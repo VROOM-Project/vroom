@@ -24,6 +24,14 @@ edge::edge(unsigned first_vertex,
   _first_vertex(std::min(first_vertex, second_vertex)),
   _second_vertex(std::max(first_vertex, second_vertex)),
   _weight(weight) {}
+
+unsigned edge::get_first_vertex() const{
+  return _first_vertex;
+}
+
+unsigned edge::get_second_vertex() const{
+  return _second_vertex;
+}
   
 bool edge::operator<(const edge& rhs) const{
   return (this->_first_vertex < rhs._first_vertex)
@@ -33,4 +41,10 @@ bool edge::operator<(const edge& rhs) const{
 
 unsigned edge::get_weight() const{
   return _weight;
+}
+
+void edge::log() const{
+  std::cout << _first_vertex
+            << "<-(" << _weight << ")->"
+            << _second_vertex;
 }

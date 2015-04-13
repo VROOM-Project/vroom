@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef EDGE_H
 #define EDGE_H
+#include <iostream>
 #include <algorithm>
 
 class edge{
@@ -30,9 +31,15 @@ private:
 public:
   edge(unsigned first_vertex, unsigned second_vertex, unsigned weight);
 
+  unsigned get_first_vertex() const;
+
+  unsigned get_second_vertex() const;
+  
   bool operator<(const edge& rhs) const;
 
   unsigned get_weight() const;
+
+  void log() const;
 };
 
 #endif

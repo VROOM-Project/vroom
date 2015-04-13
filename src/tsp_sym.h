@@ -18,17 +18,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef TSP_SYM_H
 #define TSP_SYM_H
-#include <set>
+#include <list>
+#include <unordered_map>
 #include "tsp.h"
 #include "edge.h"
 
 class tsp_sym: public tsp{
   
 private:
-  std::set<edge> _edges;
+  std::list<edge> _edges;
   
 public:
   tsp_sym(std::vector<std::vector<unsigned>> matrix);
+
+  std::list<edge> minimum_spanning_tree();
+
+  void print_edges() const;
 };
 
 #endif
