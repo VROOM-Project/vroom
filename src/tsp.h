@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef TSP_H
 #define TSP_H
-
+#include <iostream>
 #include <vector>
 
 class tsp{
@@ -27,7 +27,6 @@ private:
   std::vector<std::vector<unsigned>> _matrix;
   
 public:
-
   tsp(std::vector<std::vector<unsigned>> matrix);
 
   std::vector<std::vector<unsigned>> get_matrix();

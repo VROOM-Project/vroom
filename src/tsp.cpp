@@ -19,7 +19,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "tsp.h"
 
 tsp::tsp(std::vector<std::vector<unsigned>> matrix)
-  :_matrix(matrix){}
+  :_matrix(matrix)
+{
+  unsigned size = matrix.size();
+  // Checking for a square matrix
+  for(auto line = matrix.cbegin(); line != matrix.cend(); ++line){
+    if (line->size() != size){
+      std::cout << "Error in input matrix, square matrix required!\n";
+      exit(1);
+    }
+  }
+}
 
 std::vector<std::vector<unsigned>> tsp::get_matrix(){
   return _matrix;
