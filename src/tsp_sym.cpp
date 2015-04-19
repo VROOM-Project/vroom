@@ -20,3 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 tsp_sym::tsp_sym(std::vector<std::vector<unsigned>> matrix)
   : tsp(matrix), _graph(matrix) {}
+
+undirected_graph tsp_sym::get_graph() const{
+  return _graph;
+}

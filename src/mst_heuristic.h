@@ -16,23 +16,19 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef TSP_SYM_H
-#define TSP_SYM_H
+#ifndef MST_HEURISTIC_H
+#define MST_HEURISTIC_H
 #include <list>
-#include <unordered_map>
-#include "tsp.h"
-#include "undirected_graph.h"
+#include <set>
+#include "heuristic.h"
 #include "edge.h"
+#include "tsp_sym.h"
 
-class tsp_sym: public tsp{
-  
-private:
-  undirected_graph _graph;
-  
+// Simple heuristic based on a deep-search on a minimal spanning tree.
+class mst_heuristic : public heuristic{
 public:
-  tsp_sym(std::vector<std::vector<unsigned>> matrix);
 
-  undirected_graph get_graph() const;
+  virtual std::list<unsigned> build_solution(tsp_sym& instance);
 };
 
 #endif
