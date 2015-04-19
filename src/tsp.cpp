@@ -38,3 +38,25 @@ std::vector<std::vector<unsigned>> tsp::get_matrix(){
 std::size_t tsp::get_size(){
   return _matrix.size();
 }
+
+unsigned tsp::cost(const std::list<unsigned>& tour) const{
+  unsigned cost = 0;
+  unsigned init_step;
+
+  auto step = tour.cbegin();
+  if(tour.size() > 0){
+    init_step = *step;
+  }
+
+  unsigned previous_step = init_step;
+  ++step;
+  for(; step != tour.cend(); ++step){
+    cost += _matrix[previous_step][*step];
+    previous_step = *step;
+  }
+  if(tour.size() > 0){
+    cost += _matrix[previous_step][init_step];
+  }
+  return cost;
+}
+  

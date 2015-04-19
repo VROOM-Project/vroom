@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define TSP_H
 #include <iostream>
 #include <vector>
+#include <list>
 
 class tsp{
 private:
@@ -32,6 +33,8 @@ public:
   std::vector<std::vector<unsigned>> get_matrix();
 
   std::size_t get_size();
+
+  unsigned cost(const std::list<unsigned>& tour) const;
 };
 
 #endif
