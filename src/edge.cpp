@@ -39,6 +39,11 @@ bool edge::operator<(const edge& rhs) const{
         and (this->_second_vertex < rhs._second_vertex));
 }
 
+bool edge::operator==(const edge& rhs) const{
+  return (this->_first_vertex == rhs._first_vertex)
+    and (this->_second_vertex == rhs._second_vertex);
+}
+
 unsigned edge::get_weight() const{
   return _weight;
 }

@@ -21,19 +21,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <list>
 #include <unordered_map>
 #include "tsp.h"
+#include "undirected_graph.h"
 #include "edge.h"
 
 class tsp_sym: public tsp{
   
 private:
-  std::list<edge> _edges;
+  undirected_graph _graph;
   
 public:
   tsp_sym(std::vector<std::vector<unsigned>> matrix);
 
-  std::list<edge> minimum_spanning_tree();
-
-  void print_edges() const;
 };
 
 #endif

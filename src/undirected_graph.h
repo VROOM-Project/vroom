@@ -16,32 +16,37 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef EDGE_H
-#define EDGE_H
-#include <iostream>
+#ifndef UNDIRECTED_GRAPH_H
+#define UNDIRECTED_GRAPH_H
+#include <list>
+#include <set>
+#include <unordered_map>
 #include <algorithm>
+#include "edge.h"
 
-class edge{
+class undirected_graph{
 
 private:
-  unsigned _first_vertex;
-  unsigned _second_vertex;
-  unsigned _weight;
+  unsigned _size;
+  // Embedding two representations for different uses depending on
+  // context.
+  std::list<edge> _edges;
+  std::unordered_map<unsigned, std::set<unsigned>> _adjacency_list;
 
 public:
-  edge(unsigned first_vertex, unsigned second_vertex, unsigned weight);
+  undirected_graph(std::vector<std::vector<unsigned>> matrix);
 
-  unsigned get_first_vertex() const;
+  undirected_graph(std::list<edge> edges);
 
-  unsigned get_second_vertex() const;
-  
-  bool operator<(const edge& rhs) const;
+  std::list<edge> get_edges() const;
 
-  bool operator==(const edge& rhs) const;
+  std::unordered_map<unsigned, std::set<unsigned>> get_adjacency_list() const;
 
-  unsigned get_weight() const;
+  undirected_graph get_minimum_spanning_tree();
 
-  void log() const;
+  void print_edges() const;
+
+  void print_adjacency_list() const;
 };
 
 #endif
