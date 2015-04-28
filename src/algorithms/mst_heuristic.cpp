@@ -20,12 +20,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 std::list<unsigned> mst_heuristic::build_solution(tsp_sym& instance){
 
-  instance.get_graph().get_minimum_spanning_tree().print_adjacency_list();
-
   // Getting minimum spanning tree of associated graph under the form
   // of an adjacency list.
   std::unordered_map<unsigned, std::set<unsigned>> adjacency_list
-    = instance.get_graph().get_minimum_spanning_tree().get_adjacency_list();
+    = minimum_spanning_tree(instance.get_graph()).get_adjacency_list();
   
   // Initializing the depth-first search of the minimum spanning tree
   // with any vertex. Using the list as a stack.

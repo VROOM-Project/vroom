@@ -51,6 +51,10 @@ undirected_graph::undirected_graph(std::list<edge> edges):
   _size = _adjacency_list.size();
 }
 
+std::size_t undirected_graph::size() const{
+  return _size;
+}
+
 std::list<edge> undirected_graph::get_edges() const{
   return _edges;
 }
@@ -59,54 +63,6 @@ std::unordered_map<unsigned, std::set<unsigned>> undirected_graph::get_adjacency
   return _adjacency_list;
 }
 
-undirected_graph undirected_graph::get_minimum_spanning_tree(){
-  // First sorting _edges by weight
-  struct {
-    bool operator()(const edge &a, const edge &b){
-      return a.get_weight() < b.get_weight();
-    }   
-  } comp;
-  _edges.sort(comp);
-
-  // Empty list to initialize the tree's edges
-  std::list<edge> mst;
-
-  // During Kruskal algorithm, the number of connected components will
-  // decrease until we obtain a single component (the final tree). We
-  // use the smallest vertex as a representative of connected
-  // components.
-  std::unordered_map<unsigned, unsigned> representative;
-  for(unsigned i = 0; i < _size; ++i){
-    representative.emplace(i, i);
-  }
-
-  for(auto edge = _edges.cbegin(); edge != _edges.cend(); ++edge){
-    unsigned first_vertex = edge->get_first_vertex();
-    unsigned second_vertex = edge->get_second_vertex();
-
-    unsigned first_rep = representative[first_vertex];
-    unsigned second_rep = representative[second_vertex];
-    if(first_rep != second_rep){
-      // Adding current edge won't create a cycle as vertices are in
-      // separate connected componentes.
-      mst.push_back(*edge);
-      // Both vertices are now in the same connected component,
-      // setting new representative for all elements of second
-      // component.
-      for(auto it = representative.begin();
-          it != representative.end();
-          ++it){
-        if(it->second == second_rep){
-          it->second = first_rep;
-        }
-      }      
-    }
-  }
-
-  undirected_graph mst_as_graph (mst);
-  return mst_as_graph;
-}
-  
 void undirected_graph::print_edges() const{
   for(auto edge = _edges.cbegin(); edge != _edges.cend(); ++edge){
     edge->log();

@@ -16,21 +16,13 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef MST_HEURISTIC_H
-#define MST_HEURISTIC_H
+#ifndef KRUSKAL_H
+#define KRUSKAL_H
 #include <list>
-#include <set>
-#include "kruskal.h"
-#include "heuristic.h"
-#include "../tsp_sym.h"
+#include <algorithm>            // sort
 #include "../structures/edge.h"
 #include "../structures/undirected_graph.h"
 
-// Simple heuristic based on a deep-search on a minimal spanning tree.
-class mst_heuristic : public heuristic{
-public:
-
-  virtual std::list<unsigned> build_solution(tsp_sym& instance);
-};
+undirected_graph minimum_spanning_tree(const undirected_graph& graph);
 
 #endif

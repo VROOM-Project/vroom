@@ -21,7 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <list>
 #include <set>
 #include <unordered_map>
-#include <algorithm>
 #include "edge.h"
 #include "matrix.h"
 
@@ -39,11 +38,11 @@ public:
 
   undirected_graph(std::list<edge> edges);
 
+  std::size_t size() const;
+
   std::list<edge> get_edges() const;
 
   std::unordered_map<unsigned, std::set<unsigned>> get_adjacency_list() const;
-
-  undirected_graph get_minimum_spanning_tree();
 
   void print_edges() const;
 
