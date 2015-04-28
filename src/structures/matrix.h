@@ -16,11 +16,27 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "tsp_sym.h"
+#ifndef MATRIX_H
+#define MATRIX_H
+#include <iostream>
+#include <vector>
 
-tsp_sym::tsp_sym(matrix m)
-  : tsp(m), _graph(m) {}
+class matrix{
 
-undirected_graph tsp_sym::get_graph() const{
-  return _graph;
-}
+private:
+  std::size_t _size;
+  std::vector<std::vector<unsigned>> _inner_rep;
+  
+public:
+  matrix(std::vector<std::vector<unsigned>> matrix_as_vector);
+
+  std::size_t size() const;
+
+  void print() const;
+
+  matrix get_sub_matrix(const std::vector<unsigned>& indices) const;
+
+  unsigned operator()(unsigned i, unsigned j) const;
+};
+
+#endif

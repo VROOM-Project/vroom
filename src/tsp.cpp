@@ -18,24 +18,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "tsp.h"
 
-tsp::tsp(std::vector<std::vector<unsigned>> matrix)
-  :_matrix(matrix)
-{
-  unsigned size = matrix.size();
-  // Checking for a square matrix
-  for(auto line = matrix.cbegin(); line != matrix.cend(); ++line){
-    if (line->size() != size){
-      std::cout << "Error in input matrix, square matrix required!\n";
-      exit(1);
-    }
-  }
-}
+tsp::tsp(matrix m)
+  :_matrix(m) {}
 
-const std::vector<std::vector<unsigned>>& tsp::get_matrix() const{
+const matrix& tsp::get_matrix() const{
   return _matrix;
 }
 
-std::size_t tsp::get_size(){
+std::size_t tsp::size(){
   return _matrix.size();
 }
 
@@ -51,11 +41,11 @@ unsigned tsp::cost(const std::list<unsigned>& tour) const{
   unsigned previous_step = init_step;
   ++step;
   for(; step != tour.cend(); ++step){
-    cost += _matrix[previous_step][*step];
+    cost += _matrix(previous_step, *step);
     previous_step = *step;
   }
   if(tour.size() > 0){
-    cost += _matrix[previous_step][init_step];
+    cost += _matrix(previous_step, init_step);
   }
   return cost;
 }

@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <unordered_map>
 #include <algorithm>
 #include "edge.h"
+#include "matrix.h"
 
 class undirected_graph{
 
@@ -34,7 +35,7 @@ private:
   std::unordered_map<unsigned, std::set<unsigned>> _adjacency_list;
 
 public:
-  undirected_graph(std::vector<std::vector<unsigned>> matrix);
+  undirected_graph(matrix m);
 
   undirected_graph(std::list<edge> edges);
 

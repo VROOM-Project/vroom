@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "tsp.h"
 #include "./structures/undirected_graph.h"
 #include "./structures/edge.h"
+#include "./structures/matrix.h"
 
 class tsp_sym: public tsp{
   
@@ -30,7 +31,7 @@ private:
   undirected_graph _graph;
   
 public:
-  tsp_sym(std::vector<std::vector<unsigned>> matrix);
+  tsp_sym(matrix m);
 
   undirected_graph get_graph() const;
 };

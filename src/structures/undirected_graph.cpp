@@ -18,15 +18,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "undirected_graph.h"
 
-undirected_graph::undirected_graph(std::vector<std::vector<unsigned>> matrix)
-  :_size(matrix.size()) {
-  // Checking for a symmetric matrix
+undirected_graph::undirected_graph(matrix m):
+  _size(m.size())
+{
   bool matrix_ok = true;
   for(unsigned i = 0; i < _size; ++i){
-    matrix_ok &= (matrix[i][i] == 0);
+    matrix_ok &= (m(i, i) == 0);
     for(unsigned j = i + 1; j < _size; ++j){
-      matrix_ok &= (matrix[i][j] == matrix[j][i]);
-      _edges.emplace_front(i, j, matrix[i][j]);
+      matrix_ok &= (m(i, j) == m(j, i));
+      _edges.emplace_front(i, j, m(i, j));
       _adjacency_list[i].insert(j);
       _adjacency_list[j].insert(i);
     }

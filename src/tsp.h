@@ -21,20 +21,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <iostream>
 #include <vector>
 #include <list>
+#include "./structures/matrix.h"
 
 class tsp{
 private:
   // Cost matrix
-  const std::vector<std::vector<unsigned>> _matrix;
+  const matrix _matrix;
   
 public:
-  tsp(std::vector<std::vector<unsigned>> matrix);
+  tsp(matrix m);
 
-  const std::vector<std::vector<unsigned>>& get_matrix() const;
+  const matrix& get_matrix() const;
 
-  std::vector<std::vector<unsigned>> get_sub_matrix(std::vector<unsigned> indices) const;
-
-  std::size_t get_size();
+  std::size_t size();
 
   unsigned cost(const std::list<unsigned>& tour) const;
 };
