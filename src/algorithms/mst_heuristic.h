@@ -21,9 +21,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <list>
 #include <set>
 #include "heuristic.h"
-#include "tsp_sym.h"
-#include "./structures/edge.h"
-#include "./structures/undirected_graph.h"
+#include "../tsp_sym.h"
+#include "../structures/edge.h"
+#include "../structures/undirected_graph.h"
 
 // Simple heuristic based on a deep-search on a minimal spanning tree.
 class mst_heuristic : public heuristic{

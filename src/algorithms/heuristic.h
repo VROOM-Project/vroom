@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define HEURISTIC_H
 #include<string>
 #include<list>
-#include "tsp_sym.h"
+#include "../tsp_sym.h"
 
 class heuristic{
 
