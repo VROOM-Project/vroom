@@ -48,6 +48,7 @@ undirected_graph::undirected_graph(std::list<edge> edges):
     _adjacency_list[first].insert(second);
     _adjacency_list[second].insert(first);
   }
+  _size = _adjacency_list.size();
 }
 
 std::list<edge> undirected_graph::get_edges() const{

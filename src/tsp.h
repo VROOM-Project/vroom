@@ -25,12 +25,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 class tsp{
 private:
   // Cost matrix
-  std::vector<std::vector<unsigned>> _matrix;
+  const std::vector<std::vector<unsigned>> _matrix;
   
 public:
   tsp(std::vector<std::vector<unsigned>> matrix);
 
-  std::vector<std::vector<unsigned>> get_matrix();
+  const std::vector<std::vector<unsigned>>& get_matrix() const;
+
+  std::vector<std::vector<unsigned>> get_sub_matrix(std::vector<unsigned> indices) const;
 
   std::size_t get_size();
 

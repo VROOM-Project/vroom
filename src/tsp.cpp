@@ -31,7 +31,7 @@ tsp::tsp(std::vector<std::vector<unsigned>> matrix)
   }
 }
 
-std::vector<std::vector<unsigned>> tsp::get_matrix(){
+const std::vector<std::vector<unsigned>>& tsp::get_matrix() const{
   return _matrix;
 }
 
