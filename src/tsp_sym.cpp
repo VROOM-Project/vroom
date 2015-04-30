@@ -18,9 +18,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "tsp_sym.h"
 
-tsp_sym::tsp_sym(matrix m)
+tsp_sym::tsp_sym(matrix<double> m)
   : tsp(m), _graph(m) {}
 
-undirected_graph tsp_sym::get_graph() const{
+undirected_graph<double> tsp_sym::get_graph() const{
   return _graph;
 }

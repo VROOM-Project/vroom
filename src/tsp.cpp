@@ -18,10 +18,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "tsp.h"
 
-tsp::tsp(matrix m)
+tsp::tsp(matrix<double> m)
   :_matrix(m) {}
 
-const matrix& tsp::get_matrix() const{
+const matrix<double>& tsp::get_matrix() const{
   return _matrix;
 }
 
@@ -29,8 +29,8 @@ std::size_t tsp::size(){
   return _matrix.size();
 }
 
-unsigned tsp::cost(const std::list<unsigned>& tour) const{
-  unsigned cost = 0;
+double tsp::cost(const std::list<unsigned>& tour) const{
+  double cost = 0;
   unsigned init_step;
 
   auto step = tour.cbegin();

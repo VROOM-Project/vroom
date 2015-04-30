@@ -26,16 +26,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 class tsp{
 private:
   // Cost matrix
-  const matrix _matrix;
+  const matrix<double> _matrix;
   
 public:
-  tsp(matrix m);
+  tsp(matrix<double> m);
 
-  const matrix& get_matrix() const;
+  const matrix<double>& get_matrix() const;
 
   std::size_t size();
 
-  unsigned cost(const std::list<unsigned>& tour) const;
+  double cost(const std::list<unsigned>& tour) const;
 };
 
 #endif

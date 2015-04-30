@@ -28,12 +28,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 class tsp_sym: public tsp{
   
 private:
-  undirected_graph _graph;
+  undirected_graph<double> _graph;
   
 public:
-  tsp_sym(matrix m);
+  tsp_sym(matrix<double> m);
 
-  undirected_graph get_graph() const;
+  undirected_graph<double> get_graph() const;
 };
 
 #endif

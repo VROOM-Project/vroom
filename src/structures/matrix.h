@@ -21,22 +21,61 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <iostream>
 #include <vector>
 
-class matrix{
+
+template <class T> class matrix{
 
 private:
   std::size_t _size;
-  std::vector<std::vector<unsigned>> _inner_rep;
+  std::vector<std::vector<T>> _inner_rep;
   
 public:
-  matrix(std::vector<std::vector<unsigned>> matrix_as_vector);
+  matrix(std::vector<std::vector<T>> matrix_as_vector):
+    _size(matrix_as_vector.size()),
+    _inner_rep(matrix_as_vector)
+  {
+    // Checking for a square matrix
+    for(auto line = matrix_as_vector.cbegin();
+        line != matrix_as_vector.cend();
+        ++line){
+      if (line->size() != _size){
+        std::cout << "Error in input matrix, square matrix required!\n";
+        exit(1);
+      }
+    }
+  }
 
-  std::size_t size() const;
+  std::size_t size() const{
+    return _size;
+  }
 
-  void print() const;
+  void print() const{
+    for(auto i = _inner_rep.cbegin(); i != _inner_rep.cend(); ++i){
+      for(auto val = (*i).cbegin(); val != (*i).cend(); ++val){
+        std::cout << *val << " ; ";
+      }
+      std::cout << std::endl;
+    }
+  }
 
-  matrix get_sub_matrix(const std::vector<unsigned>& indices) const;
+  matrix<T> get_sub_matrix(const std::vector<unsigned>& indices) const{
+    std::vector<std::vector<T>> sub_matrix;
+    for(auto i = indices.cbegin(); i != indices.cend(); ++i){
+      std::vector<T> current_line;
+      for(auto j = indices.cbegin(); j != indices.cend(); ++j){
+        current_line.push_back(_inner_rep[*i][*j]);
+      }
+      sub_matrix.push_back(current_line);
+    }
+    return matrix<T> (sub_matrix);
+  }
 
-  unsigned operator()(unsigned i, unsigned j) const;
+  T operator()(unsigned i, unsigned j) const{
+    return _inner_rep[i][j];
+  }
+
+  void set(unsigned i, unsigned j, T value){
+    _inner_rep[i][j] = value;
+  }
 };
 
 #endif

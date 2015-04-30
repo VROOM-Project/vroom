@@ -21,27 +21,49 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <iostream>
 #include <algorithm>
 
-class edge{
+template <class T> class edge{
 
 private:
   unsigned _first_vertex;
   unsigned _second_vertex;
-  unsigned _weight;
+  T _weight;
 
 public:
-  edge(unsigned first_vertex, unsigned second_vertex, unsigned weight);
+  edge(unsigned first_vertex,
+              unsigned second_vertex,
+              T weight):
+  _first_vertex(std::min(first_vertex, second_vertex)),
+  _second_vertex(std::max(first_vertex, second_vertex)),
+  _weight(weight) {}
 
-  unsigned get_first_vertex() const;
+  unsigned get_first_vertex() const{
+    return _first_vertex;
+  }
 
-  unsigned get_second_vertex() const;
-  
-  bool operator<(const edge& rhs) const;
+  unsigned get_second_vertex() const{
+    return _second_vertex;
+  }
 
-  bool operator==(const edge& rhs) const;
+  bool operator<(const edge& rhs) const{
+  return (this->_first_vertex < rhs._first_vertex)
+    or ((this->_first_vertex == rhs._first_vertex)
+        and (this->_second_vertex < rhs._second_vertex));
+  }
 
-  unsigned get_weight() const;
+  bool operator==(const edge& rhs) const{
+    return (this->_first_vertex == rhs._first_vertex)
+      and (this->_second_vertex == rhs._second_vertex);
+  }
 
-  void log() const;
+  T get_weight() const{
+    return _weight;
+  }
+
+  void log() const{
+    std::cout << _first_vertex
+              << "<-(" << _weight << ")->"
+              << _second_vertex;
+  }
 };
 
 #endif
