@@ -22,7 +22,7 @@ std::list<unsigned> mst_heuristic::build_solution(tsp_sym& instance){
 
   // Getting minimum spanning tree of associated graph under the form
   // of an adjacency list.
-  std::unordered_map<unsigned, std::set<unsigned>> adjacency_list
+  std::unordered_map<unsigned, std::list<unsigned>> adjacency_list
     = minimum_spanning_tree(instance.get_graph()).get_adjacency_list();
   
   // Initializing the depth-first search of the minimum spanning tree
@@ -44,7 +44,7 @@ std::list<unsigned> mst_heuristic::build_solution(tsp_sym& instance){
       // Adding neighbour for further visit.
       df_list.push_back(*vertex);
       // Making sure current edge won't be used backward later.
-      adjacency_list[*vertex].erase(current_vertex);
+      adjacency_list[*vertex].remove(current_vertex);
     }
 
     tour.push_back(current_vertex);

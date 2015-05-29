@@ -19,7 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef MST_HEURISTIC_H
 #define MST_HEURISTIC_H
 #include <list>
-#include <set>
 #include "kruskal.h"
 #include "heuristic.h"
 #include "../tsp_sym.h"

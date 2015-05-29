@@ -19,7 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef UNDIRECTED_GRAPH_H
 #define UNDIRECTED_GRAPH_H
 #include <list>
-#include <set>
 #include <unordered_map>
 #include "edge.h"
 #include "matrix.h"
@@ -31,7 +30,7 @@ private:
   // Embedding two representations for different uses depending on
   // context.
   std::list<edge<T>> _edges;
-  std::unordered_map<unsigned, std::set<unsigned>> _adjacency_list;
+  std::unordered_map<unsigned, std::list<unsigned>> _adjacency_list;
 
 public:
   undirected_graph(matrix<T> m):
@@ -43,8 +42,8 @@ public:
       for(unsigned j = i + 1; j < _size; ++j){
         matrix_ok &= (m(i, j) == m(j, i));
         _edges.emplace_front(i, j, m(i, j));
-        _adjacency_list[i].insert(j);
-        _adjacency_list[j].insert(i);
+        _adjacency_list[i].push_back(j);
+        _adjacency_list[j].push_back(i);
       }
     }
     if(!matrix_ok){
@@ -61,8 +60,8 @@ public:
       unsigned first = edge->get_first_vertex();
       unsigned second = edge->get_second_vertex();
     
-      _adjacency_list[first].insert(second);
-      _adjacency_list[second].insert(first);
+      _adjacency_list[first].push_back(second);
+      _adjacency_list[second].push_back(first);
     }
     _size = _adjacency_list.size();
   }
@@ -75,7 +74,7 @@ public:
     return _edges;
   }
 
-  std::unordered_map<unsigned, std::set<unsigned>> get_adjacency_list() const{
+  std::unordered_map<unsigned, std::list<unsigned>> get_adjacency_list() const{
     return _adjacency_list;
   }
 
