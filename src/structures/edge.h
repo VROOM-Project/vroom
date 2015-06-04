@@ -30,12 +30,12 @@ private:
 
 public:
   edge(unsigned first_vertex,
-              unsigned second_vertex,
-              T weight):
-  _first_vertex(std::min(first_vertex, second_vertex)),
-  _second_vertex(std::max(first_vertex, second_vertex)),
-  _weight(weight) {}
-
+       unsigned second_vertex,
+       T weight):
+    _first_vertex(std::min(first_vertex, second_vertex)),
+    _second_vertex(std::max(first_vertex, second_vertex)),
+    _weight(weight) {}
+  
   unsigned get_first_vertex() const{
     return _first_vertex;
   }
