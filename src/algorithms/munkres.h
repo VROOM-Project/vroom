@@ -267,6 +267,14 @@ std::map<unsigned, unsigned> minimum_weight_perfect_matching(const matrix<T>& m)
   return matching_xy;
 }
 
+// Used in next function to order children edges to pick the smallest
+// weights first. This greedy approach allows to find a rather good
+// solution soon enough to cut more branches.
+template <class T>
+bool compare_weight (const edge<T>& first, const edge<T>& second){
+  return (first.get_weight() < second.get_weight());
+}
+
 template <class T>
 std::map<unsigned, unsigned> branch_and_bound_symetric_mwpm(const matrix<T>& m){
   // Note: intended for an even-sized matrix with inf value on the
@@ -365,6 +373,8 @@ std::map<unsigned, unsigned> branch_and_bound_symetric_mwpm(const matrix<T>& m){
         // Else sure to get a bigger weight in the end so doing
         // nothing cuts the branch.
         std::list<edge<T>> children_edges = current_node.get_children_edges();
+        children_edges.sort(compare_weight<T>);
+        // Putting highest weights first to pick them later.
         for(auto edge = children_edges.rbegin();
             edge != children_edges.rend();
             ++edge){
