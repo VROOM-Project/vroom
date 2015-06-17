@@ -21,7 +21,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <map>
 #include <limits>
 #include <set>
+#include <list>
 #include "../structures/matrix.h"
+#include "../structures/edge.h"
 
 template <class T>
 std::map<unsigned, unsigned> minimum_weight_perfect_matching(const matrix<T>& m){
@@ -263,6 +265,126 @@ std::map<unsigned, unsigned> minimum_weight_perfect_matching(const matrix<T>& m)
   }
   // std::cout << "Matching size before return: " << matching_xy.size() << std::endl;
   return matching_xy;
+}
+
+template <class T>
+std::map<unsigned, unsigned> branch_and_bound_symetric_mwpm(const matrix<T>& m){
+  // Note: intended for an even-sized matrix with inf value on the
+  // diagonal (no i-i matches may be produced anyway).
+
+  // Branch and bound algorithm using a tree whose nodes are chosen
+  // edges, taking advantage of comparison order between edges. First
+  // level of tree is 0-1, 0-2, ... 0-(n-1), then 0-1 is the parent of
+  // 2-3, 2-4... (all greater edges starting with 2). 0-2 is the
+  // parent of 1-3, 1-4, 1-5... Computing children nodes just requires
+  // to remember remaining indices (removed along while picking edges
+  // from the parents.
+
+  // The BB_tree_node structure allows a depth-first search of the
+  // above described tree, stopping at any depth when getting over the
+  // best weight currently known.
+
+  struct BB_tree_node{
+    const matrix<T>& mat;
+    std::list<edge<T>> chosen_edges;
+    std::set<unsigned> remaining_indices;
+    T cumulated_weight;
+
+    // Constructor for the root node.
+    BB_tree_node(const matrix<T>& mat):
+      mat(mat),
+      cumulated_weight(0)
+    {
+      for(unsigned i = 0; i < mat.size(); ++i){
+        remaining_indices.insert(i);
+      }
+    }
+
+    // Constructor for children nodes.
+    BB_tree_node(const BB_tree_node& parent,
+                 const edge<T>& chosen_edge):
+      mat(parent.mat),
+      chosen_edges(parent.chosen_edges),
+      remaining_indices(parent.remaining_indices),
+      cumulated_weight(parent.cumulated_weight)
+    {
+      // Update chosen edges.
+      this->chosen_edges.push_back(chosen_edge);
+      // Update remaining indices and cumulated weight.
+      unsigned first = chosen_edge.get_first_vertex();
+      unsigned second = chosen_edge.get_second_vertex();
+      this->remaining_indices.erase(first);
+      this->remaining_indices.erase(second);
+      this->cumulated_weight += chosen_edge.get_weight();
+    }
+
+    std::list<edge<T>> get_children_edges(){
+      std::list<edge<T>> children_edges;
+
+      if(remaining_indices.size() > 0){
+        auto current = remaining_indices.cbegin();
+        unsigned first_index = *current;
+        ++current;
+        while(current != remaining_indices.cend()){
+          children_edges.emplace_back(first_index,
+                                      *current,
+                                      mat(first_index, *current)
+                                      );
+          ++current;
+        }
+      }
+      return children_edges;
+    }
+  };
+
+  T current_best_weight = std::numeric_limits<T>::max();
+  std::list<edge<T>> best_edges_choice;
+
+  BB_tree_node root (m);
+
+  // Using a list as a pile to operate a depth-first search on the
+  // above described tree.
+  std::list<BB_tree_node> yet_to_visit;
+  yet_to_visit.push_back(root);
+
+  while(!yet_to_visit.empty()){
+    // First on the pile.
+    BB_tree_node current_node = yet_to_visit.back();
+    yet_to_visit.pop_back();
+
+    if(current_node.remaining_indices.size() == 0
+       and current_node.cumulated_weight < current_best_weight){
+      // Current node is a leaf giving a better result.
+      current_best_weight = current_node.cumulated_weight;
+      best_edges_choice = current_node.chosen_edges;
+      // std::cout << "Best weight found: " << current_best_weight << std::endl;
+    }
+    else{
+      // Leaf not reached yet.
+      if(current_node.cumulated_weight < current_best_weight){
+        // Else sure to get a bigger weight in the end so doing
+        // nothing cuts the branch.
+        std::list<edge<T>> children_edges = current_node.get_children_edges();
+        for(auto edge = children_edges.rbegin();
+            edge != children_edges.rend();
+            ++edge){
+          // edge->log();
+          // std::cout << " ; ";
+          yet_to_visit.emplace_back(current_node, *edge);
+        }
+        // std::cout << std::endl;
+      }
+    }
+  }  
+  
+  std::map<unsigned, unsigned> matching;
+  for(auto edge = best_edges_choice.cbegin();
+      edge != best_edges_choice.cend();
+      ++edge){
+    matching.emplace(edge->get_first_vertex(), edge->get_second_vertex());
+  }
+  
+  return matching;
 }
 
 #endif
