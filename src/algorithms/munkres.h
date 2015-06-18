@@ -397,4 +397,44 @@ std::map<unsigned, unsigned> branch_and_bound_symetric_mwpm(const matrix<T>& m){
   return matching;
 }
 
+template <class T>
+std::map<unsigned, unsigned> greedy_symetric_approx_mwpm(const matrix<T>& m){
+  // Fast greedy algorithm for finding a symetric perfect matching,
+  // choosing always smaller possible value, no minimality assured.
+  std::map<unsigned, unsigned> matching;
+  std::set<unsigned> remaining_indices;
+  for(unsigned i = 0; i < m.size(); ++i){
+    remaining_indices.insert(i);
+  }
+
+  while(remaining_indices.size() > 0){
+    T min_weight = std::numeric_limits<T>::max();
+    unsigned first_chosen_index;
+    unsigned second_chosen_index;
+    std::set<unsigned>::iterator chosen_i;
+    std::set<unsigned>::iterator chosen_j;
+    for(auto i = remaining_indices.begin();
+        i != remaining_indices.end();
+        ++i){
+      auto j = i;
+      ++j;
+      for(; j != remaining_indices.end(); ++j){
+        T current_weight = m(*i, *j);
+        if(current_weight < min_weight){
+          min_weight = current_weight;
+          first_chosen_index = *i;
+          second_chosen_index = *j;
+          chosen_i = i;
+          chosen_j = j;
+        }
+      }
+    }
+    matching.emplace(first_chosen_index, second_chosen_index);
+    remaining_indices.erase(chosen_j);
+    remaining_indices.erase(chosen_i);
+  }
+
+  return matching;
+}
+
 #endif
