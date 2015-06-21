@@ -22,7 +22,8 @@ std::list<unsigned> christo_heuristic::build_solution(tsp_sym& instance){
   // The eulerian sub-graph further used is made of a minimum spanning
   // tree with a minimum weight perfect matching on its odd degree
   // vertices.
-  undirected_graph<double> mst_graph
+
+  undirected_graph<unsigned> mst_graph
     = minimum_spanning_tree(instance.get_graph());
 
   // std::cout << "MST edges: " << std::endl;
@@ -43,20 +44,20 @@ std::list<unsigned> christo_heuristic::build_solution(tsp_sym& instance){
     }
   }
 
-  // std:: cout << "Odd degree vertices from the minimum spanning tree: ";
+  // std::cout << "Odd degree vertices from the minimum spanning tree: ";
   // for(auto it = mst_odd_vertices.cbegin(); it != mst_odd_vertices.cend(); ++it){
   //   std::cout << *it << " ; ";
   // }
   // std::cout << std::endl;
 
   // Getting corresponding matrix for the generated sub-graph.
-  matrix<double> sub_matrix
+  matrix<unsigned> sub_matrix
     = instance.get_matrix().get_sub_matrix(mst_odd_vertices);
 
   // Making each node impossible to match with itself in minimum
   // weight perfect matching to come.
   for(unsigned i = 0; i < sub_matrix.size(); ++i){
-    sub_matrix.set(i, i, std::numeric_limits<double>::max());
+    sub_matrix.set(i, i, std::numeric_limits<unsigned>::max());
   }
 
   // sub_matrix.print();
@@ -70,7 +71,7 @@ std::list<unsigned> christo_heuristic::build_solution(tsp_sym& instance){
   bool matching_ok = true;
 
   // std::cout << "mwpm with initial indices:" << std::endl;
-  // double weight = 0;
+  // unsigned weight = 0;
   for(auto edge = mwpm.begin();
       edge != mwpm.end();
       ++edge){
@@ -78,17 +79,24 @@ std::list<unsigned> christo_heuristic::build_solution(tsp_sym& instance){
     // weight += sub_matrix(edge->first, edge->second);
     // std::cout << edge->first << "->" << edge->second << std::endl;
   }
-  // std::cout << "Weight: " << weight << std::endl;
+  // std::cout << "Munkres mwpm weight: " << weight << std::endl;
   if(!matching_ok){
-    // std::cout << "Unusable mwpm!"
-    //           << " Switching to greedy approximation algorithm for symetric mwpm."
-    //           << std::endl;
+    std::cout << "Unusable mwpm!"
+              << " Switching to greedy approximation algorithm for symetric mwpm."
+              << std::endl;
+              
     mwpm = greedy_symetric_approx_mwpm(sub_matrix);
+    // std::cout << "Unusable mwpm!"
+    //           << " Switching to branch and bound algorithm for symetric mwpm."
+    //           << std::endl;
+              
+    // mwpm = branch_and_bound_symetric_mwpm(sub_matrix);
+
   }
   // std::cout << "mwpm (with original indices):" << std::endl;
 
   // Building eulerian graph.
-  std::list<edge<double>> eulerian_graph_edges
+  std::list<edge<unsigned>> eulerian_graph_edges
     = mst_graph.get_edges();
   
   // Adding edges from minimum weight perfect matching (with the
@@ -100,7 +108,7 @@ std::list<unsigned> christo_heuristic::build_solution(tsp_sym& instance){
     unsigned first_index = mst_odd_vertices[edge->first];
     unsigned second_index = mst_odd_vertices[edge->second];
     // std::cout << first_index << "->" << second_index << std::endl;
-    // weight += instance.get_matrix()(first_index, second_index);
+    // weight += 2 * instance.get_matrix()(first_index, second_index);
     if(already_added.find(first_index) == already_added.end()){
       eulerian_graph_edges.emplace_back(first_index,
                                         second_index,
@@ -113,7 +121,7 @@ std::list<unsigned> christo_heuristic::build_solution(tsp_sym& instance){
   // std::cout << "Weight: " << weight << std::endl;
 
   // Building Eulerian graph from the edges.
-  undirected_graph<double> eulerian_graph (eulerian_graph_edges);
+  undirected_graph<unsigned> eulerian_graph (eulerian_graph_edges);
 
   // Hierholzer's algorithm: building and joining closed tours with
   // vertices that still have adjacent edges.

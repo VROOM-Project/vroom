@@ -33,6 +33,8 @@ private:
   std::unordered_map<unsigned, std::list<unsigned>> _adjacency_list;
 
 public:
+  undirected_graph() {}
+  
   undirected_graph(matrix<T> m):
     _size(m.size())
   {

@@ -22,13 +22,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 
 
-template <class T> class matrix{
+template <class T>
+class matrix{
 
 private:
   std::size_t _size;
   std::vector<std::vector<T>> _inner_rep;
   
 public:
+  matrix():
+    _size(0) {}
+  
   matrix(std::vector<std::vector<T>> matrix_as_vector):
     _size(matrix_as_vector.size()),
     _inner_rep(matrix_as_vector)

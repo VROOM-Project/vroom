@@ -19,21 +19,28 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef TSP_H
 #define TSP_H
 #include <iostream>
-#include <vector>
+#include <string>
 #include <list>
 #include "./structures/matrix.h"
+#include "./structures/matrix_loader.h"
+#include "./structures/euc_2d_matrix_loader.h"
+
+class tsp_sym;
 
 class tsp{
-private:
-  // Cost matrix
-  const matrix<double> _matrix;
+protected:
+  matrix<unsigned> _matrix;
   
 public:
-  tsp(matrix<double> m);
+  tsp();
+  
+  tsp(matrix<unsigned> m);
 
-  const matrix<double>& get_matrix() const;
+  const matrix<unsigned>& get_matrix() const;
 
   std::size_t size();
+
+  tsp_sym symmetrize() const;
 
   double cost(const std::list<unsigned>& tour) const;
 };
