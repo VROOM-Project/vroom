@@ -31,6 +31,8 @@ public:
 
   local_search(matrix<unsigned> matrix, std::list<unsigned> tour);
 
+  unsigned two_opt_step();
+
   std::list<unsigned> get_tour(unsigned first_index) const;
   
 };
