@@ -28,7 +28,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 class tsp_sym: public tsp{
   
 private:
-  std::vector<std::pair<double, double>> _places;
   undirected_graph<unsigned> _graph;
   
 public:
@@ -37,8 +36,6 @@ public:
   tsp_sym(matrix<unsigned> m);
 
   undirected_graph<unsigned> get_graph() const;
-
-  std::string log(const std::list<unsigned>& tour) const;
 };
 
 #endif

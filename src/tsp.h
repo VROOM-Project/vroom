@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef TSP_H
 #define TSP_H
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <list>
 #include "./structures/matrix.h"
@@ -29,10 +30,13 @@ class tsp_sym;
 
 class tsp{
 protected:
+  std::vector<std::pair<double, double>> _places;
   matrix<unsigned> _matrix;
   
 public:
   tsp();
+
+  tsp(std::string places);
   
   tsp(matrix<unsigned> m);
 
@@ -43,6 +47,11 @@ public:
   tsp_sym symmetrize() const;
 
   double cost(const std::list<unsigned>& tour) const;
+
+  std::string log(const std::list<unsigned>& tour) const;
+
+  void log_to_file(const std::list<unsigned>& tour,
+                   std::string file_name) const;
 };
 
 #endif
