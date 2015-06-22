@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define LOCAL_SEARCH_H
 #include <list>
 #include <map>
+#include <chrono>
 #include "../structures/matrix.h"
 #include "../tsp.h"
 
@@ -33,10 +34,14 @@ public:
 
   local_search(tsp* problem, std::list<unsigned> tour);
 
+  unsigned relocate_step();
+
+  unsigned perform_all_relocate_steps();
+
   unsigned two_opt_step();
 
   unsigned perform_all_two_opt_steps();
-    
+
   std::list<unsigned> get_tour(unsigned first_index) const;
   
 };

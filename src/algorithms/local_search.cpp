@@ -35,6 +35,86 @@ local_search::local_search(tsp* problem, std::list<unsigned> tour):
   _edges.emplace(last_index, first_index);
 }
 
+unsigned local_search::relocate_step(){
+  unsigned gain = 0;
+  bool amelioration_found = false;
+  for(auto edge_1 = _edges.cbegin(); edge_1 != _edges.cend(); ++edge_1){
+    // Going through the tour while checking for insertion of
+    // edge_1->second between two other nodes (edge_2_*).
+    //
+    // Namely edge_1->first --> edge_1->second --> next is replaced by
+    // edge_1->first --> next while edge_2->first --> edge_2->second is
+    // replaced by edge_2->first --> edge_1->second --> edge_2->second.
+    unsigned next = _edges.at(edge_1->second);
+    unsigned first_potential_add = _matrix(edge_1->first, next);
+
+    unsigned relocated_node = edge_1->second;
+
+    for(auto edge_2 = _edges.cbegin(); edge_2 != _edges.cend(); ++edge_2){
+      if((edge_2 == edge_1) or (edge_2->first == relocated_node)){
+        continue;
+      }
+      int current_diff = _matrix(edge_1->first, relocated_node)
+        + _matrix(relocated_node, next)
+        + _matrix(edge_2->first, edge_2->second)
+        - first_potential_add
+        - _matrix(edge_2->first, relocated_node)
+        - _matrix(relocated_node, edge_2->second);
+      if(current_diff > 0){
+        amelioration_found = true;
+        gain = current_diff;
+        // std::cout << "Gain de :" << current_diff << std::endl;
+        // std::cout << edge_1->first
+        //           << "-" << _matrix(edge_1->first, edge_1->second) << "->"
+        //           << edge_1->second
+        //           << "-" << _matrix(edge_1->second, next) << "->"
+        //           << next
+        //           << std::endl;
+        // std::cout << edge_2->first
+        //           << "-" << _matrix(edge_2->first, edge_2->second) << "->"
+        //           << edge_2->second
+        //           << std::endl;
+
+        // Performing exchange.
+        _edges.at(edge_1->first) = next;
+        _edges.at(relocated_node) = edge_2->second;
+        _edges.at(edge_2->first) = relocated_node;
+        break;
+      }
+    }
+    if(amelioration_found){
+      break;
+    }
+  }
+
+  return gain;
+}
+
+unsigned local_search::perform_all_relocate_steps(){
+  unsigned total_gain = 0;
+  unsigned relocate_iter = 0;
+  unsigned gain = 0;
+  do{
+    gain = this->relocate_step();
+    total_gain += gain;
+
+    if(gain > 0){
+      ++relocate_iter;
+      auto timestamp
+        = std::chrono::system_clock::now().time_since_epoch().count();
+      _problem->log_to_file(this->get_tour(0),
+                            std::to_string(timestamp)
+                            + "_relocate.json");
+    }
+  } while(gain > 0);
+
+  std::cout << "Performed "
+            << relocate_iter << " \"relocate\" steps, gaining "
+            << total_gain
+            << std::endl;
+  return total_gain;
+}
+
 unsigned local_search::two_opt_step(){
   unsigned gain = 0;
   for(auto edge_1 = _edges.cbegin(); edge_1 != _edges.cend(); ++edge_1){
@@ -96,10 +176,11 @@ unsigned local_search::perform_all_two_opt_steps(){
 
     if(gain > 0){
       ++two_opt_iter;
+      auto timestamp
+        = std::chrono::system_clock::now().time_since_epoch().count();
       _problem->log_to_file(this->get_tour(0),
-                            "two_opt_"
-                            + std::to_string(two_opt_iter)
-                            + ".json");
+                            std::to_string(timestamp)
+                            + "_two_opt.json");
     }
   } while(gain > 0);
 
@@ -109,7 +190,7 @@ unsigned local_search::perform_all_two_opt_steps(){
             << std::endl;
   return total_gain;
 }
-  
+
 std::list<unsigned> local_search::get_tour(unsigned first_index) const{
   std::list<unsigned> tour;
   tour.push_back(first_index);
