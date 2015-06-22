@@ -21,18 +21,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <list>
 #include <map>
 #include "../structures/matrix.h"
+#include "../tsp.h"
 
 class local_search{
 private:
+  tsp* _problem;
   matrix<unsigned> _matrix;
   std::map<unsigned, unsigned> _edges;
 
 public:
 
-  local_search(matrix<unsigned> matrix, std::list<unsigned> tour);
+  local_search(tsp* problem, std::list<unsigned> tour);
 
   unsigned two_opt_step();
 
+  unsigned perform_all_two_opt_steps();
+    
   std::list<unsigned> get_tour(unsigned first_index) const;
   
 };

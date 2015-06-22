@@ -18,8 +18,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "local_search.h"
 
-local_search::local_search(matrix<unsigned> matrix, std::list<unsigned> tour):
-  _matrix(matrix){
+local_search::local_search(tsp* problem, std::list<unsigned> tour):
+  _problem(problem),
+  _matrix(_problem->get_matrix()){
   auto place = tour.cbegin();
   unsigned first_index = *place;
   unsigned current_index = first_index;
@@ -48,7 +49,7 @@ unsigned local_search::two_opt_step(){
       if(current_diff > 0){
         amelioration_found = true;
         gain = current_diff;
-        std::cout << "Gain de :" << current_diff << std::endl;
+        // std::cout << "Gain:" << current_diff << std::endl;
         // std::cout << edge_1->first
         //           << "-" << _matrix(edge_1->first, edge_1->second) << "->"
         //           << edge_1->second
@@ -85,6 +86,30 @@ unsigned local_search::two_opt_step(){
   return gain;
 }
 
+unsigned local_search::perform_all_two_opt_steps(){
+  unsigned total_gain = 0;
+  unsigned two_opt_iter = 0;
+  unsigned gain = 0;
+  do{
+    gain = this->two_opt_step();
+    total_gain += gain;
+
+    if(gain > 0){
+      ++two_opt_iter;
+      _problem->log_to_file(this->get_tour(0),
+                            "two_opt_"
+                            + std::to_string(two_opt_iter)
+                            + ".json");
+    }
+  } while(gain > 0);
+
+  std::cout << "Performed "
+            << two_opt_iter << " \"2-opt\" steps, gaining "
+            << total_gain
+            << std::endl;
+  return total_gain;
+}
+  
 std::list<unsigned> local_search::get_tour(unsigned first_index) const{
   std::list<unsigned> tour;
   tour.push_back(first_index);
