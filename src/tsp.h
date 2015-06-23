@@ -40,6 +40,8 @@ public:
 
   const matrix<unsigned>& get_matrix() const;
 
+  const std::vector<std::pair<double, double>>& get_places() const;
+
   const matrix<unsigned> get_symmetrized_matrix() const;
 
   std::size_t size();

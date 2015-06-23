@@ -42,6 +42,10 @@ public:
 
   unsigned perform_all_two_opt_steps();
 
+  unsigned or_opt_step();
+
+  unsigned perform_all_or_opt_steps();
+    
   std::list<unsigned> get_tour(unsigned first_index) const;
   
 };

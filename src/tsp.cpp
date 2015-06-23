@@ -58,6 +58,10 @@ const matrix<unsigned>& tsp::get_matrix() const{
   return _matrix;
 }
 
+const std::vector<std::pair<double, double>>& tsp::get_places() const{
+  return _places;
+}
+
 const matrix<unsigned> tsp::get_symmetrized_matrix() const{
   matrix<unsigned> matrix = _matrix;
   for(unsigned i = 0; i < matrix.size(); ++i){

@@ -46,16 +46,19 @@ unsigned local_search::relocate_step(){
     // edge_1->first --> next while edge_2->first --> edge_2->second is
     // replaced by edge_2->first --> edge_1->second --> edge_2->second.
     unsigned next = _edges.at(edge_1->second);
-    unsigned first_potential_add = _matrix(edge_1->first, next);
-
     unsigned relocated_node = edge_1->second;
+
+    // Precomputing weights not depending on edge_2.
+    unsigned first_potential_add = _matrix(edge_1->first, next);
+    unsigned edge_1_weight = _matrix(edge_1->first, edge_1->second);
+    unsigned relocated_next_weight = _matrix(relocated_node, next);
 
     for(auto edge_2 = _edges.cbegin(); edge_2 != _edges.cend(); ++edge_2){
       if((edge_2 == edge_1) or (edge_2->first == relocated_node)){
         continue;
       }
-      int current_diff = _matrix(edge_1->first, relocated_node)
-        + _matrix(relocated_node, next)
+      int current_diff = edge_1_weight
+        + relocated_next_weight
         + _matrix(edge_2->first, edge_2->second)
         - first_potential_add
         - _matrix(edge_2->first, relocated_node)
@@ -63,7 +66,7 @@ unsigned local_search::relocate_step(){
       if(current_diff > 0){
         amelioration_found = true;
         gain = current_diff;
-        // std::cout << "Gain de :" << current_diff << std::endl;
+        // std::cout << "Gain:" << current_diff << std::endl;
         // std::cout << edge_1->first
         //           << "-" << _matrix(edge_1->first, edge_1->second) << "->"
         //           << edge_1->second
@@ -186,6 +189,94 @@ unsigned local_search::perform_all_two_opt_steps(){
 
   std::cout << "Performed "
             << two_opt_iter << " \"2-opt\" steps, gaining "
+            << total_gain
+            << std::endl;
+  return total_gain;
+}
+
+unsigned local_search::or_opt_step(){
+  unsigned gain = 0;
+  bool amelioration_found = false;
+  for(auto edge_1 = _edges.cbegin(); edge_1 != _edges.cend(); ++edge_1){
+    // Going through the tour while checking the move of edge after
+    // edge_1 in place of another edge (edge_2).
+    //
+    // Namely edge_1->first --> edge_1->second --> next --> next_2 is
+    // replaced by edge_1->first --> next_2 while edge_2->first -->
+    // edge_2->second is replaced by edge_2->first --> edge_1->second
+    // --> next --> edge_2->second.
+    unsigned first_relocated = edge_1->second;
+    unsigned next = _edges.at(edge_1->second);
+    unsigned next_2 = _edges.at(next);
+
+    // Precomputing weights not depending on edge_2.
+    unsigned first_potential_add = _matrix(edge_1->first, next_2);
+    unsigned edge_1_weight = _matrix(edge_1->first, edge_1->second);
+    unsigned next_next_2_weight = _matrix(next, next_2);
+
+    for(auto edge_2 = _edges.cbegin(); edge_2 != _edges.cend(); ++edge_2){
+      if((edge_2 == edge_1)
+         or (edge_2->first == first_relocated)
+         or (edge_2->first == next)){
+        continue;
+      }
+      int current_diff = edge_1_weight
+        + next_next_2_weight
+        + _matrix(edge_2->first, edge_2->second)
+        - first_potential_add
+        - _matrix(edge_2->first, first_relocated)
+        - _matrix(next, edge_2->second);
+      if(current_diff > 0){
+        amelioration_found = true;
+        gain = current_diff;
+        // std::cout << "Gain:" << current_diff << std::endl;
+        // std::cout << edge_1->first
+        //           << "-" << edge_1_weight << "->"
+        //           << first_relocated
+        //           << " / "
+        //           << next << "->" << next_next_2_weight << "->"
+        //           << next_2
+        //           << std::endl;
+        // std::cout << edge_2->first
+        //           << "-" << _matrix(edge_2->first, edge_2->second) << "->"
+        //           << edge_2->second
+        //           << std::endl;
+
+        // Performing exchange.
+        _edges.at(edge_1->first) = next_2;
+        _edges.at(next) = edge_2->second;
+        _edges.at(edge_2->first) = first_relocated;
+        break;
+      }
+    }
+    if(amelioration_found){
+      break;
+    }
+  }
+
+  return gain;
+}
+
+unsigned local_search::perform_all_or_opt_steps(){
+  unsigned total_gain = 0;
+  unsigned or_opt_iter = 0;
+  unsigned gain = 0;
+  do{
+    gain = this->or_opt_step();
+    total_gain += gain;
+
+    if(gain > 0){
+      ++or_opt_iter;
+      auto timestamp
+        = std::chrono::system_clock::now().time_since_epoch().count();
+      _problem->log_to_file(this->get_tour(0),
+                            std::to_string(timestamp)
+                            + "_or_opt.json");
+    }
+  } while(gain > 0);
+
+  std::cout << "Performed "
+            << or_opt_iter << " \"or_opt\" steps, gaining "
             << total_gain
             << std::endl;
   return total_gain;
