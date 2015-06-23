@@ -20,12 +20,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define HEURISTIC_H
 #include<string>
 #include<list>
-#include "../tsp_sym.h"
+#include "../tsp.h"
 
 class heuristic{
 
 public:
-  virtual std::list<unsigned> build_solution(tsp_sym& instance) = 0;
+  virtual std::list<unsigned> build_solution(tsp& instance) = 0;
 
   virtual ~heuristic() {}
 

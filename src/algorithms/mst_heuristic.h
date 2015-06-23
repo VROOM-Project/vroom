@@ -29,7 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 class mst_heuristic : public heuristic{
 public:
 
-  virtual std::list<unsigned> build_solution(tsp_sym& instance);
+  virtual std::list<unsigned> build_solution(tsp& instance);
 };
 
 #endif

@@ -18,13 +18,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "christo_heuristic.h"
 
-std::list<unsigned> christo_heuristic::build_solution(tsp_sym& instance){
+std::list<unsigned> christo_heuristic::build_solution(tsp& instance){
+  // Using the symmetric problem derived from the general one.
+  tsp_sym sym_instance (instance.get_symmetrized_matrix());
+  
   // The eulerian sub-graph further used is made of a minimum spanning
   // tree with a minimum weight perfect matching on its odd degree
   // vertices.
 
   undirected_graph<unsigned> mst_graph
-    = minimum_spanning_tree(instance.get_graph());
+    = minimum_spanning_tree(sym_instance.get_graph());
 
   // std::cout << "MST edges: " << std::endl;
   // mst_graph.print_edges();
@@ -52,7 +55,7 @@ std::list<unsigned> christo_heuristic::build_solution(tsp_sym& instance){
 
   // Getting corresponding matrix for the generated sub-graph.
   matrix<unsigned> sub_matrix
-    = instance.get_matrix().get_sub_matrix(mst_odd_vertices);
+    = sym_instance.get_matrix().get_sub_matrix(mst_odd_vertices);
 
   // Making each node impossible to match with itself in minimum
   // weight perfect matching to come.
@@ -108,12 +111,12 @@ std::list<unsigned> christo_heuristic::build_solution(tsp_sym& instance){
     unsigned first_index = mst_odd_vertices[edge->first];
     unsigned second_index = mst_odd_vertices[edge->second];
     // std::cout << first_index << "->" << second_index << std::endl;
-    // weight += 2 * instance.get_matrix()(first_index, second_index);
+    // weight += 2 * sym_instance.get_matrix()(first_index, second_index);
     if(already_added.find(first_index) == already_added.end()){
       eulerian_graph_edges.emplace_back(first_index,
                                         second_index,
-                                        instance.get_matrix()(first_index,
-                                                              second_index)
+                                        sym_instance.get_matrix()(first_index,
+                                                                  second_index)
                                         );
       already_added.insert(second_index);
     }

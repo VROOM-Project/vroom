@@ -58,6 +58,18 @@ const matrix<unsigned>& tsp::get_matrix() const{
   return _matrix;
 }
 
+const matrix<unsigned> tsp::get_symmetrized_matrix() const{
+  matrix<unsigned> matrix = _matrix;
+  for(unsigned i = 0; i < matrix.size(); ++i){
+    for(unsigned j = i + 1; j < matrix.size(); ++j){
+      unsigned max = std::max(matrix(i, j), matrix(j, i));
+      matrix.set(i, j, max);
+      matrix.set(j, i, max);
+    }
+  }
+  return matrix;
+}
+
 std::size_t tsp::size(){
   return _matrix.size();
 }

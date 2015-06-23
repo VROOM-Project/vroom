@@ -26,8 +26,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "./structures/matrix_loader.h"
 #include "./structures/euc_2d_matrix_loader.h"
 
-class tsp_sym;
-
 class tsp{
 protected:
   std::vector<std::pair<double, double>> _places;
@@ -42,9 +40,9 @@ public:
 
   const matrix<unsigned>& get_matrix() const;
 
-  std::size_t size();
+  const matrix<unsigned> get_symmetrized_matrix() const;
 
-  tsp_sym symmetrize() const;
+  std::size_t size();
 
   double cost(const std::list<unsigned>& tour) const;
 
