@@ -276,7 +276,7 @@ bool compare_weight (const edge<T>& first, const edge<T>& second){
 }
 
 template <class T>
-std::map<unsigned, unsigned> branch_and_bound_symetric_mwpm(const matrix<T>& m){
+std::map<unsigned, unsigned> branch_and_bound_symmetric_mwpm(const matrix<T>& m){
   // Note: intended for an even-sized matrix with inf value on the
   // diagonal (no i-i matches may be produced anyway).
 
@@ -398,8 +398,8 @@ std::map<unsigned, unsigned> branch_and_bound_symetric_mwpm(const matrix<T>& m){
 }
 
 template <class T>
-std::map<unsigned, unsigned> greedy_symetric_approx_mwpm(const matrix<T>& m){
-  // Fast greedy algorithm for finding a symetric perfect matching,
+std::map<unsigned, unsigned> greedy_symmetric_approx_mwpm(const matrix<T>& m){
+  // Fast greedy algorithm for finding a symmetric perfect matching,
   // choosing always smaller possible value, no minimality assured.
   std::map<unsigned, unsigned> matching;
   std::set<unsigned> remaining_indices;

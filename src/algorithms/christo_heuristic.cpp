@@ -60,7 +60,7 @@ std::list<unsigned> christo_heuristic::build_solution(tsp& instance){
   // Making each node impossible to match with itself in minimum
   // weight perfect matching to come.
   for(unsigned i = 0; i < sub_matrix.size(); ++i){
-    sub_matrix.set(i, i, std::numeric_limits<unsigned>::max());
+    sub_matrix.set(i, i, std::numeric_limits<unsigned>::max() / 2);
   }
 
   // sub_matrix.print();
@@ -69,32 +69,57 @@ std::list<unsigned> christo_heuristic::build_solution(tsp& instance){
   std::map<unsigned, unsigned> mwpm
     = minimum_weight_perfect_matching(sub_matrix);
 
-  // Check if matching is coherent (symetry) to allow for creating
-  // size / 2 "undirected" edges.
-  bool matching_ok = true;
+  // Storing those edges from mwpm that are coherent regarding
+  // symmetry (y -> x whenever x -> y). Remembering the rest of them
+  // for further use. Edges are not doubled in mwpm_final.
+  std::map<unsigned, unsigned> mwpm_final;
+  std::vector<unsigned> wrong_vertices;
 
   // std::cout << "mwpm with initial indices:" << std::endl;
   // unsigned weight = 0;
+  unsigned total_ok = 0;
   for(auto edge = mwpm.begin();
       edge != mwpm.end();
       ++edge){
-    matching_ok &= (edge->first == mwpm[edge->second]);
+    if(mwpm.at(edge->second) == edge->first){
+      mwpm_final.emplace(std::min(edge->first, edge->second),
+                         std::max(edge->first, edge->second));
+      ++total_ok;
+    }
+    else{
+      wrong_vertices.push_back(edge->first);
+    }
     // weight += sub_matrix(edge->first, edge->second);
     // std::cout << edge->first << "->" << edge->second << std::endl;
   }
   // std::cout << "Munkres mwpm weight: " << weight << std::endl;
-  if(!matching_ok){
-    std::cout << "Unusable mwpm!"
-              << " Switching to greedy approximation algorithm for symetric mwpm."
+  
+  if(!wrong_vertices.empty()){
+    std::cout << "Not all Munkres mwpm is usable: "
+              << total_ok << "/" << mwpm.size() << " vertices ok, i.e. "
+              << (double) total_ok * 100 / mwpm.size() << "%"
               << std::endl;
-              
-    mwpm = greedy_symetric_approx_mwpm(sub_matrix);
-    // std::cout << "Unusable mwpm!"
-    //           << " Switching to branch and bound algorithm for symetric mwpm."
-    //           << std::endl;
-              
-    // mwpm = branch_and_bound_symetric_mwpm(sub_matrix);
+    // std::cout << "Switching to greedy approximation algorithm for vertices: "
+    // for(auto vertex = wrong_vertices.begin();
+    //     vertex != wrong_vertices.end();
+    //     ++vertex){
+    //   std::cout << *vertex << " ; ";
+    // }
+    // std::cout << std::endl;
 
+    std::map<unsigned, unsigned> remaining_greedy_mwpm
+      = greedy_symmetric_approx_mwpm(sub_matrix.get_sub_matrix(wrong_vertices));
+
+    // Adding edges obtained with greedy algo for the missing vertices
+    // in mwpm_final.
+    for(auto edge = remaining_greedy_mwpm.cbegin();
+        edge != remaining_greedy_mwpm.cend();
+        ++edge){
+      mwpm_final.emplace(std::min(wrong_vertices[edge->first],
+                                  wrong_vertices[edge->second]),
+                         std::max(wrong_vertices[edge->first],
+                                  wrong_vertices[edge->second]));
+    }
   }
   // std::cout << "mwpm (with original indices):" << std::endl;
 
@@ -107,7 +132,7 @@ std::list<unsigned> christo_heuristic::build_solution(tsp& instance){
   // need to remember the one already added.
   std::set<unsigned> already_added;
   // weight = 0;
-  for(auto edge = mwpm.cbegin(); edge != mwpm.cend(); ++edge){
+  for(auto edge = mwpm_final.cbegin(); edge != mwpm_final.cend(); ++edge){
     unsigned first_index = mst_odd_vertices[edge->first];
     unsigned second_index = mst_odd_vertices[edge->second];
     // std::cout << first_index << "->" << second_index << std::endl;
