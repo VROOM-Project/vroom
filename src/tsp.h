@@ -52,6 +52,8 @@ public:
 
   void log_to_file(const std::list<unsigned>& tour,
                    std::string file_name) const;
+
+  void log_places_to_file(std::string file_name) const;
 };
 
 #endif

@@ -135,3 +135,17 @@ void tsp::log_to_file(const std::list<unsigned>& tour,
   out_stream << this->log(tour);
   out_stream.close();
 }
+
+void tsp::log_places_to_file(std::string file_name) const{
+  std::string json_log = "{\"places\":[";
+  for(auto place = _places.begin(); place != _places.end(); ++place){
+    json_log += "{\"lat\":" + std::to_string(place->first)
+      + ",\"lon\":" + std::to_string(place->second) + "},";
+  }
+  json_log.pop_back();          // remove trailing comma
+  json_log += "]}";
+
+  std::ofstream out_stream (file_name, std::ofstream::out);
+  out_stream << json_log;
+  out_stream.close();
+}
