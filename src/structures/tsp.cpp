@@ -51,10 +51,10 @@ tsp::tsp(std::string places){
   _matrix = loader.load_matrix(_places);
 }
 
-tsp::tsp(matrix<unsigned> m)
+tsp::tsp(matrix<distance_t> m)
   :_matrix(m) {}
 
-const matrix<unsigned>& tsp::get_matrix() const{
+const matrix<distance_t>& tsp::get_matrix() const{
   return _matrix;
 }
 
@@ -62,11 +62,11 @@ const std::vector<std::pair<double, double>>& tsp::get_places() const{
   return _places;
 }
 
-const matrix<unsigned> tsp::get_symmetrized_matrix() const{
-  matrix<unsigned> matrix = _matrix;
-  for(unsigned i = 0; i < matrix.size(); ++i){
-    for(unsigned j = i + 1; j < matrix.size(); ++j){
-      unsigned max = std::max(matrix(i, j), matrix(j, i));
+const matrix<distance_t> tsp::get_symmetrized_matrix() const{
+  matrix<distance_t> matrix = _matrix;
+  for(index_t i = 0; i < matrix.size(); ++i){
+    for(index_t j = i + 1; j < matrix.size(); ++j){
+      distance_t max = std::max(matrix(i, j), matrix(j, i));
       matrix.set(i, j, max);
       matrix.set(j, i, max);
     }
@@ -78,16 +78,16 @@ std::size_t tsp::size(){
   return _matrix.size();
 }
 
-double tsp::cost(const std::list<unsigned>& tour) const{
-  double cost = 0;
-  unsigned init_step;
+distance_t tsp::cost(const std::list<index_t>& tour) const{
+  distance_t cost = 0;
+  index_t init_step;
 
   auto step = tour.cbegin();
   if(tour.size() > 0){
     init_step = *step;
   }
 
-  unsigned previous_step = init_step;
+  index_t previous_step = init_step;
   ++step;
   for(; step != tour.cend(); ++step){
     cost += _matrix(previous_step, *step);

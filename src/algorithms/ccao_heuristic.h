@@ -28,8 +28,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "kruskal.h"
 #include "munkres.h"
 #include "heuristic.h"
-#include "../structures/tsp_sym.h"
 #include "./graham_scan.h"
+#include "../structures/typedefs.h"
+#include "../structures/tsp_sym.h"
 #include "../structures/edge.h"
 #include "../structures/undirected_graph.h"
 #include "../structures/matrix.h"
@@ -38,7 +39,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 class ccao_heuristic : public heuristic{
 public:
 
-  virtual std::list<unsigned> build_solution(tsp& instance);
+  virtual std::list<index_t> build_solution(tsp& instance);
 };
 
 #endif

@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "christo_heuristic.h"
 
-std::list<unsigned> christo_heuristic::build_solution(tsp& instance){
+std::list<index_t> christo_heuristic::build_solution(tsp& instance){
   // Using the symmetric problem derived from the general one.
   tsp_sym sym_instance (instance.get_symmetrized_matrix());
   
@@ -26,7 +26,7 @@ std::list<unsigned> christo_heuristic::build_solution(tsp& instance){
   // tree with a minimum weight perfect matching on its odd degree
   // vertices.
 
-  undirected_graph<unsigned> mst_graph
+  undirected_graph<distance_t> mst_graph
     = minimum_spanning_tree(sym_instance.get_graph());
 
   // std::cout << "MST edges: " << std::endl;
@@ -34,11 +34,11 @@ std::list<unsigned> christo_heuristic::build_solution(tsp& instance){
   
   // Getting minimum spanning tree of associated graph under the form
   // of an adjacency list.
-  std::unordered_map<unsigned, std::list<unsigned>> adjacency_list
+  std::unordered_map<index_t, std::list<index_t>> adjacency_list
     = mst_graph.get_adjacency_list();
 
   // Getting odd degree vertices from the minimum spanning tree.
-  std::vector<unsigned> mst_odd_vertices;
+  std::vector<index_t> mst_odd_vertices;
   for(auto adjacency = adjacency_list.cbegin();
       adjacency != adjacency_list.cend();
       ++adjacency){
@@ -54,29 +54,30 @@ std::list<unsigned> christo_heuristic::build_solution(tsp& instance){
   // std::cout << std::endl;
 
   // Getting corresponding matrix for the generated sub-graph.
-  matrix<unsigned> sub_matrix
+  matrix<distance_t> sub_matrix
     = sym_instance.get_matrix().get_sub_matrix(mst_odd_vertices);
 
   // Making each node impossible to match with itself in minimum
   // weight perfect matching to come.
-  for(unsigned i = 0; i < sub_matrix.size(); ++i){
-    sub_matrix.set(i, i, std::numeric_limits<unsigned>::max() / 2);
+  for(index_t i = 0; i < sub_matrix.size(); ++i){
+    // Setting max value would cause trouble with further additions...
+    sub_matrix.set(i, i, 3 * (std::numeric_limits<distance_t>::max() / 4));
   }
 
   // sub_matrix.print();
 
   // Computing minimum weight perfect matching.
-  std::map<unsigned, unsigned> mwpm
+  std::map<index_t, index_t> mwpm
     = minimum_weight_perfect_matching(sub_matrix);
 
   // Storing those edges from mwpm that are coherent regarding
   // symmetry (y -> x whenever x -> y). Remembering the rest of them
   // for further use. Edges are not doubled in mwpm_final.
-  std::map<unsigned, unsigned> mwpm_final;
-  std::vector<unsigned> wrong_vertices;
+  std::map<index_t, index_t> mwpm_final;
+  std::vector<index_t> wrong_vertices;
 
   // std::cout << "mwpm with initial indices:" << std::endl;
-  // unsigned weight = 0;
+  // distance_t weight = 0;
   unsigned total_ok = 0;
   for(auto edge = mwpm.begin();
       edge != mwpm.end();
@@ -107,7 +108,7 @@ std::list<unsigned> christo_heuristic::build_solution(tsp& instance){
     // }
     // std::cout << std::endl;
 
-    std::map<unsigned, unsigned> remaining_greedy_mwpm
+    std::map<index_t, index_t> remaining_greedy_mwpm
       = greedy_symmetric_approx_mwpm(sub_matrix.get_sub_matrix(wrong_vertices));
 
     // Adding edges obtained with greedy algo for the missing vertices
@@ -124,17 +125,17 @@ std::list<unsigned> christo_heuristic::build_solution(tsp& instance){
   // std::cout << "mwpm (with original indices):" << std::endl;
 
   // Building eulerian graph.
-  std::list<edge<unsigned>> eulerian_graph_edges
+  std::list<edge<distance_t>> eulerian_graph_edges
     = mst_graph.get_edges();
   
   // Adding edges from minimum weight perfect matching (with the
   // original vertices index). Edges appear twice in matching so we
   // need to remember the one already added.
-  std::set<unsigned> already_added;
+  std::set<index_t> already_added;
   // weight = 0;
   for(auto edge = mwpm_final.cbegin(); edge != mwpm_final.cend(); ++edge){
-    unsigned first_index = mst_odd_vertices[edge->first];
-    unsigned second_index = mst_odd_vertices[edge->second];
+    index_t first_index = mst_odd_vertices[edge->first];
+    index_t second_index = mst_odd_vertices[edge->second];
     // std::cout << first_index << "->" << second_index << std::endl;
     // weight += 2 * sym_instance.get_matrix()(first_index, second_index);
     if(already_added.find(first_index) == already_added.end()){
@@ -149,14 +150,14 @@ std::list<unsigned> christo_heuristic::build_solution(tsp& instance){
   // std::cout << "Weight: " << weight << std::endl;
 
   // Building Eulerian graph from the edges.
-  undirected_graph<unsigned> eulerian_graph (eulerian_graph_edges);
+  undirected_graph<distance_t> eulerian_graph (eulerian_graph_edges);
 
   // Hierholzer's algorithm: building and joining closed tours with
   // vertices that still have adjacent edges.
-  std::unordered_map<unsigned, std::list<unsigned>> eulerian_adjacency_list
+  std::unordered_map<index_t, std::list<index_t>> eulerian_adjacency_list
     = eulerian_graph.get_adjacency_list();
 
-  std::list<unsigned> eulerian_path;
+  std::list<index_t> eulerian_path;
   eulerian_path.push_back(eulerian_adjacency_list.begin()->first);
 
   // Building and Joining tours as long as necessary.
@@ -164,7 +165,7 @@ std::list<unsigned> christo_heuristic::build_solution(tsp& instance){
   
   do{
     complete_tour = true;       // presumed complete
-    std::list<unsigned>::iterator new_tour_start;
+    std::list<index_t>::iterator new_tour_start;
     // Finding first element of eulerian_path that still has an
     // adjacent edge (if any).
     for(auto vertex = eulerian_path.begin();
@@ -180,10 +181,10 @@ std::list<unsigned> christo_heuristic::build_solution(tsp& instance){
 
     if(!complete_tour){
       // Add new tour to initial eulerian path and check again.
-      std::list<unsigned> new_tour;
-      unsigned initial_vertex = *new_tour_start;
-      unsigned current_vertex = initial_vertex;
-      unsigned next_vertex;
+      std::list<index_t> new_tour;
+      index_t initial_vertex = *new_tour_start;
+      index_t current_vertex = initial_vertex;
+      index_t next_vertex;
       // Start building new tour.
       do{
         new_tour.push_back(current_vertex);
@@ -234,8 +235,8 @@ std::list<unsigned> christo_heuristic::build_solution(tsp& instance){
     // }
   }while(!complete_tour);    
     
-  std::set<unsigned> already_visited;
-  std::list<unsigned> tour;
+  std::set<index_t> already_visited;
+  std::list<index_t> tour;
   for(auto vertex = eulerian_path.cbegin();
       vertex != eulerian_path.cend();
       ++vertex){

@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define KRUSKAL_H
 #include <list>
 #include <algorithm>            // sort
+#include "../structures/typedefs.h"
 #include "../structures/edge.h"
 #include "../structures/undirected_graph.h"
 
@@ -43,17 +44,17 @@ undirected_graph<T> minimum_spanning_tree(const undirected_graph<T>& graph){
   // decrease until we obtain a single component (the final tree). We
   // use the smallest vertex as a representative of connected
   // components.
-  std::unordered_map<unsigned, unsigned> representative;
-  for(unsigned i = 0; i < graph.size(); ++i){
+  std::unordered_map<index_t, index_t> representative;
+  for(index_t i = 0; i < graph.size(); ++i){
     representative.emplace(i, i);
   }
 
   for(auto edge = edges.cbegin(); edge != edges.cend(); ++edge){
-    unsigned first_vertex = edge->get_first_vertex();
-    unsigned second_vertex = edge->get_second_vertex();
+    index_t first_vertex = edge->get_first_vertex();
+    index_t second_vertex = edge->get_second_vertex();
 
-    unsigned first_rep = representative[first_vertex];
-    unsigned second_rep = representative[second_vertex];
+    index_t first_rep = representative[first_vertex];
+    index_t second_rep = representative[second_vertex];
     if(first_rep != second_rep){
       // Adding current edge won't create a cycle as vertices are in
       // separate connected componentes.

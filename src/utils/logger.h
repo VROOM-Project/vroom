@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 #include <list>
 #include <chrono>
+#include "../structures/typedefs.h"
 #include "../structures/tsp.h"
 
 class logger{
@@ -33,11 +34,11 @@ public:
   logger(std::string file_name);
   
   std::string tour_to_string(const tsp& instance,
-                             const std::list<unsigned>& tour,
+                             const std::list<index_t>& tour,
                              double computing_time) const;
 
   void tour_to_file(const tsp& instance,
-                    const std::list<unsigned>& tour,
+                    const std::list<index_t>& tour,
                     double computing_time) const;
 
   void places_to_file(const tsp& instance) const;

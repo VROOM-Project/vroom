@@ -18,23 +18,23 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "mst_heuristic.h"
 
-std::list<unsigned> mst_heuristic::build_solution(tsp& instance){
+std::list<index_t> mst_heuristic::build_solution(tsp& instance){
   // Using the symmetric problem derived from the general one.
-  undirected_graph<unsigned> graph (instance.get_symmetrized_matrix());
+  undirected_graph<distance_t> graph (instance.get_symmetrized_matrix());
 
   // Getting minimum spanning tree of associated graph under the form
   // of an adjacency list.
-  std::unordered_map<unsigned, std::list<unsigned>> adjacency_list
+  std::unordered_map<index_t, std::list<index_t>> adjacency_list
     = minimum_spanning_tree(graph).get_adjacency_list();
   
   // Initializing the depth-first search of the minimum spanning tree
   // with any vertex. Using the list as a stack.
-  std::list<unsigned> df_list;
+  std::list<index_t> df_list;
 
-  unsigned current_vertex = adjacency_list.begin()->first;
+  index_t current_vertex = adjacency_list.begin()->first;
   df_list.push_back(current_vertex);
 
-  std::list<unsigned> tour;
+  std::list<index_t> tour;
 
   while(!df_list.empty()){
     current_vertex = df_list.back();

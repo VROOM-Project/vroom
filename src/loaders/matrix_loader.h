@@ -33,8 +33,8 @@ public:
 protected:
   matrix_loader() {}
 
-  static unsigned nint(double x){
-    return (unsigned) (x + 0.5);
+  static T nint(double x){
+    return (T) (x + 0.5);
   }
 };
 

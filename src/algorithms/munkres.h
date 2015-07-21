@@ -26,16 +26,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "../structures/edge.h"
 
 template <class T>
-std::map<unsigned, unsigned> minimum_weight_perfect_matching(const matrix<T>& m){
+std::map<index_t, index_t> minimum_weight_perfect_matching(const matrix<T>& m){
   // std::cout << "Entering mwpm" << std::endl;
 
   // Trivial initial labeling.
-  std::map<unsigned, T> labeling_x;
-  std::map<unsigned, T> labeling_y;
-  for(unsigned i = 0; i < m.size(); ++i){
+  std::map<index_t, T> labeling_x;
+  std::map<index_t, T> labeling_y;
+  for(index_t i = 0; i < m.size(); ++i){
     labeling_y.emplace(i, 0);
     T min_weight = std::numeric_limits<T>::max();
-    for(unsigned j = 0; j < m.size(); ++j){
+    for(index_t j = 0; j < m.size(); ++j){
       if(m(i, j) < min_weight){
         min_weight = m(i, j);
       }
@@ -44,11 +44,11 @@ std::map<unsigned, unsigned> minimum_weight_perfect_matching(const matrix<T>& m)
   }
 
   // Initial empty matching.
-  std::map<unsigned, unsigned> matching_xy;
-  std::map<unsigned, unsigned> matching_yx;
+  std::map<index_t, index_t> matching_xy;
+  std::map<index_t, index_t> matching_yx;
 
   // Alternating tree.
-  std::map<unsigned, unsigned> alternating_tree;
+  std::map<index_t, index_t> alternating_tree;
 
   while(matching_xy.size() < m.size()){
     // Step 1.
@@ -56,20 +56,20 @@ std::map<unsigned, unsigned> minimum_weight_perfect_matching(const matrix<T>& m)
     // std::cout << "Entering step 1.\n";
 
     // std::cout << "Labeling x\n";
-    // for(unsigned x = 0; x < m.size(); ++x){
+    // for(index_t x = 0; x < m.size(); ++x){
     //   std::cout << x << ": " << labeling_x.at(x) << std::endl;
     // }
     // std::cout << "Labeling y\n";
-    // for(unsigned y = 0; y < m.size(); ++y){
+    // for(index_t y = 0; y < m.size(); ++y){
     //   std::cout << y << ": " << labeling_y.at(y) << std::endl;
     // }
 
     alternating_tree.clear();
-    std::set<unsigned> S;
-    std::set<unsigned> T_set;
+    std::set<index_t> S;
+    std::set<index_t> T_set;
     
     // Finding any unmatched x.
-    unsigned unmatched_x = 0;
+    index_t unmatched_x = 0;
     while(matching_xy.find(unmatched_x) != matching_xy.end()){
       ++unmatched_x;
     }
@@ -78,8 +78,8 @@ std::map<unsigned, unsigned> minimum_weight_perfect_matching(const matrix<T>& m)
 
     // Saving relevant neighbors in equality graph in alternating_tree
     // and initializing slacks.
-    std::map<unsigned, T> slack;
-    for(unsigned y = 0; y < m.size(); ++y){
+    std::map<index_t, T> slack;
+    for(index_t y = 0; y < m.size(); ++y){
       if(labeling_x.at(unmatched_x) + labeling_y.at(y) == m(unmatched_x, y)){
         alternating_tree.emplace(y, unmatched_x);
       }
@@ -114,7 +114,7 @@ std::map<unsigned, unsigned> minimum_weight_perfect_matching(const matrix<T>& m)
         // std::cout << std::endl;
 
         T alpha = std::numeric_limits<T>::max();
-        for(unsigned y = 0; y < m.size(); ++y){
+        for(index_t y = 0; y < m.size(); ++y){
           // Computing alpha, the minimum of slack values over
           // complement of T_set.
           if(T_set.find(y) == T_set.end()){
@@ -139,7 +139,7 @@ std::map<unsigned, unsigned> minimum_weight_perfect_matching(const matrix<T>& m)
 
         // Updating relevant neighbors in new equality graph and
         // updating slacks.
-        for(unsigned y = 0; y < m.size(); ++y){
+        for(index_t y = 0; y < m.size(); ++y){
           if(T_set.find(y) == T_set.end()){
             slack.at(y) = slack.at(y) - alpha;
             
@@ -154,11 +154,11 @@ std::map<unsigned, unsigned> minimum_weight_perfect_matching(const matrix<T>& m)
         }
 
         // std::cout << "Labeling x\n";
-        // for(unsigned x = 0; x < m.size(); ++x){
+        // for(index_t x = 0; x < m.size(); ++x){
         //   std::cout << x << ": " << labeling_x.at(x) << std::endl;
         // }
         // std::cout << "Labeling y\n";
-        // for(unsigned y = 0; y < m.size(); ++y){
+        // for(index_t y = 0; y < m.size(); ++y){
         //   std::cout << y << ": " << labeling_y.at(y) << std::endl;
         // }
         // std::cout << "Slack values\n";
@@ -178,7 +178,7 @@ std::map<unsigned, unsigned> minimum_weight_perfect_matching(const matrix<T>& m)
       //   std::cout << edge->first << "->" << edge->second << std::endl;
       // }
 
-      unsigned chosen_y;        // First y in equality neighbors not
+      index_t chosen_y;        // First y in equality neighbors not
                                 // in T_set.
       for(auto edge = alternating_tree.cbegin();
           edge != alternating_tree.cend();
@@ -196,14 +196,14 @@ std::map<unsigned, unsigned> minimum_weight_perfect_matching(const matrix<T>& m)
       if(matching_y != matching_yx.end()){
         // Chosen y is actually matched in M, update S and T_set and
         // proceed to step 2.
-        unsigned matched_x = matching_y->second;
+        index_t matched_x = matching_y->second;
 
         // std::cout << "Matched with " << matched_x << std::endl;
         S.insert(matched_x);
         T_set.insert(chosen_y);
 
         // Updating slacks.
-        for(unsigned y = 0; y < m.size(); ++y){
+        for(index_t y = 0; y < m.size(); ++y){
           T current_value = slack.at(y);
           T new_value
             = m(matched_x, y) - labeling_x.at(matched_x) - labeling_y.at(y);
@@ -228,11 +228,11 @@ std::map<unsigned, unsigned> minimum_weight_perfect_matching(const matrix<T>& m)
         // where (chosen_x, next_y) is already in matching and should
         // be removed and (chosen_x, chosen_y) is to be added.
         
-        unsigned current_y = chosen_y;
-        unsigned current_x = alternating_tree.at(current_y);
+        index_t current_y = chosen_y;
+        index_t current_x = alternating_tree.at(current_y);
 
         while(current_x != unmatched_x){
-          unsigned next_y = matching_xy.at(current_x);
+          index_t next_y = matching_xy.at(current_x);
 
           // Remove alternating edge from current matching.
           matching_xy.erase(matching_xy.find(current_x));
@@ -276,7 +276,7 @@ bool compare_weight (const edge<T>& first, const edge<T>& second){
 }
 
 template <class T>
-std::map<unsigned, unsigned> branch_and_bound_symmetric_mwpm(const matrix<T>& m){
+std::map<index_t, index_t> branch_and_bound_symmetric_mwpm(const matrix<T>& m){
   // Note: intended for an even-sized matrix with inf value on the
   // diagonal (no i-i matches may be produced anyway).
 
@@ -295,7 +295,7 @@ std::map<unsigned, unsigned> branch_and_bound_symmetric_mwpm(const matrix<T>& m)
   struct BB_tree_node{
     const matrix<T>& mat;
     std::list<edge<T>> chosen_edges;
-    std::set<unsigned> remaining_indices;
+    std::set<index_t> remaining_indices;
     T cumulated_weight;
 
     // Constructor for the root node.
@@ -303,7 +303,7 @@ std::map<unsigned, unsigned> branch_and_bound_symmetric_mwpm(const matrix<T>& m)
       mat(mat),
       cumulated_weight(0)
     {
-      for(unsigned i = 0; i < mat.size(); ++i){
+      for(index_t i = 0; i < mat.size(); ++i){
         remaining_indices.insert(i);
       }
     }
@@ -319,8 +319,8 @@ std::map<unsigned, unsigned> branch_and_bound_symmetric_mwpm(const matrix<T>& m)
       // Update chosen edges.
       this->chosen_edges.push_back(chosen_edge);
       // Update remaining indices and cumulated weight.
-      unsigned first = chosen_edge.get_first_vertex();
-      unsigned second = chosen_edge.get_second_vertex();
+      index_t first = chosen_edge.get_first_vertex();
+      index_t second = chosen_edge.get_second_vertex();
       this->remaining_indices.erase(first);
       this->remaining_indices.erase(second);
       this->cumulated_weight += chosen_edge.get_weight();
@@ -331,7 +331,7 @@ std::map<unsigned, unsigned> branch_and_bound_symmetric_mwpm(const matrix<T>& m)
 
       if(remaining_indices.size() > 0){
         auto current = remaining_indices.cbegin();
-        unsigned first_index = *current;
+        index_t first_index = *current;
         ++current;
         while(current != remaining_indices.cend()){
           children_edges.emplace_back(first_index,
@@ -387,7 +387,7 @@ std::map<unsigned, unsigned> branch_and_bound_symmetric_mwpm(const matrix<T>& m)
     }
   }  
   
-  std::map<unsigned, unsigned> matching;
+  std::map<index_t, index_t> matching;
   for(auto edge = best_edges_choice.cbegin();
       edge != best_edges_choice.cend();
       ++edge){
@@ -398,21 +398,28 @@ std::map<unsigned, unsigned> branch_and_bound_symmetric_mwpm(const matrix<T>& m)
 }
 
 template <class T>
-std::map<unsigned, unsigned> greedy_symmetric_approx_mwpm(const matrix<T>& m){
+std::map<index_t, index_t> greedy_symmetric_approx_mwpm(const matrix<T>& m){
   // Fast greedy algorithm for finding a symmetric perfect matching,
-  // choosing always smaller possible value, no minimality assured.
-  std::map<unsigned, unsigned> matching;
-  std::set<unsigned> remaining_indices;
-  for(unsigned i = 0; i < m.size(); ++i){
+  // choosing always smaller possible value, no minimality
+  // assured. Matrix size should be even!
+  if(m.size() % 2 == 1){
+    std::cout << "Error in greedy_symmetric_approx_mwpm, matrix size should be even!"
+              << std::endl;
+    exit(0);
+  }
+    
+  std::map<index_t, index_t> matching;
+  std::set<index_t> remaining_indices;
+  for(index_t i = 0; i < m.size(); ++i){
     remaining_indices.insert(i);
   }
 
   while(remaining_indices.size() > 0){
     T min_weight = std::numeric_limits<T>::max();
-    unsigned first_chosen_index;
-    unsigned second_chosen_index;
-    std::set<unsigned>::iterator chosen_i;
-    std::set<unsigned>::iterator chosen_j;
+    index_t first_chosen_index;
+    index_t second_chosen_index;
+    std::set<index_t>::iterator chosen_i;
+    std::set<index_t>::iterator chosen_j;
     for(auto i = remaining_indices.begin();
         i != remaining_indices.end();
         ++i){

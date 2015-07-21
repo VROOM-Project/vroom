@@ -31,7 +31,7 @@ T orientation(const std::pair<T, T>& p1,
 }
 
 template <class T>
-std::list<unsigned> convex_hull(const std::vector<std::pair<T, T>>& places){
+std::list<index_t> convex_hull(const std::vector<std::pair<T, T>>& places){
   // Computes the points on the convex hull of "places". Return a
   // counter-clockwise tour of the convex hull boundary: a list of the
   // index of the corresponding points in places.
@@ -39,13 +39,13 @@ std::list<unsigned> convex_hull(const std::vector<std::pair<T, T>>& places){
   unsigned nb_pts = places.size();
 
   // Used to get back index of a given place in places.
-  std::map<std::pair<T, T>, unsigned> place_indices;
+  std::map<std::pair<T, T>, index_t> place_indices;
 
   // Determine lowest place as a first point on the convex hull.
   std::pair<T, T> lowest_place = places[0];
   place_indices.emplace(places[0], 0);
   auto place = places.begin();
-  unsigned index = 1;
+  index_t index = 1;
   for(++place; place != places.end(); ++place){
     place_indices.emplace(*place, index);
     ++index;
@@ -107,7 +107,7 @@ std::list<unsigned> convex_hull(const std::vector<std::pair<T, T>>& places){
   }
 
   // Convex hull tour.
-  std::list<unsigned> convex_hull;
+  std::list<index_t> convex_hull;
   for(unsigned i = 0; i < M; ++i){
     convex_hull.push_back(place_indices.at(sorted_places[i]));
   }

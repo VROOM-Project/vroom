@@ -21,27 +21,28 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 #include <cmath>
 #include "./matrix_loader.h"
+#include "../structures/typedefs.h"
 #include "../structures/matrix.h"
 
-class euc_2d_matrix_loader : public matrix_loader<unsigned, double>{
+class euc_2d_matrix_loader : public matrix_loader<distance_t, double>{
 
 public:
-  virtual matrix<unsigned> load_matrix(const std::vector<std::pair<double, double>>& places){
+  virtual matrix<distance_t> load_matrix(const std::vector<std::pair<double, double>>& places){
     unsigned n = places.size();
-    std::vector<unsigned> blank_line (n, 0);
-    std::vector<std::vector<unsigned>> matrix_as_vector (n, blank_line);
+    std::vector<distance_t> blank_line (n, 0);
+    std::vector<std::vector<distance_t>> matrix_as_vector (n, blank_line);
 
-    for(unsigned i = 0; i < n; ++i){
+    for(index_t i = 0; i < n; ++i){
       matrix_as_vector[i][i] = 0;
-      for(unsigned j = i + 1; j < n; ++j){
+      for(index_t j = i + 1; j < n; ++j){
         double xd = places[j].first - places[i].first;
         double yd = places[j].second - places[i].second;
-        unsigned dij = nint(std::sqrt(xd * xd + yd * yd));
+        distance_t dij = nint(std::sqrt(xd * xd + yd * yd));
         matrix_as_vector[i][j] = dij;
         matrix_as_vector[j][i] = dij;
       }
     }
-    matrix<unsigned> m (matrix_as_vector);
+    matrix<distance_t> m (matrix_as_vector);
     return m;
   }
 };

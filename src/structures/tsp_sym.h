@@ -20,22 +20,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define TSP_SYM_H
 #include <list>
 #include <unordered_map>
-#include "tsp.h"
-#include "../structures/undirected_graph.h"
-#include "../structures/edge.h"
-#include "../structures/matrix.h"
+#include "./tsp.h"
+#include "./undirected_graph.h"
+#include "./edge.h"
+#include "./matrix.h"
 
 class tsp_sym: public tsp{
   
 private:
-  undirected_graph<unsigned> _graph;
+  undirected_graph<distance_t> _graph;
   
 public:
   tsp_sym(std::string places);
 
-  tsp_sym(matrix<unsigned> m);
+  tsp_sym(matrix<distance_t> m);
 
-  undirected_graph<unsigned> get_graph() const;
+  undirected_graph<distance_t> get_graph() const;
 };
 
 #endif

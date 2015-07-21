@@ -20,12 +20,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define HEURISTIC_H
 #include<string>
 #include<list>
+#include "../structures/typedefs.h"
 #include "../structures/tsp.h"
 
 class heuristic{
 
 public:
-  virtual std::list<unsigned> build_solution(tsp& instance) = 0;
+  virtual std::list<index_t> build_solution(tsp& instance) = 0;
 
   virtual ~heuristic() {}
 

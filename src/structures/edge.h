@@ -20,27 +20,28 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define EDGE_H
 #include <iostream>
 #include <algorithm>
+#include "./typedefs.h"
 
 template <class T> class edge{
 
 private:
-  unsigned _first_vertex;
-  unsigned _second_vertex;
+  index_t _first_vertex;
+  index_t _second_vertex;
   T _weight;
 
 public:
-  edge(unsigned first_vertex,
-       unsigned second_vertex,
+  edge(index_t first_vertex,
+       index_t second_vertex,
        T weight):
     _first_vertex(std::min(first_vertex, second_vertex)),
     _second_vertex(std::max(first_vertex, second_vertex)),
     _weight(weight) {}
   
-  unsigned get_first_vertex() const{
+  index_t get_first_vertex() const{
     return _first_vertex;
   }
 
-  unsigned get_second_vertex() const{
+  index_t get_second_vertex() const{
     return _second_vertex;
   }
 

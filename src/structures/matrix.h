@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define MATRIX_H
 #include <iostream>
 #include <vector>
-
+#include "./typedefs.h"
 
 template <class T>
 class matrix{
@@ -61,7 +61,7 @@ public:
     }
   }
 
-  matrix<T> get_sub_matrix(const std::vector<unsigned>& indices) const{
+  matrix<T> get_sub_matrix(const std::vector<index_t>& indices) const{
     std::vector<std::vector<T>> sub_matrix;
     for(auto i = indices.cbegin(); i != indices.cend(); ++i){
       std::vector<T> current_line;
@@ -73,11 +73,11 @@ public:
     return matrix<T> (sub_matrix);
   }
 
-  T operator()(unsigned i, unsigned j) const{
+  T operator()(index_t i, index_t j) const{
     return _inner_rep[i][j];
   }
 
-  void set(unsigned i, unsigned j, T value){
+  void set(index_t i, index_t j, T value){
     _inner_rep[i][j] = value;
   }
 };

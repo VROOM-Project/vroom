@@ -22,9 +22,9 @@ tsp_sym::tsp_sym(std::string places):
   tsp(places),
   _graph(_matrix){}
 
-tsp_sym::tsp_sym(matrix<unsigned> m)
+tsp_sym::tsp_sym(matrix<distance_t> m)
   : tsp(m), _graph(m) {}
 
-undirected_graph<unsigned> tsp_sym::get_graph() const{
+undirected_graph<distance_t> tsp_sym::get_graph() const{
   return _graph;
 }

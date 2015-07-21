@@ -22,7 +22,7 @@ logger::logger(std::string file_name):
   _file_name(file_name) {}
 
 std::string logger::tour_to_string(const tsp& instance,
-                                   const std::list<unsigned>& tour,
+                                   const std::list<index_t>& tour,
                                    double computing_time) const{
   auto places = instance.get_places();
   auto m = instance.get_matrix();
@@ -57,7 +57,7 @@ std::string logger::tour_to_string(const tsp& instance,
 }
 
 void logger::tour_to_file(const tsp& instance,
-                          const std::list<unsigned>& tour,
+                          const std::list<index_t>& tour,
                           double computing_time) const{
   auto timestamp
     = std::chrono::system_clock::now().time_since_epoch().count();
