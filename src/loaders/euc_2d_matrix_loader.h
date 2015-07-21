@@ -16,12 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef EUD_2D_MATRIX_LOADER_H
-#define EUD_2D_MATRIX_LOADER_H
+#ifndef EUC_2D_MATRIX_LOADER_H
+#define EUC_2D_MATRIX_LOADER_H
 #include <vector>
 #include <cmath>
-#include "matrix_loader.h"
-#include "matrix.h"
+#include "./matrix_loader.h"
+#include "../structures/matrix.h"
 
 class euc_2d_matrix_loader : public matrix_loader<unsigned, double>{
 

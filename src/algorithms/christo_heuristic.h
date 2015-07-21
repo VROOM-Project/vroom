@@ -28,7 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "kruskal.h"
 #include "munkres.h"
 #include "heuristic.h"
-#include "../tsp_sym.h"
+#include "../structures/tsp_sym.h"
 #include "../structures/edge.h"
 #include "../structures/undirected_graph.h"
 #include "../structures/matrix.h"

@@ -21,9 +21,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <list>
 #include <unordered_map>
 #include "tsp.h"
-#include "./structures/undirected_graph.h"
-#include "./structures/edge.h"
-#include "./structures/matrix.h"
+#include "../structures/undirected_graph.h"
+#include "../structures/edge.h"
+#include "../structures/matrix.h"
 
 class tsp_sym: public tsp{
   

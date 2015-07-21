@@ -22,9 +22,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <fstream>
 #include <string>
 #include <list>
-#include "./structures/matrix.h"
-#include "./structures/matrix_loader.h"
-#include "./structures/euc_2d_matrix_loader.h"
+#include "./matrix.h"
+#include "../loaders/matrix_loader.h"
+#include "../loaders/euc_2d_matrix_loader.h"
 
 class tsp{
 protected:

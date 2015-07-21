@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define MATRIX_LOADER_H
 #include<string>
 #include<vector>
-#include "matrix.h"
+#include "../structures/matrix.h"
 
 template <class T, class V> 
 class matrix_loader{
