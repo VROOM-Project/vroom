@@ -103,11 +103,8 @@ unsigned local_search::perform_all_relocate_steps(){
 
     if(gain > 0){
       ++relocate_iter;
-      auto timestamp
-        = std::chrono::system_clock::now().time_since_epoch().count();
-      _problem->log_to_file(this->get_tour(0),
-                            std::to_string(timestamp)
-                            + "_relocate.json");
+      // logger log ("relocate.json");
+      // log.tour_to_file(*_problem, this->get_tour(0), 0);
     }
   } while(gain > 0);
 
@@ -179,11 +176,8 @@ unsigned local_search::perform_all_two_opt_steps(){
 
     if(gain > 0){
       ++two_opt_iter;
-      auto timestamp
-        = std::chrono::system_clock::now().time_since_epoch().count();
-      _problem->log_to_file(this->get_tour(0),
-                            std::to_string(timestamp)
-                            + "_two_opt.json");
+      // logger log ("two_opt.json");
+      // log.tour_to_file(*_problem, this->get_tour(0), 0);
     }
   } while(gain > 0);
 
@@ -267,11 +261,8 @@ unsigned local_search::perform_all_or_opt_steps(){
 
     if(gain > 0){
       ++or_opt_iter;
-      auto timestamp
-        = std::chrono::system_clock::now().time_since_epoch().count();
-      _problem->log_to_file(this->get_tour(0),
-                            std::to_string(timestamp)
-                            + "_or_opt.json");
+      // logger log ("or_opt.json");
+      // log.tour_to_file(*_problem, this->get_tour(0), 0);
     }
   } while(gain > 0);
 

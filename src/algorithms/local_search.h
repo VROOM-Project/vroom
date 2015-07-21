@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <map>
 #include <chrono>
 #include "../structures/matrix.h"
+#include "../utils/logger.h"
 #include "../tsp.h"
 
 class local_search{

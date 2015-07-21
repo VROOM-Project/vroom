@@ -16,37 +16,31 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef TSP_H
-#define TSP_H
+#ifndef LOGGER_H
+#define LOGGER_H
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <list>
-#include "./structures/matrix.h"
-#include "./structures/matrix_loader.h"
-#include "./structures/euc_2d_matrix_loader.h"
+#include <chrono>
+#include "../tsp.h"
 
-class tsp{
+class logger{
 protected:
-  std::vector<std::pair<double, double>> _places;
-  matrix<unsigned> _matrix;
+  std::string _file_name;
   
 public:
-  tsp();
-
-  tsp(std::string places);
+  logger(std::string file_name);
   
-  tsp(matrix<unsigned> m);
+  std::string tour_to_string(const tsp& instance,
+                             const std::list<unsigned>& tour,
+                             double computing_time) const;
 
-  const matrix<unsigned>& get_matrix() const;
+  void tour_to_file(const tsp& instance,
+                    const std::list<unsigned>& tour,
+                    double computing_time) const;
 
-  const std::vector<std::pair<double, double>>& get_places() const;
-
-  const matrix<unsigned> get_symmetrized_matrix() const;
-
-  std::size_t size();
-
-  double cost(const std::list<unsigned>& tour) const;
+  void places_to_file(const tsp& instance) const;
 };
 
 #endif
