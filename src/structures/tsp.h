@@ -25,7 +25,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "./typedefs.h"
 #include "./matrix.h"
 #include "../loaders/matrix_loader.h"
-#include "../loaders/euc_2d_matrix_loader.h"
+// #include "../loaders/euc_2d_matrix_loader.h"
+#include "../loaders/osrm_wrapper.h"
 
 class tsp{
 protected:

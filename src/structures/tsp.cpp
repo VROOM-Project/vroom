@@ -47,7 +47,8 @@ tsp::tsp(std::string places){
                        std::stod(lon, nullptr));
 
   // Computing matrix.
-  euc_2d_matrix_loader loader;
+  // euc_2d_matrix_loader loader;
+  osrm_wrapper loader ("0.0.0.0", 5000);
   _matrix = loader.load_matrix(_places);
 }
 
