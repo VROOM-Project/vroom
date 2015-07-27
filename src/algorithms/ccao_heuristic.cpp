@@ -18,9 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "ccao_heuristic.h"
 
-std::list<index_t> ccao_heuristic::build_solution(tsp& instance){
-  // Using the symmetric problem derived from the general one.
-  const matrix<distance_t> m = instance.get_symmetrized_matrix();
+std::list<index_t> ccao_heuristic::build_solution(tsp_sym& instance){
+  const matrix<distance_t>& m = instance.get_matrix();
 
   // Initial tour with the convex hull of all vertices is turned into
   // a map to facilitate further insertions. 

@@ -18,16 +18,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "christo_heuristic.h"
 
-std::list<index_t> christo_heuristic::build_solution(tsp& instance){
-  // Using the symmetric problem derived from the general one.
-  tsp_sym sym_instance (instance.get_symmetrized_matrix());
-  
+std::list<index_t> christo_heuristic::build_solution(tsp_sym& instance){
   // The eulerian sub-graph further used is made of a minimum spanning
   // tree with a minimum weight perfect matching on its odd degree
   // vertices.
 
   undirected_graph<distance_t> mst_graph
-    = minimum_spanning_tree(sym_instance.get_graph());
+    = minimum_spanning_tree(instance.get_graph());
 
   // std::cout << "MST edges: " << std::endl;
   // mst_graph.print_edges();
@@ -55,7 +52,7 @@ std::list<index_t> christo_heuristic::build_solution(tsp& instance){
 
   // Getting corresponding matrix for the generated sub-graph.
   matrix<distance_t> sub_matrix
-    = sym_instance.get_matrix().get_sub_matrix(mst_odd_vertices);
+    = instance.get_matrix().get_sub_matrix(mst_odd_vertices);
 
   // Making each node impossible to match with itself in minimum
   // weight perfect matching to come.
@@ -100,7 +97,7 @@ std::list<index_t> christo_heuristic::build_solution(tsp& instance){
               << total_ok << "/" << mwpm.size() << " vertices ok, i.e. "
               << (double) total_ok * 100 / mwpm.size() << "%"
               << std::endl;
-    // std::cout << "Switching to greedy approximation algorithm for vertices: "
+    // std::cout << "Switching to greedy approximation algorithm for vertices: ";
     // for(auto vertex = wrong_vertices.begin();
     //     vertex != wrong_vertices.end();
     //     ++vertex){
@@ -137,12 +134,12 @@ std::list<index_t> christo_heuristic::build_solution(tsp& instance){
     index_t first_index = mst_odd_vertices[edge->first];
     index_t second_index = mst_odd_vertices[edge->second];
     // std::cout << first_index << "->" << second_index << std::endl;
-    // weight += 2 * sym_instance.get_matrix()(first_index, second_index);
+    // weight += 2 * instance.get_matrix()(first_index, second_index);
     if(already_added.find(first_index) == already_added.end()){
       eulerian_graph_edges.emplace_back(first_index,
                                         second_index,
-                                        sym_instance.get_matrix()(first_index,
-                                                                  second_index)
+                                        instance.get_matrix()(first_index,
+                                                              second_index)
                                         );
       already_added.insert(second_index);
     }
