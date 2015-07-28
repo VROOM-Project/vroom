@@ -23,18 +23,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <chrono>
 #include "../structures/typedefs.h"
 #include "../structures/matrix.h"
-#include "../utils/logger.h"
-#include "../structures/tsp.h"
+#include "../structures/tsp_sym.h"
 
 class local_search{
 private:
-  tsp* _problem;
+  tsp_sym* _problem;
   matrix<distance_t> _matrix;
   std::map<index_t, index_t> _edges;
 
 public:
 
-  local_search(tsp* problem, std::list<index_t> tour);
+  local_search(tsp_sym* problem, std::list<index_t> tour);
 
   distance_t relocate_step();
 

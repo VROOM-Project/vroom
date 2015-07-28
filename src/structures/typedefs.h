@@ -22,6 +22,5 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // To easily differentiate variable types.
 using index_t = unsigned;
 using distance_t = unsigned long;
-using gain_t = unsigned int;
 
 #endif

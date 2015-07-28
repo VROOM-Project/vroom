@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "local_search.h"
 
-local_search::local_search(tsp* problem, std::list<index_t> tour):
+local_search::local_search(tsp_sym* problem, std::list<index_t> tour):
   _problem(problem),
   _matrix(_problem->get_matrix()){
   auto place = tour.cbegin();
@@ -57,16 +57,19 @@ distance_t local_search::relocate_step(){
       if((edge_2 == edge_1) or (edge_2->first == relocated_node)){
         continue;
       }
-      gain_t current_diff = edge_1_weight
+      distance_t before_cost
+        = edge_1_weight
         + relocated_next_weight
-        + _matrix(edge_2->first, edge_2->second)
-        - first_potential_add
-        - _matrix(edge_2->first, relocated_node)
-        - _matrix(relocated_node, edge_2->second);
-      if(current_diff > 0){
+        + _matrix(edge_2->first, edge_2->second);
+      distance_t after_cost
+        = first_potential_add
+        + _matrix(edge_2->first, relocated_node)
+        + _matrix(relocated_node, edge_2->second);
+
+      if(before_cost > after_cost){
         amelioration_found = true;
-        gain = current_diff;
-        // std::cout << "Gain:" << current_diff << std::endl;
+        gain = before_cost - after_cost;
+        // std::cout << "Gain:" << gain << std::endl;
         // std::cout << edge_1->first
         //           << "-" << _matrix(edge_1->first, edge_1->second) << "->"
         //           << edge_1->second
@@ -99,12 +102,10 @@ distance_t local_search::perform_all_relocate_steps(){
   distance_t gain = 0;
   do{
     gain = this->relocate_step();
-    total_gain += gain;
 
     if(gain > 0){
+      total_gain += gain;
       ++relocate_iter;
-      // logger log ("relocate.json");
-      // log.tour_to_file(*_problem, this->get_tour(0), 0);
     }
   } while(gain > 0);
 
@@ -120,16 +121,27 @@ distance_t local_search::two_opt_step(){
   for(auto edge_1 = _edges.cbegin(); edge_1 != _edges.cend(); ++edge_1){
     auto edge_2 = edge_1;
     ++edge_2;
+    // Trying to improve two "crossing edges".
+    //
+    // Namely edge_1->first --> edge_1->second and edge_2->fist -->
+    // edge_2->second are replaced by edge_1->first --> edge_2->first
+    // and edge_1->second --> edge_2->second. The tour between
+    // edge_2->first and edge_1->second need to be reversed.
     bool amelioration_found = false;
     for(; edge_2 != _edges.cend(); ++edge_2){
-      gain_t current_diff = _matrix(edge_1->first, edge_1->second)
-        + _matrix(edge_2->first, edge_2->second)
-        - _matrix(edge_1->first, edge_2->first)
-        - _matrix(edge_1->second, edge_2->second);
-      if(current_diff > 0){
+      if(edge_2->first == edge_1->second){
+        continue;
+      }
+      distance_t before_cost
+        = _matrix(edge_1->first, edge_1->second)
+        + _matrix(edge_2->first, edge_2->second);
+      distance_t after_cost
+        = _matrix(edge_1->first, edge_2->first)
+        + _matrix(edge_1->second, edge_2->second);
+      if(before_cost > after_cost){
         amelioration_found = true;
-        gain = current_diff;
-        // std::cout << "Gain:" << current_diff << std::endl;
+        gain = before_cost - after_cost;
+        // std::cout << "Gain:" << gain << std::endl;
         // std::cout << edge_1->first
         //           << "-" << _matrix(edge_1->first, edge_1->second) << "->"
         //           << edge_1->second
@@ -172,12 +184,10 @@ distance_t local_search::perform_all_two_opt_steps(){
   distance_t gain = 0;
   do{
     gain = this->two_opt_step();
-    total_gain += gain;
 
     if(gain > 0){
+      total_gain += gain;
       ++two_opt_iter;
-      // logger log ("two_opt.json");
-      // log.tour_to_file(*_problem, this->get_tour(0), 0);
     }
   } while(gain > 0);
 
@@ -214,16 +224,18 @@ distance_t local_search::or_opt_step(){
          or (edge_2->first == next)){
         continue;
       }
-      gain_t current_diff = edge_1_weight
+      distance_t before_cost
+        = edge_1_weight
         + next_next_2_weight
-        + _matrix(edge_2->first, edge_2->second)
-        - first_potential_add
-        - _matrix(edge_2->first, first_relocated)
-        - _matrix(next, edge_2->second);
-      if(current_diff > 0){
+        + _matrix(edge_2->first, edge_2->second);
+      distance_t after_cost
+        = first_potential_add
+        + _matrix(edge_2->first, first_relocated)
+        + _matrix(next, edge_2->second);
+      if(before_cost > after_cost){
         amelioration_found = true;
-        gain = current_diff;
-        // std::cout << "Gain:" << current_diff << std::endl;
+        gain = before_cost - after_cost;
+        // std::cout << "Gain:" << gain << std::endl;
         // std::cout << edge_1->first
         //           << "-" << edge_1_weight << "->"
         //           << first_relocated
@@ -257,12 +269,9 @@ distance_t local_search::perform_all_or_opt_steps(){
   distance_t gain = 0;
   do{
     gain = this->or_opt_step();
-    total_gain += gain;
-
     if(gain > 0){
+      total_gain += gain;
       ++or_opt_iter;
-      // logger log ("or_opt.json");
-      // log.tour_to_file(*_problem, this->get_tour(0), 0);
     }
   } while(gain > 0);
 
