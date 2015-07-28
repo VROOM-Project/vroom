@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef OSRM_WRAPPER_H
 #define OSRM_WRAPPER_H
 #include <vector>
+#include <limits>
 #include <cstring>              // c_str()
 #include<sys/socket.h>          //socket
 #include<arpa/inet.h>           //inet_addr
@@ -189,7 +190,51 @@ public:
     }
 
     matrix<distance_t> m (matrix_as_vector);
-    m.print();
+    // m.print();
+
+    // Now checking for unfound routes to avoid unexpected behavior
+    // (OSRM raises max value for an int).
+    unsigned m_size = m.size();
+    std::vector<unsigned> nb_unfound_from_loc (m_size, 0);
+    std::vector<unsigned> nb_unfound_to_loc (m_size, 0);
+    distance_t unfound_time
+      = std::numeric_limits<int>::max();
+    
+    for(unsigned i = 0; i < m_size; ++i){
+      for(unsigned j = 0; j < m_size; ++j){
+        if(m(i, j) == unfound_time){
+          // Just storing info as we don't know yet which location is
+          // responsible between i and j.
+          ++nb_unfound_from_loc[i];
+          ++nb_unfound_to_loc[j];
+        }
+      }
+    }
+    
+    unsigned max_unfound_routes_for_a_loc = 0;
+    index_t error_loc = 0;    // Initial value never actually used.
+    std::string error_direction;
+    // Finding the "worst" location.
+    for(unsigned i = 0; i < m_size; ++i){
+      if(nb_unfound_from_loc[i] > max_unfound_routes_for_a_loc){
+        max_unfound_routes_for_a_loc = nb_unfound_from_loc[i];
+        error_loc = i;
+        error_direction = "from";
+      }
+      if(nb_unfound_to_loc[i] > max_unfound_routes_for_a_loc){
+        max_unfound_routes_for_a_loc = nb_unfound_to_loc[i];
+        error_loc = i;
+        error_direction = "to";
+      }
+    }
+    if(max_unfound_routes_for_a_loc > 0){
+      std::cout << "OSRM has unfound route(s) "
+                << error_direction
+                << " location at index: "
+                << std::to_string(error_loc)
+                << std::endl;
+      exit(0);      
+    }
 
     return m;
   }
