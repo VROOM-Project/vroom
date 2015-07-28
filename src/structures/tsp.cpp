@@ -81,7 +81,7 @@ std::size_t tsp::size(){
 
 distance_t tsp::cost(const std::list<index_t>& tour) const{
   distance_t cost = 0;
-  index_t init_step;
+  index_t init_step = 0;        // Initialization actually never used.
 
   auto step = tour.cbegin();
   if(tour.size() > 0){

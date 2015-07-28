@@ -53,7 +53,7 @@ std::list<index_t> ccao_heuristic::build_solution(tsp_sym& instance){
     for(auto k = remaining_vertices.begin();
         k != remaining_vertices.end();
         ++k){
-      index_t current_previous;
+      index_t current_previous = 0; // Initialization actually never used.
       // Should be signed in case of non-metric instance (where
       // triangular inequality doesn't hold).
       long int place_min_value = std::numeric_limits<long int>::max();
