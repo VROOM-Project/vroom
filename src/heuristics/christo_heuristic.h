@@ -25,9 +25,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <chrono>
 #include <random>
 #include <limits>
-#include "kruskal.h"
-#include "munkres.h"
 #include "heuristic.h"
+#include "../algorithms/kruskal.h"
+#include "../algorithms/munkres.h"
 #include "../structures/tsp_sym.h"
 #include "../structures/edge.h"
 #include "../structures/undirected_graph.h"

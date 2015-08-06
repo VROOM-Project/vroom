@@ -20,7 +20,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define LOCAL_SEARCH_H
 #include <list>
 #include <map>
-#include <chrono>
 #include "../structures/typedefs.h"
 #include "../structures/matrix.h"
 #include "../structures/tsp_sym.h"

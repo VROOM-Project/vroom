@@ -19,8 +19,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef MST_HEURISTIC_H
 #define MST_HEURISTIC_H
 #include <list>
-#include "kruskal.h"
 #include "heuristic.h"
+#include "../algorithms/kruskal.h"
 #include "../structures/typedefs.h"
 #include "../structures/tsp_sym.h"
 #include "../structures/edge.h"
