@@ -18,10 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "tsp_sym.h"
 
-tsp_sym::tsp_sym(std::string places):
-  tsp(places),
-  _graph(_matrix){}
-
 tsp_sym::tsp_sym(matrix<distance_t> m)
   : tsp(m), _graph(m) {}
 

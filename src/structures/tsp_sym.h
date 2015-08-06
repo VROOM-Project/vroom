@@ -31,8 +31,6 @@ private:
   undirected_graph<distance_t> _graph;
   
 public:
-  tsp_sym(std::string places);
-
   tsp_sym(matrix<distance_t> m);
 
   undirected_graph<distance_t> get_graph() const;
