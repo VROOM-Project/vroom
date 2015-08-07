@@ -49,6 +49,8 @@ public:
   std::size_t size();
 
   distance_t cost(const std::list<index_t>& tour) const;
+
+  std::string get_route_summary(const std::list<index_t>& tour) const;
 };
 
 #endif

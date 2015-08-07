@@ -99,3 +99,15 @@ distance_t tsp::cost(const std::list<index_t>& tour) const{
   }
   return cost;
 }
+
+std::string tsp::get_route_summary(const std::list<index_t>& tour) const{
+  // Ordering places for this tour.
+  std::vector<std::pair<double, double>> ordered_places;
+  for(auto step = tour.cbegin(); step != tour.cend(); ++step){
+    ordered_places.push_back(_places[*step]);
+  }
+
+  // Selected information from OSRM viaroute request.
+  osrm_wrapper loader ("0.0.0.0", 5000);
+  return loader.viaroute_summary(ordered_places);
+}

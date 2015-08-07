@@ -24,40 +24,33 @@ logger::logger(std::string file_name):
 std::string logger::tour_to_string(const tsp& instance,
                                    const std::list<index_t>& tour,
                                    const timing_t& computing_times) const{
-  auto places = instance.get_places();
-  auto m = instance.get_matrix();
-  std::string places_str = "\"places_tour\":[";
-  std::string lengths_str = "\"lengths\":[";
-  std::string indices_str = "\"indices\":[";
-  auto step = tour.cbegin();
-  while(step != tour.cend()){
-    indices_str += std::to_string(*step) + ",";
-    places_str += "{\"lat\":" + std::to_string(places[*step].first)
-      + ",\"lon\":" + std::to_string(places[*step].second) + "},";
-    auto current_step = step;
-    ++step;
-    if(step != tour.cend()){
-      lengths_str += std::to_string(m(*current_step, *step)) + ",";
-    }
-  }
-  indices_str.pop_back();
-  indices_str += "],";
-  places_str.pop_back();
-  places_str += "],";
-
-  lengths_str += std::to_string(m(tour.back(), tour.front())) + "],";
-
-  std::string json_log = "{" + indices_str + places_str + lengths_str;
-
-  json_log += "\"total_length\":" + std::to_string(instance.cost(tour)) + ",";
-  json_log += "\"computing_times\":{";
+  // Execution informations.
+  std::string json_log = "{\"computing_times\":{";
   json_log += "\"matrix_loading\":"
     + std::to_string(computing_times.matrix_loading) + ",";
   json_log += "\"heuristic\":"
     + std::to_string(computing_times.heuristic) + ",";
   json_log += "\"local_search\":" + std::to_string(computing_times.local_search);
-  json_log += "}}";
+  json_log += "},";
 
+  // Solution found.
+  auto places = instance.get_places();
+  auto m = instance.get_matrix();
+  std::string tour_str = "\"tour\":[";
+  for(auto step = tour.cbegin(); step != tour.cend(); ++step){
+    tour_str += "[" + std::to_string(places[*step].first)
+      + "," + std::to_string(places[*step].second) + "],";
+  }
+  tour_str.pop_back();          // Remove trailing comma.
+  tour_str += "],";
+
+  json_log += tour_str;
+
+  json_log += "\"total_length\":" + std::to_string(instance.cost(tour)) + ",";
+
+  // Route informations summary.
+  json_log += instance.get_route_summary(tour);
+  
   return json_log;
 }
 
@@ -70,6 +63,4 @@ void logger::tour_to_file(const tsp& instance,
                             std::ofstream::out);
   out_stream << this->tour_to_string(instance, tour, computing_times);
   out_stream.close();
-
-  // std::cout << instance.get_route_summary(tour) << std::endl;
 }

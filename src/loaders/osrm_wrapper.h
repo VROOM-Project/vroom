@@ -247,7 +247,7 @@ public:
     return m;
   }
 
-  std::string viaroute(const std::vector<std::pair<double, double>>& places){
+  std::string viaroute_summary(const std::vector<std::pair<double, double>>& places){
     // Building query for osrm-routed
     std::string query = "GET /viaroute?";
 
@@ -273,7 +273,26 @@ public:
     // Removing extra info
     json_content = json_content.substr(0, 11 + json_content.rfind("\"status\":0}"));
 
-    return json_content;
+    // Parsing total time/distance and route geometry.
+    unsigned time_begin = json_content.find("\"total_time\":");
+    unsigned time_end = json_content.find(",", time_begin);
+    std::string route_infos = json_content.substr(time_begin,
+                                                  time_end - time_begin);
+    route_infos += ",";
+
+    unsigned distance_begin = json_content.find("\"total_distance\":");
+    unsigned distance_end = json_content.find("}", distance_begin);
+    route_infos += json_content.substr(distance_begin,
+                                       distance_end - distance_begin);
+    route_infos += ",";
+    
+    unsigned geometry_begin = json_content.find("\"route_geometry\":");
+    unsigned geometry_end = json_content.find(",", geometry_begin);
+    route_infos += json_content.substr(geometry_begin,
+                                       geometry_end - geometry_begin);
+    route_infos += "}";
+    
+    return route_infos;
   }
 };
 
