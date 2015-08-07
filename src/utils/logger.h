@@ -40,8 +40,6 @@ public:
   void tour_to_file(const tsp& instance,
                     const std::list<index_t>& tour,
                     double computing_time) const;
-
-  void places_to_file(const tsp& instance) const;
 };
 
 #endif

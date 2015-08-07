@@ -66,18 +66,3 @@ void logger::tour_to_file(const tsp& instance,
   out_stream << this->tour_to_string(instance, tour, computing_time);
   out_stream.close();
 }
-
-void logger::places_to_file(const tsp& instance) const{
-  auto places = instance.get_places();
-  std::string json_log = "{\"places\":[";
-  for(auto place = places.begin(); place != places.end(); ++place){
-    json_log += "{\"lat\":" + std::to_string(place->first)
-      + ",\"lon\":" + std::to_string(place->second) + "},";
-  }
-  json_log.pop_back();          // remove trailing comma
-  json_log += "]}";
-
-  std::ofstream out_stream (_file_name, std::ofstream::out);
-  out_stream << json_log;
-  out_stream.close();
-}
