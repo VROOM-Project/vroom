@@ -23,7 +23,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <cstring>              // c_str()
 #include<sys/socket.h>          //socket
 #include<arpa/inet.h>           //inet_addr
-// #include<netdb.h>               //hostent
 #include "./matrix_loader.h"
 #include "../structures/matrix.h"
 
@@ -85,6 +84,39 @@ private:
     return reply;
   }
 
+  std::string receive_until(std::string query,
+                            std::string end_str){
+    // Send query.
+    this->send_data(query);
+     
+    std::string response, buffer;
+    int buffer_size = 126;
+    // First reading.
+    response = this->receive(buffer_size);
+  
+    // Storing the position for starting the search of the end
+    // string. Searching the whole response string would be unecessary
+    // and unefficient.
+    std::size_t position = 0;
+    std::size_t end_str_size = end_str.size();
+  
+    while(response.find(end_str, position) == std::string::npos){
+      // End of response not yet received.
+      buffer = this->receive(buffer_size);
+      if(buffer.find("Bad Request") != std::string::npos){
+        // Problem with the OSRM request, encountered when many
+        // locations yield a too long request.
+        std::cout << "Bad Request response from OSRM, too much localisations?\n";
+        exit(0);
+      }
+      response += buffer;
+      // To be able to find end_str even if truncated between two buffer
+      // reception.
+      position += buffer_size - end_str_size;
+    }
+    return response;  
+  }
+
 public:
   osrm_wrapper(std::string address, int port):
     _sock(-1),
@@ -100,41 +132,17 @@ public:
 
     // Adding places.
     for(auto place = places.cbegin(); place != places.cend(); ++place){
-      query += "&loc="
+      query += "loc="
         + std::to_string(place->first)
         + ","
-        + std::to_string(place->second);
+        + std::to_string(place->second)
+        + "&";
     }
 
+    query.pop_back();           // Remove last '&'.
     query += " HTTP/1.1\r\n\r\n";
 
-    // Send query.
-    this->send_data(query);
-     
-    std::string response, buffer;
-    int buffer_size = 126;
-    // First reading
-    response = this->receive(buffer_size);
-
-    // Storing current position to avoid unecessary search for the end
-    // string.
-    std::size_t position = 0;
-    std::string end_str = "]]}";
-  
-    while(response.find(end_str, position) == std::string::npos){
-      // End of response not yet received
-      buffer = this->receive(buffer_size);
-      if(buffer.find("Bad Request") != std::string::npos){
-        // Problem with the OSRM request, encountered for exemple in
-        // cases with more than 342 locs.
-        std::cout << "Bad Request response from OSRM, too much localisations?\n";
-        exit(0);
-      }
-      response += buffer;
-      // To be able to find the end string even if truncated between
-      // two buffer reception.
-      position += buffer_size - 3;
-    }
+    std::string response = this->receive_until(query, "]]}");
 
     // Removing headers.
     std::string distance_key = "{\"distance_table\":[";
@@ -237,6 +245,35 @@ public:
     }
 
     return m;
+  }
+
+  std::string viaroute(const std::vector<std::pair<double, double>>& places){
+    // Building query for osrm-routed
+    std::string query = "GET /viaroute?";
+
+    // Adding places.
+    for(auto place = places.cbegin(); place != places.cend(); ++place){
+      query += "loc="
+        + std::to_string(place->first)
+        + ","
+        + std::to_string(place->second)
+        + "&";
+    }
+
+    query.pop_back();           // Remove last '&'.
+    query += "&z=14 HTTP/1.1\r\n\r\n";
+
+    // Other return status than 0 should have been filtered before
+    // with unfound routes check.
+    std::string response = this->receive_until(query, "\"status\":0}");
+
+    // Removing headers
+    std::string json_content = response.substr(response.find("{"));
+
+    // Removing extra info
+    json_content = json_content.substr(0, 11 + json_content.rfind("\"status\":0}"));
+
+    return json_content;
   }
 };
 
