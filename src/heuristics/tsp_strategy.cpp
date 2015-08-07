@@ -19,6 +19,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "tsp_strategy.h"
 
 void solve_atsp(std::string request, std::string out_file){
+  // Store timings.
+  timing_t computing_times;
+
   // Building problem object with embedded table request.
   auto start_problem_build = std::chrono::high_resolution_clock::now();
 
@@ -26,12 +29,12 @@ void solve_atsp(std::string request, std::string out_file){
 
   auto end_problem_build = std::chrono::high_resolution_clock::now();
 
-  double problem_build_duration =
+  computing_times.matrix_loading =
     std::chrono::duration_cast<std::chrono::milliseconds>
     (end_problem_build - start_problem_build).count();
 
-  std::cout << "Built with OSRM: "
-            << problem_build_duration / 1000 << "s\n";
+  std::cout << "Matrix computing: "
+            << computing_times.matrix_loading << " ms\n";
 
   // Using symmetrized problem to apply heuristics and local searches.
   tsp_sym symmetrized_tsp (asymmetric_tsp.get_symmetrized_matrix());
@@ -45,12 +48,12 @@ void solve_atsp(std::string request, std::string out_file){
 
   auto end_christo = std::chrono::high_resolution_clock::now();
 
-  double christo_duration =
+  computing_times.heuristic = 
     std::chrono::duration_cast<std::chrono::milliseconds>
     (end_christo - start_christo).count();
 
   std::cout << "Christofides heuristic applied: "
-            << christo_duration / 1000 << "s\n";
+            << computing_times.heuristic << " ms\n";
 
   distance_t christo_cost = symmetrized_tsp.cost(christo_sol);
 
@@ -82,7 +85,7 @@ void solve_atsp(std::string request, std::string out_file){
       (end_two_opt - start_two_opt).count();
 
     std::cout << "Two-opt steps applied in: "
-              << two_opt_duration / 1000 << "s\n";
+              << two_opt_duration << " ms\n";
 
     // All relocate moves.
     auto start_relocate = std::chrono::high_resolution_clock::now();
@@ -99,7 +102,7 @@ void solve_atsp(std::string request, std::string out_file){
       (end_relocate - start_relocate).count();
 
     std::cout << "Relocate steps applied in: "
-              << relocate_duration / 1000 << "s\n";
+              << relocate_duration << " ms\n";
 
     // All or-opt moves.
     auto start_or_opt = std::chrono::high_resolution_clock::now();
@@ -117,18 +120,18 @@ void solve_atsp(std::string request, std::string out_file){
       (end_or_opt - start_or_opt).count();
 
     std::cout << "Or-Opt steps applied in: "
-              << or_opt_duration / 1000 << "s\n";
+              << or_opt_duration << " ms\n";
   }while((two_opt_gain > 0) or (relocate_gain > 0) or (or_opt_gain > 0));
 
   std::list<index_t> local_search_sol = ls.get_tour(0);
 
   auto end_local_search = std::chrono::high_resolution_clock::now();
 
-  double local_search_duration =
+  computing_times.local_search =
     std::chrono::duration_cast<std::chrono::milliseconds>
     (end_local_search - start_local_search).count();
   std::cout << "Local search: "
-            << local_search_duration / 1000 << "s\n";
+            << computing_times.local_search << " ms\n";
 
   // Back to the asymmetric problem, picking the best way.
   std::list<index_t> reverse_sol;
@@ -141,18 +144,18 @@ void solve_atsp(std::string request, std::string out_file){
   distance_t direct_cost = asymmetric_tsp.cost(local_search_sol);
   distance_t reverse_cost = asymmetric_tsp.cost(reverse_sol);
 
-  double total_duration =
+  computing_times.total_duration =
     std::chrono::duration_cast<std::chrono::milliseconds>
     (end_local_search - start_problem_build).count();
   
   std::cout << "Total: "
-            << total_duration / 1000 << "s\n";
+            << computing_times.total_duration << " ms\n";
 
   logger log (out_file);
   if(direct_cost < reverse_cost){
-    log.tour_to_file(asymmetric_tsp, local_search_sol, total_duration / 1000);
+    log.tour_to_file(asymmetric_tsp, local_search_sol, computing_times);
   }
   else{
-    log.tour_to_file(asymmetric_tsp, reverse_sol, total_duration / 1000);
+    log.tour_to_file(asymmetric_tsp, reverse_sol, computing_times);
   }
 }

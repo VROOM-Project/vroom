@@ -35,11 +35,11 @@ public:
   
   std::string tour_to_string(const tsp& instance,
                              const std::list<index_t>& tour,
-                             double computing_time) const;
+                             const timing_t& computing_times) const;
 
   void tour_to_file(const tsp& instance,
                     const std::list<index_t>& tour,
-                    double computing_time) const;
+                    const timing_t& computing_times) const;
 };
 
 #endif

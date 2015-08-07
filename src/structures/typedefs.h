@@ -23,4 +23,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using index_t = unsigned;
 using distance_t = unsigned long;
 
+struct timing_t {
+  // Computing times in milliseconds.
+  unsigned long matrix_loading;
+  unsigned long heuristic;
+  unsigned long local_search;
+  unsigned long total_duration;
+};
+
 #endif

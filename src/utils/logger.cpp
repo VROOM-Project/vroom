@@ -23,7 +23,7 @@ logger::logger(std::string file_name):
 
 std::string logger::tour_to_string(const tsp& instance,
                                    const std::list<index_t>& tour,
-                                   double computing_time) const{
+                                   const timing_t& computing_times) const{
   auto places = instance.get_places();
   auto m = instance.get_matrix();
   std::string places_str = "\"places_tour\":[";
@@ -50,19 +50,26 @@ std::string logger::tour_to_string(const tsp& instance,
   std::string json_log = "{" + indices_str + places_str + lengths_str;
 
   json_log += "\"total_length\":" + std::to_string(instance.cost(tour)) + ",";
-  json_log += "\"computing_time\":" + std::to_string(computing_time);
-  json_log += "}";
+  json_log += "\"computing_times\":{";
+  json_log += "\"matrix_loading\":"
+    + std::to_string(computing_times.matrix_loading) + ",";
+  json_log += "\"heuristic\":"
+    + std::to_string(computing_times.heuristic) + ",";
+  json_log += "\"local_search\":" + std::to_string(computing_times.local_search);
+  json_log += "}}";
 
   return json_log;
 }
 
 void logger::tour_to_file(const tsp& instance,
                           const std::list<index_t>& tour,
-                          double computing_time) const{
+                          const timing_t& computing_times) const{
   auto timestamp
     = std::chrono::system_clock::now().time_since_epoch().count();
   std::ofstream out_stream (std::to_string(timestamp) + "_" + _file_name,
                             std::ofstream::out);
-  out_stream << this->tour_to_string(instance, tour, computing_time);
+  out_stream << this->tour_to_string(instance, tour, computing_times);
   out_stream.close();
+
+  // std::cout << instance.get_route_summary(tour) << std::endl;
 }
