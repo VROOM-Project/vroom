@@ -22,24 +22,23 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <fstream>
 #include <string>
 #include <list>
-#include <chrono>
 #include "../structures/typedefs.h"
 #include "../structures/tsp.h"
 
 class logger{
-protected:
-  std::string _file_name;
+private:
+  cl_args_t _cl_args;
   
 public:
-  logger(std::string file_name);
+  logger(const cl_args_t& cl_args);
   
   std::string tour_to_string(const tsp& instance,
                              const std::list<index_t>& tour,
                              const timing_t& computing_times) const;
 
-  void tour_to_file(const tsp& instance,
-                    const std::list<index_t>& tour,
-                    const timing_t& computing_times) const;
+  void tour_to_output(const tsp& instance,
+                      const std::list<index_t>& tour,
+                      const timing_t& computing_times) const;
 };
 
 #endif

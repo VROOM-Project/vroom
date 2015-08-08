@@ -18,9 +18,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "tsp.h"
 
-tsp::tsp() {}
-
-tsp::tsp(std::string places){
+tsp::tsp(const cl_args_t& cl_args){
+  std::string places = cl_args.places;
+  
   // Poorly filtered for now.
   std::size_t start = 4;
   std::size_t end = places.find("&", start);
@@ -47,9 +47,22 @@ tsp::tsp(std::string places){
                        std::stod(lon, nullptr));
 
   // Computing matrix.
-  // euc_2d_matrix_loader loader;
-  osrm_wrapper loader ("0.0.0.0", 5000);
-  _matrix = loader.load_matrix(_places);
+  matrix_loader<distance_t, double>* loader;
+  switch(cl_args.loader){
+  case 1:
+    // Using plain euclidean distance.
+    loader = new euc_2d_matrix_loader();
+    break;
+  case 0:
+    // Using OSRM.
+    loader = new osrm_wrapper(cl_args.osrm_address, cl_args.osrm_port);
+    break;
+  default:
+    // Should not happen!
+    loader = new osrm_wrapper(cl_args.osrm_address, cl_args.osrm_port);
+    break;
+  }
+  _matrix = loader->load_matrix(_places);
 }
 
 tsp::tsp(matrix<distance_t> m)
@@ -105,6 +118,10 @@ std::string tsp::get_route_summary(const std::list<index_t>& tour) const{
   std::vector<std::pair<double, double>> ordered_places;
   for(auto step = tour.cbegin(); step != tour.cend(); ++step){
     ordered_places.push_back(_places[*step]);
+  }
+  // Back to the starting place.
+  if(tour.size() > 0){
+    ordered_places.push_back(_places[tour.front()]);
   }
 
   // Selected information from OSRM viaroute request.

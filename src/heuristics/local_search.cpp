@@ -18,9 +18,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "local_search.h"
 
-local_search::local_search(tsp_sym* problem, std::list<index_t> tour):
+local_search::local_search(tsp_sym* problem,
+                           std::list<index_t> tour,
+                           bool verbose):
   _problem(problem),
-  _matrix(_problem->get_matrix()){
+  _matrix(_problem->get_matrix()),
+  _verbose(verbose){
   auto place = tour.cbegin();
   index_t first_index = *place;
   index_t current_index = first_index;
@@ -69,17 +72,6 @@ distance_t local_search::relocate_step(){
       if(before_cost > after_cost){
         amelioration_found = true;
         gain = before_cost - after_cost;
-        // std::cout << "Gain:" << gain << std::endl;
-        // std::cout << edge_1->first
-        //           << "-" << _matrix(edge_1->first, edge_1->second) << "->"
-        //           << edge_1->second
-        //           << "-" << _matrix(edge_1->second, next) << "->"
-        //           << next
-        //           << std::endl;
-        // std::cout << edge_2->first
-        //           << "-" << _matrix(edge_2->first, edge_2->second) << "->"
-        //           << edge_2->second
-        //           << std::endl;
 
         // Performing exchange.
         _edges.at(edge_1->first) = next;
@@ -109,10 +101,12 @@ distance_t local_search::perform_all_relocate_steps(){
     }
   } while(gain > 0);
 
-  std::cout << "Performed "
-            << relocate_iter << " \"relocate\" steps, gaining "
-            << total_gain
-            << std::endl;
+  if(_verbose){
+    std::cout << "Performed "
+              << relocate_iter << " \"relocate\" steps, gaining "
+              << total_gain
+              << std::endl;
+  }
   return total_gain;
 }
 
@@ -141,15 +135,6 @@ distance_t local_search::two_opt_step(){
       if(before_cost > after_cost){
         amelioration_found = true;
         gain = before_cost - after_cost;
-        // std::cout << "Gain:" << gain << std::endl;
-        // std::cout << edge_1->first
-        //           << "-" << _matrix(edge_1->first, edge_1->second) << "->"
-        //           << edge_1->second
-        //           << std::endl;
-        // std::cout << edge_2->first
-        //           << "-" << _matrix(edge_2->first, edge_2->second) << "->"
-        //           << edge_2->second
-        //           << std::endl;
 
         // Storing part of the tour that needs to be reversed.
         std::list<index_t> to_reverse;
@@ -191,10 +176,12 @@ distance_t local_search::perform_all_two_opt_steps(){
     }
   } while(gain > 0);
 
-  std::cout << "Performed "
-            << two_opt_iter << " \"2-opt\" steps, gaining "
-            << total_gain
-            << std::endl;
+  if(_verbose){
+    std::cout << "Performed "
+              << two_opt_iter << " \"2-opt\" steps, gaining "
+              << total_gain
+              << std::endl;
+  }
   return total_gain;
 }
 
@@ -235,18 +222,6 @@ distance_t local_search::or_opt_step(){
       if(before_cost > after_cost){
         amelioration_found = true;
         gain = before_cost - after_cost;
-        // std::cout << "Gain:" << gain << std::endl;
-        // std::cout << edge_1->first
-        //           << "-" << edge_1_weight << "->"
-        //           << first_relocated
-        //           << " / "
-        //           << next << "->" << next_next_2_weight << "->"
-        //           << next_2
-        //           << std::endl;
-        // std::cout << edge_2->first
-        //           << "-" << _matrix(edge_2->first, edge_2->second) << "->"
-        //           << edge_2->second
-        //           << std::endl;
 
         // Performing exchange.
         _edges.at(edge_1->first) = next_2;
@@ -275,10 +250,12 @@ distance_t local_search::perform_all_or_opt_steps(){
     }
   } while(gain > 0);
 
-  std::cout << "Performed "
-            << or_opt_iter << " \"or_opt\" steps, gaining "
-            << total_gain
-            << std::endl;
+  if(_verbose){
+    std::cout << "Performed "
+              << or_opt_iter << " \"or_opt\" steps, gaining "
+              << total_gain
+              << std::endl;
+  }
   return total_gain;
 }
 

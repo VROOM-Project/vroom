@@ -18,8 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "logger.h"
 
-logger::logger(std::string file_name):
-  _file_name(file_name) {}
+logger::logger(const cl_args_t& cl_args):
+  _cl_args(cl_args) {}
 
 std::string logger::tour_to_string(const tsp& instance,
                                    const std::list<index_t>& tour,
@@ -48,19 +48,32 @@ std::string logger::tour_to_string(const tsp& instance,
 
   json_log += "\"total_length\":" + std::to_string(instance.cost(tour)) + ",";
 
-  // Route informations summary.
-  json_log += instance.get_route_summary(tour);
+  if(_cl_args.loader == 0){
+    // Add route informations summary when using OSRM.
+    json_log += instance.get_route_summary(tour);
+  }
+  else{
+    json_log.pop_back();        // Remove trailing comma.
+  }
+  
+  json_log += "}";
   
   return json_log;
 }
 
-void logger::tour_to_file(const tsp& instance,
-                          const std::list<index_t>& tour,
-                          const timing_t& computing_times) const{
-  auto timestamp
-    = std::chrono::system_clock::now().time_since_epoch().count();
-  std::ofstream out_stream (std::to_string(timestamp) + "_" + _file_name,
-                            std::ofstream::out);
-  out_stream << this->tour_to_string(instance, tour, computing_times);
-  out_stream.close();
+void logger::tour_to_output(const tsp& instance,
+                            const std::list<index_t>& tour,
+                            const timing_t& computing_times) const{
+  std::string log_str = this->tour_to_string(instance, tour, computing_times);
+  
+  if(_cl_args.output_file.empty()){
+    // Log to standard output.
+    std::cout << log_str << std::endl;
+  }
+  else{
+    // Log to file given as command-line option.
+    std::ofstream out_stream (_cl_args.output_file, std::ofstream::out);
+    out_stream << log_str;
+    out_stream.close();
+  }
 }

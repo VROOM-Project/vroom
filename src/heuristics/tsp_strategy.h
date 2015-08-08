@@ -24,6 +24,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "./local_search.h"
 #include "../utils/logger.h"
 
-void solve_atsp(std::string request, std::string out_file);
+void solve_atsp(const cl_args_t& cl_args);
 
 #endif

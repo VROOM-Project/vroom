@@ -261,7 +261,7 @@ public:
     }
 
     query.pop_back();           // Remove last '&'.
-    query += "&z=14 HTTP/1.1\r\n\r\n";
+    query += " HTTP/1.1\r\n\r\n";
 
     // Other return status than 0 should have been filtered before
     // with unfound routes check.
@@ -290,7 +290,6 @@ public:
     unsigned geometry_end = json_content.find(",", geometry_begin);
     route_infos += json_content.substr(geometry_begin,
                                        geometry_end - geometry_begin);
-    route_infos += "}";
     
     return route_infos;
   }

@@ -29,10 +29,13 @@ private:
   tsp_sym* _problem;
   matrix<distance_t> _matrix;
   std::map<index_t, index_t> _edges;
+  bool _verbose;
 
 public:
 
-  local_search(tsp_sym* problem, std::list<index_t> tour);
+  local_search(tsp_sym* problem,
+               std::list<index_t> tour,
+               bool verbose);
 
   distance_t relocate_step();
 

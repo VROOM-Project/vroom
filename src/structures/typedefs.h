@@ -31,4 +31,17 @@ struct timing_t {
   unsigned long total_duration;
 };
 
+struct cl_args_t {
+  // Listing command-line options.
+  std::string osrm_address;     // -a
+  unsigned loader;              // -e
+  // Loaders:
+  // * 0 for OSRM;
+  // * 1 for EUC_2D.
+  std::string output_file;      // -o
+  unsigned osrm_port;           // -p
+  bool verbose;                 // -v
+  std::string places;
+};
+
 #endif

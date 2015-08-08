@@ -93,10 +93,10 @@ std::list<index_t> christo_heuristic::build_solution(tsp_sym& instance){
   // std::cout << "Munkres mwpm weight: " << weight << std::endl;
   
   if(!wrong_vertices.empty()){
-    std::cout << "Not all Munkres mwpm is usable: "
-              << total_ok << "/" << mwpm.size() << " vertices ok, i.e. "
-              << (double) total_ok * 100 / mwpm.size() << "%"
-              << std::endl;
+    // std::cout << "Not all Munkres mwpm is usable: "
+    //           << total_ok << "/" << mwpm.size() << " vertices ok, i.e. "
+    //           << (double) total_ok * 100 / mwpm.size() << "%"
+    //           << std::endl;
     // std::cout << "Switching to greedy approximation algorithm for vertices: ";
     // for(auto vertex = wrong_vertices.begin();
     //     vertex != wrong_vertices.end();
