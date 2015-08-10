@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <fstream>
 #include <string>
 #include <list>
+#include <chrono>
 #include "../structures/typedefs.h"
 #include "../structures/tsp.h"
 

@@ -24,19 +24,36 @@ logger::logger(const cl_args_t& cl_args):
 std::string logger::tour_to_string(const tsp& instance,
                                    const std::list<index_t>& tour,
                                    const timing_t& computing_times) const{
+  std::string route_summary;
+  unsigned long route_summary_duration = 0;
+  if(_cl_args.loader == 0){
+    // Get route informations summary when using OSRM.
+    auto start_route_summary = std::chrono::high_resolution_clock::now();
+    route_summary = instance.get_route_summary(tour);
+    auto end_route_summary = std::chrono::high_resolution_clock::now();
+    route_summary_duration =
+      std::chrono::duration_cast<std::chrono::milliseconds>
+      (end_route_summary - start_route_summary).count();
+  }
+
   // Execution informations.
   std::string json_log = "{\"computing_times\":{";
   json_log += "\"matrix_loading\":"
     + std::to_string(computing_times.matrix_loading) + ",";
-  json_log += "\"heuristic\":"
+  json_log += "\"route\":{\"heuristic\":"
     + std::to_string(computing_times.heuristic) + ",";
-  json_log += "\"local_search\":" + std::to_string(computing_times.local_search);
+  json_log += "\"local_search\":"
+    + std::to_string(computing_times.local_search) + "}";
+  if(_cl_args.loader == 0){
+    // Log route information timing when using OSRM.
+    json_log += ",\"detailed_geometry\":" + std::to_string(route_summary_duration);
+  }
   json_log += "},";
 
   // Solution found.
   auto places = instance.get_places();
   auto m = instance.get_matrix();
-  std::string tour_str = "\"tour\":[";
+  std::string tour_str = "\"route\":[";
   for(auto step = tour.cbegin(); step != tour.cend(); ++step){
     tour_str += "[" + std::to_string(places[*step].first)
       + "," + std::to_string(places[*step].second) + "],";
@@ -50,7 +67,7 @@ std::string logger::tour_to_string(const tsp& instance,
 
   if(_cl_args.loader == 0){
     // Add route informations summary when using OSRM.
-    json_log += instance.get_route_summary(tour);
+    json_log += route_summary;
   }
   else{
     json_log.pop_back();        // Remove trailing comma.
