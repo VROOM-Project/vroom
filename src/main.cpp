@@ -34,11 +34,12 @@ int main(int argc, char **argv){
   // Default options.
   cl_args_t cl_args;
   cl_args.loader = 0;
+  cl_args.geometry = false;
   cl_args.osrm_address = "0.0.0.0";
   cl_args.osrm_port = 5000;
 
   // Parsing command-line arguments.
-  const char* optString = "a:ei:o:p:vh?";
+  const char* optString = "a:egi:o:p:vh?";
   int opt = getopt(argc, argv, optString);
 
   while(opt != -1) {
@@ -48,6 +49,9 @@ int main(int argc, char **argv){
       break;
     case 'e':
       cl_args.loader = 1;
+      break;
+    case 'g':
+      cl_args.geometry = true;
       break;
     case 'h':
       display_usage();
