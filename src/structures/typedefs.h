@@ -38,6 +38,7 @@ struct cl_args_t {
   // Loaders:
   // * 0 for OSRM;
   // * 1 for EUC_2D.
+  std::string input_file;       // -i
   std::string output_file;      // -o
   unsigned osrm_port;           // -p
   bool verbose;                 // -v

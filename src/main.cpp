@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <string>
+#include <sstream>
 #include <unistd.h>
 #include "./structures/typedefs.h"
 #include "./heuristics/tsp_strategy.h"
@@ -37,7 +38,7 @@ int main(int argc, char **argv){
   cl_args.osrm_port = 5000;
 
   // Parsing command-line arguments.
-  const char* optString = "a:eo:p:vh?";
+  const char* optString = "a:ei:o:p:vh?";
   int opt = getopt(argc, argv, optString);
 
   while(opt != -1) {
@@ -50,6 +51,9 @@ int main(int argc, char **argv){
       break;
     case 'h':
       display_usage();
+      break;
+    case 'i':
+      cl_args.input_file = optarg;
       break;
     case 'o':
       cl_args.output_file = optarg;
@@ -66,12 +70,22 @@ int main(int argc, char **argv){
     opt = getopt(argc, argv, optString);
   }
 
-  // Getting list of locations from command-line.
-  if(argc == optind){
-    // Missing argument!
-    display_usage();
+  if(cl_args.input_file.empty()){
+    // Getting list of locations from command-line.
+    if(argc == optind){
+      // Missing argument!
+      display_usage();
+    }
+    cl_args.places = argv[optind];
   }
-  cl_args.places = argv[optind];
+  else{
+    // Getting list of locations from input file. Fast way to get the
+    // file content as a string, not meant for large files...
+    std::ifstream ifs (cl_args.input_file, std::ifstream::in);
+    std::stringstream buffer;
+    buffer << ifs.rdbuf();
+    cl_args.places = buffer.str();
+  }
   
   solve_atsp(cl_args);
 
