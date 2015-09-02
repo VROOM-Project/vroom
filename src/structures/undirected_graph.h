@@ -49,8 +49,7 @@ public:
       }
     }
     if(!matrix_ok){
-      std::cout << "Error in input matrix, symmetric matrix required!\n";
-      exit(1);
+      throw custom_exception("symmetric matrix required for undirected graph.");
     }
   }
 

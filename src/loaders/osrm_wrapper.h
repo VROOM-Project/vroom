@@ -25,13 +25,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include<arpa/inet.h>           //inet_addr
 #include "./matrix_loader.h"
 #include "../structures/matrix.h"
+#include "../utils/exceptions.h"
 
 class osrm_wrapper : public matrix_loader<distance_t, double>{
 
 private:
   int _sock;                    // socket
-  std::string _address;  // OSRM server adress
-  int _port;             // OSRM server listening port
+  std::string _address;         // OSRM server adress
+  int _port;                    // OSRM server listening port
   struct sockaddr_in _server;   // server
 
   // Perform socket connection.
@@ -41,8 +42,7 @@ private:
       //Create socket
       _sock = socket(AF_INET, SOCK_STREAM, 0);
       if (_sock == -1){
-        std::cout << "Could not create socket\n";
-        exit(0);
+        throw custom_exception("could not create socket");
       }
     }
 
@@ -54,8 +54,7 @@ private:
 
     // Connect to osrm-routed server.
     if (connect(_sock , (struct sockaddr *)&_server , sizeof(_server)) < 0){
-      std::cout << "Connect to the OSRM server failed!\n";
-      exit(0);
+      throw custom_exception("connect to the OSRM server failed!");
     }
     return true;
   }
@@ -63,8 +62,7 @@ private:
   // Send a request or osrm routing deamon.
   bool send_data(std::string data){
     if(send(_sock, data.c_str(), strlen(data.c_str()), 0) < 0){
-      std::cout << "Send to OSRM server failed!\n";
-      exit(0);
+      throw custom_exception("send to OSRM server failed!");
     }
     return true;
   }
@@ -75,8 +73,7 @@ private:
      
     // Receive a reply from the server.
     if(recv(_sock, buffer, size, 0) < 0){
-      std::cout << "Receiving from OSRM server failed!\n";
-      exit(0);
+      throw custom_exception("receiving from OSRM server failed!");
     }
      
     std::string reply (buffer, size);
@@ -106,8 +103,7 @@ private:
       if(buffer.find("Bad Request") != std::string::npos){
         // Problem with the OSRM request, encountered when many
         // locations yield a too long request.
-        std::cout << "Bad Request response from OSRM, too much localisations?\n";
-        exit(0);
+        throw custom_exception("bad request response from OSRM, too long GET request?");
       }
       response += buffer;
       // To be able to find end_str even if truncated between two buffer
@@ -148,8 +144,7 @@ public:
     std::string distance_key = "{\"distance_table\":[";
     size_t table_start = response.find(distance_key);
     if(table_start == std::string::npos){
-      std::cout << "Unexpected form of OSRM return!\n";
-      exit(0);
+      throw custom_exception("unexpected form of OSRM return!");
     }
 
     size_t offset = table_start + distance_key.size();
@@ -172,10 +167,6 @@ public:
     last_line.pop_back();
     lines.push_back(last_line);
 
-    // for(auto line = lines.cbegin(); line != lines.cend(); ++line){
-    //   std::cout << *line << std::endl;
-    // }
-    
     std::vector<std::vector<distance_t>> matrix_as_vector;
     for(auto line = lines.cbegin(); line != lines.cend(); ++line){
       std::vector<distance_t> line_as_vector;
@@ -236,12 +227,11 @@ public:
       }
     }
     if(max_unfound_routes_for_a_loc > 0){
-      std::cout << "OSRM has unfound route(s) "
-                << error_direction
-                << " location at index: "
-                << std::to_string(error_loc)
-                << std::endl;
-      exit(0);      
+      std::string error_msg = "OSRM has unfound route(s) ";
+      error_msg += error_direction;
+      error_msg += " location at index: ";
+      error_msg += std::to_string(error_loc);
+      throw custom_exception(error_msg);
     }
 
     return m;

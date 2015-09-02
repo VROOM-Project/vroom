@@ -403,9 +403,7 @@ std::map<index_t, index_t> greedy_symmetric_approx_mwpm(const matrix<T>& m){
   // choosing always smaller possible value, no minimality
   // assured. Matrix size should be even!
   if(m.size() % 2 == 1){
-    std::cout << "Error in greedy_symmetric_approx_mwpm, matrix size should be even!"
-              << std::endl;
-    exit(0);
+    throw custom_exception("matrix size should be even in greedy_symmetric_approx_mwpm.");
   }
     
   std::map<index_t, index_t> matching;

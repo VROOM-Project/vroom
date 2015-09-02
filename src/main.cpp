@@ -91,7 +91,13 @@ int main(int argc, char **argv){
     cl_args.places = buffer.str();
   }
   
-  solve_atsp(cl_args);
+  try{
+    solve_atsp(cl_args);
+  }
+  catch(const custom_exception& e){
+    std::cout << "Error: " << e.get_message() << std::endl;
+    exit(1);
+  }
 
   return 0;
 }
