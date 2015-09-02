@@ -63,7 +63,7 @@ std::string logger::tour_to_string(const tsp& instance,
 
   json_log += tour_str;
 
-  json_log += "\"total_length\":" + std::to_string(instance.cost(tour)) + ",";
+  json_log += "\"solution_cost\":" + std::to_string(instance.cost(tour)) + ",";
 
   if(_cl_args.loader == 0 and _cl_args.geometry){
     // Add route informations summary when using OSRM.
