@@ -138,7 +138,7 @@ public:
     query.pop_back();           // Remove last '&'.
     query += " HTTP/1.1\r\n\r\n";
 
-    std::string response = this->receive_until(query, "]]}");
+    std::string response = this->receive_until(query, "}");
 
     // Removing headers.
     std::string distance_key = "{\"distance_table\":[";

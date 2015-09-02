@@ -46,6 +46,10 @@ tsp::tsp(const cl_args_t& cl_args){
   _places.emplace_back(std::stod(lat, nullptr),
                        std::stod(lon, nullptr));
 
+  if(_places.size() <= 1){
+    throw custom_exception("at least two locations required!");
+  }
+  
   // Computing matrix.
   matrix_loader<distance_t, double>* loader;
   switch(cl_args.loader){
