@@ -18,38 +18,43 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "tsp.h"
 
+void tsp::add_location(const std::string location){
+  // Regex check for valid location.
+  std::regex valid_loc ("loc=-?[0-9]+\\.?[0-9]*,-?[0-9]+\\.?[0-9]*");
+  if(!std::regex_match(location, valid_loc)){
+    throw custom_exception("invalid syntax for location "
+                           + std::to_string(_locations.size() + 1)
+                           + ", see vroom -h for usage display."
+                           );
+  }
+
+  // Parsing the location is now safe.
+  std::size_t separator_rank = location.find(",");
+  std::string lat = location.substr(4, separator_rank);
+  std::string lon = location.substr(separator_rank + 1, location.length() -1);
+  _locations.emplace_back(std::stod(lat, nullptr),
+                          std::stod(lon, nullptr));
+}
+
 tsp::tsp(const cl_args_t& cl_args){
-  std::string places = cl_args.places;
+  std::string locations = cl_args.locations;
   
-  // Poorly filtered for now.
-  std::size_t start = 4;
-  std::size_t end = places.find("&", start);
+  // Parsing locations.
+  std::size_t start = 0;
+  std::size_t end = locations.find("&", start);
   while(end != std::string::npos){
-    std::size_t separator_rank = places.find(",", start);
-    std::string lat = places.substr(start,
-                                    separator_rank - start);
-    std::string lon = places.substr(separator_rank + 1,
-                                          end - separator_rank - 1);
-    _places.emplace_back(std::stod(lat, nullptr),
-                         std::stod(lon, nullptr));
-       
-    start = end + 5;
-    end = places.find("&", start);
+    this->add_location(locations.substr(start, end - start));
+    start = end + 1;
+    end = locations.find("&", start);
   }
   // Adding last element, after last "&".
-  end = places.length();
-  std::size_t separator_rank = places.find(",", start);
-  std::string lat = places.substr(start,
-                                  separator_rank - start);
-  std::string lon = places.substr(separator_rank + 1,
-                                  end - separator_rank - 1);
-  _places.emplace_back(std::stod(lat, nullptr),
-                       std::stod(lon, nullptr));
+  end = locations.length();
+  this->add_location(locations.substr(start, end - start));
 
-  if(_places.size() <= 1){
+  if(_locations.size() <= 1){
     throw custom_exception("at least two locations required!");
   }
-  
+
   // Computing matrix.
   matrix_loader<distance_t, double>* loader;
   switch(cl_args.loader){
@@ -66,7 +71,7 @@ tsp::tsp(const cl_args_t& cl_args){
     loader = new osrm_wrapper(cl_args.osrm_address, cl_args.osrm_port);
     break;
   }
-  _matrix = loader->load_matrix(_places);
+  _matrix = loader->load_matrix(_locations);
 }
 
 tsp::tsp(matrix<distance_t> m)
@@ -76,8 +81,8 @@ const matrix<distance_t>& tsp::get_matrix() const{
   return _matrix;
 }
 
-const std::vector<std::pair<double, double>>& tsp::get_places() const{
-  return _places;
+const std::vector<std::pair<double, double>>& tsp::get_locations() const{
+  return _locations;
 }
 
 const matrix<distance_t> tsp::get_symmetrized_matrix() const{
@@ -118,17 +123,17 @@ distance_t tsp::cost(const std::list<index_t>& tour) const{
 }
 
 std::string tsp::get_route_summary(const std::list<index_t>& tour) const{
-  // Ordering places for this tour.
-  std::vector<std::pair<double, double>> ordered_places;
+  // Ordering locations for this tour.
+  std::vector<std::pair<double, double>> ordered_locations;
   for(auto step = tour.cbegin(); step != tour.cend(); ++step){
-    ordered_places.push_back(_places[*step]);
+    ordered_locations.push_back(_locations[*step]);
   }
-  // Back to the starting place.
+  // Back to the starting location.
   if(tour.size() > 0){
-    ordered_places.push_back(_places[tour.front()]);
+    ordered_locations.push_back(_locations[tour.front()]);
   }
 
   // Selected information from OSRM viaroute request.
   osrm_wrapper loader ("0.0.0.0", 5000);
-  return loader.viaroute_summary(ordered_places);
+  return loader.viaroute_summary(ordered_locations);
 }

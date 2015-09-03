@@ -26,7 +26,7 @@ template <class T, class V>
 class matrix_loader{
 
 public:
-  virtual matrix<T> load_matrix(const std::vector<std::pair<V, V>>& places) = 0;
+  virtual matrix<T> load_matrix(const std::vector<std::pair<V, V>>& locations) = 0;
 
   virtual ~matrix_loader() {}
 

@@ -122,16 +122,16 @@ public:
     this->osrm_connect();
   }
 
-  virtual matrix<distance_t> load_matrix(const std::vector<std::pair<double, double>>& places){
+  virtual matrix<distance_t> load_matrix(const std::vector<std::pair<double, double>>& locations){
     // Building query for osrm-routed
     std::string query = "GET /table?";
 
-    // Adding places.
-    for(auto place = places.cbegin(); place != places.cend(); ++place){
+    // Adding locations.
+    for(auto location = locations.cbegin(); location != locations.cend(); ++location){
       query += "loc="
-        + std::to_string(place->first)
+        + std::to_string(location->first)
         + ","
-        + std::to_string(place->second)
+        + std::to_string(location->second)
         + "&";
     }
 
@@ -237,16 +237,16 @@ public:
     return m;
   }
 
-  std::string viaroute_summary(const std::vector<std::pair<double, double>>& places){
+  std::string viaroute_summary(const std::vector<std::pair<double, double>>& locations){
     // Building query for osrm-routed
     std::string query = "GET /viaroute?";
 
-    // Adding places.
-    for(auto place = places.cbegin(); place != places.cend(); ++place){
+    // Adding locations.
+    for(auto location = locations.cbegin(); location != locations.cend(); ++location){
       query += "loc="
-        + std::to_string(place->first)
+        + std::to_string(location->first)
         + ","
-        + std::to_string(place->second)
+        + std::to_string(location->second)
         + "&";
     }
 

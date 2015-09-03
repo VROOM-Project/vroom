@@ -51,12 +51,12 @@ std::string logger::tour_to_string(const tsp& instance,
   json_log += "},";
 
   // Solution found.
-  auto places = instance.get_places();
+  auto locations = instance.get_locations();
   auto m = instance.get_matrix();
   std::string tour_str = "\"route\":[";
   for(auto step = tour.cbegin(); step != tour.cend(); ++step){
-    tour_str += "[" + std::to_string(places[*step].first)
-      + "," + std::to_string(places[*step].second) + "],";
+    tour_str += "[" + std::to_string(locations[*step].first)
+      + "," + std::to_string(locations[*step].second) + "],";
   }
   tour_str.pop_back();          // Remove trailing comma.
   tour_str += "],";

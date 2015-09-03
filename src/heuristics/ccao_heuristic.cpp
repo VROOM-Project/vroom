@@ -24,7 +24,7 @@ std::list<index_t> ccao_heuristic::build_solution(tsp_sym& instance){
   // Initial tour with the convex hull of all vertices is turned into
   // a map to facilitate further insertions. 
   std::list<index_t> convex_hull_tour
-    = convex_hull(instance.get_places());
+    = convex_hull(instance.get_locations());
 
   std::set<index_t> remaining_vertices;
   for(index_t i = 0; i < instance.size(); ++i){

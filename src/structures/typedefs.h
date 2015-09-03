@@ -43,7 +43,7 @@ struct cl_args_t {
   std::string output_file;      // -o
   unsigned osrm_port;           // -p
   bool verbose;                 // -v
-  std::string places;
+  std::string locations;
 };
 
 #endif

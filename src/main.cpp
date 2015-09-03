@@ -80,7 +80,7 @@ int main(int argc, char **argv){
       // Missing argument!
       display_usage();
     }
-    cl_args.places = argv[optind];
+    cl_args.locations = argv[optind];
   }
   else{
     // Getting list of locations from input file. Fast way to get the
@@ -88,7 +88,7 @@ int main(int argc, char **argv){
     std::ifstream ifs (cl_args.input_file, std::ifstream::in);
     std::stringstream buffer;
     buffer << ifs.rdbuf();
-    cl_args.places = buffer.str();
+    cl_args.locations = buffer.str();
   }
   
   try{

@@ -24,16 +24,16 @@ local_search::local_search(tsp_sym* problem,
   _problem(problem),
   _matrix(_problem->get_matrix()),
   _verbose(verbose){
-  auto place = tour.cbegin();
-  index_t first_index = *place;
+  auto location = tour.cbegin();
+  index_t first_index = *location;
   index_t current_index = first_index;
   index_t last_index = first_index;
-  ++place;
-  while(place != tour.cend()){
-    current_index = *place;
+  ++location;
+  while(location != tour.cend()){
+    current_index = *location;
     _edges.emplace(last_index, current_index);
     last_index = current_index;
-    ++place;
+    ++location;
   }
   _edges.emplace(last_index, first_index);
 }

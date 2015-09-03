@@ -31,33 +31,33 @@ T orientation(const std::pair<T, T>& p1,
 }
 
 template <class T>
-std::list<index_t> convex_hull(const std::vector<std::pair<T, T>>& places){
-  // Computes the points on the convex hull of "places". Return a
+std::list<index_t> convex_hull(const std::vector<std::pair<T, T>>& locations){
+  // Computes the points on the convex hull of "locations". Return a
   // counter-clockwise tour of the convex hull boundary: a list of the
-  // index of the corresponding points in places.
+  // index of the corresponding points in locations.
 
-  unsigned nb_pts = places.size();
+  unsigned nb_pts = locations.size();
 
-  // Used to get back index of a given place in places.
-  std::map<std::pair<T, T>, index_t> place_indices;
+  // Used to get back index of a given location in locations.
+  std::map<std::pair<T, T>, index_t> location_indices;
 
-  // Determine lowest place as a first point on the convex hull.
-  std::pair<T, T> lowest_place = places[0];
-  place_indices.emplace(places[0], 0);
-  auto place = places.begin();
+  // Determine lowest location as a first point on the convex hull.
+  std::pair<T, T> lowest_location = locations[0];
+  location_indices.emplace(locations[0], 0);
+  auto location = locations.begin();
   index_t index = 1;
-  for(++place; place != places.end(); ++place){
-    place_indices.emplace(*place, index);
+  for(++location; location != locations.end(); ++location){
+    location_indices.emplace(*location, index);
     ++index;
-    if((place->second < lowest_place.second)
-       or ((place->second == lowest_place.second)
-           and (place->first < lowest_place.first))){
-      lowest_place = *place;
+    if((location->second < lowest_location.second)
+       or ((location->second == lowest_location.second)
+           and (location->first < lowest_location.first))){
+      lowest_location = *location;
     }
   }
   
-  // Using a sorted copy of places.
-  std::vector<std::pair<T, T>> sorted_places (places);
+  // Using a sorted copy of locations.
+  std::vector<std::pair<T, T>> sorted_locations (locations);
 
   struct orientation_order{
     std::pair<T, T> _ref;
@@ -85,31 +85,31 @@ std::list<index_t> convex_hull(const std::vector<std::pair<T, T>>& places){
       return is_inferior;
 
     }
-  } comp (lowest_place);
+  } comp (lowest_location);
 
-  std::sort(sorted_places.begin(), sorted_places.end(), comp);
+  std::sort(sorted_locations.begin(), sorted_locations.end(), comp);
 
   size_t M = 1;
   for(size_t i = 2; i < nb_pts; ++i){
-    while(orientation(sorted_places[M - 1],
-                      sorted_places[M],
-                      sorted_places[i]) < 0){
+    while(orientation(sorted_locations[M - 1],
+                      sorted_locations[M],
+                      sorted_locations[i]) < 0){
       // Shouldn' happen when M is 1.
       --M;
     }
     ++M;
     if(M != i){
       // Swap elements if necessary.
-      std::pair<T, T> temp = sorted_places[i];
-      sorted_places[i] = sorted_places[M];
-      sorted_places[M] = temp;
+      std::pair<T, T> temp = sorted_locations[i];
+      sorted_locations[i] = sorted_locations[M];
+      sorted_locations[M] = temp;
     }
   }
 
   // Convex hull tour.
   std::list<index_t> convex_hull;
   for(unsigned i = 0; i < M; ++i){
-    convex_hull.push_back(place_indices.at(sorted_places[i]));
+    convex_hull.push_back(location_indices.at(sorted_locations[i]));
   }
 
   return convex_hull;

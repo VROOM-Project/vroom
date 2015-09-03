@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <fstream>
 #include <string>
 #include <list>
+#include <regex>
 #include "./typedefs.h"
 #include "./matrix.h"
 #include "../loaders/matrix_loader.h"
@@ -30,9 +31,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 class tsp{
 protected:
-  std::vector<std::pair<double, double>> _places;
+  std::vector<std::pair<double, double>> _locations;
   matrix<distance_t> _matrix;
   
+private:
+  void add_location(const std::string location);
+
 public:
   tsp(const cl_args_t& cl_args);
   
@@ -40,7 +44,7 @@ public:
 
   const matrix<distance_t>& get_matrix() const;
 
-  const std::vector<std::pair<double, double>>& get_places() const;
+  const std::vector<std::pair<double, double>>& get_locations() const;
 
   const matrix<distance_t> get_symmetrized_matrix() const;
 
