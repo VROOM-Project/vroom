@@ -24,7 +24,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 void display_usage(){
   std::string usage = "VROOM Copyright (C) 2015, Julien Coupey\n";
-  usage += "This program is distributed under the terms of the GNU General Public\n";
+  usage += "Usage :\n\tvroom [OPTION]... \"loc=lat,lon&loc=lat,lon[&loc=lat,lon...]\"";
+  usage += "\n\tvroom [OPTION]... -i FILE\n";
+  usage += "Options:\n";
+  usage += "\t-a=ADDRESS\t OSRM server address (\"0.0.0.0\")\n";
+  usage += "\t-p=PORT,\t OSRM listening port (5000)\n";
+  usage += "\t-g,\t\t get detailed route geometry for the solution\n";
+  usage += "\t-e,\t\t use eulidean distance rather than travel times\n\t\t\t from OSRM\n";
+  usage += "\t-o=OUTPUT,\t output file name\n";
+  usage += "\t-i=FILE,\t read locations list from FILE rather than from\n\t\t\t command-line\n";
+  usage += "\t-v,\t\t turn on verbose output\n";
+  usage += "\nThis program is distributed under the terms of the GNU General Public\n";
   usage += "License, version 3, and comes with ABSOLUTELY NO WARRANTY.\n";
   std::cout << usage << std::endl;
   exit(0);
