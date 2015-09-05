@@ -80,7 +80,7 @@ real-life open-source routing optimization!
 ### French towns
 
 A tour of the 244 biggest towns in metropolitan France, by car,
-computed in about 1.2s.
+computed in about 1.2s. [Browse on umap](http://u.osmfr.org/m/51654/).
 
 ![French towns](http://coupey.fr/vroom/french_towns.png)
 
