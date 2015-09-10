@@ -101,6 +101,12 @@ private:
     while(response.find(end_str, position) == std::string::npos){
       // End of response not yet received.
       buffer = this->receive(buffer_size);
+      if(buffer.size() == 0){
+        // Problem with the OSRM request, encountered when many
+        // locations yield a too long request.
+        throw custom_exception("bad request response from OSRM, attendu string \"" + end_str +
+          "\" + not found into " + query);
+      }
       if(buffer.find("Bad Request") != std::string::npos){
         // Problem with the OSRM request, encountered when many
         // locations yield a too long request.
