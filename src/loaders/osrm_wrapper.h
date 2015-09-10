@@ -70,13 +70,14 @@ private:
   // Receive given amount of data.
   std::string receive(const int size=512){
     char* buffer = new char[size];
+    int recv_szie;
      
     // Receive a reply from the server.
-    if(recv(_sock, buffer, size, 0) < 0){
+    if((recv_szie = recv(_sock, buffer, size, 0)) < 0){
       throw custom_exception("receiving from OSRM server failed!");
     }
      
-    std::string reply (buffer, size);
+    std::string reply (buffer, recv_szie);
     delete[] buffer;
     return reply;
   }
@@ -108,7 +109,7 @@ private:
       response += buffer;
       // To be able to find end_str even if truncated between two buffer
       // reception.
-      position += buffer_size - end_str_size;
+      position += buffer.size() - end_str_size;
     }
     return response;  
   }
