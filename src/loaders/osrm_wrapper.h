@@ -128,7 +128,7 @@ public:
 
   virtual matrix<distance_t> load_matrix(const std::vector<std::pair<double, double>>& locations){
     // Building query for osrm-routed
-    std::string query = "GET /table?";
+    std::string query = "POST /table?";
 
     // Adding locations.
     for(auto location = locations.cbegin(); location != locations.cend(); ++location){
@@ -246,7 +246,7 @@ public:
 
   std::string viaroute_summary(const std::vector<std::pair<double, double>>& locations){
     // Building query for osrm-routed
-    std::string query = "GET /viaroute?";
+    std::string query = "POST /viaroute?";
 
     // Adding locations.
     for(auto location = locations.cbegin(); location != locations.cend(); ++location){
