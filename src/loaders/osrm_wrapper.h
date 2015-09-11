@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define OSRM_WRAPPER_H
 #include <vector>
 #include <limits>
+#include <cassert>
 #include <cstring>              // c_str()
 #include<sys/socket.h>          //socket
 #include<arpa/inet.h>           //inet_addr
@@ -108,11 +109,6 @@ private:
                                + end_str 
                                + "\" not found in OSRM response.");
       }
-      if(buffer.find("Bad Request") != std::string::npos){
-        // Problem with the OSRM request, encountered when many
-        // locations yield a too long request.
-        throw custom_exception("bad request response from OSRM, too long GET request?");
-      }
       response += buffer;
       // To be able to find end_str even if truncated between two buffer
       // reception.
@@ -147,6 +143,9 @@ public:
     query += " HTTP/1.1\r\n\r\n";
 
     std::string response = this->receive_until(query, "}");
+
+    // Stop at "Bad Request" error from OSRM.
+    assert(response.find("Bad Request") == std::string::npos);
 
     // Removing headers.
     std::string distance_key = "{\"distance_table\":[";
