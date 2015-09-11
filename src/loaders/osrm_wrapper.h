@@ -70,14 +70,14 @@ private:
   // Receive given amount of data.
   std::string receive(const int size=512){
     char* buffer = new char[size];
-    int recv_szie;
+    int recv_size;
      
     // Receive a reply from the server.
-    if((recv_szie = recv(_sock, buffer, size, 0)) < 0){
+    if((recv_size = recv(_sock, buffer, size, 0)) < 0){
       throw custom_exception("receiving from OSRM server failed!");
     }
      
-    std::string reply (buffer, recv_szie);
+    std::string reply (buffer, recv_size);
     delete[] buffer;
     return reply;
   }
@@ -102,10 +102,11 @@ private:
       // End of response not yet received.
       buffer = this->receive(buffer_size);
       if(buffer.size() == 0){
-        // Problem with the OSRM request, encountered when many
-        // locations yield a too long request.
-        throw custom_exception("bad request response from OSRM, attendu string \"" + end_str +
-          "\" + not found into " + query);
+        // End of response reached without having encountered the
+        // expected end string.
+        throw custom_exception("expected string \"" 
+                               + end_str 
+                               + "\" not found in OSRM response.");
       }
       if(buffer.find("Bad Request") != std::string::npos){
         // Problem with the OSRM request, encountered when many
