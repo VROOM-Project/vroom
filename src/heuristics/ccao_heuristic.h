@@ -39,7 +39,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 class ccao_heuristic : public heuristic{
 public:
 
-  virtual std::list<index_t> build_solution(tsp_sym& instance);
+  virtual std::list<index_t> build_solution(tsp_sym& instance) override;
 };
 
 #endif

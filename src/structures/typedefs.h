@@ -20,8 +20,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define TYPEDEFS_H
 
 // To easily differentiate variable types.
-using index_t = unsigned;
-using distance_t = unsigned long;
+using index_t = uint16_t;
+using distance_t = uint32_t;
 
 struct timing_t {
   // Computing times in milliseconds.

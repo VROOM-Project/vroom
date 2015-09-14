@@ -16,7 +16,7 @@
 
 # Variables.
 CC = g++
-FLAGS = -std=c++11 -Wpedantic -Wall -O3
+FLAGS = -std=c++14 -Wpedantic -Wall -O3
 LDLIBS =
 
 # Using all cpp files in current directory.

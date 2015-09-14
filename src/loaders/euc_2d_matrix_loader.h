@@ -27,7 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 class euc_2d_matrix_loader : public matrix_loader<distance_t, double>{
 
 public:
-  virtual matrix<distance_t> load_matrix(const std::vector<std::pair<double, double>>& locations){
+  virtual matrix<distance_t> load_matrix(const std::vector<std::pair<double, double>>& locations) override{
     unsigned n = locations.size();
     std::vector<distance_t> blank_line (n, 0);
     std::vector<std::vector<distance_t>> matrix_as_vector (n, blank_line);

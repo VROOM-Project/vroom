@@ -90,7 +90,7 @@ std::list<index_t> convex_hull(const std::vector<std::pair<T, T>>& locations){
   std::sort(sorted_locations.begin(), sorted_locations.end(), comp);
 
   size_t M = 1;
-  for(size_t i = 2; i < nb_pts; ++i){
+  for(std::size_t i = 2; i < nb_pts; ++i){
     while(orientation(sorted_locations[M - 1],
                       sorted_locations[M],
                       sorted_locations[i]) < 0){
@@ -108,7 +108,7 @@ std::list<index_t> convex_hull(const std::vector<std::pair<T, T>>& locations){
 
   // Convex hull tour.
   std::list<index_t> convex_hull;
-  for(unsigned i = 0; i < M; ++i){
+  for(std::size_t i = 0; i < M; ++i){
     convex_hull.push_back(location_indices.at(sorted_locations[i]));
   }
 

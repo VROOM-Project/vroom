@@ -42,9 +42,7 @@ private:
     if(_sock == -1){
       //Create socket
       _sock = socket(AF_INET, SOCK_STREAM, 0);
-      if (_sock == -1){
-        throw custom_exception("could not create socket");
-      }
+      assert(_sock != -1);
     }
 
     // Using plain IP address (static member).
@@ -54,17 +52,13 @@ private:
     _server.sin_port = htons(_port);
 
     // Connect to osrm-routed server.
-    if (connect(_sock , (struct sockaddr *)&_server , sizeof(_server)) < 0){
-      throw custom_exception("connect to the OSRM server failed!");
-    }
+    assert(connect(_sock , (struct sockaddr *)&_server , sizeof(_server)) == 0);
     return true;
   }
   
-  // Send a request or osrm routing deamon.
+  // Send a request to osrm routing deamon.
   bool send_data(std::string data){
-    if(send(_sock, data.c_str(), strlen(data.c_str()), 0) < 0){
-      throw custom_exception("send to OSRM server failed!");
-    }
+    assert(send(_sock, data.c_str(), strlen(data.c_str()), 0) >= 0);
     return true;
   }
 
@@ -74,9 +68,7 @@ private:
     int recv_size;
      
     // Receive a reply from the server.
-    if((recv_size = recv(_sock, buffer, size, 0)) < 0){
-      throw custom_exception("receiving from OSRM server failed!");
-    }
+    assert((recv_size = recv(_sock, buffer, size, 0)) >= 0);
      
     std::string reply (buffer, recv_size);
     delete[] buffer;
@@ -102,13 +94,7 @@ private:
     while(response.find(end_str, position) == std::string::npos){
       // End of response not yet received.
       buffer = this->receive(buffer_size);
-      if(buffer.size() == 0){
-        // End of response reached without having encountered the
-        // expected end string.
-        throw custom_exception("expected string \"" 
-                               + end_str 
-                               + "\" not found in OSRM response.");
-      }
+      assert(buffer.size() > 0);
       response += buffer;
       // To be able to find end_str even if truncated between two buffer
       // reception.
@@ -126,16 +112,16 @@ public:
     this->osrm_connect();
   }
 
-  virtual matrix<distance_t> load_matrix(const std::vector<std::pair<double, double>>& locations){
+  virtual matrix<distance_t> load_matrix(const std::vector<std::pair<double, double>>& locations) override{
     // Building query for osrm-routed
     std::string query = "POST /table?";
 
     // Adding locations.
-    for(auto location = locations.cbegin(); location != locations.cend(); ++location){
+    for(auto const& location: locations){
       query += "loc="
-        + std::to_string(location->first)
+        + std::to_string(location.first)
         + ","
-        + std::to_string(location->second)
+        + std::to_string(location.second)
         + "&";
     }
 
@@ -150,9 +136,7 @@ public:
     // Removing headers.
     std::string distance_key = "{\"distance_table\":[";
     size_t table_start = response.find(distance_key);
-    if(table_start == std::string::npos){
-      throw custom_exception("unexpected form of OSRM return!");
-    }
+    assert(table_start != std::string::npos);
 
     size_t offset = table_start + distance_key.size();
     std::string json_content
@@ -175,21 +159,21 @@ public:
     lines.push_back(last_line);
 
     std::vector<std::vector<distance_t>> matrix_as_vector;
-    for(auto line = lines.cbegin(); line != lines.cend(); ++line){
+    for(auto const& line: lines){
       std::vector<distance_t> line_as_vector;
       sep = ",";
       previous_sep = 0;
-      current_sep = line->find(sep);
+      current_sep = line.find(sep);
       while(current_sep != std::string::npos){
         distance_t current_value
-          = std::stoul(line->substr(previous_sep,
+          = std::stoul(line.substr(previous_sep,
                                     current_sep - previous_sep));
         line_as_vector.push_back(current_value);
         previous_sep = current_sep + 1;
-        current_sep = line->find(sep, current_sep + 1);
+        current_sep = line.find(sep, current_sep + 1);
       }
       distance_t last_value
-        = std::stoul(line->substr(previous_sep, std::string::npos));
+        = std::stoul(line.substr(previous_sep, std::string::npos));
       line_as_vector.push_back(last_value);
       
       matrix_as_vector.push_back(line_as_vector);
@@ -249,11 +233,11 @@ public:
     std::string query = "POST /viaroute?";
 
     // Adding locations.
-    for(auto location = locations.cbegin(); location != locations.cend(); ++location){
+    for(auto const& location: locations){
       query += "loc="
-        + std::to_string(location->first)
+        + std::to_string(location.first)
         + ","
-        + std::to_string(location->second)
+        + std::to_string(location.second)
         + "&";
     }
 

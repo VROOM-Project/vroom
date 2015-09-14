@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define MATRIX_H
 #include <iostream>
 #include <vector>
+#include <cassert>
 #include "./typedefs.h"
 #include "../utils/exceptions.h"
 
@@ -42,9 +43,7 @@ public:
     for(auto line = matrix_as_vector.cbegin();
         line != matrix_as_vector.cend();
         ++line){
-      if (line->size() != _size){
-        throw custom_exception("square matrix required in matrix constructor.");
-      }
+      assert(line->size() == _size);
     }
   }
 

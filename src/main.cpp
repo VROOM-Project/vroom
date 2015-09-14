@@ -93,9 +93,8 @@ int main(int argc, char **argv){
     cl_args.locations = argv[optind];
   }
   else{
-    // Getting list of locations from input file. Fast way to get the
-    // file content as a string, not meant for large files...
-    std::ifstream ifs (cl_args.input_file, std::ifstream::in);
+    // Getting list of locations from input file.
+    std::ifstream ifs (cl_args.input_file);
     std::stringstream buffer;
     buffer << ifs.rdbuf();
     cl_args.locations = buffer.str();
