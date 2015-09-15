@@ -37,8 +37,8 @@ std::map<index_t, index_t> minimum_weight_perfect_matching(const matrix<T>& m){
     labeling_y.emplace(i, 0);
     T min_weight = std::numeric_limits<T>::max();
     for(index_t j = 0; j < m.size(); ++j){
-      if(m(i, j) < min_weight){
-        min_weight = m(i, j);
+      if(m[i][j] < min_weight){
+        min_weight = m[i][j];
       }
     }
     labeling_x.emplace(i, min_weight);
@@ -81,11 +81,11 @@ std::map<index_t, index_t> minimum_weight_perfect_matching(const matrix<T>& m){
     // and initializing slacks.
     std::map<index_t, T> slack;
     for(index_t y = 0; y < m.size(); ++y){
-      if(labeling_x.at(unmatched_x) + labeling_y.at(y) == m(unmatched_x, y)){
+      if(labeling_x.at(unmatched_x) + labeling_y.at(y) == m[unmatched_x][y]){
         alternating_tree.emplace(y, unmatched_x);
       }
       slack.emplace(y,
-                    m(unmatched_x, y) - labeling_x.at(unmatched_x) - labeling_y.at(y)
+                    m[unmatched_x][y] - labeling_x.at(unmatched_x) - labeling_y.at(y)
                     );
     }
 
@@ -145,7 +145,7 @@ std::map<index_t, index_t> minimum_weight_perfect_matching(const matrix<T>& m){
             slack.at(y) = slack.at(y) - alpha;
             
             for(auto const& x: S){
-              if(labeling_x.at(x) + labeling_y.at(y) == m(x, y)){
+              if(labeling_x.at(x) + labeling_y.at(y) == m[x][y]){
                 if(alternating_tree.find(y) == alternating_tree.end()){
                   alternating_tree.emplace(y, x);
                 }
@@ -203,7 +203,7 @@ std::map<index_t, index_t> minimum_weight_perfect_matching(const matrix<T>& m){
         for(index_t y = 0; y < m.size(); ++y){
           T current_value = slack.at(y);
           T new_value
-            = m(matched_x, y) - labeling_x.at(matched_x) - labeling_y.at(y);
+            = m[matched_x][y] - labeling_x.at(matched_x) - labeling_y.at(y);
           // std::cout << "In update slacks, current_value: "
           //           << current_value
           //           << " and new value: "
@@ -412,7 +412,7 @@ std::map<index_t, index_t> greedy_symmetric_approx_mwpm(const matrix<T>& m){
       auto j = i;
       ++j;
       for(; j != remaining_indices.end(); ++j){
-        T current_weight = m(*i, *j);
+        T current_weight = m[*i][*j];
         if(current_weight < min_weight){
           min_weight = current_weight;
           first_chosen_index = *i;

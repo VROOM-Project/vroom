@@ -142,7 +142,7 @@ public:
     std::string json_content
       = response.substr(offset, response.find("]}") - offset);
 
-    // Parsing json tables to build the matrix from a vector.
+    // Parsing json tables to build the matrix.
     std::vector<std::string> lines;
     std::string sep = "],";
     size_t previous_sep = 0;
@@ -158,33 +158,29 @@ public:
     last_line.pop_back();
     lines.push_back(last_line);
 
-    std::vector<std::vector<distance_t>> matrix_as_vector;
-    for(auto const& line: lines){
-      std::vector<distance_t> line_as_vector;
+    matrix<distance_t> m {lines.size()};
+    for(std::size_t i = 0; i < lines.size(); ++i){
       sep = ",";
       previous_sep = 0;
-      current_sep = line.find(sep);
+      current_sep = lines[i].find(sep);
+      std::size_t j = 0;
       while(current_sep != std::string::npos){
-        distance_t current_value
-          = std::stoul(line.substr(previous_sep,
-                                    current_sep - previous_sep));
-        line_as_vector.push_back(current_value);
+        assert(j < lines.size());
+        m[i][j] = std::stoul(lines[i].substr(previous_sep,
+                                             current_sep - previous_sep));
+        ++j;
         previous_sep = current_sep + 1;
-        current_sep = line.find(sep, current_sep + 1);
+        current_sep = lines[i].find(sep, current_sep + 1);
       }
-      distance_t last_value
-        = std::stoul(line.substr(previous_sep, std::string::npos));
-      line_as_vector.push_back(last_value);
-      
-      matrix_as_vector.push_back(line_as_vector);
+      m[i][lines.size()-1] 
+        = std::stoul(lines[i].substr(previous_sep, std::string::npos));
     }
 
-    matrix<distance_t> m (matrix_as_vector);
     // m.print();
 
     // Now checking for unfound routes to avoid unexpected behavior
     // (OSRM raises max value for an int).
-    unsigned m_size = m.size();
+    std::size_t m_size = m.size();
     std::vector<unsigned> nb_unfound_from_loc (m_size, 0);
     std::vector<unsigned> nb_unfound_to_loc (m_size, 0);
     distance_t unfound_time
@@ -192,7 +188,7 @@ public:
     
     for(unsigned i = 0; i < m_size; ++i){
       for(unsigned j = 0; j < m_size; ++j){
-        if(m(i, j) == unfound_time){
+        if(m[i][j] == unfound_time){
           // Just storing info as we don't know yet which location is
           // responsible between i and j.
           ++nb_unfound_from_loc[i];

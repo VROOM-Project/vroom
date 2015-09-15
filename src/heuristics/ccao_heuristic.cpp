@@ -59,7 +59,7 @@ std::list<index_t> ccao_heuristic::build_solution(tsp_sym& instance){
       long int place_min_value = std::numeric_limits<long int>::max();
       for(auto e = tour.begin(); e != tour.end(); ++e){
         long int place_current_value
-          = m(e->first, *k) + m(*k, e->second) - m(e->first, e->second);
+          = m[e->first][*k] + m[*k][e->second] - m[e->first][e->second];
         if(place_current_value < place_min_value){
           current_previous = e->first;
           place_min_value = place_current_value;
@@ -67,8 +67,8 @@ std::list<index_t> ccao_heuristic::build_solution(tsp_sym& instance){
       }
       index_t current_next = tour.at(current_previous);
       double vertex_current_value
-        = (double) (m(current_previous, *k) + m(*k, current_next))
-        / m(current_previous, current_next);
+        = (double) (m[current_previous][*k] + m[*k][current_next])
+        / m[current_previous][current_next];
       if(vertex_current_value < vertex_min_value){
         best_vertex = *k;
         best_previous = current_previous;

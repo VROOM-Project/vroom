@@ -36,7 +36,8 @@ void tsp::add_location(const std::string location){
                           std::stod(lon, nullptr));
 }
 
-tsp::tsp(const cl_args_t& cl_args){
+tsp::tsp(const cl_args_t& cl_args): 
+  _matrix(0){
   std::string locations = cl_args.locations;
   
   // Parsing locations.
@@ -56,19 +57,21 @@ tsp::tsp(const cl_args_t& cl_args){
   }
 
   // Computing matrix.
-  matrix_loader<distance_t, double>* loader;
+  std::unique_ptr<matrix_loader<distance_t, double>> loader;
   switch(cl_args.loader){
   case 1:
     // Using plain euclidean distance.
-    loader = new euc_2d_matrix_loader();
+    loader = std::make_unique<euc_2d_matrix_loader>();
     break;
   case 0:
     // Using OSRM.
-    loader = new osrm_wrapper(cl_args.osrm_address, cl_args.osrm_port);
+    loader 
+      = std::make_unique<osrm_wrapper>(cl_args.osrm_address, cl_args.osrm_port);
     break;
   default:
     // Should not happen!
-    loader = new osrm_wrapper(cl_args.osrm_address, cl_args.osrm_port);
+    loader 
+      = std::make_unique<osrm_wrapper>(cl_args.osrm_address, cl_args.osrm_port);
     break;
   }
   _matrix = loader->load_matrix(_locations);
@@ -86,15 +89,16 @@ const std::vector<std::pair<double, double>>& tsp::get_locations() const{
 }
 
 const matrix<distance_t> tsp::get_symmetrized_matrix() const{
-  matrix<distance_t> matrix = _matrix;
-  for(index_t i = 0; i < matrix.size(); ++i){
-    for(index_t j = i + 1; j < matrix.size(); ++j){
-      distance_t max = std::max(matrix(i, j), matrix(j, i));
-      matrix.set(i, j, max);
-      matrix.set(j, i, max);
+  matrix<distance_t> m {_matrix.size()};
+  for(index_t i = 0; i < m.size(); ++i){
+    m[i][i] = _matrix[i][i];
+    for(index_t j = i + 1; j < m.size(); ++j){
+      distance_t max = std::max(_matrix[i][j], _matrix[j][i]);
+      m[i][j] = max;
+      m[j][i] = max;
     }
   }
-  return matrix;
+  return m;
 }
 
 std::size_t tsp::size(){
@@ -113,11 +117,11 @@ distance_t tsp::cost(const std::list<index_t>& tour) const{
   index_t previous_step = init_step;
   ++step;
   for(; step != tour.cend(); ++step){
-    cost += _matrix(previous_step, *step);
+    cost += _matrix[previous_step][*step];
     previous_step = *step;
   }
   if(tour.size() > 0){
-    cost += _matrix(previous_step, init_step);
+    cost += _matrix[previous_step][init_step];
   }
   return cost;
 }
