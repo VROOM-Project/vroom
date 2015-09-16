@@ -41,7 +41,7 @@ struct cl_args_t {
   bool geometry;                // -g
   std::string input_file;       // -i
   std::string output_file;      // -o
-  unsigned osrm_port;           // -p
+  std::string osrm_port;        // -p
   bool verbose;                 // -v
   std::string locations;
 };

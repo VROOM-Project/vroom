@@ -35,14 +35,17 @@ protected:
   matrix<distance_t> _matrix;
   
 private:
+  const cl_args_t _cl_args;
   void add_location(const std::string location);
 
 public:
   tsp(const cl_args_t& cl_args);
   
-  tsp(matrix<distance_t> m);
+  tsp(const matrix<distance_t>& m, const cl_args_t& cl_args);
 
   const matrix<distance_t>& get_matrix() const;
+
+  const cl_args_t get_cl_args() const;
 
   const std::vector<std::pair<double, double>>& get_locations() const;
 

@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define TSP_SYM_H
 #include <list>
 #include <unordered_map>
+#include "./typedefs.h"
 #include "./tsp.h"
 #include "./undirected_graph.h"
 #include "./edge.h"
@@ -31,7 +32,7 @@ private:
   undirected_graph<distance_t> _graph;
   
 public:
-  tsp_sym(matrix<distance_t> m);
+  tsp_sym(const matrix<distance_t>& m, const cl_args_t& cl_args);
 
   undirected_graph<distance_t> get_graph() const;
 };

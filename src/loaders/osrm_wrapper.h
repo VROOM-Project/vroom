@@ -20,101 +20,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define OSRM_WRAPPER_H
 #include <vector>
 #include <limits>
-#include <cassert>
-#include <cstring>              // c_str()
-#include<sys/socket.h>          //socket
-#include<arpa/inet.h>           //inet_addr
+#include <boost/asio.hpp>
 #include "./matrix_loader.h"
 #include "../structures/matrix.h"
 #include "../utils/exceptions.h"
 
+using boost::asio::ip::tcp;
+
 class osrm_wrapper : public matrix_loader<distance_t, double>{
 
 private:
-  int _sock;                    // socket
   std::string _address;         // OSRM server adress
-  int _port;                    // OSRM server listening port
-  struct sockaddr_in _server;   // server
+  std::string _port;            // OSRM server listening port
 
-  // Perform socket connection.
-  bool osrm_connect(){
-    // Create socket if necessary.
-    if(_sock == -1){
-      //Create socket
-      _sock = socket(AF_INET, SOCK_STREAM, 0);
-      assert(_sock != -1);
-    }
-
-    // Using plain IP address (static member).
-    _server.sin_addr.s_addr = inet_addr(_address.c_str());
-  
-    _server.sin_family = AF_INET;
-    _server.sin_port = htons(_port);
-
-    // Connect to osrm-routed server.
-    assert(connect(_sock , (struct sockaddr *)&_server , sizeof(_server)) == 0);
-    return true;
-  }
-  
-  // Send a request to osrm routing deamon.
-  bool send_data(std::string data){
-    assert(send(_sock, data.c_str(), strlen(data.c_str()), 0) >= 0);
-    return true;
-  }
-
-  // Receive given amount of data.
-  std::string receive(const int size=512){
-    char* buffer = new char[size];
-    int recv_size;
-     
-    // Receive a reply from the server.
-    assert((recv_size = recv(_sock, buffer, size, 0)) >= 0);
-     
-    std::string reply (buffer, recv_size);
-    delete[] buffer;
-    return reply;
-  }
-
-  std::string receive_until(std::string query,
-                            std::string end_str){
-    // Send query.
-    this->send_data(query);
-     
-    std::string response, buffer;
-    int buffer_size = 126;
-    // First reading.
-    response = this->receive(buffer_size);
-  
-    // Storing the position for starting the search of the end
-    // string. Searching the whole response string would be unecessary
-    // and unefficient.
-    std::size_t position = 0;
-    std::size_t end_str_size = end_str.size();
-  
-    while(response.find(end_str, position) == std::string::npos){
-      // End of response not yet received.
-      buffer = this->receive(buffer_size);
-      assert(buffer.size() > 0);
-      response += buffer;
-      // To be able to find end_str even if truncated between two buffer
-      // reception.
-      position += buffer.size() - end_str_size;
-    }
-    return response;  
-  }
-
-public:
-  osrm_wrapper(std::string address, int port):
-    _sock(-1),
-    _address(address),
-    _port(port){
-    // Connect to osrm-routed.
-    this->osrm_connect();
-  }
-
-  virtual matrix<distance_t> load_matrix(const std::vector<std::pair<double, double>>& locations) override{
+  std::string build_query(const std::vector<std::pair<double, double>>& locations, std::string service){
     // Building query for osrm-routed
-    std::string query = "POST /table?";
+    std::string query = "POST /" + service + "?";
 
     // Adding locations.
     for(auto const& location: locations){
@@ -125,10 +46,52 @@ public:
         + "&";
     }
 
-    query.pop_back();           // Remove last '&'.
+    query.pop_back();           // Remove trailing '&'.
     query += " HTTP/1.1\r\n\r\n";
+    return query;
+  }
 
-    std::string response = this->receive_until(query, "}");
+  std::string send_then_receive_until(std::string query,
+                                      std::string end_str){
+    std::string response;
+
+    boost::asio::io_service io_service;
+    
+    tcp::socket s (io_service);
+    tcp::resolver r (io_service);
+    tcp::resolver::query q(_address, _port);
+    
+    try{
+      boost::asio::connect(s, r.resolve(q));
+
+      boost::asio::write(s, boost::asio::buffer(query));
+
+      boost::asio::streambuf b;
+      boost::asio::read_until(s, b, end_str);
+
+      std::istream is(&b);
+      std::string line;
+      while(std::getline(is, line)){
+        response += line;
+      }
+    }
+    catch (boost::system::system_error& e)
+      {
+        throw custom_exception("failure while connecting to the OSRM server.");
+      }
+    return response;
+  }
+
+public:
+  osrm_wrapper(std::string address, std::string port):
+    _address(address),
+    _port(port){
+  }
+
+  virtual matrix<distance_t> load_matrix(const std::vector<std::pair<double, double>>& locations) override{
+    std::string query = this->build_query(locations, "table");
+
+    std::string response = this->send_then_receive_until(query, "}");
 
     // Stop at "Bad Request" error from OSRM.
     assert(response.find("Bad Request") == std::string::npos);
@@ -225,24 +188,12 @@ public:
   }
 
   std::string viaroute_summary(const std::vector<std::pair<double, double>>& locations){
-    // Building query for osrm-routed
-    std::string query = "POST /viaroute?";
-
-    // Adding locations.
-    for(auto const& location: locations){
-      query += "loc="
-        + std::to_string(location.first)
-        + ","
-        + std::to_string(location.second)
-        + "&";
-    }
-
-    query.pop_back();           // Remove last '&'.
-    query += " HTTP/1.1\r\n\r\n";
+    std::string query = this->build_query(locations, "viaroute");
 
     // Other return status than 0 should have been filtered before
     // with unfound routes check.
-    std::string response = this->receive_until(query, "\"status\":0}");
+    std::string response 
+      = this->send_then_receive_until(query, "\"status\":0}");
 
     // Removing headers
     std::string json_content = response.substr(response.find("{"));

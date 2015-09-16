@@ -34,7 +34,7 @@ protected:
   matrix_loader() {}
 
   static T nint(double x){
-    return (T) (x + 0.5);
+    return static_cast<T>(x + 0.5);
   }
 };
 

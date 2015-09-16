@@ -37,7 +37,8 @@ void tsp::add_location(const std::string location){
 }
 
 tsp::tsp(const cl_args_t& cl_args): 
-  _matrix(0){
+  _matrix(0),
+  _cl_args(cl_args){
   std::string locations = cl_args.locations;
   
   // Parsing locations.
@@ -66,22 +67,29 @@ tsp::tsp(const cl_args_t& cl_args):
   case 0:
     // Using OSRM.
     loader 
-      = std::make_unique<osrm_wrapper>(cl_args.osrm_address, cl_args.osrm_port);
+      = std::make_unique<osrm_wrapper>(cl_args.osrm_address, 
+                                       cl_args.osrm_port);
     break;
   default:
     // Should not happen!
     loader 
-      = std::make_unique<osrm_wrapper>(cl_args.osrm_address, cl_args.osrm_port);
+      = std::make_unique<osrm_wrapper>(cl_args.osrm_address,
+                                       cl_args.osrm_port);
     break;
   }
   _matrix = loader->load_matrix(_locations);
 }
 
-tsp::tsp(matrix<distance_t> m)
-  :_matrix(m) {}
+tsp::tsp(const matrix<distance_t>& m, const cl_args_t& cl_args):
+  _matrix(m),
+  _cl_args(cl_args){}
 
 const matrix<distance_t>& tsp::get_matrix() const{
   return _matrix;
+}
+
+const cl_args_t tsp::get_cl_args() const{
+  return _cl_args;
 }
 
 const std::vector<std::pair<double, double>>& tsp::get_locations() const{
@@ -138,6 +146,6 @@ std::string tsp::get_route_summary(const std::list<index_t>& tour) const{
   }
 
   // Selected information from OSRM viaroute request.
-  osrm_wrapper loader ("0.0.0.0", 5000);
+  osrm_wrapper loader (_cl_args.osrm_address, _cl_args.osrm_port);
   return loader.viaroute_summary(ordered_locations);
 }

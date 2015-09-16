@@ -46,7 +46,7 @@ int main(int argc, char **argv){
   cl_args.loader = 0;
   cl_args.geometry = false;
   cl_args.osrm_address = "0.0.0.0";
-  cl_args.osrm_port = 5000;
+  cl_args.osrm_port = "5000";
 
   // Parsing command-line arguments.
   const char* optString = "a:egi:o:p:vh?";
@@ -73,7 +73,7 @@ int main(int argc, char **argv){
       cl_args.output_file = optarg;
       break;
     case 'p':
-      cl_args.osrm_port = strtol(optarg, nullptr, 10);
+      cl_args.osrm_port = optarg;
       break;
     case 'v':
       cl_args.verbose = true;

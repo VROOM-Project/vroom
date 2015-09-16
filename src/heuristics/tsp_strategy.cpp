@@ -39,7 +39,8 @@ void solve_atsp(const cl_args_t& cl_args){
   }
 
   // Using symmetrized problem to apply heuristics and local searches.
-  tsp_sym symmetrized_tsp (asymmetric_tsp.get_symmetrized_matrix());
+  tsp_sym symmetrized_tsp (asymmetric_tsp.get_symmetrized_matrix(),
+                           asymmetric_tsp.get_cl_args());
 
   // Applying Christofides heuristic.
   auto start_christo = std::chrono::high_resolution_clock::now();
