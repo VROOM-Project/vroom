@@ -88,21 +88,49 @@ Travel informations:
 
 * total time: 118.5 hours;
 
-* total distance: 9602.5 km.
+* total distance: 9602.5km.
 
 Tour computing time:
 
-* travel time matrix: 530 ms;
+* travel time matrix: 530ms;
 
-* tour ordering: 88 ms;
+* tour ordering: 88ms;
 
-* detailed route geometry: 556 ms.
+* detailed route geometry: 556ms.
 
 Download:
 
 * [request](http://coupey.fr/vroom/french_towns.req)
 
 * [output](http://coupey.fr/vroom/french_towns_solution.json)
+
+
+### Irish pubs
+
+Bike trip around 2232 irish pubs, computed in about 1m 10s. [Browse on
+umap](http://u.osmfr.org/m/51914).
+
+![Irish pubs](http://coupey.fr/vroom/irish_pubs.png)
+
+Travel informations:
+
+* total time: ~28 days;
+
+* total distance: 9467km.
+
+Tour computing time:
+
+* travel time matrix: 31.4s;
+
+* tour ordering: 35.9s;
+
+* detailed route geometry: 2.5s.
+
+Download:
+
+* [request](http://coupey.fr/vroom/irish_pubs.req)
+
+* [output](http://coupey.fr/vroom/irish_pubs_solution.json)
 
 ---
 
