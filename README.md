@@ -92,7 +92,7 @@ Travel informations:
 
 Tour computing time:
 
-* travel time matrix: 530ms;
+* compute and check travel time matrix: 530ms;
 
 * tour ordering: 88ms;
 
@@ -107,7 +107,7 @@ Download:
 
 ### Irish pubs
 
-Bike trip around 2232 irish pubs, computed in about 1m 10s. [Browse on
+Bike trip around 2232 irish pubs, computed in about 45s. [Browse on
 umap](http://u.osmfr.org/m/51914).
 
 ![Irish pubs](http://coupey.fr/vroom/irish_pubs.png)
@@ -120,11 +120,11 @@ Travel informations:
 
 Tour computing time:
 
-* travel time matrix: 31.4s;
+* compute and check travel time matrix: 7.5s;
 
-* tour ordering: 35.9s;
+* tour ordering: 35s;
 
-* detailed route geometry: 2.5s.
+* detailed route geometry: 2.3s.
 
 Download:
 
