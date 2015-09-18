@@ -22,32 +22,26 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <fstream>
 #include <string>
 #include <list>
-#include <regex>
 #include "./typedefs.h"
 #include "./matrix.h"
-#include "../loaders/matrix_loader.h"
-#include "../loaders/euc_2d_matrix_loader.h"
+#include "../loaders/problem_io.h"
+// #include "../loaders/euc_2d_matrix_loader.h"
 #include "../loaders/osrm_wrapper.h"
 
 class tsp{
 protected:
-  std::vector<std::pair<double, double>> _locations;
+  std::unique_ptr<problem_io<distance_t, double>> _loader;
   matrix<distance_t> _matrix;
   
 private:
-  const cl_args_t _cl_args;
   void add_location(const std::string location);
 
 public:
   tsp(const cl_args_t& cl_args);
   
-  tsp(const matrix<distance_t>& m, const cl_args_t& cl_args);
+  tsp(const matrix<distance_t>& m);
 
   const matrix<distance_t>& get_matrix() const;
-
-  const cl_args_t get_cl_args() const;
-
-  const std::vector<std::pair<double, double>>& get_locations() const;
 
   const matrix<distance_t> get_symmetrized_matrix() const;
 
@@ -55,7 +49,9 @@ public:
 
   distance_t cost(const std::list<index_t>& tour) const;
 
-  std::string get_route_summary(const std::list<index_t>& tour) const;
+  std::string get_route(const std::list<index_t>& tour) const;
+
+  std::string get_route_geometry(const std::list<index_t>& tour) const;
 };
 
 #endif

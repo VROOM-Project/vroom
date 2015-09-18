@@ -20,20 +20,23 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define OSRM_WRAPPER_H
 #include <vector>
 #include <limits>
+#include <regex>
 #include <boost/asio.hpp>
-#include "./matrix_loader.h"
+#include "./problem_io.h"
 #include "../structures/matrix.h"
 #include "../utils/exceptions.h"
 
 using boost::asio::ip::tcp;
 
-class osrm_wrapper : public matrix_loader<distance_t, double>{
+class osrm_wrapper : public problem_io<distance_t, double>{
 
 private:
   std::string _address;         // OSRM server adress
   std::string _port;            // OSRM server listening port
+  std::vector<std::pair<double, double>> _locations;
 
-  std::string build_query(const std::vector<std::pair<double, double>>& locations, std::string service){
+  std::string build_query(const std::vector<std::pair<double, double>>& locations, 
+                          std::string service) const{
     // Building query for osrm-routed
     std::string query = "POST /" + service + "?";
 
@@ -52,7 +55,7 @@ private:
   }
 
   std::string send_then_receive_until(std::string query,
-                                      std::string end_str){
+                                      std::string end_str) const{
     std::string response;
 
     boost::asio::io_service io_service;
@@ -82,14 +85,49 @@ private:
     return response;
   }
 
-public:
-  osrm_wrapper(std::string address, std::string port):
-    _address(address),
-    _port(port){
+  void add_location(const std::string location){
+    // Regex check for valid location.
+    std::regex valid_loc ("loc=-?[0-9]+\\.?[0-9]*,-?[0-9]+\\.?[0-9]*");
+    if(!std::regex_match(location, valid_loc)){
+      throw custom_exception("invalid syntax for location "
+                             + std::to_string(_locations.size() + 1)
+                             + ", see vroom -h for usage display."
+                             );
+    }
+
+    // Parsing the location is now safe.
+    std::size_t separator_rank = location.find(",");
+    std::string lat = location.substr(4, separator_rank);
+    std::string lon = location.substr(separator_rank + 1, location.length() -1);
+    _locations.emplace_back(std::stod(lat, nullptr),
+                            std::stod(lon, nullptr));
   }
 
-  virtual matrix<distance_t> load_matrix(const std::vector<std::pair<double, double>>& locations) override{
-    std::string query = this->build_query(locations, "table");
+public:
+  osrm_wrapper(std::string address, 
+               std::string port,
+               std::string loc_input):
+    _address(address),
+    _port(port){
+    // Parsing input in locations.
+    std::size_t start = 0;
+    std::size_t end = loc_input.find("&", start);
+    while(end != std::string::npos){
+      this->add_location(loc_input.substr(start, end - start));
+      start = end + 1;
+      end = loc_input.find("&", start);
+    }
+    // Adding last element, after last "&".
+    end = loc_input.length();
+    this->add_location(loc_input.substr(start, end - start));
+    
+    if(_locations.size() <= 1){
+      throw custom_exception("at least two locations required!");
+    }
+  }
+
+  virtual matrix<distance_t> get_matrix() const override{
+    std::string query = this->build_query(_locations, "table");
 
     std::string response = this->send_then_receive_until(query, "}");
 
@@ -187,8 +225,30 @@ public:
     return m;
   }
 
-  std::string viaroute_summary(const std::vector<std::pair<double, double>>& locations){
-    std::string query = this->build_query(locations, "viaroute");
+  virtual std::string get_route(const std::list<index_t>& tour) const override{
+    std::string route = "\"route\":[";
+    for(auto const& step: tour){
+      route += "[" + std::to_string(_locations[step].first)
+        + "," + std::to_string(_locations[step].second) + "],";
+    }
+    route.pop_back();          // Remove trailing comma.
+    route += "],";
+    return route;
+  }
+
+  virtual std::string get_route_geometry(const std::list<index_t>& tour) const override{
+    // Ordering locations for the given tour.
+    std::vector<std::pair<double, double>> ordered_locations;
+    for(auto& step: tour){
+      ordered_locations.push_back(_locations[step]);
+    }
+    // Back to the starting location.
+    if(tour.size() > 0){
+      ordered_locations.push_back(_locations[tour.front()]);
+    }
+
+    std::string query = this->build_query(ordered_locations,
+                                          "viaroute");
 
     // Other return status than 0 should have been filtered before
     // with unfound routes check.

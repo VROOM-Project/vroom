@@ -32,7 +32,7 @@ private:
   undirected_graph<distance_t> _graph;
   
 public:
-  tsp_sym(const matrix<distance_t>& m, const cl_args_t& cl_args);
+  tsp_sym(const matrix<distance_t>& m);
 
   undirected_graph<distance_t> get_graph() const;
 };

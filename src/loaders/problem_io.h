@@ -16,30 +16,26 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef CCAO_HEURISTIC_H
-#define CCAO_HEURISTIC_H
-#include <list>
-#include <map>
-#include <set>
-#include <algorithm>
-#include <chrono>
-#include <random>
-#include <limits>
-#include "heuristic.h"
-#include "../algorithms/kruskal.h"
-#include "../algorithms/munkres.h"
-#include "../algorithms/graham_scan.h"
-#include "../structures/typedefs.h"
-#include "../structures/tsp_sym.h"
-#include "../structures/edge.h"
-#include "../structures/undirected_graph.h"
+#ifndef PROBLEM_IO_H
+#define PROBLEM_IO_H
+#include<string>
+#include<vector>
 #include "../structures/matrix.h"
 
-// Implementing the CCAO heuristic.
-class ccao_heuristic : public heuristic{
-public:
+template <class T, class V> 
+class problem_io{
 
-  virtual std::list<index_t> build_solution(tsp_sym& instance) override;
+public:
+  virtual matrix<T> get_matrix() const = 0;
+
+  virtual std::string get_route(const std::list<index_t>& tour) const = 0;
+
+  virtual std::string get_route_geometry(const std::list<index_t>& tour) const = 0;
+
+  virtual ~problem_io() {}
+
+protected:
+  problem_io() {}
 };
 
 #endif

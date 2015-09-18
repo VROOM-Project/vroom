@@ -18,82 +18,31 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "tsp.h"
 
-void tsp::add_location(const std::string location){
-  // Regex check for valid location.
-  std::regex valid_loc ("loc=-?[0-9]+\\.?[0-9]*,-?[0-9]+\\.?[0-9]*");
-  if(!std::regex_match(location, valid_loc)){
-    throw custom_exception("invalid syntax for location "
-                           + std::to_string(_locations.size() + 1)
-                           + ", see vroom -h for usage display."
-                           );
-  }
-
-  // Parsing the location is now safe.
-  std::size_t separator_rank = location.find(",");
-  std::string lat = location.substr(4, separator_rank);
-  std::string lon = location.substr(separator_rank + 1, location.length() -1);
-  _locations.emplace_back(std::stod(lat, nullptr),
-                          std::stod(lon, nullptr));
-}
-
 tsp::tsp(const cl_args_t& cl_args): 
-  _matrix(0),
-  _cl_args(cl_args){
-  std::string locations = cl_args.locations;
+  _matrix(0){
   
-  // Parsing locations.
-  std::size_t start = 0;
-  std::size_t end = locations.find("&", start);
-  while(end != std::string::npos){
-    this->add_location(locations.substr(start, end - start));
-    start = end + 1;
-    end = locations.find("&", start);
-  }
-  // Adding last element, after last "&".
-  end = locations.length();
-  this->add_location(locations.substr(start, end - start));
-
-  if(_locations.size() <= 1){
-    throw custom_exception("at least two locations required!");
-  }
-
-  // Computing matrix.
-  std::unique_ptr<matrix_loader<distance_t, double>> loader;
-  switch(cl_args.loader){
-  case 1:
-    // Using plain euclidean distance.
-    loader = std::make_unique<euc_2d_matrix_loader>();
-    break;
-  case 0:
-    // Using OSRM.
-    loader 
+  // Computing matrix with the right tool.
+  assert((!cl_args.use_osrm) or (!cl_args.use_tsplib));
+  
+  // Exactly one of the two following is true.
+  if(cl_args.use_osrm){
+    _loader 
       = std::make_unique<osrm_wrapper>(cl_args.osrm_address, 
-                                       cl_args.osrm_port);
-    break;
-  default:
-    // Should not happen!
-    loader 
-      = std::make_unique<osrm_wrapper>(cl_args.osrm_address,
-                                       cl_args.osrm_port);
-    break;
+                                       cl_args.osrm_port,
+                                       cl_args.input);
   }
-  _matrix = loader->load_matrix(_locations);
+  // if(cl_args.use_tsplib){
+  //   _loader = std::make_unique<euc_2d_matrix_loader>();
+  // }
+
+  _matrix = _loader->get_matrix();
 }
 
-tsp::tsp(const matrix<distance_t>& m, const cl_args_t& cl_args):
-  _matrix(m),
-  _cl_args(cl_args){}
+tsp::tsp(const matrix<distance_t>& m):
+  _matrix(m) {}
 
 const matrix<distance_t>& tsp::get_matrix() const{
   return _matrix;
-}
-
-const cl_args_t tsp::get_cl_args() const{
-  return _cl_args;
-}
-
-const std::vector<std::pair<double, double>>& tsp::get_locations() const{
-  return _locations;
 }
 
 const matrix<distance_t> tsp::get_symmetrized_matrix() const{
@@ -134,18 +83,10 @@ distance_t tsp::cost(const std::list<index_t>& tour) const{
   return cost;
 }
 
-std::string tsp::get_route_summary(const std::list<index_t>& tour) const{
-  // Ordering locations for this tour.
-  std::vector<std::pair<double, double>> ordered_locations;
-  for(auto step = tour.cbegin(); step != tour.cend(); ++step){
-    ordered_locations.push_back(_locations[*step]);
-  }
-  // Back to the starting location.
-  if(tour.size() > 0){
-    ordered_locations.push_back(_locations[tour.front()]);
-  }
+std::string tsp::get_route(const std::list<index_t>& tour) const{
+  return _loader->get_route(tour);
+}
 
-  // Selected information from OSRM viaroute request.
-  osrm_wrapper loader (_cl_args.osrm_address, _cl_args.osrm_port);
-  return loader.viaroute_summary(ordered_locations);
+std::string tsp::get_route_geometry(const std::list<index_t>& tour) const{
+  return _loader->get_route_geometry(tour);
 }

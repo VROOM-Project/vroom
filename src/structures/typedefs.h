@@ -34,16 +34,14 @@ struct timing_t {
 struct cl_args_t {
   // Listing command-line options.
   std::string osrm_address;     // -a
-  unsigned loader;              // -e
-  // Loaders:
-  // * 0 for OSRM;
-  // * 1 for EUC_2D.
+  bool use_osrm;                // default
+  bool use_tsplib;              // -t
   bool geometry;                // -g
   std::string input_file;       // -i
   std::string output_file;      // -o
   std::string osrm_port;        // -p
   bool verbose;                 // -v
-  std::string locations;
+  std::string input;
 };
 
 #endif

@@ -18,8 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "tsp_sym.h"
 
-tsp_sym::tsp_sym(const matrix<distance_t>& m, const cl_args_t& cl_args): 
-  tsp(m, cl_args), 
+tsp_sym::tsp_sym(const matrix<distance_t>& m): 
+  tsp(m),
   _graph(m) {}
 
 undirected_graph<distance_t> tsp_sym::get_graph() const{
