@@ -31,9 +31,9 @@ tsp::tsp(const cl_args_t& cl_args):
                                        cl_args.osrm_port,
                                        cl_args.input);
   }
-  // if(cl_args.use_tsplib){
-  //   _loader = std::make_unique<euc_2d_matrix_loader>();
-  // }
+  if(cl_args.use_tsplib){
+    _loader = std::make_unique<tsplib_loader>(cl_args.input);
+  }
 
   _matrix = _loader->get_matrix();
 }

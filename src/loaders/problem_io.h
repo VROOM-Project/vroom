@@ -22,7 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include<vector>
 #include "../structures/matrix.h"
 
-template <class T, class V> 
+template <class T> 
 class problem_io{
 
 public:

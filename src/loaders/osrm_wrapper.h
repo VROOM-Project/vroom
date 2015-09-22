@@ -28,7 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using boost::asio::ip::tcp;
 
-class osrm_wrapper : public problem_io<distance_t, double>{
+class osrm_wrapper : public problem_io<distance_t>{
 
 private:
   std::string _address;         // OSRM server adress

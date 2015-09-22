@@ -50,7 +50,7 @@ int main(int argc, char **argv){
   cl_args.use_tsplib = false;
 
   // Parsing command-line arguments.
-  const char* optString = "a:egi:o:p:vh?";
+  const char* optString = "a:gi:o:p:tvh?";
   int opt = getopt(argc, argv, optString);
 
   while(opt != -1) {

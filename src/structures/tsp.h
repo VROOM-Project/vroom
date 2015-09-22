@@ -25,12 +25,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "./typedefs.h"
 #include "./matrix.h"
 #include "../loaders/problem_io.h"
-// #include "../loaders/euc_2d_matrix_loader.h"
+#include "../loaders/tsplib_loader.h"
 #include "../loaders/osrm_wrapper.h"
 
 class tsp{
 protected:
-  std::unique_ptr<problem_io<distance_t, double>> _loader;
+  std::unique_ptr<problem_io<distance_t>> _loader;
   matrix<distance_t> _matrix;
   
 private:
