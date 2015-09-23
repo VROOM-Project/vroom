@@ -51,7 +51,7 @@ class matrix : private std::vector<line<T>>{
   
   void print() const{
     for(std::size_t i = 0; i < this->size(); ++i){
-      for(std::size_t j = 0; j < (*this)[i].size(); ++i){
+      for(std::size_t j = 0; j < (*this)[i].size(); ++j){
         std::cout << (*this)[i][j] << " ; ";
       }
       std::cout << std::endl;
