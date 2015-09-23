@@ -19,8 +19,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef TSPLIB_LOADER_H
 #define TSPLIB_LOADER_H
 #include <vector>
-// #include <cmath>
+#include <cassert>
 #include <regex>
+#include <sstream>
 #include "./problem_io.h"
 #include "../structures/typedefs.h"
 #include "../structures/matrix.h"
@@ -31,7 +32,7 @@ private:
   // Supported EDGE_WEIGHT_TYPE values.
   enum class EWT {NONE, EXPLICIT, EUC_2D, CEIL_2D, GEO};
   // Supported EDGE_WEIGHT_FORMAT values.
-  enum class EWF {NONE, FULL_MATRIX, UPPER_ROW, UPPER_DIAG_ROW};
+  enum class EWF {NONE, FULL_MATRIX, UPPER_ROW, UPPER_DIAG_ROW, LOWER_DIAG_ROW};
 
   static distance_t nint(double x){
     return static_cast<distance_t>(x + 0.5);
@@ -42,11 +43,13 @@ private:
   EWF _ewf;                     // Edge weight format.
   std::string _data_section;    // either NODE_COORD_SECTION or
                                 // EDGE_WEIGHT_SECTION content.
-  
+  matrix<distance_t> _matrix;   // Corresponding matrix.
+
 public:
   tsplib_loader(std::string input):
     _ewt(EWT::NONE),
-    _ewf(EWF::NONE){
+    _ewf(EWF::NONE),
+    _matrix(0){
     // 1. Get problem dimension.
     std::regex dim_rgx ("DIMENSION[[:space:]]*:[[:space:]]*([0-9]+)[[:space:]]");
     std::smatch dim_match;
@@ -103,6 +106,10 @@ public:
         _ewf = EWF::UPPER_DIAG_ROW;
         std::cout << "EDGE_WEIGHT_FORMAT upper_diag_row" << std::endl;
       }
+      if(format == "LOWER_DIAG_ROW"){
+        _ewf = EWF::LOWER_DIAG_ROW;
+        std::cout << "EDGE_WEIGHT_FORMAT lower_diag_row" << std::endl;
+      }
       if(_ewf == EWF::NONE){
         throw custom_exception("unsupported \"EDGE_WEIGHT_FORMAT\" value: "
                                + format +".");
@@ -128,19 +135,150 @@ public:
       _data_section = ews_match[1].str();
     }
     
-    
-    std::cout << _data_section << std::endl;
-    exit(0);
+    std::istringstream data (_data_section);
+
+    matrix<distance_t> m {_dimension};
+
+    if(_ewt == EWT::EXPLICIT){
+      switch (_ewf){
+      case EWF::FULL_MATRIX: {
+        // // Checking number of values. Commented by default since it
+        // // can be sooo sloooow on big instances.
+        // std::size_t nb_values = _dimension * _dimension;
+        // std::regex nb_values_rgx ("[[:space:]]*([0-9]+[[:space:]]+){"
+        //                           + std::to_string(nb_values)
+        //                           + "}");
+        // if(!std::regex_match(_data_section, nb_values_rgx)){
+        //   throw custom_exception("wrong number of edge weights provided.");
+        // } 
+
+        // Reading from input.
+        for(std::size_t i = 0; i < _dimension; ++i){
+          for(std::size_t j = 0; j < _dimension; ++j){
+            data >> m[i][j];
+          }
+        }
+        // Zeros on the diagonal for further undirected graph build.
+        for(std::size_t i = 0; i < _dimension; ++i){
+          m[i][i] = 0;
+        }
+        break;
+      }
+      case EWF::UPPER_ROW: {
+        // // Checking number of values. Commented by default since it
+        // // can be sooo sloooow on big instances.
+        // std::size_t nb_values = (_dimension - 1) * _dimension / 2;
+        // std::regex nb_values_rgx ("[[:space:]]*([0-9]+[[:space:]]+){"
+        //                           + std::to_string(nb_values)
+        //                           + "}");
+        // if(!std::regex_match(_data_section, nb_values_rgx)){
+        //   throw custom_exception("wrong number of edge weights provided.");
+        // } 
+
+        // Reading from input.
+        distance_t current_value;              
+        for(std::size_t i = 0; i < _dimension - 1; ++i){
+          for(std::size_t j = i + 1; j < _dimension; ++j){
+            data >> current_value;
+            m[i][j] = current_value;
+            m[j][i] = current_value;
+          }
+        }
+        // Zeros on the diagonal for further undirected graph build.
+        for(std::size_t i = 0; i < _dimension; ++i){
+          m[i][i] = 0;
+        }
+        break;
+      }
+      case EWF::UPPER_DIAG_ROW:{
+        // // Checking number of values. Commented by default since it
+        // // can be sooo sloooow on big instances.
+        // std::size_t nb_values = (_dimension + 1) * _dimension / 2;
+        // std::regex nb_values_rgx ("[[:space:]]*([0-9]+[[:space:]]+){"
+        //                           + std::to_string(nb_values)
+        //                           + "}");
+        // if(!std::regex_match(_data_section, nb_values_rgx)){
+        //   throw custom_exception("wrong number of edge weights provided.");
+        // } 
+
+        // Reading from input.
+        distance_t current_value;              
+        for(std::size_t i = 0; i < _dimension; ++i){
+          for(std::size_t j = i; j < _dimension; ++j){
+            data >> current_value;
+            m[i][j] = current_value;
+            m[j][i] = current_value;
+          }
+        }
+        // Zeros on the diagonal for further undirected graph build.
+        for(std::size_t i = 0; i < _dimension; ++i){
+          m[i][i] = 0;
+        }
+        break;
+      }
+      case EWF::LOWER_DIAG_ROW:{
+        // // Checking number of values. Commented by default since it
+        // // can be sooo sloooow on big instances.
+        // std::size_t nb_values = (_dimension + 1) * _dimension / 2;
+        // std::regex nb_values_rgx ("[[:space:]]*([0-9]+[[:space:]]+){"
+        //                           + std::to_string(nb_values)
+        //                           + "}");
+        // if(!std::regex_match(_data_section, nb_values_rgx)){
+        //   throw custom_exception("wrong number of edge weights provided.");
+        // } 
+
+        // Reading from input.
+        distance_t current_value;              
+        for(std::size_t i = 0; i < _dimension; ++i){
+          for(std::size_t j = 0; j <= i ; ++j){
+            data >> current_value;
+            m[i][j] = current_value;
+            m[j][i] = current_value;
+          }
+        }
+        // Zeros on the diagonal for further undirected graph build.
+        for(std::size_t i = 0; i < _dimension; ++i){
+          m[i][i] = 0;
+        }
+        break;
+      }
+      case EWF::NONE:
+        // Should not happen!
+        assert(false);
+        break;
+      }
+    }
+    else{
+      switch (_ewt){
+      case EWT::EUC_2D:
+        break;
+      case EWT::CEIL_2D:
+        break;
+      case EWT::GEO:
+        break;
+      default:
+        // Should not happen!
+        assert(false);
+      }
+    }
+    _matrix = m;
+
+    // _matrix.print();
   }
 
   virtual matrix<distance_t> get_matrix() const override{
-    matrix<distance_t> m {_dimension};
-
-    return m;
+    return _matrix;
   }
 
   virtual std::string get_route(const std::list<index_t>& tour) const override{
-    return "";
+    std::string route = "\"route\":[";
+    for(auto const& step: tour){
+      // Using rank rather than index.
+      route += std::to_string(step + 1) + ",";
+    }
+    route.pop_back();          // Remove trailing comma.
+    route += "],";
+    return route;
   }
 
   virtual std::string get_route_geometry(const std::list<index_t>& tour) const{

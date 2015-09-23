@@ -48,6 +48,7 @@ int main(int argc, char **argv){
   cl_args.osrm_port = "5000";
   cl_args.use_osrm = true;
   cl_args.use_tsplib = false;
+  cl_args.verbose = false;
 
   // Parsing command-line arguments.
   const char* optString = "a:gi:o:p:tvh?";
