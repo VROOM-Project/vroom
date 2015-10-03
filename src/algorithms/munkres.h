@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <limits>
 #include <set>
 #include <list>
+#include <cassert>
 #include "../structures/matrix.h"
 #include "../structures/edge.h"
 
@@ -36,8 +37,8 @@ std::map<index_t, index_t> minimum_weight_perfect_matching(const matrix<T>& m){
     labeling_y.emplace(i, 0);
     T min_weight = std::numeric_limits<T>::max();
     for(index_t j = 0; j < m.size(); ++j){
-      if(m(i, j) < min_weight){
-        min_weight = m(i, j);
+      if(m[i][j] < min_weight){
+        min_weight = m[i][j];
       }
     }
     labeling_x.emplace(i, min_weight);
@@ -80,17 +81,17 @@ std::map<index_t, index_t> minimum_weight_perfect_matching(const matrix<T>& m){
     // and initializing slacks.
     std::map<index_t, T> slack;
     for(index_t y = 0; y < m.size(); ++y){
-      if(labeling_x.at(unmatched_x) + labeling_y.at(y) == m(unmatched_x, y)){
+      if(labeling_x.at(unmatched_x) + labeling_y.at(y) == m[unmatched_x][y]){
         alternating_tree.emplace(y, unmatched_x);
       }
       slack.emplace(y,
-                    m(unmatched_x, y) - labeling_x.at(unmatched_x) - labeling_y.at(y)
+                    m[unmatched_x][y] - labeling_x.at(unmatched_x) - labeling_y.at(y)
                     );
     }
 
     // std::cout << "Slack values\n";
-    // for(auto s = slack.cbegin(); s != slack.cend(); ++s){
-    //   std::cout << s->first << ": " << s->second << std::endl;
+    // for(auto const& s: slack){
+    //   std::cout << s.first << ": " << s.second << std::endl;
     // }
     
     bool augmented_path = false;
@@ -103,13 +104,13 @@ std::map<index_t, index_t> minimum_weight_perfect_matching(const matrix<T>& m){
         // std::cout << "Entering step 2.\n";
 
         // std::cout << "S: ";
-        // for(auto s = S.cbegin(); s != S.cend(); ++s){
-        //   std::cout << *s << " ; ";
+        // for(auto const& s: S){
+        //   std::cout << s << " ; ";
         // }
         // std::cout << std::endl;
         // std::cout << "T_set: ";
-        // for(auto s = T_set.cbegin(); s != T_set.cend(); ++s){
-        //   std::cout << *s << " ; ";
+        // for(auto const& s = T_set){
+        //   std::cout << s << " ; ";
         // }
         // std::cout << std::endl;
 
@@ -130,11 +131,11 @@ std::map<index_t, index_t> minimum_weight_perfect_matching(const matrix<T>& m){
 
         // std::cout << "Updating with alpha = " << alpha << std::endl;
 
-        for(auto x = S.cbegin(); x != S.cend(); ++x){
-          labeling_x.at(*x) = labeling_x.at(*x) + alpha;
+        for(auto const& x: S){
+          labeling_x.at(x) = labeling_x.at(x) + alpha;
         }
-        for(auto y = T_set.cbegin(); y != T_set.cend(); ++y){
-          labeling_y.at(*y) = labeling_y.at(*y) - alpha;
+        for(auto const& y: T_set){
+          labeling_y.at(y) = labeling_y.at(y) - alpha;
         }
 
         // Updating relevant neighbors in new equality graph and
@@ -143,10 +144,10 @@ std::map<index_t, index_t> minimum_weight_perfect_matching(const matrix<T>& m){
           if(T_set.find(y) == T_set.end()){
             slack.at(y) = slack.at(y) - alpha;
             
-            for(auto x = S.cbegin(); x != S.cend(); ++x){
-              if(labeling_x.at(*x) + labeling_y.at(y) == m(*x, y)){
+            for(auto const& x: S){
+              if(labeling_x.at(x) + labeling_y.at(y) == m[x][y]){
                 if(alternating_tree.find(y) == alternating_tree.end()){
-                  alternating_tree.emplace(y, *x);
+                  alternating_tree.emplace(y, x);
                 }
               }
             }
@@ -162,8 +163,8 @@ std::map<index_t, index_t> minimum_weight_perfect_matching(const matrix<T>& m){
         //   std::cout << y << ": " << labeling_y.at(y) << std::endl;
         // }
         // std::cout << "Slack values\n";
-        // for(auto s = slack.cbegin(); s != slack.cend(); ++s){
-        //   std::cout << s->first << ": " << s->second << std::endl;
+        // for(auto const& s: slack){
+        //   std::cout << s.first << ": " << s.second << std::endl;
         // }
 
       }
@@ -172,21 +173,17 @@ std::map<index_t, index_t> minimum_weight_perfect_matching(const matrix<T>& m){
       // std::cout << "Entering step 3.\n";
 
       // std::cout << "Alternating tree: \n";
-      // for(auto edge = alternating_tree.cbegin();
-      //     edge != alternating_tree.cend();
-      //     ++edge){
-      //   std::cout << edge->first << "->" << edge->second << std::endl;
+      // for(auto const& edge: alternating_tree){
+      //   std::cout << edge.first << "->" << edge.second << std::endl;
       // }
 
       index_t chosen_y;        // First y in equality neighbors not
                                 // in T_set.
-      for(auto edge = alternating_tree.cbegin();
-          edge != alternating_tree.cend();
-          ++edge){
-        if(T_set.find(edge->first) == T_set.end()){
+      for(auto const& edge: alternating_tree){
+        if(T_set.find(edge.first) == T_set.end()){
           // MUST happen before endge reaches the end of
           // alternating_tree.
-          chosen_y = edge->first;
+          chosen_y = edge.first;
           // std::cout << "chosen y: " << chosen_y << std::endl;
           break;
         }
@@ -206,7 +203,7 @@ std::map<index_t, index_t> minimum_weight_perfect_matching(const matrix<T>& m){
         for(index_t y = 0; y < m.size(); ++y){
           T current_value = slack.at(y);
           T new_value
-            = m(matched_x, y) - labeling_x.at(matched_x) - labeling_y.at(y);
+            = m[matched_x][y] - labeling_x.at(matched_x) - labeling_y.at(y);
           // std::cout << "In update slacks, current_value: "
           //           << current_value
           //           << " and new value: "
@@ -256,8 +253,8 @@ std::map<index_t, index_t> minimum_weight_perfect_matching(const matrix<T>& m){
         augmented_path = true;
         
         // std::cout << "Matching so far: \n";
-        // for(auto edge = matching_xy.cbegin(); edge != matching_xy.cend(); ++edge){
-        //   std::cout << edge->first << "->" << edge->second << std::endl;
+        // for(auto const& edge: matching_xy){
+        //   std::cout << edge.first << "->" << edge.second << std::endl;
         // }
       }
     }
@@ -265,14 +262,6 @@ std::map<index_t, index_t> minimum_weight_perfect_matching(const matrix<T>& m){
   }
   // std::cout << "Matching size before return: " << matching_xy.size() << std::endl;
   return matching_xy;
-}
-
-// Used in next function to order children edges to pick the smallest
-// weights first. This greedy approach allows to find a rather good
-// solution soon enough to cut more branches.
-template <class T>
-bool compare_weight (const edge<T>& first, const edge<T>& second){
-  return (first.get_weight() < second.get_weight());
 }
 
 template <class T>
@@ -373,7 +362,10 @@ std::map<index_t, index_t> branch_and_bound_symmetric_mwpm(const matrix<T>& m){
         // Else sure to get a bigger weight in the end so doing
         // nothing cuts the branch.
         std::list<edge<T>> children_edges = current_node.get_children_edges();
-        children_edges.sort(compare_weight<T>);
+        children_edges.sort([](auto const& a, auto const& b)
+                            {
+                              return (a.get_weight() < b.get_weight());
+                            });  
         // Putting highest weights first to pick them later.
         for(auto edge = children_edges.rbegin();
             edge != children_edges.rend();
@@ -388,10 +380,8 @@ std::map<index_t, index_t> branch_and_bound_symmetric_mwpm(const matrix<T>& m){
   }  
   
   std::map<index_t, index_t> matching;
-  for(auto edge = best_edges_choice.cbegin();
-      edge != best_edges_choice.cend();
-      ++edge){
-    matching.emplace(edge->get_first_vertex(), edge->get_second_vertex());
+  for(auto const& edge: best_edges_choice){
+    matching.emplace(edge.get_first_vertex(), edge.get_second_vertex());
   }
   
   return matching;
@@ -402,9 +392,7 @@ std::map<index_t, index_t> greedy_symmetric_approx_mwpm(const matrix<T>& m){
   // Fast greedy algorithm for finding a symmetric perfect matching,
   // choosing always smaller possible value, no minimality
   // assured. Matrix size should be even!
-  if(m.size() % 2 == 1){
-    throw custom_exception("matrix size should be even in greedy_symmetric_approx_mwpm.");
-  }
+  assert(m.size() % 2 == 0);
     
   std::map<index_t, index_t> matching;
   std::set<index_t> remaining_indices;
@@ -424,7 +412,7 @@ std::map<index_t, index_t> greedy_symmetric_approx_mwpm(const matrix<T>& m){
       auto j = i;
       ++j;
       for(; j != remaining_indices.end(); ++j){
-        T current_weight = m(*i, *j);
+        T current_weight = m[*i][*j];
         if(current_weight < min_weight){
           min_weight = current_weight;
           first_chosen_index = *i;

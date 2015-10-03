@@ -16,8 +16,8 @@
 
 # Variables.
 CC = g++
-FLAGS = -std=c++11 -Wpedantic -Wall -O3
-LDLIBS =
+FLAGS = -std=c++14 -Wpedantic -Wall -O3
+LDLIBS = -lboost_system -lpthread
 
 # Using all cpp files in current directory.
 MAIN = ../bin/vroom

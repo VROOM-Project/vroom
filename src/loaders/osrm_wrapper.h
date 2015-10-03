@@ -20,138 +20,130 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define OSRM_WRAPPER_H
 #include <vector>
 #include <limits>
-#include <cstring>              // c_str()
-#include<sys/socket.h>          //socket
-#include<arpa/inet.h>           //inet_addr
-#include "./matrix_loader.h"
+#include <regex>
+#include <boost/asio.hpp>
+#include "./problem_io.h"
 #include "../structures/matrix.h"
 #include "../utils/exceptions.h"
 
-class osrm_wrapper : public matrix_loader<distance_t, double>{
+using boost::asio::ip::tcp;
+
+class osrm_wrapper : public problem_io<distance_t>{
 
 private:
-  int _sock;                    // socket
   std::string _address;         // OSRM server adress
-  int _port;                    // OSRM server listening port
-  struct sockaddr_in _server;   // server
+  std::string _port;            // OSRM server listening port
+  std::vector<std::pair<double, double>> _locations;
 
-  // Perform socket connection.
-  bool osrm_connect(){
-    // Create socket if necessary.
-    if(_sock == -1){
-      //Create socket
-      _sock = socket(AF_INET, SOCK_STREAM, 0);
-      if (_sock == -1){
-        throw custom_exception("could not create socket");
-      }
-    }
-
-    // Using plain IP address (static member).
-    _server.sin_addr.s_addr = inet_addr(_address.c_str());
-  
-    _server.sin_family = AF_INET;
-    _server.sin_port = htons(_port);
-
-    // Connect to osrm-routed server.
-    if (connect(_sock , (struct sockaddr *)&_server , sizeof(_server)) < 0){
-      throw custom_exception("connect to the OSRM server failed!");
-    }
-    return true;
-  }
-  
-  // Send a request or osrm routing deamon.
-  bool send_data(std::string data){
-    if(send(_sock, data.c_str(), strlen(data.c_str()), 0) < 0){
-      throw custom_exception("send to OSRM server failed!");
-    }
-    return true;
-  }
-
-  // Receive given amount of data.
-  std::string receive(const int size=512){
-    char* buffer = new char[size];
-     
-    // Receive a reply from the server.
-    if(recv(_sock, buffer, size, 0) < 0){
-      throw custom_exception("receiving from OSRM server failed!");
-    }
-     
-    std::string reply (buffer, size);
-    delete[] buffer;
-    return reply;
-  }
-
-  std::string receive_until(std::string query,
-                            std::string end_str){
-    // Send query.
-    this->send_data(query);
-     
-    std::string response, buffer;
-    int buffer_size = 126;
-    // First reading.
-    response = this->receive(buffer_size);
-  
-    // Storing the position for starting the search of the end
-    // string. Searching the whole response string would be unecessary
-    // and unefficient.
-    std::size_t position = 0;
-    std::size_t end_str_size = end_str.size();
-  
-    while(response.find(end_str, position) == std::string::npos){
-      // End of response not yet received.
-      buffer = this->receive(buffer_size);
-      if(buffer.find("Bad Request") != std::string::npos){
-        // Problem with the OSRM request, encountered when many
-        // locations yield a too long request.
-        throw custom_exception("bad request response from OSRM, too long GET request?");
-      }
-      response += buffer;
-      // To be able to find end_str even if truncated between two buffer
-      // reception.
-      position += buffer_size - end_str_size;
-    }
-    return response;  
-  }
-
-public:
-  osrm_wrapper(std::string address, int port):
-    _sock(-1),
-    _address(address),
-    _port(port){
-    // Connect to osrm-routed.
-    this->osrm_connect();
-  }
-
-  virtual matrix<distance_t> load_matrix(const std::vector<std::pair<double, double>>& locations){
+  std::string build_query(const std::vector<std::pair<double, double>>& locations, 
+                          std::string service) const{
     // Building query for osrm-routed
-    std::string query = "GET /table?";
+    std::string query = "POST /" + service + "?";
 
     // Adding locations.
-    for(auto location = locations.cbegin(); location != locations.cend(); ++location){
+    for(auto const& location: locations){
       query += "loc="
-        + std::to_string(location->first)
+        + std::to_string(location.first)
         + ","
-        + std::to_string(location->second)
+        + std::to_string(location.second)
         + "&";
     }
 
-    query.pop_back();           // Remove last '&'.
+    query.pop_back();           // Remove trailing '&'.
     query += " HTTP/1.1\r\n\r\n";
+    return query;
+  }
 
-    std::string response = this->receive_until(query, "}");
+  std::string send_then_receive_until(std::string query,
+                                      std::string end_str) const{
+    std::string response;
+
+    boost::asio::io_service io_service;
+    
+    tcp::socket s (io_service);
+    tcp::resolver r (io_service);
+    tcp::resolver::query q(_address, _port);
+    
+    try{
+      boost::asio::connect(s, r.resolve(q));
+
+      boost::asio::write(s, boost::asio::buffer(query));
+
+      boost::asio::streambuf b;
+      boost::asio::read_until(s, b, end_str);
+
+      std::istream is(&b);
+      std::string line;
+      while(std::getline(is, line)){
+        response += line;
+      }
+    }
+    catch (boost::system::system_error& e)
+      {
+        throw custom_exception("failure while connecting to the OSRM server.");
+      }
+    return response;
+  }
+
+  void add_location(const std::string location){
+    // Regex check for valid location.
+    std::regex valid_loc ("loc=-?[0-9]+\\.?[0-9]*,-?[0-9]+\\.?[0-9]*");
+    if(!std::regex_match(location, valid_loc)){
+      throw custom_exception("invalid syntax for location "
+                             + std::to_string(_locations.size() + 1)
+                             + ", see vroom -h for usage display."
+                             );
+    }
+
+    // Parsing the location is now safe.
+    std::size_t separator_rank = location.find(",");
+    std::string lat = location.substr(4, separator_rank);
+    std::string lon = location.substr(separator_rank + 1, location.length() -1);
+    _locations.emplace_back(std::stod(lat, nullptr),
+                            std::stod(lon, nullptr));
+  }
+
+public:
+  osrm_wrapper(std::string address, 
+               std::string port,
+               std::string loc_input):
+    _address(address),
+    _port(port){
+    // Parsing input in locations.
+    std::size_t start = 0;
+    std::size_t end = loc_input.find("&", start);
+    while(end != std::string::npos){
+      this->add_location(loc_input.substr(start, end - start));
+      start = end + 1;
+      end = loc_input.find("&", start);
+    }
+    // Adding last element, after last "&".
+    end = loc_input.length();
+    this->add_location(loc_input.substr(start, end - start));
+    
+    if(_locations.size() <= 1){
+      throw custom_exception("at least two locations required!");
+    }
+  }
+
+  virtual matrix<distance_t> get_matrix() const override{
+    std::string query = this->build_query(_locations, "table");
+
+    std::string response = this->send_then_receive_until(query, "}");
+
+    // Stop at "Bad Request" error from OSRM.
+    assert(response.find("Bad Request") == std::string::npos);
 
     // Removing headers.
     std::string distance_key = "{\"distance_table\":[";
     size_t table_start = response.find(distance_key);
-    if(table_start == std::string::npos){
-      throw custom_exception("unexpected form of OSRM return!");
-    }
+    assert(table_start != std::string::npos);
 
     size_t offset = table_start + distance_key.size();
     std::string json_content
       = response.substr(offset, response.find("]}") - offset);
 
-    // Parsing json tables to build the matrix from a vector.
+    // Parsing json tables to build the matrix.
     std::vector<std::string> lines;
     std::string sep = "],";
     size_t previous_sep = 0;
@@ -167,33 +159,29 @@ public:
     last_line.pop_back();
     lines.push_back(last_line);
 
-    std::vector<std::vector<distance_t>> matrix_as_vector;
-    for(auto line = lines.cbegin(); line != lines.cend(); ++line){
-      std::vector<distance_t> line_as_vector;
+    matrix<distance_t> m {lines.size()};
+    for(std::size_t i = 0; i < lines.size(); ++i){
       sep = ",";
       previous_sep = 0;
-      current_sep = line->find(sep);
+      current_sep = lines[i].find(sep);
+      std::size_t j = 0;
       while(current_sep != std::string::npos){
-        distance_t current_value
-          = std::stoul(line->substr(previous_sep,
-                                    current_sep - previous_sep));
-        line_as_vector.push_back(current_value);
+        assert(j < lines.size());
+        m[i][j] = std::stoul(lines[i].substr(previous_sep,
+                                             current_sep - previous_sep));
+        ++j;
         previous_sep = current_sep + 1;
-        current_sep = line->find(sep, current_sep + 1);
+        current_sep = lines[i].find(sep, current_sep + 1);
       }
-      distance_t last_value
-        = std::stoul(line->substr(previous_sep, std::string::npos));
-      line_as_vector.push_back(last_value);
-      
-      matrix_as_vector.push_back(line_as_vector);
+      m[i][lines.size()-1] 
+        = std::stoul(lines[i].substr(previous_sep, std::string::npos));
     }
 
-    matrix<distance_t> m (matrix_as_vector);
     // m.print();
 
     // Now checking for unfound routes to avoid unexpected behavior
     // (OSRM raises max value for an int).
-    unsigned m_size = m.size();
+    std::size_t m_size = m.size();
     std::vector<unsigned> nb_unfound_from_loc (m_size, 0);
     std::vector<unsigned> nb_unfound_to_loc (m_size, 0);
     distance_t unfound_time
@@ -201,7 +189,7 @@ public:
     
     for(unsigned i = 0; i < m_size; ++i){
       for(unsigned j = 0; j < m_size; ++j){
-        if(m(i, j) == unfound_time){
+        if(m[i][j] == unfound_time){
           // Just storing info as we don't know yet which location is
           // responsible between i and j.
           ++nb_unfound_from_loc[i];
@@ -237,25 +225,35 @@ public:
     return m;
   }
 
-  std::string viaroute_summary(const std::vector<std::pair<double, double>>& locations){
-    // Building query for osrm-routed
-    std::string query = "GET /viaroute?";
+  virtual std::string get_route(const std::list<index_t>& tour) const override{
+    std::string route = "\"route\":[";
+    for(auto const& step: tour){
+      route += "[" + std::to_string(_locations[step].first)
+        + "," + std::to_string(_locations[step].second) + "],";
+    }
+    route.pop_back();          // Remove trailing comma.
+    route += "],";
+    return route;
+  }
 
-    // Adding locations.
-    for(auto location = locations.cbegin(); location != locations.cend(); ++location){
-      query += "loc="
-        + std::to_string(location->first)
-        + ","
-        + std::to_string(location->second)
-        + "&";
+  virtual std::string get_route_geometry(const std::list<index_t>& tour) const override{
+    // Ordering locations for the given tour.
+    std::vector<std::pair<double, double>> ordered_locations;
+    for(auto& step: tour){
+      ordered_locations.push_back(_locations[step]);
+    }
+    // Back to the starting location.
+    if(tour.size() > 0){
+      ordered_locations.push_back(_locations[tour.front()]);
     }
 
-    query.pop_back();           // Remove last '&'.
-    query += " HTTP/1.1\r\n\r\n";
+    std::string query = this->build_query(ordered_locations,
+                                          "viaroute");
 
     // Other return status than 0 should have been filtered before
     // with unfound routes check.
-    std::string response = this->receive_until(query, "\"status\":0}");
+    std::string response 
+      = this->send_then_receive_until(query, "\"status\":0}");
 
     // Removing headers
     std::string json_content = response.substr(response.find("{"));

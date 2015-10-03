@@ -20,8 +20,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define TYPEDEFS_H
 
 // To easily differentiate variable types.
-using index_t = unsigned;
-using distance_t = unsigned long;
+using index_t = uint16_t;
+using distance_t = uint32_t;
 
 struct timing_t {
   // Computing times in milliseconds.
@@ -34,16 +34,14 @@ struct timing_t {
 struct cl_args_t {
   // Listing command-line options.
   std::string osrm_address;     // -a
-  unsigned loader;              // -e
-  // Loaders:
-  // * 0 for OSRM;
-  // * 1 for EUC_2D.
+  bool use_osrm;                // default
+  bool use_tsplib;              // -t
   bool geometry;                // -g
   std::string input_file;       // -i
   std::string output_file;      // -o
-  unsigned osrm_port;           // -p
+  std::string osrm_port;        // -p
   bool verbose;                 // -v
-  std::string locations;
+  std::string input;
 };
 
 #endif

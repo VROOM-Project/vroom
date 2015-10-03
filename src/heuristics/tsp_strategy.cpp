@@ -43,10 +43,9 @@ void solve_atsp(const cl_args_t& cl_args){
 
   // Applying Christofides heuristic.
   auto start_christo = std::chrono::high_resolution_clock::now();
-  heuristic* christo_h = new christo_heuristic();
+  std::unique_ptr<heuristic> christo_h = std::make_unique<christo_heuristic>();
   std::list<index_t> christo_sol
     = christo_h->build_solution(symmetrized_tsp);
-  delete christo_h;
 
   auto end_christo = std::chrono::high_resolution_clock::now();
 

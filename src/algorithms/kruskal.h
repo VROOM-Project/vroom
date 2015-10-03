@@ -49,24 +49,22 @@ undirected_graph<T> minimum_spanning_tree(const undirected_graph<T>& graph){
     representative.emplace(i, i);
   }
 
-  for(auto edge = edges.cbegin(); edge != edges.cend(); ++edge){
-    index_t first_vertex = edge->get_first_vertex();
-    index_t second_vertex = edge->get_second_vertex();
+  for(auto const& edge: edges){
+    index_t first_vertex = edge.get_first_vertex();
+    index_t second_vertex = edge.get_second_vertex();
 
     index_t first_rep = representative[first_vertex];
     index_t second_rep = representative[second_vertex];
     if(first_rep != second_rep){
       // Adding current edge won't create a cycle as vertices are in
       // separate connected componentes.
-      mst.push_back(*edge);
+      mst.push_back(edge);
       // Both vertices are now in the same connected component,
       // setting new representative for all elements of second
       // component.
-      for(auto it = representative.begin();
-          it != representative.end();
-          ++it){
-        if(it->second == second_rep){
-          it->second = first_rep;
+      for(auto& e: representative){
+        if(e.second == second_rep){
+          e.second = first_rep;
         }
       }      
     }

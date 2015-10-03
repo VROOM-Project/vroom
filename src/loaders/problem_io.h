@@ -16,26 +16,26 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef MATRIX_LOADER_H
-#define MATRIX_LOADER_H
+#ifndef PROBLEM_IO_H
+#define PROBLEM_IO_H
 #include<string>
 #include<vector>
 #include "../structures/matrix.h"
 
-template <class T, class V> 
-class matrix_loader{
+template <class T> 
+class problem_io{
 
 public:
-  virtual matrix<T> load_matrix(const std::vector<std::pair<V, V>>& locations) = 0;
+  virtual matrix<T> get_matrix() const = 0;
 
-  virtual ~matrix_loader() {}
+  virtual std::string get_route(const std::list<index_t>& tour) const = 0;
+
+  virtual std::string get_route_geometry(const std::list<index_t>& tour) const = 0;
+
+  virtual ~problem_io() {}
 
 protected:
-  matrix_loader() {}
-
-  static T nint(double x){
-    return (T) (x + 0.5);
-  }
+  problem_io() {}
 };
 
 #endif

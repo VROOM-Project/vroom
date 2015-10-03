@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef TSP_STRATEGY_H
 #define TSP_STRATEGY_H
 #include <chrono>
+#include <memory>
 #include "./heuristic.h"
 #include "./christo_heuristic.h"
 #include "./local_search.h"

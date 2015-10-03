@@ -58,7 +58,7 @@ std::list<index_t> christo_heuristic::build_solution(tsp_sym& instance){
   // weight perfect matching to come.
   for(index_t i = 0; i < sub_matrix.size(); ++i){
     // Setting max value would cause trouble with further additions...
-    sub_matrix.set(i, i, 3 * (std::numeric_limits<distance_t>::max() / 4));
+    sub_matrix[i][i] = 3 * (std::numeric_limits<distance_t>::max() / 4);
   }
 
   // sub_matrix.print();
@@ -138,8 +138,7 @@ std::list<index_t> christo_heuristic::build_solution(tsp_sym& instance){
     if(already_added.find(first_index) == already_added.end()){
       eulerian_graph_edges.emplace_back(first_index,
                                         second_index,
-                                        instance.get_matrix()(first_index,
-                                                              second_index)
+                                        instance.get_matrix()[first_index][second_index]
                                         );
       already_added.insert(second_index);
     }

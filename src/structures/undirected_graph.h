@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define UNDIRECTED_GRAPH_H
 #include <list>
 #include <unordered_map>
+#include <cassert>
 #include "edge.h"
 #include "matrix.h"
 
@@ -40,26 +41,22 @@ public:
   {
     bool matrix_ok = true;
     for(index_t i = 0; i < _size; ++i){
-      matrix_ok &= (m(i, i) == 0);
+      matrix_ok &= (m[i][i] == 0);
       for(index_t j = i + 1; j < _size; ++j){
-        matrix_ok &= (m(i, j) == m(j, i));
-        _edges.emplace_front(i, j, m(i, j));
+        matrix_ok &= (m[i][j] == m[j][i]);
+        _edges.emplace_front(i, j, m[i][j]);
         _adjacency_list[i].push_back(j);
         _adjacency_list[j].push_back(i);
       }
     }
-    if(!matrix_ok){
-      throw custom_exception("symmetric matrix required for undirected graph.");
-    }
+    assert(matrix_ok);
   }
 
   undirected_graph(std::list<edge<T>> edges):
     _edges(edges){
-    for(auto edge = _edges.cbegin();
-        edge != _edges.cend();
-        ++edge){
-      index_t first = edge->get_first_vertex();
-      index_t second = edge->get_second_vertex();
+    for(auto const& edge: _edges){
+      index_t first = edge.get_first_vertex();
+      index_t second = edge.get_second_vertex();
     
       _adjacency_list[first].push_back(second);
       _adjacency_list[second].push_back(first);
@@ -80,22 +77,18 @@ public:
   }
 
   void print_edges() const{
-    for(auto edge = _edges.cbegin(); edge != _edges.cend(); ++edge){
-      edge->log();
+    for(auto const& edge: _edges){
+      edge.log();
       std::cout << " ; ";
     }
     std::cout << std::endl;
   }
 
   void print_adjacency_list() const{
-    for(auto it = _adjacency_list.cbegin();
-        it != _adjacency_list.cend();
-        ++it){
-      std::cout << it->first << "->(";
-      for(auto element = (it->second).cbegin();
-          element != (it->second).cend();
-          ++element){
-        std::cout << *element << " ; ";
+    for(auto const& adj: _adjacency_list){
+      std::cout << adj.first << "->(";
+      for(auto& element: adj.second){
+        std::cout << element << " ; ";
       }
       std::cout << ") \n";
     }

@@ -30,9 +30,9 @@ void display_usage(){
   usage += "\t-a=ADDRESS\t OSRM server address (\"0.0.0.0\")\n";
   usage += "\t-p=PORT,\t OSRM listening port (5000)\n";
   usage += "\t-g,\t\t get detailed route geometry for the solution\n";
-  usage += "\t-e,\t\t use eulidean distance rather than travel times\n\t\t\t from OSRM\n";
   usage += "\t-o=OUTPUT,\t output file name\n";
-  usage += "\t-i=FILE,\t read locations list from FILE rather than from\n\t\t\t command-line\n";
+  usage += "\t-i=FILE,\t read input from FILE rather than from\n\t\t\t command-line\n";
+  usage += "\t-t,\t\t read input file from -i option as TSPLIB format\n";
   usage += "\t-v,\t\t turn on verbose output\n";
   usage += "\nThis program is distributed under the terms of the GNU General Public\n";
   usage += "License, version 3, and comes with ABSOLUTELY NO WARRANTY.\n";
@@ -43,22 +43,21 @@ void display_usage(){
 int main(int argc, char **argv){
   // Default options.
   cl_args_t cl_args;
-  cl_args.loader = 0;
   cl_args.geometry = false;
   cl_args.osrm_address = "0.0.0.0";
-  cl_args.osrm_port = 5000;
+  cl_args.osrm_port = "5000";
+  cl_args.use_osrm = true;
+  cl_args.use_tsplib = false;
+  cl_args.verbose = false;
 
   // Parsing command-line arguments.
-  const char* optString = "a:egi:o:p:vh?";
+  const char* optString = "a:gi:o:p:tvh?";
   int opt = getopt(argc, argv, optString);
 
   while(opt != -1) {
     switch(opt){
     case 'a':
       cl_args.osrm_address = optarg;
-      break;
-    case 'e':
-      cl_args.loader = 1;
       break;
     case 'g':
       cl_args.geometry = true;
@@ -73,7 +72,11 @@ int main(int argc, char **argv){
       cl_args.output_file = optarg;
       break;
     case 'p':
-      cl_args.osrm_port = strtol(optarg, nullptr, 10);
+      cl_args.osrm_port = optarg;
+      break;
+    case 't':
+      cl_args.use_tsplib = true;
+      cl_args.use_osrm = false;
       break;
     case 'v':
       cl_args.verbose = true;
@@ -85,20 +88,19 @@ int main(int argc, char **argv){
   }
 
   if(cl_args.input_file.empty()){
-    // Getting list of locations from command-line.
+    // Getting input from command-line.
     if(argc == optind){
       // Missing argument!
       display_usage();
     }
-    cl_args.locations = argv[optind];
+    cl_args.input = argv[optind];
   }
   else{
-    // Getting list of locations from input file. Fast way to get the
-    // file content as a string, not meant for large files...
-    std::ifstream ifs (cl_args.input_file, std::ifstream::in);
+    // Getting input from provided file.
+    std::ifstream ifs (cl_args.input_file);
     std::stringstream buffer;
     buffer << ifs.rdbuf();
-    cl_args.locations = buffer.str();
+    cl_args.input = buffer.str();
   }
   
   try{

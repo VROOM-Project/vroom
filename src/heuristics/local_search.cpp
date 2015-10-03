@@ -52,9 +52,9 @@ distance_t local_search::relocate_step(){
     index_t relocated_node = edge_1->second;
 
     // Precomputing weights not depending on edge_2.
-    distance_t first_potential_add = _matrix(edge_1->first, next);
-    distance_t edge_1_weight = _matrix(edge_1->first, edge_1->second);
-    distance_t relocated_next_weight = _matrix(relocated_node, next);
+    distance_t first_potential_add = _matrix[edge_1->first][next];
+    distance_t edge_1_weight = _matrix[edge_1->first][edge_1->second];
+    distance_t relocated_next_weight = _matrix[relocated_node][next];
 
     for(auto edge_2 = _edges.cbegin(); edge_2 != _edges.cend(); ++edge_2){
       if((edge_2 == edge_1) or (edge_2->first == relocated_node)){
@@ -63,11 +63,11 @@ distance_t local_search::relocate_step(){
       distance_t before_cost
         = edge_1_weight
         + relocated_next_weight
-        + _matrix(edge_2->first, edge_2->second);
+        + _matrix[edge_2->first][edge_2->second];
       distance_t after_cost
         = first_potential_add
-        + _matrix(edge_2->first, relocated_node)
-        + _matrix(relocated_node, edge_2->second);
+        + _matrix[edge_2->first][relocated_node]
+        + _matrix[relocated_node][edge_2->second];
 
       if(before_cost > after_cost){
         amelioration_found = true;
@@ -127,11 +127,11 @@ distance_t local_search::two_opt_step(){
         continue;
       }
       distance_t before_cost
-        = _matrix(edge_1->first, edge_1->second)
-        + _matrix(edge_2->first, edge_2->second);
+        = _matrix[edge_1->first][edge_1->second]
+        + _matrix[edge_2->first][edge_2->second];
       distance_t after_cost
-        = _matrix(edge_1->first, edge_2->first)
-        + _matrix(edge_1->second, edge_2->second);
+        = _matrix[edge_1->first][edge_2->first]
+        + _matrix[edge_1->second][edge_2->second];
       if(before_cost > after_cost){
         amelioration_found = true;
         gain = before_cost - after_cost;
@@ -201,9 +201,9 @@ distance_t local_search::or_opt_step(){
     index_t next_2 = _edges.at(next);
 
     // Precomputing weights not depending on edge_2.
-    distance_t first_potential_add = _matrix(edge_1->first, next_2);
-    distance_t edge_1_weight = _matrix(edge_1->first, edge_1->second);
-    distance_t next_next_2_weight = _matrix(next, next_2);
+    distance_t first_potential_add = _matrix[edge_1->first][next_2];
+    distance_t edge_1_weight = _matrix[edge_1->first][edge_1->second];
+    distance_t next_next_2_weight = _matrix[next][next_2];
 
     for(auto edge_2 = _edges.cbegin(); edge_2 != _edges.cend(); ++edge_2){
       if((edge_2 == edge_1)
@@ -214,11 +214,11 @@ distance_t local_search::or_opt_step(){
       distance_t before_cost
         = edge_1_weight
         + next_next_2_weight
-        + _matrix(edge_2->first, edge_2->second);
+        + _matrix[edge_2->first][edge_2->second];
       distance_t after_cost
         = first_potential_add
-        + _matrix(edge_2->first, first_relocated)
-        + _matrix(next, edge_2->second);
+        + _matrix[edge_2->first][first_relocated]
+        + _matrix[next][edge_2->second];
       if(before_cost > after_cost){
         amelioration_found = true;
         gain = before_cost - after_cost;

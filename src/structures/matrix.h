@@ -24,61 +24,48 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "../utils/exceptions.h"
 
 template <class T>
-class matrix{
+class line: private std::vector<T>{
 
-private:
-  std::size_t _size;
-  std::vector<std::vector<T>> _inner_rep;
-  
+  using parent = std::vector<T>;
+
 public:
-  matrix():
-    _size(0) {}
+  using parent::size;
+  using parent::operator[];
+
+  line(std::size_t n) : parent(n) {
+  }
+};
+
+template <class T>
+class matrix : private std::vector<line<T>>{
   
-  matrix(std::vector<std::vector<T>> matrix_as_vector):
-    _size(matrix_as_vector.size()),
-    _inner_rep(matrix_as_vector)
-  {
-    // Checking for a square matrix
-    for(auto line = matrix_as_vector.cbegin();
-        line != matrix_as_vector.cend();
-        ++line){
-      if (line->size() != _size){
-        throw custom_exception("square matrix required in matrix constructor.");
-      }
-    }
+  using parent = std::vector<line<T>>;
+  
+ public:
+  using parent::size;
+  using parent::operator[];
+  
+  matrix(std::size_t n): 
+    parent(n, line<T>(n)){
   }
-
-  std::size_t size() const{
-    return _size;
-  }
-
+  
   void print() const{
-    for(auto i = _inner_rep.cbegin(); i != _inner_rep.cend(); ++i){
-      for(auto val = (*i).cbegin(); val != (*i).cend(); ++val){
-        std::cout << *val << " ; ";
+    for(std::size_t i = 0; i < this->size(); ++i){
+      for(std::size_t j = 0; j < (*this)[i].size(); ++j){
+        std::cout << (*this)[i][j] << " ; ";
       }
       std::cout << std::endl;
     }
   }
-
+  
   matrix<T> get_sub_matrix(const std::vector<index_t>& indices) const{
-    std::vector<std::vector<T>> sub_matrix;
-    for(auto i = indices.cbegin(); i != indices.cend(); ++i){
-      std::vector<T> current_line;
-      for(auto j = indices.cbegin(); j != indices.cend(); ++j){
-        current_line.push_back(_inner_rep[*i][*j]);
+    matrix<T> sub_matrix {indices.size()};
+    for(std::size_t i = 0; i < indices.size(); ++i){
+      for(std::size_t j = 0; j < indices.size(); ++j){
+        sub_matrix[i][j] = (*this)[indices[i]][indices[j]];
       }
-      sub_matrix.push_back(current_line);
     }
-    return matrix<T> (sub_matrix);
-  }
-
-  T operator()(index_t i, index_t j) const{
-    return _inner_rep[i][j];
-  }
-
-  void set(index_t i, index_t j, T value){
-    _inner_rep[i][j] = value;
+    return sub_matrix;
   }
 };
 

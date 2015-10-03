@@ -24,16 +24,16 @@ logger::logger(const cl_args_t& cl_args):
 std::string logger::tour_to_string(const tsp& instance,
                                    const std::list<index_t>& tour,
                                    const timing_t& computing_times) const{
-  std::string route_summary;
-  unsigned long route_summary_duration = 0;
-  if(_cl_args.loader == 0 and _cl_args.geometry){
-    // Get route informations summary when using OSRM.
-    auto start_route_summary = std::chrono::high_resolution_clock::now();
-    route_summary = instance.get_route_summary(tour);
-    auto end_route_summary = std::chrono::high_resolution_clock::now();
-    route_summary_duration =
+  std::string route_geometry;
+  unsigned long route_geometry_duration = 0;
+  if(_cl_args.use_osrm and _cl_args.geometry){
+    // Get route informations geometry when using OSRM.
+    auto start_route_geometry = std::chrono::high_resolution_clock::now();
+    route_geometry = instance.get_route_geometry(tour);
+    auto end_route_geometry = std::chrono::high_resolution_clock::now();
+    route_geometry_duration =
       std::chrono::duration_cast<std::chrono::milliseconds>
-      (end_route_summary - start_route_summary).count();
+      (end_route_geometry - start_route_geometry).count();
   }
 
   // Execution informations.
@@ -44,30 +44,20 @@ std::string logger::tour_to_string(const tsp& instance,
     + std::to_string(computing_times.heuristic) + ",";
   json_log += "\"local_search\":"
     + std::to_string(computing_times.local_search) + "}";
-  if(_cl_args.loader == 0 and _cl_args.geometry){
+  if(_cl_args.use_osrm and _cl_args.geometry){
     // Log route information timing when using OSRM.
-    json_log += ",\"detailed_geometry\":" + std::to_string(route_summary_duration);
+    json_log += ",\"detailed_geometry\":" + std::to_string(route_geometry_duration);
   }
   json_log += "},";
 
   // Solution found.
-  auto locations = instance.get_locations();
-  auto m = instance.get_matrix();
-  std::string tour_str = "\"route\":[";
-  for(auto step = tour.cbegin(); step != tour.cend(); ++step){
-    tour_str += "[" + std::to_string(locations[*step].first)
-      + "," + std::to_string(locations[*step].second) + "],";
-  }
-  tour_str.pop_back();          // Remove trailing comma.
-  tour_str += "],";
-
-  json_log += tour_str;
+  json_log += instance.get_route(tour);
 
   json_log += "\"solution_cost\":" + std::to_string(instance.cost(tour)) + ",";
 
-  if(_cl_args.loader == 0 and _cl_args.geometry){
-    // Add route informations summary when using OSRM.
-    json_log += route_summary;
+  if(_cl_args.use_osrm and _cl_args.geometry){
+    // Add route informations geometry when using OSRM.
+    json_log += route_geometry;
   }
   else{
     json_log.pop_back();        // Remove trailing comma.
