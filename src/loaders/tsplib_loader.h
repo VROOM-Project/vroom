@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define TSPLIB_LOADER_H
 #include <vector>
 #include <cassert>
-#include <regex>
+#include <boost/regex.hpp>
 #include <sstream>
 #include <cmath>
 #include "./problem_io.h"
@@ -106,18 +106,18 @@ public:
     _ewf(EWF::NONE),
     _matrix(0){
     // 1. Get problem dimension.
-    std::regex dim_rgx ("DIMENSION[[:space:]]*:[[:space:]]*([0-9]+)[[:space:]]");
-    std::smatch dim_match;
-    std::regex_search(input, dim_match, dim_rgx);
+    boost::regex dim_rgx ("DIMENSION[[:space:]]*:[[:space:]]*([0-9]+)[[:space:]]");
+    boost::smatch dim_match;
+    boost::regex_search(input, dim_match, dim_rgx);
     if(dim_match.size() != 2){
       throw custom_exception("incorrect \"DIMENSION\" key.");
     }
     _dimension = std::stoul(dim_match[1].str());
 
     // 2. Get edge weight type.
-    std::regex ewt_rgx ("EDGE_WEIGHT_TYPE[[:space:]]*:[[:space:]]*([A-Z]+(_2D)?)[[:space:]]");
-    std::smatch ewt_match;
-    if(!std::regex_search(input, ewt_match, ewt_rgx)){
+    boost::regex ewt_rgx ("EDGE_WEIGHT_TYPE[[:space:]]*:[[:space:]]*([A-Z]+(_2D)?)[[:space:]]");
+    boost::smatch ewt_match;
+    if(!boost::regex_search(input, ewt_match, ewt_rgx)){
       throw custom_exception("incorrect \"EDGE_WEIGHT_TYPE\".");
     }
     std::string type = ewt_match[1].str();
@@ -142,9 +142,9 @@ public:
     }
     // 2. Get edge weight format if required.
     if(_ewt == EWT::EXPLICIT){
-      std::regex ewf_rgx ("EDGE_WEIGHT_FORMAT[[:space:]]*:[[:space:]]*([A-Z]+(_[A-Z]+){1,2})[[:space:]]");
-      std::smatch ewf_match;
-      if(!std::regex_search(input, ewf_match, ewf_rgx)){
+      boost::regex ewf_rgx ("EDGE_WEIGHT_FORMAT[[:space:]]*:[[:space:]]*([A-Z]+(_[A-Z]+){1,2})[[:space:]]");
+      boost::smatch ewf_match;
+      if(!boost::regex_search(input, ewf_match, ewf_rgx)){
         throw custom_exception("incorrect \"EDGE_WEIGHT_FORMAT\".");
       }
       std::string format = ewf_match[1].str();
@@ -168,18 +168,18 @@ public:
     // 3. Getting data section.
     if(_ewt == EWT::EXPLICIT){
       // Looking for an edge weight section.
-      std::regex ews_rgx ("EDGE_WEIGHT_SECTION[[:space:]]*(([0-9]+[[:space:]]+)+)");
-      std::smatch ews_match;
-      if(!std::regex_search(input, ews_match, ews_rgx)){
+      boost::regex ews_rgx ("EDGE_WEIGHT_SECTION[[:space:]]*(.+)[[:space:]]*(EOF)?");
+      boost::smatch ews_match;
+      if(!boost::regex_search(input, ews_match, ews_rgx)){
         throw custom_exception("incorrect \"EDGE_WEIGHT_SECTION\".");
       }
       _data_section = ews_match[1].str();
     }
     else{
       // Looking for a node coord section.
-      std::regex ews_rgx ("NODE_COORD_SECTION[[:space:]]+(([0-9]+[[:space:]]+(-?[0-9]*([.][0-9]*(e[+][0-9]+)?)?[[:space:]]+){2})+)");
-      std::smatch ews_match;
-      if(!std::regex_search(input, ews_match, ews_rgx)){
+      boost::regex ews_rgx ("NODE_COORD_SECTION[[:space:]]+(([0-9]+[[:space:]]+(-?[0-9]*([.][0-9]*(e[+][0-9]+)?)?[[:space:]]+){2})+)");
+      boost::smatch ews_match;
+      if(!boost::regex_search(input, ews_match, ews_rgx)){
         throw custom_exception("incorrect \"NODE_COORD_SECTION\".");
       }
       _data_section = ews_match[1].str();
@@ -195,10 +195,10 @@ public:
         // // Checking number of values. Commented by default since it
         // // can be sooo sloooow on big instances.
         // std::size_t nb_values = _dimension * _dimension;
-        // std::regex nb_values_rgx ("[[:space:]]*([0-9]+[[:space:]]+){"
+        // boost::regex nb_values_rgx ("[[:space:]]*([0-9]+[[:space:]]+){"
         //                           + std::to_string(nb_values)
         //                           + "}");
-        // if(!std::regex_match(_data_section, nb_values_rgx)){
+        // if(!boost::regex_match(_data_section, nb_values_rgx)){
         //   throw custom_exception("wrong number of edge weights provided.");
         // } 
 
@@ -218,10 +218,10 @@ public:
         // // Checking number of values. Commented by default since it
         // // can be sooo sloooow on big instances.
         // std::size_t nb_values = (_dimension - 1) * _dimension / 2;
-        // std::regex nb_values_rgx ("[[:space:]]*([0-9]+[[:space:]]+){"
+        // boost::regex nb_values_rgx ("[[:space:]]*([0-9]+[[:space:]]+){"
         //                           + std::to_string(nb_values)
         //                           + "}");
-        // if(!std::regex_match(_data_section, nb_values_rgx)){
+        // if(!boost::regex_match(_data_section, nb_values_rgx)){
         //   throw custom_exception("wrong number of edge weights provided.");
         // } 
 
@@ -244,10 +244,10 @@ public:
         // // Checking number of values. Commented by default since it
         // // can be sooo sloooow on big instances.
         // std::size_t nb_values = (_dimension + 1) * _dimension / 2;
-        // std::regex nb_values_rgx ("[[:space:]]*([0-9]+[[:space:]]+){"
+        // boost::regex nb_values_rgx ("[[:space:]]*([0-9]+[[:space:]]+){"
         //                           + std::to_string(nb_values)
         //                           + "}");
-        // if(!std::regex_match(_data_section, nb_values_rgx)){
+        // if(!boost::regex_match(_data_section, nb_values_rgx)){
         //   throw custom_exception("wrong number of edge weights provided.");
         // } 
 
@@ -270,10 +270,10 @@ public:
         // // Checking number of values. Commented by default since it
         // // can be sooo sloooow on big instances.
         // std::size_t nb_values = (_dimension + 1) * _dimension / 2;
-        // std::regex nb_values_rgx ("[[:space:]]*([0-9]+[[:space:]]+){"
+        // boost::regex nb_values_rgx ("[[:space:]]*([0-9]+[[:space:]]+){"
         //                           + std::to_string(nb_values)
         //                           + "}");
-        // if(!std::regex_match(_data_section, nb_values_rgx)){
+        // if(!boost::regex_match(_data_section, nb_values_rgx)){
         //   throw custom_exception("wrong number of edge weights provided.");
         // } 
 
@@ -303,10 +303,10 @@ public:
 
       // // Checking number of values. Commented by default since it
       // // can be sooo sloooow on big instances.
-      // std::regex nodes_rgx ("([0-9]+[[:space:]]+(-?[0-9]*([.][0-9]*(e[+][0-9]+)?)?[[:space:]]+){2}){"
+      // boost::regex nodes_rgx ("([0-9]+[[:space:]]+(-?[0-9]*([.][0-9]*(e[+][0-9]+)?)?[[:space:]]+){2}){"
       //                       + std::to_string(_dimension) 
       //                       +"}");
-      // if(!std::regex_match(_data_section, nodes_rgx)){
+      // if(!boost::regex_match(_data_section, nodes_rgx)){
       //   throw custom_exception("wrong number of node coords.");
       // }
 
