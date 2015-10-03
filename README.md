@@ -221,7 +221,7 @@ or alternatively use a file for long lists:
 Using a specific OSRM configuration is described in the complete usage
 and options list:
 
-```bash
+```
 $ vroom -h
 VROOM Copyright (C) 2015, Julien Coupey
 Usage :
