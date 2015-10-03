@@ -18,7 +18,7 @@ _Good solutions, fast._
 
 ### What?
 
-VROOM is an optimization engine written in C++ that aim at providing
+VROOM is an optimization engine written in C++14 that aim at providing
 good solutions to various real-life [vehicle routing
 problems](https://en.wikipedia.org/wiki/Vehicle_routing_problem)
 within a small computing time. It is free software, distributed under
@@ -49,6 +49,18 @@ strategies. With the current rise of OpenStreetMap and efficient
 open-source routing tools, it's now time to go one step further with
 real-life open-source routing optimization!
 
+### How fast and how good?
+
+Solving problems is a matter of milliseconds, or seconds when reaching
+hundreds of locations.
+
+While the [NP-hardness](https://en.wikipedia.org/wiki/NP-hardness) of
+the problem makes it very difficult (or too long) to get the optimal
+solution, VROOM solutions are shown to be very good approximations
+(see
+[benchmark results](http://coupey.fr/vroom/tsplib/vroom_tsplib.pdf
+)).
+
 ---
 
 ## Features
@@ -70,8 +82,12 @@ real-life open-source routing optimization!
   places a.k.a [travelling salesman
   problem](https://en.wikipedia.org/wiki/Travelling_salesman_problem);
 
-* can scale to handle very big instances (don't worry about using
-  several thousands locations).
+* can scale to handle very big instances (don't worry about using a
+  few thousands locations);
+
+* support user-defined matrices for travel costs using
+  [TSPLIB](http://comopt.ifi.uni-heidelberg.de/software/TSPLIB95/)
+  format.
 
 ---
 
@@ -132,14 +148,55 @@ Download:
 
 * [output](http://coupey.fr/vroom/irish_pubs_solution.json)
 
+### 200 points TSPLIB instance kroB200
+
+A 200 cities problem. The travel costs are computed using euclidean
+distance with the provided coordinates.
+
+![nrw1379](http://coupey.fr/vroom/tsplib/kroB200.png)
+
+Tour computing time (including TSPLIB file parsing): 23 milliseconds.
+
+Total distance: 30042.
+
+Solution quality: +2.06% from optimal solution (29437).
+
+Download:
+
+* [request](http://coupey.fr/vroom/tsplib/kroB200.tsp)
+
+* [output](http://coupey.fr/vroom/tsplib/solutions/kroB200_sol.json)
+
+### 1379 points TSPLIB instance nrw1379
+
+Tour of 1379 places in Nordrhein-Westfalen. The travel costs are
+computed using euclidean distance with the provided coordinates.
+
+![nrw1379](http://coupey.fr/vroom/tsplib/nrw1379.png)
+
+Tour computing time (including TSPLIB file parsing): 8.1s.
+
+Total distance: 58130.
+
+Solution quality: +2.63% from optimal solution (56638).
+
+Download:
+
+* [request](http://coupey.fr/vroom/tsplib/nrw1379.tsp)
+
+* [output](http://coupey.fr/vroom/tsplib/solutions/nrw1379_sol.json)
+
 ---
 
 ## Installation and usage
 
+### Dependencies
+
+VROOM requires [boost](http://www.boost.org/) and gcc 4.8 or later.
+
 ### Build
 
-To clone the project and build the executable using gcc 4.7 or later,
-run:
+Clone the project and build the executable by running:
 
 ```bash
 git clone https://github.com/jcoupey/vroom.git
@@ -151,40 +208,54 @@ cd ../
 
 ### Command-line usage
 
-If your OSRM server is listening at 1.2.3.4 on port 4321 (see the
-[OSRM wiki](https://github.com/Project-OSRM/osrm-backend/wiki) on how
-to setup your own server), use the following with your list of
-locations as argument:
-
+Use your list of locations as command-line argument:
 ```bash
-./bin/vroom -a 1.2.3.4 -p 4321 "loc=lat,lon&loc=lat,lon[&loc=lat,lon...]"
+./bin/vroom "loc=lat,lon&loc=lat,lon[&loc=lat,lon...]"
 ```
 
-If you run OSRM locally with defaults value (0.0.0.0 on port 5000),
-you don't need to specify anything, as shown in the complete usage and
-options list:
+or alternatively use a file for long lists:
+```bash
+./bin/vroom -i myfile
+```
+
+Using a specific OSRM configuration is described in the complete usage
+and options list:
 
 ```bash
 $ vroom -h
 VROOM Copyright (C) 2015, Julien Coupey
 Usage :
-	vroom [OPTION]... "loc=lat,lon&loc=lat,lon[&loc=lat,lon...]"
-	vroom [OPTION]... -i FILE
+    vroom [OPTION]... "loc=lat,lon&loc=lat,lon[&loc=lat,lon...]"
+    vroom [OPTION]... -i FILE
 Options:
-	-a=ADDRESS	 OSRM server address ("0.0.0.0")
-	-p=PORT,	 OSRM listening port (5000)
-	-g,		     get detailed route geometry for the solution
-	-e,		     use eulidean distance rather than travel times
-			     from OSRM
-	-o=OUTPUT,	 output file name
-	-i=FILE,	 read locations list from FILE rather than from
-			     command-line
-	-v,		     turn on verbose output
+    -a=ADDRESS   OSRM server address ("0.0.0.0")
+    -p=PORT,     OSRM listening port (5000)
+    -g,          get detailed route geometry for the solution
+    -o=OUTPUT,   output file name
+    -i=FILE,     read input from FILE rather than from
+                 command-line
+    -t,          read input file from -i option as TSPLIB format
+    -v,          turn on verbose output
 
 This program is distributed under the terms of the GNU General Public
 License, version 3, and comes with ABSOLUTELY NO WARRANTY.
-
 ```
+
+Specify the `-t` option to solve a problem with your own matrix
+described with the
+[TSPLIB](http://comopt.ifi.uni-heidelberg.de/software/TSPLIB95/)
+format:
+```bash
+./bin/vroom -t -i myfile.tsp
+```
+
+Supported TSPLIB syntax include:
+
+- problems with provided list of nodes (with `EDGE_WEIGHT_TYPE` among
+`GEO`, `EUC_ED`, `CEIL_2D`, `ATT`);
+- problems with detailed matrix (with `EDGE_WEIGHT_TYPE:EXPLICIT` and
+   `EDGE_WEIGHT_FORMAT` among `FULL_MATRIX`, `UPPER_ROW`,
+   `UPPER_DIAG_ROW` and `LOWER_DIAG_ROW`);
 
 ### Output
 
@@ -192,12 +263,15 @@ The solution is described in `json` format.
 
 * `route`: array containing the ordered list of locations;
 
-* `total_time`: total travel time in seconds;
-
-* `total_distance`: total distance in meters;
+* `tour`: array describing the route as an ordered list of location
+  ranks (`-t` option only);
 
 * `route_geometry`: detailed route compressed as
-  [polyline](http://code.google.com/apis/maps/documentation/utilities/polylinealgorithm.html);
+  [polyline](http://code.google.com/apis/maps/documentation/utilities/polylinealgorithm.html) (`-g` option only);
+
+* `total_time`: total travel time in seconds (`-g` option only);
+
+* `total_distance`: total distance in meters (`-g` option only);
 
 * `solution_cost`: cost of the found solution, estimated from the cost
   matrix used while solving;
@@ -213,10 +287,10 @@ The solution is described in `json` format.
         * `local_search`: time used to improve the initial solution;
 
     * `detailed_geometry`: time required to compute `route_geometry`,
-      `total_time` and `total_distance`.
+      `total_time` and `total_distance` (`-g` option only).
 
-If you are familiar with the [OSRM API for viaroute
-queries](https://github.com/Project-OSRM/osrm-backend/wiki/Server-api#service-viaroute),
+If you are familiar with the
+[OSRM API for viaroute queries](https://github.com/Project-OSRM/osrm-backend/wiki/Server-api#service-viaroute),
 you already guessed that `route_geometry`, `total_time` and
 `total_distance` are actually obtained with a viaroute query on the
 `route` array once the solution is found.
@@ -232,10 +306,6 @@ Miscellaneous interesting perspectives:
 * give better quality indicators using a good lower bound on solution
   cost;
 
-* benchmark the approach on
-  [TSPLIB instances](http://comopt.ifi.uni-heidelberg.de/software/TSPLIB95/),
-  both for quality and computing times;
-  
 * use clustering algorithms (or other options) to handle problems
   involving several vehicles;
 
