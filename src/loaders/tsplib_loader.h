@@ -177,7 +177,7 @@ public:
     }
     else{
       // Looking for a node coord section.
-      boost::regex ews_rgx ("NODE_COORD_SECTION[[:space:]]+(([0-9]+[[:space:]]+(-?[0-9]*([.][0-9]*(e[+][0-9]+)?)?[[:space:]]+){2})+)");
+      boost::regex ews_rgx ("NODE_COORD_SECTION[[:space:]]*(.+)[[:space:]]*(EOF)?");
       boost::smatch ews_match;
       if(!boost::regex_search(input, ews_match, ews_rgx)){
         throw custom_exception("incorrect \"NODE_COORD_SECTION\".");
@@ -192,16 +192,6 @@ public:
     if(_ewt == EWT::EXPLICIT){
       switch (_ewf){
       case EWF::FULL_MATRIX: {
-        // // Checking number of values. Commented by default since it
-        // // can be sooo sloooow on big instances.
-        // std::size_t nb_values = _dimension * _dimension;
-        // boost::regex nb_values_rgx ("[[:space:]]*([0-9]+[[:space:]]+){"
-        //                           + std::to_string(nb_values)
-        //                           + "}");
-        // if(!boost::regex_match(_data_section, nb_values_rgx)){
-        //   throw custom_exception("wrong number of edge weights provided.");
-        // } 
-
         // Reading from input.
         for(std::size_t i = 0; i < _dimension; ++i){
           for(std::size_t j = 0; j < _dimension; ++j){
@@ -215,16 +205,6 @@ public:
         break;
       }
       case EWF::UPPER_ROW: {
-        // // Checking number of values. Commented by default since it
-        // // can be sooo sloooow on big instances.
-        // std::size_t nb_values = (_dimension - 1) * _dimension / 2;
-        // boost::regex nb_values_rgx ("[[:space:]]*([0-9]+[[:space:]]+){"
-        //                           + std::to_string(nb_values)
-        //                           + "}");
-        // if(!boost::regex_match(_data_section, nb_values_rgx)){
-        //   throw custom_exception("wrong number of edge weights provided.");
-        // } 
-
         // Reading from input.
         distance_t current_value;              
         for(std::size_t i = 0; i < _dimension - 1; ++i){
@@ -241,16 +221,6 @@ public:
         break;
       }
       case EWF::UPPER_DIAG_ROW:{
-        // // Checking number of values. Commented by default since it
-        // // can be sooo sloooow on big instances.
-        // std::size_t nb_values = (_dimension + 1) * _dimension / 2;
-        // boost::regex nb_values_rgx ("[[:space:]]*([0-9]+[[:space:]]+){"
-        //                           + std::to_string(nb_values)
-        //                           + "}");
-        // if(!boost::regex_match(_data_section, nb_values_rgx)){
-        //   throw custom_exception("wrong number of edge weights provided.");
-        // } 
-
         // Reading from input.
         distance_t current_value;              
         for(std::size_t i = 0; i < _dimension; ++i){
@@ -267,16 +237,6 @@ public:
         break;
       }
       case EWF::LOWER_DIAG_ROW:{
-        // // Checking number of values. Commented by default since it
-        // // can be sooo sloooow on big instances.
-        // std::size_t nb_values = (_dimension + 1) * _dimension / 2;
-        // boost::regex nb_values_rgx ("[[:space:]]*([0-9]+[[:space:]]+){"
-        //                           + std::to_string(nb_values)
-        //                           + "}");
-        // if(!boost::regex_match(_data_section, nb_values_rgx)){
-        //   throw custom_exception("wrong number of edge weights provided.");
-        // } 
-
         // Reading from input.
         distance_t current_value;              
         for(std::size_t i = 0; i < _dimension; ++i){
@@ -300,15 +260,6 @@ public:
     }
     else{
       // Parsing nodes.
-
-      // // Checking number of values. Commented by default since it
-      // // can be sooo sloooow on big instances.
-      // boost::regex nodes_rgx ("([0-9]+[[:space:]]+(-?[0-9]*([.][0-9]*(e[+][0-9]+)?)?[[:space:]]+){2}){"
-      //                       + std::to_string(_dimension) 
-      //                       +"}");
-      // if(!boost::regex_match(_data_section, nodes_rgx)){
-      //   throw custom_exception("wrong number of node coords.");
-      // }
 
       // Build vector of nodes with their coords.
       for(std::size_t i = 0; i < _dimension; ++i){
