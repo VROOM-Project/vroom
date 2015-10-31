@@ -107,7 +107,7 @@ int main(int argc, char **argv){
     solve_atsp(cl_args);
   }
   catch(const custom_exception& e){
-    std::cout << "Error: " << e.get_message() << std::endl;
+    std::cerr << "Error: " << e.get_message() << std::endl;
     exit(1);
   }
 
