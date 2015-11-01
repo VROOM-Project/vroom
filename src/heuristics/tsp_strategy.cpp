@@ -38,7 +38,7 @@ void solve_atsp(const cl_args_t& cl_args){
               << computing_times.matrix_loading << " ms\n";
   }
 
-  // Using symmetrized problem to apply heuristics and local searches.
+  // Using symmetrized problem to apply heuristic.
   tsp_sym symmetrized_tsp (asymmetric_tsp.get_symmetrized_matrix());
 
   // Applying Christofides heuristic.
@@ -58,13 +58,24 @@ void solve_atsp(const cl_args_t& cl_args){
               << computing_times.heuristic << " ms\n";
   }
 
-  distance_t christo_cost = symmetrized_tsp.cost(christo_sol);
+  // Back to the asymmetric problem, picking the best way.
+  std::list<index_t> reverse_christo_sol (christo_sol);
+  reverse_christo_sol.reverse();
+  distance_t direct_cost = asymmetric_tsp.cost(christo_sol);
+  distance_t reverse_cost = asymmetric_tsp.cost(reverse_christo_sol);
+
+  // Cost reference after heuristic.
+  distance_t christo_cost = std::min(direct_cost, reverse_cost);
 
   // Applying deterministic, fast local search to improve the current
   // solution in a small amount of time. All possible moves for the
   // different neighbourhoods are performed, stopping when reaching a
   // local minima.
-  local_search ls (&symmetrized_tsp, christo_sol, cl_args.verbose);
+  local_search ls (asymmetric_tsp,
+                   (direct_cost <= reverse_cost) ? 
+                   christo_sol: reverse_christo_sol,
+                   cl_args.verbose);
+
   auto start_local_search = std::chrono::high_resolution_clock::now();
   
   distance_t two_opt_gain = 0;
@@ -151,22 +162,6 @@ void solve_atsp(const cl_args_t& cl_args){
               << computing_times.local_search << " ms\n";
   }
 
-  // Back to the asymmetric problem, picking the best way.
-  std::list<index_t> reverse_sol;
-  for(auto step = local_search_sol.begin();
-      step != local_search_sol.end();
-      ++step){
-    reverse_sol.push_front(*step);
-  }
-
-  distance_t direct_cost = asymmetric_tsp.cost(local_search_sol);
-  distance_t reverse_cost = asymmetric_tsp.cost(reverse_sol);
-
   logger log (cl_args);
-  if(direct_cost < reverse_cost){
-    log.tour_to_output(asymmetric_tsp, local_search_sol, computing_times);
-  }
-  else{
-    log.tour_to_output(asymmetric_tsp, reverse_sol, computing_times);
-  }
+  log.tour_to_output(asymmetric_tsp, local_search_sol, computing_times);
 }

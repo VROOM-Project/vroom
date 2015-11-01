@@ -18,11 +18,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "local_search.h"
 
-local_search::local_search(tsp_sym* problem,
+local_search::local_search(const tsp& problem,
                            std::list<index_t> tour,
                            bool verbose):
-  _problem(problem),
-  _matrix(_problem->get_matrix()),
+  _matrix(problem.get_matrix()),
   _verbose(verbose){
   auto location = tour.cbegin();
   index_t first_index = *location;
@@ -132,6 +131,14 @@ distance_t local_search::two_opt_step(){
       distance_t after_cost
         = _matrix[edge_1->first][edge_2->first]
         + _matrix[edge_1->second][edge_2->second];
+      // Adding part of the tour that needs to be reversed.
+      for(index_t current = edge_1->second;
+          current != edge_2->first;
+          current = _edges.at(current)){
+        before_cost += _matrix[current][_edges.at(current)];
+        after_cost += _matrix[_edges.at(current)][current];
+      }
+
       if(before_cost > after_cost){
         amelioration_found = true;
         gain = before_cost - after_cost;
