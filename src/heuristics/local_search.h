@@ -27,6 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 class local_search{
 private:
   const matrix<distance_t> _matrix;
+  const bool _symmetric_matrix;
   std::map<index_t, index_t> _edges;
   bool _verbose;
 

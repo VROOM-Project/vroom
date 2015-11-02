@@ -67,6 +67,20 @@ class matrix : private std::vector<line<T>>{
     }
     return sub_matrix;
   }
+
+  bool is_symmetric() const{
+    bool is_sym = true;
+    std::size_t i = 0;
+    while(is_sym and (i < this->size())){
+      std::size_t j = i + 1;
+      while(is_sym and (j < this->size())){
+        is_sym &= ((*this)[i][j] == (*this)[j][i]);
+        ++j;
+      }
+      ++i;
+    }
+    return is_sym;
+  }
 };
 
 #endif

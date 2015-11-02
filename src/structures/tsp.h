@@ -32,6 +32,7 @@ class tsp{
 protected:
   std::unique_ptr<problem_io<distance_t>> _loader;
   matrix<distance_t> _matrix;
+  bool _is_symmetric;
   
 private:
   void add_location(const std::string location);
@@ -44,6 +45,8 @@ public:
   const matrix<distance_t>& get_matrix() const;
 
   const matrix<distance_t> get_symmetrized_matrix() const;
+
+  const bool is_symmetric() const;
 
   std::size_t size();
 

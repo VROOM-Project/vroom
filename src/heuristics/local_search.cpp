@@ -22,7 +22,9 @@ local_search::local_search(const tsp& problem,
                            std::list<index_t> tour,
                            bool verbose):
   _matrix(problem.get_matrix()),
-  _verbose(verbose){
+  _symmetric_matrix(problem.is_symmetric()),
+  _verbose(verbose) 
+{
   auto location = tour.cbegin();
   index_t first_index = *location;
   index_t current_index = first_index;
@@ -131,12 +133,14 @@ distance_t local_search::two_opt_step(){
       distance_t after_cost
         = _matrix[edge_1->first][edge_2->first]
         + _matrix[edge_1->second][edge_2->second];
-      // Adding part of the tour that needs to be reversed.
-      for(index_t current = edge_1->second;
-          current != edge_2->first;
-          current = _edges.at(current)){
-        before_cost += _matrix[current][_edges.at(current)];
-        after_cost += _matrix[_edges.at(current)][current];
+      if(!_symmetric_matrix){
+        // Adding part of the tour that needs to be reversed.
+        for(index_t current = edge_1->second;
+            current != edge_2->first;
+            current = _edges.at(current)){
+          before_cost += _matrix[current][_edges.at(current)];
+          after_cost += _matrix[_edges.at(current)][current];
+        }
       }
 
       if(before_cost > after_cost){
