@@ -36,7 +36,7 @@ private:
   std::vector<std::pair<double, double>> _locations;
 
   std::string build_query(const std::vector<std::pair<double, double>>& locations, 
-                          std::string service) const{
+                          std::string service, std::string extra_args = "") const{
     // Building query for osrm-routed
     std::string query = "POST /" + service + "?";
 
@@ -47,6 +47,10 @@ private:
         + ","
         + std::to_string(location.second)
         + "&";
+    }
+
+    if(!extra_args.empty()) {
+      query += extra_args + "&";
     }
 
     query.pop_back();           // Remove trailing '&'.
@@ -248,7 +252,7 @@ public:
     }
 
     std::string query = this->build_query(ordered_locations,
-                                          "viaroute");
+                                          "viaroute", "uturns=true");
 
     // Other return status than 0 should have been filtered before
     // with unfound routes check.
