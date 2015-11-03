@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "local_search.h"
 
 local_search::local_search(const tsp& problem,
-                           std::list<index_t> tour,
+                           const std::list<index_t>& tour,
                            bool verbose):
   _matrix(problem.get_matrix()),
   _symmetric_matrix(problem.is_symmetric()),

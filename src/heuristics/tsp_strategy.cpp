@@ -46,6 +46,7 @@ void solve_atsp(const cl_args_t& cl_args){
   std::unique_ptr<heuristic> christo_h = std::make_unique<christo_heuristic>();
   std::list<index_t> christo_sol
     = christo_h->build_solution(symmetrized_tsp);
+  distance_t christo_cost = symmetrized_tsp.cost(christo_sol);
 
   auto end_christo = std::chrono::high_resolution_clock::now();
 
@@ -58,38 +59,31 @@ void solve_atsp(const cl_args_t& cl_args){
               << computing_times.heuristic << " ms\n";
   }
 
-  // Back to the asymmetric problem, picking the best way.
-  std::list<index_t> reverse_christo_sol (christo_sol);
-  reverse_christo_sol.reverse();
-  distance_t direct_cost = asymmetric_tsp.cost(christo_sol);
-  distance_t reverse_cost = asymmetric_tsp.cost(reverse_christo_sol);
-
-  // Cost reference after heuristic.
-  distance_t christo_cost = std::min(direct_cost, reverse_cost);
-
+  // Local search on symmetric problem.
   // Applying deterministic, fast local search to improve the current
   // solution in a small amount of time. All possible moves for the
   // different neighbourhoods are performed, stopping when reaching a
   // local minima.
-  local_search ls (asymmetric_tsp,
-                   (direct_cost <= reverse_cost) ? 
-                   christo_sol: reverse_christo_sol,
-                   cl_args.verbose);
+  local_search sym_ls (symmetrized_tsp,
+                       christo_sol,
+                       cl_args.verbose);
+  auto start_sym_local_search = std::chrono::high_resolution_clock::now();
+  if(cl_args.verbose){
+    std::cout << "Start local search on symmetric problem." << std::endl;
+  }
 
-  auto start_local_search = std::chrono::high_resolution_clock::now();
-  
-  distance_t two_opt_gain = 0;
-  distance_t relocate_gain = 0;
-  distance_t or_opt_gain = 0;
-  
+  distance_t sym_two_opt_gain = 0;
+  distance_t sym_relocate_gain = 0;
+  distance_t sym_or_opt_gain = 0;
+
   do{
     // All possible 2-opt moves.
     auto start_two_opt = std::chrono::high_resolution_clock::now();
-    two_opt_gain = ls.perform_all_two_opt_steps();
+    sym_two_opt_gain = sym_ls.perform_all_two_opt_steps();
 
     if(cl_args.verbose){
       std::cout << " ("
-                << (double) two_opt_gain * 100 / christo_cost
+                << (double) sym_two_opt_gain * 100 / christo_cost
                 << "%)"
                 << std::endl;
     }
@@ -107,11 +101,11 @@ void solve_atsp(const cl_args_t& cl_args){
 
     // All relocate moves.
     auto start_relocate = std::chrono::high_resolution_clock::now();
-    relocate_gain = ls.perform_all_relocate_steps();
+    sym_relocate_gain = sym_ls.perform_all_relocate_steps();
 
     if(cl_args.verbose){
       std::cout << " ("
-                << (double) relocate_gain * 100 / christo_cost
+                << (double) sym_relocate_gain * 100 / christo_cost
                 << "%)"
                 << std::endl;
     }
@@ -129,11 +123,11 @@ void solve_atsp(const cl_args_t& cl_args){
 
     // All or-opt moves.
     auto start_or_opt = std::chrono::high_resolution_clock::now();
-    or_opt_gain = ls.perform_all_or_opt_steps();
+    sym_or_opt_gain = sym_ls.perform_all_or_opt_steps();
 
     if(cl_args.verbose){
       std::cout << " ("
-                << (double) or_opt_gain * 100 / christo_cost
+                << (double) sym_or_opt_gain * 100 / christo_cost
                 << "%)"
                 << std::endl;
     }
@@ -148,20 +142,135 @@ void solve_atsp(const cl_args_t& cl_args){
       std::cout << "Or-Opt steps applied in: "
                 << or_opt_duration << " ms\n";
     }
-  }while((two_opt_gain > 0) or (relocate_gain > 0) or (or_opt_gain > 0));
+  }while((sym_two_opt_gain > 0) 
+         or (sym_relocate_gain > 0) 
+         or (sym_or_opt_gain > 0));
 
-  std::list<index_t> local_search_sol = ls.get_tour(0);
+  std::list<index_t> current_sol = sym_ls.get_tour(0);
 
-  auto end_local_search = std::chrono::high_resolution_clock::now();
+  auto end_sym_local_search = std::chrono::high_resolution_clock::now();
 
-  computing_times.local_search =
-    std::chrono::duration_cast<std::chrono::milliseconds>
-    (end_local_search - start_local_search).count();
+  auto sym_local_search_duration 
+    = std::chrono::duration_cast<std::chrono::milliseconds>
+    (end_sym_local_search - start_sym_local_search).count();
   if(cl_args.verbose){
-    std::cout << "Local search: "
-              << computing_times.local_search << " ms\n";
+    std::cout << "Symmetric local search: "
+              << sym_local_search_duration << " ms\n";
   }
 
+  auto asym_local_search_duration = 0;
+
+  if(!asymmetric_tsp.is_symmetric()){
+    // Back to the asymmetric problem, picking the best way.
+    std::list<index_t> reverse_current_sol (current_sol);
+    reverse_current_sol.reverse();
+    distance_t direct_cost = asymmetric_tsp.cost(current_sol);
+    distance_t reverse_cost = asymmetric_tsp.cost(reverse_current_sol);
+
+    // Cost reference after symmetric local search.
+    distance_t sym_ls_cost = std::min(direct_cost, reverse_cost);
+
+    // Local search on asymmetric problem.
+    local_search asym_ls (asymmetric_tsp,
+                          (direct_cost <= reverse_cost) ? 
+                          current_sol: reverse_current_sol,
+                          cl_args.verbose);
+
+    auto start_asym_local_search = std::chrono::high_resolution_clock::now();
+    if(cl_args.verbose){
+      std::cout << "Start local search on asymmetric problem." << std::endl;
+    }
+  
+    distance_t asym_two_opt_gain = 0;
+    distance_t asym_relocate_gain = 0;
+    distance_t asym_or_opt_gain = 0;
+  
+    do{
+      // All possible 2-opt moves.
+      auto start_two_opt = std::chrono::high_resolution_clock::now();
+      asym_two_opt_gain = asym_ls.perform_all_two_opt_steps();
+
+      if(cl_args.verbose){
+        std::cout << " ("
+                  << (double) asym_two_opt_gain * 100 / sym_ls_cost
+                  << "%)"
+                  << std::endl;
+      }
+    
+      auto end_two_opt = std::chrono::high_resolution_clock::now();
+
+      double two_opt_duration =
+        std::chrono::duration_cast<std::chrono::milliseconds>
+        (end_two_opt - start_two_opt).count();
+
+      if(cl_args.verbose){
+        std::cout << "Two-opt steps applied in: "
+                  << two_opt_duration << " ms\n";
+      }
+
+      // All relocate moves.
+      auto start_relocate = std::chrono::high_resolution_clock::now();
+      asym_relocate_gain = asym_ls.perform_all_relocate_steps();
+
+      if(cl_args.verbose){
+        std::cout << " ("
+                  << (double) asym_relocate_gain * 100 / sym_ls_cost
+                  << "%)"
+                  << std::endl;
+      }
+    
+      auto end_relocate = std::chrono::high_resolution_clock::now();
+
+      double relocate_duration =
+        std::chrono::duration_cast<std::chrono::milliseconds>
+        (end_relocate - start_relocate).count();
+
+      if(cl_args.verbose){
+        std::cout << "Relocate steps applied in: "
+                  << relocate_duration << " ms\n";
+      }
+
+      // All or-opt moves.
+      auto start_or_opt = std::chrono::high_resolution_clock::now();
+      asym_or_opt_gain = asym_ls.perform_all_or_opt_steps();
+
+      if(cl_args.verbose){
+        std::cout << " ("
+                  << (double) asym_or_opt_gain * 100 / sym_ls_cost
+                  << "%)"
+                  << std::endl;
+      }
+    
+      auto end_or_opt = std::chrono::high_resolution_clock::now();
+
+      double or_opt_duration =
+        std::chrono::duration_cast<std::chrono::milliseconds>
+        (end_or_opt - start_or_opt).count();
+
+      if(cl_args.verbose){
+        std::cout << "Or-Opt steps applied in: "
+                  << or_opt_duration << " ms\n";
+      }
+    }while((asym_two_opt_gain > 0) 
+           or (asym_relocate_gain > 0) 
+           or (asym_or_opt_gain > 0));
+
+    current_sol = asym_ls.get_tour(0);
+
+    auto end_asym_local_search = std::chrono::high_resolution_clock::now();
+
+    asym_local_search_duration 
+      = std::chrono::duration_cast<std::chrono::milliseconds>
+      (end_asym_local_search - start_asym_local_search).count();
+    if(cl_args.verbose){
+      std::cout << "Asymmetric local search: "
+                << asym_local_search_duration << " ms\n";
+    }
+  }
+
+  computing_times.local_search 
+    = sym_local_search_duration + asym_local_search_duration;
+
   logger log (cl_args);
-  log.tour_to_output(asymmetric_tsp, local_search_sol, computing_times);
+  log.tour_to_output(asymmetric_tsp, current_sol, computing_times);
 }

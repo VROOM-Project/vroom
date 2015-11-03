@@ -34,7 +34,7 @@ private:
 public:
 
   local_search(const tsp& problem,
-               std::list<index_t> tour,
+               const std::list<index_t>& tour,
                bool verbose);
 
   distance_t relocate_step();
