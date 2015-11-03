@@ -56,9 +56,9 @@ const matrix<distance_t> tsp::get_symmetrized_matrix() const{
     for(index_t i = 0; i < m.size(); ++i){
       m[i][i] = _matrix[i][i];
       for(index_t j = i + 1; j < m.size(); ++j){
-        distance_t max = std::max(_matrix[i][j], _matrix[j][i]);
-        m[i][j] = max;
-        m[j][i] = max;
+        distance_t min = std::min(_matrix[i][j], _matrix[j][i]);
+        m[i][j] = min;
+        m[j][i] = min;
       }
     }
     return m;
