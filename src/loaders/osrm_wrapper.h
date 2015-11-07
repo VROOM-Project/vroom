@@ -38,7 +38,7 @@ private:
   std::string build_query(const std::vector<std::pair<double, double>>& locations, 
                           std::string service, std::string extra_args = "") const{
     // Building query for osrm-routed
-    std::string query = "POST /" + service + "?";
+    std::string query = "GET /" + service + "?";
 
     // Adding locations.
     for(auto const& location: locations){
