@@ -36,7 +36,8 @@ private:
   std::vector<std::pair<double, double>> _locations;
 
   std::string build_query(const std::vector<std::pair<double, double>>& locations, 
-                          std::string service, std::string extra_args = "") const{
+                          std::string service, 
+                          std::string extra_args = "") const{
     // Building query for osrm-routed
     std::string query = "GET /" + service + "?";
 
@@ -49,7 +50,7 @@ private:
         + "&";
     }
 
-    if(!extra_args.empty()) {
+    if(!extra_args.empty()){
       query += extra_args + "&";
     }
 
@@ -162,6 +163,8 @@ public:
       = json_content.substr(previous_sep + 1, std::string::npos);
     last_line.pop_back();
     lines.push_back(last_line);
+    
+    assert(lines.size() == _locations.size());
 
     matrix<distance_t> m {lines.size()};
     for(std::size_t i = 0; i < lines.size(); ++i){
@@ -170,14 +173,14 @@ public:
       current_sep = lines[i].find(sep);
       std::size_t j = 0;
       while(current_sep != std::string::npos){
-        assert(j < lines.size());
         m[i][j] = std::stoul(lines[i].substr(previous_sep,
                                              current_sep - previous_sep));
         ++j;
         previous_sep = current_sep + 1;
         current_sep = lines[i].find(sep, current_sep + 1);
       }
-      m[i][lines.size()-1] 
+      assert(j == _locations.size() - 1);
+      m[i][lines.size() - 1] 
         = std::stoul(lines[i].substr(previous_sep, std::string::npos));
     }
 
@@ -252,7 +255,8 @@ public:
     }
 
     std::string query = this->build_query(ordered_locations,
-                                          "viaroute", "uturns=true");
+                                          "viaroute",
+                                          "uturns=true");
 
     // Other return status than 0 should have been filtered before
     // with unfound routes check.
