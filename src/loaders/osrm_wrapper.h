@@ -233,14 +233,21 @@ public:
   }
 
   virtual std::string get_route(const std::list<index_t>& tour) const override{
-    std::string route = "\"route\":[";
+    std::string result = "\"route\":[";
     for(auto const& step: tour){
-      route += "[" + std::to_string(_locations[step].first)
+      result += "[" + std::to_string(_locations[step].first)
         + "," + std::to_string(_locations[step].second) + "],";
     }
-    route.pop_back();          // Remove trailing comma.
-    route += "],";
-    return route;
+    result.pop_back();          // Remove trailing comma.
+    result += "],\"tour\":[";
+    for(auto const& step: tour){
+      // Using input index to describe locations.
+      result += std::to_string(step) + ",";
+    }
+    result.pop_back();          // Remove trailing comma.
+    result += "],";
+
+    return result;
   }
 
   virtual std::string get_route_geometry(const std::list<index_t>& tour) const override{
