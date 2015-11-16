@@ -36,26 +36,37 @@ tsp::tsp(const cl_args_t& cl_args):
   }
 
   _matrix = _loader->get_matrix();
+  _is_symmetric = _matrix.is_symmetric();
 }
 
 tsp::tsp(const matrix<distance_t>& m):
-  _matrix(m) {}
+  _matrix(m),
+  _is_symmetric(_matrix.is_symmetric()) {}
 
 const matrix<distance_t>& tsp::get_matrix() const{
   return _matrix;
 }
 
 const matrix<distance_t> tsp::get_symmetrized_matrix() const{
-  matrix<distance_t> m {_matrix.size()};
-  for(index_t i = 0; i < m.size(); ++i){
-    m[i][i] = _matrix[i][i];
-    for(index_t j = i + 1; j < m.size(); ++j){
-      distance_t max = std::max(_matrix[i][j], _matrix[j][i]);
-      m[i][j] = max;
-      m[j][i] = max;
-    }
+  if(_is_symmetric){
+    return _matrix;
   }
-  return m;
+  else{
+    matrix<distance_t> m {_matrix.size()};
+    for(index_t i = 0; i < m.size(); ++i){
+      m[i][i] = _matrix[i][i];
+      for(index_t j = i + 1; j < m.size(); ++j){
+        distance_t min = std::min(_matrix[i][j], _matrix[j][i]);
+        m[i][j] = min;
+        m[j][i] = min;
+      }
+    }
+    return m;
+  }
+}
+
+const bool tsp::is_symmetric() const{
+  return _is_symmetric;
 }
 
 std::size_t tsp::size(){

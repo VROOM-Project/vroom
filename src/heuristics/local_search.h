@@ -22,19 +22,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <map>
 #include "../structures/typedefs.h"
 #include "../structures/matrix.h"
-#include "../structures/tsp_sym.h"
+#include "../structures/tsp.h"
 
 class local_search{
 private:
-  tsp_sym* _problem;
-  matrix<distance_t> _matrix;
+  const matrix<distance_t> _matrix;
+  const bool _symmetric_matrix;
   std::map<index_t, index_t> _edges;
   bool _verbose;
 
 public:
 
-  local_search(tsp_sym* problem,
-               std::list<index_t> tour,
+  local_search(const tsp& problem,
+               const std::list<index_t>& tour,
                bool verbose);
 
   distance_t relocate_step();
