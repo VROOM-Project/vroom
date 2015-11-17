@@ -184,8 +184,31 @@ void solve_atsp(const cl_args_t& cl_args){
     distance_t asym_two_opt_gain = 0;
     distance_t asym_relocate_gain = 0;
     distance_t asym_or_opt_gain = 0;
+    distance_t asym_avoid_loops_gain = 0;
   
     do{
+      // All avoid-loops moves.
+      auto start_avoid_loops = std::chrono::high_resolution_clock::now();
+      asym_avoid_loops_gain = asym_ls.perform_all_avoid_loop_steps();
+
+      if(cl_args.verbose){
+        std::cout << " ("
+                  << (double) asym_avoid_loops_gain * 100 / sym_ls_cost
+                  << "%)"
+                  << std::endl;
+      }
+    
+      auto end_avoid_loops = std::chrono::high_resolution_clock::now();
+
+      double avoid_loops_duration =
+        std::chrono::duration_cast<std::chrono::milliseconds>
+        (end_avoid_loops - start_avoid_loops).count();
+
+      if(cl_args.verbose){
+        std::cout << "Avoid-Loops steps applied in: "
+                  << avoid_loops_duration << " ms\n";
+      }
+
       // All possible 2-opt moves.
       auto start_two_opt = std::chrono::high_resolution_clock::now();
       asym_two_opt_gain = asym_ls.perform_all_two_opt_steps();
@@ -253,7 +276,8 @@ void solve_atsp(const cl_args_t& cl_args){
       }
     }while((asym_two_opt_gain > 0) 
            or (asym_relocate_gain > 0) 
-           or (asym_or_opt_gain > 0));
+           or (asym_or_opt_gain > 0)
+           or (asym_avoid_loops_gain > 0));
 
     current_sol = asym_ls.get_tour(0);
 
