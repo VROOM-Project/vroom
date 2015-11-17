@@ -36,7 +36,7 @@ private:
 public:
   undirected_graph() {}
   
-  undirected_graph(matrix<T> m):
+  undirected_graph(const matrix<T>& m):
     _size(m.size())
   {
     bool matrix_ok = true;
@@ -53,7 +53,7 @@ public:
   }
 
   undirected_graph(std::list<edge<T>> edges):
-    _edges(edges){
+    _edges{std::move(edges)}{
     for(auto const& edge: _edges){
       index_t first = edge.get_first_vertex();
       index_t second = edge.get_second_vertex();
