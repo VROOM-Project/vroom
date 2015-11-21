@@ -28,7 +28,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 template <class T>
 std::unordered_map<index_t, index_t> minimum_weight_perfect_matching(const matrix<T>& m){
-  // std::cout << "Entering mwpm" << std::endl;
 
   // Trivial initial labeling.
   std::unordered_map<index_t, T> labeling_x;
@@ -54,17 +53,6 @@ std::unordered_map<index_t, index_t> minimum_weight_perfect_matching(const matri
   while(matching_xy.size() < m.size()){
     // Step 1.
 
-    // std::cout << "Entering step 1.\n";
-
-    // std::cout << "Labeling x\n";
-    // for(index_t x = 0; x < m.size(); ++x){
-    //   std::cout << x << ": " << labeling_x.at(x) << std::endl;
-    // }
-    // std::cout << "Labeling y\n";
-    // for(index_t y = 0; y < m.size(); ++y){
-    //   std::cout << y << ": " << labeling_y.at(y) << std::endl;
-    // }
-
     alternating_tree.clear();
     std::set<index_t> S;
     std::set<index_t> T_set;
@@ -74,7 +62,6 @@ std::unordered_map<index_t, index_t> minimum_weight_perfect_matching(const matri
     while(matching_xy.find(unmatched_x) != matching_xy.end()){
       ++unmatched_x;
     }
-    // std::cout << "unmatched_x: " << unmatched_x << std::endl;
     S.insert(unmatched_x);
 
     // Saving relevant neighbors in equality graph in alternating_tree
@@ -89,11 +76,6 @@ std::unordered_map<index_t, index_t> minimum_weight_perfect_matching(const matri
                     );
     }
 
-    // std::cout << "Slack values\n";
-    // for(auto const& s: slack){
-    //   std::cout << s.first << ": " << s.second << std::endl;
-    // }
-    
     bool augmented_path = false;
 
     while(!augmented_path){
@@ -101,18 +83,6 @@ std::unordered_map<index_t, index_t> minimum_weight_perfect_matching(const matri
       // (note that T_set is included in S neighbors).
       if(alternating_tree.size() == T_set.size()){
         // Step 2.
-        // std::cout << "Entering step 2.\n";
-
-        // std::cout << "S: ";
-        // for(auto const& s: S){
-        //   std::cout << s << " ; ";
-        // }
-        // std::cout << std::endl;
-        // std::cout << "T_set: ";
-        // for(auto const& s = T_set){
-        //   std::cout << s << " ; ";
-        // }
-        // std::cout << std::endl;
 
         T alpha = std::numeric_limits<T>::max();
         for(index_t y = 0; y < m.size(); ++y){
@@ -120,7 +90,6 @@ std::unordered_map<index_t, index_t> minimum_weight_perfect_matching(const matri
           // complement of T_set.
           if(T_set.find(y) == T_set.end()){
             T current_slack = slack.at(y);
-            // std::cout << "slack for " << y << ": " << slack.at(y) << std::endl;
             if(current_slack < alpha){
               alpha = current_slack;
             }
@@ -128,9 +97,6 @@ std::unordered_map<index_t, index_t> minimum_weight_perfect_matching(const matri
         }
 
         // Update labelings
-
-        // std::cout << "Updating with alpha = " << alpha << std::endl;
-
         for(auto const& x: S){
           labeling_x.at(x) = labeling_x.at(x) + alpha;
         }
@@ -153,30 +119,9 @@ std::unordered_map<index_t, index_t> minimum_weight_perfect_matching(const matri
             }
           }
         }
-
-        // std::cout << "Labeling x\n";
-        // for(index_t x = 0; x < m.size(); ++x){
-        //   std::cout << x << ": " << labeling_x.at(x) << std::endl;
-        // }
-        // std::cout << "Labeling y\n";
-        // for(index_t y = 0; y < m.size(); ++y){
-        //   std::cout << y << ": " << labeling_y.at(y) << std::endl;
-        // }
-        // std::cout << "Slack values\n";
-        // for(auto const& s: slack){
-        //   std::cout << s.first << ": " << s.second << std::endl;
-        // }
-
       }
 
       // Step 3.
-      // std::cout << "Entering step 3.\n";
-
-      // std::cout << "Alternating tree: \n";
-      // for(auto const& edge: alternating_tree){
-      //   std::cout << edge.first << "->" << edge.second << std::endl;
-      // }
-
       index_t chosen_y;        // First y in equality neighbors not
                                 // in T_set.
       for(auto const& edge: alternating_tree){
@@ -184,7 +129,6 @@ std::unordered_map<index_t, index_t> minimum_weight_perfect_matching(const matri
           // MUST happen before endge reaches the end of
           // alternating_tree.
           chosen_y = edge.first;
-          // std::cout << "chosen y: " << chosen_y << std::endl;
           break;
         }
       }
@@ -195,7 +139,6 @@ std::unordered_map<index_t, index_t> minimum_weight_perfect_matching(const matri
         // proceed to step 2.
         index_t matched_x = matching_y->second;
 
-        // std::cout << "Matched with " << matched_x << std::endl;
         S.insert(matched_x);
         T_set.insert(chosen_y);
 
@@ -204,19 +147,12 @@ std::unordered_map<index_t, index_t> minimum_weight_perfect_matching(const matri
           T current_value = slack.at(y);
           T new_value
             = m[matched_x][y] - labeling_x.at(matched_x) - labeling_y.at(y);
-          // std::cout << "In update slacks, current_value: "
-          //           << current_value
-          //           << " and new value: "
-          //           << new_value
-          //           << std::endl;
           if(new_value < current_value){
             slack.at(y) = new_value;
           }
         }
       }
       else{
-        // std::cout << "Unmatched" << std::endl;
-
         // Find larger matching using M-alternating path. The path is
         // described at each step by:
         // 
@@ -238,7 +174,6 @@ std::unordered_map<index_t, index_t> minimum_weight_perfect_matching(const matri
           // Add edge from alternating tree to matching.
           matching_xy.emplace(current_x, current_y);
           matching_yx.emplace(current_y, current_x);
-          // std::cout << current_y << " - " << current_x << " - ";
 
           current_y = next_y;
           current_x = alternating_tree.at(current_y);
@@ -246,21 +181,12 @@ std::unordered_map<index_t, index_t> minimum_weight_perfect_matching(const matri
         // Adding last edge from alternating tree.
         matching_xy.emplace(current_x, current_y);
         matching_yx.emplace(current_y, current_x);
-        // std::cout << current_y << " - " << current_x << " - ";
 
-        // std::cout << std::endl;
         // Back to step 1.
         augmented_path = true;
-        
-        // std::cout << "Matching so far: \n";
-        // for(auto const& edge: matching_xy){
-        //   std::cout << edge.first << "->" << edge.second << std::endl;
-        // }
       }
     }
-    // std::cout << "Matching size: " << matching_xy.size() << std::endl;
   }
-  // std::cout << "Matching size before return: " << matching_xy.size() << std::endl;
   return matching_xy;
 }
 
@@ -354,7 +280,6 @@ std::unordered_map<index_t, index_t> branch_and_bound_symmetric_mwpm(const matri
       // Current node is a leaf giving a better result.
       current_best_weight = current_node.cumulated_weight;
       best_edges_choice = current_node.chosen_edges;
-      // std::cout << "Best weight found: " << current_best_weight << std::endl;
     }
     else{
       // Leaf not reached yet.
@@ -370,11 +295,8 @@ std::unordered_map<index_t, index_t> branch_and_bound_symmetric_mwpm(const matri
         for(auto edge = children_edges.rbegin();
             edge != children_edges.rend();
             ++edge){
-          // edge->log();
-          // std::cout << " ; ";
           yet_to_visit.emplace_back(current_node, *edge);
         }
-        // std::cout << std::endl;
       }
     }
   }  

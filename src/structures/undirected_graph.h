@@ -75,25 +75,6 @@ public:
   std::unordered_map<index_t, std::list<index_t>> get_adjacency_list() const{
     return _adjacency_list;
   }
-
-  void print_edges() const{
-    for(auto const& edge: _edges){
-      edge.log();
-      std::cout << " ; ";
-    }
-    std::cout << std::endl;
-  }
-
-  void print_adjacency_list() const{
-    for(auto const& adj: _adjacency_list){
-      std::cout << adj.first << "->(";
-      for(auto& element: adj.second){
-        std::cout << element << " ; ";
-      }
-      std::cout << ") \n";
-    }
-  }
-
 };
 
 #endif

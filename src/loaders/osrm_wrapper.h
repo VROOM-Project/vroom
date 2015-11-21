@@ -184,8 +184,6 @@ public:
         = std::stoul(lines[i].substr(previous_sep, std::string::npos));
     }
 
-    // m.print();
-
     // Now checking for unfound routes to avoid unexpected behavior
     // (OSRM raises max value for an int).
     std::size_t m_size = m.size();

@@ -301,8 +301,6 @@ public:
       }
     }
     _matrix = m;
-
-    // _matrix.print();
   }
 
   virtual matrix<distance_t> get_matrix() const override{

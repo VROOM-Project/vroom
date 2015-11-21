@@ -49,15 +49,6 @@ class matrix : private std::vector<line<T>>{
     parent(n, line<T>(n)){
   }
   
-  void print() const{
-    for(std::size_t i = 0; i < this->size(); ++i){
-      for(std::size_t j = 0; j < (*this)[i].size(); ++j){
-        std::cout << (*this)[i][j] << " ; ";
-      }
-      std::cout << std::endl;
-    }
-  }
-  
   matrix<T> get_sub_matrix(const std::vector<index_t>& indices) const{
     matrix<T> sub_matrix {indices.size()};
     for(std::size_t i = 0; i < indices.size(); ++i){
