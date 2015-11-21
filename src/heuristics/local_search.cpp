@@ -132,7 +132,7 @@ distance_t local_search::avoid_loop_step(){
   index_t candidate = _edges.at(previous_candidate);
 
   // Remember previous steps for each node, required for step 3.
-  std::map<index_t, index_t> previous;
+  std::unordered_map<index_t, index_t> previous;
   previous.emplace(candidate, previous_candidate);
 
   // Storing chains as described in 2.
@@ -141,7 +141,7 @@ distance_t local_search::avoid_loop_step(){
 
   // Remember possible position for further relocation of candidate
   // nodes.
-  std::map<index_t, index_t> possible_position;
+  std::unordered_map<index_t, index_t> possible_position;
 
   do{
     index_t current = _edges.at(candidate);
@@ -190,8 +190,8 @@ distance_t local_search::avoid_loop_step(){
 
     // Work on copies as modifications are needed while going through
     // the chain.
-    std::map<index_t, index_t> edges_c = _edges;
-    std::map<index_t, index_t> previous_c = previous;
+    std::unordered_map<index_t, index_t> edges_c = _edges;
+    std::unordered_map<index_t, index_t> previous_c = previous;
 
     for(auto const& step: chain){
       // Compare situations to see if relocating current step after
