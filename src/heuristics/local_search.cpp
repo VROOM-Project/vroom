@@ -111,6 +111,161 @@ distance_t local_search::perform_all_relocate_steps(){
   return total_gain;
 }
 
+distance_t local_search::avoid_loop_step(){
+  // In some cases, the solution can contain "loops" that other
+  // operators can't fix. Those are found with two steps:
+  // 
+  // 1) searching for all nodes that can be relocated somewhere else
+  // AT NO COST because they are already on some other way.
+  // 
+  // 2) listing all "chains" of two or mode consecutive such nodes.
+  // 
+  // Starting from the longest such chain, the fix is to:
+  // 
+  // 3) relocate all nodes along the chain until an amelioration pops
+  // out, meaning a "loop" has been undone.
+
+  distance_t gain = 0;
+
+  // Going through all candidate nodes for relocation.
+  index_t previous_candidate = 0;
+  index_t candidate = _edges.at(previous_candidate);
+
+  // Remember previous steps for each node, required for step 3.
+  std::unordered_map<index_t, index_t> previous;
+  previous.emplace(candidate, previous_candidate);
+
+  // Storing chains as described in 2.
+  std::vector<std::list<index_t>> relocatable_chains;
+  std::list<index_t> current_relocatable_chain;
+
+  // Remember possible position for further relocation of candidate
+  // nodes.
+  std::unordered_map<index_t, index_t> possible_position;
+
+  do{
+    index_t current = _edges.at(candidate);
+        
+    bool candidate_relocatable = false;
+    while((current != previous_candidate) and !candidate_relocatable){
+      index_t next = _edges.at(current);
+      if((_matrix[current][candidate] + _matrix[candidate][next]
+          <= _matrix[current][next])
+         // Relocation at no cost.
+         and (_matrix[current][candidate] > 0)
+         // Set aside the case of identical locations.
+         and (_matrix[candidate][next] > 0)){
+        candidate_relocatable = true;
+        // Remember possible relocate position for candidate.
+        possible_position.emplace(candidate, current);
+      }
+      current = next;
+    }
+    if(candidate_relocatable){
+      current_relocatable_chain.push_back(candidate);
+    }
+    else{
+      if(current_relocatable_chain.size() > 1){
+        relocatable_chains.push_back(current_relocatable_chain);
+      }
+      current_relocatable_chain.clear();
+    }
+    previous_candidate = candidate;
+    candidate = _edges.at(candidate);
+    previous.emplace(candidate, previous_candidate);
+  }while(candidate != 0);
+
+  // Reorder to try the longest chains first.
+  std::sort(relocatable_chains.begin(),
+            relocatable_chains.end(),
+            [](const auto& lhs, const auto& rhs){
+              return lhs.size() > rhs.size();
+            });
+
+  bool amelioration_found = false;
+  for(auto const& chain: relocatable_chains){
+    // Going through step 3. for all chains by decreasing length.
+    distance_t before_cost = 0;
+    distance_t after_cost = 0;
+
+    // Work on copies as modifications are needed while going through
+    // the chain.
+    std::unordered_map<index_t, index_t> edges_c = _edges;
+    std::unordered_map<index_t, index_t> previous_c = previous;
+
+    for(auto const& step: chain){
+      // Compare situations to see if relocating current step after
+      // possible_position.at(step) will decrease overall cost.
+      // 
+      // Situation before:
+      // 
+      // previous_c.at(step)-->step-->edges_c.at(step)
+      // possible_position.at(step)-->edges_c.at(possible_position.at(step))
+      // 
+      // Situation after: 
+      // 
+      // previous_c.at(step)-->edges_c.at(step)
+      // possible_position.at(step)-->step-->edges_c.at(possible_position.at(step))
+
+      before_cost += _matrix[previous_c.at(step)][step];
+      before_cost += _matrix[step][edges_c.at(step)];
+      after_cost += _matrix[previous_c.at(step)][edges_c.at(step)];
+      before_cost 
+        += _matrix[possible_position.at(step)][edges_c.at(possible_position.at(step))];
+      after_cost += _matrix[possible_position.at(step)][step];
+      after_cost += _matrix[step][edges_c.at(possible_position.at(step))];
+
+      // Linking previous_c.at(step) with edges_c.at(step) in both
+      // ways as remembering previous nodes is required.
+      previous_c.at(edges_c.at(step)) = previous_c.at(step);
+      edges_c.at(previous_c.at(step)) = edges_c.at(step);
+
+      // Relocating step between possible_position.at(step) and
+      // edges_c.at(possible_position.at(step)) in both ways too.
+      edges_c.at(step) = edges_c.at(possible_position.at(step));
+      previous_c.at(edges_c.at(possible_position.at(step))) = step;
+
+      edges_c.at(possible_position.at(step)) = step;
+      previous_c.at(step) = possible_position.at(step);
+      
+      if(before_cost > after_cost){
+        amelioration_found = true;
+        gain = before_cost - after_cost;
+        _edges.swap(edges_c);   // Keep changes.
+        break;
+      }
+    }
+    if(amelioration_found){
+      break;
+    }
+  }
+
+  return gain;
+}
+
+distance_t local_search::perform_all_avoid_loop_steps(){
+  distance_t total_gain = 0;
+  unsigned relocate_iter = 0;
+  distance_t gain = 0;
+  do{
+    gain = this->avoid_loop_step();
+
+    if(gain > 0){
+      total_gain += gain;
+      ++relocate_iter;
+    }
+  } while(gain > 0);
+
+  if(_verbose){
+    std::cout << "Performed "
+              << relocate_iter << " \"avoid loop\" steps, gaining "
+              << total_gain
+              << std::endl;
+  }
+  return total_gain;
+}
+
+
 distance_t local_search::two_opt_step(){
   distance_t gain = 0;
   for(auto edge_1 = _edges.cbegin(); edge_1 != _edges.cend(); ++edge_1){

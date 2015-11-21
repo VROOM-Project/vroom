@@ -41,6 +41,10 @@ public:
 
   distance_t perform_all_relocate_steps();
 
+  distance_t avoid_loop_step();
+
+  distance_t perform_all_avoid_loop_steps();
+
   distance_t two_opt_step();
 
   distance_t perform_all_two_opt_steps();
