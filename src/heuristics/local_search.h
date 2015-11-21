@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef LOCAL_SEARCH_H
 #define LOCAL_SEARCH_H
 #include <list>
-#include <map>
+#include <unordered_map>
 #include "../structures/typedefs.h"
 #include "../structures/matrix.h"
 #include "../structures/tsp.h"
@@ -28,7 +28,7 @@ class local_search{
 private:
   const matrix<distance_t> _matrix;
   const bool _symmetric_matrix;
-  std::map<index_t, index_t> _edges;
+  std::unordered_map<index_t, index_t> _edges;
   bool _verbose;
 
 public:

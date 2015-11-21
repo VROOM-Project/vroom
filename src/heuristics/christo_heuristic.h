@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef CHRISTO_HEURISTIC_H
 #define CHRISTO_HEURISTIC_H
 #include <vector>
-#include <map>
+#include <unordered_map>
 #include <set>
 #include <algorithm>
 #include <chrono>

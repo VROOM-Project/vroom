@@ -64,13 +64,13 @@ std::list<index_t> christo_heuristic::build_solution(tsp_sym& instance){
   // sub_matrix.print();
 
   // Computing minimum weight perfect matching.
-  std::map<index_t, index_t> mwpm
+  std::unordered_map<index_t, index_t> mwpm
     = minimum_weight_perfect_matching(sub_matrix);
 
   // Storing those edges from mwpm that are coherent regarding
   // symmetry (y -> x whenever x -> y). Remembering the rest of them
   // for further use. Edges are not doubled in mwpm_final.
-  std::map<index_t, index_t> mwpm_final;
+  std::unordered_map<index_t, index_t> mwpm_final;
   std::vector<index_t> wrong_vertices;
 
   // std::cout << "mwpm with initial indices:" << std::endl;
@@ -105,7 +105,7 @@ std::list<index_t> christo_heuristic::build_solution(tsp_sym& instance){
     // }
     // std::cout << std::endl;
 
-    std::map<index_t, index_t> remaining_greedy_mwpm
+    std::unordered_map<index_t, index_t> remaining_greedy_mwpm
       = greedy_symmetric_approx_mwpm(sub_matrix.get_sub_matrix(wrong_vertices));
 
     // Adding edges obtained with greedy algo for the missing vertices

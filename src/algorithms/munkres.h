@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef MUNKRES_H
 #define MUNKRES_H
-#include <map>
+#include <unordered_map>
 #include <limits>
 #include <set>
 #include <list>
@@ -27,12 +27,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "../structures/edge.h"
 
 template <class T>
-std::map<index_t, index_t> minimum_weight_perfect_matching(const matrix<T>& m){
+std::unordered_map<index_t, index_t> minimum_weight_perfect_matching(const matrix<T>& m){
   // std::cout << "Entering mwpm" << std::endl;
 
   // Trivial initial labeling.
-  std::map<index_t, T> labeling_x;
-  std::map<index_t, T> labeling_y;
+  std::unordered_map<index_t, T> labeling_x;
+  std::unordered_map<index_t, T> labeling_y;
   for(index_t i = 0; i < m.size(); ++i){
     labeling_y.emplace(i, 0);
     T min_weight = std::numeric_limits<T>::max();
@@ -45,11 +45,11 @@ std::map<index_t, index_t> minimum_weight_perfect_matching(const matrix<T>& m){
   }
 
   // Initial empty matching.
-  std::map<index_t, index_t> matching_xy;
-  std::map<index_t, index_t> matching_yx;
+  std::unordered_map<index_t, index_t> matching_xy;
+  std::unordered_map<index_t, index_t> matching_yx;
 
   // Alternating tree.
-  std::map<index_t, index_t> alternating_tree;
+  std::unordered_map<index_t, index_t> alternating_tree;
 
   while(matching_xy.size() < m.size()){
     // Step 1.
@@ -79,7 +79,7 @@ std::map<index_t, index_t> minimum_weight_perfect_matching(const matrix<T>& m){
 
     // Saving relevant neighbors in equality graph in alternating_tree
     // and initializing slacks.
-    std::map<index_t, T> slack;
+    std::unordered_map<index_t, T> slack;
     for(index_t y = 0; y < m.size(); ++y){
       if(labeling_x.at(unmatched_x) + labeling_y.at(y) == m[unmatched_x][y]){
         alternating_tree.emplace(y, unmatched_x);
@@ -265,7 +265,7 @@ std::map<index_t, index_t> minimum_weight_perfect_matching(const matrix<T>& m){
 }
 
 template <class T>
-std::map<index_t, index_t> branch_and_bound_symmetric_mwpm(const matrix<T>& m){
+std::unordered_map<index_t, index_t> branch_and_bound_symmetric_mwpm(const matrix<T>& m){
   // Note: intended for an even-sized matrix with inf value on the
   // diagonal (no i-i matches may be produced anyway).
 
@@ -379,7 +379,7 @@ std::map<index_t, index_t> branch_and_bound_symmetric_mwpm(const matrix<T>& m){
     }
   }  
   
-  std::map<index_t, index_t> matching;
+  std::unordered_map<index_t, index_t> matching;
   for(auto const& edge: best_edges_choice){
     matching.emplace(edge.get_first_vertex(), edge.get_second_vertex());
   }
@@ -388,13 +388,13 @@ std::map<index_t, index_t> branch_and_bound_symmetric_mwpm(const matrix<T>& m){
 }
 
 template <class T>
-std::map<index_t, index_t> greedy_symmetric_approx_mwpm(const matrix<T>& m){
+std::unordered_map<index_t, index_t> greedy_symmetric_approx_mwpm(const matrix<T>& m){
   // Fast greedy algorithm for finding a symmetric perfect matching,
   // choosing always smaller possible value, no minimality
   // assured. Matrix size should be even!
   assert(m.size() % 2 == 0);
     
-  std::map<index_t, index_t> matching;
+  std::unordered_map<index_t, index_t> matching;
   std::set<index_t> remaining_indices;
   for(index_t i = 0; i < m.size(); ++i){
     remaining_indices.insert(i);
