@@ -122,7 +122,7 @@ std::list<index_t> christo_heuristic::build_solution(tsp_sym& instance){
   // std::cout << "mwpm (with original indices):" << std::endl;
 
   // Building eulerian graph.
-  std::list<edge<distance_t>> eulerian_graph_edges
+  std::vector<edge<distance_t>> eulerian_graph_edges
     = mst_graph.get_edges();
   
   // Adding edges from minimum weight perfect matching (with the
