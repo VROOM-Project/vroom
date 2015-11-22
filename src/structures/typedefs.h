@@ -19,6 +19,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef TYPEDEFS_H
 #define TYPEDEFS_H
 
+#include <string>
+
 // To easily differentiate variable types.
 using index_t = uint16_t;
 using distance_t = uint32_t;
