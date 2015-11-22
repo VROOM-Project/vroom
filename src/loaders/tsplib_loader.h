@@ -324,8 +324,8 @@ public:
     
     result += "\"tour\":[";
     for(auto const& step: tour){
-      // Using rank rather than index to describe places.
-      result += std::to_string(step + 1) + ",";
+      // Using index provided in the file to describe places.
+      result += std::to_string(_nodes[step].index) + ",";
     }
     result.pop_back();          // Remove trailing comma.
     result += "],";
