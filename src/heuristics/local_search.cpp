@@ -23,6 +23,7 @@ local_search::local_search(const tsp& problem,
                            bool verbose):
   _matrix(problem.get_matrix()),
   _symmetric_matrix(problem.is_symmetric()),
+  _edges(_matrix.size()),
   _verbose(verbose) 
 {
   auto location = tour.cbegin();
@@ -32,54 +33,55 @@ local_search::local_search(const tsp& problem,
   ++location;
   while(location != tour.cend()){
     current_index = *location;
-    _edges.emplace(last_index, current_index);
+    _edges.at(last_index) = current_index;
     last_index = current_index;
     ++location;
   }
-  _edges.emplace(last_index, first_index);
+  _edges.at(last_index) = first_index;
 }
 
 distance_t local_search::relocate_step(){
   distance_t gain = 0;
   bool amelioration_found = false;
-  for(auto edge_1 = _edges.cbegin(); edge_1 != _edges.cend(); ++edge_1){
+  for(auto edge_1_start: _edges){
+    index_t edge_1_end = _edges.at(edge_1_start);
     // Going through the tour while checking for insertion of
-    // edge_1->second between two other nodes (edge_2_*).
+    // edge_1_end between two other nodes (edge_2_*).
     //
-    // Namely edge_1->first --> edge_1->second --> next is replaced by
-    // edge_1->first --> next while edge_2->first --> edge_2->second is
-    // replaced by edge_2->first --> edge_1->second --> edge_2->second.
-    index_t next = _edges.at(edge_1->second);
-    index_t relocated_node = edge_1->second;
+    // Namely edge_1_start --> edge_1_end --> next is replaced by
+    // edge_1_start --> next while edge_2_start --> edge_2_end is
+    // replaced by edge_2_start --> edge_1_end --> edge_2_end.
+    index_t next = _edges.at(edge_1_end);
 
-    // Precomputing weights not depending on edge_2.
-    distance_t first_potential_add = _matrix[edge_1->first][next];
-    distance_t edge_1_weight = _matrix[edge_1->first][edge_1->second];
-    distance_t relocated_next_weight = _matrix[relocated_node][next];
+    // Precomputing weights not depending on edge_2_*.
+    distance_t first_potential_add = _matrix[edge_1_start][next];
+    distance_t edge_1_weight = _matrix[edge_1_start][edge_1_end];
+    distance_t edge_1_end_next_weight = _matrix[edge_1_end][next];
 
-    for(auto edge_2 = _edges.cbegin(); edge_2 != _edges.cend(); ++edge_2){
-      if((edge_2 == edge_1) or (edge_2->first == relocated_node)){
-        continue;
-      }
+    index_t edge_2_start = next;
+    while(edge_2_start != edge_1_start){
+      index_t edge_2_end = _edges.at(edge_2_start);
       distance_t before_cost
         = edge_1_weight
-        + relocated_next_weight
-        + _matrix[edge_2->first][edge_2->second];
+        + edge_1_end_next_weight
+        + _matrix[edge_2_start][edge_2_end];
       distance_t after_cost
         = first_potential_add
-        + _matrix[edge_2->first][relocated_node]
-        + _matrix[relocated_node][edge_2->second];
+        + _matrix[edge_2_start][edge_1_end]
+        + _matrix[edge_1_end][edge_2_end];
 
       if(before_cost > after_cost){
         amelioration_found = true;
         gain = before_cost - after_cost;
 
         // Performing exchange.
-        _edges.at(edge_1->first) = next;
-        _edges.at(relocated_node) = edge_2->second;
-        _edges.at(edge_2->first) = relocated_node;
+        _edges.at(edge_1_start) = next;
+        _edges.at(edge_1_end) = edge_2_end;
+        _edges.at(edge_2_start) = edge_1_end;
         break;
       }
+      // Go for next possible second edge.
+      edge_2_start = edge_2_end;
     }
     if(amelioration_found){
       break;
@@ -132,8 +134,8 @@ distance_t local_search::avoid_loop_step(){
   index_t candidate = _edges.at(previous_candidate);
 
   // Remember previous steps for each node, required for step 3.
-  std::unordered_map<index_t, index_t> previous;
-  previous.emplace(candidate, previous_candidate);
+  std::vector<index_t> previous(_matrix.size());
+  previous.at(candidate) = previous_candidate;
 
   // Storing chains as described in 2.
   std::vector<std::list<index_t>> relocatable_chains;
@@ -172,7 +174,7 @@ distance_t local_search::avoid_loop_step(){
     }
     previous_candidate = candidate;
     candidate = _edges.at(candidate);
-    previous.emplace(candidate, previous_candidate);
+    previous.at(candidate) = previous_candidate;
   }while(candidate != 0);
 
   // Reorder to try the longest chains first.
@@ -190,8 +192,8 @@ distance_t local_search::avoid_loop_step(){
 
     // Work on copies as modifications are needed while going through
     // the chain.
-    std::unordered_map<index_t, index_t> edges_c = _edges;
-    std::unordered_map<index_t, index_t> previous_c = previous;
+    std::vector<index_t> edges_c = _edges;
+    std::vector<index_t> previous_c = previous;
 
     for(auto const& step: chain){
       // Compare situations to see if relocating current step after
@@ -268,34 +270,37 @@ distance_t local_search::perform_all_avoid_loop_steps(){
 
 distance_t local_search::two_opt_step(){
   distance_t gain = 0;
-  for(auto edge_1 = _edges.cbegin(); edge_1 != _edges.cend(); ++edge_1){
-    auto edge_2 = edge_1;
-    ++edge_2;
+  for(auto edge_1_start: _edges){
+    index_t edge_1_end = _edges.at(edge_1_start);
+    index_t edge_2_start = _edges.at(edge_1_end);
+    index_t edge_2_end = _edges.at(edge_2_start);
     // Trying to improve two "crossing edges".
     //
-    // Namely edge_1->first --> edge_1->second and edge_2->fist -->
-    // edge_2->second are replaced by edge_1->first --> edge_2->first
-    // and edge_1->second --> edge_2->second. The tour between
-    // edge_2->first and edge_1->second need to be reversed.
+    // Namely edge_1_start --> edge_1_end and edge_2_start -->
+    // edge_2_end are replaced by edge_1_start --> edge_2_start and
+    // edge_1_end --> edge_2_end. The tour between edge_1_end and
+    // edge_2_start need to be reversed.
+    distance_t before_reversed_part_cost = 0;
+    distance_t after_reversed_part_cost = 0;
+    index_t previous = edge_1_end;
+
     bool amelioration_found = false;
-    for(; edge_2 != _edges.cend(); ++edge_2){
-      if(edge_2->first == edge_1->second){
-        continue;
-      }
+    while(edge_2_end != edge_1_start){
       distance_t before_cost
-        = _matrix[edge_1->first][edge_1->second]
-        + _matrix[edge_2->first][edge_2->second];
+        = _matrix[edge_1_start][edge_1_end]
+        + _matrix[edge_2_start][edge_2_end];
       distance_t after_cost
-        = _matrix[edge_1->first][edge_2->first]
-        + _matrix[edge_1->second][edge_2->second];
+        = _matrix[edge_1_start][edge_2_start]
+        + _matrix[edge_1_end][edge_2_end];
       if(!_symmetric_matrix){
-        // Adding part of the tour that needs to be reversed.
-        for(index_t current = edge_1->second;
-            current != edge_2->first;
-            current = _edges.at(current)){
-          before_cost += _matrix[current][_edges.at(current)];
-          after_cost += _matrix[_edges.at(current)][current];
-        }
+        // Updating the cost of the part of the tour that needs to be
+        // reversed.
+        before_reversed_part_cost += _matrix[previous][edge_2_start];
+        after_reversed_part_cost += _matrix[edge_2_start][previous];
+
+        // Adding to the costs for comparison.
+        before_cost += before_reversed_part_cost;
+        after_cost += after_reversed_part_cost;
       }
 
       if(before_cost > after_cost){
@@ -304,22 +309,25 @@ distance_t local_search::two_opt_step(){
 
         // Storing part of the tour that needs to be reversed.
         std::list<index_t> to_reverse;
-        for(index_t current = edge_1->second;
-            current != edge_2->first;
+        for(index_t current = edge_1_end;
+            current != edge_2_start;
             current = _edges.at(current)){
           to_reverse.push_back(current);
         }
         // Performing exchange.
-        index_t current = edge_2->first;
-        index_t last = edge_2->second;
-        _edges.at(edge_1->first) = current;
+        index_t current = edge_2_start;
+        _edges.at(edge_1_start) = current;
         for(auto next = to_reverse.rbegin(); next != to_reverse.rend(); ++next){
           _edges.at(current) = *next;
           current = *next;
        }
-        _edges.at(current) = last;
+        _edges.at(current) = edge_2_end;
         break;
       }
+      // Go for next possible second edge.
+      previous = edge_2_start;
+      edge_2_start = edge_2_end;
+      edge_2_end = _edges.at(edge_2_start);
     }
     if(amelioration_found){
       break;
@@ -354,47 +362,46 @@ distance_t local_search::perform_all_two_opt_steps(){
 distance_t local_search::or_opt_step(){
   distance_t gain = 0;
   bool amelioration_found = false;
-  for(auto edge_1 = _edges.cbegin(); edge_1 != _edges.cend(); ++edge_1){
-    // Going through the tour while checking the move of edge after
-    // edge_1 in place of another edge (edge_2).
-    //
-    // Namely edge_1->first --> edge_1->second --> next --> next_2 is
-    // replaced by edge_1->first --> next_2 while edge_2->first -->
-    // edge_2->second is replaced by edge_2->first --> edge_1->second
-    // --> next --> edge_2->second.
-    index_t first_relocated = edge_1->second;
-    index_t next = _edges.at(edge_1->second);
+  for(auto edge_1_start: _edges){
+    index_t edge_1_end = _edges.at(edge_1_start);
+    index_t next = _edges.at(edge_1_end);
     index_t next_2 = _edges.at(next);
+    index_t edge_2_start = next_2;
+    // Going through the tour while checking the move of edge after
+    // edge_1_end in place of another edge (edge_2_*).
+    //
+    // Namely edge_1_start --> edge_1_end --> next --> next_2 is
+    // replaced by edge_1_start --> next_2 while edge_2_start -->
+    // edge_2_end is replaced by edge_2_start --> edge_1_end
+    // --> next --> edge_2_end.
 
     // Precomputing weights not depending on edge_2.
-    distance_t first_potential_add = _matrix[edge_1->first][next_2];
-    distance_t edge_1_weight = _matrix[edge_1->first][edge_1->second];
+    distance_t first_potential_add = _matrix[edge_1_start][next_2];
+    distance_t edge_1_weight = _matrix[edge_1_start][edge_1_end];
     distance_t next_next_2_weight = _matrix[next][next_2];
 
-    for(auto edge_2 = _edges.cbegin(); edge_2 != _edges.cend(); ++edge_2){
-      if((edge_2 == edge_1)
-         or (edge_2->first == first_relocated)
-         or (edge_2->first == next)){
-        continue;
-      }
+    while(edge_2_start != edge_1_start){
+      index_t edge_2_end = _edges.at(edge_2_start);
       distance_t before_cost
         = edge_1_weight
         + next_next_2_weight
-        + _matrix[edge_2->first][edge_2->second];
+        + _matrix[edge_2_start][edge_2_end];
       distance_t after_cost
         = first_potential_add
-        + _matrix[edge_2->first][first_relocated]
-        + _matrix[next][edge_2->second];
+        + _matrix[edge_2_start][edge_1_end]
+        + _matrix[next][edge_2_end];
       if(before_cost > after_cost){
         amelioration_found = true;
         gain = before_cost - after_cost;
 
         // Performing exchange.
-        _edges.at(edge_1->first) = next_2;
-        _edges.at(next) = edge_2->second;
-        _edges.at(edge_2->first) = first_relocated;
+        _edges.at(edge_1_start) = next_2;
+        _edges.at(next) = edge_2_end;
+        _edges.at(edge_2_start) = edge_1_end;
         break;
       }
+      // Go for next possible second edge.
+      edge_2_start = edge_2_end;
     }
     if(amelioration_found){
       break;
