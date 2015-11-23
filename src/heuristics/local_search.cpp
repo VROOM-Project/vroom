@@ -280,6 +280,10 @@ distance_t local_search::two_opt_step(){
     // edge_2_end are replaced by edge_1_start --> edge_2_start and
     // edge_1_end --> edge_2_end. The tour between edge_1_end and
     // edge_2_start need to be reversed.
+    distance_t before_reversed_part_cost = 0;
+    distance_t after_reversed_part_cost = 0;
+    index_t previous = edge_1_end;
+
     bool amelioration_found = false;
     while(edge_2_end != edge_1_start){
       distance_t before_cost
@@ -289,13 +293,14 @@ distance_t local_search::two_opt_step(){
         = _matrix[edge_1_start][edge_2_start]
         + _matrix[edge_1_end][edge_2_end];
       if(!_symmetric_matrix){
-        // Adding part of the tour that needs to be reversed.
-        for(index_t current = edge_1_end;
-            current != edge_2_start;
-            current = _edges.at(current)){
-          before_cost += _matrix[current][_edges.at(current)];
-          after_cost += _matrix[_edges.at(current)][current];
-        }
+        // Updating the cost of the part of the tour that needs to be
+        // reversed.
+        before_reversed_part_cost += _matrix[previous][edge_2_start];
+        after_reversed_part_cost += _matrix[edge_2_start][previous];
+
+        // Adding to the costs for comparison.
+        before_cost += before_reversed_part_cost;
+        after_cost += after_reversed_part_cost;
       }
 
       if(before_cost > after_cost){
@@ -320,6 +325,7 @@ distance_t local_search::two_opt_step(){
         break;
       }
       // Go for next possible second edge.
+      previous = edge_2_start;
       edge_2_start = edge_2_end;
       edge_2_end = _edges.at(edge_2_start);
     }
