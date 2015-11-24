@@ -41,8 +41,10 @@ local_search::local_search(const tsp& problem,
 }
 
 distance_t local_search::relocate_step(){
-  distance_t gain = 0;
-  bool amelioration_found = false;
+  distance_t best_gain = 0;
+  index_t best_edge_1_start;
+  index_t best_edge_2_start;
+
   for(auto edge_1_start: _edges){
     index_t edge_1_end = _edges.at(edge_1_start);
     // Going through the tour while checking for insertion of
@@ -71,24 +73,28 @@ distance_t local_search::relocate_step(){
         + _matrix[edge_1_end][edge_2_end];
 
       if(before_cost > after_cost){
-        amelioration_found = true;
-        gain = before_cost - after_cost;
-
-        // Performing exchange.
-        _edges.at(edge_1_start) = next;
-        _edges.at(edge_1_end) = edge_2_end;
-        _edges.at(edge_2_start) = edge_1_end;
-        break;
+        distance_t gain = before_cost - after_cost;
+        if(gain > best_gain){
+          best_edge_1_start = edge_1_start;
+          best_edge_2_start = edge_2_start;
+          best_gain = gain;
+        }
       }
       // Go for next possible second edge.
       edge_2_start = edge_2_end;
     }
-    if(amelioration_found){
-      break;
-    }
+  }
+  if(best_gain > 0){
+    // Performing best possible exchange.
+    index_t best_edge_1_end = _edges.at(best_edge_1_start);
+    index_t best_edge_2_end = _edges.at(best_edge_2_start);
+
+    _edges.at(best_edge_1_start) = _edges.at(best_edge_1_end);
+    _edges.at(best_edge_1_end) = best_edge_2_end;
+    _edges.at(best_edge_2_start) = best_edge_1_end;
   }
 
-  return gain;
+  return best_gain;
 }
 
 distance_t local_search::perform_all_relocate_steps(){
@@ -269,7 +275,10 @@ distance_t local_search::perform_all_avoid_loop_steps(){
 
 
 distance_t local_search::two_opt_step(){
-  distance_t gain = 0;
+  distance_t best_gain = 0;
+  index_t best_edge_1_start;
+  index_t best_edge_2_start = 0; // init value is never used.
+
   for(auto edge_1_start: _edges){
     index_t edge_1_end = _edges.at(edge_1_start);
     index_t edge_2_start = _edges.at(edge_1_end);
@@ -284,7 +293,6 @@ distance_t local_search::two_opt_step(){
     distance_t after_reversed_part_cost = 0;
     index_t previous = edge_1_end;
 
-    bool amelioration_found = false;
     while(edge_2_end != edge_1_start){
       distance_t before_cost
         = _matrix[edge_1_start][edge_1_end]
@@ -304,37 +312,40 @@ distance_t local_search::two_opt_step(){
       }
 
       if(before_cost > after_cost){
-        amelioration_found = true;
-        gain = before_cost - after_cost;
-
-        // Storing part of the tour that needs to be reversed.
-        std::list<index_t> to_reverse;
-        for(index_t current = edge_1_end;
-            current != edge_2_start;
-            current = _edges.at(current)){
-          to_reverse.push_back(current);
+        distance_t gain = before_cost - after_cost;
+        if(gain > best_gain){
+          best_gain = gain;
+          best_edge_1_start = edge_1_start;
+          best_edge_2_start = edge_2_start;
         }
-        // Performing exchange.
-        index_t current = edge_2_start;
-        _edges.at(edge_1_start) = current;
-        for(auto next = to_reverse.rbegin(); next != to_reverse.rend(); ++next){
-          _edges.at(current) = *next;
-          current = *next;
-       }
-        _edges.at(current) = edge_2_end;
-        break;
       }
       // Go for next possible second edge.
       previous = edge_2_start;
       edge_2_start = edge_2_end;
       edge_2_end = _edges.at(edge_2_start);
     }
-    if(amelioration_found){
-      break;
+  }
+  if(best_gain > 0){
+    index_t best_edge_1_end = _edges.at(best_edge_1_start);
+    index_t best_edge_2_end = _edges.at(best_edge_2_start);
+    // Storing part of the tour that needs to be reversed.
+    std::vector<index_t> to_reverse;
+    for(index_t current = best_edge_1_end;
+        current != best_edge_2_start;
+        current = _edges.at(current)){
+      to_reverse.push_back(current);
     }
+    // Performing exchange.
+    index_t current = best_edge_2_start;
+    _edges.at(best_edge_1_start) = current;
+    for(auto next = to_reverse.rbegin(); next != to_reverse.rend(); ++next){
+      _edges.at(current) = *next;
+      current = *next;
+    }
+    _edges.at(current) = best_edge_2_end;
   }
 
-  return gain;
+  return best_gain;
 }
 
 distance_t local_search::perform_all_two_opt_steps(){
@@ -360,8 +371,10 @@ distance_t local_search::perform_all_two_opt_steps(){
 }
 
 distance_t local_search::or_opt_step(){
-  distance_t gain = 0;
-  bool amelioration_found = false;
+  distance_t best_gain = 0;
+  index_t best_edge_1_start;
+  index_t best_edge_2_start;
+
   for(auto edge_1_start: _edges){
     index_t edge_1_end = _edges.at(edge_1_start);
     index_t next = _edges.at(edge_1_end);
@@ -391,24 +404,27 @@ distance_t local_search::or_opt_step(){
         + _matrix[edge_2_start][edge_1_end]
         + _matrix[next][edge_2_end];
       if(before_cost > after_cost){
-        amelioration_found = true;
-        gain = before_cost - after_cost;
-
-        // Performing exchange.
-        _edges.at(edge_1_start) = next_2;
-        _edges.at(next) = edge_2_end;
-        _edges.at(edge_2_start) = edge_1_end;
-        break;
+        distance_t gain = before_cost - after_cost;
+        if(gain > best_gain){
+          best_gain = gain;
+          best_edge_1_start = edge_1_start;
+          best_edge_2_start = edge_2_start;
+        }
       }
       // Go for next possible second edge.
       edge_2_start = edge_2_end;
     }
-    if(amelioration_found){
-      break;
-    }
   }
+  if(best_gain > 0){
+    index_t best_edge_1_end = _edges.at(best_edge_1_start);
+    index_t next = _edges.at(best_edge_1_end);
 
-  return gain;
+    // Performing exchange.
+    _edges.at(best_edge_1_start) = _edges.at(next);
+    _edges.at(next) = _edges.at(best_edge_2_start);
+    _edges.at(best_edge_2_start) = best_edge_1_end;
+  }
+  return best_gain;
 }
 
 distance_t local_search::perform_all_or_opt_steps(){
