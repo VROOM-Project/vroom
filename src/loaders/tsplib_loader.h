@@ -324,8 +324,14 @@ public:
     
     result += "\"tour\":[";
     for(auto const& step: tour){
-      // Using index provided in the file to describe places.
-      result += std::to_string(_nodes[step].index) + ",";
+      if(_ewt == EWT::EXPLICIT){
+        // Using step when matrix is explicit.
+        result += std::to_string(step) + ",";
+      }
+      else{
+        // Using index provided in the file to describe places.
+        result += std::to_string(_nodes[step].index) + ",";
+      }
     }
     result.pop_back();          // Remove trailing comma.
     result += "],";
