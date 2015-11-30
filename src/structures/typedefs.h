@@ -44,6 +44,18 @@ struct cl_args_t {
   std::string osrm_port;        // -p
   bool verbose;                 // -v
   std::string input;
+  bool force_start;             // -s
+  bool force_end;               // -e
+  // Default values.
+  cl_args_t():
+    osrm_address("0.0.0.0"),
+    use_osrm(true),
+    use_tsplib(false),
+    geometry(false),
+    osrm_port("5000"),
+    verbose(false),
+    force_start(false),
+    force_end(false) {}
 };
 
 #endif
