@@ -254,10 +254,6 @@ public:
     for(auto& step: tour){
       ordered_locations.push_back(_locations[step]);
     }
-    // Back to the starting location.
-    if(tour.size() > 0){
-      ordered_locations.push_back(_locations[tour.front()]);
-    }
 
     std::string query = this->build_query(ordered_locations,
                                           "viaroute",

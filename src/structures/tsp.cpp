@@ -99,5 +99,10 @@ std::string tsp::get_route(const std::list<index_t>& tour) const{
 }
 
 std::string tsp::get_route_geometry(const std::list<index_t>& tour) const{
-  return _loader->get_route_geometry(tour);
+  // Back to the starting location.
+  std::list<index_t> round_tour (tour);
+  if(tour.size() > 0){
+    round_tour.push_back(tour.front());
+  }
+  return _loader->get_route_geometry(round_tour);
 }
