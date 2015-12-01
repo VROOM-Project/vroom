@@ -58,8 +58,11 @@ tsp::tsp(const cl_args_t& cl_args):
   if(cl_args.force_start and cl_args.force_end){
     // Forcing first location as start, last location as end to
     // produce an open tour.
-    
-    // TODO
+    index_t last_index = _matrix.size() - 1;
+    _matrix[last_index][0] = 0;
+    for(index_t j = 1; j < last_index; ++j){
+      _matrix[last_index][j] = (std::numeric_limits<distance_t>::max() / 2);
+    }
   }
 
   _is_symmetric = _matrix.is_symmetric();

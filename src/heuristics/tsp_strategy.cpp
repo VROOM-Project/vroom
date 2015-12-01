@@ -311,9 +311,6 @@ void solve_atsp(const cl_args_t& cl_args){
     current_sol.push_back(current_sol.front());
     current_sol.pop_front();
   }
-  if(cl_args.force_start and cl_args.force_end){
-    // TODO
-  }
 
   logger log (cl_args);
   log.tour_to_output(asymmetric_tsp, current_sol, computing_times);
