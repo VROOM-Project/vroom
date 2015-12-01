@@ -133,7 +133,14 @@ distance_t tsp::cost(const std::list<index_t>& tour) const{
 }
 
 std::string tsp::get_route(const std::list<index_t>& tour) const{
-  return _loader->get_route(tour);
+  std::string type = "\"route_type\":";
+  if(_cl_args.force_start or _cl_args.force_end){
+    type += "\"open\",";
+  }
+  else{
+    type += "\"loop\",";
+  }
+  return type + _loader->get_route(tour);
 }
 
 std::string tsp::get_route_geometry(const std::list<index_t>& tour) const{
