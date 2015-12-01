@@ -19,7 +19,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "tsp.h"
 
 tsp::tsp(const cl_args_t& cl_args): 
-  _matrix(0){
+  _matrix(0),
+  _cl_args(cl_args){
   
   // Computing matrix with the right tool.
   assert((!cl_args.use_osrm) or (!cl_args.use_tsplib));
@@ -37,6 +38,15 @@ tsp::tsp(const cl_args_t& cl_args):
 
   _matrix = _loader->get_matrix();
   _is_symmetric = _matrix.is_symmetric();
+
+  // Dealing with "no-loop" cases.
+  if(cl_args.force_start){
+    // Forcing first location as start, end location decided during
+    // optimization.
+    for(index_t i = 1; i < _matrix.size(); ++i){
+      _matrix[i][0] = 0;
+    }
+  }
 }
 
 tsp::tsp(const matrix<distance_t>& m):
@@ -99,10 +109,12 @@ std::string tsp::get_route(const std::list<index_t>& tour) const{
 }
 
 std::string tsp::get_route_geometry(const std::list<index_t>& tour) const{
-  // Back to the starting location.
-  std::list<index_t> round_tour (tour);
-  if(tour.size() > 0){
-    round_tour.push_back(tour.front());
+  std::list<index_t> actual_trip (tour);
+  if(!_cl_args.force_start){
+    // Back to the starting location when the trip is a loop.
+    if(tour.size() > 0){
+      actual_trip.push_back(tour.front());
+    }
   }
-  return _loader->get_route_geometry(round_tour);
+  return _loader->get_route_geometry(actual_trip);
 }

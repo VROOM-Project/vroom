@@ -33,7 +33,8 @@ protected:
   std::unique_ptr<problem_io<distance_t>> _loader;
   matrix<distance_t> _matrix;
   bool _is_symmetric;
-  
+  const cl_args_t _cl_args;
+
 private:
   void add_location(const std::string location);
 
