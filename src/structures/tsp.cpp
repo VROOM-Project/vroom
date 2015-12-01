@@ -78,13 +78,22 @@ const matrix<distance_t> tsp::get_symmetrized_matrix() const{
     return _matrix;
   }
   else{
+    const distance_t& (*sym_f) (const distance_t&, const distance_t&) 
+      = std::min<distance_t>;
+    if((_cl_args.force_start and !_cl_args.force_end)
+       or (!_cl_args.force_start and _cl_args.force_end)){
+      // Using symmetrization with max as when only start or only end
+      // is forced, the matrix has a line or a column filled with
+      // zeros.
+      sym_f = std::max<distance_t>;
+    }
     matrix<distance_t> m {_matrix.size()};
     for(index_t i = 0; i < m.size(); ++i){
       m[i][i] = _matrix[i][i];
       for(index_t j = i + 1; j < m.size(); ++j){
-        distance_t min = std::min(_matrix[i][j], _matrix[j][i]);
-        m[i][j] = min;
-        m[j][i] = min;
+        distance_t val = sym_f(_matrix[i][j], _matrix[j][i]);
+        m[i][j] = val;
+        m[j][i] = val;
       }
     }
     return m;
