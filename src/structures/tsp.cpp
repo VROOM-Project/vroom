@@ -37,16 +37,32 @@ tsp::tsp(const cl_args_t& cl_args):
   }
 
   _matrix = _loader->get_matrix();
-  _is_symmetric = _matrix.is_symmetric();
 
-  // Dealing with "no-loop" cases.
-  if(cl_args.force_start){
+  // Dealing with open tour cases. At most one of the following
+  // occurs.
+  if(cl_args.force_start and !cl_args.force_end){
     // Forcing first location as start, end location decided during
     // optimization.
     for(index_t i = 1; i < _matrix.size(); ++i){
       _matrix[i][0] = 0;
     }
   }
+  if(!cl_args.force_start and cl_args.force_end){
+    // Forcing last location as end, start location decided during
+    // optimization.
+    index_t last_index = _matrix.size() - 1;
+    for(index_t j = 0; j < last_index; ++j){
+      _matrix[last_index][j] = 0;
+    }
+  }
+  if(cl_args.force_start and cl_args.force_end){
+    // Forcing first location as start, last location as end to
+    // produce an open tour.
+    
+    // TODO
+  }
+
+  _is_symmetric = _matrix.is_symmetric();
 }
 
 tsp::tsp(const matrix<distance_t>& m):
@@ -109,12 +125,16 @@ std::string tsp::get_route(const std::list<index_t>& tour) const{
 }
 
 std::string tsp::get_route_geometry(const std::list<index_t>& tour) const{
-  std::list<index_t> actual_trip (tour);
-  if(!_cl_args.force_start){
-    // Back to the starting location when the trip is a loop.
-    if(tour.size() > 0){
-      actual_trip.push_back(tour.front());
-    }
+  assert(tour.size() >= 2);
+
+  if(_cl_args.force_start or _cl_args.force_end){
+    // Open tour, getting direct geometry.
+    return _loader->get_route_geometry(tour);
   }
-  return _loader->get_route_geometry(actual_trip);
+  else{
+    // Back to the starting location when the trip is a loop.
+    std::list<index_t> actual_trip (tour);
+    actual_trip.push_back(actual_trip.front());
+    return _loader->get_route_geometry(actual_trip);
+  }
 }
