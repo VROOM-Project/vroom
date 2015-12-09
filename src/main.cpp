@@ -30,9 +30,11 @@ void display_usage(){
   usage += "\t-a=ADDRESS\t OSRM server address (\"0.0.0.0\")\n";
   usage += "\t-p=PORT,\t OSRM listening port (5000)\n";
   usage += "\t-g,\t\t get detailed route geometry for the solution\n";
-  usage += "\t-o=OUTPUT,\t output file name\n";
   usage += "\t-i=FILE,\t read input from FILE rather than from\n\t\t\t command-line\n";
+  usage += "\t-o=OUTPUT,\t output file name\n";
   usage += "\t-t,\t\t read input file from -i option as TSPLIB format\n";
+  usage += "\t-s,\t\t compute an \"open\" route (not a tour), starting at\n\t\t\t the first input location\n";
+  usage += "\t-e,\t\t compute an \"open\" route (not a tour), ending at\n\t\t\t the last input location\n";
   usage += "\t-v,\t\t turn on verbose output\n";
   usage += "\nThis program is distributed under the terms of the GNU General Public\n";
   usage += "License, version 3, and comes with ABSOLUTELY NO WARRANTY.\n";
