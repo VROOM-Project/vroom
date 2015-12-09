@@ -146,7 +146,14 @@ void solve_atsp(const cl_args_t& cl_args){
          or (sym_relocate_gain > 0) 
          or (sym_or_opt_gain > 0));
 
-  std::list<index_t> current_sol = sym_ls.get_tour(0);
+  // Default for first input location.
+  index_t first_loc_index = 0;
+  if(!cl_args.force_start and cl_args.force_end){
+    // Requiring the tour to be described from the "forced" end
+    // location.
+    first_loc_index = asymmetric_tsp.size() - 1;
+  }
+  std::list<index_t> current_sol = sym_ls.get_tour(first_loc_index);
 
   auto end_sym_local_search = std::chrono::high_resolution_clock::now();
 
@@ -279,7 +286,8 @@ void solve_atsp(const cl_args_t& cl_args){
            or (asym_or_opt_gain > 0)
            or (asym_avoid_loops_gain > 0));
 
-    current_sol = asym_ls.get_tour(0);
+
+    current_sol = asym_ls.get_tour(first_loc_index);
 
     auto end_asym_local_search = std::chrono::high_resolution_clock::now();
 
@@ -294,6 +302,15 @@ void solve_atsp(const cl_args_t& cl_args){
 
   computing_times.local_search 
     = sym_local_search_duration + asym_local_search_duration;
+
+  // Deal with open tour cases requiring adaptation.
+  if(!cl_args.force_start and cl_args.force_end){
+    // The tour has been listed starting with the "forced" end. This
+    // index has to be popped and put back, the next element being the
+    // chosen start resulting from the optimization.
+    current_sol.push_back(current_sol.front());
+    current_sol.pop_front();
+  }
 
   logger log (cl_args);
   log.tour_to_output(asymmetric_tsp, current_sol, computing_times);

@@ -41,23 +41,20 @@ void display_usage(){
 }
 
 int main(int argc, char **argv){
-  // Default options.
+  // Load default command-line options.
   cl_args_t cl_args;
-  cl_args.geometry = false;
-  cl_args.osrm_address = "0.0.0.0";
-  cl_args.osrm_port = "5000";
-  cl_args.use_osrm = true;
-  cl_args.use_tsplib = false;
-  cl_args.verbose = false;
 
   // Parsing command-line arguments.
-  const char* optString = "a:gi:o:p:tvh?";
+  const char* optString = "a:egi:o:p:stvh?";
   int opt = getopt(argc, argv, optString);
 
   while(opt != -1) {
     switch(opt){
     case 'a':
       cl_args.osrm_address = optarg;
+      break;
+    case 'e':
+      cl_args.force_end = true;
       break;
     case 'g':
       cl_args.geometry = true;
@@ -73,6 +70,9 @@ int main(int argc, char **argv){
       break;
     case 'p':
       cl_args.osrm_port = optarg;
+      break;
+    case 's':
+      cl_args.force_start = true;
       break;
     case 't':
       cl_args.use_tsplib = true;
