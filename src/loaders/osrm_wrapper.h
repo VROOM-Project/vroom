@@ -55,7 +55,11 @@ private:
     }
 
     query.pop_back();           // Remove trailing '&'.
-    query += " HTTP/1.1\r\n\r\n";
+    query += " HTTP/1.1\r\n";
+    query += "Host: " + _address + "\r\n";
+    query += "Accept: */*\r\n";
+    query += "Connection: close\r\n\r\n";
+
     return query;
   }
 
@@ -63,13 +67,13 @@ private:
                                       std::string end_str) const{
     std::string response;
 
-    boost::asio::io_service io_service;
-    
-    tcp::socket s (io_service);
-    tcp::resolver r (io_service);
-    tcp::resolver::query q(_address, _port);
-    
     try{
+      boost::asio::io_service io_service;
+    
+      tcp::resolver r (io_service);
+      tcp::resolver::query q (_address, _port);
+
+      tcp::socket s (io_service);
       boost::asio::connect(s, r.resolve(q));
 
       boost::asio::write(s, boost::asio::buffer(query));
