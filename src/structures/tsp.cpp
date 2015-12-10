@@ -133,6 +133,7 @@ distance_t tsp::cost(const std::list<index_t>& tour) const{
 }
 
 std::string tsp::get_route(const std::list<index_t>& tour) const{
+  assert(tour.size() == _matrix.size());
   std::string type = "\"route_type\":";
   if(_cl_args.force_start or _cl_args.force_end){
     type += "\"open\",";
@@ -144,7 +145,7 @@ std::string tsp::get_route(const std::list<index_t>& tour) const{
 }
 
 std::string tsp::get_route_geometry(const std::list<index_t>& tour) const{
-  assert(tour.size() >= 2);
+  assert(tour.size() == _matrix.size());
 
   if(_cl_args.force_start or _cl_args.force_end){
     // Open tour, getting direct geometry.
