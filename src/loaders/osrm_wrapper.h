@@ -96,7 +96,7 @@ private:
 
   void add_location(const std::string location){
     // Regex check for valid location.
-    std::regex valid_loc ("loc=-?[0-9]+\\.?[0-9]*,-?[0-9]+\\.?[0-9]*");
+    std::regex valid_loc ("loc=-?[0-9]+\\.?[0-9]*,-?[0-9]+\\.?[0-9]*[[:space:]]*");
     if(!std::regex_match(location, valid_loc)){
       throw custom_exception("invalid syntax for location "
                              + std::to_string(_locations.size() + 1)

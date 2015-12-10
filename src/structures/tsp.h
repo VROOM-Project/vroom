@@ -35,9 +35,6 @@ protected:
   bool _is_symmetric;
   const cl_args_t _cl_args;
 
-private:
-  void add_location(const std::string location);
-
 public:
   tsp(const cl_args_t& cl_args);
   
