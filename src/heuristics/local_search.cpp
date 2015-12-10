@@ -45,6 +45,11 @@ distance_t local_search::relocate_step(){
   index_t best_edge_1_start;
   index_t best_edge_2_start;
 
+  if(_edges.size() < 3){
+    // Not enough edges for the operator to make sense.
+    return 0;
+  }
+
   for(auto edge_1_start: _edges){
     index_t edge_1_end = _edges.at(edge_1_start);
     // Going through the tour while checking for insertion of
@@ -279,6 +284,11 @@ distance_t local_search::two_opt_step(){
   index_t best_edge_1_start;
   index_t best_edge_2_start = 0; // init value is never used.
 
+  if(_edges.size() < 3){
+    // Not enough edges for the operator to make sense.
+    return 0;
+  }
+
   for(auto edge_1_start: _edges){
     index_t edge_1_end = _edges.at(edge_1_start);
     index_t edge_2_start = _edges.at(edge_1_end);
@@ -374,6 +384,11 @@ distance_t local_search::or_opt_step(){
   distance_t best_gain = 0;
   index_t best_edge_1_start;
   index_t best_edge_2_start;
+
+  if(_edges.size() < 4){
+    // Not enough edges for the operator to make sense.
+    return 0;
+  }
 
   for(auto edge_1_start: _edges){
     index_t edge_1_end = _edges.at(edge_1_start);
