@@ -93,6 +93,11 @@ solution, VROOM solutions are shown to be very good approximations
 
 ## Examples
 
+### Gallery
+
+See animated examples in the [optimized trips
+gallery](http://coupey.fr/vroom/gallery).
+
 ### French towns
 
 A tour of the 244 biggest towns in metropolitan France, by car,
