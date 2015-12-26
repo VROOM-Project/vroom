@@ -261,7 +261,7 @@ public:
 
     std::string query = this->build_query(ordered_locations,
                                           "viaroute",
-                                          "uturns=true");
+                                          "alt=false&uturns=true");
 
     // Other return status than 0 should have been filtered before
     // with unfound routes check.
