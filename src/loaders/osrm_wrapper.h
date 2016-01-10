@@ -135,7 +135,7 @@ public:
     assert(response.find("Bad Request") == std::string::npos);
 
     // Removing headers.
-    std::string distance_key = "{\"distance_table\":[";
+    std::string distance_key = "\"distance_table\":[";
     size_t table_start = response.find(distance_key);
     assert(table_start != std::string::npos);
 
