@@ -21,9 +21,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 logger::logger(const cl_args_t& cl_args):
   _cl_args(cl_args) {}
 
-std::string logger::tour_to_string(const tsp& instance,
-                                   const std::list<index_t>& tour,
-                                   const timing_t& computing_times) const{
+void logger::write_solution(const tsp& instance,
+                            const std::list<index_t>& tour,
+                            const timing_t& computing_times) const{
   std::string route_geometry;
   unsigned long route_geometry_duration = 0;
   if(_cl_args.use_osrm and _cl_args.geometry){
@@ -65,22 +65,14 @@ std::string logger::tour_to_string(const tsp& instance,
   
   json_log += "}";
   
-  return json_log;
-}
-
-void logger::tour_to_output(const tsp& instance,
-                            const std::list<index_t>& tour,
-                            const timing_t& computing_times) const{
-  std::string log_str = this->tour_to_string(instance, tour, computing_times);
-  
   if(_cl_args.output_file.empty()){
     // Log to standard output.
-    std::cout << log_str << std::endl;
+    std::cout << json_log << std::endl;
   }
   else{
     // Log to file given as command-line option.
     std::ofstream out_stream (_cl_args.output_file, std::ofstream::out);
-    out_stream << log_str;
+    out_stream << json_log;
     out_stream.close();
   }
 }
