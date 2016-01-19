@@ -234,25 +234,33 @@ public:
     return m;
   }
 
-  virtual std::string get_route(const std::list<index_t>& tour) const override{
-    std::string result = "\"route\":[";
+  virtual void get_route(const std::list<index_t>& tour,
+                         rapidjson::Value& value,
+                         rapidjson::Document::AllocatorType& allocator) const override{
+    rapidjson::Value route_array(rapidjson::kArrayType);
     for(auto const& step: tour){
-      result += "[" + std::to_string(_locations[step].first)
-        + "," + std::to_string(_locations[step].second) + "],";
+      route_array
+        .PushBack(rapidjson::Value(rapidjson::kArrayType)
+                  .PushBack(_locations[step].first, allocator)
+                  .PushBack(_locations[step].second, allocator),
+                  allocator);
     }
-    result.pop_back();          // Remove trailing comma.
-    result += "],\"tour\":[";
-    for(auto const& step: tour){
-      // Using input index to describe locations.
-      result += std::to_string(step) + ",";
-    }
-    result.pop_back();          // Remove trailing comma.
-    result += "],";
-
-    return result;
+    value.Swap(route_array);
   }
 
-  virtual std::string get_route_geometry(const std::list<index_t>& tour) const override{
+  virtual void get_tour(const std::list<index_t>& tour,
+                        rapidjson::Value& value,
+                        rapidjson::Document::AllocatorType& allocator) const override{
+    rapidjson::Value tour_array(rapidjson::kArrayType);
+    for(auto const& step: tour){
+      // Using input index to describe locations.
+      tour_array.PushBack(step, allocator);
+    }
+    value.Swap(tour_array);
+  }
+
+  virtual void get_route_infos(const std::list<index_t>& tour,
+                               rapidjson::Document& output) const override{
     // Ordering locations for the given tour.
     std::vector<std::pair<double, double>> ordered_locations;
     for(auto& step: tour){
@@ -275,24 +283,24 @@ public:
     json_content = json_content.substr(0, 11 + json_content.rfind("\"status\":0}"));
 
     // Parsing total time/distance and route geometry.
-    unsigned time_begin = json_content.find("\"total_time\":");
-    unsigned time_end = json_content.find(",", time_begin);
-    std::string route_infos = json_content.substr(time_begin,
-                                                  time_end - time_begin);
-    route_infos += ",";
+    rapidjson::Document infos;
+    // FIXME: use exceptions?
+    assert(!infos.Parse(json_content.c_str()).HasParseError());
+    assert(infos.HasMember("route_summary"));
+    assert(infos["route_summary"].HasMember("total_time"));
+    assert(infos["route_summary"].HasMember("total_distance"));
+    assert(infos.HasMember("route_geometry"));
 
-    unsigned distance_begin = json_content.find("\"total_distance\":");
-    unsigned distance_end = json_content.find("}", distance_begin);
-    route_infos += json_content.substr(distance_begin,
-                                       distance_end - distance_begin);
-    route_infos += ",";
-    
-    unsigned geometry_begin = json_content.find("\"route_geometry\":");
-    unsigned geometry_end = json_content.find(",", geometry_begin);
-    route_infos += json_content.substr(geometry_begin,
-                                       geometry_end - geometry_begin);
-    
-    return route_infos;
+    rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
+    output.AddMember("total_time",
+                     infos["route_summary"]["total_time"],
+                     allocator);
+    output.AddMember("total_distance",
+                     infos["route_summary"]["total_distance"],
+                     allocator);
+    output.AddMember("route_geometry",
+                     rapidjson::Value(infos["route_geometry"], allocator),
+                     allocator);
   }
 };
 

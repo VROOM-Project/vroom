@@ -307,41 +307,44 @@ public:
     return _matrix;
   }
 
-  virtual std::string get_route(const std::list<index_t>& tour) const override{
-    std::string result;
+  virtual void get_route(const std::list<index_t>& tour,
+                         rapidjson::Value& value,
+                         rapidjson::Document::AllocatorType& allocator) const override{
+    rapidjson::Value route_array(rapidjson::kArrayType);
     if((_ewt != EWT::NONE) and (_ewt != EWT::EXPLICIT)){
       // The key "route" is only added if the matrix has been computed
       // from the detailed list of nodes, in that case contained in
       // _nodes.
-      std::string route = "\"route\":[";
       for(auto const& step: tour){
-        route += "[" + std::to_string(_nodes[step].x)
-          + "," + std::to_string(_nodes[step].y) + "],";
+        route_array
+          .PushBack(rapidjson::Value(rapidjson::kArrayType)
+                    .PushBack(_nodes[step].x, allocator)
+                    .PushBack(_nodes[step].y, allocator),
+                    allocator);
       }
-      route.pop_back();          // Remove trailing comma.
-      result += route + "],";
     }
-    
-    result += "\"tour\":[";
+    value.Swap(route_array);
+  }
+
+  virtual void get_tour(const std::list<index_t>& tour,
+                        rapidjson::Value& value,
+                        rapidjson::Document::AllocatorType& allocator) const override{
+    rapidjson::Value tour_array(rapidjson::kArrayType);
     for(auto const& step: tour){
       if(_ewt == EWT::EXPLICIT){
         // Using step when matrix is explicit.
-        result += std::to_string(step) + ",";
+        tour_array.PushBack(step, allocator);
       }
       else{
         // Using index provided in the file to describe places.
-        result += std::to_string(_nodes[step].index) + ",";
+        tour_array.PushBack(_nodes[step].index, allocator);
       }
     }
-    result.pop_back();          // Remove trailing comma.
-    result += "],";
-
-    return result;
+    value.Swap(tour_array);
   }
 
-  virtual std::string get_route_geometry(const std::list<index_t>& tour) const{
-    return "";
-  }
+  virtual void get_route_infos(const std::list<index_t>& tour,
+                               rapidjson::Document& output) const{}
 };
 
 #endif
