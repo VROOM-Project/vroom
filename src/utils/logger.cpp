@@ -64,6 +64,10 @@ void logger::write_solution(const tsp& instance,
   // references to populate them.
   output.AddMember("route", rapidjson::Value(rapidjson::kArrayType).Move(), allocator);
   instance.get_route(tour, output["route"], allocator);
+  // Avoid empty "route" value (e.g. for explicit TSPLIB).
+  if(output["route"].Empty()){
+    output.RemoveMember("route");
+  }
   output.AddMember("tour", rapidjson::Value(rapidjson::kArrayType).Move(), allocator);
   instance.get_tour(tour, output["tour"], allocator);
 
