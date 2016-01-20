@@ -63,8 +63,7 @@ private:
     return query;
   }
 
-  std::string send_then_receive_until(std::string query,
-                                      std::string end_str) const{
+  std::string send_then_receive(std::string query) const{
     std::string response;
 
     try{
@@ -78,13 +77,20 @@ private:
 
       boost::asio::write(s, boost::asio::buffer(query));
 
-      boost::asio::streambuf b;
-      boost::asio::read_until(s, b, end_str);
-
-      std::istream is(&b);
-      std::string line;
-      while(std::getline(is, line)){
-        response += line;
+      char buf[512];
+      boost::system::error_code error;
+      for(;;){
+        std::size_t len = s.read_some(boost::asio::buffer(buf), error);
+        response.append(buf, len);
+        if(error == boost::asio::error::eof){
+          // Connection closed cleanly.
+          break;
+        }
+        else{
+          if(error){
+            throw boost::system::system_error(error);
+          }
+        }
       }
     }
     catch (boost::system::system_error& e)
@@ -138,7 +144,7 @@ public:
   virtual matrix<distance_t> get_matrix() const override{
     std::string query = this->build_query(_locations, "table");
 
-    std::string response = this->send_then_receive_until(query, "]}");
+    std::string response = this->send_then_receive(query);
 
     // Stop at "Bad Request" error from OSRM.
     assert(response.find("Bad Request") == std::string::npos);
@@ -241,13 +247,7 @@ public:
     std::string query = this->build_query(ordered_locations,
                                           "viaroute",
                                           "alt=false&uturns=true");
-
-    // Other return status than 0 should have been filtered before
-    // with unfound routes check.
-
-    // FIXME: rely on the "status" key being the last one...
-    std::string response 
-      = this->send_then_receive_until(query, "\"status\":0}");
+    std::string response = this->send_then_receive(query);
 
     // Removing headers
     std::string json_content = response.substr(response.find("{"));
