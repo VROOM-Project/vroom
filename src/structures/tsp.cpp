@@ -132,29 +132,32 @@ distance_t tsp::cost(const std::list<index_t>& tour) const{
   return cost;
 }
 
-std::string tsp::get_route(const std::list<index_t>& tour) const{
+void tsp::get_route(const std::list<index_t>& tour,
+                    rapidjson::Value& value,
+                    rapidjson::Document::AllocatorType& allocator) const{
   assert(tour.size() == _matrix.size());
-  std::string type = "\"route_type\":";
-  if(_cl_args.force_start or _cl_args.force_end){
-    type += "\"open\",";
-  }
-  else{
-    type += "\"loop\",";
-  }
-  return type + _loader->get_route(tour);
+  return _loader->get_route(tour, value, allocator);
 }
 
-std::string tsp::get_route_geometry(const std::list<index_t>& tour) const{
+void tsp::get_tour(const std::list<index_t>& tour,
+                   rapidjson::Value& value,
+                   rapidjson::Document::AllocatorType& allocator) const{
+  assert(tour.size() == _matrix.size());
+  return _loader->get_tour(tour, value, allocator);
+}
+
+void tsp::get_route_infos(const std::list<index_t>& tour,
+                          rapidjson::Document& output) const{
   assert(tour.size() == _matrix.size());
 
   if(_cl_args.force_start or _cl_args.force_end){
     // Open tour, getting direct geometry.
-    return _loader->get_route_geometry(tour);
+    return _loader->get_route_infos(tour, output);
   }
   else{
     // Back to the starting location when the trip is a loop.
     std::list<index_t> actual_trip (tour);
     actual_trip.push_back(actual_trip.front());
-    return _loader->get_route_geometry(actual_trip);
+    return _loader->get_route_infos(actual_trip, output);
   }
 }

@@ -63,8 +63,7 @@ private:
     return query;
   }
 
-  std::string send_then_receive_until(std::string query,
-                                      std::string end_str) const{
+  std::string send_then_receive(std::string query) const{
     std::string response;
 
     try{
@@ -78,13 +77,20 @@ private:
 
       boost::asio::write(s, boost::asio::buffer(query));
 
-      boost::asio::streambuf b;
-      boost::asio::read_until(s, b, end_str);
-
-      std::istream is(&b);
-      std::string line;
-      while(std::getline(is, line)){
-        response += line;
+      char buf[512];
+      boost::system::error_code error;
+      for(;;){
+        std::size_t len = s.read_some(boost::asio::buffer(buf), error);
+        response.append(buf, len);
+        if(error == boost::asio::error::eof){
+          // Connection closed cleanly.
+          break;
+        }
+        else{
+          if(error){
+            throw boost::system::system_error(error);
+          }
+        }
       }
     }
     catch (boost::system::system_error& e)
@@ -138,66 +144,37 @@ public:
   virtual matrix<distance_t> get_matrix() const override{
     std::string query = this->build_query(_locations, "table");
 
-    std::string response = this->send_then_receive_until(query, "}");
+    std::string response = this->send_then_receive(query);
 
     // Stop at "Bad Request" error from OSRM.
     assert(response.find("Bad Request") == std::string::npos);
 
     // Removing headers.
-    std::string distance_key = "\"distance_table\":[";
-    size_t table_start = response.find(distance_key);
-    assert(table_start != std::string::npos);
+    std::string json_content = response.substr(response.find("{"));
 
-    size_t offset = table_start + distance_key.size();
-    std::string json_content
-      = response.substr(offset, response.find("]}") - offset);
+    // Expected matrix size.
+    std::size_t m_size = _locations.size();
 
-    // Parsing json tables to build the matrix.
-    std::vector<std::string> lines;
-    std::string sep = "],";
-    size_t previous_sep = 0;
-    size_t current_sep = json_content.find(sep);
-    while(current_sep != std::string::npos){
-      lines.push_back(json_content.substr(previous_sep + 1,
-                                          current_sep - previous_sep - 1));
-      previous_sep = current_sep + 2;
-      current_sep = json_content.find(sep, current_sep + 1);
-    }
-    std::string last_line
-      = json_content.substr(previous_sep + 1, std::string::npos);
-    last_line.pop_back();
-    lines.push_back(last_line);
-    
-    assert(lines.size() == _locations.size());
+    // Parsing distance table to build the matrix.
+    rapidjson::Document infos;
+    assert(!infos.Parse(json_content.c_str()).HasParseError());
+    assert(infos.HasMember("distance_table"));
+    assert(infos["distance_table"].Size() == m_size);
 
-    matrix<distance_t> m {lines.size()};
-    for(std::size_t i = 0; i < lines.size(); ++i){
-      sep = ",";
-      previous_sep = 0;
-      current_sep = lines[i].find(sep);
-      std::size_t j = 0;
-      while(current_sep != std::string::npos){
-        m[i][j] = std::stoul(lines[i].substr(previous_sep,
-                                             current_sep - previous_sep));
-        ++j;
-        previous_sep = current_sep + 1;
-        current_sep = lines[i].find(sep, current_sep + 1);
-      }
-      assert(j == _locations.size() - 1);
-      m[i][lines.size() - 1] 
-        = std::stoul(lines[i].substr(previous_sep, std::string::npos));
-    }
+    // Building matrix and checking for unfound routes to avoid
+    // unexpected behavior (OSRM raises max value for an int).
+    matrix<distance_t> m {m_size};
 
-    // Now checking for unfound routes to avoid unexpected behavior
-    // (OSRM raises max value for an int).
-    std::size_t m_size = m.size();
     std::vector<unsigned> nb_unfound_from_loc (m_size, 0);
     std::vector<unsigned> nb_unfound_to_loc (m_size, 0);
     distance_t unfound_time
       = std::numeric_limits<int>::max();
-    
-    for(unsigned i = 0; i < m_size; ++i){
-      for(unsigned j = 0; j < m_size; ++j){
+
+    for(rapidjson::SizeType i = 0; i < infos["distance_table"].Size(); ++i){
+      const auto& line = infos["distance_table"][i];
+      assert(line.Size() == m_size);
+      for(rapidjson::SizeType j = 0; j < line.Size(); ++j){
+        m[i][j] = line[j].GetUint();
         if(m[i][j] == unfound_time){
           // Just storing info as we don't know yet which location is
           // responsible between i and j.
@@ -210,7 +187,7 @@ public:
     unsigned max_unfound_routes_for_a_loc = 0;
     index_t error_loc = 0;    // Initial value never actually used.
     std::string error_direction;
-    // Finding the "worst" location.
+    // Finding the "worst" location for unfound routes.
     for(unsigned i = 0; i < m_size; ++i){
       if(nb_unfound_from_loc[i] > max_unfound_routes_for_a_loc){
         max_unfound_routes_for_a_loc = nb_unfound_from_loc[i];
@@ -234,25 +211,33 @@ public:
     return m;
   }
 
-  virtual std::string get_route(const std::list<index_t>& tour) const override{
-    std::string result = "\"route\":[";
+  virtual void get_route(const std::list<index_t>& tour,
+                         rapidjson::Value& value,
+                         rapidjson::Document::AllocatorType& allocator) const override{
+    rapidjson::Value route_array(rapidjson::kArrayType);
     for(auto const& step: tour){
-      result += "[" + std::to_string(_locations[step].first)
-        + "," + std::to_string(_locations[step].second) + "],";
+      route_array
+        .PushBack(rapidjson::Value(rapidjson::kArrayType)
+                  .PushBack(_locations[step].first, allocator)
+                  .PushBack(_locations[step].second, allocator),
+                  allocator);
     }
-    result.pop_back();          // Remove trailing comma.
-    result += "],\"tour\":[";
-    for(auto const& step: tour){
-      // Using input index to describe locations.
-      result += std::to_string(step) + ",";
-    }
-    result.pop_back();          // Remove trailing comma.
-    result += "],";
-
-    return result;
+    value.Swap(route_array);
   }
 
-  virtual std::string get_route_geometry(const std::list<index_t>& tour) const override{
+  virtual void get_tour(const std::list<index_t>& tour,
+                        rapidjson::Value& value,
+                        rapidjson::Document::AllocatorType& allocator) const override{
+    rapidjson::Value tour_array(rapidjson::kArrayType);
+    for(auto const& step: tour){
+      // Using input index to describe locations.
+      tour_array.PushBack(step, allocator);
+    }
+    value.Swap(tour_array);
+  }
+
+  virtual void get_route_infos(const std::list<index_t>& tour,
+                               rapidjson::Document& output) const override{
     // Ordering locations for the given tour.
     std::vector<std::pair<double, double>> ordered_locations;
     for(auto& step: tour){
@@ -262,37 +247,30 @@ public:
     std::string query = this->build_query(ordered_locations,
                                           "viaroute",
                                           "alt=false&uturns=true");
-
-    // Other return status than 0 should have been filtered before
-    // with unfound routes check.
-    std::string response 
-      = this->send_then_receive_until(query, "\"status\":0}");
+    std::string response = this->send_then_receive(query);
 
     // Removing headers
     std::string json_content = response.substr(response.find("{"));
 
-    // Removing extra info
-    json_content = json_content.substr(0, 11 + json_content.rfind("\"status\":0}"));
-
     // Parsing total time/distance and route geometry.
-    unsigned time_begin = json_content.find("\"total_time\":");
-    unsigned time_end = json_content.find(",", time_begin);
-    std::string route_infos = json_content.substr(time_begin,
-                                                  time_end - time_begin);
-    route_infos += ",";
+    rapidjson::Document infos;
+    // FIXME: use exceptions?
+    assert(!infos.Parse(json_content.c_str()).HasParseError());
+    assert(infos.HasMember("route_summary"));
+    assert(infos["route_summary"].HasMember("total_time"));
+    assert(infos["route_summary"].HasMember("total_distance"));
+    assert(infos.HasMember("route_geometry"));
 
-    unsigned distance_begin = json_content.find("\"total_distance\":");
-    unsigned distance_end = json_content.find("}", distance_begin);
-    route_infos += json_content.substr(distance_begin,
-                                       distance_end - distance_begin);
-    route_infos += ",";
-    
-    unsigned geometry_begin = json_content.find("\"route_geometry\":");
-    unsigned geometry_end = json_content.find(",", geometry_begin);
-    route_infos += json_content.substr(geometry_begin,
-                                       geometry_end - geometry_begin);
-    
-    return route_infos;
+    rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
+    output.AddMember("total_time",
+                     infos["route_summary"]["total_time"],
+                     allocator);
+    output.AddMember("total_distance",
+                     infos["route_summary"]["total_distance"],
+                     allocator);
+    output.AddMember("route_geometry",
+                     rapidjson::Value(infos["route_geometry"], allocator),
+                     allocator);
   }
 };
 

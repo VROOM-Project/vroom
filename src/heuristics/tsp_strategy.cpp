@@ -313,5 +313,5 @@ void solve_atsp(const cl_args_t& cl_args){
   }
 
   logger log (cl_args);
-  log.tour_to_output(asymmetric_tsp, current_sol, computing_times);
+  log.write_solution(asymmetric_tsp, current_sol, computing_times);
 }
