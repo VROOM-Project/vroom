@@ -208,7 +208,7 @@ std::unordered_map<index_t, index_t> branch_and_bound_symmetric_mwpm(const matri
   // best weight currently known.
 
   struct BB_tree_node{
-    const matrix<T>& mat;
+    const static_matrix<T>& mat;
     std::list<edge<T>> chosen_edges;
     std::set<index_t> remaining_indices;
     T cumulated_weight;

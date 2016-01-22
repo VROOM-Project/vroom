@@ -97,7 +97,7 @@ private:
   EWF _ewf;                     // Edge weight format.
   std::string _data_section;    // either NODE_COORD_SECTION or
                                 // EDGE_WEIGHT_SECTION content.
-  matrix<distance_t> _matrix;   // Corresponding matrix.
+  static_matrix<distance_t> _matrix;   // Corresponding matrix.
   std::vector<Node> _nodes;     // Nodes with coords.
 
 public:
@@ -187,7 +187,7 @@ public:
     
     std::istringstream data (_data_section);
 
-    matrix<distance_t> m {_dimension};
+    static_matrix<distance_t> m {_dimension};
 
     if(_ewt == EWT::EXPLICIT){
       switch (_ewf){
