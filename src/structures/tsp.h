@@ -25,8 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "./typedefs.h"
 #include "./matrix.h"
 #include "../loaders/problem_io.h"
-#include "../loaders/tsplib_loader.h"
-#include "../loaders/osrm_wrapper.h"
+#include "../loaders/euclidean.h"
 
 class tsp{
 protected:

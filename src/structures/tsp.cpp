@@ -19,23 +19,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "tsp.h"
 
 tsp::tsp(const cl_args_t& cl_args): 
-  _matrix(0),
   _cl_args(cl_args){
-  
-  // Computing matrix with the right tool.
-  assert((!cl_args.use_osrm) or (!cl_args.use_tsplib));
-  
-  // Exactly one of the two following is true.
-  if(cl_args.use_osrm){
-    _loader 
-      = std::make_unique<osrm_wrapper>(cl_args.osrm_address, 
-                                       cl_args.osrm_port,
-                                       cl_args.input);
-  }
-  if(cl_args.use_tsplib){
-    _loader = std::make_unique<tsplib_loader>(cl_args.input);
-  }
 
+  // Only use euclidean loader.
+  _loader = std::make_unique<euclidean>(cl_args.input);
   _matrix = _loader->get_matrix();
 
   // Dealing with open tour cases. At most one of the following
