@@ -25,33 +25,6 @@ tsp::tsp(const cl_args_t& cl_args):
   _loader = std::make_unique<euclidean>(cl_args.input);
   _matrix = _loader->get_matrix();
 
-  // Dealing with open tour cases. At most one of the following
-  // occurs.
-  if(cl_args.force_start and !cl_args.force_end){
-    // Forcing first location as start, end location decided during
-    // optimization.
-    for(index_t i = 1; i < _matrix.size(); ++i){
-      _matrix[i][0] = 0;
-    }
-  }
-  if(!cl_args.force_start and cl_args.force_end){
-    // Forcing last location as end, start location decided during
-    // optimization.
-    index_t last_index = _matrix.size() - 1;
-    for(index_t j = 0; j < last_index; ++j){
-      _matrix[last_index][j] = 0;
-    }
-  }
-  if(cl_args.force_start and cl_args.force_end){
-    // Forcing first location as start, last location as end to
-    // produce an open tour.
-    index_t last_index = _matrix.size() - 1;
-    _matrix[last_index][0] = 0;
-    for(index_t j = 1; j < last_index; ++j){
-      _matrix[last_index][j] = (std::numeric_limits<distance_t>::max() / 2);
-    }
-  }
-
   _is_symmetric = _matrix.is_symmetric();
 }
 
