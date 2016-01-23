@@ -28,60 +28,53 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 template <class T>
 class line{
  private:
-  std::size_t _row;
-  std::vector<std::pair<double, double>> _locations;
+  const index_t _row;
+  const std::vector<std::pair<double, double>>* const _locations_ptr;
 
  public:
-  std::size_t size() const {
-    return _locations.size();
+  line(index_t row,
+       const std::vector<std::pair<double, double>>& locations):
+    _row(row),
+    _locations_ptr(&locations){
   }
 
   T operator[](index_t index) const {
     return (_row == index) ?
       3 * (std::numeric_limits<distance_t>::max() / 4):
-      sqrt(std::pow(_locations[_row].first - _locations[index].first, 2)
-           + std::pow(_locations[_row].second - _locations[index].second, 2));
-  }
-
-  line(std::vector<std::pair<double, double>> locations):
-    _locations(locations){
-  }
-
-  void set_row(index_t row){
-    _row = row;
-  }
-
-  std::pair<double, double> get_location(index_t index) const{
-    return _locations[index];
+      sqrt(std::pow((*_locations_ptr)[_row].first - (*_locations_ptr)[index].first, 2)
+           + std::pow((*_locations_ptr)[_row].second - (*_locations_ptr)[index].second, 2));
   }
 };
 
 template <class T>
 class matrix{
  private:
-  line<T> _line;
+  std::vector<std::pair<double, double>> _locations;
+  std::vector<line<T>> _lines;
 
  public:
-  const line<T>& operator[](index_t index){
-    _line.set_row(index);
-    return _line;
+  const line<T>& operator[](index_t index) const{
+    return _lines[index];
   }
 
   matrix(std::vector<std::pair<double, double>> locations):
-    _line(locations){
+    _locations(locations){
+    for(index_t i = 0; i < _locations.size(); ++i){
+      _lines.emplace_back(i, _locations);
+    }
   }
 
   matrix(){}
 
   std::size_t size() const{
-    return _line.size();
+    return _locations.size();
   }
 
   matrix<T> get_sub_matrix(const std::vector<index_t>& indices) const{
     std::vector<std::pair<double, double>> new_locations;
     std::transform(indices.begin(), indices.cend(),
                    std::back_inserter(new_locations),
-                   [this](index_t i) {return _line.get_location(i);});
+                   [this](index_t i) {return _locations[i];});
     return matrix<T>(new_locations);
   }
 
