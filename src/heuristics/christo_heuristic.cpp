@@ -42,15 +42,8 @@ std::list<index_t> christo_heuristic::build_solution(tsp_sym& instance){
   }
 
   // Getting corresponding matrix for the generated sub-graph.
-  static_matrix<distance_t> sub_matrix
+  matrix<distance_t> sub_matrix
     = instance.get_matrix().get_sub_matrix(mst_odd_vertices);
-
-  // Making each node impossible to match with itself in minimum
-  // weight perfect matching to come.
-  for(index_t i = 0; i < sub_matrix.size(); ++i){
-    // Setting max value would cause trouble with further additions...
-    sub_matrix[i][i] = 3 * (std::numeric_limits<distance_t>::max() / 4);
-  }
 
   // Computing minimum weight perfect matching.
   std::unordered_map<index_t, index_t> mwpm
