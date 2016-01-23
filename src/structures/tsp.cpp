@@ -38,6 +38,13 @@ tsp::tsp(const cl_args_t& cl_args):
 
   _matrix = _loader->get_matrix();
 
+  // Distances on the diagonal are never used except in the minimum
+  // weight perfect matching during the heuristic. This makes sure
+  // each node will be impossible to match with itself at that time.
+  for(index_t i = 0; i < _matrix.size(); ++i){
+    _matrix[i][i] = INFINITE_DISTANCE;
+  }
+
   // Dealing with open tour cases. At most one of the following
   // occurs.
   if(cl_args.force_start and !cl_args.force_end){

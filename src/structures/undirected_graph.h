@@ -41,7 +41,7 @@ public:
   {
     bool matrix_ok = true;
     for(index_t i = 0; i < _size; ++i){
-      matrix_ok &= (m[i][i] == 0);
+      matrix_ok &= (m[i][i] == INFINITE_DISTANCE);
       for(index_t j = i + 1; j < _size; ++j){
         matrix_ok &= (m[i][j] == m[j][i]);
         _edges.emplace_back(i, j, m[i][j]);
