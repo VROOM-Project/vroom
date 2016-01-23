@@ -42,7 +42,7 @@ std::list<index_t> christo_heuristic::build_solution(tsp_sym& instance){
   }
 
   // Getting corresponding matrix for the generated sub-graph.
-  matrix<distance_t> sub_matrix
+  static_matrix<distance_t> sub_matrix
     = instance.get_matrix().get_sub_matrix(mst_odd_vertices);
 
   // Making each node impossible to match with itself in minimum
