@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef UNDIRECTED_GRAPH_H
 #define UNDIRECTED_GRAPH_H
-#include <list>
+#include <vector>
 #include <unordered_map>
 #include <cassert>
 #include "edge.h"
@@ -30,13 +30,13 @@ private:
   unsigned _size;
   // Embedding two representations for different uses depending on
   // context.
-  std::list<edge<T>> _edges;
+  std::vector<edge<T>> _edges;
   std::unordered_map<index_t, std::list<index_t>> _adjacency_list;
 
 public:
   undirected_graph() {}
   
-  undirected_graph(matrix<T> m):
+  undirected_graph(const matrix<T>& m):
     _size(m.size())
   {
     bool matrix_ok = true;
@@ -44,7 +44,7 @@ public:
       matrix_ok &= (m[i][i] == 0);
       for(index_t j = i + 1; j < _size; ++j){
         matrix_ok &= (m[i][j] == m[j][i]);
-        _edges.emplace_front(i, j, m[i][j]);
+        _edges.emplace_back(i, j, m[i][j]);
         _adjacency_list[i].push_back(j);
         _adjacency_list[j].push_back(i);
       }
@@ -52,8 +52,8 @@ public:
     assert(matrix_ok);
   }
 
-  undirected_graph(std::list<edge<T>> edges):
-    _edges(edges){
+  undirected_graph(std::vector<edge<T>> edges):
+    _edges{std::move(edges)}{
     for(auto const& edge: _edges){
       index_t first = edge.get_first_vertex();
       index_t second = edge.get_second_vertex();
@@ -68,32 +68,13 @@ public:
     return _size;
   }
 
-  std::list<edge<T>> get_edges() const{
+  std::vector<edge<T>> get_edges() const{
     return _edges;
   }
 
   std::unordered_map<index_t, std::list<index_t>> get_adjacency_list() const{
     return _adjacency_list;
   }
-
-  void print_edges() const{
-    for(auto const& edge: _edges){
-      edge.log();
-      std::cout << " ; ";
-    }
-    std::cout << std::endl;
-  }
-
-  void print_adjacency_list() const{
-    for(auto const& adj: _adjacency_list){
-      std::cout << adj.first << "->(";
-      for(auto& element: adj.second){
-        std::cout << element << " ; ";
-      }
-      std::cout << ") \n";
-    }
-  }
-
 };
 
 #endif

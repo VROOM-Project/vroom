@@ -26,9 +26,6 @@ std::list<index_t> christo_heuristic::build_solution(tsp_sym& instance){
   undirected_graph<distance_t> mst_graph
     = minimum_spanning_tree(instance.get_graph());
 
-  // std::cout << "MST edges: " << std::endl;
-  // mst_graph.print_edges();
-  
   // Getting minimum spanning tree of associated graph under the form
   // of an adjacency list.
   std::unordered_map<index_t, std::list<index_t>> adjacency_list
@@ -44,14 +41,8 @@ std::list<index_t> christo_heuristic::build_solution(tsp_sym& instance){
     }
   }
 
-  // std::cout << "Odd degree vertices from the minimum spanning tree: ";
-  // for(auto it = mst_odd_vertices.cbegin(); it != mst_odd_vertices.cend(); ++it){
-  //   std::cout << *it << " ; ";
-  // }
-  // std::cout << std::endl;
-
   // Getting corresponding matrix for the generated sub-graph.
-  matrix<distance_t> sub_matrix
+  static_matrix<distance_t> sub_matrix
     = instance.get_matrix().get_sub_matrix(mst_odd_vertices);
 
   // Making each node impossible to match with itself in minimum
@@ -61,20 +52,16 @@ std::list<index_t> christo_heuristic::build_solution(tsp_sym& instance){
     sub_matrix[i][i] = 3 * (std::numeric_limits<distance_t>::max() / 4);
   }
 
-  // sub_matrix.print();
-
   // Computing minimum weight perfect matching.
-  std::map<index_t, index_t> mwpm
+  std::unordered_map<index_t, index_t> mwpm
     = minimum_weight_perfect_matching(sub_matrix);
 
   // Storing those edges from mwpm that are coherent regarding
   // symmetry (y -> x whenever x -> y). Remembering the rest of them
   // for further use. Edges are not doubled in mwpm_final.
-  std::map<index_t, index_t> mwpm_final;
+  std::unordered_map<index_t, index_t> mwpm_final;
   std::vector<index_t> wrong_vertices;
 
-  // std::cout << "mwpm with initial indices:" << std::endl;
-  // distance_t weight = 0;
   unsigned total_ok = 0;
   for(auto edge = mwpm.begin();
       edge != mwpm.end();
@@ -87,25 +74,10 @@ std::list<index_t> christo_heuristic::build_solution(tsp_sym& instance){
     else{
       wrong_vertices.push_back(edge->first);
     }
-    // weight += sub_matrix(edge->first, edge->second);
-    // std::cout << edge->first << "->" << edge->second << std::endl;
   }
-  // std::cout << "Munkres mwpm weight: " << weight << std::endl;
   
   if(!wrong_vertices.empty()){
-    // std::cout << "Not all Munkres mwpm is usable: "
-    //           << total_ok << "/" << mwpm.size() << " vertices ok, i.e. "
-    //           << (double) total_ok * 100 / mwpm.size() << "%"
-    //           << std::endl;
-    // std::cout << "Switching to greedy approximation algorithm for vertices: ";
-    // for(auto vertex = wrong_vertices.begin();
-    //     vertex != wrong_vertices.end();
-    //     ++vertex){
-    //   std::cout << *vertex << " ; ";
-    // }
-    // std::cout << std::endl;
-
-    std::map<index_t, index_t> remaining_greedy_mwpm
+    std::unordered_map<index_t, index_t> remaining_greedy_mwpm
       = greedy_symmetric_approx_mwpm(sub_matrix.get_sub_matrix(wrong_vertices));
 
     // Adding edges obtained with greedy algo for the missing vertices
@@ -119,10 +91,9 @@ std::list<index_t> christo_heuristic::build_solution(tsp_sym& instance){
                                   wrong_vertices[edge->second]));
     }
   }
-  // std::cout << "mwpm (with original indices):" << std::endl;
 
   // Building eulerian graph.
-  std::list<edge<distance_t>> eulerian_graph_edges
+  std::vector<edge<distance_t>> eulerian_graph_edges
     = mst_graph.get_edges();
   
   // Adding edges from minimum weight perfect matching (with the
@@ -133,8 +104,6 @@ std::list<index_t> christo_heuristic::build_solution(tsp_sym& instance){
   for(auto edge = mwpm_final.cbegin(); edge != mwpm_final.cend(); ++edge){
     index_t first_index = mst_odd_vertices[edge->first];
     index_t second_index = mst_odd_vertices[edge->second];
-    // std::cout << first_index << "->" << second_index << std::endl;
-    // weight += 2 * instance.get_matrix()(first_index, second_index);
     if(already_added.find(first_index) == already_added.end()){
       eulerian_graph_edges.emplace_back(first_index,
                                         second_index,
@@ -143,7 +112,6 @@ std::list<index_t> christo_heuristic::build_solution(tsp_sym& instance){
       already_added.insert(second_index);
     }
   }
-  // std::cout << "Weight: " << weight << std::endl;
 
   // Building Eulerian graph from the edges.
   undirected_graph<distance_t> eulerian_graph (eulerian_graph_edges);
@@ -168,7 +136,6 @@ std::list<index_t> christo_heuristic::build_solution(tsp_sym& instance){
         vertex != eulerian_path.end();
         ++vertex){
       if(eulerian_adjacency_list[*vertex].size() > 0){
-        // std::cout << "size > 0 pour: " << *vertex << std::endl;
         new_tour_start = vertex;
         complete_tour = false;
         break;
@@ -199,36 +166,8 @@ std::list<index_t> christo_heuristic::build_solution(tsp_sym& instance){
       } while(current_vertex != initial_vertex);
 
       // Adding new tour to existing eulerian path.
-
-      // std::cout << "New tour starts at: " << *new_tour_start
-      //           << " size: " << new_tour.size() << std::endl;
-      // for(auto it = new_tour.begin(); it != new_tour.end(); ++it){
-      //   std::cout << *it << " ; ";
-      // }
-      // std::cout << std::endl;
-
       eulerian_path.insert(new_tour_start, new_tour.begin(), new_tour.end());
     }
-
-    // if(!complete_tour){
-    //   // Remove print eulerian path
-    //   std::cout << "Eulerian path so far: " << std::endl;
-    //   for(auto step = eulerian_path.cbegin(); step != eulerian_path.cend(); ++step){
-    //     std::cout << *step << " ; ";
-    //   }
-    //   std::cout << "\nRemaining eulerian adjacency list:\n";
-    //   for(auto it = eulerian_adjacency_list.cbegin();
-    //       it != eulerian_adjacency_list.cend();
-    //       ++it){
-    //     std::cout << it->first << "->(";
-    //     for(auto element = (it->second).cbegin();
-    //         element != (it->second).cend();
-    //         ++element){
-    //       std::cout << *element << " ; ";
-    //     }
-    //     std::cout << ") \n";
-    //   }
-    // }
   }while(!complete_tour);    
     
   std::set<index_t> already_visited;
@@ -242,6 +181,5 @@ std::list<index_t> christo_heuristic::build_solution(tsp_sym& instance){
       tour.push_back(*vertex);
     }
   }
-  // std::cout << "Taille du tour: " << tour.size() << std::endl;
   return tour;
 }

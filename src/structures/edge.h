@@ -59,12 +59,6 @@ public:
   T get_weight() const{
     return _weight;
   }
-
-  void log() const{
-    std::cout << _first_vertex
-              << "<-(" << _weight << ")->"
-              << _second_vertex;
-  }
 };
 
 #endif

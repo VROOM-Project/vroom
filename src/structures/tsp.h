@@ -32,9 +32,8 @@ class tsp{
 protected:
   std::unique_ptr<problem_io<distance_t>> _loader;
   matrix<distance_t> _matrix;
-  
-private:
-  void add_location(const std::string location);
+  bool _is_symmetric;
+  const cl_args_t _cl_args;
 
 public:
   tsp(const cl_args_t& cl_args);
@@ -45,13 +44,22 @@ public:
 
   const matrix<distance_t> get_symmetrized_matrix() const;
 
+  const bool is_symmetric() const;
+
   std::size_t size();
 
   distance_t cost(const std::list<index_t>& tour) const;
 
-  std::string get_route(const std::list<index_t>& tour) const;
+  void get_route(const std::list<index_t>& tour,
+                 rapidjson::Value& value,
+                 rapidjson::Document::AllocatorType& allocator) const;
 
-  std::string get_route_geometry(const std::list<index_t>& tour) const;
+  void get_tour(const std::list<index_t>& tour,
+                 rapidjson::Value& value,
+                 rapidjson::Document::AllocatorType& allocator) const;
+
+  void get_route_infos(const std::list<index_t>& tour,
+                       rapidjson::Document& output) const;
 };
 
 #endif

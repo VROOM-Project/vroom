@@ -19,6 +19,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef TYPEDEFS_H
 #define TYPEDEFS_H
 
+#include <string>
+
 // To easily differentiate variable types.
 using index_t = uint16_t;
 using distance_t = uint32_t;
@@ -42,6 +44,18 @@ struct cl_args_t {
   std::string osrm_port;        // -p
   bool verbose;                 // -v
   std::string input;
+  bool force_start;             // -s
+  bool force_end;               // -e
+  // Default values.
+  cl_args_t():
+    osrm_address("0.0.0.0"),
+    use_osrm(true),
+    use_tsplib(false),
+    geometry(false),
+    osrm_port("5000"),
+    verbose(false),
+    force_start(false),
+    force_end(false) {}
 };
 
 #endif

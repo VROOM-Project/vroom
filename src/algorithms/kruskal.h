@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef KRUSKAL_H
 #define KRUSKAL_H
-#include <list>
+#include <vector>
 #include <algorithm>            // sort
 #include "../structures/typedefs.h"
 #include "../structures/edge.h"
@@ -26,19 +26,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 template <class T>
 undirected_graph<T> minimum_spanning_tree(const undirected_graph<T>& graph){
-  // We just need the edges from original graph
-  std::list<edge<T>> edges = graph.get_edges();
+  // We just need the edges from original graph.
+  std::vector<edge<T>> edges = graph.get_edges();
   
-  // First sorting edges by weight
-  struct {
-    bool operator()(const edge<T> &a, const edge<T> &b){
-      return a.get_weight() < b.get_weight();
-    }   
-  } comp;
-  edges.sort(comp);
+  // First sorting edges by weight.
+  std::sort(edges.begin(), edges.end(),
+            [] (const auto &a, const auto &b){
+              return a.get_weight() < b.get_weight();
+            });
 
-  // Empty list to initialize the tree's edges
-  std::list<edge<T>> mst;
+  // Storing the edges of the minimum spanning tree.
+  std::vector<edge<T>> mst;
 
   // During Kruskal algorithm, the number of connected components will
   // decrease until we obtain a single component (the final tree). We

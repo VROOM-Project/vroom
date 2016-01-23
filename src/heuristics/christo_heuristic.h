@@ -18,8 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef CHRISTO_HEURISTIC_H
 #define CHRISTO_HEURISTIC_H
-#include <list>
-#include <map>
+#include <vector>
+#include <unordered_map>
 #include <set>
 #include <algorithm>
 #include <chrono>

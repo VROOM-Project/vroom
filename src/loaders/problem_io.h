@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define PROBLEM_IO_H
 #include<string>
 #include<vector>
+#include "../../include/rapidjson/document.h"
 #include "../structures/matrix.h"
 
 template <class T> 
@@ -28,9 +29,16 @@ class problem_io{
 public:
   virtual matrix<T> get_matrix() const = 0;
 
-  virtual std::string get_route(const std::list<index_t>& tour) const = 0;
+  virtual void get_route(const std::list<index_t>& tour,
+                         rapidjson::Value& value,
+                         rapidjson::Document::AllocatorType& allocator) const = 0;
 
-  virtual std::string get_route_geometry(const std::list<index_t>& tour) const = 0;
+  virtual void get_tour(const std::list<index_t>& tour,
+                        rapidjson::Value& value,
+                        rapidjson::Document::AllocatorType& allocator) const = 0;
+
+  virtual void get_route_infos(const std::list<index_t>& tour,
+                               rapidjson::Document& output) const = 0;
 
   virtual ~problem_io() {}
 

@@ -19,27 +19,32 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef LOCAL_SEARCH_H
 #define LOCAL_SEARCH_H
 #include <list>
-#include <map>
+#include <unordered_map>
+#include <vector>
 #include "../structures/typedefs.h"
 #include "../structures/matrix.h"
-#include "../structures/tsp_sym.h"
+#include "../structures/tsp.h"
 
 class local_search{
 private:
-  tsp_sym* _problem;
-  matrix<distance_t> _matrix;
-  std::map<index_t, index_t> _edges;
+  const matrix<distance_t> _matrix;
+  const bool _symmetric_matrix;
+  std::vector<index_t> _edges;
   bool _verbose;
 
 public:
 
-  local_search(tsp_sym* problem,
-               std::list<index_t> tour,
+  local_search(const tsp& problem,
+               const std::list<index_t>& tour,
                bool verbose);
 
   distance_t relocate_step();
 
   distance_t perform_all_relocate_steps();
+
+  distance_t avoid_loop_step();
+
+  distance_t perform_all_avoid_loop_steps();
 
   distance_t two_opt_step();
 
