@@ -27,14 +27,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 class local_search{
 private:
-  const matrix<distance_t> _matrix;
-  const bool _symmetric_matrix;
+  const matrix<distance_t>& _matrix;
+  const bool _is_symmetric_matrix;
   std::vector<index_t> _edges;
   bool _verbose;
 
 public:
 
-  local_search(const tsp& problem,
+  local_search(const matrix<distance_t>& matrix,
+               bool is_symmetric_matrix,
                const std::list<index_t>& tour,
                bool verbose);
 

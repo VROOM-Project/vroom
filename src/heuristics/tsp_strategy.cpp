@@ -38,15 +38,12 @@ void solve_atsp(const cl_args_t& cl_args){
               << computing_times.matrix_loading << " ms\n";
   }
 
-  // Using symmetrized problem to apply heuristic.
-  tsp_sym symmetrized_tsp (asymmetric_tsp.get_symmetrized_matrix());
-
   // Applying Christofides heuristic.
   auto start_christo = std::chrono::high_resolution_clock::now();
   std::unique_ptr<heuristic> christo_h = std::make_unique<christo_heuristic>();
   std::list<index_t> christo_sol
-    = christo_h->build_solution(symmetrized_tsp);
-  distance_t christo_cost = symmetrized_tsp.cost(christo_sol);
+    = christo_h->build_solution(asymmetric_tsp);
+  distance_t christo_cost = asymmetric_tsp.symmetrized_cost(christo_sol);
 
   auto end_christo = std::chrono::high_resolution_clock::now();
 
@@ -64,7 +61,8 @@ void solve_atsp(const cl_args_t& cl_args){
   // solution in a small amount of time. All possible moves for the
   // different neighbourhoods are performed, stopping when reaching a
   // local minima.
-  local_search sym_ls (symmetrized_tsp,
+  local_search sym_ls (asymmetric_tsp.get_symmetrized_matrix(),
+                       true,    // Symmetrized problem.
                        christo_sol,
                        cl_args.verbose);
   auto start_sym_local_search = std::chrono::high_resolution_clock::now();
@@ -178,7 +176,8 @@ void solve_atsp(const cl_args_t& cl_args){
     distance_t sym_ls_cost = std::min(direct_cost, reverse_cost);
 
     // Local search on asymmetric problem.
-    local_search asym_ls (asymmetric_tsp,
+    local_search asym_ls (asymmetric_tsp.get_matrix(),
+                          false, // Not the symmetrized problem.
                           (direct_cost <= reverse_cost) ? 
                           current_sol: reverse_current_sol,
                           cl_args.verbose);

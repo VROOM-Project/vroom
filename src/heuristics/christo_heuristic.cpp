@@ -18,13 +18,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "christo_heuristic.h"
 
-std::list<index_t> christo_heuristic::build_solution(tsp_sym& instance){
+std::list<index_t> christo_heuristic::build_solution(const tsp& instance){
   // The eulerian sub-graph further used is made of a minimum spanning
   // tree with a minimum weight perfect matching on its odd degree
   // vertices.
 
   undirected_graph<distance_t> mst_graph
-    = minimum_spanning_tree(instance.get_graph());
+    = minimum_spanning_tree(instance.get_symmetrized_graph());
 
   // Getting minimum spanning tree of associated graph under the form
   // of an adjacency list.
@@ -43,7 +43,7 @@ std::list<index_t> christo_heuristic::build_solution(tsp_sym& instance){
 
   // Getting corresponding matrix for the generated sub-graph.
   matrix<distance_t> sub_matrix
-    = instance.get_matrix().get_sub_matrix(mst_odd_vertices);
+    = instance.get_symmetrized_matrix().get_sub_matrix(mst_odd_vertices);
 
   // Computing minimum weight perfect matching.
   std::unordered_map<index_t, index_t> mwpm
@@ -56,16 +56,14 @@ std::list<index_t> christo_heuristic::build_solution(tsp_sym& instance){
   std::vector<index_t> wrong_vertices;
 
   unsigned total_ok = 0;
-  for(auto edge = mwpm.begin();
-      edge != mwpm.end();
-      ++edge){
-    if(mwpm.at(edge->second) == edge->first){
-      mwpm_final.emplace(std::min(edge->first, edge->second),
-                         std::max(edge->first, edge->second));
+  for(const auto& edge: mwpm){
+    if(mwpm.at(edge.second) == edge.first){
+      mwpm_final.emplace(std::min(edge.first, edge.second),
+                         std::max(edge.first, edge.second));
       ++total_ok;
     }
     else{
-      wrong_vertices.push_back(edge->first);
+      wrong_vertices.push_back(edge.first);
     }
   }
   
@@ -75,13 +73,11 @@ std::list<index_t> christo_heuristic::build_solution(tsp_sym& instance){
 
     // Adding edges obtained with greedy algo for the missing vertices
     // in mwpm_final.
-    for(auto edge = remaining_greedy_mwpm.cbegin();
-        edge != remaining_greedy_mwpm.cend();
-        ++edge){
-      mwpm_final.emplace(std::min(wrong_vertices[edge->first],
-                                  wrong_vertices[edge->second]),
-                         std::max(wrong_vertices[edge->first],
-                                  wrong_vertices[edge->second]));
+    for(const auto& edge: remaining_greedy_mwpm){
+      mwpm_final.emplace(std::min(wrong_vertices[edge.first],
+                                  wrong_vertices[edge.second]),
+                         std::max(wrong_vertices[edge.first],
+                                  wrong_vertices[edge.second]));
     }
   }
 
@@ -93,14 +89,13 @@ std::list<index_t> christo_heuristic::build_solution(tsp_sym& instance){
   // original vertices index). Edges appear twice in matching so we
   // need to remember the one already added.
   std::set<index_t> already_added;
-  // weight = 0;
-  for(auto edge = mwpm_final.cbegin(); edge != mwpm_final.cend(); ++edge){
-    index_t first_index = mst_odd_vertices[edge->first];
-    index_t second_index = mst_odd_vertices[edge->second];
+  for(const auto& edge: mwpm_final){
+    index_t first_index = mst_odd_vertices[edge.first];
+    index_t second_index = mst_odd_vertices[edge.second];
     if(already_added.find(first_index) == already_added.end()){
       eulerian_graph_edges.emplace_back(first_index,
                                         second_index,
-                                        instance.get_matrix()[first_index][second_index]
+                                        instance.get_symmetrized_matrix()[first_index][second_index]
                                         );
       already_added.insert(second_index);
     }

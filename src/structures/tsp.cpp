@@ -20,6 +20,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 tsp::tsp(const cl_args_t& cl_args): 
   _matrix(0),
+  _symmetrized_matrix(0),
+  _is_symmetric(true),
   _cl_args(cl_args){
   
   // Computing matrix with the right tool.
@@ -72,42 +74,41 @@ tsp::tsp(const cl_args_t& cl_args):
     }
   }
 
-  _is_symmetric = _matrix.is_symmetric();
+  // Compute symmetrized matrix and update _is_symmetric flag.
+  const distance_t& (*sym_f) (const distance_t&, const distance_t&) 
+    = std::min<distance_t>;
+  if((_cl_args.force_start and !_cl_args.force_end)
+     or (!_cl_args.force_start and _cl_args.force_end)){
+    // Using symmetrization with max as when only start or only end is
+    // forced, the matrix has a line or a column filled with zeros.
+    sym_f = std::max<distance_t>;
+  }
+  matrix<distance_t> m {_matrix.size()};
+  for(index_t i = 0; i < m.size(); ++i){
+    m[i][i] = _matrix[i][i];
+    for(index_t j = i + 1; j < m.size(); ++j){
+      _is_symmetric &= (_matrix[i][j] == _matrix[j][i]);
+      distance_t val = sym_f(_matrix[i][j], _matrix[j][i]);
+      m[i][j] = val;
+      m[j][i] = val;
+    }
+  }
+  _symmetrized_matrix = m;
+  
+  // Compute graph for symmetrized problem.
+  _symmetrized_graph = undirected_graph<distance_t>(_symmetrized_matrix);
 }
-
-tsp::tsp(const matrix<distance_t>& m):
-  _matrix(m),
-  _is_symmetric(_matrix.is_symmetric()) {}
 
 const matrix<distance_t>& tsp::get_matrix() const{
   return _matrix;
 }
 
-const matrix<distance_t> tsp::get_symmetrized_matrix() const{
-  if(_is_symmetric){
-    return _matrix;
-  }
-  else{
-    const distance_t& (*sym_f) (const distance_t&, const distance_t&) 
-      = std::min<distance_t>;
-    if((_cl_args.force_start and !_cl_args.force_end)
-       or (!_cl_args.force_start and _cl_args.force_end)){
-      // Using symmetrization with max as when only start or only end
-      // is forced, the matrix has a line or a column filled with
-      // zeros.
-      sym_f = std::max<distance_t>;
-    }
-    matrix<distance_t> m {_matrix.size()};
-    for(index_t i = 0; i < m.size(); ++i){
-      m[i][i] = _matrix[i][i];
-      for(index_t j = i + 1; j < m.size(); ++j){
-        distance_t val = sym_f(_matrix[i][j], _matrix[j][i]);
-        m[i][j] = val;
-        m[j][i] = val;
-      }
-    }
-    return m;
-  }
+const matrix<distance_t>& tsp::get_symmetrized_matrix() const{
+  return _symmetrized_matrix;
+}
+
+const undirected_graph<distance_t>& tsp::get_symmetrized_graph() const{
+  return _symmetrized_graph;
 }
 
 const bool tsp::is_symmetric() const{
@@ -135,6 +136,27 @@ distance_t tsp::cost(const std::list<index_t>& tour) const{
   }
   if(tour.size() > 0){
     cost += _matrix[previous_step][init_step];
+  }
+  return cost;
+}
+
+distance_t tsp::symmetrized_cost(const std::list<index_t>& tour) const{
+  distance_t cost = 0;
+  index_t init_step = 0;        // Initialization actually never used.
+
+  auto step = tour.cbegin();
+  if(tour.size() > 0){
+    init_step = *step;
+  }
+
+  index_t previous_step = init_step;
+  ++step;
+  for(; step != tour.cend(); ++step){
+    cost += _symmetrized_matrix[previous_step][*step];
+    previous_step = *step;
+  }
+  if(tour.size() > 0){
+    cost += _symmetrized_matrix[previous_step][init_step];
   }
   return cost;
 }
