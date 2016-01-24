@@ -61,11 +61,11 @@ void solve_atsp(const cl_args_t& cl_args){
   // solution in a small amount of time. All possible moves for the
   // different neighbourhoods are performed, stopping when reaching a
   // local minima.
+  auto start_sym_local_search = std::chrono::high_resolution_clock::now();
   local_search sym_ls (asymmetric_tsp.get_symmetrized_matrix(),
                        true,    // Symmetrized problem.
                        christo_sol,
                        cl_args.verbose);
-  auto start_sym_local_search = std::chrono::high_resolution_clock::now();
   if(cl_args.verbose){
     std::cout << "Start local search on symmetric problem." << std::endl;
   }
