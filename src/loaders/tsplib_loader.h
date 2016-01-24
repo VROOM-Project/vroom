@@ -93,22 +93,22 @@ private:
   }
 
   std::size_t _dimension;
+  const std::string _input;
   EWT _ewt;                     // Edge weight type.
   EWF _ewf;                     // Edge weight format.
   std::string _data_section;    // either NODE_COORD_SECTION or
                                 // EDGE_WEIGHT_SECTION content.
-  matrix<distance_t> _matrix;   // Corresponding matrix.
   std::vector<Node> _nodes;     // Nodes with coords.
 
 public:
   tsplib_loader(std::string input):
+    _input(input),
     _ewt(EWT::NONE),
-    _ewf(EWF::NONE),
-    _matrix(0){
+    _ewf(EWF::NONE) {
     // 1. Get problem dimension.
     boost::regex dim_rgx ("DIMENSION[[:space:]]*:[[:space:]]*([0-9]+)[[:space:]]");
     boost::smatch dim_match;
-    boost::regex_search(input, dim_match, dim_rgx);
+    boost::regex_search(_input, dim_match, dim_rgx);
     if(dim_match.size() != 2){
       throw custom_exception("incorrect \"DIMENSION\" key.");
     }
@@ -117,7 +117,7 @@ public:
     // 2. Get edge weight type.
     boost::regex ewt_rgx ("EDGE_WEIGHT_TYPE[[:space:]]*:[[:space:]]*([A-Z]+(_2D)?)[[:space:]]");
     boost::smatch ewt_match;
-    if(!boost::regex_search(input, ewt_match, ewt_rgx)){
+    if(!boost::regex_search(_input, ewt_match, ewt_rgx)){
       throw custom_exception("incorrect \"EDGE_WEIGHT_TYPE\".");
     }
     std::string type = ewt_match[1].str();
@@ -144,7 +144,7 @@ public:
     if(_ewt == EWT::EXPLICIT){
       boost::regex ewf_rgx ("EDGE_WEIGHT_FORMAT[[:space:]]*:[[:space:]]*([A-Z]+(_[A-Z]+){1,2})[[:space:]]");
       boost::smatch ewf_match;
-      if(!boost::regex_search(input, ewf_match, ewf_rgx)){
+      if(!boost::regex_search(_input, ewf_match, ewf_rgx)){
         throw custom_exception("incorrect \"EDGE_WEIGHT_FORMAT\".");
       }
       std::string format = ewf_match[1].str();
@@ -170,7 +170,7 @@ public:
       // Looking for an edge weight section.
       boost::regex ews_rgx ("EDGE_WEIGHT_SECTION[[:space:]]*(.+)[[:space:]]*(EOF)?");
       boost::smatch ews_match;
-      if(!boost::regex_search(input, ews_match, ews_rgx)){
+      if(!boost::regex_search(_input, ews_match, ews_rgx)){
         throw custom_exception("incorrect \"EDGE_WEIGHT_SECTION\".");
       }
       _data_section = ews_match[1].str();
@@ -179,15 +179,28 @@ public:
       // Looking for a node coord section.
       boost::regex ews_rgx ("NODE_COORD_SECTION[[:space:]]*(.+)[[:space:]]*(EOF)?");
       boost::smatch ews_match;
-      if(!boost::regex_search(input, ews_match, ews_rgx)){
+      if(!boost::regex_search(_input, ews_match, ews_rgx)){
         throw custom_exception("incorrect \"NODE_COORD_SECTION\".");
       }
       _data_section = ews_match[1].str();
     }
-    
-    std::istringstream data (_data_section);
 
+    if(_ewt != EWT::EXPLICIT){
+      // Parsing nodes.
+      std::istringstream data (_data_section);
+      for(std::size_t i = 0; i < _dimension; ++i){
+        index_t index;
+        double x,y;
+        data >> index >> x >> y;
+        _nodes.push_back({index, x, y});
+      }
+    }
+  }
+
+  virtual matrix<distance_t> get_matrix() const override{
     matrix<distance_t> m {_dimension};
+
+    std::istringstream data (_data_section);
 
     if(_ewt == EWT::EXPLICIT){
       switch (_ewf){
@@ -259,15 +272,6 @@ public:
       }
     }
     else{
-      // Parsing nodes.
-
-      // Build vector of nodes with their coords.
-      for(std::size_t i = 0; i < _dimension; ++i){
-        index_t index;
-        double x,y;
-        data >> index >> x >> y;
-        _nodes.push_back({index, x, y});
-      }
       // Using a pointer to the appropriate member function for
       // distance computing.
       distance_t (*dist_f_ptr) (Node, Node)
@@ -300,11 +304,7 @@ public:
         }
       }
     }
-    _matrix = m;
-  }
-
-  virtual matrix<distance_t> get_matrix() const override{
-    return _matrix;
+    return m;
   }
 
   virtual void get_route(const std::list<index_t>& tour,
