@@ -71,8 +71,7 @@ void solve_atsp(const cl_args_t& cl_args){
   // different neighbourhoods are performed, stopping when reaching a
   // local minima.
   local_search sym_ls (symmetrized_tsp,
-                       christo_sol,
-                       cl_args.verbose);
+                       christo_sol);
   auto start_sym_local_search = std::chrono::high_resolution_clock::now();
   BOOST_LOG_TRIVIAL(info) 
     << "[Local search] Start local search on symmetrized problem.";
@@ -134,8 +133,7 @@ void solve_atsp(const cl_args_t& cl_args){
     // Local search on asymmetric problem.
     local_search asym_ls (asymmetric_tsp,
                           (direct_cost <= reverse_cost) ? 
-                          current_sol: reverse_current_sol,
-                          cl_args.verbose);
+                          current_sol: reverse_current_sol);
 
     auto start_asym_local_search = std::chrono::high_resolution_clock::now();
     BOOST_LOG_TRIVIAL(info) 

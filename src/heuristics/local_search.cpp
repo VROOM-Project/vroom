@@ -19,12 +19,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "local_search.h"
 
 local_search::local_search(const tsp& problem,
-                           const std::list<index_t>& tour,
-                           bool verbose):
+                           const std::list<index_t>& tour):
   _matrix(problem.get_matrix()),
   _symmetric_matrix(problem.is_symmetric()),
-  _edges(_matrix.size()),
-  _verbose(verbose) 
+  _edges(_matrix.size())
 {
   auto location = tour.cbegin();
   index_t first_index = *location;

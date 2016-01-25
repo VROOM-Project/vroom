@@ -31,13 +31,11 @@ private:
   const matrix<distance_t> _matrix;
   const bool _symmetric_matrix;
   std::vector<index_t> _edges;
-  bool _verbose;
 
 public:
 
   local_search(const tsp& problem,
-               const std::list<index_t>& tour,
-               bool verbose);
+               const std::list<index_t>& tour);
 
   distance_t relocate_step();
 

@@ -40,6 +40,7 @@ void display_usage(){
   usage += "\t-s,\t\t compute an \"open\" route (not a tour), starting at\n\t\t\t the first input location\n";
   usage += "\t-e,\t\t compute an \"open\" route (not a tour), ending at\n\t\t\t the last input location\n";
   usage += "\t-v,\t\t turn on verbose output\n";
+  usage += "\t-V,\t\t turn on verbose output with all details\n";
   usage += "\nThis program is distributed under the terms of the GNU General Public\n";
   usage += "License, version 3, and comes with ABSOLUTELY NO WARRANTY.\n";
   std::cout << usage << std::endl;
@@ -51,7 +52,7 @@ int main(int argc, char **argv){
   cl_args_t cl_args;
 
   // Parsing command-line arguments.
-  const char* optString = "a:egi:o:p:stvh?";
+  const char* optString = "a:egi:o:p:stvVh?";
   int opt = getopt(argc, argv, optString);
 
   while(opt != -1) {
@@ -85,7 +86,10 @@ int main(int argc, char **argv){
       cl_args.use_osrm = false;
       break;
     case 'v':
-      cl_args.verbose = true;
+      cl_args.level = boost::log::trivial::info;
+      break;
+    case 'V':
+      cl_args.level = boost::log::trivial::trace;
       break;
     default:
       break;
@@ -110,9 +114,13 @@ int main(int argc, char **argv){
   }
   
   try{
-    // Log formatting.
+
+    // Log formatting and level.
     boost::log::add_console_log(std::cout,
                                 boost::log::keywords::format = "%Message%");
+
+    boost::log::core::get()
+      ->set_filter(boost::log::trivial::severity >= cl_args.level);
 
     solve_atsp(cl_args);
   }

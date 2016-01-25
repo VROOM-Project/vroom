@@ -35,17 +35,17 @@ struct timing_t {
 
 struct cl_args_t {
   // Listing command-line options.
-  std::string osrm_address;     // -a
-  bool use_osrm;                // default
-  bool use_tsplib;              // -t
-  bool geometry;                // -g
-  std::string input_file;       // -i
-  std::string output_file;      // -o
-  std::string osrm_port;        // -p
-  bool verbose;                 // -v
-  std::string input;
-  bool force_start;             // -s
-  bool force_end;               // -e
+  std::string osrm_address;                  // -a
+  bool use_osrm;                             // Default
+  bool use_tsplib;                           // -t
+  bool geometry;                             // -g
+  std::string input_file;                    // -i
+  std::string output_file;                   // -o
+  std::string osrm_port;                     // -p
+  boost::log::trivial::severity_level level; // -v
+  std::string input;                         // From cl
+  bool force_start;                          // -s
+  bool force_end;                            // -e
   // Default values.
   cl_args_t():
     osrm_address("0.0.0.0"),
@@ -53,7 +53,7 @@ struct cl_args_t {
     use_tsplib(false),
     geometry(false),
     osrm_port("5000"),
-    verbose(false),
+    level(boost::log::trivial::error),
     force_start(false),
     force_end(false) {}
 };
