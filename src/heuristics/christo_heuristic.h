@@ -25,6 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <chrono>
 #include <random>
 #include <limits>
+#include <boost/log/trivial.hpp>
 #include "heuristic.h"
 #include "../algorithms/kruskal.h"
 #include "../algorithms/munkres.h"
