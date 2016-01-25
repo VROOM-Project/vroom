@@ -16,9 +16,13 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <string>
 #include <sstream>
 #include <unistd.h>
+#include <boost/log/core.hpp>
+#include <boost/log/trivial.hpp>
+#include <boost/log/expressions.hpp>
+#include <boost/log/utility/setup/console.hpp>
+#include <boost/log/utility/setup/common_attributes.hpp>
 #include "./structures/typedefs.h"
 #include "./heuristics/tsp_strategy.h"
 
@@ -106,10 +110,14 @@ int main(int argc, char **argv){
   }
   
   try{
+    // Log formatting.
+    boost::log::add_console_log(std::cout,
+                                boost::log::keywords::format = "%Message%");
+
     solve_atsp(cl_args);
   }
   catch(const custom_exception& e){
-    std::cerr << "Error: " << e.get_message() << std::endl;
+    BOOST_LOG_TRIVIAL(error) << "[Error] " << e.get_message();
     exit(1);
   }
 

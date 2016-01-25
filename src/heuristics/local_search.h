@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <list>
 #include <unordered_map>
 #include <vector>
+#include <boost/log/trivial.hpp>
 #include "../structures/typedefs.h"
 #include "../structures/matrix.h"
 #include "../structures/tsp.h"

@@ -115,11 +115,11 @@ distance_t local_search::perform_all_relocate_steps(){
     }
   } while(gain > 0);
 
-  if(_verbose){
-    std::cout << "Performed "
-              << relocate_iter << " \"relocate\" steps, gaining "
-              << total_gain
-              << std::endl;
+  if(total_gain > 0){
+    BOOST_LOG_TRIVIAL(trace) << "* Performed "
+                             << relocate_iter 
+                             << " \"relocate\" steps, gaining "
+                             << total_gain;
   }
   return total_gain;
 }
@@ -269,11 +269,12 @@ distance_t local_search::perform_all_avoid_loop_steps(){
     }
   } while(gain > 0);
 
-  if(_verbose){
-    std::cout << "Performed "
-              << relocate_iter << " \"avoid loop\" steps, gaining "
-              << total_gain
-              << std::endl;
+  if(total_gain > 0){
+    BOOST_LOG_TRIVIAL(trace) << "* Performed "
+                             << relocate_iter 
+                             << " \"avoid loop\" steps, gaining "
+                             << total_gain;
+
   }
   return total_gain;
 }
@@ -371,11 +372,11 @@ distance_t local_search::perform_all_two_opt_steps(){
     }
   } while(gain > 0);
 
-  if(_verbose){
-    std::cout << "Performed "
-              << two_opt_iter << " \"2-opt\" steps, gaining "
-              << total_gain
-              << std::endl;
+  if(total_gain > 0){
+    BOOST_LOG_TRIVIAL(trace) << "* Performed "
+                             << two_opt_iter 
+                             << " \"2-opt\" steps, gaining "
+                             << total_gain;
   }
   return total_gain;
 }
@@ -454,11 +455,11 @@ distance_t local_search::perform_all_or_opt_steps(){
     }
   } while(gain > 0);
 
-  if(_verbose){
-    std::cout << "Performed "
-              << or_opt_iter << " \"or_opt\" steps, gaining "
-              << total_gain
-              << std::endl;
+  if(total_gain > 0){
+    BOOST_LOG_TRIVIAL(trace) << "* Performed "
+                             << or_opt_iter 
+                             << " \"or_opt\" steps, gaining "
+                             << total_gain;
   }
   return total_gain;
 }

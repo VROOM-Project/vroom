@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 #include <list>
 #include <chrono>
+#include <boost/log/trivial.hpp>
 #include "../../include/rapidjson/document.h"
 #include "../../include/rapidjson/writer.h"
 #include "../../include/rapidjson/stringbuffer.h"

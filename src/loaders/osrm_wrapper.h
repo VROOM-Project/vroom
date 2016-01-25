@@ -95,7 +95,7 @@ private:
     }
     catch (boost::system::system_error& e)
       {
-        throw custom_exception("failure while connecting to the OSRM server.");
+        throw custom_exception("Failure while connecting to the OSRM server.");
       }
     return response;
   }
@@ -104,7 +104,7 @@ private:
     // Regex check for valid location.
     std::regex valid_loc ("loc=-?[0-9]+\\.?[0-9]*,-?[0-9]+\\.?[0-9]*[[:space:]]*");
     if(!std::regex_match(location, valid_loc)){
-      throw custom_exception("invalid syntax for location "
+      throw custom_exception("Invalid syntax for location "
                              + std::to_string(_locations.size() + 1)
                              + ", see vroom -h for usage display."
                              );
@@ -137,7 +137,7 @@ public:
     this->add_location(loc_input.substr(start, end - start));
     
     if(_locations.size() <= 1){
-      throw custom_exception("at least two locations required!");
+      throw custom_exception("At least two locations required!");
     }
   }
 
