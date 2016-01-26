@@ -93,7 +93,6 @@ private:
   }
 
   std::size_t _dimension;
-  const std::string _input;
   EWT _ewt;                     // Edge weight type.
   EWF _ewf;                     // Edge weight format.
   std::string _data_section;    // either NODE_COORD_SECTION or
@@ -102,13 +101,12 @@ private:
 
 public:
   tsplib_loader(std::string input):
-    _input(input),
     _ewt(EWT::NONE),
     _ewf(EWF::NONE) {
     // 1. Get problem dimension.
     boost::regex dim_rgx ("DIMENSION[[:space:]]*:[[:space:]]*([0-9]+)[[:space:]]");
     boost::smatch dim_match;
-    boost::regex_search(_input, dim_match, dim_rgx);
+    boost::regex_search(input, dim_match, dim_rgx);
     if(dim_match.size() != 2){
       throw custom_exception("Incorrect \"DIMENSION\" key.");
     }
@@ -205,7 +203,7 @@ public:
     if(_ewt == EWT::EXPLICIT){
       switch (_ewf){
       case EWF::FULL_MATRIX: {
-        // Reading from input.
+        // Reading from input data.
         for(std::size_t i = 0; i < _dimension; ++i){
           for(std::size_t j = 0; j < _dimension; ++j){
             data >> m[i][j];
@@ -218,7 +216,7 @@ public:
         break;
       }
       case EWF::UPPER_ROW: {
-        // Reading from input.
+        // Reading from input data.
         distance_t current_value;              
         for(std::size_t i = 0; i < _dimension - 1; ++i){
           for(std::size_t j = i + 1; j < _dimension; ++j){
@@ -234,7 +232,7 @@ public:
         break;
       }
       case EWF::UPPER_DIAG_ROW:{
-        // Reading from input.
+        // Reading from input data.
         distance_t current_value;              
         for(std::size_t i = 0; i < _dimension; ++i){
           for(std::size_t j = i; j < _dimension; ++j){
@@ -250,7 +248,7 @@ public:
         break;
       }
       case EWF::LOWER_DIAG_ROW:{
-        // Reading from input.
+        // Reading from input data.
         distance_t current_value;              
         for(std::size_t i = 0; i < _dimension; ++i){
           for(std::size_t j = 0; j <= i ; ++j){
