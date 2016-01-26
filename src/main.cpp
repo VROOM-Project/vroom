@@ -86,10 +86,10 @@ int main(int argc, char **argv){
       cl_args.use_osrm = false;
       break;
     case 'v':
-      cl_args.level = boost::log::trivial::info;
+      cl_args.log_level = boost::log::trivial::info;
       break;
     case 'V':
-      cl_args.level = boost::log::trivial::trace;
+      cl_args.log_level = boost::log::trivial::trace;
       break;
     default:
       break;
@@ -120,7 +120,7 @@ int main(int argc, char **argv){
                                 boost::log::keywords::format = "%Message%");
 
     boost::log::core::get()
-      ->set_filter(boost::log::trivial::severity >= cl_args.level);
+      ->set_filter(boost::log::trivial::severity >= cl_args.log_level);
 
     solve_atsp(cl_args);
   }
