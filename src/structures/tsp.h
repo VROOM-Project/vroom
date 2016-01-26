@@ -24,6 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <list>
 #include "./typedefs.h"
 #include "./matrix.h"
+#include "./undirected_graph.h"
 #include "../loaders/problem_io.h"
 #include "../loaders/euclidean.h"
 
@@ -31,23 +32,27 @@ class tsp{
 protected:
   std::unique_ptr<problem_io<distance_t>> _loader;
   matrix<distance_t> _matrix;
+  matrix<distance_t> _symmetrized_matrix;
+  undirected_graph<distance_t> _symmetrized_graph;
   bool _is_symmetric;
   const cl_args_t _cl_args;
 
 public:
   tsp(const cl_args_t& cl_args);
   
-  tsp(const matrix<distance_t>& m);
-
   const matrix<distance_t>& get_matrix() const;
 
-  const matrix<distance_t> get_symmetrized_matrix() const;
+  const matrix<distance_t>& get_symmetrized_matrix() const;
+
+  const undirected_graph<distance_t>& get_symmetrized_graph() const;
 
   const bool is_symmetric() const;
 
   std::size_t size();
 
   distance_t cost(const std::list<index_t>& tour) const;
+
+  distance_t symmetrized_cost(const std::list<index_t>& tour) const;
 
   void get_route(const std::list<index_t>& tour,
                  rapidjson::Value& value,

@@ -19,6 +19,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "tsp.h"
 
 tsp::tsp(const cl_args_t& cl_args): 
+  _matrix(0),
+  _symmetrized_matrix(0),
+  _is_symmetric(true),
   _cl_args(cl_args){
 
   // Only use euclidean loader.
@@ -28,17 +31,16 @@ tsp::tsp(const cl_args_t& cl_args):
   _is_symmetric = _matrix.is_symmetric();
 }
 
-tsp::tsp(const matrix<distance_t>& m):
-  _matrix(m),
-  _is_symmetric(_matrix.is_symmetric()) {}
-
 const matrix<distance_t>& tsp::get_matrix() const{
   return _matrix;
 }
 
-const matrix<distance_t> tsp::get_symmetrized_matrix() const{
-  // Function never called with the euclidean loader.
-  return _matrix;
+const matrix<distance_t>& tsp::get_symmetrized_matrix() const{
+  return _symmetrized_matrix;
+}
+
+const undirected_graph<distance_t>& tsp::get_symmetrized_graph() const{
+  return _symmetrized_graph;
 }
 
 const bool tsp::is_symmetric() const{
@@ -66,6 +68,27 @@ distance_t tsp::cost(const std::list<index_t>& tour) const{
   }
   if(tour.size() > 0){
     cost += _matrix[previous_step][init_step];
+  }
+  return cost;
+}
+
+distance_t tsp::symmetrized_cost(const std::list<index_t>& tour) const{
+  distance_t cost = 0;
+  index_t init_step = 0;        // Initialization actually never used.
+
+  auto step = tour.cbegin();
+  if(tour.size() > 0){
+    init_step = *step;
+  }
+
+  index_t previous_step = init_step;
+  ++step;
+  for(; step != tour.cend(); ++step){
+    cost += _symmetrized_matrix[previous_step][*step];
+    previous_step = *step;
+  }
+  if(tour.size() > 0){
+    cost += _symmetrized_matrix[previous_step][init_step];
   }
   return cost;
 }

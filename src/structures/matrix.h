@@ -64,7 +64,7 @@ class matrix{
     }
   }
 
-  matrix(){}
+  matrix(std::size_t n){}
 
   std::size_t size() const{
     return _locations.size();

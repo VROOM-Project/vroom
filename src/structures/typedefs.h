@@ -20,10 +20,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define TYPEDEFS_H
 
 #include <string>
+#include <limits>
 
 // To easily differentiate variable types.
 using index_t = uint16_t;
 using distance_t = uint32_t;
+
+// Setting max value would cause trouble with further additions.
+constexpr distance_t INFINITE_DISTANCE = 3 * (std::numeric_limits<distance_t>::max() / 4);
 
 struct timing_t {
   // Computing times in milliseconds.

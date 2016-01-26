@@ -18,11 +18,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "local_search.h"
 
-local_search::local_search(const tsp& problem,
+local_search::local_search(const matrix<distance_t>& matrix,
+                           bool is_symmetric_matrix,
                            const std::list<index_t>& tour,
                            bool verbose):
-  _matrix(problem.get_matrix()),
-  _symmetric_matrix(problem.is_symmetric()),
+  _matrix(matrix),
+  _is_symmetric_matrix(is_symmetric_matrix),
   _edges(_matrix.size()),
   _verbose(verbose) 
 {
@@ -310,7 +311,7 @@ distance_t local_search::two_opt_step(){
       distance_t after_cost
         = _matrix[edge_1_start][edge_2_start]
         + _matrix[edge_1_end][edge_2_end];
-      if(!_symmetric_matrix){
+      if(!_is_symmetric_matrix){
         // Updating the cost of the part of the tour that needs to be
         // reversed.
         before_reversed_part_cost += _matrix[previous][edge_2_start];
