@@ -47,7 +47,7 @@ undirected_graph<T> minimum_spanning_tree(const undirected_graph<T>& graph){
     representative.emplace(i, i);
   }
 
-  for(auto const& edge: edges){
+  for(const auto& edge: edges){
     index_t first_vertex = edge.get_first_vertex();
     index_t second_vertex = edge.get_second_vertex();
 
@@ -68,8 +68,7 @@ undirected_graph<T> minimum_spanning_tree(const undirected_graph<T>& graph){
     }
   }
 
-  undirected_graph<T> mst_as_graph (mst);
-  return mst_as_graph;
+  return undirected_graph<T> (mst);
 }
 
 #endif
