@@ -20,6 +20,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define TSP_STRATEGY_H
 #include <chrono>
 #include <memory>
+#include <iomanip>
+#include <boost/log/trivial.hpp>
 #include "./heuristic.h"
 #include "./christo_heuristic.h"
 #include "./local_search.h"

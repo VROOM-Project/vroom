@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <list>
 #include <unordered_map>
 #include <vector>
+#include <boost/log/trivial.hpp>
 #include "../structures/typedefs.h"
 #include "../structures/matrix.h"
 #include "../structures/tsp.h"
@@ -30,14 +31,11 @@ private:
   const matrix<distance_t>& _matrix;
   const bool _is_symmetric_matrix;
   std::vector<index_t> _edges;
-  bool _verbose;
 
 public:
-
   local_search(const matrix<distance_t>& matrix,
                bool is_symmetric_matrix,
-               const std::list<index_t>& tour,
-               bool verbose);
+               const std::list<index_t>& tour);
 
   distance_t relocate_step();
 

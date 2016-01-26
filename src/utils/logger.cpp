@@ -31,12 +31,18 @@ void logger::write_solution(const tsp& instance,
   unsigned long route_geometry_duration = 0;
   if(_cl_args.use_osrm and _cl_args.geometry){
     // Get route informations geometry (only when using OSRM).
+    BOOST_LOG_TRIVIAL(info) 
+      << "[Route] Start computing detailed route.";
+
     auto start_route_geometry = std::chrono::high_resolution_clock::now();
     instance.get_route_infos(tour, output);
     auto end_route_geometry = std::chrono::high_resolution_clock::now();
     route_geometry_duration =
       std::chrono::duration_cast<std::chrono::milliseconds>
       (end_route_geometry - start_route_geometry).count();
+    BOOST_LOG_TRIVIAL(info) << "[Route] Done, took "
+                            << route_geometry_duration 
+                            << " ms.";
   }
 
   // Timing informations.
@@ -75,6 +81,12 @@ void logger::write_solution(const tsp& instance,
   rapidjson::Writer<rapidjson::StringBuffer> r_writer(s);
   output.Accept(r_writer);
 
+  auto start_output = std::chrono::high_resolution_clock::now();
+  std::string out 
+    = _cl_args.output_file.empty() ? "standard output": _cl_args.output_file;
+  BOOST_LOG_TRIVIAL(info) << "[Output] Write solution to "
+                          << out << ".";
+
   if(_cl_args.output_file.empty()){
     // Log to standard output.
     std::cout << s.GetString() << std::endl;
@@ -85,4 +97,11 @@ void logger::write_solution(const tsp& instance,
     out_stream << s.GetString();
     out_stream.close();
   }
+  auto end_output = std::chrono::high_resolution_clock::now();
+  auto output_duration =
+    std::chrono::duration_cast<std::chrono::milliseconds>
+    (end_output - start_output).count();
+
+  BOOST_LOG_TRIVIAL(info) << "[Output] Done, took "
+                          << output_duration  << " ms.";
 }

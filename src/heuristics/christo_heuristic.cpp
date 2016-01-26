@@ -23,6 +23,10 @@ std::list<index_t> christo_heuristic::build_solution(const tsp& instance){
   // tree with a minimum weight perfect matching on its odd degree
   // vertices.
 
+  BOOST_LOG_TRIVIAL(trace) << "* Graph has " 
+                           << instance.size() 
+                           << " nodes.";
+
   undirected_graph<distance_t> mst_graph
     = minimum_spanning_tree(instance.get_symmetrized_graph());
 
@@ -40,6 +44,9 @@ std::list<index_t> christo_heuristic::build_solution(const tsp& instance){
       mst_odd_vertices.push_back(adjacency->first);
     }
   }
+  BOOST_LOG_TRIVIAL(trace) << "* "
+                           << mst_odd_vertices.size()
+                           << " nodes with odd degree in the minimum spanning tree.";
 
   // Getting corresponding matrix for the generated sub-graph.
   matrix<distance_t> sub_matrix
@@ -66,8 +73,12 @@ std::list<index_t> christo_heuristic::build_solution(const tsp& instance){
       wrong_vertices.push_back(edge.first);
     }
   }
-  
+
   if(!wrong_vertices.empty()){
+    BOOST_LOG_TRIVIAL(trace) << "* Munkres: "
+                             << wrong_vertices.size()
+                             << " useless nodes for symmetry.";
+
     std::unordered_map<index_t, index_t> remaining_greedy_mwpm
       = greedy_symmetric_approx_mwpm(sub_matrix.get_sub_matrix(wrong_vertices));
 
@@ -112,7 +123,7 @@ std::list<index_t> christo_heuristic::build_solution(const tsp& instance){
   std::list<index_t> eulerian_path;
   eulerian_path.push_back(eulerian_adjacency_list.begin()->first);
 
-  // Building and Joining tours as long as necessary.
+  // Building and joining tours as long as necessary.
   bool complete_tour;
   
   do{

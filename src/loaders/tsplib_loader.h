@@ -110,15 +110,15 @@ public:
     boost::smatch dim_match;
     boost::regex_search(_input, dim_match, dim_rgx);
     if(dim_match.size() != 2){
-      throw custom_exception("incorrect \"DIMENSION\" key.");
+      throw custom_exception("Incorrect \"DIMENSION\" key.");
     }
     _dimension = std::stoul(dim_match[1].str());
 
     // 2. Get edge weight type.
     boost::regex ewt_rgx ("EDGE_WEIGHT_TYPE[[:space:]]*:[[:space:]]*([A-Z]+(_2D)?)[[:space:]]");
     boost::smatch ewt_match;
-    if(!boost::regex_search(_input, ewt_match, ewt_rgx)){
-      throw custom_exception("incorrect \"EDGE_WEIGHT_TYPE\".");
+    if(!boost::regex_search(input, ewt_match, ewt_rgx)){
+      throw custom_exception("Incorrect \"EDGE_WEIGHT_TYPE\".");
     }
     std::string type = ewt_match[1].str();
     if(type == "EXPLICIT"){
@@ -137,15 +137,15 @@ public:
       _ewt = EWT::ATT;
     }
     if(_ewt == EWT::NONE){
-     throw custom_exception("unsupported \"EDGE_WEIGHT_TYPE\" value: "
+     throw custom_exception("Unsupported \"EDGE_WEIGHT_TYPE\" value: "
                             + type +".");
     }
     // 2. Get edge weight format if required.
     if(_ewt == EWT::EXPLICIT){
       boost::regex ewf_rgx ("EDGE_WEIGHT_FORMAT[[:space:]]*:[[:space:]]*([A-Z]+(_[A-Z]+){1,2})[[:space:]]");
       boost::smatch ewf_match;
-      if(!boost::regex_search(_input, ewf_match, ewf_rgx)){
-        throw custom_exception("incorrect \"EDGE_WEIGHT_FORMAT\".");
+      if(!boost::regex_search(input, ewf_match, ewf_rgx)){
+        throw custom_exception("Incorrect \"EDGE_WEIGHT_FORMAT\".");
       }
       std::string format = ewf_match[1].str();
       if(format == "FULL_MATRIX"){
@@ -161,7 +161,7 @@ public:
         _ewf = EWF::LOWER_DIAG_ROW;
       }
       if(_ewf == EWF::NONE){
-        throw custom_exception("unsupported \"EDGE_WEIGHT_FORMAT\" value: "
+        throw custom_exception("Unsupported \"EDGE_WEIGHT_FORMAT\" value: "
                                + format +".");
       }
     }
@@ -170,8 +170,8 @@ public:
       // Looking for an edge weight section.
       boost::regex ews_rgx ("EDGE_WEIGHT_SECTION[[:space:]]*(.+)[[:space:]]*(EOF)?");
       boost::smatch ews_match;
-      if(!boost::regex_search(_input, ews_match, ews_rgx)){
-        throw custom_exception("incorrect \"EDGE_WEIGHT_SECTION\".");
+      if(!boost::regex_search(input, ews_match, ews_rgx)){
+        throw custom_exception("Incorrect \"EDGE_WEIGHT_SECTION\".");
       }
       _data_section = ews_match[1].str();
     }
@@ -179,8 +179,8 @@ public:
       // Looking for a node coord section.
       boost::regex ews_rgx ("NODE_COORD_SECTION[[:space:]]*(.+)[[:space:]]*(EOF)?");
       boost::smatch ews_match;
-      if(!boost::regex_search(_input, ews_match, ews_rgx)){
-        throw custom_exception("incorrect \"NODE_COORD_SECTION\".");
+      if(!boost::regex_search(input, ews_match, ews_rgx)){
+        throw custom_exception("Incorrect \"NODE_COORD_SECTION\".");
       }
       _data_section = ews_match[1].str();
     }

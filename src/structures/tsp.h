@@ -49,7 +49,7 @@ public:
 
   const bool is_symmetric() const;
 
-  std::size_t size();
+  std::size_t size() const;
 
   distance_t cost(const std::list<index_t>& tour) const;
 

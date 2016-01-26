@@ -115,7 +115,7 @@ const bool tsp::is_symmetric() const{
   return _is_symmetric;
 }
 
-std::size_t tsp::size(){
+std::size_t tsp::size() const{
   return _matrix.size();
 }
 
