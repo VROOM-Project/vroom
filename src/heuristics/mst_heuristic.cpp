@@ -29,25 +29,23 @@ std::list<index_t> mst_heuristic::build_solution(const tsp& instance){
     = minimum_spanning_tree(instance.get_symmetrized_graph()).get_adjacency_list();
   
   // Initializing the depth-first search of the minimum spanning tree
-  // with any vertex. Using the list as a stack.
-  std::list<index_t> df_list;
+  // with any vertex.
+  std::stack<index_t> df_list;
 
   index_t current_vertex = adjacency_list.begin()->first;
-  df_list.push_back(current_vertex);
+  df_list.push(current_vertex);
 
   std::list<index_t> tour;
 
   while(!df_list.empty()){
-    current_vertex = df_list.back();
-    df_list.pop_back();
+    current_vertex = df_list.top();
+    df_list.pop();
 
-    for(auto vertex = adjacency_list[current_vertex].cbegin();
-        vertex != adjacency_list[current_vertex].cend();
-        ++vertex){
+    for(const auto& vertex: adjacency_list[current_vertex]){
       // Adding neighbour for further visit.
-      df_list.push_back(*vertex);
+      df_list.push(vertex);
       // Making sure current edge won't be used backward later.
-      adjacency_list[*vertex].remove(current_vertex);
+      adjacency_list[vertex].remove(current_vertex);
     }
 
     tour.push_back(current_vertex);

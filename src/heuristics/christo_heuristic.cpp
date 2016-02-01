@@ -37,11 +37,9 @@ std::list<index_t> christo_heuristic::build_solution(const tsp& instance){
 
   // Getting odd degree vertices from the minimum spanning tree.
   std::vector<index_t> mst_odd_vertices;
-  for(auto adjacency = adjacency_list.cbegin();
-      adjacency != adjacency_list.cend();
-      ++adjacency){
-    if(adjacency->second.size() % 2 == 1){
-      mst_odd_vertices.push_back(adjacency->first);
+  for(const auto& adjacency: adjacency_list){
+    if(adjacency.second.size() % 2 == 1){
+      mst_odd_vertices.push_back(adjacency.first);
     }
   }
   BOOST_LOG_TRIVIAL(trace) << "* "
@@ -171,13 +169,11 @@ std::list<index_t> christo_heuristic::build_solution(const tsp& instance){
     
   std::set<index_t> already_visited;
   std::list<index_t> tour;
-  for(auto vertex = eulerian_path.cbegin();
-      vertex != eulerian_path.cend();
-      ++vertex){
-    auto ret = already_visited.insert(*vertex);
+  for(const auto& vertex: eulerian_path){
+    auto ret = already_visited.insert(vertex);
     if(ret.second){
       // Vertex not already visited.
-      tour.push_back(*vertex);
+      tour.push_back(vertex);
     }
   }
   return tour;

@@ -165,14 +165,14 @@ void tsp::get_route(const std::list<index_t>& tour,
                     rapidjson::Value& value,
                     rapidjson::Document::AllocatorType& allocator) const{
   assert(tour.size() == _matrix.size());
-  return _loader->get_route(tour, value, allocator);
+  _loader->get_route(tour, value, allocator);
 }
 
 void tsp::get_tour(const std::list<index_t>& tour,
                    rapidjson::Value& value,
                    rapidjson::Document::AllocatorType& allocator) const{
   assert(tour.size() == _matrix.size());
-  return _loader->get_tour(tour, value, allocator);
+  _loader->get_tour(tour, value, allocator);
 }
 
 void tsp::get_route_infos(const std::list<index_t>& tour,
@@ -181,12 +181,12 @@ void tsp::get_route_infos(const std::list<index_t>& tour,
 
   if(_cl_args.force_start or _cl_args.force_end){
     // Open tour, getting direct geometry.
-    return _loader->get_route_infos(tour, output);
+    _loader->get_route_infos(tour, output);
   }
   else{
     // Back to the starting location when the trip is a loop.
     std::list<index_t> actual_trip (tour);
     actual_trip.push_back(actual_trip.front());
-    return _loader->get_route_infos(actual_trip, output);
+    _loader->get_route_infos(actual_trip, output);
   }
 }

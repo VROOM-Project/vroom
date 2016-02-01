@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef MST_HEURISTIC_H
 #define MST_HEURISTIC_H
-#include <list>
+#include <stack>
 #include <boost/log/trivial.hpp>
 #include "heuristic.h"
 #include "../algorithms/kruskal.h"
