@@ -16,18 +16,22 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef TSP_STRATEGY_H
-#define TSP_STRATEGY_H
-#include <chrono>
-#include <memory>
-#include <iomanip>
+#ifndef MST_HEURISTIC_H
+#define MST_HEURISTIC_H
+#include <list>
 #include <boost/log/trivial.hpp>
-#include "./heuristic.h"
-#include "./christo_heuristic.h"
-#include "./mst_heuristic.h"
-#include "./local_search.h"
-#include "../utils/logger.h"
+#include "heuristic.h"
+#include "../algorithms/kruskal.h"
+#include "../structures/typedefs.h"
+#include "../structures/tsp.h"
+#include "../structures/edge.h"
+#include "../structures/undirected_graph.h"
 
-void solve_atsp(const cl_args_t& cl_args);
+// Simple heuristic based on a deep-search on a minimal spanning tree.
+class mst_heuristic : public heuristic{
+public:
+
+  virtual std::list<index_t> build_solution(const tsp& instance) override;
+};
 
 #endif

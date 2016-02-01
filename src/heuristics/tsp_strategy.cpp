@@ -39,8 +39,8 @@ void solve_atsp(const cl_args_t& cl_args){
   BOOST_LOG_TRIVIAL(info) << "[Matrix] Done, took "
                           << computing_times.matrix_loading << " ms.";
 
-  // Applying Christofides heuristic.
-  auto start_christo = std::chrono::high_resolution_clock::now();
+  // Applying heuristic.
+  auto start_heuristic = std::chrono::high_resolution_clock::now();
   BOOST_LOG_TRIVIAL(info) 
     << "[Heuristic] Start heuristic on symmetrized problem.";
 
@@ -49,11 +49,11 @@ void solve_atsp(const cl_args_t& cl_args){
     = christo_h->build_solution(asymmetric_tsp);
   distance_t christo_cost = asymmetric_tsp.symmetrized_cost(christo_sol);
 
-  auto end_christo = std::chrono::high_resolution_clock::now();
+  auto end_heuristic = std::chrono::high_resolution_clock::now();
 
   computing_times.heuristic = 
     std::chrono::duration_cast<std::chrono::milliseconds>
-    (end_christo - start_christo).count();
+    (end_heuristic - start_heuristic).count();
 
   BOOST_LOG_TRIVIAL(info) << "[Heuristic] Done, took "
                           << computing_times.heuristic << " ms.";
