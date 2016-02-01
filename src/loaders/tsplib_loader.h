@@ -106,8 +106,7 @@ public:
     // 1. Get problem dimension.
     boost::regex dim_rgx ("DIMENSION[[:space:]]*:[[:space:]]*([0-9]+)[[:space:]]");
     boost::smatch dim_match;
-    boost::regex_search(input, dim_match, dim_rgx);
-    if(dim_match.size() != 2){
+    if(!boost::regex_search(input, dim_match, dim_rgx)){
       throw custom_exception("Incorrect \"DIMENSION\" key.");
     }
     _dimension = std::stoul(dim_match[1].str());
