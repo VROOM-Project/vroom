@@ -1,6 +1,6 @@
 /*
 VROOM (Vehicle Routing Open-source Optimization Machine)
-Copyright (C) 2015, Julien Coupey
+Copyright (C) 2015-2016, Julien Coupey
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "./heuristics/tsp_strategy.h"
 
 void display_usage(){
-  std::string usage = "VROOM Copyright (C) 2015, Julien Coupey\n";
+  std::string usage = "VROOM Copyright (C) 2015-2016, Julien Coupey\n";
   usage += "Usage :\n\tvroom [OPTION]... \"loc=lat,lon&loc=lat,lon[&loc=lat,lon...]\"";
   usage += "\n\tvroom [OPTION]... -i FILE\n";
   usage += "Options:\n";
