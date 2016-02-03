@@ -27,6 +27,7 @@ std::list<index_t> mst_heuristic::build_solution(const tsp& instance){
   // of an adjacency list.
   std::unordered_map<index_t, std::list<index_t>> adjacency_list
     = minimum_spanning_tree(instance.get_symmetrized_graph()).get_adjacency_list();
+  assert(adjacency_list.size() >= 2);
   
   // Initializing the depth-first search of the minimum spanning tree
   // with any vertex.

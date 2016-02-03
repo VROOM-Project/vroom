@@ -112,6 +112,7 @@ std::list<index_t> christo_heuristic::build_solution(const tsp& instance){
 
   // Building Eulerian graph from the edges.
   undirected_graph<distance_t> eulerian_graph (eulerian_graph_edges);
+  assert(eulerian_graph.size() >= 2);
 
   // Hierholzer's algorithm: building and joining closed tours with
   // vertices that still have adjacent edges.

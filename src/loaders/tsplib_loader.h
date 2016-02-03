@@ -110,7 +110,7 @@ public:
       throw custom_exception("Incorrect \"DIMENSION\" key.");
     }
     _dimension = std::stoul(dim_match[1].str());
-    if(_dimension<= 1){
+    if(_dimension <= 1){
       throw custom_exception("At least two locations required!");
     }
 
