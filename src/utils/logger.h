@@ -1,6 +1,6 @@
 /*
 VROOM (Vehicle Routing Open-source Optimization Machine)
-Copyright (C) 2015, Julien Coupey
+Copyright (C) 2015-2016, Julien Coupey
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -23,6 +23,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 #include <list>
 #include <chrono>
+#include <boost/log/trivial.hpp>
+#include "../../include/rapidjson/document.h"
+#include "../../include/rapidjson/writer.h"
+#include "../../include/rapidjson/stringbuffer.h"
 #include "../structures/typedefs.h"
 #include "../structures/tsp.h"
 
@@ -33,11 +37,7 @@ private:
 public:
   logger(const cl_args_t& cl_args);
   
-  std::string tour_to_string(const tsp& instance,
-                             const std::list<index_t>& tour,
-                             const timing_t& computing_times) const;
-
-  void tour_to_output(const tsp& instance,
+  void write_solution(const tsp& instance,
                       const std::list<index_t>& tour,
                       const timing_t& computing_times) const;
 };

@@ -1,6 +1,6 @@
 /*
 VROOM (Vehicle Routing Open-source Optimization Machine)
-Copyright (C) 2015, Julien Coupey
+Copyright (C) 2015-2016, Julien Coupey
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -47,15 +47,6 @@ class matrix : private std::vector<line<T>>{
   
   matrix(std::size_t n): 
     parent(n, line<T>(n)){
-  }
-  
-  void print() const{
-    for(std::size_t i = 0; i < this->size(); ++i){
-      for(std::size_t j = 0; j < (*this)[i].size(); ++j){
-        std::cout << (*this)[i][j] << " ; ";
-      }
-      std::cout << std::endl;
-    }
   }
   
   matrix<T> get_sub_matrix(const std::vector<index_t>& indices) const{

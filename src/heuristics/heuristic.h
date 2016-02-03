@@ -1,6 +1,6 @@
 /*
 VROOM (Vehicle Routing Open-source Optimization Machine)
-Copyright (C) 2015, Julien Coupey
+Copyright (C) 2015-2016, Julien Coupey
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -21,12 +21,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include<string>
 #include<list>
 #include "../structures/typedefs.h"
-#include "../structures/tsp_sym.h"
+#include "../structures/tsp.h"
 
 class heuristic{
 
 public:
-  virtual std::list<index_t> build_solution(tsp_sym& instance) = 0;
+  virtual std::list<index_t> build_solution(const tsp& instance) = 0;
 
   virtual ~heuristic() {}
 

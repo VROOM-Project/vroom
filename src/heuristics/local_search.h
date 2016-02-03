@@ -1,6 +1,6 @@
 /*
 VROOM (Vehicle Routing Open-source Optimization Machine)
-Copyright (C) 2015, Julien Coupey
+Copyright (C) 2015-2016, Julien Coupey
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -19,27 +19,31 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef LOCAL_SEARCH_H
 #define LOCAL_SEARCH_H
 #include <list>
-#include <map>
+#include <unordered_map>
+#include <vector>
+#include <boost/log/trivial.hpp>
 #include "../structures/typedefs.h"
 #include "../structures/matrix.h"
-#include "../structures/tsp_sym.h"
+#include "../structures/tsp.h"
 
 class local_search{
 private:
-  tsp_sym* _problem;
-  matrix<distance_t> _matrix;
-  std::map<index_t, index_t> _edges;
-  bool _verbose;
+  const matrix<distance_t>& _matrix;
+  const bool _is_symmetric_matrix;
+  std::vector<index_t> _edges;
 
 public:
-
-  local_search(tsp_sym* problem,
-               std::list<index_t> tour,
-               bool verbose);
+  local_search(const matrix<distance_t>& matrix,
+               bool is_symmetric_matrix,
+               const std::list<index_t>& tour);
 
   distance_t relocate_step();
 
   distance_t perform_all_relocate_steps();
+
+  distance_t avoid_loop_step();
+
+  distance_t perform_all_avoid_loop_steps();
 
   distance_t two_opt_step();
 

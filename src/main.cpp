@@ -1,6 +1,6 @@
 /*
 VROOM (Vehicle Routing Open-source Optimization Machine)
-Copyright (C) 2015, Julien Coupey
+Copyright (C) 2015-2016, Julien Coupey
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -16,24 +16,31 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <string>
 #include <sstream>
 #include <unistd.h>
+#include <boost/log/core.hpp>
+#include <boost/log/trivial.hpp>
+#include <boost/log/expressions.hpp>
+#include <boost/log/utility/setup/console.hpp>
+#include <boost/log/utility/setup/common_attributes.hpp>
 #include "./structures/typedefs.h"
 #include "./heuristics/tsp_strategy.h"
 
 void display_usage(){
-  std::string usage = "VROOM Copyright (C) 2015, Julien Coupey\n";
+  std::string usage = "VROOM Copyright (C) 2015-2016, Julien Coupey\n";
   usage += "Usage :\n\tvroom [OPTION]... \"loc=lat,lon&loc=lat,lon[&loc=lat,lon...]\"";
   usage += "\n\tvroom [OPTION]... -i FILE\n";
   usage += "Options:\n";
   usage += "\t-a=ADDRESS\t OSRM server address (\"0.0.0.0\")\n";
   usage += "\t-p=PORT,\t OSRM listening port (5000)\n";
   usage += "\t-g,\t\t get detailed route geometry for the solution\n";
-  usage += "\t-o=OUTPUT,\t output file name\n";
   usage += "\t-i=FILE,\t read input from FILE rather than from\n\t\t\t command-line\n";
+  usage += "\t-o=OUTPUT,\t output file name\n";
   usage += "\t-t,\t\t read input file from -i option as TSPLIB format\n";
+  usage += "\t-s,\t\t compute an \"open\" route (not a tour), starting at\n\t\t\t the first input location\n";
+  usage += "\t-e,\t\t compute an \"open\" route (not a tour), ending at\n\t\t\t the last input location\n";
   usage += "\t-v,\t\t turn on verbose output\n";
+  usage += "\t-V,\t\t turn on verbose output with all details\n";
   usage += "\nThis program is distributed under the terms of the GNU General Public\n";
   usage += "License, version 3, and comes with ABSOLUTELY NO WARRANTY.\n";
   std::cout << usage << std::endl;
@@ -41,23 +48,20 @@ void display_usage(){
 }
 
 int main(int argc, char **argv){
-  // Default options.
+  // Load default command-line options.
   cl_args_t cl_args;
-  cl_args.geometry = false;
-  cl_args.osrm_address = "0.0.0.0";
-  cl_args.osrm_port = "5000";
-  cl_args.use_osrm = true;
-  cl_args.use_tsplib = false;
-  cl_args.verbose = false;
 
   // Parsing command-line arguments.
-  const char* optString = "a:gi:o:p:tvh?";
+  const char* optString = "a:egi:o:p:stvVh?";
   int opt = getopt(argc, argv, optString);
 
   while(opt != -1) {
     switch(opt){
     case 'a':
       cl_args.osrm_address = optarg;
+      break;
+    case 'e':
+      cl_args.force_end = true;
       break;
     case 'g':
       cl_args.geometry = true;
@@ -74,12 +78,18 @@ int main(int argc, char **argv){
     case 'p':
       cl_args.osrm_port = optarg;
       break;
+    case 's':
+      cl_args.force_start = true;
+      break;
     case 't':
       cl_args.use_tsplib = true;
       cl_args.use_osrm = false;
       break;
     case 'v':
-      cl_args.verbose = true;
+      cl_args.log_level = boost::log::trivial::info;
+      break;
+    case 'V':
+      cl_args.log_level = boost::log::trivial::trace;
       break;
     default:
       break;
@@ -104,10 +114,18 @@ int main(int argc, char **argv){
   }
   
   try{
+
+    // Log formatting and level.
+    boost::log::add_console_log(std::cout,
+                                boost::log::keywords::format = "%Message%");
+
+    boost::log::core::get()
+      ->set_filter(boost::log::trivial::severity >= cl_args.log_level);
+
     solve_atsp(cl_args);
   }
   catch(const custom_exception& e){
-    std::cout << "Error: " << e.get_message() << std::endl;
+    BOOST_LOG_TRIVIAL(error) << "[Error] " << e.get_message();
     exit(1);
   }
 

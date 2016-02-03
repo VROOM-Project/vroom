@@ -1,5 +1,5 @@
 # VROOM (Vehicle Routing Open-source Optimization Machine)
-# Copyright (C) 2015, Julien Coupey
+# Copyright (C) 2015-2016, Julien Coupey
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,8 +16,8 @@
 
 # Variables.
 CC = g++
-FLAGS = -std=c++14 -Wpedantic -Wall -O3
-LDLIBS = -lboost_system -lpthread
+FLAGS = -std=c++14 -Wpedantic -Wall -O3 -DBOOST_LOG_DYN_LINK
+LDLIBS = -lboost_system -lboost_regex -lboost_log -lboost_log_setup -lpthread -lboost_thread
 
 # Using all cpp files in current directory.
 MAIN = ../bin/vroom

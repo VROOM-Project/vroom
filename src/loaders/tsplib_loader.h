@@ -1,6 +1,6 @@
 /*
 VROOM (Vehicle Routing Open-source Optimization Machine)
-Copyright (C) 2015, Julien Coupey
+Copyright (C) 2015-2016, Julien Coupey
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define TSPLIB_LOADER_H
 #include <vector>
 #include <cassert>
-#include <regex>
+#include <boost/regex.hpp>
 #include <sstream>
 #include <cmath>
 #include "./problem_io.h"
@@ -97,28 +97,28 @@ private:
   EWF _ewf;                     // Edge weight format.
   std::string _data_section;    // either NODE_COORD_SECTION or
                                 // EDGE_WEIGHT_SECTION content.
-  matrix<distance_t> _matrix;   // Corresponding matrix.
   std::vector<Node> _nodes;     // Nodes with coords.
 
 public:
   tsplib_loader(std::string input):
     _ewt(EWT::NONE),
-    _ewf(EWF::NONE),
-    _matrix(0){
+    _ewf(EWF::NONE) {
     // 1. Get problem dimension.
-    std::regex dim_rgx ("DIMENSION[[:space:]]*:[[:space:]]*([0-9]+)[[:space:]]");
-    std::smatch dim_match;
-    std::regex_search(input, dim_match, dim_rgx);
-    if(dim_match.size() != 2){
-      throw custom_exception("incorrect \"DIMENSION\" key.");
+    boost::regex dim_rgx ("DIMENSION[[:space:]]*:[[:space:]]*([0-9]+)[[:space:]]");
+    boost::smatch dim_match;
+    if(!boost::regex_search(input, dim_match, dim_rgx)){
+      throw custom_exception("Incorrect \"DIMENSION\" key.");
     }
     _dimension = std::stoul(dim_match[1].str());
+    if(_dimension <= 1){
+      throw custom_exception("At least two locations required!");
+    }
 
     // 2. Get edge weight type.
-    std::regex ewt_rgx ("EDGE_WEIGHT_TYPE[[:space:]]*:[[:space:]]*([A-Z]+(_2D)?)[[:space:]]");
-    std::smatch ewt_match;
-    if(!std::regex_search(input, ewt_match, ewt_rgx)){
-      throw custom_exception("incorrect \"EDGE_WEIGHT_TYPE\".");
+    boost::regex ewt_rgx ("EDGE_WEIGHT_TYPE[[:space:]]*:[[:space:]]*([A-Z]+(_2D)?)[[:space:]]");
+    boost::smatch ewt_match;
+    if(!boost::regex_search(input, ewt_match, ewt_rgx)){
+      throw custom_exception("Incorrect \"EDGE_WEIGHT_TYPE\".");
     }
     std::string type = ewt_match[1].str();
     if(type == "EXPLICIT"){
@@ -137,15 +137,15 @@ public:
       _ewt = EWT::ATT;
     }
     if(_ewt == EWT::NONE){
-     throw custom_exception("unsupported \"EDGE_WEIGHT_TYPE\" value: "
+     throw custom_exception("Unsupported \"EDGE_WEIGHT_TYPE\" value: "
                             + type +".");
     }
     // 2. Get edge weight format if required.
     if(_ewt == EWT::EXPLICIT){
-      std::regex ewf_rgx ("EDGE_WEIGHT_FORMAT[[:space:]]*:[[:space:]]*([A-Z]+(_[A-Z]+){1,2})[[:space:]]");
-      std::smatch ewf_match;
-      if(!std::regex_search(input, ewf_match, ewf_rgx)){
-        throw custom_exception("incorrect \"EDGE_WEIGHT_FORMAT\".");
+      boost::regex ewf_rgx ("EDGE_WEIGHT_FORMAT[[:space:]]*:[[:space:]]*([A-Z]+(_[A-Z]+){1,2})[[:space:]]");
+      boost::smatch ewf_match;
+      if(!boost::regex_search(input, ewf_match, ewf_rgx)){
+        throw custom_exception("Incorrect \"EDGE_WEIGHT_FORMAT\".");
       }
       std::string format = ewf_match[1].str();
       if(format == "FULL_MATRIX"){
@@ -161,48 +161,51 @@ public:
         _ewf = EWF::LOWER_DIAG_ROW;
       }
       if(_ewf == EWF::NONE){
-        throw custom_exception("unsupported \"EDGE_WEIGHT_FORMAT\" value: "
+        throw custom_exception("Unsupported \"EDGE_WEIGHT_FORMAT\" value: "
                                + format +".");
       }
     }
     // 3. Getting data section.
     if(_ewt == EWT::EXPLICIT){
       // Looking for an edge weight section.
-      std::regex ews_rgx ("EDGE_WEIGHT_SECTION[[:space:]]*(([0-9]+[[:space:]]+)+)");
-      std::smatch ews_match;
-      if(!std::regex_search(input, ews_match, ews_rgx)){
-        throw custom_exception("incorrect \"EDGE_WEIGHT_SECTION\".");
+      boost::regex ews_rgx ("EDGE_WEIGHT_SECTION[[:space:]]*(.+)[[:space:]]*(EOF)?");
+      boost::smatch ews_match;
+      if(!boost::regex_search(input, ews_match, ews_rgx)){
+        throw custom_exception("Incorrect \"EDGE_WEIGHT_SECTION\".");
       }
       _data_section = ews_match[1].str();
     }
     else{
       // Looking for a node coord section.
-      std::regex ews_rgx ("NODE_COORD_SECTION[[:space:]]+(([0-9]+[[:space:]]+(-?[0-9]*([.][0-9]*(e[+][0-9]+)?)?[[:space:]]+){2})+)");
-      std::smatch ews_match;
-      if(!std::regex_search(input, ews_match, ews_rgx)){
-        throw custom_exception("incorrect \"NODE_COORD_SECTION\".");
+      boost::regex ews_rgx ("NODE_COORD_SECTION[[:space:]]*(.+)[[:space:]]*(EOF)?");
+      boost::smatch ews_match;
+      if(!boost::regex_search(input, ews_match, ews_rgx)){
+        throw custom_exception("Incorrect \"NODE_COORD_SECTION\".");
       }
       _data_section = ews_match[1].str();
     }
-    
-    std::istringstream data (_data_section);
 
+    if(_ewt != EWT::EXPLICIT){
+      // Parsing nodes.
+      std::istringstream data (_data_section);
+      for(std::size_t i = 0; i < _dimension; ++i){
+        index_t index;
+        double x,y;
+        data >> index >> x >> y;
+        _nodes.push_back({index, x, y});
+      }
+    }
+  }
+
+  virtual matrix<distance_t> get_matrix() const override{
     matrix<distance_t> m {_dimension};
+
+    std::istringstream data (_data_section);
 
     if(_ewt == EWT::EXPLICIT){
       switch (_ewf){
       case EWF::FULL_MATRIX: {
-        // // Checking number of values. Commented by default since it
-        // // can be sooo sloooow on big instances.
-        // std::size_t nb_values = _dimension * _dimension;
-        // std::regex nb_values_rgx ("[[:space:]]*([0-9]+[[:space:]]+){"
-        //                           + std::to_string(nb_values)
-        //                           + "}");
-        // if(!std::regex_match(_data_section, nb_values_rgx)){
-        //   throw custom_exception("wrong number of edge weights provided.");
-        // } 
-
-        // Reading from input.
+        // Reading from input data.
         for(std::size_t i = 0; i < _dimension; ++i){
           for(std::size_t j = 0; j < _dimension; ++j){
             data >> m[i][j];
@@ -215,17 +218,7 @@ public:
         break;
       }
       case EWF::UPPER_ROW: {
-        // // Checking number of values. Commented by default since it
-        // // can be sooo sloooow on big instances.
-        // std::size_t nb_values = (_dimension - 1) * _dimension / 2;
-        // std::regex nb_values_rgx ("[[:space:]]*([0-9]+[[:space:]]+){"
-        //                           + std::to_string(nb_values)
-        //                           + "}");
-        // if(!std::regex_match(_data_section, nb_values_rgx)){
-        //   throw custom_exception("wrong number of edge weights provided.");
-        // } 
-
-        // Reading from input.
+        // Reading from input data.
         distance_t current_value;              
         for(std::size_t i = 0; i < _dimension - 1; ++i){
           for(std::size_t j = i + 1; j < _dimension; ++j){
@@ -241,17 +234,7 @@ public:
         break;
       }
       case EWF::UPPER_DIAG_ROW:{
-        // // Checking number of values. Commented by default since it
-        // // can be sooo sloooow on big instances.
-        // std::size_t nb_values = (_dimension + 1) * _dimension / 2;
-        // std::regex nb_values_rgx ("[[:space:]]*([0-9]+[[:space:]]+){"
-        //                           + std::to_string(nb_values)
-        //                           + "}");
-        // if(!std::regex_match(_data_section, nb_values_rgx)){
-        //   throw custom_exception("wrong number of edge weights provided.");
-        // } 
-
-        // Reading from input.
+        // Reading from input data.
         distance_t current_value;              
         for(std::size_t i = 0; i < _dimension; ++i){
           for(std::size_t j = i; j < _dimension; ++j){
@@ -267,17 +250,7 @@ public:
         break;
       }
       case EWF::LOWER_DIAG_ROW:{
-        // // Checking number of values. Commented by default since it
-        // // can be sooo sloooow on big instances.
-        // std::size_t nb_values = (_dimension + 1) * _dimension / 2;
-        // std::regex nb_values_rgx ("[[:space:]]*([0-9]+[[:space:]]+){"
-        //                           + std::to_string(nb_values)
-        //                           + "}");
-        // if(!std::regex_match(_data_section, nb_values_rgx)){
-        //   throw custom_exception("wrong number of edge weights provided.");
-        // } 
-
-        // Reading from input.
+        // Reading from input data.
         distance_t current_value;              
         for(std::size_t i = 0; i < _dimension; ++i){
           for(std::size_t j = 0; j <= i ; ++j){
@@ -299,24 +272,6 @@ public:
       }
     }
     else{
-      // Parsing nodes.
-
-      // // Checking number of values. Commented by default since it
-      // // can be sooo sloooow on big instances.
-      // std::regex nodes_rgx ("([0-9]+[[:space:]]+(-?[0-9]*([.][0-9]*(e[+][0-9]+)?)?[[:space:]]+){2}){"
-      //                       + std::to_string(_dimension) 
-      //                       +"}");
-      // if(!std::regex_match(_data_section, nodes_rgx)){
-      //   throw custom_exception("wrong number of node coords.");
-      // }
-
-      // Build vector of nodes with their coords.
-      for(std::size_t i = 0; i < _dimension; ++i){
-        index_t index;
-        double x,y;
-        data >> index >> x >> y;
-        _nodes.push_back({index, x, y});
-      }
       // Using a pointer to the appropriate member function for
       // distance computing.
       distance_t (*dist_f_ptr) (Node, Node)
@@ -349,44 +304,47 @@ public:
         }
       }
     }
-    _matrix = m;
-
-    // _matrix.print();
+    return m;
   }
 
-  virtual matrix<distance_t> get_matrix() const override{
-    return _matrix;
-  }
-
-  virtual std::string get_route(const std::list<index_t>& tour) const override{
-    std::string result;
+  virtual void get_route(const std::list<index_t>& tour,
+                         rapidjson::Value& value,
+                         rapidjson::Document::AllocatorType& allocator) const override{
+    rapidjson::Value route_array(rapidjson::kArrayType);
     if((_ewt != EWT::NONE) and (_ewt != EWT::EXPLICIT)){
       // The key "route" is only added if the matrix has been computed
       // from the detailed list of nodes, in that case contained in
       // _nodes.
-      std::string route = "\"route\":[";
       for(auto const& step: tour){
-        route += "[" + std::to_string(_nodes[step].x)
-          + "," + std::to_string(_nodes[step].y) + "],";
+        route_array
+          .PushBack(rapidjson::Value(rapidjson::kArrayType)
+                    .PushBack(_nodes[step].x, allocator)
+                    .PushBack(_nodes[step].y, allocator),
+                    allocator);
       }
-      route.pop_back();          // Remove trailing comma.
-      result += route + "],";
     }
-    
-    result += "\"tour\":[";
+    value.Swap(route_array);
+  }
+
+  virtual void get_tour(const std::list<index_t>& tour,
+                        rapidjson::Value& value,
+                        rapidjson::Document::AllocatorType& allocator) const override{
+    rapidjson::Value tour_array(rapidjson::kArrayType);
     for(auto const& step: tour){
-      // Using rank rather than index to describe places.
-      result += std::to_string(step + 1) + ",";
+      if(_ewt == EWT::EXPLICIT){
+        // Using step when matrix is explicit.
+        tour_array.PushBack(step, allocator);
+      }
+      else{
+        // Using index provided in the file to describe places.
+        tour_array.PushBack(_nodes[step].index, allocator);
+      }
     }
-    result.pop_back();          // Remove trailing comma.
-    result += "],";
-
-    return result;
+    value.Swap(tour_array);
   }
 
-  virtual std::string get_route_geometry(const std::list<index_t>& tour) const{
-    return "";
-  }
+  virtual void get_route_infos(const std::list<index_t>& tour,
+                               rapidjson::Document& output) const{}
 };
 
 #endif
