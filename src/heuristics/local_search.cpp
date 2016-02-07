@@ -40,10 +40,6 @@ local_search::local_search(const matrix<distance_t>& matrix,
 }
 
 distance_t local_search::relocate_step(){
-  // distance_t best_gain = 0;
-  // index_t best_edge_1_start;
-  // index_t best_edge_2_start;
-
   if(_edges.size() < 3){
     // Not enough edges for the operator to make sense.
     return 0;
@@ -333,61 +329,108 @@ distance_t local_search::perform_all_avoid_loop_steps(){
 
 
 distance_t local_search::two_opt_step(){
-  distance_t best_gain = 0;
-  index_t best_edge_1_start;
-  index_t best_edge_2_start = 0; // init value is never used.
-
   if(_edges.size() < 3){
     // Not enough edges for the operator to make sense.
     return 0;
   }
 
-  for(auto edge_1_start: _edges){
-    index_t edge_1_end = _edges.at(edge_1_start);
-    index_t edge_2_start = _edges.at(edge_1_end);
-    index_t edge_2_end = _edges.at(edge_2_start);
-    // Trying to improve two "crossing edges".
-    //
-    // Namely edge_1_start --> edge_1_end and edge_2_start -->
-    // edge_2_end are replaced by edge_1_start --> edge_2_start and
-    // edge_1_end --> edge_2_end. The tour between edge_1_end and
-    // edge_2_start need to be reversed.
-    distance_t before_reversed_part_cost = 0;
-    distance_t after_reversed_part_cost = 0;
-    index_t previous = edge_1_end;
+  // Lambda function to search for the best move in a range of
+  // elements from _edges.
+  auto look_up = [&](index_t start,
+                     index_t end,
+                     distance_t& best_gain,
+                     index_t& best_edge_1_start,
+                     index_t& best_edge_2_start){
+    for(index_t edge_1_start = start; edge_1_start < end; ++edge_1_start){
+      index_t edge_1_end = _edges.at(edge_1_start);
+      index_t edge_2_start = _edges.at(edge_1_end);
+      index_t edge_2_end = _edges.at(edge_2_start);
+      // Trying to improve two "crossing edges".
+      //
+      // Namely edge_1_start --> edge_1_end and edge_2_start -->
+      // edge_2_end are replaced by edge_1_start --> edge_2_start and
+      // edge_1_end --> edge_2_end. The tour between edge_1_end and
+      // edge_2_start need to be reversed.
+      distance_t before_reversed_part_cost = 0;
+      distance_t after_reversed_part_cost = 0;
+      index_t previous = edge_1_end;
 
-    while(edge_2_end != edge_1_start){
-      distance_t before_cost
-        = _matrix[edge_1_start][edge_1_end]
-        + _matrix[edge_2_start][edge_2_end];
-      distance_t after_cost
-        = _matrix[edge_1_start][edge_2_start]
-        + _matrix[edge_1_end][edge_2_end];
-      if(!_is_symmetric_matrix){
-        // Updating the cost of the part of the tour that needs to be
-        // reversed.
-        before_reversed_part_cost += _matrix[previous][edge_2_start];
-        after_reversed_part_cost += _matrix[edge_2_start][previous];
+      while(edge_2_end != edge_1_start){
+        distance_t before_cost
+          = _matrix[edge_1_start][edge_1_end]
+          + _matrix[edge_2_start][edge_2_end];
+        distance_t after_cost
+          = _matrix[edge_1_start][edge_2_start]
+          + _matrix[edge_1_end][edge_2_end];
+        if(!_is_symmetric_matrix){
+          // Updating the cost of the part of the tour that needs to be
+          // reversed.
+          before_reversed_part_cost += _matrix[previous][edge_2_start];
+          after_reversed_part_cost += _matrix[edge_2_start][previous];
 
-        // Adding to the costs for comparison.
-        before_cost += before_reversed_part_cost;
-        after_cost += after_reversed_part_cost;
-      }
-
-      if(before_cost > after_cost){
-        distance_t gain = before_cost - after_cost;
-        if(gain > best_gain){
-          best_gain = gain;
-          best_edge_1_start = edge_1_start;
-          best_edge_2_start = edge_2_start;
+          // Adding to the costs for comparison.
+          before_cost += before_reversed_part_cost;
+          after_cost += after_reversed_part_cost;
         }
+
+        if(before_cost > after_cost){
+          distance_t gain = before_cost - after_cost;
+          if(gain > best_gain){
+            best_gain = gain;
+            best_edge_1_start = edge_1_start;
+            best_edge_2_start = edge_2_start;
+          }
+        }
+        // Go for next possible second edge.
+        previous = edge_2_start;
+        edge_2_start = edge_2_end;
+        edge_2_end = _edges.at(edge_2_start);
       }
-      // Go for next possible second edge.
-      previous = edge_2_start;
-      edge_2_start = edge_2_end;
-      edge_2_end = _edges.at(edge_2_start);
     }
+  };
+
+  // Split the look-up range between threads.
+  unsigned nb_threads = 4;
+  std::vector<distance_t> best_gains (nb_threads, 0);
+  std::vector<index_t> best_edge_1_starts (nb_threads);
+  std::vector<index_t> best_edge_2_starts (nb_threads);
+
+  std::vector<std::size_t> limits {0,
+      _edges.size()/4,
+      _edges.size()/2,
+      3 * _edges.size()/4,
+      _edges.size()};
+
+  // Start other threads, keeping a piece of the range for the main
+  // thread.
+  std::vector<std::thread> threads;
+  for(std::size_t i = 0; i < nb_threads - 1; ++i){
+    threads.emplace_back(look_up,
+                         limits[i],
+                         limits[i + 1],
+                         std::ref(best_gains[i]),
+                         std::ref(best_edge_1_starts[i]),
+                         std::ref(best_edge_2_starts[i]));
   }
+  
+  look_up(limits[nb_threads - 1],
+          limits[nb_threads],
+          std::ref(best_gains[nb_threads - 1]),
+          std::ref(best_edge_1_starts[nb_threads - 1]),
+          std::ref(best_edge_2_starts[nb_threads - 1]));
+
+  for(auto& t: threads){
+    t.join();
+  }
+
+  // Spot best gain found among all threads.
+  auto best_rank = std::distance(best_gains.begin(),
+                                 std::max_element(best_gains.begin(),
+                                                  best_gains.end()));
+  distance_t best_gain = best_gains[best_rank];
+  index_t best_edge_1_start = best_edge_1_starts[best_rank];
+  index_t best_edge_2_start = best_edge_2_starts[best_rank];
+
   if(best_gain > 0){
     index_t best_edge_1_end = _edges.at(best_edge_1_start);
     index_t best_edge_2_end = _edges.at(best_edge_2_start);
