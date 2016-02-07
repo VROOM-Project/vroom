@@ -40,54 +40,105 @@ local_search::local_search(const matrix<distance_t>& matrix,
 }
 
 distance_t local_search::relocate_step(){
-  distance_t best_gain = 0;
-  index_t best_edge_1_start;
-  index_t best_edge_2_start;
+  // distance_t best_gain = 0;
+  // index_t best_edge_1_start;
+  // index_t best_edge_2_start;
 
   if(_edges.size() < 3){
     // Not enough edges for the operator to make sense.
     return 0;
   }
 
-  for(auto edge_1_start: _edges){
-    index_t edge_1_end = _edges.at(edge_1_start);
-    // Going through the tour while checking for insertion of
-    // edge_1_end between two other nodes (edge_2_*).
-    //
-    // Namely edge_1_start --> edge_1_end --> next is replaced by
-    // edge_1_start --> next while edge_2_start --> edge_2_end is
-    // replaced by edge_2_start --> edge_1_end --> edge_2_end.
-    index_t next = _edges.at(edge_1_end);
+  // Lambda function to search for the best move in a range of
+  // elements from _edges.
+  auto look_up = [&](index_t start,
+                     index_t end,
+                     distance_t& best_gain,
+                     index_t& best_edge_1_start,
+                     index_t& best_edge_2_start){
+    for(index_t edge_1_start = start; edge_1_start < end; ++edge_1_start){
+      index_t edge_1_end = _edges.at(edge_1_start);
+      // Going through the tour while checking for insertion of
+      // edge_1_end between two other nodes (edge_2_*).
+      //
+      // Namely edge_1_start --> edge_1_end --> next is replaced by
+      // edge_1_start --> next while edge_2_start --> edge_2_end is
+      // replaced by edge_2_start --> edge_1_end --> edge_2_end.
+      index_t next = _edges.at(edge_1_end);
 
-    // Precomputing weights not depending on edge_2_*.
-    distance_t first_potential_add = _matrix[edge_1_start][next];
-    distance_t edge_1_weight = _matrix[edge_1_start][edge_1_end];
-    distance_t edge_1_end_next_weight = _matrix[edge_1_end][next];
+      // Precomputing weights not depending on edge_2_*.
+      distance_t first_potential_add = _matrix[edge_1_start][next];
+      distance_t edge_1_weight = _matrix[edge_1_start][edge_1_end];
+      distance_t edge_1_end_next_weight = _matrix[edge_1_end][next];
 
-    index_t edge_2_start = next;
-    while(edge_2_start != edge_1_start){
-      index_t edge_2_end = _edges.at(edge_2_start);
-      distance_t before_cost
-        = edge_1_weight
-        + edge_1_end_next_weight
-        + _matrix[edge_2_start][edge_2_end];
-      distance_t after_cost
-        = first_potential_add
-        + _matrix[edge_2_start][edge_1_end]
-        + _matrix[edge_1_end][edge_2_end];
+      index_t edge_2_start = next;
+      while(edge_2_start != edge_1_start){
+        index_t edge_2_end = _edges.at(edge_2_start);
+        distance_t before_cost
+          = edge_1_weight
+          + edge_1_end_next_weight
+          + _matrix[edge_2_start][edge_2_end];
+        distance_t after_cost
+          = first_potential_add
+          + _matrix[edge_2_start][edge_1_end]
+          + _matrix[edge_1_end][edge_2_end];
 
-      if(before_cost > after_cost){
-        distance_t gain = before_cost - after_cost;
-        if(gain > best_gain){
-          best_edge_1_start = edge_1_start;
-          best_edge_2_start = edge_2_start;
-          best_gain = gain;
+        if(before_cost > after_cost){
+          distance_t gain = before_cost - after_cost;
+          if(gain > best_gain){
+            best_edge_1_start = edge_1_start;
+            best_edge_2_start = edge_2_start;
+            best_gain = gain;
+          }
         }
+        // Go for next possible second edge.
+        edge_2_start = edge_2_end;
       }
-      // Go for next possible second edge.
-      edge_2_start = edge_2_end;
     }
+  };
+
+  // Split the look-up range between threads.
+  unsigned nb_threads = 4;
+  std::vector<distance_t> best_gains (nb_threads, 0);
+  std::vector<index_t> best_edge_1_starts (nb_threads);
+  std::vector<index_t> best_edge_2_starts (nb_threads);
+
+  std::vector<std::size_t> limits {0,
+      _edges.size()/4,
+      _edges.size()/2,
+      3 * _edges.size()/4,
+      _edges.size()};
+
+  // Start other threads, keeping a piece of the range for the main
+  // thread.
+  std::vector<std::thread> threads;
+  for(std::size_t i = 0; i < nb_threads - 1; ++i){
+    threads.emplace_back(look_up,
+                         limits[i],
+                         limits[i + 1],
+                         std::ref(best_gains[i]),
+                         std::ref(best_edge_1_starts[i]),
+                         std::ref(best_edge_2_starts[i]));
   }
+  
+  look_up(limits[nb_threads - 1],
+          limits[nb_threads],
+          std::ref(best_gains[nb_threads - 1]),
+          std::ref(best_edge_1_starts[nb_threads - 1]),
+          std::ref(best_edge_2_starts[nb_threads - 1]));
+
+  for(auto& t: threads){
+    t.join();
+  }
+
+  // Spot best gain found among all threads.
+  auto best_rank = std::distance(best_gains.begin(),
+                                 std::max_element(best_gains.begin(),
+                                                  best_gains.end()));
+  distance_t best_gain = best_gains[best_rank];
+  index_t best_edge_1_start = best_edge_1_starts[best_rank];
+  index_t best_edge_2_start = best_edge_2_starts[best_rank];
+  
   if(best_gain > 0){
     // Performing best possible exchange.
     index_t best_edge_1_end = _edges.at(best_edge_1_start);
