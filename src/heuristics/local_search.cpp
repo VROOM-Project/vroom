@@ -286,12 +286,20 @@ distance_t local_search::two_opt_step(){
   index_t best_edge_1_start;
   index_t best_edge_2_start = 0; // init value is never used.
 
-  if(_edges.size() < 3){
+  if(_edges.size() < 4){
     // Not enough edges for the operator to make sense.
     return 0;
   }
 
-  for(auto edge_1_start: _edges){
+  // The initial node for the first edge is arbitrary but it is handy
+  // to keep in mind the previous one for stopping conditions.
+  index_t previous_init = _edges.front();
+  index_t init = _edges.at(previous_init);
+  index_t edge_1_start = init;
+  for(std::size_t i = 0;
+      i < _edges.size();
+      ++i, edge_1_start = _edges.at(edge_1_start)){
+    // Going through the edges in the order of the current tour.
     index_t edge_1_end = _edges.at(edge_1_start);
     index_t edge_2_start = _edges.at(edge_1_end);
     index_t edge_2_end = _edges.at(edge_2_start);
@@ -306,6 +314,15 @@ distance_t local_search::two_opt_step(){
     index_t previous = edge_1_end;
 
     while(edge_2_end != edge_1_start){
+      // Going through the edges in the order of the current tour
+      // (mandatory for before_cost and after_cost efficient
+      // computation).
+      if(_is_symmetric_matrix and (edge_2_start == previous_init)){
+        // In the symmetric case, trying the move with edges (e_2,
+        // e_1) is the same as with (e_1, e_2). So better stop at some
+        // point to avoid testing pairs in both orders.
+        break;
+      }
       distance_t before_cost
         = _matrix[edge_1_start][edge_1_end]
         + _matrix[edge_2_start][edge_2_end];
@@ -337,6 +354,7 @@ distance_t local_search::two_opt_step(){
       edge_2_end = _edges.at(edge_2_start);
     }
   }
+
   if(best_gain > 0){
     index_t best_edge_1_end = _edges.at(best_edge_1_start);
     index_t best_edge_2_end = _edges.at(best_edge_2_start);
