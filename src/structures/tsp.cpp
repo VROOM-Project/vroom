@@ -25,16 +25,13 @@ tsp::tsp(const cl_args_t& cl_args):
   _cl_args(cl_args){
   
   // Computing matrix with the right tool.
-  assert((!cl_args.use_osrm) or (!cl_args.use_tsplib));
-  
-  // Exactly one of the two following is true.
   if(cl_args.use_osrm){
     _loader 
       = std::make_unique<osrm_wrapper>(cl_args.osrm_address, 
                                        cl_args.osrm_port,
                                        cl_args.input);
   }
-  if(cl_args.use_tsplib){
+  else{
     _loader = std::make_unique<tsplib_loader>(cl_args.input);
   }
 
