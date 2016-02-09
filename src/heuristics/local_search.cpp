@@ -329,10 +329,15 @@ distance_t local_search::perform_all_avoid_loop_steps(){
 
 
 distance_t local_search::two_opt_step(){
-  if(_edges.size() < 3){
+  if(_edges.size() < 4){
     // Not enough edges for the operator to make sense.
     return 0;
   }
+
+  // The initial node for the first edge is arbitrary but it is handy
+  // to keep in mind the previous one for stopping conditions.
+  index_t previous_init = _edges.front();
+  index_t init = _edges.at(previous_init);
 
   // Lambda function to search for the best move in a range of
   // elements from _edges.
@@ -341,7 +346,9 @@ distance_t local_search::two_opt_step(){
                      distance_t& best_gain,
                      index_t& best_edge_1_start,
                      index_t& best_edge_2_start){
-    for(index_t edge_1_start = start; edge_1_start < end; ++edge_1_start){
+    index_t edge_1_start = start;
+    do{
+      // Going through the edges in the order of the current tour.
       index_t edge_1_end = _edges.at(edge_1_start);
       index_t edge_2_start = _edges.at(edge_1_end);
       index_t edge_2_end = _edges.at(edge_2_start);
@@ -356,6 +363,15 @@ distance_t local_search::two_opt_step(){
       index_t previous = edge_1_end;
 
       while(edge_2_end != edge_1_start){
+        // Going through the edges in the order of the current tour
+        // (mandatory for before_cost and after_cost efficient
+        // computation).
+        if(_is_symmetric_matrix and (edge_2_start == previous_init)){
+          // In the symmetric case, trying the move with edges (e_2,
+          // e_1) is the same as with (e_1, e_2). So better stop at some
+          // point to avoid testing pairs in both orders.
+          break;
+        }
         distance_t before_cost
           = _matrix[edge_1_start][edge_1_end]
           + _matrix[edge_2_start][edge_2_end];
@@ -386,7 +402,8 @@ distance_t local_search::two_opt_step(){
         edge_2_start = edge_2_end;
         edge_2_end = _edges.at(edge_2_start);
       }
-    }
+      edge_1_start = _edges.at(edge_1_start);
+    } while(edge_1_start != end);
   };
 
   // Split the look-up range between threads.
@@ -394,27 +411,34 @@ distance_t local_search::two_opt_step(){
   std::vector<distance_t> best_gains (nb_threads, 0);
   std::vector<index_t> best_edge_1_starts (nb_threads);
   std::vector<index_t> best_edge_2_starts (nb_threads);
+  std::size_t thread_range = _edges.size() / nb_threads;
 
-  std::vector<std::size_t> limits {0,
-      _edges.size()/4,
-      _edges.size()/2,
-      3 * _edges.size()/4,
-      _edges.size()};
+  // The limits in the range given to each thread is not a rank but an
+  // actual node since everything is done following the order of the
+  // current tour.
+  std::vector<std::size_t> limit_nodes {init};
+  index_t node = init;
+  for(std::size_t i = 0; i < nb_threads - 1; ++i){
+    // Finding nodes that separate current tour in nb_threads ranges.
+    for(std::size_t j = 0; j < thread_range; ++j, node = _edges.at(node)){}
+    limit_nodes.push_back(node);
+  }
+  limit_nodes.push_back(init);
 
   // Start other threads, keeping a piece of the range for the main
   // thread.
   std::vector<std::thread> threads;
   for(std::size_t i = 0; i < nb_threads - 1; ++i){
     threads.emplace_back(look_up,
-                         limits[i],
-                         limits[i + 1],
+                         limit_nodes[i],
+                         limit_nodes[i + 1],
                          std::ref(best_gains[i]),
                          std::ref(best_edge_1_starts[i]),
                          std::ref(best_edge_2_starts[i]));
   }
   
-  look_up(limits[nb_threads - 1],
-          limits[nb_threads],
+  look_up(limit_nodes[nb_threads - 1],
+          limit_nodes[nb_threads],
           std::ref(best_gains[nb_threads - 1]),
           std::ref(best_edge_1_starts[nb_threads - 1]),
           std::ref(best_edge_2_starts[nb_threads - 1]));
