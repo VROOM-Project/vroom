@@ -49,6 +49,7 @@ struct cl_args_t {
   std::string input;                             // cl arg
   bool force_start;                              // -s
   bool force_end;                                // -e
+  unsigned nb_threads;                           // -t
   bool use_osrm;
   // Default values.
   cl_args_t():
@@ -57,7 +58,8 @@ struct cl_args_t {
     osrm_port("5000"),
     log_level(boost::log::trivial::error),
     force_start(false),
-    force_end(false) {}
+    force_end(false),
+    nb_threads(1) {}
 };
 
 #endif

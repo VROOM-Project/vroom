@@ -32,11 +32,13 @@ private:
   const matrix<distance_t>& _matrix;
   const bool _is_symmetric_matrix;
   std::vector<index_t> _edges;
+  unsigned _nb_threads;
 
 public:
   local_search(const matrix<distance_t>& matrix,
                bool is_symmetric_matrix,
-               const std::list<index_t>& tour);
+               const std::list<index_t>& tour,
+               unsigned nb_threads);
 
   distance_t relocate_step();
 

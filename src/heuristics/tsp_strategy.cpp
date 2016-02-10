@@ -70,10 +70,13 @@ void solve_atsp(const cl_args_t& cl_args){
   auto start_sym_local_search = std::chrono::high_resolution_clock::now();
   BOOST_LOG_TRIVIAL(info) 
     << "[Local search] Start local search on symmetrized problem.";
+  BOOST_LOG_TRIVIAL(info) 
+    << "[Local search] Using " << cl_args.nb_threads << " thread(s).";
 
   local_search sym_ls (asymmetric_tsp.get_symmetrized_matrix(),
                        true,    // Symmetrized problem.
-                       christo_sol);
+                       christo_sol,
+                       cl_args.nb_threads);
 
   distance_t sym_two_opt_gain = 0;
   distance_t sym_relocate_gain = 0;
@@ -133,7 +136,8 @@ void solve_atsp(const cl_args_t& cl_args){
     local_search asym_ls (asymmetric_tsp.get_matrix(),
                           false, // Not the symmetrized problem.
                           (direct_cost <= reverse_cost) ? 
-                          current_sol: reverse_current_sol);
+                          current_sol: reverse_current_sol,
+                          cl_args.nb_threads);
 
     auto start_asym_local_search = std::chrono::high_resolution_clock::now();
     BOOST_LOG_TRIVIAL(info) 
@@ -142,6 +146,9 @@ void solve_atsp(const cl_args_t& cl_args){
   
     BOOST_LOG_TRIVIAL(info) 
       << "[Asym. local search] Start local search on asymmetric problem.";
+
+    BOOST_LOG_TRIVIAL(info) 
+      << "[Asym. local search] Using " << cl_args.nb_threads << " thread(s).";
 
     distance_t asym_two_opt_gain = 0;
     distance_t asym_relocate_gain = 0;

@@ -20,10 +20,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 local_search::local_search(const matrix<distance_t>& matrix,
                            bool is_symmetric_matrix,
-                           const std::list<index_t>& tour):
+                           const std::list<index_t>& tour,
+                           unsigned nb_threads):
   _matrix(matrix),
   _is_symmetric_matrix(is_symmetric_matrix),
-  _edges(_matrix.size())
+  _edges(_matrix.size()),
+  _nb_threads(nb_threads)
 {
   auto location = tour.cbegin();
   index_t first_index = *location;
@@ -93,22 +95,24 @@ distance_t local_search::relocate_step(){
     }
   };
 
-  // Split the look-up range between threads.
-  unsigned nb_threads = 4;
-  std::vector<distance_t> best_gains (nb_threads, 0);
-  std::vector<index_t> best_edge_1_starts (nb_threads);
-  std::vector<index_t> best_edge_2_starts (nb_threads);
+  // Store best values per thread.
+  std::vector<distance_t> best_gains (_nb_threads, 0);
+  std::vector<index_t> best_edge_1_starts (_nb_threads);
+  std::vector<index_t> best_edge_2_starts (_nb_threads);
 
-  std::vector<std::size_t> limits {0,
-      _edges.size()/4,
-      _edges.size()/2,
-      3 * _edges.size()/4,
-      _edges.size()};
+  // Split the [0, _edges.size()[ look-up range evenly between
+  // threads. Bounds to use are stored in 'limits'.
+  std::size_t range_width = _edges.size() / _nb_threads;
+  std::vector<std::size_t> limits(_nb_threads);
+  std::iota(limits.begin(), limits.end(), 0);
+  std::transform(limits.begin(), limits.end(), limits.begin(),
+                 [range_width](auto v){return range_width * v;});
+  limits.push_back(_edges.size());
 
   // Start other threads, keeping a piece of the range for the main
   // thread.
   std::vector<std::thread> threads;
-  for(std::size_t i = 0; i < nb_threads - 1; ++i){
+  for(std::size_t i = 0; i < _nb_threads - 1; ++i){
     threads.emplace_back(look_up,
                          limits[i],
                          limits[i + 1],
@@ -117,11 +121,11 @@ distance_t local_search::relocate_step(){
                          std::ref(best_edge_2_starts[i]));
   }
   
-  look_up(limits[nb_threads - 1],
-          limits[nb_threads],
-          std::ref(best_gains[nb_threads - 1]),
-          std::ref(best_edge_1_starts[nb_threads - 1]),
-          std::ref(best_edge_2_starts[nb_threads - 1]));
+  look_up(limits[_nb_threads - 1],
+          limits[_nb_threads],
+          std::ref(best_gains[_nb_threads - 1]),
+          std::ref(best_edge_1_starts[_nb_threads - 1]),
+          std::ref(best_edge_2_starts[_nb_threads - 1]));
 
   for(auto& t: threads){
     t.join();
@@ -406,20 +410,18 @@ distance_t local_search::two_opt_step(){
     } while(edge_1_start != end);
   };
 
-  // Split the look-up range between threads.
-  unsigned nb_threads = 4;
-  std::vector<distance_t> best_gains (nb_threads, 0);
-  std::vector<index_t> best_edge_1_starts (nb_threads);
-  std::vector<index_t> best_edge_2_starts (nb_threads);
-  std::size_t thread_range = _edges.size() / nb_threads;
+  // Store best values per thread.
+  std::vector<distance_t> best_gains (_nb_threads, 0);
+  std::vector<index_t> best_edge_1_starts (_nb_threads);
+  std::vector<index_t> best_edge_2_starts (_nb_threads);
+  std::size_t thread_range = _edges.size() / _nb_threads;
 
-  // The limits in the range given to each thread is not a rank but an
-  // actual node since everything is done following the order of the
-  // current tour.
+  // The limits in the range given to each thread are not ranks but
+  // actual nodes used to browse a piece of the current tour.
   std::vector<std::size_t> limit_nodes {init};
   index_t node = init;
-  for(std::size_t i = 0; i < nb_threads - 1; ++i){
-    // Finding nodes that separate current tour in nb_threads ranges.
+  for(std::size_t i = 0; i < _nb_threads - 1; ++i){
+    // Finding nodes that separate current tour in _nb_threads ranges.
     for(std::size_t j = 0; j < thread_range; ++j, node = _edges.at(node)){}
     limit_nodes.push_back(node);
   }
@@ -428,7 +430,7 @@ distance_t local_search::two_opt_step(){
   // Start other threads, keeping a piece of the range for the main
   // thread.
   std::vector<std::thread> threads;
-  for(std::size_t i = 0; i < nb_threads - 1; ++i){
+  for(std::size_t i = 0; i < _nb_threads - 1; ++i){
     threads.emplace_back(look_up,
                          limit_nodes[i],
                          limit_nodes[i + 1],
@@ -437,11 +439,11 @@ distance_t local_search::two_opt_step(){
                          std::ref(best_edge_2_starts[i]));
   }
   
-  look_up(limit_nodes[nb_threads - 1],
-          limit_nodes[nb_threads],
-          std::ref(best_gains[nb_threads - 1]),
-          std::ref(best_edge_1_starts[nb_threads - 1]),
-          std::ref(best_edge_2_starts[nb_threads - 1]));
+  look_up(limit_nodes[_nb_threads - 1],
+          limit_nodes[_nb_threads],
+          std::ref(best_gains[_nb_threads - 1]),
+          std::ref(best_edge_1_starts[_nb_threads - 1]),
+          std::ref(best_edge_2_starts[_nb_threads - 1]));
 
   for(auto& t: threads){
     t.join();
@@ -556,22 +558,24 @@ distance_t local_search::or_opt_step(){
     }
   };
 
-  // Split the look-up range between threads.
-  unsigned nb_threads = 4;
-  std::vector<distance_t> best_gains (nb_threads, 0);
-  std::vector<index_t> best_edge_1_starts (nb_threads);
-  std::vector<index_t> best_edge_2_starts (nb_threads);
+  // Store best values per thread.
+  std::vector<distance_t> best_gains (_nb_threads, 0);
+  std::vector<index_t> best_edge_1_starts (_nb_threads);
+  std::vector<index_t> best_edge_2_starts (_nb_threads);
 
-  std::vector<std::size_t> limits {0,
-      _edges.size()/4,
-      _edges.size()/2,
-      3 * _edges.size()/4,
-      _edges.size()};
+  // Split the [0, _edges.size()[ look-up range evenly between
+  // threads. Bounds to use are stored in 'limits'.
+  std::size_t range_width = _edges.size() / _nb_threads;
+  std::vector<std::size_t> limits(_nb_threads);
+  std::iota(limits.begin(), limits.end(), 0);
+  std::transform(limits.begin(), limits.end(), limits.begin(),
+                 [range_width](auto v){return range_width * v;});
+  limits.push_back(_edges.size());
 
   // Start other threads, keeping a piece of the range for the main
   // thread.
   std::vector<std::thread> threads;
-  for(std::size_t i = 0; i < nb_threads - 1; ++i){
+  for(std::size_t i = 0; i < _nb_threads - 1; ++i){
     threads.emplace_back(look_up,
                          limits[i],
                          limits[i + 1],
@@ -580,11 +584,11 @@ distance_t local_search::or_opt_step(){
                          std::ref(best_edge_2_starts[i]));
   }
   
-  look_up(limits[nb_threads - 1],
-          limits[nb_threads],
-          std::ref(best_gains[nb_threads - 1]),
-          std::ref(best_edge_1_starts[nb_threads - 1]),
-          std::ref(best_edge_2_starts[nb_threads - 1]));
+  look_up(limits[_nb_threads - 1],
+          limits[_nb_threads],
+          std::ref(best_gains[_nb_threads - 1]),
+          std::ref(best_edge_1_starts[_nb_threads - 1]),
+          std::ref(best_edge_2_starts[_nb_threads - 1]));
 
   for(auto& t: threads){
     t.join();
