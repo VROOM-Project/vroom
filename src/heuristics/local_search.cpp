@@ -25,7 +25,8 @@ local_search::local_search(const matrix<distance_t>& matrix,
   _matrix(matrix),
   _is_symmetric_matrix(is_symmetric_matrix),
   _edges(_matrix.size()),
-  _nb_threads(nb_threads)
+  _nb_threads(std::min(nb_threads,
+                       static_cast<unsigned>(tour.size())))
 {
   auto location = tour.cbegin();
   index_t first_index = *location;
