@@ -26,8 +26,10 @@ local_search::local_search(const matrix<distance_t>& matrix,
   _is_symmetric_matrix(is_symmetric_matrix),
   _edges(_matrix.size()),
   _nb_threads(std::min(nb_threads,
-                       static_cast<unsigned>(tour.size())))
+                       static_cast<unsigned>(tour.size()))),
+  _rank_limits(_nb_threads)
 {
+  // Build _edges vector representation.
   auto location = tour.cbegin();
   index_t first_index = *location;
   index_t current_index = first_index;
@@ -40,6 +42,26 @@ local_search::local_search(const matrix<distance_t>& matrix,
     ++location;
   }
   _edges.at(last_index) = first_index;
+
+  // Build a vector of bounds that easily split the [0, _edges.size()]
+  // look-up range 'evenly' between threads.
+  // std::size_t range_width = (_edges.size() + 1) / _nb_threads;
+  std::size_t range_width = _edges.size() / _nb_threads;
+  std::iota(_rank_limits.begin(), _rank_limits.end(), 0);
+  std::transform(_rank_limits.begin(), _rank_limits.end(), _rank_limits.begin(),
+                 [range_width](auto v){return range_width * v;});
+  // Shifting the limits to dispatch remaining ranks among more
+  // threads for a more even load balance. This way the load
+  // difference between ranges should be at most 1.
+  std::size_t remainder = _edges.size() % _nb_threads;
+  std::size_t shift = 0;
+  for(std::size_t i = 1; i < _rank_limits.size(); ++i){
+    if(shift < remainder){
+      ++shift;
+    }
+    _rank_limits[i] += shift;
+  }
+  _rank_limits.push_back(_edges.size());
 }
 
 distance_t local_search::relocate_step(){
@@ -101,29 +123,21 @@ distance_t local_search::relocate_step(){
   std::vector<index_t> best_edge_1_starts (_nb_threads);
   std::vector<index_t> best_edge_2_starts (_nb_threads);
 
-  // Split the [0, _edges.size()[ look-up range evenly between
-  // threads. Bounds to use are stored in 'limits'.
-  std::size_t range_width = _edges.size() / _nb_threads;
-  std::vector<std::size_t> limits(_nb_threads);
-  std::iota(limits.begin(), limits.end(), 0);
-  std::transform(limits.begin(), limits.end(), limits.begin(),
-                 [range_width](auto v){return range_width * v;});
-  limits.push_back(_edges.size());
 
   // Start other threads, keeping a piece of the range for the main
   // thread.
   std::vector<std::thread> threads;
   for(std::size_t i = 0; i < _nb_threads - 1; ++i){
     threads.emplace_back(look_up,
-                         limits[i],
-                         limits[i + 1],
+                         _rank_limits[i],
+                         _rank_limits[i + 1],
                          std::ref(best_gains[i]),
                          std::ref(best_edge_1_starts[i]),
                          std::ref(best_edge_2_starts[i]));
   }
   
-  look_up(limits[_nb_threads - 1],
-          limits[_nb_threads],
+  look_up(_rank_limits[_nb_threads - 1],
+          _rank_limits[_nb_threads],
           std::ref(best_gains[_nb_threads - 1]),
           std::ref(best_edge_1_starts[_nb_threads - 1]),
           std::ref(best_edge_2_starts[_nb_threads - 1]));
@@ -578,29 +592,20 @@ distance_t local_search::or_opt_step(){
   std::vector<index_t> best_edge_1_starts (_nb_threads);
   std::vector<index_t> best_edge_2_starts (_nb_threads);
 
-  // Split the [0, _edges.size()[ look-up range evenly between
-  // threads. Bounds to use are stored in 'limits'.
-  std::size_t range_width = _edges.size() / _nb_threads;
-  std::vector<std::size_t> limits(_nb_threads);
-  std::iota(limits.begin(), limits.end(), 0);
-  std::transform(limits.begin(), limits.end(), limits.begin(),
-                 [range_width](auto v){return range_width * v;});
-  limits.push_back(_edges.size());
-
   // Start other threads, keeping a piece of the range for the main
   // thread.
   std::vector<std::thread> threads;
   for(std::size_t i = 0; i < _nb_threads - 1; ++i){
     threads.emplace_back(look_up,
-                         limits[i],
-                         limits[i + 1],
+                         _rank_limits[i],
+                         _rank_limits[i + 1],
                          std::ref(best_gains[i]),
                          std::ref(best_edge_1_starts[i]),
                          std::ref(best_edge_2_starts[i]));
   }
   
-  look_up(limits[_nb_threads - 1],
-          limits[_nb_threads],
+  look_up(_rank_limits[_nb_threads - 1],
+          _rank_limits[_nb_threads],
           std::ref(best_gains[_nb_threads - 1]),
           std::ref(best_edge_1_starts[_nb_threads - 1]),
           std::ref(best_edge_2_starts[_nb_threads - 1]));
