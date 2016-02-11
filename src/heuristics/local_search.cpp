@@ -352,7 +352,21 @@ distance_t local_search::two_opt_step(){
                      index_t& best_edge_1_start,
                      index_t& best_edge_2_start){
     index_t edge_1_start = start;
-    do{
+
+    // If a single thread is used, we have start == end and in that
+    // case we should then enter the next loop the first time, even if
+    // edge_1_start == end.
+    bool single_thread_init = (start == end);
+    while((edge_1_start != end)
+          or single_thread_init){
+      if(_is_symmetric_matrix and (edge_1_start == previous_init)){
+        // In the symmetric case, moves with edge_1_start as
+        // previous_init will all be tested in the opposite order
+        // (with previous_init as edge_2_start).
+        break;
+      }
+      single_thread_init = false; // Only used to enter the loop in
+                                  // some cases.
       // Going through the edges in the order of the current tour.
       index_t edge_1_end = _edges.at(edge_1_start);
       index_t edge_2_start = _edges.at(edge_1_end);
@@ -371,7 +385,7 @@ distance_t local_search::two_opt_step(){
         // Going through the edges in the order of the current tour
         // (mandatory for before_cost and after_cost efficient
         // computation).
-        if(_is_symmetric_matrix and (edge_2_start == previous_init)){
+        if(_is_symmetric_matrix and (edge_2_start == init)){
           // In the symmetric case, trying the move with edges (e_2,
           // e_1) is the same as with (e_1, e_2). So better stop at some
           // point to avoid testing pairs in both orders.
@@ -408,7 +422,7 @@ distance_t local_search::two_opt_step(){
         edge_2_end = _edges.at(edge_2_start);
       }
       edge_1_start = _edges.at(edge_1_start);
-    } while(edge_1_start != end);
+    }
   };
 
   // Store best values per thread.
