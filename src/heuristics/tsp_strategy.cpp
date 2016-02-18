@@ -160,7 +160,7 @@ void solve_atsp(const cl_args_t& cl_args){
       asym_avoid_loops_gain = asym_ls.perform_all_avoid_loop_steps();
 
       // All possible 2-opt moves.
-      asym_two_opt_gain = asym_ls.perform_all_two_opt_steps();
+      asym_two_opt_gain = asym_ls.perform_all_asym_two_opt_steps();
 
       // All relocate moves.
       asym_relocate_gain = asym_ls.perform_all_relocate_steps();

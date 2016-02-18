@@ -45,7 +45,6 @@ local_search::local_search(const matrix<distance_t>& matrix,
 
   // Build a vector of bounds that easily split the [0, _edges.size()]
   // look-up range 'evenly' between threads.
-  // std::size_t range_width = (_edges.size() + 1) / _nb_threads;
   std::size_t range_width = _edges.size() / _nb_threads;
   std::iota(_rank_limits.begin(), _rank_limits.end(), 0);
   std::transform(_rank_limits.begin(), _rank_limits.end(), _rank_limits.begin(),
@@ -353,6 +352,119 @@ distance_t local_search::two_opt_step(){
     return 0;
   }
 
+  // Lambda function to search for the best move in a range of
+  // elements from _edges.
+  auto look_up = [&](index_t start,
+                     index_t end,
+                     distance_t& best_gain,
+                     index_t& best_edge_1_start,
+                     index_t& best_edge_2_start){
+
+    for(index_t edge_1_start = start; edge_1_start < end; ++edge_1_start){
+      index_t edge_1_end = _edges.at(edge_1_start);
+      for(index_t edge_2_start = edge_1_start + 1;
+          edge_2_start < _edges.size();
+          ++edge_2_start){
+        // Trying to improve two "crossing edges".
+        //
+        // Namely edge_1_start --> edge_1_end and edge_2_start -->
+        // edge_2_end are replaced by edge_1_start --> edge_2_start and
+        // edge_1_end --> edge_2_end. The tour between edge_1_end and
+        // edge_2_start need to be reversed.
+        //
+        // In the symmetric case, trying the move with edges (e_2, e_1)
+        // is the same as with (e_1, e_2), so assuming edge_1_start <
+        // edge_2_start avoids testing pairs in both orders.
+        
+        index_t edge_2_end = _edges.at(edge_2_start);
+        if((edge_2_start == edge_1_end) or (edge_2_end == edge_1_start)){
+          // Operator doesn't make sense.
+          continue;
+        }
+
+        distance_t before_cost
+          = _matrix[edge_1_start][edge_1_end]
+          + _matrix[edge_2_start][edge_2_end];
+        distance_t after_cost
+          = _matrix[edge_1_start][edge_2_start]
+          + _matrix[edge_1_end][edge_2_end];
+
+        if(before_cost > after_cost){
+          distance_t gain = before_cost - after_cost;
+          if(gain > best_gain){
+            best_gain = gain;
+            best_edge_1_start = edge_1_start;
+            best_edge_2_start = edge_2_start;
+          }
+        }
+      }
+    }
+  };
+
+  // Store best values per thread.
+  std::vector<distance_t> best_gains (_nb_threads, 0);
+  std::vector<index_t> best_edge_1_starts (_nb_threads);
+  std::vector<index_t> best_edge_2_starts (_nb_threads);
+
+  // Start other threads, keeping a piece of the range for the main
+  // thread.
+  std::vector<std::thread> threads;
+  for(std::size_t i = 0; i < _nb_threads - 1; ++i){
+    threads.emplace_back(look_up,
+                         _rank_limits[i],
+                         _rank_limits[i + 1],
+                         std::ref(best_gains[i]),
+                         std::ref(best_edge_1_starts[i]),
+                         std::ref(best_edge_2_starts[i]));
+  }
+  
+  look_up(_rank_limits[_nb_threads - 1],
+          _rank_limits[_nb_threads],
+          std::ref(best_gains[_nb_threads - 1]),
+          std::ref(best_edge_1_starts[_nb_threads - 1]),
+          std::ref(best_edge_2_starts[_nb_threads - 1]));
+
+  for(auto& t: threads){
+    t.join();
+  }
+
+  // Spot best gain found among all threads.
+  auto best_rank = std::distance(best_gains.begin(),
+                                 std::max_element(best_gains.begin(),
+                                                  best_gains.end()));
+  distance_t best_gain = best_gains[best_rank];
+  index_t best_edge_1_start = best_edge_1_starts[best_rank];
+  index_t best_edge_2_start = best_edge_2_starts[best_rank];
+
+  if(best_gain > 0){
+    index_t best_edge_1_end = _edges.at(best_edge_1_start);
+    index_t best_edge_2_end = _edges.at(best_edge_2_start);
+    // Storing part of the tour that needs to be reversed.
+    std::vector<index_t> to_reverse;
+    for(index_t current = best_edge_1_end;
+        current != best_edge_2_start;
+        current = _edges.at(current)){
+      to_reverse.push_back(current);
+    }
+    // Performing exchange.
+    index_t current = best_edge_2_start;
+    _edges.at(best_edge_1_start) = current;
+    for(auto next = to_reverse.rbegin(); next != to_reverse.rend(); ++next){
+      _edges.at(current) = *next;
+      current = *next;
+    }
+    _edges.at(current) = best_edge_2_end;
+  }
+
+  return best_gain;
+}
+
+distance_t local_search::asym_two_opt_step(){
+  if(_edges.size() < 4){
+    // Not enough edges for the operator to make sense.
+    return 0;
+  }
+
   // The initial node for the first edge is arbitrary but it is handy
   // to keep in mind the previous one for stopping conditions.
   index_t previous_init = _edges.front();
@@ -367,20 +479,7 @@ distance_t local_search::two_opt_step(){
                      index_t& best_edge_2_start){
     index_t edge_1_start = start;
 
-    // If a single thread is used, we have start == end and in that
-    // case we should then enter the next loop the first time, even if
-    // edge_1_start == end.
-    bool single_thread_init = (start == end);
-    while((edge_1_start != end)
-          or single_thread_init){
-      if(_is_symmetric_matrix and (edge_1_start == previous_init)){
-        // In the symmetric case, moves with edge_1_start as
-        // previous_init will all be tested in the opposite order
-        // (with previous_init as edge_2_start).
-        break;
-      }
-      single_thread_init = false; // Only used to enter the loop in
-                                  // some cases.
+    do{
       // Going through the edges in the order of the current tour.
       index_t edge_1_end = _edges.at(edge_1_start);
       index_t edge_2_start = _edges.at(edge_1_end);
@@ -399,28 +498,21 @@ distance_t local_search::two_opt_step(){
         // Going through the edges in the order of the current tour
         // (mandatory for before_cost and after_cost efficient
         // computation).
-        if(_is_symmetric_matrix and (edge_2_start == init)){
-          // In the symmetric case, trying the move with edges (e_2,
-          // e_1) is the same as with (e_1, e_2). So better stop at some
-          // point to avoid testing pairs in both orders.
-          break;
-        }
         distance_t before_cost
           = _matrix[edge_1_start][edge_1_end]
           + _matrix[edge_2_start][edge_2_end];
         distance_t after_cost
           = _matrix[edge_1_start][edge_2_start]
           + _matrix[edge_1_end][edge_2_end];
-        if(!_is_symmetric_matrix){
-          // Updating the cost of the part of the tour that needs to be
-          // reversed.
-          before_reversed_part_cost += _matrix[previous][edge_2_start];
-          after_reversed_part_cost += _matrix[edge_2_start][previous];
 
-          // Adding to the costs for comparison.
-          before_cost += before_reversed_part_cost;
-          after_cost += after_reversed_part_cost;
-        }
+        // Updating the cost of the part of the tour that needs to be
+        // reversed.
+        before_reversed_part_cost += _matrix[previous][edge_2_start];
+        after_reversed_part_cost += _matrix[edge_2_start][previous];
+
+        // Adding to the costs for comparison.
+        before_cost += before_reversed_part_cost;
+        after_cost += after_reversed_part_cost;
 
         if(before_cost > after_cost){
           distance_t gain = before_cost - after_cost;
@@ -436,7 +528,7 @@ distance_t local_search::two_opt_step(){
         edge_2_end = _edges.at(edge_2_start);
       }
       edge_1_start = _edges.at(edge_1_start);
-    }
+    } while(edge_1_start != end);
   };
 
   // Store best values per thread.
@@ -515,6 +607,29 @@ distance_t local_search::perform_all_two_opt_steps(){
   distance_t gain = 0;
   do{
     gain = this->two_opt_step();
+
+    if(gain > 0){
+      total_gain += gain;
+      ++two_opt_iter;
+    }
+  } while(gain > 0);
+
+  if(total_gain > 0){
+    BOOST_LOG_TRIVIAL(trace) << "* Performed "
+                             << two_opt_iter 
+                             << " \"2-opt\" steps, gaining "
+                             << total_gain
+                             << ".";
+  }
+  return total_gain;
+}
+
+distance_t local_search::perform_all_asym_two_opt_steps(){
+  distance_t total_gain = 0;
+  unsigned two_opt_iter = 0;
+  distance_t gain = 0;
+  do{
+    gain = this->asym_two_opt_step();
 
     if(gain > 0){
       total_gain += gain;

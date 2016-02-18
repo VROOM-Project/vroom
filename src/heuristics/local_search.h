@@ -51,7 +51,11 @@ public:
 
   distance_t two_opt_step();
 
+  distance_t asym_two_opt_step();
+
   distance_t perform_all_two_opt_steps();
+
+  distance_t perform_all_asym_two_opt_steps();
 
   distance_t or_opt_step();
 
