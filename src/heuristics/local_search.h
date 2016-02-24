@@ -33,7 +33,8 @@ private:
   const bool _is_symmetric_matrix;
   std::vector<index_t> _edges;
   unsigned _nb_threads;
-  std::vector<std::size_t> _rank_limits;
+  std::vector<index_t> _rank_limits;
+  std::vector<index_t> _sym_two_opt_rank_limits;
 
 public:
   local_search(const matrix<distance_t>& matrix,

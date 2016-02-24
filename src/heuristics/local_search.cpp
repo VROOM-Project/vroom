@@ -44,7 +44,8 @@ local_search::local_search(const matrix<distance_t>& matrix,
   _edges.at(last_index) = first_index;
 
   // Build a vector of bounds that easily split the [0, _edges.size()]
-  // look-up range 'evenly' between threads.
+  // look-up range 'evenly' between threads for relocate and or-opt
+  // operator.
   std::size_t range_width = _edges.size() / _nb_threads;
   std::iota(_rank_limits.begin(), _rank_limits.end(), 0);
   std::transform(_rank_limits.begin(), _rank_limits.end(), _rank_limits.begin(),
@@ -61,6 +62,44 @@ local_search::local_search(const matrix<distance_t>& matrix,
     _rank_limits[i] += shift;
   }
   _rank_limits.push_back(_edges.size());
+
+  // Build a vector of bounds that easily split the [0, _edges.size()]
+  // look-up range 'evenly' between threads for 2-opt symmetric
+  // operator.
+  _sym_two_opt_rank_limits.push_back(0);
+
+  if(_nb_threads > 1){
+    // When avoiding duplicate tests in two-opt (symmetric case), the
+    // first choice for edge_1 requires number_of_lookups[0] checks
+    // for edge_2, the next requires number_of_lookups[1] and so
+    // on. If several threads are used, splitting the share between
+    // them is based on this workload.
+
+    std::vector<unsigned> number_of_lookups (_edges.size() - 1);
+    number_of_lookups[0] = _edges.size() - 3;
+    std::iota(number_of_lookups.rbegin(),
+              number_of_lookups.rend() - 1,
+              0);
+
+    std::vector<unsigned> cumulated_lookups;
+    std::partial_sum(number_of_lookups.begin(),
+                     number_of_lookups.end(),
+                     std::back_inserter(cumulated_lookups));
+
+    unsigned total_lookups = _edges.size() * (_edges.size() - 3) / 2;
+    unsigned thread_lookup_share = total_lookups / _nb_threads;
+
+    index_t rank = 0;
+    for(std::size_t i = 1; i < _nb_threads; ++i){
+      // Finding nodes that separate current tour in _nb_threads ranges.
+      while(cumulated_lookups[rank] < i * thread_lookup_share){
+        ++rank;
+      }
+      ++rank;
+      _sym_two_opt_rank_limits.push_back(rank);
+    }
+  }
+  _sym_two_opt_rank_limits.push_back(_edges.size());
 }
 
 distance_t local_search::relocate_step(){
@@ -359,7 +398,6 @@ distance_t local_search::two_opt_step(){
                      distance_t& best_gain,
                      index_t& best_edge_1_start,
                      index_t& best_edge_2_start){
-
     for(index_t edge_1_start = start; edge_1_start < end; ++edge_1_start){
       index_t edge_1_end = _edges.at(edge_1_start);
       for(index_t edge_2_start = edge_1_start + 1;
@@ -411,15 +449,15 @@ distance_t local_search::two_opt_step(){
   std::vector<std::thread> threads;
   for(std::size_t i = 0; i < _nb_threads - 1; ++i){
     threads.emplace_back(look_up,
-                         _rank_limits[i],
-                         _rank_limits[i + 1],
+                         _sym_two_opt_rank_limits[i],
+                         _sym_two_opt_rank_limits[i + 1],
                          std::ref(best_gains[i]),
                          std::ref(best_edge_1_starts[i]),
                          std::ref(best_edge_2_starts[i]));
   }
   
-  look_up(_rank_limits[_nb_threads - 1],
-          _rank_limits[_nb_threads],
+  look_up(_sym_two_opt_rank_limits[_nb_threads - 1],
+          _sym_two_opt_rank_limits[_nb_threads],
           std::ref(best_gains[_nb_threads - 1]),
           std::ref(best_edge_1_starts[_nb_threads - 1]),
           std::ref(best_edge_2_starts[_nb_threads - 1]));
