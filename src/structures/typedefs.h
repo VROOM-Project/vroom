@@ -59,7 +59,7 @@ struct cl_args_t {
     log_level(boost::log::trivial::error),
     force_start(false),
     force_end(false),
-    nb_threads(1) {}
+    nb_threads(2) {}
 };
 
 #endif
