@@ -41,8 +41,6 @@ struct timing_t {
 struct cl_args_t {
   // Listing command-line options.
   std::string osrm_address;                      // -a
-  bool use_osrm;                                 // Default
-  bool use_tsplib;                               // -t
   bool geometry;                                 // -g
   std::string input_file;                        // -i
   std::string output_file;                       // -o
@@ -51,16 +49,17 @@ struct cl_args_t {
   std::string input;                             // cl arg
   bool force_start;                              // -s
   bool force_end;                                // -e
+  unsigned nb_threads;                           // -t
+  bool use_osrm;
   // Default values.
   cl_args_t():
     osrm_address("0.0.0.0"),
-    use_osrm(true),
-    use_tsplib(false),
     geometry(false),
     osrm_port("5000"),
     log_level(boost::log::trivial::error),
     force_start(false),
-    force_end(false) {}
+    force_end(false),
+    nb_threads(1) {}
 };
 
 #endif
