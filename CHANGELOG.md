@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.1] - 2016-03-01
+
+### Changed
+
+- Switch to BSD 2-clause license.
+- Solving TSPLIB instances does not require the `-t` flag anymore.
+- Several components of the local search code can now use
+  multi-threading (#26).
+
+### Fixed
+
+- Improve 2-opt operator for symmetric cases (#27).
+
 ## [0.3] - 2016-02-03
 
 ### Added

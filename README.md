@@ -12,7 +12,7 @@ VROOM is an optimization engine written in C++14 that aim at providing
 good solutions to various real-life [vehicle routing
 problems](https://en.wikipedia.org/wiki/Vehicle_routing_problem)
 within a small computing time. It is free software, distributed under
-the term of the GNU General Public License V3.
+the terms of the BSD 2-clause license.
 
 ### How?
 
