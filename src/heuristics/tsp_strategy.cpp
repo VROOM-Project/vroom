@@ -1,19 +1,10 @@
 /*
-VROOM (Vehicle Routing Open-source Optimization Machine)
-Copyright (C) 2015-2016, Julien Coupey
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or (at
-your option) any later version.
+This file is part of VROOM.
 
-This program is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-General Public License for more details.
+Copyright (c) 2015-2016, Julien Coupey.
+All rights reserved (see LICENSE).
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "tsp_strategy.h"
@@ -70,10 +61,13 @@ void solve_atsp(const cl_args_t& cl_args){
   auto start_sym_local_search = std::chrono::high_resolution_clock::now();
   BOOST_LOG_TRIVIAL(info) 
     << "[Local search] Start local search on symmetrized problem.";
+  BOOST_LOG_TRIVIAL(info) 
+    << "[Local search] Using " << cl_args.nb_threads << " thread(s).";
 
   local_search sym_ls (asymmetric_tsp.get_symmetrized_matrix(),
                        true,    // Symmetrized problem.
-                       christo_sol);
+                       christo_sol,
+                       cl_args.nb_threads);
 
   distance_t sym_two_opt_gain = 0;
   distance_t sym_relocate_gain = 0;
@@ -133,7 +127,8 @@ void solve_atsp(const cl_args_t& cl_args){
     local_search asym_ls (asymmetric_tsp.get_matrix(),
                           false, // Not the symmetrized problem.
                           (direct_cost <= reverse_cost) ? 
-                          current_sol: reverse_current_sol);
+                          current_sol: reverse_current_sol,
+                          cl_args.nb_threads);
 
     auto start_asym_local_search = std::chrono::high_resolution_clock::now();
     BOOST_LOG_TRIVIAL(info) 
@@ -142,6 +137,9 @@ void solve_atsp(const cl_args_t& cl_args){
   
     BOOST_LOG_TRIVIAL(info) 
       << "[Asym. local search] Start local search on asymmetric problem.";
+
+    BOOST_LOG_TRIVIAL(info) 
+      << "[Asym. local search] Using " << cl_args.nb_threads << " thread(s).";
 
     distance_t asym_two_opt_gain = 0;
     distance_t asym_relocate_gain = 0;
@@ -153,7 +151,7 @@ void solve_atsp(const cl_args_t& cl_args){
       asym_avoid_loops_gain = asym_ls.perform_all_avoid_loop_steps();
 
       // All possible 2-opt moves.
-      asym_two_opt_gain = asym_ls.perform_all_two_opt_steps();
+      asym_two_opt_gain = asym_ls.perform_all_asym_two_opt_steps();
 
       // All relocate moves.
       asym_relocate_gain = asym_ls.perform_all_relocate_steps();
