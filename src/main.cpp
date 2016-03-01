@@ -1,19 +1,10 @@
 /*
-VROOM (Vehicle Routing Open-source Optimization Machine)
-Copyright (C) 2015-2016, Julien Coupey
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or (at
-your option) any later version.
+This file is part of VROOM.
 
-This program is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-General Public License for more details.
+Copyright (c) 2015-2016, Julien Coupey.
+All rights reserved (see LICENSE).
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <sstream>
@@ -40,9 +31,7 @@ void display_usage(){
   usage += "\t-e,\t\t compute an \"open\" route (not a tour), ending at\n\t\t\t the last input location\n";
   usage += "\t-t,\t\t number of threads to use\n";
   usage += "\t-v,\t\t turn on verbose output\n";
-  usage += "\t-V,\t\t turn on verbose output with all details\n";
-  usage += "\nThis program is distributed under the terms of the GNU General Public\n";
-  usage += "License, version 3, and comes with ABSOLUTELY NO WARRANTY.\n";
+  usage += "\t-V,\t\t turn on verbose output with all details";
   std::cout << usage << std::endl;
   exit(0);
 }
