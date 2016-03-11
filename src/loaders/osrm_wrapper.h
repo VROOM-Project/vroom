@@ -23,30 +23,54 @@ using boost::asio::ip::tcp;
 class osrm_wrapper : public problem_io<distance_t>{
 
 private:
-  std::string _address;         // OSRM server adress
-  std::string _port;            // OSRM server listening port
+  const std::string _address;      // OSRM server adress
+  const std::string _port;         // OSRM server listening port
+  const std::string _osrm_profile; // OSRM profile name
+  const bool _use_osrm_v5;         // For backward compat
   std::vector<std::pair<double, double>> _locations;
 
   std::string build_query(const std::vector<std::pair<double, double>>& locations, 
                           std::string service, 
                           std::string extra_args = "") const{
     // Building query for osrm-routed
-    std::string query = "GET /" + service + "?";
+    std::string query = "GET /" + service;
 
-    // Adding locations.
-    for(auto const& location: locations){
-      query += "loc="
-        + std::to_string(location.first)
-        + ","
-        + std::to_string(location.second)
-        + "&";
+    if(_use_osrm_v5){
+      query += "/v1/" + _osrm_profile + "/";
+
+      // Adding locations.
+      for(auto const& location: locations){
+        // OSRM v5 has gone [lon,lat].
+        query += std::to_string(location.second)
+          + ","
+          + std::to_string(location.first)
+          + ";";
+      }
+      query.pop_back();         // Remove trailing ';'.
+      
+      if(!extra_args.empty()){
+        query += "?" + extra_args;
+      }
     }
+    else{
+      // Backward compat.
+      query += "?";
 
-    if(!extra_args.empty()){
-      query += extra_args + "&";
+      // Adding locations.
+      for(auto const& location: locations){
+        query += "loc="
+          + std::to_string(location.first)
+          + ","
+          + std::to_string(location.second)
+          + "&";
+      }
+
+      if(!extra_args.empty()){
+        query += extra_args + "&";
+      }
+      query.pop_back();         // Remove trailing '&'.
     }
-
-    query.pop_back();           // Remove trailing '&'.
+    
     query += " HTTP/1.1\r\n";
     query += "Host: " + _address + "\r\n";
     query += "Accept: */*\r\n";
@@ -113,9 +137,13 @@ private:
 public:
   osrm_wrapper(std::string address, 
                std::string port,
+               std::string osrm_profile,
                std::string loc_input):
     _address(address),
-    _port(port){
+    _port(port),
+    _osrm_profile(osrm_profile),
+    _use_osrm_v5(!_osrm_profile.empty()){
+
     // Parsing input in locations.
     std::size_t start = 0;
     std::size_t end = loc_input.find("&", start);
@@ -138,20 +166,35 @@ public:
 
     std::string response = this->send_then_receive(query);
 
-    // Stop at "Bad Request" error from OSRM.
-    assert(response.find("Bad Request") == std::string::npos);
+    if(!_use_osrm_v5){
+      // Backward compat. Stop at "Bad Request" error from OSRM.
+      assert(response.find("Bad Request") == std::string::npos);
+    }
 
     // Removing headers.
     std::string json_content = response.substr(response.find("{"));
 
     // Expected matrix size.
     std::size_t m_size = _locations.size();
+    // Matrix key label depends on OSRM version.
+    const char* durations = _use_osrm_v5 ? "durations": "distance_table";
 
-    // Parsing distance table to build the matrix.
+    // Checking everything is fine in the response (OSRM version
+    // dependant).
     rapidjson::Document infos;
     assert(!infos.Parse(json_content.c_str()).HasParseError());
-    assert(infos.HasMember("distance_table"));
-    assert(infos["distance_table"].Size() == m_size);
+    if(_use_osrm_v5){
+      assert(infos.HasMember("code"));
+      if(infos["code"] != "ok"){
+        throw custom_exception("OSRM table: "
+                               + std::string(infos["message"].GetString()));
+      }
+    }
+    else{
+      // Backward compat.
+      assert(infos.HasMember(durations));
+    }
+    assert(infos[durations].Size() == m_size);
 
     // Building matrix and checking for unfound routes to avoid
     // unexpected behavior (OSRM raises max value for an int).
@@ -159,19 +202,20 @@ public:
 
     std::vector<unsigned> nb_unfound_from_loc (m_size, 0);
     std::vector<unsigned> nb_unfound_to_loc (m_size, 0);
-    distance_t unfound_time
-      = std::numeric_limits<int>::max();
 
-    for(rapidjson::SizeType i = 0; i < infos["distance_table"].Size(); ++i){
-      const auto& line = infos["distance_table"][i];
+    for(rapidjson::SizeType i = 0; i < infos[durations].Size(); ++i){
+      const auto& line = infos[durations][i];
       assert(line.Size() == m_size);
       for(rapidjson::SizeType j = 0; j < line.Size(); ++j){
-        m[i][j] = line[j].GetUint();
-        if(m[i][j] == unfound_time){
-          // Just storing info as we don't know yet which location is
-          // responsible between i and j.
+        if(line[j].IsNull()){
+          // No route found between i and j. Just storing info as we
+          // don't know yet which location is responsible between i
+          // and j.
           ++nb_unfound_from_loc[i];
           ++nb_unfound_to_loc[j];
+        }
+        else{
+          m[i][j] = static_cast<distance_t>(line[j].GetDouble() + 0.5);
         }
       }
     }
@@ -236,33 +280,65 @@ public:
       ordered_locations.push_back(_locations[step]);
     }
 
+    std::string route_service = _use_osrm_v5 ? "route": "viaroute";
+
+    // Backward compat.
+    std::string extra_args = "alt=false&uturns=true";
+    if(_use_osrm_v5){
+      extra_args = "alternative=false&steps=false&overview=full&uturns=true";
+      for(std::size_t i = 1; i < tour.size(); ++i){
+        extra_args += ";true";
+      }
+    }
+    
     std::string query = this->build_query(ordered_locations,
-                                          "viaroute",
-                                          "alt=false&uturns=true");
+                                          route_service,
+                                          extra_args);
     std::string response = this->send_then_receive(query);
 
     // Removing headers
     std::string json_content = response.substr(response.find("{"));
 
-    // Parsing total time/distance and route geometry.
+    // Checking everything is fine in the response (OSRM version
+    // dependant). Then parse total time/distance and route geometry.
     rapidjson::Document infos;
-    // FIXME: use exceptions?
-    assert(!infos.Parse(json_content.c_str()).HasParseError());
-    assert(infos.HasMember("route_summary"));
-    assert(infos["route_summary"].HasMember("total_time"));
-    assert(infos["route_summary"].HasMember("total_distance"));
-    assert(infos.HasMember("route_geometry"));
-
     rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
-    output.AddMember("total_time",
-                     infos["route_summary"]["total_time"],
-                     allocator);
-    output.AddMember("total_distance",
-                     infos["route_summary"]["total_distance"],
-                     allocator);
-    output.AddMember("route_geometry",
-                     rapidjson::Value(infos["route_geometry"], allocator),
-                     allocator);
+
+    assert(!infos.Parse(json_content.c_str()).HasParseError());
+    if(_use_osrm_v5){
+      assert(infos.HasMember("code"));
+      if(infos["code"] != "ok"){
+        throw custom_exception("OSRM route: "
+                               + std::string(infos["message"].GetString()));
+      }
+
+      output.AddMember("total_time",
+                       infos["routes"][0]["duration"],
+                       allocator);
+      output.AddMember("total_distance",
+                       infos["routes"][0]["distance"],
+                       allocator);
+      output.AddMember("route_geometry",
+                       rapidjson::Value(infos["routes"][0]["geometry"], allocator),
+                       allocator);
+    }
+    else{
+      // Backward compat.
+      assert(infos.HasMember("route_summary"));
+      assert(infos["route_summary"].HasMember("total_time"));
+      assert(infos["route_summary"].HasMember("total_distance"));
+      assert(infos.HasMember("route_geometry"));
+
+      output.AddMember("total_time",
+                       infos["route_summary"]["total_time"],
+                       allocator);
+      output.AddMember("total_distance",
+                       infos["route_summary"]["total_distance"],
+                       allocator);
+      output.AddMember("route_geometry",
+                       rapidjson::Value(infos["route_geometry"], allocator),
+                       allocator);
+    }
   }
 };
 

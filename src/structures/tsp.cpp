@@ -20,6 +20,7 @@ tsp::tsp(const cl_args_t& cl_args):
     _loader 
       = std::make_unique<osrm_wrapper>(cl_args.osrm_address, 
                                        cl_args.osrm_port,
+                                       cl_args.osrm_profile,
                                        cl_args.input);
   }
   else{
