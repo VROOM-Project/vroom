@@ -17,16 +17,17 @@ All rights reserved (see LICENSE).
 // To easily differentiate variable types.
 using index_t = uint16_t;
 using distance_t = uint32_t;
+using duration_t = uint32_t;
 
 // Setting max value would cause trouble with further additions.
 constexpr distance_t INFINITE_DISTANCE = 3 * (std::numeric_limits<distance_t>::max() / 4);
 
 struct timing_t {
   // Computing times in milliseconds.
-  unsigned long matrix_loading;
-  unsigned long heuristic;
-  unsigned long local_search;
-  unsigned long total_duration;
+  duration_t matrix_loading;
+  duration_t heuristic;
+  duration_t local_search;
+  duration_t total_duration;
 };
 
 struct cl_args_t {

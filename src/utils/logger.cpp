@@ -19,7 +19,7 @@ void logger::write_solution(const tsp& instance,
   output.SetObject();
   rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
 
-  unsigned long route_geometry_duration = 0;
+  duration_t route_geometry_duration = 0;
   if(_cl_args.use_osrm and _cl_args.geometry){
     // Get route informations geometry (only when using OSRM).
     BOOST_LOG_TRIVIAL(info) 
