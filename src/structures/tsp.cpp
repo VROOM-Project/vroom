@@ -9,25 +9,15 @@ All rights reserved (see LICENSE).
 
 #include "tsp.h"
 
-tsp::tsp(const cl_args_t& cl_args): 
-  _matrix(0),
+tsp::tsp(const problem_io<distance_t>& loader,
+         bool force_start,
+         bool force_end):
+  _matrix(loader.get_matrix()),
   _symmetrized_matrix(0),
   _is_symmetric(true),
-  _cl_args(cl_args){
+  _force_start(force_start),
+  _force_end(force_end){
   
-  // Computing matrix with the right tool.
-  if(cl_args.use_osrm){
-    _loader 
-      = std::make_unique<osrm_wrapper>(cl_args.osrm_address, 
-                                       cl_args.osrm_port,
-                                       cl_args.input);
-  }
-  else{
-    _loader = std::make_unique<tsplib_loader>(cl_args.input);
-  }
-
-  _matrix = _loader->get_matrix();
-
   // Distances on the diagonal are never used except in the minimum
   // weight perfect matching during the heuristic. This makes sure
   // each node will be impossible to match with itself at that time.
@@ -37,14 +27,14 @@ tsp::tsp(const cl_args_t& cl_args):
 
   // Dealing with open tour cases. At most one of the following
   // occurs.
-  if(cl_args.force_start and !cl_args.force_end){
+  if(_force_start and !_force_end){
     // Forcing first location as start, end location decided during
     // optimization.
     for(index_t i = 1; i < _matrix.size(); ++i){
       _matrix[i][0] = 0;
     }
   }
-  if(!cl_args.force_start and cl_args.force_end){
+  if(!_force_start and _force_end){
     // Forcing last location as end, start location decided during
     // optimization.
     index_t last_index = _matrix.size() - 1;
@@ -52,7 +42,7 @@ tsp::tsp(const cl_args_t& cl_args):
       _matrix[last_index][j] = 0;
     }
   }
-  if(cl_args.force_start and cl_args.force_end){
+  if(_force_start and _force_end){
     // Forcing first location as start, last location as end to
     // produce an open tour.
     index_t last_index = _matrix.size() - 1;
@@ -65,8 +55,8 @@ tsp::tsp(const cl_args_t& cl_args):
   // Compute symmetrized matrix and update _is_symmetric flag.
   const distance_t& (*sym_f) (const distance_t&, const distance_t&) 
     = std::min<distance_t>;
-  if((_cl_args.force_start and !_cl_args.force_end)
-     or (!_cl_args.force_start and _cl_args.force_end)){
+  if((_force_start and !_force_end)
+     or (!_force_start and _force_end)){
     // Using symmetrization with max as when only start or only end is
     // forced, the matrix has a line or a column filled with zeros.
     sym_f = std::max<distance_t>;
@@ -101,6 +91,14 @@ const undirected_graph<distance_t>& tsp::get_symmetrized_graph() const{
 
 const bool tsp::is_symmetric() const{
   return _is_symmetric;
+}
+
+const bool tsp::force_start() const{
+  return _force_start;
+}
+
+const bool tsp::force_end() const{
+  return _force_end;
 }
 
 std::size_t tsp::size() const{
@@ -147,30 +145,4 @@ distance_t tsp::symmetrized_cost(const std::list<index_t>& tour) const{
     cost += _symmetrized_matrix[previous_step][init_step];
   }
   return cost;
-}
-
-void tsp::get_route(const std::list<index_t>& tour,
-                    rapidjson::Value& value,
-                    rapidjson::Document::AllocatorType& allocator) const{
-  unsigned offset = (_cl_args.force_start or _cl_args.force_end) ? 0: 1;
-  assert(tour.size() == (_matrix.size() + offset));
-  
-  _loader->get_route(tour, value, allocator);
-}
-
-void tsp::get_tour(const std::list<index_t>& tour,
-                   rapidjson::Value& value,
-                   rapidjson::Document::AllocatorType& allocator) const{
-  unsigned offset = (_cl_args.force_start or _cl_args.force_end) ? 0: 1;
-  assert(tour.size() == (_matrix.size() + offset));
-  
-  _loader->get_tour(tour, value, allocator);
-}
-
-void tsp::get_route_infos(const std::list<index_t>& tour,
-                          rapidjson::Document& output) const{
-  unsigned offset = (_cl_args.force_start or _cl_args.force_end) ? 0: 1;
-  assert(tour.size() == (_matrix.size() + offset));
-
-  _loader->get_route_infos(tour, output);
 }

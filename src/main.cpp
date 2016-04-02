@@ -16,6 +16,10 @@ All rights reserved (see LICENSE).
 #include <boost/log/utility/setup/common_attributes.hpp>
 #include "./structures/typedefs.h"
 #include "./heuristics/tsp_strategy.h"
+#include "./loaders/problem_io.h"
+#include "./loaders/tsplib_loader.h"
+#include "./loaders/osrm_wrapper.h"
+#include "./utils/logger.h"
 
 void display_usage(){
   std::string usage = "VROOM Copyright (C) 2015-2016, Julien Coupey\n";
@@ -117,7 +121,46 @@ int main(int argc, char **argv){
     ->set_filter(boost::log::trivial::severity >= cl_args.log_level);
   
   try{
-    solve_atsp(cl_args);
+    timing_t computing_times;
+    auto start_problem_loading = std::chrono::high_resolution_clock::now();
+    BOOST_LOG_TRIVIAL(info) 
+      << "[Matrix] Start matrix computing and problem loading.";
+
+    // Parse input with relevant loader.
+    std::unique_ptr<problem_io<distance_t>> loader;
+    if(cl_args.use_osrm){
+      loader 
+        = std::make_unique<osrm_wrapper>(cl_args.osrm_address, 
+                                         cl_args.osrm_port,
+                                         cl_args.input);
+    }
+    else{
+      loader = std::make_unique<tsplib_loader>(cl_args.input);
+    }
+
+    // Build problem.
+    tsp asymmetric_tsp (*loader, cl_args.force_start, cl_args.force_end);
+
+    auto end_problem_loading = std::chrono::high_resolution_clock::now();
+    computing_times.matrix_loading =
+      std::chrono::duration_cast<std::chrono::milliseconds>
+      (end_problem_loading - start_problem_loading).count();
+
+    BOOST_LOG_TRIVIAL(info) << "[Matrix] Done, took "
+                            << computing_times.matrix_loading << " ms.";
+
+    // Solve!
+    // TODO: adapt return type.
+    std::pair<std::list<index_t>, distance_t> solution
+      = solve_atsp(asymmetric_tsp, cl_args.nb_threads, computing_times);
+
+    // Write solution.
+    write_solution(cl_args,
+                   *loader,
+                   asymmetric_tsp,
+                   solution.first,
+                   solution.second,
+                   computing_times);
   }
   catch(const custom_exception& e){
     BOOST_LOG_TRIVIAL(error) << "[Error] " << e.get_message();

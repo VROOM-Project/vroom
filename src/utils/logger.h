@@ -22,17 +22,11 @@ All rights reserved (see LICENSE).
 #include "../structures/typedefs.h"
 #include "../structures/tsp.h"
 
-class logger{
-private:
-  cl_args_t _cl_args;
-  
-public:
-  logger(const cl_args_t& cl_args);
-  
-  void write_solution(const tsp& instance,
-                      const std::list<index_t>& tour,
-                      distance_t sol_cost,
-                      const timing_t& computing_times) const;
-};
+void write_solution(const cl_args_t& cl_args,
+                    const problem_io<distance_t>& loader,
+                    const tsp& instance,
+                    const std::list<index_t>& tour,
+                    distance_t sol_cost,                    
+                    const timing_t& computing_times);
 
 #endif
