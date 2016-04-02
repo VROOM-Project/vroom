@@ -14,6 +14,7 @@ logger::logger(const cl_args_t& cl_args):
 
 void logger::write_solution(const tsp& instance,
                             const std::list<index_t>& tour,
+                            distance_t sol_cost,
                             const timing_t& computing_times) const{
   rapidjson::Document output;
   output.SetObject();
@@ -51,12 +52,7 @@ void logger::write_solution(const tsp& instance,
   output.AddMember("computing_times", c_t, allocator);
 
   // Solution description.
-  std::string route_type 
-    = (_cl_args.force_start or _cl_args.force_end) ? "open": "loop";
-  output.AddMember("route_type", rapidjson::Value(), allocator);
-  output["route_type"].SetString(route_type.c_str(), route_type.size());
-
-  output.AddMember("solution_cost", instance.cost(tour), allocator);
+  output.AddMember("solution_cost", sol_cost, allocator);
   // Create route and tour keys with null values and pass them as
   // references to populate them.
   output.AddMember("route", rapidjson::Value(rapidjson::kArrayType).Move(), allocator);

@@ -31,6 +31,7 @@ public:
   
   void write_solution(const tsp& instance,
                       const std::list<index_t>& tour,
+                      distance_t sol_cost,
                       const timing_t& computing_times) const;
 };
 

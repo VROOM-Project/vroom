@@ -196,6 +196,14 @@ void solve_atsp(const cl_args_t& cl_args){
     current_sol.pop_front();
   }
 
+  // Duplicate start at the end for round trips.
+  if(!cl_args.force_start and !cl_args.force_end){
+    current_sol.push_back(current_sol.front());
+  }
+
   logger log (cl_args);
-  log.write_solution(asymmetric_tsp, current_sol, computing_times);
+  log.write_solution(asymmetric_tsp,
+                     current_sol,
+                     current_cost,
+                     computing_times);
 }

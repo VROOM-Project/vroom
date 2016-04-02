@@ -152,29 +152,25 @@ distance_t tsp::symmetrized_cost(const std::list<index_t>& tour) const{
 void tsp::get_route(const std::list<index_t>& tour,
                     rapidjson::Value& value,
                     rapidjson::Document::AllocatorType& allocator) const{
-  assert(tour.size() == _matrix.size());
+  unsigned offset = (_cl_args.force_start or _cl_args.force_end) ? 0: 1;
+  assert(tour.size() == (_matrix.size() + offset));
+  
   _loader->get_route(tour, value, allocator);
 }
 
 void tsp::get_tour(const std::list<index_t>& tour,
                    rapidjson::Value& value,
                    rapidjson::Document::AllocatorType& allocator) const{
-  assert(tour.size() == _matrix.size());
+  unsigned offset = (_cl_args.force_start or _cl_args.force_end) ? 0: 1;
+  assert(tour.size() == (_matrix.size() + offset));
+  
   _loader->get_tour(tour, value, allocator);
 }
 
 void tsp::get_route_infos(const std::list<index_t>& tour,
                           rapidjson::Document& output) const{
-  assert(tour.size() == _matrix.size());
+  unsigned offset = (_cl_args.force_start or _cl_args.force_end) ? 0: 1;
+  assert(tour.size() == (_matrix.size() + offset));
 
-  if(_cl_args.force_start or _cl_args.force_end){
-    // Open tour, getting direct geometry.
-    _loader->get_route_infos(tour, output);
-  }
-  else{
-    // Back to the starting location when the trip is a loop.
-    std::list<index_t> actual_trip (tour);
-    actual_trip.push_back(actual_trip.front());
-    _loader->get_route_infos(actual_trip, output);
-  }
+  _loader->get_route_infos(tour, output);
 }
