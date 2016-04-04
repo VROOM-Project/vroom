@@ -57,11 +57,6 @@ void write_solution(const cl_args_t& cl_args,
     json_c_t.AddMember("routing", route_geometry_duration, allocator);
   }
 
-  // Solution description.
-  rapidjson::Value json_solution(rapidjson::kObjectType);
-  json_solution.AddMember("computing_times", json_c_t, allocator);
-  json_output.AddMember("solution", json_solution, allocator);
-
   // Create locations and steps keys with null values and pass them as
   // references to populate them.
   json_route.AddMember("locations", rapidjson::Value(rapidjson::kArrayType).Move(), allocator);
@@ -77,7 +72,32 @@ void write_solution(const cl_args_t& cl_args,
   // Routes.
   rapidjson::Value json_routes_array(rapidjson::kArrayType);
   json_routes_array.PushBack(json_route, allocator);
+
+  // Global indicators.
+  distance_t global_cost = 0;
+  distance_t global_duration = 0;
+  distance_t global_distance = 0;
+  
+  for(rapidjson::SizeType i = 0; i < json_routes_array.Size(); ++i){
+    global_cost += json_routes_array[i]["cost"].GetUint();
+    if(cl_args.use_osrm and cl_args.geometry){
+      global_duration += json_routes_array[i]["duration"].GetUint();
+      global_distance += json_routes_array[i]["distance"].GetUint();
+    }
+  }
+
+  // Solution description.
+  rapidjson::Value json_solution(rapidjson::kObjectType);
+  json_solution.AddMember("computing_times", json_c_t, allocator);
+  if(cl_args.use_osrm and cl_args.geometry){
+    json_solution.AddMember("distance", global_distance, allocator);
+    json_solution.AddMember("duration", global_duration, allocator);
+  }
+  json_solution.AddMember("cost", global_cost, allocator);
+
   json_output.AddMember("routes", json_routes_array, allocator);
+  json_output.AddMember("solution", json_solution, allocator);
+
 
   rapidjson::StringBuffer s;
   rapidjson::Writer<rapidjson::StringBuffer> r_writer(s);
