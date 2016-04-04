@@ -36,6 +36,13 @@ void write_solution(const cl_args_t& cl_args,
                             << " ms.";
   }
 
+  // Set output.
+  auto start_output = std::chrono::high_resolution_clock::now();
+  std::string out 
+    = cl_args.output_file.empty() ? "standard output": cl_args.output_file;
+  BOOST_LOG_TRIVIAL(info) << "[Output] Write solution to "
+                          << out << ".";
+
   // Timing informations.
   rapidjson::Value json_c_t(rapidjson::kObjectType);
   json_c_t.AddMember("loading", computing_times.matrix_loading, allocator);
@@ -76,12 +83,7 @@ void write_solution(const cl_args_t& cl_args,
   rapidjson::Writer<rapidjson::StringBuffer> r_writer(s);
   json_output.Accept(r_writer);
 
-  auto start_output = std::chrono::high_resolution_clock::now();
-  std::string out 
-    = cl_args.output_file.empty() ? "standard output": cl_args.output_file;
-  BOOST_LOG_TRIVIAL(info) << "[Output] Write solution to "
-                          << out << ".";
-
+  // Write to relevant output.
   if(cl_args.output_file.empty()){
     // Log to standard output.
     std::cout << s.GetString() << std::endl;
