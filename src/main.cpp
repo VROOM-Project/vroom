@@ -157,7 +157,6 @@ int main(int argc, char **argv){
     // Write solution.
     write_solution(cl_args,
                    *loader,
-                   asymmetric_tsp,
                    solution.first,
                    solution.second,
                    computing_times);

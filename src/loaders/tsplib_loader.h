@@ -299,44 +299,46 @@ public:
     return m;
   }
 
-  virtual void get_route(const std::list<index_t>& tour,
-                         rapidjson::Value& value,
-                         rapidjson::Document::AllocatorType& allocator) const override{
-    rapidjson::Value route_array(rapidjson::kArrayType);
+  virtual void get_locations(const std::list<index_t>& steps,
+                             rapidjson::Value& value,
+                             rapidjson::Document::AllocatorType& allocator) const override{
+    rapidjson::Value locations_array(rapidjson::kArrayType);
     if((_ewt != EWT::NONE) and (_ewt != EWT::EXPLICIT)){
-      // The key "route" is only added if the matrix has been computed
-      // from the detailed list of nodes, in that case contained in
-      // _nodes.
-      for(auto const& step: tour){
-        route_array
+      // The key "locations" is only added if the matrix has been
+      // computed from the detailed list of nodes, in that case
+      // contained in _nodes.
+      for(auto const& step: steps){
+        locations_array
           .PushBack(rapidjson::Value(rapidjson::kArrayType)
                     .PushBack(_nodes[step].x, allocator)
                     .PushBack(_nodes[step].y, allocator),
                     allocator);
       }
     }
-    value.Swap(route_array);
+    value.Swap(locations_array);
   }
 
-  virtual void get_tour(const std::list<index_t>& tour,
-                        rapidjson::Value& value,
-                        rapidjson::Document::AllocatorType& allocator) const override{
-    rapidjson::Value tour_array(rapidjson::kArrayType);
-    for(auto const& step: tour){
+  virtual void get_steps(const std::list<index_t>& steps,
+                         rapidjson::Value& value,
+                         rapidjson::Document::AllocatorType& allocator) const override{
+    rapidjson::Value steps_array(rapidjson::kArrayType);
+    for(auto const& step: steps){
       if(_ewt == EWT::EXPLICIT){
         // Using step when matrix is explicit.
-        tour_array.PushBack(step, allocator);
+        steps_array.PushBack(step, allocator);
       }
       else{
         // Using index provided in the file to describe places.
-        tour_array.PushBack(_nodes[step].index, allocator);
+        steps_array.PushBack(_nodes[step].index, allocator);
       }
     }
-    value.Swap(tour_array);
+    value.Swap(steps_array);
   }
 
-  virtual void get_route_infos(const std::list<index_t>& tour,
-                               rapidjson::Document& output) const{}
+  virtual void get_route_infos(const std::list<index_t>& steps,
+                               rapidjson::Value& value,
+                               rapidjson::Document::AllocatorType& allocator) const{
+  }
 };
 
 #endif

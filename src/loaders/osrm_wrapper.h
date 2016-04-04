@@ -203,36 +203,37 @@ public:
     return m;
   }
 
-  virtual void get_route(const std::list<index_t>& tour,
-                         rapidjson::Value& value,
-                         rapidjson::Document::AllocatorType& allocator) const override{
-    rapidjson::Value route_array(rapidjson::kArrayType);
-    for(auto const& step: tour){
-      route_array
+  virtual void get_locations(const std::list<index_t>& steps,
+                             rapidjson::Value& value,
+                             rapidjson::Document::AllocatorType& allocator) const override{
+    rapidjson::Value locations_array(rapidjson::kArrayType);
+    for(auto const& step: steps){
+      locations_array
         .PushBack(rapidjson::Value(rapidjson::kArrayType)
                   .PushBack(_locations[step].first, allocator)
                   .PushBack(_locations[step].second, allocator),
                   allocator);
     }
-    value.Swap(route_array);
+    value.Swap(locations_array);
   }
 
-  virtual void get_tour(const std::list<index_t>& tour,
-                        rapidjson::Value& value,
-                        rapidjson::Document::AllocatorType& allocator) const override{
-    rapidjson::Value tour_array(rapidjson::kArrayType);
-    for(auto const& step: tour){
+  virtual void get_steps(const std::list<index_t>& steps,
+                         rapidjson::Value& value,
+                         rapidjson::Document::AllocatorType& allocator) const override{
+    rapidjson::Value steps_array(rapidjson::kArrayType);
+    for(auto const& step: steps){
       // Using input index to describe locations.
-      tour_array.PushBack(step, allocator);
+      steps_array.PushBack(step, allocator);
     }
-    value.Swap(tour_array);
+    value.Swap(steps_array);
   }
 
-  virtual void get_route_infos(const std::list<index_t>& tour,
-                               rapidjson::Document& output) const override{
-    // Ordering locations for the given tour.
+  virtual void get_route_infos(const std::list<index_t>& steps,
+                               rapidjson::Value& value,
+                               rapidjson::Document::AllocatorType& allocator) const override{
+    // Ordering locations for the given steps.
     std::vector<std::pair<double, double>> ordered_locations;
-    for(auto& step: tour){
+    for(auto& step: steps){
       ordered_locations.push_back(_locations[step]);
     }
 
@@ -253,16 +254,15 @@ public:
     assert(infos["route_summary"].HasMember("total_distance"));
     assert(infos.HasMember("route_geometry"));
 
-    rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
-    output.AddMember("total_time",
-                     infos["route_summary"]["total_time"],
-                     allocator);
-    output.AddMember("total_distance",
-                     infos["route_summary"]["total_distance"],
-                     allocator);
-    output.AddMember("route_geometry",
-                     rapidjson::Value(infos["route_geometry"], allocator),
-                     allocator);
+    value.AddMember("geometry",
+                    rapidjson::Value(infos["route_geometry"], allocator),
+                    allocator);
+    value.AddMember("duration",
+                    infos["route_summary"]["total_time"],
+                    allocator);
+    value.AddMember("distance",
+                    infos["route_summary"]["total_distance"],
+                    allocator);
   }
 };
 

@@ -21,16 +21,17 @@ class problem_io{
 public:
   virtual matrix<T> get_matrix() const = 0;
 
-  virtual void get_route(const std::list<index_t>& tour,
+  virtual void get_locations(const std::list<index_t>& steps,
+                             rapidjson::Value& value,
+                             rapidjson::Document::AllocatorType& allocator) const = 0;
+
+  virtual void get_steps(const std::list<index_t>& steps,
                          rapidjson::Value& value,
                          rapidjson::Document::AllocatorType& allocator) const = 0;
 
-  virtual void get_tour(const std::list<index_t>& tour,
-                        rapidjson::Value& value,
-                        rapidjson::Document::AllocatorType& allocator) const = 0;
-
-  virtual void get_route_infos(const std::list<index_t>& tour,
-                               rapidjson::Document& output) const = 0;
+  virtual void get_route_infos(const std::list<index_t>& steps,
+                               rapidjson::Value& value,
+                               rapidjson::Document::AllocatorType& allocator) const = 0;
 
   virtual ~problem_io() {}
 
