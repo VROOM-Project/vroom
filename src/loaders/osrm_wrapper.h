@@ -285,10 +285,7 @@ public:
     // Backward compat.
     std::string extra_args = "alt=false&uturns=true";
     if(_use_osrm_v5){
-      extra_args = "alternative=false&steps=false&overview=full&uturns=true";
-      for(std::size_t i = 1; i < tour.size(); ++i){
-        extra_args += ";true";
-      }
+      extra_args = "alternatives=false&steps=false&overview=full";
     }
     
     std::string query = this->build_query(ordered_locations,
