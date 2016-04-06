@@ -83,7 +83,7 @@ int main(int argc, char **argv){
         cl_args.nb_threads = std::stoul(optarg);
       }
       catch(const std::exception& e){
-        BOOST_LOG_TRIVIAL(error) << "[Error] Wrong value for number of threads.";
+        std::cerr << "[Error] Wrong value for number of threads.\n";
         exit(1);
       }
       break;
@@ -162,7 +162,7 @@ int main(int argc, char **argv){
                    computing_times);
   }
   catch(const custom_exception& e){
-    BOOST_LOG_TRIVIAL(error) << "[Error] " << e.get_message();
+    std::cerr << "[Error] " << e.get_message() << std::endl;
     exit(1);
   }
 
