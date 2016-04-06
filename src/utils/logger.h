@@ -28,4 +28,6 @@ void write_solution(const cl_args_t& cl_args,
                     distance_t sol_cost,                    
                     const timing_t& computing_times);
 
+void write_error(const std::string& output, const std::string& message);
+
 #endif

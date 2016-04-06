@@ -97,7 +97,7 @@ void write_solution(const cl_args_t& cl_args,
 
   json_output.AddMember("routes", json_routes_array, allocator);
   json_output.AddMember("solution", json_solution, allocator);
-
+  json_output.AddMember("code", rapidjson::Value(0), allocator);
 
   rapidjson::StringBuffer s;
   rapidjson::Writer<rapidjson::StringBuffer> r_writer(s);
@@ -121,4 +121,32 @@ void write_solution(const cl_args_t& cl_args,
 
   BOOST_LOG_TRIVIAL(info) << "[Output] Done, took "
                           << output_duration  << " ms.";
+}
+
+void write_error(const std::string& output,
+                 const std::string& message){
+  rapidjson::Document json_output;
+  json_output.SetObject();
+  rapidjson::Document::AllocatorType& allocator = json_output.GetAllocator();
+
+  json_output.AddMember("code", rapidjson::Value(1), allocator);
+
+  json_output.AddMember("error", rapidjson::Value(), allocator);
+  json_output["error"].SetString(message.c_str(), message.size());
+  
+  rapidjson::StringBuffer s;
+  rapidjson::Writer<rapidjson::StringBuffer> r_writer(s);
+  json_output.Accept(r_writer);
+
+  // Write to relevant output.
+  if(output.empty()){
+    // Log to standard output.
+    std::cout << s.GetString() << std::endl;
+  }
+  else{
+    // Log to file given as command-line option.
+    std::ofstream out_stream (output, std::ofstream::out);
+    out_stream << s.GetString();
+    out_stream.close();
+  }
 }

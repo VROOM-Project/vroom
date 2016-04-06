@@ -52,6 +52,8 @@ int main(int argc, char **argv){
   const char* optString = "a:egi:o:p:st:vVh?";
   int opt = getopt(argc, argv, optString);
 
+  std::string nb_threads_arg = std::to_string(cl_args.nb_threads);
+
   while(opt != -1) {
     switch(opt){
     case 'a':
@@ -79,13 +81,7 @@ int main(int argc, char **argv){
       cl_args.force_start = true;
       break;
     case 't':
-      try{
-        cl_args.nb_threads = std::stoul(optarg);
-      }
-      catch(const std::exception& e){
-        std::cerr << "[Error] Wrong value for number of threads.\n";
-        exit(1);
-      }
+      nb_threads_arg = optarg;
       break;
     case 'v':
       cl_args.log_level = boost::log::trivial::info;
@@ -97,6 +93,18 @@ int main(int argc, char **argv){
       break;
     }
     opt = getopt(argc, argv, optString);
+  }
+
+  try{
+    // Needs to be done after previous switch to make sure the
+    // appropriate output file is set.
+    cl_args.nb_threads = std::stoul(nb_threads_arg);
+  }
+  catch(const std::exception& e){
+    std::string message = "Wrong value for number of threads.";
+    std::cerr << "[Error] " << message << std::endl;
+    write_error(cl_args.output_file, message);
+    exit(1);
   }
 
   if(cl_args.input_file.empty()){
@@ -163,6 +171,7 @@ int main(int argc, char **argv){
   }
   catch(const custom_exception& e){
     std::cerr << "[Error] " << e.get_message() << std::endl;
+    write_error(cl_args.output_file, e.get_message());
     exit(1);
   }
 
