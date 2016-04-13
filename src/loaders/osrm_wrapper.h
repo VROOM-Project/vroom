@@ -185,7 +185,7 @@ public:
     assert(!infos.Parse(json_content.c_str()).HasParseError());
     if(_use_osrm_v5){
       assert(infos.HasMember("code"));
-      if(infos["code"] != "ok"){
+      if(infos["code"] != "Ok"){
         throw custom_exception("OSRM table: "
                                + std::string(infos["message"].GetString()));
       }
@@ -197,7 +197,7 @@ public:
     assert(infos[durations].Size() == m_size);
 
     // Building matrix and checking for unfound routes to avoid
-    // unexpected behavior (OSRM raises max value for an int).
+    // unexpected behavior (OSRM raises 'null').
     matrix<distance_t> m {m_size};
 
     std::vector<unsigned> nb_unfound_from_loc (m_size, 0);
@@ -285,7 +285,7 @@ public:
     // Backward compat.
     std::string extra_args = "alt=false&uturns=true";
     if(_use_osrm_v5){
-      extra_args = "alternatives=false&steps=false&overview=full";
+      extra_args = "alternatives=false&steps=false&overview=full&continue_straight=false";
     }
     
     std::string query = this->build_query(ordered_locations,
@@ -304,7 +304,7 @@ public:
     assert(!infos.Parse(json_content.c_str()).HasParseError());
     if(_use_osrm_v5){
       assert(infos.HasMember("code"));
-      if(infos["code"] != "ok"){
+      if(infos["code"] != "Ok"){
         throw custom_exception("OSRM route: "
                                + std::string(infos["message"].GetString()));
       }
