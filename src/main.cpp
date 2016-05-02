@@ -24,12 +24,13 @@ void display_usage(){
   usage += "Options:\n";
   usage += "\t-a=ADDRESS\t OSRM server address (\"0.0.0.0\")\n";
   usage += "\t-p=PORT,\t OSRM listening port (5000)\n";
+  usage += "\t-m=MODE,\t mode of transportation (profile name), iff using\n\t\t\t OSRM v5\n";
   usage += "\t-g,\t\t get detailed route geometry for the solution\n";
   usage += "\t-i=FILE,\t read input from FILE rather than from\n\t\t\t command-line\n";
   usage += "\t-o=OUTPUT,\t output file name\n";
   usage += "\t-s,\t\t compute an \"open\" route (not a tour), starting at\n\t\t\t the first input location\n";
   usage += "\t-e,\t\t compute an \"open\" route (not a tour), ending at\n\t\t\t the last input location\n";
-  usage += "\t-t,\t\t number of threads to use\n";
+  usage += "\t-t=THREADS,\t number of threads to use\n";
   usage += "\t-v,\t\t turn on verbose output\n";
   usage += "\t-V,\t\t turn on verbose output with all details";
   std::cout << usage << std::endl;
@@ -45,7 +46,7 @@ int main(int argc, char **argv){
   cl_args_t cl_args;
 
   // Parsing command-line arguments.
-  const char* optString = "a:egi:o:p:st:vVh?";
+  const char* optString = "a:egi:m:o:p:st:vVh?";
   int opt = getopt(argc, argv, optString);
 
   while(opt != -1) {
@@ -64,6 +65,9 @@ int main(int argc, char **argv){
       break;
     case 'i':
       cl_args.input_file = optarg;
+      break;
+    case 'm':
+      cl_args.osrm_profile = optarg;
       break;
     case 'o':
       cl_args.output_file = optarg;

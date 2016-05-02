@@ -42,6 +42,7 @@ struct cl_args_t {
   bool force_start;                              // -s
   bool force_end;                                // -e
   unsigned nb_threads;                           // -t
+  std::string osrm_profile;                      // -m
   bool use_osrm;
   // Default values.
   cl_args_t():
