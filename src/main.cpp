@@ -24,7 +24,7 @@ void display_usage(){
   usage += "Options:\n";
   usage += "\t-a=ADDRESS\t OSRM server address (\"0.0.0.0\")\n";
   usage += "\t-p=PORT,\t OSRM listening port (5000)\n";
-  usage += "\t-m=MODE,\t mode of transportation, OSRM profile name\n";
+  usage += "\t-m=MODE,\t mode of transportation (profile name), iff using\n\t\t\t OSRM v5\n";
   usage += "\t-g,\t\t get detailed route geometry for the solution\n";
   usage += "\t-i=FILE,\t read input from FILE rather than from\n\t\t\t command-line\n";
   usage += "\t-o=OUTPUT,\t output file name\n";
