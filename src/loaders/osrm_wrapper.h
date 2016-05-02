@@ -197,17 +197,22 @@ public:
     assert(infos[durations].Size() == m_size);
 
     // Building matrix and checking for unfound routes to avoid
-    // unexpected behavior (OSRM raises 'null').
+    // unexpected behavior (OSRM v5 raises 'null' while v4 raises a
+    // max int value).
     matrix<distance_t> m {m_size};
 
     std::vector<unsigned> nb_unfound_from_loc (m_size, 0);
     std::vector<unsigned> nb_unfound_to_loc (m_size, 0);
+    distance_t unfound_time
+      = std::numeric_limits<int>::max();
 
     for(rapidjson::SizeType i = 0; i < infos[durations].Size(); ++i){
       const auto& line = infos[durations][i];
       assert(line.Size() == m_size);
       for(rapidjson::SizeType j = 0; j < line.Size(); ++j){
-        if(line[j].IsNull()){
+        if((_use_osrm_v5 and line[j].IsNull())
+           or (!_use_osrm_v5 and (line[j].GetUint() == unfound_time))
+           ){
           // No route found between i and j. Just storing info as we
           // don't know yet which location is responsible between i
           // and j.
