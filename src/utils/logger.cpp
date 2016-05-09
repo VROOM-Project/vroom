@@ -57,14 +57,8 @@ void write_solution(const cl_args_t& cl_args,
     json_c_t.AddMember("routing", route_geometry_duration, allocator);
   }
 
-  // Create locations and steps keys with null values and pass them as
-  // references to populate them.
-  json_route.AddMember("locations", rapidjson::Value(rapidjson::kArrayType).Move(), allocator);
-  loader.get_locations(steps, json_route["locations"], allocator);
-  if(json_route["locations"].Empty()){
-  // Avoid empty "locations" value (e.g. for explicit TSPLIB).
-    json_route.RemoveMember("locations");
-  }
+  // Create "steps" key as an empty array and pass it as a reference
+  // for step objects additions.
   json_route.AddMember("steps", rapidjson::Value(rapidjson::kArrayType).Move(), allocator);
   loader.get_steps(steps, json_route["steps"], allocator);
   json_route.AddMember("cost", sol_cost, allocator);

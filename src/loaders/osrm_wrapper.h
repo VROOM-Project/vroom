@@ -203,27 +203,21 @@ public:
     return m;
   }
 
-  virtual void get_locations(const std::list<index_t>& steps,
-                             rapidjson::Value& value,
-                             rapidjson::Document::AllocatorType& allocator) const override{
-    rapidjson::Value locations_array(rapidjson::kArrayType);
-    for(auto const& step: steps){
-      locations_array
-        .PushBack(rapidjson::Value(rapidjson::kArrayType)
-                  .PushBack(_locations[step].first, allocator)
-                  .PushBack(_locations[step].second, allocator),
-                  allocator);
-    }
-    value.Swap(locations_array);
-  }
-
   virtual void get_steps(const std::list<index_t>& steps,
                          rapidjson::Value& value,
                          rapidjson::Document::AllocatorType& allocator) const override{
     rapidjson::Value steps_array(rapidjson::kArrayType);
-    for(auto const& step: steps){
+    for(auto const& step_id: steps){
+      rapidjson::Value json_step(rapidjson::kObjectType);
+      json_step.AddMember("type", "job", allocator);
       // Using input index to describe locations.
-      steps_array.PushBack(step, allocator);
+      json_step.AddMember("location", step_id, allocator);
+      json_step.AddMember("coordinates",
+                           rapidjson::Value(rapidjson::kArrayType).Move(),
+                           allocator);
+      json_step["coordinates"].PushBack(_locations[step_id].first, allocator);
+      json_step["coordinates"].PushBack(_locations[step_id].second, allocator);
+      steps_array.PushBack(json_step, allocator);
     }
     value.Swap(steps_array);
   }

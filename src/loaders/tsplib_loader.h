@@ -299,39 +299,37 @@ public:
     return m;
   }
 
-  virtual void get_locations(const std::list<index_t>& steps,
-                             rapidjson::Value& value,
-                             rapidjson::Document::AllocatorType& allocator) const override{
-    rapidjson::Value locations_array(rapidjson::kArrayType);
-    if((_ewt != EWT::NONE) and (_ewt != EWT::EXPLICIT)){
-      // The key "locations" is only added if the matrix has been
-      // computed from the detailed list of nodes, in that case
-      // contained in _nodes.
-      for(auto const& step: steps){
-        locations_array
-          .PushBack(rapidjson::Value(rapidjson::kArrayType)
-                    .PushBack(_nodes[step].x, allocator)
-                    .PushBack(_nodes[step].y, allocator),
-                    allocator);
-      }
-    }
-    value.Swap(locations_array);
-  }
-
   virtual void get_steps(const std::list<index_t>& steps,
                          rapidjson::Value& value,
                          rapidjson::Document::AllocatorType& allocator) const override{
     rapidjson::Value steps_array(rapidjson::kArrayType);
-    for(auto const& step: steps){
+    for(auto const& step_id: steps){
+      rapidjson::Value json_step(rapidjson::kObjectType);
+      json_step.AddMember("type", "job", allocator);
+
       if(_ewt == EWT::EXPLICIT){
         // Using step when matrix is explicit.
-        steps_array.PushBack(step, allocator);
+        json_step.AddMember("location", step_id, allocator);
       }
       else{
         // Using index provided in the file to describe places.
-        steps_array.PushBack(_nodes[step].index, allocator);
+        json_step.AddMember("location", _nodes[step_id].index, allocator);
       }
+
+      if((_ewt != EWT::NONE) and (_ewt != EWT::EXPLICIT)){
+        // Coordinates are only added if the matrix has been computed
+        // from the detailed list of nodes, in that case contained in
+        // _nodes.
+        json_step.AddMember("coordinates",
+                            rapidjson::Value(rapidjson::kArrayType).Move(),
+                            allocator);
+        json_step["coordinates"].PushBack(_nodes[step_id].x, allocator);
+        json_step["coordinates"].PushBack(_nodes[step_id].y, allocator);
+      }
+
+      steps_array.PushBack(json_step, allocator);
     }
+
     value.Swap(steps_array);
   }
 
