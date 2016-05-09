@@ -11,13 +11,24 @@ All rights reserved (see LICENSE).
 
 tsp::tsp(const problem_io<distance_t>& loader,
          bool force_start,
-         bool force_end):
+         index_t start,
+         bool force_end,
+         index_t end):
   _matrix(loader.get_matrix()),
   _symmetrized_matrix(0),
   _is_symmetric(true),
   _force_start(force_start),
-  _force_end(force_end){
-  
+  _start(start),
+  _force_end(force_end),
+  _end(end){
+
+  if(_force_start){
+    assert(_start < _matrix.size());
+  }
+  if(_force_end){
+    assert(_end < _matrix.size());
+  }
+
   // Distances on the diagonal are never used except in the minimum
   // weight perfect matching during the heuristic. This makes sure
   // each node will be impossible to match with itself at that time.
@@ -30,25 +41,31 @@ tsp::tsp(const problem_io<distance_t>& loader,
   if(_force_start and !_force_end){
     // Forcing first location as start, end location decided during
     // optimization.
-    for(index_t i = 1; i < _matrix.size(); ++i){
-      _matrix[i][0] = 0;
+    for(index_t i = 0; i < _matrix.size(); ++i){
+      if(i != _start){
+        _matrix[i][_start] = 0;
+      }
     }
   }
   if(!_force_start and _force_end){
     // Forcing last location as end, start location decided during
     // optimization.
-    index_t last_index = _matrix.size() - 1;
-    for(index_t j = 0; j < last_index; ++j){
-      _matrix[last_index][j] = 0;
+    for(index_t j = 0; j < _matrix.size(); ++j){
+      if(j != _end){
+        _matrix[_end][j] = 0;
+      }
     }
   }
   if(_force_start and _force_end){
     // Forcing first location as start, last location as end to
     // produce an open tour.
+    assert(_start != _end);
     index_t last_index = _matrix.size() - 1;
-    _matrix[last_index][0] = 0;
+    _matrix[_end][_start] = 0;
     for(index_t j = 1; j < last_index; ++j){
-      _matrix[last_index][j] = (std::numeric_limits<distance_t>::max() / 2);
+      if((j != _start) and (j != _end)){
+        _matrix[_end][j] = INFINITE_DISTANCE;
+      }
     }
   }
 
@@ -97,8 +114,16 @@ const bool tsp::force_start() const{
   return _force_start;
 }
 
+const index_t tsp::get_start() const{
+  return _start;
+}
+
 const bool tsp::force_end() const{
   return _force_end;
+}
+
+const index_t tsp::get_end() const{
+  return _end;
 }
 
 std::size_t tsp::size() const{

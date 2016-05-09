@@ -69,11 +69,11 @@ std::pair<std::list<index_t>, distance_t> solve_atsp(const tsp& asymmetric_tsp,
          or (sym_or_opt_gain > 0));
 
   // Default for first input location.
-  index_t first_loc_index = 0;
+  index_t first_loc_index = asymmetric_tsp.get_start();
   if(!asymmetric_tsp.force_start() and asymmetric_tsp.force_end()){
     // Requiring the tour to be described from the "forced" end
     // location.
-    first_loc_index = asymmetric_tsp.size() - 1;
+    first_loc_index = asymmetric_tsp.get_end();
   }
   std::list<index_t> current_sol = sym_ls.get_tour(first_loc_index);
   auto current_cost = asymmetric_tsp.symmetrized_cost(current_sol);

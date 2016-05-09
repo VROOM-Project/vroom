@@ -49,7 +49,7 @@ int main(int argc, char **argv){
   cl_args_t cl_args;
 
   // Parsing command-line arguments.
-  const char* optString = "a:egi:o:p:st:vVh?";
+  const char* optString = "a:e:gi:o:p:s:t:vVh?";
   int opt = getopt(argc, argv, optString);
 
   std::string nb_threads_arg = std::to_string(cl_args.nb_threads);
@@ -61,6 +61,7 @@ int main(int argc, char **argv){
       break;
     case 'e':
       cl_args.force_end = true;
+      cl_args.end = std::stoul(optarg);
       break;
     case 'g':
       cl_args.geometry = true;
@@ -79,6 +80,7 @@ int main(int argc, char **argv){
       break;
     case 's':
       cl_args.force_start = true;
+      cl_args.start = std::stoul(optarg);
       break;
     case 't':
       nb_threads_arg = optarg;
@@ -147,7 +149,11 @@ int main(int argc, char **argv){
     }
 
     // Build problem.
-    tsp asymmetric_tsp (*loader, cl_args.force_start, cl_args.force_end);
+    tsp asymmetric_tsp (*loader,
+                        cl_args.force_start,
+                        cl_args.start,
+                        cl_args.force_end,
+                        cl_args.end);
 
     auto end_problem_loading = std::chrono::high_resolution_clock::now();
     computing_times.matrix_loading =

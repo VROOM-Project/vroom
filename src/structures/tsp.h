@@ -26,12 +26,16 @@ protected:
   undirected_graph<distance_t> _symmetrized_graph;
   bool _is_symmetric;
   const bool _force_start;
+  const index_t _start;
   const bool _force_end;
+  const index_t _end;
 
 public:
   tsp(const problem_io<distance_t>& loader,
       bool force_start,
-      bool force_end);
+      index_t start,
+      bool force_end,
+      index_t end);
   
   const matrix<distance_t>& get_matrix() const;
 
@@ -43,7 +47,11 @@ public:
 
   const bool force_start() const;
 
+  const index_t get_start() const;
+
   const bool force_end() const;
+
+  const index_t get_end() const;
 
   std::size_t size() const;
 
