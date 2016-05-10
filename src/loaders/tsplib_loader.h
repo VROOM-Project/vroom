@@ -92,7 +92,7 @@ private:
   std::vector<Node> _nodes;     // Nodes with coords.
 
 public:
-  tsplib_loader(std::string input):
+  tsplib_loader(const std::string& input):
     _ewt(EWT::NONE),
     _ewf(EWF::NONE) {
     // 1. Get problem dimension.

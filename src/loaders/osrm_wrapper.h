@@ -14,6 +14,7 @@ All rights reserved (see LICENSE).
 #include <limits>
 #include <regex>
 #include <boost/asio.hpp>
+#include "../../include/rapidjson/error/en.h"
 #include "./problem_io.h"
 #include "../structures/matrix.h"
 #include "../utils/exceptions.h"
@@ -23,11 +24,14 @@ using boost::asio::ip::tcp;
 class osrm_wrapper : public problem_io<distance_t>{
 
 private:
+  enum class LOC_TYPE {START, END, JOB};
+  struct Location {LOC_TYPE type; double lat; double lon; index_t job_id;};
+
   std::string _address;         // OSRM server adress
   std::string _port;            // OSRM server listening port
-  std::vector<std::pair<double, double>> _locations;
+  std::vector<Location> _locations;
 
-  std::string build_query(const std::vector<std::pair<double, double>>& locations, 
+  std::string build_query(const std::vector<Location>& locations, 
                           std::string service, 
                           std::string extra_args = "") const{
     // Building query for osrm-routed
@@ -36,9 +40,9 @@ private:
     // Adding locations.
     for(auto const& location: locations){
       query += "loc="
-        + std::to_string(location.first)
+        + std::to_string(location.lat)
         + ","
-        + std::to_string(location.second)
+        + std::to_string(location.lon)
         + "&";
     }
 
@@ -92,42 +96,110 @@ private:
     return response;
   }
 
-  void add_location(const std::string location){
-    // Regex check for valid location.
-    std::regex valid_loc ("loc=-?[0-9]+\\.?[0-9]*,-?[0-9]+\\.?[0-9]*[[:space:]]*");
-    if(!std::regex_match(location, valid_loc)){
-      throw custom_exception("Invalid syntax for location "
-                             + std::to_string(_locations.size() + 1)
-                             + ", see vroom -h for usage display."
-                             );
+  void add_location(LOC_TYPE type, const rapidjson::Value& location, index_t job_id = 0){
+    if(!location.IsArray()
+       or location.Size() != 2
+       or !location[0].IsNumber()
+       or !location[1].IsNumber()){
+      throw custom_exception("Invalid input location");
     }
-
-    // Parsing the location is now safe.
-    std::size_t separator_rank = location.find(",");
-    std::string lat = location.substr(4, separator_rank);
-    std::string lon = location.substr(separator_rank + 1, location.length() -1);
-    _locations.emplace_back(std::stod(lat, nullptr),
-                            std::stod(lon, nullptr));
+    _locations.push_back({type, location[0].GetDouble(), location[1].GetDouble(), job_id});
   }
 
 public:
-  osrm_wrapper(std::string address, 
-               std::string port,
-               std::string loc_input):
+  osrm_wrapper(const std::string& address,
+               const std::string& port,
+               cl_args_t& cl_args):
     _address(address),
     _port(port){
-    // Parsing input in locations.
-    std::size_t start = 0;
-    std::size_t end = loc_input.find("&", start);
-    while(end != std::string::npos){
-      this->add_location(loc_input.substr(start, end - start));
-      start = end + 1;
-      end = loc_input.find("&", start);
+    rapidjson::Document input;
+    std::string error_msg;
+
+    // Parsing input.
+    if(input.Parse(cl_args.input.c_str()).HasParseError()){
+      std::string error_msg = std::string(rapidjson::GetParseError_En(input.GetParseError()))
+        + " (offset: "
+        + std::to_string(input.GetErrorOffset())
+        + ")";
+      throw custom_exception(error_msg);
     }
-    // Adding last element, after last "&".
-    end = loc_input.length();
-    this->add_location(loc_input.substr(start, end - start));
     
+    // Getting vehicle(s).
+    if(!input.HasMember("vehicles")
+       or !input["vehicles"].IsArray()
+       or input["vehicles"].Empty()){
+      throw custom_exception("Incorrect vehicles input.");
+    }
+    if(input["vehicles"].Size() > 1){
+      throw custom_exception("Multiple vehicles are not supported (yet).");
+    }
+    if(!input["vehicles"][0].IsObject()){
+      throw custom_exception("Ill-formed vehicle object.");
+    }
+    bool has_start = input["vehicles"][0].HasMember("start");
+
+    // Check round_trip optional value.
+    if(input["vehicles"][0].HasMember("round_trip")
+       and !input["vehicles"][0]["round_trip"].IsBool()){
+      throw custom_exception("Incorrect round_trip key.");
+    }
+    // Perform a round trip by default unless "round_trip": false is
+    // explicitly specified.
+    bool round_trip = !input["vehicles"][0].HasMember("round_trip")
+      or input["vehicles"][0]["round_trip"].GetBool();
+
+    if(round_trip and !has_start){
+      throw custom_exception("Vehicle start is mandatory for a round trip.");
+    }
+
+    if(has_start){
+      // Remember the index of the start loc to be added.
+      cl_args.start = _locations.size();
+      this->add_location(LOC_TYPE::START, input["vehicles"][0]["start"]);
+    }
+
+    // Getting jobs.
+    if(!input.HasMember("jobs")
+       or !input["jobs"].IsArray()){
+      throw custom_exception("Incorrect jobs input.");
+    }
+    for(rapidjson::SizeType i = 0; i < input["jobs"].Size(); ++i){
+      if(!input["jobs"][i].IsObject()){
+        throw custom_exception("Ill-formed job object.");
+      }
+      if(!input["jobs"][i].HasMember("location")){
+        throw custom_exception("Missing mandatory job location.");
+      }
+      if(!input["jobs"][i].HasMember("id")){
+        throw custom_exception("Missing mandatory job id.");
+      }
+
+      this->add_location(LOC_TYPE::JOB,
+                         input["jobs"][i]["location"],
+                         input["jobs"][i]["id"].GetUint());
+    }
+
+    // Add optional vehicle end as last value in _locations.
+    bool has_end = input["vehicles"][0].HasMember("end");
+    if(round_trip and has_end){
+      throw custom_exception("Vehicle end may only be used with round_trip: false.");
+    }
+    if(!round_trip and !has_start and !has_end){
+      throw custom_exception("Vehicle start or end is mandatory with round_trip: false.");
+    }
+    if(has_end){
+      // Remember the index of the end loc to be added.
+      cl_args.end = _locations.size();
+      this->add_location(LOC_TYPE::END, input["vehicles"][0]["end"]);
+    }
+
+    // Deduce forced start and end from input.
+    cl_args.force_start = (has_start and !round_trip);
+    cl_args.force_end = has_end;
+
+    std::cout << "force_start: " << cl_args.force_start << std::endl;
+    std::cout << "force_end: " << cl_args.force_end << std::endl;
+    std::cout << "round_trip: " << round_trip << std::endl;
     if(_locations.size() <= 1){
       throw custom_exception("At least two locations required!");
     }
@@ -209,14 +281,32 @@ public:
     rapidjson::Value steps_array(rapidjson::kArrayType);
     for(auto const& step_id: steps){
       rapidjson::Value json_step(rapidjson::kObjectType);
-      json_step.AddMember("type", "job", allocator);
-      // Using input index to describe locations.
-      json_step.AddMember("location", step_id, allocator);
-      json_step.AddMember("coordinates",
+
+      // Step type
+      json_step.AddMember("type", rapidjson::Value(), allocator);
+      switch (_locations[step_id].type){
+      case LOC_TYPE::START:
+        json_step["type"].SetString("start");
+        break;
+      case LOC_TYPE::END:
+        json_step["type"].SetString("end");
+        break;
+      case LOC_TYPE::JOB:
+        json_step["type"].SetString("job");
+        break;
+      }
+
+      // Location coordinates.
+      json_step.AddMember("location",
                            rapidjson::Value(rapidjson::kArrayType).Move(),
                            allocator);
-      json_step["coordinates"].PushBack(_locations[step_id].first, allocator);
-      json_step["coordinates"].PushBack(_locations[step_id].second, allocator);
+      json_step["location"].PushBack(_locations[step_id].lat, allocator);
+      json_step["location"].PushBack(_locations[step_id].lon, allocator);
+
+      if(_locations[step_id].type == LOC_TYPE::JOB){
+        json_step.AddMember("job", _locations[step_id].job_id, allocator);
+      }
+
       steps_array.PushBack(json_step, allocator);
     }
     value.Swap(steps_array);
@@ -226,7 +316,7 @@ public:
                                rapidjson::Value& value,
                                rapidjson::Document::AllocatorType& allocator) const override{
     // Ordering locations for the given steps.
-    std::vector<std::pair<double, double>> ordered_locations;
+    std::vector<Location> ordered_locations;
     for(auto& step: steps){
       ordered_locations.push_back(_locations[step]);
     }

@@ -124,7 +124,6 @@ int main(int argc, char **argv){
     buffer << ifs.rdbuf();
     cl_args.input = buffer.str();
   }
-  cl_args.use_osrm = (cl_args.input.find("DIMENSION") == std::string::npos);
 
   // Log level.
   boost::log::core::get()
@@ -137,12 +136,13 @@ int main(int argc, char **argv){
       << "[Matrix] Start matrix computing and problem loading.";
 
     // Parse input with relevant loader.
+    cl_args.use_osrm = (cl_args.input.find("DIMENSION") == std::string::npos);
     std::unique_ptr<problem_io<distance_t>> loader;
     if(cl_args.use_osrm){
       loader 
         = std::make_unique<osrm_wrapper>(cl_args.osrm_address, 
                                          cl_args.osrm_port,
-                                         cl_args.input);
+                                         cl_args);
     }
     else{
       loader = std::make_unique<tsplib_loader>(cl_args.input);
