@@ -197,9 +197,6 @@ public:
     _pbl_context.force_start = (has_start and !_pbl_context.round_trip);
     _pbl_context.force_end = has_end;
 
-    std::cout << "force_start: " << _pbl_context.force_start << std::endl;
-    std::cout << "force_end: " << _pbl_context.force_end << std::endl;
-    std::cout << "round_trip: " << _pbl_context.round_trip << std::endl;
     if(_locations.size() <= 1){
       throw custom_exception("At least two locations required!");
     }
@@ -298,8 +295,8 @@ public:
 
       // Location coordinates.
       json_step.AddMember("location",
-                           rapidjson::Value(rapidjson::kArrayType).Move(),
-                           allocator);
+                          rapidjson::Value(rapidjson::kArrayType).Move(),
+                          allocator);
       json_step["location"].PushBack(_locations[step_id].lat, allocator);
       json_step["location"].PushBack(_locations[step_id].lon, allocator);
 
@@ -309,6 +306,21 @@ public:
 
       steps_array.PushBack(json_step, allocator);
     }
+
+    if(_pbl_context.round_trip){
+      // Duplicate the start location as end of the route for round
+      // trips.
+      rapidjson::Value json_step(rapidjson::kObjectType);
+      json_step.AddMember("type", rapidjson::Value(), allocator);
+      json_step["type"].SetString("end");
+      json_step.AddMember("location",
+                          rapidjson::Value(rapidjson::kArrayType).Move(),
+                          allocator);
+      json_step["location"].PushBack(_locations[steps.front()].lat, allocator);
+      json_step["location"].PushBack(_locations[steps.front()].lon, allocator);
+      steps_array.PushBack(json_step, allocator);
+    }
+
     value.Swap(steps_array);
   }
 
@@ -319,6 +331,12 @@ public:
     std::vector<Location> ordered_locations;
     for(auto& step: steps){
       ordered_locations.push_back(_locations[step]);
+    }
+
+    if(_pbl_context.round_trip){
+      // Duplicate the start location as end of the route for round
+      // trips.
+      ordered_locations.push_back(_locations[steps.front()]);
     }
 
     std::string query = this->build_query(ordered_locations,

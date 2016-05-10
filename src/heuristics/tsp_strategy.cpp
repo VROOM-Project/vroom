@@ -178,10 +178,5 @@ std::pair<std::list<index_t>, distance_t> solve_atsp(const tsp& asymmetric_tsp,
     current_sol.pop_front();
   }
 
-  // Duplicate start at the end for round trips.
-  if(!asymmetric_tsp.force_start() and !asymmetric_tsp.force_end()){
-    current_sol.push_back(current_sol.front());
-  }
-
   return std::make_pair(current_sol, current_cost);
 }
