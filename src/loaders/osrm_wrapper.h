@@ -109,97 +109,97 @@ private:
 public:
   osrm_wrapper(const std::string& address,
                const std::string& port,
-               cl_args_t& cl_args):
+               const std::string& input):
     _address(address),
     _port(port){
-    rapidjson::Document input;
+    rapidjson::Document json_input;
     std::string error_msg;
 
     // Parsing input.
-    if(input.Parse(cl_args.input.c_str()).HasParseError()){
-      std::string error_msg = std::string(rapidjson::GetParseError_En(input.GetParseError()))
+    if(json_input.Parse(input.c_str()).HasParseError()){
+      std::string error_msg = std::string(rapidjson::GetParseError_En(json_input.GetParseError()))
         + " (offset: "
-        + std::to_string(input.GetErrorOffset())
+        + std::to_string(json_input.GetErrorOffset())
         + ")";
       throw custom_exception(error_msg);
     }
     
     // Getting vehicle(s).
-    if(!input.HasMember("vehicles")
-       or !input["vehicles"].IsArray()
-       or input["vehicles"].Empty()){
+    if(!json_input.HasMember("vehicles")
+       or !json_input["vehicles"].IsArray()
+       or json_input["vehicles"].Empty()){
       throw custom_exception("Incorrect vehicles input.");
     }
-    if(input["vehicles"].Size() > 1){
+    if(json_input["vehicles"].Size() > 1){
       throw custom_exception("Multiple vehicles are not supported (yet).");
     }
-    if(!input["vehicles"][0].IsObject()){
+    if(!json_input["vehicles"][0].IsObject()){
       throw custom_exception("Ill-formed vehicle object.");
     }
-    bool has_start = input["vehicles"][0].HasMember("start");
+    bool has_start = json_input["vehicles"][0].HasMember("start");
 
     // Check round_trip optional value.
-    if(input["vehicles"][0].HasMember("round_trip")
-       and !input["vehicles"][0]["round_trip"].IsBool()){
+    if(json_input["vehicles"][0].HasMember("round_trip")
+       and !json_input["vehicles"][0]["round_trip"].IsBool()){
       throw custom_exception("Incorrect round_trip key.");
     }
     // Perform a round trip by default unless "round_trip": false is
     // explicitly specified.
-    bool round_trip = !input["vehicles"][0].HasMember("round_trip")
-      or input["vehicles"][0]["round_trip"].GetBool();
+    _pbl_context.round_trip = !json_input["vehicles"][0].HasMember("round_trip")
+      or json_input["vehicles"][0]["round_trip"].GetBool();
 
-    if(round_trip and !has_start){
+    if(_pbl_context.round_trip and !has_start){
       throw custom_exception("Vehicle start is mandatory for a round trip.");
     }
 
     if(has_start){
       // Remember the index of the start loc to be added.
-      cl_args.start = _locations.size();
-      this->add_location(LOC_TYPE::START, input["vehicles"][0]["start"]);
+      _pbl_context.start = _locations.size();
+      this->add_location(LOC_TYPE::START, json_input["vehicles"][0]["start"]);
     }
 
     // Getting jobs.
-    if(!input.HasMember("jobs")
-       or !input["jobs"].IsArray()){
+    if(!json_input.HasMember("jobs")
+       or !json_input["jobs"].IsArray()){
       throw custom_exception("Incorrect jobs input.");
     }
-    for(rapidjson::SizeType i = 0; i < input["jobs"].Size(); ++i){
-      if(!input["jobs"][i].IsObject()){
+    for(rapidjson::SizeType i = 0; i < json_input["jobs"].Size(); ++i){
+      if(!json_input["jobs"][i].IsObject()){
         throw custom_exception("Ill-formed job object.");
       }
-      if(!input["jobs"][i].HasMember("location")){
+      if(!json_input["jobs"][i].HasMember("location")){
         throw custom_exception("Missing mandatory job location.");
       }
-      if(!input["jobs"][i].HasMember("id")){
+      if(!json_input["jobs"][i].HasMember("id")){
         throw custom_exception("Missing mandatory job id.");
       }
 
       this->add_location(LOC_TYPE::JOB,
-                         input["jobs"][i]["location"],
-                         input["jobs"][i]["id"].GetUint());
+                         json_input["jobs"][i]["location"],
+                         json_input["jobs"][i]["id"].GetUint());
     }
 
     // Add optional vehicle end as last value in _locations.
-    bool has_end = input["vehicles"][0].HasMember("end");
-    if(round_trip and has_end){
+    bool has_end = json_input["vehicles"][0].HasMember("end");
+    if(_pbl_context.round_trip and has_end){
       throw custom_exception("Vehicle end may only be used with round_trip: false.");
     }
-    if(!round_trip and !has_start and !has_end){
+    if(!_pbl_context.round_trip and !has_start and !has_end){
       throw custom_exception("Vehicle start or end is mandatory with round_trip: false.");
     }
     if(has_end){
       // Remember the index of the end loc to be added.
-      cl_args.end = _locations.size();
-      this->add_location(LOC_TYPE::END, input["vehicles"][0]["end"]);
+      _pbl_context.end = _locations.size();
+      this->add_location(LOC_TYPE::END, json_input["vehicles"][0]["end"]);
     }
 
     // Deduce forced start and end from input.
-    cl_args.force_start = (has_start and !round_trip);
-    cl_args.force_end = has_end;
+    _pbl_context.force_start = (has_start and !_pbl_context.round_trip);
+    _pbl_context.force_end = has_end;
 
-    std::cout << "force_start: " << cl_args.force_start << std::endl;
-    std::cout << "force_end: " << cl_args.force_end << std::endl;
-    std::cout << "round_trip: " << round_trip << std::endl;
+    std::cout << "force_start: " << _pbl_context.force_start << std::endl;
+    std::cout << "force_end: " << _pbl_context.force_end << std::endl;
+    std::cout << "round_trip: " << _pbl_context.round_trip << std::endl;
     if(_locations.size() <= 1){
       throw custom_exception("At least two locations required!");
     }

@@ -31,8 +31,6 @@ void display_usage(){
   usage += "\t-g,\t\t get detailed route geometry for the solution\n";
   usage += "\t-i=FILE,\t read input from FILE rather than from\n\t\t\t command-line\n";
   usage += "\t-o=OUTPUT,\t output file name\n";
-  usage += "\t-s,\t\t compute an \"open\" route (not a tour), starting at\n\t\t\t the first input location\n";
-  usage += "\t-e,\t\t compute an \"open\" route (not a tour), ending at\n\t\t\t the last input location\n";
   usage += "\t-t,\t\t number of threads to use\n";
   usage += "\t-v,\t\t turn on verbose output\n";
   usage += "\t-V,\t\t turn on verbose output with all details";
@@ -49,7 +47,7 @@ int main(int argc, char **argv){
   cl_args_t cl_args;
 
   // Parsing command-line arguments.
-  const char* optString = "a:e:gi:o:p:s:t:vVh?";
+  const char* optString = "a:gi:o:p:t:vVh?";
   int opt = getopt(argc, argv, optString);
 
   std::string nb_threads_arg = std::to_string(cl_args.nb_threads);
@@ -58,10 +56,6 @@ int main(int argc, char **argv){
     switch(opt){
     case 'a':
       cl_args.osrm_address = optarg;
-      break;
-    case 'e':
-      cl_args.force_end = true;
-      cl_args.end = std::stoul(optarg);
       break;
     case 'g':
       cl_args.geometry = true;
@@ -77,10 +71,6 @@ int main(int argc, char **argv){
       break;
     case 'p':
       cl_args.osrm_port = optarg;
-      break;
-    case 's':
-      cl_args.force_start = true;
-      cl_args.start = std::stoul(optarg);
       break;
     case 't':
       nb_threads_arg = optarg;
@@ -142,18 +132,14 @@ int main(int argc, char **argv){
       loader 
         = std::make_unique<osrm_wrapper>(cl_args.osrm_address, 
                                          cl_args.osrm_port,
-                                         cl_args);
+                                         cl_args.input);
     }
     else{
       loader = std::make_unique<tsplib_loader>(cl_args.input);
     }
 
     // Build problem.
-    tsp asymmetric_tsp (*loader,
-                        cl_args.force_start,
-                        cl_args.start,
-                        cl_args.force_end,
-                        cl_args.end);
+    tsp asymmetric_tsp (*loader);
 
     auto end_problem_loading = std::chrono::high_resolution_clock::now();
     computing_times.matrix_loading =

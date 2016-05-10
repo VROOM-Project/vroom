@@ -32,7 +32,14 @@ public:
   virtual ~problem_io() {}
 
 protected:
+  pbl_context_t _pbl_context;
+
   problem_io() {}
+
+public:
+  const pbl_context_t& get_pbl_context() const{
+    return _pbl_context;
+  }
 };
 
 #endif

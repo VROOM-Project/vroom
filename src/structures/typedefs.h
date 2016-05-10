@@ -39,10 +39,6 @@ struct cl_args_t {
   std::string osrm_port;                         // -p
   boost::log::trivial::severity_level log_level; // -v
   std::string input;                             // cl arg
-  bool force_start;                              // -s
-  index_t start;
-  bool force_end;                                // -e
-  index_t end;
   unsigned nb_threads;                           // -t
   bool use_osrm;
   // Default values.
@@ -51,11 +47,15 @@ struct cl_args_t {
     geometry(false),
     osrm_port("5000"),
     log_level(boost::log::trivial::error),
-    force_start(false),
-    start(0),
-    force_end(false),
-    end(0),
     nb_threads(2) {}
+};
+
+struct pbl_context_t {
+  bool round_trip;
+  bool force_start;
+  index_t start;
+  bool force_end;
+  index_t end;
 };
 
 #endif

@@ -9,24 +9,17 @@ All rights reserved (see LICENSE).
 
 #include "tsp.h"
 
-tsp::tsp(const problem_io<distance_t>& loader,
-         bool force_start,
-         index_t start,
-         bool force_end,
-         index_t end):
+tsp::tsp(const problem_io<distance_t>& loader):
+  _pbl_context(loader.get_pbl_context()),
   _matrix(loader.get_matrix()),
   _symmetrized_matrix(0),
-  _is_symmetric(true),
-  _force_start(force_start),
-  _start(start),
-  _force_end(force_end),
-  _end(end){
+  _is_symmetric(true){
 
-  if(_force_start){
-    assert(_start < _matrix.size());
+  if(_pbl_context.force_start){
+    assert(_pbl_context.start < _matrix.size());
   }
-  if(_force_end){
-    assert(_end < _matrix.size());
+  if(_pbl_context.force_end){
+    assert(_pbl_context.end < _matrix.size());
   }
 
   // Distances on the diagonal are never used except in the minimum
@@ -38,33 +31,33 @@ tsp::tsp(const problem_io<distance_t>& loader,
 
   // Dealing with open tour cases. At most one of the following
   // occurs.
-  if(_force_start and !_force_end){
+  if(_pbl_context.force_start and !_pbl_context.force_end){
     // Forcing first location as start, end location decided during
     // optimization.
     for(index_t i = 0; i < _matrix.size(); ++i){
-      if(i != _start){
-        _matrix[i][_start] = 0;
+      if(i != _pbl_context.start){
+        _matrix[i][_pbl_context.start] = 0;
       }
     }
   }
-  if(!_force_start and _force_end){
+  if(!_pbl_context.force_start and _pbl_context.force_end){
     // Forcing last location as end, start location decided during
     // optimization.
     for(index_t j = 0; j < _matrix.size(); ++j){
-      if(j != _end){
-        _matrix[_end][j] = 0;
+      if(j != _pbl_context.end){
+        _matrix[_pbl_context.end][j] = 0;
       }
     }
   }
-  if(_force_start and _force_end){
+  if(_pbl_context.force_start and _pbl_context.force_end){
     // Forcing first location as start, last location as end to
     // produce an open tour.
-    assert(_start != _end);
+    assert(_pbl_context.start != _pbl_context.end);
     index_t last_index = _matrix.size() - 1;
-    _matrix[_end][_start] = 0;
+    _matrix[_pbl_context.end][_pbl_context.start] = 0;
     for(index_t j = 1; j < last_index; ++j){
-      if((j != _start) and (j != _end)){
-        _matrix[_end][j] = INFINITE_DISTANCE;
+      if((j != _pbl_context.start) and (j != _pbl_context.end)){
+        _matrix[_pbl_context.end][j] = INFINITE_DISTANCE;
       }
     }
   }
@@ -72,8 +65,8 @@ tsp::tsp(const problem_io<distance_t>& loader,
   // Compute symmetrized matrix and update _is_symmetric flag.
   const distance_t& (*sym_f) (const distance_t&, const distance_t&) 
     = std::min<distance_t>;
-  if((_force_start and !_force_end)
-     or (!_force_start and _force_end)){
+  if((_pbl_context.force_start and !_pbl_context.force_end)
+     or (!_pbl_context.force_start and _pbl_context.force_end)){
     // Using symmetrization with max as when only start or only end is
     // forced, the matrix has a line or a column filled with zeros.
     sym_f = std::max<distance_t>;
@@ -111,19 +104,19 @@ const bool tsp::is_symmetric() const{
 }
 
 const bool tsp::force_start() const{
-  return _force_start;
+  return _pbl_context.force_start;
 }
 
 const index_t tsp::get_start() const{
-  return _start;
+  return _pbl_context.start;
 }
 
 const bool tsp::force_end() const{
-  return _force_end;
+  return _pbl_context.force_end;
 }
 
 const index_t tsp::get_end() const{
-  return _end;
+  return _pbl_context.end;
 }
 
 std::size_t tsp::size() const{

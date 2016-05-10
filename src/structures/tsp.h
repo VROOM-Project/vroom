@@ -21,21 +21,14 @@ All rights reserved (see LICENSE).
 
 class tsp{
 protected:
+  const pbl_context_t& _pbl_context;
   matrix<distance_t> _matrix;
   matrix<distance_t> _symmetrized_matrix;
   undirected_graph<distance_t> _symmetrized_graph;
   bool _is_symmetric;
-  const bool _force_start;
-  const index_t _start;
-  const bool _force_end;
-  const index_t _end;
 
 public:
-  tsp(const problem_io<distance_t>& loader,
-      bool force_start,
-      index_t start,
-      bool force_end,
-      index_t end);
+  tsp(const problem_io<distance_t>& loader);
   
   const matrix<distance_t>& get_matrix() const;
 
