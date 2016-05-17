@@ -263,9 +263,19 @@ public:
     }
     if(max_unfound_routes_for_a_loc > 0){
       std::string error_msg = "OSRM has unfound route(s) ";
-      error_msg += error_direction;
-      error_msg += " location at index: ";
-      error_msg += std::to_string(error_loc);
+      switch (_locations[error_loc].type){
+      case LOC_TYPE::START:
+        error_msg += "from vehicle start";
+        break;
+      case LOC_TYPE::END:
+        error_msg += "to vehicle end";
+        break;
+      case LOC_TYPE::JOB:
+        error_msg += error_direction;
+        error_msg += " job ";
+        error_msg += std::to_string(_locations[error_loc].job_id);
+        break;
+      }
       throw custom_exception(error_msg);
     }
 
