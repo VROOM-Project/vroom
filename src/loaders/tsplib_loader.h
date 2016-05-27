@@ -383,35 +383,49 @@ public:
     return m;
   }
 
+  inline void add_json_step(index_t step_id,
+                            std::string type,
+                            rapidjson::Value& steps_array,
+                            rapidjson::Document::AllocatorType& allocator) const{
+    rapidjson::Value json_step(rapidjson::kObjectType);
+    json_step.AddMember("type", rapidjson::Value(), allocator);
+    json_step["type"].SetString(type.c_str(), type.size(), allocator);
+
+    if(_ewt == EWT::EXPLICIT){
+      // Using step when matrix is explicit.
+      json_step.AddMember("location", step_id, allocator);
+    }
+    else{
+      // Using index provided in the file to describe places.
+      json_step.AddMember("location", _nodes[step_id].index, allocator);
+    }
+
+    if((_ewt != EWT::NONE) and (_ewt != EWT::EXPLICIT)){
+      // Coordinates are only added if the matrix has been computed
+      // from the detailed list of nodes, in that case contained in
+      // _nodes.
+      json_step.AddMember("coordinates",
+                          rapidjson::Value(rapidjson::kArrayType).Move(),
+                          allocator);
+      json_step["coordinates"].PushBack(_nodes[step_id].x, allocator);
+      json_step["coordinates"].PushBack(_nodes[step_id].y, allocator);
+    }
+
+    steps_array.PushBack(json_step, allocator);
+  }
+
   virtual void get_steps(const std::list<index_t>& steps,
                          rapidjson::Value& value,
                          rapidjson::Document::AllocatorType& allocator) const override{
     rapidjson::Value steps_array(rapidjson::kArrayType);
     for(auto const& step_id: steps){
-      rapidjson::Value json_step(rapidjson::kObjectType);
-      json_step.AddMember("type", "job", allocator);
+      add_json_step(step_id, "job", steps_array, allocator);
+    }
 
-      if(_ewt == EWT::EXPLICIT){
-        // Using step when matrix is explicit.
-        json_step.AddMember("location", step_id, allocator);
-      }
-      else{
-        // Using index provided in the file to describe places.
-        json_step.AddMember("location", _nodes[step_id].index, allocator);
-      }
-
-      if((_ewt != EWT::NONE) and (_ewt != EWT::EXPLICIT)){
-        // Coordinates are only added if the matrix has been computed
-        // from the detailed list of nodes, in that case contained in
-        // _nodes.
-        json_step.AddMember("coordinates",
-                            rapidjson::Value(rapidjson::kArrayType).Move(),
-                            allocator);
-        json_step["coordinates"].PushBack(_nodes[step_id].x, allocator);
-        json_step["coordinates"].PushBack(_nodes[step_id].y, allocator);
-      }
-
-      steps_array.PushBack(json_step, allocator);
+    if(_pbl_context.round_trip){
+      // Duplicate the start location as end of the route for round
+      // trips.
+      add_json_step(steps.front(), "end", steps_array, allocator);
     }
 
     value.Swap(steps_array);
