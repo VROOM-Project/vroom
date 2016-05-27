@@ -391,24 +391,24 @@ public:
     json_step.AddMember("type", rapidjson::Value(), allocator);
     json_step["type"].SetString(type.c_str(), type.size(), allocator);
 
-    if(_ewt == EWT::EXPLICIT){
-      // Using step when matrix is explicit.
-      json_step.AddMember("location", step_id, allocator);
-    }
-    else{
-      // Using index provided in the file to describe places.
-      json_step.AddMember("location", _nodes[step_id].index, allocator);
-    }
-
     if((_ewt != EWT::NONE) and (_ewt != EWT::EXPLICIT)){
       // Coordinates are only added if the matrix has been computed
       // from the detailed list of nodes, in that case contained in
       // _nodes.
-      json_step.AddMember("coordinates",
+      json_step.AddMember("location",
                           rapidjson::Value(rapidjson::kArrayType).Move(),
                           allocator);
-      json_step["coordinates"].PushBack(_nodes[step_id].x, allocator);
-      json_step["coordinates"].PushBack(_nodes[step_id].y, allocator);
+      json_step["location"].PushBack(_nodes[step_id].x, allocator);
+      json_step["location"].PushBack(_nodes[step_id].y, allocator);
+    }
+
+    if(_ewt == EWT::EXPLICIT){
+      // Using step when matrix is explicit.
+      json_step.AddMember("job", step_id, allocator);
+    }
+    else{
+      // Using index provided in the file to describe places.
+      json_step.AddMember("job", _nodes[step_id].index, allocator);
     }
 
     steps_array.PushBack(json_step, allocator);
