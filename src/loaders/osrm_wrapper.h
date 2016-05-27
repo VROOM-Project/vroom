@@ -282,53 +282,55 @@ public:
     return m;
   }
 
+  inline void add_json_step(index_t step_id,
+                            std::string type,
+                            rapidjson::Value& steps_array,
+                            rapidjson::Document::AllocatorType& allocator) const{
+    rapidjson::Value json_step(rapidjson::kObjectType);
+    json_step.AddMember("type", rapidjson::Value(), allocator);
+    json_step["type"].SetString(type.c_str(), type.size(), allocator);
+
+    // Location coordinates.
+    json_step.AddMember("location",
+                        rapidjson::Value(rapidjson::kArrayType).Move(),
+                        allocator);
+    json_step["location"].PushBack(_locations[step_id].lat, allocator);
+    json_step["location"].PushBack(_locations[step_id].lon, allocator);
+
+    if(_locations[step_id].type == LOC_TYPE::JOB){
+      json_step.AddMember("job", _locations[step_id].job_id, allocator);
+    }
+
+    steps_array.PushBack(json_step, allocator);
+  }
+
   virtual void get_steps(const std::list<index_t>& steps,
                          rapidjson::Value& value,
                          rapidjson::Document::AllocatorType& allocator) const override{
     rapidjson::Value steps_array(rapidjson::kArrayType);
     for(auto const& step_id: steps){
-      rapidjson::Value json_step(rapidjson::kObjectType);
 
       // Step type
-      json_step.AddMember("type", rapidjson::Value(), allocator);
+      std::string type;
       switch (_locations[step_id].type){
       case LOC_TYPE::START:
-        json_step["type"].SetString("start");
+        type = "start";
         break;
       case LOC_TYPE::END:
-        json_step["type"].SetString("end");
+        type = "end";
         break;
       case LOC_TYPE::JOB:
-        json_step["type"].SetString("job");
+        type = "job";
         break;
       }
 
-      // Location coordinates.
-      json_step.AddMember("location",
-                          rapidjson::Value(rapidjson::kArrayType).Move(),
-                          allocator);
-      json_step["location"].PushBack(_locations[step_id].lat, allocator);
-      json_step["location"].PushBack(_locations[step_id].lon, allocator);
-
-      if(_locations[step_id].type == LOC_TYPE::JOB){
-        json_step.AddMember("job", _locations[step_id].job_id, allocator);
-      }
-
-      steps_array.PushBack(json_step, allocator);
+      add_json_step(step_id, type, steps_array, allocator);
     }
 
     if(_pbl_context.round_trip){
       // Duplicate the start location as end of the route for round
       // trips.
-      rapidjson::Value json_step(rapidjson::kObjectType);
-      json_step.AddMember("type", rapidjson::Value(), allocator);
-      json_step["type"].SetString("end");
-      json_step.AddMember("location",
-                          rapidjson::Value(rapidjson::kArrayType).Move(),
-                          allocator);
-      json_step["location"].PushBack(_locations[steps.front()].lat, allocator);
-      json_step["location"].PushBack(_locations[steps.front()].lon, allocator);
-      steps_array.PushBack(json_step, allocator);
+      add_json_step(steps.front(), "end", steps_array, allocator);
     }
 
     value.Swap(steps_array);
