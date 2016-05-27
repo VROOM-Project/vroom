@@ -424,8 +424,19 @@ public:
 
     if(_pbl_context.round_trip){
       // Duplicate the start location as end of the route for round
-      // trips.
+      // trips and adjust first step type.
       add_json_step(steps.front(), "end", steps_array, allocator);
+      steps_array[0]["type"] = "start";
+    }
+    else{
+      if(_pbl_context.force_start){
+        // Adjust first step type.
+        steps_array[0]["type"] = "start";
+      }
+      if(_pbl_context.force_end){
+        // Adjust last step type.
+        steps_array[steps_array.Size() - 1]["type"] = "end";
+      }
     }
 
     value.Swap(steps_array);
