@@ -187,6 +187,90 @@ public:
         _nodes.push_back({index, x, y});
       }
     }
+
+    // 4. Setting problem context regarding start and end.
+
+    // Perform a round trip by default unless "OPEN_TRIP: TRUE" is
+    // explicitly specified.
+    boost::regex open_trip_rgx ("OPEN_TRIP[[:space:]]*:[[:space:]]*TRUE[[:space:]]");
+    boost::smatch open_trip_match;
+    _pbl_context.round_trip = !boost::regex_search(input,
+                                                   open_trip_match,
+                                                   open_trip_rgx);
+
+    // Check for a start section.
+    bool has_start = false;
+    boost::regex start_rgx ("START[[:space:]]*:[[:space:]]*([0-9]+)[[:space:]]");
+    boost::smatch start_match;
+    if(boost::regex_search(input, start_match, start_rgx)){
+      has_start = true;
+      auto input_start = std::stoul(start_match[1].str());
+      if(_ewt == EWT::EXPLICIT){
+        if(input_start >= _dimension){
+          throw custom_exception("Invalid index for START node.");
+        }
+        _pbl_context.start = input_start;
+      }
+      else{
+        // Input start is a node index, whose rank in _nodes should
+        // actually been used.
+        auto start_node = std::find_if(_nodes.begin(), _nodes.end(),
+                                       [input_start] (const auto& n){
+                                         return n.index == input_start;
+                                       });
+        if(start_node == _nodes.end()){
+          throw custom_exception("Invalid index for START node.");
+        }
+        _pbl_context.start = std::distance(_nodes.begin(), start_node);
+      }
+    }
+
+    if(_pbl_context.round_trip and !has_start){
+      // Defaults to first place as start to keep expected behavior
+      // without extra TSPLIB keyword (START should not be mandatory).
+      _pbl_context.start = 0;
+    }
+
+    // Check for an end section.
+    bool has_end = false;
+    boost::regex end_rgx ("END[[:space:]]*:[[:space:]]*([0-9]+)[[:space:]]");
+    boost::smatch end_match;
+    if(boost::regex_search(input, end_match, end_rgx)){
+      has_end = true;
+      auto input_end = std::stoul(end_match[1].str());
+      if(_ewt == EWT::EXPLICIT){
+        if(input_end >= _dimension){
+          throw custom_exception("Invalid index for END node.");
+        }
+        _pbl_context.end = input_end;
+      }
+      else{
+        // Input end is a node index, whose rank in _nodes should
+        // actually been used.
+        auto end_node = std::find_if(_nodes.begin(), _nodes.end(),
+                                       [input_end] (const auto& n){
+                                         return n.index == input_end;
+                                       });
+        if(end_node == _nodes.end()){
+          throw custom_exception("Invalid index for END node.");
+        }
+        _pbl_context.end = std::distance(_nodes.begin(), end_node);
+      }
+    }
+
+    if(_pbl_context.round_trip and has_end){
+      throw custom_exception("Vehicle end may only be used with OPEN_TRIP: TRUE.");
+    }
+    if(!_pbl_context.round_trip and !has_start and !has_end){
+      throw custom_exception("START or END key is mandatory with OPEN_TRIP: TRUE.");
+    }
+    if(has_start and has_end and (_pbl_context.start == _pbl_context.end)){
+      throw custom_exception("START and END should be different.");
+    }
+
+    // Deduce forced start and end from input.
+    _pbl_context.force_start = (has_start and !_pbl_context.round_trip);
+    _pbl_context.force_end = has_end;
   }
 
   virtual matrix<distance_t> get_matrix() const override{
