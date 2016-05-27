@@ -9,27 +9,9 @@ All rights reserved (see LICENSE).
 
 #include "tsp_strategy.h"
 
-void solve_atsp(const cl_args_t& cl_args){
-  // Store timings.
-  timing_t computing_times;
-
-  // Building problem object with embedded table request.
-  auto start_problem_build = std::chrono::high_resolution_clock::now();
-
-  BOOST_LOG_TRIVIAL(info) 
-    << "[Matrix] Start matrix computing and problem loading.";
-
-  tsp asymmetric_tsp (cl_args);
-
-  auto end_problem_build = std::chrono::high_resolution_clock::now();
-
-  computing_times.matrix_loading =
-    std::chrono::duration_cast<std::chrono::milliseconds>
-    (end_problem_build - start_problem_build).count();
-
-  BOOST_LOG_TRIVIAL(info) << "[Matrix] Done, took "
-                          << computing_times.matrix_loading << " ms.";
-
+std::pair<std::list<index_t>, distance_t> solve_atsp(const tsp& asymmetric_tsp,
+                                                     unsigned nb_threads,
+                                                     timing_t& computing_times){
   // Applying heuristic.
   auto start_heuristic = std::chrono::high_resolution_clock::now();
   BOOST_LOG_TRIVIAL(info) 
@@ -62,12 +44,12 @@ void solve_atsp(const cl_args_t& cl_args){
   BOOST_LOG_TRIVIAL(info) 
     << "[Local search] Start local search on symmetrized problem.";
   BOOST_LOG_TRIVIAL(info) 
-    << "[Local search] Using " << cl_args.nb_threads << " thread(s).";
+    << "[Local search] Using " << nb_threads << " thread(s).";
 
   local_search sym_ls (asymmetric_tsp.get_symmetrized_matrix(),
                        true,    // Symmetrized problem.
                        christo_sol,
-                       cl_args.nb_threads);
+                       nb_threads);
 
   distance_t sym_two_opt_gain = 0;
   distance_t sym_relocate_gain = 0;
@@ -87,11 +69,11 @@ void solve_atsp(const cl_args_t& cl_args){
          or (sym_or_opt_gain > 0));
 
   // Default for first input location.
-  index_t first_loc_index = 0;
-  if(!cl_args.force_start and cl_args.force_end){
+  index_t first_loc_index = asymmetric_tsp.get_start();
+  if(!asymmetric_tsp.force_start() and asymmetric_tsp.force_end()){
     // Requiring the tour to be described from the "forced" end
     // location.
-    first_loc_index = asymmetric_tsp.size() - 1;
+    first_loc_index = asymmetric_tsp.get_end();
   }
   std::list<index_t> current_sol = sym_ls.get_tour(first_loc_index);
   auto current_cost = asymmetric_tsp.symmetrized_cost(current_sol);
@@ -128,7 +110,7 @@ void solve_atsp(const cl_args_t& cl_args){
                           false, // Not the symmetrized problem.
                           (direct_cost <= reverse_cost) ? 
                           current_sol: reverse_current_sol,
-                          cl_args.nb_threads);
+                          nb_threads);
 
     auto start_asym_local_search = std::chrono::high_resolution_clock::now();
     BOOST_LOG_TRIVIAL(info) 
@@ -139,7 +121,7 @@ void solve_atsp(const cl_args_t& cl_args){
       << "[Asym. local search] Start local search on asymmetric problem.";
 
     BOOST_LOG_TRIVIAL(info) 
-      << "[Asym. local search] Using " << cl_args.nb_threads << " thread(s).";
+      << "[Asym. local search] Using " << nb_threads << " thread(s).";
 
     distance_t asym_two_opt_gain = 0;
     distance_t asym_relocate_gain = 0;
@@ -188,7 +170,7 @@ void solve_atsp(const cl_args_t& cl_args){
     = sym_local_search_duration + asym_local_search_duration;
 
   // Deal with open tour cases requiring adaptation.
-  if(!cl_args.force_start and cl_args.force_end){
+  if(!asymmetric_tsp.force_start() and asymmetric_tsp.force_end()){
     // The tour has been listed starting with the "forced" end. This
     // index has to be popped and put back, the next element being the
     // chosen start resulting from the optimization.
@@ -196,6 +178,5 @@ void solve_atsp(const cl_args_t& cl_args){
     current_sol.pop_front();
   }
 
-  logger log (cl_args);
-  log.write_solution(asymmetric_tsp, current_sol, computing_times);
+  return std::make_pair(current_sol, current_cost);
 }

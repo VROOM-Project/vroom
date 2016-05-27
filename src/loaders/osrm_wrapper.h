@@ -14,6 +14,7 @@ All rights reserved (see LICENSE).
 #include <limits>
 #include <regex>
 #include <boost/asio.hpp>
+#include "../../include/rapidjson/error/en.h"
 #include "./problem_io.h"
 #include "../structures/matrix.h"
 #include "../utils/exceptions.h"
@@ -23,13 +24,16 @@ using boost::asio::ip::tcp;
 class osrm_wrapper : public problem_io<distance_t>{
 
 private:
-  const std::string _address;      // OSRM server adress
-  const std::string _port;         // OSRM server listening port
+  enum class LOC_TYPE {START, END, JOB};
+  struct Location {LOC_TYPE type; double lat; double lon; index_t job_id;};
+
+  std::string _address;         // OSRM server adress
+  std::string _port;            // OSRM server listening port
   const std::string _osrm_profile; // OSRM profile name
   const bool _use_osrm_v5;         // For backward compat
-  std::vector<std::pair<double, double>> _locations;
+  std::vector<Location> _locations;
 
-  std::string build_query(const std::vector<std::pair<double, double>>& locations, 
+  std::string build_query(const std::vector<Location>& locations, 
                           std::string service, 
                           std::string extra_args = "") const{
     // Building query for osrm-routed
@@ -41,9 +45,9 @@ private:
       // Adding locations.
       for(auto const& location: locations){
         // OSRM v5 has gone [lon,lat].
-        query += std::to_string(location.second)
+        query += std::to_string(location.lon)
           + ","
-          + std::to_string(location.first)
+          + std::to_string(location.lat)
           + ";";
       }
       query.pop_back();         // Remove trailing ';'.
@@ -59,9 +63,9 @@ private:
       // Adding locations.
       for(auto const& location: locations){
         query += "loc="
-          + std::to_string(location.first)
+          + std::to_string(location.lat)
           + ","
-          + std::to_string(location.second)
+          + std::to_string(location.lon)
           + "&";
       }
 
@@ -116,46 +120,111 @@ private:
     return response;
   }
 
-  void add_location(const std::string location){
-    // Regex check for valid location.
-    std::regex valid_loc ("loc=-?[0-9]+\\.?[0-9]*,-?[0-9]+\\.?[0-9]*[[:space:]]*");
-    if(!std::regex_match(location, valid_loc)){
-      throw custom_exception("Invalid syntax for location "
-                             + std::to_string(_locations.size() + 1)
-                             + ", see vroom -h for usage display."
-                             );
+  void add_location(LOC_TYPE type, const rapidjson::Value& location, index_t job_id = 0){
+    if(!location.IsArray()
+       or location.Size() != 2
+       or !location[0].IsNumber()
+       or !location[1].IsNumber()){
+      throw custom_exception("Invalid input location");
     }
-
-    // Parsing the location is now safe.
-    std::size_t separator_rank = location.find(",");
-    std::string lat = location.substr(4, separator_rank);
-    std::string lon = location.substr(separator_rank + 1, location.length() -1);
-    _locations.emplace_back(std::stod(lat, nullptr),
-                            std::stod(lon, nullptr));
+    _locations.push_back({type, location[0].GetDouble(), location[1].GetDouble(), job_id});
   }
 
 public:
-  osrm_wrapper(std::string address, 
-               std::string port,
-               std::string osrm_profile,
-               std::string loc_input):
+  osrm_wrapper(const std::string& address,
+               const std::string& port,
+               const std::string& osrm_profile,
+               const std::string& input):
     _address(address),
     _port(port),
     _osrm_profile(osrm_profile),
-    _use_osrm_v5(!_osrm_profile.empty()){
+    _use_osrm_v5(!_osrm_profile.empty())
+  {
+    rapidjson::Document json_input;
+    std::string error_msg;
 
-    // Parsing input in locations.
-    std::size_t start = 0;
-    std::size_t end = loc_input.find("&", start);
-    while(end != std::string::npos){
-      this->add_location(loc_input.substr(start, end - start));
-      start = end + 1;
-      end = loc_input.find("&", start);
+    // Parsing input.
+    if(json_input.Parse(input.c_str()).HasParseError()){
+      std::string error_msg = std::string(rapidjson::GetParseError_En(json_input.GetParseError()))
+        + " (offset: "
+        + std::to_string(json_input.GetErrorOffset())
+        + ")";
+      throw custom_exception(error_msg);
     }
-    // Adding last element, after last "&".
-    end = loc_input.length();
-    this->add_location(loc_input.substr(start, end - start));
     
+    // Getting vehicle(s).
+    if(!json_input.HasMember("vehicles")
+       or !json_input["vehicles"].IsArray()
+       or json_input["vehicles"].Empty()){
+      throw custom_exception("Incorrect vehicles input.");
+    }
+    if(json_input["vehicles"].Size() > 1){
+      throw custom_exception("Multiple vehicles are not supported (yet).");
+    }
+    if(!json_input["vehicles"][0].IsObject()){
+      throw custom_exception("Ill-formed vehicle object.");
+    }
+    bool has_start = json_input["vehicles"][0].HasMember("start");
+
+    // Check round_trip optional value.
+    if(json_input["vehicles"][0].HasMember("round_trip")
+       and !json_input["vehicles"][0]["round_trip"].IsBool()){
+      throw custom_exception("Incorrect round_trip key.");
+    }
+    // Perform a round trip by default unless "round_trip": false is
+    // explicitly specified.
+    _pbl_context.round_trip = !json_input["vehicles"][0].HasMember("round_trip")
+      or json_input["vehicles"][0]["round_trip"].GetBool();
+
+    if(_pbl_context.round_trip and !has_start){
+      throw custom_exception("Vehicle start is mandatory for a round trip.");
+    }
+
+    if(has_start){
+      // Remember the index of the start loc to be added.
+      _pbl_context.start = _locations.size();
+      this->add_location(LOC_TYPE::START, json_input["vehicles"][0]["start"]);
+    }
+
+    // Getting jobs.
+    if(!json_input.HasMember("jobs")
+       or !json_input["jobs"].IsArray()){
+      throw custom_exception("Incorrect jobs input.");
+    }
+    for(rapidjson::SizeType i = 0; i < json_input["jobs"].Size(); ++i){
+      if(!json_input["jobs"][i].IsObject()){
+        throw custom_exception("Ill-formed job object.");
+      }
+      if(!json_input["jobs"][i].HasMember("location")){
+        throw custom_exception("Missing mandatory job location.");
+      }
+      if(!json_input["jobs"][i].HasMember("id")){
+        throw custom_exception("Missing mandatory job id.");
+      }
+
+      this->add_location(LOC_TYPE::JOB,
+                         json_input["jobs"][i]["location"],
+                         json_input["jobs"][i]["id"].GetUint());
+    }
+
+    // Add optional vehicle end as last value in _locations.
+    bool has_end = json_input["vehicles"][0].HasMember("end");
+    if(_pbl_context.round_trip and has_end){
+      throw custom_exception("Vehicle end may only be used with round_trip: false.");
+    }
+    if(!_pbl_context.round_trip and !has_start and !has_end){
+      throw custom_exception("Vehicle start or end is mandatory with round_trip: false.");
+    }
+    if(has_end){
+      // Remember the index of the end loc to be added.
+      _pbl_context.end = _locations.size();
+      this->add_location(LOC_TYPE::END, json_input["vehicles"][0]["end"]);
+    }
+
+    // Deduce forced start and end from input.
+    _pbl_context.force_start = (has_start and !_pbl_context.round_trip);
+    _pbl_context.force_end = has_end;
+
     if(_locations.size() <= 1){
       throw custom_exception("At least two locations required!");
     }
@@ -243,56 +312,101 @@ public:
     }
     if(max_unfound_routes_for_a_loc > 0){
       std::string error_msg = "OSRM has unfound route(s) ";
-      error_msg += error_direction;
-      error_msg += " location at index: ";
-      error_msg += std::to_string(error_loc);
+      switch (_locations[error_loc].type){
+      case LOC_TYPE::START:
+        error_msg += "from vehicle start";
+        break;
+      case LOC_TYPE::END:
+        error_msg += "to vehicle end";
+        break;
+      case LOC_TYPE::JOB:
+        error_msg += error_direction;
+        error_msg += " job ";
+        error_msg += std::to_string(_locations[error_loc].job_id);
+        break;
+      }
       throw custom_exception(error_msg);
     }
 
     return m;
   }
 
-  virtual void get_route(const std::list<index_t>& tour,
+  inline void add_json_step(index_t step_id,
+                            std::string type,
+                            rapidjson::Value& steps_array,
+                            rapidjson::Document::AllocatorType& allocator) const{
+    rapidjson::Value json_step(rapidjson::kObjectType);
+    json_step.AddMember("type", rapidjson::Value(), allocator);
+    json_step["type"].SetString(type.c_str(), type.size(), allocator);
+
+    // Location coordinates.
+    json_step.AddMember("location",
+                        rapidjson::Value(rapidjson::kArrayType).Move(),
+                        allocator);
+    json_step["location"].PushBack(_locations[step_id].lat, allocator);
+    json_step["location"].PushBack(_locations[step_id].lon, allocator);
+
+    if(_locations[step_id].type == LOC_TYPE::JOB){
+      json_step.AddMember("job", _locations[step_id].job_id, allocator);
+    }
+
+    steps_array.PushBack(json_step, allocator);
+  }
+
+  virtual void get_steps(const std::list<index_t>& steps,
                          rapidjson::Value& value,
                          rapidjson::Document::AllocatorType& allocator) const override{
-    rapidjson::Value route_array(rapidjson::kArrayType);
-    for(auto const& step: tour){
-      route_array
-        .PushBack(rapidjson::Value(rapidjson::kArrayType)
-                  .PushBack(_locations[step].first, allocator)
-                  .PushBack(_locations[step].second, allocator),
-                  allocator);
+    rapidjson::Value steps_array(rapidjson::kArrayType);
+    for(auto const& step_id: steps){
+
+      // Step type
+      std::string type;
+      switch (_locations[step_id].type){
+      case LOC_TYPE::START:
+        type = "start";
+        break;
+      case LOC_TYPE::END:
+        type = "end";
+        break;
+      case LOC_TYPE::JOB:
+        type = "job";
+        break;
+      }
+
+      add_json_step(step_id, type, steps_array, allocator);
     }
-    value.Swap(route_array);
+
+    if(_pbl_context.round_trip){
+      // Duplicate the start location as end of the route for round
+      // trips.
+      add_json_step(steps.front(), "end", steps_array, allocator);
+    }
+
+    value.Swap(steps_array);
   }
 
-  virtual void get_tour(const std::list<index_t>& tour,
-                        rapidjson::Value& value,
-                        rapidjson::Document::AllocatorType& allocator) const override{
-    rapidjson::Value tour_array(rapidjson::kArrayType);
-    for(auto const& step: tour){
-      // Using input index to describe locations.
-      tour_array.PushBack(step, allocator);
-    }
-    value.Swap(tour_array);
-  }
-
-  virtual void get_route_infos(const std::list<index_t>& tour,
-                               rapidjson::Document& output) const override{
-    // Ordering locations for the given tour.
-    std::vector<std::pair<double, double>> ordered_locations;
-    for(auto& step: tour){
+  virtual void get_route_infos(const std::list<index_t>& steps,
+                               rapidjson::Value& value,
+                               rapidjson::Document::AllocatorType& allocator) const override{
+    // Ordering locations for the given steps.
+    std::vector<Location> ordered_locations;
+    for(auto& step: steps){
       ordered_locations.push_back(_locations[step]);
     }
 
-    std::string route_service = _use_osrm_v5 ? "route": "viaroute";
+    if(_pbl_context.round_trip){
+      // Duplicate the start location as end of the route for round
+      // trips.
+      ordered_locations.push_back(_locations[steps.front()]);
+    }
 
     // Backward compat.
+    std::string route_service = _use_osrm_v5 ? "route": "viaroute";
     std::string extra_args = "alt=false&uturns=true";
     if(_use_osrm_v5){
       extra_args = "alternatives=false&steps=false&overview=full&continue_straight=false";
     }
-    
+
     std::string query = this->build_query(ordered_locations,
                                           route_service,
                                           extra_args);
@@ -304,7 +418,6 @@ public:
     // Checking everything is fine in the response (OSRM version
     // dependant). Then parse total time/distance and route geometry.
     rapidjson::Document infos;
-    rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
 
     assert(!infos.Parse(json_content.c_str()).HasParseError());
     if(_use_osrm_v5){
@@ -314,15 +427,15 @@ public:
                                + std::string(infos["message"].GetString()));
       }
 
-      output.AddMember("total_time",
-                       infos["routes"][0]["duration"],
-                       allocator);
-      output.AddMember("total_distance",
-                       infos["routes"][0]["distance"],
-                       allocator);
-      output.AddMember("route_geometry",
-                       rapidjson::Value(infos["routes"][0]["geometry"], allocator),
-                       allocator);
+      value.AddMember("duration",
+                      infos["routes"][0]["duration"],
+                      allocator);
+      value.AddMember("distance",
+                      infos["routes"][0]["distance"],
+                      allocator);
+      value.AddMember("geometry",
+                      rapidjson::Value(infos["routes"][0]["geometry"], allocator),
+                      allocator);
     }
     else{
       // Backward compat.
@@ -331,15 +444,15 @@ public:
       assert(infos["route_summary"].HasMember("total_distance"));
       assert(infos.HasMember("route_geometry"));
 
-      output.AddMember("total_time",
-                       infos["route_summary"]["total_time"],
-                       allocator);
-      output.AddMember("total_distance",
-                       infos["route_summary"]["total_distance"],
-                       allocator);
-      output.AddMember("route_geometry",
-                       rapidjson::Value(infos["route_geometry"], allocator),
-                       allocator);
+      value.AddMember("duration",
+                      infos["route_summary"]["total_time"],
+                      allocator);
+      value.AddMember("distance",
+                      infos["route_summary"]["total_distance"],
+                      allocator);
+      value.AddMember("geometry",
+                      rapidjson::Value(infos["route_geometry"], allocator),
+                      allocator);
     }
   }
 };

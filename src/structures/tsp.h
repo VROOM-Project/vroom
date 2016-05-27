@@ -18,20 +18,17 @@ All rights reserved (see LICENSE).
 #include "./matrix.h"
 #include "./undirected_graph.h"
 #include "../loaders/problem_io.h"
-#include "../loaders/tsplib_loader.h"
-#include "../loaders/osrm_wrapper.h"
 
 class tsp{
 protected:
-  std::unique_ptr<problem_io<distance_t>> _loader;
+  const pbl_context_t& _pbl_context;
   matrix<distance_t> _matrix;
   matrix<distance_t> _symmetrized_matrix;
   undirected_graph<distance_t> _symmetrized_graph;
   bool _is_symmetric;
-  const cl_args_t _cl_args;
 
 public:
-  tsp(const cl_args_t& cl_args);
+  tsp(const problem_io<distance_t>& loader);
   
   const matrix<distance_t>& get_matrix() const;
 
@@ -41,22 +38,19 @@ public:
 
   const bool is_symmetric() const;
 
+  const bool force_start() const;
+
+  const index_t get_start() const;
+
+  const bool force_end() const;
+
+  const index_t get_end() const;
+
   std::size_t size() const;
 
   distance_t cost(const std::list<index_t>& tour) const;
 
   distance_t symmetrized_cost(const std::list<index_t>& tour) const;
-
-  void get_route(const std::list<index_t>& tour,
-                 rapidjson::Value& value,
-                 rapidjson::Document::AllocatorType& allocator) const;
-
-  void get_tour(const std::list<index_t>& tour,
-                 rapidjson::Value& value,
-                 rapidjson::Document::AllocatorType& allocator) const;
-
-  void get_route_infos(const std::list<index_t>& tour,
-                       rapidjson::Document& output) const;
 };
 
 #endif
