@@ -33,6 +33,10 @@ private:
   const bool _use_osrm_v5;         // For backward compat
   std::vector<Location> _locations;
 
+  static distance_t round_to_distance(double value){
+    return static_cast<distance_t>(value + 0.5);
+  }
+
   std::string build_query(const std::vector<Location>& locations, 
                           std::string service, 
                           std::string extra_args = "") const{
@@ -289,7 +293,7 @@ public:
           ++nb_unfound_to_loc[j];
         }
         else{
-          m[i][j] = static_cast<distance_t>(line[j].GetDouble() + 0.5);
+          m[i][j] = round_to_distance(line[j].GetDouble());
         }
       }
     }
@@ -428,10 +432,10 @@ public:
       }
 
       value.AddMember("duration",
-                      infos["routes"][0]["duration"],
+                      round_to_distance(infos["routes"][0]["duration"].GetDouble()),
                       allocator);
       value.AddMember("distance",
-                      infos["routes"][0]["distance"],
+                      round_to_distance(infos["routes"][0]["distance"].GetDouble()),
                       allocator);
       value.AddMember("geometry",
                       rapidjson::Value(infos["routes"][0]["geometry"], allocator),
