@@ -29,9 +29,14 @@ public:
                                rapidjson::Value& value,
                                rapidjson::Document::AllocatorType& allocator) const = 0;
 
+  index_t get_vehicle_id() const{
+    return _vehicle_id;
+  }
+
   virtual ~problem_io() {}
 
 protected:
+  index_t _vehicle_id;
   pbl_context_t _pbl_context;
 
   problem_io() {}

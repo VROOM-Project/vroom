@@ -62,6 +62,7 @@ void write_solution(const cl_args_t& cl_args,
   json_route.AddMember("steps", rapidjson::Value(rapidjson::kArrayType).Move(), allocator);
   loader.get_steps(steps, json_route["steps"], allocator);
   json_route.AddMember("cost", sol_cost, allocator);
+  json_route.AddMember("vehicle", loader.get_vehicle_id(), allocator);
 
   // Routes.
   rapidjson::Value json_routes_array(rapidjson::kArrayType);

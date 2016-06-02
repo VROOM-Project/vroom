@@ -27,8 +27,8 @@ private:
   enum class LOC_TYPE {START, END, JOB};
   struct Location {LOC_TYPE type; double lat; double lon; index_t job_id;};
 
-  std::string _address;         // OSRM server adress
-  std::string _port;            // OSRM server listening port
+  std::string _address;            // OSRM server adress
+  std::string _port;               // OSRM server listening port
   const std::string _osrm_profile; // OSRM profile name
   const bool _use_osrm_v5;         // For backward compat
   std::vector<Location> _locations;
@@ -168,6 +168,11 @@ public:
     if(!json_input["vehicles"][0].IsObject()){
       throw custom_exception("Ill-formed vehicle object.");
     }
+    if(!json_input["vehicles"][0].HasMember("id")){
+      throw custom_exception("Missing mandatory vehicle id.");
+    }
+    _vehicle_id = json_input["vehicles"][0]["id"].GetUint();
+
     bool has_start = json_input["vehicles"][0].HasMember("start");
 
     // Check round_trip optional value.
