@@ -25,7 +25,7 @@ class osrm_wrapper : public problem_io<distance_t>{
 
 private:
   enum class LOC_TYPE {START, END, JOB};
-  struct Location {LOC_TYPE type; double lat; double lon; index_t job_id;};
+  struct Location {LOC_TYPE type; double lon; double lat; index_t job_id;};
 
   std::string _address;            // OSRM server adress
   std::string _port;               // OSRM server listening port
@@ -352,8 +352,8 @@ public:
     json_step.AddMember("location",
                         rapidjson::Value(rapidjson::kArrayType).Move(),
                         allocator);
-    json_step["location"].PushBack(_locations[step_id].lat, allocator);
     json_step["location"].PushBack(_locations[step_id].lon, allocator);
+    json_step["location"].PushBack(_locations[step_id].lat, allocator);
 
     if(_locations[step_id].type == LOC_TYPE::JOB){
       json_step.AddMember("job", _locations[step_id].job_id, allocator);
