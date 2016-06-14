@@ -31,6 +31,7 @@ void display_usage(){
   usage += "\t-m=MODE,\t mode of transportation (profile name), iff using\n\t\t\t OSRM v5\n";
   usage += "\t-g,\t\t get detailed route geometry for the solution\n";
   usage += "\t-i=FILE,\t read input from FILE rather than from\n\t\t\t command-line\n";
+  usage += "\t-l=FILE,\t .osrm base path used with osrm-datastore\n";
   usage += "\t-o=OUTPUT,\t output file name\n";
   usage += "\t-t=THREADS,\t number of threads to use\n";
   usage += "\t-v,\t\t turn on verbose output\n";
@@ -48,7 +49,7 @@ int main(int argc, char **argv){
   cl_args_t cl_args;
 
   // Parsing command-line arguments.
-  const char* optString = "a:gi:m:o:p:t:vVh?";
+  const char* optString = "a:gi:l:m:o:p:t:vVh?";
   int opt = getopt(argc, argv, optString);
 
   std::string nb_threads_arg = std::to_string(cl_args.nb_threads);
@@ -66,6 +67,9 @@ int main(int argc, char **argv){
       break;
     case 'i':
       cl_args.input_file = optarg;
+      break;
+    case 'l':
+      cl_args.osrm_storage_config = optarg;
       break;
     case 'm':
       cl_args.osrm_profile = optarg;

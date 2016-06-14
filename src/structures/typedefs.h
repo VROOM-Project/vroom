@@ -37,6 +37,7 @@ struct cl_args_t {
   std::string input_file;                        // -i
   std::string output_file;                       // -o
   std::string osrm_port;                         // -p
+  std::string osrm_storage_config;               // -l
   boost::log::trivial::severity_level log_level; // -v
   std::string input;                             // cl arg
   unsigned nb_threads;                           // -t
