@@ -18,7 +18,7 @@ All rights reserved (see LICENSE).
 #include "./heuristics/tsp_strategy.h"
 #include "./loaders/problem_io.h"
 #include "./loaders/tsplib_loader.h"
-#include "./loaders/osrm_wrapper.h"
+#include "./loaders/routed_wrapper.h"
 #include "./utils/logger.h"
 
 void display_usage(){
@@ -134,10 +134,10 @@ int main(int argc, char **argv){
     std::unique_ptr<problem_io<distance_t>> loader;
     if(cl_args.use_osrm){
       loader 
-        = std::make_unique<osrm_wrapper>(cl_args.osrm_address, 
-                                         cl_args.osrm_port,
-                                         cl_args.osrm_profile,
-                                         cl_args.input);
+        = std::make_unique<routed_wrapper>(cl_args.osrm_address,
+                                           cl_args.osrm_port,
+                                           cl_args.osrm_profile,
+                                           cl_args.input);
     }
     else{
       loader = std::make_unique<tsplib_loader>(cl_args.input);
