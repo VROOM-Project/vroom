@@ -37,7 +37,7 @@ struct cl_args_t {
   std::string input_file;                        // -i
   std::string output_file;                       // -o
   std::string osrm_port;                         // -p
-  std::string osrm_storage_config;               // -l
+  bool use_libosrm;                              // -l
   boost::log::trivial::severity_level log_level; // -v
   std::string input;                             // cl arg
   unsigned nb_threads;                           // -t
@@ -48,6 +48,7 @@ struct cl_args_t {
     osrm_address("0.0.0.0"),
     geometry(false),
     osrm_port("5000"),
+    use_libosrm(false),
     log_level(boost::log::trivial::error),
     nb_threads(2) {}
 };

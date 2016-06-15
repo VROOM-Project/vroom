@@ -34,7 +34,7 @@ void display_usage(){
   usage += "\t-m=MODE,\t mode of transportation (profile name), iff using\n\t\t\t OSRM v5\n";
   usage += "\t-g,\t\t get detailed route geometry for the solution\n";
   usage += "\t-i=FILE,\t read input from FILE rather than from\n\t\t\t command-line\n";
-  usage += "\t-l=FILE,\t .osrm base path to use with libosrm\n";
+  usage += "\t-l,\t\t use libosrm rather than osrm-routed\n";
   usage += "\t-o=OUTPUT,\t output file name\n";
   usage += "\t-t=THREADS,\t number of threads to use\n";
   usage += "\t-v,\t\t turn on verbose output\n";
@@ -52,7 +52,7 @@ int main(int argc, char **argv){
   cl_args_t cl_args;
 
   // Parsing command-line arguments.
-  const char* optString = "a:gi:l:m:o:p:t:vVh?";
+  const char* optString = "a:gi:lm:o:p:t:vVh?";
   int opt = getopt(argc, argv, optString);
 
   std::string nb_threads_arg = std::to_string(cl_args.nb_threads);
@@ -72,7 +72,7 @@ int main(int argc, char **argv){
       cl_args.input_file = optarg;
       break;
     case 'l':
-      cl_args.osrm_storage_config = optarg;
+      cl_args.use_libosrm = true;
       break;
     case 'm':
       cl_args.osrm_profile = optarg;
@@ -140,7 +140,7 @@ int main(int argc, char **argv){
     cl_args.use_osrm = (cl_args.input.find("DIMENSION") == std::string::npos);
     std::unique_ptr<problem_io<distance_t>> loader;
     if(cl_args.use_osrm){
-      if(cl_args.osrm_storage_config.empty()){
+      if(!cl_args.use_libosrm){
         // Use osrm-routed.
         loader
           = std::make_unique<routed_wrapper>(cl_args.osrm_address,
