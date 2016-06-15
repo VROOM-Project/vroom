@@ -34,7 +34,7 @@ void display_usage(){
   usage += "\t-m=MODE,\t mode of transportation (profile name), iff using\n\t\t\t OSRM v5\n";
   usage += "\t-g,\t\t get detailed route geometry for the solution\n";
   usage += "\t-i=FILE,\t read input from FILE rather than from\n\t\t\t command-line\n";
-  usage += "\t-l,\t\t use libosrm rather than osrm-routed\n";
+  usage += "\t-l,\t\t use libosrm rather than osrm-routed (requires -m)\n";
   usage += "\t-o=OUTPUT,\t output file name\n";
   usage += "\t-t=THREADS,\t number of threads to use\n";
   usage += "\t-v,\t\t turn on verbose output\n";
@@ -151,6 +151,9 @@ int main(int argc, char **argv){
       else{
         #if LIBOSRM
         // Use libosrm.
+        if(cl_args.osrm_profile.empty()){
+          throw custom_exception("-l flag requires -m.");
+        }
         loader
           = std::make_unique<libosrm_wrapper>(cl_args.osrm_profile,
                                               cl_args.input);
