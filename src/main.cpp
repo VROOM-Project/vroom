@@ -19,6 +19,9 @@ All rights reserved (see LICENSE).
 #include "./loaders/problem_io.h"
 #include "./loaders/tsplib_loader.h"
 #include "./loaders/routed_wrapper.h"
+#if LIBOSRM
+#include "./loaders/libosrm_wrapper.h"
+#endif
 #include "./utils/logger.h"
 
 void display_usage(){
@@ -31,7 +34,7 @@ void display_usage(){
   usage += "\t-m=MODE,\t mode of transportation (profile name), iff using\n\t\t\t OSRM v5\n";
   usage += "\t-g,\t\t get detailed route geometry for the solution\n";
   usage += "\t-i=FILE,\t read input from FILE rather than from\n\t\t\t command-line\n";
-  usage += "\t-l=FILE,\t .osrm base path used with osrm-datastore\n";
+  usage += "\t-l=FILE,\t .osrm base path to use with libosrm\n";
   usage += "\t-o=OUTPUT,\t output file name\n";
   usage += "\t-t=THREADS,\t number of threads to use\n";
   usage += "\t-v,\t\t turn on verbose output\n";
@@ -137,11 +140,24 @@ int main(int argc, char **argv){
     cl_args.use_osrm = (cl_args.input.find("DIMENSION") == std::string::npos);
     std::unique_ptr<problem_io<distance_t>> loader;
     if(cl_args.use_osrm){
-      loader 
-        = std::make_unique<routed_wrapper>(cl_args.osrm_address,
-                                           cl_args.osrm_port,
-                                           cl_args.osrm_profile,
-                                           cl_args.input);
+      if(cl_args.osrm_storage_config.empty()){
+        // Use osrm-routed.
+        loader
+          = std::make_unique<routed_wrapper>(cl_args.osrm_address,
+                                             cl_args.osrm_port,
+                                             cl_args.osrm_profile,
+                                             cl_args.input);
+      }
+      else{
+        #if LIBOSRM
+        // Use libosrm.
+        loader
+          = std::make_unique<libosrm_wrapper>(cl_args.osrm_profile,
+                                              cl_args.input);
+        #else
+        throw custom_exception("libosrm must be installed to use -l.");
+        #endif
+      }
     }
     else{
       loader = std::make_unique<tsplib_loader>(cl_args.input);
