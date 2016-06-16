@@ -10,7 +10,7 @@ LDLIBS = -lboost_system -lboost_regex -lboost_log -lboost_log_setup -lpthread -l
 
 # Checking for libosrm
 ifeq ($(shell pkg-config --exists libosrm && echo 1),1)
-LDLIBS += $(shell pkg-config --libs libosrm) -lboost_filesystem -lboost_iostreams -lrt
+LDLIBS += $(shell pkg-config --libs libosrm) -lboost_filesystem -lboost_iostreams -lrt -ltbb
 CXXFLAGS += $(shell pkg-config --cflags libosrm) -D LIBOSRM=true
 endif
 
