@@ -445,9 +445,9 @@ public:
     value.Swap(steps_array);
   }
 
-  virtual void get_route_infos(const std::list<index_t>& steps,
-                               rapidjson::Value& value,
-                               rapidjson::Document::AllocatorType& allocator) const{
+  virtual void get_route_infos(const std::list<index_t>&,
+                               rapidjson::Value&,
+                               rapidjson::Document::AllocatorType&) const{
   }
 };
 

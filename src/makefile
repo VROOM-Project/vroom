@@ -5,7 +5,7 @@
 
 # Variables.
 CC = g++
-FLAGS = -std=c++14 -Wpedantic -Wall -O3 -DBOOST_LOG_DYN_LINK
+FLAGS = -std=c++14 -Wextra -Wpedantic -Wall  -O3 -DBOOST_LOG_DYN_LINK
 LDLIBS = -lboost_system -lboost_regex -lboost_log -lboost_log_setup -lpthread -lboost_thread
 
 # Using all cpp files in current directory.
