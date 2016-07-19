@@ -226,7 +226,7 @@ distance_t local_search::avoid_loop_step(){
   // 1) searching for all nodes that can be relocated somewhere else
   // AT NO COST because they are already on some other way.
   // 
-  // 2) listing all "chains" of two or mode consecutive such nodes.
+  // 2) listing all "chains" of two or more consecutive such nodes.
   // 
   // Starting from the longest such chain, the fix is to:
   // 
