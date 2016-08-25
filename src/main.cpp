@@ -18,9 +18,9 @@ All rights reserved (see LICENSE).
 #include "./heuristics/tsp_strategy.h"
 #include "./loaders/problem_io.h"
 #include "./loaders/tsplib_loader.h"
-#include "./loaders/routed_wrapper.h"
+#include "./loaders/routed_loader.h"
 #if LIBOSRM
-#include "./loaders/libosrm_wrapper.h"
+#include "./loaders/libosrm_loader.h"
 #endif
 #include "./utils/logger.h"
 
@@ -143,7 +143,7 @@ int main(int argc, char **argv){
       if(!cl_args.use_libosrm){
         // Use osrm-routed.
         loader
-          = std::make_unique<routed_wrapper>(cl_args.osrm_address,
+          = std::make_unique<routed_loader>(cl_args.osrm_address,
                                              cl_args.osrm_port,
                                              cl_args.osrm_profile,
                                              cl_args.input);
@@ -155,7 +155,7 @@ int main(int argc, char **argv){
           throw custom_exception("-l flag requires -m.");
         }
         loader
-          = std::make_unique<libosrm_wrapper>(cl_args.osrm_profile,
+          = std::make_unique<libosrm_loader>(cl_args.osrm_profile,
                                               cl_args.input);
         #else
         throw custom_exception("libosrm must be installed to use -l.");

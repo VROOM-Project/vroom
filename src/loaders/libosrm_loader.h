@@ -1,5 +1,5 @@
-#ifndef LIBOSRM_WRAPPER_H
-#define LIBOSRM_WRAPPER_H
+#ifndef LIBOSRM_LOADER_H
+#define LIBOSRM_LOADER_H
 
 /*
 
@@ -24,10 +24,10 @@ All rights reserved (see LICENSE).
 
 using namespace osrm;
 
-class libosrm_wrapper : public osrm_loader{
+class libosrm_loader : public osrm_loader{
 
 public:
-  libosrm_wrapper(const std::string& osrm_profile,
+  libosrm_loader(const std::string& osrm_profile,
                   const std::string& input):
     osrm_loader(osrm_profile, input) {}
 

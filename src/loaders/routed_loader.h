@@ -1,5 +1,5 @@
-#ifndef ROUTED_WRAPPER_H
-#define ROUTED_WRAPPER_H
+#ifndef ROUTED_LOADER_H
+#define ROUTED_LOADER_H
 
 /*
 
@@ -15,7 +15,7 @@ All rights reserved (see LICENSE).
 
 using boost::asio::ip::tcp;
 
-class routed_wrapper : public osrm_loader{
+class routed_loader : public osrm_loader{
 
 private:
   std::string _address;            // OSRM server adress
@@ -109,7 +109,7 @@ private:
   }
 
 public:
-  routed_wrapper(const std::string& address,
+  routed_loader(const std::string& address,
                  const std::string& port,
                  const std::string& osrm_profile,
                  const std::string& input):
