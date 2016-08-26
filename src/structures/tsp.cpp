@@ -99,23 +99,23 @@ const undirected_graph<distance_t>& tsp::get_symmetrized_graph() const{
   return _symmetrized_graph;
 }
 
-const bool tsp::is_symmetric() const{
+bool tsp::is_symmetric() const{
   return _is_symmetric;
 }
 
-const bool tsp::force_start() const{
+bool tsp::force_start() const{
   return _pbl_context.force_start;
 }
 
-const index_t tsp::get_start() const{
+index_t tsp::get_start() const{
   return _pbl_context.start;
 }
 
-const bool tsp::force_end() const{
+bool tsp::force_end() const{
   return _pbl_context.force_end;
 }
 
-const index_t tsp::get_end() const{
+index_t tsp::get_end() const{
   return _pbl_context.end;
 }
 

@@ -36,15 +36,15 @@ public:
 
   const undirected_graph<distance_t>& get_symmetrized_graph() const;
 
-  const bool is_symmetric() const;
+  bool is_symmetric() const;
 
-  const bool force_start() const;
+  bool force_start() const;
 
-  const index_t get_start() const;
+  index_t get_start() const;
 
-  const bool force_end() const;
+  bool force_end() const;
 
-  const index_t get_end() const;
+  index_t get_end() const;
 
   std::size_t size() const;
 

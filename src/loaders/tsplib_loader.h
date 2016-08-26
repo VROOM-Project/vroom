@@ -190,6 +190,9 @@ public:
 
     // 4. Setting problem context regarding start and end.
 
+    // Vehicle id is not set in input, setting default value.
+    _vehicle_id = 0;
+
     // Perform a round trip by default unless "OPEN_TRIP: TRUE" is
     // explicitly specified.
     boost::regex open_trip_rgx ("OPEN_TRIP[[:space:]]*:[[:space:]]*TRUE[[:space:]]");
@@ -442,9 +445,9 @@ public:
     value.Swap(steps_array);
   }
 
-  virtual void get_route_infos(const std::list<index_t>& steps,
-                               rapidjson::Value& value,
-                               rapidjson::Document::AllocatorType& allocator) const{
+  virtual void get_route_infos(const std::list<index_t>&,
+                               rapidjson::Value&,
+                               rapidjson::Document::AllocatorType&) const{
   }
 };
 

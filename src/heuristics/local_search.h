@@ -14,6 +14,7 @@ All rights reserved (see LICENSE).
 #include <unordered_map>
 #include <vector>
 #include <thread>
+#include <numeric>
 #include <boost/log/trivial.hpp>
 #include "../structures/typedefs.h"
 #include "../structures/matrix.h"
