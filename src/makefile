@@ -4,9 +4,15 @@
 # All rights reserved (see LICENSE).
 
 # Variables.
-CC = g++
-FLAGS = -std=c++14 -Wextra -Wpedantic -Wall  -O3 -DBOOST_LOG_DYN_LINK
+CXX = g++
+CXXFLAGS = -std=c++14 -Wextra -Wpedantic -Wall -O3 -DBOOST_LOG_DYN_LINK
 LDLIBS = -lboost_system -lboost_regex -lboost_log -lboost_log_setup -lpthread -lboost_thread
+
+# Checking for libosrm
+ifeq ($(shell pkg-config --exists libosrm && echo 1),1)
+LDLIBS += $(shell pkg-config --libs libosrm) -lboost_filesystem -lboost_iostreams -lrt -ltbb
+CXXFLAGS += $(shell pkg-config --cflags libosrm) -D LIBOSRM=true
+endif
 
 # Using all cpp files in current directory.
 MAIN = ../bin/vroom
@@ -21,15 +27,15 @@ OBJ = $(SRC:.cpp=.o)
 all : $(MAIN)
 
 $(MAIN) : $(OBJ) main.o
-	$(CC) $(FLAGS) -o $@ $^ $(LDLIBS) 
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBS)
 
 # Building .o files.
 %.o : %.cpp %.h
-	$(CC) $(FLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 # Specific target for main (no .h file).
 main.o : main.cpp
-	$(CC) $(FLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean : 
 	rm $(OBJ)
