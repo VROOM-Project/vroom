@@ -123,8 +123,10 @@ public:
     std::string response = this->send_then_receive(query);
 
     if(!_use_osrm_v5){
-      // Backward compat. Stop at "Bad Request" error from OSRM.
-      assert(response.find("Bad Request") == std::string::npos);
+      if(response.find("Bad Request") != std::string::npos){
+        // Backward compat. Stop at "Bad Request" error from OSRM.
+        throw custom_exception("OSRM v4 API error. Use -m with OSRM v5.");
+      }
     }
 
     // Removing headers.

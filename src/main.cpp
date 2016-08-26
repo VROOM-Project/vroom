@@ -194,6 +194,16 @@ int main(int argc, char **argv){
     write_error(cl_args.output_file, e.get_message());
     exit(1);
   }
+  #if LIBOSRM
+  catch(const std::exception& e){
+    // Should only occur when trying to use libosrm without running
+    // osrm-datastore. It would be good to be able to catch an
+    // osrm::util::exception for this. See OSRM issue #2813.
+    std::cerr << "[Error] " << e.what() << std::endl;
+    write_error(cl_args.output_file, e.what());
+    exit(1);
+  }
+  #endif
 
   return 0;
 }
