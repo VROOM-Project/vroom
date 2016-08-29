@@ -53,9 +53,8 @@ tsp::tsp(const pbl_context_t& pbl_context, const matrix<distance_t>& m):
     // Forcing first location as start, last location as end to
     // produce an open tour.
     assert(_pbl_context.start != _pbl_context.end);
-    index_t last_index = _matrix.size() - 1;
     _matrix[_pbl_context.end][_pbl_context.start] = 0;
-    for(index_t j = 1; j < last_index; ++j){
+    for(index_t j = 0; j < _matrix.size(); ++j){
       if((j != _pbl_context.start) and (j != _pbl_context.end)){
         _matrix[_pbl_context.end][j] = INFINITE_DISTANCE;
       }

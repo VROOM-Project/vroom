@@ -114,13 +114,6 @@ public:
             util::FloatLatitude(_locations[step].lat)});
     }
 
-    if(_pbl_context.round_trip){
-      // Duplicate the start location as end of the route for round
-      // trips.
-      params.coordinates.push_back({util::FloatLongitude(_locations[steps.front()].lon),
-            util::FloatLatitude(_locations[steps.front()].lat)});
-    }
-
     json::Object result;
     Status status;
     try{

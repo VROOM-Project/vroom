@@ -197,12 +197,6 @@ public:
       ordered_locations.push_back(_locations[step]);
     }
 
-    if(_pbl_context.round_trip){
-      // Duplicate the start location as end of the route for round
-      // trips.
-      ordered_locations.push_back(_locations[steps.front()]);
-    }
-
     // Backward compat.
     std::string route_service = _use_osrm_v5 ? "route": "viaroute";
     std::string extra_args = "alt=false&uturns=true";

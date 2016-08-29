@@ -166,6 +166,10 @@ int main(int argc, char **argv){
       loader = std::make_unique<tsplib_loader>(cl_args.input);
     }
 
+    if(loader->get_pbl_context().problem == PROBLEM_TYPE::OTSP){
+      throw custom_exception("TODO, implement open TSP with no start and no end");
+    }
+
     // Build problem.
     tsp asymmetric_tsp (loader->get_pbl_context(), loader->get_matrix());
 

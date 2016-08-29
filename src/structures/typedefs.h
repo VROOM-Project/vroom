@@ -53,8 +53,11 @@ struct cl_args_t {
     nb_threads(2) {}
 };
 
+// Distinguish between different types of problems.
+enum class PROBLEM_TYPE: unsigned char {TSP = 0, OTSP = 1};
+
 struct pbl_context_t {
-  bool round_trip;
+  PROBLEM_TYPE problem;
   bool force_start;
   index_t start;
   bool force_end;

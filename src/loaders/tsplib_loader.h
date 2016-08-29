@@ -193,20 +193,12 @@ public:
     // Vehicle id is not set in input, setting default value.
     _vehicle_id = 0;
 
-    // Perform a round trip by default unless "OPEN_TRIP: TRUE" is
-    // explicitly specified.
-    boost::regex open_trip_rgx ("OPEN_TRIP[[:space:]]*:[[:space:]]*TRUE[[:space:]]");
-    boost::smatch open_trip_match;
-    _pbl_context.round_trip = !boost::regex_search(input,
-                                                   open_trip_match,
-                                                   open_trip_rgx);
-
     // Check for a start section.
-    bool has_start = false;
     boost::regex start_rgx ("START[[:space:]]*:[[:space:]]*([0-9]+)[[:space:]]");
     boost::smatch start_match;
-    if(boost::regex_search(input, start_match, start_rgx)){
-      has_start = true;
+    _pbl_context.force_start = boost::regex_search(input, start_match, start_rgx);
+
+    if(_pbl_context.force_start){
       auto input_start = std::stoul(start_match[1].str());
       if(_ewt == EWT::EXPLICIT){
         if(input_start >= _dimension){
@@ -215,8 +207,8 @@ public:
         _pbl_context.start = input_start;
       }
       else{
-        // Input start is a node index, whose rank in _nodes should
-        // actually been used.
+        // Input start is a node index. Retrieving the rank of this
+        // node in _nodes.
         auto start_node = std::find_if(_nodes.begin(), _nodes.end(),
                                        [input_start] (const auto& n){
                                          return n.index == input_start;
@@ -228,18 +220,11 @@ public:
       }
     }
 
-    if(_pbl_context.round_trip and !has_start){
-      // Defaults to first place as start to keep expected behavior
-      // without extra TSPLIB keyword (START should not be mandatory).
-      _pbl_context.start = 0;
-    }
-
     // Check for an end section.
-    bool has_end = false;
     boost::regex end_rgx ("END[[:space:]]*:[[:space:]]*([0-9]+)[[:space:]]");
     boost::smatch end_match;
-    if(boost::regex_search(input, end_match, end_rgx)){
-      has_end = true;
+    _pbl_context.force_end = boost::regex_search(input, end_match, end_rgx);
+    if(_pbl_context.force_end){
       auto input_end = std::stoul(end_match[1].str());
       if(_ewt == EWT::EXPLICIT){
         if(input_end >= _dimension){
@@ -248,8 +233,8 @@ public:
         _pbl_context.end = input_end;
       }
       else{
-        // Input end is a node index, whose rank in _nodes should
-        // actually been used.
+        // Input end is a node index. Retrieving the rank of this node
+        // in _nodes.
         auto end_node = std::find_if(_nodes.begin(), _nodes.end(),
                                        [input_end] (const auto& n){
                                          return n.index == input_end;
@@ -261,19 +246,38 @@ public:
       }
     }
 
-    if(_pbl_context.round_trip and has_end){
-      throw custom_exception("Vehicle end may only be used with OPEN_TRIP: TRUE.");
-    }
-    if(!_pbl_context.round_trip and !has_start and !has_end){
-      throw custom_exception("START or END key is mandatory with OPEN_TRIP: TRUE.");
-    }
-    if(has_start and has_end and (_pbl_context.start == _pbl_context.end)){
-      throw custom_exception("START and END should be different.");
+    // Determine the kind of problem.
+    _pbl_context.problem = PROBLEM_TYPE::TSP;
+
+    if(!_pbl_context.force_start && !_pbl_context.force_end){
+      // Specifying no start and no end should default to a round trip
+      // computation to keep the expected behavior on a TSPLIB file
+      // without the need for extra keywords. Hence the case of an
+      // open trip with start and end defined during the optimization
+      // requires an extra "OPEN_TRIP: TRUE" to be explicitly
+      // specified.
+      boost::regex open_trip_rgx ("OPEN_TRIP[[:space:]]*:[[:space:]]*TRUE[[:space:]]");
+      boost::smatch open_trip_match;
+      bool round_trip = !boost::regex_search(input,
+                                             open_trip_match,
+                                             open_trip_rgx);
+      if(round_trip){
+        // Defaults to first place as start (only used in the solution
+        // display order since _pbl_context.force_start is still
+        // false).
+        _pbl_context.start = 0;
+      }
+      else{
+        // BOTH start and end are to be chosen during optimization.
+        _pbl_context.problem = PROBLEM_TYPE::OTSP;
+      }
     }
 
-    // Deduce forced start and end from input.
-    _pbl_context.force_start = (has_start and !_pbl_context.round_trip);
-    _pbl_context.force_end = has_end;
+    if(_pbl_context.force_start
+       and _pbl_context.force_end
+       and (_pbl_context.start == _pbl_context.end)){
+      throw custom_exception("START and END should be different. Remove both for a regular round trip.");
+    }
   }
 
   virtual matrix<distance_t> get_matrix() const override{
@@ -425,11 +429,13 @@ public:
       add_json_step(step_id, "job", steps_array, allocator);
     }
 
-    if(_pbl_context.round_trip){
-      // Duplicate the start location as end of the route for round
-      // trips and adjust first step type.
-      add_json_step(steps.front(), "end", steps_array, allocator);
-      steps_array[0]["type"] = "start";
+    if(!_pbl_context.force_start and !_pbl_context.force_end){
+      if(_pbl_context.problem == PROBLEM_TYPE::TSP){
+        // Duplicate the start location as end of the route for round
+        // trips and adjust first step type.
+        add_json_step(steps.front(), "end", steps_array, allocator);
+        steps_array[0]["type"] = "start";
+      }
     }
     else{
       if(_pbl_context.force_start){
