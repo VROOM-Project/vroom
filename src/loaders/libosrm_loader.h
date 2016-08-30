@@ -63,8 +63,8 @@ public:
     std::size_t m_size = _locations.size();
     assert(table.values.size() == m_size);
 
-    // Building matrix and checking for unfound routes to avoid
-    // unexpected behavior (OSRM v5 raises 'null')
+    // Build matrix while checking for unfound routes to avoid
+    // unexpected behavior (OSRM raises 'null').
     matrix<distance_t> m {m_size};
 
     std::vector<unsigned> nb_unfound_from_loc (m_size, 0);
