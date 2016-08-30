@@ -246,31 +246,14 @@ public:
       }
     }
 
-    // Determine the kind of problem.
-    _pbl_context.problem = PROBLEM_TYPE::TSP;
-
     if(!_pbl_context.force_start && !_pbl_context.force_end){
       // Specifying no start and no end should default to a round trip
       // computation to keep the expected behavior on a TSPLIB file
-      // without the need for extra keywords. Hence the case of an
-      // open trip with start and end defined during the optimization
-      // requires an extra "OPEN_TRIP: TRUE" to be explicitly
-      // specified.
-      boost::regex open_trip_rgx ("OPEN_TRIP[[:space:]]*:[[:space:]]*TRUE[[:space:]]");
-      boost::smatch open_trip_match;
-      bool round_trip = !boost::regex_search(input,
-                                             open_trip_match,
-                                             open_trip_rgx);
-      if(round_trip){
-        // Defaults to first place as start (only used in the solution
-        // display order since _pbl_context.force_start is still
-        // false).
+      // without the need for extra keywords.
+
+      // Defaults to first place as start (only used in the solution
+      // display order since _pbl_context.force_start is still false).
         _pbl_context.start = 0;
-      }
-      else{
-        // BOTH start and end are to be chosen during optimization.
-        _pbl_context.problem = PROBLEM_TYPE::OTSP;
-      }
     }
 
     if(_pbl_context.force_start
@@ -430,12 +413,10 @@ public:
     }
 
     if(!_pbl_context.force_start and !_pbl_context.force_end){
-      if(_pbl_context.problem == PROBLEM_TYPE::TSP){
-        // Duplicate the start location as end of the route for round
-        // trips and adjust first step type.
-        add_json_step(steps.front(), "end", steps_array, allocator);
-        steps_array[0]["type"] = "start";
-      }
+      // Duplicate the start location as end of the route for round
+      // trips and adjust first step type.
+      add_json_step(steps.front(), "end", steps_array, allocator);
+      steps_array[0]["type"] = "start";
     }
     else{
       if(_pbl_context.force_start){

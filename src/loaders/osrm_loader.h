@@ -118,11 +118,10 @@ protected:
       throw custom_exception("At least two locations required!");
     }
 
-    // Determine the kind of problem.
-    _pbl_context.problem = PROBLEM_TYPE::TSP;
     if(!_pbl_context.force_start && !_pbl_context.force_end){
-      // BOTH start and end are to be chosen during optimization.
-      _pbl_context.problem = PROBLEM_TYPE::OTSP;
+      throw custom_exception("No start or end specified for vehicle "
+                             + std::to_string(_vehicle_id)
+                             + '.');
     }
   }
 
