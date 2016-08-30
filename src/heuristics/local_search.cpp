@@ -164,7 +164,7 @@ distance_t local_search::relocate_step(){
                          std::ref(best_edge_1_starts[i]),
                          std::ref(best_edge_2_starts[i]));
   }
-  
+
   look_up(_rank_limits[_nb_threads - 1],
           _rank_limits[_nb_threads],
           std::ref(best_gains[_nb_threads - 1]),
@@ -182,7 +182,7 @@ distance_t local_search::relocate_step(){
   distance_t best_gain = best_gains[best_rank];
   index_t best_edge_1_start = best_edge_1_starts[best_rank];
   index_t best_edge_2_start = best_edge_2_starts[best_rank];
-  
+
   if(best_gain > 0){
     // Performing best possible exchange.
     index_t best_edge_1_end = _edges.at(best_edge_1_start);
@@ -211,7 +211,7 @@ distance_t local_search::perform_all_relocate_steps(){
 
   if(total_gain > 0){
     BOOST_LOG_TRIVIAL(trace) << "* Performed "
-                             << relocate_iter 
+                             << relocate_iter
                              << " \"relocate\" steps, gaining "
                              << total_gain
                              << ".";
@@ -222,14 +222,14 @@ distance_t local_search::perform_all_relocate_steps(){
 distance_t local_search::avoid_loop_step(){
   // In some cases, the solution can contain "loops" that other
   // operators can't fix. Those are found with two steps:
-  // 
+  //
   // 1) searching for all nodes that can be relocated somewhere else
   // AT NO COST because they are already on some other way.
-  // 
+  //
   // 2) listing all "chains" of two or more consecutive such nodes.
-  // 
+  //
   // Starting from the longest such chain, the fix is to:
-  // 
+  //
   // 3) relocate all nodes along the chain until an amelioration pops
   // out, meaning a "loop" has been undone.
 
@@ -253,7 +253,7 @@ distance_t local_search::avoid_loop_step(){
 
   do{
     index_t current = _edges.at(candidate);
-        
+
     bool candidate_relocatable = false;
     while((current != previous_candidate) and !candidate_relocatable){
       index_t next = _edges.at(current);
@@ -304,21 +304,21 @@ distance_t local_search::avoid_loop_step(){
     for(auto const& step: chain){
       // Compare situations to see if relocating current step after
       // possible_position.at(step) will decrease overall cost.
-      // 
+      //
       // Situation before:
-      // 
+      //
       // previous_c.at(step)-->step-->edges_c.at(step)
       // possible_position.at(step)-->edges_c.at(possible_position.at(step))
-      // 
-      // Situation after: 
-      // 
+      //
+      // Situation after:
+      //
       // previous_c.at(step)-->edges_c.at(step)
       // possible_position.at(step)-->step-->edges_c.at(possible_position.at(step))
 
       before_cost += _matrix[previous_c.at(step)][step];
       before_cost += _matrix[step][edges_c.at(step)];
       after_cost += _matrix[previous_c.at(step)][edges_c.at(step)];
-      before_cost 
+      before_cost
         += _matrix[possible_position.at(step)][edges_c.at(possible_position.at(step))];
       after_cost += _matrix[possible_position.at(step)][step];
       after_cost += _matrix[step][edges_c.at(possible_position.at(step))];
@@ -335,7 +335,7 @@ distance_t local_search::avoid_loop_step(){
 
       edges_c.at(possible_position.at(step)) = step;
       previous_c.at(step) = possible_position.at(step);
-      
+
       if(before_cost > after_cost){
         amelioration_found = true;
         gain = before_cost - after_cost;
@@ -366,7 +366,7 @@ distance_t local_search::perform_all_avoid_loop_steps(){
 
   if(total_gain > 0){
     BOOST_LOG_TRIVIAL(trace) << "* Performed "
-                             << relocate_iter 
+                             << relocate_iter
                              << " \"avoid loop\" steps, gaining "
                              << total_gain
                              << ".";
@@ -404,7 +404,7 @@ distance_t local_search::two_opt_step(){
         // In the symmetric case, trying the move with edges (e_2, e_1)
         // is the same as with (e_1, e_2), so assuming edge_1_start <
         // edge_2_start avoids testing pairs in both orders.
-        
+
         index_t edge_2_end = _edges.at(edge_2_start);
         if((edge_2_start == edge_1_end) or (edge_2_end == edge_1_start)){
           // Operator doesn't make sense.
@@ -446,7 +446,7 @@ distance_t local_search::two_opt_step(){
                          std::ref(best_edge_1_starts[i]),
                          std::ref(best_edge_2_starts[i]));
   }
-  
+
   look_up(_sym_two_opt_rank_limits[_nb_threads - 1],
           _sym_two_opt_rank_limits[_nb_threads],
           std::ref(best_gains[_nb_threads - 1]),
@@ -588,7 +588,7 @@ distance_t local_search::asym_two_opt_step(){
                          std::ref(best_edge_1_starts[i]),
                          std::ref(best_edge_2_starts[i]));
   }
-  
+
   look_up(limit_nodes[_nb_threads - 1],
           limit_nodes[_nb_threads],
           std::ref(best_gains[_nb_threads - 1]),
@@ -645,7 +645,7 @@ distance_t local_search::perform_all_two_opt_steps(){
 
   if(total_gain > 0){
     BOOST_LOG_TRIVIAL(trace) << "* Performed "
-                             << two_opt_iter 
+                             << two_opt_iter
                              << " \"2-opt\" steps, gaining "
                              << total_gain
                              << ".";
@@ -668,7 +668,7 @@ distance_t local_search::perform_all_asym_two_opt_steps(){
 
   if(total_gain > 0){
     BOOST_LOG_TRIVIAL(trace) << "* Performed "
-                             << two_opt_iter 
+                             << two_opt_iter
                              << " \"2-opt\" steps, gaining "
                              << total_gain
                              << ".";
@@ -747,7 +747,7 @@ distance_t local_search::or_opt_step(){
                          std::ref(best_edge_1_starts[i]),
                          std::ref(best_edge_2_starts[i]));
   }
-  
+
   look_up(_rank_limits[_nb_threads - 1],
           _rank_limits[_nb_threads],
           std::ref(best_gains[_nb_threads - 1]),
@@ -792,7 +792,7 @@ distance_t local_search::perform_all_or_opt_steps(){
 
   if(total_gain > 0){
     BOOST_LOG_TRIVIAL(trace) << "* Performed "
-                             << or_opt_iter 
+                             << or_opt_iter
                              << " \"or_opt\" steps, gaining "
                              << total_gain
                              << ".";

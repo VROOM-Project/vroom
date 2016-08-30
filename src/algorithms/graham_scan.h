@@ -47,7 +47,7 @@ std::list<index_t> convex_hull(const std::vector<std::pair<T, T>>& locations){
       lowest_location = *location;
     }
   }
-  
+
   // Using a sorted copy of locations.
   std::vector<std::pair<T, T>> sorted_locations (locations);
 
@@ -69,7 +69,7 @@ std::list<index_t> convex_hull(const std::vector<std::pair<T, T>>& locations){
 
       T orient = orientation(_ref, lhs, rhs);
       is_inferior &= (orient >= 0);
-      
+
       if(orient == 0){
         is_inferior &= ((lh_x_diff * lh_x_diff) + (lh_y_diff * lh_y_diff)
                         < (rh_x_diff * rh_x_diff) + (rh_y_diff * rh_y_diff));

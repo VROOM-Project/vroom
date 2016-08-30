@@ -1,5 +1,5 @@
 # This file is part of VROOM.
-# 
+#
 # Copyright (c) 2015-2016, Julien Coupey.
 # All rights reserved (see LICENSE).
 
@@ -37,6 +37,6 @@ $(MAIN) : $(OBJ) main.o
 main.o : main.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-clean : 
+clean :
 	rm $(OBJ)
 	rm $(MAIN)

@@ -14,7 +14,7 @@ std::pair<std::list<index_t>, distance_t> solve_atsp(const tsp& asymmetric_tsp,
                                                      timing_t& computing_times){
   // Applying heuristic.
   auto start_heuristic = std::chrono::high_resolution_clock::now();
-  BOOST_LOG_TRIVIAL(info) 
+  BOOST_LOG_TRIVIAL(info)
     << "[Heuristic] Start heuristic on symmetrized problem.";
 
   std::unique_ptr<heuristic> christo_h = std::make_unique<christo_heuristic>();
@@ -24,7 +24,7 @@ std::pair<std::list<index_t>, distance_t> solve_atsp(const tsp& asymmetric_tsp,
 
   auto end_heuristic = std::chrono::high_resolution_clock::now();
 
-  computing_times.heuristic = 
+  computing_times.heuristic =
     std::chrono::duration_cast<std::chrono::milliseconds>
     (end_heuristic - start_heuristic).count();
 
@@ -41,9 +41,9 @@ std::pair<std::list<index_t>, distance_t> solve_atsp(const tsp& asymmetric_tsp,
   // different neighbourhoods are performed, stopping when reaching a
   // local minima.
   auto start_sym_local_search = std::chrono::high_resolution_clock::now();
-  BOOST_LOG_TRIVIAL(info) 
+  BOOST_LOG_TRIVIAL(info)
     << "[Local search] Start local search on symmetrized problem.";
-  BOOST_LOG_TRIVIAL(info) 
+  BOOST_LOG_TRIVIAL(info)
     << "[Local search] Using " << nb_threads << " thread(s).";
 
   local_search sym_ls (asymmetric_tsp.get_symmetrized_matrix(),
@@ -64,8 +64,8 @@ std::pair<std::list<index_t>, distance_t> solve_atsp(const tsp& asymmetric_tsp,
 
     // All or-opt moves.
     sym_or_opt_gain = sym_ls.perform_all_or_opt_steps();
-  }while((sym_two_opt_gain > 0) 
-         or (sym_relocate_gain > 0) 
+  }while((sym_two_opt_gain > 0)
+         or (sym_relocate_gain > 0)
          or (sym_or_opt_gain > 0));
 
   // Default for first input location.
@@ -80,7 +80,7 @@ std::pair<std::list<index_t>, distance_t> solve_atsp(const tsp& asymmetric_tsp,
 
   auto end_sym_local_search = std::chrono::high_resolution_clock::now();
 
-  auto sym_local_search_duration 
+  auto sym_local_search_duration
     = std::chrono::duration_cast<std::chrono::milliseconds>
     (end_sym_local_search - start_sym_local_search).count();
   BOOST_LOG_TRIVIAL(info) << "[Local search] Done, took "
@@ -88,7 +88,7 @@ std::pair<std::list<index_t>, distance_t> solve_atsp(const tsp& asymmetric_tsp,
 
   BOOST_LOG_TRIVIAL(info) << "[Local search] Symmetric solution cost is now "
                           << current_cost
-                          << " (" 
+                          << " ("
                           << std::fixed << std::setprecision(2)
                           << 100 *(((double) current_cost) / christo_cost - 1)
                           << "%).";
@@ -108,26 +108,26 @@ std::pair<std::list<index_t>, distance_t> solve_atsp(const tsp& asymmetric_tsp,
     // Local search on asymmetric problem.
     local_search asym_ls (asymmetric_tsp.get_matrix(),
                           false, // Not the symmetrized problem.
-                          (direct_cost <= reverse_cost) ? 
+                          (direct_cost <= reverse_cost) ?
                           current_sol: reverse_current_sol,
                           nb_threads);
 
     auto start_asym_local_search = std::chrono::high_resolution_clock::now();
-    BOOST_LOG_TRIVIAL(info) 
+    BOOST_LOG_TRIVIAL(info)
       << "[Asym. local search] Back to asymmetric problem, initial solution cost is "
       << sym_ls_cost << ".";
-  
-    BOOST_LOG_TRIVIAL(info) 
+
+    BOOST_LOG_TRIVIAL(info)
       << "[Asym. local search] Start local search on asymmetric problem.";
 
-    BOOST_LOG_TRIVIAL(info) 
+    BOOST_LOG_TRIVIAL(info)
       << "[Asym. local search] Using " << nb_threads << " thread(s).";
 
     distance_t asym_two_opt_gain = 0;
     distance_t asym_relocate_gain = 0;
     distance_t asym_or_opt_gain = 0;
     distance_t asym_avoid_loops_gain = 0;
-  
+
     do{
       // All avoid-loops moves.
       asym_avoid_loops_gain = asym_ls.perform_all_avoid_loop_steps();
@@ -140,8 +140,8 @@ std::pair<std::list<index_t>, distance_t> solve_atsp(const tsp& asymmetric_tsp,
 
       // All or-opt moves.
       asym_or_opt_gain = asym_ls.perform_all_or_opt_steps();
-    }while((asym_two_opt_gain > 0) 
-           or (asym_relocate_gain > 0) 
+    }while((asym_two_opt_gain > 0)
+           or (asym_relocate_gain > 0)
            or (asym_or_opt_gain > 0)
            or (asym_avoid_loops_gain > 0));
 
@@ -151,22 +151,22 @@ std::pair<std::list<index_t>, distance_t> solve_atsp(const tsp& asymmetric_tsp,
 
     auto end_asym_local_search = std::chrono::high_resolution_clock::now();
 
-    asym_local_search_duration 
+    asym_local_search_duration
       = std::chrono::duration_cast<std::chrono::milliseconds>
       (end_asym_local_search - start_asym_local_search).count();
     BOOST_LOG_TRIVIAL(info) << "[Asym. local search] Done, took "
                             << asym_local_search_duration << " ms.";
 
-    BOOST_LOG_TRIVIAL(info) 
+    BOOST_LOG_TRIVIAL(info)
       << "[Asym. local search] Asymmetric solution cost is now "
       << current_cost
-      << " (" 
+      << " ("
       << std::fixed << std::setprecision(2)
       << 100 *(((double) current_cost) / sym_ls_cost - 1)
       << "%).";
   }
 
-  computing_times.local_search 
+  computing_times.local_search
     = sym_local_search_duration + asym_local_search_duration;
 
   // Deal with open tour cases requiring adaptation.

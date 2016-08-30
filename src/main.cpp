@@ -129,11 +129,11 @@ int main(int argc, char **argv){
   // Log level.
   boost::log::core::get()
     ->set_filter(boost::log::trivial::severity >= cl_args.log_level);
-  
+
   try{
     timing_t computing_times;
     auto start_problem_loading = std::chrono::high_resolution_clock::now();
-    BOOST_LOG_TRIVIAL(info) 
+    BOOST_LOG_TRIVIAL(info)
       << "[Matrix] Start matrix computing and problem loading.";
 
     // Parse input with relevant loader.

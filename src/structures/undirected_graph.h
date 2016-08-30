@@ -27,7 +27,7 @@ private:
 
 public:
   undirected_graph() {}
-  
+
   undirected_graph(const matrix<T>& m):
     _size(m.size())
   {
@@ -49,7 +49,7 @@ public:
     for(auto const& edge: _edges){
       index_t first = edge.get_first_vertex();
       index_t second = edge.get_second_vertex();
-    
+
       _adjacency_list[first].push_back(second);
       _adjacency_list[second].push_back(first);
     }

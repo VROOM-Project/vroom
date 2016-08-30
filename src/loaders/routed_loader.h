@@ -21,8 +21,8 @@ private:
   std::string _address;            // OSRM server adress
   std::string _port;               // OSRM server listening port
 
-  std::string build_query(const std::vector<Location>& locations, 
-                          std::string service, 
+  std::string build_query(const std::vector<Location>& locations,
+                          std::string service,
                           std::string extra_args = "") const{
     // Building query for osrm-routed
     std::string query = "GET /" + service;
@@ -39,7 +39,7 @@ private:
           + ";";
       }
       query.pop_back();         // Remove trailing ';'.
-      
+
       if(!extra_args.empty()){
         query += "?" + extra_args;
       }
@@ -62,7 +62,7 @@ private:
       }
       query.pop_back();         // Remove trailing '&'.
     }
-    
+
     query += " HTTP/1.1\r\n";
     query += "Host: " + _address + "\r\n";
     query += "Accept: */*\r\n";
@@ -76,7 +76,7 @@ private:
 
     try{
       boost::asio::io_service io_service;
-    
+
       tcp::resolver r (io_service);
       tcp::resolver::query q (_address, _port);
 
@@ -182,7 +182,7 @@ public:
         }
       }
     }
-    
+
     check_unfound(nb_unfound_from_loc, nb_unfound_to_loc);
 
     return m;

@@ -15,7 +15,7 @@ All rights reserved (see LICENSE).
 #include "../../include/rapidjson/document.h"
 #include "../structures/matrix.h"
 
-template <class T> 
+template <class T>
 class problem_io{
 
 public:

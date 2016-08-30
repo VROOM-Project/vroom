@@ -14,8 +14,8 @@ std::list<index_t> christo_heuristic::build_solution(const tsp& instance){
   // tree with a minimum weight perfect matching on its odd degree
   // vertices.
 
-  BOOST_LOG_TRIVIAL(trace) << "* Graph has " 
-                           << instance.size() 
+  BOOST_LOG_TRIVIAL(trace) << "* Graph has "
+                           << instance.size()
                            << " nodes.";
 
   undirected_graph<distance_t> mst_graph
@@ -84,7 +84,7 @@ std::list<index_t> christo_heuristic::build_solution(const tsp& instance){
   // Building eulerian graph.
   std::vector<edge<distance_t>> eulerian_graph_edges
     = mst_graph.get_edges();
-  
+
   // Adding edges from minimum weight perfect matching (with the
   // original vertices index). Edges appear twice in matching so we
   // need to remember the one already added.
@@ -115,7 +115,7 @@ std::list<index_t> christo_heuristic::build_solution(const tsp& instance){
 
   // Building and joining tours as long as necessary.
   bool complete_tour;
-  
+
   do{
     complete_tour = true;       // presumed complete
     std::list<index_t>::iterator new_tour_start;
@@ -157,8 +157,8 @@ std::list<index_t> christo_heuristic::build_solution(const tsp& instance){
       // Adding new tour to existing eulerian path.
       eulerian_path.insert(new_tour_start, new_tour.begin(), new_tour.end());
     }
-  }while(!complete_tour);    
-    
+  }while(!complete_tour);
+
   std::set<index_t> already_visited;
   std::list<index_t> tour;
   for(const auto& vertex: eulerian_path){

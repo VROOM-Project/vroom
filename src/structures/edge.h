@@ -28,7 +28,7 @@ public:
     _first_vertex(std::min(first_vertex, second_vertex)),
     _second_vertex(std::max(first_vertex, second_vertex)),
     _weight(weight) {}
-  
+
   index_t get_first_vertex() const{
     return _first_vertex;
   }

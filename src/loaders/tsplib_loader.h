@@ -285,7 +285,7 @@ public:
       }
       case EWF::UPPER_ROW: {
         // Reading from input data.
-        distance_t current_value;              
+        distance_t current_value;
         for(std::size_t i = 0; i < _dimension - 1; ++i){
           for(std::size_t j = i + 1; j < _dimension; ++j){
             data >> current_value;
@@ -301,7 +301,7 @@ public:
       }
       case EWF::UPPER_DIAG_ROW:{
         // Reading from input data.
-        distance_t current_value;              
+        distance_t current_value;
         for(std::size_t i = 0; i < _dimension; ++i){
           for(std::size_t j = i; j < _dimension; ++j){
             data >> current_value;
@@ -317,7 +317,7 @@ public:
       }
       case EWF::LOWER_DIAG_ROW:{
         // Reading from input data.
-        distance_t current_value;              
+        distance_t current_value;
         for(std::size_t i = 0; i < _dimension; ++i){
           for(std::size_t j = 0; j <= i ; ++j){
             data >> current_value;
@@ -360,7 +360,7 @@ public:
         assert(false);
       }
       // Computing symmetric matrix.
-      distance_t current_value;              
+      distance_t current_value;
       for(std::size_t i = 0; i < _dimension; ++i){
         m[i][i] = 0;
         for(std::size_t j = i + 1; j < _dimension ; ++j){

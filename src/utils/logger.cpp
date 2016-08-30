@@ -32,13 +32,13 @@ void write_solution(const cl_args_t& cl_args,
       std::chrono::duration_cast<std::chrono::milliseconds>
       (end_route_geometry - start_route_geometry).count();
     BOOST_LOG_TRIVIAL(info) << "[Route] Done, took "
-                            << route_geometry_duration 
+                            << route_geometry_duration
                             << " ms.";
   }
 
   // Set output.
   auto start_output = std::chrono::high_resolution_clock::now();
-  std::string out 
+  std::string out
     = cl_args.output_file.empty() ? "standard output": cl_args.output_file;
   BOOST_LOG_TRIVIAL(info) << "[Output] Write solution to "
                           << out << ".";
@@ -72,7 +72,7 @@ void write_solution(const cl_args_t& cl_args,
   distance_t global_cost = 0;
   distance_t global_duration = 0;
   distance_t global_distance = 0;
-  
+
   for(rapidjson::SizeType i = 0; i < json_routes_array.Size(); ++i){
     global_cost += json_routes_array[i]["cost"].GetUint();
     if(cl_args.use_osrm and cl_args.geometry){
@@ -128,7 +128,7 @@ void write_error(const std::string& output,
 
   json_output.AddMember("error", rapidjson::Value(), allocator);
   json_output["error"].SetString(message.c_str(), message.size());
-  
+
   rapidjson::StringBuffer s;
   rapidjson::Writer<rapidjson::StringBuffer> r_writer(s);
   json_output.Accept(r_writer);

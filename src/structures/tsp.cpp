@@ -62,7 +62,7 @@ tsp::tsp(const pbl_context_t& pbl_context, const matrix<distance_t>& m):
   }
 
   // Compute symmetrized matrix and update _is_symmetric flag.
-  const distance_t& (*sym_f) (const distance_t&, const distance_t&) 
+  const distance_t& (*sym_f) (const distance_t&, const distance_t&)
     = std::min<distance_t>;
   if((_pbl_context.force_start and !_pbl_context.force_end)
      or (!_pbl_context.force_start and _pbl_context.force_end)){
@@ -81,7 +81,7 @@ tsp::tsp(const pbl_context_t& pbl_context, const matrix<distance_t>& m):
     }
   }
   _symmetrized_matrix = mat;
-  
+
   // Compute graph for symmetrized problem.
   _symmetrized_graph = undirected_graph<distance_t>(_symmetrized_matrix);
 }

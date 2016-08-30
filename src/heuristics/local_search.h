@@ -54,9 +54,9 @@ public:
   distance_t or_opt_step();
 
   distance_t perform_all_or_opt_steps();
-    
+
   std::list<index_t> get_tour(index_t first_index) const;
-  
+
 };
 
 #endif

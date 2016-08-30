@@ -49,7 +49,7 @@ public:
     catch(const std::exception &e){
       throw custom_exception(e.what());
     }
-    
+
     if(status == Status::Error){
       throw custom_exception("libOSRM: "
                              + result.values["code"].get<json::String>().value

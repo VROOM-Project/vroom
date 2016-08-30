@@ -58,7 +58,7 @@ protected:
         + ")";
       throw custom_exception(error_msg);
     }
-    
+
     // Getting vehicle(s).
     if(!json_input.HasMember("vehicles")
        or !json_input["vehicles"].IsArray()

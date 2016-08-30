@@ -48,7 +48,7 @@ std::unordered_map<index_t, index_t> minimum_weight_perfect_matching(const matri
     alternating_tree.clear();
     std::set<index_t> S;
     std::set<index_t> T_set;
-    
+
     // Finding any unmatched x.
     index_t unmatched_x = 0;
     while(matching_xy.find(unmatched_x) != matching_xy.end()){
@@ -101,7 +101,7 @@ std::unordered_map<index_t, index_t> minimum_weight_perfect_matching(const matri
         for(index_t y = 0; y < m.size(); ++y){
           if(T_set.find(y) == T_set.end()){
             slack.at(y) = slack.at(y) - alpha;
-            
+
             for(auto const& x: S){
               if(labeling_x.at(x) + labeling_y.at(y) == m[x][y]){
                 if(alternating_tree.find(y) == alternating_tree.end()){
@@ -147,12 +147,12 @@ std::unordered_map<index_t, index_t> minimum_weight_perfect_matching(const matri
       else{
         // Find larger matching using M-alternating path. The path is
         // described at each step by:
-        // 
+        //
         // chosen_y -- chosen_x -- next_y -- [...] -- unmatched_x
         //
         // where (chosen_x, next_y) is already in matching and should
         // be removed and (chosen_x, chosen_y) is to be added.
-        
+
         index_t current_y = chosen_y;
         index_t current_x = alternating_tree.at(current_y);
 
@@ -162,7 +162,7 @@ std::unordered_map<index_t, index_t> minimum_weight_perfect_matching(const matri
           // Remove alternating edge from current matching.
           matching_xy.erase(matching_xy.find(current_x));
           matching_yx.erase(matching_yx.find(next_y));
-          
+
           // Add edge from alternating tree to matching.
           matching_xy.emplace(current_x, current_y);
           matching_yx.emplace(current_y, current_x);
@@ -282,7 +282,7 @@ std::unordered_map<index_t, index_t> branch_and_bound_symmetric_mwpm(const matri
         children_edges.sort([](auto const& a, auto const& b)
                             {
                               return (a.get_weight() < b.get_weight());
-                            });  
+                            });
         // Putting highest weights first to pick them later.
         for(auto edge = children_edges.rbegin();
             edge != children_edges.rend();
@@ -291,13 +291,13 @@ std::unordered_map<index_t, index_t> branch_and_bound_symmetric_mwpm(const matri
         }
       }
     }
-  }  
-  
+  }
+
   std::unordered_map<index_t, index_t> matching;
   for(auto const& edge: best_edges_choice){
     matching.emplace(edge.get_first_vertex(), edge.get_second_vertex());
   }
-  
+
   return matching;
 }
 
@@ -307,7 +307,7 @@ std::unordered_map<index_t, index_t> greedy_symmetric_approx_mwpm(const matrix<T
   // choosing always smaller possible value, no minimality
   // assured. Matrix size should be even!
   assert(m.size() % 2 == 0);
-    
+
   std::unordered_map<index_t, index_t> matching;
   std::set<index_t> remaining_indices;
   for(index_t i = 0; i < m.size(); ++i){

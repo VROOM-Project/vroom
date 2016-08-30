@@ -30,17 +30,17 @@ public:
 
 template <class T>
 class matrix : private std::vector<line<T>>{
-  
+
   using parent = std::vector<line<T>>;
-  
+
  public:
   using parent::size;
   using parent::operator[];
-  
-  matrix(std::size_t n): 
+
+  matrix(std::size_t n):
     parent(n, line<T>(n)){
   }
-  
+
   matrix<T> get_sub_matrix(const std::vector<index_t>& indices) const{
     matrix<T> sub_matrix {indices.size()};
     for(std::size_t i = 0; i < indices.size(); ++i){
