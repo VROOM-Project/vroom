@@ -22,7 +22,7 @@ using duration_t = uint32_t;
 // Setting max value would cause trouble with further additions.
 constexpr distance_t INFINITE_DISTANCE = 3 * (std::numeric_limits<distance_t>::max() / 4);
 
-struct timing_t {
+struct timing_t{
   // Computing times in milliseconds.
   duration_t matrix_loading;
   duration_t heuristic;
@@ -30,7 +30,7 @@ struct timing_t {
   duration_t total_duration;
 };
 
-struct cl_args_t {
+struct cl_args_t{
   // Listing command-line options.
   std::string osrm_address;                      // -a
   bool geometry;                                 // -g
@@ -53,8 +53,7 @@ struct cl_args_t {
     nb_threads(2) {}
 };
 
-struct pbl_context_t {
-  bool round_trip;
+struct pbl_context_t{
   bool force_start;
   index_t start;
   bool force_end;

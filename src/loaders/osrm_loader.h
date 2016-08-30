@@ -76,23 +76,9 @@ protected:
     }
     _vehicle_id = json_input["vehicles"][0]["id"].GetUint();
 
-    bool has_start = json_input["vehicles"][0].HasMember("start");
-
-    // Check round_trip optional value.
-    if(json_input["vehicles"][0].HasMember("round_trip")
-       and !json_input["vehicles"][0]["round_trip"].IsBool()){
-      throw custom_exception("Incorrect round_trip key.");
-    }
-    // Perform a round trip by default unless "round_trip": false is
-    // explicitly specified.
-    _pbl_context.round_trip = !json_input["vehicles"][0].HasMember("round_trip")
-      or json_input["vehicles"][0]["round_trip"].GetBool();
-
-    if(_pbl_context.round_trip and !has_start){
-      throw custom_exception("Vehicle start is mandatory for a round trip.");
-    }
-
-    if(has_start){
+    // Add optional vehicle start.
+    _pbl_context.force_start = json_input["vehicles"][0].HasMember("start");
+    if(_pbl_context.force_start){
       // Remember the index of the start loc to be added.
       _pbl_context.start = _locations.size();
       this->add_location(LOC_TYPE::START, json_input["vehicles"][0]["start"]);
@@ -120,25 +106,22 @@ protected:
     }
 
     // Add optional vehicle end as last value in _locations.
-    bool has_end = json_input["vehicles"][0].HasMember("end");
-    if(_pbl_context.round_trip and has_end){
-      throw custom_exception("Vehicle end may only be used with round_trip: false.");
-    }
-    if(!_pbl_context.round_trip and !has_start and !has_end){
-      throw custom_exception("Vehicle start or end is mandatory with round_trip: false.");
-    }
-    if(has_end){
+    _pbl_context.force_end = json_input["vehicles"][0].HasMember("end");
+
+    if(_pbl_context.force_end){
       // Remember the index of the end loc to be added.
       _pbl_context.end = _locations.size();
       this->add_location(LOC_TYPE::END, json_input["vehicles"][0]["end"]);
     }
 
-    // Deduce forced start and end from input.
-    _pbl_context.force_start = (has_start and !_pbl_context.round_trip);
-    _pbl_context.force_end = has_end;
-
     if(_locations.size() <= 1){
       throw custom_exception("At least two locations required!");
+    }
+
+    if(!_pbl_context.force_start && !_pbl_context.force_end){
+      throw custom_exception("No start or end specified for vehicle "
+                             + std::to_string(_vehicle_id)
+                             + '.');
     }
   }
 
@@ -225,12 +208,6 @@ protected:
       }
 
       add_json_step(step_id, type, steps_array, allocator);
-    }
-
-    if(_pbl_context.round_trip){
-      // Duplicate the start location as end of the route for round
-      // trips.
-      add_json_step(steps.front(), "end", steps_array, allocator);
     }
 
     value.Swap(steps_array);

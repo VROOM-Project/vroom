@@ -17,7 +17,6 @@ All rights reserved (see LICENSE).
 #include "./typedefs.h"
 #include "./matrix.h"
 #include "./undirected_graph.h"
-#include "../loaders/problem_io.h"
 
 class tsp{
 protected:
@@ -28,8 +27,8 @@ protected:
   bool _is_symmetric;
 
 public:
-  tsp(const problem_io<distance_t>& loader);
-  
+  tsp(const pbl_context_t& pbl_context, const matrix<distance_t>& matrix);
+
   const matrix<distance_t>& get_matrix() const;
 
   const matrix<distance_t>& get_symmetrized_matrix() const;

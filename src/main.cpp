@@ -167,7 +167,7 @@ int main(int argc, char **argv){
     }
 
     // Build problem.
-    tsp asymmetric_tsp (*loader);
+    tsp asymmetric_tsp (loader->get_pbl_context(), loader->get_matrix());
 
     auto end_problem_loading = std::chrono::high_resolution_clock::now();
     computing_times.matrix_loading =

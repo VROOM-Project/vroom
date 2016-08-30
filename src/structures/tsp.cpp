@@ -9,9 +9,9 @@ All rights reserved (see LICENSE).
 
 #include "tsp.h"
 
-tsp::tsp(const problem_io<distance_t>& loader):
-  _pbl_context(loader.get_pbl_context()),
-  _matrix(loader.get_matrix()),
+tsp::tsp(const pbl_context_t& pbl_context, const matrix<distance_t>& m):
+  _pbl_context(pbl_context),
+  _matrix(m),
   _symmetrized_matrix(0),
   _is_symmetric(true){
 
@@ -53,9 +53,8 @@ tsp::tsp(const problem_io<distance_t>& loader):
     // Forcing first location as start, last location as end to
     // produce an open tour.
     assert(_pbl_context.start != _pbl_context.end);
-    index_t last_index = _matrix.size() - 1;
     _matrix[_pbl_context.end][_pbl_context.start] = 0;
-    for(index_t j = 1; j < last_index; ++j){
+    for(index_t j = 0; j < _matrix.size(); ++j){
       if((j != _pbl_context.start) and (j != _pbl_context.end)){
         _matrix[_pbl_context.end][j] = INFINITE_DISTANCE;
       }
@@ -71,17 +70,17 @@ tsp::tsp(const problem_io<distance_t>& loader):
     // forced, the matrix has a line or a column filled with zeros.
     sym_f = std::max<distance_t>;
   }
-  matrix<distance_t> m {_matrix.size()};
-  for(index_t i = 0; i < m.size(); ++i){
-    m[i][i] = _matrix[i][i];
-    for(index_t j = i + 1; j < m.size(); ++j){
+  matrix<distance_t> mat {_matrix.size()};
+  for(index_t i = 0; i < mat.size(); ++i){
+    mat[i][i] = _matrix[i][i];
+    for(index_t j = i + 1; j < mat.size(); ++j){
       _is_symmetric &= (_matrix[i][j] == _matrix[j][i]);
       distance_t val = sym_f(_matrix[i][j], _matrix[j][i]);
-      m[i][j] = val;
-      m[j][i] = val;
+      mat[i][j] = val;
+      mat[j][i] = val;
     }
   }
-  _symmetrized_matrix = m;
+  _symmetrized_matrix = mat;
   
   // Compute graph for symmetrized problem.
   _symmetrized_graph = undirected_graph<distance_t>(_symmetrized_matrix);
