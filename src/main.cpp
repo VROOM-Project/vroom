@@ -31,7 +31,13 @@ void display_usage(){
   usage += "Options:\n";
   usage += "\t-a ADDRESS\t OSRM server address (\"0.0.0.0\")\n";
   usage += "\t-p PORT,\t OSRM listening port (5000)\n";
-  usage += "\t-m MODE,\t OSRM profile name (car)\n";
+  // usage += "\t-m MODE,\t OSRM profile name (car)\n";
+
+  // The -m flag is only present as the profile name is part of the
+  // OSRM v5 API. It is undocumented as OSRM doesn't implement
+  // query-time profile selection (yet) so setting it will have no
+  // effect for now.
+
   usage += "\t-g,\t\t get detailed route geometry for the solution\n";
   usage += "\t-i FILE,\t read input from FILE rather than from\n\t\t\t command-line\n";
   usage += "\t-l,\t\t use libosrm rather than osrm-routed\n";
