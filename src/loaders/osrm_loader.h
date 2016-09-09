@@ -25,7 +25,6 @@ protected:
   struct Location {LOC_TYPE type; double lon; double lat; index_t job_id;};
 
   const std::string _osrm_profile; // OSRM profile name
-  const bool _use_osrm_v5;         // For backward compat
   std::vector<Location> _locations;
 
   static distance_t round_to_distance(double value){
@@ -44,8 +43,7 @@ protected:
 
   osrm_loader(const std::string& osrm_profile,
               const std::string& input):
-    _osrm_profile(osrm_profile),
-    _use_osrm_v5(!_osrm_profile.empty())
+    _osrm_profile(osrm_profile)
   {
     rapidjson::Document json_input;
     std::string error_msg;

@@ -31,10 +31,16 @@ void display_usage(){
   usage += "Options:\n";
   usage += "\t-a ADDRESS\t OSRM server address (\"0.0.0.0\")\n";
   usage += "\t-p PORT,\t OSRM listening port (5000)\n";
-  usage += "\t-m MODE,\t mode of transportation (profile name), iff using\n\t\t\t OSRM v5\n";
+  // usage += "\t-m MODE,\t OSRM profile name (car)\n";
+
+  // The -m flag is only present as the profile name is part of the
+  // OSRM v5 API. It is undocumented as OSRM doesn't implement
+  // query-time profile selection (yet) so setting it will have no
+  // effect for now.
+
   usage += "\t-g,\t\t get detailed route geometry for the solution\n";
   usage += "\t-i FILE,\t read input from FILE rather than from\n\t\t\t command-line\n";
-  usage += "\t-l,\t\t use libosrm rather than osrm-routed (requires -m)\n";
+  usage += "\t-l,\t\t use libosrm rather than osrm-routed\n";
   usage += "\t-o OUTPUT,\t output file name\n";
   usage += "\t-t THREADS,\t number of threads to use\n";
   usage += "\t-v,\t\t turn on verbose output\n";
@@ -144,9 +150,9 @@ int main(int argc, char **argv){
         // Use osrm-routed.
         loader
           = std::make_unique<routed_loader>(cl_args.osrm_address,
-                                             cl_args.osrm_port,
-                                             cl_args.osrm_profile,
-                                             cl_args.input);
+                                            cl_args.osrm_port,
+                                            cl_args.osrm_profile,
+                                            cl_args.input);
       }
       else{
         #if LIBOSRM
