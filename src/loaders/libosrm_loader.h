@@ -22,22 +22,20 @@ All rights reserved (see LICENSE).
 #include "osrm/status.hpp"
 #include "osrm/osrm.hpp"
 
-using namespace osrm;
-
 // Unable to define an OSRM object as a class member and use it within
 // get_matrix and get_route_infos because Table and Route are not
 // const (see #34). This should be fixed in libosrm in the future (see
 // OSRM #2861 and #2862). In the meantime, this workaround suggested
 // by @daniel-j-h allows to support all libosrm 5.* versions.
 struct S{
-  mutable OSRM osrm;
-  S(EngineConfig engine): osrm(engine){}
+  mutable osrm::OSRM osrm;
+  S(osrm::EngineConfig engine): osrm(engine){}
 };
 
 class libosrm_loader : public osrm_loader{
 
 private:
-  const EngineConfig _config;
+  const osrm::EngineConfig _config;
   const S _s;
 
 public:
@@ -48,14 +46,14 @@ public:
     _s(_config){}
 
   virtual matrix<distance_t> get_matrix() const override{
-    TableParameters params;
+    osrm::TableParameters params;
     for(auto const& location: _locations){
-      params.coordinates.push_back({util::FloatLongitude(location.lon),
-            util::FloatLatitude(location.lat)});
+      params.coordinates.push_back({osrm::util::FloatLongitude(location.lon),
+            osrm::util::FloatLatitude(location.lat)});
     }
 
-    json::Object result;
-    Status status;
+    osrm::json::Object result;
+    osrm::Status status;
     try{
       status = _s.osrm.Table(params, result);
     }
@@ -63,14 +61,14 @@ public:
       throw custom_exception(e.what());
     }
 
-    if(status == Status::Error){
+    if(status == osrm::Status::Error){
       throw custom_exception("libOSRM: "
-                             + result.values["code"].get<json::String>().value
+                             + result.values["code"].get<osrm::json::String>().value
                              + ": "
-                             + result.values["message"].get<json::String>().value);
+                             + result.values["message"].get<osrm::json::String>().value);
     }
 
-    auto& table = result.values["durations"].get<json::Array>();
+    auto& table = result.values["durations"].get<osrm::json::Array>();
 
     // Expected matrix size.
     std::size_t m_size = _locations.size();
@@ -85,11 +83,11 @@ public:
 
     std::string reason;
     for(std::size_t i = 0; i < m_size; ++i){
-      const auto& line = table.values.at(i).get<json::Array>();
+      const auto& line = table.values.at(i).get<osrm::json::Array>();
       assert(line.values.size() == m_size);
       for(std::size_t j = 0; j < m_size; ++j){
         const auto& el = line.values.at(j);
-        if(el.is<json::Null>()){
+        if(el.is<osrm::json::Null>()){
           // No route found between i and j. Just storing info as we
           // don't know yet which location is responsible between i
           // and j.
@@ -97,7 +95,7 @@ public:
           ++nb_unfound_to_loc[j];
         }
         else{
-          m[i][j] = round_to_distance(el.get<json::Number>().value);
+          m[i][j] = round_to_distance(el.get<osrm::json::Number>().value);
         }
       }
     }
@@ -111,21 +109,21 @@ public:
                                rapidjson::Value& value,
                                rapidjson::Document::AllocatorType& allocator) const override{
     // Default options for routing.
-    RouteParameters params(false, // steps
-                           false, // alternatives
-                           RouteParameters::GeometriesType::Polyline,
-                           RouteParameters::OverviewType::Full,
-                           false // continue_straight
-                           );
+    osrm::RouteParameters params(false, // steps
+                                 false, // alternatives
+                                 osrm::RouteParameters::GeometriesType::Polyline,
+                                 osrm::RouteParameters::OverviewType::Full,
+                                 false // continue_straight
+                                 );
 
     // Ordering locations for the given steps.
     for(auto& step: steps){
-      params.coordinates.push_back({util::FloatLongitude(_locations[step].lon),
-            util::FloatLatitude(_locations[step].lat)});
+      params.coordinates.push_back({osrm::util::FloatLongitude(_locations[step].lon),
+            osrm::util::FloatLatitude(_locations[step].lat)});
     }
 
-    json::Object result;
-    Status status;
+    osrm::json::Object result;
+    osrm::Status status;
     try{
       status = _s.osrm.Route(params, result);
     }
@@ -133,24 +131,24 @@ public:
       throw custom_exception(e.what());
     }
 
-    if(status == Status::Error){
+    if(status == osrm::Status::Error){
       throw custom_exception("libOSRM: "
-                             + result.values["code"].get<json::String>().value
+                             + result.values["code"].get<osrm::json::String>().value
                              + ": "
-                             + result.values["message"].get<json::String>().value);
+                             + result.values["message"].get<osrm::json::String>().value);
     }
 
-    auto &routes = result.values["routes"].get<json::Array>();
-    auto &route = routes.values.at(0).get<json::Object>();
+    auto &routes = result.values["routes"].get<osrm::json::Array>();
+    auto &route = routes.values.at(0).get<osrm::json::Object>();
 
     value.AddMember("duration",
-                    round_to_distance(route.values["duration"].get<json::Number>().value),
+                    round_to_distance(route.values["duration"].get<osrm::json::Number>().value),
                     allocator);
     value.AddMember("distance",
-                    round_to_distance(route.values["distance"].get<json::Number>().value),
+                    round_to_distance(route.values["distance"].get<osrm::json::Number>().value),
                     allocator);
     value.AddMember("geometry",
-                    rapidjson::Value(route.values["geometry"].get<json::String>().value.c_str(),
+                    rapidjson::Value(route.values["geometry"].get<osrm::json::String>().value.c_str(),
                                      allocator),
                     allocator);
   }
