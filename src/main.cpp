@@ -14,6 +14,7 @@ All rights reserved (see LICENSE).
 #include <boost/log/expressions.hpp>
 #include <boost/log/utility/setup/console.hpp>
 #include <boost/log/utility/setup/common_attributes.hpp>
+#include "./utils/version.h"
 #include "./structures/typedefs.h"
 #include "./heuristics/tsp_strategy.h"
 #include "./loaders/problem_io.h"
@@ -26,7 +27,8 @@ All rights reserved (see LICENSE).
 
 void display_usage(){
   std::string usage = "VROOM Copyright (C) 2015-2016, Julien Coupey\n";
-  usage += "Usage :\n\tvroom [OPTION]... \"INPUT\"";
+  usage += "Version: " + get_version() + "\n";
+  usage += "Usage:\n\tvroom [OPTION]... \"INPUT\"";
   usage += "\n\tvroom [OPTION]... -i FILE\n";
   usage += "Options:\n";
   usage += "\t-a ADDRESS\t OSRM server address (\"0.0.0.0\")\n";
