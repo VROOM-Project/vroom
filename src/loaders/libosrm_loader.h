@@ -24,17 +24,30 @@ All rights reserved (see LICENSE).
 
 using namespace osrm;
 
+// Unable to define an OSRM object as a class member and use it within
+// get_matrix and get_route_infos because Table and Route are not
+// const (see #34). This should be fixed in libosrm in the future (see
+// OSRM #2861 and #2862). In the meantime, this workaround suggested
+// by @daniel-j-h allows to support all libosrm 5.* versions.
+struct S{
+  mutable OSRM osrm;
+  S(EngineConfig engine): osrm(engine){}
+};
+
 class libosrm_loader : public osrm_loader{
+
+private:
+  const EngineConfig _config;
+  const S _s;
 
 public:
   libosrm_loader(const std::string& osrm_profile,
-                  const std::string& input):
-    osrm_loader(osrm_profile, input) {}
+                 const std::string& input):
+    osrm_loader(osrm_profile, input),
+    _config(),
+    _s(_config){}
 
   virtual matrix<distance_t> get_matrix() const override{
-    EngineConfig config;
-    OSRM osrm{config};
-
     TableParameters params;
     for(auto const& location: _locations){
       params.coordinates.push_back({util::FloatLongitude(location.lon),
@@ -44,7 +57,7 @@ public:
     json::Object result;
     Status status;
     try{
-      status = osrm.Table(params, result);
+      status = _s.osrm.Table(params, result);
     }
     catch(const std::exception &e){
       throw custom_exception(e.what());
@@ -97,9 +110,6 @@ public:
   virtual void get_route_infos(const std::list<index_t>& steps,
                                rapidjson::Value& value,
                                rapidjson::Document::AllocatorType& allocator) const override{
-    EngineConfig config;
-    OSRM osrm{config};
-
     // Default options for routing.
     RouteParameters params(false, // steps
                            false, // alternatives
@@ -117,7 +127,7 @@ public:
     json::Object result;
     Status status;
     try{
-      status = osrm.Route(params, result);
+      status = _s.osrm.Route(params, result);
     }
     catch(const std::exception &e){
       throw custom_exception(e.what());
