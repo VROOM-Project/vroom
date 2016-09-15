@@ -47,10 +47,17 @@ void write_solution(const cl_args_t& cl_args,
   rapidjson::Value json_c_t(rapidjson::kObjectType);
   json_c_t.AddMember("loading", computing_times.matrix_loading, allocator);
 
-  rapidjson::Value json_c_t_solving(rapidjson::kObjectType);
-  json_c_t_solving.AddMember("heuristic", computing_times.heuristic, allocator);
-  json_c_t_solving.AddMember("local_search", computing_times.local_search, allocator);
-  json_c_t.AddMember("solving", json_c_t_solving, allocator);
+  duration_t solving_time
+    = computing_times.heuristic + computing_times.local_search;
+  json_c_t.AddMember("solving", solving_time, allocator);
+
+  if(DEV){
+    // Add solving time details.
+    rapidjson::Value details(rapidjson::kObjectType);
+    details.AddMember("heuristic", computing_times.heuristic, allocator);
+    details.AddMember("local_search", computing_times.local_search, allocator);
+    json_c_t.AddMember("solving_details", details, allocator);
+  }
 
   if(cl_args.use_osrm and cl_args.geometry){
     // Log route information timing when using OSRM.
