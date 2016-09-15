@@ -22,6 +22,7 @@ All rights reserved (see LICENSE).
 #include "../structures/typedefs.h"
 #include "../structures/tsp.h"
 #include "../loaders/problem_io.h"
+#include "./version.h"
 
 void write_solution(const cl_args_t& cl_args,
                     const problem_io<distance_t>& loader,
