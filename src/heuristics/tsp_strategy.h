@@ -16,7 +16,6 @@ All rights reserved (see LICENSE).
 #include <boost/log/trivial.hpp>
 #include "./heuristic.h"
 #include "./christo_heuristic.h"
-#include "./mst_heuristic.h"
 #include "./local_search.h"
 
 std::pair<std::list<index_t>, distance_t>solve_atsp(const tsp& asymmetric_tsp,

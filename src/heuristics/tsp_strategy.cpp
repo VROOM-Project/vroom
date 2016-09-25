@@ -17,9 +17,8 @@ std::pair<std::list<index_t>, distance_t> solve_atsp(const tsp& asymmetric_tsp,
   BOOST_LOG_TRIVIAL(info)
     << "[Heuristic] Start heuristic on symmetrized problem.";
 
-  std::unique_ptr<heuristic> christo_h = std::make_unique<christo_heuristic>();
-  std::list<index_t> christo_sol
-    = christo_h->build_solution(asymmetric_tsp);
+  christo_heuristic christo_h;
+  std::list<index_t> christo_sol = christo_h.build_solution(asymmetric_tsp);
   distance_t christo_cost = asymmetric_tsp.symmetrized_cost(christo_sol);
 
   auto end_heuristic = std::chrono::high_resolution_clock::now();
