@@ -8,12 +8,6 @@ CXX = g++
 CXXFLAGS = -std=c++14 -Wextra -Wpedantic -Wall -O3 -DBOOST_LOG_DYN_LINK
 LDLIBS = -lboost_system -lboost_regex -lboost_log -lboost_log_setup -lpthread -lboost_thread
 
-# Checking for libosrm
-ifeq ($(shell pkg-config --exists libosrm && echo 1),1)
-LDLIBS += $(shell pkg-config --libs libosrm) -lboost_filesystem -lboost_iostreams -lrt -ltbb
-CXXFLAGS += $(shell pkg-config --cflags libosrm) -D LIBOSRM=true
-endif
-
 # Using all cpp files in current directory.
 MAIN = ../bin/vroom
 SRC = $(wildcard *.cpp)\

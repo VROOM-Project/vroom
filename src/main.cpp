@@ -20,9 +20,6 @@ All rights reserved (see LICENSE).
 #include "./loaders/problem_io.h"
 #include "./loaders/tsplib_loader.h"
 #include "./loaders/routed_loader.h"
-#if LIBOSRM
-#include "./loaders/libosrm_loader.h"
-#endif
 #include "./utils/logger.h"
 
 void display_usage(){
@@ -42,7 +39,6 @@ void display_usage(){
 
   usage += "\t-g,\t\t get detailed route geometry for the solution\n";
   usage += "\t-i FILE,\t read input from FILE rather than from\n\t\t\t command-line\n";
-  usage += "\t-l,\t\t use libosrm rather than osrm-routed\n";
   usage += "\t-o OUTPUT,\t output file name\n";
   usage += "\t-t THREADS,\t number of threads to use\n";
   usage += "\t-v,\t\t turn on verbose output\n";
@@ -78,9 +74,6 @@ int main(int argc, char **argv){
       break;
     case 'i':
       cl_args.input_file = optarg;
-      break;
-    case 'l':
-      cl_args.use_libosrm = true;
       break;
     case 'm':
       cl_args.osrm_profile = optarg;
@@ -148,27 +141,11 @@ int main(int argc, char **argv){
     cl_args.use_osrm = (cl_args.input.find("DIMENSION") == std::string::npos);
     std::unique_ptr<problem_io<distance_t>> loader;
     if(cl_args.use_osrm){
-      if(!cl_args.use_libosrm){
-        // Use osrm-routed.
-        loader
-          = std::make_unique<routed_loader>(cl_args.osrm_address,
-                                            cl_args.osrm_port,
-                                            cl_args.osrm_profile,
-                                            cl_args.input);
-      }
-      else{
-        #if LIBOSRM
-        // Use libosrm.
-        if(cl_args.osrm_profile.empty()){
-          throw custom_exception("-l flag requires -m.");
-        }
-        loader
-          = std::make_unique<libosrm_loader>(cl_args.osrm_profile,
-                                              cl_args.input);
-        #else
-        throw custom_exception("libosrm must be installed to use -l.");
-        #endif
-      }
+      // Use osrm-routed.
+      loader = std::make_unique<routed_loader>(cl_args.osrm_address,
+                                               cl_args.osrm_port,
+                                               cl_args.osrm_profile,
+                                               cl_args.input);
     }
     else{
       loader = std::make_unique<tsplib_loader>(cl_args.input);
@@ -202,16 +179,6 @@ int main(int argc, char **argv){
     write_error(cl_args.output_file, e.get_message());
     exit(1);
   }
-  #if LIBOSRM
-  catch(const std::exception& e){
-    // Should only occur when trying to use libosrm without running
-    // osrm-datastore. It would be good to be able to catch an
-    // osrm::util::exception for this. See OSRM issue #2813.
-    std::cerr << "[Error] " << e.what() << std::endl;
-    write_error(cl_args.output_file, e.what());
-    exit(1);
-  }
-  #endif
 
   return 0;
 }
