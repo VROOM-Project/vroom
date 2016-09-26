@@ -9,82 +9,110 @@ All rights reserved (see LICENSE).
 
 #include "logger.h"
 
-logger::logger(const cl_args_t& cl_args):
-  _cl_args(cl_args) {}
+void write_solution(const cl_args_t& cl_args,
+                    const problem_io<distance_t>& loader,
+                    const std::list<index_t>& steps,
+                    distance_t sol_cost,
+                    const timing_t& computing_times){
+  rapidjson::Document json_output;
+  json_output.SetObject();
+  rapidjson::Document::AllocatorType& allocator = json_output.GetAllocator();
+  rapidjson::Value json_route(rapidjson::kObjectType);
 
-void logger::write_solution(const tsp& instance,
-                            const std::list<index_t>& tour,
-                            const timing_t& computing_times) const{
-  rapidjson::Document output;
-  output.SetObject();
-  rapidjson::Document::AllocatorType& allocator = output.GetAllocator();
-
-  unsigned long route_geometry_duration = 0;
-  if(_cl_args.use_osrm and _cl_args.geometry){
+  duration_t route_geometry_duration = 0;
+  if(cl_args.use_osrm and cl_args.geometry){
     // Get route informations geometry (only when using OSRM).
-    BOOST_LOG_TRIVIAL(info) 
+    BOOST_LOG_TRIVIAL(info)
       << "[Route] Start computing detailed route.";
 
     auto start_route_geometry = std::chrono::high_resolution_clock::now();
-    instance.get_route_infos(tour, output);
+    loader.get_route_infos(steps, json_route, allocator);
     auto end_route_geometry = std::chrono::high_resolution_clock::now();
     route_geometry_duration =
       std::chrono::duration_cast<std::chrono::milliseconds>
       (end_route_geometry - start_route_geometry).count();
     BOOST_LOG_TRIVIAL(info) << "[Route] Done, took "
-                            << route_geometry_duration 
+                            << route_geometry_duration
                             << " ms.";
   }
 
-  // Timing informations.
-  rapidjson::Value c_t(rapidjson::kObjectType);
-  c_t.AddMember("matrix_loading", computing_times.matrix_loading, allocator);
-
-  rapidjson::Value c_t_route(rapidjson::kObjectType);
-  c_t_route.AddMember("heuristic", computing_times.heuristic, allocator);
-  c_t_route.AddMember("local_search", computing_times.local_search, allocator);
-  if(_cl_args.use_osrm and _cl_args.geometry){
-    // Log route information timing when using OSRM.
-    c_t.AddMember("detailed_geometry", route_geometry_duration, allocator);
-  }
-  c_t.AddMember("route", c_t_route, allocator);
-  output.AddMember("computing_times", c_t, allocator);
-
-  // Solution description.
-  std::string route_type 
-    = (_cl_args.force_start or _cl_args.force_end) ? "open": "loop";
-  output.AddMember("route_type", rapidjson::Value(), allocator);
-  output["route_type"].SetString(route_type.c_str(), route_type.size());
-
-  output.AddMember("solution_cost", instance.cost(tour), allocator);
-  // Create route and tour keys with null values and pass them as
-  // references to populate them.
-  output.AddMember("route", rapidjson::Value(rapidjson::kArrayType).Move(), allocator);
-  instance.get_route(tour, output["route"], allocator);
-  // Avoid empty "route" value (e.g. for explicit TSPLIB).
-  if(output["route"].Empty()){
-    output.RemoveMember("route");
-  }
-  output.AddMember("tour", rapidjson::Value(rapidjson::kArrayType).Move(), allocator);
-  instance.get_tour(tour, output["tour"], allocator);
-
-  rapidjson::StringBuffer s;
-  rapidjson::Writer<rapidjson::StringBuffer> r_writer(s);
-  output.Accept(r_writer);
-
+  // Set output.
   auto start_output = std::chrono::high_resolution_clock::now();
-  std::string out 
-    = _cl_args.output_file.empty() ? "standard output": _cl_args.output_file;
+  std::string out
+    = cl_args.output_file.empty() ? "standard output": cl_args.output_file;
   BOOST_LOG_TRIVIAL(info) << "[Output] Write solution to "
                           << out << ".";
 
-  if(_cl_args.output_file.empty()){
+  // Timing informations.
+  rapidjson::Value json_c_t(rapidjson::kObjectType);
+  json_c_t.AddMember("loading", computing_times.matrix_loading, allocator);
+
+  duration_t solving_time
+    = computing_times.heuristic + computing_times.local_search;
+  json_c_t.AddMember("solving", solving_time, allocator);
+
+  if(DEV){
+    // Add solving time details.
+    rapidjson::Value details(rapidjson::kObjectType);
+    details.AddMember("heuristic", computing_times.heuristic, allocator);
+    details.AddMember("local_search", computing_times.local_search, allocator);
+    json_c_t.AddMember("solving_details", details, allocator);
+  }
+
+  if(cl_args.use_osrm and cl_args.geometry){
+    // Log route information timing when using OSRM.
+    json_c_t.AddMember("routing", route_geometry_duration, allocator);
+  }
+
+  // Create "steps" key as an empty array and pass it as a reference
+  // for step objects additions.
+  json_route.AddMember("steps", rapidjson::Value(rapidjson::kArrayType).Move(), allocator);
+  loader.get_steps(steps, json_route["steps"], allocator);
+  json_route.AddMember("cost", sol_cost, allocator);
+  json_route.AddMember("vehicle", loader.get_vehicle_id(), allocator);
+
+  // Routes.
+  rapidjson::Value json_routes_array(rapidjson::kArrayType);
+  json_routes_array.PushBack(json_route, allocator);
+
+  // Global indicators.
+  distance_t global_cost = 0;
+  distance_t global_duration = 0;
+  distance_t global_distance = 0;
+
+  for(rapidjson::SizeType i = 0; i < json_routes_array.Size(); ++i){
+    global_cost += json_routes_array[i]["cost"].GetUint();
+    if(cl_args.use_osrm and cl_args.geometry){
+      global_duration += json_routes_array[i]["duration"].GetUint();
+      global_distance += json_routes_array[i]["distance"].GetUint();
+    }
+  }
+
+  // Solution description.
+  rapidjson::Value json_solution(rapidjson::kObjectType);
+  json_solution.AddMember("computing_times", json_c_t, allocator);
+  if(cl_args.use_osrm and cl_args.geometry){
+    json_solution.AddMember("distance", global_distance, allocator);
+    json_solution.AddMember("duration", global_duration, allocator);
+  }
+  json_solution.AddMember("cost", global_cost, allocator);
+
+  json_output.AddMember("routes", json_routes_array, allocator);
+  json_output.AddMember("solution", json_solution, allocator);
+  json_output.AddMember("code", rapidjson::Value(0), allocator);
+
+  rapidjson::StringBuffer s;
+  rapidjson::Writer<rapidjson::StringBuffer> r_writer(s);
+  json_output.Accept(r_writer);
+
+  // Write to relevant output.
+  if(cl_args.output_file.empty()){
     // Log to standard output.
     std::cout << s.GetString() << std::endl;
   }
   else{
     // Log to file given as command-line option.
-    std::ofstream out_stream (_cl_args.output_file, std::ofstream::out);
+    std::ofstream out_stream (cl_args.output_file, std::ofstream::out);
     out_stream << s.GetString();
     out_stream.close();
   }
@@ -95,4 +123,32 @@ void logger::write_solution(const tsp& instance,
 
   BOOST_LOG_TRIVIAL(info) << "[Output] Done, took "
                           << output_duration  << " ms.";
+}
+
+void write_error(const std::string& output,
+                 const std::string& message){
+  rapidjson::Document json_output;
+  json_output.SetObject();
+  rapidjson::Document::AllocatorType& allocator = json_output.GetAllocator();
+
+  json_output.AddMember("code", rapidjson::Value(1), allocator);
+
+  json_output.AddMember("error", rapidjson::Value(), allocator);
+  json_output["error"].SetString(message.c_str(), message.size());
+
+  rapidjson::StringBuffer s;
+  rapidjson::Writer<rapidjson::StringBuffer> r_writer(s);
+  json_output.Accept(r_writer);
+
+  // Write to relevant output.
+  if(output.empty()){
+    // Log to standard output.
+    std::cout << s.GetString() << std::endl;
+  }
+  else{
+    // Log to file given as command-line option.
+    std::ofstream out_stream (output, std::ofstream::out);
+    out_stream << s.GetString();
+    out_stream.close();
+  }
 }

@@ -16,10 +16,10 @@ All rights reserved (see LICENSE).
 #include <boost/log/trivial.hpp>
 #include "./heuristic.h"
 #include "./christo_heuristic.h"
-#include "./mst_heuristic.h"
 #include "./local_search.h"
-#include "../utils/logger.h"
 
-void solve_atsp(const cl_args_t& cl_args);
+std::pair<std::list<index_t>, distance_t>solve_atsp(const tsp& asymmetric_tsp,
+                                                    unsigned nb_threads,
+                                                    timing_t& computing_times);
 
 #endif

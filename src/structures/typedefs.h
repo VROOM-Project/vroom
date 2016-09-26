@@ -1,5 +1,5 @@
-#ifndef TYPEDEFS_H
-#define TYPEDEFS_H
+#ifndef VROOM_TYPEDEFS_H
+#define VROOM_TYPEDEFS_H
 
 /*
 
@@ -17,19 +17,20 @@ All rights reserved (see LICENSE).
 // To easily differentiate variable types.
 using index_t = uint16_t;
 using distance_t = uint32_t;
+using duration_t = uint32_t;
 
 // Setting max value would cause trouble with further additions.
 constexpr distance_t INFINITE_DISTANCE = 3 * (std::numeric_limits<distance_t>::max() / 4);
 
-struct timing_t {
+struct timing_t{
   // Computing times in milliseconds.
-  unsigned long matrix_loading;
-  unsigned long heuristic;
-  unsigned long local_search;
-  unsigned long total_duration;
+  duration_t matrix_loading;
+  duration_t heuristic;
+  duration_t local_search;
+  duration_t total_duration;
 };
 
-struct cl_args_t {
+struct cl_args_t{
   // Listing command-line options.
   std::string osrm_address;                      // -a
   bool geometry;                                 // -g
@@ -38,9 +39,8 @@ struct cl_args_t {
   std::string osrm_port;                         // -p
   boost::log::trivial::severity_level log_level; // -v
   std::string input;                             // cl arg
-  bool force_start;                              // -s
-  bool force_end;                                // -e
   unsigned nb_threads;                           // -t
+  std::string osrm_profile;                      // -m
   bool use_osrm;
   // Default values.
   cl_args_t():
@@ -48,9 +48,15 @@ struct cl_args_t {
     geometry(false),
     osrm_port("5000"),
     log_level(boost::log::trivial::error),
-    force_start(false),
-    force_end(false),
-    nb_threads(2) {}
+    nb_threads(2),
+    osrm_profile("car"){}
+};
+
+struct pbl_context_t{
+  bool force_start;
+  index_t start;
+  bool force_end;
+  index_t end;
 };
 
 #endif

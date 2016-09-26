@@ -14,6 +14,7 @@ All rights reserved (see LICENSE).
 #include <unordered_map>
 #include <vector>
 #include <thread>
+#include <numeric>
 #include <boost/log/trivial.hpp>
 #include "../structures/typedefs.h"
 #include "../structures/matrix.h"
@@ -53,9 +54,9 @@ public:
   distance_t or_opt_step();
 
   distance_t perform_all_or_opt_steps();
-    
+
   std::list<index_t> get_tour(index_t first_index) const;
-  
+
 };
 
 #endif

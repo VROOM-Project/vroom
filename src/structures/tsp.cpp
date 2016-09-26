@@ -9,24 +9,18 @@ All rights reserved (see LICENSE).
 
 #include "tsp.h"
 
-tsp::tsp(const cl_args_t& cl_args): 
-  _matrix(0),
+tsp::tsp(const pbl_context_t& pbl_context, const matrix<distance_t>& m):
+  _pbl_context(pbl_context),
+  _matrix(m),
   _symmetrized_matrix(0),
-  _is_symmetric(true),
-  _cl_args(cl_args){
-  
-  // Computing matrix with the right tool.
-  if(cl_args.use_osrm){
-    _loader 
-      = std::make_unique<osrm_wrapper>(cl_args.osrm_address, 
-                                       cl_args.osrm_port,
-                                       cl_args.input);
-  }
-  else{
-    _loader = std::make_unique<tsplib_loader>(cl_args.input);
-  }
+  _is_symmetric(true){
 
-  _matrix = _loader->get_matrix();
+  if(_pbl_context.force_start){
+    assert(_pbl_context.start < _matrix.size());
+  }
+  if(_pbl_context.force_end){
+    assert(_pbl_context.end < _matrix.size());
+  }
 
   // Distances on the diagonal are never used except in the minimum
   // weight perfect matching during the heuristic. This makes sure
@@ -37,52 +31,57 @@ tsp::tsp(const cl_args_t& cl_args):
 
   // Dealing with open tour cases. At most one of the following
   // occurs.
-  if(cl_args.force_start and !cl_args.force_end){
+  if(_pbl_context.force_start and !_pbl_context.force_end){
     // Forcing first location as start, end location decided during
     // optimization.
-    for(index_t i = 1; i < _matrix.size(); ++i){
-      _matrix[i][0] = 0;
+    for(index_t i = 0; i < _matrix.size(); ++i){
+      if(i != _pbl_context.start){
+        _matrix[i][_pbl_context.start] = 0;
+      }
     }
   }
-  if(!cl_args.force_start and cl_args.force_end){
+  if(!_pbl_context.force_start and _pbl_context.force_end){
     // Forcing last location as end, start location decided during
     // optimization.
-    index_t last_index = _matrix.size() - 1;
-    for(index_t j = 0; j < last_index; ++j){
-      _matrix[last_index][j] = 0;
+    for(index_t j = 0; j < _matrix.size(); ++j){
+      if(j != _pbl_context.end){
+        _matrix[_pbl_context.end][j] = 0;
+      }
     }
   }
-  if(cl_args.force_start and cl_args.force_end){
+  if(_pbl_context.force_start and _pbl_context.force_end){
     // Forcing first location as start, last location as end to
     // produce an open tour.
-    index_t last_index = _matrix.size() - 1;
-    _matrix[last_index][0] = 0;
-    for(index_t j = 1; j < last_index; ++j){
-      _matrix[last_index][j] = (std::numeric_limits<distance_t>::max() / 2);
+    assert(_pbl_context.start != _pbl_context.end);
+    _matrix[_pbl_context.end][_pbl_context.start] = 0;
+    for(index_t j = 0; j < _matrix.size(); ++j){
+      if((j != _pbl_context.start) and (j != _pbl_context.end)){
+        _matrix[_pbl_context.end][j] = INFINITE_DISTANCE;
+      }
     }
   }
 
   // Compute symmetrized matrix and update _is_symmetric flag.
-  const distance_t& (*sym_f) (const distance_t&, const distance_t&) 
+  const distance_t& (*sym_f) (const distance_t&, const distance_t&)
     = std::min<distance_t>;
-  if((_cl_args.force_start and !_cl_args.force_end)
-     or (!_cl_args.force_start and _cl_args.force_end)){
+  if((_pbl_context.force_start and !_pbl_context.force_end)
+     or (!_pbl_context.force_start and _pbl_context.force_end)){
     // Using symmetrization with max as when only start or only end is
     // forced, the matrix has a line or a column filled with zeros.
     sym_f = std::max<distance_t>;
   }
-  matrix<distance_t> m {_matrix.size()};
-  for(index_t i = 0; i < m.size(); ++i){
-    m[i][i] = _matrix[i][i];
-    for(index_t j = i + 1; j < m.size(); ++j){
+  matrix<distance_t> mat {_matrix.size()};
+  for(index_t i = 0; i < mat.size(); ++i){
+    mat[i][i] = _matrix[i][i];
+    for(index_t j = i + 1; j < mat.size(); ++j){
       _is_symmetric &= (_matrix[i][j] == _matrix[j][i]);
       distance_t val = sym_f(_matrix[i][j], _matrix[j][i]);
-      m[i][j] = val;
-      m[j][i] = val;
+      mat[i][j] = val;
+      mat[j][i] = val;
     }
   }
-  _symmetrized_matrix = m;
-  
+  _symmetrized_matrix = mat;
+
   // Compute graph for symmetrized problem.
   _symmetrized_graph = undirected_graph<distance_t>(_symmetrized_matrix);
 }
@@ -99,8 +98,24 @@ const undirected_graph<distance_t>& tsp::get_symmetrized_graph() const{
   return _symmetrized_graph;
 }
 
-const bool tsp::is_symmetric() const{
+bool tsp::is_symmetric() const{
   return _is_symmetric;
+}
+
+bool tsp::force_start() const{
+  return _pbl_context.force_start;
+}
+
+index_t tsp::get_start() const{
+  return _pbl_context.start;
+}
+
+bool tsp::force_end() const{
+  return _pbl_context.force_end;
+}
+
+index_t tsp::get_end() const{
+  return _pbl_context.end;
 }
 
 std::size_t tsp::size() const{
@@ -147,34 +162,4 @@ distance_t tsp::symmetrized_cost(const std::list<index_t>& tour) const{
     cost += _symmetrized_matrix[previous_step][init_step];
   }
   return cost;
-}
-
-void tsp::get_route(const std::list<index_t>& tour,
-                    rapidjson::Value& value,
-                    rapidjson::Document::AllocatorType& allocator) const{
-  assert(tour.size() == _matrix.size());
-  _loader->get_route(tour, value, allocator);
-}
-
-void tsp::get_tour(const std::list<index_t>& tour,
-                   rapidjson::Value& value,
-                   rapidjson::Document::AllocatorType& allocator) const{
-  assert(tour.size() == _matrix.size());
-  _loader->get_tour(tour, value, allocator);
-}
-
-void tsp::get_route_infos(const std::list<index_t>& tour,
-                          rapidjson::Document& output) const{
-  assert(tour.size() == _matrix.size());
-
-  if(_cl_args.force_start or _cl_args.force_end){
-    // Open tour, getting direct geometry.
-    _loader->get_route_infos(tour, output);
-  }
-  else{
-    // Back to the starting location when the trip is a loop.
-    std::list<index_t> actual_trip (tour);
-    actual_trip.push_back(actual_trip.front());
-    _loader->get_route_infos(actual_trip, output);
-  }
 }

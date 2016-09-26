@@ -20,7 +20,7 @@ template <class T>
 undirected_graph<T> minimum_spanning_tree(const undirected_graph<T>& graph){
   // We just need the edges from original graph.
   std::vector<edge<T>> edges = graph.get_edges();
-  
+
   // First sorting edges by weight.
   std::sort(edges.begin(), edges.end(),
             [] (const auto &a, const auto &b){
@@ -56,7 +56,7 @@ undirected_graph<T> minimum_spanning_tree(const undirected_graph<T>& graph){
         if(e.second == second_rep){
           e.second = first_rep;
         }
-      }      
+      }
     }
   }
 

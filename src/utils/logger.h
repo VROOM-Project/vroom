@@ -21,17 +21,15 @@ All rights reserved (see LICENSE).
 #include "../../include/rapidjson/stringbuffer.h"
 #include "../structures/typedefs.h"
 #include "../structures/tsp.h"
+#include "../loaders/problem_io.h"
+#include "./version.h"
 
-class logger{
-private:
-  cl_args_t _cl_args;
-  
-public:
-  logger(const cl_args_t& cl_args);
-  
-  void write_solution(const tsp& instance,
-                      const std::list<index_t>& tour,
-                      const timing_t& computing_times) const;
-};
+void write_solution(const cl_args_t& cl_args,
+                    const problem_io<distance_t>& loader,
+                    const std::list<index_t>& steps,
+                    distance_t sol_cost,
+                    const timing_t& computing_times);
+
+void write_error(const std::string& output, const std::string& message);
 
 #endif

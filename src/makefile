@@ -1,11 +1,11 @@
 # This file is part of VROOM.
-# 
+#
 # Copyright (c) 2015-2016, Julien Coupey.
 # All rights reserved (see LICENSE).
 
 # Variables.
-CC = g++
-FLAGS = -std=c++14 -Wpedantic -Wall -O3 -DBOOST_LOG_DYN_LINK
+CXX = g++
+CXXFLAGS = -std=c++14 -Wextra -Wpedantic -Wall -O3 -DBOOST_LOG_DYN_LINK
 LDLIBS = -lboost_system -lboost_regex -lboost_log -lboost_log_setup -lpthread -lboost_thread
 
 # Using all cpp files in current directory.
@@ -21,16 +21,16 @@ OBJ = $(SRC:.cpp=.o)
 all : $(MAIN)
 
 $(MAIN) : $(OBJ) main.o
-	$(CC) $(FLAGS) -o $@ $^ $(LDLIBS) 
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBS)
 
 # Building .o files.
 %.o : %.cpp %.h
-	$(CC) $(FLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 # Specific target for main (no .h file).
 main.o : main.cpp
-	$(CC) $(FLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-clean : 
+clean :
 	rm $(OBJ)
 	rm $(MAIN)
