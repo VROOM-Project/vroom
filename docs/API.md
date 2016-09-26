@@ -132,7 +132,7 @@ The file `input.json` describes a (very) small problem:
     {
       "id": 0,
       "start": [2.3526, 48.8604],
-      "end": [2.3526, 48.8604],
+      "end": [2.3526, 48.8604]
     }
   ],
   "jobs": [
