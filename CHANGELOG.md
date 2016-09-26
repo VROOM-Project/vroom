@@ -1,6 +1,28 @@
 # Changelog
 
-## [0.3.1] - 2016-03-01
+## [v1.0.0] - 2016-09-26
+
+### Added
+
+- Support for OSRM v5.*
+- Dedicated folder for API documentation
+
+### Changed
+
+- New input and output json API (#30)
+- Switch to [lon, lat] for all coordinates (#33)
+
+### Removed
+
+- Drop support for OSRM v4.*
+- Flags `-s` and `-e` (see new API)
+
+### Fixed
+
+- Compilation trouble with rapidjson and some types (#31)
+- Correct usage display obtained with `-h` (#39)
+
+## [v0.3.1] - 2016-03-01
 
 ### Changed
 
@@ -13,7 +35,7 @@
 
 - Improve 2-opt operator for symmetric cases (#27).
 
-## [0.3] - 2016-02-03
+## [v0.3] - 2016-02-03
 
 ### Added
 
@@ -52,7 +74,7 @@
 - Incorrect DIMENSION key in TSPLIB format raising stoul exception.
 - Segfault for DIMENSION: 1 problem in TSPLIB format (#25).
 
-## [0.2] - 2015-10-03
+## [v0.2] - 2015-10-03
 
 ### Added
 
@@ -71,7 +93,7 @@
 - Socket reading issues (#1).
 - Potentially incorrect request for route summary (#5).
 
-## [0.1] - 2015-09-05
+## [v0.1] - 2015-09-05
 
 ### Added
 
