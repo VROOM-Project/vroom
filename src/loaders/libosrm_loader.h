@@ -111,6 +111,7 @@ public:
     // Default options for routing.
     osrm::RouteParameters params(false, // steps
                                  false, // alternatives
+                                 false, // annotations
                                  osrm::RouteParameters::GeometriesType::Polyline,
                                  osrm::RouteParameters::OverviewType::Full,
                                  false // continue_straight
