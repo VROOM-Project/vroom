@@ -48,7 +48,8 @@ public:
   virtual matrix<distance_t> get_matrix() const override{
     osrm::TableParameters params;
     for(auto const& location: _locations){
-      params.coordinates.emplace_back(location.lon, location.lat);
+      params.coordinates.emplace_back(osrm::util::FloatLongitude({location.lon}),
+                                      osrm::util::FloatLatitude({location.lat}));
     }
 
     osrm::json::Object result;
@@ -117,8 +118,8 @@ public:
 
     // Ordering locations for the given steps.
     for(auto& step: steps){
-      params.coordinates.emplace_back(_locations[step].lon,
-                                      _locations[step].lat);
+      params.coordinates.emplace_back(osrm::util::FloatLongitude({_locations[step].lon}),
+                                      osrm::util::FloatLatitude({_locations[step].lat}));
     }
 
     osrm::json::Object result;
