@@ -15,8 +15,8 @@ All rights reserved (see LICENSE).
 #include <set>
 #include <list>
 #include <cassert>
-#include "../structures/matrix.h"
-#include "../structures/edge.h"
+#include "../structures/abstract/matrix.h"
+#include "../structures/abstract/edge.h"
 
 template <class T>
 std::unordered_map<index_t, index_t> minimum_weight_perfect_matching(const matrix<T>& m){

@@ -13,7 +13,7 @@ All rights reserved (see LICENSE).
 #include<string>
 #include<vector>
 #include "../../include/rapidjson/document.h"
-#include "../structures/matrix.h"
+#include "../structures/abstract/matrix.h"
 
 template <class T>
 class problem_io{

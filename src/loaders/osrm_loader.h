@@ -11,11 +11,9 @@ All rights reserved (see LICENSE).
 */
 
 #include <vector>
-#include <limits>
-#include <regex>
 #include "../../include/rapidjson/error/en.h"
 #include "./problem_io.h"
-#include "../structures/matrix.h"
+#include "../structures/abstract/matrix.h"
 #include "../utils/exceptions.h"
 
 class osrm_loader : public problem_io<distance_t>{

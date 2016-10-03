@@ -15,8 +15,8 @@ All rights reserved (see LICENSE).
 #include <string>
 #include <list>
 #include "./typedefs.h"
-#include "./matrix.h"
-#include "./undirected_graph.h"
+#include "./abstract/matrix.h"
+#include "./abstract/undirected_graph.h"
 
 class tsp{
 protected:

@@ -21,9 +21,9 @@ All rights reserved (see LICENSE).
 #include "../algorithms/kruskal.h"
 #include "../algorithms/munkres.h"
 #include "../structures/tsp.h"
-#include "../structures/edge.h"
-#include "../structures/undirected_graph.h"
-#include "../structures/matrix.h"
+#include "../structures/abstract/edge.h"
+#include "../structures/abstract/undirected_graph.h"
+#include "../structures/abstract/matrix.h"
 
 // Implementing the Christofides heuristic.
 class christo_heuristic : public heuristic{

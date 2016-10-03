@@ -10,9 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <iostream>
 #include <algorithm>
-#include "./typedefs.h"
 
 template <class T> class edge{
 

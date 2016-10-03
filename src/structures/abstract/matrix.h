@@ -10,10 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <iostream>
 #include <vector>
-#include "./typedefs.h"
-#include "../utils/exceptions.h"
 
 template <class T>
 class line: private std::vector<T>{
