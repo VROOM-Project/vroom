@@ -18,7 +18,6 @@ All rights reserved (see LICENSE).
 #include "./structures/typedefs.h"
 #include "./heuristics/tsp_strategy.h"
 #include "./loaders/problem_io.h"
-#include "./loaders/tsplib_loader.h"
 #include "./loaders/routed_loader.h"
 #if LIBOSRM
 #include "./loaders/libosrm_loader.h"
@@ -145,33 +144,27 @@ int main(int argc, char **argv){
       << "[Matrix] Start matrix computing and problem loading.";
 
     // Parse input with relevant loader.
-    cl_args.use_osrm = (cl_args.input.find("DIMENSION") == std::string::npos);
     std::unique_ptr<problem_io<distance_t>> loader;
-    if(cl_args.use_osrm){
-      if(!cl_args.use_libosrm){
-        // Use osrm-routed.
-        loader
-          = std::make_unique<routed_loader>(cl_args.osrm_address,
-                                            cl_args.osrm_port,
-                                            cl_args.osrm_profile,
-                                            cl_args.input);
-      }
-      else{
-        #if LIBOSRM
-        // Use libosrm.
-        if(cl_args.osrm_profile.empty()){
-          throw custom_exception("-l flag requires -m.");
-        }
-        loader
-          = std::make_unique<libosrm_loader>(cl_args.osrm_profile,
-                                              cl_args.input);
-        #else
-        throw custom_exception("libosrm must be installed to use -l.");
-        #endif
-      }
+    if(!cl_args.use_libosrm){
+      // Use osrm-routed.
+      loader
+        = std::make_unique<routed_loader>(cl_args.osrm_address,
+                                          cl_args.osrm_port,
+                                          cl_args.osrm_profile,
+                                          cl_args.input);
     }
     else{
-      loader = std::make_unique<tsplib_loader>(cl_args.input);
+      #if LIBOSRM
+      // Use libosrm.
+      if(cl_args.osrm_profile.empty()){
+        throw custom_exception("-l flag requires -m.");
+      }
+      loader
+        = std::make_unique<libosrm_loader>(cl_args.osrm_profile,
+                                            cl_args.input);
+      #else
+      throw custom_exception("libosrm must be installed to use -l.");
+      #endif
     }
 
     // Build problem.

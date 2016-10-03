@@ -20,7 +20,7 @@ void write_solution(const cl_args_t& cl_args,
   rapidjson::Value json_route(rapidjson::kObjectType);
 
   duration_t route_geometry_duration = 0;
-  if(cl_args.use_osrm and cl_args.geometry){
+  if(cl_args.geometry){
     // Get route informations geometry (only when using OSRM).
     BOOST_LOG_TRIVIAL(info)
       << "[Route] Start computing detailed route.";
@@ -59,7 +59,7 @@ void write_solution(const cl_args_t& cl_args,
     json_c_t.AddMember("solving_details", details, allocator);
   }
 
-  if(cl_args.use_osrm and cl_args.geometry){
+  if(cl_args.geometry){
     // Log route information timing when using OSRM.
     json_c_t.AddMember("routing", route_geometry_duration, allocator);
   }
@@ -82,7 +82,7 @@ void write_solution(const cl_args_t& cl_args,
 
   for(rapidjson::SizeType i = 0; i < json_routes_array.Size(); ++i){
     global_cost += json_routes_array[i]["cost"].GetUint();
-    if(cl_args.use_osrm and cl_args.geometry){
+    if(cl_args.geometry){
       global_duration += json_routes_array[i]["duration"].GetUint();
       global_distance += json_routes_array[i]["distance"].GetUint();
     }
@@ -91,7 +91,7 @@ void write_solution(const cl_args_t& cl_args,
   // Solution description.
   rapidjson::Value json_solution(rapidjson::kObjectType);
   json_solution.AddMember("computing_times", json_c_t, allocator);
-  if(cl_args.use_osrm and cl_args.geometry){
+  if(cl_args.geometry){
     json_solution.AddMember("distance", global_distance, allocator);
     json_solution.AddMember("duration", global_duration, allocator);
   }
