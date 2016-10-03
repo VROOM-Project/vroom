@@ -18,6 +18,7 @@ All rights reserved (see LICENSE).
 using index_t = uint16_t;
 using distance_t = uint32_t;
 using duration_t = uint32_t;
+using coordinate_t = double;
 
 // Setting max value would cause trouble with further additions.
 constexpr distance_t INFINITE_DISTANCE = 3 * (std::numeric_limits<distance_t>::max() / 4);
