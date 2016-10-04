@@ -35,8 +35,10 @@ class matrix : private std::vector<line<T>>{
   using parent::operator[];
 
   matrix(std::size_t n):
-    parent(n, line<T>(n)){
-  }
+    parent(n, line<T>(n)){}
+
+  matrix():
+    matrix(0){}
 
   matrix<T> get_sub_matrix(const std::vector<index_t>& indices) const{
     matrix<T> sub_matrix {indices.size()};
