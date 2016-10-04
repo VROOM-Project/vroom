@@ -19,6 +19,7 @@ MAIN = ../bin/vroom
 SRC = $(wildcard *.cpp)\
 			$(wildcard ./algorithms/*.cpp)\
 			$(wildcard ./heuristics/*.cpp)\
+			$(wildcard ./structures/vroom/*.cpp)\
 			$(wildcard ./structures/*.cpp)\
 			$(wildcard ./utils/*.cpp)
 OBJ = $(SRC:.cpp=.o)

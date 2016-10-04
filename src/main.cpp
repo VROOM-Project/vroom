@@ -16,6 +16,7 @@ All rights reserved (see LICENSE).
 #include <boost/log/utility/setup/common_attributes.hpp>
 #include "./utils/version.h"
 #include "./structures/typedefs.h"
+#include "./structures/vroom/input.h"
 #include "./heuristics/tsp_strategy.h"
 #include "./loaders/problem_io.h"
 #include "./loaders/routed_loader.h"
@@ -140,8 +141,10 @@ int main(int argc, char **argv){
   try{
     timing_t computing_times;
     auto start_problem_loading = std::chrono::high_resolution_clock::now();
-    BOOST_LOG_TRIVIAL(info)
-      << "[Matrix] Start matrix computing and problem loading.";
+
+    BOOST_LOG_TRIVIAL(info) << "[Loading] Parsing input.";
+    input input_data;
+    input_data.parse(cl_args.input);
 
     // Parse input with relevant loader.
     std::unique_ptr<problem_io<distance_t>> loader;
@@ -175,7 +178,7 @@ int main(int argc, char **argv){
       std::chrono::duration_cast<std::chrono::milliseconds>
       (end_problem_loading - start_problem_loading).count();
 
-    BOOST_LOG_TRIVIAL(info) << "[Matrix] Done, took "
+    BOOST_LOG_TRIVIAL(info) << "[Loading] Done, took "
                             << computing_times.matrix_loading << " ms.";
 
     // Solve!
