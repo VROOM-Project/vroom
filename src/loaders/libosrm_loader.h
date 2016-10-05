@@ -22,40 +22,30 @@ All rights reserved (see LICENSE).
 #include "osrm/status.hpp"
 #include "osrm/osrm.hpp"
 
-// Unable to define an OSRM object as a class member and use it within
-// get_matrix and get_route_infos because Table and Route are not
-// const (see #34). This should be fixed in libosrm in the future (see
-// OSRM #2861 and #2862). In the meantime, this workaround suggested
-// by @daniel-j-h allows to support all libosrm 5.* versions.
-struct S{
-  mutable osrm::OSRM osrm;
-  S(osrm::EngineConfig engine): osrm(engine){}
-};
-
 class libosrm_loader : public osrm_loader{
 
 private:
-  const osrm::EngineConfig _config;
-  const S _s;
+  osrm::EngineConfig _config;
+  const osrm::OSRM _osrm;
 
 public:
   libosrm_loader(const std::string& osrm_profile,
                  const std::string& input):
     osrm_loader(osrm_profile, input),
     _config(),
-    _s(_config){}
+    _osrm(_config){}
 
   virtual matrix<distance_t> get_matrix() const override{
     osrm::TableParameters params;
     for(auto const& location: _locations){
-      params.coordinates.push_back({osrm::util::FloatLongitude(location.lon),
-            osrm::util::FloatLatitude(location.lat)});
+      params.coordinates.emplace_back(osrm::util::FloatLongitude({location.lon}),
+                                      osrm::util::FloatLatitude({location.lat}));
     }
 
     osrm::json::Object result;
     osrm::Status status;
     try{
-      status = _s.osrm.Table(params, result);
+      status = _osrm.Table(params, result);
     }
     catch(const std::exception &e){
       throw custom_exception(e.what());
@@ -111,6 +101,7 @@ public:
     // Default options for routing.
     osrm::RouteParameters params(false, // steps
                                  false, // alternatives
+                                 false, // annotations
                                  osrm::RouteParameters::GeometriesType::Polyline,
                                  osrm::RouteParameters::OverviewType::Full,
                                  false // continue_straight
@@ -118,14 +109,14 @@ public:
 
     // Ordering locations for the given steps.
     for(auto& step: steps){
-      params.coordinates.push_back({osrm::util::FloatLongitude(_locations[step].lon),
-            osrm::util::FloatLatitude(_locations[step].lat)});
+      params.coordinates.emplace_back(osrm::util::FloatLongitude({_locations[step].lon}),
+                                      osrm::util::FloatLatitude({_locations[step].lat}));
     }
 
     osrm::json::Object result;
     osrm::Status status;
     try{
-      status = _s.osrm.Route(params, result);
+      status = _osrm.Route(params, result);
     }
     catch(const std::exception &e){
       throw custom_exception(e.what());
