@@ -24,6 +24,7 @@ All rights reserved (see LICENSE).
 #include "./loaders/libosrm_loader.h"
 #endif
 #include "./utils/logger.h"
+#include "./utils/input_parser.h"
 
 void display_usage(){
   std::string usage = "VROOM Copyright (C) 2015-2016, Julien Coupey\n";
@@ -143,8 +144,7 @@ int main(int argc, char **argv){
     auto start_problem_loading = std::chrono::high_resolution_clock::now();
 
     BOOST_LOG_TRIVIAL(info) << "[Loading] Parsing input.";
-    input input_data;
-    input_data.parse(cl_args.input);
+    input input_data = parse(cl_args.input);
 
     // Parse input with relevant loader.
     std::unique_ptr<problem_io<distance_t>> loader;

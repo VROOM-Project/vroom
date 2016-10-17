@@ -10,7 +10,6 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <boost/optional.hpp>
 #include "../typedefs.h"
 #include "./location.h"
 

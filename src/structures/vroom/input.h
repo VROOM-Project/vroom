@@ -13,20 +13,15 @@ All rights reserved (see LICENSE).
 #include <array>
 #include <vector>
 #include <boost/optional.hpp>
-#include "../../../include/rapidjson/document.h"
-#include "../../../include/rapidjson/error/en.h"
 #include "../typedefs.h"
 #include "../abstract/matrix.h"
 #include "./job.h"
 #include "./vehicle.h"
 #include "../../utils/exceptions.h"
 
-using optional_coords_t = boost::optional<std::array<coordinate_t, 2>>;
-
 class input{
 private:
   index_t _location_number;
-  rapidjson::Document _json_input;
 
 protected:
   std::vector<job> _jobs;
@@ -45,7 +40,7 @@ public:
                    optional_coords_t start_coords,
                    optional_coords_t end_coords);
 
-  void parse(const std::string& input);
+  index_t get_location_number();
 };
 
 #endif
