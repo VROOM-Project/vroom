@@ -20,15 +20,38 @@ inline optional_coords_t parse_coordinates(const rapidjson::Value& object,
   }
 }
 
-input parse(const std::string& input_string){
-  std::string error_msg;
-
+input parse(const cl_args_t& cl_args){
+  // Input json object.
   rapidjson::Document json_input;
 
-  // Parsing input string to create an input object.
+  // Custom input object embedding jobs, vehicles and matrix.
   input input_data;
 
-  if(json_input.Parse(input_string.c_str()).HasParseError()){
+  // Set relevant wrapper to retrieve the matrix and geometry.
+  std::unique_ptr<routing_io<distance_t>> routing_wrapper;
+  if(!cl_args.use_libosrm){
+    // Use osrm-routed.
+    routing_wrapper
+      = std::make_unique<routed_wrapper>(cl_args.osrm_address,
+                                         cl_args.osrm_port,
+                                         cl_args.osrm_profile);
+  }
+  else{
+#if LIBOSRM
+    // Use libosrm.
+    if(cl_args.osrm_profile.empty()){
+      throw custom_exception("-l flag requires -m.");
+    }
+    routing_wrapper
+      = std::make_unique<libosrm_wrapper>(cl_args.osrm_profile);
+#else
+    throw custom_exception("libosrm must be installed to use -l.");
+#endif
+  }
+  input_data.set_routing(std::move(routing_wrapper));
+
+  // Parsing input string to populate the input object.
+  if(json_input.Parse(cl_args.input.c_str()).HasParseError()){
     std::string error_msg = std::string(rapidjson::GetParseError_En(json_input.GetParseError()))
       + " (offset: "
       + std::to_string(json_input.GetErrorOffset())

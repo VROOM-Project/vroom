@@ -19,10 +19,15 @@ All rights reserved (see LICENSE).
 #include "./vehicle.h"
 #include "../../utils/exceptions.h"
 #include "../../routing/routing_io.h"
+#include "../../routing/routed_wrapper.h"
+#if LIBOSRM
+#include "../../routing/libosrm_wrapper.h"
+#endif
 
 class input{
 private:
   index_t _location_number;
+  void set_routing(std::unique_ptr<routing_io<distance_t>> routing_wrapper);
   void set_matrix();
 
 protected:
@@ -45,7 +50,7 @@ public:
 
   index_t get_location_number();
 
-  friend input parse(const std::string& input_string);
+  friend input parse(const cl_args_t& cl_args);
 };
 
 #endif

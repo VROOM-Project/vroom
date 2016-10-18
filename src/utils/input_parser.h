@@ -21,6 +21,6 @@ All rights reserved (see LICENSE).
 #include "../structures/vroom/input.h"
 #include "./exceptions.h"
 
-input parse(const std::string& input_string);
+input parse(const cl_args_t& cl_args);
 
 #endif

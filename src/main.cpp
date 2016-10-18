@@ -18,11 +18,6 @@ All rights reserved (see LICENSE).
 #include "./structures/typedefs.h"
 #include "./structures/vroom/input.h"
 #include "./heuristics/tsp_strategy.h"
-#include "./loaders/problem_io.h"
-#include "./loaders/routed_loader.h"
-#if LIBOSRM
-#include "./loaders/libosrm_loader.h"
-#endif
 #include "./utils/logger.h"
 #include "./utils/input_parser.h"
 
@@ -144,31 +139,8 @@ int main(int argc, char **argv){
     auto start_problem_loading = std::chrono::high_resolution_clock::now();
 
     BOOST_LOG_TRIVIAL(info) << "[Loading] Parsing input.";
-    input input_data = parse(cl_args.input);
+    input input_data = parse(cl_args);
 
-    // Parse input with relevant loader.
-    std::unique_ptr<problem_io<distance_t>> loader;
-    if(!cl_args.use_libosrm){
-      // Use osrm-routed.
-      loader
-        = std::make_unique<routed_loader>(cl_args.osrm_address,
-                                          cl_args.osrm_port,
-                                          cl_args.osrm_profile,
-                                          cl_args.input);
-    }
-    else{
-      #if LIBOSRM
-      // Use libosrm.
-      if(cl_args.osrm_profile.empty()){
-        throw custom_exception("-l flag requires -m.");
-      }
-      loader
-        = std::make_unique<libosrm_loader>(cl_args.osrm_profile,
-                                            cl_args.input);
-      #else
-      throw custom_exception("libosrm must be installed to use -l.");
-      #endif
-    }
 
     // Build problem.
     tsp asymmetric_tsp (loader->get_pbl_context(), loader->get_matrix());

@@ -63,6 +63,11 @@ index_t input::get_location_number(){
   return _location_number;
 }
 
+void input::set_routing(std::unique_ptr<routing_io<distance_t>> routing_wrapper){
+  _routing_wrapper = std::move(routing_wrapper);
+}
+
 void input::set_matrix(){
+  assert(_routing_wrapper);
   _matrix = _routing_wrapper->get_matrix(_ordered_locations);
 }
