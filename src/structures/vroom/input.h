@@ -27,6 +27,7 @@ All rights reserved (see LICENSE).
 class input{
 private:
   index_t _location_number;
+  PROBLEM_T _problem_type;
   void set_routing(std::unique_ptr<routing_io<distance_t>> routing_wrapper);
   void set_matrix();
 
@@ -49,6 +50,8 @@ public:
                    optional_coords_t end_coords);
 
   index_t get_location_number();
+
+  PROBLEM_T get_problem_type();
 
   friend input parse(const cl_args_t& cl_args);
 };

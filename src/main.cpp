@@ -141,17 +141,16 @@ int main(int argc, char **argv){
     BOOST_LOG_TRIVIAL(info) << "[Loading] Parsing input.";
     input input_data = parse(cl_args);
 
-
     // Build problem.
-    tsp asymmetric_tsp (loader->get_pbl_context(), loader->get_matrix());
+    auto problem = input_data.get_problem();
 
     auto end_problem_loading = std::chrono::high_resolution_clock::now();
-    computing_times.matrix_loading =
+    computing_times.loading =
       std::chrono::duration_cast<std::chrono::milliseconds>
       (end_problem_loading - start_problem_loading).count();
 
     BOOST_LOG_TRIVIAL(info) << "[Loading] Done, took "
-                            << computing_times.matrix_loading << " ms.";
+                            << computing_times.loading << " ms.";
 
     // Solve!
     // TODO: adapt return type.

@@ -29,7 +29,7 @@ constexpr distance_t INFINITE_DISTANCE = 3 * (std::numeric_limits<distance_t>::m
 
 struct timing_t{
   // Computing times in milliseconds.
-  duration_t matrix_loading;
+  duration_t loading;
   duration_t heuristic;
   duration_t local_search;
   duration_t total_duration;
@@ -58,11 +58,7 @@ struct cl_args_t{
     osrm_profile("car"){}
 };
 
-struct pbl_context_t{
-  bool force_start;
-  index_t start;
-  bool force_end;
-  index_t end;
-};
+// Problem types.
+enum class PROBLEM_T {TSP};
 
 #endif

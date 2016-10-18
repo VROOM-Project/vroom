@@ -45,7 +45,7 @@ void write_solution(const cl_args_t& cl_args,
 
   // Timing informations.
   rapidjson::Value json_c_t(rapidjson::kObjectType);
-  json_c_t.AddMember("loading", computing_times.matrix_loading, allocator);
+  json_c_t.AddMember("loading", computing_times.loading, allocator);
 
   duration_t solving_time
     = computing_times.heuristic + computing_times.local_search;

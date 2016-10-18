@@ -9,7 +9,9 @@ All rights reserved (see LICENSE).
 
 #include "./input.h"
 
-input::input(): _location_number(0){}
+input::input():
+  _location_number(0),
+  _problem_type(PROBLEM_T::TSP){}
 
 void input::add_job(index_t id, optional_coords_t coords){
   // Using current number of locations as index of this job in the
@@ -61,6 +63,10 @@ void input::add_vehicle(index_t id,
 
 index_t input::get_location_number(){
   return _location_number;
+}
+
+PROBLEM_T input::get_problem_type(){
+  return _problem_type;
 }
 
 void input::set_routing(std::unique_ptr<routing_io<distance_t>> routing_wrapper){
