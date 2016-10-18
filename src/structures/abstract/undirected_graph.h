@@ -12,6 +12,7 @@ All rights reserved (see LICENSE).
 
 #include <vector>
 #include <unordered_map>
+#include <list>
 #include <cassert>
 #include "edge.h"
 #include "matrix.h"

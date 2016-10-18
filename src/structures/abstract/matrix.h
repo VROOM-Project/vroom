@@ -11,6 +11,7 @@ All rights reserved (see LICENSE).
 */
 
 #include <vector>
+#include "../typedefs.h"
 
 template <class T>
 class line: private std::vector<T>{
