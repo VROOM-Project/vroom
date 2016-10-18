@@ -22,9 +22,6 @@ template <class T>
 std::unordered_map<index_t, index_t> minimum_weight_perfect_matching(const matrix<T>& m);
 
 template <class T>
-std::unordered_map<index_t, index_t> branch_and_bound_symmetric_mwpm(const matrix<T>& m);
-
-template <class T>
 std::unordered_map<index_t, index_t> greedy_symmetric_approx_mwpm(const matrix<T>& m);
 
 #endif
