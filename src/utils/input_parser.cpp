@@ -88,6 +88,8 @@ input parse(const std::string& input_string){
     if(input_data.get_location_number() <= 1){
       throw custom_exception("At least two locations required!");
     }
+
+    input_data.set_matrix();
   }
 
   return input_data;

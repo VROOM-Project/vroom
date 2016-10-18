@@ -18,15 +18,18 @@ All rights reserved (see LICENSE).
 #include "./job.h"
 #include "./vehicle.h"
 #include "../../utils/exceptions.h"
+#include "../../routing/routing_io.h"
 
 class input{
 private:
   index_t _location_number;
+  void set_matrix();
 
 protected:
   std::vector<job> _jobs;
   std::vector<vehicle> _vehicles;
   matrix<distance_t> _matrix;
+  std::unique_ptr<routing_io<distance_t>> _routing_wrapper;
   // List of locations added through add_* matching the matrix
   // ordering.
   std::vector<std::reference_wrapper<location>> _ordered_locations;
@@ -41,6 +44,8 @@ public:
                    optional_coords_t end_coords);
 
   index_t get_location_number();
+
+  friend input parse(const std::string& input_string);
 };
 
 #endif

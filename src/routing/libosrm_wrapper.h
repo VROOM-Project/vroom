@@ -39,15 +39,14 @@ private:
   const S _s;
 
 public:
-  libosrm_loader(const std::string& osrm_profile,
-                 const std::string& input):
-    osrm_loader(osrm_profile, input),
+  libosrm_loader(const std::string& osrm_profile):
+    osrm_loader(osrm_profile),
     _config(),
     _s(_config){}
 
-  virtual matrix<distance_t> get_matrix() const override{
+  virtual matrix<distance_t> get_matrix(const std::vector<std::reference_wrapper<location>>& locs) const override{
     osrm::TableParameters params;
-    for(auto const& location: _locations){
+    for(auto const& location: locs){
       params.coordinates.emplace_back(osrm::util::FloatLongitude({location.lon}),
                                       osrm::util::FloatLatitude({location.lat}));
     }
@@ -71,7 +70,7 @@ public:
     auto& table = result.values["durations"].get<osrm::json::Array>();
 
     // Expected matrix size.
-    std::size_t m_size = _locations.size();
+    std::size_t m_size = locs.size();
     assert(table.values.size() == m_size);
 
     // Build matrix while checking for unfound routes to avoid
@@ -105,7 +104,8 @@ public:
     return m;
   }
 
-  virtual void get_route_infos(const std::list<index_t>& steps,
+  virtual void get_route_infos(const std::vector<std::reference_wrapper<location>>& locs,
+                               const std::list<index_t>& steps,
                                rapidjson::Value& value,
                                rapidjson::Document::AllocatorType& allocator) const override{
     // Default options for routing.
@@ -119,8 +119,8 @@ public:
 
     // Ordering locations for the given steps.
     for(auto& step: steps){
-      params.coordinates.emplace_back(osrm::util::FloatLongitude({_locations[step].lon}),
-                                      osrm::util::FloatLatitude({_locations[step].lat}));
+      params.coordinates.emplace_back(osrm::util::FloatLongitude({locs[step].lon}),
+                                      osrm::util::FloatLatitude({locs[step].lat}));
     }
 
     osrm::json::Object result;

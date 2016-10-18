@@ -18,6 +18,7 @@ endif
 MAIN = ../bin/vroom
 SRC = $(wildcard *.cpp)\
 			$(wildcard ./algorithms/*.cpp)\
+			$(wildcard ./routing/*.cpp)\
 			$(wildcard ./heuristics/*.cpp)\
 			$(wildcard ./structures/vroom/*.cpp)\
 			$(wildcard ./structures/*.cpp)\

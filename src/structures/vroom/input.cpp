@@ -62,3 +62,7 @@ void input::add_vehicle(index_t id,
 index_t input::get_location_number(){
   return _location_number;
 }
+
+void input::set_matrix(){
+  _matrix = _routing_wrapper->get_matrix(_ordered_locations);
+}

@@ -21,7 +21,7 @@ private:
   std::string _address;            // OSRM server adress
   std::string _port;               // OSRM server listening port
 
-  std::string build_query(const std::vector<Location>& locations,
+  std::string build_query(const std::vector<std::reference_wrapper<location>>& locations,
                           std::string service,
                           std::string extra_args = "") const{
     // Building query for osrm-routed
@@ -96,8 +96,8 @@ public:
     _address(address),
     _port(port) {}
 
-  virtual matrix<distance_t> get_matrix() const override{
-    std::string query = this->build_query(_locations, "table");
+  virtual matrix<distance_t> get_matrix(const std::vector<std::reference_wrapper<location>>& locs) const override{
+    std::string query = this->build_query(locs, "table");
 
     std::string response = this->send_then_receive(query);
 
@@ -105,7 +105,7 @@ public:
     std::string json_content = response.substr(response.find("{"));
 
     // Expected matrix size.
-    std::size_t m_size = _locations.size();
+    std::size_t m_size = locs.size();
 
     // Checking everything is fine in the response.
     rapidjson::Document infos;
@@ -146,13 +146,14 @@ public:
     return m;
   }
 
-  virtual void get_route_infos(const std::list<index_t>& steps,
+  virtual void get_route_infos(const std::vector<std::reference_wrapper<location>>& locs,
+                               const std::list<index_t>& steps,
                                rapidjson::Value& value,
                                rapidjson::Document::AllocatorType& allocator) const override{
     // Ordering locations for the given steps.
-    std::vector<Location> ordered_locations;
+    std::vector<std::reference_wrapper<location>> ordered_locations;
     for(auto& step: steps){
-      ordered_locations.push_back(_locations[step]);
+      ordered_locations.push_back(locs[step]);
     }
 
     std::string extra_args = "alternatives=false&steps=false&overview=full&continue_straight=false";
