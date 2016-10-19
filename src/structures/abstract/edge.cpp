@@ -44,3 +44,5 @@ template <class T>
 T edge<T>::get_weight() const{
   return _weight;
 }
+
+template class edge<distance_t>;

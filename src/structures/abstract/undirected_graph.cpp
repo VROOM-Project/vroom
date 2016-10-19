@@ -57,3 +57,5 @@ template <class T>
 std::unordered_map<index_t, std::list<index_t>> undirected_graph<T>::get_adjacency_list() const{
   return _adjacency_list;
 }
+
+template class undirected_graph<distance_t>;

@@ -215,3 +215,7 @@ std::unordered_map<index_t, index_t> greedy_symmetric_approx_mwpm(const matrix<T
 
   return matching;
 }
+
+template std::unordered_map<index_t, index_t> minimum_weight_perfect_matching(const matrix<distance_t>& m);
+
+template std::unordered_map<index_t, index_t> greedy_symmetric_approx_mwpm(const matrix<distance_t>& m);
