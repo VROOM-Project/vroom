@@ -10,7 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
-struct computing_times{
+struct computing_times_t{
   // Computing times in milliseconds.
   duration_t loading;
   duration_t solving;

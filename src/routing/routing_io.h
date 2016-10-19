@@ -21,9 +21,9 @@ template <class T>
 class routing_io{
 
 public:
-  virtual matrix<T> get_matrix(const std::vector<std::reference_wrapper<location>>& locs) const = 0;
+  virtual matrix<T> get_matrix(const std::vector<std::reference_wrapper<location_t>>& locs) const = 0;
 
-  virtual void get_route_infos(const std::vector<std::reference_wrapper<location>>& locs,
+  virtual void get_route_infos(const std::vector<std::reference_wrapper<location_t>>& locs,
                                const std::list<index_t>& steps,
                                rapidjson::Value& value,
                                rapidjson::Document::AllocatorType& allocator) const = 0;

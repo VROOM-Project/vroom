@@ -7,7 +7,8 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <sstream>
+#include <fstream>
+#include <chrono>
 #include <unistd.h>
 #include <boost/log/core.hpp>
 #include <boost/log/trivial.hpp>
@@ -17,9 +18,8 @@ All rights reserved (see LICENSE).
 #include "./utils/version.h"
 #include "./structures/typedefs.h"
 #include "./structures/vroom/input/input.h"
-#include "./heuristics/tsp_strategy.h"
-#include "./utils/logger.h"
 #include "./utils/input_parser.h"
+#include "./problems/vrp.h"
 
 void display_usage(){
   std::string usage = "VROOM Copyright (C) 2015-2016, Julien Coupey\n";
@@ -110,7 +110,7 @@ int main(int argc, char **argv){
   catch(const std::exception& e){
     std::string message = "Wrong value for number of threads.";
     std::cerr << "[Error] " << message << std::endl;
-    write_error(cl_args.output_file, message);
+    // write_error(cl_args.output_file, message);
     exit(1);
   }
 
@@ -153,22 +153,22 @@ int main(int argc, char **argv){
                             << computing_times.loading << " ms.";
 
     // Solve!
-    auto output = problem.solve();
+    auto output = problem->solve();
 
-    // TODO: adapt return type.
-    std::pair<std::list<index_t>, distance_t> solution
-      = solve_atsp(asymmetric_tsp, cl_args.nb_threads, computing_times);
+    // // TODO: adapt return type.
+    // std::pair<std::list<index_t>, distance_t> solution
+    //   = solve_atsp(asymmetric_tsp, cl_args.nb_threads, computing_times);
 
-    // Write solution.
-    write_solution(cl_args,
-                   *loader,
-                   solution.first,
-                   solution.second,
-                   computing_times);
+    // // Write solution.
+    // write_solution(cl_args,
+    //                *loader,
+    //                solution.first,
+    //                solution.second,
+    //                computing_times);
   }
   catch(const custom_exception& e){
     std::cerr << "[Error] " << e.get_message() << std::endl;
-    write_error(cl_args.output_file, e.get_message());
+    // write_error(cl_args.output_file, e.get_message());
     exit(1);
   }
   #if LIBOSRM
@@ -177,7 +177,7 @@ int main(int argc, char **argv){
     // osrm-datastore. It would be good to be able to catch an
     // osrm::util::exception for this. See OSRM issue #2813.
     std::cerr << "[Error] " << e.what() << std::endl;
-    write_error(cl_args.output_file, e.what());
+    // write_error(cl_args.output_file, e.what());
     exit(1);
   }
   #endif

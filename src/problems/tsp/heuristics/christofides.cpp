@@ -7,19 +7,22 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "christo_heuristic.h"
+#include "christofides.h"
 
-std::list<index_t> christo_heuristic::build_solution(const tsp& instance){
+std::list<index_t> christofides(const matrix<distance_t>& sym_matrix){
   // The eulerian sub-graph further used is made of a minimum spanning
   // tree with a minimum weight perfect matching on its odd degree
   // vertices.
 
+  // Compute symmetric graph from the matrix.
+  auto sym_graph = undirected_graph<distance_t>(sym_matrix);
+
   BOOST_LOG_TRIVIAL(trace) << "* Graph has "
-                           << instance.size()
+                           << sym_graph.size()
                            << " nodes.";
 
-  undirected_graph<distance_t> mst_graph
-    = minimum_spanning_tree(instance.get_symmetrized_graph());
+  // Work on a minimum spanning tree seen as a graph.
+  auto mst_graph = minimum_spanning_tree(sym_graph);
 
   // Getting minimum spanning tree of associated graph under the form
   // of an adjacency list.
@@ -39,7 +42,7 @@ std::list<index_t> christo_heuristic::build_solution(const tsp& instance){
 
   // Getting corresponding matrix for the generated sub-graph.
   matrix<distance_t> sub_matrix
-    = instance.get_symmetrized_matrix().get_sub_matrix(mst_odd_vertices);
+    = sym_matrix.get_sub_matrix(mst_odd_vertices);
 
   // Computing minimum weight perfect matching.
   std::unordered_map<index_t, index_t> mwpm
@@ -95,7 +98,7 @@ std::list<index_t> christo_heuristic::build_solution(const tsp& instance){
     if(already_added.find(first_index) == already_added.end()){
       eulerian_graph_edges.emplace_back(first_index,
                                         second_index,
-                                        instance.get_symmetrized_matrix()[first_index][second_index]
+                                        sym_matrix[first_index][second_index]
                                         );
       already_added.insert(second_index);
     }

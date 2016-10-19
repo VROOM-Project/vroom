@@ -15,12 +15,12 @@ All rights reserved (see LICENSE).
 
 struct vehicle{
   const index_t id;
-  boost::optional<location> start;
-  boost::optional<location> end;
+  boost::optional<location_t> start;
+  boost::optional<location_t> end;
 
   vehicle(index_t id,
-          boost::optional<location> start,
-          boost::optional<location> end):
+          boost::optional<location_t> start,
+          boost::optional<location_t> end):
     id(id),
     start(start),
     end(end){}

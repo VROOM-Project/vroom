@@ -14,7 +14,7 @@ libosrm_wrapper::libosrm_wrapper(const std::string& osrm_profile):
   _config(),
   _s(_config){}
 
-matrix<distance_t> libosrm_wrapper::get_matrix(const std::vector<std::reference_wrapper<location>>& locs) const{
+matrix<distance_t> libosrm_wrapper::get_matrix(const std::vector<std::reference_wrapper<location_t>>& locs) const{
   osrm::TableParameters params;
   for(auto const& location: locs){
     params.coordinates.emplace_back(osrm::util::FloatLongitude({location.get().lon.get()}),
@@ -74,7 +74,7 @@ matrix<distance_t> libosrm_wrapper::get_matrix(const std::vector<std::reference_
   return m;
 }
 
-void libosrm_wrapper::get_route_infos(const std::vector<std::reference_wrapper<location>>& locs,
+void libosrm_wrapper::get_route_infos(const std::vector<std::reference_wrapper<location_t>>& locs,
                                const std::list<index_t>& steps,
                                rapidjson::Value& value,
                                rapidjson::Document::AllocatorType& allocator) const{

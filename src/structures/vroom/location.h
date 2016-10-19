@@ -12,7 +12,7 @@ All rights reserved (see LICENSE).
 
 #include "../typedefs.h"
 
-struct location{
+struct location_t{
   // Index of this location in the matrix.
   const index_t index;
 
@@ -20,10 +20,10 @@ struct location{
   boost::optional<const coordinate_t> lon;
   boost::optional<const coordinate_t> lat;
 
-  location(index_t index):
+  location_t(index_t index):
     index(index){}
 
-  location(index_t index, coordinate_t lon, coordinate_t lat):
+  location_t(index_t index, coordinate_t lon, coordinate_t lat):
     index(index), lon(lon), lat(lat){}
 
   bool has_coordinates() const{

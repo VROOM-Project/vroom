@@ -13,13 +13,13 @@ All rights reserved (see LICENSE).
 #include "../typedefs.h"
 #include "./location.h"
 
-struct job: public location{
+struct job_t: public location_t{
   const index_t id;
 
   template <typename... Args>
-  job(index_t id,
+  job_t(index_t id,
       Args&&... args):
-    location(std::forward<Args>(args)...),
+    location_t(std::forward<Args>(args)...),
     id(id){}
 };
 

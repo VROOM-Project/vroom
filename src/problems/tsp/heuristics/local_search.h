@@ -16,9 +16,8 @@ All rights reserved (see LICENSE).
 #include <thread>
 #include <numeric>
 #include <boost/log/trivial.hpp>
-#include "../structures/typedefs.h"
-#include "../structures/abstract/matrix.h"
-#include "../structures/tsp.h"
+#include "../../../structures/typedefs.h"
+#include "../../../structures/abstract/matrix.h"
 
 class local_search{
 private:

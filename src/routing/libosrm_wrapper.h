@@ -41,9 +41,9 @@ private:
 public:
   libosrm_wrapper(const std::string& osrm_profile);
 
-  virtual matrix<distance_t> get_matrix(const std::vector<std::reference_wrapper<location>>& locs) const override;
+  virtual matrix<distance_t> get_matrix(const std::vector<std::reference_wrapper<location_t>>& locs) const override;
 
-  virtual void get_route_infos(const std::vector<std::reference_wrapper<location>>& locs,
+  virtual void get_route_infos(const std::vector<std::reference_wrapper<location_t>>& locs,
                                const std::list<index_t>& steps,
                                rapidjson::Value& value,
                                rapidjson::Document::AllocatorType& allocator) const override;

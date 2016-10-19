@@ -21,7 +21,7 @@ private:
   std::string _address;            // OSRM server adress
   std::string _port;               // OSRM server listening port
 
-  std::string build_query(const std::vector<std::reference_wrapper<location>>& locations,
+  std::string build_query(const std::vector<std::reference_wrapper<location_t>>& locations,
                           std::string service,
                           std::string extra_args) const;
 
@@ -32,9 +32,9 @@ public:
                  const std::string& port,
                  const std::string& osrm_profile);
 
-  virtual matrix<distance_t> get_matrix(const std::vector<std::reference_wrapper<location>>& locs) const override;
+  virtual matrix<distance_t> get_matrix(const std::vector<std::reference_wrapper<location_t>>& locs) const override;
 
-  virtual void get_route_infos(const std::vector<std::reference_wrapper<location>>& locs,
+  virtual void get_route_infos(const std::vector<std::reference_wrapper<location_t>>& locs,
                                const std::list<index_t>& steps,
                                rapidjson::Value& value,
                                rapidjson::Document::AllocatorType& allocator) const override;

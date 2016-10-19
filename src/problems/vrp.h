@@ -10,31 +10,25 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "./typedefs.h"
-#include "./abstract/matrix.h"
-#include "../structures/vroom/job.h"
-#include "../structures/vroom/vehicle.h"
+#include "../structures/vroom/input/input.h"
 #include "../structures/vroom/output/output.h"
-
 
 class vrp{
   // Abstract class describing a VRP (vehicle routing problem).
 protected:
-  const std::vector<job>& _jobs;
-  const std::vector<vehicle>& _vehicles;
-  matrix<distance_t> _matrix;
+  const input& _input;
 
 public:
-  vrp(const std::vector<job>& jobs,
-      const std::vector<vehicle>& vehicles,
-      const matrix<distance_t>& matrix):
-    _jobs(jobs),
-    _vehicles(vehicles),
-    _matrix(matrix){
-    assert(_vehicles.size() > 0);
+  vrp(const input& input):
+    _input(input){
+    assert(_input._vehicles.size() > 0);
   }
 
-  virtual output solve() const = 0;
+  virtual output solve(unsigned nb_threads) const = 0;
+
+  output solve() const{
+    return solve(1);
+  };
 };
 
 #endif

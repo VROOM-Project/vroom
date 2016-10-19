@@ -10,24 +10,25 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "./location.h"
+#include "../location.h"
 
 enum class TYPE {START, JOB, END};
 
 struct step{
   const TYPE type;
-  const location location;
+  const location_t location;
   const boost::optional<index_t> job;
 
   step(TYPE type,
-       location location):
+       location_t location):
     type(type),
     location(location){}
 
   step(TYPE type,
-       location location,
+       location_t location,
        index_t job):
-    step(type, location),
+    type(type),
+    location(location),
     job(job){}
 };
 

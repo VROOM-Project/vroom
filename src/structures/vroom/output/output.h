@@ -16,16 +16,19 @@ All rights reserved (see LICENSE).
 struct output{
   index_t code;
   boost::optional<std::string> error;
-  const std::vector<route> routes;
-  const solution solution;
+  const std::vector<route_t> routes;
+  const boost::optional<solution_t> solution;
 
   output(index_t code, std::string error):
     code(code),
     error(error){}
 
-  output(index_t code, const std::vector<route>& routes):
+  output(index_t code,
+         const std::vector<route_t>& routes,
+         solution_t solution):
     code(code),
-    routes(std::move(routes)){}
+    routes(std::move(routes)),
+    solution(solution){}
 };
 
 #endif

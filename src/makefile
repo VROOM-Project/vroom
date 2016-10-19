@@ -19,7 +19,8 @@ MAIN = ../bin/vroom
 SRC = $(wildcard *.cpp)\
 			$(wildcard ./algorithms/*.cpp)\
 			$(wildcard ./routing/*.cpp)\
-			$(wildcard ./heuristics/*.cpp)\
+			$(wildcard ./problems/*/*.cpp)\
+			$(wildcard ./problems/*/heuristics/*.cpp)\
 			$(wildcard ./structures/vroom/*.cpp)\
 			$(wildcard ./structures/vroom/input/*.cpp)\
 			$(wildcard ./structures/*.cpp)\

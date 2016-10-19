@@ -11,18 +11,20 @@ All rights reserved (see LICENSE).
 */
 
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <string>
 #include <list>
-#include "../../structures/typedefs.h"
-#include "../../structures/abstract/matrix.h"
+#include "../vrp.h"
 #include "../../structures/abstract/undirected_graph.h"
-#include "../../structures/vroom/output/output.h"
+#include "./heuristics/christofides.h"
+#include "./heuristics/local_search.h"
 
 class tsp: public vrp{
 private:
+  index_t _vehicle_rank;
+  matrix<distance_t> _matrix;
   matrix<distance_t> _symmetrized_matrix;
-  undirected_graph<distance_t> _symmetrized_graph;
   bool _is_symmetric;
   bool _force_start;
   index_t _start;
@@ -30,13 +32,14 @@ private:
   index_t _end;
 
 public:
-  tsp(const std::vector<job>& jobs,
-      const std::vector<vehicle>& vehicles,
-      matrix<distance_t> matrix):
+  tsp(const input& input,
+      index_t vehicle_rank);
 
   distance_t cost(const std::list<index_t>& tour) const;
 
   distance_t symmetrized_cost(const std::list<index_t>& tour) const;
+
+  virtual output solve(unsigned nb_threads) const override;
 };
 
 #endif

@@ -28,7 +28,7 @@ protected:
   osrm_wrapper(const std::string& osrm_profile):
     _osrm_profile(osrm_profile){}
 
-  inline void check_unfound(const std::vector<std::reference_wrapper<location>>& locs,
+  inline void check_unfound(const std::vector<std::reference_wrapper<location_t>>& locs,
                             const std::vector<unsigned>& nb_unfound_from_loc,
                             const std::vector<unsigned>& nb_unfound_to_loc) const{
   assert(nb_unfound_from_loc.size() == nb_unfound_to_loc.size());
@@ -61,9 +61,9 @@ protected:
   }
 }
 
-  virtual matrix<distance_t> get_matrix(const std::vector<std::reference_wrapper<location>>& locs) const = 0;
+  virtual matrix<distance_t> get_matrix(const std::vector<std::reference_wrapper<location_t>>& locs) const = 0;
 
-  virtual void get_route_infos(const std::vector<std::reference_wrapper<location>>& locs,
+  virtual void get_route_infos(const std::vector<std::reference_wrapper<location_t>>& locs,
                                const std::list<index_t>& steps,
                                rapidjson::Value& value,
                                rapidjson::Document::AllocatorType& allocator) const = 0;
