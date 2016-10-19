@@ -22,8 +22,7 @@ public:
   using parent::size;
   using parent::operator[];
 
-  line(std::size_t n) : parent(n) {
-  }
+  line(std::size_t n);
 };
 
 template <class T>
@@ -35,21 +34,11 @@ class matrix : private std::vector<line<T>>{
   using parent::size;
   using parent::operator[];
 
-  matrix(std::size_t n):
-    parent(n, line<T>(n)){}
+  matrix();
 
-  matrix():
-    matrix(0){}
+  matrix(std::size_t n);
 
-  matrix<T> get_sub_matrix(const std::vector<index_t>& indices) const{
-    matrix<T> sub_matrix {indices.size()};
-    for(std::size_t i = 0; i < indices.size(); ++i){
-      for(std::size_t j = 0; j < indices.size(); ++j){
-        sub_matrix[i][j] = (*this)[indices[i]][indices[j]];
-      }
-    }
-    return sub_matrix;
-  }
+  matrix<T> get_sub_matrix(const std::vector<index_t>& indices) const;
 };
 
 #endif

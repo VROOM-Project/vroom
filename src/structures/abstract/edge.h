@@ -11,6 +11,7 @@ All rights reserved (see LICENSE).
 */
 
 #include <algorithm>
+#include "../typedefs.h"
 
 template <class T> class edge{
 
@@ -22,33 +23,17 @@ private:
 public:
   edge(index_t first_vertex,
        index_t second_vertex,
-       T weight):
-    _first_vertex(std::min(first_vertex, second_vertex)),
-    _second_vertex(std::max(first_vertex, second_vertex)),
-    _weight(weight) {}
+       T weight);
 
-  index_t get_first_vertex() const{
-    return _first_vertex;
-  }
+  index_t get_first_vertex() const;
 
-  index_t get_second_vertex() const{
-    return _second_vertex;
-  }
+  index_t get_second_vertex() const;
 
-  bool operator<(const edge& rhs) const{
-  return (this->_first_vertex < rhs._first_vertex)
-    or ((this->_first_vertex == rhs._first_vertex)
-        and (this->_second_vertex < rhs._second_vertex));
-  }
+  bool operator<(const edge& rhs) const;
 
-  bool operator==(const edge& rhs) const{
-    return (this->_first_vertex == rhs._first_vertex)
-      and (this->_second_vertex == rhs._second_vertex);
-  }
+  bool operator==(const edge& rhs) const;
 
-  T get_weight() const{
-    return _weight;
-  }
+  T get_weight() const;
 };
 
 #endif
