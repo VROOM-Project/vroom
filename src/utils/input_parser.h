@@ -18,7 +18,7 @@ All rights reserved (see LICENSE).
 #include "../structures/abstract/matrix.h"
 #include "../structures/vroom/job.h"
 #include "../structures/vroom/vehicle.h"
-#include "../structures/vroom/input.h"
+#include "../structures/vroom/input/input.h"
 #include "./exceptions.h"
 
 input parse(const cl_args_t& cl_args);

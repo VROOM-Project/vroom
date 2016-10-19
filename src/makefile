@@ -21,6 +21,7 @@ SRC = $(wildcard *.cpp)\
 			$(wildcard ./routing/*.cpp)\
 			$(wildcard ./heuristics/*.cpp)\
 			$(wildcard ./structures/vroom/*.cpp)\
+			$(wildcard ./structures/vroom/input/*.cpp)\
 			$(wildcard ./structures/*.cpp)\
 			$(wildcard ./utils/*.cpp)
 OBJ = $(SRC:.cpp=.o)

@@ -13,15 +13,15 @@ All rights reserved (see LICENSE).
 #include <array>
 #include <vector>
 #include <boost/optional.hpp>
-#include "../typedefs.h"
-#include "../abstract/matrix.h"
-#include "./job.h"
-#include "./vehicle.h"
-#include "../../utils/exceptions.h"
-#include "../../routing/routing_io.h"
-#include "../../routing/routed_wrapper.h"
+#include "../../typedefs.h"
+#include "../../abstract/matrix.h"
+#include "../job.h"
+#include "../vehicle.h"
+#include "../../../utils/exceptions.h"
+#include "../../../routing/routing_io.h"
+#include "../../../routing/routed_wrapper.h"
 #if LIBOSRM
-#include "../../routing/libosrm_wrapper.h"
+#include "../../../routing/libosrm_wrapper.h"
 #endif
 
 class input{

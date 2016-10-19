@@ -32,7 +32,6 @@ struct timing_t{
   duration_t loading;
   duration_t heuristic;
   duration_t local_search;
-  duration_t total_duration;
 };
 
 struct cl_args_t{

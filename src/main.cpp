@@ -16,7 +16,7 @@ All rights reserved (see LICENSE).
 #include <boost/log/utility/setup/common_attributes.hpp>
 #include "./utils/version.h"
 #include "./structures/typedefs.h"
-#include "./structures/vroom/input.h"
+#include "./structures/vroom/input/input.h"
 #include "./heuristics/tsp_strategy.h"
 #include "./utils/logger.h"
 #include "./utils/input_parser.h"
@@ -153,6 +153,8 @@ int main(int argc, char **argv){
                             << computing_times.loading << " ms.";
 
     // Solve!
+    auto output = problem.solve();
+
     // TODO: adapt return type.
     std::pair<std::list<index_t>, distance_t> solution
       = solve_atsp(asymmetric_tsp, cl_args.nb_threads, computing_times);
