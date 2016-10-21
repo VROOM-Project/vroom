@@ -12,8 +12,12 @@ All rights reserved (see LICENSE).
 // Helper to get optional array of coordinates.
 inline optional_coords_t parse_coordinates(const rapidjson::Value& object,
                                            const char* key){
-  if(object.HasMember(key)){
-    return {{object[key][0].GetDouble(), object[key][1].GetDouble()}};
+  if(object.HasMember(key)
+     and object[key].IsArray()){
+    if(object[key].Size() < 2){
+      throw custom_exception("Invalid coordinates array size.");
+    }
+    return optional_coords_t({object[key][0].GetDouble(), object[key][1].GetDouble()});
   }
   else{
     return boost::none;
