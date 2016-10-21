@@ -16,7 +16,7 @@ routed_wrapper::routed_wrapper(const std::string& address,
     _address(address),
     _port(port) {}
 
-std::string routed_wrapper::build_query(const std::vector<std::reference_wrapper<location_t>>& locations,
+std::string routed_wrapper::build_query(const std::vector<location_t>& locations,
                                         std::string service,
                                         std::string extra_args = "") const{
   // Building query for osrm-routed
@@ -26,9 +26,9 @@ std::string routed_wrapper::build_query(const std::vector<std::reference_wrapper
 
   // Adding locations.
   for(auto const& location: locations){
-    query += std::to_string(location.get().lon.get())
+    query += std::to_string(location.lon.get())
       + ","
-      + std::to_string(location.get().lat.get())
+      + std::to_string(location.lat.get())
       + ";";
   }
   query.pop_back();         // Remove trailing ';'.
@@ -82,7 +82,7 @@ std::string routed_wrapper::send_then_receive(std::string query) const{
   return response;
 }
 
-matrix<distance_t> routed_wrapper::get_matrix(const std::vector<std::reference_wrapper<location_t>>& locs) const{
+matrix<distance_t> routed_wrapper::get_matrix(const std::vector<location_t>& locs) const{
   std::string query = this->build_query(locs, "table");
 
   std::string response = this->send_then_receive(query);
@@ -132,12 +132,12 @@ matrix<distance_t> routed_wrapper::get_matrix(const std::vector<std::reference_w
   return m;
 }
 
-void routed_wrapper::get_route_infos(const std::vector<std::reference_wrapper<location_t>>& locs,
+void routed_wrapper::get_route_infos(const std::vector<location_t>& locs,
                                              const std::list<index_t>& steps,
                                              rapidjson::Value& value,
                                              rapidjson::Document::AllocatorType& allocator) const{
   // Ordering locations for the given steps.
-  std::vector<std::reference_wrapper<location_t>> ordered_locations;
+  std::vector<location_t> ordered_locations;
   for(auto& step: steps){
     ordered_locations.push_back(locs[step]);
   }

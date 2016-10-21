@@ -7,6 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <iostream>
 #include "./input.h"
 #include "../../../problems/vrp.h"
 
@@ -14,7 +15,7 @@ input::input():
   _location_number(0),
   _problem_type(PROBLEM_T::TSP){}
 
-void input::add_job(index_t id, optional_coords_t coords){
+void input::add_job(index_t id, const optional_coords_t& coords){
   // Using current number of locations as index of this job in the
   // matrix.
   if(coords == boost::none){
@@ -35,8 +36,8 @@ void input::add_job(index_t id, optional_coords_t coords){
 }
 
 void input::add_vehicle(index_t id,
-                        optional_coords_t start_coords,
-                        optional_coords_t end_coords){
+                        const optional_coords_t& start_coords,
+                        const optional_coords_t& end_coords){
   // Using current number of locations as index of start and end in
   // the matrix.
   if((!start_coords) and (!end_coords)){
@@ -48,22 +49,22 @@ void input::add_vehicle(index_t id,
   boost::optional<location_t> start = (start_coords == boost::none) ?
     boost::none:
     boost::optional<location_t>(
-      {++_location_number, (*start_coords)[0], (*start_coords)[1]}
+      {_location_number++, (*start_coords)[0], (*start_coords)[1]}
       );
 
   boost::optional<location_t> end = (end_coords == boost::none) ?
     boost::none:
     boost::optional<location_t>(
-      {++_location_number, (*end_coords)[0], (*end_coords)[1]}
+      {_location_number++, (*end_coords)[0], (*end_coords)[1]}
       );
 
   _vehicles.emplace_back(id, start, end);
 
   if(start_coords){
-    _ordered_locations.push_back(_vehicles.back().start.value());
+    _ordered_locations.push_back(_vehicles.back().start.get());
   }
   if(end_coords){
-    _ordered_locations.push_back(_vehicles.back().end.value());
+    _ordered_locations.push_back(_vehicles.back().end.get());
   }
 }
 
@@ -81,7 +82,7 @@ index_t input::get_location_number() const{
 }
 
 location_t input::get_location_at(index_t index) const{
-  return _ordered_locations[index].get();
+  return _ordered_locations[index];
 }
 
 index_t input::get_job_rank_from_index(index_t index) const{

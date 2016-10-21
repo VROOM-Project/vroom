@@ -42,15 +42,15 @@ public:
   std::unique_ptr<routing_io<distance_t>> _routing_wrapper;
   // List of locations added through add_* matching the matrix
   // ordering.
-  std::vector<std::reference_wrapper<location_t>> _ordered_locations;
+  std::vector<location_t> _ordered_locations;
 
   input();
 
-  void add_job(index_t id, optional_coords_t coords);
+  void add_job(index_t id, const optional_coords_t& coords);
 
   void add_vehicle(index_t id,
-                   optional_coords_t start_coords,
-                   optional_coords_t end_coords);
+                   const optional_coords_t& start_coords,
+                   const optional_coords_t& end_coords);
 
   index_t get_location_number() const;
 

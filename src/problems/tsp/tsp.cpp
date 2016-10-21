@@ -192,13 +192,10 @@ output tsp::solve(unsigned nb_threads) const{
     first_loc_index = _start;
   }
   else{
-    // Next condition should always be met as at least start or end
-    // should be provided in input.
-    if(_force_end){
-      // Requiring the tour to be described from the "forced" end
-      // location.
-      first_loc_index = _end;
-    }
+    assert(_force_end);
+    // Requiring the tour to be described from the "forced" end
+    // location.
+    first_loc_index = _end;
   }
 
   std::list<index_t> current_sol = sym_ls.get_tour(first_loc_index);
@@ -342,7 +339,7 @@ output tsp::solve(unsigned nb_threads) const{
                       current_cost);
 
   // TODO
-  computing_times_t ct;
+  computing_times_t ct(0, 0, 0);
 
   // Indicators.
   solution_t sol (current_cost, ct);
