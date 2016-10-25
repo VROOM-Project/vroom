@@ -8,6 +8,7 @@ All rights reserved (see LICENSE).
 */
 
 #include "tsp.h"
+#include "../../structures/vroom/input/input.h"
 
 tsp::tsp(const input& input,
          index_t vehicle_rank):

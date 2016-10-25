@@ -96,6 +96,5 @@ PROBLEM_T input::get_problem_type() const{
 }
 
 std::unique_ptr<vrp> input::get_problem() const{
-  std::unique_ptr<vrp> problem;
-  return problem;
+  return std::make_unique<tsp>(*this, 0);
 }

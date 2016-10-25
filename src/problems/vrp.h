@@ -10,8 +10,9 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "../structures/vroom/input/input.h"
 #include "../structures/vroom/output/output.h"
+
+class input;
 
 class vrp{
   // Abstract class describing a VRP (vehicle routing problem).
@@ -19,10 +20,7 @@ protected:
   const input& _input;
 
 public:
-  vrp(const input& input):
-    _input(input){
-    assert(_input._vehicles.size() > 0);
-  }
+  vrp(const input& input);
 
   virtual output solve(unsigned nb_threads) const = 0;
 

@@ -18,6 +18,7 @@ All rights reserved (see LICENSE).
 #include "../../abstract/matrix.h"
 #include "../job.h"
 #include "../vehicle.h"
+#include "../../../problems/tsp/tsp.h"
 #include "../../../utils/exceptions.h"
 #include "../../../routing/routing_io.h"
 #include "../../../routing/routed_wrapper.h"
