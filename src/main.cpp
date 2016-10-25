@@ -153,7 +153,7 @@ int main(int argc, char **argv){
                             << computing_times.loading << " ms.";
 
     // Solve!
-    auto output = problem->solve();
+    auto sol = problem->solve();
 
     // // TODO: adapt return type.
     // std::pair<std::list<index_t>, distance_t> solution

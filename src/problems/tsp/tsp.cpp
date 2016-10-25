@@ -133,7 +133,7 @@ distance_t tsp::symmetrized_cost(const std::list<index_t>& tour) const{
   return cost;
 }
 
-output tsp::solve(unsigned nb_threads) const{
+solution tsp::solve(unsigned nb_threads) const{
   // Applying heuristic.
   auto start_heuristic = std::chrono::high_resolution_clock::now();
   BOOST_LOG_TRIVIAL(info)
@@ -339,14 +339,10 @@ output tsp::solve(unsigned nb_threads) const{
                       steps,
                       current_cost);
 
-  // TODO
-  computing_times_t ct(0, 0, 0);
-
   // Indicators.
-  solution_t sol (current_cost, ct);
+  summary_t summary (current_cost);
 
-  // Final output.
-  output result (0, routes, sol);
+  solution sol (0, routes, summary);
 
-  return result;
+  return sol;
 }

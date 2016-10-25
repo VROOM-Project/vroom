@@ -10,7 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "../structures/vroom/output/output.h"
+#include "../structures/vroom/output/solution.h"
 
 class input;
 
@@ -22,9 +22,9 @@ protected:
 public:
   vrp(const input& input);
 
-  virtual output solve(unsigned nb_threads) const = 0;
+  virtual solution solve(unsigned nb_threads) const = 0;
 
-  output solve() const{
+  solution solve() const{
     return solve(1);
   };
 };

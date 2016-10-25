@@ -16,12 +16,10 @@ struct computing_times_t{
   duration_t solving;
   duration_t routing;
 
-  computing_times_t(duration_t loading,
-                    duration_t solving,
-                    duration_t routing):
-    loading(loading),
-    solving(solving),
-    routing(routing){}
+  computing_times_t():
+    loading(0),
+    solving(0),
+    routing(0){}
 };
 
 #endif

@@ -10,20 +10,25 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "./computing_times.h"
+#include "./route.h"
+#include "./summary.h"
 
-struct solution_t{
-  const duration_t cost;
-  const boost::optional<duration_t> duration;
-  const boost::optional<distance_t> distance;
-  const computing_times_t computing_times;
+struct solution{
+  index_t code;
+  boost::optional<std::string> error;
+  const std::vector<route_t> routes;
+  const boost::optional<summary_t> summary;
 
-  solution_t(duration_t cost,
-             computing_times_t computing_times):
-    cost(cost),
-    duration(boost::none),
-    distance(boost::none),
-    computing_times(computing_times){}
+  solution(index_t code, std::string error):
+    code(code),
+    error(error){}
+
+  solution(index_t code,
+           const std::vector<route_t>& routes,
+           summary_t summary):
+    code(code),
+    routes(std::move(routes)),
+    summary(summary){}
 };
 
 #endif

@@ -39,7 +39,7 @@ public:
 
   distance_t symmetrized_cost(const std::list<index_t>& tour) const;
 
-  virtual output solve(unsigned nb_threads) const override;
+  virtual solution solve(unsigned nb_threads) const override;
 };
 
 #endif
