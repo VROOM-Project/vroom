@@ -21,7 +21,8 @@ struct solution{
 
   solution(index_t code, std::string error):
     code(code),
-    error(error){}
+    error(error),
+    summary(0){}
 
   solution(index_t code,
            std::vector<route_t>&& routes,

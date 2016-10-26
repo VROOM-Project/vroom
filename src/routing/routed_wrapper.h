@@ -34,10 +34,7 @@ public:
 
   virtual matrix<distance_t> get_matrix(const std::vector<location_t>& locs) const override;
 
-  virtual void get_route_infos(const std::vector<location_t>& locs,
-                               const std::list<index_t>& steps,
-                               rapidjson::Value& value,
-                               rapidjson::Document::AllocatorType& allocator) const override;
+  virtual void add_route_geometry(route_t& rte) const override;
 };
 
 #endif

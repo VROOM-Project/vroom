@@ -132,14 +132,11 @@ matrix<distance_t> routed_wrapper::get_matrix(const std::vector<location_t>& loc
   return m;
 }
 
-void routed_wrapper::get_route_infos(const std::vector<location_t>& locs,
-                                             const std::list<index_t>& steps,
-                                             rapidjson::Value& value,
-                                             rapidjson::Document::AllocatorType& allocator) const{
+void routed_wrapper::add_route_geometry(route_t& rte) const{
   // Ordering locations for the given steps.
   std::vector<location_t> ordered_locations;
-  for(auto& step: steps){
-    ordered_locations.push_back(locs[step]);
+  for(auto& step: rte.steps){
+    ordered_locations.push_back(step.location);
   }
 
   std::string extra_args = "alternatives=false&steps=false&overview=full&continue_straight=false";
@@ -163,13 +160,7 @@ void routed_wrapper::get_route_infos(const std::vector<location_t>& locs,
   }
 
   // Parse total time/distance and route geometry.
-  value.AddMember("duration",
-                  round_to_distance(infos["routes"][0]["duration"].GetDouble()),
-                  allocator);
-  value.AddMember("distance",
-                  round_to_distance(infos["routes"][0]["distance"].GetDouble()),
-                  allocator);
-  value.AddMember("geometry",
-                  rapidjson::Value(infos["routes"][0]["geometry"], allocator),
-                  allocator);
+  rte.duration = round_to_distance(infos["routes"][0]["duration"].GetDouble());
+  rte.distance = round_to_distance(infos["routes"][0]["distance"].GetDouble());
+  rte.geometry = std::move(infos["routes"][0]["geometry"].GetString());
 }

@@ -74,10 +74,7 @@ matrix<distance_t> libosrm_wrapper::get_matrix(const std::vector<location_t>& lo
   return m;
 }
 
-void libosrm_wrapper::get_route_infos(const std::vector<location_t>& locs,
-                               const std::list<index_t>& steps,
-                               rapidjson::Value& value,
-                               rapidjson::Document::AllocatorType& allocator) const{
+void libosrm_wrapper::add_route_infos(route& rte) const{
   // Default options for routing.
   osrm::RouteParameters params(false, // steps
                                false, // alternatives
@@ -88,9 +85,9 @@ void libosrm_wrapper::get_route_infos(const std::vector<location_t>& locs,
                                );
 
   // Ordering locations for the given steps.
-  for(auto& step: steps){
-    params.coordinates.emplace_back(osrm::util::FloatLongitude({locs[step].get().lon.get()}),
-                                    osrm::util::FloatLatitude({locs[step].get().lat.get()}));
+  for(auto& step: rte.steps){
+    params.coordinates.emplace_back(osrm::util::FloatLongitude({step.location.get().lon.get()}),
+                                    osrm::util::FloatLatitude({step.location.get().lat.get()}));
   }
 
   osrm::json::Object result;
@@ -109,17 +106,10 @@ void libosrm_wrapper::get_route_infos(const std::vector<location_t>& locs,
                            + result.values["message"].get<osrm::json::String>().value);
   }
 
-  auto &routes = result.values["routes"].get<osrm::json::Array>();
-  auto &route = routes.values.at(0).get<osrm::json::Object>();
+  auto& result_routes = result.values["routes"].get<osrm::json::Array>();
+  auto& result_route = result_routes.values.at(0).get<osrm::json::Object>();
 
-  value.AddMember("duration",
-                  round_to_distance(route.values["duration"].get<osrm::json::Number>().value),
-                  allocator);
-  value.AddMember("distance",
-                  round_to_distance(route.values["distance"].get<osrm::json::Number>().value),
-                  allocator);
-  value.AddMember("geometry",
-                  rapidjson::Value(route.values["geometry"].get<osrm::json::String>().value.c_str(),
-                                   allocator),
-                  allocator);
+  rte.duration = round_to_distance(route.values["duration"].get<osrm::json::Number>().value);
+  rte.distance = round_to_distance(route.values["distance"].get<osrm::json::Number>().value);
+  rte.geometry = std::move(route.values["geometry"].get<osrm::json::String>().value);
 }

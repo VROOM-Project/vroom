@@ -18,10 +18,10 @@ struct summary_t{
   distance_t distance;
   computing_times_t computing_times;
 
-  summary_t() {}
-
   summary_t(duration_t cost):
-    cost(cost) {}
+    cost(cost),
+    duration(0),
+    distance(0){}
 };
 
 #endif

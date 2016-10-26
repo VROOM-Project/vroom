@@ -22,6 +22,8 @@ All rights reserved (see LICENSE).
 #include "osrm/status.hpp"
 #include "osrm/osrm.hpp"
 
+// TODO change the following as this is fixed in OSRM.
+
 // Unable to define an OSRM object as a class member and use it within
 // get_matrix and get_route_infos because Table and Route are not
 // const (see #34). This should be fixed in libosrm in the future (see
@@ -43,10 +45,7 @@ public:
 
   virtual matrix<distance_t> get_matrix(const std::vector<location_t>& locs) const override;
 
-  virtual void get_route_infos(const std::vector<location_t>& locs,
-                               const std::list<index_t>& steps,
-                               rapidjson::Value& value,
-                               rapidjson::Document::AllocatorType& allocator) const override;
+  virtual void add_route_geometry(route& rte) const override;
 };
 
 #endif

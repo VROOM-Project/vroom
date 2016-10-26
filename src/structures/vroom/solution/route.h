@@ -25,7 +25,9 @@ struct route_t{
           duration_t cost):
     vehicle(vehicle),
     steps(std::move(steps)),
-    cost(cost){}
+    cost(cost),
+    duration(0),
+    distance(0){}
 };
 
 #endif

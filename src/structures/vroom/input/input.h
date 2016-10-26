@@ -34,10 +34,11 @@ private:
   std::chrono::high_resolution_clock::time_point _start_loading;
   std::chrono::high_resolution_clock::time_point _end_loading;
   std::chrono::high_resolution_clock::time_point _end_solving;
+  std::chrono::high_resolution_clock::time_point _end_routing;
   index_t _location_number;
   PROBLEM_T _problem_type;
   std::unique_ptr<routing_io<distance_t>> _routing_wrapper;
-  bool _geometry;
+  const bool _geometry;
   void set_matrix();
   std::unordered_map<index_t, index_t> _index_to_job_rank;
   std::unique_ptr<vrp> get_problem() const;
