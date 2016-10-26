@@ -15,9 +15,9 @@ All rights reserved (see LICENSE).
 enum class TYPE {START, JOB, END};
 
 struct step{
-  const TYPE type;
-  const location_t location;
-  const boost::optional<index_t> job;
+  TYPE type;
+  location_t location;
+  index_t job;
 
   step(TYPE type,
        location_t location):

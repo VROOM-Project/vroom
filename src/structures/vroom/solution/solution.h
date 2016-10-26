@@ -15,9 +15,9 @@ All rights reserved (see LICENSE).
 
 struct solution{
   index_t code;
-  boost::optional<std::string> error;
-  const std::vector<route_t> routes;
-  const boost::optional<summary_t> summary;
+  std::string error;
+  std::vector<route_t> routes;
+  summary_t summary;
 
   solution(index_t code, std::string error):
     code(code),
@@ -25,10 +25,10 @@ struct solution{
 
   solution(index_t code,
            const std::vector<route_t>& routes,
-           summary_t summary):
+           duration_t cost):
     code(code),
     routes(std::move(routes)),
-    summary(summary){}
+    summary(cost){}
 };
 
 #endif
