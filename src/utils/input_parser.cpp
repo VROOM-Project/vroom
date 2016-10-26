@@ -27,12 +27,6 @@ inline optional_coords_t parse_coordinates(const rapidjson::Value& object,
 input parse(const cl_args_t& cl_args){
   BOOST_LOG_TRIVIAL(info) << "[Loading] Parsing input.";
 
-  // Custom input object embedding jobs, vehicles and matrix.
-  input input_data;
-
-  // Input json object.
-  rapidjson::Document json_input;
-
   // Set relevant wrapper to retrieve the matrix and geometry.
   std::unique_ptr<routing_io<distance_t>> routing_wrapper;
   if(!cl_args.use_libosrm){
@@ -54,7 +48,13 @@ input parse(const cl_args_t& cl_args){
     throw custom_exception("libosrm must be installed to use -l.");
 #endif
   }
-  input_data.set_routing(std::move(routing_wrapper));
+
+  // Custom input object embedding jobs, vehicles and matrix.
+  input input_data(std::move(routing_wrapper), cl_args.geometry);
+
+  // Input json object.
+  rapidjson::Document json_input;
+
 
   // Parsing input string to populate the input object.
   if(json_input.Parse(cl_args.input.c_str()).HasParseError()){

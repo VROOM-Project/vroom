@@ -24,7 +24,7 @@ struct solution{
     error(error){}
 
   solution(index_t code,
-           const std::vector<route_t>& routes,
+           std::vector<route_t>&& routes,
            duration_t cost):
     code(code),
     routes(std::move(routes)),

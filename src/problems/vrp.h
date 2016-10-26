@@ -10,7 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "../structures/vroom/output/solution.h"
+#include "../structures/vroom/solution/solution.h"
 
 class input;
 

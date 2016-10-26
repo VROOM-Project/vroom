@@ -11,10 +11,13 @@ All rights reserved (see LICENSE).
 #include "./input.h"
 #include "../../../problems/vrp.h"
 
-input::input():
+input::input(std::unique_ptr<routing_io<distance_t>> routing_wrapper,
+             bool geometry):
   _start_loading(std::chrono::high_resolution_clock::now()),
   _location_number(0),
-  _problem_type(PROBLEM_T::TSP){}
+  _problem_type(PROBLEM_T::TSP),
+  _routing_wrapper(std::move(routing_wrapper)),
+  _geometry(geometry){}
 
 void input::add_job(index_t id, const optional_coords_t& coords){
   // Using current number of locations as index of this job in the
@@ -69,10 +72,6 @@ void input::add_vehicle(index_t id,
   }
 }
 
-void input::set_routing(std::unique_ptr<routing_io<distance_t>> routing_wrapper){
-  _routing_wrapper = std::move(routing_wrapper);
-}
-
 void input::set_matrix(){
   assert(_routing_wrapper);
   BOOST_LOG_TRIVIAL(info) << "[Loading] Start matrix computing.";
@@ -124,7 +123,7 @@ solution input::solve(unsigned nb_thread){
     = std::chrono::duration_cast<std::chrono::milliseconds>
       (_end_solving - _end_loading).count();
 
-  // TODO routing stuff and timing.
+  // Routing stuff and timing.
 
   return sol;
 }

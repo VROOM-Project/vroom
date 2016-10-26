@@ -36,7 +36,8 @@ private:
   std::chrono::high_resolution_clock::time_point _end_solving;
   index_t _location_number;
   PROBLEM_T _problem_type;
-  void set_routing(std::unique_ptr<routing_io<distance_t>> routing_wrapper);
+  std::unique_ptr<routing_io<distance_t>> _routing_wrapper;
+  bool _geometry;
   void set_matrix();
   std::unordered_map<index_t, index_t> _index_to_job_rank;
   std::unique_ptr<vrp> get_problem() const;
@@ -46,12 +47,12 @@ public:
   std::vector<job_t> _jobs;
   std::vector<vehicle> _vehicles;
   matrix<distance_t> _matrix;
-  std::unique_ptr<routing_io<distance_t>> _routing_wrapper;
   // List of locations added through add_* matching the matrix
   // ordering.
   std::vector<location_t> _ordered_locations;
 
-  input();
+  input(std::unique_ptr<routing_io<distance_t>> routing_wrapper,
+        bool geometry);
 
   void add_job(index_t id, const optional_coords_t& coords);
 

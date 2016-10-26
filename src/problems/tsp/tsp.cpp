@@ -339,7 +339,7 @@ solution tsp::solve(unsigned nb_threads) const{
                       steps,
                       current_cost);
 
-  solution sol (0, routes, current_cost);
+  solution sol (0, std::move(routes), current_cost);
 
   return sol;
 }
