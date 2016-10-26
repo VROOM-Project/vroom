@@ -11,6 +11,7 @@ All rights reserved (see LICENSE).
 */
 
 #include <array>
+#include <chrono>
 #include <vector>
 #include <unordered_map>
 #include <boost/optional.hpp>
@@ -30,11 +31,16 @@ class vrp;
 
 class input{
 private:
+  std::chrono::high_resolution_clock::time_point _start_loading;
+  std::chrono::high_resolution_clock::time_point _end_loading;
+  std::chrono::high_resolution_clock::time_point _end_solving;
   index_t _location_number;
   PROBLEM_T _problem_type;
   void set_routing(std::unique_ptr<routing_io<distance_t>> routing_wrapper);
   void set_matrix();
   std::unordered_map<index_t, index_t> _index_to_job_rank;
+  std::unique_ptr<vrp> get_problem() const;
+
 
 public:
   std::vector<job_t> _jobs;
@@ -62,7 +68,7 @@ public:
 
   PROBLEM_T get_problem_type() const;
 
-  std::unique_ptr<vrp> get_problem() const;
+  solution solve(unsigned nb_thread);
 
   friend input parse(const cl_args_t& cl_args);
 };

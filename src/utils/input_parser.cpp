@@ -25,11 +25,13 @@ inline optional_coords_t parse_coordinates(const rapidjson::Value& object,
 }
 
 input parse(const cl_args_t& cl_args){
-  // Input json object.
-  rapidjson::Document json_input;
+  BOOST_LOG_TRIVIAL(info) << "[Loading] Parsing input.";
 
   // Custom input object embedding jobs, vehicles and matrix.
   input input_data;
+
+  // Input json object.
+  rapidjson::Document json_input;
 
   // Set relevant wrapper to retrieve the matrix and geometry.
   std::unique_ptr<routing_io<distance_t>> routing_wrapper;
@@ -115,8 +117,6 @@ input parse(const cl_args_t& cl_args){
     if(input_data.get_location_number() <= 1){
       throw custom_exception("At least two locations required!");
     }
-
-    input_data.set_matrix();
   }
 
   return input_data;

@@ -339,10 +339,7 @@ solution tsp::solve(unsigned nb_threads) const{
                       steps,
                       current_cost);
 
-  // Indicators.
-  summary_t summary (current_cost);
-
-  solution sol (0, routes, summary);
+  solution sol (0, routes, current_cost);
 
   return sol;
 }

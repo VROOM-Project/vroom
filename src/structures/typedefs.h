@@ -27,13 +27,6 @@ using optional_coords_t = boost::optional<std::array<coordinate_t, 2>>;
 // Setting max value would cause trouble with further additions.
 constexpr distance_t INFINITE_DISTANCE = 3 * (std::numeric_limits<distance_t>::max() / 4);
 
-struct timing_t{
-  // Computing times in milliseconds.
-  duration_t loading;
-  duration_t heuristic;
-  duration_t local_search;
-};
-
 struct cl_args_t{
   // Listing command-line options.
   std::string osrm_address;                      // -a

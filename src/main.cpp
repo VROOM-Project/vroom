@@ -135,36 +135,16 @@ int main(int argc, char **argv){
     ->set_filter(boost::log::trivial::severity >= cl_args.log_level);
 
   try{
-    timing_t computing_times;
-    auto start_problem_loading = std::chrono::high_resolution_clock::now();
-
-    BOOST_LOG_TRIVIAL(info) << "[Loading] Parsing input.";
-    input input_data = parse(cl_args);
-
     // Build problem.
-    auto problem = input_data.get_problem();
+    input problem_instance = parse(cl_args);
 
-    auto end_problem_loading = std::chrono::high_resolution_clock::now();
-    computing_times.loading =
-      std::chrono::duration_cast<std::chrono::milliseconds>
-      (end_problem_loading - start_problem_loading).count();
+    solution sol = problem_instance.solve(cl_args.nb_threads);
 
-    BOOST_LOG_TRIVIAL(info) << "[Loading] Done, took "
-                            << computing_times.loading << " ms.";
-
-    // Solve!
-    auto sol = problem->solve();
-
-    // // TODO: adapt return type.
-    // std::pair<std::list<index_t>, distance_t> solution
-    //   = solve_atsp(asymmetric_tsp, cl_args.nb_threads, computing_times);
+    std::cout << "Loading: " << sol.summary.computing_times.loading << '\n'
+              << "Solving: " << sol.summary.computing_times.solving << '\n';
 
     // // Write solution.
-    // write_solution(cl_args,
-    //                *loader,
-    //                solution.first,
-    //                solution.second,
-    //                computing_times);
+    // write_solution_to_json(input_data, sol);
   }
   catch(const custom_exception& e){
     std::cerr << "[Error] " << e.get_message() << std::endl;

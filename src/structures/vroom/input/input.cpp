@@ -12,6 +12,7 @@ All rights reserved (see LICENSE).
 #include "../../../problems/vrp.h"
 
 input::input():
+  _start_loading(std::chrono::high_resolution_clock::now()),
   _location_number(0),
   _problem_type(PROBLEM_T::TSP){}
 
@@ -74,6 +75,7 @@ void input::set_routing(std::unique_ptr<routing_io<distance_t>> routing_wrapper)
 
 void input::set_matrix(){
   assert(_routing_wrapper);
+  BOOST_LOG_TRIVIAL(info) << "[Loading] Start matrix computing.";
   _matrix = _routing_wrapper->get_matrix(_ordered_locations);
 }
 
@@ -97,4 +99,32 @@ PROBLEM_T input::get_problem_type() const{
 
 std::unique_ptr<vrp> input::get_problem() const{
   return std::make_unique<tsp>(*this, 0);
+}
+
+solution input::solve(unsigned nb_thread){
+  // Compute matrix and load relevant problem.
+  this->set_matrix();
+  auto instance = this->get_problem();
+  _end_loading = std::chrono::high_resolution_clock::now();
+
+  auto loading = std::chrono::duration_cast<std::chrono::milliseconds>
+    (_end_loading - _start_loading).count();
+
+  BOOST_LOG_TRIVIAL(info) << "[Loading] Done, took "
+                          << loading << " ms.";
+
+  // Solve.
+  solution sol = instance->solve(nb_thread);
+
+  // Update timing info.
+  sol.summary.computing_times.loading = loading;
+
+  _end_solving = std::chrono::high_resolution_clock::now();
+  sol.summary.computing_times.solving
+    = std::chrono::duration_cast<std::chrono::milliseconds>
+      (_end_solving - _end_loading).count();
+
+  // TODO routing stuff and timing.
+
+  return sol;
 }
