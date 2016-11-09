@@ -41,7 +41,9 @@ struct cl_args_t{
   std::string input;                             // cl arg
   unsigned nb_threads;                           // -t
   std::string osrm_profile;                      // -m
-  bool use_osrm;
+  bool use_osrm;                                 // default
+  bool use_tsplib_loader;                        // auto-detected
+  bool use_json_loader;                          // -j
   // Default values.
   cl_args_t():
     osrm_address("0.0.0.0"),

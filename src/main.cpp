@@ -20,6 +20,7 @@ All rights reserved (see LICENSE).
 #include "./loaders/problem_io.h"
 #include "./loaders/tsplib_loader.h"
 #include "./loaders/routed_loader.h"
+#include "./loaders/json_loader.h"
 #include "./utils/logger.h"
 
 void display_usage(){
@@ -39,6 +40,7 @@ void display_usage(){
 
   usage += "\t-g,\t\t get detailed route geometry for the solution\n";
   usage += "\t-i FILE,\t read input from FILE rather than from\n\t\t\t command-line\n";
+  usage += "\t-j,\t\t use supplied matrix from JSON-object then from osrm-routed\n";
   usage += "\t-o OUTPUT,\t output file name\n";
   usage += "\t-t THREADS,\t number of threads to use\n";
   usage += "\t-v,\t\t turn on verbose output\n";
@@ -56,7 +58,7 @@ int main(int argc, char **argv){
   cl_args_t cl_args;
 
   // Parsing command-line arguments.
-  const char* optString = "a:gi:lm:o:p:t:vVh?";
+  const char* optString = "a:gi:lmj:o:p:t:vVh?";
   int opt = getopt(argc, argv, optString);
 
   std::string nb_threads_arg = std::to_string(cl_args.nb_threads);
@@ -74,6 +76,9 @@ int main(int argc, char **argv){
       break;
     case 'i':
       cl_args.input_file = optarg;
+      break;
+    case 'j':
+      cl_args.use_json_loader = true;
       break;
     case 'm':
       cl_args.osrm_profile = optarg;
@@ -137,8 +142,10 @@ int main(int argc, char **argv){
     BOOST_LOG_TRIVIAL(info)
       << "[Matrix] Start matrix computing and problem loading.";
 
-    // Parse input with relevant loader.
-    cl_args.use_osrm = (cl_args.input.find("DIMENSION") == std::string::npos);
+    // Check, if input-file is in TSPLIB format
+    cl_args.use_tsplib_loader = !(cl_args.input.find("DIMENSION") == std::string::npos);
+    cl_args.use_osrm = !(cl_args.use_tsplib_loader || cl_args.use_json_loader);
+
     std::unique_ptr<problem_io<distance_t>> loader;
     if(cl_args.use_osrm){
       // Use osrm-routed.
@@ -147,8 +154,17 @@ int main(int argc, char **argv){
                                                cl_args.osrm_profile,
                                                cl_args.input);
     }
-    else{
+    else if(cl_args.use_tsplib_loader){
       loader = std::make_unique<tsplib_loader>(cl_args.input);
+    }
+    else if(cl_args.use_json_loader){
+      loader = std::make_unique<json_loader>(cl_args.input);
+    }
+    else{   //Shall never happen!
+      std::string message = "Internal unexpected indecision which loader to use.";
+      std::cerr << "[Error] " << message << std::endl;
+      write_error(cl_args.output_file, message);
+      exit(1);
     }
 
     // Build problem.
