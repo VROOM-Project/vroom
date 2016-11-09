@@ -56,16 +56,20 @@ public:
     }  
   }
 
+
   virtual matrix<distance_t> get_matrix() const override{
     matrix<distance_t> m {_dimension};
 
     // Reading from DOM
+    bool is_uint = _dom["matrix"][0][0].IsUint();
     for(std::size_t i = 0; i < _dimension; ++i){
       for(std::size_t j = 0; j < _dimension; ++j){
-        m[i][j] = _dom["matrix"][i][j].GetUint();
+        if(is_uint)
+          m[i][j] = _dom["matrix"][i][j].GetUint(); //Hier ansetzen wegen Fließkommata
+        else
+          m[i][j] = _dom["matrix"][i][j].GetDouble();
       }
     }
-
     return m;
   }
 
