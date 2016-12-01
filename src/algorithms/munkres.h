@@ -279,10 +279,8 @@ std::unordered_map<index_t, index_t> branch_and_bound_symmetric_mwpm(const matri
         // Else sure to get a bigger weight in the end so doing
         // nothing cuts the branch.
         std::list<edge<T>> children_edges = current_node.get_children_edges();
-        children_edges.sort([](edge<T> const& a, edge<T> const& b)
-                            {
-                              return (a.get_weight() < b.get_weight());
-                            });
+        children_edges.sort();
+
         // Putting highest weights first to pick them later.
         for(auto edge = children_edges.rbegin();
             edge != children_edges.rend();

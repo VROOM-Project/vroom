@@ -38,14 +38,7 @@ public:
   }
 
   bool operator<(const edge& rhs) const{
-  return (this->_first_vertex < rhs._first_vertex)
-    or ((this->_first_vertex == rhs._first_vertex)
-        and (this->_second_vertex < rhs._second_vertex));
-  }
-
-  bool operator==(const edge& rhs) const{
-    return (this->_first_vertex == rhs._first_vertex)
-      and (this->_second_vertex == rhs._second_vertex);
+    return this->_weight < rhs._weight;
   }
 
   T get_weight() const{
