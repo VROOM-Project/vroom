@@ -23,7 +23,7 @@ undirected_graph<T> minimum_spanning_tree(const undirected_graph<T>& graph){
 
   // First sorting edges by weight.
   std::sort(edges.begin(), edges.end(),
-            [] (const auto &a, const auto &b){
+            [] (const edge<T> &a, const edge<T> &b){
               return a.get_weight() < b.get_weight();
             });
 

@@ -210,7 +210,7 @@ public:
         // Input start is a node index. Retrieving the rank of this
         // node in _nodes.
         auto start_node = std::find_if(_nodes.begin(), _nodes.end(),
-                                       [input_start] (const auto& n){
+                                       [input_start] (const Node& n){
                                          return n.index == input_start;
                                        });
         if(start_node == _nodes.end()){
@@ -236,7 +236,7 @@ public:
         // Input end is a node index. Retrieving the rank of this node
         // in _nodes.
         auto end_node = std::find_if(_nodes.begin(), _nodes.end(),
-                                       [input_end] (const auto& n){
+                                       [input_end] (const Node& n){
                                          return n.index == input_end;
                                        });
         if(end_node == _nodes.end()){

@@ -40,7 +40,7 @@ local_search::local_search(const matrix<distance_t>& matrix,
   std::size_t range_width = _edges.size() / _nb_threads;
   std::iota(_rank_limits.begin(), _rank_limits.end(), 0);
   std::transform(_rank_limits.begin(), _rank_limits.end(), _rank_limits.begin(),
-                 [range_width](auto v){return range_width * v;});
+                 [range_width](std::size_t v){return range_width * v;});
   // Shifting the limits to dispatch remaining ranks among more
   // threads for a more even load balance. This way the load
   // difference between ranges should be at most 1.
@@ -286,7 +286,7 @@ distance_t local_search::avoid_loop_step(){
   // Reorder to try the longest chains first.
   std::sort(relocatable_chains.begin(),
             relocatable_chains.end(),
-            [](const auto& lhs, const auto& rhs){
+            [](const std::list<index_t>& lhs, const std::list<index_t>& rhs){
               return lhs.size() > rhs.size();
             });
 
