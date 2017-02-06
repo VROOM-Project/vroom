@@ -10,16 +10,19 @@ All rights reserved (see LICENSE).
 
 */
 
+#include "../../../../include/rapidjson/document.h"
+#include "../../typedefs.h"
+
 struct computing_times_t{
   // Computing times in milliseconds.
   duration_t loading;
   duration_t solving;
   duration_t routing;
 
-  computing_times_t():
-    loading(0),
-    solving(0),
-    routing(0){}
+  computing_times_t();
+
+  rapidjson::Value to_json(bool geometry,
+                           rapidjson::Document::AllocatorType& allocator) const;
 };
 
 #endif
