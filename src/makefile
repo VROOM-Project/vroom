@@ -19,6 +19,7 @@ SRC = $(wildcard *.cpp)\
 			$(wildcard ./structures/abstract/*.cpp)\
 			$(wildcard ./structures/vroom/*.cpp)\
 			$(wildcard ./structures/vroom/input/*.cpp)\
+			$(wildcard ./structures/vroom/solution/*.cpp)\
 			$(wildcard ./structures/*.cpp)\
 			$(wildcard ./utils/*.cpp)
 

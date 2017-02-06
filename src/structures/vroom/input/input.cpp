@@ -125,15 +125,25 @@ solution input::solve(unsigned nb_thread){
 
   if(_geometry){
     // Routing stuff.
+    BOOST_LOG_TRIVIAL(info)
+      << "[Route] Start computing detailed route.";
+
     for(auto& route: sol.routes){
       _routing_wrapper->add_route_geometry(route);
       sol.summary.duration += route.duration;
       sol.summary.distance += route.distance;
     }
+
     _end_routing = std::chrono::high_resolution_clock::now();
-    sol.summary.computing_times.routing
+    auto routing
       = std::chrono::duration_cast<std::chrono::milliseconds>
       (_end_routing - _end_solving).count();
+
+    sol.summary.computing_times.routing = routing;
+
+    BOOST_LOG_TRIVIAL(info) << "[Route] Done, took "
+                            << routing
+                            << " ms.";
   }
 
   return sol;

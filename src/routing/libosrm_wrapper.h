@@ -22,8 +22,6 @@ All rights reserved (see LICENSE).
 #include "osrm/status.hpp"
 #include "osrm/osrm.hpp"
 
-// TODO change the following as this is fixed in OSRM.
-
 // Unable to define an OSRM object as a class member and use it within
 // get_matrix and get_route_infos because Table and Route are not
 // const (see #34). This should be fixed in libosrm in the future (see

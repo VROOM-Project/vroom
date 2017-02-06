@@ -19,6 +19,7 @@ All rights reserved (see LICENSE).
 #include "./structures/typedefs.h"
 #include "./structures/vroom/input/input.h"
 #include "./utils/input_parser.h"
+#include "./utils/output_json.h"
 #include "./problems/vrp.h"
 
 void display_usage(){
@@ -110,7 +111,7 @@ int main(int argc, char **argv){
   catch(const std::exception& e){
     std::string message = "Wrong value for number of threads.";
     std::cerr << "[Error] " << message << std::endl;
-    // write_error(cl_args.output_file, message);
+    write_to_json({1, message}, false, cl_args.output_file);
     exit(1);
   }
 
@@ -143,12 +144,12 @@ int main(int argc, char **argv){
     std::cout << "Loading: " << sol.summary.computing_times.loading << '\n'
               << "Solving: " << sol.summary.computing_times.solving << '\n';
 
-    // // Write solution.
-    // write_solution_to_json(input_data, sol);
+    // Write solution.
+    write_to_json(sol, cl_args.geometry, cl_args.output_file);
   }
   catch(const custom_exception& e){
     std::cerr << "[Error] " << e.get_message() << std::endl;
-    // write_error(cl_args.output_file, e.get_message());
+    write_to_json({1, e.get_message()}, false, cl_args.output_file);
     exit(1);
   }
   #if LIBOSRM
@@ -157,7 +158,7 @@ int main(int argc, char **argv){
     // osrm-datastore. It would be good to be able to catch an
     // osrm::util::exception for this. See OSRM issue #2813.
     std::cerr << "[Error] " << e.what() << std::endl;
-    // write_error(cl_args.output_file, e.what());
+    write_to_json({1, e.what()}, false, cl_args.output_file);
     exit(1);
   }
   #endif
