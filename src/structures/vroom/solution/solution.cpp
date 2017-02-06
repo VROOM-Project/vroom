@@ -35,7 +35,15 @@ rapidjson::Document solution::to_json(bool geometry) const{
     json_output.AddMember("summary",
                           summary.to_json(geometry, allocator),
                           allocator);
+
+    rapidjson::Value json_routes(rapidjson::kArrayType);
+    for(const auto& route: routes){
+      json_routes.PushBack(route.to_json(allocator), allocator);
+    }
+
+    json_output.AddMember("routes", json_routes, allocator);
   }
+
 
   return json_output;
 }

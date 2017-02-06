@@ -18,17 +18,17 @@ rapidjson::Value summary_t::to_json(bool geometry,
                                     rapidjson::Document::AllocatorType& allocator) const{
   rapidjson::Value json_summary(rapidjson::kObjectType);
 
-  json_summary.AddMember("computing_times",
-                         computing_times.to_json(geometry,
-                                                 allocator),
-                         allocator);
+  json_summary.AddMember("cost", cost, allocator);
 
   if(geometry){
     json_summary.AddMember("distance", distance, allocator);
     json_summary.AddMember("duration", duration, allocator);
   }
 
-  json_summary.AddMember("cost", cost, allocator);
+  json_summary.AddMember("computing_times",
+                         computing_times.to_json(geometry,
+                                                 allocator),
+                         allocator);
 
   return json_summary;
 }

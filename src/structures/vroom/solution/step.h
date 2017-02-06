@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include "../../../../include/rapidjson/document.h"
 #include "../location.h"
 
 enum class TYPE {START, JOB, END};
@@ -19,17 +20,11 @@ struct step{
   location_t location;
   index_t job;
 
-  step(TYPE type,
-       location_t location):
-    type(type),
-    location(location){}
+  step(TYPE type, location_t location);
 
-  step(TYPE type,
-       location_t location,
-       index_t job):
-    type(type),
-    location(location),
-    job(job){}
+  step(TYPE type, location_t location, index_t job);
+
+  rapidjson::Value to_json(rapidjson::Document::AllocatorType& allocator) const;
 };
 
 #endif

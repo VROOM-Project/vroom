@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include "../../../../include/rapidjson/document.h"
 #include "./step.h"
 
 struct route_t{
@@ -20,14 +21,9 @@ struct route_t{
   duration_t duration;
   distance_t distance;
 
-  route_t(index_t vehicle,
-          std::vector<step> steps,
-          duration_t cost):
-    vehicle(vehicle),
-    steps(std::move(steps)),
-    cost(cost),
-    duration(0),
-    distance(0){}
+  route_t(index_t vehicle, std::vector<step> steps, duration_t cost);
+
+  rapidjson::Value to_json(rapidjson::Document::AllocatorType& allocator) const;
 };
 
 #endif
