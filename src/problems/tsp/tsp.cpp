@@ -29,16 +29,6 @@ tsp::tsp(const input& input,
     assert(_end < _matrix.size());
   }
 
-  // Distances on the diagonal are never used except in the minimum
-  // weight perfect matching during the heuristic. This makes sure
-  // each node will be impossible to match with itself at that time.
-
-  // TODO change munkres implementation to avoid having to do this
-  // here.
-  for(index_t i = 0; i < _input._matrix.size(); ++i){
-    _matrix[i][i] = INFINITE_DISTANCE;
-  }
-
   // Dealing with open tour cases. At most one of the following
   // occurs.
   if(_force_start and !_force_end){

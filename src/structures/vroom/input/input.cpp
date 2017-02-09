@@ -76,6 +76,14 @@ void input::set_matrix(){
   assert(_routing_wrapper);
   BOOST_LOG_TRIVIAL(info) << "[Loading] Start matrix computing.";
   _matrix = _routing_wrapper->get_matrix(_ordered_locations);
+
+  // Distances on the diagonal are never used except in the minimum
+  // weight perfect matching (munkres call during the TSP
+  // heuristic). This makes sure no node will be matched with itself
+  // at that time.
+  for(index_t i = 0; i < _matrix.size(); ++i){
+    _matrix[i][i] = INFINITE_DISTANCE;
+  }
 }
 
 index_t input::get_location_number() const{
