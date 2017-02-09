@@ -141,9 +141,6 @@ int main(int argc, char **argv){
 
     solution sol = problem_instance.solve(cl_args.nb_threads);
 
-    std::cout << "Loading: " << sol.summary.computing_times.loading << '\n'
-              << "Solving: " << sol.summary.computing_times.solving << '\n';
-
     // Write solution.
     write_to_json(sol, cl_args.geometry, cl_args.output_file);
   }
