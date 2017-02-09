@@ -55,7 +55,6 @@ input parse(const cl_args_t& cl_args){
   // Input json object.
   rapidjson::Document json_input;
 
-
   // Parsing input string to populate the input object.
   if(json_input.Parse(cl_args.input.c_str()).HasParseError()){
     std::string error_msg = std::string(rapidjson::GetParseError_En(json_input.GetParseError()))
@@ -77,7 +76,7 @@ input parse(const cl_args_t& cl_args){
 
   // Switch input type: explicit matrix or using OSRM.
   if(json_input.HasMember("matrix")){
-    // TODO
+    // TODO, see issue #47.
   }
   else{
     // Getting vehicle(s).
