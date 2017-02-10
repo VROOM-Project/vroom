@@ -10,7 +10,6 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "../../../../include/rapidjson/document.h"
 #include "../../typedefs.h"
 
 struct computing_times_t{
@@ -20,9 +19,6 @@ struct computing_times_t{
   duration_t routing;
 
   computing_times_t();
-
-  rapidjson::Value to_json(bool geometry,
-                           rapidjson::Document::AllocatorType& allocator) const;
 };
 
 #endif

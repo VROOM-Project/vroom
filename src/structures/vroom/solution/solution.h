@@ -10,7 +10,6 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "../../../../include/rapidjson/document.h"
 #include "./route.h"
 #include "./summary.h"
 
@@ -25,8 +24,6 @@ struct solution{
   solution(index_t code,
            std::vector<route_t>&& routes,
            duration_t cost);
-
-  rapidjson::Document to_json(bool geometry) const;
 };
 
 #endif

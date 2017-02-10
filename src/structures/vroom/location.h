@@ -10,7 +10,6 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "../../../include/rapidjson/document.h"
 #include "../typedefs.h"
 
 struct location_t{
@@ -26,8 +25,6 @@ struct location_t{
   location_t(index_t index, coordinate_t lon, coordinate_t lat);
 
   bool has_coordinates() const;
-
-  rapidjson::Value to_json(rapidjson::Document::AllocatorType& allocator) const;
 };
 
 #endif
