@@ -13,22 +13,19 @@ All rights reserved (see LICENSE).
 #include <string>
 #include <limits>
 #include <boost/log/trivial.hpp>
+#include <boost/optional.hpp>
 
 // To easily differentiate variable types.
 using index_t = uint16_t;
 using distance_t = uint32_t;
 using duration_t = uint32_t;
+using coordinate_t = double;
+
+// Type helper.
+using optional_coords_t = boost::optional<std::array<coordinate_t, 2>>;
 
 // Setting max value would cause trouble with further additions.
 constexpr distance_t INFINITE_DISTANCE = 3 * (std::numeric_limits<distance_t>::max() / 4);
-
-struct timing_t{
-  // Computing times in milliseconds.
-  duration_t matrix_loading;
-  duration_t heuristic;
-  duration_t local_search;
-  duration_t total_duration;
-};
 
 struct cl_args_t{
   // Listing command-line options.
@@ -41,7 +38,6 @@ struct cl_args_t{
   std::string input;                             // cl arg
   unsigned nb_threads;                           // -t
   std::string osrm_profile;                      // -m
-  bool use_osrm;
   // Default values.
   cl_args_t():
     osrm_address("0.0.0.0"),
@@ -52,11 +48,7 @@ struct cl_args_t{
     osrm_profile("car"){}
 };
 
-struct pbl_context_t{
-  bool force_start;
-  index_t start;
-  bool force_end;
-  index_t end;
-};
+// Problem types.
+enum class PROBLEM_T {TSP};
 
 #endif

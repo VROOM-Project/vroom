@@ -12,9 +12,25 @@ LDLIBS = -lboost_system -lboost_regex -lboost_log -lboost_log_setup -lpthread -l
 MAIN = ../bin/vroom
 SRC = $(wildcard *.cpp)\
 			$(wildcard ./algorithms/*.cpp)\
-			$(wildcard ./heuristics/*.cpp)\
+			$(wildcard ./routing/*.cpp)\
+			$(wildcard ./problems/*.cpp)\
+			$(wildcard ./problems/*/*.cpp)\
+			$(wildcard ./problems/*/heuristics/*.cpp)\
+			$(wildcard ./structures/abstract/*.cpp)\
+			$(wildcard ./structures/vroom/*.cpp)\
+			$(wildcard ./structures/vroom/input/*.cpp)\
+			$(wildcard ./structures/vroom/solution/*.cpp)\
 			$(wildcard ./structures/*.cpp)\
 			$(wildcard ./utils/*.cpp)
+
+# Checking for libosrm
+ifeq ($(shell pkg-config --exists libosrm && echo 1),1)
+LDLIBS += $(shell pkg-config --libs libosrm) -lboost_filesystem -lboost_iostreams -lrt -ltbb
+CXXFLAGS += $(shell pkg-config --cflags libosrm) -D LIBOSRM=true
+else
+	SRC := $(filter-out ./routing/libosrm_wrapper.cpp, $(SRC))
+endif
+
 OBJ = $(SRC:.cpp=.o)
 
 # Main target.

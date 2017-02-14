@@ -4,7 +4,7 @@
 <!-- All rights reserved (see LICENSE). -->
 
 This file describes the API to use with `vroom` command-line as of
-version 1.0.0.
+version 1.1.0.
 
 Contents:
 - [Input format](#input)
@@ -68,8 +68,8 @@ The computed solution is written as `json` on standard output or a file
 | ----------- | ----------- |
 | `code` | return code, `0` if no error was raised |
 | `error` | error message (present iff `code` is different from `0`) |
+| [`summary`](#summary) | object summarizing solution indicators |
 | [`routes`](#routes) | array of `route` objects |
-| [`solution`](#indicators) | object summarizing solution indicators |
 
 ## Routes
 
@@ -96,9 +96,9 @@ A `step` object has the following properties:
 | `location` | coordinates array for this step |
 | `job` | id of the job performed at this step, provided if `type` value is `job` |
 
-## Indicators
+## Summary
 
-The `solution` object has the following properties:
+The `summary` object has the following properties:
 
 | Key         | Description |
 | ----------- | ----------- |
