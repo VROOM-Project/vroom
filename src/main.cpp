@@ -7,7 +7,8 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <sstream>
+#include <fstream>
+#include <chrono>
 #include <unistd.h>
 #include <boost/log/core.hpp>
 #include <boost/log/trivial.hpp>
@@ -16,14 +17,10 @@ All rights reserved (see LICENSE).
 #include <boost/log/utility/setup/common_attributes.hpp>
 #include "./utils/version.h"
 #include "./structures/typedefs.h"
-#include "./heuristics/tsp_strategy.h"
-#include "./loaders/problem_io.h"
-#include "./loaders/tsplib_loader.h"
-#include "./loaders/routed_loader.h"
-#if LIBOSRM
-#include "./loaders/libosrm_loader.h"
-#endif
-#include "./utils/logger.h"
+#include "./structures/vroom/input/input.h"
+#include "./utils/input_parser.h"
+#include "./utils/output_json.h"
+#include "./problems/vrp.h"
 
 void display_usage(){
   std::string usage = "VROOM Copyright (C) 2015-2016, Julien Coupey\n";
@@ -114,7 +111,7 @@ int main(int argc, char **argv){
   catch(const std::exception& e){
     std::string message = "Wrong value for number of threads.";
     std::cerr << "[Error] " << message << std::endl;
-    write_error(cl_args.output_file, message);
+    write_to_json({1, message}, false, cl_args.output_file);
     exit(1);
   }
 
@@ -139,67 +136,17 @@ int main(int argc, char **argv){
     ->set_filter(boost::log::trivial::severity >= cl_args.log_level);
 
   try{
-    timing_t computing_times;
-    auto start_problem_loading = std::chrono::high_resolution_clock::now();
-    BOOST_LOG_TRIVIAL(info)
-      << "[Matrix] Start matrix computing and problem loading.";
-
-    // Parse input with relevant loader.
-    cl_args.use_osrm = (cl_args.input.find("DIMENSION") == std::string::npos);
-    std::unique_ptr<problem_io<distance_t>> loader;
-    if(cl_args.use_osrm){
-      if(!cl_args.use_libosrm){
-        // Use osrm-routed.
-        loader
-          = std::make_unique<routed_loader>(cl_args.osrm_address,
-                                            cl_args.osrm_port,
-                                            cl_args.osrm_profile,
-                                            cl_args.input);
-      }
-      else{
-        #if LIBOSRM
-        // Use libosrm.
-        if(cl_args.osrm_profile.empty()){
-          throw custom_exception("-l flag requires -m.");
-        }
-        loader
-          = std::make_unique<libosrm_loader>(cl_args.osrm_profile,
-                                              cl_args.input);
-        #else
-        throw custom_exception("libosrm must be installed to use -l.");
-        #endif
-      }
-    }
-    else{
-      loader = std::make_unique<tsplib_loader>(cl_args.input);
-    }
-
     // Build problem.
-    tsp asymmetric_tsp (loader->get_pbl_context(), loader->get_matrix());
+    input problem_instance = parse(cl_args);
 
-    auto end_problem_loading = std::chrono::high_resolution_clock::now();
-    computing_times.matrix_loading =
-      std::chrono::duration_cast<std::chrono::milliseconds>
-      (end_problem_loading - start_problem_loading).count();
-
-    BOOST_LOG_TRIVIAL(info) << "[Matrix] Done, took "
-                            << computing_times.matrix_loading << " ms.";
-
-    // Solve!
-    // TODO: adapt return type.
-    std::pair<std::list<index_t>, distance_t> solution
-      = solve_atsp(asymmetric_tsp, cl_args.nb_threads, computing_times);
+    solution sol = problem_instance.solve(cl_args.nb_threads);
 
     // Write solution.
-    write_solution(cl_args,
-                   *loader,
-                   solution.first,
-                   solution.second,
-                   computing_times);
+    write_to_json(sol, cl_args.geometry, cl_args.output_file);
   }
   catch(const custom_exception& e){
     std::cerr << "[Error] " << e.get_message() << std::endl;
-    write_error(cl_args.output_file, e.get_message());
+    write_to_json({1, e.get_message()}, false, cl_args.output_file);
     exit(1);
   }
   #if LIBOSRM
@@ -208,7 +155,7 @@ int main(int argc, char **argv){
     // osrm-datastore. It would be good to be able to catch an
     // osrm::util::exception for this. See OSRM issue #2813.
     std::cerr << "[Error] " << e.what() << std::endl;
-    write_error(cl_args.output_file, e.what());
+    write_to_json({1, e.what()}, false, cl_args.output_file);
     exit(1);
   }
   #endif
