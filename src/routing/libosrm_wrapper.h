@@ -22,21 +22,11 @@ All rights reserved (see LICENSE).
 #include "osrm/status.hpp"
 #include "osrm/osrm.hpp"
 
-// Unable to define an OSRM object as a class member and use it within
-// get_matrix and get_route_infos because Table and Route are not
-// const (see #34). This should be fixed in libosrm in the future (see
-// OSRM #2861 and #2862). In the meantime, this workaround suggested
-// by @daniel-j-h allows to support all libosrm 5.* versions.
-struct S{
-  mutable osrm::OSRM osrm;
-  S(osrm::EngineConfig engine): osrm(engine){}
-};
-
 class libosrm_wrapper : public osrm_wrapper{
 
 private:
-  const osrm::EngineConfig _config;
-  const S _s;
+  osrm::EngineConfig _config;
+  const osrm::OSRM _osrm;
 
 public:
   libosrm_wrapper(const std::string& osrm_profile);

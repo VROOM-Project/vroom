@@ -12,7 +12,7 @@ All rights reserved (see LICENSE).
 libosrm_wrapper::libosrm_wrapper(const std::string& osrm_profile):
   osrm_wrapper(osrm_profile),
   _config(),
-  _s(_config){}
+  _osrm(_config){}
 
 matrix<distance_t> libosrm_wrapper::get_matrix(const std::vector<location_t>& locs) const{
   osrm::TableParameters params;
@@ -25,7 +25,7 @@ matrix<distance_t> libosrm_wrapper::get_matrix(const std::vector<location_t>& lo
   osrm::json::Object result;
   osrm::Status status;
   try{
-    status = _s.osrm.Table(params, result);
+    status = _osrm.Table(params, result);
   }
   catch(const std::exception &e){
     throw custom_exception(e.what());
@@ -94,7 +94,7 @@ void libosrm_wrapper::add_route_geometry(route_t& rte) const{
   osrm::json::Object result;
   osrm::Status status;
   try{
-    status = _s.osrm.Route(params, result);
+    status = _osrm.Route(params, result);
   }
   catch(const std::exception &e){
     throw custom_exception(e.what());
