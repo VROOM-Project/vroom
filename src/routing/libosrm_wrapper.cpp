@@ -17,8 +17,9 @@ libosrm_wrapper::libosrm_wrapper(const std::string& osrm_profile):
 matrix<distance_t> libosrm_wrapper::get_matrix(const std::vector<location_t>& locs) const{
   osrm::TableParameters params;
   for(auto const& location: locs){
-    params.coordinates.emplace_back(osrm::util::FloatLongitude({location.get().lon.get()}),
-                                    osrm::util::FloatLatitude({location.get().lat.get()}));
+    assert(location.has_coordinates());
+    params.coordinates.emplace_back(osrm::util::FloatLongitude({location.lon.get()}),
+                                    osrm::util::FloatLatitude({location.lat.get()}));
   }
 
   osrm::json::Object result;
@@ -74,7 +75,7 @@ matrix<distance_t> libosrm_wrapper::get_matrix(const std::vector<location_t>& lo
   return m;
 }
 
-void libosrm_wrapper::add_route_infos(route& rte) const{
+void libosrm_wrapper::add_route_geometry(route_t& rte) const{
   // Default options for routing.
   osrm::RouteParameters params(false, // steps
                                false, // alternatives
@@ -86,8 +87,8 @@ void libosrm_wrapper::add_route_infos(route& rte) const{
 
   // Ordering locations for the given steps.
   for(auto& step: rte.steps){
-    params.coordinates.emplace_back(osrm::util::FloatLongitude({step.location.get().lon.get()}),
-                                    osrm::util::FloatLatitude({step.location.get().lat.get()}));
+    params.coordinates.emplace_back(osrm::util::FloatLongitude({step.location.lon.get()}),
+                                    osrm::util::FloatLatitude({step.location.lat.get()}));
   }
 
   osrm::json::Object result;
@@ -107,7 +108,7 @@ void libosrm_wrapper::add_route_infos(route& rte) const{
   }
 
   auto& result_routes = result.values["routes"].get<osrm::json::Array>();
-  auto& result_route = result_routes.values.at(0).get<osrm::json::Object>();
+  auto& route = result_routes.values.at(0).get<osrm::json::Object>();
 
   rte.duration = round_to_distance(route.values["duration"].get<osrm::json::Number>().value);
   rte.distance = round_to_distance(route.values["distance"].get<osrm::json::Number>().value);

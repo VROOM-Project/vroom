@@ -43,7 +43,7 @@ public:
 
   virtual matrix<distance_t> get_matrix(const std::vector<location_t>& locs) const override;
 
-  virtual void add_route_geometry(route& rte) const override;
+  virtual void add_route_geometry(route_t& rte) const override;
 };
 
 #endif
