@@ -77,6 +77,22 @@ input parse(const cl_args_t& cl_args){
   // Switch input type: explicit matrix or using OSRM.
   if(json_input.HasMember("matrix")){
     // TODO, see issue #47.
+    rapidjson::SizeType matrix_size = json_input["matrix"].Size();
+    // Load JSON-matrix into input, while checking, if matrix is quadratic.
+    for(rapidjson::SizeType i = 0; i < matrix_size; ++i){
+      if(json_input["matrix"][i].Size() != matrix_size){
+        throw custom_exception("JSON-matrix is not quadratic.");
+      }
+      line<distance_t> matrix_row(matrix_size);
+      for(rapidjson::SizeType j = 0; j < matrix_size; ++j){
+        if(!json_input["matrix"][i][j].IsNumber()){
+          throw custom_exception("JSON-matrix-entry is not a number.");
+        }
+        matrix_row.push_back( json_input["matrix"][i][j].GetInt() );
+      }
+      input_data._matrix.push_back(matrix_row);
+    }
+
   }
   else{
     // Getting vehicle(s).
