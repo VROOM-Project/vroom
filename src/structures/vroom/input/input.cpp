@@ -72,6 +72,33 @@ void input::add_vehicle(index_t id,
   }
 }
 
+void input::add_vehicle(index_t id,
+                        boost::optional<index_t> start_id,
+                        boost::optional<index_t> end_id,
+                        const optional_coords_t& start_coords,
+                        const optional_coords_t& end_coords){
+
+  boost::optional<location_t> start = (start_coords == boost::none) ?
+    boost::none:
+    boost::optional<location_t>(
+      {_location_number++, (*start_coords)[0], (*start_coords)[1]}
+      );
+
+  boost::optional<location_t> end = (end_coords == boost::none) ?
+    boost::none:
+    boost::optional<location_t>(
+      {_location_number++, (*end_coords)[0], (*end_coords)[1]}
+      );
+
+  _vehicles.emplace_back(id, start, end, start_id, end_id);
+  if(start_coords){
+    _ordered_locations.push_back(_vehicles.back().start.get());
+  }
+  if(end_coords){
+    _ordered_locations.push_back(_vehicles.back().end.get());
+  }
+}
+
 void input::set_matrix(){
   assert(_routing_wrapper);
   BOOST_LOG_TRIVIAL(info) << "[Loading] Start matrix computing.";

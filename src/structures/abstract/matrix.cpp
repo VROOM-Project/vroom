@@ -33,3 +33,4 @@ matrix<T> matrix<T>::get_sub_matrix(const std::vector<index_t>& indices) const{
 }
 
 template class matrix<distance_t>;
+template class line<distance_t>;

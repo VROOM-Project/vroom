@@ -64,21 +64,28 @@ input parse(const cl_args_t& cl_args){
     throw custom_exception(error_msg);
   }
 
+  // Checks, that needs to be done for both modes.
   // Vehicles check.
   if(!json_input.HasMember("vehicles")
      or !json_input["vehicles"].IsArray()
      or json_input["vehicles"].Empty()){
     throw custom_exception("Incorrect vehicles input.");
   }
+  if(!json_input["vehicles"][0].IsObject()){
+    throw custom_exception("Ill-formed vehicle object.");
+  }
+  if(!json_input["vehicles"][0].HasMember("id")){
+    throw custom_exception("Missing mandatory vehicle id.");
+  }
   if(json_input["vehicles"].Size() > 1){
     throw custom_exception("Multiple vehicles are not supported (yet).");
   }
-
   // Switch input type: explicit matrix or using OSRM.
   if(json_input.HasMember("matrix")){
-    // TODO, see issue #47.
-    rapidjson::SizeType matrix_size = json_input["matrix"].Size();
+    //
+    // ---Custom-Matrix-mode---
     // Load JSON-matrix into input, while checking, if matrix is quadratic.
+    rapidjson::SizeType matrix_size = json_input["matrix"].Size();
     for(rapidjson::SizeType i = 0; i < matrix_size; ++i){
       if(json_input["matrix"][i].Size() != matrix_size){
         throw custom_exception("JSON-matrix is not quadratic.");
@@ -88,20 +95,74 @@ input parse(const cl_args_t& cl_args){
         if(!json_input["matrix"][i][j].IsNumber()){
           throw custom_exception("JSON-matrix-entry is not a number.");
         }
-        matrix_row.push_back( json_input["matrix"][i][j].GetInt() );
+        matrix_row.push_back( json_input["matrix"][i][j].GetUint() );
       }
       input_data._matrix.push_back(matrix_row);
     }
+    // Check, if vehicle has start-id (mandatory) and and end-id (optional)
+    if(!json_input["vehicles"][0].HasMember("start_id")){
+      throw custom_exception("Vehicle attribute 'start_id' in custom-matrix-mode is mandatory.");
+    }
+    if(!json_input["vehicles"][0]["start_id"].IsNumber()){
+      throw custom_exception("Vehicle attribute 'start_id' is not a number.");
+    }
+    boost::optional<index_t> start_id = json_input["vehicles"][0]["end_id"].GetUint();
+    if(matrix_size <= *start_id){
+      throw custom_exception("Vehicle start-id does not match to matrix size.");
+    }
+    boost::optional<index_t> end_id = NO_INDEX;
+    if(json_input["vehicles"][0].HasMember("end_id")){
+      if(!json_input["vehicles"][0]["end_id"].IsNumber()){
+        throw custom_exception("Vehicle attribute 'end_id' is not a number.");
+      }
+      end_id = json_input["vehicles"][0]["end_id"].GetUint();
+      if(matrix_size <= *end_id){
+        throw custom_exception("Vehicle end-id does not match to matrix size.");
+      }
+    }
+    // Add vehicle to input
+    input_data.add_vehicle(json_input["vehicles"][0]["id"].GetUint(),
+                           json_input["vehicles"][0]["start_id"].GetUint(),
+                           end_id,
+                           parse_coordinates(json_input["vehicles"][0],
+                                             "start"),
+                           parse_coordinates(json_input["vehicles"][0],
+                                             "end"));
+    // Add the jobs (optional)
+    if(!json_input.HasMember("jobs")){
+      // Compute generic jobs, if not provided by input
+      for(index_t i = 0; i < matrix_size; ++i){
+        if(i == *start_id || (end_id != boost::none && i == *end_id)){
+          //ids used by vehicle, are no jobs.
+          continue;
+        }
+        input_data.add_job(i,
+                           parse_coordinates(json_input,
+                                            "does_not_exist_anyway"));
+      }
+    
+    }else{
+      // Add the provided jobs 
+      for(rapidjson::SizeType i = 0; i < json_input["jobs"].Size(); ++i){
+        if(!json_input["jobs"][i].IsObject()){
+          throw custom_exception("Ill-formed job object.");
+        }
+        if(!json_input["jobs"][i].HasMember("id")){
+          throw custom_exception("Missing mandatory job id.");
+        }
+        if(matrix_size <= json_input["jobs"][i]["id"].GetUint()){
+          throw custom_exception("Job id does not match to matrix size.");
+        }
+        input_data.add_job(json_input["jobs"][i]["id"].GetUint(),
+                          parse_coordinates(json_input["jobs"][i],
+                                            "location"));
+      }
+    }
 
-  }
-  else{
-    // Getting vehicle(s).
-    if(!json_input["vehicles"][0].IsObject()){
-      throw custom_exception("Ill-formed vehicle object.");
-    }
-    if(!json_input["vehicles"][0].HasMember("id")){
-      throw custom_exception("Missing mandatory vehicle id.");
-    }
+  }else{
+    //
+    // ---OSRM-mode---
+    // add vehicle to input
     input_data.add_vehicle(json_input["vehicles"][0]["id"].GetUint(),
                            parse_coordinates(json_input["vehicles"][0],
                                              "start"),
@@ -128,11 +189,11 @@ input parse(const cl_args_t& cl_args){
                          parse_coordinates(json_input["jobs"][i],
                                            "location"));
     }
-
-    if(input_data.get_location_number() <= 1){
-      throw custom_exception("At least two locations required!");
-    }
+    
   }
-
+  //final check, if enough jobs aquired
+  if(input_data.get_location_number() <= 1){
+    throw custom_exception("At least two locations required!");
+  }
   return input_data;
 }

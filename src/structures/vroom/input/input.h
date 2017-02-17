@@ -60,6 +60,11 @@ public:
   void add_vehicle(index_t id,
                    const optional_coords_t& start_coords,
                    const optional_coords_t& end_coords);
+  void add_vehicle(index_t id,
+                   boost::optional<index_t> start_id,
+                   boost::optional<index_t> end_id,
+                   const optional_coords_t& start_coords,
+                   const optional_coords_t& end_coords);
 
   index_t get_location_number() const;
 

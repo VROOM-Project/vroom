@@ -17,13 +17,37 @@ struct vehicle{
   const index_t id;
   boost::optional<location_t> start;
   boost::optional<location_t> end;
+  boost::optional<index_t> start_id;
+  boost::optional<index_t> end_id;
 
   vehicle(index_t id,
           boost::optional<location_t> start,
           boost::optional<location_t> end):
     id(id),
     start(start),
-    end(end){}
+    end(end),
+    start_id(boost::none),
+    end_id(boost::none){}
+  
+  vehicle(index_t id,
+          boost::optional<index_t> start_id,
+          boost::optional<index_t> end_id):
+    id(id),
+    start(boost::none),
+    end(boost::none),
+    start_id(start_id),
+    end_id(end_id){}
+
+  vehicle(index_t id,
+          boost::optional<location_t> start,
+          boost::optional<location_t> end,
+          boost::optional<index_t> start_id,
+          boost::optional<index_t> end_id):
+    id(id),
+    start(start),
+    end(end),
+    start_id(start_id),
+    end_id(end_id){}
 
   bool has_start() const{
     return start != boost::none;
