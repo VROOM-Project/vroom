@@ -39,6 +39,7 @@ void display_usage(){
 
   usage += "\t-g,\t\t get detailed route geometry for the solution\n";
   usage += "\t-i FILE,\t read input from FILE rather than from\n\t\t\t command-line\n";
+  usage += "\t-l,\t\t use libosrm rather than osrm-routed\n";
   usage += "\t-o OUTPUT,\t output file name\n";
   usage += "\t-t THREADS,\t number of threads to use\n";
   usage += "\t-v,\t\t turn on verbose output\n";
@@ -74,6 +75,9 @@ int main(int argc, char **argv){
       break;
     case 'i':
       cl_args.input_file = optarg;
+      break;
+    case 'l':
+      cl_args.use_libosrm = true;
       break;
     case 'm':
       cl_args.osrm_profile = optarg;
