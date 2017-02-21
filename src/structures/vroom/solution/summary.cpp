@@ -9,7 +9,4 @@ All rights reserved (see LICENSE).
 
 #include "summary.h"
 
-summary_t::summary_t(duration_t cost):
-  cost(cost),
-  duration(0),
-  distance(0){}
+summary_t::summary_t(duration_t cost) : cost(cost), duration(0), distance(0) {}

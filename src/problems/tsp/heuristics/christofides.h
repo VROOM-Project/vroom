@@ -12,7 +12,9 @@ All rights reserved (see LICENSE).
 
 #include <chrono>
 #include <random>
+
 #include <boost/log/trivial.hpp>
+
 #include "../../../algorithms/kruskal.h"
 #include "../../../algorithms/munkres.h"
 

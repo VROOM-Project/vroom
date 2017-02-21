@@ -13,7 +13,7 @@ All rights reserved (see LICENSE).
 #include "./route.h"
 #include "./summary.h"
 
-struct solution{
+struct solution {
   index_t code;
   std::string error;
   std::vector<route_t> routes;
@@ -21,9 +21,7 @@ struct solution{
 
   solution(index_t code, std::string error);
 
-  solution(index_t code,
-           std::vector<route_t>&& routes,
-           duration_t cost);
+  solution(index_t code, std::vector<route_t>&& routes, duration_t cost);
 };
 
 #endif

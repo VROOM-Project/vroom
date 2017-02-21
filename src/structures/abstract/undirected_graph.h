@@ -10,15 +10,16 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <vector>
-#include <unordered_map>
-#include <list>
 #include <cassert>
+#include <list>
+#include <unordered_map>
+#include <vector>
+
 #include "edge.h"
 #include "matrix.h"
 
 template <class T>
-class undirected_graph{
+class undirected_graph {
 
 private:
   unsigned _size;

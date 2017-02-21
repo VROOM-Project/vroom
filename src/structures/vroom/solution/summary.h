@@ -12,7 +12,7 @@ All rights reserved (see LICENSE).
 
 #include "./computing_times.h"
 
-struct summary_t{
+struct summary_t {
   duration_t cost;
   duration_t duration;
   distance_t distance;

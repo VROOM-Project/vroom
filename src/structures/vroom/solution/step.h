@@ -12,9 +12,9 @@ All rights reserved (see LICENSE).
 
 #include "../location.h"
 
-enum class TYPE {START, JOB, END};
+enum class TYPE { START, JOB, END };
 
-struct step{
+struct step {
   TYPE type;
   location_t location;
   index_t job;

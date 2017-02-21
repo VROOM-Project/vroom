@@ -12,7 +12,7 @@ All rights reserved (see LICENSE).
 
 #include "../typedefs.h"
 
-struct location_t{
+struct location_t {
   // Index of this location in the matrix.
   const index_t index;
 

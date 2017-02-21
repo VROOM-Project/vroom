@@ -10,16 +10,17 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "./osrm_wrapper.h"
 #include <boost/asio.hpp>
+
+#include "./osrm_wrapper.h"
 
 using boost::asio::ip::tcp;
 
-class routed_wrapper : public osrm_wrapper{
+class routed_wrapper : public osrm_wrapper {
 
 private:
-  std::string _address;            // OSRM server adress
-  std::string _port;               // OSRM server listening port
+  std::string _address;
+  std::string _port;
 
   std::string build_query(const std::vector<location_t>& locations,
                           std::string service,
@@ -32,7 +33,8 @@ public:
                  const std::string& port,
                  const std::string& osrm_profile);
 
-  virtual matrix<distance_t> get_matrix(const std::vector<location_t>& locs) const override;
+  virtual matrix<distance_t>
+  get_matrix(const std::vector<location_t>& locs) const override;
 
   virtual void add_route_geometry(route_t& rte) const override;
 };

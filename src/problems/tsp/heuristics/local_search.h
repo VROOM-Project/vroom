@@ -11,15 +11,17 @@ All rights reserved (see LICENSE).
 */
 
 #include <list>
+#include <numeric>
+#include <thread>
 #include <unordered_map>
 #include <vector>
-#include <thread>
-#include <numeric>
-#include <boost/log/trivial.hpp>
-#include "../../../structures/typedefs.h"
-#include "../../../structures/abstract/matrix.h"
 
-class local_search{
+#include <boost/log/trivial.hpp>
+
+#include "../../../structures/abstract/matrix.h"
+#include "../../../structures/typedefs.h"
+
+class local_search {
 private:
   const matrix<distance_t>& _matrix;
   const bool _is_symmetric_matrix;
@@ -55,7 +57,6 @@ public:
   distance_t perform_all_or_opt_steps();
 
   std::list<index_t> get_tour(index_t first_index) const;
-
 };
 
 #endif

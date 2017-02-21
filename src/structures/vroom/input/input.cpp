@@ -8,24 +8,25 @@ All rights reserved (see LICENSE).
 */
 
 #include <iostream>
-#include "./input.h"
+
 #include "../../../problems/vrp.h"
+#include "./input.h"
 
 input::input(std::unique_ptr<routing_io<distance_t>> routing_wrapper,
-             bool geometry):
-  _start_loading(std::chrono::high_resolution_clock::now()),
-  _location_number(0),
-  _problem_type(PROBLEM_T::TSP),
-  _routing_wrapper(std::move(routing_wrapper)),
-  _geometry(geometry){}
+             bool geometry)
+  : _start_loading(std::chrono::high_resolution_clock::now()),
+    _location_number(0),
+    _problem_type(PROBLEM_T::TSP),
+    _routing_wrapper(std::move(routing_wrapper)),
+    _geometry(geometry) {}
 
-void input::add_job(index_t id, const optional_coords_t& coords){
+void input::add_job(index_t id, const optional_coords_t& coords) {
   // Using current number of locations as index of this job in the
   // matrix.
-  if(coords == boost::none){
+  if (coords == boost::none) {
     _jobs.emplace_back(id, _location_number++);
   }
-  else{
+  else {
     _jobs.emplace_back(id,
                        _location_number++,
                        coords.get()[0],
@@ -41,13 +42,12 @@ void input::add_job(index_t id, const optional_coords_t& coords){
 
 void input::add_vehicle(index_t id,
                         const optional_coords_t& start_coords,
-                        const optional_coords_t& end_coords){
+                        const optional_coords_t& end_coords) {
   // Using current number of locations as index of start and end in
   // the matrix.
-  if((!start_coords) and (!end_coords)){
-    throw custom_exception("No start or end specified for vehicle "
-                           + std::to_string(id)
-                           + '.');
+  if ((!start_coords) and (!end_coords)) {
+    throw custom_exception("No start or end specified for vehicle " +
+                           std::to_string(id) + '.');
   }
 
   boost::optional<location_t> start = (start_coords == boost::none) ?
@@ -64,15 +64,15 @@ void input::add_vehicle(index_t id,
 
   _vehicles.emplace_back(id, start, end);
 
-  if(start_coords){
+  if (start_coords) {
     _ordered_locations.push_back(_vehicles.back().start.get());
   }
-  if(end_coords){
+  if (end_coords) {
     _ordered_locations.push_back(_vehicles.back().end.get());
   }
 }
 
-void input::set_matrix(){
+void input::set_matrix() {
   assert(_routing_wrapper);
   BOOST_LOG_TRIVIAL(info) << "[Loading] Start matrix computing.";
   _matrix = _routing_wrapper->get_matrix(_ordered_locations);
@@ -81,34 +81,34 @@ void input::set_matrix(){
   // weight perfect matching (munkres call during the TSP
   // heuristic). This makes sure no node will be matched with itself
   // at that time.
-  for(index_t i = 0; i < _matrix.size(); ++i){
+  for (index_t i = 0; i < _matrix.size(); ++i) {
     _matrix[i][i] = INFINITE_DISTANCE;
   }
 }
 
-index_t input::get_location_number() const{
+index_t input::get_location_number() const {
   return _location_number;
 }
 
-location_t input::get_location_at(index_t index) const{
+location_t input::get_location_at(index_t index) const {
   return _ordered_locations[index];
 }
 
-index_t input::get_job_rank_from_index(index_t index) const{
+index_t input::get_job_rank_from_index(index_t index) const {
   auto result = _index_to_job_rank.find(index);
   assert(result != _index_to_job_rank.end());
   return result->second;
 }
 
-PROBLEM_T input::get_problem_type() const{
+PROBLEM_T input::get_problem_type() const {
   return _problem_type;
 }
 
-std::unique_ptr<vrp> input::get_problem() const{
+std::unique_ptr<vrp> input::get_problem() const {
   return std::make_unique<tsp>(*this, 0);
 }
 
-solution input::solve(unsigned nb_thread){
+solution input::solve(unsigned nb_thread) {
   // Compute matrix and load relevant problem.
   this->set_matrix();
   auto instance = this->get_problem();
@@ -127,24 +127,24 @@ solution input::solve(unsigned nb_thread){
   sol.summary.computing_times.loading = loading;
 
   _end_solving = std::chrono::high_resolution_clock::now();
-  sol.summary.computing_times.solving
-    = std::chrono::duration_cast<std::chrono::milliseconds>
-      (_end_solving - _end_loading).count();
+  sol.summary.computing_times.solving =
+    std::chrono::duration_cast<std::chrono::milliseconds>(_end_solving -
+                                                          _end_loading)
+    .count();
 
-  if(_geometry){
+  if (_geometry) {
     // Routing stuff.
     BOOST_LOG_TRIVIAL(info)
       << "[Route] Start computing detailed route.";
 
-    for(auto& route: sol.routes){
+    for (auto& route : sol.routes) {
       _routing_wrapper->add_route_geometry(route);
       sol.summary.duration += route.duration;
       sol.summary.distance += route.distance;
     }
 
     _end_routing = std::chrono::high_resolution_clock::now();
-    auto routing
-      = std::chrono::duration_cast<std::chrono::milliseconds>
+    auto routing = std::chrono::duration_cast<std::chrono::milliseconds>
       (_end_routing - _end_solving).count();
 
     sol.summary.computing_times.routing = routing;

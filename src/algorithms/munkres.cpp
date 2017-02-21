@@ -10,16 +10,17 @@ All rights reserved (see LICENSE).
 #include "./munkres.h"
 
 template <class T>
-std::unordered_map<index_t, index_t> minimum_weight_perfect_matching(const matrix<T>& m){
+std::unordered_map<index_t, index_t>
+minimum_weight_perfect_matching(const matrix<T>& m) {
 
   // Trivial initial labeling.
   std::unordered_map<index_t, T> labeling_x;
   std::unordered_map<index_t, T> labeling_y;
-  for(index_t i = 0; i < m.size(); ++i){
+  for (index_t i = 0; i < m.size(); ++i) {
     labeling_y.emplace(i, 0);
     T min_weight = std::numeric_limits<T>::max();
-    for(index_t j = 0; j < m.size(); ++j){
-      if(m[i][j] < min_weight){
+    for (index_t j = 0; j < m.size(); ++j) {
+      if (m[i][j] < min_weight) {
         min_weight = m[i][j];
       }
     }
@@ -33,7 +34,7 @@ std::unordered_map<index_t, index_t> minimum_weight_perfect_matching(const matri
   // Alternating tree.
   std::unordered_map<index_t, index_t> alternating_tree;
 
-  while(matching_xy.size() < m.size()){
+  while (matching_xy.size() < m.size()) {
     // Step 1.
 
     alternating_tree.clear();
@@ -42,7 +43,7 @@ std::unordered_map<index_t, index_t> minimum_weight_perfect_matching(const matri
 
     // Finding any unmatched x.
     index_t unmatched_x = 0;
-    while(matching_xy.find(unmatched_x) != matching_xy.end()){
+    while (matching_xy.find(unmatched_x) != matching_xy.end()) {
       ++unmatched_x;
     }
     S.insert(unmatched_x);
@@ -50,8 +51,8 @@ std::unordered_map<index_t, index_t> minimum_weight_perfect_matching(const matri
     // Saving relevant neighbors in equality graph in alternating_tree
     // and initializing slacks.
     std::unordered_map<index_t, T> slack;
-    for(index_t y = 0; y < m.size(); ++y){
-      if(labeling_x.at(unmatched_x) + labeling_y.at(y) == m[unmatched_x][y]){
+    for (index_t y = 0; y < m.size(); ++y) {
+      if (labeling_x.at(unmatched_x) + labeling_y.at(y) == m[unmatched_x][y]) {
         alternating_tree.emplace(y, unmatched_x);
       }
       slack.emplace(y,
@@ -61,41 +62,41 @@ std::unordered_map<index_t, index_t> minimum_weight_perfect_matching(const matri
 
     bool augmented_path = false;
 
-    while(!augmented_path){
+    while (!augmented_path) {
       // Test if neighbors of S in equality graph equals T_set or not
       // (note that T_set is included in S neighbors).
-      if(alternating_tree.size() == T_set.size()){
+      if (alternating_tree.size() == T_set.size()) {
         // Step 2.
 
         T alpha = std::numeric_limits<T>::max();
-        for(index_t y = 0; y < m.size(); ++y){
+        for (index_t y = 0; y < m.size(); ++y) {
           // Computing alpha, the minimum of slack values over
           // complement of T_set.
-          if(T_set.find(y) == T_set.end()){
+          if (T_set.find(y) == T_set.end()) {
             T current_slack = slack.at(y);
-            if(current_slack < alpha){
+            if (current_slack < alpha) {
               alpha = current_slack;
             }
           }
         }
 
         // Update labelings
-        for(auto const& x: S){
+        for (auto const& x : S) {
           labeling_x.at(x) = labeling_x.at(x) + alpha;
         }
-        for(auto const& y: T_set){
+        for (auto const& y : T_set) {
           labeling_y.at(y) = labeling_y.at(y) - alpha;
         }
 
         // Updating relevant neighbors in new equality graph and
         // updating slacks.
-        for(index_t y = 0; y < m.size(); ++y){
-          if(T_set.find(y) == T_set.end()){
+        for (index_t y = 0; y < m.size(); ++y) {
+          if (T_set.find(y) == T_set.end()) {
             slack.at(y) = slack.at(y) - alpha;
 
-            for(auto const& x: S){
-              if(labeling_x.at(x) + labeling_y.at(y) == m[x][y]){
-                if(alternating_tree.find(y) == alternating_tree.end()){
+            for (auto const& x : S) {
+              if (labeling_x.at(x) + labeling_y.at(y) == m[x][y]) {
+                if (alternating_tree.find(y) == alternating_tree.end()) {
                   alternating_tree.emplace(y, x);
                 }
               }
@@ -105,10 +106,10 @@ std::unordered_map<index_t, index_t> minimum_weight_perfect_matching(const matri
       }
 
       // Step 3.
-      index_t chosen_y;        // First y in equality neighbors not
+      index_t chosen_y;         // First y in equality neighbors not
                                 // in T_set.
-      for(auto const& edge: alternating_tree){
-        if(T_set.find(edge.first) == T_set.end()){
+      for (auto const& edge : alternating_tree) {
+        if (T_set.find(edge.first) == T_set.end()) {
           // MUST happen before endge reaches the end of
           // alternating_tree.
           chosen_y = edge.first;
@@ -117,7 +118,7 @@ std::unordered_map<index_t, index_t> minimum_weight_perfect_matching(const matri
       }
 
       auto matching_y = matching_yx.find(chosen_y);
-      if(matching_y != matching_yx.end()){
+      if (matching_y != matching_yx.end()) {
         // Chosen y is actually matched in M, update S and T_set and
         // proceed to step 2.
         index_t matched_x = matching_y->second;
@@ -126,16 +127,16 @@ std::unordered_map<index_t, index_t> minimum_weight_perfect_matching(const matri
         T_set.insert(chosen_y);
 
         // Updating slacks.
-        for(index_t y = 0; y < m.size(); ++y){
+        for (index_t y = 0; y < m.size(); ++y) {
           T current_value = slack.at(y);
-          T new_value
-            = m[matched_x][y] - labeling_x.at(matched_x) - labeling_y.at(y);
-          if(new_value < current_value){
+          T new_value =
+            m[matched_x][y] - labeling_x.at(matched_x) - labeling_y.at(y);
+          if (new_value < current_value) {
             slack.at(y) = new_value;
           }
         }
       }
-      else{
+      else {
         // Find larger matching using M-alternating path. The path is
         // described at each step by:
         //
@@ -147,7 +148,7 @@ std::unordered_map<index_t, index_t> minimum_weight_perfect_matching(const matri
         index_t current_y = chosen_y;
         index_t current_x = alternating_tree.at(current_y);
 
-        while(current_x != unmatched_x){
+        while (current_x != unmatched_x) {
           index_t next_y = matching_xy.at(current_x);
 
           // Remove alternating edge from current matching.
@@ -174,7 +175,8 @@ std::unordered_map<index_t, index_t> minimum_weight_perfect_matching(const matri
 }
 
 template <class T>
-std::unordered_map<index_t, index_t> greedy_symmetric_approx_mwpm(const matrix<T>& m){
+std::unordered_map<index_t, index_t>
+greedy_symmetric_approx_mwpm(const matrix<T>& m) {
   // Fast greedy algorithm for finding a symmetric perfect matching,
   // choosing always smaller possible value, no minimality
   // assured. Matrix size should be even!
@@ -182,24 +184,24 @@ std::unordered_map<index_t, index_t> greedy_symmetric_approx_mwpm(const matrix<T
 
   std::unordered_map<index_t, index_t> matching;
   std::set<index_t> remaining_indices;
-  for(index_t i = 0; i < m.size(); ++i){
+  for (index_t i = 0; i < m.size(); ++i) {
     remaining_indices.insert(i);
   }
 
-  while(remaining_indices.size() > 0){
+  while (remaining_indices.size() > 0) {
     T min_weight = std::numeric_limits<T>::max();
     index_t first_chosen_index;
     index_t second_chosen_index;
     std::set<index_t>::iterator chosen_i;
     std::set<index_t>::iterator chosen_j;
-    for(auto i = remaining_indices.begin();
+    for (auto i = remaining_indices.begin();
         i != remaining_indices.end();
-        ++i){
+        ++i) {
       auto j = i;
       ++j;
-      for(; j != remaining_indices.end(); ++j){
+      for (; j != remaining_indices.end(); ++j) {
         T current_weight = m[*i][*j];
-        if(current_weight < min_weight){
+        if (current_weight < min_weight) {
           min_weight = current_weight;
           first_chosen_index = *i;
           second_chosen_index = *j;
@@ -216,6 +218,8 @@ std::unordered_map<index_t, index_t> greedy_symmetric_approx_mwpm(const matrix<T
   return matching;
 }
 
-template std::unordered_map<index_t, index_t> minimum_weight_perfect_matching(const matrix<distance_t>& m);
+template std::unordered_map<index_t, index_t>
+minimum_weight_perfect_matching(const matrix<distance_t>& m);
 
-template std::unordered_map<index_t, index_t> greedy_symmetric_approx_mwpm(const matrix<distance_t>& m);
+template std::unordered_map<index_t, index_t>
+greedy_symmetric_approx_mwpm(const matrix<distance_t>& m);

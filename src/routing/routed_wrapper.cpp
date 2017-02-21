@@ -11,29 +11,28 @@ All rights reserved (see LICENSE).
 
 routed_wrapper::routed_wrapper(const std::string& address,
                                const std::string& port,
-                               const std::string& osrm_profile):
-    osrm_wrapper(osrm_profile),
+                               const std::string& osrm_profile)
+  : osrm_wrapper(osrm_profile),
     _address(address),
     _port(port) {}
 
-std::string routed_wrapper::build_query(const std::vector<location_t>& locations,
-                                        std::string service,
-                                        std::string extra_args = "") const{
+std::string
+routed_wrapper::build_query(const std::vector<location_t>& locations,
+                            std::string service,
+                            std::string extra_args = "") const {
   // Building query for osrm-routed
   std::string query = "GET /" + service;
 
   query += "/v1/" + _osrm_profile + "/";
 
   // Adding locations.
-  for(auto const& location: locations){
-    query += std::to_string(location.lon.get())
-      + ","
-      + std::to_string(location.lat.get())
-      + ";";
+  for (auto const& location : locations) {
+    query += std::to_string(location.lon.get()) + "," +
+      std::to_string(location.lat.get()) + ";";
   }
-  query.pop_back();         // Remove trailing ';'.
+  query.pop_back();             // Remove trailing ';'.
 
-  if(!extra_args.empty()){
+  if (!extra_args.empty()) {
     query += "?" + extra_args;
   }
 
@@ -45,44 +44,44 @@ std::string routed_wrapper::build_query(const std::vector<location_t>& locations
   return query;
 }
 
-std::string routed_wrapper::send_then_receive(std::string query) const{
+std::string routed_wrapper::send_then_receive(std::string query) const {
   std::string response;
 
-  try{
+  try {
     boost::asio::io_service io_service;
 
-    tcp::resolver r (io_service);
-    tcp::resolver::query q (_address, _port);
+    tcp::resolver r(io_service);
+    tcp::resolver::query q(_address, _port);
 
-    tcp::socket s (io_service);
+    tcp::socket s(io_service);
     boost::asio::connect(s, r.resolve(q));
 
     boost::asio::write(s, boost::asio::buffer(query));
 
     char buf[512];
     boost::system::error_code error;
-    for(;;){
+    for (;;) {
       std::size_t len = s.read_some(boost::asio::buffer(buf), error);
       response.append(buf, len);
-      if(error == boost::asio::error::eof){
+      if (error == boost::asio::error::eof) {
         // Connection closed cleanly.
         break;
       }
-      else{
-        if(error){
+      else {
+        if (error) {
           throw boost::system::system_error(error);
         }
       }
     }
   }
-  catch (boost::system::system_error& e)
-    {
+  catch (boost::system::system_error& e) {
       throw custom_exception("Failure while connecting to the OSRM server.");
     }
   return response;
 }
 
-matrix<distance_t> routed_wrapper::get_matrix(const std::vector<location_t>& locs) const{
+matrix<distance_t>
+routed_wrapper::get_matrix(const std::vector<location_t>& locs) const {
   std::string query = this->build_query(locs, "table");
 
   std::string response = this->send_then_receive(query);
@@ -97,31 +96,31 @@ matrix<distance_t> routed_wrapper::get_matrix(const std::vector<location_t>& loc
   rapidjson::Document infos;
   assert(!infos.Parse(json_content.c_str()).HasParseError());
   assert(infos.HasMember("code"));
-  if(infos["code"] != "Ok"){
-    throw custom_exception("OSRM table: "
-                           + std::string(infos["message"].GetString()));
+  if (infos["code"] != "Ok") {
+    throw custom_exception("OSRM table: " +
+                           std::string(infos["message"].GetString()));
   }
   assert(infos["durations"].Size() == m_size);
 
   // Build matrix while checking for unfound routes to avoid
   // unexpected behavior (OSRM raises 'null').
-  matrix<distance_t> m {m_size};
+  matrix<distance_t> m{m_size};
 
-  std::vector<unsigned> nb_unfound_from_loc (m_size, 0);
-  std::vector<unsigned> nb_unfound_to_loc (m_size, 0);
+  std::vector<unsigned> nb_unfound_from_loc(m_size, 0);
+  std::vector<unsigned> nb_unfound_to_loc(m_size, 0);
 
-  for(rapidjson::SizeType i = 0; i < infos["durations"].Size(); ++i){
+  for (rapidjson::SizeType i = 0; i < infos["durations"].Size(); ++i) {
     const auto& line = infos["durations"][i];
     assert(line.Size() == m_size);
-    for(rapidjson::SizeType j = 0; j < line.Size(); ++j){
-      if(line[j].IsNull()){
+    for (rapidjson::SizeType j = 0; j < line.Size(); ++j) {
+      if (line[j].IsNull()) {
         // No route found between i and j. Just storing info as we
         // don't know yet which location is responsible between i
         // and j.
         ++nb_unfound_from_loc[i];
         ++nb_unfound_to_loc[j];
       }
-      else{
+      else {
         m[i][j] = round_to_distance(line[j].GetDouble());
       }
     }
@@ -132,18 +131,17 @@ matrix<distance_t> routed_wrapper::get_matrix(const std::vector<location_t>& loc
   return m;
 }
 
-void routed_wrapper::add_route_geometry(route_t& rte) const{
+void routed_wrapper::add_route_geometry(route_t& rte) const {
   // Ordering locations for the given steps.
   std::vector<location_t> ordered_locations;
-  for(auto& step: rte.steps){
+  for (auto& step : rte.steps) {
     ordered_locations.push_back(step.location);
   }
 
-  std::string extra_args = "alternatives=false&steps=false&overview=full&continue_straight=false";
+  std::string extra_args =
+    "alternatives=false&steps=false&overview=full&continue_straight=false";
 
-  std::string query = this->build_query(ordered_locations,
-                                        "route",
-                                        extra_args);
+  std::string query = this->build_query(ordered_locations, "route", extra_args);
   std::string response = this->send_then_receive(query);
 
   // Removing headers
@@ -154,9 +152,9 @@ void routed_wrapper::add_route_geometry(route_t& rte) const{
 
   assert(!infos.Parse(json_content.c_str()).HasParseError());
   assert(infos.HasMember("code"));
-  if(infos["code"] != "Ok"){
-    throw custom_exception("OSRM route: "
-                           + std::string(infos["message"].GetString()));
+  if (infos["code"] != "Ok") {
+    throw custom_exception("OSRM route: " +
+                           std::string(infos["message"].GetString()));
   }
 
   // Parse total time/distance and route geometry.

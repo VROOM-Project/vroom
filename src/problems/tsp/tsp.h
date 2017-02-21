@@ -10,17 +10,18 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <iostream>
-#include <iomanip>
 #include <fstream>
-#include <string>
+#include <iomanip>
+#include <iostream>
 #include <list>
-#include "../vrp.h"
+#include <string>
+
 #include "../../structures/abstract/undirected_graph.h"
+#include "../vrp.h"
 #include "./heuristics/christofides.h"
 #include "./heuristics/local_search.h"
 
-class tsp: public vrp{
+class tsp : public vrp {
 private:
   index_t _vehicle_rank;
   matrix<distance_t> _matrix;
@@ -32,8 +33,7 @@ private:
   index_t _end;
 
 public:
-  tsp(const input& input,
-      index_t vehicle_rank);
+  tsp(const input &input, index_t vehicle_rank);
 
   distance_t cost(const std::list<index_t>& tour) const;
 

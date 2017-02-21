@@ -12,7 +12,7 @@ All rights reserved (see LICENSE).
 
 #include "./step.h"
 
-struct route_t{
+struct route_t {
   index_t vehicle;
   std::vector<step> steps;
   duration_t cost;

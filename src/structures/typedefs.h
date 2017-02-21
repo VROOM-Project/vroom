@@ -10,8 +10,9 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <string>
 #include <limits>
+#include <string>
+
 #include <boost/log/trivial.hpp>
 #include <boost/optional.hpp>
 
@@ -25,7 +26,8 @@ using coordinate_t = double;
 using optional_coords_t = boost::optional<std::array<coordinate_t, 2>>;
 
 // Setting max value would cause trouble with further additions.
-constexpr distance_t INFINITE_DISTANCE = 3 * (std::numeric_limits<distance_t>::max() / 4);
+constexpr distance_t INFINITE_DISTANCE =
+  3 * (std::numeric_limits<distance_t>::max() / 4);
 
 struct cl_args_t{
   // Listing command-line options.
@@ -39,16 +41,16 @@ struct cl_args_t{
   unsigned nb_threads;                           // -t
   std::string osrm_profile;                      // -m
   // Default values.
-  cl_args_t():
-    osrm_address("0.0.0.0"),
-    geometry(false),
-    osrm_port("5000"),
-    log_level(boost::log::trivial::error),
-    nb_threads(2),
-    osrm_profile("car"){}
+  cl_args_t()
+    : osrm_address("0.0.0.0"),
+      geometry(false),
+      osrm_port("5000"),
+      log_level(boost::log::trivial::error),
+      nb_threads(2),
+      osrm_profile("car") {}
 };
 
 // Problem types.
-enum class PROBLEM_T {TSP};
+enum class PROBLEM_T { TSP };
 
 #endif
