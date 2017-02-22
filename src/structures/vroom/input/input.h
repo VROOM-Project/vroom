@@ -13,6 +13,8 @@ All rights reserved (see LICENSE).
 #include <array>
 #include <chrono>
 #include <vector>
+#include <string>
+#include <sstream>
 #include <unordered_map>
 #include <boost/optional.hpp>
 #include "../../typedefs.h"
@@ -48,6 +50,7 @@ public:
   std::vector<job_t> _jobs;
   std::vector<vehicle> _vehicles;
   matrix<distance_t> _matrix;
+  bool _json_matrix_provided; 
   // List of locations added through add_* matching the matrix
   // ordering.
   std::vector<location_t> _ordered_locations;

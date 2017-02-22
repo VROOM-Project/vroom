@@ -17,7 +17,8 @@ input::input(std::unique_ptr<routing_io<distance_t>> routing_wrapper,
   _location_number(0),
   _problem_type(PROBLEM_T::TSP),
   _routing_wrapper(std::move(routing_wrapper)),
-  _geometry(geometry){}
+  _geometry(geometry),
+  _json_matrix_provided(false){}
 
 void input::add_job(index_t id, const optional_coords_t& coords){
   // Using current number of locations as index of this job in the
@@ -100,10 +101,12 @@ void input::add_vehicle(index_t id,
 }
 
 void input::set_matrix(){
-  assert(_routing_wrapper);
-  BOOST_LOG_TRIVIAL(info) << "[Loading] Start matrix computing.";
-  _matrix = _routing_wrapper->get_matrix(_ordered_locations);
-
+  //Don't call osrm, if matrix is already provided.
+  if(!_json_matrix_provided){
+    assert(_routing_wrapper);
+    BOOST_LOG_TRIVIAL(info) << "[Loading] Start matrix computing.";
+    _matrix = _routing_wrapper->get_matrix(_ordered_locations);
+  }
   // Distances on the diagonal are never used except in the minimum
   // weight perfect matching (munkres call during the TSP
   // heuristic). This makes sure no node will be matched with itself
@@ -122,6 +125,13 @@ location_t input::get_location_at(index_t index) const{
 }
 
 index_t input::get_job_rank_from_index(index_t index) const{
+  //DEBUG 
+  std::stringstream overview;
+  for( auto entry : _index_to_job_rank){
+    overview << entry.first << "->" << entry.second << std::endl;
+  }
+  std::string my_map = overview.str();
+  //DEBUG END
   auto result = _index_to_job_rank.find(index);
   assert(result != _index_to_job_rank.end());
   return result->second;

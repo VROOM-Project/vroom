@@ -50,11 +50,11 @@ struct vehicle{
     end_id(end_id){}
 
   bool has_start() const{
-    return start != boost::none;
+    return start != boost::none || start_id;
   }
 
   bool has_end() const{
-    return end != boost::none;
+    return end != boost::none || end_id;
   }
 };
 

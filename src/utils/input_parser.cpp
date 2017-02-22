@@ -85,6 +85,7 @@ input parse(const cl_args_t& cl_args){
     //
     // ---Custom-Matrix-mode---
     // Load JSON-matrix into input, while checking, if matrix is quadratic.
+    input_data._json_matrix_provided = true; 
     rapidjson::SizeType matrix_size = json_input["matrix"].Size();
     for(rapidjson::SizeType i = 0; i < matrix_size; ++i){
       if(json_input["matrix"][i].Size() != matrix_size){
@@ -95,29 +96,30 @@ input parse(const cl_args_t& cl_args){
         if(!json_input["matrix"][i][j].IsNumber()){
           throw custom_exception("JSON-matrix-entry is not a number.");
         }
-        matrix_row.push_back( json_input["matrix"][i][j].GetUint() );
+        //matrix_row.push_back( json_input["matrix"][i][j].GetUint() );
+        matrix_row[j] = json_input["matrix"][i][j].GetUint();
       }
       input_data._matrix.push_back(matrix_row);
     }
-    // Check, if vehicle has start-id (mandatory) and and end-id (optional)
+    // Check, if vehicle has start_id (mandatory) and end_id (optional)
     if(!json_input["vehicles"][0].HasMember("start_id")){
       throw custom_exception("Vehicle attribute 'start_id' in custom-matrix-mode is mandatory.");
     }
     if(!json_input["vehicles"][0]["start_id"].IsNumber()){
       throw custom_exception("Vehicle attribute 'start_id' is not a number.");
     }
-    boost::optional<index_t> start_id = json_input["vehicles"][0]["end_id"].GetUint();
-    if(matrix_size <= *start_id){
-      throw custom_exception("Vehicle start-id does not match to matrix size.");
+    boost::optional<index_t> start_id = json_input["vehicles"][0]["start_id"].GetUint();
+    if(matrix_size <= start_id.get()){
+      throw custom_exception("Vehicle start_id does not match to matrix size.");
     }
-    boost::optional<index_t> end_id = NO_INDEX;
+    boost::optional<index_t> end_id;
     if(json_input["vehicles"][0].HasMember("end_id")){
       if(!json_input["vehicles"][0]["end_id"].IsNumber()){
         throw custom_exception("Vehicle attribute 'end_id' is not a number.");
       }
       end_id = json_input["vehicles"][0]["end_id"].GetUint();
-      if(matrix_size <= *end_id){
-        throw custom_exception("Vehicle end-id does not match to matrix size.");
+      if(matrix_size <= end_id.get()){
+        throw custom_exception("Vehicle end_id does not match to matrix size.");
       }
     }
     // Add vehicle to input
@@ -131,16 +133,15 @@ input parse(const cl_args_t& cl_args){
     // Add the jobs (optional)
     if(!json_input.HasMember("jobs")){
       // Compute generic jobs, if not provided by input
-      for(index_t i = 0; i < matrix_size; ++i){
-        if(i == *start_id || (end_id != boost::none && i == *end_id)){
+      for(index_t i = 0; i < matrix_size; i++){
+        /*if(i == start_id.get() || (end_id && i == end_id.get())){
           //ids used by vehicle, are no jobs.
           continue;
-        }
+        }*/
         input_data.add_job(i,
                            parse_coordinates(json_input,
                                             "does_not_exist_anyway"));
       }
-    
     }else{
       // Add the provided jobs 
       for(rapidjson::SizeType i = 0; i < json_input["jobs"].Size(); ++i){
