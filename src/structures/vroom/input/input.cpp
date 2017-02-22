@@ -125,13 +125,6 @@ location_t input::get_location_at(index_t index) const{
 }
 
 index_t input::get_job_rank_from_index(index_t index) const{
-  //DEBUG 
-  std::stringstream overview;
-  for( auto entry : _index_to_job_rank){
-    overview << entry.first << "->" << entry.second << std::endl;
-  }
-  std::string my_map = overview.str();
-  //DEBUG END
   auto result = _index_to_job_rank.find(index);
   assert(result != _index_to_job_rank.end());
   return result->second;

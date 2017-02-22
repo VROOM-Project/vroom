@@ -21,7 +21,6 @@ class line: private std::vector<T>{
 public:
   using parent::size;
   using parent::operator[];
-  using parent::push_back;
 
   line(std::size_t n);
 };
