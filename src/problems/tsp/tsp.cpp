@@ -10,7 +10,6 @@ All rights reserved (see LICENSE).
 #include "tsp.h"
 #include "../../structures/vroom/input/input.h"
 
-<<<<<<< HEAD
 tsp::tsp(const input& input,
          index_t vehicle_rank):
   vrp(input),
