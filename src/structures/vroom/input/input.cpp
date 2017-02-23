@@ -73,12 +73,17 @@ void input::add_vehicle(index_t id,
   }
 }
 
+//Vehicles from Custom matrix
 void input::add_vehicle(index_t id,
                         boost::optional<index_t> start_id,
                         boost::optional<index_t> end_id,
                         const optional_coords_t& start_coords,
                         const optional_coords_t& end_coords){
 
+  if ((start_id == boost::none ) and (end_id == boost::none)) {
+    throw custom_exception("No start_id or end_id specified for vehicle " +
+                           std::to_string(id) + '.');
+  }
   boost::optional<location_t> start = (start_coords == boost::none) ?
     boost::none:
     boost::optional<location_t>(

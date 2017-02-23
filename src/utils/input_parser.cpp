@@ -90,27 +90,24 @@ input parse(const cl_args_t& cl_args) {
       if(json_input["matrix"][i].Size() != matrix_size){
         throw custom_exception("JSON-matrix is not quadratic.");
       }
-      //line<distance_t> matrix_row(matrix_size);
       for(rapidjson::SizeType j = 0; j < matrix_size; ++j){
         if(!json_input["matrix"][i][j].IsNumber()){
           throw custom_exception("JSON-matrix-entry is not a number.");
         }
-        //matrix_row.push_back( json_input["matrix"][i][j].GetUint() );
         matrix_input[i][j] = json_input["matrix"][i][j].GetUint();
       }
-      //input_data._matrix.push_back(matrix_row);
     }
     input_data._matrix = matrix_input;
-    // Check, if vehicle has start_id (mandatory) and end_id (optional)
-    if(!json_input["vehicles"][0].HasMember("start_id")){
-      throw custom_exception("Vehicle attribute 'start_id' in custom-matrix-mode is mandatory.");
-    }
-    if(!json_input["vehicles"][0]["start_id"].IsNumber()){
-      throw custom_exception("Vehicle attribute 'start_id' is not a number.");
-    }
-    boost::optional<index_t> start_id = json_input["vehicles"][0]["start_id"].GetUint();
-    if(matrix_size <= start_id.get()){
-      throw custom_exception("Vehicle start_id does not match to matrix size.");
+    // Check, if vehicle has start_id or end_id 
+    boost::optional<index_t> start_id; 
+    if(json_input["vehicles"][0].HasMember("start_id")){
+      if(!json_input["vehicles"][0]["start_id"].IsNumber()){
+        throw custom_exception("Vehicle attribute 'start_id' is not a number.");
+      }
+      start_id = json_input["vehicles"][0]["start_id"].GetUint();
+      if(matrix_size <= start_id.get()){
+        throw custom_exception("Vehicle start_id does not match to matrix size.");
+      }
     }
     boost::optional<index_t> end_id;
     if(json_input["vehicles"][0].HasMember("end_id")){
@@ -124,7 +121,7 @@ input parse(const cl_args_t& cl_args) {
     }
     // Add vehicle to input
     input_data.add_vehicle(json_input["vehicles"][0]["id"].GetUint(),
-                           json_input["vehicles"][0]["start_id"].GetUint(),
+                           start_id,
                            end_id,
                            parse_coordinates(json_input["vehicles"][0],
                                              "start"),
