@@ -128,10 +128,10 @@ rapidjson::Value to_json(const step& s,
     json_step.AddMember("job", s.job, allocator);
   }
   if(s.type == TYPE::START){
-    json_step.AddMember("start_id", s.job, allocator);
+    json_step.AddMember("start", s.job, allocator);
   }
   if(s.type == TYPE::END){
-    json_step.AddMember("end_id", s.job, allocator);
+    json_step.AddMember("end", s.job, allocator);
   }
 
   return json_step;
