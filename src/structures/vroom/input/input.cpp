@@ -73,7 +73,6 @@ void input::add_vehicle(index_t id,
   }
 }
 
-<<<<<<< HEAD
 void input::add_vehicle(index_t id,
                         boost::optional<index_t> start_id,
                         boost::optional<index_t> end_id,
@@ -91,12 +90,6 @@ void input::add_vehicle(index_t id,
     boost::optional<location_t>(
       {_location_number++, (*end_coords)[0], (*end_coords)[1]}
       );
-=======
-void input::set_matrix() {
-  assert(_routing_wrapper);
-  BOOST_LOG_TRIVIAL(info) << "[Loading] Start matrix computing.";
-  _matrix = _routing_wrapper->get_matrix(_ordered_locations);
->>>>>>> upstream/master
 
   _vehicles.emplace_back(id, start, end, start_id, end_id);
   if(start_coords){

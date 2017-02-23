@@ -34,7 +34,6 @@ class matrix : private std::vector<line<T>> {
 public:
   using parent::size;
   using parent::operator[];
-  using parent::push_back;
 
   matrix();
 
