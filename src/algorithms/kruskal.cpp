@@ -2,7 +2,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2016, Julien Coupey.
+Copyright (c) 2015-2017, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -10,15 +10,14 @@ All rights reserved (see LICENSE).
 #include "./kruskal.h"
 
 template <class T>
-undirected_graph<T> minimum_spanning_tree(const undirected_graph<T>& graph){
+undirected_graph<T> minimum_spanning_tree(const undirected_graph<T>& graph) {
   // We just need the edges from original graph.
   std::vector<edge<T>> edges = graph.get_edges();
 
   // First sorting edges by weight.
-  std::sort(edges.begin(), edges.end(),
-            [] (const auto &a, const auto &b){
-              return a.get_weight() < b.get_weight();
-            });
+  std::sort(edges.begin(), edges.end(), [](const auto &a, const auto &b) {
+      return a.get_weight() < b.get_weight();
+    });
 
   // Storing the edges of the minimum spanning tree.
   std::vector<edge<T>> mst;
@@ -28,32 +27,33 @@ undirected_graph<T> minimum_spanning_tree(const undirected_graph<T>& graph){
   // use the smallest vertex as a representative of connected
   // components.
   std::unordered_map<index_t, index_t> representative;
-  for(index_t i = 0; i < graph.size(); ++i){
+  for (index_t i = 0; i < graph.size(); ++i) {
     representative.emplace(i, i);
   }
 
-  for(const auto& edge: edges){
+  for (const auto& edge : edges) {
     index_t first_vertex = edge.get_first_vertex();
     index_t second_vertex = edge.get_second_vertex();
 
     index_t first_rep = representative[first_vertex];
     index_t second_rep = representative[second_vertex];
-    if(first_rep != second_rep){
+    if (first_rep != second_rep) {
       // Adding current edge won't create a cycle as vertices are in
       // separate connected componentes.
       mst.push_back(edge);
       // Both vertices are now in the same connected component,
       // setting new representative for all elements of second
       // component.
-      for(auto& e: representative){
-        if(e.second == second_rep){
+      for (auto& e : representative) {
+        if (e.second == second_rep) {
           e.second = first_rep;
         }
       }
     }
   }
 
-  return undirected_graph<T> (mst);
+  return undirected_graph<T>(mst);
 }
 
-template undirected_graph<distance_t> minimum_spanning_tree(const undirected_graph<distance_t>& graph);
+template undirected_graph<distance_t>
+minimum_spanning_tree(const undirected_graph<distance_t>& graph);

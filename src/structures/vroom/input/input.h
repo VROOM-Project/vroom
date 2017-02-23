@@ -5,31 +5,33 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2016, Julien Coupey.
+Copyright (c) 2015-2017, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
 
 #include <array>
 #include <chrono>
-#include <vector>
 #include <unordered_map>
+#include <vector>
+
 #include <boost/optional.hpp>
-#include "../../typedefs.h"
+
+#include "../../../problems/tsp/tsp.h"
+#include "../../../routing/routed_wrapper.h"
+#include "../../../routing/routing_io.h"
+#include "../../../utils/exceptions.h"
 #include "../../abstract/matrix.h"
+#include "../../typedefs.h"
 #include "../job.h"
 #include "../vehicle.h"
-#include "../../../problems/tsp/tsp.h"
-#include "../../../utils/exceptions.h"
-#include "../../../routing/routing_io.h"
-#include "../../../routing/routed_wrapper.h"
 #if LIBOSRM
 #include "../../../routing/libosrm_wrapper.h"
 #endif
 
 class vrp;
 
-class input{
+class input {
 private:
   std::chrono::high_resolution_clock::time_point _start_loading;
   std::chrono::high_resolution_clock::time_point _end_loading;
@@ -43,7 +45,6 @@ private:
   std::unordered_map<index_t, index_t> _index_to_job_rank;
   std::unique_ptr<vrp> get_problem() const;
 
-
 public:
   std::vector<job_t> _jobs;
   std::vector<vehicle> _vehicles;
@@ -53,8 +54,7 @@ public:
   // ordering.
   std::vector<location_t> _ordered_locations;
 
-  input(std::unique_ptr<routing_io<distance_t>> routing_wrapper,
-        bool geometry);
+  input(std::unique_ptr<routing_io<distance_t>> routing_wrapper, bool geometry);
 
   void add_job(index_t id, const optional_coords_t& coords);
 

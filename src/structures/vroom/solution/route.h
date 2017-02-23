@@ -5,14 +5,14 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2016, Julien Coupey.
+Copyright (c) 2015-2017, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
 
 #include "./step.h"
 
-struct route_t{
+struct route_t {
   index_t vehicle;
   std::vector<step> steps;
   duration_t cost;
