@@ -5,14 +5,16 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2016, Julien Coupey.
+Copyright (c) 2015-2017, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
 
 #include <chrono>
 #include <random>
+
 #include <boost/log/trivial.hpp>
+
 #include "../../../algorithms/kruskal.h"
 #include "../../../algorithms/munkres.h"
 

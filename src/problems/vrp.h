@@ -5,7 +5,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2016, Julien Coupey.
+Copyright (c) 2015-2017, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -14,7 +14,7 @@ All rights reserved (see LICENSE).
 
 class input;
 
-class vrp{
+class vrp {
   // Abstract class describing a VRP (vehicle routing problem).
 protected:
   const input& _input;
@@ -24,9 +24,7 @@ public:
 
   virtual solution solve(unsigned nb_threads) const = 0;
 
-  solution solve() const{
-    return solve(1);
-  };
+  solution solve() const;
 };
 
 #endif

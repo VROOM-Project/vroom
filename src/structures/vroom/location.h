@@ -5,14 +5,14 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2016, Julien Coupey.
+Copyright (c) 2015-2017, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
 
 #include "../typedefs.h"
 
-struct location_t{
+struct location_t {
   // Index of this location in the matrix.
   const index_t index;
 
