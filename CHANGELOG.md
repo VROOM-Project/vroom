@@ -13,6 +13,7 @@
 
 - Internals refactor setting up a scalable data model for future
   features (#44)
+- Renamed solution indicators key in json output `solution`->`summary`
 - Global cleanup with regard to coding standard (#56)
 
 ### Removed
