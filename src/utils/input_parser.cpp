@@ -98,31 +98,31 @@ input parse(const cl_args_t& cl_args) {
       }
     }
     input_data._matrix = matrix_input;
-    // Check, if vehicle has start_id or end_id 
-    boost::optional<index_t> start_id; 
-    if(json_input["vehicles"][0].HasMember("start_id")){
-      if(!json_input["vehicles"][0]["start_id"].IsNumber()){
-        throw custom_exception("Vehicle attribute 'start_id' is not a number.");
+    // Check, if vehicle has start_index or end_index 
+    boost::optional<index_t> start_index; 
+    if(json_input["vehicles"][0].HasMember("start_index")){
+      if(!json_input["vehicles"][0]["start_index"].IsNumber()){
+        throw custom_exception("Vehicle attribute 'start_index' is not a number.");
       }
-      start_id = json_input["vehicles"][0]["start_id"].GetUint();
-      if(matrix_size <= start_id.get()){
-        throw custom_exception("Vehicle start_id does not match to matrix size.");
+      start_index = json_input["vehicles"][0]["start_index"].GetUint();
+      if(matrix_size <= start_index.get()){
+        throw custom_exception("Vehicle start_index does not match to matrix size.");
       }
     }
-    boost::optional<index_t> end_id;
-    if(json_input["vehicles"][0].HasMember("end_id")){
-      if(!json_input["vehicles"][0]["end_id"].IsNumber()){
-        throw custom_exception("Vehicle attribute 'end_id' is not a number.");
+    boost::optional<index_t> end_index;
+    if(json_input["vehicles"][0].HasMember("end_index")){
+      if(!json_input["vehicles"][0]["end_index"].IsNumber()){
+        throw custom_exception("Vehicle attribute 'end_index' is not a number.");
       }
-      end_id = json_input["vehicles"][0]["end_id"].GetUint();
-      if(matrix_size <= end_id.get()){
-        throw custom_exception("Vehicle end_id does not match to matrix size.");
+      end_index = json_input["vehicles"][0]["end_index"].GetUint();
+      if(matrix_size <= end_index.get()){
+        throw custom_exception("Vehicle end_index does not match to matrix size.");
       }
     }
     // Add vehicle to input
     input_data.add_vehicle(json_input["vehicles"][0]["id"].GetUint(),
-                           start_id,
-                           end_id,
+                           start_index,
+                           end_index,
                            parse_coordinates(json_input["vehicles"][0],
                                              "start"),
                            parse_coordinates(json_input["vehicles"][0],
@@ -131,10 +131,10 @@ input parse(const cl_args_t& cl_args) {
     if(!json_input.HasMember("jobs")){
       // Compute generic jobs, if not provided by input
       for(index_t i = 0; i < matrix_size; i++){
-        /*if(i == start_id.get() || (end_id && i == end_id.get())){
+        if(i == start_index.get() || (end_index && i == end_index.get())){
           //ids used by vehicle, are no jobs.
           continue;
-        }*/
+        }
         input_data.add_job(i,
                            parse_coordinates(json_input,
                                             "does_not_exist_anyway"));
@@ -145,13 +145,13 @@ input parse(const cl_args_t& cl_args) {
         if(!json_input["jobs"][i].IsObject()){
           throw custom_exception("Ill-formed job object.");
         }
-        if(!json_input["jobs"][i].HasMember("id")){
+        if(!json_input["jobs"][i].HasMember("index")){
           throw custom_exception("Missing mandatory job id.");
         }
-        if(matrix_size <= json_input["jobs"][i]["id"].GetUint()){
-          throw custom_exception("Job id does not match to matrix size.");
+        if(matrix_size <= json_input["jobs"][i]["index"].GetUint()){
+          throw custom_exception("Job index does not match to matrix size.");
         }
-        input_data.add_job(json_input["jobs"][i]["id"].GetUint(),
+        input_data.add_job(json_input["jobs"][i]["index"].GetUint(),
                           parse_coordinates(json_input["jobs"][i],
                                             "location"));
       }

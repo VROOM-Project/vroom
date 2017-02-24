@@ -20,19 +20,11 @@ tsp::tsp(const input& input,
   _force_start(_input._vehicles[_vehicle_rank].has_start()),
   _force_end(_input._vehicles[_vehicle_rank].has_end()) {
   if(_force_start){
-    if( _input._vehicles[_vehicle_rank].start_id != boost::none ){
-      _start = _input._vehicles[_vehicle_rank].start_id.get();
-    }else{
-      _start = _input._vehicles[_vehicle_rank].start.get().index;
-    }
+    _start = _input._vehicles[_vehicle_rank].start.get().index;
     assert(_start < _matrix.size());
   }
   if(_force_end){
-    if( _input._vehicles[_vehicle_rank].end_id != boost::none ){
-      _end = _input._vehicles[_vehicle_rank].end_id.get();
-    }else{
-      _end = _input._vehicles[_vehicle_rank].end.get().index;
-    }
+    _end = _input._vehicles[_vehicle_rank].end.get().index;
     assert(_end < _matrix.size());
   }
 
@@ -309,9 +301,9 @@ solution tsp::solve(unsigned nb_threads) const {
   if (_force_start) {
     // Add start step.
     if(_input._json_matrix_provided){
-      index_t start_id = _input._vehicles[_vehicle_rank].start_id.get();
+      index_t start_id = _input._vehicles[_vehicle_rank].start.get().index;
       steps.emplace_back(TYPE::START,
-                       _input._jobs[start_id],
+                       _input.get_location_at(current_sol.front()),
                        start_id
                       );
     }else{
@@ -338,9 +330,9 @@ solution tsp::solve(unsigned nb_threads) const {
   if (_force_end) {
     // Add end step.
     if(_input._json_matrix_provided){
-      index_t end_id = _input._vehicles[_vehicle_rank].end_id.get();
+      index_t end_id = _input._vehicles[_vehicle_rank].end.get().index;
       steps.emplace_back(TYPE::END,
-                       _input._jobs[end_id],
+                       _input.get_location_at(current_sol.back()),
                        end_id
                       );
     }else{
