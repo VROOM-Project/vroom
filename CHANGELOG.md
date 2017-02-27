@@ -1,5 +1,25 @@
 # Changelog
 
+## [v1.1.0]
+
+### Added
+
+- Support `libosrm` as of v5.4 for faster `table` and `route` queries
+  (#34)
+- Add contributing guidelines (#56)
+- Compile also with `-std=c++11`, useful in some environments (#55)
+
+### Changed
+
+- Internals refactor setting up a scalable data model for future
+  features (#44)
+- Global cleanup with regard to coding standard (#56)
+
+### Removed
+
+- Drop support for TSPLIB files (#48)
+- Clean unused code and heuristics
+
 ## [v1.0.0] - 2016-09-26
 
 ### Added
