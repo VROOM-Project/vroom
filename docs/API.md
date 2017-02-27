@@ -22,8 +22,9 @@ The problem description is read from standard input or from a file
 |-----------|-----------|
 | [`jobs`](#jobs) |  array of `job` objects describing the places to visit |
 | [`vehicles`](#vehicles) |  array of `vehicle` objects describing the available vehicles |
+| [`matrix`](#matrix) | (optional) two-dimensional array describing a custom matrix |
 
-**Warning**: only problems with one vehicle are supported in v1.0.0 so
+**Warning**: only problems with one vehicle are supported in v1.1.0 so
 at the moment, `vehicles` should have length 1.
 
 ## Jobs
@@ -58,6 +59,26 @@ No two vehicles should have the same `id`.
   visited job, whose choice is determined by the optimization process
 - to request a round trip, just specify both `start` and `end` with
   the same coordinates
+
+
+## Matrix
+
+A `matrix` object contains a custom distance matrix for the TSP/VRP, 
+as an alternative to the distance matrix provided by OSRM through 
+the locations. Therefore, if a custom matrix is provided, the `location`, 
+`start` and `end` properties become optional. Instead of the coordinates, 
+an index has to be provided for a row indication on the matrix:
+
+| Key         | Description |
+| ----------- | ----------- |
+| `job -> index` | an integer used as unique identifier |
+| `vehicle -> start_index` | row_location for the starting point |
+| `vehicle -> end_index` | row_location for the destination point |
+
+### Notes on `jobs`, while custom matrix provided:
+- if no jobs are provided on input, then VROOM creates generical 
+  job-entries with no coordinates.
+
 
 # Output
 
@@ -193,5 +214,85 @@ like:
       "loading": 13
     }
   }
+}
+```
+
+
+The following input makes use of the option to provide a custom matrix:
+
+```javascript
+{
+  "vehicles": [
+    {
+      "id":0,
+      "start_index":0,
+			"end_index":7
+    }
+  ],
+  "matrix": [
+    [0,2104,197,959,1975,436,418,1299],
+    [2103,0,2255,2812,1455,2539,1685,3152],
+    [197,2256,0,762,2172,633,570,1102],
+    [959,2813,762,0,2934,1395,1127,340],
+    [1975,1456,2172,2934,0,2020,2169,3274],
+    [435,2539,632,1394,2019,0,853,1734],
+    [418,1686,570,1127,2169,854,0,1467],
+    [1299,3153,1102,340,3274,1735,1467,0] 
+  ]
+}
+```
+
+Generating the following output:
+
+```javascript
+{
+  "code": 0,
+  "summary": {
+    "cost": 7268,
+    "computing_times": {
+      "loading": 0,
+      "solving": 2
+    }
+  },
+  "routes": [
+    {
+      "vehicle": 0,
+      "cost": 7268,
+      "steps": [
+        {
+          "type": "start",
+          "start": 0
+        },
+        {
+          "type": "job",
+          "job": 5
+        },
+        {
+          "type": "job",
+          "job": 4
+        },
+        {
+          "type": "job",
+          "job": 1
+        },
+        {
+          "type": "job",
+          "job": 6
+        },
+        {
+          "type": "job",
+          "job": 2
+        },
+        {
+          "type": "job",
+          "job": 3
+        },
+        {
+          "type": "end",
+          "end": 7
+        }
+      ]
+    }
+  ]
 }
 ```
