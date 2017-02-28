@@ -79,7 +79,7 @@ input parse(const cl_args_t& cl_args) {
     throw custom_exception("Multiple vehicles are not supported (yet).");
   }
   // Switch input type: explicit matrix or using OSRM.
-  if(json_input.HasMember("matrix")){
+  if (json_input.HasMember("matrix")) {
     //
     // ---Custom-Matrix-mode---
     // Load JSON-matrix into input, while checking, if matrix is quadratic.
@@ -157,7 +157,8 @@ input parse(const cl_args_t& cl_args) {
       }
     }
 
-  }else{
+  }
+  else {
     //
     // ---OSRM-mode---
     // add vehicle to input
@@ -185,7 +186,6 @@ input parse(const cl_args_t& cl_args) {
       input_data.add_job(json_input["jobs"][i]["id"].GetUint(),
                          parse_coordinates(json_input["jobs"][i], "location"));
     }
-    
   }
   //final check, if enough jobs aquired
   if(input_data.get_location_number() <= 1){

@@ -10,20 +10,19 @@ All rights reserved (see LICENSE).
 #include "tsp.h"
 #include "../../structures/vroom/input/input.h"
 
-tsp::tsp(const input& input,
-         index_t vehicle_rank):
-  vrp(input),
-  _vehicle_rank(vehicle_rank),
-  _matrix(_input._matrix),      // TODO avoid this copy!
-  _symmetrized_matrix(_input._matrix.size()),
-  _is_symmetric(true),
-  _force_start(_input._vehicles[_vehicle_rank].has_start()),
-  _force_end(_input._vehicles[_vehicle_rank].has_end()) {
-  if(_force_start){
+tsp::tsp(const input& input, index_t vehicle_rank)
+  : vrp(input),
+    _vehicle_rank(vehicle_rank),
+    _matrix(_input._matrix),      // TODO avoid this copy!
+    _symmetrized_matrix(_input._matrix.size()),
+    _is_symmetric(true),
+    _force_start(_input._vehicles[_vehicle_rank].has_start()),
+    _force_end(_input._vehicles[_vehicle_rank].has_end()) {
+  if (_force_start) {
     _start = _input._vehicles[_vehicle_rank].start.get().index;
     assert(_start < _matrix.size());
   }
-  if(_force_end){
+  if (_force_end) {
     _end = _input._vehicles[_vehicle_rank].end.get().index;
     assert(_end < _matrix.size());
   }
@@ -300,17 +299,18 @@ solution tsp::solve(unsigned nb_threads) const {
   auto job_start = current_sol.cbegin();
   if (_force_start) {
     // Add start step.
-    if(_input._json_matrix_provided){
+    if(_input._json_matrix_provided) {
       index_t start_id = _input._vehicles[_vehicle_rank].start.get().index;
       steps.emplace_back(TYPE::START,
-                       _input.get_location_at(current_sol.front()),
-                       start_id
-                      );
-    }else{
-      steps.emplace_back(TYPE::START,
-                       _input.get_location_at(current_sol.front()));
+                         _input.get_location_at(current_sol.front()),
+                         start_id
+                         );
     }
-    
+    else {
+      steps.emplace_back(TYPE::START,
+                         _input.get_location_at(current_sol.front()));
+    }
+
     // Remember that jobs start further away in the list.
     ++job_start;
   }
@@ -329,24 +329,22 @@ solution tsp::solve(unsigned nb_threads) const {
   // Handle end.
   if (_force_end) {
     // Add end step.
-    if(_input._json_matrix_provided){
+    if (_input._json_matrix_provided) {
       index_t end_id = _input._vehicles[_vehicle_rank].end.get().index;
       steps.emplace_back(TYPE::END,
-                       _input.get_location_at(current_sol.back()),
-                       end_id
-                      );
-    }else{
+                         _input.get_location_at(current_sol.back()),
+                         end_id
+                         );
+    }
+    else {
       steps.emplace_back(TYPE::END,
                          _input.get_location_at(current_sol.back()));
     }
   }
 
-
   // Route.
   std::vector<route_t> routes;
-  routes.emplace_back(_input._vehicles[_vehicle_rank].id,
-                      steps,
-                      current_cost);
+  routes.emplace_back(_input._vehicles[_vehicle_rank].id, steps, current_cost);
 
   solution sol(0, std::move(routes), current_cost);
 

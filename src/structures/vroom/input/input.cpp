@@ -13,17 +13,18 @@ All rights reserved (see LICENSE).
 #include "./input.h"
 
 input::input(std::unique_ptr<routing_io<distance_t>> routing_wrapper,
-             bool geometry):
-  _start_loading(std::chrono::high_resolution_clock::now()),
-  _location_number(0),
-  _problem_type(PROBLEM_T::TSP),
-  _routing_wrapper(std::move(routing_wrapper)),
-  _geometry(geometry),
-  _json_matrix_provided(false){}
+             bool geometry)
+  : _start_loading(std::chrono::high_resolution_clock::now()),
+    _location_number(0),
+    _problem_type(PROBLEM_T::TSP),
+    _routing_wrapper(std::move(routing_wrapper)),
+    _geometry(geometry),
+    _json_matrix_provided(false){}
 
-void input::add_job(index_t id, const optional_coords_t& coords){
+void input::add_job(index_t id, const optional_coords_t& coords) {
   if (_json_matrix_provided) {
-    //With custom matrizes, the provided id is also the index location in the matrix
+    //With custom matrices, the provided id is also the index location
+    //in the matrix
     if (coords == boost::none) {
       _jobs.emplace_back(id, id);
     }
@@ -51,9 +52,6 @@ void input::add_job(index_t id, const optional_coords_t& coords){
     // in _jobs.
     _index_to_job_rank.insert({_location_number - 1, _jobs.size() - 1});
   }
-
-  
-  
 
   _ordered_locations.push_back(_jobs.back());
 }
