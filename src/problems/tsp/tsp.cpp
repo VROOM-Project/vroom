@@ -303,12 +303,15 @@ solution tsp::solve(unsigned nb_threads) const {
       index_t start_id = _input._vehicles[_vehicle_rank].start.get().index;
       steps.emplace_back(TYPE::START,
                          _input.get_location_at(current_sol.front()),
+                         _input._vehicles[_vehicle_rank].id,
                          start_id
                          );
     }
     else {
       steps.emplace_back(TYPE::START,
-                         _input.get_location_at(current_sol.front()));
+                         _input.get_location_at(current_sol.front()),
+                         _input._vehicles[_vehicle_rank].id
+                         );
     }
 
     // Remember that jobs start further away in the list.
@@ -324,7 +327,9 @@ solution tsp::solve(unsigned nb_threads) const {
     auto current_rank = _input.get_job_rank_from_index(*job);
     steps.emplace_back(TYPE::JOB,
                        _input._jobs[current_rank],
-                       _input._jobs[current_rank].id);
+                       _input._jobs[current_rank].id,
+                       _input._jobs[current_rank].index
+                       );
   }
   // Handle end.
   if (_force_end) {
@@ -333,12 +338,15 @@ solution tsp::solve(unsigned nb_threads) const {
       index_t end_id = _input._vehicles[_vehicle_rank].end.get().index;
       steps.emplace_back(TYPE::END,
                          _input.get_location_at(current_sol.back()),
+                         _input._vehicles[_vehicle_rank].id,
                          end_id
                          );
     }
     else {
       steps.emplace_back(TYPE::END,
-                         _input.get_location_at(current_sol.back()));
+                         _input.get_location_at(current_sol.back()),
+                         _input._vehicles[_vehicle_rank].id
+                         );
     }
   }
 

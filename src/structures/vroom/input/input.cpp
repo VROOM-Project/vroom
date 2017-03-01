@@ -192,8 +192,5 @@ solution input::solve(unsigned nb_thread) {
                             << " ms.";
   }
 
-  //Add bool-flag for location_index printing in output
-  sol.custom_matrix_provided = _json_matrix_provided;
-
   return sol;
 }

@@ -17,11 +17,13 @@ enum class TYPE { START, JOB, END };
 struct step {
   TYPE type;
   location_t location;
-  index_t job;
+  index_t id;
+  bool location_index_provided;
+  index_t location_index;
 
-  step(TYPE type, location_t location);
+  step(TYPE type, location_t location, index_t id);
 
-  step(TYPE type, location_t location, index_t job);
+  step(TYPE type, location_t location, index_t id, index_t location_index);
 };
 
 #endif

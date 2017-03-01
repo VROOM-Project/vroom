@@ -124,13 +124,10 @@ rapidjson::Value to_json(const step& s,
   }
 
   if (s.type == TYPE::JOB) {
-    json_step.AddMember("job", s.job, allocator);
+    json_step.AddMember("job", s.id, allocator);
   }
-  if(s.type == TYPE::START){
-    json_step.AddMember("start", s.job, allocator);
-  }
-  if(s.type == TYPE::END){
-    json_step.AddMember("end", s.job, allocator);
+  if (s.location_index_provided) {
+    json_step.AddMember("location_index", s.location_index, allocator);
   }
 
   return json_step;
