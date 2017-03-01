@@ -71,13 +71,9 @@ an index has to be provided for a row indication on the matrix:
 
 | Key         | Description |
 | ----------- | ----------- |
-| `job -> index` | an integer used as unique identifier |
-| `vehicle -> start_index` | row_location for the starting point |
-| `vehicle -> end_index` | row_location for the destination point |
-
-### Notes on `jobs`, while custom matrix provided:
-- if no jobs are provided on input, then VROOM creates generical 
-  job-entries with no coordinates.
+| `job -> location_index` | an integer for row-location in matrix |
+| `vehicle -> start_index` | an integer for row-location in matrix |
+| `vehicle -> end_index` | an integer for row-location in matrix |
 
 
 # Output
@@ -116,6 +112,9 @@ A `step` object has the following properties:
 | `type` | a string that is either `start`, `job` or `end` |
 | `location` | coordinates array for this step |
 | `job` | id of the job performed at this step, provided if `type` value is `job` |
+| `location_index`* | showing former row location inside custom matrix | 
+
+*: provided when custom matrix is provided on JSON input.
 
 ## Summary
 
@@ -229,6 +228,32 @@ The following input makes use of the option to provide a custom matrix:
 			"end_index":7
     }
   ],
+  "jobs": [
+    {
+      "id":0,
+      "location_index":1
+    },
+    {
+      "id":1,
+      "location_index":2
+    },
+    {
+      "id":2,
+      "location_index":3
+    },
+    {
+      "id":3,
+      "location_index":4
+    },
+    {
+      "id":4,
+      "location_index":5
+    },
+    {
+      "id":5,
+      "location_index":6
+    }
+  ],
   "matrix": [
     [0,2104,197,959,1975,436,418,1299],
     [2103,0,2255,2812,1455,2539,1685,3152],
@@ -261,35 +286,41 @@ Generating the following output:
       "steps": [
         {
           "type": "start",
-          "start": 0
+          "location_index": 0
         },
         {
           "type": "job",
-          "job": 5
+          "job": 4,
+          "location_index": 5
         },
         {
           "type": "job",
-          "job": 4
+          "job": 3,
+          "location_index": 4
         },
         {
           "type": "job",
-          "job": 1
+          "job": 0,
+          "location_index": 1
         },
         {
           "type": "job",
-          "job": 6
+          "job": 5,
+          "location_index": 6
         },
         {
           "type": "job",
-          "job": 2
+          "job": 1,
+          "location_index": 2
         },
         {
           "type": "job",
-          "job": 3
+          "job": 2,
+          "location_index": 3
         },
         {
           "type": "end",
-          "end": 7
+          "location_index": 7
         }
       ]
     }

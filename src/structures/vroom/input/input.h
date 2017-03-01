@@ -56,7 +56,9 @@ public:
 
   input(std::unique_ptr<routing_io<distance_t>> routing_wrapper, bool geometry);
 
-  void add_job(index_t id, const optional_coords_t& coords);
+  void add_job(index_t id, const optional_coords_t& coords) 
+    {add_job(id, coords, _location_number);};
+  void add_job(index_t id, const optional_coords_t& coords, index_t location_id);
 
   void add_vehicle(index_t id,
                    const optional_coords_t& start_coords,

@@ -15,6 +15,7 @@ All rights reserved (see LICENSE).
 
 struct solution {
   index_t code;
+  bool custom_matrix_provided;
   std::string error;
   std::vector<route_t> routes;
   summary_t summary;

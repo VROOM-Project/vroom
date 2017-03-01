@@ -21,39 +21,25 @@ input::input(std::unique_ptr<routing_io<distance_t>> routing_wrapper,
     _geometry(geometry),
     _json_matrix_provided(false){}
 
-void input::add_job(index_t id, const optional_coords_t& coords) {
-  if (_json_matrix_provided) {
-    //With custom matrices, the provided id is also the index location
-    //in the matrix
-    if (coords == boost::none) {
-      _jobs.emplace_back(id, id);
-    }
-    else {
-      _jobs.emplace_back(id,
-                        id,
-                        coords.get()[0],
-                        coords.get()[1]);
-    }
-    _location_number++;
-    _index_to_job_rank.insert({id, _jobs.size() - 1});
-  }else {
-    // Using current number of locations as index of this job in the
-    // matrix.
-    if (coords == boost::none) {
-      _jobs.emplace_back(id, _location_number++);
-    }
-    else {
-      _jobs.emplace_back(id,
-                        _location_number++,
-                        coords.get()[0],
-                        coords.get()[1]);
-    }
-    // Remember mapping between the job index in the matrix and its rank
-    // in _jobs.
-    _index_to_job_rank.insert({_location_number - 1, _jobs.size() - 1});
+void input::add_job(index_t id, const optional_coords_t& coords, index_t location_id) {
+  //With custom matrices, the provided id is also the index location
+  //in the matrix
+  if (coords == boost::none) {
+    _jobs.emplace_back(id, location_id);
+  }
+  else {
+    _jobs.emplace_back(id,
+                      location_id,
+                      coords.get()[0],
+                      coords.get()[1]);
   }
 
+  // Remember mapping between the job index in the matrix and its rank
+  // in _jobs.
+  _index_to_job_rank.insert({location_id, _jobs.size() - 1});
+
   _ordered_locations.push_back(_jobs.back());
+  ++_location_number;
 }
 
 void input::add_vehicle(index_t id,
@@ -205,6 +191,9 @@ solution input::solve(unsigned nb_thread) {
                             << routing
                             << " ms.";
   }
+
+  //Add bool-flag for location_index printing in output
+  sol.custom_matrix_provided = _json_matrix_provided;
 
   return sol;
 }
