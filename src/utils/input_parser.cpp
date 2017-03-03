@@ -83,7 +83,6 @@ input parse(const cl_args_t& cl_args) {
     //
     // ---Custom-Matrix-mode---
     // Load JSON-matrix into input, while checking, if matrix is quadratic.
-    input_data._json_matrix_provided = true; 
     rapidjson::SizeType matrix_size = json_input["matrix"].Size();
     matrix<distance_t> matrix_input(matrix_size);
     for (rapidjson::SizeType i = 0; i < matrix_size; ++i) {

@@ -18,8 +18,7 @@ input::input(std::unique_ptr<routing_io<distance_t>> routing_wrapper,
     _location_number(0),
     _problem_type(PROBLEM_T::TSP),
     _routing_wrapper(std::move(routing_wrapper)),
-    _geometry(geometry),
-    _json_matrix_provided(false){}
+    _geometry(geometry){}
 
 void input::add_job(index_t id, const optional_coords_t& coords, index_t location_id) {
   //With custom matrices, the provided id is also the index location
@@ -110,7 +109,7 @@ void input::add_vehicle(index_t id,
 
 void input::set_matrix(){
   //Don't call osrm, if matrix is already provided.
-  if(!_json_matrix_provided){
+  if (_matrix.size() < 2) {
     assert(_routing_wrapper);
     BOOST_LOG_TRIVIAL(info) << "[Loading] Start matrix computing.";
     _matrix = _routing_wrapper->get_matrix(_ordered_locations);
