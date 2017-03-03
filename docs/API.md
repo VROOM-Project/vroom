@@ -112,9 +112,6 @@ A `step` object has the following properties:
 | `type` | a string that is either `start`, `job` or `end` |
 | `location` | coordinates array for this step |
 | `job` | id of the job performed at this step, provided if `type` value is `job` |
-| `location_index`* | showing former row location inside custom matrix | 
-
-*: provided when custom matrix is provided on JSON input.
 
 ## Summary
 
@@ -286,41 +283,33 @@ Generating the following output:
       "steps": [
         {
           "type": "start",
-          "location_index": 0
         },
         {
           "type": "job",
-          "job": 4,
-          "location_index": 5
+          "job": 4
         },
         {
           "type": "job",
-          "job": 3,
-          "location_index": 4
+          "job": 3
         },
         {
           "type": "job",
-          "job": 0,
-          "location_index": 1
+          "job": 0
         },
         {
           "type": "job",
-          "job": 5,
-          "location_index": 6
+          "job": 5
         },
         {
           "type": "job",
-          "job": 1,
-          "location_index": 2
+          "job": 1
         },
         {
           "type": "job",
-          "job": 2,
-          "location_index": 3
+          "job": 2
         },
         {
-          "type": "end",
-          "location_index": 7
+          "type": "end"
         }
       ]
     }
