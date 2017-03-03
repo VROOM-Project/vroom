@@ -78,6 +78,7 @@ input parse(const cl_args_t& cl_args) {
   if (json_input["vehicles"].Size() > 1) {
     throw custom_exception("Multiple vehicles are not supported (yet).");
   }
+  
   // Switch input type: explicit matrix or using OSRM.
   if (json_input.HasMember("matrix")) {
     //

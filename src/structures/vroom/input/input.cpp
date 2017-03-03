@@ -18,7 +18,7 @@ input::input(std::unique_ptr<routing_io<distance_t>> routing_wrapper,
     _location_number(0),
     _problem_type(PROBLEM_T::TSP),
     _routing_wrapper(std::move(routing_wrapper)),
-    _geometry(geometry){}
+    _geometry(geometry) {}
 
 void input::add_job(index_t id, const optional_coords_t& coords, index_t location_id) {
   //With custom matrices, the provided id is also the index location

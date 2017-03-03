@@ -300,8 +300,7 @@ solution tsp::solve(unsigned nb_threads) const {
   if (_force_start) {
     // Add start step.
     steps.emplace_back(TYPE::START,
-                         _input.get_location_at(current_sol.front())
-                         );
+                       _input.get_location_at(current_sol.front()));
     // Remember that jobs start further away in the list.
     ++job_start;
   }
@@ -315,20 +314,20 @@ solution tsp::solve(unsigned nb_threads) const {
     auto current_rank = _input.get_job_rank_from_index(*job);
     steps.emplace_back(TYPE::JOB,
                        _input._jobs[current_rank],
-                       _input._jobs[current_rank].id
-                       );
+                       _input._jobs[current_rank].id);
   }
   // Handle end.
   if (_force_end) {
     // Add end step.
     steps.emplace_back(TYPE::END,
-                        _input.get_location_at(current_sol.back())
-                        );
+                        _input.get_location_at(current_sol.back()));
   }
 
   // Route.
   std::vector<route_t> routes;
-  routes.emplace_back(_input._vehicles[_vehicle_rank].id, steps, current_cost);
+  routes.emplace_back(_input._vehicles[_vehicle_rank].id, 
+                      steps, 
+                      current_cost);
 
   solution sol(0, std::move(routes), current_cost);
 
