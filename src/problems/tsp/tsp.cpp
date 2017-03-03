@@ -320,13 +320,13 @@ solution tsp::solve(unsigned nb_threads) const {
   if (_force_end) {
     // Add end step.
     steps.emplace_back(TYPE::END,
-                        _input.get_location_at(current_sol.back()));
+                       _input.get_location_at(current_sol.back()));
   }
 
   // Route.
   std::vector<route_t> routes;
-  routes.emplace_back(_input._vehicles[_vehicle_rank].id, 
-                      steps, 
+  routes.emplace_back(_input._vehicles[_vehicle_rank].id,
+                      steps,
                       current_cost);
 
   solution sol(0, std::move(routes), current_cost);
