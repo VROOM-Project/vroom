@@ -10,6 +10,8 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <vector>
+
 #include "./step.h"
 
 struct route_t {
