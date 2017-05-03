@@ -62,8 +62,11 @@ input parse(const cl_args_t& cl_args) {
     throw custom_exception(error_msg);
   }
 
-  // Checks, that needs to be done for both modes.
-  // Vehicles check.
+  // Checks required in any case.
+  if (!json_input.HasMember("jobs") or !json_input["jobs"].IsArray()) {
+    throw custom_exception("Incorrect jobs input.");
+  }
+
   if (!json_input.HasMember("vehicles")
      or !json_input["vehicles"].IsArray()
      or json_input["vehicles"].Empty()) {
@@ -78,31 +81,30 @@ input parse(const cl_args_t& cl_args) {
   if (json_input["vehicles"].Size() > 1) {
     throw custom_exception("Multiple vehicles are not supported (yet).");
   }
-  
+
   // Switch input type: explicit matrix or using OSRM.
   if (json_input.HasMember("matrix")) {
-    //
-    // ---Custom-Matrix-mode---
-    // Load JSON-matrix into input, while checking, if matrix is quadratic.
+    // Load custom matrix while checking if it is square.
     rapidjson::SizeType matrix_size = json_input["matrix"].Size();
     matrix<distance_t> matrix_input(matrix_size);
     for (rapidjson::SizeType i = 0; i < matrix_size; ++i) {
       if (json_input["matrix"][i].Size() != matrix_size) {
-        throw custom_exception("JSON-matrix is not quadratic.");
+        throw custom_exception("Input matrix is not square.");
       }
       for (rapidjson::SizeType j = 0; j < matrix_size; ++j) {
         if (!json_input["matrix"][i][j].IsNumber()) {
-          throw custom_exception("JSON-matrix-entry is not a number.");
+          throw custom_exception("Input matrix has a non-number entry.");
         }
         matrix_input[i][j] = json_input["matrix"][i][j].GetUint();
       }
     }
     input_data._matrix = matrix_input;
-    // Check, if vehicle has start_index or end_index 
-    boost::optional<index_t> start_index; 
+
+    // Check if vehicle has start_index or end_index.
+    boost::optional<index_t> start_index;
     if (json_input["vehicles"][0].HasMember("start_index")) {
       if (!json_input["vehicles"][0]["start_index"].IsNumber()) {
-        throw custom_exception("Vehicle attribute 'start_index' is not a number.");
+        throw custom_exception("Vehicle start_index is not a number.");
       }
       start_index = json_input["vehicles"][0]["start_index"].GetUint();
       if (matrix_size <= start_index.get()) {
@@ -112,7 +114,7 @@ input parse(const cl_args_t& cl_args) {
     boost::optional<index_t> end_index;
     if (json_input["vehicles"][0].HasMember("end_index")) {
       if (!json_input["vehicles"][0]["end_index"].IsNumber()) {
-        throw custom_exception("Vehicle attribute 'end_index' is not a number.");
+        throw custom_exception("Vehicle end_index is not a number.");
       }
       end_index = json_input["vehicles"][0]["end_index"].GetUint();
       if (matrix_size <= end_index.get()) {
@@ -121,17 +123,13 @@ input parse(const cl_args_t& cl_args) {
     }
     // Add vehicle to input
     input_data.add_vehicle(json_input["vehicles"][0]["id"].GetUint(),
-                           start_index,
-                           end_index,
                            parse_coordinates(json_input["vehicles"][0],
                                              "start"),
                            parse_coordinates(json_input["vehicles"][0],
-                                             "end"));
+                                             "end"),
+                           start_index,
+                           end_index);
     // Add the jobs
-    if (!json_input.HasMember("jobs")) {
-        // Compute generic jobs, if not provided by input
-        throw custom_exception("Vehicle end_index does not match to matrix size.");
-    }
     for (rapidjson::SizeType i = 0; i < json_input["jobs"].Size(); ++i) {
       if (!json_input["jobs"][i].IsObject()){
         throw custom_exception("Ill-formed job object.");
@@ -143,7 +141,7 @@ input parse(const cl_args_t& cl_args) {
         throw custom_exception("Job id is not a number.");
       }
       if (!json_input["jobs"][i].HasMember("location_index")) {
-        throw custom_exception("Missing mandatory job location_index for custom_matrix.");
+        throw custom_exception("Missing mandatory job location_index.");
       }
       if (!json_input["jobs"][i]["location_index"].IsNumber()) {
         throw custom_exception("Job location_index is not a number.");
@@ -151,16 +149,12 @@ input parse(const cl_args_t& cl_args) {
       if (matrix_size <= json_input["jobs"][i]["location_index"].GetUint()) {
         throw custom_exception("Job location_index does not match to matrix size.");
       }
-      input_data.add_job( json_input["jobs"][i]["id"].GetUint(),
-                        parse_coordinates( json_input["jobs"][i],"location" ),
-                        json_input["jobs"][i]["location_index"].GetUint() );
+      input_data.add_job(json_input["jobs"][i]["id"].GetUint(),
+                         parse_coordinates(json_input["jobs"][i],"location"),
+                         json_input["jobs"][i]["location_index"].GetUint());
     }
-
   }
   else {
-    //
-    // ---OSRM-mode---
-    // add vehicle to input
     input_data.add_vehicle(json_input["vehicles"][0]["id"].GetUint(),
                            parse_coordinates(json_input["vehicles"][0],
                                              "start"),
@@ -168,9 +162,6 @@ input parse(const cl_args_t& cl_args) {
                                              "end"));
 
     // Getting jobs.
-    if (!json_input.HasMember("jobs") or !json_input["jobs"].IsArray()) {
-      throw custom_exception("Incorrect jobs input.");
-    }
     for (rapidjson::SizeType i = 0; i < json_input["jobs"].Size(); ++i) {
       if (!json_input["jobs"][i].IsObject()) {
         throw custom_exception("Ill-formed job object.");
@@ -186,9 +177,10 @@ input parse(const cl_args_t& cl_args) {
                          parse_coordinates(json_input["jobs"][i], "location"));
     }
   }
-  //final check, if enough jobs aquired
-  if(input_data.get_location_number() <= 1){
+
+  if (input_data.get_location_number() <= 1) {
     throw custom_exception("At least two locations required!");
   }
+
   return input_data;
 }
