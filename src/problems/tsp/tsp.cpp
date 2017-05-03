@@ -290,8 +290,6 @@ solution tsp::solve(unsigned nb_threads) const {
     current_sol.pop_front();
   }
 
-  // current_sol;
-
   // Steps for the one route.
   std::vector<step> steps;
 
@@ -300,7 +298,7 @@ solution tsp::solve(unsigned nb_threads) const {
   if (_force_start) {
     // Add start step.
     steps.emplace_back(TYPE::START,
-                       _input.get_location_at(current_sol.front()));
+                       _input._vehicles[_vehicle_rank].start.get());
     // Remember that jobs start further away in the list.
     ++job_start;
   }
@@ -320,7 +318,7 @@ solution tsp::solve(unsigned nb_threads) const {
   if (_force_end) {
     // Add end step.
     steps.emplace_back(TYPE::END,
-                       _input.get_location_at(current_sol.back()));
+                       _input._vehicles[_vehicle_rank].end.get());
   }
 
   // Route.
