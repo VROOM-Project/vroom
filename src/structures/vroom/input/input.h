@@ -49,25 +49,27 @@ public:
   std::vector<job_t> _jobs;
   std::vector<vehicle> _vehicles;
   matrix<distance_t> _matrix;
-  bool _json_matrix_provided; 
   // List of locations added through add_* matching the matrix
   // ordering.
   std::vector<location_t> _ordered_locations;
 
   input(std::unique_ptr<routing_io<distance_t>> routing_wrapper, bool geometry);
 
-  void add_job(index_t id, const optional_coords_t& coords) 
-    {add_job(id, coords, _location_number);};
-  void add_job(index_t id, const optional_coords_t& coords, index_t location_id);
+  void add_job(index_t id, const optional_coords_t& coords);
+
+  void add_job(index_t id,
+               const optional_coords_t& coords,
+               index_t index);
 
   void add_vehicle(index_t id,
                    const optional_coords_t& start_coords,
                    const optional_coords_t& end_coords);
+
   void add_vehicle(index_t id,
-                   boost::optional<index_t> start_id,
-                   boost::optional<index_t> end_id,
                    const optional_coords_t& start_coords,
-                   const optional_coords_t& end_coords);
+                   const optional_coords_t& end_coords,
+                   boost::optional<index_t> start_index,
+                   boost::optional<index_t> end_index);
 
   index_t get_location_number() const;
 

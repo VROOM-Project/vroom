@@ -20,22 +20,28 @@ input::input(std::unique_ptr<routing_io<distance_t>> routing_wrapper,
     _routing_wrapper(std::move(routing_wrapper)),
     _geometry(geometry) {}
 
-void input::add_job(index_t id, const optional_coords_t& coords, index_t location_id) {
-  //With custom matrices, the provided id is also the index location
-  //in the matrix
+void input::add_job(index_t id, const optional_coords_t& coords) {
+  // Using current number of locations as index of this job in the
+  // matrix.
+  add_job(id, coords, _location_number);
+}
+
+void input::add_job(index_t id,
+                    const optional_coords_t& coords,
+                    index_t index) {
   if (coords == boost::none) {
-    _jobs.emplace_back(id, location_id);
+    _jobs.emplace_back(id, index);
   }
   else {
     _jobs.emplace_back(id,
-                      location_id,
+                      index,
                       coords.get()[0],
                       coords.get()[1]);
   }
 
   // Remember mapping between the job index in the matrix and its rank
   // in _jobs.
-  _index_to_job_rank.insert({location_id, _jobs.size() - 1});
+  _index_to_job_rank.insert({index, _jobs.size() - 1});
 
   _ordered_locations.push_back(_jobs.back());
   ++_location_number;
@@ -75,34 +81,34 @@ void input::add_vehicle(index_t id,
 
 //Vehicles from Custom matrix
 void input::add_vehicle(index_t id,
-                        boost::optional<index_t> start_id,
-                        boost::optional<index_t> end_id,
                         const optional_coords_t& start_coords,
-                        const optional_coords_t& end_coords){
+                        const optional_coords_t& end_coords,
+                        boost::optional<index_t> start_index,
+                        boost::optional<index_t> end_index){
 
-  if ((start_id == boost::none ) and (end_id == boost::none)) {
-    throw custom_exception("No start_id or end_id specified for vehicle " +
+  if ((start_index == boost::none ) and (end_index == boost::none)) {
+    throw custom_exception("No start_index or end_index specified for vehicle " +
                            std::to_string(id) + '.');
   }
-  boost::optional<location_t> start = (start_id == boost::none) ?
+  boost::optional<location_t> start = (start_index == boost::none) ?
     boost::none:
     ((start_coords == boost::none) ?
-      boost::optional<location_t>(start_id.get()):
-      boost::optional<location_t>({start_id.get(), (*start_coords)[0], (*start_coords)[1]})
+      boost::optional<location_t>(start_index.get()):
+      boost::optional<location_t>({start_index.get(), (*start_coords)[0], (*start_coords)[1]})
     );
 
-  boost::optional<location_t> end = (end_id == boost::none) ?
+  boost::optional<location_t> end = (end_index == boost::none) ?
     boost::none:
     ((end_coords == boost::none) ?
-      boost::optional<location_t>(end_id.get()):
-      boost::optional<location_t>({end_id.get(), (*end_coords)[0], (*end_coords)[1]})
+      boost::optional<location_t>(end_index.get()):
+      boost::optional<location_t>({end_index.get(), (*end_coords)[0], (*end_coords)[1]})
     );
 
   _vehicles.emplace_back(id, start, end);
-  if(start_id != boost::none){
+  if(start_index != boost::none){
     _ordered_locations.push_back(_vehicles.back().start.get());
   }
-  if(end_id != boost::none){
+  if(end_index != boost::none){
     _ordered_locations.push_back(_vehicles.back().end.get());
   }
 }
