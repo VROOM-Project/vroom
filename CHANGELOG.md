@@ -1,6 +1,6 @@
 # Changelog
 
-## [v1.1.0]
+## [v1.1.0] - 2017-03-09
 
 ### Added
 
@@ -13,6 +13,7 @@
 
 - Internals refactor setting up a scalable data model for future
   features (#44)
+- Renamed solution indicators key in json output `solution`->`summary`
 - Global cleanup with regard to coding standard (#56)
 
 ### Removed
