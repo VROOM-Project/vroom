@@ -52,42 +52,29 @@ void input::add_vehicle(index_t id,
                         const optional_coords_t& end_coords) {
   // Using current number of locations as index of start and end in
   // the matrix.
-  if ((!start_coords) and (!end_coords)) {
-    throw custom_exception("No start or end specified for vehicle " +
-                           std::to_string(id) + '.');
-  }
-
-  boost::optional<location_t> start = (start_coords == boost::none) ?
-    boost::none:
-    boost::optional<location_t>(
-      {_location_number++, (*start_coords)[0], (*start_coords)[1]}
-      );
-
-  boost::optional<location_t> end = (end_coords == boost::none) ?
-    boost::none:
-    boost::optional<location_t>(
-      {_location_number++, (*end_coords)[0], (*end_coords)[1]}
-      );
-
-  _vehicles.emplace_back(id, start, end);
-
+  boost::optional<index_t> start_index;
   if (start_coords) {
-    _ordered_locations.push_back(_vehicles.back().start.get());
+    start_index = _location_number;
   }
+  boost::optional<index_t> end_index;
   if (end_coords) {
-    _ordered_locations.push_back(_vehicles.back().end.get());
+    end_index = _location_number;
+    if (start_coords) {
+      end_index = _location_number + 1;
+    }
   }
+
+  add_vehicle(id, start_coords, end_coords, start_index, end_index);
 }
 
-//Vehicles from Custom matrix
 void input::add_vehicle(index_t id,
                         const optional_coords_t& start_coords,
                         const optional_coords_t& end_coords,
                         boost::optional<index_t> start_index,
-                        boost::optional<index_t> end_index){
+                        boost::optional<index_t> end_index) {
 
   if ((start_index == boost::none ) and (end_index == boost::none)) {
-    throw custom_exception("No start_index or end_index specified for vehicle " +
+    throw custom_exception("No start or end specified for vehicle " +
                            std::to_string(id) + '.');
   }
   boost::optional<location_t> start = (start_index == boost::none) ?
@@ -105,15 +92,18 @@ void input::add_vehicle(index_t id,
     );
 
   _vehicles.emplace_back(id, start, end);
-  if(start_index != boost::none){
+
+  if(start_coords) {
     _ordered_locations.push_back(_vehicles.back().start.get());
+    ++_location_number;
   }
-  if(end_index != boost::none){
+  if(end_coords) {
     _ordered_locations.push_back(_vehicles.back().end.get());
+    ++_location_number;
   }
 }
 
-void input::set_matrix(){
+void input::set_matrix() {
   //Don't call osrm, if matrix is already provided.
   if (_matrix.size() < 2) {
     assert(_routing_wrapper);
