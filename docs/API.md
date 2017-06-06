@@ -222,7 +222,7 @@ The following input makes use of the option to provide a custom matrix:
     {
       "id":0,
       "start_index":0,
-			"end_index":7
+      "end_index":7
     }
   ],
   "jobs": [
