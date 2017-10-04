@@ -42,6 +42,7 @@ private:
   const bool _geometry;
   void set_matrix();
   std::unordered_map<index_t, index_t> _index_to_job_rank;
+  std::set<index_t> _all_indices;
   std::unique_ptr<vrp> get_problem() const;
 
 public:

@@ -41,6 +41,7 @@ void input::add_job(index_t id,
   // Remember mapping between the job index in the matrix and its rank
   // in _jobs.
   _index_to_job_rank.insert({index, _jobs.size() - 1});
+  _all_indices.insert(index);
 
   _locations.push_back(_jobs.back());
 }
@@ -81,12 +82,20 @@ void input::add_vehicle(index_t id,
       boost::optional<location_t>({start_index.get(), (*start_coords)[0], (*start_coords)[1]})
     );
 
+  if (start_index != boost::none) {
+    _all_indices.insert(start_index.get());
+  }
+
   boost::optional<location_t> end = (end_index == boost::none) ?
     boost::none:
     ((end_coords == boost::none) ?
       boost::optional<location_t>(end_index.get()):
       boost::optional<location_t>({end_index.get(), (*end_coords)[0], (*end_coords)[1]})
     );
+
+  if (end_index != boost::none) {
+    _all_indices.insert(end_index.get());
+  }
 
   _vehicles.emplace_back(id, start, end);
 
@@ -129,7 +138,14 @@ PROBLEM_T input::get_problem_type() const {
 }
 
 std::unique_ptr<vrp> input::get_problem() const {
-  return std::make_unique<tsp>(*this, 0);
+  std::vector<index_t> problem_indices;
+  for (const auto& i: _all_indices) {
+    problem_indices.push_back(i);
+  }
+
+  return std::make_unique<tsp>(*this,
+                               problem_indices,
+                               0);
 }
 
 solution input::solve(unsigned nb_thread) {
