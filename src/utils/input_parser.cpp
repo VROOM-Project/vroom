@@ -66,20 +66,18 @@ input parse(const cl_args_t& cl_args) {
 
   // Main Checks for valid json input.
   if (!json_input.HasMember("jobs") or !json_input["jobs"].IsArray()) {
-    throw custom_exception("Incorrect jobs input.");
+    throw custom_exception("Invalid jobs.");
   }
 
   if (!json_input.HasMember("vehicles")
      or !json_input["vehicles"].IsArray()
      or json_input["vehicles"].Empty()) {
-    throw custom_exception("Incorrect vehicles input.");
+    throw custom_exception("Invalid vehicles.");
   }
-  if (!json_input["vehicles"][0].IsObject()) {
-    throw custom_exception("Ill-formed vehicle object.");
-  }
-  if (!json_input["vehicles"][0].HasMember("id")
+  if (!json_input["vehicles"][0].IsObject()
+      or !json_input["vehicles"][0].HasMember("id")
       or !json_input["vehicles"][0]["id"].IsUint()) {
-    throw custom_exception("Invalid vehicle id.");
+    throw custom_exception("Invalid vehicle at 0.");
   }
   if (json_input["vehicles"].Size() > 1) {
     throw custom_exception("Multiple vehicles are not supported (yet).");
@@ -97,11 +95,11 @@ input parse(const cl_args_t& cl_args) {
     for (rapidjson::SizeType i = 0; i < matrix_size; ++i) {
       if (!json_input["matrix"][i].IsArray()
           or (json_input["matrix"][i].Size() != matrix_size)) {
-        throw custom_exception("Input matrix is not square.");
+        throw custom_exception("Invalid matrix line " + std::to_string(i) + ".");
       }
       for (rapidjson::SizeType j = 0; j < matrix_size; ++j) {
         if (!json_input["matrix"][i][j].IsUint()) {
-          throw custom_exception("Input matrix has a non-number entry.");
+          throw custom_exception("Invalid matrix entry (" + std::to_string(i) + "," + std::to_string(j) + ").");
         }
         matrix_input[i][j] = json_input["matrix"][i][j].GetUint();
       }
@@ -115,11 +113,11 @@ input parse(const cl_args_t& cl_args) {
     boost::optional<index_t> start_index;
     if (json_input["vehicles"][0].HasMember("start_index")) {
       if (!json_input["vehicles"][0]["start_index"].IsUint()) {
-        throw custom_exception("Vehicle start_index is not a number.");
+        throw custom_exception("Invalid start_index for vehicle at 0.");
       }
       start_index = json_input["vehicles"][0]["start_index"].GetUint();
       if (matrix_size <= start_index.get()) {
-        throw custom_exception("Vehicle start_index does not match to matrix size.");
+        throw custom_exception("start_index exceeding matrix size for vehicle at 0.");
       }
     }
     if (start_index) {
@@ -129,11 +127,11 @@ input parse(const cl_args_t& cl_args) {
     boost::optional<index_t> end_index;
     if (json_input["vehicles"][0].HasMember("end_index")) {
       if (!json_input["vehicles"][0]["end_index"].IsUint()) {
-        throw custom_exception("Vehicle end_index is not a number.");
+        throw custom_exception("Invalid end_index for vehicle at 0.");
       }
       end_index = json_input["vehicles"][0]["end_index"].GetUint();
       if (matrix_size <= end_index.get()) {
-        throw custom_exception("Vehicle end_index does not match to matrix size.");
+        throw custom_exception("end_index exceeding matrix size for vehicle at 0.");
       }
     }
     if (end_index) {
@@ -151,18 +149,18 @@ input parse(const cl_args_t& cl_args) {
     // Add the jobs
     for (rapidjson::SizeType i = 0; i < json_input["jobs"].Size(); ++i) {
       if (!json_input["jobs"][i].IsObject()) {
-        throw custom_exception("Ill-formed job object.");
+        throw custom_exception("Invalid job.");
       }
       if (!json_input["jobs"][i].HasMember("id")
           or !json_input["jobs"][i]["id"].IsUint()) {
-        throw custom_exception("Invalid job id.");
+        throw custom_exception("Invalid id for job at " + std::to_string(i) + ".");
       }
       if (!json_input["jobs"][i].HasMember("location_index")
           or !json_input["jobs"][i]["location_index"].IsUint()) {
-        throw custom_exception("Invalid job location_index.");
+        throw custom_exception("Invalid location_index for job at " + std::to_string(i) + ".");
       }
       if (matrix_size <= json_input["jobs"][i]["location_index"].GetUint()) {
-        throw custom_exception("Job location_index does not match to matrix size.");
+        throw custom_exception("location_index exceeding matrix size for job at " + std::to_string(i) + ".");
       }
       necessary_indices.push_back( json_input["jobs"][i]["location_index"].GetUint() );
       input_data.add_job(json_input["jobs"][i]["id"].GetUint(),
@@ -183,15 +181,15 @@ input parse(const cl_args_t& cl_args) {
     // Getting jobs.
     for (rapidjson::SizeType i = 0; i < json_input["jobs"].Size(); ++i) {
       if (!json_input["jobs"][i].IsObject()) {
-        throw custom_exception("Ill-formed job object.");
+        throw custom_exception("Invalid job.");
       }
       if (!json_input["jobs"][i].HasMember("location")
           or !json_input["jobs"][i]["location"].IsArray()) {
-        throw custom_exception("Invalid job location.");
+        throw custom_exception("Invalid location for job at " + std::to_string(i) + ".");
       }
       if (!json_input["jobs"][i].HasMember("id")
           or !json_input["jobs"][i]["id"].IsUint()) {
-        throw custom_exception("Invalid job id.");
+        throw custom_exception("Invalid id for job at " + std::to_string(i) + ".");
       }
 
       input_data.add_job(json_input["jobs"][i]["id"].GetUint(),
