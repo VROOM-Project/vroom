@@ -9,7 +9,7 @@ version 1.1.0.
 Contents:
 - [Input format](#input)
 - [Output format](#output)
-- [Example](#example)
+- [Examples](#examples)
 
 **Note**: the expected order for all coordinates arrays is [lon,lat].
 
@@ -76,12 +76,12 @@ A `vehicle` object has the following properties:
 
 ## Matrix
 
-A `matrix` object is an array of arrays describing the rows of a
-custom cost matrix as an alternative to the travel-time matrix
-computed by OSRM. Therefore, if a custom matrix is provided, the
-`location`, `start` and `end` properties become optional. Instead of
-the coordinates, row and column indications provided with the
-`*_index` keys are used during optimization.
+A `matrix` object is an array of arrays of unsigned integers
+describing the rows of a custom cost matrix as an alternative to the
+travel-time matrix computed by OSRM. Therefore, if a custom matrix is
+provided, the `location`, `start` and `end` properties become
+optional. Instead of the coordinates, row and column indications
+provided with the `*_index` keys are used during optimization.
 
 # Output
 
@@ -146,9 +146,10 @@ milliseconds.
 
 *: provided when using the `-g` flag with `OSRM`.
 
-# Example
+# Examples
 
-The file `input.json` describes a (very) small problem:
+Using the following input describes a (very) small problem where
+matrix computing rely on OSRM:
 
 ```javascript
 {
@@ -172,8 +173,7 @@ The file `input.json` describes a (very) small problem:
 }
 ```
 
-Running `vroom -i input.json -g` will provide a solution that looks
-like:
+producing a solution that looks like:
 
 ```javascript
 {
@@ -229,97 +229,61 @@ The following input makes use of the option to provide a custom matrix:
     {
       "id":0,
       "start_index":0,
-      "end_index":7
+      "end_index":3
     }
   ],
   "jobs": [
     {
-      "id":0,
+      "id":1414,
       "location_index":1
     },
     {
-      "id":1,
+      "id":1515,
       "location_index":2
-    },
-    {
-      "id":2,
-      "location_index":3
-    },
-    {
-      "id":3,
-      "location_index":4
-    },
-    {
-      "id":4,
-      "location_index":5
-    },
-    {
-      "id":5,
-      "location_index":6
     }
   ],
   "matrix": [
-    [0,2104,197,959,1975,436,418,1299],
-    [2103,0,2255,2812,1455,2539,1685,3152],
-    [197,2256,0,762,2172,633,570,1102],
-    [959,2813,762,0,2934,1395,1127,340],
-    [1975,1456,2172,2934,0,2020,2169,3274],
-    [435,2539,632,1394,2019,0,853,1734],
-    [418,1686,570,1127,2169,854,0,1467],
-    [1299,3153,1102,340,3274,1735,1467,0] 
+    [0,2104,197,1299],
+    [2103,0,2255,3152],
+    [197,2256,0,1102],
+    [1299,3153,1102,0]
   ]
 }
 ```
 
-Generating the following output:
+producing a solution that looks like:
 
 ```javascript
 {
-  "code": 0,
-  "summary": {
-    "cost": 7268,
-    "computing_times": {
-      "loading": 0,
-      "solving": 2
-    }
-  },
   "routes": [
     {
-      "vehicle": 0,
-      "cost": 7268,
       "steps": [
         {
-          "type": "start",
+          "type": "start"
         },
         {
-          "type": "job",
-          "job": 4
+          "job": 1414,
+          "type": "job"
         },
         {
-          "type": "job",
-          "job": 3
-        },
-        {
-          "type": "job",
-          "job": 0
-        },
-        {
-          "type": "job",
-          "job": 5
-        },
-        {
-          "type": "job",
-          "job": 1
-        },
-        {
-          "type": "job",
-          "job": 2
+          "job": 1515,
+          "type": "job"
         },
         {
           "type": "end"
         }
-      ]
+      ],
+      "cost": 5461,
+      "vehicle": 0
     }
-  ]
+  ],
+  "summary": {
+    "computing_times": {
+      "solving": 1,
+      "loading": 0
+    },
+    "cost": 5461
+  },
+  "code": 0
 }
 ```
