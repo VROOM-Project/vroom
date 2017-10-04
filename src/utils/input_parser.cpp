@@ -98,8 +98,8 @@ input parse(const cl_args_t& cl_args) {
         matrix_input[i][j] = json_input["matrix"][i][j].GetUint();
       }
     }
-    
-    //Identify the necessary columns/rows from the loaded matrix 
+
+    //Identify the necessary columns/rows from the loaded matrix
     std::vector<index_t> necessary_indices;
     index_t index_counter = 0;
 
@@ -168,7 +168,6 @@ input parse(const cl_args_t& cl_args) {
 
     //Extract the necessary columns/rows for the algorithm.
     input_data._matrix = matrix_input.get_sub_matrix( necessary_indices );
-  
   }
   else {
     input_data.add_vehicle(json_input["vehicles"][0]["id"].GetUint(),
@@ -194,7 +193,7 @@ input parse(const cl_args_t& cl_args) {
     }
   }
 
-  if (input_data.get_location_number() <= 1) {
+  if (input_data._locations.size() <= 1) {
     throw custom_exception("At least two locations required!");
   }
 

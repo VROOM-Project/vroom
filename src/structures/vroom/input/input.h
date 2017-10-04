@@ -37,7 +37,6 @@ private:
   std::chrono::high_resolution_clock::time_point _end_loading;
   std::chrono::high_resolution_clock::time_point _end_solving;
   std::chrono::high_resolution_clock::time_point _end_routing;
-  index_t _location_number;
   PROBLEM_T _problem_type;
   std::unique_ptr<routing_io<distance_t>> _routing_wrapper;
   const bool _geometry;
@@ -51,7 +50,7 @@ public:
   matrix<distance_t> _matrix;
   // List of locations added through add_* matching the matrix
   // ordering.
-  std::vector<location_t> _ordered_locations;
+  std::vector<location_t> _locations;
 
   input(std::unique_ptr<routing_io<distance_t>> routing_wrapper, bool geometry);
 
@@ -70,8 +69,6 @@ public:
                    const optional_coords_t& end_coords,
                    boost::optional<index_t> start_index,
                    boost::optional<index_t> end_index);
-
-  index_t get_location_number() const;
 
   // Retrieve the corresponding location from a matrix index.
   location_t get_location_at(index_t index) const;
