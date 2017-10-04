@@ -10,20 +10,33 @@ All rights reserved (see LICENSE).
 #include "tsp.h"
 #include "../../structures/vroom/input/input.h"
 
-tsp::tsp(const input& input, index_t vehicle_rank)
+tsp::tsp(const input& input,
+         std::vector<index_t> problem_indices,
+         index_t vehicle_rank)
   : vrp(input),
     _vehicle_rank(vehicle_rank),
-    _matrix(_input._matrix),      // TODO avoid this copy!
-    _symmetrized_matrix(_input._matrix.size()),
+    _tsp_index_to_global(std::move(problem_indices)),
+    _matrix(_input._matrix.get_sub_matrix(_tsp_index_to_global)),
+    _symmetrized_matrix(_matrix.size()),
     _is_symmetric(true),
     _force_start(_input._vehicles[_vehicle_rank].has_start()),
     _force_end(_input._vehicles[_vehicle_rank].has_end()) {
   if (_force_start) {
-    _start = _input._vehicles[_vehicle_rank].start.get().index;
+    // Use index in _matrix for start.
+    auto search = std::find(_tsp_index_to_global.begin(),
+                            _tsp_index_to_global.end(),
+                            _input._vehicles[_vehicle_rank].start.get().index);
+    assert(search != _tsp_index_to_global.end());
+    _start = std::distance(_tsp_index_to_global.begin(), search);
     assert(_start < _matrix.size());
   }
   if (_force_end) {
-    _end = _input._vehicles[_vehicle_rank].end.get().index;
+    // Use index in _matrix for start.
+    auto search = std::find(_tsp_index_to_global.begin(),
+                            _tsp_index_to_global.end(),
+                            _input._vehicles[_vehicle_rank].end.get().index);
+    assert(search != _tsp_index_to_global.end());
+    _end = std::distance(_tsp_index_to_global.begin(), search);
     assert(_end < _matrix.size());
   }
 
@@ -298,7 +311,7 @@ solution tsp::solve(unsigned nb_threads) const {
   if (_force_start) {
     // Add start step.
     steps.emplace_back(TYPE::START,
-                       _input.get_location_at(current_sol.front()));
+                       _input.get_location_at(_tsp_index_to_global[current_sol.front()]));
     // Remember that jobs start further away in the list.
     ++job_start;
   }
@@ -309,7 +322,7 @@ solution tsp::solve(unsigned nb_threads) const {
   }
   // Handle jobs.
   for (auto job = job_start; job != job_end; ++job) {
-    auto current_rank = _input.get_job_rank_from_index(*job);
+    auto current_rank = _input.get_job_rank_from_index(_tsp_index_to_global[*job]);
     steps.emplace_back(TYPE::JOB,
                        _input._jobs[current_rank],
                        _input._jobs[current_rank].id);
@@ -318,7 +331,7 @@ solution tsp::solve(unsigned nb_threads) const {
   if (_force_end) {
     // Add end step.
     steps.emplace_back(TYPE::END,
-                       _input.get_location_at(current_sol.back()));
+                       _input.get_location_at(_tsp_index_to_global[current_sol.back()]));
   }
 
   // Route.
