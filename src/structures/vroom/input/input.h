@@ -73,6 +73,9 @@ public:
 
   index_t get_location_number() const;
 
+  // Retrieve the corresponding location from a matrix index.
+  location_t get_location_at(index_t index) const;
+
   index_t get_job_rank_from_index(index_t index) const;
 
   PROBLEM_T get_problem_type() const;

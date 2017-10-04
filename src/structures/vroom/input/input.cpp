@@ -123,6 +123,10 @@ index_t input::get_location_number() const {
   return _location_number;
 }
 
+location_t input::get_location_at(index_t index) const {
+  return _ordered_locations[index];
+}
+
 index_t input::get_job_rank_from_index(index_t index) const {
   auto result = _index_to_job_rank.find(index);
   assert(result != _index_to_job_rank.end());

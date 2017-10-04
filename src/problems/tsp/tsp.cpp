@@ -298,7 +298,7 @@ solution tsp::solve(unsigned nb_threads) const {
   if (_force_start) {
     // Add start step.
     steps.emplace_back(TYPE::START,
-                       _input._vehicles[_vehicle_rank].start.get());
+                       _input.get_location_at(current_sol.front()));
     // Remember that jobs start further away in the list.
     ++job_start;
   }
@@ -318,7 +318,7 @@ solution tsp::solve(unsigned nb_threads) const {
   if (_force_end) {
     // Add end step.
     steps.emplace_back(TYPE::END,
-                       _input._vehicles[_vehicle_rank].end.get());
+                       _input.get_location_at(current_sol.back()));
   }
 
   // Route.
