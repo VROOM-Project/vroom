@@ -22,7 +22,7 @@ The problem description is read from standard input or from a file
 |-----------|-----------|
 | [`jobs`](#jobs) |  array of `job` objects describing the places to visit |
 | [`vehicles`](#vehicles) |  array of `vehicle` objects describing the available vehicles |
-| [`matrix`](#matrix) | (optional) two-dimensional array describing a custom matrix |
+| [[`matrix`](#matrix)] | optional two-dimensional array describing a custom matrix |
 
 **Warning**: only problems with one vehicle are supported in v1.1.0 so
 at the moment, `vehicles` should have length 1.
@@ -34,9 +34,20 @@ A `job` object has the following properties:
 | Key         | Description |
 | ----------- | ----------- |
 | `id` | an integer used as unique identifier |
-| `location` | coordinates array |
+| [`location`] | coordinates array |
+| [`location_index`] | index of relevant row and column in custom matrix |
 
-No two jobs should have the same `id`.
+If a custom matrix is provided:
+
+- `location_index` is mandatory
+- `location` is optional but can be set to retrieve coordinates in the
+  response
+
+If no custom matrix is provided:
+
+- a `table` query will be sent to OSRM
+- `location` is mandatory
+- `location_index` is irrelevant
 
 ## Vehicles
 
@@ -45,12 +56,13 @@ A `vehicle` object has the following properties:
 | Key         | Description |
 | ----------- | ----------- |
 | `id` | an integer used as unique identifier |
-| `start` | coordinates array |
-| `end` | coordinates array |
+| [`start`] | coordinates array |
+| [`start_index`] | index of relevant row and column in custom matrix |
+| [`end`] | coordinates array |
+| [`end_index`] | index of relevant row and column in custom matrix |
 
-No two vehicles should have the same `id`.
+### Notes on `vehicle` locations
 
-### Notes on `vehicle` locations:
 - key `start` and `end` are optional for a `vehicle`, as long as at
   least one of them is present
 - if `end` is omitted, the resulting route will stop at the last
@@ -59,22 +71,17 @@ No two vehicles should have the same `id`.
   visited job, whose choice is determined by the optimization process
 - to request a round trip, just specify both `start` and `end` with
   the same coordinates
-
+- depending on if a custom matrix is provided, required fields follow
+  the same logic than for `job` keys `location` and `location_index`
 
 ## Matrix
 
-A `matrix` object contains a custom distance matrix for the TSP/VRP, 
-as an alternative to the distance matrix provided by OSRM through 
-the locations. Therefore, if a custom matrix is provided, the `location`, 
-`start` and `end` properties become optional. Instead of the coordinates, 
-an index has to be provided for a row indication on the matrix:
-
-| Key         | Description |
-| ----------- | ----------- |
-| `job -> location_index` | an integer for row-location in matrix |
-| `vehicle -> start_index` | an integer for row-location in matrix |
-| `vehicle -> end_index` | an integer for row-location in matrix |
-
+A `matrix` object is an array of arrays describing the rows of a
+custom cost matrix as an alternative to the travel-time matrix
+computed by OSRM. Therefore, if a custom matrix is provided, the
+`location`, `start` and `end` properties become optional. Instead of
+the coordinates, row and column indications provided with the
+`*_index` keys are used during optimization.
 
 # Output
 
