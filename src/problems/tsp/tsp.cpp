@@ -290,8 +290,6 @@ solution tsp::solve(unsigned nb_threads) const {
     current_sol.pop_front();
   }
 
-  // current_sol;
-
   // Steps for the one route.
   std::vector<step> steps;
 

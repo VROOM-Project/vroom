@@ -15,7 +15,6 @@ All rights reserved (see LICENSE).
 input::input(std::unique_ptr<routing_io<distance_t>> routing_wrapper,
              bool geometry)
   : _start_loading(std::chrono::high_resolution_clock::now()),
-    _location_number(0),
     _problem_type(PROBLEM_T::TSP),
     _routing_wrapper(std::move(routing_wrapper)),
     _geometry(geometry) {}
@@ -23,21 +22,27 @@ input::input(std::unique_ptr<routing_io<distance_t>> routing_wrapper,
 void input::add_job(index_t id, const optional_coords_t& coords) {
   // Using current number of locations as index of this job in the
   // matrix.
+  add_job(id, coords, _locations.size());
+}
+
+void input::add_job(index_t id,
+                    const optional_coords_t& coords,
+                    index_t index) {
   if (coords == boost::none) {
-    _jobs.emplace_back(id, _location_number++);
+    _jobs.emplace_back(id, index);
   }
   else {
     _jobs.emplace_back(id,
-                       _location_number++,
-                       coords.get()[0],
-                       coords.get()[1]);
+                      index,
+                      coords.get()[0],
+                      coords.get()[1]);
   }
 
   // Remember mapping between the job index in the matrix and its rank
   // in _jobs.
-  _index_to_job_rank.insert({_location_number - 1, _jobs.size() - 1});
+  _index_to_job_rank.insert({index, _jobs.size() - 1});
 
-  _ordered_locations.push_back(_jobs.back());
+  _locations.push_back(_jobs.back());
 }
 
 void input::add_vehicle(index_t id,
@@ -45,38 +50,61 @@ void input::add_vehicle(index_t id,
                         const optional_coords_t& end_coords) {
   // Using current number of locations as index of start and end in
   // the matrix.
-  if ((!start_coords) and (!end_coords)) {
+  boost::optional<index_t> start_index;
+  if (start_coords) {
+    start_index = _locations.size();
+  }
+  boost::optional<index_t> end_index;
+  if (end_coords) {
+    end_index = (start_coords) ?
+      _locations.size() + 1:
+      _locations.size();
+  }
+
+  add_vehicle(id, start_coords, end_coords, start_index, end_index);
+}
+
+void input::add_vehicle(index_t id,
+                        const optional_coords_t& start_coords,
+                        const optional_coords_t& end_coords,
+                        boost::optional<index_t> start_index,
+                        boost::optional<index_t> end_index) {
+
+  if ((start_index == boost::none ) and (end_index == boost::none)) {
     throw custom_exception("No start or end specified for vehicle " +
                            std::to_string(id) + '.');
   }
-
-  boost::optional<location_t> start = (start_coords == boost::none) ?
+  boost::optional<location_t> start = (start_index == boost::none) ?
     boost::none:
-    boost::optional<location_t>(
-      {_location_number++, (*start_coords)[0], (*start_coords)[1]}
-      );
+    ((start_coords == boost::none) ?
+      boost::optional<location_t>(start_index.get()):
+      boost::optional<location_t>({start_index.get(), (*start_coords)[0], (*start_coords)[1]})
+    );
 
-  boost::optional<location_t> end = (end_coords == boost::none) ?
+  boost::optional<location_t> end = (end_index == boost::none) ?
     boost::none:
-    boost::optional<location_t>(
-      {_location_number++, (*end_coords)[0], (*end_coords)[1]}
-      );
+    ((end_coords == boost::none) ?
+      boost::optional<location_t>(end_index.get()):
+      boost::optional<location_t>({end_index.get(), (*end_coords)[0], (*end_coords)[1]})
+    );
 
   _vehicles.emplace_back(id, start, end);
 
   if (start_coords) {
-    _ordered_locations.push_back(_vehicles.back().start.get());
+    _locations.push_back(_vehicles.back().start.get());
   }
   if (end_coords) {
-    _ordered_locations.push_back(_vehicles.back().end.get());
+    _locations.push_back(_vehicles.back().end.get());
   }
 }
 
 void input::set_matrix() {
-  assert(_routing_wrapper);
-  BOOST_LOG_TRIVIAL(info) << "[Loading] Start matrix computing.";
-  _matrix = _routing_wrapper->get_matrix(_ordered_locations);
-
+  //Don't call osrm, if matrix is already provided.
+  if (_matrix.size() < 2) {
+    assert(_routing_wrapper);
+    BOOST_LOG_TRIVIAL(info) << "[Loading] Start matrix computing.";
+    _matrix = _routing_wrapper->get_matrix(_locations);
+  }
   // Distances on the diagonal are never used except in the minimum
   // weight perfect matching (munkres call during the TSP
   // heuristic). This makes sure no node will be matched with itself
@@ -86,12 +114,8 @@ void input::set_matrix() {
   }
 }
 
-index_t input::get_location_number() const {
-  return _location_number;
-}
-
 location_t input::get_location_at(index_t index) const {
-  return _ordered_locations[index];
+  return _locations[index];
 }
 
 index_t input::get_job_rank_from_index(index_t index) const {
