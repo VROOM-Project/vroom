@@ -14,14 +14,14 @@ All rights reserved (see LICENSE).
 #include "./summary.h"
 
 struct solution {
-  index_t code;
+  unsigned code;
   std::string error;
   std::vector<route_t> routes;
   summary_t summary;
 
-  solution(index_t code, std::string error);
+  solution(unsigned code, std::string error);
 
-  solution(index_t code, std::vector<route_t>&& routes, duration_t cost);
+  solution(unsigned code, std::vector<route_t>&& routes, duration_t cost);
 };
 
 #endif

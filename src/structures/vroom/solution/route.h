@@ -15,14 +15,14 @@ All rights reserved (see LICENSE).
 #include "./step.h"
 
 struct route_t {
-  index_t vehicle;
+  ID_t vehicle;
   std::vector<step> steps;
   duration_t cost;
   std::string geometry;
   duration_t duration;
   distance_t distance;
 
-  route_t(index_t vehicle, std::vector<step> steps, duration_t cost);
+  route_t(ID_t vehicle, std::vector<step> steps, duration_t cost);
 };
 
 #endif

@@ -14,11 +14,11 @@ All rights reserved (see LICENSE).
 #include "./location.h"
 
 struct vehicle {
-  const index_t id;
+  const ID_t id;
   boost::optional<location_t> start;
   boost::optional<location_t> end;
 
-  vehicle(index_t id,
+  vehicle(ID_t id,
           boost::optional<location_t> start,
           boost::optional<location_t> end)
     : id(id),

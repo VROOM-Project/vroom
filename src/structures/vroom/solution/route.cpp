@@ -9,7 +9,7 @@ All rights reserved (see LICENSE).
 
 #include "./route.h"
 
-route_t::route_t(index_t vehicle, std::vector<step> steps, duration_t cost)
+route_t::route_t(ID_t vehicle, std::vector<step> steps, duration_t cost)
   : vehicle(vehicle),
     steps(std::move(steps)),
     cost(cost),

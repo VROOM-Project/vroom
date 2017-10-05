@@ -54,17 +54,17 @@ public:
 
   input(std::unique_ptr<routing_io<distance_t>> routing_wrapper, bool geometry);
 
-  void add_job(index_t id, const optional_coords_t& coords);
+  void add_job(ID_t id, const optional_coords_t& coords);
 
-  void add_job(index_t id,
+  void add_job(ID_t id,
                const optional_coords_t& coords,
                index_t index);
 
-  void add_vehicle(index_t id,
+  void add_vehicle(ID_t id,
                    const optional_coords_t& start_coords,
                    const optional_coords_t& end_coords);
 
-  void add_vehicle(index_t id,
+  void add_vehicle(ID_t id,
                    const optional_coords_t& start_coords,
                    const optional_coords_t& end_coords,
                    boost::optional<index_t> start_index,

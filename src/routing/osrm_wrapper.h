@@ -34,7 +34,7 @@ protected:
                 const std::vector<unsigned>& nb_unfound_to_loc) const {
     assert(nb_unfound_from_loc.size() == nb_unfound_to_loc.size());
     unsigned max_unfound_routes_for_a_loc = 0;
-    index_t error_loc = 0;    // Initial value never actually used.
+    unsigned error_loc = 0;    // Initial value never actually used.
     std::string error_direction;
     // Finding the "worst" location for unfound routes.
     for (unsigned i = 0; i < nb_unfound_from_loc.size(); ++i) {

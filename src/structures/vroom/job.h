@@ -14,10 +14,10 @@ All rights reserved (see LICENSE).
 #include "./location.h"
 
 struct job_t : public location_t {
-  const index_t id;
+  const ID_t id;
 
   template <typename... Args>
-  job_t(index_t id, Args&&... args)
+  job_t(ID_t id, Args&&... args)
     : location_t(std::forward<Args>(args)...),
       id(id) {}
 };

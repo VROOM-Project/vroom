@@ -19,13 +19,13 @@ input::input(std::unique_ptr<routing_io<distance_t>> routing_wrapper,
     _routing_wrapper(std::move(routing_wrapper)),
     _geometry(geometry) {}
 
-void input::add_job(index_t id, const optional_coords_t& coords) {
+void input::add_job(ID_t id, const optional_coords_t& coords) {
   // Using current number of locations as index of this job in the
   // matrix.
   add_job(id, coords, _locations.size());
 }
 
-void input::add_job(index_t id,
+void input::add_job(ID_t id,
                     const optional_coords_t& coords,
                     index_t index) {
   if (coords == boost::none) {
@@ -45,7 +45,7 @@ void input::add_job(index_t id,
   _locations.push_back(_jobs.back());
 }
 
-void input::add_vehicle(index_t id,
+void input::add_vehicle(ID_t id,
                         const optional_coords_t& start_coords,
                         const optional_coords_t& end_coords) {
   // Using current number of locations as index of start and end in
@@ -64,7 +64,7 @@ void input::add_vehicle(index_t id,
   add_vehicle(id, start_coords, end_coords, start_index, end_index);
 }
 
-void input::add_vehicle(index_t id,
+void input::add_vehicle(ID_t id,
                         const optional_coords_t& start_coords,
                         const optional_coords_t& end_coords,
                         boost::optional<index_t> start_index,
