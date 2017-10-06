@@ -19,9 +19,9 @@ tsp::tsp(const input& input,
     _matrix(_input._matrix.get_sub_matrix(_tsp_index_to_global)),
     _symmetrized_matrix(_matrix.size()),
     _is_symmetric(true),
-    _force_start(_input._vehicles[_vehicle_rank].has_start()),
-    _force_end(_input._vehicles[_vehicle_rank].has_end()) {
-  if (_force_start) {
+    _has_start(_input._vehicles[_vehicle_rank].has_start()),
+    _has_end(_input._vehicles[_vehicle_rank].has_end()) {
+  if (_has_start) {
     // Use index in _matrix for start.
     auto search = std::find(_tsp_index_to_global.begin(),
                             _tsp_index_to_global.end(),
@@ -30,7 +30,7 @@ tsp::tsp(const input& input,
     _start = std::distance(_tsp_index_to_global.begin(), search);
     assert(_start < _matrix.size());
   }
-  if (_force_end) {
+  if (_has_end) {
     // Use index in _matrix for start.
     auto search = std::find(_tsp_index_to_global.begin(),
                             _tsp_index_to_global.end(),
@@ -40,34 +40,38 @@ tsp::tsp(const input& input,
     assert(_end < _matrix.size());
   }
 
-  // Dealing with open tour cases. At most one of the following
-  // occurs.
-  if (_force_start and !_force_end) {
-    // Forcing first location as start, end location decided during
-    // optimization.
-    for (index_t i = 0; i < _matrix.size(); ++i) {
-      if (i != _start) {
-        _matrix[i][_start] = 0;
+  _round_trip = _has_start and _has_end and (_start == _end);
+
+  if (!_round_trip) {
+    // Dealing with open tour cases. Exactly one of the following
+    // happens.
+    if (_has_start and !_has_end) {
+      // Forcing first location as start, end location decided during
+      // optimization.
+      for (index_t i = 0; i < _matrix.size(); ++i) {
+        if (i != _start) {
+          _matrix[i][_start] = 0;
+        }
       }
     }
-  }
-  if (!_force_start and _force_end) {
-    // Forcing last location as end, start location decided during
-    // optimization.
-    for (index_t j = 0; j < _matrix.size(); ++j) {
-      if (j != _end) {
-        _matrix[_end][j] = 0;
+    if (!_has_start and _has_end) {
+      // Forcing last location as end, start location decided during
+      // optimization.
+      for (index_t j = 0; j < _matrix.size(); ++j) {
+        if (j != _end) {
+          _matrix[_end][j] = 0;
+        }
       }
     }
-  }
-  if (_force_start and _force_end) {
-    // Forcing first location as start, last location as end to
-    // produce an open tour.
-    assert(_start != _end);
-    _matrix[_end][_start] = 0;
-    for (index_t j = 0; j < _matrix.size(); ++j) {
-      if ((j != _start) and (j != _end)) {
-        _matrix[_end][j] = INFINITE_DISTANCE;
+    if (_has_start and _has_end) {
+      // Forcing first location as start, last location as end to
+      // produce an open tour.
+      assert(_start != _end);
+      _matrix[_end][_start] = 0;
+      for (index_t j = 0; j < _matrix.size(); ++j) {
+        if ((j != _start) and (j != _end)) {
+          _matrix[_end][j] = INFINITE_DISTANCE;
+        }
       }
     }
   }
@@ -75,7 +79,7 @@ tsp::tsp(const input& input,
   // Compute symmetrized matrix and update _is_symmetric flag.
   const distance_t& (*sym_f) (const distance_t&, const distance_t&) =
     std::min<distance_t>;
-  if ((_force_start and !_force_end) or (!_force_start and _force_end)) {
+  if ((_has_start and !_has_end) or (!_has_start and _has_end)) {
     // Using symmetrization with max as when only start or only end is
     // forced, the matrix has a line or a column filled with zeros.
     sym_f = std::max<distance_t>;
@@ -189,12 +193,12 @@ solution tsp::solve(unsigned nb_threads) const {
            or (sym_or_opt_gain > 0));
 
   index_t first_loc_index;
-  if (_force_start) {
+  if (_has_start) {
     // Use start value set in constructor from vehicle input.
     first_loc_index = _start;
   }
   else {
-    assert(_force_end);
+    assert(_has_end);
     // Requiring the tour to be described from the "forced" end
     // location.
     first_loc_index = _end;
@@ -295,7 +299,7 @@ solution tsp::solve(unsigned nb_threads) const {
   }
 
   // Deal with open tour cases requiring adaptation.
-  if (!_force_start and _force_end) {
+  if (!_has_start and _has_end) {
     // The tour has been listed starting with the "forced" end. This
     // index has to be popped and put back, the next element being the
     // chosen start resulting from the optimization.
@@ -308,18 +312,27 @@ solution tsp::solve(unsigned nb_threads) const {
 
   // Handle start.
   auto job_start = current_sol.cbegin();
-  if (_force_start) {
+  if (_has_start) {
     // Add start step.
+    assert(current_sol.front() == _start);
     steps.emplace_back(TYPE::START,
-                       _input.get_location_at(_tsp_index_to_global[current_sol.front()]));
+                       _input.get_location_at(_tsp_index_to_global[_start]));
     // Remember that jobs start further away in the list.
     ++job_start;
   }
-  // Determine where to stop for last job.
+  // Determine end index and where to stop for last job.
   auto job_end = current_sol.cend();
-  if (_force_end) {
-    --job_end;
+  index_t end_index = current_sol.back();
+
+  if (_round_trip) {
+    end_index = _start;
   }
+  else {
+    if (_has_end) {
+      --job_end;
+    }
+  }
+
   // Handle jobs.
   for (auto job = job_start; job != job_end; ++job) {
     auto current_rank = _input.get_job_rank_from_index(_tsp_index_to_global[*job]);
@@ -328,10 +341,10 @@ solution tsp::solve(unsigned nb_threads) const {
                        _input._jobs[current_rank].id);
   }
   // Handle end.
-  if (_force_end) {
+  if (_has_end) {
     // Add end step.
     steps.emplace_back(TYPE::END,
-                       _input.get_location_at(_tsp_index_to_global[current_sol.back()]));
+                       _input.get_location_at(_tsp_index_to_global[end_index]));
   }
 
   // Route.

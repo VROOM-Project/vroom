@@ -30,10 +30,11 @@ private:
   matrix<distance_t> _matrix;
   matrix<distance_t> _symmetrized_matrix;
   bool _is_symmetric;
-  bool _force_start;
+  bool _has_start;
   index_t _start;
-  bool _force_end;
+  bool _has_end;
   index_t _end;
+  bool _round_trip;
 
 public:
   tsp(const input &input,
