@@ -102,6 +102,7 @@ input parse(const cl_args_t& cl_args) {
 
     // Check if vehicle has start_index or end_index.
     boost::optional<index_t> start_index;
+    optional_coords_t start;
     if (json_input["vehicles"][0].HasMember("start_index")) {
       if (!json_input["vehicles"][0]["start_index"].IsNumber()) {
         throw custom_exception("Vehicle start_index is not a number.");
@@ -110,8 +111,12 @@ input parse(const cl_args_t& cl_args) {
       if (matrix_size <= start_index.get()) {
         throw custom_exception("Vehicle start_index does not match to matrix size.");
       }
+
+      start = parse_coordinates(json_input["vehicles"][0], "start");
     }
+
     boost::optional<index_t> end_index;
+    optional_coords_t end;
     if (json_input["vehicles"][0].HasMember("end_index")) {
       if (!json_input["vehicles"][0]["end_index"].IsNumber()) {
         throw custom_exception("Vehicle end_index is not a number.");
@@ -120,13 +125,13 @@ input parse(const cl_args_t& cl_args) {
       if (matrix_size <= end_index.get()) {
         throw custom_exception("Vehicle end_index does not match to matrix size.");
       }
+
+      end= parse_coordinates(json_input["vehicles"][0], "end");
     }
     // Add vehicle to input
     input_data.add_vehicle(json_input["vehicles"][0]["id"].GetUint(),
-                           parse_coordinates(json_input["vehicles"][0],
-                                             "start"),
-                           parse_coordinates(json_input["vehicles"][0],
-                                             "end"),
+                           start,
+                           end,
                            start_index,
                            end_index);
     // Add the jobs
