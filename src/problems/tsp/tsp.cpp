@@ -21,6 +21,7 @@ tsp::tsp(const input& input,
     _is_symmetric(true),
     _has_start(_input._vehicles[_vehicle_rank].has_start()),
     _has_end(_input._vehicles[_vehicle_rank].has_end()) {
+
   if (_has_start) {
     // Use index in _matrix for start.
     auto search = std::find(_tsp_index_to_global.begin(),
@@ -315,8 +316,9 @@ solution tsp::solve(unsigned nb_threads) const {
   if (_has_start) {
     // Add start step.
     assert(current_sol.front() == _start);
-    steps.emplace_back(TYPE::START,
-                       _input.get_location_at(_tsp_index_to_global[_start]));
+    auto rank
+      = _input.get_location_rank_from_index(_tsp_index_to_global[current_sol.front()]);
+    steps.emplace_back(TYPE::START, _input._locations[rank]);
     // Remember that jobs start further away in the list.
     ++job_start;
   }
@@ -329,6 +331,7 @@ solution tsp::solve(unsigned nb_threads) const {
   }
   else {
     if (_has_end) {
+      assert(current_sol.back() == end_index);
       --job_end;
     }
   }
@@ -343,8 +346,9 @@ solution tsp::solve(unsigned nb_threads) const {
   // Handle end.
   if (_has_end) {
     // Add end step.
-    steps.emplace_back(TYPE::END,
-                       _input.get_location_at(_tsp_index_to_global[end_index]));
+    auto rank
+      = _input.get_location_rank_from_index(_tsp_index_to_global[end_index]);
+    steps.emplace_back(TYPE::END, _input._locations[rank]);
   }
 
   // Route.

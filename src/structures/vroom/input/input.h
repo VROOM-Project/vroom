@@ -42,6 +42,7 @@ private:
   const bool _geometry;
   void set_matrix();
   std::unordered_map<index_t, index_t> _index_to_job_rank;
+  std::unordered_map<index_t, index_t> _index_to_loc_rank;
   std::set<index_t> _all_indices;
   std::unique_ptr<vrp> get_problem() const;
 
@@ -71,8 +72,7 @@ public:
                    boost::optional<index_t> start_index,
                    boost::optional<index_t> end_index);
 
-  // Retrieve the corresponding location from a matrix index.
-  location_t get_location_at(index_t index) const;
+  index_t get_location_rank_from_index(index_t index) const;
 
   index_t get_job_rank_from_index(index_t index) const;
 

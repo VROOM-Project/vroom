@@ -44,6 +44,7 @@ void input::add_job(index_t id,
   _all_indices.insert(index);
 
   _locations.push_back(_jobs.back());
+  _index_to_loc_rank.insert({index, _locations.size() - 1});
 }
 
 void input::add_vehicle(index_t id,
@@ -99,11 +100,13 @@ void input::add_vehicle(index_t id,
 
   _vehicles.emplace_back(id, start, end);
 
-  if (start_coords) {
+  if (start) {
     _locations.push_back(_vehicles.back().start.get());
+    _index_to_loc_rank.insert({_vehicles.back().start.get().index , _locations.size() - 1});
   }
-  if (end_coords) {
+  if (end) {
     _locations.push_back(_vehicles.back().end.get());
+    _index_to_loc_rank.insert({_vehicles.back().end.get().index , _locations.size() - 1});
   }
 }
 
@@ -123,8 +126,10 @@ void input::set_matrix() {
   }
 }
 
-location_t input::get_location_at(index_t index) const {
-  return _locations[index];
+index_t input::get_location_rank_from_index(index_t index) const {
+  auto result = _index_to_loc_rank.find(index);
+  assert(result != _index_to_loc_rank.end());
+  return result->second;
 }
 
 index_t input::get_job_rank_from_index(index_t index) const {
