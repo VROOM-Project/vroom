@@ -104,13 +104,11 @@ input parse(const cl_args_t& cl_args) {
         matrix_input[i][j] = json_input["matrix"][i][j].GetUint();
       }
     }
-
-    //Identify the necessary columns/rows from the loaded matrix
-    std::vector<index_t> necessary_indices;
-    index_t index_counter = 0;
+    input_data._matrix = matrix_input;
 
     // Check if vehicle has start_index or end_index.
     boost::optional<index_t> start_index;
+    optional_coords_t start;
     if (json_input["vehicles"][0].HasMember("start_index")) {
       if (!json_input["vehicles"][0]["start_index"].IsUint()) {
         throw custom_exception("Invalid start_index for vehicle at 0.");
@@ -119,12 +117,12 @@ input parse(const cl_args_t& cl_args) {
       if (matrix_size <= start_index.get()) {
         throw custom_exception("start_index exceeding matrix size for vehicle at 0.");
       }
+
+      start = parse_coordinates(json_input["vehicles"][0], "start");
     }
-    if (start_index) {
-      necessary_indices.push_back( start_index.get() );
-      start_index = index_counter++;
-    }
+
     boost::optional<index_t> end_index;
+    optional_coords_t end;
     if (json_input["vehicles"][0].HasMember("end_index")) {
       if (!json_input["vehicles"][0]["end_index"].IsUint()) {
         throw custom_exception("Invalid end_index for vehicle at 0.");
@@ -133,17 +131,13 @@ input parse(const cl_args_t& cl_args) {
       if (matrix_size <= end_index.get()) {
         throw custom_exception("end_index exceeding matrix size for vehicle at 0.");
       }
-    }
-    if (end_index) {
-      necessary_indices.push_back( end_index.get() );
-      end_index = index_counter++;
+
+      end= parse_coordinates(json_input["vehicles"][0], "end");
     }
     // Add vehicle to input
-    input_data.add_vehicle(json_input["vehicles"][0]["id"].GetUint64(),
-                           parse_coordinates(json_input["vehicles"][0],
-                                             "start"),
-                           parse_coordinates(json_input["vehicles"][0],
-                                             "end"),
+    input_data.add_vehicle(json_input["vehicles"][0]["id"].GetUint(),
+                           start,
+                           end,
                            start_index,
                            end_index);
     // Add the jobs
@@ -162,14 +156,10 @@ input parse(const cl_args_t& cl_args) {
       if (matrix_size <= json_input["jobs"][i]["location_index"].GetUint()) {
         throw custom_exception("location_index exceeding matrix size for job at " + std::to_string(i) + ".");
       }
-      necessary_indices.push_back( json_input["jobs"][i]["location_index"].GetUint() );
       input_data.add_job(json_input["jobs"][i]["id"].GetUint64(),
                          parse_coordinates(json_input["jobs"][i],"location"),
-                         index_counter++);
+                         json_input["jobs"][i]["location_index"].GetUint());
     }
-
-    //Extract the necessary columns/rows for the algorithm.
-    input_data._matrix = matrix_input.get_sub_matrix( necessary_indices );
   }
   else {
     input_data.add_vehicle(json_input["vehicles"][0]["id"].GetUint(),
