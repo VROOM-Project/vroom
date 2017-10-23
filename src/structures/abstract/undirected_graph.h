@@ -18,8 +18,7 @@ All rights reserved (see LICENSE).
 #include "edge.h"
 #include "matrix.h"
 
-template <class T>
-class undirected_graph {
+template <class T> class undirected_graph {
 
 private:
   unsigned _size;

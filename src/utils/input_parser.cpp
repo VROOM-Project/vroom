@@ -13,15 +13,13 @@ All rights reserved (see LICENSE).
 inline optional_coords_t parse_coordinates(const rapidjson::Value& object,
                                            const char* key) {
   if (object.HasMember(key) and object[key].IsArray()) {
-    if ((object[key].Size() < 2)
-        or !object[key][0].IsNumber()
-        or !object[key][1].IsNumber()) {
+    if ((object[key].Size() < 2) or !object[key][0].IsNumber() or
+        !object[key][1].IsNumber()) {
       throw custom_exception("Invalid " + std::string(key) + " array.");
     }
-    return optional_coords_t({object[key][0].GetDouble(),
-          object[key][1].GetDouble()});
-  }
-  else {
+    return optional_coords_t(
+      {object[key][0].GetDouble(), object[key][1].GetDouble()});
+  } else {
     return boost::none;
   }
 }
@@ -33,12 +31,10 @@ input parse(const cl_args_t& cl_args) {
   std::unique_ptr<routing_io<distance_t>> routing_wrapper;
   if (!cl_args.use_libosrm) {
     // Use osrm-routed.
-    routing_wrapper =
-      std::make_unique<routed_wrapper>(cl_args.osrm_address,
-                                       cl_args.osrm_port,
-                                       cl_args.osrm_profile);
-  }
-  else {
+    routing_wrapper = std::make_unique<routed_wrapper>(cl_args.osrm_address,
+                                                       cl_args.osrm_port,
+                                                       cl_args.osrm_profile);
+  } else {
 #if LIBOSRM
     // Use libosrm.
     if (cl_args.osrm_profile.empty()) {
@@ -69,14 +65,13 @@ input parse(const cl_args_t& cl_args) {
     throw custom_exception("Invalid jobs.");
   }
 
-  if (!json_input.HasMember("vehicles")
-     or !json_input["vehicles"].IsArray()
-     or json_input["vehicles"].Empty()) {
+  if (!json_input.HasMember("vehicles") or !json_input["vehicles"].IsArray() or
+      json_input["vehicles"].Empty()) {
     throw custom_exception("Invalid vehicles.");
   }
-  if (!json_input["vehicles"][0].IsObject()
-      or !json_input["vehicles"][0].HasMember("id")
-      or !json_input["vehicles"][0]["id"].IsUint64()) {
+  if (!json_input["vehicles"][0].IsObject() or
+      !json_input["vehicles"][0].HasMember("id") or
+      !json_input["vehicles"][0]["id"].IsUint64()) {
     throw custom_exception("Invalid vehicle at 0.");
   }
   if (json_input["vehicles"].Size() > 1) {
@@ -93,13 +88,15 @@ input parse(const cl_args_t& cl_args) {
     rapidjson::SizeType matrix_size = json_input["matrix"].Size();
     matrix<distance_t> matrix_input(matrix_size);
     for (rapidjson::SizeType i = 0; i < matrix_size; ++i) {
-      if (!json_input["matrix"][i].IsArray()
-          or (json_input["matrix"][i].Size() != matrix_size)) {
-        throw custom_exception("Invalid matrix line " + std::to_string(i) + ".");
+      if (!json_input["matrix"][i].IsArray() or
+          (json_input["matrix"][i].Size() != matrix_size)) {
+        throw custom_exception("Invalid matrix line " + std::to_string(i) +
+                               ".");
       }
       for (rapidjson::SizeType j = 0; j < matrix_size; ++j) {
         if (!json_input["matrix"][i][j].IsUint()) {
-          throw custom_exception("Invalid matrix entry (" + std::to_string(i) + "," + std::to_string(j) + ").");
+          throw custom_exception("Invalid matrix entry (" + std::to_string(i) +
+                                 "," + std::to_string(j) + ").");
         }
         matrix_input[i][j] = json_input["matrix"][i][j].GetUint();
       }
@@ -115,7 +112,8 @@ input parse(const cl_args_t& cl_args) {
       }
       start_index = json_input["vehicles"][0]["start_index"].GetUint();
       if (matrix_size <= start_index.get()) {
-        throw custom_exception("start_index exceeding matrix size for vehicle at 0.");
+        throw custom_exception(
+          "start_index exceeding matrix size for vehicle at 0.");
       }
 
       start = parse_coordinates(json_input["vehicles"][0], "start");
@@ -129,10 +127,11 @@ input parse(const cl_args_t& cl_args) {
       }
       end_index = json_input["vehicles"][0]["end_index"].GetUint();
       if (matrix_size <= end_index.get()) {
-        throw custom_exception("end_index exceeding matrix size for vehicle at 0.");
+        throw custom_exception(
+          "end_index exceeding matrix size for vehicle at 0.");
       }
 
-      end= parse_coordinates(json_input["vehicles"][0], "end");
+      end = parse_coordinates(json_input["vehicles"][0], "end");
     }
     // Add vehicle to input
     input_data.add_vehicle(json_input["vehicles"][0]["id"].GetUint(),
@@ -145,41 +144,45 @@ input parse(const cl_args_t& cl_args) {
       if (!json_input["jobs"][i].IsObject()) {
         throw custom_exception("Invalid job.");
       }
-      if (!json_input["jobs"][i].HasMember("id")
-          or !json_input["jobs"][i]["id"].IsUint64()) {
-        throw custom_exception("Invalid id for job at " + std::to_string(i) + ".");
+      if (!json_input["jobs"][i].HasMember("id") or
+          !json_input["jobs"][i]["id"].IsUint64()) {
+        throw custom_exception("Invalid id for job at " + std::to_string(i) +
+                               ".");
       }
-      if (!json_input["jobs"][i].HasMember("location_index")
-          or !json_input["jobs"][i]["location_index"].IsUint()) {
-        throw custom_exception("Invalid location_index for job at " + std::to_string(i) + ".");
+      if (!json_input["jobs"][i].HasMember("location_index") or
+          !json_input["jobs"][i]["location_index"].IsUint()) {
+        throw custom_exception("Invalid location_index for job at " +
+                               std::to_string(i) + ".");
       }
       if (matrix_size <= json_input["jobs"][i]["location_index"].GetUint()) {
-        throw custom_exception("location_index exceeding matrix size for job at " + std::to_string(i) + ".");
+        throw custom_exception(
+          "location_index exceeding matrix size for job at " +
+          std::to_string(i) + ".");
       }
       input_data.add_job(json_input["jobs"][i]["id"].GetUint64(),
-                         parse_coordinates(json_input["jobs"][i],"location"),
+                         parse_coordinates(json_input["jobs"][i], "location"),
                          json_input["jobs"][i]["location_index"].GetUint());
     }
-  }
-  else {
+  } else {
     input_data.add_vehicle(json_input["vehicles"][0]["id"].GetUint(),
                            parse_coordinates(json_input["vehicles"][0],
                                              "start"),
-                           parse_coordinates(json_input["vehicles"][0],
-                                             "end"));
+                           parse_coordinates(json_input["vehicles"][0], "end"));
 
     // Getting jobs.
     for (rapidjson::SizeType i = 0; i < json_input["jobs"].Size(); ++i) {
       if (!json_input["jobs"][i].IsObject()) {
         throw custom_exception("Invalid job.");
       }
-      if (!json_input["jobs"][i].HasMember("location")
-          or !json_input["jobs"][i]["location"].IsArray()) {
-        throw custom_exception("Invalid location for job at " + std::to_string(i) + ".");
+      if (!json_input["jobs"][i].HasMember("location") or
+          !json_input["jobs"][i]["location"].IsArray()) {
+        throw custom_exception("Invalid location for job at " +
+                               std::to_string(i) + ".");
       }
-      if (!json_input["jobs"][i].HasMember("id")
-          or !json_input["jobs"][i]["id"].IsUint64()) {
-        throw custom_exception("Invalid id for job at " + std::to_string(i) + ".");
+      if (!json_input["jobs"][i].HasMember("id") or
+          !json_input["jobs"][i]["id"].IsUint64()) {
+        throw custom_exception("Invalid id for job at " + std::to_string(i) +
+                               ".");
       }
 
       input_data.add_job(json_input["jobs"][i]["id"].GetUint64(),

@@ -9,15 +9,14 @@ All rights reserved (see LICENSE).
 
 #include "matrix.h"
 
-template <class T>
-line<T>::line(std::size_t n):
-  parent(n) {}
+template <class T> line<T>::line(std::size_t n) : parent(n) {
+}
 
-template <class T>
-matrix<T>::matrix(std::size_t n) : parent(n, line<T>(n)) {}
+template <class T> matrix<T>::matrix(std::size_t n) : parent(n, line<T>(n)) {
+}
 
-template <class T>
-matrix<T>::matrix() : matrix(0) {}
+template <class T> matrix<T>::matrix() : matrix(0) {
+}
 
 template <class T>
 matrix<T> matrix<T>::get_sub_matrix(const std::vector<index_t>& indices) const {

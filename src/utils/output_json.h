@@ -23,7 +23,6 @@ All rights reserved (see LICENSE).
 #include "../structures/vroom/solution/solution.h"
 #include "./version.h"
 
-
 rapidjson::Document to_json(const solution& sol, bool geometry);
 
 rapidjson::Value to_json(const summary_t& summary,

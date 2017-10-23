@@ -58,9 +58,7 @@ public:
 
   void add_job(ID_t id, const optional_coords_t& coords);
 
-  void add_job(ID_t id,
-               const optional_coords_t& coords,
-               index_t index);
+  void add_job(ID_t id, const optional_coords_t& coords, index_t index);
 
   void add_vehicle(ID_t id,
                    const optional_coords_t& start_coords,

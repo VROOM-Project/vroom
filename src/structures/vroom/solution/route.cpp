@@ -14,5 +14,5 @@ route_t::route_t(ID_t vehicle, std::vector<step> steps, duration_t cost)
     steps(std::move(steps)),
     cost(cost),
     duration(0),
-    distance(0) {}
-
+    distance(0) {
+}

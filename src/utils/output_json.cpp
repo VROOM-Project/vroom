@@ -18,8 +18,7 @@ rapidjson::Document to_json(const solution& sol, bool geometry) {
   if (sol.code != 0) {
     json_output.AddMember("error", rapidjson::Value(), allocator);
     json_output["error"].SetString(sol.error.c_str(), sol.error.size());
-  }
-  else {
+  } else {
     json_output.AddMember("summary",
                           to_json(sol.summary, geometry, allocator),
                           allocator);
@@ -48,9 +47,7 @@ rapidjson::Value to_json(const summary_t& summary,
   }
 
   json_summary.AddMember("computing_times",
-                         to_json(summary.computing_times,
-                                 geometry,
-                                 allocator),
+                         to_json(summary.computing_times, geometry, allocator),
                          allocator);
 
   return json_summary;
@@ -146,8 +143,7 @@ void write_to_json(const solution& sol,
   // Set output.
   auto start_output = std::chrono::high_resolution_clock::now();
   std::string out = output_file.empty() ? "standard output" : output_file;
-  BOOST_LOG_TRIVIAL(info) << "[Output] Write solution to "
-                          << out << ".";
+  BOOST_LOG_TRIVIAL(info) << "[Output] Write solution to " << out << ".";
 
   auto json_output = to_json(sol, geometry);
 
@@ -160,18 +156,17 @@ void write_to_json(const solution& sol,
   if (output_file.empty()) {
     // Log to standard output.
     std::cout << s.GetString() << std::endl;
-  }
-  else {
+  } else {
     // Log to file.
     std::ofstream out_stream(output_file, std::ofstream::out);
     out_stream << s.GetString();
     out_stream.close();
   }
   auto end_output = std::chrono::high_resolution_clock::now();
-  auto output_duration =
-    std::chrono::duration_cast<std::chrono::milliseconds>
-    (end_output - start_output).count();
+  auto output_duration = std::chrono::duration_cast<std::chrono::milliseconds>(
+                           end_output - start_output)
+                           .count();
 
-  BOOST_LOG_TRIVIAL(info) << "[Output] Done, took "
-                          << output_duration  << " ms.";
+  BOOST_LOG_TRIVIAL(info) << "[Output] Done, took " << output_duration
+                          << " ms.";
 }

@@ -40,8 +40,9 @@ void display_usage() {
   // effect for now.
 
   usage += "\t-g,\t\t get detailed route geometry for the solution\n";
-  usage += "\t-i FILE,\t read input from FILE rather than from\n\t\t\t "
-           "command-line\n";
+  usage +=
+    "\t-i FILE,\t read input from FILE rather than from\n\t\t\t "
+    "command-line\n";
   usage += "\t-l,\t\t use libosrm rather than osrm-routed\n";
   usage += "\t-o OUTPUT,\t output file name\n";
   usage += "\t-t THREADS,\t number of threads to use\n";
@@ -110,7 +111,7 @@ int main(int argc, char** argv) {
     // Needs to be done after previous switch to make sure the
     // appropriate output file is set.
     cl_args.nb_threads = std::stoul(nb_threads_arg);
-  } catch (const std::exception &e) {
+  } catch (const std::exception& e) {
     std::string message = "Wrong value for number of threads.";
     std::cerr << "[Error] " << message << std::endl;
     write_to_json({1, message}, false, cl_args.output_file);
@@ -124,8 +125,7 @@ int main(int argc, char** argv) {
       display_usage();
     }
     cl_args.input = argv[optind];
-  }
-  else {
+  } else {
     // Getting input from provided file.
     std::ifstream ifs(cl_args.input_file);
     std::stringstream buffer;
@@ -145,14 +145,13 @@ int main(int argc, char** argv) {
 
     // Write solution.
     write_to_json(sol, cl_args.geometry, cl_args.output_file);
-  }
-  catch (const custom_exception &e) {
+  } catch (const custom_exception& e) {
     std::cerr << "[Error] " << e.get_message() << std::endl;
     write_to_json({1, e.get_message()}, false, cl_args.output_file);
     exit(1);
   }
 #if LIBOSRM
-  catch (const std::exception &e) {
+  catch (const std::exception& e) {
     // Should only occur when trying to use libosrm without running
     // osrm-datastore. It would be good to be able to catch an
     // osrm::util::exception for this. See OSRM issue #2813.
