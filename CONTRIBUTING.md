@@ -24,9 +24,7 @@ with the scope or aim of the project.
 
 ## Coding conventions
 
-No automatic formatting tool is used so far, so please refer to the
-current code-base to get a grasp of the implicit coding standard. In
-particular:
-
-* Try to always keep line length to less than 80 chars.
-* Please add comments to provide relevant context information.
+To ensure a consistent formatting of the code-base, please run
+`./scripts/format.sh` prior to submitting a PR (or run manually
+`clang-format-3.8` using the provided `.clang-format` configuration
+file).

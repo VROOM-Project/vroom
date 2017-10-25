@@ -17,9 +17,7 @@ std::list<index_t> christofides(const matrix<distance_t>& sym_matrix) {
   // Compute symmetric graph from the matrix.
   auto sym_graph = undirected_graph<distance_t>(sym_matrix);
 
-  BOOST_LOG_TRIVIAL(trace) << "* Graph has "
-                           << sym_graph.size()
-                           << " nodes.";
+  BOOST_LOG_TRIVIAL(trace) << "* Graph has " << sym_graph.size() << " nodes.";
 
   // Work on a minimum spanning tree seen as a graph.
   auto mst_graph = minimum_spanning_tree(sym_graph);
@@ -36,9 +34,9 @@ std::list<index_t> christofides(const matrix<distance_t>& sym_matrix) {
       mst_odd_vertices.push_back(adjacency.first);
     }
   }
-  BOOST_LOG_TRIVIAL(trace) << "* "
-                           << mst_odd_vertices.size()
-                           << " nodes with odd degree in the minimum spanning tree.";
+  BOOST_LOG_TRIVIAL(trace)
+    << "* " << mst_odd_vertices.size()
+    << " nodes with odd degree in the minimum spanning tree.";
 
   // Getting corresponding matrix for the generated sub-graph.
   matrix<distance_t> sub_matrix = sym_matrix.get_sub_matrix(mst_odd_vertices);
@@ -59,15 +57,13 @@ std::list<index_t> christofides(const matrix<distance_t>& sym_matrix) {
       mwpm_final.emplace(std::min(edge.first, edge.second),
                          std::max(edge.first, edge.second));
       ++total_ok;
-    }
-    else {
+    } else {
       wrong_vertices.push_back(edge.first);
     }
   }
 
   if (!wrong_vertices.empty()) {
-    BOOST_LOG_TRIVIAL(trace) << "* Munkres: "
-                             << wrong_vertices.size()
+    BOOST_LOG_TRIVIAL(trace) << "* Munkres: " << wrong_vertices.size()
                              << " useless nodes for symmetry.";
 
     std::unordered_map<index_t, index_t> remaining_greedy_mwpm =
@@ -84,8 +80,7 @@ std::list<index_t> christofides(const matrix<distance_t>& sym_matrix) {
   }
 
   // Building eulerian graph.
-  std::vector<edge<distance_t>> eulerian_graph_edges =
-    mst_graph.get_edges();
+  std::vector<edge<distance_t>> eulerian_graph_edges = mst_graph.get_edges();
 
   // Adding edges from minimum weight perfect matching (with the
   // original vertices index). Edges appear twice in matching so we
@@ -97,8 +92,7 @@ std::list<index_t> christofides(const matrix<distance_t>& sym_matrix) {
     if (already_added.find(first_index) == already_added.end()) {
       eulerian_graph_edges.emplace_back(first_index,
                                         second_index,
-                                        sym_matrix[first_index][second_index]
-                                        );
+                                        sym_matrix[first_index][second_index]);
       already_added.insert(second_index);
     }
   }
@@ -119,13 +113,12 @@ std::list<index_t> christofides(const matrix<distance_t>& sym_matrix) {
   bool complete_tour;
 
   do {
-    complete_tour = true;       // presumed complete
+    complete_tour = true; // presumed complete
     std::list<index_t>::iterator new_tour_start;
     // Finding first element of eulerian_path that still has an
     // adjacent edge (if any).
-    for (auto vertex = eulerian_path.begin();
-        vertex != eulerian_path.end();
-        ++vertex) {
+    for (auto vertex = eulerian_path.begin(); vertex != eulerian_path.end();
+         ++vertex) {
       if (eulerian_adjacency_list[*vertex].size() > 0) {
         new_tour_start = vertex;
         complete_tour = false;
@@ -146,8 +139,8 @@ std::list<index_t> christofides(const matrix<distance_t>& sym_matrix) {
         next_vertex = eulerian_adjacency_list[current_vertex].front();
         eulerian_adjacency_list[current_vertex].pop_front();
         for (auto vertex = eulerian_adjacency_list[next_vertex].begin();
-            vertex != eulerian_adjacency_list[next_vertex].end();
-            ++vertex) {
+             vertex != eulerian_adjacency_list[next_vertex].end();
+             ++vertex) {
           if (*vertex == current_vertex) {
             eulerian_adjacency_list[next_vertex].erase(vertex);
             break;

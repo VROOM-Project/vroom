@@ -37,7 +37,7 @@ private:
   bool _round_trip;
 
 public:
-  tsp(const input &input,
+  tsp(const input& input,
       std::vector<index_t> problem_indices,
       index_t vehicle_rank);
 

@@ -56,8 +56,8 @@ minimum_weight_perfect_matching(const matrix<T>& m) {
         alternating_tree.emplace(y, unmatched_x);
       }
       slack.emplace(y,
-                    m[unmatched_x][y] - labeling_x.at(unmatched_x) - labeling_y.at(y)
-                    );
+                    m[unmatched_x][y] - labeling_x.at(unmatched_x) -
+                      labeling_y.at(y));
     }
 
     bool augmented_path = false;
@@ -106,8 +106,9 @@ minimum_weight_perfect_matching(const matrix<T>& m) {
       }
 
       // Step 3.
-      index_t chosen_y;         // First y in equality neighbors not
-                                // in T_set.
+
+      // First y in equality neighbors not in T_set.
+      index_t chosen_y;
       for (auto const& edge : alternating_tree) {
         if (T_set.find(edge.first) == T_set.end()) {
           // MUST happen before endge reaches the end of
@@ -135,8 +136,7 @@ minimum_weight_perfect_matching(const matrix<T>& m) {
             slack.at(y) = new_value;
           }
         }
-      }
-      else {
+      } else {
         // Find larger matching using M-alternating path. The path is
         // described at each step by:
         //
@@ -194,9 +194,8 @@ greedy_symmetric_approx_mwpm(const matrix<T>& m) {
     index_t second_chosen_index;
     std::set<index_t>::iterator chosen_i;
     std::set<index_t>::iterator chosen_j;
-    for (auto i = remaining_indices.begin();
-        i != remaining_indices.end();
-        ++i) {
+    for (auto i = remaining_indices.begin(); i != remaining_indices.end();
+         ++i) {
       auto j = i;
       ++j;
       for (; j != remaining_indices.end(); ++j) {

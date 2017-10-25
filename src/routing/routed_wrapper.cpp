@@ -12,9 +12,8 @@ All rights reserved (see LICENSE).
 routed_wrapper::routed_wrapper(const std::string& address,
                                const std::string& port,
                                const std::string& osrm_profile)
-  : osrm_wrapper(osrm_profile),
-    _address(address),
-    _port(port) {}
+  : osrm_wrapper(osrm_profile), _address(address), _port(port) {
+}
 
 std::string
 routed_wrapper::build_query(const std::vector<location_t>& locations,
@@ -28,9 +27,9 @@ routed_wrapper::build_query(const std::vector<location_t>& locations,
   // Adding locations.
   for (auto const& location : locations) {
     query += std::to_string(location.lon.get()) + "," +
-      std::to_string(location.lat.get()) + ";";
+             std::to_string(location.lat.get()) + ";";
   }
-  query.pop_back();             // Remove trailing ';'.
+  query.pop_back(); // Remove trailing ';'.
 
   if (!extra_args.empty()) {
     query += "?" + extra_args;
@@ -66,17 +65,15 @@ std::string routed_wrapper::send_then_receive(std::string query) const {
       if (error == boost::asio::error::eof) {
         // Connection closed cleanly.
         break;
-      }
-      else {
+      } else {
         if (error) {
           throw boost::system::system_error(error);
         }
       }
     }
+  } catch (boost::system::system_error& e) {
+    throw custom_exception("Failure while connecting to the OSRM server.");
   }
-  catch (boost::system::system_error& e) {
-      throw custom_exception("Failure while connecting to the OSRM server.");
-    }
   return response;
 }
 
@@ -119,8 +116,7 @@ routed_wrapper::get_matrix(const std::vector<location_t>& locs) const {
         // and j.
         ++nb_unfound_from_loc[i];
         ++nb_unfound_to_loc[j];
-      }
-      else {
+      } else {
         m[i][j] = round_to_distance(line[j].GetDouble());
       }
     }

@@ -14,8 +14,7 @@ All rights reserved (see LICENSE).
 
 #include "../typedefs.h"
 
-template <class T>
-class edge {
+template <class T> class edge {
 
 private:
   index_t _first_vertex;

@@ -26,7 +26,8 @@ protected:
     return static_cast<distance_t>(value + 0.5);
   }
 
-  osrm_wrapper(const std::string& osrm_profile) : _osrm_profile(osrm_profile) {}
+  osrm_wrapper(const std::string& osrm_profile) : _osrm_profile(osrm_profile) {
+  }
 
   inline void
   check_unfound(const std::vector<location_t>& locs,
@@ -34,7 +35,7 @@ protected:
                 const std::vector<unsigned>& nb_unfound_to_loc) const {
     assert(nb_unfound_from_loc.size() == nb_unfound_to_loc.size());
     unsigned max_unfound_routes_for_a_loc = 0;
-    unsigned error_loc = 0;    // Initial value never actually used.
+    unsigned error_loc = 0; // Initial value never actually used.
     std::string error_direction;
     // Finding the "worst" location for unfound routes.
     for (unsigned i = 0; i < nb_unfound_from_loc.size(); ++i) {
@@ -52,9 +53,8 @@ protected:
     if (max_unfound_routes_for_a_loc > 0) {
       std::string error_msg = "OSRM has unfound route(s) ";
       error_msg += error_direction;
-      error_msg += "location [" +
-        std::to_string(locs[error_loc].lon.get()) + ";" +
-        std::to_string(locs[error_loc].lat.get()) + "]";
+      error_msg += "location [" + std::to_string(locs[error_loc].lon.get()) +
+                   ";" + std::to_string(locs[error_loc].lat.get()) + "]";
 
       throw custom_exception(error_msg);
     }

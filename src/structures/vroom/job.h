@@ -18,8 +18,8 @@ struct job_t : public location_t {
 
   template <typename... Args>
   job_t(ID_t id, Args&&... args)
-    : location_t(std::forward<Args>(args)...),
-      id(id) {}
+    : location_t(std::forward<Args>(args)...), id(id) {
+  }
 };
 
 #endif

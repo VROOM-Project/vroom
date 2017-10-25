@@ -15,9 +15,9 @@ undirected_graph<T> minimum_spanning_tree(const undirected_graph<T>& graph) {
   std::vector<edge<T>> edges = graph.get_edges();
 
   // First sorting edges by weight.
-  std::sort(edges.begin(), edges.end(), [](const auto &a, const auto &b) {
-      return a.get_weight() < b.get_weight();
-    });
+  std::sort(edges.begin(), edges.end(), [](const auto& a, const auto& b) {
+    return a.get_weight() < b.get_weight();
+  });
 
   // Storing the edges of the minimum spanning tree.
   std::vector<edge<T>> mst;

@@ -9,8 +9,8 @@ All rights reserved (see LICENSE).
 
 #include "undirected_graph.h"
 
-template <class T>
-undirected_graph<T>::undirected_graph() {}
+template <class T> undirected_graph<T>::undirected_graph() {
+}
 
 template <class T>
 undirected_graph<T>::undirected_graph(const matrix<T>& m) : _size(m.size()) {
@@ -40,13 +40,11 @@ undirected_graph<T>::undirected_graph(std::vector<edge<T>> edges)
   _size = _adjacency_list.size();
 }
 
-template <class T>
-std::size_t undirected_graph<T>::size() const {
+template <class T> std::size_t undirected_graph<T>::size() const {
   return _size;
 }
 
-template <class T>
-std::vector<edge<T>> undirected_graph<T>::get_edges() const {
+template <class T> std::vector<edge<T>> undirected_graph<T>::get_edges() const {
   return _edges;
 }
 

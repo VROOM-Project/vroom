@@ -21,9 +21,8 @@ struct vehicle {
   vehicle(ID_t id,
           boost::optional<location_t> start,
           boost::optional<location_t> end)
-    : id(id),
-      start(start),
-      end(end) {}
+    : id(id), start(start), end(end) {
+  }
 
   bool has_start() const {
     return start != boost::none;

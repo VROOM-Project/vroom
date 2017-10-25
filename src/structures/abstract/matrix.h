@@ -14,8 +14,7 @@ All rights reserved (see LICENSE).
 
 #include "../typedefs.h"
 
-template <class T>
-class line : private std::vector<T> {
+template <class T> class line : private std::vector<T> {
 
   using parent = std::vector<T>;
 
@@ -26,8 +25,7 @@ public:
   line(std::size_t n);
 };
 
-template <class T>
-class matrix : private std::vector<line<T>> {
+template <class T> class matrix : private std::vector<line<T>> {
 
   using parent = std::vector<line<T>>;
 

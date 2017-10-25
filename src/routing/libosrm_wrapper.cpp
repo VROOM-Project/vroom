@@ -10,33 +10,31 @@ All rights reserved (see LICENSE).
 #include "./libosrm_wrapper.h"
 
 libosrm_wrapper::libosrm_wrapper(const std::string& osrm_profile)
-  : osrm_wrapper(osrm_profile),
-    _config(),
-    _osrm(_config) {}
+  : osrm_wrapper(osrm_profile), _config(), _osrm(_config) {
+}
 
 matrix<distance_t>
 libosrm_wrapper::get_matrix(const std::vector<location_t>& locs) const {
   osrm::TableParameters params;
   for (auto const& location : locs) {
     assert(location.has_coordinates());
-    params.coordinates.emplace_back(osrm::util::FloatLongitude({location.lon.get()}),
-                                    osrm::util::FloatLatitude({location.lat.get()}));
+    params.coordinates
+      .emplace_back(osrm::util::FloatLongitude({location.lon.get()}),
+                    osrm::util::FloatLatitude({location.lat.get()}));
   }
 
   osrm::json::Object result;
   osrm::Status status;
   try {
     status = _osrm.Table(params, result);
-  }
-  catch(const std::exception &e) {
+  } catch (const std::exception& e) {
     throw custom_exception(e.what());
   }
 
   if (status == osrm::Status::Error) {
-    throw custom_exception("libOSRM: " +
-                           result.values["code"].get<osrm::json::String>().value
-                           + ": " +
-                           result.values["message"].get<osrm::json::String>().value);
+    throw custom_exception(
+      "libOSRM: " + result.values["code"].get<osrm::json::String>().value +
+      ": " + result.values["message"].get<osrm::json::String>().value);
   }
 
   auto& table = result.values["durations"].get<osrm::json::Array>();
@@ -64,8 +62,7 @@ libosrm_wrapper::get_matrix(const std::vector<location_t>& locs) const {
         // and j.
         ++nb_unfound_from_loc[i];
         ++nb_unfound_to_loc[j];
-      }
-      else {
+      } else {
         m[i][j] = round_to_distance(el.get<osrm::json::Number>().value);
       }
     }
@@ -88,24 +85,23 @@ void libosrm_wrapper::add_route_geometry(route_t& rte) const {
 
   // Ordering locations for the given steps.
   for (auto& step : rte.steps) {
-    params.coordinates.emplace_back(osrm::util::FloatLongitude({step.location.lon.get()}),
-                                    osrm::util::FloatLatitude({step.location.lat.get()}));
+    params.coordinates
+      .emplace_back(osrm::util::FloatLongitude({step.location.lon.get()}),
+                    osrm::util::FloatLatitude({step.location.lat.get()}));
   }
 
   osrm::json::Object result;
   osrm::Status status;
   try {
     status = _osrm.Route(params, result);
-  }
-  catch(const std::exception &e) {
+  } catch (const std::exception& e) {
     throw custom_exception(e.what());
   }
 
   if (status == osrm::Status::Error) {
-    throw custom_exception("libOSRM: " +
-                           result.values["code"].get<osrm::json::String>().value
-                           + ": " +
-                           result.values["message"].get<osrm::json::String>().value);
+    throw custom_exception(
+      "libOSRM: " + result.values["code"].get<osrm::json::String>().value +
+      ": " + result.values["message"].get<osrm::json::String>().value);
   }
 
   auto& result_routes = result.values["routes"].get<osrm::json::Array>();

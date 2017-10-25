@@ -30,7 +30,7 @@ using optional_coords_t = boost::optional<std::array<coordinate_t, 2>>;
 constexpr distance_t INFINITE_DISTANCE =
   3 * (std::numeric_limits<distance_t>::max() / 4);
 
-struct cl_args_t{
+struct cl_args_t {
   // Listing command-line options.
   std::string osrm_address;                      // -a
   bool geometry;                                 // -g
@@ -50,7 +50,8 @@ struct cl_args_t{
       use_libosrm(false),
       log_level(boost::log::trivial::error),
       nb_threads(2),
-      osrm_profile("car") {}
+      osrm_profile("car") {
+  }
 };
 
 // Problem types.
