@@ -104,6 +104,50 @@ void input::add_vehicle(ID_t id,
   }
 }
 
+inline cost_t add_without_overflow(cost_t a, cost_t b) {
+  if (a > std::numeric_limits<cost_t>::max() - b) {
+    throw custom_exception(
+      "Too high cost values, stopping to avoid overflowing.");
+  }
+  return a + b;
+}
+
+void input::check_cost_bound() {
+  // Check that we don't have any overflow while computing an upper
+  // bound for solution cost.
+
+  cost_t jobs_departure_bound = 0;
+  cost_t jobs_arrival_bound = 0;
+  for (const auto& j : _jobs) {
+    jobs_departure_bound =
+      add_without_overflow(jobs_departure_bound, _max_cost_per_line[j.index]);
+    jobs_arrival_bound =
+      add_without_overflow(jobs_arrival_bound, _max_cost_per_column[j.index]);
+  }
+
+  cost_t jobs_bound = std::max(jobs_departure_bound, jobs_arrival_bound);
+
+  cost_t start_bound = 0;
+  cost_t end_bound = 0;
+  for (const auto& v : _vehicles) {
+    if (v.has_start()) {
+      start_bound =
+        add_without_overflow(start_bound,
+                             _max_cost_per_line[v.start.get().index]);
+    }
+    if (v.has_end()) {
+      end_bound = add_without_overflow(end_bound,
+                                       _max_cost_per_column[v.end.get().index]);
+    }
+  }
+
+  cost_t bound = add_without_overflow(start_bound, jobs_bound);
+  bound = add_without_overflow(bound, end_bound);
+
+  BOOST_LOG_TRIVIAL(info) << "[Loading] solution cost upper bound: " << bound
+                          << ".";
+}
+
 void input::set_matrix() {
   // Don't call osrm, if matrix is already provided.
   if (_matrix.size() < 2) {
@@ -116,6 +160,10 @@ void input::set_matrix() {
                                            _max_cost_per_line,
                                            _max_cost_per_column);
   }
+
+  // Check for potential overflow in solution cost.
+  this->check_cost_bound();
+
   // Distances on the diagonal are never used except in the minimum
   // weight perfect matching (munkres call during the TSP
   // heuristic). This makes sure no node will be matched with itself

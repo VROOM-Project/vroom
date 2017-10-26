@@ -40,6 +40,7 @@ private:
   PROBLEM_T _problem_type;
   std::unique_ptr<routing_io<cost_t>> _routing_wrapper;
   const bool _geometry;
+  void check_cost_bound();
   void set_matrix();
   std::unordered_map<index_t, index_t> _index_to_job_rank;
   std::unordered_map<index_t, index_t> _index_to_loc_rank;
