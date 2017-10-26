@@ -16,7 +16,7 @@ template <class T>
 undirected_graph<T>::undirected_graph(const matrix<T>& m) : _size(m.size()) {
   bool matrix_ok = true;
   for (index_t i = 0; i < _size; ++i) {
-    matrix_ok &= (m[i][i] == INFINITE_DISTANCE);
+    matrix_ok &= (m[i][i] == INFINITE_COST);
     for (index_t j = i + 1; j < _size; ++j) {
       matrix_ok &= (m[i][j] == m[j][i]);
       _edges.emplace_back(i, j, m[i][j]);
@@ -54,4 +54,4 @@ undirected_graph<T>::get_adjacency_list() const {
   return _adjacency_list;
 }
 
-template class undirected_graph<distance_t>;
+template class undirected_graph<cost_t>;

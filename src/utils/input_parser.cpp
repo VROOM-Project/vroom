@@ -28,7 +28,7 @@ input parse(const cl_args_t& cl_args) {
   BOOST_LOG_TRIVIAL(info) << "[Loading] Parsing input.";
 
   // Set relevant wrapper to retrieve the matrix and geometry.
-  std::unique_ptr<routing_io<distance_t>> routing_wrapper;
+  std::unique_ptr<routing_io<cost_t>> routing_wrapper;
   if (!cl_args.use_libosrm) {
     // Use osrm-routed.
     routing_wrapper = std::make_unique<routed_wrapper>(cl_args.osrm_address,
@@ -86,7 +86,7 @@ input parse(const cl_args_t& cl_args) {
 
     // Load custom matrix while checking if it is square.
     rapidjson::SizeType matrix_size = json_input["matrix"].Size();
-    matrix<distance_t> matrix_input(matrix_size);
+    matrix<cost_t> matrix_input(matrix_size);
     for (rapidjson::SizeType i = 0; i < matrix_size; ++i) {
       if (!json_input["matrix"][i].IsArray() or
           (json_input["matrix"][i].Size() != matrix_size)) {

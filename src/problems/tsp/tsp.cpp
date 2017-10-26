@@ -71,33 +71,32 @@ tsp::tsp(const input& input,
       _matrix[_end][_start] = 0;
       for (index_t j = 0; j < _matrix.size(); ++j) {
         if ((j != _start) and (j != _end)) {
-          _matrix[_end][j] = INFINITE_DISTANCE;
+          _matrix[_end][j] = INFINITE_COST;
         }
       }
     }
   }
 
   // Compute symmetrized matrix and update _is_symmetric flag.
-  const distance_t& (*sym_f)(const distance_t&, const distance_t&) =
-    std::min<distance_t>;
+  const cost_t& (*sym_f)(const cost_t&, const cost_t&) = std::min<cost_t>;
   if ((_has_start and !_has_end) or (!_has_start and _has_end)) {
     // Using symmetrization with max as when only start or only end is
     // forced, the matrix has a line or a column filled with zeros.
-    sym_f = std::max<distance_t>;
+    sym_f = std::max<cost_t>;
   }
   for (index_t i = 0; i < _matrix.size(); ++i) {
     _symmetrized_matrix[i][i] = _matrix[i][i];
     for (index_t j = i + 1; j < _matrix.size(); ++j) {
       _is_symmetric &= (_matrix[i][j] == _matrix[j][i]);
-      distance_t val = sym_f(_matrix[i][j], _matrix[j][i]);
+      cost_t val = sym_f(_matrix[i][j], _matrix[j][i]);
       _symmetrized_matrix[i][j] = val;
       _symmetrized_matrix[j][i] = val;
     }
   }
 }
 
-distance_t tsp::cost(const std::list<index_t>& tour) const {
-  distance_t cost = 0;
+cost_t tsp::cost(const std::list<index_t>& tour) const {
+  cost_t cost = 0;
   index_t init_step = 0; // Initialization actually never used.
 
   auto step = tour.cbegin();
@@ -117,8 +116,8 @@ distance_t tsp::cost(const std::list<index_t>& tour) const {
   return cost;
 }
 
-distance_t tsp::symmetrized_cost(const std::list<index_t>& tour) const {
-  distance_t cost = 0;
+cost_t tsp::symmetrized_cost(const std::list<index_t>& tour) const {
+  cost_t cost = 0;
   index_t init_step = 0; // Initialization actually never used.
 
   auto step = tour.cbegin();
@@ -145,7 +144,7 @@ solution tsp::solve(unsigned nb_threads) const {
                              "problem.";
 
   std::list<index_t> christo_sol = christofides(_symmetrized_matrix);
-  distance_t christo_cost = this->symmetrized_cost(christo_sol);
+  cost_t christo_cost = this->symmetrized_cost(christo_sol);
 
   auto end_heuristic = std::chrono::high_resolution_clock::now();
 
@@ -176,9 +175,9 @@ solution tsp::solve(unsigned nb_threads) const {
                       christo_sol,
                       nb_threads);
 
-  distance_t sym_two_opt_gain = 0;
-  distance_t sym_relocate_gain = 0;
-  distance_t sym_or_opt_gain = 0;
+  cost_t sym_two_opt_gain = 0;
+  cost_t sym_relocate_gain = 0;
+  cost_t sym_or_opt_gain = 0;
 
   do {
     // All possible 2-opt moves.
@@ -229,11 +228,11 @@ solution tsp::solve(unsigned nb_threads) const {
     // Back to the asymmetric problem, picking the best way.
     std::list<index_t> reverse_current_sol(current_sol);
     reverse_current_sol.reverse();
-    distance_t direct_cost = this->cost(current_sol);
-    distance_t reverse_cost = this->cost(reverse_current_sol);
+    cost_t direct_cost = this->cost(current_sol);
+    cost_t reverse_cost = this->cost(reverse_current_sol);
 
     // Cost reference after symmetric local search.
-    distance_t sym_ls_cost = std::min(direct_cost, reverse_cost);
+    cost_t sym_ls_cost = std::min(direct_cost, reverse_cost);
 
     // Local search on asymmetric problem.
     local_search asym_ls(_matrix,
@@ -252,10 +251,10 @@ solution tsp::solve(unsigned nb_threads) const {
     BOOST_LOG_TRIVIAL(info) << "[Asym. local search] Using " << nb_threads
                             << " thread(s).";
 
-    distance_t asym_two_opt_gain = 0;
-    distance_t asym_relocate_gain = 0;
-    distance_t asym_or_opt_gain = 0;
-    distance_t asym_avoid_loops_gain = 0;
+    cost_t asym_two_opt_gain = 0;
+    cost_t asym_relocate_gain = 0;
+    cost_t asym_or_opt_gain = 0;
+    cost_t asym_avoid_loops_gain = 0;
 
     do {
       // All avoid-loops moves.

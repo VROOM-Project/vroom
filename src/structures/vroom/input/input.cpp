@@ -7,13 +7,10 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <iostream>
-
-#include "../../../problems/vrp.h"
 #include "./input.h"
+#include "../../../problems/vrp.h"
 
-input::input(std::unique_ptr<routing_io<distance_t>> routing_wrapper,
-             bool geometry)
+input::input(std::unique_ptr<routing_io<cost_t>> routing_wrapper, bool geometry)
   : _start_loading(std::chrono::high_resolution_clock::now()),
     _problem_type(PROBLEM_T::TSP),
     _routing_wrapper(std::move(routing_wrapper)),
@@ -119,7 +116,7 @@ void input::set_matrix() {
   // heuristic). This makes sure no node will be matched with itself
   // at that time.
   for (index_t i = 0; i < _matrix.size(); ++i) {
-    _matrix[i][i] = INFINITE_DISTANCE;
+    _matrix[i][i] = INFINITE_COST;
   }
 }
 

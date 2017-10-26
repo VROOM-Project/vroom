@@ -17,13 +17,13 @@ All rights reserved (see LICENSE).
 #include "../utils/exceptions.h"
 #include "./routing_io.h"
 
-class osrm_wrapper : public routing_io<distance_t> {
+class osrm_wrapper : public routing_io<cost_t> {
 
 protected:
   const std::string _osrm_profile; // OSRM profile name
 
-  static distance_t round_to_distance(double value) {
-    return static_cast<distance_t>(value + 0.5);
+  static cost_t round_cost(double value) {
+    return static_cast<cost_t>(value + 0.5);
   }
 
   osrm_wrapper(const std::string& osrm_profile) : _osrm_profile(osrm_profile) {
@@ -60,7 +60,7 @@ protected:
     }
   }
 
-  virtual matrix<distance_t>
+  virtual matrix<cost_t>
   get_matrix(const std::vector<location_t>& locs) const = 0;
 
   virtual void add_route_geometry(route_t& route) const = 0;

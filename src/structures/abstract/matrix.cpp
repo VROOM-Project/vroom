@@ -29,4 +29,4 @@ matrix<T> matrix<T>::get_sub_matrix(const std::vector<index_t>& indices) const {
   return sub_matrix;
 }
 
-template class matrix<distance_t>;
+template class matrix<cost_t>;

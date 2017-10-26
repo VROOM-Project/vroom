@@ -77,7 +77,7 @@ std::string routed_wrapper::send_then_receive(std::string query) const {
   return response;
 }
 
-matrix<distance_t>
+matrix<cost_t>
 routed_wrapper::get_matrix(const std::vector<location_t>& locs) const {
   std::string query = this->build_query(locs, "table");
 
@@ -101,7 +101,7 @@ routed_wrapper::get_matrix(const std::vector<location_t>& locs) const {
 
   // Build matrix while checking for unfound routes to avoid
   // unexpected behavior (OSRM raises 'null').
-  matrix<distance_t> m{m_size};
+  matrix<cost_t> m{m_size};
 
   std::vector<unsigned> nb_unfound_from_loc(m_size, 0);
   std::vector<unsigned> nb_unfound_to_loc(m_size, 0);
@@ -117,7 +117,7 @@ routed_wrapper::get_matrix(const std::vector<location_t>& locs) const {
         ++nb_unfound_from_loc[i];
         ++nb_unfound_to_loc[j];
       } else {
-        m[i][j] = round_to_distance(line[j].GetDouble());
+        m[i][j] = round_cost(line[j].GetDouble());
       }
     }
   }
@@ -154,7 +154,7 @@ void routed_wrapper::add_route_geometry(route_t& rte) const {
   }
 
   // Parse total time/distance and route geometry.
-  rte.duration = round_to_distance(infos["routes"][0]["duration"].GetDouble());
-  rte.distance = round_to_distance(infos["routes"][0]["distance"].GetDouble());
+  rte.duration = round_cost(infos["routes"][0]["duration"].GetDouble());
+  rte.distance = round_cost(infos["routes"][0]["distance"].GetDouble());
   rte.geometry = std::move(infos["routes"][0]["geometry"].GetString());
 }

@@ -17,12 +17,12 @@ All rights reserved (see LICENSE).
 struct route_t {
   ID_t vehicle;
   std::vector<step> steps;
-  duration_t cost;
+  cost_t cost;
   std::string geometry;
   duration_t duration;
   distance_t distance;
 
-  route_t(ID_t vehicle, std::vector<step> steps, duration_t cost);
+  route_t(ID_t vehicle, std::vector<step> steps, cost_t cost);
 };
 
 #endif

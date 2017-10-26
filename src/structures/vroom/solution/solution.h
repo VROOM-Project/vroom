@@ -21,7 +21,7 @@ struct solution {
 
   solution(unsigned code, std::string error);
 
-  solution(unsigned code, std::vector<route_t>&& routes, duration_t cost);
+  solution(unsigned code, std::vector<route_t>&& routes, cost_t cost);
 };
 
 #endif
