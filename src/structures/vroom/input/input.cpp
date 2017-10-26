@@ -109,7 +109,12 @@ void input::set_matrix() {
   if (_matrix.size() < 2) {
     assert(_routing_wrapper);
     BOOST_LOG_TRIVIAL(info) << "[Loading] Start matrix computing.";
-    _matrix = _routing_wrapper->get_matrix(_locations);
+    _max_cost_per_line.assign(_locations.size(), 0);
+    _max_cost_per_column.assign(_locations.size(), 0);
+
+    _matrix = _routing_wrapper->get_matrix(_locations,
+                                           _max_cost_per_line,
+                                           _max_cost_per_column);
   }
   // Distances on the diagonal are never used except in the minimum
   // weight perfect matching (munkres call during the TSP

@@ -78,7 +78,9 @@ std::string routed_wrapper::send_then_receive(std::string query) const {
 }
 
 matrix<cost_t>
-routed_wrapper::get_matrix(const std::vector<location_t>& locs) const {
+routed_wrapper::get_matrix(const std::vector<location_t>& locs,
+                           std::vector<cost_t>& max_cost_per_line,
+                           std::vector<cost_t>& max_cost_per_column) const {
   std::string query = this->build_query(locs, "table");
 
   std::string response = this->send_then_receive(query);
@@ -117,7 +119,10 @@ routed_wrapper::get_matrix(const std::vector<location_t>& locs) const {
         ++nb_unfound_from_loc[i];
         ++nb_unfound_to_loc[j];
       } else {
-        m[i][j] = round_cost(line[j].GetDouble());
+        auto cost = round_cost(line[j].GetDouble());
+        m[i][j] = cost;
+        max_cost_per_line[i] = std::max(max_cost_per_line[i], cost);
+        max_cost_per_column[j] = std::max(max_cost_per_column[j], cost);
       }
     }
   }
