@@ -21,6 +21,7 @@ All rights reserved (see LICENSE).
 #include "../../../routing/routed_wrapper.h"
 #include "../../../routing/routing_io.h"
 #include "../../../utils/exceptions.h"
+#include "../../../utils/helpers.h"
 #include "../../abstract/matrix.h"
 #include "../../typedefs.h"
 #include "../job.h"

@@ -104,14 +104,6 @@ void input::add_vehicle(ID_t id,
   }
 }
 
-inline cost_t add_without_overflow(cost_t a, cost_t b) {
-  if (a > std::numeric_limits<cost_t>::max() - b) {
-    throw custom_exception(
-      "Too high cost values, stopping to avoid overflowing.");
-  }
-  return a + b;
-}
-
 void input::check_cost_bound() {
   // Check that we don't have any overflow while computing an upper
   // bound for solution cost.
