@@ -23,7 +23,7 @@ All rights reserved (see LICENSE).
 
 class local_search {
 private:
-  const matrix<distance_t>& _matrix;
+  const matrix<cost_t>& _matrix;
   const bool _is_symmetric_matrix;
   std::vector<index_t> _edges;
   unsigned _nb_threads;
@@ -31,30 +31,30 @@ private:
   std::vector<index_t> _sym_two_opt_rank_limits;
 
 public:
-  local_search(const matrix<distance_t>& matrix,
+  local_search(const matrix<cost_t>& matrix,
                bool is_symmetric_matrix,
                const std::list<index_t>& tour,
                unsigned nb_threads);
 
-  distance_t relocate_step();
+  cost_t relocate_step();
 
-  distance_t perform_all_relocate_steps();
+  cost_t perform_all_relocate_steps();
 
-  distance_t avoid_loop_step();
+  cost_t avoid_loop_step();
 
-  distance_t perform_all_avoid_loop_steps();
+  cost_t perform_all_avoid_loop_steps();
 
-  distance_t two_opt_step();
+  cost_t two_opt_step();
 
-  distance_t asym_two_opt_step();
+  cost_t asym_two_opt_step();
 
-  distance_t perform_all_two_opt_steps();
+  cost_t perform_all_two_opt_steps();
 
-  distance_t perform_all_asym_two_opt_steps();
+  cost_t perform_all_asym_two_opt_steps();
 
-  distance_t or_opt_step();
+  cost_t or_opt_step();
 
-  distance_t perform_all_or_opt_steps();
+  cost_t perform_all_or_opt_steps();
 
   std::list<index_t> get_tour(index_t first_index) const;
 };

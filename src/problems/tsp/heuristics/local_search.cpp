@@ -9,7 +9,7 @@ All rights reserved (see LICENSE).
 
 #include "local_search.h"
 
-local_search::local_search(const matrix<distance_t>& matrix,
+local_search::local_search(const matrix<cost_t>& matrix,
                            bool is_symmetric_matrix,
                            const std::list<index_t>& tour,
                            unsigned nb_threads)
@@ -91,7 +91,7 @@ local_search::local_search(const matrix<distance_t>& matrix,
   _sym_two_opt_rank_limits.push_back(_edges.size());
 }
 
-distance_t local_search::relocate_step() {
+cost_t local_search::relocate_step() {
   if (_edges.size() < 3) {
     // Not enough edges for the operator to make sense.
     return 0;
@@ -101,7 +101,7 @@ distance_t local_search::relocate_step() {
   // elements from _edges.
   auto look_up = [&](index_t start,
                      index_t end,
-                     distance_t& best_gain,
+                     cost_t& best_gain,
                      index_t& best_edge_1_start,
                      index_t& best_edge_2_start) {
     for (index_t edge_1_start = start; edge_1_start < end; ++edge_1_start) {
@@ -115,21 +115,21 @@ distance_t local_search::relocate_step() {
       index_t next = _edges.at(edge_1_end);
 
       // Precomputing weights not depending on edge_2_*.
-      distance_t first_potential_add = _matrix[edge_1_start][next];
-      distance_t edge_1_weight = _matrix[edge_1_start][edge_1_end];
-      distance_t edge_1_end_next_weight = _matrix[edge_1_end][next];
+      cost_t first_potential_add = _matrix[edge_1_start][next];
+      cost_t edge_1_weight = _matrix[edge_1_start][edge_1_end];
+      cost_t edge_1_end_next_weight = _matrix[edge_1_end][next];
 
       index_t edge_2_start = next;
       while (edge_2_start != edge_1_start) {
         index_t edge_2_end = _edges.at(edge_2_start);
-        distance_t before_cost = edge_1_weight + edge_1_end_next_weight +
-                                 _matrix[edge_2_start][edge_2_end];
-        distance_t after_cost = first_potential_add +
-                                _matrix[edge_2_start][edge_1_end] +
-                                _matrix[edge_1_end][edge_2_end];
+        cost_t before_cost = edge_1_weight + edge_1_end_next_weight +
+                             _matrix[edge_2_start][edge_2_end];
+        cost_t after_cost = first_potential_add +
+                            _matrix[edge_2_start][edge_1_end] +
+                            _matrix[edge_1_end][edge_2_end];
 
         if (before_cost > after_cost) {
-          distance_t gain = before_cost - after_cost;
+          cost_t gain = before_cost - after_cost;
           if (gain > best_gain) {
             best_edge_1_start = edge_1_start;
             best_edge_2_start = edge_2_start;
@@ -143,7 +143,7 @@ distance_t local_search::relocate_step() {
   };
 
   // Store best values per thread.
-  std::vector<distance_t> best_gains(_nb_threads, 0);
+  std::vector<cost_t> best_gains(_nb_threads, 0);
   std::vector<index_t> best_edge_1_starts(_nb_threads);
   std::vector<index_t> best_edge_2_starts(_nb_threads);
 
@@ -173,7 +173,7 @@ distance_t local_search::relocate_step() {
   auto best_rank =
     std::distance(best_gains.begin(),
                   std::max_element(best_gains.begin(), best_gains.end()));
-  distance_t best_gain = best_gains[best_rank];
+  cost_t best_gain = best_gains[best_rank];
   index_t best_edge_1_start = best_edge_1_starts[best_rank];
   index_t best_edge_2_start = best_edge_2_starts[best_rank];
 
@@ -190,10 +190,10 @@ distance_t local_search::relocate_step() {
   return best_gain;
 }
 
-distance_t local_search::perform_all_relocate_steps() {
-  distance_t total_gain = 0;
+cost_t local_search::perform_all_relocate_steps() {
+  cost_t total_gain = 0;
   unsigned relocate_iter = 0;
-  distance_t gain = 0;
+  cost_t gain = 0;
   do {
     gain = this->relocate_step();
 
@@ -211,7 +211,7 @@ distance_t local_search::perform_all_relocate_steps() {
   return total_gain;
 }
 
-distance_t local_search::avoid_loop_step() {
+cost_t local_search::avoid_loop_step() {
   // In some cases, the solution can contain "loops" that other
   // operators can't fix. Those are found with two steps:
   //
@@ -225,7 +225,7 @@ distance_t local_search::avoid_loop_step() {
   // 3) relocate all nodes along the chain until an amelioration pops
   // out, meaning a "loop" has been undone.
 
-  distance_t gain = 0;
+  cost_t gain = 0;
 
   // Going through all candidate nodes for relocation.
   index_t previous_candidate = 0;
@@ -284,8 +284,8 @@ distance_t local_search::avoid_loop_step() {
   bool amelioration_found = false;
   for (auto const& chain : relocatable_chains) {
     // Going through step 3. for all chains by decreasing length.
-    distance_t before_cost = 0;
-    distance_t after_cost = 0;
+    cost_t before_cost = 0;
+    cost_t after_cost = 0;
 
     // Work on copies as modifications are needed while going through
     // the chain.
@@ -342,10 +342,10 @@ distance_t local_search::avoid_loop_step() {
   return gain;
 }
 
-distance_t local_search::perform_all_avoid_loop_steps() {
-  distance_t total_gain = 0;
+cost_t local_search::perform_all_avoid_loop_steps() {
+  cost_t total_gain = 0;
   unsigned relocate_iter = 0;
-  distance_t gain = 0;
+  cost_t gain = 0;
   do {
     gain = this->avoid_loop_step();
 
@@ -363,7 +363,7 @@ distance_t local_search::perform_all_avoid_loop_steps() {
   return total_gain;
 }
 
-distance_t local_search::two_opt_step() {
+cost_t local_search::two_opt_step() {
   if (_edges.size() < 4) {
     // Not enough edges for the operator to make sense.
     return 0;
@@ -373,7 +373,7 @@ distance_t local_search::two_opt_step() {
   // elements from _edges.
   auto look_up = [&](index_t start,
                      index_t end,
-                     distance_t& best_gain,
+                     cost_t& best_gain,
                      index_t& best_edge_1_start,
                      index_t& best_edge_2_start) {
     for (index_t edge_1_start = start; edge_1_start < end; ++edge_1_start) {
@@ -398,13 +398,13 @@ distance_t local_search::two_opt_step() {
           continue;
         }
 
-        distance_t before_cost =
+        cost_t before_cost =
           _matrix[edge_1_start][edge_1_end] + _matrix[edge_2_start][edge_2_end];
-        distance_t after_cost =
+        cost_t after_cost =
           _matrix[edge_1_start][edge_2_start] + _matrix[edge_1_end][edge_2_end];
 
         if (before_cost > after_cost) {
-          distance_t gain = before_cost - after_cost;
+          cost_t gain = before_cost - after_cost;
           if (gain > best_gain) {
             best_gain = gain;
             best_edge_1_start = edge_1_start;
@@ -416,7 +416,7 @@ distance_t local_search::two_opt_step() {
   };
 
   // Store best values per thread.
-  std::vector<distance_t> best_gains(_nb_threads, 0);
+  std::vector<cost_t> best_gains(_nb_threads, 0);
   std::vector<index_t> best_edge_1_starts(_nb_threads);
   std::vector<index_t> best_edge_2_starts(_nb_threads);
 
@@ -446,7 +446,7 @@ distance_t local_search::two_opt_step() {
   auto best_rank =
     std::distance(best_gains.begin(),
                   std::max_element(best_gains.begin(), best_gains.end()));
-  distance_t best_gain = best_gains[best_rank];
+  cost_t best_gain = best_gains[best_rank];
   index_t best_edge_1_start = best_edge_1_starts[best_rank];
   index_t best_edge_2_start = best_edge_2_starts[best_rank];
 
@@ -472,7 +472,7 @@ distance_t local_search::two_opt_step() {
   return best_gain;
 }
 
-distance_t local_search::asym_two_opt_step() {
+cost_t local_search::asym_two_opt_step() {
   if (_edges.size() < 4) {
     // Not enough edges for the operator to make sense.
     return 0;
@@ -487,7 +487,7 @@ distance_t local_search::asym_two_opt_step() {
   // elements from _edges.
   auto look_up = [&](index_t start,
                      index_t end,
-                     distance_t& best_gain,
+                     cost_t& best_gain,
                      index_t& best_edge_1_start,
                      index_t& best_edge_2_start) {
     index_t edge_1_start = start;
@@ -503,17 +503,17 @@ distance_t local_search::asym_two_opt_step() {
       // edge_2_end are replaced by edge_1_start --> edge_2_start and
       // edge_1_end --> edge_2_end. The tour between edge_1_end and
       // edge_2_start need to be reversed.
-      distance_t before_reversed_part_cost = 0;
-      distance_t after_reversed_part_cost = 0;
+      cost_t before_reversed_part_cost = 0;
+      cost_t after_reversed_part_cost = 0;
       index_t previous = edge_1_end;
 
       while (edge_2_end != edge_1_start) {
         // Going through the edges in the order of the current tour
         // (mandatory for before_cost and after_cost efficient
         // computation).
-        distance_t before_cost =
+        cost_t before_cost =
           _matrix[edge_1_start][edge_1_end] + _matrix[edge_2_start][edge_2_end];
-        distance_t after_cost =
+        cost_t after_cost =
           _matrix[edge_1_start][edge_2_start] + _matrix[edge_1_end][edge_2_end];
 
         // Updating the cost of the part of the tour that needs to be
@@ -526,7 +526,7 @@ distance_t local_search::asym_two_opt_step() {
         after_cost += after_reversed_part_cost;
 
         if (before_cost > after_cost) {
-          distance_t gain = before_cost - after_cost;
+          cost_t gain = before_cost - after_cost;
           if (gain > best_gain) {
             best_gain = gain;
             best_edge_1_start = edge_1_start;
@@ -543,7 +543,7 @@ distance_t local_search::asym_two_opt_step() {
   };
 
   // Store best values per thread.
-  std::vector<distance_t> best_gains(_nb_threads, 0);
+  std::vector<cost_t> best_gains(_nb_threads, 0);
   std::vector<index_t> best_edge_1_starts(_nb_threads);
   std::vector<index_t> best_edge_2_starts(_nb_threads);
   std::size_t thread_range = _edges.size() / _nb_threads;
@@ -586,7 +586,7 @@ distance_t local_search::asym_two_opt_step() {
   auto best_rank =
     std::distance(best_gains.begin(),
                   std::max_element(best_gains.begin(), best_gains.end()));
-  distance_t best_gain = best_gains[best_rank];
+  cost_t best_gain = best_gains[best_rank];
   index_t best_edge_1_start = best_edge_1_starts[best_rank];
   index_t best_edge_2_start = best_edge_2_starts[best_rank];
 
@@ -612,10 +612,10 @@ distance_t local_search::asym_two_opt_step() {
   return best_gain;
 }
 
-distance_t local_search::perform_all_two_opt_steps() {
-  distance_t total_gain = 0;
+cost_t local_search::perform_all_two_opt_steps() {
+  cost_t total_gain = 0;
   unsigned two_opt_iter = 0;
-  distance_t gain = 0;
+  cost_t gain = 0;
   do {
     gain = this->two_opt_step();
 
@@ -633,10 +633,10 @@ distance_t local_search::perform_all_two_opt_steps() {
   return total_gain;
 }
 
-distance_t local_search::perform_all_asym_two_opt_steps() {
-  distance_t total_gain = 0;
+cost_t local_search::perform_all_asym_two_opt_steps() {
+  cost_t total_gain = 0;
   unsigned two_opt_iter = 0;
-  distance_t gain = 0;
+  cost_t gain = 0;
   do {
     gain = this->asym_two_opt_step();
 
@@ -654,7 +654,7 @@ distance_t local_search::perform_all_asym_two_opt_steps() {
   return total_gain;
 }
 
-distance_t local_search::or_opt_step() {
+cost_t local_search::or_opt_step() {
   if (_edges.size() < 4) {
     // Not enough edges for the operator to make sense.
     return 0;
@@ -664,7 +664,7 @@ distance_t local_search::or_opt_step() {
   // elements from _edges.
   auto look_up = [&](index_t start,
                      index_t end,
-                     distance_t& best_gain,
+                     cost_t& best_gain,
                      index_t& best_edge_1_start,
                      index_t& best_edge_2_start) {
     for (index_t edge_1_start = start; edge_1_start < end; ++edge_1_start) {
@@ -681,19 +681,19 @@ distance_t local_search::or_opt_step() {
       // --> next --> edge_2_end.
 
       // Precomputing weights not depending on edge_2.
-      distance_t first_potential_add = _matrix[edge_1_start][next_2];
-      distance_t edge_1_weight = _matrix[edge_1_start][edge_1_end];
-      distance_t next_next_2_weight = _matrix[next][next_2];
+      cost_t first_potential_add = _matrix[edge_1_start][next_2];
+      cost_t edge_1_weight = _matrix[edge_1_start][edge_1_end];
+      cost_t next_next_2_weight = _matrix[next][next_2];
 
       while (edge_2_start != edge_1_start) {
         index_t edge_2_end = _edges.at(edge_2_start);
-        distance_t before_cost = edge_1_weight + next_next_2_weight +
-                                 _matrix[edge_2_start][edge_2_end];
-        distance_t after_cost = first_potential_add +
-                                _matrix[edge_2_start][edge_1_end] +
-                                _matrix[next][edge_2_end];
+        cost_t before_cost = edge_1_weight + next_next_2_weight +
+                             _matrix[edge_2_start][edge_2_end];
+        cost_t after_cost = first_potential_add +
+                            _matrix[edge_2_start][edge_1_end] +
+                            _matrix[next][edge_2_end];
         if (before_cost > after_cost) {
-          distance_t gain = before_cost - after_cost;
+          cost_t gain = before_cost - after_cost;
           if (gain > best_gain) {
             best_gain = gain;
             best_edge_1_start = edge_1_start;
@@ -707,7 +707,7 @@ distance_t local_search::or_opt_step() {
   };
 
   // Store best values per thread.
-  std::vector<distance_t> best_gains(_nb_threads, 0);
+  std::vector<cost_t> best_gains(_nb_threads, 0);
   std::vector<index_t> best_edge_1_starts(_nb_threads);
   std::vector<index_t> best_edge_2_starts(_nb_threads);
 
@@ -737,7 +737,7 @@ distance_t local_search::or_opt_step() {
   auto best_rank =
     std::distance(best_gains.begin(),
                   std::max_element(best_gains.begin(), best_gains.end()));
-  distance_t best_gain = best_gains[best_rank];
+  cost_t best_gain = best_gains[best_rank];
   index_t best_edge_1_start = best_edge_1_starts[best_rank];
   index_t best_edge_2_start = best_edge_2_starts[best_rank];
 
@@ -753,10 +753,10 @@ distance_t local_search::or_opt_step() {
   return best_gain;
 }
 
-distance_t local_search::perform_all_or_opt_steps() {
-  distance_t total_gain = 0;
+cost_t local_search::perform_all_or_opt_steps() {
+  cost_t total_gain = 0;
   unsigned or_opt_iter = 0;
-  distance_t gain = 0;
+  cost_t gain = 0;
   do {
     gain = this->or_opt_step();
     if (gain > 0) {

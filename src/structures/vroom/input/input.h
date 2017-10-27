@@ -21,6 +21,7 @@ All rights reserved (see LICENSE).
 #include "../../../routing/routed_wrapper.h"
 #include "../../../routing/routing_io.h"
 #include "../../../utils/exceptions.h"
+#include "../../../utils/helpers.h"
 #include "../../abstract/matrix.h"
 #include "../../typedefs.h"
 #include "../job.h"
@@ -38,8 +39,9 @@ private:
   std::chrono::high_resolution_clock::time_point _end_solving;
   std::chrono::high_resolution_clock::time_point _end_routing;
   PROBLEM_T _problem_type;
-  std::unique_ptr<routing_io<distance_t>> _routing_wrapper;
+  std::unique_ptr<routing_io<cost_t>> _routing_wrapper;
   const bool _geometry;
+  void check_cost_bound();
   void set_matrix();
   std::unordered_map<index_t, index_t> _index_to_job_rank;
   std::unordered_map<index_t, index_t> _index_to_loc_rank;
@@ -49,12 +51,15 @@ private:
 public:
   std::vector<job_t> _jobs;
   std::vector<vehicle> _vehicles;
-  matrix<distance_t> _matrix;
+  matrix<cost_t> _matrix;
+  std::vector<cost_t> _max_cost_per_line;
+  std::vector<cost_t> _max_cost_per_column;
+
   // List of locations added through add_* matching the matrix
   // ordering.
   std::vector<location_t> _locations;
 
-  input(std::unique_ptr<routing_io<distance_t>> routing_wrapper, bool geometry);
+  input(std::unique_ptr<routing_io<cost_t>> routing_wrapper, bool geometry);
 
   void add_job(ID_t id, const optional_coords_t& coords);
 

@@ -19,6 +19,7 @@ All rights reserved (see LICENSE).
 // To easily differentiate variable types.
 using ID_t = uint64_t;
 using index_t = uint16_t;
+using cost_t = uint32_t;
 using distance_t = uint32_t;
 using duration_t = uint32_t;
 using coordinate_t = double;
@@ -27,8 +28,7 @@ using coordinate_t = double;
 using optional_coords_t = boost::optional<std::array<coordinate_t, 2>>;
 
 // Setting max value would cause trouble with further additions.
-constexpr distance_t INFINITE_DISTANCE =
-  3 * (std::numeric_limits<distance_t>::max() / 4);
+constexpr cost_t INFINITE_COST = 3 * (std::numeric_limits<cost_t>::max() / 4);
 
 struct cl_args_t {
   // Listing command-line options.

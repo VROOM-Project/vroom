@@ -55,5 +55,5 @@ undirected_graph<T> minimum_spanning_tree(const undirected_graph<T>& graph) {
   return undirected_graph<T>(mst);
 }
 
-template undirected_graph<distance_t>
-minimum_spanning_tree(const undirected_graph<distance_t>& graph);
+template undirected_graph<cost_t>
+minimum_spanning_tree(const undirected_graph<cost_t>& graph);

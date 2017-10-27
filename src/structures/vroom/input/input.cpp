@@ -7,13 +7,10 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <iostream>
-
-#include "../../../problems/vrp.h"
 #include "./input.h"
+#include "../../../problems/vrp.h"
 
-input::input(std::unique_ptr<routing_io<distance_t>> routing_wrapper,
-             bool geometry)
+input::input(std::unique_ptr<routing_io<cost_t>> routing_wrapper, bool geometry)
   : _start_loading(std::chrono::high_resolution_clock::now()),
     _problem_type(PROBLEM_T::TSP),
     _routing_wrapper(std::move(routing_wrapper)),
@@ -107,19 +104,64 @@ void input::add_vehicle(ID_t id,
   }
 }
 
+void input::check_cost_bound() {
+  // Check that we don't have any overflow while computing an upper
+  // bound for solution cost.
+
+  cost_t jobs_departure_bound = 0;
+  cost_t jobs_arrival_bound = 0;
+  for (const auto& j : _jobs) {
+    jobs_departure_bound =
+      add_without_overflow(jobs_departure_bound, _max_cost_per_line[j.index]);
+    jobs_arrival_bound =
+      add_without_overflow(jobs_arrival_bound, _max_cost_per_column[j.index]);
+  }
+
+  cost_t jobs_bound = std::max(jobs_departure_bound, jobs_arrival_bound);
+
+  cost_t start_bound = 0;
+  cost_t end_bound = 0;
+  for (const auto& v : _vehicles) {
+    if (v.has_start()) {
+      start_bound =
+        add_without_overflow(start_bound,
+                             _max_cost_per_line[v.start.get().index]);
+    }
+    if (v.has_end()) {
+      end_bound = add_without_overflow(end_bound,
+                                       _max_cost_per_column[v.end.get().index]);
+    }
+  }
+
+  cost_t bound = add_without_overflow(start_bound, jobs_bound);
+  bound = add_without_overflow(bound, end_bound);
+
+  BOOST_LOG_TRIVIAL(info) << "[Loading] solution cost upper bound: " << bound
+                          << ".";
+}
+
 void input::set_matrix() {
   // Don't call osrm, if matrix is already provided.
   if (_matrix.size() < 2) {
     assert(_routing_wrapper);
     BOOST_LOG_TRIVIAL(info) << "[Loading] Start matrix computing.";
-    _matrix = _routing_wrapper->get_matrix(_locations);
+    _max_cost_per_line.assign(_locations.size(), 0);
+    _max_cost_per_column.assign(_locations.size(), 0);
+
+    _matrix = _routing_wrapper->get_matrix(_locations,
+                                           _max_cost_per_line,
+                                           _max_cost_per_column);
   }
+
+  // Check for potential overflow in solution cost.
+  this->check_cost_bound();
+
   // Distances on the diagonal are never used except in the minimum
   // weight perfect matching (munkres call during the TSP
   // heuristic). This makes sure no node will be matched with itself
   // at that time.
   for (index_t i = 0; i < _matrix.size(); ++i) {
-    _matrix[i][i] = INFINITE_DISTANCE;
+    _matrix[i][i] = INFINITE_COST;
   }
 }
 

@@ -9,13 +9,13 @@ All rights reserved (see LICENSE).
 
 #include "christofides.h"
 
-std::list<index_t> christofides(const matrix<distance_t>& sym_matrix) {
+std::list<index_t> christofides(const matrix<cost_t>& sym_matrix) {
   // The eulerian sub-graph further used is made of a minimum spanning
   // tree with a minimum weight perfect matching on its odd degree
   // vertices.
 
   // Compute symmetric graph from the matrix.
-  auto sym_graph = undirected_graph<distance_t>(sym_matrix);
+  auto sym_graph = undirected_graph<cost_t>(sym_matrix);
 
   BOOST_LOG_TRIVIAL(trace) << "* Graph has " << sym_graph.size() << " nodes.";
 
@@ -39,7 +39,7 @@ std::list<index_t> christofides(const matrix<distance_t>& sym_matrix) {
     << " nodes with odd degree in the minimum spanning tree.";
 
   // Getting corresponding matrix for the generated sub-graph.
-  matrix<distance_t> sub_matrix = sym_matrix.get_sub_matrix(mst_odd_vertices);
+  matrix<cost_t> sub_matrix = sym_matrix.get_sub_matrix(mst_odd_vertices);
 
   // Computing minimum weight perfect matching.
   std::unordered_map<index_t, index_t> mwpm =
@@ -80,7 +80,7 @@ std::list<index_t> christofides(const matrix<distance_t>& sym_matrix) {
   }
 
   // Building eulerian graph.
-  std::vector<edge<distance_t>> eulerian_graph_edges = mst_graph.get_edges();
+  std::vector<edge<cost_t>> eulerian_graph_edges = mst_graph.get_edges();
 
   // Adding edges from minimum weight perfect matching (with the
   // original vertices index). Edges appear twice in matching so we
@@ -98,7 +98,7 @@ std::list<index_t> christofides(const matrix<distance_t>& sym_matrix) {
   }
 
   // Building Eulerian graph from the edges.
-  undirected_graph<distance_t> eulerian_graph(eulerian_graph_edges);
+  undirected_graph<cost_t> eulerian_graph(eulerian_graph_edges);
   assert(eulerian_graph.size() >= 2);
 
   // Hierholzer's algorithm: building and joining closed tours with

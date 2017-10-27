@@ -19,6 +19,6 @@ All rights reserved (see LICENSE).
 #include "../../../algorithms/munkres.h"
 
 // Implementing a variant of the Christofides heuristic.
-std::list<index_t> christofides(const matrix<distance_t>& sym_matrix);
+std::list<index_t> christofides(const matrix<cost_t>& sym_matrix);
 
 #endif

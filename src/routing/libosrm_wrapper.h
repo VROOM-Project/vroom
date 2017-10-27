@@ -29,8 +29,10 @@ private:
 public:
   libosrm_wrapper(const std::string& osrm_profile);
 
-  virtual matrix<distance_t>
-  get_matrix(const std::vector<location_t>& locs) const override;
+  virtual matrix<cost_t>
+  get_matrix(const std::vector<location_t>& locs,
+             std::vector<cost_t>& max_cost_per_line,
+             std::vector<cost_t>& max_cost_per_column) const override;
 
   virtual void add_route_geometry(route_t& rte) const override;
 };

@@ -13,8 +13,10 @@ libosrm_wrapper::libosrm_wrapper(const std::string& osrm_profile)
   : osrm_wrapper(osrm_profile), _config(), _osrm(_config) {
 }
 
-matrix<distance_t>
-libosrm_wrapper::get_matrix(const std::vector<location_t>& locs) const {
+matrix<cost_t>
+libosrm_wrapper::get_matrix(const std::vector<location_t>& locs,
+                            std::vector<cost_t>& max_cost_per_line,
+                            std::vector<cost_t>& max_cost_per_column) const {
   osrm::TableParameters params;
   for (auto const& location : locs) {
     assert(location.has_coordinates());
@@ -45,7 +47,7 @@ libosrm_wrapper::get_matrix(const std::vector<location_t>& locs) const {
 
   // Build matrix while checking for unfound routes to avoid
   // unexpected behavior (OSRM raises 'null').
-  matrix<distance_t> m{m_size};
+  matrix<cost_t> m{m_size};
 
   std::vector<unsigned> nb_unfound_from_loc(m_size, 0);
   std::vector<unsigned> nb_unfound_to_loc(m_size, 0);
@@ -63,7 +65,10 @@ libosrm_wrapper::get_matrix(const std::vector<location_t>& locs) const {
         ++nb_unfound_from_loc[i];
         ++nb_unfound_to_loc[j];
       } else {
-        m[i][j] = round_to_distance(el.get<osrm::json::Number>().value);
+        auto cost = round_cost(el.get<osrm::json::Number>().value);
+        m[i][j] = cost;
+        max_cost_per_line[i] = std::max(max_cost_per_line[i], cost);
+        max_cost_per_column[j] = std::max(max_cost_per_column[j], cost);
       }
     }
   }
@@ -108,9 +113,9 @@ void libosrm_wrapper::add_route_geometry(route_t& rte) const {
   auto& route = result_routes.values.at(0).get<osrm::json::Object>();
 
   rte.duration =
-    round_to_distance(route.values["duration"].get<osrm::json::Number>().value);
+    round_cost(route.values["duration"].get<osrm::json::Number>().value);
   rte.distance =
-    round_to_distance(route.values["distance"].get<osrm::json::Number>().value);
+    round_cost(route.values["distance"].get<osrm::json::Number>().value);
   rte.geometry =
     std::move(route.values["geometry"].get<osrm::json::String>().value);
 }

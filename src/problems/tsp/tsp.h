@@ -27,8 +27,8 @@ private:
   // Holds the matching from index in _matrix to index in global
   // matrix.
   std::vector<index_t> _tsp_index_to_global;
-  matrix<distance_t> _matrix;
-  matrix<distance_t> _symmetrized_matrix;
+  matrix<cost_t> _matrix;
+  matrix<cost_t> _symmetrized_matrix;
   bool _is_symmetric;
   bool _has_start;
   index_t _start;
@@ -41,9 +41,9 @@ public:
       std::vector<index_t> problem_indices,
       index_t vehicle_rank);
 
-  distance_t cost(const std::list<index_t>& tour) const;
+  cost_t cost(const std::list<index_t>& tour) const;
 
-  distance_t symmetrized_cost(const std::list<index_t>& tour) const;
+  cost_t symmetrized_cost(const std::list<index_t>& tour) const;
 
   virtual solution solve(unsigned nb_threads) const override;
 };
