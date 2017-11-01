@@ -26,10 +26,8 @@ undirected_graph<T> minimum_spanning_tree(const undirected_graph<T>& graph) {
   // decrease until we obtain a single component (the final tree). We
   // use the smallest vertex as a representative of connected
   // components.
-  std::unordered_map<index_t, index_t> representative;
-  for (index_t i = 0; i < graph.size(); ++i) {
-    representative.emplace(i, i);
-  }
+  std::vector<index_t> representative(graph.size());
+  std::iota(representative.begin(), representative.end(), 0);
 
   for (const auto& edge : edges) {
     index_t first_vertex = edge.get_first_vertex();
@@ -39,14 +37,15 @@ undirected_graph<T> minimum_spanning_tree(const undirected_graph<T>& graph) {
     index_t second_rep = representative[second_vertex];
     if (first_rep != second_rep) {
       // Adding current edge won't create a cycle as vertices are in
-      // separate connected componentes.
+      // separate connected components.
       mst.push_back(edge);
       // Both vertices are now in the same connected component,
       // setting new representative for all elements of second
-      // component.
+      // component. Relies on first_vertex < second_vertex (see edge
+      // ctor).
       for (auto& e : representative) {
-        if (e.second == second_rep) {
-          e.second = first_rep;
+        if (e == second_rep) {
+          e = first_rep;
         }
       }
     }
