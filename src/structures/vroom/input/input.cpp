@@ -181,19 +181,17 @@ PROBLEM_T input::get_problem_type() const {
   return _problem_type;
 }
 
-std::unique_ptr<vrp> input::get_problem() const {
+solution input::solve(unsigned nb_thread) {
+  // Compute matrix and load relevant problem.
+  this->set_matrix();
+
+  // Create problem instance.
   std::vector<index_t> problem_indices;
   for (const auto& i : _all_indices) {
     problem_indices.push_back(i);
   }
+  auto instance = std::make_unique<tsp>(*this, problem_indices, 0);
 
-  return std::make_unique<tsp>(*this, problem_indices, 0);
-}
-
-solution input::solve(unsigned nb_thread) {
-  // Compute matrix and load relevant problem.
-  this->set_matrix();
-  auto instance = this->get_problem();
   _end_loading = std::chrono::high_resolution_clock::now();
 
   auto loading = std::chrono::duration_cast<std::chrono::milliseconds>(
