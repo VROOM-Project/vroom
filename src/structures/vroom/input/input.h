@@ -46,6 +46,7 @@ private:
   std::unordered_map<index_t, index_t> _index_to_job_rank;
   std::unordered_map<index_t, index_t> _index_to_loc_rank;
   std::set<index_t> _all_indices;
+  std::unique_ptr<vrp> get_problem() const;
 
 public:
   std::vector<job_t> _jobs;
