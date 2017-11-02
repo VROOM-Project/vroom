@@ -22,6 +22,8 @@ protected:
 public:
   vrp(const input& input);
 
+  virtual ~vrp();
+
   virtual solution solve(unsigned nb_threads) const = 0;
 
   solution solve() const;
