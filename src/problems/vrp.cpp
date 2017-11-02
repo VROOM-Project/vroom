@@ -14,6 +14,9 @@ vrp::vrp(const input& input) : _input(input) {
   assert(_input._vehicles.size() > 0);
 }
 
+vrp::~vrp() {
+}
+
 solution vrp::solve() const {
   return solve(1);
 }
