@@ -56,3 +56,4 @@ main.o : main.cpp
 clean :
 	rm $(OBJ)
 	rm $(MAIN)
+	rm $(LIB)
