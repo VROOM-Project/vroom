@@ -10,6 +10,7 @@ LDLIBS = -lboost_system -lboost_regex -lboost_log -lboost_log_setup -lpthread -l
 
 # Using all cpp files in current directory.
 MAIN = ../bin/vroom
+LIB = ../lib/libvroom.a
 SRC = $(wildcard *.cpp)\
 			$(wildcard ./algorithms/*.cpp)\
 			$(wildcard ./routing/*.cpp)\
@@ -34,10 +35,13 @@ endif
 OBJ = $(SRC:.cpp=.o)
 
 # Main target.
-all : $(MAIN)
+all : $(MAIN) $(LIB)
 
 $(MAIN) : $(OBJ) main.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBS)
+
+$(LIB) : $(OBJ)
+	$(AR) cr $@ $^
 
 # Building .o files.
 %.o : %.cpp %.h
