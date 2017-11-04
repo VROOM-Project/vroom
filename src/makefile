@@ -38,9 +38,11 @@ OBJ = $(SRC:.cpp=.o)
 all : $(MAIN) $(LIB)
 
 $(MAIN) : $(OBJ) main.o
+	mkdir -p $(@D)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBS)
 
 $(LIB) : $(OBJ)
+	mkdir -p $(@D)
 	$(AR) cr $@ $^
 
 # Building .o files.
