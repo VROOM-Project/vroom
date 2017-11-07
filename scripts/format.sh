@@ -37,5 +37,5 @@ else
     exit 1
 fi
 
-find src -type f -name '*.h' -o -name '*.cpp' \
+find src examples -type f -name '*.h' -o -name '*.cpp' \
   | xargs -I{} -P ${NPROC} ${CLANG_FORMAT} -i -style=file {}
