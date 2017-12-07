@@ -13,15 +13,19 @@ All rights reserved (see LICENSE).
 #include "../typedefs.h"
 #include "./location.h"
 
-struct vehicle {
+struct vehicle_t {
   const ID_t id;
   boost::optional<location_t> start;
   boost::optional<location_t> end;
 
-  vehicle(ID_t id,
-          boost::optional<location_t> start,
-          boost::optional<location_t> end)
+  vehicle_t(ID_t id,
+            const boost::optional<location_t>& start,
+            const boost::optional<location_t>& end)
     : id(id), start(start), end(end) {
+    if ((start == boost::none) and (end == boost::none)) {
+      throw custom_exception("No start or end specified for vehicle " +
+                             std::to_string(id) + '.');
+    }
   }
 
   bool has_start() const {

@@ -131,8 +131,8 @@ rapidjson::Value to_json(const location_t& loc,
                          rapidjson::Document::AllocatorType& allocator) {
   rapidjson::Value json_coords(rapidjson::kArrayType);
 
-  json_coords.PushBack(loc.lon.get(), allocator);
-  json_coords.PushBack(loc.lat.get(), allocator);
+  json_coords.PushBack(loc.lon(), allocator);
+  json_coords.PushBack(loc.lat(), allocator);
 
   return json_coords;
 }

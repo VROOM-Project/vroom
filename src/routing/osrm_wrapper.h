@@ -53,8 +53,8 @@ protected:
     if (max_unfound_routes_for_a_loc > 0) {
       std::string error_msg = "OSRM has unfound route(s) ";
       error_msg += error_direction;
-      error_msg += "location [" + std::to_string(locs[error_loc].lon.get()) +
-                   ";" + std::to_string(locs[error_loc].lat.get()) + "]";
+      error_msg += "location [" + std::to_string(locs[error_loc].lon()) + ";" +
+                   std::to_string(locs[error_loc].lat()) + "]";
 
       throw custom_exception(error_msg);
     }
