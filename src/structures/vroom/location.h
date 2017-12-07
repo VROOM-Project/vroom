@@ -12,19 +12,31 @@ All rights reserved (see LICENSE).
 
 #include "../typedefs.h"
 
-struct location_t {
+class location_t {
+private:
   // Index of this location in the matrix.
-  const index_t index;
-
+  index_t _index;
   // Coordinates (not mandatory).
-  boost::optional<const coordinate_t> lon;
-  boost::optional<const coordinate_t> lat;
+  optional_coords_t _coords;
+
+public:
+  bool user_index;
 
   location_t(index_t index);
 
-  location_t(index_t index, coordinate_t lon, coordinate_t lat);
+  location_t(index_t index, const coords_t& coords);
+
+  location_t(const coords_t& coords);
+
+  void set_index(index_t index);
 
   bool has_coordinates() const;
+
+  index_t index() const;
+
+  coordinate_t lon() const;
+
+  coordinate_t lat() const;
 };
 
 #endif

@@ -10,18 +10,13 @@ All rights reserved (see LICENSE).
 #include "./input_parser.h"
 
 // Helper to get optional array of coordinates.
-inline optional_coords_t parse_coordinates(const rapidjson::Value& object,
-                                           const char* key) {
-  if (object.HasMember(key) and object[key].IsArray()) {
-    if ((object[key].Size() < 2) or !object[key][0].IsNumber() or
-        !object[key][1].IsNumber()) {
-      throw custom_exception("Invalid " + std::string(key) + " array.");
-    }
-    return optional_coords_t(
-      {object[key][0].GetDouble(), object[key][1].GetDouble()});
-  } else {
-    return boost::none;
+inline std::array<coordinate_t, 2>
+parse_coordinates(const rapidjson::Value& object, const char* key) {
+  if (!object[key].IsArray() or (object[key].Size() < 2) or
+      !object[key][0].IsNumber() or !object[key][1].IsNumber()) {
+    throw custom_exception("Invalid " + std::string(key) + " array.");
   }
+  return {object[key][0].GetDouble(), object[key][1].GetDouble()};
 }
 
 input parse(const cl_args_t& cl_args) {
@@ -113,41 +108,65 @@ input parse(const cl_args_t& cl_args) {
     input_data._matrix = matrix_input;
 
     // Check if vehicle has start_index or end_index.
-    boost::optional<index_t> start_index;
-    optional_coords_t start;
-    if (json_input["vehicles"][0].HasMember("start_index")) {
+    bool has_start_index = json_input["vehicles"][0].HasMember("start_index");
+    index_t start_index = 0; // Initial value actually never used.
+    if (has_start_index) {
       if (!json_input["vehicles"][0]["start_index"].IsUint()) {
         throw custom_exception("Invalid start_index for vehicle at 0.");
       }
       start_index = json_input["vehicles"][0]["start_index"].GetUint();
-      if (matrix_size <= start_index.get()) {
+
+      if (matrix_size <= start_index) {
         throw custom_exception(
           "start_index exceeding matrix size for vehicle at 0.");
       }
-
-      start = parse_coordinates(json_input["vehicles"][0], "start");
     }
 
-    boost::optional<index_t> end_index;
-    optional_coords_t end;
-    if (json_input["vehicles"][0].HasMember("end_index")) {
+    bool has_start_coords = json_input["vehicles"][0].HasMember("start");
+
+    bool has_end_index = json_input["vehicles"][0].HasMember("end_index");
+    index_t end_index = 0; // Initial value actually never used.
+    if (has_end_index) {
       if (!json_input["vehicles"][0]["end_index"].IsUint()) {
         throw custom_exception("Invalid end_index for vehicle at 0.");
       }
       end_index = json_input["vehicles"][0]["end_index"].GetUint();
-      if (matrix_size <= end_index.get()) {
+
+      if (matrix_size <= end_index) {
         throw custom_exception(
           "end_index exceeding matrix size for vehicle at 0.");
       }
-
-      end = parse_coordinates(json_input["vehicles"][0], "end");
     }
+
+    bool has_end_coords = json_input["vehicles"][0].HasMember("end");
+
     // Add vehicle to input
-    input_data.add_vehicle(json_input["vehicles"][0]["id"].GetUint(),
-                           start,
-                           end,
-                           start_index,
-                           end_index);
+    boost::optional<location_t> start;
+    if (has_start_index) {
+      if (has_start_coords) {
+        start = boost::optional<location_t>(
+          location_t({start_index,
+                      parse_coordinates(json_input["vehicles"][0], "start")}));
+      } else {
+        start = boost::optional<location_t>(start_index);
+      }
+    }
+
+    // Add vehicle to input
+    boost::optional<location_t> end;
+    if (has_end_index) {
+      if (has_end_coords) {
+        end = boost::optional<location_t>(location_t(
+          {end_index, parse_coordinates(json_input["vehicles"][0], "end")}));
+      } else {
+        end = boost::optional<location_t>(end_index);
+      }
+    }
+
+    vehicle_t current_v(json_input["vehicles"][0]["id"].GetUint(), start, end);
+
+    input_data.add_vehicle(current_v);
+
     // Add the jobs
     for (rapidjson::SizeType i = 0; i < json_input["jobs"].Size(); ++i) {
       if (!json_input["jobs"][i].IsObject()) {
@@ -168,15 +187,36 @@ input parse(const cl_args_t& cl_args) {
           "location_index exceeding matrix size for job at " +
           std::to_string(i) + ".");
       }
-      input_data.add_job(json_input["jobs"][i]["id"].GetUint64(),
-                         parse_coordinates(json_input["jobs"][i], "location"),
-                         json_input["jobs"][i]["location_index"].GetUint());
+
+      if (json_input["jobs"][i].HasMember("location")) {
+        job_t current_job(json_input["jobs"][i]["id"].GetUint64(),
+                          json_input["jobs"][i]["location_index"].GetUint(),
+                          parse_coordinates(json_input["jobs"][i], "location"));
+        input_data.add_job(current_job);
+      } else {
+        job_t current_job(json_input["jobs"][i]["id"].GetUint64(),
+                          json_input["jobs"][i]["location_index"].GetUint());
+        input_data.add_job(current_job);
+      }
     }
   } else {
-    input_data.add_vehicle(json_input["vehicles"][0]["id"].GetUint(),
-                           parse_coordinates(json_input["vehicles"][0],
-                                             "start"),
-                           parse_coordinates(json_input["vehicles"][0], "end"));
+    // No index provided along locations, matrix computed using OSRM.
+
+    boost::optional<location_t> start;
+    if (json_input["vehicles"][0].HasMember("start")) {
+      start = boost::optional<location_t>(
+        parse_coordinates(json_input["vehicles"][0], "start"));
+    }
+
+    boost::optional<location_t> end;
+    if (json_input["vehicles"][0].HasMember("end")) {
+      end = boost::optional<location_t>(
+        parse_coordinates(json_input["vehicles"][0], "end"));
+    }
+
+    vehicle_t current_v(json_input["vehicles"][0]["id"].GetUint(), start, end);
+
+    input_data.add_vehicle(current_v);
 
     // Getting jobs.
     for (rapidjson::SizeType i = 0; i < json_input["jobs"].Size(); ++i) {
@@ -194,8 +234,10 @@ input parse(const cl_args_t& cl_args) {
                                ".");
       }
 
-      input_data.add_job(json_input["jobs"][i]["id"].GetUint64(),
-                         parse_coordinates(json_input["jobs"][i], "location"));
+      job_t current_job(json_input["jobs"][i]["id"].GetUint64(),
+                        parse_coordinates(json_input["jobs"][i], "location"));
+
+      input_data.add_job(current_job);
     }
   }
 

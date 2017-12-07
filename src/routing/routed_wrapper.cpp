@@ -26,8 +26,8 @@ routed_wrapper::build_query(const std::vector<location_t>& locations,
 
   // Adding locations.
   for (auto const& location : locations) {
-    query += std::to_string(location.lon.get()) + "," +
-             std::to_string(location.lat.get()) + ";";
+    query += std::to_string(location.lon()) + "," +
+             std::to_string(location.lat()) + ";";
   }
   query.pop_back(); // Remove trailing ';'.
 

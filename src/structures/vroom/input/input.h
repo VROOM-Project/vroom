@@ -50,7 +50,7 @@ private:
 
 public:
   std::vector<job_t> _jobs;
-  std::vector<vehicle> _vehicles;
+  std::vector<vehicle_t> _vehicles;
   matrix<cost_t> _matrix;
   std::vector<cost_t> _max_cost_per_line;
   std::vector<cost_t> _max_cost_per_column;
@@ -61,19 +61,9 @@ public:
 
   input(std::unique_ptr<routing_io<cost_t>> routing_wrapper, bool geometry);
 
-  void add_job(ID_t id, const optional_coords_t& coords);
+  void add_job(const job_t& job);
 
-  void add_job(ID_t id, const optional_coords_t& coords, index_t index);
-
-  void add_vehicle(ID_t id,
-                   const optional_coords_t& start_coords,
-                   const optional_coords_t& end_coords);
-
-  void add_vehicle(ID_t id,
-                   const optional_coords_t& start_coords,
-                   const optional_coords_t& end_coords,
-                   boost::optional<index_t> start_index,
-                   boost::optional<index_t> end_index);
+  void add_vehicle(const vehicle_t& vehicle);
 
   index_t get_location_rank_from_index(index_t index) const;
 

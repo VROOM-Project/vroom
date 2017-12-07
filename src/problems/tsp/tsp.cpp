@@ -24,9 +24,10 @@ tsp::tsp(const input& input,
 
   if (_has_start) {
     // Use index in _matrix for start.
-    auto search = std::find(_tsp_index_to_global.begin(),
-                            _tsp_index_to_global.end(),
-                            _input._vehicles[_vehicle_rank].start.get().index);
+    auto search =
+      std::find(_tsp_index_to_global.begin(),
+                _tsp_index_to_global.end(),
+                _input._vehicles[_vehicle_rank].start.get().index());
     assert(search != _tsp_index_to_global.end());
     _start = std::distance(_tsp_index_to_global.begin(), search);
     assert(_start < _matrix.size());
@@ -35,7 +36,7 @@ tsp::tsp(const input& input,
     // Use index in _matrix for start.
     auto search = std::find(_tsp_index_to_global.begin(),
                             _tsp_index_to_global.end(),
-                            _input._vehicles[_vehicle_rank].end.get().index);
+                            _input._vehicles[_vehicle_rank].end.get().index());
     assert(search != _tsp_index_to_global.end());
     _end = std::distance(_tsp_index_to_global.begin(), search);
     assert(_end < _matrix.size());
