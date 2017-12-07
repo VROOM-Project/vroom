@@ -8,6 +8,8 @@
 
 #include "../src/routing/routed_wrapper.h"
 #include "../src/structures/vroom/input/input.h"
+#include "../src/structures/vroom/job.h"
+#include "../src/structures/vroom/vehicle.h"
 #include "../src/utils/exceptions.h"
 
 int main() {
@@ -21,15 +23,18 @@ int main() {
   input problem_instance(std::move(routing_wrapper),
                          true); // Query for route geometry after solving.
 
-  // Set vehicle id, start and end (use boost::none for no start or no
-  // end).
-  problem_instance.add_vehicle(0,
-                               optional_coords_t({2.3526, 48.8604}),
-                               optional_coords_t({2.3526, 48.8604}));
+  // Define vehicle with id, start and end (use boost::none for no
+  // start or no end).
+  vehicle_t v(0, location_t({2.3526, 48.8604}), location_t({2.3526, 48.8604}));
+
+  problem_instance.add_vehicle(v);
 
   // Set jobs ids and locations.
-  problem_instance.add_job(0, optional_coords_t({2.3691, 48.8532}));
-  problem_instance.add_job(1, optional_coords_t({2.2911, 48.8566}));
+  job_t j1(1, coords_t({2.3691, 48.8532}));
+  job_t j2(2, coords_t({2.2911, 48.8566}));
+
+  problem_instance.add_job(j1);
+  problem_instance.add_job(j2);
 
   // Log level.
   boost::log::core::get()->set_filter(boost::log::trivial::severity >=
@@ -68,8 +73,8 @@ int main() {
 
         // Add location if known.
         if (step.location.has_coordinates()) {
-          std::cout << " - " << step.location.lon.get() << ";"
-                    << step.location.lat.get();
+          std::cout << " - " << step.location.lon() << ";"
+                    << step.location.lat();
         }
         std::cout << std::endl;
       }
