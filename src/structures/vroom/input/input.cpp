@@ -22,7 +22,7 @@ void input::add_job(const job_t& job) {
 
   auto& current_job = _jobs.back();
 
-  if (!current_job.user_index) {
+  if (!current_job.user_index()) {
     // Index of this job in the matrix was not specified upon job
     // creation, using current number of locations.
     current_job.set_index(_locations.size());
@@ -46,7 +46,7 @@ void input::add_vehicle(const vehicle_t& vehicle) {
   bool has_end = current_v.has_end();
 
   if (has_start) {
-    if (!current_v.start.get().user_index) {
+    if (!current_v.start.get().user_index()) {
       // Index of this start in the matrix was not specified upon
       // vehicle creation, using current number of locations.
       current_v.start.get().set_index(_locations.size());
@@ -59,7 +59,7 @@ void input::add_vehicle(const vehicle_t& vehicle) {
   }
 
   if (has_end) {
-    if (!current_v.end.get().user_index) {
+    if (!current_v.end.get().user_index()) {
       // Index of this end in the matrix was not specified upon
       // vehicle creation, using current number of locations.
       current_v.end.get().set_index(_locations.size());

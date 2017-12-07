@@ -18,10 +18,9 @@ private:
   index_t _index;
   // Coordinates (not mandatory).
   optional_coords_t _coords;
+  bool _user_index;
 
 public:
-  bool user_index;
-
   location_t(index_t index);
 
   location_t(index_t index, const coords_t& coords);
@@ -37,6 +36,8 @@ public:
   coordinate_t lon() const;
 
   coordinate_t lat() const;
+
+  bool user_index() const;
 };
 
 #endif
