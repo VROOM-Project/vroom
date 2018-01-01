@@ -2,7 +2,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2017, Julien Coupey.
+Copyright (c) 2015-2018, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -25,7 +25,7 @@ All rights reserved (see LICENSE).
 #include "./utils/version.h"
 
 void display_usage() {
-  std::string usage = "VROOM Copyright (C) 2015-2017, Julien Coupey\n";
+  std::string usage = "VROOM Copyright (C) 2015-2018, Julien Coupey\n";
   usage += "Version: " + get_version() + "\n";
   usage += "Usage:\n\tvroom [OPTION]... \"INPUT\"";
   usage += "\n\tvroom [OPTION]... -i FILE\n";
