@@ -70,6 +70,24 @@ void input::add_vehicle(const vehicle_t& vehicle) {
     _index_to_loc_rank.insert({end_index, _locations.size()});
     _locations.push_back(current_v.end.get());
   }
+
+  if (current_v.has_capacity()) {
+    this->check_amount_size(current_v.capacity.get().size());
+  }
+}
+
+void input::check_amount_size(unsigned size) {
+  if (_amount_size) {
+    // Checking consistency for amount/capacity input lengths.
+    if (size != _amount_size.get()) {
+      throw custom_exception("Inconsistent amount/capacity lengths: " +
+                             std::to_string(size) + " and " +
+                             std::to_string(_amount_size.get()) + '.');
+    }
+  } else {
+    // Updating real value on first call.
+    _amount_size = boost::make_optional(size);
+  }
 }
 
 void input::check_cost_bound() {

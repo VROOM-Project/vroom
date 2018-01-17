@@ -19,6 +19,21 @@ parse_coordinates(const rapidjson::Value& object, const char* key) {
   return {object[key][0].GetDouble(), object[key][1].GetDouble()};
 }
 
+inline amount_t parse_amount(const rapidjson::Value& object, const char* key) {
+  if (!object[key].IsArray()) {
+    throw custom_exception("Invalid " + std::string(key) + " array.");
+  }
+  amount_t amount;
+  for (rapidjson::SizeType i = 0; i < object[key].Size(); ++i) {
+    if (!object[key][i].IsInt64()) {
+      throw custom_exception("Invalid " + std::string(key) + " value.");
+    }
+    amount.push_back(object[key][i].GetInt64());
+  }
+
+  return amount;
+}
+
 inline bool valid_vehicle(const rapidjson::Value& v) {
   return v.IsObject() and v.HasMember("id") and v["id"].IsUint64();
 }
@@ -142,6 +157,12 @@ input parse(const cl_args_t& cl_args) {
 
       bool has_end_coords = json_input["vehicles"][i].HasMember("end");
 
+      // Handle optional capacity.
+      boost::optional<amount_t> capacity;
+      if (json_input["vehicles"][i].HasMember("capacity")) {
+        capacity = parse_amount(json_input["vehicles"][i], "capacity");
+      }
+
       // Add vehicle to input
       boost::optional<location_t> start;
       if (has_start_index) {
@@ -166,7 +187,8 @@ input parse(const cl_args_t& cl_args) {
 
       vehicle_t current_v(json_input["vehicles"][i]["id"].GetUint(),
                           start,
-                          end);
+                          end,
+                          capacity);
 
       input_data.add_vehicle(current_v);
     }
@@ -226,15 +248,22 @@ input parse(const cl_args_t& cl_args) {
           parse_coordinates(json_input["vehicles"][i], "start"));
       }
 
-      boost::optional<location_t> end;
+      auto end([]() -> boost::optional<location_t> { return boost::none; }());
       if (json_input["vehicles"][i].HasMember("end")) {
         end = boost::optional<location_t>(
           parse_coordinates(json_input["vehicles"][i], "end"));
       }
 
+      // Handle optional capacity.
+      boost::optional<amount_t> capacity;
+      if (json_input["vehicles"][i].HasMember("capacity")) {
+        capacity = parse_amount(json_input["vehicles"][i], "capacity");
+      }
+
       vehicle_t current_v(json_input["vehicles"][i]["id"].GetUint(),
                           start,
-                          end);
+                          end,
+                          capacity);
 
       input_data.add_vehicle(current_v);
     }

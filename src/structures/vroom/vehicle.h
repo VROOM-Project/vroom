@@ -10,31 +10,31 @@ All rights reserved (see LICENSE).
 
 */
 
+#include "../../utils/exceptions.h"
 #include "../typedefs.h"
+#include "./amount.h"
 #include "./location.h"
 
 struct vehicle_t {
   const ID_t id;
   boost::optional<location_t> start;
   boost::optional<location_t> end;
+  boost::optional<amount_t> capacity;
 
   vehicle_t(ID_t id,
             const boost::optional<location_t>& start,
-            const boost::optional<location_t>& end)
-    : id(id), start(start), end(end) {
-    if ((start == boost::none) and (end == boost::none)) {
-      throw custom_exception("No start or end specified for vehicle " +
-                             std::to_string(id) + '.');
-    }
-  }
+            const boost::optional<location_t>& end);
 
-  bool has_start() const {
-    return start != boost::none;
-  }
+  vehicle_t(ID_t id,
+            const boost::optional<location_t>& start,
+            const boost::optional<location_t>& end,
+            const boost::optional<amount_t>& capacity);
 
-  bool has_end() const {
-    return end != boost::none;
-  }
+  bool has_start() const;
+
+  bool has_end() const;
+
+  bool has_capacity() const;
 };
 
 #endif

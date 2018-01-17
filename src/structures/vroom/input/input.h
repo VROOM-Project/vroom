@@ -41,6 +41,8 @@ private:
   PROBLEM_T _problem_type;
   std::unique_ptr<routing_io<cost_t>> _routing_wrapper;
   const bool _geometry;
+  boost::optional<unsigned> _amount_size;
+  void check_amount_size(unsigned size);
   void check_cost_bound();
   void set_matrix();
   std::unordered_map<index_t, index_t> _index_to_job_rank;
@@ -55,8 +57,8 @@ public:
   std::vector<cost_t> _max_cost_per_line;
   std::vector<cost_t> _max_cost_per_column;
 
-  // List of locations added through add_* matching the matrix
-  // ordering.
+  // List of locations added through add_[job|vehicle] matching the
+  // matrix ordering.
   std::vector<location_t> _locations;
 
   input(std::unique_ptr<routing_io<cost_t>> routing_wrapper, bool geometry);
