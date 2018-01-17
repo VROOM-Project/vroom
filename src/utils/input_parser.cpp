@@ -34,6 +34,26 @@ inline amount_t parse_amount(const rapidjson::Value& object, const char* key) {
   return amount;
 }
 
+inline boost::optional<amount_t> get_amount(const rapidjson::Value& object,
+                                            const char* key) {
+  if (!object.HasMember(key)) {
+    return boost::none;
+  }
+
+  if (!object[key].IsArray()) {
+    throw custom_exception("Invalid " + std::string(key) + " array.");
+  }
+  amount_t amount;
+  for (rapidjson::SizeType i = 0; i < object[key].Size(); ++i) {
+    if (!object[key][i].IsInt64()) {
+      throw custom_exception("Invalid " + std::string(key) + " value.");
+    }
+    amount.push_back(object[key][i].GetInt64());
+  }
+
+  return amount;
+}
+
 inline bool valid_vehicle(const rapidjson::Value& v) {
   return v.IsObject() and v.HasMember("id") and v["id"].IsUint64();
 }
@@ -157,12 +177,6 @@ input parse(const cl_args_t& cl_args) {
 
       bool has_end_coords = json_input["vehicles"][i].HasMember("end");
 
-      // Handle optional capacity.
-      boost::optional<amount_t> capacity;
-      if (json_input["vehicles"][i].HasMember("capacity")) {
-        capacity = parse_amount(json_input["vehicles"][i], "capacity");
-      }
-
       // Add vehicle to input
       boost::optional<location_t> start;
       if (has_start_index) {
@@ -188,7 +202,7 @@ input parse(const cl_args_t& cl_args) {
       vehicle_t current_v(json_input["vehicles"][i]["id"].GetUint(),
                           start,
                           end,
-                          capacity);
+                          get_amount(json_input["vehicles"][i], "capacity"));
 
       input_data.add_vehicle(current_v);
     }
@@ -216,11 +230,13 @@ input parse(const cl_args_t& cl_args) {
 
       if (json_input["jobs"][i].HasMember("location")) {
         job_t current_job(json_input["jobs"][i]["id"].GetUint64(),
+                          get_amount(json_input["jobs"][i], "amount"),
                           json_input["jobs"][i]["location_index"].GetUint(),
                           parse_coordinates(json_input["jobs"][i], "location"));
         input_data.add_job(current_job);
       } else {
         job_t current_job(json_input["jobs"][i]["id"].GetUint64(),
+                          get_amount(json_input["jobs"][i], "amount"),
                           json_input["jobs"][i]["location_index"].GetUint());
         input_data.add_job(current_job);
       }
@@ -248,22 +264,16 @@ input parse(const cl_args_t& cl_args) {
           parse_coordinates(json_input["vehicles"][i], "start"));
       }
 
-      auto end([]() -> boost::optional<location_t> { return boost::none; }());
+      boost::optional<location_t> end;
       if (json_input["vehicles"][i].HasMember("end")) {
         end = boost::optional<location_t>(
           parse_coordinates(json_input["vehicles"][i], "end"));
       }
 
-      // Handle optional capacity.
-      boost::optional<amount_t> capacity;
-      if (json_input["vehicles"][i].HasMember("capacity")) {
-        capacity = parse_amount(json_input["vehicles"][i], "capacity");
-      }
-
       vehicle_t current_v(json_input["vehicles"][i]["id"].GetUint(),
                           start,
                           end,
-                          capacity);
+                          get_amount(json_input["vehicles"][i], "capacity"));
 
       input_data.add_vehicle(current_v);
     }
@@ -285,6 +295,7 @@ input parse(const cl_args_t& cl_args) {
       }
 
       job_t current_job(json_input["jobs"][i]["id"].GetUint64(),
+                        get_amount(json_input["jobs"][i], "amount"),
                         parse_coordinates(json_input["jobs"][i], "location"));
 
       input_data.add_job(current_job);

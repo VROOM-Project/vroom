@@ -35,6 +35,10 @@ void input::add_job(const job_t& job) {
 
   _index_to_loc_rank.insert({current_job.index(), _locations.size()});
   _locations.push_back(current_job);
+
+  if (current_job.has_amount()) {
+    this->check_amount_size(current_job.amount.get().size());
+  }
 }
 
 void input::add_vehicle(const vehicle_t& vehicle) {
