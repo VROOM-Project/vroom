@@ -54,6 +54,6 @@ main.o : main.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean :
-	rm $(OBJ)
-	rm $(MAIN)
-	rm $(LIB)
+	$(RM) $(OBJ)
+	$(RM) $(MAIN)
+	$(RM) $(LIB)
