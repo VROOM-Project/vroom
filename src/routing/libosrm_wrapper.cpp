@@ -21,8 +21,8 @@ libosrm_wrapper::get_matrix(const std::vector<location_t>& locs,
   for (auto const& location : locs) {
     assert(location.has_coordinates());
     params.coordinates
-      .emplace_back(osrm::util::FloatLongitude({location.lon.get()}),
-                    osrm::util::FloatLatitude({location.lat.get()}));
+      .emplace_back(osrm::util::FloatLongitude({location.lon()}),
+                    osrm::util::FloatLatitude({location.lat()}));
   }
 
   osrm::json::Object result;
@@ -91,8 +91,8 @@ void libosrm_wrapper::add_route_geometry(route_t& rte) const {
   // Ordering locations for the given steps.
   for (auto& step : rte.steps) {
     params.coordinates
-      .emplace_back(osrm::util::FloatLongitude({step.location.lon.get()}),
-                    osrm::util::FloatLatitude({step.location.lat.get()}));
+      .emplace_back(osrm::util::FloatLongitude({step.location.lon()}),
+                    osrm::util::FloatLatitude({step.location.lat()}));
   }
 
   osrm::json::Object result;
