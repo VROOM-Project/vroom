@@ -17,6 +17,7 @@ All rights reserved (see LICENSE).
 
 #include <boost/optional.hpp>
 
+#include "../../../problems/cvrp/cvrp.h"
 #include "../../../problems/tsp/tsp.h"
 #include "../../../routing/routed_wrapper.h"
 #include "../../../routing/routing_io.h"
@@ -38,8 +39,8 @@ private:
   std::chrono::high_resolution_clock::time_point _end_loading;
   std::chrono::high_resolution_clock::time_point _end_solving;
   std::chrono::high_resolution_clock::time_point _end_routing;
-  PROBLEM_T _problem_type;
   std::unique_ptr<routing_io<cost_t>> _routing_wrapper;
+  bool _has_capacity;
   const bool _geometry;
   boost::optional<unsigned> _amount_size;
   void check_amount_size(unsigned size);

@@ -12,8 +12,8 @@ All rights reserved (see LICENSE).
 
 input::input(std::unique_ptr<routing_io<cost_t>> routing_wrapper, bool geometry)
   : _start_loading(std::chrono::high_resolution_clock::now()),
-    _problem_type(PROBLEM_T::TSP),
     _routing_wrapper(std::move(routing_wrapper)),
+    _has_capacity(false),
     _geometry(geometry) {
 }
 
@@ -91,6 +91,7 @@ void input::check_amount_size(unsigned size) {
   } else {
     // Updating real value on first call.
     _amount_size = boost::make_optional(size);
+    _has_capacity = true;
   }
 }
 
@@ -169,16 +170,26 @@ index_t input::get_job_rank_from_index(index_t index) const {
 }
 
 PROBLEM_T input::get_problem_type() const {
-  return _problem_type;
+  PROBLEM_T problem_type = PROBLEM_T::TSP;
+  if (_has_capacity) {
+    problem_type = PROBLEM_T::CVRP;
+  }
+  return problem_type;
 }
 
 std::unique_ptr<vrp> input::get_problem() const {
-  std::vector<index_t> problem_indices;
-  for (const auto& i : _all_indices) {
-    problem_indices.push_back(i);
-  }
+  auto problem_type = this->get_problem_type();
 
-  return std::make_unique<tsp>(*this, problem_indices, 0);
+  if (problem_type == PROBLEM_T::CVRP) {
+    return std::make_unique<cvrp>(*this);
+  } else {
+    std::vector<index_t> problem_indices;
+    for (const auto& i : _all_indices) {
+      problem_indices.push_back(i);
+    }
+
+    return std::make_unique<tsp>(*this, problem_indices, 0);
+  }
 }
 
 solution input::solve(unsigned nb_thread) {

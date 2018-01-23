@@ -57,6 +57,6 @@ struct cl_args_t {
 };
 
 // Problem types.
-enum class PROBLEM_T { TSP };
+enum class PROBLEM_T { TSP, CVRP };
 
 #endif
