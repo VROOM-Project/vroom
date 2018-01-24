@@ -11,4 +11,4 @@ $(MAIN) : $(SRC)
 	$(CXX) $(CXXFLAGS) $^ $(LDLIBS) -o $@
 
 clean :
-	rm $(MAIN)
+	$(RM) $(MAIN)
