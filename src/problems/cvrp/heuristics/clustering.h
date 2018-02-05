@@ -10,8 +10,10 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <algorithm>
 #include <vector>
 
+#include "../../../structures/vroom/amount.h"
 #include "../../../structures/vroom/input/input.h"
 
 std::vector<std::vector<index_t>> clustering(const input& input);

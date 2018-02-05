@@ -15,6 +15,9 @@ All rights reserved (see LICENSE).
 #include "./heuristics/clustering.h"
 
 class cvrp : public vrp {
+private:
+  bool empty_cluster(const std::vector<index_t>& cluster, index_t v) const;
+
 public:
   cvrp(const input& input);
 

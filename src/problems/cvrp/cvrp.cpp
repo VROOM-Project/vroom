@@ -13,13 +13,26 @@ All rights reserved (see LICENSE).
 cvrp::cvrp(const input& input) : vrp(input) {
 }
 
+bool cvrp::empty_cluster(const std::vector<index_t>& cluster, index_t v) const {
+  // Checking if the cluster has only start/end.
+  return (cluster.size() == 1) or
+         ((cluster.size() == 2) and _input._vehicles[v].has_start() and
+          _input._vehicles[v].has_end() and
+          (_input._vehicles[v].start.get().index() !=
+           _input._vehicles[v].end.get().index()));
+}
+
 solution cvrp::solve(unsigned nb_threads) const {
   std::vector<solution> tsp_sols;
 
   auto clusters = clustering(_input);
-  // Test cutting the problem in several TSP (dumbly adding jobs in
-  // order for now).
+
   for (std::size_t i = 0; i < clusters.size(); ++i) {
+    if (empty_cluster(clusters[i], i)) {
+      std::cout << "Empty cluster" << std::endl;
+      continue;
+    }
+
     for (const auto& j : clusters[i]) {
       std::cout << j << " ; ";
     }
