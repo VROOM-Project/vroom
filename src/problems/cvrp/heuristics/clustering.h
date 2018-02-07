@@ -19,6 +19,7 @@ All rights reserved (see LICENSE).
 
 std::vector<std::vector<index_t>> clustering(const input& input);
 
-std::vector<std::vector<index_t>> sequential_clustering(const input& input);
+std::vector<std::vector<index_t>> sequential_clustering(const input& input,
+                                                        double regret_coeff);
 
 #endif

@@ -175,7 +175,8 @@ std::vector<std::vector<index_t>> clustering(const input& input) {
   return clusters;
 }
 
-std::vector<std::vector<index_t>> sequential_clustering(const input& input) {
+std::vector<std::vector<index_t>> sequential_clustering(const input& input,
+                                                        double regret_coeff) {
   auto V = input._vehicles.size();
   auto J = input._jobs.size();
   auto& jobs = input._jobs;
@@ -192,26 +193,52 @@ std::vector<std::vector<index_t>> sequential_clustering(const input& input) {
     candidates_set.insert(i);
   }
 
+  // Remember initial cost of reaching a job from a vehicle (based on
+  // start/end loc).
+  std::vector<std::vector<cost_t>>
+    vehicles_to_job_costs(V, std::vector<cost_t>(J));
+
+  for (std::size_t j = 0; j < J; ++j) {
+    for (std::size_t v = 0; v < V; ++v) {
+      cost_t current_cost = std::numeric_limits<cost_t>::max();
+      if (vehicles[v].has_start()) {
+        auto start_index = vehicles[v].start.get().index();
+        current_cost = std::min(current_cost, m[start_index][jobs[j].index()]);
+      }
+      if (vehicles[v].has_end()) {
+        auto end_index = vehicles[v].end.get().index();
+        current_cost = std::min(current_cost, m[jobs[j].index()][end_index]);
+      }
+      vehicles_to_job_costs[v][j] = current_cost;
+    }
+  }
+
+  // Regrets[v][j] is the min cost of reaching jobs[j] from another
+  // yet-to-build cluster after v. It serves as an indicator of the
+  // cost we'll have to support later when NOT including a job to the
+  // current cluster.
+  std::vector<std::vector<cost_t>> regrets(V, std::vector<cost_t>(J, 0));
+
+  // Regret for penultimate cluster is the cost for last
+  // vehicle. Previous values are computed backward.
+  for (std::size_t j = 0; j < J; ++j) {
+    regrets[V - 2][j] = vehicles_to_job_costs[V - 1][j];
+  }
+  for (std::size_t i = 3; i <= V; ++i) {
+    for (std::size_t j = 0; j < J; ++j) {
+      regrets[V - i][j] = std::min(regrets[V - i + 1][j],
+                                   vehicles_to_job_costs[V - i + 1][j]);
+    }
+  }
+
   for (std::size_t v = 0; v < V; ++v) {
     // Initialization with remaining compatible jobs while remembering
     // costs to jobs for current vehicle.
     std::vector<index_t> candidates;
-    std::vector<cost_t> cost_to_jobs(J);
     for (auto i : candidates_set) {
       // TODO, only keep jobs compatible with vehicle skills.
       if (jobs[i].amount.get() <= input._vehicles[v].capacity.get()) {
         candidates.push_back(i);
-
-        if (vehicles[v].has_start()) {
-          cost_to_jobs[i] = m[vehicles[v].start.get().index()][jobs[i].index()];
-          if (vehicles[v].has_end()) {
-            cost_to_jobs[i] = std::min(cost_to_jobs[i],
-                                       m[jobs[i].index()][vehicles[v].end.get().index()]);
-          }
-        } else {
-          assert(vehicles[v].has_end());
-          cost_to_jobs[i] = m[jobs[i].index()][vehicles[v].end.get().index()];
-        }
       }
     }
 
@@ -253,7 +280,7 @@ std::vector<std::vector<index_t>> sequential_clustering(const input& input) {
                          [&] (index_t lhs, index_t rhs) {
                            return jobs[lhs].amount.get() < jobs[rhs].amount.get() or
                            (jobs[lhs].amount.get() == jobs[rhs].amount.get() and
-                            cost_to_jobs[lhs] < cost_to_jobs[rhs]);
+                            vehicles_to_job_costs[v][lhs] < vehicles_to_job_costs[v][rhs]);
                          });
 
     if (init_job != candidates.cend()) {
@@ -270,10 +297,15 @@ std::vector<std::vector<index_t>> sequential_clustering(const input& input) {
       update_cost(jobs[job_rank].index(), costs, parents, candidates, jobs, m);
     }
 
+    auto eval_lambda = [&](auto i, auto j) {
+      return regret_coeff * static_cast<double>(regrets[v][i]) -
+               static_cast<double>(costs[i]) <
+             regret_coeff * static_cast<double>(regrets[v][j]) -
+               static_cast<double>(costs[j]);
+    };
+
     while (!candidates.empty()) {
-      std::make_heap(candidates.begin(),
-                     candidates.end(),
-                     [&](auto i, auto j) { return costs[i] > costs[j]; });
+      std::make_heap(candidates.begin(), candidates.end(), eval_lambda);
 
       auto current_j = candidates.front();
 
@@ -288,11 +320,7 @@ std::vector<std::vector<index_t>> sequential_clustering(const input& input) {
         update_cost(jobs[current_j].index(), costs, parents, candidates, jobs, m);
       }
 
-      std::pop_heap(candidates.begin(),
-                    candidates.end(),
-                    [&](auto i, auto j) {
-                      return costs[i] > costs[j];
-                    });
+      std::pop_heap(candidates.begin(), candidates.end(), eval_lambda);
       candidates.pop_back();
     }
   }
