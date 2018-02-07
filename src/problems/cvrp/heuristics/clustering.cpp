@@ -174,3 +174,128 @@ std::vector<std::vector<index_t>> clustering(const input& input) {
 
   return clusters;
 }
+
+std::vector<std::vector<index_t>> sequential_clustering(const input& input) {
+  auto V = input._vehicles.size();
+  auto J = input._jobs.size();
+  auto& jobs = input._jobs;
+  auto& vehicles = input._vehicles;
+  auto& m = input._matrix;
+
+  // Vehicle clusters.
+  std::vector<std::vector<index_t>> clusters(V);
+
+  // For each vehicle cluster, we need to initialize a vector of job
+  // candidates (represented by their index in 'jobs').
+  std::unordered_set<index_t> candidates_set;
+  for (index_t i = 0; i < J; ++i) {
+    candidates_set.insert(i);
+  }
+
+  for (std::size_t v = 0; v < V; ++v) {
+    // Initialization with remaining compatible jobs while remembering
+    // costs to jobs for current vehicle.
+    std::vector<index_t> candidates;
+    std::vector<cost_t> cost_to_jobs(J);
+    for (auto i : candidates_set) {
+      // TODO, only keep jobs compatible with vehicle skills.
+      if (jobs[i].amount.get() <= input._vehicles[v].capacity.get()) {
+        candidates.push_back(i);
+
+        if (vehicles[v].has_start()) {
+          cost_to_jobs[i] = m[vehicles[v].start.get().index()][jobs[i].index()];
+          if (vehicles[v].has_end()) {
+            cost_to_jobs[i] = std::min(cost_to_jobs[i],
+                                       m[jobs[i].index()][vehicles[v].end.get().index()]);
+          }
+        } else {
+          assert(vehicles[v].has_end());
+          cost_to_jobs[i] = m[jobs[i].index()][vehicles[v].end.get().index()];
+        }
+      }
+    }
+
+    // Current best known costs to add jobs to current vehicle cluster.
+    std::vector<cost_t> costs(J, std::numeric_limits<cost_t>::max());
+
+    // Remember wanabee parent for each job.
+    std::vector<index_t> parents(J);
+
+    // Pushing start/end into vehicle clusters and updating costs
+    // accordingly.
+    if (vehicles[v].has_start()) {
+      auto start_index = vehicles[v].start.get().index();
+      clusters[v].push_back(start_index);
+      update_cost(start_index, costs, parents, candidates, jobs, m);
+
+      if (vehicles[v].has_end()) {
+        auto end_index = vehicles[v].end.get().index();
+        if (start_index != end_index) {
+          clusters[v].push_back(end_index);
+          update_cost(end_index, costs, parents, candidates, jobs, m);
+        }
+      }
+    } else {
+      assert(vehicles[v].has_end());
+      auto end_index = vehicles[v].end.get().index();
+      clusters[v].push_back(end_index);
+      update_cost(end_index, costs, parents, candidates, jobs, m);
+    }
+
+    // Remember current capacity left in cluster.
+    auto capacity = vehicles[v].capacity.get();
+
+    // Initialize cluster with the job that has higher amount (and is
+    // the further away in case of amount tie).
+    auto init_job
+      = std::max_element(candidates.cbegin(),
+                         candidates.cend(),
+                         [&] (index_t lhs, index_t rhs) {
+                           return jobs[lhs].amount.get() < jobs[rhs].amount.get() or
+                           (jobs[lhs].amount.get() == jobs[rhs].amount.get() and
+                            cost_to_jobs[lhs] < cost_to_jobs[rhs]);
+                         });
+
+    if (init_job != candidates.cend()) {
+      auto job_rank = *init_job;
+      clusters[v].push_back(jobs[job_rank].index());
+      capacity -= jobs[job_rank].amount.get();
+      candidates_set.erase(job_rank);
+      candidates.erase(init_job);
+
+      std::cout << vehicles[v].id << ";" << parents[job_rank]
+                << "->" << jobs[job_rank].index()
+                << std::endl;
+
+      update_cost(jobs[job_rank].index(), costs, parents, candidates, jobs, m);
+    }
+
+    while (!candidates.empty()) {
+      std::make_heap(candidates.begin(),
+                     candidates.end(),
+                     [&](auto i, auto j) { return costs[i] > costs[j]; });
+
+      auto current_j = candidates.front();
+
+      if (jobs[current_j].amount.get() <= capacity) {
+        clusters[v].push_back(jobs[current_j].index());
+        std::cout << vehicles[v].id << ";" << parents[current_j]
+                  << "->" << jobs[current_j].index()
+                  << std::endl;
+        capacity -= jobs[current_j].amount.get();
+        candidates_set.erase(current_j);
+
+        update_cost(jobs[current_j].index(), costs, parents, candidates, jobs, m);
+      }
+
+      std::pop_heap(candidates.begin(),
+                    candidates.end(),
+                    [&](auto i, auto j) {
+                      return costs[i] > costs[j];
+                    });
+      candidates.pop_back();
+    }
+  }
+
+  return clusters;
+}

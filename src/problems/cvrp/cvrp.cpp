@@ -25,7 +25,7 @@ bool cvrp::empty_cluster(const std::vector<index_t>& cluster, index_t v) const {
 solution cvrp::solve(unsigned nb_threads) const {
   std::vector<solution> tsp_sols;
 
-  auto clusters = clustering(_input);
+  auto clusters = sequential_clustering(_input);
 
   for (std::size_t i = 0; i < clusters.size(); ++i) {
     if (empty_cluster(clusters[i], i)) {

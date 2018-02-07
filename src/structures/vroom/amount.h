@@ -37,6 +37,8 @@ public:
   friend bool operator<(const amount_t& lhs, const amount_t& rhs);
 
   friend bool operator<=(const amount_t& lhs, const amount_t& rhs);
+
+  friend bool operator==(const amount_t& lhs, const amount_t& rhs);
 };
 
 #endif

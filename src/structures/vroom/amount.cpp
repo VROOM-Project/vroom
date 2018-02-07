@@ -66,3 +66,16 @@ bool operator<=(const amount_t& lhs, const amount_t& rhs) {
 
   return is_inf;
 }
+
+bool operator==(const amount_t& lhs, const amount_t& rhs) {
+  bool is_equal = true;
+  assert(lhs.size() == rhs.size());
+  for (std::size_t i = 0; i < lhs.size(); ++i) {
+    if (lhs[i] != rhs[i]) {
+      is_equal = false;
+      break;
+    }
+  }
+
+  return is_equal;
+}
