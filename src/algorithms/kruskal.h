@@ -11,6 +11,7 @@ All rights reserved (see LICENSE).
 */
 
 #include <algorithm>
+#include <numeric>
 #include <vector>
 
 #include "../structures/abstract/edge.h"
