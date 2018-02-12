@@ -1,5 +1,4 @@
 /*
-
 This file is part of VROOM.
 
 Copyright (c) 2015-2017, Julien Coupey.
@@ -9,8 +8,28 @@ All rights reserved (see LICENSE).
 
 #include "clustering.h"
 
-clustering::clustering(std::string s, double c, std::size_t V) :
-  strategy(s), regret_coeff(c), clusters(V), edges_cost(0) {
+clustering::clustering(const input& input, CLUSTERING_T t, double c)
+  : input_ref(input),
+    type(t),
+    regret_coeff(c),
+    clusters(input._vehicles.size()),
+    edges_cost(0) {
+  for (const auto& j : input_ref._jobs) {
+    unassigned.insert(j);
+  }
+  std::string strategy;
+  switch (type) {
+  case CLUSTERING_T::PARALLEL:
+    this->parallel_clustering();
+    strategy = "parallel";
+    break;
+  case CLUSTERING_T::SEQUENTIAL:
+    this->sequential_clustering();
+    strategy = "sequential";
+    break;
+  }
+  std::cout << "Clustering:" << strategy << ";" << this->regret_coeff << ";"
+            << this->unassigned.size() << ";" << this->edges_cost << std::endl;
 }
 
 inline void update_cost(index_t from_index,
@@ -31,18 +50,12 @@ inline void update_cost(index_t from_index,
   }
 }
 
-clustering parallel_clustering(const input& input, double regret_coeff) {
-  auto V = input._vehicles.size();
-  auto J = input._jobs.size();
-  auto& jobs = input._jobs;
-  auto& vehicles = input._vehicles;
-  auto& m = input._matrix;
-
-  // Vehicle clusters.
-  clustering c("Parallel", regret_coeff, V);
-  for (const auto& j : jobs) {
-    c.unassigned.insert(j);
-  }
+void clustering::parallel_clustering() {
+  auto V = input_ref._vehicles.size();
+  auto J = input_ref._jobs.size();
+  auto& jobs = input_ref._jobs;
+  auto& vehicles = input_ref._vehicles;
+  auto& m = input_ref._matrix;
 
   // Current best known costs to add jobs to vehicle clusters.
   std::vector<std::vector<cost_t>>
@@ -63,20 +76,20 @@ clustering parallel_clustering(const input& input, double regret_coeff) {
 
     if (vehicles[v].has_start()) {
       auto start_index = vehicles[v].start.get().index();
-      c.clusters[v].push_back(start_index);
+      clusters[v].push_back(start_index);
       update_cost(start_index, costs[v], parents[v], candidates[v], jobs, m);
 
       if (vehicles[v].has_end()) {
         auto end_index = vehicles[v].end.get().index();
         if (start_index != end_index) {
-          c.clusters[v].push_back(end_index);
+          clusters[v].push_back(end_index);
           update_cost(end_index, costs[v], parents[v], candidates[v], jobs, m);
         }
       }
     } else {
       assert(vehicles[v].has_end());
       auto end_index = vehicles[v].end.get().index();
-      c.clusters[v].push_back(end_index);
+      clusters[v].push_back(end_index);
       update_cost(end_index, costs[v], parents[v], candidates[v], jobs, m);
     }
   }
@@ -170,9 +183,9 @@ clustering parallel_clustering(const input& input, double regret_coeff) {
 
     // Add best candidate to matching cluster and remove from all
     // candidate vectors.
-    c.clusters[best_v].push_back(jobs[best_j].index());
-    c.unassigned.erase(jobs[best_j]);
-    c.edges_cost += best_cost;
+    clusters[best_v].push_back(jobs[best_j].index());
+    unassigned.erase(jobs[best_j]);
+    edges_cost += best_cost;
     std::cout << vehicles[best_v].id << ";" << parents[best_v][best_j] << "->"
               << jobs[best_j].index() << std::endl;
     capacities[best_v] -= jobs[best_j].amount.get();
@@ -214,22 +227,14 @@ clustering parallel_clustering(const input& input, double regret_coeff) {
       candidates_remaining |= !candidates[v].empty();
     }
   }
-
-  return c;
 }
 
-clustering sequential_clustering(const input& input, double regret_coeff) {
-  auto V = input._vehicles.size();
-  auto J = input._jobs.size();
-  auto& jobs = input._jobs;
-  auto& vehicles = input._vehicles;
-  auto& m = input._matrix;
-
-  // Vehicle clusters.
-  clustering c("Sequential", regret_coeff, V);
-  for (const auto& j : jobs) {
-    c.unassigned.insert(j);
-  }
+void clustering::sequential_clustering() {
+  auto V = input_ref._vehicles.size();
+  auto J = input_ref._jobs.size();
+  auto& jobs = input_ref._jobs;
+  auto& vehicles = input_ref._vehicles;
+  auto& m = input_ref._matrix;
 
   // For each vehicle cluster, we need to initialize a vector of job
   // candidates (represented by their index in 'jobs').
@@ -282,7 +287,7 @@ clustering sequential_clustering(const input& input, double regret_coeff) {
     std::vector<index_t> candidates;
     for (auto i : candidates_set) {
       // TODO, only keep jobs compatible with vehicle skills.
-      if (jobs[i].amount.get() <= input._vehicles[v].capacity.get()) {
+      if (jobs[i].amount.get() <= input_ref._vehicles[v].capacity.get()) {
         candidates.push_back(i);
       }
     }
@@ -297,20 +302,20 @@ clustering sequential_clustering(const input& input, double regret_coeff) {
     // accordingly.
     if (vehicles[v].has_start()) {
       auto start_index = vehicles[v].start.get().index();
-      c.clusters[v].push_back(start_index);
+      clusters[v].push_back(start_index);
       update_cost(start_index, costs, parents, candidates, jobs, m);
 
       if (vehicles[v].has_end()) {
         auto end_index = vehicles[v].end.get().index();
         if (start_index != end_index) {
-          c.clusters[v].push_back(end_index);
+          clusters[v].push_back(end_index);
           update_cost(end_index, costs, parents, candidates, jobs, m);
         }
       }
     } else {
       assert(vehicles[v].has_end());
       auto end_index = vehicles[v].end.get().index();
-      c.clusters[v].push_back(end_index);
+      clusters[v].push_back(end_index);
       update_cost(end_index, costs, parents, candidates, jobs, m);
     }
 
@@ -330,9 +335,9 @@ clustering sequential_clustering(const input& input, double regret_coeff) {
 
     if (init_job != candidates.cend()) {
       auto job_rank = *init_job;
-      c.clusters[v].push_back(jobs[job_rank].index());
-      c.unassigned.erase(jobs[job_rank]);
-      c.edges_cost += vehicles_to_job_costs[v][job_rank];
+      clusters[v].push_back(jobs[job_rank].index());
+      unassigned.erase(jobs[job_rank]);
+      edges_cost += vehicles_to_job_costs[v][job_rank];
       capacity -= jobs[job_rank].amount.get();
       candidates_set.erase(job_rank);
       candidates.erase(init_job);
@@ -357,9 +362,9 @@ clustering sequential_clustering(const input& input, double regret_coeff) {
       auto current_j = candidates.front();
 
       if (jobs[current_j].amount.get() <= capacity) {
-        c.clusters[v].push_back(jobs[current_j].index());
-        c.unassigned.erase(jobs[current_j]);
-        c.edges_cost += costs[current_j];
+        clusters[v].push_back(jobs[current_j].index());
+        unassigned.erase(jobs[current_j]);
+        edges_cost += costs[current_j];
         std::cout << vehicles[v].id << ";" << parents[current_j]
                   << "->" << jobs[current_j].index()
                   << std::endl;
@@ -373,6 +378,4 @@ clustering sequential_clustering(const input& input, double regret_coeff) {
       candidates.pop_back();
     }
   }
-
-  return c;
 }

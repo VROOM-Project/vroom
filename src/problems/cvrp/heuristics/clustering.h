@@ -18,19 +18,25 @@ All rights reserved (see LICENSE).
 #include "../../../structures/vroom/input/input.h"
 #include "../../../structures/vroom/job.h"
 
-struct clustering {
-  std::string strategy;
-  double regret_coeff;
+// Clustering types.
+enum class CLUSTERING_T { PARALLEL, SEQUENTIAL };
+
+class clustering {
+private:
+  const input& input_ref;
+  void parallel_clustering();
+  void sequential_clustering();
+
+public:
+  const CLUSTERING_T type;
+  const double regret_coeff;
   std::vector<std::vector<index_t>> clusters;
   // Cost of all edges added during the clustering process
   cost_t edges_cost;
   std::unordered_set<job_t> unassigned;
 
-  clustering(std::string s, double c, std::size_t V);
+  clustering(const input& input, CLUSTERING_T t, double c);
 };
 
-clustering parallel_clustering(const input& input, double regret_coeff);
-
-clustering sequential_clustering(const input& input, double regret_coeff);
 
 #endif

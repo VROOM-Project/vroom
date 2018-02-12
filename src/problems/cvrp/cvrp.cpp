@@ -25,24 +25,47 @@ bool cvrp::empty_cluster(const std::vector<index_t>& cluster, index_t v) const {
 solution cvrp::solve(unsigned nb_threads) const {
   std::vector<solution> tsp_sols;
 
-  double regret_coeff = 1;
-  auto c = parallel_clustering(_input, regret_coeff);
+  struct param {
+    CLUSTERING_T type;
+    double regret_coeff;
+  };
 
-  std::cout << "Clustering:" << c.strategy << ";" << c.regret_coeff
-            << ";" << c.edges_cost << std::endl;
+  std::vector<param> parameters;
+  parameters.push_back({CLUSTERING_T::PARALLEL, 0});
+  parameters.push_back({CLUSTERING_T::PARALLEL, 0.5});
+  parameters.push_back({CLUSTERING_T::PARALLEL, 1});
+  parameters.push_back({CLUSTERING_T::SEQUENTIAL, 0});
+  parameters.push_back({CLUSTERING_T::SEQUENTIAL, 0.5});
+  parameters.push_back({CLUSTERING_T::SEQUENTIAL, 1});
 
-  for (std::size_t i = 0; i < c.clusters.size(); ++i) {
-    if (empty_cluster(c.clusters[i], i)) {
+  std::vector<clustering> clusterings;
+  for (const auto& p : parameters) {
+    clusterings.emplace_back(_input, p.type, p.regret_coeff);
+  }
+
+  auto c = std::min_element(clusterings.begin(),
+                            clusterings.end(),
+                            [] (auto& lhs, auto& rhs) {
+                              return lhs.unassigned.size() < rhs.unassigned.size() or (lhs.unassigned.size() == rhs.unassigned.size() and lhs.edges_cost < rhs.edges_cost);
+                            });
+
+  std::string strategy
+    = (c->type == CLUSTERING_T::PARALLEL) ? "parallel": "sequential";
+  std::cout << "Best clustering:" << strategy << ";" << c->regret_coeff << ";"
+            << c->unassigned.size() << ";" << c->edges_cost << std::endl;
+
+  for (std::size_t i = 0; i < c->clusters.size(); ++i) {
+    if (empty_cluster(c->clusters[i], i)) {
       std::cout << "Empty cluster" << std::endl;
       continue;
     }
 
-    for (const auto& j : c.clusters[i]) {
+    for (const auto& j : c->clusters[i]) {
       std::cout << j << " ; ";
     }
     std::cout << std::endl;
 
-    tsp p(_input, c.clusters[i], i);
+    tsp p(_input, c->clusters[i], i);
 
     tsp_sols.push_back(p.solve(1));
   }
@@ -54,5 +77,5 @@ solution cvrp::solve(unsigned nb_threads) const {
     total_cost += tsp_sol.summary.cost;
   }
 
-  return solution(0, total_cost, std::move(routes), std::move(c.unassigned));
+  return solution(0, total_cost, std::move(routes), std::move(c->unassigned));
 }
