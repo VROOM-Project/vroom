@@ -26,20 +26,23 @@ solution cvrp::solve(unsigned nb_threads) const {
   std::vector<solution> tsp_sols;
 
   double regret_coeff = 1;
-  auto clusters = clustering(_input, regret_coeff);
+  auto c = parallel_clustering(_input, regret_coeff);
 
-  for (std::size_t i = 0; i < clusters.size(); ++i) {
-    if (empty_cluster(clusters[i], i)) {
+  std::cout << "Clustering:" << c.strategy << ";" << c.regret_coeff
+            << ";" << c.edges_cost << std::endl;
+
+  for (std::size_t i = 0; i < c.clusters.size(); ++i) {
+    if (empty_cluster(c.clusters[i], i)) {
       std::cout << "Empty cluster" << std::endl;
       continue;
     }
 
-    for (const auto& j : clusters[i]) {
+    for (const auto& j : c.clusters[i]) {
       std::cout << j << " ; ";
     }
     std::cout << std::endl;
 
-    tsp p(_input, clusters[i], i);
+    tsp p(_input, c.clusters[i], i);
 
     tsp_sols.push_back(p.solve(1));
   }

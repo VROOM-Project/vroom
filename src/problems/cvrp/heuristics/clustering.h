@@ -17,9 +17,18 @@ All rights reserved (see LICENSE).
 #include "../../../structures/vroom/amount.h"
 #include "../../../structures/vroom/input/input.h"
 
-std::vector<std::vector<index_t>> clustering(const input& input, double regret_coeff);
+struct clustering {
+  std::string strategy;
+  double regret_coeff;
+  std::vector<std::vector<index_t>> clusters;
+  // Cost of all edges added during the clustering process
+  cost_t edges_cost;
 
-std::vector<std::vector<index_t>> sequential_clustering(const input& input,
-                                                        double regret_coeff);
+  clustering(std::string s, double c, std::size_t n);
+};
+
+clustering parallel_clustering(const input& input, double regret_coeff);
+
+clustering sequential_clustering(const input& input, double regret_coeff);
 
 #endif
