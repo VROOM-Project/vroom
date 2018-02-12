@@ -17,8 +17,9 @@ struct summary_t {
   duration_t duration;
   distance_t distance;
   computing_times_t computing_times;
+  unsigned unassigned;
 
-  summary_t(cost_t cost);
+  summary_t(cost_t cost, unsigned unassigned);
 };
 
 #endif

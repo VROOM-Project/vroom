@@ -54,5 +54,5 @@ solution cvrp::solve(unsigned nb_threads) const {
     total_cost += tsp_sol.summary.cost;
   }
 
-  return solution(0, std::move(routes), total_cost);
+  return solution(0, total_cost, std::move(routes), std::move(c.unassigned));
 }

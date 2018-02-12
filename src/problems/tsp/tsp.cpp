@@ -346,7 +346,7 @@ solution tsp::solve(unsigned nb_threads) const {
   std::vector<route_t> routes;
   routes.emplace_back(_input._vehicles[_vehicle_rank].id, steps, current_cost);
 
-  solution sol(0, std::move(routes), current_cost);
+  solution sol(0, current_cost, std::move(routes), {});
 
   return sol;
 }

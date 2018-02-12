@@ -9,8 +9,8 @@ All rights reserved (see LICENSE).
 
 #include "clustering.h"
 
-clustering::clustering(std::string s, double c, std::size_t n) :
-  strategy(s), regret_coeff(c), clusters(n), edges_cost(0) {
+clustering::clustering(std::string s, double c, std::size_t V) :
+  strategy(s), regret_coeff(c), clusters(V), edges_cost(0) {
 }
 
 inline void update_cost(index_t from_index,
@@ -40,6 +40,9 @@ clustering parallel_clustering(const input& input, double regret_coeff) {
 
   // Vehicle clusters.
   clustering c("Parallel", regret_coeff, V);
+  for (const auto& j : jobs) {
+    c.unassigned.insert(j);
+  }
 
   // Current best known costs to add jobs to vehicle clusters.
   std::vector<std::vector<cost_t>>
@@ -168,6 +171,7 @@ clustering parallel_clustering(const input& input, double regret_coeff) {
     // Add best candidate to matching cluster and remove from all
     // candidate vectors.
     c.clusters[best_v].push_back(jobs[best_j].index());
+    c.unassigned.erase(jobs[best_j]);
     c.edges_cost += best_cost;
     std::cout << vehicles[best_v].id << ";" << parents[best_v][best_j] << "->"
               << jobs[best_j].index() << std::endl;
@@ -223,6 +227,9 @@ clustering sequential_clustering(const input& input, double regret_coeff) {
 
   // Vehicle clusters.
   clustering c("Sequential", regret_coeff, V);
+  for (const auto& j : jobs) {
+    c.unassigned.insert(j);
+  }
 
   // For each vehicle cluster, we need to initialize a vector of job
   // candidates (represented by their index in 'jobs').
@@ -324,6 +331,7 @@ clustering sequential_clustering(const input& input, double regret_coeff) {
     if (init_job != candidates.cend()) {
       auto job_rank = *init_job;
       c.clusters[v].push_back(jobs[job_rank].index());
+      c.unassigned.erase(jobs[job_rank]);
       c.edges_cost += vehicles_to_job_costs[v][job_rank];
       capacity -= jobs[job_rank].amount.get();
       candidates_set.erase(job_rank);
@@ -350,6 +358,7 @@ clustering sequential_clustering(const input& input, double regret_coeff) {
 
       if (jobs[current_j].amount.get() <= capacity) {
         c.clusters[v].push_back(jobs[current_j].index());
+        c.unassigned.erase(jobs[current_j]);
         c.edges_cost += costs[current_j];
         std::cout << vehicles[v].id << ";" << parents[current_j]
                   << "->" << jobs[current_j].index()

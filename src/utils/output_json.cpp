@@ -23,6 +23,18 @@ rapidjson::Document to_json(const solution& sol, bool geometry) {
                           to_json(sol.summary, geometry, allocator),
                           allocator);
 
+    rapidjson::Value json_unassigned(rapidjson::kArrayType);
+    for (const auto& job : sol.unassigned) {
+      rapidjson::Value json_job(rapidjson::kObjectType);
+      json_job.AddMember("id", job.id, allocator);
+      if (job.has_coordinates()) {
+        json_job.AddMember("location", to_json(job, allocator), allocator);
+      }
+      json_unassigned.PushBack(json_job, allocator);
+    }
+
+    json_output.AddMember("unassigned", json_unassigned, allocator);
+
     rapidjson::Value json_routes(rapidjson::kArrayType);
     for (const auto& route : sol.routes) {
       json_routes.PushBack(to_json(route, allocator), allocator);
@@ -40,6 +52,7 @@ rapidjson::Value to_json(const summary_t& summary,
   rapidjson::Value json_summary(rapidjson::kObjectType);
 
   json_summary.AddMember("cost", summary.cost, allocator);
+  json_summary.AddMember("unassigned", summary.unassigned, allocator);
 
   if (geometry) {
     json_summary.AddMember("distance", summary.distance, allocator);

@@ -16,6 +16,7 @@ All rights reserved (see LICENSE).
 
 #include "../../../structures/vroom/amount.h"
 #include "../../../structures/vroom/input/input.h"
+#include "../../../structures/vroom/job.h"
 
 struct clustering {
   std::string strategy;
@@ -23,8 +24,9 @@ struct clustering {
   std::vector<std::vector<index_t>> clusters;
   // Cost of all edges added during the clustering process
   cost_t edges_cost;
+  std::unordered_set<job_t> unassigned;
 
-  clustering(std::string s, double c, std::size_t n);
+  clustering(std::string s, double c, std::size_t V);
 };
 
 clustering parallel_clustering(const input& input, double regret_coeff);
