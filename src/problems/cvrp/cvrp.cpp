@@ -26,7 +26,7 @@ solution cvrp::solve(unsigned nb_threads) const {
   std::vector<solution> tsp_sols;
 
   double regret_coeff = 1;
-  auto clusters = sequential_clustering(_input, regret_coeff);
+  auto clusters = clustering(_input, regret_coeff);
 
   for (std::size_t i = 0; i < clusters.size(); ++i) {
     if (empty_cluster(clusters[i], i)) {

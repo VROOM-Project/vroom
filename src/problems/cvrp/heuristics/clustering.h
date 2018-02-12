@@ -17,7 +17,7 @@ All rights reserved (see LICENSE).
 #include "../../../structures/vroom/amount.h"
 #include "../../../structures/vroom/input/input.h"
 
-std::vector<std::vector<index_t>> clustering(const input& input);
+std::vector<std::vector<index_t>> clustering(const input& input, double regret_coeff);
 
 std::vector<std::vector<index_t>> sequential_clustering(const input& input,
                                                         double regret_coeff);

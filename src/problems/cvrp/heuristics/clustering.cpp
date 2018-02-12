@@ -27,7 +27,8 @@ inline void update_cost(index_t from_index,
   }
 }
 
-std::vector<std::vector<index_t>> clustering(const input& input) {
+std::vector<std::vector<index_t>> clustering(const input& input,
+                                             double regret_coeff) {
   auto V = input._vehicles.size();
   auto J = input._jobs.size();
   auto& jobs = input._jobs;
@@ -80,6 +81,34 @@ std::vector<std::vector<index_t>> clustering(const input& input) {
     capacities.emplace_back(vehicles[v].capacity.get());
   }
 
+  // Regrets[v][j] is the min cost of reaching jobs[j] from another
+  // cluster than v. It serves as an indicator of the cost we'll have
+  // to support later when NOT including a job to the current cluster.
+  std::vector<std::vector<cost_t>> regrets(V, std::vector<cost_t>(J, 0));
+  for (std::size_t v = 0; v < V; ++v) {
+    for (auto j : candidates[v]) {
+      auto current_regret = std::numeric_limits<cost_t>::max();
+      for (std::size_t other_v = 0; other_v < V; ++other_v) {
+        // Cost from other clusters that potentially can handle job.
+        if ((v == other_v) or
+            (costs[other_v][j] == std::numeric_limits<cost_t>::max())) {
+          continue;
+        }
+        current_regret = std::min(current_regret, costs[other_v][j]);
+      }
+      regrets[v][j] = current_regret;
+    }
+  }
+
+  auto eval_lambda = [&](auto v) {
+    return [&](auto i, auto j) {
+      return regret_coeff * static_cast<double>(regrets[v][i]) -
+      static_cast<double>(costs[v][i]) <
+      regret_coeff * static_cast<double>(regrets[v][j]) -
+      static_cast<double>(costs[v][j]);
+    };
+  };
+
   bool candidates_remaining = true;
 
   while (candidates_remaining) {
@@ -95,9 +124,7 @@ std::vector<std::vector<index_t>> clustering(const input& input) {
       }
 
       // Consider best job candidate for current cluster.
-      std::make_heap(candidates[v].begin(),
-                     candidates[v].end(),
-                     [&](auto i, auto j) { return costs[v][i] > costs[v][j]; });
+      std::make_heap(candidates[v].begin(), candidates[v].end(), eval_lambda(v));
 
       auto current_j = candidates[v].front();
       if (jobs[current_j].amount.get() <= capacities[v] and
@@ -127,11 +154,7 @@ std::vector<std::vector<index_t>> clustering(const input& input) {
         if (candidates[v].empty()) {
           continue;
         }
-        std::pop_heap(candidates[v].begin(),
-                      candidates[v].end(),
-                      [&](auto i, auto j) {
-                        return costs[v][i] > costs[v][j];
-                      });
+        std::pop_heap(candidates[v].begin(), candidates[v].end(), eval_lambda(v));
         candidates[v].pop_back();
 
         candidates_remaining |= !candidates[v].empty();
@@ -148,9 +171,7 @@ std::vector<std::vector<index_t>> clustering(const input& input) {
 
     std::pop_heap(candidates[best_v].begin(),
                   candidates[best_v].end(),
-                  [&](auto i, auto j) {
-                    return costs[best_v][i] > costs[best_v][j];
-                  });
+                  eval_lambda(best_v));
     candidates[best_v].pop_back();
     update_cost(jobs[best_j].index(),
                 costs[best_v],
@@ -158,6 +179,20 @@ std::vector<std::vector<index_t>> clustering(const input& input) {
                 candidates[best_v],
                 jobs,
                 m);
+    // Update regrets as costs from matching cluster to job candidates
+    // potentially decrease.
+    for (auto j : candidates[best_v]) {
+      auto new_cost = std::min(m[jobs[best_j].index()][jobs[j].index()],
+                               m[jobs[j].index()][jobs[best_j].index()]);
+      for (std::size_t other_v = 0; other_v < V; ++other_v) {
+        // Regret for other clusters that potentially can handle job.
+        if ((other_v == best_v) or
+            (costs[other_v][j] == std::numeric_limits<cost_t>::max())) {
+          continue;
+        }
+        regrets[other_v][j] = std::min(regrets[other_v][j], new_cost);
+      }
+    }
 
     for (std::size_t v = 0; v < V; ++v) {
       if (v != best_v) {
