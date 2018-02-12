@@ -11,8 +11,8 @@ All rights reserved (see LICENSE).
 */
 
 #include <algorithm>
-#include <vector>
 #include <numeric>
+#include <vector>
 
 #include "../structures/abstract/edge.h"
 #include "../structures/abstract/undirected_graph.h"
