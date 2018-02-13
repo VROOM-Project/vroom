@@ -22,6 +22,13 @@ tsp::tsp(const input& input,
     _has_start(_input._vehicles[_vehicle_rank].has_start()),
     _has_end(_input._vehicles[_vehicle_rank].has_end()) {
 
+  // Distances on the diagonal are never used except in the minimum
+  // weight perfect matching (munkres call during the heuristic). This
+  // makes sure no node will be matched with itself at that time.
+  for (index_t i = 0; i < _matrix.size(); ++i) {
+    _matrix[i][i] = INFINITE_COST;
+  }
+
   if (_has_start) {
     // Use index in _matrix for start.
     auto search =

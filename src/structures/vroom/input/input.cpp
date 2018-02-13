@@ -119,14 +119,6 @@ void input::set_matrix() {
 
   // Check for potential overflow in solution cost.
   this->check_cost_bound();
-
-  // Distances on the diagonal are never used except in the minimum
-  // weight perfect matching (munkres call during the TSP
-  // heuristic). This makes sure no node will be matched with itself
-  // at that time.
-  for (index_t i = 0; i < _matrix.size(); ++i) {
-    _matrix[i][i] = INFINITE_COST;
-  }
 }
 
 PROBLEM_T input::get_problem_type() const {
