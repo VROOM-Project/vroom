@@ -307,7 +307,8 @@ solution tsp::solve(unsigned nb_threads) const {
   if (_has_start) {
     // Add start step.
     assert(current_sol.front() == _start);
-    steps.emplace_back(TYPE::START, _input._vehicles[_vehicle_rank].start.get());
+    steps.emplace_back(TYPE::START,
+                       _input._vehicles[_vehicle_rank].start.get());
     // Remember that jobs start further away in the list.
     ++job_start;
   }
@@ -326,11 +327,7 @@ solution tsp::solve(unsigned nb_threads) const {
 
   // Handle jobs.
   for (auto job = job_start; job != job_end; ++job) {
-    auto current_rank =
-      _input.get_job_rank_from_index(_tsp_index_to_global[*job]);
-    steps.emplace_back(TYPE::JOB,
-                       _input._jobs[current_rank],
-                       _input._jobs[current_rank].id);
+    steps.emplace_back(TYPE::JOB, _input._locations[*job], _input._ids[*job]);
   }
   // Handle end.
   if (_has_end) {

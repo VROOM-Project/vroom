@@ -43,8 +43,6 @@ private:
   const bool _geometry;
   void check_cost_bound();
   void set_matrix();
-  std::unordered_map<index_t, index_t> _index_to_job_rank;
-  std::set<index_t> _all_indices;
   std::unique_ptr<vrp> get_problem() const;
 
 public:
@@ -54,7 +52,8 @@ public:
   std::vector<cost_t> _max_cost_per_line;
   std::vector<cost_t> _max_cost_per_column;
 
-  // List of locations added through add_*.
+  // List of ids and locations added through add_*.
+  std::vector<ID_t> _ids;
   std::vector<location_t> _locations;
 
   input(std::unique_ptr<routing_io<cost_t>> routing_wrapper, bool geometry);
@@ -62,8 +61,6 @@ public:
   void add_job(const job_t& job);
 
   void add_vehicle(const vehicle_t& vehicle);
-
-  index_t get_job_rank_from_index(index_t index) const;
 
   PROBLEM_T get_problem_type() const;
 

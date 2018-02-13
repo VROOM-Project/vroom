@@ -28,11 +28,7 @@ void input::add_job(const job_t& job) {
     current_job.set_index(_locations.size());
   }
 
-  // Remember mapping between the job index in the matrix and its rank
-  // in _jobs.
-  _index_to_job_rank.insert({current_job.index(), _jobs.size() - 1});
-  _all_indices.insert(current_job.index());
-
+  _ids.push_back(current_job.id);
   _locations.push_back(current_job);
 }
 
@@ -50,9 +46,8 @@ void input::add_vehicle(const vehicle_t& vehicle) {
       // vehicle creation, using current number of locations.
       current_v.start.get().set_index(_locations.size());
     }
-    auto start_index = current_v.start.get().index();
-    _all_indices.insert(start_index);
 
+    _ids.push_back(current_v.id);
     _locations.push_back(current_v.start.get());
   }
 
@@ -62,11 +57,11 @@ void input::add_vehicle(const vehicle_t& vehicle) {
       // vehicle creation, using current number of locations.
       current_v.end.get().set_index(_locations.size());
     }
-    auto end_index = current_v.end.get().index();
-    _all_indices.insert(end_index);
 
-    if (!has_start or (current_v.start.get().index() != end_index)) {
+    if (!has_start or
+        (current_v.start.get().index() != current_v.end.get().index())) {
       // Avoiding duplicate for start/end location.
+      _ids.push_back(current_v.id);
       _locations.push_back(current_v.end.get());
     }
   }
@@ -132,12 +127,6 @@ void input::set_matrix() {
   for (index_t i = 0; i < _matrix.size(); ++i) {
     _matrix[i][i] = INFINITE_COST;
   }
-}
-
-index_t input::get_job_rank_from_index(index_t index) const {
-  auto result = _index_to_job_rank.find(index);
-  assert(result != _index_to_job_rank.end());
-  return result->second;
 }
 
 PROBLEM_T input::get_problem_type() const {
