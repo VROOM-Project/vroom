@@ -65,7 +65,10 @@ void input::add_vehicle(const vehicle_t& vehicle) {
     auto end_index = current_v.end.get().index();
     _all_indices.insert(end_index);
 
-    _locations.push_back(current_v.end.get());
+    if (!has_start or (current_v.start.get().index() != end_index)) {
+      // Avoiding duplicate for start/end location.
+      _locations.push_back(current_v.end.get());
+    }
   }
 }
 
@@ -143,9 +146,10 @@ PROBLEM_T input::get_problem_type() const {
 
 std::unique_ptr<vrp> input::get_problem() const {
   std::vector<index_t> problem_indices;
-  for (const auto& i : _all_indices) {
-    problem_indices.push_back(i);
-  }
+  std::transform(_locations.begin(),
+                 _locations.end(),
+                 std::back_inserter(problem_indices),
+                 [](const auto& loc) { return loc.index(); });
 
   return std::make_unique<tsp>(*this, problem_indices, 0);
 }

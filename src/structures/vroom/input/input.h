@@ -54,8 +54,7 @@ public:
   std::vector<cost_t> _max_cost_per_line;
   std::vector<cost_t> _max_cost_per_column;
 
-  // List of locations added through add_* matching the matrix
-  // ordering.
+  // List of locations added through add_*.
   std::vector<location_t> _locations;
 
   input(std::unique_ptr<routing_io<cost_t>> routing_wrapper, bool geometry);
@@ -63,8 +62,6 @@ public:
   void add_job(const job_t& job);
 
   void add_vehicle(const vehicle_t& vehicle);
-
-  index_t get_location_rank_from_index(index_t index) const;
 
   index_t get_job_rank_from_index(index_t index) const;
 
