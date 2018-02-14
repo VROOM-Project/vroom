@@ -21,7 +21,14 @@ int main() {
                                      );
 
   input problem_instance(std::move(routing_wrapper),
-                         true); // Query for route geometry after solving.
+                         false); // Query for route geometry after solving.
+
+  // // Un-comment to define your own matrix and bypass OSRM call.
+  // matrix<cost_t> matrix_input({{0, 0, 775, 1340},
+  //                              {0, 0, 775, 1340},
+  //                              {746, 746, 0, 1635},
+  //                              {1507, 1507, 1593, 0}});
+  // problem_instance.set_matrix(std::move(matrix_input));
 
   // Define vehicle with id, start and end (use boost::none for no
   // start or no end).

@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <initializer_list>
 #include <vector>
 
 #include "../typedefs.h"
@@ -23,6 +24,8 @@ public:
   using parent::operator[];
 
   line(std::size_t n);
+
+  line(std::initializer_list<T> l);
 };
 
 template <class T> class matrix : private std::vector<line<T>> {
@@ -36,6 +39,8 @@ public:
   matrix();
 
   matrix(std::size_t n);
+
+  matrix(std::initializer_list<line<T>> l);
 
   matrix<T> get_sub_matrix(const std::vector<index_t>& indices) const;
 };

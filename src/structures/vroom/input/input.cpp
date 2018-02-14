@@ -72,17 +72,36 @@ void input::add_vehicle(const vehicle_t& vehicle) {
   }
 }
 
-void input::check_cost_bound() {
+void input::set_matrix(matrix<cost_t>&& m) {
+  _matrix = std::move(m);
+}
+
+matrix<cost_t>
+input::get_sub_matrix(const std::vector<index_t>& indices) const {
+  return _matrix.get_sub_matrix(indices);
+}
+
+void input::check_cost_bound() const {
   // Check that we don't have any overflow while computing an upper
   // bound for solution cost.
+
+  std::vector<cost_t> max_cost_per_line(_matrix.size(), 0);
+  std::vector<cost_t> max_cost_per_column(_matrix.size(), 0);
+
+  for (std::size_t i = 0; i < _matrix.size(); ++i) {
+    for (std::size_t j = 0; j < _matrix.size(); ++j) {
+      max_cost_per_line[i] = std::max(max_cost_per_line[i], _matrix[i][j]);
+      max_cost_per_column[j] = std::max(max_cost_per_column[j], _matrix[i][j]);
+    }
+  }
 
   cost_t jobs_departure_bound = 0;
   cost_t jobs_arrival_bound = 0;
   for (const auto& j : _jobs) {
     jobs_departure_bound =
-      add_without_overflow(jobs_departure_bound, _max_cost_per_line[j.index()]);
+      add_without_overflow(jobs_departure_bound, max_cost_per_line[j.index()]);
     jobs_arrival_bound =
-      add_without_overflow(jobs_arrival_bound, _max_cost_per_column[j.index()]);
+      add_without_overflow(jobs_arrival_bound, max_cost_per_column[j.index()]);
   }
 
   cost_t jobs_bound = std::max(jobs_departure_bound, jobs_arrival_bound);
@@ -93,12 +112,12 @@ void input::check_cost_bound() {
     if (v.has_start()) {
       start_bound =
         add_without_overflow(start_bound,
-                             _max_cost_per_line[v.start.get().index()]);
+                             max_cost_per_line[v.start.get().index()]);
     }
     if (v.has_end()) {
       end_bound =
         add_without_overflow(end_bound,
-                             _max_cost_per_column[v.end.get().index()]);
+                             max_cost_per_column[v.end.get().index()]);
     }
   }
 
@@ -107,31 +126,6 @@ void input::check_cost_bound() {
 
   BOOST_LOG_TRIVIAL(info) << "[Loading] solution cost upper bound: " << bound
                           << ".";
-}
-
-void input::set_matrix() {
-  // Don't call osrm, if matrix is already provided.
-  if (_matrix.size() < 2) {
-    assert(_routing_wrapper);
-    BOOST_LOG_TRIVIAL(info) << "[Loading] Start matrix computing.";
-    _max_cost_per_line.assign(_locations.size(), 0);
-    _max_cost_per_column.assign(_locations.size(), 0);
-
-    _matrix = _routing_wrapper->get_matrix(_locations,
-                                           _max_cost_per_line,
-                                           _max_cost_per_column);
-  }
-
-  // Check for potential overflow in solution cost.
-  this->check_cost_bound();
-
-  // Distances on the diagonal are never used except in the minimum
-  // weight perfect matching (munkres call during the TSP
-  // heuristic). This makes sure no node will be matched with itself
-  // at that time.
-  for (index_t i = 0; i < _matrix.size(); ++i) {
-    _matrix[i][i] = INFINITE_COST;
-  }
 }
 
 index_t input::get_location_rank_from_index(index_t index) const {
@@ -160,8 +154,25 @@ std::unique_ptr<vrp> input::get_problem() const {
 }
 
 solution input::solve(unsigned nb_thread) {
-  // Compute matrix and load relevant problem.
-  this->set_matrix();
+  if (_matrix.size() < 2) {
+    // OSRM call if matrix not already provided.
+    assert(_routing_wrapper);
+    BOOST_LOG_TRIVIAL(info) << "[Loading] Start matrix computing.";
+    _matrix = _routing_wrapper->get_matrix(_locations);
+  }
+
+  // Check for potential overflow in solution cost.
+  this->check_cost_bound();
+
+  // Distances on the diagonal are never used except in the minimum
+  // weight perfect matching (munkres call during the TSP
+  // heuristic). This makes sure no node will be matched with itself
+  // at that time.
+  for (index_t i = 0; i < _matrix.size(); ++i) {
+    _matrix[i][i] = INFINITE_COST;
+  }
+
+  // Load relevant problem.
   auto instance = this->get_problem();
   _end_loading = std::chrono::high_resolution_clock::now();
 
