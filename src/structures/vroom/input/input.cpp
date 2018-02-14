@@ -28,7 +28,7 @@ void input::add_job(const job_t& job) {
     current_job.set_index(_locations.size());
   }
 
-  _ids.push_back(current_job.id);
+  _type_with_ids.push_back({TYPE::JOB, current_job.id});
   _locations.push_back(current_job);
 }
 
@@ -47,7 +47,7 @@ void input::add_vehicle(const vehicle_t& vehicle) {
       current_v.start.get().set_index(_locations.size());
     }
 
-    _ids.push_back(current_v.id);
+    _type_with_ids.push_back({TYPE::START, current_v.id});
     _locations.push_back(current_v.start.get());
   }
 
@@ -61,7 +61,7 @@ void input::add_vehicle(const vehicle_t& vehicle) {
     if (!has_start or
         (current_v.start.get().index() != current_v.end.get().index())) {
       // Avoiding duplicate for start/end location.
-      _ids.push_back(current_v.id);
+      _type_with_ids.push_back({TYPE::END, current_v.id});
       _locations.push_back(current_v.end.get());
     }
   }

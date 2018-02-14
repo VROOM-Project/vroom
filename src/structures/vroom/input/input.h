@@ -32,6 +32,11 @@ All rights reserved (see LICENSE).
 
 class vrp;
 
+struct type_with_id {
+  TYPE type;
+  ID_t id;
+};
+
 class input {
 private:
   std::chrono::high_resolution_clock::time_point _start_loading;
@@ -53,7 +58,7 @@ public:
   std::vector<cost_t> _max_cost_per_column;
 
   // List of ids and locations added through add_*.
-  std::vector<ID_t> _ids;
+  std::vector<type_with_id> _type_with_ids;
   std::vector<location_t> _locations;
 
   input(std::unique_ptr<routing_io<cost_t>> routing_wrapper, bool geometry);

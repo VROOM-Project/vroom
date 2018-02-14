@@ -334,7 +334,10 @@ solution tsp::solve(unsigned nb_threads) const {
 
   // Handle jobs.
   for (auto job = job_start; job != job_end; ++job) {
-    steps.emplace_back(TYPE::JOB, _input._locations[*job], _input._ids[*job]);
+    assert(_input._type_with_ids[*job].type == TYPE::JOB);
+    steps.emplace_back(TYPE::JOB,
+                       _input._locations[*job],
+                       _input._type_with_ids[*job].id);
   }
   // Handle end.
   if (_has_end) {

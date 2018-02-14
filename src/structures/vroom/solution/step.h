@@ -12,8 +12,6 @@ All rights reserved (see LICENSE).
 
 #include "../location.h"
 
-enum class TYPE { START, JOB, END };
-
 struct step {
   TYPE type;
   location_t location;
