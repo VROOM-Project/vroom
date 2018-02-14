@@ -45,7 +45,7 @@ libosrm_wrapper::get_matrix(const std::vector<location_t>& locs) const {
 
   // Build matrix while checking for unfound routes to avoid
   // unexpected behavior (OSRM raises 'null').
-  matrix<cost_t> m{m_size};
+  matrix<cost_t> m(m_size);
 
   std::vector<unsigned> nb_unfound_from_loc(m_size, 0);
   std::vector<unsigned> nb_unfound_to_loc(m_size, 0);

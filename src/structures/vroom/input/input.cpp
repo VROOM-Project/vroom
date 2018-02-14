@@ -76,7 +76,8 @@ void input::set_matrix(matrix<cost_t>&& m) {
   _matrix = std::move(m);
 }
 
-matrix<cost_t> input::get_sub_matrix(const std::vector<index_t>& indices) const {
+matrix<cost_t>
+input::get_sub_matrix(const std::vector<index_t>& indices) const {
   return _matrix.get_sub_matrix(indices);
 }
 
