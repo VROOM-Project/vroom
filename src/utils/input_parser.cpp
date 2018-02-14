@@ -82,9 +82,6 @@ input parse(const cl_args_t& cl_args) {
     // Load custom matrix while checking if it is square.
     rapidjson::SizeType matrix_size = json_input["matrix"].Size();
 
-    input_data._max_cost_per_line.assign(matrix_size, 0);
-    input_data._max_cost_per_column.assign(matrix_size, 0);
-
     matrix<cost_t> matrix_input(matrix_size);
     for (rapidjson::SizeType i = 0; i < matrix_size; ++i) {
       if (!json_input["matrix"][i].IsArray() or
@@ -99,10 +96,6 @@ input parse(const cl_args_t& cl_args) {
         }
         cost_t cost = json_input["matrix"][i][j].GetUint();
         matrix_input[i][j] = cost;
-        input_data._max_cost_per_line[i] =
-          std::max(input_data._max_cost_per_line[i], cost);
-        input_data._max_cost_per_column[j] =
-          std::max(input_data._max_cost_per_column[j], cost);
       }
     }
     input_data._matrix = matrix_input;

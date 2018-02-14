@@ -52,8 +52,6 @@ public:
   std::vector<job_t> _jobs;
   std::vector<vehicle_t> _vehicles;
   matrix<cost_t> _matrix;
-  std::vector<cost_t> _max_cost_per_line;
-  std::vector<cost_t> _max_cost_per_column;
 
   // List of locations added through add_* matching the matrix
   // ordering.

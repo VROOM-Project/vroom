@@ -14,9 +14,7 @@ libosrm_wrapper::libosrm_wrapper(const std::string& osrm_profile)
 }
 
 matrix<cost_t>
-libosrm_wrapper::get_matrix(const std::vector<location_t>& locs,
-                            std::vector<cost_t>& max_cost_per_line,
-                            std::vector<cost_t>& max_cost_per_column) const {
+libosrm_wrapper::get_matrix(const std::vector<location_t>& locs) const {
   osrm::TableParameters params;
   for (auto const& location : locs) {
     assert(location.has_coordinates());
@@ -67,8 +65,6 @@ libosrm_wrapper::get_matrix(const std::vector<location_t>& locs,
       } else {
         auto cost = round_cost(el.get<osrm::json::Number>().value);
         m[i][j] = cost;
-        max_cost_per_line[i] = std::max(max_cost_per_line[i], cost);
-        max_cost_per_column[j] = std::max(max_cost_per_column[j], cost);
       }
     }
   }

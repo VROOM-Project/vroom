@@ -76,13 +76,23 @@ void input::check_cost_bound() {
   // Check that we don't have any overflow while computing an upper
   // bound for solution cost.
 
+  std::vector<cost_t> max_cost_per_line(_matrix.size(), 0);
+  std::vector<cost_t> max_cost_per_column(_matrix.size(), 0);
+
+  for (std::size_t i = 0; i < _matrix.size(); ++i) {
+    for (std::size_t j = 0; j < _matrix.size(); ++j) {
+      max_cost_per_line[i] = std::max(max_cost_per_line[i], _matrix[i][j]);
+      max_cost_per_column[j] = std::max(max_cost_per_column[j], _matrix[i][j]);
+    }
+  }
+
   cost_t jobs_departure_bound = 0;
   cost_t jobs_arrival_bound = 0;
   for (const auto& j : _jobs) {
     jobs_departure_bound =
-      add_without_overflow(jobs_departure_bound, _max_cost_per_line[j.index()]);
+      add_without_overflow(jobs_departure_bound, max_cost_per_line[j.index()]);
     jobs_arrival_bound =
-      add_without_overflow(jobs_arrival_bound, _max_cost_per_column[j.index()]);
+      add_without_overflow(jobs_arrival_bound, max_cost_per_column[j.index()]);
   }
 
   cost_t jobs_bound = std::max(jobs_departure_bound, jobs_arrival_bound);
@@ -93,12 +103,12 @@ void input::check_cost_bound() {
     if (v.has_start()) {
       start_bound =
         add_without_overflow(start_bound,
-                             _max_cost_per_line[v.start.get().index()]);
+                             max_cost_per_line[v.start.get().index()]);
     }
     if (v.has_end()) {
       end_bound =
         add_without_overflow(end_bound,
-                             _max_cost_per_column[v.end.get().index()]);
+                             max_cost_per_column[v.end.get().index()]);
     }
   }
 
@@ -110,16 +120,11 @@ void input::check_cost_bound() {
 }
 
 void input::set_matrix() {
-  // Don't call osrm, if matrix is already provided.
   if (_matrix.size() < 2) {
+    // OSRM call if matrix not already provided.
     assert(_routing_wrapper);
     BOOST_LOG_TRIVIAL(info) << "[Loading] Start matrix computing.";
-    _max_cost_per_line.assign(_locations.size(), 0);
-    _max_cost_per_column.assign(_locations.size(), 0);
-
-    _matrix = _routing_wrapper->get_matrix(_locations,
-                                           _max_cost_per_line,
-                                           _max_cost_per_column);
+    _matrix = _routing_wrapper->get_matrix(_locations);
   }
 
   // Check for potential overflow in solution cost.
