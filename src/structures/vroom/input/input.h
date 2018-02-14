@@ -41,17 +41,16 @@ private:
   PROBLEM_T _problem_type;
   std::unique_ptr<routing_io<cost_t>> _routing_wrapper;
   const bool _geometry;
-  void check_cost_bound();
-  void set_matrix();
+  matrix<cost_t> _matrix;
   std::unordered_map<index_t, index_t> _index_to_job_rank;
   std::unordered_map<index_t, index_t> _index_to_loc_rank;
   std::set<index_t> _all_indices;
   std::unique_ptr<vrp> get_problem() const;
+  void check_cost_bound() const;
 
 public:
   std::vector<job_t> _jobs;
   std::vector<vehicle_t> _vehicles;
-  matrix<cost_t> _matrix;
 
   // List of locations added through add_* matching the matrix
   // ordering.
@@ -62,6 +61,10 @@ public:
   void add_job(const job_t& job);
 
   void add_vehicle(const vehicle_t& vehicle);
+
+  void set_matrix(matrix<cost_t>&& m);
+
+  matrix<cost_t> get_sub_matrix(const std::vector<index_t>& indices) const;
 
   index_t get_location_rank_from_index(index_t index) const;
 

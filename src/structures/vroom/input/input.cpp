@@ -72,7 +72,15 @@ void input::add_vehicle(const vehicle_t& vehicle) {
   }
 }
 
-void input::check_cost_bound() {
+void input::set_matrix(matrix<cost_t>&& m) {
+  _matrix = std::move(m);
+}
+
+matrix<cost_t> input::get_sub_matrix(const std::vector<index_t>& indices) const {
+  return _matrix.get_sub_matrix(indices);
+}
+
+void input::check_cost_bound() const {
   // Check that we don't have any overflow while computing an upper
   // bound for solution cost.
 
@@ -119,26 +127,6 @@ void input::check_cost_bound() {
                           << ".";
 }
 
-void input::set_matrix() {
-  if (_matrix.size() < 2) {
-    // OSRM call if matrix not already provided.
-    assert(_routing_wrapper);
-    BOOST_LOG_TRIVIAL(info) << "[Loading] Start matrix computing.";
-    _matrix = _routing_wrapper->get_matrix(_locations);
-  }
-
-  // Check for potential overflow in solution cost.
-  this->check_cost_bound();
-
-  // Distances on the diagonal are never used except in the minimum
-  // weight perfect matching (munkres call during the TSP
-  // heuristic). This makes sure no node will be matched with itself
-  // at that time.
-  for (index_t i = 0; i < _matrix.size(); ++i) {
-    _matrix[i][i] = INFINITE_COST;
-  }
-}
-
 index_t input::get_location_rank_from_index(index_t index) const {
   auto result = _index_to_loc_rank.find(index);
   assert(result != _index_to_loc_rank.end());
@@ -165,8 +153,25 @@ std::unique_ptr<vrp> input::get_problem() const {
 }
 
 solution input::solve(unsigned nb_thread) {
-  // Compute matrix and load relevant problem.
-  this->set_matrix();
+  if (_matrix.size() < 2) {
+    // OSRM call if matrix not already provided.
+    assert(_routing_wrapper);
+    BOOST_LOG_TRIVIAL(info) << "[Loading] Start matrix computing.";
+    _matrix = _routing_wrapper->get_matrix(_locations);
+  }
+
+  // Check for potential overflow in solution cost.
+  this->check_cost_bound();
+
+  // Distances on the diagonal are never used except in the minimum
+  // weight perfect matching (munkres call during the TSP
+  // heuristic). This makes sure no node will be matched with itself
+  // at that time.
+  for (index_t i = 0; i < _matrix.size(); ++i) {
+    _matrix[i][i] = INFINITE_COST;
+  }
+
+  // Load relevant problem.
   auto instance = this->get_problem();
   _end_loading = std::chrono::high_resolution_clock::now();
 

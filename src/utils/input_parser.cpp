@@ -98,7 +98,7 @@ input parse(const cl_args_t& cl_args) {
         matrix_input[i][j] = cost;
       }
     }
-    input_data._matrix = matrix_input;
+    input_data.set_matrix(std::move(matrix_input));
 
     // Check if vehicle has start_index or end_index.
     bool has_start_index = json_input["vehicles"][0].HasMember("start_index");
