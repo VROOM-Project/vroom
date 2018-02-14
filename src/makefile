@@ -4,8 +4,8 @@
 # All rights reserved (see LICENSE).
 
 # Variables.
-CXX = g++
-CXXFLAGS = -std=c++14 -Wextra -Wpedantic -Wall -O3 -DBOOST_LOG_DYN_LINK
+CXX ?= g++
+CXXFLAGS = -MMD -MP -std=c++14 -Wextra -Wpedantic -Wall -O3 -DBOOST_LOG_DYN_LINK
 LDLIBS = -lboost_system -lboost_log -lboost_log_setup -lpthread -lboost_thread
 
 # Using all cpp files in current directory.
@@ -33,6 +33,7 @@ else
 endif
 
 OBJ = $(SRC:.cpp=.o)
+DEPS = $(SRC:.cpp=.d)
 
 # Main target.
 all : $(MAIN) $(LIB)
@@ -46,14 +47,12 @@ $(LIB) : $(OBJ)
 	$(AR) cr $@ $^
 
 # Building .o files.
-%.o : %.cpp %.h
+%.o : %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-# Specific target for main (no .h file).
-main.o : main.cpp
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+-include ${DEPS}
 
 clean :
-	$(RM) $(OBJ)
+	$(RM) $(OBJ) $(DEPS)
 	$(RM) $(MAIN)
 	$(RM) $(LIB)
