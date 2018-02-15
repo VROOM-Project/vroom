@@ -27,32 +27,42 @@ solution cvrp::solve(unsigned nb_threads) const {
 
   struct param {
     CLUSTERING_T type;
+    INIT_T init;
     double regret_coeff;
   };
 
   std::vector<param> parameters;
-  parameters.push_back({CLUSTERING_T::PARALLEL, 0});
-  parameters.push_back({CLUSTERING_T::PARALLEL, 0.5});
-  parameters.push_back({CLUSTERING_T::PARALLEL, 1});
-  parameters.push_back({CLUSTERING_T::SEQUENTIAL, 0});
-  parameters.push_back({CLUSTERING_T::SEQUENTIAL, 0.5});
-  parameters.push_back({CLUSTERING_T::SEQUENTIAL, 1});
+  parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NONE, 0});
+  parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NONE, 0.5});
+  parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NONE, 1});
+  parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NONE, 0});
+  parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NONE, 0.5});
+  parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NONE, 1});
+  parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::HIGHER_AMOUNT, 0});
+  parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::HIGHER_AMOUNT, 0.5});
+  parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::HIGHER_AMOUNT, 1});
 
   std::vector<clustering> clusterings;
   for (const auto& p : parameters) {
-    clusterings.emplace_back(_input, p.type, p.regret_coeff);
+    clusterings.emplace_back(_input, p.type, p.init, p.regret_coeff);
   }
 
-  auto c = std::min_element(clusterings.begin(),
-                            clusterings.end(),
-                            [] (auto& lhs, auto& rhs) {
-                              return lhs.unassigned.size() < rhs.unassigned.size() or (lhs.unassigned.size() == rhs.unassigned.size() and lhs.edges_cost < rhs.edges_cost);
-                            });
+  auto c =
+    std::min_element(clusterings.begin(),
+                     clusterings.end(),
+                     [](auto& lhs, auto& rhs) {
+                       return lhs.unassigned.size() < rhs.unassigned.size() or
+                              (lhs.unassigned.size() ==
+                                 rhs.unassigned.size() and
+                               lhs.edges_cost < rhs.edges_cost);
+                     });
 
-  std::string strategy
-    = (c->type == CLUSTERING_T::PARALLEL) ? "parallel": "sequential";
-  std::cout << "Best clustering:" << strategy << ";" << c->regret_coeff << ";"
-            << c->unassigned.size() << ";" << c->edges_cost << std::endl;
+  std::string strategy =
+    (c->type == CLUSTERING_T::PARALLEL) ? "parallel" : "sequential";
+  std::string init = (c->init == INIT_T::NONE) ? "none" : "higher_amount";
+  std::cout << "Best clustering:" << strategy << ";" << init << ";"
+            << c->regret_coeff << ";" << c->unassigned.size() << ";"
+            << c->edges_cost << std::endl;
 
   for (std::size_t i = 0; i < c->clusters.size(); ++i) {
     if (empty_cluster(c->clusters[i], i)) {

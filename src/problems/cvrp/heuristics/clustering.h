@@ -21,6 +21,9 @@ All rights reserved (see LICENSE).
 // Clustering types.
 enum class CLUSTERING_T { PARALLEL, SEQUENTIAL };
 
+// Initialization types.
+enum class INIT_T { NONE, HIGHER_AMOUNT };
+
 class clustering {
 private:
   const input& input_ref;
@@ -29,14 +32,14 @@ private:
 
 public:
   const CLUSTERING_T type;
+  const INIT_T init;
   const double regret_coeff;
   std::vector<std::vector<index_t>> clusters;
   // Cost of all edges added during the clustering process
   cost_t edges_cost;
   std::unordered_set<job_t> unassigned;
 
-  clustering(const input& input, CLUSTERING_T t, double c);
+  clustering(const input& input, CLUSTERING_T t, INIT_T i, double c);
 };
-
 
 #endif

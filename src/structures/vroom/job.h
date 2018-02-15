@@ -36,8 +36,6 @@ struct job_t : public location_t {
 };
 
 namespace std {
-  template <> struct hash<job_t> {
-    size_t operator()(const job_t& k) const;
-  };
+template <> struct hash<job_t> { size_t operator()(const job_t& k) const; };
 }
 #endif

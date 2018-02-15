@@ -8,9 +8,10 @@ All rights reserved (see LICENSE).
 
 #include "clustering.h"
 
-clustering::clustering(const input& input, CLUSTERING_T t, double c)
+clustering::clustering(const input& input, CLUSTERING_T t, INIT_T i, double c)
   : input_ref(input),
     type(t),
+    init(i),
     regret_coeff(c),
     clusters(input._vehicles.size()),
     edges_cost(0) {
@@ -28,8 +29,18 @@ clustering::clustering(const input& input, CLUSTERING_T t, double c)
     strategy = "sequential";
     break;
   }
-  std::cout << "Clustering:" << strategy << ";" << this->regret_coeff << ";"
-            << this->unassigned.size() << ";" << this->edges_cost << std::endl;
+  std::string init_str;
+  switch (init) {
+  case INIT_T::NONE:
+    init_str = "none";
+    break;
+  case INIT_T::HIGHER_AMOUNT:
+    init_str = "higher_amount";
+    break;
+  }
+  std::cout << "Clustering:" << strategy << ";" << init_str << ";"
+            << this->regret_coeff << ";" << this->unassigned.size() << ";"
+            << this->edges_cost << std::endl;
 }
 
 inline void update_cost(index_t from_index,
@@ -122,9 +133,9 @@ void clustering::parallel_clustering() {
   auto eval_lambda = [&](auto v) {
     return [&](auto i, auto j) {
       return regret_coeff * static_cast<double>(regrets[v][i]) -
-      static_cast<double>(costs[v][i]) <
-      regret_coeff * static_cast<double>(regrets[v][j]) -
-      static_cast<double>(costs[v][j]);
+               static_cast<double>(costs[v][i]) <
+             regret_coeff * static_cast<double>(regrets[v][j]) -
+               static_cast<double>(costs[v][j]);
     };
   };
 
@@ -143,7 +154,9 @@ void clustering::parallel_clustering() {
       }
 
       // Consider best job candidate for current cluster.
-      std::make_heap(candidates[v].begin(), candidates[v].end(), eval_lambda(v));
+      std::make_heap(candidates[v].begin(),
+                     candidates[v].end(),
+                     eval_lambda(v));
 
       auto current_j = candidates[v].front();
       if (jobs[current_j].amount.get() <= capacities[v] and
@@ -173,7 +186,9 @@ void clustering::parallel_clustering() {
         if (candidates[v].empty()) {
           continue;
         }
-        std::pop_heap(candidates[v].begin(), candidates[v].end(), eval_lambda(v));
+        std::pop_heap(candidates[v].begin(),
+                      candidates[v].end(),
+                      eval_lambda(v));
         candidates[v].pop_back();
 
         candidates_remaining |= !candidates[v].empty();
@@ -245,8 +260,9 @@ void clustering::sequential_clustering() {
 
   // Remember initial cost of reaching a job from a vehicle (based on
   // start/end loc).
-  std::vector<std::vector<cost_t>>
-    vehicles_to_job_costs(V, std::vector<cost_t>(J));
+  std::vector<std::vector<cost_t>> vehicles_to_job_costs(V,
+                                                         std::vector<cost_t>(
+                                                           J));
 
   for (std::size_t j = 0; j < J; ++j) {
     for (std::size_t v = 0; v < V; ++v) {
@@ -276,10 +292,22 @@ void clustering::sequential_clustering() {
   }
   for (std::size_t i = 3; i <= V; ++i) {
     for (std::size_t j = 0; j < J; ++j) {
-      regrets[V - i][j] = std::min(regrets[V - i + 1][j],
-                                   vehicles_to_job_costs[V - i + 1][j]);
+      regrets[V - i][j] =
+        std::min(regrets[V - i + 1][j], vehicles_to_job_costs[V - i + 1][j]);
     }
   }
+
+  // Choose initialization strategy.
+
+  // Initialize cluster with the job that has higher amount (and is
+  // the further away in case of amount tie).
+  auto cluster_init_lambda = [&](auto v) {
+    return [&](index_t lhs, index_t rhs) {
+      return jobs[lhs].amount.get() < jobs[rhs].amount.get() or
+             (jobs[lhs].amount.get() == jobs[rhs].amount.get() and
+              vehicles_to_job_costs[v][lhs] < vehicles_to_job_costs[v][rhs]);
+    };
+  };
 
   for (std::size_t v = 0; v < V; ++v) {
     // Initialization with remaining compatible jobs while remembering
@@ -322,31 +350,30 @@ void clustering::sequential_clustering() {
     // Remember current capacity left in cluster.
     auto capacity = vehicles[v].capacity.get();
 
-    // Initialize cluster with the job that has higher amount (and is
-    // the further away in case of amount tie).
-    auto init_job
-      = std::max_element(candidates.cbegin(),
-                         candidates.cend(),
-                         [&] (index_t lhs, index_t rhs) {
-                           return jobs[lhs].amount.get() < jobs[rhs].amount.get() or
-                           (jobs[lhs].amount.get() == jobs[rhs].amount.get() and
-                            vehicles_to_job_costs[v][lhs] < vehicles_to_job_costs[v][rhs]);
-                         });
+    if (init != INIT_T::NONE) {
+      auto init_job = std::max_element(candidates.cbegin(),
+                                       candidates.cend(),
+                                       cluster_init_lambda(v));
 
-    if (init_job != candidates.cend()) {
-      auto job_rank = *init_job;
-      clusters[v].push_back(jobs[job_rank].index());
-      unassigned.erase(jobs[job_rank]);
-      edges_cost += vehicles_to_job_costs[v][job_rank];
-      capacity -= jobs[job_rank].amount.get();
-      candidates_set.erase(job_rank);
-      candidates.erase(init_job);
+      if (init_job != candidates.cend()) {
+        auto job_rank = *init_job;
+        clusters[v].push_back(jobs[job_rank].index());
+        unassigned.erase(jobs[job_rank]);
+        edges_cost += vehicles_to_job_costs[v][job_rank];
+        capacity -= jobs[job_rank].amount.get();
+        candidates_set.erase(job_rank);
+        candidates.erase(init_job);
 
-      std::cout << vehicles[v].id << ";" << parents[job_rank]
-                << "->" << jobs[job_rank].index()
-                << std::endl;
+        std::cout << vehicles[v].id << ";" << parents[job_rank] << "->"
+                  << jobs[job_rank].index() << std::endl;
 
-      update_cost(jobs[job_rank].index(), costs, parents, candidates, jobs, m);
+        update_cost(jobs[job_rank].index(),
+                    costs,
+                    parents,
+                    candidates,
+                    jobs,
+                    m);
+      }
     }
 
     auto eval_lambda = [&](auto i, auto j) {
@@ -365,13 +392,17 @@ void clustering::sequential_clustering() {
         clusters[v].push_back(jobs[current_j].index());
         unassigned.erase(jobs[current_j]);
         edges_cost += costs[current_j];
-        std::cout << vehicles[v].id << ";" << parents[current_j]
-                  << "->" << jobs[current_j].index()
-                  << std::endl;
+        std::cout << vehicles[v].id << ";" << parents[current_j] << "->"
+                  << jobs[current_j].index() << std::endl;
         capacity -= jobs[current_j].amount.get();
         candidates_set.erase(current_j);
 
-        update_cost(jobs[current_j].index(), costs, parents, candidates, jobs, m);
+        update_cost(jobs[current_j].index(),
+                    costs,
+                    parents,
+                    candidates,
+                    jobs,
+                    m);
       }
 
       std::pop_heap(candidates.begin(), candidates.end(), eval_lambda);
