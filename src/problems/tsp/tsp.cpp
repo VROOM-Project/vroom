@@ -22,24 +22,41 @@ tsp::tsp(const input& input,
     _has_start(_input._vehicles[_vehicle_rank].has_start()),
     _has_end(_input._vehicles[_vehicle_rank].has_end()) {
 
+  // Distances on the diagonal are never used except in the minimum
+  // weight perfect matching (munkres call during the heuristic). This
+  // makes sure no node will be matched with itself at that time.
+  for (index_t i = 0; i < _matrix.size(); ++i) {
+    _matrix[i][i] = INFINITE_COST;
+  }
+
   if (_has_start) {
     // Use index in _matrix for start.
-    auto search =
-      std::find(_tsp_index_to_global.begin(),
-                _tsp_index_to_global.end(),
-                _input._vehicles[_vehicle_rank].start.get().index());
-    assert(search != _tsp_index_to_global.end());
-    _start = std::distance(_tsp_index_to_global.begin(), search);
-    assert(_start < _matrix.size());
+    bool start_found;
+    for (index_t i = 0; i < _tsp_index_to_global.size(); ++i) {
+      start_found = (_input._type_with_ids[i].type == TYPE::START) and
+        (_tsp_index_to_global[i] == _input._vehicles[_vehicle_rank].start.get().index());
+      if (start_found) {
+        _start = i;
+        break;
+      }
+    }
+    assert(start_found);
   }
   if (_has_end) {
-    // Use index in _matrix for start.
-    auto search = std::find(_tsp_index_to_global.begin(),
-                            _tsp_index_to_global.end(),
-                            _input._vehicles[_vehicle_rank].end.get().index());
-    assert(search != _tsp_index_to_global.end());
-    _end = std::distance(_tsp_index_to_global.begin(), search);
-    assert(_end < _matrix.size());
+    // Use index in _matrix for end.
+    bool end_found;
+    for (index_t i = 0; i < _tsp_index_to_global.size(); ++i) {
+      // Not checking for TYPE::END here because when start_index and
+      // end_index are both provided and equal, then the end location
+      // is not duplicated in input::_locations.
+      end_found = (_input._type_with_ids[i].type != TYPE::JOB) and
+        (_tsp_index_to_global[i] == _input._vehicles[_vehicle_rank].end.get().index());
+      if (end_found) {
+        _end = i;
+        break;
+      }
+    }
+    assert(end_found);
   }
 
   _round_trip = _has_start and _has_end and (_start == _end);
@@ -307,9 +324,8 @@ solution tsp::solve(unsigned nb_threads) const {
   if (_has_start) {
     // Add start step.
     assert(current_sol.front() == _start);
-    auto rank = _input.get_location_rank_from_index(
-      _tsp_index_to_global[current_sol.front()]);
-    steps.emplace_back(TYPE::START, _input._locations[rank]);
+    steps.emplace_back(TYPE::START,
+                       _input._vehicles[_vehicle_rank].start.get());
     // Remember that jobs start further away in the list.
     ++job_start;
   }
@@ -328,18 +344,15 @@ solution tsp::solve(unsigned nb_threads) const {
 
   // Handle jobs.
   for (auto job = job_start; job != job_end; ++job) {
-    auto current_rank =
-      _input.get_job_rank_from_index(_tsp_index_to_global[*job]);
+    assert(_input._type_with_ids[*job].type == TYPE::JOB);
     steps.emplace_back(TYPE::JOB,
-                       _input._jobs[current_rank],
-                       _input._jobs[current_rank].id);
+                       _input._locations[*job],
+                       _input._type_with_ids[*job].id);
   }
   // Handle end.
   if (_has_end) {
     // Add end step.
-    auto rank =
-      _input.get_location_rank_from_index(_tsp_index_to_global[end_index]);
-    steps.emplace_back(TYPE::END, _input._locations[rank]);
+    steps.emplace_back(TYPE::END, _input._vehicles[_vehicle_rank].end.get());
   }
 
   // Route.

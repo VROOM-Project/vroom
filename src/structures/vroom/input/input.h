@@ -32,6 +32,11 @@ All rights reserved (see LICENSE).
 
 class vrp;
 
+struct type_with_id {
+  TYPE type;
+  ID_t id;
+};
+
 class input {
 private:
   std::chrono::high_resolution_clock::time_point _start_loading;
@@ -42,9 +47,6 @@ private:
   std::unique_ptr<routing_io<cost_t>> _routing_wrapper;
   const bool _geometry;
   matrix<cost_t> _matrix;
-  std::unordered_map<index_t, index_t> _index_to_job_rank;
-  std::unordered_map<index_t, index_t> _index_to_loc_rank;
-  std::set<index_t> _all_indices;
   std::unique_ptr<vrp> get_problem() const;
   void check_cost_bound() const;
 
@@ -52,8 +54,8 @@ public:
   std::vector<job_t> _jobs;
   std::vector<vehicle_t> _vehicles;
 
-  // List of locations added through add_* matching the matrix
-  // ordering.
+  // List of ids and locations added through add_*.
+  std::vector<type_with_id> _type_with_ids;
   std::vector<location_t> _locations;
 
   input(std::unique_ptr<routing_io<cost_t>> routing_wrapper, bool geometry);
@@ -65,10 +67,6 @@ public:
   void set_matrix(matrix<cost_t>&& m);
 
   matrix<cost_t> get_sub_matrix(const std::vector<index_t>& indices) const;
-
-  index_t get_location_rank_from_index(index_t index) const;
-
-  index_t get_job_rank_from_index(index_t index) const;
 
   PROBLEM_T get_problem_type() const;
 

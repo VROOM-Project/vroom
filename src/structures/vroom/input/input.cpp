@@ -28,12 +28,7 @@ void input::add_job(const job_t& job) {
     current_job.set_index(_locations.size());
   }
 
-  // Remember mapping between the job index in the matrix and its rank
-  // in _jobs.
-  _index_to_job_rank.insert({current_job.index(), _jobs.size() - 1});
-  _all_indices.insert(current_job.index());
-
-  _index_to_loc_rank.insert({current_job.index(), _locations.size()});
+  _type_with_ids.push_back({TYPE::JOB, current_job.id});
   _locations.push_back(current_job);
 }
 
@@ -51,10 +46,8 @@ void input::add_vehicle(const vehicle_t& vehicle) {
       // vehicle creation, using current number of locations.
       current_v.start.get().set_index(_locations.size());
     }
-    auto start_index = current_v.start.get().index();
-    _all_indices.insert(start_index);
 
-    _index_to_loc_rank.insert({start_index, _locations.size()});
+    _type_with_ids.push_back({TYPE::START, current_v.id});
     _locations.push_back(current_v.start.get());
   }
 
@@ -64,11 +57,13 @@ void input::add_vehicle(const vehicle_t& vehicle) {
       // vehicle creation, using current number of locations.
       current_v.end.get().set_index(_locations.size());
     }
-    auto end_index = current_v.end.get().index();
-    _all_indices.insert(end_index);
 
-    _index_to_loc_rank.insert({end_index, _locations.size()});
-    _locations.push_back(current_v.end.get());
+    if (!has_start or
+        (current_v.start.get().index() != current_v.end.get().index())) {
+      // Avoiding duplicate for start/end location.
+      _type_with_ids.push_back({TYPE::END, current_v.id});
+      _locations.push_back(current_v.end.get());
+    }
   }
 }
 
@@ -128,27 +123,16 @@ void input::check_cost_bound() const {
                           << ".";
 }
 
-index_t input::get_location_rank_from_index(index_t index) const {
-  auto result = _index_to_loc_rank.find(index);
-  assert(result != _index_to_loc_rank.end());
-  return result->second;
-}
-
-index_t input::get_job_rank_from_index(index_t index) const {
-  auto result = _index_to_job_rank.find(index);
-  assert(result != _index_to_job_rank.end());
-  return result->second;
-}
-
 PROBLEM_T input::get_problem_type() const {
   return _problem_type;
 }
 
 std::unique_ptr<vrp> input::get_problem() const {
   std::vector<index_t> problem_indices;
-  for (const auto& i : _all_indices) {
-    problem_indices.push_back(i);
-  }
+  std::transform(_locations.begin(),
+                 _locations.end(),
+                 std::back_inserter(problem_indices),
+                 [](const auto& loc) { return loc.index(); });
 
   return std::make_unique<tsp>(*this, problem_indices, 0);
 }
@@ -163,14 +147,6 @@ solution input::solve(unsigned nb_thread) {
 
   // Check for potential overflow in solution cost.
   this->check_cost_bound();
-
-  // Distances on the diagonal are never used except in the minimum
-  // weight perfect matching (munkres call during the TSP
-  // heuristic). This makes sure no node will be matched with itself
-  // at that time.
-  for (index_t i = 0; i < _matrix.size(); ++i) {
-    _matrix[i][i] = INFINITE_COST;
-  }
 
   // Load relevant problem.
   auto instance = this->get_problem();
