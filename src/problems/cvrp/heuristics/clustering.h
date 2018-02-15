@@ -22,7 +22,7 @@ All rights reserved (see LICENSE).
 enum class CLUSTERING_T { PARALLEL, SEQUENTIAL };
 
 // Initialization types.
-enum class INIT_T { NONE, HIGHER_AMOUNT };
+enum class INIT_T { NONE, HIGHER_AMOUNT, NEAREST };
 
 class clustering {
 private:

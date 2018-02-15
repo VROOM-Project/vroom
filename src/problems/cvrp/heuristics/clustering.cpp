@@ -37,6 +37,9 @@ clustering::clustering(const input& input, CLUSTERING_T t, INIT_T i, double c)
   case INIT_T::HIGHER_AMOUNT:
     init_str = "higher_amount";
     break;
+  case INIT_T::NEAREST:
+    init_str = "nearest";
+    break;
   }
   std::cout << "Clustering:" << strategy << ";" << init_str << ";"
             << this->regret_coeff << ";" << this->unassigned.size() << ";"
@@ -297,15 +300,21 @@ void clustering::sequential_clustering() {
     }
   }
 
-  // Choose initialization strategy.
+  // Define available initialization strategies.
 
   // Initialize cluster with the job that has higher amount (and is
   // the further away in case of amount tie).
-  auto cluster_init_lambda = [&](auto v) {
+  auto higher_amount_init_lambda = [&](auto v) {
     return [&](index_t lhs, index_t rhs) {
       return jobs[lhs].amount.get() < jobs[rhs].amount.get() or
              (jobs[lhs].amount.get() == jobs[rhs].amount.get() and
               vehicles_to_job_costs[v][lhs] < vehicles_to_job_costs[v][rhs]);
+    };
+  };
+  // Initialize cluster with the nearest job.
+  auto nearest_init_lambda = [&](auto v) {
+    return [&](index_t lhs, index_t rhs) {
+      return vehicles_to_job_costs[v][lhs] < vehicles_to_job_costs[v][rhs];
     };
   };
 
@@ -351,9 +360,17 @@ void clustering::sequential_clustering() {
     auto capacity = vehicles[v].capacity.get();
 
     if (init != INIT_T::NONE) {
-      auto init_job = std::max_element(candidates.cbegin(),
-                                       candidates.cend(),
-                                       cluster_init_lambda(v));
+      auto init_job = candidates.cend();
+      if (init == INIT_T::HIGHER_AMOUNT) {
+        init_job = std::max_element(candidates.cbegin(),
+                                    candidates.cend(),
+                                    higher_amount_init_lambda(v));
+      }
+      if (init == INIT_T::NEAREST) {
+        init_job = std::min_element(candidates.cbegin(),
+                                    candidates.cend(),
+                                    nearest_init_lambda(v));
+      }
 
       if (init_job != candidates.cend()) {
         auto job_rank = *init_job;

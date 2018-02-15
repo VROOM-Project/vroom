@@ -38,6 +38,9 @@ solution cvrp::solve(unsigned nb_threads) const {
   parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NONE, 0});
   parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NONE, 0.5});
   parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NONE, 1});
+  parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NEAREST, 0});
+  parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NEAREST, 0.5});
+  parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NEAREST, 1});
   parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::HIGHER_AMOUNT, 0});
   parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::HIGHER_AMOUNT, 0.5});
   parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::HIGHER_AMOUNT, 1});
@@ -59,8 +62,19 @@ solution cvrp::solve(unsigned nb_threads) const {
 
   std::string strategy =
     (c->type == CLUSTERING_T::PARALLEL) ? "parallel" : "sequential";
-  std::string init = (c->init == INIT_T::NONE) ? "none" : "higher_amount";
-  std::cout << "Best clustering:" << strategy << ";" << init << ";"
+  std::string init_str;
+  switch (c->init) {
+  case INIT_T::NONE:
+    init_str = "none";
+    break;
+  case INIT_T::HIGHER_AMOUNT:
+    init_str = "higher_amount";
+    break;
+  case INIT_T::NEAREST:
+    init_str = "nearest";
+    break;
+  }
+  std::cout << "Best clustering:" << strategy << ";" << init_str << ";"
             << c->regret_coeff << ";" << c->unassigned.size() << ";"
             << c->edges_cost << std::endl;
 
