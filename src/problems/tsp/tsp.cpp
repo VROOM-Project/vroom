@@ -34,7 +34,8 @@ tsp::tsp(const input& input,
     bool start_found;
     for (index_t i = 0; i < _tsp_index_to_global.size(); ++i) {
       start_found = (_input._type_with_ids[i].type == TYPE::START) and
-        (_tsp_index_to_global[i] == _input._vehicles[_vehicle_rank].start.get().index());
+                    (_tsp_index_to_global[i] ==
+                     _input._vehicles[_vehicle_rank].start.get().index());
       if (start_found) {
         _start = i;
         break;
@@ -50,7 +51,8 @@ tsp::tsp(const input& input,
       // end_index are both provided and equal, then the end location
       // is not duplicated in input::_locations.
       end_found = (_input._type_with_ids[i].type != TYPE::JOB) and
-        (_tsp_index_to_global[i] == _input._vehicles[_vehicle_rank].end.get().index());
+                  (_tsp_index_to_global[i] ==
+                   _input._vehicles[_vehicle_rank].end.get().index());
       if (end_found) {
         _end = i;
         break;
