@@ -143,19 +143,22 @@ input parse(const cl_args_t& cl_args) {
       if (!valid_vehicle(json_input["vehicles"][i])) {
         throw custom_exception("Invalid vehicle at " + std::to_string(i) + ".");
       }
+      auto v_id = json_input["vehicles"][i]["id"].GetUint();
 
       // Check if vehicle has start_index or end_index.
       bool has_start_index = json_input["vehicles"][i].HasMember("start_index");
       index_t start_index = 0; // Initial value actually never used.
       if (has_start_index) {
         if (!json_input["vehicles"][i]["start_index"].IsUint()) {
-          throw custom_exception("Invalid start_index for vehicle at 0.");
+          throw custom_exception("Invalid start_index for vehicle " +
+                                 std::to_string(v_id) + ".");
         }
         start_index = json_input["vehicles"][i]["start_index"].GetUint();
 
         if (matrix_size <= start_index) {
           throw custom_exception(
-            "start_index exceeding matrix size for vehicle at 0.");
+            "start_index exceeding matrix size for vehicle" +
+            std::to_string(v_id) + ".");
         }
       }
 
@@ -165,13 +168,14 @@ input parse(const cl_args_t& cl_args) {
       index_t end_index = 0; // Initial value actually never used.
       if (has_end_index) {
         if (!json_input["vehicles"][i]["end_index"].IsUint()) {
-          throw custom_exception("Invalid end_index for vehicle at 0.");
+          throw custom_exception("Invalid end_index for vehicle" +
+                                 std::to_string(v_id) + ".");
         }
         end_index = json_input["vehicles"][i]["end_index"].GetUint();
 
         if (matrix_size <= end_index) {
-          throw custom_exception(
-            "end_index exceeding matrix size for vehicle at 0.");
+          throw custom_exception("end_index exceeding matrix size for vehicle" +
+                                 std::to_string(v_id) + ".");
         }
       }
 
@@ -199,7 +203,7 @@ input parse(const cl_args_t& cl_args) {
         }
       }
 
-      vehicle_t current_v(json_input["vehicles"][i]["id"].GetUint(),
+      vehicle_t current_v(v_id,
                           start,
                           end,
                           get_amount(json_input["vehicles"][i], "capacity"));
@@ -217,19 +221,19 @@ input parse(const cl_args_t& cl_args) {
         throw custom_exception("Invalid id for job at " + std::to_string(i) +
                                ".");
       }
+      auto j_id = json_input["jobs"][i]["id"].GetUint64();
       if (!json_input["jobs"][i].HasMember("location_index") or
           !json_input["jobs"][i]["location_index"].IsUint()) {
-        throw custom_exception("Invalid location_index for job at " +
-                               std::to_string(i) + ".");
+        throw custom_exception("Invalid location_index for job " +
+                               std::to_string(j_id) + ".");
       }
       if (matrix_size <= json_input["jobs"][i]["location_index"].GetUint()) {
-        throw custom_exception(
-          "location_index exceeding matrix size for job at " +
-          std::to_string(i) + ".");
+        throw custom_exception("location_index exceeding matrix size for job " +
+                               std::to_string(j_id) + ".");
       }
 
       if (json_input["jobs"][i].HasMember("location")) {
-        job_t current_job(json_input["jobs"][i]["id"].GetUint64(),
+        job_t current_job(j_id,
                           get_amount(json_input["jobs"][i], "amount"),
                           json_input["jobs"][i]["location_index"].GetUint(),
                           parse_coordinates(json_input["jobs"][i], "location"));
@@ -283,18 +287,19 @@ input parse(const cl_args_t& cl_args) {
       if (!json_input["jobs"][i].IsObject()) {
         throw custom_exception("Invalid job.");
       }
-      if (!json_input["jobs"][i].HasMember("location") or
-          !json_input["jobs"][i]["location"].IsArray()) {
-        throw custom_exception("Invalid location for job at " +
-                               std::to_string(i) + ".");
-      }
       if (!json_input["jobs"][i].HasMember("id") or
           !json_input["jobs"][i]["id"].IsUint64()) {
         throw custom_exception("Invalid id for job at " + std::to_string(i) +
                                ".");
       }
+      auto j_id = json_input["jobs"][i]["id"].GetUint64();
+      if (!json_input["jobs"][i].HasMember("location") or
+          !json_input["jobs"][i]["location"].IsArray()) {
+        throw custom_exception("Invalid location for job " +
+                               std::to_string(j_id) + ".");
+      }
 
-      job_t current_job(json_input["jobs"][i]["id"].GetUint64(),
+      job_t current_job(j_id,
                         get_amount(json_input["jobs"][i], "amount"),
                         parse_coordinates(json_input["jobs"][i], "location"));
 
