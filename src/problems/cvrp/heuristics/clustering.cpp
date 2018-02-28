@@ -133,6 +133,84 @@ void clustering::parallel_clustering() {
     }
   }
 
+  // Cluster initialization: define available initialization
+  // strategies then run initialization sequentially on all clusters.
+
+  // Initialize cluster with the job that has higher amount (and is
+  // the further away in case of amount tie).
+  auto higher_amount_init_lambda = [&](auto v) {
+    return [&](index_t lhs, index_t rhs) {
+      return jobs[lhs].amount.get() < jobs[rhs].amount.get() or
+             (jobs[lhs].amount.get() == jobs[rhs].amount.get() and
+              costs[v][lhs] < costs[v][rhs]);
+    };
+  };
+  // Initialize cluster with the nearest job.
+  auto nearest_init_lambda = [&](auto v) {
+    return
+      [&](index_t lhs, index_t rhs) { return costs[v][lhs] < costs[v][rhs]; };
+  };
+
+  if (init != INIT_T::NONE) {
+    for (std::size_t v = 0; v < V; ++v) {
+      auto init_job = candidates[v].cend();
+      if (init == INIT_T::HIGHER_AMOUNT) {
+        init_job = std::max_element(candidates[v].cbegin(),
+                                    candidates[v].cend(),
+                                    higher_amount_init_lambda(v));
+      }
+      if (init == INIT_T::NEAREST) {
+        init_job = std::min_element(candidates[v].cbegin(),
+                                    candidates[v].cend(),
+                                    nearest_init_lambda(v));
+      }
+
+      if (init_job != candidates[v].cend()) {
+        auto job_rank = *init_job;
+        clusters[v].push_back(jobs[job_rank].index());
+        unassigned.erase(jobs[job_rank]);
+        edges_cost += costs[v][job_rank];
+        capacities[v] -= jobs[job_rank].amount.get();
+        candidates[v].erase(init_job);
+
+        std::cout << vehicles[v].id << ";" << parents[v][job_rank] << "->"
+                  << jobs[job_rank].index() << std::endl;
+
+        update_cost(jobs[job_rank].index(),
+                    costs[v],
+                    parents[v],
+                    candidates[v],
+                    jobs,
+                    m);
+        // Update regrets as costs from matching cluster to job
+        // candidates potentially decreases.
+        for (auto j : candidates[v]) {
+          auto new_cost = std::min(m[jobs[job_rank].index()][jobs[j].index()],
+                                   m[jobs[j].index()][jobs[job_rank].index()]);
+          for (std::size_t other_v = 0; other_v < V; ++other_v) {
+            // Regret for other clusters that potentially can handle job.
+            if ((other_v == v) or
+                (costs[other_v][j] == std::numeric_limits<cost_t>::max())) {
+              continue;
+            }
+            regrets[other_v][j] = std::min(regrets[other_v][j], new_cost);
+          }
+        }
+
+        for (std::size_t other_v = 0; other_v < V; ++other_v) {
+          if (other_v != v) {
+            auto search = std::find(candidates[other_v].begin(),
+                                    candidates[other_v].end(),
+                                    job_rank);
+            if (search != candidates[other_v].end()) {
+              candidates[other_v].erase(search);
+            }
+          }
+        }
+      }
+    }
+  }
+
   auto eval_lambda = [&](auto v) {
     return [&](auto i, auto j) {
       return regret_coeff * static_cast<double>(regrets[v][i]) -
@@ -219,7 +297,7 @@ void clustering::parallel_clustering() {
                 jobs,
                 m);
     // Update regrets as costs from matching cluster to job candidates
-    // potentially decrease.
+    // potentially decreases.
     for (auto j : candidates[best_v]) {
       auto new_cost = std::min(m[jobs[best_j].index()][jobs[j].index()],
                                m[jobs[j].index()][jobs[best_j].index()]);
@@ -359,6 +437,7 @@ void clustering::sequential_clustering() {
     // Remember current capacity left in cluster.
     auto capacity = vehicles[v].capacity.get();
 
+    // Strategy for cluster initialization.
     if (init != INIT_T::NONE) {
       auto init_job = candidates.cend();
       if (init == INIT_T::HIGHER_AMOUNT) {
