@@ -366,15 +366,17 @@ void clustering::sequential_clustering() {
   // current cluster.
   std::vector<std::vector<cost_t>> regrets(V, std::vector<cost_t>(J, 0));
 
-  // Regret for penultimate cluster is the cost for last
-  // vehicle. Previous values are computed backward.
-  for (std::size_t j = 0; j < J; ++j) {
-    regrets[V - 2][j] = vehicles_to_job_costs[V - 1][j];
-  }
-  for (std::size_t i = 3; i <= V; ++i) {
+  if (vehicles.size() > 1) {
+    // Regret for penultimate cluster is the cost for last
+    // vehicle. Previous values are computed backward.
     for (std::size_t j = 0; j < J; ++j) {
-      regrets[V - i][j] =
-        std::min(regrets[V - i + 1][j], vehicles_to_job_costs[V - i + 1][j]);
+      regrets[V - 2][j] = vehicles_to_job_costs[V - 1][j];
+    }
+    for (std::size_t i = 3; i <= V; ++i) {
+      for (std::size_t j = 0; j < J; ++j) {
+        regrets[V - i][j] =
+          std::min(regrets[V - i + 1][j], vehicles_to_job_costs[V - i + 1][j]);
+      }
     }
   }
 
