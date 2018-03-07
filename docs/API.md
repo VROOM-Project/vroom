@@ -1,6 +1,6 @@
 <!-- This file is part of VROOM. -->
 
-<!-- Copyright (c) 2015-2016, Julien Coupey. -->
+<!-- Copyright (c) 2015-2018, Julien Coupey. -->
 <!-- All rights reserved (see LICENSE). -->
 
 This file describes the API to use with `vroom` command-line as of
@@ -36,6 +36,7 @@ A `job` object has the following properties:
 | `id` | an integer used as unique identifier |
 | [`location`] | coordinates array |
 | [`location_index`] | index of relevant row and column in custom matrix |
+| [`amount`] | an array representing multidimensional quantities |
 
 If a custom matrix is provided:
 
@@ -60,6 +61,7 @@ A `vehicle` object has the following properties:
 | [`start_index`] | index of relevant row and column in custom matrix |
 | [`end`] | coordinates array |
 | [`end_index`] | index of relevant row and column in custom matrix |
+| [`capacity`] | an array representing multidimensional quantities |
 
 ### Notes on `vehicle` locations
 
@@ -73,6 +75,15 @@ A `vehicle` object has the following properties:
   the same coordinates
 - depending on if a custom matrix is provided, required fields follow
   the same logic than for `job` keys `location` and `location_index`
+
+### Notes on capacity restrictions
+
+Use `capacity` for vehicles and `amount` for jobs to describe a
+problem with capacity restrictions. Those arrays can be used to model
+custom restrictions for several metrics at once, e.g. number of items,
+weight, volume etc. A vehicle is only allowed to serve a set of jobs
+if the `amount` component sums are lower than the matching value in
+`capacity` for each metric.
 
 ## Matrix
 
@@ -93,7 +104,21 @@ The computed solution is written as `json` on standard output or a file
 | `code` | return code, `0` if no error was raised |
 | `error` | error message (present iff `code` is different from `0`) |
 | [`summary`](#summary) | object summarizing solution indicators |
+| `unassigned` | array containing the ids of unassigned jobs |
 | [`routes`](#routes) | array of `route` objects |
+
+## Summary
+
+The `summary` object has the following properties:
+
+| Key         | Description |
+| ----------- | ----------- |
+| `cost` | total cost for all routes |
+| `unassigned` | number of jobs that could not be served |
+| `duration`* | total duration in seconds for all routes |
+| `distance`* | total distance in meters for all routes |
+
+*: provided when using the `-g` flag with `OSRM`.
 
 ## Routes
 
@@ -120,36 +145,12 @@ A `step` object has the following properties:
 | `location` | coordinates array for this step |
 | `job` | id of the job performed at this step, provided if `type` value is `job` |
 
-## Summary
-
-The `summary` object has the following properties:
-
-| Key         | Description |
-| ----------- | ----------- |
-| `cost` | total cost for all routes |
-| `duration`* | total duration in seconds for all routes |
-| `distance`* | total distance in meters for all routes |
-| [`computing_times`](#computing-times) | details for run-time information |
-
-*: provided when using the `-g` flag with `OSRM`.
-
-### Computing times
-
-The `computing_times` object is used to report execution times in
-milliseconds.
-
-| Key | Description |
-| ----------- | ----------- |
-| `loading` | time required to parse the problem, compute and load the cost matrix |
-| `solving` | time required to apply the solving strategy |
-| `routing`* | time required to retrieve the detailed route geometries |
-
-*: provided when using the `-g` flag with `OSRM`.
-
 # Examples
 
-Using the following input describes a (very) small problem where
-matrix computing rely on OSRM:
+## Using OSRM
+
+Using the following input describes a (very) small TSP where matrix
+computing rely on OSRM:
 
 ```javascript
 {
@@ -178,10 +179,16 @@ producing a solution that looks like:
 ```javascript
 {
   "code": 0,
+  "summary": {
+    "cost": 3679,
+    "unassigned": 0,
+    "duration": 3679,
+    "distance": 14422
+  },
+  "unassigned": [],
   "routes": [
     {
-      "vehicle": 0,
-      "cost": 1009,
+      "geometry": "o`fiHaqjMBSPHh@T^PHDTLLHLFJFLFlBz@r@VXL\\NJDHDlCjAJDHDCPCNCNTvBLrAHx@BL?HFp@Oz@~Ap@BBRHPHtDhBHDETKj@Mp@Ov@m@bDI^I\\i@tBGROp@W`Bc@`EGfA?TAV?Zi@vHGn@p@j@NJRRfB|A@BHLFH{@fBUd@}BvE{@hBW|ASvAQpASxAAP?DJtC@\\Ab@O~@aArGG\\UhAWlA_@fBOn@_B~GEREP]zAMh@Kb@gA|EMp@S|@Mp@aBdIADI\\GZEPMp@k@rCGXKf@yEvUQ|@I`@Ml@GXI^?BOr@Mr@CN[zA?f@Eh@Aj@@hNBx@D`EBt@@h@?v@?RAFAr@@jDFr@D^LfAJ~@Dh@@`@@f@@J?p@B|CJfNBxD@`AF|L?L?`A?V?dAGb@?F?\\BbAF`A?D?HDhBFrALjBV|BD\\L~@X|A`@nB~@|C`AfCfAhBLT`@n@fAzBtCtEhBvCtCxEt@|@bAfAzAmC{AlCIm@{@_BcEyGW_@S[QNK\\a@~@aErHCBGNy@gAEGMQe@o@}FcIo@}@a@yAeA_F_@iBAGGWKe@ESAEKe@eBcNMkAe@kGw@{JQiBEc@Ca@Ai@?kACsDCaFKgAA_BKyOCkE?g@C_EAg@CuD?g@CiDIgMC_CAwBBsANaAXkA^gAn@sCXqAJk@|@sD\\cAr@yBlD}ONm@FWJe@jCoLjBkITuADQBSn@aC?E@EJ{@T_B?GJq@p@iF@ILaAL_A@EJu@z@aGz@eGBg@BkA?OLcC@OJeB@GLeBLgBBODk@@Kt@{GJw@?GTuB@IHa@PaA@GPcAHc@@Kt@aEt@mEReADUh@cD@ELu@DIDM@O?OPaABGTmAJi@Hc@P}@@EHa@ZqABEFWt@kCXcA@GHWPq@BIFY`@wAFUd@iBNm@FUT}@TYXcAPk@dB_GH[J[@ET}@T_A`AoD@EHWd@mBXgAFYLc@`AsDDM|@iDd@eBDOLa@L]v@sAj@_@ZIpAEb@APAJ@HAe@gCG_@[uAEWy@{DgBsIEOKe@Ow@Q{@WqAKi@YsA]}AKm@COGe@AO?KAKAm@HWFY@Q?SAQGYIWOQSKSAMBKDEBILEBKVEXAR?P@RBJBJBJDJNP@?PHIpAEj@IbAIfAATQ~Be@`D?F[bBKp@CLERERu@fDCNGRCHg@rBENMd@[`A_@jAQd@G`@Il@Mz@q@rEQnA[tBEVG\\c@vCCPCRc@tCStACPET_@fCQjACNQjAu@bFGMGGECuAq@IGIIsByB{@{@KMIGgAiAIIENw@bDCDi@bCCJcAs@OMIImAoAEHWl@Sv@U`BCVQx@CL`Br@CR",
       "steps": [
         {
           "location": [2.3526, 48.8604],
@@ -202,24 +209,16 @@ producing a solution that looks like:
           "type": "end"
         }
       ],
-      "geometry": "o`fiHaqjMBSPHh@T^PHDTLLHLFJFLFlBz@r@VXL\\NJDHDlCjAJDHDCPCNCNl\n@dGBVFp@Oz@bBt@RHPHtDhBHDJD@@bD~AnB~@RJLFFDbAd@PJTH`Ad@LFCHGZSpAO~@kApGOn@K^?BSf@Yv@k@zAw@nBGPwBnDOTmBrCa\n@l@W\\{@fBUd@}BvE{@hBW|ASvAe@jDAP?DJtC@\\Ab@qArIG\\UhAWlA_@fBoBnIEREP]zAMh@Kb@e@vBo@vCS|@oBvJADI\\GZEPy\n@dEGXKf@kFtWI`@Ml@GXI^?BOr@Mr@CN[zA?f@KzADbNBx@D`EBt@@h@?v@?RAFAr@@jDFr@\\fDFh@@`@@f@@J?p@B|CPpVFnL?L\n?`A?|AGb@?F?\\BbAF`A?D?HDtAFfBLjBV|BD\\L~@X|A`@nB~@|C`AfCfAhBLT`@n@fAzBtCtEhBvCtCxEt@|@bAfAvAgCwAfCIm\n@{@_BcEyGW_@S[QNK\\a@~@aErHCBGN_AoAIMyDoFqBmCm@w@a@wAw@oDo@aDGYGSCK?ECGO_AcB{MW}B[yEw@{JQiBEc@Ca@Ai@\n?kACsDCaFKgACoFIiKCkE?g@C_EAg@CuD?g@CiDIgMC_CAwBBsANaAXkA^gAn@sCXqAJk@hAoEzCcN^cBj@eCLg@`@kBViAhAcFlBqIzCyLhE_\n[|@oKt@uJPyAL_@BMJe@|@kINkAlAkGxAaI`@wC^kBLq@Ji@lAuGTmAx@qCv@kDZsALa@b@u@p@}BRkAp@yBd@oA~@eCJY\\aAPi\n@`@sAp@_DZ_BF[x@iDZy@?_@n@sCDc@US|@iDd@eBDOLa@L]v@sAj@_@ZIpAEb@APAJ@HAe@gCG_@[uAEWy@{DgBsIEOKe@Ow@Q{\n@WqAKi@YsA]}AKm@COGe@Cg@Am@HWFY@Q?SAQGYIWOQSKSAMBKDEBILEBKVCNAHAR?P@RFVBJDJNP@?PHIpAEj@IbAIfAATQ~Be@\n`D?F[bBKp@CLERERu@fDCNGRCHg@rBENMd@[`A_@jAQd@G`@Il@Mz@q@rEQnA[tBEVG\\c@vCCPCRc@tCStACPET_@fCQjACNQjAu\n@bFGMGGECuAq@IGERmAtEELKGs@c@CCeCwAIEIEqA}@GEcAs@OMIImAoAEHWl@Sv@U`BCVQx@CL`Br@",
-      "distance": 14615,
-      "duration": 1009
+      "duration": 3679,
+      "distance": 14422,
+      "cost": 3679,
+      "vehicle": 0
     }
-  ],
-  "solution": {
-    "cost": 1009,
-    "duration": 1009,
-    "distance": 14615,
-    "computing_times": {
-      "routing": 7,
-      "solving": 0,
-      "loading": 13
-    }
-  }
+  ]
 }
 ```
 
+## Using a custom matrix
 
 The following input makes use of the option to provide a custom matrix:
 
@@ -255,6 +254,12 @@ producing a solution that looks like:
 
 ```javascript
 {
+  "code": 0,
+  "summary": {
+    "cost": 5461,
+    "unassigned": 0
+  },
+  "unassigned": [],
   "routes": [
     {
       "steps": [
@@ -276,14 +281,6 @@ producing a solution that looks like:
       "cost": 5461,
       "vehicle": 0
     }
-  ],
-  "summary": {
-    "computing_times": {
-      "solving": 1,
-      "loading": 0
-    },
-    "cost": 5461
-  },
-  "code": 0
+  ]
 }
 ```
