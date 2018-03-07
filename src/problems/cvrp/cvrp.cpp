@@ -42,6 +42,9 @@ solution cvrp::solve(unsigned nb_threads) const {
     double regret_coeff;
   };
 
+  auto start_clustering = std::chrono::high_resolution_clock::now();
+  BOOST_LOG_TRIVIAL(info) << "[CVRP] Start clustering heuristic(s).";
+
   std::vector<param> parameters;
   parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NONE, 0});
   parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NONE, 0.5});
@@ -95,6 +98,18 @@ solution cvrp::solve(unsigned nb_threads) const {
                            << ";" << c->regret_coeff << ";"
                            << c->unassigned.size() << ";" << c->edges_cost;
 
+  auto end_clustering = std::chrono::high_resolution_clock::now();
+
+  auto clustering_computing_time =
+    std::chrono::duration_cast<std::chrono::milliseconds>(end_clustering -
+                                                          start_clustering)
+      .count();
+
+  BOOST_LOG_TRIVIAL(info) << "[CVRP] Done, took " << clustering_computing_time
+                          << " ms.";
+
+  BOOST_LOG_TRIVIAL(info) << "[CVRP] Launching TSPs ";
+
   for (std::size_t i = 0; i < c->clusters.size(); ++i) {
     if (empty_cluster(c->clusters[i], i)) {
       continue;
@@ -104,6 +119,15 @@ solution cvrp::solve(unsigned nb_threads) const {
 
     tsp_sols.push_back(p.solve(1));
   }
+
+  auto end_tsps = std::chrono::high_resolution_clock::now();
+  auto tsp_computing_time =
+    std::chrono::duration_cast<std::chrono::milliseconds>(end_tsps -
+                                                          end_clustering)
+      .count();
+
+  BOOST_LOG_TRIVIAL(info) << "[CVRP] Done with TSPs, took "
+                          << tsp_computing_time << " ms.";
 
   std::vector<route_t> routes;
   cost_t total_cost = 0;
