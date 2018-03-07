@@ -41,9 +41,10 @@ clustering::clustering(const input& input, CLUSTERING_T t, INIT_T i, double c)
     init_str = "nearest";
     break;
   }
-  std::cout << "Clustering:" << strategy << ";" << init_str << ";"
-            << this->regret_coeff << ";" << this->unassigned.size() << ";"
-            << this->edges_cost << std::endl;
+  BOOST_LOG_TRIVIAL(trace) << "Clustering:" << strategy << ";" << init_str
+                           << ";" << this->regret_coeff << ";"
+                           << this->unassigned.size() << ";"
+                           << this->edges_cost;
 }
 
 inline void update_cost(index_t from_index,
@@ -173,8 +174,9 @@ void clustering::parallel_clustering() {
         capacities[v] -= jobs[job_rank].amount.get();
         candidates[v].erase(init_job);
 
-        std::cout << vehicles[v].id << ";" << parents[v][job_rank] << "->"
-                  << jobs[job_rank].index() << std::endl;
+        BOOST_LOG_TRIVIAL(trace) << vehicles[v].id << ";"
+                                 << parents[v][job_rank] << "->"
+                                 << jobs[job_rank].index();
 
         update_cost(jobs[job_rank].index(),
                     costs[v],
@@ -282,8 +284,9 @@ void clustering::parallel_clustering() {
     clusters[best_v].push_back(jobs[best_j].index());
     unassigned.erase(jobs[best_j]);
     edges_cost += best_cost;
-    std::cout << vehicles[best_v].id << ";" << parents[best_v][best_j] << "->"
-              << jobs[best_j].index() << std::endl;
+    BOOST_LOG_TRIVIAL(trace) << vehicles[best_v].id << ";"
+                             << parents[best_v][best_j] << "->"
+                             << jobs[best_j].index();
     capacities[best_v] -= jobs[best_j].amount.get();
 
     std::pop_heap(candidates[best_v].begin(),
@@ -462,8 +465,8 @@ void clustering::sequential_clustering() {
         candidates_set.erase(job_rank);
         candidates.erase(init_job);
 
-        std::cout << vehicles[v].id << ";" << parents[job_rank] << "->"
-                  << jobs[job_rank].index() << std::endl;
+        BOOST_LOG_TRIVIAL(trace) << vehicles[v].id << ";" << parents[job_rank]
+                                 << "->" << jobs[job_rank].index();
 
         update_cost(jobs[job_rank].index(),
                     costs,
@@ -490,8 +493,8 @@ void clustering::sequential_clustering() {
         clusters[v].push_back(jobs[current_j].index());
         unassigned.erase(jobs[current_j]);
         edges_cost += costs[current_j];
-        std::cout << vehicles[v].id << ";" << parents[current_j] << "->"
-                  << jobs[current_j].index() << std::endl;
+        BOOST_LOG_TRIVIAL(trace) << vehicles[v].id << ";" << parents[current_j]
+                                 << "->" << jobs[current_j].index();
         capacity -= jobs[current_j].amount.get();
         candidates_set.erase(current_j);
 

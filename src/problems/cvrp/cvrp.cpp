@@ -91,20 +91,14 @@ solution cvrp::solve(unsigned nb_threads) const {
     init_str = "nearest";
     break;
   }
-  std::cout << "Best clustering:" << strategy << ";" << init_str << ";"
-            << c->regret_coeff << ";" << c->unassigned.size() << ";"
-            << c->edges_cost << std::endl;
+  BOOST_LOG_TRIVIAL(trace) << "Best clustering:" << strategy << ";" << init_str
+                           << ";" << c->regret_coeff << ";"
+                           << c->unassigned.size() << ";" << c->edges_cost;
 
   for (std::size_t i = 0; i < c->clusters.size(); ++i) {
     if (empty_cluster(c->clusters[i], i)) {
-      std::cout << "Empty cluster" << std::endl;
       continue;
     }
-
-    for (const auto& j : c->clusters[i]) {
-      std::cout << j << " ; ";
-    }
-    std::cout << std::endl;
 
     tsp p(_input, c->clusters[i], i);
 
