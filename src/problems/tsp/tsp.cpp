@@ -154,8 +154,7 @@ cost_t tsp::symmetrized_cost(const std::list<index_t>& tour) const {
 solution tsp::solve(unsigned nb_threads) const {
   // Applying heuristic.
   auto start_heuristic = std::chrono::high_resolution_clock::now();
-  BOOST_LOG_TRIVIAL(info) << "[Heuristic] Start heuristic on symmetrized "
-                             "problem.";
+  BOOST_LOG_TRIVIAL(info) << "[TSP] Start heuristic on symmetrized problem.";
 
   std::list<index_t> christo_sol = christofides(_symmetrized_matrix);
   cost_t christo_cost = this->symmetrized_cost(christo_sol);
@@ -167,11 +166,9 @@ solution tsp::solve(unsigned nb_threads) const {
                                                           start_heuristic)
       .count();
 
-  BOOST_LOG_TRIVIAL(info) << "[Heuristic] Done, took "
-                          << heuristic_computing_time << " ms.";
-
-  BOOST_LOG_TRIVIAL(info) << "[Heuristic] Symmetric solution cost is "
-                          << christo_cost << ".";
+  BOOST_LOG_TRIVIAL(info) << "[TSP] Done in " << heuristic_computing_time
+                          << " ms, symmetric solution cost is " << christo_cost
+                          << ".";
 
   // Local search on symmetric problem.
   // Applying deterministic, fast local search to improve the current
@@ -179,10 +176,9 @@ solution tsp::solve(unsigned nb_threads) const {
   // different neighbourhoods are performed, stopping when reaching a
   // local minima.
   auto start_sym_local_search = std::chrono::high_resolution_clock::now();
-  BOOST_LOG_TRIVIAL(info) << "[Local search] Start local search on symmetrized "
-                             "problem.";
-  BOOST_LOG_TRIVIAL(info) << "[Local search] Using " << nb_threads
-                          << " thread(s).";
+  BOOST_LOG_TRIVIAL(info)
+    << "[TSP] Start local search on symmetrized problem using " << nb_threads
+    << " thread(s).";
 
   local_search sym_ls(_symmetrized_matrix,
                       true, // Symmetrized problem.
@@ -225,10 +221,8 @@ solution tsp::solve(unsigned nb_threads) const {
     std::chrono::duration_cast<std::chrono::milliseconds>(
       end_sym_local_search - start_sym_local_search)
       .count();
-  BOOST_LOG_TRIVIAL(info) << "[Local search] Done, took "
-                          << sym_local_search_duration << " ms.";
-
-  BOOST_LOG_TRIVIAL(info) << "[Local search] Symmetric solution cost is now "
+  BOOST_LOG_TRIVIAL(info) << "[TSP] Done in " << sym_local_search_duration
+                          << " ms, symmetric solution cost is now "
                           << current_cost << " (" << std::fixed
                           << std::setprecision(2)
                           << 100 * (((double)current_cost) / christo_cost - 1)
@@ -255,15 +249,13 @@ solution tsp::solve(unsigned nb_threads) const {
                                                        : reverse_current_sol,
                          nb_threads);
 
-    BOOST_LOG_TRIVIAL(info) << "[Asym. local search] Back to asymmetric "
+    BOOST_LOG_TRIVIAL(info) << "[TSP] Back to asymmetric "
                                "problem, initial solution cost is "
                             << sym_ls_cost << ".";
 
     BOOST_LOG_TRIVIAL(info)
-      << "[Asym. local search] Start local search on asymmetric problem.";
-
-    BOOST_LOG_TRIVIAL(info) << "[Asym. local search] Using " << nb_threads
-                            << " thread(s).";
+      << "[TSP] Start local search on asymmetric problem using " << nb_threads
+      << " thread(s).";
 
     cost_t asym_two_opt_gain = 0;
     cost_t asym_relocate_gain = 0;
@@ -294,12 +286,10 @@ solution tsp::solve(unsigned nb_threads) const {
       std::chrono::duration_cast<std::chrono::milliseconds>(
         end_asym_local_search - start_asym_local_search)
         .count();
-    BOOST_LOG_TRIVIAL(info) << "[Asym. local search] Done, took "
-                            << asym_local_search_duration << " ms.";
-
     BOOST_LOG_TRIVIAL(info)
-      << "[Asym. local search] Asymmetric solution cost is now " << current_cost
-      << " (" << std::fixed << std::setprecision(2)
+      << "[TSP] Done in " << asym_local_search_duration
+      << " ms, asymmetric solution cost is now " << current_cost << " ("
+      << std::fixed << std::setprecision(2)
       << 100 * (((double)current_cost) / sym_ls_cost - 1) << "%).";
   }
 
@@ -349,7 +339,7 @@ solution tsp::solve(unsigned nb_threads) const {
   std::vector<route_t> routes;
   routes.emplace_back(_input._vehicles[_vehicle_rank].id, steps, current_cost);
 
-  solution sol(0, std::move(routes), current_cost);
+  solution sol(0, current_cost, std::move(routes), {});
 
   return sol;
 }

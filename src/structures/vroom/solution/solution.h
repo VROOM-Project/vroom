@@ -10,18 +10,25 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <unordered_set>
+
+#include "../job.h"
 #include "./route.h"
 #include "./summary.h"
 
 struct solution {
   unsigned code;
   std::string error;
-  std::vector<route_t> routes;
   summary_t summary;
+  std::vector<route_t> routes;
+  std::unordered_set<job_t> unassigned;
 
   solution(unsigned code, std::string error);
 
-  solution(unsigned code, std::vector<route_t>&& routes, cost_t cost);
+  solution(unsigned code,
+           cost_t cost,
+           std::vector<route_t>&& routes,
+           std::unordered_set<job_t>&& unassigned);
 };
 
 #endif

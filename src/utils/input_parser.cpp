@@ -19,6 +19,30 @@ parse_coordinates(const rapidjson::Value& object, const char* key) {
   return {object[key][0].GetDouble(), object[key][1].GetDouble()};
 }
 
+inline boost::optional<amount_t> get_amount(const rapidjson::Value& object,
+                                            const char* key) {
+  if (!object.HasMember(key)) {
+    return boost::none;
+  }
+
+  if (!object[key].IsArray()) {
+    throw custom_exception("Invalid " + std::string(key) + " array.");
+  }
+  amount_t amount;
+  for (rapidjson::SizeType i = 0; i < object[key].Size(); ++i) {
+    if (!object[key][i].IsInt64()) {
+      throw custom_exception("Invalid " + std::string(key) + " value.");
+    }
+    amount.push_back(object[key][i].GetInt64());
+  }
+
+  return amount;
+}
+
+inline bool valid_vehicle(const rapidjson::Value& v) {
+  return v.IsObject() and v.HasMember("id") and v["id"].IsUint64();
+}
+
 input parse(const cl_args_t& cl_args) {
   BOOST_LOG_TRIVIAL(info) << "[Loading] Parsing input.";
 
@@ -65,14 +89,6 @@ input parse(const cl_args_t& cl_args) {
       json_input["vehicles"].Empty()) {
     throw custom_exception("Invalid vehicles.");
   }
-  if (!json_input["vehicles"][0].IsObject() or
-      !json_input["vehicles"][0].HasMember("id") or
-      !json_input["vehicles"][0]["id"].IsUint64()) {
-    throw custom_exception("Invalid vehicle at 0.");
-  }
-  if (json_input["vehicles"].Size() > 1) {
-    throw custom_exception("Multiple vehicles are not supported (yet).");
-  }
 
   // Switch input type: explicit matrix or using OSRM.
   if (json_input.HasMember("matrix")) {
@@ -101,65 +117,78 @@ input parse(const cl_args_t& cl_args) {
     }
     input_data.set_matrix(std::move(matrix_input));
 
-    // Check if vehicle has start_index or end_index.
-    bool has_start_index = json_input["vehicles"][0].HasMember("start_index");
-    index_t start_index = 0; // Initial value actually never used.
-    if (has_start_index) {
-      if (!json_input["vehicles"][0]["start_index"].IsUint()) {
-        throw custom_exception("Invalid start_index for vehicle at 0.");
+    // Add all vehicles.
+    for (rapidjson::SizeType i = 0; i < json_input["vehicles"].Size(); ++i) {
+      if (!valid_vehicle(json_input["vehicles"][i])) {
+        throw custom_exception("Invalid vehicle at " + std::to_string(i) + ".");
       }
-      start_index = json_input["vehicles"][0]["start_index"].GetUint();
+      auto v_id = json_input["vehicles"][i]["id"].GetUint();
 
-      if (matrix_size <= start_index) {
-        throw custom_exception(
-          "start_index exceeding matrix size for vehicle at 0.");
+      // Check if vehicle has start_index or end_index.
+      bool has_start_index = json_input["vehicles"][i].HasMember("start_index");
+      index_t start_index = 0; // Initial value actually never used.
+      if (has_start_index) {
+        if (!json_input["vehicles"][i]["start_index"].IsUint()) {
+          throw custom_exception("Invalid start_index for vehicle " +
+                                 std::to_string(v_id) + ".");
+        }
+        start_index = json_input["vehicles"][i]["start_index"].GetUint();
+
+        if (matrix_size <= start_index) {
+          throw custom_exception(
+            "start_index exceeding matrix size for vehicle" +
+            std::to_string(v_id) + ".");
+        }
       }
+
+      bool has_start_coords = json_input["vehicles"][i].HasMember("start");
+
+      bool has_end_index = json_input["vehicles"][i].HasMember("end_index");
+      index_t end_index = 0; // Initial value actually never used.
+      if (has_end_index) {
+        if (!json_input["vehicles"][i]["end_index"].IsUint()) {
+          throw custom_exception("Invalid end_index for vehicle" +
+                                 std::to_string(v_id) + ".");
+        }
+        end_index = json_input["vehicles"][i]["end_index"].GetUint();
+
+        if (matrix_size <= end_index) {
+          throw custom_exception("end_index exceeding matrix size for vehicle" +
+                                 std::to_string(v_id) + ".");
+        }
+      }
+
+      bool has_end_coords = json_input["vehicles"][i].HasMember("end");
+
+      // Add vehicle to input
+      boost::optional<location_t> start;
+      if (has_start_index) {
+        if (has_start_coords) {
+          start = boost::optional<location_t>(location_t(
+            {start_index,
+             parse_coordinates(json_input["vehicles"][i], "start")}));
+        } else {
+          start = boost::optional<location_t>(start_index);
+        }
+      }
+
+      boost::optional<location_t> end;
+      if (has_end_index) {
+        if (has_end_coords) {
+          end = boost::optional<location_t>(location_t(
+            {end_index, parse_coordinates(json_input["vehicles"][i], "end")}));
+        } else {
+          end = boost::optional<location_t>(end_index);
+        }
+      }
+
+      vehicle_t current_v(v_id,
+                          start,
+                          end,
+                          get_amount(json_input["vehicles"][i], "capacity"));
+
+      input_data.add_vehicle(current_v);
     }
-
-    bool has_start_coords = json_input["vehicles"][0].HasMember("start");
-
-    bool has_end_index = json_input["vehicles"][0].HasMember("end_index");
-    index_t end_index = 0; // Initial value actually never used.
-    if (has_end_index) {
-      if (!json_input["vehicles"][0]["end_index"].IsUint()) {
-        throw custom_exception("Invalid end_index for vehicle at 0.");
-      }
-      end_index = json_input["vehicles"][0]["end_index"].GetUint();
-
-      if (matrix_size <= end_index) {
-        throw custom_exception(
-          "end_index exceeding matrix size for vehicle at 0.");
-      }
-    }
-
-    bool has_end_coords = json_input["vehicles"][0].HasMember("end");
-
-    // Add vehicle to input
-    boost::optional<location_t> start;
-    if (has_start_index) {
-      if (has_start_coords) {
-        start = boost::optional<location_t>(
-          location_t({start_index,
-                      parse_coordinates(json_input["vehicles"][0], "start")}));
-      } else {
-        start = boost::optional<location_t>(start_index);
-      }
-    }
-
-    // Add vehicle to input
-    boost::optional<location_t> end;
-    if (has_end_index) {
-      if (has_end_coords) {
-        end = boost::optional<location_t>(location_t(
-          {end_index, parse_coordinates(json_input["vehicles"][0], "end")}));
-      } else {
-        end = boost::optional<location_t>(end_index);
-      }
-    }
-
-    vehicle_t current_v(json_input["vehicles"][0]["id"].GetUint(), start, end);
-
-    input_data.add_vehicle(current_v);
 
     // Add the jobs
     for (rapidjson::SizeType i = 0; i < json_input["jobs"].Size(); ++i) {
@@ -171,64 +200,86 @@ input parse(const cl_args_t& cl_args) {
         throw custom_exception("Invalid id for job at " + std::to_string(i) +
                                ".");
       }
+      auto j_id = json_input["jobs"][i]["id"].GetUint64();
       if (!json_input["jobs"][i].HasMember("location_index") or
           !json_input["jobs"][i]["location_index"].IsUint()) {
-        throw custom_exception("Invalid location_index for job at " +
-                               std::to_string(i) + ".");
+        throw custom_exception("Invalid location_index for job " +
+                               std::to_string(j_id) + ".");
       }
       if (matrix_size <= json_input["jobs"][i]["location_index"].GetUint()) {
-        throw custom_exception(
-          "location_index exceeding matrix size for job at " +
-          std::to_string(i) + ".");
+        throw custom_exception("location_index exceeding matrix size for job " +
+                               std::to_string(j_id) + ".");
       }
 
       if (json_input["jobs"][i].HasMember("location")) {
-        job_t current_job(json_input["jobs"][i]["id"].GetUint64(),
+        job_t current_job(j_id,
+                          get_amount(json_input["jobs"][i], "amount"),
                           json_input["jobs"][i]["location_index"].GetUint(),
                           parse_coordinates(json_input["jobs"][i], "location"));
         input_data.add_job(current_job);
       } else {
         job_t current_job(json_input["jobs"][i]["id"].GetUint64(),
+                          get_amount(json_input["jobs"][i], "amount"),
                           json_input["jobs"][i]["location_index"].GetUint());
         input_data.add_job(current_job);
       }
     }
   } else {
-    // No index provided along locations, matrix computed using OSRM.
+    // Adding vehicles and jobs only, matrix will be computed using
+    // OSRM upon solving.
 
-    boost::optional<location_t> start;
-    if (json_input["vehicles"][0].HasMember("start")) {
-      start = boost::optional<location_t>(
-        parse_coordinates(json_input["vehicles"][0], "start"));
+    // All vehicles.
+    for (rapidjson::SizeType i = 0; i < json_input["vehicles"].Size(); ++i) {
+      if (!valid_vehicle(json_input["vehicles"][i])) {
+        throw custom_exception("Invalid vehicle at " + std::to_string(i) + ".");
+      }
+
+      // Start def is a ugly workaround as using plain:
+      //
+      // boost::optional<location_t> start;
+      //
+      // will raise a false positive -Wmaybe-uninitialized with gcc,
+      // see https://gcc.gnu.org/bugzilla/show_bug.cgi?id=47679
+
+      auto start([]() -> boost::optional<location_t> { return boost::none; }());
+      if (json_input["vehicles"][i].HasMember("start")) {
+        start = boost::optional<location_t>(
+          parse_coordinates(json_input["vehicles"][i], "start"));
+      }
+
+      boost::optional<location_t> end;
+      if (json_input["vehicles"][i].HasMember("end")) {
+        end = boost::optional<location_t>(
+          parse_coordinates(json_input["vehicles"][i], "end"));
+      }
+
+      vehicle_t current_v(json_input["vehicles"][i]["id"].GetUint(),
+                          start,
+                          end,
+                          get_amount(json_input["vehicles"][i], "capacity"));
+
+      input_data.add_vehicle(current_v);
     }
-
-    boost::optional<location_t> end;
-    if (json_input["vehicles"][0].HasMember("end")) {
-      end = boost::optional<location_t>(
-        parse_coordinates(json_input["vehicles"][0], "end"));
-    }
-
-    vehicle_t current_v(json_input["vehicles"][0]["id"].GetUint(), start, end);
-
-    input_data.add_vehicle(current_v);
 
     // Getting jobs.
     for (rapidjson::SizeType i = 0; i < json_input["jobs"].Size(); ++i) {
       if (!json_input["jobs"][i].IsObject()) {
         throw custom_exception("Invalid job.");
       }
-      if (!json_input["jobs"][i].HasMember("location") or
-          !json_input["jobs"][i]["location"].IsArray()) {
-        throw custom_exception("Invalid location for job at " +
-                               std::to_string(i) + ".");
-      }
       if (!json_input["jobs"][i].HasMember("id") or
           !json_input["jobs"][i]["id"].IsUint64()) {
         throw custom_exception("Invalid id for job at " + std::to_string(i) +
                                ".");
       }
+      auto j_id = json_input["jobs"][i]["id"].GetUint64();
+      if (!json_input["jobs"][i].HasMember("location") or
+          !json_input["jobs"][i]["location"].IsArray()) {
+        throw custom_exception("Invalid location for job " +
+                               std::to_string(j_id) + ".");
+      }
 
-      job_t current_job(json_input["jobs"][i]["id"].GetUint64(),
+      job_t current_job(j_id,
+                        get_amount(json_input["jobs"][i], "amount"),
                         parse_coordinates(json_input["jobs"][i], "location"));
 
       input_data.add_job(current_job);

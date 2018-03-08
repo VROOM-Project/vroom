@@ -12,8 +12,8 @@ All rights reserved (see LICENSE).
 
 input::input(std::unique_ptr<routing_io<cost_t>> routing_wrapper, bool geometry)
   : _start_loading(std::chrono::high_resolution_clock::now()),
-    _problem_type(PROBLEM_T::TSP),
     _routing_wrapper(std::move(routing_wrapper)),
+    _has_capacity(false),
     _geometry(geometry) {
 }
 
@@ -29,6 +29,10 @@ void input::add_job(const job_t& job) {
   }
 
   _locations.push_back(current_job);
+
+  if (current_job.has_amount()) {
+    this->check_amount_size(current_job.amount.get().size());
+  }
 }
 
 void input::add_vehicle(const vehicle_t& vehicle) {
@@ -66,10 +70,33 @@ void input::add_vehicle(const vehicle_t& vehicle) {
       }
     }
   }
+
+  if (current_v.has_capacity()) {
+    this->check_amount_size(current_v.capacity.get().size());
+  }
+}
+
+void input::check_amount_size(unsigned size) {
+  if (_amount_size) {
+    // Checking consistency for amount/capacity input lengths.
+    if (size != _amount_size.get()) {
+      throw custom_exception("Inconsistent amount/capacity lengths: " +
+                             std::to_string(size) + " and " +
+                             std::to_string(_amount_size.get()) + '.');
+    }
+  } else {
+    // Updating real value on first call.
+    _amount_size = boost::make_optional(size);
+    _has_capacity = true;
+  }
 }
 
 void input::set_matrix(matrix<cost_t>&& m) {
   _matrix = std::move(m);
+}
+
+const matrix<cost_t>& input::get_matrix() const {
+  return _matrix;
 }
 
 matrix<cost_t>
@@ -125,14 +152,24 @@ void input::check_cost_bound() const {
 }
 
 PROBLEM_T input::get_problem_type() const {
-  return _problem_type;
+  PROBLEM_T problem_type = PROBLEM_T::TSP;
+  if (_has_capacity) {
+    problem_type = PROBLEM_T::CVRP;
+  }
+  return problem_type;
 }
 
 std::unique_ptr<vrp> input::get_problem() const {
-  std::vector<index_t> job_ranks(_jobs.size());
-  std::iota(job_ranks.begin(), job_ranks.end(), 0);
+  auto problem_type = this->get_problem_type();
 
-  return std::make_unique<tsp>(*this, job_ranks, 0);
+  if (problem_type == PROBLEM_T::CVRP) {
+    return std::make_unique<cvrp>(*this);
+  } else {
+    std::vector<index_t> job_ranks(_jobs.size());
+    std::iota(job_ranks.begin(), job_ranks.end(), 0);
+
+    return std::make_unique<tsp>(*this, job_ranks, 0);
+  }
 }
 
 solution input::solve(unsigned nb_thread) {
