@@ -11,54 +11,46 @@ All rights reserved (see LICENSE).
 #include "../../structures/vroom/input/input.h"
 
 tsp::tsp(const input& input,
-         std::vector<index_t> problem_indices,
+         std::vector<index_t> job_ranks,
          index_t vehicle_rank)
   : vrp(input),
     _vehicle_rank(vehicle_rank),
-    _tsp_index_to_global(std::move(problem_indices)),
-    _matrix(_input.get_sub_matrix(_tsp_index_to_global)),
-    _symmetrized_matrix(_matrix.size()),
+    _job_ranks(std::move(job_ranks)),
     _is_symmetric(true),
     _has_start(_input._vehicles[_vehicle_rank].has_start()),
     _has_end(_input._vehicles[_vehicle_rank].has_end()) {
+
+  // Pick ranks to select from input matrix.
+  std::vector<index_t> matrix_ranks;
+  std::transform(_job_ranks.cbegin(),
+                 _job_ranks.cend(),
+                 std::back_inserter(matrix_ranks),
+                 [&](const auto& r) { return _input._jobs[r].index(); });
+
+  if (_has_start) {
+    // Add start and remember rank in _matrix.
+    _start = matrix_ranks.size();
+    matrix_ranks.push_back(_input._vehicles[_vehicle_rank].start.get().index());
+  }
+  if (_has_end) {
+    // Add end and remember rank in _matrix.
+    if (_has_start and (_input._vehicles[_vehicle_rank].start.get().index() ==
+                        _input._vehicles[_vehicle_rank].end.get().index())) {
+      // Avoiding duplicate for identical ranks.
+      _end = _start;
+    } else {
+      _end = matrix_ranks.size();
+      matrix_ranks.push_back(_input._vehicles[_vehicle_rank].end.get().index());
+    }
+  }
+
+  _matrix = _input.get_sub_matrix(matrix_ranks);
 
   // Distances on the diagonal are never used except in the minimum
   // weight perfect matching (munkres call during the heuristic). This
   // makes sure no node will be matched with itself at that time.
   for (index_t i = 0; i < _matrix.size(); ++i) {
     _matrix[i][i] = INFINITE_COST;
-  }
-
-  if (_has_start) {
-    // Use index in _matrix for start.
-    bool start_found;
-    for (index_t i = 0; i < _tsp_index_to_global.size(); ++i) {
-      start_found = (_input._type_with_ids[i].type == TYPE::START) and
-                    (_tsp_index_to_global[i] ==
-                     _input._vehicles[_vehicle_rank].start.get().index());
-      if (start_found) {
-        _start = i;
-        break;
-      }
-    }
-    assert(start_found);
-  }
-  if (_has_end) {
-    // Use index in _matrix for end.
-    bool end_found;
-    for (index_t i = 0; i < _tsp_index_to_global.size(); ++i) {
-      // Not checking for TYPE::END here because when start_index and
-      // end_index are both provided and equal, then the end location
-      // is not duplicated in input::_locations.
-      end_found = (_input._type_with_ids[i].type != TYPE::JOB) and
-                  (_tsp_index_to_global[i] ==
-                   _input._vehicles[_vehicle_rank].end.get().index());
-      if (end_found) {
-        _end = i;
-        break;
-      }
-    }
-    assert(end_found);
   }
 
   _round_trip = _has_start and _has_end and (_start == _end);
@@ -98,6 +90,8 @@ tsp::tsp(const input& input,
   }
 
   // Compute symmetrized matrix and update _is_symmetric flag.
+  _symmetrized_matrix = matrix<cost_t>(_matrix.size());
+
   const cost_t& (*sym_f)(const cost_t&, const cost_t&) = std::min<cost_t>;
   if ((_has_start and !_has_end) or (!_has_start and _has_end)) {
     // Using symmetrization with max as when only start or only end is
@@ -331,25 +325,19 @@ solution tsp::solve(unsigned nb_threads) const {
     // Remember that jobs start further away in the list.
     ++job_start;
   }
-  // Determine end index and where to stop for last job.
+  // Determine where to stop for last job.
   auto job_end = current_sol.cend();
-  index_t end_index = current_sol.back();
 
-  if (_round_trip) {
-    end_index = _start;
-  } else {
-    if (_has_end) {
-      assert(current_sol.back() == end_index);
-      --job_end;
-    }
+  if (!_round_trip and _has_end) {
+    --job_end;
   }
 
   // Handle jobs.
   for (auto job = job_start; job != job_end; ++job) {
-    assert(_input._type_with_ids[*job].type == TYPE::JOB);
+    auto current_rank = _job_ranks[*job];
     steps.emplace_back(TYPE::JOB,
-                       _input._locations[*job],
-                       _input._type_with_ids[*job].id);
+                       _input._jobs[current_rank],
+                       _input._jobs[current_rank].id);
   }
   // Handle end.
   if (_has_end) {

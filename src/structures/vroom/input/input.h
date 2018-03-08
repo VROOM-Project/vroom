@@ -55,7 +55,6 @@ public:
   std::vector<vehicle_t> _vehicles;
 
   // List of ids and locations added through add_*.
-  std::vector<type_with_id> _type_with_ids;
   std::vector<location_t> _locations;
 
   input(std::unique_ptr<routing_io<cost_t>> routing_wrapper, bool geometry);
