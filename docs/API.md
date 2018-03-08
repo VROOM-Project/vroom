@@ -104,7 +104,7 @@ The computed solution is written as `json` on standard output or a file
 | `code` | return code, `0` if no error was raised |
 | `error` | error message (present iff `code` is different from `0`) |
 | [`summary`](#summary) | object summarizing solution indicators |
-| `unassigned` | array containing the ids of unassigned jobs |
+| `unassigned` | array of objects describing unassigned jobs with their `id` and `location` (if provided) |
 | [`routes`](#routes) | array of `route` objects |
 
 ## Summary
