@@ -56,7 +56,8 @@ input parse(const cl_args_t& cl_args) {
   }
 
   // Main Checks for valid json input.
-  if (!json_input.HasMember("jobs") or !json_input["jobs"].IsArray()) {
+  if (!json_input.HasMember("jobs") or !json_input["jobs"].IsArray() or
+      json_input["jobs"].Empty()) {
     throw custom_exception("Invalid jobs.");
   }
 
@@ -232,10 +233,6 @@ input parse(const cl_args_t& cl_args) {
 
       input_data.add_job(current_job);
     }
-  }
-
-  if (input_data._locations.size() <= 1) {
-    throw custom_exception("At least two locations required!");
   }
 
   return input_data;

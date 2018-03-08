@@ -47,15 +47,13 @@ private:
   std::unique_ptr<routing_io<cost_t>> _routing_wrapper;
   const bool _geometry;
   matrix<cost_t> _matrix;
+  std::vector<location_t> _locations;
   std::unique_ptr<vrp> get_problem() const;
   void check_cost_bound() const;
 
 public:
   std::vector<job_t> _jobs;
   std::vector<vehicle_t> _vehicles;
-
-  // List of ids and locations added through add_*.
-  std::vector<location_t> _locations;
 
   input(std::unique_ptr<routing_io<cost_t>> routing_wrapper, bool geometry);
 
