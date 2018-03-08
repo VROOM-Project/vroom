@@ -28,7 +28,6 @@ void input::add_job(const job_t& job) {
     current_job.set_index(_locations.size());
   }
 
-  _type_with_ids.push_back({TYPE::JOB, current_job.id});
   _locations.push_back(current_job);
 }
 
@@ -44,25 +43,27 @@ void input::add_vehicle(const vehicle_t& vehicle) {
     if (!current_v.start.get().user_index()) {
       // Index of this start in the matrix was not specified upon
       // vehicle creation, using current number of locations.
+      assert(current_v.start.get().has_coordinates());
       current_v.start.get().set_index(_locations.size());
+      _locations.push_back(current_v.start.get());
     }
-
-    _type_with_ids.push_back({TYPE::START, current_v.id});
-    _locations.push_back(current_v.start.get());
   }
 
   if (has_end) {
     if (!current_v.end.get().user_index()) {
       // Index of this end in the matrix was not specified upon
       // vehicle creation, using current number of locations.
-      current_v.end.get().set_index(_locations.size());
-    }
+      assert(current_v.end.get().has_coordinates());
 
-    if (!has_start or
-        (current_v.start.get().index() != current_v.end.get().index())) {
-      // Avoiding duplicate for start/end location.
-      _type_with_ids.push_back({TYPE::END, current_v.id});
-      _locations.push_back(current_v.end.get());
+      if (has_start and !current_v.start.get().user_index() and
+          current_v.start.get().lon() == current_v.end.get().lon() and
+          current_v.start.get().lat() == current_v.end.get().lat()) {
+        // Avoiding duplicate for start/end identical locations.
+        current_v.end.get().set_index(_locations.size() - 1);
+      } else {
+        current_v.end.get().set_index(_locations.size());
+        _locations.push_back(current_v.end.get());
+      }
     }
   }
 }
@@ -128,13 +129,10 @@ PROBLEM_T input::get_problem_type() const {
 }
 
 std::unique_ptr<vrp> input::get_problem() const {
-  std::vector<index_t> problem_indices;
-  std::transform(_locations.begin(),
-                 _locations.end(),
-                 std::back_inserter(problem_indices),
-                 [](const auto& loc) { return loc.index(); });
+  std::vector<index_t> job_ranks(_jobs.size());
+  std::iota(job_ranks.begin(), job_ranks.end(), 0);
 
-  return std::make_unique<tsp>(*this, problem_indices, 0);
+  return std::make_unique<tsp>(*this, job_ranks, 0);
 }
 
 solution input::solve(unsigned nb_thread) {
