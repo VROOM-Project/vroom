@@ -57,8 +57,33 @@ solution cvrp::solve(unsigned nb_threads) const {
   parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::HIGHER_AMOUNT, 1});
 
   std::vector<clustering> clusterings;
-  for (const auto& p : parameters) {
-    clusterings.emplace_back(_input, p.type, p.init, p.regret_coeff);
+  std::mutex clusterings_mutex;
+
+  // Split the work among threads.
+  std::vector<std::vector<std::size_t>>
+    thread_ranks(nb_threads, std::vector<std::size_t>());
+  for (std::size_t i = 0; i < parameters.size(); ++i) {
+    thread_ranks[i % nb_threads].push_back(i);
+  }
+
+  auto run_clustering = [&](const std::vector<std::size_t>& param_ranks) {
+    for (auto rank : param_ranks) {
+      auto& p = parameters[rank];
+      clustering c(_input, p.type, p.init, p.regret_coeff);
+
+      std::lock_guard<std::mutex> guard(clusterings_mutex);
+      clusterings.push_back(std::move(c));
+    }
+  };
+
+  std::vector<std::thread> threads;
+
+  for (std::size_t i = 0; i < nb_threads; ++i) {
+    threads.emplace_back(run_clustering, thread_ranks[i]);
+  }
+
+  for (auto& t : threads) {
+    t.join();
   }
 
   auto best_c =
