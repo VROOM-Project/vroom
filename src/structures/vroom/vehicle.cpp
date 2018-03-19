@@ -12,14 +12,15 @@ All rights reserved (see LICENSE).
 vehicle_t::vehicle_t(ID_t id,
                      const boost::optional<location_t>& start,
                      const boost::optional<location_t>& end)
-  : vehicle_t(id, start, end, boost::none) {
+  : vehicle_t(id, start, end, boost::none, std::vector<skill_t>()) {
 }
 
 vehicle_t::vehicle_t(ID_t id,
                      const boost::optional<location_t>& start,
                      const boost::optional<location_t>& end,
-                     const boost::optional<amount_t>& capacity)
-  : id(id), start(start), end(end), capacity(capacity) {
+                     const boost::optional<amount_t>& capacity,
+                     const std::vector<skill_t>& skills)
+  : id(id), start(start), end(end), capacity(capacity), skills(skills) {
   if (!static_cast<bool>(start) and !static_cast<bool>(end)) {
     throw custom_exception("No start or end specified for vehicle " +
                            std::to_string(id) + '.');

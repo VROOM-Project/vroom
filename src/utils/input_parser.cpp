@@ -182,10 +182,13 @@ input parse(const cl_args_t& cl_args) {
         }
       }
 
+      std::vector<skill_t> v_skills;
+
       vehicle_t current_v(v_id,
                           start,
                           end,
-                          get_amount(json_input["vehicles"][i], "capacity"));
+                          get_amount(json_input["vehicles"][i], "capacity"),
+                          v_skills);
 
       input_data.add_vehicle(current_v);
     }
@@ -211,15 +214,19 @@ input parse(const cl_args_t& cl_args) {
                                std::to_string(j_id) + ".");
       }
 
+      std::vector<skill_t> job_skills;
+
       if (json_input["jobs"][i].HasMember("location")) {
         job_t current_job(j_id,
                           get_amount(json_input["jobs"][i], "amount"),
+                          job_skills,
                           json_input["jobs"][i]["location_index"].GetUint(),
                           parse_coordinates(json_input["jobs"][i], "location"));
         input_data.add_job(current_job);
       } else {
         job_t current_job(json_input["jobs"][i]["id"].GetUint64(),
                           get_amount(json_input["jobs"][i], "amount"),
+                          job_skills,
                           json_input["jobs"][i]["location_index"].GetUint());
         input_data.add_job(current_job);
       }
@@ -253,10 +260,13 @@ input parse(const cl_args_t& cl_args) {
           parse_coordinates(json_input["vehicles"][i], "end"));
       }
 
+      std::vector<skill_t> v_skills;
+
       vehicle_t current_v(json_input["vehicles"][i]["id"].GetUint(),
                           start,
                           end,
-                          get_amount(json_input["vehicles"][i], "capacity"));
+                          get_amount(json_input["vehicles"][i], "capacity"),
+                          v_skills);
 
       input_data.add_vehicle(current_v);
     }
@@ -278,8 +288,11 @@ input parse(const cl_args_t& cl_args) {
                                std::to_string(j_id) + ".");
       }
 
+      std::vector<skill_t> job_skills;
+
       job_t current_job(j_id,
                         get_amount(json_input["jobs"][i], "amount"),
+                        job_skills,
                         parse_coordinates(json_input["jobs"][i], "location"));
 
       input_data.add_job(current_job);

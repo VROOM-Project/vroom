@@ -17,6 +17,7 @@ All rights reserved (see LICENSE).
 struct job_t : public location_t {
   const ID_t id;
   boost::optional<amount_t> amount;
+  std::vector<skill_t> skills;
 
   job_t(ID_t id, index_t index);
 
@@ -25,8 +26,14 @@ struct job_t : public location_t {
   job_t(ID_t id, const coords_t& coords);
 
   template <typename... Args>
-  job_t(ID_t id, const boost::optional<amount_t>& amount, Args&&... args)
-    : location_t(std::forward<Args>(args)...), id(id), amount(amount) {
+  job_t(ID_t id,
+        const boost::optional<amount_t>& amount,
+        const std::vector<skill_t>& skills,
+        Args&&... args)
+    : location_t(std::forward<Args>(args)...),
+      id(id),
+      amount(amount),
+      skills(skills) {
   }
 
   bool has_amount() const;
