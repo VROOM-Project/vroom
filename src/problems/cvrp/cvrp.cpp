@@ -25,8 +25,6 @@ cvrp::cvrp(const input& input) : vrp(input) {
 }
 
 solution cvrp::solve(unsigned nb_threads) const {
-  std::vector<solution> tsp_sols;
-
   struct param {
     CLUSTERING_T type;
     INIT_T init;
@@ -76,13 +74,13 @@ solution cvrp::solve(unsigned nb_threads) const {
     }
   };
 
-  std::vector<std::thread> threads;
+  std::vector<std::thread> clustering_threads;
 
   for (std::size_t i = 0; i < nb_threads; ++i) {
-    threads.emplace_back(run_clustering, thread_ranks[i]);
+    clustering_threads.emplace_back(run_clustering, thread_ranks[i]);
   }
 
-  for (auto& t : threads) {
+  for (auto& t : clustering_threads) {
     t.join();
   }
 
@@ -127,14 +125,59 @@ solution cvrp::solve(unsigned nb_threads) const {
 
   BOOST_LOG_TRIVIAL(info) << "[CVRP] Launching TSPs ";
 
+  // Determine non-empty clusters and number of TSP to launch.
+  std::vector<std::size_t> non_empty_cluster_ranks;
   for (std::size_t i = 0; i < best_c->clusters.size(); ++i) {
-    if (best_c->clusters[i].empty()) {
-      continue;
+    if (!best_c->clusters[i].empty()) {
+      non_empty_cluster_ranks.push_back(i);
+    }
+  }
+  auto nb_tsp = non_empty_cluster_ranks.size();
+
+  // Create vector of TSP solutions with dummy init.
+  std::vector<solution> tsp_sols(nb_tsp, solution(0, ""));
+
+  // Run TSP solving for a list of clusters in turn, each with
+  // provided number of threads.
+  auto run_tsp = [&](const std::vector<unsigned>& cluster_ranks,
+                     unsigned tsp_threads) {
+    for (auto cl_rank : cluster_ranks) {
+      auto vehicle_rank = non_empty_cluster_ranks[cl_rank];
+      tsp p(_input, best_c->clusters[vehicle_rank], vehicle_rank);
+
+      tsp_sols[cl_rank] = p.solve(tsp_threads);
+    }
+  };
+
+  std::vector<std::thread> tsp_threads;
+
+  if (nb_tsp <= nb_threads) {
+    // We launch nb_tsp TSP solving and each of them can be
+    // multi-threaded.
+    std::vector<unsigned> thread_per_tsp(nb_tsp, 0);
+    for (std::size_t i = 0; i < nb_threads; ++i) {
+      ++thread_per_tsp[i % nb_tsp];
     }
 
-    tsp p(_input, best_c->clusters[i], i);
+    for (unsigned i = 0; i < nb_tsp; ++i) {
+      std::vector<unsigned> cluster_ranks({i});
+      tsp_threads.emplace_back(run_tsp, cluster_ranks, thread_per_tsp[i]);
+    }
+  } else {
+    // We launch nb_threads threads, each one solving several TSP.
+    std::vector<std::vector<unsigned>>
+    ranks_per_thread(nb_threads, std::vector<unsigned>());
+    for (std::size_t i = 0; i < nb_tsp; ++i) {
+      ranks_per_thread[i % nb_threads].push_back(i);
+    }
 
-    tsp_sols.push_back(p.solve(1));
+    for (std::size_t i = 0; i < nb_threads; ++i) {
+      tsp_threads.emplace_back(run_tsp, ranks_per_thread[i], 1);
+    }
+  }
+
+  for (auto& t : tsp_threads) {
+    t.join();
   }
 
   auto end_tsps = std::chrono::high_resolution_clock::now();
