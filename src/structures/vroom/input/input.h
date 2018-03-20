@@ -46,13 +46,16 @@ private:
   std::chrono::high_resolution_clock::time_point _end_routing;
   std::unique_ptr<routing_io<cost_t>> _routing_wrapper;
   bool _has_capacity;
+  bool _has_skills;
   const bool _geometry;
   matrix<cost_t> _matrix;
   std::vector<location_t> _locations;
   boost::optional<unsigned> _amount_size;
+  std::vector<std::vector<bool>> _vehicle_to_job_compatibility;
   void check_amount_size(unsigned size);
   std::unique_ptr<vrp> get_problem() const;
   void check_cost_bound() const;
+  void set_vehicle_to_job_compatibility();
 
 public:
   std::vector<job_t> _jobs;

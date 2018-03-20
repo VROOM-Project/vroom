@@ -10,6 +10,8 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <unordered_set>
+
 #include "../../utils/exceptions.h"
 #include "../typedefs.h"
 #include "./amount.h"
@@ -20,7 +22,7 @@ struct vehicle_t {
   boost::optional<location_t> start;
   boost::optional<location_t> end;
   boost::optional<amount_t> capacity;
-  std::vector<skill_t> skills;
+  std::unordered_set<skill_t> skills;
 
   vehicle_t(ID_t id,
             const boost::optional<location_t>& start,
@@ -30,7 +32,7 @@ struct vehicle_t {
             const boost::optional<location_t>& start,
             const boost::optional<location_t>& end,
             const boost::optional<amount_t>& capacity,
-            const std::vector<skill_t>& skills);
+            const std::unordered_set<skill_t>& skills);
 
   bool has_start() const;
 

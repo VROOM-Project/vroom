@@ -10,6 +10,8 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <unordered_set>
+
 #include "../typedefs.h"
 #include "./amount.h"
 #include "./location.h"
@@ -17,7 +19,7 @@ All rights reserved (see LICENSE).
 struct job_t : public location_t {
   const ID_t id;
   boost::optional<amount_t> amount;
-  std::vector<skill_t> skills;
+  std::unordered_set<skill_t> skills;
 
   job_t(ID_t id, index_t index);
 
@@ -28,7 +30,7 @@ struct job_t : public location_t {
   template <typename... Args>
   job_t(ID_t id,
         const boost::optional<amount_t>& amount,
-        const std::vector<skill_t>& skills,
+        const std::unordered_set<skill_t>& skills,
         Args&&... args)
     : location_t(std::forward<Args>(args)...),
       id(id),

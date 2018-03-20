@@ -10,15 +10,15 @@ All rights reserved (see LICENSE).
 #include "job.h"
 
 job_t::job_t(ID_t id, index_t index)
-  : job_t(id, boost::none, std::vector<skill_t>(), index) {
+  : job_t(id, boost::none, std::unordered_set<skill_t>(), index) {
 }
 
 job_t::job_t(ID_t id, index_t index, const coords_t& coords)
-  : job_t(id, boost::none, std::vector<skill_t>(), index, coords) {
+  : job_t(id, boost::none, std::unordered_set<skill_t>(), index, coords) {
 }
 
 job_t::job_t(ID_t id, const coords_t& coords)
-  : job_t(id, boost::none, std::vector<skill_t>(), coords) {
+  : job_t(id, boost::none, std::unordered_set<skill_t>(), coords) {
 }
 
 bool job_t::has_amount() const {

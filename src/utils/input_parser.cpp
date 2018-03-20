@@ -39,8 +39,8 @@ inline boost::optional<amount_t> get_amount(const rapidjson::Value& object,
   return amount;
 }
 
-inline std::vector<skill_t> get_skills(const rapidjson::Value& object) {
-  std::vector<skill_t> skills;
+inline std::unordered_set<skill_t> get_skills(const rapidjson::Value& object) {
+  std::unordered_set<skill_t> skills;
   if (object.HasMember("skills")) {
     if (!object["skills"].IsArray()) {
       throw custom_exception("Invalid skills object.");
@@ -49,7 +49,7 @@ inline std::vector<skill_t> get_skills(const rapidjson::Value& object) {
       if (!object["skills"][i].IsUint()) {
         throw custom_exception("Invalid skill value.");
       }
-      skills.push_back(object["skills"][i].GetUint());
+      skills.insert(object["skills"][i].GetUint());
     }
   }
 

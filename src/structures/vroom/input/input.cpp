@@ -14,6 +14,7 @@ input::input(std::unique_ptr<routing_io<cost_t>> routing_wrapper, bool geometry)
   : _start_loading(std::chrono::high_resolution_clock::now()),
     _routing_wrapper(std::move(routing_wrapper)),
     _has_capacity(false),
+    _has_skills(false),
     _geometry(geometry) {
 }
 
@@ -33,6 +34,7 @@ void input::add_job(const job_t& job) {
   if (current_job.has_amount()) {
     this->check_amount_size(current_job.amount.get().size());
   }
+  _has_skills |= !current_job.skills.empty();
 }
 
 void input::add_vehicle(const vehicle_t& vehicle) {
@@ -74,6 +76,7 @@ void input::add_vehicle(const vehicle_t& vehicle) {
   if (current_v.has_capacity()) {
     this->check_amount_size(current_v.capacity.get().size());
   }
+  _has_skills |= !current_v.skills.empty();
 }
 
 void input::check_amount_size(unsigned size) {
@@ -151,6 +154,30 @@ void input::check_cost_bound() const {
                           << ".";
 }
 
+void input::set_vehicle_to_job_compatibility() {
+  // Default to no restriction when no skills are provided.
+  _vehicle_to_job_compatibility =
+    std::vector<std::vector<bool>>(_vehicles.size(),
+                                   std::vector<bool>(_jobs.size(), true));
+  if (_has_skills) {
+    for (std::size_t v = 0; v < _vehicles.size(); ++v) {
+      const auto& v_skills = _vehicles[v].skills;
+
+      for (std::size_t j = 0; j < _jobs.size(); ++j) {
+        bool is_compatible = !_jobs[j].skills.empty();
+        for (const auto& s : _jobs[j].skills) {
+          auto search = v_skills.find(s);
+          is_compatible &= (search != v_skills.end());
+          if (!is_compatible) {
+            break;
+          }
+        }
+        _vehicle_to_job_compatibility[v][j] = is_compatible;
+      }
+    }
+  }
+}
+
 PROBLEM_T input::get_problem_type() const {
   PROBLEM_T problem_type = PROBLEM_T::TSP;
   if (_has_capacity) {
@@ -182,6 +209,9 @@ solution input::solve(unsigned nb_thread) {
 
   // Check for potential overflow in solution cost.
   this->check_cost_bound();
+
+  // Fill vehicle/job compatibility matrix.
+  this->set_vehicle_to_job_compatibility();
 
   // Load relevant problem.
   auto instance = this->get_problem();
