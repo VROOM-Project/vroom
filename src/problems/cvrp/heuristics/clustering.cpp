@@ -81,7 +81,7 @@ void clustering::parallel_clustering() {
   // For each vehicle cluster, we need to maintain a vector of job
   // candidates (represented by their index in 'jobs'). Initialization
   // updates all costs related to start/end for each vehicle cluster.
-  std::vector<std::vector<index_t>> candidates(V, std::vector<index_t>(J));
+  std::vector<std::vector<index_t>> candidates(V);
 
   // Remember wanabee parent for each job in each cluster.
   std::vector<std::vector<index_t>> parents(V, std::vector<index_t>(J));
