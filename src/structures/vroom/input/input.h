@@ -77,7 +77,7 @@ public:
 
   solution solve(unsigned nb_thread);
 
-  friend input parse(const cl_args_t& cl_args);
+  friend class clustering;
 };
 
 #endif

@@ -78,16 +78,19 @@ void clustering::parallel_clustering() {
 
   // For each vehicle cluster, we need to maintain a vector of job
   // candidates (represented by their index in 'jobs'). Initialization
-  // also include pushing start/end into vehicle clusters and updating
-  // costs accordingly.
+  // updates all costs related to start/end for each vehicle cluster.
   std::vector<std::vector<index_t>> candidates(V, std::vector<index_t>(J));
 
   // Remember wanabee parent for each job in each cluster.
   std::vector<std::vector<index_t>> parents(V, std::vector<index_t>(J));
 
   for (std::size_t v = 0; v < V; ++v) {
-    // TODO, only keep jobs compatible with vehicle skills.
-    std::iota(candidates[v].begin(), candidates[v].end(), 0);
+    // Only keep jobs compatible with vehicle skills in candidates.
+    for (std::size_t j = 0; j < J; ++j) {
+      if (input_ref._vehicle_to_job_compatibility[v][j]) {
+        candidates[v].push_back(j);
+      }
+    }
 
     if (vehicles[v].has_start()) {
       auto start_index = vehicles[v].start.get().index();
@@ -403,8 +406,8 @@ void clustering::sequential_clustering() {
     // costs to jobs for current vehicle.
     std::vector<index_t> candidates;
     for (auto i : candidates_set) {
-      // TODO, only keep jobs compatible with vehicle skills.
-      if (jobs[i].amount.get() <= input_ref._vehicles[v].capacity.get()) {
+      if (input_ref._vehicle_to_job_compatibility[v][i] and
+          jobs[i].amount.get() <= input_ref._vehicles[v].capacity.get()) {
         candidates.push_back(i);
       }
     }
@@ -415,8 +418,7 @@ void clustering::sequential_clustering() {
     // Remember wanabee parent for each job.
     std::vector<index_t> parents(J);
 
-    // Pushing start/end into vehicle clusters and updating costs
-    // accordingly.
+    // Updating costs related to start/end for each vehicle cluster.
     if (vehicles[v].has_start()) {
       auto start_index = vehicles[v].start.get().index();
       update_cost(start_index, costs, parents, candidates, jobs, m);
