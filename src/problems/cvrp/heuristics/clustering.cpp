@@ -15,9 +15,11 @@ clustering::clustering(const input& input, CLUSTERING_T t, INIT_T i, double c)
     regret_coeff(c),
     clusters(input._vehicles.size()),
     edges_cost(0) {
-  for (const auto& j : input_ref._jobs) {
-    unassigned.insert(j);
+  // All job ranks start with unassigned status.
+  for (unsigned i = 0; i < input_ref._jobs.size(); ++i) {
+    unassigned.insert(i);
   }
+
   std::string strategy;
   switch (type) {
   case CLUSTERING_T::PARALLEL:
@@ -169,7 +171,7 @@ void clustering::parallel_clustering() {
       if (init_job != candidates[v].cend()) {
         auto job_rank = *init_job;
         clusters[v].push_back(job_rank);
-        unassigned.erase(jobs[job_rank]);
+        unassigned.erase(job_rank);
         edges_cost += costs[v][job_rank];
         capacities[v] -= jobs[job_rank].amount.get();
         candidates[v].erase(init_job);
@@ -282,7 +284,7 @@ void clustering::parallel_clustering() {
     // Add best candidate to matching cluster and remove from all
     // candidate vectors.
     clusters[best_v].push_back(best_j);
-    unassigned.erase(jobs[best_j]);
+    unassigned.erase(best_j);
     edges_cost += best_cost;
     BOOST_LOG_TRIVIAL(trace) << vehicles[best_v].id << ";"
                              << parents[best_v][best_j] << "->"
@@ -455,7 +457,7 @@ void clustering::sequential_clustering() {
       if (init_job != candidates.cend()) {
         auto job_rank = *init_job;
         clusters[v].push_back(job_rank);
-        unassigned.erase(jobs[job_rank]);
+        unassigned.erase(job_rank);
         edges_cost += vehicles_to_job_costs[v][job_rank];
         capacity -= jobs[job_rank].amount.get();
         candidates_set.erase(job_rank);
@@ -487,7 +489,7 @@ void clustering::sequential_clustering() {
 
       if (jobs[current_j].amount.get() <= capacity) {
         clusters[v].push_back(current_j);
-        unassigned.erase(jobs[current_j]);
+        unassigned.erase(current_j);
         edges_cost += costs[current_j];
         BOOST_LOG_TRIVIAL(trace) << vehicles[v].id << ";" << parents[current_j]
                                  << "->" << jobs[current_j].index();

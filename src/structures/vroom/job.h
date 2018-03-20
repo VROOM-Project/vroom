@@ -39,12 +39,6 @@ struct job_t : public location_t {
   }
 
   bool has_amount() const;
-
-  // Hash and operator== to be able to use jobs in std::unordered_set.
-  bool operator==(const job_t& other) const;
 };
 
-namespace std {
-template <> struct hash<job_t> { size_t operator()(const job_t& k) const; };
-}
 #endif

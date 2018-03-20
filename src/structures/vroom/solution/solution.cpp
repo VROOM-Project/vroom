@@ -16,7 +16,7 @@ solution::solution(unsigned code, std::string error)
 solution::solution(unsigned code,
                    cost_t cost,
                    std::vector<route_t>&& routes,
-                   std::unordered_set<job_t>&& unassigned)
+                   std::vector<job_t>&& unassigned)
   : code(code),
     summary(cost, unassigned.size()),
     routes(std::move(routes)),
