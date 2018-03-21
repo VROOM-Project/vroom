@@ -22,6 +22,15 @@ void input::add_job(const job_t& job) {
 
   auto& current_job = _jobs.back();
 
+  // Ensure that skills are either always or never provided.
+  if (_locations.empty()) {
+    _has_skills = !current_job.skills.empty();
+  } else {
+    if (_has_skills != !current_job.skills.empty()) {
+      throw custom_exception("Missing skills.");
+    }
+  }
+
   if (!current_job.user_index()) {
     // Index of this job in the matrix was not specified upon job
     // creation, using current number of locations.
@@ -39,6 +48,15 @@ void input::add_vehicle(const vehicle_t& vehicle) {
   _vehicles.push_back(vehicle);
 
   auto& current_v = _vehicles.back();
+
+  // Ensure that skills are either always or never provided.
+  if (_locations.empty()) {
+    _has_skills = !current_v.skills.empty();
+  } else {
+    if (_has_skills != !current_v.skills.empty()) {
+      throw custom_exception("Missing skills.");
+    }
+  }
 
   bool has_start = current_v.has_start();
   bool has_end = current_v.has_end();
@@ -151,6 +169,32 @@ void input::check_cost_bound() const {
                           << ".";
 }
 
+void input::set_vehicle_to_job_compatibility() {
+  // Default to no restriction when no skills are provided.
+  _vehicle_to_job_compatibility =
+    std::vector<std::vector<bool>>(_vehicles.size(),
+                                   std::vector<bool>(_jobs.size(), true));
+  if (_has_skills) {
+    for (std::size_t v = 0; v < _vehicles.size(); ++v) {
+      const auto& v_skills = _vehicles[v].skills;
+      assert(!v_skills.empty());
+
+      for (std::size_t j = 0; j < _jobs.size(); ++j) {
+        bool is_compatible = true;
+        assert(!_jobs[j].skills.empty());
+        for (const auto& s : _jobs[j].skills) {
+          auto search = v_skills.find(s);
+          is_compatible &= (search != v_skills.end());
+          if (!is_compatible) {
+            break;
+          }
+        }
+        _vehicle_to_job_compatibility[v][j] = is_compatible;
+      }
+    }
+  }
+}
+
 PROBLEM_T input::get_problem_type() const {
   PROBLEM_T problem_type = PROBLEM_T::TSP;
   if (_has_capacity) {
@@ -182,6 +226,9 @@ solution input::solve(unsigned nb_thread) {
 
   // Check for potential overflow in solution cost.
   this->check_cost_bound();
+
+  // Fill vehicle/job compatibility matrix.
+  this->set_vehicle_to_job_compatibility();
 
   // Load relevant problem.
   auto instance = this->get_problem();

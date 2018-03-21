@@ -128,8 +128,11 @@ solution cvrp::solve(unsigned nb_threads) const {
     total_cost += tsp_sol.summary.cost;
   }
 
-  return solution(0,
-                  total_cost,
-                  std::move(routes),
-                  std::move(best_c->unassigned));
+  std::vector<job_t> unassigned_jobs;
+  std::transform(best_c->unassigned.begin(),
+                 best_c->unassigned.end(),
+                 std::back_inserter(unassigned_jobs),
+                 [&](auto j) { return _input._jobs[j]; });
+
+  return solution(0, total_cost, std::move(routes), std::move(unassigned_jobs));
 }

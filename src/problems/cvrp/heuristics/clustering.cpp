@@ -15,9 +15,11 @@ clustering::clustering(const input& input, CLUSTERING_T t, INIT_T i, double c)
     regret_coeff(c),
     clusters(input._vehicles.size()),
     edges_cost(0) {
-  for (const auto& j : input_ref._jobs) {
-    unassigned.insert(j);
+  // All job ranks start with unassigned status.
+  for (unsigned i = 0; i < input_ref._jobs.size(); ++i) {
+    unassigned.insert(i);
   }
+
   std::string strategy;
   switch (type) {
   case CLUSTERING_T::PARALLEL:
@@ -78,16 +80,19 @@ void clustering::parallel_clustering() {
 
   // For each vehicle cluster, we need to maintain a vector of job
   // candidates (represented by their index in 'jobs'). Initialization
-  // also include pushing start/end into vehicle clusters and updating
-  // costs accordingly.
-  std::vector<std::vector<index_t>> candidates(V, std::vector<index_t>(J));
+  // updates all costs related to start/end for each vehicle cluster.
+  std::vector<std::vector<index_t>> candidates(V);
 
   // Remember wanabee parent for each job in each cluster.
   std::vector<std::vector<index_t>> parents(V, std::vector<index_t>(J));
 
   for (std::size_t v = 0; v < V; ++v) {
-    // TODO, only keep jobs compatible with vehicle skills.
-    std::iota(candidates[v].begin(), candidates[v].end(), 0);
+    // Only keep jobs compatible with vehicle skills in candidates.
+    for (std::size_t j = 0; j < J; ++j) {
+      if (input_ref._vehicle_to_job_compatibility[v][j]) {
+        candidates[v].push_back(j);
+      }
+    }
 
     if (vehicles[v].has_start()) {
       auto start_index = vehicles[v].start.get().index();
@@ -166,7 +171,7 @@ void clustering::parallel_clustering() {
       if (init_job != candidates[v].cend()) {
         auto job_rank = *init_job;
         clusters[v].push_back(job_rank);
-        unassigned.erase(jobs[job_rank]);
+        unassigned.erase(job_rank);
         edges_cost += costs[v][job_rank];
         capacities[v] -= jobs[job_rank].amount.get();
         candidates[v].erase(init_job);
@@ -279,7 +284,7 @@ void clustering::parallel_clustering() {
     // Add best candidate to matching cluster and remove from all
     // candidate vectors.
     clusters[best_v].push_back(best_j);
-    unassigned.erase(jobs[best_j]);
+    unassigned.erase(best_j);
     edges_cost += best_cost;
     BOOST_LOG_TRIVIAL(trace) << vehicles[best_v].id << ";"
                              << parents[best_v][best_j] << "->"
@@ -403,8 +408,8 @@ void clustering::sequential_clustering() {
     // costs to jobs for current vehicle.
     std::vector<index_t> candidates;
     for (auto i : candidates_set) {
-      // TODO, only keep jobs compatible with vehicle skills.
-      if (jobs[i].amount.get() <= input_ref._vehicles[v].capacity.get()) {
+      if (input_ref._vehicle_to_job_compatibility[v][i] and
+          jobs[i].amount.get() <= input_ref._vehicles[v].capacity.get()) {
         candidates.push_back(i);
       }
     }
@@ -415,8 +420,7 @@ void clustering::sequential_clustering() {
     // Remember wanabee parent for each job.
     std::vector<index_t> parents(J);
 
-    // Pushing start/end into vehicle clusters and updating costs
-    // accordingly.
+    // Updating costs related to start/end for each vehicle cluster.
     if (vehicles[v].has_start()) {
       auto start_index = vehicles[v].start.get().index();
       update_cost(start_index, costs, parents, candidates, jobs, m);
@@ -453,7 +457,7 @@ void clustering::sequential_clustering() {
       if (init_job != candidates.cend()) {
         auto job_rank = *init_job;
         clusters[v].push_back(job_rank);
-        unassigned.erase(jobs[job_rank]);
+        unassigned.erase(job_rank);
         edges_cost += vehicles_to_job_costs[v][job_rank];
         capacity -= jobs[job_rank].amount.get();
         candidates_set.erase(job_rank);
@@ -485,7 +489,7 @@ void clustering::sequential_clustering() {
 
       if (jobs[current_j].amount.get() <= capacity) {
         clusters[v].push_back(current_j);
-        unassigned.erase(jobs[current_j]);
+        unassigned.erase(current_j);
         edges_cost += costs[current_j];
         BOOST_LOG_TRIVIAL(trace) << vehicles[v].id << ";" << parents[current_j]
                                  << "->" << jobs[current_j].index();

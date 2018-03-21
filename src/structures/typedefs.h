@@ -24,6 +24,7 @@ using distance_t = uint32_t;
 using duration_t = uint32_t;
 using coordinate_t = double;
 using capacity_t = int64_t;
+using skill_t = uint32_t;
 
 // Type helpers.
 using coords_t = std::array<coordinate_t, 2>;

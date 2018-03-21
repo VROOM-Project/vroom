@@ -10,6 +10,8 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <unordered_set>
+
 #include "../typedefs.h"
 #include "./amount.h"
 #include "./location.h"
@@ -17,6 +19,7 @@ All rights reserved (see LICENSE).
 struct job_t : public location_t {
   const ID_t id;
   boost::optional<amount_t> amount;
+  std::unordered_set<skill_t> skills;
 
   job_t(ID_t id, index_t index);
 
@@ -25,17 +28,17 @@ struct job_t : public location_t {
   job_t(ID_t id, const coords_t& coords);
 
   template <typename... Args>
-  job_t(ID_t id, const boost::optional<amount_t>& amount, Args&&... args)
-    : location_t(std::forward<Args>(args)...), id(id), amount(amount) {
+  job_t(ID_t id,
+        const boost::optional<amount_t>& amount,
+        const std::unordered_set<skill_t>& skills,
+        Args&&... args)
+    : location_t(std::forward<Args>(args)...),
+      id(id),
+      amount(amount),
+      skills(skills) {
   }
 
   bool has_amount() const;
-
-  // Hash and operator== to be able to use jobs in std::unordered_set.
-  bool operator==(const job_t& other) const;
 };
 
-namespace std {
-template <> struct hash<job_t> { size_t operator()(const job_t& k) const; };
-}
 #endif
