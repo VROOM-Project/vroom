@@ -36,7 +36,8 @@ A `job` object has the following properties:
 | `id` | an integer used as unique identifier |
 | [`location`] | coordinates array |
 | [`location_index`] | index of relevant row and column in custom matrix |
-| [`amount`] | an array representing multidimensional quantities |
+| [`amount`] | an array of integers describing multidimensional quantities |
+| [`skills`] | an array of integers defining mandatory skills for this job |
 
 If a custom matrix is provided:
 
@@ -61,7 +62,8 @@ A `vehicle` object has the following properties:
 | [`start_index`] | index of relevant row and column in custom matrix |
 | [`end`] | coordinates array |
 | [`end_index`] | index of relevant row and column in custom matrix |
-| [`capacity`] | an array representing multidimensional quantities |
+| [`capacity`] | an array of integers describing multidimensional quantities |
+| [`skills`] | an array of integers defining skills for this vehicle |
 
 ### Notes on `vehicle` locations
 
@@ -84,6 +86,18 @@ custom restrictions for several metrics at once, e.g. number of items,
 weight, volume etc. A vehicle is only allowed to serve a set of jobs
 if the `amount` component sums are lower than the matching value in
 `capacity` for each metric.
+
+### Notes on skills
+
+Use `skills` to describe a problem where not all jobs can be served by
+all vehicles. Job skills are mandatory, i.e. a job can only be served
+by a vehicle that has **all** its required skills. In other words:
+job `j` is eligible to vehicle `v` iff `j.skills` is included in
+`v.skills`.
+
+In order to ease modeling problems with no skills required, it is
+assumed that there is no restriction at all if no `skills` keys are
+provided.
 
 ## Matrix
 
