@@ -14,7 +14,6 @@ input::input(std::unique_ptr<routing_io<cost_t>> routing_wrapper, bool geometry)
   : _start_loading(std::chrono::high_resolution_clock::now()),
     _routing_wrapper(std::move(routing_wrapper)),
     _has_capacity(false),
-    _has_skills(false),
     _geometry(geometry) {
 }
 
@@ -22,6 +21,15 @@ void input::add_job(const job_t& job) {
   _jobs.push_back(job);
 
   auto& current_job = _jobs.back();
+
+  // Ensure that skills key is either always or never provided.
+  if (_locations.empty()) {
+    _has_skills = !current_job.skills.empty();
+  } else {
+    if (_has_skills != !current_job.skills.empty()) {
+      throw custom_exception("Missing skills.");
+    }
+  }
 
   if (!current_job.user_index()) {
     // Index of this job in the matrix was not specified upon job
@@ -34,13 +42,21 @@ void input::add_job(const job_t& job) {
   if (current_job.has_amount()) {
     this->check_amount_size(current_job.amount.get().size());
   }
-  _has_skills |= !current_job.skills.empty();
 }
 
 void input::add_vehicle(const vehicle_t& vehicle) {
   _vehicles.push_back(vehicle);
 
   auto& current_v = _vehicles.back();
+
+  // Ensure that skills key is either always or never provided.
+  if (_locations.empty()) {
+    _has_skills = !current_v.skills.empty();
+  } else {
+    if (_has_skills != !current_v.skills.empty()) {
+      throw custom_exception("Missing skills.");
+    }
+  }
 
   bool has_start = current_v.has_start();
   bool has_end = current_v.has_end();
@@ -76,7 +92,6 @@ void input::add_vehicle(const vehicle_t& vehicle) {
   if (current_v.has_capacity()) {
     this->check_amount_size(current_v.capacity.get().size());
   }
-  _has_skills |= !current_v.skills.empty();
 }
 
 void input::check_amount_size(unsigned size) {
