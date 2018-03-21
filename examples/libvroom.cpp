@@ -58,15 +58,16 @@ void log_solution(const solution& sol) {
   }
 }
 
-void run_example_with_osrm() {
+std::unique_ptr<routed_wrapper> routing_wrapper() {
   // Create a wrapper for OSRM queries.
-  auto routing_wrapper =
-    std::make_unique<routed_wrapper>("localhost", // OSRM server
-                                     "5000",      // OSRM port
-                                     "car"        // Profile
-                                     );
+  return std::make_unique<routed_wrapper>("localhost", // OSRM server
+                                          "5000",      // OSRM port
+                                          "car"        // Profile
+                                          );
+}
 
-  input problem_instance(std::move(routing_wrapper),
+void run_example_with_osrm() {
+  input problem_instance(std::move(routing_wrapper()),
                          false); // Query for route geometry after solving.
 
   // Create one-dimension capacity restrictions to model the situation
@@ -120,12 +121,80 @@ void run_example_with_osrm() {
   }
 }
 
+void run_example_with_custom_matrix() {
+  input problem_instance(std::move(routing_wrapper()),
+                         false); // Query for route geometry after solving.
+
+  // Define custom matrix and bypass OSRM call.
+  matrix<cost_t> matrix_input({{0, 2713, 2218, 4317, 5698, 2191, 3528},
+                               {2876, 0, 1109, 5198, 6361, 2963, 5385},
+                               {2359, 1082, 0, 5797, 7178, 1883, 5008},
+                               {4097, 5228, 5584, 0, 2236, 5511, 3669},
+                               {5472, 6432, 6959, 2232, 0, 6886, 4581},
+                               {2083, 2954, 1887, 5736, 7117, 0, 4593},
+                               {3679, 5526, 5166, 3506, 4471, 4631, 0}});
+  problem_instance.set_matrix(std::move(matrix_input));
+
+  // Create one-dimension capacity restrictions to model the situation
+  // where one vehicle can handle 4 jobs.
+  amount_t vehicle_capacity(1);
+  amount_t job_amount(1);
+  vehicle_capacity[0] = 4;
+  job_amount[0] = 1;
+
+  // Define vehicles (use boost::none for no start or no end).
+  location_t depot(0); // index in the provided matrix.
+
+  vehicle_t v1(1,                // id
+               depot,            // start
+               depot,            // end
+               vehicle_capacity, // capacity
+               {1, 14});         // skills
+  problem_instance.add_vehicle(v1);
+
+  vehicle_t v2(2,                // id
+               depot,            // start
+               depot,            // end
+               vehicle_capacity, // capacity
+               {2, 14});         // skills
+  problem_instance.add_vehicle(v2);
+
+  // Set jobs id, amount, required skills and index of location in the
+  // matrix (coordinates are optional).
+  std::vector<job_t> jobs;
+  jobs.push_back(job_t(1, job_amount, {1}, 1));
+  jobs.push_back(job_t(2, job_amount, {1}, 2));
+  jobs.push_back(job_t(3, job_amount, {2}, 3));
+  jobs.push_back(job_t(4, job_amount, {2}, 4));
+  jobs.push_back(job_t(5, job_amount, {14}, 5));
+  jobs.push_back(job_t(6, job_amount, {14}, 6));
+
+  for (const auto& j : jobs) {
+    problem_instance.add_job(j);
+  }
+
+  // Skills definitions set the following constraints:
+  // - jobs 1 and 2 can only be served by vehicle 1
+  // - jobs 3 and 4 can only be served by vehicle 2
+  // - jobs 5 and 6 can be served by either one of the vehicles
+
+  // Solve!
+  try {
+    auto sol = problem_instance.solve(2); // Use 2 threads.
+
+    log_solution(sol);
+  } catch (const custom_exception& e) {
+    std::cerr << "[Error] " << e.get_message() << std::endl;
+  }
+}
+
 int main() {
   // Log level.
   boost::log::core::get()->set_filter(boost::log::trivial::severity >=
                                       boost::log::trivial::error);
 
   run_example_with_osrm();
+  // run_example_with_custom_matrix();
 
   return 0;
 }
