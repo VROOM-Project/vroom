@@ -22,7 +22,7 @@ void input::add_job(const job_t& job) {
 
   auto& current_job = _jobs.back();
 
-  // Ensure that skills key is either always or never provided.
+  // Ensure that skills are either always or never provided.
   if (_locations.empty()) {
     _has_skills = !current_job.skills.empty();
   } else {
@@ -49,7 +49,7 @@ void input::add_vehicle(const vehicle_t& vehicle) {
 
   auto& current_v = _vehicles.back();
 
-  // Ensure that skills key is either always or never provided.
+  // Ensure that skills are either always or never provided.
   if (_locations.empty()) {
     _has_skills = !current_v.skills.empty();
   } else {
@@ -177,9 +177,11 @@ void input::set_vehicle_to_job_compatibility() {
   if (_has_skills) {
     for (std::size_t v = 0; v < _vehicles.size(); ++v) {
       const auto& v_skills = _vehicles[v].skills;
+      assert(!v_skills.empty());
 
       for (std::size_t j = 0; j < _jobs.size(); ++j) {
-        bool is_compatible = !_jobs[j].skills.empty();
+        bool is_compatible = true;
+        assert(!_jobs[j].skills.empty());
         for (const auto& s : _jobs[j].skills) {
           auto search = v_skills.find(s);
           is_compatible &= (search != v_skills.end());
