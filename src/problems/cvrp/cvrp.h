@@ -10,6 +10,9 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <mutex>
+#include <thread>
+
 #include "../tsp/tsp.h"
 #include "../vrp.h"
 #include "./heuristics/clustering.h"
