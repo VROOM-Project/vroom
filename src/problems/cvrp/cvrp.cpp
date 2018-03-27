@@ -11,17 +11,6 @@ All rights reserved (see LICENSE).
 #include "../../structures/vroom/input/input.h"
 
 cvrp::cvrp(const input& input) : vrp(input) {
-  for (const auto& v : _input._vehicles) {
-    if (!v.has_capacity()) {
-      throw custom_exception("Missing capacity for vehicle " +
-                             std::to_string(v.id));
-    }
-  }
-  for (const auto& j : _input._jobs) {
-    if (!j.has_amount()) {
-      throw custom_exception("Missing amount for job " + std::to_string(j.id));
-    }
-  }
 }
 
 solution cvrp::solve(unsigned nb_threads) const {

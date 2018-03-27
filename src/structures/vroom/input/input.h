@@ -50,7 +50,7 @@ private:
   const bool _geometry;
   matrix<cost_t> _matrix;
   std::vector<location_t> _locations;
-  boost::optional<unsigned> _amount_size;
+  unsigned _amount_size;
   std::vector<std::vector<bool>> _vehicle_to_job_compatibility;
   void check_amount_size(unsigned size);
   std::unique_ptr<vrp> get_problem() const;

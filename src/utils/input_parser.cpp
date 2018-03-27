@@ -19,16 +19,18 @@ parse_coordinates(const rapidjson::Value& object, const char* key) {
   return {object[key][0].GetDouble(), object[key][1].GetDouble()};
 }
 
-inline boost::optional<amount_t> get_amount(const rapidjson::Value& object,
-                                            const char* key) {
+inline amount_t get_amount(const rapidjson::Value& object, const char* key) {
+  // Default to empty amount.
+  amount_t amount(0);
+
   if (!object.HasMember(key)) {
-    return boost::none;
+    return amount;
   }
 
   if (!object[key].IsArray()) {
     throw custom_exception("Invalid " + std::string(key) + " array.");
   }
-  amount_t amount;
+
   for (rapidjson::SizeType i = 0; i < object[key].Size(); ++i) {
     if (!object[key][i].IsInt64()) {
       throw custom_exception("Invalid " + std::string(key) + " value.");

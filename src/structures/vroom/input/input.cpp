@@ -22,6 +22,9 @@ void input::add_job(const job_t& job) {
 
   auto& current_job = _jobs.back();
 
+  // Ensure amount size consistency.
+  this->check_amount_size(current_job.amount.size());
+
   // Ensure that skills are either always or never provided.
   if (_locations.empty()) {
     _has_skills = !current_job.skills.empty();
@@ -38,16 +41,15 @@ void input::add_job(const job_t& job) {
   }
 
   _locations.push_back(current_job);
-
-  if (current_job.has_amount()) {
-    this->check_amount_size(current_job.amount.get().size());
-  }
 }
 
 void input::add_vehicle(const vehicle_t& vehicle) {
   _vehicles.push_back(vehicle);
 
   auto& current_v = _vehicles.back();
+
+  // Ensure amount size consistency.
+  this->check_amount_size(current_v.capacity.size());
 
   // Ensure that skills are either always or never provided.
   if (_locations.empty()) {
@@ -88,24 +90,20 @@ void input::add_vehicle(const vehicle_t& vehicle) {
       }
     }
   }
-
-  if (current_v.has_capacity()) {
-    this->check_amount_size(current_v.capacity.get().size());
-  }
 }
 
 void input::check_amount_size(unsigned size) {
-  if (_amount_size) {
+  if (_locations.empty()) {
+    // Updating real value on first call.
+    _amount_size = size;
+    _has_capacity = true;
+  } else {
     // Checking consistency for amount/capacity input lengths.
-    if (size != _amount_size.get()) {
+    if (size != _amount_size) {
       throw custom_exception("Inconsistent amount/capacity lengths: " +
                              std::to_string(size) + " and " +
-                             std::to_string(_amount_size.get()) + '.');
+                             std::to_string(_amount_size) + '.');
     }
-  } else {
-    // Updating real value on first call.
-    _amount_size = boost::make_optional(size);
-    _has_capacity = true;
   }
 }
 
