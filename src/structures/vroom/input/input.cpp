@@ -68,8 +68,9 @@ void input::add_vehicle(const vehicle_t& vehicle) {
       // vehicle creation, using current number of locations.
       assert(current_v.start.get().has_coordinates());
       current_v.start.get().set_index(_locations.size());
-      _locations.push_back(current_v.start.get());
     }
+
+    _locations.push_back(current_v.start.get());
   }
 
   if (has_end) {
@@ -77,17 +78,10 @@ void input::add_vehicle(const vehicle_t& vehicle) {
       // Index of this end in the matrix was not specified upon
       // vehicle creation, using current number of locations.
       assert(current_v.end.get().has_coordinates());
-
-      if (has_start and !current_v.start.get().user_index() and
-          current_v.start.get().lon() == current_v.end.get().lon() and
-          current_v.start.get().lat() == current_v.end.get().lat()) {
-        // Avoiding duplicate for start/end identical locations.
-        current_v.end.get().set_index(_locations.size() - 1);
-      } else {
-        current_v.end.get().set_index(_locations.size());
-        _locations.push_back(current_v.end.get());
-      }
+      current_v.end.get().set_index(_locations.size());
     }
+
+    _locations.push_back(current_v.end.get());
   }
 }
 
