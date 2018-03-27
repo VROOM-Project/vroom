@@ -57,9 +57,6 @@ struct cl_args_t {
   }
 };
 
-// Problem types.
-enum class PROBLEM_T { TSP, CVRP };
-
 // Available location status.
 enum class TYPE { START, JOB, END };
 

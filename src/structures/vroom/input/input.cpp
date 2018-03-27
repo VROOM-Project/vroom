@@ -13,7 +13,6 @@ All rights reserved (see LICENSE).
 input::input(std::unique_ptr<routing_io<cost_t>> routing_wrapper, bool geometry)
   : _start_loading(std::chrono::high_resolution_clock::now()),
     _routing_wrapper(std::move(routing_wrapper)),
-    _has_capacity(false),
     _geometry(geometry) {
 }
 
@@ -96,7 +95,6 @@ void input::check_amount_size(unsigned size) {
   if (_locations.empty()) {
     // Updating real value on first call.
     _amount_size = size;
-    _has_capacity = true;
   } else {
     // Checking consistency for amount/capacity input lengths.
     if (size != _amount_size) {
@@ -193,25 +191,8 @@ void input::set_vehicle_to_job_compatibility() {
   }
 }
 
-PROBLEM_T input::get_problem_type() const {
-  PROBLEM_T problem_type = PROBLEM_T::TSP;
-  if (_has_capacity) {
-    problem_type = PROBLEM_T::CVRP;
-  }
-  return problem_type;
-}
-
 std::unique_ptr<vrp> input::get_problem() const {
-  auto problem_type = this->get_problem_type();
-
-  if (problem_type == PROBLEM_T::CVRP) {
-    return std::make_unique<cvrp>(*this);
-  } else {
-    std::vector<index_t> job_ranks(_jobs.size());
-    std::iota(job_ranks.begin(), job_ranks.end(), 0);
-
-    return std::make_unique<tsp>(*this, job_ranks, 0);
-  }
+  return std::make_unique<cvrp>(*this);
 }
 
 solution input::solve(unsigned nb_thread) {
