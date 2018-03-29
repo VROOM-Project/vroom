@@ -36,6 +36,7 @@ void input::add_job(const job_t& job) {
     // creation, using current number of locations.
     current_job.set_index(_locations.size());
   }
+  _matrix_used_index.insert(current_job.index());
 
   _locations.push_back(current_job);
 
@@ -69,6 +70,7 @@ void input::add_vehicle(const vehicle_t& vehicle) {
       current_v.start.get().set_index(_locations.size());
       _locations.push_back(current_v.start.get());
     }
+    _matrix_used_index.insert(current_v.start.get().index());
   }
 
   if (has_end) {
@@ -87,6 +89,7 @@ void input::add_vehicle(const vehicle_t& vehicle) {
         _locations.push_back(current_v.end.get());
       }
     }
+    _matrix_used_index.insert(current_v.end.get().index());
   }
 
   if (current_v.has_capacity()) {
@@ -129,8 +132,8 @@ void input::check_cost_bound() const {
   std::vector<cost_t> max_cost_per_line(_matrix.size(), 0);
   std::vector<cost_t> max_cost_per_column(_matrix.size(), 0);
 
-  for (std::size_t i = 0; i < _matrix.size(); ++i) {
-    for (std::size_t j = 0; j < _matrix.size(); ++j) {
+  for (auto const& i: _matrix_used_index) {
+    for (auto const& j: _matrix_used_index) {
       max_cost_per_line[i] = std::max(max_cost_per_line[i], _matrix[i][j]);
       max_cost_per_column[j] = std::max(max_cost_per_column[j], _matrix[i][j]);
     }
