@@ -56,7 +56,7 @@ private:
   std::unique_ptr<vrp> get_problem() const;
   void check_cost_bound() const;
   void set_vehicle_to_job_compatibility();
-  std::unordered_set<int> _matrix_used_index;
+  std::unordered_set<index_t> _matrix_used_index;
 
 public:
   std::vector<job_t> _jobs;

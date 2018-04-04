@@ -132,8 +132,8 @@ void input::check_cost_bound() const {
   std::vector<cost_t> max_cost_per_line(_matrix.size(), 0);
   std::vector<cost_t> max_cost_per_column(_matrix.size(), 0);
 
-  for (auto const& i: _matrix_used_index) {
-    for (auto const& j: _matrix_used_index) {
+  for (const auto i : _matrix_used_index) {
+    for (const auto j : _matrix_used_index) {
       max_cost_per_line[i] = std::max(max_cost_per_line[i], _matrix[i][j]);
       max_cost_per_column[j] = std::max(max_cost_per_column[j], _matrix[i][j]);
     }
