@@ -93,14 +93,15 @@ void run_example_with_osrm() {
                {2, 14});         // skills
   problem_instance.add_vehicle(v2);
 
-  // Set jobs id, amount, required skills and location.
+  // Set jobs id, location, amount and required skills. Last two can
+  // be omitted if no constraints are required.
   std::vector<job_t> jobs;
-  jobs.push_back(job_t(1, job_amount, {1}, coords_t({1.98935, 48.701})));
-  jobs.push_back(job_t(2, job_amount, {1}, coords_t({2.03655, 48.61128})));
-  jobs.push_back(job_t(3, job_amount, {2}, coords_t({2.39719, 49.07611})));
-  jobs.push_back(job_t(4, job_amount, {2}, coords_t({2.41808, 49.22619})));
-  jobs.push_back(job_t(5, job_amount, {14}, coords_t({2.28325, 48.5958})));
-  jobs.push_back(job_t(6, job_amount, {14}, coords_t({2.89357, 48.90736})));
+  jobs.push_back(job_t(1, coords_t({1.98935, 48.701}), job_amount, {1}));
+  jobs.push_back(job_t(2, coords_t({2.03655, 48.61128}), job_amount, {1}));
+  jobs.push_back(job_t(3, coords_t({2.39719, 49.07611}), job_amount, {2}));
+  jobs.push_back(job_t(4, coords_t({2.41808, 49.22619}), job_amount, {2}));
+  jobs.push_back(job_t(5, coords_t({2.28325, 48.5958}), job_amount, {14}));
+  jobs.push_back(job_t(6, coords_t({2.89357, 48.90736}), job_amount, {14}));
 
   for (const auto& j : jobs) {
     problem_instance.add_job(j);
@@ -159,15 +160,16 @@ void run_example_with_custom_matrix() {
                {2, 14});         // skills
   problem_instance.add_vehicle(v2);
 
-  // Set jobs id, amount, required skills and index of location in the
-  // matrix (coordinates are optional).
+  // Set jobs id, index of location in the matrix (coordinates are
+  // optional), amount and required skills. Last two can be omitted if
+  // no constraints are required.
   std::vector<job_t> jobs;
-  jobs.push_back(job_t(1, job_amount, {1}, 1));
-  jobs.push_back(job_t(2, job_amount, {1}, 2));
-  jobs.push_back(job_t(3, job_amount, {2}, 3));
-  jobs.push_back(job_t(4, job_amount, {2}, 4));
-  jobs.push_back(job_t(5, job_amount, {14}, 5));
-  jobs.push_back(job_t(6, job_amount, {14}, 6));
+  jobs.push_back(job_t(1, 1, job_amount, {1}));
+  jobs.push_back(job_t(2, 2, job_amount, {1}));
+  jobs.push_back(job_t(3, 3, job_amount, {2}));
+  jobs.push_back(job_t(4, 4, job_amount, {2}));
+  jobs.push_back(job_t(5, 5, job_amount, {14}));
+  jobs.push_back(job_t(6, 6, job_amount, {14}));
 
   for (const auto& j : jobs) {
     problem_instance.add_job(j);
