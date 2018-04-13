@@ -10,8 +10,8 @@ All rights reserved (see LICENSE).
 #include "./input_parser.h"
 
 // Helper to get optional array of coordinates.
-inline std::array<coordinate_t, 2>
-parse_coordinates(const rapidjson::Value& object, const char* key) {
+inline coords_t parse_coordinates(const rapidjson::Value& object,
+                                  const char* key) {
   if (!object[key].IsArray() or (object[key].Size() < 2) or
       !object[key][0].IsNumber() or !object[key][1].IsNumber()) {
     throw custom_exception("Invalid " + std::string(key) + " array.");
@@ -233,16 +233,15 @@ input parse(const cl_args_t& cl_args) {
 
       if (json_job.HasMember("location")) {
         job_t current_job(j_id,
+                          parse_coordinates(json_job, "location"),
                           get_amount(json_job, "amount"),
-                          get_skills(json_job),
-                          json_job["location_index"].GetUint(),
-                          parse_coordinates(json_job, "location"));
+                          get_skills(json_job));
         input_data.add_job(current_job);
       } else {
         job_t current_job(json_job["id"].GetUint64(),
+                          json_job["location_index"].GetUint(),
                           get_amount(json_job, "amount"),
-                          get_skills(json_job),
-                          json_job["location_index"].GetUint());
+                          get_skills(json_job));
         input_data.add_job(current_job);
       }
     }
@@ -302,9 +301,9 @@ input parse(const cl_args_t& cl_args) {
       }
 
       job_t current_job(j_id,
+                        parse_coordinates(json_job, "location"),
                         get_amount(json_job, "amount"),
-                        get_skills(json_job),
-                        parse_coordinates(json_job, "location"));
+                        get_skills(json_job));
 
       input_data.add_job(current_job);
     }

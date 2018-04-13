@@ -25,7 +25,9 @@ tsp::tsp(const input& input,
   std::transform(_job_ranks.cbegin(),
                  _job_ranks.cend(),
                  std::back_inserter(matrix_ranks),
-                 [&](const auto& r) { return _input._jobs[r].index(); });
+                 [&](const auto& r) {
+                   return _input._jobs[r].location.index();
+                 });
 
   if (_has_start) {
     // Add start and remember rank in _matrix.
@@ -326,7 +328,7 @@ solution tsp::solve(unsigned nb_threads) const {
   for (auto job = job_start; job != job_end; ++job) {
     auto current_rank = _job_ranks[*job];
     steps.emplace_back(TYPE::JOB,
-                       _input._jobs[current_rank],
+                       _input._jobs[current_rank].location,
                        _input._jobs[current_rank].id);
   }
   // Handle end.

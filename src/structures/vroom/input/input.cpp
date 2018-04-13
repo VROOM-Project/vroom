@@ -33,13 +33,13 @@ void input::add_job(const job_t& job) {
     }
   }
 
-  if (!current_job.user_index()) {
+  if (!current_job.location.user_index()) {
     // Index of this job in the matrix was not specified upon job
     // creation, using current number of locations.
-    current_job.set_index(_locations.size());
+    current_job.location.set_index(_locations.size());
   }
 
-  _locations.push_back(current_job);
+  _locations.push_back(current_job.location);
 }
 
 void input::add_vehicle(const vehicle_t& vehicle) {

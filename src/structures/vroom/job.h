@@ -16,27 +16,18 @@ All rights reserved (see LICENSE).
 #include "./amount.h"
 #include "./location.h"
 
-struct job_t : public location_t {
+struct job_t {
   const ID_t id;
+  location_t location;
   amount_t amount;
   std::unordered_set<skill_t> skills;
 
-  job_t(ID_t id, index_t index);
-
-  job_t(ID_t id, index_t index, const coords_t& coords);
-
-  job_t(ID_t id, const coords_t& coords);
-
-  template <typename... Args>
   job_t(ID_t id,
+        location_t location,
         const amount_t& amount,
-        const std::unordered_set<skill_t>& skills,
-        Args&&... args)
-    : location_t(std::forward<Args>(args)...),
-      id(id),
-      amount(amount),
-      skills(skills) {
-  }
+        const std::unordered_set<skill_t>& skills);
+
+  index_t index() const;
 };
 
 #endif
