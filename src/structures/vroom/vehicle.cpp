@@ -11,12 +11,6 @@ All rights reserved (see LICENSE).
 
 vehicle_t::vehicle_t(ID_t id,
                      const boost::optional<location_t>& start,
-                     const boost::optional<location_t>& end)
-  : vehicle_t(id, start, end, amount_t(0), std::unordered_set<skill_t>()) {
-}
-
-vehicle_t::vehicle_t(ID_t id,
-                     const boost::optional<location_t>& start,
                      const boost::optional<location_t>& end,
                      const amount_t& capacity,
                      const std::unordered_set<skill_t>& skills)

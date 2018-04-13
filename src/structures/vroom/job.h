@@ -10,8 +10,6 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <unordered_set>
-
 #include "../typedefs.h"
 #include "./amount.h"
 #include "./location.h"
@@ -19,13 +17,13 @@ All rights reserved (see LICENSE).
 struct job_t {
   const ID_t id;
   location_t location;
-  amount_t amount;
-  std::unordered_set<skill_t> skills;
+  const amount_t amount;
+  const skills_t skills;
 
   job_t(ID_t id,
         location_t location,
-        const amount_t& amount,
-        const std::unordered_set<skill_t>& skills);
+        const amount_t& amount = amount_t(0),
+        const skills_t& skills = skills_t());
 
   index_t index() const;
 };
