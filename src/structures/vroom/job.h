@@ -21,7 +21,7 @@ struct job_t {
   const skills_t skills;
 
   job_t(ID_t id,
-        location_t location,
+        const location_t& location,
         const amount_t& amount = amount_t(0),
         const skills_t& skills = skills_t());
 

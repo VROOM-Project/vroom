@@ -10,7 +10,7 @@ All rights reserved (see LICENSE).
 #include "job.h"
 
 job_t::job_t(ID_t id,
-             location_t location,
+             const location_t& location,
              const amount_t& amount,
              const std::unordered_set<skill_t>& skills)
   : id(id), location(location), amount(amount), skills(skills) {

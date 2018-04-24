@@ -231,19 +231,19 @@ input parse(const cl_args_t& cl_args) {
                                std::to_string(j_id) + ".");
       }
 
+      auto job_loc_index = json_job["location_index"].GetUint();
+      location_t job_loc(job_loc_index);
+
       if (json_job.HasMember("location")) {
-        job_t current_job(j_id,
-                          parse_coordinates(json_job, "location"),
-                          get_amount(json_job, "amount"),
-                          get_skills(json_job));
-        input_data.add_job(current_job);
-      } else {
-        job_t current_job(json_job["id"].GetUint64(),
-                          json_job["location_index"].GetUint(),
-                          get_amount(json_job, "amount"),
-                          get_skills(json_job));
-        input_data.add_job(current_job);
+        job_loc =
+          location_t(job_loc_index, parse_coordinates(json_job, "location"));
       }
+
+      job_t current_job(j_id,
+                        job_loc,
+                        get_amount(json_job, "amount"),
+                        get_skills(json_job));
+      input_data.add_job(current_job);
     }
   } else {
     // Adding vehicles and jobs only, matrix will be computed using
