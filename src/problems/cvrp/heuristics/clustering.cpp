@@ -150,8 +150,9 @@ void clustering::parallel_clustering() {
   };
   // Initialize cluster with the nearest job.
   auto nearest_init_lambda = [&](auto v) {
-    return
-      [&](index_t lhs, index_t rhs) { return costs[v][lhs] < costs[v][rhs]; };
+    return [&, v](index_t lhs, index_t rhs) {
+      return costs[v][lhs] < costs[v][rhs];
+    };
   };
 
   if (init != INIT_T::NONE) {
@@ -216,7 +217,7 @@ void clustering::parallel_clustering() {
   }
 
   auto eval_lambda = [&](auto v) {
-    return [&](auto i, auto j) {
+    return [&, v](auto i, auto j) {
       return regret_coeff * static_cast<double>(regrets[v][i]) -
                static_cast<double>(costs[v][i]) <
              regret_coeff * static_cast<double>(regrets[v][j]) -
@@ -398,7 +399,7 @@ void clustering::sequential_clustering() {
   };
   // Initialize cluster with the nearest job.
   auto nearest_init_lambda = [&](auto v) {
-    return [&](index_t lhs, index_t rhs) {
+    return [&, v](index_t lhs, index_t rhs) {
       return vehicles_to_job_costs[v][lhs] < vehicles_to_job_costs[v][rhs];
     };
   };
