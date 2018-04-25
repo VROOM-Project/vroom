@@ -63,7 +63,7 @@ protected:
   virtual matrix<cost_t>
   get_matrix(const std::vector<location_t>& locs) const = 0;
 
-  virtual void add_route_geometry(route_t& route) const = 0;
+  virtual void add_route_info(route_t& route) const = 0;
 };
 
 #endif

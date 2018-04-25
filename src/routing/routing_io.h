@@ -24,7 +24,7 @@ template <class T> class routing_io {
 public:
   virtual matrix<T> get_matrix(const std::vector<location_t>& locs) const = 0;
 
-  virtual void add_route_geometry(route_t& rte) const = 0;
+  virtual void add_route_info(route_t& rte) const = 0;
 
   virtual ~routing_io() {
   }

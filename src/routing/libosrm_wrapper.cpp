@@ -74,7 +74,7 @@ libosrm_wrapper::get_matrix(const std::vector<location_t>& locs) const {
   return m;
 }
 
-void libosrm_wrapper::add_route_geometry(route_t& rte) const {
+void libosrm_wrapper::add_route_info(route_t& rte) const {
   // Default options for routing.
   osrm::RouteParameters params(false, // steps
                                false, // alternatives

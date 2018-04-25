@@ -128,10 +128,10 @@ routed_wrapper::get_matrix(const std::vector<location_t>& locs) const {
   return m;
 }
 
-void routed_wrapper::add_route_geometry(route_t& rte) const {
+void routed_wrapper::add_route_info(route_t& rte) const {
   // Ordering locations for the given steps.
   std::vector<location_t> ordered_locations;
-  for (auto& step : rte.steps) {
+  for (const auto& step : rte.steps) {
     ordered_locations.push_back(step.location);
   }
 
@@ -158,4 +158,20 @@ void routed_wrapper::add_route_geometry(route_t& rte) const {
   rte.duration = round_cost(infos["routes"][0]["duration"].GetDouble());
   rte.distance = round_cost(infos["routes"][0]["distance"].GetDouble());
   rte.geometry = std::move(infos["routes"][0]["geometry"].GetString());
+
+  auto nb_legs = infos["routes"][0]["legs"].Size();
+  assert(nb_legs == rte.steps.size() - 1);
+  double current_distance = 0;
+  double current_duration = 0;
+
+  rte.steps[0].distance = round_cost(current_distance);
+  rte.steps[0].arrival = round_cost(current_duration);
+
+  for (rapidjson::SizeType i = 0; i < nb_legs; ++i) {
+    current_distance += infos["routes"][0]["legs"][i]["distance"].GetDouble();
+    current_duration += infos["routes"][0]["legs"][i]["duration"].GetDouble();
+
+    rte.steps[i + 1].distance = round_cost(current_distance);
+    rte.steps[i + 1].arrival = round_cost(current_duration);
+  }
 }

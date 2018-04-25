@@ -13,9 +13,11 @@ All rights reserved (see LICENSE).
 #include "../location.h"
 
 struct step {
-  TYPE type;
-  location_t location;
-  ID_t job;
+  const TYPE type;
+  const location_t location;
+  const ID_t job;
+  duration_t arrival;
+  distance_t distance;
 
   step(TYPE type, location_t location);
 
