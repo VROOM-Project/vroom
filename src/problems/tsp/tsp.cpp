@@ -326,7 +326,7 @@ solution tsp::solve(unsigned nb_threads) const {
   for (auto job = job_start; job != job_end; ++job) {
     auto current_rank = _job_ranks[*job];
     steps.emplace_back(TYPE::JOB,
-                       _input._jobs[current_rank],
+                       _input._jobs[current_rank].location,
                        _input._jobs[current_rank].id);
   }
   // Handle end.

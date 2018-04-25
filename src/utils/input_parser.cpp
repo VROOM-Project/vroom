@@ -10,8 +10,8 @@ All rights reserved (see LICENSE).
 #include "./input_parser.h"
 
 // Helper to get optional array of coordinates.
-inline std::array<coordinate_t, 2>
-parse_coordinates(const rapidjson::Value& object, const char* key) {
+inline coords_t parse_coordinates(const rapidjson::Value& object,
+                                  const char* key) {
   if (!object[key].IsArray() or (object[key].Size() < 2) or
       !object[key][0].IsNumber() or !object[key][1].IsNumber()) {
     throw custom_exception("Invalid " + std::string(key) + " array.");
@@ -19,21 +19,21 @@ parse_coordinates(const rapidjson::Value& object, const char* key) {
   return {object[key][0].GetDouble(), object[key][1].GetDouble()};
 }
 
-inline boost::optional<amount_t> get_amount(const rapidjson::Value& object,
-                                            const char* key) {
-  if (!object.HasMember(key)) {
-    return boost::none;
-  }
+inline amount_t get_amount(const rapidjson::Value& object, const char* key) {
+  // Default to empty amount.
+  amount_t amount(0);
 
-  if (!object[key].IsArray()) {
-    throw custom_exception("Invalid " + std::string(key) + " array.");
-  }
-  amount_t amount;
-  for (rapidjson::SizeType i = 0; i < object[key].Size(); ++i) {
-    if (!object[key][i].IsInt64()) {
-      throw custom_exception("Invalid " + std::string(key) + " value.");
+  if (object.HasMember(key)) {
+    if (!object[key].IsArray()) {
+      throw custom_exception("Invalid " + std::string(key) + " array.");
     }
-    amount.push_back(object[key][i].GetInt64());
+
+    for (rapidjson::SizeType i = 0; i < object[key].Size(); ++i) {
+      if (!object[key][i].IsInt64()) {
+        throw custom_exception("Invalid " + std::string(key) + " value.");
+      }
+      amount.push_back(object[key][i].GetInt64());
+    }
   }
 
   return amount;
@@ -229,20 +229,19 @@ input parse(const cl_args_t& cl_args) {
                                std::to_string(j_id) + ".");
       }
 
+      auto job_loc_index = json_job["location_index"].GetUint();
+      location_t job_loc(job_loc_index);
+
       if (json_job.HasMember("location")) {
-        job_t current_job(j_id,
-                          get_amount(json_job, "amount"),
-                          get_skills(json_job),
-                          json_job["location_index"].GetUint(),
-                          parse_coordinates(json_job, "location"));
-        input_data.add_job(current_job);
-      } else {
-        job_t current_job(json_job["id"].GetUint64(),
-                          get_amount(json_job, "amount"),
-                          get_skills(json_job),
-                          json_job["location_index"].GetUint());
-        input_data.add_job(current_job);
+        job_loc =
+          location_t(job_loc_index, parse_coordinates(json_job, "location"));
       }
+
+      job_t current_job(j_id,
+                        job_loc,
+                        get_amount(json_job, "amount"),
+                        get_skills(json_job));
+      input_data.add_job(current_job);
     }
   } else {
     // Adding vehicles and jobs only, matrix will be computed using
@@ -300,9 +299,9 @@ input parse(const cl_args_t& cl_args) {
       }
 
       job_t current_job(j_id,
+                        parse_coordinates(json_job, "location"),
                         get_amount(json_job, "amount"),
-                        get_skills(json_job),
-                        parse_coordinates(json_job, "location"));
+                        get_skills(json_job));
 
       input_data.add_job(current_job);
     }

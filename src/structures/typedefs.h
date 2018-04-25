@@ -12,6 +12,7 @@ All rights reserved (see LICENSE).
 
 #include <limits>
 #include <string>
+#include <unordered_set>
 
 #include <boost/log/trivial.hpp>
 #include <boost/optional.hpp>
@@ -29,6 +30,7 @@ using skill_t = uint32_t;
 // Type helpers.
 using coords_t = std::array<coordinate_t, 2>;
 using optional_coords_t = boost::optional<coords_t>;
+using skills_t = std::unordered_set<skill_t>;
 
 // Setting max value would cause trouble with further additions.
 constexpr cost_t INFINITE_COST = 3 * (std::numeric_limits<cost_t>::max() / 4);
@@ -56,9 +58,6 @@ struct cl_args_t {
       osrm_profile("car") {
   }
 };
-
-// Problem types.
-enum class PROBLEM_T { TSP, CVRP };
 
 // Available location status.
 enum class TYPE { START, JOB, END };

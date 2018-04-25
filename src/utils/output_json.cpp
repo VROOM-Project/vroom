@@ -27,8 +27,10 @@ rapidjson::Document to_json(const solution& sol, bool geometry) {
     for (const auto& job : sol.unassigned) {
       rapidjson::Value json_job(rapidjson::kObjectType);
       json_job.AddMember("id", job.id, allocator);
-      if (job.has_coordinates()) {
-        json_job.AddMember("location", to_json(job, allocator), allocator);
+      if (job.location.has_coordinates()) {
+        json_job.AddMember("location",
+                           to_json(job.location, allocator),
+                           allocator);
       }
       json_unassigned.PushBack(json_job, allocator);
     }

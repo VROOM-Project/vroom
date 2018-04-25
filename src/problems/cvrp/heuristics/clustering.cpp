@@ -43,10 +43,34 @@ clustering::clustering(const input& input, CLUSTERING_T t, INIT_T i, double c)
     init_str = "nearest";
     break;
   }
+
+  // Filter out empty clusters.
+  clusters.erase(std::remove_if(clusters.begin(),
+                                clusters.end(),
+                                [](auto& c) { return c.empty(); }),
+                 clusters.end());
+
   BOOST_LOG_TRIVIAL(trace) << "Clustering:" << strategy << ";" << init_str
                            << ";" << this->regret_coeff << ";"
+                           << this->clusters.size() << ";"
                            << this->unassigned.size() << ";"
                            << this->edges_cost;
+}
+
+bool operator<(const clustering& lhs, const clustering& rhs) {
+  if (lhs.unassigned.size() < rhs.unassigned.size()) {
+    return true;
+  }
+  if (lhs.unassigned.size() == rhs.unassigned.size()) {
+    if (lhs.edges_cost < rhs.edges_cost) {
+      return true;
+    }
+    if (lhs.edges_cost == rhs.edges_cost and
+        lhs.clusters.size() < rhs.clusters.size()) {
+      return true;
+    }
+  }
+  return false;
 }
 
 inline void update_cost(index_t from_index,
@@ -114,7 +138,7 @@ void clustering::parallel_clustering() {
   // Remember current capacity left in clusters.
   std::vector<amount_t> capacities;
   for (std::size_t v = 0; v < V; ++v) {
-    capacities.emplace_back(vehicles[v].capacity.get());
+    capacities.emplace_back(vehicles[v].capacity);
   }
 
   // Regrets[v][j] is the min cost of reaching jobs[j] from another
@@ -143,15 +167,16 @@ void clustering::parallel_clustering() {
   // the further away in case of amount tie).
   auto higher_amount_init_lambda = [&](auto v) {
     return [&](index_t lhs, index_t rhs) {
-      return jobs[lhs].amount.get() < jobs[rhs].amount.get() or
-             (jobs[lhs].amount.get() == jobs[rhs].amount.get() and
+      return jobs[lhs].amount < jobs[rhs].amount or
+             (jobs[lhs].amount == jobs[rhs].amount and
               costs[v][lhs] < costs[v][rhs]);
     };
   };
   // Initialize cluster with the nearest job.
   auto nearest_init_lambda = [&](auto v) {
-    return
-      [&](index_t lhs, index_t rhs) { return costs[v][lhs] < costs[v][rhs]; };
+    return [&, v](index_t lhs, index_t rhs) {
+      return costs[v][lhs] < costs[v][rhs];
+    };
   };
 
   if (init != INIT_T::NONE) {
@@ -173,7 +198,7 @@ void clustering::parallel_clustering() {
         clusters[v].push_back(job_rank);
         unassigned.erase(job_rank);
         edges_cost += costs[v][job_rank];
-        capacities[v] -= jobs[job_rank].amount.get();
+        capacities[v] -= jobs[job_rank].amount;
         candidates[v].erase(init_job);
 
         BOOST_LOG_TRIVIAL(trace) << vehicles[v].id << ";"
@@ -216,7 +241,7 @@ void clustering::parallel_clustering() {
   }
 
   auto eval_lambda = [&](auto v) {
-    return [&](auto i, auto j) {
+    return [&, v](auto i, auto j) {
       return regret_coeff * static_cast<double>(regrets[v][i]) -
                static_cast<double>(costs[v][i]) <
              regret_coeff * static_cast<double>(regrets[v][j]) -
@@ -244,7 +269,7 @@ void clustering::parallel_clustering() {
                      eval_lambda(v));
 
       auto current_j = candidates[v].front();
-      if (jobs[current_j].amount.get() <= capacities[v] and
+      if (jobs[current_j].amount <= capacities[v] and
           (costs[v][current_j] < best_cost or
            (costs[v][current_j] == best_cost and
             capacities[best_v] < capacities[v]))) {
@@ -289,7 +314,7 @@ void clustering::parallel_clustering() {
     BOOST_LOG_TRIVIAL(trace) << vehicles[best_v].id << ";"
                              << parents[best_v][best_j] << "->"
                              << jobs[best_j].index();
-    capacities[best_v] -= jobs[best_j].amount.get();
+    capacities[best_v] -= jobs[best_j].amount;
 
     std::pop_heap(candidates[best_v].begin(),
                   candidates[best_v].end(),
@@ -391,14 +416,14 @@ void clustering::sequential_clustering() {
   // the further away in case of amount tie).
   auto higher_amount_init_lambda = [&](auto v) {
     return [&](index_t lhs, index_t rhs) {
-      return jobs[lhs].amount.get() < jobs[rhs].amount.get() or
-             (jobs[lhs].amount.get() == jobs[rhs].amount.get() and
+      return jobs[lhs].amount < jobs[rhs].amount or
+             (jobs[lhs].amount == jobs[rhs].amount and
               vehicles_to_job_costs[v][lhs] < vehicles_to_job_costs[v][rhs]);
     };
   };
   // Initialize cluster with the nearest job.
   auto nearest_init_lambda = [&](auto v) {
-    return [&](index_t lhs, index_t rhs) {
+    return [&, v](index_t lhs, index_t rhs) {
       return vehicles_to_job_costs[v][lhs] < vehicles_to_job_costs[v][rhs];
     };
   };
@@ -409,7 +434,7 @@ void clustering::sequential_clustering() {
     std::vector<index_t> candidates;
     for (auto i : candidates_set) {
       if (input_ref._vehicle_to_job_compatibility[v][i] and
-          jobs[i].amount.get() <= input_ref._vehicles[v].capacity.get()) {
+          jobs[i].amount <= input_ref._vehicles[v].capacity) {
         candidates.push_back(i);
       }
     }
@@ -438,7 +463,7 @@ void clustering::sequential_clustering() {
     }
 
     // Remember current capacity left in cluster.
-    auto capacity = vehicles[v].capacity.get();
+    auto capacity = vehicles[v].capacity;
 
     // Strategy for cluster initialization.
     if (init != INIT_T::NONE) {
@@ -459,7 +484,7 @@ void clustering::sequential_clustering() {
         clusters[v].push_back(job_rank);
         unassigned.erase(job_rank);
         edges_cost += vehicles_to_job_costs[v][job_rank];
-        capacity -= jobs[job_rank].amount.get();
+        capacity -= jobs[job_rank].amount;
         candidates_set.erase(job_rank);
         candidates.erase(init_job);
 
@@ -487,13 +512,13 @@ void clustering::sequential_clustering() {
 
       auto current_j = candidates.front();
 
-      if (jobs[current_j].amount.get() <= capacity) {
+      if (jobs[current_j].amount <= capacity) {
         clusters[v].push_back(current_j);
         unassigned.erase(current_j);
         edges_cost += costs[current_j];
         BOOST_LOG_TRIVIAL(trace) << vehicles[v].id << ";" << parents[current_j]
                                  << "->" << jobs[current_j].index();
-        capacity -= jobs[current_j].amount.get();
+        capacity -= jobs[current_j].amount;
         candidates_set.erase(current_j);
 
         update_cost(jobs[current_j].index(),

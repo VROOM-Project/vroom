@@ -13,7 +13,6 @@ All rights reserved (see LICENSE).
 input::input(std::unique_ptr<routing_io<cost_t>> routing_wrapper, bool geometry)
   : _start_loading(std::chrono::high_resolution_clock::now()),
     _routing_wrapper(std::move(routing_wrapper)),
-    _has_capacity(false),
     _geometry(geometry) {
 }
 
@@ -21,6 +20,9 @@ void input::add_job(const job_t& job) {
   _jobs.push_back(job);
 
   auto& current_job = _jobs.back();
+
+  // Ensure amount size consistency.
+  this->check_amount_size(current_job.amount.size());
 
   // Ensure that skills are either always or never provided.
   if (_locations.empty()) {
@@ -31,24 +33,23 @@ void input::add_job(const job_t& job) {
     }
   }
 
-  if (!current_job.user_index()) {
+  if (!current_job.location.user_index()) {
     // Index of this job in the matrix was not specified upon job
     // creation, using current number of locations.
-    current_job.set_index(_locations.size());
+    current_job.location.set_index(_locations.size());
   }
   _matrix_used_index.insert(current_job.index());
 
-  _locations.push_back(current_job);
-
-  if (current_job.has_amount()) {
-    this->check_amount_size(current_job.amount.get().size());
-  }
+  _locations.push_back(current_job.location);
 }
 
 void input::add_vehicle(const vehicle_t& vehicle) {
   _vehicles.push_back(vehicle);
 
   auto& current_v = _vehicles.back();
+
+  // Ensure amount size consistency.
+  this->check_amount_size(current_v.capacity.size());
 
   // Ensure that skills are either always or never provided.
   if (_locations.empty()) {
@@ -68,9 +69,11 @@ void input::add_vehicle(const vehicle_t& vehicle) {
       // vehicle creation, using current number of locations.
       assert(current_v.start.get().has_coordinates());
       current_v.start.get().set_index(_locations.size());
-      _locations.push_back(current_v.start.get());
     }
+
     _matrix_used_index.insert(current_v.start.get().index());
+
+    _locations.push_back(current_v.start.get());
   }
 
   if (has_end) {
@@ -78,37 +81,26 @@ void input::add_vehicle(const vehicle_t& vehicle) {
       // Index of this end in the matrix was not specified upon
       // vehicle creation, using current number of locations.
       assert(current_v.end.get().has_coordinates());
-
-      if (has_start and !current_v.start.get().user_index() and
-          current_v.start.get().lon() == current_v.end.get().lon() and
-          current_v.start.get().lat() == current_v.end.get().lat()) {
-        // Avoiding duplicate for start/end identical locations.
-        current_v.end.get().set_index(_locations.size() - 1);
-      } else {
-        current_v.end.get().set_index(_locations.size());
-        _locations.push_back(current_v.end.get());
-      }
+      current_v.end.get().set_index(_locations.size());
     }
-    _matrix_used_index.insert(current_v.end.get().index());
-  }
 
-  if (current_v.has_capacity()) {
-    this->check_amount_size(current_v.capacity.get().size());
+    _matrix_used_index.insert(current_v.end.get().index());
+
+    _locations.push_back(current_v.end.get());
   }
 }
 
 void input::check_amount_size(unsigned size) {
-  if (_amount_size) {
+  if (_locations.empty()) {
+    // Updating real value on first call.
+    _amount_size = size;
+  } else {
     // Checking consistency for amount/capacity input lengths.
-    if (size != _amount_size.get()) {
+    if (size != _amount_size) {
       throw custom_exception("Inconsistent amount/capacity lengths: " +
                              std::to_string(size) + " and " +
-                             std::to_string(_amount_size.get()) + '.');
+                             std::to_string(_amount_size) + '.');
     }
-  } else {
-    // Updating real value on first call.
-    _amount_size = boost::make_optional(size);
-    _has_capacity = true;
   }
 }
 
@@ -198,25 +190,8 @@ void input::set_vehicle_to_job_compatibility() {
   }
 }
 
-PROBLEM_T input::get_problem_type() const {
-  PROBLEM_T problem_type = PROBLEM_T::TSP;
-  if (_has_capacity) {
-    problem_type = PROBLEM_T::CVRP;
-  }
-  return problem_type;
-}
-
 std::unique_ptr<vrp> input::get_problem() const {
-  auto problem_type = this->get_problem_type();
-
-  if (problem_type == PROBLEM_T::CVRP) {
-    return std::make_unique<cvrp>(*this);
-  } else {
-    std::vector<index_t> job_ranks(_jobs.size());
-    std::iota(job_ranks.begin(), job_ranks.end(), 0);
-
-    return std::make_unique<tsp>(*this, job_ranks, 0);
-  }
+  return std::make_unique<cvrp>(*this);
 }
 
 solution input::solve(unsigned nb_thread) {

@@ -11,14 +11,8 @@ All rights reserved (see LICENSE).
 
 vehicle_t::vehicle_t(ID_t id,
                      const boost::optional<location_t>& start,
-                     const boost::optional<location_t>& end)
-  : vehicle_t(id, start, end, boost::none, std::unordered_set<skill_t>()) {
-}
-
-vehicle_t::vehicle_t(ID_t id,
-                     const boost::optional<location_t>& start,
                      const boost::optional<location_t>& end,
-                     const boost::optional<amount_t>& capacity,
+                     const amount_t& capacity,
                      const std::unordered_set<skill_t>& skills)
   : id(id), start(start), end(end), capacity(capacity), skills(skills) {
   if (!static_cast<bool>(start) and !static_cast<bool>(end)) {
@@ -33,8 +27,4 @@ bool vehicle_t::has_start() const {
 
 bool vehicle_t::has_end() const {
   return static_cast<bool>(end);
-}
-
-bool vehicle_t::has_capacity() const {
-  return static_cast<bool>(capacity);
 }

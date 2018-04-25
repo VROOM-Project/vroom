@@ -45,12 +45,11 @@ private:
   std::chrono::high_resolution_clock::time_point _end_solving;
   std::chrono::high_resolution_clock::time_point _end_routing;
   std::unique_ptr<routing_io<cost_t>> _routing_wrapper;
-  bool _has_capacity;
   bool _has_skills;
   const bool _geometry;
   matrix<cost_t> _matrix;
   std::vector<location_t> _locations;
-  boost::optional<unsigned> _amount_size;
+  unsigned _amount_size;
   std::vector<std::vector<bool>> _vehicle_to_job_compatibility;
   void check_amount_size(unsigned size);
   std::unique_ptr<vrp> get_problem() const;
@@ -73,8 +72,6 @@ public:
   const matrix<cost_t>& get_matrix() const;
 
   matrix<cost_t> get_sub_matrix(const std::vector<index_t>& indices) const;
-
-  PROBLEM_T get_problem_type() const;
 
   solution solve(unsigned nb_thread);
 

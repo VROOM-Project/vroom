@@ -10,35 +10,22 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <unordered_set>
-
 #include "../typedefs.h"
 #include "./amount.h"
 #include "./location.h"
 
-struct job_t : public location_t {
+struct job_t {
   const ID_t id;
-  boost::optional<amount_t> amount;
-  std::unordered_set<skill_t> skills;
+  location_t location;
+  const amount_t amount;
+  const skills_t skills;
 
-  job_t(ID_t id, index_t index);
-
-  job_t(ID_t id, index_t index, const coords_t& coords);
-
-  job_t(ID_t id, const coords_t& coords);
-
-  template <typename... Args>
   job_t(ID_t id,
-        const boost::optional<amount_t>& amount,
-        const std::unordered_set<skill_t>& skills,
-        Args&&... args)
-    : location_t(std::forward<Args>(args)...),
-      id(id),
-      amount(amount),
-      skills(skills) {
-  }
+        const location_t& location,
+        const amount_t& amount = amount_t(0),
+        const skills_t& skills = skills_t());
 
-  bool has_amount() const;
+  index_t index() const;
 };
 
 #endif
