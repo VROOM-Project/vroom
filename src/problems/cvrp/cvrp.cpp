@@ -99,6 +99,7 @@ solution cvrp::solve(unsigned nb_threads) const {
   }
   BOOST_LOG_TRIVIAL(trace) << "Best clustering:" << strategy << ";" << init_str
                            << ";" << best_c->regret_coeff << ";"
+                           << best_c->clusters.size() << ";"
                            << best_c->unassigned.size() << ";"
                            << best_c->edges_cost;
 
@@ -114,14 +115,7 @@ solution cvrp::solve(unsigned nb_threads) const {
 
   BOOST_LOG_TRIVIAL(info) << "[CVRP] Launching TSPs ";
 
-  // Determine non-empty clusters and number of TSP to launch.
-  std::vector<std::size_t> non_empty_cluster_ranks;
-  for (std::size_t i = 0; i < best_c->clusters.size(); ++i) {
-    if (!best_c->clusters[i].empty()) {
-      non_empty_cluster_ranks.push_back(i);
-    }
-  }
-  auto nb_tsp = non_empty_cluster_ranks.size();
+  auto nb_tsp = best_c->clusters.size();
 
   // Create vector of TSP solutions with dummy init.
   std::vector<solution> tsp_sols(nb_tsp, solution(0, ""));
@@ -131,8 +125,7 @@ solution cvrp::solve(unsigned nb_threads) const {
   auto run_tsp = [&](const std::vector<unsigned>& cluster_ranks,
                      unsigned tsp_threads) {
     for (auto cl_rank : cluster_ranks) {
-      auto vehicle_rank = non_empty_cluster_ranks[cl_rank];
-      tsp p(_input, best_c->clusters[vehicle_rank], vehicle_rank);
+      tsp p(_input, best_c->clusters[cl_rank], cl_rank);
 
       tsp_sols[cl_rank] = p.solve(tsp_threads);
     }

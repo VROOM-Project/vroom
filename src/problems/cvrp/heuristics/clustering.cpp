@@ -43,8 +43,16 @@ clustering::clustering(const input& input, CLUSTERING_T t, INIT_T i, double c)
     init_str = "nearest";
     break;
   }
+
+  // Filter out empty clusters.
+  clusters.erase(std::remove_if(clusters.begin(),
+                                clusters.end(),
+                                [](auto& c) { return c.empty(); }),
+                 clusters.end());
+
   BOOST_LOG_TRIVIAL(trace) << "Clustering:" << strategy << ";" << init_str
                            << ";" << this->regret_coeff << ";"
+                           << this->clusters.size() << ";"
                            << this->unassigned.size() << ";"
                            << this->edges_cost;
 }
