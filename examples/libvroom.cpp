@@ -12,7 +12,7 @@
 #include "../src/structures/vroom/vehicle.h"
 #include "../src/utils/exceptions.h"
 
-void log_solution(const solution& sol) {
+void log_solution(const solution& sol, bool geometry) {
   std::cout << "Total cost: " << sol.summary.cost << std::endl;
   std::cout << "Unassigned: " << sol.summary.unassigned << std::endl;
 
@@ -26,7 +26,13 @@ void log_solution(const solution& sol) {
   // Describe routes in solution.
   for (const auto& route : sol.routes) {
     std::cout << "Steps for vehicle " << route.vehicle
-              << " (cost: " << route.cost << ")" << std::endl;
+              << " (cost: " << route.cost;
+    if (geometry) {
+      std::cout << " - duration: " << route.duration;
+      std::cout << " - distance: " << route.distance;
+    }
+
+    std::cout << ")" << std::endl;
 
     // Describe all route steps.
     for (const auto& step : route.steps) {
@@ -53,6 +59,12 @@ void log_solution(const solution& sol) {
       if (step.location.has_coordinates()) {
         std::cout << " - " << step.location.lon() << ";" << step.location.lat();
       }
+
+      // Add extra step info if geometry is required.
+      if (geometry) {
+        std::cout << " - arrival: " << step.arrival;
+        std::cout << " - distance: " << step.distance;
+      }
       std::cout << std::endl;
     }
   }
@@ -67,8 +79,10 @@ std::unique_ptr<routed_wrapper> routing_wrapper() {
 }
 
 void run_example_with_osrm() {
+  bool GEOMETRY = true;
+
   input problem_instance(std::move(routing_wrapper()),
-                         false); // Query for route geometry after solving.
+                         GEOMETRY); // Query for route geometry after solving.
 
   // Create one-dimension capacity restrictions to model the situation
   // where one vehicle can handle 4 jobs.
@@ -116,15 +130,17 @@ void run_example_with_osrm() {
   try {
     auto sol = problem_instance.solve(2); // Use 2 threads.
 
-    log_solution(sol);
+    log_solution(sol, GEOMETRY);
   } catch (const custom_exception& e) {
     std::cerr << "[Error] " << e.get_message() << std::endl;
   }
 }
 
 void run_example_with_custom_matrix() {
+  bool GEOMETRY = false;
+
   input problem_instance(std::move(routing_wrapper()),
-                         false); // Query for route geometry after solving.
+                         GEOMETRY); // Query for route geometry after solving.
 
   // Define custom matrix and bypass OSRM call.
   matrix<cost_t> matrix_input({{0, 2713, 2218, 4317, 5698, 2191, 3528},
@@ -184,7 +200,7 @@ void run_example_with_custom_matrix() {
   try {
     auto sol = problem_instance.solve(2); // Use 2 threads.
 
-    log_solution(sol);
+    log_solution(sol, GEOMETRY);
   } catch (const custom_exception& e) {
     std::cerr << "[Error] " << e.get_message() << std::endl;
   }
