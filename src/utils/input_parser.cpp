@@ -23,19 +23,17 @@ inline amount_t get_amount(const rapidjson::Value& object, const char* key) {
   // Default to empty amount.
   amount_t amount(0);
 
-  if (!object.HasMember(key)) {
-    return amount;
-  }
-
-  if (!object[key].IsArray()) {
-    throw custom_exception("Invalid " + std::string(key) + " array.");
-  }
-
-  for (rapidjson::SizeType i = 0; i < object[key].Size(); ++i) {
-    if (!object[key][i].IsInt64()) {
-      throw custom_exception("Invalid " + std::string(key) + " value.");
+  if (object.HasMember(key)) {
+    if (!object[key].IsArray()) {
+      throw custom_exception("Invalid " + std::string(key) + " array.");
     }
-    amount.push_back(object[key][i].GetInt64());
+
+    for (rapidjson::SizeType i = 0; i < object[key].Size(); ++i) {
+      if (!object[key][i].IsInt64()) {
+        throw custom_exception("Invalid " + std::string(key) + " value.");
+      }
+      amount.push_back(object[key][i].GetInt64());
+    }
   }
 
   return amount;
