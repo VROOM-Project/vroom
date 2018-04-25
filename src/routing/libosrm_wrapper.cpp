@@ -114,4 +114,22 @@ void libosrm_wrapper::add_route_info(route_t& rte) const {
     round_cost(route.values["distance"].get<osrm::json::Number>().value);
   rte.geometry =
     std::move(route.values["geometry"].get<osrm::json::String>().value);
+
+  auto& legs = route.values["legs"].get<osrm::json::Array>();
+  auto nb_legs = legs.values.size();
+  assert(nb_legs == rte.steps.size() - 1);
+  double current_distance = 0;
+  double current_duration = 0;
+
+  rte.steps[0].distance = round_cost(current_distance);
+  rte.steps[0].arrival = round_cost(current_duration);
+
+  for (unsigned i = 0; i < nb_legs; ++i) {
+    auto& leg = legs.values.at(i).get<osrm::json::Object>();
+    current_distance += leg.values["distance"].get<osrm::json::Number>().value;
+    current_duration += leg.values["duration"].get<osrm::json::Number>().value;
+
+    rte.steps[i + 1].distance = round_cost(current_distance);
+    rte.steps[i + 1].arrival = round_cost(current_duration);
+  }
 }
