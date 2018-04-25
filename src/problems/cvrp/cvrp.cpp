@@ -73,15 +73,7 @@ solution cvrp::solve(unsigned nb_threads) const {
     t.join();
   }
 
-  auto best_c =
-    std::min_element(clusterings.begin(),
-                     clusterings.end(),
-                     [](auto& lhs, auto& rhs) {
-                       return lhs.unassigned.size() < rhs.unassigned.size() or
-                              (lhs.unassigned.size() ==
-                                 rhs.unassigned.size() and
-                               lhs.edges_cost < rhs.edges_cost);
-                     });
+  auto best_c = std::min_element(clusterings.begin(), clusterings.end());
 
   std::string strategy =
     (best_c->type == CLUSTERING_T::PARALLEL) ? "parallel" : "sequential";

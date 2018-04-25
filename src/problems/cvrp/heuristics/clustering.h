@@ -40,6 +40,8 @@ public:
   std::unordered_set<unsigned> unassigned;
 
   clustering(const input& input, CLUSTERING_T t, INIT_T i, double c);
+
+  friend bool operator<(const clustering& lhs, const clustering& rhs);
 };
 
 #endif

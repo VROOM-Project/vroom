@@ -57,6 +57,22 @@ clustering::clustering(const input& input, CLUSTERING_T t, INIT_T i, double c)
                            << this->edges_cost;
 }
 
+bool operator<(const clustering& lhs, const clustering& rhs) {
+  if (lhs.unassigned.size() < rhs.unassigned.size()) {
+    return true;
+  }
+  if (lhs.unassigned.size() == rhs.unassigned.size()) {
+    if (lhs.edges_cost < rhs.edges_cost) {
+      return true;
+    }
+    if (lhs.edges_cost == rhs.edges_cost and
+        lhs.clusters.size() < rhs.clusters.size()) {
+      return true;
+    }
+  }
+  return false;
+}
+
 inline void update_cost(index_t from_index,
                         std::vector<cost_t>& costs,
                         std::vector<index_t>& parents,
