@@ -39,7 +39,7 @@ rapidjson::Document to_json(const solution& sol, bool geometry) {
 
     rapidjson::Value json_routes(rapidjson::kArrayType);
     for (const auto& route : sol.routes) {
-      json_routes.PushBack(to_json(route, allocator), allocator);
+      json_routes.PushBack(to_json(route, geometry, allocator), allocator);
     }
 
     json_output.AddMember("routes", json_routes, allocator);
@@ -69,20 +69,21 @@ rapidjson::Value to_json(const summary_t& summary,
 }
 
 rapidjson::Value to_json(const route_t& route,
+                         bool geometry,
                          rapidjson::Document::AllocatorType& allocator) {
   rapidjson::Value json_route(rapidjson::kObjectType);
 
   json_route.AddMember("vehicle", route.vehicle, allocator);
   json_route.AddMember("cost", route.cost, allocator);
 
-  if (!route.geometry.empty()) {
+  if (geometry) {
     json_route.AddMember("distance", route.distance, allocator);
     json_route.AddMember("duration", route.duration, allocator);
   }
 
   rapidjson::Value json_steps(rapidjson::kArrayType);
   for (const auto& step : route.steps) {
-    json_steps.PushBack(to_json(step, allocator), allocator);
+    json_steps.PushBack(to_json(step, geometry, allocator), allocator);
   }
 
   json_route.AddMember("steps", json_steps, allocator);
@@ -113,6 +114,7 @@ rapidjson::Value to_json(const computing_times_t& ct,
 }
 
 rapidjson::Value to_json(const step& s,
+                         bool geometry,
                          rapidjson::Document::AllocatorType& allocator) {
   rapidjson::Value json_step(rapidjson::kObjectType);
 
@@ -137,6 +139,11 @@ rapidjson::Value to_json(const step& s,
 
   if (s.type == TYPE::JOB) {
     json_step.AddMember("job", s.job, allocator);
+  }
+
+  if (geometry) {
+    json_step.AddMember("arrival", s.arrival, allocator);
+    json_step.AddMember("distance", s.distance, allocator);
   }
 
   return json_step;
