@@ -25,9 +25,7 @@ tsp::tsp(const input& input,
   std::transform(_job_ranks.cbegin(),
                  _job_ranks.cend(),
                  std::back_inserter(matrix_ranks),
-                 [&](const auto& r) {
-                   return _input._jobs[r].location.index();
-                 });
+                 [&](const auto& r) { return _input._jobs[r].index(); });
 
   if (_has_start) {
     // Add start and remember rank in _matrix.
