@@ -19,11 +19,13 @@ struct job_t {
   location_t location;
   const amount_t amount;
   const skills_t skills;
+  const duration_t service;
 
   job_t(ID_t id,
         const location_t& location,
         const amount_t& amount = amount_t(0),
-        const skills_t& skills = skills_t());
+        const skills_t& skills = skills_t(),
+        duration_t service = 0);
 
   index_t index() const;
 };
