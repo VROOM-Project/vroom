@@ -19,6 +19,7 @@ struct route_t {
   std::vector<step> steps;
   cost_t cost;
   std::string geometry;
+  duration_t service;
   duration_t duration;
   distance_t distance;
 

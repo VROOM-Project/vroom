@@ -159,6 +159,13 @@ void routed_wrapper::add_route_info(route_t& rte) const {
   rte.distance = round_cost(infos["routes"][0]["distance"].GetDouble());
   rte.geometry = std::move(infos["routes"][0]["geometry"].GetString());
 
+  rte.service = std::accumulate(rte.steps.begin(),
+                                rte.steps.end(),
+                                0,
+                                [](const duration_t& sum, const auto& step) {
+                                  return sum + step.service;
+                                });
+
   auto nb_legs = infos["routes"][0]["legs"].Size();
   assert(nb_legs == rte.steps.size() - 1);
   double current_distance = 0;

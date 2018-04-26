@@ -236,6 +236,7 @@ solution input::solve(unsigned nb_thread) {
 
     for (auto& route : sol.routes) {
       _routing_wrapper->add_route_info(route);
+      sol.summary.service += route.service;
       sol.summary.duration += route.duration;
       sol.summary.distance += route.distance;
     }
