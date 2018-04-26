@@ -3,15 +3,17 @@
 <!-- Copyright (c) 2015-2018, Julien Coupey. -->
 <!-- All rights reserved (see LICENSE). -->
 
-This file describes the API to use with `vroom` command-line as of
-version 1.1.0.
+This file describes the `vroom` API.
 
 Contents:
 - [Input format](#input)
 - [Output format](#output)
 - [Examples](#examples)
 
-**Note**: the expected order for all coordinates arrays is [lon,lat].
+**Note**:
+- the expected order for all coordinates arrays is [lon,lat]
+- all timings are in seconds
+- all distances are in meters
 
 # Input
 
@@ -129,8 +131,8 @@ The `summary` object has the following properties:
 | ----------- | ----------- |
 | `cost` | total cost for all routes |
 | `unassigned` | number of jobs that could not be served |
-| `duration`* | total duration in seconds for all routes |
-| `distance`* | total distance in meters for all routes |
+| `duration`* | total duration for all routes |
+| `distance`* | total distance for all routes |
 
 *: provided when using the `-g` flag with `OSRM`.
 
@@ -143,9 +145,9 @@ A `route` object has the following properties:
 | `vehicle` | id of the vehicle assigned to this route |
 | [`steps`](#steps) | array of `step` objects |
 | `cost` | cost for this route |
-| `geometry`* | polyline encoded route geometry |
-| `duration`* | total route duration in seconds |
-| `distance`* | total route distance in meters |
+| [`geometry`]* | polyline encoded route geometry |
+| [`duration`]* | total route duration |
+| [`distance`]* | total route distance |
 
 *: provided when using the `-g` flag with `OSRM`.
 
@@ -157,7 +159,11 @@ A `step` object has the following properties:
 | ----------- | ----------- |
 | `type` | a string that is either `start`, `job` or `end` |
 | `location` | coordinates array for this step |
-| `job` | id of the job performed at this step, provided if `type` value is `job` |
+| [`job`] | id of the job performed at this step, only provided if `type` value is `job` |
+| [`arrival`]* | estimated time of arrival at this step |
+| [`distance`]* | traveled distance upon arrival at this step |
+
+*: provided when using the `-g` flag with `OSRM`.
 
 # Examples
 
