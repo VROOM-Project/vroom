@@ -139,6 +139,7 @@ rapidjson::Value to_json(const step& s,
 
   if (s.type == TYPE::JOB) {
     json_step.AddMember("job", s.job, allocator);
+    json_step.AddMember("service", s.service, allocator);
   }
 
   if (geometry) {
