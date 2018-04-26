@@ -34,9 +34,11 @@ rapidjson::Value to_json(const computing_times_t& computing_times,
                          rapidjson::Document::AllocatorType& allocator);
 
 rapidjson::Value to_json(const route_t& route,
+                         bool geometry,
                          rapidjson::Document::AllocatorType& allocator);
 
 rapidjson::Value to_json(const step& s,
+                         bool geometry,
                          rapidjson::Document::AllocatorType& allocator);
 
 rapidjson::Value to_json(const location_t& loc,

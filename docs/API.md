@@ -3,15 +3,17 @@
 <!-- Copyright (c) 2015-2018, Julien Coupey. -->
 <!-- All rights reserved (see LICENSE). -->
 
-This file describes the API to use with `vroom` command-line as of
-version 1.1.0.
+This file describes the `vroom` API.
 
 Contents:
 - [Input format](#input)
 - [Output format](#output)
 - [Examples](#examples)
 
-**Note**: the expected order for all coordinates arrays is [lon,lat].
+**Note**:
+- the expected order for all coordinates arrays is [lon,lat]
+- all timings are in seconds
+- all distances are in meters
 
 # Input
 
@@ -129,8 +131,8 @@ The `summary` object has the following properties:
 | ----------- | ----------- |
 | `cost` | total cost for all routes |
 | `unassigned` | number of jobs that could not be served |
-| `duration`* | total duration in seconds for all routes |
-| `distance`* | total distance in meters for all routes |
+| `duration`* | total duration for all routes |
+| `distance`* | total distance for all routes |
 
 *: provided when using the `-g` flag with `OSRM`.
 
@@ -143,9 +145,9 @@ A `route` object has the following properties:
 | `vehicle` | id of the vehicle assigned to this route |
 | [`steps`](#steps) | array of `step` objects |
 | `cost` | cost for this route |
-| `geometry`* | polyline encoded route geometry |
-| `duration`* | total route duration in seconds |
-| `distance`* | total route distance in meters |
+| [`geometry`]* | polyline encoded route geometry |
+| [`duration`]* | total route duration |
+| [`distance`]* | total route distance |
 
 *: provided when using the `-g` flag with `OSRM`.
 
@@ -157,7 +159,11 @@ A `step` object has the following properties:
 | ----------- | ----------- |
 | `type` | a string that is either `start`, `job` or `end` |
 | `location` | coordinates array for this step |
-| `job` | id of the job performed at this step, provided if `type` value is `job` |
+| [`job`] | id of the job performed at this step, only provided if `type` value is `job` |
+| [`arrival`]* | estimated time of arrival at this step |
+| [`distance`]* | traveled distance upon arrival at this step |
+
+*: provided when using the `-g` flag with `OSRM`.
 
 # Examples
 
@@ -194,39 +200,47 @@ producing a solution that looks like:
 {
   "code": 0,
   "summary": {
-    "cost": 3679,
+    "cost": 3081,
     "unassigned": 0,
-    "duration": 3679,
+    "duration": 3081,
     "distance": 14422
   },
   "unassigned": [],
   "routes": [
     {
-      "geometry": "o`fiHaqjMBSPHh@T^PHDTLLHLFJFLFlBz@r@VXL\\NJDHDlCjAJDHDCPCNCNTvBLrAHx@BL?HFp@Oz@~Ap@BBRHPHtDhBHDETKj@Mp@Ov@m@bDI^I\\i@tBGROp@W`Bc@`EGfA?TAV?Zi@vHGn@p@j@NJRRfB|A@BHLFH{@fBUd@}BvE{@hBW|ASvAQpASxAAP?DJtC@\\Ab@O~@aArGG\\UhAWlA_@fBOn@_B~GEREP]zAMh@Kb@gA|EMp@S|@Mp@aBdIADI\\GZEPMp@k@rCGXKf@yEvUQ|@I`@Ml@GXI^?BOr@Mr@CN[zA?f@Eh@Aj@@hNBx@D`EBt@@h@?v@?RAFAr@@jDFr@D^LfAJ~@Dh@@`@@f@@J?p@B|CJfNBxD@`AF|L?L?`A?V?dAGb@?F?\\BbAF`A?D?HDhBFrALjBV|BD\\L~@X|A`@nB~@|C`AfCfAhBLT`@n@fAzBtCtEhBvCtCxEt@|@bAfAzAmC{AlCIm@{@_BcEyGW_@S[QNK\\a@~@aErHCBGNy@gAEGMQe@o@}FcIo@}@a@yAeA_F_@iBAGGWKe@ESAEKe@eBcNMkAe@kGw@{JQiBEc@Ca@Ai@?kACsDCaFKgAA_BKyOCkE?g@C_EAg@CuD?g@CiDIgMC_CAwBBsANaAXkA^gAn@sCXqAJk@|@sD\\cAr@yBlD}ONm@FWJe@jCoLjBkITuADQBSn@aC?E@EJ{@T_B?GJq@p@iF@ILaAL_A@EJu@z@aGz@eGBg@BkA?OLcC@OJeB@GLeBLgBBODk@@Kt@{GJw@?GTuB@IHa@PaA@GPcAHc@@Kt@aEt@mEReADUh@cD@ELu@DIDM@O?OPaABGTmAJi@Hc@P}@@EHa@ZqABEFWt@kCXcA@GHWPq@BIFY`@wAFUd@iBNm@FUT}@TYXcAPk@dB_GH[J[@ET}@T_A`AoD@EHWd@mBXgAFYLc@`AsDDM|@iDd@eBDOLa@L]v@sAj@_@ZIpAEb@APAJ@HAe@gCG_@[uAEWy@{DgBsIEOKe@Ow@Q{@WqAKi@YsA]}AKm@COGe@AO?KAKAm@HWFY@Q?SAQGYIWOQSKSAMBKDEBILEBKVEXAR?P@RBJBJBJDJNP@?PHIpAEj@IbAIfAATQ~Be@`D?F[bBKp@CLERERu@fDCNGRCHg@rBENMd@[`A_@jAQd@G`@Il@Mz@q@rEQnA[tBEVG\\c@vCCPCRc@tCStACPET_@fCQjACNQjAu@bFGMGGECuAq@IGIIsByB{@{@KMIGgAiAIIENw@bDCDi@bCCJcAs@OMIImAoAEHWl@Sv@U`BCVQx@CL`Br@CR",
+      "vehicle": 0,
+      "cost": 3081,
+      "duration": 3081,
+      "distance": 14422,
       "steps": [
         {
+          "distance": 0,
+          "arrival": 0,
           "location": [2.3526, 48.8604],
           "type": "start"
         },
         {
+          "distance": 5484,
+          "arrival": 1108,
           "job": 1,
           "location": [2.2911, 48.8566],
           "type": "job"
         },
         {
+          "distance": 12518,
+          "arrival": 2417,
           "job": 0,
           "location": [2.3691, 48.8532],
           "type": "job"
         },
         {
+          "distance": 14422,
+          "arrival": 3080,
           "location": [2.3526, 48.8604],
           "type": "end"
         }
       ],
-      "duration": 3679,
-      "distance": 14422,
-      "cost": 3679,
-      "vehicle": 0
+      "geometry": "o`fiHaqjMBSPHh@T^PHDTLLHLFJFLFlBz@r@TXN\\NJDHDlCjAJDHDCPCNCNTvBLrAHx@@L@HFp@Oz@~Ap@BBRHPHtDhBHDETKj@Mp@Ov@m@bDI^CHERi@tBGROn@WbBc@`EIfA@TAVAZg@vHGn@p@j@NJRRfB|A@BHLFH}@`BWd@yB|E{@hBEJQpASvAQpASxAAP?DJtC@\\Ab@O~@aArGG\\UhAWlA_@fBOn@_B~GGRCN]|AMf@Kd@gA|EMp@S|@Mp@aBdIADI\\GZEPMp@k@rCGXKf@yEvUQ|@I`@Ml@GXI^?BOr@Mr@CLYtAAT?XEh@Aj@@hNBx@@nA?JBdBBt@@h@?t@?TAFAr@@jDFr@D^LfAJ~@Dh@@`@@f@@J?p@BtCJnNBxD@h@?V@f@DtK?J?bA?F?dA?NGb@?F?^B`AFfA?HDhBFrALhBV~BD\\L~@X|A`@nB~@|C`AfCjAjBLVVNh@z@zE|HNV\\h@PXhDxFl@lA~@fAzAmC{AlCIm@{@_BcEyGQW]i@MTM\\_@~@aErHCBADEHy@gAEGIKe@o@}FcIo@}@g@_BcA_F_@iBAGGWKe@ESAEKe@eBcNMkAe@kGw@{JQiBEc@Ca@Ai@?kACsDCaFKgAAaBKwOCkE?g@C_EAg@CuD?g@CiDIgMC_CAwBBsANaAXkA^gAn@sCXsAJi@~@yDj@_BnEoRBKLe@FWJg@jCoLhBkIVuADSBQl@aC@E@EJ{@R_B@GJq@p@iF@ILaAL_A@EJu@z@aGz@eGBg@BkA?OLcC@OJeB@GLeBLgBBODk@@Kt@yGDa@BU@A?ETuB@KHa@NaABGPcAHe@@It@aEt@mEReADUTqARqA@EJu@FIDM@O?OPaA@GVmAJi@Hc@P}@@EHa@ZqABEFWt@kCVcABGHWPq@BIFY`@wAFUd@iBBGJe@FUPk@DMFOFUZ_APi@hByF@IFSH]@ET}@DSNk@hAcEBId@mBVcABIDSLc@`AsDDM|@iDd@eBHYHWL]v@sAj@_@ZIpAEb@APAH?LAe@eCKe@S}@EQEWy@sDgB{IEOKe@S_AMs@WqAKi@G[Qw@EUWiAKk@COGg@AQAY?OHu@Fy@AQGYIWOQUKSAKBKDEBKLCBKVEXAR?P@RBJ@JDJDJLJTNKpACj@IbAIfACZOxBAHa@rCAJ[bBIj@ERERENu@jDCNGRADe@fBCJGRKb@GRUl@[~@Mb@ENG`@EVCTMz@ETi@fDERQnAYtBEVG\\c@tCCRCPc@vCSrAERCRa@jCOhACLQlAm@dEG\\EKGGOIkAg@IKIOm@i@eAiA{@{@KMIGgAiAIIELw@dDCDi@bCCJcAs@EEEECAIImAoAEHWl@Sv@U`BCVQx@CL`Br@CR"
     }
   ]
 }

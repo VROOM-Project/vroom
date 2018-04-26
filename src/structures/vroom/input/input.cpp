@@ -235,7 +235,7 @@ solution input::solve(unsigned nb_thread) {
     BOOST_LOG_TRIVIAL(info) << "[Route] Start computing detailed route.";
 
     for (auto& route : sol.routes) {
-      _routing_wrapper->add_route_geometry(route);
+      _routing_wrapper->add_route_info(route);
       sol.summary.duration += route.duration;
       sol.summary.distance += route.distance;
     }

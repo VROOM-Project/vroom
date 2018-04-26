@@ -9,7 +9,10 @@ All rights reserved (see LICENSE).
 
 #include "step.h"
 
-step::step(TYPE type, location_t location) : type(type), location(location) {
+// Dummy initialization value for unused job id.
+step::step(TYPE type, location_t location)
+  : type(type), location(location), job(0) {
+  assert(type == TYPE::START or type == TYPE::END);
 }
 
 step::step(TYPE type, location_t location, ID_t job)
