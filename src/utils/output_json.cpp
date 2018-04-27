@@ -146,6 +146,7 @@ rapidjson::Value to_json(const step& s,
 
   if (geometry) {
     json_step.AddMember("arrival", s.arrival, allocator);
+    json_step.AddMember("duration", s.duration, allocator);
     json_step.AddMember("distance", s.distance, allocator);
   }
 

@@ -131,8 +131,9 @@ The `summary` object has the following properties:
 | ----------- | ----------- |
 | `cost` | total cost for all routes |
 | `unassigned` | number of jobs that could not be served |
-| `duration`* | total duration for all routes |
-| `distance`* | total distance for all routes |
+| `service` | total service time for all routes |
+| [`duration`]* | total duration for all routes |
+| [`distance`]* | total distance for all routes |
 
 *: provided when using the `-g` flag with `OSRM`.
 
@@ -145,6 +146,7 @@ A `route` object has the following properties:
 | `vehicle` | id of the vehicle assigned to this route |
 | [`steps`](#steps) | array of `step` objects |
 | `cost` | cost for this route |
+| `service` | total route service time |
 | [`geometry`]* | polyline encoded route geometry |
 | [`duration`]* | total route duration |
 | [`distance`]* | total route distance |
@@ -160,7 +162,9 @@ A `step` object has the following properties:
 | `type` | a string that is either `start`, `job` or `end` |
 | `location` | coordinates array for this step |
 | [`job`] | id of the job performed at this step, only provided if `type` value is `job` |
+| [`service`] | service time at this step, only provided if `type` value is `job` |
 | [`arrival`]* | estimated time of arrival at this step |
+| [`duration`]* | traveled duration upon arrival at this step |
 | [`distance`]* | traveled distance upon arrival at this step |
 
 *: provided when using the `-g` flag with `OSRM`.

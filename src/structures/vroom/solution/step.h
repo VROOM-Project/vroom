@@ -19,6 +19,7 @@ struct step {
   const ID_t job;
   duration_t service;
   duration_t arrival;
+  duration_t duration;
   distance_t distance;
 
   step(TYPE type, location_t location);
