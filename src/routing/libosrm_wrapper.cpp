@@ -108,6 +108,7 @@ void libosrm_wrapper::add_route_info(route_t& rte) const {
   auto& result_routes = result.values["routes"].get<osrm::json::Array>();
   auto& route = result_routes.values.at(0).get<osrm::json::Object>();
 
+  // Total duration/distance and route geometry.
   rte.duration =
     round_cost(route.values["duration"].get<osrm::json::Number>().value);
   rte.distance =
@@ -118,18 +119,26 @@ void libosrm_wrapper::add_route_info(route_t& rte) const {
   auto& legs = route.values["legs"].get<osrm::json::Array>();
   auto nb_legs = legs.values.size();
   assert(nb_legs == rte.steps.size() - 1);
+
+  // Accumulated travel duration and distance stored for each step.
   double current_distance = 0;
   double current_duration = 0;
 
   rte.steps[0].distance = round_cost(current_distance);
-  rte.steps[0].arrival = round_cost(current_duration);
+  rte.steps[0].duration = round_cost(current_duration);
+  rte.steps[0].arrival = 0;
 
   for (unsigned i = 0; i < nb_legs; ++i) {
+    // Update arrival, distance and duration for step after current
+    // route leg.
     auto& leg = legs.values.at(i).get<osrm::json::Object>();
     current_distance += leg.values["distance"].get<osrm::json::Number>().value;
     current_duration += leg.values["duration"].get<osrm::json::Number>().value;
 
     rte.steps[i + 1].distance = round_cost(current_distance);
-    rte.steps[i + 1].arrival = round_cost(current_duration);
+    rte.steps[i + 1].duration = round_cost(current_duration);
+
+    rte.steps[i + 1].arrival = round_cost(current_duration + rte.service);
+    rte.service += rte.steps[i + 1].service;
   }
 }
