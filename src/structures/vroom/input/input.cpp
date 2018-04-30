@@ -13,7 +13,8 @@ All rights reserved (see LICENSE).
 input::input(std::unique_ptr<routing_io<cost_t>> routing_wrapper, bool geometry)
   : _start_loading(std::chrono::high_resolution_clock::now()),
     _routing_wrapper(std::move(routing_wrapper)),
-    _geometry(geometry) {
+    _geometry(geometry),
+    _all_locations_have_coords(true) {
 }
 
 void input::add_job(const job_t& job) {
@@ -39,6 +40,7 @@ void input::add_job(const job_t& job) {
     current_job.location.set_index(_locations.size());
   }
   _matrix_used_index.insert(current_job.index());
+  _all_locations_have_coords &= current_job.location.has_coordinates();
 
   _locations.push_back(current_job.location);
 }
@@ -72,6 +74,7 @@ void input::add_vehicle(const vehicle_t& vehicle) {
     }
 
     _matrix_used_index.insert(current_v.start.get().index());
+    _all_locations_have_coords &= current_v.start.get().has_coordinates();
 
     _locations.push_back(current_v.start.get());
   }
@@ -85,6 +88,7 @@ void input::add_vehicle(const vehicle_t& vehicle) {
     }
 
     _matrix_used_index.insert(current_v.end.get().index());
+    _all_locations_have_coords &= current_v.end.get().has_coordinates();
 
     _locations.push_back(current_v.end.get());
   }
@@ -195,6 +199,11 @@ std::unique_ptr<vrp> input::get_problem() const {
 }
 
 solution input::solve(unsigned nb_thread) {
+  if (_geometry and !_all_locations_have_coords) {
+    // Early abort when info is required with missing coordinates.
+    throw custom_exception("Option -g is invalid with missing coordinates.");
+  }
+
   if (_matrix.size() < 2) {
     // OSRM call if matrix not already provided.
     assert(_routing_wrapper);
