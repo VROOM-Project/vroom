@@ -57,6 +57,7 @@ rapidjson::Value to_json(const summary_t& summary,
   json_summary.AddMember("unassigned", summary.unassigned, allocator);
 
   if (geometry) {
+    json_summary.AddMember("service", summary.service, allocator);
     json_summary.AddMember("distance", summary.distance, allocator);
     json_summary.AddMember("duration", summary.duration, allocator);
   }
@@ -77,6 +78,7 @@ rapidjson::Value to_json(const route_t& route,
   json_route.AddMember("cost", route.cost, allocator);
 
   if (geometry) {
+    json_route.AddMember("service", route.service, allocator);
     json_route.AddMember("distance", route.distance, allocator);
     json_route.AddMember("duration", route.duration, allocator);
   }
@@ -139,10 +141,12 @@ rapidjson::Value to_json(const step& s,
 
   if (s.type == TYPE::JOB) {
     json_step.AddMember("job", s.job, allocator);
+    json_step.AddMember("service", s.service, allocator);
   }
 
   if (geometry) {
     json_step.AddMember("arrival", s.arrival, allocator);
+    json_step.AddMember("duration", s.duration, allocator);
     json_step.AddMember("distance", s.distance, allocator);
   }
 

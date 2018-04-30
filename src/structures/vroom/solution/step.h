@@ -10,18 +10,21 @@ All rights reserved (see LICENSE).
 
 */
 
+#include "../job.h"
 #include "../location.h"
 
 struct step {
   const TYPE type;
   const location_t location;
   const ID_t job;
+  duration_t service;
   duration_t arrival;
+  duration_t duration;
   distance_t distance;
 
   step(TYPE type, location_t location);
 
-  step(TYPE type, location_t location, ID_t job);
+  step(const job_t& job);
 };
 
 #endif

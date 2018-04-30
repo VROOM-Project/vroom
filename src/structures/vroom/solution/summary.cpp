@@ -10,5 +10,5 @@ All rights reserved (see LICENSE).
 #include "summary.h"
 
 summary_t::summary_t(cost_t cost, unsigned unassigned)
-  : cost(cost), duration(0), distance(0), unassigned(unassigned) {
+  : cost(cost), service(0), duration(0), distance(0), unassigned(unassigned) {
 }

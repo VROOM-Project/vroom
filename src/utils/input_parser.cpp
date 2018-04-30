@@ -56,6 +56,17 @@ inline std::unordered_set<skill_t> get_skills(const rapidjson::Value& object) {
   return skills;
 }
 
+inline duration_t get_service(const rapidjson::Value& object) {
+  duration_t service = 0;
+  if (object.HasMember("service")) {
+    if (!object["service"].IsUint()) {
+      throw custom_exception("Invalid service value.");
+    }
+    service = object["service"].GetUint();
+  }
+  return service;
+}
+
 inline bool valid_vehicle(const rapidjson::Value& v) {
   return v.IsObject() and v.HasMember("id") and v["id"].IsUint64();
 }
@@ -239,6 +250,7 @@ input parse(const cl_args_t& cl_args) {
 
       job_t current_job(j_id,
                         job_loc,
+                        get_service(json_job),
                         get_amount(json_job, "amount"),
                         get_skills(json_job));
       input_data.add_job(current_job);
@@ -300,6 +312,7 @@ input parse(const cl_args_t& cl_args) {
 
       job_t current_job(j_id,
                         parse_coordinates(json_job, "location"),
+                        get_service(json_job),
                         get_amount(json_job, "amount"),
                         get_skills(json_job));
 

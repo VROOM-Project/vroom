@@ -29,6 +29,7 @@ void log_solution(const solution& sol, bool geometry) {
               << " (cost: " << route.cost;
     if (geometry) {
       std::cout << " - duration: " << route.duration;
+      std::cout << " - service: " << route.service;
       std::cout << " - distance: " << route.distance;
     }
 
@@ -63,6 +64,8 @@ void log_solution(const solution& sol, bool geometry) {
       // Add extra step info if geometry is required.
       if (geometry) {
         std::cout << " - arrival: " << step.arrival;
+        std::cout << " - duration: " << step.duration;
+        std::cout << " - service: " << step.service;
         std::cout << " - distance: " << step.distance;
       }
       std::cout << std::endl;
@@ -88,6 +91,7 @@ void run_example_with_osrm() {
   // where one vehicle can handle 4 jobs.
   amount_t vehicle_capacity(1);
   amount_t job_amount(1);
+  duration_t service = 5 * 60; // 5 minutes
   vehicle_capacity[0] = 4;
   job_amount[0] = 1;
 
@@ -107,15 +111,21 @@ void run_example_with_osrm() {
                {2, 14});         // skills
   problem_instance.add_vehicle(v2);
 
-  // Set jobs id, location, amount and required skills. Last two can
-  // be omitted if no constraints are required.
+  // Set jobs id, location, service time, amount and required skills.
+  // Last three can be omitted if no constraints are required.
   std::vector<job_t> jobs;
-  jobs.push_back(job_t(1, coords_t({1.98935, 48.701}), job_amount, {1}));
-  jobs.push_back(job_t(2, coords_t({2.03655, 48.61128}), job_amount, {1}));
-  jobs.push_back(job_t(3, coords_t({2.39719, 49.07611}), job_amount, {2}));
-  jobs.push_back(job_t(4, coords_t({2.41808, 49.22619}), job_amount, {2}));
-  jobs.push_back(job_t(5, coords_t({2.28325, 48.5958}), job_amount, {14}));
-  jobs.push_back(job_t(6, coords_t({2.89357, 48.90736}), job_amount, {14}));
+  jobs.push_back(
+    job_t(1, coords_t({1.98935, 48.701}), service, job_amount, {1}));
+  jobs.push_back(
+    job_t(2, coords_t({2.03655, 48.61128}), service, job_amount, {1}));
+  jobs.push_back(
+    job_t(3, coords_t({2.39719, 49.07611}), service, job_amount, {2}));
+  jobs.push_back(
+    job_t(4, coords_t({2.41808, 49.22619}), service, job_amount, {2}));
+  jobs.push_back(
+    job_t(5, coords_t({2.28325, 48.5958}), service, job_amount, {14}));
+  jobs.push_back(
+    job_t(6, coords_t({2.89357, 48.90736}), service, job_amount, {14}));
 
   for (const auto& j : jobs) {
     problem_instance.add_job(j);
@@ -156,6 +166,7 @@ void run_example_with_custom_matrix() {
   // where one vehicle can handle 4 jobs.
   amount_t vehicle_capacity(1);
   amount_t job_amount(1);
+  duration_t service = 5 * 60; // 5 minutes
   vehicle_capacity[0] = 4;
   job_amount[0] = 1;
 
@@ -180,12 +191,12 @@ void run_example_with_custom_matrix() {
   // optional), amount and required skills. Last two can be omitted if
   // no constraints are required.
   std::vector<job_t> jobs;
-  jobs.push_back(job_t(1, 1, job_amount, {1}));
-  jobs.push_back(job_t(2, 2, job_amount, {1}));
-  jobs.push_back(job_t(3, 3, job_amount, {2}));
-  jobs.push_back(job_t(4, 4, job_amount, {2}));
-  jobs.push_back(job_t(5, 5, job_amount, {14}));
-  jobs.push_back(job_t(6, 6, job_amount, {14}));
+  jobs.push_back(job_t(1, 1, service, job_amount, {1}));
+  jobs.push_back(job_t(2, 2, service, job_amount, {1}));
+  jobs.push_back(job_t(3, 3, service, job_amount, {2}));
+  jobs.push_back(job_t(4, 4, service, job_amount, {2}));
+  jobs.push_back(job_t(5, 5, service, job_amount, {14}));
+  jobs.push_back(job_t(6, 6, service, job_amount, {14}));
 
   for (const auto& j : jobs) {
     problem_instance.add_job(j);

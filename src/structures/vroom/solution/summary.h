@@ -14,6 +14,7 @@ All rights reserved (see LICENSE).
 
 struct summary_t {
   cost_t cost;
+  duration_t service;
   duration_t duration;
   distance_t distance;
   computing_times_t computing_times;
