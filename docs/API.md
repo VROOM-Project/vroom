@@ -38,6 +38,7 @@ A `job` object has the following properties:
 | `id` | an integer used as unique identifier |
 | [`location`] | coordinates array |
 | [`location_index`] | index of relevant row and column in custom matrix |
+| [`service`] | job service time (defaults to 0) |
 | [`amount`] | an array of integers describing multidimensional quantities |
 | [`skills`] | an array of integers defining mandatory skills for this job |
 
@@ -188,11 +189,13 @@ computing rely on OSRM:
   "jobs": [
     {
       "id": 0,
-      "location": [2.3691, 48.8532]
+      "location": [2.3691, 48.8532],
+      "service": 300
     },
     {
       "id": 1,
-      "location": [2.2911, 48.8566]
+      "location": [2.2911, 48.8566],
+      "service": 300
     }
   ]
 }
@@ -207,7 +210,8 @@ producing a solution that looks like:
     "cost": 3081,
     "unassigned": 0,
     "duration": 3081,
-    "distance": 14422
+    "distance": 14422,
+    "service": 600
   },
   "unassigned": [],
   "routes": [
@@ -216,31 +220,38 @@ producing a solution that looks like:
       "cost": 3081,
       "duration": 3081,
       "distance": 14422,
+      "service": 600,
       "steps": [
         {
           "distance": 0,
+          "duration": 0,
           "arrival": 0,
           "location": [2.3526, 48.8604],
           "type": "start"
         },
         {
           "distance": 5484,
+          "duration": 1108,
           "arrival": 1108,
+          "service": 300,
           "job": 1,
           "location": [2.2911, 48.8566],
           "type": "job"
         },
         {
           "distance": 12518,
-          "arrival": 2417,
+          "duration": 2417,
+          "arrival": 2717,
+          "service": 300,
           "job": 0,
           "location": [2.3691, 48.8532],
           "type": "job"
         },
         {
           "distance": 14422,
-          "arrival": 3080,
-          "location": [2.3526, 48.8604],
+          "duration": 3080,
+          "arrival": 3680,
+          "location": [2.3526,48.8604],
           "type": "end"
         }
       ],
@@ -294,24 +305,26 @@ producing a solution that looks like:
   "unassigned": [],
   "routes": [
     {
+      "vehicle": 0,
+      "cost": 5461,
       "steps": [
         {
           "type": "start"
         },
         {
+          "service": 0,
           "job": 1414,
           "type": "job"
         },
         {
+          "service": 0,
           "job": 1515,
           "type": "job"
         },
         {
           "type": "end"
         }
-      ],
-      "cost": 5461,
-      "vehicle": 0
+      ]
     }
   ]
 }
