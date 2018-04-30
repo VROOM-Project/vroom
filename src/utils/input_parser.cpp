@@ -250,9 +250,9 @@ input parse(const cl_args_t& cl_args) {
 
       job_t current_job(j_id,
                         job_loc,
+                        get_service(json_job),
                         get_amount(json_job, "amount"),
-                        get_skills(json_job),
-                        get_service(json_job));
+                        get_skills(json_job));
       input_data.add_job(current_job);
     }
   } else {
@@ -312,9 +312,9 @@ input parse(const cl_args_t& cl_args) {
 
       job_t current_job(j_id,
                         parse_coordinates(json_job, "location"),
+                        get_service(json_job),
                         get_amount(json_job, "amount"),
-                        get_skills(json_job),
-                        get_service(json_job));
+                        get_skills(json_job));
 
       input_data.add_job(current_job);
     }

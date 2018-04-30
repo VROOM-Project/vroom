@@ -11,14 +11,14 @@ All rights reserved (see LICENSE).
 
 job_t::job_t(ID_t id,
              const location_t& location,
+             duration_t service,
              const amount_t& amount,
-             const std::unordered_set<skill_t>& skills,
-             duration_t service)
+             const std::unordered_set<skill_t>& skills)
   : id(id),
     location(location),
+    service(service),
     amount(amount),
-    skills(skills),
-    service(service) {
+    skills(skills) {
 }
 
 index_t job_t::index() const {
