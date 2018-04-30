@@ -24,7 +24,7 @@ struct step {
 
   step(TYPE type, location_t location);
 
-  step(TYPE type, const job_t& job);
+  step(const job_t& job);
 };
 
 #endif

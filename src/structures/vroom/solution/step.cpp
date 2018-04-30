@@ -15,6 +15,6 @@ step::step(TYPE type, location_t location)
   assert(type == TYPE::START or type == TYPE::END);
 }
 
-step::step(TYPE type, const job_t& job)
-  : type(type), location(job.location), job(job.id), service(job.service) {
+step::step(const job_t& job)
+  : type(TYPE::JOB), location(job.location), job(job.id), service(job.service) {
 }
