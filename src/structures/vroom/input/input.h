@@ -56,6 +56,7 @@ private:
   void check_cost_bound() const;
   void set_vehicle_to_job_compatibility();
   std::unordered_set<index_t> _matrix_used_index;
+  bool _all_locations_have_coords;
 
 public:
   std::vector<job_t> _jobs;
