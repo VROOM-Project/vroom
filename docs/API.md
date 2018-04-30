@@ -161,7 +161,7 @@ A `step` object has the following properties:
 | Key         | Description |
 | ----------- | ----------- |
 | `type` | a string that is either `start`, `job` or `end` |
-| `location` | coordinates array for this step |
+| [`location`] | coordinates array for this step (if provided in input) |
 | [`job`] | id of the job performed at this step, only provided if `type` value is `job` |
 | [`service`] | service time at this step, only provided if `type` value is `job` |
 | [`arrival`]* | estimated time of arrival at this step |
