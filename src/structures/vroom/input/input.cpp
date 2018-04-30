@@ -199,6 +199,11 @@ std::unique_ptr<vrp> input::get_problem() const {
 }
 
 solution input::solve(unsigned nb_thread) {
+  if (_geometry and !_all_locations_have_coords) {
+    // Early abort when info is required with missing coordinates.
+    throw custom_exception("Option -g is invalid with missing coordinates.");
+  }
+
   if (_matrix.size() < 2) {
     // OSRM call if matrix not already provided.
     assert(_routing_wrapper);
