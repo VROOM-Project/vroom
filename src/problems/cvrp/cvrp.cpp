@@ -92,7 +92,7 @@ std::vector<std::list<index_t>> cvrp::solve(unsigned nb_threads) const {
   BOOST_LOG_TRIVIAL(trace) << "Best clustering:" << strategy << ";" << init_str
                            << ";" << best_c->regret_coeff << ";"
                            << best_c->clusters.size() << ";"
-                           << best_c->unassigned.size() << ";"
+                           << best_c->assigned_jobs << ";"
                            << best_c->edges_cost;
 
   auto end_clustering = std::chrono::high_resolution_clock::now();

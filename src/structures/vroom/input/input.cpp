@@ -235,7 +235,7 @@ solution input::format_solution(
       steps.emplace_back(TYPE::END, v.end.get());
       cost += _matrix[_jobs[route.back()].index()][v.end.get().index()];
     }
-    routes.emplace_back(_vehicles[i].id, steps, cost);
+    routes.emplace_back(_vehicles[i].id, std::move(steps), cost);
 
     total_cost += cost;
   }

@@ -39,7 +39,7 @@ public:
   std::vector<std::vector<index_t>> clusters;
   // Cost of all edges added during the clustering process
   cost_t edges_cost;
-  std::unordered_set<unsigned> unassigned;
+  unsigned assigned_jobs;
 
   clustering(const input& input, CLUSTERING_T t, INIT_T i, double c);
 
