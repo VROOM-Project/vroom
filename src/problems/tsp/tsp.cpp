@@ -151,7 +151,7 @@ cost_t tsp::symmetrized_cost(const std::list<index_t>& tour) const {
   return cost;
 }
 
-std::list<index_t> tsp::optimized_list(unsigned nb_threads) const {
+std::vector<std::list<index_t>> tsp::solve(unsigned nb_threads) const {
   // Applying heuristic.
   auto start_heuristic = std::chrono::high_resolution_clock::now();
   BOOST_LOG_TRIVIAL(info) << "[TSP] Start heuristic on symmetrized problem.";
@@ -319,38 +319,5 @@ std::list<index_t> tsp::optimized_list(unsigned nb_threads) const {
                  std::back_inserter(init_ranks_sol),
                  [&](const auto& i) { return _job_ranks[i]; });
 
-  return init_ranks_sol;
-}
-
-solution tsp::solve(unsigned nb_threads) const {
-  const auto sol_as_list = this->optimized_list(nb_threads);
-
-  // Steps for the one route.
-  std::vector<step> steps;
-
-  // Handle start.
-  if (_has_start) {
-    steps.emplace_back(TYPE::START,
-                       _input._vehicles[_vehicle_rank].start.get());
-  }
-
-  // Handle jobs.
-  for (const auto i : sol_as_list) {
-    steps.emplace_back(_input._jobs[i]);
-  }
-
-  // Handle end.
-  if (_has_end) {
-    // Add end step.
-    steps.emplace_back(TYPE::END, _input._vehicles[_vehicle_rank].end.get());
-  }
-
-  // Route.
-  auto cost = _input.cost(_vehicle_rank, sol_as_list);
-  std::vector<route_t> routes;
-  routes.emplace_back(_input._vehicles[_vehicle_rank].id, steps, cost);
-
-  solution sol(0, cost, std::move(routes), std::vector<job_t>());
-
-  return sol;
+  return {init_ranks_sol};
 }

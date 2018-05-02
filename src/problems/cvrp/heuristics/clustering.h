@@ -34,6 +34,8 @@ public:
   const CLUSTERING_T type;
   const INIT_T init;
   const double regret_coeff;
+  // Clusters are relative to the vehicle with same rank in
+  // input_ref._vehicles.
   std::vector<std::vector<index_t>> clusters;
   // Cost of all edges added during the clustering process
   cost_t edges_cost;

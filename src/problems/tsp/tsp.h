@@ -13,7 +13,6 @@ All rights reserved (see LICENSE).
 #include <fstream>
 #include <iomanip>
 #include <iostream>
-#include <list>
 #include <string>
 
 #include "../../structures/abstract/undirected_graph.h"
@@ -44,7 +43,8 @@ public:
 
   std::list<index_t> optimized_list(unsigned nb_threads) const;
 
-  virtual solution solve(unsigned nb_threads) const override;
+  virtual std::vector<std::list<index_t>>
+  solve(unsigned nb_threads) const override;
 };
 
 #endif

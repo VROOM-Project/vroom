@@ -10,7 +10,10 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "../structures/vroom/solution/solution.h"
+#include <list>
+#include <vector>
+
+#include "../structures/typedefs.h"
 
 class input;
 
@@ -24,9 +27,9 @@ public:
 
   virtual ~vrp();
 
-  virtual solution solve(unsigned nb_threads) const = 0;
+  virtual std::vector<std::list<index_t>> solve(unsigned nb_threads) const = 0;
 
-  solution solve() const;
+  std::vector<std::list<index_t>> solve() const;
 };
 
 #endif
