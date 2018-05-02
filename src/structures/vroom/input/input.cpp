@@ -198,6 +198,28 @@ std::unique_ptr<vrp> input::get_problem() const {
   return std::make_unique<cvrp>(*this);
 }
 
+cost_t input::cost(unsigned vehicle_rank,
+                   const std::list<index_t>& route) const {
+  cost_t total_cost = 0;
+  const auto& v = _vehicles[vehicle_rank];
+
+  if (v.has_start()) {
+    total_cost += _matrix[v.start.get().index()][_jobs[route.front()].index()];
+  }
+
+  index_t previous = route.front();
+  for (auto it = ++route.cbegin(); it != route.cend(); ++it) {
+    total_cost += _matrix[_jobs[previous].index()][_jobs[*it].index()];
+    previous = *it;
+  }
+
+  if (v.has_end()) {
+    total_cost += _matrix[_jobs[route.back()].index()][v.end.get().index()];
+  }
+
+  return total_cost;
+}
+
 solution input::solve(unsigned nb_thread) {
   if (_geometry and !_all_locations_have_coords) {
     // Early abort when info is required with missing coordinates.

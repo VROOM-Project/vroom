@@ -74,6 +74,8 @@ public:
 
   matrix<cost_t> get_sub_matrix(const std::vector<index_t>& indices) const;
 
+  cost_t cost(unsigned vehicle_rank, const std::list<index_t>& route) const;
+
   solution solve(unsigned nb_thread);
 
   friend class clustering;
