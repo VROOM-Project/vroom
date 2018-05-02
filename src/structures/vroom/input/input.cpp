@@ -203,6 +203,12 @@ solution input::format_solution(
   std::vector<route_t> routes;
   cost_t total_cost = 0;
 
+  // All job ranks start with unassigned status.
+  std::unordered_set<index_t> unassigned_ranks;
+  for (unsigned i = 0; i < _jobs.size(); ++i) {
+    unassigned_ranks.insert(i);
+  }
+
   for (std::size_t i = 0; i < routes_as_lists.size(); ++i) {
     const auto& route = routes_as_lists[i];
     if (route.empty()) {
@@ -223,10 +229,12 @@ solution input::format_solution(
     // Handle jobs.
     index_t previous = route.front();
     steps.emplace_back(_jobs[previous]);
+    unassigned_ranks.erase(previous);
 
     for (auto it = ++route.cbegin(); it != route.cend(); ++it) {
       cost += _matrix[_jobs[previous].index()][_jobs[*it].index()];
       steps.emplace_back(_jobs[*it]);
+      unassigned_ranks.erase(*it);
       previous = *it;
     }
 
@@ -240,8 +248,12 @@ solution input::format_solution(
     total_cost += cost;
   }
 
-  // TODO
+  // Handle unassigned jobs.
   std::vector<job_t> unassigned_jobs;
+  std::transform(unassigned_ranks.begin(),
+                 unassigned_ranks.end(),
+                 std::back_inserter(unassigned_jobs),
+                 [&](auto j) { return _jobs[j]; });
 
   return solution(0, total_cost, std::move(routes), std::move(unassigned_jobs));
 }

@@ -13,6 +13,7 @@ All rights reserved (see LICENSE).
 #include <array>
 #include <chrono>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include <boost/optional.hpp>
