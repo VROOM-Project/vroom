@@ -26,6 +26,7 @@ All rights reserved (see LICENSE).
 #include "../../abstract/matrix.h"
 #include "../../typedefs.h"
 #include "../job.h"
+#include "../solution/solution.h"
 #include "../vehicle.h"
 #if LIBOSRM
 #include "../../../routing/libosrm_wrapper.h"
@@ -58,6 +59,9 @@ private:
   std::unordered_set<index_t> _matrix_used_index;
   bool _all_locations_have_coords;
 
+  solution
+  format_solution(const std::vector<std::list<index_t>>& routes_as_list) const;
+
 public:
   std::vector<job_t> _jobs;
   std::vector<vehicle_t> _vehicles;
@@ -73,8 +77,6 @@ public:
   const matrix<cost_t>& get_matrix() const;
 
   matrix<cost_t> get_sub_matrix(const std::vector<index_t>& indices) const;
-
-  cost_t cost(unsigned vehicle_rank, const std::list<index_t>& route) const;
 
   solution solve(unsigned nb_thread);
 

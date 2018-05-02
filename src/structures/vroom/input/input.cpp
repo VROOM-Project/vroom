@@ -198,26 +198,52 @@ std::unique_ptr<vrp> input::get_problem() const {
   return std::make_unique<cvrp>(*this);
 }
 
-cost_t input::cost(unsigned vehicle_rank,
-                   const std::list<index_t>& route) const {
+solution input::format_solution(
+  const std::vector<std::list<index_t>>& routes_as_lists) const {
+  std::vector<route_t> routes;
   cost_t total_cost = 0;
-  const auto& v = _vehicles[vehicle_rank];
 
-  if (v.has_start()) {
-    total_cost += _matrix[v.start.get().index()][_jobs[route.front()].index()];
+  for (std::size_t i = 0; i < routes_as_lists.size(); ++i) {
+    const auto& route = routes_as_lists[i];
+    if (route.empty()) {
+      continue;
+    }
+    const auto& v = _vehicles[i];
+    auto cost = 0;
+
+    // Steps for current route.
+    std::vector<step> steps;
+
+    // Handle start.
+    if (v.has_start()) {
+      steps.emplace_back(TYPE::START, v.start.get());
+      cost += _matrix[v.start.get().index()][_jobs[route.front()].index()];
+    }
+
+    // Handle jobs.
+    index_t previous = route.front();
+    steps.emplace_back(_jobs[previous]);
+
+    for (auto it = ++route.cbegin(); it != route.cend(); ++it) {
+      cost += _matrix[_jobs[previous].index()][_jobs[*it].index()];
+      steps.emplace_back(_jobs[*it]);
+      previous = *it;
+    }
+
+    // Handle end.
+    if (v.has_end()) {
+      steps.emplace_back(TYPE::END, v.end.get());
+      cost += _matrix[_jobs[route.back()].index()][v.end.get().index()];
+    }
+    routes.emplace_back(_vehicles[i].id, steps, cost);
+
+    total_cost += cost;
   }
 
-  index_t previous = route.front();
-  for (auto it = ++route.cbegin(); it != route.cend(); ++it) {
-    total_cost += _matrix[_jobs[previous].index()][_jobs[*it].index()];
-    previous = *it;
-  }
+  // TODO
+  std::vector<job_t> unassigned_jobs;
 
-  if (v.has_end()) {
-    total_cost += _matrix[_jobs[route.back()].index()][v.end.get().index()];
-  }
-
-  return total_cost;
+  return solution(0, total_cost, std::move(routes), std::move(unassigned_jobs));
 }
 
 solution input::solve(unsigned nb_thread) {
@@ -250,7 +276,7 @@ solution input::solve(unsigned nb_thread) {
   BOOST_LOG_TRIVIAL(info) << "[Loading] Done, took " << loading << " ms.";
 
   // Solve.
-  solution sol = instance->solve(nb_thread);
+  auto sol = format_solution(instance->solve(nb_thread));
 
   // Update timing info.
   sol.summary.computing_times.loading = loading;
