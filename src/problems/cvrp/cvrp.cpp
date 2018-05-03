@@ -9,6 +9,7 @@ All rights reserved (see LICENSE).
 
 #include "cvrp.h"
 #include "../../structures/vroom/input/input.h"
+#include "./local_search/local_search.h"
 
 cvrp::cvrp(const input& input) : vrp(input) {
 }
@@ -166,6 +167,10 @@ raw_solution cvrp::solve(unsigned nb_threads) const {
 
   BOOST_LOG_TRIVIAL(info) << "[CVRP] Done with TSPs, took "
                           << tsp_computing_time << " ms.";
+
+  cvrp_local_search ls(_input, tsp_sols);
+
+  ls.run();
 
   return tsp_sols;
 }
