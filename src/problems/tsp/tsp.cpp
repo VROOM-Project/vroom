@@ -20,6 +20,8 @@ tsp::tsp(const input& input,
     _has_start(_input._vehicles[_vehicle_rank].has_start()),
     _has_end(_input._vehicles[_vehicle_rank].has_end()) {
 
+  assert(!_job_ranks.empty());
+
   // Pick ranks to select from input matrix.
   std::vector<index_t> matrix_ranks;
   std::transform(_job_ranks.cbegin(),

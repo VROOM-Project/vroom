@@ -40,6 +40,7 @@ public:
   // Cost of all edges added during the clustering process
   cost_t edges_cost;
   unsigned assigned_jobs;
+  unsigned non_empty_clusters;
 
   clustering(const input& input, CLUSTERING_T t, INIT_T i, double c);
 

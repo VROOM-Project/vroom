@@ -15,7 +15,8 @@ clustering::clustering(const input& input, CLUSTERING_T t, INIT_T i, double c)
     regret_coeff(c),
     clusters(input._vehicles.size()),
     edges_cost(0),
-    assigned_jobs(0) {
+    assigned_jobs(0),
+    non_empty_clusters(0) {
   std::string strategy;
   switch (type) {
   case CLUSTERING_T::PARALLEL:
@@ -40,15 +41,13 @@ clustering::clustering(const input& input, CLUSTERING_T t, INIT_T i, double c)
     break;
   }
 
-  // Filter out empty clusters.
-  clusters.erase(std::remove_if(clusters.begin(),
-                                clusters.end(),
-                                [](auto& c) { return c.empty(); }),
-                 clusters.end());
+  non_empty_clusters = std::count_if(clusters.begin(),
+                                     clusters.end(),
+                                     [](auto& c) { return !c.empty(); });
 
   BOOST_LOG_TRIVIAL(trace) << "Clustering:" << strategy << ";" << init_str
                            << ";" << this->regret_coeff << ";"
-                           << this->clusters.size() << ";" << assigned_jobs
+                           << this->non_empty_clusters << ";" << assigned_jobs
                            << ";" << this->edges_cost;
 }
 
@@ -61,7 +60,7 @@ bool operator<(const clustering& lhs, const clustering& rhs) {
       return true;
     }
     if (lhs.edges_cost == rhs.edges_cost and
-        lhs.clusters.size() < rhs.clusters.size()) {
+        lhs.non_empty_clusters < rhs.non_empty_clusters) {
       return true;
     }
   }
