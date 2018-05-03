@@ -13,7 +13,7 @@ All rights reserved (see LICENSE).
 cvrp::cvrp(const input& input) : vrp(input) {
 }
 
-std::vector<std::list<index_t>> cvrp::solve(unsigned nb_threads) const {
+raw_solution cvrp::solve(unsigned nb_threads) const {
   struct param {
     CLUSTERING_T type;
     INIT_T init;
@@ -110,7 +110,7 @@ std::vector<std::list<index_t>> cvrp::solve(unsigned nb_threads) const {
   auto nb_tsp = best_c->clusters.size();
 
   // Vector of TSP solutions as lists.
-  std::vector<std::list<index_t>> tsp_sols(nb_tsp, std::list<index_t>());
+  raw_solution tsp_sols(nb_tsp, std::list<index_t>());
 
   // Run TSP solving for a list of clusters in turn, each with
   // provided number of threads.

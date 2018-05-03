@@ -198,8 +198,7 @@ std::unique_ptr<vrp> input::get_problem() const {
   return std::make_unique<cvrp>(*this);
 }
 
-solution input::format_solution(
-  const std::vector<std::list<index_t>>& routes_as_lists) const {
+solution input::format_solution(const raw_solution& routes_as_lists) const {
   std::vector<route_t> routes;
   cost_t total_cost = 0;
 

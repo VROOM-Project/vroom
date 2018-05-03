@@ -43,8 +43,7 @@ public:
 
   std::list<index_t> optimized_list(unsigned nb_threads) const;
 
-  virtual std::vector<std::list<index_t>>
-  solve(unsigned nb_threads) const override;
+  virtual raw_solution solve(unsigned nb_threads) const override;
 };
 
 #endif

@@ -27,9 +27,9 @@ public:
 
   virtual ~vrp();
 
-  virtual std::vector<std::list<index_t>> solve(unsigned nb_threads) const = 0;
+  virtual raw_solution solve(unsigned nb_threads) const = 0;
 
-  std::vector<std::list<index_t>> solve() const;
+  raw_solution solve() const;
 };
 
 #endif

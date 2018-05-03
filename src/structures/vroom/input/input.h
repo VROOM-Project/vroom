@@ -60,8 +60,7 @@ private:
   std::unordered_set<index_t> _matrix_used_index;
   bool _all_locations_have_coords;
 
-  solution
-  format_solution(const std::vector<std::list<index_t>>& routes_as_list) const;
+  solution format_solution(const raw_solution& routes_as_list) const;
 
 public:
   std::vector<job_t> _jobs;

@@ -24,8 +24,7 @@ private:
 public:
   cvrp(const input& input);
 
-  virtual std::vector<std::list<index_t>>
-  solve(unsigned nb_threads) const override;
+  virtual raw_solution solve(unsigned nb_threads) const override;
 };
 
 #endif
