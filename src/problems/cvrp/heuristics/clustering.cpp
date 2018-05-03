@@ -258,11 +258,10 @@ void clustering::parallel_clustering() {
       }
 
       // Consider best job candidate for current cluster.
-      std::make_heap(candidates[v].begin(),
-                     candidates[v].end(),
-                     eval_lambda(v));
+      std::nth_element(candidates[v].begin(), candidates[v].end() - 1,
+              candidates[v].end(), eval_lambda(v));
 
-      auto current_j = candidates[v].front();
+      auto current_j = candidates[v].back();
       if (jobs[current_j].amount <= capacities[v] and
           (costs[v][current_j] < best_cost or
            (costs[v][current_j] == best_cost and
@@ -290,9 +289,6 @@ void clustering::parallel_clustering() {
         if (candidates[v].empty()) {
           continue;
         }
-        std::pop_heap(candidates[v].begin(),
-                      candidates[v].end(),
-                      eval_lambda(v));
         candidates[v].pop_back();
 
         candidates_remaining |= !candidates[v].empty();
@@ -310,9 +306,6 @@ void clustering::parallel_clustering() {
                              << jobs[best_j].index();
     capacities[best_v] -= jobs[best_j].amount;
 
-    std::pop_heap(candidates[best_v].begin(),
-                  candidates[best_v].end(),
-                  eval_lambda(best_v));
     candidates[best_v].pop_back();
     update_cost(jobs[best_j].index(),
                 costs[best_v],
