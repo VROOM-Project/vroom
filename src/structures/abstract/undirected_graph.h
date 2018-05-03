@@ -10,7 +10,6 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <cassert>
 #include <list>
 #include <unordered_map>
 #include <vector>

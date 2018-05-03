@@ -10,7 +10,6 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <algorithm>
 
 #include "../typedefs.h"
 

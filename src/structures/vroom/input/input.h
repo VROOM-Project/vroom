@@ -10,17 +10,12 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <array>
 #include <chrono>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <memory>
 
-#include <boost/optional.hpp>
-
-#include "../../../problems/cvrp/cvrp.h"
-#include "../../../problems/tsp/tsp.h"
-#include "../../../routing/routed_wrapper.h"
 #include "../../../routing/routing_io.h"
 #include "../../../utils/exceptions.h"
 #include "../../../utils/helpers.h"
@@ -29,9 +24,6 @@ All rights reserved (see LICENSE).
 #include "../job.h"
 #include "../solution/solution.h"
 #include "../vehicle.h"
-#if LIBOSRM
-#include "../../../routing/libosrm_wrapper.h"
-#endif
 
 class vrp;
 

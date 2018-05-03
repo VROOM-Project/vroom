@@ -6,6 +6,18 @@ Copyright (c) 2015-2018, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
+#include <array>
+
+#include <boost/optional.hpp>
+
+#include "../../../problems/cvrp/cvrp.h"
+#include "../../../problems/tsp/tsp.h"
+
+#include "../../../routing/routed_wrapper.h"
+
+#if LIBOSRM
+#include "../../../routing/libosrm_wrapper.h"
+#endif
 
 #include "./input.h"
 #include "../../../problems/vrp.h"

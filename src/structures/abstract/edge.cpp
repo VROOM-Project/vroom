@@ -6,6 +6,7 @@ Copyright (c) 2015-2018, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
+#include <algorithm>
 
 #include "edge.h"
 
