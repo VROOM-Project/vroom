@@ -11,6 +11,7 @@ All rights reserved (see LICENSE).
 */
 
 #include <limits>
+#include <array>
 #include <list>
 #include <unordered_set>
 #include <vector>
