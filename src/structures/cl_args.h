@@ -1,3 +1,14 @@
+#ifndef CLARGS_H
+#define CLARGS_H
+
+/*
+
+This file is part of VROOM.
+
+Copyright (c) 2015-2018, Julien Coupey.
+All rights reserved (see LICENSE).
+
+*/
 
 #include <string>
 #include <boost/log/trivial.hpp>
@@ -25,3 +36,5 @@ struct cl_args_t {
       osrm_profile("car") {
   }
 };
+
+#endif
