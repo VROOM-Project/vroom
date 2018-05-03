@@ -316,7 +316,7 @@ raw_solution tsp::solve(unsigned nb_threads) const {
   }
 
   // Back to ranks in input::_jobs.
-  std::list<index_t> init_ranks_sol;
+  std::vector<index_t> init_ranks_sol;
   std::transform(current_sol.cbegin(),
                  current_sol.cend(),
                  std::back_inserter(init_ranks_sol),

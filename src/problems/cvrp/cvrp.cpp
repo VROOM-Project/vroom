@@ -112,7 +112,7 @@ raw_solution cvrp::solve(unsigned nb_threads) const {
   assert(nb_tsp == _input._vehicles.size());
 
   // Vector of TSP solutions as lists.
-  raw_solution tsp_sols(nb_tsp, std::list<index_t>());
+  raw_solution tsp_sols(nb_tsp, std::vector<index_t>());
 
   // Run TSP solving for a list of clusters in turn, each with
   // provided number of threads.
