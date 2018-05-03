@@ -13,7 +13,7 @@ All rights reserved (see LICENSE).
 cvrp::cvrp(const input& input) : vrp(input) {
 }
 
-solution cvrp::solve(unsigned nb_threads) const {
+raw_solution cvrp::solve(unsigned nb_threads) const {
   struct param {
     CLUSTERING_T type;
     INIT_T init;
@@ -91,8 +91,8 @@ solution cvrp::solve(unsigned nb_threads) const {
   }
   BOOST_LOG_TRIVIAL(trace) << "Best clustering:" << strategy << ";" << init_str
                            << ";" << best_c->regret_coeff << ";"
-                           << best_c->clusters.size() << ";"
-                           << best_c->unassigned.size() << ";"
+                           << best_c->non_empty_clusters << ";"
+                           << best_c->assigned_jobs << ";"
                            << best_c->edges_cost;
 
   auto end_clustering = std::chrono::high_resolution_clock::now();
@@ -108,18 +108,22 @@ solution cvrp::solve(unsigned nb_threads) const {
   BOOST_LOG_TRIVIAL(info) << "[CVRP] Launching TSPs ";
 
   auto nb_tsp = best_c->clusters.size();
+  assert(nb_tsp == _input._vehicles.size());
 
-  // Create vector of TSP solutions with dummy init.
-  std::vector<solution> tsp_sols(nb_tsp, solution(0, ""));
+  // Vector of TSP solutions as lists.
+  raw_solution tsp_sols(nb_tsp, std::list<index_t>());
 
   // Run TSP solving for a list of clusters in turn, each with
   // provided number of threads.
   auto run_tsp = [&](const std::vector<unsigned>& cluster_ranks,
                      unsigned tsp_threads) {
     for (auto cl_rank : cluster_ranks) {
+      if (best_c->clusters[cl_rank].empty()) {
+        continue;
+      }
       tsp p(_input, best_c->clusters[cl_rank], cl_rank);
 
-      tsp_sols[cl_rank] = p.solve(tsp_threads);
+      tsp_sols[cl_rank] = p.solve(tsp_threads)[0];
     }
   };
 
@@ -163,18 +167,5 @@ solution cvrp::solve(unsigned nb_threads) const {
   BOOST_LOG_TRIVIAL(info) << "[CVRP] Done with TSPs, took "
                           << tsp_computing_time << " ms.";
 
-  std::vector<route_t> routes;
-  cost_t total_cost = 0;
-  for (const auto& tsp_sol : tsp_sols) {
-    routes.push_back(tsp_sol.routes[0]);
-    total_cost += tsp_sol.summary.cost;
-  }
-
-  std::vector<job_t> unassigned_jobs;
-  std::transform(best_c->unassigned.begin(),
-                 best_c->unassigned.end(),
-                 std::back_inserter(unassigned_jobs),
-                 [&](auto j) { return _input._jobs[j]; });
-
-  return solution(0, total_cost, std::move(routes), std::move(unassigned_jobs));
+  return tsp_sols;
 }

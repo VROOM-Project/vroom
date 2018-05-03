@@ -20,6 +20,8 @@ tsp::tsp(const input& input,
     _has_start(_input._vehicles[_vehicle_rank].has_start()),
     _has_end(_input._vehicles[_vehicle_rank].has_end()) {
 
+  assert(!_job_ranks.empty());
+
   // Pick ranks to select from input matrix.
   std::vector<index_t> matrix_ranks;
   std::transform(_job_ranks.cbegin(),
@@ -151,7 +153,7 @@ cost_t tsp::symmetrized_cost(const std::list<index_t>& tour) const {
   return cost;
 }
 
-solution tsp::solve(unsigned nb_threads) const {
+raw_solution tsp::solve(unsigned nb_threads) const {
   // Applying heuristic.
   auto start_heuristic = std::chrono::high_resolution_clock::now();
   BOOST_LOG_TRIVIAL(info) << "[TSP] Start heuristic on symmetrized problem.";
@@ -302,42 +304,22 @@ solution tsp::solve(unsigned nb_threads) const {
     current_sol.pop_front();
   }
 
-  // Steps for the one route.
-  std::vector<step> steps;
-
-  // Handle start.
-  auto job_start = current_sol.cbegin();
+  // Handle start and end removal as output list should only contain
+  // jobs.
   if (_has_start) {
-    // Add start step.
-    assert(current_sol.front() == _start);
-    steps.emplace_back(TYPE::START,
-                       _input._vehicles[_vehicle_rank].start.get());
-    // Remember that jobs start further away in the list.
-    ++job_start;
+    // Jobs start further away in the list.
+    current_sol.pop_front();
   }
-  // Determine where to stop for last job.
-  auto job_end = current_sol.cend();
-
   if (!_round_trip and _has_end) {
-    --job_end;
+    current_sol.pop_back();
   }
 
-  // Handle jobs.
-  for (auto job = job_start; job != job_end; ++job) {
-    auto current_rank = _job_ranks[*job];
-    steps.emplace_back(_input._jobs[current_rank]);
-  }
-  // Handle end.
-  if (_has_end) {
-    // Add end step.
-    steps.emplace_back(TYPE::END, _input._vehicles[_vehicle_rank].end.get());
-  }
+  // Back to ranks in input::_jobs.
+  std::list<index_t> init_ranks_sol;
+  std::transform(current_sol.cbegin(),
+                 current_sol.cend(),
+                 std::back_inserter(init_ranks_sol),
+                 [&](const auto& i) { return _job_ranks[i]; });
 
-  // Route.
-  std::vector<route_t> routes;
-  routes.emplace_back(_input._vehicles[_vehicle_rank].id, steps, current_cost);
-
-  solution sol(0, current_cost, std::move(routes), std::vector<job_t>());
-
-  return sol;
+  return {init_ranks_sol};
 }

@@ -24,7 +24,7 @@ private:
 public:
   cvrp(const input& input);
 
-  virtual solution solve(unsigned nb_threads) const override;
+  virtual raw_solution solve(unsigned nb_threads) const override;
 };
 
 #endif

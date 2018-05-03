@@ -13,6 +13,7 @@ All rights reserved (see LICENSE).
 #include <array>
 #include <chrono>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include <boost/optional.hpp>
@@ -26,6 +27,7 @@ All rights reserved (see LICENSE).
 #include "../../abstract/matrix.h"
 #include "../../typedefs.h"
 #include "../job.h"
+#include "../solution/solution.h"
 #include "../vehicle.h"
 #if LIBOSRM
 #include "../../../routing/libosrm_wrapper.h"
@@ -57,6 +59,8 @@ private:
   void set_vehicle_to_job_compatibility();
   std::unordered_set<index_t> _matrix_used_index;
   bool _all_locations_have_coords;
+
+  solution format_solution(const raw_solution& routes_as_list) const;
 
 public:
   std::vector<job_t> _jobs;

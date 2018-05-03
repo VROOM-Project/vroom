@@ -34,10 +34,13 @@ public:
   const CLUSTERING_T type;
   const INIT_T init;
   const double regret_coeff;
+  // Clusters are relative to the vehicle with same rank in
+  // input_ref._vehicles.
   std::vector<std::vector<index_t>> clusters;
   // Cost of all edges added during the clustering process
   cost_t edges_cost;
-  std::unordered_set<unsigned> unassigned;
+  unsigned assigned_jobs;
+  unsigned non_empty_clusters;
 
   clustering(const input& input, CLUSTERING_T t, INIT_T i, double c);
 

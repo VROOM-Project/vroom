@@ -23,7 +23,7 @@ struct route_t {
   duration_t duration;
   distance_t distance;
 
-  route_t(ID_t vehicle, std::vector<step> steps, cost_t cost);
+  route_t(ID_t vehicle, std::vector<step>&& steps, cost_t cost);
 };
 
 #endif

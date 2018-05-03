@@ -13,7 +13,6 @@ All rights reserved (see LICENSE).
 #include <fstream>
 #include <iomanip>
 #include <iostream>
-#include <list>
 #include <string>
 
 #include "../../structures/abstract/undirected_graph.h"
@@ -42,7 +41,7 @@ public:
 
   cost_t symmetrized_cost(const std::list<index_t>& tour) const;
 
-  virtual solution solve(unsigned nb_threads) const override;
+  virtual raw_solution solve(unsigned nb_threads) const override;
 };
 
 #endif

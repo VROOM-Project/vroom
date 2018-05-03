@@ -14,12 +14,9 @@ clustering::clustering(const input& input, CLUSTERING_T t, INIT_T i, double c)
     init(i),
     regret_coeff(c),
     clusters(input._vehicles.size()),
-    edges_cost(0) {
-  // All job ranks start with unassigned status.
-  for (unsigned i = 0; i < input_ref._jobs.size(); ++i) {
-    unassigned.insert(i);
-  }
-
+    edges_cost(0),
+    assigned_jobs(0),
+    non_empty_clusters(0) {
   std::string strategy;
   switch (type) {
   case CLUSTERING_T::PARALLEL:
@@ -44,29 +41,26 @@ clustering::clustering(const input& input, CLUSTERING_T t, INIT_T i, double c)
     break;
   }
 
-  // Filter out empty clusters.
-  clusters.erase(std::remove_if(clusters.begin(),
-                                clusters.end(),
-                                [](auto& c) { return c.empty(); }),
-                 clusters.end());
+  non_empty_clusters = std::count_if(clusters.begin(),
+                                     clusters.end(),
+                                     [](auto& c) { return !c.empty(); });
 
   BOOST_LOG_TRIVIAL(trace) << "Clustering:" << strategy << ";" << init_str
                            << ";" << this->regret_coeff << ";"
-                           << this->clusters.size() << ";"
-                           << this->unassigned.size() << ";"
-                           << this->edges_cost;
+                           << this->non_empty_clusters << ";" << assigned_jobs
+                           << ";" << this->edges_cost;
 }
 
 bool operator<(const clustering& lhs, const clustering& rhs) {
-  if (lhs.unassigned.size() < rhs.unassigned.size()) {
+  if (lhs.assigned_jobs > rhs.assigned_jobs) {
     return true;
   }
-  if (lhs.unassigned.size() == rhs.unassigned.size()) {
+  if (lhs.assigned_jobs == rhs.assigned_jobs) {
     if (lhs.edges_cost < rhs.edges_cost) {
       return true;
     }
     if (lhs.edges_cost == rhs.edges_cost and
-        lhs.clusters.size() < rhs.clusters.size()) {
+        lhs.non_empty_clusters < rhs.non_empty_clusters) {
       return true;
     }
   }
@@ -196,7 +190,7 @@ void clustering::parallel_clustering() {
       if (init_job != candidates[v].cend()) {
         auto job_rank = *init_job;
         clusters[v].push_back(job_rank);
-        unassigned.erase(job_rank);
+        ++assigned_jobs;
         edges_cost += costs[v][job_rank];
         capacities[v] -= jobs[job_rank].amount;
         candidates[v].erase(init_job);
@@ -309,7 +303,7 @@ void clustering::parallel_clustering() {
     // Add best candidate to matching cluster and remove from all
     // candidate vectors.
     clusters[best_v].push_back(best_j);
-    unassigned.erase(best_j);
+    ++assigned_jobs;
     edges_cost += best_cost;
     BOOST_LOG_TRIVIAL(trace) << vehicles[best_v].id << ";"
                              << parents[best_v][best_j] << "->"
@@ -482,7 +476,7 @@ void clustering::sequential_clustering() {
       if (init_job != candidates.cend()) {
         auto job_rank = *init_job;
         clusters[v].push_back(job_rank);
-        unassigned.erase(job_rank);
+        ++assigned_jobs;
         edges_cost += vehicles_to_job_costs[v][job_rank];
         capacity -= jobs[job_rank].amount;
         candidates_set.erase(job_rank);
@@ -514,7 +508,7 @@ void clustering::sequential_clustering() {
 
       if (jobs[current_j].amount <= capacity) {
         clusters[v].push_back(current_j);
-        unassigned.erase(current_j);
+        ++assigned_jobs;
         edges_cost += costs[current_j];
         BOOST_LOG_TRIVIAL(trace) << vehicles[v].id << ";" << parents[current_j]
                                  << "->" << jobs[current_j].index();

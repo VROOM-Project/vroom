@@ -17,6 +17,6 @@ vrp::vrp(const input& input) : _input(input) {
 vrp::~vrp() {
 }
 
-solution vrp::solve() const {
+raw_solution vrp::solve() const {
   return solve(1);
 }
