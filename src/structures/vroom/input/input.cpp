@@ -9,6 +9,8 @@ All rights reserved (see LICENSE).
 #include <array>
 
 #include <boost/optional.hpp>
+#include <boost/log/trivial.hpp>
+
 
 #include "../../../problems/cvrp/cvrp.h"
 #include "../../../problems/tsp/tsp.h"

@@ -6,6 +6,16 @@ Copyright (c) 2015-2018, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <string>
+#include <boost/log/trivial.hpp>
+
+
+#include "../../structures/abstract/undirected_graph.h"
+#include "./heuristics/christofides.h"
+#include "./heuristics/local_search.h"
 
 #include "tsp.h"
 #include "../../structures/vroom/input/input.h"

@@ -6,6 +6,9 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <algorithm>
+#include <unordered_set>
+
 #include "clustering.h"
 #include <boost/log/trivial.hpp>
 

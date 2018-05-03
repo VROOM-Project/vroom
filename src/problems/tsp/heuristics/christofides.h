@@ -10,13 +10,9 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <chrono>
-#include <random>
-
-#include <boost/log/trivial.hpp>
-
-#include "../../../algorithms/kruskal.h"
-#include "../../../algorithms/munkres.h"
+#include <list>
+#include "../../../structures/typedefs.h"
+#include "../../../structures/abstract/matrix.h"
 
 // Implementing a variant of the Christofides heuristic.
 std::list<index_t> christofides(const matrix<cost_t>& sym_matrix);

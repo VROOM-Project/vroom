@@ -10,15 +10,10 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <fstream>
-#include <iomanip>
-#include <iostream>
-#include <string>
+#include "../../structures/typedefs.h"
+#include "../../structures/abstract/matrix.h"
 
-#include "../../structures/abstract/undirected_graph.h"
 #include "../vrp.h"
-#include "./heuristics/christofides.h"
-#include "./heuristics/local_search.h"
 
 class tsp : public vrp {
 private:

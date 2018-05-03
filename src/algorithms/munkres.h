@@ -10,13 +10,9 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <cassert>
-#include <limits>
-#include <list>
-#include <set>
 #include <unordered_map>
 
-#include "../structures/abstract/edge.h"
+#include "../structures/typedefs.h"
 #include "../structures/abstract/matrix.h"
 
 template <class T>

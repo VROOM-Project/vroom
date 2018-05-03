@@ -7,6 +7,11 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <numeric>
+#include <unordered_map>
+#include <thread>
+#include <boost/log/trivial.hpp>
+
 #include "local_search.h"
 
 local_search::local_search(const matrix<cost_t>& matrix,

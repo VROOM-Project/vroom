@@ -7,6 +7,13 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <mutex>
+#include <thread>
+#include <boost/log/trivial.hpp>
+
+#include "../tsp/tsp.h"
+#include "./heuristics/clustering.h"
+
 #include "cvrp.h"
 #include "../../structures/vroom/input/input.h"
 

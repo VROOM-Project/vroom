@@ -7,6 +7,13 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <cassert>
+#include <limits>
+#include <list>
+#include <set>
+
+#include "../structures/abstract/edge.h"
+
 #include "./munkres.h"
 
 template <class T>

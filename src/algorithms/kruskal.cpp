@@ -7,6 +7,13 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <algorithm>
+#include <numeric>
+#include <vector>
+
+#include "../structures/typedefs.h"
+#include "../structures/abstract/edge.h"
+
 #include "./kruskal.h"
 
 template <class T>
