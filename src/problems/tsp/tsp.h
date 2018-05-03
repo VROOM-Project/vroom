@@ -41,8 +41,6 @@ public:
 
   cost_t symmetrized_cost(const std::list<index_t>& tour) const;
 
-  std::list<index_t> optimized_list(unsigned nb_threads) const;
-
   virtual raw_solution solve(unsigned nb_threads) const override;
 };
 

@@ -10,9 +10,6 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <list>
-#include <vector>
-
 #include "../structures/typedefs.h"
 
 class input;
