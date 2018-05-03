@@ -10,11 +10,8 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <list>
-#include <string>
 #include <vector>
 
-#include "../../include/rapidjson/document.h"
 #include "../structures/abstract/matrix.h"
 #include "../structures/vroom/location.h"
 #include "../structures/vroom/solution/route.h"

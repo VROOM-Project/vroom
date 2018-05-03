@@ -6,6 +6,11 @@ Copyright (c) 2015-2018, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
+#include <boost/asio.hpp>
+using boost::asio::ip::tcp;
+
+#include "../../include/rapidjson/document.h"
+#include "../../include/rapidjson/error/en.h"
 
 #include "./routed_wrapper.h"
 

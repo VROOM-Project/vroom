@@ -7,6 +7,12 @@ All rights reserved (see LICENSE).
 
 */
 
+#include "osrm/coordinate.hpp"
+#include "osrm/json_container.hpp"
+#include "osrm/route_parameters.hpp"
+#include "osrm/status.hpp"
+#include "osrm/table_parameters.hpp"
+
 #include "./libosrm_wrapper.h"
 
 libosrm_wrapper::libosrm_wrapper(const std::string& osrm_profile)
