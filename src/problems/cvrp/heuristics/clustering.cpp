@@ -502,9 +502,9 @@ void clustering::sequential_clustering() {
     };
 
     while (!candidates.empty()) {
-      std::make_heap(candidates.begin(), candidates.end(), eval_lambda);
+      std::nth_element(candidates.begin(), candidates.end() - 1, candidates.end(), eval_lambda);
 
-      auto current_j = candidates.front();
+      auto current_j = candidates.back();
 
       if (jobs[current_j].amount <= capacity) {
         clusters[v].push_back(current_j);
@@ -523,7 +523,6 @@ void clustering::sequential_clustering() {
                     m);
       }
 
-      std::pop_heap(candidates.begin(), candidates.end(), eval_lambda);
       candidates.pop_back();
     }
   }
