@@ -14,6 +14,7 @@ All rights reserved (see LICENSE).
 #include <list>
 #include <string>
 #include <unordered_set>
+#include <vector>
 
 #include <boost/log/trivial.hpp>
 #include <boost/optional.hpp>
