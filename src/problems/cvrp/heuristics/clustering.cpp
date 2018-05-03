@@ -7,6 +7,7 @@ All rights reserved (see LICENSE).
 */
 
 #include "clustering.h"
+#include <boost/log/trivial.hpp>
 
 clustering::clustering(const input& input, CLUSTERING_T t, INIT_T i, double c)
   : input_ref(input),

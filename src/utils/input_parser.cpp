@@ -10,6 +10,9 @@ All rights reserved (see LICENSE).
 #include <array>
 #include <vector>
 
+#include "../structures/cl_args.h"
+
+#include "../routing/routed_wrapper.h"
 #include "../../include/rapidjson/document.h"
 #include "../../include/rapidjson/error/en.h"
 #include "../structures/abstract/matrix.h"
