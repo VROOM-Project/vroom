@@ -27,6 +27,8 @@ public:
 
   virtual bool is_valid() const override;
 
+  virtual void apply() const override;
+
   virtual void log() const override;
 };
 

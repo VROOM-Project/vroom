@@ -115,6 +115,10 @@ bool exchange::is_valid() const {
   return valid;
 }
 
+void exchange::apply() const {
+  // TODO
+}
+
 void exchange::log() const {
   const auto& v_source = _input._vehicles[source_vehicle];
   const auto& v_target = _input._vehicles[target_vehicle];

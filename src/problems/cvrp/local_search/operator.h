@@ -41,6 +41,8 @@ public:
 
   virtual bool is_valid() const = 0;
 
+  virtual void apply() const = 0;
+
   virtual void log() const = 0;
 
   virtual ~ls_operator() {

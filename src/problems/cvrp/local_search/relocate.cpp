@@ -110,6 +110,17 @@ bool relocate::is_valid() const {
   return valid;
 }
 
+void relocate::apply() const {
+  auto relocate_job_rank = _sol[source_vehicle][source_rank];
+  _sol[source_vehicle].erase(_sol[source_vehicle].begin() + source_rank);
+  _sol[target_vehicle].insert(_sol[target_vehicle].begin() + target_rank,
+                              relocate_job_rank);
+
+  auto& relocate_amount = _input._jobs[relocate_job_rank].amount;
+  _amounts[target_vehicle] += relocate_amount;
+  _amounts[source_vehicle] -= relocate_amount;
+}
+
 void relocate::log() const {
   const auto& v_source = _input._vehicles[source_vehicle];
   const auto& v_target = _input._vehicles[target_vehicle];

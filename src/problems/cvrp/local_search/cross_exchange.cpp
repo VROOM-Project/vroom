@@ -128,6 +128,10 @@ bool cross_exchange::is_valid() const {
   return valid;
 }
 
+void cross_exchange::apply() const {
+  // TODO
+}
+
 void cross_exchange::log() const {
   const auto& v_source = _input._vehicles[source_vehicle];
   const auto& v_target = _input._vehicles[target_vehicle];
