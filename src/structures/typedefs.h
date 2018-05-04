@@ -22,6 +22,7 @@ All rights reserved (see LICENSE).
 using ID_t = uint64_t;
 using index_t = uint16_t;
 using cost_t = uint32_t;
+using gain_t = int64_t;
 using distance_t = uint32_t;
 using duration_t = uint32_t;
 using coordinate_t = double;
