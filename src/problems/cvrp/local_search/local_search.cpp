@@ -61,7 +61,7 @@ void cvrp_local_search::run() {
         }
         for (unsigned t_rank = 0; t_rank <= _sol[t_v].size(); ++t_rank) {
           relocate r(_input, _sol, _amounts, s_v, s_rank, t_v, t_rank);
-          if (r.gain > 0 and r.is_valid()) {
+          if (r.gain() > 0 and r.is_valid()) {
             r.log();
           }
         }
@@ -75,7 +75,7 @@ void cvrp_local_search::run() {
       for (unsigned t_v = s_v + 1; t_v < _sol.size(); ++t_v) {
         for (unsigned t_rank = 0; t_rank < _sol[t_v].size(); ++t_rank) {
           exchange r(_input, _sol, _amounts, s_v, s_rank, t_v, t_rank);
-          if (r.gain > 0 and r.is_valid()) {
+          if (r.gain() > 0 and r.is_valid()) {
             r.log();
           }
         }
@@ -98,7 +98,7 @@ void cvrp_local_search::run() {
 
         for (unsigned t_rank = 0; t_rank <= _sol[t_v].size(); ++t_rank) {
           or_opt r(_input, _sol, _amounts, s_v, s_rank, t_v, t_rank);
-          if (r.gain > 0 and r.is_valid()) {
+          if (r.gain() > 0 and r.is_valid()) {
             r.log();
           }
         }
@@ -112,7 +112,7 @@ void cvrp_local_search::run() {
       for (unsigned t_v = s_v + 1; t_v < _sol.size(); ++t_v) {
         for (unsigned t_rank = 0; t_rank < _sol[t_v].size() - 1; ++t_rank) {
           cross_exchange r(_input, _sol, _amounts, s_v, s_rank, t_v, t_rank);
-          if (r.gain > 0 and r.is_valid()) {
+          if (r.gain() > 0 and r.is_valid()) {
             r.log();
           }
         }
