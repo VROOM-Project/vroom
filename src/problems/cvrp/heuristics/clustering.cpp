@@ -107,7 +107,7 @@ void clustering::parallel_clustering() {
   for (std::size_t v = 0; v < V; ++v) {
     // Only keep jobs compatible with vehicle skills in candidates.
     for (std::size_t j = 0; j < J; ++j) {
-      if (input_ref._vehicle_to_job_compatibility[v][j]) {
+      if (input_ref.vehicle_ok_with_job(v, j)) {
         candidates[v].push_back(j);
       }
     }
@@ -427,7 +427,7 @@ void clustering::sequential_clustering() {
     // costs to jobs for current vehicle.
     std::vector<index_t> candidates;
     for (auto i : candidates_set) {
-      if (input_ref._vehicle_to_job_compatibility[v][i] and
+      if (input_ref.vehicle_ok_with_job(v, i) and
           jobs[i].amount <= input_ref._vehicles[v].capacity) {
         candidates.push_back(i);
       }

@@ -13,11 +13,13 @@ All rights reserved (see LICENSE).
 #include "../../../structures/typedefs.h"
 
 class input;
+class amount_t;
 
 class cvrp_local_search {
 private:
   const input& _input;
   raw_solution& _sol;
+  std::vector<amount_t> _amounts;
 
 public:
   cvrp_local_search(const input& input, raw_solution& sol);

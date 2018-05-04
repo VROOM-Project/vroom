@@ -17,6 +17,7 @@ class relocate {
 private:
   const input& _input;
   raw_solution& _sol;
+  std::vector<amount_t>& _amounts;
 
   static gain_t compute_gain(const input& input,
                              const raw_solution& sol,
@@ -34,10 +35,13 @@ public:
 
   relocate(const input& input,
            raw_solution& sol,
+           std::vector<amount_t>& amounts,
            index_t source_vehicle,
            index_t source_rank,
            index_t target_vehicle,
            index_t target_rank);
+
+  bool is_valid() const;
 
   void log() const;
 };

@@ -88,12 +88,14 @@ gain_t relocate::compute_gain(const input& input,
 
 relocate::relocate(const input& input,
                    raw_solution& sol,
+                   std::vector<amount_t>& amounts,
                    index_t source_vehicle,
                    index_t source_rank,
                    index_t target_vehicle,
                    index_t target_rank)
   : _input(input),
     _sol(sol),
+    _amounts(amounts),
     source_vehicle(source_vehicle),
     source_rank(source_rank),
     target_vehicle(target_vehicle),
@@ -106,12 +108,23 @@ relocate::relocate(const input& input,
                       target_rank)) {
 }
 
+bool relocate::is_valid() const {
+  auto relocate_job_rank = _sol[source_vehicle][source_rank];
+
+  bool valid = _input.vehicle_ok_with_job(target_vehicle, relocate_job_rank);
+
+  valid &= (_amounts[target_vehicle] + _input._jobs[relocate_job_rank].amount <=
+            _input._vehicles[target_vehicle].capacity);
+
+  return valid;
+}
+
 void relocate::log() const {
   const auto& v_source = _input._vehicles[source_vehicle];
   const auto& v_target = _input._vehicles[target_vehicle];
 
-  std::cout << "Gain: " << gain << " - vehicle " << v_source.id << ", step "
-            << source_rank << " (job "
+  std::cout << "Relocate gain: " << gain << " - vehicle " << v_source.id
+            << ", step " << source_rank << " (job "
             << _input._jobs[_sol[source_vehicle][source_rank]].id
             << ") moved to rank " << target_rank << " in route for vehicle "
             << v_target.id << std::endl;

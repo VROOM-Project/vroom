@@ -13,7 +13,14 @@ All rights reserved (see LICENSE).
 #include "relocate.h"
 
 cvrp_local_search::cvrp_local_search(const input& input, raw_solution& sol)
-  : _input(input), _sol(sol) {
+  : _input(input),
+    _sol(sol),
+    _amounts(sol.size(), amount_t(input.amount_size())) {
+  for (std::size_t i = 0; i < sol.size(); ++i) {
+    for (const auto rank : sol[i]) {
+      _amounts[i] += _input._jobs[rank].amount;
+    }
+  }
 }
 
 void cvrp_local_search::run() {
@@ -26,8 +33,8 @@ void cvrp_local_search::run() {
           continue;
         }
         for (unsigned t_rank = 0; t_rank <= _sol[t_v].size(); ++t_rank) {
-          relocate r(_input, _sol, s_v, s_rank, t_v, t_rank);
-          if (r.gain > 0) {
+          relocate r(_input, _sol, _amounts, s_v, s_rank, t_v, t_rank);
+          if (r.gain > 0 and r.is_valid()) {
             r.log();
           }
         }

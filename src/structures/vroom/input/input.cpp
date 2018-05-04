@@ -112,6 +112,14 @@ void input::set_matrix(matrix<cost_t>&& m) {
   _matrix = std::move(m);
 }
 
+unsigned input::amount_size() const {
+  return _amount_size;
+}
+
+bool input::vehicle_ok_with_job(index_t v_index, index_t j_index) const {
+  return _vehicle_to_job_compatibility[v_index][j_index];
+}
+
 const matrix<cost_t>& input::get_matrix() const {
   return _matrix;
 }

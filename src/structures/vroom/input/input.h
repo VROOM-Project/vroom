@@ -74,13 +74,15 @@ public:
 
   void set_matrix(matrix<cost_t>&& m);
 
+  unsigned amount_size() const;
+
+  bool vehicle_ok_with_job(index_t v_index, index_t j_index) const;
+
   const matrix<cost_t>& get_matrix() const;
 
   matrix<cost_t> get_sub_matrix(const std::vector<index_t>& indices) const;
 
   solution solve(unsigned nb_thread);
-
-  friend class clustering;
 };
 
 #endif
