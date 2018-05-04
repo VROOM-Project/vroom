@@ -25,6 +25,8 @@ void input::add_job(const job_t& job) {
   // Ensure amount size consistency.
   this->check_amount_size(current_job.amount.size());
 
+  this->store_amount_lower_bound(current_job.amount);
+
   // Ensure that skills are either always or never provided.
   if (_locations.empty()) {
     _has_skills = !current_job.skills.empty();
@@ -94,6 +96,17 @@ void input::add_vehicle(const vehicle_t& vehicle) {
   }
 }
 
+void input::store_amount_lower_bound(const amount_t& amount) {
+  if (_amount_lower_bound.empty()) {
+    // Create on first call.
+    _amount_lower_bound = amount;
+  } else {
+    for (std::size_t i = 0; i < _amount_size; ++i) {
+      _amount_lower_bound[i] = std::min(_amount_lower_bound[i], amount[i]);
+    }
+  }
+}
+
 void input::check_amount_size(unsigned size) {
   if (_locations.empty()) {
     // Updating real value on first call.
@@ -114,6 +127,10 @@ void input::set_matrix(matrix<cost_t>&& m) {
 
 unsigned input::amount_size() const {
   return _amount_size;
+}
+
+amount_t input::get_amount_lower_bound() const {
+  return _amount_lower_bound;
 }
 
 bool input::vehicle_ok_with_job(index_t v_index, index_t j_index) const {

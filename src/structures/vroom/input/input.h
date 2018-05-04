@@ -52,6 +52,7 @@ private:
   matrix<cost_t> _matrix;
   std::vector<location_t> _locations;
   unsigned _amount_size;
+  amount_t _amount_lower_bound;
   std::vector<std::vector<bool>> _vehicle_to_job_compatibility;
   void check_amount_size(unsigned size);
   std::unique_ptr<vrp> get_problem() const;
@@ -61,6 +62,7 @@ private:
   bool _all_locations_have_coords;
 
   solution format_solution(const raw_solution& routes_as_list) const;
+  void store_amount_lower_bound(const amount_t& amount);
 
 public:
   std::vector<job_t> _jobs;
@@ -75,6 +77,8 @@ public:
   void set_matrix(matrix<cost_t>&& m);
 
   unsigned amount_size() const;
+
+  amount_t get_amount_lower_bound() const;
 
   bool vehicle_ok_with_job(index_t v_index, index_t j_index) const;
 
