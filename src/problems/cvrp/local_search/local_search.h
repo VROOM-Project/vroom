@@ -11,6 +11,7 @@ All rights reserved (see LICENSE).
 */
 
 #include "../../../structures/typedefs.h"
+#include "../../../utils/output_json.h" // To remove
 
 class input;
 class amount_t;

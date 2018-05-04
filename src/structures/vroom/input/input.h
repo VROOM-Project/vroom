@@ -34,6 +34,7 @@ All rights reserved (see LICENSE).
 #endif
 
 class vrp;
+class cvrp_local_search; // To remove
 
 struct type_with_id {
   TYPE type;
@@ -87,6 +88,8 @@ public:
   matrix<cost_t> get_sub_matrix(const std::vector<index_t>& indices) const;
 
   solution solve(unsigned nb_thread);
+
+  friend cvrp_local_search; // To remove
 };
 
 #endif

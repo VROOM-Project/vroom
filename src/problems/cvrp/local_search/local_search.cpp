@@ -47,76 +47,117 @@ void cvrp_local_search::run() {
   auto amount_lower_bound = _input.get_amount_lower_bound();
   auto double_amount_lower_bound = amount_lower_bound + amount_lower_bound;
 
-  // Relocate stuff
-  for (unsigned s_v = 0; s_v < _sol.size(); ++s_v) {
-    for (unsigned s_rank = 0; s_rank < _sol[s_v].size(); ++s_rank) {
-      for (unsigned t_v = 0; t_v < _sol.size(); ++t_v) {
-        if (s_v == t_v) {
-          continue;
-        }
-        if (_input._vehicles[t_v].capacity <
-            _amounts[t_v] + amount_lower_bound) {
-          // Don't try to put things in a full vehicle.
-          continue;
-        }
-        for (unsigned t_rank = 0; t_rank <= _sol[t_v].size(); ++t_rank) {
-          relocate r(_input, _sol, _amounts, s_v, s_rank, t_v, t_rank);
-          if (r.gain() > 0 and r.is_valid()) {
-            r.log();
+  std::unique_ptr<ls_operator> best_op;
+  gain_t best_gain = 1;
+
+  unsigned ls_step = 0;
+  write_to_json(_input.format_solution(_sol),
+                false,
+                "ls_log_" + std::to_string(ls_step) + "_sol.json");
+
+  while (best_gain > 0) {
+    ++ls_step;
+    best_gain = 0;
+
+    // Relocate stuff
+    for (unsigned s_v = 0; s_v < _sol.size(); ++s_v) {
+      for (unsigned s_rank = 0; s_rank < _sol[s_v].size(); ++s_rank) {
+        for (unsigned t_v = 0; t_v < _sol.size(); ++t_v) {
+          if (s_v == t_v) {
+            continue;
+          }
+          if (_input._vehicles[t_v].capacity <
+              _amounts[t_v] + amount_lower_bound) {
+            // Don't try to put things in a full vehicle.
+            continue;
+          }
+          for (unsigned t_rank = 0; t_rank <= _sol[t_v].size(); ++t_rank) {
+            relocate r(_input, _sol, _amounts, s_v, s_rank, t_v, t_rank);
+            if (r.gain() > 0 and r.is_valid()) {
+              if (best_gain < r.gain()) {
+                best_gain = r.gain();
+                best_op = std::make_unique<relocate>(r);
+              }
+            }
           }
         }
       }
     }
-  }
 
-  // Exchange stuff
-  for (unsigned s_v = 0; s_v < _sol.size(); ++s_v) {
-    for (unsigned s_rank = 0; s_rank < _sol[s_v].size(); ++s_rank) {
-      for (unsigned t_v = s_v + 1; t_v < _sol.size(); ++t_v) {
-        for (unsigned t_rank = 0; t_rank < _sol[t_v].size(); ++t_rank) {
-          exchange r(_input, _sol, _amounts, s_v, s_rank, t_v, t_rank);
-          if (r.gain() > 0 and r.is_valid()) {
-            r.log();
-          }
-        }
-      }
-    }
-  }
+    // // Exchange stuff
+    // for (unsigned s_v = 0; s_v < _sol.size(); ++s_v) {
+    //   for (unsigned s_rank = 0; s_rank < _sol[s_v].size(); ++s_rank) {
+    //     for (unsigned t_v = s_v + 1; t_v < _sol.size(); ++t_v) {
+    //       for (unsigned t_rank = 0; t_rank < _sol[t_v].size(); ++t_rank) {
+    //         exchange r(_input, _sol, _amounts, s_v, s_rank, t_v, t_rank);
+    //         if (r.gain() > 0 and r.is_valid()) {
+    //           r.log();
+    //           if (best_gain < r.gain()) {
+    //             best_gain = r.gain();
+    //             best_op =  std::make_unique<exchange>(r);
+    //           }
+    //         }
+    //       }
+    //     }
+    //   }
+    // }
 
-  // Or-opt stuff
-  for (unsigned s_v = 0; s_v < _sol.size(); ++s_v) {
-    for (unsigned s_rank = 0; s_rank < _sol[s_v].size() - 1; ++s_rank) {
-      for (unsigned t_v = 0; t_v < _sol.size(); ++t_v) {
-        if (s_v == t_v) {
-          continue;
-        }
-        if (_input._vehicles[t_v].capacity <
-            _amounts[t_v] + double_amount_lower_bound) {
-          // Don't try to put things in a full vehicle.
-          continue;
-        }
+    // // Or-opt stuff
+    // for (unsigned s_v = 0; s_v < _sol.size(); ++s_v) {
+    //   for (unsigned s_rank = 0; s_rank < _sol[s_v].size() - 1; ++s_rank) {
+    //     for (unsigned t_v = 0; t_v < _sol.size(); ++t_v) {
+    //       if (s_v == t_v) {
+    //         continue;
+    //       }
+    //       if (_input._vehicles[t_v].capacity <
+    //           _amounts[t_v] + double_amount_lower_bound) {
+    //         // Don't try to put things in a full vehicle.
+    //         continue;
+    //       }
 
-        for (unsigned t_rank = 0; t_rank <= _sol[t_v].size(); ++t_rank) {
-          or_opt r(_input, _sol, _amounts, s_v, s_rank, t_v, t_rank);
-          if (r.gain() > 0 and r.is_valid()) {
-            r.log();
-          }
-        }
-      }
-    }
-  }
+    //       for (unsigned t_rank = 0; t_rank <= _sol[t_v].size(); ++t_rank) {
+    //         or_opt r(_input, _sol, _amounts, s_v, s_rank, t_v, t_rank);
+    //         if (r.gain() > 0 and r.is_valid()) {
+    //           r.log();
+    //           if (best_gain < r.gain()) {
+    //             best_gain = r.gain();
+    //             best_op =  std::make_unique<or_opt>(r);
+    //           }
+    //         }
+    //       }
+    //     }
+    //   }
+    // }
 
-  // CROSS-exchange stuff
-  for (unsigned s_v = 0; s_v < _sol.size(); ++s_v) {
-    for (unsigned s_rank = 0; s_rank < _sol[s_v].size() - 1; ++s_rank) {
-      for (unsigned t_v = s_v + 1; t_v < _sol.size(); ++t_v) {
-        for (unsigned t_rank = 0; t_rank < _sol[t_v].size() - 1; ++t_rank) {
-          cross_exchange r(_input, _sol, _amounts, s_v, s_rank, t_v, t_rank);
-          if (r.gain() > 0 and r.is_valid()) {
-            r.log();
-          }
-        }
-      }
+    // // CROSS-exchange stuff
+    // for (unsigned s_v = 0; s_v < _sol.size(); ++s_v) {
+    //   for (unsigned s_rank = 0; s_rank < _sol[s_v].size() - 1; ++s_rank) {
+    //     for (unsigned t_v = s_v + 1; t_v < _sol.size(); ++t_v) {
+    //       for (unsigned t_rank = 0; t_rank < _sol[t_v].size() - 1; ++t_rank)
+    //       {
+    //         cross_exchange r(_input, _sol, _amounts, s_v, s_rank, t_v,
+    //         t_rank);
+    //         if (r.gain() > 0 and r.is_valid()) {
+    //           r.log();
+    //           if (best_gain < r.gain()) {
+    //             best_gain = r.gain();
+    //             best_op =  std::make_unique<cross_exchange>(r);
+    //           }
+    //         }
+    //       }
+    //     }
+    //   }
+    // }
+
+    if (best_gain > 0) {
+      std::cout << "* Best operator choice" << std::endl;
+      best_op->log();
+
+      best_op->apply();
+
+      write_to_json(_input.format_solution(_sol),
+                    false,
+                    "ls_log_" + std::to_string(ls_step) + "_sol.json");
     }
   }
 }
