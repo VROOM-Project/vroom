@@ -118,7 +118,17 @@ bool or_opt::is_valid() const {
 }
 
 void or_opt::apply() const {
-  // TODO
+  auto mv_amount = _input._jobs[_sol[source_vehicle][source_rank]].amount +
+                   _input._jobs[_sol[source_vehicle][source_rank + 1]].amount;
+
+  _amounts[target_vehicle] += mv_amount;
+  _amounts[source_vehicle] -= mv_amount;
+
+  _sol[target_vehicle].insert(_sol[target_vehicle].begin() + target_rank,
+                              _sol[source_vehicle].begin() + source_rank,
+                              _sol[source_vehicle].begin() + source_rank + 2);
+  _sol[source_vehicle].erase(_sol[source_vehicle].begin() + source_rank,
+                             _sol[source_vehicle].begin() + source_rank + 2);
 }
 
 void or_opt::log() const {

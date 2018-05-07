@@ -116,7 +116,16 @@ bool exchange::is_valid() const {
 }
 
 void exchange::apply() const {
-  // TODO
+  auto& s_amount = _input._jobs[_sol[source_vehicle][source_rank]].amount;
+  auto& t_amount = _input._jobs[_sol[target_vehicle][target_rank]].amount;
+
+  auto s_t_amount = t_amount - s_amount;
+
+  _amounts[source_vehicle] += s_t_amount;
+  _amounts[target_vehicle] -= s_t_amount;
+
+  std::swap(_sol[source_vehicle][source_rank],
+            _sol[target_vehicle][target_rank]);
 }
 
 void exchange::log() const {
