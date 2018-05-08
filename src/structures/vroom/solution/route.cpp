@@ -7,7 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "./route.h"
+#include "structures/vroom/solution/route.h"
 
 route_t::route_t(ID_t vehicle, std::vector<step>&& steps, cost_t cost)
   : vehicle(vehicle),

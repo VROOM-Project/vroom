@@ -13,10 +13,10 @@ All rights reserved (see LICENSE).
 #include <set>
 
 
-#include "../../../algorithms/kruskal.h"
-#include "../../../algorithms/munkres.h"
+#include "algorithms/kruskal.h"
+#include "algorithms/munkres.h"
 
-#include "christofides.h"
+#include "problems/tsp/heuristics/christofides.h"
 
 std::list<index_t> christofides(const matrix<cost_t>& sym_matrix) {
   // The eulerian sub-graph further used is made of a minimum spanning

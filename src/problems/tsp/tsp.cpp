@@ -13,12 +13,12 @@ All rights reserved (see LICENSE).
 #include <boost/log/trivial.hpp>
 
 
-#include "../../structures/abstract/undirected_graph.h"
-#include "./heuristics/christofides.h"
-#include "./heuristics/local_search.h"
+#include "structures/abstract/undirected_graph.h"
+#include "problems/tsp/heuristics/christofides.h"
+#include "problems/tsp/heuristics/local_search.h"
 
 #include "tsp.h"
-#include "../../structures/vroom/input/input.h"
+#include "structures/vroom/input/input.h"
 
 tsp::tsp(const input& input,
          std::vector<index_t> job_ranks,

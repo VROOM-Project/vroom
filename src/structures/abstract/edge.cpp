@@ -8,7 +8,7 @@ All rights reserved (see LICENSE).
 */
 #include <algorithm>
 
-#include "edge.h"
+#include "structures/abstract/edge.h"
 
 template <class T>
 edge<T>::edge(index_t first_vertex, index_t second_vertex, T weight)

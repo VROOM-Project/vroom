@@ -12,11 +12,11 @@ All rights reserved (see LICENSE).
 #include <iostream>
 
 #include <boost/log/trivial.hpp>
-#include "../../include/rapidjson/stringbuffer.h"
-#include "../../include/rapidjson/writer.h"
-#include "./version.h"
+#include "../include/rapidjson/stringbuffer.h"
+#include "../include/rapidjson/writer.h"
+#include "utils/version.h"
 
-#include "output_json.h"
+#include "utils/output_json.h"
 
 rapidjson::Document to_json(const solution& sol, bool geometry) {
   rapidjson::Document json_output;

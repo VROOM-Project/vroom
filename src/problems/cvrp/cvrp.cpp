@@ -11,11 +11,11 @@ All rights reserved (see LICENSE).
 #include <thread>
 #include <boost/log/trivial.hpp>
 
-#include "../tsp/tsp.h"
-#include "./heuristics/clustering.h"
+#include "problems/tsp/tsp.h"
+#include "problems/cvrp/heuristics/clustering.h"
 
-#include "cvrp.h"
-#include "../../structures/vroom/input/input.h"
+#include "problems/cvrp/cvrp.h"
+#include "structures/vroom/input/input.h"
 
 cvrp::cvrp(const input& input) : vrp(input) {
 }

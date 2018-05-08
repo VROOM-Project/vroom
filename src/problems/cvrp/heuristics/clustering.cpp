@@ -9,7 +9,7 @@ All rights reserved (see LICENSE).
 #include <algorithm>
 #include <unordered_set>
 
-#include "clustering.h"
+#include "problems/cvrp/heuristics/clustering.h"
 #include <boost/log/trivial.hpp>
 
 clustering::clustering(const input& input, CLUSTERING_T t, INIT_T i, double c)

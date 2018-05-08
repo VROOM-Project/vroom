@@ -12,17 +12,17 @@ All rights reserved (see LICENSE).
 #include <boost/log/trivial.hpp>
 
 
-#include "../../../problems/cvrp/cvrp.h"
-#include "../../../problems/tsp/tsp.h"
+#include "problems/cvrp/cvrp.h"
+#include "problems/tsp/tsp.h"
 
-#include "../../../routing/routed_wrapper.h"
+#include "routing/routed_wrapper.h"
 
 #if LIBOSRM
-#include "../../../routing/libosrm_wrapper.h"
+#include "routing/libosrm_wrapper.h"
 #endif
 
-#include "./input.h"
-#include "../../../problems/vrp.h"
+#include "structures/vroom/input/input.h"
+#include "problems/vrp.h"
 
 input::input(std::unique_ptr<routing_io<cost_t>> routing_wrapper, bool geometry)
   : _start_loading(std::chrono::high_resolution_clock::now()),
