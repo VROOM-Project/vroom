@@ -12,9 +12,9 @@ All rights reserved (see LICENSE).
 
 #include <vector>
 
-#include "../../../structures/vroom/amount.h"
-#include "../../../structures/vroom/input/input.h"
-#include "../../../structures/vroom/job.h"
+#include "structures/vroom/amount.h"
+#include "structures/vroom/input/input.h"
+#include "structures/vroom/job.h"
 
 // Clustering types.
 enum class CLUSTERING_T { PARALLEL, SEQUENTIAL };

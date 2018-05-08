@@ -10,7 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "../vrp.h"
+#include "problems/vrp.h"
 
 class cvrp : public vrp {
 private:

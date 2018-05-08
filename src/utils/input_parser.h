@@ -10,8 +10,8 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "../structures/typedefs.h"
-#include "../structures/vroom/input/input.h"
+#include "structures/typedefs.h"
+#include "structures/vroom/input/input.h"
 
 struct cl_args_t;
 

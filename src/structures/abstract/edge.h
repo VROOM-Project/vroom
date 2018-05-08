@@ -11,7 +11,7 @@ All rights reserved (see LICENSE).
 */
 
 
-#include "../typedefs.h"
+#include "structures/typedefs.h"
 
 template <class T> class edge {
 

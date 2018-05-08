@@ -10,9 +10,9 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "../job.h"
-#include "./route.h"
-#include "./summary.h"
+#include "structures/vroom/job.h"
+#include "structures/vroom/solution/route.h"
+#include "structures/vroom/solution/summary.h"
 
 struct solution {
   unsigned code;

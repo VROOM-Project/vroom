@@ -10,7 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "../structures/typedefs.h"
+#include "structures/typedefs.h"
 
 class input;
 

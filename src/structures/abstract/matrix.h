@@ -13,7 +13,7 @@ All rights reserved (see LICENSE).
 #include <initializer_list>
 #include <vector>
 
-#include "../typedefs.h"
+#include "structures/typedefs.h"
 
 template <class T> class line : private std::vector<T> {
 

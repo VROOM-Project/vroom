@@ -10,10 +10,10 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "../../utils/exceptions.h"
-#include "../typedefs.h"
-#include "./amount.h"
-#include "./location.h"
+#include "utils/exceptions.h"
+#include "structures/typedefs.h"
+#include "structures/vroom/amount.h"
+#include "structures/vroom/location.h"
 
 struct vehicle_t {
   const ID_t id;

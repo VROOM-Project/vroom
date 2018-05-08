@@ -10,7 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "./osrm_wrapper.h"
+#include "routing/osrm_wrapper.h"
 
 class routed_wrapper : public osrm_wrapper {
 

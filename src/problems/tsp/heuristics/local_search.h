@@ -13,8 +13,8 @@ All rights reserved (see LICENSE).
 #include <list>
 #include <vector>
 
-#include "../../../structures/abstract/matrix.h"
-#include "../../../structures/typedefs.h"
+#include "structures/abstract/matrix.h"
+#include "structures/typedefs.h"
 
 class local_search {
 private:

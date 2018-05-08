@@ -12,8 +12,8 @@ All rights reserved (see LICENSE).
 
 #include <string>
 
-#include "../../include/rapidjson/document.h"
-#include "../structures/vroom/solution/solution.h"
+#include "../include/rapidjson/document.h"
+#include "structures/vroom/solution/solution.h"
 
 rapidjson::Document to_json(const solution& sol, bool geometry);
 

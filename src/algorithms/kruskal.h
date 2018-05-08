@@ -10,7 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "../structures/abstract/undirected_graph.h"
+#include "structures/abstract/undirected_graph.h"
 
 template <class T>
 undirected_graph<T> minimum_spanning_tree(const undirected_graph<T>& graph);

@@ -13,7 +13,7 @@ All rights reserved (see LICENSE).
 #include "osrm/osrm.hpp"
 #include "osrm/engine_config.hpp"
 
-#include "./osrm_wrapper.h"
+#include "routing/osrm_wrapper.h"
 
 class libosrm_wrapper : public osrm_wrapper {
 

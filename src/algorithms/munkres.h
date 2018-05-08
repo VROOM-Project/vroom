@@ -12,8 +12,8 @@ All rights reserved (see LICENSE).
 
 #include <unordered_map>
 
-#include "../structures/typedefs.h"
-#include "../structures/abstract/matrix.h"
+#include "structures/typedefs.h"
+#include "structures/abstract/matrix.h"
 
 template <class T>
 std::unordered_map<index_t, index_t>

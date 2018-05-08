@@ -12,7 +12,7 @@ All rights reserved (see LICENSE).
 
 #include <vector>
 
-#include "../typedefs.h"
+#include "structures/typedefs.h"
 
 class amount_t : private std::vector<capacity_t> {
 
