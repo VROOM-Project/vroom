@@ -7,7 +7,13 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "./routed_wrapper.h"
+#include "../include/rapidjson/document.h"
+#include "../include/rapidjson/error/en.h"
+#include <boost/asio.hpp>
+
+#include "routing/routed_wrapper.h"
+
+using boost::asio::ip::tcp;
 
 routed_wrapper::routed_wrapper(const std::string& address,
                                const std::string& port,

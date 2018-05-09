@@ -10,8 +10,8 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "../structures/typedefs.h"
-#include "./exceptions.h"
+#include "structures/typedefs.h"
+#include "utils/exceptions.h"
 
 inline cost_t add_without_overflow(cost_t a, cost_t b) {
   if (a > std::numeric_limits<cost_t>::max() - b) {

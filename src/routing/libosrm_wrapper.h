@@ -10,15 +10,10 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "osrm/coordinate.hpp"
 #include "osrm/engine_config.hpp"
-#include "osrm/json_container.hpp"
 #include "osrm/osrm.hpp"
-#include "osrm/route_parameters.hpp"
-#include "osrm/status.hpp"
-#include "osrm/table_parameters.hpp"
 
-#include "./osrm_wrapper.h"
+#include "routing/osrm_wrapper.h"
 
 class libosrm_wrapper : public osrm_wrapper {
 

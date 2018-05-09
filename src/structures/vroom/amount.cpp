@@ -7,7 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "amount.h"
+#include "structures/vroom/amount.h"
 
 amount_t::amount_t() : parent() {
 }

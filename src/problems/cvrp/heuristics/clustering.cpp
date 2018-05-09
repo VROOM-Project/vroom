@@ -6,7 +6,13 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "clustering.h"
+#include <algorithm>
+#include <unordered_set>
+
+#include <boost/log/trivial.hpp>
+
+#include "problems/cvrp/heuristics/clustering.h"
+#include "structures/vroom/amount.h"
 
 clustering::clustering(const input& input, CLUSTERING_T t, INIT_T i, double c)
   : input_ref(input),

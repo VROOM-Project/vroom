@@ -7,7 +7,13 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "./kruskal.h"
+#include <algorithm>
+#include <numeric>
+#include <vector>
+
+#include "algorithms/kruskal.h"
+#include "structures/abstract/edge.h"
+#include "structures/typedefs.h"
 
 template <class T>
 undirected_graph<T> minimum_spanning_tree(const undirected_graph<T>& graph) {

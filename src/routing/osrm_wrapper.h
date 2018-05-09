@@ -12,10 +12,9 @@ All rights reserved (see LICENSE).
 
 #include <vector>
 
-#include "../../include/rapidjson/error/en.h"
-#include "../structures/abstract/matrix.h"
-#include "../utils/exceptions.h"
-#include "./routing_io.h"
+#include "routing/routing_io.h"
+#include "structures/abstract/matrix.h"
+#include "utils/exceptions.h"
 
 class osrm_wrapper : public routing_io<cost_t> {
 

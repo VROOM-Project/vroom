@@ -7,7 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "location.h"
+#include "structures/vroom/location.h"
 
 location_t::location_t(index_t index)
   : _index(index), _coords(boost::none), _user_index(true) {

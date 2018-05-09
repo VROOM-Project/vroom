@@ -10,11 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <boost/asio.hpp>
-
-#include "./osrm_wrapper.h"
-
-using boost::asio::ip::tcp;
+#include "routing/osrm_wrapper.h"
 
 class routed_wrapper : public osrm_wrapper {
 

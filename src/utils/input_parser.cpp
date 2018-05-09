@@ -7,7 +7,21 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "./input_parser.h"
+#include <array>
+#include <vector>
+
+#include "../include/rapidjson/document.h"
+#include "../include/rapidjson/error/en.h"
+
+#include "routing/routed_wrapper.h"
+#include "structures/abstract/matrix.h"
+#include "structures/cl_args.h"
+#include "structures/typedefs.h"
+#include "structures/vroom/amount.h"
+#include "structures/vroom/job.h"
+#include "structures/vroom/vehicle.h"
+#include "utils/exceptions.h"
+#include "utils/input_parser.h"
 
 // Helper to get optional array of coordinates.
 inline coords_t parse_coordinates(const rapidjson::Value& object,

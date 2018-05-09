@@ -10,28 +10,18 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <array>
 #include <chrono>
+#include <memory>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
-#include <boost/optional.hpp>
-
-#include "../../../problems/cvrp/cvrp.h"
-#include "../../../problems/tsp/tsp.h"
-#include "../../../routing/routed_wrapper.h"
-#include "../../../routing/routing_io.h"
-#include "../../../utils/exceptions.h"
-#include "../../../utils/helpers.h"
-#include "../../abstract/matrix.h"
-#include "../../typedefs.h"
-#include "../job.h"
-#include "../solution/solution.h"
-#include "../vehicle.h"
-#if LIBOSRM
-#include "../../../routing/libosrm_wrapper.h"
-#endif
+#include "routing/routing_io.h"
+#include "structures/abstract/matrix.h"
+#include "structures/typedefs.h"
+#include "structures/vroom/job.h"
+#include "structures/vroom/solution/solution.h"
+#include "structures/vroom/vehicle.h"
 
 class vrp;
 

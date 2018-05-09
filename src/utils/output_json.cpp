@@ -7,7 +7,16 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "output_json.h"
+#include <chrono>
+#include <fstream>
+#include <iostream>
+
+#include "../include/rapidjson/stringbuffer.h"
+#include "../include/rapidjson/writer.h"
+#include <boost/log/trivial.hpp>
+
+#include "utils/output_json.h"
+#include "utils/version.h"
 
 rapidjson::Document to_json(const solution& sol, bool geometry) {
   rapidjson::Document json_output;

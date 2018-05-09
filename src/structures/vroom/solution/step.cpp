@@ -7,7 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "step.h"
+#include "structures/vroom/solution/step.h"
 
 // Dummy initialization value for unused job id.
 step::step(TYPE type, location_t location)

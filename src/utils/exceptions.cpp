@@ -7,7 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "exceptions.h"
+#include "utils/exceptions.h"
 
 custom_exception::custom_exception(const std::string message)
   : _message(message) {

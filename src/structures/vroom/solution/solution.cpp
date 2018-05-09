@@ -7,7 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "solution.h"
+#include "structures/vroom/solution/solution.h"
 
 solution::solution(unsigned code, std::string error)
   : code(code), error(error), summary(0, 0) {

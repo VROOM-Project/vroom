@@ -12,7 +12,7 @@ All rights reserved (see LICENSE).
 
 #include <vector>
 
-#include "./step.h"
+#include "structures/vroom/solution/step.h"
 
 struct route_t {
   const ID_t vehicle;

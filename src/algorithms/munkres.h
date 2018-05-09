@@ -10,14 +10,10 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <cassert>
-#include <limits>
-#include <list>
-#include <set>
 #include <unordered_map>
 
-#include "../structures/abstract/edge.h"
-#include "../structures/abstract/matrix.h"
+#include "structures/abstract/matrix.h"
+#include "structures/typedefs.h"
 
 template <class T>
 std::unordered_map<index_t, index_t>

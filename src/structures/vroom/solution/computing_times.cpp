@@ -7,7 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "computing_times.h"
+#include "structures/vroom/solution/computing_times.h"
 
 computing_times_t::computing_times_t() : loading(0), solving(0), routing(0) {
 }

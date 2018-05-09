@@ -10,18 +10,10 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <chrono>
-#include <fstream>
-#include <iostream>
 #include <string>
 
-#include <boost/log/trivial.hpp>
-
-#include "../../include/rapidjson/document.h"
-#include "../../include/rapidjson/stringbuffer.h"
-#include "../../include/rapidjson/writer.h"
-#include "../structures/vroom/solution/solution.h"
-#include "./version.h"
+#include "../include/rapidjson/document.h"
+#include "structures/vroom/solution/solution.h"
 
 rapidjson::Document to_json(const solution& sol, bool geometry);
 

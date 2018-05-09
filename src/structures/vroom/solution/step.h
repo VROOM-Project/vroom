@@ -10,8 +10,8 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "../job.h"
-#include "../location.h"
+#include "structures/vroom/job.h"
+#include "structures/vroom/location.h"
 
 struct step {
   const TYPE type;

@@ -7,7 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "matrix.h"
+#include "structures/abstract/matrix.h"
 
 template <class T> line<T>::line(std::size_t n) : parent(n) {
 }

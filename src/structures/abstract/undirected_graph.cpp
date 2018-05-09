@@ -6,8 +6,9 @@ Copyright (c) 2015-2018, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
+#include <cassert>
 
-#include "undirected_graph.h"
+#include "structures/abstract/undirected_graph.h"
 
 template <class T> undirected_graph<T>::undirected_graph() {
 }

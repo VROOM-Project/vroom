@@ -7,7 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "version.h"
+#include "utils/version.h"
 
 std::string get_version() {
   std::string version = std::to_string(MAJOR) + "." + std::to_string(MINOR) +

@@ -17,12 +17,14 @@ All rights reserved (see LICENSE).
 #include <boost/log/utility/setup/common_attributes.hpp>
 #include <boost/log/utility/setup/console.hpp>
 
-#include "./problems/vrp.h"
-#include "./structures/typedefs.h"
-#include "./structures/vroom/input/input.h"
-#include "./utils/input_parser.h"
-#include "./utils/output_json.h"
-#include "./utils/version.h"
+#include "problems/vrp.h"
+#include "structures/cl_args.h"
+#include "structures/typedefs.h"
+#include "structures/vroom/input/input.h"
+#include "utils/exceptions.h"
+#include "utils/input_parser.h"
+#include "utils/output_json.h"
+#include "utils/version.h"
 
 void display_usage() {
   std::string usage = "VROOM Copyright (C) 2015-2018, Julien Coupey\n";

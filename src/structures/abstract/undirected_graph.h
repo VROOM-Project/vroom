@@ -10,13 +10,12 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <cassert>
 #include <list>
 #include <unordered_map>
 #include <vector>
 
-#include "edge.h"
-#include "matrix.h"
+#include "structures/abstract/edge.h"
+#include "structures/abstract/matrix.h"
 
 template <class T> class undirected_graph {
 

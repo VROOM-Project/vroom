@@ -10,7 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "../typedefs.h"
+#include "structures/typedefs.h"
 
 class location_t {
 private:

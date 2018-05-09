@@ -7,7 +7,13 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "local_search.h"
+#include <numeric>
+#include <thread>
+#include <unordered_map>
+
+#include <boost/log/trivial.hpp>
+
+#include "problems/tsp/heuristics/local_search.h"
 
 local_search::local_search(const matrix<cost_t>& matrix,
                            bool is_symmetric_matrix,
