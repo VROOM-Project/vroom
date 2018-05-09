@@ -12,7 +12,6 @@ All rights reserved (see LICENSE).
 
 #include <vector>
 
-#include "structures/vroom/amount.h"
 #include "structures/vroom/input/input.h"
 #include "structures/vroom/job.h"
 

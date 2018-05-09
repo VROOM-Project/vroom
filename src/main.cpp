@@ -21,6 +21,7 @@ All rights reserved (see LICENSE).
 #include "structures/typedefs.h"
 #include "structures/cl_args.h"
 #include "structures/vroom/input/input.h"
+#include "utils/exceptions.h"
 #include "utils/input_parser.h"
 #include "utils/output_json.h"
 #include "utils/version.h"
