@@ -258,8 +258,10 @@ void clustering::parallel_clustering() {
       }
 
       // Consider best job candidate for current cluster.
-      std::nth_element(candidates[v].begin(), candidates[v].end() - 1,
-              candidates[v].end(), eval_lambda(v));
+      std::nth_element(candidates[v].begin(),
+                       candidates[v].end() - 1,
+                       candidates[v].end(),
+                       eval_lambda(v));
 
       auto current_j = candidates[v].back();
       if (jobs[current_j].amount <= capacities[v] and
@@ -495,7 +497,10 @@ void clustering::sequential_clustering() {
     };
 
     while (!candidates.empty()) {
-      std::nth_element(candidates.begin(), candidates.end() - 1, candidates.end(), eval_lambda);
+      std::nth_element(candidates.begin(),
+                       candidates.end() - 1,
+                       candidates.end(),
+                       eval_lambda);
 
       auto current_j = candidates.back();
 
