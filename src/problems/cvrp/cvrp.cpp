@@ -9,12 +9,12 @@ All rights reserved (see LICENSE).
 
 #include <mutex>
 #include <thread>
+
 #include <boost/log/trivial.hpp>
 
-#include "problems/tsp/tsp.h"
-#include "problems/cvrp/heuristics/clustering.h"
-
 #include "problems/cvrp/cvrp.h"
+#include "problems/cvrp/heuristics/clustering.h"
+#include "problems/tsp/tsp.h"
 #include "structures/vroom/input/input.h"
 
 cvrp::cvrp(const input& input) : vrp(input) {

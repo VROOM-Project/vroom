@@ -10,8 +10,8 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "osrm/osrm.hpp"
 #include "osrm/engine_config.hpp"
+#include "osrm/osrm.hpp"
 
 #include "routing/osrm_wrapper.h"
 

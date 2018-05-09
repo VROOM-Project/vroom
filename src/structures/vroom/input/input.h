@@ -11,10 +11,10 @@ All rights reserved (see LICENSE).
 */
 
 #include <chrono>
+#include <memory>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-#include <memory>
 
 #include "routing/routing_io.h"
 #include "structures/abstract/matrix.h"

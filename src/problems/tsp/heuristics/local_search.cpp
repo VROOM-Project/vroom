@@ -8,8 +8,9 @@ All rights reserved (see LICENSE).
 */
 
 #include <numeric>
-#include <unordered_map>
 #include <thread>
+#include <unordered_map>
+
 #include <boost/log/trivial.hpp>
 
 #include "problems/tsp/heuristics/local_search.h"

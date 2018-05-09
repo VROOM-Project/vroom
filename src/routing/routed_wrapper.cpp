@@ -6,13 +6,14 @@ Copyright (c) 2015-2018, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
-#include <boost/asio.hpp>
-using boost::asio::ip::tcp;
 
 #include "../include/rapidjson/document.h"
 #include "../include/rapidjson/error/en.h"
+#include <boost/asio.hpp>
 
 #include "routing/routed_wrapper.h"
+
+using boost::asio::ip::tcp;
 
 routed_wrapper::routed_wrapper(const std::string& address,
                                const std::string& port,

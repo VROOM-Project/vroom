@@ -10,10 +10,9 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "structures/typedefs.h"
-#include "structures/abstract/matrix.h"
-
 #include "problems/vrp.h"
+#include "structures/abstract/matrix.h"
+#include "structures/typedefs.h"
 
 class tsp : public vrp {
 private:

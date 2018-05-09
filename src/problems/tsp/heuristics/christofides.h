@@ -11,8 +11,9 @@ All rights reserved (see LICENSE).
 */
 
 #include <list>
-#include "structures/typedefs.h"
+
 #include "structures/abstract/matrix.h"
+#include "structures/typedefs.h"
 
 // Implementing a variant of the Christofides heuristic.
 std::list<index_t> christofides(const matrix<cost_t>& sym_matrix);

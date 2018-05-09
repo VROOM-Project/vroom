@@ -10,7 +10,6 @@ All rights reserved (see LICENSE).
 
 */
 
-
 #include "structures/typedefs.h"
 
 template <class T> class edge {

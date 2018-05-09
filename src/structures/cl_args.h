@@ -11,6 +11,7 @@ All rights reserved (see LICENSE).
 */
 
 #include <string>
+
 #include <boost/log/trivial.hpp>
 
 struct cl_args_t {
