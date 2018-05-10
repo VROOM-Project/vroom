@@ -6,11 +6,11 @@
 #include <boost/log/utility/setup/common_attributes.hpp>
 #include <boost/log/utility/setup/console.hpp>
 
-#include "../src/routing/routed_wrapper.h"
-#include "../src/structures/vroom/input/input.h"
-#include "../src/structures/vroom/job.h"
-#include "../src/structures/vroom/vehicle.h"
-#include "../src/utils/exceptions.h"
+#include "routing/routed_wrapper.h"
+#include "structures/vroom/input/input.h"
+#include "structures/vroom/job.h"
+#include "structures/vroom/vehicle.h"
+#include "utils/exceptions.h"
 
 void log_solution(const solution& sol, bool geometry) {
   std::cout << "Total cost: " << sol.summary.cost << std::endl;
