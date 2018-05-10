@@ -14,10 +14,6 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/cvrp.h"
 #include "problems/tsp/tsp.h"
 #include "problems/vrp.h"
-#if LIBOSRM
-#include "routing/libosrm_wrapper.h"
-#endif
-#include "routing/routed_wrapper.h"
 #include "structures/vroom/input/input.h"
 #include "utils/exceptions.h"
 #include "utils/helpers.h"

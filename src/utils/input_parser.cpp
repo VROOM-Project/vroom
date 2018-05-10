@@ -13,6 +13,9 @@ All rights reserved (see LICENSE).
 #include "../include/rapidjson/document.h"
 #include "../include/rapidjson/error/en.h"
 
+#if LIBOSRM
+#include "routing/libosrm_wrapper.h"
+#endif
 #include "routing/routed_wrapper.h"
 #include "structures/abstract/matrix.h"
 #include "structures/cl_args.h"
