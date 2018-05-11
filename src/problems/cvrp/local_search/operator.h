@@ -49,7 +49,7 @@ public:
   static std::vector<std::vector<gain_t>> edge_gains;
   static std::vector<index_t> edge_candidates;
 
-  gain_t gain() const;
+  gain_t gain();
 
   virtual bool is_valid() const = 0;
 
@@ -59,8 +59,6 @@ public:
 
   virtual ~ls_operator() {
   }
-
-  friend bool operator<(const ls_operator& lhs, const ls_operator& rhs);
 };
 
 #endif

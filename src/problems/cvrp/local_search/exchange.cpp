@@ -25,7 +25,6 @@ exchange::exchange(const input& input,
                 source_rank,
                 target_vehicle,
                 target_rank) {
-  this->compute_gain();
 }
 
 void exchange::compute_gain() {

@@ -25,7 +25,6 @@ or_opt::or_opt(const input& input,
                 source_rank,
                 target_vehicle,
                 target_rank) {
-  this->compute_gain();
 }
 
 void or_opt::compute_gain() {

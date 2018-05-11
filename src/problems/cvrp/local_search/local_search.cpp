@@ -190,7 +190,7 @@ void cvrp_local_search::run() {
       for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size(); ++t_rank) {
         relocate
           r(_input, _sol, _amounts, s_t.first, s_rank, s_t.second, t_rank);
-        if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid()) {
+        if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
           best_gains[s_t.first][s_t.second] = r.gain();
           best_ops[s_t.first][s_t.second] = std::make_unique<relocate>(r);
         }
@@ -206,7 +206,7 @@ void cvrp_local_search::run() {
       for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size(); ++t_rank) {
         exchange
           r(_input, _sol, _amounts, s_t.first, s_rank, s_t.second, t_rank);
-        if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid()) {
+        if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
           best_gains[s_t.first][s_t.second] = r.gain();
           best_ops[s_t.first][s_t.second] = std::make_unique<exchange>(r);
         }
@@ -226,7 +226,7 @@ void cvrp_local_search::run() {
       auto s_rank = ls_operator::edge_candidates[s_t.first];
       for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size(); ++t_rank) {
         or_opt r(_input, _sol, _amounts, s_t.first, s_rank, s_t.second, t_rank);
-        if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid()) {
+        if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
           best_gains[s_t.first][s_t.second] = r.gain();
           best_ops[s_t.first][s_t.second] = std::make_unique<or_opt>(r);
         }
@@ -243,7 +243,7 @@ void cvrp_local_search::run() {
            ++t_rank) {
         cross_exchange
           r(_input, _sol, _amounts, s_t.first, s_rank, s_t.second, t_rank);
-        if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid()) {
+        if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
           best_gains[s_t.first][s_t.second] = r.gain();
           best_ops[s_t.first][s_t.second] = std::make_unique<cross_exchange>(r);
         }

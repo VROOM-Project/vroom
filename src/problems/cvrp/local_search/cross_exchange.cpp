@@ -25,7 +25,6 @@ cross_exchange::cross_exchange(const input& input,
                 source_rank,
                 target_vehicle,
                 target_rank) {
-  this->compute_gain();
 }
 
 void cross_exchange::compute_gain() {

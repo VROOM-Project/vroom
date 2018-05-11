@@ -33,11 +33,9 @@ ls_operator::ls_operator(const input& input,
     gain_computed(false) {
 }
 
-gain_t ls_operator::gain() const {
-  assert(gain_computed);
+gain_t ls_operator::gain() {
+  if (!gain_computed) {
+    this->compute_gain();
+  }
   return stored_gain;
-}
-
-bool operator<(const ls_operator& lhs, const ls_operator& rhs) {
-  return lhs.gain() > rhs.gain();
 }

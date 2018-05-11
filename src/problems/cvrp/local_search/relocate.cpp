@@ -25,7 +25,6 @@ relocate::relocate(const input& input,
                 source_rank,
                 target_vehicle,
                 target_rank) {
-  this->compute_gain();
 }
 
 void relocate::compute_gain() {
