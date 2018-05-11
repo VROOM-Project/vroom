@@ -37,6 +37,18 @@ public:
               index_t target_vehicle,
               index_t target_rank);
 
+  // node_gains[v][i] stores potential gain when removing job at rank
+  // i in route for vehicle v. node_candidates[v] is the rank of the
+  // job that yields the biggest such gain for vehicle v.
+  static std::vector<std::vector<gain_t>> node_gains;
+  static std::vector<index_t> node_candidates;
+
+  // edge_gains[v][i] stores potential gain when removing jobs at rank
+  // i and i + 1 in route for vehicle v. edge_candidates[v] is the
+  // rank of the job that yields the biggest such gain for vehicle v.
+  static std::vector<std::vector<gain_t>> edge_gains;
+  static std::vector<index_t> edge_candidates;
+
   gain_t gain() const;
 
   virtual bool is_valid() const = 0;

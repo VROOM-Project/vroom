@@ -65,10 +65,6 @@ void cross_exchange::compute_gain() {
   gain_t g1 = static_cast<gain_t>(m[s_previous][s_current]) +
               m[s_after][s_next] - m[s_previous][t_current] -
               m[t_after][s_next];
-  BOOST_LOG_TRIVIAL(info) << m[s_previous][s_current] << " + "
-                          << m[s_after][s_next] << " - "
-                          << m[s_previous][t_current] << " - "
-                          << m[t_after][s_next] << " = " << g1;
 
   // For target vehicle, we consider replacing "t_previous -->
   // t_current --> t_after --> t_next" with "t_previous --> s_current
@@ -92,10 +88,6 @@ void cross_exchange::compute_gain() {
   gain_t g2 = static_cast<gain_t>(m[t_previous][t_current]) +
               m[t_after][t_next] - m[t_previous][s_current] -
               m[s_after][t_next];
-  BOOST_LOG_TRIVIAL(info) << m[t_previous][t_current] << " + "
-                          << m[t_after][t_next] << " - "
-                          << m[t_previous][s_current] << " - "
-                          << m[s_after][t_next] << " = " << g2;
 
   stored_gain = g1 + g2;
   gain_computed = true;

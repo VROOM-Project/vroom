@@ -18,7 +18,7 @@ All rights reserved (see LICENSE).
 index_t cvrp_local_search::previous_index(index_t route_rank,
                                           index_t job_rank) const {
   if (job_rank == 0) {
-    // Only deal with those cases for now.
+    // Don't handle open tours for now.
     assert(_input._vehicles[route_rank].has_start());
     return _input._vehicles[route_rank].start.get().index();
   } else {
@@ -29,6 +29,7 @@ index_t cvrp_local_search::previous_index(index_t route_rank,
 index_t cvrp_local_search::next_index(index_t route_rank,
                                       index_t job_rank) const {
   if (job_rank == _sol[route_rank].size() - 1) {
+    // Don't handle open tours for now.
     assert(_input._vehicles[route_rank].has_end());
     return _input._vehicles[route_rank].end.get().index();
   } else {
@@ -36,9 +37,11 @@ index_t cvrp_local_search::next_index(index_t route_rank,
   }
 }
 
-void cvrp_local_search::set_node_candidate(index_t v) {
+void cvrp_local_search::set_node_gains(index_t v) {
   auto m = _input.get_matrix();
   gain_t best_gain = std::numeric_limits<gain_t>::min();
+
+  ls_operator::node_gains[v] = std::vector<gain_t>(_sol[v].size());
   for (std::size_t i = 0; i < _sol[v].size(); ++i) {
     // Compute potential gain to relocate current job.
     index_t previous = previous_index(v, i);
@@ -54,18 +57,22 @@ void cvrp_local_search::set_node_candidate(index_t v) {
     gain_t current_gain =
       m[previous][current] + m[current][next] - new_edge_cost;
 
+    ls_operator::node_gains[v][i] = current_gain;
+
     if (current_gain > best_gain) {
       best_gain = current_gain;
-      _node_candidates[v] = i;
+      ls_operator::node_candidates[v] = i;
     }
   }
 }
 
-void cvrp_local_search::set_edge_candidate(index_t v) {
+void cvrp_local_search::set_edge_gains(index_t v) {
   auto m = _input.get_matrix();
   gain_t best_gain = std::numeric_limits<gain_t>::min();
 
   std::size_t nb_edges = (_sol[v].size() < 2) ? 0 : _sol[v].size() - 1;
+
+  ls_operator::edge_gains[v] = std::vector<gain_t>(nb_edges);
 
   for (std::size_t i = 0; i < nb_edges; ++i) {
     // Compute potential gain to relocate edge from current to next
@@ -76,7 +83,7 @@ void cvrp_local_search::set_edge_candidate(index_t v) {
     index_t next = next_index(v, i + 1);
 
     gain_t new_edge_cost = m[previous][next];
-    if (nb_edges == 2) {
+    if (nb_edges == 1) {
       // Trying to empty a route, so cost of start --> end without
       // job is not taken into account.
       new_edge_cost = 0;
@@ -84,9 +91,11 @@ void cvrp_local_search::set_edge_candidate(index_t v) {
     gain_t current_gain =
       m[previous][current] + m[after_current][next] - new_edge_cost;
 
+    ls_operator::edge_gains[v][i] = current_gain;
+
     if (current_gain > best_gain) {
       best_gain = current_gain;
-      _edge_candidates[v] = i;
+      ls_operator::edge_candidates[v] = i;
     }
   }
 }
@@ -94,9 +103,7 @@ void cvrp_local_search::set_edge_candidate(index_t v) {
 cvrp_local_search::cvrp_local_search(const input& input, raw_solution& sol)
   : _input(input),
     _sol(sol),
-    _amounts(sol.size(), amount_t(input.amount_size())),
-    _node_candidates(_input._vehicles.size()),
-    _edge_candidates(_input._vehicles.size()) {
+    _amounts(sol.size(), amount_t(input.amount_size())) {
 
   std::cout << "Amount lower bound: ";
   auto amount_lower_bound = _input.get_amount_lower_bound();
@@ -119,11 +126,18 @@ cvrp_local_search::cvrp_local_search(const input& input, raw_solution& sol)
     std::cout << std::endl;
   }
 
-  // Find best candidate for job pop in each route.
+  // Initialize storage and find best candidate for job/edge pop in
+  // each route.
   auto V = _input._vehicles.size();
+
+  ls_operator::node_gains = std::vector<std::vector<gain_t>>(V);
+  ls_operator::node_candidates = std::vector<index_t>(V);
+  ls_operator::edge_gains = std::vector<std::vector<gain_t>>(V);
+  ls_operator::edge_candidates = std::vector<index_t>(V);
+
   for (std::size_t v = 0; v < V; ++v) {
-    set_node_candidate(v);
-    set_edge_candidate(v);
+    set_node_gains(v);
+    set_edge_gains(v);
   }
 }
 
@@ -172,7 +186,7 @@ void cvrp_local_search::run() {
       if (_sol[s_t.first].size() == 0) {
         continue;
       }
-      auto s_rank = _node_candidates[s_t.first];
+      auto s_rank = ls_operator::node_candidates[s_t.first];
       for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size(); ++t_rank) {
         relocate
           r(_input, _sol, _amounts, s_t.first, s_rank, s_t.second, t_rank);
@@ -188,7 +202,7 @@ void cvrp_local_search::run() {
       if ((_sol[s_t.first].size() == 0) or (_sol[s_t.second].size() == 0)) {
         continue;
       }
-      auto s_rank = _node_candidates[s_t.first];
+      auto s_rank = ls_operator::node_candidates[s_t.first];
       for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size(); ++t_rank) {
         exchange
           r(_input, _sol, _amounts, s_t.first, s_rank, s_t.second, t_rank);
@@ -209,7 +223,7 @@ void cvrp_local_search::run() {
       if (_sol[s_t.first].size() < 2) {
         continue;
       }
-      auto s_rank = _edge_candidates[s_t.first];
+      auto s_rank = ls_operator::edge_candidates[s_t.first];
       for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size(); ++t_rank) {
         or_opt r(_input, _sol, _amounts, s_t.first, s_rank, s_t.second, t_rank);
         if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid()) {
@@ -224,7 +238,7 @@ void cvrp_local_search::run() {
       if ((_sol[s_t.first].size() < 2) or (_sol[s_t.second].size() < 2)) {
         continue;
       }
-      auto s_rank = _edge_candidates[s_t.first];
+      auto s_rank = ls_operator::edge_candidates[s_t.first];
       for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size() - 1;
            ++t_rank) {
         cross_exchange
@@ -269,10 +283,10 @@ void cvrp_local_search::run() {
       //               "ls_log_" + std::to_string(ls_step) + "_sol.json");
 
       // Update candidates.
-      set_node_candidate(best_source);
-      set_node_candidate(best_target);
-      set_edge_candidate(best_source);
-      set_edge_candidate(best_target);
+      set_node_gains(best_source);
+      set_node_gains(best_target);
+      set_edge_gains(best_source);
+      set_edge_gains(best_target);
 
       // Set gains to zero for what needs to be recomputed in the next round.
       s_t_pairs.clear();

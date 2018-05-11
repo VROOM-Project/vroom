@@ -11,6 +11,11 @@ All rights reserved (see LICENSE).
 
 #include "operator.h"
 
+std::vector<std::vector<gain_t>> ls_operator::node_gains;
+std::vector<index_t> ls_operator::node_candidates;
+std::vector<std::vector<gain_t>> ls_operator::edge_gains;
+std::vector<index_t> ls_operator::edge_candidates;
+
 ls_operator::ls_operator(const input& input,
                          raw_solution& sol,
                          std::vector<amount_t>& amounts,

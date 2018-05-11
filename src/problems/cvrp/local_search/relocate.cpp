@@ -35,41 +35,18 @@ void relocate::compute_gain() {
   assert(target_rank <= _sol[target_vehicle].size());
 
   auto m = _input.get_matrix();
-  const auto& v_source = _input._vehicles[source_vehicle];
   const auto& v_target = _input._vehicles[target_vehicle];
 
   // For source vehicle, we consider replacing "previous --> current
-  // --> next" with "previous --> next".
-  index_t current = _input._jobs[_sol[source_vehicle][source_rank]].index();
-  index_t previous;
-  if (source_rank == 0) {
-    assert(v_source.has_start());
-    previous = v_source.start.get().index();
-  } else {
-    previous = _input._jobs[_sol[source_vehicle][source_rank - 1]].index();
-  }
-  index_t next;
-  if (source_rank == _sol[source_vehicle].size() - 1) {
-    assert(v_source.has_end());
-    next = v_source.end.get().index();
-  } else {
-    next = _input._jobs[_sol[source_vehicle][source_rank + 1]].index();
-  }
-
-  // Gain for source vehicle.
-  gain_t new_edge_cost = m[previous][next];
-  if (_sol[source_vehicle].size() == 1) {
-    // Trying to empty a route, so cost of start --> end without job
-    // is not taken into account.
-    new_edge_cost = 0;
-  }
-  // Implicit cast to gain_t thanks to new_edge_cost.
-  gain_t g1 = m[previous][current] + m[current][next] - new_edge_cost;
-  BOOST_LOG_TRIVIAL(info) << m[previous][current] << " + " << m[current][next]
-                          << " - " << new_edge_cost << " = " << g1;
+  // --> next" with "previous --> next". This is already stored at
+  // node_gains[source_vehicle][source_rank].
 
   // For target vehicle, we consider replacing "previous --> next"
   // with "previous --> current --> next".
+  index_t current = _input._jobs[_sol[source_vehicle][source_rank]].index();
+  index_t previous;
+  index_t next;
+
   if (target_rank == 0) {
     assert(v_target.has_start());
     previous = v_target.start.get().index();
@@ -92,10 +69,8 @@ void relocate::compute_gain() {
   }
   // Implicit cast to gain_t thanks to old_edge_cost.
   gain_t g2 = old_edge_cost - m[previous][current] - m[current][next];
-  BOOST_LOG_TRIVIAL(info) << old_edge_cost << " - " << m[previous][current]
-                          << " - " << m[current][next] << " = " << g2;
 
-  stored_gain = g1 + g2;
+  stored_gain = node_gains[source_vehicle][source_rank] + g2;
   gain_computed = true;
 }
 
