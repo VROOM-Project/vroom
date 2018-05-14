@@ -19,8 +19,18 @@ class amount_t;
 class cvrp_local_search {
 private:
   const input& _input;
+  const std::size_t V;
   raw_solution& _sol;
   std::vector<amount_t> _amounts;
+  // _nearest_job_rank_in_routes_from[v1][v2][r1] stores the rank of
+  // job in route v2 that minimize cost from job at rank r1 in v1.
+  std::vector<std::vector<std::vector<index_t>>>
+    _nearest_job_rank_in_routes_from;
+  // _nearest_job_rank_in_routes_to[v1][v2][r1] stores the rank of job
+  // in route v2 that minimize cost to job at rank r1 in v1.
+  std::vector<std::vector<std::vector<index_t>>> _nearest_job_rank_in_routes_to;
+
+  void update_nearest_job_rank_in_routes(index_t v1, index_t v2);
 
   index_t previous_index(index_t route_rank, index_t job_rank) const;
   index_t next_index(index_t route_rank, index_t job_rank) const;

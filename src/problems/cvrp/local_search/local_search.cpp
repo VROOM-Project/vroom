@@ -100,10 +100,47 @@ void cvrp_local_search::set_edge_gains(index_t v) {
   }
 }
 
+void cvrp_local_search::update_nearest_job_rank_in_routes(index_t v1,
+                                                          index_t v2) {
+  _nearest_job_rank_in_routes_from[v1][v2] =
+    std::vector<index_t>(_sol[v1].size());
+  _nearest_job_rank_in_routes_to[v1][v2] =
+    std::vector<index_t>(_sol[v1].size());
+
+  auto m = _input.get_matrix();
+
+  for (std::size_t r1 = 0; r1 < _sol[v1].size(); ++r1) {
+    index_t index_r1 = _input._jobs[_sol[v1][r1]].index();
+
+    auto min_from = std::numeric_limits<cost_t>::max();
+    auto min_to = std::numeric_limits<cost_t>::max();
+    index_t best_from_rank = 0;
+    index_t best_to_rank = 0;
+
+    for (std::size_t r2 = 0; r2 < _sol[v2].size(); ++r2) {
+      index_t index_r2 = _input._jobs[_sol[v2][r2]].index();
+      if (m[index_r1][index_r2] < min_from) {
+        min_from = m[index_r1][index_r2];
+        best_from_rank = r2;
+      }
+      if (m[index_r2][index_r1] < min_to) {
+        min_to = m[index_r2][index_r1];
+        best_to_rank = r2;
+      }
+    }
+
+    _nearest_job_rank_in_routes_from[v1][v2][r1] = best_from_rank;
+    _nearest_job_rank_in_routes_to[v1][v2][r1] = best_to_rank;
+  }
+}
+
 cvrp_local_search::cvrp_local_search(const input& input, raw_solution& sol)
   : _input(input),
+    V(_input._vehicles.size()),
     _sol(sol),
-    _amounts(sol.size(), amount_t(input.amount_size())) {
+    _amounts(sol.size(), amount_t(input.amount_size())),
+    _nearest_job_rank_in_routes_from(V, std::vector<std::vector<index_t>>(V)),
+    _nearest_job_rank_in_routes_to(V, std::vector<std::vector<index_t>>(V)) {
 
   std::cout << "Amount lower bound: ";
   auto amount_lower_bound = _input.get_amount_lower_bound();
@@ -128,8 +165,6 @@ cvrp_local_search::cvrp_local_search(const input& input, raw_solution& sol)
 
   // Initialize storage and find best candidate for job/edge pop in
   // each route.
-  auto V = _input._vehicles.size();
-
   ls_operator::node_gains = std::vector<std::vector<gain_t>>(V);
   ls_operator::node_candidates = std::vector<index_t>(V);
   ls_operator::edge_gains = std::vector<std::vector<gain_t>>(V);
@@ -139,6 +174,14 @@ cvrp_local_search::cvrp_local_search(const input& input, raw_solution& sol)
     set_node_gains(v);
     set_edge_gains(v);
   }
+
+  // Store nearest job from and to any job in any route for constant
+  // time access down the line.
+  for (std::size_t v1 = 0; v1 < V; ++v1) {
+    for (std::size_t v2 = 0; v2 < V; ++v2) {
+      update_nearest_job_rank_in_routes(v1, v2);
+    }
+  }
 }
 
 void cvrp_local_search::run() {
@@ -147,7 +190,6 @@ void cvrp_local_search::run() {
   auto amount_lower_bound = _input.get_amount_lower_bound();
   auto double_amount_lower_bound = amount_lower_bound + amount_lower_bound;
 
-  auto V = _input._vehicles.size();
   std::vector<std::vector<std::unique_ptr<ls_operator>>> best_ops(V);
   for (std::size_t v = 0; v < V; ++v) {
     best_ops[v] = std::vector<std::unique_ptr<ls_operator>>(V);
@@ -293,19 +335,29 @@ void cvrp_local_search::run() {
       best_gains[best_source] = std::vector<gain_t>(V, 0);
       best_gains[best_target] = std::vector<gain_t>(V, 0);
 
+      s_t_pairs.emplace_back(best_source, best_target);
+      s_t_pairs.emplace_back(best_target, best_source);
+
+      update_nearest_job_rank_in_routes(best_source, best_target);
+      update_nearest_job_rank_in_routes(best_target, best_source);
+
       for (unsigned v = 0; v < V; ++v) {
-        if (v != best_source) {
-          s_t_pairs.emplace_back(best_source, v);
-          s_t_pairs.emplace_back(v, best_source);
-          best_gains[v][best_source] = 0;
-          best_gains[best_source][v] = 0;
+        if (v == best_source or v == best_target) {
+          continue;
         }
-        if (v != best_target) {
-          s_t_pairs.emplace_back(best_target, v);
-          s_t_pairs.emplace_back(v, best_target);
-          best_gains[v][best_target] = 0;
-          best_gains[best_target][v] = 0;
-        }
+        s_t_pairs.emplace_back(best_source, v);
+        s_t_pairs.emplace_back(v, best_source);
+        best_gains[v][best_source] = 0;
+        best_gains[best_source][v] = 0;
+        update_nearest_job_rank_in_routes(best_source, v);
+        update_nearest_job_rank_in_routes(v, best_source);
+
+        s_t_pairs.emplace_back(best_target, v);
+        s_t_pairs.emplace_back(v, best_target);
+        best_gains[v][best_target] = 0;
+        best_gains[best_target][v] = 0;
+        update_nearest_job_rank_in_routes(best_target, v);
+        update_nearest_job_rank_in_routes(v, best_target);
       }
     }
   }
