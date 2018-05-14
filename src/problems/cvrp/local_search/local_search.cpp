@@ -8,6 +8,7 @@ All rights reserved (see LICENSE).
 */
 
 #include <iostream>
+#include <unordered_set>
 
 #include "cross_exchange.h"
 #include "exchange.h"
@@ -230,31 +231,27 @@ void cvrp_local_search::run() {
       }
       auto s_rank = ls_operator::node_candidates[s_t.first];
 
+      std::unordered_set<index_t> t_ranks;
+
       // Candidate for relocate: put chosen job *before* the nearest
       // "from" job in target route.
-      auto t_rank =
-        _nearest_job_rank_in_routes_from[s_t.first][s_t.second][s_rank];
-
-      relocate
-        r_from(_input, _sol, _amounts, s_t.first, s_rank, s_t.second, t_rank);
-      if (r_from.is_valid() and
-          r_from.gain() > best_gains[s_t.first][s_t.second]) {
-        best_gains[s_t.first][s_t.second] = r_from.gain();
-        best_ops[s_t.first][s_t.second] = std::make_unique<relocate>(r_from);
-      }
+      t_ranks.insert(
+        _nearest_job_rank_in_routes_from[s_t.first][s_t.second][s_rank]);
 
       // Candidate for relocate: put chosen job *after* the nearest
       // "to" job in target route (or at 0 in an empty route).
       auto nearest_to_rank =
         _nearest_job_rank_in_routes_to[s_t.first][s_t.second][s_rank];
 
-      t_rank = (_sol[s_t.second].size() == 0) ? 0 : nearest_to_rank + 1;
+      t_ranks.insert((_sol[s_t.second].size() == 0) ? 0 : nearest_to_rank + 1);
 
-      relocate
-        r_to(_input, _sol, _amounts, s_t.first, s_rank, s_t.second, t_rank);
-      if (r_to.is_valid() and r_to.gain() > best_gains[s_t.first][s_t.second]) {
-        best_gains[s_t.first][s_t.second] = r_to.gain();
-        best_ops[s_t.first][s_t.second] = std::make_unique<relocate>(r_to);
+      for (const index_t t_rank : t_ranks) {
+        relocate
+          r(_input, _sol, _amounts, s_t.first, s_rank, s_t.second, t_rank);
+        if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
+          best_gains[s_t.first][s_t.second] = r.gain();
+          best_ops[s_t.first][s_t.second] = std::make_unique<relocate>(r);
+        }
       }
     }
 
@@ -265,33 +262,21 @@ void cvrp_local_search::run() {
       }
       auto s_rank = ls_operator::node_candidates[s_t.first];
 
+      std::unordered_set<index_t> t_ranks;
+
       // Use proximity to surrounding jobs in source route.
       if (s_rank > 0) {
         // Exchange chosen job with the one in target route that is
         // the closest from previous job in source route.
-        auto t_rank =
-          _nearest_job_rank_in_routes_from[s_t.first][s_t.second][s_rank - 1];
-
-        exchange
-          r(_input, _sol, _amounts, s_t.first, s_rank, s_t.second, t_rank);
-        if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
-          best_gains[s_t.first][s_t.second] = r.gain();
-          best_ops[s_t.first][s_t.second] = std::make_unique<exchange>(r);
-        }
+        t_ranks.insert(
+          _nearest_job_rank_in_routes_from[s_t.first][s_t.second][s_rank - 1]);
       }
 
       if (s_rank < _sol[s_t.first].size() - 1) {
         // Exchange chosen job with the one in target route that is
         // the closest to next job in source route.
-        auto t_rank =
-          _nearest_job_rank_in_routes_to[s_t.first][s_t.second][s_rank + 1];
-
-        exchange
-          r(_input, _sol, _amounts, s_t.first, s_rank, s_t.second, t_rank);
-        if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
-          best_gains[s_t.first][s_t.second] = r.gain();
-          best_ops[s_t.first][s_t.second] = std::make_unique<exchange>(r);
-        }
+        t_ranks.insert(
+          _nearest_job_rank_in_routes_to[s_t.first][s_t.second][s_rank + 1]);
       }
 
       // Use proximity to surrounding candidates in target route.
@@ -302,30 +287,24 @@ void cvrp_local_search::run() {
       auto nearest_from_rank =
         _nearest_job_rank_in_routes_from[s_t.first][s_t.second][s_rank];
 
-      auto t_rank = (nearest_from_rank == 0) ? 0 : nearest_from_rank - 1;
-
-      exchange
-        r_from(_input, _sol, _amounts, s_t.first, s_rank, s_t.second, t_rank);
-      if (r_from.is_valid() and
-          r_from.gain() > best_gains[s_t.first][s_t.second]) {
-        best_gains[s_t.first][s_t.second] = r_from.gain();
-        best_ops[s_t.first][s_t.second] = std::make_unique<exchange>(r_from);
-      }
+      t_ranks.insert((nearest_from_rank == 0) ? 0 : nearest_from_rank - 1);
 
       // Exchange chosen job with the one in target route that is
       // *after* the closest to chosen job (or last if none is after).
       auto nearest_to_rank =
         _nearest_job_rank_in_routes_to[s_t.first][s_t.second][s_rank];
 
-      t_rank = (nearest_to_rank == _sol[s_t.second].size() - 1)
-                 ? nearest_to_rank
-                 : nearest_to_rank + 1;
+      t_ranks.insert((nearest_to_rank == _sol[s_t.second].size() - 1)
+                       ? nearest_to_rank
+                       : nearest_to_rank + 1);
 
-      exchange
-        r_to(_input, _sol, _amounts, s_t.first, s_rank, s_t.second, t_rank);
-      if (r_to.is_valid() and r_to.gain() > best_gains[s_t.first][s_t.second]) {
-        best_gains[s_t.first][s_t.second] = r_to.gain();
-        best_ops[s_t.first][s_t.second] = std::make_unique<exchange>(r_to);
+      for (const index_t t_rank : t_ranks) {
+        exchange
+          r(_input, _sol, _amounts, s_t.first, s_rank, s_t.second, t_rank);
+        if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
+          best_gains[s_t.first][s_t.second] = r.gain();
+          best_ops[s_t.first][s_t.second] = std::make_unique<exchange>(r);
+        }
       }
     }
 
@@ -341,31 +320,26 @@ void cvrp_local_search::run() {
       }
       auto s_rank = ls_operator::edge_candidates[s_t.first];
 
+      std::unordered_set<index_t> t_ranks;
+
       // Candidate for Or-opt: put chosen edge *before* the nearest
       // "from" job in target route.
-      auto t_rank =
-        _nearest_job_rank_in_routes_from[s_t.first][s_t.second][s_rank + 1];
-
-      or_opt
-        r_from(_input, _sol, _amounts, s_t.first, s_rank, s_t.second, t_rank);
-      if (r_from.is_valid() and
-          r_from.gain() > best_gains[s_t.first][s_t.second]) {
-        best_gains[s_t.first][s_t.second] = r_from.gain();
-        best_ops[s_t.first][s_t.second] = std::make_unique<or_opt>(r_from);
-      }
+      t_ranks.insert(
+        _nearest_job_rank_in_routes_from[s_t.first][s_t.second][s_rank + 1]);
 
       // Candidate for Or-opt: put chosen edge *after* the nearest
       // "to" job in target route (or at 0 in an empty route).
       auto nearest_to_rank =
         _nearest_job_rank_in_routes_to[s_t.first][s_t.second][s_rank];
 
-      t_rank = (_sol[s_t.second].size() == 0) ? 0 : nearest_to_rank + 1;
+      t_ranks.insert((_sol[s_t.second].size() == 0) ? 0 : nearest_to_rank + 1);
 
-      or_opt
-        r_to(_input, _sol, _amounts, s_t.first, s_rank, s_t.second, t_rank);
-      if (r_to.is_valid() and r_to.gain() > best_gains[s_t.first][s_t.second]) {
-        best_gains[s_t.first][s_t.second] = r_to.gain();
-        best_ops[s_t.first][s_t.second] = std::make_unique<or_opt>(r_to);
+      for (const index_t t_rank : t_ranks) {
+        or_opt r(_input, _sol, _amounts, s_t.first, s_rank, s_t.second, t_rank);
+        if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
+          best_gains[s_t.first][s_t.second] = r.gain();
+          best_ops[s_t.first][s_t.second] = std::make_unique<or_opt>(r);
+        }
       }
     }
 
@@ -376,6 +350,8 @@ void cvrp_local_search::run() {
       }
       auto s_rank = ls_operator::edge_candidates[s_t.first];
 
+      std::unordered_set<index_t> t_ranks;
+
       // Use proximity to surrounding jobs in source route.
       if (s_rank > 0) {
         // Exchange chosen edge with the one in target route that
@@ -385,16 +361,9 @@ void cvrp_local_search::run() {
         auto nearest_from_rank =
           _nearest_job_rank_in_routes_from[s_t.first][s_t.second][s_rank - 1];
 
-        auto t_rank = (nearest_from_rank < _sol[s_t.second].size() - 1)
-                        ? nearest_from_rank
-                        : _sol[s_t.second].size() - 2;
-
-        cross_exchange
-          r(_input, _sol, _amounts, s_t.first, s_rank, s_t.second, t_rank);
-        if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
-          best_gains[s_t.first][s_t.second] = r.gain();
-          best_ops[s_t.first][s_t.second] = std::make_unique<cross_exchange>(r);
-        }
+        t_ranks.insert((nearest_from_rank < _sol[s_t.second].size() - 1)
+                         ? nearest_from_rank
+                         : _sol[s_t.second].size() - 2);
       }
 
       if (s_rank < _sol[s_t.first].size() - 2) {
@@ -404,14 +373,7 @@ void cvrp_local_search::run() {
         auto nearest_to_rank =
           _nearest_job_rank_in_routes_to[s_t.first][s_t.second][s_rank + 2];
 
-        auto t_rank = (nearest_to_rank == 0) ? 0 : nearest_to_rank - 1;
-
-        cross_exchange
-          r(_input, _sol, _amounts, s_t.first, s_rank, s_t.second, t_rank);
-        if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
-          best_gains[s_t.first][s_t.second] = r.gain();
-          best_ops[s_t.first][s_t.second] = std::make_unique<cross_exchange>(r);
-        }
+        t_ranks.insert((nearest_to_rank == 0) ? 0 : nearest_to_rank - 1);
       }
 
       // Use proximity to surrounding candidates in target route.
@@ -422,16 +384,7 @@ void cvrp_local_search::run() {
       auto nearest_from_rank =
         _nearest_job_rank_in_routes_from[s_t.first][s_t.second][s_rank + 1];
 
-      auto t_rank = (nearest_from_rank >= 2) ? nearest_from_rank - 2 : 0;
-
-      cross_exchange
-        r_from(_input, _sol, _amounts, s_t.first, s_rank, s_t.second, t_rank);
-      if (r_from.is_valid() and
-          r_from.gain() > best_gains[s_t.first][s_t.second]) {
-        best_gains[s_t.first][s_t.second] = r_from.gain();
-        best_ops[s_t.first][s_t.second] =
-          std::make_unique<cross_exchange>(r_from);
-      }
+      t_ranks.insert((nearest_from_rank >= 2) ? nearest_from_rank - 2 : 0);
 
       // Exchange chosen edge with the one in target route that starts
       // with the job *after* the closest to chosen job (or last edge
@@ -439,16 +392,17 @@ void cvrp_local_search::run() {
       auto nearest_to_rank =
         _nearest_job_rank_in_routes_to[s_t.first][s_t.second][s_rank];
 
-      t_rank = (nearest_to_rank < _sol[s_t.second].size() - 2)
-                 ? nearest_to_rank + 1
-                 : _sol[s_t.second].size() - 2;
+      t_ranks.insert((nearest_to_rank < _sol[s_t.second].size() - 2)
+                       ? nearest_to_rank + 1
+                       : _sol[s_t.second].size() - 2);
 
-      cross_exchange
-        r_to(_input, _sol, _amounts, s_t.first, s_rank, s_t.second, t_rank);
-      if (r_to.is_valid() and r_to.gain() > best_gains[s_t.first][s_t.second]) {
-        best_gains[s_t.first][s_t.second] = r_to.gain();
-        best_ops[s_t.first][s_t.second] =
-          std::make_unique<cross_exchange>(r_to);
+      for (const index_t t_rank : t_ranks) {
+        cross_exchange
+          r(_input, _sol, _amounts, s_t.first, s_rank, s_t.second, t_rank);
+        if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
+          best_gains[s_t.first][s_t.second] = r.gain();
+          best_ops[s_t.first][s_t.second] = std::make_unique<cross_exchange>(r);
+        }
       }
     }
 
