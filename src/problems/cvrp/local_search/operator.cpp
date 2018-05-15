@@ -11,8 +11,10 @@ All rights reserved (see LICENSE).
 
 #include "operator.h"
 
+std::vector<std::vector<gain_t>> ls_operator::edge_costs_around_node;
 std::vector<std::vector<gain_t>> ls_operator::node_gains;
 std::vector<index_t> ls_operator::node_candidates;
+std::vector<std::vector<gain_t>> ls_operator::edge_costs_around_edge;
 std::vector<std::vector<gain_t>> ls_operator::edge_gains;
 std::vector<index_t> ls_operator::edge_candidates;
 

@@ -36,40 +36,61 @@ void relocate::compute_gain() {
   auto m = _input.get_matrix();
   const auto& v_target = _input._vehicles[target_vehicle];
 
-  // For source vehicle, we consider replacing "previous --> current
-  // --> next" with "previous --> next". This is already stored at
+  // For source vehicle, we consider the cost of removing job at rank
+  // source_rank, already stored in
   // node_gains[source_vehicle][source_rank].
 
-  // For target vehicle, we consider replacing "previous --> next"
-  // with "previous --> current --> next".
-  index_t current = _input._jobs[_sol[source_vehicle][source_rank]].index();
-  index_t previous;
-  index_t next;
+  // For target vehicle, we consider the cost of adding source job at
+  // rank target_rank.
+  index_t c_index = _input._jobs[_sol[source_vehicle][source_rank]].index();
 
-  if (target_rank == 0) {
-    assert(v_target.has_start());
-    previous = v_target.start.get().index();
-  } else {
-    previous = _input._jobs[_sol[target_vehicle][target_rank - 1]].index();
-  }
+  gain_t previous_cost = 0;
+  gain_t next_cost = 0;
+  gain_t old_edge_cost = 0;
+
   if (target_rank == _sol[target_vehicle].size()) {
-    assert(v_target.has_end());
-    next = v_target.end.get().index();
+    if (_sol[target_vehicle].size() == 0) {
+      // Adding job to an empty route.
+      if (v_target.has_start()) {
+        previous_cost = m[v_target.start.get().index()][c_index];
+      }
+      if (v_target.has_end()) {
+        next_cost = m[c_index][v_target.end.get().index()];
+      }
+    } else {
+      // Adding job past the end after a real job.
+      auto p_index =
+        _input._jobs[_sol[target_vehicle][target_rank - 1]].index();
+      previous_cost = m[p_index][c_index];
+      if (v_target.has_end()) {
+        auto n_index = v_target.end.get().index();
+        old_edge_cost = m[p_index][n_index];
+        next_cost = m[c_index][n_index];
+      }
+    }
   } else {
-    next = _input._jobs[_sol[target_vehicle][target_rank]].index();
+    // Adding before one of the jobs.
+    auto n_index = _input._jobs[_sol[target_vehicle][target_rank]].index();
+    next_cost = m[c_index][n_index];
+
+    if (target_rank == 0) {
+      if (v_target.has_start()) {
+        auto p_index = v_target.start.get().index();
+        previous_cost = m[p_index][c_index];
+        old_edge_cost = m[p_index][n_index];
+      }
+    } else {
+      auto p_index =
+        _input._jobs[_sol[target_vehicle][target_rank - 1]].index();
+      previous_cost = m[p_index][c_index];
+      old_edge_cost = m[p_index][n_index];
+    }
   }
 
   // Gain for target vehicle.
-  gain_t old_edge_cost = m[previous][next];
-  if (_sol[target_vehicle].size() == 0) {
-    // Adding to empty target route, so cost of start --> end without
-    // job is not taken into account.
-    old_edge_cost = 0;
-  }
-  // Implicit cast to gain_t thanks to old_edge_cost.
-  gain_t g2 = old_edge_cost - m[previous][current] - m[current][next];
+  gain_t target_gain = old_edge_cost - previous_cost - next_cost;
 
-  stored_gain = node_gains[source_vehicle][source_rank] + g2;
+  stored_gain = node_gains[source_vehicle][source_rank] + target_gain;
   gain_computed = true;
 }
 

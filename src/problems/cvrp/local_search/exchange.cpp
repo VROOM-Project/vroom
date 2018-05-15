@@ -38,53 +38,71 @@ void exchange::compute_gain() {
   const auto& v_source = _input._vehicles[source_vehicle];
   const auto& v_target = _input._vehicles[target_vehicle];
 
-  // For source vehicle, we consider replacing "s_previous -->
-  // s_current --> s_next" with "s_previous --> t_current --> s_next".
-  index_t s_current = _input._jobs[_sol[source_vehicle][source_rank]].index();
-  index_t t_current = _input._jobs[_sol[target_vehicle][target_rank]].index();
-  index_t s_previous;
+  // For source vehicle, we consider the cost of replacing job at rank
+  // source_rank with target job. Part of that cost (for adjacent
+  // edges) is stored in edge_costs_around_node.
+  index_t s_c_index = _input._jobs[_sol[source_vehicle][source_rank]].index();
+  index_t t_c_index = _input._jobs[_sol[target_vehicle][target_rank]].index();
+
+  // Determine costs added with target job.
+  gain_t new_previous_cost = 0;
+  gain_t new_next_cost = 0;
+
   if (source_rank == 0) {
-    assert(v_source.has_start());
-    s_previous = v_source.start.get().index();
+    if (v_source.has_start()) {
+      auto p_index = v_source.start.get().index();
+      new_previous_cost = m[p_index][t_c_index];
+    }
   } else {
-    s_previous = _input._jobs[_sol[source_vehicle][source_rank - 1]].index();
+    auto p_index = _input._jobs[_sol[source_vehicle][source_rank - 1]].index();
+    new_previous_cost = m[p_index][t_c_index];
   }
-  index_t s_next;
+
   if (source_rank == _sol[source_vehicle].size() - 1) {
-    assert(v_source.has_end());
-    s_next = v_source.end.get().index();
+    if (v_source.has_end()) {
+      auto n_index = v_source.end.get().index();
+      new_next_cost = m[t_c_index][n_index];
+    }
   } else {
-    s_next = _input._jobs[_sol[source_vehicle][source_rank + 1]].index();
+    auto n_index = _input._jobs[_sol[source_vehicle][source_rank + 1]].index();
+    new_next_cost = m[t_c_index][n_index];
   }
 
-  // Gain for source vehicle.
-  gain_t g1 = static_cast<gain_t>(m[s_previous][s_current]) +
-              m[s_current][s_next] - m[s_previous][t_current] -
-              m[t_current][s_next];
+  gain_t source_gain = edge_costs_around_node[source_vehicle][source_rank] -
+                       new_previous_cost - new_next_cost;
 
-  // For target vehicle, we consider replacing "t_previous -->
-  // t_current --> t_next" with "t_previous --> s_current --> t_next".
-  index_t t_previous;
+  // For target vehicle, we consider the cost of replacing job at rank
+  // target_rank with source job. Part of that cost (for adjacent
+  // edges) is stored in edge_costs_around_node.
+
+  // Determine costs added with source job.
+  new_previous_cost = 0;
+  new_next_cost = 0;
+
   if (target_rank == 0) {
-    assert(v_target.has_start());
-    t_previous = v_target.start.get().index();
+    if (v_target.has_start()) {
+      auto p_index = v_target.start.get().index();
+      new_previous_cost = m[p_index][s_c_index];
+    }
   } else {
-    t_previous = _input._jobs[_sol[target_vehicle][target_rank - 1]].index();
+    auto p_index = _input._jobs[_sol[target_vehicle][target_rank - 1]].index();
+    new_previous_cost = m[p_index][s_c_index];
   }
-  index_t t_next;
+
   if (target_rank == _sol[target_vehicle].size() - 1) {
-    assert(v_target.has_end());
-    t_next = v_target.end.get().index();
+    if (v_target.has_end()) {
+      auto n_index = v_target.end.get().index();
+      new_next_cost = m[s_c_index][n_index];
+    }
   } else {
-    t_next = _input._jobs[_sol[target_vehicle][target_rank + 1]].index();
+    auto n_index = _input._jobs[_sol[target_vehicle][target_rank + 1]].index();
+    new_next_cost = m[s_c_index][n_index];
   }
 
-  // Gain for target vehicle.
-  gain_t g2 = static_cast<gain_t>(m[t_previous][t_current]) +
-              m[t_current][t_next] - m[t_previous][s_current] -
-              m[s_current][t_next];
+  gain_t target_gain = edge_costs_around_node[target_vehicle][target_rank] -
+                       new_previous_cost - new_next_cost;
 
-  stored_gain = g1 + g2;
+  stored_gain = source_gain + target_gain;
   gain_computed = true;
 }
 

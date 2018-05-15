@@ -37,15 +37,25 @@ public:
               index_t target_vehicle,
               index_t target_rank);
 
-  // node_gains[v][i] stores potential gain when removing job at rank
-  // i in route for vehicle v. node_candidates[v] is the rank of the
-  // job that yields the biggest such gain for vehicle v.
+  // edge_costs_around_node[v][i] stores the sum of costs for edges
+  // that appear before and after job at rank i in route for vehicle v
+  // (handling cases where those edges are absent or linked with
+  // start/end of vehicle). node_gains[v][i] stores potential gain
+  // when removing job at rank i in route for vehicle
+  // v. node_candidates[v] is the rank that yields the biggest such
+  // gain for vehicle v.
+  static std::vector<std::vector<gain_t>> edge_costs_around_node;
   static std::vector<std::vector<gain_t>> node_gains;
   static std::vector<index_t> node_candidates;
 
-  // edge_gains[v][i] stores potential gain when removing jobs at rank
-  // i and i + 1 in route for vehicle v. edge_candidates[v] is the
-  // rank of the job that yields the biggest such gain for vehicle v.
+  // edge_costs_around_edge[v][i] stores the sum of costs for edges
+  // that appear before and after edge starting at rank i in route for
+  // vehicle v (handling cases where those edges are absent or linked
+  // with start/end of vehicle). edge_gains[v][i] stores potential
+  // gain when removing edge starting at rank i in route for vehicle
+  // v. edge_candidates[v] is the rank that yields the biggest such
+  // gain for vehicle v.
+  static std::vector<std::vector<gain_t>> edge_costs_around_edge;
   static std::vector<std::vector<gain_t>> edge_gains;
   static std::vector<index_t> edge_candidates;
 

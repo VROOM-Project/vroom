@@ -16,48 +16,75 @@ All rights reserved (see LICENSE).
 #include "or_opt.h"
 #include "relocate.h"
 
-index_t cvrp_local_search::previous_index(index_t route_rank,
-                                          index_t job_rank) const {
-  if (job_rank == 0) {
-    // Don't handle open tours for now.
-    assert(_input._vehicles[route_rank].has_start());
-    return _input._vehicles[route_rank].start.get().index();
-  } else {
-    return _input._jobs[_sol[route_rank][job_rank - 1]].index();
-  }
-}
-
-index_t cvrp_local_search::next_index(index_t route_rank,
-                                      index_t job_rank) const {
-  if (job_rank == _sol[route_rank].size() - 1) {
-    // Don't handle open tours for now.
-    assert(_input._vehicles[route_rank].has_end());
-    return _input._vehicles[route_rank].end.get().index();
-  } else {
-    return _input._jobs[_sol[route_rank][job_rank + 1]].index();
-  }
-}
-
 void cvrp_local_search::set_node_gains(index_t v) {
-  auto m = _input.get_matrix();
-  gain_t best_gain = std::numeric_limits<gain_t>::min();
-
   ls_operator::node_gains[v] = std::vector<gain_t>(_sol[v].size());
-  for (std::size_t i = 0; i < _sol[v].size(); ++i) {
-    // Compute potential gain to relocate current job.
-    index_t previous = previous_index(v, i);
-    index_t current = _input._jobs[_sol[v][i]].index();
-    index_t next = next_index(v, i);
+  ls_operator::edge_costs_around_node[v] = std::vector<gain_t>(_sol[v].size());
 
-    gain_t new_edge_cost = m[previous][next];
-    if (_sol[v].size() == 1) {
-      // Trying to empty a route, so cost of start --> end without
-      // job is not taken into account.
-      new_edge_cost = 0;
+  if (_sol[v].size() == 0) {
+    return;
+  }
+
+  // Handling first job is special due to potential open tours.
+  index_t p_index;
+  index_t c_index = _input._jobs[_sol[v][0]].index();
+  index_t n_index;
+
+  gain_t previous_cost = 0;
+  gain_t next_cost = 0;
+  gain_t new_edge_cost = 0;
+
+  if (_input._vehicles[v].has_start()) {
+    // There is a previous step before job at rank 0.
+    p_index = _input._vehicles[v].start.get().index();
+    previous_cost = _m[p_index][c_index];
+
+    // Update next_cost with next job or end.
+    if (_sol[v].size() > 1) {
+      n_index = _input._jobs[_sol[v][1]].index();
+      next_cost = _m[c_index][n_index];
+      new_edge_cost = _m[p_index][n_index];
+    } else {
+      // _sol[v].size() is 1 and first job is also the last.
+      if (_input._vehicles[v].has_end()) {
+        next_cost = _m[c_index][_input._vehicles[v].end.get().index()];
+      }
     }
-    gain_t current_gain =
-      m[previous][current] + m[current][next] - new_edge_cost;
+  } else {
+    // There is a next cost either to next job or to end of route, but
+    // no new edge.
+    if (_sol[v].size() > 1) {
+      n_index = _input._jobs[_sol[v][1]].index();
+    } else {
+      assert(_input._vehicles[v].has_end());
+      n_index = _input._vehicles[v].end.get().index();
+    }
+    next_cost = _m[c_index][n_index];
+  }
 
+  gain_t edges_costs_around = previous_cost + next_cost;
+  ls_operator::edge_costs_around_node[v][0] = edges_costs_around;
+
+  gain_t current_gain = edges_costs_around - new_edge_cost;
+  ls_operator::node_gains[v][0] = current_gain;
+  gain_t best_gain = current_gain;
+  ls_operator::node_candidates[v] = 0;
+
+  if (_sol[v].size() == 1) {
+    // No more jobs.
+    return;
+  }
+
+  // Handle jobs that always have a previous and next job.
+  for (std::size_t i = 1; i < _sol[v].size() - 1; ++i) {
+    // Compute potential gain to relocate current job.
+    p_index = _input._jobs[_sol[v][i - 1]].index();
+    c_index = _input._jobs[_sol[v][i]].index();
+    n_index = _input._jobs[_sol[v][i + 1]].index();
+
+    edges_costs_around = _m[p_index][c_index] + _m[c_index][n_index];
+    ls_operator::edge_costs_around_node[v][i] = edges_costs_around;
+
+    current_gain = edges_costs_around - _m[p_index][n_index];
     ls_operator::node_gains[v][i] = current_gain;
 
     if (current_gain > best_gain) {
@@ -65,39 +92,169 @@ void cvrp_local_search::set_node_gains(index_t v) {
       ls_operator::node_candidates[v] = i;
     }
   }
+
+  // Handling last job is special due to potential open tours.
+  auto last_rank = _sol[v].size() - 1;
+  c_index = _input._jobs[_sol[v][last_rank]].index();
+
+  previous_cost = 0;
+  next_cost = 0;
+  new_edge_cost = 0;
+
+  if (_input._vehicles[v].has_end()) {
+    // There is a next step after last job.
+    n_index = _input._vehicles[v].end.get().index();
+    next_cost = _m[c_index][n_index];
+
+    if (_sol[v].size() > 1) {
+      p_index = _input._jobs[_sol[v][last_rank - 1]].index();
+      previous_cost = _m[p_index][c_index];
+      new_edge_cost = _m[p_index][n_index];
+    }
+  } else {
+    // There is a previous cost either from previous job or from start
+    // of route, but no new edge.
+    if (_sol[v].size() > 1) {
+      p_index = _input._jobs[_sol[v][last_rank - 1]].index();
+    } else {
+      assert(_input._vehicles[v].has_start());
+      p_index = _input._vehicles[v].start.get().index();
+    }
+    previous_cost = _m[p_index][c_index];
+  }
+
+  edges_costs_around = previous_cost + next_cost;
+  ls_operator::edge_costs_around_node[v][last_rank] = edges_costs_around;
+
+  current_gain = edges_costs_around - new_edge_cost;
+  ls_operator::node_gains[v][last_rank] = current_gain;
+
+  if (current_gain > best_gain) {
+    ls_operator::node_candidates[v] = last_rank;
+  }
 }
 
 void cvrp_local_search::set_edge_gains(index_t v) {
-  auto m = _input.get_matrix();
-  gain_t best_gain = std::numeric_limits<gain_t>::min();
-
   std::size_t nb_edges = (_sol[v].size() < 2) ? 0 : _sol[v].size() - 1;
 
   ls_operator::edge_gains[v] = std::vector<gain_t>(nb_edges);
+  ls_operator::edge_costs_around_edge[v] = std::vector<gain_t>(nb_edges);
 
-  for (std::size_t i = 0; i < nb_edges; ++i) {
+  if (_sol[v].size() < 2) {
+    return;
+  }
+
+  // Handling first edge is special due to potential open tours.
+  index_t p_index;
+  index_t c_index = _input._jobs[_sol[v][0]].index();
+  index_t after_c_index = _input._jobs[_sol[v][1]].index();
+  index_t n_index;
+
+  gain_t previous_cost = 0;
+  gain_t next_cost = 0;
+  gain_t new_edge_cost = 0;
+
+  if (_input._vehicles[v].has_start()) {
+    // There is a previous step before job at rank 0.
+    p_index = _input._vehicles[v].start.get().index();
+    previous_cost = _m[p_index][c_index];
+
+    // Update next_cost with next job or end.
+    if (_sol[v].size() > 2) {
+      n_index = _input._jobs[_sol[v][2]].index();
+      next_cost = _m[after_c_index][n_index];
+      new_edge_cost = _m[p_index][n_index];
+    } else {
+      // _sol[v].size() is 2 and first edge is also the last.
+      if (_input._vehicles[v].has_end()) {
+        next_cost = _m[after_c_index][_input._vehicles[v].end.get().index()];
+      }
+    }
+  } else {
+    // There is a next cost either to next job or to end of route, but
+    // no new edge.
+    if (_sol[v].size() > 2) {
+      n_index = _input._jobs[_sol[v][2]].index();
+    } else {
+      assert(_input._vehicles[v].has_end());
+      n_index = _input._vehicles[v].end.get().index();
+    }
+    next_cost = _m[after_c_index][n_index];
+  }
+
+  gain_t edges_costs_around = previous_cost + next_cost;
+  ls_operator::edge_costs_around_edge[v][0] = edges_costs_around;
+
+  gain_t current_gain = edges_costs_around - new_edge_cost;
+  ls_operator::edge_gains[v][0] = current_gain;
+  gain_t best_gain = current_gain;
+  ls_operator::edge_candidates[v] = 0;
+
+  if (_sol[v].size() == 2) {
+    // No more edges.
+    return;
+  }
+
+  // Handle edges that always have a previous and next job.
+  for (std::size_t i = 1; i < nb_edges - 1; ++i) {
     // Compute potential gain to relocate edge from current to next
     // job.
-    index_t previous = previous_index(v, i);
-    index_t current = _input._jobs[_sol[v][i]].index();
-    index_t after_current = _input._jobs[_sol[v][i + 1]].index();
-    index_t next = next_index(v, i + 1);
+    p_index = _input._jobs[_sol[v][i - 1]].index();
+    c_index = _input._jobs[_sol[v][i]].index();
+    after_c_index = _input._jobs[_sol[v][i + 1]].index();
+    n_index = _input._jobs[_sol[v][i + 2]].index();
 
-    gain_t new_edge_cost = m[previous][next];
-    if (nb_edges == 1) {
-      // Trying to empty a route, so cost of start --> end without
-      // job is not taken into account.
-      new_edge_cost = 0;
-    }
-    gain_t current_gain =
-      m[previous][current] + m[after_current][next] - new_edge_cost;
+    edges_costs_around = _m[p_index][c_index] + _m[after_c_index][n_index];
+    ls_operator::edge_costs_around_edge[v][i] = edges_costs_around;
 
+    current_gain = edges_costs_around - _m[p_index][n_index];
     ls_operator::edge_gains[v][i] = current_gain;
 
     if (current_gain > best_gain) {
       best_gain = current_gain;
       ls_operator::edge_candidates[v] = i;
     }
+  }
+
+  // Handling last edge is special due to potential open tours.
+  auto last_edge_rank = nb_edges - 1;
+  c_index = _input._jobs[_sol[v][last_edge_rank]].index();
+  after_c_index = _input._jobs[_sol[v][last_edge_rank + 1]].index();
+
+  previous_cost = 0;
+  next_cost = 0;
+  new_edge_cost = 0;
+
+  if (_input._vehicles[v].has_end()) {
+    // There is a next step after last job.
+    n_index = _input._vehicles[v].end.get().index();
+    next_cost = _m[after_c_index][n_index];
+
+    if (_sol[v].size() > 2) {
+      p_index = _input._jobs[_sol[v][last_edge_rank - 1]].index();
+      previous_cost = _m[p_index][c_index];
+      new_edge_cost = _m[p_index][n_index];
+    }
+  } else {
+    // There is a previous cost either from previous job or from start
+    // of route, but no new edge.
+    if (_sol[v].size() > 2) {
+      p_index = _input._jobs[_sol[v][last_edge_rank - 1]].index();
+    } else {
+      assert(_input._vehicles[v].has_start());
+      p_index = _input._vehicles[v].start.get().index();
+    }
+    previous_cost = _m[p_index][c_index];
+  }
+
+  edges_costs_around = previous_cost + next_cost;
+  ls_operator::edge_costs_around_edge[v][last_edge_rank] = edges_costs_around;
+
+  current_gain = edges_costs_around - new_edge_cost;
+  ls_operator::edge_gains[v][last_edge_rank] = current_gain;
+
+  if (current_gain > best_gain) {
+    ls_operator::edge_candidates[v] = last_edge_rank;
   }
 }
 
@@ -107,8 +264,6 @@ void cvrp_local_search::update_nearest_job_rank_in_routes(index_t v1,
     std::vector<index_t>(_sol[v1].size());
   _nearest_job_rank_in_routes_to[v1][v2] =
     std::vector<index_t>(_sol[v1].size());
-
-  auto m = _input.get_matrix();
 
   for (std::size_t r1 = 0; r1 < _sol[v1].size(); ++r1) {
     index_t index_r1 = _input._jobs[_sol[v1][r1]].index();
@@ -120,12 +275,12 @@ void cvrp_local_search::update_nearest_job_rank_in_routes(index_t v1,
 
     for (std::size_t r2 = 0; r2 < _sol[v2].size(); ++r2) {
       index_t index_r2 = _input._jobs[_sol[v2][r2]].index();
-      if (m[index_r1][index_r2] < min_from) {
-        min_from = m[index_r1][index_r2];
+      if (_m[index_r1][index_r2] < min_from) {
+        min_from = _m[index_r1][index_r2];
         best_from_rank = r2;
       }
-      if (m[index_r2][index_r1] < min_to) {
-        min_to = m[index_r2][index_r1];
+      if (_m[index_r2][index_r1] < min_to) {
+        min_to = _m[index_r2][index_r1];
         best_to_rank = r2;
       }
     }
@@ -137,6 +292,7 @@ void cvrp_local_search::update_nearest_job_rank_in_routes(index_t v1,
 
 cvrp_local_search::cvrp_local_search(const input& input, raw_solution& sol)
   : _input(input),
+    _m(_input.get_matrix()),
     V(_input._vehicles.size()),
     _sol(sol),
     _amounts(sol.size(), amount_t(input.amount_size())),
@@ -166,8 +322,10 @@ cvrp_local_search::cvrp_local_search(const input& input, raw_solution& sol)
 
   // Initialize storage and find best candidate for job/edge pop in
   // each route.
+  ls_operator::edge_costs_around_node = std::vector<std::vector<gain_t>>(V);
   ls_operator::node_gains = std::vector<std::vector<gain_t>>(V);
   ls_operator::node_candidates = std::vector<index_t>(V);
+  ls_operator::edge_costs_around_edge = std::vector<std::vector<gain_t>>(V);
   ls_operator::edge_gains = std::vector<std::vector<gain_t>>(V);
   ls_operator::edge_candidates = std::vector<index_t>(V);
 

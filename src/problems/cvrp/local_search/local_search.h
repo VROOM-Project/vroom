@@ -13,12 +13,10 @@ All rights reserved (see LICENSE).
 #include "../../../structures/typedefs.h"
 #include "../../../utils/output_json.h" // To remove
 
-class input;
-class amount_t;
-
 class cvrp_local_search {
 private:
   const input& _input;
+  const matrix<cost_t>& _m;
   const std::size_t V;
   raw_solution& _sol;
   std::vector<amount_t> _amounts;
@@ -32,8 +30,6 @@ private:
 
   void update_nearest_job_rank_in_routes(index_t v1, index_t v2);
 
-  index_t previous_index(index_t route_rank, index_t job_rank) const;
-  index_t next_index(index_t route_rank, index_t job_rank) const;
   void set_node_gains(index_t v);
   void set_edge_gains(index_t v);
 
