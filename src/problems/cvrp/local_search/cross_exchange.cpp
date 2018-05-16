@@ -24,7 +24,9 @@ cross_exchange::cross_exchange(const input& input,
                 source_vehicle,
                 source_rank,
                 target_vehicle,
-                target_rank) {
+                target_rank),
+    reverse_source_edge(false),
+    reverse_target_edge(false) {
 }
 
 void cross_exchange::compute_gain() {
@@ -41,6 +43,7 @@ void cross_exchange::compute_gain() {
   // For source vehicle, we consider the cost of replacing edge
   // starting at rank source_rank with target edge. Part of that cost
   // (for adjacent edges) is stored in edge_costs_around_edge.
+  // reverse_* checks whether we should change the target edge order.
   index_t s_c_index = _input._jobs[_sol[source_vehicle][source_rank]].index();
   index_t s_after_c_index =
     _input._jobs[_sol[source_vehicle][source_rank + 1]].index();
@@ -49,62 +52,96 @@ void cross_exchange::compute_gain() {
     _input._jobs[_sol[target_vehicle][target_rank + 1]].index();
 
   // Determine costs added with target edge.
-  gain_t new_previous_cost = 0;
-  gain_t new_next_cost = 0;
+  gain_t previous_cost = 0;
+  gain_t next_cost = 0;
+  gain_t reverse_previous_cost = 0;
+  gain_t reverse_next_cost = 0;
 
   if (source_rank == 0) {
     if (v_source.has_start()) {
       auto p_index = v_source.start.get().index();
-      new_previous_cost = m[p_index][t_c_index];
+      previous_cost = m[p_index][t_c_index];
+      reverse_previous_cost = m[p_index][t_after_c_index];
     }
   } else {
     auto p_index = _input._jobs[_sol[source_vehicle][source_rank - 1]].index();
-    new_previous_cost = m[p_index][t_c_index];
+    previous_cost = m[p_index][t_c_index];
+    reverse_previous_cost = m[p_index][t_after_c_index];
   }
 
   if (source_rank == _sol[source_vehicle].size() - 2) {
     if (v_source.has_end()) {
       auto n_index = v_source.end.get().index();
-      new_next_cost = m[t_after_c_index][n_index];
+      next_cost = m[t_after_c_index][n_index];
+      reverse_next_cost = m[t_c_index][n_index];
     }
   } else {
     auto n_index = _input._jobs[_sol[source_vehicle][source_rank + 2]].index();
-    new_next_cost = m[t_after_c_index][n_index];
+    next_cost = m[t_after_c_index][n_index];
+    reverse_next_cost = m[t_c_index][n_index];
   }
 
   gain_t source_gain = edge_costs_around_edge[source_vehicle][source_rank] -
-                       new_previous_cost - new_next_cost;
+                       previous_cost - next_cost;
+
+  gain_t reverse_edge_cost =
+    static_cast<gain_t>(m[t_c_index][t_after_c_index]) -
+    static_cast<gain_t>(m[t_after_c_index][t_c_index]);
+  gain_t reverse_source_gain =
+    edge_costs_around_edge[source_vehicle][source_rank] + reverse_edge_cost -
+    reverse_previous_cost - reverse_next_cost;
+
+  if (reverse_source_gain > source_gain) {
+    reverse_target_edge = true;
+    source_gain = reverse_source_gain;
+  }
 
   // For target vehicle, we consider the cost of replacing edge
   // starting at rank target_rank with source edge. Part of that cost
   // (for adjacent edges) is stored in edge_costs_around_edge.
-
-  // Determine costs added with source edge.
-  new_previous_cost = 0;
-  new_next_cost = 0;
+  // reverse_* checks whether we should change the source edge order.
+  previous_cost = 0;
+  next_cost = 0;
+  reverse_previous_cost = 0;
+  reverse_next_cost = 0;
 
   if (target_rank == 0) {
     if (v_target.has_start()) {
       auto p_index = v_target.start.get().index();
-      new_previous_cost = m[p_index][s_c_index];
+      previous_cost = m[p_index][s_c_index];
+      reverse_previous_cost = m[p_index][s_after_c_index];
     }
   } else {
     auto p_index = _input._jobs[_sol[target_vehicle][target_rank - 1]].index();
-    new_previous_cost = m[p_index][s_c_index];
+    previous_cost = m[p_index][s_c_index];
+    reverse_previous_cost = m[p_index][s_after_c_index];
   }
 
   if (target_rank == _sol[target_vehicle].size() - 2) {
     if (v_target.has_end()) {
       auto n_index = v_target.end.get().index();
-      new_next_cost = m[s_after_c_index][n_index];
+      next_cost = m[s_after_c_index][n_index];
+      reverse_next_cost = m[s_c_index][n_index];
     }
   } else {
     auto n_index = _input._jobs[_sol[target_vehicle][target_rank + 2]].index();
-    new_next_cost = m[s_after_c_index][n_index];
+    next_cost = m[s_after_c_index][n_index];
+    reverse_next_cost = m[s_c_index][n_index];
   }
 
   gain_t target_gain = edge_costs_around_edge[target_vehicle][target_rank] -
-                       new_previous_cost - new_next_cost;
+                       previous_cost - next_cost;
+
+  reverse_edge_cost = static_cast<gain_t>(m[s_c_index][s_after_c_index]) -
+                      static_cast<gain_t>(m[s_after_c_index][s_c_index]);
+  gain_t reverse_target_gain =
+    edge_costs_around_edge[target_vehicle][target_rank] + reverse_edge_cost -
+    reverse_previous_cost - reverse_next_cost;
+
+  if (reverse_target_gain > target_gain) {
+    reverse_source_edge = true;
+    target_gain = reverse_target_gain;
+  }
 
   stored_gain = source_gain + target_gain;
 
@@ -153,15 +190,35 @@ void cross_exchange::apply() const {
             _sol[target_vehicle][target_rank]);
   std::swap(_sol[source_vehicle][source_rank + 1],
             _sol[target_vehicle][target_rank + 1]);
+
+  if (reverse_source_edge) {
+    std::swap(_sol[target_vehicle][target_rank],
+              _sol[target_vehicle][target_rank + 1]);
+  }
+  if (reverse_target_edge) {
+    std::swap(_sol[source_vehicle][source_rank],
+              _sol[source_vehicle][source_rank + 1]);
+  }
 }
 
 void cross_exchange::log() const {
   const auto& v_source = _input._vehicles[source_vehicle];
   const auto& v_target = _input._vehicles[target_vehicle];
 
-  std::cout << "Cross_Exchange gain: " << stored_gain << " - vehicle "
-            << v_source.id << ", edge " << source_rank << " -> "
-            << source_rank + 1 << " (job "
+  std::string rev;
+  if (reverse_source_edge and reverse_target_edge) {
+    rev = "reversed source and target";
+  } else {
+    if (reverse_source_edge) {
+      rev = "reversed source";
+    }
+    if (reverse_target_edge) {
+      rev = "reversed target";
+    }
+  }
+  std::cout << "Cross_Exchange " << rev << " gain: " << stored_gain
+            << " - vehicle " << v_source.id << ", edge " << source_rank
+            << " -> " << source_rank + 1 << " (job "
             << _input._jobs[_sol[source_vehicle][source_rank]].id << " -> "
             << _input._jobs[_sol[source_vehicle][source_rank + 1]].id
             << ") exchanged with vehicle " << v_target.id << ", edge "

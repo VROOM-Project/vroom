@@ -16,6 +16,9 @@ class cross_exchange : public ls_operator {
 private:
   virtual void compute_gain() override;
 
+  bool reverse_source_edge;
+  bool reverse_target_edge;
+
 public:
   cross_exchange(const input& input,
                  raw_solution& sol,
