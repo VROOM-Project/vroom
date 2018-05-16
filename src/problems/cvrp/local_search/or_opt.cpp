@@ -24,7 +24,8 @@ or_opt::or_opt(const input& input,
                 source_vehicle,
                 source_rank,
                 target_vehicle,
-                target_rank) {
+                target_rank),
+    reverse_source_edge(false) {
 }
 
 void or_opt::compute_gain() {
@@ -41,13 +42,16 @@ void or_opt::compute_gain() {
   // edge_gains[source_vehicle][source_rank].
 
   // For target vehicle, we consider the cost of adding source edge at
-  // rank target_rank.
+  // rank target_rank. reverse_* checks whether we should change the
+  // source edge order.
   index_t c_index = _input._jobs[_sol[source_vehicle][source_rank]].index();
   index_t after_c_index =
     _input._jobs[_sol[source_vehicle][source_rank + 1]].index();
 
   gain_t previous_cost = 0;
   gain_t next_cost = 0;
+  gain_t reverse_previous_cost = 0;
+  gain_t reverse_next_cost = 0;
   gain_t old_edge_cost = 0;
 
   if (target_rank == _sol[target_vehicle].size()) {
@@ -55,42 +59,59 @@ void or_opt::compute_gain() {
       // Adding edge to an empty route.
       if (v_target.has_start()) {
         previous_cost = m[v_target.start.get().index()][c_index];
+        reverse_previous_cost = m[v_target.start.get().index()][after_c_index];
       }
       if (v_target.has_end()) {
         next_cost = m[after_c_index][v_target.end.get().index()];
+        reverse_next_cost = m[c_index][v_target.end.get().index()];
       }
     } else {
       // Adding edge past the end after a real job.
       auto p_index =
         _input._jobs[_sol[target_vehicle][target_rank - 1]].index();
       previous_cost = m[p_index][c_index];
+      reverse_previous_cost = m[p_index][after_c_index];
       if (v_target.has_end()) {
         auto n_index = v_target.end.get().index();
         old_edge_cost = m[p_index][n_index];
         next_cost = m[after_c_index][n_index];
+        reverse_next_cost = m[c_index][n_index];
       }
     }
   } else {
     // Adding before one of the jobs.
     auto n_index = _input._jobs[_sol[target_vehicle][target_rank]].index();
     next_cost = m[after_c_index][n_index];
+    reverse_next_cost = m[c_index][n_index];
 
     if (target_rank == 0) {
       if (v_target.has_start()) {
         auto p_index = v_target.start.get().index();
         previous_cost = m[p_index][c_index];
+        reverse_previous_cost = m[p_index][after_c_index];
         old_edge_cost = m[p_index][n_index];
       }
     } else {
       auto p_index =
         _input._jobs[_sol[target_vehicle][target_rank - 1]].index();
       previous_cost = m[p_index][c_index];
+      reverse_previous_cost = m[p_index][after_c_index];
       old_edge_cost = m[p_index][n_index];
     }
   }
 
   // Gain for target vehicle.
   gain_t target_gain = old_edge_cost - previous_cost - next_cost;
+
+  gain_t reverse_edge_cost = static_cast<gain_t>(m[c_index][after_c_index]) -
+                             static_cast<gain_t>(m[after_c_index][c_index]);
+  gain_t reverse_target_gain = old_edge_cost + reverse_edge_cost -
+                               reverse_previous_cost - reverse_next_cost;
+
+  if (reverse_target_gain > target_gain) {
+    reverse_source_edge = true;
+    target_gain = reverse_target_gain;
+  }
 
   stored_gain = edge_gains[source_vehicle][source_rank] + target_gain;
 
@@ -122,6 +143,11 @@ void or_opt::apply() const {
   _sol[target_vehicle].insert(_sol[target_vehicle].begin() + target_rank,
                               _sol[source_vehicle].begin() + source_rank,
                               _sol[source_vehicle].begin() + source_rank + 2);
+  if (reverse_source_edge) {
+    std::swap(_sol[target_vehicle][target_rank],
+              _sol[target_vehicle][target_rank + 1]);
+  }
+
   _sol[source_vehicle].erase(_sol[source_vehicle].begin() + source_rank,
                              _sol[source_vehicle].begin() + source_rank + 2);
 }
@@ -130,8 +156,10 @@ void or_opt::log() const {
   const auto& v_source = _input._vehicles[source_vehicle];
   const auto& v_target = _input._vehicles[target_vehicle];
 
-  std::cout << "Or_Opt gain: " << stored_gain << " - vehicle " << v_source.id
-            << ", edge " << source_rank << " -> " << source_rank + 1 << " (job "
+  std::string rev = reverse_source_edge ? "reversed" : "";
+  std::cout << "Or_Opt " << rev << " gain: " << stored_gain << " - vehicle "
+            << v_source.id << ", edge " << source_rank << " -> "
+            << source_rank + 1 << " (job "
             << _input._jobs[_sol[source_vehicle][source_rank]].id << " -> "
             << _input._jobs[_sol[source_vehicle][source_rank + 1]].id
             << ") moved to rank " << target_rank << " in route for vehicle "

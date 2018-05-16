@@ -16,6 +16,8 @@ class or_opt : public ls_operator {
 private:
   virtual void compute_gain() override;
 
+  bool reverse_source_edge;
+
 public:
   or_opt(const input& input,
          raw_solution& sol,
