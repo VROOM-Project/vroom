@@ -33,6 +33,7 @@ private:
   // Todo remove
   bool _log;
   unsigned _ls_step;
+  void log_solution();
 
   void update_nearest_job_rank_in_routes(index_t v1, index_t v2);
 
@@ -43,10 +44,14 @@ private:
   void run_with_fixed_source();
   void run_exhaustive_search();
 
+  cost_t route_cost_for_vehicle(index_t vehicle_rank,
+                                const std::vector<index_t>& route);
+  void run_tsp(index_t route_rank, unsigned nb_threads);
+
 public:
   cvrp_local_search(const input& input, raw_solution& sol);
 
-  void run();
+  void run(unsigned nb_threads);
 };
 
 #endif

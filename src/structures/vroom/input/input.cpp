@@ -223,7 +223,7 @@ std::unique_ptr<vrp> input::get_problem() const {
   return std::make_unique<cvrp>(*this);
 }
 
-solution input::format_solution(const raw_solution& routes_as_lists) const {
+solution input::format_solution(const raw_solution& raw_routes) const {
   std::vector<route_t> routes;
   cost_t total_cost = 0;
 
@@ -233,8 +233,8 @@ solution input::format_solution(const raw_solution& routes_as_lists) const {
     unassigned_ranks.insert(i);
   }
 
-  for (std::size_t i = 0; i < routes_as_lists.size(); ++i) {
-    const auto& route = routes_as_lists[i];
+  for (std::size_t i = 0; i < raw_routes.size(); ++i) {
+    const auto& route = raw_routes[i];
     if (route.empty()) {
       continue;
     }

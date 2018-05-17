@@ -258,6 +258,14 @@ void cvrp_local_search::set_edge_gains(index_t v) {
   }
 }
 
+void cvrp_local_search::log_solution() {
+  if (_log) {
+    write_to_json(_input.format_solution(_sol),
+                  false,
+                  "ls_log_" + std::to_string(_ls_step++) + "_sol.json");
+  }
+}
+
 void cvrp_local_search::update_nearest_job_rank_in_routes(index_t v1,
                                                           index_t v2) {
   _nearest_job_rank_in_routes_from[v1][v2] =
@@ -347,7 +355,7 @@ cvrp_local_search::cvrp_local_search(const input& input, raw_solution& sol)
 }
 
 void cvrp_local_search::run_with_fixed_source_and_target() {
-  std::cout << "Running CVRP local search with fixed source and target."
+  std::cout << "* Running CVRP local search with fixed source and target."
             << std::endl;
 
   std::vector<std::vector<std::unique_ptr<ls_operator>>> best_ops(V);
@@ -368,11 +376,7 @@ void cvrp_local_search::run_with_fixed_source_and_target() {
 
   std::vector<std::vector<gain_t>> best_gains(V, std::vector<gain_t>(V, 0));
 
-  if (_log) {
-    write_to_json(_input.format_solution(_sol),
-                  false,
-                  "ls_log_" + std::to_string(_ls_step) + "_sol.json");
-  }
+  log_solution();
 
   gain_t best_gain = 1;
 
@@ -584,19 +588,15 @@ void cvrp_local_search::run_with_fixed_source_and_target() {
 
     // Apply matching operator.
     if (best_gain > 0) {
-      std::cout << "* Best operator choice " << std::endl;
-
       assert(best_ops[best_source][best_target] != nullptr);
 
       best_ops[best_source][best_target]->log();
 
       best_ops[best_source][best_target]->apply();
+      run_tsp(best_source, 1);
+      run_tsp(best_target, 1);
 
-      if (_log) {
-        write_to_json(_input.format_solution(_sol),
-                      false,
-                      "ls_log_" + std::to_string(++_ls_step) + "_sol.json");
-      }
+      log_solution();
 
       // Update candidates.
       set_node_gains(best_source);
@@ -638,7 +638,7 @@ void cvrp_local_search::run_with_fixed_source_and_target() {
 }
 
 void cvrp_local_search::run_with_fixed_source() {
-  std::cout << "Running CVRP local search with fixed source." << std::endl;
+  std::cout << "* Running CVRP local search with fixed source." << std::endl;
 
   std::vector<std::vector<std::unique_ptr<ls_operator>>> best_ops(V);
   for (std::size_t v = 0; v < V; ++v) {
@@ -755,19 +755,15 @@ void cvrp_local_search::run_with_fixed_source() {
 
     // Apply matching operator.
     if (best_gain > 0) {
-      std::cout << "* Best operator choice " << std::endl;
-
       assert(best_ops[best_source][best_target] != nullptr);
 
       best_ops[best_source][best_target]->log();
 
       best_ops[best_source][best_target]->apply();
+      run_tsp(best_source, 1);
+      run_tsp(best_target, 1);
 
-      if (_log) {
-        write_to_json(_input.format_solution(_sol),
-                      false,
-                      "ls_log_" + std::to_string(++_ls_step) + "_sol.json");
-      }
+      log_solution();
 
       // Update candidates.
       set_node_gains(best_source);
@@ -802,7 +798,7 @@ void cvrp_local_search::run_with_fixed_source() {
 }
 
 void cvrp_local_search::run_exhaustive_search() {
-  std::cout << "Running CVRP local search exhaustively." << std::endl;
+  std::cout << "* Running CVRP local search exhaustively." << std::endl;
 
   std::vector<std::vector<std::unique_ptr<ls_operator>>> best_ops(V);
   for (std::size_t v = 0; v < V; ++v) {
@@ -935,19 +931,15 @@ void cvrp_local_search::run_exhaustive_search() {
 
     // Apply matching operator.
     if (best_gain > 0) {
-      std::cout << "* Best operator choice " << std::endl;
-
       assert(best_ops[best_source][best_target] != nullptr);
 
       best_ops[best_source][best_target]->log();
 
       best_ops[best_source][best_target]->apply();
+      run_tsp(best_source, 1);
+      run_tsp(best_target, 1);
 
-      if (_log) {
-        write_to_json(_input.format_solution(_sol),
-                      false,
-                      "ls_log_" + std::to_string(++_ls_step) + "_sol.json");
-      }
+      log_solution();
 
       // Update candidates.
       set_node_gains(best_source);
@@ -981,7 +973,48 @@ void cvrp_local_search::run_exhaustive_search() {
   }
 }
 
-void cvrp_local_search::run() {
+cost_t
+cvrp_local_search::route_cost_for_vehicle(index_t vehicle_rank,
+                                          const std::vector<index_t>& route) {
+  const auto& v = _input._vehicles[vehicle_rank];
+  auto cost = 0;
+
+  if (route.size() > 0) {
+    if (v.has_start()) {
+      cost += _m[v.start.get().index()][_input._jobs[route.front()].index()];
+    }
+
+    index_t previous = route.front();
+    for (auto it = ++route.cbegin(); it != route.cend(); ++it) {
+      cost += _m[_input._jobs[previous].index()][_input._jobs[*it].index()];
+      previous = *it;
+    }
+
+    if (v.has_end()) {
+      cost += _m[_input._jobs[route.back()].index()][v.end.get().index()];
+    }
+  }
+
+  return cost;
+}
+
+void cvrp_local_search::run_tsp(index_t route_rank, unsigned nb_threads) {
+  if (_sol[route_rank].size() > 0) {
+    auto before_cost = route_cost_for_vehicle(route_rank, _sol[route_rank]);
+
+    tsp p(_input, _sol[route_rank], nb_threads);
+    auto new_route = p.solve(nb_threads)[0];
+
+    auto after_cost = route_cost_for_vehicle(route_rank, new_route);
+
+    if (after_cost < before_cost) {
+      _sol[route_rank] = std::move(new_route);
+      std::cout << "Rearrange gain: " << before_cost - after_cost << std::endl;
+    }
+  }
+}
+
+void cvrp_local_search::run(unsigned nb_threads) {
   run_with_fixed_source_and_target();
 
   run_with_fixed_source();

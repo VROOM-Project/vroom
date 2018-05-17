@@ -111,7 +111,7 @@ raw_solution cvrp::solve(unsigned nb_threads) const {
   auto nb_tsp = best_c->clusters.size();
   assert(nb_tsp == _input._vehicles.size());
 
-  // Vector of TSP solutions as lists.
+  // Vector of TSP solutions.
   raw_solution tsp_sols(nb_tsp, std::vector<index_t>());
 
   // Run TSP solving for a list of clusters in turn, each with
@@ -168,9 +168,11 @@ raw_solution cvrp::solve(unsigned nb_threads) const {
   BOOST_LOG_TRIVIAL(info) << "[CVRP] Done with TSPs, took "
                           << tsp_computing_time << " ms.";
 
-  cvrp_local_search ls(_input, tsp_sols);
+  if (_input._vehicles.size() > 1) {
+    cvrp_local_search ls(_input, tsp_sols);
 
-  ls.run();
+    ls.run(nb_threads);
+  }
 
   return tsp_sols;
 }
