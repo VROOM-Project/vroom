@@ -33,7 +33,7 @@ void relocate::compute_gain() {
   assert(source_rank < _sol[source_vehicle].size());
   assert(target_rank <= _sol[target_vehicle].size());
 
-  auto m = _input.get_matrix();
+  auto& m = _input.get_matrix();
   const auto& v_target = _input._vehicles[target_vehicle];
 
   // For source vehicle, we consider the cost of removing job at rank

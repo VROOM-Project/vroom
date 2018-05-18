@@ -34,7 +34,7 @@ void exchange::compute_gain() {
   assert(source_rank < _sol[source_vehicle].size());
   assert(target_rank < _sol[target_vehicle].size());
 
-  auto m = _input.get_matrix();
+  auto& m = _input.get_matrix();
   const auto& v_source = _input._vehicles[source_vehicle];
   const auto& v_target = _input._vehicles[target_vehicle];
 
