@@ -226,6 +226,8 @@ std::unique_ptr<vrp> input::get_problem() const {
 solution input::format_solution(const raw_solution& raw_routes) const {
   std::vector<route_t> routes;
   cost_t total_cost = 0;
+  duration_t total_service = 0;
+  amount_t total_amount(_amount_size);
 
   // All job ranks start with unassigned status.
   std::unordered_set<index_t> unassigned_ranks;
@@ -239,7 +241,9 @@ solution input::format_solution(const raw_solution& raw_routes) const {
       continue;
     }
     const auto& v = _vehicles[i];
-    auto cost = 0;
+    cost_t cost = 0;
+    duration_t service = 0;
+    amount_t amount(_amount_size);
 
     // Steps for current route.
     std::vector<step> steps;
@@ -253,11 +257,15 @@ solution input::format_solution(const raw_solution& raw_routes) const {
     // Handle jobs.
     index_t previous = route.front();
     steps.emplace_back(_jobs[previous]);
+    service += steps.back().service;
+    amount += steps.back().amount;
     unassigned_ranks.erase(previous);
 
     for (auto it = ++route.cbegin(); it != route.cend(); ++it) {
       cost += _matrix[_jobs[previous].index()][_jobs[*it].index()];
       steps.emplace_back(_jobs[*it]);
+      service += steps.back().service;
+      amount += steps.back().amount;
       unassigned_ranks.erase(*it);
       previous = *it;
     }
@@ -267,9 +275,17 @@ solution input::format_solution(const raw_solution& raw_routes) const {
       steps.emplace_back(TYPE::END, v.end.get());
       cost += _matrix[_jobs[route.back()].index()][v.end.get().index()];
     }
-    routes.emplace_back(_vehicles[i].id, std::move(steps), cost);
+
+    assert(amount <= _vehicles[i].capacity);
+    routes.emplace_back(_vehicles[i].id,
+                        std::move(steps),
+                        cost,
+                        service,
+                        amount);
 
     total_cost += cost;
+    total_service += service;
+    total_amount += amount;
   }
 
   // Handle unassigned jobs.
@@ -279,7 +295,12 @@ solution input::format_solution(const raw_solution& raw_routes) const {
                  std::back_inserter(unassigned_jobs),
                  [&](auto j) { return _jobs[j]; });
 
-  return solution(0, total_cost, std::move(routes), std::move(unassigned_jobs));
+  return solution(0,
+                  total_cost,
+                  std::move(routes),
+                  std::move(unassigned_jobs),
+                  total_service,
+                  std::move(total_amount));
 }
 
 solution input::solve(unsigned nb_thread) {
@@ -329,7 +350,6 @@ solution input::solve(unsigned nb_thread) {
 
     for (auto& route : sol.routes) {
       _routing_wrapper->add_route_info(route);
-      sol.summary.service += route.service;
       sol.summary.duration += route.duration;
       sol.summary.distance += route.distance;
     }

@@ -56,6 +56,14 @@ rapidjson::Value to_json(const summary_t& summary,
   json_summary.AddMember("cost", summary.cost, allocator);
   json_summary.AddMember("unassigned", summary.unassigned, allocator);
 
+  if (summary.amount.size() > 0) {
+    rapidjson::Value json_amount(rapidjson::kArrayType);
+    for (std::size_t i = 0; i < summary.amount.size(); ++i) {
+      json_amount.PushBack(summary.amount[i], allocator);
+    }
+    json_summary.AddMember("amount", json_amount, allocator);
+  }
+
   if (geometry) {
     json_summary.AddMember("service", summary.service, allocator);
     json_summary.AddMember("distance", summary.distance, allocator);
@@ -76,6 +84,14 @@ rapidjson::Value to_json(const route_t& route,
 
   json_route.AddMember("vehicle", route.vehicle, allocator);
   json_route.AddMember("cost", route.cost, allocator);
+
+  if (route.amount.size() > 0) {
+    rapidjson::Value json_amount(rapidjson::kArrayType);
+    for (std::size_t i = 0; i < route.amount.size(); ++i) {
+      json_amount.PushBack(route.amount[i], allocator);
+    }
+    json_route.AddMember("amount", json_amount, allocator);
+  }
 
   if (geometry) {
     json_route.AddMember("service", route.service, allocator);

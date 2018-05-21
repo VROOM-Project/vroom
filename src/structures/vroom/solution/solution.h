@@ -26,7 +26,9 @@ struct solution {
   solution(unsigned code,
            cost_t cost,
            std::vector<route_t>&& routes,
-           std::vector<job_t>&& unassigned);
+           std::vector<job_t>&& unassigned,
+           duration_t service,
+           amount_t&& amount);
 };
 
 #endif

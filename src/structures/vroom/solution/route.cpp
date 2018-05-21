@@ -9,11 +9,16 @@ All rights reserved (see LICENSE).
 
 #include "./route.h"
 
-route_t::route_t(ID_t vehicle, std::vector<step>&& steps, cost_t cost)
+route_t::route_t(ID_t vehicle,
+                 std::vector<step>&& steps,
+                 cost_t cost,
+                 duration_t service,
+                 const amount_t& amount)
   : vehicle(vehicle),
     steps(std::move(steps)),
     cost(cost),
-    service(0),
+    service(service),
+    amount(amount),
     duration(0),
     distance(0) {
 }

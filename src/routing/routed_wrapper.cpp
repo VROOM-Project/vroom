@@ -169,6 +169,7 @@ void routed_wrapper::add_route_info(route_t& rte) const {
   rte.steps[0].distance = round_cost(current_distance);
   rte.steps[0].duration = round_cost(current_duration);
   rte.steps[0].arrival = 0;
+  duration_t service = 0;
 
   for (rapidjson::SizeType i = 0; i < nb_legs; ++i) {
     // Update arrival, distance and duration for step after current
@@ -179,7 +180,7 @@ void routed_wrapper::add_route_info(route_t& rte) const {
     rte.steps[i + 1].distance = round_cost(current_distance);
     rte.steps[i + 1].duration = round_cost(current_duration);
 
-    rte.steps[i + 1].arrival = round_cost(current_duration + rte.service);
-    rte.service += rte.steps[i + 1].service;
+    rte.steps[i + 1].arrival = round_cost(current_duration + service);
+    service += rte.steps[i + 1].service;
   }
 }

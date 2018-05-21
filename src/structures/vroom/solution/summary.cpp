@@ -9,6 +9,17 @@ All rights reserved (see LICENSE).
 
 #include "summary.h"
 
-summary_t::summary_t(cost_t cost, unsigned unassigned)
-  : cost(cost), service(0), duration(0), distance(0), unassigned(unassigned) {
+summary_t::summary_t() : cost(0), unassigned(0), service(0), amount() {
+}
+
+summary_t::summary_t(cost_t cost,
+                     unsigned unassigned,
+                     duration_t service,
+                     amount_t&& amount)
+  : cost(cost),
+    unassigned(unassigned),
+    service(service),
+    amount(std::move(amount)),
+    duration(0),
+    distance(0) {
 }

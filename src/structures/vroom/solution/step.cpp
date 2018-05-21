@@ -16,5 +16,9 @@ step::step(TYPE type, location_t location)
 }
 
 step::step(const job_t& job)
-  : type(TYPE::JOB), location(job.location), job(job.id), service(job.service) {
+  : type(TYPE::JOB),
+    location(job.location),
+    job(job.id),
+    service(job.service),
+    amount(job.amount) {
 }
