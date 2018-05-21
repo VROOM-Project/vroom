@@ -21,7 +21,6 @@ private:
 public:
   or_opt(const input& input,
          raw_solution& sol,
-         std::vector<amount_t>& amounts,
          index_t source_vehicle,
          index_t source_rank,
          index_t target_vehicle,

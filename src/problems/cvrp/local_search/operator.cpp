@@ -11,6 +11,7 @@ All rights reserved (see LICENSE).
 
 #include "operator.h"
 
+std::vector<std::vector<amount_t>> ls_operator::amounts;
 std::vector<std::vector<gain_t>> ls_operator::edge_costs_around_node;
 std::vector<std::vector<gain_t>> ls_operator::node_gains;
 std::vector<index_t> ls_operator::node_candidates;
@@ -20,14 +21,12 @@ std::vector<index_t> ls_operator::edge_candidates;
 
 ls_operator::ls_operator(const input& input,
                          raw_solution& sol,
-                         std::vector<amount_t>& amounts,
                          index_t source_vehicle,
                          index_t source_rank,
                          index_t target_vehicle,
                          index_t target_rank)
   : _input(input),
     _sol(sol),
-    _amounts(amounts),
     source_vehicle(source_vehicle),
     source_rank(source_rank),
     target_vehicle(target_vehicle),

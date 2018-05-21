@@ -17,7 +17,6 @@ class ls_operator {
 protected:
   const input& _input;
   raw_solution& _sol;
-  std::vector<amount_t>& _amounts;
 
   const index_t source_vehicle;
   const index_t source_rank;
@@ -31,11 +30,14 @@ protected:
 public:
   ls_operator(const input& input,
               raw_solution& sol,
-              std::vector<amount_t>& amounts,
               index_t source_vehicle,
               index_t source_rank,
               index_t target_vehicle,
               index_t target_rank);
+
+  // amounts[v][i] stores the total amount up to rank i in the route
+  // for vehicle v .
+  static std::vector<std::vector<amount_t>> amounts;
 
   // edge_costs_around_node[v][i] stores the sum of costs for edges
   // that appear before and after job at rank i in route for vehicle v

@@ -13,26 +13,23 @@ All rights reserved (see LICENSE).
 
 relocate::relocate(const input& input,
                    raw_solution& sol,
-                   std::vector<amount_t>& amounts,
                    index_t source_vehicle,
                    index_t source_rank,
                    index_t target_vehicle,
                    index_t target_rank)
   : ls_operator(input,
                 sol,
-                amounts,
                 source_vehicle,
                 source_rank,
                 target_vehicle,
                 target_rank) {
-}
-
-void relocate::compute_gain() {
   assert(source_vehicle != target_vehicle);
   assert(_sol[source_vehicle].size() >= 1);
   assert(source_rank < _sol[source_vehicle].size());
   assert(target_rank <= _sol[target_vehicle].size());
+}
 
+void relocate::compute_gain() {
   auto& m = _input.get_matrix();
   const auto& v_target = _input._vehicles[target_vehicle];
 
@@ -99,8 +96,14 @@ bool relocate::is_valid() const {
 
   bool valid = _input.vehicle_ok_with_job(target_vehicle, relocate_job_rank);
 
-  valid &= (_amounts[target_vehicle] + _input._jobs[relocate_job_rank].amount <=
-            _input._vehicles[target_vehicle].capacity);
+  if (amounts[target_vehicle].empty()) {
+    valid &= (_input._jobs[relocate_job_rank].amount <=
+              _input._vehicles[target_vehicle].capacity);
+  } else {
+    valid &= (amounts[target_vehicle].back() +
+                _input._jobs[relocate_job_rank].amount <=
+              _input._vehicles[target_vehicle].capacity);
+  }
 
   return valid;
 }
@@ -110,10 +113,6 @@ void relocate::apply() const {
   _sol[source_vehicle].erase(_sol[source_vehicle].begin() + source_rank);
   _sol[target_vehicle].insert(_sol[target_vehicle].begin() + target_rank,
                               relocate_job_rank);
-
-  auto& relocate_amount = _input._jobs[relocate_job_rank].amount;
-  _amounts[target_vehicle] += relocate_amount;
-  _amounts[source_vehicle] -= relocate_amount;
 }
 
 void relocate::log() const {

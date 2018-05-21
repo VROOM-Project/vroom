@@ -13,27 +13,24 @@ All rights reserved (see LICENSE).
 
 or_opt::or_opt(const input& input,
                raw_solution& sol,
-               std::vector<amount_t>& amounts,
                index_t source_vehicle,
                index_t source_rank,
                index_t target_vehicle,
                index_t target_rank)
   : ls_operator(input,
                 sol,
-                amounts,
                 source_vehicle,
                 source_rank,
                 target_vehicle,
                 target_rank),
     reverse_source_edge(false) {
-}
-
-void or_opt::compute_gain() {
   assert(source_vehicle != target_vehicle);
   assert(_sol[source_vehicle].size() >= 2);
   assert(source_rank < _sol[source_vehicle].size() - 1);
   assert(target_rank <= _sol[target_vehicle].size());
+}
 
+void or_opt::compute_gain() {
   auto& m = _input.get_matrix();
   const auto& v_target = _input._vehicles[target_vehicle];
 
@@ -126,20 +123,21 @@ bool or_opt::is_valid() const {
   bool valid = _input.vehicle_ok_with_job(target_vehicle, current_job_rank);
   valid &= _input.vehicle_ok_with_job(target_vehicle, after_job_rank);
 
-  valid &= (_amounts[target_vehicle] + _input._jobs[current_job_rank].amount +
-              _input._jobs[after_job_rank].amount <=
-            _input._vehicles[target_vehicle].capacity);
+  if (amounts[target_vehicle].empty()) {
+    valid &= (_input._jobs[current_job_rank].amount +
+                _input._jobs[after_job_rank].amount <=
+              _input._vehicles[target_vehicle].capacity);
+  } else {
+    valid &=
+      (amounts[target_vehicle].back() + _input._jobs[current_job_rank].amount +
+         _input._jobs[after_job_rank].amount <=
+       _input._vehicles[target_vehicle].capacity);
+  }
 
   return valid;
 }
 
 void or_opt::apply() const {
-  auto mv_amount = _input._jobs[_sol[source_vehicle][source_rank]].amount +
-                   _input._jobs[_sol[source_vehicle][source_rank + 1]].amount;
-
-  _amounts[target_vehicle] += mv_amount;
-  _amounts[source_vehicle] -= mv_amount;
-
   _sol[target_vehicle].insert(_sol[target_vehicle].begin() + target_rank,
                               _sol[source_vehicle].begin() + source_rank,
                               _sol[source_vehicle].begin() + source_rank + 2);

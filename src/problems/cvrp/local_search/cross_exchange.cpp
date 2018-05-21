@@ -13,29 +13,26 @@ All rights reserved (see LICENSE).
 
 cross_exchange::cross_exchange(const input& input,
                                raw_solution& sol,
-                               std::vector<amount_t>& amounts,
                                index_t source_vehicle,
                                index_t source_rank,
                                index_t target_vehicle,
                                index_t target_rank)
   : ls_operator(input,
                 sol,
-                amounts,
                 source_vehicle,
                 source_rank,
                 target_vehicle,
                 target_rank),
     reverse_source_edge(false),
     reverse_target_edge(false) {
-}
-
-void cross_exchange::compute_gain() {
   assert(source_vehicle != target_vehicle);
   assert(_sol[source_vehicle].size() >= 2);
   assert(_sol[target_vehicle].size() >= 2);
   assert(source_rank < _sol[source_vehicle].size() - 1);
   assert(target_rank < _sol[target_vehicle].size() - 1);
+}
 
+void cross_exchange::compute_gain() {
   auto& m = _input.get_matrix();
   const auto& v_source = _input._vehicles[source_vehicle];
   const auto& v_target = _input._vehicles[target_vehicle];
@@ -160,32 +157,24 @@ bool cross_exchange::is_valid() const {
   valid &= _input.vehicle_ok_with_job(source_vehicle, t_current_job_rank);
   valid &= _input.vehicle_ok_with_job(source_vehicle, t_after_job_rank);
 
-  valid &= (_amounts[source_vehicle] - _input._jobs[s_current_job_rank].amount -
-              _input._jobs[s_after_job_rank].amount +
-              _input._jobs[t_current_job_rank].amount +
-              _input._jobs[t_after_job_rank].amount <=
-            _input._vehicles[source_vehicle].capacity);
+  valid &=
+    (amounts[source_vehicle].back() - _input._jobs[s_current_job_rank].amount -
+       _input._jobs[s_after_job_rank].amount +
+       _input._jobs[t_current_job_rank].amount +
+       _input._jobs[t_after_job_rank].amount <=
+     _input._vehicles[source_vehicle].capacity);
 
-  valid &= (_amounts[target_vehicle] - _input._jobs[t_current_job_rank].amount -
-              _input._jobs[t_after_job_rank].amount +
-              _input._jobs[s_current_job_rank].amount +
-              _input._jobs[s_after_job_rank].amount <=
-            _input._vehicles[target_vehicle].capacity);
+  valid &=
+    (amounts[target_vehicle].back() - _input._jobs[t_current_job_rank].amount -
+       _input._jobs[t_after_job_rank].amount +
+       _input._jobs[s_current_job_rank].amount +
+       _input._jobs[s_after_job_rank].amount <=
+     _input._vehicles[target_vehicle].capacity);
 
   return valid;
 }
 
 void cross_exchange::apply() const {
-  auto s_amount = _input._jobs[_sol[source_vehicle][source_rank]].amount +
-                  _input._jobs[_sol[source_vehicle][source_rank + 1]].amount;
-  auto t_amount = _input._jobs[_sol[target_vehicle][target_rank]].amount +
-                  _input._jobs[_sol[target_vehicle][target_rank + 1]].amount;
-
-  auto s_t_amount = t_amount - s_amount;
-
-  _amounts[source_vehicle] += s_t_amount;
-  _amounts[target_vehicle] -= s_t_amount;
-
   std::swap(_sol[source_vehicle][source_rank],
             _sol[target_vehicle][target_rank]);
   std::swap(_sol[source_vehicle][source_rank + 1],

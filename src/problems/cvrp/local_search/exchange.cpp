@@ -13,27 +13,24 @@ All rights reserved (see LICENSE).
 
 exchange::exchange(const input& input,
                    raw_solution& sol,
-                   std::vector<amount_t>& amounts,
                    index_t source_vehicle,
                    index_t source_rank,
                    index_t target_vehicle,
                    index_t target_rank)
   : ls_operator(input,
                 sol,
-                amounts,
                 source_vehicle,
                 source_rank,
                 target_vehicle,
                 target_rank) {
-}
-
-void exchange::compute_gain() {
   assert(source_vehicle != target_vehicle);
   assert(_sol[source_vehicle].size() >= 1);
   assert(_sol[target_vehicle].size() >= 1);
   assert(source_rank < _sol[source_vehicle].size());
   assert(target_rank < _sol[target_vehicle].size());
+}
 
+void exchange::compute_gain() {
   auto& m = _input.get_matrix();
   const auto& v_source = _input._vehicles[source_vehicle];
   const auto& v_target = _input._vehicles[target_vehicle];
@@ -113,26 +110,20 @@ bool exchange::is_valid() const {
   bool valid = _input.vehicle_ok_with_job(target_vehicle, source_job_rank);
   valid &= _input.vehicle_ok_with_job(source_vehicle, target_job_rank);
 
-  valid &= (_amounts[target_vehicle] - _input._jobs[target_job_rank].amount +
-              _input._jobs[source_job_rank].amount <=
-            _input._vehicles[target_vehicle].capacity);
+  valid &=
+    (amounts[target_vehicle].back() - _input._jobs[target_job_rank].amount +
+       _input._jobs[source_job_rank].amount <=
+     _input._vehicles[target_vehicle].capacity);
 
-  valid &= (_amounts[source_vehicle] - _input._jobs[source_job_rank].amount +
-              _input._jobs[target_job_rank].amount <=
-            _input._vehicles[source_vehicle].capacity);
+  valid &=
+    (amounts[source_vehicle].back() - _input._jobs[source_job_rank].amount +
+       _input._jobs[target_job_rank].amount <=
+     _input._vehicles[source_vehicle].capacity);
 
   return valid;
 }
 
 void exchange::apply() const {
-  auto& s_amount = _input._jobs[_sol[source_vehicle][source_rank]].amount;
-  auto& t_amount = _input._jobs[_sol[target_vehicle][target_rank]].amount;
-
-  auto s_t_amount = t_amount - s_amount;
-
-  _amounts[source_vehicle] += s_t_amount;
-  _amounts[target_vehicle] -= s_t_amount;
-
   std::swap(_sol[source_vehicle][source_rank],
             _sol[target_vehicle][target_rank]);
 }

@@ -21,7 +21,6 @@ private:
   const matrix<cost_t>& _m;
   const std::size_t V;
   raw_solution& _sol;
-  std::vector<amount_t> _amounts;
   std::unordered_set<index_t> _unassigned;
   const amount_t _amount_lower_bound;
   const amount_t _double_amount_lower_bound;
@@ -33,15 +32,17 @@ private:
   // in route v2 that minimize cost to job at rank r1 in v1.
   std::vector<std::vector<std::vector<index_t>>> _nearest_job_rank_in_routes_to;
 
+  void set_node_gains(index_t v);
+  void set_edge_gains(index_t v);
+
   // Todo remove
   bool _log;
   unsigned _ls_step;
   void log_solution();
 
+  void update_amounts(index_t v);
+  amount_t total_amount(index_t v);
   void update_nearest_job_rank_in_routes(index_t v1, index_t v2);
-
-  void set_node_gains(index_t v);
-  void set_edge_gains(index_t v);
 
   void try_job_additions(const std::vector<index_t>& routes);
 

@@ -265,6 +265,24 @@ void cvrp_local_search::log_solution() {
   }
 }
 
+void cvrp_local_search::update_amounts(index_t v) {
+  ls_operator::amounts[v] = std::vector<amount_t>(_sol[v].size());
+  amount_t current_amount(_input.amount_size());
+
+  for (std::size_t i = 0; i < _sol[v].size(); ++i) {
+    current_amount += _input._jobs[_sol[v][i]].amount;
+    ls_operator::amounts[v][i] = current_amount;
+  }
+}
+
+amount_t cvrp_local_search::total_amount(index_t v) {
+  amount_t v_amount(_input.amount_size());
+  if (!ls_operator::amounts[v].empty()) {
+    v_amount = ls_operator::amounts[v].back();
+  }
+  return v_amount;
+}
+
 void cvrp_local_search::update_nearest_job_rank_in_routes(index_t v1,
                                                           index_t v2) {
   _nearest_job_rank_in_routes_from[v1][v2] =
@@ -302,13 +320,18 @@ cvrp_local_search::cvrp_local_search(const input& input, raw_solution& sol)
     _m(_input.get_matrix()),
     V(_input._vehicles.size()),
     _sol(sol),
-    _amounts(sol.size(), amount_t(input.amount_size())),
     _amount_lower_bound(_input.get_amount_lower_bound()),
     _double_amount_lower_bound(_amount_lower_bound + _amount_lower_bound),
     _nearest_job_rank_in_routes_from(V, std::vector<std::vector<index_t>>(V)),
     _nearest_job_rank_in_routes_to(V, std::vector<std::vector<index_t>>(V)),
     _log(false),
     _ls_step(0) {
+
+  // Initialize amounts.
+  ls_operator::amounts = std::vector<std::vector<amount_t>>(_sol.size());
+  for (std::size_t v = 0; v < _sol.size(); ++v) {
+    update_amounts(v);
+  }
 
   // Initialize unassigned jobs.
   std::generate_n(std::inserter(_unassigned, _unassigned.end()),
@@ -331,22 +354,24 @@ cvrp_local_search::cvrp_local_search(const input& input, raw_solution& sol)
   }
   std::cout << std::endl;
 
+  // Logging stuff, todo remove.
   std::cout << "Amount lower bound: ";
   for (std::size_t r = 0; r < _amount_lower_bound.size(); ++r) {
     std::cout << _amount_lower_bound[r];
   }
   std::cout << std::endl;
 
-  for (std::size_t i = 0; i < sol.size(); ++i) {
-    for (const auto rank : sol[i]) {
-      _amounts[i] += _input._jobs[rank].amount;
+  for (std::size_t v = 0; v < sol.size(); ++v) {
+    if (ls_operator::amounts[v].empty()) {
+      assert(_sol[v].empty());
+      continue;
     }
-    auto& capacity = _input._vehicles[i].capacity;
-
-    std::cout << "Amount for vehicle " << _input._vehicles[i].id << " (at rank "
-              << i << "): ";
-    for (std::size_t r = 0; r < _amounts[i].size(); ++r) {
-      std::cout << _amounts[i][r] << " / " << capacity[r] << " ; ";
+    auto& capacity = _input._vehicles[v].capacity;
+    std::cout << "Amount for vehicle " << _input._vehicles[v].id << " (at rank "
+              << v << "): ";
+    auto& v_amount = ls_operator::amounts[v].back();
+    for (std::size_t r = 0; r < v_amount.size(); ++r) {
+      std::cout << v_amount[r] << " / " << capacity[r] << " ; ";
     }
     std::cout << std::endl;
   }
@@ -389,12 +414,13 @@ void cvrp_local_search::try_job_additions(const std::vector<index_t>& routes) {
 
     for (const auto v : routes) {
       const auto& v_target = _input._vehicles[v];
+      const amount_t v_amount = total_amount(v);
 
       for (const auto j : _unassigned) {
         auto& current_amount = _input._jobs[j].amount;
 
         if (_input.vehicle_ok_with_job(v, j) and
-            _amounts[v] + current_amount <= _input._vehicles[v].capacity) {
+            v_amount + current_amount <= _input._vehicles[v].capacity) {
           auto index_j = _input._jobs[j].index();
 
           for (std::size_t r = 0; r < _sol[v].size(); ++r) {
@@ -460,7 +486,14 @@ void cvrp_local_search::try_job_additions(const std::vector<index_t>& routes) {
                 << best_rank << " in route for vehicle "
                 << _input._vehicles[best_route].id << "." << std::endl;
       _sol[best_route].insert(_sol[best_route].begin() + best_rank, best_job);
-      _amounts[best_route] += _input._jobs[best_job].amount;
+
+      auto& best_amounts = ls_operator::amounts[best_route];
+      const auto& job_amount = _input._jobs[best_job].amount;
+      best_amounts.insert(best_amounts.begin() + best_rank, job_amount);
+      std::for_each(best_amounts.begin() + best_rank + 1,
+                    best_amounts.end(),
+                    [&](auto& a) { a += job_amount; });
+
       _unassigned.erase(best_job);
     }
   } while (job_added);
@@ -496,7 +529,7 @@ void cvrp_local_search::run_with_fixed_source_and_target() {
     // Relocate stuff
     for (const auto& s_t : s_t_pairs) {
       if (_input._vehicles[s_t.second].capacity <
-          _amounts[s_t.second] + _amount_lower_bound) {
+          total_amount(s_t.second) + _amount_lower_bound) {
         // Don't try to put things in a full vehicle.
         continue;
       }
@@ -520,8 +553,7 @@ void cvrp_local_search::run_with_fixed_source_and_target() {
       t_ranks.insert((_sol[s_t.second].size() == 0) ? 0 : nearest_to_rank + 1);
 
       for (const index_t t_rank : t_ranks) {
-        relocate
-          r(_input, _sol, _amounts, s_t.first, s_rank, s_t.second, t_rank);
+        relocate r(_input, _sol, s_t.first, s_rank, s_t.second, t_rank);
         if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
           best_gains[s_t.first][s_t.second] = r.gain();
           best_ops[s_t.first][s_t.second] = std::make_unique<relocate>(r);
@@ -573,8 +605,7 @@ void cvrp_local_search::run_with_fixed_source_and_target() {
                        : nearest_to_rank + 1);
 
       for (const index_t t_rank : t_ranks) {
-        exchange
-          r(_input, _sol, _amounts, s_t.first, s_rank, s_t.second, t_rank);
+        exchange r(_input, _sol, s_t.first, s_rank, s_t.second, t_rank);
         if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
           best_gains[s_t.first][s_t.second] = r.gain();
           best_ops[s_t.first][s_t.second] = std::make_unique<exchange>(r);
@@ -585,7 +616,7 @@ void cvrp_local_search::run_with_fixed_source_and_target() {
     // Or-opt stuff
     for (const auto& s_t : s_t_pairs) {
       if (_input._vehicles[s_t.second].capacity <
-          _amounts[s_t.second] + _double_amount_lower_bound) {
+          total_amount(s_t.second) + _double_amount_lower_bound) {
         // Don't try to put things in a full vehicle.
         continue;
       }
@@ -609,7 +640,7 @@ void cvrp_local_search::run_with_fixed_source_and_target() {
       t_ranks.insert((_sol[s_t.second].size() == 0) ? 0 : nearest_to_rank + 1);
 
       for (const index_t t_rank : t_ranks) {
-        or_opt r(_input, _sol, _amounts, s_t.first, s_rank, s_t.second, t_rank);
+        or_opt r(_input, _sol, s_t.first, s_rank, s_t.second, t_rank);
         if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
           best_gains[s_t.first][s_t.second] = r.gain();
           best_ops[s_t.first][s_t.second] = std::make_unique<or_opt>(r);
@@ -671,8 +702,7 @@ void cvrp_local_search::run_with_fixed_source_and_target() {
                        : _sol[s_t.second].size() - 2);
 
       for (const index_t t_rank : t_ranks) {
-        cross_exchange
-          r(_input, _sol, _amounts, s_t.first, s_rank, s_t.second, t_rank);
+        cross_exchange r(_input, _sol, s_t.first, s_rank, s_t.second, t_rank);
         if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
           best_gains[s_t.first][s_t.second] = r.gain();
           best_ops[s_t.first][s_t.second] = std::make_unique<cross_exchange>(r);
@@ -707,6 +737,9 @@ void cvrp_local_search::run_with_fixed_source_and_target() {
       best_ops[best_source][best_target]->apply();
       run_tsp(best_source, 1);
       run_tsp(best_target, 1);
+
+      update_amounts(best_source);
+      update_amounts(best_target);
 
       try_job_additions(
         best_ops[best_source][best_target]->addition_candidates());
@@ -779,7 +812,7 @@ void cvrp_local_search::run_with_fixed_source() {
     // Relocate stuff
     for (const auto& s_t : s_t_pairs) {
       if (_input._vehicles[s_t.second].capacity <
-          _amounts[s_t.second] + _amount_lower_bound) {
+          total_amount(s_t.second) + _amount_lower_bound) {
         // Don't try to put things in a full vehicle.
         continue;
       }
@@ -788,8 +821,7 @@ void cvrp_local_search::run_with_fixed_source() {
       }
       auto s_rank = ls_operator::node_candidates[s_t.first];
       for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size(); ++t_rank) {
-        relocate
-          r(_input, _sol, _amounts, s_t.first, s_rank, s_t.second, t_rank);
+        relocate r(_input, _sol, s_t.first, s_rank, s_t.second, t_rank);
         if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
           best_gains[s_t.first][s_t.second] = r.gain();
           best_ops[s_t.first][s_t.second] = std::make_unique<relocate>(r);
@@ -804,8 +836,7 @@ void cvrp_local_search::run_with_fixed_source() {
       }
       auto s_rank = ls_operator::node_candidates[s_t.first];
       for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size(); ++t_rank) {
-        exchange
-          r(_input, _sol, _amounts, s_t.first, s_rank, s_t.second, t_rank);
+        exchange r(_input, _sol, s_t.first, s_rank, s_t.second, t_rank);
         if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
           best_gains[s_t.first][s_t.second] = r.gain();
           best_ops[s_t.first][s_t.second] = std::make_unique<exchange>(r);
@@ -816,7 +847,7 @@ void cvrp_local_search::run_with_fixed_source() {
     // Or-opt stuff
     for (const auto& s_t : s_t_pairs) {
       if (_input._vehicles[s_t.second].capacity <
-          _amounts[s_t.second] + _double_amount_lower_bound) {
+          total_amount(s_t.second) + _double_amount_lower_bound) {
         // Don't try to put things in a full vehicle.
         continue;
       }
@@ -825,7 +856,7 @@ void cvrp_local_search::run_with_fixed_source() {
       }
       auto s_rank = ls_operator::edge_candidates[s_t.first];
       for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size(); ++t_rank) {
-        or_opt r(_input, _sol, _amounts, s_t.first, s_rank, s_t.second, t_rank);
+        or_opt r(_input, _sol, s_t.first, s_rank, s_t.second, t_rank);
         if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
           best_gains[s_t.first][s_t.second] = r.gain();
           best_ops[s_t.first][s_t.second] = std::make_unique<or_opt>(r);
@@ -841,8 +872,7 @@ void cvrp_local_search::run_with_fixed_source() {
       auto s_rank = ls_operator::edge_candidates[s_t.first];
       for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size() - 1;
            ++t_rank) {
-        cross_exchange
-          r(_input, _sol, _amounts, s_t.first, s_rank, s_t.second, t_rank);
+        cross_exchange r(_input, _sol, s_t.first, s_rank, s_t.second, t_rank);
         if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
           best_gains[s_t.first][s_t.second] = r.gain();
           best_ops[s_t.first][s_t.second] = std::make_unique<cross_exchange>(r);
@@ -877,6 +907,9 @@ void cvrp_local_search::run_with_fixed_source() {
       best_ops[best_source][best_target]->apply();
       run_tsp(best_source, 1);
       run_tsp(best_target, 1);
+
+      update_amounts(best_source);
+      update_amounts(best_target);
 
       try_job_additions(
         best_ops[best_source][best_target]->addition_candidates());
@@ -942,7 +975,7 @@ void cvrp_local_search::run_exhaustive_search() {
     // Relocate stuff
     for (const auto& s_t : s_t_pairs) {
       if (_input._vehicles[s_t.second].capacity <
-          _amounts[s_t.second] + _amount_lower_bound) {
+          total_amount(s_t.second) + _amount_lower_bound) {
         // Don't try to put things in a full vehicle.
         continue;
       }
@@ -951,8 +984,7 @@ void cvrp_local_search::run_exhaustive_search() {
       }
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
         for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size(); ++t_rank) {
-          relocate
-            r(_input, _sol, _amounts, s_t.first, s_rank, s_t.second, t_rank);
+          relocate r(_input, _sol, s_t.first, s_rank, s_t.second, t_rank);
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
             best_gains[s_t.first][s_t.second] = r.gain();
             best_ops[s_t.first][s_t.second] = std::make_unique<relocate>(r);
@@ -973,8 +1005,7 @@ void cvrp_local_search::run_exhaustive_search() {
 
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
         for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size(); ++t_rank) {
-          exchange
-            r(_input, _sol, _amounts, s_t.first, s_rank, s_t.second, t_rank);
+          exchange r(_input, _sol, s_t.first, s_rank, s_t.second, t_rank);
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
             best_gains[s_t.first][s_t.second] = r.gain();
             best_ops[s_t.first][s_t.second] = std::make_unique<exchange>(r);
@@ -986,7 +1017,7 @@ void cvrp_local_search::run_exhaustive_search() {
     // Or-opt stuff
     for (const auto& s_t : s_t_pairs) {
       if (_input._vehicles[s_t.second].capacity <
-          _amounts[s_t.second] + _double_amount_lower_bound) {
+          total_amount(s_t.second) + _double_amount_lower_bound) {
         // Don't try to put things in a full vehicle.
         continue;
       }
@@ -995,8 +1026,7 @@ void cvrp_local_search::run_exhaustive_search() {
       }
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1; ++s_rank) {
         for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size(); ++t_rank) {
-          or_opt
-            r(_input, _sol, _amounts, s_t.first, s_rank, s_t.second, t_rank);
+          or_opt r(_input, _sol, s_t.first, s_rank, s_t.second, t_rank);
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
             best_gains[s_t.first][s_t.second] = r.gain();
             best_ops[s_t.first][s_t.second] = std::make_unique<or_opt>(r);
@@ -1018,8 +1048,7 @@ void cvrp_local_search::run_exhaustive_search() {
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1; ++s_rank) {
         for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size() - 1;
              ++t_rank) {
-          cross_exchange
-            r(_input, _sol, _amounts, s_t.first, s_rank, s_t.second, t_rank);
+          cross_exchange r(_input, _sol, s_t.first, s_rank, s_t.second, t_rank);
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
             best_gains[s_t.first][s_t.second] = r.gain();
             best_ops[s_t.first][s_t.second] =
@@ -1056,6 +1085,9 @@ void cvrp_local_search::run_exhaustive_search() {
       best_ops[best_source][best_target]->apply();
       run_tsp(best_source, 1);
       run_tsp(best_target, 1);
+
+      update_amounts(best_source);
+      update_amounts(best_target);
 
       try_job_additions(
         best_ops[best_source][best_target]->addition_candidates());
