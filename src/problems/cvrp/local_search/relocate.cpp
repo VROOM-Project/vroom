@@ -126,3 +126,7 @@ void relocate::log() const {
             << ") moved to rank " << target_rank << " in route for vehicle "
             << v_target.id << std::endl;
 }
+
+std::vector<index_t> relocate::addition_candidates() const {
+  return {source_vehicle};
+}

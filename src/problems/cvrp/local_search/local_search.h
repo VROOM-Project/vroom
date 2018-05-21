@@ -10,6 +10,8 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <unordered_set>
+
 #include "../../../structures/typedefs.h"
 #include "../../../utils/output_json.h" // Todo remove
 
@@ -20,6 +22,7 @@ private:
   const std::size_t V;
   raw_solution& _sol;
   std::vector<amount_t> _amounts;
+  std::unordered_set<index_t> _unassigned;
   const amount_t _amount_lower_bound;
   const amount_t _double_amount_lower_bound;
   // _nearest_job_rank_in_routes_from[v1][v2][r1] stores the rank of
@@ -39,6 +42,8 @@ private:
 
   void set_node_gains(index_t v);
   void set_edge_gains(index_t v);
+
+  void try_job_additions(const std::vector<index_t>& routes);
 
   void run_with_fixed_source_and_target();
   void run_with_fixed_source();

@@ -149,3 +149,7 @@ void exchange::log() const {
             << _input._jobs[_sol[target_vehicle][target_rank]].id << ")"
             << std::endl;
 }
+
+std::vector<index_t> exchange::addition_candidates() const {
+  return {source_vehicle, target_vehicle};
+}

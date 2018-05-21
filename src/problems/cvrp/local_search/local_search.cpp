@@ -8,7 +8,6 @@ All rights reserved (see LICENSE).
 */
 
 #include <iostream>
-#include <unordered_set>
 
 #include "cross_exchange.h"
 #include "exchange.h"
@@ -311,6 +310,27 @@ cvrp_local_search::cvrp_local_search(const input& input, raw_solution& sol)
     _log(false),
     _ls_step(0) {
 
+  // Initialize unassigned jobs.
+  std::generate_n(std::inserter(_unassigned, _unassigned.end()),
+                  _input._jobs.size(),
+                  [] {
+                    static int x = 0;
+                    return x++;
+                  });
+
+  for (const auto& s : _sol) {
+    for (const auto i : s) {
+      _unassigned.erase(i);
+    }
+  }
+
+  std::cout << "Unassigned jobs: ";
+  for (auto i : _unassigned) {
+    std::cout << _input._jobs[i].id << " (" << _input._jobs[i].amount[0]
+              << ") ; ";
+  }
+  std::cout << std::endl;
+
   std::cout << "Amount lower bound: ";
   for (std::size_t r = 0; r < _amount_lower_bound.size(); ++r) {
     std::cout << _amount_lower_bound[r];
@@ -349,9 +369,101 @@ cvrp_local_search::cvrp_local_search(const input& input, raw_solution& sol)
   // time access down the line.
   for (std::size_t v1 = 0; v1 < V; ++v1) {
     for (std::size_t v2 = 0; v2 < V; ++v2) {
+      if (v2 == v1) {
+        continue;
+      }
       update_nearest_job_rank_in_routes(v1, v2);
     }
   }
+}
+
+void cvrp_local_search::try_job_additions(const std::vector<index_t>& routes) {
+  auto& m = _input.get_matrix();
+  bool job_added;
+
+  do {
+    auto best_cost = std::numeric_limits<gain_t>::max();
+    index_t best_job;
+    index_t best_route;
+    index_t best_rank;
+
+    for (const auto v : routes) {
+      const auto& v_target = _input._vehicles[v];
+
+      for (const auto j : _unassigned) {
+        auto& current_amount = _input._jobs[j].amount;
+
+        if (_input.vehicle_ok_with_job(v, j) and
+            _amounts[v] + current_amount <= _input._vehicles[v].capacity) {
+          auto index_j = _input._jobs[j].index();
+
+          for (std::size_t r = 0; r < _sol[v].size(); ++r) {
+            // Check cost of adding unassigned job at rank r in route
+            // v. Same logic as in relocate::compute_gain.
+            gain_t previous_cost = 0;
+            gain_t next_cost = 0;
+            gain_t old_edge_cost = 0;
+
+            if (r == _sol[v].size()) {
+              if (_sol[v].size() == 0) {
+                // Adding job to an empty route.
+                if (v_target.has_start()) {
+                  previous_cost = m[v_target.start.get().index()][index_j];
+                }
+                if (v_target.has_end()) {
+                  next_cost = m[index_j][v_target.end.get().index()];
+                }
+              } else {
+                // Adding job past the end after a real job.
+                auto p_index = _input._jobs[_sol[v][r - 1]].index();
+                previous_cost = m[p_index][index_j];
+                if (v_target.has_end()) {
+                  auto n_index = v_target.end.get().index();
+                  old_edge_cost = m[p_index][n_index];
+                  next_cost = m[index_j][n_index];
+                }
+              }
+            } else {
+              // Adding before one of the jobs.
+              auto n_index = _input._jobs[_sol[v][r]].index();
+              next_cost = m[index_j][n_index];
+
+              if (r == 0) {
+                if (v_target.has_start()) {
+                  auto p_index = v_target.start.get().index();
+                  previous_cost = m[p_index][index_j];
+                  old_edge_cost = m[p_index][n_index];
+                }
+              } else {
+                auto p_index = _input._jobs[_sol[v][r - 1]].index();
+                previous_cost = m[p_index][index_j];
+                old_edge_cost = m[p_index][n_index];
+              }
+            }
+
+            gain_t current_cost = old_edge_cost - previous_cost - next_cost;
+            if (current_cost < best_cost) {
+              best_cost = current_cost;
+              best_job = j;
+              best_route = v;
+              best_rank = r;
+            }
+          }
+        }
+      }
+    }
+
+    job_added = (best_cost < std::numeric_limits<gain_t>::max());
+
+    if (job_added) {
+      std::cout << "- Adding job: " << _input._jobs[best_job].id << " at rank "
+                << best_rank << " in route for vehicle "
+                << _input._vehicles[best_route].id << "." << std::endl;
+      _sol[best_route].insert(_sol[best_route].begin() + best_rank, best_job);
+      _amounts[best_route] += _input._jobs[best_job].amount;
+      _unassigned.erase(best_job);
+    }
+  } while (job_added);
 }
 
 void cvrp_local_search::run_with_fixed_source_and_target() {
@@ -596,6 +708,9 @@ void cvrp_local_search::run_with_fixed_source_and_target() {
       run_tsp(best_source, 1);
       run_tsp(best_target, 1);
 
+      try_job_additions(
+        best_ops[best_source][best_target]->addition_candidates());
+
       log_solution();
 
       // Update candidates.
@@ -762,6 +877,9 @@ void cvrp_local_search::run_with_fixed_source() {
       best_ops[best_source][best_target]->apply();
       run_tsp(best_source, 1);
       run_tsp(best_target, 1);
+
+      try_job_additions(
+        best_ops[best_source][best_target]->addition_candidates());
 
       log_solution();
 
@@ -938,6 +1056,9 @@ void cvrp_local_search::run_exhaustive_search() {
       best_ops[best_source][best_target]->apply();
       run_tsp(best_source, 1);
       run_tsp(best_target, 1);
+
+      try_job_additions(
+        best_ops[best_source][best_target]->addition_candidates());
 
       log_solution();
 

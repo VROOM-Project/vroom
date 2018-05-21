@@ -33,6 +33,8 @@ public:
   virtual void apply() const override;
 
   virtual void log() const override;
+
+  virtual std::vector<index_t> addition_candidates() const override;
 };
 
 #endif

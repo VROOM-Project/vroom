@@ -227,3 +227,7 @@ void cross_exchange::log() const {
             << _input._jobs[_sol[target_vehicle][target_rank + 1]].id << ")"
             << std::endl;
 }
+
+std::vector<index_t> cross_exchange::addition_candidates() const {
+  return {source_vehicle, target_vehicle};
+}
