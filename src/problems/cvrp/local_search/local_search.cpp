@@ -9,6 +9,7 @@ All rights reserved (see LICENSE).
 
 #include <iostream>
 
+#include "2_opt.h"
 #include "cross_exchange.h"
 #include "exchange.h"
 #include "local_search.h"
@@ -489,7 +490,10 @@ void cvrp_local_search::try_job_additions(const std::vector<index_t>& routes) {
 
       auto& best_amounts = ls_operator::amounts[best_route];
       const auto& job_amount = _input._jobs[best_job].amount;
-      best_amounts.insert(best_amounts.begin() + best_rank, job_amount);
+      auto previous_cumul = (best_rank == 0) ? amount_t(_input.amount_size())
+                                             : best_amounts[best_rank - 1];
+      best_amounts.insert(best_amounts.begin() + best_rank,
+                          previous_cumul + job_amount);
       std::for_each(best_amounts.begin() + best_rank + 1,
                     best_amounts.end(),
                     [&](auto& a) { a += job_amount; });
@@ -969,6 +973,8 @@ void cvrp_local_search::run_exhaustive_search() {
 
   std::vector<std::vector<gain_t>> best_gains(V, std::vector<gain_t>(V, 0));
 
+  log_solution();
+
   gain_t best_gain = 1;
 
   while (best_gain > 0) {
@@ -1058,6 +1064,23 @@ void cvrp_local_search::run_exhaustive_search() {
       }
     }
 
+    // 2-opt* stuff
+    for (const auto& s_t : s_t_pairs) {
+      if (s_t.second <= s_t.first) {
+        // This operator is symmetric.
+        continue;
+      }
+      for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
+        for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size(); ++t_rank) {
+          two_opt r(_input, _sol, s_t.first, s_rank, s_t.second, t_rank);
+          if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
+            best_gains[s_t.first][s_t.second] = r.gain();
+            best_ops[s_t.first][s_t.second] = std::make_unique<two_opt>(r);
+          }
+        }
+      }
+    }
+
     // Find best overall gain.
     best_gain = 0;
     index_t best_source = 0;
@@ -1083,6 +1106,9 @@ void cvrp_local_search::run_exhaustive_search() {
       best_ops[best_source][best_target]->log();
 
       best_ops[best_source][best_target]->apply();
+
+      log_solution();
+
       run_tsp(best_source, 1);
       run_tsp(best_target, 1);
 
@@ -1168,9 +1194,9 @@ void cvrp_local_search::run_tsp(index_t route_rank, unsigned nb_threads) {
 }
 
 void cvrp_local_search::run(unsigned nb_threads) {
-  run_with_fixed_source_and_target();
+  // run_with_fixed_source_and_target();
 
-  run_with_fixed_source();
+  // run_with_fixed_source();
 
   run_exhaustive_search();
 }
