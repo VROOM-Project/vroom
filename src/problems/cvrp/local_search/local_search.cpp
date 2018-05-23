@@ -15,6 +15,7 @@ All rights reserved (see LICENSE).
 #include "local_search.h"
 #include "or_opt.h"
 #include "relocate.h"
+#include "reverse_2_opt.h"
 
 void cvrp_local_search::set_node_gains(index_t v) {
   ls_operator::node_gains[v] = std::vector<gain_t>(_sol[v].size());
@@ -1124,6 +1125,25 @@ void cvrp_local_search::run_exhaustive_search() {
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
             best_gains[s_t.first][s_t.second] = r.gain();
             best_ops[s_t.first][s_t.second] = std::make_unique<two_opt>(r);
+          }
+        }
+      }
+    }
+
+    // Reverse 2-opt* stuff
+    for (const auto& s_t : s_t_pairs) {
+      for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
+        for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size(); ++t_rank) {
+          reverse_two_opt r(_input,
+                            _sol,
+                            s_t.first,
+                            s_rank,
+                            s_t.second,
+                            t_rank);
+          if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
+            best_gains[s_t.first][s_t.second] = r.gain();
+            best_ops[s_t.first][s_t.second] =
+              std::make_unique<reverse_two_opt>(r);
           }
         }
       }

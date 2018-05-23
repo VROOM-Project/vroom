@@ -1,0 +1,166 @@
+/*
+
+This file is part of VROOM.
+
+Copyright (c) 2015-2018, Julien Coupey.
+All rights reserved (see LICENSE).
+
+*/
+
+#include <iostream>
+
+#include "reverse_2_opt.h"
+
+reverse_two_opt::reverse_two_opt(const input& input,
+                                 raw_solution& sol,
+                                 index_t source_vehicle,
+                                 index_t source_rank,
+                                 index_t target_vehicle,
+                                 index_t target_rank)
+  : ls_operator(input,
+                sol,
+                source_vehicle,
+                source_rank,
+                target_vehicle,
+                target_rank) {
+  assert(source_vehicle != target_vehicle);
+  assert(_sol[source_vehicle].size() >= 1);
+  assert(_sol[target_vehicle].size() >= 1);
+  assert(source_rank < _sol[source_vehicle].size());
+  assert(target_rank < _sol[target_vehicle].size());
+}
+
+void reverse_two_opt::compute_gain() {
+  auto& m = _input.get_matrix();
+  const auto& v_source = _input._vehicles[source_vehicle];
+  const auto& v_target = _input._vehicles[target_vehicle];
+
+  index_t s_index = _input._jobs[_sol[source_vehicle][source_rank]].index();
+  index_t t_index = _input._jobs[_sol[target_vehicle][target_rank]].index();
+  index_t last_s = _input._jobs[_sol[source_vehicle].back()].index();
+  index_t first_t = _input._jobs[_sol[target_vehicle].front()].index();
+  stored_gain = 0;
+  bool last_in_source = (source_rank == _sol[source_vehicle].size() - 1);
+  bool last_in_target = (target_rank == _sol[target_vehicle].size() - 1);
+
+  // Cost of swapping route for vehicle source_vehicle after step
+  // source_rank with route for vehicle target_vehicle up to step
+  // target_rank, but reversed.
+  if (!last_in_source) {
+    index_t next_index =
+      _input._jobs[_sol[source_vehicle][source_rank + 1]].index();
+    stored_gain += m[s_index][next_index];
+  }
+  stored_gain -= m[s_index][t_index];
+  stored_gain += fwd_costs[target_vehicle][target_rank];
+  stored_gain -= bwd_costs[target_vehicle][target_rank];
+  if (v_source.has_end()) {
+    auto end_s = v_source.end.get().index();
+    stored_gain += m[last_s][end_s];
+    stored_gain -= m[first_t][end_s];
+  }
+  if (v_target.has_start()) {
+    auto start_t = v_target.start.get().index();
+    stored_gain += m[start_t][first_t];
+    if (!last_in_source) {
+      stored_gain -= m[start_t][last_s];
+    } else {
+      // No job from source route actually swapped to target route.
+      if (!last_in_target) {
+        index_t next_index =
+          _input._jobs[_sol[target_vehicle][target_rank + 1]].index();
+        stored_gain -= m[start_t][next_index];
+      } else {
+        // Emptying the whole target route here, so also gaining cost
+        // to end if it exists.
+        if (v_target.has_end()) {
+          auto end_t = v_target.end.get().index();
+          stored_gain += m[t_index][end_t];
+        }
+      }
+    }
+  }
+
+  if (!last_in_source) {
+    index_t next_s_index =
+      _input._jobs[_sol[source_vehicle][source_rank + 1]].index();
+
+    stored_gain += fwd_costs[source_vehicle].back();
+    stored_gain -= fwd_costs[source_vehicle][source_rank + 1];
+    stored_gain -= bwd_costs[source_vehicle].back();
+    stored_gain += bwd_costs[source_vehicle][source_rank + 1];
+
+    if (!last_in_target) {
+      index_t next_t_index =
+        _input._jobs[_sol[target_vehicle][target_rank + 1]].index();
+      stored_gain += m[t_index][next_t_index];
+      stored_gain -= m[next_s_index][next_t_index];
+    } else {
+      if (v_target.has_end()) {
+        auto end_t = v_target.end.get().index();
+        stored_gain += m[t_index][end_t];
+        stored_gain -= m[next_s_index][end_t];
+      }
+    }
+  }
+
+  gain_computed = true;
+}
+
+bool reverse_two_opt::is_valid() const {
+  bool valid = true;
+  for (auto it = _sol[source_vehicle].begin() + source_rank + 1;
+       it < _sol[source_vehicle].end() and valid;
+       ++it) {
+    valid &= _input.vehicle_ok_with_job(target_vehicle, *it);
+  }
+  for (auto it = _sol[target_vehicle].begin();
+       it <= _sol[target_vehicle].begin() + target_rank and valid;
+       ++it) {
+    valid &= _input.vehicle_ok_with_job(source_vehicle, *it);
+  }
+
+  valid &= (fwd_amounts[source_vehicle][source_rank] +
+              fwd_amounts[target_vehicle][target_rank] <=
+            _input._vehicles[source_vehicle].capacity);
+  valid &= (bwd_amounts[target_vehicle][target_rank] +
+              bwd_amounts[source_vehicle][source_rank] <=
+            _input._vehicles[target_vehicle].capacity);
+
+  return valid;
+}
+
+void reverse_two_opt::apply() const {
+  auto nb_source = _sol[source_vehicle].size() - 1 - source_rank;
+
+  _sol[target_vehicle].insert(_sol[target_vehicle].begin(),
+                              _sol[source_vehicle].rbegin(),
+                              _sol[source_vehicle].rbegin() + nb_source);
+  _sol[source_vehicle].erase(_sol[source_vehicle].begin() + source_rank + 1,
+                             _sol[source_vehicle].end());
+  _sol[source_vehicle].insert(_sol[source_vehicle].end(),
+                              _sol[target_vehicle].rend() - target_rank -
+                                nb_source - 1,
+                              _sol[target_vehicle].rend() - nb_source);
+  _sol[target_vehicle].erase(_sol[target_vehicle].begin() + nb_source,
+                             _sol[target_vehicle].begin() + nb_source +
+                               target_rank + 1);
+}
+
+void reverse_two_opt::log() const {
+  const auto& v_source = _input._vehicles[source_vehicle];
+  const auto& v_target = _input._vehicles[target_vehicle];
+
+  std::cout << "Reverse 2-opt* gain: " << stored_gain
+            << " - swap route for vehicle " << v_source.id << " after step "
+            << source_rank << " (job "
+            << _input._jobs[_sol[source_vehicle][source_rank]].id
+            << ") with route for vehicle " << v_target.id << " up to step "
+            << target_rank << " (job "
+            << _input._jobs[_sol[target_vehicle][target_rank]].id
+            << "), but reversed" << std::endl;
+}
+
+std::vector<index_t> reverse_two_opt::addition_candidates() const {
+  return {source_vehicle, target_vehicle};
+}
