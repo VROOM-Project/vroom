@@ -35,9 +35,11 @@ public:
               index_t target_vehicle,
               index_t target_rank);
 
-  // amounts[v][i] stores the total amount up to rank i in the route
-  // for vehicle v .
-  static std::vector<std::vector<amount_t>> amounts;
+  // fwd_amounts[v][i] stores the total amount up to rank i in the
+  // route for vehicle v, while bwd_amounts[v][i] stores the total
+  // amount *after* rank i in the route for vehicle v.
+  static std::vector<std::vector<amount_t>> fwd_amounts;
+  static std::vector<std::vector<amount_t>> bwd_amounts;
 
   // edge_costs_around_node[v][i] stores the sum of costs for edges
   // that appear before and after job at rank i in route for vehicle v

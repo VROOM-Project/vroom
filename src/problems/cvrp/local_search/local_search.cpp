@@ -267,19 +267,28 @@ void cvrp_local_search::log_solution() {
 }
 
 void cvrp_local_search::update_amounts(index_t v) {
-  ls_operator::amounts[v] = std::vector<amount_t>(_sol[v].size());
+  ls_operator::fwd_amounts[v] = std::vector<amount_t>(_sol[v].size());
+  ls_operator::bwd_amounts[v] = std::vector<amount_t>(_sol[v].size());
   amount_t current_amount(_input.amount_size());
 
   for (std::size_t i = 0; i < _sol[v].size(); ++i) {
     current_amount += _input._jobs[_sol[v][i]].amount;
-    ls_operator::amounts[v][i] = current_amount;
+    ls_operator::fwd_amounts[v][i] = current_amount;
   }
+
+  std::transform(ls_operator::fwd_amounts[v].cbegin(),
+                 ls_operator::fwd_amounts[v].cend(),
+                 ls_operator::bwd_amounts[v].begin(),
+                 [&](const auto& a) {
+                   auto total_amount = ls_operator::fwd_amounts[v].back();
+                   return total_amount - a;
+                 });
 }
 
 amount_t cvrp_local_search::total_amount(index_t v) {
   amount_t v_amount(_input.amount_size());
-  if (!ls_operator::amounts[v].empty()) {
-    v_amount = ls_operator::amounts[v].back();
+  if (!ls_operator::fwd_amounts[v].empty()) {
+    v_amount = ls_operator::fwd_amounts[v].back();
   }
   return v_amount;
 }
@@ -329,7 +338,8 @@ cvrp_local_search::cvrp_local_search(const input& input, raw_solution& sol)
     _ls_step(0) {
 
   // Initialize amounts.
-  ls_operator::amounts = std::vector<std::vector<amount_t>>(_sol.size());
+  ls_operator::fwd_amounts = std::vector<std::vector<amount_t>>(_sol.size());
+  ls_operator::bwd_amounts = std::vector<std::vector<amount_t>>(_sol.size());
   for (std::size_t v = 0; v < _sol.size(); ++v) {
     update_amounts(v);
   }
@@ -363,14 +373,14 @@ cvrp_local_search::cvrp_local_search(const input& input, raw_solution& sol)
   std::cout << std::endl;
 
   for (std::size_t v = 0; v < sol.size(); ++v) {
-    if (ls_operator::amounts[v].empty()) {
+    if (ls_operator::fwd_amounts[v].empty()) {
       assert(_sol[v].empty());
       continue;
     }
     auto& capacity = _input._vehicles[v].capacity;
     std::cout << "Amount for vehicle " << _input._vehicles[v].id << " (at rank "
               << v << "): ";
-    auto& v_amount = ls_operator::amounts[v].back();
+    auto& v_amount = ls_operator::fwd_amounts[v].back();
     for (std::size_t r = 0; r < v_amount.size(); ++r) {
       std::cout << v_amount[r] << " / " << capacity[r] << " ; ";
     }
@@ -488,15 +498,25 @@ void cvrp_local_search::try_job_additions(const std::vector<index_t>& routes) {
                 << _input._vehicles[best_route].id << "." << std::endl;
       _sol[best_route].insert(_sol[best_route].begin() + best_rank, best_job);
 
-      auto& best_amounts = ls_operator::amounts[best_route];
+      // Update amounts after addition.
       const auto& job_amount = _input._jobs[best_job].amount;
+      auto& best_fwd_amounts = ls_operator::fwd_amounts[best_route];
       auto previous_cumul = (best_rank == 0) ? amount_t(_input.amount_size())
-                                             : best_amounts[best_rank - 1];
-      best_amounts.insert(best_amounts.begin() + best_rank,
-                          previous_cumul + job_amount);
-      std::for_each(best_amounts.begin() + best_rank + 1,
-                    best_amounts.end(),
+                                             : best_fwd_amounts[best_rank - 1];
+      best_fwd_amounts.insert(best_fwd_amounts.begin() + best_rank,
+                              previous_cumul + job_amount);
+      std::for_each(best_fwd_amounts.begin() + best_rank + 1,
+                    best_fwd_amounts.end(),
                     [&](auto& a) { a += job_amount; });
+
+      auto& best_bwd_amounts = ls_operator::bwd_amounts[best_route];
+      best_bwd_amounts.insert(best_bwd_amounts.begin() + best_rank,
+                              amount_t(_input.amount_size())); // dummy init
+      for (std::size_t i = 0; i <= best_rank; ++i) {
+        auto total_amount = ls_operator::fwd_amounts[best_route].back();
+        ls_operator::bwd_amounts[best_route][i] =
+          total_amount - ls_operator::fwd_amounts[best_route][i];
+      }
 
       _unassigned.erase(best_job);
     }

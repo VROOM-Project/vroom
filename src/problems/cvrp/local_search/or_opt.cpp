@@ -123,15 +123,15 @@ bool or_opt::is_valid() const {
   bool valid = _input.vehicle_ok_with_job(target_vehicle, current_job_rank);
   valid &= _input.vehicle_ok_with_job(target_vehicle, after_job_rank);
 
-  if (amounts[target_vehicle].empty()) {
+  if (fwd_amounts[target_vehicle].empty()) {
     valid &= (_input._jobs[current_job_rank].amount +
                 _input._jobs[after_job_rank].amount <=
               _input._vehicles[target_vehicle].capacity);
   } else {
-    valid &=
-      (amounts[target_vehicle].back() + _input._jobs[current_job_rank].amount +
-         _input._jobs[after_job_rank].amount <=
-       _input._vehicles[target_vehicle].capacity);
+    valid &= (fwd_amounts[target_vehicle].back() +
+                _input._jobs[current_job_rank].amount +
+                _input._jobs[after_job_rank].amount <=
+              _input._vehicles[target_vehicle].capacity);
   }
 
   return valid;

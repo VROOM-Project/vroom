@@ -11,7 +11,8 @@ All rights reserved (see LICENSE).
 
 #include "operator.h"
 
-std::vector<std::vector<amount_t>> ls_operator::amounts;
+std::vector<std::vector<amount_t>> ls_operator::fwd_amounts;
+std::vector<std::vector<amount_t>> ls_operator::bwd_amounts;
 std::vector<std::vector<gain_t>> ls_operator::edge_costs_around_node;
 std::vector<std::vector<gain_t>> ls_operator::node_gains;
 std::vector<index_t> ls_operator::node_candidates;

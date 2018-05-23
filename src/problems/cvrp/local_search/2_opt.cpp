@@ -83,11 +83,6 @@ void two_opt::compute_gain() {
 }
 
 bool two_opt::is_valid() const {
-  auto rem_source_amount =
-    amounts[source_vehicle].back() - amounts[source_vehicle][source_rank];
-  auto rem_target_amount =
-    amounts[target_vehicle].back() - amounts[target_vehicle][target_rank];
-
   bool valid = true;
   for (auto it = _sol[source_vehicle].begin() + source_rank + 1;
        it < _sol[source_vehicle].end() and valid;
@@ -100,9 +95,11 @@ bool two_opt::is_valid() const {
     valid &= _input.vehicle_ok_with_job(source_vehicle, *it);
   }
 
-  valid &= (amounts[source_vehicle][source_rank] + rem_target_amount <=
+  valid &= (fwd_amounts[source_vehicle][source_rank] +
+              bwd_amounts[target_vehicle][target_rank] <=
             _input._vehicles[source_vehicle].capacity);
-  valid &= (amounts[target_vehicle][target_rank] + rem_source_amount <=
+  valid &= (fwd_amounts[target_vehicle][target_rank] +
+              bwd_amounts[source_vehicle][source_rank] <=
             _input._vehicles[target_vehicle].capacity);
 
   return valid;

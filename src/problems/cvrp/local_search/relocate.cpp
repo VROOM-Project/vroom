@@ -96,11 +96,11 @@ bool relocate::is_valid() const {
 
   bool valid = _input.vehicle_ok_with_job(target_vehicle, relocate_job_rank);
 
-  if (amounts[target_vehicle].empty()) {
+  if (fwd_amounts[target_vehicle].empty()) {
     valid &= (_input._jobs[relocate_job_rank].amount <=
               _input._vehicles[target_vehicle].capacity);
   } else {
-    valid &= (amounts[target_vehicle].back() +
+    valid &= (fwd_amounts[target_vehicle].back() +
                 _input._jobs[relocate_job_rank].amount <=
               _input._vehicles[target_vehicle].capacity);
   }

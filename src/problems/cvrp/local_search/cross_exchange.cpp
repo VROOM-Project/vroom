@@ -157,19 +157,19 @@ bool cross_exchange::is_valid() const {
   valid &= _input.vehicle_ok_with_job(source_vehicle, t_current_job_rank);
   valid &= _input.vehicle_ok_with_job(source_vehicle, t_after_job_rank);
 
-  valid &=
-    (amounts[source_vehicle].back() - _input._jobs[s_current_job_rank].amount -
-       _input._jobs[s_after_job_rank].amount +
-       _input._jobs[t_current_job_rank].amount +
-       _input._jobs[t_after_job_rank].amount <=
-     _input._vehicles[source_vehicle].capacity);
+  valid &= (fwd_amounts[source_vehicle].back() -
+              _input._jobs[s_current_job_rank].amount -
+              _input._jobs[s_after_job_rank].amount +
+              _input._jobs[t_current_job_rank].amount +
+              _input._jobs[t_after_job_rank].amount <=
+            _input._vehicles[source_vehicle].capacity);
 
-  valid &=
-    (amounts[target_vehicle].back() - _input._jobs[t_current_job_rank].amount -
-       _input._jobs[t_after_job_rank].amount +
-       _input._jobs[s_current_job_rank].amount +
-       _input._jobs[s_after_job_rank].amount <=
-     _input._vehicles[target_vehicle].capacity);
+  valid &= (fwd_amounts[target_vehicle].back() -
+              _input._jobs[t_current_job_rank].amount -
+              _input._jobs[t_after_job_rank].amount +
+              _input._jobs[s_current_job_rank].amount +
+              _input._jobs[s_after_job_rank].amount <=
+            _input._vehicles[target_vehicle].capacity);
 
   return valid;
 }

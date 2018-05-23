@@ -111,12 +111,12 @@ bool exchange::is_valid() const {
   valid &= _input.vehicle_ok_with_job(source_vehicle, target_job_rank);
 
   valid &=
-    (amounts[target_vehicle].back() - _input._jobs[target_job_rank].amount +
+    (fwd_amounts[target_vehicle].back() - _input._jobs[target_job_rank].amount +
        _input._jobs[source_job_rank].amount <=
      _input._vehicles[target_vehicle].capacity);
 
   valid &=
-    (amounts[source_vehicle].back() - _input._jobs[source_job_rank].amount +
+    (fwd_amounts[source_vehicle].back() - _input._jobs[source_job_rank].amount +
        _input._jobs[target_job_rank].amount <=
      _input._vehicles[source_vehicle].capacity);
 
