@@ -266,6 +266,31 @@ void cvrp_local_search::log_solution() {
   }
 }
 
+void cvrp_local_search::update_costs(index_t v) {
+  ls_operator::fwd_costs[v] = std::vector<cost_t>(_sol[v].size());
+  ls_operator::bwd_costs[v] = std::vector<cost_t>(_sol[v].size());
+
+  auto& m = _input.get_matrix();
+  cost_t current_fwd = 0;
+  cost_t current_bwd = 0;
+
+  index_t previous_index = 0; // dummy init
+  if (!_sol[v].empty()) {
+    previous_index = _input._jobs[_sol[v][0]].index();
+    ls_operator::fwd_costs[v][0] = current_fwd;
+    ls_operator::bwd_costs[v][0] = current_bwd;
+  }
+
+  for (std::size_t i = 1; i < _sol[v].size(); ++i) {
+    auto current_index = _input._jobs[_sol[v][i]].index();
+    current_fwd += m[previous_index][current_index];
+    current_bwd += m[current_index][previous_index];
+    ls_operator::fwd_costs[v][i] = current_fwd;
+    ls_operator::bwd_costs[v][i] = current_bwd;
+    previous_index = current_index;
+  }
+}
+
 void cvrp_local_search::update_amounts(index_t v) {
   ls_operator::fwd_amounts[v] = std::vector<amount_t>(_sol[v].size());
   ls_operator::bwd_amounts[v] = std::vector<amount_t>(_sol[v].size());
@@ -337,11 +362,14 @@ cvrp_local_search::cvrp_local_search(const input& input, raw_solution& sol)
     _log(false),
     _ls_step(0) {
 
-  // Initialize amounts.
+  // Initialize amounts and costs storage.
   ls_operator::fwd_amounts = std::vector<std::vector<amount_t>>(_sol.size());
   ls_operator::bwd_amounts = std::vector<std::vector<amount_t>>(_sol.size());
+  ls_operator::fwd_costs = std::vector<std::vector<cost_t>>(_sol.size());
+  ls_operator::bwd_costs = std::vector<std::vector<cost_t>>(_sol.size());
   for (std::size_t v = 0; v < _sol.size(); ++v) {
     update_amounts(v);
+    update_costs(v);
   }
 
   // Initialize unassigned jobs.
@@ -1132,11 +1160,19 @@ void cvrp_local_search::run_exhaustive_search() {
       run_tsp(best_source, 1);
       run_tsp(best_target, 1);
 
+      // We need to run update_amounts before try_job_additions to
+      // correctly evaluate amounts. No need to run it again after
+      // since try_before_additions will subsequently fix amounts upon
+      // each addition.
       update_amounts(best_source);
       update_amounts(best_target);
 
       try_job_additions(
         best_ops[best_source][best_target]->addition_candidates());
+
+      // Running update_costs only after try_job_additions is fine.
+      update_costs(best_source);
+      update_costs(best_target);
 
       log_solution();
 

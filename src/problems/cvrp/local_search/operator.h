@@ -41,6 +41,13 @@ public:
   static std::vector<std::vector<amount_t>> fwd_amounts;
   static std::vector<std::vector<amount_t>> bwd_amounts;
 
+  // fwd_costs[v][i] stores the total cost from job at rank 0 to job
+  // at rank i in the route for vehicle v, while bwd_costs[v][i]
+  // stores the total cost from job at rank i to job at rank 0
+  // (i.e. when *reversing* all edges).
+  static std::vector<std::vector<cost_t>> fwd_costs;
+  static std::vector<std::vector<cost_t>> bwd_costs;
+
   // edge_costs_around_node[v][i] stores the sum of costs for edges
   // that appear before and after job at rank i in route for vehicle v
   // (handling cases where those edges are absent or linked with

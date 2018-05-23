@@ -40,6 +40,7 @@ private:
   unsigned _ls_step;
   void log_solution();
 
+  void update_costs(index_t v);
   void update_amounts(index_t v);
   amount_t total_amount(index_t v);
   void update_nearest_job_rank_in_routes(index_t v1, index_t v2);
