@@ -48,6 +48,15 @@ public:
   static std::vector<std::vector<cost_t>> fwd_costs;
   static std::vector<std::vector<cost_t>> bwd_costs;
 
+  // fwd_skill_rank[v1][v2] stores the maximum rank r for a step in
+  // route for vehicle v1 such that v2 can handle all jobs from step 0
+  // to r -- excluded -- in that route. bwd_skill_rank[v1][v2] stores
+  // the minimum rank r for a step in route for vehicle v1 such that
+  // v2 can handle all jobs after step r -- included -- up to the end
+  // of that route.
+  static std::vector<std::vector<index_t>> fwd_skill_rank;
+  static std::vector<std::vector<index_t>> bwd_skill_rank;
+
   // edge_costs_around_node[v][i] stores the sum of costs for edges
   // that appear before and after job at rank i in route for vehicle v
   // (handling cases where those edges are absent or linked with

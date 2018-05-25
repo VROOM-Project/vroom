@@ -108,17 +108,10 @@ void reverse_two_opt::compute_gain() {
 }
 
 bool reverse_two_opt::is_valid() const {
-  bool valid = true;
-  for (auto it = _sol[source_vehicle].begin() + source_rank + 1;
-       it < _sol[source_vehicle].end() and valid;
-       ++it) {
-    valid &= _input.vehicle_ok_with_job(target_vehicle, *it);
-  }
-  for (auto it = _sol[target_vehicle].begin();
-       it <= _sol[target_vehicle].begin() + target_rank and valid;
-       ++it) {
-    valid &= _input.vehicle_ok_with_job(source_vehicle, *it);
-  }
+  bool valid =
+    (bwd_skill_rank[source_vehicle][target_vehicle] <= source_rank + 1);
+
+  valid &= (target_rank < fwd_skill_rank[target_vehicle][source_vehicle]);
 
   valid &= (fwd_amounts[source_vehicle][source_rank] +
               fwd_amounts[target_vehicle][target_rank] <=

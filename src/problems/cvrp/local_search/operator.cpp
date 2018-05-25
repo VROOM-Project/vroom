@@ -15,6 +15,8 @@ std::vector<std::vector<amount_t>> ls_operator::fwd_amounts;
 std::vector<std::vector<amount_t>> ls_operator::bwd_amounts;
 std::vector<std::vector<cost_t>> ls_operator::fwd_costs;
 std::vector<std::vector<cost_t>> ls_operator::bwd_costs;
+std::vector<std::vector<index_t>> ls_operator::fwd_skill_rank;
+std::vector<std::vector<index_t>> ls_operator::bwd_skill_rank;
 std::vector<std::vector<gain_t>> ls_operator::edge_costs_around_node;
 std::vector<std::vector<gain_t>> ls_operator::node_gains;
 std::vector<index_t> ls_operator::node_candidates;
