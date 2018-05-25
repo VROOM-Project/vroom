@@ -47,10 +47,6 @@ private:
 
   void try_job_additions(const std::vector<index_t>& routes);
 
-  void run_with_fixed_source_and_target();
-  void run_with_fixed_source();
-  void run_exhaustive_search();
-
   cost_t route_cost_for_vehicle(index_t vehicle_rank,
                                 const std::vector<index_t>& route);
   void run_tsp(index_t route_rank, unsigned nb_threads);
