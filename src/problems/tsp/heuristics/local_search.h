@@ -24,7 +24,7 @@ All rights reserved (see LICENSE).
 class tsp_local_search {
 private:
   const matrix<cost_t>& _matrix;
-  const bool _is_symmetric_matrix;
+  const std::pair<bool, index_t> _avoid_start_relocate;
   std::vector<index_t> _edges;
   unsigned _nb_threads;
   std::vector<index_t> _rank_limits;
@@ -32,7 +32,7 @@ private:
 
 public:
   tsp_local_search(const matrix<cost_t>& matrix,
-                   bool is_symmetric_matrix,
+                   std::pair<bool, index_t> avoid_start_relocate,
                    const std::list<index_t>& tour,
                    unsigned nb_threads);
 

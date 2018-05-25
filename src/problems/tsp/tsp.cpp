@@ -183,7 +183,9 @@ raw_solution tsp::solve(unsigned nb_threads) const {
     << " thread(s).";
 
   tsp_local_search sym_ls(_symmetrized_matrix,
-                          true, // Symmetrized problem.
+                          std::make_pair(!_round_trip and _has_start and
+                                           _has_end,
+                                         _start),
                           christo_sol,
                           nb_threads);
 
@@ -245,12 +247,11 @@ raw_solution tsp::solve(unsigned nb_threads) const {
     cost_t sym_ls_cost = std::min(direct_cost, reverse_cost);
 
     // Local search on asymmetric problem.
-    tsp_local_search asym_ls(_matrix,
-                             false, // Not the symmetrized problem.
-                             (direct_cost <= reverse_cost)
-                               ? current_sol
-                               : reverse_current_sol,
-                             nb_threads);
+    tsp_local_search
+      asym_ls(_matrix,
+              std::make_pair(!_round_trip and _has_start and _has_end, _start),
+              (direct_cost <= reverse_cost) ? current_sol : reverse_current_sol,
+              nb_threads);
 
     BOOST_LOG_TRIVIAL(info) << "[TSP] Back to asymmetric "
                                "problem, initial solution cost is "

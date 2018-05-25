@@ -9,12 +9,13 @@ All rights reserved (see LICENSE).
 
 #include "local_search.h"
 
-tsp_local_search::tsp_local_search(const matrix<cost_t>& matrix,
-                                   bool is_symmetric_matrix,
-                                   const std::list<index_t>& tour,
-                                   unsigned nb_threads)
+tsp_local_search::tsp_local_search(
+  const matrix<cost_t>& matrix,
+  std::pair<bool, index_t> avoid_start_relocate,
+  const std::list<index_t>& tour,
+  unsigned nb_threads)
   : _matrix(matrix),
-    _is_symmetric_matrix(is_symmetric_matrix),
+    _avoid_start_relocate(avoid_start_relocate),
     _edges(_matrix.size()),
     _nb_threads(std::min(nb_threads, static_cast<unsigned>(tour.size()))),
     _rank_limits(_nb_threads) {
@@ -247,19 +248,22 @@ cost_t tsp_local_search::avoid_loop_step() {
     index_t current = _edges.at(candidate);
 
     bool candidate_relocatable = false;
-    while ((current != previous_candidate) and !candidate_relocatable) {
-      index_t next = _edges.at(current);
-      if ((_matrix[current][candidate] + _matrix[candidate][next] <=
-           _matrix[current][next]) and
-          (_matrix[current][candidate] > 0) and
-          (_matrix[candidate][next] > 0)) {
-        // Relocation at no cost, set aside the case of identical
-        // locations.
-        candidate_relocatable = true;
-        // Remember possible relocate position for candidate.
-        possible_position.emplace(candidate, current);
+    if (!_avoid_start_relocate.first or
+        candidate != _avoid_start_relocate.second) {
+      while ((current != previous_candidate) and !candidate_relocatable) {
+        index_t next = _edges.at(current);
+        if ((_matrix[current][candidate] + _matrix[candidate][next] <=
+             _matrix[current][next]) and
+            (_matrix[current][candidate] > 0) and
+            (_matrix[candidate][next] > 0)) {
+          // Relocation at no cost, set aside the case of identical
+          // locations.
+          candidate_relocatable = true;
+          // Remember possible relocate position for candidate.
+          possible_position.emplace(candidate, current);
+        }
+        current = next;
       }
-      current = next;
     }
     if (candidate_relocatable) {
       current_relocatable_chain.push_back(candidate);
