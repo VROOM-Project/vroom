@@ -671,7 +671,13 @@ void cvrp_local_search::run(unsigned nb_threads) {
         continue;
       }
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
-        for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size(); ++t_rank) {
+        auto s_free_amount = _input._vehicles[s_t.first].capacity;
+        s_free_amount -= ls_operator::fwd_amounts[s_t.first][s_rank];
+        for (int t_rank = _sol[s_t.second].size() - 1; t_rank >= 0; --t_rank) {
+          if (!(ls_operator::bwd_amounts[s_t.second][t_rank] <=
+                s_free_amount)) {
+            break;
+          }
           two_opt r(_input, _sol, s_t.first, s_rank, s_t.second, t_rank);
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
             best_gains[s_t.first][s_t.second] = r.gain();
@@ -684,7 +690,13 @@ void cvrp_local_search::run(unsigned nb_threads) {
     // Reverse 2-opt* stuff
     for (const auto& s_t : s_t_pairs) {
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
+        auto s_free_amount = _input._vehicles[s_t.first].capacity;
+        s_free_amount -= ls_operator::fwd_amounts[s_t.first][s_rank];
         for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size(); ++t_rank) {
+          if (!(ls_operator::fwd_amounts[s_t.second][t_rank] <=
+                s_free_amount)) {
+            break;
+          }
           reverse_two_opt r(_input,
                             _sol,
                             s_t.first,
