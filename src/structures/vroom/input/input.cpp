@@ -256,6 +256,7 @@ solution input::format_solution(const raw_solution& raw_routes) const {
 
     // Handle jobs.
     index_t previous = route.front();
+    assert(vehicle_ok_with_job(i, previous));
     steps.emplace_back(_jobs[previous]);
     service += steps.back().service;
     amount += steps.back().amount;
@@ -263,6 +264,7 @@ solution input::format_solution(const raw_solution& raw_routes) const {
 
     for (auto it = ++route.cbegin(); it != route.cend(); ++it) {
       cost += _matrix[_jobs[previous].index()][_jobs[*it].index()];
+      assert(vehicle_ok_with_job(i, *it));
       steps.emplace_back(_jobs[*it]);
       service += steps.back().service;
       amount += steps.back().amount;
