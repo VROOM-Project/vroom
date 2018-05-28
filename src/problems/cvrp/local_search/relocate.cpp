@@ -30,7 +30,7 @@ relocate::relocate(const input& input,
 }
 
 void relocate::compute_gain() {
-  auto& m = _input.get_matrix();
+  const auto& m = _input.get_matrix();
   const auto& v_target = _input._vehicles[target_vehicle];
 
   // For source vehicle, we consider the cost of removing job at rank

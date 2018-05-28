@@ -31,7 +31,7 @@ reverse_two_opt::reverse_two_opt(const input& input,
 }
 
 void reverse_two_opt::compute_gain() {
-  auto& m = _input.get_matrix();
+  const auto& m = _input.get_matrix();
   const auto& v_source = _input._vehicles[source_vehicle];
   const auto& v_target = _input._vehicles[target_vehicle];
 

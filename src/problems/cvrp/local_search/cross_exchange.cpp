@@ -33,7 +33,7 @@ cross_exchange::cross_exchange(const input& input,
 }
 
 void cross_exchange::compute_gain() {
-  auto& m = _input.get_matrix();
+  const auto& m = _input.get_matrix();
   const auto& v_source = _input._vehicles[source_vehicle];
   const auto& v_target = _input._vehicles[target_vehicle];
 

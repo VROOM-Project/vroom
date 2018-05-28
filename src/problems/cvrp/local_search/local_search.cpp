@@ -373,7 +373,6 @@ void cvrp_local_search::update_costs(index_t v) {
   ls_operator::fwd_costs[v] = std::vector<cost_t>(_sol[v].size());
   ls_operator::bwd_costs[v] = std::vector<cost_t>(_sol[v].size());
 
-  auto& m = _input.get_matrix();
   cost_t current_fwd = 0;
   cost_t current_bwd = 0;
 
@@ -386,8 +385,8 @@ void cvrp_local_search::update_costs(index_t v) {
 
   for (std::size_t i = 1; i < _sol[v].size(); ++i) {
     auto current_index = _input._jobs[_sol[v][i]].index();
-    current_fwd += m[previous_index][current_index];
-    current_bwd += m[current_index][previous_index];
+    current_fwd += _m[previous_index][current_index];
+    current_bwd += _m[current_index][previous_index];
     ls_operator::fwd_costs[v][i] = current_fwd;
     ls_operator::bwd_costs[v][i] = current_bwd;
     previous_index = current_index;
@@ -475,7 +474,6 @@ void cvrp_local_search::update_nearest_job_rank_in_routes(index_t v1,
 }
 
 void cvrp_local_search::try_job_additions(const std::vector<index_t>& routes) {
-  auto& m = _input.get_matrix();
   bool job_added;
 
   do {
@@ -506,36 +504,36 @@ void cvrp_local_search::try_job_additions(const std::vector<index_t>& routes) {
               if (_sol[v].size() == 0) {
                 // Adding job to an empty route.
                 if (v_target.has_start()) {
-                  previous_cost = m[v_target.start.get().index()][index_j];
+                  previous_cost = _m[v_target.start.get().index()][index_j];
                 }
                 if (v_target.has_end()) {
-                  next_cost = m[index_j][v_target.end.get().index()];
+                  next_cost = _m[index_j][v_target.end.get().index()];
                 }
               } else {
                 // Adding job past the end after a real job.
                 auto p_index = _input._jobs[_sol[v][r - 1]].index();
-                previous_cost = m[p_index][index_j];
+                previous_cost = _m[p_index][index_j];
                 if (v_target.has_end()) {
                   auto n_index = v_target.end.get().index();
-                  old_edge_cost = m[p_index][n_index];
-                  next_cost = m[index_j][n_index];
+                  old_edge_cost = _m[p_index][n_index];
+                  next_cost = _m[index_j][n_index];
                 }
               }
             } else {
               // Adding before one of the jobs.
               auto n_index = _input._jobs[_sol[v][r]].index();
-              next_cost = m[index_j][n_index];
+              next_cost = _m[index_j][n_index];
 
               if (r == 0) {
                 if (v_target.has_start()) {
                   auto p_index = v_target.start.get().index();
-                  previous_cost = m[p_index][index_j];
-                  old_edge_cost = m[p_index][n_index];
+                  previous_cost = _m[p_index][index_j];
+                  old_edge_cost = _m[p_index][n_index];
                 }
               } else {
                 auto p_index = _input._jobs[_sol[v][r - 1]].index();
-                previous_cost = m[p_index][index_j];
-                old_edge_cost = m[p_index][n_index];
+                previous_cost = _m[p_index][index_j];
+                old_edge_cost = _m[p_index][n_index];
               }
             }
 
