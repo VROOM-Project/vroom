@@ -33,7 +33,7 @@ inline coords_t parse_coordinates(const rapidjson::Value& object,
       !object[key][0].IsNumber() or !object[key][1].IsNumber()) {
     throw custom_exception("Invalid " + std::string(key) + " array.");
   }
-  return {object[key][0].GetDouble(), object[key][1].GetDouble()};
+  return {{object[key][0].GetDouble(), object[key][1].GetDouble()}};
 }
 
 inline amount_t get_amount(const rapidjson::Value& object, const char* key) {
