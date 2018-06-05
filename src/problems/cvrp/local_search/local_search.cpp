@@ -493,7 +493,12 @@ void cvrp_local_search::try_job_additions(const std::vector<index_t>& routes) {
             v_amount + current_amount <= _input._vehicles[v].capacity) {
           auto index_j = _input._jobs[j].index();
 
-          for (std::size_t r = 0; r < _sol[v].size(); ++r) {
+          auto rank_end = _sol[v].size();
+          if (_sol[v].empty()) {
+            rank_end = 1;
+          }
+
+          for (std::size_t r = 0; r < rank_end; ++r) {
             // Check cost of adding unassigned job at rank r in route
             // v. Same logic as in relocate::compute_gain.
             gain_t previous_cost = 0;
@@ -537,7 +542,7 @@ void cvrp_local_search::try_job_additions(const std::vector<index_t>& routes) {
               }
             }
 
-            gain_t current_cost = old_edge_cost - previous_cost - next_cost;
+            gain_t current_cost = previous_cost + next_cost - old_edge_cost;
             if (current_cost < best_cost) {
               best_cost = current_cost;
               best_job = j;
