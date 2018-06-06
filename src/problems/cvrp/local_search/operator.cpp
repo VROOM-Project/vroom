@@ -11,27 +11,16 @@ All rights reserved (see LICENSE).
 
 #include "operator.h"
 
-std::vector<std::vector<amount_t>> ls_operator::fwd_amounts;
-std::vector<std::vector<amount_t>> ls_operator::bwd_amounts;
-std::vector<std::vector<cost_t>> ls_operator::fwd_costs;
-std::vector<std::vector<cost_t>> ls_operator::bwd_costs;
-std::vector<std::vector<index_t>> ls_operator::fwd_skill_rank;
-std::vector<std::vector<index_t>> ls_operator::bwd_skill_rank;
-std::vector<std::vector<gain_t>> ls_operator::edge_costs_around_node;
-std::vector<std::vector<gain_t>> ls_operator::node_gains;
-std::vector<index_t> ls_operator::node_candidates;
-std::vector<std::vector<gain_t>> ls_operator::edge_costs_around_edge;
-std::vector<std::vector<gain_t>> ls_operator::edge_gains;
-std::vector<index_t> ls_operator::edge_candidates;
-
 ls_operator::ls_operator(const input& input,
                          raw_solution& sol,
+                         const solution_state& sol_state,
                          index_t source_vehicle,
                          index_t source_rank,
                          index_t target_vehicle,
                          index_t target_rank)
   : _input(input),
     _sol(sol),
+    _sol_state(sol_state),
     source_vehicle(source_vehicle),
     source_rank(source_rank),
     target_vehicle(target_vehicle),

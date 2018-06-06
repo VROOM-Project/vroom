@@ -13,12 +13,14 @@ All rights reserved (see LICENSE).
 
 reverse_two_opt::reverse_two_opt(const input& input,
                                  raw_solution& sol,
+                                 const solution_state& sol_state,
                                  index_t source_vehicle,
                                  index_t source_rank,
                                  index_t target_vehicle,
                                  index_t target_rank)
   : ls_operator(input,
                 sol,
+                sol_state,
                 source_vehicle,
                 source_rank,
                 target_vehicle,
@@ -52,8 +54,8 @@ void reverse_two_opt::compute_gain() {
     stored_gain += m[s_index][next_index];
   }
   stored_gain -= m[s_index][t_index];
-  stored_gain += fwd_costs[target_vehicle][target_rank];
-  stored_gain -= bwd_costs[target_vehicle][target_rank];
+  stored_gain += _sol_state.fwd_costs[target_vehicle][target_rank];
+  stored_gain -= _sol_state.bwd_costs[target_vehicle][target_rank];
   if (v_source.has_end()) {
     auto end_s = v_source.end.get().index();
     stored_gain += m[last_s][end_s];
@@ -85,10 +87,10 @@ void reverse_two_opt::compute_gain() {
     index_t next_s_index =
       _input._jobs[_sol[source_vehicle][source_rank + 1]].index();
 
-    stored_gain += fwd_costs[source_vehicle].back();
-    stored_gain -= fwd_costs[source_vehicle][source_rank + 1];
-    stored_gain -= bwd_costs[source_vehicle].back();
-    stored_gain += bwd_costs[source_vehicle][source_rank + 1];
+    stored_gain += _sol_state.fwd_costs[source_vehicle].back();
+    stored_gain -= _sol_state.fwd_costs[source_vehicle][source_rank + 1];
+    stored_gain -= _sol_state.bwd_costs[source_vehicle].back();
+    stored_gain += _sol_state.bwd_costs[source_vehicle][source_rank + 1];
 
     if (!last_in_target) {
       index_t next_t_index =
@@ -108,16 +110,17 @@ void reverse_two_opt::compute_gain() {
 }
 
 bool reverse_two_opt::is_valid() const {
-  bool valid =
-    (bwd_skill_rank[source_vehicle][target_vehicle] <= source_rank + 1);
+  bool valid = (_sol_state.bwd_skill_rank[source_vehicle][target_vehicle] <=
+                source_rank + 1);
 
-  valid &= (target_rank < fwd_skill_rank[target_vehicle][source_vehicle]);
+  valid &=
+    (target_rank < _sol_state.fwd_skill_rank[target_vehicle][source_vehicle]);
 
-  valid &= (fwd_amounts[source_vehicle][source_rank] +
-              fwd_amounts[target_vehicle][target_rank] <=
+  valid &= (_sol_state.fwd_amounts[source_vehicle][source_rank] +
+              _sol_state.fwd_amounts[target_vehicle][target_rank] <=
             _input._vehicles[source_vehicle].capacity);
-  valid &= (bwd_amounts[target_vehicle][target_rank] +
-              bwd_amounts[source_vehicle][source_rank] <=
+  valid &= (_sol_state.bwd_amounts[target_vehicle][target_rank] +
+              _sol_state.bwd_amounts[source_vehicle][source_rank] <=
             _input._vehicles[target_vehicle].capacity);
 
   return valid;

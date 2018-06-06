@@ -22,41 +22,31 @@ cvrp_local_search::cvrp_local_search(const input& input, raw_solution& sol)
     _m(_input.get_matrix()),
     V(_input._vehicles.size()),
     _sol(sol),
+    _sol_state(_sol.size()),
     _amount_lower_bound(_input.get_amount_lower_bound()),
     _double_amount_lower_bound(_amount_lower_bound + _amount_lower_bound),
-    _nearest_job_rank_in_routes_from(V, std::vector<std::vector<index_t>>(V)),
-    _nearest_job_rank_in_routes_to(V, std::vector<std::vector<index_t>>(V)),
     _log(false),
     _ls_step(0) {
-
-  // Initialize amounts and costs storage.
-  ls_operator::fwd_amounts = std::vector<std::vector<amount_t>>(_sol.size());
-  ls_operator::bwd_amounts = std::vector<std::vector<amount_t>>(_sol.size());
-  ls_operator::fwd_costs = std::vector<std::vector<cost_t>>(_sol.size());
-  ls_operator::bwd_costs = std::vector<std::vector<cost_t>>(_sol.size());
+  // Initialize solution state.
   for (std::size_t v = 0; v < _sol.size(); ++v) {
     update_amounts(v);
     update_costs(v);
-  }
-
-  // Initialize skills storage.
-  ls_operator::fwd_skill_rank =
-    std::vector<std::vector<index_t>>(_sol.size(),
-                                      std::vector<index_t>(_sol.size()));
-  ls_operator::bwd_skill_rank =
-    std::vector<std::vector<index_t>>(_sol.size(),
-                                      std::vector<index_t>(_sol.size()));
-  for (std::size_t v = 0; v < V; ++v) {
     update_skills(v);
+    set_node_gains(v);
+    set_edge_gains(v);
+    for (std::size_t v2 = 0; v2 < V; ++v2) {
+      if (v2 == v) {
+        continue;
+      }
+      update_nearest_job_rank_in_routes(v, v2);
+    }
   }
 
   // Initialize unassigned jobs.
+  index_t x = 0;
   std::generate_n(std::inserter(_unassigned, _unassigned.end()),
                   _input._jobs.size(),
-                  [] {
-                    static int x = 0;
-                    return x++;
-                  });
+                  [&] { return x++; });
 
   for (const auto& s : _sol) {
     for (const auto i : s) {
@@ -64,6 +54,7 @@ cvrp_local_search::cvrp_local_search(const input& input, raw_solution& sol)
     }
   }
 
+  // Logging stuff, todo remove.
   std::cout << "Unassigned jobs: ";
   for (auto i : _unassigned) {
     std::cout << _input._jobs[i].id << " (" << _input._jobs[i].amount[0]
@@ -71,7 +62,6 @@ cvrp_local_search::cvrp_local_search(const input& input, raw_solution& sol)
   }
   std::cout << std::endl;
 
-  // Logging stuff, todo remove.
   std::cout << "Amount lower bound: ";
   for (std::size_t r = 0; r < _amount_lower_bound.size(); ++r) {
     std::cout << _amount_lower_bound[r];
@@ -79,49 +69,24 @@ cvrp_local_search::cvrp_local_search(const input& input, raw_solution& sol)
   std::cout << std::endl;
 
   for (std::size_t v = 0; v < sol.size(); ++v) {
-    if (ls_operator::fwd_amounts[v].empty()) {
+    if (_sol_state.fwd_amounts[v].empty()) {
       assert(_sol[v].empty());
       continue;
     }
     auto& capacity = _input._vehicles[v].capacity;
     std::cout << "Amount for vehicle " << _input._vehicles[v].id << " (at rank "
               << v << "): ";
-    auto& v_amount = ls_operator::fwd_amounts[v].back();
+    auto& v_amount = _sol_state.fwd_amounts[v].back();
     for (std::size_t r = 0; r < v_amount.size(); ++r) {
       std::cout << v_amount[r] << " / " << capacity[r] << " ; ";
     }
     std::cout << std::endl;
   }
-
-  // Initialize storage and find best candidate for job/edge pop in
-  // each route.
-  ls_operator::edge_costs_around_node = std::vector<std::vector<gain_t>>(V);
-  ls_operator::node_gains = std::vector<std::vector<gain_t>>(V);
-  ls_operator::node_candidates = std::vector<index_t>(V);
-  ls_operator::edge_costs_around_edge = std::vector<std::vector<gain_t>>(V);
-  ls_operator::edge_gains = std::vector<std::vector<gain_t>>(V);
-  ls_operator::edge_candidates = std::vector<index_t>(V);
-
-  for (std::size_t v = 0; v < V; ++v) {
-    set_node_gains(v);
-    set_edge_gains(v);
-  }
-
-  // Store nearest job from and to any job in any route for constant
-  // time access down the line.
-  for (std::size_t v1 = 0; v1 < V; ++v1) {
-    for (std::size_t v2 = 0; v2 < V; ++v2) {
-      if (v2 == v1) {
-        continue;
-      }
-      update_nearest_job_rank_in_routes(v1, v2);
-    }
-  }
 }
 
 void cvrp_local_search::set_node_gains(index_t v) {
-  ls_operator::node_gains[v] = std::vector<gain_t>(_sol[v].size());
-  ls_operator::edge_costs_around_node[v] = std::vector<gain_t>(_sol[v].size());
+  _sol_state.node_gains[v] = std::vector<gain_t>(_sol[v].size());
+  _sol_state.edge_costs_around_node[v] = std::vector<gain_t>(_sol[v].size());
 
   if (_sol[v].size() == 0) {
     return;
@@ -165,12 +130,12 @@ void cvrp_local_search::set_node_gains(index_t v) {
   }
 
   gain_t edges_costs_around = previous_cost + next_cost;
-  ls_operator::edge_costs_around_node[v][0] = edges_costs_around;
+  _sol_state.edge_costs_around_node[v][0] = edges_costs_around;
 
   gain_t current_gain = edges_costs_around - new_edge_cost;
-  ls_operator::node_gains[v][0] = current_gain;
+  _sol_state.node_gains[v][0] = current_gain;
   gain_t best_gain = current_gain;
-  ls_operator::node_candidates[v] = 0;
+  _sol_state.node_candidates[v] = 0;
 
   if (_sol[v].size() == 1) {
     // No more jobs.
@@ -185,14 +150,14 @@ void cvrp_local_search::set_node_gains(index_t v) {
     n_index = _input._jobs[_sol[v][i + 1]].index();
 
     edges_costs_around = _m[p_index][c_index] + _m[c_index][n_index];
-    ls_operator::edge_costs_around_node[v][i] = edges_costs_around;
+    _sol_state.edge_costs_around_node[v][i] = edges_costs_around;
 
     current_gain = edges_costs_around - _m[p_index][n_index];
-    ls_operator::node_gains[v][i] = current_gain;
+    _sol_state.node_gains[v][i] = current_gain;
 
     if (current_gain > best_gain) {
       best_gain = current_gain;
-      ls_operator::node_candidates[v] = i;
+      _sol_state.node_candidates[v] = i;
     }
   }
 
@@ -227,21 +192,21 @@ void cvrp_local_search::set_node_gains(index_t v) {
   }
 
   edges_costs_around = previous_cost + next_cost;
-  ls_operator::edge_costs_around_node[v][last_rank] = edges_costs_around;
+  _sol_state.edge_costs_around_node[v][last_rank] = edges_costs_around;
 
   current_gain = edges_costs_around - new_edge_cost;
-  ls_operator::node_gains[v][last_rank] = current_gain;
+  _sol_state.node_gains[v][last_rank] = current_gain;
 
   if (current_gain > best_gain) {
-    ls_operator::node_candidates[v] = last_rank;
+    _sol_state.node_candidates[v] = last_rank;
   }
 }
 
 void cvrp_local_search::set_edge_gains(index_t v) {
   std::size_t nb_edges = (_sol[v].size() < 2) ? 0 : _sol[v].size() - 1;
 
-  ls_operator::edge_gains[v] = std::vector<gain_t>(nb_edges);
-  ls_operator::edge_costs_around_edge[v] = std::vector<gain_t>(nb_edges);
+  _sol_state.edge_gains[v] = std::vector<gain_t>(nb_edges);
+  _sol_state.edge_costs_around_edge[v] = std::vector<gain_t>(nb_edges);
 
   if (_sol[v].size() < 2) {
     return;
@@ -286,12 +251,12 @@ void cvrp_local_search::set_edge_gains(index_t v) {
   }
 
   gain_t edges_costs_around = previous_cost + next_cost;
-  ls_operator::edge_costs_around_edge[v][0] = edges_costs_around;
+  _sol_state.edge_costs_around_edge[v][0] = edges_costs_around;
 
   gain_t current_gain = edges_costs_around - new_edge_cost;
-  ls_operator::edge_gains[v][0] = current_gain;
+  _sol_state.edge_gains[v][0] = current_gain;
   gain_t best_gain = current_gain;
-  ls_operator::edge_candidates[v] = 0;
+  _sol_state.edge_candidates[v] = 0;
 
   if (_sol[v].size() == 2) {
     // No more edges.
@@ -308,14 +273,14 @@ void cvrp_local_search::set_edge_gains(index_t v) {
     n_index = _input._jobs[_sol[v][i + 2]].index();
 
     edges_costs_around = _m[p_index][c_index] + _m[after_c_index][n_index];
-    ls_operator::edge_costs_around_edge[v][i] = edges_costs_around;
+    _sol_state.edge_costs_around_edge[v][i] = edges_costs_around;
 
     current_gain = edges_costs_around - _m[p_index][n_index];
-    ls_operator::edge_gains[v][i] = current_gain;
+    _sol_state.edge_gains[v][i] = current_gain;
 
     if (current_gain > best_gain) {
       best_gain = current_gain;
-      ls_operator::edge_candidates[v] = i;
+      _sol_state.edge_candidates[v] = i;
     }
   }
 
@@ -351,13 +316,13 @@ void cvrp_local_search::set_edge_gains(index_t v) {
   }
 
   edges_costs_around = previous_cost + next_cost;
-  ls_operator::edge_costs_around_edge[v][last_edge_rank] = edges_costs_around;
+  _sol_state.edge_costs_around_edge[v][last_edge_rank] = edges_costs_around;
 
   current_gain = edges_costs_around - new_edge_cost;
-  ls_operator::edge_gains[v][last_edge_rank] = current_gain;
+  _sol_state.edge_gains[v][last_edge_rank] = current_gain;
 
   if (current_gain > best_gain) {
-    ls_operator::edge_candidates[v] = last_edge_rank;
+    _sol_state.edge_candidates[v] = last_edge_rank;
   }
 }
 
@@ -370,8 +335,8 @@ void cvrp_local_search::log_solution() {
 }
 
 void cvrp_local_search::update_costs(index_t v) {
-  ls_operator::fwd_costs[v] = std::vector<cost_t>(_sol[v].size());
-  ls_operator::bwd_costs[v] = std::vector<cost_t>(_sol[v].size());
+  _sol_state.fwd_costs[v] = std::vector<cost_t>(_sol[v].size());
+  _sol_state.bwd_costs[v] = std::vector<cost_t>(_sol[v].size());
 
   cost_t current_fwd = 0;
   cost_t current_bwd = 0;
@@ -379,35 +344,35 @@ void cvrp_local_search::update_costs(index_t v) {
   index_t previous_index = 0; // dummy init
   if (!_sol[v].empty()) {
     previous_index = _input._jobs[_sol[v][0]].index();
-    ls_operator::fwd_costs[v][0] = current_fwd;
-    ls_operator::bwd_costs[v][0] = current_bwd;
+    _sol_state.fwd_costs[v][0] = current_fwd;
+    _sol_state.bwd_costs[v][0] = current_bwd;
   }
 
   for (std::size_t i = 1; i < _sol[v].size(); ++i) {
     auto current_index = _input._jobs[_sol[v][i]].index();
     current_fwd += _m[previous_index][current_index];
     current_bwd += _m[current_index][previous_index];
-    ls_operator::fwd_costs[v][i] = current_fwd;
-    ls_operator::bwd_costs[v][i] = current_bwd;
+    _sol_state.fwd_costs[v][i] = current_fwd;
+    _sol_state.bwd_costs[v][i] = current_bwd;
     previous_index = current_index;
   }
 }
 
 void cvrp_local_search::update_amounts(index_t v) {
-  ls_operator::fwd_amounts[v] = std::vector<amount_t>(_sol[v].size());
-  ls_operator::bwd_amounts[v] = std::vector<amount_t>(_sol[v].size());
+  _sol_state.fwd_amounts[v] = std::vector<amount_t>(_sol[v].size());
+  _sol_state.bwd_amounts[v] = std::vector<amount_t>(_sol[v].size());
   amount_t current_amount(_input.amount_size());
 
   for (std::size_t i = 0; i < _sol[v].size(); ++i) {
     current_amount += _input._jobs[_sol[v][i]].amount;
-    ls_operator::fwd_amounts[v][i] = current_amount;
+    _sol_state.fwd_amounts[v][i] = current_amount;
   }
 
-  std::transform(ls_operator::fwd_amounts[v].cbegin(),
-                 ls_operator::fwd_amounts[v].cend(),
-                 ls_operator::bwd_amounts[v].begin(),
+  std::transform(_sol_state.fwd_amounts[v].cbegin(),
+                 _sol_state.fwd_amounts[v].cend(),
+                 _sol_state.bwd_amounts[v].begin(),
                  [&](const auto& a) {
-                   auto total_amount = ls_operator::fwd_amounts[v].back();
+                   auto total_amount = _sol_state.fwd_amounts[v].back();
                    return total_amount - a;
                  });
 }
@@ -422,30 +387,30 @@ void cvrp_local_search::update_skills(index_t v1) {
       std::find_if_not(_sol[v1].begin(), _sol[v1].end(), [&](auto j_rank) {
         return _input.vehicle_ok_with_job(v2, j_rank);
       });
-    ls_operator::fwd_skill_rank[v1][v2] = std::distance(_sol[v1].begin(), fwd);
+    _sol_state.fwd_skill_rank[v1][v2] = std::distance(_sol[v1].begin(), fwd);
 
     auto bwd =
       std::find_if_not(_sol[v1].rbegin(), _sol[v1].rend(), [&](auto j_rank) {
         return _input.vehicle_ok_with_job(v2, j_rank);
       });
-    ls_operator::bwd_skill_rank[v1][v2] =
+    _sol_state.bwd_skill_rank[v1][v2] =
       _sol[v1].size() - std::distance(_sol[v1].rbegin(), bwd);
   }
 }
 
 amount_t cvrp_local_search::total_amount(index_t v) {
   amount_t v_amount(_input.amount_size());
-  if (!ls_operator::fwd_amounts[v].empty()) {
-    v_amount = ls_operator::fwd_amounts[v].back();
+  if (!_sol_state.fwd_amounts[v].empty()) {
+    v_amount = _sol_state.fwd_amounts[v].back();
   }
   return v_amount;
 }
 
 void cvrp_local_search::update_nearest_job_rank_in_routes(index_t v1,
                                                           index_t v2) {
-  _nearest_job_rank_in_routes_from[v1][v2] =
+  _sol_state.nearest_job_rank_in_routes_from[v1][v2] =
     std::vector<index_t>(_sol[v1].size());
-  _nearest_job_rank_in_routes_to[v1][v2] =
+  _sol_state.nearest_job_rank_in_routes_to[v1][v2] =
     std::vector<index_t>(_sol[v1].size());
 
   for (std::size_t r1 = 0; r1 < _sol[v1].size(); ++r1) {
@@ -468,8 +433,8 @@ void cvrp_local_search::update_nearest_job_rank_in_routes(index_t v1,
       }
     }
 
-    _nearest_job_rank_in_routes_from[v1][v2][r1] = best_from_rank;
-    _nearest_job_rank_in_routes_to[v1][v2][r1] = best_to_rank;
+    _sol_state.nearest_job_rank_in_routes_from[v1][v2][r1] = best_from_rank;
+    _sol_state.nearest_job_rank_in_routes_to[v1][v2][r1] = best_to_rank;
   }
 }
 
@@ -564,7 +529,7 @@ void cvrp_local_search::try_job_additions(const std::vector<index_t>& routes) {
 
       // Update amounts after addition.
       const auto& job_amount = _input._jobs[best_job].amount;
-      auto& best_fwd_amounts = ls_operator::fwd_amounts[best_route];
+      auto& best_fwd_amounts = _sol_state.fwd_amounts[best_route];
       auto previous_cumul = (best_rank == 0) ? amount_t(_input.amount_size())
                                              : best_fwd_amounts[best_rank - 1];
       best_fwd_amounts.insert(best_fwd_amounts.begin() + best_rank,
@@ -573,13 +538,13 @@ void cvrp_local_search::try_job_additions(const std::vector<index_t>& routes) {
                     best_fwd_amounts.end(),
                     [&](auto& a) { a += job_amount; });
 
-      auto& best_bwd_amounts = ls_operator::bwd_amounts[best_route];
+      auto& best_bwd_amounts = _sol_state.bwd_amounts[best_route];
       best_bwd_amounts.insert(best_bwd_amounts.begin() + best_rank,
                               amount_t(_input.amount_size())); // dummy init
       for (std::size_t i = 0; i <= best_rank; ++i) {
-        auto total_amount = ls_operator::fwd_amounts[best_route].back();
-        ls_operator::bwd_amounts[best_route][i] =
-          total_amount - ls_operator::fwd_amounts[best_route][i];
+        auto total_amount = _sol_state.fwd_amounts[best_route].back();
+        _sol_state.bwd_amounts[best_route][i] =
+          total_amount - _sol_state.fwd_amounts[best_route][i];
       }
 
       _unassigned.erase(best_job);
@@ -625,7 +590,8 @@ void cvrp_local_search::run(unsigned nb_threads) {
       }
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
         for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size(); ++t_rank) {
-          relocate r(_input, _sol, s_t.first, s_rank, s_t.second, t_rank);
+          relocate
+            r(_input, _sol, _sol_state, s_t.first, s_rank, s_t.second, t_rank);
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
             best_gains[s_t.first][s_t.second] = r.gain();
             best_ops[s_t.first][s_t.second] = std::make_unique<relocate>(r);
@@ -646,7 +612,8 @@ void cvrp_local_search::run(unsigned nb_threads) {
 
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
         for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size(); ++t_rank) {
-          exchange r(_input, _sol, s_t.first, s_rank, s_t.second, t_rank);
+          exchange
+            r(_input, _sol, _sol_state, s_t.first, s_rank, s_t.second, t_rank);
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
             best_gains[s_t.first][s_t.second] = r.gain();
             best_ops[s_t.first][s_t.second] = std::make_unique<exchange>(r);
@@ -667,7 +634,8 @@ void cvrp_local_search::run(unsigned nb_threads) {
       }
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1; ++s_rank) {
         for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size(); ++t_rank) {
-          or_opt r(_input, _sol, s_t.first, s_rank, s_t.second, t_rank);
+          or_opt
+            r(_input, _sol, _sol_state, s_t.first, s_rank, s_t.second, t_rank);
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
             best_gains[s_t.first][s_t.second] = r.gain();
             best_ops[s_t.first][s_t.second] = std::make_unique<or_opt>(r);
@@ -689,7 +657,8 @@ void cvrp_local_search::run(unsigned nb_threads) {
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1; ++s_rank) {
         for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size() - 1;
              ++t_rank) {
-          cross_exchange r(_input, _sol, s_t.first, s_rank, s_t.second, t_rank);
+          cross_exchange
+            r(_input, _sol, _sol_state, s_t.first, s_rank, s_t.second, t_rank);
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
             best_gains[s_t.first][s_t.second] = r.gain();
             best_ops[s_t.first][s_t.second] =
@@ -707,13 +676,13 @@ void cvrp_local_search::run(unsigned nb_threads) {
       }
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
         auto s_free_amount = _input._vehicles[s_t.first].capacity;
-        s_free_amount -= ls_operator::fwd_amounts[s_t.first][s_rank];
+        s_free_amount -= _sol_state.fwd_amounts[s_t.first][s_rank];
         for (int t_rank = _sol[s_t.second].size() - 1; t_rank >= 0; --t_rank) {
-          if (!(ls_operator::bwd_amounts[s_t.second][t_rank] <=
-                s_free_amount)) {
+          if (!(_sol_state.bwd_amounts[s_t.second][t_rank] <= s_free_amount)) {
             break;
           }
-          two_opt r(_input, _sol, s_t.first, s_rank, s_t.second, t_rank);
+          two_opt
+            r(_input, _sol, _sol_state, s_t.first, s_rank, s_t.second, t_rank);
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
             best_gains[s_t.first][s_t.second] = r.gain();
             best_ops[s_t.first][s_t.second] = std::make_unique<two_opt>(r);
@@ -726,18 +695,13 @@ void cvrp_local_search::run(unsigned nb_threads) {
     for (const auto& s_t : s_t_pairs) {
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
         auto s_free_amount = _input._vehicles[s_t.first].capacity;
-        s_free_amount -= ls_operator::fwd_amounts[s_t.first][s_rank];
+        s_free_amount -= _sol_state.fwd_amounts[s_t.first][s_rank];
         for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size(); ++t_rank) {
-          if (!(ls_operator::fwd_amounts[s_t.second][t_rank] <=
-                s_free_amount)) {
+          if (!(_sol_state.fwd_amounts[s_t.second][t_rank] <= s_free_amount)) {
             break;
           }
-          reverse_two_opt r(_input,
-                            _sol,
-                            s_t.first,
-                            s_rank,
-                            s_t.second,
-                            t_rank);
+          reverse_two_opt
+            r(_input, _sol, _sol_state, s_t.first, s_rank, s_t.second, t_rank);
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
             best_gains[s_t.first][s_t.second] = r.gain();
             best_ops[s_t.first][s_t.second] =

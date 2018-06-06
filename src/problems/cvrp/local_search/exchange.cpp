@@ -13,12 +13,14 @@ All rights reserved (see LICENSE).
 
 exchange::exchange(const input& input,
                    raw_solution& sol,
+                   const solution_state& sol_state,
                    index_t source_vehicle,
                    index_t source_rank,
                    index_t target_vehicle,
                    index_t target_rank)
   : ls_operator(input,
                 sol,
+                sol_state,
                 source_vehicle,
                 source_rank,
                 target_vehicle,
@@ -37,7 +39,7 @@ void exchange::compute_gain() {
 
   // For source vehicle, we consider the cost of replacing job at rank
   // source_rank with target job. Part of that cost (for adjacent
-  // edges) is stored in edge_costs_around_node.
+  // edges) is stored in _sol_state.edge_costs_around_node.
   index_t s_c_index = _input._jobs[_sol[source_vehicle][source_rank]].index();
   index_t t_c_index = _input._jobs[_sol[target_vehicle][target_rank]].index();
 
@@ -65,12 +67,13 @@ void exchange::compute_gain() {
     new_next_cost = m[t_c_index][n_index];
   }
 
-  gain_t source_gain = edge_costs_around_node[source_vehicle][source_rank] -
-                       new_previous_cost - new_next_cost;
+  gain_t source_gain =
+    _sol_state.edge_costs_around_node[source_vehicle][source_rank] -
+    new_previous_cost - new_next_cost;
 
   // For target vehicle, we consider the cost of replacing job at rank
   // target_rank with source job. Part of that cost (for adjacent
-  // edges) is stored in edge_costs_around_node.
+  // edges) is stored in _sol_state.edge_costs_around_node.
 
   // Determine costs added with source job.
   new_previous_cost = 0;
@@ -96,8 +99,9 @@ void exchange::compute_gain() {
     new_next_cost = m[s_c_index][n_index];
   }
 
-  gain_t target_gain = edge_costs_around_node[target_vehicle][target_rank] -
-                       new_previous_cost - new_next_cost;
+  gain_t target_gain =
+    _sol_state.edge_costs_around_node[target_vehicle][target_rank] -
+    new_previous_cost - new_next_cost;
 
   stored_gain = source_gain + target_gain;
   gain_computed = true;
@@ -110,15 +114,15 @@ bool exchange::is_valid() const {
   bool valid = _input.vehicle_ok_with_job(target_vehicle, source_job_rank);
   valid &= _input.vehicle_ok_with_job(source_vehicle, target_job_rank);
 
-  valid &=
-    (fwd_amounts[target_vehicle].back() - _input._jobs[target_job_rank].amount +
-       _input._jobs[source_job_rank].amount <=
-     _input._vehicles[target_vehicle].capacity);
+  valid &= (_sol_state.fwd_amounts[target_vehicle].back() -
+              _input._jobs[target_job_rank].amount +
+              _input._jobs[source_job_rank].amount <=
+            _input._vehicles[target_vehicle].capacity);
 
-  valid &=
-    (fwd_amounts[source_vehicle].back() - _input._jobs[source_job_rank].amount +
-       _input._jobs[target_job_rank].amount <=
-     _input._vehicles[source_vehicle].capacity);
+  valid &= (_sol_state.fwd_amounts[source_vehicle].back() -
+              _input._jobs[source_job_rank].amount +
+              _input._jobs[target_job_rank].amount <=
+            _input._vehicles[source_vehicle].capacity);
 
   return valid;
 }

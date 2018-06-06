@@ -14,6 +14,7 @@ All rights reserved (see LICENSE).
 
 #include "../../../structures/typedefs.h"
 #include "../../../utils/output_json.h" // Todo remove
+#include "./solution_state.h"
 
 class cvrp_local_search {
 private:
@@ -21,16 +22,10 @@ private:
   const matrix<cost_t>& _m;
   const std::size_t V;
   raw_solution& _sol;
+  solution_state _sol_state;
   std::unordered_set<index_t> _unassigned;
   const amount_t _amount_lower_bound;
   const amount_t _double_amount_lower_bound;
-  // _nearest_job_rank_in_routes_from[v1][v2][r1] stores the rank of
-  // job in route v2 that minimize cost from job at rank r1 in v1.
-  std::vector<std::vector<std::vector<index_t>>>
-    _nearest_job_rank_in_routes_from;
-  // _nearest_job_rank_in_routes_to[v1][v2][r1] stores the rank of job
-  // in route v2 that minimize cost to job at rank r1 in v1.
-  std::vector<std::vector<std::vector<index_t>>> _nearest_job_rank_in_routes_to;
 
   void set_node_gains(index_t v);
   void set_edge_gains(index_t v);

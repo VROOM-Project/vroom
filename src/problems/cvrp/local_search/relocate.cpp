@@ -13,12 +13,14 @@ All rights reserved (see LICENSE).
 
 relocate::relocate(const input& input,
                    raw_solution& sol,
+                   const solution_state& sol_state,
                    index_t source_vehicle,
                    index_t source_rank,
                    index_t target_vehicle,
                    index_t target_rank)
   : ls_operator(input,
                 sol,
+                sol_state,
                 source_vehicle,
                 source_rank,
                 target_vehicle,
@@ -35,7 +37,7 @@ void relocate::compute_gain() {
 
   // For source vehicle, we consider the cost of removing job at rank
   // source_rank, already stored in
-  // node_gains[source_vehicle][source_rank].
+  // _sol_state.node_gains[source_vehicle][source_rank].
 
   // For target vehicle, we consider the cost of adding source job at
   // rank target_rank.
@@ -87,7 +89,8 @@ void relocate::compute_gain() {
   // Gain for target vehicle.
   gain_t target_gain = old_edge_cost - previous_cost - next_cost;
 
-  stored_gain = node_gains[source_vehicle][source_rank] + target_gain;
+  stored_gain =
+    _sol_state.node_gains[source_vehicle][source_rank] + target_gain;
   gain_computed = true;
 }
 
@@ -96,11 +99,11 @@ bool relocate::is_valid() const {
 
   bool valid = _input.vehicle_ok_with_job(target_vehicle, relocate_job_rank);
 
-  if (fwd_amounts[target_vehicle].empty()) {
+  if (_sol_state.fwd_amounts[target_vehicle].empty()) {
     valid &= (_input._jobs[relocate_job_rank].amount <=
               _input._vehicles[target_vehicle].capacity);
   } else {
-    valid &= (fwd_amounts[target_vehicle].back() +
+    valid &= (_sol_state.fwd_amounts[target_vehicle].back() +
                 _input._jobs[relocate_job_rank].amount <=
               _input._vehicles[target_vehicle].capacity);
   }

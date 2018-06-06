@@ -13,12 +13,14 @@ All rights reserved (see LICENSE).
 
 or_opt::or_opt(const input& input,
                raw_solution& sol,
+               const solution_state& sol_state,
                index_t source_vehicle,
                index_t source_rank,
                index_t target_vehicle,
                index_t target_rank)
   : ls_operator(input,
                 sol,
+                sol_state,
                 source_vehicle,
                 source_rank,
                 target_vehicle,
@@ -36,7 +38,7 @@ void or_opt::compute_gain() {
 
   // For source vehicle, we consider the cost of removing edge
   // starting at rank source_rank, already stored in
-  // edge_gains[source_vehicle][source_rank].
+  // _sol_state.edge_gains[source_vehicle][source_rank].
 
   // For target vehicle, we consider the cost of adding source edge at
   // rank target_rank. reverse_* checks whether we should change the
@@ -110,7 +112,8 @@ void or_opt::compute_gain() {
     target_gain = reverse_target_gain;
   }
 
-  stored_gain = edge_gains[source_vehicle][source_rank] + target_gain;
+  stored_gain =
+    _sol_state.edge_gains[source_vehicle][source_rank] + target_gain;
 
   gain_computed = true;
 }
@@ -123,12 +126,12 @@ bool or_opt::is_valid() const {
   bool valid = _input.vehicle_ok_with_job(target_vehicle, current_job_rank);
   valid &= _input.vehicle_ok_with_job(target_vehicle, after_job_rank);
 
-  if (fwd_amounts[target_vehicle].empty()) {
+  if (_sol_state.fwd_amounts[target_vehicle].empty()) {
     valid &= (_input._jobs[current_job_rank].amount +
                 _input._jobs[after_job_rank].amount <=
               _input._vehicles[target_vehicle].capacity);
   } else {
-    valid &= (fwd_amounts[target_vehicle].back() +
+    valid &= (_sol_state.fwd_amounts[target_vehicle].back() +
                 _input._jobs[current_job_rank].amount +
                 _input._jobs[after_job_rank].amount <=
               _input._vehicles[target_vehicle].capacity);

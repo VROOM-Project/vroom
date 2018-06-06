@@ -13,12 +13,14 @@ All rights reserved (see LICENSE).
 
 two_opt::two_opt(const input& input,
                  raw_solution& sol,
+                 const solution_state& sol_state,
                  index_t source_vehicle,
                  index_t source_rank,
                  index_t target_vehicle,
                  index_t target_rank)
   : ls_operator(input,
                 sol,
+                sol_state,
                 source_vehicle,
                 source_rank,
                 target_vehicle,
@@ -83,16 +85,17 @@ void two_opt::compute_gain() {
 }
 
 bool two_opt::is_valid() const {
-  bool valid =
-    (bwd_skill_rank[source_vehicle][target_vehicle] <= source_rank + 1);
+  bool valid = (_sol_state.bwd_skill_rank[source_vehicle][target_vehicle] <=
+                source_rank + 1);
 
-  valid &= (bwd_skill_rank[target_vehicle][source_vehicle] <= target_rank + 1);
+  valid &= (_sol_state.bwd_skill_rank[target_vehicle][source_vehicle] <=
+            target_rank + 1);
 
-  valid &= (fwd_amounts[source_vehicle][source_rank] +
-              bwd_amounts[target_vehicle][target_rank] <=
+  valid &= (_sol_state.fwd_amounts[source_vehicle][source_rank] +
+              _sol_state.bwd_amounts[target_vehicle][target_rank] <=
             _input._vehicles[source_vehicle].capacity);
-  valid &= (fwd_amounts[target_vehicle][target_rank] +
-              bwd_amounts[source_vehicle][source_rank] <=
+  valid &= (_sol_state.fwd_amounts[target_vehicle][target_rank] +
+              _sol_state.bwd_amounts[source_vehicle][source_rank] <=
             _input._vehicles[target_vehicle].capacity);
 
   return valid;

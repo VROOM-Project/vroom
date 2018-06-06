@@ -21,6 +21,7 @@ private:
 public:
   or_opt(const input& input,
          raw_solution& sol,
+         const solution_state& sol_state,
          index_t source_vehicle,
          index_t source_rank,
          index_t target_vehicle,
