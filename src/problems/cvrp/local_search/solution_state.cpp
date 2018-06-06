@@ -23,5 +23,6 @@ solution_state::solution_state(std::size_t n)
     edge_gains(n),
     edge_candidates(n),
     nearest_job_rank_in_routes_from(n, std::vector<std::vector<index_t>>(n)),
-    nearest_job_rank_in_routes_to(n, std::vector<std::vector<index_t>>(n)) {
+    nearest_job_rank_in_routes_to(n, std::vector<std::vector<index_t>>(n)),
+    route_costs(n) {
 }

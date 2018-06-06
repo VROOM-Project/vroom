@@ -40,6 +40,8 @@ cvrp_local_search::cvrp_local_search(const input& input, raw_solution& sol)
       }
       update_nearest_job_rank_in_routes(v, v2);
     }
+
+    _sol_state.route_costs[v] = route_cost_for_vehicle(v, _sol[v]);
   }
 
   // Initialize unassigned jobs.
@@ -443,9 +445,9 @@ void cvrp_local_search::try_job_additions(const std::vector<index_t>& routes) {
 
   do {
     auto best_cost = std::numeric_limits<gain_t>::max();
-    index_t best_job;
-    index_t best_route;
-    index_t best_rank;
+    index_t best_job = 0;
+    index_t best_route = 0;
+    index_t best_rank = 0;
 
     for (const auto v : routes) {
       const auto& v_target = _input._vehicles[v];
@@ -546,6 +548,10 @@ void cvrp_local_search::try_job_additions(const std::vector<index_t>& routes) {
         _sol_state.bwd_amounts[best_route][i] =
           total_amount - _sol_state.fwd_amounts[best_route][i];
       }
+
+      // Update cost after addition.
+      _sol_state.route_costs[best_route] =
+        route_cost_for_vehicle(best_route, _sol[best_route]);
 
       _unassigned.erase(best_job);
     }
@@ -739,6 +745,17 @@ void cvrp_local_search::run(unsigned nb_threads) {
 
       log_solution();
 
+      // Update route costs.
+      auto previous_cost = _sol_state.route_costs[best_source] +
+                           _sol_state.route_costs[best_target];
+      _sol_state.route_costs[best_source] =
+        route_cost_for_vehicle(best_source, _sol[best_source]);
+      _sol_state.route_costs[best_target] =
+        route_cost_for_vehicle(best_target, _sol[best_target]);
+      auto new_cost = _sol_state.route_costs[best_source] +
+                      _sol_state.route_costs[best_target];
+      assert(new_cost + best_gain == previous_cost);
+
       run_tsp(best_source, 1);
       run_tsp(best_target, 1);
 
@@ -821,7 +838,7 @@ cvrp_local_search::route_cost_for_vehicle(index_t vehicle_rank,
 
 void cvrp_local_search::run_tsp(index_t route_rank, unsigned nb_threads) {
   if (_sol[route_rank].size() > 0) {
-    auto before_cost = route_cost_for_vehicle(route_rank, _sol[route_rank]);
+    auto before_cost = _sol_state.route_costs[route_rank];
 
     tsp p(_input, _sol[route_rank], nb_threads);
     auto new_route = p.solve(nb_threads)[0];
@@ -830,6 +847,7 @@ void cvrp_local_search::run_tsp(index_t route_rank, unsigned nb_threads) {
 
     if (after_cost < before_cost) {
       _sol[route_rank] = std::move(new_route);
+      _sol_state.route_costs[route_rank] = after_cost;
       std::cout << "Rearrange gain: " << before_cost - after_cost << std::endl;
     }
   }
