@@ -16,6 +16,12 @@ All rights reserved (see LICENSE).
 #include "../../../utils/output_json.h" // Todo remove
 #include "./solution_state.h"
 
+struct solution_indicators {
+  unsigned unassigned;
+  cost_t cost;
+  unsigned used_vehicles;
+};
+
 class cvrp_local_search {
 private:
   const input& _input;
@@ -50,7 +56,9 @@ private:
 public:
   cvrp_local_search(const input& input, raw_solution& sol);
 
-  void run(unsigned nb_threads);
+  solution_indicators indicators() const;
+
+  void run();
 };
 
 #endif

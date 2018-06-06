@@ -21,7 +21,7 @@ raw_solution cvrp::solve(unsigned nb_threads) const {
     double regret_coeff;
   };
 
-  auto start_clustering = std::chrono::high_resolution_clock::now();
+  auto start_solving = std::chrono::high_resolution_clock::now();
   BOOST_LOG_TRIVIAL(info) << "[CVRP] Start clustering heuristic(s).";
 
   std::vector<param> parameters;
@@ -44,135 +44,89 @@ raw_solution cvrp::solve(unsigned nb_threads) const {
   parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::HIGHER_AMOUNT, 0.5});
   parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::HIGHER_AMOUNT, 1});
 
-  std::vector<clustering> clusterings;
-  std::mutex clusterings_mutex;
+  auto P = parameters.size();
+  auto nb_tsp = _input._vehicles.size();
+
+  std::vector<raw_solution> solutions(P,
+                                      raw_solution(nb_tsp,
+                                                   std::vector<index_t>()));
+  std::vector<solution_indicators> sol_indicators(P);
 
   // Split the work among threads.
   std::vector<std::vector<std::size_t>>
     thread_ranks(nb_threads, std::vector<std::size_t>());
-  for (std::size_t i = 0; i < parameters.size(); ++i) {
+  for (std::size_t i = 0; i < P; ++i) {
     thread_ranks[i % nb_threads].push_back(i);
   }
 
-  auto run_clustering = [&](const std::vector<std::size_t>& param_ranks) {
+  auto run_solve = [&](const std::vector<std::size_t>& param_ranks) {
     for (auto rank : param_ranks) {
       auto& p = parameters[rank];
       clustering c(_input, p.type, p.init, p.regret_coeff);
 
-      std::lock_guard<std::mutex> guard(clusterings_mutex);
-      clusterings.push_back(std::move(c));
+      // Populate vector of TSP solutions, one per clusters.
+      for (std::size_t v = 0; v < nb_tsp; ++v) {
+        if (c.clusters[v].empty()) {
+          continue;
+        }
+        tsp p(_input, c.clusters[v], v);
+
+        solutions[rank][v] = p.solve(1)[0];
+      }
+
+      // Local search phase.
+      cvrp_local_search ls(_input, solutions[rank]);
+      ls.run();
+
+      // Store solution indicators.
+      sol_indicators[rank] = ls.indicators();
     }
   };
 
-  std::vector<std::thread> clustering_threads;
+  std::vector<std::thread> solving_threads;
 
   for (std::size_t i = 0; i < nb_threads; ++i) {
-    clustering_threads.emplace_back(run_clustering, thread_ranks[i]);
+    solving_threads.emplace_back(run_solve, thread_ranks[i]);
   }
 
-  for (auto& t : clustering_threads) {
+  for (auto& t : solving_threads) {
     t.join();
   }
 
-  auto best_c = std::min_element(clusterings.begin(), clusterings.end());
+  auto end_solving = std::chrono::high_resolution_clock::now();
 
-  std::string strategy =
-    (best_c->type == CLUSTERING_T::PARALLEL) ? "parallel" : "sequential";
-  std::string init_str;
-  switch (best_c->init) {
-  case INIT_T::NONE:
-    init_str = "none";
-    break;
-  case INIT_T::HIGHER_AMOUNT:
-    init_str = "higher_amount";
-    break;
-  case INIT_T::NEAREST:
-    init_str = "nearest";
-    break;
-  }
-  BOOST_LOG_TRIVIAL(trace) << "Best clustering:" << strategy << ";" << init_str
-                           << ";" << best_c->regret_coeff << ";"
-                           << best_c->non_empty_clusters << ";"
-                           << best_c->assigned_jobs << ";"
-                           << best_c->edges_cost;
-
-  auto end_clustering = std::chrono::high_resolution_clock::now();
-
-  auto clustering_computing_time =
-    std::chrono::duration_cast<std::chrono::milliseconds>(end_clustering -
-                                                          start_clustering)
+  auto solving_computing_time =
+    std::chrono::duration_cast<std::chrono::milliseconds>(end_solving -
+                                                          start_solving)
       .count();
 
-  BOOST_LOG_TRIVIAL(info) << "[CVRP] Done, took " << clustering_computing_time
-                          << " ms.";
+  for (const auto& indic : sol_indicators) {
+    std::cout << indic.unassigned << ";" << indic.cost << ";"
+              << indic.used_vehicles << std::endl;
+  }
 
-  BOOST_LOG_TRIVIAL(info) << "[CVRP] Launching TSPs ";
-
-  auto nb_tsp = best_c->clusters.size();
-  assert(nb_tsp == _input._vehicles.size());
-
-  // Vector of TSP solutions.
-  raw_solution tsp_sols(nb_tsp, std::vector<index_t>());
-
-  // Run TSP solving for a list of clusters in turn, each with
-  // provided number of threads.
-  auto run_tsp = [&](const std::vector<unsigned>& cluster_ranks,
-                     unsigned tsp_threads) {
-    for (auto cl_rank : cluster_ranks) {
-      if (best_c->clusters[cl_rank].empty()) {
-        continue;
-      }
-      tsp p(_input, best_c->clusters[cl_rank], cl_rank);
-
-      tsp_sols[cl_rank] = p.solve(tsp_threads)[0];
+  auto indicators_compare = [](const auto& lhs, const auto& rhs) {
+    if (lhs.unassigned < rhs.unassigned) {
+      return true;
     }
+    if (lhs.unassigned == rhs.unassigned) {
+      if (lhs.cost < rhs.cost) {
+        return true;
+      }
+      if (lhs.cost == rhs.cost and lhs.used_vehicles < rhs.used_vehicles) {
+        return true;
+      }
+    }
+    return false;
   };
 
-  std::vector<std::thread> tsp_threads;
+  auto best_indic = std::min_element(sol_indicators.cbegin(),
+                                     sol_indicators.cend(),
+                                     indicators_compare);
 
-  if (nb_tsp <= nb_threads) {
-    // We launch nb_tsp TSP solving and each of them can be
-    // multi-threaded.
-    std::vector<unsigned> thread_per_tsp(nb_tsp, 0);
-    for (std::size_t i = 0; i < nb_threads; ++i) {
-      ++thread_per_tsp[i % nb_tsp];
-    }
+  std::cout << std::distance(sol_indicators.cbegin(), best_indic) << std::endl;
+  BOOST_LOG_TRIVIAL(info) << "[CVRP] Done, took " << solving_computing_time
+                          << " ms.";
 
-    for (unsigned i = 0; i < nb_tsp; ++i) {
-      std::vector<unsigned> cluster_ranks({i});
-      tsp_threads.emplace_back(run_tsp, cluster_ranks, thread_per_tsp[i]);
-    }
-  } else {
-    // We launch nb_threads threads, each one solving several TSP.
-    std::vector<std::vector<unsigned>>
-    ranks_per_thread(nb_threads, std::vector<unsigned>());
-    for (std::size_t i = 0; i < nb_tsp; ++i) {
-      ranks_per_thread[i % nb_threads].push_back(i);
-    }
-
-    for (std::size_t i = 0; i < nb_threads; ++i) {
-      tsp_threads.emplace_back(run_tsp, ranks_per_thread[i], 1);
-    }
-  }
-
-  for (auto& t : tsp_threads) {
-    t.join();
-  }
-
-  auto end_tsps = std::chrono::high_resolution_clock::now();
-  auto tsp_computing_time =
-    std::chrono::duration_cast<std::chrono::milliseconds>(end_tsps -
-                                                          end_clustering)
-      .count();
-
-  BOOST_LOG_TRIVIAL(info) << "[CVRP] Done with TSPs, took "
-                          << tsp_computing_time << " ms.";
-
-  if (_input._vehicles.size() > 1) {
-    cvrp_local_search ls(_input, tsp_sols);
-
-    ls.run(nb_threads);
-  }
-
-  return tsp_sols;
+  return solutions[std::distance(sol_indicators.cbegin(), best_indic)];
 }
