@@ -56,14 +56,17 @@ void reverse_two_opt::compute_gain() {
   stored_gain -= m[s_index][t_index];
   stored_gain += _sol_state.fwd_costs[target_vehicle][target_rank];
   stored_gain -= _sol_state.bwd_costs[target_vehicle][target_rank];
+
   if (v_source.has_end()) {
     auto end_s = v_source.end.get().index();
     stored_gain += m[last_s][end_s];
     stored_gain -= m[first_t][end_s];
   }
+
   if (v_target.has_start()) {
     auto start_t = v_target.start.get().index();
     stored_gain += m[start_t][first_t];
+
     if (!last_in_source) {
       stored_gain -= m[start_t][last_s];
     } else {
@@ -71,6 +74,7 @@ void reverse_two_opt::compute_gain() {
       if (!last_in_target) {
         index_t next_index =
           _input._jobs[_sol[target_vehicle][target_rank + 1]].index();
+        stored_gain += m[t_index][next_index];
         stored_gain -= m[start_t][next_index];
       } else {
         // Emptying the whole target route here, so also gaining cost
