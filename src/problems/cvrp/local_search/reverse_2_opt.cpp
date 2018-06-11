@@ -48,33 +48,71 @@ void reverse_two_opt::compute_gain() {
   // Cost of swapping route for vehicle source_vehicle after step
   // source_rank with route for vehicle target_vehicle up to step
   // target_rank, but reversed.
-  if (!last_in_source) {
-    index_t next_index =
-      _input._jobs[_sol[source_vehicle][source_rank + 1]].index();
-    stored_gain += m[s_index][next_index];
-  }
+
+  // Add new source -> target edge.
   stored_gain -= m[s_index][t_index];
+
+  // Cost of reversing target route portion.
   stored_gain += _sol_state.fwd_costs[target_vehicle][target_rank];
   stored_gain -= _sol_state.bwd_costs[target_vehicle][target_rank];
 
+  if (!last_in_target) {
+    // Spare next edge in target route.
+    index_t next_index =
+      _input._jobs[_sol[target_vehicle][target_rank + 1]].index();
+    stored_gain += m[t_index][next_index];
+  }
+
+  if (!last_in_source) {
+    // Spare next edge in source route.
+    index_t next_index =
+      _input._jobs[_sol[source_vehicle][source_rank + 1]].index();
+    stored_gain += m[s_index][next_index];
+
+    // Part of source route is moved to target route.
+    index_t next_s_index =
+      _input._jobs[_sol[source_vehicle][source_rank + 1]].index();
+
+    // Cost or reverting source route portion.
+    stored_gain += _sol_state.fwd_costs[source_vehicle].back();
+    stored_gain -= _sol_state.fwd_costs[source_vehicle][source_rank + 1];
+    stored_gain -= _sol_state.bwd_costs[source_vehicle].back();
+    stored_gain += _sol_state.bwd_costs[source_vehicle][source_rank + 1];
+
+    if (last_in_target) {
+      if (v_target.has_end()) {
+        // Handle target route new end.
+        auto end_t = v_target.end.get().index();
+        stored_gain += m[t_index][end_t];
+        stored_gain -= m[next_s_index][end_t];
+      }
+    } else {
+      // Add new target -> source edge.
+      index_t next_t_index =
+        _input._jobs[_sol[target_vehicle][target_rank + 1]].index();
+      stored_gain -= m[next_s_index][next_t_index];
+    }
+  }
+
   if (v_source.has_end()) {
+    // Update cost to source end because last job changed.
     auto end_s = v_source.end.get().index();
     stored_gain += m[last_s][end_s];
     stored_gain -= m[first_t][end_s];
   }
 
   if (v_target.has_start()) {
+    // Spare cost from target start because first job changed.
     auto start_t = v_target.start.get().index();
     stored_gain += m[start_t][first_t];
-
     if (!last_in_source) {
       stored_gain -= m[start_t][last_s];
     } else {
       // No job from source route actually swapped to target route.
       if (!last_in_target) {
+        // Going straight from start to next job in target route.
         index_t next_index =
           _input._jobs[_sol[target_vehicle][target_rank + 1]].index();
-        stored_gain += m[t_index][next_index];
         stored_gain -= m[start_t][next_index];
       } else {
         // Emptying the whole target route here, so also gaining cost
@@ -83,29 +121,6 @@ void reverse_two_opt::compute_gain() {
           auto end_t = v_target.end.get().index();
           stored_gain += m[t_index][end_t];
         }
-      }
-    }
-  }
-
-  if (!last_in_source) {
-    index_t next_s_index =
-      _input._jobs[_sol[source_vehicle][source_rank + 1]].index();
-
-    stored_gain += _sol_state.fwd_costs[source_vehicle].back();
-    stored_gain -= _sol_state.fwd_costs[source_vehicle][source_rank + 1];
-    stored_gain -= _sol_state.bwd_costs[source_vehicle].back();
-    stored_gain += _sol_state.bwd_costs[source_vehicle][source_rank + 1];
-
-    if (!last_in_target) {
-      index_t next_t_index =
-        _input._jobs[_sol[target_vehicle][target_rank + 1]].index();
-      stored_gain += m[t_index][next_t_index];
-      stored_gain -= m[next_s_index][next_t_index];
-    } else {
-      if (v_target.has_end()) {
-        auto end_t = v_target.end.get().index();
-        stored_gain += m[t_index][end_t];
-        stored_gain -= m[next_s_index][end_t];
       }
     }
   }
