@@ -39,6 +39,9 @@ clustering::clustering(const input& input, CLUSTERING_T t, INIT_T i, double c)
   case INIT_T::NEAREST:
     init_str = "nearest";
     break;
+  case INIT_T::FURTHEST:
+    init_str = "furthest";
+    break;
   }
 
   non_empty_clusters = std::count_if(clusters.begin(),
@@ -167,6 +170,12 @@ void clustering::parallel_clustering() {
       }
       if (init == INIT_T::NEAREST) {
         init_job = std::min_element(candidates[v].cbegin(),
+                                    candidates[v].cend(),
+                                    nearest_init_lambda(v));
+      }
+
+      if (init == INIT_T::FURTHEST) {
+        init_job = std::max_element(candidates[v].cbegin(),
                                     candidates[v].cend(),
                                     nearest_init_lambda(v));
       }
@@ -453,6 +462,11 @@ void clustering::sequential_clustering() {
       }
       if (init == INIT_T::NEAREST) {
         init_job = std::min_element(candidates.cbegin(),
+                                    candidates.cend(),
+                                    nearest_init_lambda(v));
+      }
+      if (init == INIT_T::FURTHEST) {
+        init_job = std::max_element(candidates.cbegin(),
                                     candidates.cend(),
                                     nearest_init_lambda(v));
       }

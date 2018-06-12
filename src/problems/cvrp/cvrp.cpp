@@ -31,6 +31,9 @@ raw_solution cvrp::solve(unsigned nb_threads) const {
   parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NEAREST, 0});
   parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NEAREST, 0.5});
   parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NEAREST, 1});
+  parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::FURTHEST, 0});
+  parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::FURTHEST, 0.5});
+  parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::FURTHEST, 1});
   parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::HIGHER_AMOUNT, 0});
   parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::HIGHER_AMOUNT, 0.5});
   parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::HIGHER_AMOUNT, 1});
@@ -40,6 +43,9 @@ raw_solution cvrp::solve(unsigned nb_threads) const {
   parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NEAREST, 0});
   parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NEAREST, 0.5});
   parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NEAREST, 1});
+  parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::FURTHEST, 0});
+  parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::FURTHEST, 0.5});
+  parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::FURTHEST, 1});
   parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::HIGHER_AMOUNT, 0});
   parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::HIGHER_AMOUNT, 0.5});
   parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::HIGHER_AMOUNT, 1});
