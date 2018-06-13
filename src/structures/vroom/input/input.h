@@ -34,7 +34,7 @@ All rights reserved (see LICENSE).
 #endif
 
 class vrp;
-class cvrp_local_search; // To remove
+class cvrp_local_search; // Todo remove
 
 struct type_with_id {
   TYPE type;
@@ -63,6 +63,7 @@ private:
   bool _all_locations_have_coords;
 
   solution format_solution(const raw_solution& raw_routes) const;
+
   void store_amount_lower_bound(const amount_t& amount);
 
 public:
@@ -89,7 +90,7 @@ public:
 
   solution solve(unsigned nb_thread);
 
-  friend cvrp_local_search; // To remove
+  friend cvrp_local_search; // Todo remove
 };
 
 #endif

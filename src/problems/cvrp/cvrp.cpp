@@ -70,7 +70,7 @@ raw_solution cvrp::solve(unsigned nb_threads) const {
       auto& p = parameters[rank];
       clustering c(_input, p.type, p.init, p.regret_coeff);
 
-      // Populate vector of TSP solutions, one per clusters.
+      // Populate vector of TSP solutions, one per cluster.
       for (std::size_t v = 0; v < nb_tsp; ++v) {
         if (c.clusters[v].empty()) {
           continue;
@@ -106,11 +106,6 @@ raw_solution cvrp::solve(unsigned nb_threads) const {
                                                           start_solving)
       .count();
 
-  for (const auto& indic : sol_indicators) {
-    std::cout << indic.unassigned << ";" << indic.cost << ";"
-              << indic.used_vehicles << std::endl;
-  }
-
   auto indicators_compare = [](const auto& lhs, const auto& rhs) {
     if (lhs.unassigned < rhs.unassigned) {
       return true;
@@ -130,7 +125,6 @@ raw_solution cvrp::solve(unsigned nb_threads) const {
                                      sol_indicators.cend(),
                                      indicators_compare);
 
-  std::cout << std::distance(sol_indicators.cbegin(), best_indic) << std::endl;
   BOOST_LOG_TRIVIAL(info) << "[CVRP] Done, took " << solving_computing_time
                           << " ms.";
 
