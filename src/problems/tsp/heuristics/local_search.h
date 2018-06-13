@@ -1,5 +1,5 @@
-#ifndef LOCAL_SEARCH_H
-#define LOCAL_SEARCH_H
+#ifndef TSP_LOCAL_SEARCH_H
+#define TSP_LOCAL_SEARCH_H
 
 /*
 
@@ -16,7 +16,7 @@ All rights reserved (see LICENSE).
 #include "structures/abstract/matrix.h"
 #include "structures/typedefs.h"
 
-class local_search {
+class tsp_local_search {
 private:
   const matrix<cost_t>& _matrix;
   const std::pair<bool, index_t> _avoid_start_relocate;
@@ -26,10 +26,10 @@ private:
   std::vector<index_t> _sym_two_opt_rank_limits;
 
 public:
-  local_search(const matrix<cost_t>& matrix,
-               std::pair<bool, index_t> avoid_start_relocate,
-               const std::list<index_t>& tour,
-               unsigned nb_threads);
+  tsp_local_search(const matrix<cost_t>& matrix,
+                   std::pair<bool, index_t> avoid_start_relocate,
+                   const std::list<index_t>& tour,
+                   unsigned nb_threads);
 
   cost_t relocate_step();
 

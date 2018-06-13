@@ -19,7 +19,7 @@ All rights reserved (see LICENSE).
 enum class CLUSTERING_T { PARALLEL, SEQUENTIAL };
 
 // Initialization types.
-enum class INIT_T { NONE, HIGHER_AMOUNT, NEAREST };
+enum class INIT_T { NONE, HIGHER_AMOUNT, NEAREST, FURTHEST };
 
 class clustering {
 private:
@@ -40,8 +40,6 @@ public:
   unsigned non_empty_clusters;
 
   clustering(const input& input, CLUSTERING_T t, INIT_T i, double c);
-
-  friend bool operator<(const clustering& lhs, const clustering& rhs);
 };
 
 #endif

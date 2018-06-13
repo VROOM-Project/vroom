@@ -18,12 +18,18 @@ struct route_t {
   const ID_t vehicle;
   std::vector<step> steps;
   const cost_t cost;
+  const duration_t service;
+  const amount_t amount;
+
   std::string geometry;
-  duration_t service;
   duration_t duration;
   distance_t distance;
 
-  route_t(ID_t vehicle, std::vector<step>&& steps, cost_t cost);
+  route_t(ID_t vehicle,
+          std::vector<step>&& steps,
+          cost_t cost,
+          duration_t service,
+          const amount_t& amount);
 };
 
 #endif

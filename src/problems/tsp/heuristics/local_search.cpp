@@ -15,10 +15,11 @@ All rights reserved (see LICENSE).
 
 #include "problems/tsp/heuristics/local_search.h"
 
-local_search::local_search(const matrix<cost_t>& matrix,
-                           std::pair<bool, index_t> avoid_start_relocate,
-                           const std::list<index_t>& tour,
-                           unsigned nb_threads)
+tsp_local_search::tsp_local_search(
+  const matrix<cost_t>& matrix,
+  std::pair<bool, index_t> avoid_start_relocate,
+  const std::list<index_t>& tour,
+  unsigned nb_threads)
   : _matrix(matrix),
     _avoid_start_relocate(avoid_start_relocate),
     _edges(_matrix.size()),
@@ -97,7 +98,7 @@ local_search::local_search(const matrix<cost_t>& matrix,
   _sym_two_opt_rank_limits.push_back(_edges.size());
 }
 
-cost_t local_search::relocate_step() {
+cost_t tsp_local_search::relocate_step() {
   if (_edges.size() < 3) {
     // Not enough edges for the operator to make sense.
     return 0;
@@ -196,7 +197,7 @@ cost_t local_search::relocate_step() {
   return best_gain;
 }
 
-cost_t local_search::perform_all_relocate_steps() {
+cost_t tsp_local_search::perform_all_relocate_steps() {
   cost_t total_gain = 0;
   unsigned relocate_iter = 0;
   cost_t gain = 0;
@@ -217,7 +218,7 @@ cost_t local_search::perform_all_relocate_steps() {
   return total_gain;
 }
 
-cost_t local_search::avoid_loop_step() {
+cost_t tsp_local_search::avoid_loop_step() {
   // In some cases, the solution can contain "loops" that other
   // operators can't fix. Those are found with two steps:
   //
@@ -351,7 +352,7 @@ cost_t local_search::avoid_loop_step() {
   return gain;
 }
 
-cost_t local_search::perform_all_avoid_loop_steps() {
+cost_t tsp_local_search::perform_all_avoid_loop_steps() {
   cost_t total_gain = 0;
   unsigned relocate_iter = 0;
   cost_t gain = 0;
@@ -372,7 +373,7 @@ cost_t local_search::perform_all_avoid_loop_steps() {
   return total_gain;
 }
 
-cost_t local_search::two_opt_step() {
+cost_t tsp_local_search::two_opt_step() {
   if (_edges.size() < 4) {
     // Not enough edges for the operator to make sense.
     return 0;
@@ -481,7 +482,7 @@ cost_t local_search::two_opt_step() {
   return best_gain;
 }
 
-cost_t local_search::asym_two_opt_step() {
+cost_t tsp_local_search::asym_two_opt_step() {
   if (_edges.size() < 4) {
     // Not enough edges for the operator to make sense.
     return 0;
@@ -621,7 +622,7 @@ cost_t local_search::asym_two_opt_step() {
   return best_gain;
 }
 
-cost_t local_search::perform_all_two_opt_steps() {
+cost_t tsp_local_search::perform_all_two_opt_steps() {
   cost_t total_gain = 0;
   unsigned two_opt_iter = 0;
   cost_t gain = 0;
@@ -642,7 +643,7 @@ cost_t local_search::perform_all_two_opt_steps() {
   return total_gain;
 }
 
-cost_t local_search::perform_all_asym_two_opt_steps() {
+cost_t tsp_local_search::perform_all_asym_two_opt_steps() {
   cost_t total_gain = 0;
   unsigned two_opt_iter = 0;
   cost_t gain = 0;
@@ -663,7 +664,7 @@ cost_t local_search::perform_all_asym_two_opt_steps() {
   return total_gain;
 }
 
-cost_t local_search::or_opt_step() {
+cost_t tsp_local_search::or_opt_step() {
   if (_edges.size() < 4) {
     // Not enough edges for the operator to make sense.
     return 0;
@@ -762,7 +763,7 @@ cost_t local_search::or_opt_step() {
   return best_gain;
 }
 
-cost_t local_search::perform_all_or_opt_steps() {
+cost_t tsp_local_search::perform_all_or_opt_steps() {
   cost_t total_gain = 0;
   unsigned or_opt_iter = 0;
   cost_t gain = 0;
@@ -782,7 +783,7 @@ cost_t local_search::perform_all_or_opt_steps() {
   return total_gain;
 }
 
-std::list<index_t> local_search::get_tour(index_t first_index) const {
+std::list<index_t> tsp_local_search::get_tour(index_t first_index) const {
   std::list<index_t> tour;
   tour.push_back(first_index);
   index_t next_index = _edges.at(first_index);

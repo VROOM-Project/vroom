@@ -45,6 +45,9 @@ clustering::clustering(const input& input, CLUSTERING_T t, INIT_T i, double c)
   case INIT_T::NEAREST:
     init_str = "nearest";
     break;
+  case INIT_T::FURTHEST:
+    init_str = "furthest";
+    break;
   }
 
   non_empty_clusters = std::count_if(clusters.begin(),
@@ -55,22 +58,6 @@ clustering::clustering(const input& input, CLUSTERING_T t, INIT_T i, double c)
                            << ";" << this->regret_coeff << ";"
                            << this->non_empty_clusters << ";" << assigned_jobs
                            << ";" << this->edges_cost;
-}
-
-bool operator<(const clustering& lhs, const clustering& rhs) {
-  if (lhs.assigned_jobs > rhs.assigned_jobs) {
-    return true;
-  }
-  if (lhs.assigned_jobs == rhs.assigned_jobs) {
-    if (lhs.edges_cost < rhs.edges_cost) {
-      return true;
-    }
-    if (lhs.edges_cost == rhs.edges_cost and
-        lhs.non_empty_clusters < rhs.non_empty_clusters) {
-      return true;
-    }
-  }
-  return false;
 }
 
 inline void update_cost(index_t from_index,
@@ -113,7 +100,7 @@ void clustering::parallel_clustering() {
   for (std::size_t v = 0; v < V; ++v) {
     // Only keep jobs compatible with vehicle skills in candidates.
     for (std::size_t j = 0; j < J; ++j) {
-      if (input_ref._vehicle_to_job_compatibility[v][j]) {
+      if (input_ref.vehicle_ok_with_job(v, j)) {
         candidates[v].push_back(j);
       }
     }
@@ -189,6 +176,12 @@ void clustering::parallel_clustering() {
       }
       if (init == INIT_T::NEAREST) {
         init_job = std::min_element(candidates[v].cbegin(),
+                                    candidates[v].cend(),
+                                    nearest_init_lambda(v));
+      }
+
+      if (init == INIT_T::FURTHEST) {
+        init_job = std::max_element(candidates[v].cbegin(),
                                     candidates[v].cend(),
                                     nearest_init_lambda(v));
       }
@@ -428,7 +421,7 @@ void clustering::sequential_clustering() {
     // costs to jobs for current vehicle.
     std::vector<index_t> candidates;
     for (auto i : candidates_set) {
-      if (input_ref._vehicle_to_job_compatibility[v][i] and
+      if (input_ref.vehicle_ok_with_job(v, i) and
           jobs[i].amount <= input_ref._vehicles[v].capacity) {
         candidates.push_back(i);
       }
@@ -470,6 +463,11 @@ void clustering::sequential_clustering() {
       }
       if (init == INIT_T::NEAREST) {
         init_job = std::min_element(candidates.cbegin(),
+                                    candidates.cend(),
+                                    nearest_init_lambda(v));
+      }
+      if (init == INIT_T::FURTHEST) {
+        init_job = std::max_element(candidates.cbegin(),
                                     candidates.cend(),
                                     nearest_init_lambda(v));
       }

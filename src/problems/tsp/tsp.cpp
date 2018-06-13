@@ -6,17 +6,18 @@ Copyright (c) 2015-2018, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
-#include <boost/log/trivial.hpp>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <string>
 
+#include <boost/log/trivial.hpp>
+
 #include "problems/tsp/heuristics/christofides.h"
 #include "problems/tsp/heuristics/local_search.h"
+#include "problems/tsp/tsp.h"
 #include "structures/abstract/undirected_graph.h"
 #include "structures/vroom/input/input.h"
-#include "tsp.h"
 
 tsp::tsp(const input& input,
          std::vector<index_t> job_ranks,
@@ -190,11 +191,12 @@ raw_solution tsp::solve(unsigned nb_threads) const {
     << "[TSP] Start local search on symmetrized problem using " << nb_threads
     << " thread(s).";
 
-  local_search sym_ls(_symmetrized_matrix,
-                      std::make_pair(!_round_trip and _has_start and _has_end,
-                                     _start),
-                      christo_sol,
-                      nb_threads);
+  tsp_local_search sym_ls(_symmetrized_matrix,
+                          std::make_pair(!_round_trip and _has_start and
+                                           _has_end,
+                                         _start),
+                          christo_sol,
+                          nb_threads);
 
   cost_t sym_two_opt_gain = 0;
   cost_t sym_relocate_gain = 0;
@@ -254,13 +256,11 @@ raw_solution tsp::solve(unsigned nb_threads) const {
     cost_t sym_ls_cost = std::min(direct_cost, reverse_cost);
 
     // Local search on asymmetric problem.
-    local_search asym_ls(_matrix,
-                         std::make_pair(!_round_trip and _has_start and
-                                          _has_end,
-                                        _start),
-                         (direct_cost <= reverse_cost) ? current_sol
-                                                       : reverse_current_sol,
-                         nb_threads);
+    tsp_local_search
+      asym_ls(_matrix,
+              std::make_pair(!_round_trip and _has_start and _has_end, _start),
+              (direct_cost <= reverse_cost) ? current_sol : reverse_current_sol,
+              nb_threads);
 
     BOOST_LOG_TRIVIAL(info) << "[TSP] Back to asymmetric "
                                "problem, initial solution cost is "
@@ -326,7 +326,7 @@ raw_solution tsp::solve(unsigned nb_threads) const {
   }
 
   // Back to ranks in input::_jobs.
-  std::list<index_t> init_ranks_sol;
+  std::vector<index_t> init_ranks_sol;
   std::transform(current_sol.cbegin(),
                  current_sol.cend(),
                  std::back_inserter(init_ranks_sol),

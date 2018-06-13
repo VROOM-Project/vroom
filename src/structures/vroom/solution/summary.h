@@ -10,17 +10,25 @@ All rights reserved (see LICENSE).
 
 */
 
+#include "structures/vroom/amount.h"
 #include "structures/vroom/solution/computing_times.h"
 
 struct summary_t {
-  cost_t cost;
-  duration_t service;
+  const cost_t cost;
+  const unsigned unassigned;
+  const duration_t service;
+  const amount_t amount;
+
   duration_t duration;
   distance_t distance;
   computing_times_t computing_times;
-  unsigned unassigned;
 
-  summary_t(cost_t cost, unsigned unassigned);
+  summary_t();
+
+  summary_t(cost_t cost,
+            unsigned unassigned,
+            duration_t service,
+            amount_t&& amount);
 };
 
 #endif

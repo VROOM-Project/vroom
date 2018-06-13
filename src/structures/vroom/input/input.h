@@ -24,6 +24,7 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/vehicle.h"
 
 class vrp;
+class cvrp_local_search; // Todo remove
 
 struct type_with_id {
   TYPE type;
@@ -42,6 +43,7 @@ private:
   matrix<cost_t> _matrix;
   std::vector<location_t> _locations;
   unsigned _amount_size;
+  amount_t _amount_lower_bound;
   std::vector<std::vector<bool>> _vehicle_to_job_compatibility;
   void check_amount_size(unsigned size);
   std::unique_ptr<vrp> get_problem() const;
@@ -50,7 +52,9 @@ private:
   std::unordered_set<index_t> _matrix_used_index;
   bool _all_locations_have_coords;
 
-  solution format_solution(const raw_solution& routes_as_list) const;
+  solution format_solution(const raw_solution& raw_routes) const;
+
+  void store_amount_lower_bound(const amount_t& amount);
 
 public:
   std::vector<job_t> _jobs;
@@ -64,13 +68,19 @@ public:
 
   void set_matrix(matrix<cost_t>&& m);
 
+  unsigned amount_size() const;
+
+  amount_t get_amount_lower_bound() const;
+
+  bool vehicle_ok_with_job(index_t v_index, index_t j_index) const;
+
   const matrix<cost_t>& get_matrix() const;
 
   matrix<cost_t> get_sub_matrix(const std::vector<index_t>& indices) const;
 
   solution solve(unsigned nb_thread);
 
-  friend class clustering;
+  friend cvrp_local_search; // Todo remove
 };
 
 #endif

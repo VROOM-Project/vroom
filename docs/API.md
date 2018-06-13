@@ -133,6 +133,7 @@ The `summary` object has the following properties:
 | `cost` | total cost for all routes |
 | `unassigned` | number of jobs that could not be served |
 | `service` | total service time for all routes |
+| [`amount`] | total amount for all routes |
 | [`duration`]* | total duration for all routes |
 | [`distance`]* | total distance for all routes |
 
@@ -148,6 +149,7 @@ A `route` object has the following properties:
 | [`steps`](#steps) | array of `step` objects |
 | `cost` | cost for this route |
 | `service` | total route service time |
+| [`amount`] | total amount for jobs in this route |
 | [`geometry`]* | polyline encoded route geometry |
 | [`duration`]* | total route duration |
 | [`distance`]* | total route distance |

@@ -23,6 +23,7 @@ public:
   amount_t(std::size_t size);
 
   using parent::size;
+  using parent::empty;
   using parent::operator[];
   using parent::push_back;
 
