@@ -72,6 +72,8 @@ public:
 
   amount_t get_amount_lower_bound() const;
 
+  bool has_skills() const;
+
   bool vehicle_ok_with_job(index_t v_index, index_t j_index) const;
 
   const matrix<cost_t>& get_matrix() const;

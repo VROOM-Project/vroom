@@ -21,6 +21,18 @@ cvrp::cvrp(const input& input) : vrp(input) {
 }
 
 raw_solution cvrp::solve(unsigned nb_threads) const {
+  auto nb_tsp = _input._vehicles.size();
+
+  if (nb_tsp == 1 and !_input.has_skills() and _input.amount_size() == 0) {
+    // This is a plain TSP, no need to go through the trouble below.
+    std::vector<index_t> job_ranks(_input._jobs.size());
+    std::iota(job_ranks.begin(), job_ranks.end(), 0);
+
+    tsp p(_input, job_ranks, 0);
+
+    return p.solve(nb_threads);
+  }
+
   struct param {
     CLUSTERING_T type;
     INIT_T init;
@@ -57,7 +69,6 @@ raw_solution cvrp::solve(unsigned nb_threads) const {
   parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::HIGHER_AMOUNT, 1});
 
   auto P = parameters.size();
-  auto nb_tsp = _input._vehicles.size();
 
   std::vector<raw_solution> solutions(P,
                                       raw_solution(nb_tsp,
