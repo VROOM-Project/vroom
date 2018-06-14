@@ -60,6 +60,8 @@ raw_solution cvrp::solve(unsigned nb_threads) const {
 
   auto P = parameters.size();
 
+  unsigned max_nb_jobs_removal = 2;
+
   std::vector<raw_solution> solutions(P,
                                       raw_solution(nb_tsp,
                                                    std::vector<index_t>()));
@@ -88,7 +90,7 @@ raw_solution cvrp::solve(unsigned nb_threads) const {
       }
 
       // Local search phase.
-      cvrp_local_search ls(_input, solutions[rank]);
+      cvrp_local_search ls(_input, solutions[rank], max_nb_jobs_removal);
       ls.run();
 
       // Store solution indicators.

@@ -29,6 +29,7 @@ private:
   const std::size_t V;
   const amount_t _amount_lower_bound;
   const amount_t _double_amount_lower_bound;
+  const unsigned _max_nb_jobs_removal;
 
   std::vector<index_t> _all_routes;
   raw_solution& _target_sol;
@@ -67,7 +68,9 @@ private:
   void remove_from_routes();
 
 public:
-  cvrp_local_search(const input& input, raw_solution& sol);
+  cvrp_local_search(const input& input,
+                    raw_solution& sol,
+                    unsigned max_nb_jobs_removal);
 
   solution_indicators indicators() const;
 
