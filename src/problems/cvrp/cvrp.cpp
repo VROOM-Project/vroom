@@ -43,30 +43,20 @@ raw_solution cvrp::solve(unsigned nb_threads) const {
   BOOST_LOG_TRIVIAL(info) << "[CVRP] Start clustering heuristic(s).";
 
   std::vector<param> parameters;
-  parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NONE, 0});
   parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NONE, 0.5});
-  parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NONE, 1});
-  parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NEAREST, 0});
-  parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NEAREST, 0.5});
+  parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NEAREST, 0.3});
+  parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NEAREST, 1.9});
+  parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::HIGHER_AMOUNT, 1.4});
+
+  parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NONE, 0.1});
   parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NEAREST, 1});
-  parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::FURTHEST, 0});
-  parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::FURTHEST, 0.5});
-  parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::FURTHEST, 1});
-  parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::HIGHER_AMOUNT, 0});
-  parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::HIGHER_AMOUNT, 0.5});
-  parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::HIGHER_AMOUNT, 1});
-  parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NONE, 0});
-  parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NONE, 0.5});
-  parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NONE, 1});
-  parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NEAREST, 0});
-  parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NEAREST, 0.5});
-  parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NEAREST, 1});
-  parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::FURTHEST, 0});
-  parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::FURTHEST, 0.5});
-  parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::FURTHEST, 1});
-  parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::HIGHER_AMOUNT, 0});
-  parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::HIGHER_AMOUNT, 0.5});
-  parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::HIGHER_AMOUNT, 1});
+  parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NONE, 0.1});
+  parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::HIGHER_AMOUNT, 1.1});
+
+  parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NONE, 0.6});
+  parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NONE, 1.2});
+  parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NEAREST, 0.5});
+  parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NEAREST, 1.2});
 
   auto P = parameters.size();
 
