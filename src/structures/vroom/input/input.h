@@ -80,7 +80,7 @@ public:
 
   matrix<cost_t> get_sub_matrix(const std::vector<index_t>& indices) const;
 
-  solution solve(unsigned nb_thread);
+  solution solve(unsigned exploration_level, unsigned nb_thread);
 
   friend cvrp_local_search; // Todo remove
 };

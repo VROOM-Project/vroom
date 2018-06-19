@@ -162,7 +162,7 @@ cost_t tsp::symmetrized_cost(const std::list<index_t>& tour) const {
   return cost;
 }
 
-raw_solution tsp::solve(unsigned nb_threads) const {
+raw_solution tsp::solve(unsigned, unsigned nb_threads) const {
   // Applying heuristic.
   auto start_heuristic = std::chrono::high_resolution_clock::now();
   BOOST_LOG_TRIVIAL(info) << "[TSP] Start heuristic on symmetrized problem.";
