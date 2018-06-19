@@ -1,6 +1,35 @@
 # Changelog
 
-## [v1.1.0] - 2017-03-09
+## Unreleased
+
+### Added
+
+- Support for multiple vehicles
+- Support for multi-dimensional capacity constraints (#74)
+- Support for skills to model jobs/vehicles compatibility (#90)
+- Support for user-defined matrices (#47)
+- Provide ETA at step level in the routes, using optional service time for each job (#101, #103)
+- Experimental* support to use `vroom` directly from C++ as a library (#42)
+- Automatic code formatting script based on `clang-format` (#66)
+- PR template
+
+*: read "functional with no C++ API stability guarantee"
+
+### Changed
+
+- Update `rapidjson` to a patched `v1.1.0` (#128)
+- Improve dependency handling (#78)
+- Improve compilation time and switch from relative to absolute paths for includes (#108)
+- Various refactors (#64, #72, #88, #106)
+
+### Fixed
+
+- Memory leak upon `vrp` destruction (#69)
+- Prevent overflows with huge costs (#50)
+- Infinite loop on TSP edge case (#122)
+- Various build warnings and errors with both `gcc` and `clang` (#94, #114)
+
+## [v1.1.0]
 
 ### Added
 
@@ -21,7 +50,7 @@
 - Drop support for TSPLIB files (#48)
 - Clean unused code and heuristics
 
-## [v1.0.0] - 2016-09-26
+## [v1.0.0]
 
 ### Added
 
@@ -43,7 +72,7 @@
 - Compilation trouble with rapidjson and some types (#31)
 - Correct usage display obtained with `-h` (#39)
 
-## [v0.3.1] - 2016-03-01
+## [v0.3.1]
 
 ### Changed
 
@@ -56,7 +85,7 @@
 
 - Improve 2-opt operator for symmetric cases (#27).
 
-## [v0.3] - 2016-02-03
+## [v0.3]
 
 ### Added
 
@@ -95,7 +124,7 @@
 - Incorrect DIMENSION key in TSPLIB format raising stoul exception.
 - Segfault for DIMENSION: 1 problem in TSPLIB format (#25).
 
-## [v0.2] - 2015-10-03
+## [v0.2]
 
 ### Added
 
@@ -114,7 +143,7 @@
 - Socket reading issues (#1).
 - Potentially incorrect request for route summary (#5).
 
-## [v0.1] - 2015-09-05
+## [v0.1]
 
 ### Added
 
