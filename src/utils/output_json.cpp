@@ -7,13 +7,11 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <chrono>
 #include <fstream>
 #include <iostream>
 
 #include "../include/rapidjson/stringbuffer.h"
 #include "../include/rapidjson/writer.h"
-#include <boost/log/trivial.hpp>
 
 #include "utils/output_json.h"
 #include "utils/version.h"
@@ -191,11 +189,6 @@ rapidjson::Value to_json(const location_t& loc,
 void write_to_json(const solution& sol,
                    bool geometry,
                    const std::string& output_file) {
-  // Set output.
-  auto start_output = std::chrono::high_resolution_clock::now();
-  std::string out = output_file.empty() ? "standard output" : output_file;
-  BOOST_LOG_TRIVIAL(info) << "[Output] Write solution to " << out << ".";
-
   auto json_output = to_json(sol, geometry);
 
   // Rapidjson writing process.
@@ -213,11 +206,4 @@ void write_to_json(const solution& sol,
     out_stream << s.GetString();
     out_stream.close();
   }
-  auto end_output = std::chrono::high_resolution_clock::now();
-  auto output_duration = std::chrono::duration_cast<std::chrono::milliseconds>(
-                           end_output - start_output)
-                           .count();
-
-  BOOST_LOG_TRIVIAL(info) << "[Output] Done, took " << output_duration
-                          << " ms.";
 }

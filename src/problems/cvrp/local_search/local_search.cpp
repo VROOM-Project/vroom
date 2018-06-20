@@ -7,14 +7,10 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <iostream>
-
-#include <boost/log/trivial.hpp>
-
+#include "problems/cvrp/local_search/local_search.h"
 #include "problems/cvrp/local_search/2_opt.h"
 #include "problems/cvrp/local_search/cross_exchange.h"
 #include "problems/cvrp/local_search/exchange.h"
-#include "problems/cvrp/local_search/local_search.h"
 #include "problems/cvrp/local_search/or_opt.h"
 #include "problems/cvrp/local_search/relocate.h"
 #include "problems/cvrp/local_search/reverse_2_opt.h"
@@ -33,9 +29,7 @@ cvrp_local_search::cvrp_local_search(const input& input,
     _target_sol(sol),
     _sol(sol),
     _sol_state(_sol.size()),
-    _best_sol(sol),
-    _log(false),
-    _ls_step(0) {
+    _best_sol(sol) {
   // Initialize all route indices.
   std::iota(_all_routes.begin(), _all_routes.end(), 0);
 
@@ -315,14 +309,6 @@ void cvrp_local_search::set_edge_gains(index_t v) {
   }
 }
 
-void cvrp_local_search::log_solution() {
-  if (_log) {
-    write_to_json(_input.format_solution(_sol),
-                  false,
-                  "ls_log_" + std::to_string(_ls_step++) + "_sol.json");
-  }
-}
-
 void cvrp_local_search::update_costs(index_t v) {
   _sol_state.fwd_costs[v] = std::vector<cost_t>(_sol[v].size());
   _sol_state.bwd_costs[v] = std::vector<cost_t>(_sol[v].size());
@@ -536,10 +522,6 @@ void cvrp_local_search::try_job_additions(const std::vector<index_t>& routes,
     job_added = (best_cost < std::numeric_limits<double>::max());
 
     if (job_added) {
-      BOOST_LOG_TRIVIAL(trace) << "- Adding job: " << _input._jobs[best_job].id
-                               << " at rank " << best_rank
-                               << " in route for vehicle "
-                               << _input._vehicles[best_route].id << ".";
       _sol[best_route].insert(_sol[best_route].begin() + best_rank, best_job);
 
       // Update amounts after addition.
@@ -567,15 +549,11 @@ void cvrp_local_search::try_job_additions(const std::vector<index_t>& routes,
         route_cost_for_vehicle(best_route, _sol[best_route]);
 
       _unassigned.erase(best_job);
-
-      log_solution();
     }
   } while (job_added);
 }
 
 void cvrp_local_search::run_ls_step() {
-  BOOST_LOG_TRIVIAL(trace) << "* Running CVRP local search step.";
-
   std::vector<std::vector<std::unique_ptr<ls_operator>>> best_ops(V);
   for (std::size_t v = 0; v < V; ++v) {
     best_ops[v] = std::vector<std::unique_ptr<ls_operator>>(V);
@@ -593,8 +571,6 @@ void cvrp_local_search::run_ls_step() {
   }
 
   std::vector<std::vector<gain_t>> best_gains(V, std::vector<gain_t>(V, 0));
-
-  log_solution();
 
   gain_t best_gain = 1;
 
@@ -754,11 +730,7 @@ void cvrp_local_search::run_ls_step() {
     if (best_gain > 0) {
       assert(best_ops[best_source][best_target] != nullptr);
 
-      // best_ops[best_source][best_target]->log();
-
       best_ops[best_source][best_target]->apply();
-
-      log_solution();
 
       // Update route costs.
       auto previous_cost = _sol_state.route_costs[best_source] +
@@ -784,8 +756,6 @@ void cvrp_local_search::run_ls_step() {
       try_job_additions(best_ops[best_source][best_target]
                           ->addition_candidates(),
                         0);
-
-      log_solution();
 
       // Running update_costs only after try_job_additions is fine.
       update_costs(best_source);
@@ -882,8 +852,6 @@ void cvrp_local_search::run() {
 
       // Reset what is needed in solution state.
       setup();
-
-      log_solution();
     }
 
     first_step = false;
@@ -976,8 +944,6 @@ void cvrp_local_search::remove_from_routes() {
     auto r = r_r.second;
     _unassigned.insert(_sol[v][r]);
     _sol[v].erase(_sol[v].begin() + r);
-
-    log_solution();
   }
 }
 
@@ -1018,8 +984,6 @@ void cvrp_local_search::run_tsp(index_t route_rank) {
     if (after_cost < before_cost) {
       _sol[route_rank] = std::move(new_route);
       _sol_state.route_costs[route_rank] = after_cost;
-      BOOST_LOG_TRIVIAL(trace) << "Rearrange gain: " << before_cost - after_cost
-                               << std::endl;
     }
   }
 }

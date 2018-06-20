@@ -7,8 +7,6 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <iostream>
-
 #include "problems/cvrp/local_search/exchange.h"
 
 exchange::exchange(const input& input,
@@ -130,19 +128,6 @@ bool exchange::is_valid() const {
 void exchange::apply() const {
   std::swap(_sol[source_vehicle][source_rank],
             _sol[target_vehicle][target_rank]);
-}
-
-void exchange::log() const {
-  const auto& v_source = _input._vehicles[source_vehicle];
-  const auto& v_target = _input._vehicles[target_vehicle];
-
-  std::cout << "Exchange gain: " << stored_gain << " - vehicle " << v_source.id
-            << ", step " << source_rank << " (job "
-            << _input._jobs[_sol[source_vehicle][source_rank]].id
-            << ") exchanged with vehicle " << v_target.id << ", step "
-            << target_rank << " (job "
-            << _input._jobs[_sol[target_vehicle][target_rank]].id << ")"
-            << std::endl;
 }
 
 std::vector<index_t> exchange::addition_candidates() const {

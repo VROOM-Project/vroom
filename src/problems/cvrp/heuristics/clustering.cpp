@@ -9,8 +9,6 @@ All rights reserved (see LICENSE).
 #include <algorithm>
 #include <unordered_set>
 
-#include <boost/log/trivial.hpp>
-
 #include "problems/cvrp/heuristics/clustering.h"
 #include "structures/vroom/amount.h"
 
@@ -53,11 +51,6 @@ clustering::clustering(const input& input, CLUSTERING_T t, INIT_T i, double c)
   non_empty_clusters = std::count_if(clusters.begin(),
                                      clusters.end(),
                                      [](auto& c) { return !c.empty(); });
-
-  BOOST_LOG_TRIVIAL(trace) << "Clustering:" << strategy << ";" << init_str
-                           << ";" << this->regret_coeff << ";"
-                           << this->non_empty_clusters << ";" << assigned_jobs
-                           << ";" << this->edges_cost;
 }
 
 inline void update_cost(index_t from_index,
@@ -194,10 +187,6 @@ void clustering::parallel_clustering() {
         capacities[v] -= jobs[job_rank].amount;
         candidates[v].erase(init_job);
 
-        BOOST_LOG_TRIVIAL(trace) << vehicles[v].id << ";"
-                                 << parents[v][job_rank] << "->"
-                                 << jobs[job_rank].index();
-
         update_cost(jobs[job_rank].index(),
                     costs[v],
                     parents[v],
@@ -302,9 +291,6 @@ void clustering::parallel_clustering() {
     clusters[best_v].push_back(best_j);
     ++assigned_jobs;
     edges_cost += best_cost;
-    BOOST_LOG_TRIVIAL(trace) << vehicles[best_v].id << ";"
-                             << parents[best_v][best_j] << "->"
-                             << jobs[best_j].index();
     capacities[best_v] -= jobs[best_j].amount;
 
     candidates[best_v].pop_back();
@@ -481,9 +467,6 @@ void clustering::sequential_clustering() {
         candidates_set.erase(job_rank);
         candidates.erase(init_job);
 
-        BOOST_LOG_TRIVIAL(trace) << vehicles[v].id << ";" << parents[job_rank]
-                                 << "->" << jobs[job_rank].index();
-
         update_cost(jobs[job_rank].index(),
                     costs,
                     parents,
@@ -512,8 +495,6 @@ void clustering::sequential_clustering() {
         clusters[v].push_back(current_j);
         ++assigned_jobs;
         edges_cost += costs[current_j];
-        BOOST_LOG_TRIVIAL(trace) << vehicles[v].id << ";" << parents[current_j]
-                                 << "->" << jobs[current_j].index();
         capacity -= jobs[current_j].amount;
         candidates_set.erase(current_j);
 

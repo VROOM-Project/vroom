@@ -5,8 +5,8 @@
 
 # Variables.
 CXX ?= g++
-CXXFLAGS = -MMD -MP -I. -std=c++14 -Wextra -Wpedantic -Wall -O3 -DBOOST_LOG_DYN_LINK
-LDLIBS = -lboost_system -lboost_log -lboost_log_setup -lpthread -lboost_thread
+CXXFLAGS = -MMD -MP -I. -std=c++14 -Wextra -Wpedantic -Wall -O3
+LDLIBS = -lboost_system -lpthread
 
 # Using all cpp files in current directory.
 MAIN = ../bin/vroom

@@ -7,8 +7,6 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <iostream>
-
 #include "problems/cvrp/local_search/2_opt.h"
 
 two_opt::two_opt(const input& input,
@@ -116,19 +114,6 @@ void two_opt::apply() const {
   _sol[target_vehicle].erase(_sol[target_vehicle].begin() + target_rank + 1 +
                                nb_source,
                              _sol[target_vehicle].end());
-}
-
-void two_opt::log() const {
-  const auto& v_source = _input._vehicles[source_vehicle];
-  const auto& v_target = _input._vehicles[target_vehicle];
-
-  std::cout << "2-opt* gain: " << stored_gain << " - swap route for vehicle "
-            << v_source.id << " after step " << source_rank << " (job "
-            << _input._jobs[_sol[source_vehicle][source_rank]].id
-            << ") with route for vehicle " << v_target.id << " after step "
-            << target_rank << " (job "
-            << _input._jobs[_sol[target_vehicle][target_rank]].id << ")"
-            << std::endl;
 }
 
 std::vector<index_t> two_opt::addition_candidates() const {

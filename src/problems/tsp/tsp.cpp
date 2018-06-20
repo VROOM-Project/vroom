@@ -6,16 +6,10 @@ Copyright (c) 2015-2018, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
-#include <fstream>
-#include <iomanip>
-#include <iostream>
-#include <string>
 
-#include <boost/log/trivial.hpp>
-
+#include "problems/tsp/tsp.h"
 #include "problems/tsp/heuristics/christofides.h"
 #include "problems/tsp/heuristics/local_search.h"
-#include "problems/tsp/tsp.h"
 #include "structures/abstract/undirected_graph.h"
 #include "structures/vroom/input/input.h"
 
@@ -164,33 +158,13 @@ cost_t tsp::symmetrized_cost(const std::list<index_t>& tour) const {
 
 raw_solution tsp::solve(unsigned, unsigned nb_threads) const {
   // Applying heuristic.
-  auto start_heuristic = std::chrono::high_resolution_clock::now();
-  BOOST_LOG_TRIVIAL(info) << "[TSP] Start heuristic on symmetrized problem.";
-
   std::list<index_t> christo_sol = christofides(_symmetrized_matrix);
-  cost_t christo_cost = this->symmetrized_cost(christo_sol);
-
-  auto end_heuristic = std::chrono::high_resolution_clock::now();
-
-  auto heuristic_computing_time =
-    std::chrono::duration_cast<std::chrono::milliseconds>(end_heuristic -
-                                                          start_heuristic)
-      .count();
-
-  BOOST_LOG_TRIVIAL(info) << "[TSP] Done in " << heuristic_computing_time
-                          << " ms, symmetric solution cost is " << christo_cost
-                          << ".";
 
   // Local search on symmetric problem.
   // Applying deterministic, fast local search to improve the current
   // solution in a small amount of time. All possible moves for the
   // different neighbourhoods are performed, stopping when reaching a
   // local minima.
-  auto start_sym_local_search = std::chrono::high_resolution_clock::now();
-  BOOST_LOG_TRIVIAL(info)
-    << "[TSP] Start local search on symmetrized problem using " << nb_threads
-    << " thread(s).";
-
   tsp_local_search sym_ls(_symmetrized_matrix,
                           std::make_pair(!_round_trip and _has_start and
                                            _has_end,
@@ -226,34 +200,13 @@ raw_solution tsp::solve(unsigned, unsigned nb_threads) const {
   }
 
   std::list<index_t> current_sol = sym_ls.get_tour(first_loc_index);
-  auto current_cost = this->symmetrized_cost(current_sol);
-
-  auto end_sym_local_search = std::chrono::high_resolution_clock::now();
-
-  auto sym_local_search_duration =
-    std::chrono::duration_cast<std::chrono::milliseconds>(
-      end_sym_local_search - start_sym_local_search)
-      .count();
-  BOOST_LOG_TRIVIAL(info) << "[TSP] Done in " << sym_local_search_duration
-                          << " ms, symmetric solution cost is now "
-                          << current_cost << " (" << std::fixed
-                          << std::setprecision(2)
-                          << 100 * (((double)current_cost) / christo_cost - 1)
-                          << "%).";
-
-  auto asym_local_search_duration = 0;
 
   if (!_is_symmetric) {
-    auto start_asym_local_search = std::chrono::high_resolution_clock::now();
-
     // Back to the asymmetric problem, picking the best way.
     std::list<index_t> reverse_current_sol(current_sol);
     reverse_current_sol.reverse();
     cost_t direct_cost = this->cost(current_sol);
     cost_t reverse_cost = this->cost(reverse_current_sol);
-
-    // Cost reference after symmetric local search.
-    cost_t sym_ls_cost = std::min(direct_cost, reverse_cost);
 
     // Local search on asymmetric problem.
     tsp_local_search
@@ -261,14 +214,6 @@ raw_solution tsp::solve(unsigned, unsigned nb_threads) const {
               std::make_pair(!_round_trip and _has_start and _has_end, _start),
               (direct_cost <= reverse_cost) ? current_sol : reverse_current_sol,
               nb_threads);
-
-    BOOST_LOG_TRIVIAL(info) << "[TSP] Back to asymmetric "
-                               "problem, initial solution cost is "
-                            << sym_ls_cost << ".";
-
-    BOOST_LOG_TRIVIAL(info)
-      << "[TSP] Start local search on asymmetric problem using " << nb_threads
-      << " thread(s).";
 
     cost_t asym_two_opt_gain = 0;
     cost_t asym_relocate_gain = 0;
@@ -291,19 +236,6 @@ raw_solution tsp::solve(unsigned, unsigned nb_threads) const {
              (asym_or_opt_gain > 0) or (asym_avoid_loops_gain > 0));
 
     current_sol = asym_ls.get_tour(first_loc_index);
-    current_cost = this->cost(current_sol);
-
-    auto end_asym_local_search = std::chrono::high_resolution_clock::now();
-
-    asym_local_search_duration =
-      std::chrono::duration_cast<std::chrono::milliseconds>(
-        end_asym_local_search - start_asym_local_search)
-        .count();
-    BOOST_LOG_TRIVIAL(info)
-      << "[TSP] Done in " << asym_local_search_duration
-      << " ms, asymmetric solution cost is now " << current_cost << " ("
-      << std::fixed << std::setprecision(2)
-      << 100 * (((double)current_cost) / sym_ls_cost - 1) << "%).";
   }
 
   // Deal with open tour cases requiring adaptation.

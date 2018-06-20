@@ -23,6 +23,10 @@
 - Improve compilation time and switch from relative to absolute paths for includes (#108)
 - Various refactors (#64, #72, #88, #106)
 
+### Removed
+
+- Drop Boost.Log dependency (#130)
+
 ### Fixed
 
 - Memory leak upon `vrp` destruction (#69)

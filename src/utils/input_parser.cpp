@@ -89,8 +89,6 @@ inline bool valid_vehicle(const rapidjson::Value& v) {
 }
 
 input parse(const cl_args_t& cl_args) {
-  BOOST_LOG_TRIVIAL(info) << "[Loading] Parsing input.";
-
   // Set relevant wrapper to retrieve the matrix and geometry.
   std::unique_ptr<routing_io<cost_t>> routing_wrapper;
   if (!cl_args.use_libosrm) {

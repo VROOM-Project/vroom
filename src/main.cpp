@@ -7,15 +7,10 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <chrono>
 #include <fstream>
+#include <iostream>
+#include <sstream>
 #include <unistd.h>
-
-#include <boost/log/core.hpp>
-#include <boost/log/expressions.hpp>
-#include <boost/log/trivial.hpp>
-#include <boost/log/utility/setup/common_attributes.hpp>
-#include <boost/log/utility/setup/console.hpp>
 
 #include "problems/vrp.h"
 #include "structures/cl_args.h"
@@ -46,23 +41,17 @@ void display_usage() {
   usage += "\t-l,\t\t\t use libosrm rather than osrm-routed\n";
   usage += "\t-o OUTPUT,\t\t output file name\n";
   usage += "\t-t THREADS (=4),\t number of threads to use\n";
-  usage += "\t-v,\t\t turn on verbose output\n";
-  usage += "\t-V,\t\t turn on verbose output with all details\n";
   usage += "\t-x EXPLORE (=1),\t exploration level to use (0..5)";
   std::cout << usage << std::endl;
   exit(0);
 }
 
 int main(int argc, char** argv) {
-  // Log formatting.
-  boost::log::add_console_log(std::cout,
-                              boost::log::keywords::format = "%Message%");
-
   // Load default command-line options.
   cl_args_t cl_args;
 
   // Parsing command-line arguments.
-  const char* optString = "a:gi:lm:o:p:t:vVx:h?";
+  const char* optString = "a:gi:lm:o:p:t:x:h?";
   int opt = getopt(argc, argv, optString);
 
   std::string nb_threads_arg = std::to_string(cl_args.nb_threads);
@@ -96,12 +85,6 @@ int main(int argc, char** argv) {
       break;
     case 't':
       nb_threads_arg = optarg;
-      break;
-    case 'v':
-      cl_args.log_level = boost::log::trivial::info;
-      break;
-    case 'V':
-      cl_args.log_level = boost::log::trivial::trace;
       break;
     case 'x':
       exploration_level_arg = optarg;
@@ -141,10 +124,6 @@ int main(int argc, char** argv) {
     buffer << ifs.rdbuf();
     cl_args.input = buffer.str();
   }
-
-  // Log level.
-  boost::log::core::get()->set_filter(boost::log::trivial::severity >=
-                                      cl_args.log_level);
 
   try {
     // Build problem.

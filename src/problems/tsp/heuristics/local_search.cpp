@@ -11,8 +11,6 @@ All rights reserved (see LICENSE).
 #include <thread>
 #include <unordered_map>
 
-#include <boost/log/trivial.hpp>
-
 #include "problems/tsp/heuristics/local_search.h"
 
 tsp_local_search::tsp_local_search(
@@ -210,11 +208,6 @@ cost_t tsp_local_search::perform_all_relocate_steps() {
     }
   } while (gain > 0);
 
-  if (total_gain > 0) {
-    BOOST_LOG_TRIVIAL(trace) << "* Performed " << relocate_iter
-                             << " \"relocate\" steps, gaining " << total_gain
-                             << ".";
-  }
   return total_gain;
 }
 
@@ -365,11 +358,6 @@ cost_t tsp_local_search::perform_all_avoid_loop_steps() {
     }
   } while (gain > 0);
 
-  if (total_gain > 0) {
-    BOOST_LOG_TRIVIAL(trace) << "* Performed " << relocate_iter
-                             << " \"avoid loop\" steps, gaining " << total_gain
-                             << ".";
-  }
   return total_gain;
 }
 
@@ -635,11 +623,6 @@ cost_t tsp_local_search::perform_all_two_opt_steps() {
     }
   } while (gain > 0);
 
-  if (total_gain > 0) {
-    BOOST_LOG_TRIVIAL(trace) << "* Performed " << two_opt_iter
-                             << " \"2-opt\" steps, gaining " << total_gain
-                             << ".";
-  }
   return total_gain;
 }
 
@@ -656,11 +639,6 @@ cost_t tsp_local_search::perform_all_asym_two_opt_steps() {
     }
   } while (gain > 0);
 
-  if (total_gain > 0) {
-    BOOST_LOG_TRIVIAL(trace) << "* Performed " << two_opt_iter
-                             << " \"2-opt\" steps, gaining " << total_gain
-                             << ".";
-  }
   return total_gain;
 }
 
@@ -775,11 +753,6 @@ cost_t tsp_local_search::perform_all_or_opt_steps() {
     }
   } while (gain > 0);
 
-  if (total_gain > 0) {
-    BOOST_LOG_TRIVIAL(trace) << "* Performed " << or_opt_iter
-                             << " \"or_opt\" steps, gaining " << total_gain
-                             << ".";
-  }
   return total_gain;
 }
 

@@ -7,8 +7,6 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <iostream>
-
 #include "problems/cvrp/local_search/or_opt.h"
 
 or_opt::or_opt(const input& input,
@@ -151,20 +149,6 @@ void or_opt::apply() const {
 
   _sol[source_vehicle].erase(_sol[source_vehicle].begin() + source_rank,
                              _sol[source_vehicle].begin() + source_rank + 2);
-}
-
-void or_opt::log() const {
-  const auto& v_source = _input._vehicles[source_vehicle];
-  const auto& v_target = _input._vehicles[target_vehicle];
-
-  std::string rev = reverse_source_edge ? "reversed" : "";
-  std::cout << "Or_Opt " << rev << " gain: " << stored_gain << " - vehicle "
-            << v_source.id << ", edge " << source_rank << " -> "
-            << source_rank + 1 << " (job "
-            << _input._jobs[_sol[source_vehicle][source_rank]].id << " -> "
-            << _input._jobs[_sol[source_vehicle][source_rank + 1]].id
-            << ") moved to rank " << target_rank << " in route for vehicle "
-            << v_target.id << std::endl;
 }
 
 std::vector<index_t> or_opt::addition_candidates() const {

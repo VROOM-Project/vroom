@@ -14,7 +14,7 @@ All rights reserved (see LICENSE).
 
 #include "problems/cvrp/local_search/solution_state.h"
 #include "structures/typedefs.h"
-#include "utils/output_json.h" // Todo remove
+#include "structures/vroom/input/input.h"
 
 struct solution_indicators {
   unsigned unassigned;
@@ -44,11 +44,6 @@ private:
 
   void set_node_gains(index_t v);
   void set_edge_gains(index_t v);
-
-  // Todo remove
-  bool _log;
-  unsigned _ls_step;
-  void log_solution();
 
   void update_costs(index_t v);
   void update_amounts(index_t v);

@@ -7,8 +7,6 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <iostream>
-
 #include "problems/cvrp/local_search/reverse_2_opt.h"
 
 reverse_two_opt::reverse_two_opt(const input& input,
@@ -160,20 +158,6 @@ void reverse_two_opt::apply() const {
   _sol[target_vehicle].erase(_sol[target_vehicle].begin() + nb_source,
                              _sol[target_vehicle].begin() + nb_source +
                                target_rank + 1);
-}
-
-void reverse_two_opt::log() const {
-  const auto& v_source = _input._vehicles[source_vehicle];
-  const auto& v_target = _input._vehicles[target_vehicle];
-
-  std::cout << "Reverse 2-opt* gain: " << stored_gain
-            << " - swap route for vehicle " << v_source.id << " after step "
-            << source_rank << " (job "
-            << _input._jobs[_sol[source_vehicle][source_rank]].id
-            << ") with route for vehicle " << v_target.id << " up to step "
-            << target_rank << " (job "
-            << _input._jobs[_sol[target_vehicle][target_rank]].id
-            << "), but reversed" << std::endl;
 }
 
 std::vector<index_t> reverse_two_opt::addition_candidates() const {

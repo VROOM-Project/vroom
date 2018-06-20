@@ -7,8 +7,6 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <iostream>
-
 #include "problems/cvrp/local_search/operator.h"
 
 ls_operator::ls_operator(const input& input,

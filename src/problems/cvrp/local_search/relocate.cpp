@@ -7,8 +7,6 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <iostream>
-
 #include "problems/cvrp/local_search/relocate.h"
 
 relocate::relocate(const input& input,
@@ -116,17 +114,6 @@ void relocate::apply() const {
   _sol[source_vehicle].erase(_sol[source_vehicle].begin() + source_rank);
   _sol[target_vehicle].insert(_sol[target_vehicle].begin() + target_rank,
                               relocate_job_rank);
-}
-
-void relocate::log() const {
-  const auto& v_source = _input._vehicles[source_vehicle];
-  const auto& v_target = _input._vehicles[target_vehicle];
-
-  std::cout << "Relocate gain: " << stored_gain << " - vehicle " << v_source.id
-            << ", step " << source_rank << " (job "
-            << _input._jobs[_sol[source_vehicle][source_rank]].id
-            << ") moved to rank " << target_rank << " in route for vehicle "
-            << v_target.id << std::endl;
 }
 
 std::vector<index_t> relocate::addition_candidates() const {

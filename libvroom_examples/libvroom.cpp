@@ -1,11 +1,5 @@
 #include <iostream>
 
-#include <boost/log/core.hpp>
-#include <boost/log/expressions.hpp>
-#include <boost/log/trivial.hpp>
-#include <boost/log/utility/setup/common_attributes.hpp>
-#include <boost/log/utility/setup/console.hpp>
-
 #include "routing/routed_wrapper.h"
 #include "structures/vroom/input/input.h"
 #include "structures/vroom/job.h"
@@ -220,10 +214,6 @@ void run_example_with_custom_matrix() {
 }
 
 int main() {
-  // Log level.
-  boost::log::core::get()->set_filter(boost::log::trivial::severity >=
-                                      boost::log::trivial::error);
-
   run_example_with_osrm();
   // run_example_with_custom_matrix();
 

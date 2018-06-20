@@ -8,7 +8,6 @@ All rights reserved (see LICENSE).
 */
 #include <array>
 
-#include <boost/log/trivial.hpp>
 #include <boost/optional.hpp>
 
 #include "problems/cvrp/cvrp.h"
@@ -200,9 +199,6 @@ void input::check_cost_bound() const {
 
   cost_t bound = add_without_overflow(start_bound, jobs_bound);
   bound = add_without_overflow(bound, end_bound);
-
-  BOOST_LOG_TRIVIAL(info) << "[Loading] solution cost upper bound: " << bound
-                          << ".";
 }
 
 void input::set_vehicle_to_job_compatibility() {
@@ -326,7 +322,6 @@ solution input::solve(unsigned exploration_level, unsigned nb_thread) {
   if (_matrix.size() < 2) {
     // OSRM call if matrix not already provided.
     assert(_routing_wrapper);
-    BOOST_LOG_TRIVIAL(info) << "[Loading] Start matrix computing.";
     _matrix = _routing_wrapper->get_matrix(_locations);
   }
 
@@ -344,8 +339,6 @@ solution input::solve(unsigned exploration_level, unsigned nb_thread) {
                    _end_loading - _start_loading)
                    .count();
 
-  BOOST_LOG_TRIVIAL(info) << "[Loading] Done, took " << loading << " ms.";
-
   // Solve.
   auto sol = format_solution(instance->solve(exploration_level, nb_thread));
 
@@ -360,8 +353,6 @@ solution input::solve(unsigned exploration_level, unsigned nb_thread) {
 
   if (_geometry) {
     // Routing stuff.
-    BOOST_LOG_TRIVIAL(info) << "[Route] Start computing detailed route.";
-
     for (auto& route : sol.routes) {
       _routing_wrapper->add_route_info(route);
       sol.summary.duration += route.duration;
@@ -374,8 +365,6 @@ solution input::solve(unsigned exploration_level, unsigned nb_thread) {
                      .count();
 
     sol.summary.computing_times.routing = routing;
-
-    BOOST_LOG_TRIVIAL(info) << "[Route] Done, took " << routing << " ms.";
   }
 
   return sol;

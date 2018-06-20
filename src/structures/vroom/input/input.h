@@ -24,7 +24,6 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/vehicle.h"
 
 class vrp;
-class cvrp_local_search; // Todo remove
 
 struct type_with_id {
   TYPE type;
@@ -81,8 +80,6 @@ public:
   matrix<cost_t> get_sub_matrix(const std::vector<index_t>& indices) const;
 
   solution solve(unsigned exploration_level, unsigned nb_thread);
-
-  friend cvrp_local_search; // Todo remove
 };
 
 #endif

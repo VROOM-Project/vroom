@@ -7,11 +7,8 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <chrono>
 #include <random>
 #include <set>
-
-#include <boost/log/trivial.hpp>
 
 #include "algorithms/kruskal.h"
 #include "algorithms/munkres.h"
@@ -24,8 +21,6 @@ std::list<index_t> christofides(const matrix<cost_t>& sym_matrix) {
 
   // Compute symmetric graph from the matrix.
   auto sym_graph = undirected_graph<cost_t>(sym_matrix);
-
-  BOOST_LOG_TRIVIAL(trace) << "* Graph has " << sym_graph.size() << " nodes.";
 
   // Work on a minimum spanning tree seen as a graph.
   auto mst_graph = minimum_spanning_tree(sym_graph);
@@ -42,9 +37,6 @@ std::list<index_t> christofides(const matrix<cost_t>& sym_matrix) {
       mst_odd_vertices.push_back(adjacency.first);
     }
   }
-  BOOST_LOG_TRIVIAL(trace)
-    << "* " << mst_odd_vertices.size()
-    << " nodes with odd degree in the minimum spanning tree.";
 
   // Getting corresponding matrix for the generated sub-graph.
   matrix<cost_t> sub_matrix = sym_matrix.get_sub_matrix(mst_odd_vertices);
@@ -71,9 +63,6 @@ std::list<index_t> christofides(const matrix<cost_t>& sym_matrix) {
   }
 
   if (!wrong_vertices.empty()) {
-    BOOST_LOG_TRIVIAL(trace) << "* Munkres: " << wrong_vertices.size()
-                             << " useless nodes for symmetry.";
-
     std::unordered_map<index_t, index_t> remaining_greedy_mwpm =
       greedy_symmetric_approx_mwpm(sub_matrix.get_sub_matrix(wrong_vertices));
 

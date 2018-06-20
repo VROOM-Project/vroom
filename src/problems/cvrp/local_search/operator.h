@@ -44,8 +44,6 @@ public:
 
   virtual void apply() const = 0;
 
-  virtual void log() const = 0;
-
   virtual std::vector<index_t> addition_candidates() const = 0;
 
   virtual ~ls_operator() {

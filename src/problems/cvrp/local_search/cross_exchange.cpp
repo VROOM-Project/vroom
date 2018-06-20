@@ -7,8 +7,6 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <iostream>
-
 #include "problems/cvrp/local_search/cross_exchange.h"
 
 cross_exchange::cross_exchange(const input& input,
@@ -193,33 +191,6 @@ void cross_exchange::apply() const {
     std::swap(_sol[source_vehicle][source_rank],
               _sol[source_vehicle][source_rank + 1]);
   }
-}
-
-void cross_exchange::log() const {
-  const auto& v_source = _input._vehicles[source_vehicle];
-  const auto& v_target = _input._vehicles[target_vehicle];
-
-  std::string rev;
-  if (reverse_source_edge and reverse_target_edge) {
-    rev = "reversed source and target";
-  } else {
-    if (reverse_source_edge) {
-      rev = "reversed source";
-    }
-    if (reverse_target_edge) {
-      rev = "reversed target";
-    }
-  }
-  std::cout << "Cross_Exchange " << rev << " gain: " << stored_gain
-            << " - vehicle " << v_source.id << ", edge " << source_rank
-            << " -> " << source_rank + 1 << " (job "
-            << _input._jobs[_sol[source_vehicle][source_rank]].id << " -> "
-            << _input._jobs[_sol[source_vehicle][source_rank + 1]].id
-            << ") exchanged with vehicle " << v_target.id << ", edge "
-            << target_rank << " -> " << target_rank + 1 << " (job "
-            << _input._jobs[_sol[target_vehicle][target_rank]].id << " -> "
-            << _input._jobs[_sol[target_vehicle][target_rank + 1]].id << ")"
-            << std::endl;
 }
 
 std::vector<index_t> cross_exchange::addition_candidates() const {

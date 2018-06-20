@@ -9,8 +9,6 @@ All rights reserved (see LICENSE).
 
 #include <thread>
 
-#include <boost/log/trivial.hpp>
-
 #include "problems/cvrp/cvrp.h"
 #include "problems/cvrp/heuristics/clustering.h"
 #include "problems/cvrp/local_search/local_search.h"
@@ -39,9 +37,6 @@ raw_solution cvrp::solve(unsigned exploration_level,
     INIT_T init;
     double regret_coeff;
   };
-
-  auto start_solving = std::chrono::high_resolution_clock::now();
-  BOOST_LOG_TRIVIAL(info) << "[CVRP] Start clustering heuristic(s).";
 
   std::vector<param> parameters(
     {{CLUSTERING_T::PARALLEL, INIT_T::NONE, 0.5},
@@ -142,13 +137,6 @@ raw_solution cvrp::solve(unsigned exploration_level,
     t.join();
   }
 
-  auto end_solving = std::chrono::high_resolution_clock::now();
-
-  auto solving_computing_time =
-    std::chrono::duration_cast<std::chrono::milliseconds>(end_solving -
-                                                          start_solving)
-      .count();
-
   auto indicators_compare = [](const auto& lhs, const auto& rhs) {
     if (lhs.unassigned < rhs.unassigned) {
       return true;
@@ -167,9 +155,6 @@ raw_solution cvrp::solve(unsigned exploration_level,
   auto best_indic = std::min_element(sol_indicators.cbegin(),
                                      sol_indicators.cend(),
                                      indicators_compare);
-
-  BOOST_LOG_TRIVIAL(info) << "[CVRP] Done, took " << solving_computing_time
-                          << " ms.";
 
   return solutions[std::distance(sol_indicators.cbegin(), best_indic)];
 }
