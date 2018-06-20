@@ -78,7 +78,7 @@ std::unique_ptr<routed_wrapper> routing_wrapper() {
 void run_example_with_osrm() {
   bool GEOMETRY = true;
 
-  input problem_instance(std::move(routing_wrapper()),
+  input problem_instance(routing_wrapper(),
                          GEOMETRY); // Query for route geometry after solving.
 
   // Create one-dimension capacity restrictions to model the situation
@@ -90,7 +90,7 @@ void run_example_with_osrm() {
   job_amount[0] = 1;
 
   // Define vehicles (use boost::none for no start or no end).
-  location_t depot({2.35044, 48.71764});
+  location_t depot(coords_t({{2.35044, 48.71764}}));
   vehicle_t v1(1,                // id
                depot,            // start
                depot,            // end
@@ -109,17 +109,17 @@ void run_example_with_osrm() {
   // Last three can be omitted if no constraints are required.
   std::vector<job_t> jobs;
   jobs.push_back(
-    job_t(1, coords_t({1.98935, 48.701}), service, job_amount, {1}));
+    job_t(1, coords_t({{1.98935, 48.701}}), service, job_amount, {1}));
   jobs.push_back(
-    job_t(2, coords_t({2.03655, 48.61128}), service, job_amount, {1}));
+    job_t(2, coords_t({{2.03655, 48.61128}}), service, job_amount, {1}));
   jobs.push_back(
-    job_t(3, coords_t({2.39719, 49.07611}), service, job_amount, {2}));
+    job_t(3, coords_t({{2.39719, 49.07611}}), service, job_amount, {2}));
   jobs.push_back(
-    job_t(4, coords_t({2.41808, 49.22619}), service, job_amount, {2}));
+    job_t(4, coords_t({{2.41808, 49.22619}}), service, job_amount, {2}));
   jobs.push_back(
-    job_t(5, coords_t({2.28325, 48.5958}), service, job_amount, {14}));
+    job_t(5, coords_t({{2.28325, 48.5958}}), service, job_amount, {14}));
   jobs.push_back(
-    job_t(6, coords_t({2.89357, 48.90736}), service, job_amount, {14}));
+    job_t(6, coords_t({{2.89357, 48.90736}}), service, job_amount, {14}));
 
   for (const auto& j : jobs) {
     problem_instance.add_job(j);
@@ -144,7 +144,7 @@ void run_example_with_osrm() {
 void run_example_with_custom_matrix() {
   bool GEOMETRY = false;
 
-  input problem_instance(std::move(routing_wrapper()),
+  input problem_instance(routing_wrapper(),
                          GEOMETRY); // Query for route geometry after solving.
 
   // Define custom matrix and bypass OSRM call.

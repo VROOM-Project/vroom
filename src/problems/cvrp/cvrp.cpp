@@ -7,6 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <numeric>
 #include <thread>
 
 #include "problems/cvrp/cvrp.h"

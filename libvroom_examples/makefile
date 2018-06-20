@@ -1,6 +1,6 @@
-CXX = g++
-CXXFLAGS = -I../src -std=c++14 -Wextra -Wpedantic -Wall -O3 -DBOOST_LOG_DYN_LINK
-LDLIBS = -L../lib/ -lvroom -lboost_system -lboost_log -lboost_log_setup -lpthread -lboost_thread
+CXX ?= g++
+CXXFLAGS = -I../src -std=c++14 -Wextra -Wpedantic -Wall -O3
+LDLIBS = -L../lib/ -lvroom -lboost_system -lpthread
 
 MAIN = ./libvroom-example
 SRC = libvroom.cpp
