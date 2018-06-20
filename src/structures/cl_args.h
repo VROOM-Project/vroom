@@ -25,18 +25,9 @@ struct cl_args_t {
   std::string osrm_profile;   // -m
   unsigned exploration_level; // -x
 
-  static const unsigned max_exploration_level = 5;
+  static const unsigned max_exploration_level;
 
-  // Default values.
-  cl_args_t()
-    : osrm_address("0.0.0.0"),
-      geometry(false),
-      osrm_port("5000"),
-      use_libosrm(false),
-      nb_threads(4),
-      osrm_profile("car"),
-      exploration_level(1) {
-  }
+  cl_args_t();
 };
 
 #endif
