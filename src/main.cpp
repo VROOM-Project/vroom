@@ -49,7 +49,8 @@ void display_usage() {
   usage += "\t-o OUTPUT,\t output file name\n";
   usage += "\t-t THREADS,\t number of threads to use\n";
   usage += "\t-v,\t\t turn on verbose output\n";
-  usage += "\t-V,\t\t turn on verbose output with all details";
+  usage += "\t-V,\t\t turn on verbose output with all details\n";
+  usage += "\t-x EXPLORE(=1),\t exploration level to use (0..5)";
   std::cout << usage << std::endl;
   exit(0);
 }
@@ -63,10 +64,11 @@ int main(int argc, char** argv) {
   cl_args_t cl_args;
 
   // Parsing command-line arguments.
-  const char* optString = "a:gi:lm:o:p:t:vVh?";
+  const char* optString = "a:gi:lm:o:p:t:vVx:h?";
   int opt = getopt(argc, argv, optString);
 
   std::string nb_threads_arg = std::to_string(cl_args.nb_threads);
+  std::string exploration_level_arg = std::to_string(cl_args.exploration_level);
 
   while (opt != -1) {
     switch (opt) {
@@ -103,6 +105,9 @@ int main(int argc, char** argv) {
     case 'V':
       cl_args.log_level = boost::log::trivial::trace;
       break;
+    case 'x':
+      exploration_level_arg = optarg;
+      break;
     default:
       break;
     }
@@ -113,8 +118,12 @@ int main(int argc, char** argv) {
     // Needs to be done after previous switch to make sure the
     // appropriate output file is set.
     cl_args.nb_threads = std::stoul(nb_threads_arg);
+    cl_args.exploration_level = std::stoul(exploration_level_arg);
+
+    cl_args.exploration_level =
+      std::min(cl_args.exploration_level, cl_args.max_exploration_level);
   } catch (const std::exception& e) {
-    std::string message = "Wrong value for number of threads.";
+    std::string message = "Wrong numerical value.";
     std::cerr << "[Error] " << message << std::endl;
     write_to_json({1, message}, false, cl_args.output_file);
     exit(1);
@@ -143,7 +152,8 @@ int main(int argc, char** argv) {
     // Build problem.
     input problem_instance = parse(cl_args);
 
-    solution sol = problem_instance.solve(cl_args.nb_threads);
+    solution sol =
+      problem_instance.solve(cl_args.exploration_level, cl_args.nb_threads);
 
     // Write solution.
     write_to_json(sol, cl_args.geometry, cl_args.output_file);

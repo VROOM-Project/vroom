@@ -26,6 +26,10 @@ struct cl_args_t {
   std::string input;                             // cl arg
   unsigned nb_threads;                           // -t
   std::string osrm_profile;                      // -m
+  unsigned exploration_level;                    // -x
+
+  static const unsigned max_exploration_level = 5;
+
   // Default values.
   cl_args_t()
     : osrm_address("0.0.0.0"),
@@ -34,7 +38,8 @@ struct cl_args_t {
       use_libosrm(false),
       log_level(boost::log::trivial::error),
       nb_threads(2),
-      osrm_profile("car") {
+      osrm_profile("car"),
+      exploration_level(1) {
   }
 };
 

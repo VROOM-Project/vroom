@@ -16,7 +16,3 @@ vrp::vrp(const input& input) : _input(input) {
 
 vrp::~vrp() {
 }
-
-raw_solution vrp::solve() const {
-  return solve(1);
-}

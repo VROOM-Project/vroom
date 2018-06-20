@@ -20,7 +20,8 @@ All rights reserved (see LICENSE).
 cvrp::cvrp(const input& input) : vrp(input) {
 }
 
-raw_solution cvrp::solve(unsigned nb_threads) const {
+raw_solution cvrp::solve(unsigned exploration_level,
+                         unsigned nb_threads) const {
   auto nb_tsp = _input._vehicles.size();
 
   if (nb_tsp == 1 and !_input.has_skills() and _input.amount_size() == 0) {
@@ -30,7 +31,7 @@ raw_solution cvrp::solve(unsigned nb_threads) const {
 
     tsp p(_input, job_ranks, 0);
 
-    return p.solve(nb_threads);
+    return p.solve(0, nb_threads);
   }
 
   struct param {
@@ -42,31 +43,56 @@ raw_solution cvrp::solve(unsigned nb_threads) const {
   auto start_solving = std::chrono::high_resolution_clock::now();
   BOOST_LOG_TRIVIAL(info) << "[CVRP] Start clustering heuristic(s).";
 
-  std::vector<param> parameters;
-  parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NONE, 0});
-  parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NONE, 0.5});
-  parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NONE, 1});
-  parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NEAREST, 0});
-  parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NEAREST, 0.5});
-  parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NEAREST, 1});
-  parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::FURTHEST, 0});
-  parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::FURTHEST, 0.5});
-  parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::FURTHEST, 1});
-  parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::HIGHER_AMOUNT, 0});
-  parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::HIGHER_AMOUNT, 0.5});
-  parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::HIGHER_AMOUNT, 1});
-  parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NONE, 0});
-  parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NONE, 0.5});
-  parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NONE, 1});
-  parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NEAREST, 0});
-  parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NEAREST, 0.5});
-  parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NEAREST, 1});
-  parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::FURTHEST, 0});
-  parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::FURTHEST, 0.5});
-  parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::FURTHEST, 1});
-  parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::HIGHER_AMOUNT, 0});
-  parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::HIGHER_AMOUNT, 0.5});
-  parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::HIGHER_AMOUNT, 1});
+  std::vector<param> parameters(
+    {{CLUSTERING_T::PARALLEL, INIT_T::NONE, 0.5},
+     {CLUSTERING_T::SEQUENTIAL, INIT_T::NEAREST, 0.3},
+     {CLUSTERING_T::SEQUENTIAL, INIT_T::NEAREST, 1.9},
+     {CLUSTERING_T::SEQUENTIAL, INIT_T::HIGHER_AMOUNT, 1.4}});
+
+  unsigned max_nb_jobs_removal = 0;
+
+  if (exploration_level > 0) {
+    max_nb_jobs_removal = 1;
+  }
+
+  if (exploration_level > 1) {
+    max_nb_jobs_removal = 3;
+  }
+
+  if (exploration_level > 2) {
+    parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NONE, 0.1});
+    parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NEAREST, 1});
+    parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NONE, 0.1});
+    parameters.push_back(
+      {CLUSTERING_T::SEQUENTIAL, INIT_T::HIGHER_AMOUNT, 1.1});
+  }
+
+  if (exploration_level > 3) {
+    parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NONE, 0.6});
+    parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NONE, 1.2});
+    parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NEAREST, 0.5});
+    parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NEAREST, 1.2});
+
+    parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::FURTHEST, 1.7});
+    parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NEAREST, 1.1});
+    parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::FURTHEST, 0.6});
+    parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::HIGHER_AMOUNT, 0});
+  }
+
+  if (exploration_level > 4) {
+    max_nb_jobs_removal = 4;
+
+    parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NONE, 0.3});
+    parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NEAREST, 0.4});
+    parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NONE, 0.2});
+    parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NEAREST, 1.6});
+
+    parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NONE, 0.9});
+    parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NONE, 1.1});
+    parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NEAREST, 0.4});
+    parameters.push_back(
+      {CLUSTERING_T::SEQUENTIAL, INIT_T::HIGHER_AMOUNT, 0.7});
+  }
 
   auto P = parameters.size();
 
@@ -94,11 +120,11 @@ raw_solution cvrp::solve(unsigned nb_threads) const {
         }
         tsp p(_input, c.clusters[v], v);
 
-        solutions[rank][v] = p.solve(1)[0];
+        solutions[rank][v] = p.solve(0, 1)[0];
       }
 
       // Local search phase.
-      cvrp_local_search ls(_input, solutions[rank]);
+      cvrp_local_search ls(_input, solutions[rank], max_nb_jobs_removal);
       ls.run();
 
       // Store solution indicators.

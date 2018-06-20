@@ -24,9 +24,8 @@ public:
 
   virtual ~vrp();
 
-  virtual raw_solution solve(unsigned nb_threads) const = 0;
-
-  raw_solution solve() const;
+  virtual raw_solution solve(unsigned exploration_level,
+                             unsigned nb_threads) const = 0;
 };
 
 #endif

@@ -8,6 +8,7 @@
 - Support for multi-dimensional capacity constraints (#74)
 - Support for skills to model jobs/vehicles compatibility (#90)
 - Support for user-defined matrices (#47)
+- New flag `-x` to set the trade-off between computing time and exploration depth (#131)
 - Provide ETA at step level in the routes, using optional service time for each job (#101, #103)
 - Experimental* support to use `vroom` directly from C++ as a library (#42)
 - Automatic code formatting script based on `clang-format` (#66)

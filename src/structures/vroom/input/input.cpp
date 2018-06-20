@@ -317,7 +317,7 @@ solution input::format_solution(const raw_solution& raw_routes) const {
                   std::move(total_amount));
 }
 
-solution input::solve(unsigned nb_thread) {
+solution input::solve(unsigned exploration_level, unsigned nb_thread) {
   if (_geometry and !_all_locations_have_coords) {
     // Early abort when info is required with missing coordinates.
     throw custom_exception("Option -g is invalid with missing coordinates.");
@@ -347,7 +347,7 @@ solution input::solve(unsigned nb_thread) {
   BOOST_LOG_TRIVIAL(info) << "[Loading] Done, took " << loading << " ms.";
 
   // Solve.
-  auto sol = format_solution(instance->solve(nb_thread));
+  auto sol = format_solution(instance->solve(exploration_level, nb_thread));
 
   // Update timing info.
   sol.summary.computing_times.loading = loading;

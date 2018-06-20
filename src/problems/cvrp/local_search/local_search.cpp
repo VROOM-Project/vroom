@@ -20,12 +20,15 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/local_search/reverse_2_opt.h"
 #include "problems/tsp/tsp.h"
 
-cvrp_local_search::cvrp_local_search(const input& input, raw_solution& sol)
+cvrp_local_search::cvrp_local_search(const input& input,
+                                     raw_solution& sol,
+                                     unsigned max_nb_jobs_removal)
   : _input(input),
     _m(_input.get_matrix()),
     V(_input._vehicles.size()),
     _amount_lower_bound(_input.get_amount_lower_bound()),
     _double_amount_lower_bound(_amount_lower_bound + _amount_lower_bound),
+    _max_nb_jobs_removal(max_nb_jobs_removal),
     _all_routes(V),
     _target_sol(sol),
     _sol(sol),
@@ -826,7 +829,9 @@ void cvrp_local_search::run_ls_step() {
 
 void cvrp_local_search::run() {
   bool try_ls_step = true;
-  bool first_try = true;
+  bool first_step = true;
+
+  unsigned current_nb_removal = 1;
 
   while (try_ls_step) {
     // A round of local search.
@@ -841,19 +846,29 @@ void cvrp_local_search::run() {
     bool solution_improved =
       (current_unassigned < _best_unassigned or
        (current_unassigned == _best_unassigned and current_cost < _best_cost));
+
     if (solution_improved) {
       _best_unassigned = current_unassigned;
       _best_cost = current_cost;
       _best_sol = _sol;
+    } else {
+      if (!first_step) {
+        ++current_nb_removal;
+      }
     }
 
-    // Try again on each improvement, but also in case first local
-    // search step did not change anything.
-    try_ls_step = solution_improved or first_try;
+    // Try again on each improvement until we reach last job removal
+    // level.
+    try_ls_step = (current_nb_removal <= _max_nb_jobs_removal);
 
     if (try_ls_step) {
       // Get a looser situation by removing jobs.
-      remove_from_routes();
+      for (unsigned i = 0; i < current_nb_removal; ++i) {
+        remove_from_routes();
+        for (std::size_t v = 0; v < _sol.size(); ++v) {
+          set_node_gains(v);
+        }
+      }
 
       // Refill jobs (requires updated amounts).
       for (std::size_t v = 0; v < _sol.size(); ++v) {
@@ -871,7 +886,7 @@ void cvrp_local_search::run() {
       log_solution();
     }
 
-    first_try = false;
+    first_step = false;
   }
 
   _target_sol = _best_sol;
@@ -996,7 +1011,7 @@ void cvrp_local_search::run_tsp(index_t route_rank) {
     auto before_cost = _sol_state.route_costs[route_rank];
 
     tsp p(_input, _sol[route_rank], route_rank);
-    auto new_route = p.solve(1)[0];
+    auto new_route = p.solve(0, 1)[0];
 
     auto after_cost = route_cost_for_vehicle(route_rank, new_route);
 

@@ -138,7 +138,8 @@ void run_example_with_osrm() {
 
   // Solve!
   try {
-    auto sol = problem_instance.solve(2); // Use 2 threads.
+    auto sol = problem_instance.solve(1,  // Exploration level.
+                                      4); // Use 4 threads.
 
     log_solution(sol, GEOMETRY);
   } catch (const custom_exception& e) {
@@ -209,7 +210,8 @@ void run_example_with_custom_matrix() {
 
   // Solve!
   try {
-    auto sol = problem_instance.solve(2); // Use 2 threads.
+    auto sol = problem_instance.solve(1,  // Exploration level.
+                                      4); // Use 4 threads.
 
     log_solution(sol, GEOMETRY);
   } catch (const custom_exception& e) {
