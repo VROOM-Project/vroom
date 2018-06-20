@@ -97,8 +97,12 @@ routed_wrapper::get_matrix(const std::vector<location_t>& locs) const {
 
   // Checking everything is fine in the response.
   rapidjson::Document infos;
+#ifdef NDEBUG
+  infos.Parse(json_content.c_str()).HasParseError();
+#else
   assert(!infos.Parse(json_content.c_str()).HasParseError());
   assert(infos.HasMember("code"));
+#endif
   if (infos["code"] != "Ok") {
     throw custom_exception("OSRM table: " +
                            std::string(infos["message"].GetString()));
@@ -153,8 +157,12 @@ void routed_wrapper::add_route_info(route_t& rte) const {
   // Checking everything is fine in the response.
   rapidjson::Document infos;
 
+#ifdef NDEBUG
+  infos.Parse(json_content.c_str()).HasParseError();
+#else
   assert(!infos.Parse(json_content.c_str()).HasParseError());
   assert(infos.HasMember("code"));
+#endif
   if (infos["code"] != "Ok") {
     throw custom_exception("OSRM route: " +
                            std::string(infos["message"].GetString()));

@@ -734,6 +734,7 @@ void cvrp_local_search::run_ls_step() {
 
       best_ops[best_source][best_target]->apply();
 
+#ifndef NDEBUG
       // Update route costs.
       auto previous_cost = _sol_state.route_costs[best_source] +
                            _sol_state.route_costs[best_target];
@@ -743,6 +744,7 @@ void cvrp_local_search::run_ls_step() {
         route_cost_for_vehicle(best_target, _sol[best_target]);
       auto new_cost = _sol_state.route_costs[best_source] +
                       _sol_state.route_costs[best_target];
+#endif
       assert(new_cost + best_gain == previous_cost);
 
       run_tsp(best_source);
