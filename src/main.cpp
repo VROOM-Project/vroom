@@ -32,25 +32,23 @@ void display_usage() {
   usage += "Usage:\n\tvroom [OPTION]... \"INPUT\"";
   usage += "\n\tvroom [OPTION]... -i FILE\n";
   usage += "Options:\n";
-  usage += "\t-a ADDRESS\t OSRM server address (\"0.0.0.0\")\n";
-  usage += "\t-p PORT,\t OSRM listening port (5000)\n";
-  // usage += "\t-m MODE,\t OSRM profile name (car)\n";
+  usage += "\t-a ADDRESS (=\"0.0.0.0\")\t OSRM server address\n";
+  usage += "\t-p PORT (=5000),\t OSRM listening port\n";
+  // usage += "\t-m MODE,\t\t OSRM profile name (car)\n";
 
   // The -m flag is only present as the profile name is part of the
   // OSRM v5 API. It is undocumented as OSRM doesn't implement
   // query-time profile selection (yet) so setting it will have no
   // effect for now.
 
-  usage += "\t-g,\t\t get detailed route geometry for the solution\n";
-  usage +=
-    "\t-i FILE,\t read input from FILE rather than from\n\t\t\t "
-    "command-line\n";
-  usage += "\t-l,\t\t use libosrm rather than osrm-routed\n";
-  usage += "\t-o OUTPUT,\t output file name\n";
-  usage += "\t-t THREADS,\t number of threads to use\n";
+  usage += "\t-g,\t\t\t add detailed route geometry and indicators\n";
+  usage += "\t-i FILE,\t\t read input from FILE rather than from stdin\n";
+  usage += "\t-l,\t\t\t use libosrm rather than osrm-routed\n";
+  usage += "\t-o OUTPUT,\t\t output file name\n";
+  usage += "\t-t THREADS (=4),\t number of threads to use\n";
   usage += "\t-v,\t\t turn on verbose output\n";
   usage += "\t-V,\t\t turn on verbose output with all details\n";
-  usage += "\t-x EXPLORE(=1),\t exploration level to use (0..5)";
+  usage += "\t-x EXPLORE (=1),\t exploration level to use (0..5)";
   std::cout << usage << std::endl;
   exit(0);
 }

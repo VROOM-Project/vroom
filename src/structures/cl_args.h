@@ -37,7 +37,7 @@ struct cl_args_t {
       osrm_port("5000"),
       use_libosrm(false),
       log_level(boost::log::trivial::error),
-      nb_threads(2),
+      nb_threads(4),
       osrm_profile("car"),
       exploration_level(1) {
   }
