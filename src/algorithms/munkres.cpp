@@ -20,7 +20,7 @@ std::unordered_map<index_t, index_t>
 minimum_weight_perfect_matching(const matrix<T>& m) {
 
   // Trivial initial labeling.
-  std::unordered_map<index_t, T> labeling_x;
+  std::vector<T> labeling_x(m.size(), 0);
   std::vector<T> labeling_y(m.size(), 0);
   for (index_t i = 0; i < m.size(); ++i) {
     T min_weight = std::numeric_limits<T>::max();
@@ -29,7 +29,7 @@ minimum_weight_perfect_matching(const matrix<T>& m) {
         min_weight = m[i][j];
       }
     }
-    labeling_x.emplace(i, min_weight);
+    labeling_x[i] = min_weight;
   }
 
   // Initial empty matching.
@@ -58,10 +58,10 @@ minimum_weight_perfect_matching(const matrix<T>& m) {
     std::vector<T> slack;
     slack.resize(m.size());
     for (index_t y = 0; y < m.size(); ++y) {
-      if (labeling_x.at(unmatched_x) + labeling_y[y] == m[unmatched_x][y]) {
+      if (labeling_x[unmatched_x] + labeling_y[y] == m[unmatched_x][y]) {
         alternating_tree.emplace(y, unmatched_x);
       }
-      slack[y] = m[unmatched_x][y] - labeling_x.at(unmatched_x) -
+      slack[y] = m[unmatched_x][y] - labeling_x[unmatched_x] -
                       labeling_y[y];
     }
 
@@ -87,7 +87,7 @@ minimum_weight_perfect_matching(const matrix<T>& m) {
 
         // Update labelings
         for (auto const& x : S) {
-          labeling_x.at(x) = labeling_x.at(x) + alpha;
+          labeling_x[x] = labeling_x[x] + alpha;
         }
         for (auto const& y : T_set) {
           labeling_y[y] = labeling_y[y] - alpha;
@@ -101,7 +101,7 @@ minimum_weight_perfect_matching(const matrix<T>& m) {
 
             if (alternating_tree.find(y) == alternating_tree.end()) {
               for (auto const& x : S) {
-                if (labeling_x.at(x) + labeling_y[y] == m[x][y]) {
+                if (labeling_x[x] + labeling_y[y] == m[x][y]) {
                     alternating_tree.emplace(y, x);
                 }
               }
@@ -136,7 +136,7 @@ minimum_weight_perfect_matching(const matrix<T>& m) {
         for (index_t y = 0; y < m.size(); ++y) {
           T current_value = slack[y];
           T new_value =
-            m[matched_x][y] - labeling_x.at(matched_x) - labeling_y[y];
+            m[matched_x][y] - labeling_x[matched_x] - labeling_y[y];
           if (new_value < current_value) {
             slack[y] = new_value;
           }
