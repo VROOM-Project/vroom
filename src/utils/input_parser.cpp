@@ -149,12 +149,13 @@ input parse(const cl_args_t& cl_args) {
         throw custom_exception("Invalid matrix line " + std::to_string(i) +
                                ".");
       }
+      rapidjson::Document::Array mi = json_input["matrix"][i].GetArray();
       for (rapidjson::SizeType j = 0; j < matrix_size; ++j) {
-        if (!json_input["matrix"][i][j].IsUint()) {
+        if (!mi[j].IsUint()) {
           throw custom_exception("Invalid matrix entry (" + std::to_string(i) +
                                  "," + std::to_string(j) + ").");
         }
-        cost_t cost = json_input["matrix"][i][j].GetUint();
+        cost_t cost = mi[j].GetUint();
         matrix_input[i][j] = cost;
       }
     }
