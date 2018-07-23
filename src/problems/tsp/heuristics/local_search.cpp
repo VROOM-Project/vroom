@@ -110,14 +110,14 @@ cost_t tsp_local_search::relocate_step() {
                      index_t& best_edge_1_start,
                      index_t& best_edge_2_start) {
     for (index_t edge_1_start = start; edge_1_start < end; ++edge_1_start) {
-      index_t edge_1_end = _edges.at(edge_1_start);
+      index_t edge_1_end = _edges[edge_1_start];
       // Going through the tour while checking for insertion of
       // edge_1_end between two other nodes (edge_2_*).
       //
       // Namely edge_1_start --> edge_1_end --> next is replaced by
       // edge_1_start --> next while edge_2_start --> edge_2_end is
       // replaced by edge_2_start --> edge_1_end --> edge_2_end.
-      index_t next = _edges.at(edge_1_end);
+      index_t next = _edges[edge_1_end];
 
       // Precomputing weights not depending on edge_2_*.
       cost_t first_potential_add = _matrix[edge_1_start][next];
@@ -126,7 +126,7 @@ cost_t tsp_local_search::relocate_step() {
 
       index_t edge_2_start = next;
       while (edge_2_start != edge_1_start) {
-        index_t edge_2_end = _edges.at(edge_2_start);
+        index_t edge_2_end = _edges[edge_2_start];
         cost_t before_cost = edge_1_weight + edge_1_end_next_weight +
                              _matrix[edge_2_start][edge_2_end];
         cost_t after_cost = first_potential_add +
