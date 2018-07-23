@@ -44,8 +44,8 @@ minimum_weight_perfect_matching(const matrix<T>& m) {
     // Step 1.
 
     alternating_tree.clear();
-    std::set<index_t> S;
-    std::set<index_t> T_set;
+    std::unordered_set<index_t> S;
+    std::unordered_set<index_t> T_set;
 
     // Finding any unmatched x.
     index_t unmatched_x = 0;
