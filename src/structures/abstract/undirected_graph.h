@@ -24,7 +24,7 @@ private:
   // Embedding two representations for different uses depending on
   // context.
   std::vector<edge<T>> _edges;
-  std::unordered_map<index_t, std::list<index_t>> _adjacency_list;
+  std::unordered_map<index_t, std::vector<index_t>> _adjacency_list;
 
 public:
   undirected_graph();
