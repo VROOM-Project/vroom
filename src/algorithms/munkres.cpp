@@ -56,14 +56,14 @@ minimum_weight_perfect_matching(const matrix<T>& m) {
 
     // Saving relevant neighbors in equality graph in alternating_tree
     // and initializing slacks.
-    std::unordered_map<index_t, T> slack;
+    std::vector<T> slack;
+    slack.resize(m.size());
     for (index_t y = 0; y < m.size(); ++y) {
       if (labeling_x.at(unmatched_x) + labeling_y.at(y) == m[unmatched_x][y]) {
         alternating_tree.emplace(y, unmatched_x);
       }
-      slack.emplace(y,
-                    m[unmatched_x][y] - labeling_x.at(unmatched_x) -
-                      labeling_y.at(y));
+      slack[y] = m[unmatched_x][y] - labeling_x.at(unmatched_x) -
+                      labeling_y.at(y);
     }
 
     bool augmented_path = false;
@@ -79,7 +79,7 @@ minimum_weight_perfect_matching(const matrix<T>& m) {
           // Computing alpha, the minimum of slack values over
           // complement of T_set.
           if (T_set.find(y) == T_set.end()) {
-            T current_slack = slack.at(y);
+            T current_slack = slack[y];
             if (current_slack < alpha) {
               alpha = current_slack;
             }
@@ -98,12 +98,12 @@ minimum_weight_perfect_matching(const matrix<T>& m) {
         // updating slacks.
         for (index_t y = 0; y < m.size(); ++y) {
           if (T_set.find(y) == T_set.end()) {
-            slack.at(y) = slack.at(y) - alpha;
+            slack[y] = slack[y] - alpha;
 
-            for (auto const& x : S) {
-              if (labeling_x.at(x) + labeling_y.at(y) == m[x][y]) {
-                if (alternating_tree.find(y) == alternating_tree.end()) {
-                  alternating_tree.emplace(y, x);
+            if (alternating_tree.find(y) == alternating_tree.end()) {
+              for (auto const& x : S) {
+                if (labeling_x.at(x) + labeling_y.at(y) == m[x][y]) {
+                    alternating_tree.emplace(y, x);
                 }
               }
             }
@@ -135,11 +135,11 @@ minimum_weight_perfect_matching(const matrix<T>& m) {
 
         // Updating slacks.
         for (index_t y = 0; y < m.size(); ++y) {
-          T current_value = slack.at(y);
+          T current_value = slack[y];
           T new_value =
             m[matched_x][y] - labeling_x.at(matched_x) - labeling_y.at(y);
           if (new_value < current_value) {
-            slack.at(y) = new_value;
+            slack[y] = new_value;
           }
         }
       } else {
