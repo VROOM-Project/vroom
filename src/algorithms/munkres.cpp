@@ -104,7 +104,8 @@ minimum_weight_perfect_matching(const matrix<T>& m) {
             if (alternating_tree.find(y) == alternating_tree.end()) {
               for (auto const& x : S_list) {
                 if (labeling_x[x] + labeling_y[y] == m[x][y]) {
-                    alternating_tree.emplace(y, x);
+                  alternating_tree.emplace(y, x);
+                  break;
                 }
               }
             }
