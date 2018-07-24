@@ -124,14 +124,16 @@ cost_t tsp_local_search::relocate_step() {
       cost_t edge_1_weight = _matrix[edge_1_start][edge_1_end];
       cost_t edge_1_end_next_weight = _matrix[edge_1_end][next];
 
-      if (edge_1_weight + edge_1_end_next_weight - first_potential_add < best_gain) {
-          //if edge_2_start --> edge_2_end is shorter than
-          //edge_2_start --> edge_1_end --> edge_2_end (which it should be)
-          //than the gain can't be larger than the improvement between
-          //edge_1_start --> edge_1_end --> next  and
-          //edge_1_start --> next
-          //Note: No harm is done if this underflows due to triangle inequality violations
-          continue;
+      if (edge_1_weight + edge_1_end_next_weight - first_potential_add <
+          best_gain) {
+        // if edge_2_start --> edge_2_end is shorter than
+        // edge_2_start --> edge_1_end --> edge_2_end (which it should be)
+        // than the gain can't be larger than the improvement between
+        // edge_1_start --> edge_1_end --> next  and
+        // edge_1_start --> next
+        // Note: No harm is done if this underflows due to triangle inequality
+        // violations
+        continue;
       }
 
       index_t edge_2_start = next;

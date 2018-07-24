@@ -63,8 +63,7 @@ minimum_weight_perfect_matching(const matrix<T>& m) {
       if (labeling_x[unmatched_x] + labeling_y[y] == m[unmatched_x][y]) {
         alternating_tree.emplace(y, unmatched_x);
       }
-      slack[y] = m[unmatched_x][y] - labeling_x[unmatched_x] -
-                      labeling_y[y];
+      slack[y] = m[unmatched_x][y] - labeling_x[unmatched_x] - labeling_y[y];
     }
 
     bool augmented_path = false;
@@ -141,8 +140,7 @@ minimum_weight_perfect_matching(const matrix<T>& m) {
         // Updating slacks.
         for (index_t y = 0; y < m.size(); ++y) {
           T current_value = slack[y];
-          T new_value =
-            m[matched_x][y] - labeling_x[matched_x] - labeling_y[y];
+          T new_value = m[matched_x][y] - labeling_x[matched_x] - labeling_y[y];
           if (new_value < current_value) {
             slack[y] = new_value;
           }

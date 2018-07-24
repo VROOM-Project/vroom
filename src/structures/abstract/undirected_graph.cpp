@@ -19,7 +19,7 @@ undirected_graph<T>::undirected_graph(const matrix<T>& m) : _size(m.size()) {
   _edges.reserve(_size * _size);
   _adjacency_list.reserve(_size);
   for (index_t i = 0; i < _size; ++i) {
-      _adjacency_list[i].reserve(_size);
+    _adjacency_list[i].reserve(_size);
   }
   for (index_t i = 0; i < _size; ++i) {
     matrix_ok &= (m[i][i] == INFINITE_COST);
@@ -59,7 +59,9 @@ std::unordered_map<index_t, std::list<index_t>>
 undirected_graph<T>::get_adjacency_list() const {
   std::unordered_map<index_t, std::list<index_t>> result;
   for (const auto& pair : _adjacency_list) {
-    std::copy(pair.second.begin(), pair.second.end(), std::back_inserter(result[pair.first]));
+    std::copy(pair.second.begin(),
+              pair.second.end(),
+              std::back_inserter(result[pair.first]));
   }
   return result;
 }
