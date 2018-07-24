@@ -43,6 +43,7 @@ minimum_weight_perfect_matching(const matrix<T>& m) {
     // Step 1.
 
     alternating_tree.clear();
+    std::vector<index_t> S_list;
     std::unordered_set<index_t> S;
     std::unordered_set<index_t> T_set;
 
@@ -52,6 +53,7 @@ minimum_weight_perfect_matching(const matrix<T>& m) {
       ++unmatched_x;
     }
     S.insert(unmatched_x);
+    S_list.push_back(unmatched_x);
 
     // Saving relevant neighbors in equality graph in alternating_tree
     // and initializing slacks.
@@ -86,7 +88,7 @@ minimum_weight_perfect_matching(const matrix<T>& m) {
         }
 
         // Update labelings
-        for (auto const& x : S) {
+        for (auto const& x : S_list) {
           labeling_x[x] = labeling_x[x] + alpha;
         }
         for (auto const& y : T_set) {
@@ -100,7 +102,7 @@ minimum_weight_perfect_matching(const matrix<T>& m) {
             slack[y] = slack[y] - alpha;
 
             if (alternating_tree.find(y) == alternating_tree.end()) {
-              for (auto const& x : S) {
+              for (auto const& x : S_list) {
                 if (labeling_x[x] + labeling_y[y] == m[x][y]) {
                     alternating_tree.emplace(y, x);
                 }
@@ -129,7 +131,10 @@ minimum_weight_perfect_matching(const matrix<T>& m) {
         // proceed to step 2.
         index_t matched_x = matching_y->second;
 
-        S.insert(matched_x);
+        auto p = S.insert(matched_x);
+        if (p.second) {
+          S_list.push_back(matched_x);
+        }
         T_set.insert(chosen_y);
 
         // Updating slacks.
