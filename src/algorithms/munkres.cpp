@@ -195,8 +195,6 @@ greedy_symmetric_approx_mwpm(const matrix<T>& m) {
 
   while (remaining_indices.size() > 0) {
     T min_weight = std::numeric_limits<T>::max();
-    index_t first_chosen_index;
-    index_t second_chosen_index;
     std::set<index_t>::iterator chosen_i;
     std::set<index_t>::iterator chosen_j;
     for (auto i = remaining_indices.begin(); i != remaining_indices.end();
@@ -207,14 +205,12 @@ greedy_symmetric_approx_mwpm(const matrix<T>& m) {
         T current_weight = m[*i][*j];
         if (current_weight < min_weight) {
           min_weight = current_weight;
-          first_chosen_index = *i;
-          second_chosen_index = *j;
           chosen_i = i;
           chosen_j = j;
         }
       }
     }
-    matching.emplace(first_chosen_index, second_chosen_index);
+    matching.emplace(*chosen_i, *chosen_j);
     remaining_indices.erase(chosen_j);
     remaining_indices.erase(chosen_i);
   }
