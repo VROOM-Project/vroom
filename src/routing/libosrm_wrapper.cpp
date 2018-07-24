@@ -88,7 +88,7 @@ void libosrm_wrapper::add_route_info(route_t& rte) const {
                                osrm::RouteParameters::GeometriesType::Polyline,
                                osrm::RouteParameters::OverviewType::Full,
                                false // continue_straight
-                               );
+  );
 
   // Ordering locations for the given steps.
   for (auto& step : rte.steps) {

@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- Update `clang-format` to 6.0 for automatic code formatting (#143)
+
 ## [v1.2.0]
 
 ### Added

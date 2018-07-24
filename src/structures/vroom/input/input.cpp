@@ -121,9 +121,9 @@ void input::check_amount_size(unsigned size) {
   } else {
     // Checking consistency for amount/capacity input lengths.
     if (size != _amount_size) {
-      throw custom_exception("Inconsistent amount/capacity lengths: " +
-                             std::to_string(size) + " and " +
-                             std::to_string(_amount_size) + '.');
+      throw custom_exception(
+        "Inconsistent amount/capacity lengths: " + std::to_string(size) +
+        " and " + std::to_string(_amount_size) + '.');
     }
   }
 }

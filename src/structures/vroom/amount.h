@@ -22,8 +22,8 @@ public:
   amount_t();
   amount_t(std::size_t size);
 
-  using parent::size;
   using parent::empty;
+  using parent::size;
   using parent::operator[];
   using parent::push_back;
 

@@ -72,7 +72,7 @@ std::unique_ptr<routed_wrapper> routing_wrapper() {
   return std::make_unique<routed_wrapper>("localhost", // OSRM server
                                           "5000",      // OSRM port
                                           "car"        // Profile
-                                          );
+  );
 }
 
 void run_example_with_osrm() {

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Borrowed and slightly adapted from
+# Initially borrowed and adapted from
 # https://github.com/Project-OSRM/osrm-backend/blob/master/scripts/format.sh
 
 set -o errexit
@@ -9,7 +9,7 @@ set -o nounset
 
 # Runs the Clang Formatter in parallel on the code base.
 # Return codes:
-#  - 1 there are files to be formatted or clang-format 3.8 is missing
+#  - 1 there are files to be formatted or clang-format 6.0 is missing
 #  - 0 everything looks fine
 
 # Get CPU count
@@ -22,18 +22,18 @@ elif [[ ${OS} = "Darwin" ]] ; then
 fi
 
 # Discover clang-format
-if type clang-format-3.8 2> /dev/null ; then
-    CLANG_FORMAT=clang-format-3.8
+if type clang-format-6.0 2> /dev/null ; then
+    CLANG_FORMAT=clang-format-6.0
 elif type clang-format 2> /dev/null ; then
     # Clang format found, but need to check version
     CLANG_FORMAT=clang-format
     V=$(clang-format --version)
-    if [[ $V != *3.8* ]] ; then
-        echo "clang-format is not 3.8 (returned ${V})"
+    if [[ $V != *6.0* ]] ; then
+        echo "clang-format is not 6.0 (returned ${V})"
         exit 1
     fi
 else
-    echo "No appropriate clang-format found (expected clang-format-3.8, or clang-format)"
+    echo "No appropriate clang-format found (expected clang-format-6.0, or clang-format)"
     exit 1
 fi
 
