@@ -22,6 +22,7 @@ All rights reserved (see LICENSE).
 #include "structures/typedefs.h"
 #include "structures/vroom/amount.h"
 #include "structures/vroom/job.h"
+#include "structures/vroom/time_window.h"
 #include "structures/vroom/vehicle.h"
 #include "utils/exceptions.h"
 #include "utils/input_parser.h"
@@ -86,6 +87,13 @@ inline duration_t get_service(const rapidjson::Value& object) {
 
 inline bool valid_vehicle(const rapidjson::Value& v) {
   return v.IsObject() and v.HasMember("id") and v["id"].IsUint64();
+}
+
+inline time_window_t get_time_window(const rapidjson::Value& tw) {
+  if (!tw.IsArray() or tw.Size() < 2 or !tw[0].IsUint() or !tw[1].IsUint()) {
+    throw custom_exception("Invalid time-window.");
+  }
+  return time_window_t(tw[0].GetUint(), tw[1].GetUint());
 }
 
 input parse(const cl_args_t& cl_args) {
@@ -226,11 +234,15 @@ input parse(const cl_args_t& cl_args) {
         }
       }
 
+      // TODO: make this optional
+      assert(json_vehicle.HasMember("time_window"));
+
       vehicle_t current_v(v_id,
                           start,
                           end,
                           get_amount(json_vehicle, "capacity"),
-                          get_skills(json_vehicle));
+                          get_skills(json_vehicle),
+                          get_time_window(json_vehicle["time_window"]));
 
       input_data.add_vehicle(current_v);
     }
@@ -301,11 +313,15 @@ input parse(const cl_args_t& cl_args) {
           boost::optional<location_t>(parse_coordinates(json_vehicle, "end"));
       }
 
+      // TODO: make this optional
+      assert(json_vehicle.HasMember("time_window"));
+
       vehicle_t current_v(json_vehicle["id"].GetUint(),
                           start,
                           end,
                           get_amount(json_vehicle, "capacity"),
-                          get_skills(json_vehicle));
+                          get_skills(json_vehicle),
+                          get_time_window(json_vehicle["time_window"]));
 
       input_data.add_vehicle(current_v);
     }

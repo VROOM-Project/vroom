@@ -14,8 +14,9 @@ vehicle_t::vehicle_t(ID_t id,
                      const boost::optional<location_t>& start,
                      const boost::optional<location_t>& end,
                      const amount_t& capacity,
-                     const std::unordered_set<skill_t>& skills)
-  : id(id), start(start), end(end), capacity(capacity), skills(skills) {
+                     const std::unordered_set<skill_t>& skills,
+                     const time_window_t& tw)
+  : id(id), start(start), end(end), capacity(capacity), skills(skills), tw(tw) {
   if (!static_cast<bool>(start) and !static_cast<bool>(end)) {
     throw custom_exception("No start or end specified for vehicle " +
                            std::to_string(id) + '.');
