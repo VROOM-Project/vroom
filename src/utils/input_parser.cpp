@@ -276,11 +276,22 @@ input parse(const cl_args_t& cl_args) {
           location_t(job_loc_index, parse_coordinates(json_job, "location"));
       }
 
+      // TODO: make this optional
+      assert(json_job.HasMember("time_windows") and
+             json_job["time_windows"].IsArray());
+      std::vector<time_window_t> tws;
+      std::transform(json_job["time_windows"].Begin(),
+                     json_job["time_windows"].End(),
+                     std::back_inserter(tws),
+                     [](auto& tw) { return get_time_window(tw); });
+
       job_t current_job(j_id,
                         job_loc,
                         get_service(json_job),
                         get_amount(json_job, "amount"),
-                        get_skills(json_job));
+                        get_skills(json_job),
+                        tws);
+
       input_data.add_job(current_job);
     }
   } else {
@@ -342,11 +353,21 @@ input parse(const cl_args_t& cl_args) {
                                std::to_string(j_id) + ".");
       }
 
+      // TODO: make this optional
+      assert(json_job.HasMember("time_windows") and
+             json_job["time_windows"].IsArray());
+      std::vector<time_window_t> tws;
+      std::transform(json_job["time_windows"].Begin(),
+                     json_job["time_windows"].End(),
+                     std::back_inserter(tws),
+                     [](auto& tw) { return get_time_window(tw); });
+
       job_t current_job(j_id,
                         parse_coordinates(json_job, "location"),
                         get_service(json_job),
                         get_amount(json_job, "amount"),
-                        get_skills(json_job));
+                        get_skills(json_job),
+                        tws);
 
       input_data.add_job(current_job);
     }
