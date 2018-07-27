@@ -20,17 +20,16 @@ std::unordered_map<index_t, index_t>
 minimum_weight_perfect_matching(const matrix<T>& m) {
 
   // Trivial initial labeling.
-  std::unordered_map<index_t, T> labeling_x;
-  std::unordered_map<index_t, T> labeling_y;
+  std::vector<T> labeling_x(m.size(), 0);
+  std::vector<T> labeling_y(m.size(), 0);
   for (index_t i = 0; i < m.size(); ++i) {
-    labeling_y.emplace(i, 0);
     T min_weight = std::numeric_limits<T>::max();
     for (index_t j = 0; j < m.size(); ++j) {
       if (m[i][j] < min_weight) {
         min_weight = m[i][j];
       }
     }
-    labeling_x.emplace(i, min_weight);
+    labeling_x[i] = min_weight;
   }
 
   // Initial empty matching.
@@ -44,8 +43,9 @@ minimum_weight_perfect_matching(const matrix<T>& m) {
     // Step 1.
 
     alternating_tree.clear();
-    std::set<index_t> S;
-    std::set<index_t> T_set;
+    std::vector<index_t> S_list;
+    std::unordered_set<index_t> S;
+    std::unordered_set<index_t> T_set;
 
     // Finding any unmatched x.
     index_t unmatched_x = 0;
@@ -53,17 +53,17 @@ minimum_weight_perfect_matching(const matrix<T>& m) {
       ++unmatched_x;
     }
     S.insert(unmatched_x);
+    S_list.push_back(unmatched_x);
 
     // Saving relevant neighbors in equality graph in alternating_tree
     // and initializing slacks.
-    std::unordered_map<index_t, T> slack;
+    std::vector<T> slack;
+    slack.resize(m.size());
     for (index_t y = 0; y < m.size(); ++y) {
-      if (labeling_x.at(unmatched_x) + labeling_y.at(y) == m[unmatched_x][y]) {
+      if (labeling_x[unmatched_x] + labeling_y[y] == m[unmatched_x][y]) {
         alternating_tree.emplace(y, unmatched_x);
       }
-      slack.emplace(y,
-                    m[unmatched_x][y] - labeling_x.at(unmatched_x) -
-                      labeling_y.at(y));
+      slack[y] = m[unmatched_x][y] - labeling_x[unmatched_x] - labeling_y[y];
     }
 
     bool augmented_path = false;
@@ -79,7 +79,7 @@ minimum_weight_perfect_matching(const matrix<T>& m) {
           // Computing alpha, the minimum of slack values over
           // complement of T_set.
           if (T_set.find(y) == T_set.end()) {
-            T current_slack = slack.at(y);
+            T current_slack = slack[y];
             if (current_slack < alpha) {
               alpha = current_slack;
             }
@@ -87,23 +87,24 @@ minimum_weight_perfect_matching(const matrix<T>& m) {
         }
 
         // Update labelings
-        for (auto const& x : S) {
-          labeling_x.at(x) = labeling_x.at(x) + alpha;
+        for (auto const& x : S_list) {
+          labeling_x[x] = labeling_x[x] + alpha;
         }
         for (auto const& y : T_set) {
-          labeling_y.at(y) = labeling_y.at(y) - alpha;
+          labeling_y[y] = labeling_y[y] - alpha;
         }
 
         // Updating relevant neighbors in new equality graph and
         // updating slacks.
         for (index_t y = 0; y < m.size(); ++y) {
           if (T_set.find(y) == T_set.end()) {
-            slack.at(y) = slack.at(y) - alpha;
+            slack[y] = slack[y] - alpha;
 
-            for (auto const& x : S) {
-              if (labeling_x.at(x) + labeling_y.at(y) == m[x][y]) {
-                if (alternating_tree.find(y) == alternating_tree.end()) {
+            if (alternating_tree.find(y) == alternating_tree.end()) {
+              for (auto const& x : S_list) {
+                if (labeling_x[x] + labeling_y[y] == m[x][y]) {
                   alternating_tree.emplace(y, x);
+                  break;
                 }
               }
             }
@@ -130,16 +131,18 @@ minimum_weight_perfect_matching(const matrix<T>& m) {
         // proceed to step 2.
         index_t matched_x = matching_y->second;
 
-        S.insert(matched_x);
+        auto p = S.insert(matched_x);
+        if (p.second) {
+          S_list.push_back(matched_x);
+        }
         T_set.insert(chosen_y);
 
         // Updating slacks.
         for (index_t y = 0; y < m.size(); ++y) {
-          T current_value = slack.at(y);
-          T new_value =
-            m[matched_x][y] - labeling_x.at(matched_x) - labeling_y.at(y);
+          T current_value = slack[y];
+          T new_value = m[matched_x][y] - labeling_x[matched_x] - labeling_y[y];
           if (new_value < current_value) {
-            slack.at(y) = new_value;
+            slack[y] = new_value;
           }
         }
       } else {
@@ -196,8 +199,6 @@ greedy_symmetric_approx_mwpm(const matrix<T>& m) {
 
   while (remaining_indices.size() > 0) {
     T min_weight = std::numeric_limits<T>::max();
-    index_t first_chosen_index;
-    index_t second_chosen_index;
     std::set<index_t>::iterator chosen_i;
     std::set<index_t>::iterator chosen_j;
     for (auto i = remaining_indices.begin(); i != remaining_indices.end();
@@ -208,14 +209,12 @@ greedy_symmetric_approx_mwpm(const matrix<T>& m) {
         T current_weight = m[*i][*j];
         if (current_weight < min_weight) {
           min_weight = current_weight;
-          first_chosen_index = *i;
-          second_chosen_index = *j;
           chosen_i = i;
           chosen_j = j;
         }
       }
     }
-    matching.emplace(first_chosen_index, second_chosen_index);
+    matching.emplace(*chosen_i, *chosen_j);
     remaining_indices.erase(chosen_j);
     remaining_indices.erase(chosen_i);
   }
