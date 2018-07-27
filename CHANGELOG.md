@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- Improve performance of the TSP heuristic by ~35% on all TSPLIB instances (#142)
+
 ## [v1.2.0]
 
 ### Added
