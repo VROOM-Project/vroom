@@ -111,8 +111,8 @@ public:
 
 template <typename E1, typename E2>
 class amount_sum_t : public amount_expression_t<amount_sum_t<E1, E2>> {
-  E1 const& lhs;
-  E2 const& rhs;
+  const E1& lhs;
+  const E2& rhs;
 
 public:
   amount_sum_t(const E1& a, const E2& b) : lhs(a), rhs(b) {
