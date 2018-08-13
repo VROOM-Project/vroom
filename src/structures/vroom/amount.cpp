@@ -25,9 +25,3 @@ amount_t& amount_t::operator-=(const amount_t& rhs) {
   return *this;
 }
 
-
-
-bool test_check(const amount_t& r, const amount_t& l, const amount_t& g) {
-    return r + l == g;
-}
-
