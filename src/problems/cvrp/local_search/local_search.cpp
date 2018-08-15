@@ -495,6 +495,20 @@ void cvrp_local_search::try_job_additions(const std::vector<index_t>& routes,
         }
       }
 
+      auto smallest = std::numeric_limits<gain_t>::max();
+      auto second_smallest = std::numeric_limits<gain_t>::max();
+      size_t smallest_idx = std::numeric_limits<gain_t>::max();
+
+      for (std::size_t i = 0; i < routes.size(); ++i) {
+        if (best_costs[i] < smallest) {
+          smallest_idx = i;
+          second_smallest = smallest;
+          smallest = best_costs[i];
+        } else if (best_costs[i] < second_smallest) {
+          second_smallest = best_costs[i];
+        }
+      }
+
       // Find best route for current job based on cost of addition and
       // regret cost of not adding.
       for (std::size_t i = 0; i < routes.size(); ++i) {
@@ -503,11 +517,10 @@ void cvrp_local_search::try_job_additions(const std::vector<index_t>& routes,
           continue;
         }
         auto regret_cost = std::numeric_limits<gain_t>::max();
-        for (std::size_t i2 = 0; i2 < routes.size(); ++i2) {
-          if (i == i2) {
-            continue;
-          }
-          regret_cost = std::min(regret_cost, best_costs[i2]);
+        if (i == smallest_idx) {
+          regret_cost = second_smallest;
+        } else {
+          regret_cost = smallest;
         }
 
         double eval = static_cast<double>(addition_cost) -
