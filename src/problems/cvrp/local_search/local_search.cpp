@@ -26,6 +26,7 @@ cvrp_local_search::cvrp_local_search(const input& input,
     V(_input._vehicles.size()),
     _amount_lower_bound(_input.get_amount_lower_bound()),
     _double_amount_lower_bound(_amount_lower_bound + _amount_lower_bound),
+    _empty_amount(_input.amount_size()),
     _max_nb_jobs_removal(max_nb_jobs_removal),
     _all_routes(V),
     _target_sol(sol),
@@ -375,12 +376,12 @@ void cvrp_local_search::update_skills(index_t v1) {
   }
 }
 
-amount_t cvrp_local_search::total_amount(index_t v) {
-  amount_t v_amount(_input.amount_size());
+const amount_t& cvrp_local_search::total_amount(index_t v) {
   if (!_sol_state.fwd_amounts[v].empty()) {
-    v_amount = _sol_state.fwd_amounts[v].back();
+    return _sol_state.fwd_amounts[v].back();
+  } else {
+    return _empty_amount;
   }
-  return v_amount;
 }
 
 void cvrp_local_search::update_nearest_job_rank_in_routes(index_t v1,
@@ -434,7 +435,7 @@ void cvrp_local_search::try_job_additions(const std::vector<index_t>& routes,
       for (std::size_t i = 0; i < routes.size(); ++i) {
         auto v = routes[i];
         const auto& v_target = _input._vehicles[v];
-        const amount_t v_amount = total_amount(v);
+        const amount_t& v_amount = total_amount(v);
 
         if (_input.vehicle_ok_with_job(v, j) and
             v_amount + current_amount <= _input._vehicles[v].capacity) {
