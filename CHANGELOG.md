@@ -6,6 +6,7 @@
 
 - Update `clang-format` to 6.0 for automatic code formatting (#143)
 - Improve performance of the TSP heuristic by ~35% on all TSPLIB instances (#142)
+- Improve performance of the CVRP heuristic by ~55% on all CVRPLIB instances (#146)
 
 ## [v1.2.0]
 
