@@ -497,7 +497,7 @@ void cvrp_local_search::try_job_additions(const std::vector<index_t>& routes,
 
       auto smallest = std::numeric_limits<gain_t>::max();
       auto second_smallest = std::numeric_limits<gain_t>::max();
-      size_t smallest_idx = std::numeric_limits<gain_t>::max();
+      std::size_t smallest_idx = std::numeric_limits<gain_t>::max();
 
       for (std::size_t i = 0; i < routes.size(); ++i) {
         if (best_costs[i] < smallest) {
