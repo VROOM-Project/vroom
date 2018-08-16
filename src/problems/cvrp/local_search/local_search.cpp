@@ -349,8 +349,8 @@ void cvrp_local_search::update_amounts(index_t v) {
   std::transform(_sol_state.fwd_amounts[v].cbegin(),
                  _sol_state.fwd_amounts[v].cend(),
                  _sol_state.bwd_amounts[v].begin(),
-                 [&](const auto& a) -> amount_t {
-                   auto total_amount = _sol_state.fwd_amounts[v].back();
+                 [&](const auto& a) {
+                   const auto& total_amount = _sol_state.fwd_amounts[v].back();
                    return total_amount - a;
                  });
 }
