@@ -148,7 +148,7 @@ public:
   capacity_t operator[](std::size_t i) const {
     return lhs[i] - rhs[i];
   };
-  
+
   std::size_t size() const {
     return lhs.size();
   };

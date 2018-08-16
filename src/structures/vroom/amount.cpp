@@ -24,4 +24,3 @@ amount_t& amount_t::operator-=(const amount_t& rhs) {
   }
   return *this;
 }
-
