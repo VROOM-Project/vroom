@@ -104,9 +104,21 @@ public:
     return elems.size();
   };
 
-  amount_t& operator+=(const amount_t& rhs);
+  amount_t& operator+=(const amount_t& rhs) {
+    assert(this->size() == rhs.size());
+    for (std::size_t i = 0; i < this->size(); ++i) {
+      (*this)[i] += rhs[i];
+    }
+    return *this;
+  }
 
-  amount_t& operator-=(const amount_t& rhs);
+  amount_t& operator-=(const amount_t& rhs) {
+    assert(this->size() == rhs.size());
+    for (std::size_t i = 0; i < this->size(); ++i) {
+      (*this)[i] -= rhs[i];
+    }
+    return *this;
+  }
 };
 
 template <typename E1, typename E2>
