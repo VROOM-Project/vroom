@@ -5,8 +5,8 @@
 ### Changed
 
 - Update `clang-format` to 6.0 for automatic code formatting (#143)
-- Speed up TSP solving by ~35% on all TSPLIB instances (#142)
-- Speed up CVRP solving by ~55% on all CVRPLIB instances (#146)
+- Speed up TSP solving by over 35% on all TSPLIB instances (#142)
+- Speed up CVRP solving by over 65% on all CVRPLIB instances (#146)
 
 ## [v1.2.0]
 
