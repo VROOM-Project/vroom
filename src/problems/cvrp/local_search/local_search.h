@@ -29,6 +29,7 @@ private:
   const std::size_t V;
   const amount_t _amount_lower_bound;
   const amount_t _double_amount_lower_bound;
+  const amount_t _empty_amount;
   const unsigned _max_nb_jobs_removal;
 
   std::vector<index_t> _all_routes;
@@ -48,7 +49,7 @@ private:
   void update_costs(index_t v);
   void update_amounts(index_t v);
   void update_skills(index_t v);
-  amount_t total_amount(index_t v);
+  const amount_t& total_amount(index_t v);
   void update_nearest_job_rank_in_routes(index_t v1, index_t v2);
 
   void try_job_additions(const std::vector<index_t>& routes,
