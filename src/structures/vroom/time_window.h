@@ -13,10 +13,12 @@ All rights reserved (see LICENSE).
 #include "structures/typedefs.h"
 
 struct time_window_t {
-  const duration_t start;
-  const duration_t end;
+  duration_t start;
+  duration_t end;
 
   time_window_t(duration_t start, duration_t end);
+
+  friend bool operator<(const time_window_t& lhs, const time_window_t& rhs);
 };
 
 #endif

@@ -8,6 +8,7 @@ All rights reserved (see LICENSE).
 */
 
 #include "structures/vroom/job.h"
+#include "utils/exceptions.h"
 
 job_t::job_t(ID_t id,
              const location_t& location,
@@ -21,6 +22,14 @@ job_t::job_t(ID_t id,
     amount(amount),
     skills(skills),
     tws(tws) {
+  if (tws.size() > 1) {
+    for (std::size_t i = 0; i < tws.size() - 1; ++i) {
+      if (tws[i + 1].start <= tws[i].end) {
+        throw custom_exception("Unsorted or overlapping time-windows for job " +
+                               std::to_string(id) + ".");
+      }
+    }
+  }
 }
 
 index_t job_t::index() const {

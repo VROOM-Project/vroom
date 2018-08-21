@@ -284,6 +284,7 @@ input parse(const cl_args_t& cl_args) {
                      json_job["time_windows"].End(),
                      std::back_inserter(tws),
                      [](auto& tw) { return get_time_window(tw); });
+      std::sort(tws.begin(), tws.end());
 
       job_t current_job(j_id,
                         job_loc,
@@ -361,6 +362,7 @@ input parse(const cl_args_t& cl_args) {
                      json_job["time_windows"].End(),
                      std::back_inserter(tws),
                      [](auto& tw) { return get_time_window(tw); });
+      std::sort(tws.begin(), tws.end());
 
       job_t current_job(j_id,
                         parse_coordinates(json_job, "location"),

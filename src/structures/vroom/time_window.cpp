@@ -19,3 +19,8 @@ time_window_t::time_window_t(duration_t start, duration_t end)
                            ", " + std::to_string(end) + "]");
   }
 }
+
+bool operator<(const time_window_t& lhs, const time_window_t& rhs) {
+  return lhs.start < rhs.start or
+         (lhs.start == rhs.start and lhs.end < rhs.end);
+}
