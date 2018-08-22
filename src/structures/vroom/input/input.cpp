@@ -13,6 +13,7 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/cvrp.h"
 #include "problems/tsp/tsp.h"
 #include "problems/vrp.h"
+#include "problems/vrptw/vrptw.h"
 #include "structures/vroom/input/input.h"
 #include "utils/exceptions.h"
 #include "utils/helpers.h"
@@ -228,7 +229,8 @@ void input::set_vehicle_to_job_compatibility() {
 }
 
 std::unique_ptr<vrp> input::get_problem() const {
-  return std::make_unique<cvrp>(*this);
+  // TODO handle different cases.
+  return std::make_unique<vrptw>(*this);
 }
 
 solution input::format_solution(const raw_solution& raw_routes) const {
