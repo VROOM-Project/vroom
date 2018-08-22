@@ -25,6 +25,14 @@ with the scope or aim of the project.
 ## Coding conventions
 
 To ensure a consistent formatting of the code-base, please run
-`./scripts/format.sh` prior to submitting a PR (or run manually
-`clang-format-3.8` using the provided `.clang-format` configuration
-file).
+`./scripts/format.sh` prior to submitting a PR. A convenient way to
+automate code formatting is to use a commit hook. Create the file
+`.git/hooks/pre-commit` containing:
+
+```
+#!/bin/sh
+
+./scripts/format.sh
+```
+
+then make sure it's executable: `chmod +x .git/hooks/pre-commit`.
