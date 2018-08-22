@@ -17,6 +17,7 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/local_search/relocate.h"
 #include "problems/cvrp/local_search/reverse_2_opt.h"
 #include "problems/tsp/tsp.h"
+#include "utils/helpers.h"
 
 cvrp_local_search::cvrp_local_search(const input& input,
                                      raw_solution& sol,
@@ -439,53 +440,9 @@ void cvrp_local_search::try_job_additions(const std::vector<index_t>& routes,
 
         if (_input.vehicle_ok_with_job(v, j) and
             v_amount + current_amount <= _input._vehicles[v].capacity) {
-          auto index_j = _input._jobs[j].index();
-
           for (std::size_t r = 0; r <= _sol[v].size(); ++r) {
-            // Check cost of adding unassigned job at rank r in route
-            // v. Same logic as in relocate::compute_gain.
-            gain_t previous_cost = 0;
-            gain_t next_cost = 0;
-            gain_t old_edge_cost = 0;
-
-            if (r == _sol[v].size()) {
-              if (_sol[v].size() == 0) {
-                // Adding job to an empty route.
-                if (v_target.has_start()) {
-                  previous_cost = _m[v_target.start.get().index()][index_j];
-                }
-                if (v_target.has_end()) {
-                  next_cost = _m[index_j][v_target.end.get().index()];
-                }
-              } else {
-                // Adding job past the end after a real job.
-                auto p_index = _input._jobs[_sol[v][r - 1]].index();
-                previous_cost = _m[p_index][index_j];
-                if (v_target.has_end()) {
-                  auto n_index = v_target.end.get().index();
-                  old_edge_cost = _m[p_index][n_index];
-                  next_cost = _m[index_j][n_index];
-                }
-              }
-            } else {
-              // Adding before one of the jobs.
-              auto n_index = _input._jobs[_sol[v][r]].index();
-              next_cost = _m[index_j][n_index];
-
-              if (r == 0) {
-                if (v_target.has_start()) {
-                  auto p_index = v_target.start.get().index();
-                  previous_cost = _m[p_index][index_j];
-                  old_edge_cost = _m[p_index][n_index];
-                }
-              } else {
-                auto p_index = _input._jobs[_sol[v][r - 1]].index();
-                previous_cost = _m[p_index][index_j];
-                old_edge_cost = _m[p_index][n_index];
-              }
-            }
-
-            gain_t current_cost = previous_cost + next_cost - old_edge_cost;
+            gain_t current_cost =
+              addition_cost(_input, _m, j, v_target, _sol[v], r);
 
             if (current_cost < best_costs[i]) {
               best_costs[i] = current_cost;

@@ -8,6 +8,7 @@ All rights reserved (see LICENSE).
 */
 
 #include "problems/cvrp/local_search/relocate.h"
+#include "utils/helpers.h"
 
 relocate::relocate(const input& input,
                    raw_solution& sol,
@@ -39,53 +40,12 @@ void relocate::compute_gain() {
 
   // For target vehicle, we consider the cost of adding source job at
   // rank target_rank.
-  index_t c_index = _input._jobs[_sol[source_vehicle][source_rank]].index();
-
-  gain_t previous_cost = 0;
-  gain_t next_cost = 0;
-  gain_t old_edge_cost = 0;
-
-  if (target_rank == _sol[target_vehicle].size()) {
-    if (_sol[target_vehicle].size() == 0) {
-      // Adding job to an empty route.
-      if (v_target.has_start()) {
-        previous_cost = m[v_target.start.get().index()][c_index];
-      }
-      if (v_target.has_end()) {
-        next_cost = m[c_index][v_target.end.get().index()];
-      }
-    } else {
-      // Adding job past the end after a real job.
-      auto p_index =
-        _input._jobs[_sol[target_vehicle][target_rank - 1]].index();
-      previous_cost = m[p_index][c_index];
-      if (v_target.has_end()) {
-        auto n_index = v_target.end.get().index();
-        old_edge_cost = m[p_index][n_index];
-        next_cost = m[c_index][n_index];
-      }
-    }
-  } else {
-    // Adding before one of the jobs.
-    auto n_index = _input._jobs[_sol[target_vehicle][target_rank]].index();
-    next_cost = m[c_index][n_index];
-
-    if (target_rank == 0) {
-      if (v_target.has_start()) {
-        auto p_index = v_target.start.get().index();
-        previous_cost = m[p_index][c_index];
-        old_edge_cost = m[p_index][n_index];
-      }
-    } else {
-      auto p_index =
-        _input._jobs[_sol[target_vehicle][target_rank - 1]].index();
-      previous_cost = m[p_index][c_index];
-      old_edge_cost = m[p_index][n_index];
-    }
-  }
-
-  // Gain for target vehicle.
-  gain_t target_gain = old_edge_cost - previous_cost - next_cost;
+  gain_t target_gain = -addition_cost(_input,
+                                      m,
+                                      _sol[source_vehicle][source_rank],
+                                      v_target,
+                                      _sol[target_vehicle],
+                                      target_rank);
 
   stored_gain =
     _sol_state.node_gains[source_vehicle][source_rank] + target_gain;
