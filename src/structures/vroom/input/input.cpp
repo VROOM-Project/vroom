@@ -271,14 +271,15 @@ solution input::solve(unsigned exploration_level, unsigned nb_thread) {
                                                           _end_loading)
       .count();
 
-  if (_geometry) {
-    // Routing stuff.
-    for (auto& route : sol.routes) {
+  for (auto& route : sol.routes) {
+    sol.summary.duration += route.duration;
+    if (_geometry) {
       _routing_wrapper->add_route_info(route);
-      sol.summary.duration += route.duration;
       sol.summary.distance += route.distance;
     }
+  }
 
+  if (_geometry) {
     _end_routing = std::chrono::high_resolution_clock::now();
     auto routing = std::chrono::duration_cast<std::chrono::milliseconds>(
                      _end_routing - _end_solving)

@@ -11,7 +11,10 @@ All rights reserved (see LICENSE).
 */
 
 #include "structures/typedefs.h"
+#include "structures/vroom/tw_route.h"
 #include "utils/exceptions.h"
+
+using tw_solution = std::vector<tw_route>;
 
 inline cost_t add_without_overflow(cost_t a, cost_t b) {
   if (a > std::numeric_limits<cost_t>::max() - b) {
@@ -177,6 +180,81 @@ inline solution format_solution(const input& input,
                   std::move(unassigned_jobs),
                   total_service,
                   std::move(total_amount));
+}
+
+inline solution format_solution(const input& input,
+                                const tw_solution& tw_routes) {
+  raw_solution raw_sol;
+  raw_sol.reserve(tw_routes.size());
+
+  std::transform(tw_routes.begin(),
+                 tw_routes.end(),
+                 std::back_inserter(raw_sol),
+                 [](const auto& tw_r) { return tw_r.route; });
+
+  auto sol = format_solution(input, raw_sol);
+
+  const auto& m = input.get_matrix();
+
+  for (std::size_t i = 0; i < sol.routes.size(); ++i) {
+    // TW ETA logic: use earliest possible arrival for last job then
+    // "push" all previous steps forward to pack the route and
+    // minimize waiting times.
+    auto& route = sol.routes[i];
+    const auto& tw_r = tw_routes[i];
+    const auto& v = tw_r.v;
+
+    duration_t ETA = tw_r.earliest.back();
+    // s and r respectively hold current index in route.steps and
+    // tw_r.route.
+    std::size_t s = route.steps.size() - 1;
+    std::size_t r = tw_r.route.size() - 1;
+
+    if (v.has_end()) {
+      assert(route.steps[s].type == TYPE::END);
+
+      const auto& last_job = input._jobs[tw_r.route[r]];
+      duration_t end_ETA =
+        ETA + last_job.service + m[last_job.index()][v.end.get().index()];
+      assert(v.tw.contains(end_ETA));
+      route.steps[s].arrival = end_ETA;
+      --s;
+    }
+    route.steps[s].arrival = ETA;
+
+    assert(r <= s);
+    for (; r > 0; --r, --s) {
+      assert(route.steps[s - 1].type == TYPE::JOB);
+
+      const auto& current_job = input._jobs[tw_r.route[r]];
+      const auto& previous_job = input._jobs[tw_r.route[r - 1]];
+
+      duration_t diff =
+        previous_job.service + m[previous_job.index()][current_job.index()];
+      assert(diff <= ETA);
+      duration_t candidate_ETA = ETA - diff;
+      assert(tw_r.earliest[r - 1] <= candidate_ETA);
+
+      ETA = std::min(candidate_ETA, tw_r.latest[r - 1]);
+      assert(previous_job.is_valid_arrival(ETA));
+      route.steps[s - 1].arrival = ETA;
+    }
+
+    if (v.has_start()) {
+      assert(s == 1);
+      assert(route.steps[0].type == TYPE::START);
+      const auto& current_job = input._jobs[tw_r.route[0]];
+      duration_t diff = m[v.start.get().index()][current_job.index()];
+      assert(diff <= ETA);
+      ETA -= diff;
+      assert(v.tw.contains(ETA));
+      route.steps[0].arrival = ETA;
+    } else {
+      assert(s == 0);
+    }
+  }
+
+  return sol;
 }
 
 #endif

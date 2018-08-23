@@ -34,6 +34,8 @@ struct job_t {
         const std::vector<time_window_t>& tws = std::vector<time_window_t>());
 
   index_t index() const;
+
+  bool is_valid_arrival(duration_t time) const;
 };
 
 #endif

@@ -21,13 +21,5 @@ vrptw::vrptw(const input& input) : vrp(input) {
 solution vrptw::solve(unsigned exploration_level, unsigned nb_threads) const {
   tw_solution sol = best_insertion(_input);
 
-  raw_solution raw_sol;
-  raw_sol.reserve(sol.size());
-
-  std::transform(sol.begin(),
-                 sol.end(),
-                 std::back_inserter(raw_sol),
-                 [](const auto& tw_r) { return tw_r.route; });
-
-  return format_solution(_input, raw_sol);
+  return format_solution(_input, sol);
 }

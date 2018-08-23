@@ -18,6 +18,8 @@ struct time_window_t {
 
   time_window_t(duration_t start, duration_t end);
 
+  bool contains(duration_t time) const;
+
   friend bool operator<(const time_window_t& lhs, const time_window_t& rhs);
 };
 

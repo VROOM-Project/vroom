@@ -35,3 +35,16 @@ job_t::job_t(ID_t id,
 index_t job_t::index() const {
   return location.index();
 }
+
+bool job_t::is_valid_arrival(duration_t time) const {
+  bool valid = false;
+
+  for (const auto& tw : tws) {
+    if (tw.contains(time)) {
+      valid = true;
+      break;
+    }
+  }
+
+  return valid;
+}
