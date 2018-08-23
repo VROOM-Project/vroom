@@ -74,4 +74,86 @@ inline gain_t addition_cost(const input& input,
   return previous_cost + next_cost - old_edge_cost;
 }
 
+inline solution format_solution(const input& input,
+                                const raw_solution& raw_routes) {
+  const auto& m = input.get_matrix();
+
+  std::vector<route_t> routes;
+  cost_t total_cost = 0;
+  duration_t total_service = 0;
+  amount_t total_amount(input.amount_size());
+
+  // All job ranks start with unassigned status.
+  std::unordered_set<index_t> unassigned_ranks;
+  for (unsigned i = 0; i < input._jobs.size(); ++i) {
+    unassigned_ranks.insert(i);
+  }
+
+  for (std::size_t i = 0; i < raw_routes.size(); ++i) {
+    const auto& route = raw_routes[i];
+    if (route.empty()) {
+      continue;
+    }
+    const auto& v = input._vehicles[i];
+
+    cost_t cost = 0;
+    duration_t service = 0;
+    amount_t amount(input.amount_size());
+
+    // Steps for current route.
+    std::vector<step> steps;
+
+    // Handle start.
+    if (v.has_start()) {
+      steps.emplace_back(TYPE::START, v.start.get());
+      cost += m[v.start.get().index()][input._jobs[route.front()].index()];
+    }
+
+    // Handle jobs.
+    index_t previous = route.front();
+    assert(input.vehicle_ok_with_job(i, previous));
+    steps.emplace_back(input._jobs[previous]);
+    service += steps.back().service;
+    amount += steps.back().amount;
+    unassigned_ranks.erase(previous);
+
+    for (auto it = ++route.cbegin(); it != route.cend(); ++it) {
+      cost += m[input._jobs[previous].index()][input._jobs[*it].index()];
+      assert(input.vehicle_ok_with_job(i, *it));
+      steps.emplace_back(input._jobs[*it]);
+      service += steps.back().service;
+      amount += steps.back().amount;
+      unassigned_ranks.erase(*it);
+      previous = *it;
+    }
+
+    // Handle end.
+    if (v.has_end()) {
+      steps.emplace_back(TYPE::END, v.end.get());
+      cost += m[input._jobs[route.back()].index()][v.end.get().index()];
+    }
+
+    assert(amount <= v.capacity);
+    routes.emplace_back(v.id, std::move(steps), cost, service, amount);
+
+    total_cost += cost;
+    total_service += service;
+    total_amount += amount;
+  }
+
+  // Handle unassigned jobs.
+  std::vector<job_t> unassigned_jobs;
+  std::transform(unassigned_ranks.begin(),
+                 unassigned_ranks.end(),
+                 std::back_inserter(unassigned_jobs),
+                 [&](auto j) { return input._jobs[j]; });
+
+  return solution(0,
+                  total_cost,
+                  std::move(routes),
+                  std::move(unassigned_jobs),
+                  total_service,
+                  std::move(total_amount));
+}
+
 #endif

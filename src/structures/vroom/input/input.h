@@ -51,8 +51,6 @@ private:
   std::unordered_set<index_t> _matrix_used_index;
   bool _all_locations_have_coords;
 
-  solution format_solution(const raw_solution& raw_routes) const;
-
   void store_amount_lower_bound(const amount_t& amount);
 
 public:
