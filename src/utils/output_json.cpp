@@ -71,10 +71,11 @@ rapidjson::Value to_json(const summary_t& summary,
     json_summary.AddMember("amount", json_amount, allocator);
   }
 
+  json_summary.AddMember("service", summary.service, allocator);
+  json_summary.AddMember("duration", summary.duration, allocator);
+
   if (geometry) {
-    json_summary.AddMember("service", summary.service, allocator);
     json_summary.AddMember("distance", summary.distance, allocator);
-    json_summary.AddMember("duration", summary.duration, allocator);
   }
 
   json_summary.AddMember("computing_times",
@@ -100,10 +101,11 @@ rapidjson::Value to_json(const route_t& route,
     json_route.AddMember("amount", json_amount, allocator);
   }
 
+  json_route.AddMember("service", route.service, allocator);
+  json_route.AddMember("duration", route.duration, allocator);
+
   if (geometry) {
-    json_route.AddMember("service", route.service, allocator);
     json_route.AddMember("distance", route.distance, allocator);
-    json_route.AddMember("duration", route.duration, allocator);
   }
 
   rapidjson::Value json_steps(rapidjson::kArrayType);
@@ -167,9 +169,10 @@ rapidjson::Value to_json(const step& s,
     json_step.AddMember("service", s.service, allocator);
   }
 
+  json_step.AddMember("arrival", s.arrival, allocator);
+  json_step.AddMember("duration", s.duration, allocator);
+
   if (geometry) {
-    json_step.AddMember("arrival", s.arrival, allocator);
-    json_step.AddMember("duration", s.duration, allocator);
     json_step.AddMember("distance", s.distance, allocator);
   }
 

@@ -103,38 +103,61 @@ inline solution format_solution(const input& input,
     // Steps for current route.
     std::vector<step> steps;
 
+    duration_t ETA = 0;
     // Handle start.
     if (v.has_start()) {
       steps.emplace_back(TYPE::START, v.start.get());
-      cost += m[v.start.get().index()][input._jobs[route.front()].index()];
+      steps.back().duration = 0;
+      steps.back().arrival = 0;
+      auto travel =
+        m[v.start.get().index()][input._jobs[route.front()].index()];
+      ETA += travel;
+      cost += travel;
     }
 
     // Handle jobs.
-    index_t previous = route.front();
-    assert(input.vehicle_ok_with_job(i, previous));
-    steps.emplace_back(input._jobs[previous]);
-    service += steps.back().service;
-    amount += steps.back().amount;
-    unassigned_ranks.erase(previous);
+    assert(input.vehicle_ok_with_job(i, route.front()));
+    steps.emplace_back(input._jobs[route.front()]);
 
-    for (auto it = ++route.cbegin(); it != route.cend(); ++it) {
-      cost += m[input._jobs[previous].index()][input._jobs[*it].index()];
-      assert(input.vehicle_ok_with_job(i, *it));
-      steps.emplace_back(input._jobs[*it]);
-      service += steps.back().service;
-      amount += steps.back().amount;
-      unassigned_ranks.erase(*it);
-      previous = *it;
+    auto& first = steps.back();
+    service += first.service;
+    amount += first.amount;
+
+    first.duration = ETA;
+    first.arrival = ETA;
+    ETA += first.service;
+    unassigned_ranks.erase(route.front());
+
+    for (std::size_t r = 0; r < route.size() - 1; ++r) {
+      assert(input.vehicle_ok_with_job(i, route[r + 1]));
+      duration_t travel =
+        m[input._jobs[route[r]].index()][input._jobs[route[r + 1]].index()];
+      ETA += travel;
+      cost += travel;
+      steps.emplace_back(input._jobs[route[r + 1]]);
+      auto& current = steps.back();
+      service += current.service;
+      amount += current.amount;
+      current.duration = cost;
+      current.arrival = ETA;
+      ETA += current.service;
+      unassigned_ranks.erase(route[r + 1]);
     }
 
     // Handle end.
     if (v.has_end()) {
       steps.emplace_back(TYPE::END, v.end.get());
-      cost += m[input._jobs[route.back()].index()][v.end.get().index()];
+      duration_t travel =
+        m[input._jobs[route.back()].index()][v.end.get().index()];
+      ETA += travel;
+      cost += travel;
+      steps.back().duration = cost;
+      steps.back().arrival = ETA;
     }
 
     assert(amount <= v.capacity);
     routes.emplace_back(v.id, std::move(steps), cost, service, amount);
+    routes.back().duration = cost;
 
     total_cost += cost;
     total_service += service;

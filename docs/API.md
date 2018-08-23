@@ -105,11 +105,12 @@ provided.
 ## Matrix
 
 A `matrix` object is an array of arrays of unsigned integers
-describing the rows of a custom cost matrix as an alternative to the
-travel-time matrix computed by OSRM. Therefore, if a custom matrix is
-provided, the `location`, `start` and `end` properties become
-optional. Instead of the coordinates, row and column indications
-provided with the `*_index` keys are used during optimization.
+describing the rows of a custom travel-time matrix as an alternative
+to the travel-time matrix computed by OSRM. Therefore, if a custom
+matrix is provided, the `location`, `start` and `end` properties
+become optional. Instead of the coordinates, row and column
+indications provided with the `*_index` keys are used during
+optimization.
 
 # Output
 
@@ -133,8 +134,8 @@ The `summary` object has the following properties:
 | `cost` | total cost for all routes |
 | `unassigned` | number of jobs that could not be served |
 | `service` | total service time for all routes |
+| `duration` | total travel time for all routes |
 | [`amount`] | total amount for all routes |
-| [`duration`]* | total duration for all routes |
 | [`distance`]* | total distance for all routes |
 
 *: provided when using the `-g` flag with `OSRM`.
@@ -148,10 +149,10 @@ A `route` object has the following properties:
 | `vehicle` | id of the vehicle assigned to this route |
 | [`steps`](#steps) | array of `step` objects |
 | `cost` | cost for this route |
-| `service` | total route service time |
+| `service` | total service time for this route |
+| `duration` | total travel time for this route |
 | [`amount`] | total amount for jobs in this route |
 | [`geometry`]* | polyline encoded route geometry |
-| [`duration`]* | total route duration |
 | [`distance`]* | total route distance |
 
 *: provided when using the `-g` flag with `OSRM`.
@@ -163,11 +164,11 @@ A `step` object has the following properties:
 | Key         | Description |
 | ----------- | ----------- |
 | `type` | a string that is either `start`, `job` or `end` |
+| `arrival` | estimated time of arrival at this step |
+| `duration` | cumulated travel time upon arrival at this step |
 | [`location`] | coordinates array for this step (if provided in input) |
 | [`job`] | id of the job performed at this step, only provided if `type` value is `job` |
 | [`service`] | service time at this step, only provided if `type` value is `job` |
-| [`arrival`]* | estimated time of arrival at this step |
-| [`duration`]* | traveled duration upon arrival at this step |
 | [`distance`]* | traveled distance upon arrival at this step |
 
 *: provided when using the `-g` flag with `OSRM`.
