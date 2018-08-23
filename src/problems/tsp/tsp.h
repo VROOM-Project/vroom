@@ -13,6 +13,7 @@ All rights reserved (see LICENSE).
 #include "problems/vrp.h"
 #include "structures/abstract/matrix.h"
 #include "structures/typedefs.h"
+#include "structures/vroom/solution/solution.h"
 
 class tsp : public vrp {
 private:
@@ -35,7 +36,9 @@ public:
 
   cost_t symmetrized_cost(const std::list<index_t>& tour) const;
 
-  virtual raw_solution solve(unsigned, unsigned nb_threads) const override;
+  raw_solution raw_solve(unsigned, unsigned nb_threads) const;
+
+  virtual solution solve(unsigned, unsigned nb_threads) const override;
 };
 
 #endif

@@ -15,12 +15,12 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/local_search/local_search.h"
 #include "problems/tsp/tsp.h"
 #include "structures/vroom/input/input.h"
+#include "utils/helpers.h"
 
 cvrp::cvrp(const input& input) : vrp(input) {
 }
 
-raw_solution cvrp::solve(unsigned exploration_level,
-                         unsigned nb_threads) const {
+solution cvrp::solve(unsigned exploration_level, unsigned nb_threads) const {
   auto nb_tsp = _input._vehicles.size();
 
   if (nb_tsp == 1 and !_input.has_skills() and _input.amount_size() == 0) {
@@ -30,7 +30,7 @@ raw_solution cvrp::solve(unsigned exploration_level,
 
     tsp p(_input, job_ranks, 0);
 
-    return p.solve(0, nb_threads);
+    return format_solution(_input, p.raw_solve(0, nb_threads));
   }
 
   struct param {
@@ -116,7 +116,7 @@ raw_solution cvrp::solve(unsigned exploration_level,
         }
         tsp p(_input, c.clusters[v], v);
 
-        solutions[rank][v] = p.solve(0, 1)[0];
+        solutions[rank][v] = p.raw_solve(0, 1)[0];
       }
 
       // Local search phase.
@@ -157,5 +157,7 @@ raw_solution cvrp::solve(unsigned exploration_level,
                                      sol_indicators.cend(),
                                      indicators_compare);
 
-  return solutions[std::distance(sol_indicators.cbegin(), best_indic)];
+  return format_solution(_input,
+                         solutions[std::distance(sol_indicators.cbegin(),
+                                                 best_indic)]);
 }

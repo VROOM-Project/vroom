@@ -10,7 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "structures/typedefs.h"
+#include "structures/vroom/solution/solution.h"
 
 class input;
 
@@ -24,8 +24,8 @@ public:
 
   virtual ~vrp();
 
-  virtual raw_solution solve(unsigned exploration_level,
-                             unsigned nb_threads) const = 0;
+  virtual solution solve(unsigned exploration_level,
+                         unsigned nb_threads) const = 0;
 };
 
 #endif

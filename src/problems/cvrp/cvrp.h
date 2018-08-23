@@ -19,8 +19,8 @@ private:
 public:
   cvrp(const input& input);
 
-  virtual raw_solution solve(unsigned exploration_level,
-                             unsigned nb_threads) const override;
+  virtual solution solve(unsigned exploration_level,
+                         unsigned nb_threads) const override;
 };
 
 #endif

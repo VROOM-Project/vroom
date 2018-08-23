@@ -950,7 +950,7 @@ void cvrp_local_search::run_tsp(index_t route_rank) {
     auto before_cost = _sol_state.route_costs[route_rank];
 
     tsp p(_input, _sol[route_rank], route_rank);
-    auto new_route = p.solve(0, 1)[0];
+    auto new_route = p.raw_solve(0, 1)[0];
 
     auto after_cost = route_cost_for_vehicle(route_rank, new_route);
 
