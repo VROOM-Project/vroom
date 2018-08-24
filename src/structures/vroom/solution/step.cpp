@@ -11,7 +11,7 @@ All rights reserved (see LICENSE).
 
 // Dummy initialization value for unused job id.
 step::step(TYPE type, location_t location)
-  : type(type), location(location), job(0), service(0) {
+  : type(type), location(location), job(0), service(0), waiting_time(0) {
   assert(type == TYPE::START or type == TYPE::END);
 }
 
@@ -20,5 +20,6 @@ step::step(const job_t& job)
     location(job.location),
     job(job.id),
     service(job.service),
-    amount(job.amount) {
+    amount(job.amount),
+    waiting_time(0) {
 }

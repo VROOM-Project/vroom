@@ -20,6 +20,7 @@ struct summary_t {
   const amount_t amount;
 
   duration_t duration;
+  duration_t waiting_time;
   distance_t distance;
   computing_times_t computing_times;
 

@@ -135,6 +135,7 @@ The `summary` object has the following properties:
 | `unassigned` | number of jobs that could not be served |
 | `service` | total service time for all routes |
 | `duration` | total travel time for all routes |
+| `waiting_time` | total waiting time for all routes |
 | [`amount`] | total amount for all routes |
 | [`distance`]* | total distance for all routes |
 
@@ -151,6 +152,7 @@ A `route` object has the following properties:
 | `cost` | cost for this route |
 | `service` | total service time for this route |
 | `duration` | total travel time for this route |
+| `waiting_time` | total waiting time for this route |
 | [`amount`] | total amount for jobs in this route |
 | [`geometry`]* | polyline encoded route geometry |
 | [`distance`]* | total route distance |
@@ -169,6 +171,7 @@ A `step` object has the following properties:
 | [`location`] | coordinates array for this step (if provided in input) |
 | [`job`] | id of the job performed at this step, only provided if `type` value is `job` |
 | [`service`] | service time at this step, only provided if `type` value is `job` |
+| [`waiting_time`] | waiting time upon arrival at this step, only provided if `type` value is `job` |
 | [`distance`]* | traveled distance upon arrival at this step |
 
 *: provided when using the `-g` flag with `OSRM`.

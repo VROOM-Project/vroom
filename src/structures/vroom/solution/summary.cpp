@@ -21,5 +21,6 @@ summary_t::summary_t(cost_t cost,
     service(service),
     amount(std::move(amount)),
     duration(0),
+    waiting_time(0),
     distance(0) {
 }

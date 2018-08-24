@@ -20,5 +20,6 @@ route_t::route_t(ID_t vehicle,
     service(service),
     amount(amount),
     duration(0),
+    waiting_time(0),
     distance(0) {
 }

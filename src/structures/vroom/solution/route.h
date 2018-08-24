@@ -23,6 +23,7 @@ struct route_t {
 
   std::string geometry;
   duration_t duration;
+  duration_t waiting_time;
   distance_t distance;
 
   route_t(ID_t vehicle,

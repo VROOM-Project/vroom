@@ -196,6 +196,8 @@ inline solution format_solution(const input& input,
 
   const auto& m = input.get_matrix();
 
+  duration_t total_waiting_time = 0;
+
   for (std::size_t i = 0; i < sol.routes.size(); ++i) {
     // TW ETA logic: use earliest possible arrival for last job then
     // "push" all previous steps forward to pack the route and
@@ -203,6 +205,8 @@ inline solution format_solution(const input& input,
     auto& route = sol.routes[i];
     const auto& tw_r = tw_routes[i];
     const auto& v = tw_r.v;
+
+    duration_t waiting_time = 0;
 
     duration_t ETA = tw_r.earliest.back();
     // s and r respectively hold current index in route.steps and
@@ -236,6 +240,11 @@ inline solution format_solution(const input& input,
       assert(tw_r.earliest[r - 1] <= candidate_ETA);
 
       ETA = std::min(candidate_ETA, tw_r.latest[r - 1]);
+      if (ETA < candidate_ETA) {
+        duration_t wt = candidate_ETA - ETA;
+        route.steps[s].waiting_time = wt;
+        waiting_time += wt;
+      }
       assert(previous_job.is_valid_arrival(ETA));
       route.steps[s - 1].arrival = ETA;
     }
@@ -252,7 +261,15 @@ inline solution format_solution(const input& input,
     } else {
       assert(s == 0);
     }
+
+    route.waiting_time = waiting_time;
+    total_waiting_time += waiting_time;
+
+    assert(route.steps.back().arrival - route.steps.front().arrival ==
+           route.duration + route.service + route.waiting_time);
   }
+
+  sol.summary.waiting_time = total_waiting_time;
 
   return sol;
 }
