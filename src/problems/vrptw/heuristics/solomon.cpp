@@ -12,7 +12,7 @@ All rights reserved (see LICENSE).
 #include "problems/vrptw/heuristics/solomon.h"
 #include "utils/helpers.h"
 
-tw_solution solomon(const input& input, float lambda) {
+tw_solution solomon(const input& input, INIT_T init, float lambda) {
   tw_solution routes;
   for (index_t i = 0; i < input._vehicles.size(); ++i) {
     routes.emplace_back(input, i);
@@ -69,30 +69,54 @@ tw_solution solomon(const input& input, float lambda) {
 
     amount_t route_amount(input.amount_size());
 
-    // Initialize current route with the furthest valid job that is
-    // still closest for current vehicle than to any other remaining
-    // vehicle.
-    cost_t higher_cost = 0;
-    index_t best_job_rank = 0;
-    for (const auto& job_rank : unassigned) {
-      if (!input.vehicle_ok_with_job(v, job_rank) or
-          vehicle.capacity < input._jobs[job_rank].amount) {
-        continue;
-      }
+    if (init != INIT_T::NONE) {
+      // Initialize current route with the "best" valid job that is
+      //  closest for current vehicle than to any other remaining
+      //  vehicle.
+      amount_t higher_amount(input.amount_size());
+      cost_t furthest_cost = 0;
+      duration_t earliest_deadline = std::numeric_limits<duration_t>::max();
+      index_t best_job_rank = 0;
+      for (const auto& job_rank : unassigned) {
+        if (!input.vehicle_ok_with_job(v, job_rank) or
+            vehicle.capacity < input._jobs[job_rank].amount) {
+          continue;
+        }
 
-      auto current_cost =
-        addition_cost(input, m, job_rank, vehicle, tw_r.route, 0);
-      if (higher_cost < current_cost and
-          current_cost <= regrets[job_rank][v] and
-          tw_r.is_valid_addition_for_tw(job_rank, 0)) {
-        higher_cost = current_cost;
-        best_job_rank = job_rank;
+        auto current_cost =
+          addition_cost(input, m, job_rank, vehicle, tw_r.route, 0);
+        if (regrets[job_rank][v] < current_cost) {
+          continue;
+        }
+
+        if (init == INIT_T::HIGHER_AMOUNT and
+            higher_amount < input._jobs[job_rank].amount and
+            tw_r.is_valid_addition_for_tw(job_rank, 0)) {
+          higher_amount = input._jobs[job_rank].amount;
+          best_job_rank = job_rank;
+        }
+        if (init == INIT_T::EARLIEST_DEADLINE) {
+          duration_t current_deadline = input._jobs[job_rank].tws.back().end;
+          if (current_deadline < earliest_deadline and
+              tw_r.is_valid_addition_for_tw(job_rank, 0)) {
+            earliest_deadline = current_deadline;
+            best_job_rank = job_rank;
+          }
+        }
+        if (init == INIT_T::FURTHEST and furthest_cost < current_cost and
+            tw_r.is_valid_addition_for_tw(job_rank, 0)) {
+          furthest_cost = current_cost;
+          best_job_rank = job_rank;
+        }
       }
-    }
-    if (higher_cost > 0) {
-      tw_r.add(best_job_rank, 0);
-      route_amount += input._jobs[best_job_rank].amount;
-      unassigned.erase(best_job_rank);
+      if ((init == INIT_T::HIGHER_AMOUNT and route_amount < higher_amount) or
+          (init == INIT_T::EARLIEST_DEADLINE and
+           earliest_deadline < std::numeric_limits<duration_t>::max()) or
+          (init == INIT_T::FURTHEST and furthest_cost > 0)) {
+        tw_r.add(best_job_rank, 0);
+        route_amount += input._jobs[best_job_rank].amount;
+        unassigned.erase(best_job_rank);
+      }
     }
 
     bool keep_going = true;
