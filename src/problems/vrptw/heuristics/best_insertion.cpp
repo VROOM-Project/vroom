@@ -43,7 +43,6 @@ tw_solution best_insertion(const input& input) {
         }
 
         for (index_t r = 0; r <= tw_r.route.size(); ++r) {
-
           gain_t current_cost = addition_cost(input,
                                               input.get_matrix(),
                                               job_rank,
