@@ -9,7 +9,6 @@ All rights reserved (see LICENSE).
 
 #include <thread>
 
-#include "problems/vrptw/heuristics/best_insertion.h"
 #include "problems/vrptw/heuristics/solomon.h"
 #include "problems/vrptw/vrptw.h"
 #include "structures/vroom/input/input.h"
@@ -66,15 +65,30 @@ solution vrptw::solve(unsigned exploration_level, unsigned nb_threads) const {
   }
 
   std::vector<solution> solutions;
-  cost_t best_cost = std::numeric_limits<cost_t>::max();
-  std::size_t best_sol_rank;
-  for (const auto& tw_sol : tw_solutions) {
-    solutions.push_back(format_solution(_input, tw_sol));
-    if (solutions.back().summary.cost < best_cost) {
-      best_cost = solutions.back().summary.cost;
-      best_sol_rank = solutions.size() - 1;
-    }
-  }
+  std::transform(tw_solutions.begin(),
+                 tw_solutions.end(),
+                 std::back_inserter(solutions),
+                 [&](const auto& tw_sol) {
+                   return format_solution(_input, tw_sol);
+                 });
 
-  return solutions[best_sol_rank];
+  auto sol_compare = [](const auto& lhs, const auto& rhs) {
+    if (lhs.summary.unassigned < rhs.summary.unassigned) {
+      return true;
+    }
+    if (lhs.summary.unassigned == rhs.summary.unassigned) {
+      if (lhs.summary.cost < rhs.summary.cost) {
+        return true;
+      }
+      if (lhs.summary.cost == rhs.summary.cost and
+          lhs.routes.size() < rhs.routes.size()) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  auto sol = std::min_element(solutions.begin(), solutions.end(), sol_compare);
+
+  return *sol;
 }
