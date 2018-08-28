@@ -30,8 +30,8 @@ struct job_t {
         duration_t service = 0,
         const amount_t& amount = amount_t(0),
         const skills_t& skills = skills_t(),
-        // TODO handle default.
-        const std::vector<time_window_t>& tws = std::vector<time_window_t>());
+        const std::vector<time_window_t>& tws =
+          std::vector<time_window_t>(1, time_window_t()));
 
   index_t index() const;
 

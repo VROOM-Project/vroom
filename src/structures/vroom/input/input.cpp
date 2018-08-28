@@ -21,6 +21,7 @@ All rights reserved (see LICENSE).
 input::input(std::unique_ptr<routing_io<cost_t>> routing_wrapper, bool geometry)
   : _start_loading(std::chrono::high_resolution_clock::now()),
     _routing_wrapper(std::move(routing_wrapper)),
+    _has_TW(false),
     _geometry(geometry),
     _all_locations_have_coords(true) {
 }
@@ -43,6 +44,9 @@ void input::add_job(const job_t& job) {
       throw custom_exception("Missing skills.");
     }
   }
+
+  // Check for time-windows.
+  _has_TW |= (!(job.tws.size() == 1) or !job.tws[0].is_default());
 
   if (!current_job.location.user_index()) {
     // Index of this job in the matrix was not specified upon job
@@ -71,6 +75,9 @@ void input::add_vehicle(const vehicle_t& vehicle) {
       throw custom_exception("Missing skills.");
     }
   }
+
+  // Check for time-windows.
+  _has_TW |= !vehicle.tw.is_default();
 
   bool has_start = current_v.has_start();
   bool has_end = current_v.has_end();
@@ -229,8 +236,11 @@ void input::set_vehicle_to_job_compatibility() {
 }
 
 std::unique_ptr<vrp> input::get_problem() const {
-  // TODO handle different cases.
-  return std::make_unique<vrptw>(*this);
+  if (_has_TW) {
+    return std::make_unique<vrptw>(*this);
+  } else {
+    return std::make_unique<cvrp>(*this);
+  }
 }
 
 solution input::solve(unsigned exploration_level, unsigned nb_thread) {

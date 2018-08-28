@@ -96,6 +96,36 @@ inline time_window_t get_time_window(const rapidjson::Value& tw) {
   return time_window_t(tw[0].GetUint(), tw[1].GetUint());
 }
 
+inline time_window_t get_vehicle_time_window(const rapidjson::Value& v) {
+  time_window_t v_tw = time_window_t();
+  if (v.HasMember("time_window")) {
+    v_tw = get_time_window(v["time_window"]);
+  }
+  return v_tw;
+}
+
+inline std::vector<time_window_t>
+get_job_time_windows(const rapidjson::Value& j) {
+  std::vector<time_window_t> tws;
+  if (j.HasMember("time_windows")) {
+    if (!j["time_windows"].IsArray()) {
+      throw custom_exception("invalid time_windows value for job " +
+                             std::to_string(j["id"].GetUint64()) + ".");
+    }
+
+    std::transform(j["time_windows"].Begin(),
+                   j["time_windows"].End(),
+                   std::back_inserter(tws),
+                   [](auto& tw) { return get_time_window(tw); });
+
+    std::sort(tws.begin(), tws.end());
+  } else {
+    tws = std::vector<time_window_t>(1, time_window_t());
+  }
+
+  return tws;
+}
+
 input parse(const cl_args_t& cl_args) {
   // Set relevant wrapper to retrieve the matrix and geometry.
   std::unique_ptr<routing_io<cost_t>> routing_wrapper;
@@ -234,15 +264,12 @@ input parse(const cl_args_t& cl_args) {
         }
       }
 
-      // TODO: make this optional
-      assert(json_vehicle.HasMember("time_window"));
-
       vehicle_t current_v(v_id,
                           start,
                           end,
                           get_amount(json_vehicle, "capacity"),
                           get_skills(json_vehicle),
-                          get_time_window(json_vehicle["time_window"]));
+                          get_vehicle_time_window(json_vehicle));
 
       input_data.add_vehicle(current_v);
     }
@@ -276,22 +303,12 @@ input parse(const cl_args_t& cl_args) {
           location_t(job_loc_index, parse_coordinates(json_job, "location"));
       }
 
-      // TODO: make this optional
-      assert(json_job.HasMember("time_windows") and
-             json_job["time_windows"].IsArray());
-      std::vector<time_window_t> tws;
-      std::transform(json_job["time_windows"].Begin(),
-                     json_job["time_windows"].End(),
-                     std::back_inserter(tws),
-                     [](auto& tw) { return get_time_window(tw); });
-      std::sort(tws.begin(), tws.end());
-
       job_t current_job(j_id,
                         job_loc,
                         get_service(json_job),
                         get_amount(json_job, "amount"),
                         get_skills(json_job),
-                        tws);
+                        get_job_time_windows(json_job));
 
       input_data.add_job(current_job);
     }
@@ -325,15 +342,12 @@ input parse(const cl_args_t& cl_args) {
           boost::optional<location_t>(parse_coordinates(json_vehicle, "end"));
       }
 
-      // TODO: make this optional
-      assert(json_vehicle.HasMember("time_window"));
-
       vehicle_t current_v(json_vehicle["id"].GetUint(),
                           start,
                           end,
                           get_amount(json_vehicle, "capacity"),
                           get_skills(json_vehicle),
-                          get_time_window(json_vehicle["time_window"]));
+                          get_vehicle_time_window(json_vehicle));
 
       input_data.add_vehicle(current_v);
     }
@@ -354,22 +368,12 @@ input parse(const cl_args_t& cl_args) {
                                std::to_string(j_id) + ".");
       }
 
-      // TODO: make this optional
-      assert(json_job.HasMember("time_windows") and
-             json_job["time_windows"].IsArray());
-      std::vector<time_window_t> tws;
-      std::transform(json_job["time_windows"].Begin(),
-                     json_job["time_windows"].End(),
-                     std::back_inserter(tws),
-                     [](auto& tw) { return get_time_window(tw); });
-      std::sort(tws.begin(), tws.end());
-
       job_t current_job(j_id,
                         parse_coordinates(json_job, "location"),
                         get_service(json_job),
                         get_amount(json_job, "amount"),
                         get_skills(json_job),
-                        tws);
+                        get_job_time_windows(json_job));
 
       input_data.add_job(current_job);
     }

@@ -12,6 +12,13 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/time_window.h"
 #include "utils/exceptions.h"
 
+constexpr duration_t time_window_t::default_length =
+  std::numeric_limits<duration_t>::max();
+
+time_window_t::time_window_t()
+  : start(0), end(std::numeric_limits<duration_t>::max()) {
+}
+
 time_window_t::time_window_t(duration_t start, duration_t end)
   : start(start), end(end) {
   if (start > end) {
@@ -22,6 +29,10 @@ time_window_t::time_window_t(duration_t start, duration_t end)
 
 bool time_window_t::contains(duration_t time) const {
   return (start <= time) and (time <= end);
+}
+
+bool time_window_t::is_default() const {
+  return end - start == default_length;
 }
 
 bool operator<(const time_window_t& lhs, const time_window_t& rhs) {

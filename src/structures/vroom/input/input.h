@@ -38,6 +38,7 @@ private:
   std::chrono::high_resolution_clock::time_point _end_routing;
   std::unique_ptr<routing_io<cost_t>> _routing_wrapper;
   bool _has_skills;
+  bool _has_TW;
   const bool _geometry;
   matrix<cost_t> _matrix;
   std::vector<location_t> _locations;

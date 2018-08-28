@@ -28,8 +28,7 @@ struct vehicle_t {
             const boost::optional<location_t>& end,
             const amount_t& capacity = amount_t(0),
             const skills_t& skills = skills_t(),
-            // TODO handle default.
-            const time_window_t& tw = time_window_t(0, 0));
+            const time_window_t& tw = time_window_t());
 
   bool has_start() const;
 

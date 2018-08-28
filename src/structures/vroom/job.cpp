@@ -22,6 +22,11 @@ job_t::job_t(ID_t id,
     amount(amount),
     skills(skills),
     tws(tws) {
+  if (tws.size() == 0) {
+    throw custom_exception("Empty time-windows for job " + std::to_string(id) +
+                           ".");
+  }
+
   if (tws.size() > 1) {
     for (std::size_t i = 0; i < tws.size() - 1; ++i) {
       if (tws[i + 1].start <= tws[i].end) {
