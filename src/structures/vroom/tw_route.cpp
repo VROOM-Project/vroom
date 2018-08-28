@@ -42,10 +42,10 @@ duration_t tw_route::new_earliest(index_t job_rank, index_t rank) {
     const auto& previous_job = _input._jobs[route[rank - 1]];
     previous_earliest = earliest[rank - 1];
     previous_service = previous_job.service;
-    previous_travel = m[previous_job.location.index()][j.location.index()];
+    previous_travel = m[previous_job.index()][j.index()];
   } else {
     if (has_start) {
-      previous_travel = m[v.start.get().index()][j.location.index()];
+      previous_travel = m[v.start.get().index()][j.index()];
     }
   }
 
@@ -59,12 +59,11 @@ duration_t tw_route::new_latest(index_t job_rank, index_t rank) {
   duration_t next_travel = 0;
   if (rank == route.size()) {
     if (has_end) {
-      next_travel = m[j.location.index()][v.end.get().index()];
+      next_travel = m[j.index()][v.end.get().index()];
     }
   } else {
     next_latest = latest[rank];
-    next_travel =
-      m[j.location.index()][_input._jobs[route[rank]].location.index()];
+    next_travel = m[j.index()][_input._jobs[route[rank]].index()];
   }
 
   assert(j.service + next_travel <= next_latest);
@@ -86,12 +85,11 @@ bool tw_route::is_valid_addition_for_tw(const index_t job_rank,
   duration_t next_travel = 0;
   if (rank == route.size()) {
     if (has_end) {
-      next_travel = m[j.location.index()][v.end.get().index()];
+      next_travel = m[j.index()][v.end.get().index()];
     }
   } else {
     next_latest = latest[rank];
-    next_travel =
-      m[j.location.index()][_input._jobs[route[rank]].location.index()];
+    next_travel = m[j.index()][_input._jobs[route[rank]].index()];
   }
 
   bool valid = job_earliest + j.service + next_travel <= next_latest;
@@ -155,9 +153,8 @@ void tw_route::add(const index_t job_rank, const index_t rank) {
   for (index_t i = rank + 1; i < route.size(); ++i) {
     const auto& previous_j = _input._jobs[route[i - 1]];
     const auto& next_j = _input._jobs[route[i]];
-    duration_t next_earliest =
-      previous_earliest + previous_j.service +
-      m[previous_j.location.index()][next_j.location.index()];
+    duration_t next_earliest = previous_earliest + previous_j.service +
+                               m[previous_j.index()][next_j.index()];
 
     if (next_earliest <= earliest[i]) {
       break;
@@ -175,8 +172,7 @@ void tw_route::add(const index_t job_rank, const index_t rank) {
     const auto& previous_j = _input._jobs[route[next_i - 1]];
     const auto& next_j = _input._jobs[route[next_i]];
 
-    duration_t gap = previous_j.service +
-                     m[previous_j.location.index()][next_j.location.index()];
+    duration_t gap = previous_j.service + m[previous_j.index()][next_j.index()];
     assert(gap <= next_latest);
     duration_t previous_latest = next_latest - gap;
 
