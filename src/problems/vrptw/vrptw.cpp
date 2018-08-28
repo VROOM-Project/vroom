@@ -25,16 +25,23 @@ solution vrptw::solve(unsigned exploration_level, unsigned nb_threads) const {
     INIT_T init;
     float regret_coeff;
   };
-  std::vector<param> parameters;
+  std::vector<param> parameters({{INIT_T::NONE, 1},
+                                 {INIT_T::NONE, 1.3},
+                                 {INIT_T::FURTHEST, 0.4},
+                                 {INIT_T::FURTHEST, 0.6}});
 
-  std::vector<INIT_T> inits({INIT_T::NONE,
-                             INIT_T::HIGHER_AMOUNT,
-                             INIT_T::EARLIEST_DEADLINE,
-                             INIT_T::FURTHEST});
-  for (auto init : inits) {
-    for (float lambda = 0; lambda <= 3.05; lambda += 0.1) {
-      parameters.push_back({init, lambda});
-    }
+  if (exploration_level > 0) {
+    parameters.push_back({INIT_T::NONE, 1.2});
+    parameters.push_back({INIT_T::EARLIEST_DEADLINE, 0.2});
+    parameters.push_back({INIT_T::EARLIEST_DEADLINE, 2.1});
+    parameters.push_back({INIT_T::FURTHEST, 0.5});
+  }
+
+  if (exploration_level > 1) {
+    parameters.push_back({INIT_T::HIGHER_AMOUNT, 2.1});
+    parameters.push_back({INIT_T::EARLIEST_DEADLINE, 0.6});
+    parameters.push_back({INIT_T::FURTHEST, 0.7});
+    parameters.push_back({INIT_T::FURTHEST, 1.1});
   }
 
   auto P = parameters.size();
