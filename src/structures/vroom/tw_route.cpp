@@ -25,11 +25,11 @@ inline bool is_margin_ok(const std::pair<duration_t, duration_t>& margin,
     std::find_if(tws.begin(), tws.end(), [&](const auto& tw) {
       return margin.first <= tw.end;
     });
-  if (overlap_candidate == tws.end()) {
-    return false;
-  } else {
-    return overlap_candidate->start <= margin.second;
-  }
+
+  // The situation where there is no TW candidate should have been
+  // previously filtered in is_valid_addition_for_tw.
+  assert(overlap_candidate != tws.end());
+  return overlap_candidate->start <= margin.second;
 }
 
 duration_t tw_route::new_earliest(index_t job_rank, index_t rank) {
@@ -166,7 +166,6 @@ void tw_route::add(const index_t job_rank, const index_t rank) {
   }
 
   // Update latest date for new (and all precedent) jobs.
-
   duration_t next_latest = job_latest;
   for (index_t next_i = rank; next_i > 0; --next_i) {
     const auto& previous_j = _input._jobs[route[next_i - 1]];
