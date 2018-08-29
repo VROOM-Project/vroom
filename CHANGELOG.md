@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Data-structure and heuristic to solve VRPTW (#140)
+
 ### Changed
 
 - Update `clang-format` to 6.0 for automatic code formatting (#143)
