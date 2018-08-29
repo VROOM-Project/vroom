@@ -35,7 +35,7 @@ struct job_t {
 
   index_t index() const;
 
-  bool is_valid_arrival(duration_t time) const;
+  bool is_valid_start(duration_t time) const;
 };
 
 #endif

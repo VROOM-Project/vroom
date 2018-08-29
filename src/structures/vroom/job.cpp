@@ -41,7 +41,7 @@ index_t job_t::index() const {
   return location.index();
 }
 
-bool job_t::is_valid_arrival(duration_t time) const {
+bool job_t::is_valid_start(duration_t time) const {
   bool valid = false;
 
   for (const auto& tw : tws) {

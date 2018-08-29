@@ -199,71 +199,87 @@ inline solution format_solution(const input& input,
   duration_t total_waiting_time = 0;
 
   for (std::size_t i = 0; i < sol.routes.size(); ++i) {
-    // TW ETA logic: use earliest possible arrival for last job then
-    // "push" all previous steps forward to pack the route and
-    // minimize waiting times.
     auto& route = sol.routes[i];
     const auto& tw_r = tw_routes[i];
     const auto& v = tw_r.v;
 
-    duration_t waiting_time = 0;
-
-    duration_t ETA = tw_r.earliest.back();
-    // s and r respectively hold current index in route.steps and
-    // tw_r.route.
-    std::size_t s = route.steps.size() - 1;
-    std::size_t r = tw_r.route.size() - 1;
-
-    if (v.has_end()) {
-      assert(route.steps[s].type == TYPE::END);
-
-      const auto& last_job = input._jobs[tw_r.route[r]];
-      duration_t end_ETA =
-        ETA + last_job.service + m[last_job.index()][v.end.get().index()];
-      assert(v.tw.contains(end_ETA));
-      route.steps[s].arrival = end_ETA;
-      --s;
-    }
-    route.steps[s].arrival = ETA;
-
-    assert(r <= s);
-    for (; r > 0; --r, --s) {
-      assert(route.steps[s - 1].type == TYPE::JOB);
-
+    // ETA logic: aim at earliest possible arrival for last job then
+    // determine latest possible start time in order to minimize
+    // waiting times.
+    duration_t job_start = tw_r.earliest.back();
+    duration_t backward_wt = 0;
+    for (std::size_t r = tw_r.route.size() - 1; r > 0; --r) {
       const auto& current_job = input._jobs[tw_r.route[r]];
       const auto& previous_job = input._jobs[tw_r.route[r - 1]];
 
       duration_t diff =
         previous_job.service + m[previous_job.index()][current_job.index()];
-      assert(diff <= ETA);
-      duration_t candidate_ETA = ETA - diff;
-      assert(tw_r.earliest[r - 1] <= candidate_ETA);
 
-      ETA = std::min(candidate_ETA, tw_r.latest[r - 1]);
-      if (ETA < candidate_ETA) {
-        duration_t wt = candidate_ETA - ETA;
-        route.steps[s].waiting_time = wt;
-        waiting_time += wt;
+      assert(diff <= job_start);
+      duration_t candidate_start = job_start - diff;
+      assert(tw_r.earliest[r - 1] <= candidate_start);
+
+      job_start = std::min(candidate_start, tw_r.latest[r - 1]);
+      if (job_start < candidate_start) {
+        backward_wt += (candidate_start - job_start);
       }
-      assert(previous_job.is_valid_arrival(ETA));
-      route.steps[s - 1].arrival = ETA;
+      assert(previous_job.is_valid_start(job_start));
     }
+
+    // Now pack everything ASAP based on first job start date. s holds
+    // current index in route.steps.
+    std::size_t s = 0;
 
     if (v.has_start()) {
-      assert(s == 1);
       assert(route.steps[0].type == TYPE::START);
-      const auto& current_job = input._jobs[tw_r.route[0]];
-      duration_t diff = m[v.start.get().index()][current_job.index()];
-      assert(diff <= ETA);
-      ETA -= diff;
-      assert(v.tw.contains(ETA));
-      route.steps[0].arrival = ETA;
-    } else {
-      assert(s == 0);
+      const auto& first_job = input._jobs[tw_r.route[0]];
+      duration_t diff = m[v.start.get().index()][first_job.index()];
+      assert(diff <= job_start);
+      auto v_start = job_start - diff;
+      assert(v.tw.contains(v_start));
+      route.steps[0].arrival = v_start;
+      ++s;
     }
 
-    route.waiting_time = waiting_time;
-    total_waiting_time += waiting_time;
+    assert(route.steps[s].type == TYPE::JOB);
+    route.steps[s].arrival = job_start;
+
+    duration_t forward_wt = 0;
+    for (std::size_t r = 0; r < tw_r.route.size() - 1; ++r, ++s) {
+      assert(route.steps[s].type == TYPE::JOB);
+      const auto& previous_job = input._jobs[tw_r.route[r]];
+      const auto& next_job = input._jobs[tw_r.route[r + 1]];
+
+      duration_t diff =
+        previous_job.service + m[previous_job.index()][next_job.index()];
+      duration_t start_candidate = job_start + diff;
+      assert(start_candidate <= tw_r.latest[r + 1]);
+
+      route.steps[s + 1].arrival = start_candidate;
+      job_start = std::max(start_candidate, tw_r.earliest[r + 1]);
+
+      if (start_candidate < tw_r.earliest[r + 1]) {
+        duration_t wt = tw_r.earliest[r + 1] - start_candidate;
+        route.steps[s + 1].waiting_time = wt;
+        forward_wt += wt;
+      }
+      assert(next_job.is_valid_start(route.steps[s + 1].arrival +
+                                     route.steps[s + 1].waiting_time));
+    }
+
+    if (v.has_end()) {
+      ++s;
+      assert(route.steps[s].type == TYPE::END);
+      const auto& last_job = input._jobs[tw_r.route.back()];
+      duration_t v_end =
+        job_start + last_job.service + m[last_job.index()][v.end.get().index()];
+      assert(v.tw.contains(v_end));
+      route.steps[s].arrival = v_end;
+    }
+
+    assert(forward_wt == backward_wt);
+    route.waiting_time = forward_wt;
+    total_waiting_time += forward_wt;
 
     assert(route.steps.back().arrival - route.steps.front().arrival ==
            route.duration + route.service + route.waiting_time);
