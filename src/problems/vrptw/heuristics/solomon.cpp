@@ -7,7 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <unordered_set>
+#include <set>
 
 #include "problems/vrptw/heuristics/solomon.h"
 #include "utils/helpers.h"
@@ -18,7 +18,7 @@ tw_solution solomon(const input& input, INIT_T init, float lambda) {
     routes.emplace_back(input, i);
   }
 
-  std::unordered_set<index_t> unassigned;
+  std::set<index_t> unassigned;
   for (index_t j = 0; j < input._jobs.size(); ++j) {
     unassigned.insert(j);
   }
