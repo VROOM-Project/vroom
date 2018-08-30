@@ -19,17 +19,19 @@ struct route_t {
   std::vector<step> steps;
   const cost_t cost;
   const duration_t service;
+  const duration_t duration;
+  const duration_t waiting_time;
   const amount_t amount;
 
   std::string geometry;
-  duration_t duration;
-  duration_t waiting_time;
   distance_t distance;
 
   route_t(ID_t vehicle,
           std::vector<step>&& steps,
           cost_t cost,
           duration_t service,
+          duration_t duration,
+          duration_t waiting_time,
           const amount_t& amount);
 };
 

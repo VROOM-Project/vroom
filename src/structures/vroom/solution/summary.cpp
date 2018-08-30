@@ -9,17 +9,14 @@ All rights reserved (see LICENSE).
 
 #include "structures/vroom/solution/summary.h"
 
-summary_t::summary_t() : cost(0), unassigned(0), service(0), amount() {
+summary_t::summary_t() : cost(0), unassigned(0), amount(), service(0) {
 }
 
-summary_t::summary_t(cost_t cost,
-                     unsigned unassigned,
-                     duration_t service,
-                     amount_t&& amount)
-  : cost(cost),
+summary_t::summary_t(unsigned unassigned, unsigned amount_size)
+  : cost(0),
     unassigned(unassigned),
-    service(service),
-    amount(std::move(amount)),
+    amount(amount_size),
+    service(0),
     duration(0),
     waiting_time(0),
     distance(0) {

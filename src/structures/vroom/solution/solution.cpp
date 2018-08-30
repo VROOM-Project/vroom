@@ -14,13 +14,19 @@ solution::solution(unsigned code, std::string error)
 }
 
 solution::solution(unsigned code,
-                   cost_t cost,
+                   unsigned amount_size,
                    std::vector<route_t>&& routes,
-                   std::vector<job_t>&& unassigned,
-                   duration_t service,
-                   amount_t&& amount)
+                   std::vector<job_t>&& unassigned)
   : code(code),
-    summary(cost, unassigned.size(), service, std::move(amount)),
+    summary(unassigned.size(), amount_size),
     routes(std::move(routes)),
     unassigned(std::move(unassigned)) {
+
+  for (const auto& route : this->routes) {
+    summary.cost += route.cost;
+    summary.amount += route.amount;
+    summary.service += route.service;
+    summary.duration += route.duration;
+    summary.waiting_time += route.waiting_time;
+  }
 }
