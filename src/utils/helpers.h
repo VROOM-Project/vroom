@@ -82,9 +82,6 @@ inline solution format_solution(const input& input,
   const auto& m = input.get_matrix();
 
   std::vector<route_t> routes;
-  cost_t total_cost = 0;
-  duration_t total_service = 0;
-  amount_t total_amount(input.amount_size());
 
   // All job ranks start with unassigned status.
   std::unordered_set<index_t> unassigned_ranks;
@@ -137,12 +134,14 @@ inline solution format_solution(const input& input,
         m[input._jobs[route[r]].index()][input._jobs[route[r + 1]].index()];
       ETA += travel;
       cost += travel;
+
       steps.emplace_back(input._jobs[route[r + 1]]);
       auto& current = steps.back();
       service += current.service;
       amount += current.amount;
       current.duration = cost;
       current.arrival = ETA;
+
       ETA += current.service;
       unassigned_ranks.erase(route[r + 1]);
     }
@@ -159,12 +158,7 @@ inline solution format_solution(const input& input,
     }
 
     assert(amount <= v.capacity);
-    routes.emplace_back(v.id, std::move(steps), cost, service, amount);
-    routes.back().duration = cost;
-
-    total_cost += cost;
-    total_service += service;
-    total_amount += amount;
+    routes.emplace_back(v.id, std::move(steps), cost, service, cost, 0, amount);
   }
 
   // Handle unassigned jobs.
@@ -175,33 +169,28 @@ inline solution format_solution(const input& input,
                  [&](auto j) { return input._jobs[j]; });
 
   return solution(0,
-                  total_cost,
+                  input.amount_size(),
                   std::move(routes),
-                  std::move(unassigned_jobs),
-                  total_service,
-                  std::move(total_amount));
+                  std::move(unassigned_jobs));
 }
 
 inline solution format_solution(const input& input,
                                 const tw_solution& tw_routes) {
-  raw_solution raw_sol;
-  raw_sol.reserve(tw_routes.size());
-
-  std::transform(tw_routes.begin(),
-                 tw_routes.end(),
-                 std::back_inserter(raw_sol),
-                 [](const auto& tw_r) { return tw_r.route; });
-
-  auto sol = format_solution(input, raw_sol);
-
   const auto& m = input.get_matrix();
 
-  duration_t total_waiting_time = 0;
+  std::vector<route_t> routes;
 
-  for (std::size_t i = 0; i < sol.routes.size(); ++i) {
-    auto& route = sol.routes[i];
-    const auto& tw_r = tw_routes[i];
+  // All job ranks start with unassigned status.
+  std::unordered_set<index_t> unassigned_ranks;
+  for (unsigned i = 0; i < input._jobs.size(); ++i) {
+    unassigned_ranks.insert(i);
+  }
+
+  for (const auto& tw_r : tw_routes) {
     const auto& v = tw_r.v;
+    if (tw_r.route.empty()) {
+      continue;
+    }
 
     // ETA logic: aim at earliest possible arrival for last job then
     // determine latest possible start time in order to minimize
@@ -226,68 +215,104 @@ inline solution format_solution(const input& input,
       assert(previous_job.is_valid_start(job_start));
     }
 
-    // Now pack everything ASAP based on first job start date. s holds
-    // current index in route.steps.
-    std::size_t s = 0;
+    cost_t cost = 0;
+    duration_t service = 0;
+    amount_t amount(input.amount_size());
+    // Steps for current route.
+    std::vector<step> steps;
 
+    // Now pack everything ASAP based on first job start date.
     if (v.has_start()) {
-      assert(route.steps[0].type == TYPE::START);
+      steps.emplace_back(TYPE::START, v.start.get());
+      steps.back().duration = 0;
+
       const auto& first_job = input._jobs[tw_r.route[0]];
       duration_t diff = m[v.start.get().index()][first_job.index()];
+      cost += diff;
+
       assert(diff <= job_start);
       auto v_start = job_start - diff;
       assert(v.tw.contains(v_start));
-      route.steps[0].arrival = v_start;
-      ++s;
+      steps.back().arrival = v_start;
     }
 
-    assert(route.steps[s].type == TYPE::JOB);
-    route.steps[s].arrival = job_start;
+    steps.emplace_back(input._jobs[tw_r.route.front()]);
+    auto& first = steps.back();
+    service += first.service;
+    amount += first.amount;
+
+    first.duration = cost;
+    first.arrival = job_start;
+    unassigned_ranks.erase(tw_r.route.front());
 
     duration_t forward_wt = 0;
-    for (std::size_t r = 0; r < tw_r.route.size() - 1; ++r, ++s) {
-      assert(route.steps[s].type == TYPE::JOB);
+    for (std::size_t r = 0; r < tw_r.route.size() - 1; ++r) {
       const auto& previous_job = input._jobs[tw_r.route[r]];
       const auto& next_job = input._jobs[tw_r.route[r + 1]];
 
-      duration_t diff =
-        previous_job.service + m[previous_job.index()][next_job.index()];
-      duration_t start_candidate = job_start + diff;
+      duration_t travel = m[previous_job.index()][next_job.index()];
+      cost += travel;
+
+      steps.emplace_back(input._jobs[tw_r.route[r + 1]]);
+      auto& current = steps.back();
+      service += current.service;
+      amount += current.amount;
+      current.duration = cost;
+
+      duration_t start_candidate = job_start + previous_job.service + travel;
       assert(start_candidate <= tw_r.latest[r + 1]);
 
-      route.steps[s + 1].arrival = start_candidate;
+      current.arrival = start_candidate;
       job_start = std::max(start_candidate, tw_r.earliest[r + 1]);
 
       if (start_candidate < tw_r.earliest[r + 1]) {
         duration_t wt = tw_r.earliest[r + 1] - start_candidate;
-        route.steps[s + 1].waiting_time = wt;
+        current.waiting_time = wt;
         forward_wt += wt;
       }
-      assert(next_job.is_valid_start(route.steps[s + 1].arrival +
-                                     route.steps[s + 1].waiting_time));
+      assert(next_job.is_valid_start(current.arrival + current.waiting_time));
+
+      unassigned_ranks.erase(tw_r.route[r + 1]);
     }
 
     if (v.has_end()) {
-      ++s;
-      assert(route.steps[s].type == TYPE::END);
       const auto& last_job = input._jobs[tw_r.route.back()];
-      duration_t v_end =
-        job_start + last_job.service + m[last_job.index()][v.end.get().index()];
+      duration_t travel = m[last_job.index()][v.end.get().index()];
+      cost += travel;
+
+      steps.emplace_back(TYPE::END, v.end.get());
+      steps.back().duration = cost;
+
+      duration_t v_end = job_start + last_job.service + travel;
       assert(v.tw.contains(v_end));
-      route.steps[s].arrival = v_end;
+      steps.back().arrival = v_end;
     }
 
+    assert(amount <= v.capacity);
     assert(forward_wt == backward_wt);
-    route.waiting_time = forward_wt;
-    total_waiting_time += forward_wt;
+    assert(steps.back().arrival - steps.front().arrival ==
+           cost + service + forward_wt);
 
-    assert(route.steps.back().arrival - route.steps.front().arrival ==
-           route.duration + route.service + route.waiting_time);
+    routes.emplace_back(v.id,
+                        std::move(steps),
+                        cost,
+                        service,
+                        cost,
+                        forward_wt,
+                        amount);
   }
 
-  sol.summary.waiting_time = total_waiting_time;
+  // Handle unassigned jobs.
+  std::vector<job_t> unassigned_jobs;
+  std::transform(unassigned_ranks.begin(),
+                 unassigned_ranks.end(),
+                 std::back_inserter(unassigned_jobs),
+                 [&](auto j) { return input._jobs[j]; });
 
-  return sol;
+  return solution(0,
+                  input.amount_size(),
+                  std::move(routes),
+                  std::move(unassigned_jobs));
 }
 
 #endif
