@@ -11,19 +11,19 @@ void log_solution(const solution& sol, bool geometry) {
   std::cout << "Unassigned: " << sol.summary.unassigned << std::endl;
 
   // Log unassigned jobs if any.
-  std::cout << "Unassigned job ids: [";
+  std::cout << "Unassigned job ids: ";
   for (const auto& j : sol.unassigned) {
     std::cout << j.id << ", ";
   }
-  std::cout << "]" << std::endl;
+  std::cout << std::endl;
 
   // Describe routes in solution.
   for (const auto& route : sol.routes) {
     std::cout << "Steps for vehicle " << route.vehicle
               << " (cost: " << route.cost;
+    std::cout << " - duration: " << route.duration;
+    std::cout << " - service: " << route.service;
     if (geometry) {
-      std::cout << " - duration: " << route.duration;
-      std::cout << " - service: " << route.service;
       std::cout << " - distance: " << route.distance;
     }
 
@@ -55,11 +55,12 @@ void log_solution(const solution& sol, bool geometry) {
         std::cout << " - " << step.location.lon() << ";" << step.location.lat();
       }
 
+      std::cout << " - arrival: " << step.arrival;
+      std::cout << " - duration: " << step.duration;
+      std::cout << " - service: " << step.service;
+
       // Add extra step info if geometry is required.
       if (geometry) {
-        std::cout << " - arrival: " << step.arrival;
-        std::cout << " - duration: " << step.duration;
-        std::cout << " - service: " << step.service;
         std::cout << " - distance: " << step.distance;
       }
       std::cout << std::endl;
@@ -84,6 +85,7 @@ void run_example_with_osrm() {
   // Create one-dimension capacity restrictions to model the situation
   // where one vehicle can handle 4 jobs.
   amount_t vehicle_capacity(1);
+  time_window_t vehicle_tw(28800, 43200); // Working hours.
   amount_t job_amount(1);
   duration_t service = 5 * 60; // 5 minutes
   vehicle_capacity[0] = 4;
@@ -95,21 +97,30 @@ void run_example_with_osrm() {
                depot,            // start
                depot,            // end
                vehicle_capacity, // capacity
-               {1, 14});         // skills
+               {1, 14},          // skills
+               vehicle_tw);      // time window
   problem_instance.add_vehicle(v1);
 
   vehicle_t v2(2,                // id
                depot,            // start
                depot,            // end
                vehicle_capacity, // capacity
-               {2, 14});         // skills
+               {2, 14},          // skills
+               vehicle_tw);      // time window
   problem_instance.add_vehicle(v2);
+
+  // Job to be done between 9 and 10 AM.
+  std::vector<time_window_t> job_1_tws({{32400, 36000}});
 
   // Set jobs id, location, service time, amount and required skills.
   // Last three can be omitted if no constraints are required.
   std::vector<job_t> jobs;
-  jobs.push_back(
-    job_t(1, coords_t({{1.98935, 48.701}}), service, job_amount, {1}));
+  jobs.push_back(job_t(1,
+                       coords_t({{1.98935, 48.701}}),
+                       service,
+                       job_amount,
+                       {1},
+                       job_1_tws));
   jobs.push_back(
     job_t(2, coords_t({{2.03655, 48.61128}}), service, job_amount, {1}));
   jobs.push_back(
@@ -160,6 +171,7 @@ void run_example_with_custom_matrix() {
   // Create one-dimension capacity restrictions to model the situation
   // where one vehicle can handle 4 jobs.
   amount_t vehicle_capacity(1);
+  time_window_t vehicle_tw(28800, 43200); // Working hours.
   amount_t job_amount(1);
   duration_t service = 5 * 60; // 5 minutes
   vehicle_capacity[0] = 4;
@@ -172,21 +184,26 @@ void run_example_with_custom_matrix() {
                depot,            // start
                depot,            // end
                vehicle_capacity, // capacity
-               {1, 14});         // skills
+               {1, 14},          // skills
+               vehicle_tw);      // time window
   problem_instance.add_vehicle(v1);
 
   vehicle_t v2(2,                // id
                depot,            // start
                depot,            // end
                vehicle_capacity, // capacity
-               {2, 14});         // skills
+               {2, 14},          // skills
+               vehicle_tw);      // time window
   problem_instance.add_vehicle(v2);
 
+  // Job to be done between 9 and 10 AM.
+  std::vector<time_window_t> job_1_tws({{32400, 36000}});
+
   // Set jobs id, index of location in the matrix (coordinates are
-  // optional), amount and required skills. Last two can be omitted if
-  // no constraints are required.
+  // optional), amount, required skills and time windows. Last three
+  // can be omitted if no constraints are required.
   std::vector<job_t> jobs;
-  jobs.push_back(job_t(1, 1, service, job_amount, {1}));
+  jobs.push_back(job_t(1, 1, service, job_amount, {1}, job_1_tws));
   jobs.push_back(job_t(2, 2, service, job_amount, {1}));
   jobs.push_back(job_t(3, 3, service, job_amount, {2}));
   jobs.push_back(job_t(4, 4, service, job_amount, {2}));
