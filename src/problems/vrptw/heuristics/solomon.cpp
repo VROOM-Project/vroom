@@ -7,6 +7,8 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <algorithm>
+#include <numeric>
 #include <set>
 
 #include "problems/vrptw/heuristics/solomon.h"
@@ -14,20 +16,34 @@ All rights reserved (see LICENSE).
 
 tw_solution solomon(const input& input, INIT_T init, float lambda) {
   tw_solution routes;
-  for (index_t i = 0; i < input._vehicles.size(); ++i) {
-    routes.emplace_back(input, i);
-  }
 
   std::set<index_t> unassigned;
   for (index_t j = 0; j < input._jobs.size(); ++j) {
     unassigned.insert(j);
   }
 
+  // One level of indirection to allow easy ordering of the vehicles
+  // within the heuristic.
+  std::vector<index_t> vehicles_ranks(input._vehicles.size());
+  std::iota(vehicles_ranks.begin(), vehicles_ranks.end(), 0);
+  // Sort vehicles by "higher" capacity or by time window in case of
+  // capacities ties.
+  std::sort(vehicles_ranks.begin(),
+            vehicles_ranks.end(),
+            [&](const auto lhs, const auto rhs) {
+              auto& v_lhs = input._vehicles[lhs];
+              auto& v_rhs = input._vehicles[rhs];
+              return (v_rhs.capacity << v_lhs.capacity) or
+                     (v_lhs.capacity == v_rhs.capacity and
+                      v_lhs.tw.length > v_rhs.tw.length);
+            });
+
   const auto& m = input.get_matrix();
 
   // costs[j][v] is the cost of fetching job j in an empty route from
-  // vehicle v. regrets[j][v] is the minimum cost of fetching job j in
-  // an empty route from any vehicle after v.
+  // vehicle at vehicles_ranks[v]. regrets[j][v] is the minimum cost
+  // of fetching job j in an empty route from any vehicle after the
+  // one at vehicles_ranks[v].
   std::vector<std::vector<cost_t>> costs(input._jobs.size(),
                                          std::vector<cost_t>(
                                            input._vehicles.size()));
@@ -39,8 +55,8 @@ tw_solution solomon(const input& input, INIT_T init, float lambda) {
 
     regrets[j].back() = INFINITE_COST;
 
-    for (std::size_t v = input._vehicles.size() - 1; v > 0; --v) {
-      const auto& vehicle = input._vehicles[v];
+    for (std::size_t v = vehicles_ranks.size() - 1; v > 0; --v) {
+      const auto& vehicle = input._vehicles[vehicles_ranks[v]];
       cost_t current_cost = 0;
       if (vehicle.has_start()) {
         current_cost += m[vehicle.start.get().index()][j_index];
@@ -52,7 +68,7 @@ tw_solution solomon(const input& input, INIT_T init, float lambda) {
       regrets[j][v - 1] = std::min(regrets[j][v], current_cost);
     }
 
-    const auto& vehicle = input._vehicles[0];
+    const auto& vehicle = input._vehicles[vehicles_ranks[0]];
     cost_t current_cost = 0;
     if (vehicle.has_start()) {
       current_cost += m[vehicle.start.get().index()][j_index];
@@ -64,8 +80,10 @@ tw_solution solomon(const input& input, INIT_T init, float lambda) {
   }
 
   for (index_t v = 0; v < input._vehicles.size(); ++v) {
-    auto& tw_r = routes[v];
-    const auto& vehicle = input._vehicles[v];
+    routes.emplace_back(input, vehicles_ranks[v]);
+    auto& tw_r = routes.back();
+
+    const auto& vehicle = input._vehicles[vehicles_ranks[v]];
 
     amount_t route_amount(input.amount_size());
 

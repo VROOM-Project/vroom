@@ -16,6 +16,7 @@ struct time_window_t {
   static const duration_t default_length;
   duration_t start;
   duration_t end;
+  duration_t length;
 
   // Default "no-constraint" time-window.
   time_window_t();

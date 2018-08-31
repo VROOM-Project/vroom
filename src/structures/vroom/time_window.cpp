@@ -16,11 +16,11 @@ constexpr duration_t time_window_t::default_length =
   std::numeric_limits<duration_t>::max();
 
 time_window_t::time_window_t()
-  : start(0), end(std::numeric_limits<duration_t>::max()) {
+  : start(0), end(std::numeric_limits<duration_t>::max()), length(end - start) {
 }
 
 time_window_t::time_window_t(duration_t start, duration_t end)
-  : start(start), end(end) {
+  : start(start), end(end), length(end - start) {
   if (start > end) {
     throw custom_exception("Invalid time window: [" + std::to_string(start) +
                            ", " + std::to_string(end) + "]");
