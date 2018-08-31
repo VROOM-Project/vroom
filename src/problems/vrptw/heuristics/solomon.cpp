@@ -79,7 +79,8 @@ tw_solution solomon(const input& input, INIT_T init, float lambda) {
       index_t best_job_rank = 0;
       for (const auto& job_rank : unassigned) {
         if (!input.vehicle_ok_with_job(v, job_rank) or
-            !(input._jobs[job_rank].amount <= vehicle.capacity)) {
+            !(input._jobs[job_rank].amount <= vehicle.capacity) or
+            !tw_r.is_valid_addition_for_tw(job_rank, 0)) {
           continue;
         }
 
@@ -90,21 +91,18 @@ tw_solution solomon(const input& input, INIT_T init, float lambda) {
         }
 
         if (init == INIT_T::HIGHER_AMOUNT and
-            higher_amount << input._jobs[job_rank].amount and
-            tw_r.is_valid_addition_for_tw(job_rank, 0)) {
+            higher_amount << input._jobs[job_rank].amount) {
           higher_amount = input._jobs[job_rank].amount;
           best_job_rank = job_rank;
         }
         if (init == INIT_T::EARLIEST_DEADLINE) {
           duration_t current_deadline = input._jobs[job_rank].tws.back().end;
-          if (current_deadline < earliest_deadline and
-              tw_r.is_valid_addition_for_tw(job_rank, 0)) {
+          if (current_deadline < earliest_deadline) {
             earliest_deadline = current_deadline;
             best_job_rank = job_rank;
           }
         }
-        if (init == INIT_T::FURTHEST and furthest_cost < current_cost and
-            tw_r.is_valid_addition_for_tw(job_rank, 0)) {
+        if (init == INIT_T::FURTHEST and furthest_cost < current_cost) {
           furthest_cost = current_cost;
           best_job_rank = job_rank;
         }
