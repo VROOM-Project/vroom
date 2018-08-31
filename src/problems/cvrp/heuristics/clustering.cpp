@@ -143,11 +143,11 @@ void clustering::parallel_clustering() {
   // Cluster initialization: define available initialization
   // strategies then run initialization sequentially on all clusters.
 
-  // Initialize cluster with the job that has higher amount (and is
+  // Initialize cluster with the job that has "higher" amount (and is
   // the further away in case of amount tie).
   auto higher_amount_init_lambda = [&](auto v) {
     return [&, v](index_t lhs, index_t rhs) {
-      return jobs[lhs].amount < jobs[rhs].amount or
+      return jobs[lhs].amount << jobs[rhs].amount or
              (jobs[lhs].amount == jobs[rhs].amount and
               costs[v][lhs] < costs[v][rhs]);
     };
@@ -254,11 +254,11 @@ void clustering::parallel_clustering() {
       auto current_j = candidates[v].back();
       if (jobs[current_j].amount <= capacities[v] and
           (costs[v][current_j] < best_cost or
-           (costs[v][current_j] == best_cost and
-            capacities[best_v] < capacities[v]))) {
+           (costs[v][current_j] == best_cost and capacities[best_v]
+                                                   << capacities[v]))) {
         // Update if job candidate is OK wrt capacity and cheaper to
-        // add. In case of cost tie, pick cluster with most remaining
-        // room.
+        // add. In case of cost tie, pick cluster with "higher"
+        // capacity.
         capacity_ok = true;
         best_v = v;
         best_j = current_j;
@@ -386,11 +386,11 @@ void clustering::sequential_clustering() {
 
   // Define available initialization strategies.
 
-  // Initialize cluster with the job that has higher amount (and is
+  // Initialize cluster with the job that has "higher" amount (and is
   // the further away in case of amount tie).
   auto higher_amount_init_lambda = [&](auto v) {
     return [&, v](index_t lhs, index_t rhs) {
-      return jobs[lhs].amount < jobs[rhs].amount or
+      return jobs[lhs].amount << jobs[rhs].amount or
              (jobs[lhs].amount == jobs[rhs].amount and
               vehicles_to_job_costs[v][lhs] < vehicles_to_job_costs[v][rhs]);
     };

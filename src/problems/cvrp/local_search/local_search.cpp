@@ -550,8 +550,8 @@ void cvrp_local_search::run_ls_step() {
   while (best_gain > 0) {
     // Relocate stuff
     for (const auto& s_t : s_t_pairs) {
-      if (_input._vehicles[s_t.second].capacity <
-          total_amount(s_t.second) + _amount_lower_bound) {
+      if (total_amount(s_t.second) + _amount_lower_bound <=
+          _input._vehicles[s_t.second].capacity) {
         // Don't try to put things in a full vehicle.
         continue;
       }
@@ -594,8 +594,8 @@ void cvrp_local_search::run_ls_step() {
 
     // Or-opt stuff
     for (const auto& s_t : s_t_pairs) {
-      if (_input._vehicles[s_t.second].capacity <
-          total_amount(s_t.second) + _double_amount_lower_bound) {
+      if (total_amount(s_t.second) + _double_amount_lower_bound <=
+          _input._vehicles[s_t.second].capacity) {
         // Don't try to put things in a full vehicle.
         continue;
       }
