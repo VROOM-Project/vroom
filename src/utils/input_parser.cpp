@@ -22,6 +22,7 @@ All rights reserved (see LICENSE).
 #include "structures/typedefs.h"
 #include "structures/vroom/amount.h"
 #include "structures/vroom/job.h"
+#include "structures/vroom/time_window.h"
 #include "structures/vroom/vehicle.h"
 #include "utils/exceptions.h"
 #include "utils/input_parser.h"
@@ -86,6 +87,43 @@ inline duration_t get_service(const rapidjson::Value& object) {
 
 inline bool valid_vehicle(const rapidjson::Value& v) {
   return v.IsObject() and v.HasMember("id") and v["id"].IsUint64();
+}
+
+inline time_window_t get_time_window(const rapidjson::Value& tw) {
+  if (!tw.IsArray() or tw.Size() < 2 or !tw[0].IsUint() or !tw[1].IsUint()) {
+    throw custom_exception("Invalid time-window.");
+  }
+  return time_window_t(tw[0].GetUint(), tw[1].GetUint());
+}
+
+inline time_window_t get_vehicle_time_window(const rapidjson::Value& v) {
+  time_window_t v_tw = time_window_t();
+  if (v.HasMember("time_window")) {
+    v_tw = get_time_window(v["time_window"]);
+  }
+  return v_tw;
+}
+
+inline std::vector<time_window_t>
+get_job_time_windows(const rapidjson::Value& j) {
+  std::vector<time_window_t> tws;
+  if (j.HasMember("time_windows")) {
+    if (!j["time_windows"].IsArray()) {
+      throw custom_exception("invalid time_windows value for job " +
+                             std::to_string(j["id"].GetUint64()) + ".");
+    }
+
+    std::transform(j["time_windows"].Begin(),
+                   j["time_windows"].End(),
+                   std::back_inserter(tws),
+                   [](auto& tw) { return get_time_window(tw); });
+
+    std::sort(tws.begin(), tws.end());
+  } else {
+    tws = std::vector<time_window_t>(1, time_window_t());
+  }
+
+  return tws;
 }
 
 input parse(const cl_args_t& cl_args) {
@@ -230,7 +268,8 @@ input parse(const cl_args_t& cl_args) {
                           start,
                           end,
                           get_amount(json_vehicle, "capacity"),
-                          get_skills(json_vehicle));
+                          get_skills(json_vehicle),
+                          get_vehicle_time_window(json_vehicle));
 
       input_data.add_vehicle(current_v);
     }
@@ -268,7 +307,9 @@ input parse(const cl_args_t& cl_args) {
                         job_loc,
                         get_service(json_job),
                         get_amount(json_job, "amount"),
-                        get_skills(json_job));
+                        get_skills(json_job),
+                        get_job_time_windows(json_job));
+
       input_data.add_job(current_job);
     }
   } else {
@@ -305,7 +346,8 @@ input parse(const cl_args_t& cl_args) {
                           start,
                           end,
                           get_amount(json_vehicle, "capacity"),
-                          get_skills(json_vehicle));
+                          get_skills(json_vehicle),
+                          get_vehicle_time_window(json_vehicle));
 
       input_data.add_vehicle(current_v);
     }
@@ -330,7 +372,8 @@ input parse(const cl_args_t& cl_args) {
                         parse_coordinates(json_job, "location"),
                         get_service(json_job),
                         get_amount(json_job, "amount"),
-                        get_skills(json_job));
+                        get_skills(json_job),
+                        get_job_time_windows(json_job));
 
       input_data.add_job(current_job);
     }

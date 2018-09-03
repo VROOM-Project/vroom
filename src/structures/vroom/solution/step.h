@@ -22,6 +22,7 @@ struct step {
 
   duration_t arrival;
   duration_t duration;
+  duration_t waiting_time;
   distance_t distance;
 
   step(TYPE type, location_t location);

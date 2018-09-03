@@ -2,11 +2,20 @@
 
 ## [Unreleased]
 
+### Added
+
+- Data-structure and heuristic to solve VRPTW (#140)
+
 ### Changed
 
 - Update `clang-format` to 6.0 for automatic code formatting (#143)
 - Speed up TSP solving by over 35% on all TSPLIB instances (#142)
 - Speed up CVRP solving by over 65% on all CVRPLIB instances (#146)
+- Keys `duration` and `arrival` are no longer optional in output and based on matrix values.
+
+### Fixed
+
+- Wrong ETA with service time and no start (#148)
 
 ## [v1.2.0]
 

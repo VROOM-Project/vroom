@@ -11,9 +11,10 @@ Contents:
 - [Examples](#examples)
 
 **Note**:
-- the expected order for all coordinates arrays is [lon,lat]
+- the expected order for all coordinates arrays is `[lon, lat]`
 - all timings are in seconds
 - all distances are in meters
+- a `time_window` object is a pair of timestamps in the form `[start, end]`
 
 # Input
 
@@ -26,9 +27,6 @@ The problem description is read from standard input or from a file
 | [`vehicles`](#vehicles) |  array of `vehicle` objects describing the available vehicles |
 | [[`matrix`](#matrix)] | optional two-dimensional array describing a custom matrix |
 
-**Warning**: only problems with one vehicle are supported in v1.1.0 so
-at the moment, `vehicles` should have length 1.
-
 ## Jobs
 
 A `job` object has the following properties:
@@ -38,9 +36,10 @@ A `job` object has the following properties:
 | `id` | an integer used as unique identifier |
 | [`location`] | coordinates array |
 | [`location_index`] | index of relevant row and column in custom matrix |
-| [`service`] | job service time (defaults to 0) |
+| [`service`] | job service duration (defaults to 0) |
 | [`amount`] | an array of integers describing multidimensional quantities |
 | [`skills`] | an array of integers defining mandatory skills for this job |
+| [`time_windows`] | an array of `time_window` objects describing valid slots for job service start |
 
 If a custom matrix is provided:
 
@@ -67,8 +66,11 @@ A `vehicle` object has the following properties:
 | [`end_index`] | index of relevant row and column in custom matrix |
 | [`capacity`] | an array of integers describing multidimensional quantities |
 | [`skills`] | an array of integers defining skills for this vehicle |
+| [`time_window`] | a `time_window` object describing working hours for this vehicle |
 
-### Notes on `vehicle` locations
+## Notes
+
+### `vehicle` locations
 
 - key `start` and `end` are optional for a `vehicle`, as long as at
   least one of them is present
@@ -81,7 +83,7 @@ A `vehicle` object has the following properties:
 - depending on if a custom matrix is provided, required fields follow
   the same logic than for `job` keys `location` and `location_index`
 
-### Notes on capacity restrictions
+### Capacity restrictions
 
 Use `capacity` for vehicles and `amount` for jobs to describe a
 problem with capacity restrictions. Those arrays can be used to model
@@ -90,7 +92,7 @@ weight, volume etc. A vehicle is only allowed to serve a set of jobs
 if the `amount` component sums are lower than the matching value in
 `capacity` for each metric.
 
-### Notes on skills
+### Skills
 
 Use `skills` to describe a problem where not all jobs can be served by
 all vehicles. Job skills are mandatory, i.e. a job can only be served
@@ -102,14 +104,24 @@ In order to ease modeling problems with no skills required, it is
 assumed that there is no restriction at all if no `skills` keys are
 provided.
 
+### Time windows
+
+The absence of a time window in input means no timing constraint
+applies. In particular, a vehicle with no `time_window` key will be
+able to serve any number of jobs, and a job with no `time_windows` key
+might be included at any time in any route, to the extent permitted by
+other constraints such as skills, capacity and other vehicles/jobs
+time windows.
+
 ## Matrix
 
 A `matrix` object is an array of arrays of unsigned integers
-describing the rows of a custom cost matrix as an alternative to the
-travel-time matrix computed by OSRM. Therefore, if a custom matrix is
-provided, the `location`, `start` and `end` properties become
-optional. Instead of the coordinates, row and column indications
-provided with the `*_index` keys are used during optimization.
+describing the rows of a custom travel-time matrix as an alternative
+to the travel-time matrix computed by OSRM. Therefore, if a custom
+matrix is provided, the `location`, `start` and `end` properties
+become optional. Instead of the coordinates, row and column
+indications provided with the `*_index` keys are used during
+optimization.
 
 # Output
 
@@ -133,8 +145,9 @@ The `summary` object has the following properties:
 | `cost` | total cost for all routes |
 | `unassigned` | number of jobs that could not be served |
 | `service` | total service time for all routes |
+| `duration` | total travel time for all routes |
+| `waiting_time` | total waiting time for all routes |
 | [`amount`] | total amount for all routes |
-| [`duration`]* | total duration for all routes |
 | [`distance`]* | total distance for all routes |
 
 *: provided when using the `-g` flag with `OSRM`.
@@ -148,10 +161,11 @@ A `route` object has the following properties:
 | `vehicle` | id of the vehicle assigned to this route |
 | [`steps`](#steps) | array of `step` objects |
 | `cost` | cost for this route |
-| `service` | total route service time |
+| `service` | total service time for this route |
+| `duration` | total travel time for this route |
+| `waiting_time` | total waiting time for this route |
 | [`amount`] | total amount for jobs in this route |
 | [`geometry`]* | polyline encoded route geometry |
-| [`duration`]* | total route duration |
 | [`distance`]* | total route distance |
 
 *: provided when using the `-g` flag with `OSRM`.
@@ -163,11 +177,12 @@ A `step` object has the following properties:
 | Key         | Description |
 | ----------- | ----------- |
 | `type` | a string that is either `start`, `job` or `end` |
+| `arrival` | estimated time of arrival at this step |
+| `duration` | cumulated travel time upon arrival at this step |
 | [`location`] | coordinates array for this step (if provided in input) |
 | [`job`] | id of the job performed at this step, only provided if `type` value is `job` |
 | [`service`] | service time at this step, only provided if `type` value is `job` |
-| [`arrival`]* | estimated time of arrival at this step |
-| [`duration`]* | traveled duration upon arrival at this step |
+| [`waiting_time`] | waiting time upon arrival at this step, only provided if `type` value is `job` |
 | [`distance`]* | traveled distance upon arrival at this step |
 
 *: provided when using the `-g` flag with `OSRM`.

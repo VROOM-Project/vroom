@@ -13,6 +13,7 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/cvrp.h"
 #include "problems/tsp/tsp.h"
 #include "problems/vrp.h"
+#include "problems/vrptw/vrptw.h"
 #include "structures/vroom/input/input.h"
 #include "utils/exceptions.h"
 #include "utils/helpers.h"
@@ -20,6 +21,7 @@ All rights reserved (see LICENSE).
 input::input(std::unique_ptr<routing_io<cost_t>> routing_wrapper, bool geometry)
   : _start_loading(std::chrono::high_resolution_clock::now()),
     _routing_wrapper(std::move(routing_wrapper)),
+    _has_TW(false),
     _geometry(geometry),
     _all_locations_have_coords(true) {
 }
@@ -42,6 +44,9 @@ void input::add_job(const job_t& job) {
       throw custom_exception("Missing skills.");
     }
   }
+
+  // Check for time-windows.
+  _has_TW |= (!(job.tws.size() == 1) or !job.tws[0].is_default());
 
   if (!current_job.location.user_index()) {
     // Index of this job in the matrix was not specified upon job
@@ -70,6 +75,9 @@ void input::add_vehicle(const vehicle_t& vehicle) {
       throw custom_exception("Missing skills.");
     }
   }
+
+  // Check for time-windows.
+  _has_TW |= !vehicle.tw.is_default();
 
   bool has_start = current_v.has_start();
   bool has_end = current_v.has_end();
@@ -228,89 +236,11 @@ void input::set_vehicle_to_job_compatibility() {
 }
 
 std::unique_ptr<vrp> input::get_problem() const {
-  return std::make_unique<cvrp>(*this);
-}
-
-solution input::format_solution(const raw_solution& raw_routes) const {
-  std::vector<route_t> routes;
-  cost_t total_cost = 0;
-  duration_t total_service = 0;
-  amount_t total_amount(_amount_size);
-
-  // All job ranks start with unassigned status.
-  std::unordered_set<index_t> unassigned_ranks;
-  for (unsigned i = 0; i < _jobs.size(); ++i) {
-    unassigned_ranks.insert(i);
+  if (_has_TW) {
+    return std::make_unique<vrptw>(*this);
+  } else {
+    return std::make_unique<cvrp>(*this);
   }
-
-  for (std::size_t i = 0; i < raw_routes.size(); ++i) {
-    const auto& route = raw_routes[i];
-    if (route.empty()) {
-      continue;
-    }
-    const auto& v = _vehicles[i];
-    cost_t cost = 0;
-    duration_t service = 0;
-    amount_t amount(_amount_size);
-
-    // Steps for current route.
-    std::vector<step> steps;
-
-    // Handle start.
-    if (v.has_start()) {
-      steps.emplace_back(TYPE::START, v.start.get());
-      cost += _matrix[v.start.get().index()][_jobs[route.front()].index()];
-    }
-
-    // Handle jobs.
-    index_t previous = route.front();
-    assert(vehicle_ok_with_job(i, previous));
-    steps.emplace_back(_jobs[previous]);
-    service += steps.back().service;
-    amount += steps.back().amount;
-    unassigned_ranks.erase(previous);
-
-    for (auto it = ++route.cbegin(); it != route.cend(); ++it) {
-      cost += _matrix[_jobs[previous].index()][_jobs[*it].index()];
-      assert(vehicle_ok_with_job(i, *it));
-      steps.emplace_back(_jobs[*it]);
-      service += steps.back().service;
-      amount += steps.back().amount;
-      unassigned_ranks.erase(*it);
-      previous = *it;
-    }
-
-    // Handle end.
-    if (v.has_end()) {
-      steps.emplace_back(TYPE::END, v.end.get());
-      cost += _matrix[_jobs[route.back()].index()][v.end.get().index()];
-    }
-
-    assert(amount <= _vehicles[i].capacity);
-    routes.emplace_back(_vehicles[i].id,
-                        std::move(steps),
-                        cost,
-                        service,
-                        amount);
-
-    total_cost += cost;
-    total_service += service;
-    total_amount += amount;
-  }
-
-  // Handle unassigned jobs.
-  std::vector<job_t> unassigned_jobs;
-  std::transform(unassigned_ranks.begin(),
-                 unassigned_ranks.end(),
-                 std::back_inserter(unassigned_jobs),
-                 [&](auto j) { return _jobs[j]; });
-
-  return solution(0,
-                  total_cost,
-                  std::move(routes),
-                  std::move(unassigned_jobs),
-                  total_service,
-                  std::move(total_amount));
 }
 
 solution input::solve(unsigned exploration_level, unsigned nb_thread) {
@@ -340,7 +270,7 @@ solution input::solve(unsigned exploration_level, unsigned nb_thread) {
                    .count();
 
   // Solve.
-  auto sol = format_solution(instance->solve(exploration_level, nb_thread));
+  auto sol = instance->solve(exploration_level, nb_thread);
 
   // Update timing info.
   sol.summary.computing_times.loading = loading;
@@ -352,10 +282,8 @@ solution input::solve(unsigned exploration_level, unsigned nb_thread) {
       .count();
 
   if (_geometry) {
-    // Routing stuff.
     for (auto& route : sol.routes) {
       _routing_wrapper->add_route_info(route);
-      sol.summary.duration += route.duration;
       sol.summary.distance += route.distance;
     }
 

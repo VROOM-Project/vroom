@@ -1,5 +1,5 @@
-#ifndef CVRP_H
-#define CVRP_H
+#ifndef VRPTW_H
+#define VRPTW_H
 
 /*
 
@@ -12,12 +12,9 @@ All rights reserved (see LICENSE).
 
 #include "problems/vrp.h"
 
-class cvrp : public vrp {
-private:
-  bool empty_cluster(const std::vector<index_t>& cluster, index_t v) const;
-
+class vrptw : public vrp {
 public:
-  cvrp(const input& input);
+  vrptw(const input& input);
 
   virtual solution solve(unsigned exploration_level,
                          unsigned nb_threads) const override;

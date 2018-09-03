@@ -24,11 +24,9 @@ struct solution {
   solution(unsigned code, std::string error);
 
   solution(unsigned code,
-           cost_t cost,
+           unsigned amount_size,
            std::vector<route_t>&& routes,
-           std::vector<job_t>&& unassigned,
-           duration_t service,
-           amount_t&& amount);
+           std::vector<job_t>&& unassigned);
 };
 
 #endif

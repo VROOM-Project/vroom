@@ -38,6 +38,7 @@ private:
   std::chrono::high_resolution_clock::time_point _end_routing;
   std::unique_ptr<routing_io<cost_t>> _routing_wrapper;
   bool _has_skills;
+  bool _has_TW;
   const bool _geometry;
   matrix<cost_t> _matrix;
   std::vector<location_t> _locations;
@@ -50,8 +51,6 @@ private:
   void set_vehicle_to_job_compatibility();
   std::unordered_set<index_t> _matrix_used_index;
   bool _all_locations_have_coords;
-
-  solution format_solution(const raw_solution& raw_routes) const;
 
   void store_amount_lower_bound(const amount_t& amount);
 

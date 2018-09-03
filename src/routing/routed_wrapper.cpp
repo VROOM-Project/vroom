@@ -12,6 +12,7 @@ All rights reserved (see LICENSE).
 #include <boost/asio.hpp>
 
 #include "routing/routed_wrapper.h"
+#include "utils/exceptions.h"
 
 using boost::asio::ip::tcp;
 
@@ -160,33 +161,21 @@ void routed_wrapper::add_route_info(route_t& rte) const {
                            std::string(infos["message"].GetString()));
   }
 
-  // Total duration/distance and route geometry.
-  rte.duration = round_cost(infos["routes"][0]["duration"].GetDouble());
+  // Total distance and route geometry.
   rte.distance = round_cost(infos["routes"][0]["distance"].GetDouble());
   rte.geometry = std::move(infos["routes"][0]["geometry"].GetString());
 
   auto nb_legs = infos["routes"][0]["legs"].Size();
   assert(nb_legs == rte.steps.size() - 1);
 
-  // Accumulated travel duration and distance stored for each step.
+  // Accumulated travel distance stored for each step.
   double current_distance = 0;
-  double current_duration = 0;
 
-  rte.steps[0].distance = round_cost(current_distance);
-  rte.steps[0].duration = round_cost(current_duration);
-  rte.steps[0].arrival = 0;
-  duration_t service = 0;
+  rte.steps[0].distance = 0;
 
   for (rapidjson::SizeType i = 0; i < nb_legs; ++i) {
-    // Update arrival, distance and duration for step after current
-    // route leg.
+    // Update distance for step after current route leg.
     current_distance += infos["routes"][0]["legs"][i]["distance"].GetDouble();
-    current_duration += infos["routes"][0]["legs"][i]["duration"].GetDouble();
-
     rte.steps[i + 1].distance = round_cost(current_distance);
-    rte.steps[i + 1].duration = round_cost(current_duration);
-
-    rte.steps[i + 1].arrival = round_cost(current_duration + service);
-    service += rte.steps[i + 1].service;
   }
 }

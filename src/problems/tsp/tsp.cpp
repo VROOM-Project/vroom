@@ -12,6 +12,7 @@ All rights reserved (see LICENSE).
 #include "problems/tsp/heuristics/local_search.h"
 #include "structures/abstract/undirected_graph.h"
 #include "structures/vroom/input/input.h"
+#include "utils/helpers.h"
 
 tsp::tsp(const input& input,
          std::vector<index_t> job_ranks,
@@ -156,7 +157,7 @@ cost_t tsp::symmetrized_cost(const std::list<index_t>& tour) const {
   return cost;
 }
 
-raw_solution tsp::solve(unsigned, unsigned nb_threads) const {
+raw_solution tsp::raw_solve(unsigned, unsigned nb_threads) const {
   // Applying heuristic.
   std::list<index_t> christo_sol = christofides(_symmetrized_matrix);
 
@@ -265,4 +266,8 @@ raw_solution tsp::solve(unsigned, unsigned nb_threads) const {
                  [&](const auto& i) { return _job_ranks[i]; });
 
   return {init_ranks_sol};
+}
+
+solution tsp::solve(unsigned, unsigned nb_threads) const {
+  return format_solution(_input, raw_solve(0, nb_threads));
 }

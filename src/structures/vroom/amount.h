@@ -27,19 +27,25 @@ public:
   };
 };
 
+// Lexicographical comparison, useful for situations where a total
+// order is required.
 template <typename E1, typename E2>
-bool operator<(const amount_expression_t<E1>& lhs,
-               const amount_expression_t<E2>& rhs) {
-  bool is_strict_inf = true;
+bool operator<<(const amount_expression_t<E1>& lhs,
+                const amount_expression_t<E2>& rhs) {
   assert(lhs.size() == rhs.size());
-  for (std::size_t i = 0; i < lhs.size(); ++i) {
-    if (lhs[i] >= rhs[i]) {
-      is_strict_inf = false;
-      break;
+  if (lhs.empty()) {
+    return false;
+  }
+  auto last_rank = lhs.size() - 1;
+  for (std::size_t i = 0; i < last_rank; ++i) {
+    if (lhs[i] < rhs[i]) {
+      return true;
+    }
+    if (lhs[i] > rhs[i]) {
+      return false;
     }
   }
-
-  return is_strict_inf;
+  return lhs[last_rank] < rhs[last_rank];
 }
 
 template <typename E1, typename E2>
