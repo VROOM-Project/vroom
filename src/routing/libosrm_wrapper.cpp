@@ -19,7 +19,6 @@ libosrm_wrapper::libosrm_wrapper(const std::string& osrm_profile)
   : osrm_wrapper(osrm_profile), _config(), _osrm(_config) {
 }
 
-
 matrix<cost_t>
 libosrm_wrapper::get_matrix(const std::vector<location_t>& locs) const {
   osrm::TableParameters params;

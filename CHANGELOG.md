@@ -5,6 +5,7 @@
 ### Added
 
 - Data-structure and heuristic to solve VRPTW (#140)
+- CI builds using Travis (#134)
 
 ### Changed
 

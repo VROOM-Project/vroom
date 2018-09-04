@@ -22,37 +22,37 @@ matrix:
             - libboost-all-dev
       env: COMPILER=g++-6
 
-    # - os: linux
-    #   addons:
-    #     apt:
-    #       sources:
-    #         - ubuntu-toolchain-r-test
-    #       packages:
-    #         - g++-7
-    #         - libboost-all-dev
-    #   env: COMPILER=g++-7
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-7
+            - libboost-all-dev
+      env: COMPILER=g++-7
 
-    # - os: linux
-    #   addons:
-    #     apt:
-    #       sources:
-    #         - ubuntu-toolchain-r-test
-    #       packages:
-    #         - g++-8
-    #         - libboost-all-dev
-    #   env: COMPILER=g++-8
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-8
+            - libboost-all-dev
+      env: COMPILER=g++-8
 
-    # - os: linux
-    #   addons:
-    #     apt:
-    #       sources:
-    #         - ubuntu-toolchain-r-test
-    #         - llvm-toolchain-trusty-5.0
-    #       packages:
-    #         - clang-5.0
-    #         - libboost-all-dev
-    #         - g++-7
-    #   env: COMPILER=clang++-5.0
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-trusty-5.0
+          packages:
+            - clang-5.0
+            - libboost-all-dev
+            - g++-7
+      env: COMPILER=clang++-5.0
 
     # - os: linux
     #   addons:
