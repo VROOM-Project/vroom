@@ -10,7 +10,7 @@ matrix:
           packages:
             - g++-6
             - libboost-all-dev
-      env: CXX=g++-6
+      env: COMPILER=g++-6
 
     - os: linux
       addons:
@@ -20,7 +20,7 @@ matrix:
           packages:
             - g++-7
             - libboost-all-dev
-      env: CXX=g++-7
+      env: COMPILER=g++-7
 
     - os: linux
       addons:
@@ -30,7 +30,7 @@ matrix:
           packages:
             - clang-4.0
             - libboost-all-dev
-      env: CXX=clang++-4.0
+      env: COMPILER=clang++-4.0
 
     - os: linux
       addons:
@@ -40,12 +40,14 @@ matrix:
           packages:
             - clang-5.0
             - libboost-all-dev
-      env: CXX=clang++-5.0
+      env: COMPILER=clang++-5.0
 
 before_install:
     - export SRC_DIR="$(pwd)/src"
 
 install:
+  - export CXX=${COMPILER}
+  - ${CXX} --version
   - cd ${SRC_DIR}
   - make
 
