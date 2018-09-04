@@ -36,6 +36,16 @@ matrix:
         apt:
           sources:
             - ubuntu-toolchain-r-test
+          packages:
+            - g++-8
+            - libboost-all-dev
+      env: COMPILER=g++-8
+
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
             - llvm-toolchain-trusty-4.0
           packages:
             - clang-4.0
@@ -54,6 +64,18 @@ matrix:
             - libboost-all-dev
             - g++-7
       env: COMPILER=clang++-5.0
+
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-trusty-6.0
+          packages:
+            - clang-6.0
+            - libboost-all-dev
+            - g++-7
+      env: COMPILER=clang++-6.0
 
 before_script:
   - cd "$(pwd)/src"
