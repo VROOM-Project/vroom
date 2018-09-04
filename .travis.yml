@@ -39,6 +39,7 @@ matrix:
           packages:
             - clang-4.0
             - libboost-all-dev
+            - libstdc++5
       env: COMPILER=clang++-4.0
 
     - os: linux
@@ -49,6 +50,7 @@ matrix:
           packages:
             - clang-5.0
             - libboost-all-dev
+            - libstdc++5
       env: COMPILER=clang++-5.0
 
 before_script:
