@@ -1,5 +1,10 @@
 language: cpp
 
+branches:
+  only:
+    - master
+    - /^v\d+\.\d+(\.\d+)?(-\S*)?$/
+
 matrix:
   include:
     - os: linux
