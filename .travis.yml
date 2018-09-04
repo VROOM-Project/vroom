@@ -1,13 +1,14 @@
 language: cpp
 
 git:
-  depth: 3
   quiet: true
 
 branches:
   only:
     - master
     - /^v\d+\.\d+(\.\d+)?(-\S*)?$/
+
+sudo: required
 
 matrix:
   include:
@@ -66,9 +67,26 @@ matrix:
       env: COMPILER=clang++-6.0
 
 before_script:
-  - cd "$(pwd)/src"
+  - export ROOT_FOLDER="$(pwd)"
+  - export BUILD_FOLDER="$(pwd)/src"
+  - cd ${BUILD_FOLDER}
   - export CXX=${COMPILER}
   - ${CXX} --version
 
 script:
+  # Check build without libosrm.
+  - make
+  # Check build with libosrm installed.
+  - make clean
+  - cd ${ROOT_FOLDER}
+  - sudo apt-get install build-essential wget cmake3 pkg-config libbz2-dev libstxxl-dev libstxxl1 libxml2-dev libzip-dev lua5.2 liblua5.2-dev libtbb-dev
+  - git clone https://github.com/Project-OSRM/osrm-backend.git
+  - cd osrm-backend
+  - git checkout v5.18.0
+  - mkdir build
+  - cd build
+  - cmake .. -DCMAKE_BUILD_TYPE=Release
+  - cmake --build .
+  - sudo cmake --build . --target install
+  - cd ${BUILD_FOLDER}
   - make
