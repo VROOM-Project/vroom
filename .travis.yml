@@ -1,5 +1,9 @@
 language: cpp
 
+git:
+  depth: 3
+  quiet: true
+
 branches:
   only:
     - master
