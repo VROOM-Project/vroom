@@ -54,17 +54,17 @@ matrix:
             - g++-7
       env: COMPILER=clang++-5.0
 
-    - os: linux
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-trusty-6.0
-          packages:
-            - clang-6.0
-            - libboost-all-dev
-            - g++-7
-      env: COMPILER=clang++-6.0
+    # - os: linux
+    #   addons:
+    #     apt:
+    #       sources:
+    #         - ubuntu-toolchain-r-test
+    #         - llvm-toolchain-trusty-6.0
+    #       packages:
+    #         - clang-6.0
+    #         - libboost-all-dev
+    #         - g++-7
+    #   env: COMPILER=clang++-6.0
 
 before_script:
   - export ROOT_FOLDER="$(pwd)"
