@@ -35,22 +35,24 @@ matrix:
       addons:
         apt:
           sources:
+            - ubuntu-toolchain-r-test
             - llvm-toolchain-trusty-4.0
           packages:
             - clang-4.0
             - libboost-all-dev
-            - libstdc++5
+            - g++-7
       env: COMPILER=clang++-4.0
 
     - os: linux
       addons:
         apt:
           sources:
+            - ubuntu-toolchain-r-test
             - llvm-toolchain-trusty-5.0
           packages:
             - clang-5.0
             - libboost-all-dev
-            - libstdc++5
+            - g++-7
       env: COMPILER=clang++-5.0
 
 before_script:
