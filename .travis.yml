@@ -42,13 +42,12 @@ matrix:
             - libboost-all-dev
       env: COMPILER=clang++-5.0
 
-before_install:
-    - export SRC_DIR="$(pwd)/src"
-
-install:
+before_script:
+  - cd "$(pwd)/src"
   - export CXX=${COMPILER}
   - ${CXX} --version
-  - cd ${SRC_DIR}
+
+script:
   - make
 
 
