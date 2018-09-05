@@ -559,6 +559,12 @@ void cvrp_local_search::run_ls_step() {
         continue;
       }
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
+        if (_sol_state.node_gains[s_t.first][s_rank] <=
+            best_gains[s_t.first][s_t.second]) {
+          // Except if addition cost in route s_t.second is negative
+          // (!!), overall gain can't exceed current known best gain.
+          continue;
+        }
         for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size(); ++t_rank) {
           relocate
             r(_input, _sol, _sol_state, s_t.first, s_rank, s_t.second, t_rank);
@@ -603,6 +609,12 @@ void cvrp_local_search::run_ls_step() {
         continue;
       }
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1; ++s_rank) {
+        if (_sol_state.edge_gains[s_t.first][s_rank] <
+            best_gains[s_t.first][s_t.second]) {
+          // Except if addition cost in route s_t.second is negative
+          // (!!), overall gain can't exceed current known best gain.
+          continue;
+        }
         for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size(); ++t_rank) {
           or_opt
             r(_input, _sol, _sol_state, s_t.first, s_rank, s_t.second, t_rank);
