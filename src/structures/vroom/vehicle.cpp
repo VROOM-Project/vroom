@@ -30,3 +30,18 @@ bool vehicle_t::has_start() const {
 bool vehicle_t::has_end() const {
   return static_cast<bool>(end);
 }
+
+bool vehicle_t::has_same_locations(const vehicle_t& other) const {
+  bool same = (this->has_start() == other.has_start()) and
+              (this->has_end() == other.has_end());
+
+  if (same and this->has_start()) {
+    same &= this->start.get() == other.start.get();
+  }
+
+  if (same and this->has_end()) {
+    same &= this->end.get() == other.end.get();
+  }
+
+  return same;
+}
