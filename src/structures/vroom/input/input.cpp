@@ -22,6 +22,7 @@ input::input(std::unique_ptr<routing_io<cost_t>> routing_wrapper, bool geometry)
   : _start_loading(std::chrono::high_resolution_clock::now()),
     _routing_wrapper(std::move(routing_wrapper)),
     _has_TW(false),
+    _homogeneous_locations(true),
     _geometry(geometry),
     _all_locations_have_coords(true) {
 }
@@ -108,6 +109,12 @@ void input::add_vehicle(const vehicle_t& vehicle) {
     _all_locations_have_coords &= current_v.end.get().has_coordinates();
 
     _locations.push_back(current_v.end.get());
+  }
+
+  // Check for homogeneous locations among vehicles.
+  if (_vehicles.size() > 1) {
+    _homogeneous_locations &=
+      _vehicles.front().has_same_locations(_vehicles.back());
   }
 }
 

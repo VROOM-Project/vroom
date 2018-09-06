@@ -39,6 +39,7 @@ private:
   std::unique_ptr<routing_io<cost_t>> _routing_wrapper;
   bool _has_skills;
   bool _has_TW;
+  bool _homogeneous_locations;
   const bool _geometry;
   matrix<cost_t> _matrix;
   std::vector<location_t> _locations;
