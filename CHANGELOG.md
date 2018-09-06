@@ -11,7 +11,7 @@
 
 - Update `clang-format` to 6.0 for automatic code formatting (#143)
 - Speed up TSP solving by over 35% on all TSPLIB instances (#142)
-- Speed up CVRP solving by over 65% on all CVRPLIB instances (#146)
+- Speed up CVRP solving by over 65%, then another ~8% on all CVRPLIB instances (#146, #147)
 - Keys `duration` and `arrival` are no longer optional in output and based on matrix values.
 
 ### Fixed
