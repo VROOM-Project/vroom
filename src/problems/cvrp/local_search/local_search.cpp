@@ -676,7 +676,7 @@ void cvrp_local_search::run_ls_step() {
         continue;
       }
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1; ++s_rank) {
-        if (_sol_state.edge_gains[s_t.first][s_rank] <
+        if (_sol_state.edge_gains[s_t.first][s_rank] <=
             best_gains[s_t.first][s_t.second]) {
           // Except if addition cost in route s_t.second is negative
           // (!!), overall gain can't exceed current known best gain.
