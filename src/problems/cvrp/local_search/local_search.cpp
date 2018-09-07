@@ -548,28 +548,6 @@ void cvrp_local_search::run_ls_step() {
   gain_t best_gain = 1;
 
   while (best_gain > 0) {
-    // Relocate stuff
-    for (const auto& s_t : s_t_pairs) {
-      if (total_amount(s_t.second) + _amount_lower_bound <=
-          _input._vehicles[s_t.second].capacity) {
-        // Don't try to put things in a full vehicle.
-        continue;
-      }
-      if (_sol[s_t.first].size() == 0) {
-        continue;
-      }
-      for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
-        for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size(); ++t_rank) {
-          relocate
-            r(_input, _sol, _sol_state, s_t.first, s_rank, s_t.second, t_rank);
-          if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
-            best_gains[s_t.first][s_t.second] = r.gain();
-            best_ops[s_t.first][s_t.second] = std::make_unique<relocate>(r);
-          }
-        }
-      }
-    }
-
     // Exchange stuff
     for (const auto& s_t : s_t_pairs) {
       if (s_t.second <= s_t.first) {
@@ -587,28 +565,6 @@ void cvrp_local_search::run_ls_step() {
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
             best_gains[s_t.first][s_t.second] = r.gain();
             best_ops[s_t.first][s_t.second] = std::make_unique<exchange>(r);
-          }
-        }
-      }
-    }
-
-    // Or-opt stuff
-    for (const auto& s_t : s_t_pairs) {
-      if (total_amount(s_t.second) + _double_amount_lower_bound <=
-          _input._vehicles[s_t.second].capacity) {
-        // Don't try to put things in a full vehicle.
-        continue;
-      }
-      if (_sol[s_t.first].size() < 2) {
-        continue;
-      }
-      for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1; ++s_rank) {
-        for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size(); ++t_rank) {
-          or_opt
-            r(_input, _sol, _sol_state, s_t.first, s_rank, s_t.second, t_rank);
-          if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
-            best_gains[s_t.first][s_t.second] = r.gain();
-            best_ops[s_t.first][s_t.second] = std::make_unique<or_opt>(r);
           }
         }
       }
@@ -676,6 +632,62 @@ void cvrp_local_search::run_ls_step() {
             best_gains[s_t.first][s_t.second] = r.gain();
             best_ops[s_t.first][s_t.second] =
               std::make_unique<reverse_two_opt>(r);
+          }
+        }
+      }
+    }
+
+    // Relocate stuff
+    for (const auto& s_t : s_t_pairs) {
+      if (total_amount(s_t.second) + _amount_lower_bound <=
+          _input._vehicles[s_t.second].capacity) {
+        // Don't try to put things in a full vehicle.
+        continue;
+      }
+      if (_sol[s_t.first].size() == 0) {
+        continue;
+      }
+      for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
+        if (_sol_state.node_gains[s_t.first][s_rank] <=
+            best_gains[s_t.first][s_t.second]) {
+          // Except if addition cost in route s_t.second is negative
+          // (!!), overall gain can't exceed current known best gain.
+          continue;
+        }
+        for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size(); ++t_rank) {
+          relocate
+            r(_input, _sol, _sol_state, s_t.first, s_rank, s_t.second, t_rank);
+          if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
+            best_gains[s_t.first][s_t.second] = r.gain();
+            best_ops[s_t.first][s_t.second] = std::make_unique<relocate>(r);
+          }
+        }
+      }
+    }
+
+    // Or-opt stuff
+    for (const auto& s_t : s_t_pairs) {
+      if (total_amount(s_t.second) + _double_amount_lower_bound <=
+          _input._vehicles[s_t.second].capacity) {
+        // Don't try to put things in a full vehicle.
+        continue;
+      }
+      if (_sol[s_t.first].size() < 2) {
+        continue;
+      }
+      for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1; ++s_rank) {
+        if (_sol_state.edge_gains[s_t.first][s_rank] <=
+            best_gains[s_t.first][s_t.second]) {
+          // Except if addition cost in route s_t.second is negative
+          // (!!), overall gain can't exceed current known best gain.
+          continue;
+        }
+        for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size(); ++t_rank) {
+          or_opt
+            r(_input, _sol, _sol_state, s_t.first, s_rank, s_t.second, t_rank);
+          if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
+            best_gains[s_t.first][s_t.second] = r.gain();
+            best_ops[s_t.first][s_t.second] = std::make_unique<or_opt>(r);
           }
         }
       }
