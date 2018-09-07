@@ -14,7 +14,9 @@ All rights reserved (see LICENSE).
 #include "problems/vrptw/heuristics/solomon.h"
 #include "utils/helpers.h"
 
-tw_solution solomon(const input& input, INIT_T init, float lambda) {
+tw_solution homogeneous_solomon(const input& input, INIT_T init, float lambda) {
+  // TODO
+  // assert(input._homogeneous_locations and input._vehicles.size() > 0);
   tw_solution routes;
 
   std::set<index_t> unassigned;
@@ -40,43 +42,23 @@ tw_solution solomon(const input& input, INIT_T init, float lambda) {
 
   const auto& m = input.get_matrix();
 
-  // costs[j][v] is the cost of fetching job j in an empty route from
-  // vehicle at vehicles_ranks[v]. regrets[j][v] is the minimum cost
-  // of fetching job j in an empty route from any vehicle after the
-  // one at vehicles_ranks[v].
-  std::vector<std::vector<cost_t>> costs(input._jobs.size(),
-                                         std::vector<cost_t>(
-                                           input._vehicles.size()));
-  std::vector<std::vector<cost_t>> regrets(input._jobs.size(),
-                                           std::vector<cost_t>(
-                                             input._vehicles.size()));
+  // costs[j] is the cost of fetching job j in an empty route from one
+  // of the vehicles (consistent across vehicles in the homogeneous
+  // case).
+  const auto& v = input._vehicles[0];
+
+  std::vector<cost_t> costs(input._jobs.size());
   for (std::size_t j = 0; j < input._jobs.size(); ++j) {
     index_t j_index = input._jobs[j].index();
 
-    regrets[j].back() = INFINITE_COST;
-
-    for (std::size_t v = vehicles_ranks.size() - 1; v > 0; --v) {
-      const auto& vehicle = input._vehicles[vehicles_ranks[v]];
-      cost_t current_cost = 0;
-      if (vehicle.has_start()) {
-        current_cost += m[vehicle.start.get().index()][j_index];
-      }
-      if (vehicle.has_end()) {
-        current_cost += m[j_index][vehicle.end.get().index()];
-      }
-      costs[j][v] = current_cost;
-      regrets[j][v - 1] = std::min(regrets[j][v], current_cost);
-    }
-
-    const auto& vehicle = input._vehicles[vehicles_ranks[0]];
     cost_t current_cost = 0;
-    if (vehicle.has_start()) {
-      current_cost += m[vehicle.start.get().index()][j_index];
+    if (v.has_start()) {
+      current_cost += m[v.start.get().index()][j_index];
     }
-    if (vehicle.has_end()) {
-      current_cost += m[j_index][vehicle.end.get().index()];
+    if (v.has_end()) {
+      current_cost += m[j_index][v.end.get().index()];
     }
-    costs[j][0] = current_cost;
+    costs[j] = current_cost;
   }
 
   for (index_t v = 0; v < input._vehicles.size(); ++v) {
@@ -88,9 +70,7 @@ tw_solution solomon(const input& input, INIT_T init, float lambda) {
     amount_t route_amount(input.amount_size());
 
     if (init != INIT_T::NONE) {
-      // Initialize current route with the "best" valid job that is
-      //  closest for current vehicle than to any other remaining
-      //  vehicle.
+      // Initialize current route with the "best" valid job.
       amount_t higher_amount(input.amount_size());
       cost_t furthest_cost = 0;
       duration_t earliest_deadline = std::numeric_limits<duration_t>::max();
@@ -99,12 +79,6 @@ tw_solution solomon(const input& input, INIT_T init, float lambda) {
         if (!input.vehicle_ok_with_job(v, job_rank) or
             !(input._jobs[job_rank].amount <= vehicle.capacity) or
             !tw_r.is_valid_addition_for_tw(job_rank, 0)) {
-          continue;
-        }
-
-        auto current_cost =
-          addition_cost(input, m, job_rank, vehicle, tw_r.route, 0);
-        if (regrets[job_rank][v] < current_cost) {
           continue;
         }
 
@@ -120,8 +94,8 @@ tw_solution solomon(const input& input, INIT_T init, float lambda) {
             best_job_rank = job_rank;
           }
         }
-        if (init == INIT_T::FURTHEST and furthest_cost < current_cost) {
-          furthest_cost = current_cost;
+        if (init == INIT_T::FURTHEST and furthest_cost < costs[job_rank]) {
+          furthest_cost = costs[job_rank];
           best_job_rank = job_rank;
         }
       }
@@ -154,7 +128,7 @@ tw_solution solomon(const input& input, INIT_T init, float lambda) {
             addition_cost(input, m, job_rank, vehicle, tw_r.route, r);
 
           float current_cost =
-            current_add - lambda * static_cast<float>(regrets[job_rank][v]);
+            current_add - lambda * static_cast<float>(costs[job_rank]);
 
           if (current_cost < best_cost and
               tw_r.is_valid_addition_for_tw(job_rank, r)) {
