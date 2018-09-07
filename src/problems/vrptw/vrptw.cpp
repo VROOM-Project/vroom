@@ -57,7 +57,8 @@ solution vrptw::solve(unsigned exploration_level, unsigned nb_threads) const {
   auto run_solve = [&](const std::vector<std::size_t>& param_ranks) {
     for (auto rank : param_ranks) {
       auto& p = parameters[rank];
-      tw_solutions[rank] = homogeneous_solomon(_input, p.init, p.regret_coeff);
+      tw_solutions[rank] =
+        dynamic_vehicle_choice_heuristic(_input, p.init, p.regret_coeff);
     }
   };
 
