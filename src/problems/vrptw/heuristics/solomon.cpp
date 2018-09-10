@@ -263,15 +263,12 @@ tw_solution dynamic_vehicle_choice_heuristic(const input& input,
       cost_t furthest_cost = 0;
       duration_t earliest_deadline = std::numeric_limits<duration_t>::max();
       index_t best_job_rank = 0;
-      for (const auto& job_rank : unassigned) {
-        if (!input.vehicle_ok_with_job(v_rank, job_rank) or
+      for (const auto job_rank : unassigned) {
+        if (jobs_min_costs[job_rank] < costs[job_rank][v_rank] or
+            // One of the remaining vehicles is closest to that job.
+            !input.vehicle_ok_with_job(v_rank, job_rank) or
             !(input._jobs[job_rank].amount <= vehicle.capacity) or
             !tw_r.is_valid_addition_for_tw(job_rank, 0)) {
-          continue;
-        }
-
-        if (jobs_min_costs[job_rank] < costs[job_rank][v_rank]) {
-          // One of the remaining vehicles is closest to that job.
           continue;
         }
 
