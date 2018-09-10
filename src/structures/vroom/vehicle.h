@@ -33,6 +33,8 @@ struct vehicle_t {
   bool has_start() const;
 
   bool has_end() const;
+
+  bool has_same_locations(const vehicle_t& other) const;
 };
 
 #endif

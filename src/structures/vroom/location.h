@@ -38,6 +38,12 @@ public:
   coordinate_t lat() const;
 
   bool user_index() const;
+
+  // Locations are considered identical if they have the same
+  // user-provided index or if they both have coordinates and those
+  // are equal. The last part is required for situations with no
+  // explicit index provided in input.
+  bool operator==(const location_t& other) const;
 };
 
 #endif

@@ -47,3 +47,9 @@ coordinate_t location_t::lat() const {
 bool location_t::user_index() const {
   return _user_index;
 }
+
+bool location_t::operator==(const location_t& other) const {
+  return (_index == other.index()) or
+         (this->has_coordinates() and other.has_coordinates() and
+          (this->lon() == other.lon()) and (this->lat() == other.lat()));
+}

@@ -19,6 +19,11 @@ using tw_solution = std::vector<tw_route>;
 enum class INIT_T { NONE, HIGHER_AMOUNT, EARLIEST_DEADLINE, FURTHEST };
 
 // Implementation of a variant of the Solomon I1 heuristic.
-tw_solution solomon(const input& input, INIT_T init, float lambda);
+tw_solution basic_heuristic(const input& input, INIT_T init, float lambda);
+
+// Adjusting the above for situation with heterogeneous fleet.
+tw_solution dynamic_vehicle_choice_heuristic(const input& input,
+                                             INIT_T init,
+                                             float lambda);
 
 #endif

@@ -39,6 +39,7 @@ private:
   std::unique_ptr<routing_io<cost_t>> _routing_wrapper;
   bool _has_skills;
   bool _has_TW;
+  bool _homogeneous_locations;
   const bool _geometry;
   matrix<cost_t> _matrix;
   std::vector<location_t> _locations;
@@ -71,6 +72,8 @@ public:
   amount_t get_amount_lower_bound() const;
 
   bool has_skills() const;
+
+  bool has_homogeneous_locations() const;
 
   bool vehicle_ok_with_job(index_t v_index, index_t j_index) const;
 

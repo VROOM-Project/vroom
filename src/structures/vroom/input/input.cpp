@@ -22,6 +22,7 @@ input::input(std::unique_ptr<routing_io<cost_t>> routing_wrapper, bool geometry)
   : _start_loading(std::chrono::high_resolution_clock::now()),
     _routing_wrapper(std::move(routing_wrapper)),
     _has_TW(false),
+    _homogeneous_locations(true),
     _geometry(geometry),
     _all_locations_have_coords(true) {
 }
@@ -109,6 +110,12 @@ void input::add_vehicle(const vehicle_t& vehicle) {
 
     _locations.push_back(current_v.end.get());
   }
+
+  // Check for homogeneous locations among vehicles.
+  if (_vehicles.size() > 1) {
+    _homogeneous_locations &=
+      _vehicles.front().has_same_locations(_vehicles.back());
+  }
 }
 
 void input::store_amount_lower_bound(const amount_t& amount) {
@@ -150,6 +157,10 @@ amount_t input::get_amount_lower_bound() const {
 
 bool input::has_skills() const {
   return _has_skills;
+}
+
+bool input::has_homogeneous_locations() const {
+  return _homogeneous_locations;
 }
 
 bool input::vehicle_ok_with_job(index_t v_index, index_t j_index) const {
