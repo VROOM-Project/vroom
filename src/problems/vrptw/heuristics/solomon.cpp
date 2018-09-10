@@ -73,7 +73,7 @@ tw_solution basic_heuristic(const input& input, INIT_T init, float lambda) {
       cost_t furthest_cost = 0;
       duration_t earliest_deadline = std::numeric_limits<duration_t>::max();
       index_t best_job_rank = 0;
-      for (const auto& job_rank : unassigned) {
+      for (const auto job_rank : unassigned) {
         if (!input.vehicle_ok_with_job(v, job_rank) or
             !(input._jobs[job_rank].amount <= vehicle.capacity) or
             !tw_r.is_valid_addition_for_tw(job_rank, 0)) {
@@ -114,7 +114,7 @@ tw_solution basic_heuristic(const input& input, INIT_T init, float lambda) {
       index_t best_job_rank = 0;
       index_t best_r = 0;
 
-      for (const auto& job_rank : unassigned) {
+      for (const auto job_rank : unassigned) {
         if (!input.vehicle_ok_with_job(v, job_rank) or
             !(route_amount + input._jobs[job_rank].amount <=
               vehicle.capacity)) {
@@ -195,8 +195,8 @@ tw_solution dynamic_vehicle_choice_heuristic(const input& input,
     std::vector<cost_t>
       jobs_second_min_costs(input._jobs.size(),
                             std::numeric_limits<cost_t>::max());
-    for (const auto& job_rank : unassigned) {
-      for (const auto& v_rank : vehicles_ranks) {
+    for (const auto job_rank : unassigned) {
+      for (const auto v_rank : vehicles_ranks) {
         if (costs[job_rank][v_rank] <= jobs_min_costs[job_rank]) {
           jobs_second_min_costs[job_rank] = jobs_min_costs[job_rank];
           jobs_min_costs[job_rank] = costs[job_rank][v_rank];
@@ -211,8 +211,8 @@ tw_solution dynamic_vehicle_choice_heuristic(const input& input,
     // Pick vehicle that has the biggest number of compatible jobs
     // closest to him than to any other different vehicle.
     std::vector<unsigned> closest_jobs_count(input._vehicles.size(), 0);
-    for (const auto& job_rank : unassigned) {
-      for (const auto& v_rank : vehicles_ranks) {
+    for (const auto job_rank : unassigned) {
+      for (const auto v_rank : vehicles_ranks) {
         if (costs[job_rank][v_rank] == jobs_min_costs[job_rank]) {
           ++closest_jobs_count[v_rank];
         }
@@ -241,7 +241,7 @@ tw_solution dynamic_vehicle_choice_heuristic(const input& input,
     // vehicles.
     std::vector<cost_t> regrets(input._jobs.size(),
                                 std::numeric_limits<cost_t>::max());
-    for (const auto& job_rank : unassigned) {
+    for (const auto job_rank : unassigned) {
       if (jobs_min_costs[job_rank] < costs[job_rank][v_rank]) {
         regrets[job_rank] = jobs_min_costs[job_rank];
       } else {
@@ -310,7 +310,7 @@ tw_solution dynamic_vehicle_choice_heuristic(const input& input,
       index_t best_job_rank = 0;
       index_t best_r = 0;
 
-      for (const auto& job_rank : unassigned) {
+      for (const auto job_rank : unassigned) {
         if (!input.vehicle_ok_with_job(v_rank, job_rank) or
             !(route_amount + input._jobs[job_rank].amount <=
               vehicle.capacity)) {
