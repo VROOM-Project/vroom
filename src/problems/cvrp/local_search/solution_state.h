@@ -10,10 +10,23 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <unordered_set>
+
 #include "structures/typedefs.h"
 #include "structures/vroom/amount.h"
+#include "structures/vroom/input/input.h"
 
-struct solution_state {
+class solution_state {
+private:
+  const input& _input;
+  const matrix<cost_t>& _m;
+  const std::size_t _V;
+  const amount_t _empty_amount;
+
+public:
+  // Store unassigned jobs.
+  std::unordered_set<index_t> unassigned;
+
   // fwd_amounts[v][i] stores the total amount up to rank i in the
   // route for vehicle v, while bwd_amounts[v][i] stores the total
   // amount *after* rank i in the route for vehicle v.
@@ -68,7 +81,30 @@ struct solution_state {
 
   std::vector<cost_t> route_costs;
 
-  solution_state(std::size_t n);
+  solution_state(const input& input, const raw_solution& sol);
+
+  void setup(const raw_solution& sol);
+
+  void update_amounts(const raw_solution& sol, index_t v);
+
+  void update_costs(const raw_solution& sol, index_t v);
+
+  void update_skills(const raw_solution& sol, index_t v1);
+
+  void set_node_gains(const raw_solution& sol, index_t v);
+
+  void set_edge_gains(const raw_solution& sol, index_t v);
+
+  void update_nearest_job_rank_in_routes(const raw_solution& sol,
+                                         index_t v1,
+                                         index_t v2);
+
+  cost_t route_cost_for_vehicle(index_t vehicle_rank,
+                                const std::vector<index_t>& route) const;
+
+  void update_route_cost(const raw_solution& sol, index_t v);
+
+  const amount_t& total_amount(index_t v) const;
 };
 
 #endif
