@@ -290,7 +290,8 @@ inline solution format_solution(const input& input,
 
     assert(amount <= v.capacity);
     assert(forward_wt == backward_wt);
-    assert(steps.back().arrival - steps.front().arrival ==
+    assert(steps.back().arrival + steps.back().waiting_time +
+             steps.back().service - steps.front().arrival ==
            cost + service + forward_wt);
 
     routes.emplace_back(v.id,
