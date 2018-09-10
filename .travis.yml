@@ -54,17 +54,17 @@ matrix:
             - g++-7
       env: COMPILER=clang++-5.0
 
-    # - os: linux
-    #   addons:
-    #     apt:
-    #       sources:
-    #         - ubuntu-toolchain-r-test
-    #         - llvm-toolchain-trusty-6.0
-    #       packages:
-    #         - clang-6.0
-    #         - libboost-all-dev
-    #         - g++-7
-    #   env: COMPILER=clang++-6.0
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-trusty-6.0
+          packages:
+            - clang-6.0
+            - libboost-all-dev
+            - g++-7
+      env: COMPILER=clang++-6.0
 
 before_script:
   - export ROOT_FOLDER="$(pwd)"
@@ -85,7 +85,7 @@ script:
   - sudo apt-get install build-essential wget cmake3 pkg-config libbz2-dev libstxxl-dev libstxxl1 libxml2-dev libzip-dev lua5.2 liblua5.2-dev libtbb-dev
   - git clone https://github.com/Project-OSRM/osrm-backend.git
   - cd osrm-backend
-  - git checkout v5.18.0
+  - git checkout v5.19.0
   - mkdir build
   - cd build
   - cmake .. -DCMAKE_BUILD_TYPE=Release
