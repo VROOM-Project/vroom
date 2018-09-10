@@ -73,6 +73,8 @@ public:
 
   bool has_skills() const;
 
+  bool has_homogeneous_locations() const;
+
   bool vehicle_ok_with_job(index_t v_index, index_t j_index) const;
 
   const matrix<cost_t>& get_matrix() const;

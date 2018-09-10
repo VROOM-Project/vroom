@@ -159,6 +159,10 @@ bool input::has_skills() const {
   return _has_skills;
 }
 
+bool input::has_homogeneous_locations() const {
+  return _homogeneous_locations;
+}
+
 bool input::vehicle_ok_with_job(index_t v_index, index_t j_index) const {
   return _vehicle_to_job_compatibility[v_index][j_index];
 }
