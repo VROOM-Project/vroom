@@ -16,6 +16,28 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/amount.h"
 #include "structures/vroom/input/input.h"
 
+struct solution_indicators {
+  unsigned unassigned;
+  cost_t cost;
+  unsigned used_vehicles;
+
+  friend bool operator<(const solution_indicators& lhs,
+                        const solution_indicators& rhs) {
+    if (lhs.unassigned < rhs.unassigned) {
+      return true;
+    }
+    if (lhs.unassigned == rhs.unassigned) {
+      if (lhs.cost < rhs.cost) {
+        return true;
+      }
+      if (lhs.cost == rhs.cost and lhs.used_vehicles < rhs.used_vehicles) {
+        return true;
+      }
+    }
+    return false;
+  }
+};
+
 class solution_state {
 private:
   const input& _input;

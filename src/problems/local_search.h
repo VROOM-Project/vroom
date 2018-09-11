@@ -14,12 +14,6 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/input/input.h"
 #include "structures/vroom/solution_state.h"
 
-struct solution_indicators {
-  unsigned unassigned;
-  cost_t cost;
-  unsigned used_vehicles;
-};
-
 class local_search {
 protected:
   const input& _input;

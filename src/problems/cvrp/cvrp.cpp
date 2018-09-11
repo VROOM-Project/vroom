@@ -138,24 +138,8 @@ solution cvrp::solve(unsigned exploration_level, unsigned nb_threads) const {
     t.join();
   }
 
-  auto indicators_compare = [](const auto& lhs, const auto& rhs) {
-    if (lhs.unassigned < rhs.unassigned) {
-      return true;
-    }
-    if (lhs.unassigned == rhs.unassigned) {
-      if (lhs.cost < rhs.cost) {
-        return true;
-      }
-      if (lhs.cost == rhs.cost and lhs.used_vehicles < rhs.used_vehicles) {
-        return true;
-      }
-    }
-    return false;
-  };
-
-  auto best_indic = std::min_element(sol_indicators.cbegin(),
-                                     sol_indicators.cend(),
-                                     indicators_compare);
+  auto best_indic =
+    std::min_element(sol_indicators.cbegin(), sol_indicators.cend());
 
   return format_solution(_input,
                          solutions[std::distance(sol_indicators.cbegin(),
