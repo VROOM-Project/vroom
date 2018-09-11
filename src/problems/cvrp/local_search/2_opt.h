@@ -1,5 +1,5 @@
-#ifndef TWO_OPT_H
-#define TWO_OPT_H
+#ifndef CVRP_TWO_OPT_H
+#define CVRP_TWO_OPT_H
 
 /*
 
@@ -12,18 +12,18 @@ All rights reserved (see LICENSE).
 
 #include "problems/cvrp/local_search/operator.h"
 
-class two_opt : public ls_operator {
+class cvrp_two_opt : public cvrp_ls_operator {
 private:
   virtual void compute_gain() override;
 
 public:
-  two_opt(const input& input,
-          raw_solution& sol,
-          const solution_state& sol_state,
-          index_t source_vehicle,
-          index_t source_rank,
-          index_t target_vehicle,
-          index_t target_rank);
+  cvrp_two_opt(const input& input,
+               raw_solution& sol,
+               const solution_state& sol_state,
+               index_t source_vehicle,
+               index_t source_rank,
+               index_t target_vehicle,
+               index_t target_rank);
 
   virtual bool is_valid() const override;
 

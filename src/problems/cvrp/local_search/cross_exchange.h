@@ -1,5 +1,5 @@
-#ifndef CROSS_EXCHANGE_H
-#define CROSS_EXCHANGE_H
+#ifndef CVRP_CROSS_EXCHANGE_H
+#define CVRP_CROSS_EXCHANGE_H
 
 /*
 
@@ -12,7 +12,7 @@ All rights reserved (see LICENSE).
 
 #include "problems/cvrp/local_search/operator.h"
 
-class cross_exchange : public ls_operator {
+class cvrp_cross_exchange : public cvrp_ls_operator {
 private:
   virtual void compute_gain() override;
 
@@ -20,13 +20,13 @@ private:
   bool reverse_target_edge;
 
 public:
-  cross_exchange(const input& input,
-                 raw_solution& sol,
-                 const solution_state& sol_state,
-                 index_t source_vehicle,
-                 index_t source_rank,
-                 index_t target_vehicle,
-                 index_t target_rank);
+  cvrp_cross_exchange(const input& input,
+                      raw_solution& sol,
+                      const solution_state& sol_state,
+                      index_t source_vehicle,
+                      index_t source_rank,
+                      index_t target_vehicle,
+                      index_t target_rank);
 
   virtual bool is_valid() const override;
 

@@ -9,20 +9,20 @@ All rights reserved (see LICENSE).
 
 #include "problems/cvrp/local_search/2_opt.h"
 
-two_opt::two_opt(const input& input,
-                 raw_solution& sol,
-                 const solution_state& sol_state,
-                 index_t source_vehicle,
-                 index_t source_rank,
-                 index_t target_vehicle,
-                 index_t target_rank)
-  : ls_operator(input,
-                sol,
-                sol_state,
-                source_vehicle,
-                source_rank,
-                target_vehicle,
-                target_rank) {
+cvrp_two_opt::cvrp_two_opt(const input& input,
+                           raw_solution& sol,
+                           const solution_state& sol_state,
+                           index_t source_vehicle,
+                           index_t source_rank,
+                           index_t target_vehicle,
+                           index_t target_rank)
+  : cvrp_ls_operator(input,
+                     sol,
+                     sol_state,
+                     source_vehicle,
+                     source_rank,
+                     target_vehicle,
+                     target_rank) {
   assert(source_vehicle != target_vehicle);
   assert(_sol[source_vehicle].size() >= 1);
   assert(_sol[target_vehicle].size() >= 1);
@@ -30,7 +30,7 @@ two_opt::two_opt(const input& input,
   assert(target_rank < _sol[target_vehicle].size());
 }
 
-void two_opt::compute_gain() {
+void cvrp_two_opt::compute_gain() {
   const auto& m = _input.get_matrix();
   const auto& v_source = _input._vehicles[source_vehicle];
   const auto& v_target = _input._vehicles[target_vehicle];
@@ -82,7 +82,7 @@ void two_opt::compute_gain() {
   gain_computed = true;
 }
 
-bool two_opt::is_valid() const {
+bool cvrp_two_opt::is_valid() const {
   bool valid = (_sol_state.bwd_skill_rank[source_vehicle][target_vehicle] <=
                 source_rank + 1);
 
@@ -99,7 +99,7 @@ bool two_opt::is_valid() const {
   return valid;
 }
 
-void two_opt::apply() const {
+void cvrp_two_opt::apply() const {
   auto nb_source = _sol[source_vehicle].size() - 1 - source_rank;
 
   _sol[target_vehicle].insert(_sol[target_vehicle].begin() + target_rank + 1,
@@ -116,6 +116,6 @@ void two_opt::apply() const {
                              _sol[target_vehicle].end());
 }
 
-std::vector<index_t> two_opt::addition_candidates() const {
+std::vector<index_t> cvrp_two_opt::addition_candidates() const {
   return {source_vehicle, target_vehicle};
 }

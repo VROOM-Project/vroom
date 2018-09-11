@@ -7,7 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/cvrp/local_search/solution_state.h"
+#include "structures/vroom/solution_state.h"
 
 solution_state::solution_state(const input& input, const raw_solution& sol)
   : _input(input),

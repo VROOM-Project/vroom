@@ -9,13 +9,13 @@ All rights reserved (see LICENSE).
 
 #include "problems/cvrp/local_search/operator.h"
 
-ls_operator::ls_operator(const input& input,
-                         raw_solution& sol,
-                         const solution_state& sol_state,
-                         index_t source_vehicle,
-                         index_t source_rank,
-                         index_t target_vehicle,
-                         index_t target_rank)
+cvrp_ls_operator::cvrp_ls_operator(const input& input,
+                                   raw_solution& sol,
+                                   const solution_state& sol_state,
+                                   index_t source_vehicle,
+                                   index_t source_rank,
+                                   index_t target_vehicle,
+                                   index_t target_rank)
   : _input(input),
     _sol(sol),
     _sol_state(sol_state),
@@ -26,7 +26,7 @@ ls_operator::ls_operator(const input& input,
     gain_computed(false) {
 }
 
-gain_t ls_operator::gain() {
+gain_t cvrp_ls_operator::gain() {
   if (!gain_computed) {
     this->compute_gain();
   }

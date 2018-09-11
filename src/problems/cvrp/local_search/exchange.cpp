@@ -9,20 +9,20 @@ All rights reserved (see LICENSE).
 
 #include "problems/cvrp/local_search/exchange.h"
 
-exchange::exchange(const input& input,
-                   raw_solution& sol,
-                   const solution_state& sol_state,
-                   index_t source_vehicle,
-                   index_t source_rank,
-                   index_t target_vehicle,
-                   index_t target_rank)
-  : ls_operator(input,
-                sol,
-                sol_state,
-                source_vehicle,
-                source_rank,
-                target_vehicle,
-                target_rank) {
+cvrp_exchange::cvrp_exchange(const input& input,
+                             raw_solution& sol,
+                             const solution_state& sol_state,
+                             index_t source_vehicle,
+                             index_t source_rank,
+                             index_t target_vehicle,
+                             index_t target_rank)
+  : cvrp_ls_operator(input,
+                     sol,
+                     sol_state,
+                     source_vehicle,
+                     source_rank,
+                     target_vehicle,
+                     target_rank) {
   assert(source_vehicle != target_vehicle);
   assert(_sol[source_vehicle].size() >= 1);
   assert(_sol[target_vehicle].size() >= 1);
@@ -30,7 +30,7 @@ exchange::exchange(const input& input,
   assert(target_rank < _sol[target_vehicle].size());
 }
 
-void exchange::compute_gain() {
+void cvrp_exchange::compute_gain() {
   const auto& m = _input.get_matrix();
   const auto& v_source = _input._vehicles[source_vehicle];
   const auto& v_target = _input._vehicles[target_vehicle];
@@ -105,7 +105,7 @@ void exchange::compute_gain() {
   gain_computed = true;
 }
 
-bool exchange::is_valid() const {
+bool cvrp_exchange::is_valid() const {
   auto source_job_rank = _sol[source_vehicle][source_rank];
   auto target_job_rank = _sol[target_vehicle][target_rank];
 
@@ -125,11 +125,11 @@ bool exchange::is_valid() const {
   return valid;
 }
 
-void exchange::apply() const {
+void cvrp_exchange::apply() const {
   std::swap(_sol[source_vehicle][source_rank],
             _sol[target_vehicle][target_rank]);
 }
 
-std::vector<index_t> exchange::addition_candidates() const {
+std::vector<index_t> cvrp_exchange::addition_candidates() const {
   return {source_vehicle, target_vehicle};
 }

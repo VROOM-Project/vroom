@@ -10,27 +10,27 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/local_search/relocate.h"
 #include "utils/helpers.h"
 
-relocate::relocate(const input& input,
-                   raw_solution& sol,
-                   const solution_state& sol_state,
-                   index_t source_vehicle,
-                   index_t source_rank,
-                   index_t target_vehicle,
-                   index_t target_rank)
-  : ls_operator(input,
-                sol,
-                sol_state,
-                source_vehicle,
-                source_rank,
-                target_vehicle,
-                target_rank) {
+cvrp_relocate::cvrp_relocate(const input& input,
+                             raw_solution& sol,
+                             const solution_state& sol_state,
+                             index_t source_vehicle,
+                             index_t source_rank,
+                             index_t target_vehicle,
+                             index_t target_rank)
+  : cvrp_ls_operator(input,
+                     sol,
+                     sol_state,
+                     source_vehicle,
+                     source_rank,
+                     target_vehicle,
+                     target_rank) {
   assert(source_vehicle != target_vehicle);
   assert(_sol[source_vehicle].size() >= 1);
   assert(source_rank < _sol[source_vehicle].size());
   assert(target_rank <= _sol[target_vehicle].size());
 }
 
-void relocate::compute_gain() {
+void cvrp_relocate::compute_gain() {
   const auto& m = _input.get_matrix();
   const auto& v_target = _input._vehicles[target_vehicle];
 
@@ -52,7 +52,7 @@ void relocate::compute_gain() {
   gain_computed = true;
 }
 
-bool relocate::is_valid() const {
+bool cvrp_relocate::is_valid() const {
   auto relocate_job_rank = _sol[source_vehicle][source_rank];
 
   bool valid = _input.vehicle_ok_with_job(target_vehicle, relocate_job_rank);
@@ -69,13 +69,13 @@ bool relocate::is_valid() const {
   return valid;
 }
 
-void relocate::apply() const {
+void cvrp_relocate::apply() const {
   auto relocate_job_rank = _sol[source_vehicle][source_rank];
   _sol[source_vehicle].erase(_sol[source_vehicle].begin() + source_rank);
   _sol[target_vehicle].insert(_sol[target_vehicle].begin() + target_rank,
                               relocate_job_rank);
 }
 
-std::vector<index_t> relocate::addition_candidates() const {
+std::vector<index_t> cvrp_relocate::addition_candidates() const {
   return {source_vehicle};
 }

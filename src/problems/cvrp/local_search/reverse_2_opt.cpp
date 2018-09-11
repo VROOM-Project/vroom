@@ -9,20 +9,20 @@ All rights reserved (see LICENSE).
 
 #include "problems/cvrp/local_search/reverse_2_opt.h"
 
-reverse_two_opt::reverse_two_opt(const input& input,
-                                 raw_solution& sol,
-                                 const solution_state& sol_state,
-                                 index_t source_vehicle,
-                                 index_t source_rank,
-                                 index_t target_vehicle,
-                                 index_t target_rank)
-  : ls_operator(input,
-                sol,
-                sol_state,
-                source_vehicle,
-                source_rank,
-                target_vehicle,
-                target_rank) {
+cvrp_reverse_two_opt::cvrp_reverse_two_opt(const input& input,
+                                           raw_solution& sol,
+                                           const solution_state& sol_state,
+                                           index_t source_vehicle,
+                                           index_t source_rank,
+                                           index_t target_vehicle,
+                                           index_t target_rank)
+  : cvrp_ls_operator(input,
+                     sol,
+                     sol_state,
+                     source_vehicle,
+                     source_rank,
+                     target_vehicle,
+                     target_rank) {
   assert(source_vehicle != target_vehicle);
   assert(_sol[source_vehicle].size() >= 1);
   assert(_sol[target_vehicle].size() >= 1);
@@ -30,7 +30,7 @@ reverse_two_opt::reverse_two_opt(const input& input,
   assert(target_rank < _sol[target_vehicle].size());
 }
 
-void reverse_two_opt::compute_gain() {
+void cvrp_reverse_two_opt::compute_gain() {
   const auto& m = _input.get_matrix();
   const auto& v_source = _input._vehicles[source_vehicle];
   const auto& v_target = _input._vehicles[target_vehicle];
@@ -126,7 +126,7 @@ void reverse_two_opt::compute_gain() {
   gain_computed = true;
 }
 
-bool reverse_two_opt::is_valid() const {
+bool cvrp_reverse_two_opt::is_valid() const {
   bool valid = (_sol_state.bwd_skill_rank[source_vehicle][target_vehicle] <=
                 source_rank + 1);
 
@@ -143,7 +143,7 @@ bool reverse_two_opt::is_valid() const {
   return valid;
 }
 
-void reverse_two_opt::apply() const {
+void cvrp_reverse_two_opt::apply() const {
   auto nb_source = _sol[source_vehicle].size() - 1 - source_rank;
 
   _sol[target_vehicle].insert(_sol[target_vehicle].begin(),
@@ -160,6 +160,6 @@ void reverse_two_opt::apply() const {
                                target_rank + 1);
 }
 
-std::vector<index_t> reverse_two_opt::addition_candidates() const {
+std::vector<index_t> cvrp_reverse_two_opt::addition_candidates() const {
   return {source_vehicle, target_vehicle};
 }

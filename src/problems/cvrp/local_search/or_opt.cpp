@@ -9,20 +9,20 @@ All rights reserved (see LICENSE).
 
 #include "problems/cvrp/local_search/or_opt.h"
 
-or_opt::or_opt(const input& input,
-               raw_solution& sol,
-               const solution_state& sol_state,
-               index_t source_vehicle,
-               index_t source_rank,
-               index_t target_vehicle,
-               index_t target_rank)
-  : ls_operator(input,
-                sol,
-                sol_state,
-                source_vehicle,
-                source_rank,
-                target_vehicle,
-                target_rank),
+cvrp_or_opt::cvrp_or_opt(const input& input,
+                         raw_solution& sol,
+                         const solution_state& sol_state,
+                         index_t source_vehicle,
+                         index_t source_rank,
+                         index_t target_vehicle,
+                         index_t target_rank)
+  : cvrp_ls_operator(input,
+                     sol,
+                     sol_state,
+                     source_vehicle,
+                     source_rank,
+                     target_vehicle,
+                     target_rank),
     reverse_source_edge(false) {
   assert(source_vehicle != target_vehicle);
   assert(_sol[source_vehicle].size() >= 2);
@@ -30,7 +30,7 @@ or_opt::or_opt(const input& input,
   assert(target_rank <= _sol[target_vehicle].size());
 }
 
-void or_opt::compute_gain() {
+void cvrp_or_opt::compute_gain() {
   const auto& m = _input.get_matrix();
   const auto& v_target = _input._vehicles[target_vehicle];
 
@@ -116,7 +116,7 @@ void or_opt::compute_gain() {
   gain_computed = true;
 }
 
-bool or_opt::is_valid() const {
+bool cvrp_or_opt::is_valid() const {
   auto current_job_rank = _sol[source_vehicle][source_rank];
   // Already asserted in compute_gain.
   auto after_job_rank = _sol[source_vehicle][source_rank + 1];
@@ -138,7 +138,7 @@ bool or_opt::is_valid() const {
   return valid;
 }
 
-void or_opt::apply() const {
+void cvrp_or_opt::apply() const {
   _sol[target_vehicle].insert(_sol[target_vehicle].begin() + target_rank,
                               _sol[source_vehicle].begin() + source_rank,
                               _sol[source_vehicle].begin() + source_rank + 2);
@@ -151,6 +151,6 @@ void or_opt::apply() const {
                              _sol[source_vehicle].begin() + source_rank + 2);
 }
 
-std::vector<index_t> or_opt::addition_candidates() const {
+std::vector<index_t> cvrp_or_opt::addition_candidates() const {
   return {source_vehicle};
 }

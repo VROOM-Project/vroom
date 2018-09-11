@@ -10,9 +10,9 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/cvrp/local_search/solution_state.h"
 #include "structures/typedefs.h"
 #include "structures/vroom/input/input.h"
+#include "structures/vroom/solution_state.h"
 
 struct solution_indicators {
   unsigned unassigned;
