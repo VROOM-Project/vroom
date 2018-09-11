@@ -22,16 +22,11 @@ All rights reserved (see LICENSE).
 cvrp_local_search::cvrp_local_search(const input& input,
                                      raw_solution& sol,
                                      unsigned max_nb_jobs_removal)
-  : _input(input),
-    _m(_input.get_matrix()),
-    V(_input._vehicles.size()),
-    _amount_lower_bound(_input.get_amount_lower_bound()),
-    _double_amount_lower_bound(_amount_lower_bound + _amount_lower_bound),
+  : local_search(input, sol),
     _max_nb_jobs_removal(max_nb_jobs_removal),
     _all_routes(V),
     _target_sol(sol),
     _sol(sol),
-    _sol_state(input, _sol),
     _best_sol(sol) {
   // Initialize all route indices.
   std::iota(_all_routes.begin(), _all_routes.end(), 0);

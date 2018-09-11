@@ -10,29 +10,15 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "structures/typedefs.h"
-#include "structures/vroom/input/input.h"
-#include "structures/vroom/solution_state.h"
+#include "problems/local_search.h"
 
-struct solution_indicators {
-  unsigned unassigned;
-  cost_t cost;
-  unsigned used_vehicles;
-};
-
-class cvrp_local_search {
+class cvrp_local_search : public local_search {
 private:
-  const input& _input;
-  const matrix<cost_t>& _m;
-  const std::size_t V;
-  const amount_t _amount_lower_bound;
-  const amount_t _double_amount_lower_bound;
   const unsigned _max_nb_jobs_removal;
 
   std::vector<index_t> _all_routes;
   raw_solution& _target_sol;
   raw_solution _sol;
-  solution_state _sol_state;
 
   raw_solution _best_sol;
   unsigned _best_unassigned;
@@ -52,9 +38,9 @@ public:
                     raw_solution& sol,
                     unsigned max_nb_jobs_removal);
 
-  solution_indicators indicators() const;
+  virtual solution_indicators indicators() const override;
 
-  void run();
+  virtual void run() override;
 };
 
 #endif
