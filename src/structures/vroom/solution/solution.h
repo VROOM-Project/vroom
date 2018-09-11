@@ -10,6 +10,8 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <string>
+
 #include "structures/vroom/job.h"
 #include "structures/vroom/solution/route.h"
 #include "structures/vroom/solution/summary.h"
