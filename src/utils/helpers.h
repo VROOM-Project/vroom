@@ -316,4 +316,14 @@ inline solution format_solution(const input& input,
                   std::move(unassigned_jobs));
 }
 
+inline raw_solution to_raw_solution(const tw_solution& tw_sol) {
+  raw_solution result;
+  std::transform(tw_sol.begin(),
+                 tw_sol.end(),
+                 std::back_inserter(result),
+                 [](const auto& tw_r) { return tw_r.route; });
+
+  return result;
+}
+
 #endif

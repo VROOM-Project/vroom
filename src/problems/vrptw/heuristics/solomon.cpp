@@ -16,6 +16,9 @@ All rights reserved (see LICENSE).
 
 tw_solution basic_heuristic(const input& input, INIT_T init, float lambda) {
   tw_solution routes;
+  for (index_t v = 0; v < input._vehicles.size(); ++v) {
+    routes.emplace_back(input, v);
+  }
 
   std::set<index_t> unassigned;
   for (index_t j = 0; j < input._jobs.size(); ++j) {
@@ -60,8 +63,7 @@ tw_solution basic_heuristic(const input& input, INIT_T init, float lambda) {
   }
 
   for (index_t v = 0; v < input._vehicles.size(); ++v) {
-    routes.emplace_back(input, vehicles_ranks[v]);
-    auto& tw_r = routes.back();
+    auto& tw_r = routes[vehicles_ranks[v]];
 
     const auto& vehicle = input._vehicles[vehicles_ranks[v]];
 
@@ -153,6 +155,9 @@ tw_solution dynamic_vehicle_choice_heuristic(const input& input,
                                              INIT_T init,
                                              float lambda) {
   tw_solution routes;
+  for (index_t v = 0; v < input._vehicles.size(); ++v) {
+    routes.emplace_back(input, v);
+  }
 
   std::set<index_t> unassigned;
   for (index_t j = 0; j < input._jobs.size(); ++j) {
@@ -250,8 +255,7 @@ tw_solution dynamic_vehicle_choice_heuristic(const input& input,
     }
 
     const auto& vehicle = input._vehicles[v_rank];
-    routes.emplace_back(input, v_rank);
-    auto& tw_r = routes.back();
+    auto& tw_r = routes[v_rank];
 
     amount_t route_amount(input.amount_size());
 

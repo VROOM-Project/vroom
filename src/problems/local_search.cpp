@@ -15,6 +15,7 @@ local_search::local_search(const input& input, const raw_solution& sol)
     V(_input._vehicles.size()),
     _amount_lower_bound(_input.get_amount_lower_bound()),
     _double_amount_lower_bound(_amount_lower_bound + _amount_lower_bound),
+    _sol(sol),
     _sol_state(input, sol) {
 }
 

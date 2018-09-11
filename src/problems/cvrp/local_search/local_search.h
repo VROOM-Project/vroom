@@ -18,7 +18,6 @@ private:
 
   std::vector<index_t> _all_routes;
   raw_solution& _target_sol;
-  raw_solution _sol;
 
   raw_solution _best_sol;
   unsigned _best_unassigned;

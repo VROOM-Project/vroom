@@ -22,6 +22,7 @@ protected:
   const amount_t _amount_lower_bound;
   const amount_t _double_amount_lower_bound;
 
+  raw_solution _sol;
   solution_state _sol_state;
 
 public:

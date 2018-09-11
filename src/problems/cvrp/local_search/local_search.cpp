@@ -26,7 +26,6 @@ cvrp_local_search::cvrp_local_search(const input& input,
     _max_nb_jobs_removal(max_nb_jobs_removal),
     _all_routes(V),
     _target_sol(sol),
-    _sol(sol),
     _best_sol(sol) {
   // Initialize all route indices.
   std::iota(_all_routes.begin(), _all_routes.end(), 0);
