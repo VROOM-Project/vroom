@@ -550,11 +550,8 @@ void cvrp_local_search::run_ls_step() {
   while (best_gain > 0) {
     // Exchange stuff
     for (const auto& s_t : s_t_pairs) {
-      if (s_t.second <= s_t.first) {
-        // This operator is symmetric.
-        continue;
-      }
-      if ((_sol[s_t.first].size() == 0) or (_sol[s_t.second].size() == 0)) {
+      if (s_t.second <= s_t.first or // This operator is symmetric.
+          _sol[s_t.first].size() == 0 or _sol[s_t.second].size() == 0) {
         continue;
       }
 
@@ -572,14 +569,11 @@ void cvrp_local_search::run_ls_step() {
 
     // CROSS-exchange stuff
     for (const auto& s_t : s_t_pairs) {
-      if (s_t.second <= s_t.first) {
-        // This operator is symmetric.
+      if (s_t.second <= s_t.first or // This operator is symmetric.
+          _sol[s_t.first].size() < 2 or _sol[s_t.second].size() < 2) {
         continue;
       }
 
-      if ((_sol[s_t.first].size() < 2) or (_sol[s_t.second].size() < 2)) {
-        continue;
-      }
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1; ++s_rank) {
         for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size() - 1;
              ++t_rank) {
@@ -639,12 +633,11 @@ void cvrp_local_search::run_ls_step() {
 
     // Relocate stuff
     for (const auto& s_t : s_t_pairs) {
-      if (total_amount(s_t.second) + _amount_lower_bound <=
-          _input._vehicles[s_t.second].capacity) {
-        // Don't try to put things in a full vehicle.
-        continue;
-      }
-      if (_sol[s_t.first].size() == 0) {
+      if (_sol[s_t.first].size() == 0 or
+          !(total_amount(s_t.second) + _amount_lower_bound <=
+            _input._vehicles[s_t.second].capacity)) {
+        // Don't try to put things in a full vehicle or from an empty
+        // vehicle.
         continue;
       }
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
@@ -667,12 +660,11 @@ void cvrp_local_search::run_ls_step() {
 
     // Or-opt stuff
     for (const auto& s_t : s_t_pairs) {
-      if (total_amount(s_t.second) + _double_amount_lower_bound <=
-          _input._vehicles[s_t.second].capacity) {
-        // Don't try to put things in a full vehicle.
-        continue;
-      }
-      if (_sol[s_t.first].size() < 2) {
+      if (_sol[s_t.first].size() < 2 or
+          !(total_amount(s_t.second) + _double_amount_lower_bound <=
+            _input._vehicles[s_t.second].capacity)) {
+        // Don't try to put things in a full vehicle or from a
+        // (near-)empty vehicle.
         continue;
       }
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1; ++s_rank) {
