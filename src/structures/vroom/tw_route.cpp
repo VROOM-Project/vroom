@@ -108,6 +108,26 @@ void tw_route::bwd_update_latest_from(index_t rank) {
   }
 }
 
+void tw_route::log() {
+  std::cout << "Route:\t\t";
+  for (const auto j : route) {
+    std::cout << _input._jobs[j].id << "\t";
+  }
+  std::cout << std::endl;
+
+  std::cout << "Earliest:\t";
+  for (const auto t : earliest) {
+    std::cout << t << "\t";
+  }
+  std::cout << std::endl;
+
+  std::cout << "Latest:\t\t";
+  for (const auto t : latest) {
+    std::cout << t << "\t";
+  }
+  std::cout << std::endl;
+}
+
 bool tw_route::is_valid_addition_for_tw(const index_t job_rank,
                                         const index_t rank) {
   const auto& j = _input._jobs[job_rank];

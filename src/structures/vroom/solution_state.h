@@ -15,6 +15,9 @@ All rights reserved (see LICENSE).
 #include "structures/typedefs.h"
 #include "structures/vroom/amount.h"
 #include "structures/vroom/input/input.h"
+#include "structures/vroom/tw_route.h"
+
+using tw_solution = std::vector<tw_route>;
 
 struct solution_indicators {
   unsigned unassigned;
@@ -103,28 +106,31 @@ public:
 
   std::vector<cost_t> route_costs;
 
-  solution_state(const input& input, const raw_solution& sol);
+  solution_state(const input& input);
 
   void setup(const raw_solution& sol);
 
-  void update_amounts(const raw_solution& sol, index_t v);
+  void setup(const tw_solution& tw_sol);
 
-  void update_costs(const raw_solution& sol, index_t v);
+  void update_amounts(const raw_route_t& route, index_t v);
 
-  void update_skills(const raw_solution& sol, index_t v1);
+  void update_costs(const raw_route_t& route, index_t v);
 
-  void set_node_gains(const raw_solution& sol, index_t v);
+  void update_skills(const raw_route_t& route, index_t v1);
 
-  void set_edge_gains(const raw_solution& sol, index_t v);
+  void set_node_gains(const raw_route_t& route, index_t v);
 
-  void update_nearest_job_rank_in_routes(const raw_solution& sol,
+  void set_edge_gains(const raw_route_t& route, index_t v);
+
+  void update_nearest_job_rank_in_routes(const raw_route_t& route_1,
+                                         const raw_route_t& route_2,
                                          index_t v1,
                                          index_t v2);
 
   cost_t route_cost_for_vehicle(index_t vehicle_rank,
-                                const std::vector<index_t>& route) const;
+                                const raw_route_t& route) const;
 
-  void update_route_cost(const raw_solution& sol, index_t v);
+  void update_route_cost(const raw_route_t& route, index_t v);
 
   const amount_t& total_amount(index_t v) const;
 };

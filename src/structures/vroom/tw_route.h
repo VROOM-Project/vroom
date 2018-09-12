@@ -12,6 +12,8 @@ All rights reserved (see LICENSE).
 
 #include <vector>
 
+#include <iostream> // TODO remove
+
 #include "structures/abstract/matrix.h"
 #include "structures/typedefs.h"
 #include "structures/vroom/input/input.h"
@@ -40,12 +42,14 @@ public:
   const duration_t v_start;
   const duration_t v_end;
 
-  std::vector<index_t> route;
+  raw_route_t route;
   std::vector<duration_t> earliest;
   std::vector<duration_t> latest;
   std::vector<index_t> tw_ranks;
 
   tw_route(const input& input, index_t i);
+
+  void log();
 
   bool is_valid_addition_for_tw(const index_t job_rank, const index_t rank);
 

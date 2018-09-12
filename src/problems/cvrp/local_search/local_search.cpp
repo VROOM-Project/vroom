@@ -22,11 +22,15 @@ All rights reserved (see LICENSE).
 cvrp_local_search::cvrp_local_search(const input& input,
                                      raw_solution& sol,
                                      unsigned max_nb_jobs_removal)
-  : local_search(input, sol),
+  : local_search(input),
+    _sol(sol),
     _max_nb_jobs_removal(max_nb_jobs_removal),
     _all_routes(V),
     _target_sol(sol),
     _best_sol(sol) {
+  // Setup solution state.
+  _sol_state.setup(_sol);
+
   // Initialize all route indices.
   std::iota(_all_routes.begin(), _all_routes.end(), 0);
 
@@ -138,7 +142,7 @@ void cvrp_local_search::try_job_additions(const std::vector<index_t>& routes,
       }
 
       // Update cost after addition.
-      _sol_state.update_route_cost(_sol, best_route);
+      _sol_state.update_route_cost(_sol[best_route], best_route);
 
       _sol_state.unassigned.erase(best_job);
     }
@@ -369,8 +373,8 @@ void cvrp_local_search::run_ls_step() {
       // Update route costs.
       auto previous_cost = _sol_state.route_costs[best_source] +
                            _sol_state.route_costs[best_target];
-      _sol_state.update_route_cost(_sol, best_source);
-      _sol_state.update_route_cost(_sol, best_target);
+      _sol_state.update_route_cost(_sol[best_source], best_source);
+      _sol_state.update_route_cost(_sol[best_target], best_target);
       auto new_cost = _sol_state.route_costs[best_source] +
                       _sol_state.route_costs[best_target];
       assert(new_cost + best_gain == previous_cost);
@@ -382,25 +386,25 @@ void cvrp_local_search::run_ls_step() {
       // correctly evaluate amounts. No need to run it again after
       // since try_before_additions will subsequently fix amounts upon
       // each addition.
-      _sol_state.update_amounts(_sol, best_source);
-      _sol_state.update_amounts(_sol, best_target);
+      _sol_state.update_amounts(_sol[best_source], best_source);
+      _sol_state.update_amounts(_sol[best_target], best_target);
 
       try_job_additions(best_ops[best_source][best_target]
                           ->addition_candidates(),
                         0);
 
       // Running update_costs only after try_job_additions is fine.
-      _sol_state.update_costs(_sol, best_source);
-      _sol_state.update_costs(_sol, best_target);
+      _sol_state.update_costs(_sol[best_source], best_source);
+      _sol_state.update_costs(_sol[best_target], best_target);
 
-      _sol_state.update_skills(_sol, best_source);
-      _sol_state.update_skills(_sol, best_target);
+      _sol_state.update_skills(_sol[best_source], best_source);
+      _sol_state.update_skills(_sol[best_target], best_target);
 
       // Update candidates.
-      _sol_state.set_node_gains(_sol, best_source);
-      _sol_state.set_node_gains(_sol, best_target);
-      _sol_state.set_edge_gains(_sol, best_source);
-      _sol_state.set_edge_gains(_sol, best_target);
+      _sol_state.set_node_gains(_sol[best_source], best_source);
+      _sol_state.set_node_gains(_sol[best_target], best_target);
+      _sol_state.set_edge_gains(_sol[best_source], best_source);
+      _sol_state.set_edge_gains(_sol[best_target], best_target);
 
       // Set gains to zero for what needs to be recomputed in the next
       // round.
@@ -468,13 +472,13 @@ void cvrp_local_search::run() {
       for (unsigned i = 0; i < current_nb_removal; ++i) {
         remove_from_routes();
         for (std::size_t v = 0; v < _sol.size(); ++v) {
-          _sol_state.set_node_gains(_sol, v);
+          _sol_state.set_node_gains(_sol[v], v);
         }
       }
 
       // Refill jobs (requires updated amounts).
       for (std::size_t v = 0; v < _sol.size(); ++v) {
-        _sol_state.update_amounts(_sol, v);
+        _sol_state.update_amounts(_sol[v], v);
       }
       try_job_additions(_all_routes, 1.5);
 
@@ -500,7 +504,7 @@ void cvrp_local_search::remove_from_routes() {
       if (v2 == v1) {
         continue;
       }
-      _sol_state.update_nearest_job_rank_in_routes(_sol, v1, v2);
+      _sol_state.update_nearest_job_rank_in_routes(_sol[v1], _sol[v2], v1, v2);
     }
   }
 

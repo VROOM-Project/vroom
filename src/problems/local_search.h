@@ -22,11 +22,10 @@ protected:
   const amount_t _amount_lower_bound;
   const amount_t _double_amount_lower_bound;
 
-  raw_solution _sol;
   solution_state _sol_state;
 
 public:
-  local_search(const input& input, const raw_solution& sol);
+  local_search(const input& input);
 
   virtual ~local_search();
 

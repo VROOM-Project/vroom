@@ -14,6 +14,8 @@ All rights reserved (see LICENSE).
 
 class cvrp_local_search : public local_search {
 private:
+  raw_solution _sol;
+
   const unsigned _max_nb_jobs_removal;
 
   std::vector<index_t> _all_routes;

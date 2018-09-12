@@ -7,18 +7,30 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <iostream> // TODO remove
-
-#include "problems/ls_operator.h"
 #include "problems/vrptw/local_search/local_search.h"
+#include "problems/ls_operator.h"
 #include "problems/vrptw/local_search/relocate.h"
 #include "utils/helpers.h"
 
+#include "utils/output_json.h"
+
 vrptw_local_search::vrptw_local_search(const input& input, tw_solution& tw_sol)
-  : local_search(input, to_raw_solution(tw_sol)), _tw_sol(tw_sol) {
+  : local_search(input), _tw_sol(tw_sol), log(false), log_iter(0) {
+  // Setup solution state.
+  _sol_state.setup(_tw_sol);
+}
+
+void vrptw_local_search::log_current_solution() {
+  if (log) {
+    write_to_json(format_solution(_input, _tw_sol),
+                  false,
+                  "debug_" + std::to_string(++log_iter) + "_sol.json");
+  }
 }
 
 void vrptw_local_search::run() {
+  log_current_solution();
+
   std::vector<std::vector<std::unique_ptr<ls_operator>>> best_ops(V);
   for (std::size_t v = 0; v < V; ++v) {
     best_ops[v] = std::vector<std::unique_ptr<ls_operator>>(V);
@@ -42,21 +54,23 @@ void vrptw_local_search::run() {
   while (best_gain > 0) {
     // Relocate stuff
     for (const auto& s_t : s_t_pairs) {
-      if (_sol[s_t.first].size() == 0 or
+      if (_tw_sol[s_t.first].route.size() == 0 or
           !(_sol_state.total_amount(s_t.second) + _amount_lower_bound <=
             _input._vehicles[s_t.second].capacity)) {
         // Don't try to put things in a full vehicle or from an empty
         // vehicle.
         continue;
       }
-      for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
+      for (unsigned s_rank = 0; s_rank < _tw_sol[s_t.first].route.size();
+           ++s_rank) {
         if (_sol_state.node_gains[s_t.first][s_rank] <=
             best_gains[s_t.first][s_t.second]) {
           // Except if addition cost in route s_t.second is negative
           // (!!), overall gain can't exceed current known best gain.
           continue;
         }
-        for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size(); ++t_rank) {
+        for (unsigned t_rank = 0; t_rank <= _tw_sol[s_t.second].route.size();
+             ++t_rank) {
           vrptw_relocate r(_input,
                            _sol_state,
                            _tw_sol,
@@ -93,9 +107,6 @@ void vrptw_local_search::run() {
 
     // Apply matching operator.
     if (best_gain > 0) {
-      std::cout << best_gain << std::endl;
-      exit(0);
-
       assert(best_ops[best_source][best_target] != nullptr);
 
       best_ops[best_source][best_target]->apply();
@@ -103,14 +114,14 @@ void vrptw_local_search::run() {
       // Update route costs.
       auto previous_cost = _sol_state.route_costs[best_source] +
                            _sol_state.route_costs[best_target];
-      _sol_state.update_route_cost(_sol, best_source);
-      _sol_state.update_route_cost(_sol, best_target);
+      _sol_state.update_route_cost(_tw_sol[best_source].route, best_source);
+      _sol_state.update_route_cost(_tw_sol[best_target].route, best_target);
       auto new_cost = _sol_state.route_costs[best_source] +
                       _sol_state.route_costs[best_target];
       assert(new_cost + best_gain == previous_cost);
 
-      _sol_state.update_amounts(_sol, best_source);
-      _sol_state.update_amounts(_sol, best_target);
+      _sol_state.update_amounts(_tw_sol[best_source].route, best_source);
+      _sol_state.update_amounts(_tw_sol[best_target].route, best_target);
 
       // Only required for 2-opt* and reverse 2-opt*
       // _sol_state.update_costs(_sol, best_source);
@@ -119,10 +130,10 @@ void vrptw_local_search::run() {
       // _sol_state.update_skills(_sol, best_target);
 
       // Update candidates.
-      _sol_state.set_node_gains(_sol, best_source);
-      _sol_state.set_node_gains(_sol, best_target);
-      _sol_state.set_edge_gains(_sol, best_source);
-      _sol_state.set_edge_gains(_sol, best_target);
+      _sol_state.set_node_gains(_tw_sol[best_source].route, best_source);
+      _sol_state.set_node_gains(_tw_sol[best_target].route, best_target);
+      _sol_state.set_edge_gains(_tw_sol[best_source].route, best_source);
+      _sol_state.set_edge_gains(_tw_sol[best_target].route, best_target);
 
       // Set gains to zero for what needs to be recomputed in the next
       // round.
@@ -148,6 +159,8 @@ void vrptw_local_search::run() {
         best_gains[best_target][v] = 0;
       }
     }
+
+    log_current_solution();
   }
 }
 
@@ -159,8 +172,9 @@ solution_indicators vrptw_local_search::indicators() const {
   for (std::size_t v = 0; v < V; ++v) {
     si.cost += _sol_state.route_costs[v];
   }
-  si.used_vehicles = std::count_if(_sol.begin(), _sol.end(), [](const auto& r) {
-    return !r.empty();
-  });
+  si.used_vehicles =
+    std::count_if(_tw_sol.begin(), _tw_sol.end(), [](const auto& tw_r) {
+      return !tw_r.route.empty();
+    });
   return si;
 }

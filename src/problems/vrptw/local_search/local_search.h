@@ -19,6 +19,11 @@ class vrptw_local_search : public local_search {
 private:
   tw_solution& _tw_sol;
 
+  // TODO remove
+  bool log;
+  unsigned log_iter;
+  void log_current_solution();
+
 public:
   vrptw_local_search(const input& input, tw_solution& tw_sol);
 
