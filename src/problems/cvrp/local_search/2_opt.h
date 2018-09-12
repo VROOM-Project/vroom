@@ -10,9 +10,9 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/cvrp/local_search/operator.h"
+#include "problems/ls_operator.h"
 
-class cvrp_two_opt : public cvrp_ls_operator {
+class cvrp_two_opt : public ls_operator {
 private:
   virtual void compute_gain() override;
 

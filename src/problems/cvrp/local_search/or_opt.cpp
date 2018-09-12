@@ -16,13 +16,13 @@ cvrp_or_opt::cvrp_or_opt(const input& input,
                          index_t source_rank,
                          index_t target_vehicle,
                          index_t target_rank)
-  : cvrp_ls_operator(input,
-                     sol,
-                     sol_state,
-                     source_vehicle,
-                     source_rank,
-                     target_vehicle,
-                     target_rank),
+  : ls_operator(input,
+                sol,
+                sol_state,
+                source_vehicle,
+                source_rank,
+                target_vehicle,
+                target_rank),
     reverse_source_edge(false) {
   assert(source_vehicle != target_vehicle);
   assert(_sol[source_vehicle].size() >= 2);

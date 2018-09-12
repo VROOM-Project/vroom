@@ -1,5 +1,5 @@
-#ifndef CVRP_LS_OPERATOR_H
-#define CVRP_LS_OPERATOR_H
+#ifndef LS_OPERATOR_H
+#define LS_OPERATOR_H
 
 /*
 
@@ -14,7 +14,7 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/input/input.h"
 #include "structures/vroom/solution_state.h"
 
-class cvrp_ls_operator {
+class ls_operator {
 protected:
   const input& _input;
   raw_solution& _sol;
@@ -30,13 +30,13 @@ protected:
   virtual void compute_gain() = 0;
 
 public:
-  cvrp_ls_operator(const input& input,
-                   raw_solution& sol,
-                   const solution_state& sol_state,
-                   index_t source_vehicle,
-                   index_t source_rank,
-                   index_t target_vehicle,
-                   index_t target_rank);
+  ls_operator(const input& input,
+              raw_solution& sol,
+              const solution_state& sol_state,
+              index_t source_vehicle,
+              index_t source_rank,
+              index_t target_vehicle,
+              index_t target_rank);
 
   gain_t gain();
 
@@ -46,7 +46,7 @@ public:
 
   virtual std::vector<index_t> addition_candidates() const = 0;
 
-  virtual ~cvrp_ls_operator() {
+  virtual ~ls_operator() {
   }
 };
 

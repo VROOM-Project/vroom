@@ -146,9 +146,9 @@ void cvrp_local_search::try_job_additions(const std::vector<index_t>& routes,
 }
 
 void cvrp_local_search::run_ls_step() {
-  std::vector<std::vector<std::unique_ptr<cvrp_ls_operator>>> best_ops(V);
+  std::vector<std::vector<std::unique_ptr<ls_operator>>> best_ops(V);
   for (std::size_t v = 0; v < V; ++v) {
-    best_ops[v] = std::vector<std::unique_ptr<cvrp_ls_operator>>(V);
+    best_ops[v] = std::vector<std::unique_ptr<ls_operator>>(V);
   }
 
   // List of source/target pairs we need to test (all at first).
