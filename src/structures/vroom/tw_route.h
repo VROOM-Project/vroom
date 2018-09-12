@@ -30,6 +30,9 @@ private:
   duration_t new_earliest(index_t job_rank, index_t rank);
   duration_t new_latest(index_t job_rank, index_t rank);
 
+  void fwd_update_earliest_from(index_t rank);
+  void bwd_update_latest_from(index_t rank);
+
 public:
   const vehicle_t& v;
   const bool has_start;

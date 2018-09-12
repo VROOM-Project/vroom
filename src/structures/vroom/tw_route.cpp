@@ -70,6 +70,44 @@ duration_t tw_route::new_latest(index_t job_rank, index_t rank) {
   return next_latest - j.service - next_travel;
 }
 
+void tw_route::fwd_update_earliest_from(index_t rank) {
+  duration_t previous_earliest = earliest[rank];
+  for (index_t i = rank + 1; i < route.size(); ++i) {
+    const auto& previous_j = _input._jobs[route[i - 1]];
+    const auto& next_j = _input._jobs[route[i]];
+    duration_t next_earliest = previous_earliest + previous_j.service +
+                               m[previous_j.index()][next_j.index()];
+
+    if (next_earliest <= earliest[i]) {
+      break;
+    } else {
+      assert(next_earliest <= latest[i]);
+      earliest[i] = next_earliest;
+      previous_earliest = next_earliest;
+    }
+  }
+}
+
+void tw_route::bwd_update_latest_from(index_t rank) {
+  duration_t next_latest = latest[rank];
+  for (index_t next_i = rank; next_i > 0; --next_i) {
+    const auto& previous_j = _input._jobs[route[next_i - 1]];
+    const auto& next_j = _input._jobs[route[next_i]];
+
+    duration_t gap = previous_j.service + m[previous_j.index()][next_j.index()];
+    assert(gap <= next_latest);
+    duration_t previous_latest = next_latest - gap;
+
+    if (latest[next_i - 1] <= previous_latest) {
+      break;
+    } else {
+      assert(earliest[next_i - 1] <= previous_latest);
+      latest[next_i - 1] = previous_latest;
+      next_latest = previous_latest;
+    }
+  }
+}
+
 bool tw_route::is_valid_addition_for_tw(const index_t job_rank,
                                         const index_t rank) {
   const auto& j = _input._jobs[job_rank];
@@ -149,38 +187,6 @@ void tw_route::add(const index_t job_rank, const index_t rank) {
   earliest.insert(earliest.begin() + rank, job_earliest);
   latest.insert(latest.begin() + rank, job_latest);
 
-  duration_t previous_earliest = job_earliest;
-  for (index_t i = rank + 1; i < route.size(); ++i) {
-    const auto& previous_j = _input._jobs[route[i - 1]];
-    const auto& next_j = _input._jobs[route[i]];
-    duration_t next_earliest = previous_earliest + previous_j.service +
-                               m[previous_j.index()][next_j.index()];
-
-    if (next_earliest <= earliest[i]) {
-      break;
-    } else {
-      assert(next_earliest <= latest[i]);
-      earliest[i] = next_earliest;
-      previous_earliest = next_earliest;
-    }
-  }
-
-  // Update latest date for new (and all precedent) jobs.
-  duration_t next_latest = job_latest;
-  for (index_t next_i = rank; next_i > 0; --next_i) {
-    const auto& previous_j = _input._jobs[route[next_i - 1]];
-    const auto& next_j = _input._jobs[route[next_i]];
-
-    duration_t gap = previous_j.service + m[previous_j.index()][next_j.index()];
-    assert(gap <= next_latest);
-    duration_t previous_latest = next_latest - gap;
-
-    if (latest[next_i - 1] <= previous_latest) {
-      break;
-    } else {
-      assert(earliest[next_i - 1] <= previous_latest);
-      latest[next_i - 1] = previous_latest;
-      next_latest = previous_latest;
-    }
-  }
+  fwd_update_earliest_from(rank);
+  bwd_update_latest_from(rank);
 }
