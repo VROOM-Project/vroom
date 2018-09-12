@@ -108,6 +108,39 @@ void tw_route::bwd_update_latest_from(index_t rank) {
   }
 }
 
+void tw_route::fwd_update_earliest_with_TW_from(index_t rank) {
+  duration_t current_earliest = earliest[rank];
+  for (index_t i = rank + 1; i < route.size(); ++i) {
+    const auto& previous_j = _input._jobs[route[i - 1]];
+    const auto& next_j = _input._jobs[route[i]];
+    current_earliest +=
+      previous_j.service + m[previous_j.index()][next_j.index()];
+    const auto& next_TW = next_j.tws[tw_ranks[i]];
+    current_earliest = std::max(current_earliest, next_TW.start);
+
+    assert(current_earliest <= latest[i]);
+    earliest[i] = current_earliest;
+  }
+}
+
+void tw_route::bwd_update_latest_with_TW_from(index_t rank) {
+  duration_t current_latest = latest[rank];
+  for (index_t next_i = rank; next_i > 0; --next_i) {
+    const auto& previous_j = _input._jobs[route[next_i - 1]];
+    const auto& next_j = _input._jobs[route[next_i]];
+
+    auto gap = previous_j.service + m[previous_j.index()][next_j.index()];
+    assert(gap <= current_latest);
+    current_latest -= gap;
+
+    const auto& previous_TW = previous_j.tws[tw_ranks[next_i - 1]];
+    current_latest = std::min(current_latest, previous_TW.end);
+
+    assert(earliest[next_i - 1] <= current_latest);
+    latest[next_i - 1] = current_latest;
+  }
+}
+
 void tw_route::log() {
   std::cout << "Route:\t\t";
   for (const auto j : route) {
@@ -209,4 +242,56 @@ void tw_route::add(const index_t job_rank, const index_t rank) {
 
   fwd_update_earliest_from(rank);
   bwd_update_latest_from(rank);
+}
+
+void tw_route::remove(const index_t rank, const unsigned count) {
+  assert(rank + count <= route.size());
+
+  bool empty_route = rank == 0 and count == route.size();
+
+  // Find out where to start updates for earliest/latest dates in new
+  // route. fwd/bwd_ranks are relative to the route *after* the erase
+  // operations below.
+  auto fwd_rank = rank - 1;
+  auto bwd_rank = rank;
+  if (!empty_route) {
+    if (rank == 0) {
+      fwd_rank = 0;
+      // Update earliest date for new first job.
+      const auto& new_first_j = _input._jobs[route[count]];
+      duration_t start_earliest = v_start;
+      if (has_start) {
+        start_earliest += m[v.start.get().index()][new_first_j.index()];
+      }
+      const auto& new_first_TW = new_first_j.tws[tw_ranks[count]];
+      earliest[count] = std::max(start_earliest, new_first_TW.start);
+    }
+
+    if (rank + count == route.size()) {
+      // Implicitly rank > 0 because !empty_route.
+      bwd_rank = rank - 1;
+      // Update earliest date for new last job.
+      const auto& new_last_j = _input._jobs[route[bwd_rank]];
+      duration_t end_latest = v_end;
+      if (has_end) {
+        auto gap =
+          new_last_j.service + m[new_last_j.index()][v.end.get().index()];
+        assert(gap <= v_end);
+        end_latest -= gap;
+      }
+      const auto& new_last_TW = new_last_j.tws[tw_ranks[bwd_rank]];
+      latest[bwd_rank] = std::min(end_latest, new_last_TW.end);
+    }
+  }
+
+  route.erase(route.begin() + rank, route.begin() + rank + count);
+  earliest.erase(earliest.begin() + rank, earliest.begin() + rank + count);
+  latest.erase(latest.begin() + rank, latest.begin() + rank + count);
+  tw_ranks.erase(tw_ranks.begin() + rank, tw_ranks.begin() + rank + count);
+
+  // Update earliest/latest dates.
+  if (!empty_route) {
+    fwd_update_earliest_with_TW_from(fwd_rank);
+    bwd_update_latest_with_TW_from(bwd_rank);
+  }
 }

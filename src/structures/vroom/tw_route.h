@@ -34,6 +34,8 @@ private:
 
   void fwd_update_earliest_from(index_t rank);
   void bwd_update_latest_from(index_t rank);
+  void fwd_update_earliest_with_TW_from(index_t rank);
+  void bwd_update_latest_with_TW_from(index_t rank);
 
 public:
   const vehicle_t& v;
@@ -54,6 +56,8 @@ public:
   bool is_valid_addition_for_tw(const index_t job_rank, const index_t rank);
 
   void add(const index_t job_rank, const index_t rank);
+
+  void remove(const index_t rank, const unsigned count);
 };
 
 #endif
