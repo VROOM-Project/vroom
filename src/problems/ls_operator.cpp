@@ -10,19 +10,21 @@ All rights reserved (see LICENSE).
 #include "problems/ls_operator.h"
 
 ls_operator::ls_operator(const input& input,
-                         raw_solution& sol,
                          const solution_state& sol_state,
-                         index_t source_vehicle,
-                         index_t source_rank,
-                         index_t target_vehicle,
-                         index_t target_rank)
+                         std::vector<index_t>& s_route,
+                         index_t s_vehicle,
+                         index_t s_rank,
+                         std::vector<index_t>& t_route,
+                         index_t t_vehicle,
+                         index_t t_rank)
   : _input(input),
-    _sol(sol),
     _sol_state(sol_state),
-    source_vehicle(source_vehicle),
-    source_rank(source_rank),
-    target_vehicle(target_vehicle),
-    target_rank(target_rank),
+    s_route(s_route),
+    s_vehicle(s_vehicle),
+    s_rank(s_rank),
+    t_route(t_route),
+    t_vehicle(t_vehicle),
+    t_rank(t_rank),
     gain_computed(false) {
 }
 

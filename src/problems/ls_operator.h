@@ -17,13 +17,17 @@ All rights reserved (see LICENSE).
 class ls_operator {
 protected:
   const input& _input;
-  raw_solution& _sol;
   const solution_state& _sol_state;
 
-  const index_t source_vehicle;
-  const index_t source_rank;
-  const index_t target_vehicle;
-  const index_t target_rank;
+  // Source of move for this operator.
+  std::vector<index_t>& s_route;
+  const index_t s_vehicle;
+  const index_t s_rank;
+  // Target of move for this operator.
+  std::vector<index_t>& t_route;
+  const index_t t_vehicle;
+  const index_t t_rank;
+
   bool gain_computed;
   gain_t stored_gain;
 
@@ -31,12 +35,13 @@ protected:
 
 public:
   ls_operator(const input& input,
-              raw_solution& sol,
               const solution_state& sol_state,
-              index_t source_vehicle,
-              index_t source_rank,
-              index_t target_vehicle,
-              index_t target_rank);
+              std::vector<index_t>& s_route,
+              index_t s_vehicle,
+              index_t s_rank,
+              std::vector<index_t>& t_route,
+              index_t t_vehicle,
+              index_t t_rank);
 
   gain_t gain();
 

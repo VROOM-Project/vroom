@@ -18,12 +18,13 @@ private:
 
 public:
   cvrp_two_opt(const input& input,
-               raw_solution& sol,
                const solution_state& sol_state,
-               index_t source_vehicle,
-               index_t source_rank,
-               index_t target_vehicle,
-               index_t target_rank);
+               std::vector<index_t>& s_route,
+               index_t s_vehicle,
+               index_t s_rank,
+               std::vector<index_t>& t_route,
+               index_t t_vehicle,
+               index_t t_rank);
 
   virtual bool is_valid() const override;
 

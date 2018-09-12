@@ -21,13 +21,12 @@ private:
 
 public:
   vrptw_relocate(const input& input,
-                 tw_solution& tw_sol,
-                 raw_solution& sol,
                  const solution_state& sol_state,
-                 index_t source_vehicle,
-                 index_t source_rank,
-                 index_t target_vehicle,
-                 index_t target_rank);
+                 tw_solution& tw_sol,
+                 index_t s_vehicle,
+                 index_t s_rank,
+                 index_t t_vehicle,
+                 index_t t_rank);
 
   virtual bool is_valid() const override;
 

@@ -10,30 +10,27 @@ All rights reserved (see LICENSE).
 #include "problems/vrptw/local_search/relocate.h"
 
 vrptw_relocate::vrptw_relocate(const input& input,
-                               tw_solution& tw_sol,
-                               raw_solution& sol,
                                const solution_state& sol_state,
-                               index_t source_vehicle,
-                               index_t source_rank,
-                               index_t target_vehicle,
-                               index_t target_rank)
+                               tw_solution& tw_sol,
+                               index_t s_vehicle,
+                               index_t s_rank,
+                               index_t t_vehicle,
+                               index_t t_rank)
   : cvrp_relocate(input,
-                  sol,
                   sol_state,
-                  source_vehicle,
-                  source_rank,
-                  target_vehicle,
-                  target_rank),
+                  tw_sol[s_vehicle].route,
+                  s_vehicle,
+                  s_rank,
+                  tw_sol[t_vehicle].route,
+                  t_vehicle,
+                  t_rank),
     _tw_sol(tw_sol) {
 }
 
 bool vrptw_relocate::is_valid() const {
   return cvrp_relocate::is_valid() and
-         _tw_sol[target_vehicle]
-           .is_valid_addition_for_tw(_sol[source_vehicle][source_rank],
-                                     target_rank);
+         _tw_sol[t_vehicle].is_valid_addition_for_tw(s_route[s_rank], t_rank);
 }
 
 void vrptw_relocate::apply() const {
-  // cvrp_relocate::apply();  // TODO adjust _tw_sol
 }

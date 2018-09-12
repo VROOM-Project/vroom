@@ -58,9 +58,8 @@ void vrptw_local_search::run() {
         }
         for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size(); ++t_rank) {
           vrptw_relocate r(_input,
-                           _tw_sol,
-                           _sol,
                            _sol_state,
+                           _tw_sol,
                            s_t.first,
                            s_rank,
                            s_t.second,

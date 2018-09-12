@@ -16,17 +16,18 @@ class cvrp_cross_exchange : public ls_operator {
 private:
   virtual void compute_gain() override;
 
-  bool reverse_source_edge;
-  bool reverse_target_edge;
+  bool reverse_s_edge;
+  bool reverse_t_edge;
 
 public:
   cvrp_cross_exchange(const input& input,
-                      raw_solution& sol,
                       const solution_state& sol_state,
-                      index_t source_vehicle,
-                      index_t source_rank,
-                      index_t target_vehicle,
-                      index_t target_rank);
+                      std::vector<index_t>& s_route,
+                      index_t s_vehicle,
+                      index_t s_rank,
+                      std::vector<index_t>& t_route,
+                      index_t t_vehicle,
+                      index_t t_rank);
 
   virtual bool is_valid() const override;
 
