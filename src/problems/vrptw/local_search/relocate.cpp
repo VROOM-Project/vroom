@@ -33,4 +33,8 @@ bool vrptw_relocate::is_valid() const {
 }
 
 void vrptw_relocate::apply() const {
+  auto relocate_job_rank = s_route[s_rank];
+
+  _tw_sol[s_vehicle].remove(s_rank, 1);
+  _tw_sol[t_vehicle].add(relocate_job_rank, t_rank);
 }
