@@ -9,6 +9,7 @@ All rights reserved (see LICENSE).
 
 #include "problems/vrptw/local_search/local_search.h"
 #include "problems/ls_operator.h"
+#include "problems/vrptw/local_search/exchange.h"
 #include "problems/vrptw/local_search/relocate.h"
 #include "utils/helpers.h"
 
@@ -58,6 +59,34 @@ void vrptw_local_search::run() {
   gain_t best_gain = 1;
 
   while (best_gain > 0) {
+    // Exchange stuff
+    for (const auto& s_t : s_t_pairs) {
+      if (s_t.second <= s_t.first or // This operator is symmetric.
+          _tw_sol[s_t.first].route.size() == 0 or
+          _tw_sol[s_t.second].route.size() == 0) {
+        continue;
+      }
+
+      for (unsigned s_rank = 0; s_rank < _tw_sol[s_t.first].route.size();
+           ++s_rank) {
+        for (unsigned t_rank = 0; t_rank < _tw_sol[s_t.second].route.size();
+             ++t_rank) {
+          vrptw_exchange r(_input,
+                           _sol_state,
+                           _tw_sol,
+                           s_t.first,
+                           s_rank,
+                           s_t.second,
+                           t_rank);
+          if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
+            best_gains[s_t.first][s_t.second] = r.gain();
+            best_ops[s_t.first][s_t.second] =
+              std::make_unique<vrptw_exchange>(r);
+          }
+        }
+      }
+    }
+
     // Relocate stuff
     for (const auto& s_t : s_t_pairs) {
       if (_tw_sol[s_t.first].route.size() == 0 or
