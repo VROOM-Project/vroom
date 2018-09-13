@@ -14,8 +14,14 @@ All rights reserved (see LICENSE).
 
 #include "utils/output_json.h"
 
+unsigned vrptw_local_search::ls_rank = 0;
+
 vrptw_local_search::vrptw_local_search(const input& input, tw_solution& tw_sol)
-  : local_search(input), _tw_sol(tw_sol), log(false), log_iter(0) {
+  : local_search(input),
+    _tw_sol(tw_sol),
+    log(false),
+    log_iter(0),
+    log_name("debug_" + std::to_string(++ls_rank) + "_") {
   // Setup solution state.
   _sol_state.setup(_tw_sol);
 }
@@ -24,7 +30,7 @@ void vrptw_local_search::log_current_solution() {
   if (log) {
     write_to_json(format_solution(_input, _tw_sol),
                   false,
-                  "debug_" + std::to_string(++log_iter) + "_sol.json");
+                  log_name + std::to_string(++log_iter) + "_sol.json");
   }
 }
 

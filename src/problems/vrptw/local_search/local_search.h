@@ -19,9 +19,12 @@ class vrptw_local_search : public local_search {
 private:
   tw_solution& _tw_sol;
 
+  static unsigned ls_rank;
+
   // TODO remove
   bool log;
   unsigned log_iter;
+  std::string log_name;
   void log_current_solution();
 
 public:
