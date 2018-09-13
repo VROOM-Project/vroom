@@ -197,38 +197,21 @@ bool tw_route::is_valid_addition_for_tw(const index_t job_rank,
 void tw_route::add(const index_t job_rank, const index_t rank) {
   assert(rank <= route.size());
 
-  // Among all job TW compatible with current constraint margin, pick
-  // the one that yields the biggest final margin.
   duration_t job_earliest = new_earliest(job_rank, rank);
   duration_t job_latest = new_latest(job_rank, rank);
 
+  // Pick first compatible TW.
   const auto& tws = _input._jobs[job_rank].tws;
   auto candidate = std::find_if(tws.begin(), tws.end(), [&](const auto& tw) {
     return job_earliest <= tw.end;
   });
   assert(candidate != tws.end());
-  auto best_candidate = candidate;
-  duration_t best_margin = 0;
 
-  for (; candidate != tws.end(); ++candidate) {
-    if (candidate->start > job_latest) {
-      break;
-    }
-    duration_t earliest_candidate = std::max(job_earliest, candidate->start);
-    duration_t latest_candidate = std::min(job_latest, candidate->end);
-    assert(earliest_candidate <= latest_candidate);
-    duration_t margin = latest_candidate - earliest_candidate;
-    if (margin > best_margin) {
-      best_candidate = candidate;
-      best_margin = margin;
-    }
-  }
-
-  job_earliest = std::max(job_earliest, best_candidate->start);
-  job_latest = std::min(job_latest, best_candidate->end);
+  job_earliest = std::max(job_earliest, candidate->start);
+  job_latest = std::min(job_latest, candidate->end);
 
   tw_ranks.insert(tw_ranks.begin() + rank,
-                  std::distance(tws.begin(), best_candidate));
+                  std::distance(tws.begin(), candidate));
 
   // Needs to be done after TW stuff as new_[earliest|latest] rely on
   // route size before addition ; but before earliest/latest date
