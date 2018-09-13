@@ -19,20 +19,8 @@ tw_route::tw_route(const input& input, index_t i)
     v_end(_input._vehicles[i].tw.end) {
 }
 
-inline bool is_margin_ok(const std::pair<duration_t, duration_t>& margin,
-                         const std::vector<time_window_t>& tws) {
-  auto overlap_candidate =
-    std::find_if(tws.begin(), tws.end(), [&](const auto& tw) {
-      return margin.first <= tw.end;
-    });
-
-  // The situation where there is no TW candidate should have been
-  // previously filtered in is_valid_addition_for_tw.
-  assert(overlap_candidate != tws.end());
-  return overlap_candidate->start <= margin.second;
-}
-
-duration_t tw_route::new_earliest(index_t job_rank, index_t rank) {
+duration_t tw_route::new_earliest_candidate(index_t job_rank,
+                                            index_t rank) const {
   const auto& j = _input._jobs[job_rank];
 
   duration_t previous_earliest = v_start;
@@ -52,7 +40,8 @@ duration_t tw_route::new_earliest(index_t job_rank, index_t rank) {
   return previous_earliest + previous_service + previous_travel;
 }
 
-duration_t tw_route::new_latest(index_t job_rank, index_t rank) {
+duration_t tw_route::new_latest_candidate(index_t job_rank,
+                                          index_t rank) const {
   const auto& j = _input._jobs[job_rank];
 
   duration_t next_latest = v_end;
@@ -141,7 +130,7 @@ void tw_route::bwd_update_latest_with_TW_from(index_t rank) {
   }
 }
 
-void tw_route::log() {
+void tw_route::log() const {
   std::cout << "Route:\t\t";
   for (const auto j : route) {
     std::cout << _input._jobs[j].id << "\t";
@@ -162,10 +151,10 @@ void tw_route::log() {
 }
 
 bool tw_route::is_valid_addition_for_tw(const index_t job_rank,
-                                        const index_t rank) {
+                                        const index_t rank) const {
   const auto& j = _input._jobs[job_rank];
 
-  duration_t job_earliest = new_earliest(job_rank, rank);
+  duration_t job_earliest = new_earliest_candidate(job_rank, rank);
 
   if (j.tws.back().end < job_earliest) {
     // Early abort if we're after the latest deadline for current job.
@@ -187,18 +176,84 @@ bool tw_route::is_valid_addition_for_tw(const index_t job_rank,
 
   if (valid) {
     duration_t new_latest = next_latest - j.service - next_travel;
-    auto margin = std::make_pair(job_earliest, new_latest);
-    valid &= is_margin_ok(margin, j.tws);
+
+    auto overlap_candidate =
+      std::find_if(j.tws.begin(), j.tws.end(), [&](const auto& tw) {
+        return job_earliest <= tw.end;
+      });
+
+    // The situation where there is no TW candidate should have been
+    // previously filtered by early abort above.
+    assert(overlap_candidate != j.tws.end());
+    valid &= overlap_candidate->start <= new_latest;
   }
 
   return valid;
 }
 
+bool tw_route::is_valid_addition_for_tw(
+  std::vector<index_t>::iterator first_job,
+  std::vector<index_t>::iterator last_job,
+  const index_t first_rank,
+  const index_t last_rank) const {
+  assert(first_job != last_job);
+  // Handle first job earliest date.
+  const auto& first_j = _input._jobs[*first_job];
+  duration_t job_earliest = new_earliest_candidate(*first_job, first_rank);
+
+  auto tw_candidate =
+    std::find_if(first_j.tws.begin(), first_j.tws.end(), [&](const auto& tw) {
+      return job_earliest <= tw.end;
+    });
+
+  if (tw_candidate == first_j.tws.end()) {
+    // Early abort if we're after the latest deadline for current job.
+    return false;
+  }
+  job_earliest = std::max(job_earliest, tw_candidate->start);
+
+  // Propagate earliest dates for all jobs in the addition range.
+  auto next_job = first_job + 1;
+  while (next_job != last_job) {
+    const auto& first_j = _input._jobs[*first_job];
+    const auto& next_j = _input._jobs[*next_job];
+    job_earliest += first_j.service + m[first_j.index()][next_j.index()];
+
+    tw_candidate =
+      std::find_if(next_j.tws.begin(), next_j.tws.end(), [&](const auto& tw) {
+        return job_earliest <= tw.end;
+      });
+    if (tw_candidate == next_j.tws.end()) {
+      // Early abort if we're after the latest deadline for current job.
+      return false;
+    }
+    job_earliest = std::max(job_earliest, tw_candidate->start);
+
+    ++first_job;
+    ++next_job;
+  }
+
+  // Check latest date for last inserted job.
+  const auto& j = _input._jobs[*first_job];
+  duration_t next_latest = v_end;
+  duration_t next_travel = 0;
+  if (last_rank == route.size()) {
+    if (has_end) {
+      next_travel = m[j.index()][v.end.get().index()];
+    }
+  } else {
+    next_latest = latest[last_rank];
+    next_travel = m[j.index()][_input._jobs[route[last_rank]].index()];
+  }
+
+  return job_earliest + j.service + next_travel <= next_latest;
+}
+
 void tw_route::add(const index_t job_rank, const index_t rank) {
   assert(rank <= route.size());
 
-  duration_t job_earliest = new_earliest(job_rank, rank);
-  duration_t job_latest = new_latest(job_rank, rank);
+  duration_t job_earliest = new_earliest_candidate(job_rank, rank);
+  duration_t job_latest = new_latest_candidate(job_rank, rank);
 
   // Pick first compatible TW.
   const auto& tws = _input._jobs[job_rank].tws;
