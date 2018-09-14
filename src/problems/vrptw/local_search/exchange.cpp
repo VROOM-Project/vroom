@@ -28,17 +28,20 @@ vrptw_exchange::vrptw_exchange(const input& input,
 }
 
 bool vrptw_exchange::is_valid() const {
-  return cvrp_exchange::is_valid() and
-         _tw_sol[t_vehicle].is_valid_addition_for_tw(s_route.begin() + s_rank,
-                                                     s_route.begin() + s_rank +
-                                                       1,
-                                                     t_rank,
-                                                     t_rank + 1) and
-         _tw_sol[s_vehicle].is_valid_addition_for_tw(t_route.begin() + t_rank,
-                                                     t_route.begin() + t_rank +
-                                                       1,
-                                                     s_rank,
-                                                     s_rank + 1);
+  bool valid = cvrp_exchange::is_valid();
+  valid &= _tw_sol[t_vehicle]
+             .is_valid_addition_for_tw(s_route.begin() + s_rank,
+                                       s_route.begin() + s_rank + 1,
+                                       t_rank,
+                                       t_rank + 1)
+             .first;
+  valid &= _tw_sol[s_vehicle]
+             .is_valid_addition_for_tw(t_route.begin() + t_rank,
+                                       t_route.begin() + t_rank + 1,
+                                       s_rank,
+                                       s_rank + 1)
+             .first;
+  return valid;
 }
 
 void vrptw_exchange::apply() const {

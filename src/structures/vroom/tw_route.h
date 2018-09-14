@@ -69,6 +69,14 @@ public:
   void add(const index_t job_rank, const index_t rank);
 
   void remove(const index_t rank, const unsigned count);
+
+  // Add the range [first_job; last_job) in the existing route at rank
+  // first_rank and before last_rank *in place of* the current jobs
+  // that may be there.
+  void replace(std::vector<index_t>::iterator first_job,
+               std::vector<index_t>::iterator last_job,
+               const index_t first_rank,
+               const index_t last_rank);
 };
 
 #endif
