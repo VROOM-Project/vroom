@@ -13,8 +13,11 @@ All rights reserved (see LICENSE).
 #include "problems/ls_operator.h"
 
 class cvrp_or_opt : public ls_operator {
-private:
+protected:
   virtual void compute_gain() override;
+
+  gain_t normal_stored_gain;
+  gain_t reversed_stored_gain;
 
   bool reverse_s_edge;
 

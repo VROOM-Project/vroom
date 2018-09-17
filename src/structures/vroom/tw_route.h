@@ -61,8 +61,9 @@ public:
   // Check validity for inclusion of the range [first_job; last_job)
   // in the existing route at rank first_rank and before last_rank *in
   // place of* the current jobs that may be there.
-  bool is_valid_addition_for_tw(std::vector<index_t>::iterator first_job,
-                                std::vector<index_t>::iterator last_job,
+  template <class InputIterator>
+  bool is_valid_addition_for_tw(InputIterator first_job,
+                                InputIterator last_job,
                                 const index_t first_rank,
                                 const index_t last_rank) const;
 
@@ -73,8 +74,9 @@ public:
   // Add the range [first_job; last_job) in the existing route at rank
   // first_rank and before last_rank *in place of* the current jobs
   // that may be there.
-  void replace(std::vector<index_t>::iterator first_job,
-               std::vector<index_t>::iterator last_job,
+  template <class InputIterator>
+  void replace(InputIterator first_job,
+               InputIterator last_job,
                const index_t first_rank,
                const index_t last_rank);
 };

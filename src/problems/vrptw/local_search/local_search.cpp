@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 #include "problems/vrptw/local_search/local_search.h"
 #include "problems/ls_operator.h"
 #include "problems/vrptw/local_search/exchange.h"
+#include "problems/vrptw/local_search/or_opt.h"
 #include "problems/vrptw/local_search/relocate.h"
 #include "utils/helpers.h"
 
@@ -117,6 +118,40 @@ void vrptw_local_search::run() {
             best_gains[s_t.first][s_t.second] = r.gain();
             best_ops[s_t.first][s_t.second] =
               std::make_unique<vrptw_relocate>(r);
+          }
+        }
+      }
+    }
+
+    // Or-opt stuff
+    for (const auto& s_t : s_t_pairs) {
+      if (_tw_sol[s_t.first].route.size() < 2 or
+          !(_sol_state.total_amount(s_t.second) + _double_amount_lower_bound <=
+            _input._vehicles[s_t.second].capacity)) {
+        // Don't try to put things in a full vehicle or from a
+        // (near-)empty vehicle.
+        continue;
+      }
+      for (unsigned s_rank = 0; s_rank < _tw_sol[s_t.first].route.size() - 1;
+           ++s_rank) {
+        if (_sol_state.edge_gains[s_t.first][s_rank] <=
+            best_gains[s_t.first][s_t.second]) {
+          // Except if addition cost in route s_t.second is negative
+          // (!!), overall gain can't exceed current known best gain.
+          continue;
+        }
+        for (unsigned t_rank = 0; t_rank <= _tw_sol[s_t.second].route.size();
+             ++t_rank) {
+          vrptw_or_opt r(_input,
+                         _sol_state,
+                         _tw_sol,
+                         s_t.first,
+                         s_rank,
+                         s_t.second,
+                         t_rank);
+          if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
+            best_gains[s_t.first][s_t.second] = r.gain();
+            best_ops[s_t.first][s_t.second] = std::make_unique<vrptw_or_opt>(r);
           }
         }
       }

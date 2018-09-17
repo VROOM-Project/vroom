@@ -197,11 +197,11 @@ bool tw_route::is_valid_addition_for_tw(const index_t job_rank,
   return valid;
 }
 
-bool tw_route::is_valid_addition_for_tw(
-  std::vector<index_t>::iterator first_job,
-  std::vector<index_t>::iterator last_job,
-  const index_t first_rank,
-  const index_t last_rank) const {
+template <class InputIterator>
+bool tw_route::is_valid_addition_for_tw(InputIterator first_job,
+                                        InputIterator last_job,
+                                        const index_t first_rank,
+                                        const index_t last_rank) const {
   assert(first_job != last_job and first_rank <= last_rank);
 
   // Handle first job earliest date.
@@ -341,8 +341,9 @@ void tw_route::remove(const index_t rank, const unsigned count) {
   }
 }
 
-void tw_route::replace(std::vector<index_t>::iterator first_job,
-                       std::vector<index_t>::iterator last_job,
+template <class InputIterator>
+void tw_route::replace(InputIterator first_job,
+                       InputIterator last_job,
                        const index_t first_rank,
                        const index_t last_rank) {
   assert(first_job != last_job and first_rank <= last_rank);
@@ -472,3 +473,24 @@ void tw_route::replace(std::vector<index_t>::iterator first_job,
   // Update latest dates backward.
   bwd_update_latest_with_TW_from(bwd_rank);
 }
+
+template bool
+tw_route::is_valid_addition_for_tw(std::vector<index_t>::iterator first_job,
+                                   std::vector<index_t>::iterator last_job,
+                                   const index_t first_rank,
+                                   const index_t last_rank) const;
+template bool tw_route::is_valid_addition_for_tw(
+  std::vector<index_t>::reverse_iterator first_job,
+  std::vector<index_t>::reverse_iterator last_job,
+  const index_t first_rank,
+  const index_t last_rank) const;
+
+template void tw_route::replace(std::vector<index_t>::iterator first_job,
+                                std::vector<index_t>::iterator last_job,
+                                const index_t first_rank,
+                                const index_t last_rank);
+template void
+tw_route::replace(std::vector<index_t>::reverse_iterator first_job,
+                  std::vector<index_t>::reverse_iterator last_job,
+                  const index_t first_rank,
+                  const index_t last_rank);

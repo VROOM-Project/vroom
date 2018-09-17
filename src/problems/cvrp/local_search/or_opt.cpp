@@ -104,12 +104,16 @@ void cvrp_or_opt::compute_gain() {
   gain_t reverse_t_gain = old_edge_cost + reverse_edge_cost -
                           reverse_previous_cost - reverse_next_cost;
 
+  normal_stored_gain = _sol_state.edge_gains[s_vehicle][s_rank] + t_gain;
+  reversed_stored_gain =
+    _sol_state.edge_gains[s_vehicle][s_rank] + reverse_t_gain;
+
+  stored_gain = normal_stored_gain;
+
   if (reverse_t_gain > t_gain) {
     reverse_s_edge = true;
-    t_gain = reverse_t_gain;
+    stored_gain = reversed_stored_gain;
   }
-
-  stored_gain = _sol_state.edge_gains[s_vehicle][s_rank] + t_gain;
 
   gain_computed = true;
 }
