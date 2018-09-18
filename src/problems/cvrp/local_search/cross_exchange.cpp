@@ -79,19 +79,18 @@ void cvrp_cross_exchange::compute_gain() {
     reverse_next_cost = m[t_c_index][n_index];
   }
 
-  gain_t s_gain = _sol_state.edge_costs_around_edge[s_vehicle][s_rank] -
+  normal_s_gain = _sol_state.edge_costs_around_edge[s_vehicle][s_rank] -
                   previous_cost - next_cost;
 
   gain_t reverse_edge_cost =
     static_cast<gain_t>(m[t_c_index][t_after_c_index]) -
     static_cast<gain_t>(m[t_after_c_index][t_c_index]);
-  gain_t reverse_s_gain = _sol_state.edge_costs_around_edge[s_vehicle][s_rank] +
-                          reverse_edge_cost - reverse_previous_cost -
-                          reverse_next_cost;
+  reversed_s_gain = _sol_state.edge_costs_around_edge[s_vehicle][s_rank] +
+                    reverse_edge_cost - reverse_previous_cost -
+                    reverse_next_cost;
 
-  if (reverse_s_gain > s_gain) {
+  if (reversed_s_gain > normal_s_gain) {
     reverse_t_edge = true;
-    s_gain = reverse_s_gain;
   }
 
   // For target vehicle, we consider the cost of replacing edge
@@ -127,21 +126,21 @@ void cvrp_cross_exchange::compute_gain() {
     reverse_next_cost = m[s_c_index][n_index];
   }
 
-  gain_t t_gain = _sol_state.edge_costs_around_edge[t_vehicle][t_rank] -
+  normal_t_gain = _sol_state.edge_costs_around_edge[t_vehicle][t_rank] -
                   previous_cost - next_cost;
 
   reverse_edge_cost = static_cast<gain_t>(m[s_c_index][s_after_c_index]) -
                       static_cast<gain_t>(m[s_after_c_index][s_c_index]);
-  gain_t reverse_t_gain = _sol_state.edge_costs_around_edge[t_vehicle][t_rank] +
-                          reverse_edge_cost - reverse_previous_cost -
-                          reverse_next_cost;
+  reversed_t_gain = _sol_state.edge_costs_around_edge[t_vehicle][t_rank] +
+                    reverse_edge_cost - reverse_previous_cost -
+                    reverse_next_cost;
 
-  if (reverse_t_gain > t_gain) {
+  if (reversed_t_gain > normal_t_gain) {
     reverse_s_edge = true;
-    t_gain = reverse_t_gain;
   }
 
-  stored_gain = s_gain + t_gain;
+  stored_gain = std::max(normal_s_gain, reversed_s_gain) +
+                std::max(normal_t_gain, reversed_t_gain);
 
   gain_computed = true;
 }

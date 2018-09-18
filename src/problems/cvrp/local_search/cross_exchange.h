@@ -16,6 +16,12 @@ class cvrp_cross_exchange : public ls_operator {
 private:
   virtual void compute_gain() override;
 
+protected:
+  gain_t normal_s_gain;
+  gain_t reversed_s_gain;
+  gain_t normal_t_gain;
+  gain_t reversed_t_gain;
+
   bool reverse_s_edge;
   bool reverse_t_edge;
 
