@@ -14,6 +14,7 @@ All rights reserved (see LICENSE).
 #include "problems/vrptw/local_search/exchange.h"
 #include "problems/vrptw/local_search/or_opt.h"
 #include "problems/vrptw/local_search/relocate.h"
+#include "problems/vrptw/local_search/reverse_2_opt.h"
 #include "utils/helpers.h"
 
 #include "utils/output_json.h"
@@ -144,6 +145,33 @@ void vrptw_local_search::run() {
             best_gains[s_t.first][s_t.second] = r.gain();
             best_ops[s_t.first][s_t.second] =
               std::make_unique<vrptw_two_opt>(r);
+          }
+        }
+      }
+    }
+
+    // Reverse 2-opt* stuff
+    for (const auto& s_t : s_t_pairs) {
+      for (unsigned s_rank = 0; s_rank < _tw_sol[s_t.first].route.size();
+           ++s_rank) {
+        auto s_free_amount = _input._vehicles[s_t.first].capacity;
+        s_free_amount -= _sol_state.fwd_amounts[s_t.first][s_rank];
+        for (unsigned t_rank = 0; t_rank < _tw_sol[s_t.second].route.size();
+             ++t_rank) {
+          if (!(_sol_state.fwd_amounts[s_t.second][t_rank] <= s_free_amount)) {
+            break;
+          }
+          vrptw_reverse_two_opt r(_input,
+                                  _sol_state,
+                                  _tw_sol,
+                                  s_t.first,
+                                  s_rank,
+                                  s_t.second,
+                                  t_rank);
+          if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
+            best_gains[s_t.first][s_t.second] = r.gain();
+            best_ops[s_t.first][s_t.second] =
+              std::make_unique<vrptw_reverse_two_opt>(r);
           }
         }
       }
