@@ -43,7 +43,7 @@ public:
               index_t t_vehicle,
               index_t t_rank);
 
-  gain_t gain();
+  virtual gain_t gain();
 
   virtual bool is_valid() const = 0;
 
