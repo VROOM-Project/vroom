@@ -202,7 +202,10 @@ bool tw_route::is_valid_addition_for_tw(InputIterator first_job,
                                         InputIterator last_job,
                                         const index_t first_rank,
                                         const index_t last_rank) const {
-  assert(first_job != last_job and first_rank <= last_rank);
+  if (first_job == last_job) {
+    return true;
+  }
+  assert(first_rank <= last_rank);
 
   // Handle first job earliest date.
   const auto& first_j = _input._jobs[*first_job];
@@ -346,7 +349,7 @@ void tw_route::replace(InputIterator first_job,
                        InputIterator last_job,
                        const index_t first_rank,
                        const index_t last_rank) {
-  assert(first_job != last_job and first_rank <= last_rank);
+  assert(first_rank <= last_rank);
 
   // Number of items to erase and add.
   unsigned erase_count = last_rank - first_rank;
@@ -447,31 +450,56 @@ void tw_route::replace(InputIterator first_job,
     ++insert_rank;
   }
 
-  // Rank of the last job with known latest date. Note that
-  // erase_count < last_rank + add_count.g
-  auto bwd_rank = last_rank + add_count - erase_count;
-  if (bwd_rank == route.size()) {
-    // Replacing last job(s) in route, so update earliest and latest
-    // date for new last job based on relevant time-window.
-    --bwd_rank;
-    const auto& new_last_j = _input._jobs[route[bwd_rank]];
+  if (!route.empty()) {
+    if (add_count == 0 and insert_rank == 0) {
+      // First jobs in route have been erased and not replaced, so
+      // update new first job earliest date.
+      const auto& current_j = _input._jobs[route[insert_rank]];
+      current_earliest = v_start;
+      if (has_start) {
+        current_earliest += m[v.start.get().index()][current_j.index()];
+      }
 
-    duration_t end_latest = v_end;
-    if (has_end) {
-      auto gap =
-        new_last_j.service + m[new_last_j.index()][v.end.get().index()];
-      assert(gap <= v_end);
-      end_latest -= gap;
+      auto tw_candidate = std::find_if(current_j.tws.begin(),
+                                       current_j.tws.end(),
+                                       [&](const auto& tw) {
+                                         return current_earliest <= tw.end;
+                                       });
+      assert(tw_candidate != current_j.tws.end());
+
+      earliest[insert_rank] = std::max(current_earliest, tw_candidate->start);
+      tw_ranks[insert_rank] =
+        std::distance(current_j.tws.begin(), tw_candidate);
+      // Invalidated latest values.
+      latest[insert_rank] = 0;
+      ++insert_rank;
     }
-    latest[bwd_rank] =
-      std::min(end_latest, new_last_j.tws[tw_ranks[bwd_rank]].end);
-  } else {
-    // Update earliest dates forward in end of route.
-    fwd_update_earliest_with_TW_from(insert_rank - 1);
-  }
 
-  // Update latest dates backward.
-  bwd_update_latest_with_TW_from(bwd_rank);
+    // If valid, insert_rank is the rank of the first job with known
+    // latest date.
+    if (insert_rank == route.size()) {
+      // Replacing last job(s) in route, so update earliest and latest
+      // date for new last job based on relevant time-window.
+      --insert_rank;
+      const auto& new_last_j = _input._jobs[route[insert_rank]];
+
+      duration_t end_latest = v_end;
+      if (has_end) {
+        auto gap =
+          new_last_j.service + m[new_last_j.index()][v.end.get().index()];
+        assert(gap <= v_end);
+        end_latest -= gap;
+      }
+      latest[insert_rank] =
+        std::min(end_latest, new_last_j.tws[tw_ranks[insert_rank]].end);
+    } else {
+      // Update earliest dates forward in end of route.
+      fwd_update_earliest_with_TW_from(insert_rank - 1);
+    }
+
+    // Update latest dates backward.
+    bwd_update_latest_with_TW_from(insert_rank);
+  }
 }
 
 template bool
