@@ -9,6 +9,7 @@ All rights reserved (see LICENSE).
 
 #include "problems/vrptw/local_search/local_search.h"
 #include "problems/ls_operator.h"
+#include "problems/vrptw/local_search/2_opt.h"
 #include "problems/vrptw/local_search/cross_exchange.h"
 #include "problems/vrptw/local_search/exchange.h"
 #include "problems/vrptw/local_search/or_opt.h"
@@ -117,6 +118,37 @@ void vrptw_local_search::run() {
       }
     }
 
+    // 2-opt* stuff
+    for (const auto& s_t : s_t_pairs) {
+      if (s_t.second <= s_t.first) {
+        // This operator is symmetric.
+        continue;
+      }
+      for (unsigned s_rank = 0; s_rank < _tw_sol[s_t.first].route.size();
+           ++s_rank) {
+        auto s_free_amount = _input._vehicles[s_t.first].capacity;
+        s_free_amount -= _sol_state.fwd_amounts[s_t.first][s_rank];
+        for (int t_rank = _tw_sol[s_t.second].route.size() - 1; t_rank >= 0;
+             --t_rank) {
+          if (!(_sol_state.bwd_amounts[s_t.second][t_rank] <= s_free_amount)) {
+            break;
+          }
+          vrptw_two_opt r(_input,
+                          _sol_state,
+                          _tw_sol,
+                          s_t.first,
+                          s_rank,
+                          s_t.second,
+                          t_rank);
+          if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
+            best_gains[s_t.first][s_t.second] = r.gain();
+            best_ops[s_t.first][s_t.second] =
+              std::make_unique<vrptw_two_opt>(r);
+          }
+        }
+      }
+    }
+
     // Relocate stuff
     for (const auto& s_t : s_t_pairs) {
       if (_tw_sol[s_t.first].route.size() == 0 or
@@ -217,16 +249,17 @@ void vrptw_local_search::run() {
       _sol_state.update_route_cost(_tw_sol[best_target].route, best_target);
       auto new_cost = _sol_state.route_costs[best_source] +
                       _sol_state.route_costs[best_target];
+
       assert(new_cost + best_gain == previous_cost);
 
       _sol_state.update_amounts(_tw_sol[best_source].route, best_source);
       _sol_state.update_amounts(_tw_sol[best_target].route, best_target);
 
       // Only required for 2-opt* and reverse 2-opt*
-      // _sol_state.update_costs(_sol, best_source);
-      // _sol_state.update_costs(_sol, best_target);
-      // _sol_state.update_skills(_sol, best_source);
-      // _sol_state.update_skills(_sol, best_target);
+      _sol_state.update_costs(_tw_sol[best_source].route, best_source);
+      _sol_state.update_costs(_tw_sol[best_target].route, best_target);
+      _sol_state.update_skills(_tw_sol[best_source].route, best_source);
+      _sol_state.update_skills(_tw_sol[best_target].route, best_target);
 
       // Update candidates.
       _sol_state.set_node_gains(_tw_sol[best_source].route, best_source);
