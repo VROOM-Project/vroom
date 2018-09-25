@@ -60,14 +60,16 @@ bool vrptw_or_opt::is_valid() {
   if (valid) {
     // Keep edge direction.
     auto s_start = s_route.begin() + s_rank;
-    _is_normal_valid = _tw_sol[t_vehicle].is_valid_addition_for_tw(s_start,
+    _is_normal_valid = _tw_sol[t_vehicle].is_valid_addition_for_tw(_input,
+                                                                   s_start,
                                                                    s_start + 2,
                                                                    t_rank,
                                                                    t_rank);
     // Reverse edge direction.
     auto s_reverse_start = s_route.rbegin() + s_route.size() - 2 - s_rank;
     _is_reverse_valid =
-      _tw_sol[t_vehicle].is_valid_addition_for_tw(s_reverse_start,
+      _tw_sol[t_vehicle].is_valid_addition_for_tw(_input,
+                                                  s_reverse_start,
                                                   s_reverse_start + 2,
                                                   t_rank,
                                                   t_rank);
@@ -79,14 +81,15 @@ bool vrptw_or_opt::is_valid() {
 void vrptw_or_opt::apply() const {
   if (reverse_s_edge) {
     auto s_reverse_start = s_route.rbegin() + s_route.size() - 2 - s_rank;
-    _tw_sol[t_vehicle].replace(s_reverse_start,
+    _tw_sol[t_vehicle].replace(_input,
+                               s_reverse_start,
                                s_reverse_start + 2,
                                t_rank,
                                t_rank);
-    _tw_sol[s_vehicle].remove(s_rank, 2);
+    _tw_sol[s_vehicle].remove(_input, s_rank, 2);
   } else {
     auto s_start = s_route.begin() + s_rank;
-    _tw_sol[t_vehicle].replace(s_start, s_start + 2, t_rank, t_rank);
-    _tw_sol[s_vehicle].remove(s_rank, 2);
+    _tw_sol[t_vehicle].replace(_input, s_start, s_start + 2, t_rank, t_rank);
+    _tw_sol[s_vehicle].remove(_input, s_rank, 2);
   }
 }

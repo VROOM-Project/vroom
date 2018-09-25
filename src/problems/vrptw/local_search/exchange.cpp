@@ -30,12 +30,14 @@ vrptw_exchange::vrptw_exchange(const input& input,
 bool vrptw_exchange::is_valid() const {
   bool valid = cvrp_exchange::is_valid();
   valid &=
-    _tw_sol[t_vehicle].is_valid_addition_for_tw(s_route.begin() + s_rank,
+    _tw_sol[t_vehicle].is_valid_addition_for_tw(_input,
+                                                s_route.begin() + s_rank,
                                                 s_route.begin() + s_rank + 1,
                                                 t_rank,
                                                 t_rank + 1);
   valid &=
-    _tw_sol[s_vehicle].is_valid_addition_for_tw(t_route.begin() + t_rank,
+    _tw_sol[s_vehicle].is_valid_addition_for_tw(_input,
+                                                t_route.begin() + t_rank,
                                                 t_route.begin() + t_rank + 1,
                                                 s_rank,
                                                 s_rank + 1);
@@ -45,11 +47,13 @@ bool vrptw_exchange::is_valid() const {
 void vrptw_exchange::apply() const {
   std::vector<index_t> t_job_ranks(1, t_route[t_rank]);
 
-  _tw_sol[t_vehicle].replace(s_route.begin() + s_rank,
+  _tw_sol[t_vehicle].replace(_input,
+                             s_route.begin() + s_rank,
                              s_route.begin() + s_rank + 1,
                              t_rank,
                              t_rank + 1);
-  _tw_sol[s_vehicle].replace(t_job_ranks.begin(),
+  _tw_sol[s_vehicle].replace(_input,
+                             t_job_ranks.begin(),
                              t_job_ranks.end(),
                              s_rank,
                              s_rank + 1);

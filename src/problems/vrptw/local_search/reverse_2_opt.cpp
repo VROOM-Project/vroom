@@ -31,13 +31,15 @@ vrptw_reverse_two_opt::vrptw_reverse_two_opt(const input& input,
 
 bool vrptw_reverse_two_opt::is_valid() const {
   return cvrp_reverse_two_opt::is_valid() and
-         _tw_sol[t_vehicle].is_valid_addition_for_tw(s_route.rbegin(),
+         _tw_sol[t_vehicle].is_valid_addition_for_tw(_input,
+                                                     s_route.rbegin(),
                                                      s_route.rbegin() +
                                                        s_route.size() - 1 -
                                                        s_rank,
                                                      0,
                                                      t_rank + 1) and
-         _tw_sol[s_vehicle].is_valid_addition_for_tw(t_route.rbegin() +
+         _tw_sol[s_vehicle].is_valid_addition_for_tw(_input,
+                                                     t_route.rbegin() +
                                                        t_route.size() - 1 -
                                                        t_rank,
                                                      t_route.rend(),
@@ -51,12 +53,14 @@ void vrptw_reverse_two_opt::apply() const {
                      t_route.rbegin() + t_route.size() - 1 - t_rank,
                      t_route.rend());
 
-  _tw_sol[t_vehicle].replace(s_route.rbegin(),
+  _tw_sol[t_vehicle].replace(_input,
+                             s_route.rbegin(),
                              s_route.rbegin() + s_route.size() - 1 - s_rank,
                              0,
                              t_rank + 1);
 
-  _tw_sol[s_vehicle].replace(t_job_ranks.begin(),
+  _tw_sol[s_vehicle].replace(_input,
+                             t_job_ranks.begin(),
                              t_job_ranks.end(),
                              s_rank + 1,
                              s_route.size());

@@ -78,7 +78,7 @@ tw_solution basic_heuristic(const input& input, INIT_T init, float lambda) {
       for (const auto job_rank : unassigned) {
         if (!input.vehicle_ok_with_job(v, job_rank) or
             !(input._jobs[job_rank].amount <= vehicle.capacity) or
-            !tw_r.is_valid_addition_for_tw(job_rank, 0)) {
+            !tw_r.is_valid_addition_for_tw(input, job_rank, 0)) {
           continue;
         }
 
@@ -103,7 +103,7 @@ tw_solution basic_heuristic(const input& input, INIT_T init, float lambda) {
           (init == INIT_T::EARLIEST_DEADLINE and
            earliest_deadline < std::numeric_limits<duration_t>::max()) or
           (init == INIT_T::FURTHEST and furthest_cost > 0)) {
-        tw_r.add(best_job_rank, 0);
+        tw_r.add(input, best_job_rank, 0);
         route_amount += input._jobs[best_job_rank].amount;
         unassigned.erase(best_job_rank);
       }
@@ -131,7 +131,7 @@ tw_solution basic_heuristic(const input& input, INIT_T init, float lambda) {
             current_add - lambda * static_cast<float>(costs[job_rank]);
 
           if (current_cost < best_cost and
-              tw_r.is_valid_addition_for_tw(job_rank, r)) {
+              tw_r.is_valid_addition_for_tw(input, job_rank, r)) {
             best_cost = current_cost;
             best_job_rank = job_rank;
             best_r = r;
@@ -140,7 +140,7 @@ tw_solution basic_heuristic(const input& input, INIT_T init, float lambda) {
       }
 
       if (best_cost < std::numeric_limits<float>::max()) {
-        tw_r.add(best_job_rank, best_r);
+        tw_r.add(input, best_job_rank, best_r);
         route_amount += input._jobs[best_job_rank].amount;
         unassigned.erase(best_job_rank);
         keep_going = true;
@@ -272,7 +272,7 @@ tw_solution dynamic_vehicle_choice_heuristic(const input& input,
             // One of the remaining vehicles is closest to that job.
             !input.vehicle_ok_with_job(v_rank, job_rank) or
             !(input._jobs[job_rank].amount <= vehicle.capacity) or
-            !tw_r.is_valid_addition_for_tw(job_rank, 0)) {
+            !tw_r.is_valid_addition_for_tw(input, job_rank, 0)) {
           continue;
         }
 
@@ -298,7 +298,7 @@ tw_solution dynamic_vehicle_choice_heuristic(const input& input,
           (init == INIT_T::EARLIEST_DEADLINE and
            earliest_deadline < std::numeric_limits<duration_t>::max()) or
           (init == INIT_T::FURTHEST and furthest_cost > 0)) {
-        tw_r.add(best_job_rank, 0);
+        tw_r.add(input, best_job_rank, 0);
         route_amount += input._jobs[best_job_rank].amount;
         unassigned.erase(best_job_rank);
       }
@@ -326,7 +326,7 @@ tw_solution dynamic_vehicle_choice_heuristic(const input& input,
             current_add - lambda * static_cast<float>(regrets[job_rank]);
 
           if (current_cost < best_cost and
-              tw_r.is_valid_addition_for_tw(job_rank, r)) {
+              tw_r.is_valid_addition_for_tw(input, job_rank, r)) {
             best_cost = current_cost;
             best_job_rank = job_rank;
             best_r = r;
@@ -335,7 +335,7 @@ tw_solution dynamic_vehicle_choice_heuristic(const input& input,
       }
 
       if (best_cost < std::numeric_limits<float>::max()) {
-        tw_r.add(best_job_rank, best_r);
+        tw_r.add(input, best_job_rank, best_r);
         route_amount += input._jobs[best_job_rank].amount;
         unassigned.erase(best_job_rank);
         keep_going = true;
