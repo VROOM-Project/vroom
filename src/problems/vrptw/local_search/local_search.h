@@ -27,6 +27,8 @@ private:
   std::string log_name;
   void log_current_solution();
 
+  void straighten_route(index_t route_rank);
+
 public:
   vrptw_local_search(const input& input, tw_solution& tw_sol);
 

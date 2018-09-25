@@ -9,6 +9,7 @@ All rights reserved (see LICENSE).
 
 #include "problems/vrptw/local_search/local_search.h"
 #include "problems/ls_operator.h"
+#include "problems/vrptw/heuristics/solomon.h"
 #include "problems/vrptw/local_search/2_opt.h"
 #include "problems/vrptw/local_search/cross_exchange.h"
 #include "problems/vrptw/local_search/exchange.h"
@@ -280,6 +281,9 @@ void vrptw_local_search::run() {
 
       assert(new_cost + best_gain == previous_cost);
 
+      straighten_route(best_source);
+      straighten_route(best_target);
+
       _sol_state.update_amounts(_tw_sol[best_source].route, best_source);
       _sol_state.update_amounts(_tw_sol[best_target].route, best_target);
 
@@ -321,6 +325,36 @@ void vrptw_local_search::run() {
     }
 
     log_current_solution();
+  }
+}
+
+void vrptw_local_search::straighten_route(index_t route_rank) {
+  if (_tw_sol[route_rank].route.size() > 0) {
+    auto before_cost = _sol_state.route_costs[route_rank];
+
+    auto new_tw_r = single_route_heuristic(_input, _tw_sol[route_rank], true);
+
+    auto other_tw_r =
+      single_route_heuristic(_input, _tw_sol[route_rank], false);
+
+    if (other_tw_r.route.size() > new_tw_r.route.size() or
+        (other_tw_r.route.size() == new_tw_r.route.size() and
+         _sol_state.route_cost_for_vehicle(route_rank, other_tw_r.route) <
+           _sol_state.route_cost_for_vehicle(route_rank, new_tw_r.route))) {
+      new_tw_r = std::move(other_tw_r);
+    }
+
+    if (new_tw_r.route.size() == _tw_sol[route_rank].route.size()) {
+      auto after_cost =
+        _sol_state.route_cost_for_vehicle(route_rank, new_tw_r.route);
+
+      if (after_cost < before_cost) {
+        log_current_solution();
+
+        _tw_sol[route_rank] = std::move(new_tw_r);
+        _sol_state.route_costs[route_rank] = after_cost;
+      }
+    }
   }
 }
 

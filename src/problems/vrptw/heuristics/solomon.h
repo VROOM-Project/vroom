@@ -26,4 +26,10 @@ tw_solution dynamic_vehicle_choice_heuristic(const input& input,
                                              INIT_T init,
                                              float lambda);
 
+// Re-build single route using initial state. Jobs are inserted based
+// on time windows length or deadline.
+tw_route single_route_heuristic(const input& input,
+                                const tw_route& init_tw_r,
+                                bool tw_length);
+
 #endif

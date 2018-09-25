@@ -345,3 +345,50 @@ tw_solution dynamic_vehicle_choice_heuristic(const input& input,
 
   return routes;
 }
+
+tw_route single_route_heuristic(const input& input,
+                                const tw_route& init_tw_r,
+                                bool tw_length) {
+  const auto& m = input.get_matrix();
+  auto v_rank = init_tw_r.vehicle_rank;
+
+  tw_route tw_r(input, v_rank);
+  const auto& vehicle = input._vehicles[v_rank];
+
+  std::vector<index_t> jobs;
+  jobs.reserve(init_tw_r.route.size());
+  std::copy(init_tw_r.route.begin(),
+            init_tw_r.route.end(),
+            std::back_inserter(jobs));
+
+  if (tw_length) {
+    std::stable_sort(jobs.begin(), jobs.end(), [&](auto j1, auto j2) {
+      return input._jobs[j1].tw_length < input._jobs[j2].tw_length;
+    });
+  } else {
+    std::stable_sort(jobs.begin(), jobs.end(), [&](auto j1, auto j2) {
+      return input._jobs[j1].tws.back().end < input._jobs[j2].tws.back().end;
+    });
+  }
+
+  for (const auto job_rank : jobs) {
+    gain_t best_cost = std::numeric_limits<gain_t>::max();
+    index_t best_r = 0;
+    for (index_t r = 0; r <= tw_r.route.size(); ++r) {
+      auto current_cost =
+        addition_cost(input, m, job_rank, vehicle, tw_r.route, r);
+
+      if (current_cost < best_cost and
+          tw_r.is_valid_addition_for_tw(input, job_rank, r)) {
+        best_cost = current_cost;
+        best_r = r;
+      }
+    }
+
+    if (best_cost < std::numeric_limits<gain_t>::max()) {
+      tw_r.add(input, job_rank, best_r);
+    }
+  }
+
+  return tw_r;
+}
