@@ -35,23 +35,44 @@ solution vrptw::solve(unsigned exploration_level, unsigned nb_threads) const {
   if (!_input.has_homogeneous_locations()) {
     h_flavor = HEURISTIC_T::DYNAMIC;
   }
-  std::vector<param> parameters({{h_flavor, INIT_T::NONE, 1},
-                                 {h_flavor, INIT_T::NONE, 1.3},
-                                 {h_flavor, INIT_T::FURTHEST, 0.4},
-                                 {h_flavor, INIT_T::FURTHEST, 0.6}});
+  std::vector<param> parameters({{h_flavor, INIT_T::HIGHER_AMOUNT, 0.3},
+                                 {h_flavor, INIT_T::HIGHER_AMOUNT, 0.7},
+                                 {h_flavor, INIT_T::EARLIEST_DEADLINE, 0.2},
+                                 {h_flavor, INIT_T::FURTHEST, 1.1}});
 
   if (exploration_level > 0) {
-    parameters.push_back({h_flavor, INIT_T::NONE, 1.2});
-    parameters.push_back({h_flavor, INIT_T::EARLIEST_DEADLINE, 0.2});
-    parameters.push_back({h_flavor, INIT_T::EARLIEST_DEADLINE, 2.1});
-    parameters.push_back({h_flavor, INIT_T::FURTHEST, 0.5});
+    parameters.push_back({h_flavor, INIT_T::NONE, 0.9});
+    parameters.push_back({h_flavor, INIT_T::HIGHER_AMOUNT, 0.1});
+    parameters.push_back({h_flavor, INIT_T::HIGHER_AMOUNT, 1.8});
+    parameters.push_back({h_flavor, INIT_T::EARLIEST_DEADLINE, 0.7});
   }
 
   if (exploration_level > 1) {
-    parameters.push_back({h_flavor, INIT_T::HIGHER_AMOUNT, 2.1});
+    parameters.push_back({h_flavor, INIT_T::NONE, 0.2});
+    parameters.push_back({h_flavor, INIT_T::HIGHER_AMOUNT, 1.5});
     parameters.push_back({h_flavor, INIT_T::EARLIEST_DEADLINE, 0.6});
+    parameters.push_back({h_flavor, INIT_T::EARLIEST_DEADLINE, 1.1});
+  }
+
+  if (exploration_level > 2) {
+    parameters.push_back({h_flavor, INIT_T::HIGHER_AMOUNT, 0});
+    parameters.push_back({h_flavor, INIT_T::HIGHER_AMOUNT, 0.1});
+    parameters.push_back({h_flavor, INIT_T::HIGHER_AMOUNT, 1});
+    parameters.push_back({h_flavor, INIT_T::HIGHER_AMOUNT, 1.2});
+  }
+
+  if (exploration_level > 3) {
+    parameters.push_back({h_flavor, INIT_T::HIGHER_AMOUNT, 0});
+    parameters.push_back({h_flavor, INIT_T::EARLIEST_DEADLINE, 0.9});
+    parameters.push_back({h_flavor, INIT_T::FURTHEST, 0.1});
+    parameters.push_back({h_flavor, INIT_T::FURTHEST, 2});
+  }
+
+  if (exploration_level > 3) {
+    parameters.push_back({h_flavor, INIT_T::NONE, 0});
+    parameters.push_back({h_flavor, INIT_T::EARLIEST_DEADLINE, 1.8});
+    parameters.push_back({h_flavor, INIT_T::FURTHEST, 0.2});
     parameters.push_back({h_flavor, INIT_T::FURTHEST, 0.7});
-    parameters.push_back({h_flavor, INIT_T::FURTHEST, 1.1});
   }
 
   auto P = parameters.size();
