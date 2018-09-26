@@ -24,6 +24,7 @@ struct job_t {
   const amount_t amount;
   const skills_t skills;
   const std::vector<time_window_t> tws;
+  const duration_t tw_length;
 
   job_t(ID_t id,
         const location_t& location,

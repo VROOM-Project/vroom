@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 #include <thread>
 
 #include "problems/vrptw/heuristics/solomon.h"
+#include "problems/vrptw/local_search/local_search.h"
 #include "problems/vrptw/vrptw.h"
 #include "structures/vroom/input/input.h"
 #include "structures/vroom/tw_route.h"
@@ -34,27 +35,49 @@ solution vrptw::solve(unsigned exploration_level, unsigned nb_threads) const {
   if (!_input.has_homogeneous_locations()) {
     h_flavor = HEURISTIC_T::DYNAMIC;
   }
-  std::vector<param> parameters({{h_flavor, INIT_T::NONE, 1},
-                                 {h_flavor, INIT_T::NONE, 1.3},
-                                 {h_flavor, INIT_T::FURTHEST, 0.4},
-                                 {h_flavor, INIT_T::FURTHEST, 0.6}});
+  std::vector<param> parameters({{h_flavor, INIT_T::HIGHER_AMOUNT, 0.3},
+                                 {h_flavor, INIT_T::HIGHER_AMOUNT, 0.7},
+                                 {h_flavor, INIT_T::EARLIEST_DEADLINE, 0.2},
+                                 {h_flavor, INIT_T::FURTHEST, 1.1}});
 
   if (exploration_level > 0) {
-    parameters.push_back({h_flavor, INIT_T::NONE, 1.2});
-    parameters.push_back({h_flavor, INIT_T::EARLIEST_DEADLINE, 0.2});
-    parameters.push_back({h_flavor, INIT_T::EARLIEST_DEADLINE, 2.1});
-    parameters.push_back({h_flavor, INIT_T::FURTHEST, 0.5});
+    parameters.push_back({h_flavor, INIT_T::NONE, 0.9});
+    parameters.push_back({h_flavor, INIT_T::HIGHER_AMOUNT, 0.1});
+    parameters.push_back({h_flavor, INIT_T::HIGHER_AMOUNT, 1.8});
+    parameters.push_back({h_flavor, INIT_T::EARLIEST_DEADLINE, 0.7});
   }
 
   if (exploration_level > 1) {
-    parameters.push_back({h_flavor, INIT_T::HIGHER_AMOUNT, 2.1});
+    parameters.push_back({h_flavor, INIT_T::NONE, 0.2});
+    parameters.push_back({h_flavor, INIT_T::HIGHER_AMOUNT, 1.5});
     parameters.push_back({h_flavor, INIT_T::EARLIEST_DEADLINE, 0.6});
+    parameters.push_back({h_flavor, INIT_T::EARLIEST_DEADLINE, 1.1});
+  }
+
+  if (exploration_level > 2) {
+    parameters.push_back({h_flavor, INIT_T::HIGHER_AMOUNT, 0});
+    parameters.push_back({h_flavor, INIT_T::HIGHER_AMOUNT, 0.1});
+    parameters.push_back({h_flavor, INIT_T::HIGHER_AMOUNT, 1});
+    parameters.push_back({h_flavor, INIT_T::HIGHER_AMOUNT, 1.2});
+  }
+
+  if (exploration_level > 3) {
+    parameters.push_back({h_flavor, INIT_T::HIGHER_AMOUNT, 0});
+    parameters.push_back({h_flavor, INIT_T::EARLIEST_DEADLINE, 0.9});
+    parameters.push_back({h_flavor, INIT_T::FURTHEST, 0.1});
+    parameters.push_back({h_flavor, INIT_T::FURTHEST, 2});
+  }
+
+  if (exploration_level > 3) {
+    parameters.push_back({h_flavor, INIT_T::NONE, 0});
+    parameters.push_back({h_flavor, INIT_T::EARLIEST_DEADLINE, 1.8});
+    parameters.push_back({h_flavor, INIT_T::FURTHEST, 0.2});
     parameters.push_back({h_flavor, INIT_T::FURTHEST, 0.7});
-    parameters.push_back({h_flavor, INIT_T::FURTHEST, 1.1});
   }
 
   auto P = parameters.size();
   std::vector<tw_solution> tw_solutions(P);
+  std::vector<solution_indicators> sol_indicators(P);
 
   // Split the work among threads.
   std::vector<std::vector<std::size_t>>
@@ -75,6 +98,13 @@ solution vrptw::solve(unsigned exploration_level, unsigned nb_threads) const {
           dynamic_vehicle_choice_heuristic(_input, p.init, p.regret_coeff);
         break;
       }
+
+      // Local search phase.
+      vrptw_local_search ls(_input, tw_solutions[rank]);
+      ls.run();
+
+      // Store solution indicators.
+      sol_indicators[rank] = ls.indicators();
     }
   };
 
@@ -88,31 +118,10 @@ solution vrptw::solve(unsigned exploration_level, unsigned nb_threads) const {
     t.join();
   }
 
-  std::vector<solution> solutions;
-  std::transform(tw_solutions.begin(),
-                 tw_solutions.end(),
-                 std::back_inserter(solutions),
-                 [&](const auto& tw_sol) {
-                   return format_solution(_input, tw_sol);
-                 });
+  auto best_indic =
+    std::min_element(sol_indicators.cbegin(), sol_indicators.cend());
 
-  auto sol_compare = [](const auto& lhs, const auto& rhs) {
-    if (lhs.summary.unassigned < rhs.summary.unassigned) {
-      return true;
-    }
-    if (lhs.summary.unassigned == rhs.summary.unassigned) {
-      if (lhs.summary.cost < rhs.summary.cost) {
-        return true;
-      }
-      if (lhs.summary.cost == rhs.summary.cost and
-          lhs.routes.size() < rhs.routes.size()) {
-        return true;
-      }
-    }
-    return false;
-  };
-
-  auto sol = std::min_element(solutions.begin(), solutions.end(), sol_compare);
-
-  return *sol;
+  return format_solution(_input,
+                         tw_solutions[std::distance(sol_indicators.cbegin(),
+                                                    best_indic)]);
 }

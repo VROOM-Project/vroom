@@ -1,5 +1,5 @@
-#ifndef RELOCATE_H
-#define RELOCATE_H
+#ifndef CVRP_RELOCATE_H
+#define CVRP_RELOCATE_H
 
 /*
 
@@ -10,20 +10,21 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/cvrp/local_search/operator.h"
+#include "problems/ls_operator.h"
 
-class relocate : public ls_operator {
+class cvrp_relocate : public ls_operator {
 private:
   virtual void compute_gain() override;
 
 public:
-  relocate(const input& input,
-           raw_solution& sol,
-           const solution_state& sol_state,
-           index_t source_vehicle,
-           index_t source_rank,
-           index_t target_vehicle,
-           index_t target_rank);
+  cvrp_relocate(const input& input,
+                const solution_state& sol_state,
+                std::vector<index_t>& s_route,
+                index_t s_vehicle,
+                index_t s_rank,
+                std::vector<index_t>& t_route,
+                index_t t_vehicle,
+                index_t t_rank);
 
   virtual bool is_valid() const override;
 

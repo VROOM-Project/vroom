@@ -187,7 +187,7 @@ inline solution format_solution(const input& input,
   }
 
   for (const auto& tw_r : tw_routes) {
-    const auto& v = tw_r.v;
+    const auto& v = input._vehicles[tw_r.vehicle_rank];
     if (tw_r.route.empty()) {
       continue;
     }

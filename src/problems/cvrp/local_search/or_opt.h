@@ -1,5 +1,5 @@
-#ifndef OR_OPT_H
-#define OR_OPT_H
+#ifndef CVRP_OR_OPT_H
+#define CVRP_OR_OPT_H
 
 /*
 
@@ -10,22 +10,27 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/cvrp/local_search/operator.h"
+#include "problems/ls_operator.h"
 
-class or_opt : public ls_operator {
+class cvrp_or_opt : public ls_operator {
 private:
   virtual void compute_gain() override;
 
-  bool reverse_source_edge;
+protected:
+  gain_t normal_stored_gain;
+  gain_t reversed_stored_gain;
+
+  bool reverse_s_edge;
 
 public:
-  or_opt(const input& input,
-         raw_solution& sol,
-         const solution_state& sol_state,
-         index_t source_vehicle,
-         index_t source_rank,
-         index_t target_vehicle,
-         index_t target_rank);
+  cvrp_or_opt(const input& input,
+              const solution_state& sol_state,
+              std::vector<index_t>& s_route,
+              index_t s_vehicle,
+              index_t s_rank,
+              std::vector<index_t>& t_route,
+              index_t t_vehicle,
+              index_t t_rank);
 
   virtual bool is_valid() const override;
 

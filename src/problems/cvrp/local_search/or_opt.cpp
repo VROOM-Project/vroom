@@ -9,41 +9,42 @@ All rights reserved (see LICENSE).
 
 #include "problems/cvrp/local_search/or_opt.h"
 
-or_opt::or_opt(const input& input,
-               raw_solution& sol,
-               const solution_state& sol_state,
-               index_t source_vehicle,
-               index_t source_rank,
-               index_t target_vehicle,
-               index_t target_rank)
+cvrp_or_opt::cvrp_or_opt(const input& input,
+                         const solution_state& sol_state,
+                         std::vector<index_t>& s_route,
+                         index_t s_vehicle,
+                         index_t s_rank,
+                         std::vector<index_t>& t_route,
+                         index_t t_vehicle,
+                         index_t t_rank)
   : ls_operator(input,
-                sol,
                 sol_state,
-                source_vehicle,
-                source_rank,
-                target_vehicle,
-                target_rank),
-    reverse_source_edge(false) {
-  assert(source_vehicle != target_vehicle);
-  assert(_sol[source_vehicle].size() >= 2);
-  assert(source_rank < _sol[source_vehicle].size() - 1);
-  assert(target_rank <= _sol[target_vehicle].size());
+                s_route,
+                s_vehicle,
+                s_rank,
+                t_route,
+                t_vehicle,
+                t_rank),
+    reverse_s_edge(false) {
+  assert(s_vehicle != t_vehicle);
+  assert(s_route.size() >= 2);
+  assert(s_rank < s_route.size() - 1);
+  assert(t_rank <= t_route.size());
 }
 
-void or_opt::compute_gain() {
+void cvrp_or_opt::compute_gain() {
   const auto& m = _input.get_matrix();
-  const auto& v_target = _input._vehicles[target_vehicle];
+  const auto& v_target = _input._vehicles[t_vehicle];
 
   // For source vehicle, we consider the cost of removing edge
-  // starting at rank source_rank, already stored in
-  // _sol_state.edge_gains[source_vehicle][source_rank].
+  // starting at rank s_rank, already stored in
+  // _sol_state.edge_gains[s_vehicle][s_rank].
 
   // For target vehicle, we consider the cost of adding source edge at
-  // rank target_rank. reverse_* checks whether we should change the
+  // rank t_rank. reverse_* checks whether we should change the
   // source edge order.
-  index_t c_index = _input._jobs[_sol[source_vehicle][source_rank]].index();
-  index_t after_c_index =
-    _input._jobs[_sol[source_vehicle][source_rank + 1]].index();
+  index_t c_index = _input._jobs[s_route[s_rank]].index();
+  index_t after_c_index = _input._jobs[s_route[s_rank + 1]].index();
 
   gain_t previous_cost = 0;
   gain_t next_cost = 0;
@@ -51,8 +52,8 @@ void or_opt::compute_gain() {
   gain_t reverse_next_cost = 0;
   gain_t old_edge_cost = 0;
 
-  if (target_rank == _sol[target_vehicle].size()) {
-    if (_sol[target_vehicle].size() == 0) {
+  if (t_rank == t_route.size()) {
+    if (t_route.size() == 0) {
       // Adding edge to an empty route.
       if (v_target.has_start()) {
         previous_cost = m[v_target.start.get().index()][c_index];
@@ -64,8 +65,7 @@ void or_opt::compute_gain() {
       }
     } else {
       // Adding edge past the end after a real job.
-      auto p_index =
-        _input._jobs[_sol[target_vehicle][target_rank - 1]].index();
+      auto p_index = _input._jobs[t_route[t_rank - 1]].index();
       previous_cost = m[p_index][c_index];
       reverse_previous_cost = m[p_index][after_c_index];
       if (v_target.has_end()) {
@@ -77,11 +77,11 @@ void or_opt::compute_gain() {
     }
   } else {
     // Adding before one of the jobs.
-    auto n_index = _input._jobs[_sol[target_vehicle][target_rank]].index();
+    auto n_index = _input._jobs[t_route[t_rank]].index();
     next_cost = m[after_c_index][n_index];
     reverse_next_cost = m[c_index][n_index];
 
-    if (target_rank == 0) {
+    if (t_rank == 0) {
       if (v_target.has_start()) {
         auto p_index = v_target.start.get().index();
         previous_cost = m[p_index][c_index];
@@ -89,8 +89,7 @@ void or_opt::compute_gain() {
         old_edge_cost = m[p_index][n_index];
       }
     } else {
-      auto p_index =
-        _input._jobs[_sol[target_vehicle][target_rank - 1]].index();
+      auto p_index = _input._jobs[t_route[t_rank - 1]].index();
       previous_cost = m[p_index][c_index];
       reverse_previous_cost = m[p_index][after_c_index];
       old_edge_cost = m[p_index][n_index];
@@ -98,59 +97,60 @@ void or_opt::compute_gain() {
   }
 
   // Gain for target vehicle.
-  gain_t target_gain = old_edge_cost - previous_cost - next_cost;
+  gain_t t_gain = old_edge_cost - previous_cost - next_cost;
 
   gain_t reverse_edge_cost = static_cast<gain_t>(m[c_index][after_c_index]) -
                              static_cast<gain_t>(m[after_c_index][c_index]);
-  gain_t reverse_target_gain = old_edge_cost + reverse_edge_cost -
-                               reverse_previous_cost - reverse_next_cost;
+  gain_t reverse_t_gain = old_edge_cost + reverse_edge_cost -
+                          reverse_previous_cost - reverse_next_cost;
 
-  if (reverse_target_gain > target_gain) {
-    reverse_source_edge = true;
-    target_gain = reverse_target_gain;
+  normal_stored_gain = _sol_state.edge_gains[s_vehicle][s_rank] + t_gain;
+  reversed_stored_gain =
+    _sol_state.edge_gains[s_vehicle][s_rank] + reverse_t_gain;
+
+  stored_gain = normal_stored_gain;
+
+  if (reverse_t_gain > t_gain) {
+    reverse_s_edge = true;
+    stored_gain = reversed_stored_gain;
   }
-
-  stored_gain =
-    _sol_state.edge_gains[source_vehicle][source_rank] + target_gain;
 
   gain_computed = true;
 }
 
-bool or_opt::is_valid() const {
-  auto current_job_rank = _sol[source_vehicle][source_rank];
+bool cvrp_or_opt::is_valid() const {
+  auto current_job_rank = s_route[s_rank];
   // Already asserted in compute_gain.
-  auto after_job_rank = _sol[source_vehicle][source_rank + 1];
+  auto after_job_rank = s_route[s_rank + 1];
 
-  bool valid = _input.vehicle_ok_with_job(target_vehicle, current_job_rank);
-  valid &= _input.vehicle_ok_with_job(target_vehicle, after_job_rank);
+  bool valid = _input.vehicle_ok_with_job(t_vehicle, current_job_rank);
+  valid &= _input.vehicle_ok_with_job(t_vehicle, after_job_rank);
 
-  if (_sol_state.fwd_amounts[target_vehicle].empty()) {
+  if (_sol_state.fwd_amounts[t_vehicle].empty()) {
     valid &= (_input._jobs[current_job_rank].amount +
                 _input._jobs[after_job_rank].amount <=
-              _input._vehicles[target_vehicle].capacity);
+              _input._vehicles[t_vehicle].capacity);
   } else {
-    valid &= (_sol_state.fwd_amounts[target_vehicle].back() +
+    valid &= (_sol_state.fwd_amounts[t_vehicle].back() +
                 _input._jobs[current_job_rank].amount +
                 _input._jobs[after_job_rank].amount <=
-              _input._vehicles[target_vehicle].capacity);
+              _input._vehicles[t_vehicle].capacity);
   }
 
   return valid;
 }
 
-void or_opt::apply() const {
-  _sol[target_vehicle].insert(_sol[target_vehicle].begin() + target_rank,
-                              _sol[source_vehicle].begin() + source_rank,
-                              _sol[source_vehicle].begin() + source_rank + 2);
-  if (reverse_source_edge) {
-    std::swap(_sol[target_vehicle][target_rank],
-              _sol[target_vehicle][target_rank + 1]);
+void cvrp_or_opt::apply() const {
+  t_route.insert(t_route.begin() + t_rank,
+                 s_route.begin() + s_rank,
+                 s_route.begin() + s_rank + 2);
+  if (reverse_s_edge) {
+    std::swap(t_route[t_rank], t_route[t_rank + 1]);
   }
 
-  _sol[source_vehicle].erase(_sol[source_vehicle].begin() + source_rank,
-                             _sol[source_vehicle].begin() + source_rank + 2);
+  s_route.erase(s_route.begin() + s_rank, s_route.begin() + s_rank + 2);
 }
 
-std::vector<index_t> or_opt::addition_candidates() const {
-  return {source_vehicle};
+std::vector<index_t> cvrp_or_opt::addition_candidates() const {
+  return {s_vehicle};
 }
