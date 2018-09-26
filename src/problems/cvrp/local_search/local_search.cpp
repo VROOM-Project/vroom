@@ -135,8 +135,8 @@ void cvrp_local_search::try_job_additions(const std::vector<index_t>& routes,
       auto& best_bwd_amounts = _sol_state.bwd_amounts[best_route];
       best_bwd_amounts.insert(best_bwd_amounts.begin() + best_rank,
                               amount_t(_input.amount_size())); // dummy init
+      auto total_amount = _sol_state.fwd_amounts[best_route].back();
       for (std::size_t i = 0; i <= best_rank; ++i) {
-        auto total_amount = _sol_state.fwd_amounts[best_route].back();
         _sol_state.bwd_amounts[best_route][i] =
           total_amount - _sol_state.fwd_amounts[best_route][i];
       }

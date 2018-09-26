@@ -32,6 +32,116 @@ vrptw_local_search::vrptw_local_search(const input& input, tw_solution& tw_sol)
   _sol_state.setup(_tw_sol);
 }
 
+void vrptw_local_search::try_job_additions(const std::vector<index_t>& routes,
+                                           double regret_coeff) {
+  bool job_added;
+
+  do {
+    double best_cost = std::numeric_limits<double>::max();
+    index_t best_job = 0;
+    index_t best_route = 0;
+    index_t best_rank = 0;
+
+    for (const auto j : _sol_state.unassigned) {
+      auto& current_amount = _input._jobs[j].amount;
+      std::vector<gain_t> best_costs(routes.size(),
+                                     std::numeric_limits<gain_t>::max());
+      std::vector<index_t> best_ranks(routes.size());
+
+      for (std::size_t i = 0; i < routes.size(); ++i) {
+        auto v = routes[i];
+        const auto& v_target = _input._vehicles[v];
+        const amount_t& v_amount = _sol_state.total_amount(v);
+
+        if (_input.vehicle_ok_with_job(v, j) and
+            v_amount + current_amount <= _input._vehicles[v].capacity) {
+          for (std::size_t r = 0; r <= _tw_sol[v].route.size(); ++r) {
+            if (_tw_sol[v].is_valid_addition_for_tw(_input, j, r)) {
+              gain_t current_cost =
+                addition_cost(_input, _m, j, v_target, _tw_sol[v].route, r);
+
+              if (current_cost < best_costs[i]) {
+                best_costs[i] = current_cost;
+                best_ranks[i] = r;
+              }
+            }
+          }
+        }
+      }
+
+      auto smallest = std::numeric_limits<gain_t>::max();
+      auto second_smallest = std::numeric_limits<gain_t>::max();
+      std::size_t smallest_idx = std::numeric_limits<gain_t>::max();
+
+      for (std::size_t i = 0; i < routes.size(); ++i) {
+        if (best_costs[i] < smallest) {
+          smallest_idx = i;
+          second_smallest = smallest;
+          smallest = best_costs[i];
+        } else if (best_costs[i] < second_smallest) {
+          second_smallest = best_costs[i];
+        }
+      }
+
+      // Find best route for current job based on cost of addition and
+      // regret cost of not adding.
+      for (std::size_t i = 0; i < routes.size(); ++i) {
+        auto addition_cost = best_costs[i];
+        if (addition_cost == std::numeric_limits<gain_t>::max()) {
+          continue;
+        }
+        auto regret_cost = std::numeric_limits<gain_t>::max();
+        if (i == smallest_idx) {
+          regret_cost = second_smallest;
+        } else {
+          regret_cost = smallest;
+        }
+
+        double eval = static_cast<double>(addition_cost) -
+                      regret_coeff * static_cast<double>(regret_cost);
+
+        if (eval < best_cost) {
+          best_cost = eval;
+          best_job = j;
+          best_route = routes[i];
+          best_rank = best_ranks[i];
+        }
+      }
+    }
+
+    job_added = (best_cost < std::numeric_limits<double>::max());
+
+    if (job_added) {
+      _tw_sol[best_route].add(_input, best_job, best_rank);
+
+      // Update amounts after addition.
+      const auto& job_amount = _input._jobs[best_job].amount;
+      auto& best_fwd_amounts = _sol_state.fwd_amounts[best_route];
+      auto previous_cumul = (best_rank == 0) ? amount_t(_input.amount_size())
+                                             : best_fwd_amounts[best_rank - 1];
+      best_fwd_amounts.insert(best_fwd_amounts.begin() + best_rank,
+                              previous_cumul + job_amount);
+      std::for_each(best_fwd_amounts.begin() + best_rank + 1,
+                    best_fwd_amounts.end(),
+                    [&](auto& a) { a += job_amount; });
+
+      auto& best_bwd_amounts = _sol_state.bwd_amounts[best_route];
+      best_bwd_amounts.insert(best_bwd_amounts.begin() + best_rank,
+                              amount_t(_input.amount_size())); // dummy init
+      auto total_amount = _sol_state.fwd_amounts[best_route].back();
+      for (std::size_t i = 0; i <= best_rank; ++i) {
+        _sol_state.bwd_amounts[best_route][i] =
+          total_amount - _sol_state.fwd_amounts[best_route][i];
+      }
+
+      // Update cost after addition.
+      _sol_state.update_route_cost(_tw_sol[best_route].route, best_route);
+
+      _sol_state.unassigned.erase(best_job);
+    }
+  } while (job_added);
+}
+
 void vrptw_local_search::log_current_solution() {
   if (log) {
     write_to_json(format_solution(_input, _tw_sol),
@@ -284,12 +394,21 @@ void vrptw_local_search::run() {
       straighten_route(best_source);
       straighten_route(best_target);
 
+      // We need to run update_amounts before try_job_additions to
+      // correctly evaluate amounts. No need to run it again after
+      // since try_before_additions will subsequently fix amounts upon
+      // each addition.
       _sol_state.update_amounts(_tw_sol[best_source].route, best_source);
       _sol_state.update_amounts(_tw_sol[best_target].route, best_target);
 
-      // Only required for 2-opt* and reverse 2-opt*
+      try_job_additions(best_ops[best_source][best_target]
+                          ->addition_candidates(),
+                        0);
+
+      // Running update_costs only after try_job_additions is fine.
       _sol_state.update_costs(_tw_sol[best_source].route, best_source);
       _sol_state.update_costs(_tw_sol[best_target].route, best_target);
+
       _sol_state.update_skills(_tw_sol[best_source].route, best_source);
       _sol_state.update_skills(_tw_sol[best_target].route, best_target);
 

@@ -27,6 +27,9 @@ private:
   std::string log_name;
   void log_current_solution();
 
+  void try_job_additions(const std::vector<index_t>& routes,
+                         double regret_coeff);
+
   void straighten_route(index_t route_rank);
 
 public:
