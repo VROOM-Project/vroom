@@ -37,7 +37,7 @@ cvrp_local_search::cvrp_local_search(const input& input,
   _best_unassigned = _sol_state.unassigned.size();
   _best_cost = 0;
   for (std::size_t v = 0; v < _sol.size(); ++v) {
-    _best_cost += _sol_state.route_cost_for_vehicle(v, _sol[v]);
+    _best_cost += route_cost_for_vehicle(_input, v, _sol[v]);
   }
 }
 
@@ -447,7 +447,7 @@ void cvrp_local_search::run() {
     auto current_unassigned = _sol_state.unassigned.size();
     cost_t current_cost = 0;
     for (std::size_t v = 0; v < _sol.size(); ++v) {
-      current_cost += _sol_state.route_cost_for_vehicle(v, _sol[v]);
+      current_cost += route_cost_for_vehicle(_input, v, _sol[v]);
     }
     bool solution_improved =
       (current_unassigned < _best_unassigned or
@@ -590,7 +590,7 @@ void cvrp_local_search::run_tsp(index_t route_rank) {
     tsp p(_input, _sol[route_rank], route_rank);
     auto new_route = p.raw_solve(0, 1)[0];
 
-    auto after_cost = _sol_state.route_cost_for_vehicle(route_rank, new_route);
+    auto after_cost = route_cost_for_vehicle(_input, route_rank, new_route);
 
     if (after_cost < before_cost) {
       _sol[route_rank] = std::move(new_route);

@@ -108,6 +108,8 @@ public:
 
   solution_state(const input& input);
 
+  void setup(const raw_route_t& r, index_t v);
+
   void setup(const raw_solution& sol);
 
   void setup(const tw_solution& tw_sol);
@@ -126,9 +128,6 @@ public:
                                          const raw_route_t& route_2,
                                          index_t v1,
                                          index_t v2);
-
-  cost_t route_cost_for_vehicle(index_t vehicle_rank,
-                                const raw_route_t& route) const;
 
   void update_route_cost(const raw_route_t& route, index_t v);
 

@@ -30,7 +30,7 @@ private:
   void try_job_additions(const std::vector<index_t>& routes,
                          double regret_coeff);
 
-  void straighten_route(index_t route_rank);
+  bool straighten_route(index_t route_rank);
 
 public:
   vrptw_local_search(const input& input, tw_solution& tw_sol);

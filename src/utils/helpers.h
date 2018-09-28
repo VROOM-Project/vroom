@@ -77,6 +77,32 @@ inline gain_t addition_cost(const input& input,
   return previous_cost + next_cost - old_edge_cost;
 }
 
+inline cost_t route_cost_for_vehicle(const input& input,
+                                     index_t vehicle_rank,
+                                     const std::vector<index_t>& route) {
+  const auto& v = input._vehicles[vehicle_rank];
+  const auto& m = input.get_matrix();
+  auto cost = 0;
+
+  if (route.size() > 0) {
+    if (v.has_start()) {
+      cost += m[v.start.get().index()][input._jobs[route.front()].index()];
+    }
+
+    index_t previous = route.front();
+    for (auto it = ++route.cbegin(); it != route.cend(); ++it) {
+      cost += m[input._jobs[previous].index()][input._jobs[*it].index()];
+      previous = *it;
+    }
+
+    if (v.has_end()) {
+      cost += m[input._jobs[route.back()].index()][v.end.get().index()];
+    }
+  }
+
+  return cost;
+}
+
 inline solution format_solution(const input& input,
                                 const raw_solution& raw_routes) {
   const auto& m = input.get_matrix();
