@@ -22,10 +22,13 @@ protected:
   const amount_t _amount_lower_bound;
   const amount_t _double_amount_lower_bound;
 
+  const unsigned _max_nb_jobs_removal;
+  std::vector<index_t> _all_routes;
+
   solution_state _sol_state;
 
 public:
-  local_search(const input& input);
+  local_search(const input& input, unsigned max_nb_jobs_removal);
 
   virtual ~local_search();
 

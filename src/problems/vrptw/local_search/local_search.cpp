@@ -22,14 +22,20 @@ All rights reserved (see LICENSE).
 
 unsigned vrptw_local_search::ls_rank = 0;
 
-vrptw_local_search::vrptw_local_search(const input& input, tw_solution& tw_sol)
-  : local_search(input),
+vrptw_local_search::vrptw_local_search(const input& input,
+                                       tw_solution& tw_sol,
+                                       unsigned max_nb_jobs_removal)
+  : local_search(input, max_nb_jobs_removal),
     _tw_sol(tw_sol),
+    _best_sol(tw_sol),
     log(false),
     log_iter(0),
     log_name("debug_" + std::to_string(++ls_rank) + "_") {
   // Setup solution state.
   _sol_state.setup(_tw_sol);
+
+  _best_unassigned = _sol_state.unassigned.size();
+  _best_cost = _sol_state.total_cost();
 
   log_current_solution();
 
@@ -158,7 +164,7 @@ void vrptw_local_search::log_current_solution() {
   }
 }
 
-void vrptw_local_search::run() {
+void vrptw_local_search::run_ls_step() {
   std::vector<std::vector<std::unique_ptr<ls_operator>>> best_ops(V);
   for (std::size_t v = 0; v < V; ++v) {
     best_ops[v] = std::vector<std::unique_ptr<ls_operator>>(V);
@@ -453,6 +459,155 @@ void vrptw_local_search::run() {
   }
 }
 
+void vrptw_local_search::run() {
+  bool try_ls_step = true;
+  bool first_step = true;
+
+  unsigned current_nb_removal = 1;
+
+  while (try_ls_step) {
+    // A round of local search.
+    run_ls_step();
+
+    // Remember best known solution.
+    auto current_unassigned = _sol_state.unassigned.size();
+    cost_t current_cost = _sol_state.total_cost();
+    bool solution_improved =
+      (current_unassigned < _best_unassigned or
+       (current_unassigned == _best_unassigned and current_cost < _best_cost));
+
+    if (solution_improved) {
+      _best_unassigned = current_unassigned;
+      _best_cost = current_cost;
+      _best_sol = _tw_sol;
+    } else {
+      if (!first_step) {
+        ++current_nb_removal;
+      }
+    }
+
+    // Try again on each improvement until we reach last job removal
+    // level.
+    try_ls_step = (current_nb_removal <= _max_nb_jobs_removal);
+
+    if (try_ls_step) {
+      // Get a looser situation by removing jobs.
+      for (unsigned i = 0; i < current_nb_removal; ++i) {
+        remove_from_routes();
+        for (std::size_t v = 0; v < _tw_sol.size(); ++v) {
+          _sol_state.set_node_gains(_tw_sol[v].route, v);
+        }
+      }
+
+      // Refill jobs (requires updated amounts).
+      for (std::size_t v = 0; v < _tw_sol.size(); ++v) {
+        _sol_state.update_amounts(_tw_sol[v].route, v);
+      }
+      try_job_additions(_all_routes, 1.5);
+
+      for (std::size_t v = 0; v < _tw_sol.size(); ++v) {
+        straighten_route(v);
+      }
+
+      // Reset what is needed in solution state.
+      _sol_state.setup(_tw_sol);
+    }
+
+    first_step = false;
+  }
+}
+
+void vrptw_local_search::remove_from_routes() {
+  // Store nearest job from and to any job in any route for constant
+  // time access down the line.
+  for (std::size_t v1 = 0; v1 < V; ++v1) {
+    for (std::size_t v2 = 0; v2 < V; ++v2) {
+      if (v2 == v1) {
+        continue;
+      }
+      _sol_state.update_nearest_job_rank_in_routes(_tw_sol[v1].route,
+                                                   _tw_sol[v2].route,
+                                                   v1,
+                                                   v2);
+    }
+  }
+
+  // Remove best node candidate from all routes.
+  std::vector<std::pair<index_t, index_t>> routes_and_ranks;
+
+  for (std::size_t v = 0; v < _tw_sol.size(); ++v) {
+    if (_tw_sol[v].route.empty()) {
+      continue;
+    }
+
+    // Try removing the best node (good gain on current route and
+    // small cost to closest node in another compatible route).
+    index_t best_rank = 0;
+    gain_t best_gain = std::numeric_limits<gain_t>::min();
+
+    for (std::size_t r = 0; r < _tw_sol[v].route.size(); ++r) {
+      gain_t best_relocate_distance = std::numeric_limits<gain_t>::max();
+
+      auto current_index = _input._jobs[_tw_sol[v].route[r]].index();
+
+      for (std::size_t other_v = 0; other_v < _tw_sol.size(); ++other_v) {
+        if (other_v == v or
+            !_input.vehicle_ok_with_job(other_v, _tw_sol[v].route[r])) {
+          continue;
+        }
+        gain_t relocate_distance = std::numeric_limits<gain_t>::max();
+
+        if (_input._vehicles[other_v].has_start()) {
+          auto start_index = _input._vehicles[other_v].start.get().index();
+          gain_t start_cost = _m[start_index][current_index];
+          relocate_distance = std::min(relocate_distance, start_cost);
+        }
+        if (_input._vehicles[other_v].has_end()) {
+          auto end_index = _input._vehicles[other_v].end.get().index();
+          gain_t end_cost = _m[current_index][end_index];
+          relocate_distance = std::min(relocate_distance, end_cost);
+        }
+        if (_tw_sol[other_v].route.size() != 0) {
+          auto nearest_from_rank =
+            _sol_state.nearest_job_rank_in_routes_from[v][other_v][r];
+          auto nearest_from_index =
+            _input._jobs[_tw_sol[other_v].route[nearest_from_rank]].index();
+          gain_t cost_from = _m[nearest_from_index][current_index];
+          relocate_distance = std::min(relocate_distance, cost_from);
+
+          auto nearest_to_rank =
+            _sol_state.nearest_job_rank_in_routes_to[v][other_v][r];
+          auto nearest_to_index =
+            _input._jobs[_tw_sol[other_v].route[nearest_to_rank]].index();
+          gain_t cost_to = _m[current_index][nearest_to_index];
+          relocate_distance = std::min(relocate_distance, cost_to);
+        }
+
+        if (relocate_distance < best_relocate_distance) {
+          best_relocate_distance = relocate_distance;
+        }
+      }
+
+      gain_t current_gain =
+        _sol_state.node_gains[v][r] - best_relocate_distance;
+
+      if (current_gain > best_gain) {
+        best_gain = current_gain;
+        best_rank = r;
+      }
+    }
+
+    routes_and_ranks.push_back(std::make_pair(v, best_rank));
+  }
+
+  for (const auto& r_r : routes_and_ranks) {
+    auto v = r_r.first;
+    auto r = r_r.second;
+    _sol_state.unassigned.insert(_tw_sol[v].route[r]);
+    _tw_sol[v].remove(_input, r, 1);
+  }
+}
+
 bool vrptw_local_search::straighten_route(index_t route_rank) {
   bool update_route = false;
   if (_tw_sol[route_rank].route.size() > 0) {
@@ -490,13 +645,10 @@ bool vrptw_local_search::straighten_route(index_t route_rank) {
 solution_indicators vrptw_local_search::indicators() const {
   solution_indicators si;
 
-  si.unassigned = _sol_state.unassigned.size();
-  si.cost = 0;
-  for (std::size_t v = 0; v < V; ++v) {
-    si.cost += _sol_state.route_costs[v];
-  }
+  si.unassigned = _best_unassigned;
+  si.cost = _best_cost;
   si.used_vehicles =
-    std::count_if(_tw_sol.begin(), _tw_sol.end(), [](const auto& tw_r) {
+    std::count_if(_best_sol.begin(), _best_sol.end(), [](const auto& tw_r) {
       return !tw_r.route.empty();
     });
   return si;

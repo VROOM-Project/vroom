@@ -40,35 +40,43 @@ solution vrptw::solve(unsigned exploration_level, unsigned nb_threads) const {
                                  {h_flavor, INIT_T::EARLIEST_DEADLINE, 0.2},
                                  {h_flavor, INIT_T::FURTHEST, 1.1}});
 
+  unsigned max_nb_jobs_removal = 0;
+
   if (exploration_level > 0) {
+    max_nb_jobs_removal = 1;
+  }
+
+  if (exploration_level > 1) {
+    max_nb_jobs_removal = 3;
+  }
+
+  if (exploration_level > 2) {
     parameters.push_back({h_flavor, INIT_T::NONE, 0.9});
     parameters.push_back({h_flavor, INIT_T::HIGHER_AMOUNT, 0.1});
     parameters.push_back({h_flavor, INIT_T::HIGHER_AMOUNT, 1.8});
     parameters.push_back({h_flavor, INIT_T::EARLIEST_DEADLINE, 0.7});
   }
 
-  if (exploration_level > 1) {
+  if (exploration_level > 3) {
     parameters.push_back({h_flavor, INIT_T::NONE, 0.2});
     parameters.push_back({h_flavor, INIT_T::HIGHER_AMOUNT, 1.5});
     parameters.push_back({h_flavor, INIT_T::EARLIEST_DEADLINE, 0.6});
     parameters.push_back({h_flavor, INIT_T::EARLIEST_DEADLINE, 1.1});
-  }
 
-  if (exploration_level > 2) {
     parameters.push_back({h_flavor, INIT_T::HIGHER_AMOUNT, 0});
     parameters.push_back({h_flavor, INIT_T::HIGHER_AMOUNT, 0.1});
     parameters.push_back({h_flavor, INIT_T::HIGHER_AMOUNT, 1});
     parameters.push_back({h_flavor, INIT_T::HIGHER_AMOUNT, 1.2});
   }
 
-  if (exploration_level > 3) {
+  if (exploration_level > 4) {
+    max_nb_jobs_removal = 4;
+
     parameters.push_back({h_flavor, INIT_T::HIGHER_AMOUNT, 0});
     parameters.push_back({h_flavor, INIT_T::EARLIEST_DEADLINE, 0.9});
     parameters.push_back({h_flavor, INIT_T::FURTHEST, 0.1});
     parameters.push_back({h_flavor, INIT_T::FURTHEST, 2});
-  }
 
-  if (exploration_level > 3) {
     parameters.push_back({h_flavor, INIT_T::NONE, 0});
     parameters.push_back({h_flavor, INIT_T::EARLIEST_DEADLINE, 1.8});
     parameters.push_back({h_flavor, INIT_T::FURTHEST, 0.2});
@@ -100,7 +108,7 @@ solution vrptw::solve(unsigned exploration_level, unsigned nb_threads) const {
       }
 
       // Local search phase.
-      vrptw_local_search ls(_input, tw_solutions[rank]);
+      vrptw_local_search ls(_input, tw_solutions[rank], max_nb_jobs_removal);
       ls.run();
 
       // Store solution indicators.

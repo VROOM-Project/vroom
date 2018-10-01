@@ -7,6 +7,8 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <numeric>
+
 #include "structures/vroom/solution_state.h"
 #include "utils/helpers.h"
 
@@ -416,6 +418,10 @@ void solution_state::update_nearest_job_rank_in_routes(
 
 void solution_state::update_route_cost(const raw_route_t& route, index_t v) {
   route_costs[v] = route_cost_for_vehicle(_input, v, route);
+}
+
+cost_t solution_state::total_cost() const {
+  return std::accumulate(route_costs.begin(), route_costs.end(), 0);
 }
 
 const amount_t& solution_state::total_amount(index_t v) const {

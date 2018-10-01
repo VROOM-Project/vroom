@@ -7,12 +7,10 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <numeric>
-
+#include "problems/cvrp/local_search/local_search.h"
 #include "problems/cvrp/local_search/2_opt.h"
 #include "problems/cvrp/local_search/cross_exchange.h"
 #include "problems/cvrp/local_search/exchange.h"
-#include "problems/cvrp/local_search/local_search.h"
 #include "problems/cvrp/local_search/or_opt.h"
 #include "problems/cvrp/local_search/relocate.h"
 #include "problems/cvrp/local_search/reverse_2_opt.h"
@@ -22,23 +20,12 @@ All rights reserved (see LICENSE).
 cvrp_local_search::cvrp_local_search(const input& input,
                                      raw_solution& sol,
                                      unsigned max_nb_jobs_removal)
-  : local_search(input),
-    _sol(sol),
-    _max_nb_jobs_removal(max_nb_jobs_removal),
-    _all_routes(V),
-    _target_sol(sol),
-    _best_sol(sol) {
+  : local_search(input, max_nb_jobs_removal), _sol(sol), _best_sol(sol) {
   // Setup solution state.
   _sol_state.setup(_sol);
 
-  // Initialize all route indices.
-  std::iota(_all_routes.begin(), _all_routes.end(), 0);
-
   _best_unassigned = _sol_state.unassigned.size();
-  _best_cost = 0;
-  for (std::size_t v = 0; v < _sol.size(); ++v) {
-    _best_cost += route_cost_for_vehicle(_input, v, _sol[v]);
-  }
+  _best_cost = _sol_state.total_cost();
 }
 
 void cvrp_local_search::try_job_additions(const std::vector<index_t>& routes,
@@ -445,10 +432,7 @@ void cvrp_local_search::run() {
 
     // Remember best known solution.
     auto current_unassigned = _sol_state.unassigned.size();
-    cost_t current_cost = 0;
-    for (std::size_t v = 0; v < _sol.size(); ++v) {
-      current_cost += route_cost_for_vehicle(_input, v, _sol[v]);
-    }
+    cost_t current_cost = _sol_state.total_cost();
     bool solution_improved =
       (current_unassigned < _best_unassigned or
        (current_unassigned == _best_unassigned and current_cost < _best_cost));
@@ -492,8 +476,6 @@ void cvrp_local_search::run() {
 
     first_step = false;
   }
-
-  _target_sol = _best_sol;
 }
 
 void cvrp_local_search::remove_from_routes() {

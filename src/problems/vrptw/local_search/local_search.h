@@ -17,7 +17,11 @@ using tw_solution = std::vector<tw_route>;
 
 class vrptw_local_search : public local_search {
 private:
-  tw_solution& _tw_sol;
+  tw_solution _tw_sol;
+
+  tw_solution& _best_sol;
+  unsigned _best_unassigned;
+  cost_t _best_cost;
 
   static unsigned ls_rank;
 
@@ -32,8 +36,14 @@ private:
 
   bool straighten_route(index_t route_rank);
 
+  void run_ls_step();
+
+  void remove_from_routes();
+
 public:
-  vrptw_local_search(const input& input, tw_solution& tw_sol);
+  vrptw_local_search(const input& input,
+                     tw_solution& tw_sol,
+                     unsigned max_nb_jobs_removal);
 
   virtual solution_indicators indicators() const override;
 
