@@ -433,6 +433,7 @@ void cvrp_local_search::run() {
     // Remember best known solution.
     auto current_unassigned = _sol_state.unassigned.size();
     cost_t current_cost = _sol_state.total_cost();
+
     bool solution_improved =
       (current_unassigned < _best_unassigned or
        (current_unassigned == _best_unassigned and current_cost < _best_cost));
@@ -444,6 +445,13 @@ void cvrp_local_search::run() {
     } else {
       if (!first_step) {
         ++current_nb_removal;
+      }
+      if (_best_unassigned < current_unassigned or
+          (_best_unassigned == current_unassigned and
+           _best_cost < current_cost)) {
+        // Back to best known solution for further steps.
+        _sol = _best_sol;
+        _sol_state.setup(_sol);
       }
     }
 

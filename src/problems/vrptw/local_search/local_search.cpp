@@ -484,6 +484,13 @@ void vrptw_local_search::run() {
       if (!first_step) {
         ++current_nb_removal;
       }
+      if (_best_unassigned < current_unassigned or
+          (_best_unassigned == current_unassigned and
+           _best_cost < current_cost)) {
+        // Back to best known solution for further steps.
+        _tw_sol = _best_sol;
+        _sol_state.setup(_tw_sol);
+      }
     }
 
     // Try again on each improvement until we reach last job removal
