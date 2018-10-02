@@ -90,7 +90,9 @@ problem with capacity restrictions. Those arrays can be used to model
 custom restrictions for several metrics at once, e.g. number of items,
 weight, volume etc. A vehicle is only allowed to serve a set of jobs
 if the `amount` component sums are lower than the matching value in
-`capacity` for each metric.
+`capacity` for each metric. When using multiple components for
+`amount` and `capacity`, it is recommended to put the most
+important/limiting metrics first.
 
 ### Skills
 
