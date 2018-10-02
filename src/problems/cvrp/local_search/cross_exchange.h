@@ -13,9 +13,6 @@ All rights reserved (see LICENSE).
 #include "problems/ls_operator.h"
 
 class cvrp_cross_exchange : public ls_operator {
-private:
-  virtual void compute_gain() override;
-
 protected:
   gain_t normal_s_gain;
   gain_t reversed_s_gain;
@@ -24,6 +21,8 @@ protected:
 
   bool reverse_s_edge;
   bool reverse_t_edge;
+
+  virtual void compute_gain() override;
 
 public:
   cvrp_cross_exchange(const input& input,

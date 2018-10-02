@@ -31,8 +31,8 @@ vrptw_cross_exchange::vrptw_cross_exchange(const input& input,
     _t_is_reverse_valid(false) {
 }
 
-gain_t vrptw_cross_exchange::gain() {
-  ls_operator::gain();
+void vrptw_cross_exchange::compute_gain() {
+  cvrp_cross_exchange::compute_gain();
   assert(_s_is_normal_valid or _s_is_reverse_valid);
   assert(_t_is_normal_valid or _t_is_reverse_valid);
 
@@ -78,7 +78,7 @@ gain_t vrptw_cross_exchange::gain() {
     }
   }
 
-  return s_gain + t_gain;
+  stored_gain = s_gain + t_gain;
 }
 
 bool vrptw_cross_exchange::is_valid() {

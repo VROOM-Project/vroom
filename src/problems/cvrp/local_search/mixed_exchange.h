@@ -13,15 +13,14 @@ All rights reserved (see LICENSE).
 #include "problems/ls_operator.h"
 
 class cvrp_mixed_exchange : public ls_operator {
-private:
-  virtual void compute_gain() override;
-
 protected:
   gain_t normal_s_gain;
   gain_t reversed_s_gain;
   gain_t t_gain;
 
   bool reverse_t_edge;
+
+  virtual void compute_gain() override;
 
 public:
   cvrp_mixed_exchange(const input& input,

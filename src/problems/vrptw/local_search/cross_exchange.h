@@ -24,6 +24,8 @@ private:
   bool _t_is_normal_valid;
   bool _t_is_reverse_valid;
 
+  virtual void compute_gain() override;
+
 public:
   vrptw_cross_exchange(const input& input,
                        const solution_state& sol_state,
@@ -32,8 +34,6 @@ public:
                        index_t s_rank,
                        index_t t_vehicle,
                        index_t t_rank);
-
-  virtual gain_t gain() override;
 
   virtual bool is_valid();
 
