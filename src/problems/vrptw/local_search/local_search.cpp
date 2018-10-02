@@ -13,6 +13,7 @@ All rights reserved (see LICENSE).
 #include "problems/vrptw/local_search/2_opt.h"
 #include "problems/vrptw/local_search/cross_exchange.h"
 #include "problems/vrptw/local_search/exchange.h"
+#include "problems/vrptw/local_search/mixed_exchange.h"
 #include "problems/vrptw/local_search/or_opt.h"
 #include "problems/vrptw/local_search/relocate.h"
 #include "problems/vrptw/local_search/reverse_2_opt.h"
@@ -237,6 +238,33 @@ void vrptw_local_search::run_ls_step() {
             best_gains[s_t.first][s_t.second] = r.gain();
             best_ops[s_t.first][s_t.second] =
               std::make_unique<vrptw_cross_exchange>(r);
+          }
+        }
+      }
+    }
+
+    // Mixed-exchange stuff
+    for (const auto& s_t : s_t_pairs) {
+      if (_tw_sol[s_t.first].route.size() == 0 or
+          _tw_sol[s_t.second].route.size() < 2) {
+        continue;
+      }
+
+      for (unsigned s_rank = 0; s_rank < _tw_sol[s_t.first].route.size();
+           ++s_rank) {
+        for (unsigned t_rank = 0; t_rank < _tw_sol[s_t.second].route.size() - 1;
+             ++t_rank) {
+          vrptw_mixed_exchange r(_input,
+                                 _sol_state,
+                                 _tw_sol,
+                                 s_t.first,
+                                 s_rank,
+                                 s_t.second,
+                                 t_rank);
+          if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
+            best_gains[s_t.first][s_t.second] = r.gain();
+            best_ops[s_t.first][s_t.second] =
+              std::make_unique<vrptw_mixed_exchange>(r);
           }
         }
       }
