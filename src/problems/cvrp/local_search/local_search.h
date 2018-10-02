@@ -16,12 +16,7 @@ class cvrp_local_search : public local_search {
 private:
   raw_solution _sol;
 
-  const unsigned _max_nb_jobs_removal;
-
-  std::vector<index_t> _all_routes;
-  raw_solution& _target_sol;
-
-  raw_solution _best_sol;
+  raw_solution& _best_sol;
   unsigned _best_unassigned;
   cost_t _best_cost;
 

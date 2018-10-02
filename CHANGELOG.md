@@ -4,7 +4,7 @@
 
 ### Added
 
-- Support for VRPTW (#140, #159)
+- Support for VRPTW (#113)
 - CI builds using Travis (#134)
 - Adjust solving depending on whether vehicles locations are all identical (#152)
 

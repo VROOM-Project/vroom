@@ -7,7 +7,10 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <numeric>
+
 #include "structures/vroom/solution_state.h"
+#include "utils/helpers.h"
 
 solution_state::solution_state(const input& input)
   : _input(input),
@@ -31,14 +34,18 @@ solution_state::solution_state(const input& input)
     route_costs(_V) {
 }
 
+void solution_state::setup(const raw_route_t& r, index_t v) {
+  update_amounts(r, v);
+  update_costs(r, v);
+  update_skills(r, v);
+  set_node_gains(r, v);
+  set_edge_gains(r, v);
+  update_route_cost(r, v);
+}
+
 void solution_state::setup(const raw_solution& sol) {
   for (std::size_t v = 0; v < _V; ++v) {
-    update_amounts(sol[v], v);
-    update_costs(sol[v], v);
-    update_skills(sol[v], v);
-    set_node_gains(sol[v], v);
-    set_edge_gains(sol[v], v);
-    update_route_cost(sol[v], v);
+    setup(sol[v], v);
   }
 
   // Initialize unassigned jobs.
@@ -56,12 +63,7 @@ void solution_state::setup(const raw_solution& sol) {
 
 void solution_state::setup(const tw_solution& tw_sol) {
   for (std::size_t v = 0; v < _V; ++v) {
-    update_amounts(tw_sol[v].route, v);
-    update_costs(tw_sol[v].route, v);
-    update_skills(tw_sol[v].route, v);
-    set_node_gains(tw_sol[v].route, v);
-    set_edge_gains(tw_sol[v].route, v);
-    update_route_cost(tw_sol[v].route, v);
+    setup(tw_sol[v].route, v);
   }
 
   // Initialize unassigned jobs.
@@ -414,33 +416,12 @@ void solution_state::update_nearest_job_rank_in_routes(
   }
 }
 
-cost_t solution_state::route_cost_for_vehicle(
-  index_t vehicle_rank,
-  const std::vector<index_t>& route) const {
-  const auto& v = _input._vehicles[vehicle_rank];
-  auto cost = 0;
-
-  if (route.size() > 0) {
-    if (v.has_start()) {
-      cost += _m[v.start.get().index()][_input._jobs[route.front()].index()];
-    }
-
-    index_t previous = route.front();
-    for (auto it = ++route.cbegin(); it != route.cend(); ++it) {
-      cost += _m[_input._jobs[previous].index()][_input._jobs[*it].index()];
-      previous = *it;
-    }
-
-    if (v.has_end()) {
-      cost += _m[_input._jobs[route.back()].index()][v.end.get().index()];
-    }
-  }
-
-  return cost;
+void solution_state::update_route_cost(const raw_route_t& route, index_t v) {
+  route_costs[v] = route_cost_for_vehicle(_input, v, route);
 }
 
-void solution_state::update_route_cost(const raw_route_t& route, index_t v) {
-  route_costs[v] = route_cost_for_vehicle(v, route);
+cost_t solution_state::total_cost() const {
+  return std::accumulate(route_costs.begin(), route_costs.end(), 0);
 }
 
 const amount_t& solution_state::total_amount(index_t v) const {
