@@ -11,11 +11,12 @@ All rights reserved (see LICENSE).
 #include <thread>
 
 #include "problems/cvrp/cvrp.h"
-#include "problems/cvrp/heuristics/clustering.h"
 #include "problems/cvrp/local_search/local_search.h"
 #include "problems/tsp/tsp.h"
 #include "structures/vroom/input/input.h"
 #include "utils/helpers.h"
+
+constexpr std::array<h_param, 24> cvrp::homogeneous_parameters;
 
 cvrp::cvrp(const input& input) : vrp(input) {
 }
@@ -33,64 +34,11 @@ solution cvrp::solve(unsigned exploration_level, unsigned nb_threads) const {
     return format_solution(_input, p.raw_solve(0, nb_threads));
   }
 
-  struct param {
-    CLUSTERING_T type;
-    INIT_T init;
-    double regret_coeff;
-  };
-
-  std::vector<param> parameters(
-    {{CLUSTERING_T::PARALLEL, INIT_T::NONE, 0.5},
-     {CLUSTERING_T::SEQUENTIAL, INIT_T::NEAREST, 0.3},
-     {CLUSTERING_T::SEQUENTIAL, INIT_T::NEAREST, 1.9},
-     {CLUSTERING_T::SEQUENTIAL, INIT_T::HIGHER_AMOUNT, 1.4}});
-
-  unsigned max_nb_jobs_removal = 0;
-
-  if (exploration_level > 0) {
-    max_nb_jobs_removal = 1;
-  }
-
-  if (exploration_level > 1) {
-    max_nb_jobs_removal = 3;
-  }
-
-  if (exploration_level > 2) {
-    parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NONE, 0.1});
-    parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NEAREST, 1});
-    parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NONE, 0.1});
-    parameters.push_back(
-      {CLUSTERING_T::SEQUENTIAL, INIT_T::HIGHER_AMOUNT, 1.1});
-  }
-
-  if (exploration_level > 3) {
-    parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NONE, 0.6});
-    parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NONE, 1.2});
-    parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NEAREST, 0.5});
-    parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NEAREST, 1.2});
-
-    parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::FURTHEST, 1.7});
-    parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NEAREST, 1.1});
-    parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::FURTHEST, 0.6});
-    parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::HIGHER_AMOUNT, 0});
-  }
-
-  if (exploration_level > 4) {
-    max_nb_jobs_removal = 4;
-
-    parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NONE, 0.3});
-    parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NEAREST, 0.4});
-    parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NONE, 0.2});
-    parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NEAREST, 1.6});
-
-    parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NONE, 0.9});
-    parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NONE, 1.1});
-    parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NEAREST, 0.4});
-    parameters.push_back(
-      {CLUSTERING_T::SEQUENTIAL, INIT_T::HIGHER_AMOUNT, 0.7});
-  }
-
-  auto P = parameters.size();
+  // Local search parameter.
+  unsigned max_nb_jobs_removal = exploration_level;
+  // Number of initial solutions to consider.
+  auto P = 4 * (exploration_level + 1);
+  assert(P <= homogeneous_parameters.size());
 
   std::vector<raw_solution> solutions(P,
                                       raw_solution(nb_tsp,
@@ -106,7 +54,8 @@ solution cvrp::solve(unsigned exploration_level, unsigned nb_threads) const {
 
   auto run_solve = [&](const std::vector<std::size_t>& param_ranks) {
     for (auto rank : param_ranks) {
-      auto& p = parameters[rank];
+      auto& p = homogeneous_parameters[rank];
+
       clustering c(_input, p.type, p.init, p.regret_coeff);
 
       // Populate vector of TSP solutions, one per cluster.

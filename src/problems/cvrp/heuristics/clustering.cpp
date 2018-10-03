@@ -12,7 +12,7 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/heuristics/clustering.h"
 #include "structures/vroom/amount.h"
 
-clustering::clustering(const input& input, CLUSTERING_T t, INIT_T i, double c)
+clustering::clustering(const input& input, CLUSTERING_T t, INIT_T i, float c)
   : input_ref(input),
     type(t),
     init(i),
@@ -227,10 +227,10 @@ void clustering::parallel_clustering() {
 
   auto eval_lambda = [&](auto v) {
     return [&, v](auto i, auto j) {
-      return regret_coeff * static_cast<double>(regrets[v][i]) -
-               static_cast<double>(costs[v][i]) <
-             regret_coeff * static_cast<double>(regrets[v][j]) -
-               static_cast<double>(costs[v][j]);
+      return regret_coeff * static_cast<float>(regrets[v][i]) -
+               static_cast<float>(costs[v][i]) <
+             regret_coeff * static_cast<float>(regrets[v][j]) -
+               static_cast<float>(costs[v][j]);
     };
   };
 
@@ -480,10 +480,10 @@ void clustering::sequential_clustering() {
     }
 
     auto eval_lambda = [&](auto i, auto j) {
-      return regret_coeff * static_cast<double>(regrets[v][i]) -
-               static_cast<double>(costs[i]) <
-             regret_coeff * static_cast<double>(regrets[v][j]) -
-               static_cast<double>(costs[j]);
+      return regret_coeff * static_cast<float>(regrets[v][i]) -
+               static_cast<float>(costs[i]) <
+             regret_coeff * static_cast<float>(regrets[v][j]) -
+               static_cast<float>(costs[j]);
     };
 
     while (!candidates.empty()) {

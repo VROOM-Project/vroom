@@ -15,9 +15,6 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/input/input.h"
 #include "structures/vroom/job.h"
 
-// Clustering types.
-enum class CLUSTERING_T { PARALLEL, SEQUENTIAL };
-
 class clustering {
 private:
   const input& input_ref;
@@ -27,7 +24,7 @@ private:
 public:
   const CLUSTERING_T type;
   const INIT_T init;
-  const double regret_coeff;
+  const float regret_coeff;
   // Clusters are relative to the vehicle with same rank in
   // input_ref._vehicles.
   std::vector<std::vector<index_t>> clusters;
@@ -36,7 +33,7 @@ public:
   unsigned assigned_jobs;
   unsigned non_empty_clusters;
 
-  clustering(const input& input, CLUSTERING_T t, INIT_T i, double c);
+  clustering(const input& input, CLUSTERING_T t, INIT_T i, float c);
 };
 
 #endif

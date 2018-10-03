@@ -44,6 +44,31 @@ enum class TYPE { START, JOB, END };
 
 // Heuristic options.
 enum class HEURISTIC_T { BASIC, DYNAMIC };
+enum class CLUSTERING_T { PARALLEL, SEQUENTIAL };
 enum class INIT_T { NONE, HIGHER_AMOUNT, NEAREST, FURTHEST, EARLIEST_DEADLINE };
+
+struct h_param {
+  bool is_clustering; // Use "heuristic" or "type".
+  HEURISTIC_T heuristic;
+  CLUSTERING_T type;
+  INIT_T init;
+  float regret_coeff;
+
+  constexpr h_param(HEURISTIC_T heuristic, INIT_T init, float regret_coeff)
+    : is_clustering(false),
+      heuristic(heuristic),
+      type(CLUSTERING_T::SEQUENTIAL), // dummy init
+      init(init),
+      regret_coeff(regret_coeff) {
+  }
+
+  constexpr h_param(CLUSTERING_T type, INIT_T init, float regret_coeff)
+    : is_clustering(true),
+      heuristic(HEURISTIC_T::BASIC), // dummy init
+      type(type),
+      init(init),
+      regret_coeff(regret_coeff) {
+  }
+};
 
 #endif
