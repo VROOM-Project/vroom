@@ -18,9 +18,6 @@ All rights reserved (see LICENSE).
 // Clustering types.
 enum class CLUSTERING_T { PARALLEL, SEQUENTIAL };
 
-// Initialization types.
-enum class INIT_T { NONE, HIGHER_AMOUNT, NEAREST, FURTHEST };
-
 class clustering {
 private:
   const input& input_ref;

@@ -22,9 +22,6 @@ vrptw::vrptw(const input& input) : vrp(input) {
 }
 
 solution vrptw::solve(unsigned exploration_level, unsigned nb_threads) const {
-  // Heuristic flavor.
-  enum class HEURISTIC_T { BASIC, DYNAMIC };
-
   struct param {
     HEURISTIC_T heuristic;
     INIT_T init;

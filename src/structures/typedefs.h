@@ -42,4 +42,8 @@ constexpr cost_t INFINITE_COST = 3 * (std::numeric_limits<cost_t>::max() / 4);
 // Available location status.
 enum class TYPE { START, JOB, END };
 
+// Heuristic options.
+enum class HEURISTIC_T { BASIC, DYNAMIC };
+enum class INIT_T { NONE, HIGHER_AMOUNT, NEAREST, FURTHEST, EARLIEST_DEADLINE };
+
 #endif

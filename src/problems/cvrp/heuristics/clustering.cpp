@@ -46,6 +46,9 @@ clustering::clustering(const input& input, CLUSTERING_T t, INIT_T i, double c)
   case INIT_T::FURTHEST:
     init_str = "furthest";
     break;
+  case INIT_T::EARLIEST_DEADLINE:
+    assert(false);
+    break;
   }
 
   non_empty_clusters = std::count_if(clusters.begin(),

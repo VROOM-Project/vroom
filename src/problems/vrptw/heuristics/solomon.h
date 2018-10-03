@@ -15,9 +15,6 @@ All rights reserved (see LICENSE).
 
 using tw_solution = std::vector<tw_route>;
 
-// Initialization types.
-enum class INIT_T { NONE, HIGHER_AMOUNT, EARLIEST_DEADLINE, FURTHEST };
-
 // Implementation of a variant of the Solomon I1 heuristic.
 tw_solution vrptw_basic_heuristic(const input& input,
                                   INIT_T init,
