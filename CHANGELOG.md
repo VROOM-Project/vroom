@@ -7,6 +7,7 @@
 - Support for VRPTW (#113)
 - CI builds using Travis (#134)
 - Adjust solving depending on whether vehicles locations are all identical (#152)
+- New local search operator (#164)
 
 ### Changed
 

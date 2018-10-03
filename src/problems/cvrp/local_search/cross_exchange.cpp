@@ -94,8 +94,8 @@ void cvrp_cross_exchange::compute_gain() {
   }
 
   // For target vehicle, we consider the cost of replacing edge
-  // starting at rank t_rank with source edge. Part of that cost
-  // (for adjacent edges) is stored in edge_costs_around_edge.
+  // starting at rank t_rank with source edge. Part of that cost (for
+  // adjacent edges) is stored in _sol_state.edge_costs_around_edge.
   // reverse_* checks whether we should change the source edge order.
   previous_cost = 0;
   next_cost = 0;

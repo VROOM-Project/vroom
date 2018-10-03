@@ -11,6 +11,7 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/local_search/2_opt.h"
 #include "problems/cvrp/local_search/cross_exchange.h"
 #include "problems/cvrp/local_search/exchange.h"
+#include "problems/cvrp/local_search/mixed_exchange.h"
 #include "problems/cvrp/local_search/or_opt.h"
 #include "problems/cvrp/local_search/relocate.h"
 #include "problems/cvrp/local_search/reverse_2_opt.h"
@@ -206,6 +207,32 @@ void cvrp_local_search::run_ls_step() {
             best_gains[s_t.first][s_t.second] = r.gain();
             best_ops[s_t.first][s_t.second] =
               std::make_unique<cvrp_cross_exchange>(r);
+          }
+        }
+      }
+    }
+
+    // Mixed-exchange stuff
+    for (const auto& s_t : s_t_pairs) {
+      if (_sol[s_t.first].size() == 0 or _sol[s_t.second].size() < 2) {
+        continue;
+      }
+
+      for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
+        for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size() - 1;
+             ++t_rank) {
+          cvrp_mixed_exchange r(_input,
+                                _sol_state,
+                                _sol[s_t.first],
+                                s_t.first,
+                                s_rank,
+                                _sol[s_t.second],
+                                s_t.second,
+                                t_rank);
+          if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
+            best_gains[s_t.first][s_t.second] = r.gain();
+            best_ops[s_t.first][s_t.second] =
+              std::make_unique<cvrp_mixed_exchange>(r);
           }
         }
       }

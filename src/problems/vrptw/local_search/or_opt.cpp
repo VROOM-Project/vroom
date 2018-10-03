@@ -29,8 +29,8 @@ vrptw_or_opt::vrptw_or_opt(const input& input,
     _is_reverse_valid(false) {
 }
 
-gain_t vrptw_or_opt::gain() {
-  ls_operator::gain();
+void vrptw_or_opt::compute_gain() {
+  cvrp_or_opt::compute_gain();
   assert(_is_normal_valid or _is_reverse_valid);
 
   if (reverse_s_edge) {
@@ -50,8 +50,6 @@ gain_t vrptw_or_opt::gain() {
       reverse_s_edge = true;
     }
   }
-
-  return stored_gain;
 }
 
 bool vrptw_or_opt::is_valid() {

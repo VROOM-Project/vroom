@@ -13,7 +13,7 @@ All rights reserved (see LICENSE).
 #include "problems/ls_operator.h"
 
 class cvrp_exchange : public ls_operator {
-private:
+protected:
   virtual void compute_gain() override;
 
 public:
