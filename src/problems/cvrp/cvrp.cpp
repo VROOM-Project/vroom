@@ -11,6 +11,7 @@ All rights reserved (see LICENSE).
 #include <thread>
 
 #include "problems/cvrp/cvrp.h"
+#include "problems/cvrp/heuristics/solomon.h"
 #include "problems/cvrp/local_search/local_search.h"
 #include "problems/tsp/tsp.h"
 #include "structures/vroom/input/input.h"
@@ -56,16 +57,31 @@ solution cvrp::solve(unsigned exploration_level, unsigned nb_threads) const {
     for (auto rank : param_ranks) {
       auto& p = homogeneous_parameters[rank];
 
-      clustering c(_input, p.type, p.init, p.regret_coeff);
+      if (p.is_clustering) {
+        clustering c(_input, p.type, p.init, p.regret_coeff);
 
-      // Populate vector of TSP solutions, one per cluster.
-      for (std::size_t v = 0; v < nb_tsp; ++v) {
-        if (c.clusters[v].empty()) {
-          continue;
+        // Populate vector of TSP solutions, one per cluster.
+        for (std::size_t v = 0; v < nb_tsp; ++v) {
+          if (c.clusters[v].empty()) {
+            continue;
+          }
+          tsp p(_input, c.clusters[v], v);
+
+          solutions[rank][v] = p.raw_solve(0, 1)[0];
         }
-        tsp p(_input, c.clusters[v], v);
-
-        solutions[rank][v] = p.raw_solve(0, 1)[0];
+      } else {
+        switch (p.heuristic) {
+        case HEURISTIC_T::BASIC:
+          solutions[rank] =
+            cvrp_basic_heuristic(_input, p.init, p.regret_coeff);
+          break;
+        case HEURISTIC_T::DYNAMIC:
+          solutions[rank] =
+            cvrp_dynamic_vehicle_choice_heuristic(_input,
+                                                  p.init,
+                                                  p.regret_coeff);
+          break;
+        }
       }
 
       // Local search phase.
