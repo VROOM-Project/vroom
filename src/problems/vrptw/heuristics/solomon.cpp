@@ -14,7 +14,9 @@ All rights reserved (see LICENSE).
 #include "problems/vrptw/heuristics/solomon.h"
 #include "utils/helpers.h"
 
-tw_solution basic_heuristic(const input& input, INIT_T init, float lambda) {
+tw_solution vrptw_basic_heuristic(const input& input,
+                                  INIT_T init,
+                                  float lambda) {
   tw_solution routes;
   for (index_t v = 0; v < input._vehicles.size(); ++v) {
     routes.emplace_back(input, v);
@@ -151,9 +153,9 @@ tw_solution basic_heuristic(const input& input, INIT_T init, float lambda) {
   return routes;
 }
 
-tw_solution dynamic_vehicle_choice_heuristic(const input& input,
-                                             INIT_T init,
-                                             float lambda) {
+tw_solution vrptw_dynamic_vehicle_choice_heuristic(const input& input,
+                                                   INIT_T init,
+                                                   float lambda) {
   tw_solution routes;
   for (index_t v = 0; v < input._vehicles.size(); ++v) {
     routes.emplace_back(input, v);

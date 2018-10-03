@@ -1,5 +1,5 @@
-#ifndef SOLOMON_H
-#define SOLOMON_H
+#ifndef VRPTW_SOLOMON_H
+#define VRPTW_SOLOMON_H
 
 /*
 
@@ -19,12 +19,14 @@ using tw_solution = std::vector<tw_route>;
 enum class INIT_T { NONE, HIGHER_AMOUNT, EARLIEST_DEADLINE, FURTHEST };
 
 // Implementation of a variant of the Solomon I1 heuristic.
-tw_solution basic_heuristic(const input& input, INIT_T init, float lambda);
+tw_solution vrptw_basic_heuristic(const input& input,
+                                  INIT_T init,
+                                  float lambda);
 
 // Adjusting the above for situation with heterogeneous fleet.
-tw_solution dynamic_vehicle_choice_heuristic(const input& input,
-                                             INIT_T init,
-                                             float lambda);
+tw_solution vrptw_dynamic_vehicle_choice_heuristic(const input& input,
+                                                   INIT_T init,
+                                                   float lambda);
 
 // Re-build single route using initial state. Jobs are inserted based
 // on time windows length or deadline.

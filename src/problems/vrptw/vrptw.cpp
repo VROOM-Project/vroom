@@ -99,11 +99,14 @@ solution vrptw::solve(unsigned exploration_level, unsigned nb_threads) const {
       auto& p = parameters[rank];
       switch (p.heuristic) {
       case HEURISTIC_T::BASIC:
-        tw_solutions[rank] = basic_heuristic(_input, p.init, p.regret_coeff);
+        tw_solutions[rank] =
+          vrptw_basic_heuristic(_input, p.init, p.regret_coeff);
         break;
       case HEURISTIC_T::DYNAMIC:
         tw_solutions[rank] =
-          dynamic_vehicle_choice_heuristic(_input, p.init, p.regret_coeff);
+          vrptw_dynamic_vehicle_choice_heuristic(_input,
+                                                 p.init,
+                                                 p.regret_coeff);
         break;
       }
 
