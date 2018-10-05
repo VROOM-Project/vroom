@@ -17,7 +17,7 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/input/input.h"
 #include "utils/helpers.h"
 
-constexpr std::array<h_param, 24> cvrp::homogeneous_parameters;
+constexpr std::array<h_param, 32> cvrp::homogeneous_parameters;
 
 cvrp::cvrp(const input& input) : vrp(input) {
 }
@@ -35,11 +35,19 @@ solution cvrp::solve(unsigned exploration_level, unsigned nb_threads) const {
     return format_solution(_input, p.raw_solve(0, nb_threads));
   }
 
+  auto parameters = homogeneous_parameters;
+
   // Local search parameter.
   unsigned max_nb_jobs_removal = exploration_level;
   // Number of initial solutions to consider.
   auto P = 4 * (exploration_level + 1);
-  assert(P <= homogeneous_parameters.size());
+  if (exploration_level >= 4) {
+    P += 4;
+  }
+  if (exploration_level >= 5) {
+    P += 4;
+  }
+  assert(P <= parameters.size());
 
   std::vector<raw_solution> solutions(P,
                                       raw_solution(nb_tsp,
@@ -55,7 +63,7 @@ solution cvrp::solve(unsigned exploration_level, unsigned nb_threads) const {
 
   auto run_solve = [&](const std::vector<std::size_t>& param_ranks) {
     for (auto rank : param_ranks) {
-      auto& p = homogeneous_parameters[rank];
+      auto& p = parameters[rank];
 
       if (p.is_clustering) {
         clustering c(_input, p.type, p.init, p.regret_coeff);
