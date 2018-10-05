@@ -18,6 +18,7 @@ All rights reserved (see LICENSE).
 #include "utils/helpers.h"
 
 constexpr std::array<h_param, 32> cvrp::homogeneous_parameters;
+constexpr std::array<h_param, 32> cvrp::heterogeneous_parameters;
 
 cvrp::cvrp(const input& input) : vrp(input) {
 }
@@ -35,29 +36,30 @@ solution cvrp::solve(unsigned exploration_level, unsigned nb_threads) const {
     return format_solution(_input, p.raw_solve(0, nb_threads));
   }
 
-  auto parameters = homogeneous_parameters;
+  auto parameters = (_input.has_homogeneous_locations())
+                      ? homogeneous_parameters
+                      : heterogeneous_parameters;
 
   // Local search parameter.
   unsigned max_nb_jobs_removal = exploration_level;
-  // Number of initial solutions to consider.
-  auto P = 4 * (exploration_level + 1);
+  auto nb_init_solutions = 4 * (exploration_level + 1);
   if (exploration_level >= 4) {
-    P += 4;
+    nb_init_solutions += 4;
   }
   if (exploration_level >= 5) {
-    P += 4;
+    nb_init_solutions += 4;
   }
-  assert(P <= parameters.size());
+  assert(nb_init_solutions <= parameters.size());
 
-  std::vector<raw_solution> solutions(P,
+  std::vector<raw_solution> solutions(nb_init_solutions,
                                       raw_solution(nb_tsp,
                                                    std::vector<index_t>()));
-  std::vector<solution_indicators> sol_indicators(P);
+  std::vector<solution_indicators> sol_indicators(nb_init_solutions);
 
   // Split the work among threads.
   std::vector<std::vector<std::size_t>>
     thread_ranks(nb_threads, std::vector<std::size_t>());
-  for (std::size_t i = 0; i < P; ++i) {
+  for (std::size_t i = 0; i < nb_init_solutions; ++i) {
     thread_ranks[i % nb_threads].push_back(i);
   }
 
