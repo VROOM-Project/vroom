@@ -11,11 +11,14 @@ All rights reserved (see LICENSE).
 #include <thread>
 
 #include "problems/cvrp/cvrp.h"
-#include "problems/cvrp/heuristics/clustering.h"
+#include "problems/cvrp/heuristics/solomon.h"
 #include "problems/cvrp/local_search/local_search.h"
 #include "problems/tsp/tsp.h"
 #include "structures/vroom/input/input.h"
 #include "utils/helpers.h"
+
+constexpr std::array<h_param, 32> cvrp::homogeneous_parameters;
+constexpr std::array<h_param, 32> cvrp::heterogeneous_parameters;
 
 cvrp::cvrp(const input& input) : vrp(input) {
 }
@@ -33,90 +36,62 @@ solution cvrp::solve(unsigned exploration_level, unsigned nb_threads) const {
     return format_solution(_input, p.raw_solve(0, nb_threads));
   }
 
-  struct param {
-    CLUSTERING_T type;
-    INIT_T init;
-    double regret_coeff;
-  };
+  auto parameters = (_input.has_homogeneous_locations())
+                      ? homogeneous_parameters
+                      : heterogeneous_parameters;
 
-  std::vector<param> parameters(
-    {{CLUSTERING_T::PARALLEL, INIT_T::NONE, 0.5},
-     {CLUSTERING_T::SEQUENTIAL, INIT_T::NEAREST, 0.3},
-     {CLUSTERING_T::SEQUENTIAL, INIT_T::NEAREST, 1.9},
-     {CLUSTERING_T::SEQUENTIAL, INIT_T::HIGHER_AMOUNT, 1.4}});
-
-  unsigned max_nb_jobs_removal = 0;
-
-  if (exploration_level > 0) {
-    max_nb_jobs_removal = 1;
+  // Local search parameter.
+  unsigned max_nb_jobs_removal = exploration_level;
+  auto nb_init_solutions = 4 * (exploration_level + 1);
+  if (exploration_level >= 4) {
+    nb_init_solutions += 4;
   }
-
-  if (exploration_level > 1) {
-    max_nb_jobs_removal = 3;
+  if (exploration_level >= 5) {
+    nb_init_solutions += 4;
   }
+  assert(nb_init_solutions <= parameters.size());
 
-  if (exploration_level > 2) {
-    parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NONE, 0.1});
-    parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NEAREST, 1});
-    parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NONE, 0.1});
-    parameters.push_back(
-      {CLUSTERING_T::SEQUENTIAL, INIT_T::HIGHER_AMOUNT, 1.1});
-  }
-
-  if (exploration_level > 3) {
-    parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NONE, 0.6});
-    parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NONE, 1.2});
-    parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NEAREST, 0.5});
-    parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NEAREST, 1.2});
-
-    parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::FURTHEST, 1.7});
-    parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NEAREST, 1.1});
-    parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::FURTHEST, 0.6});
-    parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::HIGHER_AMOUNT, 0});
-  }
-
-  if (exploration_level > 4) {
-    max_nb_jobs_removal = 4;
-
-    parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NONE, 0.3});
-    parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NEAREST, 0.4});
-    parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NONE, 0.2});
-    parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NEAREST, 1.6});
-
-    parameters.push_back({CLUSTERING_T::PARALLEL, INIT_T::NONE, 0.9});
-    parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NONE, 1.1});
-    parameters.push_back({CLUSTERING_T::SEQUENTIAL, INIT_T::NEAREST, 0.4});
-    parameters.push_back(
-      {CLUSTERING_T::SEQUENTIAL, INIT_T::HIGHER_AMOUNT, 0.7});
-  }
-
-  auto P = parameters.size();
-
-  std::vector<raw_solution> solutions(P,
+  std::vector<raw_solution> solutions(nb_init_solutions,
                                       raw_solution(nb_tsp,
                                                    std::vector<index_t>()));
-  std::vector<solution_indicators> sol_indicators(P);
+  std::vector<solution_indicators> sol_indicators(nb_init_solutions);
 
   // Split the work among threads.
   std::vector<std::vector<std::size_t>>
     thread_ranks(nb_threads, std::vector<std::size_t>());
-  for (std::size_t i = 0; i < P; ++i) {
+  for (std::size_t i = 0; i < nb_init_solutions; ++i) {
     thread_ranks[i % nb_threads].push_back(i);
   }
 
   auto run_solve = [&](const std::vector<std::size_t>& param_ranks) {
     for (auto rank : param_ranks) {
       auto& p = parameters[rank];
-      clustering c(_input, p.type, p.init, p.regret_coeff);
 
-      // Populate vector of TSP solutions, one per cluster.
-      for (std::size_t v = 0; v < nb_tsp; ++v) {
-        if (c.clusters[v].empty()) {
-          continue;
+      if (p.is_clustering) {
+        clustering c(_input, p.type, p.init, p.regret_coeff);
+
+        // Populate vector of TSP solutions, one per cluster.
+        for (std::size_t v = 0; v < nb_tsp; ++v) {
+          if (c.clusters[v].empty()) {
+            continue;
+          }
+          tsp p(_input, c.clusters[v], v);
+
+          solutions[rank][v] = p.raw_solve(0, 1)[0];
         }
-        tsp p(_input, c.clusters[v], v);
-
-        solutions[rank][v] = p.raw_solve(0, 1)[0];
+      } else {
+        switch (p.heuristic) {
+        case HEURISTIC_T::BASIC:
+          solutions[rank] =
+            cvrp_basic_heuristic(_input, p.init, p.regret_coeff);
+          break;
+        case HEURISTIC_T::DYNAMIC:
+          solutions[rank] =
+            cvrp_dynamic_vehicle_choice_heuristic(_input,
+                                                  p.init,
+                                                  p.regret_coeff);
+          break;
+        }
       }
 
       // Local search phase.
