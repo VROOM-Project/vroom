@@ -113,3 +113,7 @@ void cvrp_two_opt::apply() const {
 std::vector<index_t> cvrp_two_opt::addition_candidates() const {
   return {s_vehicle, t_vehicle};
 }
+
+std::vector<index_t> cvrp_two_opt::update_candidates() const {
+  return {s_vehicle, t_vehicle};
+}

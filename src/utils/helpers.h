@@ -24,7 +24,7 @@ inline cost_t add_without_overflow(cost_t a, cost_t b) {
   return a + b;
 }
 
-// Compute cost of adding job with index job_index in given route at
+// Compute cost of adding job with rank job_rank in given route at
 // given rank for vehicle v.
 inline gain_t addition_cost(const input& input,
                             const matrix<cost_t>& m,

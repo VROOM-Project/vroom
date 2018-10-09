@@ -189,3 +189,7 @@ void cvrp_cross_exchange::apply() const {
 std::vector<index_t> cvrp_cross_exchange::addition_candidates() const {
   return {s_vehicle, t_vehicle};
 }
+
+std::vector<index_t> cvrp_cross_exchange::update_candidates() const {
+  return {s_vehicle, t_vehicle};
+}

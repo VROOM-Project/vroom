@@ -36,6 +36,8 @@ public:
   virtual void apply() const override;
 
   virtual std::vector<index_t> addition_candidates() const override;
+
+  virtual std::vector<index_t> update_candidates() const override;
 };
 
 #endif

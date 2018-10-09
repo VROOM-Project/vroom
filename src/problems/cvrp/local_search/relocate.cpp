@@ -75,3 +75,7 @@ void cvrp_relocate::apply() const {
 std::vector<index_t> cvrp_relocate::addition_candidates() const {
   return {s_vehicle};
 }
+
+std::vector<index_t> cvrp_relocate::update_candidates() const {
+  return {s_vehicle, t_vehicle};
+}

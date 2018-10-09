@@ -51,6 +51,8 @@ public:
 
   virtual std::vector<index_t> addition_candidates() const = 0;
 
+  virtual std::vector<index_t> update_candidates() const = 0;
+
   virtual ~ls_operator() {
   }
 };

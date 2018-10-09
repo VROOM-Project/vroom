@@ -7,10 +7,13 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/cvrp/local_search/local_search.h"
+#include <numeric>
+
 #include "problems/cvrp/local_search/2_opt.h"
 #include "problems/cvrp/local_search/cross_exchange.h"
 #include "problems/cvrp/local_search/exchange.h"
+#include "problems/cvrp/local_search/inner_relocate.h"
+#include "problems/cvrp/local_search/local_search.h"
 #include "problems/cvrp/local_search/mixed_exchange.h"
 #include "problems/cvrp/local_search/or_opt.h"
 #include "problems/cvrp/local_search/relocate.h"
@@ -147,9 +150,6 @@ void cvrp_local_search::run_ls_step() {
   std::vector<std::pair<index_t, index_t>> s_t_pairs;
   for (unsigned s_v = 0; s_v < V; ++s_v) {
     for (unsigned t_v = 0; t_v < V; ++t_v) {
-      if (s_v == t_v) {
-        continue;
-      }
       s_t_pairs.emplace_back(s_v, t_v);
     }
   }
@@ -214,7 +214,8 @@ void cvrp_local_search::run_ls_step() {
 
     // Mixed-exchange stuff
     for (const auto& s_t : s_t_pairs) {
-      if (_sol[s_t.first].size() == 0 or _sol[s_t.second].size() < 2) {
+      if (s_t.first == s_t.second or _sol[s_t.first].size() == 0 or
+          _sol[s_t.second].size() < 2) {
         continue;
       }
 
@@ -269,6 +270,9 @@ void cvrp_local_search::run_ls_step() {
 
     // Reverse 2-opt* stuff
     for (const auto& s_t : s_t_pairs) {
+      if (s_t.first == s_t.second) {
+        continue;
+      }
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
         auto s_free_amount = _input._vehicles[s_t.first].capacity;
         s_free_amount -= _sol_state.fwd_amounts[s_t.first][s_rank];
@@ -295,7 +299,7 @@ void cvrp_local_search::run_ls_step() {
 
     // Relocate stuff
     for (const auto& s_t : s_t_pairs) {
-      if (_sol[s_t.first].size() == 0 or
+      if (s_t.first == s_t.second or _sol[s_t.first].size() == 0 or
           !(_sol_state.total_amount(s_t.second) + _amount_lower_bound <=
             _input._vehicles[s_t.second].capacity)) {
         // Don't try to put things in a full vehicle or from an empty
@@ -329,7 +333,7 @@ void cvrp_local_search::run_ls_step() {
 
     // Or-opt stuff
     for (const auto& s_t : s_t_pairs) {
-      if (_sol[s_t.first].size() < 2 or
+      if (s_t.first == s_t.second or _sol[s_t.first].size() < 2 or
           !(_sol_state.total_amount(s_t.second) + _double_amount_lower_bound <=
             _input._vehicles[s_t.second].capacity)) {
         // Don't try to put things in a full vehicle or from a
@@ -360,6 +364,39 @@ void cvrp_local_search::run_ls_step() {
       }
     }
 
+    // Inner relocate stuff, only applied on a single route.
+    for (const auto& s_t : s_t_pairs) {
+      if (s_t.first != s_t.second or _sol[s_t.first].size() < 2) {
+        continue;
+      }
+      for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
+        if (_sol_state.node_gains[s_t.first][s_rank] <=
+            best_gains[s_t.first][s_t.first]) {
+          // Except if addition cost in route is negative (!!),
+          // overall gain can't exceed current known best gain.
+          continue;
+        }
+        for (unsigned t_rank = 0; t_rank <= _sol[s_t.first].size() - 1;
+             ++t_rank) {
+          if (t_rank == s_rank) {
+            continue;
+          }
+          cvrp_inner_relocate r(_input,
+                                _sol_state,
+                                _sol[s_t.first],
+                                s_t.first,
+                                s_rank,
+                                t_rank);
+          // This move is always valid.
+          if (r.gain() > best_gains[s_t.first][s_t.first]) {
+            best_gains[s_t.first][s_t.first] = r.gain();
+            best_ops[s_t.first][s_t.first] =
+              std::make_unique<cvrp_inner_relocate>(r);
+          }
+        }
+      }
+    }
+
     // Find best overall gain.
     best_gain = 0;
     index_t best_source = 0;
@@ -367,9 +404,6 @@ void cvrp_local_search::run_ls_step() {
 
     for (unsigned s_v = 0; s_v < V; ++s_v) {
       for (unsigned t_v = 0; t_v < V; ++t_v) {
-        if (s_v == t_v) {
-          continue;
-        }
         if (best_gains[s_v][t_v] > best_gain) {
           best_gain = best_gains[s_v][t_v];
           best_source = s_v;
@@ -384,64 +418,75 @@ void cvrp_local_search::run_ls_step() {
 
       best_ops[best_source][best_target]->apply();
 
+      auto update_candidates =
+        best_ops[best_source][best_target]->update_candidates();
+
       // Update route costs.
-      auto previous_cost = _sol_state.route_costs[best_source] +
-                           _sol_state.route_costs[best_target];
-      _sol_state.update_route_cost(_sol[best_source], best_source);
-      _sol_state.update_route_cost(_sol[best_target], best_target);
-      auto new_cost = _sol_state.route_costs[best_source] +
-                      _sol_state.route_costs[best_target];
+      auto previous_cost =
+        std::accumulate(update_candidates.begin(),
+                        update_candidates.end(),
+                        0,
+                        [&](auto sum, auto c) {
+                          return sum + _sol_state.route_costs[c];
+                        });
+      for (auto v_rank : update_candidates) {
+        _sol_state.update_route_cost(_sol[v_rank], v_rank);
+      }
+      auto new_cost = std::accumulate(update_candidates.begin(),
+                                      update_candidates.end(),
+                                      0,
+                                      [&](auto sum, auto c) {
+                                        return sum + _sol_state.route_costs[c];
+                                      });
+
       assert(new_cost + best_gain == previous_cost);
 
-      run_tsp(best_source);
-      run_tsp(best_target);
+      for (auto v_rank : update_candidates) {
+        run_tsp(v_rank);
+      }
 
       // We need to run update_amounts before try_job_additions to
       // correctly evaluate amounts. No need to run it again after
       // since try_before_additions will subsequently fix amounts upon
       // each addition.
-      _sol_state.update_amounts(_sol[best_source], best_source);
-      _sol_state.update_amounts(_sol[best_target], best_target);
+      for (auto v_rank : update_candidates) {
+        _sol_state.update_amounts(_sol[v_rank], v_rank);
+      }
 
       try_job_additions(best_ops[best_source][best_target]
                           ->addition_candidates(),
                         0);
 
       // Running update_costs only after try_job_additions is fine.
-      _sol_state.update_costs(_sol[best_source], best_source);
-      _sol_state.update_costs(_sol[best_target], best_target);
+      for (auto v_rank : update_candidates) {
+        _sol_state.update_costs(_sol[v_rank], v_rank);
+      }
 
-      _sol_state.update_skills(_sol[best_source], best_source);
-      _sol_state.update_skills(_sol[best_target], best_target);
+      for (auto v_rank : update_candidates) {
+        _sol_state.update_skills(_sol[v_rank], v_rank);
+      }
 
       // Update candidates.
-      _sol_state.set_node_gains(_sol[best_source], best_source);
-      _sol_state.set_node_gains(_sol[best_target], best_target);
-      _sol_state.set_edge_gains(_sol[best_source], best_source);
-      _sol_state.set_edge_gains(_sol[best_target], best_target);
+      for (auto v_rank : update_candidates) {
+        _sol_state.set_node_gains(_sol[v_rank], v_rank);
+        _sol_state.set_edge_gains(_sol[v_rank], v_rank);
+      }
 
       // Set gains to zero for what needs to be recomputed in the next
-      // round.
+      // round and set route pairs accordingly.
       s_t_pairs.clear();
-      best_gains[best_source] = std::vector<gain_t>(V, 0);
-      best_gains[best_target] = std::vector<gain_t>(V, 0);
-
-      s_t_pairs.emplace_back(best_source, best_target);
-      s_t_pairs.emplace_back(best_target, best_source);
+      for (auto v_rank : update_candidates) {
+        best_gains[v_rank] = std::vector<gain_t>(V, 0);
+      }
 
       for (unsigned v = 0; v < V; ++v) {
-        if (v == best_source or v == best_target) {
-          continue;
+        for (auto v_rank : update_candidates) {
+          best_gains[v][v_rank] = 0;
+          s_t_pairs.emplace_back(v, v_rank);
+          if (v != v_rank) {
+            s_t_pairs.emplace_back(v_rank, v);
+          }
         }
-        s_t_pairs.emplace_back(best_source, v);
-        s_t_pairs.emplace_back(v, best_source);
-        best_gains[v][best_source] = 0;
-        best_gains[best_source][v] = 0;
-
-        s_t_pairs.emplace_back(best_target, v);
-        s_t_pairs.emplace_back(v, best_target);
-        best_gains[v][best_target] = 0;
-        best_gains[best_target][v] = 0;
       }
     }
   }
