@@ -32,7 +32,7 @@ cvrp_inner_relocate::cvrp_inner_relocate(const input& input,
 
 void cvrp_inner_relocate::compute_gain() {
   const auto& m = _input.get_matrix();
-  const auto& v_target = _input._vehicles[t_vehicle];
+  const auto& v_target = _input._vehicles[s_vehicle];
 
   // For removal, we consider the cost of removing job at rank s_rank,
   // already stored in _sol_state.node_gains[s_vehicle][s_rank].
