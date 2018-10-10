@@ -40,8 +40,8 @@ void cvrp_exchange::compute_gain() {
   // For source vehicle, we consider the cost of replacing job at rank
   // s_rank with target job. Part of that cost (for adjacent
   // edges) is stored in _sol_state.edge_costs_around_node.
-  index_t s_c_index = _input._jobs[s_route[s_rank]].index();
-  index_t t_c_index = _input._jobs[t_route[t_rank]].index();
+  index_t s_index = _input._jobs[s_route[s_rank]].index();
+  index_t t_index = _input._jobs[t_route[t_rank]].index();
 
   // Determine costs added with target job.
   gain_t new_previous_cost = 0;
@@ -50,21 +50,21 @@ void cvrp_exchange::compute_gain() {
   if (s_rank == 0) {
     if (v_source.has_start()) {
       auto p_index = v_source.start.get().index();
-      new_previous_cost = m[p_index][t_c_index];
+      new_previous_cost = m[p_index][t_index];
     }
   } else {
     auto p_index = _input._jobs[s_route[s_rank - 1]].index();
-    new_previous_cost = m[p_index][t_c_index];
+    new_previous_cost = m[p_index][t_index];
   }
 
   if (s_rank == s_route.size() - 1) {
     if (v_source.has_end()) {
       auto n_index = v_source.end.get().index();
-      new_next_cost = m[t_c_index][n_index];
+      new_next_cost = m[t_index][n_index];
     }
   } else {
     auto n_index = _input._jobs[s_route[s_rank + 1]].index();
-    new_next_cost = m[t_c_index][n_index];
+    new_next_cost = m[t_index][n_index];
   }
 
   gain_t s_gain = _sol_state.edge_costs_around_node[s_vehicle][s_rank] -
@@ -81,21 +81,21 @@ void cvrp_exchange::compute_gain() {
   if (t_rank == 0) {
     if (v_target.has_start()) {
       auto p_index = v_target.start.get().index();
-      new_previous_cost = m[p_index][s_c_index];
+      new_previous_cost = m[p_index][s_index];
     }
   } else {
     auto p_index = _input._jobs[t_route[t_rank - 1]].index();
-    new_previous_cost = m[p_index][s_c_index];
+    new_previous_cost = m[p_index][s_index];
   }
 
   if (t_rank == t_route.size() - 1) {
     if (v_target.has_end()) {
       auto n_index = v_target.end.get().index();
-      new_next_cost = m[s_c_index][n_index];
+      new_next_cost = m[s_index][n_index];
     }
   } else {
     auto n_index = _input._jobs[t_route[t_rank + 1]].index();
-    new_next_cost = m[s_c_index][n_index];
+    new_next_cost = m[s_index][n_index];
   }
 
   gain_t t_gain = _sol_state.edge_costs_around_node[t_vehicle][t_rank] -

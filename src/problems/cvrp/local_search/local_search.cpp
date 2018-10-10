@@ -12,6 +12,7 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/local_search/2_opt.h"
 #include "problems/cvrp/local_search/cross_exchange.h"
 #include "problems/cvrp/local_search/exchange.h"
+#include "problems/cvrp/local_search/inner_exchange.h"
 #include "problems/cvrp/local_search/inner_relocate.h"
 #include "problems/cvrp/local_search/local_search.h"
 #include "problems/cvrp/local_search/mixed_exchange.h"
@@ -159,6 +160,8 @@ void cvrp_local_search::run_ls_step() {
   gain_t best_gain = 1;
 
   while (best_gain > 0) {
+    // Operators applied to a pair of (different) routes.
+
     // Exchange stuff
     for (const auto& s_t : s_t_pairs) {
       if (s_t.second <= s_t.first or // This operator is symmetric.
@@ -364,7 +367,9 @@ void cvrp_local_search::run_ls_step() {
       }
     }
 
-    // Inner relocate stuff, only applied on a single route.
+    // Operators applied to a single route.
+
+    // Inner relocate stuff
     for (const auto& s_t : s_t_pairs) {
       if (s_t.first != s_t.second or _sol[s_t.first].size() < 2) {
         continue;
@@ -392,6 +397,31 @@ void cvrp_local_search::run_ls_step() {
             best_gains[s_t.first][s_t.first] = r.gain();
             best_ops[s_t.first][s_t.first] =
               std::make_unique<cvrp_inner_relocate>(r);
+          }
+        }
+      }
+    }
+
+    // Inner exchange stuff
+    for (const auto& s_t : s_t_pairs) {
+      if (s_t.first != s_t.second or _sol[s_t.first].size() < 3) {
+        continue;
+      }
+
+      for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 2; ++s_rank) {
+        for (unsigned t_rank = s_rank + 2; t_rank < _sol[s_t.second].size();
+             ++t_rank) {
+          cvrp_inner_exchange r(_input,
+                                _sol_state,
+                                _sol[s_t.first],
+                                s_t.first,
+                                s_rank,
+                                t_rank);
+          // This move is always valid.
+          if (r.gain() > best_gains[s_t.first][s_t.second]) {
+            best_gains[s_t.first][s_t.second] = r.gain();
+            best_ops[s_t.first][s_t.second] =
+              std::make_unique<cvrp_inner_exchange>(r);
           }
         }
       }
