@@ -292,7 +292,7 @@ void vrptw_local_search::run_ls_step() {
                           s_rank,
                           s_t.second,
                           t_rank);
-          if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
+          if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid()) {
             best_gains[s_t.first][s_t.second] = r.gain();
             best_ops[s_t.first][s_t.second] =
               std::make_unique<vrptw_two_opt>(r);
@@ -322,7 +322,7 @@ void vrptw_local_search::run_ls_step() {
                                   s_rank,
                                   s_t.second,
                                   t_rank);
-          if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
+          if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid()) {
             best_gains[s_t.first][s_t.second] = r.gain();
             best_ops[s_t.first][s_t.second] =
               std::make_unique<vrptw_reverse_two_opt>(r);
@@ -424,7 +424,7 @@ void vrptw_local_search::run_ls_step() {
                                  s_t.first,
                                  s_rank,
                                  t_rank);
-          if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.first]) {
+          if (r.gain() > best_gains[s_t.first][s_t.first] and r.is_valid()) {
             best_gains[s_t.first][s_t.first] = r.gain();
             best_ops[s_t.first][s_t.first] =
               std::make_unique<vrptw_inner_relocate>(r);
