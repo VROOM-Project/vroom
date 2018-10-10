@@ -14,6 +14,7 @@ All rights reserved (see LICENSE).
 #include "problems/vrptw/local_search/2_opt.h"
 #include "problems/vrptw/local_search/cross_exchange.h"
 #include "problems/vrptw/local_search/exchange.h"
+#include "problems/vrptw/local_search/inner_exchange.h"
 #include "problems/vrptw/local_search/inner_relocate.h"
 #include "problems/vrptw/local_search/local_search.h"
 #include "problems/vrptw/local_search/mixed_exchange.h"
@@ -187,6 +188,8 @@ void vrptw_local_search::run_ls_step() {
   gain_t best_gain = 1;
 
   while (best_gain > 0) {
+    // Operators applied to a pair of (different) routes.
+
     // Exchange stuff
     for (const auto& s_t : s_t_pairs) {
       if (s_t.second <= s_t.first or // This operator is symmetric.
@@ -400,7 +403,9 @@ void vrptw_local_search::run_ls_step() {
       }
     }
 
-    // Inner relocate stuff, only applied on a single route.
+    // Operators applied to a single route.
+
+    // Inner relocate stuff
     for (const auto& s_t : s_t_pairs) {
       if (s_t.first != s_t.second or _tw_sol[s_t.first].route.size() < 2) {
         continue;
@@ -428,6 +433,32 @@ void vrptw_local_search::run_ls_step() {
             best_gains[s_t.first][s_t.first] = r.gain();
             best_ops[s_t.first][s_t.first] =
               std::make_unique<vrptw_inner_relocate>(r);
+          }
+        }
+      }
+    }
+
+    // Inner exchange stuff
+    for (const auto& s_t : s_t_pairs) {
+      if (s_t.first != s_t.second or _tw_sol[s_t.first].route.size() < 3) {
+        continue;
+      }
+
+      for (unsigned s_rank = 0; s_rank < _tw_sol[s_t.first].route.size() - 2;
+           ++s_rank) {
+        for (unsigned t_rank = s_rank + 2;
+             t_rank < _tw_sol[s_t.first].route.size();
+             ++t_rank) {
+          vrptw_inner_exchange r(_input,
+                                 _sol_state,
+                                 _tw_sol,
+                                 s_t.first,
+                                 s_rank,
+                                 t_rank);
+          if (r.gain() > best_gains[s_t.first][s_t.first] and r.is_valid()) {
+            best_gains[s_t.first][s_t.first] = r.gain();
+            best_ops[s_t.first][s_t.first] =
+              std::make_unique<vrptw_inner_exchange>(r);
           }
         }
       }

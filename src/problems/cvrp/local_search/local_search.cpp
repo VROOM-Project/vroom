@@ -409,7 +409,7 @@ void cvrp_local_search::run_ls_step() {
       }
 
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 2; ++s_rank) {
-        for (unsigned t_rank = s_rank + 2; t_rank < _sol[s_t.second].size();
+        for (unsigned t_rank = s_rank + 2; t_rank < _sol[s_t.first].size();
              ++t_rank) {
           cvrp_inner_exchange r(_input,
                                 _sol_state,
@@ -418,9 +418,9 @@ void cvrp_local_search::run_ls_step() {
                                 s_rank,
                                 t_rank);
           // This move is always valid.
-          if (r.gain() > best_gains[s_t.first][s_t.second]) {
-            best_gains[s_t.first][s_t.second] = r.gain();
-            best_ops[s_t.first][s_t.second] =
+          if (r.gain() > best_gains[s_t.first][s_t.first]) {
+            best_gains[s_t.first][s_t.first] = r.gain();
+            best_ops[s_t.first][s_t.first] =
               std::make_unique<cvrp_inner_exchange>(r);
           }
         }
