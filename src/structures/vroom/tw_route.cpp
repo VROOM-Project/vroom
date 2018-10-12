@@ -316,6 +316,72 @@ void tw_route::add(const input& input,
   bwd_update_latest_from(input, rank);
 }
 
+bool tw_route::is_valid_removal(const input& input,
+                                const index_t rank,
+                                const unsigned count) const {
+  assert(rank + count <= route.size());
+
+  const auto& m = input.get_matrix();
+  const auto& v = input._vehicles[vehicle_rank];
+
+  // Check validity as of first non-removed job.
+  index_t current_rank = rank + count;
+  if (current_rank == route.size()) {
+    // Removing the end of a route is always OK.
+    return true;
+  }
+  const auto& current_index = input._jobs[route[current_rank]].index();
+
+  duration_t previous_earliest = v_start;
+  duration_t previous_service = 0;
+  duration_t previous_travel = 0;
+
+  if (rank > 0) {
+    const auto& previous_job = input._jobs[route[rank - 1]];
+    previous_earliest = earliest[rank - 1];
+    previous_service = previous_job.service;
+    previous_travel = m[previous_job.index()][current_index];
+  } else {
+    if (has_start) {
+      previous_travel = m[v.start.get().index()][current_index];
+    }
+  }
+
+  duration_t job_earliest =
+    previous_earliest + previous_service + previous_travel;
+
+  while (current_rank < route.size()) {
+    if (job_earliest <= earliest[current_rank]) {
+      return true;
+    }
+    if (latest[current_rank] < job_earliest) {
+      return false;
+    }
+
+    // Pick first compatible TW to keep on checking for next jobs.
+    const auto& current_job = input._jobs[route[current_rank]];
+    const auto& tws = current_job.tws;
+    auto candidate = std::find_if(tws.begin(), tws.end(), [&](const auto& tw) {
+      return job_earliest <= tw.end;
+    });
+    assert(candidate != tws.end());
+    job_earliest = std::max(job_earliest, candidate->start);
+    job_earliest += current_job.service;
+    if (current_rank < route.size() - 1) {
+      job_earliest +=
+        m[current_job.index()][input._jobs[route[current_rank + 1]].index()];
+    } else {
+      if (has_end) {
+        job_earliest += m[current_job.index()][v.end.get().index()];
+      }
+    }
+
+    ++current_rank;
+  }
+
+  return job_earliest <= v_end;
+}
+
 void tw_route::remove(const input& input,
                       const index_t rank,
                       const unsigned count) {
