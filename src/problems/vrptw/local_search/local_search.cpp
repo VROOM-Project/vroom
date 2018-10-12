@@ -626,7 +626,7 @@ void vrptw_local_search::remove_from_routes() {
       if (!_tw_sol[v].is_valid_removal(_input, r, 1)) {
         continue;
       }
-      gain_t best_relocate_distance = std::numeric_limits<gain_t>::max();
+      gain_t best_relocate_distance = static_cast<gain_t>(INFINITE_COST);
 
       auto current_index = _input._jobs[_tw_sol[v].route[r]].index();
 
