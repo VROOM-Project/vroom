@@ -31,7 +31,8 @@ bool vrptw_relocate::is_valid() const {
   return cvrp_relocate::is_valid() and
          _tw_sol[t_vehicle].is_valid_addition_for_tw(_input,
                                                      s_route[s_rank],
-                                                     t_rank);
+                                                     t_rank) and
+         _tw_sol[s_vehicle].is_valid_removal(_input, s_rank, 1);
 }
 
 void vrptw_relocate::apply() const {
