@@ -635,17 +635,16 @@ void vrptw_local_search::remove_from_routes() {
             !_input.vehicle_ok_with_job(other_v, _tw_sol[v].route[r])) {
           continue;
         }
-        gain_t relocate_distance = std::numeric_limits<gain_t>::max();
 
         if (_input._vehicles[other_v].has_start()) {
           auto start_index = _input._vehicles[other_v].start.get().index();
           gain_t start_cost = _m[start_index][current_index];
-          relocate_distance = std::min(relocate_distance, start_cost);
+          best_relocate_distance = std::min(best_relocate_distance, start_cost);
         }
         if (_input._vehicles[other_v].has_end()) {
           auto end_index = _input._vehicles[other_v].end.get().index();
           gain_t end_cost = _m[current_index][end_index];
-          relocate_distance = std::min(relocate_distance, end_cost);
+          best_relocate_distance = std::min(best_relocate_distance, end_cost);
         }
         if (_tw_sol[other_v].route.size() != 0) {
           auto nearest_from_rank =
@@ -653,18 +652,14 @@ void vrptw_local_search::remove_from_routes() {
           auto nearest_from_index =
             _input._jobs[_tw_sol[other_v].route[nearest_from_rank]].index();
           gain_t cost_from = _m[nearest_from_index][current_index];
-          relocate_distance = std::min(relocate_distance, cost_from);
+          best_relocate_distance = std::min(best_relocate_distance, cost_from);
 
           auto nearest_to_rank =
             _sol_state.nearest_job_rank_in_routes_to[v][other_v][r];
           auto nearest_to_index =
             _input._jobs[_tw_sol[other_v].route[nearest_to_rank]].index();
           gain_t cost_to = _m[current_index][nearest_to_index];
-          relocate_distance = std::min(relocate_distance, cost_to);
-        }
-
-        if (relocate_distance < best_relocate_distance) {
-          best_relocate_distance = relocate_distance;
+          best_relocate_distance = std::min(best_relocate_distance, cost_to);
         }
       }
 
