@@ -72,6 +72,13 @@ public:
 
   void add(const input& input, const index_t job_rank, const index_t rank);
 
+  // Check validity for removing a set of jobs from current route at
+  // rank. Required because removing a job can actually lead to an
+  // invalid solution (see #172).
+  bool is_valid_removal(const input& input,
+                        const index_t rank,
+                        const unsigned count) const;
+
   void remove(const input& input, const index_t rank, const unsigned count);
 
   // Add the range [first_job; last_job) in the existing route at rank

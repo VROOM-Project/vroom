@@ -55,7 +55,7 @@ void vrptw_or_opt::compute_gain() {
 bool vrptw_or_opt::is_valid() {
   bool valid = cvrp_or_opt::is_valid();
 
-  if (valid) {
+  if (valid and _tw_sol[s_vehicle].is_valid_removal(_input, s_rank, 2)) {
     // Keep edge direction.
     auto s_start = s_route.begin() + s_rank;
     _is_normal_valid = _tw_sol[t_vehicle].is_valid_addition_for_tw(_input,

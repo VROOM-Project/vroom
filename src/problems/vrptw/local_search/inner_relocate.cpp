@@ -52,7 +52,8 @@ bool vrptw_inner_relocate::is_valid() const {
                                                      job_ranks.begin(),
                                                      job_ranks.end(),
                                                      first_rank,
-                                                     last_rank);
+                                                     last_rank) and
+         _tw_sol[s_vehicle].is_valid_removal(_input, s_rank, 1);
 }
 
 void vrptw_inner_relocate::apply() const {
