@@ -15,6 +15,7 @@ All rights reserved (see LICENSE).
 #include "problems/vrptw/local_search/cross_exchange.h"
 #include "problems/vrptw/local_search/exchange.h"
 #include "problems/vrptw/local_search/inner_exchange.h"
+#include "problems/vrptw/local_search/inner_or_opt.h"
 #include "problems/vrptw/local_search/inner_relocate.h"
 #include "problems/vrptw/local_search/local_search.h"
 #include "problems/vrptw/local_search/mixed_exchange.h"
@@ -405,6 +406,32 @@ void vrptw_local_search::run_ls_step() {
 
     // Operators applied to a single route.
 
+    // Inner exchange stuff
+    for (const auto& s_t : s_t_pairs) {
+      if (s_t.first != s_t.second or _tw_sol[s_t.first].route.size() < 3) {
+        continue;
+      }
+
+      for (unsigned s_rank = 0; s_rank < _tw_sol[s_t.first].route.size() - 2;
+           ++s_rank) {
+        for (unsigned t_rank = s_rank + 2;
+             t_rank < _tw_sol[s_t.first].route.size();
+             ++t_rank) {
+          vrptw_inner_exchange r(_input,
+                                 _sol_state,
+                                 _tw_sol,
+                                 s_t.first,
+                                 s_rank,
+                                 t_rank);
+          if (r.gain() > best_gains[s_t.first][s_t.first] and r.is_valid()) {
+            best_gains[s_t.first][s_t.first] = r.gain();
+            best_ops[s_t.first][s_t.first] =
+              std::make_unique<vrptw_inner_exchange>(r);
+          }
+        }
+      }
+    }
+
     // Inner relocate stuff
     for (const auto& s_t : s_t_pairs) {
       if (s_t.first != s_t.second or _tw_sol[s_t.first].route.size() < 2) {
@@ -438,27 +465,34 @@ void vrptw_local_search::run_ls_step() {
       }
     }
 
-    // Inner exchange stuff
+    // Inner Or-opt stuff
     for (const auto& s_t : s_t_pairs) {
-      if (s_t.first != s_t.second or _tw_sol[s_t.first].route.size() < 3) {
+      if (s_t.first != s_t.second or _tw_sol[s_t.first].route.size() < 4) {
         continue;
       }
-
-      for (unsigned s_rank = 0; s_rank < _tw_sol[s_t.first].route.size() - 2;
+      for (unsigned s_rank = 0; s_rank < _tw_sol[s_t.first].route.size() - 1;
            ++s_rank) {
-        for (unsigned t_rank = s_rank + 2;
-             t_rank < _tw_sol[s_t.first].route.size();
+        if (_sol_state.node_gains[s_t.first][s_rank] <=
+            best_gains[s_t.first][s_t.first]) {
+          // Except if addition cost in route is negative (!!),
+          // overall gain can't exceed current known best gain.
+          continue;
+        }
+        for (unsigned t_rank = 0; t_rank <= _tw_sol[s_t.first].route.size() - 2;
              ++t_rank) {
-          vrptw_inner_exchange r(_input,
-                                 _sol_state,
-                                 _tw_sol,
-                                 s_t.first,
-                                 s_rank,
-                                 t_rank);
-          if (r.gain() > best_gains[s_t.first][s_t.first] and r.is_valid()) {
+          if (t_rank == s_rank) {
+            continue;
+          }
+          vrptw_inner_or_opt r(_input,
+                               _sol_state,
+                               _tw_sol,
+                               s_t.first,
+                               s_rank,
+                               t_rank);
+          if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.first]) {
             best_gains[s_t.first][s_t.first] = r.gain();
             best_ops[s_t.first][s_t.first] =
-              std::make_unique<vrptw_inner_exchange>(r);
+              std::make_unique<vrptw_inner_or_opt>(r);
           }
         }
       }

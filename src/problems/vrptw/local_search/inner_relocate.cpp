@@ -60,5 +60,5 @@ void vrptw_inner_relocate::apply() const {
   auto relocate_job_rank = s_route[s_rank];
 
   _tw_sol[s_vehicle].remove(_input, s_rank, 1);
-  _tw_sol[t_vehicle].add(_input, relocate_job_rank, t_rank);
+  _tw_sol[s_vehicle].add(_input, relocate_job_rank, t_rank);
 }
