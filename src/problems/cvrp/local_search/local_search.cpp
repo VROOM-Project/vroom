@@ -12,6 +12,7 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/local_search/2_opt.h"
 #include "problems/cvrp/local_search/cross_exchange.h"
 #include "problems/cvrp/local_search/exchange.h"
+#include "problems/cvrp/local_search/inner_cross_exchange.h"
 #include "problems/cvrp/local_search/inner_exchange.h"
 #include "problems/cvrp/local_search/inner_or_opt.h"
 #include "problems/cvrp/local_search/inner_relocate.h"
@@ -390,6 +391,32 @@ void cvrp_local_search::run_ls_step() {
             best_gains[s_t.first][s_t.first] = r.gain();
             best_ops[s_t.first][s_t.first] =
               std::make_unique<cvrp_inner_exchange>(r);
+          }
+        }
+      }
+    }
+
+    // Inner CROSS-exchange stuff
+    for (const auto& s_t : s_t_pairs) {
+      if (s_t.first != s_t.second or _sol[s_t.first].size() < 5) {
+        continue;
+      }
+
+      for (unsigned s_rank = 0; s_rank <= _sol[s_t.first].size() - 4;
+           ++s_rank) {
+        for (unsigned t_rank = s_rank + 3; t_rank < _sol[s_t.first].size() - 1;
+             ++t_rank) {
+          cvrp_inner_cross_exchange r(_input,
+                                      _sol_state,
+                                      _sol[s_t.first],
+                                      s_t.first,
+                                      s_rank,
+                                      t_rank);
+          // This move is always valid.
+          if (r.gain() > best_gains[s_t.first][s_t.first]) {
+            best_gains[s_t.first][s_t.first] = r.gain();
+            best_ops[s_t.first][s_t.first] =
+              std::make_unique<cvrp_inner_cross_exchange>(r);
           }
         }
       }
