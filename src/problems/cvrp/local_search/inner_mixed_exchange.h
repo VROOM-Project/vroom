@@ -1,5 +1,5 @@
-#ifndef CVRP_INNER_CROSS_EXCHANGE_H
-#define CVRP_INNER_CROSS_EXCHANGE_H
+#ifndef CVRP_INNER_MIXED_EXCHANGE_H
+#define CVRP_INNER_MIXED_EXCHANGE_H
 
 /*
 
@@ -12,20 +12,18 @@ All rights reserved (see LICENSE).
 
 #include "problems/ls_operator.h"
 
-class cvrp_inner_cross_exchange : public ls_operator {
+class cvrp_inner_mixed_exchange : public ls_operator {
 protected:
   gain_t normal_s_gain;
   gain_t reversed_s_gain;
-  gain_t normal_t_gain;
-  gain_t reversed_t_gain;
+  gain_t t_gain;
 
-  bool reverse_s_edge;
   bool reverse_t_edge;
 
   virtual void compute_gain() override;
 
 public:
-  cvrp_inner_cross_exchange(const input& input,
+  cvrp_inner_mixed_exchange(const input& input,
                             const solution_state& sol_state,
                             std::vector<index_t>& s_route,
                             index_t s_vehicle,
