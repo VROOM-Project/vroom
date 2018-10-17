@@ -38,6 +38,14 @@ private:
   void fwd_update_earliest_with_TW_from(const input& input, index_t rank);
   void bwd_update_latest_with_TW_from(const input& input, index_t rank);
 
+  bool is_fwd_valid_removal(const input& input,
+                            const index_t rank,
+                            const unsigned count) const;
+
+  bool is_bwd_valid_removal(const input& input,
+                            const index_t rank,
+                            const unsigned count) const;
+
 public:
   index_t vehicle_rank;
   bool has_start;

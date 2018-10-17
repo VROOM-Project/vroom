@@ -316,21 +316,29 @@ void tw_route::add(const input& input,
   bwd_update_latest_from(input, rank);
 }
 
-bool tw_route::is_valid_removal(const input& input,
-                                const index_t rank,
-                                const unsigned count) const {
-  assert(rank + count <= route.size());
-
+bool tw_route::is_fwd_valid_removal(const input& input,
+                                    const index_t rank,
+                                    const unsigned count) const {
   const auto& m = input.get_matrix();
   const auto& v = input._vehicles[vehicle_rank];
 
-  // Check validity as of first non-removed job.
+  // Check forward validity as of first non-removed job.
   index_t current_rank = rank + count;
   if (current_rank == route.size()) {
-    // Removing the end of a route is always OK.
-    return true;
+    if (rank == 0 or !has_end) {
+      // Emptying a route or removing the end of a route with no
+      // vehicle end is always OK.
+      return true;
+    } else {
+      // Otherwise check for end date validity.
+      const auto& new_last_job = input._jobs[route[rank - 1]];
+      return earliest[rank - 1] + new_last_job.service +
+               m[new_last_job.index()][v.end.get().index()] <=
+             v_end;
+    }
   }
-  const auto& current_index = input._jobs[route[current_rank]].index();
+
+  const auto current_index = input._jobs[route[current_rank]].index();
 
   duration_t previous_earliest = v_start;
   duration_t previous_service = 0;
@@ -380,6 +388,84 @@ bool tw_route::is_valid_removal(const input& input,
   }
 
   return job_earliest <= v_end;
+}
+
+bool tw_route::is_bwd_valid_removal(const input& input,
+                                    const index_t rank,
+                                    const unsigned count) const {
+  const auto& m = input.get_matrix();
+  const auto& v = input._vehicles[vehicle_rank];
+
+  if (rank == 0) {
+    if (count == route.size() or !has_start) {
+      // Emptying a route or removing the start of a route with no
+      // vehicle start is always OK.
+      return true;
+    }
+
+    // Check for start date validity.
+    const auto new_first_index = input._jobs[route[count]].index();
+    return v_start + m[v.start.get().index()][new_first_index] <= latest[count];
+  }
+
+  // Check backward validity as of first non-removed job.
+  index_t current_rank = rank - 1;
+  index_t current_index = input._jobs[route[current_rank]].index();
+
+  index_t next_rank = rank + count;
+  duration_t next_latest = v_end;
+  duration_t next_travel = 0;
+
+  if (next_rank == route.size()) {
+    if (has_end) {
+      next_travel = m[current_index][v.end.get().index()];
+    }
+  } else {
+    const auto& next_job = input._jobs[route[next_rank]];
+    next_latest = latest[next_rank];
+    next_travel = m[current_index][next_job.index()];
+  }
+
+  while (current_rank > 0) {
+    duration_t current_service = input._jobs[route[current_rank]].service;
+    if (latest[current_rank] + current_service + next_travel <= next_latest) {
+      return true;
+    }
+    if (next_latest < earliest[current_rank] + current_service + next_travel) {
+      return false;
+    }
+
+    // Update new latest date for current job. No underflow due to
+    // previous check.
+    next_latest = next_latest - current_service - next_travel;
+    assert(
+      input._jobs[route[current_rank]].tws[tw_ranks[current_rank]].contains(
+        next_latest));
+
+    if (current_rank > 0) {
+      auto previous_index = input._jobs[route[current_rank - 1]].index();
+      next_travel = m[previous_index][current_index];
+      current_index = previous_index;
+    }
+
+    --current_rank;
+  }
+
+  next_travel = 0;
+  if (has_start) {
+    next_travel = m[v.start.get().index()][current_index];
+  }
+  return v_start + next_travel <= next_latest;
+}
+
+bool tw_route::is_valid_removal(const input& input,
+                                const index_t rank,
+                                const unsigned count) const {
+  assert(!route.empty());
+  assert(rank + count <= route.size());
+
+  return is_fwd_valid_removal(input, rank, count) and
+         is_bwd_valid_removal(input, rank, count);
 }
 
 void tw_route::remove(const input& input,
