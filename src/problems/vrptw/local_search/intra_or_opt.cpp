@@ -7,15 +7,15 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/vrptw/local_search/inner_or_opt.h"
+#include "problems/vrptw/local_search/intra_or_opt.h"
 
-vrptw_inner_or_opt::vrptw_inner_or_opt(const input& input,
+vrptw_intra_or_opt::vrptw_intra_or_opt(const input& input,
                                        const solution_state& sol_state,
                                        tw_solution& tw_sol,
                                        index_t s_vehicle,
                                        index_t s_rank,
                                        index_t t_rank)
-  : cvrp_inner_or_opt(input,
+  : cvrp_intra_or_opt(input,
                       sol_state,
                       tw_sol[s_vehicle].route,
                       s_vehicle,
@@ -47,8 +47,8 @@ vrptw_inner_or_opt::vrptw_inner_or_opt(const input& input,
   _moved_jobs[_s_edge_last] = s_route[s_rank + 1];
 }
 
-void vrptw_inner_or_opt::compute_gain() {
-  cvrp_inner_or_opt::compute_gain();
+void vrptw_intra_or_opt::compute_gain() {
+  cvrp_intra_or_opt::compute_gain();
   assert(_is_normal_valid or _is_reverse_valid);
 
   if (reverse_s_edge) {
@@ -70,7 +70,7 @@ void vrptw_inner_or_opt::compute_gain() {
   }
 }
 
-bool vrptw_inner_or_opt::is_valid() {
+bool vrptw_intra_or_opt::is_valid() {
   _is_normal_valid =
     _tw_sol[s_vehicle].is_valid_addition_for_tw(_input,
                                                 _moved_jobs.begin(),
@@ -93,7 +93,7 @@ bool vrptw_inner_or_opt::is_valid() {
   return _is_normal_valid or _is_reverse_valid;
 }
 
-void vrptw_inner_or_opt::apply() {
+void vrptw_intra_or_opt::apply() {
   if (reverse_s_edge) {
     std::swap(_moved_jobs[_s_edge_first], _moved_jobs[_s_edge_last]);
   }

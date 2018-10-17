@@ -7,16 +7,16 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/vrptw/local_search/inner_mixed_exchange.h"
+#include "problems/vrptw/local_search/intra_mixed_exchange.h"
 
-vrptw_inner_mixed_exchange::vrptw_inner_mixed_exchange(
+vrptw_intra_mixed_exchange::vrptw_intra_mixed_exchange(
   const input& input,
   const solution_state& sol_state,
   tw_solution& tw_sol,
   index_t s_vehicle,
   index_t s_rank,
   index_t t_rank)
-  : cvrp_inner_mixed_exchange(input,
+  : cvrp_intra_mixed_exchange(input,
                               sol_state,
                               tw_sol[s_vehicle].route,
                               s_vehicle,
@@ -52,8 +52,8 @@ vrptw_inner_mixed_exchange::vrptw_inner_mixed_exchange(
   _moved_jobs[_t_edge_last] = s_route[t_rank + 1];
 }
 
-void vrptw_inner_mixed_exchange::compute_gain() {
-  cvrp_inner_mixed_exchange::compute_gain();
+void vrptw_intra_mixed_exchange::compute_gain() {
+  cvrp_intra_mixed_exchange::compute_gain();
   assert(_s_is_normal_valid or _s_is_reverse_valid);
 
   gain_t s_gain;
@@ -80,7 +80,7 @@ void vrptw_inner_mixed_exchange::compute_gain() {
   stored_gain = s_gain + t_gain;
 }
 
-bool vrptw_inner_mixed_exchange::is_valid() {
+bool vrptw_intra_mixed_exchange::is_valid() {
   _s_is_normal_valid =
     _tw_sol[s_vehicle].is_valid_addition_for_tw(_input,
                                                 _moved_jobs.begin(),
@@ -103,7 +103,7 @@ bool vrptw_inner_mixed_exchange::is_valid() {
   return _s_is_normal_valid or _s_is_reverse_valid;
 }
 
-void vrptw_inner_mixed_exchange::apply() {
+void vrptw_intra_mixed_exchange::apply() {
   if (reverse_t_edge) {
     std::swap(_moved_jobs[_t_edge_first], _moved_jobs[_t_edge_last]);
   }

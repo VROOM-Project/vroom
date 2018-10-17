@@ -7,10 +7,10 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/cvrp/local_search/inner_mixed_exchange.h"
+#include "problems/cvrp/local_search/intra_mixed_exchange.h"
 #include "utils/helpers.h"
 
-cvrp_inner_mixed_exchange::cvrp_inner_mixed_exchange(
+cvrp_intra_mixed_exchange::cvrp_intra_mixed_exchange(
   const input& input,
   const solution_state& sol_state,
   std::vector<index_t>& s_route,
@@ -34,7 +34,7 @@ cvrp_inner_mixed_exchange::cvrp_inner_mixed_exchange(
   assert(t_rank < s_route.size() - 1);
 }
 
-void cvrp_inner_mixed_exchange::compute_gain() {
+void cvrp_intra_mixed_exchange::compute_gain() {
   const auto& m = _input.get_matrix();
   const auto& v = _input._vehicles[s_vehicle];
 
@@ -125,11 +125,11 @@ void cvrp_inner_mixed_exchange::compute_gain() {
   gain_computed = true;
 }
 
-bool cvrp_inner_mixed_exchange::is_valid() {
+bool cvrp_intra_mixed_exchange::is_valid() {
   return true;
 }
 
-void cvrp_inner_mixed_exchange::apply() {
+void cvrp_intra_mixed_exchange::apply() {
   if (reverse_t_edge) {
     std::swap(s_route[t_rank], s_route[t_rank + 1]);
   }
@@ -147,10 +147,10 @@ void cvrp_inner_mixed_exchange::apply() {
   s_route.insert(s_route.begin() + end_t_rank, t_after);
 }
 
-std::vector<index_t> cvrp_inner_mixed_exchange::addition_candidates() const {
+std::vector<index_t> cvrp_intra_mixed_exchange::addition_candidates() const {
   return {};
 }
 
-std::vector<index_t> cvrp_inner_mixed_exchange::update_candidates() const {
+std::vector<index_t> cvrp_intra_mixed_exchange::update_candidates() const {
   return {s_vehicle};
 }

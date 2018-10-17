@@ -7,16 +7,16 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/vrptw/local_search/inner_cross_exchange.h"
+#include "problems/vrptw/local_search/intra_cross_exchange.h"
 
-vrptw_inner_cross_exchange::vrptw_inner_cross_exchange(
+vrptw_intra_cross_exchange::vrptw_intra_cross_exchange(
   const input& input,
   const solution_state& sol_state,
   tw_solution& tw_sol,
   index_t s_vehicle,
   index_t s_rank,
   index_t t_rank)
-  : cvrp_inner_cross_exchange(input,
+  : cvrp_intra_cross_exchange(input,
                               sol_state,
                               tw_sol[s_vehicle].route,
                               s_vehicle,
@@ -39,8 +39,8 @@ vrptw_inner_cross_exchange::vrptw_inner_cross_exchange(
   _moved_jobs[_moved_jobs.size() - 1] = s_route[s_rank + 1];
 }
 
-void vrptw_inner_cross_exchange::compute_gain() {
-  cvrp_inner_cross_exchange::compute_gain();
+void vrptw_intra_cross_exchange::compute_gain() {
+  cvrp_intra_cross_exchange::compute_gain();
   assert(_s_normal_t_normal_is_valid or _s_normal_t_reverse_is_valid or
          _s_reverse_t_reverse_is_valid or _s_reverse_t_normal_is_valid);
 
@@ -83,7 +83,7 @@ void vrptw_inner_cross_exchange::compute_gain() {
   }
 }
 
-bool vrptw_inner_cross_exchange::is_valid() {
+bool vrptw_intra_cross_exchange::is_valid() {
   _s_normal_t_normal_is_valid =
     _tw_sol[s_vehicle].is_valid_addition_for_tw(_input,
                                                 _moved_jobs.begin(),
@@ -124,7 +124,7 @@ bool vrptw_inner_cross_exchange::is_valid() {
          _s_reverse_t_reverse_is_valid or _s_reverse_t_normal_is_valid;
 }
 
-void vrptw_inner_cross_exchange::apply() {
+void vrptw_intra_cross_exchange::apply() {
   if (reverse_t_edge) {
     std::swap(_moved_jobs[0], _moved_jobs[1]);
   }

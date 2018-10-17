@@ -12,11 +12,11 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/local_search/2_opt.h"
 #include "problems/cvrp/local_search/cross_exchange.h"
 #include "problems/cvrp/local_search/exchange.h"
-#include "problems/cvrp/local_search/inner_cross_exchange.h"
-#include "problems/cvrp/local_search/inner_exchange.h"
-#include "problems/cvrp/local_search/inner_mixed_exchange.h"
-#include "problems/cvrp/local_search/inner_or_opt.h"
-#include "problems/cvrp/local_search/inner_relocate.h"
+#include "problems/cvrp/local_search/intra_cross_exchange.h"
+#include "problems/cvrp/local_search/intra_exchange.h"
+#include "problems/cvrp/local_search/intra_mixed_exchange.h"
+#include "problems/cvrp/local_search/intra_or_opt.h"
+#include "problems/cvrp/local_search/intra_relocate.h"
 #include "problems/cvrp/local_search/local_search.h"
 #include "problems/cvrp/local_search/mixed_exchange.h"
 #include "problems/cvrp/local_search/or_opt.h"
@@ -381,7 +381,7 @@ void cvrp_local_search::run_ls_step() {
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 2; ++s_rank) {
         for (unsigned t_rank = s_rank + 2; t_rank < _sol[s_t.first].size();
              ++t_rank) {
-          cvrp_inner_exchange r(_input,
+          cvrp_intra_exchange r(_input,
                                 _sol_state,
                                 _sol[s_t.first],
                                 s_t.first,
@@ -391,7 +391,7 @@ void cvrp_local_search::run_ls_step() {
           if (r.gain() > best_gains[s_t.first][s_t.first]) {
             best_gains[s_t.first][s_t.first] = r.gain();
             best_ops[s_t.first][s_t.first] =
-              std::make_unique<cvrp_inner_exchange>(r);
+              std::make_unique<cvrp_intra_exchange>(r);
           }
         }
       }
@@ -407,7 +407,7 @@ void cvrp_local_search::run_ls_step() {
            ++s_rank) {
         for (unsigned t_rank = s_rank + 3; t_rank < _sol[s_t.first].size() - 1;
              ++t_rank) {
-          cvrp_inner_cross_exchange r(_input,
+          cvrp_intra_cross_exchange r(_input,
                                       _sol_state,
                                       _sol[s_t.first],
                                       s_t.first,
@@ -417,7 +417,7 @@ void cvrp_local_search::run_ls_step() {
           if (r.gain() > best_gains[s_t.first][s_t.first]) {
             best_gains[s_t.first][s_t.first] = r.gain();
             best_ops[s_t.first][s_t.first] =
-              std::make_unique<cvrp_inner_cross_exchange>(r);
+              std::make_unique<cvrp_intra_cross_exchange>(r);
           }
         }
       }
@@ -435,7 +435,7 @@ void cvrp_local_search::run_ls_step() {
           if (t_rank <= s_rank + 1 and s_rank <= t_rank + 2) {
             continue;
           }
-          cvrp_inner_mixed_exchange r(_input,
+          cvrp_intra_mixed_exchange r(_input,
                                       _sol_state,
                                       _sol[s_t.first],
                                       s_t.first,
@@ -445,7 +445,7 @@ void cvrp_local_search::run_ls_step() {
           if (r.gain() > best_gains[s_t.first][s_t.first]) {
             best_gains[s_t.first][s_t.first] = r.gain();
             best_ops[s_t.first][s_t.first] =
-              std::make_unique<cvrp_inner_mixed_exchange>(r);
+              std::make_unique<cvrp_intra_mixed_exchange>(r);
           }
         }
       }
@@ -468,7 +468,7 @@ void cvrp_local_search::run_ls_step() {
           if (t_rank == s_rank) {
             continue;
           }
-          cvrp_inner_relocate r(_input,
+          cvrp_intra_relocate r(_input,
                                 _sol_state,
                                 _sol[s_t.first],
                                 s_t.first,
@@ -478,7 +478,7 @@ void cvrp_local_search::run_ls_step() {
           if (r.gain() > best_gains[s_t.first][s_t.first]) {
             best_gains[s_t.first][s_t.first] = r.gain();
             best_ops[s_t.first][s_t.first] =
-              std::make_unique<cvrp_inner_relocate>(r);
+              std::make_unique<cvrp_intra_relocate>(r);
           }
         }
       }
@@ -501,7 +501,7 @@ void cvrp_local_search::run_ls_step() {
           if (t_rank == s_rank) {
             continue;
           }
-          cvrp_inner_or_opt r(_input,
+          cvrp_intra_or_opt r(_input,
                               _sol_state,
                               _sol[s_t.first],
                               s_t.first,
@@ -511,7 +511,7 @@ void cvrp_local_search::run_ls_step() {
           if (r.gain() > best_gains[s_t.first][s_t.first]) {
             best_gains[s_t.first][s_t.first] = r.gain();
             best_ops[s_t.first][s_t.first] =
-              std::make_unique<cvrp_inner_or_opt>(r);
+              std::make_unique<cvrp_intra_or_opt>(r);
           }
         }
       }

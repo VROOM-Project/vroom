@@ -12,7 +12,7 @@ All rights reserved (see LICENSE).
 
 #include "problems/ls_operator.h"
 
-class cvrp_inner_mixed_exchange : public ls_operator {
+class cvrp_intra_mixed_exchange : public ls_operator {
 protected:
   gain_t normal_s_gain;
   gain_t reversed_s_gain;
@@ -23,7 +23,7 @@ protected:
   virtual void compute_gain() override;
 
 public:
-  cvrp_inner_mixed_exchange(const input& input,
+  cvrp_intra_mixed_exchange(const input& input,
                             const solution_state& sol_state,
                             std::vector<index_t>& s_route,
                             index_t s_vehicle,

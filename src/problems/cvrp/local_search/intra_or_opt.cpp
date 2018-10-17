@@ -7,10 +7,10 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/cvrp/local_search/inner_or_opt.h"
+#include "problems/cvrp/local_search/intra_or_opt.h"
 #include "utils/helpers.h"
 
-cvrp_inner_or_opt::cvrp_inner_or_opt(const input& input,
+cvrp_intra_or_opt::cvrp_intra_or_opt(const input& input,
                                      const solution_state& sol_state,
                                      std::vector<index_t>& s_route,
                                      index_t s_vehicle,
@@ -31,7 +31,7 @@ cvrp_inner_or_opt::cvrp_inner_or_opt(const input& input,
   assert(s_rank != t_rank);
 }
 
-void cvrp_inner_or_opt::compute_gain() {
+void cvrp_intra_or_opt::compute_gain() {
   const auto& m = _input.get_matrix();
   const auto& v = _input._vehicles[s_vehicle];
 
@@ -108,11 +108,11 @@ void cvrp_inner_or_opt::compute_gain() {
   gain_computed = true;
 }
 
-bool cvrp_inner_or_opt::is_valid() {
+bool cvrp_intra_or_opt::is_valid() {
   return true;
 }
 
-void cvrp_inner_or_opt::apply() {
+void cvrp_intra_or_opt::apply() {
   auto first_job_rank = s_route[s_rank];
   auto second_job_rank = s_route[s_rank + 1];
   s_route.erase(s_route.begin() + s_rank, s_route.begin() + s_rank + 2);
@@ -122,10 +122,10 @@ void cvrp_inner_or_opt::apply() {
   }
 }
 
-std::vector<index_t> cvrp_inner_or_opt::addition_candidates() const {
+std::vector<index_t> cvrp_intra_or_opt::addition_candidates() const {
   return {};
 }
 
-std::vector<index_t> cvrp_inner_or_opt::update_candidates() const {
+std::vector<index_t> cvrp_intra_or_opt::update_candidates() const {
   return {s_vehicle};
 }

@@ -7,10 +7,10 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/cvrp/local_search/inner_cross_exchange.h"
+#include "problems/cvrp/local_search/intra_cross_exchange.h"
 #include "utils/helpers.h"
 
-cvrp_inner_cross_exchange::cvrp_inner_cross_exchange(
+cvrp_intra_cross_exchange::cvrp_intra_cross_exchange(
   const input& input,
   const solution_state& sol_state,
   std::vector<index_t>& s_route,
@@ -33,7 +33,7 @@ cvrp_inner_cross_exchange::cvrp_inner_cross_exchange(
   assert(t_rank < s_route.size() - 1);
 }
 
-void cvrp_inner_cross_exchange::compute_gain() {
+void cvrp_intra_cross_exchange::compute_gain() {
   const auto& m = _input.get_matrix();
   const auto& v = _input._vehicles[s_vehicle];
 
@@ -124,11 +124,11 @@ void cvrp_inner_cross_exchange::compute_gain() {
   gain_computed = true;
 }
 
-bool cvrp_inner_cross_exchange::is_valid() {
+bool cvrp_intra_cross_exchange::is_valid() {
   return true;
 }
 
-void cvrp_inner_cross_exchange::apply() {
+void cvrp_intra_cross_exchange::apply() {
   std::swap(s_route[s_rank], s_route[t_rank]);
   std::swap(s_route[s_rank + 1], s_route[t_rank + 1]);
 
@@ -140,10 +140,10 @@ void cvrp_inner_cross_exchange::apply() {
   }
 }
 
-std::vector<index_t> cvrp_inner_cross_exchange::addition_candidates() const {
+std::vector<index_t> cvrp_intra_cross_exchange::addition_candidates() const {
   return {};
 }
 
-std::vector<index_t> cvrp_inner_cross_exchange::update_candidates() const {
+std::vector<index_t> cvrp_intra_cross_exchange::update_candidates() const {
   return {s_vehicle};
 }

@@ -12,7 +12,7 @@ All rights reserved (see LICENSE).
 
 #include "problems/ls_operator.h"
 
-class cvrp_inner_or_opt : public ls_operator {
+class cvrp_intra_or_opt : public ls_operator {
 protected:
   virtual void compute_gain() override;
 
@@ -22,7 +22,7 @@ protected:
   bool reverse_s_edge;
 
 public:
-  cvrp_inner_or_opt(const input& input,
+  cvrp_intra_or_opt(const input& input,
                     const solution_state& sol_state,
                     std::vector<index_t>& s_route,
                     index_t s_vehicle,

@@ -7,10 +7,10 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/cvrp/local_search/inner_exchange.h"
+#include "problems/cvrp/local_search/intra_exchange.h"
 #include "utils/helpers.h"
 
-cvrp_inner_exchange::cvrp_inner_exchange(const input& input,
+cvrp_intra_exchange::cvrp_intra_exchange(const input& input,
                                          const solution_state& sol_state,
                                          std::vector<index_t>& s_route,
                                          index_t s_vehicle,
@@ -25,14 +25,14 @@ cvrp_inner_exchange::cvrp_inner_exchange(const input& input,
                 s_vehicle,
                 t_rank) {
   // Assume s_rank < t_rank for symmetry reasons. Set aside cases
-  // where t_rank = s_rank + 1, as the move is also an inner_relocate.
+  // where t_rank = s_rank + 1, as the move is also an intra_relocate.
   assert(0 < t_rank);
   assert(s_rank < t_rank - 1);
   assert(s_route.size() >= 3);
   assert(t_rank < s_route.size());
 }
 
-void cvrp_inner_exchange::compute_gain() {
+void cvrp_intra_exchange::compute_gain() {
   const auto& m = _input.get_matrix();
   const auto& v = _input._vehicles[s_vehicle];
 
@@ -88,18 +88,18 @@ void cvrp_inner_exchange::compute_gain() {
   gain_computed = true;
 }
 
-bool cvrp_inner_exchange::is_valid() {
+bool cvrp_intra_exchange::is_valid() {
   return true;
 }
 
-void cvrp_inner_exchange::apply() {
+void cvrp_intra_exchange::apply() {
   std::swap(s_route[s_rank], t_route[t_rank]);
 }
 
-std::vector<index_t> cvrp_inner_exchange::addition_candidates() const {
+std::vector<index_t> cvrp_intra_exchange::addition_candidates() const {
   return {};
 }
 
-std::vector<index_t> cvrp_inner_exchange::update_candidates() const {
+std::vector<index_t> cvrp_intra_exchange::update_candidates() const {
   return {s_vehicle};
 }

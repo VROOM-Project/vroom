@@ -10,12 +10,12 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/cvrp/local_search/inner_cross_exchange.h"
+#include "problems/cvrp/local_search/intra_cross_exchange.h"
 #include "structures/vroom/tw_route.h"
 
 using tw_solution = std::vector<tw_route>;
 
-class vrptw_inner_cross_exchange : public cvrp_inner_cross_exchange {
+class vrptw_intra_cross_exchange : public cvrp_intra_cross_exchange {
 private:
   tw_solution& _tw_sol;
 
@@ -31,7 +31,7 @@ private:
   virtual void compute_gain() override;
 
 public:
-  vrptw_inner_cross_exchange(const input& input,
+  vrptw_intra_cross_exchange(const input& input,
                              const solution_state& sol_state,
                              tw_solution& tw_sol,
                              index_t s_vehicle,

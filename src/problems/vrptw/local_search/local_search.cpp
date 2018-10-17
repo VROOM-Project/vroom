@@ -14,11 +14,11 @@ All rights reserved (see LICENSE).
 #include "problems/vrptw/local_search/2_opt.h"
 #include "problems/vrptw/local_search/cross_exchange.h"
 #include "problems/vrptw/local_search/exchange.h"
-#include "problems/vrptw/local_search/inner_cross_exchange.h"
-#include "problems/vrptw/local_search/inner_exchange.h"
-#include "problems/vrptw/local_search/inner_mixed_exchange.h"
-#include "problems/vrptw/local_search/inner_or_opt.h"
-#include "problems/vrptw/local_search/inner_relocate.h"
+#include "problems/vrptw/local_search/intra_cross_exchange.h"
+#include "problems/vrptw/local_search/intra_exchange.h"
+#include "problems/vrptw/local_search/intra_mixed_exchange.h"
+#include "problems/vrptw/local_search/intra_or_opt.h"
+#include "problems/vrptw/local_search/intra_relocate.h"
 #include "problems/vrptw/local_search/local_search.h"
 #include "problems/vrptw/local_search/mixed_exchange.h"
 #include "problems/vrptw/local_search/or_opt.h"
@@ -419,7 +419,7 @@ void vrptw_local_search::run_ls_step() {
         for (unsigned t_rank = s_rank + 2;
              t_rank < _tw_sol[s_t.first].route.size();
              ++t_rank) {
-          vrptw_inner_exchange r(_input,
+          vrptw_intra_exchange r(_input,
                                  _sol_state,
                                  _tw_sol,
                                  s_t.first,
@@ -428,7 +428,7 @@ void vrptw_local_search::run_ls_step() {
           if (r.gain() > best_gains[s_t.first][s_t.first] and r.is_valid()) {
             best_gains[s_t.first][s_t.first] = r.gain();
             best_ops[s_t.first][s_t.first] =
-              std::make_unique<vrptw_inner_exchange>(r);
+              std::make_unique<vrptw_intra_exchange>(r);
           }
         }
       }
@@ -445,7 +445,7 @@ void vrptw_local_search::run_ls_step() {
         for (unsigned t_rank = s_rank + 3;
              t_rank < _tw_sol[s_t.first].route.size() - 1;
              ++t_rank) {
-          vrptw_inner_cross_exchange r(_input,
+          vrptw_intra_cross_exchange r(_input,
                                        _sol_state,
                                        _tw_sol,
                                        s_t.first,
@@ -454,7 +454,7 @@ void vrptw_local_search::run_ls_step() {
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.first]) {
             best_gains[s_t.first][s_t.first] = r.gain();
             best_ops[s_t.first][s_t.first] =
-              std::make_unique<vrptw_inner_cross_exchange>(r);
+              std::make_unique<vrptw_intra_cross_exchange>(r);
           }
         }
       }
@@ -473,7 +473,7 @@ void vrptw_local_search::run_ls_step() {
           if (t_rank <= s_rank + 1 and s_rank <= t_rank + 2) {
             continue;
           }
-          vrptw_inner_mixed_exchange r(_input,
+          vrptw_intra_mixed_exchange r(_input,
                                        _sol_state,
                                        _tw_sol,
                                        s_t.first,
@@ -482,7 +482,7 @@ void vrptw_local_search::run_ls_step() {
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.first]) {
             best_gains[s_t.first][s_t.first] = r.gain();
             best_ops[s_t.first][s_t.first] =
-              std::make_unique<vrptw_inner_mixed_exchange>(r);
+              std::make_unique<vrptw_intra_mixed_exchange>(r);
           }
         }
       }
@@ -506,7 +506,7 @@ void vrptw_local_search::run_ls_step() {
           if (t_rank == s_rank) {
             continue;
           }
-          vrptw_inner_relocate r(_input,
+          vrptw_intra_relocate r(_input,
                                  _sol_state,
                                  _tw_sol,
                                  s_t.first,
@@ -515,7 +515,7 @@ void vrptw_local_search::run_ls_step() {
           if (r.gain() > best_gains[s_t.first][s_t.first] and r.is_valid()) {
             best_gains[s_t.first][s_t.first] = r.gain();
             best_ops[s_t.first][s_t.first] =
-              std::make_unique<vrptw_inner_relocate>(r);
+              std::make_unique<vrptw_intra_relocate>(r);
           }
         }
       }
@@ -539,7 +539,7 @@ void vrptw_local_search::run_ls_step() {
           if (t_rank == s_rank) {
             continue;
           }
-          vrptw_inner_or_opt r(_input,
+          vrptw_intra_or_opt r(_input,
                                _sol_state,
                                _tw_sol,
                                s_t.first,
@@ -548,7 +548,7 @@ void vrptw_local_search::run_ls_step() {
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.first]) {
             best_gains[s_t.first][s_t.first] = r.gain();
             best_ops[s_t.first][s_t.first] =
-              std::make_unique<vrptw_inner_or_opt>(r);
+              std::make_unique<vrptw_intra_or_opt>(r);
           }
         }
       }

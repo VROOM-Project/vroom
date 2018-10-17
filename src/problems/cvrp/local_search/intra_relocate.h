@@ -12,12 +12,12 @@ All rights reserved (see LICENSE).
 
 #include "problems/ls_operator.h"
 
-class cvrp_inner_relocate : public ls_operator {
+class cvrp_intra_relocate : public ls_operator {
 protected:
   virtual void compute_gain() override;
 
 public:
-  cvrp_inner_relocate(const input& input,
+  cvrp_intra_relocate(const input& input,
                       const solution_state& sol_state,
                       std::vector<index_t>& s_route,
                       index_t s_vehicle,

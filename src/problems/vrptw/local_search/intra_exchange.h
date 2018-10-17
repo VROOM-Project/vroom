@@ -10,12 +10,12 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/cvrp/local_search/inner_exchange.h"
+#include "problems/cvrp/local_search/intra_exchange.h"
 #include "structures/vroom/tw_route.h"
 
 using tw_solution = std::vector<tw_route>;
 
-class vrptw_inner_exchange : public cvrp_inner_exchange {
+class vrptw_intra_exchange : public cvrp_intra_exchange {
 private:
   tw_solution& _tw_sol;
 
@@ -24,7 +24,7 @@ private:
   const index_t _last_rank;
 
 public:
-  vrptw_inner_exchange(const input& input,
+  vrptw_intra_exchange(const input& input,
                        const solution_state& sol_state,
                        tw_solution& tw_sol,
                        index_t s_vehicle,

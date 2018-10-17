@@ -7,15 +7,15 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/vrptw/local_search/inner_relocate.h"
+#include "problems/vrptw/local_search/intra_relocate.h"
 
-vrptw_inner_relocate::vrptw_inner_relocate(const input& input,
+vrptw_intra_relocate::vrptw_intra_relocate(const input& input,
                                            const solution_state& sol_state,
                                            tw_solution& tw_sol,
                                            index_t s_vehicle,
                                            index_t s_rank,
                                            index_t t_rank)
-  : cvrp_inner_relocate(input,
+  : cvrp_intra_relocate(input,
                         sol_state,
                         tw_sol[s_vehicle].route,
                         s_vehicle,
@@ -38,7 +38,7 @@ vrptw_inner_relocate::vrptw_inner_relocate(const input& input,
   }
 }
 
-bool vrptw_inner_relocate::is_valid() {
+bool vrptw_intra_relocate::is_valid() {
   return _tw_sol[s_vehicle].is_valid_addition_for_tw(_input,
                                                      _moved_jobs.begin(),
                                                      _moved_jobs.end(),
@@ -46,7 +46,7 @@ bool vrptw_inner_relocate::is_valid() {
                                                      _last_rank);
 }
 
-void vrptw_inner_relocate::apply() {
+void vrptw_intra_relocate::apply() {
   _tw_sol[s_vehicle].replace(_input,
                              _moved_jobs.begin(),
                              _moved_jobs.end(),

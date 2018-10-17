@@ -7,10 +7,10 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/cvrp/local_search/inner_relocate.h"
+#include "problems/cvrp/local_search/intra_relocate.h"
 #include "utils/helpers.h"
 
-cvrp_inner_relocate::cvrp_inner_relocate(const input& input,
+cvrp_intra_relocate::cvrp_intra_relocate(const input& input,
                                          const solution_state& sol_state,
                                          std::vector<index_t>& s_route,
                                          index_t s_vehicle,
@@ -30,7 +30,7 @@ cvrp_inner_relocate::cvrp_inner_relocate(const input& input,
   assert(s_rank != t_rank);
 }
 
-void cvrp_inner_relocate::compute_gain() {
+void cvrp_intra_relocate::compute_gain() {
   const auto& m = _input.get_matrix();
   const auto& v_target = _input._vehicles[s_vehicle];
 
@@ -50,20 +50,20 @@ void cvrp_inner_relocate::compute_gain() {
   gain_computed = true;
 }
 
-bool cvrp_inner_relocate::is_valid() {
+bool cvrp_intra_relocate::is_valid() {
   return true;
 }
 
-void cvrp_inner_relocate::apply() {
+void cvrp_intra_relocate::apply() {
   auto relocate_job_rank = s_route[s_rank];
   s_route.erase(s_route.begin() + s_rank);
   t_route.insert(t_route.begin() + t_rank, relocate_job_rank);
 }
 
-std::vector<index_t> cvrp_inner_relocate::addition_candidates() const {
+std::vector<index_t> cvrp_intra_relocate::addition_candidates() const {
   return {};
 }
 
-std::vector<index_t> cvrp_inner_relocate::update_candidates() const {
+std::vector<index_t> cvrp_intra_relocate::update_candidates() const {
   return {s_vehicle};
 }
