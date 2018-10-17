@@ -38,6 +38,14 @@ private:
   void fwd_update_earliest_with_TW_from(const input& input, index_t rank);
   void bwd_update_latest_with_TW_from(const input& input, index_t rank);
 
+  bool is_fwd_valid_removal(const input& input,
+                            const index_t rank,
+                            const unsigned count) const;
+
+  bool is_bwd_valid_removal(const input& input,
+                            const index_t rank,
+                            const unsigned count) const;
+
 public:
   index_t vehicle_rank;
   bool has_start;
@@ -71,6 +79,13 @@ public:
                                 const index_t last_rank) const;
 
   void add(const input& input, const index_t job_rank, const index_t rank);
+
+  // Check validity for removing a set of jobs from current route at
+  // rank. Required because removing a job can actually lead to an
+  // invalid solution (see #172).
+  bool is_valid_removal(const input& input,
+                        const index_t rank,
+                        const unsigned count) const;
 
   void remove(const input& input, const index_t rank, const unsigned count);
 

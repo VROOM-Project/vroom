@@ -124,7 +124,7 @@ void cvrp_mixed_exchange::compute_gain() {
   gain_computed = true;
 }
 
-bool cvrp_mixed_exchange::is_valid() const {
+bool cvrp_mixed_exchange::is_valid() {
   auto s_job_rank = s_route[s_rank];
   auto t_job_rank = t_route[t_rank];
   // Already asserted in compute_gain.
@@ -149,7 +149,7 @@ bool cvrp_mixed_exchange::is_valid() const {
   return valid;
 }
 
-void cvrp_mixed_exchange::apply() const {
+void cvrp_mixed_exchange::apply() {
   std::swap(s_route[s_rank], t_route[t_rank]);
   s_route.insert(s_route.begin() + s_rank + 1,
                  t_route.begin() + t_rank + 1,
@@ -162,5 +162,9 @@ void cvrp_mixed_exchange::apply() const {
 }
 
 std::vector<index_t> cvrp_mixed_exchange::addition_candidates() const {
+  return {s_vehicle, t_vehicle};
+}
+
+std::vector<index_t> cvrp_mixed_exchange::update_candidates() const {
   return {s_vehicle, t_vehicle};
 }

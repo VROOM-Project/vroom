@@ -26,11 +26,13 @@ public:
                        index_t t_vehicle,
                        index_t t_rank);
 
-  virtual bool is_valid() const override;
+  virtual bool is_valid() override;
 
-  virtual void apply() const override;
+  virtual void apply() override;
 
   virtual std::vector<index_t> addition_candidates() const override;
+
+  virtual std::vector<index_t> update_candidates() const override;
 };
 
 #endif

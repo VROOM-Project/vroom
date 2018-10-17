@@ -113,7 +113,7 @@ bool vrptw_cross_exchange::is_valid() {
                                                   s_start + 2,
                                                   t_rank,
                                                   t_rank + 2);
-    // Reverse source edge direction when inserting in target route..
+    // Reverse source edge direction when inserting in target route.
     auto s_reverse_start = s_route.rbegin() + s_route.size() - 2 - s_rank;
     _t_is_reverse_valid =
       _tw_sol[t_vehicle].is_valid_addition_for_tw(_input,
@@ -127,7 +127,7 @@ bool vrptw_cross_exchange::is_valid() {
   return valid;
 }
 
-void vrptw_cross_exchange::apply() const {
+void vrptw_cross_exchange::apply() {
   std::vector<index_t> t_job_ranks;
   if (!reverse_t_edge) {
     auto t_start = t_route.begin() + t_rank;

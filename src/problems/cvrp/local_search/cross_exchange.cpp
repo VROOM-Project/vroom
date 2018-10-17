@@ -44,10 +44,10 @@ void cvrp_cross_exchange::compute_gain() {
   // (for adjacent edges) is stored in
   // _sol_state.edge_costs_around_edge.  reverse_* checks whether we
   // should change the target edge order.
-  index_t s_c_index = _input._jobs[s_route[s_rank]].index();
-  index_t s_after_c_index = _input._jobs[s_route[s_rank + 1]].index();
-  index_t t_c_index = _input._jobs[t_route[t_rank]].index();
-  index_t t_after_c_index = _input._jobs[t_route[t_rank + 1]].index();
+  index_t s_index = _input._jobs[s_route[s_rank]].index();
+  index_t s_after_index = _input._jobs[s_route[s_rank + 1]].index();
+  index_t t_index = _input._jobs[t_route[t_rank]].index();
+  index_t t_after_index = _input._jobs[t_route[t_rank + 1]].index();
 
   // Determine costs added with target edge.
   gain_t previous_cost = 0;
@@ -58,33 +58,32 @@ void cvrp_cross_exchange::compute_gain() {
   if (s_rank == 0) {
     if (v_source.has_start()) {
       auto p_index = v_source.start.get().index();
-      previous_cost = m[p_index][t_c_index];
-      reverse_previous_cost = m[p_index][t_after_c_index];
+      previous_cost = m[p_index][t_index];
+      reverse_previous_cost = m[p_index][t_after_index];
     }
   } else {
     auto p_index = _input._jobs[s_route[s_rank - 1]].index();
-    previous_cost = m[p_index][t_c_index];
-    reverse_previous_cost = m[p_index][t_after_c_index];
+    previous_cost = m[p_index][t_index];
+    reverse_previous_cost = m[p_index][t_after_index];
   }
 
   if (s_rank == s_route.size() - 2) {
     if (v_source.has_end()) {
       auto n_index = v_source.end.get().index();
-      next_cost = m[t_after_c_index][n_index];
-      reverse_next_cost = m[t_c_index][n_index];
+      next_cost = m[t_after_index][n_index];
+      reverse_next_cost = m[t_index][n_index];
     }
   } else {
     auto n_index = _input._jobs[s_route[s_rank + 2]].index();
-    next_cost = m[t_after_c_index][n_index];
-    reverse_next_cost = m[t_c_index][n_index];
+    next_cost = m[t_after_index][n_index];
+    reverse_next_cost = m[t_index][n_index];
   }
 
   normal_s_gain = _sol_state.edge_costs_around_edge[s_vehicle][s_rank] -
                   previous_cost - next_cost;
 
-  gain_t reverse_edge_cost =
-    static_cast<gain_t>(m[t_c_index][t_after_c_index]) -
-    static_cast<gain_t>(m[t_after_c_index][t_c_index]);
+  gain_t reverse_edge_cost = static_cast<gain_t>(m[t_index][t_after_index]) -
+                             static_cast<gain_t>(m[t_after_index][t_index]);
   reversed_s_gain = _sol_state.edge_costs_around_edge[s_vehicle][s_rank] +
                     reverse_edge_cost - reverse_previous_cost -
                     reverse_next_cost;
@@ -105,32 +104,32 @@ void cvrp_cross_exchange::compute_gain() {
   if (t_rank == 0) {
     if (v_target.has_start()) {
       auto p_index = v_target.start.get().index();
-      previous_cost = m[p_index][s_c_index];
-      reverse_previous_cost = m[p_index][s_after_c_index];
+      previous_cost = m[p_index][s_index];
+      reverse_previous_cost = m[p_index][s_after_index];
     }
   } else {
     auto p_index = _input._jobs[t_route[t_rank - 1]].index();
-    previous_cost = m[p_index][s_c_index];
-    reverse_previous_cost = m[p_index][s_after_c_index];
+    previous_cost = m[p_index][s_index];
+    reverse_previous_cost = m[p_index][s_after_index];
   }
 
   if (t_rank == t_route.size() - 2) {
     if (v_target.has_end()) {
       auto n_index = v_target.end.get().index();
-      next_cost = m[s_after_c_index][n_index];
-      reverse_next_cost = m[s_c_index][n_index];
+      next_cost = m[s_after_index][n_index];
+      reverse_next_cost = m[s_index][n_index];
     }
   } else {
     auto n_index = _input._jobs[t_route[t_rank + 2]].index();
-    next_cost = m[s_after_c_index][n_index];
-    reverse_next_cost = m[s_c_index][n_index];
+    next_cost = m[s_after_index][n_index];
+    reverse_next_cost = m[s_index][n_index];
   }
 
   normal_t_gain = _sol_state.edge_costs_around_edge[t_vehicle][t_rank] -
                   previous_cost - next_cost;
 
-  reverse_edge_cost = static_cast<gain_t>(m[s_c_index][s_after_c_index]) -
-                      static_cast<gain_t>(m[s_after_c_index][s_c_index]);
+  reverse_edge_cost = static_cast<gain_t>(m[s_index][s_after_index]) -
+                      static_cast<gain_t>(m[s_after_index][s_index]);
   reversed_t_gain = _sol_state.edge_costs_around_edge[t_vehicle][t_rank] +
                     reverse_edge_cost - reverse_previous_cost -
                     reverse_next_cost;
@@ -145,7 +144,7 @@ void cvrp_cross_exchange::compute_gain() {
   gain_computed = true;
 }
 
-bool cvrp_cross_exchange::is_valid() const {
+bool cvrp_cross_exchange::is_valid() {
   auto s_current_job_rank = s_route[s_rank];
   auto t_current_job_rank = t_route[t_rank];
   // Already asserted in compute_gain.
@@ -174,7 +173,7 @@ bool cvrp_cross_exchange::is_valid() const {
   return valid;
 }
 
-void cvrp_cross_exchange::apply() const {
+void cvrp_cross_exchange::apply() {
   std::swap(s_route[s_rank], t_route[t_rank]);
   std::swap(s_route[s_rank + 1], t_route[t_rank + 1]);
 
@@ -187,5 +186,9 @@ void cvrp_cross_exchange::apply() const {
 }
 
 std::vector<index_t> cvrp_cross_exchange::addition_candidates() const {
+  return {s_vehicle, t_vehicle};
+}
+
+std::vector<index_t> cvrp_cross_exchange::update_candidates() const {
   return {s_vehicle, t_vehicle};
 }

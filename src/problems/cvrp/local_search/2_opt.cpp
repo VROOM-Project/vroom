@@ -82,7 +82,7 @@ void cvrp_two_opt::compute_gain() {
   gain_computed = true;
 }
 
-bool cvrp_two_opt::is_valid() const {
+bool cvrp_two_opt::is_valid() {
   bool valid = (_sol_state.bwd_skill_rank[s_vehicle][t_vehicle] <= s_rank + 1);
 
   valid &= (_sol_state.bwd_skill_rank[t_vehicle][s_vehicle] <= t_rank + 1);
@@ -97,7 +97,7 @@ bool cvrp_two_opt::is_valid() const {
   return valid;
 }
 
-void cvrp_two_opt::apply() const {
+void cvrp_two_opt::apply() {
   auto nb_source = s_route.size() - 1 - s_rank;
 
   t_route.insert(t_route.begin() + t_rank + 1,
@@ -111,5 +111,9 @@ void cvrp_two_opt::apply() const {
 }
 
 std::vector<index_t> cvrp_two_opt::addition_candidates() const {
+  return {s_vehicle, t_vehicle};
+}
+
+std::vector<index_t> cvrp_two_opt::update_candidates() const {
   return {s_vehicle, t_vehicle};
 }

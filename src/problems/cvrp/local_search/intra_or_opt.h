@@ -1,5 +1,5 @@
-#ifndef CVRP_OR_OPT_H
-#define CVRP_OR_OPT_H
+#ifndef CVRP_INNER_OR_OPT_H
+#define CVRP_INNER_OR_OPT_H
 
 /*
 
@@ -12,24 +12,22 @@ All rights reserved (see LICENSE).
 
 #include "problems/ls_operator.h"
 
-class cvrp_or_opt : public ls_operator {
+class cvrp_intra_or_opt : public ls_operator {
 protected:
+  virtual void compute_gain() override;
+
   gain_t normal_stored_gain;
   gain_t reversed_stored_gain;
 
   bool reverse_s_edge;
 
-  virtual void compute_gain() override;
-
 public:
-  cvrp_or_opt(const input& input,
-              const solution_state& sol_state,
-              std::vector<index_t>& s_route,
-              index_t s_vehicle,
-              index_t s_rank,
-              std::vector<index_t>& t_route,
-              index_t t_vehicle,
-              index_t t_rank);
+  cvrp_intra_or_opt(const input& input,
+                    const solution_state& sol_state,
+                    std::vector<index_t>& s_route,
+                    index_t s_vehicle,
+                    index_t s_rank,
+                    index_t t_rank); // rank *after* removal.
 
   virtual bool is_valid() override;
 

@@ -90,7 +90,7 @@ bool vrptw_mixed_exchange::is_valid() {
   return valid;
 }
 
-void vrptw_mixed_exchange::apply() const {
+void vrptw_mixed_exchange::apply() {
   std::vector<index_t> s_job_ranks({s_route[s_rank]});
   std::vector<index_t> t_job_ranks;
   if (!reverse_t_edge) {

@@ -29,7 +29,7 @@ vrptw_reverse_two_opt::vrptw_reverse_two_opt(const input& input,
     _tw_sol(tw_sol) {
 }
 
-bool vrptw_reverse_two_opt::is_valid() const {
+bool vrptw_reverse_two_opt::is_valid() {
   return cvrp_reverse_two_opt::is_valid() and
          _tw_sol[t_vehicle].is_valid_addition_for_tw(_input,
                                                      s_route.rbegin(),
@@ -47,7 +47,7 @@ bool vrptw_reverse_two_opt::is_valid() const {
                                                      s_route.size());
 }
 
-void vrptw_reverse_two_opt::apply() const {
+void vrptw_reverse_two_opt::apply() {
   std::vector<index_t> t_job_ranks;
   t_job_ranks.insert(t_job_ranks.begin(),
                      t_route.rbegin() + t_route.size() - 1 - t_rank,

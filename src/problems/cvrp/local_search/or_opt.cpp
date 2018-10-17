@@ -43,8 +43,8 @@ void cvrp_or_opt::compute_gain() {
   // For target vehicle, we consider the cost of adding source edge at
   // rank t_rank. reverse_* checks whether we should change the
   // source edge order.
-  index_t c_index = _input._jobs[s_route[s_rank]].index();
-  index_t after_c_index = _input._jobs[s_route[s_rank + 1]].index();
+  index_t s_index = _input._jobs[s_route[s_rank]].index();
+  index_t after_s_index = _input._jobs[s_route[s_rank + 1]].index();
 
   gain_t previous_cost = 0;
   gain_t next_cost = 0;
@@ -56,42 +56,42 @@ void cvrp_or_opt::compute_gain() {
     if (t_route.size() == 0) {
       // Adding edge to an empty route.
       if (v_target.has_start()) {
-        previous_cost = m[v_target.start.get().index()][c_index];
-        reverse_previous_cost = m[v_target.start.get().index()][after_c_index];
+        previous_cost = m[v_target.start.get().index()][s_index];
+        reverse_previous_cost = m[v_target.start.get().index()][after_s_index];
       }
       if (v_target.has_end()) {
-        next_cost = m[after_c_index][v_target.end.get().index()];
-        reverse_next_cost = m[c_index][v_target.end.get().index()];
+        next_cost = m[after_s_index][v_target.end.get().index()];
+        reverse_next_cost = m[s_index][v_target.end.get().index()];
       }
     } else {
       // Adding edge past the end after a real job.
       auto p_index = _input._jobs[t_route[t_rank - 1]].index();
-      previous_cost = m[p_index][c_index];
-      reverse_previous_cost = m[p_index][after_c_index];
+      previous_cost = m[p_index][s_index];
+      reverse_previous_cost = m[p_index][after_s_index];
       if (v_target.has_end()) {
         auto n_index = v_target.end.get().index();
         old_edge_cost = m[p_index][n_index];
-        next_cost = m[after_c_index][n_index];
-        reverse_next_cost = m[c_index][n_index];
+        next_cost = m[after_s_index][n_index];
+        reverse_next_cost = m[s_index][n_index];
       }
     }
   } else {
     // Adding before one of the jobs.
     auto n_index = _input._jobs[t_route[t_rank]].index();
-    next_cost = m[after_c_index][n_index];
-    reverse_next_cost = m[c_index][n_index];
+    next_cost = m[after_s_index][n_index];
+    reverse_next_cost = m[s_index][n_index];
 
     if (t_rank == 0) {
       if (v_target.has_start()) {
         auto p_index = v_target.start.get().index();
-        previous_cost = m[p_index][c_index];
-        reverse_previous_cost = m[p_index][after_c_index];
+        previous_cost = m[p_index][s_index];
+        reverse_previous_cost = m[p_index][after_s_index];
         old_edge_cost = m[p_index][n_index];
       }
     } else {
       auto p_index = _input._jobs[t_route[t_rank - 1]].index();
-      previous_cost = m[p_index][c_index];
-      reverse_previous_cost = m[p_index][after_c_index];
+      previous_cost = m[p_index][s_index];
+      reverse_previous_cost = m[p_index][after_s_index];
       old_edge_cost = m[p_index][n_index];
     }
   }
@@ -99,8 +99,8 @@ void cvrp_or_opt::compute_gain() {
   // Gain for target vehicle.
   gain_t t_gain = old_edge_cost - previous_cost - next_cost;
 
-  gain_t reverse_edge_cost = static_cast<gain_t>(m[c_index][after_c_index]) -
-                             static_cast<gain_t>(m[after_c_index][c_index]);
+  gain_t reverse_edge_cost = static_cast<gain_t>(m[s_index][after_s_index]) -
+                             static_cast<gain_t>(m[after_s_index][s_index]);
   gain_t reverse_t_gain = old_edge_cost + reverse_edge_cost -
                           reverse_previous_cost - reverse_next_cost;
 
@@ -118,7 +118,7 @@ void cvrp_or_opt::compute_gain() {
   gain_computed = true;
 }
 
-bool cvrp_or_opt::is_valid() const {
+bool cvrp_or_opt::is_valid() {
   auto current_job_rank = s_route[s_rank];
   // Already asserted in compute_gain.
   auto after_job_rank = s_route[s_rank + 1];
@@ -140,7 +140,7 @@ bool cvrp_or_opt::is_valid() const {
   return valid;
 }
 
-void cvrp_or_opt::apply() const {
+void cvrp_or_opt::apply() {
   t_route.insert(t_route.begin() + t_rank,
                  s_route.begin() + s_rank,
                  s_route.begin() + s_rank + 2);
@@ -153,4 +153,8 @@ void cvrp_or_opt::apply() const {
 
 std::vector<index_t> cvrp_or_opt::addition_candidates() const {
   return {s_vehicle};
+}
+
+std::vector<index_t> cvrp_or_opt::update_candidates() const {
+  return {s_vehicle, t_vehicle};
 }

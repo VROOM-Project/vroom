@@ -27,14 +27,15 @@ vrptw_relocate::vrptw_relocate(const input& input,
     _tw_sol(tw_sol) {
 }
 
-bool vrptw_relocate::is_valid() const {
+bool vrptw_relocate::is_valid() {
   return cvrp_relocate::is_valid() and
          _tw_sol[t_vehicle].is_valid_addition_for_tw(_input,
                                                      s_route[s_rank],
-                                                     t_rank);
+                                                     t_rank) and
+         _tw_sol[s_vehicle].is_valid_removal(_input, s_rank, 1);
 }
 
-void vrptw_relocate::apply() const {
+void vrptw_relocate::apply() {
   auto relocate_job_rank = s_route[s_rank];
 
   _tw_sol[s_vehicle].remove(_input, s_rank, 1);

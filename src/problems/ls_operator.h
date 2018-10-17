@@ -45,11 +45,13 @@ public:
 
   virtual gain_t gain();
 
-  virtual bool is_valid() const = 0;
+  virtual bool is_valid() = 0;
 
-  virtual void apply() const = 0;
+  virtual void apply() = 0;
 
   virtual std::vector<index_t> addition_candidates() const = 0;
+
+  virtual std::vector<index_t> update_candidates() const = 0;
 
   virtual ~ls_operator() {
   }

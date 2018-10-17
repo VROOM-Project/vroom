@@ -34,7 +34,7 @@ cvrp_relocate::cvrp_relocate(const input& input,
 
 void cvrp_relocate::compute_gain() {
   const auto& m = _input.get_matrix();
-  const auto& v_target = _input._vehicles[t_vehicle];
+  const auto& v = _input._vehicles[t_vehicle];
 
   // For source vehicle, we consider the cost of removing job at rank
   // s_rank, already stored in
@@ -43,13 +43,13 @@ void cvrp_relocate::compute_gain() {
   // For target vehicle, we consider the cost of adding source job at
   // rank t_rank.
   gain_t t_gain =
-    -addition_cost(_input, m, s_route[s_rank], v_target, t_route, t_rank);
+    -addition_cost(_input, m, s_route[s_rank], v, t_route, t_rank);
 
   stored_gain = _sol_state.node_gains[s_vehicle][s_rank] + t_gain;
   gain_computed = true;
 }
 
-bool cvrp_relocate::is_valid() const {
+bool cvrp_relocate::is_valid() {
   auto relocate_job_rank = s_route[s_rank];
 
   bool valid = _input.vehicle_ok_with_job(t_vehicle, relocate_job_rank);
@@ -66,7 +66,7 @@ bool cvrp_relocate::is_valid() const {
   return valid;
 }
 
-void cvrp_relocate::apply() const {
+void cvrp_relocate::apply() {
   auto relocate_job_rank = s_route[s_rank];
   s_route.erase(s_route.begin() + s_rank);
   t_route.insert(t_route.begin() + t_rank, relocate_job_rank);
@@ -74,4 +74,8 @@ void cvrp_relocate::apply() const {
 
 std::vector<index_t> cvrp_relocate::addition_candidates() const {
   return {s_vehicle};
+}
+
+std::vector<index_t> cvrp_relocate::update_candidates() const {
+  return {s_vehicle, t_vehicle};
 }
