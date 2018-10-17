@@ -88,11 +88,11 @@ void cvrp_inner_exchange::compute_gain() {
   gain_computed = true;
 }
 
-bool cvrp_inner_exchange::is_valid() const {
+bool cvrp_inner_exchange::is_valid() {
   return true;
 }
 
-void cvrp_inner_exchange::apply() const {
+void cvrp_inner_exchange::apply() {
   std::swap(s_route[s_rank], t_route[t_rank]);
 }
 

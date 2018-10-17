@@ -125,11 +125,11 @@ void cvrp_inner_mixed_exchange::compute_gain() {
   gain_computed = true;
 }
 
-bool cvrp_inner_mixed_exchange::is_valid() const {
+bool cvrp_inner_mixed_exchange::is_valid() {
   return true;
 }
 
-void cvrp_inner_mixed_exchange::apply() const {
+void cvrp_inner_mixed_exchange::apply() {
   if (reverse_t_edge) {
     std::swap(s_route[t_rank], s_route[t_rank + 1]);
   }

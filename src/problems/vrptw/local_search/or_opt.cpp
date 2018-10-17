@@ -76,7 +76,7 @@ bool vrptw_or_opt::is_valid() {
   return valid and (_is_normal_valid or _is_reverse_valid);
 }
 
-void vrptw_or_opt::apply() const {
+void vrptw_or_opt::apply() {
   if (reverse_s_edge) {
     auto s_reverse_start = s_route.rbegin() + s_route.size() - 2 - s_rank;
     _tw_sol[t_vehicle].replace(_input,

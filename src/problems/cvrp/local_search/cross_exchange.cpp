@@ -144,7 +144,7 @@ void cvrp_cross_exchange::compute_gain() {
   gain_computed = true;
 }
 
-bool cvrp_cross_exchange::is_valid() const {
+bool cvrp_cross_exchange::is_valid() {
   auto s_current_job_rank = s_route[s_rank];
   auto t_current_job_rank = t_route[t_rank];
   // Already asserted in compute_gain.
@@ -173,7 +173,7 @@ bool cvrp_cross_exchange::is_valid() const {
   return valid;
 }
 
-void cvrp_cross_exchange::apply() const {
+void cvrp_cross_exchange::apply() {
   std::swap(s_route[s_rank], t_route[t_rank]);
   std::swap(s_route[s_rank + 1], t_route[t_rank + 1]);
 

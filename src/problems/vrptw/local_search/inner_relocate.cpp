@@ -25,7 +25,7 @@ vrptw_inner_relocate::vrptw_inner_relocate(const input& input,
     _rank_distance((s_rank < t_rank) ? t_rank - s_rank : s_rank - t_rank) {
 }
 
-bool vrptw_inner_relocate::is_valid() const {
+bool vrptw_inner_relocate::is_valid() {
   std::vector<index_t> job_ranks(_rank_distance + 1);
   index_t first_rank;
   index_t last_rank;
@@ -56,7 +56,7 @@ bool vrptw_inner_relocate::is_valid() const {
          _tw_sol[s_vehicle].is_valid_removal(_input, s_rank, 1);
 }
 
-void vrptw_inner_relocate::apply() const {
+void vrptw_inner_relocate::apply() {
   auto relocate_job_rank = s_route[s_rank];
 
   _tw_sol[s_vehicle].remove(_input, s_rank, 1);

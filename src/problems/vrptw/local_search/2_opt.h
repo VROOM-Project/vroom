@@ -28,9 +28,9 @@ public:
                 index_t t_vehicle,
                 index_t t_rank);
 
-  virtual bool is_valid() const;
+  virtual bool is_valid() override;
 
-  virtual void apply() const override;
+  virtual void apply() override;
 };
 
 #endif

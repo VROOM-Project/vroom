@@ -118,7 +118,7 @@ void cvrp_or_opt::compute_gain() {
   gain_computed = true;
 }
 
-bool cvrp_or_opt::is_valid() const {
+bool cvrp_or_opt::is_valid() {
   auto current_job_rank = s_route[s_rank];
   // Already asserted in compute_gain.
   auto after_job_rank = s_route[s_rank + 1];
@@ -140,7 +140,7 @@ bool cvrp_or_opt::is_valid() const {
   return valid;
 }
 
-void cvrp_or_opt::apply() const {
+void cvrp_or_opt::apply() {
   t_route.insert(t_route.begin() + t_rank,
                  s_route.begin() + s_rank,
                  s_route.begin() + s_rank + 2);

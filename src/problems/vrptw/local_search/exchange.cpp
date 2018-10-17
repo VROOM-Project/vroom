@@ -27,7 +27,7 @@ vrptw_exchange::vrptw_exchange(const input& input,
     _tw_sol(tw_sol) {
 }
 
-bool vrptw_exchange::is_valid() const {
+bool vrptw_exchange::is_valid() {
   bool valid = cvrp_exchange::is_valid();
   valid &=
     _tw_sol[t_vehicle].is_valid_addition_for_tw(_input,
@@ -44,7 +44,7 @@ bool vrptw_exchange::is_valid() const {
   return valid;
 }
 
-void vrptw_exchange::apply() const {
+void vrptw_exchange::apply() {
   std::vector<index_t> t_job_ranks(1, t_route[t_rank]);
 
   _tw_sol[t_vehicle].replace(_input,

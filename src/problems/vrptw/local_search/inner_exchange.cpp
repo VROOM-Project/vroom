@@ -24,7 +24,7 @@ vrptw_inner_exchange::vrptw_inner_exchange(const input& input,
     _tw_sol(tw_sol) {
 }
 
-bool vrptw_inner_exchange::is_valid() const {
+bool vrptw_inner_exchange::is_valid() {
   std::vector<index_t> job_ranks(t_rank - s_rank + 1);
 
   std::copy(s_route.begin() + s_rank,
@@ -39,7 +39,7 @@ bool vrptw_inner_exchange::is_valid() const {
                                                      t_rank + 1);
 }
 
-void vrptw_inner_exchange::apply() const {
+void vrptw_inner_exchange::apply() {
   index_t s_job_rank = s_route[s_rank];
   std::vector<index_t> t_job_ranks(1, s_route[t_rank]);
 

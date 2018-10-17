@@ -112,7 +112,7 @@ bool vrptw_inner_mixed_exchange::is_valid() {
   return _s_is_normal_valid or _s_is_reverse_valid;
 }
 
-void vrptw_inner_mixed_exchange::apply() const {
+void vrptw_inner_mixed_exchange::apply() {
   unsigned validity_test_size =
     (s_rank < t_rank) ? t_rank - s_rank + 2 : s_rank - t_rank + 1;
 

@@ -108,11 +108,11 @@ void cvrp_inner_or_opt::compute_gain() {
   gain_computed = true;
 }
 
-bool cvrp_inner_or_opt::is_valid() const {
+bool cvrp_inner_or_opt::is_valid() {
   return true;
 }
 
-void cvrp_inner_or_opt::apply() const {
+void cvrp_inner_or_opt::apply() {
   auto first_job_rank = s_route[s_rank];
   auto second_job_rank = s_route[s_rank + 1];
   s_route.erase(s_route.begin() + s_rank, s_route.begin() + s_rank + 2);

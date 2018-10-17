@@ -124,11 +124,11 @@ void cvrp_inner_cross_exchange::compute_gain() {
   gain_computed = true;
 }
 
-bool cvrp_inner_cross_exchange::is_valid() const {
+bool cvrp_inner_cross_exchange::is_valid() {
   return true;
 }
 
-void cvrp_inner_cross_exchange::apply() const {
+void cvrp_inner_cross_exchange::apply() {
   std::swap(s_route[s_rank], s_route[t_rank]);
   std::swap(s_route[s_rank + 1], s_route[t_rank + 1]);
 

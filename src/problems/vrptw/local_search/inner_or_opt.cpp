@@ -105,7 +105,7 @@ bool vrptw_inner_or_opt::is_valid() {
   return _is_normal_valid or _is_reverse_valid;
 }
 
-void vrptw_inner_or_opt::apply() const {
+void vrptw_inner_or_opt::apply() {
   std::vector<index_t> job_ranks({s_route[s_rank], s_route[s_rank + 1]});
   if (reverse_s_edge) {
     std::swap(job_ranks[0], job_ranks[1]);

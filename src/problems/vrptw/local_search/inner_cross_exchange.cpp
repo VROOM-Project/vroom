@@ -115,7 +115,7 @@ bool vrptw_inner_cross_exchange::is_valid() {
          _s_reverse_t_reverse_is_valid or _s_reverse_t_normal_is_valid;
 }
 
-void vrptw_inner_cross_exchange::apply() const {
+void vrptw_inner_cross_exchange::apply() {
   std::vector<index_t> job_ranks(t_rank - s_rank + 2);
   job_ranks[0] = s_route[t_rank];
   job_ranks[1] = s_route[t_rank + 1];

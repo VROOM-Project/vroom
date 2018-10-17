@@ -105,7 +105,7 @@ void cvrp_exchange::compute_gain() {
   gain_computed = true;
 }
 
-bool cvrp_exchange::is_valid() const {
+bool cvrp_exchange::is_valid() {
   auto s_job_rank = s_route[s_rank];
   auto t_job_rank = t_route[t_rank];
 
@@ -125,7 +125,7 @@ bool cvrp_exchange::is_valid() const {
   return valid;
 }
 
-void cvrp_exchange::apply() const {
+void cvrp_exchange::apply() {
   std::swap(s_route[s_rank], t_route[t_rank]);
 }
 

@@ -49,7 +49,7 @@ void cvrp_relocate::compute_gain() {
   gain_computed = true;
 }
 
-bool cvrp_relocate::is_valid() const {
+bool cvrp_relocate::is_valid() {
   auto relocate_job_rank = s_route[s_rank];
 
   bool valid = _input.vehicle_ok_with_job(t_vehicle, relocate_job_rank);
@@ -66,7 +66,7 @@ bool cvrp_relocate::is_valid() const {
   return valid;
 }
 
-void cvrp_relocate::apply() const {
+void cvrp_relocate::apply() {
   auto relocate_job_rank = s_route[s_rank];
   s_route.erase(s_route.begin() + s_rank);
   t_route.insert(t_route.begin() + t_rank, relocate_job_rank);

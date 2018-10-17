@@ -123,7 +123,7 @@ void cvrp_reverse_two_opt::compute_gain() {
   gain_computed = true;
 }
 
-bool cvrp_reverse_two_opt::is_valid() const {
+bool cvrp_reverse_two_opt::is_valid() {
   bool valid = (_sol_state.bwd_skill_rank[s_vehicle][t_vehicle] <= s_rank + 1);
 
   valid &= (t_rank < _sol_state.fwd_skill_rank[t_vehicle][s_vehicle]);
@@ -138,7 +138,7 @@ bool cvrp_reverse_two_opt::is_valid() const {
   return valid;
 }
 
-void cvrp_reverse_two_opt::apply() const {
+void cvrp_reverse_two_opt::apply() {
   auto nb_source = s_route.size() - 1 - s_rank;
 
   t_route.insert(t_route.begin(),

@@ -34,9 +34,9 @@ public:
                              index_t s_rank,
                              index_t t_rank);
 
-  virtual bool is_valid();
+  virtual bool is_valid() override;
 
-  virtual void apply() const override;
+  virtual void apply() override;
 };
 
 #endif

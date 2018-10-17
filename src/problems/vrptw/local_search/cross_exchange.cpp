@@ -127,7 +127,7 @@ bool vrptw_cross_exchange::is_valid() {
   return valid;
 }
 
-void vrptw_cross_exchange::apply() const {
+void vrptw_cross_exchange::apply() {
   std::vector<index_t> t_job_ranks;
   if (!reverse_t_edge) {
     auto t_start = t_route.begin() + t_rank;
