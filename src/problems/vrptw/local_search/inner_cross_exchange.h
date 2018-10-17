@@ -24,6 +24,10 @@ private:
   bool _s_reverse_t_reverse_is_valid;
   bool _s_reverse_t_normal_is_valid;
 
+  std::vector<index_t> _moved_jobs;
+  const index_t _first_rank;
+  const index_t _last_rank;
+
   virtual void compute_gain() override;
 
 public:

@@ -19,7 +19,9 @@ class vrptw_inner_relocate : public cvrp_inner_relocate {
 private:
   tw_solution& _tw_sol;
 
-  const unsigned _rank_distance;
+  std::vector<index_t> _moved_jobs;
+  const index_t _first_rank;
+  const index_t _last_rank;
 
 public:
   vrptw_inner_relocate(const input& input,

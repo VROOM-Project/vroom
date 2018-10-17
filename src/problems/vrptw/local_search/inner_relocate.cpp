@@ -22,43 +22,34 @@ vrptw_inner_relocate::vrptw_inner_relocate(const input& input,
                         s_rank,
                         t_rank),
     _tw_sol(tw_sol),
-    _rank_distance((s_rank < t_rank) ? t_rank - s_rank : s_rank - t_rank) {
-}
-
-bool vrptw_inner_relocate::is_valid() {
-  std::vector<index_t> job_ranks(_rank_distance + 1);
-  index_t first_rank;
-  index_t last_rank;
-
+    _moved_jobs((s_rank < t_rank) ? t_rank - s_rank + 1 : s_rank - t_rank + 1),
+    _first_rank(std::min(s_rank, t_rank)),
+    _last_rank(std::max(s_rank, t_rank) + 1) {
   if (t_rank < s_rank) {
-    job_ranks[0] = s_route[s_rank];
+    _moved_jobs[0] = s_route[s_rank];
     std::copy(s_route.begin() + t_rank,
               s_route.begin() + s_rank,
-              job_ranks.begin() + 1);
-
-    first_rank = t_rank;
-    last_rank = s_rank + 1;
+              _moved_jobs.begin() + 1);
   } else {
     std::copy(s_route.begin() + s_rank + 1,
               s_route.begin() + t_rank + 1,
-              job_ranks.begin());
-    job_ranks.back() = s_route[s_rank];
-
-    first_rank = s_rank;
-    last_rank = t_rank + 1;
+              _moved_jobs.begin());
+    _moved_jobs.back() = s_route[s_rank];
   }
+}
 
+bool vrptw_inner_relocate::is_valid() {
   return _tw_sol[s_vehicle].is_valid_addition_for_tw(_input,
-                                                     job_ranks.begin(),
-                                                     job_ranks.end(),
-                                                     first_rank,
-                                                     last_rank) and
-         _tw_sol[s_vehicle].is_valid_removal(_input, s_rank, 1);
+                                                     _moved_jobs.begin(),
+                                                     _moved_jobs.end(),
+                                                     _first_rank,
+                                                     _last_rank);
 }
 
 void vrptw_inner_relocate::apply() {
-  auto relocate_job_rank = s_route[s_rank];
-
-  _tw_sol[s_vehicle].remove(_input, s_rank, 1);
-  _tw_sol[s_vehicle].add(_input, relocate_job_rank, t_rank);
+  _tw_sol[s_vehicle].replace(_input,
+                             _moved_jobs.begin(),
+                             _moved_jobs.end(),
+                             _first_rank,
+                             _last_rank);
 }

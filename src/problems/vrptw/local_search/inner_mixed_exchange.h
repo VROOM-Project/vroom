@@ -22,6 +22,12 @@ private:
   bool _s_is_normal_valid;
   bool _s_is_reverse_valid;
 
+  std::vector<index_t> _moved_jobs;
+  const index_t _first_rank;
+  const index_t _last_rank;
+  index_t _t_edge_first;
+  index_t _t_edge_last;
+
   virtual void compute_gain() override;
 
 public:

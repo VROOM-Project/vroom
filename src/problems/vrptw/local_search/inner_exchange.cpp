@@ -21,35 +21,28 @@ vrptw_inner_exchange::vrptw_inner_exchange(const input& input,
                         s_vehicle,
                         s_rank,
                         t_rank),
-    _tw_sol(tw_sol) {
+    _tw_sol(tw_sol),
+    _moved_jobs(t_rank - s_rank + 1),
+    _first_rank(s_rank),
+    _last_rank(t_rank + 1) {
+  std::copy(s_route.begin() + s_rank,
+            s_route.begin() + t_rank + 1,
+            _moved_jobs.begin());
+  std::swap(_moved_jobs[0], _moved_jobs.back());
 }
 
 bool vrptw_inner_exchange::is_valid() {
-  std::vector<index_t> job_ranks(t_rank - s_rank + 1);
-
-  std::copy(s_route.begin() + s_rank,
-            s_route.begin() + t_rank + 1,
-            job_ranks.begin());
-  std::swap(job_ranks[0], job_ranks.back());
-
   return _tw_sol[s_vehicle].is_valid_addition_for_tw(_input,
-                                                     job_ranks.begin(),
-                                                     job_ranks.end(),
-                                                     s_rank,
-                                                     t_rank + 1);
+                                                     _moved_jobs.begin(),
+                                                     _moved_jobs.end(),
+                                                     _first_rank,
+                                                     _last_rank);
 }
 
 void vrptw_inner_exchange::apply() {
-  index_t s_job_rank = s_route[s_rank];
-  std::vector<index_t> t_job_ranks(1, s_route[t_rank]);
-
-  _tw_sol[s_vehicle].remove(_input, t_rank, 1);
-
   _tw_sol[s_vehicle].replace(_input,
-                             t_job_ranks.begin(),
-                             t_job_ranks.end(),
-                             s_rank,
-                             s_rank + 1);
-
-  _tw_sol[s_vehicle].add(_input, s_job_rank, t_rank);
+                             _moved_jobs.begin(),
+                             _moved_jobs.end(),
+                             _first_rank,
+                             _last_rank);
 }

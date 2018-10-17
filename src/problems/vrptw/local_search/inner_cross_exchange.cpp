@@ -26,7 +26,17 @@ vrptw_inner_cross_exchange::vrptw_inner_cross_exchange(
     _s_normal_t_normal_is_valid(false),
     _s_normal_t_reverse_is_valid(false),
     _s_reverse_t_reverse_is_valid(false),
-    _s_reverse_t_normal_is_valid(false) {
+    _s_reverse_t_normal_is_valid(false),
+    _moved_jobs(t_rank - s_rank + 2),
+    _first_rank(s_rank),
+    _last_rank(t_rank + 2) {
+  _moved_jobs[0] = s_route[t_rank];
+  _moved_jobs[1] = s_route[t_rank + 1];
+  std::copy(s_route.begin() + s_rank + 2,
+            s_route.begin() + t_rank,
+            _moved_jobs.begin() + 2);
+  _moved_jobs[_moved_jobs.size() - 2] = s_route[s_rank];
+  _moved_jobs[_moved_jobs.size() - 1] = s_route[s_rank + 1];
 }
 
 void vrptw_inner_cross_exchange::compute_gain() {
@@ -74,67 +84,58 @@ void vrptw_inner_cross_exchange::compute_gain() {
 }
 
 bool vrptw_inner_cross_exchange::is_valid() {
-  std::vector<index_t> job_ranks(t_rank - s_rank + 2);
-  job_ranks[0] = s_route[t_rank];
-  job_ranks[1] = s_route[t_rank + 1];
-  std::copy(s_route.begin() + s_rank + 2,
-            s_route.begin() + t_rank,
-            job_ranks.begin() + 2);
-  job_ranks[job_ranks.size() - 2] = s_route[s_rank];
-  job_ranks[job_ranks.size() - 1] = s_route[s_rank + 1];
-
   _s_normal_t_normal_is_valid =
     _tw_sol[s_vehicle].is_valid_addition_for_tw(_input,
-                                                job_ranks.begin(),
-                                                job_ranks.end(),
-                                                s_rank,
-                                                t_rank + 2);
-  std::swap(job_ranks[0], job_ranks[1]);
+                                                _moved_jobs.begin(),
+                                                _moved_jobs.end(),
+                                                _first_rank,
+                                                _last_rank);
+
+  std::swap(_moved_jobs[0], _moved_jobs[1]);
   _s_normal_t_reverse_is_valid =
     _tw_sol[s_vehicle].is_valid_addition_for_tw(_input,
-                                                job_ranks.begin(),
-                                                job_ranks.end(),
-                                                s_rank,
-                                                t_rank + 2);
-  std::swap(job_ranks[job_ranks.size() - 2], job_ranks[job_ranks.size() - 1]);
+                                                _moved_jobs.begin(),
+                                                _moved_jobs.end(),
+                                                _first_rank,
+                                                _last_rank);
+
+  std::swap(_moved_jobs[_moved_jobs.size() - 2],
+            _moved_jobs[_moved_jobs.size() - 1]);
   _s_reverse_t_reverse_is_valid =
     _tw_sol[s_vehicle].is_valid_addition_for_tw(_input,
-                                                job_ranks.begin(),
-                                                job_ranks.end(),
-                                                s_rank,
-                                                t_rank + 2);
-  std::swap(job_ranks[0], job_ranks[1]);
+                                                _moved_jobs.begin(),
+                                                _moved_jobs.end(),
+                                                _first_rank,
+                                                _last_rank);
+
+  std::swap(_moved_jobs[0], _moved_jobs[1]);
   _s_reverse_t_normal_is_valid =
     _tw_sol[s_vehicle].is_valid_addition_for_tw(_input,
-                                                job_ranks.begin(),
-                                                job_ranks.end(),
-                                                s_rank,
-                                                t_rank + 2);
+                                                _moved_jobs.begin(),
+                                                _moved_jobs.end(),
+                                                _first_rank,
+                                                _last_rank);
+
+  // Reset to initial situation before potential application.
+  std::swap(_moved_jobs[_moved_jobs.size() - 2],
+            _moved_jobs[_moved_jobs.size() - 1]);
 
   return _s_normal_t_normal_is_valid or _s_normal_t_reverse_is_valid or
          _s_reverse_t_reverse_is_valid or _s_reverse_t_normal_is_valid;
 }
 
 void vrptw_inner_cross_exchange::apply() {
-  std::vector<index_t> job_ranks(t_rank - s_rank + 2);
-  job_ranks[0] = s_route[t_rank];
-  job_ranks[1] = s_route[t_rank + 1];
-  std::copy(s_route.begin() + s_rank + 2,
-            s_route.begin() + t_rank,
-            job_ranks.begin() + 2);
-  job_ranks[job_ranks.size() - 2] = s_route[s_rank];
-  job_ranks[job_ranks.size() - 1] = s_route[s_rank + 1];
-
   if (reverse_t_edge) {
-    std::swap(job_ranks[0], job_ranks[1]);
+    std::swap(_moved_jobs[0], _moved_jobs[1]);
   }
   if (reverse_s_edge) {
-    std::swap(job_ranks[job_ranks.size() - 2], job_ranks[job_ranks.size() - 1]);
+    std::swap(_moved_jobs[_moved_jobs.size() - 2],
+              _moved_jobs[_moved_jobs.size() - 1]);
   }
 
   _tw_sol[s_vehicle].replace(_input,
-                             job_ranks.begin(),
-                             job_ranks.end(),
-                             s_rank,
-                             t_rank + 2);
+                             _moved_jobs.begin(),
+                             _moved_jobs.end(),
+                             _first_rank,
+                             _last_rank);
 }

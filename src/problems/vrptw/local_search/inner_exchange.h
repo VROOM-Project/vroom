@@ -19,6 +19,10 @@ class vrptw_inner_exchange : public cvrp_inner_exchange {
 private:
   tw_solution& _tw_sol;
 
+  std::vector<index_t> _moved_jobs;
+  const index_t _first_rank;
+  const index_t _last_rank;
+
 public:
   vrptw_inner_exchange(const input& input,
                        const solution_state& sol_state,

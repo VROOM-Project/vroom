@@ -24,7 +24,32 @@ vrptw_inner_mixed_exchange::vrptw_inner_mixed_exchange(
                               t_rank),
     _tw_sol(tw_sol),
     _s_is_normal_valid(false),
-    _s_is_reverse_valid(false) {
+    _s_is_reverse_valid(false),
+    _moved_jobs((s_rank < t_rank) ? t_rank - s_rank + 2 : s_rank - t_rank + 1),
+    _first_rank(std::min(s_rank, t_rank)),
+    _last_rank((t_rank < s_rank) ? s_rank + 1 : t_rank + 2) {
+  index_t s_node;
+  if (t_rank < s_rank) {
+    s_node = 0;
+    _t_edge_first = _moved_jobs.size() - 2;
+    _t_edge_last = _moved_jobs.size() - 1;
+
+    std::copy(s_route.begin() + t_rank + 2,
+              s_route.begin() + s_rank,
+              _moved_jobs.begin() + 1);
+  } else {
+    _t_edge_first = 0;
+    _t_edge_last = 1;
+    s_node = _moved_jobs.size() - 1;
+
+    std::copy(s_route.begin() + s_rank + 1,
+              s_route.begin() + t_rank,
+              _moved_jobs.begin() + 2);
+  }
+
+  _moved_jobs[s_node] = s_route[s_rank];
+  _moved_jobs[_t_edge_first] = s_route[t_rank];
+  _moved_jobs[_t_edge_last] = s_route[t_rank + 1];
 }
 
 void vrptw_inner_mixed_exchange::compute_gain() {
@@ -56,108 +81,36 @@ void vrptw_inner_mixed_exchange::compute_gain() {
 }
 
 bool vrptw_inner_mixed_exchange::is_valid() {
-  unsigned validity_test_size =
-    (s_rank < t_rank) ? t_rank - s_rank + 2 : s_rank - t_rank + 1;
-
-  std::vector<index_t> job_ranks(validity_test_size);
-  index_t first_rank;
-  index_t last_rank;
-  index_t t_edge_first;
-  index_t t_edge_last;
-  index_t s_node;
-
-  if (t_rank < s_rank) {
-    s_node = 0;
-    t_edge_first = job_ranks.size() - 2;
-    t_edge_last = job_ranks.size() - 1;
-
-    std::copy(s_route.begin() + t_rank + 2,
-              s_route.begin() + s_rank,
-              job_ranks.begin() + 1);
-
-    first_rank = t_rank;
-    last_rank = s_rank + 1;
-  } else {
-    t_edge_first = 0;
-    t_edge_last = 1;
-    s_node = job_ranks.size() - 1;
-
-    std::copy(s_route.begin() + s_rank + 1,
-              s_route.begin() + t_rank,
-              job_ranks.begin() + 2);
-
-    first_rank = s_rank;
-    last_rank = t_rank + 2;
-  }
-
-  job_ranks[s_node] = s_route[s_rank];
-  job_ranks[t_edge_first] = s_route[t_rank];
-  job_ranks[t_edge_last] = s_route[t_rank + 1];
-
   _s_is_normal_valid =
     _tw_sol[s_vehicle].is_valid_addition_for_tw(_input,
-                                                job_ranks.begin(),
-                                                job_ranks.end(),
-                                                first_rank,
-                                                last_rank);
+                                                _moved_jobs.begin(),
+                                                _moved_jobs.end(),
+                                                _first_rank,
+                                                _last_rank);
 
-  std::swap(job_ranks[t_edge_first], job_ranks[t_edge_last]);
+  std::swap(_moved_jobs[_t_edge_first], _moved_jobs[_t_edge_last]);
+
   _s_is_reverse_valid =
     _tw_sol[s_vehicle].is_valid_addition_for_tw(_input,
-                                                job_ranks.begin(),
-                                                job_ranks.end(),
-                                                first_rank,
-                                                last_rank);
+                                                _moved_jobs.begin(),
+                                                _moved_jobs.end(),
+                                                _first_rank,
+                                                _last_rank);
+
+  // Reset to initial situation before potential application.
+  std::swap(_moved_jobs[_t_edge_first], _moved_jobs[_t_edge_last]);
 
   return _s_is_normal_valid or _s_is_reverse_valid;
 }
 
 void vrptw_inner_mixed_exchange::apply() {
-  unsigned validity_test_size =
-    (s_rank < t_rank) ? t_rank - s_rank + 2 : s_rank - t_rank + 1;
-
-  std::vector<index_t> job_ranks(validity_test_size);
-  index_t first_rank;
-  index_t last_rank;
-  index_t t_edge_first;
-  index_t t_edge_last;
-  index_t s_node;
-
-  if (t_rank < s_rank) {
-    s_node = 0;
-    t_edge_first = job_ranks.size() - 2;
-    t_edge_last = job_ranks.size() - 1;
-
-    std::copy(s_route.begin() + t_rank + 2,
-              s_route.begin() + s_rank,
-              job_ranks.begin() + 1);
-
-    first_rank = t_rank;
-    last_rank = s_rank + 1;
-  } else {
-    t_edge_first = 0;
-    t_edge_last = 1;
-    s_node = job_ranks.size() - 1;
-
-    std::copy(s_route.begin() + s_rank + 1,
-              s_route.begin() + t_rank,
-              job_ranks.begin() + 2);
-
-    first_rank = s_rank;
-    last_rank = t_rank + 2;
-  }
-
-  job_ranks[s_node] = s_route[s_rank];
-  job_ranks[t_edge_first] = s_route[t_rank];
-  job_ranks[t_edge_last] = s_route[t_rank + 1];
-
   if (reverse_t_edge) {
-    std::swap(job_ranks[t_edge_first], job_ranks[t_edge_last]);
+    std::swap(_moved_jobs[_t_edge_first], _moved_jobs[_t_edge_last]);
   }
 
   _tw_sol[s_vehicle].replace(_input,
-                             job_ranks.begin(),
-                             job_ranks.end(),
-                             first_rank,
-                             last_rank);
+                             _moved_jobs.begin(),
+                             _moved_jobs.end(),
+                             _first_rank,
+                             _last_rank);
 }
