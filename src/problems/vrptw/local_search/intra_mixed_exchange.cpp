@@ -114,3 +114,7 @@ void vrptw_intra_mixed_exchange::apply() {
                              _first_rank,
                              _last_rank);
 }
+
+std::vector<index_t> vrptw_intra_mixed_exchange::addition_candidates() const {
+  return {s_vehicle};
+}
