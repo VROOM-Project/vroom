@@ -18,7 +18,7 @@ All rights reserved (see LICENSE).
 
 using tw_solution = std::vector<tw_route>;
 
-constexpr std::array<h_param, 24> vrptw::homogeneous_parameters;
+constexpr std::array<h_param, 32> vrptw::homogeneous_parameters;
 
 vrptw::vrptw(const input& input) : vrp(input) {
 }
