@@ -28,6 +28,12 @@ solution vrptw::solve(unsigned exploration_level, unsigned nb_threads) const {
   unsigned max_nb_jobs_removal = exploration_level;
   // Number of initial solutions to consider.
   auto P = 4 * (exploration_level + 1);
+  if (exploration_level >= 4) {
+    P += 4;
+  }
+  if (exploration_level >= 5) {
+    P += 4;
+  }
   assert(P <= homogeneous_parameters.size());
 
   std::vector<tw_solution> tw_solutions(P);
