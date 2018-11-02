@@ -19,36 +19,40 @@ All rights reserved (see LICENSE).
 using tw_solution = std::vector<tw_route>;
 
 constexpr std::array<h_param, 32> vrptw::homogeneous_parameters;
+constexpr std::array<h_param, 32> vrptw::heterogeneous_parameters;
 
 vrptw::vrptw(const input& input) : vrp(input) {
 }
 
 solution vrptw::solve(unsigned exploration_level, unsigned nb_threads) const {
+  auto parameters = (_input.has_homogeneous_locations())
+                      ? homogeneous_parameters
+                      : heterogeneous_parameters;
+
   // Local search parameter.
   unsigned max_nb_jobs_removal = exploration_level;
-  // Number of initial solutions to consider.
-  auto P = 4 * (exploration_level + 1);
+  auto nb_init_solutions = 4 * (exploration_level + 1);
   if (exploration_level >= 4) {
-    P += 4;
+    nb_init_solutions += 4;
   }
   if (exploration_level >= 5) {
-    P += 4;
+    nb_init_solutions += 4;
   }
-  assert(P <= homogeneous_parameters.size());
+  assert(nb_init_solutions <= parameters.size());
 
-  std::vector<tw_solution> tw_solutions(P);
-  std::vector<solution_indicators> sol_indicators(P);
+  std::vector<tw_solution> tw_solutions(nb_init_solutions);
+  std::vector<solution_indicators> sol_indicators(nb_init_solutions);
 
   // Split the work among threads.
   std::vector<std::vector<std::size_t>>
     thread_ranks(nb_threads, std::vector<std::size_t>());
-  for (std::size_t i = 0; i < P; ++i) {
+  for (std::size_t i = 0; i < nb_init_solutions; ++i) {
     thread_ranks[i % nb_threads].push_back(i);
   }
 
   auto run_solve = [&](const std::vector<std::size_t>& param_ranks) {
     for (auto rank : param_ranks) {
-      auto& p = homogeneous_parameters[rank];
+      auto& p = parameters[rank];
       switch (p.heuristic) {
       case HEURISTIC_T::BASIC:
         tw_solutions[rank] =
