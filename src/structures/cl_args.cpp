@@ -19,5 +19,5 @@ cl_args_t::cl_args_t()
     use_libosrm(false),
     nb_threads(4),
     osrm_profile("car"),
-    exploration_level(1) {
+    exploration_level(5) {
 }

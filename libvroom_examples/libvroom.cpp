@@ -143,7 +143,7 @@ void run_example_with_osrm() {
 
   // Solve!
   try {
-    auto sol = problem_instance.solve(1,  // Exploration level.
+    auto sol = problem_instance.solve(5,  // Exploration level.
                                       4); // Use 4 threads.
 
     log_solution(sol, GEOMETRY);
@@ -221,7 +221,7 @@ void run_example_with_custom_matrix() {
 
   // Solve!
   try {
-    auto sol = problem_instance.solve(1,  // Exploration level.
+    auto sol = problem_instance.solve(5,  // Exploration level.
                                       4); // Use 4 threads.
 
     log_solution(sol, GEOMETRY);

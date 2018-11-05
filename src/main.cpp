@@ -41,7 +41,7 @@ void display_usage() {
   usage += "\t-l,\t\t\t use libosrm rather than osrm-routed\n";
   usage += "\t-o OUTPUT,\t\t output file name\n";
   usage += "\t-t THREADS (=4),\t number of threads to use\n";
-  usage += "\t-x EXPLORE (=1),\t exploration level to use (0..5)";
+  usage += "\t-x EXPLORE (=5),\t exploration level to use (0..5)";
   std::cout << usage << std::endl;
   exit(0);
 }

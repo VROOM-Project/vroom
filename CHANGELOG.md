@@ -18,6 +18,7 @@
 - Speed up CVRP solving by over 65%, then another ~8% on all CVRPLIB instances (#146, #147)
 - New heuristic for CVRP (#153)
 - Take advantage of CVRP speed-up and new heuristic to adjust quality/computing time trade-offs (#167)
+- Default exploration level set to 5 (max value)
 
 ### Fixed
 
