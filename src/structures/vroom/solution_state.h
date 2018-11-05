@@ -132,8 +132,6 @@ public:
 
   void update_route_cost(const raw_route_t& route, index_t v);
 
-  cost_t total_cost() const;
-
   const amount_t& total_amount(index_t v) const;
 };
 

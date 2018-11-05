@@ -38,7 +38,16 @@ vrptw_local_search::vrptw_local_search(const input& input,
   _sol_state.setup(_tw_sol);
 
   _best_unassigned = _sol_state.unassigned.size();
-  _best_cost = _sol_state.total_cost();
+  index_t v_rank = 0;
+  _best_cost =
+    std::accumulate(_tw_sol.begin(),
+                    _tw_sol.end(),
+                    0,
+                    [&](auto sum, auto tw_r) {
+                      return sum + route_cost_for_vehicle(_input,
+                                                          v_rank++,
+                                                          tw_r.route);
+                    });
 }
 
 void vrptw_local_search::try_job_additions(const std::vector<index_t>& routes,
@@ -639,7 +648,17 @@ void vrptw_local_search::run() {
 
     // Remember best known solution.
     auto current_unassigned = _sol_state.unassigned.size();
-    cost_t current_cost = _sol_state.total_cost();
+    index_t v_rank = 0;
+    cost_t current_cost =
+      std::accumulate(_tw_sol.begin(),
+                      _tw_sol.end(),
+                      0,
+                      [&](auto sum, auto tw_r) {
+                        return sum + route_cost_for_vehicle(_input,
+                                                            v_rank++,
+                                                            tw_r.route);
+                      });
+
     bool solution_improved =
       (current_unassigned < _best_unassigned or
        (current_unassigned == _best_unassigned and current_cost < _best_cost));
