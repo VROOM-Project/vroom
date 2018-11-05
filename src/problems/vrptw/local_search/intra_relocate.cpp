@@ -53,3 +53,7 @@ void vrptw_intra_relocate::apply() {
                              _first_rank,
                              _last_rank);
 }
+
+std::vector<index_t> vrptw_intra_relocate::addition_candidates() const {
+  return {s_vehicle};
+}

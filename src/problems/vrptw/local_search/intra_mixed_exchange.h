@@ -41,6 +41,8 @@ public:
   virtual bool is_valid() override;
 
   virtual void apply() override;
+
+  virtual std::vector<index_t> addition_candidates() const override;
 };
 
 #endif

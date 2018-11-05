@@ -46,12 +46,6 @@ vrptw_local_search::vrptw_local_search(const input& input,
   _best_cost = _sol_state.total_cost();
 
   log_current_solution();
-
-  for (std::size_t i = 0; i < _tw_sol.size(); ++i) {
-    if (straighten_route(i)) {
-      _sol_state.setup(_tw_sol[i].route, i);
-    }
-  }
 }
 
 void vrptw_local_search::try_job_additions(const std::vector<index_t>& routes,
@@ -597,10 +591,6 @@ void vrptw_local_search::run_ls_step() {
                                       });
       assert(new_cost + best_gain == previous_cost);
 
-      for (auto v_rank : update_candidates) {
-        straighten_route(v_rank);
-      }
-
       // We need to run update_amounts before try_job_additions to
       // correctly evaluate amounts. No need to run it again after
       // since try_before_additions will subsequently fix amounts upon
@@ -703,10 +693,6 @@ void vrptw_local_search::run() {
       }
       try_job_additions(_all_routes, 1.5);
 
-      for (std::size_t v = 0; v < _tw_sol.size(); ++v) {
-        straighten_route(v);
-      }
-
       // Reset what is needed in solution state.
       _sol_state.setup(_tw_sol);
     }
@@ -802,40 +788,6 @@ void vrptw_local_search::remove_from_routes() {
     _sol_state.unassigned.insert(_tw_sol[v].route[r]);
     _tw_sol[v].remove(_input, r, 1);
   }
-}
-
-bool vrptw_local_search::straighten_route(index_t route_rank) {
-  bool update_route = false;
-  if (_tw_sol[route_rank].route.size() > 0) {
-    auto before_cost = _sol_state.route_costs[route_rank];
-
-    auto new_tw_r = single_route_heuristic(_input, _tw_sol[route_rank], true);
-    auto new_cost = route_cost_for_vehicle(_input, route_rank, new_tw_r.route);
-
-    auto other_tw_r =
-      single_route_heuristic(_input, _tw_sol[route_rank], false);
-    auto other_cost =
-      route_cost_for_vehicle(_input, route_rank, other_tw_r.route);
-
-    if (other_tw_r.route.size() > new_tw_r.route.size() or
-        (other_tw_r.route.size() == new_tw_r.route.size() and
-         other_cost < new_cost)) {
-      new_tw_r = std::move(other_tw_r);
-      new_cost = other_cost;
-    }
-
-    update_route =
-      (new_tw_r.route.size() == _tw_sol[route_rank].route.size() and
-       new_cost < before_cost);
-    if (update_route) {
-      log_current_solution();
-
-      _tw_sol[route_rank] = std::move(new_tw_r);
-      _sol_state.route_costs[route_rank] = new_cost;
-    }
-  }
-
-  return update_route;
 }
 
 solution_indicators vrptw_local_search::indicators() const {

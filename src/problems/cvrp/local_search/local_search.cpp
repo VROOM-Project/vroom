@@ -561,10 +561,6 @@ void cvrp_local_search::run_ls_step() {
 
       assert(new_cost + best_gain == previous_cost);
 
-      for (auto v_rank : update_candidates) {
-        run_tsp(v_rank);
-      }
-
       // We need to run update_amounts before try_job_additions to
       // correctly evaluate amounts. No need to run it again after
       // since try_before_additions will subsequently fix amounts upon
@@ -666,10 +662,6 @@ void cvrp_local_search::run() {
       }
       try_job_additions(_all_routes, 1.5);
 
-      for (std::size_t v = 0; v < _sol.size(); ++v) {
-        run_tsp(v);
-      }
-
       // Reset what is needed in solution state.
       _sol_state.setup(_sol);
     }
@@ -762,22 +754,6 @@ void cvrp_local_search::remove_from_routes() {
     auto r = r_r.second;
     _sol_state.unassigned.insert(_sol[v][r]);
     _sol[v].erase(_sol[v].begin() + r);
-  }
-}
-
-void cvrp_local_search::run_tsp(index_t route_rank) {
-  if (_sol[route_rank].size() > 0) {
-    auto before_cost = _sol_state.route_costs[route_rank];
-
-    tsp p(_input, _sol[route_rank], route_rank);
-    auto new_route = p.raw_solve(0, 1)[0];
-
-    auto after_cost = route_cost_for_vehicle(_input, route_rank, new_route);
-
-    if (after_cost < before_cost) {
-      _sol[route_rank] = std::move(new_route);
-      _sol_state.route_costs[route_rank] = after_cost;
-    }
   }
 }
 

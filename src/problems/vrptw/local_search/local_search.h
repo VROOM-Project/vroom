@@ -34,8 +34,6 @@ private:
   void try_job_additions(const std::vector<index_t>& routes,
                          double regret_coeff);
 
-  bool straighten_route(index_t route_rank);
-
   void run_ls_step();
 
   void remove_from_routes();

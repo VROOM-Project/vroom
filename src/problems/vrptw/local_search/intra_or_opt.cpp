@@ -104,3 +104,7 @@ void vrptw_intra_or_opt::apply() {
                              _first_rank,
                              _last_rank);
 }
+
+std::vector<index_t> vrptw_intra_or_opt::addition_candidates() const {
+  return {s_vehicle};
+}
