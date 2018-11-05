@@ -40,7 +40,9 @@ void solution_state::setup(const raw_route_t& r, index_t v) {
   update_skills(r, v);
   set_node_gains(r, v);
   set_edge_gains(r, v);
+#ifndef NDEBUG
   update_route_cost(r, v);
+#endif
 }
 
 void solution_state::setup(const raw_solution& sol) {

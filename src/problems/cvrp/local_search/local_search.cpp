@@ -136,8 +136,10 @@ void cvrp_local_search::try_job_additions(const std::vector<index_t>& routes,
           total_amount - _sol_state.fwd_amounts[best_route][i];
       }
 
+#ifndef NDEBUG
       // Update cost after addition.
       _sol_state.update_route_cost(_sol[best_route], best_route);
+#endif
 
       _sol_state.unassigned.erase(best_job);
     }
@@ -541,6 +543,7 @@ void cvrp_local_search::run_ls_step() {
       auto update_candidates =
         best_ops[best_source][best_target]->update_candidates();
 
+#ifndef NDEBUG
       // Update route costs.
       auto previous_cost =
         std::accumulate(update_candidates.begin(),
@@ -560,6 +563,7 @@ void cvrp_local_search::run_ls_step() {
                                       });
 
       assert(new_cost + best_gain == previous_cost);
+#endif
 
       // We need to run update_amounts before try_job_additions to
       // correctly evaluate amounts. No need to run it again after

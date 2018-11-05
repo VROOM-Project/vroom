@@ -104,6 +104,7 @@ public:
   // in route v2 that minimize cost to job at rank r1 in v1.
   std::vector<std::vector<std::vector<index_t>>> nearest_job_rank_in_routes_to;
 
+  // Only used for assertions in debug mode.
   std::vector<cost_t> route_costs;
 
   solution_state(const input& input);
