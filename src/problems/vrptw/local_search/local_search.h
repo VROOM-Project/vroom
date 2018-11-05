@@ -25,12 +25,6 @@ private:
 
   static unsigned ls_rank;
 
-  // TODO remove
-  bool log;
-  unsigned log_iter;
-  std::string log_name;
-  void log_current_solution();
-
   void try_job_additions(const std::vector<index_t>& routes,
                          double regret_coeff);
 

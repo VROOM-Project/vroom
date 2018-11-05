@@ -12,8 +12,6 @@ All rights reserved (see LICENSE).
 
 #include <vector>
 
-#include <iostream> // TODO remove
-
 #include "structures/abstract/matrix.h"
 #include "structures/typedefs.h"
 #include "structures/vroom/input/input.h"
@@ -59,8 +57,6 @@ public:
   std::vector<index_t> tw_ranks;
 
   tw_route(const input& input, index_t i);
-
-  void log(const input& input) const;
 
   // Check validity for addition of job at job_rank in current route
   // at rank.

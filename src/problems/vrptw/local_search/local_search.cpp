@@ -26,8 +26,6 @@ All rights reserved (see LICENSE).
 #include "problems/vrptw/local_search/reverse_2_opt.h"
 #include "utils/helpers.h"
 
-#include "utils/output_json.h"
-
 unsigned vrptw_local_search::ls_rank = 0;
 
 vrptw_local_search::vrptw_local_search(const input& input,
@@ -35,17 +33,12 @@ vrptw_local_search::vrptw_local_search(const input& input,
                                        unsigned max_nb_jobs_removal)
   : local_search(input, max_nb_jobs_removal),
     _tw_sol(tw_sol),
-    _best_sol(tw_sol),
-    log(false),
-    log_iter(0),
-    log_name("debug_" + std::to_string(++ls_rank) + "_") {
+    _best_sol(tw_sol) {
   // Setup solution state.
   _sol_state.setup(_tw_sol);
 
   _best_unassigned = _sol_state.unassigned.size();
   _best_cost = _sol_state.total_cost();
-
-  log_current_solution();
 }
 
 void vrptw_local_search::try_job_additions(const std::vector<index_t>& routes,
@@ -156,14 +149,6 @@ void vrptw_local_search::try_job_additions(const std::vector<index_t>& routes,
       _sol_state.unassigned.erase(best_job);
     }
   } while (job_added);
-}
-
-void vrptw_local_search::log_current_solution() {
-  if (log) {
-    write_to_json(format_solution(_input, _tw_sol),
-                  false,
-                  log_name + std::to_string(++log_iter) + "_sol.json");
-  }
 }
 
 void vrptw_local_search::run_ls_step() {
@@ -634,8 +619,6 @@ void vrptw_local_search::run_ls_step() {
           }
         }
       }
-
-      log_current_solution();
     }
   }
 }
