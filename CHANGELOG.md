@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [v1.3.0]
+
 ### Added
 
 - Support for VRPTW (#113)
