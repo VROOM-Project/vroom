@@ -22,7 +22,6 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/local_search/or_opt.h"
 #include "problems/cvrp/local_search/relocate.h"
 #include "problems/cvrp/local_search/reverse_2_opt.h"
-#include "problems/tsp/tsp.h"
 #include "utils/helpers.h"
 
 cvrp_local_search::cvrp_local_search(const input& input,

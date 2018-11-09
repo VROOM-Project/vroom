@@ -23,8 +23,6 @@ private:
   unsigned _best_unassigned;
   cost_t _best_cost;
 
-  static unsigned ls_rank;
-
   void try_job_additions(const std::vector<index_t>& routes,
                          double regret_coeff);
 

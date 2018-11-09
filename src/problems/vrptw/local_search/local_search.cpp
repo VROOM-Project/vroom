@@ -10,7 +10,6 @@ All rights reserved (see LICENSE).
 #include <numeric>
 
 #include "problems/ls_operator.h"
-#include "problems/vrptw/heuristics/solomon.h"
 #include "problems/vrptw/local_search/2_opt.h"
 #include "problems/vrptw/local_search/cross_exchange.h"
 #include "problems/vrptw/local_search/exchange.h"
@@ -25,8 +24,6 @@ All rights reserved (see LICENSE).
 #include "problems/vrptw/local_search/relocate.h"
 #include "problems/vrptw/local_search/reverse_2_opt.h"
 #include "utils/helpers.h"
-
-unsigned vrptw_local_search::ls_rank = 0;
 
 vrptw_local_search::vrptw_local_search(const input& input,
                                        tw_solution& tw_sol,
