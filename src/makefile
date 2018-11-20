@@ -13,6 +13,7 @@ MAIN = ../bin/vroom
 LIB = ../lib/libvroom.a
 SRC = $(wildcard *.cpp)\
 			$(wildcard ./algorithms/*.cpp)\
+			$(wildcard ./algorithms/*/*.cpp)\
 			$(wildcard ./routing/*.cpp)\
 			$(wildcard ./problems/*.cpp)\
 			$(wildcard ./problems/*/*.cpp)\

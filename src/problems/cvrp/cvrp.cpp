@@ -10,12 +10,15 @@ All rights reserved (see LICENSE).
 #include <numeric>
 #include <thread>
 
+#include "algorithms/heuristics/solomon.h"
 #include "problems/cvrp/cvrp.h"
-#include "problems/cvrp/heuristics/solomon.h"
 #include "problems/cvrp/local_search/local_search.h"
 #include "problems/tsp/tsp.h"
 #include "structures/vroom/input/input.h"
+#include "structures/vroom/raw_route.h"
 #include "utils/helpers.h"
+
+using raw_solution = std::vector<raw_route>;
 
 constexpr std::array<h_param, 32> cvrp::homogeneous_parameters;
 constexpr std::array<h_param, 32> cvrp::heterogeneous_parameters;
@@ -81,13 +84,13 @@ solution cvrp::solve(unsigned exploration_level, unsigned nb_threads) const {
         switch (p.heuristic) {
         case HEURISTIC_T::BASIC:
           solutions[rank] =
-            cvrp_basic_heuristic(_input, p.init, p.regret_coeff);
+            basic_heuristic<raw_solution>(_input, p.init, p.regret_coeff);
           break;
         case HEURISTIC_T::DYNAMIC:
           solutions[rank] =
-            cvrp_dynamic_vehicle_choice_heuristic(_input,
-                                                  p.init,
-                                                  p.regret_coeff);
+            dynamic_vehicle_choice_heuristic<raw_solution>(_input,
+                                                           p.init,
+                                                           p.regret_coeff);
           break;
         }
       }

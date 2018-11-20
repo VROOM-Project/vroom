@@ -11,13 +11,14 @@ All rights reserved (see LICENSE).
 #include <numeric>
 #include <set>
 
-#include "problems/vrptw/heuristics/solomon.h"
+#include "algorithms/heuristics/solomon.h"
+#include "structures/vroom/raw_route.h"
+#include "structures/vroom/tw_route.h"
 #include "utils/helpers.h"
 
-tw_solution vrptw_basic_heuristic(const input& input,
-                                  INIT_T init,
-                                  float lambda) {
-  tw_solution routes;
+template <class T>
+T basic_heuristic(const input& input, INIT_T init, float lambda) {
+  T routes;
   for (index_t v = 0; v < input._vehicles.size(); ++v) {
     routes.emplace_back(input, v);
   }
@@ -65,7 +66,7 @@ tw_solution vrptw_basic_heuristic(const input& input,
   }
 
   for (index_t v = 0; v < input._vehicles.size(); ++v) {
-    auto& tw_r = routes[vehicles_ranks[v]];
+    auto& current_r = routes[vehicles_ranks[v]];
 
     const auto& vehicle = input._vehicles[vehicles_ranks[v]];
 
@@ -80,7 +81,7 @@ tw_solution vrptw_basic_heuristic(const input& input,
       for (const auto job_rank : unassigned) {
         if (!input.vehicle_ok_with_job(v, job_rank) or
             !(input._jobs[job_rank].amount <= vehicle.capacity) or
-            !tw_r.is_valid_addition_for_tw(input, job_rank, 0)) {
+            !current_r.is_valid_addition_for_tw(input, job_rank, 0)) {
           continue;
         }
 
@@ -105,7 +106,7 @@ tw_solution vrptw_basic_heuristic(const input& input,
           (init == INIT_T::EARLIEST_DEADLINE and
            earliest_deadline < std::numeric_limits<duration_t>::max()) or
           (init == INIT_T::FURTHEST and furthest_cost > 0)) {
-        tw_r.add(input, best_job_rank, 0);
+        current_r.add(input, best_job_rank, 0);
         route_amount += input._jobs[best_job_rank].amount;
         unassigned.erase(best_job_rank);
       }
@@ -125,15 +126,15 @@ tw_solution vrptw_basic_heuristic(const input& input,
           continue;
         }
 
-        for (index_t r = 0; r <= tw_r.size(); ++r) {
+        for (index_t r = 0; r <= current_r.size(); ++r) {
           float current_add =
-            addition_cost(input, m, job_rank, vehicle, tw_r.route, r);
+            addition_cost(input, m, job_rank, vehicle, current_r.route, r);
 
           float current_cost =
             current_add - lambda * static_cast<float>(costs[job_rank]);
 
           if (current_cost < best_cost and
-              tw_r.is_valid_addition_for_tw(input, job_rank, r)) {
+              current_r.is_valid_addition_for_tw(input, job_rank, r)) {
             best_cost = current_cost;
             best_job_rank = job_rank;
             best_r = r;
@@ -142,7 +143,7 @@ tw_solution vrptw_basic_heuristic(const input& input,
       }
 
       if (best_cost < std::numeric_limits<float>::max()) {
-        tw_r.add(input, best_job_rank, best_r);
+        current_r.add(input, best_job_rank, best_r);
         route_amount += input._jobs[best_job_rank].amount;
         unassigned.erase(best_job_rank);
         keep_going = true;
@@ -153,10 +154,11 @@ tw_solution vrptw_basic_heuristic(const input& input,
   return routes;
 }
 
-tw_solution vrptw_dynamic_vehicle_choice_heuristic(const input& input,
-                                                   INIT_T init,
-                                                   float lambda) {
-  tw_solution routes;
+template <class T>
+T dynamic_vehicle_choice_heuristic(const input& input,
+                                   INIT_T init,
+                                   float lambda) {
+  T routes;
   for (index_t v = 0; v < input._vehicles.size(); ++v) {
     routes.emplace_back(input, v);
   }
@@ -257,7 +259,7 @@ tw_solution vrptw_dynamic_vehicle_choice_heuristic(const input& input,
     }
 
     const auto& vehicle = input._vehicles[v_rank];
-    auto& tw_r = routes[v_rank];
+    auto& current_r = routes[v_rank];
 
     amount_t route_amount(input.amount_size());
 
@@ -274,7 +276,7 @@ tw_solution vrptw_dynamic_vehicle_choice_heuristic(const input& input,
             // One of the remaining vehicles is closest to that job.
             !input.vehicle_ok_with_job(v_rank, job_rank) or
             !(input._jobs[job_rank].amount <= vehicle.capacity) or
-            !tw_r.is_valid_addition_for_tw(input, job_rank, 0)) {
+            !current_r.is_valid_addition_for_tw(input, job_rank, 0)) {
           continue;
         }
 
@@ -300,7 +302,7 @@ tw_solution vrptw_dynamic_vehicle_choice_heuristic(const input& input,
           (init == INIT_T::EARLIEST_DEADLINE and
            earliest_deadline < std::numeric_limits<duration_t>::max()) or
           (init == INIT_T::FURTHEST and furthest_cost > 0)) {
-        tw_r.add(input, best_job_rank, 0);
+        current_r.add(input, best_job_rank, 0);
         route_amount += input._jobs[best_job_rank].amount;
         unassigned.erase(best_job_rank);
       }
@@ -320,15 +322,15 @@ tw_solution vrptw_dynamic_vehicle_choice_heuristic(const input& input,
           continue;
         }
 
-        for (index_t r = 0; r <= tw_r.size(); ++r) {
+        for (index_t r = 0; r <= current_r.size(); ++r) {
           float current_add =
-            addition_cost(input, m, job_rank, vehicle, tw_r.route, r);
+            addition_cost(input, m, job_rank, vehicle, current_r.route, r);
 
           float current_cost =
             current_add - lambda * static_cast<float>(regrets[job_rank]);
 
           if (current_cost < best_cost and
-              tw_r.is_valid_addition_for_tw(input, job_rank, r)) {
+              current_r.is_valid_addition_for_tw(input, job_rank, r)) {
             best_cost = current_cost;
             best_job_rank = job_rank;
             best_r = r;
@@ -337,7 +339,7 @@ tw_solution vrptw_dynamic_vehicle_choice_heuristic(const input& input,
       }
 
       if (best_cost < std::numeric_limits<float>::max()) {
-        tw_r.add(input, best_job_rank, best_r);
+        current_r.add(input, best_job_rank, best_r);
         route_amount += input._jobs[best_job_rank].amount;
         unassigned.erase(best_job_rank);
         keep_going = true;
@@ -347,3 +349,22 @@ tw_solution vrptw_dynamic_vehicle_choice_heuristic(const input& input,
 
   return routes;
 }
+
+using raw_solution = std::vector<raw_route>;
+using tw_solution = std::vector<tw_route>;
+
+template raw_solution basic_heuristic(const input& input,
+                                      INIT_T init,
+                                      float lambda);
+
+template raw_solution dynamic_vehicle_choice_heuristic(const input& input,
+                                                       INIT_T init,
+                                                       float lambda);
+
+template tw_solution basic_heuristic(const input& input,
+                                     INIT_T init,
+                                     float lambda);
+
+template tw_solution dynamic_vehicle_choice_heuristic(const input& input,
+                                                      INIT_T init,
+                                                      float lambda);
