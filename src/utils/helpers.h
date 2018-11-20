@@ -11,9 +11,11 @@ All rights reserved (see LICENSE).
 */
 
 #include "structures/typedefs.h"
+#include "structures/vroom/raw_route.h"
 #include "structures/vroom/tw_route.h"
 #include "utils/exceptions.h"
 
+using raw_solution = std::vector<raw_route>;
 using tw_solution = std::vector<tw_route>;
 
 inline cost_t add_without_overflow(cost_t a, cost_t b) {
@@ -116,7 +118,7 @@ inline solution format_solution(const input& input,
   }
 
   for (std::size_t i = 0; i < raw_routes.size(); ++i) {
-    const auto& route = raw_routes[i];
+    const auto& route = raw_routes[i].route;
     if (route.empty()) {
       continue;
     }

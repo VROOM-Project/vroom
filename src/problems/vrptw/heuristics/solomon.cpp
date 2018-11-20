@@ -125,7 +125,7 @@ tw_solution vrptw_basic_heuristic(const input& input,
           continue;
         }
 
-        for (index_t r = 0; r <= tw_r.route.size(); ++r) {
+        for (index_t r = 0; r <= tw_r.size(); ++r) {
           float current_add =
             addition_cost(input, m, job_rank, vehicle, tw_r.route, r);
 
@@ -320,7 +320,7 @@ tw_solution vrptw_dynamic_vehicle_choice_heuristic(const input& input,
           continue;
         }
 
-        for (index_t r = 0; r <= tw_r.route.size(); ++r) {
+        for (index_t r = 0; r <= tw_r.size(); ++r) {
           float current_add =
             addition_cost(input, m, job_rank, vehicle, tw_r.route, r);
 

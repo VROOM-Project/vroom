@@ -34,8 +34,8 @@ cvrp_local_search::cvrp_local_search(const input& input,
   _best_unassigned = _sol_state.unassigned.size();
   index_t v_rank = 0;
   _best_cost =
-    std::accumulate(_sol.begin(), _sol.end(), 0, [&](auto sum, auto route) {
-      return sum + route_cost_for_vehicle(_input, v_rank++, route);
+    std::accumulate(_sol.begin(), _sol.end(), 0, [&](auto sum, auto r) {
+      return sum + route_cost_for_vehicle(_input, v_rank++, r.route);
     });
 }
 
@@ -64,7 +64,7 @@ void cvrp_local_search::try_job_additions(const std::vector<index_t>& routes,
             v_amount + current_amount <= _input._vehicles[v].capacity) {
           for (std::size_t r = 0; r <= _sol[v].size(); ++r) {
             gain_t current_cost =
-              addition_cost(_input, _m, j, v_target, _sol[v], r);
+              addition_cost(_input, _m, j, v_target, _sol[v].route, r);
 
             if (current_cost < best_costs[i]) {
               best_costs[i] = current_cost;
@@ -117,7 +117,7 @@ void cvrp_local_search::try_job_additions(const std::vector<index_t>& routes,
     job_added = (best_cost < std::numeric_limits<double>::max());
 
     if (job_added) {
-      _sol[best_route].insert(_sol[best_route].begin() + best_rank, best_job);
+      _sol[best_route].add(_input, best_job, best_rank);
 
       // Update amounts after addition.
       const auto& job_amount = _input._jobs[best_job].amount;
@@ -141,7 +141,7 @@ void cvrp_local_search::try_job_additions(const std::vector<index_t>& routes,
 
 #ifndef NDEBUG
       // Update cost after addition.
-      _sol_state.update_route_cost(_sol[best_route], best_route);
+      _sol_state.update_route_cost(_sol[best_route].route, best_route);
 #endif
 
       _sol_state.unassigned.erase(best_job);
@@ -181,10 +181,10 @@ void cvrp_local_search::run_ls_step() {
         for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size(); ++t_rank) {
           cvrp_exchange r(_input,
                           _sol_state,
-                          _sol[s_t.first],
+                          _sol[s_t.first].route,
                           s_t.first,
                           s_rank,
-                          _sol[s_t.second],
+                          _sol[s_t.second].route,
                           s_t.second,
                           t_rank);
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
@@ -208,10 +208,10 @@ void cvrp_local_search::run_ls_step() {
              ++t_rank) {
           cvrp_cross_exchange r(_input,
                                 _sol_state,
-                                _sol[s_t.first],
+                                _sol[s_t.first].route,
                                 s_t.first,
                                 s_rank,
-                                _sol[s_t.second],
+                                _sol[s_t.second].route,
                                 s_t.second,
                                 t_rank);
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
@@ -235,10 +235,10 @@ void cvrp_local_search::run_ls_step() {
              ++t_rank) {
           cvrp_mixed_exchange r(_input,
                                 _sol_state,
-                                _sol[s_t.first],
+                                _sol[s_t.first].route,
                                 s_t.first,
                                 s_rank,
-                                _sol[s_t.second],
+                                _sol[s_t.second].route,
                                 s_t.second,
                                 t_rank);
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
@@ -265,10 +265,10 @@ void cvrp_local_search::run_ls_step() {
           }
           cvrp_two_opt r(_input,
                          _sol_state,
-                         _sol[s_t.first],
+                         _sol[s_t.first].route,
                          s_t.first,
                          s_rank,
-                         _sol[s_t.second],
+                         _sol[s_t.second].route,
                          s_t.second,
                          t_rank);
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
@@ -293,10 +293,10 @@ void cvrp_local_search::run_ls_step() {
           }
           cvrp_reverse_two_opt r(_input,
                                  _sol_state,
-                                 _sol[s_t.first],
+                                 _sol[s_t.first].route,
                                  s_t.first,
                                  s_rank,
-                                 _sol[s_t.second],
+                                 _sol[s_t.second].route,
                                  s_t.second,
                                  t_rank);
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
@@ -327,10 +327,10 @@ void cvrp_local_search::run_ls_step() {
         for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size(); ++t_rank) {
           cvrp_relocate r(_input,
                           _sol_state,
-                          _sol[s_t.first],
+                          _sol[s_t.first].route,
                           s_t.first,
                           s_rank,
-                          _sol[s_t.second],
+                          _sol[s_t.second].route,
                           s_t.second,
                           t_rank);
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
@@ -361,10 +361,10 @@ void cvrp_local_search::run_ls_step() {
         for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size(); ++t_rank) {
           cvrp_or_opt r(_input,
                         _sol_state,
-                        _sol[s_t.first],
+                        _sol[s_t.first].route,
                         s_t.first,
                         s_rank,
-                        _sol[s_t.second],
+                        _sol[s_t.second].route,
                         s_t.second,
                         t_rank);
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
@@ -388,7 +388,7 @@ void cvrp_local_search::run_ls_step() {
              ++t_rank) {
           cvrp_intra_exchange r(_input,
                                 _sol_state,
-                                _sol[s_t.first],
+                                _sol[s_t.first].route,
                                 s_t.first,
                                 s_rank,
                                 t_rank);
@@ -414,7 +414,7 @@ void cvrp_local_search::run_ls_step() {
              ++t_rank) {
           cvrp_intra_cross_exchange r(_input,
                                       _sol_state,
-                                      _sol[s_t.first],
+                                      _sol[s_t.first].route,
                                       s_t.first,
                                       s_rank,
                                       t_rank);
@@ -442,7 +442,7 @@ void cvrp_local_search::run_ls_step() {
           }
           cvrp_intra_mixed_exchange r(_input,
                                       _sol_state,
-                                      _sol[s_t.first],
+                                      _sol[s_t.first].route,
                                       s_t.first,
                                       s_rank,
                                       t_rank);
@@ -475,7 +475,7 @@ void cvrp_local_search::run_ls_step() {
           }
           cvrp_intra_relocate r(_input,
                                 _sol_state,
-                                _sol[s_t.first],
+                                _sol[s_t.first].route,
                                 s_t.first,
                                 s_rank,
                                 t_rank);
@@ -508,7 +508,7 @@ void cvrp_local_search::run_ls_step() {
           }
           cvrp_intra_or_opt r(_input,
                               _sol_state,
-                              _sol[s_t.first],
+                              _sol[s_t.first].route,
                               s_t.first,
                               s_rank,
                               t_rank);
@@ -556,7 +556,7 @@ void cvrp_local_search::run_ls_step() {
                           return sum + _sol_state.route_costs[c];
                         });
       for (auto v_rank : update_candidates) {
-        _sol_state.update_route_cost(_sol[v_rank], v_rank);
+        _sol_state.update_route_cost(_sol[v_rank].route, v_rank);
       }
       auto new_cost = std::accumulate(update_candidates.begin(),
                                       update_candidates.end(),
@@ -573,7 +573,7 @@ void cvrp_local_search::run_ls_step() {
       // since try_before_additions will subsequently fix amounts upon
       // each addition.
       for (auto v_rank : update_candidates) {
-        _sol_state.update_amounts(_sol[v_rank], v_rank);
+        _sol_state.update_amounts(_sol[v_rank].route, v_rank);
       }
 
       try_job_additions(best_ops[best_source][best_target]
@@ -582,17 +582,17 @@ void cvrp_local_search::run_ls_step() {
 
       // Running update_costs only after try_job_additions is fine.
       for (auto v_rank : update_candidates) {
-        _sol_state.update_costs(_sol[v_rank], v_rank);
+        _sol_state.update_costs(_sol[v_rank].route, v_rank);
       }
 
       for (auto v_rank : update_candidates) {
-        _sol_state.update_skills(_sol[v_rank], v_rank);
+        _sol_state.update_skills(_sol[v_rank].route, v_rank);
       }
 
       // Update candidates.
       for (auto v_rank : update_candidates) {
-        _sol_state.set_node_gains(_sol[v_rank], v_rank);
-        _sol_state.set_edge_gains(_sol[v_rank], v_rank);
+        _sol_state.set_node_gains(_sol[v_rank].route, v_rank);
+        _sol_state.set_edge_gains(_sol[v_rank].route, v_rank);
       }
 
       // Set gains to zero for what needs to be recomputed in the next
@@ -629,8 +629,8 @@ void cvrp_local_search::run() {
     auto current_unassigned = _sol_state.unassigned.size();
     index_t v_rank = 0;
     cost_t current_cost =
-      std::accumulate(_sol.begin(), _sol.end(), 0, [&](auto sum, auto route) {
-        return sum + route_cost_for_vehicle(_input, v_rank++, route);
+      std::accumulate(_sol.begin(), _sol.end(), 0, [&](auto sum, auto r) {
+        return sum + route_cost_for_vehicle(_input, v_rank++, r.route);
       });
 
     bool solution_improved =
@@ -663,13 +663,13 @@ void cvrp_local_search::run() {
       for (unsigned i = 0; i < current_nb_removal; ++i) {
         remove_from_routes();
         for (std::size_t v = 0; v < _sol.size(); ++v) {
-          _sol_state.set_node_gains(_sol[v], v);
+          _sol_state.set_node_gains(_sol[v].route, v);
         }
       }
 
       // Refill jobs (requires updated amounts).
       for (std::size_t v = 0; v < _sol.size(); ++v) {
-        _sol_state.update_amounts(_sol[v], v);
+        _sol_state.update_amounts(_sol[v].route, v);
       }
       try_job_additions(_all_routes, 1.5);
 
@@ -689,7 +689,10 @@ void cvrp_local_search::remove_from_routes() {
       if (v2 == v1) {
         continue;
       }
-      _sol_state.update_nearest_job_rank_in_routes(_sol[v1], _sol[v2], v1, v2);
+      _sol_state.update_nearest_job_rank_in_routes(_sol[v1].route,
+                                                   _sol[v2].route,
+                                                   v1,
+                                                   v2);
     }
   }
 
@@ -709,10 +712,11 @@ void cvrp_local_search::remove_from_routes() {
     for (std::size_t r = 0; r < _sol[v].size(); ++r) {
       gain_t best_relocate_distance = static_cast<gain_t>(INFINITE_COST);
 
-      auto current_index = _input._jobs[_sol[v][r]].index();
+      auto current_index = _input._jobs[_sol[v].route[r]].index();
 
       for (std::size_t other_v = 0; other_v < _sol.size(); ++other_v) {
-        if (other_v == v or !_input.vehicle_ok_with_job(other_v, _sol[v][r])) {
+        if (other_v == v or
+            !_input.vehicle_ok_with_job(other_v, _sol[v].route[r])) {
           continue;
         }
 
@@ -730,14 +734,14 @@ void cvrp_local_search::remove_from_routes() {
           auto nearest_from_rank =
             _sol_state.nearest_job_rank_in_routes_from[v][other_v][r];
           auto nearest_from_index =
-            _input._jobs[_sol[other_v][nearest_from_rank]].index();
+            _input._jobs[_sol[other_v].route[nearest_from_rank]].index();
           gain_t cost_from = _m[nearest_from_index][current_index];
           best_relocate_distance = std::min(best_relocate_distance, cost_from);
 
           auto nearest_to_rank =
             _sol_state.nearest_job_rank_in_routes_to[v][other_v][r];
           auto nearest_to_index =
-            _input._jobs[_sol[other_v][nearest_to_rank]].index();
+            _input._jobs[_sol[other_v].route[nearest_to_rank]].index();
           gain_t cost_to = _m[current_index][nearest_to_index];
           best_relocate_distance = std::min(best_relocate_distance, cost_to);
         }
@@ -758,8 +762,8 @@ void cvrp_local_search::remove_from_routes() {
   for (const auto& r_r : routes_and_ranks) {
     auto v = r_r.first;
     auto r = r_r.second;
-    _sol_state.unassigned.insert(_sol[v][r]);
-    _sol[v].erase(_sol[v].begin() + r);
+    _sol_state.unassigned.insert(_sol[v].route[r]);
+    _sol[v].remove(_input, r, 1);
   }
 }
 

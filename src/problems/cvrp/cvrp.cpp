@@ -51,9 +51,7 @@ solution cvrp::solve(unsigned exploration_level, unsigned nb_threads) const {
   }
   assert(nb_init_solutions <= parameters.size());
 
-  std::vector<raw_solution> solutions(nb_init_solutions,
-                                      raw_solution(nb_tsp,
-                                                   std::vector<index_t>()));
+  std::vector<raw_solution> solutions(nb_init_solutions, raw_solution(nb_tsp));
   std::vector<solution_indicators> sol_indicators(nb_init_solutions);
 
   // Split the work among threads.

@@ -12,11 +12,8 @@ All rights reserved (see LICENSE).
 
 #include <vector>
 
-#include "structures/abstract/matrix.h"
 #include "structures/typedefs.h"
 #include "structures/vroom/input/input.h"
-#include "structures/vroom/job.h"
-#include "structures/vroom/vehicle.h"
 
 class tw_route {
 private:
@@ -51,12 +48,20 @@ public:
   duration_t v_start;
   duration_t v_end;
 
-  raw_route_t route;
+  std::vector<index_t> route;
   std::vector<duration_t> earliest;
   std::vector<duration_t> latest;
   std::vector<index_t> tw_ranks;
 
   tw_route(const input& input, index_t i);
+
+  bool empty() const {
+    return route.empty();
+  }
+
+  std::size_t size() const {
+    return route.size();
+  }
 
   // Check validity for addition of job at job_rank in current route
   // at rank.

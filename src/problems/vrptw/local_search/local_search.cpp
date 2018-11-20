@@ -70,7 +70,7 @@ void vrptw_local_search::try_job_additions(const std::vector<index_t>& routes,
 
         if (_input.vehicle_ok_with_job(v, j) and
             v_amount + current_amount <= _input._vehicles[v].capacity) {
-          for (std::size_t r = 0; r <= _tw_sol[v].route.size(); ++r) {
+          for (std::size_t r = 0; r <= _tw_sol[v].size(); ++r) {
             if (_tw_sol[v].is_valid_addition_for_tw(_input, j, r)) {
               gain_t current_cost =
                 addition_cost(_input, _m, j, v_target, _tw_sol[v].route, r);
@@ -183,14 +183,12 @@ void vrptw_local_search::run_ls_step() {
     // Exchange stuff
     for (const auto& s_t : s_t_pairs) {
       if (s_t.second <= s_t.first or // This operator is symmetric.
-          _tw_sol[s_t.first].route.size() == 0 or
-          _tw_sol[s_t.second].route.size() == 0) {
+          _tw_sol[s_t.first].size() == 0 or _tw_sol[s_t.second].size() == 0) {
         continue;
       }
 
-      for (unsigned s_rank = 0; s_rank < _tw_sol[s_t.first].route.size();
-           ++s_rank) {
-        for (unsigned t_rank = 0; t_rank < _tw_sol[s_t.second].route.size();
+      for (unsigned s_rank = 0; s_rank < _tw_sol[s_t.first].size(); ++s_rank) {
+        for (unsigned t_rank = 0; t_rank < _tw_sol[s_t.second].size();
              ++t_rank) {
           vrptw_exchange r(_input,
                            _sol_state,
@@ -211,14 +209,13 @@ void vrptw_local_search::run_ls_step() {
     // CROSS-exchange stuff
     for (const auto& s_t : s_t_pairs) {
       if (s_t.second <= s_t.first or // This operator is symmetric.
-          _tw_sol[s_t.first].route.size() < 2 or
-          _tw_sol[s_t.second].route.size() < 2) {
+          _tw_sol[s_t.first].size() < 2 or _tw_sol[s_t.second].size() < 2) {
         continue;
       }
 
-      for (unsigned s_rank = 0; s_rank < _tw_sol[s_t.first].route.size() - 1;
+      for (unsigned s_rank = 0; s_rank < _tw_sol[s_t.first].size() - 1;
            ++s_rank) {
-        for (unsigned t_rank = 0; t_rank < _tw_sol[s_t.second].route.size() - 1;
+        for (unsigned t_rank = 0; t_rank < _tw_sol[s_t.second].size() - 1;
              ++t_rank) {
           vrptw_cross_exchange r(_input,
                                  _sol_state,
@@ -238,14 +235,13 @@ void vrptw_local_search::run_ls_step() {
 
     // Mixed-exchange stuff
     for (const auto& s_t : s_t_pairs) {
-      if (s_t.first == s_t.second or _tw_sol[s_t.first].route.size() == 0 or
-          _tw_sol[s_t.second].route.size() < 2) {
+      if (s_t.first == s_t.second or _tw_sol[s_t.first].size() == 0 or
+          _tw_sol[s_t.second].size() < 2) {
         continue;
       }
 
-      for (unsigned s_rank = 0; s_rank < _tw_sol[s_t.first].route.size();
-           ++s_rank) {
-        for (unsigned t_rank = 0; t_rank < _tw_sol[s_t.second].route.size() - 1;
+      for (unsigned s_rank = 0; s_rank < _tw_sol[s_t.first].size(); ++s_rank) {
+        for (unsigned t_rank = 0; t_rank < _tw_sol[s_t.second].size() - 1;
              ++t_rank) {
           vrptw_mixed_exchange r(_input,
                                  _sol_state,
@@ -269,11 +265,10 @@ void vrptw_local_search::run_ls_step() {
         // This operator is symmetric.
         continue;
       }
-      for (unsigned s_rank = 0; s_rank < _tw_sol[s_t.first].route.size();
-           ++s_rank) {
+      for (unsigned s_rank = 0; s_rank < _tw_sol[s_t.first].size(); ++s_rank) {
         auto s_free_amount = _input._vehicles[s_t.first].capacity;
         s_free_amount -= _sol_state.fwd_amounts[s_t.first][s_rank];
-        for (int t_rank = _tw_sol[s_t.second].route.size() - 1; t_rank >= 0;
+        for (int t_rank = _tw_sol[s_t.second].size() - 1; t_rank >= 0;
              --t_rank) {
           if (!(_sol_state.bwd_amounts[s_t.second][t_rank] <= s_free_amount)) {
             break;
@@ -299,11 +294,10 @@ void vrptw_local_search::run_ls_step() {
       if (s_t.first == s_t.second) {
         continue;
       }
-      for (unsigned s_rank = 0; s_rank < _tw_sol[s_t.first].route.size();
-           ++s_rank) {
+      for (unsigned s_rank = 0; s_rank < _tw_sol[s_t.first].size(); ++s_rank) {
         auto s_free_amount = _input._vehicles[s_t.first].capacity;
         s_free_amount -= _sol_state.fwd_amounts[s_t.first][s_rank];
-        for (unsigned t_rank = 0; t_rank < _tw_sol[s_t.second].route.size();
+        for (unsigned t_rank = 0; t_rank < _tw_sol[s_t.second].size();
              ++t_rank) {
           if (!(_sol_state.fwd_amounts[s_t.second][t_rank] <= s_free_amount)) {
             break;
@@ -326,22 +320,21 @@ void vrptw_local_search::run_ls_step() {
 
     // Relocate stuff
     for (const auto& s_t : s_t_pairs) {
-      if (s_t.first == s_t.second or _tw_sol[s_t.first].route.size() == 0 or
+      if (s_t.first == s_t.second or _tw_sol[s_t.first].size() == 0 or
           !(_sol_state.total_amount(s_t.second) + _amount_lower_bound <=
             _input._vehicles[s_t.second].capacity)) {
         // Don't try to put things in a full vehicle or from an empty
         // vehicle.
         continue;
       }
-      for (unsigned s_rank = 0; s_rank < _tw_sol[s_t.first].route.size();
-           ++s_rank) {
+      for (unsigned s_rank = 0; s_rank < _tw_sol[s_t.first].size(); ++s_rank) {
         if (_sol_state.node_gains[s_t.first][s_rank] <=
             best_gains[s_t.first][s_t.second]) {
           // Except if addition cost in route s_t.second is negative
           // (!!), overall gain can't exceed current known best gain.
           continue;
         }
-        for (unsigned t_rank = 0; t_rank <= _tw_sol[s_t.second].route.size();
+        for (unsigned t_rank = 0; t_rank <= _tw_sol[s_t.second].size();
              ++t_rank) {
           vrptw_relocate r(_input,
                            _sol_state,
@@ -361,14 +354,14 @@ void vrptw_local_search::run_ls_step() {
 
     // Or-opt stuff
     for (const auto& s_t : s_t_pairs) {
-      if (s_t.first == s_t.second or _tw_sol[s_t.first].route.size() < 2 or
+      if (s_t.first == s_t.second or _tw_sol[s_t.first].size() < 2 or
           !(_sol_state.total_amount(s_t.second) + _double_amount_lower_bound <=
             _input._vehicles[s_t.second].capacity)) {
         // Don't try to put things in a full vehicle or from a
         // (near-)empty vehicle.
         continue;
       }
-      for (unsigned s_rank = 0; s_rank < _tw_sol[s_t.first].route.size() - 1;
+      for (unsigned s_rank = 0; s_rank < _tw_sol[s_t.first].size() - 1;
            ++s_rank) {
         if (_sol_state.edge_gains[s_t.first][s_rank] <=
             best_gains[s_t.first][s_t.second]) {
@@ -376,7 +369,7 @@ void vrptw_local_search::run_ls_step() {
           // (!!), overall gain can't exceed current known best gain.
           continue;
         }
-        for (unsigned t_rank = 0; t_rank <= _tw_sol[s_t.second].route.size();
+        for (unsigned t_rank = 0; t_rank <= _tw_sol[s_t.second].size();
              ++t_rank) {
           vrptw_or_opt r(_input,
                          _sol_state,
@@ -397,14 +390,13 @@ void vrptw_local_search::run_ls_step() {
 
     // Inner exchange stuff
     for (const auto& s_t : s_t_pairs) {
-      if (s_t.first != s_t.second or _tw_sol[s_t.first].route.size() < 3) {
+      if (s_t.first != s_t.second or _tw_sol[s_t.first].size() < 3) {
         continue;
       }
 
-      for (unsigned s_rank = 0; s_rank < _tw_sol[s_t.first].route.size() - 2;
+      for (unsigned s_rank = 0; s_rank < _tw_sol[s_t.first].size() - 2;
            ++s_rank) {
-        for (unsigned t_rank = s_rank + 2;
-             t_rank < _tw_sol[s_t.first].route.size();
+        for (unsigned t_rank = s_rank + 2; t_rank < _tw_sol[s_t.first].size();
              ++t_rank) {
           vrptw_intra_exchange r(_input,
                                  _sol_state,
@@ -423,14 +415,14 @@ void vrptw_local_search::run_ls_step() {
 
     // Inner CROSS-exchange stuff
     for (const auto& s_t : s_t_pairs) {
-      if (s_t.first != s_t.second or _tw_sol[s_t.first].route.size() < 5) {
+      if (s_t.first != s_t.second or _tw_sol[s_t.first].size() < 5) {
         continue;
       }
 
-      for (unsigned s_rank = 0; s_rank <= _tw_sol[s_t.first].route.size() - 4;
+      for (unsigned s_rank = 0; s_rank <= _tw_sol[s_t.first].size() - 4;
            ++s_rank) {
         for (unsigned t_rank = s_rank + 3;
-             t_rank < _tw_sol[s_t.first].route.size() - 1;
+             t_rank < _tw_sol[s_t.first].size() - 1;
              ++t_rank) {
           vrptw_intra_cross_exchange r(_input,
                                        _sol_state,
@@ -449,13 +441,12 @@ void vrptw_local_search::run_ls_step() {
 
     // Inner mixed-exchange stuff
     for (const auto& s_t : s_t_pairs) {
-      if (s_t.first != s_t.second or _tw_sol[s_t.first].route.size() < 4) {
+      if (s_t.first != s_t.second or _tw_sol[s_t.first].size() < 4) {
         continue;
       }
 
-      for (unsigned s_rank = 0; s_rank < _tw_sol[s_t.first].route.size();
-           ++s_rank) {
-        for (unsigned t_rank = 0; t_rank < _tw_sol[s_t.first].route.size() - 1;
+      for (unsigned s_rank = 0; s_rank < _tw_sol[s_t.first].size(); ++s_rank) {
+        for (unsigned t_rank = 0; t_rank < _tw_sol[s_t.first].size() - 1;
              ++t_rank) {
           if (t_rank <= s_rank + 1 and s_rank <= t_rank + 2) {
             continue;
@@ -477,18 +468,17 @@ void vrptw_local_search::run_ls_step() {
 
     // Inner relocate stuff
     for (const auto& s_t : s_t_pairs) {
-      if (s_t.first != s_t.second or _tw_sol[s_t.first].route.size() < 2) {
+      if (s_t.first != s_t.second or _tw_sol[s_t.first].size() < 2) {
         continue;
       }
-      for (unsigned s_rank = 0; s_rank < _tw_sol[s_t.first].route.size();
-           ++s_rank) {
+      for (unsigned s_rank = 0; s_rank < _tw_sol[s_t.first].size(); ++s_rank) {
         if (_sol_state.node_gains[s_t.first][s_rank] <=
             best_gains[s_t.first][s_t.first]) {
           // Except if addition cost in route is negative (!!),
           // overall gain can't exceed current known best gain.
           continue;
         }
-        for (unsigned t_rank = 0; t_rank <= _tw_sol[s_t.first].route.size() - 1;
+        for (unsigned t_rank = 0; t_rank <= _tw_sol[s_t.first].size() - 1;
              ++t_rank) {
           if (t_rank == s_rank) {
             continue;
@@ -510,10 +500,10 @@ void vrptw_local_search::run_ls_step() {
 
     // Inner Or-opt stuff
     for (const auto& s_t : s_t_pairs) {
-      if (s_t.first != s_t.second or _tw_sol[s_t.first].route.size() < 4) {
+      if (s_t.first != s_t.second or _tw_sol[s_t.first].size() < 4) {
         continue;
       }
-      for (unsigned s_rank = 0; s_rank < _tw_sol[s_t.first].route.size() - 1;
+      for (unsigned s_rank = 0; s_rank < _tw_sol[s_t.first].size() - 1;
            ++s_rank) {
         if (_sol_state.node_gains[s_t.first][s_rank] <=
             best_gains[s_t.first][s_t.first]) {
@@ -521,7 +511,7 @@ void vrptw_local_search::run_ls_step() {
           // overall gain can't exceed current known best gain.
           continue;
         }
-        for (unsigned t_rank = 0; t_rank <= _tw_sol[s_t.first].route.size() - 2;
+        for (unsigned t_rank = 0; t_rank <= _tw_sol[s_t.first].size() - 2;
              ++t_rank) {
           if (t_rank == s_rank) {
             continue;
@@ -723,7 +713,7 @@ void vrptw_local_search::remove_from_routes() {
   std::vector<std::pair<index_t, index_t>> routes_and_ranks;
 
   for (std::size_t v = 0; v < _tw_sol.size(); ++v) {
-    if (_tw_sol[v].route.empty()) {
+    if (_tw_sol[v].empty()) {
       continue;
     }
 
@@ -732,7 +722,7 @@ void vrptw_local_search::remove_from_routes() {
     index_t best_rank = 0;
     gain_t best_gain = std::numeric_limits<gain_t>::min();
 
-    for (std::size_t r = 0; r < _tw_sol[v].route.size(); ++r) {
+    for (std::size_t r = 0; r < _tw_sol[v].size(); ++r) {
       if (!_tw_sol[v].is_valid_removal(_input, r, 1)) {
         continue;
       }
@@ -756,7 +746,7 @@ void vrptw_local_search::remove_from_routes() {
           gain_t end_cost = _m[current_index][end_index];
           best_relocate_distance = std::min(best_relocate_distance, end_cost);
         }
-        if (_tw_sol[other_v].route.size() != 0) {
+        if (_tw_sol[other_v].size() != 0) {
           auto nearest_from_rank =
             _sol_state.nearest_job_rank_in_routes_from[v][other_v][r];
           auto nearest_from_index =
@@ -800,7 +790,7 @@ solution_indicators vrptw_local_search::indicators() const {
   si.cost = _best_cost;
   si.used_vehicles =
     std::count_if(_best_sol.begin(), _best_sol.end(), [](const auto& tw_r) {
-      return !tw_r.route.empty();
+      return !tw_r.empty();
     });
   return si;
 }

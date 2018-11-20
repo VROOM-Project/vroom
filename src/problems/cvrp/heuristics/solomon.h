@@ -11,6 +11,9 @@ All rights reserved (see LICENSE).
 */
 
 #include "structures/vroom/input/input.h"
+#include "structures/vroom/raw_route.h"
+
+using raw_solution = std::vector<raw_route>;
 
 // Implementation of a variant of the Solomon I1 heuristic.
 raw_solution cvrp_basic_heuristic(const input& input,

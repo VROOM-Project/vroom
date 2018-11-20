@@ -15,8 +15,10 @@ All rights reserved (see LICENSE).
 #include "structures/typedefs.h"
 #include "structures/vroom/amount.h"
 #include "structures/vroom/input/input.h"
+#include "structures/vroom/raw_route.h"
 #include "structures/vroom/tw_route.h"
 
+using raw_solution = std::vector<raw_route>;
 using tw_solution = std::vector<tw_route>;
 
 struct solution_indicators {
@@ -109,28 +111,28 @@ public:
 
   solution_state(const input& input);
 
-  void setup(const raw_route_t& r, index_t v);
+  void setup(const std::vector<index_t>& r, index_t v);
 
   void setup(const raw_solution& sol);
 
   void setup(const tw_solution& tw_sol);
 
-  void update_amounts(const raw_route_t& route, index_t v);
+  void update_amounts(const std::vector<index_t>& route, index_t v);
 
-  void update_costs(const raw_route_t& route, index_t v);
+  void update_costs(const std::vector<index_t>& route, index_t v);
 
-  void update_skills(const raw_route_t& route, index_t v1);
+  void update_skills(const std::vector<index_t>& route, index_t v1);
 
-  void set_node_gains(const raw_route_t& route, index_t v);
+  void set_node_gains(const std::vector<index_t>& route, index_t v);
 
-  void set_edge_gains(const raw_route_t& route, index_t v);
+  void set_edge_gains(const std::vector<index_t>& route, index_t v);
 
-  void update_nearest_job_rank_in_routes(const raw_route_t& route_1,
-                                         const raw_route_t& route_2,
+  void update_nearest_job_rank_in_routes(const std::vector<index_t>& route_1,
+                                         const std::vector<index_t>& route_2,
                                          index_t v1,
                                          index_t v2);
 
-  void update_route_cost(const raw_route_t& route, index_t v);
+  void update_route_cost(const std::vector<index_t>& route, index_t v);
 
   const amount_t& total_amount(index_t v) const;
 };

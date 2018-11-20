@@ -58,7 +58,7 @@ raw_solution cvrp_basic_heuristic(const input& input,
   }
 
   for (index_t v = 0; v < input._vehicles.size(); ++v) {
-    auto& route = routes[vehicles_ranks[v]];
+    auto& current_r = routes[vehicles_ranks[v]];
 
     const auto& vehicle = input._vehicles[vehicles_ranks[v]];
 
@@ -87,7 +87,7 @@ raw_solution cvrp_basic_heuristic(const input& input,
       }
       if ((init == INIT_T::HIGHER_AMOUNT and route_amount << higher_amount) or
           (init == INIT_T::FURTHEST and furthest_cost > 0)) {
-        route.insert(route.begin(), best_job_rank);
+        current_r.add(input, best_job_rank, 0);
         route_amount += input._jobs[best_job_rank].amount;
         unassigned.erase(best_job_rank);
       }
@@ -107,9 +107,9 @@ raw_solution cvrp_basic_heuristic(const input& input,
           continue;
         }
 
-        for (index_t r = 0; r <= route.size(); ++r) {
+        for (index_t r = 0; r <= current_r.size(); ++r) {
           float current_add =
-            addition_cost(input, m, job_rank, vehicle, route, r);
+            addition_cost(input, m, job_rank, vehicle, current_r.route, r);
 
           float current_cost =
             current_add - lambda * static_cast<float>(costs[job_rank]);
@@ -123,7 +123,7 @@ raw_solution cvrp_basic_heuristic(const input& input,
       }
 
       if (best_cost < std::numeric_limits<float>::max()) {
-        route.insert(route.begin() + best_r, best_job_rank);
+        current_r.add(input, best_job_rank, best_r);
         route_amount += input._jobs[best_job_rank].amount;
         unassigned.erase(best_job_rank);
         keep_going = true;
@@ -232,7 +232,7 @@ raw_solution cvrp_dynamic_vehicle_choice_heuristic(const input& input,
     }
 
     const auto& vehicle = input._vehicles[v_rank];
-    auto& route = routes[v_rank];
+    auto& current_r = routes[v_rank];
 
     amount_t route_amount(input.amount_size());
 
@@ -264,7 +264,7 @@ raw_solution cvrp_dynamic_vehicle_choice_heuristic(const input& input,
       }
       if ((init == INIT_T::HIGHER_AMOUNT and route_amount << higher_amount) or
           (init == INIT_T::FURTHEST and furthest_cost > 0)) {
-        route.insert(route.begin(), best_job_rank);
+        current_r.add(input, best_job_rank, 0);
         route_amount += input._jobs[best_job_rank].amount;
         unassigned.erase(best_job_rank);
       }
@@ -284,9 +284,9 @@ raw_solution cvrp_dynamic_vehicle_choice_heuristic(const input& input,
           continue;
         }
 
-        for (index_t r = 0; r <= route.size(); ++r) {
+        for (index_t r = 0; r <= current_r.size(); ++r) {
           float current_add =
-            addition_cost(input, m, job_rank, vehicle, route, r);
+            addition_cost(input, m, job_rank, vehicle, current_r.route, r);
 
           float current_cost =
             current_add - lambda * static_cast<float>(regrets[job_rank]);
@@ -300,7 +300,7 @@ raw_solution cvrp_dynamic_vehicle_choice_heuristic(const input& input,
       }
 
       if (best_cost < std::numeric_limits<float>::max()) {
-        route.insert(route.begin() + best_r, best_job_rank);
+        current_r.add(input, best_job_rank, best_r);
         route_amount += input._jobs[best_job_rank].amount;
         unassigned.erase(best_job_rank);
         keep_going = true;

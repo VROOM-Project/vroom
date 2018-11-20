@@ -13,7 +13,10 @@ All rights reserved (see LICENSE).
 #include "problems/vrp.h"
 #include "structures/abstract/matrix.h"
 #include "structures/typedefs.h"
+#include "structures/vroom/raw_route.h"
 #include "structures/vroom/solution/solution.h"
+
+using raw_solution = std::vector<raw_route>;
 
 class tsp : public vrp {
 private:

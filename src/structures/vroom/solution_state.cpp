@@ -34,7 +34,7 @@ solution_state::solution_state(const input& input)
     route_costs(_V) {
 }
 
-void solution_state::setup(const raw_route_t& r, index_t v) {
+void solution_state::setup(const std::vector<index_t>& r, index_t v) {
   update_amounts(r, v);
   update_costs(r, v);
   update_skills(r, v);
@@ -47,7 +47,7 @@ void solution_state::setup(const raw_route_t& r, index_t v) {
 
 void solution_state::setup(const raw_solution& sol) {
   for (std::size_t v = 0; v < _V; ++v) {
-    setup(sol[v], v);
+    setup(sol[v].route, v);
   }
 
   // Initialize unassigned jobs.
@@ -57,7 +57,7 @@ void solution_state::setup(const raw_solution& sol) {
                   [&] { return x++; });
 
   for (const auto& s : sol) {
-    for (const auto i : s) {
+    for (const auto i : s.route) {
       unassigned.erase(i);
     }
   }
@@ -81,7 +81,8 @@ void solution_state::setup(const tw_solution& tw_sol) {
   }
 }
 
-void solution_state::update_amounts(const raw_route_t& route, index_t v) {
+void solution_state::update_amounts(const std::vector<index_t>& route,
+                                    index_t v) {
   fwd_amounts[v] = std::vector<amount_t>(route.size());
   bwd_amounts[v] = std::vector<amount_t>(route.size());
   amount_t current_amount(_input.amount_size());
@@ -100,7 +101,8 @@ void solution_state::update_amounts(const raw_route_t& route, index_t v) {
                  });
 }
 
-void solution_state::update_costs(const raw_route_t& route, index_t v) {
+void solution_state::update_costs(const std::vector<index_t>& route,
+                                  index_t v) {
   fwd_costs[v] = std::vector<cost_t>(route.size());
   bwd_costs[v] = std::vector<cost_t>(route.size());
 
@@ -124,7 +126,8 @@ void solution_state::update_costs(const raw_route_t& route, index_t v) {
   }
 }
 
-void solution_state::update_skills(const raw_route_t& route, index_t v1) {
+void solution_state::update_skills(const std::vector<index_t>& route,
+                                   index_t v1) {
   for (std::size_t v2 = 0; v2 < _V; ++v2) {
     if (v1 == v2) {
       continue;
@@ -142,7 +145,8 @@ void solution_state::update_skills(const raw_route_t& route, index_t v1) {
   }
 }
 
-void solution_state::set_node_gains(const raw_route_t& route, index_t v) {
+void solution_state::set_node_gains(const std::vector<index_t>& route,
+                                    index_t v) {
   node_gains[v] = std::vector<gain_t>(route.size());
   edge_costs_around_node[v] = std::vector<gain_t>(route.size());
 
@@ -260,7 +264,8 @@ void solution_state::set_node_gains(const raw_route_t& route, index_t v) {
   }
 }
 
-void solution_state::set_edge_gains(const raw_route_t& route, index_t v) {
+void solution_state::set_edge_gains(const std::vector<index_t>& route,
+                                    index_t v) {
   std::size_t nb_edges = (route.size() < 2) ? 0 : route.size() - 1;
 
   edge_gains[v] = std::vector<gain_t>(nb_edges);
@@ -385,8 +390,8 @@ void solution_state::set_edge_gains(const raw_route_t& route, index_t v) {
 }
 
 void solution_state::update_nearest_job_rank_in_routes(
-  const raw_route_t& route_1,
-  const raw_route_t& route_2,
+  const std::vector<index_t>& route_1,
+  const std::vector<index_t>& route_2,
   index_t v1,
   index_t v2) {
   nearest_job_rank_in_routes_from[v1][v2] =
@@ -418,7 +423,8 @@ void solution_state::update_nearest_job_rank_in_routes(
   }
 }
 
-void solution_state::update_route_cost(const raw_route_t& route, index_t v) {
+void solution_state::update_route_cost(const std::vector<index_t>& route,
+                                       index_t v) {
   route_costs[v] = route_cost_for_vehicle(_input, v, route);
 }
 
