@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 #include <numeric>
 #include <thread>
 
+#include "algorithms/heuristics/clustering.h"
 #include "algorithms/heuristics/solomon.h"
 #include "problems/cvrp/cvrp.h"
 #include "problems/cvrp/local_search/local_search.h"

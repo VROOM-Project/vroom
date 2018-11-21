@@ -12,7 +12,6 @@ All rights reserved (see LICENSE).
 
 #include <array>
 
-#include "problems/cvrp/heuristics/clustering.h"
 #include "problems/vrp.h"
 
 class cvrp : public vrp {
