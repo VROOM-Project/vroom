@@ -14,8 +14,9 @@ All rights reserved (see LICENSE).
 
 #include "structures/typedefs.h"
 #include "structures/vroom/input/input.h"
+#include "structures/vroom/raw_route.h"
 
-class tw_route {
+class tw_route : public raw_route {
 private:
   // Compute new earliest and latest date for job at job_rank when
   // inserted in route at rank. Only takes into account existing
@@ -48,7 +49,6 @@ public:
   duration_t v_start;
   duration_t v_end;
 
-  std::vector<index_t> route;
   std::vector<duration_t> earliest;
   std::vector<duration_t> latest;
   std::vector<index_t> tw_ranks;
