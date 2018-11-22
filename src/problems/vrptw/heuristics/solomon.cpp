@@ -65,9 +65,10 @@ tw_solution vrptw_basic_heuristic(const input& input,
   }
 
   for (index_t v = 0; v < input._vehicles.size(); ++v) {
-    auto& tw_r = routes[vehicles_ranks[v]];
+    auto v_rank = vehicles_ranks[v];
+    auto& tw_r = routes[v_rank];
 
-    const auto& vehicle = input._vehicles[vehicles_ranks[v]];
+    const auto& vehicle = input._vehicles[v_rank];
 
     amount_t route_amount(input.amount_size());
 
@@ -78,7 +79,7 @@ tw_solution vrptw_basic_heuristic(const input& input,
       duration_t earliest_deadline = std::numeric_limits<duration_t>::max();
       index_t best_job_rank = 0;
       for (const auto job_rank : unassigned) {
-        if (!input.vehicle_ok_with_job(v, job_rank) or
+        if (!input.vehicle_ok_with_job(v_rank, job_rank) or
             !(input._jobs[job_rank].amount <= vehicle.capacity) or
             !tw_r.is_valid_addition_for_tw(input, job_rank, 0)) {
           continue;
@@ -119,7 +120,7 @@ tw_solution vrptw_basic_heuristic(const input& input,
       index_t best_r = 0;
 
       for (const auto job_rank : unassigned) {
-        if (!input.vehicle_ok_with_job(v, job_rank) or
+        if (!input.vehicle_ok_with_job(v_rank, job_rank) or
             !(route_amount + input._jobs[job_rank].amount <=
               vehicle.capacity)) {
           continue;
