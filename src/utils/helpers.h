@@ -212,7 +212,8 @@ inline solution format_solution(const input& input,
     unassigned_ranks.insert(i);
   }
 
-  for (const auto& tw_r : tw_routes) {
+  for (std::size_t i = 0; i < tw_routes.size(); ++i) {
+    const auto& tw_r = tw_routes[i];
     const auto& v = input._vehicles[tw_r.vehicle_rank];
     if (tw_r.route.empty()) {
       continue;
@@ -262,6 +263,7 @@ inline solution format_solution(const input& input,
       steps.back().arrival = v_start;
     }
 
+    assert(input.vehicle_ok_with_job(i, tw_r.route.front()));
     steps.emplace_back(input._jobs[tw_r.route.front()]);
     auto& first = steps.back();
     service += first.service;
@@ -273,6 +275,7 @@ inline solution format_solution(const input& input,
 
     duration_t forward_wt = 0;
     for (std::size_t r = 0; r < tw_r.route.size() - 1; ++r) {
+      assert(input.vehicle_ok_with_job(i, tw_r.route[r + 1]));
       const auto& previous_job = input._jobs[tw_r.route[r]];
       const auto& next_job = input._jobs[tw_r.route[r + 1]];
 
