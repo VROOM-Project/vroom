@@ -12,17 +12,17 @@ All rights reserved (see LICENSE).
 vrptw_intra_cross_exchange::vrptw_intra_cross_exchange(
   const input& input,
   const solution_state& sol_state,
-  tw_solution& tw_sol,
+  tw_route& tw_s_route,
   index_t s_vehicle,
   index_t s_rank,
   index_t t_rank)
   : cvrp_intra_cross_exchange(input,
                               sol_state,
-                              tw_sol[s_vehicle].route,
+                              static_cast<raw_route&>(tw_s_route),
                               s_vehicle,
                               s_rank,
                               t_rank),
-    _tw_sol(tw_sol),
+    _tw_s_route(tw_s_route),
     _s_normal_t_normal_is_valid(false),
     _s_normal_t_reverse_is_valid(false),
     _s_reverse_t_reverse_is_valid(false),
@@ -85,36 +85,36 @@ void vrptw_intra_cross_exchange::compute_gain() {
 
 bool vrptw_intra_cross_exchange::is_valid() {
   _s_normal_t_normal_is_valid =
-    _tw_sol[s_vehicle].is_valid_addition_for_tw(_input,
-                                                _moved_jobs.begin(),
-                                                _moved_jobs.end(),
-                                                _first_rank,
-                                                _last_rank);
+    _tw_s_route.is_valid_addition_for_tw(_input,
+                                         _moved_jobs.begin(),
+                                         _moved_jobs.end(),
+                                         _first_rank,
+                                         _last_rank);
 
   std::swap(_moved_jobs[0], _moved_jobs[1]);
   _s_normal_t_reverse_is_valid =
-    _tw_sol[s_vehicle].is_valid_addition_for_tw(_input,
-                                                _moved_jobs.begin(),
-                                                _moved_jobs.end(),
-                                                _first_rank,
-                                                _last_rank);
+    _tw_s_route.is_valid_addition_for_tw(_input,
+                                         _moved_jobs.begin(),
+                                         _moved_jobs.end(),
+                                         _first_rank,
+                                         _last_rank);
 
   std::swap(_moved_jobs[_moved_jobs.size() - 2],
             _moved_jobs[_moved_jobs.size() - 1]);
   _s_reverse_t_reverse_is_valid =
-    _tw_sol[s_vehicle].is_valid_addition_for_tw(_input,
-                                                _moved_jobs.begin(),
-                                                _moved_jobs.end(),
-                                                _first_rank,
-                                                _last_rank);
+    _tw_s_route.is_valid_addition_for_tw(_input,
+                                         _moved_jobs.begin(),
+                                         _moved_jobs.end(),
+                                         _first_rank,
+                                         _last_rank);
 
   std::swap(_moved_jobs[0], _moved_jobs[1]);
   _s_reverse_t_normal_is_valid =
-    _tw_sol[s_vehicle].is_valid_addition_for_tw(_input,
-                                                _moved_jobs.begin(),
-                                                _moved_jobs.end(),
-                                                _first_rank,
-                                                _last_rank);
+    _tw_s_route.is_valid_addition_for_tw(_input,
+                                         _moved_jobs.begin(),
+                                         _moved_jobs.end(),
+                                         _first_rank,
+                                         _last_rank);
 
   // Reset to initial situation before potential application.
   std::swap(_moved_jobs[_moved_jobs.size() - 2],
@@ -133,11 +133,11 @@ void vrptw_intra_cross_exchange::apply() {
               _moved_jobs[_moved_jobs.size() - 1]);
   }
 
-  _tw_sol[s_vehicle].replace(_input,
-                             _moved_jobs.begin(),
-                             _moved_jobs.end(),
-                             _first_rank,
-                             _last_rank);
+  _tw_s_route.replace(_input,
+                      _moved_jobs.begin(),
+                      _moved_jobs.end(),
+                      _first_rank,
+                      _last_rank);
 }
 
 std::vector<index_t> vrptw_intra_cross_exchange::addition_candidates() const {

@@ -181,10 +181,10 @@ void cvrp_local_search::run_ls_step() {
         for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size(); ++t_rank) {
           cvrp_exchange r(_input,
                           _sol_state,
-                          _sol[s_t.first].route,
+                          _sol[s_t.first],
                           s_t.first,
                           s_rank,
-                          _sol[s_t.second].route,
+                          _sol[s_t.second],
                           s_t.second,
                           t_rank);
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
@@ -208,10 +208,10 @@ void cvrp_local_search::run_ls_step() {
              ++t_rank) {
           cvrp_cross_exchange r(_input,
                                 _sol_state,
-                                _sol[s_t.first].route,
+                                _sol[s_t.first],
                                 s_t.first,
                                 s_rank,
-                                _sol[s_t.second].route,
+                                _sol[s_t.second],
                                 s_t.second,
                                 t_rank);
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
@@ -235,10 +235,10 @@ void cvrp_local_search::run_ls_step() {
              ++t_rank) {
           cvrp_mixed_exchange r(_input,
                                 _sol_state,
-                                _sol[s_t.first].route,
+                                _sol[s_t.first],
                                 s_t.first,
                                 s_rank,
-                                _sol[s_t.second].route,
+                                _sol[s_t.second],
                                 s_t.second,
                                 t_rank);
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
@@ -265,10 +265,10 @@ void cvrp_local_search::run_ls_step() {
           }
           cvrp_two_opt r(_input,
                          _sol_state,
-                         _sol[s_t.first].route,
+                         _sol[s_t.first],
                          s_t.first,
                          s_rank,
-                         _sol[s_t.second].route,
+                         _sol[s_t.second],
                          s_t.second,
                          t_rank);
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
@@ -293,10 +293,10 @@ void cvrp_local_search::run_ls_step() {
           }
           cvrp_reverse_two_opt r(_input,
                                  _sol_state,
-                                 _sol[s_t.first].route,
+                                 _sol[s_t.first],
                                  s_t.first,
                                  s_rank,
-                                 _sol[s_t.second].route,
+                                 _sol[s_t.second],
                                  s_t.second,
                                  t_rank);
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
@@ -327,10 +327,10 @@ void cvrp_local_search::run_ls_step() {
         for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size(); ++t_rank) {
           cvrp_relocate r(_input,
                           _sol_state,
-                          _sol[s_t.first].route,
+                          _sol[s_t.first],
                           s_t.first,
                           s_rank,
-                          _sol[s_t.second].route,
+                          _sol[s_t.second],
                           s_t.second,
                           t_rank);
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
@@ -361,10 +361,10 @@ void cvrp_local_search::run_ls_step() {
         for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size(); ++t_rank) {
           cvrp_or_opt r(_input,
                         _sol_state,
-                        _sol[s_t.first].route,
+                        _sol[s_t.first],
                         s_t.first,
                         s_rank,
-                        _sol[s_t.second].route,
+                        _sol[s_t.second],
                         s_t.second,
                         t_rank);
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
@@ -388,7 +388,7 @@ void cvrp_local_search::run_ls_step() {
              ++t_rank) {
           cvrp_intra_exchange r(_input,
                                 _sol_state,
-                                _sol[s_t.first].route,
+                                _sol[s_t.first],
                                 s_t.first,
                                 s_rank,
                                 t_rank);
@@ -414,7 +414,7 @@ void cvrp_local_search::run_ls_step() {
              ++t_rank) {
           cvrp_intra_cross_exchange r(_input,
                                       _sol_state,
-                                      _sol[s_t.first].route,
+                                      _sol[s_t.first],
                                       s_t.first,
                                       s_rank,
                                       t_rank);
@@ -442,7 +442,7 @@ void cvrp_local_search::run_ls_step() {
           }
           cvrp_intra_mixed_exchange r(_input,
                                       _sol_state,
-                                      _sol[s_t.first].route,
+                                      _sol[s_t.first],
                                       s_t.first,
                                       s_rank,
                                       t_rank);
@@ -475,7 +475,7 @@ void cvrp_local_search::run_ls_step() {
           }
           cvrp_intra_relocate r(_input,
                                 _sol_state,
-                                _sol[s_t.first].route,
+                                _sol[s_t.first],
                                 s_t.first,
                                 s_rank,
                                 t_rank);
@@ -508,7 +508,7 @@ void cvrp_local_search::run_ls_step() {
           }
           cvrp_intra_or_opt r(_input,
                               _sol_state,
-                              _sol[s_t.first].route,
+                              _sol[s_t.first],
                               s_t.first,
                               s_rank,
                               t_rank);

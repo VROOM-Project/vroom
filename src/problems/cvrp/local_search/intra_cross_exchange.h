@@ -27,7 +27,7 @@ protected:
 public:
   cvrp_intra_cross_exchange(const input& input,
                             const solution_state& sol_state,
-                            std::vector<index_t>& s_route,
+                            raw_route& s_route,
                             index_t s_vehicle,
                             index_t s_rank,
                             index_t t_rank);

@@ -11,20 +11,22 @@ All rights reserved (see LICENSE).
 
 vrptw_cross_exchange::vrptw_cross_exchange(const input& input,
                                            const solution_state& sol_state,
-                                           tw_solution& tw_sol,
+                                           tw_route& tw_s_route,
                                            index_t s_vehicle,
                                            index_t s_rank,
+                                           tw_route& tw_t_route,
                                            index_t t_vehicle,
                                            index_t t_rank)
   : cvrp_cross_exchange(input,
                         sol_state,
-                        tw_sol[s_vehicle].route,
+                        static_cast<raw_route&>(tw_s_route),
                         s_vehicle,
                         s_rank,
-                        tw_sol[t_vehicle].route,
+                        static_cast<raw_route&>(tw_t_route),
                         t_vehicle,
                         t_rank),
-    _tw_sol(tw_sol),
+    _tw_s_route(tw_s_route),
+    _tw_t_route(tw_t_route),
     _s_is_normal_valid(false),
     _s_is_reverse_valid(false),
     _t_is_normal_valid(false),
@@ -87,40 +89,38 @@ bool vrptw_cross_exchange::is_valid() {
   if (valid) {
     // Keep target edge direction when inserting in source route.
     auto t_start = t_route.begin() + t_rank;
-    _s_is_normal_valid =
-      _tw_sol[s_vehicle].is_valid_addition_for_tw(_input,
-                                                  t_start,
-                                                  t_start + 2,
-                                                  s_rank,
-                                                  s_rank + 2);
+    _s_is_normal_valid = _tw_s_route.is_valid_addition_for_tw(_input,
+                                                              t_start,
+                                                              t_start + 2,
+                                                              s_rank,
+                                                              s_rank + 2);
     // Reverse target edge direction when inserting in source route.
     auto t_reverse_start = t_route.rbegin() + t_route.size() - 2 - t_rank;
     _s_is_reverse_valid =
-      _tw_sol[s_vehicle].is_valid_addition_for_tw(_input,
-                                                  t_reverse_start,
-                                                  t_reverse_start + 2,
-                                                  s_rank,
-                                                  s_rank + 2);
+      _tw_s_route.is_valid_addition_for_tw(_input,
+                                           t_reverse_start,
+                                           t_reverse_start + 2,
+                                           s_rank,
+                                           s_rank + 2);
     valid = _s_is_normal_valid or _s_is_reverse_valid;
   }
 
   if (valid) {
     // Keep source edge direction when inserting in target route.
     auto s_start = s_route.begin() + s_rank;
-    _t_is_normal_valid =
-      _tw_sol[t_vehicle].is_valid_addition_for_tw(_input,
-                                                  s_start,
-                                                  s_start + 2,
-                                                  t_rank,
-                                                  t_rank + 2);
+    _t_is_normal_valid = _tw_t_route.is_valid_addition_for_tw(_input,
+                                                              s_start,
+                                                              s_start + 2,
+                                                              t_rank,
+                                                              t_rank + 2);
     // Reverse source edge direction when inserting in target route.
     auto s_reverse_start = s_route.rbegin() + s_route.size() - 2 - s_rank;
     _t_is_reverse_valid =
-      _tw_sol[t_vehicle].is_valid_addition_for_tw(_input,
-                                                  s_reverse_start,
-                                                  s_reverse_start + 2,
-                                                  t_rank,
-                                                  t_rank + 2);
+      _tw_t_route.is_valid_addition_for_tw(_input,
+                                           s_reverse_start,
+                                           s_reverse_start + 2,
+                                           t_rank,
+                                           t_rank + 2);
     valid = _t_is_normal_valid or _t_is_reverse_valid;
   }
 
@@ -140,23 +140,23 @@ void vrptw_cross_exchange::apply() {
   }
 
   if (!reverse_s_edge) {
-    _tw_sol[t_vehicle].replace(_input,
-                               s_route.begin() + s_rank,
-                               s_route.begin() + s_rank + 2,
-                               t_rank,
-                               t_rank + 2);
+    _tw_t_route.replace(_input,
+                        s_route.begin() + s_rank,
+                        s_route.begin() + s_rank + 2,
+                        t_rank,
+                        t_rank + 2);
   } else {
     auto s_reverse_start = s_route.rbegin() + s_route.size() - 2 - s_rank;
-    _tw_sol[t_vehicle].replace(_input,
-                               s_reverse_start,
-                               s_reverse_start + 2,
-                               t_rank,
-                               t_rank + 2);
+    _tw_t_route.replace(_input,
+                        s_reverse_start,
+                        s_reverse_start + 2,
+                        t_rank,
+                        t_rank + 2);
   }
 
-  _tw_sol[s_vehicle].replace(_input,
-                             t_job_ranks.begin(),
-                             t_job_ranks.end(),
-                             s_rank,
-                             s_rank + 2);
+  _tw_s_route.replace(_input,
+                      t_job_ranks.begin(),
+                      t_job_ranks.end(),
+                      s_rank,
+                      s_rank + 2);
 }

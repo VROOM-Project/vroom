@@ -19,10 +19,10 @@ protected:
 public:
   cvrp_reverse_two_opt(const input& input,
                        const solution_state& sol_state,
-                       std::vector<index_t>& s_route,
+                       raw_route& s_route,
                        index_t s_vehicle,
                        index_t s_rank,
-                       std::vector<index_t>& t_route,
+                       raw_route& t_route,
                        index_t t_vehicle,
                        index_t t_rank);
 

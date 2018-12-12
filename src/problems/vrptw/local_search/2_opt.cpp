@@ -11,36 +11,36 @@ All rights reserved (see LICENSE).
 
 vrptw_two_opt::vrptw_two_opt(const input& input,
                              const solution_state& sol_state,
-                             tw_solution& tw_sol,
+                             tw_route& tw_s_route,
                              index_t s_vehicle,
                              index_t s_rank,
+                             tw_route& tw_t_route,
                              index_t t_vehicle,
                              index_t t_rank)
   : cvrp_two_opt(input,
                  sol_state,
-                 tw_sol[s_vehicle].route,
+                 static_cast<raw_route&>(tw_s_route),
                  s_vehicle,
                  s_rank,
-                 tw_sol[t_vehicle].route,
+                 static_cast<raw_route&>(tw_t_route),
                  t_vehicle,
                  t_rank),
-    _tw_sol(tw_sol) {
+    _tw_s_route(tw_s_route),
+    _tw_t_route(tw_t_route) {
 }
 
 bool vrptw_two_opt::is_valid() {
   return cvrp_two_opt::is_valid() and
-         _tw_sol[t_vehicle].is_valid_addition_for_tw(_input,
-                                                     s_route.begin() + s_rank +
-                                                       1,
-                                                     s_route.end(),
-                                                     t_rank + 1,
-                                                     t_route.size()) and
-         _tw_sol[s_vehicle].is_valid_addition_for_tw(_input,
-                                                     t_route.begin() + t_rank +
-                                                       1,
-                                                     t_route.end(),
-                                                     s_rank + 1,
-                                                     s_route.size());
+         _tw_t_route.is_valid_addition_for_tw(_input,
+                                              s_route.begin() + s_rank + 1,
+                                              s_route.end(),
+                                              t_rank + 1,
+                                              t_route.size()) and
+         _tw_s_route.is_valid_addition_for_tw(_input,
+                                              t_route.begin() + t_rank + 1,
+                                              t_route.end(),
+                                              s_rank + 1,
+                                              s_route.size());
 }
 
 void vrptw_two_opt::apply() {
@@ -49,14 +49,14 @@ void vrptw_two_opt::apply() {
                      t_route.begin() + t_rank + 1,
                      t_route.end());
 
-  _tw_sol[t_vehicle].replace(_input,
-                             s_route.begin() + s_rank + 1,
-                             s_route.end(),
-                             t_rank + 1,
-                             t_route.size());
-  _tw_sol[s_vehicle].replace(_input,
-                             t_job_ranks.begin(),
-                             t_job_ranks.end(),
-                             s_rank + 1,
-                             s_route.size());
+  _tw_t_route.replace(_input,
+                      s_route.begin() + s_rank + 1,
+                      s_route.end(),
+                      t_rank + 1,
+                      t_route.size());
+  _tw_s_route.replace(_input,
+                      t_job_ranks.begin(),
+                      t_job_ranks.end(),
+                      s_rank + 1,
+                      s_route.size());
 }

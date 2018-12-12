@@ -11,33 +11,35 @@ All rights reserved (see LICENSE).
 
 vrptw_relocate::vrptw_relocate(const input& input,
                                const solution_state& sol_state,
-                               tw_solution& tw_sol,
+                               tw_route& tw_s_route,
                                index_t s_vehicle,
                                index_t s_rank,
+                               tw_route& tw_t_route,
                                index_t t_vehicle,
                                index_t t_rank)
   : cvrp_relocate(input,
                   sol_state,
-                  tw_sol[s_vehicle].route,
+                  static_cast<raw_route&>(tw_s_route),
                   s_vehicle,
                   s_rank,
-                  tw_sol[t_vehicle].route,
+                  static_cast<raw_route&>(tw_t_route),
                   t_vehicle,
                   t_rank),
-    _tw_sol(tw_sol) {
+    _tw_s_route(tw_s_route),
+    _tw_t_route(tw_t_route) {
 }
 
 bool vrptw_relocate::is_valid() {
   return cvrp_relocate::is_valid() and
-         _tw_sol[t_vehicle].is_valid_addition_for_tw(_input,
-                                                     s_route[s_rank],
-                                                     t_rank) and
-         _tw_sol[s_vehicle].is_valid_removal(_input, s_rank, 1);
+         _tw_t_route.is_valid_addition_for_tw(_input,
+                                              s_route[s_rank],
+                                              t_rank) and
+         _tw_s_route.is_valid_removal(_input, s_rank, 1);
 }
 
 void vrptw_relocate::apply() {
   auto relocate_job_rank = s_route[s_rank];
 
-  _tw_sol[s_vehicle].remove(_input, s_rank, 1);
-  _tw_sol[t_vehicle].add(_input, relocate_job_rank, t_rank);
+  _tw_s_route.remove(_input, s_rank, 1);
+  _tw_t_route.add(_input, relocate_job_rank, t_rank);
 }

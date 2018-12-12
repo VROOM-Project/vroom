@@ -12,6 +12,7 @@ All rights reserved (see LICENSE).
 
 #include "structures/typedefs.h"
 #include "structures/vroom/input/input.h"
+#include "structures/vroom/raw_route.h"
 #include "structures/vroom/solution_state.h"
 
 class ls_operator {
@@ -36,10 +37,10 @@ protected:
 public:
   ls_operator(const input& input,
               const solution_state& sol_state,
-              std::vector<index_t>& s_route,
+              raw_route& s_route,
               index_t s_vehicle,
               index_t s_rank,
-              std::vector<index_t>& t_route,
+              raw_route& t_route,
               index_t t_vehicle,
               index_t t_rank);
 

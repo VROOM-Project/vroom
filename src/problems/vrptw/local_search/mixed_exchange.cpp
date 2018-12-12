@@ -11,20 +11,22 @@ All rights reserved (see LICENSE).
 
 vrptw_mixed_exchange::vrptw_mixed_exchange(const input& input,
                                            const solution_state& sol_state,
-                                           tw_solution& tw_sol,
+                                           tw_route& tw_s_route,
                                            index_t s_vehicle,
                                            index_t s_rank,
+                                           tw_route& tw_t_route,
                                            index_t t_vehicle,
                                            index_t t_rank)
   : cvrp_mixed_exchange(input,
                         sol_state,
-                        tw_sol[s_vehicle].route,
+                        static_cast<raw_route&>(tw_s_route),
                         s_vehicle,
                         s_rank,
-                        tw_sol[t_vehicle].route,
+                        static_cast<raw_route&>(tw_t_route),
                         t_vehicle,
                         t_rank),
-    _tw_sol(tw_sol),
+    _tw_s_route(tw_s_route),
+    _tw_t_route(tw_t_route),
     _s_is_normal_valid(false),
     _s_is_reverse_valid(false) {
 }
@@ -60,8 +62,7 @@ void vrptw_mixed_exchange::compute_gain() {
 bool vrptw_mixed_exchange::is_valid() {
   bool valid = cvrp_mixed_exchange::is_valid();
 
-  valid &=
-    _tw_sol[t_vehicle].is_valid_addition_for_tw(_input,
+  valid &= _tw_t_route.is_valid_addition_for_tw(_input,
                                                 s_route.begin() + s_rank,
                                                 s_route.begin() + s_rank + 1,
                                                 t_rank,
@@ -70,20 +71,19 @@ bool vrptw_mixed_exchange::is_valid() {
   if (valid) {
     // Keep target edge direction when inserting in source route.
     auto t_start = t_route.begin() + t_rank;
-    _s_is_normal_valid =
-      _tw_sol[s_vehicle].is_valid_addition_for_tw(_input,
-                                                  t_start,
-                                                  t_start + 2,
-                                                  s_rank,
-                                                  s_rank + 1);
+    _s_is_normal_valid = _tw_s_route.is_valid_addition_for_tw(_input,
+                                                              t_start,
+                                                              t_start + 2,
+                                                              s_rank,
+                                                              s_rank + 1);
     // Reverse target edge direction when inserting in source route.
     auto t_reverse_start = t_route.rbegin() + t_route.size() - 2 - t_rank;
     _s_is_reverse_valid =
-      _tw_sol[s_vehicle].is_valid_addition_for_tw(_input,
-                                                  t_reverse_start,
-                                                  t_reverse_start + 2,
-                                                  s_rank,
-                                                  s_rank + 1);
+      _tw_s_route.is_valid_addition_for_tw(_input,
+                                           t_reverse_start,
+                                           t_reverse_start + 2,
+                                           s_rank,
+                                           s_rank + 1);
     valid = _s_is_normal_valid or _s_is_reverse_valid;
   }
 
@@ -103,15 +103,15 @@ void vrptw_mixed_exchange::apply() {
                        t_reverse_start + 2);
   }
 
-  _tw_sol[s_vehicle].replace(_input,
-                             t_job_ranks.begin(),
-                             t_job_ranks.end(),
-                             s_rank,
-                             s_rank + 1);
+  _tw_s_route.replace(_input,
+                      t_job_ranks.begin(),
+                      t_job_ranks.end(),
+                      s_rank,
+                      s_rank + 1);
 
-  _tw_sol[t_vehicle].replace(_input,
-                             s_job_ranks.begin(),
-                             s_job_ranks.end(),
-                             t_rank,
-                             t_rank + 2);
+  _tw_t_route.replace(_input,
+                      s_job_ranks.begin(),
+                      s_job_ranks.end(),
+                      t_rank,
+                      t_rank + 2);
 }

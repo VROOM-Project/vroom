@@ -192,9 +192,10 @@ void vrptw_local_search::run_ls_step() {
              ++t_rank) {
           vrptw_exchange r(_input,
                            _sol_state,
-                           _tw_sol,
+                           _tw_sol[s_t.first],
                            s_t.first,
                            s_rank,
+                           _tw_sol[s_t.second],
                            s_t.second,
                            t_rank);
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
@@ -219,9 +220,10 @@ void vrptw_local_search::run_ls_step() {
              ++t_rank) {
           vrptw_cross_exchange r(_input,
                                  _sol_state,
-                                 _tw_sol,
+                                 _tw_sol[s_t.first],
                                  s_t.first,
                                  s_rank,
+                                 _tw_sol[s_t.second],
                                  s_t.second,
                                  t_rank);
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
@@ -245,9 +247,10 @@ void vrptw_local_search::run_ls_step() {
              ++t_rank) {
           vrptw_mixed_exchange r(_input,
                                  _sol_state,
-                                 _tw_sol,
+                                 _tw_sol[s_t.first],
                                  s_t.first,
                                  s_rank,
+                                 _tw_sol[s_t.second],
                                  s_t.second,
                                  t_rank);
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
@@ -275,9 +278,10 @@ void vrptw_local_search::run_ls_step() {
           }
           vrptw_two_opt r(_input,
                           _sol_state,
-                          _tw_sol,
+                          _tw_sol[s_t.first],
                           s_t.first,
                           s_rank,
+                          _tw_sol[s_t.second],
                           s_t.second,
                           t_rank);
           if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid()) {
@@ -304,9 +308,10 @@ void vrptw_local_search::run_ls_step() {
           }
           vrptw_reverse_two_opt r(_input,
                                   _sol_state,
-                                  _tw_sol,
+                                  _tw_sol[s_t.first],
                                   s_t.first,
                                   s_rank,
+                                  _tw_sol[s_t.second],
                                   s_t.second,
                                   t_rank);
           if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid()) {
@@ -338,9 +343,10 @@ void vrptw_local_search::run_ls_step() {
              ++t_rank) {
           vrptw_relocate r(_input,
                            _sol_state,
-                           _tw_sol,
+                           _tw_sol[s_t.first],
                            s_t.first,
                            s_rank,
+                           _tw_sol[s_t.second],
                            s_t.second,
                            t_rank);
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
@@ -373,9 +379,10 @@ void vrptw_local_search::run_ls_step() {
              ++t_rank) {
           vrptw_or_opt r(_input,
                          _sol_state,
-                         _tw_sol,
+                         _tw_sol[s_t.first],
                          s_t.first,
                          s_rank,
+                         _tw_sol[s_t.second],
                          s_t.second,
                          t_rank);
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
@@ -400,7 +407,7 @@ void vrptw_local_search::run_ls_step() {
              ++t_rank) {
           vrptw_intra_exchange r(_input,
                                  _sol_state,
-                                 _tw_sol,
+                                 _tw_sol[s_t.first],
                                  s_t.first,
                                  s_rank,
                                  t_rank);
@@ -426,7 +433,7 @@ void vrptw_local_search::run_ls_step() {
              ++t_rank) {
           vrptw_intra_cross_exchange r(_input,
                                        _sol_state,
-                                       _tw_sol,
+                                       _tw_sol[s_t.first],
                                        s_t.first,
                                        s_rank,
                                        t_rank);
@@ -453,7 +460,7 @@ void vrptw_local_search::run_ls_step() {
           }
           vrptw_intra_mixed_exchange r(_input,
                                        _sol_state,
-                                       _tw_sol,
+                                       _tw_sol[s_t.first],
                                        s_t.first,
                                        s_rank,
                                        t_rank);
@@ -485,7 +492,7 @@ void vrptw_local_search::run_ls_step() {
           }
           vrptw_intra_relocate r(_input,
                                  _sol_state,
-                                 _tw_sol,
+                                 _tw_sol[s_t.first],
                                  s_t.first,
                                  s_rank,
                                  t_rank);
@@ -518,7 +525,7 @@ void vrptw_local_search::run_ls_step() {
           }
           vrptw_intra_or_opt r(_input,
                                _sol_state,
-                               _tw_sol,
+                               _tw_sol[s_t.first],
                                s_t.first,
                                s_rank,
                                t_rank);

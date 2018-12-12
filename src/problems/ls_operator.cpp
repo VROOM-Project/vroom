@@ -11,18 +11,18 @@ All rights reserved (see LICENSE).
 
 ls_operator::ls_operator(const input& input,
                          const solution_state& sol_state,
-                         std::vector<index_t>& s_route,
+                         raw_route& s_raw_route,
                          index_t s_vehicle,
                          index_t s_rank,
-                         std::vector<index_t>& t_route,
+                         raw_route& t_raw_route,
                          index_t t_vehicle,
                          index_t t_rank)
   : _input(input),
     _sol_state(sol_state),
-    s_route(s_route),
+    s_route(s_raw_route.route),
     s_vehicle(s_vehicle),
     s_rank(s_rank),
-    t_route(t_route),
+    t_route(t_raw_route.route),
     t_vehicle(t_vehicle),
     t_rank(t_rank),
     gain_computed(false) {

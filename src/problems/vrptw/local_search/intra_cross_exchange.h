@@ -13,11 +13,9 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/local_search/intra_cross_exchange.h"
 #include "structures/vroom/tw_route.h"
 
-using tw_solution = std::vector<tw_route>;
-
 class vrptw_intra_cross_exchange : public cvrp_intra_cross_exchange {
 private:
-  tw_solution& _tw_sol;
+  tw_route& _tw_s_route;
 
   bool _s_normal_t_normal_is_valid;
   bool _s_normal_t_reverse_is_valid;
@@ -33,7 +31,7 @@ private:
 public:
   vrptw_intra_cross_exchange(const input& input,
                              const solution_state& sol_state,
-                             tw_solution& tw_sol,
+                             tw_route& tw_s_route,
                              index_t s_vehicle,
                              index_t s_rank,
                              index_t t_rank);

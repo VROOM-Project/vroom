@@ -11,10 +11,10 @@ All rights reserved (see LICENSE).
 
 cvrp_cross_exchange::cvrp_cross_exchange(const input& input,
                                          const solution_state& sol_state,
-                                         std::vector<index_t>& s_route,
+                                         raw_route& s_route,
                                          index_t s_vehicle,
                                          index_t s_rank,
-                                         std::vector<index_t>& t_route,
+                                         raw_route& t_route,
                                          index_t t_vehicle,
                                          index_t t_rank)
   : ls_operator(input,
