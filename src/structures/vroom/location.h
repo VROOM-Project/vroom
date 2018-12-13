@@ -33,7 +33,9 @@ public:
 
   bool has_coordinates() const;
 
-  Index index() const;
+  Index index() const {
+    return _index;
+  }
 
   Coordinate lon() const;
 

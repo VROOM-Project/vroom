@@ -20,8 +20,8 @@ All rights reserved (see LICENSE).
 namespace vroom {
 
 struct Job {
-  const Id id;
   Location location;
+  const Id id;
   const Duration service;
   const Amount amount;
   const Skills skills;
@@ -36,7 +36,9 @@ struct Job {
       const std::vector<TimeWindow>& tws =
         std::vector<TimeWindow>(1, TimeWindow()));
 
-  Index index() const;
+  Index index() const {
+    return location.index();
+  }
 
   bool is_valid_start(Duration time) const;
 };
