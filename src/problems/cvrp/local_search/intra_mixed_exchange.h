@@ -10,7 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/ls_operator.h"
+#include "algorithms/local_search/ls_operator.h"
 
 class cvrp_intra_mixed_exchange : public ls_operator {
 protected:

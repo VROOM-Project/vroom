@@ -9,7 +9,7 @@ All rights reserved (see LICENSE).
 
 #include <numeric>
 
-#include "problems/ls_operator.h"
+#include "algorithms/local_search/ls_operator.h"
 #include "problems/vrptw/local_search/2_opt.h"
 #include "problems/vrptw/local_search/cross_exchange.h"
 #include "problems/vrptw/local_search/exchange.h"

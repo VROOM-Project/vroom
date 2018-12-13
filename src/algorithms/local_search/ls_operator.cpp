@@ -7,7 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/ls_operator.h"
+#include "algorithms/local_search/ls_operator.h"
 
 ls_operator::ls_operator(const input& input,
                          const solution_state& sol_state,
