@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Refactor to remove duplicate code for heuristic and local search (#176)
+
 ## [v1.3.0]
 
 ### Added
