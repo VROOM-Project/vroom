@@ -7,7 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/vrptw/local_search/intra_mixed_exchange.h"
+#include "problems/vrptw/operators/intra_mixed_exchange.h"
 
 vrptw_intra_mixed_exchange::vrptw_intra_mixed_exchange(
   const input& input,

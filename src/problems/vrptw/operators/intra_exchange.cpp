@@ -7,7 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/vrptw/local_search/intra_exchange.h"
+#include "problems/vrptw/operators/intra_exchange.h"
 
 vrptw_intra_exchange::vrptw_intra_exchange(const input& input,
                                            const solution_state& sol_state,

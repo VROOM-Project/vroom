@@ -7,7 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/vrptw/local_search/intra_cross_exchange.h"
+#include "problems/vrptw/operators/intra_cross_exchange.h"
 
 vrptw_intra_cross_exchange::vrptw_intra_cross_exchange(
   const input& input,

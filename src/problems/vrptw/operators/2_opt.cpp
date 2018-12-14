@@ -7,7 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/vrptw/local_search/2_opt.h"
+#include "problems/vrptw/operators/2_opt.h"
 
 vrptw_two_opt::vrptw_two_opt(const input& input,
                              const solution_state& sol_state,

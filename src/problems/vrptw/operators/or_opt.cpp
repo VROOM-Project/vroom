@@ -7,7 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/vrptw/local_search/or_opt.h"
+#include "problems/vrptw/operators/or_opt.h"
 
 vrptw_or_opt::vrptw_or_opt(const input& input,
                            const solution_state& sol_state,

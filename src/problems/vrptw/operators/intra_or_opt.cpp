@@ -7,7 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/vrptw/local_search/intra_or_opt.h"
+#include "problems/vrptw/operators/intra_or_opt.h"
 
 vrptw_intra_or_opt::vrptw_intra_or_opt(const input& input,
                                        const solution_state& sol_state,

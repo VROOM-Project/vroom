@@ -10,7 +10,7 @@ All rights reserved (see LICENSE).
 #include <thread>
 
 #include "algorithms/heuristics/solomon.h"
-#include "problems/vrptw/local_search/local_search.h"
+#include "algorithms/local_search/local_search.h"
 #include "problems/vrptw/vrptw.h"
 #include "structures/vroom/input/input.h"
 #include "structures/vroom/tw_route.h"
@@ -67,7 +67,9 @@ solution vrptw::solve(unsigned exploration_level, unsigned nb_threads) const {
       }
 
       // Local search phase.
-      vrptw_local_search ls(_input, tw_solutions[rank], max_nb_jobs_removal);
+      local_search<tw_route> ls(_input,
+                                tw_solutions[rank],
+                                max_nb_jobs_removal);
       ls.run();
 
       // Store solution indicators.

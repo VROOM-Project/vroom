@@ -7,7 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/vrptw/local_search/relocate.h"
+#include "problems/vrptw/operators/relocate.h"
 
 vrptw_relocate::vrptw_relocate(const input& input,
                                const solution_state& sol_state,
