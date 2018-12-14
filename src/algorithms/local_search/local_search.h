@@ -14,7 +14,20 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/solution_state.h"
 #include "structures/vroom/tw_route.h"
 
-template <class Route> class local_search {
+template <class Route,
+          class exchange,
+          class cross_exchange,
+          class mixed_exchange,
+          class two_opt,
+          class reverse_two_opt,
+          class relocate,
+          class or_opt,
+          class intra_exchange,
+          class intra_cross_exchange,
+          class intra_mixed_exchange,
+          class intra_relocate,
+          class intra_or_opt>
+class local_search {
 private:
   const input& _input;
   const matrix<cost_t>& _m;

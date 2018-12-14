@@ -25,10 +25,34 @@ All rights reserved (see LICENSE).
 #include "problems/vrptw/operators/reverse_2_opt.h"
 #include "utils/helpers.h"
 
-template <class Route>
-local_search<Route>::local_search(const input& input,
-                                  std::vector<Route>& sol,
-                                  unsigned max_nb_jobs_removal)
+template <class Route,
+          class exchange,
+          class cross_exchange,
+          class mixed_exchange,
+          class two_opt,
+          class reverse_two_opt,
+          class relocate,
+          class or_opt,
+          class intra_exchange,
+          class intra_cross_exchange,
+          class intra_mixed_exchange,
+          class intra_relocate,
+          class intra_or_opt>
+local_search<Route,
+             exchange,
+             cross_exchange,
+             mixed_exchange,
+             two_opt,
+             reverse_two_opt,
+             relocate,
+             or_opt,
+             intra_exchange,
+             intra_cross_exchange,
+             intra_mixed_exchange,
+             intra_relocate,
+             intra_or_opt>::local_search(const input& input,
+                                         std::vector<Route>& sol,
+                                         unsigned max_nb_jobs_removal)
   : _input(input),
     _m(_input.get_matrix()),
     V(_input._vehicles.size()),
@@ -53,9 +77,34 @@ local_search<Route>::local_search(const input& input,
     });
 }
 
-template <class Route>
-void local_search<Route>::try_job_additions(const std::vector<index_t>& routes,
-                                            double regret_coeff) {
+template <class Route,
+          class exchange,
+          class cross_exchange,
+          class mixed_exchange,
+          class two_opt,
+          class reverse_two_opt,
+          class relocate,
+          class or_opt,
+          class intra_exchange,
+          class intra_cross_exchange,
+          class intra_mixed_exchange,
+          class intra_relocate,
+          class intra_or_opt>
+void local_search<Route,
+                  exchange,
+                  cross_exchange,
+                  mixed_exchange,
+                  two_opt,
+                  reverse_two_opt,
+                  relocate,
+                  or_opt,
+                  intra_exchange,
+                  intra_cross_exchange,
+                  intra_mixed_exchange,
+                  intra_relocate,
+                  intra_or_opt>::try_job_additions(const std::vector<index_t>&
+                                                     routes,
+                                                   double regret_coeff) {
   bool job_added;
 
   do {
@@ -166,7 +215,32 @@ void local_search<Route>::try_job_additions(const std::vector<index_t>& routes,
   } while (job_added);
 }
 
-template <class Route> void local_search<Route>::run_ls_step() {
+template <class Route,
+          class exchange,
+          class cross_exchange,
+          class mixed_exchange,
+          class two_opt,
+          class reverse_two_opt,
+          class relocate,
+          class or_opt,
+          class intra_exchange,
+          class intra_cross_exchange,
+          class intra_mixed_exchange,
+          class intra_relocate,
+          class intra_or_opt>
+void local_search<Route,
+                  exchange,
+                  cross_exchange,
+                  mixed_exchange,
+                  two_opt,
+                  reverse_two_opt,
+                  relocate,
+                  or_opt,
+                  intra_exchange,
+                  intra_cross_exchange,
+                  intra_mixed_exchange,
+                  intra_relocate,
+                  intra_or_opt>::run_ls_step() {
   std::vector<std::vector<std::unique_ptr<ls_operator>>> best_ops(V);
   for (std::size_t v = 0; v < V; ++v) {
     best_ops[v] = std::vector<std::unique_ptr<ls_operator>>(V);
@@ -627,7 +701,32 @@ template <class Route> void local_search<Route>::run_ls_step() {
   }
 }
 
-template <class Route> void local_search<Route>::run() {
+template <class Route,
+          class exchange,
+          class cross_exchange,
+          class mixed_exchange,
+          class two_opt,
+          class reverse_two_opt,
+          class relocate,
+          class or_opt,
+          class intra_exchange,
+          class intra_cross_exchange,
+          class intra_mixed_exchange,
+          class intra_relocate,
+          class intra_or_opt>
+void local_search<Route,
+                  exchange,
+                  cross_exchange,
+                  mixed_exchange,
+                  two_opt,
+                  reverse_two_opt,
+                  relocate,
+                  or_opt,
+                  intra_exchange,
+                  intra_cross_exchange,
+                  intra_mixed_exchange,
+                  intra_relocate,
+                  intra_or_opt>::run() {
   bool try_ls_step = true;
   bool first_step = true;
 
@@ -693,7 +792,32 @@ template <class Route> void local_search<Route>::run() {
   }
 }
 
-template <class Route> void local_search<Route>::remove_from_routes() {
+template <class Route,
+          class exchange,
+          class cross_exchange,
+          class mixed_exchange,
+          class two_opt,
+          class reverse_two_opt,
+          class relocate,
+          class or_opt,
+          class intra_exchange,
+          class intra_cross_exchange,
+          class intra_mixed_exchange,
+          class intra_relocate,
+          class intra_or_opt>
+void local_search<Route,
+                  exchange,
+                  cross_exchange,
+                  mixed_exchange,
+                  two_opt,
+                  reverse_two_opt,
+                  relocate,
+                  or_opt,
+                  intra_exchange,
+                  intra_cross_exchange,
+                  intra_mixed_exchange,
+                  intra_relocate,
+                  intra_or_opt>::remove_from_routes() {
   // Store nearest job from and to any job in any route for constant
   // time access down the line.
   for (std::size_t v1 = 0; v1 < V; ++v1) {
@@ -782,8 +906,32 @@ template <class Route> void local_search<Route>::remove_from_routes() {
   }
 }
 
-template <class Route>
-solution_indicators local_search<Route>::indicators() const {
+template <class Route,
+          class exchange,
+          class cross_exchange,
+          class mixed_exchange,
+          class two_opt,
+          class reverse_two_opt,
+          class relocate,
+          class or_opt,
+          class intra_exchange,
+          class intra_cross_exchange,
+          class intra_mixed_exchange,
+          class intra_relocate,
+          class intra_or_opt>
+solution_indicators local_search<Route,
+                                 exchange,
+                                 cross_exchange,
+                                 mixed_exchange,
+                                 two_opt,
+                                 reverse_two_opt,
+                                 relocate,
+                                 or_opt,
+                                 intra_exchange,
+                                 intra_cross_exchange,
+                                 intra_mixed_exchange,
+                                 intra_relocate,
+                                 intra_or_opt>::indicators() const {
   solution_indicators si;
 
   si.unassigned = _best_unassigned;
@@ -794,4 +942,16 @@ solution_indicators local_search<Route>::indicators() const {
   return si;
 }
 
-template class local_search<tw_route>;
+template class local_search<tw_route,
+                            vrptw_exchange,
+                            vrptw_cross_exchange,
+                            vrptw_mixed_exchange,
+                            vrptw_two_opt,
+                            vrptw_reverse_two_opt,
+                            vrptw_relocate,
+                            vrptw_or_opt,
+                            vrptw_intra_exchange,
+                            vrptw_intra_cross_exchange,
+                            vrptw_intra_mixed_exchange,
+                            vrptw_intra_relocate,
+                            vrptw_intra_or_opt>;

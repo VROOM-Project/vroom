@@ -11,12 +11,38 @@ All rights reserved (see LICENSE).
 
 #include "algorithms/heuristics/solomon.h"
 #include "algorithms/local_search/local_search.h"
+#include "problems/vrptw/operators/2_opt.h"
+#include "problems/vrptw/operators/cross_exchange.h"
+#include "problems/vrptw/operators/exchange.h"
+#include "problems/vrptw/operators/intra_cross_exchange.h"
+#include "problems/vrptw/operators/intra_exchange.h"
+#include "problems/vrptw/operators/intra_mixed_exchange.h"
+#include "problems/vrptw/operators/intra_or_opt.h"
+#include "problems/vrptw/operators/intra_relocate.h"
+#include "problems/vrptw/operators/mixed_exchange.h"
+#include "problems/vrptw/operators/or_opt.h"
+#include "problems/vrptw/operators/relocate.h"
+#include "problems/vrptw/operators/reverse_2_opt.h"
 #include "problems/vrptw/vrptw.h"
 #include "structures/vroom/input/input.h"
 #include "structures/vroom/tw_route.h"
 #include "utils/helpers.h"
 
 using tw_solution = std::vector<tw_route>;
+
+using vrptw_local_search = local_search<tw_route,
+                                        vrptw_exchange,
+                                        vrptw_cross_exchange,
+                                        vrptw_mixed_exchange,
+                                        vrptw_two_opt,
+                                        vrptw_reverse_two_opt,
+                                        vrptw_relocate,
+                                        vrptw_or_opt,
+                                        vrptw_intra_exchange,
+                                        vrptw_intra_cross_exchange,
+                                        vrptw_intra_mixed_exchange,
+                                        vrptw_intra_relocate,
+                                        vrptw_intra_or_opt>;
 
 constexpr std::array<h_param, 32> vrptw::homogeneous_parameters;
 constexpr std::array<h_param, 32> vrptw::heterogeneous_parameters;
@@ -67,9 +93,7 @@ solution vrptw::solve(unsigned exploration_level, unsigned nb_threads) const {
       }
 
       // Local search phase.
-      local_search<tw_route> ls(_input,
-                                tw_solutions[rank],
-                                max_nb_jobs_removal);
+      vrptw_local_search ls(_input, tw_solutions[rank], max_nb_jobs_removal);
       ls.run();
 
       // Store solution indicators.
