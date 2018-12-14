@@ -7,7 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/cvrp/local_search/intra_or_opt.h"
+#include "problems/cvrp/operators/intra_or_opt.h"
 #include "utils/helpers.h"
 
 cvrp_intra_or_opt::cvrp_intra_or_opt(const input& input,

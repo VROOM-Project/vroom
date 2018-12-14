@@ -7,7 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/cvrp/local_search/exchange.h"
+#include "problems/cvrp/operators/exchange.h"
 
 cvrp_exchange::cvrp_exchange(const input& input,
                              const solution_state& sol_state,

@@ -7,7 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/cvrp/local_search/2_opt.h"
+#include "problems/cvrp/operators/2_opt.h"
 
 cvrp_two_opt::cvrp_two_opt(const input& input,
                            const solution_state& sol_state,

@@ -7,7 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/cvrp/local_search/intra_relocate.h"
+#include "problems/cvrp/operators/intra_relocate.h"
 #include "utils/helpers.h"
 
 cvrp_intra_relocate::cvrp_intra_relocate(const input& input,

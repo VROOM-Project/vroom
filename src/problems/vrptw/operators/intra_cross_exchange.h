@@ -10,7 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/cvrp/local_search/intra_cross_exchange.h"
+#include "problems/cvrp/operators/intra_cross_exchange.h"
 #include "structures/vroom/tw_route.h"
 
 class vrptw_intra_cross_exchange : public cvrp_intra_cross_exchange {

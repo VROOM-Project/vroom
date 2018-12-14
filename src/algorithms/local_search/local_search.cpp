@@ -11,6 +11,18 @@ All rights reserved (see LICENSE).
 
 #include "algorithms/local_search/local_search.h"
 #include "algorithms/local_search/ls_operator.h"
+#include "problems/cvrp/operators/2_opt.h"
+#include "problems/cvrp/operators/cross_exchange.h"
+#include "problems/cvrp/operators/exchange.h"
+#include "problems/cvrp/operators/intra_cross_exchange.h"
+#include "problems/cvrp/operators/intra_exchange.h"
+#include "problems/cvrp/operators/intra_mixed_exchange.h"
+#include "problems/cvrp/operators/intra_or_opt.h"
+#include "problems/cvrp/operators/intra_relocate.h"
+#include "problems/cvrp/operators/mixed_exchange.h"
+#include "problems/cvrp/operators/or_opt.h"
+#include "problems/cvrp/operators/relocate.h"
+#include "problems/cvrp/operators/reverse_2_opt.h"
 #include "problems/vrptw/operators/2_opt.h"
 #include "problems/vrptw/operators/cross_exchange.h"
 #include "problems/vrptw/operators/exchange.h"
@@ -270,18 +282,17 @@ void local_search<Route,
 
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
         for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size(); ++t_rank) {
-          vrptw_exchange r(_input,
-                           _sol_state,
-                           _sol[s_t.first],
-                           s_t.first,
-                           s_rank,
-                           _sol[s_t.second],
-                           s_t.second,
-                           t_rank);
+          exchange r(_input,
+                     _sol_state,
+                     _sol[s_t.first],
+                     s_t.first,
+                     s_rank,
+                     _sol[s_t.second],
+                     s_t.second,
+                     t_rank);
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
             best_gains[s_t.first][s_t.second] = r.gain();
-            best_ops[s_t.first][s_t.second] =
-              std::make_unique<vrptw_exchange>(r);
+            best_ops[s_t.first][s_t.second] = std::make_unique<exchange>(r);
           }
         }
       }
@@ -297,18 +308,18 @@ void local_search<Route,
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1; ++s_rank) {
         for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size() - 1;
              ++t_rank) {
-          vrptw_cross_exchange r(_input,
-                                 _sol_state,
-                                 _sol[s_t.first],
-                                 s_t.first,
-                                 s_rank,
-                                 _sol[s_t.second],
-                                 s_t.second,
-                                 t_rank);
+          cross_exchange r(_input,
+                           _sol_state,
+                           _sol[s_t.first],
+                           s_t.first,
+                           s_rank,
+                           _sol[s_t.second],
+                           s_t.second,
+                           t_rank);
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
             best_gains[s_t.first][s_t.second] = r.gain();
             best_ops[s_t.first][s_t.second] =
-              std::make_unique<vrptw_cross_exchange>(r);
+              std::make_unique<cross_exchange>(r);
           }
         }
       }
@@ -324,18 +335,18 @@ void local_search<Route,
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
         for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size() - 1;
              ++t_rank) {
-          vrptw_mixed_exchange r(_input,
-                                 _sol_state,
-                                 _sol[s_t.first],
-                                 s_t.first,
-                                 s_rank,
-                                 _sol[s_t.second],
-                                 s_t.second,
-                                 t_rank);
+          mixed_exchange r(_input,
+                           _sol_state,
+                           _sol[s_t.first],
+                           s_t.first,
+                           s_rank,
+                           _sol[s_t.second],
+                           s_t.second,
+                           t_rank);
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
             best_gains[s_t.first][s_t.second] = r.gain();
             best_ops[s_t.first][s_t.second] =
-              std::make_unique<vrptw_mixed_exchange>(r);
+              std::make_unique<mixed_exchange>(r);
           }
         }
       }
@@ -354,18 +365,17 @@ void local_search<Route,
           if (!(_sol_state.bwd_amounts[s_t.second][t_rank] <= s_free_amount)) {
             break;
           }
-          vrptw_two_opt r(_input,
-                          _sol_state,
-                          _sol[s_t.first],
-                          s_t.first,
-                          s_rank,
-                          _sol[s_t.second],
-                          s_t.second,
-                          t_rank);
+          two_opt r(_input,
+                    _sol_state,
+                    _sol[s_t.first],
+                    s_t.first,
+                    s_rank,
+                    _sol[s_t.second],
+                    s_t.second,
+                    t_rank);
           if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid()) {
             best_gains[s_t.first][s_t.second] = r.gain();
-            best_ops[s_t.first][s_t.second] =
-              std::make_unique<vrptw_two_opt>(r);
+            best_ops[s_t.first][s_t.second] = std::make_unique<two_opt>(r);
           }
         }
       }
@@ -383,18 +393,18 @@ void local_search<Route,
           if (!(_sol_state.fwd_amounts[s_t.second][t_rank] <= s_free_amount)) {
             break;
           }
-          vrptw_reverse_two_opt r(_input,
-                                  _sol_state,
-                                  _sol[s_t.first],
-                                  s_t.first,
-                                  s_rank,
-                                  _sol[s_t.second],
-                                  s_t.second,
-                                  t_rank);
+          reverse_two_opt r(_input,
+                            _sol_state,
+                            _sol[s_t.first],
+                            s_t.first,
+                            s_rank,
+                            _sol[s_t.second],
+                            s_t.second,
+                            t_rank);
           if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid()) {
             best_gains[s_t.first][s_t.second] = r.gain();
             best_ops[s_t.first][s_t.second] =
-              std::make_unique<vrptw_reverse_two_opt>(r);
+              std::make_unique<reverse_two_opt>(r);
           }
         }
       }
@@ -417,18 +427,17 @@ void local_search<Route,
           continue;
         }
         for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size(); ++t_rank) {
-          vrptw_relocate r(_input,
-                           _sol_state,
-                           _sol[s_t.first],
-                           s_t.first,
-                           s_rank,
-                           _sol[s_t.second],
-                           s_t.second,
-                           t_rank);
+          relocate r(_input,
+                     _sol_state,
+                     _sol[s_t.first],
+                     s_t.first,
+                     s_rank,
+                     _sol[s_t.second],
+                     s_t.second,
+                     t_rank);
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
             best_gains[s_t.first][s_t.second] = r.gain();
-            best_ops[s_t.first][s_t.second] =
-              std::make_unique<vrptw_relocate>(r);
+            best_ops[s_t.first][s_t.second] = std::make_unique<relocate>(r);
           }
         }
       }
@@ -451,17 +460,17 @@ void local_search<Route,
           continue;
         }
         for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size(); ++t_rank) {
-          vrptw_or_opt r(_input,
-                         _sol_state,
-                         _sol[s_t.first],
-                         s_t.first,
-                         s_rank,
-                         _sol[s_t.second],
-                         s_t.second,
-                         t_rank);
+          or_opt r(_input,
+                   _sol_state,
+                   _sol[s_t.first],
+                   s_t.first,
+                   s_rank,
+                   _sol[s_t.second],
+                   s_t.second,
+                   t_rank);
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
             best_gains[s_t.first][s_t.second] = r.gain();
-            best_ops[s_t.first][s_t.second] = std::make_unique<vrptw_or_opt>(r);
+            best_ops[s_t.first][s_t.second] = std::make_unique<or_opt>(r);
           }
         }
       }
@@ -478,16 +487,16 @@ void local_search<Route,
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 2; ++s_rank) {
         for (unsigned t_rank = s_rank + 2; t_rank < _sol[s_t.first].size();
              ++t_rank) {
-          vrptw_intra_exchange r(_input,
-                                 _sol_state,
-                                 _sol[s_t.first],
-                                 s_t.first,
-                                 s_rank,
-                                 t_rank);
+          intra_exchange r(_input,
+                           _sol_state,
+                           _sol[s_t.first],
+                           s_t.first,
+                           s_rank,
+                           t_rank);
           if (r.gain() > best_gains[s_t.first][s_t.first] and r.is_valid()) {
             best_gains[s_t.first][s_t.first] = r.gain();
             best_ops[s_t.first][s_t.first] =
-              std::make_unique<vrptw_intra_exchange>(r);
+              std::make_unique<intra_exchange>(r);
           }
         }
       }
@@ -503,16 +512,16 @@ void local_search<Route,
            ++s_rank) {
         for (unsigned t_rank = s_rank + 3; t_rank < _sol[s_t.first].size() - 1;
              ++t_rank) {
-          vrptw_intra_cross_exchange r(_input,
-                                       _sol_state,
-                                       _sol[s_t.first],
-                                       s_t.first,
-                                       s_rank,
-                                       t_rank);
+          intra_cross_exchange r(_input,
+                                 _sol_state,
+                                 _sol[s_t.first],
+                                 s_t.first,
+                                 s_rank,
+                                 t_rank);
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.first]) {
             best_gains[s_t.first][s_t.first] = r.gain();
             best_ops[s_t.first][s_t.first] =
-              std::make_unique<vrptw_intra_cross_exchange>(r);
+              std::make_unique<intra_cross_exchange>(r);
           }
         }
       }
@@ -530,16 +539,16 @@ void local_search<Route,
           if (t_rank <= s_rank + 1 and s_rank <= t_rank + 2) {
             continue;
           }
-          vrptw_intra_mixed_exchange r(_input,
-                                       _sol_state,
-                                       _sol[s_t.first],
-                                       s_t.first,
-                                       s_rank,
-                                       t_rank);
+          intra_mixed_exchange r(_input,
+                                 _sol_state,
+                                 _sol[s_t.first],
+                                 s_t.first,
+                                 s_rank,
+                                 t_rank);
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.first]) {
             best_gains[s_t.first][s_t.first] = r.gain();
             best_ops[s_t.first][s_t.first] =
-              std::make_unique<vrptw_intra_mixed_exchange>(r);
+              std::make_unique<intra_mixed_exchange>(r);
           }
         }
       }
@@ -562,16 +571,16 @@ void local_search<Route,
           if (t_rank == s_rank) {
             continue;
           }
-          vrptw_intra_relocate r(_input,
-                                 _sol_state,
-                                 _sol[s_t.first],
-                                 s_t.first,
-                                 s_rank,
-                                 t_rank);
+          intra_relocate r(_input,
+                           _sol_state,
+                           _sol[s_t.first],
+                           s_t.first,
+                           s_rank,
+                           t_rank);
           if (r.gain() > best_gains[s_t.first][s_t.first] and r.is_valid()) {
             best_gains[s_t.first][s_t.first] = r.gain();
             best_ops[s_t.first][s_t.first] =
-              std::make_unique<vrptw_intra_relocate>(r);
+              std::make_unique<intra_relocate>(r);
           }
         }
       }
@@ -594,16 +603,15 @@ void local_search<Route,
           if (t_rank == s_rank) {
             continue;
           }
-          vrptw_intra_or_opt r(_input,
-                               _sol_state,
-                               _sol[s_t.first],
-                               s_t.first,
-                               s_rank,
-                               t_rank);
+          intra_or_opt r(_input,
+                         _sol_state,
+                         _sol[s_t.first],
+                         s_t.first,
+                         s_rank,
+                         t_rank);
           if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.first]) {
             best_gains[s_t.first][s_t.first] = r.gain();
-            best_ops[s_t.first][s_t.first] =
-              std::make_unique<vrptw_intra_or_opt>(r);
+            best_ops[s_t.first][s_t.first] = std::make_unique<intra_or_opt>(r);
           }
         }
       }
@@ -955,3 +963,17 @@ template class local_search<tw_route,
                             vrptw_intra_mixed_exchange,
                             vrptw_intra_relocate,
                             vrptw_intra_or_opt>;
+
+template class local_search<raw_route,
+                            cvrp_exchange,
+                            cvrp_cross_exchange,
+                            cvrp_mixed_exchange,
+                            cvrp_two_opt,
+                            cvrp_reverse_two_opt,
+                            cvrp_relocate,
+                            cvrp_or_opt,
+                            cvrp_intra_exchange,
+                            cvrp_intra_cross_exchange,
+                            cvrp_intra_mixed_exchange,
+                            cvrp_intra_relocate,
+                            cvrp_intra_or_opt>;

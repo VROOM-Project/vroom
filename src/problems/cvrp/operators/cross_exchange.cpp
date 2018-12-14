@@ -7,7 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/cvrp/local_search/cross_exchange.h"
+#include "problems/cvrp/operators/cross_exchange.h"
 
 cvrp_cross_exchange::cvrp_cross_exchange(const input& input,
                                          const solution_state& sol_state,

@@ -10,7 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/cvrp/local_search/exchange.h"
+#include "problems/cvrp/operators/exchange.h"
 #include "structures/vroom/tw_route.h"
 
 class vrptw_exchange : public cvrp_exchange {

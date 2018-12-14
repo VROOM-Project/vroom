@@ -12,14 +12,40 @@ All rights reserved (see LICENSE).
 
 #include "algorithms/heuristics/clustering.h"
 #include "algorithms/heuristics/solomon.h"
+#include "algorithms/local_search/local_search.h"
 #include "problems/cvrp/cvrp.h"
-#include "problems/cvrp/local_search/local_search.h"
+#include "problems/cvrp/operators/2_opt.h"
+#include "problems/cvrp/operators/cross_exchange.h"
+#include "problems/cvrp/operators/exchange.h"
+#include "problems/cvrp/operators/intra_cross_exchange.h"
+#include "problems/cvrp/operators/intra_exchange.h"
+#include "problems/cvrp/operators/intra_mixed_exchange.h"
+#include "problems/cvrp/operators/intra_or_opt.h"
+#include "problems/cvrp/operators/intra_relocate.h"
+#include "problems/cvrp/operators/mixed_exchange.h"
+#include "problems/cvrp/operators/or_opt.h"
+#include "problems/cvrp/operators/relocate.h"
+#include "problems/cvrp/operators/reverse_2_opt.h"
 #include "problems/tsp/tsp.h"
 #include "structures/vroom/input/input.h"
 #include "structures/vroom/raw_route.h"
 #include "utils/helpers.h"
 
 using raw_solution = std::vector<raw_route>;
+
+using cvrp_local_search = local_search<raw_route,
+                                       cvrp_exchange,
+                                       cvrp_cross_exchange,
+                                       cvrp_mixed_exchange,
+                                       cvrp_two_opt,
+                                       cvrp_reverse_two_opt,
+                                       cvrp_relocate,
+                                       cvrp_or_opt,
+                                       cvrp_intra_exchange,
+                                       cvrp_intra_cross_exchange,
+                                       cvrp_intra_mixed_exchange,
+                                       cvrp_intra_relocate,
+                                       cvrp_intra_or_opt>;
 
 constexpr std::array<h_param, 32> cvrp::homogeneous_parameters;
 constexpr std::array<h_param, 32> cvrp::heterogeneous_parameters;

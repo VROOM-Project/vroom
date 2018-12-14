@@ -7,7 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/cvrp/local_search/intra_cross_exchange.h"
+#include "problems/cvrp/operators/intra_cross_exchange.h"
 #include "utils/helpers.h"
 
 cvrp_intra_cross_exchange::cvrp_intra_cross_exchange(

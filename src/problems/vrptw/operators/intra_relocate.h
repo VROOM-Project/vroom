@@ -10,7 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/cvrp/local_search/intra_relocate.h"
+#include "problems/cvrp/operators/intra_relocate.h"
 #include "structures/vroom/tw_route.h"
 
 class vrptw_intra_relocate : public cvrp_intra_relocate {

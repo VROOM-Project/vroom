@@ -10,7 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/cvrp/local_search/reverse_2_opt.h"
+#include "problems/cvrp/operators/reverse_2_opt.h"
 #include "structures/vroom/tw_route.h"
 
 class vrptw_reverse_two_opt : public cvrp_reverse_two_opt {

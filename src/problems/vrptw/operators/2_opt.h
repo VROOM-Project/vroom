@@ -10,7 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/cvrp/local_search/2_opt.h"
+#include "problems/cvrp/operators/2_opt.h"
 #include "structures/vroom/tw_route.h"
 
 class vrptw_two_opt : public cvrp_two_opt {

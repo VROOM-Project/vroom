@@ -7,7 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/cvrp/local_search/intra_exchange.h"
+#include "problems/cvrp/operators/intra_exchange.h"
 #include "utils/helpers.h"
 
 cvrp_intra_exchange::cvrp_intra_exchange(const input& input,

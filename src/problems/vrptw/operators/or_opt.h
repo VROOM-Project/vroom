@@ -10,7 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/cvrp/local_search/or_opt.h"
+#include "problems/cvrp/operators/or_opt.h"
 #include "structures/vroom/tw_route.h"
 
 class vrptw_or_opt : public cvrp_or_opt {

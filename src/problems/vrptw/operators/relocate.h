@@ -10,7 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/cvrp/local_search/relocate.h"
+#include "problems/cvrp/operators/relocate.h"
 #include "structures/vroom/tw_route.h"
 
 class vrptw_relocate : public cvrp_relocate {
