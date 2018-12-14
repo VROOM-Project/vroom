@@ -9,33 +9,33 @@ All rights reserved (see LICENSE).
 
 #include "problems/vrptw/operators/mixed_exchange.h"
 
-vrptw_mixed_exchange::vrptw_mixed_exchange(const input& input,
-                                           const solution_state& sol_state,
-                                           tw_route& tw_s_route,
-                                           index_t s_vehicle,
-                                           index_t s_rank,
-                                           tw_route& tw_t_route,
-                                           index_t t_vehicle,
-                                           index_t t_rank)
-  : cvrp_mixed_exchange(input,
-                        sol_state,
-                        static_cast<raw_route&>(tw_s_route),
-                        s_vehicle,
-                        s_rank,
-                        static_cast<raw_route&>(tw_t_route),
-                        t_vehicle,
-                        t_rank),
+vrptwMixedExchange::vrptwMixedExchange(const Input& input,
+                                       const SolutionState& sol_state,
+                                       TWRoute& tw_s_route,
+                                       Index s_vehicle,
+                                       Index s_rank,
+                                       TWRoute& tw_t_route,
+                                       Index t_vehicle,
+                                       Index t_rank)
+  : CVRPMixedExchange(input,
+                      sol_state,
+                      static_cast<RawRoute&>(tw_s_route),
+                      s_vehicle,
+                      s_rank,
+                      static_cast<RawRoute&>(tw_t_route),
+                      t_vehicle,
+                      t_rank),
     _tw_s_route(tw_s_route),
     _tw_t_route(tw_t_route),
     _s_is_normal_valid(false),
     _s_is_reverse_valid(false) {
 }
 
-void vrptw_mixed_exchange::compute_gain() {
-  cvrp_mixed_exchange::compute_gain();
+void vrptwMixedExchange::compute_gain() {
+  CVRPMixedExchange::compute_gain();
   assert(_s_is_normal_valid or _s_is_reverse_valid);
 
-  gain_t s_gain;
+  Gain s_gain;
   if (reverse_t_edge) {
     s_gain = reversed_s_gain;
     if (!_s_is_reverse_valid) {
@@ -59,8 +59,8 @@ void vrptw_mixed_exchange::compute_gain() {
   stored_gain = s_gain + t_gain;
 }
 
-bool vrptw_mixed_exchange::is_valid() {
-  bool valid = cvrp_mixed_exchange::is_valid();
+bool vrptwMixedExchange::is_valid() {
+  bool valid = CVRPMixedExchange::is_valid();
 
   valid &= _tw_t_route.is_valid_addition_for_tw(_input,
                                                 s_route.begin() + s_rank,
@@ -90,9 +90,9 @@ bool vrptw_mixed_exchange::is_valid() {
   return valid;
 }
 
-void vrptw_mixed_exchange::apply() {
-  std::vector<index_t> s_job_ranks({s_route[s_rank]});
-  std::vector<index_t> t_job_ranks;
+void vrptwMixedExchange::apply() {
+  std::vector<Index> s_job_ranks({s_route[s_rank]});
+  std::vector<Index> t_job_ranks;
   if (!reverse_t_edge) {
     auto t_start = t_route.begin() + t_rank;
     t_job_ranks.insert(t_job_ranks.begin(), t_start, t_start + 2);

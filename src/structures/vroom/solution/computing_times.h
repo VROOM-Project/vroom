@@ -12,13 +12,13 @@ All rights reserved (see LICENSE).
 
 #include "structures/typedefs.h"
 
-struct computing_times_t {
+struct ComputingTimes {
   // Computing times in milliseconds.
-  duration_t loading;
-  duration_t solving;
-  duration_t routing;
+  Duration loading;
+  Duration solving;
+  Duration routing;
 
-  computing_times_t();
+  ComputingTimes();
 };
 
 #endif

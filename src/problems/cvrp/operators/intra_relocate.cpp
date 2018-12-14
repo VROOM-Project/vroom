@@ -10,27 +10,27 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/operators/intra_relocate.h"
 #include "utils/helpers.h"
 
-cvrp_intra_relocate::cvrp_intra_relocate(const input& input,
-                                         const solution_state& sol_state,
-                                         raw_route& s_route,
-                                         index_t s_vehicle,
-                                         index_t s_rank,
-                                         index_t t_rank)
-  : ls_operator(input,
-                sol_state,
-                s_route,
-                s_vehicle,
-                s_rank,
-                s_route,
-                s_vehicle,
-                t_rank) {
+CVRPIntraRelocate::CVRPIntraRelocate(const Input& input,
+                                     const SolutionState& sol_state,
+                                     RawRoute& s_route,
+                                     Index s_vehicle,
+                                     Index s_rank,
+                                     Index t_rank)
+  : Operator(input,
+             sol_state,
+             s_route,
+             s_vehicle,
+             s_rank,
+             s_route,
+             s_vehicle,
+             t_rank) {
   assert(s_route.size() >= 2);
   assert(s_rank < s_route.size());
   assert(t_rank <= s_route.size() - 1);
   assert(s_rank != t_rank);
 }
 
-void cvrp_intra_relocate::compute_gain() {
+void CVRPIntraRelocate::compute_gain() {
   const auto& m = _input.get_matrix();
   const auto& v_target = _input._vehicles[s_vehicle];
 
@@ -43,27 +43,27 @@ void cvrp_intra_relocate::compute_gain() {
   if (s_rank < t_rank) {
     ++new_rank;
   }
-  gain_t t_gain =
+  Gain t_gain =
     -addition_cost(_input, m, s_route[s_rank], v_target, t_route, new_rank);
 
   stored_gain = _sol_state.node_gains[s_vehicle][s_rank] + t_gain;
   gain_computed = true;
 }
 
-bool cvrp_intra_relocate::is_valid() {
+bool CVRPIntraRelocate::is_valid() {
   return true;
 }
 
-void cvrp_intra_relocate::apply() {
+void CVRPIntraRelocate::apply() {
   auto relocate_job_rank = s_route[s_rank];
   s_route.erase(s_route.begin() + s_rank);
   t_route.insert(t_route.begin() + t_rank, relocate_job_rank);
 }
 
-std::vector<index_t> cvrp_intra_relocate::addition_candidates() const {
+std::vector<Index> CVRPIntraRelocate::addition_candidates() const {
   return {};
 }
 
-std::vector<index_t> cvrp_intra_relocate::update_candidates() const {
+std::vector<Index> CVRPIntraRelocate::update_candidates() const {
   return {s_vehicle};
 }

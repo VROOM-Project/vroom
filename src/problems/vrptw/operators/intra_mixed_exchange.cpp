@@ -9,26 +9,25 @@ All rights reserved (see LICENSE).
 
 #include "problems/vrptw/operators/intra_mixed_exchange.h"
 
-vrptw_intra_mixed_exchange::vrptw_intra_mixed_exchange(
-  const input& input,
-  const solution_state& sol_state,
-  tw_route& tw_s_route,
-  index_t s_vehicle,
-  index_t s_rank,
-  index_t t_rank)
-  : cvrp_intra_mixed_exchange(input,
-                              sol_state,
-                              static_cast<raw_route&>(tw_s_route),
-                              s_vehicle,
-                              s_rank,
-                              t_rank),
+vrptwIntraMixedExchange::vrptwIntraMixedExchange(const Input& input,
+                                                 const SolutionState& sol_state,
+                                                 TWRoute& tw_s_route,
+                                                 Index s_vehicle,
+                                                 Index s_rank,
+                                                 Index t_rank)
+  : CVRPIntraMixedExchange(input,
+                           sol_state,
+                           static_cast<RawRoute&>(tw_s_route),
+                           s_vehicle,
+                           s_rank,
+                           t_rank),
     _tw_s_route(tw_s_route),
     _s_is_normal_valid(false),
     _s_is_reverse_valid(false),
     _moved_jobs((s_rank < t_rank) ? t_rank - s_rank + 2 : s_rank - t_rank + 1),
     _first_rank(std::min(s_rank, t_rank)),
     _last_rank((t_rank < s_rank) ? s_rank + 1 : t_rank + 2) {
-  index_t s_node;
+  Index s_node;
   if (t_rank < s_rank) {
     s_node = 0;
     _t_edge_first = _moved_jobs.size() - 2;
@@ -52,11 +51,11 @@ vrptw_intra_mixed_exchange::vrptw_intra_mixed_exchange(
   _moved_jobs[_t_edge_last] = s_route[t_rank + 1];
 }
 
-void vrptw_intra_mixed_exchange::compute_gain() {
-  cvrp_intra_mixed_exchange::compute_gain();
+void vrptwIntraMixedExchange::compute_gain() {
+  CVRPIntraMixedExchange::compute_gain();
   assert(_s_is_normal_valid or _s_is_reverse_valid);
 
-  gain_t s_gain;
+  Gain s_gain;
   if (reverse_t_edge) {
     s_gain = reversed_s_gain;
     if (!_s_is_reverse_valid) {
@@ -80,7 +79,7 @@ void vrptw_intra_mixed_exchange::compute_gain() {
   stored_gain = s_gain + t_gain;
 }
 
-bool vrptw_intra_mixed_exchange::is_valid() {
+bool vrptwIntraMixedExchange::is_valid() {
   _s_is_normal_valid = _tw_s_route.is_valid_addition_for_tw(_input,
                                                             _moved_jobs.begin(),
                                                             _moved_jobs.end(),
@@ -102,7 +101,7 @@ bool vrptw_intra_mixed_exchange::is_valid() {
   return _s_is_normal_valid or _s_is_reverse_valid;
 }
 
-void vrptw_intra_mixed_exchange::apply() {
+void vrptwIntraMixedExchange::apply() {
   if (reverse_t_edge) {
     std::swap(_moved_jobs[_t_edge_first], _moved_jobs[_t_edge_last]);
   }
@@ -114,6 +113,6 @@ void vrptw_intra_mixed_exchange::apply() {
                       _last_rank);
 }
 
-std::vector<index_t> vrptw_intra_mixed_exchange::addition_candidates() const {
+std::vector<Index> vrptwIntraMixedExchange::addition_candidates() const {
   return {s_vehicle};
 }

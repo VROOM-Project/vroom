@@ -9,22 +9,22 @@ All rights reserved (see LICENSE).
 
 #include "problems/vrptw/operators/cross_exchange.h"
 
-vrptw_cross_exchange::vrptw_cross_exchange(const input& input,
-                                           const solution_state& sol_state,
-                                           tw_route& tw_s_route,
-                                           index_t s_vehicle,
-                                           index_t s_rank,
-                                           tw_route& tw_t_route,
-                                           index_t t_vehicle,
-                                           index_t t_rank)
-  : cvrp_cross_exchange(input,
-                        sol_state,
-                        static_cast<raw_route&>(tw_s_route),
-                        s_vehicle,
-                        s_rank,
-                        static_cast<raw_route&>(tw_t_route),
-                        t_vehicle,
-                        t_rank),
+vrptwCrossExchange::vrptwCrossExchange(const Input& input,
+                                       const SolutionState& sol_state,
+                                       TWRoute& tw_s_route,
+                                       Index s_vehicle,
+                                       Index s_rank,
+                                       TWRoute& tw_t_route,
+                                       Index t_vehicle,
+                                       Index t_rank)
+  : CVRPCrossExchange(input,
+                      sol_state,
+                      static_cast<RawRoute&>(tw_s_route),
+                      s_vehicle,
+                      s_rank,
+                      static_cast<RawRoute&>(tw_t_route),
+                      t_vehicle,
+                      t_rank),
     _tw_s_route(tw_s_route),
     _tw_t_route(tw_t_route),
     _s_is_normal_valid(false),
@@ -33,12 +33,12 @@ vrptw_cross_exchange::vrptw_cross_exchange(const input& input,
     _t_is_reverse_valid(false) {
 }
 
-void vrptw_cross_exchange::compute_gain() {
-  cvrp_cross_exchange::compute_gain();
+void vrptwCrossExchange::compute_gain() {
+  CVRPCrossExchange::compute_gain();
   assert(_s_is_normal_valid or _s_is_reverse_valid);
   assert(_t_is_normal_valid or _t_is_reverse_valid);
 
-  gain_t s_gain;
+  Gain s_gain;
   if (reverse_t_edge) {
     s_gain = reversed_s_gain;
     if (!_s_is_reverse_valid) {
@@ -59,7 +59,7 @@ void vrptw_cross_exchange::compute_gain() {
     }
   }
 
-  gain_t t_gain;
+  Gain t_gain;
   if (reverse_s_edge) {
     t_gain = reversed_t_gain;
     if (!_t_is_reverse_valid) {
@@ -83,8 +83,8 @@ void vrptw_cross_exchange::compute_gain() {
   stored_gain = s_gain + t_gain;
 }
 
-bool vrptw_cross_exchange::is_valid() {
-  bool valid = cvrp_cross_exchange::is_valid();
+bool vrptwCrossExchange::is_valid() {
+  bool valid = CVRPCrossExchange::is_valid();
 
   if (valid) {
     // Keep target edge direction when inserting in source route.
@@ -127,8 +127,8 @@ bool vrptw_cross_exchange::is_valid() {
   return valid;
 }
 
-void vrptw_cross_exchange::apply() {
-  std::vector<index_t> t_job_ranks;
+void vrptwCrossExchange::apply() {
+  std::vector<Index> t_job_ranks;
   if (!reverse_t_edge) {
     auto t_start = t_route.begin() + t_rank;
     t_job_ranks.insert(t_job_ranks.begin(), t_start, t_start + 2);

@@ -10,21 +10,20 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/operators/intra_mixed_exchange.h"
 #include "utils/helpers.h"
 
-cvrp_intra_mixed_exchange::cvrp_intra_mixed_exchange(
-  const input& input,
-  const solution_state& sol_state,
-  raw_route& s_route,
-  index_t s_vehicle,
-  index_t s_rank,
-  index_t t_rank)
-  : ls_operator(input,
-                sol_state,
-                s_route,
-                s_vehicle,
-                s_rank,
-                s_route,
-                s_vehicle,
-                t_rank),
+CVRPIntraMixedExchange::CVRPIntraMixedExchange(const Input& input,
+                                               const SolutionState& sol_state,
+                                               RawRoute& s_route,
+                                               Index s_vehicle,
+                                               Index s_rank,
+                                               Index t_rank)
+  : Operator(input,
+             sol_state,
+             s_route,
+             s_vehicle,
+             s_rank,
+             s_route,
+             s_vehicle,
+             t_rank),
     reverse_t_edge(false) {
   // If node at s_rank is right before/after edge at t_rank, then the
   // move is a relocate.
@@ -34,7 +33,7 @@ cvrp_intra_mixed_exchange::cvrp_intra_mixed_exchange(
   assert(t_rank < s_route.size() - 1);
 }
 
-void cvrp_intra_mixed_exchange::compute_gain() {
+void CVRPIntraMixedExchange::compute_gain() {
   const auto& m = _input.get_matrix();
   const auto& v = _input._vehicles[s_vehicle];
 
@@ -42,15 +41,15 @@ void cvrp_intra_mixed_exchange::compute_gain() {
   // edge. Part of that cost (for adjacent edges) is stored in
   // _sol_state.edge_costs_around_node.  reverse_* checks whether we
   // should change the target edge order.
-  index_t s_index = _input._jobs[s_route[s_rank]].index();
-  index_t t_index = _input._jobs[s_route[t_rank]].index();
-  index_t t_after_index = _input._jobs[s_route[t_rank + 1]].index();
+  Index s_index = _input._jobs[s_route[s_rank]].index();
+  Index t_index = _input._jobs[s_route[t_rank]].index();
+  Index t_after_index = _input._jobs[s_route[t_rank + 1]].index();
 
   // Determine costs added with target edge.
-  gain_t previous_cost = 0;
-  gain_t next_cost = 0;
-  gain_t reverse_previous_cost = 0;
-  gain_t reverse_next_cost = 0;
+  Gain previous_cost = 0;
+  Gain next_cost = 0;
+  Gain reverse_previous_cost = 0;
+  Gain reverse_next_cost = 0;
 
   if (s_rank == 0) {
     if (v.has_start()) {
@@ -79,8 +78,8 @@ void cvrp_intra_mixed_exchange::compute_gain() {
   normal_s_gain = _sol_state.edge_costs_around_node[s_vehicle][s_rank] -
                   previous_cost - next_cost;
 
-  gain_t reverse_edge_cost = static_cast<gain_t>(m[t_index][t_after_index]) -
-                             static_cast<gain_t>(m[t_after_index][t_index]);
+  Gain reverse_edge_cost = static_cast<Gain>(m[t_index][t_after_index]) -
+                           static_cast<Gain>(m[t_after_index][t_index]);
   reversed_s_gain = _sol_state.edge_costs_around_node[s_vehicle][s_rank] +
                     reverse_edge_cost - reverse_previous_cost -
                     reverse_next_cost;
@@ -125,11 +124,11 @@ void cvrp_intra_mixed_exchange::compute_gain() {
   gain_computed = true;
 }
 
-bool cvrp_intra_mixed_exchange::is_valid() {
+bool CVRPIntraMixedExchange::is_valid() {
   return true;
 }
 
-void cvrp_intra_mixed_exchange::apply() {
+void CVRPIntraMixedExchange::apply() {
   if (reverse_t_edge) {
     std::swap(s_route[t_rank], s_route[t_rank + 1]);
   }
@@ -147,10 +146,10 @@ void cvrp_intra_mixed_exchange::apply() {
   s_route.insert(s_route.begin() + end_t_rank, t_after);
 }
 
-std::vector<index_t> cvrp_intra_mixed_exchange::addition_candidates() const {
+std::vector<Index> CVRPIntraMixedExchange::addition_candidates() const {
   return {};
 }
 
-std::vector<index_t> cvrp_intra_mixed_exchange::update_candidates() const {
+std::vector<Index> CVRPIntraMixedExchange::update_candidates() const {
   return {s_vehicle};
 }

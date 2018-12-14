@@ -12,12 +12,12 @@ All rights reserved (see LICENSE).
 
 #include <string>
 
-class custom_exception : public std::exception {
+class Exception : public std::exception {
 private:
   const std::string _message;
 
 public:
-  custom_exception(const std::string message);
+  Exception(const std::string message);
 
   const std::string get_message() const;
 };

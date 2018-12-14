@@ -9,7 +9,7 @@ All rights reserved (see LICENSE).
 
 #include "structures/vroom/tw_route.h"
 
-tw_route::tw_route(const input& input, index_t i)
+TWRoute::TWRoute(const Input& input, Index i)
   : vehicle_rank(i),
     has_start(input._vehicles[i].has_start()),
     has_end(input._vehicles[i].has_end()),
@@ -17,16 +17,16 @@ tw_route::tw_route(const input& input, index_t i)
     v_end(input._vehicles[i].tw.end) {
 }
 
-duration_t tw_route::new_earliest_candidate(const input& input,
-                                            index_t job_rank,
-                                            index_t rank) const {
+Duration TWRoute::new_earliest_candidate(const Input& input,
+                                         Index job_rank,
+                                         Index rank) const {
   const auto& m = input.get_matrix();
   const auto& v = input._vehicles[vehicle_rank];
   const auto& j = input._jobs[job_rank];
 
-  duration_t previous_earliest = v_start;
-  duration_t previous_service = 0;
-  duration_t previous_travel = 0;
+  Duration previous_earliest = v_start;
+  Duration previous_service = 0;
+  Duration previous_travel = 0;
   if (rank > 0) {
     const auto& previous_job = input._jobs[route[rank - 1]];
     previous_earliest = earliest[rank - 1];
@@ -41,15 +41,15 @@ duration_t tw_route::new_earliest_candidate(const input& input,
   return previous_earliest + previous_service + previous_travel;
 }
 
-duration_t tw_route::new_latest_candidate(const input& input,
-                                          index_t job_rank,
-                                          index_t rank) const {
+Duration TWRoute::new_latest_candidate(const Input& input,
+                                       Index job_rank,
+                                       Index rank) const {
   const auto& m = input.get_matrix();
   const auto& v = input._vehicles[vehicle_rank];
   const auto& j = input._jobs[job_rank];
 
-  duration_t next_latest = v_end;
-  duration_t next_travel = 0;
+  Duration next_latest = v_end;
+  Duration next_travel = 0;
   if (rank == route.size()) {
     if (has_end) {
       next_travel = m[j.index()][v.end.get().index()];
@@ -63,15 +63,15 @@ duration_t tw_route::new_latest_candidate(const input& input,
   return next_latest - j.service - next_travel;
 }
 
-void tw_route::fwd_update_earliest_from(const input& input, index_t rank) {
+void TWRoute::fwd_update_earliest_from(const Input& input, Index rank) {
   const auto& m = input.get_matrix();
 
-  duration_t previous_earliest = earliest[rank];
-  for (index_t i = rank + 1; i < route.size(); ++i) {
+  Duration previous_earliest = earliest[rank];
+  for (Index i = rank + 1; i < route.size(); ++i) {
     const auto& previous_j = input._jobs[route[i - 1]];
     const auto& next_j = input._jobs[route[i]];
-    duration_t next_earliest = previous_earliest + previous_j.service +
-                               m[previous_j.index()][next_j.index()];
+    Duration next_earliest = previous_earliest + previous_j.service +
+                             m[previous_j.index()][next_j.index()];
 
     if (next_earliest <= earliest[i]) {
       break;
@@ -83,17 +83,17 @@ void tw_route::fwd_update_earliest_from(const input& input, index_t rank) {
   }
 }
 
-void tw_route::bwd_update_latest_from(const input& input, index_t rank) {
+void TWRoute::bwd_update_latest_from(const Input& input, Index rank) {
   const auto& m = input.get_matrix();
 
-  duration_t next_latest = latest[rank];
-  for (index_t next_i = rank; next_i > 0; --next_i) {
+  Duration next_latest = latest[rank];
+  for (Index next_i = rank; next_i > 0; --next_i) {
     const auto& previous_j = input._jobs[route[next_i - 1]];
     const auto& next_j = input._jobs[route[next_i]];
 
-    duration_t gap = previous_j.service + m[previous_j.index()][next_j.index()];
+    Duration gap = previous_j.service + m[previous_j.index()][next_j.index()];
     assert(gap <= next_latest);
-    duration_t previous_latest = next_latest - gap;
+    Duration previous_latest = next_latest - gap;
 
     if (latest[next_i - 1] <= previous_latest) {
       break;
@@ -105,12 +105,11 @@ void tw_route::bwd_update_latest_from(const input& input, index_t rank) {
   }
 }
 
-void tw_route::fwd_update_earliest_with_TW_from(const input& input,
-                                                index_t rank) {
+void TWRoute::fwd_update_earliest_with_TW_from(const Input& input, Index rank) {
   const auto& m = input.get_matrix();
 
-  duration_t current_earliest = earliest[rank];
-  for (index_t i = rank + 1; i < route.size(); ++i) {
+  Duration current_earliest = earliest[rank];
+  for (Index i = rank + 1; i < route.size(); ++i) {
     const auto& previous_j = input._jobs[route[i - 1]];
     const auto& next_j = input._jobs[route[i]];
     current_earliest +=
@@ -126,12 +125,11 @@ void tw_route::fwd_update_earliest_with_TW_from(const input& input,
   }
 }
 
-void tw_route::bwd_update_latest_with_TW_from(const input& input,
-                                              index_t rank) {
+void TWRoute::bwd_update_latest_with_TW_from(const Input& input, Index rank) {
   const auto& m = input.get_matrix();
 
-  duration_t current_latest = latest[rank];
-  for (index_t next_i = rank; next_i > 0; --next_i) {
+  Duration current_latest = latest[rank];
+  for (Index next_i = rank; next_i > 0; --next_i) {
     const auto& previous_j = input._jobs[route[next_i - 1]];
     const auto& next_j = input._jobs[route[next_i]];
 
@@ -150,22 +148,22 @@ void tw_route::bwd_update_latest_with_TW_from(const input& input,
   }
 }
 
-bool tw_route::is_valid_addition_for_tw(const input& input,
-                                        const index_t job_rank,
-                                        const index_t rank) const {
+bool TWRoute::is_valid_addition_for_tw(const Input& input,
+                                       const Index job_rank,
+                                       const Index rank) const {
   const auto& m = input.get_matrix();
   const auto& v = input._vehicles[vehicle_rank];
   const auto& j = input._jobs[job_rank];
 
-  duration_t job_earliest = new_earliest_candidate(input, job_rank, rank);
+  Duration job_earliest = new_earliest_candidate(input, job_rank, rank);
 
   if (j.tws.back().end < job_earliest) {
     // Early abort if we're after the latest deadline for current job.
     return false;
   }
 
-  duration_t next_latest = v_end;
-  duration_t next_travel = 0;
+  Duration next_latest = v_end;
+  Duration next_travel = 0;
   if (rank == route.size()) {
     if (has_end) {
       next_travel = m[j.index()][v.end.get().index()];
@@ -178,7 +176,7 @@ bool tw_route::is_valid_addition_for_tw(const input& input,
   bool valid = job_earliest + j.service + next_travel <= next_latest;
 
   if (valid) {
-    duration_t new_latest = next_latest - j.service - next_travel;
+    Duration new_latest = next_latest - j.service - next_travel;
 
     auto overlap_candidate =
       std::find_if(j.tws.begin(), j.tws.end(), [&](const auto& tw) {
@@ -195,11 +193,11 @@ bool tw_route::is_valid_addition_for_tw(const input& input,
 }
 
 template <class InputIterator>
-bool tw_route::is_valid_addition_for_tw(const input& input,
-                                        InputIterator first_job,
-                                        InputIterator last_job,
-                                        const index_t first_rank,
-                                        const index_t last_rank) const {
+bool TWRoute::is_valid_addition_for_tw(const Input& input,
+                                       InputIterator first_job,
+                                       InputIterator last_job,
+                                       const Index first_rank,
+                                       const Index last_rank) const {
   if (first_job == last_job) {
     return true;
   }
@@ -210,8 +208,7 @@ bool tw_route::is_valid_addition_for_tw(const input& input,
 
   // Handle first job earliest date.
   const auto& first_j = input._jobs[*first_job];
-  duration_t job_earliest =
-    new_earliest_candidate(input, *first_job, first_rank);
+  Duration job_earliest = new_earliest_candidate(input, *first_job, first_rank);
 
   auto tw_candidate =
     std::find_if(first_j.tws.begin(), first_j.tws.end(), [&](const auto& tw) {
@@ -247,8 +244,8 @@ bool tw_route::is_valid_addition_for_tw(const input& input,
 
   // Check latest date for last inserted job.
   const auto& j = input._jobs[*first_job];
-  duration_t next_latest = v_end;
-  duration_t next_travel = 0;
+  Duration next_latest = v_end;
+  Duration next_travel = 0;
   if (last_rank == route.size()) {
     if (has_end) {
       next_travel = m[j.index()][v.end.get().index()];
@@ -261,13 +258,11 @@ bool tw_route::is_valid_addition_for_tw(const input& input,
   return job_earliest + j.service + next_travel <= next_latest;
 }
 
-void tw_route::add(const input& input,
-                   const index_t job_rank,
-                   const index_t rank) {
+void TWRoute::add(const Input& input, const Index job_rank, const Index rank) {
   assert(rank <= route.size());
 
-  duration_t job_earliest = new_earliest_candidate(input, job_rank, rank);
-  duration_t job_latest = new_latest_candidate(input, job_rank, rank);
+  Duration job_earliest = new_earliest_candidate(input, job_rank, rank);
+  Duration job_latest = new_latest_candidate(input, job_rank, rank);
 
   // Pick first compatible TW.
   const auto& tws = input._jobs[job_rank].tws;
@@ -296,14 +291,14 @@ void tw_route::add(const input& input,
   bwd_update_latest_from(input, rank);
 }
 
-bool tw_route::is_fwd_valid_removal(const input& input,
-                                    const index_t rank,
-                                    const unsigned count) const {
+bool TWRoute::is_fwd_valid_removal(const Input& input,
+                                   const Index rank,
+                                   const unsigned count) const {
   const auto& m = input.get_matrix();
   const auto& v = input._vehicles[vehicle_rank];
 
   // Check forward validity as of first non-removed job.
-  index_t current_rank = rank + count;
+  Index current_rank = rank + count;
   if (current_rank == route.size()) {
     if (rank == 0 or !has_end) {
       // Emptying a route or removing the end of a route with no
@@ -320,9 +315,9 @@ bool tw_route::is_fwd_valid_removal(const input& input,
 
   const auto current_index = input._jobs[route[current_rank]].index();
 
-  duration_t previous_earliest = v_start;
-  duration_t previous_service = 0;
-  duration_t previous_travel = 0;
+  Duration previous_earliest = v_start;
+  Duration previous_service = 0;
+  Duration previous_travel = 0;
 
   if (rank > 0) {
     const auto& previous_job = input._jobs[route[rank - 1]];
@@ -335,7 +330,7 @@ bool tw_route::is_fwd_valid_removal(const input& input,
     }
   }
 
-  duration_t job_earliest =
+  Duration job_earliest =
     previous_earliest + previous_service + previous_travel;
 
   while (current_rank < route.size()) {
@@ -370,9 +365,9 @@ bool tw_route::is_fwd_valid_removal(const input& input,
   return job_earliest <= v_end;
 }
 
-bool tw_route::is_bwd_valid_removal(const input& input,
-                                    const index_t rank,
-                                    const unsigned count) const {
+bool TWRoute::is_bwd_valid_removal(const Input& input,
+                                   const Index rank,
+                                   const unsigned count) const {
   const auto& m = input.get_matrix();
   const auto& v = input._vehicles[vehicle_rank];
 
@@ -389,12 +384,12 @@ bool tw_route::is_bwd_valid_removal(const input& input,
   }
 
   // Check backward validity as of first non-removed job.
-  index_t current_rank = rank - 1;
-  index_t current_index = input._jobs[route[current_rank]].index();
+  Index current_rank = rank - 1;
+  Index current_index = input._jobs[route[current_rank]].index();
 
-  index_t next_rank = rank + count;
-  duration_t next_latest = v_end;
-  duration_t next_travel = 0;
+  Index next_rank = rank + count;
+  Duration next_latest = v_end;
+  Duration next_travel = 0;
 
   if (next_rank == route.size()) {
     if (has_end) {
@@ -407,7 +402,7 @@ bool tw_route::is_bwd_valid_removal(const input& input,
   }
 
   while (current_rank > 0) {
-    duration_t current_service = input._jobs[route[current_rank]].service;
+    Duration current_service = input._jobs[route[current_rank]].service;
     if (latest[current_rank] + current_service + next_travel <= next_latest) {
       return true;
     }
@@ -438,9 +433,9 @@ bool tw_route::is_bwd_valid_removal(const input& input,
   return v_start + next_travel <= next_latest;
 }
 
-bool tw_route::is_valid_removal(const input& input,
-                                const index_t rank,
-                                const unsigned count) const {
+bool TWRoute::is_valid_removal(const Input& input,
+                               const Index rank,
+                               const unsigned count) const {
   assert(!route.empty());
   assert(rank + count <= route.size());
 
@@ -448,9 +443,9 @@ bool tw_route::is_valid_removal(const input& input,
          is_bwd_valid_removal(input, rank, count);
 }
 
-void tw_route::remove(const input& input,
-                      const index_t rank,
-                      const unsigned count) {
+void TWRoute::remove(const Input& input,
+                     const Index rank,
+                     const unsigned count) {
   assert(rank + count <= route.size());
 
   const auto& m = input.get_matrix();
@@ -468,7 +463,7 @@ void tw_route::remove(const input& input,
       fwd_rank = 0;
       // Update earliest date for new first job.
       const auto& new_first_j = input._jobs[route[count]];
-      duration_t start_earliest = v_start;
+      Duration start_earliest = v_start;
       if (has_start) {
         start_earliest += m[v.start.get().index()][new_first_j.index()];
       }
@@ -481,7 +476,7 @@ void tw_route::remove(const input& input,
       bwd_rank = rank - 1;
       // Update earliest date for new last job.
       const auto& new_last_j = input._jobs[route[bwd_rank]];
-      duration_t end_latest = v_end;
+      Duration end_latest = v_end;
       if (has_end) {
         auto gap =
           new_last_j.service + m[new_last_j.index()][v.end.get().index()];
@@ -506,11 +501,11 @@ void tw_route::remove(const input& input,
 }
 
 template <class InputIterator>
-void tw_route::replace(const input& input,
-                       InputIterator first_job,
-                       InputIterator last_job,
-                       const index_t first_rank,
-                       const index_t last_rank) {
+void TWRoute::replace(const Input& input,
+                      InputIterator first_job,
+                      InputIterator last_job,
+                      const Index first_rank,
+                      const Index last_rank) {
   assert(first_rank <= last_rank);
 
   const auto& m = input.get_matrix();
@@ -521,7 +516,7 @@ void tw_route::replace(const input& input,
   unsigned add_count = std::distance(first_job, last_job);
 
   // Start updates for earliest/latest dates in new route.
-  duration_t current_earliest;
+  Duration current_earliest;
   if (first_rank > 0) {
     current_earliest = earliest[first_rank - 1];
   } else {
@@ -648,7 +643,7 @@ void tw_route::replace(const input& input,
       --insert_rank;
       const auto& new_last_j = input._jobs[route[insert_rank]];
 
-      duration_t end_latest = v_end;
+      Duration end_latest = v_end;
       if (has_end) {
         auto gap =
           new_last_j.service + m[new_last_j.index()][v.end.get().index()];
@@ -668,26 +663,25 @@ void tw_route::replace(const input& input,
 }
 
 template bool
-tw_route::is_valid_addition_for_tw(const input& input,
-                                   std::vector<index_t>::iterator first_job,
-                                   std::vector<index_t>::iterator last_job,
-                                   const index_t first_rank,
-                                   const index_t last_rank) const;
-template bool tw_route::is_valid_addition_for_tw(
-  const input& input,
-  std::vector<index_t>::reverse_iterator first_job,
-  std::vector<index_t>::reverse_iterator last_job,
-  const index_t first_rank,
-  const index_t last_rank) const;
+TWRoute::is_valid_addition_for_tw(const Input& input,
+                                  std::vector<Index>::iterator first_job,
+                                  std::vector<Index>::iterator last_job,
+                                  const Index first_rank,
+                                  const Index last_rank) const;
+template bool TWRoute::is_valid_addition_for_tw(
+  const Input& input,
+  std::vector<Index>::reverse_iterator first_job,
+  std::vector<Index>::reverse_iterator last_job,
+  const Index first_rank,
+  const Index last_rank) const;
 
-template void tw_route::replace(const input& input,
-                                std::vector<index_t>::iterator first_job,
-                                std::vector<index_t>::iterator last_job,
-                                const index_t first_rank,
-                                const index_t last_rank);
-template void
-tw_route::replace(const input& input,
-                  std::vector<index_t>::reverse_iterator first_job,
-                  std::vector<index_t>::reverse_iterator last_job,
-                  const index_t first_rank,
-                  const index_t last_rank);
+template void TWRoute::replace(const Input& input,
+                               std::vector<Index>::iterator first_job,
+                               std::vector<Index>::iterator last_job,
+                               const Index first_rank,
+                               const Index last_rank);
+template void TWRoute::replace(const Input& input,
+                               std::vector<Index>::reverse_iterator first_job,
+                               std::vector<Index>::reverse_iterator last_job,
+                               const Index first_rank,
+                               const Index last_rank);

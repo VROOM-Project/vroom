@@ -9,22 +9,22 @@ All rights reserved (see LICENSE).
 
 #include "problems/cvrp/operators/mixed_exchange.h"
 
-cvrp_mixed_exchange::cvrp_mixed_exchange(const input& input,
-                                         const solution_state& sol_state,
-                                         raw_route& s_route,
-                                         index_t s_vehicle,
-                                         index_t s_rank,
-                                         raw_route& t_route,
-                                         index_t t_vehicle,
-                                         index_t t_rank)
-  : ls_operator(input,
-                sol_state,
-                s_route,
-                s_vehicle,
-                s_rank,
-                t_route,
-                t_vehicle,
-                t_rank),
+CVRPMixedExchange::CVRPMixedExchange(const Input& input,
+                                     const SolutionState& sol_state,
+                                     RawRoute& s_route,
+                                     Index s_vehicle,
+                                     Index s_rank,
+                                     RawRoute& t_route,
+                                     Index t_vehicle,
+                                     Index t_rank)
+  : Operator(input,
+             sol_state,
+             s_route,
+             s_vehicle,
+             s_rank,
+             t_route,
+             t_vehicle,
+             t_rank),
     reverse_t_edge(false) {
   assert(s_vehicle != t_vehicle);
   assert(s_route.size() >= 1);
@@ -33,7 +33,7 @@ cvrp_mixed_exchange::cvrp_mixed_exchange(const input& input,
   assert(t_rank < t_route.size() - 1);
 }
 
-void cvrp_mixed_exchange::compute_gain() {
+void CVRPMixedExchange::compute_gain() {
   const auto& m = _input.get_matrix();
   const auto& v_source = _input._vehicles[s_vehicle];
   const auto& v_target = _input._vehicles[t_vehicle];
@@ -42,15 +42,15 @@ void cvrp_mixed_exchange::compute_gain() {
   // s_rank with target edge. Part of that cost (for adjacent edges)
   // is stored in _sol_state.edge_costs_around_node. reverse_t_edge
   // checks whether we should change the target edge order.
-  index_t s_index = _input._jobs[s_route[s_rank]].index();
-  index_t t_index = _input._jobs[t_route[t_rank]].index();
-  index_t t_after_index = _input._jobs[t_route[t_rank + 1]].index();
+  Index s_index = _input._jobs[s_route[s_rank]].index();
+  Index t_index = _input._jobs[t_route[t_rank]].index();
+  Index t_after_index = _input._jobs[t_route[t_rank + 1]].index();
 
   // Determine costs added with target edge.
-  gain_t previous_cost = 0;
-  gain_t next_cost = 0;
-  gain_t reverse_previous_cost = 0;
-  gain_t reverse_next_cost = 0;
+  Gain previous_cost = 0;
+  Gain next_cost = 0;
+  Gain reverse_previous_cost = 0;
+  Gain reverse_next_cost = 0;
 
   if (s_rank == 0) {
     if (v_source.has_start()) {
@@ -79,8 +79,8 @@ void cvrp_mixed_exchange::compute_gain() {
   normal_s_gain = _sol_state.edge_costs_around_node[s_vehicle][s_rank] -
                   previous_cost - next_cost;
 
-  gain_t reverse_edge_cost = static_cast<gain_t>(m[t_index][t_after_index]) -
-                             static_cast<gain_t>(m[t_after_index][t_index]);
+  Gain reverse_edge_cost = static_cast<Gain>(m[t_index][t_after_index]) -
+                           static_cast<Gain>(m[t_after_index][t_index]);
   reversed_s_gain = _sol_state.edge_costs_around_node[s_vehicle][s_rank] +
                     reverse_edge_cost - reverse_previous_cost -
                     reverse_next_cost;
@@ -124,7 +124,7 @@ void cvrp_mixed_exchange::compute_gain() {
   gain_computed = true;
 }
 
-bool cvrp_mixed_exchange::is_valid() {
+bool CVRPMixedExchange::is_valid() {
   auto s_job_rank = s_route[s_rank];
   auto t_job_rank = t_route[t_rank];
   // Already asserted in compute_gain.
@@ -149,7 +149,7 @@ bool cvrp_mixed_exchange::is_valid() {
   return valid;
 }
 
-void cvrp_mixed_exchange::apply() {
+void CVRPMixedExchange::apply() {
   std::swap(s_route[s_rank], t_route[t_rank]);
   s_route.insert(s_route.begin() + s_rank + 1,
                  t_route.begin() + t_rank + 1,
@@ -161,10 +161,10 @@ void cvrp_mixed_exchange::apply() {
   }
 }
 
-std::vector<index_t> cvrp_mixed_exchange::addition_candidates() const {
+std::vector<Index> CVRPMixedExchange::addition_candidates() const {
   return {s_vehicle, t_vehicle};
 }
 
-std::vector<index_t> cvrp_mixed_exchange::update_candidates() const {
+std::vector<Index> CVRPMixedExchange::update_candidates() const {
   return {s_vehicle, t_vehicle};
 }

@@ -24,6 +24,13 @@ with the scope or aim of the project.
 
 ## Coding conventions
 
+### Miscellaneous
+
+- Custom types use upper CamelCase (e.g. `LocalSearch`)
+- Variables and functions use lowercase with underscore (e.g `addition_cost`)
+
+### Automatic formatting
+
 To ensure a consistent formatting of the code-base, please run
 `./scripts/format.sh` prior to submitting a PR. A convenient way to
 automate code formatting is to use a commit hook. Create the file

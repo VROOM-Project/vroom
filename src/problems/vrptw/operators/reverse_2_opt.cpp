@@ -11,28 +11,28 @@ All rights reserved (see LICENSE).
 
 #include "problems/vrptw/operators/reverse_2_opt.h"
 
-vrptw_reverse_two_opt::vrptw_reverse_two_opt(const input& input,
-                                             const solution_state& sol_state,
-                                             tw_route& tw_s_route,
-                                             index_t s_vehicle,
-                                             index_t s_rank,
-                                             tw_route& tw_t_route,
-                                             index_t t_vehicle,
-                                             index_t t_rank)
-  : cvrp_reverse_two_opt(input,
-                         sol_state,
-                         static_cast<raw_route&>(tw_s_route),
-                         s_vehicle,
-                         s_rank,
-                         static_cast<raw_route&>(tw_t_route),
-                         t_vehicle,
-                         t_rank),
+vrptwReverseTwoOpt::vrptwReverseTwoOpt(const Input& input,
+                                       const SolutionState& sol_state,
+                                       TWRoute& tw_s_route,
+                                       Index s_vehicle,
+                                       Index s_rank,
+                                       TWRoute& tw_t_route,
+                                       Index t_vehicle,
+                                       Index t_rank)
+  : CVRPReverseTwoOpt(input,
+                      sol_state,
+                      static_cast<RawRoute&>(tw_s_route),
+                      s_vehicle,
+                      s_rank,
+                      static_cast<RawRoute&>(tw_t_route),
+                      t_vehicle,
+                      t_rank),
     _tw_s_route(tw_s_route),
     _tw_t_route(tw_t_route) {
 }
 
-bool vrptw_reverse_two_opt::is_valid() {
-  return cvrp_reverse_two_opt::is_valid() and
+bool vrptwReverseTwoOpt::is_valid() {
+  return CVRPReverseTwoOpt::is_valid() and
          _tw_t_route.is_valid_addition_for_tw(_input,
                                               s_route.rbegin(),
                                               s_route.rbegin() +
@@ -47,8 +47,8 @@ bool vrptw_reverse_two_opt::is_valid() {
                                               s_route.size());
 }
 
-void vrptw_reverse_two_opt::apply() {
-  std::vector<index_t> t_job_ranks;
+void vrptwReverseTwoOpt::apply() {
+  std::vector<Index> t_job_ranks;
   t_job_ranks.insert(t_job_ranks.begin(),
                      t_route.rbegin() + t_route.size() - 1 - t_rank,
                      t_route.rend());

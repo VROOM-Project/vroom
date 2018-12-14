@@ -10,20 +10,20 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/operators/intra_or_opt.h"
 #include "utils/helpers.h"
 
-cvrp_intra_or_opt::cvrp_intra_or_opt(const input& input,
-                                     const solution_state& sol_state,
-                                     raw_route& s_route,
-                                     index_t s_vehicle,
-                                     index_t s_rank,
-                                     index_t t_rank)
-  : ls_operator(input,
-                sol_state,
-                s_route,
-                s_vehicle,
-                s_rank,
-                s_route,
-                s_vehicle,
-                t_rank),
+CVRPIntraOrOpt::CVRPIntraOrOpt(const Input& input,
+                               const SolutionState& sol_state,
+                               RawRoute& s_route,
+                               Index s_vehicle,
+                               Index s_rank,
+                               Index t_rank)
+  : Operator(input,
+             sol_state,
+             s_route,
+             s_vehicle,
+             s_rank,
+             s_route,
+             s_vehicle,
+             t_rank),
     reverse_s_edge(false) {
   assert(s_route.size() >= 4);
   assert(s_rank < s_route.size() - 1);
@@ -31,7 +31,7 @@ cvrp_intra_or_opt::cvrp_intra_or_opt(const input& input,
   assert(s_rank != t_rank);
 }
 
-void cvrp_intra_or_opt::compute_gain() {
+void CVRPIntraOrOpt::compute_gain() {
   const auto& m = _input.get_matrix();
   const auto& v = _input._vehicles[s_vehicle];
 
@@ -45,14 +45,14 @@ void cvrp_intra_or_opt::compute_gain() {
     new_rank += 2;
   }
 
-  index_t s_index = _input._jobs[s_route[s_rank]].index();
-  index_t after_s_index = _input._jobs[s_route[s_rank + 1]].index();
+  Index s_index = _input._jobs[s_route[s_rank]].index();
+  Index after_s_index = _input._jobs[s_route[s_rank + 1]].index();
 
-  gain_t previous_cost = 0;
-  gain_t next_cost = 0;
-  gain_t reverse_previous_cost = 0;
-  gain_t reverse_next_cost = 0;
-  gain_t old_edge_cost = 0;
+  Gain previous_cost = 0;
+  Gain next_cost = 0;
+  Gain reverse_previous_cost = 0;
+  Gain reverse_next_cost = 0;
+  Gain old_edge_cost = 0;
 
   if (new_rank == s_route.size()) {
     // Adding edge past the end after a real job that was unmoved.
@@ -87,12 +87,12 @@ void cvrp_intra_or_opt::compute_gain() {
   }
 
   // Gain for addition.
-  gain_t add_gain = old_edge_cost - previous_cost - next_cost;
+  Gain add_gain = old_edge_cost - previous_cost - next_cost;
 
-  gain_t reverse_edge_cost = static_cast<gain_t>(m[s_index][after_s_index]) -
-                             static_cast<gain_t>(m[after_s_index][s_index]);
-  gain_t reverse_add_gain = old_edge_cost + reverse_edge_cost -
-                            reverse_previous_cost - reverse_next_cost;
+  Gain reverse_edge_cost = static_cast<Gain>(m[s_index][after_s_index]) -
+                           static_cast<Gain>(m[after_s_index][s_index]);
+  Gain reverse_add_gain = old_edge_cost + reverse_edge_cost -
+                          reverse_previous_cost - reverse_next_cost;
 
   normal_stored_gain = _sol_state.edge_gains[s_vehicle][s_rank] + add_gain;
   reversed_stored_gain =
@@ -108,11 +108,11 @@ void cvrp_intra_or_opt::compute_gain() {
   gain_computed = true;
 }
 
-bool cvrp_intra_or_opt::is_valid() {
+bool CVRPIntraOrOpt::is_valid() {
   return true;
 }
 
-void cvrp_intra_or_opt::apply() {
+void CVRPIntraOrOpt::apply() {
   auto first_job_rank = s_route[s_rank];
   auto second_job_rank = s_route[s_rank + 1];
   s_route.erase(s_route.begin() + s_rank, s_route.begin() + s_rank + 2);
@@ -122,10 +122,10 @@ void cvrp_intra_or_opt::apply() {
   }
 }
 
-std::vector<index_t> cvrp_intra_or_opt::addition_candidates() const {
+std::vector<Index> CVRPIntraOrOpt::addition_candidates() const {
   return {};
 }
 
-std::vector<index_t> cvrp_intra_or_opt::update_candidates() const {
+std::vector<Index> CVRPIntraOrOpt::update_candidates() const {
   return {s_vehicle};
 }

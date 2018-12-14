@@ -16,11 +16,11 @@ All rights reserved (see LICENSE).
 #include "structures/typedefs.h"
 
 template <class T>
-std::unordered_map<index_t, index_t>
-minimum_weight_perfect_matching(const matrix<T>& m);
+std::unordered_map<Index, Index>
+minimum_weight_perfect_matching(const Matrix<T>& m);
 
 template <class T>
-std::unordered_map<index_t, index_t>
-greedy_symmetric_approx_mwpm(const matrix<T>& m);
+std::unordered_map<Index, Index>
+greedy_symmetric_approx_mwpm(const Matrix<T>& m);
 
 #endif

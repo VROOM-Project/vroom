@@ -9,22 +9,22 @@ All rights reserved (see LICENSE).
 
 #include "problems/cvrp/operators/or_opt.h"
 
-cvrp_or_opt::cvrp_or_opt(const input& input,
-                         const solution_state& sol_state,
-                         raw_route& s_route,
-                         index_t s_vehicle,
-                         index_t s_rank,
-                         raw_route& t_route,
-                         index_t t_vehicle,
-                         index_t t_rank)
-  : ls_operator(input,
-                sol_state,
-                s_route,
-                s_vehicle,
-                s_rank,
-                t_route,
-                t_vehicle,
-                t_rank),
+CVRPOrOpt::CVRPOrOpt(const Input& input,
+                     const SolutionState& sol_state,
+                     RawRoute& s_route,
+                     Index s_vehicle,
+                     Index s_rank,
+                     RawRoute& t_route,
+                     Index t_vehicle,
+                     Index t_rank)
+  : Operator(input,
+             sol_state,
+             s_route,
+             s_vehicle,
+             s_rank,
+             t_route,
+             t_vehicle,
+             t_rank),
     reverse_s_edge(false) {
   assert(s_vehicle != t_vehicle);
   assert(s_route.size() >= 2);
@@ -32,7 +32,7 @@ cvrp_or_opt::cvrp_or_opt(const input& input,
   assert(t_rank <= t_route.size());
 }
 
-void cvrp_or_opt::compute_gain() {
+void CVRPOrOpt::compute_gain() {
   const auto& m = _input.get_matrix();
   const auto& v_target = _input._vehicles[t_vehicle];
 
@@ -43,14 +43,14 @@ void cvrp_or_opt::compute_gain() {
   // For target vehicle, we consider the cost of adding source edge at
   // rank t_rank. reverse_* checks whether we should change the
   // source edge order.
-  index_t s_index = _input._jobs[s_route[s_rank]].index();
-  index_t after_s_index = _input._jobs[s_route[s_rank + 1]].index();
+  Index s_index = _input._jobs[s_route[s_rank]].index();
+  Index after_s_index = _input._jobs[s_route[s_rank + 1]].index();
 
-  gain_t previous_cost = 0;
-  gain_t next_cost = 0;
-  gain_t reverse_previous_cost = 0;
-  gain_t reverse_next_cost = 0;
-  gain_t old_edge_cost = 0;
+  Gain previous_cost = 0;
+  Gain next_cost = 0;
+  Gain reverse_previous_cost = 0;
+  Gain reverse_next_cost = 0;
+  Gain old_edge_cost = 0;
 
   if (t_rank == t_route.size()) {
     if (t_route.size() == 0) {
@@ -97,12 +97,12 @@ void cvrp_or_opt::compute_gain() {
   }
 
   // Gain for target vehicle.
-  gain_t t_gain = old_edge_cost - previous_cost - next_cost;
+  Gain t_gain = old_edge_cost - previous_cost - next_cost;
 
-  gain_t reverse_edge_cost = static_cast<gain_t>(m[s_index][after_s_index]) -
-                             static_cast<gain_t>(m[after_s_index][s_index]);
-  gain_t reverse_t_gain = old_edge_cost + reverse_edge_cost -
-                          reverse_previous_cost - reverse_next_cost;
+  Gain reverse_edge_cost = static_cast<Gain>(m[s_index][after_s_index]) -
+                           static_cast<Gain>(m[after_s_index][s_index]);
+  Gain reverse_t_gain = old_edge_cost + reverse_edge_cost -
+                        reverse_previous_cost - reverse_next_cost;
 
   normal_stored_gain = _sol_state.edge_gains[s_vehicle][s_rank] + t_gain;
   reversed_stored_gain =
@@ -118,7 +118,7 @@ void cvrp_or_opt::compute_gain() {
   gain_computed = true;
 }
 
-bool cvrp_or_opt::is_valid() {
+bool CVRPOrOpt::is_valid() {
   auto current_job_rank = s_route[s_rank];
   // Already asserted in compute_gain.
   auto after_job_rank = s_route[s_rank + 1];
@@ -140,7 +140,7 @@ bool cvrp_or_opt::is_valid() {
   return valid;
 }
 
-void cvrp_or_opt::apply() {
+void CVRPOrOpt::apply() {
   t_route.insert(t_route.begin() + t_rank,
                  s_route.begin() + s_rank,
                  s_route.begin() + s_rank + 2);
@@ -151,10 +151,10 @@ void cvrp_or_opt::apply() {
   s_route.erase(s_route.begin() + s_rank, s_route.begin() + s_rank + 2);
 }
 
-std::vector<index_t> cvrp_or_opt::addition_candidates() const {
+std::vector<Index> CVRPOrOpt::addition_candidates() const {
   return {s_vehicle};
 }
 
-std::vector<index_t> cvrp_or_opt::update_candidates() const {
+std::vector<Index> CVRPOrOpt::update_candidates() const {
   return {s_vehicle, t_vehicle};
 }

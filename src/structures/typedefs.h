@@ -19,50 +19,52 @@ All rights reserved (see LICENSE).
 #include <boost/optional.hpp>
 
 // To easily differentiate variable types.
-using ID_t = uint64_t;
-using index_t = uint16_t;
-using cost_t = uint32_t;
-using gain_t = int64_t;
-using distance_t = uint32_t;
-using duration_t = uint32_t;
-using coordinate_t = double;
-using capacity_t = int64_t;
-using skill_t = uint32_t;
+using Id = uint64_t;
+using Index = uint16_t;
+using Cost = uint32_t;
+using Gain = int64_t;
+using Distance = uint32_t;
+using Duration = uint32_t;
+using Coordinate = double;
+using Capacity = int64_t;
+using Skill = uint32_t;
 
 // Type helpers.
-using coords_t = std::array<coordinate_t, 2>;
-using optional_coords_t = boost::optional<coords_t>;
-using skills_t = std::unordered_set<skill_t>;
+using Coordinates = std::array<Coordinate, 2>;
+using OptionalCoordinates = boost::optional<Coordinates>;
+using Skills = std::unordered_set<Skill>;
 
 // Setting max value would cause trouble with further additions.
-constexpr cost_t INFINITE_COST = 3 * (std::numeric_limits<cost_t>::max() / 4);
+constexpr Cost INFINITE_COST = 3 * (std::numeric_limits<Cost>::max() / 4);
 
 // Available location status.
 enum class TYPE { START, JOB, END };
 
 // Heuristic options.
-enum class HEURISTIC_T { BASIC, DYNAMIC };
-enum class CLUSTERING_T { PARALLEL, SEQUENTIAL };
-enum class INIT_T { NONE, HIGHER_AMOUNT, NEAREST, FURTHEST, EARLIEST_DEADLINE };
+enum class HEURISTIC { BASIC, DYNAMIC };
+enum class CLUSTERING { PARALLEL, SEQUENTIAL };
+enum class INIT { NONE, HIGHER_AMOUNT, NEAREST, FURTHEST, EARLIEST_DEADLINE };
 
-struct h_param {
+struct HeuristicParameters {
   bool is_clustering; // Use "heuristic" or "type".
-  HEURISTIC_T heuristic;
-  CLUSTERING_T type;
-  INIT_T init;
+  HEURISTIC heuristic;
+  CLUSTERING type;
+  INIT init;
   float regret_coeff;
 
-  constexpr h_param(HEURISTIC_T heuristic, INIT_T init, float regret_coeff)
+  constexpr HeuristicParameters(HEURISTIC heuristic,
+                                INIT init,
+                                float regret_coeff)
     : is_clustering(false),
       heuristic(heuristic),
-      type(CLUSTERING_T::SEQUENTIAL), // dummy init
+      type(CLUSTERING::SEQUENTIAL), // dummy init
       init(init),
       regret_coeff(regret_coeff) {
   }
 
-  constexpr h_param(CLUSTERING_T type, INIT_T init, float regret_coeff)
+  constexpr HeuristicParameters(CLUSTERING type, INIT init, float regret_coeff)
     : is_clustering(true),
-      heuristic(HEURISTIC_T::BASIC), // dummy init
+      heuristic(HEURISTIC::BASIC), // dummy init
       type(type),
       init(init),
       regret_coeff(regret_coeff) {

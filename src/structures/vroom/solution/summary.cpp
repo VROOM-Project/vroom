@@ -9,10 +9,10 @@ All rights reserved (see LICENSE).
 
 #include "structures/vroom/solution/summary.h"
 
-summary_t::summary_t() : cost(0), unassigned(0), amount(), service(0) {
+Summary::Summary() : cost(0), unassigned(0), amount(), service(0) {
 }
 
-summary_t::summary_t(unsigned unassigned, unsigned amount_size)
+Summary::Summary(unsigned unassigned, unsigned amount_size)
   : cost(0),
     unassigned(unassigned),
     amount(amount_size),

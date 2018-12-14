@@ -15,25 +15,25 @@ All rights reserved (see LICENSE).
 
 #include "structures/vroom/solution/step.h"
 
-struct route_t {
-  const ID_t vehicle;
-  std::vector<step> steps;
-  const cost_t cost;
-  const duration_t service;
-  const duration_t duration;
-  const duration_t waiting_time;
-  const amount_t amount;
+struct Route {
+  const Id vehicle;
+  std::vector<Step> steps;
+  const Cost cost;
+  const Duration service;
+  const Duration duration;
+  const Duration waiting_time;
+  const Amount amount;
 
   std::string geometry;
-  distance_t distance;
+  Distance distance;
 
-  route_t(ID_t vehicle,
-          std::vector<step>&& steps,
-          cost_t cost,
-          duration_t service,
-          duration_t duration,
-          duration_t waiting_time,
-          const amount_t& amount);
+  Route(Id vehicle,
+        std::vector<Step>&& steps,
+        Cost cost,
+        Duration service,
+        Duration duration,
+        Duration waiting_time,
+        const Amount& amount);
 };
 
 #endif

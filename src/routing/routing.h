@@ -1,5 +1,5 @@
-#ifndef ROUTING_IO_H
-#define ROUTING_IO_H
+#ifndef ROUTING_H
+#define ROUTING_H
 
 /*
 
@@ -16,18 +16,18 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/location.h"
 #include "structures/vroom/solution/route.h"
 
-template <class T> class routing_io {
+template <class T> class Routing {
 
 public:
-  virtual matrix<T> get_matrix(const std::vector<location_t>& locs) const = 0;
+  virtual Matrix<T> get_matrix(const std::vector<Location>& locs) const = 0;
 
-  virtual void add_route_info(route_t& rte) const = 0;
+  virtual void add_route_info(Route& route) const = 0;
 
-  virtual ~routing_io() {
+  virtual ~Routing() {
   }
 
 protected:
-  routing_io() {
+  Routing() {
   }
 };
 

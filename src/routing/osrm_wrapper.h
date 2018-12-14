@@ -12,24 +12,24 @@ All rights reserved (see LICENSE).
 
 #include <vector>
 
-#include "routing/routing_io.h"
+#include "routing/routing.h"
 #include "structures/abstract/matrix.h"
 #include "utils/exceptions.h"
 
-class osrm_wrapper : public routing_io<cost_t> {
+class OSRMWrapper : public Routing<Cost> {
 
 protected:
   const std::string _osrm_profile; // OSRM profile name
 
-  static cost_t round_cost(double value) {
-    return static_cast<cost_t>(value + 0.5);
+  static Cost round_cost(double value) {
+    return static_cast<Cost>(value + 0.5);
   }
 
-  osrm_wrapper(const std::string& osrm_profile) : _osrm_profile(osrm_profile) {
+  OSRMWrapper(const std::string& osrm_profile) : _osrm_profile(osrm_profile) {
   }
 
   inline void
-  check_unfound(const std::vector<location_t>& locs,
+  check_unfound(const std::vector<Location>& locs,
                 const std::vector<unsigned>& nb_unfound_from_loc,
                 const std::vector<unsigned>& nb_unfound_to_loc) const {
     assert(nb_unfound_from_loc.size() == nb_unfound_to_loc.size());
@@ -55,14 +55,13 @@ protected:
       error_msg += "location [" + std::to_string(locs[error_loc].lon()) + ";" +
                    std::to_string(locs[error_loc].lat()) + "]";
 
-      throw custom_exception(error_msg);
+      throw Exception(error_msg);
     }
   }
 
-  virtual matrix<cost_t>
-  get_matrix(const std::vector<location_t>& locs) const = 0;
+  virtual Matrix<Cost> get_matrix(const std::vector<Location>& locs) const = 0;
 
-  virtual void add_route_info(route_t& route) const = 0;
+  virtual void add_route_info(Route& route) const = 0;
 };
 
 #endif

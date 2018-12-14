@@ -15,25 +15,25 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/input/input.h"
 #include "structures/vroom/job.h"
 
-class clustering {
+class Clustering {
 private:
-  const input& input_ref;
+  const Input& input_ref;
   void parallel_clustering();
   void sequential_clustering();
 
 public:
-  const CLUSTERING_T type;
-  const INIT_T init;
+  const CLUSTERING type;
+  const INIT init;
   const float regret_coeff;
   // Clusters are relative to the vehicle with same rank in
   // input_ref._vehicles.
-  std::vector<std::vector<index_t>> clusters;
+  std::vector<std::vector<Index>> clusters;
   // Cost of all edges added during the clustering process
-  cost_t edges_cost;
+  Cost edges_cost;
   unsigned assigned_jobs;
   unsigned non_empty_clusters;
 
-  clustering(const input& input, CLUSTERING_T t, INIT_T i, float c);
+  Clustering(const Input& input, CLUSTERING t, INIT i, float c);
 };
 
 #endif

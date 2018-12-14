@@ -12,27 +12,27 @@ All rights reserved (see LICENSE).
 
 #include "structures/typedefs.h"
 
-template <class T> class edge {
+template <class T> class Edge {
 
 private:
-  index_t _first_vertex;
-  index_t _second_vertex;
+  Index _first_vertex;
+  Index _second_vertex;
   T _weight;
 
 public:
-  edge(index_t first_vertex, index_t second_vertex, T weight);
+  Edge(Index first_vertex, Index second_vertex, T weight);
 
-  index_t get_first_vertex() const {
+  Index get_first_vertex() const {
     return _first_vertex;
   };
 
-  index_t get_second_vertex() const {
+  Index get_second_vertex() const {
     return _second_vertex;
   };
 
-  bool operator<(const edge& rhs) const;
+  bool operator<(const Edge& rhs) const;
 
-  bool operator==(const edge& rhs) const;
+  bool operator==(const Edge& rhs) const;
 
   T get_weight() const {
     return _weight;

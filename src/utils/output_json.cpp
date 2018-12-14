@@ -16,7 +16,7 @@ All rights reserved (see LICENSE).
 #include "utils/output_json.h"
 #include "utils/version.h"
 
-rapidjson::Document to_json(const solution& sol, bool geometry) {
+rapidjson::Document to_json(const Solution& sol, bool geometry) {
   rapidjson::Document json_output;
   json_output.SetObject();
   rapidjson::Document::AllocatorType& allocator = json_output.GetAllocator();
@@ -55,7 +55,7 @@ rapidjson::Document to_json(const solution& sol, bool geometry) {
   return json_output;
 }
 
-rapidjson::Value to_json(const summary_t& summary,
+rapidjson::Value to_json(const Summary& summary,
                          bool geometry,
                          rapidjson::Document::AllocatorType& allocator) {
   rapidjson::Value json_summary(rapidjson::kObjectType);
@@ -86,7 +86,7 @@ rapidjson::Value to_json(const summary_t& summary,
   return json_summary;
 }
 
-rapidjson::Value to_json(const route_t& route,
+rapidjson::Value to_json(const Route& route,
                          bool geometry,
                          rapidjson::Document::AllocatorType& allocator) {
   rapidjson::Value json_route(rapidjson::kObjectType);
@@ -126,7 +126,7 @@ rapidjson::Value to_json(const route_t& route,
   return json_route;
 }
 
-rapidjson::Value to_json(const computing_times_t& ct,
+rapidjson::Value to_json(const ComputingTimes& ct,
                          bool geometry,
                          rapidjson::Document::AllocatorType& allocator) {
   rapidjson::Value json_ct(rapidjson::kObjectType);
@@ -142,7 +142,7 @@ rapidjson::Value to_json(const computing_times_t& ct,
   return json_ct;
 }
 
-rapidjson::Value to_json(const step& s,
+rapidjson::Value to_json(const Step& s,
                          bool geometry,
                          rapidjson::Document::AllocatorType& allocator) {
   rapidjson::Value json_step(rapidjson::kObjectType);
@@ -182,7 +182,7 @@ rapidjson::Value to_json(const step& s,
   return json_step;
 }
 
-rapidjson::Value to_json(const location_t& loc,
+rapidjson::Value to_json(const Location& loc,
                          rapidjson::Document::AllocatorType& allocator) {
   rapidjson::Value json_coords(rapidjson::kArrayType);
 
@@ -192,7 +192,7 @@ rapidjson::Value to_json(const location_t& loc,
   return json_coords;
 }
 
-void write_to_json(const solution& sol,
+void write_to_json(const Solution& sol,
                    bool geometry,
                    const std::string& output_file) {
   auto json_output = to_json(sol, geometry);

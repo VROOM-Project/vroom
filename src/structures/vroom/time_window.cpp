@@ -12,30 +12,30 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/time_window.h"
 #include "utils/exceptions.h"
 
-constexpr duration_t time_window_t::default_length =
-  std::numeric_limits<duration_t>::max();
+constexpr Duration TimeWindow::default_length =
+  std::numeric_limits<Duration>::max();
 
-time_window_t::time_window_t()
-  : start(0), end(std::numeric_limits<duration_t>::max()), length(end - start) {
+TimeWindow::TimeWindow()
+  : start(0), end(std::numeric_limits<Duration>::max()), length(end - start) {
 }
 
-time_window_t::time_window_t(duration_t start, duration_t end)
+TimeWindow::TimeWindow(Duration start, Duration end)
   : start(start), end(end), length(end - start) {
   if (start > end) {
-    throw custom_exception("Invalid time window: [" + std::to_string(start) +
-                           ", " + std::to_string(end) + "]");
+    throw Exception("Invalid time window: [" + std::to_string(start) + ", " +
+                    std::to_string(end) + "]");
   }
 }
 
-bool time_window_t::contains(duration_t time) const {
+bool TimeWindow::contains(Duration time) const {
   return (start <= time) and (time <= end);
 }
 
-bool time_window_t::is_default() const {
+bool TimeWindow::is_default() const {
   return end - start == default_length;
 }
 
-bool operator<(const time_window_t& lhs, const time_window_t& rhs) {
+bool operator<(const TimeWindow& lhs, const TimeWindow& rhs) {
   return lhs.start < rhs.start or
          (lhs.start == rhs.start and lhs.end < rhs.end);
 }

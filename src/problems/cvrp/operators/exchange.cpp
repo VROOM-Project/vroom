@@ -9,22 +9,22 @@ All rights reserved (see LICENSE).
 
 #include "problems/cvrp/operators/exchange.h"
 
-cvrp_exchange::cvrp_exchange(const input& input,
-                             const solution_state& sol_state,
-                             raw_route& s_route,
-                             index_t s_vehicle,
-                             index_t s_rank,
-                             raw_route& t_route,
-                             index_t t_vehicle,
-                             index_t t_rank)
-  : ls_operator(input,
-                sol_state,
-                s_route,
-                s_vehicle,
-                s_rank,
-                t_route,
-                t_vehicle,
-                t_rank) {
+CVRPExchange::CVRPExchange(const Input& input,
+                           const SolutionState& sol_state,
+                           RawRoute& s_route,
+                           Index s_vehicle,
+                           Index s_rank,
+                           RawRoute& t_route,
+                           Index t_vehicle,
+                           Index t_rank)
+  : Operator(input,
+             sol_state,
+             s_route,
+             s_vehicle,
+             s_rank,
+             t_route,
+             t_vehicle,
+             t_rank) {
   assert(s_vehicle != t_vehicle);
   assert(s_route.size() >= 1);
   assert(t_route.size() >= 1);
@@ -32,7 +32,7 @@ cvrp_exchange::cvrp_exchange(const input& input,
   assert(t_rank < t_route.size());
 }
 
-void cvrp_exchange::compute_gain() {
+void CVRPExchange::compute_gain() {
   const auto& m = _input.get_matrix();
   const auto& v_source = _input._vehicles[s_vehicle];
   const auto& v_target = _input._vehicles[t_vehicle];
@@ -40,12 +40,12 @@ void cvrp_exchange::compute_gain() {
   // For source vehicle, we consider the cost of replacing job at rank
   // s_rank with target job. Part of that cost (for adjacent
   // edges) is stored in _sol_state.edge_costs_around_node.
-  index_t s_index = _input._jobs[s_route[s_rank]].index();
-  index_t t_index = _input._jobs[t_route[t_rank]].index();
+  Index s_index = _input._jobs[s_route[s_rank]].index();
+  Index t_index = _input._jobs[t_route[t_rank]].index();
 
   // Determine costs added with target job.
-  gain_t new_previous_cost = 0;
-  gain_t new_next_cost = 0;
+  Gain new_previous_cost = 0;
+  Gain new_next_cost = 0;
 
   if (s_rank == 0) {
     if (v_source.has_start()) {
@@ -67,8 +67,8 @@ void cvrp_exchange::compute_gain() {
     new_next_cost = m[t_index][n_index];
   }
 
-  gain_t s_gain = _sol_state.edge_costs_around_node[s_vehicle][s_rank] -
-                  new_previous_cost - new_next_cost;
+  Gain s_gain = _sol_state.edge_costs_around_node[s_vehicle][s_rank] -
+                new_previous_cost - new_next_cost;
 
   // For target vehicle, we consider the cost of replacing job at rank
   // t_rank with source job. Part of that cost (for adjacent
@@ -98,14 +98,14 @@ void cvrp_exchange::compute_gain() {
     new_next_cost = m[s_index][n_index];
   }
 
-  gain_t t_gain = _sol_state.edge_costs_around_node[t_vehicle][t_rank] -
-                  new_previous_cost - new_next_cost;
+  Gain t_gain = _sol_state.edge_costs_around_node[t_vehicle][t_rank] -
+                new_previous_cost - new_next_cost;
 
   stored_gain = s_gain + t_gain;
   gain_computed = true;
 }
 
-bool cvrp_exchange::is_valid() {
+bool CVRPExchange::is_valid() {
   auto s_job_rank = s_route[s_rank];
   auto t_job_rank = t_route[t_rank];
 
@@ -125,14 +125,14 @@ bool cvrp_exchange::is_valid() {
   return valid;
 }
 
-void cvrp_exchange::apply() {
+void CVRPExchange::apply() {
   std::swap(s_route[s_rank], t_route[t_rank]);
 }
 
-std::vector<index_t> cvrp_exchange::addition_candidates() const {
+std::vector<Index> CVRPExchange::addition_candidates() const {
   return {s_vehicle, t_vehicle};
 }
 
-std::vector<index_t> cvrp_exchange::update_candidates() const {
+std::vector<Index> CVRPExchange::update_candidates() const {
   return {s_vehicle, t_vehicle};
 }

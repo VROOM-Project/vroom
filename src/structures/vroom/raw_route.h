@@ -15,15 +15,15 @@ All rights reserved (see LICENSE).
 #include "structures/typedefs.h"
 #include "structures/vroom/input/input.h"
 
-class raw_route {
+class RawRoute {
 public:
-  std::vector<index_t> route;
+  std::vector<Index> route;
 
-  raw_route() : route(){};
+  RawRoute() : route(){};
 
-  raw_route(const std::vector<index_t>& r) : route(r){};
+  RawRoute(const std::vector<Index>& r) : route(r){};
 
-  raw_route(const input&, index_t) : route(){};
+  RawRoute(const Input&, Index) : route(){};
 
   bool empty() const {
     return route.empty();
@@ -33,21 +33,19 @@ public:
     return route.size();
   }
 
-  bool is_valid_addition_for_tw(const input&,
-                                const index_t,
-                                const index_t) const {
+  bool is_valid_addition_for_tw(const Input&, const Index, const Index) const {
     return true;
   };
 
-  void add(const input&, const index_t job_rank, const index_t rank) {
+  void add(const Input&, const Index job_rank, const Index rank) {
     route.insert(route.begin() + rank, job_rank);
   };
 
-  bool is_valid_removal(const input&, const index_t, const unsigned) const {
+  bool is_valid_removal(const Input&, const Index, const unsigned) const {
     return true;
   };
 
-  void remove(const input&, const index_t rank, const unsigned count) {
+  void remove(const Input&, const Index rank, const unsigned count) {
     route.erase(route.begin() + rank, route.begin() + rank + count);
   };
 };

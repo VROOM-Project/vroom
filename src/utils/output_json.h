@@ -15,28 +15,28 @@ All rights reserved (see LICENSE).
 #include "../include/rapidjson/document.h"
 #include "structures/vroom/solution/solution.h"
 
-rapidjson::Document to_json(const solution& sol, bool geometry);
+rapidjson::Document to_json(const Solution& sol, bool geometry);
 
-rapidjson::Value to_json(const summary_t& summary,
+rapidjson::Value to_json(const Summary& summary,
                          bool geometry,
                          rapidjson::Document::AllocatorType& allocator);
 
-rapidjson::Value to_json(const computing_times_t& computing_times,
+rapidjson::Value to_json(const ComputingTimes& computing_times,
                          bool geometry,
                          rapidjson::Document::AllocatorType& allocator);
 
-rapidjson::Value to_json(const route_t& route,
+rapidjson::Value to_json(const Route& route,
                          bool geometry,
                          rapidjson::Document::AllocatorType& allocator);
 
-rapidjson::Value to_json(const step& s,
+rapidjson::Value to_json(const Step& s,
                          bool geometry,
                          rapidjson::Document::AllocatorType& allocator);
 
-rapidjson::Value to_json(const location_t& loc,
+rapidjson::Value to_json(const Location& loc,
                          rapidjson::Document::AllocatorType& allocator);
 
-void write_to_json(const solution& sol,
+void write_to_json(const Solution& sol,
                    bool geometry,
                    const std::string& output_file);
 

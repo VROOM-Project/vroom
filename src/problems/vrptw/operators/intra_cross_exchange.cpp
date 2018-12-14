@@ -9,19 +9,18 @@ All rights reserved (see LICENSE).
 
 #include "problems/vrptw/operators/intra_cross_exchange.h"
 
-vrptw_intra_cross_exchange::vrptw_intra_cross_exchange(
-  const input& input,
-  const solution_state& sol_state,
-  tw_route& tw_s_route,
-  index_t s_vehicle,
-  index_t s_rank,
-  index_t t_rank)
-  : cvrp_intra_cross_exchange(input,
-                              sol_state,
-                              static_cast<raw_route&>(tw_s_route),
-                              s_vehicle,
-                              s_rank,
-                              t_rank),
+vrptwIntraCrossExchange::vrptwIntraCrossExchange(const Input& input,
+                                                 const SolutionState& sol_state,
+                                                 TWRoute& tw_s_route,
+                                                 Index s_vehicle,
+                                                 Index s_rank,
+                                                 Index t_rank)
+  : CVRPIntraCrossExchange(input,
+                           sol_state,
+                           static_cast<RawRoute&>(tw_s_route),
+                           s_vehicle,
+                           s_rank,
+                           t_rank),
     _tw_s_route(tw_s_route),
     _s_normal_t_normal_is_valid(false),
     _s_normal_t_reverse_is_valid(false),
@@ -39,15 +38,15 @@ vrptw_intra_cross_exchange::vrptw_intra_cross_exchange(
   _moved_jobs[_moved_jobs.size() - 1] = s_route[s_rank + 1];
 }
 
-void vrptw_intra_cross_exchange::compute_gain() {
-  cvrp_intra_cross_exchange::compute_gain();
+void vrptwIntraCrossExchange::compute_gain() {
+  CVRPIntraCrossExchange::compute_gain();
   assert(_s_normal_t_normal_is_valid or _s_normal_t_reverse_is_valid or
          _s_reverse_t_reverse_is_valid or _s_reverse_t_normal_is_valid);
 
-  stored_gain = std::numeric_limits<gain_t>::min();
+  stored_gain = std::numeric_limits<Gain>::min();
 
   if (_s_normal_t_normal_is_valid) {
-    gain_t current_gain = normal_s_gain + normal_t_gain;
+    Gain current_gain = normal_s_gain + normal_t_gain;
     if (current_gain > stored_gain) {
       stored_gain = current_gain;
       reverse_s_edge = false;
@@ -56,7 +55,7 @@ void vrptw_intra_cross_exchange::compute_gain() {
   }
 
   if (_s_normal_t_reverse_is_valid) {
-    gain_t current_gain = reversed_s_gain + normal_t_gain;
+    Gain current_gain = reversed_s_gain + normal_t_gain;
     if (current_gain > stored_gain) {
       stored_gain = current_gain;
       reverse_s_edge = false;
@@ -65,7 +64,7 @@ void vrptw_intra_cross_exchange::compute_gain() {
   }
 
   if (_s_reverse_t_reverse_is_valid) {
-    gain_t current_gain = reversed_s_gain + reversed_t_gain;
+    Gain current_gain = reversed_s_gain + reversed_t_gain;
     if (current_gain > stored_gain) {
       stored_gain = current_gain;
       reverse_s_edge = true;
@@ -74,7 +73,7 @@ void vrptw_intra_cross_exchange::compute_gain() {
   }
 
   if (_s_reverse_t_normal_is_valid) {
-    gain_t current_gain = normal_s_gain + reversed_t_gain;
+    Gain current_gain = normal_s_gain + reversed_t_gain;
     if (current_gain > stored_gain) {
       stored_gain = current_gain;
       reverse_s_edge = true;
@@ -83,7 +82,7 @@ void vrptw_intra_cross_exchange::compute_gain() {
   }
 }
 
-bool vrptw_intra_cross_exchange::is_valid() {
+bool vrptwIntraCrossExchange::is_valid() {
   _s_normal_t_normal_is_valid =
     _tw_s_route.is_valid_addition_for_tw(_input,
                                          _moved_jobs.begin(),
@@ -124,7 +123,7 @@ bool vrptw_intra_cross_exchange::is_valid() {
          _s_reverse_t_reverse_is_valid or _s_reverse_t_normal_is_valid;
 }
 
-void vrptw_intra_cross_exchange::apply() {
+void vrptwIntraCrossExchange::apply() {
   if (reverse_t_edge) {
     std::swap(_moved_jobs[0], _moved_jobs[1]);
   }
@@ -140,6 +139,6 @@ void vrptw_intra_cross_exchange::apply() {
                       _last_rank);
 }
 
-std::vector<index_t> vrptw_intra_cross_exchange::addition_candidates() const {
+std::vector<Index> vrptwIntraCrossExchange::addition_candidates() const {
   return {s_vehicle};
 }

@@ -12,30 +12,30 @@ All rights reserved (see LICENSE).
 
 #include "structures/typedefs.h"
 
-class location_t {
+class Location {
 private:
   // Index of this location in the matrix.
-  index_t _index;
+  Index _index;
   // Coordinates (not mandatory).
-  optional_coords_t _coords;
+  OptionalCoordinates _coords;
   bool _user_index;
 
 public:
-  location_t(index_t index);
+  Location(Index index);
 
-  location_t(index_t index, const coords_t& coords);
+  Location(Index index, const Coordinates& coords);
 
-  location_t(const coords_t& coords);
+  Location(const Coordinates& coords);
 
-  void set_index(index_t index);
+  void set_index(Index index);
 
   bool has_coordinates() const;
 
-  index_t index() const;
+  Index index() const;
 
-  coordinate_t lon() const;
+  Coordinate lon() const;
 
-  coordinate_t lat() const;
+  Coordinate lat() const;
 
   bool user_index() const;
 
@@ -43,7 +43,7 @@ public:
   // user-provided index or if they both have coordinates and those
   // are equal. The last part is required for situations with no
   // explicit index provided in input.
-  bool operator==(const location_t& other) const;
+  bool operator==(const Location& other) const;
 };
 
 #endif

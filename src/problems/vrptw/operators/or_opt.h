@@ -13,10 +13,10 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/operators/or_opt.h"
 #include "structures/vroom/tw_route.h"
 
-class vrptw_or_opt : public cvrp_or_opt {
+class vrptwOrOpt : public CVRPOrOpt {
 private:
-  tw_route& _tw_s_route;
-  tw_route& _tw_t_route;
+  TWRoute& _tw_s_route;
+  TWRoute& _tw_t_route;
 
   bool _is_normal_valid;
   bool _is_reverse_valid;
@@ -24,14 +24,14 @@ private:
   virtual void compute_gain() override;
 
 public:
-  vrptw_or_opt(const input& input,
-               const solution_state& sol_state,
-               tw_route& tw_s_route,
-               index_t s_vehicle,
-               index_t s_rank,
-               tw_route& tw_t_route,
-               index_t t_vehicle,
-               index_t t_rank);
+  vrptwOrOpt(const Input& input,
+             const SolutionState& sol_state,
+             TWRoute& tw_s_route,
+             Index s_vehicle,
+             Index s_rank,
+             TWRoute& tw_t_route,
+             Index t_vehicle,
+             Index t_rank);
 
   virtual bool is_valid() override;
 

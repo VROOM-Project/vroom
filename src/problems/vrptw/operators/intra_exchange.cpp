@@ -9,18 +9,18 @@ All rights reserved (see LICENSE).
 
 #include "problems/vrptw/operators/intra_exchange.h"
 
-vrptw_intra_exchange::vrptw_intra_exchange(const input& input,
-                                           const solution_state& sol_state,
-                                           tw_route& tw_s_route,
-                                           index_t s_vehicle,
-                                           index_t s_rank,
-                                           index_t t_rank)
-  : cvrp_intra_exchange(input,
-                        sol_state,
-                        static_cast<raw_route&>(tw_s_route),
-                        s_vehicle,
-                        s_rank,
-                        t_rank),
+vrptwIntraExchange::vrptwIntraExchange(const Input& input,
+                                       const SolutionState& sol_state,
+                                       TWRoute& tw_s_route,
+                                       Index s_vehicle,
+                                       Index s_rank,
+                                       Index t_rank)
+  : CVRPIntraExchange(input,
+                      sol_state,
+                      static_cast<RawRoute&>(tw_s_route),
+                      s_vehicle,
+                      s_rank,
+                      t_rank),
     _tw_s_route(tw_s_route),
     _moved_jobs(t_rank - s_rank + 1),
     _first_rank(s_rank),
@@ -31,7 +31,7 @@ vrptw_intra_exchange::vrptw_intra_exchange(const input& input,
   std::swap(_moved_jobs[0], _moved_jobs.back());
 }
 
-bool vrptw_intra_exchange::is_valid() {
+bool vrptwIntraExchange::is_valid() {
   return _tw_s_route.is_valid_addition_for_tw(_input,
                                               _moved_jobs.begin(),
                                               _moved_jobs.end(),
@@ -39,7 +39,7 @@ bool vrptw_intra_exchange::is_valid() {
                                               _last_rank);
 }
 
-void vrptw_intra_exchange::apply() {
+void vrptwIntraExchange::apply() {
   _tw_s_route.replace(_input,
                       _moved_jobs.begin(),
                       _moved_jobs.end(),
@@ -47,6 +47,6 @@ void vrptw_intra_exchange::apply() {
                       _last_rank);
 }
 
-std::vector<index_t> vrptw_intra_exchange::addition_candidates() const {
+std::vector<Index> vrptwIntraExchange::addition_candidates() const {
   return {s_vehicle};
 }

@@ -17,27 +17,27 @@ All rights reserved (see LICENSE).
 #include "structures/abstract/edge.h"
 #include "structures/abstract/matrix.h"
 
-template <class T> class undirected_graph {
+template <class T> class UndirectedGraph {
 
 private:
   unsigned _size;
   // Embedding two representations for different uses depending on
   // context.
-  std::vector<edge<T>> _edges;
-  std::unordered_map<index_t, std::vector<index_t>> _adjacency_list;
+  std::vector<Edge<T>> _edges;
+  std::unordered_map<Index, std::vector<Index>> _adjacency_list;
 
 public:
-  undirected_graph();
+  UndirectedGraph();
 
-  undirected_graph(const matrix<T>& m);
+  UndirectedGraph(const Matrix<T>& m);
 
-  undirected_graph(std::vector<edge<T>> edges);
+  UndirectedGraph(std::vector<Edge<T>> edges);
 
   std::size_t size() const;
 
-  std::vector<edge<T>> get_edges() const;
+  std::vector<Edge<T>> get_edges() const;
 
-  std::unordered_map<index_t, std::list<index_t>> get_adjacency_list() const;
+  std::unordered_map<Index, std::list<Index>> get_adjacency_list() const;
 };
 
 #endif

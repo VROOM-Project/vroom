@@ -9,14 +9,14 @@ All rights reserved (see LICENSE).
 
 #include "algorithms/local_search/ls_operator.h"
 
-ls_operator::ls_operator(const input& input,
-                         const solution_state& sol_state,
-                         raw_route& s_raw_route,
-                         index_t s_vehicle,
-                         index_t s_rank,
-                         raw_route& t_raw_route,
-                         index_t t_vehicle,
-                         index_t t_rank)
+Operator::Operator(const Input& input,
+                   const SolutionState& sol_state,
+                   RawRoute& s_raw_route,
+                   Index s_vehicle,
+                   Index s_rank,
+                   RawRoute& t_raw_route,
+                   Index t_vehicle,
+                   Index t_rank)
   : _input(input),
     _sol_state(sol_state),
     s_route(s_raw_route.route),
@@ -28,7 +28,7 @@ ls_operator::ls_operator(const input& input,
     gain_computed(false) {
 }
 
-gain_t ls_operator::gain() {
+Gain Operator::gain() {
   if (!gain_computed) {
     this->compute_gain();
   }

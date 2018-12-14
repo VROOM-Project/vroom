@@ -31,37 +31,37 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/raw_route.h"
 #include "utils/helpers.h"
 
-using raw_solution = std::vector<raw_route>;
+using RawSolution = std::vector<RawRoute>;
 
-using cvrp_local_search = local_search<raw_route,
-                                       cvrp_exchange,
-                                       cvrp_cross_exchange,
-                                       cvrp_mixed_exchange,
-                                       cvrp_two_opt,
-                                       cvrp_reverse_two_opt,
-                                       cvrp_relocate,
-                                       cvrp_or_opt,
-                                       cvrp_intra_exchange,
-                                       cvrp_intra_cross_exchange,
-                                       cvrp_intra_mixed_exchange,
-                                       cvrp_intra_relocate,
-                                       cvrp_intra_or_opt>;
+using CVRPLocalSearch = LocalSearch<RawRoute,
+                                    CVRPExchange,
+                                    CVRPCrossExchange,
+                                    CVRPMixedExchange,
+                                    CVRPTwoOpt,
+                                    CVRPReverseTwoOpt,
+                                    CVRPRelocate,
+                                    CVRPOrOpt,
+                                    CVRPIntraExchange,
+                                    CVRPIntraCrossExchange,
+                                    CVRPIntraMixedExchange,
+                                    CVRPIntraRelocate,
+                                    CVRPIntraOrOpt>;
 
-constexpr std::array<h_param, 32> cvrp::homogeneous_parameters;
-constexpr std::array<h_param, 32> cvrp::heterogeneous_parameters;
+constexpr std::array<HeuristicParameters, 32> CVRP::homogeneous_parameters;
+constexpr std::array<HeuristicParameters, 32> CVRP::heterogeneous_parameters;
 
-cvrp::cvrp(const input& input) : vrp(input) {
+CVRP::CVRP(const Input& input) : VRP(input) {
 }
 
-solution cvrp::solve(unsigned exploration_level, unsigned nb_threads) const {
+Solution CVRP::solve(unsigned exploration_level, unsigned nb_threads) const {
   auto nb_tsp = _input._vehicles.size();
 
   if (nb_tsp == 1 and !_input.has_skills() and _input.amount_size() == 0) {
     // This is a plain TSP, no need to go through the trouble below.
-    std::vector<index_t> job_ranks(_input._jobs.size());
+    std::vector<Index> job_ranks(_input._jobs.size());
     std::iota(job_ranks.begin(), job_ranks.end(), 0);
 
-    tsp p(_input, job_ranks, 0);
+    TSP p(_input, job_ranks, 0);
 
     return format_solution(_input, p.raw_solve(0, nb_threads));
   }
@@ -81,8 +81,8 @@ solution cvrp::solve(unsigned exploration_level, unsigned nb_threads) const {
   }
   assert(nb_init_solutions <= parameters.size());
 
-  std::vector<raw_solution> solutions(nb_init_solutions, raw_solution(nb_tsp));
-  std::vector<solution_indicators> sol_indicators(nb_init_solutions);
+  std::vector<RawSolution> solutions(nb_init_solutions, RawSolution(nb_tsp));
+  std::vector<SolutionIndicators> sol_indicators(nb_init_solutions);
 
   // Split the work among threads.
   std::vector<std::vector<std::size_t>>
@@ -96,34 +96,34 @@ solution cvrp::solve(unsigned exploration_level, unsigned nb_threads) const {
       auto& p = parameters[rank];
 
       if (p.is_clustering) {
-        clustering c(_input, p.type, p.init, p.regret_coeff);
+        Clustering c(_input, p.type, p.init, p.regret_coeff);
 
         // Populate vector of TSP solutions, one per cluster.
         for (std::size_t v = 0; v < nb_tsp; ++v) {
           if (c.clusters[v].empty()) {
             continue;
           }
-          tsp p(_input, c.clusters[v], v);
+          TSP p(_input, c.clusters[v], v);
 
           solutions[rank][v] = p.raw_solve(0, 1)[0];
         }
       } else {
         switch (p.heuristic) {
-        case HEURISTIC_T::BASIC:
+        case HEURISTIC::BASIC:
           solutions[rank] =
-            basic_heuristic<raw_solution>(_input, p.init, p.regret_coeff);
+            basic_heuristic<RawSolution>(_input, p.init, p.regret_coeff);
           break;
-        case HEURISTIC_T::DYNAMIC:
+        case HEURISTIC::DYNAMIC:
           solutions[rank] =
-            dynamic_vehicle_choice_heuristic<raw_solution>(_input,
-                                                           p.init,
-                                                           p.regret_coeff);
+            dynamic_vehicle_choice_heuristic<RawSolution>(_input,
+                                                          p.init,
+                                                          p.regret_coeff);
           break;
         }
       }
 
       // Local search phase.
-      cvrp_local_search ls(_input, solutions[rank], max_nb_jobs_removal);
+      CVRPLocalSearch ls(_input, solutions[rank], max_nb_jobs_removal);
       ls.run();
 
       // Store solution indicators.

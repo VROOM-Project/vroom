@@ -15,7 +15,7 @@ All rights reserved (see LICENSE).
 
 #include "structures/typedefs.h"
 
-template <class T> class line : private std::vector<T> {
+template <class T> class Line : private std::vector<T> {
 
   using parent = std::vector<T>;
 
@@ -23,26 +23,26 @@ public:
   using parent::size;
   using parent::operator[];
 
-  line(std::size_t n);
+  Line(std::size_t n);
 
-  line(std::initializer_list<T> l);
+  Line(std::initializer_list<T> l);
 };
 
-template <class T> class matrix : private std::vector<line<T>> {
+template <class T> class Matrix : private std::vector<Line<T>> {
 
-  using parent = std::vector<line<T>>;
+  using parent = std::vector<Line<T>>;
 
 public:
   using parent::size;
   using parent::operator[];
 
-  matrix();
+  Matrix();
 
-  matrix(std::size_t n);
+  Matrix(std::size_t n);
 
-  matrix(std::initializer_list<line<T>> l);
+  Matrix(std::initializer_list<Line<T>> l);
 
-  matrix<T> get_sub_matrix(const std::vector<index_t>& indices) const;
+  Matrix<T> get_sub_matrix(const std::vector<Index>& indices) const;
 };
 
 #endif

@@ -12,7 +12,7 @@ All rights reserved (see LICENSE).
 #include "algorithms/heuristics/clustering.h"
 #include "structures/vroom/amount.h"
 
-clustering::clustering(const input& input, CLUSTERING_T t, INIT_T i, float c)
+Clustering::Clustering(const Input& input, CLUSTERING t, INIT i, float c)
   : input_ref(input),
     type(t),
     init(i),
@@ -23,30 +23,30 @@ clustering::clustering(const input& input, CLUSTERING_T t, INIT_T i, float c)
     non_empty_clusters(0) {
   std::string strategy;
   switch (type) {
-  case CLUSTERING_T::PARALLEL:
+  case CLUSTERING::PARALLEL:
     this->parallel_clustering();
     strategy = "parallel";
     break;
-  case CLUSTERING_T::SEQUENTIAL:
+  case CLUSTERING::SEQUENTIAL:
     this->sequential_clustering();
     strategy = "sequential";
     break;
   }
   std::string init_str;
   switch (init) {
-  case INIT_T::NONE:
+  case INIT::NONE:
     init_str = "none";
     break;
-  case INIT_T::HIGHER_AMOUNT:
+  case INIT::HIGHER_AMOUNT:
     init_str = "higher_amount";
     break;
-  case INIT_T::NEAREST:
+  case INIT::NEAREST:
     init_str = "nearest";
     break;
-  case INIT_T::FURTHEST:
+  case INIT::FURTHEST:
     init_str = "furthest";
     break;
-  case INIT_T::EARLIEST_DEADLINE:
+  case INIT::EARLIEST_DEADLINE:
     assert(false);
     break;
   }
@@ -56,12 +56,12 @@ clustering::clustering(const input& input, CLUSTERING_T t, INIT_T i, float c)
                                      [](auto& c) { return !c.empty(); });
 }
 
-inline void update_cost(index_t from_index,
-                        std::vector<cost_t>& costs,
-                        std::vector<index_t>& parents,
-                        const std::vector<index_t>& candidates,
-                        const std::vector<job_t>& jobs,
-                        const matrix<cost_t>& m) {
+inline void update_cost(Index from_index,
+                        std::vector<Cost>& costs,
+                        std::vector<Index>& parents,
+                        const std::vector<Index>& candidates,
+                        const std::vector<Job>& jobs,
+                        const Matrix<Cost>& m) {
   // Update cost of reaching all candidates (seen as neighbours of
   // "from_index").
   for (auto j : candidates) {
@@ -74,7 +74,7 @@ inline void update_cost(index_t from_index,
   }
 }
 
-void clustering::parallel_clustering() {
+void Clustering::parallel_clustering() {
   auto V = input_ref._vehicles.size();
   auto J = input_ref._jobs.size();
   auto& jobs = input_ref._jobs;
@@ -82,16 +82,16 @@ void clustering::parallel_clustering() {
   auto m = input_ref.get_matrix();
 
   // Current best known costs to add jobs to vehicle clusters.
-  std::vector<std::vector<cost_t>>
-    costs(V, std::vector<cost_t>(J, std::numeric_limits<cost_t>::max()));
+  std::vector<std::vector<Cost>>
+    costs(V, std::vector<Cost>(J, std::numeric_limits<Cost>::max()));
 
   // For each vehicle cluster, we need to maintain a vector of job
   // candidates (represented by their index in 'jobs'). Initialization
   // updates all costs related to start/end for each vehicle cluster.
-  std::vector<std::vector<index_t>> candidates(V);
+  std::vector<std::vector<Index>> candidates(V);
 
   // Remember wanabee parent for each job in each cluster.
-  std::vector<std::vector<index_t>> parents(V, std::vector<index_t>(J));
+  std::vector<std::vector<Index>> parents(V, std::vector<Index>(J));
 
   for (std::size_t v = 0; v < V; ++v) {
     // Only keep jobs compatible with vehicle skills in candidates.
@@ -119,7 +119,7 @@ void clustering::parallel_clustering() {
   }
 
   // Remember current capacity left in clusters.
-  std::vector<amount_t> capacities;
+  std::vector<Amount> capacities;
   for (std::size_t v = 0; v < V; ++v) {
     capacities.emplace_back(vehicles[v].capacity);
   }
@@ -127,14 +127,14 @@ void clustering::parallel_clustering() {
   // Regrets[v][j] is the min cost of reaching jobs[j] from another
   // cluster than v. It serves as an indicator of the cost we'll have
   // to support later when NOT including a job to the current cluster.
-  std::vector<std::vector<cost_t>> regrets(V, std::vector<cost_t>(J, 0));
+  std::vector<std::vector<Cost>> regrets(V, std::vector<Cost>(J, 0));
   for (std::size_t v = 0; v < V; ++v) {
     for (auto j : candidates[v]) {
-      auto current_regret = std::numeric_limits<cost_t>::max();
+      auto current_regret = std::numeric_limits<Cost>::max();
       for (std::size_t other_v = 0; other_v < V; ++other_v) {
         // Cost from other clusters that potentially can handle job.
         if ((v == other_v) or
-            (costs[other_v][j] == std::numeric_limits<cost_t>::max())) {
+            (costs[other_v][j] == std::numeric_limits<Cost>::max())) {
           continue;
         }
         current_regret = std::min(current_regret, costs[other_v][j]);
@@ -149,7 +149,7 @@ void clustering::parallel_clustering() {
   // Initialize cluster with the job that has "higher" amount (and is
   // the further away in case of amount tie).
   auto higher_amount_init_lambda = [&](auto v) {
-    return [&, v](index_t lhs, index_t rhs) {
+    return [&, v](Index lhs, Index rhs) {
       return jobs[lhs].amount << jobs[rhs].amount or
              (jobs[lhs].amount == jobs[rhs].amount and
               costs[v][lhs] < costs[v][rhs]);
@@ -157,26 +157,25 @@ void clustering::parallel_clustering() {
   };
   // Initialize cluster with the nearest job.
   auto nearest_init_lambda = [&](auto v) {
-    return [&, v](index_t lhs, index_t rhs) {
-      return costs[v][lhs] < costs[v][rhs];
-    };
+    return
+      [&, v](Index lhs, Index rhs) { return costs[v][lhs] < costs[v][rhs]; };
   };
 
-  if (init != INIT_T::NONE) {
+  if (init != INIT::NONE) {
     for (std::size_t v = 0; v < V; ++v) {
       auto init_job = candidates[v].cend();
-      if (init == INIT_T::HIGHER_AMOUNT) {
+      if (init == INIT::HIGHER_AMOUNT) {
         init_job = std::max_element(candidates[v].cbegin(),
                                     candidates[v].cend(),
                                     higher_amount_init_lambda(v));
       }
-      if (init == INIT_T::NEAREST) {
+      if (init == INIT::NEAREST) {
         init_job = std::min_element(candidates[v].cbegin(),
                                     candidates[v].cend(),
                                     nearest_init_lambda(v));
       }
 
-      if (init == INIT_T::FURTHEST) {
+      if (init == INIT::FURTHEST) {
         init_job = std::max_element(candidates[v].cbegin(),
                                     candidates[v].cend(),
                                     nearest_init_lambda(v));
@@ -204,7 +203,7 @@ void clustering::parallel_clustering() {
           for (std::size_t other_v = 0; other_v < V; ++other_v) {
             // Regret for other clusters that potentially can handle job.
             if ((other_v == v) or
-                (costs[other_v][j] == std::numeric_limits<cost_t>::max())) {
+                (costs[other_v][j] == std::numeric_limits<Cost>::max())) {
               continue;
             }
             regrets[other_v][j] = std::min(regrets[other_v][j], new_cost);
@@ -239,9 +238,9 @@ void clustering::parallel_clustering() {
   while (candidates_remaining) {
     // Remember best cluster and job candidate.
     bool capacity_ok = false;
-    index_t best_v = 0; // Dummy init, value never used.
-    index_t best_j;
-    cost_t best_cost = std::numeric_limits<cost_t>::max();
+    Index best_v = 0; // Dummy init, value never used.
+    Index best_j;
+    Cost best_cost = std::numeric_limits<Cost>::max();
 
     for (std::size_t v = 0; v < V; ++v) {
       if (candidates[v].empty()) {
@@ -311,7 +310,7 @@ void clustering::parallel_clustering() {
       for (std::size_t other_v = 0; other_v < V; ++other_v) {
         // Regret for other clusters that potentially can handle job.
         if ((other_v == best_v) or
-            (costs[other_v][j] == std::numeric_limits<cost_t>::max())) {
+            (costs[other_v][j] == std::numeric_limits<Cost>::max())) {
           continue;
         }
         regrets[other_v][j] = std::min(regrets[other_v][j], new_cost);
@@ -332,7 +331,7 @@ void clustering::parallel_clustering() {
   }
 }
 
-void clustering::sequential_clustering() {
+void Clustering::sequential_clustering() {
   auto V = input_ref._vehicles.size();
   auto J = input_ref._jobs.size();
   auto& jobs = input_ref._jobs;
@@ -341,20 +340,18 @@ void clustering::sequential_clustering() {
 
   // For each vehicle cluster, we need to initialize a vector of job
   // candidates (represented by their index in 'jobs').
-  std::unordered_set<index_t> candidates_set;
-  for (index_t i = 0; i < J; ++i) {
+  std::unordered_set<Index> candidates_set;
+  for (Index i = 0; i < J; ++i) {
     candidates_set.insert(i);
   }
 
   // Remember initial cost of reaching a job from a vehicle (based on
   // start/end loc).
-  std::vector<std::vector<cost_t>> vehicles_to_job_costs(V,
-                                                         std::vector<cost_t>(
-                                                           J));
+  std::vector<std::vector<Cost>> vehicles_to_job_costs(V, std::vector<Cost>(J));
 
   for (std::size_t j = 0; j < J; ++j) {
     for (std::size_t v = 0; v < V; ++v) {
-      cost_t current_cost = std::numeric_limits<cost_t>::max();
+      Cost current_cost = std::numeric_limits<Cost>::max();
       if (vehicles[v].has_start()) {
         auto start_index = vehicles[v].start.get().index();
         current_cost = std::min(current_cost, m[start_index][jobs[j].index()]);
@@ -371,7 +368,7 @@ void clustering::sequential_clustering() {
   // yet-to-build cluster after v. It serves as an indicator of the
   // cost we'll have to support later when NOT including a job to the
   // current cluster.
-  std::vector<std::vector<cost_t>> regrets(V, std::vector<cost_t>(J, 0));
+  std::vector<std::vector<Cost>> regrets(V, std::vector<Cost>(J, 0));
 
   if (vehicles.size() > 1) {
     // Regret for penultimate cluster is the cost for last
@@ -392,7 +389,7 @@ void clustering::sequential_clustering() {
   // Initialize cluster with the job that has "higher" amount (and is
   // the further away in case of amount tie).
   auto higher_amount_init_lambda = [&](auto v) {
-    return [&, v](index_t lhs, index_t rhs) {
+    return [&, v](Index lhs, Index rhs) {
       return jobs[lhs].amount << jobs[rhs].amount or
              (jobs[lhs].amount == jobs[rhs].amount and
               vehicles_to_job_costs[v][lhs] < vehicles_to_job_costs[v][rhs]);
@@ -400,7 +397,7 @@ void clustering::sequential_clustering() {
   };
   // Initialize cluster with the nearest job.
   auto nearest_init_lambda = [&](auto v) {
-    return [&, v](index_t lhs, index_t rhs) {
+    return [&, v](Index lhs, Index rhs) {
       return vehicles_to_job_costs[v][lhs] < vehicles_to_job_costs[v][rhs];
     };
   };
@@ -408,7 +405,7 @@ void clustering::sequential_clustering() {
   for (std::size_t v = 0; v < V; ++v) {
     // Initialization with remaining compatible jobs while remembering
     // costs to jobs for current vehicle.
-    std::vector<index_t> candidates;
+    std::vector<Index> candidates;
     for (auto i : candidates_set) {
       if (input_ref.vehicle_ok_with_job(v, i) and
           jobs[i].amount <= input_ref._vehicles[v].capacity) {
@@ -417,10 +414,10 @@ void clustering::sequential_clustering() {
     }
 
     // Current best known costs to add jobs to current vehicle cluster.
-    std::vector<cost_t> costs(J, std::numeric_limits<cost_t>::max());
+    std::vector<Cost> costs(J, std::numeric_limits<Cost>::max());
 
     // Remember wanabee parent for each job.
-    std::vector<index_t> parents(J);
+    std::vector<Index> parents(J);
 
     // Updating costs related to start/end for each vehicle cluster.
     if (vehicles[v].has_start()) {
@@ -443,19 +440,19 @@ void clustering::sequential_clustering() {
     auto capacity = vehicles[v].capacity;
 
     // Strategy for cluster initialization.
-    if (init != INIT_T::NONE) {
+    if (init != INIT::NONE) {
       auto init_job = candidates.cend();
-      if (init == INIT_T::HIGHER_AMOUNT) {
+      if (init == INIT::HIGHER_AMOUNT) {
         init_job = std::max_element(candidates.cbegin(),
                                     candidates.cend(),
                                     higher_amount_init_lambda(v));
       }
-      if (init == INIT_T::NEAREST) {
+      if (init == INIT::NEAREST) {
         init_job = std::min_element(candidates.cbegin(),
                                     candidates.cend(),
                                     nearest_init_lambda(v));
       }
-      if (init == INIT_T::FURTHEST) {
+      if (init == INIT::FURTHEST) {
         init_job = std::max_element(candidates.cbegin(),
                                     candidates.cend(),
                                     nearest_init_lambda(v));

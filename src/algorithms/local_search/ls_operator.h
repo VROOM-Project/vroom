@@ -15,46 +15,46 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/raw_route.h"
 #include "structures/vroom/solution_state.h"
 
-class ls_operator {
+class Operator {
 protected:
-  const input& _input;
-  const solution_state& _sol_state;
+  const Input& _input;
+  const SolutionState& _sol_state;
 
   // Source of move for this operator.
-  std::vector<index_t>& s_route;
-  const index_t s_vehicle;
-  const index_t s_rank;
+  std::vector<Index>& s_route;
+  const Index s_vehicle;
+  const Index s_rank;
   // Target of move for this operator.
-  std::vector<index_t>& t_route;
-  const index_t t_vehicle;
-  const index_t t_rank;
+  std::vector<Index>& t_route;
+  const Index t_vehicle;
+  const Index t_rank;
 
   bool gain_computed;
-  gain_t stored_gain;
+  Gain stored_gain;
 
   virtual void compute_gain() = 0;
 
 public:
-  ls_operator(const input& input,
-              const solution_state& sol_state,
-              raw_route& s_route,
-              index_t s_vehicle,
-              index_t s_rank,
-              raw_route& t_route,
-              index_t t_vehicle,
-              index_t t_rank);
+  Operator(const Input& input,
+           const SolutionState& sol_state,
+           RawRoute& s_route,
+           Index s_vehicle,
+           Index s_rank,
+           RawRoute& t_route,
+           Index t_vehicle,
+           Index t_rank);
 
-  virtual gain_t gain();
+  virtual Gain gain();
 
   virtual bool is_valid() = 0;
 
   virtual void apply() = 0;
 
-  virtual std::vector<index_t> addition_candidates() const = 0;
+  virtual std::vector<Index> addition_candidates() const = 0;
 
-  virtual std::vector<index_t> update_candidates() const = 0;
+  virtual std::vector<Index> update_candidates() const = 0;
 
-  virtual ~ls_operator() {
+  virtual ~Operator() {
   }
 };
 

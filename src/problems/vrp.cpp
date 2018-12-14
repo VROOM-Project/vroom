@@ -10,9 +10,9 @@ All rights reserved (see LICENSE).
 #include "problems/vrp.h"
 #include "structures/vroom/input/input.h"
 
-vrp::vrp(const input& input) : _input(input) {
+VRP::VRP(const Input& input) : _input(input) {
   assert(_input._vehicles.size() > 0);
 }
 
-vrp::~vrp() {
+VRP::~VRP() {
 }

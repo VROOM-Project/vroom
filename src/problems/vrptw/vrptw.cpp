@@ -28,29 +28,29 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/tw_route.h"
 #include "utils/helpers.h"
 
-using tw_solution = std::vector<tw_route>;
+using TWSolution = std::vector<TWRoute>;
 
-using vrptw_local_search = local_search<tw_route,
-                                        vrptw_exchange,
-                                        vrptw_cross_exchange,
-                                        vrptw_mixed_exchange,
-                                        vrptw_two_opt,
-                                        vrptw_reverse_two_opt,
-                                        vrptw_relocate,
-                                        vrptw_or_opt,
-                                        vrptw_intra_exchange,
-                                        vrptw_intra_cross_exchange,
-                                        vrptw_intra_mixed_exchange,
-                                        vrptw_intra_relocate,
-                                        vrptw_intra_or_opt>;
+using vrptwLocalSearch = LocalSearch<TWRoute,
+                                     vrptwExchange,
+                                     vrptwCrossExchange,
+                                     vrptwMixedExchange,
+                                     vrptwTwoOpt,
+                                     vrptwReverseTwoOpt,
+                                     vrptwRelocate,
+                                     vrptwOrOpt,
+                                     vrptwIntraExchange,
+                                     vrptwIntraCrossExchange,
+                                     vrptwIntraMixedExchange,
+                                     vrptwIntraRelocate,
+                                     vrptwIntraOrOpt>;
 
-constexpr std::array<h_param, 32> vrptw::homogeneous_parameters;
-constexpr std::array<h_param, 32> vrptw::heterogeneous_parameters;
+constexpr std::array<HeuristicParameters, 32> VRPTW::homogeneous_parameters;
+constexpr std::array<HeuristicParameters, 32> VRPTW::heterogeneous_parameters;
 
-vrptw::vrptw(const input& input) : vrp(input) {
+VRPTW::VRPTW(const Input& input) : VRP(input) {
 }
 
-solution vrptw::solve(unsigned exploration_level, unsigned nb_threads) const {
+Solution VRPTW::solve(unsigned exploration_level, unsigned nb_threads) const {
   auto parameters = (_input.has_homogeneous_locations())
                       ? homogeneous_parameters
                       : heterogeneous_parameters;
@@ -66,8 +66,8 @@ solution vrptw::solve(unsigned exploration_level, unsigned nb_threads) const {
   }
   assert(nb_init_solutions <= parameters.size());
 
-  std::vector<tw_solution> tw_solutions(nb_init_solutions);
-  std::vector<solution_indicators> sol_indicators(nb_init_solutions);
+  std::vector<TWSolution> tw_solutions(nb_init_solutions);
+  std::vector<SolutionIndicators> sol_indicators(nb_init_solutions);
 
   // Split the work among threads.
   std::vector<std::vector<std::size_t>>
@@ -80,20 +80,20 @@ solution vrptw::solve(unsigned exploration_level, unsigned nb_threads) const {
     for (auto rank : param_ranks) {
       auto& p = parameters[rank];
       switch (p.heuristic) {
-      case HEURISTIC_T::BASIC:
+      case HEURISTIC::BASIC:
         tw_solutions[rank] =
-          basic_heuristic<tw_solution>(_input, p.init, p.regret_coeff);
+          basic_heuristic<TWSolution>(_input, p.init, p.regret_coeff);
         break;
-      case HEURISTIC_T::DYNAMIC:
+      case HEURISTIC::DYNAMIC:
         tw_solutions[rank] =
-          dynamic_vehicle_choice_heuristic<tw_solution>(_input,
-                                                        p.init,
-                                                        p.regret_coeff);
+          dynamic_vehicle_choice_heuristic<TWSolution>(_input,
+                                                       p.init,
+                                                       p.regret_coeff);
         break;
       }
 
       // Local search phase.
-      vrptw_local_search ls(_input, tw_solutions[rank], max_nb_jobs_removal);
+      vrptwLocalSearch ls(_input, tw_solutions[rank], max_nb_jobs_removal);
       ls.run();
 
       // Store solution indicators.

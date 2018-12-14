@@ -16,9 +16,9 @@ All rights reserved (see LICENSE).
 #include "structures/typedefs.h"
 
 template <class T>
-undirected_graph<T> minimum_spanning_tree(const undirected_graph<T>& graph) {
+UndirectedGraph<T> minimum_spanning_tree(const UndirectedGraph<T>& graph) {
   // We just need the edges from original graph.
-  std::vector<edge<T>> edges = graph.get_edges();
+  std::vector<Edge<T>> edges = graph.get_edges();
 
   // First sorting edges by weight.
   std::sort(edges.begin(), edges.end(), [](const auto& a, const auto& b) {
@@ -26,21 +26,21 @@ undirected_graph<T> minimum_spanning_tree(const undirected_graph<T>& graph) {
   });
 
   // Storing the edges of the minimum spanning tree.
-  std::vector<edge<T>> mst;
+  std::vector<Edge<T>> mst;
 
   // During Kruskal algorithm, the number of connected components will
   // decrease until we obtain a single component (the final tree). We
   // use the smallest vertex as a representative of connected
   // components.
-  std::vector<index_t> representative(graph.size());
+  std::vector<Index> representative(graph.size());
   std::iota(representative.begin(), representative.end(), 0);
 
   for (const auto& edge : edges) {
-    index_t first_vertex = edge.get_first_vertex();
-    index_t second_vertex = edge.get_second_vertex();
+    Index first_vertex = edge.get_first_vertex();
+    Index second_vertex = edge.get_second_vertex();
 
-    index_t first_rep = representative[first_vertex];
-    index_t second_rep = representative[second_vertex];
+    Index first_rep = representative[first_vertex];
+    Index second_rep = representative[second_vertex];
     if (first_rep != second_rep) {
       // Adding current edge won't create a cycle as vertices are in
       // separate connected components.
@@ -57,8 +57,8 @@ undirected_graph<T> minimum_spanning_tree(const undirected_graph<T>& graph) {
     }
   }
 
-  return undirected_graph<T>(mst);
+  return UndirectedGraph<T>(mst);
 }
 
-template undirected_graph<cost_t>
-minimum_spanning_tree(const undirected_graph<cost_t>& graph);
+template UndirectedGraph<Cost>
+minimum_spanning_tree(const UndirectedGraph<Cost>& graph);

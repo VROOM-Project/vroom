@@ -14,12 +14,10 @@ All rights reserved (see LICENSE).
 
 // Implementation of a variant of the Solomon I1 heuristic.
 template <class T>
-T basic_heuristic(const input& input, INIT_T init, float lambda);
+T basic_heuristic(const Input& input, INIT init, float lambda);
 
 // Adjusting the above for situation with heterogeneous fleet.
 template <class T>
-T dynamic_vehicle_choice_heuristic(const input& input,
-                                   INIT_T init,
-                                   float lambda);
+T dynamic_vehicle_choice_heuristic(const Input& input, INIT init, float lambda);
 
 #endif

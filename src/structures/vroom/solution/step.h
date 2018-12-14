@@ -13,21 +13,21 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/job.h"
 #include "structures/vroom/location.h"
 
-struct step {
+struct Step {
   const TYPE type;
-  const location_t location;
-  const ID_t job;
-  const duration_t service;
-  const amount_t amount;
+  const Location location;
+  const Id job;
+  const Duration service;
+  const Amount amount;
 
-  duration_t arrival;
-  duration_t duration;
-  duration_t waiting_time;
-  distance_t distance;
+  Duration arrival;
+  Duration duration;
+  Duration waiting_time;
+  Distance distance;
 
-  step(TYPE type, location_t location);
+  Step(TYPE type, Location location);
 
-  step(const job_t& job);
+  Step(const Job& job);
 };
 
 #endif

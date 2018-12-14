@@ -9,18 +9,18 @@ All rights reserved (see LICENSE).
 
 #include "problems/vrptw/operators/intra_relocate.h"
 
-vrptw_intra_relocate::vrptw_intra_relocate(const input& input,
-                                           const solution_state& sol_state,
-                                           tw_route& tw_s_route,
-                                           index_t s_vehicle,
-                                           index_t s_rank,
-                                           index_t t_rank)
-  : cvrp_intra_relocate(input,
-                        sol_state,
-                        static_cast<raw_route&>(tw_s_route),
-                        s_vehicle,
-                        s_rank,
-                        t_rank),
+vrptwIntraRelocate::vrptwIntraRelocate(const Input& input,
+                                       const SolutionState& sol_state,
+                                       TWRoute& tw_s_route,
+                                       Index s_vehicle,
+                                       Index s_rank,
+                                       Index t_rank)
+  : CVRPIntraRelocate(input,
+                      sol_state,
+                      static_cast<RawRoute&>(tw_s_route),
+                      s_vehicle,
+                      s_rank,
+                      t_rank),
     _tw_s_route(tw_s_route),
     _moved_jobs((s_rank < t_rank) ? t_rank - s_rank + 1 : s_rank - t_rank + 1),
     _first_rank(std::min(s_rank, t_rank)),
@@ -38,7 +38,7 @@ vrptw_intra_relocate::vrptw_intra_relocate(const input& input,
   }
 }
 
-bool vrptw_intra_relocate::is_valid() {
+bool vrptwIntraRelocate::is_valid() {
   return _tw_s_route.is_valid_addition_for_tw(_input,
                                               _moved_jobs.begin(),
                                               _moved_jobs.end(),
@@ -46,7 +46,7 @@ bool vrptw_intra_relocate::is_valid() {
                                               _last_rank);
 }
 
-void vrptw_intra_relocate::apply() {
+void vrptwIntraRelocate::apply() {
   _tw_s_route.replace(_input,
                       _moved_jobs.begin(),
                       _moved_jobs.end(),
@@ -54,6 +54,6 @@ void vrptw_intra_relocate::apply() {
                       _last_rank);
 }
 
-std::vector<index_t> vrptw_intra_relocate::addition_candidates() const {
+std::vector<Index> vrptwIntraRelocate::addition_candidates() const {
   return {s_vehicle};
 }

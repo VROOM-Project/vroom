@@ -9,30 +9,30 @@ All rights reserved (see LICENSE).
 
 #include "problems/vrptw/operators/or_opt.h"
 
-vrptw_or_opt::vrptw_or_opt(const input& input,
-                           const solution_state& sol_state,
-                           tw_route& tw_s_route,
-                           index_t s_vehicle,
-                           index_t s_rank,
-                           tw_route& tw_t_route,
-                           index_t t_vehicle,
-                           index_t t_rank)
-  : cvrp_or_opt(input,
-                sol_state,
-                static_cast<raw_route&>(tw_s_route),
-                s_vehicle,
-                s_rank,
-                static_cast<raw_route&>(tw_t_route),
-                t_vehicle,
-                t_rank),
+vrptwOrOpt::vrptwOrOpt(const Input& input,
+                       const SolutionState& sol_state,
+                       TWRoute& tw_s_route,
+                       Index s_vehicle,
+                       Index s_rank,
+                       TWRoute& tw_t_route,
+                       Index t_vehicle,
+                       Index t_rank)
+  : CVRPOrOpt(input,
+              sol_state,
+              static_cast<RawRoute&>(tw_s_route),
+              s_vehicle,
+              s_rank,
+              static_cast<RawRoute&>(tw_t_route),
+              t_vehicle,
+              t_rank),
     _tw_s_route(tw_s_route),
     _tw_t_route(tw_t_route),
     _is_normal_valid(false),
     _is_reverse_valid(false) {
 }
 
-void vrptw_or_opt::compute_gain() {
-  cvrp_or_opt::compute_gain();
+void vrptwOrOpt::compute_gain() {
+  CVRPOrOpt::compute_gain();
   assert(_is_normal_valid or _is_reverse_valid);
 
   if (reverse_s_edge) {
@@ -54,8 +54,8 @@ void vrptw_or_opt::compute_gain() {
   }
 }
 
-bool vrptw_or_opt::is_valid() {
-  bool valid = cvrp_or_opt::is_valid();
+bool vrptwOrOpt::is_valid() {
+  bool valid = CVRPOrOpt::is_valid();
 
   if (valid and _tw_s_route.is_valid_removal(_input, s_rank, 2)) {
     // Keep edge direction.
@@ -78,7 +78,7 @@ bool vrptw_or_opt::is_valid() {
   return valid and (_is_normal_valid or _is_reverse_valid);
 }
 
-void vrptw_or_opt::apply() {
+void vrptwOrOpt::apply() {
   if (reverse_s_edge) {
     auto s_reverse_start = s_route.rbegin() + s_route.size() - 2 - s_rank;
     _tw_t_route.replace(_input,

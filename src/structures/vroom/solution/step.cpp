@@ -10,12 +10,12 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/solution/step.h"
 
 // Dummy initialization value for unused job id.
-step::step(TYPE type, location_t location)
+Step::Step(TYPE type, Location location)
   : type(type), location(location), job(0), service(0), waiting_time(0) {
   assert(type == TYPE::START or type == TYPE::END);
 }
 
-step::step(const job_t& job)
+Step::Step(const Job& job)
   : type(TYPE::JOB),
     location(job.location),
     job(job.id),

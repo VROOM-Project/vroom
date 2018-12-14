@@ -13,34 +13,34 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/operators/intra_mixed_exchange.h"
 #include "structures/vroom/tw_route.h"
 
-class vrptw_intra_mixed_exchange : public cvrp_intra_mixed_exchange {
+class vrptwIntraMixedExchange : public CVRPIntraMixedExchange {
 private:
-  tw_route& _tw_s_route;
+  TWRoute& _tw_s_route;
 
   bool _s_is_normal_valid;
   bool _s_is_reverse_valid;
 
-  std::vector<index_t> _moved_jobs;
-  const index_t _first_rank;
-  const index_t _last_rank;
-  index_t _t_edge_first;
-  index_t _t_edge_last;
+  std::vector<Index> _moved_jobs;
+  const Index _first_rank;
+  const Index _last_rank;
+  Index _t_edge_first;
+  Index _t_edge_last;
 
   virtual void compute_gain() override;
 
 public:
-  vrptw_intra_mixed_exchange(const input& input,
-                             const solution_state& sol_state,
-                             tw_route& tw_s_route,
-                             index_t s_vehicle,
-                             index_t s_rank,
-                             index_t t_rank);
+  vrptwIntraMixedExchange(const Input& input,
+                          const SolutionState& sol_state,
+                          TWRoute& tw_s_route,
+                          Index s_vehicle,
+                          Index s_rank,
+                          Index t_rank);
 
   virtual bool is_valid() override;
 
   virtual void apply() override;
 
-  virtual std::vector<index_t> addition_candidates() const override;
+  virtual std::vector<Index> addition_candidates() const override;
 };
 
 #endif

@@ -12,30 +12,30 @@ All rights reserved (see LICENSE).
 
 #include "algorithms/local_search/ls_operator.h"
 
-class cvrp_intra_or_opt : public ls_operator {
+class CVRPIntraOrOpt : public Operator {
 protected:
   virtual void compute_gain() override;
 
-  gain_t normal_stored_gain;
-  gain_t reversed_stored_gain;
+  Gain normal_stored_gain;
+  Gain reversed_stored_gain;
 
   bool reverse_s_edge;
 
 public:
-  cvrp_intra_or_opt(const input& input,
-                    const solution_state& sol_state,
-                    raw_route& s_route,
-                    index_t s_vehicle,
-                    index_t s_rank,
-                    index_t t_rank); // rank *after* removal.
+  CVRPIntraOrOpt(const Input& input,
+                 const SolutionState& sol_state,
+                 RawRoute& s_route,
+                 Index s_vehicle,
+                 Index s_rank,
+                 Index t_rank); // rank *after* removal.
 
   virtual bool is_valid() override;
 
   virtual void apply() override;
 
-  virtual std::vector<index_t> addition_candidates() const override;
+  virtual std::vector<Index> addition_candidates() const override;
 
-  virtual std::vector<index_t> update_candidates() const override;
+  virtual std::vector<Index> update_candidates() const override;
 };
 
 #endif

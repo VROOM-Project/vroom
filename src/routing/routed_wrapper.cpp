@@ -16,16 +16,15 @@ All rights reserved (see LICENSE).
 
 using boost::asio::ip::tcp;
 
-routed_wrapper::routed_wrapper(const std::string& address,
-                               const std::string& port,
-                               const std::string& osrm_profile)
-  : osrm_wrapper(osrm_profile), _address(address), _port(port) {
+RoutedWrapper::RoutedWrapper(const std::string& address,
+                             const std::string& port,
+                             const std::string& osrm_profile)
+  : OSRMWrapper(osrm_profile), _address(address), _port(port) {
 }
 
-std::string
-routed_wrapper::build_query(const std::vector<location_t>& locations,
-                            std::string service,
-                            std::string extra_args = "") const {
+std::string RoutedWrapper::build_query(const std::vector<Location>& locations,
+                                       std::string service,
+                                       std::string extra_args = "") const {
   // Building query for osrm-routed
   std::string query = "GET /" + service;
 
@@ -50,7 +49,7 @@ routed_wrapper::build_query(const std::vector<location_t>& locations,
   return query;
 }
 
-std::string routed_wrapper::send_then_receive(std::string query) const {
+std::string RoutedWrapper::send_then_receive(std::string query) const {
   std::string response;
 
   try {
@@ -79,13 +78,13 @@ std::string routed_wrapper::send_then_receive(std::string query) const {
       }
     }
   } catch (boost::system::system_error& e) {
-    throw custom_exception("Failure while connecting to the OSRM server.");
+    throw Exception("Failure while connecting to the OSRM server.");
   }
   return response;
 }
 
-matrix<cost_t>
-routed_wrapper::get_matrix(const std::vector<location_t>& locs) const {
+Matrix<Cost>
+RoutedWrapper::get_matrix(const std::vector<Location>& locs) const {
   std::string query = this->build_query(locs, "table");
 
   std::string response = this->send_then_receive(query);
@@ -105,14 +104,13 @@ routed_wrapper::get_matrix(const std::vector<location_t>& locs) const {
   assert(infos.HasMember("code"));
 #endif
   if (infos["code"] != "Ok") {
-    throw custom_exception("OSRM table: " +
-                           std::string(infos["message"].GetString()));
+    throw Exception("OSRM table: " + std::string(infos["message"].GetString()));
   }
   assert(infos["durations"].Size() == m_size);
 
   // Build matrix while checking for unfound routes to avoid
   // unexpected behavior (OSRM raises 'null').
-  matrix<cost_t> m(m_size);
+  Matrix<Cost> m(m_size);
 
   std::vector<unsigned> nb_unfound_from_loc(m_size, 0);
   std::vector<unsigned> nb_unfound_to_loc(m_size, 0);
@@ -139,10 +137,10 @@ routed_wrapper::get_matrix(const std::vector<location_t>& locs) const {
   return m;
 }
 
-void routed_wrapper::add_route_info(route_t& rte) const {
+void RoutedWrapper::add_route_info(Route& route) const {
   // Ordering locations for the given steps.
-  std::vector<location_t> ordered_locations;
-  for (const auto& step : rte.steps) {
+  std::vector<Location> ordered_locations;
+  for (const auto& step : route.steps) {
     ordered_locations.push_back(step.location);
   }
 
@@ -164,25 +162,24 @@ void routed_wrapper::add_route_info(route_t& rte) const {
   assert(infos.HasMember("code"));
 #endif
   if (infos["code"] != "Ok") {
-    throw custom_exception("OSRM route: " +
-                           std::string(infos["message"].GetString()));
+    throw Exception("OSRM route: " + std::string(infos["message"].GetString()));
   }
 
   // Total distance and route geometry.
-  rte.distance = round_cost(infos["routes"][0]["distance"].GetDouble());
-  rte.geometry = std::move(infos["routes"][0]["geometry"].GetString());
+  route.distance = round_cost(infos["routes"][0]["distance"].GetDouble());
+  route.geometry = std::move(infos["routes"][0]["geometry"].GetString());
 
   auto nb_legs = infos["routes"][0]["legs"].Size();
-  assert(nb_legs == rte.steps.size() - 1);
+  assert(nb_legs == route.steps.size() - 1);
 
   // Accumulated travel distance stored for each step.
   double current_distance = 0;
 
-  rte.steps[0].distance = 0;
+  route.steps[0].distance = 0;
 
   for (rapidjson::SizeType i = 0; i < nb_legs; ++i) {
     // Update distance for step after current route leg.
     current_distance += infos["routes"][0]["legs"][i]["distance"].GetDouble();
-    rte.steps[i + 1].distance = round_cost(current_distance);
+    route.steps[i + 1].distance = round_cost(current_distance);
   }
 }

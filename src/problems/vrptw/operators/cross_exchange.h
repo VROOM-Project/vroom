@@ -13,10 +13,10 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/operators/cross_exchange.h"
 #include "structures/vroom/tw_route.h"
 
-class vrptw_cross_exchange : public cvrp_cross_exchange {
+class vrptwCrossExchange : public CVRPCrossExchange {
 private:
-  tw_route& _tw_s_route;
-  tw_route& _tw_t_route;
+  TWRoute& _tw_s_route;
+  TWRoute& _tw_t_route;
 
   bool _s_is_normal_valid;
   bool _s_is_reverse_valid;
@@ -26,14 +26,14 @@ private:
   virtual void compute_gain() override;
 
 public:
-  vrptw_cross_exchange(const input& input,
-                       const solution_state& sol_state,
-                       tw_route& tw_s_route,
-                       index_t s_vehicle,
-                       index_t s_rank,
-                       tw_route& tw_t_route,
-                       index_t t_vehicle,
-                       index_t t_rank);
+  vrptwCrossExchange(const Input& input,
+                     const SolutionState& sol_state,
+                     TWRoute& tw_s_route,
+                     Index s_vehicle,
+                     Index s_rank,
+                     TWRoute& tw_t_route,
+                     Index t_vehicle,
+                     Index t_rank);
 
   virtual bool is_valid() override;
 

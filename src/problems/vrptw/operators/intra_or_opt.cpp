@@ -9,18 +9,18 @@ All rights reserved (see LICENSE).
 
 #include "problems/vrptw/operators/intra_or_opt.h"
 
-vrptw_intra_or_opt::vrptw_intra_or_opt(const input& input,
-                                       const solution_state& sol_state,
-                                       tw_route& tw_s_route,
-                                       index_t s_vehicle,
-                                       index_t s_rank,
-                                       index_t t_rank)
-  : cvrp_intra_or_opt(input,
-                      sol_state,
-                      static_cast<raw_route&>(tw_s_route),
-                      s_vehicle,
-                      s_rank,
-                      t_rank),
+vrptwIntraOrOpt::vrptwIntraOrOpt(const Input& input,
+                                 const SolutionState& sol_state,
+                                 TWRoute& tw_s_route,
+                                 Index s_vehicle,
+                                 Index s_rank,
+                                 Index t_rank)
+  : CVRPIntraOrOpt(input,
+                   sol_state,
+                   static_cast<RawRoute&>(tw_s_route),
+                   s_vehicle,
+                   s_rank,
+                   t_rank),
     _tw_s_route(tw_s_route),
     _is_normal_valid(false),
     _is_reverse_valid(false),
@@ -47,8 +47,8 @@ vrptw_intra_or_opt::vrptw_intra_or_opt(const input& input,
   _moved_jobs[_s_edge_last] = s_route[s_rank + 1];
 }
 
-void vrptw_intra_or_opt::compute_gain() {
-  cvrp_intra_or_opt::compute_gain();
+void vrptwIntraOrOpt::compute_gain() {
+  CVRPIntraOrOpt::compute_gain();
   assert(_is_normal_valid or _is_reverse_valid);
 
   if (reverse_s_edge) {
@@ -70,7 +70,7 @@ void vrptw_intra_or_opt::compute_gain() {
   }
 }
 
-bool vrptw_intra_or_opt::is_valid() {
+bool vrptwIntraOrOpt::is_valid() {
   _is_normal_valid = _tw_s_route.is_valid_addition_for_tw(_input,
                                                           _moved_jobs.begin(),
                                                           _moved_jobs.end(),
@@ -91,7 +91,7 @@ bool vrptw_intra_or_opt::is_valid() {
   return _is_normal_valid or _is_reverse_valid;
 }
 
-void vrptw_intra_or_opt::apply() {
+void vrptwIntraOrOpt::apply() {
   if (reverse_s_edge) {
     std::swap(_moved_jobs[_s_edge_first], _moved_jobs[_s_edge_last]);
   }
@@ -103,6 +103,6 @@ void vrptw_intra_or_opt::apply() {
                       _last_rank);
 }
 
-std::vector<index_t> vrptw_intra_or_opt::addition_candidates() const {
+std::vector<Index> vrptwIntraOrOpt::addition_candidates() const {
   return {s_vehicle};
 }

@@ -13,20 +13,20 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/operators/reverse_2_opt.h"
 #include "structures/vroom/tw_route.h"
 
-class vrptw_reverse_two_opt : public cvrp_reverse_two_opt {
+class vrptwReverseTwoOpt : public CVRPReverseTwoOpt {
 private:
-  tw_route& _tw_s_route;
-  tw_route& _tw_t_route;
+  TWRoute& _tw_s_route;
+  TWRoute& _tw_t_route;
 
 public:
-  vrptw_reverse_two_opt(const input& input,
-                        const solution_state& sol_state,
-                        tw_route& tw_s_route,
-                        index_t s_vehicle,
-                        index_t s_rank,
-                        tw_route& tw_t_route,
-                        index_t t_vehicle,
-                        index_t t_rank);
+  vrptwReverseTwoOpt(const Input& input,
+                     const SolutionState& sol_state,
+                     TWRoute& tw_s_route,
+                     Index s_vehicle,
+                     Index s_rank,
+                     TWRoute& tw_t_route,
+                     Index t_vehicle,
+                     Index t_rank);
 
   virtual bool is_valid() override;
 

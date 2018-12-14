@@ -48,7 +48,7 @@ void display_usage() {
 
 int main(int argc, char** argv) {
   // Load default command-line options.
-  cl_args_t cl_args;
+  CLArgs cl_args;
 
   // Parsing command-line arguments.
   const char* optString = "a:gi:lm:o:p:t:x:h?";
@@ -127,14 +127,14 @@ int main(int argc, char** argv) {
 
   try {
     // Build problem.
-    input problem_instance = parse(cl_args);
+    Input problem_instance = parse(cl_args);
 
-    solution sol =
+    Solution sol =
       problem_instance.solve(cl_args.exploration_level, cl_args.nb_threads);
 
     // Write solution.
     write_to_json(sol, cl_args.geometry, cl_args.output_file);
-  } catch (const custom_exception& e) {
+  } catch (const Exception& e) {
     std::cerr << "[Error] " << e.get_message() << std::endl;
     write_to_json({1, e.get_message()}, false, cl_args.output_file);
     exit(1);

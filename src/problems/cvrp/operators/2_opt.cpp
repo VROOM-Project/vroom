@@ -9,22 +9,22 @@ All rights reserved (see LICENSE).
 
 #include "problems/cvrp/operators/2_opt.h"
 
-cvrp_two_opt::cvrp_two_opt(const input& input,
-                           const solution_state& sol_state,
-                           raw_route& s_route,
-                           index_t s_vehicle,
-                           index_t s_rank,
-                           raw_route& t_route,
-                           index_t t_vehicle,
-                           index_t t_rank)
-  : ls_operator(input,
-                sol_state,
-                s_route,
-                s_vehicle,
-                s_rank,
-                t_route,
-                t_vehicle,
-                t_rank) {
+CVRPTwoOpt::CVRPTwoOpt(const Input& input,
+                       const SolutionState& sol_state,
+                       RawRoute& s_route,
+                       Index s_vehicle,
+                       Index s_rank,
+                       RawRoute& t_route,
+                       Index t_vehicle,
+                       Index t_rank)
+  : Operator(input,
+             sol_state,
+             s_route,
+             s_vehicle,
+             s_rank,
+             t_route,
+             t_vehicle,
+             t_rank) {
   assert(s_vehicle != t_vehicle);
   assert(s_route.size() >= 1);
   assert(t_route.size() >= 1);
@@ -32,18 +32,18 @@ cvrp_two_opt::cvrp_two_opt(const input& input,
   assert(t_rank < t_route.size());
 }
 
-void cvrp_two_opt::compute_gain() {
+void CVRPTwoOpt::compute_gain() {
   const auto& m = _input.get_matrix();
   const auto& v_source = _input._vehicles[s_vehicle];
   const auto& v_target = _input._vehicles[t_vehicle];
 
-  index_t s_index = _input._jobs[s_route[s_rank]].index();
-  index_t t_index = _input._jobs[t_route[t_rank]].index();
-  index_t last_s = _input._jobs[s_route.back()].index();
-  index_t last_t = _input._jobs[t_route.back()].index();
+  Index s_index = _input._jobs[s_route[s_rank]].index();
+  Index t_index = _input._jobs[t_route[t_rank]].index();
+  Index last_s = _input._jobs[s_route.back()].index();
+  Index last_t = _input._jobs[t_route.back()].index();
   stored_gain = 0;
-  index_t new_last_s = last_t;
-  index_t new_last_t = last_s;
+  Index new_last_s = last_t;
+  Index new_last_t = last_s;
 
   // Cost of swapping route for vehicle s_vehicle after step
   // s_rank with route for vehicle t_vehicle after step
@@ -52,14 +52,14 @@ void cvrp_two_opt::compute_gain() {
   // Basic costs in case we really swap jobs and not only the end of
   // the route. Otherwise remember that last job does not change.
   if (s_rank < s_route.size() - 1) {
-    index_t next_index = _input._jobs[s_route[s_rank + 1]].index();
+    Index next_index = _input._jobs[s_route[s_rank + 1]].index();
     stored_gain += m[s_index][next_index];
     stored_gain -= m[t_index][next_index];
   } else {
     new_last_t = t_index;
   }
   if (t_rank < t_route.size() - 1) {
-    index_t next_index = _input._jobs[t_route[t_rank + 1]].index();
+    Index next_index = _input._jobs[t_route[t_rank + 1]].index();
     stored_gain += m[t_index][next_index];
     stored_gain -= m[s_index][next_index];
   } else {
@@ -82,7 +82,7 @@ void cvrp_two_opt::compute_gain() {
   gain_computed = true;
 }
 
-bool cvrp_two_opt::is_valid() {
+bool CVRPTwoOpt::is_valid() {
   bool valid = (_sol_state.bwd_skill_rank[s_vehicle][t_vehicle] <= s_rank + 1);
 
   valid &= (_sol_state.bwd_skill_rank[t_vehicle][s_vehicle] <= t_rank + 1);
@@ -97,7 +97,7 @@ bool cvrp_two_opt::is_valid() {
   return valid;
 }
 
-void cvrp_two_opt::apply() {
+void CVRPTwoOpt::apply() {
   auto nb_source = s_route.size() - 1 - s_rank;
 
   t_route.insert(t_route.begin() + t_rank + 1,
@@ -110,10 +110,10 @@ void cvrp_two_opt::apply() {
   t_route.erase(t_route.begin() + t_rank + 1 + nb_source, t_route.end());
 }
 
-std::vector<index_t> cvrp_two_opt::addition_candidates() const {
+std::vector<Index> CVRPTwoOpt::addition_candidates() const {
   return {s_vehicle, t_vehicle};
 }
 
-std::vector<index_t> cvrp_two_opt::update_candidates() const {
+std::vector<Index> CVRPTwoOpt::update_candidates() const {
   return {s_vehicle, t_vehicle};
 }

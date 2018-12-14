@@ -17,26 +17,26 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/location.h"
 #include "structures/vroom/time_window.h"
 
-struct job_t {
-  const ID_t id;
-  location_t location;
-  const duration_t service;
-  const amount_t amount;
-  const skills_t skills;
-  const std::vector<time_window_t> tws;
-  const duration_t tw_length;
+struct Job {
+  const Id id;
+  Location location;
+  const Duration service;
+  const Amount amount;
+  const Skills skills;
+  const std::vector<TimeWindow> tws;
+  const Duration tw_length;
 
-  job_t(ID_t id,
-        const location_t& location,
-        duration_t service = 0,
-        const amount_t& amount = amount_t(0),
-        const skills_t& skills = skills_t(),
-        const std::vector<time_window_t>& tws =
-          std::vector<time_window_t>(1, time_window_t()));
+  Job(Id id,
+      const Location& location,
+      Duration service = 0,
+      const Amount& amount = Amount(0),
+      const Skills& skills = Skills(),
+      const std::vector<TimeWindow>& tws =
+        std::vector<TimeWindow>(1, TimeWindow()));
 
-  index_t index() const;
+  Index index() const;
 
-  bool is_valid_start(duration_t time) const;
+  bool is_valid_start(Duration time) const;
 };
 
 #endif
