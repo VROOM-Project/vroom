@@ -12,7 +12,7 @@ All rights reserved (see LICENSE).
 
 #include <vector>
 
-#include "structures/abstract/matrix.h"
+#include "structures/generic/matrix.h"
 #include "structures/vroom/location.h"
 #include "structures/vroom/solution/route.h"
 

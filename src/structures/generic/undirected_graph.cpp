@@ -8,7 +8,7 @@ All rights reserved (see LICENSE).
 */
 #include <cassert>
 
-#include "structures/abstract/undirected_graph.h"
+#include "structures/generic/undirected_graph.h"
 
 template <class T> UndirectedGraph<T>::UndirectedGraph() {
 }

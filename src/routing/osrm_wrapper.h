@@ -13,7 +13,7 @@ All rights reserved (see LICENSE).
 #include <vector>
 
 #include "routing/routing.h"
-#include "structures/abstract/matrix.h"
+#include "structures/generic/matrix.h"
 #include "utils/exceptions.h"
 
 class OSRMWrapper : public Routing<Cost> {

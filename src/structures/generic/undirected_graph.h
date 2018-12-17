@@ -14,8 +14,8 @@ All rights reserved (see LICENSE).
 #include <unordered_map>
 #include <vector>
 
-#include "structures/abstract/edge.h"
-#include "structures/abstract/matrix.h"
+#include "structures/generic/edge.h"
+#include "structures/generic/matrix.h"
 
 template <class T> class UndirectedGraph {
 

@@ -17,7 +17,7 @@ All rights reserved (see LICENSE).
 #include <vector>
 
 #include "routing/routing.h"
-#include "structures/abstract/matrix.h"
+#include "structures/generic/matrix.h"
 #include "structures/typedefs.h"
 #include "structures/vroom/job.h"
 #include "structures/vroom/solution/solution.h"

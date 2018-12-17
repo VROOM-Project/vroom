@@ -13,7 +13,7 @@ All rights reserved (see LICENSE).
 #include <set>
 
 #include "algorithms/munkres.h"
-#include "structures/abstract/edge.h"
+#include "structures/generic/edge.h"
 
 template <class T>
 std::unordered_map<Index, Index>

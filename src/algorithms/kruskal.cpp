@@ -12,7 +12,7 @@ All rights reserved (see LICENSE).
 #include <vector>
 
 #include "algorithms/kruskal.h"
-#include "structures/abstract/edge.h"
+#include "structures/generic/edge.h"
 #include "structures/typedefs.h"
 
 template <class T>

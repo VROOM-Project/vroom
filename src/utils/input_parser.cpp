@@ -17,8 +17,8 @@ All rights reserved (see LICENSE).
 #include "routing/libosrm_wrapper.h"
 #endif
 #include "routing/routed_wrapper.h"
-#include "structures/abstract/matrix.h"
 #include "structures/cl_args.h"
+#include "structures/generic/matrix.h"
 #include "structures/typedefs.h"
 #include "structures/vroom/amount.h"
 #include "structures/vroom/job.h"

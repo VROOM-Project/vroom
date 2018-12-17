@@ -12,7 +12,7 @@ All rights reserved (see LICENSE).
 
 #include <unordered_map>
 
-#include "structures/abstract/matrix.h"
+#include "structures/generic/matrix.h"
 #include "structures/typedefs.h"
 
 template <class T>
