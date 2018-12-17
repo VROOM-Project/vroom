@@ -15,7 +15,7 @@ All rights reserved (see LICENSE).
 #include "problems/vrp.h"
 #include "problems/vrptw/vrptw.h"
 #include "structures/vroom/input/input.h"
-#include "utils/exceptions.h"
+#include "utils/exception.h"
 #include "utils/helpers.h"
 
 Input::Input(std::unique_ptr<Routing<Cost>> routing_wrapper, bool geometry)

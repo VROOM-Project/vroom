@@ -1,5 +1,5 @@
-#ifndef VRPTW_INNER_OR_OPT_H
-#define VRPTW_INNER_OR_OPT_H
+#ifndef VRPTW_INTRA_OR_OPT_H
+#define VRPTW_INTRA_OR_OPT_H
 
 /*
 

@@ -11,7 +11,6 @@ All rights reserved (see LICENSE).
 
 #include "algorithms/heuristics/solomon.h"
 #include "algorithms/local_search/local_search.h"
-#include "problems/vrptw/operators/2_opt.h"
 #include "problems/vrptw/operators/cross_exchange.h"
 #include "problems/vrptw/operators/exchange.h"
 #include "problems/vrptw/operators/intra_cross_exchange.h"
@@ -22,7 +21,8 @@ All rights reserved (see LICENSE).
 #include "problems/vrptw/operators/mixed_exchange.h"
 #include "problems/vrptw/operators/or_opt.h"
 #include "problems/vrptw/operators/relocate.h"
-#include "problems/vrptw/operators/reverse_2_opt.h"
+#include "problems/vrptw/operators/reverse_two_opt.h"
+#include "problems/vrptw/operators/two_opt.h"
 #include "problems/vrptw/vrptw.h"
 #include "structures/vroom/input/input.h"
 #include "structures/vroom/tw_route.h"

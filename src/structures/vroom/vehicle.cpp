@@ -8,7 +8,7 @@ All rights reserved (see LICENSE).
 */
 
 #include "structures/vroom/vehicle.h"
-#include "utils/exceptions.h"
+#include "utils/exception.h"
 
 Vehicle::Vehicle(Id id,
                  const boost::optional<Location>& start,

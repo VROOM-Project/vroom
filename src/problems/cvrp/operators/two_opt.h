@@ -10,7 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "algorithms/local_search/ls_operator.h"
+#include "algorithms/local_search/operator.h"
 
 class CVRPTwoOpt : public Operator {
 protected:

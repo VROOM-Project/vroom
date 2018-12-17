@@ -7,7 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "utils/exceptions.h"
+#include "utils/exception.h"
 
 Exception::Exception(const std::string message) : _message(message) {
 }

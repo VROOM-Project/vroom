@@ -10,7 +10,7 @@ All rights reserved (see LICENSE).
 #include <numeric>
 
 #include "structures/vroom/job.h"
-#include "utils/exceptions.h"
+#include "utils/exception.h"
 
 Job::Job(Id id,
          const Location& location,

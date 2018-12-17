@@ -13,7 +13,7 @@ All rights reserved (see LICENSE).
 #include "structures/typedefs.h"
 #include "structures/vroom/raw_route.h"
 #include "structures/vroom/tw_route.h"
-#include "utils/exceptions.h"
+#include "utils/exception.h"
 
 using RawSolution = std::vector<RawRoute>;
 using TWSolution = std::vector<TWRoute>;

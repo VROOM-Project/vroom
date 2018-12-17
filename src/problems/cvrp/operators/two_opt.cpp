@@ -7,7 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/cvrp/operators/2_opt.h"
+#include "problems/cvrp/operators/two_opt.h"
 
 CVRPTwoOpt::CVRPTwoOpt(const Input& input,
                        const SolutionState& sol_state,

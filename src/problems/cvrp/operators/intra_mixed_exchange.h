@@ -1,5 +1,5 @@
-#ifndef CVRP_INNER_MIXED_EXCHANGE_H
-#define CVRP_INNER_MIXED_EXCHANGE_H
+#ifndef CVRP_INTRA_MIXED_EXCHANGE_H
+#define CVRP_INTRA_MIXED_EXCHANGE_H
 
 /*
 
@@ -10,7 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "algorithms/local_search/ls_operator.h"
+#include "algorithms/local_search/operator.h"
 
 class CVRPIntraMixedExchange : public Operator {
 protected:

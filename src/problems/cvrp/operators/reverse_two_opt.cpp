@@ -7,7 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/cvrp/operators/reverse_2_opt.h"
+#include "problems/cvrp/operators/reverse_two_opt.h"
 
 CVRPReverseTwoOpt::CVRPReverseTwoOpt(const Input& input,
                                      const SolutionState& sol_state,

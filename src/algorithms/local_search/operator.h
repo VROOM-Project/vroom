@@ -1,5 +1,5 @@
-#ifndef LS_OPERATOR_H
-#define LS_OPERATOR_H
+#ifndef OPERATOR_H
+#define OPERATOR_H
 
 /*
 

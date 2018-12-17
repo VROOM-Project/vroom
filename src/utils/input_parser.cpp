@@ -24,7 +24,7 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/job.h"
 #include "structures/vroom/time_window.h"
 #include "structures/vroom/vehicle.h"
-#include "utils/exceptions.h"
+#include "utils/exception.h"
 #include "utils/input_parser.h"
 
 // Helper to get optional array of coordinates.

@@ -9,7 +9,7 @@ All rights reserved (see LICENSE).
 
 #include <iostream>
 
-#include "problems/vrptw/operators/reverse_2_opt.h"
+#include "problems/vrptw/operators/reverse_two_opt.h"
 
 vrptwReverseTwoOpt::vrptwReverseTwoOpt(const Input& input,
                                        const SolutionState& sol_state,

@@ -14,7 +14,7 @@ All rights reserved (see LICENSE).
 
 #include "routing/routing.h"
 #include "structures/generic/matrix.h"
-#include "utils/exceptions.h"
+#include "utils/exception.h"
 
 class OSRMWrapper : public Routing<Cost> {
 

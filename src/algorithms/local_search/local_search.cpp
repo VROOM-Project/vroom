@@ -10,8 +10,7 @@ All rights reserved (see LICENSE).
 #include <numeric>
 
 #include "algorithms/local_search/local_search.h"
-#include "algorithms/local_search/ls_operator.h"
-#include "problems/cvrp/operators/2_opt.h"
+#include "algorithms/local_search/operator.h"
 #include "problems/cvrp/operators/cross_exchange.h"
 #include "problems/cvrp/operators/exchange.h"
 #include "problems/cvrp/operators/intra_cross_exchange.h"
@@ -22,8 +21,8 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/operators/mixed_exchange.h"
 #include "problems/cvrp/operators/or_opt.h"
 #include "problems/cvrp/operators/relocate.h"
-#include "problems/cvrp/operators/reverse_2_opt.h"
-#include "problems/vrptw/operators/2_opt.h"
+#include "problems/cvrp/operators/reverse_two_opt.h"
+#include "problems/cvrp/operators/two_opt.h"
 #include "problems/vrptw/operators/cross_exchange.h"
 #include "problems/vrptw/operators/exchange.h"
 #include "problems/vrptw/operators/intra_cross_exchange.h"
@@ -34,7 +33,8 @@ All rights reserved (see LICENSE).
 #include "problems/vrptw/operators/mixed_exchange.h"
 #include "problems/vrptw/operators/or_opt.h"
 #include "problems/vrptw/operators/relocate.h"
-#include "problems/vrptw/operators/reverse_2_opt.h"
+#include "problems/vrptw/operators/reverse_two_opt.h"
+#include "problems/vrptw/operators/two_opt.h"
 #include "utils/helpers.h"
 
 template <class Route,

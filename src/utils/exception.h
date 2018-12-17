@@ -1,5 +1,5 @@
-#ifndef EXCEPTIONS_H
-#define EXCEPTIONS_H
+#ifndef EXCEPTION_H
+#define EXCEPTION_H
 
 /*
 

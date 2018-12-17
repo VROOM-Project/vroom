@@ -12,7 +12,7 @@ All rights reserved (see LICENSE).
 #include <boost/asio.hpp>
 
 #include "routing/routed_wrapper.h"
-#include "utils/exceptions.h"
+#include "utils/exception.h"
 
 using boost::asio::ip::tcp;
 
