@@ -17,16 +17,17 @@ All rights reserved (see LICENSE).
 
 class Clustering {
 private:
-  const Input& input_ref;
+  const Input& _input;
+  const CLUSTERING _type;
+  const INIT _init;
+  const float _regret_coeff;
+
   void parallel_clustering();
   void sequential_clustering();
 
 public:
-  const CLUSTERING type;
-  const INIT init;
-  const float regret_coeff;
   // Clusters are relative to the vehicle with same rank in
-  // input_ref._vehicles.
+  // _input.vehicles.
   std::vector<std::vector<Index>> clusters;
   // Cost of all edges added during the clustering process
   Cost edges_cost;

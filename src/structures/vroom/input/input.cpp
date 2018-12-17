@@ -28,9 +28,9 @@ Input::Input(std::unique_ptr<Routing<Cost>> routing_wrapper, bool geometry)
 }
 
 void Input::add_job(const Job& job) {
-  _jobs.push_back(job);
+  jobs.push_back(job);
 
-  auto& current_job = _jobs.back();
+  auto& current_job = jobs.back();
 
   // Ensure amount size consistency.
   this->check_amount_size(current_job.amount.size());
@@ -61,9 +61,9 @@ void Input::add_job(const Job& job) {
 }
 
 void Input::add_vehicle(const Vehicle& vehicle) {
-  _vehicles.push_back(vehicle);
+  vehicles.push_back(vehicle);
 
-  auto& current_v = _vehicles.back();
+  auto& current_v = vehicles.back();
 
   // Ensure amount size consistency.
   this->check_amount_size(current_v.capacity.size());
@@ -112,9 +112,9 @@ void Input::add_vehicle(const Vehicle& vehicle) {
   }
 
   // Check for homogeneous locations among vehicles.
-  if (_vehicles.size() > 1) {
+  if (vehicles.size() > 1) {
     _homogeneous_locations &=
-      _vehicles.front().has_same_locations(_vehicles.back());
+      vehicles.front().has_same_locations(vehicles.back());
   }
 }
 
@@ -191,7 +191,7 @@ void Input::check_cost_bound() const {
 
   Cost jobs_departure_bound = 0;
   Cost jobs_arrival_bound = 0;
-  for (const auto& j : _jobs) {
+  for (const auto& j : jobs) {
     jobs_departure_bound =
       add_without_overflow(jobs_departure_bound, max_cost_per_line[j.index()]);
     jobs_arrival_bound =
@@ -202,7 +202,7 @@ void Input::check_cost_bound() const {
 
   Cost start_bound = 0;
   Cost end_bound = 0;
-  for (const auto& v : _vehicles) {
+  for (const auto& v : vehicles) {
     if (v.has_start()) {
       start_bound =
         add_without_overflow(start_bound,
@@ -222,17 +222,17 @@ void Input::check_cost_bound() const {
 void Input::set_vehicle_to_job_compatibility() {
   // Default to no restriction when no skills are provided.
   _vehicle_to_job_compatibility =
-    std::vector<std::vector<bool>>(_vehicles.size(),
-                                   std::vector<bool>(_jobs.size(), true));
+    std::vector<std::vector<bool>>(vehicles.size(),
+                                   std::vector<bool>(jobs.size(), true));
   if (_has_skills) {
-    for (std::size_t v = 0; v < _vehicles.size(); ++v) {
-      const auto& v_skills = _vehicles[v].skills;
+    for (std::size_t v = 0; v < vehicles.size(); ++v) {
+      const auto& v_skills = vehicles[v].skills;
       assert(!v_skills.empty());
 
-      for (std::size_t j = 0; j < _jobs.size(); ++j) {
+      for (std::size_t j = 0; j < jobs.size(); ++j) {
         bool is_compatible = true;
-        assert(!_jobs[j].skills.empty());
-        for (const auto& s : _jobs[j].skills) {
+        assert(!jobs[j].skills.empty());
+        for (const auto& s : jobs[j].skills) {
           auto search = v_skills.find(s);
           is_compatible &= (search != v_skills.end());
           if (!is_compatible) {

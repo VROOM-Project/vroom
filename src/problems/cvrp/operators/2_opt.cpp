@@ -34,13 +34,13 @@ CVRPTwoOpt::CVRPTwoOpt(const Input& input,
 
 void CVRPTwoOpt::compute_gain() {
   const auto& m = _input.get_matrix();
-  const auto& v_source = _input._vehicles[s_vehicle];
-  const auto& v_target = _input._vehicles[t_vehicle];
+  const auto& v_source = _input.vehicles[s_vehicle];
+  const auto& v_target = _input.vehicles[t_vehicle];
 
-  Index s_index = _input._jobs[s_route[s_rank]].index();
-  Index t_index = _input._jobs[t_route[t_rank]].index();
-  Index last_s = _input._jobs[s_route.back()].index();
-  Index last_t = _input._jobs[t_route.back()].index();
+  Index s_index = _input.jobs[s_route[s_rank]].index();
+  Index t_index = _input.jobs[t_route[t_rank]].index();
+  Index last_s = _input.jobs[s_route.back()].index();
+  Index last_t = _input.jobs[t_route.back()].index();
   stored_gain = 0;
   Index new_last_s = last_t;
   Index new_last_t = last_s;
@@ -52,14 +52,14 @@ void CVRPTwoOpt::compute_gain() {
   // Basic costs in case we really swap jobs and not only the end of
   // the route. Otherwise remember that last job does not change.
   if (s_rank < s_route.size() - 1) {
-    Index next_index = _input._jobs[s_route[s_rank + 1]].index();
+    Index next_index = _input.jobs[s_route[s_rank + 1]].index();
     stored_gain += m[s_index][next_index];
     stored_gain -= m[t_index][next_index];
   } else {
     new_last_t = t_index;
   }
   if (t_rank < t_route.size() - 1) {
-    Index next_index = _input._jobs[t_route[t_rank + 1]].index();
+    Index next_index = _input.jobs[t_route[t_rank + 1]].index();
     stored_gain += m[t_index][next_index];
     stored_gain -= m[s_index][next_index];
   } else {
@@ -89,10 +89,10 @@ bool CVRPTwoOpt::is_valid() {
 
   valid &= (_sol_state.fwd_amounts[s_vehicle][s_rank] +
               _sol_state.bwd_amounts[t_vehicle][t_rank] <=
-            _input._vehicles[s_vehicle].capacity);
+            _input.vehicles[s_vehicle].capacity);
   valid &= (_sol_state.fwd_amounts[t_vehicle][t_rank] +
               _sol_state.bwd_amounts[s_vehicle][s_rank] <=
-            _input._vehicles[t_vehicle].capacity);
+            _input.vehicles[t_vehicle].capacity);
 
   return valid;
 }

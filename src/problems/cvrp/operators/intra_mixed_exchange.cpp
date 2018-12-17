@@ -35,15 +35,15 @@ CVRPIntraMixedExchange::CVRPIntraMixedExchange(const Input& input,
 
 void CVRPIntraMixedExchange::compute_gain() {
   const auto& m = _input.get_matrix();
-  const auto& v = _input._vehicles[s_vehicle];
+  const auto& v = _input.vehicles[s_vehicle];
 
   // Consider the cost of replacing node at rank s_rank with target
   // edge. Part of that cost (for adjacent edges) is stored in
   // _sol_state.edge_costs_around_node.  reverse_* checks whether we
   // should change the target edge order.
-  Index s_index = _input._jobs[s_route[s_rank]].index();
-  Index t_index = _input._jobs[s_route[t_rank]].index();
-  Index t_after_index = _input._jobs[s_route[t_rank + 1]].index();
+  Index s_index = _input.jobs[s_route[s_rank]].index();
+  Index t_index = _input.jobs[s_route[t_rank]].index();
+  Index t_after_index = _input.jobs[s_route[t_rank + 1]].index();
 
   // Determine costs added with target edge.
   Gain previous_cost = 0;
@@ -58,7 +58,7 @@ void CVRPIntraMixedExchange::compute_gain() {
       reverse_previous_cost = m[p_index][t_after_index];
     }
   } else {
-    auto p_index = _input._jobs[s_route[s_rank - 1]].index();
+    auto p_index = _input.jobs[s_route[s_rank - 1]].index();
     previous_cost = m[p_index][t_index];
     reverse_previous_cost = m[p_index][t_after_index];
   }
@@ -70,7 +70,7 @@ void CVRPIntraMixedExchange::compute_gain() {
       reverse_next_cost = m[t_index][n_index];
     }
   } else {
-    auto n_index = _input._jobs[s_route[s_rank + 1]].index();
+    auto n_index = _input.jobs[s_route[s_rank + 1]].index();
     next_cost = m[t_after_index][n_index];
     reverse_next_cost = m[t_index][n_index];
   }
@@ -101,7 +101,7 @@ void CVRPIntraMixedExchange::compute_gain() {
       previous_cost = m[p_index][s_index];
     }
   } else {
-    auto p_index = _input._jobs[s_route[t_rank - 1]].index();
+    auto p_index = _input.jobs[s_route[t_rank - 1]].index();
     previous_cost = m[p_index][s_index];
   }
 
@@ -112,7 +112,7 @@ void CVRPIntraMixedExchange::compute_gain() {
       reverse_next_cost = m[s_index][n_index];
     }
   } else {
-    auto n_index = _input._jobs[s_route[t_rank + 2]].index();
+    auto n_index = _input.jobs[s_route[t_rank + 2]].index();
     next_cost = m[s_index][n_index];
   }
 

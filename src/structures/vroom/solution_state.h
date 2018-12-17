@@ -47,7 +47,7 @@ class SolutionState {
 private:
   const Input& _input;
   const Matrix<Cost>& _m;
-  const std::size_t _V;
+  const std::size_t _nb_vehicles;
   const Amount _empty_amount;
 
 public:

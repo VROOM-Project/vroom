@@ -34,13 +34,13 @@ CVRPReverseTwoOpt::CVRPReverseTwoOpt(const Input& input,
 
 void CVRPReverseTwoOpt::compute_gain() {
   const auto& m = _input.get_matrix();
-  const auto& v_source = _input._vehicles[s_vehicle];
-  const auto& v_target = _input._vehicles[t_vehicle];
+  const auto& v_source = _input.vehicles[s_vehicle];
+  const auto& v_target = _input.vehicles[t_vehicle];
 
-  Index s_index = _input._jobs[s_route[s_rank]].index();
-  Index t_index = _input._jobs[t_route[t_rank]].index();
-  Index last_s = _input._jobs[s_route.back()].index();
-  Index first_t = _input._jobs[t_route.front()].index();
+  Index s_index = _input.jobs[s_route[s_rank]].index();
+  Index t_index = _input.jobs[t_route[t_rank]].index();
+  Index last_s = _input.jobs[s_route.back()].index();
+  Index first_t = _input.jobs[t_route.front()].index();
   stored_gain = 0;
   bool last_in_source = (s_rank == s_route.size() - 1);
   bool last_in_target = (t_rank == t_route.size() - 1);
@@ -58,17 +58,17 @@ void CVRPReverseTwoOpt::compute_gain() {
 
   if (!last_in_target) {
     // Spare next edge in target route.
-    Index next_index = _input._jobs[t_route[t_rank + 1]].index();
+    Index next_index = _input.jobs[t_route[t_rank + 1]].index();
     stored_gain += m[t_index][next_index];
   }
 
   if (!last_in_source) {
     // Spare next edge in source route.
-    Index next_index = _input._jobs[s_route[s_rank + 1]].index();
+    Index next_index = _input.jobs[s_route[s_rank + 1]].index();
     stored_gain += m[s_index][next_index];
 
     // Part of source route is moved to target route.
-    Index next_s_index = _input._jobs[s_route[s_rank + 1]].index();
+    Index next_s_index = _input.jobs[s_route[s_rank + 1]].index();
 
     // Cost or reverting source route portion.
     stored_gain += _sol_state.fwd_costs[s_vehicle].back();
@@ -85,7 +85,7 @@ void CVRPReverseTwoOpt::compute_gain() {
       }
     } else {
       // Add new target -> source edge.
-      Index next_t_index = _input._jobs[t_route[t_rank + 1]].index();
+      Index next_t_index = _input.jobs[t_route[t_rank + 1]].index();
       stored_gain -= m[next_s_index][next_t_index];
     }
   }
@@ -107,7 +107,7 @@ void CVRPReverseTwoOpt::compute_gain() {
       // No job from source route actually swapped to target route.
       if (!last_in_target) {
         // Going straight from start to next job in target route.
-        Index next_index = _input._jobs[t_route[t_rank + 1]].index();
+        Index next_index = _input.jobs[t_route[t_rank + 1]].index();
         stored_gain -= m[start_t][next_index];
       } else {
         // Emptying the whole target route here, so also gaining cost
@@ -130,10 +130,10 @@ bool CVRPReverseTwoOpt::is_valid() {
 
   valid &= (_sol_state.fwd_amounts[s_vehicle][s_rank] +
               _sol_state.fwd_amounts[t_vehicle][t_rank] <=
-            _input._vehicles[s_vehicle].capacity);
+            _input.vehicles[s_vehicle].capacity);
   valid &= (_sol_state.bwd_amounts[t_vehicle][t_rank] +
               _sol_state.bwd_amounts[s_vehicle][s_rank] <=
-            _input._vehicles[t_vehicle].capacity);
+            _input.vehicles[t_vehicle].capacity);
 
   return valid;
 }

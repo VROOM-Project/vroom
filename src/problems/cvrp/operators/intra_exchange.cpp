@@ -34,13 +34,13 @@ CVRPIntraExchange::CVRPIntraExchange(const Input& input,
 
 void CVRPIntraExchange::compute_gain() {
   const auto& m = _input.get_matrix();
-  const auto& v = _input._vehicles[s_vehicle];
+  const auto& v = _input.vehicles[s_vehicle];
 
   // Consider the cost of replacing job at rank s_rank with target
   // job. Part of that cost (for adjacent edges) is stored in
   // _sol_state.edge_costs_around_node.
-  Index s_index = _input._jobs[s_route[s_rank]].index();
-  Index t_index = _input._jobs[t_route[t_rank]].index();
+  Index s_index = _input.jobs[s_route[s_rank]].index();
+  Index t_index = _input.jobs[t_route[t_rank]].index();
 
   // Determine costs added with target job.
   Gain new_previous_cost = 0;
@@ -51,11 +51,11 @@ void CVRPIntraExchange::compute_gain() {
       new_previous_cost = m[p_index][t_index];
     }
   } else {
-    auto p_index = _input._jobs[s_route[s_rank - 1]].index();
+    auto p_index = _input.jobs[s_route[s_rank - 1]].index();
     new_previous_cost = m[p_index][t_index];
   }
 
-  auto n_index = _input._jobs[s_route[s_rank + 1]].index();
+  auto n_index = _input.jobs[s_route[s_rank + 1]].index();
   Gain new_next_cost = m[t_index][n_index];
 
   Gain s_gain = _sol_state.edge_costs_around_node[s_vehicle][s_rank] -
@@ -68,7 +68,7 @@ void CVRPIntraExchange::compute_gain() {
   // Determine costs added with source job.
   new_next_cost = 0;
 
-  auto p_index = _input._jobs[t_route[t_rank - 1]].index();
+  auto p_index = _input.jobs[t_route[t_rank - 1]].index();
   new_previous_cost = m[p_index][s_index];
 
   if (t_rank == t_route.size() - 1) {
@@ -77,7 +77,7 @@ void CVRPIntraExchange::compute_gain() {
       new_next_cost = m[s_index][n_index];
     }
   } else {
-    auto n_index = _input._jobs[t_route[t_rank + 1]].index();
+    auto n_index = _input.jobs[t_route[t_rank + 1]].index();
     new_next_cost = m[s_index][n_index];
   }
 

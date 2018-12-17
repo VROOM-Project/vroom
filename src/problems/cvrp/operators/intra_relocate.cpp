@@ -32,7 +32,7 @@ CVRPIntraRelocate::CVRPIntraRelocate(const Input& input,
 
 void CVRPIntraRelocate::compute_gain() {
   const auto& m = _input.get_matrix();
-  const auto& v_target = _input._vehicles[s_vehicle];
+  const auto& v_target = _input.vehicles[s_vehicle];
 
   // For removal, we consider the cost of removing job at rank s_rank,
   // already stored in _sol_state.node_gains[s_vehicle][s_rank].

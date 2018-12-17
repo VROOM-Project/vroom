@@ -66,12 +66,12 @@ LocalSearch<Route,
                                      std::vector<Route>& sol,
                                      unsigned max_nb_jobs_removal)
   : _input(input),
-    _m(_input.get_matrix()),
-    V(_input._vehicles.size()),
+    _matrix(_input.get_matrix()),
+    _nb_vehicles(_input.vehicles.size()),
     _amount_lower_bound(_input.get_amount_lower_bound()),
     _double_amount_lower_bound(_amount_lower_bound + _amount_lower_bound),
     _max_nb_jobs_removal(max_nb_jobs_removal),
-    _all_routes(V),
+    _all_routes(_nb_vehicles),
     _sol_state(input),
     _sol(sol),
     _best_sol(sol) {
@@ -126,22 +126,22 @@ void LocalSearch<Route,
     Index best_rank = 0;
 
     for (const auto j : _sol_state.unassigned) {
-      auto& current_amount = _input._jobs[j].amount;
+      auto& current_amount = _input.jobs[j].amount;
       std::vector<Gain> best_costs(routes.size(),
                                    std::numeric_limits<Gain>::max());
       std::vector<Index> best_ranks(routes.size());
 
       for (std::size_t i = 0; i < routes.size(); ++i) {
         auto v = routes[i];
-        const auto& v_target = _input._vehicles[v];
+        const auto& v_target = _input.vehicles[v];
         const Amount& v_amount = _sol_state.total_amount(v);
 
         if (_input.vehicle_ok_with_job(v, j) and
-            v_amount + current_amount <= _input._vehicles[v].capacity) {
+            v_amount + current_amount <= _input.vehicles[v].capacity) {
           for (std::size_t r = 0; r <= _sol[v].size(); ++r) {
             if (_sol[v].is_valid_addition_for_tw(_input, j, r)) {
               Gain current_cost =
-                addition_cost(_input, _m, j, v_target, _sol[v].route, r);
+                addition_cost(_input, _matrix, j, v_target, _sol[v].route, r);
 
               if (current_cost < best_costs[i]) {
                 best_costs[i] = current_cost;
@@ -198,7 +198,7 @@ void LocalSearch<Route,
       _sol[best_route].add(_input, best_job, best_rank);
 
       // Update amounts after addition.
-      const auto& job_amount = _input._jobs[best_job].amount;
+      const auto& job_amount = _input.jobs[best_job].amount;
       auto& best_fwd_amounts = _sol_state.fwd_amounts[best_route];
       auto previous_cumul = (best_rank == 0) ? Amount(_input.amount_size())
                                              : best_fwd_amounts[best_rank - 1];
@@ -253,20 +253,21 @@ void LocalSearch<Route,
                  IntraMixedExchange,
                  IntraRelocate,
                  IntraOrOpt>::run_ls_step() {
-  std::vector<std::vector<std::unique_ptr<Operator>>> best_ops(V);
-  for (std::size_t v = 0; v < V; ++v) {
-    best_ops[v] = std::vector<std::unique_ptr<Operator>>(V);
+  std::vector<std::vector<std::unique_ptr<Operator>>> best_ops(_nb_vehicles);
+  for (std::size_t v = 0; v < _nb_vehicles; ++v) {
+    best_ops[v] = std::vector<std::unique_ptr<Operator>>(_nb_vehicles);
   }
 
   // List of source/target pairs we need to test (all at first).
   std::vector<std::pair<Index, Index>> s_t_pairs;
-  for (unsigned s_v = 0; s_v < V; ++s_v) {
-    for (unsigned t_v = 0; t_v < V; ++t_v) {
+  for (unsigned s_v = 0; s_v < _nb_vehicles; ++s_v) {
+    for (unsigned t_v = 0; t_v < _nb_vehicles; ++t_v) {
       s_t_pairs.emplace_back(s_v, t_v);
     }
   }
 
-  std::vector<std::vector<Gain>> best_gains(V, std::vector<Gain>(V, 0));
+  std::vector<std::vector<Gain>> best_gains(_nb_vehicles,
+                                            std::vector<Gain>(_nb_vehicles, 0));
 
   Gain best_gain = 1;
 
@@ -359,7 +360,7 @@ void LocalSearch<Route,
         continue;
       }
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
-        auto s_free_amount = _input._vehicles[s_t.first].capacity;
+        auto s_free_amount = _input.vehicles[s_t.first].capacity;
         s_free_amount -= _sol_state.fwd_amounts[s_t.first][s_rank];
         for (int t_rank = _sol[s_t.second].size() - 1; t_rank >= 0; --t_rank) {
           if (!(_sol_state.bwd_amounts[s_t.second][t_rank] <= s_free_amount)) {
@@ -387,7 +388,7 @@ void LocalSearch<Route,
         continue;
       }
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
-        auto s_free_amount = _input._vehicles[s_t.first].capacity;
+        auto s_free_amount = _input.vehicles[s_t.first].capacity;
         s_free_amount -= _sol_state.fwd_amounts[s_t.first][s_rank];
         for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size(); ++t_rank) {
           if (!(_sol_state.fwd_amounts[s_t.second][t_rank] <= s_free_amount)) {
@@ -414,7 +415,7 @@ void LocalSearch<Route,
     for (const auto& s_t : s_t_pairs) {
       if (s_t.first == s_t.second or _sol[s_t.first].size() == 0 or
           !(_sol_state.total_amount(s_t.second) + _amount_lower_bound <=
-            _input._vehicles[s_t.second].capacity)) {
+            _input.vehicles[s_t.second].capacity)) {
         // Don't try to put things in a full vehicle or from an empty
         // vehicle.
         continue;
@@ -447,7 +448,7 @@ void LocalSearch<Route,
     for (const auto& s_t : s_t_pairs) {
       if (s_t.first == s_t.second or _sol[s_t.first].size() < 2 or
           !(_sol_state.total_amount(s_t.second) + _double_amount_lower_bound <=
-            _input._vehicles[s_t.second].capacity)) {
+            _input.vehicles[s_t.second].capacity)) {
         // Don't try to put things in a full vehicle or from a
         // (near-)empty vehicle.
         continue;
@@ -620,8 +621,8 @@ void LocalSearch<Route,
     Index best_source = 0;
     Index best_target = 0;
 
-    for (unsigned s_v = 0; s_v < V; ++s_v) {
-      for (unsigned t_v = 0; t_v < V; ++t_v) {
+    for (unsigned s_v = 0; s_v < _nb_vehicles; ++s_v) {
+      for (unsigned t_v = 0; t_v < _nb_vehicles; ++t_v) {
         if (best_gains[s_v][t_v] > best_gain) {
           best_gain = best_gains[s_v][t_v];
           best_source = s_v;
@@ -691,10 +692,10 @@ void LocalSearch<Route,
       // round and set route pairs accordingly.
       s_t_pairs.clear();
       for (auto v_rank : update_candidates) {
-        best_gains[v_rank] = std::vector<Gain>(V, 0);
+        best_gains[v_rank] = std::vector<Gain>(_nb_vehicles, 0);
       }
 
-      for (unsigned v = 0; v < V; ++v) {
+      for (unsigned v = 0; v < _nb_vehicles; ++v) {
         for (auto v_rank : update_candidates) {
           best_gains[v][v_rank] = 0;
           s_t_pairs.emplace_back(v, v_rank);
@@ -826,8 +827,8 @@ void LocalSearch<Route,
                  IntraOrOpt>::remove_from_routes() {
   // Store nearest job from and to any job in any route for constant
   // time access down the line.
-  for (std::size_t v1 = 0; v1 < V; ++v1) {
-    for (std::size_t v2 = 0; v2 < V; ++v2) {
+  for (std::size_t v1 = 0; v1 < _nb_vehicles; ++v1) {
+    for (std::size_t v2 = 0; v2 < _nb_vehicles; ++v2) {
       if (v2 == v1) {
         continue;
       }
@@ -857,7 +858,7 @@ void LocalSearch<Route,
       }
       Gain best_relocate_distance = static_cast<Gain>(INFINITE_COST);
 
-      auto current_index = _input._jobs[_sol[v].route[r]].index();
+      auto current_index = _input.jobs[_sol[v].route[r]].index();
 
       for (std::size_t other_v = 0; other_v < _sol.size(); ++other_v) {
         if (other_v == v or
@@ -865,29 +866,29 @@ void LocalSearch<Route,
           continue;
         }
 
-        if (_input._vehicles[other_v].has_start()) {
-          auto start_index = _input._vehicles[other_v].start.get().index();
-          Gain start_cost = _m[start_index][current_index];
+        if (_input.vehicles[other_v].has_start()) {
+          auto start_index = _input.vehicles[other_v].start.get().index();
+          Gain start_cost = _matrix[start_index][current_index];
           best_relocate_distance = std::min(best_relocate_distance, start_cost);
         }
-        if (_input._vehicles[other_v].has_end()) {
-          auto end_index = _input._vehicles[other_v].end.get().index();
-          Gain end_cost = _m[current_index][end_index];
+        if (_input.vehicles[other_v].has_end()) {
+          auto end_index = _input.vehicles[other_v].end.get().index();
+          Gain end_cost = _matrix[current_index][end_index];
           best_relocate_distance = std::min(best_relocate_distance, end_cost);
         }
         if (_sol[other_v].size() != 0) {
           auto nearest_from_rank =
             _sol_state.nearest_job_rank_in_routes_from[v][other_v][r];
           auto nearest_from_index =
-            _input._jobs[_sol[other_v].route[nearest_from_rank]].index();
-          Gain cost_from = _m[nearest_from_index][current_index];
+            _input.jobs[_sol[other_v].route[nearest_from_rank]].index();
+          Gain cost_from = _matrix[nearest_from_index][current_index];
           best_relocate_distance = std::min(best_relocate_distance, cost_from);
 
           auto nearest_to_rank =
             _sol_state.nearest_job_rank_in_routes_to[v][other_v][r];
           auto nearest_to_index =
-            _input._jobs[_sol[other_v].route[nearest_to_rank]].index();
-          Gain Costo = _m[current_index][nearest_to_index];
+            _input.jobs[_sol[other_v].route[nearest_to_rank]].index();
+          Gain Costo = _matrix[current_index][nearest_to_index];
           best_relocate_distance = std::min(best_relocate_distance, Costo);
         }
       }

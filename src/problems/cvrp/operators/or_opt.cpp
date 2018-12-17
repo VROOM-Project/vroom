@@ -34,7 +34,7 @@ CVRPOrOpt::CVRPOrOpt(const Input& input,
 
 void CVRPOrOpt::compute_gain() {
   const auto& m = _input.get_matrix();
-  const auto& v_target = _input._vehicles[t_vehicle];
+  const auto& v_target = _input.vehicles[t_vehicle];
 
   // For source vehicle, we consider the cost of removing edge
   // starting at rank s_rank, already stored in
@@ -43,8 +43,8 @@ void CVRPOrOpt::compute_gain() {
   // For target vehicle, we consider the cost of adding source edge at
   // rank t_rank. reverse_* checks whether we should change the
   // source edge order.
-  Index s_index = _input._jobs[s_route[s_rank]].index();
-  Index after_s_index = _input._jobs[s_route[s_rank + 1]].index();
+  Index s_index = _input.jobs[s_route[s_rank]].index();
+  Index after_s_index = _input.jobs[s_route[s_rank + 1]].index();
 
   Gain previous_cost = 0;
   Gain next_cost = 0;
@@ -65,7 +65,7 @@ void CVRPOrOpt::compute_gain() {
       }
     } else {
       // Adding edge past the end after a real job.
-      auto p_index = _input._jobs[t_route[t_rank - 1]].index();
+      auto p_index = _input.jobs[t_route[t_rank - 1]].index();
       previous_cost = m[p_index][s_index];
       reverse_previous_cost = m[p_index][after_s_index];
       if (v_target.has_end()) {
@@ -77,7 +77,7 @@ void CVRPOrOpt::compute_gain() {
     }
   } else {
     // Adding before one of the jobs.
-    auto n_index = _input._jobs[t_route[t_rank]].index();
+    auto n_index = _input.jobs[t_route[t_rank]].index();
     next_cost = m[after_s_index][n_index];
     reverse_next_cost = m[s_index][n_index];
 
@@ -89,7 +89,7 @@ void CVRPOrOpt::compute_gain() {
         old_edge_cost = m[p_index][n_index];
       }
     } else {
-      auto p_index = _input._jobs[t_route[t_rank - 1]].index();
+      auto p_index = _input.jobs[t_route[t_rank - 1]].index();
       previous_cost = m[p_index][s_index];
       reverse_previous_cost = m[p_index][after_s_index];
       old_edge_cost = m[p_index][n_index];
@@ -127,14 +127,14 @@ bool CVRPOrOpt::is_valid() {
   valid &= _input.vehicle_ok_with_job(t_vehicle, after_job_rank);
 
   if (_sol_state.fwd_amounts[t_vehicle].empty()) {
-    valid &= (_input._jobs[current_job_rank].amount +
-                _input._jobs[after_job_rank].amount <=
-              _input._vehicles[t_vehicle].capacity);
+    valid &= (_input.jobs[current_job_rank].amount +
+                _input.jobs[after_job_rank].amount <=
+              _input.vehicles[t_vehicle].capacity);
   } else {
     valid &= (_sol_state.fwd_amounts[t_vehicle].back() +
-                _input._jobs[current_job_rank].amount +
-                _input._jobs[after_job_rank].amount <=
-              _input._vehicles[t_vehicle].capacity);
+                _input.jobs[current_job_rank].amount +
+                _input.jobs[after_job_rank].amount <=
+              _input.vehicles[t_vehicle].capacity);
   }
 
   return valid;

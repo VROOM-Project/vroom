@@ -34,7 +34,7 @@ CVRPRelocate::CVRPRelocate(const Input& input,
 
 void CVRPRelocate::compute_gain() {
   const auto& m = _input.get_matrix();
-  const auto& v = _input._vehicles[t_vehicle];
+  const auto& v = _input.vehicles[t_vehicle];
 
   // For source vehicle, we consider the cost of removing job at rank
   // s_rank, already stored in
@@ -54,12 +54,12 @@ bool CVRPRelocate::is_valid() {
   bool valid = _input.vehicle_ok_with_job(t_vehicle, relocate_job_rank);
 
   if (_sol_state.fwd_amounts[t_vehicle].empty()) {
-    valid &= (_input._jobs[relocate_job_rank].amount <=
-              _input._vehicles[t_vehicle].capacity);
+    valid &= (_input.jobs[relocate_job_rank].amount <=
+              _input.vehicles[t_vehicle].capacity);
   } else {
     valid &= (_sol_state.fwd_amounts[t_vehicle].back() +
-                _input._jobs[relocate_job_rank].amount <=
-              _input._vehicles[t_vehicle].capacity);
+                _input.jobs[relocate_job_rank].amount <=
+              _input.vehicles[t_vehicle].capacity);
   }
 
   return valid;

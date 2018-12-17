@@ -35,16 +35,16 @@ CVRPMixedExchange::CVRPMixedExchange(const Input& input,
 
 void CVRPMixedExchange::compute_gain() {
   const auto& m = _input.get_matrix();
-  const auto& v_source = _input._vehicles[s_vehicle];
-  const auto& v_target = _input._vehicles[t_vehicle];
+  const auto& v_source = _input.vehicles[s_vehicle];
+  const auto& v_target = _input.vehicles[t_vehicle];
 
   // For source vehicle, we consider the cost of replacing job at rank
   // s_rank with target edge. Part of that cost (for adjacent edges)
   // is stored in _sol_state.edge_costs_around_node. reverse_t_edge
   // checks whether we should change the target edge order.
-  Index s_index = _input._jobs[s_route[s_rank]].index();
-  Index t_index = _input._jobs[t_route[t_rank]].index();
-  Index t_after_index = _input._jobs[t_route[t_rank + 1]].index();
+  Index s_index = _input.jobs[s_route[s_rank]].index();
+  Index t_index = _input.jobs[t_route[t_rank]].index();
+  Index t_after_index = _input.jobs[t_route[t_rank + 1]].index();
 
   // Determine costs added with target edge.
   Gain previous_cost = 0;
@@ -59,7 +59,7 @@ void CVRPMixedExchange::compute_gain() {
       reverse_previous_cost = m[p_index][t_after_index];
     }
   } else {
-    auto p_index = _input._jobs[s_route[s_rank - 1]].index();
+    auto p_index = _input.jobs[s_route[s_rank - 1]].index();
     previous_cost = m[p_index][t_index];
     reverse_previous_cost = m[p_index][t_after_index];
   }
@@ -71,7 +71,7 @@ void CVRPMixedExchange::compute_gain() {
       reverse_next_cost = m[t_index][n_index];
     }
   } else {
-    auto n_index = _input._jobs[s_route[s_rank + 1]].index();
+    auto n_index = _input.jobs[s_route[s_rank + 1]].index();
     next_cost = m[t_after_index][n_index];
     reverse_next_cost = m[t_index][n_index];
   }
@@ -103,7 +103,7 @@ void CVRPMixedExchange::compute_gain() {
       previous_cost = m[p_index][s_index];
     }
   } else {
-    auto p_index = _input._jobs[t_route[t_rank - 1]].index();
+    auto p_index = _input.jobs[t_route[t_rank - 1]].index();
     previous_cost = m[p_index][s_index];
   }
 
@@ -113,7 +113,7 @@ void CVRPMixedExchange::compute_gain() {
       next_cost = m[s_index][n_index];
     }
   } else {
-    auto n_index = _input._jobs[t_route[t_rank + 2]].index();
+    auto n_index = _input.jobs[t_route[t_rank + 2]].index();
     next_cost = m[s_index][n_index];
   }
 
@@ -135,16 +135,14 @@ bool CVRPMixedExchange::is_valid() {
   valid &= _input.vehicle_ok_with_job(s_vehicle, t_after_job_rank);
 
   valid &=
-    (_sol_state.fwd_amounts[s_vehicle].back() -
-       _input._jobs[s_job_rank].amount + _input._jobs[t_job_rank].amount +
-       _input._jobs[t_after_job_rank].amount <=
-     _input._vehicles[s_vehicle].capacity);
+    (_sol_state.fwd_amounts[s_vehicle].back() - _input.jobs[s_job_rank].amount +
+       _input.jobs[t_job_rank].amount + _input.jobs[t_after_job_rank].amount <=
+     _input.vehicles[s_vehicle].capacity);
 
   valid &=
-    (_sol_state.fwd_amounts[t_vehicle].back() -
-       _input._jobs[t_job_rank].amount - _input._jobs[t_after_job_rank].amount +
-       _input._jobs[s_job_rank].amount <=
-     _input._vehicles[t_vehicle].capacity);
+    (_sol_state.fwd_amounts[t_vehicle].back() - _input.jobs[t_job_rank].amount -
+       _input.jobs[t_after_job_rank].amount + _input.jobs[s_job_rank].amount <=
+     _input.vehicles[t_vehicle].capacity);
 
   return valid;
 }

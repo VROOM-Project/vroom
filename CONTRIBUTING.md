@@ -27,7 +27,8 @@ with the scope or aim of the project.
 ### Miscellaneous
 
 - Custom types use upper CamelCase (e.g. `LocalSearch`)
-- Variables and functions use lowercase with underscore (e.g `addition_cost`)
+- Variables and functions use lowercase with underscore (e.g. `addition_cost`)
+- Non-static private data members are prefixed with an underscore (e.g. `_matrix`)
 
 ### Automatic formatting
 

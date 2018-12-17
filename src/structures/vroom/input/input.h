@@ -41,18 +41,22 @@ private:
   unsigned _amount_size;
   Amount _amount_lower_bound;
   std::vector<std::vector<bool>> _vehicle_to_job_compatibility;
-  void check_amount_size(unsigned size);
-  std::unique_ptr<VRP> get_problem() const;
-  void check_cost_bound() const;
-  void set_vehicle_to_job_compatibility();
   std::unordered_set<Index> _matrix_used_index;
   bool _all_locations_have_coords;
+
+  void check_amount_size(unsigned size);
+
+  std::unique_ptr<VRP> get_problem() const;
+
+  void check_cost_bound() const;
+
+  void set_vehicle_to_job_compatibility();
 
   void store_amount_lower_bound(const Amount& amount);
 
 public:
-  std::vector<Job> _jobs;
-  std::vector<Vehicle> _vehicles;
+  std::vector<Job> jobs;
+  std::vector<Vehicle> vehicles;
 
   Input(std::unique_ptr<Routing<Cost>> routing_wrapper, bool geometry);
 

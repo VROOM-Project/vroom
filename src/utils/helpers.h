@@ -33,7 +33,7 @@ inline Gain addition_cost(const Input& input,
                           const Vehicle& v,
                           const std::vector<Index>& route,
                           Index rank) {
-  Index job_index = input._jobs[job_rank].index();
+  Index job_index = input.jobs[job_rank].index();
   Gain previous_cost = 0;
   Gain next_cost = 0;
   Gain old_edge_cost = 0;
@@ -49,7 +49,7 @@ inline Gain addition_cost(const Input& input,
       }
     } else {
       // Adding job past the end after a real job.
-      auto p_index = input._jobs[route[rank - 1]].index();
+      auto p_index = input.jobs[route[rank - 1]].index();
       previous_cost = m[p_index][job_index];
       if (v.has_end()) {
         auto n_index = v.end.get().index();
@@ -59,7 +59,7 @@ inline Gain addition_cost(const Input& input,
     }
   } else {
     // Adding before one of the jobs.
-    auto n_index = input._jobs[route[rank]].index();
+    auto n_index = input.jobs[route[rank]].index();
     next_cost = m[job_index][n_index];
 
     if (rank == 0) {
@@ -69,7 +69,7 @@ inline Gain addition_cost(const Input& input,
         old_edge_cost = m[p_index][n_index];
       }
     } else {
-      auto p_index = input._jobs[route[rank - 1]].index();
+      auto p_index = input.jobs[route[rank - 1]].index();
       previous_cost = m[p_index][job_index];
       old_edge_cost = m[p_index][n_index];
     }
@@ -81,23 +81,23 @@ inline Gain addition_cost(const Input& input,
 inline Cost route_cost_for_vehicle(const Input& input,
                                    Index vehicle_rank,
                                    const std::vector<Index>& route) {
-  const auto& v = input._vehicles[vehicle_rank];
+  const auto& v = input.vehicles[vehicle_rank];
   const auto& m = input.get_matrix();
   auto cost = 0;
 
   if (route.size() > 0) {
     if (v.has_start()) {
-      cost += m[v.start.get().index()][input._jobs[route.front()].index()];
+      cost += m[v.start.get().index()][input.jobs[route.front()].index()];
     }
 
     Index previous = route.front();
     for (auto it = ++route.cbegin(); it != route.cend(); ++it) {
-      cost += m[input._jobs[previous].index()][input._jobs[*it].index()];
+      cost += m[input.jobs[previous].index()][input.jobs[*it].index()];
       previous = *it;
     }
 
     if (v.has_end()) {
-      cost += m[input._jobs[route.back()].index()][v.end.get().index()];
+      cost += m[input.jobs[route.back()].index()][v.end.get().index()];
     }
   }
 
@@ -112,7 +112,7 @@ inline Solution format_solution(const Input& input,
 
   // All job ranks start with unassigned status.
   std::unordered_set<Index> unassigned_ranks;
-  for (unsigned i = 0; i < input._jobs.size(); ++i) {
+  for (unsigned i = 0; i < input.jobs.size(); ++i) {
     unassigned_ranks.insert(i);
   }
 
@@ -121,7 +121,7 @@ inline Solution format_solution(const Input& input,
     if (route.empty()) {
       continue;
     }
-    const auto& v = input._vehicles[i];
+    const auto& v = input.vehicles[i];
 
     Cost cost = 0;
     Duration service = 0;
@@ -136,15 +136,14 @@ inline Solution format_solution(const Input& input,
       steps.emplace_back(TYPE::START, v.start.get());
       steps.back().duration = 0;
       steps.back().arrival = 0;
-      auto travel =
-        m[v.start.get().index()][input._jobs[route.front()].index()];
+      auto travel = m[v.start.get().index()][input.jobs[route.front()].index()];
       ETA += travel;
       cost += travel;
     }
 
     // Handle jobs.
     assert(input.vehicle_ok_with_job(i, route.front()));
-    steps.emplace_back(input._jobs[route.front()]);
+    steps.emplace_back(input.jobs[route.front()]);
 
     auto& first = steps.back();
     service += first.service;
@@ -158,11 +157,11 @@ inline Solution format_solution(const Input& input,
     for (std::size_t r = 0; r < route.size() - 1; ++r) {
       assert(input.vehicle_ok_with_job(i, route[r + 1]));
       Duration travel =
-        m[input._jobs[route[r]].index()][input._jobs[route[r + 1]].index()];
+        m[input.jobs[route[r]].index()][input.jobs[route[r + 1]].index()];
       ETA += travel;
       cost += travel;
 
-      steps.emplace_back(input._jobs[route[r + 1]]);
+      steps.emplace_back(input.jobs[route[r + 1]]);
       auto& current = steps.back();
       service += current.service;
       amount += current.amount;
@@ -177,7 +176,7 @@ inline Solution format_solution(const Input& input,
     if (v.has_end()) {
       steps.emplace_back(TYPE::END, v.end.get());
       Duration travel =
-        m[input._jobs[route.back()].index()][v.end.get().index()];
+        m[input.jobs[route.back()].index()][v.end.get().index()];
       ETA += travel;
       cost += travel;
       steps.back().duration = cost;
@@ -193,7 +192,7 @@ inline Solution format_solution(const Input& input,
   std::transform(unassigned_ranks.begin(),
                  unassigned_ranks.end(),
                  std::back_inserter(unassigned_jobs),
-                 [&](auto j) { return input._jobs[j]; });
+                 [&](auto j) { return input.jobs[j]; });
 
   return Solution(0,
                   input.amount_size(),
@@ -209,12 +208,12 @@ inline Solution format_solution(const Input& input,
 
   // All job ranks start with unassigned status.
   std::unordered_set<Index> unassigned_ranks;
-  for (unsigned i = 0; i < input._jobs.size(); ++i) {
+  for (unsigned i = 0; i < input.jobs.size(); ++i) {
     unassigned_ranks.insert(i);
   }
 
   for (const auto& tw_r : tw_routes) {
-    const auto& v = input._vehicles[tw_r.vehicle_rank];
+    const auto& v = input.vehicles[tw_r.vehicle_rank];
     if (tw_r.route.empty()) {
       continue;
     }
@@ -225,8 +224,8 @@ inline Solution format_solution(const Input& input,
     Duration job_start = tw_r.earliest.back();
     Duration backward_wt = 0;
     for (std::size_t r = tw_r.route.size() - 1; r > 0; --r) {
-      const auto& current_job = input._jobs[tw_r.route[r]];
-      const auto& previous_job = input._jobs[tw_r.route[r - 1]];
+      const auto& current_job = input.jobs[tw_r.route[r]];
+      const auto& previous_job = input.jobs[tw_r.route[r - 1]];
 
       Duration diff =
         previous_job.service + m[previous_job.index()][current_job.index()];
@@ -253,7 +252,7 @@ inline Solution format_solution(const Input& input,
       steps.emplace_back(TYPE::START, v.start.get());
       steps.back().duration = 0;
 
-      const auto& first_job = input._jobs[tw_r.route[0]];
+      const auto& first_job = input.jobs[tw_r.route[0]];
       Duration diff = m[v.start.get().index()][first_job.index()];
       cost += diff;
 
@@ -263,7 +262,7 @@ inline Solution format_solution(const Input& input,
       steps.back().arrival = v_start;
     }
 
-    steps.emplace_back(input._jobs[tw_r.route.front()]);
+    steps.emplace_back(input.jobs[tw_r.route.front()]);
     auto& first = steps.back();
     service += first.service;
     amount += first.amount;
@@ -274,13 +273,13 @@ inline Solution format_solution(const Input& input,
 
     Duration forward_wt = 0;
     for (std::size_t r = 0; r < tw_r.route.size() - 1; ++r) {
-      const auto& previous_job = input._jobs[tw_r.route[r]];
-      const auto& next_job = input._jobs[tw_r.route[r + 1]];
+      const auto& previous_job = input.jobs[tw_r.route[r]];
+      const auto& next_job = input.jobs[tw_r.route[r + 1]];
 
       Duration travel = m[previous_job.index()][next_job.index()];
       cost += travel;
 
-      steps.emplace_back(input._jobs[tw_r.route[r + 1]]);
+      steps.emplace_back(input.jobs[tw_r.route[r + 1]]);
       auto& current = steps.back();
       service += current.service;
       amount += current.amount;
@@ -303,7 +302,7 @@ inline Solution format_solution(const Input& input,
     }
 
     if (v.has_end()) {
-      const auto& last_job = input._jobs[tw_r.route.back()];
+      const auto& last_job = input.jobs[tw_r.route.back()];
       Duration travel = m[last_job.index()][v.end.get().index()];
       cost += travel;
 
@@ -335,7 +334,7 @@ inline Solution format_solution(const Input& input,
   std::transform(unassigned_ranks.begin(),
                  unassigned_ranks.end(),
                  std::back_inserter(unassigned_jobs),
-                 [&](auto j) { return input._jobs[j]; });
+                 [&](auto j) { return input.jobs[j]; });
 
   return Solution(0,
                   input.amount_size(),

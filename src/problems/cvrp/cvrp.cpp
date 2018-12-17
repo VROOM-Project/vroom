@@ -54,11 +54,11 @@ CVRP::CVRP(const Input& input) : VRP(input) {
 }
 
 Solution CVRP::solve(unsigned exploration_level, unsigned nb_threads) const {
-  auto nb_tsp = _input._vehicles.size();
+  auto nb_tsp = _input.vehicles.size();
 
   if (nb_tsp == 1 and !_input.has_skills() and _input.amount_size() == 0) {
     // This is a plain TSP, no need to go through the trouble below.
-    std::vector<Index> job_ranks(_input._jobs.size());
+    std::vector<Index> job_ranks(_input.jobs.size());
     std::iota(job_ranks.begin(), job_ranks.end(), 0);
 
     TSP p(_input, job_ranks, 0);

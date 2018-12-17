@@ -13,16 +13,16 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/amount.h"
 
 Clustering::Clustering(const Input& input, CLUSTERING t, INIT i, float c)
-  : input_ref(input),
-    type(t),
-    init(i),
-    regret_coeff(c),
-    clusters(input._vehicles.size()),
+  : _input(input),
+    _type(t),
+    _init(i),
+    _regret_coeff(c),
+    clusters(input.vehicles.size()),
     edges_cost(0),
     assigned_jobs(0),
     non_empty_clusters(0) {
   std::string strategy;
-  switch (type) {
+  switch (_type) {
   case CLUSTERING::PARALLEL:
     this->parallel_clustering();
     strategy = "parallel";
@@ -33,7 +33,7 @@ Clustering::Clustering(const Input& input, CLUSTERING t, INIT i, float c)
     break;
   }
   std::string init_str;
-  switch (init) {
+  switch (_init) {
   case INIT::NONE:
     init_str = "none";
     break;
@@ -75,11 +75,11 @@ inline void update_cost(Index from_index,
 }
 
 void Clustering::parallel_clustering() {
-  auto V = input_ref._vehicles.size();
-  auto J = input_ref._jobs.size();
-  auto& jobs = input_ref._jobs;
-  auto& vehicles = input_ref._vehicles;
-  auto m = input_ref.get_matrix();
+  auto V = _input.vehicles.size();
+  auto J = _input.jobs.size();
+  auto& jobs = _input.jobs;
+  auto& vehicles = _input.vehicles;
+  auto m = _input.get_matrix();
 
   // Current best known costs to add jobs to vehicle clusters.
   std::vector<std::vector<Cost>>
@@ -96,7 +96,7 @@ void Clustering::parallel_clustering() {
   for (std::size_t v = 0; v < V; ++v) {
     // Only keep jobs compatible with vehicle skills in candidates.
     for (std::size_t j = 0; j < J; ++j) {
-      if (input_ref.vehicle_ok_with_job(v, j)) {
+      if (_input.vehicle_ok_with_job(v, j)) {
         candidates[v].push_back(j);
       }
     }
@@ -161,21 +161,21 @@ void Clustering::parallel_clustering() {
       [&, v](Index lhs, Index rhs) { return costs[v][lhs] < costs[v][rhs]; };
   };
 
-  if (init != INIT::NONE) {
+  if (_init != INIT::NONE) {
     for (std::size_t v = 0; v < V; ++v) {
       auto init_job = candidates[v].cend();
-      if (init == INIT::HIGHER_AMOUNT) {
+      if (_init == INIT::HIGHER_AMOUNT) {
         init_job = std::max_element(candidates[v].cbegin(),
                                     candidates[v].cend(),
                                     higher_amount_init_lambda(v));
       }
-      if (init == INIT::NEAREST) {
+      if (_init == INIT::NEAREST) {
         init_job = std::min_element(candidates[v].cbegin(),
                                     candidates[v].cend(),
                                     nearest_init_lambda(v));
       }
 
-      if (init == INIT::FURTHEST) {
+      if (_init == INIT::FURTHEST) {
         init_job = std::max_element(candidates[v].cbegin(),
                                     candidates[v].cend(),
                                     nearest_init_lambda(v));
@@ -226,9 +226,9 @@ void Clustering::parallel_clustering() {
 
   auto eval_lambda = [&](auto v) {
     return [&, v](auto i, auto j) {
-      return regret_coeff * static_cast<float>(regrets[v][i]) -
+      return _regret_coeff * static_cast<float>(regrets[v][i]) -
                static_cast<float>(costs[v][i]) <
-             regret_coeff * static_cast<float>(regrets[v][j]) -
+             _regret_coeff * static_cast<float>(regrets[v][j]) -
                static_cast<float>(costs[v][j]);
     };
   };
@@ -332,11 +332,11 @@ void Clustering::parallel_clustering() {
 }
 
 void Clustering::sequential_clustering() {
-  auto V = input_ref._vehicles.size();
-  auto J = input_ref._jobs.size();
-  auto& jobs = input_ref._jobs;
-  auto& vehicles = input_ref._vehicles;
-  auto m = input_ref.get_matrix();
+  auto V = _input.vehicles.size();
+  auto J = _input.jobs.size();
+  auto& jobs = _input.jobs;
+  auto& vehicles = _input.vehicles;
+  auto m = _input.get_matrix();
 
   // For each vehicle cluster, we need to initialize a vector of job
   // candidates (represented by their index in 'jobs').
@@ -407,8 +407,8 @@ void Clustering::sequential_clustering() {
     // costs to jobs for current vehicle.
     std::vector<Index> candidates;
     for (auto i : candidates_set) {
-      if (input_ref.vehicle_ok_with_job(v, i) and
-          jobs[i].amount <= input_ref._vehicles[v].capacity) {
+      if (_input.vehicle_ok_with_job(v, i) and
+          jobs[i].amount <= _input.vehicles[v].capacity) {
         candidates.push_back(i);
       }
     }
@@ -440,19 +440,19 @@ void Clustering::sequential_clustering() {
     auto capacity = vehicles[v].capacity;
 
     // Strategy for cluster initialization.
-    if (init != INIT::NONE) {
+    if (_init != INIT::NONE) {
       auto init_job = candidates.cend();
-      if (init == INIT::HIGHER_AMOUNT) {
+      if (_init == INIT::HIGHER_AMOUNT) {
         init_job = std::max_element(candidates.cbegin(),
                                     candidates.cend(),
                                     higher_amount_init_lambda(v));
       }
-      if (init == INIT::NEAREST) {
+      if (_init == INIT::NEAREST) {
         init_job = std::min_element(candidates.cbegin(),
                                     candidates.cend(),
                                     nearest_init_lambda(v));
       }
-      if (init == INIT::FURTHEST) {
+      if (_init == INIT::FURTHEST) {
         init_job = std::max_element(candidates.cbegin(),
                                     candidates.cend(),
                                     nearest_init_lambda(v));
@@ -477,9 +477,9 @@ void Clustering::sequential_clustering() {
     }
 
     auto eval_lambda = [&](auto i, auto j) {
-      return regret_coeff * static_cast<float>(regrets[v][i]) -
+      return _regret_coeff * static_cast<float>(regrets[v][i]) -
                static_cast<float>(costs[i]) <
-             regret_coeff * static_cast<float>(regrets[v][j]) -
+             _regret_coeff * static_cast<float>(regrets[v][j]) -
                static_cast<float>(costs[j]);
     };
 

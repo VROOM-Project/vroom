@@ -19,8 +19,8 @@ TSP::TSP(const Input& input, std::vector<Index> job_ranks, Index vehicle_rank)
     _vehicle_rank(vehicle_rank),
     _job_ranks(std::move(job_ranks)),
     _is_symmetric(true),
-    _has_start(_input._vehicles[_vehicle_rank].has_start()),
-    _has_end(_input._vehicles[_vehicle_rank].has_end()) {
+    _has_start(_input.vehicles[_vehicle_rank].has_start()),
+    _has_end(_input.vehicles[_vehicle_rank].has_end()) {
 
   assert(!_job_ranks.empty());
 
@@ -29,22 +29,22 @@ TSP::TSP(const Input& input, std::vector<Index> job_ranks, Index vehicle_rank)
   std::transform(_job_ranks.cbegin(),
                  _job_ranks.cend(),
                  std::back_inserter(matrix_ranks),
-                 [&](const auto& r) { return _input._jobs[r].index(); });
+                 [&](const auto& r) { return _input.jobs[r].index(); });
 
   if (_has_start) {
     // Add start and remember rank in _matrix.
     _start = matrix_ranks.size();
-    matrix_ranks.push_back(_input._vehicles[_vehicle_rank].start.get().index());
+    matrix_ranks.push_back(_input.vehicles[_vehicle_rank].start.get().index());
   }
   if (_has_end) {
     // Add end and remember rank in _matrix.
-    if (_has_start and (_input._vehicles[_vehicle_rank].start.get().index() ==
-                        _input._vehicles[_vehicle_rank].end.get().index())) {
+    if (_has_start and (_input.vehicles[_vehicle_rank].start.get().index() ==
+                        _input.vehicles[_vehicle_rank].end.get().index())) {
       // Avoiding duplicate for identical ranks.
       _end = _start;
     } else {
       _end = matrix_ranks.size();
-      matrix_ranks.push_back(_input._vehicles[_vehicle_rank].end.get().index());
+      matrix_ranks.push_back(_input.vehicles[_vehicle_rank].end.get().index());
     }
   }
 
