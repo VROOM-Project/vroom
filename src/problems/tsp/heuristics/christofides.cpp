@@ -7,6 +7,8 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <iostream>
+#include <fstream>
 #include <random>
 #include <set>
 
@@ -41,40 +43,54 @@ std::list<index_t> christofides(const matrix<cost_t>& sym_matrix) {
   // Getting corresponding matrix for the generated sub-graph.
   matrix<cost_t> sub_matrix = sym_matrix.get_sub_matrix(mst_odd_vertices);
 
-  // Computing minimum weight perfect matching.
-  std::unordered_map<index_t, index_t> mwpm =
-    minimum_weight_perfect_matching(sub_matrix);
+  // EXPERIMENT! Use Blossom V to calculate a minimum weight perfect matching
+  // to see if there are any significant gains to be had. The algorithm is 
+  // described here:
+  // https://pdfs.semanticscholar.org/930b/9f9c3bc7acf3277dd2361076d40ff03774b2.pdf
+  
+  // As this is only an experiment we write out a file of edges and have the 
+  // original blossom5 code: 
+  // http://pub.ist.ac.at/~vnk/software/blossom5-v2.05.src.tar.gz 
+  // do the work.
 
-  // Storing those edges from mwpm that are coherent regarding
-  // symmetry (y -> x whenever x -> y). Remembering the rest of them
-  // for further use. Edges are not doubled in mwpm_final.
+  // The license of the blossom5 code is incompatible with the license used by
+  // vroom in general, but as long as it is only used for research purpose it
+  // is within bounds.
+
+  // Hence, in order to build and run vroom on this branch you need to compile 
+  // (and include on your PATH) the blossom5 executable yourself, and make sure
+  // you are not using it in a commercial setting. 
+
+  auto node_count = sub_matrix.size();
+  auto edge_count = node_count * (node_count - 1);
+
+  std::ofstream output;
+  output.open("sub_matrix");
+  output << node_count << " " << edge_count << std::endl;
+
+  for (size_t i = 0; i < node_count; ++i)
+    for (size_t j = 0; j < node_count; ++j)
+      if (i != j)
+        output << i << " " << j << " " << sym_matrix[i][j] << std::endl;
+
+  output.close();
+
+  std::system("blossom5 -e sub_matrix -w mwpm_final");
+
+  std::ifstream input;
+  input.open("mwpm_final");
+
+  index_t i, j;
   std::unordered_map<index_t, index_t> mwpm_final;
-  std::vector<index_t> wrong_vertices;
-
-  unsigned total_ok = 0;
-  for (const auto& edge : mwpm) {
-    if (mwpm.at(edge.second) == edge.first) {
-      mwpm_final.emplace(std::min(edge.first, edge.second),
-                         std::max(edge.first, edge.second));
-      ++total_ok;
-    } else {
-      wrong_vertices.push_back(edge.first);
-    }
+  
+  std::string skip;
+  std::getline(input, skip); // skip first line
+  while (!input.eof()) {
+    input >> i >> j;
+    mwpm_final[i] = j;
   }
 
-  if (!wrong_vertices.empty()) {
-    std::unordered_map<index_t, index_t> remaining_greedy_mwpm =
-      greedy_symmetric_approx_mwpm(sub_matrix.get_sub_matrix(wrong_vertices));
-
-    // Adding edges obtained with greedy algo for the missing vertices
-    // in mwpm_final.
-    for (const auto& edge : remaining_greedy_mwpm) {
-      mwpm_final.emplace(std::min(wrong_vertices[edge.first],
-                                  wrong_vertices[edge.second]),
-                         std::max(wrong_vertices[edge.first],
-                                  wrong_vertices[edge.second]));
-    }
-  }
+  input.close();
 
   // Building eulerian graph.
   std::vector<edge<cost_t>> eulerian_graph_edges = mst_graph.get_edges();
@@ -92,6 +108,8 @@ std::list<index_t> christofides(const matrix<cost_t>& sym_matrix) {
                                         sym_matrix[first_index][second_index]);
       already_added.insert(second_index);
     }
+    else
+      std::cout << "already there: " << first_index << " " << second_index << std::endl;
   }
 
   // Building Eulerian graph from the edges.
@@ -160,5 +178,6 @@ std::list<index_t> christofides(const matrix<cost_t>& sym_matrix) {
       tour.push_back(vertex);
     }
   }
+
   return tour;
 }
