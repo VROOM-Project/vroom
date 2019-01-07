@@ -37,6 +37,8 @@ All rights reserved (see LICENSE).
 #include "problems/vrptw/operators/two_opt.h"
 #include "utils/helpers.h"
 
+namespace vroom {
+
 template <class Route,
           class Exchange,
           class CrossExchange,
@@ -975,3 +977,5 @@ template class LocalSearch<RawRoute,
                            CVRPIntraMixedExchange,
                            CVRPIntraRelocate,
                            CVRPIntraOrOpt>;
+
+} // namespace vroom

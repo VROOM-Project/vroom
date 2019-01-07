@@ -17,6 +17,8 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/location.h"
 #include "structures/vroom/time_window.h"
 
+namespace vroom {
+
 struct Job {
   const Id id;
   Location location;
@@ -38,5 +40,7 @@ struct Job {
 
   bool is_valid_start(Duration time) const;
 };
+
+} // namespace vroom
 
 #endif

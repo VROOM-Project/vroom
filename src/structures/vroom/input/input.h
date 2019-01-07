@@ -23,6 +23,8 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/solution/solution.h"
 #include "structures/vroom/vehicle.h"
 
+namespace vroom {
+
 class VRP;
 
 class Input {
@@ -82,5 +84,7 @@ public:
 
   Solution solve(unsigned exploration_level, unsigned nb_thread);
 };
+
+} // namespace vroom
 
 #endif

@@ -15,6 +15,8 @@ All rights reserved (see LICENSE).
 
 #include "structures/typedefs.h"
 
+namespace vroom {
+
 template <class T> class Line : private std::vector<T> {
 
   using parent = std::vector<T>;
@@ -44,5 +46,7 @@ public:
 
   Matrix<T> get_sub_matrix(const std::vector<Index>& indices) const;
 };
+
+} // namespace vroom
 
 #endif

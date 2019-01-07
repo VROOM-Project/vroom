@@ -9,6 +9,8 @@ All rights reserved (see LICENSE).
 
 #include "structures/vroom/solution/solution.h"
 
+namespace vroom {
+
 Solution::Solution(unsigned code, std::string error)
   : code(code), error(error) {
 }
@@ -30,3 +32,5 @@ Solution::Solution(unsigned code,
     summary.waiting_time += route.waiting_time;
   }
 }
+
+} // namespace vroom

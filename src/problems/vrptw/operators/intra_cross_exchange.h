@@ -13,6 +13,8 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/operators/intra_cross_exchange.h"
 #include "structures/vroom/tw_route.h"
 
+namespace vroom {
+
 class vrptwIntraCrossExchange : public CVRPIntraCrossExchange {
 private:
   TWRoute& _tw_s_route;
@@ -42,5 +44,7 @@ public:
 
   virtual std::vector<Index> addition_candidates() const override;
 };
+
+} // namespace vroom
 
 #endif

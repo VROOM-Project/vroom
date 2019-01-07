@@ -14,6 +14,8 @@ All rights reserved (see LICENSE).
 
 #include "problems/vrp.h"
 
+namespace vroom {
+
 class CVRP : public VRP {
 private:
   bool empty_cluster(const std::vector<Index>& cluster, Index v) const;
@@ -107,5 +109,7 @@ public:
   virtual Solution solve(unsigned exploration_level,
                          unsigned nb_threads) const override;
 };
+
+} // namespace vroom
 
 #endif

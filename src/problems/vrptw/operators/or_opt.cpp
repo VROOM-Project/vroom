@@ -9,6 +9,8 @@ All rights reserved (see LICENSE).
 
 #include "problems/vrptw/operators/or_opt.h"
 
+namespace vroom {
+
 vrptwOrOpt::vrptwOrOpt(const Input& input,
                        const SolutionState& sol_state,
                        TWRoute& tw_s_route,
@@ -93,3 +95,5 @@ void vrptwOrOpt::apply() {
     _tw_s_route.remove(_input, s_rank, 2);
   }
 }
+
+} // namespace vroom

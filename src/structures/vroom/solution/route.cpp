@@ -9,6 +9,8 @@ All rights reserved (see LICENSE).
 
 #include "structures/vroom/solution/route.h"
 
+namespace vroom {
+
 Route::Route(Id vehicle,
              std::vector<Step>&& steps,
              Cost cost,
@@ -25,3 +27,5 @@ Route::Route(Id vehicle,
     amount(amount),
     distance(0) {
 }
+
+} // namespace vroom

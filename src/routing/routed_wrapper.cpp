@@ -16,6 +16,8 @@ All rights reserved (see LICENSE).
 
 using boost::asio::ip::tcp;
 
+namespace vroom {
+
 RoutedWrapper::RoutedWrapper(const std::string& address,
                              const std::string& port,
                              const std::string& osrm_profile)
@@ -183,3 +185,5 @@ void RoutedWrapper::add_route_info(Route& route) const {
     route.steps[i + 1].distance = round_cost(current_distance);
   }
 }
+
+} // namespace vroom

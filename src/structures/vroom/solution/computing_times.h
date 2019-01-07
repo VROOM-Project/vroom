@@ -12,6 +12,8 @@ All rights reserved (see LICENSE).
 
 #include "structures/typedefs.h"
 
+namespace vroom {
+
 struct ComputingTimes {
   // Computing times in milliseconds.
   Duration loading;
@@ -20,5 +22,7 @@ struct ComputingTimes {
 
   ComputingTimes();
 };
+
+} // namespace vroom
 
 #endif

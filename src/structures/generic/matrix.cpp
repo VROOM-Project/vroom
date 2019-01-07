@@ -9,6 +9,8 @@ All rights reserved (see LICENSE).
 
 #include "structures/generic/matrix.h"
 
+namespace vroom {
+
 template <class T> Line<T>::Line(std::size_t n) : parent(n) {
 }
 
@@ -38,3 +40,5 @@ Matrix<T> Matrix<T>::get_sub_matrix(const std::vector<Index>& indices) const {
 
 template class Line<Cost>;
 template class Matrix<Cost>;
+
+} // namespace vroom

@@ -31,6 +31,8 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/raw_route.h"
 #include "utils/helpers.h"
 
+namespace vroom {
+
 using RawSolution = std::vector<RawRoute>;
 
 using CVRPLocalSearch = LocalSearch<RawRoute,
@@ -148,3 +150,5 @@ Solution CVRP::solve(unsigned exploration_level, unsigned nb_threads) const {
                          solutions[std::distance(sol_indicators.cbegin(),
                                                  best_indic)]);
 }
+
+} // namespace vroom

@@ -16,6 +16,8 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/raw_route.h"
 #include "structures/vroom/solution/solution.h"
 
+namespace vroom {
+
 using RawSolution = std::vector<RawRoute>;
 
 class TSP : public VRP {
@@ -43,5 +45,7 @@ public:
 
   virtual Solution solve(unsigned, unsigned nb_threads) const override;
 };
+
+} // namespace vroom
 
 #endif

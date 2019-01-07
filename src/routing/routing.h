@@ -16,6 +16,8 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/location.h"
 #include "structures/vroom/solution/route.h"
 
+namespace vroom {
+
 template <class T> class Routing {
 
 public:
@@ -30,5 +32,7 @@ protected:
   Routing() {
   }
 };
+
+} // namespace vroom
 
 #endif

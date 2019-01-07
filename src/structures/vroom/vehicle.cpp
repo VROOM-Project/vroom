@@ -10,6 +10,8 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/vehicle.h"
 #include "utils/exception.h"
 
+namespace vroom {
+
 Vehicle::Vehicle(Id id,
                  const boost::optional<Location>& start,
                  const boost::optional<Location>& end,
@@ -45,3 +47,5 @@ bool Vehicle::has_same_locations(const Vehicle& other) const {
 
   return same;
 }
+
+} // namespace vroom

@@ -15,6 +15,8 @@ All rights reserved (see LICENSE).
 #include "algorithms/munkres.h"
 #include "structures/generic/edge.h"
 
+namespace vroom {
+
 template <class T>
 std::unordered_map<Index, Index>
 minimum_weight_perfect_matching(const Matrix<T>& m) {
@@ -227,3 +229,5 @@ minimum_weight_perfect_matching(const Matrix<Cost>& m);
 
 template std::unordered_map<Index, Index>
 greedy_symmetric_approx_mwpm(const Matrix<Cost>& m);
+
+} // namespace vroom

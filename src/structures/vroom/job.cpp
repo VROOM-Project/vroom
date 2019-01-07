@@ -12,6 +12,8 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/job.h"
 #include "utils/exception.h"
 
+namespace vroom {
+
 Job::Job(Id id,
          const Location& location,
          Duration service,
@@ -59,3 +61,5 @@ bool Job::is_valid_start(Duration time) const {
 
   return valid;
 }
+
+} // namespace vroom

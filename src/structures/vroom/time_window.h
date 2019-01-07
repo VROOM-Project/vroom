@@ -12,6 +12,8 @@ All rights reserved (see LICENSE).
 
 #include "structures/typedefs.h"
 
+namespace vroom {
+
 struct TimeWindow {
   static const Duration default_length;
   Duration start;
@@ -29,5 +31,7 @@ struct TimeWindow {
 
   friend bool operator<(const TimeWindow& lhs, const TimeWindow& rhs);
 };
+
+} // namespace vroom
 
 #endif

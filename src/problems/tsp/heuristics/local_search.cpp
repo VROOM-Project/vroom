@@ -13,6 +13,8 @@ All rights reserved (see LICENSE).
 
 #include "problems/tsp/heuristics/local_search.h"
 
+namespace vroom {
+
 TSPLocalSearch::TSPLocalSearch(const Matrix<Cost>& matrix,
                                std::pair<bool, Index> avoid_start_relocate,
                                const std::list<Index>& tour,
@@ -776,3 +778,5 @@ std::list<Index> TSPLocalSearch::get_tour(Index first_index) const {
   }
   return tour;
 }
+
+} // namespace vroom

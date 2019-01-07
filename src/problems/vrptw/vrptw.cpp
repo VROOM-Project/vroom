@@ -28,6 +28,8 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/tw_route.h"
 #include "utils/helpers.h"
 
+namespace vroom {
+
 using TWSolution = std::vector<TWRoute>;
 
 using vrptwLocalSearch = LocalSearch<TWRoute,
@@ -118,3 +120,5 @@ Solution VRPTW::solve(unsigned exploration_level, unsigned nb_threads) const {
                          tw_solutions[std::distance(sol_indicators.cbegin(),
                                                     best_indic)]);
 }
+
+} // namespace vroom

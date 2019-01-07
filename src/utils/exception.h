@@ -12,6 +12,8 @@ All rights reserved (see LICENSE).
 
 #include <string>
 
+namespace vroom {
+
 class Exception : public std::exception {
 private:
   const std::string _message;
@@ -21,5 +23,7 @@ public:
 
   const std::string get_message() const;
 };
+
+} // namespace vroom
 
 #endif

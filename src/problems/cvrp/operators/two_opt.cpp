@@ -9,6 +9,8 @@ All rights reserved (see LICENSE).
 
 #include "problems/cvrp/operators/two_opt.h"
 
+namespace vroom {
+
 CVRPTwoOpt::CVRPTwoOpt(const Input& input,
                        const SolutionState& sol_state,
                        RawRoute& s_route,
@@ -117,3 +119,5 @@ std::vector<Index> CVRPTwoOpt::addition_candidates() const {
 std::vector<Index> CVRPTwoOpt::update_candidates() const {
   return {s_vehicle, t_vehicle};
 }
+
+} // namespace vroom

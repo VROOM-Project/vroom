@@ -9,6 +9,8 @@ All rights reserved (see LICENSE).
 
 #include "structures/cl_args.h"
 
+namespace vroom {
+
 const unsigned CLArgs::max_exploration_level = 5;
 
 // Default values.
@@ -21,3 +23,5 @@ CLArgs::CLArgs()
     osrm_profile("car"),
     exploration_level(5) {
 }
+
+} // namespace vroom

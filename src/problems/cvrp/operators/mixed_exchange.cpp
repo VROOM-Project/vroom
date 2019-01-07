@@ -9,6 +9,8 @@ All rights reserved (see LICENSE).
 
 #include "problems/cvrp/operators/mixed_exchange.h"
 
+namespace vroom {
+
 CVRPMixedExchange::CVRPMixedExchange(const Input& input,
                                      const SolutionState& sol_state,
                                      RawRoute& s_route,
@@ -166,3 +168,5 @@ std::vector<Index> CVRPMixedExchange::addition_candidates() const {
 std::vector<Index> CVRPMixedExchange::update_candidates() const {
   return {s_vehicle, t_vehicle};
 }
+
+} // namespace vroom

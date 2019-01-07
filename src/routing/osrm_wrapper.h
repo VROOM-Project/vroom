@@ -16,6 +16,8 @@ All rights reserved (see LICENSE).
 #include "structures/generic/matrix.h"
 #include "utils/exception.h"
 
+namespace vroom {
+
 class OSRMWrapper : public Routing<Cost> {
 
 protected:
@@ -63,5 +65,7 @@ protected:
 
   virtual void add_route_info(Route& route) const = 0;
 };
+
+} // namespace vroom
 
 #endif

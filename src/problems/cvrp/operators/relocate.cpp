@@ -10,6 +10,8 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/operators/relocate.h"
 #include "utils/helpers.h"
 
+namespace vroom {
+
 CVRPRelocate::CVRPRelocate(const Input& input,
                            const SolutionState& sol_state,
                            RawRoute& s_route,
@@ -78,3 +80,5 @@ std::vector<Index> CVRPRelocate::addition_candidates() const {
 std::vector<Index> CVRPRelocate::update_candidates() const {
   return {s_vehicle, t_vehicle};
 }
+
+} // namespace vroom

@@ -12,6 +12,8 @@ All rights reserved (see LICENSE).
 
 #include <string>
 
+namespace vroom {
+
 struct CLArgs {
   // Listing command-line options.
   std::string osrm_address;   // -a
@@ -29,5 +31,7 @@ struct CLArgs {
 
   CLArgs();
 };
+
+} // namespace vroom
 
 #endif

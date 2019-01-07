@@ -10,6 +10,8 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/operators/intra_or_opt.h"
 #include "utils/helpers.h"
 
+namespace vroom {
+
 CVRPIntraOrOpt::CVRPIntraOrOpt(const Input& input,
                                const SolutionState& sol_state,
                                RawRoute& s_route,
@@ -129,3 +131,5 @@ std::vector<Index> CVRPIntraOrOpt::addition_candidates() const {
 std::vector<Index> CVRPIntraOrOpt::update_candidates() const {
   return {s_vehicle};
 }
+
+} // namespace vroom

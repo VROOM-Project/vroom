@@ -9,6 +9,8 @@ All rights reserved (see LICENSE).
 
 #include "problems/vrptw/operators/intra_relocate.h"
 
+namespace vroom {
+
 vrptwIntraRelocate::vrptwIntraRelocate(const Input& input,
                                        const SolutionState& sol_state,
                                        TWRoute& tw_s_route,
@@ -57,3 +59,5 @@ void vrptwIntraRelocate::apply() {
 std::vector<Index> vrptwIntraRelocate::addition_candidates() const {
   return {s_vehicle};
 }
+
+} // namespace vroom

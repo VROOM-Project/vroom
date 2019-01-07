@@ -23,7 +23,7 @@ All rights reserved (see LICENSE).
 
 void display_usage() {
   std::string usage = "VROOM Copyright (C) 2015-2018, Julien Coupey\n";
-  usage += "Version: " + get_version() + "\n";
+  usage += "Version: " + vroom::get_version() + "\n";
   usage += "Usage:\n\tvroom [OPTION]... \"INPUT\"";
   usage += "\n\tvroom [OPTION]... -i FILE\n";
   usage += "Options:\n";
@@ -48,7 +48,7 @@ void display_usage() {
 
 int main(int argc, char** argv) {
   // Load default command-line options.
-  CLArgs cl_args;
+  vroom::CLArgs cl_args;
 
   // Parsing command-line arguments.
   const char* optString = "a:gi:lm:o:p:t:x:h?";
@@ -106,7 +106,7 @@ int main(int argc, char** argv) {
   } catch (const std::exception& e) {
     std::string message = "Wrong numerical value.";
     std::cerr << "[Error] " << message << std::endl;
-    write_to_json({1, message}, false, cl_args.output_file);
+    vroom::write_to_json({1, message}, false, cl_args.output_file);
     exit(1);
   }
 
@@ -127,16 +127,16 @@ int main(int argc, char** argv) {
 
   try {
     // Build problem.
-    Input problem_instance = parse(cl_args);
+    vroom::Input problem_instance = parse(cl_args);
 
-    Solution sol =
+    vroom::Solution sol =
       problem_instance.solve(cl_args.exploration_level, cl_args.nb_threads);
 
     // Write solution.
-    write_to_json(sol, cl_args.geometry, cl_args.output_file);
-  } catch (const Exception& e) {
+    vroom::write_to_json(sol, cl_args.geometry, cl_args.output_file);
+  } catch (const vroom::Exception& e) {
     std::cerr << "[Error] " << e.get_message() << std::endl;
-    write_to_json({1, e.get_message()}, false, cl_args.output_file);
+    vroom::write_to_json({1, e.get_message()}, false, cl_args.output_file);
     exit(1);
   }
 #if LIBOSRM

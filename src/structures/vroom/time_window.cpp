@@ -12,6 +12,8 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/time_window.h"
 #include "utils/exception.h"
 
+namespace vroom {
+
 constexpr Duration TimeWindow::default_length =
   std::numeric_limits<Duration>::max();
 
@@ -39,3 +41,5 @@ bool operator<(const TimeWindow& lhs, const TimeWindow& rhs) {
   return lhs.start < rhs.start or
          (lhs.start == rhs.start and lhs.end < rhs.end);
 }
+
+} // namespace vroom

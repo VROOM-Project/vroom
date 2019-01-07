@@ -15,6 +15,8 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/location.h"
 #include "structures/vroom/time_window.h"
 
+namespace vroom {
+
 struct Vehicle {
   const Id id;
   boost::optional<Location> start;
@@ -36,5 +38,7 @@ struct Vehicle {
 
   bool has_same_locations(const Vehicle& other) const;
 };
+
+} // namespace vroom
 
 #endif

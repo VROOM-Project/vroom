@@ -9,6 +9,8 @@ All rights reserved (see LICENSE).
 
 #include "problems/vrptw/operators/intra_cross_exchange.h"
 
+namespace vroom {
+
 vrptwIntraCrossExchange::vrptwIntraCrossExchange(const Input& input,
                                                  const SolutionState& sol_state,
                                                  TWRoute& tw_s_route,
@@ -142,3 +144,5 @@ void vrptwIntraCrossExchange::apply() {
 std::vector<Index> vrptwIntraCrossExchange::addition_candidates() const {
   return {s_vehicle};
 }
+
+} // namespace vroom

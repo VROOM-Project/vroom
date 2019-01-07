@@ -10,6 +10,8 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/operators/intra_cross_exchange.h"
 #include "utils/helpers.h"
 
+namespace vroom {
+
 CVRPIntraCrossExchange::CVRPIntraCrossExchange(const Input& input,
                                                const SolutionState& sol_state,
                                                RawRoute& s_route,
@@ -146,3 +148,5 @@ std::vector<Index> CVRPIntraCrossExchange::addition_candidates() const {
 std::vector<Index> CVRPIntraCrossExchange::update_candidates() const {
   return {s_vehicle};
 }
+
+} // namespace vroom

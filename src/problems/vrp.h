@@ -12,6 +12,8 @@ All rights reserved (see LICENSE).
 
 #include "structures/vroom/solution/solution.h"
 
+namespace vroom {
+
 class Input;
 
 class VRP {
@@ -27,5 +29,7 @@ public:
   virtual Solution solve(unsigned exploration_level,
                          unsigned nb_threads) const = 0;
 };
+
+} // namespace vroom
 
 #endif

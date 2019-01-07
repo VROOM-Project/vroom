@@ -15,6 +15,8 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/input/input.h"
 #include "structures/vroom/job.h"
 
+namespace vroom {
+
 class Clustering {
 private:
   const Input& _input;
@@ -36,5 +38,7 @@ public:
 
   Clustering(const Input& input, CLUSTERING t, INIT i, float c);
 };
+
+} // namespace vroom
 
 #endif

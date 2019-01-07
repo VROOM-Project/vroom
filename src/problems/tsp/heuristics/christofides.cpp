@@ -14,6 +14,8 @@ All rights reserved (see LICENSE).
 #include "algorithms/munkres.h"
 #include "problems/tsp/heuristics/christofides.h"
 
+namespace vroom {
+
 std::list<Index> christofides(const Matrix<Cost>& sym_matrix) {
   // The eulerian sub-graph further used is made of a minimum spanning
   // tree with a minimum weight perfect matching on its odd degree
@@ -162,3 +164,5 @@ std::list<Index> christofides(const Matrix<Cost>& sym_matrix) {
   }
   return tour;
 }
+
+} // namespace vroom

@@ -18,6 +18,8 @@ All rights reserved (see LICENSE).
 #include "utils/exception.h"
 #include "utils/helpers.h"
 
+namespace vroom {
+
 Input::Input(std::unique_ptr<Routing<Cost>> routing_wrapper, bool geometry)
   : _start_loading(std::chrono::high_resolution_clock::now()),
     _routing_wrapper(std::move(routing_wrapper)),
@@ -307,3 +309,5 @@ Solution Input::solve(unsigned exploration_level, unsigned nb_thread) {
 
   return sol;
 }
+
+} // namespace vroom

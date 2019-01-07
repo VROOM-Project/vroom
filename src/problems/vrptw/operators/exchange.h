@@ -13,6 +13,8 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/operators/exchange.h"
 #include "structures/vroom/tw_route.h"
 
+namespace vroom {
+
 class vrptwExchange : public CVRPExchange {
 private:
   TWRoute& _tw_s_route;
@@ -32,5 +34,7 @@ public:
 
   virtual void apply() override;
 };
+
+} // namespace vroom
 
 #endif

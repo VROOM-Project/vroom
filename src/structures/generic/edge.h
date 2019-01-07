@@ -12,6 +12,8 @@ All rights reserved (see LICENSE).
 
 #include "structures/typedefs.h"
 
+namespace vroom {
+
 template <class T> class Edge {
 
 private:
@@ -38,5 +40,7 @@ public:
     return _weight;
   };
 };
+
+} // namespace vroom
 
 #endif

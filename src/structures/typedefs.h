@@ -18,6 +18,8 @@ All rights reserved (see LICENSE).
 
 #include <boost/optional.hpp>
 
+namespace vroom {
+
 // To easily differentiate variable types.
 using Id = uint64_t;
 using Index = uint16_t;
@@ -38,7 +40,7 @@ using Skills = std::unordered_set<Skill>;
 constexpr Cost INFINITE_COST = 3 * (std::numeric_limits<Cost>::max() / 4);
 
 // Available location status.
-enum class TYPE { START, JOB, END };
+enum class STEP_TYPE { START, JOB, END };
 
 // Heuristic options.
 enum class HEURISTIC { BASIC, DYNAMIC };
@@ -70,5 +72,7 @@ struct HeuristicParameters {
       regret_coeff(regret_coeff) {
   }
 };
+
+} // namespace vroom
 
 #endif

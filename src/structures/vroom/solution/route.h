@@ -15,6 +15,8 @@ All rights reserved (see LICENSE).
 
 #include "structures/vroom/solution/step.h"
 
+namespace vroom {
+
 struct Route {
   const Id vehicle;
   std::vector<Step> steps;
@@ -35,5 +37,7 @@ struct Route {
         Duration waiting_time,
         const Amount& amount);
 };
+
+} // namespace vroom
 
 #endif

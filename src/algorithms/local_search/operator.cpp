@@ -9,6 +9,8 @@ All rights reserved (see LICENSE).
 
 #include "algorithms/local_search/operator.h"
 
+namespace vroom {
+
 Operator::Operator(const Input& input,
                    const SolutionState& sol_state,
                    RawRoute& s_raw_route,
@@ -34,3 +36,5 @@ Gain Operator::gain() {
   }
   return stored_gain;
 }
+
+} // namespace vroom

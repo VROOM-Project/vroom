@@ -12,6 +12,8 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/solution_state.h"
 #include "utils/helpers.h"
 
+namespace vroom {
+
 SolutionState::SolutionState(const Input& input)
   : _input(input),
     _m(_input.get_matrix()),
@@ -433,3 +435,5 @@ const Amount& SolutionState::total_amount(Index v) const {
     return _empty_amount;
   }
 }
+
+} // namespace vroom

@@ -9,6 +9,8 @@ All rights reserved (see LICENSE).
 
 #include "problems/vrptw/operators/exchange.h"
 
+namespace vroom {
+
 vrptwExchange::vrptwExchange(const Input& input,
                              const SolutionState& sol_state,
                              TWRoute& tw_s_route,
@@ -58,3 +60,5 @@ void vrptwExchange::apply() {
                       s_rank,
                       s_rank + 1);
 }
+
+} // namespace vroom

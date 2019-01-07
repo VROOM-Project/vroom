@@ -14,6 +14,8 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/input/input.h"
 #include "utils/helpers.h"
 
+namespace vroom {
+
 TSP::TSP(const Input& input, std::vector<Index> job_ranks, Index vehicle_rank)
   : VRP(input),
     _vehicle_rank(vehicle_rank),
@@ -270,3 +272,5 @@ RawSolution TSP::raw_solve(unsigned, unsigned nb_threads) const {
 Solution TSP::solve(unsigned, unsigned nb_threads) const {
   return format_solution(_input, raw_solve(0, nb_threads));
 }
+
+} // namespace vroom

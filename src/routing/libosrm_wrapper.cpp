@@ -15,6 +15,8 @@ All rights reserved (see LICENSE).
 
 #include "routing/libosrm_wrapper.h"
 
+namespace vroom {
+
 LibosrmWrapper::LibosrmWrapper(const std::string& osrm_profile)
   : osrm_wrapper(osrm_profile), _config(), _osrm(_config) {
 }
@@ -136,3 +138,5 @@ void LibosrmWrapper::add_route_info(Route& route) const {
     route.steps[i + 1].distance = round_cost(current_distance);
   }
 }
+
+} // namespace vroom

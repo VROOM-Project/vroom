@@ -9,6 +9,8 @@ All rights reserved (see LICENSE).
 
 #include "structures/vroom/location.h"
 
+namespace vroom {
+
 Location::Location(Index index)
   : _index(index), _coords(boost::none), _user_index(true) {
 }
@@ -53,3 +55,5 @@ bool Location::operator==(const Location& other) const {
          (this->has_coordinates() and other.has_coordinates() and
           (this->lon() == other.lon()) and (this->lat() == other.lat()));
 }
+
+} // namespace vroom

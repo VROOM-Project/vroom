@@ -14,6 +14,8 @@ All rights reserved (see LICENSE).
 
 #include "structures/typedefs.h"
 
+namespace vroom {
+
 template <typename E> class AmountExpression {
 public:
   Capacity operator[](size_t i) const {
@@ -176,5 +178,7 @@ auto operator-(const AmountExpression<E1>& lhs, const AmountExpression<E2>& rhs)
   -> AmountDiff<AmountExpression<E1>, AmountExpression<E2>> {
   return {lhs, rhs};
 }
+
+} // namespace vroom
 
 #endif

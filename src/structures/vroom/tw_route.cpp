@@ -9,6 +9,8 @@ All rights reserved (see LICENSE).
 
 #include "structures/vroom/tw_route.h"
 
+namespace vroom {
+
 TWRoute::TWRoute(const Input& input, Index i)
   : vehicle_rank(i),
     has_start(input.vehicles[i].has_start()),
@@ -684,3 +686,5 @@ template void TWRoute::replace(const Input& input,
                                std::vector<Index>::reverse_iterator last_job,
                                const Index first_rank,
                                const Index last_rank);
+
+} // namespace vroom

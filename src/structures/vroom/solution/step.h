@@ -13,8 +13,10 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/job.h"
 #include "structures/vroom/location.h"
 
+namespace vroom {
+
 struct Step {
-  const TYPE type;
+  const STEP_TYPE type;
   const Location location;
   const Id job;
   const Duration service;
@@ -25,9 +27,11 @@ struct Step {
   Duration waiting_time;
   Distance distance;
 
-  Step(TYPE type, Location location);
+  Step(STEP_TYPE type, Location location);
 
   Step(const Job& job);
 };
+
+} // namespace vroom
 
 #endif

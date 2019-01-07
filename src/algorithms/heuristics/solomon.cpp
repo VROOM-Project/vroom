@@ -16,6 +16,8 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/tw_route.h"
 #include "utils/helpers.h"
 
+namespace vroom {
+
 template <class T>
 T basic_heuristic(const Input& input, INIT init, float lambda) {
   T routes;
@@ -365,3 +367,5 @@ template TWSolution basic_heuristic(const Input& input,
 template TWSolution dynamic_vehicle_choice_heuristic(const Input& input,
                                                      INIT init,
                                                      float lambda);
+
+} // namespace vroom

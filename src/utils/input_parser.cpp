@@ -27,6 +27,8 @@ All rights reserved (see LICENSE).
 #include "utils/exception.h"
 #include "utils/input_parser.h"
 
+namespace vroom {
+
 // Helper to get optional array of coordinates.
 inline Coordinates parse_coordinates(const rapidjson::Value& object,
                                      const char* key) {
@@ -375,3 +377,5 @@ Input parse(const CLArgs& cl_args) {
 
   return input_data;
 }
+
+} // namespace vroom

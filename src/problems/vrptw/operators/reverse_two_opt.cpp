@@ -11,6 +11,8 @@ All rights reserved (see LICENSE).
 
 #include "problems/vrptw/operators/reverse_two_opt.h"
 
+namespace vroom {
+
 vrptwReverseTwoOpt::vrptwReverseTwoOpt(const Input& input,
                                        const SolutionState& sol_state,
                                        TWRoute& tw_s_route,
@@ -65,3 +67,5 @@ void vrptwReverseTwoOpt::apply() {
                       s_rank + 1,
                       s_route.size());
 }
+
+} // namespace vroom

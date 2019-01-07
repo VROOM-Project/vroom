@@ -16,6 +16,8 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/solution/route.h"
 #include "structures/vroom/solution/summary.h"
 
+namespace vroom {
+
 struct Solution {
   unsigned code;
   std::string error;
@@ -30,5 +32,7 @@ struct Solution {
            std::vector<Route>&& routes,
            std::vector<Job>&& unassigned);
 };
+
+} // namespace vroom
 
 #endif

@@ -15,6 +15,8 @@ All rights reserved (see LICENSE).
 #include "../include/rapidjson/document.h"
 #include "structures/vroom/solution/solution.h"
 
+namespace vroom {
+
 rapidjson::Document to_json(const Solution& sol, bool geometry);
 
 rapidjson::Value to_json(const Summary& summary,
@@ -39,5 +41,7 @@ rapidjson::Value to_json(const Location& loc,
 void write_to_json(const Solution& sol,
                    bool geometry,
                    const std::string& output_file);
+
+} // namespace vroom
 
 #endif

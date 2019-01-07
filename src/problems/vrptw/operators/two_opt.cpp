@@ -9,6 +9,8 @@ All rights reserved (see LICENSE).
 
 #include "problems/vrptw/operators/two_opt.h"
 
+namespace vroom {
+
 vrptwTwoOpt::vrptwTwoOpt(const Input& input,
                          const SolutionState& sol_state,
                          TWRoute& tw_s_route,
@@ -60,3 +62,5 @@ void vrptwTwoOpt::apply() {
                       s_rank + 1,
                       s_route.size());
 }
+
+} // namespace vroom

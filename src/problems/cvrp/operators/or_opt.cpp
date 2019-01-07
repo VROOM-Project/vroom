@@ -9,6 +9,8 @@ All rights reserved (see LICENSE).
 
 #include "problems/cvrp/operators/or_opt.h"
 
+namespace vroom {
+
 CVRPOrOpt::CVRPOrOpt(const Input& input,
                      const SolutionState& sol_state,
                      RawRoute& s_route,
@@ -158,3 +160,5 @@ std::vector<Index> CVRPOrOpt::addition_candidates() const {
 std::vector<Index> CVRPOrOpt::update_candidates() const {
   return {s_vehicle, t_vehicle};
 }
+
+} // namespace vroom

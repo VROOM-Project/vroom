@@ -13,6 +13,8 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/operators/intra_relocate.h"
 #include "structures/vroom/tw_route.h"
 
+namespace vroom {
+
 class vrptwIntraRelocate : public CVRPIntraRelocate {
 private:
   TWRoute& _tw_s_route;
@@ -35,5 +37,7 @@ public:
 
   virtual std::vector<Index> addition_candidates() const override;
 };
+
+} // namespace vroom
 
 #endif

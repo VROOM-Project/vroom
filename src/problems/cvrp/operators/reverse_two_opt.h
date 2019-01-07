@@ -12,6 +12,8 @@ All rights reserved (see LICENSE).
 
 #include "algorithms/local_search/operator.h"
 
+namespace vroom {
+
 class CVRPReverseTwoOpt : public Operator {
 protected:
   virtual void compute_gain() override;
@@ -34,5 +36,7 @@ public:
 
   virtual std::vector<Index> update_candidates() const override;
 };
+
+} // namespace vroom
 
 #endif

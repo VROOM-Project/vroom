@@ -12,6 +12,8 @@ All rights reserved (see LICENSE).
 
 #include "routing/osrm_wrapper.h"
 
+namespace vroom {
+
 class RoutedWrapper : public OSRMWrapper {
 
 private:
@@ -34,5 +36,7 @@ public:
 
   virtual void add_route_info(Route& route) const override;
 };
+
+} // namespace vroom
 
 #endif

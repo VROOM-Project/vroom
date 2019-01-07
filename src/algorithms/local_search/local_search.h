@@ -14,6 +14,8 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/solution_state.h"
 #include "structures/vroom/tw_route.h"
 
+namespace vroom {
+
 template <class Route,
           class Exchange,
           class CrossExchange,
@@ -61,5 +63,7 @@ public:
 
   void run();
 };
+
+} // namespace vroom
 
 #endif

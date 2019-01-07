@@ -18,6 +18,8 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/raw_route.h"
 #include "structures/vroom/tw_route.h"
 
+namespace vroom {
+
 using RawSolution = std::vector<RawRoute>;
 using TWSolution = std::vector<TWRoute>;
 
@@ -135,5 +137,7 @@ public:
 
   const Amount& total_amount(Index v) const;
 };
+
+} // namespace vroom
 
 #endif

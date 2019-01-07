@@ -12,6 +12,8 @@ All rights reserved (see LICENSE).
 
 #include "algorithms/local_search/operator.h"
 
+namespace vroom {
+
 class CVRPIntraCrossExchange : public Operator {
 protected:
   Gain normal_s_gain;
@@ -40,5 +42,7 @@ public:
 
   virtual std::vector<Index> update_candidates() const override;
 };
+
+} // namespace vroom
 
 #endif

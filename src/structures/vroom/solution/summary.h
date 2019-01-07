@@ -13,6 +13,8 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/amount.h"
 #include "structures/vroom/solution/computing_times.h"
 
+namespace vroom {
+
 struct Summary {
   Cost cost;
   const unsigned unassigned;
@@ -28,5 +30,7 @@ struct Summary {
 
   Summary(unsigned unassigned, unsigned amount_size);
 };
+
+} // namespace vroom
 
 #endif

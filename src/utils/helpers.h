@@ -15,6 +15,8 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/tw_route.h"
 #include "utils/exception.h"
 
+namespace vroom {
+
 using RawSolution = std::vector<RawRoute>;
 using TWSolution = std::vector<TWRoute>;
 
@@ -133,7 +135,7 @@ inline Solution format_solution(const Input& input,
     Duration ETA = 0;
     // Handle start.
     if (v.has_start()) {
-      steps.emplace_back(TYPE::START, v.start.get());
+      steps.emplace_back(STEP_TYPE::START, v.start.get());
       steps.back().duration = 0;
       steps.back().arrival = 0;
       auto travel = m[v.start.get().index()][input.jobs[route.front()].index()];
@@ -174,7 +176,7 @@ inline Solution format_solution(const Input& input,
 
     // Handle end.
     if (v.has_end()) {
-      steps.emplace_back(TYPE::END, v.end.get());
+      steps.emplace_back(STEP_TYPE::END, v.end.get());
       Duration travel =
         m[input.jobs[route.back()].index()][v.end.get().index()];
       ETA += travel;
@@ -249,7 +251,7 @@ inline Solution format_solution(const Input& input,
 
     // Now pack everything ASAP based on first job start date.
     if (v.has_start()) {
-      steps.emplace_back(TYPE::START, v.start.get());
+      steps.emplace_back(STEP_TYPE::START, v.start.get());
       steps.back().duration = 0;
 
       const auto& first_job = input.jobs[tw_r.route[0]];
@@ -306,7 +308,7 @@ inline Solution format_solution(const Input& input,
       Duration travel = m[last_job.index()][v.end.get().index()];
       cost += travel;
 
-      steps.emplace_back(TYPE::END, v.end.get());
+      steps.emplace_back(STEP_TYPE::END, v.end.get());
       steps.back().duration = cost;
 
       Duration v_end = job_start + last_job.service + travel;
@@ -341,5 +343,7 @@ inline Solution format_solution(const Input& input,
                   std::move(routes),
                   std::move(unassigned_jobs));
 }
+
+} // namespace vroom
 
 #endif

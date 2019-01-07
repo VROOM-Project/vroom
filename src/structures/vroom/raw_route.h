@@ -15,6 +15,8 @@ All rights reserved (see LICENSE).
 #include "structures/typedefs.h"
 #include "structures/vroom/input/input.h"
 
+namespace vroom {
+
 class RawRoute {
 public:
   std::vector<Index> route;
@@ -49,5 +51,7 @@ public:
     route.erase(route.begin() + rank, route.begin() + rank + count);
   };
 };
+
+} // namespace vroom
 
 #endif

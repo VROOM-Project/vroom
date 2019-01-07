@@ -16,6 +16,8 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/input/input.h"
 #include "structures/vroom/raw_route.h"
 
+namespace vroom {
+
 class TWRoute : public RawRoute {
 private:
   // Compute new earliest and latest date for job at job_rank when
@@ -100,5 +102,7 @@ public:
                const Index first_rank,
                const Index last_rank);
 };
+
+} // namespace vroom
 
 #endif

@@ -15,6 +15,8 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/raw_route.h"
 #include "structures/vroom/solution_state.h"
 
+namespace vroom {
+
 class Operator {
 protected:
   const Input& _input;
@@ -57,5 +59,7 @@ public:
   virtual ~Operator() {
   }
 };
+
+} // namespace vroom
 
 #endif

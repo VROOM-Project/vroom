@@ -12,6 +12,8 @@ All rights reserved (see LICENSE).
 
 #include "structures/typedefs.h"
 
+namespace vroom {
+
 class Location {
 private:
   // Index of this location in the matrix.
@@ -45,5 +47,7 @@ public:
   // explicit index provided in input.
   bool operator==(const Location& other) const;
 };
+
+} // namespace vroom
 
 #endif

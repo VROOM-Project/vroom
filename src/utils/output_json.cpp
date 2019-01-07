@@ -16,6 +16,8 @@ All rights reserved (see LICENSE).
 #include "utils/output_json.h"
 #include "utils/version.h"
 
+namespace vroom {
+
 rapidjson::Document to_json(const Solution& sol, bool geometry) {
   rapidjson::Document json_output;
   json_output.SetObject();
@@ -150,13 +152,13 @@ rapidjson::Value to_json(const Step& s,
   json_step.AddMember("type", rapidjson::Value(), allocator);
   std::string str_type;
   switch (s.type) {
-  case TYPE::START:
+  case STEP_TYPE::START:
     str_type = "start";
     break;
-  case TYPE::END:
+  case STEP_TYPE::END:
     str_type = "end";
     break;
-  case TYPE::JOB:
+  case STEP_TYPE::JOB:
     str_type = "job";
     break;
   }
@@ -166,7 +168,7 @@ rapidjson::Value to_json(const Step& s,
     json_step.AddMember("location", to_json(s.location, allocator), allocator);
   }
 
-  if (s.type == TYPE::JOB) {
+  if (s.type == STEP_TYPE::JOB) {
     json_step.AddMember("job", s.job, allocator);
     json_step.AddMember("service", s.service, allocator);
     json_step.AddMember("waiting_time", s.waiting_time, allocator);
@@ -213,3 +215,5 @@ void write_to_json(const Solution& sol,
     out_stream.close();
   }
 }
+
+} // namespace vroom

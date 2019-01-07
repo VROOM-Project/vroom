@@ -14,6 +14,8 @@ All rights reserved (see LICENSE).
 
 #include "problems/vrp.h"
 
+namespace vroom {
+
 class VRPTW : public VRP {
 private:
   static constexpr std::array<HeuristicParameters, 32> homogeneous_parameters =
@@ -105,5 +107,7 @@ public:
   virtual Solution solve(unsigned exploration_level,
                          unsigned nb_threads) const override;
 };
+
+} // namespace vroom
 
 #endif

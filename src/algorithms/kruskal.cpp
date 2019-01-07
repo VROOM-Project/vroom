@@ -15,6 +15,8 @@ All rights reserved (see LICENSE).
 #include "structures/generic/edge.h"
 #include "structures/typedefs.h"
 
+namespace vroom {
+
 template <class T>
 UndirectedGraph<T> minimum_spanning_tree(const UndirectedGraph<T>& graph) {
   // We just need the edges from original graph.
@@ -62,3 +64,5 @@ UndirectedGraph<T> minimum_spanning_tree(const UndirectedGraph<T>& graph) {
 
 template UndirectedGraph<Cost>
 minimum_spanning_tree(const UndirectedGraph<Cost>& graph);
+
+} // namespace vroom

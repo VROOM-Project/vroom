@@ -10,6 +10,8 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/operators/intra_mixed_exchange.h"
 #include "utils/helpers.h"
 
+namespace vroom {
+
 CVRPIntraMixedExchange::CVRPIntraMixedExchange(const Input& input,
                                                const SolutionState& sol_state,
                                                RawRoute& s_route,
@@ -153,3 +155,5 @@ std::vector<Index> CVRPIntraMixedExchange::addition_candidates() const {
 std::vector<Index> CVRPIntraMixedExchange::update_candidates() const {
   return {s_vehicle};
 }
+
+} // namespace vroom
