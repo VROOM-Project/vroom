@@ -13,7 +13,7 @@ All rights reserved (see LICENSE).
 namespace vroom {
 
 CVRPIntraRelocate::CVRPIntraRelocate(const Input& input,
-                                     const SolutionState& sol_state,
+                                     const utils::SolutionState& sol_state,
                                      RawRoute& s_route,
                                      Index s_vehicle,
                                      Index s_rank,
@@ -45,8 +45,12 @@ void CVRPIntraRelocate::compute_gain() {
   if (s_rank < t_rank) {
     ++new_rank;
   }
-  Gain t_gain =
-    -addition_cost(_input, m, s_route[s_rank], v_target, t_route, new_rank);
+  Gain t_gain = -utils::addition_cost(_input,
+                                      m,
+                                      s_route[s_rank],
+                                      v_target,
+                                      t_route,
+                                      new_rank);
 
   stored_gain = _sol_state.node_gains[s_vehicle][s_rank] + t_gain;
   gain_computed = true;

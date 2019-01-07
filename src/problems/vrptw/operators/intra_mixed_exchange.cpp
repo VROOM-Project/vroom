@@ -11,12 +11,13 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
-vrptwIntraMixedExchange::vrptwIntraMixedExchange(const Input& input,
-                                                 const SolutionState& sol_state,
-                                                 TWRoute& tw_s_route,
-                                                 Index s_vehicle,
-                                                 Index s_rank,
-                                                 Index t_rank)
+vrptwIntraMixedExchange::vrptwIntraMixedExchange(
+  const Input& input,
+  const utils::SolutionState& sol_state,
+  TWRoute& tw_s_route,
+  Index s_vehicle,
+  Index s_rank,
+  Index t_rank)
   : CVRPIntraMixedExchange(input,
                            sol_state,
                            static_cast<RawRoute&>(tw_s_route),

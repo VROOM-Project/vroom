@@ -22,10 +22,10 @@ std::list<Index> christofides(const Matrix<Cost>& sym_matrix) {
   // vertices.
 
   // Compute symmetric graph from the matrix.
-  auto sym_graph = UndirectedGraph<Cost>(sym_matrix);
+  auto sym_graph = utils::UndirectedGraph<Cost>(sym_matrix);
 
   // Work on a minimum spanning tree seen as a graph.
-  auto mst_graph = minimum_spanning_tree(sym_graph);
+  auto mst_graph = utils::minimum_spanning_tree(sym_graph);
 
   // Getting minimum spanning tree of associated graph under the form
   // of an adjacency list.
@@ -45,7 +45,7 @@ std::list<Index> christofides(const Matrix<Cost>& sym_matrix) {
 
   // Computing minimum weight perfect matching.
   std::unordered_map<Index, Index> mwpm =
-    minimum_weight_perfect_matching(sub_matrix);
+    utils::minimum_weight_perfect_matching(sub_matrix);
 
   // Storing those edges from mwpm that are coherent regarding
   // symmetry (y -> x whenever x -> y). Remembering the rest of them
@@ -66,7 +66,8 @@ std::list<Index> christofides(const Matrix<Cost>& sym_matrix) {
 
   if (!wrong_vertices.empty()) {
     std::unordered_map<Index, Index> remaining_greedy_mwpm =
-      greedy_symmetric_approx_mwpm(sub_matrix.get_sub_matrix(wrong_vertices));
+      utils::greedy_symmetric_approx_mwpm(
+        sub_matrix.get_sub_matrix(wrong_vertices));
 
     // Adding edges obtained with greedy algo for the missing vertices
     // in mwpm_final.
@@ -79,7 +80,7 @@ std::list<Index> christofides(const Matrix<Cost>& sym_matrix) {
   }
 
   // Building eulerian graph.
-  std::vector<Edge<Cost>> eulerian_graph_edges = mst_graph.get_edges();
+  std::vector<utils::Edge<Cost>> eulerian_graph_edges = mst_graph.get_edges();
 
   // Adding edges from minimum weight perfect matching (with the
   // original vertices index). Edges appear twice in matching so we
@@ -97,7 +98,7 @@ std::list<Index> christofides(const Matrix<Cost>& sym_matrix) {
   }
 
   // Building Eulerian graph from the edges.
-  UndirectedGraph<Cost> eulerian_graph(eulerian_graph_edges);
+  utils::UndirectedGraph<Cost> eulerian_graph(eulerian_graph_edges);
   assert(eulerian_graph.size() >= 2);
 
   // Hierholzer's algorithm: building and joining closed tours with

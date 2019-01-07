@@ -13,6 +13,7 @@ All rights reserved (see LICENSE).
 #include "structures/typedefs.h"
 
 namespace vroom {
+namespace utils {
 
 template <class T> class Edge {
 
@@ -41,6 +42,7 @@ public:
   };
 };
 
+} // namespace utils
 } // namespace vroom
 
 #endif

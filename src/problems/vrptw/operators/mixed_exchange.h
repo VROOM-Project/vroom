@@ -27,7 +27,7 @@ private:
 
 public:
   vrptwMixedExchange(const Input& input,
-                     const SolutionState& sol_state,
+                     const utils::SolutionState& sol_state,
                      TWRoute& tw_s_route,
                      Index s_vehicle,
                      Index s_rank,

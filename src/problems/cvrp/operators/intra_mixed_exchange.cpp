@@ -12,12 +12,13 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
-CVRPIntraMixedExchange::CVRPIntraMixedExchange(const Input& input,
-                                               const SolutionState& sol_state,
-                                               RawRoute& s_route,
-                                               Index s_vehicle,
-                                               Index s_rank,
-                                               Index t_rank)
+CVRPIntraMixedExchange::CVRPIntraMixedExchange(
+  const Input& input,
+  const utils::SolutionState& sol_state,
+  RawRoute& s_route,
+  Index s_vehicle,
+  Index s_rank,
+  Index t_rank)
   : Operator(input,
              sol_state,
              s_route,

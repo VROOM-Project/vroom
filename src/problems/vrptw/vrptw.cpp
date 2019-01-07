@@ -69,7 +69,7 @@ Solution VRPTW::solve(unsigned exploration_level, unsigned nb_threads) const {
   assert(nb_init_solutions <= parameters.size());
 
   std::vector<TWSolution> tw_solutions(nb_init_solutions);
-  std::vector<SolutionIndicators> sol_indicators(nb_init_solutions);
+  std::vector<utils::SolutionIndicators> sol_indicators(nb_init_solutions);
 
   // Split the work among threads.
   std::vector<std::vector<std::size_t>>
@@ -116,9 +116,10 @@ Solution VRPTW::solve(unsigned exploration_level, unsigned nb_threads) const {
   auto best_indic =
     std::min_element(sol_indicators.cbegin(), sol_indicators.cend());
 
-  return format_solution(_input,
-                         tw_solutions[std::distance(sol_indicators.cbegin(),
-                                                    best_indic)]);
+  return utils::format_solution(_input,
+                                tw_solutions[std::distance(sol_indicators
+                                                             .cbegin(),
+                                                           best_indic)]);
 }
 
 } // namespace vroom

@@ -128,8 +128,12 @@ T basic_heuristic(const Input& input, INIT init, float lambda) {
         }
 
         for (Index r = 0; r <= current_r.size(); ++r) {
-          float current_add =
-            addition_cost(input, m, job_rank, vehicle, current_r.route, r);
+          float current_add = utils::addition_cost(input,
+                                                   m,
+                                                   job_rank,
+                                                   vehicle,
+                                                   current_r.route,
+                                                   r);
 
           float current_cost =
             current_add - lambda * static_cast<float>(costs[job_rank]);
@@ -322,8 +326,12 @@ T dynamic_vehicle_choice_heuristic(const Input& input,
         }
 
         for (Index r = 0; r <= current_r.size(); ++r) {
-          float current_add =
-            addition_cost(input, m, job_rank, vehicle, current_r.route, r);
+          float current_add = utils::addition_cost(input,
+                                                   m,
+                                                   job_rank,
+                                                   vehicle,
+                                                   current_r.route,
+                                                   r);
 
           float current_cost =
             current_add - lambda * static_cast<float>(regrets[job_rank]);

@@ -40,7 +40,7 @@ private:
   const unsigned _max_nb_jobs_removal;
   std::vector<Index> _all_routes;
 
-  SolutionState _sol_state;
+  utils::SolutionState _sol_state;
 
   std::vector<Route> _sol;
 
@@ -59,7 +59,7 @@ public:
               std::vector<Route>& tw_sol,
               unsigned max_nb_jobs_removal);
 
-  SolutionIndicators indicators() const;
+  utils::SolutionIndicators indicators() const;
 
   void run();
 };

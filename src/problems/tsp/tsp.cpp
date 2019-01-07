@@ -270,7 +270,7 @@ RawSolution TSP::raw_solve(unsigned, unsigned nb_threads) const {
 }
 
 Solution TSP::solve(unsigned, unsigned nb_threads) const {
-  return format_solution(_input, raw_solve(0, nb_threads));
+  return utils::format_solution(_input, raw_solve(0, nb_threads));
 }
 
 } // namespace vroom

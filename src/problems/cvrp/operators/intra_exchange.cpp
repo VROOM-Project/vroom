@@ -13,7 +13,7 @@ All rights reserved (see LICENSE).
 namespace vroom {
 
 CVRPIntraExchange::CVRPIntraExchange(const Input& input,
-                                     const SolutionState& sol_state,
+                                     const utils::SolutionState& sol_state,
                                      RawRoute& s_route,
                                      Index s_vehicle,
                                      Index s_rank,

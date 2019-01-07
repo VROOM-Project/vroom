@@ -16,6 +16,7 @@ All rights reserved (see LICENSE).
 #include "structures/typedefs.h"
 
 namespace vroom {
+namespace utils {
 
 template <class T>
 UndirectedGraph<T> minimum_spanning_tree(const UndirectedGraph<T>& graph) {
@@ -65,4 +66,5 @@ UndirectedGraph<T> minimum_spanning_tree(const UndirectedGraph<T>& graph) {
 template UndirectedGraph<Cost>
 minimum_spanning_tree(const UndirectedGraph<Cost>& graph);
 
+} // namespace utils
 } // namespace vroom

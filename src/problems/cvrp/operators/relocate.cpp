@@ -13,7 +13,7 @@ All rights reserved (see LICENSE).
 namespace vroom {
 
 CVRPRelocate::CVRPRelocate(const Input& input,
-                           const SolutionState& sol_state,
+                           const utils::SolutionState& sol_state,
                            RawRoute& s_route,
                            Index s_vehicle,
                            Index s_rank,
@@ -44,7 +44,8 @@ void CVRPRelocate::compute_gain() {
 
   // For target vehicle, we consider the cost of adding source job at
   // rank t_rank.
-  Gain t_gain = -addition_cost(_input, m, s_route[s_rank], v, t_route, t_rank);
+  Gain t_gain =
+    -utils::addition_cost(_input, m, s_route[s_rank], v, t_route, t_rank);
 
   stored_gain = _sol_state.node_gains[s_vehicle][s_rank] + t_gain;
   gain_computed = true;

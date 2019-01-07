@@ -87,7 +87,7 @@ LocalSearch<Route,
   Index v_rank = 0;
   _best_cost =
     std::accumulate(_sol.begin(), _sol.end(), 0, [&](auto sum, auto r) {
-      return sum + route_cost_for_vehicle(_input, v_rank++, r.route);
+      return sum + utils::route_cost_for_vehicle(_input, v_rank++, r.route);
     });
 }
 
@@ -142,8 +142,12 @@ void LocalSearch<Route,
             v_amount + current_amount <= _input.vehicles[v].capacity) {
           for (std::size_t r = 0; r <= _sol[v].size(); ++r) {
             if (_sol[v].is_valid_addition_for_tw(_input, j, r)) {
-              Gain current_cost =
-                addition_cost(_input, _matrix, j, v_target, _sol[v].route, r);
+              Gain current_cost = utils::addition_cost(_input,
+                                                       _matrix,
+                                                       j,
+                                                       v_target,
+                                                       _sol[v].route,
+                                                       r);
 
               if (current_cost < best_costs[i]) {
                 best_costs[i] = current_cost;
@@ -750,7 +754,7 @@ void LocalSearch<Route,
     Index v_rank = 0;
     Cost current_cost =
       std::accumulate(_sol.begin(), _sol.end(), 0, [&](auto sum, auto r) {
-        return sum + route_cost_for_vehicle(_input, v_rank++, r.route);
+        return sum + utils::route_cost_for_vehicle(_input, v_rank++, r.route);
       });
 
     bool solution_improved =
@@ -927,20 +931,20 @@ template <class Route,
           class IntraMixedExchange,
           class IntraRelocate,
           class IntraOrOpt>
-SolutionIndicators LocalSearch<Route,
-                               Exchange,
-                               CrossExchange,
-                               MixedExchange,
-                               TwoOpt,
-                               ReverseTwoOpt,
-                               Relocate,
-                               OrOpt,
-                               IntraExchange,
-                               IntraCrossExchange,
-                               IntraMixedExchange,
-                               IntraRelocate,
-                               IntraOrOpt>::indicators() const {
-  SolutionIndicators si;
+utils::SolutionIndicators LocalSearch<Route,
+                                      Exchange,
+                                      CrossExchange,
+                                      MixedExchange,
+                                      TwoOpt,
+                                      ReverseTwoOpt,
+                                      Relocate,
+                                      OrOpt,
+                                      IntraExchange,
+                                      IntraCrossExchange,
+                                      IntraMixedExchange,
+                                      IntraRelocate,
+                                      IntraOrOpt>::indicators() const {
+  utils::SolutionIndicators si;
 
   si.unassigned = _best_unassigned;
   si.cost = _best_cost;

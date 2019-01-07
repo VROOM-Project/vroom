@@ -11,6 +11,7 @@ All rights reserved (see LICENSE).
 #include "structures/generic/edge.h"
 
 namespace vroom {
+namespace utils {
 
 template <class T>
 Edge<T>::Edge(Index first_vertex, Index second_vertex, T weight)
@@ -32,4 +33,5 @@ template <class T> bool Edge<T>::operator==(const Edge& rhs) const {
 
 template class Edge<Cost>;
 
+} // namespace utils
 } // namespace vroom

@@ -13,6 +13,7 @@ All rights reserved (see LICENSE).
 #include "utils/helpers.h"
 
 namespace vroom {
+namespace utils {
 
 SolutionState::SolutionState(const Input& input)
   : _input(input),
@@ -436,4 +437,5 @@ const Amount& SolutionState::total_amount(Index v) const {
   }
 }
 
+} // namespace utils
 } // namespace vroom

@@ -20,7 +20,7 @@ namespace vroom {
 class Operator {
 protected:
   const Input& _input;
-  const SolutionState& _sol_state;
+  const utils::SolutionState& _sol_state;
 
   // Source of move for this operator.
   std::vector<Index>& s_route;
@@ -38,7 +38,7 @@ protected:
 
 public:
   Operator(const Input& input,
-           const SolutionState& sol_state,
+           const utils::SolutionState& sol_state,
            RawRoute& s_route,
            Index s_vehicle,
            Index s_rank,

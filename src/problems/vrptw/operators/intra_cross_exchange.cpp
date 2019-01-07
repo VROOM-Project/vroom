@@ -11,12 +11,13 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
-vrptwIntraCrossExchange::vrptwIntraCrossExchange(const Input& input,
-                                                 const SolutionState& sol_state,
-                                                 TWRoute& tw_s_route,
-                                                 Index s_vehicle,
-                                                 Index s_rank,
-                                                 Index t_rank)
+vrptwIntraCrossExchange::vrptwIntraCrossExchange(
+  const Input& input,
+  const utils::SolutionState& sol_state,
+  TWRoute& tw_s_route,
+  Index s_vehicle,
+  Index s_rank,
+  Index t_rank)
   : CVRPIntraCrossExchange(input,
                            sol_state,
                            static_cast<RawRoute&>(tw_s_route),

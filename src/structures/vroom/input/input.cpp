@@ -195,9 +195,11 @@ void Input::check_cost_bound() const {
   Cost jobs_arrival_bound = 0;
   for (const auto& j : jobs) {
     jobs_departure_bound =
-      add_without_overflow(jobs_departure_bound, max_cost_per_line[j.index()]);
+      utils::add_without_overflow(jobs_departure_bound,
+                                  max_cost_per_line[j.index()]);
     jobs_arrival_bound =
-      add_without_overflow(jobs_arrival_bound, max_cost_per_column[j.index()]);
+      utils::add_without_overflow(jobs_arrival_bound,
+                                  max_cost_per_column[j.index()]);
   }
 
   Cost jobs_bound = std::max(jobs_departure_bound, jobs_arrival_bound);
@@ -207,18 +209,18 @@ void Input::check_cost_bound() const {
   for (const auto& v : vehicles) {
     if (v.has_start()) {
       start_bound =
-        add_without_overflow(start_bound,
-                             max_cost_per_line[v.start.get().index()]);
+        utils::add_without_overflow(start_bound,
+                                    max_cost_per_line[v.start.get().index()]);
     }
     if (v.has_end()) {
       end_bound =
-        add_without_overflow(end_bound,
-                             max_cost_per_column[v.end.get().index()]);
+        utils::add_without_overflow(end_bound,
+                                    max_cost_per_column[v.end.get().index()]);
     }
   }
 
-  Cost bound = add_without_overflow(start_bound, jobs_bound);
-  bound = add_without_overflow(bound, end_bound);
+  Cost bound = utils::add_without_overflow(start_bound, jobs_bound);
+  bound = utils::add_without_overflow(bound, end_bound);
 }
 
 void Input::set_vehicle_to_job_compatibility() {
