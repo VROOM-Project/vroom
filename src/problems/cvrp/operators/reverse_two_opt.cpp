@@ -10,15 +10,16 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/operators/reverse_two_opt.h"
 
 namespace vroom {
+namespace cvrp {
 
-CVRPReverseTwoOpt::CVRPReverseTwoOpt(const Input& input,
-                                     const utils::SolutionState& sol_state,
-                                     RawRoute& s_route,
-                                     Index s_vehicle,
-                                     Index s_rank,
-                                     RawRoute& t_route,
-                                     Index t_vehicle,
-                                     Index t_rank)
+ReverseTwoOpt::ReverseTwoOpt(const Input& input,
+                             const utils::SolutionState& sol_state,
+                             RawRoute& s_route,
+                             Index s_vehicle,
+                             Index s_rank,
+                             RawRoute& t_route,
+                             Index t_vehicle,
+                             Index t_rank)
   : Operator(input,
              sol_state,
              s_route,
@@ -34,7 +35,7 @@ CVRPReverseTwoOpt::CVRPReverseTwoOpt(const Input& input,
   assert(t_rank < t_route.size());
 }
 
-void CVRPReverseTwoOpt::compute_gain() {
+void ReverseTwoOpt::compute_gain() {
   const auto& m = _input.get_matrix();
   const auto& v_source = _input.vehicles[s_vehicle];
   const auto& v_target = _input.vehicles[t_vehicle];
@@ -125,7 +126,7 @@ void CVRPReverseTwoOpt::compute_gain() {
   gain_computed = true;
 }
 
-bool CVRPReverseTwoOpt::is_valid() {
+bool ReverseTwoOpt::is_valid() {
   bool valid = (_sol_state.bwd_skill_rank[s_vehicle][t_vehicle] <= s_rank + 1);
 
   valid &= (t_rank < _sol_state.fwd_skill_rank[t_vehicle][s_vehicle]);
@@ -140,7 +141,7 @@ bool CVRPReverseTwoOpt::is_valid() {
   return valid;
 }
 
-void CVRPReverseTwoOpt::apply() {
+void ReverseTwoOpt::apply() {
   auto nb_source = s_route.size() - 1 - s_rank;
 
   t_route.insert(t_route.begin(),
@@ -154,12 +155,13 @@ void CVRPReverseTwoOpt::apply() {
                 t_route.begin() + nb_source + t_rank + 1);
 }
 
-std::vector<Index> CVRPReverseTwoOpt::addition_candidates() const {
+std::vector<Index> ReverseTwoOpt::addition_candidates() const {
   return {s_vehicle, t_vehicle};
 }
 
-std::vector<Index> CVRPReverseTwoOpt::update_candidates() const {
+std::vector<Index> ReverseTwoOpt::update_candidates() const {
   return {s_vehicle, t_vehicle};
 }
 
+} // namespace cvrp
 } // namespace vroom

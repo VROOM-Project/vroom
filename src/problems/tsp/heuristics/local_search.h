@@ -17,8 +17,9 @@ All rights reserved (see LICENSE).
 #include "structures/typedefs.h"
 
 namespace vroom {
+namespace tsp {
 
-class TSPLocalSearch {
+class LocalSearch {
 private:
   const Matrix<Cost>& _matrix;
   const std::pair<bool, Index> _avoid_start_relocate;
@@ -28,10 +29,10 @@ private:
   std::vector<Index> _sym_two_opt_rank_limits;
 
 public:
-  TSPLocalSearch(const Matrix<Cost>& matrix,
-                 std::pair<bool, Index> avoid_start_relocate,
-                 const std::list<Index>& tour,
-                 unsigned nb_threads);
+  LocalSearch(const Matrix<Cost>& matrix,
+              std::pair<bool, Index> avoid_start_relocate,
+              const std::list<Index>& tour,
+              unsigned nb_threads);
 
   Cost relocate_step();
 
@@ -56,6 +57,7 @@ public:
   std::list<Index> get_tour(Index first_index) const;
 };
 
+} // namespace tsp
 } // namespace vroom
 
 #endif

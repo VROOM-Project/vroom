@@ -38,6 +38,7 @@ All rights reserved (see LICENSE).
 #include "utils/helpers.h"
 
 namespace vroom {
+namespace ls {
 
 template <class Route,
           class Exchange,
@@ -955,31 +956,32 @@ utils::SolutionIndicators LocalSearch<Route,
 }
 
 template class LocalSearch<TWRoute,
-                           vrptwExchange,
-                           vrptwCrossExchange,
-                           vrptwMixedExchange,
-                           vrptwTwoOpt,
-                           vrptwReverseTwoOpt,
-                           vrptwRelocate,
-                           vrptwOrOpt,
-                           vrptwIntraExchange,
-                           vrptwIntraCrossExchange,
-                           vrptwIntraMixedExchange,
-                           vrptwIntraRelocate,
-                           vrptwIntraOrOpt>;
+                           vrptw::Exchange,
+                           vrptw::CrossExchange,
+                           vrptw::MixedExchange,
+                           vrptw::TwoOpt,
+                           vrptw::ReverseTwoOpt,
+                           vrptw::Relocate,
+                           vrptw::OrOpt,
+                           vrptw::IntraExchange,
+                           vrptw::IntraCrossExchange,
+                           vrptw::IntraMixedExchange,
+                           vrptw::IntraRelocate,
+                           vrptw::IntraOrOpt>;
 
 template class LocalSearch<RawRoute,
-                           CVRPExchange,
-                           CVRPCrossExchange,
-                           CVRPMixedExchange,
-                           CVRPTwoOpt,
-                           CVRPReverseTwoOpt,
-                           CVRPRelocate,
-                           CVRPOrOpt,
-                           CVRPIntraExchange,
-                           CVRPIntraCrossExchange,
-                           CVRPIntraMixedExchange,
-                           CVRPIntraRelocate,
-                           CVRPIntraOrOpt>;
+                           cvrp::Exchange,
+                           cvrp::CrossExchange,
+                           cvrp::MixedExchange,
+                           cvrp::TwoOpt,
+                           cvrp::ReverseTwoOpt,
+                           cvrp::Relocate,
+                           cvrp::OrOpt,
+                           cvrp::IntraExchange,
+                           cvrp::IntraCrossExchange,
+                           cvrp::IntraMixedExchange,
+                           cvrp::IntraRelocate,
+                           cvrp::IntraOrOpt>;
 
+} // namespace ls
 } // namespace vroom

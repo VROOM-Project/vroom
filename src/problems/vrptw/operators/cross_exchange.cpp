@@ -10,23 +10,24 @@ All rights reserved (see LICENSE).
 #include "problems/vrptw/operators/cross_exchange.h"
 
 namespace vroom {
+namespace vrptw {
 
-vrptwCrossExchange::vrptwCrossExchange(const Input& input,
-                                       const utils::SolutionState& sol_state,
-                                       TWRoute& tw_s_route,
-                                       Index s_vehicle,
-                                       Index s_rank,
-                                       TWRoute& tw_t_route,
-                                       Index t_vehicle,
-                                       Index t_rank)
-  : CVRPCrossExchange(input,
-                      sol_state,
-                      static_cast<RawRoute&>(tw_s_route),
-                      s_vehicle,
-                      s_rank,
-                      static_cast<RawRoute&>(tw_t_route),
-                      t_vehicle,
-                      t_rank),
+CrossExchange::CrossExchange(const Input& input,
+                             const utils::SolutionState& sol_state,
+                             TWRoute& tw_s_route,
+                             Index s_vehicle,
+                             Index s_rank,
+                             TWRoute& tw_t_route,
+                             Index t_vehicle,
+                             Index t_rank)
+  : cvrp::CrossExchange(input,
+                        sol_state,
+                        static_cast<RawRoute&>(tw_s_route),
+                        s_vehicle,
+                        s_rank,
+                        static_cast<RawRoute&>(tw_t_route),
+                        t_vehicle,
+                        t_rank),
     _tw_s_route(tw_s_route),
     _tw_t_route(tw_t_route),
     _s_is_normal_valid(false),
@@ -35,8 +36,8 @@ vrptwCrossExchange::vrptwCrossExchange(const Input& input,
     _t_is_reverse_valid(false) {
 }
 
-void vrptwCrossExchange::compute_gain() {
-  CVRPCrossExchange::compute_gain();
+void CrossExchange::compute_gain() {
+  cvrp::CrossExchange::compute_gain();
   assert(_s_is_normal_valid or _s_is_reverse_valid);
   assert(_t_is_normal_valid or _t_is_reverse_valid);
 
@@ -85,8 +86,8 @@ void vrptwCrossExchange::compute_gain() {
   stored_gain = s_gain + t_gain;
 }
 
-bool vrptwCrossExchange::is_valid() {
-  bool valid = CVRPCrossExchange::is_valid();
+bool CrossExchange::is_valid() {
+  bool valid = cvrp::CrossExchange::is_valid();
 
   if (valid) {
     // Keep target edge direction when inserting in source route.
@@ -129,7 +130,7 @@ bool vrptwCrossExchange::is_valid() {
   return valid;
 }
 
-void vrptwCrossExchange::apply() {
+void CrossExchange::apply() {
   std::vector<Index> t_job_ranks;
   if (!reverse_t_edge) {
     auto t_start = t_route.begin() + t_rank;
@@ -163,4 +164,5 @@ void vrptwCrossExchange::apply() {
                       s_rank + 2);
 }
 
+} // namespace vrptw
 } // namespace vroom

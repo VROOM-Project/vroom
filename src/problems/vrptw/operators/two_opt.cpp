@@ -10,29 +10,30 @@ All rights reserved (see LICENSE).
 #include "problems/vrptw/operators/two_opt.h"
 
 namespace vroom {
+namespace vrptw {
 
-vrptwTwoOpt::vrptwTwoOpt(const Input& input,
-                         const utils::SolutionState& sol_state,
-                         TWRoute& tw_s_route,
-                         Index s_vehicle,
-                         Index s_rank,
-                         TWRoute& tw_t_route,
-                         Index t_vehicle,
-                         Index t_rank)
-  : CVRPTwoOpt(input,
-               sol_state,
-               static_cast<RawRoute&>(tw_s_route),
-               s_vehicle,
-               s_rank,
-               static_cast<RawRoute&>(tw_t_route),
-               t_vehicle,
-               t_rank),
+TwoOpt::TwoOpt(const Input& input,
+               const utils::SolutionState& sol_state,
+               TWRoute& tw_s_route,
+               Index s_vehicle,
+               Index s_rank,
+               TWRoute& tw_t_route,
+               Index t_vehicle,
+               Index t_rank)
+  : cvrp::TwoOpt(input,
+                 sol_state,
+                 static_cast<RawRoute&>(tw_s_route),
+                 s_vehicle,
+                 s_rank,
+                 static_cast<RawRoute&>(tw_t_route),
+                 t_vehicle,
+                 t_rank),
     _tw_s_route(tw_s_route),
     _tw_t_route(tw_t_route) {
 }
 
-bool vrptwTwoOpt::is_valid() {
-  return CVRPTwoOpt::is_valid() and
+bool TwoOpt::is_valid() {
+  return cvrp::TwoOpt::is_valid() and
          _tw_t_route.is_valid_addition_for_tw(_input,
                                               s_route.begin() + s_rank + 1,
                                               s_route.end(),
@@ -45,7 +46,7 @@ bool vrptwTwoOpt::is_valid() {
                                               s_route.size());
 }
 
-void vrptwTwoOpt::apply() {
+void TwoOpt::apply() {
   std::vector<Index> t_job_ranks;
   t_job_ranks.insert(t_job_ranks.begin(),
                      t_route.begin() + t_rank + 1,
@@ -63,4 +64,5 @@ void vrptwTwoOpt::apply() {
                       s_route.size());
 }
 
+} // namespace vrptw
 } // namespace vroom

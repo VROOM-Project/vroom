@@ -15,6 +15,7 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/tw_route.h"
 
 namespace vroom {
+namespace ls {
 
 template <class Route,
           class Exchange,
@@ -64,6 +65,7 @@ public:
   void run();
 };
 
+} // namespace ls
 } // namespace vroom
 
 #endif

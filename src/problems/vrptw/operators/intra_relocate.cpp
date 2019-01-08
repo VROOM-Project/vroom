@@ -10,19 +10,20 @@ All rights reserved (see LICENSE).
 #include "problems/vrptw/operators/intra_relocate.h"
 
 namespace vroom {
+namespace vrptw {
 
-vrptwIntraRelocate::vrptwIntraRelocate(const Input& input,
-                                       const utils::SolutionState& sol_state,
-                                       TWRoute& tw_s_route,
-                                       Index s_vehicle,
-                                       Index s_rank,
-                                       Index t_rank)
-  : CVRPIntraRelocate(input,
-                      sol_state,
-                      static_cast<RawRoute&>(tw_s_route),
-                      s_vehicle,
-                      s_rank,
-                      t_rank),
+IntraRelocate::IntraRelocate(const Input& input,
+                             const utils::SolutionState& sol_state,
+                             TWRoute& tw_s_route,
+                             Index s_vehicle,
+                             Index s_rank,
+                             Index t_rank)
+  : cvrp::IntraRelocate(input,
+                        sol_state,
+                        static_cast<RawRoute&>(tw_s_route),
+                        s_vehicle,
+                        s_rank,
+                        t_rank),
     _tw_s_route(tw_s_route),
     _moved_jobs((s_rank < t_rank) ? t_rank - s_rank + 1 : s_rank - t_rank + 1),
     _first_rank(std::min(s_rank, t_rank)),
@@ -40,7 +41,7 @@ vrptwIntraRelocate::vrptwIntraRelocate(const Input& input,
   }
 }
 
-bool vrptwIntraRelocate::is_valid() {
+bool IntraRelocate::is_valid() {
   return _tw_s_route.is_valid_addition_for_tw(_input,
                                               _moved_jobs.begin(),
                                               _moved_jobs.end(),
@@ -48,7 +49,7 @@ bool vrptwIntraRelocate::is_valid() {
                                               _last_rank);
 }
 
-void vrptwIntraRelocate::apply() {
+void IntraRelocate::apply() {
   _tw_s_route.replace(_input,
                       _moved_jobs.begin(),
                       _moved_jobs.end(),
@@ -56,8 +57,9 @@ void vrptwIntraRelocate::apply() {
                       _last_rank);
 }
 
-std::vector<Index> vrptwIntraRelocate::addition_candidates() const {
+std::vector<Index> IntraRelocate::addition_candidates() const {
   return {s_vehicle};
 }
 
+} // namespace vrptw
 } // namespace vroom

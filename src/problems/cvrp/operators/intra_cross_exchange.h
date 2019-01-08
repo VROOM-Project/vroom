@@ -13,8 +13,9 @@ All rights reserved (see LICENSE).
 #include "algorithms/local_search/operator.h"
 
 namespace vroom {
+namespace cvrp {
 
-class CVRPIntraCrossExchange : public Operator {
+class IntraCrossExchange : public ls::Operator {
 protected:
   Gain normal_s_gain;
   Gain reversed_s_gain;
@@ -27,12 +28,12 @@ protected:
   virtual void compute_gain() override;
 
 public:
-  CVRPIntraCrossExchange(const Input& input,
-                         const utils::SolutionState& sol_state,
-                         RawRoute& s_route,
-                         Index s_vehicle,
-                         Index s_rank,
-                         Index t_rank);
+  IntraCrossExchange(const Input& input,
+                     const utils::SolutionState& sol_state,
+                     RawRoute& s_route,
+                     Index s_vehicle,
+                     Index s_rank,
+                     Index t_rank);
 
   virtual bool is_valid() override;
 
@@ -43,6 +44,7 @@ public:
   virtual std::vector<Index> update_candidates() const override;
 };
 
+} // namespace cvrp
 } // namespace vroom
 
 #endif

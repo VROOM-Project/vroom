@@ -10,15 +10,16 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/operators/mixed_exchange.h"
 
 namespace vroom {
+namespace cvrp {
 
-CVRPMixedExchange::CVRPMixedExchange(const Input& input,
-                                     const utils::SolutionState& sol_state,
-                                     RawRoute& s_route,
-                                     Index s_vehicle,
-                                     Index s_rank,
-                                     RawRoute& t_route,
-                                     Index t_vehicle,
-                                     Index t_rank)
+MixedExchange::MixedExchange(const Input& input,
+                             const utils::SolutionState& sol_state,
+                             RawRoute& s_route,
+                             Index s_vehicle,
+                             Index s_rank,
+                             RawRoute& t_route,
+                             Index t_vehicle,
+                             Index t_rank)
   : Operator(input,
              sol_state,
              s_route,
@@ -35,7 +36,7 @@ CVRPMixedExchange::CVRPMixedExchange(const Input& input,
   assert(t_rank < t_route.size() - 1);
 }
 
-void CVRPMixedExchange::compute_gain() {
+void MixedExchange::compute_gain() {
   const auto& m = _input.get_matrix();
   const auto& v_source = _input.vehicles[s_vehicle];
   const auto& v_target = _input.vehicles[t_vehicle];
@@ -126,7 +127,7 @@ void CVRPMixedExchange::compute_gain() {
   gain_computed = true;
 }
 
-bool CVRPMixedExchange::is_valid() {
+bool MixedExchange::is_valid() {
   auto s_job_rank = s_route[s_rank];
   auto t_job_rank = t_route[t_rank];
   // Already asserted in compute_gain.
@@ -149,7 +150,7 @@ bool CVRPMixedExchange::is_valid() {
   return valid;
 }
 
-void CVRPMixedExchange::apply() {
+void MixedExchange::apply() {
   std::swap(s_route[s_rank], t_route[t_rank]);
   s_route.insert(s_route.begin() + s_rank + 1,
                  t_route.begin() + t_rank + 1,
@@ -161,12 +162,13 @@ void CVRPMixedExchange::apply() {
   }
 }
 
-std::vector<Index> CVRPMixedExchange::addition_candidates() const {
+std::vector<Index> MixedExchange::addition_candidates() const {
   return {s_vehicle, t_vehicle};
 }
 
-std::vector<Index> CVRPMixedExchange::update_candidates() const {
+std::vector<Index> MixedExchange::update_candidates() const {
   return {s_vehicle, t_vehicle};
 }
 
+} // namespace cvrp
 } // namespace vroom

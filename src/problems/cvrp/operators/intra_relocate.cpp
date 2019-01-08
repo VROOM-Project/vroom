@@ -11,13 +11,14 @@ All rights reserved (see LICENSE).
 #include "utils/helpers.h"
 
 namespace vroom {
+namespace cvrp {
 
-CVRPIntraRelocate::CVRPIntraRelocate(const Input& input,
-                                     const utils::SolutionState& sol_state,
-                                     RawRoute& s_route,
-                                     Index s_vehicle,
-                                     Index s_rank,
-                                     Index t_rank)
+IntraRelocate::IntraRelocate(const Input& input,
+                             const utils::SolutionState& sol_state,
+                             RawRoute& s_route,
+                             Index s_vehicle,
+                             Index s_rank,
+                             Index t_rank)
   : Operator(input,
              sol_state,
              s_route,
@@ -32,7 +33,7 @@ CVRPIntraRelocate::CVRPIntraRelocate(const Input& input,
   assert(s_rank != t_rank);
 }
 
-void CVRPIntraRelocate::compute_gain() {
+void IntraRelocate::compute_gain() {
   const auto& m = _input.get_matrix();
   const auto& v_target = _input.vehicles[s_vehicle];
 
@@ -56,22 +57,23 @@ void CVRPIntraRelocate::compute_gain() {
   gain_computed = true;
 }
 
-bool CVRPIntraRelocate::is_valid() {
+bool IntraRelocate::is_valid() {
   return true;
 }
 
-void CVRPIntraRelocate::apply() {
+void IntraRelocate::apply() {
   auto relocate_job_rank = s_route[s_rank];
   s_route.erase(s_route.begin() + s_rank);
   t_route.insert(t_route.begin() + t_rank, relocate_job_rank);
 }
 
-std::vector<Index> CVRPIntraRelocate::addition_candidates() const {
+std::vector<Index> IntraRelocate::addition_candidates() const {
   return {};
 }
 
-std::vector<Index> CVRPIntraRelocate::update_candidates() const {
+std::vector<Index> IntraRelocate::update_candidates() const {
   return {s_vehicle};
 }
 
+} // namespace cvrp
 } // namespace vroom

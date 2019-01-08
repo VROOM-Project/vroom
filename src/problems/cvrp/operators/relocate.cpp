@@ -11,15 +11,16 @@ All rights reserved (see LICENSE).
 #include "utils/helpers.h"
 
 namespace vroom {
+namespace cvrp {
 
-CVRPRelocate::CVRPRelocate(const Input& input,
-                           const utils::SolutionState& sol_state,
-                           RawRoute& s_route,
-                           Index s_vehicle,
-                           Index s_rank,
-                           RawRoute& t_route,
-                           Index t_vehicle,
-                           Index t_rank)
+Relocate::Relocate(const Input& input,
+                   const utils::SolutionState& sol_state,
+                   RawRoute& s_route,
+                   Index s_vehicle,
+                   Index s_rank,
+                   RawRoute& t_route,
+                   Index t_vehicle,
+                   Index t_rank)
   : Operator(input,
              sol_state,
              s_route,
@@ -34,7 +35,7 @@ CVRPRelocate::CVRPRelocate(const Input& input,
   assert(t_rank <= t_route.size());
 }
 
-void CVRPRelocate::compute_gain() {
+void Relocate::compute_gain() {
   const auto& m = _input.get_matrix();
   const auto& v = _input.vehicles[t_vehicle];
 
@@ -51,7 +52,7 @@ void CVRPRelocate::compute_gain() {
   gain_computed = true;
 }
 
-bool CVRPRelocate::is_valid() {
+bool Relocate::is_valid() {
   auto relocate_job_rank = s_route[s_rank];
 
   bool valid = _input.vehicle_ok_with_job(t_vehicle, relocate_job_rank);
@@ -68,18 +69,19 @@ bool CVRPRelocate::is_valid() {
   return valid;
 }
 
-void CVRPRelocate::apply() {
+void Relocate::apply() {
   auto relocate_job_rank = s_route[s_rank];
   s_route.erase(s_route.begin() + s_rank);
   t_route.insert(t_route.begin() + t_rank, relocate_job_rank);
 }
 
-std::vector<Index> CVRPRelocate::addition_candidates() const {
+std::vector<Index> Relocate::addition_candidates() const {
   return {s_vehicle};
 }
 
-std::vector<Index> CVRPRelocate::update_candidates() const {
+std::vector<Index> Relocate::update_candidates() const {
   return {s_vehicle, t_vehicle};
 }
 
+} // namespace cvrp
 } // namespace vroom

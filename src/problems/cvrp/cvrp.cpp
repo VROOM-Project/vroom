@@ -35,19 +35,19 @@ namespace vroom {
 
 using RawSolution = std::vector<RawRoute>;
 
-using CVRPLocalSearch = LocalSearch<RawRoute,
-                                    CVRPExchange,
-                                    CVRPCrossExchange,
-                                    CVRPMixedExchange,
-                                    CVRPTwoOpt,
-                                    CVRPReverseTwoOpt,
-                                    CVRPRelocate,
-                                    CVRPOrOpt,
-                                    CVRPIntraExchange,
-                                    CVRPIntraCrossExchange,
-                                    CVRPIntraMixedExchange,
-                                    CVRPIntraRelocate,
-                                    CVRPIntraOrOpt>;
+using LocalSearch = ls::LocalSearch<RawRoute,
+                                    cvrp::Exchange,
+                                    cvrp::CrossExchange,
+                                    cvrp::MixedExchange,
+                                    cvrp::TwoOpt,
+                                    cvrp::ReverseTwoOpt,
+                                    cvrp::Relocate,
+                                    cvrp::OrOpt,
+                                    cvrp::IntraExchange,
+                                    cvrp::IntraCrossExchange,
+                                    cvrp::IntraMixedExchange,
+                                    cvrp::IntraRelocate,
+                                    cvrp::IntraOrOpt>;
 
 constexpr std::array<HeuristicParameters, 32> CVRP::homogeneous_parameters;
 constexpr std::array<HeuristicParameters, 32> CVRP::heterogeneous_parameters;
@@ -125,7 +125,7 @@ Solution CVRP::solve(unsigned exploration_level, unsigned nb_threads) const {
       }
 
       // Local search phase.
-      CVRPLocalSearch ls(_input, solutions[rank], max_nb_jobs_removal);
+      LocalSearch ls(_input, solutions[rank], max_nb_jobs_removal);
       ls.run();
 
       // Store solution indicators.

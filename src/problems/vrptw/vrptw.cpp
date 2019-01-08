@@ -32,19 +32,19 @@ namespace vroom {
 
 using TWSolution = std::vector<TWRoute>;
 
-using vrptwLocalSearch = LocalSearch<TWRoute,
-                                     vrptwExchange,
-                                     vrptwCrossExchange,
-                                     vrptwMixedExchange,
-                                     vrptwTwoOpt,
-                                     vrptwReverseTwoOpt,
-                                     vrptwRelocate,
-                                     vrptwOrOpt,
-                                     vrptwIntraExchange,
-                                     vrptwIntraCrossExchange,
-                                     vrptwIntraMixedExchange,
-                                     vrptwIntraRelocate,
-                                     vrptwIntraOrOpt>;
+using LocalSearch = ls::LocalSearch<TWRoute,
+                                    vrptw::Exchange,
+                                    vrptw::CrossExchange,
+                                    vrptw::MixedExchange,
+                                    vrptw::TwoOpt,
+                                    vrptw::ReverseTwoOpt,
+                                    vrptw::Relocate,
+                                    vrptw::OrOpt,
+                                    vrptw::IntraExchange,
+                                    vrptw::IntraCrossExchange,
+                                    vrptw::IntraMixedExchange,
+                                    vrptw::IntraRelocate,
+                                    vrptw::IntraOrOpt>;
 
 constexpr std::array<HeuristicParameters, 32> VRPTW::homogeneous_parameters;
 constexpr std::array<HeuristicParameters, 32> VRPTW::heterogeneous_parameters;
@@ -95,7 +95,7 @@ Solution VRPTW::solve(unsigned exploration_level, unsigned nb_threads) const {
       }
 
       // Local search phase.
-      vrptwLocalSearch ls(_input, tw_solutions[rank], max_nb_jobs_removal);
+      LocalSearch ls(_input, tw_solutions[rank], max_nb_jobs_removal);
       ls.run();
 
       // Store solution indicators.

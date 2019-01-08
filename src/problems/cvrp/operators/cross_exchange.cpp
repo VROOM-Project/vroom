@@ -10,15 +10,16 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/operators/cross_exchange.h"
 
 namespace vroom {
+namespace cvrp {
 
-CVRPCrossExchange::CVRPCrossExchange(const Input& input,
-                                     const utils::SolutionState& sol_state,
-                                     RawRoute& s_route,
-                                     Index s_vehicle,
-                                     Index s_rank,
-                                     RawRoute& t_route,
-                                     Index t_vehicle,
-                                     Index t_rank)
+CrossExchange::CrossExchange(const Input& input,
+                             const utils::SolutionState& sol_state,
+                             RawRoute& s_route,
+                             Index s_vehicle,
+                             Index s_rank,
+                             RawRoute& t_route,
+                             Index t_vehicle,
+                             Index t_rank)
   : Operator(input,
              sol_state,
              s_route,
@@ -36,7 +37,7 @@ CVRPCrossExchange::CVRPCrossExchange(const Input& input,
   assert(t_rank < t_route.size() - 1);
 }
 
-void CVRPCrossExchange::compute_gain() {
+void CrossExchange::compute_gain() {
   const auto& m = _input.get_matrix();
   const auto& v_source = _input.vehicles[s_vehicle];
   const auto& v_target = _input.vehicles[t_vehicle];
@@ -146,7 +147,7 @@ void CVRPCrossExchange::compute_gain() {
   gain_computed = true;
 }
 
-bool CVRPCrossExchange::is_valid() {
+bool CrossExchange::is_valid() {
   auto s_current_job_rank = s_route[s_rank];
   auto t_current_job_rank = t_route[t_rank];
   // Already asserted in compute_gain.
@@ -175,7 +176,7 @@ bool CVRPCrossExchange::is_valid() {
   return valid;
 }
 
-void CVRPCrossExchange::apply() {
+void CrossExchange::apply() {
   std::swap(s_route[s_rank], t_route[t_rank]);
   std::swap(s_route[s_rank + 1], t_route[t_rank + 1]);
 
@@ -187,12 +188,13 @@ void CVRPCrossExchange::apply() {
   }
 }
 
-std::vector<Index> CVRPCrossExchange::addition_candidates() const {
+std::vector<Index> CrossExchange::addition_candidates() const {
   return {s_vehicle, t_vehicle};
 }
 
-std::vector<Index> CVRPCrossExchange::update_candidates() const {
+std::vector<Index> CrossExchange::update_candidates() const {
   return {s_vehicle, t_vehicle};
 }
 
+} // namespace cvrp
 } // namespace vroom

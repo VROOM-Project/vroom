@@ -159,18 +159,19 @@ Cost TSP::symmetrized_cost(const std::list<Index>& tour) const {
 
 RawSolution TSP::raw_solve(unsigned, unsigned nb_threads) const {
   // Applying heuristic.
-  std::list<Index> christo_sol = christofides(_symmetrized_matrix);
+  std::list<Index> christo_sol = tsp::christofides(_symmetrized_matrix);
 
   // Local search on symmetric problem.
   // Applying deterministic, fast local search to improve the current
   // solution in a small amount of time. All possible moves for the
   // different neighbourhoods are performed, stopping when reaching a
   // local minima.
-  TSPLocalSearch sym_ls(_symmetrized_matrix,
-                        std::make_pair(!_round_trip and _has_start and _has_end,
-                                       _start),
-                        christo_sol,
-                        nb_threads);
+  tsp::LocalSearch sym_ls(_symmetrized_matrix,
+                          std::make_pair(!_round_trip and _has_start and
+                                           _has_end,
+                                         _start),
+                          christo_sol,
+                          nb_threads);
 
   Cost sym_two_opt_gain = 0;
   Cost sym_relocate_gain = 0;
@@ -209,13 +210,11 @@ RawSolution TSP::raw_solve(unsigned, unsigned nb_threads) const {
     Cost reverse_cost = this->cost(reverse_current_sol);
 
     // Local search on asymmetric problem.
-    TSPLocalSearch asym_ls(_matrix,
-                           std::make_pair(!_round_trip and _has_start and
-                                            _has_end,
-                                          _start),
-                           (direct_cost <= reverse_cost) ? current_sol
-                                                         : reverse_current_sol,
-                           nb_threads);
+    tsp::LocalSearch
+      asym_ls(_matrix,
+              std::make_pair(!_round_trip and _has_start and _has_end, _start),
+              (direct_cost <= reverse_cost) ? current_sol : reverse_current_sol,
+              nb_threads);
 
     Cost asym_two_opt_gain = 0;
     Cost asym_relocate_gain = 0;

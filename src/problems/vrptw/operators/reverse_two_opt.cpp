@@ -12,29 +12,30 @@ All rights reserved (see LICENSE).
 #include "problems/vrptw/operators/reverse_two_opt.h"
 
 namespace vroom {
+namespace vrptw {
 
-vrptwReverseTwoOpt::vrptwReverseTwoOpt(const Input& input,
-                                       const utils::SolutionState& sol_state,
-                                       TWRoute& tw_s_route,
-                                       Index s_vehicle,
-                                       Index s_rank,
-                                       TWRoute& tw_t_route,
-                                       Index t_vehicle,
-                                       Index t_rank)
-  : CVRPReverseTwoOpt(input,
-                      sol_state,
-                      static_cast<RawRoute&>(tw_s_route),
-                      s_vehicle,
-                      s_rank,
-                      static_cast<RawRoute&>(tw_t_route),
-                      t_vehicle,
-                      t_rank),
+ReverseTwoOpt::ReverseTwoOpt(const Input& input,
+                             const utils::SolutionState& sol_state,
+                             TWRoute& tw_s_route,
+                             Index s_vehicle,
+                             Index s_rank,
+                             TWRoute& tw_t_route,
+                             Index t_vehicle,
+                             Index t_rank)
+  : cvrp::ReverseTwoOpt(input,
+                        sol_state,
+                        static_cast<RawRoute&>(tw_s_route),
+                        s_vehicle,
+                        s_rank,
+                        static_cast<RawRoute&>(tw_t_route),
+                        t_vehicle,
+                        t_rank),
     _tw_s_route(tw_s_route),
     _tw_t_route(tw_t_route) {
 }
 
-bool vrptwReverseTwoOpt::is_valid() {
-  return CVRPReverseTwoOpt::is_valid() and
+bool ReverseTwoOpt::is_valid() {
+  return cvrp::ReverseTwoOpt::is_valid() and
          _tw_t_route.is_valid_addition_for_tw(_input,
                                               s_route.rbegin(),
                                               s_route.rbegin() +
@@ -49,7 +50,7 @@ bool vrptwReverseTwoOpt::is_valid() {
                                               s_route.size());
 }
 
-void vrptwReverseTwoOpt::apply() {
+void ReverseTwoOpt::apply() {
   std::vector<Index> t_job_ranks;
   t_job_ranks.insert(t_job_ranks.begin(),
                      t_route.rbegin() + t_route.size() - 1 - t_rank,
@@ -68,4 +69,5 @@ void vrptwReverseTwoOpt::apply() {
                       s_route.size());
 }
 
+} // namespace vrptw
 } // namespace vroom

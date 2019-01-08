@@ -11,14 +11,14 @@ All rights reserved (see LICENSE).
 #include "utils/helpers.h"
 
 namespace vroom {
+namespace cvrp {
 
-CVRPIntraCrossExchange::CVRPIntraCrossExchange(
-  const Input& input,
-  const utils::SolutionState& sol_state,
-  RawRoute& s_route,
-  Index s_vehicle,
-  Index s_rank,
-  Index t_rank)
+IntraCrossExchange::IntraCrossExchange(const Input& input,
+                                       const utils::SolutionState& sol_state,
+                                       RawRoute& s_route,
+                                       Index s_vehicle,
+                                       Index s_rank,
+                                       Index t_rank)
   : Operator(input,
              sol_state,
              s_route,
@@ -35,7 +35,7 @@ CVRPIntraCrossExchange::CVRPIntraCrossExchange(
   assert(t_rank < s_route.size() - 1);
 }
 
-void CVRPIntraCrossExchange::compute_gain() {
+void IntraCrossExchange::compute_gain() {
   const auto& m = _input.get_matrix();
   const auto& v = _input.vehicles[s_vehicle];
 
@@ -126,11 +126,11 @@ void CVRPIntraCrossExchange::compute_gain() {
   gain_computed = true;
 }
 
-bool CVRPIntraCrossExchange::is_valid() {
+bool IntraCrossExchange::is_valid() {
   return true;
 }
 
-void CVRPIntraCrossExchange::apply() {
+void IntraCrossExchange::apply() {
   std::swap(s_route[s_rank], s_route[t_rank]);
   std::swap(s_route[s_rank + 1], s_route[t_rank + 1]);
 
@@ -142,12 +142,13 @@ void CVRPIntraCrossExchange::apply() {
   }
 }
 
-std::vector<Index> CVRPIntraCrossExchange::addition_candidates() const {
+std::vector<Index> IntraCrossExchange::addition_candidates() const {
   return {};
 }
 
-std::vector<Index> CVRPIntraCrossExchange::update_candidates() const {
+std::vector<Index> IntraCrossExchange::update_candidates() const {
   return {s_vehicle};
 }
 
+} // namespace cvrp
 } // namespace vroom

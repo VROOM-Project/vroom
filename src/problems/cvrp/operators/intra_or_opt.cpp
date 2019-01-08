@@ -11,13 +11,14 @@ All rights reserved (see LICENSE).
 #include "utils/helpers.h"
 
 namespace vroom {
+namespace cvrp {
 
-CVRPIntraOrOpt::CVRPIntraOrOpt(const Input& input,
-                               const utils::SolutionState& sol_state,
-                               RawRoute& s_route,
-                               Index s_vehicle,
-                               Index s_rank,
-                               Index t_rank)
+IntraOrOpt::IntraOrOpt(const Input& input,
+                       const utils::SolutionState& sol_state,
+                       RawRoute& s_route,
+                       Index s_vehicle,
+                       Index s_rank,
+                       Index t_rank)
   : Operator(input,
              sol_state,
              s_route,
@@ -33,7 +34,7 @@ CVRPIntraOrOpt::CVRPIntraOrOpt(const Input& input,
   assert(s_rank != t_rank);
 }
 
-void CVRPIntraOrOpt::compute_gain() {
+void IntraOrOpt::compute_gain() {
   const auto& m = _input.get_matrix();
   const auto& v = _input.vehicles[s_vehicle];
 
@@ -110,11 +111,11 @@ void CVRPIntraOrOpt::compute_gain() {
   gain_computed = true;
 }
 
-bool CVRPIntraOrOpt::is_valid() {
+bool IntraOrOpt::is_valid() {
   return true;
 }
 
-void CVRPIntraOrOpt::apply() {
+void IntraOrOpt::apply() {
   auto first_job_rank = s_route[s_rank];
   auto second_job_rank = s_route[s_rank + 1];
   s_route.erase(s_route.begin() + s_rank, s_route.begin() + s_rank + 2);
@@ -124,12 +125,13 @@ void CVRPIntraOrOpt::apply() {
   }
 }
 
-std::vector<Index> CVRPIntraOrOpt::addition_candidates() const {
+std::vector<Index> IntraOrOpt::addition_candidates() const {
   return {};
 }
 
-std::vector<Index> CVRPIntraOrOpt::update_candidates() const {
+std::vector<Index> IntraOrOpt::update_candidates() const {
   return {s_vehicle};
 }
 
+} // namespace cvrp
 } // namespace vroom

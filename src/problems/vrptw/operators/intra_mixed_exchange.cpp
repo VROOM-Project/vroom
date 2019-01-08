@@ -10,20 +10,20 @@ All rights reserved (see LICENSE).
 #include "problems/vrptw/operators/intra_mixed_exchange.h"
 
 namespace vroom {
+namespace vrptw {
 
-vrptwIntraMixedExchange::vrptwIntraMixedExchange(
-  const Input& input,
-  const utils::SolutionState& sol_state,
-  TWRoute& tw_s_route,
-  Index s_vehicle,
-  Index s_rank,
-  Index t_rank)
-  : CVRPIntraMixedExchange(input,
-                           sol_state,
-                           static_cast<RawRoute&>(tw_s_route),
-                           s_vehicle,
-                           s_rank,
-                           t_rank),
+IntraMixedExchange::IntraMixedExchange(const Input& input,
+                                       const utils::SolutionState& sol_state,
+                                       TWRoute& tw_s_route,
+                                       Index s_vehicle,
+                                       Index s_rank,
+                                       Index t_rank)
+  : cvrp::IntraMixedExchange(input,
+                             sol_state,
+                             static_cast<RawRoute&>(tw_s_route),
+                             s_vehicle,
+                             s_rank,
+                             t_rank),
     _tw_s_route(tw_s_route),
     _s_is_normal_valid(false),
     _s_is_reverse_valid(false),
@@ -54,8 +54,8 @@ vrptwIntraMixedExchange::vrptwIntraMixedExchange(
   _moved_jobs[_t_edge_last] = s_route[t_rank + 1];
 }
 
-void vrptwIntraMixedExchange::compute_gain() {
-  CVRPIntraMixedExchange::compute_gain();
+void IntraMixedExchange::compute_gain() {
+  cvrp::IntraMixedExchange::compute_gain();
   assert(_s_is_normal_valid or _s_is_reverse_valid);
 
   Gain s_gain;
@@ -82,7 +82,7 @@ void vrptwIntraMixedExchange::compute_gain() {
   stored_gain = s_gain + t_gain;
 }
 
-bool vrptwIntraMixedExchange::is_valid() {
+bool IntraMixedExchange::is_valid() {
   _s_is_normal_valid = _tw_s_route.is_valid_addition_for_tw(_input,
                                                             _moved_jobs.begin(),
                                                             _moved_jobs.end(),
@@ -104,7 +104,7 @@ bool vrptwIntraMixedExchange::is_valid() {
   return _s_is_normal_valid or _s_is_reverse_valid;
 }
 
-void vrptwIntraMixedExchange::apply() {
+void IntraMixedExchange::apply() {
   if (reverse_t_edge) {
     std::swap(_moved_jobs[_t_edge_first], _moved_jobs[_t_edge_last]);
   }
@@ -116,8 +116,9 @@ void vrptwIntraMixedExchange::apply() {
                       _last_rank);
 }
 
-std::vector<Index> vrptwIntraMixedExchange::addition_candidates() const {
+std::vector<Index> IntraMixedExchange::addition_candidates() const {
   return {s_vehicle};
 }
 
+} // namespace vrptw
 } // namespace vroom

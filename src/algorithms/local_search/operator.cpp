@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 #include "algorithms/local_search/operator.h"
 
 namespace vroom {
+namespace ls {
 
 Operator::Operator(const Input& input,
                    const utils::SolutionState& sol_state,
@@ -37,4 +38,5 @@ Gain Operator::gain() {
   return stored_gain;
 }
 
+} // namespace ls
 } // namespace vroom

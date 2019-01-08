@@ -10,15 +10,16 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/operators/exchange.h"
 
 namespace vroom {
+namespace cvrp {
 
-CVRPExchange::CVRPExchange(const Input& input,
-                           const utils::SolutionState& sol_state,
-                           RawRoute& s_route,
-                           Index s_vehicle,
-                           Index s_rank,
-                           RawRoute& t_route,
-                           Index t_vehicle,
-                           Index t_rank)
+Exchange::Exchange(const Input& input,
+                   const utils::SolutionState& sol_state,
+                   RawRoute& s_route,
+                   Index s_vehicle,
+                   Index s_rank,
+                   RawRoute& t_route,
+                   Index t_vehicle,
+                   Index t_rank)
   : Operator(input,
              sol_state,
              s_route,
@@ -34,7 +35,7 @@ CVRPExchange::CVRPExchange(const Input& input,
   assert(t_rank < t_route.size());
 }
 
-void CVRPExchange::compute_gain() {
+void Exchange::compute_gain() {
   const auto& m = _input.get_matrix();
   const auto& v_source = _input.vehicles[s_vehicle];
   const auto& v_target = _input.vehicles[t_vehicle];
@@ -107,7 +108,7 @@ void CVRPExchange::compute_gain() {
   gain_computed = true;
 }
 
-bool CVRPExchange::is_valid() {
+bool Exchange::is_valid() {
   auto s_job_rank = s_route[s_rank];
   auto t_job_rank = t_route[t_rank];
 
@@ -125,16 +126,17 @@ bool CVRPExchange::is_valid() {
   return valid;
 }
 
-void CVRPExchange::apply() {
+void Exchange::apply() {
   std::swap(s_route[s_rank], t_route[t_rank]);
 }
 
-std::vector<Index> CVRPExchange::addition_candidates() const {
+std::vector<Index> Exchange::addition_candidates() const {
   return {s_vehicle, t_vehicle};
 }
 
-std::vector<Index> CVRPExchange::update_candidates() const {
+std::vector<Index> Exchange::update_candidates() const {
   return {s_vehicle, t_vehicle};
 }
 
+} // namespace cvrp
 } // namespace vroom

@@ -14,8 +14,9 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/tw_route.h"
 
 namespace vroom {
+namespace vrptw {
 
-class vrptwIntraExchange : public CVRPIntraExchange {
+class IntraExchange : public cvrp::IntraExchange {
 private:
   TWRoute& _tw_s_route;
 
@@ -24,12 +25,12 @@ private:
   const Index _last_rank;
 
 public:
-  vrptwIntraExchange(const Input& input,
-                     const utils::SolutionState& sol_state,
-                     TWRoute& tw_s_route,
-                     Index s_vehicle,
-                     Index s_rank,
-                     Index t_rank);
+  IntraExchange(const Input& input,
+                const utils::SolutionState& sol_state,
+                TWRoute& tw_s_route,
+                Index s_vehicle,
+                Index s_rank,
+                Index t_rank);
 
   virtual bool is_valid() override;
 
@@ -38,6 +39,7 @@ public:
   virtual std::vector<Index> addition_candidates() const override;
 };
 
+} // namespace vrptw
 } // namespace vroom
 
 #endif

@@ -16,6 +16,7 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/solution_state.h"
 
 namespace vroom {
+namespace ls {
 
 class Operator {
 protected:
@@ -60,6 +61,7 @@ public:
   }
 };
 
+} // namespace ls
 } // namespace vroom
 
 #endif

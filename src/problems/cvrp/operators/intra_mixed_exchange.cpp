@@ -11,14 +11,14 @@ All rights reserved (see LICENSE).
 #include "utils/helpers.h"
 
 namespace vroom {
+namespace cvrp {
 
-CVRPIntraMixedExchange::CVRPIntraMixedExchange(
-  const Input& input,
-  const utils::SolutionState& sol_state,
-  RawRoute& s_route,
-  Index s_vehicle,
-  Index s_rank,
-  Index t_rank)
+IntraMixedExchange::IntraMixedExchange(const Input& input,
+                                       const utils::SolutionState& sol_state,
+                                       RawRoute& s_route,
+                                       Index s_vehicle,
+                                       Index s_rank,
+                                       Index t_rank)
   : Operator(input,
              sol_state,
              s_route,
@@ -36,7 +36,7 @@ CVRPIntraMixedExchange::CVRPIntraMixedExchange(
   assert(t_rank < s_route.size() - 1);
 }
 
-void CVRPIntraMixedExchange::compute_gain() {
+void IntraMixedExchange::compute_gain() {
   const auto& m = _input.get_matrix();
   const auto& v = _input.vehicles[s_vehicle];
 
@@ -127,11 +127,11 @@ void CVRPIntraMixedExchange::compute_gain() {
   gain_computed = true;
 }
 
-bool CVRPIntraMixedExchange::is_valid() {
+bool IntraMixedExchange::is_valid() {
   return true;
 }
 
-void CVRPIntraMixedExchange::apply() {
+void IntraMixedExchange::apply() {
   if (reverse_t_edge) {
     std::swap(s_route[t_rank], s_route[t_rank + 1]);
   }
@@ -149,12 +149,13 @@ void CVRPIntraMixedExchange::apply() {
   s_route.insert(s_route.begin() + end_t_rank, t_after);
 }
 
-std::vector<Index> CVRPIntraMixedExchange::addition_candidates() const {
+std::vector<Index> IntraMixedExchange::addition_candidates() const {
   return {};
 }
 
-std::vector<Index> CVRPIntraMixedExchange::update_candidates() const {
+std::vector<Index> IntraMixedExchange::update_candidates() const {
   return {s_vehicle};
 }
 
+} // namespace cvrp
 } // namespace vroom

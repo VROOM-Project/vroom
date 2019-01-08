@@ -10,31 +10,32 @@ All rights reserved (see LICENSE).
 #include "problems/vrptw/operators/mixed_exchange.h"
 
 namespace vroom {
+namespace vrptw {
 
-vrptwMixedExchange::vrptwMixedExchange(const Input& input,
-                                       const utils::SolutionState& sol_state,
-                                       TWRoute& tw_s_route,
-                                       Index s_vehicle,
-                                       Index s_rank,
-                                       TWRoute& tw_t_route,
-                                       Index t_vehicle,
-                                       Index t_rank)
-  : CVRPMixedExchange(input,
-                      sol_state,
-                      static_cast<RawRoute&>(tw_s_route),
-                      s_vehicle,
-                      s_rank,
-                      static_cast<RawRoute&>(tw_t_route),
-                      t_vehicle,
-                      t_rank),
+MixedExchange::MixedExchange(const Input& input,
+                             const utils::SolutionState& sol_state,
+                             TWRoute& tw_s_route,
+                             Index s_vehicle,
+                             Index s_rank,
+                             TWRoute& tw_t_route,
+                             Index t_vehicle,
+                             Index t_rank)
+  : cvrp::MixedExchange(input,
+                        sol_state,
+                        static_cast<RawRoute&>(tw_s_route),
+                        s_vehicle,
+                        s_rank,
+                        static_cast<RawRoute&>(tw_t_route),
+                        t_vehicle,
+                        t_rank),
     _tw_s_route(tw_s_route),
     _tw_t_route(tw_t_route),
     _s_is_normal_valid(false),
     _s_is_reverse_valid(false) {
 }
 
-void vrptwMixedExchange::compute_gain() {
-  CVRPMixedExchange::compute_gain();
+void MixedExchange::compute_gain() {
+  cvrp::MixedExchange::compute_gain();
   assert(_s_is_normal_valid or _s_is_reverse_valid);
 
   Gain s_gain;
@@ -61,8 +62,8 @@ void vrptwMixedExchange::compute_gain() {
   stored_gain = s_gain + t_gain;
 }
 
-bool vrptwMixedExchange::is_valid() {
-  bool valid = CVRPMixedExchange::is_valid();
+bool MixedExchange::is_valid() {
+  bool valid = cvrp::MixedExchange::is_valid();
 
   valid &= _tw_t_route.is_valid_addition_for_tw(_input,
                                                 s_route.begin() + s_rank,
@@ -92,7 +93,7 @@ bool vrptwMixedExchange::is_valid() {
   return valid;
 }
 
-void vrptwMixedExchange::apply() {
+void MixedExchange::apply() {
   std::vector<Index> s_job_ranks({s_route[s_rank]});
   std::vector<Index> t_job_ranks;
   if (!reverse_t_edge) {
@@ -118,4 +119,5 @@ void vrptwMixedExchange::apply() {
                       t_rank + 2);
 }
 
+} // namespace vrptw
 } // namespace vroom

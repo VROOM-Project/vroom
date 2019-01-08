@@ -14,11 +14,12 @@ All rights reserved (see LICENSE).
 #include "problems/tsp/heuristics/local_search.h"
 
 namespace vroom {
+namespace tsp {
 
-TSPLocalSearch::TSPLocalSearch(const Matrix<Cost>& matrix,
-                               std::pair<bool, Index> avoid_start_relocate,
-                               const std::list<Index>& tour,
-                               unsigned nb_threads)
+LocalSearch::LocalSearch(const Matrix<Cost>& matrix,
+                         std::pair<bool, Index> avoid_start_relocate,
+                         const std::list<Index>& tour,
+                         unsigned nb_threads)
   : _matrix(matrix),
     _avoid_start_relocate(avoid_start_relocate),
     _edges(_matrix.size()),
@@ -97,7 +98,7 @@ TSPLocalSearch::TSPLocalSearch(const Matrix<Cost>& matrix,
   _sym_two_opt_rank_limits.push_back(_edges.size());
 }
 
-Cost TSPLocalSearch::relocate_step() {
+Cost LocalSearch::relocate_step() {
   if (_edges.size() < 3) {
     // Not enough edges for the operator to make sense.
     return 0;
@@ -208,7 +209,7 @@ Cost TSPLocalSearch::relocate_step() {
   return best_gain;
 }
 
-Cost TSPLocalSearch::perform_all_relocate_steps() {
+Cost LocalSearch::perform_all_relocate_steps() {
   Cost total_gain = 0;
   unsigned relocate_iter = 0;
   Cost gain = 0;
@@ -224,7 +225,7 @@ Cost TSPLocalSearch::perform_all_relocate_steps() {
   return total_gain;
 }
 
-Cost TSPLocalSearch::avoid_loop_step() {
+Cost LocalSearch::avoid_loop_step() {
   // In some cases, the solution can contain "loops" that other
   // operators can't fix. Those are found with two steps:
   //
@@ -358,7 +359,7 @@ Cost TSPLocalSearch::avoid_loop_step() {
   return gain;
 }
 
-Cost TSPLocalSearch::perform_all_avoid_loop_steps() {
+Cost LocalSearch::perform_all_avoid_loop_steps() {
   Cost total_gain = 0;
   unsigned relocate_iter = 0;
   Cost gain = 0;
@@ -374,7 +375,7 @@ Cost TSPLocalSearch::perform_all_avoid_loop_steps() {
   return total_gain;
 }
 
-Cost TSPLocalSearch::two_opt_step() {
+Cost LocalSearch::two_opt_step() {
   if (_edges.size() < 4) {
     // Not enough edges for the operator to make sense.
     return 0;
@@ -482,7 +483,7 @@ Cost TSPLocalSearch::two_opt_step() {
   return best_gain;
 }
 
-Cost TSPLocalSearch::asym_two_opt_step() {
+Cost LocalSearch::asym_two_opt_step() {
   if (_edges.size() < 4) {
     // Not enough edges for the operator to make sense.
     return 0;
@@ -622,7 +623,7 @@ Cost TSPLocalSearch::asym_two_opt_step() {
   return best_gain;
 }
 
-Cost TSPLocalSearch::perform_all_two_opt_steps() {
+Cost LocalSearch::perform_all_two_opt_steps() {
   Cost total_gain = 0;
   unsigned two_opt_iter = 0;
   Cost gain = 0;
@@ -638,7 +639,7 @@ Cost TSPLocalSearch::perform_all_two_opt_steps() {
   return total_gain;
 }
 
-Cost TSPLocalSearch::perform_all_asym_two_opt_steps() {
+Cost LocalSearch::perform_all_asym_two_opt_steps() {
   Cost total_gain = 0;
   unsigned two_opt_iter = 0;
   Cost gain = 0;
@@ -654,7 +655,7 @@ Cost TSPLocalSearch::perform_all_asym_two_opt_steps() {
   return total_gain;
 }
 
-Cost TSPLocalSearch::or_opt_step() {
+Cost LocalSearch::or_opt_step() {
   if (_edges.size() < 4) {
     // Not enough edges for the operator to make sense.
     return 0;
@@ -753,7 +754,7 @@ Cost TSPLocalSearch::or_opt_step() {
   return best_gain;
 }
 
-Cost TSPLocalSearch::perform_all_or_opt_steps() {
+Cost LocalSearch::perform_all_or_opt_steps() {
   Cost total_gain = 0;
   unsigned or_opt_iter = 0;
   Cost gain = 0;
@@ -768,7 +769,7 @@ Cost TSPLocalSearch::perform_all_or_opt_steps() {
   return total_gain;
 }
 
-std::list<Index> TSPLocalSearch::get_tour(Index first_index) const {
+std::list<Index> LocalSearch::get_tour(Index first_index) const {
   std::list<Index> tour;
   tour.push_back(first_index);
   Index next_index = _edges[first_index];
@@ -779,4 +780,5 @@ std::list<Index> TSPLocalSearch::get_tour(Index first_index) const {
   return tour;
 }
 
+} // namespace tsp
 } // namespace vroom

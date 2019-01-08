@@ -14,27 +14,29 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/tw_route.h"
 
 namespace vroom {
+namespace vrptw {
 
-class vrptwRelocate : public CVRPRelocate {
+class Relocate : public cvrp::Relocate {
 private:
   TWRoute& _tw_s_route;
   TWRoute& _tw_t_route;
 
 public:
-  vrptwRelocate(const Input& input,
-                const utils::SolutionState& sol_state,
-                TWRoute& tw_s_route,
-                Index s_vehicle,
-                Index s_rank,
-                TWRoute& tw_t_route,
-                Index t_vehicle,
-                Index t_rank);
+  Relocate(const Input& input,
+           const utils::SolutionState& sol_state,
+           TWRoute& tw_s_route,
+           Index s_vehicle,
+           Index s_rank,
+           TWRoute& tw_t_route,
+           Index t_vehicle,
+           Index t_rank);
 
   virtual bool is_valid() override;
 
   virtual void apply() override;
 };
 
+} // namespace vrptw
 } // namespace vroom
 
 #endif

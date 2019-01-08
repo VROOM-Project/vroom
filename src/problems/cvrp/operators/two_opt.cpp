@@ -10,15 +10,16 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/operators/two_opt.h"
 
 namespace vroom {
+namespace cvrp {
 
-CVRPTwoOpt::CVRPTwoOpt(const Input& input,
-                       const utils::SolutionState& sol_state,
-                       RawRoute& s_route,
-                       Index s_vehicle,
-                       Index s_rank,
-                       RawRoute& t_route,
-                       Index t_vehicle,
-                       Index t_rank)
+TwoOpt::TwoOpt(const Input& input,
+               const utils::SolutionState& sol_state,
+               RawRoute& s_route,
+               Index s_vehicle,
+               Index s_rank,
+               RawRoute& t_route,
+               Index t_vehicle,
+               Index t_rank)
   : Operator(input,
              sol_state,
              s_route,
@@ -34,7 +35,7 @@ CVRPTwoOpt::CVRPTwoOpt(const Input& input,
   assert(t_rank < t_route.size());
 }
 
-void CVRPTwoOpt::compute_gain() {
+void TwoOpt::compute_gain() {
   const auto& m = _input.get_matrix();
   const auto& v_source = _input.vehicles[s_vehicle];
   const auto& v_target = _input.vehicles[t_vehicle];
@@ -84,7 +85,7 @@ void CVRPTwoOpt::compute_gain() {
   gain_computed = true;
 }
 
-bool CVRPTwoOpt::is_valid() {
+bool TwoOpt::is_valid() {
   bool valid = (_sol_state.bwd_skill_rank[s_vehicle][t_vehicle] <= s_rank + 1);
 
   valid &= (_sol_state.bwd_skill_rank[t_vehicle][s_vehicle] <= t_rank + 1);
@@ -99,7 +100,7 @@ bool CVRPTwoOpt::is_valid() {
   return valid;
 }
 
-void CVRPTwoOpt::apply() {
+void TwoOpt::apply() {
   auto nb_source = s_route.size() - 1 - s_rank;
 
   t_route.insert(t_route.begin() + t_rank + 1,
@@ -112,12 +113,13 @@ void CVRPTwoOpt::apply() {
   t_route.erase(t_route.begin() + t_rank + 1 + nb_source, t_route.end());
 }
 
-std::vector<Index> CVRPTwoOpt::addition_candidates() const {
+std::vector<Index> TwoOpt::addition_candidates() const {
   return {s_vehicle, t_vehicle};
 }
 
-std::vector<Index> CVRPTwoOpt::update_candidates() const {
+std::vector<Index> TwoOpt::update_candidates() const {
   return {s_vehicle, t_vehicle};
 }
 
+} // namespace cvrp
 } // namespace vroom
