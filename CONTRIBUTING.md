@@ -30,6 +30,21 @@ with the scope or aim of the project.
 - Variables and functions use lowercase with underscore (e.g. `addition_cost`)
 - Non-static private data members are prefixed with an underscore (e.g. `_matrix`)
 
+### Namespaces
+
+A generic `vroom` namespace contains every type that needs to be
+exposed, such as `Job`, `Vehicle`, `Location`, `Amount` etc. Then
+there are several namespace specializations.
+
+- `utils`: helper data structures, functions and algorithms
+- `io`: everything related to command-line arguments, input and output handling
+- `routing`: wrappers for the routing layer
+- `heuristics`: VRP heuristics stuff
+- `ls`: local search phase stuff
+- `tsp`: specific code for the TSP
+- `cvrp`: CVRP-specific local search operators
+- `vrptw`: VRPTW-specific local search operators
+
 ### Automatic formatting
 
 To ensure a consistent formatting of the code-base, please run

@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Generic `vroom` namespace and several other specializations (#135)
+
 ### Changed
 
 - Refactor to remove duplicate code for heuristic and local search (#176)
