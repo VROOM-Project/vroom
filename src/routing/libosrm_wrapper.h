@@ -16,8 +16,9 @@ All rights reserved (see LICENSE).
 #include "routing/osrm_wrapper.h"
 
 namespace vroom {
+namespace routing {
 
-class LibosrmWrapper : public osrm_wrapper {
+class LibosrmWrapper : public OSRMWrapper {
 
 private:
   osrm::EngineConfig _config;
@@ -26,12 +27,13 @@ private:
 public:
   LibosrmWrapper(const std::string& osrm_profile);
 
-  virtual matrix<Cost>
+  virtual Matrix<Cost>
   get_matrix(const std::vector<Location>& locs) const override;
 
   virtual void add_route_info(Route& route) const override;
 };
 
+} // namespace routing
 } // namespace vroom
 
 #endif

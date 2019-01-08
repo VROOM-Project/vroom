@@ -68,11 +68,12 @@ void log_solution(const vroom::Solution& sol, bool geometry) {
   }
 }
 
-std::unique_ptr<vroom::RoutedWrapper> routing_wrapper() {
+std::unique_ptr<vroom::routing::RoutedWrapper> routing_wrapper() {
   // Create a wrapper for OSRM queries.
-  return std::make_unique<vroom::RoutedWrapper>("localhost", // OSRM server
-                                                "5000",      // OSRM port
-                                                "car"        // Profile
+  return std::make_unique<vroom::routing::RoutedWrapper>("localhost", // OSRM
+                                                                      // server
+                                                         "5000", // OSRM port
+                                                         "car"   // Profile
   );
 }
 

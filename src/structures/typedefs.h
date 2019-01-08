@@ -1,5 +1,5 @@
-#ifndef TYPEDEFS_H
-#define TYPEDEFS_H
+#ifndef VROOM_TYPEDEFS_H
+#define VROOM_TYPEDEFS_H
 
 /*
 

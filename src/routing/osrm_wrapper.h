@@ -12,13 +12,14 @@ All rights reserved (see LICENSE).
 
 #include <vector>
 
-#include "routing/routing.h"
+#include "routing/wrapper.h"
 #include "structures/generic/matrix.h"
 #include "utils/exception.h"
 
 namespace vroom {
+namespace routing {
 
-class OSRMWrapper : public Routing<Cost> {
+class OSRMWrapper : public Wrapper<Cost> {
 
 protected:
   const std::string _osrm_profile; // OSRM profile name
@@ -66,6 +67,7 @@ protected:
   virtual void add_route_info(Route& route) const = 0;
 };
 
+} // namespace routing
 } // namespace vroom
 
 #endif

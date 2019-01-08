@@ -16,7 +16,7 @@ All rights reserved (see LICENSE).
 #include <unordered_set>
 #include <vector>
 
-#include "routing/routing.h"
+#include "routing/wrapper.h"
 #include "structures/generic/matrix.h"
 #include "structures/typedefs.h"
 #include "structures/vroom/job.h"
@@ -33,7 +33,7 @@ private:
   std::chrono::high_resolution_clock::time_point _end_loading;
   std::chrono::high_resolution_clock::time_point _end_solving;
   std::chrono::high_resolution_clock::time_point _end_routing;
-  std::unique_ptr<Routing<Cost>> _routing_wrapper;
+  std::unique_ptr<routing::Wrapper<Cost>> _routing_wrapper;
   bool _has_skills;
   bool _has_TW;
   bool _homogeneous_locations;
@@ -60,7 +60,7 @@ public:
   std::vector<Job> jobs;
   std::vector<Vehicle> vehicles;
 
-  Input(std::unique_ptr<Routing<Cost>> routing_wrapper, bool geometry);
+  Input(std::unique_ptr<routing::Wrapper<Cost>> routing_wrapper, bool geometry);
 
   void add_job(const Job& job);
 

@@ -20,7 +20,8 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
-Input::Input(std::unique_ptr<Routing<Cost>> routing_wrapper, bool geometry)
+Input::Input(std::unique_ptr<routing::Wrapper<Cost>> routing_wrapper,
+             bool geometry)
   : _start_loading(std::chrono::high_resolution_clock::now()),
     _routing_wrapper(std::move(routing_wrapper)),
     _has_TW(false),

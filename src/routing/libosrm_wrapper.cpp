@@ -16,12 +16,13 @@ All rights reserved (see LICENSE).
 #include "routing/libosrm_wrapper.h"
 
 namespace vroom {
+namespace routing {
 
 LibosrmWrapper::LibosrmWrapper(const std::string& osrm_profile)
-  : osrm_wrapper(osrm_profile), _config(), _osrm(_config) {
+  : OSRMWrapper(osrm_profile), _config(), _osrm(_config) {
 }
 
-matrix<Cost>
+Matrix<Cost>
 LibosrmWrapper::get_matrix(const std::vector<Location>& locs) const {
   osrm::TableParameters params;
   for (auto const& location : locs) {
@@ -53,7 +54,7 @@ LibosrmWrapper::get_matrix(const std::vector<Location>& locs) const {
 
   // Build matrix while checking for unfound routes to avoid
   // unexpected behavior (OSRM raises 'null').
-  matrix<Cost> m(m_size);
+  Matrix<Cost> m(m_size);
 
   std::vector<unsigned> nb_unfound_from_loc(m_size, 0);
   std::vector<unsigned> nb_unfound_to_loc(m_size, 0);
@@ -114,15 +115,15 @@ void LibosrmWrapper::add_route_info(Route& route) const {
   }
 
   auto& result_routes = result.values["routes"].get<osrm::json::Array>();
-  auto& route = result_routes.values.at(0).get<osrm::json::Object>();
+  auto& json_route = result_routes.values.at(0).get<osrm::json::Object>();
 
   // Total distance and route geometry.
   route.distance =
-    round_cost(route.values["distance"].get<osrm::json::Number>().value);
+    round_cost(json_route.values["distance"].get<osrm::json::Number>().value);
   route.geometry =
-    std::move(route.values["geometry"].get<osrm::json::String>().value);
+    std::move(json_route.values["geometry"].get<osrm::json::String>().value);
 
-  auto& legs = route.values["legs"].get<osrm::json::Array>();
+  auto& legs = json_route.values["legs"].get<osrm::json::Array>();
   auto nb_legs = legs.values.size();
   assert(nb_legs == route.steps.size() - 1);
 
@@ -139,4 +140,5 @@ void LibosrmWrapper::add_route_info(Route& route) const {
   }
 }
 
+} // namespace routing
 } // namespace vroom

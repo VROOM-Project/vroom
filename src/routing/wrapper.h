@@ -1,5 +1,5 @@
-#ifndef ROUTING_H
-#define ROUTING_H
+#ifndef WRAPPER_H
+#define WRAPPER_H
 
 /*
 
@@ -17,22 +17,24 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/solution/route.h"
 
 namespace vroom {
+namespace routing {
 
-template <class T> class Routing {
+template <class T> class Wrapper {
 
 public:
   virtual Matrix<T> get_matrix(const std::vector<Location>& locs) const = 0;
 
   virtual void add_route_info(Route& route) const = 0;
 
-  virtual ~Routing() {
+  virtual ~Wrapper() {
   }
 
 protected:
-  Routing() {
+  Wrapper() {
   }
 };
 
+} // namespace routing
 } // namespace vroom
 
 #endif

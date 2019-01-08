@@ -130,19 +130,21 @@ inline std::vector<TimeWindow> get_job_time_windows(const rapidjson::Value& j) {
 
 Input parse(const CLArgs& cl_args) {
   // Set relevant wrapper to retrieve the matrix and geometry.
-  std::unique_ptr<Routing<Cost>> routing_wrapper;
+  std::unique_ptr<routing::Wrapper<Cost>> routing_wrapper;
   if (!cl_args.use_libosrm) {
     // Use osrm-routed.
-    routing_wrapper = std::make_unique<RoutedWrapper>(cl_args.osrm_address,
-                                                      cl_args.osrm_port,
-                                                      cl_args.osrm_profile);
+    routing_wrapper =
+      std::make_unique<routing::RoutedWrapper>(cl_args.osrm_address,
+                                               cl_args.osrm_port,
+                                               cl_args.osrm_profile);
   } else {
 #if LIBOSRM
     // Use libosrm.
     if (cl_args.osrm_profile.empty()) {
       throw Exception("-l flag requires -m.");
     }
-    routing_wrapper = std::make_unique<libosrm_wrapper>(cl_args.osrm_profile);
+    routing_wrapper =
+      std::make_unique<routing::LibosrmWrapper>(cl_args.osrm_profile);
 #else
     throw Exception("libosrm must be installed to use -l.");
 #endif

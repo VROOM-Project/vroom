@@ -145,7 +145,7 @@ int main(int argc, char** argv) {
     // osrm-datastore. It would be good to be able to catch an
     // osrm::util::exception for this. See OSRM issue #2813.
     std::cerr << "[Error] " << e.what() << std::endl;
-    write_to_json({1, e.what()}, false, cl_args.output_file);
+    vroom::io::write_to_json({1, e.what()}, false, cl_args.output_file);
     exit(1);
   }
 #endif

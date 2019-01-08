@@ -17,6 +17,7 @@ All rights reserved (see LICENSE).
 using boost::asio::ip::tcp;
 
 namespace vroom {
+namespace routing {
 
 RoutedWrapper::RoutedWrapper(const std::string& address,
                              const std::string& port,
@@ -186,4 +187,5 @@ void RoutedWrapper::add_route_info(Route& route) const {
   }
 }
 
+} // namespace routing
 } // namespace vroom
