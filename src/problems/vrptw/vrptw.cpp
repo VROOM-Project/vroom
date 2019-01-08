@@ -9,22 +9,50 @@ All rights reserved (see LICENSE).
 
 #include <thread>
 
-#include "problems/vrptw/heuristics/solomon.h"
-#include "problems/vrptw/local_search/local_search.h"
+#include "algorithms/heuristics/solomon.h"
+#include "algorithms/local_search/local_search.h"
+#include "problems/vrptw/operators/cross_exchange.h"
+#include "problems/vrptw/operators/exchange.h"
+#include "problems/vrptw/operators/intra_cross_exchange.h"
+#include "problems/vrptw/operators/intra_exchange.h"
+#include "problems/vrptw/operators/intra_mixed_exchange.h"
+#include "problems/vrptw/operators/intra_or_opt.h"
+#include "problems/vrptw/operators/intra_relocate.h"
+#include "problems/vrptw/operators/mixed_exchange.h"
+#include "problems/vrptw/operators/or_opt.h"
+#include "problems/vrptw/operators/relocate.h"
+#include "problems/vrptw/operators/reverse_two_opt.h"
+#include "problems/vrptw/operators/two_opt.h"
 #include "problems/vrptw/vrptw.h"
 #include "structures/vroom/input/input.h"
 #include "structures/vroom/tw_route.h"
 #include "utils/helpers.h"
 
-using tw_solution = std::vector<tw_route>;
+namespace vroom {
 
-constexpr std::array<h_param, 32> vrptw::homogeneous_parameters;
-constexpr std::array<h_param, 32> vrptw::heterogeneous_parameters;
+using TWSolution = std::vector<TWRoute>;
 
-vrptw::vrptw(const input& input) : vrp(input) {
+using LocalSearch = ls::LocalSearch<TWRoute,
+                                    vrptw::Exchange,
+                                    vrptw::CrossExchange,
+                                    vrptw::MixedExchange,
+                                    vrptw::TwoOpt,
+                                    vrptw::ReverseTwoOpt,
+                                    vrptw::Relocate,
+                                    vrptw::OrOpt,
+                                    vrptw::IntraExchange,
+                                    vrptw::IntraCrossExchange,
+                                    vrptw::IntraMixedExchange,
+                                    vrptw::IntraRelocate,
+                                    vrptw::IntraOrOpt>;
+
+constexpr std::array<HeuristicParameters, 32> VRPTW::homogeneous_parameters;
+constexpr std::array<HeuristicParameters, 32> VRPTW::heterogeneous_parameters;
+
+VRPTW::VRPTW(const Input& input) : VRP(input) {
 }
 
-solution vrptw::solve(unsigned exploration_level, unsigned nb_threads) const {
+Solution VRPTW::solve(unsigned exploration_level, unsigned nb_threads) const {
   auto parameters = (_input.has_homogeneous_locations())
                       ? homogeneous_parameters
                       : heterogeneous_parameters;
@@ -40,8 +68,8 @@ solution vrptw::solve(unsigned exploration_level, unsigned nb_threads) const {
   }
   assert(nb_init_solutions <= parameters.size());
 
-  std::vector<tw_solution> tw_solutions(nb_init_solutions);
-  std::vector<solution_indicators> sol_indicators(nb_init_solutions);
+  std::vector<TWSolution> tw_solutions(nb_init_solutions);
+  std::vector<utils::SolutionIndicators> sol_indicators(nb_init_solutions);
 
   // Split the work among threads.
   std::vector<std::vector<std::size_t>>
@@ -54,20 +82,20 @@ solution vrptw::solve(unsigned exploration_level, unsigned nb_threads) const {
     for (auto rank : param_ranks) {
       auto& p = parameters[rank];
       switch (p.heuristic) {
-      case HEURISTIC_T::BASIC:
+      case HEURISTIC::BASIC:
         tw_solutions[rank] =
-          vrptw_basic_heuristic(_input, p.init, p.regret_coeff);
+          heuristics::basic<TWSolution>(_input, p.init, p.regret_coeff);
         break;
-      case HEURISTIC_T::DYNAMIC:
+      case HEURISTIC::DYNAMIC:
         tw_solutions[rank] =
-          vrptw_dynamic_vehicle_choice_heuristic(_input,
-                                                 p.init,
-                                                 p.regret_coeff);
+          heuristics::dynamic_vehicle_choice<TWSolution>(_input,
+                                                         p.init,
+                                                         p.regret_coeff);
         break;
       }
 
       // Local search phase.
-      vrptw_local_search ls(_input, tw_solutions[rank], max_nb_jobs_removal);
+      LocalSearch ls(_input, tw_solutions[rank], max_nb_jobs_removal);
       ls.run();
 
       // Store solution indicators.
@@ -88,7 +116,10 @@ solution vrptw::solve(unsigned exploration_level, unsigned nb_threads) const {
   auto best_indic =
     std::min_element(sol_indicators.cbegin(), sol_indicators.cend());
 
-  return format_solution(_input,
-                         tw_solutions[std::distance(sol_indicators.cbegin(),
-                                                    best_indic)]);
+  return utils::format_solution(_input,
+                                tw_solutions[std::distance(sol_indicators
+                                                             .cbegin(),
+                                                           best_indic)]);
 }
+
+} // namespace vroom

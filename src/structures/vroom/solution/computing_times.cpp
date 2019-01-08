@@ -9,5 +9,9 @@ All rights reserved (see LICENSE).
 
 #include "structures/vroom/solution/computing_times.h"
 
-computing_times_t::computing_times_t() : loading(0), solving(0), routing(0) {
+namespace vroom {
+
+ComputingTimes::ComputingTimes() : loading(0), solving(0), routing(0) {
 }
+
+} // namespace vroom

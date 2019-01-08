@@ -15,10 +15,13 @@ All rights reserved (see LICENSE).
 #include "problems/vrp.h"
 #include "problems/vrptw/vrptw.h"
 #include "structures/vroom/input/input.h"
-#include "utils/exceptions.h"
+#include "utils/exception.h"
 #include "utils/helpers.h"
 
-input::input(std::unique_ptr<routing_io<cost_t>> routing_wrapper, bool geometry)
+namespace vroom {
+
+Input::Input(std::unique_ptr<routing::Wrapper<Cost>> routing_wrapper,
+             bool geometry)
   : _start_loading(std::chrono::high_resolution_clock::now()),
     _routing_wrapper(std::move(routing_wrapper)),
     _has_TW(false),
@@ -27,10 +30,10 @@ input::input(std::unique_ptr<routing_io<cost_t>> routing_wrapper, bool geometry)
     _all_locations_have_coords(true) {
 }
 
-void input::add_job(const job_t& job) {
-  _jobs.push_back(job);
+void Input::add_job(const Job& job) {
+  jobs.push_back(job);
 
-  auto& current_job = _jobs.back();
+  auto& current_job = jobs.back();
 
   // Ensure amount size consistency.
   this->check_amount_size(current_job.amount.size());
@@ -42,7 +45,7 @@ void input::add_job(const job_t& job) {
     _has_skills = !current_job.skills.empty();
   } else {
     if (_has_skills != !current_job.skills.empty()) {
-      throw custom_exception("Missing skills.");
+      throw Exception("Missing skills.");
     }
   }
 
@@ -60,10 +63,10 @@ void input::add_job(const job_t& job) {
   _locations.push_back(current_job.location);
 }
 
-void input::add_vehicle(const vehicle_t& vehicle) {
-  _vehicles.push_back(vehicle);
+void Input::add_vehicle(const Vehicle& vehicle) {
+  vehicles.push_back(vehicle);
 
-  auto& current_v = _vehicles.back();
+  auto& current_v = vehicles.back();
 
   // Ensure amount size consistency.
   this->check_amount_size(current_v.capacity.size());
@@ -73,7 +76,7 @@ void input::add_vehicle(const vehicle_t& vehicle) {
     _has_skills = !current_v.skills.empty();
   } else {
     if (_has_skills != !current_v.skills.empty()) {
-      throw custom_exception("Missing skills.");
+      throw Exception("Missing skills.");
     }
   }
 
@@ -112,13 +115,13 @@ void input::add_vehicle(const vehicle_t& vehicle) {
   }
 
   // Check for homogeneous locations among vehicles.
-  if (_vehicles.size() > 1) {
+  if (vehicles.size() > 1) {
     _homogeneous_locations &=
-      _vehicles.front().has_same_locations(_vehicles.back());
+      vehicles.front().has_same_locations(vehicles.back());
   }
 }
 
-void input::store_amount_lower_bound(const amount_t& amount) {
+void Input::store_amount_lower_bound(const Amount& amount) {
   if (_amount_lower_bound.empty()) {
     // Create on first call.
     _amount_lower_bound = amount;
@@ -129,59 +132,58 @@ void input::store_amount_lower_bound(const amount_t& amount) {
   }
 }
 
-void input::check_amount_size(unsigned size) {
+void Input::check_amount_size(unsigned size) {
   if (_locations.empty()) {
     // Updating real value on first call.
     _amount_size = size;
   } else {
     // Checking consistency for amount/capacity input lengths.
     if (size != _amount_size) {
-      throw custom_exception(
+      throw Exception(
         "Inconsistent amount/capacity lengths: " + std::to_string(size) +
         " and " + std::to_string(_amount_size) + '.');
     }
   }
 }
 
-void input::set_matrix(matrix<cost_t>&& m) {
+void Input::set_matrix(Matrix<Cost>&& m) {
   _matrix = std::move(m);
 }
 
-unsigned input::amount_size() const {
+unsigned Input::amount_size() const {
   return _amount_size;
 }
 
-amount_t input::get_amount_lower_bound() const {
+Amount Input::get_amount_lower_bound() const {
   return _amount_lower_bound;
 }
 
-bool input::has_skills() const {
+bool Input::has_skills() const {
   return _has_skills;
 }
 
-bool input::has_homogeneous_locations() const {
+bool Input::has_homogeneous_locations() const {
   return _homogeneous_locations;
 }
 
-bool input::vehicle_ok_with_job(index_t v_index, index_t j_index) const {
+bool Input::vehicle_ok_with_job(Index v_index, Index j_index) const {
   return _vehicle_to_job_compatibility[v_index][j_index];
 }
 
-const matrix<cost_t>& input::get_matrix() const {
+const Matrix<Cost>& Input::get_matrix() const {
   return _matrix;
 }
 
-matrix<cost_t>
-input::get_sub_matrix(const std::vector<index_t>& indices) const {
+Matrix<Cost> Input::get_sub_matrix(const std::vector<Index>& indices) const {
   return _matrix.get_sub_matrix(indices);
 }
 
-void input::check_cost_bound() const {
+void Input::check_cost_bound() const {
   // Check that we don't have any overflow while computing an upper
   // bound for solution cost.
 
-  std::vector<cost_t> max_cost_per_line(_matrix.size(), 0);
-  std::vector<cost_t> max_cost_per_column(_matrix.size(), 0);
+  std::vector<Cost> max_cost_per_line(_matrix.size(), 0);
+  std::vector<Cost> max_cost_per_column(_matrix.size(), 0);
 
   for (const auto i : _matrix_used_index) {
     for (const auto j : _matrix_used_index) {
@@ -190,50 +192,52 @@ void input::check_cost_bound() const {
     }
   }
 
-  cost_t jobs_departure_bound = 0;
-  cost_t jobs_arrival_bound = 0;
-  for (const auto& j : _jobs) {
+  Cost jobs_departure_bound = 0;
+  Cost jobs_arrival_bound = 0;
+  for (const auto& j : jobs) {
     jobs_departure_bound =
-      add_without_overflow(jobs_departure_bound, max_cost_per_line[j.index()]);
+      utils::add_without_overflow(jobs_departure_bound,
+                                  max_cost_per_line[j.index()]);
     jobs_arrival_bound =
-      add_without_overflow(jobs_arrival_bound, max_cost_per_column[j.index()]);
+      utils::add_without_overflow(jobs_arrival_bound,
+                                  max_cost_per_column[j.index()]);
   }
 
-  cost_t jobs_bound = std::max(jobs_departure_bound, jobs_arrival_bound);
+  Cost jobs_bound = std::max(jobs_departure_bound, jobs_arrival_bound);
 
-  cost_t start_bound = 0;
-  cost_t end_bound = 0;
-  for (const auto& v : _vehicles) {
+  Cost start_bound = 0;
+  Cost end_bound = 0;
+  for (const auto& v : vehicles) {
     if (v.has_start()) {
       start_bound =
-        add_without_overflow(start_bound,
-                             max_cost_per_line[v.start.get().index()]);
+        utils::add_without_overflow(start_bound,
+                                    max_cost_per_line[v.start.get().index()]);
     }
     if (v.has_end()) {
       end_bound =
-        add_without_overflow(end_bound,
-                             max_cost_per_column[v.end.get().index()]);
+        utils::add_without_overflow(end_bound,
+                                    max_cost_per_column[v.end.get().index()]);
     }
   }
 
-  cost_t bound = add_without_overflow(start_bound, jobs_bound);
-  bound = add_without_overflow(bound, end_bound);
+  Cost bound = utils::add_without_overflow(start_bound, jobs_bound);
+  bound = utils::add_without_overflow(bound, end_bound);
 }
 
-void input::set_vehicle_to_job_compatibility() {
+void Input::set_vehicle_to_job_compatibility() {
   // Default to no restriction when no skills are provided.
   _vehicle_to_job_compatibility =
-    std::vector<std::vector<bool>>(_vehicles.size(),
-                                   std::vector<bool>(_jobs.size(), true));
+    std::vector<std::vector<bool>>(vehicles.size(),
+                                   std::vector<bool>(jobs.size(), true));
   if (_has_skills) {
-    for (std::size_t v = 0; v < _vehicles.size(); ++v) {
-      const auto& v_skills = _vehicles[v].skills;
+    for (std::size_t v = 0; v < vehicles.size(); ++v) {
+      const auto& v_skills = vehicles[v].skills;
       assert(!v_skills.empty());
 
-      for (std::size_t j = 0; j < _jobs.size(); ++j) {
+      for (std::size_t j = 0; j < jobs.size(); ++j) {
         bool is_compatible = true;
-        assert(!_jobs[j].skills.empty());
-        for (const auto& s : _jobs[j].skills) {
+        assert(!jobs[j].skills.empty());
+        for (const auto& s : jobs[j].skills) {
           auto search = v_skills.find(s);
           is_compatible &= (search != v_skills.end());
           if (!is_compatible) {
@@ -246,18 +250,18 @@ void input::set_vehicle_to_job_compatibility() {
   }
 }
 
-std::unique_ptr<vrp> input::get_problem() const {
+std::unique_ptr<VRP> Input::get_problem() const {
   if (_has_TW) {
-    return std::make_unique<vrptw>(*this);
+    return std::make_unique<VRPTW>(*this);
   } else {
-    return std::make_unique<cvrp>(*this);
+    return std::make_unique<CVRP>(*this);
   }
 }
 
-solution input::solve(unsigned exploration_level, unsigned nb_thread) {
+Solution Input::solve(unsigned exploration_level, unsigned nb_thread) {
   if (_geometry and !_all_locations_have_coords) {
     // Early abort when info is required with missing coordinates.
-    throw custom_exception("Option -g is invalid with missing coordinates.");
+    throw Exception("Option -g is invalid with missing coordinates.");
   }
 
   if (_matrix.size() < 2) {
@@ -308,3 +312,5 @@ solution input::solve(unsigned exploration_level, unsigned nb_thread) {
 
   return sol;
 }
+
+} // namespace vroom

@@ -12,20 +12,24 @@ All rights reserved (see LICENSE).
 
 #include "structures/vroom/solution/solution.h"
 
-class input;
+namespace vroom {
 
-class vrp {
+class Input;
+
+class VRP {
   // Abstract class describing a VRP (vehicle routing problem).
 protected:
-  const input& _input;
+  const Input& _input;
 
 public:
-  vrp(const input& input);
+  VRP(const Input& input);
 
-  virtual ~vrp();
+  virtual ~VRP();
 
-  virtual solution solve(unsigned exploration_level,
+  virtual Solution solve(unsigned exploration_level,
                          unsigned nb_threads) const = 0;
 };
+
+} // namespace vroom
 
 #endif

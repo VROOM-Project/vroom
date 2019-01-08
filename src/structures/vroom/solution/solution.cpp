@@ -9,14 +9,16 @@ All rights reserved (see LICENSE).
 
 #include "structures/vroom/solution/solution.h"
 
-solution::solution(unsigned code, std::string error)
+namespace vroom {
+
+Solution::Solution(unsigned code, std::string error)
   : code(code), error(error) {
 }
 
-solution::solution(unsigned code,
+Solution::Solution(unsigned code,
                    unsigned amount_size,
-                   std::vector<route_t>&& routes,
-                   std::vector<job_t>&& unassigned)
+                   std::vector<Route>&& routes,
+                   std::vector<Job>&& unassigned)
   : code(code),
     summary(unassigned.size(), amount_size),
     routes(std::move(routes)),
@@ -30,3 +32,5 @@ solution::solution(unsigned code,
     summary.waiting_time += route.waiting_time;
   }
 }
+
+} // namespace vroom

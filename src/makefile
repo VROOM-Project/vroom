@@ -13,12 +13,12 @@ MAIN = ../bin/vroom
 LIB = ../lib/libvroom.a
 SRC = $(wildcard *.cpp)\
 			$(wildcard ./algorithms/*.cpp)\
+			$(wildcard ./algorithms/*/*.cpp)\
 			$(wildcard ./routing/*.cpp)\
 			$(wildcard ./problems/*.cpp)\
 			$(wildcard ./problems/*/*.cpp)\
-			$(wildcard ./problems/*/heuristics/*.cpp)\
-			$(wildcard ./problems/*/local_search/*.cpp)\
-			$(wildcard ./structures/abstract/*.cpp)\
+			$(wildcard ./problems/*/*/*.cpp)\
+			$(wildcard ./structures/generic/*.cpp)\
 			$(wildcard ./structures/vroom/*.cpp)\
 			$(wildcard ./structures/vroom/input/*.cpp)\
 			$(wildcard ./structures/vroom/solution/*.cpp)\

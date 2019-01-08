@@ -11,34 +11,41 @@ All rights reserved (see LICENSE).
 */
 
 #include "problems/vrp.h"
-#include "structures/abstract/matrix.h"
+#include "structures/generic/matrix.h"
 #include "structures/typedefs.h"
+#include "structures/vroom/raw_route.h"
 #include "structures/vroom/solution/solution.h"
 
-class tsp : public vrp {
+namespace vroom {
+
+using RawSolution = std::vector<RawRoute>;
+
+class TSP : public VRP {
 private:
-  index_t _vehicle_rank;
+  Index _vehicle_rank;
   // Holds the matching from index in _matrix to rank in input::_jobs.
-  std::vector<index_t> _job_ranks;
+  std::vector<Index> _job_ranks;
   bool _is_symmetric;
   bool _has_start;
-  index_t _start;
+  Index _start;
   bool _has_end;
-  index_t _end;
-  matrix<cost_t> _matrix;
-  matrix<cost_t> _symmetrized_matrix;
+  Index _end;
+  Matrix<Cost> _matrix;
+  Matrix<Cost> _symmetrized_matrix;
   bool _round_trip;
 
 public:
-  tsp(const input& input, std::vector<index_t> job_ranks, index_t vehicle_rank);
+  TSP(const Input& input, std::vector<Index> job_ranks, Index vehicle_rank);
 
-  cost_t cost(const std::list<index_t>& tour) const;
+  Cost cost(const std::list<Index>& tour) const;
 
-  cost_t symmetrized_cost(const std::list<index_t>& tour) const;
+  Cost symmetrized_cost(const std::list<Index>& tour) const;
 
-  raw_solution raw_solve(unsigned, unsigned nb_threads) const;
+  RawSolution raw_solve(unsigned, unsigned nb_threads) const;
 
-  virtual solution solve(unsigned, unsigned nb_threads) const override;
+  virtual Solution solve(unsigned, unsigned nb_threads) const override;
 };
+
+} // namespace vroom
 
 #endif

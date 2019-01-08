@@ -10,14 +10,16 @@ All rights reserved (see LICENSE).
 #include <numeric>
 
 #include "structures/vroom/job.h"
-#include "utils/exceptions.h"
+#include "utils/exception.h"
 
-job_t::job_t(ID_t id,
-             const location_t& location,
-             duration_t service,
-             const amount_t& amount,
-             const std::unordered_set<skill_t>& skills,
-             const std::vector<time_window_t>& tws)
+namespace vroom {
+
+Job::Job(Id id,
+         const Location& location,
+         Duration service,
+         const Amount& amount,
+         const Skills& skills,
+         const std::vector<TimeWindow>& tws)
   : id(id),
     location(location),
     service(service),
@@ -30,25 +32,24 @@ job_t::job_t(ID_t id,
                       tws[0].length,
                       [](auto sum, auto tw) { return sum + tw.length; })) {
   if (tws.size() == 0) {
-    throw custom_exception("Empty time-windows for job " + std::to_string(id) +
-                           ".");
+    throw Exception("Empty time-windows for job " + std::to_string(id) + ".");
   }
 
   if (tws.size() > 1) {
     for (std::size_t i = 0; i < tws.size() - 1; ++i) {
       if (tws[i + 1].start <= tws[i].end) {
-        throw custom_exception("Unsorted or overlapping time-windows for job " +
-                               std::to_string(id) + ".");
+        throw Exception("Unsorted or overlapping time-windows for job " +
+                        std::to_string(id) + ".");
       }
     }
   }
 }
 
-index_t job_t::index() const {
+Index Job::index() const {
   return location.index();
 }
 
-bool job_t::is_valid_start(duration_t time) const {
+bool Job::is_valid_start(Duration time) const {
   bool valid = false;
 
   for (const auto& tw : tws) {
@@ -60,3 +61,5 @@ bool job_t::is_valid_start(duration_t time) const {
 
   return valid;
 }
+
+} // namespace vroom

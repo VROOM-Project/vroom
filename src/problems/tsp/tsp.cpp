@@ -10,43 +10,43 @@ All rights reserved (see LICENSE).
 #include "problems/tsp/tsp.h"
 #include "problems/tsp/heuristics/christofides.h"
 #include "problems/tsp/heuristics/local_search.h"
-#include "structures/abstract/undirected_graph.h"
+#include "structures/generic/undirected_graph.h"
 #include "structures/vroom/input/input.h"
 #include "utils/helpers.h"
 
-tsp::tsp(const input& input,
-         std::vector<index_t> job_ranks,
-         index_t vehicle_rank)
-  : vrp(input),
+namespace vroom {
+
+TSP::TSP(const Input& input, std::vector<Index> job_ranks, Index vehicle_rank)
+  : VRP(input),
     _vehicle_rank(vehicle_rank),
     _job_ranks(std::move(job_ranks)),
     _is_symmetric(true),
-    _has_start(_input._vehicles[_vehicle_rank].has_start()),
-    _has_end(_input._vehicles[_vehicle_rank].has_end()) {
+    _has_start(_input.vehicles[_vehicle_rank].has_start()),
+    _has_end(_input.vehicles[_vehicle_rank].has_end()) {
 
   assert(!_job_ranks.empty());
 
   // Pick ranks to select from input matrix.
-  std::vector<index_t> matrix_ranks;
+  std::vector<Index> matrix_ranks;
   std::transform(_job_ranks.cbegin(),
                  _job_ranks.cend(),
                  std::back_inserter(matrix_ranks),
-                 [&](const auto& r) { return _input._jobs[r].index(); });
+                 [&](const auto& r) { return _input.jobs[r].index(); });
 
   if (_has_start) {
     // Add start and remember rank in _matrix.
     _start = matrix_ranks.size();
-    matrix_ranks.push_back(_input._vehicles[_vehicle_rank].start.get().index());
+    matrix_ranks.push_back(_input.vehicles[_vehicle_rank].start.get().index());
   }
   if (_has_end) {
     // Add end and remember rank in _matrix.
-    if (_has_start and (_input._vehicles[_vehicle_rank].start.get().index() ==
-                        _input._vehicles[_vehicle_rank].end.get().index())) {
+    if (_has_start and (_input.vehicles[_vehicle_rank].start.get().index() ==
+                        _input.vehicles[_vehicle_rank].end.get().index())) {
       // Avoiding duplicate for identical ranks.
       _end = _start;
     } else {
       _end = matrix_ranks.size();
-      matrix_ranks.push_back(_input._vehicles[_vehicle_rank].end.get().index());
+      matrix_ranks.push_back(_input.vehicles[_vehicle_rank].end.get().index());
     }
   }
 
@@ -55,7 +55,7 @@ tsp::tsp(const input& input,
   // Distances on the diagonal are never used except in the minimum
   // weight perfect matching (munkres call during the heuristic). This
   // makes sure no node will be matched with itself at that time.
-  for (index_t i = 0; i < _matrix.size(); ++i) {
+  for (Index i = 0; i < _matrix.size(); ++i) {
     _matrix[i][i] = INFINITE_COST;
   }
 
@@ -67,7 +67,7 @@ tsp::tsp(const input& input,
     if (_has_start and !_has_end) {
       // Forcing first location as start, end location decided during
       // optimization.
-      for (index_t i = 0; i < _matrix.size(); ++i) {
+      for (Index i = 0; i < _matrix.size(); ++i) {
         if (i != _start) {
           _matrix[i][_start] = 0;
         }
@@ -76,7 +76,7 @@ tsp::tsp(const input& input,
     if (!_has_start and _has_end) {
       // Forcing last location as end, start location decided during
       // optimization.
-      for (index_t j = 0; j < _matrix.size(); ++j) {
+      for (Index j = 0; j < _matrix.size(); ++j) {
         if (j != _end) {
           _matrix[_end][j] = 0;
         }
@@ -87,7 +87,7 @@ tsp::tsp(const input& input,
       // produce an open tour.
       assert(_start != _end);
       _matrix[_end][_start] = 0;
-      for (index_t j = 0; j < _matrix.size(); ++j) {
+      for (Index j = 0; j < _matrix.size(); ++j) {
         if ((j != _start) and (j != _end)) {
           _matrix[_end][j] = INFINITE_COST;
         }
@@ -96,35 +96,35 @@ tsp::tsp(const input& input,
   }
 
   // Compute symmetrized matrix and update _is_symmetric flag.
-  _symmetrized_matrix = matrix<cost_t>(_matrix.size());
+  _symmetrized_matrix = Matrix<Cost>(_matrix.size());
 
-  const cost_t& (*sym_f)(const cost_t&, const cost_t&) = std::min<cost_t>;
+  const Cost& (*sym_f)(const Cost&, const Cost&) = std::min<Cost>;
   if ((_has_start and !_has_end) or (!_has_start and _has_end)) {
     // Using symmetrization with max as when only start or only end is
     // forced, the matrix has a line or a column filled with zeros.
-    sym_f = std::max<cost_t>;
+    sym_f = std::max<Cost>;
   }
-  for (index_t i = 0; i < _matrix.size(); ++i) {
+  for (Index i = 0; i < _matrix.size(); ++i) {
     _symmetrized_matrix[i][i] = _matrix[i][i];
-    for (index_t j = i + 1; j < _matrix.size(); ++j) {
+    for (Index j = i + 1; j < _matrix.size(); ++j) {
       _is_symmetric &= (_matrix[i][j] == _matrix[j][i]);
-      cost_t val = sym_f(_matrix[i][j], _matrix[j][i]);
+      Cost val = sym_f(_matrix[i][j], _matrix[j][i]);
       _symmetrized_matrix[i][j] = val;
       _symmetrized_matrix[j][i] = val;
     }
   }
 }
 
-cost_t tsp::cost(const std::list<index_t>& tour) const {
-  cost_t cost = 0;
-  index_t init_step = 0; // Initialization actually never used.
+Cost TSP::cost(const std::list<Index>& tour) const {
+  Cost cost = 0;
+  Index init_step = 0; // Initialization actually never used.
 
   auto step = tour.cbegin();
   if (tour.size() > 0) {
     init_step = *step;
   }
 
-  index_t previous_step = init_step;
+  Index previous_step = init_step;
   ++step;
   for (; step != tour.cend(); ++step) {
     cost += _matrix[previous_step][*step];
@@ -136,16 +136,16 @@ cost_t tsp::cost(const std::list<index_t>& tour) const {
   return cost;
 }
 
-cost_t tsp::symmetrized_cost(const std::list<index_t>& tour) const {
-  cost_t cost = 0;
-  index_t init_step = 0; // Initialization actually never used.
+Cost TSP::symmetrized_cost(const std::list<Index>& tour) const {
+  Cost cost = 0;
+  Index init_step = 0; // Initialization actually never used.
 
   auto step = tour.cbegin();
   if (tour.size() > 0) {
     init_step = *step;
   }
 
-  index_t previous_step = init_step;
+  Index previous_step = init_step;
   ++step;
   for (; step != tour.cend(); ++step) {
     cost += _symmetrized_matrix[previous_step][*step];
@@ -157,25 +157,25 @@ cost_t tsp::symmetrized_cost(const std::list<index_t>& tour) const {
   return cost;
 }
 
-raw_solution tsp::raw_solve(unsigned, unsigned nb_threads) const {
+RawSolution TSP::raw_solve(unsigned, unsigned nb_threads) const {
   // Applying heuristic.
-  std::list<index_t> christo_sol = christofides(_symmetrized_matrix);
+  std::list<Index> christo_sol = tsp::christofides(_symmetrized_matrix);
 
   // Local search on symmetric problem.
   // Applying deterministic, fast local search to improve the current
   // solution in a small amount of time. All possible moves for the
   // different neighbourhoods are performed, stopping when reaching a
   // local minima.
-  tsp_local_search sym_ls(_symmetrized_matrix,
+  tsp::LocalSearch sym_ls(_symmetrized_matrix,
                           std::make_pair(!_round_trip and _has_start and
                                            _has_end,
                                          _start),
                           christo_sol,
                           nb_threads);
 
-  cost_t sym_two_opt_gain = 0;
-  cost_t sym_relocate_gain = 0;
-  cost_t sym_or_opt_gain = 0;
+  Cost sym_two_opt_gain = 0;
+  Cost sym_relocate_gain = 0;
+  Cost sym_or_opt_gain = 0;
 
   do {
     // All possible 2-opt moves.
@@ -189,7 +189,7 @@ raw_solution tsp::raw_solve(unsigned, unsigned nb_threads) const {
   } while ((sym_two_opt_gain > 0) or (sym_relocate_gain > 0) or
            (sym_or_opt_gain > 0));
 
-  index_t first_loc_index;
+  Index first_loc_index;
   if (_has_start) {
     // Use start value set in constructor from vehicle input.
     first_loc_index = _start;
@@ -200,26 +200,26 @@ raw_solution tsp::raw_solve(unsigned, unsigned nb_threads) const {
     first_loc_index = _end;
   }
 
-  std::list<index_t> current_sol = sym_ls.get_tour(first_loc_index);
+  std::list<Index> current_sol = sym_ls.get_tour(first_loc_index);
 
   if (!_is_symmetric) {
     // Back to the asymmetric problem, picking the best way.
-    std::list<index_t> reverse_current_sol(current_sol);
+    std::list<Index> reverse_current_sol(current_sol);
     reverse_current_sol.reverse();
-    cost_t direct_cost = this->cost(current_sol);
-    cost_t reverse_cost = this->cost(reverse_current_sol);
+    Cost direct_cost = this->cost(current_sol);
+    Cost reverse_cost = this->cost(reverse_current_sol);
 
     // Local search on asymmetric problem.
-    tsp_local_search
+    tsp::LocalSearch
       asym_ls(_matrix,
               std::make_pair(!_round_trip and _has_start and _has_end, _start),
               (direct_cost <= reverse_cost) ? current_sol : reverse_current_sol,
               nb_threads);
 
-    cost_t asym_two_opt_gain = 0;
-    cost_t asym_relocate_gain = 0;
-    cost_t asym_or_opt_gain = 0;
-    cost_t asym_avoid_loops_gain = 0;
+    Cost asym_two_opt_gain = 0;
+    Cost asym_relocate_gain = 0;
+    Cost asym_or_opt_gain = 0;
+    Cost asym_avoid_loops_gain = 0;
 
     do {
       // All avoid-loops moves.
@@ -259,7 +259,7 @@ raw_solution tsp::raw_solve(unsigned, unsigned nb_threads) const {
   }
 
   // Back to ranks in input::_jobs.
-  std::vector<index_t> init_ranks_sol;
+  std::vector<Index> init_ranks_sol;
   std::transform(current_sol.cbegin(),
                  current_sol.cend(),
                  std::back_inserter(init_ranks_sol),
@@ -268,6 +268,8 @@ raw_solution tsp::raw_solve(unsigned, unsigned nb_threads) const {
   return {init_ranks_sol};
 }
 
-solution tsp::solve(unsigned, unsigned nb_threads) const {
-  return format_solution(_input, raw_solve(0, nb_threads));
+Solution TSP::solve(unsigned, unsigned nb_threads) const {
+  return utils::format_solution(_input, raw_solve(0, nb_threads));
 }
+
+} // namespace vroom

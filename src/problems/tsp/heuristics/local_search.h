@@ -13,45 +13,51 @@ All rights reserved (see LICENSE).
 #include <list>
 #include <vector>
 
-#include "structures/abstract/matrix.h"
+#include "structures/generic/matrix.h"
 #include "structures/typedefs.h"
 
-class tsp_local_search {
+namespace vroom {
+namespace tsp {
+
+class LocalSearch {
 private:
-  const matrix<cost_t>& _matrix;
-  const std::pair<bool, index_t> _avoid_start_relocate;
-  std::vector<index_t> _edges;
+  const Matrix<Cost>& _matrix;
+  const std::pair<bool, Index> _avoid_start_relocate;
+  std::vector<Index> _edges;
   unsigned _nb_threads;
-  std::vector<index_t> _rank_limits;
-  std::vector<index_t> _sym_two_opt_rank_limits;
+  std::vector<Index> _rank_limits;
+  std::vector<Index> _sym_two_opt_rank_limits;
 
 public:
-  tsp_local_search(const matrix<cost_t>& matrix,
-                   std::pair<bool, index_t> avoid_start_relocate,
-                   const std::list<index_t>& tour,
-                   unsigned nb_threads);
+  LocalSearch(const Matrix<Cost>& matrix,
+              std::pair<bool, Index> avoid_start_relocate,
+              const std::list<Index>& tour,
+              unsigned nb_threads);
 
-  cost_t relocate_step();
+  Cost relocate_step();
 
-  cost_t perform_all_relocate_steps();
+  Cost perform_all_relocate_steps();
 
-  cost_t avoid_loop_step();
+  Cost avoid_loop_step();
 
-  cost_t perform_all_avoid_loop_steps();
+  Cost perform_all_avoid_loop_steps();
 
-  cost_t two_opt_step();
+  Cost two_opt_step();
 
-  cost_t asym_two_opt_step();
+  Cost asym_two_opt_step();
 
-  cost_t perform_all_two_opt_steps();
+  Cost perform_all_two_opt_steps();
 
-  cost_t perform_all_asym_two_opt_steps();
+  Cost perform_all_asym_two_opt_steps();
 
-  cost_t or_opt_step();
+  Cost or_opt_step();
 
-  cost_t perform_all_or_opt_steps();
+  Cost perform_all_or_opt_steps();
 
-  std::list<index_t> get_tour(index_t first_index) const;
+  std::list<Index> get_tour(Index first_index) const;
 };
+
+} // namespace tsp
+} // namespace vroom
 
 #endif

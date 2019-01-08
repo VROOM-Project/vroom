@@ -1,5 +1,5 @@
-#ifndef CLARGS_H
-#define CLARGS_H
+#ifndef CL_ARGS_H
+#define CL_ARGS_H
 
 /*
 
@@ -12,7 +12,10 @@ All rights reserved (see LICENSE).
 
 #include <string>
 
-struct cl_args_t {
+namespace vroom {
+namespace io {
+
+struct CLArgs {
   // Listing command-line options.
   std::string osrm_address;   // -a
   bool geometry;              // -g
@@ -27,7 +30,10 @@ struct cl_args_t {
 
   static const unsigned max_exploration_level;
 
-  cl_args_t();
+  CLArgs();
 };
+
+} // namespace io
+} // namespace vroom
 
 #endif

@@ -12,10 +12,16 @@ All rights reserved (see LICENSE).
 
 #include <list>
 
-#include "structures/abstract/matrix.h"
+#include "structures/generic/matrix.h"
 #include "structures/typedefs.h"
 
+namespace vroom {
+namespace tsp {
+
 // Implementing a variant of the Christofides heuristic.
-std::list<index_t> christofides(const matrix<cost_t>& sym_matrix);
+std::list<Index> christofides(const Matrix<Cost>& sym_matrix);
+
+} // namespace tsp
+} // namespace vroom
 
 #endif

@@ -13,11 +13,13 @@ All rights reserved (see LICENSE).
 
 #include "problems/tsp/heuristics/local_search.h"
 
-tsp_local_search::tsp_local_search(
-  const matrix<cost_t>& matrix,
-  std::pair<bool, index_t> avoid_start_relocate,
-  const std::list<index_t>& tour,
-  unsigned nb_threads)
+namespace vroom {
+namespace tsp {
+
+LocalSearch::LocalSearch(const Matrix<Cost>& matrix,
+                         std::pair<bool, Index> avoid_start_relocate,
+                         const std::list<Index>& tour,
+                         unsigned nb_threads)
   : _matrix(matrix),
     _avoid_start_relocate(avoid_start_relocate),
     _edges(_matrix.size()),
@@ -25,9 +27,9 @@ tsp_local_search::tsp_local_search(
     _rank_limits(_nb_threads) {
   // Build _edges vector representation.
   auto location = tour.cbegin();
-  index_t first_index = *location;
-  index_t current_index = first_index;
-  index_t last_index = first_index;
+  Index first_index = *location;
+  Index current_index = first_index;
+  Index last_index = first_index;
   ++location;
   while (location != tour.cend()) {
     current_index = *location;
@@ -83,7 +85,7 @@ tsp_local_search::tsp_local_search(
     unsigned total_lookups = _edges.size() * (_edges.size() - 3) / 2;
     unsigned thread_lookup_share = total_lookups / _nb_threads;
 
-    index_t rank = 0;
+    Index rank = 0;
     for (std::size_t i = 1; i < _nb_threads; ++i) {
       // Finding nodes that separate current tour in _nb_threads ranges.
       while (cumulated_lookups[rank] < i * thread_lookup_share) {
@@ -96,7 +98,7 @@ tsp_local_search::tsp_local_search(
   _sym_two_opt_rank_limits.push_back(_edges.size());
 }
 
-cost_t tsp_local_search::relocate_step() {
+Cost LocalSearch::relocate_step() {
   if (_edges.size() < 3) {
     // Not enough edges for the operator to make sense.
     return 0;
@@ -104,25 +106,25 @@ cost_t tsp_local_search::relocate_step() {
 
   // Lambda function to search for the best move in a range of
   // elements from _edges.
-  auto look_up = [&](index_t start,
-                     index_t end,
-                     cost_t& best_gain,
-                     index_t& best_edge_1_start,
-                     index_t& best_edge_2_start) {
-    for (index_t edge_1_start = start; edge_1_start < end; ++edge_1_start) {
-      index_t edge_1_end = _edges[edge_1_start];
+  auto look_up = [&](Index start,
+                     Index end,
+                     Cost& best_gain,
+                     Index& best_edge_1_start,
+                     Index& best_edge_2_start) {
+    for (Index edge_1_start = start; edge_1_start < end; ++edge_1_start) {
+      Index edge_1_end = _edges[edge_1_start];
       // Going through the tour while checking for insertion of
       // edge_1_end between two other nodes (edge_2_*).
       //
       // Namely edge_1_start --> edge_1_end --> next is replaced by
       // edge_1_start --> next while edge_2_start --> edge_2_end is
       // replaced by edge_2_start --> edge_1_end --> edge_2_end.
-      index_t next = _edges[edge_1_end];
+      Index next = _edges[edge_1_end];
 
       // Precomputing weights not depending on edge_2_*.
-      cost_t first_potential_add = _matrix[edge_1_start][next];
-      cost_t edge_1_weight = _matrix[edge_1_start][edge_1_end];
-      cost_t edge_1_end_next_weight = _matrix[edge_1_end][next];
+      Cost first_potential_add = _matrix[edge_1_start][next];
+      Cost edge_1_weight = _matrix[edge_1_start][edge_1_end];
+      Cost edge_1_end_next_weight = _matrix[edge_1_end][next];
 
       if (edge_1_weight + edge_1_end_next_weight - first_potential_add <
           best_gain) {
@@ -136,17 +138,17 @@ cost_t tsp_local_search::relocate_step() {
         continue;
       }
 
-      index_t edge_2_start = next;
+      Index edge_2_start = next;
       while (edge_2_start != edge_1_start) {
-        index_t edge_2_end = _edges[edge_2_start];
-        cost_t before_cost = edge_1_weight + edge_1_end_next_weight +
-                             _matrix[edge_2_start][edge_2_end];
-        cost_t after_cost = first_potential_add +
-                            _matrix[edge_2_start][edge_1_end] +
-                            _matrix[edge_1_end][edge_2_end];
+        Index edge_2_end = _edges[edge_2_start];
+        Cost before_cost = edge_1_weight + edge_1_end_next_weight +
+                           _matrix[edge_2_start][edge_2_end];
+        Cost after_cost = first_potential_add +
+                          _matrix[edge_2_start][edge_1_end] +
+                          _matrix[edge_1_end][edge_2_end];
 
         if (before_cost > after_cost) {
-          cost_t gain = before_cost - after_cost;
+          Cost gain = before_cost - after_cost;
           if (gain > best_gain) {
             best_edge_1_start = edge_1_start;
             best_edge_2_start = edge_2_start;
@@ -160,9 +162,9 @@ cost_t tsp_local_search::relocate_step() {
   };
 
   // Store best values per thread.
-  std::vector<cost_t> best_gains(_nb_threads, 0);
-  std::vector<index_t> best_edge_1_starts(_nb_threads);
-  std::vector<index_t> best_edge_2_starts(_nb_threads);
+  std::vector<Cost> best_gains(_nb_threads, 0);
+  std::vector<Index> best_edge_1_starts(_nb_threads);
+  std::vector<Index> best_edge_2_starts(_nb_threads);
 
   // Start other threads, keeping a piece of the range for the main
   // thread.
@@ -190,14 +192,14 @@ cost_t tsp_local_search::relocate_step() {
   auto best_rank =
     std::distance(best_gains.begin(),
                   std::max_element(best_gains.begin(), best_gains.end()));
-  cost_t best_gain = best_gains[best_rank];
-  index_t best_edge_1_start = best_edge_1_starts[best_rank];
-  index_t best_edge_2_start = best_edge_2_starts[best_rank];
+  Cost best_gain = best_gains[best_rank];
+  Index best_edge_1_start = best_edge_1_starts[best_rank];
+  Index best_edge_2_start = best_edge_2_starts[best_rank];
 
   if (best_gain > 0) {
     // Performing best possible exchange.
-    index_t best_edge_1_end = _edges[best_edge_1_start];
-    index_t best_edge_2_end = _edges[best_edge_2_start];
+    Index best_edge_1_end = _edges[best_edge_1_start];
+    Index best_edge_2_end = _edges[best_edge_2_start];
 
     _edges[best_edge_1_start] = _edges[best_edge_1_end];
     _edges[best_edge_1_end] = best_edge_2_end;
@@ -207,10 +209,10 @@ cost_t tsp_local_search::relocate_step() {
   return best_gain;
 }
 
-cost_t tsp_local_search::perform_all_relocate_steps() {
-  cost_t total_gain = 0;
+Cost LocalSearch::perform_all_relocate_steps() {
+  Cost total_gain = 0;
   unsigned relocate_iter = 0;
-  cost_t gain = 0;
+  Cost gain = 0;
   do {
     gain = this->relocate_step();
 
@@ -223,7 +225,7 @@ cost_t tsp_local_search::perform_all_relocate_steps() {
   return total_gain;
 }
 
-cost_t tsp_local_search::avoid_loop_step() {
+Cost LocalSearch::avoid_loop_step() {
   // In some cases, the solution can contain "loops" that other
   // operators can't fix. Those are found with two steps:
   //
@@ -237,32 +239,32 @@ cost_t tsp_local_search::avoid_loop_step() {
   // 3) relocate all nodes along the chain until an amelioration pops
   // out, meaning a "loop" has been undone.
 
-  cost_t gain = 0;
+  Cost gain = 0;
 
   // Going through all candidate nodes for relocation.
-  index_t previous_candidate = 0;
-  index_t candidate = _edges[previous_candidate];
+  Index previous_candidate = 0;
+  Index candidate = _edges[previous_candidate];
 
   // Remember previous steps for each node, required for step 3.
-  std::vector<index_t> previous(_matrix.size());
+  std::vector<Index> previous(_matrix.size());
   previous.at(candidate) = previous_candidate;
 
   // Storing chains as described in 2.
-  std::vector<std::list<index_t>> relocatable_chains;
-  std::list<index_t> current_relocatable_chain;
+  std::vector<std::list<Index>> relocatable_chains;
+  std::list<Index> current_relocatable_chain;
 
   // Remember possible position for further relocation of candidate
   // nodes.
-  std::unordered_map<index_t, index_t> possible_position;
+  std::unordered_map<Index, Index> possible_position;
 
   do {
-    index_t current = _edges[candidate];
+    Index current = _edges[candidate];
 
     bool candidate_relocatable = false;
     if (!_avoid_start_relocate.first or
         candidate != _avoid_start_relocate.second) {
       while ((current != previous_candidate) and !candidate_relocatable) {
-        index_t next = _edges[current];
+        Index next = _edges[current];
         if ((_matrix[current][candidate] + _matrix[candidate][next] <=
              _matrix[current][next]) and
             (_matrix[current][candidate] > 0) and
@@ -292,20 +294,20 @@ cost_t tsp_local_search::avoid_loop_step() {
   // Reorder to try the longest chains first.
   std::sort(relocatable_chains.begin(),
             relocatable_chains.end(),
-            [](const std::list<index_t>& lhs, const std::list<index_t>& rhs) {
+            [](const std::list<Index>& lhs, const std::list<Index>& rhs) {
               return lhs.size() > rhs.size();
             });
 
   bool amelioration_found = false;
   for (auto const& chain : relocatable_chains) {
     // Going through step 3. for all chains by decreasing length.
-    cost_t before_cost = 0;
-    cost_t after_cost = 0;
+    Cost before_cost = 0;
+    Cost after_cost = 0;
 
     // Work on copies as modifications are needed while going through
     // the chain.
-    std::vector<index_t> edges_c = _edges;
-    std::vector<index_t> previous_c = previous;
+    std::vector<Index> edges_c = _edges;
+    std::vector<Index> previous_c = previous;
 
     for (auto const& step : chain) {
       // Compare situations to see if relocating current step after
@@ -357,10 +359,10 @@ cost_t tsp_local_search::avoid_loop_step() {
   return gain;
 }
 
-cost_t tsp_local_search::perform_all_avoid_loop_steps() {
-  cost_t total_gain = 0;
+Cost LocalSearch::perform_all_avoid_loop_steps() {
+  Cost total_gain = 0;
   unsigned relocate_iter = 0;
-  cost_t gain = 0;
+  Cost gain = 0;
   do {
     gain = this->avoid_loop_step();
 
@@ -373,7 +375,7 @@ cost_t tsp_local_search::perform_all_avoid_loop_steps() {
   return total_gain;
 }
 
-cost_t tsp_local_search::two_opt_step() {
+Cost LocalSearch::two_opt_step() {
   if (_edges.size() < 4) {
     // Not enough edges for the operator to make sense.
     return 0;
@@ -381,15 +383,14 @@ cost_t tsp_local_search::two_opt_step() {
 
   // Lambda function to search for the best move in a range of
   // elements from _edges.
-  auto look_up = [&](index_t start,
-                     index_t end,
-                     cost_t& best_gain,
-                     index_t& best_edge_1_start,
-                     index_t& best_edge_2_start) {
-    for (index_t edge_1_start = start; edge_1_start < end; ++edge_1_start) {
-      index_t edge_1_end = _edges[edge_1_start];
-      for (index_t edge_2_start = edge_1_start + 1;
-           edge_2_start < _edges.size();
+  auto look_up = [&](Index start,
+                     Index end,
+                     Cost& best_gain,
+                     Index& best_edge_1_start,
+                     Index& best_edge_2_start) {
+    for (Index edge_1_start = start; edge_1_start < end; ++edge_1_start) {
+      Index edge_1_end = _edges[edge_1_start];
+      for (Index edge_2_start = edge_1_start + 1; edge_2_start < _edges.size();
            ++edge_2_start) {
         // Trying to improve two "crossing edges".
         //
@@ -402,19 +403,19 @@ cost_t tsp_local_search::two_opt_step() {
         // is the same as with (e_1, e_2), so assuming edge_1_start <
         // edge_2_start avoids testing pairs in both orders.
 
-        index_t edge_2_end = _edges[edge_2_start];
+        Index edge_2_end = _edges[edge_2_start];
         if ((edge_2_start == edge_1_end) or (edge_2_end == edge_1_start)) {
           // Operator doesn't make sense.
           continue;
         }
 
-        cost_t before_cost =
+        Cost before_cost =
           _matrix[edge_1_start][edge_1_end] + _matrix[edge_2_start][edge_2_end];
-        cost_t after_cost =
+        Cost after_cost =
           _matrix[edge_1_start][edge_2_start] + _matrix[edge_1_end][edge_2_end];
 
         if (before_cost > after_cost) {
-          cost_t gain = before_cost - after_cost;
+          Cost gain = before_cost - after_cost;
           if (gain > best_gain) {
             best_gain = gain;
             best_edge_1_start = edge_1_start;
@@ -426,9 +427,9 @@ cost_t tsp_local_search::two_opt_step() {
   };
 
   // Store best values per thread.
-  std::vector<cost_t> best_gains(_nb_threads, 0);
-  std::vector<index_t> best_edge_1_starts(_nb_threads);
-  std::vector<index_t> best_edge_2_starts(_nb_threads);
+  std::vector<Cost> best_gains(_nb_threads, 0);
+  std::vector<Index> best_edge_1_starts(_nb_threads);
+  std::vector<Index> best_edge_2_starts(_nb_threads);
 
   // Start other threads, keeping a piece of the range for the main
   // thread.
@@ -456,21 +457,21 @@ cost_t tsp_local_search::two_opt_step() {
   auto best_rank =
     std::distance(best_gains.begin(),
                   std::max_element(best_gains.begin(), best_gains.end()));
-  cost_t best_gain = best_gains[best_rank];
-  index_t best_edge_1_start = best_edge_1_starts[best_rank];
-  index_t best_edge_2_start = best_edge_2_starts[best_rank];
+  Cost best_gain = best_gains[best_rank];
+  Index best_edge_1_start = best_edge_1_starts[best_rank];
+  Index best_edge_2_start = best_edge_2_starts[best_rank];
 
   if (best_gain > 0) {
-    index_t best_edge_1_end = _edges[best_edge_1_start];
-    index_t best_edge_2_end = _edges[best_edge_2_start];
+    Index best_edge_1_end = _edges[best_edge_1_start];
+    Index best_edge_2_end = _edges[best_edge_2_start];
     // Storing part of the tour that needs to be reversed.
-    std::vector<index_t> to_reverse;
-    for (index_t current = best_edge_1_end; current != best_edge_2_start;
+    std::vector<Index> to_reverse;
+    for (Index current = best_edge_1_end; current != best_edge_2_start;
          current = _edges[current]) {
       to_reverse.push_back(current);
     }
     // Performing exchange.
-    index_t current = best_edge_2_start;
+    Index current = best_edge_2_start;
     _edges[best_edge_1_start] = current;
     for (auto next = to_reverse.rbegin(); next != to_reverse.rend(); ++next) {
       _edges[current] = *next;
@@ -482,7 +483,7 @@ cost_t tsp_local_search::two_opt_step() {
   return best_gain;
 }
 
-cost_t tsp_local_search::asym_two_opt_step() {
+Cost LocalSearch::asym_two_opt_step() {
   if (_edges.size() < 4) {
     // Not enough edges for the operator to make sense.
     return 0;
@@ -490,40 +491,40 @@ cost_t tsp_local_search::asym_two_opt_step() {
 
   // The initial node for the first edge is arbitrary but it is handy
   // to keep in mind the previous one for stopping conditions.
-  index_t previous_init = _edges.front();
-  index_t init = _edges[previous_init];
+  Index previous_init = _edges.front();
+  Index init = _edges[previous_init];
 
   // Lambda function to search for the best move in a range of
   // elements from _edges.
-  auto look_up = [&](index_t start,
-                     index_t end,
-                     cost_t& best_gain,
-                     index_t& best_edge_1_start,
-                     index_t& best_edge_2_start) {
-    index_t edge_1_start = start;
+  auto look_up = [&](Index start,
+                     Index end,
+                     Cost& best_gain,
+                     Index& best_edge_1_start,
+                     Index& best_edge_2_start) {
+    Index edge_1_start = start;
 
     do {
       // Going through the edges in the order of the current tour.
-      index_t edge_1_end = _edges[edge_1_start];
-      index_t edge_2_start = _edges[edge_1_end];
-      index_t edge_2_end = _edges[edge_2_start];
+      Index edge_1_end = _edges[edge_1_start];
+      Index edge_2_start = _edges[edge_1_end];
+      Index edge_2_end = _edges[edge_2_start];
       // Trying to improve two "crossing edges".
       //
       // Namely edge_1_start --> edge_1_end and edge_2_start -->
       // edge_2_end are replaced by edge_1_start --> edge_2_start and
       // edge_1_end --> edge_2_end. The tour between edge_1_end and
       // edge_2_start need to be reversed.
-      cost_t before_reversed_part_cost = 0;
-      cost_t after_reversed_part_cost = 0;
-      index_t previous = edge_1_end;
+      Cost before_reversed_part_cost = 0;
+      Cost after_reversed_part_cost = 0;
+      Index previous = edge_1_end;
 
       while (edge_2_end != edge_1_start) {
         // Going through the edges in the order of the current tour
         // (mandatory for before_cost and after_cost efficient
         // computation).
-        cost_t before_cost =
+        Cost before_cost =
           _matrix[edge_1_start][edge_1_end] + _matrix[edge_2_start][edge_2_end];
-        cost_t after_cost =
+        Cost after_cost =
           _matrix[edge_1_start][edge_2_start] + _matrix[edge_1_end][edge_2_end];
 
         // Updating the cost of the part of the tour that needs to be
@@ -536,7 +537,7 @@ cost_t tsp_local_search::asym_two_opt_step() {
         after_cost += after_reversed_part_cost;
 
         if (before_cost > after_cost) {
-          cost_t gain = before_cost - after_cost;
+          Cost gain = before_cost - after_cost;
           if (gain > best_gain) {
             best_gain = gain;
             best_edge_1_start = edge_1_start;
@@ -553,15 +554,15 @@ cost_t tsp_local_search::asym_two_opt_step() {
   };
 
   // Store best values per thread.
-  std::vector<cost_t> best_gains(_nb_threads, 0);
-  std::vector<index_t> best_edge_1_starts(_nb_threads);
-  std::vector<index_t> best_edge_2_starts(_nb_threads);
+  std::vector<Cost> best_gains(_nb_threads, 0);
+  std::vector<Index> best_edge_1_starts(_nb_threads);
+  std::vector<Index> best_edge_2_starts(_nb_threads);
   std::size_t thread_range = _edges.size() / _nb_threads;
 
   // The limits in the range given to each thread are not ranks but
   // actual nodes used to browse a piece of the current tour.
   std::vector<std::size_t> limit_nodes{init};
-  index_t node = init;
+  Index node = init;
   for (std::size_t i = 0; i < _nb_threads - 1; ++i) {
     // Finding nodes that separate current tour in _nb_threads ranges.
     for (std::size_t j = 0; j < thread_range; ++j, node = _edges[node]) {
@@ -596,21 +597,21 @@ cost_t tsp_local_search::asym_two_opt_step() {
   auto best_rank =
     std::distance(best_gains.begin(),
                   std::max_element(best_gains.begin(), best_gains.end()));
-  cost_t best_gain = best_gains[best_rank];
-  index_t best_edge_1_start = best_edge_1_starts[best_rank];
-  index_t best_edge_2_start = best_edge_2_starts[best_rank];
+  Cost best_gain = best_gains[best_rank];
+  Index best_edge_1_start = best_edge_1_starts[best_rank];
+  Index best_edge_2_start = best_edge_2_starts[best_rank];
 
   if (best_gain > 0) {
-    index_t best_edge_1_end = _edges[best_edge_1_start];
-    index_t best_edge_2_end = _edges[best_edge_2_start];
+    Index best_edge_1_end = _edges[best_edge_1_start];
+    Index best_edge_2_end = _edges[best_edge_2_start];
     // Storing part of the tour that needs to be reversed.
-    std::vector<index_t> to_reverse;
-    for (index_t current = best_edge_1_end; current != best_edge_2_start;
+    std::vector<Index> to_reverse;
+    for (Index current = best_edge_1_end; current != best_edge_2_start;
          current = _edges[current]) {
       to_reverse.push_back(current);
     }
     // Performing exchange.
-    index_t current = best_edge_2_start;
+    Index current = best_edge_2_start;
     _edges[best_edge_1_start] = current;
     for (auto next = to_reverse.rbegin(); next != to_reverse.rend(); ++next) {
       _edges[current] = *next;
@@ -622,10 +623,10 @@ cost_t tsp_local_search::asym_two_opt_step() {
   return best_gain;
 }
 
-cost_t tsp_local_search::perform_all_two_opt_steps() {
-  cost_t total_gain = 0;
+Cost LocalSearch::perform_all_two_opt_steps() {
+  Cost total_gain = 0;
   unsigned two_opt_iter = 0;
-  cost_t gain = 0;
+  Cost gain = 0;
   do {
     gain = this->two_opt_step();
 
@@ -638,10 +639,10 @@ cost_t tsp_local_search::perform_all_two_opt_steps() {
   return total_gain;
 }
 
-cost_t tsp_local_search::perform_all_asym_two_opt_steps() {
-  cost_t total_gain = 0;
+Cost LocalSearch::perform_all_asym_two_opt_steps() {
+  Cost total_gain = 0;
   unsigned two_opt_iter = 0;
-  cost_t gain = 0;
+  Cost gain = 0;
   do {
     gain = this->asym_two_opt_step();
 
@@ -654,7 +655,7 @@ cost_t tsp_local_search::perform_all_asym_two_opt_steps() {
   return total_gain;
 }
 
-cost_t tsp_local_search::or_opt_step() {
+Cost LocalSearch::or_opt_step() {
   if (_edges.size() < 4) {
     // Not enough edges for the operator to make sense.
     return 0;
@@ -662,16 +663,16 @@ cost_t tsp_local_search::or_opt_step() {
 
   // Lambda function to search for the best move in a range of
   // elements from _edges.
-  auto look_up = [&](index_t start,
-                     index_t end,
-                     cost_t& best_gain,
-                     index_t& best_edge_1_start,
-                     index_t& best_edge_2_start) {
-    for (index_t edge_1_start = start; edge_1_start < end; ++edge_1_start) {
-      index_t edge_1_end = _edges[edge_1_start];
-      index_t next = _edges[edge_1_end];
-      index_t next_2 = _edges[next];
-      index_t edge_2_start = next_2;
+  auto look_up = [&](Index start,
+                     Index end,
+                     Cost& best_gain,
+                     Index& best_edge_1_start,
+                     Index& best_edge_2_start) {
+    for (Index edge_1_start = start; edge_1_start < end; ++edge_1_start) {
+      Index edge_1_end = _edges[edge_1_start];
+      Index next = _edges[edge_1_end];
+      Index next_2 = _edges[next];
+      Index edge_2_start = next_2;
       // Going through the tour while checking the move of edge after
       // edge_1_end in place of another edge (edge_2_*).
       //
@@ -681,19 +682,19 @@ cost_t tsp_local_search::or_opt_step() {
       // --> next --> edge_2_end.
 
       // Precomputing weights not depending on edge_2.
-      cost_t first_potential_add = _matrix[edge_1_start][next_2];
-      cost_t edge_1_weight = _matrix[edge_1_start][edge_1_end];
-      cost_t next_next_2_weight = _matrix[next][next_2];
+      Cost first_potential_add = _matrix[edge_1_start][next_2];
+      Cost edge_1_weight = _matrix[edge_1_start][edge_1_end];
+      Cost next_next_2_weight = _matrix[next][next_2];
 
       while (edge_2_start != edge_1_start) {
-        index_t edge_2_end = _edges[edge_2_start];
-        cost_t before_cost = edge_1_weight + next_next_2_weight +
-                             _matrix[edge_2_start][edge_2_end];
-        cost_t after_cost = first_potential_add +
-                            _matrix[edge_2_start][edge_1_end] +
-                            _matrix[next][edge_2_end];
+        Index edge_2_end = _edges[edge_2_start];
+        Cost before_cost = edge_1_weight + next_next_2_weight +
+                           _matrix[edge_2_start][edge_2_end];
+        Cost after_cost = first_potential_add +
+                          _matrix[edge_2_start][edge_1_end] +
+                          _matrix[next][edge_2_end];
         if (before_cost > after_cost) {
-          cost_t gain = before_cost - after_cost;
+          Cost gain = before_cost - after_cost;
           if (gain > best_gain) {
             best_gain = gain;
             best_edge_1_start = edge_1_start;
@@ -707,9 +708,9 @@ cost_t tsp_local_search::or_opt_step() {
   };
 
   // Store best values per thread.
-  std::vector<cost_t> best_gains(_nb_threads, 0);
-  std::vector<index_t> best_edge_1_starts(_nb_threads);
-  std::vector<index_t> best_edge_2_starts(_nb_threads);
+  std::vector<Cost> best_gains(_nb_threads, 0);
+  std::vector<Index> best_edge_1_starts(_nb_threads);
+  std::vector<Index> best_edge_2_starts(_nb_threads);
 
   // Start other threads, keeping a piece of the range for the main
   // thread.
@@ -737,13 +738,13 @@ cost_t tsp_local_search::or_opt_step() {
   auto best_rank =
     std::distance(best_gains.begin(),
                   std::max_element(best_gains.begin(), best_gains.end()));
-  cost_t best_gain = best_gains[best_rank];
-  index_t best_edge_1_start = best_edge_1_starts[best_rank];
-  index_t best_edge_2_start = best_edge_2_starts[best_rank];
+  Cost best_gain = best_gains[best_rank];
+  Index best_edge_1_start = best_edge_1_starts[best_rank];
+  Index best_edge_2_start = best_edge_2_starts[best_rank];
 
   if (best_gain > 0) {
-    index_t best_edge_1_end = _edges[best_edge_1_start];
-    index_t next = _edges[best_edge_1_end];
+    Index best_edge_1_end = _edges[best_edge_1_start];
+    Index next = _edges[best_edge_1_end];
 
     // Performing exchange.
     _edges[best_edge_1_start] = _edges[next];
@@ -753,10 +754,10 @@ cost_t tsp_local_search::or_opt_step() {
   return best_gain;
 }
 
-cost_t tsp_local_search::perform_all_or_opt_steps() {
-  cost_t total_gain = 0;
+Cost LocalSearch::perform_all_or_opt_steps() {
+  Cost total_gain = 0;
   unsigned or_opt_iter = 0;
-  cost_t gain = 0;
+  Cost gain = 0;
   do {
     gain = this->or_opt_step();
     if (gain > 0) {
@@ -768,13 +769,16 @@ cost_t tsp_local_search::perform_all_or_opt_steps() {
   return total_gain;
 }
 
-std::list<index_t> tsp_local_search::get_tour(index_t first_index) const {
-  std::list<index_t> tour;
+std::list<Index> LocalSearch::get_tour(Index first_index) const {
+  std::list<Index> tour;
   tour.push_back(first_index);
-  index_t next_index = _edges[first_index];
+  Index next_index = _edges[first_index];
   while (next_index != first_index) {
     tour.push_back(next_index);
     next_index = _edges[next_index];
   }
   return tour;
 }
+
+} // namespace tsp
+} // namespace vroom

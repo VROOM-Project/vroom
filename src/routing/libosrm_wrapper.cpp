@@ -15,12 +15,15 @@ All rights reserved (see LICENSE).
 
 #include "routing/libosrm_wrapper.h"
 
-libosrm_wrapper::libosrm_wrapper(const std::string& osrm_profile)
-  : osrm_wrapper(osrm_profile), _config(), _osrm(_config) {
+namespace vroom {
+namespace routing {
+
+LibosrmWrapper::LibosrmWrapper(const std::string& osrm_profile)
+  : OSRMWrapper(osrm_profile), _config(), _osrm(_config) {
 }
 
-matrix<cost_t>
-libosrm_wrapper::get_matrix(const std::vector<location_t>& locs) const {
+Matrix<Cost>
+LibosrmWrapper::get_matrix(const std::vector<Location>& locs) const {
   osrm::TableParameters params;
   for (auto const& location : locs) {
     assert(location.has_coordinates());
@@ -34,11 +37,11 @@ libosrm_wrapper::get_matrix(const std::vector<location_t>& locs) const {
   try {
     status = _osrm.Table(params, result);
   } catch (const std::exception& e) {
-    throw custom_exception(e.what());
+    throw Exception(e.what());
   }
 
   if (status == osrm::Status::Error) {
-    throw custom_exception(
+    throw Exception(
       "libOSRM: " + result.values["code"].get<osrm::json::String>().value +
       ": " + result.values["message"].get<osrm::json::String>().value);
   }
@@ -51,7 +54,7 @@ libosrm_wrapper::get_matrix(const std::vector<location_t>& locs) const {
 
   // Build matrix while checking for unfound routes to avoid
   // unexpected behavior (OSRM raises 'null').
-  matrix<cost_t> m(m_size);
+  Matrix<Cost> m(m_size);
 
   std::vector<unsigned> nb_unfound_from_loc(m_size, 0);
   std::vector<unsigned> nb_unfound_to_loc(m_size, 0);
@@ -80,7 +83,7 @@ libosrm_wrapper::get_matrix(const std::vector<location_t>& locs) const {
   return m;
 }
 
-void libosrm_wrapper::add_route_info(route_t& rte) const {
+void LibosrmWrapper::add_route_info(Route& route) const {
   // Default options for routing.
   osrm::RouteParameters params(false, // steps
                                false, // alternatives
@@ -91,7 +94,7 @@ void libosrm_wrapper::add_route_info(route_t& rte) const {
   );
 
   // Ordering locations for the given steps.
-  for (auto& step : rte.steps) {
+  for (auto& step : route.steps) {
     params.coordinates
       .emplace_back(osrm::util::FloatLongitude({step.location.lon()}),
                     osrm::util::FloatLatitude({step.location.lat()}));
@@ -102,37 +105,40 @@ void libosrm_wrapper::add_route_info(route_t& rte) const {
   try {
     status = _osrm.Route(params, result);
   } catch (const std::exception& e) {
-    throw custom_exception(e.what());
+    throw Exception(e.what());
   }
 
   if (status == osrm::Status::Error) {
-    throw custom_exception(
+    throw Exception(
       "libOSRM: " + result.values["code"].get<osrm::json::String>().value +
       ": " + result.values["message"].get<osrm::json::String>().value);
   }
 
   auto& result_routes = result.values["routes"].get<osrm::json::Array>();
-  auto& route = result_routes.values.at(0).get<osrm::json::Object>();
+  auto& json_route = result_routes.values.at(0).get<osrm::json::Object>();
 
   // Total distance and route geometry.
-  rte.distance =
-    round_cost(route.values["distance"].get<osrm::json::Number>().value);
-  rte.geometry =
-    std::move(route.values["geometry"].get<osrm::json::String>().value);
+  route.distance =
+    round_cost(json_route.values["distance"].get<osrm::json::Number>().value);
+  route.geometry =
+    std::move(json_route.values["geometry"].get<osrm::json::String>().value);
 
-  auto& legs = route.values["legs"].get<osrm::json::Array>();
+  auto& legs = json_route.values["legs"].get<osrm::json::Array>();
   auto nb_legs = legs.values.size();
-  assert(nb_legs == rte.steps.size() - 1);
+  assert(nb_legs == route.steps.size() - 1);
 
   // Accumulated travel distance stored for each step.
   double current_distance = 0;
 
-  rte.steps[0].distance = 0;
+  route.steps[0].distance = 0;
 
   for (unsigned i = 0; i < nb_legs; ++i) {
     // Update distance for step after current route leg.
     auto& leg = legs.values.at(i).get<osrm::json::Object>();
     current_distance += leg.values["distance"].get<osrm::json::Number>().value;
-    rte.steps[i + 1].distance = round_cost(current_distance);
+    route.steps[i + 1].distance = round_cost(current_distance);
   }
 }
+
+} // namespace routing
+} // namespace vroom

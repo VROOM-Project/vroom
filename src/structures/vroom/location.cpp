@@ -9,47 +9,51 @@ All rights reserved (see LICENSE).
 
 #include "structures/vroom/location.h"
 
-location_t::location_t(index_t index)
+namespace vroom {
+
+Location::Location(Index index)
   : _index(index), _coords(boost::none), _user_index(true) {
 }
 
-location_t::location_t(index_t index, const coords_t& coords)
-  : _index(index), _coords(optional_coords_t(coords)), _user_index(true) {
+Location::Location(Index index, const Coordinates& coords)
+  : _index(index), _coords(OptionalCoordinates(coords)), _user_index(true) {
 }
 
-location_t::location_t(const coords_t& coords)
-  : _coords(optional_coords_t(coords)), _user_index(false) {
+Location::Location(const Coordinates& coords)
+  : _coords(OptionalCoordinates(coords)), _user_index(false) {
 }
 
-void location_t::set_index(index_t index) {
+void Location::set_index(Index index) {
   assert(!_user_index);
   _index = index;
 }
 
-bool location_t::has_coordinates() const {
+bool Location::has_coordinates() const {
   return _coords != boost::none;
 }
 
-index_t location_t::index() const {
+Index Location::index() const {
   return _index;
 }
 
-coordinate_t location_t::lon() const {
+Coordinate Location::lon() const {
   assert(this->has_coordinates());
   return _coords.get()[0];
 }
 
-coordinate_t location_t::lat() const {
+Coordinate Location::lat() const {
   assert(this->has_coordinates());
   return _coords.get()[1];
 }
 
-bool location_t::user_index() const {
+bool Location::user_index() const {
   return _user_index;
 }
 
-bool location_t::operator==(const location_t& other) const {
+bool Location::operator==(const Location& other) const {
   return (_index == other.index()) or
          (this->has_coordinates() and other.has_coordinates() and
           (this->lon() == other.lon()) and (this->lat() == other.lat()));
 }
+
+} // namespace vroom

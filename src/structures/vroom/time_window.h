@@ -12,22 +12,26 @@ All rights reserved (see LICENSE).
 
 #include "structures/typedefs.h"
 
-struct time_window_t {
-  static const duration_t default_length;
-  duration_t start;
-  duration_t end;
-  duration_t length;
+namespace vroom {
+
+struct TimeWindow {
+  static const Duration default_length;
+  Duration start;
+  Duration end;
+  Duration length;
 
   // Default "no-constraint" time-window.
-  time_window_t();
+  TimeWindow();
 
-  time_window_t(duration_t start, duration_t end);
+  TimeWindow(Duration start, Duration end);
 
-  bool contains(duration_t time) const;
+  bool contains(Duration time) const;
 
   bool is_default() const;
 
-  friend bool operator<(const time_window_t& lhs, const time_window_t& rhs);
+  friend bool operator<(const TimeWindow& lhs, const TimeWindow& rhs);
 };
+
+} // namespace vroom
 
 #endif

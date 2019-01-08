@@ -15,26 +15,30 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/location.h"
 #include "structures/vroom/time_window.h"
 
-struct vehicle_t {
-  const ID_t id;
-  boost::optional<location_t> start;
-  boost::optional<location_t> end;
-  const amount_t capacity;
-  const skills_t skills;
-  const time_window_t tw;
+namespace vroom {
 
-  vehicle_t(ID_t id,
-            const boost::optional<location_t>& start,
-            const boost::optional<location_t>& end,
-            const amount_t& capacity = amount_t(0),
-            const skills_t& skills = skills_t(),
-            const time_window_t& tw = time_window_t());
+struct Vehicle {
+  const Id id;
+  boost::optional<Location> start;
+  boost::optional<Location> end;
+  const Amount capacity;
+  const Skills skills;
+  const TimeWindow tw;
+
+  Vehicle(Id id,
+          const boost::optional<Location>& start,
+          const boost::optional<Location>& end,
+          const Amount& capacity = Amount(0),
+          const Skills& skills = Skills(),
+          const TimeWindow& tw = TimeWindow());
 
   bool has_start() const;
 
   bool has_end() const;
 
-  bool has_same_locations(const vehicle_t& other) const;
+  bool has_same_locations(const Vehicle& other) const;
 };
+
+} // namespace vroom
 
 #endif

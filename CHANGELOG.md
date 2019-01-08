@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+### Added
+
+- Generic `vroom` namespace and several other specializations (#135)
+
+### Changed
+
+- Refactor to remove duplicate code for heuristic and local search (#176)
+- Refactor to enforce naming conventions that are now explicitly stated in `CONTRIBUTING.md` (#135)
+
 ## [v1.3.0]
 
 ### Added

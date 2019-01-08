@@ -15,17 +15,22 @@ All rights reserved (see LICENSE).
 #include "structures/typedefs.h"
 #include "structures/vroom/amount.h"
 #include "structures/vroom/input/input.h"
+#include "structures/vroom/raw_route.h"
 #include "structures/vroom/tw_route.h"
 
-using tw_solution = std::vector<tw_route>;
+namespace vroom {
+namespace utils {
 
-struct solution_indicators {
+using RawSolution = std::vector<RawRoute>;
+using TWSolution = std::vector<TWRoute>;
+
+struct SolutionIndicators {
   unsigned unassigned;
-  cost_t cost;
+  Cost cost;
   unsigned used_vehicles;
 
-  friend bool operator<(const solution_indicators& lhs,
-                        const solution_indicators& rhs) {
+  friend bool operator<(const SolutionIndicators& lhs,
+                        const SolutionIndicators& rhs) {
     if (lhs.unassigned < rhs.unassigned) {
       return true;
     }
@@ -41,29 +46,29 @@ struct solution_indicators {
   }
 };
 
-class solution_state {
+class SolutionState {
 private:
-  const input& _input;
-  const matrix<cost_t>& _m;
-  const std::size_t _V;
-  const amount_t _empty_amount;
+  const Input& _input;
+  const Matrix<Cost>& _m;
+  const std::size_t _nb_vehicles;
+  const Amount _empty_amount;
 
 public:
   // Store unassigned jobs.
-  std::unordered_set<index_t> unassigned;
+  std::unordered_set<Index> unassigned;
 
   // fwd_amounts[v][i] stores the total amount up to rank i in the
   // route for vehicle v, while bwd_amounts[v][i] stores the total
   // amount *after* rank i in the route for vehicle v.
-  std::vector<std::vector<amount_t>> fwd_amounts;
-  std::vector<std::vector<amount_t>> bwd_amounts;
+  std::vector<std::vector<Amount>> fwd_amounts;
+  std::vector<std::vector<Amount>> bwd_amounts;
 
   // fwd_costs[v][i] stores the total cost from job at rank 0 to job
   // at rank i in the route for vehicle v, while bwd_costs[v][i]
   // stores the total cost from job at rank i to job at rank 0
   // (i.e. when *reversing* all edges).
-  std::vector<std::vector<cost_t>> fwd_costs;
-  std::vector<std::vector<cost_t>> bwd_costs;
+  std::vector<std::vector<Cost>> fwd_costs;
+  std::vector<std::vector<Cost>> bwd_costs;
 
   // fwd_skill_rank[v1][v2] stores the maximum rank r for a step in
   // route for vehicle v1 such that v2 can handle all jobs from step 0
@@ -71,8 +76,8 @@ public:
   // the minimum rank r for a step in route for vehicle v1 such that
   // v2 can handle all jobs after step r -- included -- up to the end
   // of that route.
-  std::vector<std::vector<index_t>> fwd_skill_rank;
-  std::vector<std::vector<index_t>> bwd_skill_rank;
+  std::vector<std::vector<Index>> fwd_skill_rank;
+  std::vector<std::vector<Index>> bwd_skill_rank;
 
   // edge_costs_around_node[v][i] stores the sum of costs for edges
   // that appear before and after job at rank i in route for vehicle v
@@ -81,9 +86,9 @@ public:
   // when removing job at rank i in route for vehicle
   // v. node_candidates[v] is the rank that yields the biggest such
   // gain for vehicle v.
-  std::vector<std::vector<gain_t>> edge_costs_around_node;
-  std::vector<std::vector<gain_t>> node_gains;
-  std::vector<index_t> node_candidates;
+  std::vector<std::vector<Gain>> edge_costs_around_node;
+  std::vector<std::vector<Gain>> node_gains;
+  std::vector<Index> node_candidates;
 
   // edge_costs_around_edge[v][i] stores the sum of costs for edges
   // that appear before and after edge starting at rank i in route for
@@ -92,47 +97,49 @@ public:
   // gain when removing edge starting at rank i in route for vehicle
   // v. edge_candidates[v] is the rank that yields the biggest such
   // gain for vehicle v.
-  std::vector<std::vector<gain_t>> edge_costs_around_edge;
-  std::vector<std::vector<gain_t>> edge_gains;
-  std::vector<index_t> edge_candidates;
+  std::vector<std::vector<Gain>> edge_costs_around_edge;
+  std::vector<std::vector<Gain>> edge_gains;
+  std::vector<Index> edge_candidates;
 
   // nearest_job_rank_in_routes_from[v1][v2][r1] stores the rank of
   // job in route v2 that minimize cost from job at rank r1 in v1.
-  std::vector<std::vector<std::vector<index_t>>>
-    nearest_job_rank_in_routes_from;
+  std::vector<std::vector<std::vector<Index>>> nearest_job_rank_in_routes_from;
   // nearest_job_rank_in_routes_to[v1][v2][r1] stores the rank of job
   // in route v2 that minimize cost to job at rank r1 in v1.
-  std::vector<std::vector<std::vector<index_t>>> nearest_job_rank_in_routes_to;
+  std::vector<std::vector<std::vector<Index>>> nearest_job_rank_in_routes_to;
 
   // Only used for assertions in debug mode.
-  std::vector<cost_t> route_costs;
+  std::vector<Cost> route_costs;
 
-  solution_state(const input& input);
+  SolutionState(const Input& input);
 
-  void setup(const raw_route_t& r, index_t v);
+  void setup(const std::vector<Index>& r, Index v);
 
-  void setup(const raw_solution& sol);
+  void setup(const RawSolution& sol);
 
-  void setup(const tw_solution& tw_sol);
+  void setup(const TWSolution& tw_sol);
 
-  void update_amounts(const raw_route_t& route, index_t v);
+  void update_amounts(const std::vector<Index>& route, Index v);
 
-  void update_costs(const raw_route_t& route, index_t v);
+  void update_costs(const std::vector<Index>& route, Index v);
 
-  void update_skills(const raw_route_t& route, index_t v1);
+  void update_skills(const std::vector<Index>& route, Index v1);
 
-  void set_node_gains(const raw_route_t& route, index_t v);
+  void set_node_gains(const std::vector<Index>& route, Index v);
 
-  void set_edge_gains(const raw_route_t& route, index_t v);
+  void set_edge_gains(const std::vector<Index>& route, Index v);
 
-  void update_nearest_job_rank_in_routes(const raw_route_t& route_1,
-                                         const raw_route_t& route_2,
-                                         index_t v1,
-                                         index_t v2);
+  void update_nearest_job_rank_in_routes(const std::vector<Index>& route_1,
+                                         const std::vector<Index>& route_2,
+                                         Index v1,
+                                         Index v2);
 
-  void update_route_cost(const raw_route_t& route, index_t v);
+  void update_route_cost(const std::vector<Index>& route, Index v);
 
-  const amount_t& total_amount(index_t v) const;
+  const Amount& total_amount(Index v) const;
 };
+
+} // namespace utils
+} // namespace vroom
 
 #endif

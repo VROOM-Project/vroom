@@ -16,19 +16,23 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/solution/route.h"
 #include "structures/vroom/solution/summary.h"
 
-struct solution {
+namespace vroom {
+
+struct Solution {
   unsigned code;
   std::string error;
-  summary_t summary;
-  std::vector<route_t> routes;
-  std::vector<job_t> unassigned;
+  Summary summary;
+  std::vector<Route> routes;
+  std::vector<Job> unassigned;
 
-  solution(unsigned code, std::string error);
+  Solution(unsigned code, std::string error);
 
-  solution(unsigned code,
+  Solution(unsigned code,
            unsigned amount_size,
-           std::vector<route_t>&& routes,
-           std::vector<job_t>&& unassigned);
+           std::vector<Route>&& routes,
+           std::vector<Job>&& unassigned);
 };
+
+} // namespace vroom
 
 #endif

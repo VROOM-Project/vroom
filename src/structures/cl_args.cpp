@@ -9,10 +9,13 @@ All rights reserved (see LICENSE).
 
 #include "structures/cl_args.h"
 
-const unsigned cl_args_t::max_exploration_level = 5;
+namespace vroom {
+namespace io {
+
+const unsigned CLArgs::max_exploration_level = 5;
 
 // Default values.
-cl_args_t::cl_args_t()
+CLArgs::CLArgs()
   : osrm_address("0.0.0.0"),
     geometry(false),
     osrm_port("5000"),
@@ -21,3 +24,6 @@ cl_args_t::cl_args_t()
     osrm_profile("car"),
     exploration_level(5) {
 }
+
+} // namespace io
+} // namespace vroom

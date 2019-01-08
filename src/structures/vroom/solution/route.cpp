@@ -9,13 +9,15 @@ All rights reserved (see LICENSE).
 
 #include "structures/vroom/solution/route.h"
 
-route_t::route_t(ID_t vehicle,
-                 std::vector<step>&& steps,
-                 cost_t cost,
-                 duration_t service,
-                 duration_t duration,
-                 duration_t waiting_time,
-                 const amount_t& amount)
+namespace vroom {
+
+Route::Route(Id vehicle,
+             std::vector<Step>&& steps,
+             Cost cost,
+             Duration service,
+             Duration duration,
+             Duration waiting_time,
+             const Amount& amount)
   : vehicle(vehicle),
     steps(std::move(steps)),
     cost(cost),
@@ -25,3 +27,5 @@ route_t::route_t(ID_t vehicle,
     amount(amount),
     distance(0) {
 }
+
+} // namespace vroom
