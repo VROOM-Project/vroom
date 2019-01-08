@@ -98,7 +98,7 @@ Solution CVRP::solve(unsigned exploration_level, unsigned nb_threads) const {
       auto& p = parameters[rank];
 
       if (p.is_clustering) {
-        Clustering c(_input, p.type, p.init, p.regret_coeff);
+        heuristics::Clustering c(_input, p.type, p.init, p.regret_coeff);
 
         // Populate vector of TSP solutions, one per cluster.
         for (std::size_t v = 0; v < nb_tsp; ++v) {
@@ -113,13 +113,13 @@ Solution CVRP::solve(unsigned exploration_level, unsigned nb_threads) const {
         switch (p.heuristic) {
         case HEURISTIC::BASIC:
           solutions[rank] =
-            basic_heuristic<RawSolution>(_input, p.init, p.regret_coeff);
+            heuristics::basic<RawSolution>(_input, p.init, p.regret_coeff);
           break;
         case HEURISTIC::DYNAMIC:
           solutions[rank] =
-            dynamic_vehicle_choice_heuristic<RawSolution>(_input,
-                                                          p.init,
-                                                          p.regret_coeff);
+            heuristics::dynamic_vehicle_choice<RawSolution>(_input,
+                                                            p.init,
+                                                            p.regret_coeff);
           break;
         }
       }

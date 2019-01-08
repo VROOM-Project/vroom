@@ -13,6 +13,7 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/amount.h"
 
 namespace vroom {
+namespace heuristics {
 
 Clustering::Clustering(const Input& input, CLUSTERING t, INIT i, float c)
   : _input(input),
@@ -513,4 +514,5 @@ void Clustering::sequential_clustering() {
   }
 }
 
+} // namespace heuristics
 } // namespace vroom

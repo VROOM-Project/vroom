@@ -16,6 +16,7 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/job.h"
 
 namespace vroom {
+namespace heuristics {
 
 class Clustering {
 private:
@@ -39,6 +40,7 @@ public:
   Clustering(const Input& input, CLUSTERING t, INIT i, float c);
 };
 
+} // namespace heuristics
 } // namespace vroom
 
 #endif

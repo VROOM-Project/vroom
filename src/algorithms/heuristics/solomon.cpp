@@ -17,9 +17,9 @@ All rights reserved (see LICENSE).
 #include "utils/helpers.h"
 
 namespace vroom {
+namespace heuristics {
 
-template <class T>
-T basic_heuristic(const Input& input, INIT init, float lambda) {
+template <class T> T basic(const Input& input, INIT init, float lambda) {
   T routes;
   for (Index v = 0; v < input.vehicles.size(); ++v) {
     routes.emplace_back(input, v);
@@ -160,9 +160,7 @@ T basic_heuristic(const Input& input, INIT init, float lambda) {
 }
 
 template <class T>
-T dynamic_vehicle_choice_heuristic(const Input& input,
-                                   INIT init,
-                                   float lambda) {
+T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
   T routes;
   for (Index v = 0; v < input.vehicles.size(); ++v) {
     routes.emplace_back(input, v);
@@ -360,20 +358,17 @@ T dynamic_vehicle_choice_heuristic(const Input& input,
 using RawSolution = std::vector<RawRoute>;
 using TWSolution = std::vector<TWRoute>;
 
-template RawSolution basic_heuristic(const Input& input,
-                                     INIT init,
-                                     float lambda);
+template RawSolution basic(const Input& input, INIT init, float lambda);
 
-template RawSolution dynamic_vehicle_choice_heuristic(const Input& input,
-                                                      INIT init,
-                                                      float lambda);
+template RawSolution dynamic_vehicle_choice(const Input& input,
+                                            INIT init,
+                                            float lambda);
 
-template TWSolution basic_heuristic(const Input& input,
-                                    INIT init,
-                                    float lambda);
+template TWSolution basic(const Input& input, INIT init, float lambda);
 
-template TWSolution dynamic_vehicle_choice_heuristic(const Input& input,
-                                                     INIT init,
-                                                     float lambda);
+template TWSolution dynamic_vehicle_choice(const Input& input,
+                                           INIT init,
+                                           float lambda);
 
+} // namespace heuristics
 } // namespace vroom
