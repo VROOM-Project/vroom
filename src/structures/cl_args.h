@@ -13,6 +13,7 @@ All rights reserved (see LICENSE).
 #include <string>
 
 namespace vroom {
+namespace io {
 
 struct CLArgs {
   // Listing command-line options.
@@ -32,6 +33,7 @@ struct CLArgs {
   CLArgs();
 };
 
+} // namespace io
 } // namespace vroom
 
 #endif

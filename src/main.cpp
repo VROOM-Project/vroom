@@ -48,7 +48,7 @@ void display_usage() {
 
 int main(int argc, char** argv) {
   // Load default command-line options.
-  vroom::CLArgs cl_args;
+  vroom::io::CLArgs cl_args;
 
   // Parsing command-line arguments.
   const char* optString = "a:gi:lm:o:p:t:x:h?";
@@ -106,7 +106,7 @@ int main(int argc, char** argv) {
   } catch (const std::exception& e) {
     std::string message = "Wrong numerical value.";
     std::cerr << "[Error] " << message << std::endl;
-    vroom::write_to_json({1, message}, false, cl_args.output_file);
+    vroom::io::write_to_json({1, message}, false, cl_args.output_file);
     exit(1);
   }
 
@@ -127,16 +127,16 @@ int main(int argc, char** argv) {
 
   try {
     // Build problem.
-    vroom::Input problem_instance = parse(cl_args);
+    vroom::Input problem_instance = vroom::io::parse(cl_args);
 
     vroom::Solution sol =
       problem_instance.solve(cl_args.exploration_level, cl_args.nb_threads);
 
     // Write solution.
-    vroom::write_to_json(sol, cl_args.geometry, cl_args.output_file);
+    vroom::io::write_to_json(sol, cl_args.geometry, cl_args.output_file);
   } catch (const vroom::Exception& e) {
     std::cerr << "[Error] " << e.get_message() << std::endl;
-    vroom::write_to_json({1, e.get_message()}, false, cl_args.output_file);
+    vroom::io::write_to_json({1, e.get_message()}, false, cl_args.output_file);
     exit(1);
   }
 #if LIBOSRM

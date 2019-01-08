@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 #include "structures/cl_args.h"
 
 namespace vroom {
+namespace io {
 
 const unsigned CLArgs::max_exploration_level = 5;
 
@@ -24,4 +25,5 @@ CLArgs::CLArgs()
     exploration_level(5) {
 }
 
+} // namespace io
 } // namespace vroom
