@@ -54,7 +54,7 @@ int main(int argc, char** argv) {
   while (opt != -1) {
     switch (opt) {
     case 'a':
-      cl_args.osrm_address = optarg;
+      cl_args.server.address = optarg;
       break;
     case 'g':
       cl_args.geometry = true;
@@ -69,7 +69,7 @@ int main(int argc, char** argv) {
       cl_args.output_file = optarg;
       break;
     case 'p':
-      cl_args.osrm_port = optarg;
+      cl_args.server.port = optarg;
       break;
     case 'r':
       router_arg = optarg;

@@ -19,11 +19,10 @@ namespace io {
 
 struct CLArgs {
   // Listing command-line options.
-  std::string osrm_address;   // -a
+  Server server;              // -a and -p
   bool geometry;              // -g
   std::string input_file;     // -i
   std::string output_file;    // -o
-  std::string osrm_port;      // -p
   ROUTER router;              // -r
   std::string input;          // cl arg
   unsigned nb_threads;        // -t

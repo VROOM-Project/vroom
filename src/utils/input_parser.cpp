@@ -134,9 +134,7 @@ Input parse(const CLArgs& cl_args) {
   switch (cl_args.router) {
   case ROUTER::OSRM:
     // Use osrm-routed.
-    routing_wrapper =
-      std::make_unique<routing::RoutedWrapper>(cl_args.osrm_address,
-                                               cl_args.osrm_port);
+    routing_wrapper = std::make_unique<routing::RoutedWrapper>(cl_args.server);
     break;
   case ROUTER::LIBOSRM:
 #if USE_LIBOSRM

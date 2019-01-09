@@ -19,9 +19,7 @@ using boost::asio::ip::tcp;
 namespace vroom {
 namespace routing {
 
-RoutedWrapper::RoutedWrapper(const std::string& address,
-                             const std::string& port)
-  : _address(address), _port(port) {
+RoutedWrapper::RoutedWrapper(const Server& server) : _server(server) {
 }
 
 std::string RoutedWrapper::build_query(const std::vector<Location>& locations,
@@ -44,7 +42,7 @@ std::string RoutedWrapper::build_query(const std::vector<Location>& locations,
   }
 
   query += " HTTP/1.1\r\n";
-  query += "Host: " + _address + "\r\n";
+  query += "Host: " + _server.address + "\r\n";
   query += "Accept: */*\r\n";
   query += "Connection: close\r\n\r\n";
 
@@ -58,7 +56,7 @@ std::string RoutedWrapper::send_then_receive(std::string query) const {
     boost::asio::io_service io_service;
 
     tcp::resolver r(io_service);
-    tcp::resolver::query q(_address, _port);
+    tcp::resolver::query q(_server.address, _server.port);
 
     tcp::socket s(io_service);
     boost::asio::connect(s, r.resolve(q));

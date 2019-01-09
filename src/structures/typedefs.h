@@ -42,6 +42,15 @@ constexpr Cost INFINITE_COST = 3 * (std::numeric_limits<Cost>::max() / 4);
 // Available routing engines.
 enum class ROUTER { OSRM, LIBOSRM };
 
+// Used to describe a routing server.
+struct Server {
+  std::string address;
+  std::string port;
+
+  Server() : address("0.0.0.0"), port("5000") {
+  }
+};
+
 // Available location status.
 enum class STEP_TYPE { START, JOB, END };
 

@@ -18,8 +18,7 @@ namespace routing {
 class RoutedWrapper : public OSRMWrapper {
 
 private:
-  std::string _address;
-  std::string _port;
+  Server _server;
 
   std::string build_query(const std::vector<Location>& locations,
                           std::string service,
@@ -28,7 +27,7 @@ private:
   std::string send_then_receive(std::string query) const;
 
 public:
-  RoutedWrapper(const std::string& address, const std::string& port);
+  RoutedWrapper(const Server& server);
 
   virtual Matrix<Cost>
   get_matrix(const std::vector<Location>& locs) const override;

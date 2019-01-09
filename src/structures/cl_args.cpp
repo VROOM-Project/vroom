@@ -16,12 +16,7 @@ const unsigned CLArgs::max_exploration_level = 5;
 
 // Default values.
 CLArgs::CLArgs()
-  : osrm_address("0.0.0.0"),
-    geometry(false),
-    osrm_port("5000"),
-    router(ROUTER::OSRM),
-    nb_threads(4),
-    exploration_level(5) {
+  : geometry(false), router(ROUTER::OSRM), nb_threads(4), exploration_level(5) {
 }
 
 } // namespace io
