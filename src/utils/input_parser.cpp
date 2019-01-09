@@ -13,7 +13,7 @@ All rights reserved (see LICENSE).
 #include "../include/rapidjson/document.h"
 #include "../include/rapidjson/error/en.h"
 
-#if LIBOSRM
+#if USE_LIBOSRM
 #include "routing/libosrm_wrapper.h"
 #endif
 #include "routing/routed_wrapper.h"
@@ -131,18 +131,22 @@ inline std::vector<TimeWindow> get_job_time_windows(const rapidjson::Value& j) {
 Input parse(const CLArgs& cl_args) {
   // Set relevant wrapper to retrieve the matrix and geometry.
   std::unique_ptr<routing::Wrapper<Cost>> routing_wrapper;
-  if (!cl_args.use_libosrm) {
+  switch (cl_args.router) {
+  case ROUTER::OSRM:
     // Use osrm-routed.
     routing_wrapper =
       std::make_unique<routing::RoutedWrapper>(cl_args.osrm_address,
                                                cl_args.osrm_port);
-  } else {
-#if LIBOSRM
+    break;
+  case ROUTER::LIBOSRM:
+#if USE_LIBOSRM
     // Use libosrm.
     routing_wrapper = std::make_unique<routing::LibosrmWrapper>();
 #else
-    throw Exception("libosrm must be installed to use -l.");
+    // Attempt to use libosrm while compiling without it.
+    throw Exception("VROOM compiled without libosrm installed.");
 #endif
+    break;
   }
 
   // Custom input object embedding jobs, vehicles and matrix.

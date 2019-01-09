@@ -31,8 +31,8 @@ void display_usage() {
   usage += "\t-p PORT (=5000),\t OSRM listening port\n";
   usage += "\t-g,\t\t\t add detailed route geometry and indicators\n";
   usage += "\t-i FILE,\t\t read input from FILE rather than from stdin\n";
-  usage += "\t-l,\t\t\t use libosrm rather than osrm-routed\n";
   usage += "\t-o OUTPUT,\t\t output file name\n";
+  usage += "\t-r ROUTER (=osrm),\t osrm or libosrm\n";
   usage += "\t-t THREADS (=4),\t number of threads to use\n";
   usage += "\t-x EXPLORE (=5),\t exploration level to use (0..5)";
   std::cout << usage << std::endl;
@@ -44,9 +44,10 @@ int main(int argc, char** argv) {
   vroom::io::CLArgs cl_args;
 
   // Parsing command-line arguments.
-  const char* optString = "a:gi:lm:o:p:t:x:h?";
+  const char* optString = "a:gi:o:p:r:t:x:h?";
   int opt = getopt(argc, argv, optString);
 
+  std::string router_arg;
   std::string nb_threads_arg = std::to_string(cl_args.nb_threads);
   std::string exploration_level_arg = std::to_string(cl_args.exploration_level);
 
@@ -64,14 +65,14 @@ int main(int argc, char** argv) {
     case 'i':
       cl_args.input_file = optarg;
       break;
-    case 'l':
-      cl_args.use_libosrm = true;
-      break;
     case 'o':
       cl_args.output_file = optarg;
       break;
     case 'p':
       cl_args.osrm_port = optarg;
+      break;
+    case 'r':
+      router_arg = optarg;
       break;
     case 't':
       nb_threads_arg = optarg;
@@ -94,7 +95,17 @@ int main(int argc, char** argv) {
     cl_args.exploration_level =
       std::min(cl_args.exploration_level, cl_args.max_exploration_level);
   } catch (const std::exception& e) {
-    std::string message = "Wrong numerical value.";
+    std::string message = "Invalid numerical value.";
+    std::cerr << "[Error] " << message << std::endl;
+    vroom::io::write_to_json({1, message}, false, cl_args.output_file);
+    exit(1);
+  }
+
+  // Determine routing engine (defaults to ROUTER::OSRM).
+  if (router_arg == "libosrm") {
+    cl_args.router = vroom::ROUTER::LIBOSRM;
+  } else if (!router_arg.empty() and router_arg != "osrm") {
+    std::string message = "Invalid routing engine: " + router_arg;
     std::cerr << "[Error] " << message << std::endl;
     vroom::io::write_to_json({1, message}, false, cl_args.output_file);
     exit(1);
@@ -129,7 +140,7 @@ int main(int argc, char** argv) {
     vroom::io::write_to_json({1, e.get_message()}, false, cl_args.output_file);
     exit(1);
   }
-#if LIBOSRM
+#if USE_LIBOSRM
   catch (const std::exception& e) {
     // Should only occur when trying to use libosrm without running
     // osrm-datastore. It would be good to be able to catch an

@@ -12,6 +12,8 @@ All rights reserved (see LICENSE).
 
 #include <string>
 
+#include "structures/typedefs.h"
+
 namespace vroom {
 namespace io {
 
@@ -22,7 +24,7 @@ struct CLArgs {
   std::string input_file;     // -i
   std::string output_file;    // -o
   std::string osrm_port;      // -p
-  bool use_libosrm;           // -l
+  ROUTER router;              // -r
   std::string input;          // cl arg
   unsigned nb_threads;        // -t
   unsigned exploration_level; // -x
