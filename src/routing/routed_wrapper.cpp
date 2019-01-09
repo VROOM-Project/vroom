@@ -20,9 +20,8 @@ namespace vroom {
 namespace routing {
 
 RoutedWrapper::RoutedWrapper(const std::string& address,
-                             const std::string& port,
-                             const std::string& osrm_profile)
-  : OSRMWrapper(osrm_profile), _address(address), _port(port) {
+                             const std::string& port)
+  : _address(address), _port(port) {
 }
 
 std::string RoutedWrapper::build_query(const std::vector<Location>& locations,
@@ -31,7 +30,7 @@ std::string RoutedWrapper::build_query(const std::vector<Location>& locations,
   // Building query for osrm-routed
   std::string query = "GET /" + service;
 
-  query += "/v1/" + _osrm_profile + "/";
+  query += "/v1/" + _profile + "/";
 
   // Adding locations.
   for (auto const& location : locations) {

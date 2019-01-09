@@ -25,7 +25,7 @@ private:
   const osrm::OSRM _osrm;
 
 public:
-  LibosrmWrapper(const std::string& osrm_profile);
+  LibosrmWrapper();
 
   virtual Matrix<Cost>
   get_matrix(const std::vector<Location>& locs) const override;

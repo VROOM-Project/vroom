@@ -27,15 +27,8 @@ void display_usage() {
   usage += "Usage:\n\tvroom [OPTION]... \"INPUT\"";
   usage += "\n\tvroom [OPTION]... -i FILE\n";
   usage += "Options:\n";
-  usage += "\t-a ADDRESS (=\"0.0.0.0\")\t OSRM server address\n";
+  usage += "\t-a HOST (=\"0.0.0.0\")\t OSRM server\n";
   usage += "\t-p PORT (=5000),\t OSRM listening port\n";
-  // usage += "\t-m MODE,\t\t OSRM profile name (car)\n";
-
-  // The -m flag is only present as the profile name is part of the
-  // OSRM v5 API. It is undocumented as OSRM doesn't implement
-  // query-time profile selection (yet) so setting it will have no
-  // effect for now.
-
   usage += "\t-g,\t\t\t add detailed route geometry and indicators\n";
   usage += "\t-i FILE,\t\t read input from FILE rather than from stdin\n";
   usage += "\t-l,\t\t\t use libosrm rather than osrm-routed\n";
@@ -73,9 +66,6 @@ int main(int argc, char** argv) {
       break;
     case 'l':
       cl_args.use_libosrm = true;
-      break;
-    case 'm':
-      cl_args.osrm_profile = optarg;
       break;
     case 'o':
       cl_args.output_file = optarg;

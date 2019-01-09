@@ -22,6 +22,8 @@ namespace routing {
 template <class T> class Wrapper {
 
 public:
+  const std::string _profile;
+
   virtual Matrix<T> get_matrix(const std::vector<Location>& locs) const = 0;
 
   virtual void add_route_info(Route& route) const = 0;
@@ -30,7 +32,7 @@ public:
   }
 
 protected:
-  Wrapper() {
+  Wrapper() : _profile("car") {
   }
 };
 

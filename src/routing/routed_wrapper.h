@@ -28,9 +28,7 @@ private:
   std::string send_then_receive(std::string query) const;
 
 public:
-  RoutedWrapper(const std::string& address,
-                const std::string& port,
-                const std::string& osrm_profile);
+  RoutedWrapper(const std::string& address, const std::string& port);
 
   virtual Matrix<Cost>
   get_matrix(const std::vector<Location>& locs) const override;

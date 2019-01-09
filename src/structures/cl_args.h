@@ -25,7 +25,6 @@ struct CLArgs {
   bool use_libosrm;           // -l
   std::string input;          // cl arg
   unsigned nb_threads;        // -t
-  std::string osrm_profile;   // -m
   unsigned exploration_level; // -x
 
   static const unsigned max_exploration_level;

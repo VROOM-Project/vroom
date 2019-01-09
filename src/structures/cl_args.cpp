@@ -21,7 +21,6 @@ CLArgs::CLArgs()
     osrm_port("5000"),
     use_libosrm(false),
     nb_threads(4),
-    osrm_profile("car"),
     exploration_level(5) {
 }
 
