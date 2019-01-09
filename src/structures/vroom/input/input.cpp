@@ -20,6 +20,14 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
+Input::Input()
+  : _start_loading(std::chrono::high_resolution_clock::now()),
+    _has_TW(false),
+    _homogeneous_locations(true),
+    _geometry(false),
+    _all_locations_have_coords(true) {
+}
+
 Input::Input(std::unique_ptr<routing::Wrapper<Cost>> routing_wrapper,
              bool geometry)
   : _start_loading(std::chrono::high_resolution_clock::now()),

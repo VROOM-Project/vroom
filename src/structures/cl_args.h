@@ -11,15 +11,18 @@ All rights reserved (see LICENSE).
 */
 
 #include <string>
+#include <unordered_map>
 
 #include "structures/typedefs.h"
 
 namespace vroom {
 namespace io {
 
+using Servers = std::unordered_map<std::string, Server>;
+
 struct CLArgs {
   // Listing command-line options.
-  Server server;              // -a and -p
+  Servers servers;            // -a and -p
   bool geometry;              // -g
   std::string input_file;     // -i
   std::string output_file;    // -o
@@ -32,6 +35,10 @@ struct CLArgs {
 
   CLArgs();
 };
+
+void update_host(Servers& servers, const std::string& value);
+
+void update_port(Servers& servers, const std::string& value);
 
 } // namespace io
 } // namespace vroom

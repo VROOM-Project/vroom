@@ -44,10 +44,13 @@ enum class ROUTER { OSRM, LIBOSRM };
 
 // Used to describe a routing server.
 struct Server {
-  std::string address;
+  std::string host;
   std::string port;
 
-  Server() : address("0.0.0.0"), port("5000") {
+  Server() : host("0.0.0.0"), port("5000") {
+  }
+  Server(const std::string& host, const std::string& port)
+    : host(host), port(port) {
   }
 };
 

@@ -19,7 +19,21 @@ using boost::asio::ip::tcp;
 namespace vroom {
 namespace routing {
 
-RoutedWrapper::RoutedWrapper(const Server& server) : _server(server) {
+RoutedWrapper::RoutedWrapper(const Servers& servers) : _servers(servers) {
+  if (_servers.size() == 1) {
+    this->set_profile(_servers.begin()->first);
+  }
+}
+
+void RoutedWrapper::update_server() {
+  auto search = _servers.find(_profile);
+  if (search == _servers.end()) {
+    throw Exception("Invalid profile:" + _profile + ".");
+  }
+
+  auto& server = search->second;
+  _host = server.host;
+  _port = server.port;
 }
 
 std::string RoutedWrapper::build_query(const std::vector<Location>& locations,
@@ -42,7 +56,7 @@ std::string RoutedWrapper::build_query(const std::vector<Location>& locations,
   }
 
   query += " HTTP/1.1\r\n";
-  query += "Host: " + _server.address + "\r\n";
+  query += "Host: " + _host + "\r\n";
   query += "Accept: */*\r\n";
   query += "Connection: close\r\n\r\n";
 
@@ -56,7 +70,8 @@ std::string RoutedWrapper::send_then_receive(std::string query) const {
     boost::asio::io_service io_service;
 
     tcp::resolver r(io_service);
-    tcp::resolver::query q(_server.address, _server.port);
+
+    tcp::resolver::query q(_host, _port);
 
     tcp::socket s(io_service);
     boost::asio::connect(s, r.resolve(q));
@@ -182,6 +197,11 @@ void RoutedWrapper::add_route_info(Route& route) const {
     current_distance += infos["routes"][0]["legs"][i]["distance"].GetDouble();
     route.steps[i + 1].distance = round_cost(current_distance);
   }
+}
+
+void RoutedWrapper::set_profile(const std::string& profile) {
+  Wrapper::set_profile(profile);
+  this->update_server();
 }
 
 } // namespace routing

@@ -27,8 +27,8 @@ void display_usage() {
   usage += "Usage:\n\tvroom [OPTION]... \"INPUT\"";
   usage += "\n\tvroom [OPTION]... -i FILE\n";
   usage += "Options:\n";
-  usage += "\t-a HOST (=\"0.0.0.0\")\t OSRM server\n";
-  usage += "\t-p PORT (=5000),\t OSRM listening port\n";
+  usage += "\t-a PROFILE:HOST (=car:0.0.0.0)\t Routing server\n";
+  usage += "\t-p PROFILE:PORT (=car:5000),\t Routing server port\n";
   usage += "\t-g,\t\t\t add detailed route geometry and indicators\n";
   usage += "\t-i FILE,\t\t read input from FILE rather than from stdin\n";
   usage += "\t-o OUTPUT,\t\t output file name\n";
@@ -54,7 +54,7 @@ int main(int argc, char** argv) {
   while (opt != -1) {
     switch (opt) {
     case 'a':
-      cl_args.server.address = optarg;
+      vroom::io::update_host(cl_args.servers, optarg);
       break;
     case 'g':
       cl_args.geometry = true;
@@ -69,7 +69,7 @@ int main(int argc, char** argv) {
       cl_args.output_file = optarg;
       break;
     case 'p':
-      cl_args.server.port = optarg;
+      vroom::io::update_port(cl_args.servers, optarg);
       break;
     case 'r':
       router_arg = optarg;

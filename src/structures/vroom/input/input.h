@@ -60,6 +60,8 @@ public:
   std::vector<Job> jobs;
   std::vector<Vehicle> vehicles;
 
+  Input();
+
   Input(std::unique_ptr<routing::Wrapper<Cost>> routing_wrapper, bool geometry);
 
   void add_job(const Job& job);

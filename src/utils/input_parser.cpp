@@ -134,7 +134,7 @@ Input parse(const CLArgs& cl_args) {
   switch (cl_args.router) {
   case ROUTER::OSRM:
     // Use osrm-routed.
-    routing_wrapper = std::make_unique<routing::RoutedWrapper>(cl_args.server);
+    routing_wrapper = std::make_unique<routing::RoutedWrapper>(cl_args.servers);
     break;
   case ROUTER::LIBOSRM:
 #if USE_LIBOSRM
@@ -146,6 +146,9 @@ Input parse(const CLArgs& cl_args) {
 #endif
     break;
   }
+
+  // TODO set this in Input after parsing vehicles.
+  routing_wrapper->set_profile("car");
 
   // Custom input object embedding jobs, vehicles and matrix.
   Input input_data(std::move(routing_wrapper), cl_args.geometry);
