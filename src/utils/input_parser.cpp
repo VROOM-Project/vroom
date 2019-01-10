@@ -148,7 +148,7 @@ Input parse(const CLArgs& cl_args) {
   }
 
   // TODO set this in Input after parsing vehicles.
-  routing_wrapper->set_profile("car");
+  routing_wrapper->set_profile(vroom::DEFAULT_PROFILE);
 
   // Custom input object embedding jobs, vehicles and matrix.
   Input input_data(std::move(routing_wrapper), cl_args.geometry);

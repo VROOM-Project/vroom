@@ -39,6 +39,8 @@ using Skills = std::unordered_set<Skill>;
 // Setting max value would cause trouble with further additions.
 constexpr Cost INFINITE_COST = 3 * (std::numeric_limits<Cost>::max() / 4);
 
+const std::string DEFAULT_PROFILE = "car";
+
 // Available routing engines.
 enum class ROUTER { OSRM, LIBOSRM };
 

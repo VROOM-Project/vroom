@@ -36,7 +36,7 @@ public:
   }
 
 protected:
-  Wrapper() : _profile("car") {
+  Wrapper() : _profile(DEFAULT_PROFILE) {
   }
 };
 

@@ -21,7 +21,7 @@ CLArgs::CLArgs()
 
 void update_host(Servers& servers, const std::string& value) {
   // Determine profile and host from a "car:0.0.0.0"-like value.
-  std::string profile = "car";
+  std::string profile = DEFAULT_PROFILE;
   std::string host;
 
   auto index = value.find(':');
@@ -44,7 +44,7 @@ void update_host(Servers& servers, const std::string& value) {
 
 void update_port(Servers& servers, const std::string& value) {
   // Determine profile and port from a "car:0.0.0.0"-like value.
-  std::string profile = "car";
+  std::string profile = DEFAULT_PROFILE;
   std::string port;
 
   auto index = value.find(':');

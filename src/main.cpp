@@ -27,8 +27,10 @@ void display_usage() {
   usage += "Usage:\n\tvroom [OPTION]... \"INPUT\"";
   usage += "\n\tvroom [OPTION]... -i FILE\n";
   usage += "Options:\n";
-  usage += "\t-a PROFILE:HOST (=car:0.0.0.0)\t Routing server\n";
-  usage += "\t-p PROFILE:PORT (=car:5000),\t Routing server port\n";
+  usage += "\t-a PROFILE:HOST (=" + vroom::DEFAULT_PROFILE +
+           ":0.0.0.0)\t Routing server\n";
+  usage += "\t-p PROFILE:PORT (=" + vroom::DEFAULT_PROFILE +
+           ":5000),\t Routing server port\n";
   usage += "\t-g,\t\t\t add detailed route geometry and indicators\n";
   usage += "\t-i FILE,\t\t read input from FILE rather than from stdin\n";
   usage += "\t-o OUTPUT,\t\t output file name\n";
