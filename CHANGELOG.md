@@ -4,12 +4,20 @@
 
 ### Added
 
+- Optional `profile` key for vehicles to allow picking routing profile at query-time (#196)
+- `-r` command-line flag for explicit routing engine choice (#196)
+- Support for multiple named datasets when using `libosrm` (#181)
 - Generic `vroom` namespace and several other specializations (#135)
 
 ### Changed
 
 - Refactor to remove duplicate code for heuristic and local search (#176)
 - Refactor to enforce naming conventions that are now explicitly stated in `CONTRIBUTING.md` (#135)
+- Options `-a` and `-p` can be used to define profile-dependant servers (#196)
+
+### Removed
+
+- `-l` and `-m` command-line flags (#196)
 
 ## [v1.3.0]
 
