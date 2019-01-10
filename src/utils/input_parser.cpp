@@ -134,26 +134,9 @@ inline std::vector<TimeWindow> get_job_time_windows(const rapidjson::Value& j) {
 }
 
 Input parse(const CLArgs& cl_args) {
-  // Set relevant wrapper to retrieve the matrix and geometry.
-  std::unique_ptr<routing::Wrapper<Cost>> routing_wrapper;
-  switch (cl_args.router) {
-  case ROUTER::OSRM:
-    // Use osrm-routed.
-    routing_wrapper = std::make_unique<routing::RoutedWrapper>(cl_args.servers);
-    break;
-  case ROUTER::LIBOSRM:
-#if USE_LIBOSRM
-    // Use libosrm.
-    routing_wrapper = std::make_unique<routing::LibosrmWrapper>();
-#else
-    // Attempt to use libosrm while compiling without it.
-    throw Exception("VROOM compiled without libosrm installed.");
-#endif
-    break;
-  }
-
   // Custom input object embedding jobs, vehicles and matrix.
-  Input input(std::move(routing_wrapper), cl_args.geometry);
+  Input input;
+  input.set_geometry(cl_args.geometry);
 
   // Input json object.
   rapidjson::Document json_input;
@@ -371,9 +354,31 @@ Input parse(const CLArgs& cl_args) {
       }
     }
 
-    if (has_input_profile) {
-      input.set_profile(common_profile);
+    // Set relevant routing wrapper.
+    std::unique_ptr<routing::Wrapper<Cost>> routing_wrapper;
+    switch (cl_args.router) {
+    case ROUTER::OSRM: {
+      // Use osrm-routed.
+      auto search = cl_args.servers.find(common_profile);
+      if (search == cl_args.servers.end()) {
+        throw Exception("Invalid profile: " + common_profile + ".");
+      }
+      routing_wrapper =
+        std::make_unique<routing::RoutedWrapper>(common_profile,
+                                                 search->second);
+    } break;
+    case ROUTER::LIBOSRM:
+#if USE_LIBOSRM
+      // Use libosrm.
+      routing_wrapper =
+        std::make_unique<routing::LibosrmWrapper>(common_profile);
+#else
+      // Attempt to use libosrm while compiling without it.
+      throw Exception("VROOM compiled without libosrm installed.");
+#endif
+      break;
     }
+    input.set_routing(std::move(routing_wrapper));
 
     // Getting jobs.
     for (rapidjson::SizeType i = 0; i < json_input["jobs"].Size(); ++i) {

@@ -22,6 +22,9 @@ namespace routing {
 class OSRMWrapper : public Wrapper<Cost> {
 
 protected:
+  OSRMWrapper(const std::string& profile) : Wrapper(profile) {
+  }
+
   static Cost round_cost(double value) {
     return static_cast<Cost>(value + 0.5);
   }

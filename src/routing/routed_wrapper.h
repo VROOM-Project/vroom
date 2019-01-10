@@ -17,14 +17,10 @@ All rights reserved (see LICENSE).
 namespace vroom {
 namespace routing {
 
-using Servers = std::unordered_map<std::string, Server>;
-
 class RoutedWrapper : public OSRMWrapper {
 
 private:
-  Servers _servers;
-  std::string _host;
-  std::string _port;
+  Server _server;
 
   void update_server();
 
@@ -35,14 +31,12 @@ private:
   std::string send_then_receive(std::string query) const;
 
 public:
-  RoutedWrapper(const Servers& servers);
+  RoutedWrapper(const std::string& profile, const Server& server);
 
   virtual Matrix<Cost>
   get_matrix(const std::vector<Location>& locs) const override;
 
   virtual void add_route_info(Route& route) const override;
-
-  virtual void set_profile(const std::string& profile) override;
 };
 
 } // namespace routing

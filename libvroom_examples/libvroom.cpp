@@ -71,20 +71,16 @@ void log_solution(const vroom::Solution& sol, bool geometry) {
 void run_example_with_osrm() {
   bool GEOMETRY = true;
 
-  vroom::routing::Servers servers;
-  servers.emplace("car",                     // Profile
-                  vroom::Server("localhost", // OSRM server
-                                "5000")      // OSRM port
-  );
+  // Set OSRM host and port.
   auto routing_wrapper =
-    std::make_unique<vroom::routing::RoutedWrapper>(servers);
+    std::make_unique<vroom::routing::RoutedWrapper>("car",
+                                                    vroom::Server("localhost",
+                                                                  "5000"));
 
-  // // Pick profile if more than one is described in servers.
-  // routing_wrapper->set_profile("bike");
-
-  vroom::Input problem_instance(std::move(routing_wrapper),
-                                GEOMETRY); // Query for route geometry after
-                                           // solving.
+  vroom::Input problem_instance;
+  problem_instance.set_routing(std::move(routing_wrapper));
+  problem_instance.set_geometry(GEOMETRY); // Query for route geometry
+                                           // after solving.
 
   // Create one-dimension capacity restrictions to model the situation
   // where one vehicle can handle 4 jobs.

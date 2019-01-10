@@ -18,7 +18,8 @@ All rights reserved (see LICENSE).
 namespace vroom {
 namespace routing {
 
-LibosrmWrapper::LibosrmWrapper() : _config(), _osrm(_config) {
+LibosrmWrapper::LibosrmWrapper(const std::string& profile)
+  : OSRMWrapper(profile), _config(), _osrm(_config) {
 }
 
 Matrix<Cost>

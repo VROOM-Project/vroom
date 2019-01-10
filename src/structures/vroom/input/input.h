@@ -37,7 +37,7 @@ private:
   bool _has_skills;
   bool _has_TW;
   bool _homogeneous_locations;
-  const bool _geometry;
+  bool _geometry;
   Matrix<Cost> _matrix;
   std::vector<Location> _locations;
   unsigned _amount_size;
@@ -62,7 +62,9 @@ public:
 
   Input();
 
-  Input(std::unique_ptr<routing::Wrapper<Cost>> routing_wrapper, bool geometry);
+  void set_geometry(bool geometry);
+
+  void set_routing(std::unique_ptr<routing::Wrapper<Cost>> routing_wrapper);
 
   void add_job(const Job& job);
 
@@ -85,8 +87,6 @@ public:
   Matrix<Cost> get_sub_matrix(const std::vector<Index>& indices) const;
 
   Solution solve(unsigned exploration_level, unsigned nb_thread);
-
-  void set_profile(const std::string& profile);
 };
 
 } // namespace vroom

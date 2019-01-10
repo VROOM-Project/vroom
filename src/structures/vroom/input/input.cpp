@@ -28,14 +28,13 @@ Input::Input()
     _all_locations_have_coords(true) {
 }
 
-Input::Input(std::unique_ptr<routing::Wrapper<Cost>> routing_wrapper,
-             bool geometry)
-  : _start_loading(std::chrono::high_resolution_clock::now()),
-    _routing_wrapper(std::move(routing_wrapper)),
-    _has_TW(false),
-    _homogeneous_locations(true),
-    _geometry(geometry),
-    _all_locations_have_coords(true) {
+void Input::set_geometry(bool geometry) {
+  _geometry = geometry;
+}
+
+void Input::set_routing(
+  std::unique_ptr<routing::Wrapper<Cost>> routing_wrapper) {
+  _routing_wrapper = std::move(routing_wrapper);
 }
 
 void Input::add_job(const Job& job) {
@@ -319,10 +318,6 @@ Solution Input::solve(unsigned exploration_level, unsigned nb_thread) {
   }
 
   return sol;
-}
-
-void Input::set_profile(const std::string& profile) {
-  _routing_wrapper->set_profile(profile);
 }
 
 } // namespace vroom
