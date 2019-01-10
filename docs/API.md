@@ -60,6 +60,7 @@ A `vehicle` object has the following properties:
 | Key         | Description |
 | ----------- | ----------- |
 | `id` | an integer used as unique identifier |
+| [`profile`] | routing profile (defaults to `car`) |
 | [`start`] | coordinates array |
 | [`start_index`] | index of relevant row and column in custom matrix |
 | [`end`] | coordinates array |

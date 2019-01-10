@@ -40,6 +40,11 @@ inline Coordinates parse_coordinates(const rapidjson::Value& object,
   return {{object[key][0].GetDouble(), object[key][1].GetDouble()}};
 }
 
+inline std::string get_string(const rapidjson::Value& object, const char* key) {
+  assert(object.HasMember(key));
+  return object[key].GetString();
+}
+
 inline Amount get_amount(const rapidjson::Value& object, const char* key) {
   // Default to empty amount.
   Amount amount(0);
@@ -147,11 +152,8 @@ Input parse(const CLArgs& cl_args) {
     break;
   }
 
-  // TODO set this in Input after parsing vehicles.
-  routing_wrapper->set_profile(vroom::DEFAULT_PROFILE);
-
   // Custom input object embedding jobs, vehicles and matrix.
-  Input input_data(std::move(routing_wrapper), cl_args.geometry);
+  Input input(std::move(routing_wrapper), cl_args.geometry);
 
   // Input json object.
   rapidjson::Document json_input;
@@ -200,7 +202,7 @@ Input parse(const CLArgs& cl_args) {
         matrix_input[i][j] = cost;
       }
     }
-    input_data.set_matrix(std::move(matrix_input));
+    input.set_matrix(std::move(matrix_input));
 
     // Add all vehicles.
     for (rapidjson::SizeType i = 0; i < json_input["vehicles"].Size(); ++i) {
@@ -273,7 +275,7 @@ Input parse(const CLArgs& cl_args) {
                         get_skills(json_vehicle),
                         get_vehicle_time_window(json_vehicle));
 
-      input_data.add_vehicle(current_v);
+      input.add_vehicle(current_v);
     }
 
     // Add the jobs
@@ -311,13 +313,14 @@ Input parse(const CLArgs& cl_args) {
                       get_skills(json_job),
                       get_job_time_windows(json_job));
 
-      input_data.add_job(current_job);
+      input.add_job(current_job);
     }
   } else {
     // Adding vehicles and jobs only, matrix will be computed using
     // OSRM upon solving.
 
     // All vehicles.
+    std::string common_profile;
     for (rapidjson::SizeType i = 0; i < json_input["vehicles"].Size(); ++i) {
       auto& json_vehicle = json_input["vehicles"][i];
       if (!valid_vehicle(json_vehicle)) {
@@ -349,8 +352,24 @@ Input parse(const CLArgs& cl_args) {
                         get_skills(json_vehicle),
                         get_vehicle_time_window(json_vehicle));
 
-      input_data.add_vehicle(current_v);
+      input.add_vehicle(current_v);
+
+      bool has_profile = json_vehicle.HasMember("profile");
+      std::string current_profile =
+        (has_profile) ? get_string(json_vehicle, "profile") : DEFAULT_PROFILE;
+
+      if (common_profile.empty()) {
+        // First iteration only.
+        common_profile = current_profile;
+      } else {
+        // Check profile consistency.
+        if (current_profile != common_profile) {
+          throw Exception("Mixed vehicle profiles in input.");
+        }
+      }
     }
+
+    input.set_profile(common_profile);
 
     // Getting jobs.
     for (rapidjson::SizeType i = 0; i < json_input["jobs"].Size(); ++i) {
@@ -374,11 +393,11 @@ Input parse(const CLArgs& cl_args) {
                       get_skills(json_job),
                       get_job_time_windows(json_job));
 
-      input_data.add_job(current_job);
+      input.add_job(current_job);
     }
   }
 
-  return input_data;
+  return input;
 }
 
 } // namespace io

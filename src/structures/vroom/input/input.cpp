@@ -321,4 +321,8 @@ Solution Input::solve(unsigned exploration_level, unsigned nb_thread) {
   return sol;
 }
 
+void Input::set_profile(const std::string& profile) {
+  _routing_wrapper->set_profile(profile);
+}
+
 } // namespace vroom

@@ -85,6 +85,8 @@ public:
   Matrix<Cost> get_sub_matrix(const std::vector<Index>& indices) const;
 
   Solution solve(unsigned exploration_level, unsigned nb_thread);
+
+  void set_profile(const std::string& profile);
 };
 
 } // namespace vroom
