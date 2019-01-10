@@ -121,6 +121,8 @@ void LocalSearch<Route,
                                                   routes,
                                                 double regret_coeff) {
   bool job_added;
+  std::vector<Gain> best_costs;
+  std::vector<Index> best_ranks;
 
   do {
     double best_cost = std::numeric_limits<double>::max();
@@ -130,10 +132,9 @@ void LocalSearch<Route,
 
     for (const auto j : _sol_state.unassigned) {
       auto& current_amount = _input.jobs[j].amount;
-      std::vector<Gain> best_costs(routes.size(),
-                                   std::numeric_limits<Gain>::max());
-      std::vector<Index> best_ranks(routes.size());
 
+      best_costs.assign(routes.size(), std::numeric_limits<Gain>::max());
+      best_ranks.assign(routes.size(), 0);
       for (std::size_t i = 0; i < routes.size(); ++i) {
         auto v = routes[i];
         const auto& v_target = _input.vehicles[v];
