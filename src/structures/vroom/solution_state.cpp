@@ -396,8 +396,8 @@ void SolutionState::update_nearest_job_rank_in_routes(
   const std::vector<Index>& route_2,
   Index v1,
   Index v2) {
-  nearest_job_rank_in_routes_from[v1][v2] = std::vector<Index>(route_1.size());
-  nearest_job_rank_in_routes_to[v1][v2] = std::vector<Index>(route_1.size());
+  nearest_job_rank_in_routes_from[v1][v2].assign(route_1.size(), 0);
+  nearest_job_rank_in_routes_to[v1][v2].assign(route_1.size(), 0);
 
   for (std::size_t r1 = 0; r1 < route_1.size(); ++r1) {
     Index index_r1 = _input.jobs[route_1[r1]].index();
