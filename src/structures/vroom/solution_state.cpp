@@ -89,8 +89,8 @@ void SolutionState::setup(const TWSolution& tw_sol) {
 }
 
 void SolutionState::update_amounts(const std::vector<Index>& route, Index v) {
-  fwd_amounts[v] = std::vector<Amount>(route.size());
-  bwd_amounts[v] = std::vector<Amount>(route.size());
+  fwd_amounts[v].resize(route.size());
+  bwd_amounts[v].resize(route.size());
   Amount current_amount(_input.amount_size());
 
   for (std::size_t i = 0; i < route.size(); ++i) {
@@ -98,11 +98,11 @@ void SolutionState::update_amounts(const std::vector<Index>& route, Index v) {
     fwd_amounts[v][i] = current_amount;
   }
 
+  const auto& total_amount = fwd_amounts[v].back();
   std::transform(fwd_amounts[v].cbegin(),
                  fwd_amounts[v].cend(),
                  bwd_amounts[v].begin(),
                  [&](const auto& a) {
-                   const auto& total_amount = fwd_amounts[v].back();
                    return total_amount - a;
                  });
 }
