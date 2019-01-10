@@ -321,6 +321,7 @@ Input parse(const CLArgs& cl_args) {
 
     // All vehicles.
     std::string common_profile;
+    bool has_input_profile = false;
     for (rapidjson::SizeType i = 0; i < json_input["vehicles"].Size(); ++i) {
       auto& json_vehicle = json_input["vehicles"][i];
       if (!valid_vehicle(json_vehicle)) {
@@ -355,6 +356,7 @@ Input parse(const CLArgs& cl_args) {
       input.add_vehicle(current_v);
 
       bool has_profile = json_vehicle.HasMember("profile");
+      has_input_profile |= has_profile;
       std::string current_profile =
         (has_profile) ? get_string(json_vehicle, "profile") : DEFAULT_PROFILE;
 
@@ -369,7 +371,9 @@ Input parse(const CLArgs& cl_args) {
       }
     }
 
-    input.set_profile(common_profile);
+    if (has_input_profile) {
+      input.set_profile(common_profile);
+    }
 
     // Getting jobs.
     for (rapidjson::SizeType i = 0; i < json_input["jobs"].Size(); ++i) {

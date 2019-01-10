@@ -93,7 +93,7 @@ std::string RoutedWrapper::send_then_receive(std::string query) const {
       }
     }
   } catch (boost::system::system_error& e) {
-    throw Exception("Failure while connecting to the OSRM server.");
+    throw Exception("Failed to connect to OSRM at " + _host + ":" + _port);
   }
   return response;
 }

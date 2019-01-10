@@ -113,6 +113,11 @@ int main(int argc, char** argv) {
     exit(1);
   }
 
+  // Add default server if none provided in input.
+  if (cl_args.servers.empty()) {
+    cl_args.servers.emplace(vroom::DEFAULT_PROFILE, vroom::Server());
+  }
+
   if (cl_args.input_file.empty()) {
     // Getting input from command-line.
     if (argc == optind) {
