@@ -12,6 +12,10 @@ All rights reserved (see LICENSE).
 #include <sstream>
 #include <unistd.h>
 
+#if USE_LIBOSRM
+#include "osrm/exception.hpp"
+#endif
+
 #include "problems/vrp.h"
 #include "structures/cl_args.h"
 #include "structures/typedefs.h"
@@ -148,15 +152,20 @@ int main(int argc, char** argv) {
     exit(1);
   }
 #if USE_LIBOSRM
+  catch (const osrm::exception& e) {
+    // In case of an unhandled routing error.
+    auto message = "Routing problem: " + std::string(e.what());
+    std::cerr << "[Error] " << message << std::endl;
+    vroom::io::write_to_json({1, message}, false, cl_args.output_file);
+    exit(1);
+  }
+#endif
   catch (const std::exception& e) {
-    // Should only occur when trying to use libosrm without running
-    // osrm-datastore. It would be good to be able to catch an
-    // osrm::util::exception for this. See OSRM issue #2813.
+    // In case of an unhandled internal error.
     std::cerr << "[Error] " << e.what() << std::endl;
     vroom::io::write_to_json({1, e.what()}, false, cl_args.output_file);
     exit(1);
   }
-#endif
 
   return 0;
 }

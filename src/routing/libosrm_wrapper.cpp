@@ -49,12 +49,7 @@ LibosrmWrapper::get_matrix(const std::vector<Location>& locs) const {
   }
 
   osrm::json::Object result;
-  osrm::Status status;
-  try {
-    status = _osrm.Table(params, result);
-  } catch (const std::exception& e) {
-    throw Exception(e.what());
-  }
+  osrm::Status status = _osrm.Table(params, result);
 
   if (status == osrm::Status::Error) {
     throw Exception(
@@ -117,12 +112,7 @@ void LibosrmWrapper::add_route_info(Route& route) const {
   }
 
   osrm::json::Object result;
-  osrm::Status status;
-  try {
-    status = _osrm.Route(params, result);
-  } catch (const std::exception& e) {
-    throw Exception(e.what());
-  }
+  osrm::Status status = _osrm.Route(params, result);
 
   if (status == osrm::Status::Error) {
     throw Exception(
