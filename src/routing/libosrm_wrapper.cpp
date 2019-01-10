@@ -19,7 +19,23 @@ namespace vroom {
 namespace routing {
 
 LibosrmWrapper::LibosrmWrapper(const std::string& profile)
-  : OSRMWrapper(profile), _config(), _osrm(_config) {
+  : OSRMWrapper(profile),
+    _config({
+      {},     // storare_config
+      -1,     // max_locations_trip
+      -1,     // max_locations_viaroute
+      -1,     // max_locations_distance_table
+      -1,     // max_locations_map_matching
+      -1.0,   // max_radius_map_matching
+      -1,     // max_results_nearest
+      1,      // max_alternatives
+      true,   // use_shared_memory
+      {},     // memory_file
+      {},     // algorithm
+      {},     // verbosity
+      profile // dataset_name
+    }),
+    _osrm(_config) {
 }
 
 Matrix<Cost>
