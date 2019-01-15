@@ -28,7 +28,7 @@ SRC = $(wildcard *.cpp)\
 # Checking for libosrm
 ifeq ($(shell pkg-config --exists libosrm && echo 1),1)
 LDLIBS += $(shell pkg-config --libs libosrm) -lboost_filesystem -lboost_iostreams -lboost_thread -lrt -ltbb
-CXXFLAGS += $(shell pkg-config --cflags libosrm) -D LIBOSRM=true
+CXXFLAGS += $(shell pkg-config --cflags libosrm) -D USE_LIBOSRM=true
 else
 	SRC := $(filter-out ./routing/libosrm_wrapper.cpp, $(SRC))
 endif

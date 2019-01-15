@@ -22,13 +22,11 @@ namespace routing {
 class OSRMWrapper : public Wrapper<Cost> {
 
 protected:
-  const std::string _osrm_profile; // OSRM profile name
-
   static Cost round_cost(double value) {
     return static_cast<Cost>(value + 0.5);
   }
 
-  OSRMWrapper(const std::string& osrm_profile) : _osrm_profile(osrm_profile) {
+  OSRMWrapper(const std::string& profile) : Wrapper(profile) {
   }
 
   inline void
@@ -44,12 +42,12 @@ protected:
       if (nb_unfound_from_loc[i] > max_unfound_routes_for_a_loc) {
         max_unfound_routes_for_a_loc = nb_unfound_from_loc[i];
         error_loc = i;
-        error_direction = "from";
+        error_direction = "from ";
       }
       if (nb_unfound_to_loc[i] > max_unfound_routes_for_a_loc) {
         max_unfound_routes_for_a_loc = nb_unfound_to_loc[i];
         error_loc = i;
-        error_direction = "to";
+        error_direction = "to ";
       }
     }
     if (max_unfound_routes_for_a_loc > 0) {

@@ -12,6 +12,10 @@ All rights reserved (see LICENSE).
 #include <sstream>
 #include <unistd.h>
 
+#if USE_LIBOSRM
+#include "osrm/exception.hpp"
+#endif
+
 #include "problems/vrp.h"
 #include "structures/cl_args.h"
 #include "structures/typedefs.h"
@@ -27,21 +31,16 @@ void display_usage() {
   usage += "Usage:\n\tvroom [OPTION]... \"INPUT\"";
   usage += "\n\tvroom [OPTION]... -i FILE\n";
   usage += "Options:\n";
-  usage += "\t-a ADDRESS (=\"0.0.0.0\")\t OSRM server address\n";
-  usage += "\t-p PORT (=5000),\t OSRM listening port\n";
-  // usage += "\t-m MODE,\t\t OSRM profile name (car)\n";
-
-  // The -m flag is only present as the profile name is part of the
-  // OSRM v5 API. It is undocumented as OSRM doesn't implement
-  // query-time profile selection (yet) so setting it will have no
-  // effect for now.
-
-  usage += "\t-g,\t\t\t add detailed route geometry and indicators\n";
-  usage += "\t-i FILE,\t\t read input from FILE rather than from stdin\n";
-  usage += "\t-l,\t\t\t use libosrm rather than osrm-routed\n";
-  usage += "\t-o OUTPUT,\t\t output file name\n";
-  usage += "\t-t THREADS (=4),\t number of threads to use\n";
-  usage += "\t-x EXPLORE (=5),\t exploration level to use (0..5)";
+  usage += "\t-a PROFILE:HOST (=" + vroom::DEFAULT_PROFILE +
+           ":0.0.0.0)\t routing server\n";
+  usage += "\t-p PROFILE:PORT (=" + vroom::DEFAULT_PROFILE +
+           ":5000),\t routing server port\n";
+  usage += "\t-g,\t\t\t\t add detailed route geometry and indicators\n";
+  usage += "\t-i FILE,\t\t\t read input from FILE rather than from stdin\n";
+  usage += "\t-o OUTPUT,\t\t\t output file name\n";
+  usage += "\t-r ROUTER (=osrm),\t\t osrm or libosrm\n";
+  usage += "\t-t THREADS (=4),\t\t number of threads to use\n";
+  usage += "\t-x EXPLORE (=5),\t\t exploration level to use (0..5)";
   std::cout << usage << std::endl;
   exit(0);
 }
@@ -51,16 +50,17 @@ int main(int argc, char** argv) {
   vroom::io::CLArgs cl_args;
 
   // Parsing command-line arguments.
-  const char* optString = "a:gi:lm:o:p:t:x:h?";
+  const char* optString = "a:gi:o:p:r:t:x:h?";
   int opt = getopt(argc, argv, optString);
 
+  std::string router_arg;
   std::string nb_threads_arg = std::to_string(cl_args.nb_threads);
   std::string exploration_level_arg = std::to_string(cl_args.exploration_level);
 
   while (opt != -1) {
     switch (opt) {
     case 'a':
-      cl_args.osrm_address = optarg;
+      vroom::io::update_host(cl_args.servers, optarg);
       break;
     case 'g':
       cl_args.geometry = true;
@@ -71,17 +71,14 @@ int main(int argc, char** argv) {
     case 'i':
       cl_args.input_file = optarg;
       break;
-    case 'l':
-      cl_args.use_libosrm = true;
-      break;
-    case 'm':
-      cl_args.osrm_profile = optarg;
-      break;
     case 'o':
       cl_args.output_file = optarg;
       break;
     case 'p':
-      cl_args.osrm_port = optarg;
+      vroom::io::update_port(cl_args.servers, optarg);
+      break;
+    case 'r':
+      router_arg = optarg;
       break;
     case 't':
       nb_threads_arg = optarg;
@@ -104,10 +101,25 @@ int main(int argc, char** argv) {
     cl_args.exploration_level =
       std::min(cl_args.exploration_level, cl_args.max_exploration_level);
   } catch (const std::exception& e) {
-    std::string message = "Wrong numerical value.";
+    std::string message = "Invalid numerical value.";
     std::cerr << "[Error] " << message << std::endl;
     vroom::io::write_to_json({1, message}, false, cl_args.output_file);
     exit(1);
+  }
+
+  // Determine routing engine (defaults to ROUTER::OSRM).
+  if (router_arg == "libosrm") {
+    cl_args.router = vroom::ROUTER::LIBOSRM;
+  } else if (!router_arg.empty() and router_arg != "osrm") {
+    std::string message = "Invalid routing engine: " + router_arg;
+    std::cerr << "[Error] " << message << std::endl;
+    vroom::io::write_to_json({1, message}, false, cl_args.output_file);
+    exit(1);
+  }
+
+  // Add default server if none provided in input.
+  if (cl_args.servers.empty()) {
+    cl_args.servers.emplace(vroom::DEFAULT_PROFILE, vroom::Server());
   }
 
   if (cl_args.input_file.empty()) {
@@ -139,16 +151,21 @@ int main(int argc, char** argv) {
     vroom::io::write_to_json({1, e.get_message()}, false, cl_args.output_file);
     exit(1);
   }
-#if LIBOSRM
+#if USE_LIBOSRM
+  catch (const osrm::exception& e) {
+    // In case of an unhandled routing error.
+    auto message = "Routing problem: " + std::string(e.what());
+    std::cerr << "[Error] " << message << std::endl;
+    vroom::io::write_to_json({1, message}, false, cl_args.output_file);
+    exit(1);
+  }
+#endif
   catch (const std::exception& e) {
-    // Should only occur when trying to use libosrm without running
-    // osrm-datastore. It would be good to be able to catch an
-    // osrm::util::exception for this. See OSRM issue #2813.
+    // In case of an unhandled internal error.
     std::cerr << "[Error] " << e.what() << std::endl;
     vroom::io::write_to_json({1, e.what()}, false, cl_args.output_file);
     exit(1);
   }
-#endif
 
   return 0;
 }

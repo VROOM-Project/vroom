@@ -10,10 +10,14 @@ All rights reserved (see LICENSE).
 #include <array>
 #include <vector>
 
+#if USE_LIBOSRM
+#include "osrm/exception.hpp"
+#endif
+
 #include "../include/rapidjson/document.h"
 #include "../include/rapidjson/error/en.h"
 
-#if LIBOSRM
+#if USE_LIBOSRM
 #include "routing/libosrm_wrapper.h"
 #endif
 #include "routing/routed_wrapper.h"
@@ -38,6 +42,11 @@ inline Coordinates parse_coordinates(const rapidjson::Value& object,
     throw Exception("Invalid " + std::string(key) + " array.");
   }
   return {{object[key][0].GetDouble(), object[key][1].GetDouble()}};
+}
+
+inline std::string get_string(const rapidjson::Value& object, const char* key) {
+  assert(object.HasMember(key));
+  return object[key].GetString();
 }
 
 inline Amount get_amount(const rapidjson::Value& object, const char* key) {
@@ -129,29 +138,9 @@ inline std::vector<TimeWindow> get_job_time_windows(const rapidjson::Value& j) {
 }
 
 Input parse(const CLArgs& cl_args) {
-  // Set relevant wrapper to retrieve the matrix and geometry.
-  std::unique_ptr<routing::Wrapper<Cost>> routing_wrapper;
-  if (!cl_args.use_libosrm) {
-    // Use osrm-routed.
-    routing_wrapper =
-      std::make_unique<routing::RoutedWrapper>(cl_args.osrm_address,
-                                               cl_args.osrm_port,
-                                               cl_args.osrm_profile);
-  } else {
-#if LIBOSRM
-    // Use libosrm.
-    if (cl_args.osrm_profile.empty()) {
-      throw Exception("-l flag requires -m.");
-    }
-    routing_wrapper =
-      std::make_unique<routing::LibosrmWrapper>(cl_args.osrm_profile);
-#else
-    throw Exception("libosrm must be installed to use -l.");
-#endif
-  }
-
   // Custom input object embedding jobs, vehicles and matrix.
-  Input input_data(std::move(routing_wrapper), cl_args.geometry);
+  Input input;
+  input.set_geometry(cl_args.geometry);
 
   // Input json object.
   rapidjson::Document json_input;
@@ -200,7 +189,7 @@ Input parse(const CLArgs& cl_args) {
         matrix_input[i][j] = cost;
       }
     }
-    input_data.set_matrix(std::move(matrix_input));
+    input.set_matrix(std::move(matrix_input));
 
     // Add all vehicles.
     for (rapidjson::SizeType i = 0; i < json_input["vehicles"].Size(); ++i) {
@@ -273,7 +262,7 @@ Input parse(const CLArgs& cl_args) {
                         get_skills(json_vehicle),
                         get_vehicle_time_window(json_vehicle));
 
-      input_data.add_vehicle(current_v);
+      input.add_vehicle(current_v);
     }
 
     // Add the jobs
@@ -311,13 +300,15 @@ Input parse(const CLArgs& cl_args) {
                       get_skills(json_job),
                       get_job_time_windows(json_job));
 
-      input_data.add_job(current_job);
+      input.add_job(current_job);
     }
   } else {
     // Adding vehicles and jobs only, matrix will be computed using
     // OSRM upon solving.
 
     // All vehicles.
+    std::string common_profile;
+    bool has_input_profile = false;
     for (rapidjson::SizeType i = 0; i < json_input["vehicles"].Size(); ++i) {
       auto& json_vehicle = json_input["vehicles"][i];
       if (!valid_vehicle(json_vehicle)) {
@@ -349,8 +340,53 @@ Input parse(const CLArgs& cl_args) {
                         get_skills(json_vehicle),
                         get_vehicle_time_window(json_vehicle));
 
-      input_data.add_vehicle(current_v);
+      input.add_vehicle(current_v);
+
+      bool has_profile = json_vehicle.HasMember("profile");
+      has_input_profile |= has_profile;
+      std::string current_profile =
+        (has_profile) ? get_string(json_vehicle, "profile") : DEFAULT_PROFILE;
+
+      if (common_profile.empty()) {
+        // First iteration only.
+        common_profile = current_profile;
+      } else {
+        // Check profile consistency.
+        if (current_profile != common_profile) {
+          throw Exception("Mixed vehicle profiles in input.");
+        }
+      }
     }
+
+    // Set relevant routing wrapper.
+    std::unique_ptr<routing::Wrapper<Cost>> routing_wrapper;
+    switch (cl_args.router) {
+    case ROUTER::OSRM: {
+      // Use osrm-routed.
+      auto search = cl_args.servers.find(common_profile);
+      if (search == cl_args.servers.end()) {
+        throw Exception("Invalid profile: " + common_profile + ".");
+      }
+      routing_wrapper =
+        std::make_unique<routing::RoutedWrapper>(common_profile,
+                                                 search->second);
+    } break;
+    case ROUTER::LIBOSRM:
+#if USE_LIBOSRM
+      // Use libosrm.
+      try {
+        routing_wrapper =
+          std::make_unique<routing::LibosrmWrapper>(common_profile);
+      } catch (const osrm::exception& e) {
+        throw Exception("Invalid shared memory region: " + common_profile);
+      }
+#else
+      // Attempt to use libosrm while compiling without it.
+      throw Exception("VROOM compiled without libosrm installed.");
+#endif
+      break;
+    }
+    input.set_routing(std::move(routing_wrapper));
 
     // Getting jobs.
     for (rapidjson::SizeType i = 0; i < json_input["jobs"].Size(); ++i) {
@@ -374,11 +410,11 @@ Input parse(const CLArgs& cl_args) {
                       get_skills(json_job),
                       get_job_time_windows(json_job));
 
-      input_data.add_job(current_job);
+      input.add_job(current_job);
     }
   }
 
-  return input_data;
+  return input;
 }
 
 } // namespace io

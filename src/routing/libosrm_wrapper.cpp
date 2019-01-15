@@ -18,8 +18,24 @@ All rights reserved (see LICENSE).
 namespace vroom {
 namespace routing {
 
-LibosrmWrapper::LibosrmWrapper(const std::string& osrm_profile)
-  : OSRMWrapper(osrm_profile), _config(), _osrm(_config) {
+LibosrmWrapper::LibosrmWrapper(const std::string& profile)
+  : OSRMWrapper(profile),
+    _config({
+      {},     // storare_config
+      -1,     // max_locations_trip
+      -1,     // max_locations_viaroute
+      -1,     // max_locations_distance_table
+      -1,     // max_locations_map_matching
+      -1.0,   // max_radius_map_matching
+      -1,     // max_results_nearest
+      1,      // max_alternatives
+      true,   // use_shared_memory
+      {},     // memory_file
+      {},     // algorithm
+      {},     // verbosity
+      profile // dataset_name
+    }),
+    _osrm(_config) {
 }
 
 Matrix<Cost>
@@ -33,12 +49,7 @@ LibosrmWrapper::get_matrix(const std::vector<Location>& locs) const {
   }
 
   osrm::json::Object result;
-  osrm::Status status;
-  try {
-    status = _osrm.Table(params, result);
-  } catch (const std::exception& e) {
-    throw Exception(e.what());
-  }
+  osrm::Status status = _osrm.Table(params, result);
 
   if (status == osrm::Status::Error) {
     throw Exception(
@@ -101,12 +112,7 @@ void LibosrmWrapper::add_route_info(Route& route) const {
   }
 
   osrm::json::Object result;
-  osrm::Status status;
-  try {
-    status = _osrm.Route(params, result);
-  } catch (const std::exception& e) {
-    throw Exception(e.what());
-  }
+  osrm::Status status = _osrm.Route(params, result);
 
   if (status == osrm::Status::Error) {
     throw Exception(

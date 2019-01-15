@@ -37,7 +37,7 @@ private:
   bool _has_skills;
   bool _has_TW;
   bool _homogeneous_locations;
-  const bool _geometry;
+  bool _geometry;
   Matrix<Cost> _matrix;
   std::vector<Location> _locations;
   unsigned _amount_size;
@@ -60,7 +60,11 @@ public:
   std::vector<Job> jobs;
   std::vector<Vehicle> vehicles;
 
-  Input(std::unique_ptr<routing::Wrapper<Cost>> routing_wrapper, bool geometry);
+  Input();
+
+  void set_geometry(bool geometry);
+
+  void set_routing(std::unique_ptr<routing::Wrapper<Cost>> routing_wrapper);
 
   void add_job(const Job& job);
 

@@ -19,10 +19,8 @@ using boost::asio::ip::tcp;
 namespace vroom {
 namespace routing {
 
-RoutedWrapper::RoutedWrapper(const std::string& address,
-                             const std::string& port,
-                             const std::string& osrm_profile)
-  : OSRMWrapper(osrm_profile), _address(address), _port(port) {
+RoutedWrapper::RoutedWrapper(const std::string& profile, const Server& server)
+  : OSRMWrapper(profile), _server(server) {
 }
 
 std::string RoutedWrapper::build_query(const std::vector<Location>& locations,
@@ -31,7 +29,7 @@ std::string RoutedWrapper::build_query(const std::vector<Location>& locations,
   // Building query for osrm-routed
   std::string query = "GET /" + service;
 
-  query += "/v1/" + _osrm_profile + "/";
+  query += "/v1/" + _profile + "/";
 
   // Adding locations.
   for (auto const& location : locations) {
@@ -45,7 +43,7 @@ std::string RoutedWrapper::build_query(const std::vector<Location>& locations,
   }
 
   query += " HTTP/1.1\r\n";
-  query += "Host: " + _address + "\r\n";
+  query += "Host: " + _server.host + "\r\n";
   query += "Accept: */*\r\n";
   query += "Connection: close\r\n\r\n";
 
@@ -59,7 +57,8 @@ std::string RoutedWrapper::send_then_receive(std::string query) const {
     boost::asio::io_service io_service;
 
     tcp::resolver r(io_service);
-    tcp::resolver::query q(_address, _port);
+
+    tcp::resolver::query q(_server.host, _server.port);
 
     tcp::socket s(io_service);
     boost::asio::connect(s, r.resolve(q));
@@ -81,7 +80,8 @@ std::string RoutedWrapper::send_then_receive(std::string query) const {
       }
     }
   } catch (boost::system::system_error& e) {
-    throw Exception("Failure while connecting to the OSRM server.");
+    throw Exception("Failed to connect to OSRM at " + _server.host + ":" +
+                    _server.port);
   }
   return response;
 }

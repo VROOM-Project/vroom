@@ -68,21 +68,19 @@ void log_solution(const vroom::Solution& sol, bool geometry) {
   }
 }
 
-std::unique_ptr<vroom::routing::RoutedWrapper> routing_wrapper() {
-  // Create a wrapper for OSRM queries.
-  return std::make_unique<vroom::routing::RoutedWrapper>("localhost", // OSRM
-                                                                      // server
-                                                         "5000", // OSRM port
-                                                         "car"   // Profile
-  );
-}
-
 void run_example_with_osrm() {
   bool GEOMETRY = true;
 
-  vroom::Input problem_instance(routing_wrapper(),
-                                GEOMETRY); // Query for route geometry after
-                                           // solving.
+  // Set OSRM host and port.
+  auto routing_wrapper =
+    std::make_unique<vroom::routing::RoutedWrapper>("car",
+                                                    vroom::Server("localhost",
+                                                                  "5000"));
+
+  vroom::Input problem_instance;
+  problem_instance.set_routing(std::move(routing_wrapper));
+  problem_instance.set_geometry(GEOMETRY); // Query for route geometry
+                                           // after solving.
 
   // Create one-dimension capacity restrictions to model the situation
   // where one vehicle can handle 4 jobs.
@@ -172,9 +170,7 @@ void run_example_with_osrm() {
 void run_example_with_custom_matrix() {
   bool GEOMETRY = false;
 
-  vroom::Input problem_instance(routing_wrapper(),
-                                GEOMETRY); // Query for route geometry after
-                                           // solving.
+  vroom::Input problem_instance;
 
   // Define custom matrix and bypass OSRM call.
   vroom::Matrix<vroom::Cost> matrix_input(

@@ -39,6 +39,24 @@ using Skills = std::unordered_set<Skill>;
 // Setting max value would cause trouble with further additions.
 constexpr Cost INFINITE_COST = 3 * (std::numeric_limits<Cost>::max() / 4);
 
+const std::string DEFAULT_PROFILE = "car";
+
+// Available routing engines.
+enum class ROUTER { OSRM, LIBOSRM };
+
+// Used to describe a routing server.
+struct Server {
+  std::string host;
+  std::string port;
+
+  Server() : host("0.0.0.0"), port("5000") {
+  }
+
+  Server(const std::string& host, const std::string& port)
+    : host(host), port(port) {
+  }
+};
+
 // Available location status.
 enum class STEP_TYPE { START, JOB, END };
 
