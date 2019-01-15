@@ -19,6 +19,10 @@
 
 - `-l` and `-m` command-line flags (#196)
 
+### Fixed
+
+- Missing capacity check for initialization in parallel clustering heuristic (#198)
+
 ## [v1.3.0]
 
 ### Added

@@ -99,7 +99,8 @@ void Clustering::parallel_clustering() {
   for (std::size_t v = 0; v < V; ++v) {
     // Only keep jobs compatible with vehicle skills in candidates.
     for (std::size_t j = 0; j < J; ++j) {
-      if (_input.vehicle_ok_with_job(v, j)) {
+      if (_input.vehicle_ok_with_job(v, j) and
+          jobs[j].amount <= _input.vehicles[v].capacity) {
         candidates[v].push_back(j);
       }
     }
