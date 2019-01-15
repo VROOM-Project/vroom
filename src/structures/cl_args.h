@@ -18,6 +18,7 @@ All rights reserved (see LICENSE).
 namespace vroom {
 namespace io {
 
+// Profile name used as key.
 using Servers = std::unordered_map<std::string, Server>;
 
 struct CLArgs {

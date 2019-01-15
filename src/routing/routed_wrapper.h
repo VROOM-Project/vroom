@@ -10,8 +10,6 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <unordered_map>
-
 #include "routing/osrm_wrapper.h"
 
 namespace vroom {
