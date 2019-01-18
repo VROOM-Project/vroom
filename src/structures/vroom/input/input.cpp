@@ -255,6 +255,32 @@ void Input::set_vehicle_to_job_compatibility() {
       }
     }
   }
+
+  // Derive potential extra incompatibilities : jobs with amount that
+  // does not fit into vehicle or that cannot be added to an empty
+  // route for vehicle based on the timing constraints (when they
+  // apply).
+  unsigned total_added_incompatible = 0;
+  for (std::size_t v = 0; v < vehicles.size(); ++v) {
+    TWRoute empty_route(*this, v);
+    unsigned incompatible_additions = 0;
+    for (std::size_t j = 0; j < jobs.size(); ++j) {
+      if (_vehicle_to_job_compatibility[v][j]) {
+        auto is_compatible = (jobs[j].amount <= vehicles[v].capacity);
+        if (_has_TW) {
+          is_compatible &= empty_route.is_valid_addition_for_tw(*this, j, 0);
+        }
+
+        _vehicle_to_job_compatibility[v][j] = is_compatible;
+
+        if (!is_compatible) {
+          ++incompatible_additions;
+        }
+      }
+    }
+
+    total_added_incompatible += incompatible_additions;
+  }
 }
 
 std::unique_ptr<VRP> Input::get_problem() const {
