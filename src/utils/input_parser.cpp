@@ -432,8 +432,7 @@ Input parse(const CLArgs& cl_args) {
       throw Exception("Invalid profile: " + common_profile + ".");
     }
     routing_wrapper =
-      std::make_unique<routing::OrsHttpWrapper>(common_profile,
-        search->second);
+      std::make_unique<routing::OrsHttpWrapper>(common_profile, search->second);
     break;
   }
   input.set_routing(std::move(routing_wrapper));

@@ -110,7 +110,7 @@ int main(int argc, char** argv) {
   // Determine routing engine (defaults to ROUTER::OSRM).
   if (router_arg == "libosrm") {
     cl_args.router = vroom::ROUTER::LIBOSRM;
-  } else if (router_arg =="ors") {
+  } else if (router_arg == "ors") {
     cl_args.router = vroom::ROUTER::ORS;
   } else if (!router_arg.empty() and router_arg != "osrm") {
     std::string message = "Invalid routing engine: " + router_arg;

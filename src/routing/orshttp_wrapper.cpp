@@ -24,10 +24,10 @@ OrsHttpWrapper::OrsHttpWrapper(const std::string& profile, const Server& server)
 }
 
 std::string OrsHttpWrapper::build_query(const std::vector<Location>& locations,
-                                       std::string service,
-                                       std::string extra_args = "") const {
+                                        std::string service,
+                                        std::string extra_args = "") const {
   // Building query for ORS
-  std::string query = "GET /v2/" + service; 
+  std::string query = "GET /v2/" + service;
 
   query += "?profile=" + _profile;
 
@@ -111,7 +111,8 @@ OrsHttpWrapper::get_matrix(const std::vector<Location>& locs) const {
   assert(!infos.Parse(json_content.c_str()).HasParseError());
 #endif
   if (infos.HasMember("error")) {
-    throw Exception("ORS matrix:" + std::string(infos["error"]["message"].GetString()));
+    throw Exception("ORS matrix:" +
+                    std::string(infos["error"]["message"].GetString()));
   }
   assert(infos["durations"].Size() == m_size);
 
@@ -153,7 +154,8 @@ void OrsHttpWrapper::add_route_info(Route& route) const {
 
   std::string extra_args = "";
 
-  std::string query = this->build_query(ordered_locations, "routes", extra_args);
+  std::string query =
+    this->build_query(ordered_locations, "routes", extra_args);
   std::string response = this->send_then_receive(query);
 
   // Removing headers
@@ -167,11 +169,13 @@ void OrsHttpWrapper::add_route_info(Route& route) const {
   assert(!infos.Parse(json_content.c_str()).HasParseError());
 #endif
   if (infos.HasMember("error")) {
-    throw Exception("ORS routes: " + std::string(infos["error"]["message"].GetString()));
+    throw Exception("ORS routes: " +
+                    std::string(infos["error"]["message"].GetString()));
   }
 
   // Total distance and route geometry.
-  route.distance = round_cost(infos["routes"][0]["summary"]["distance"].GetDouble());
+  route.distance =
+    round_cost(infos["routes"][0]["summary"]["distance"].GetDouble());
   route.geometry = std::move(infos["routes"][0]["geometry"].GetString());
 
   auto nb_legs = infos["routes"][0]["segments"].Size();
@@ -184,7 +188,8 @@ void OrsHttpWrapper::add_route_info(Route& route) const {
 
   for (rapidjson::SizeType i = 0; i < nb_legs; ++i) {
     // Update distance for step after current route leg.
-    current_distance += infos["routes"][0]["segments"][i]["distance"].GetDouble();
+    current_distance +=
+      infos["routes"][0]["segments"][i]["distance"].GetDouble();
     route.steps[i + 1].distance = round_cost(current_distance);
   }
 }
