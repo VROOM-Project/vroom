@@ -265,11 +265,14 @@ void LocalSearch<Route,
     best_ops[v] = std::vector<std::unique_ptr<Operator>>(_nb_vehicles);
   }
 
-  // List of source/target pairs we need to test (all at first).
+  // List of source/target pairs we need to test (all related vehicles
+  // at first).
   std::vector<std::pair<Index, Index>> s_t_pairs;
   for (unsigned s_v = 0; s_v < _nb_vehicles; ++s_v) {
     for (unsigned t_v = 0; t_v < _nb_vehicles; ++t_v) {
-      s_t_pairs.emplace_back(s_v, t_v);
+      if (_input.vehicle_ok_with_vehicle(s_v, t_v)) {
+        s_t_pairs.emplace_back(s_v, t_v);
+      }
     }
   }
 
@@ -704,10 +707,12 @@ void LocalSearch<Route,
 
       for (unsigned v = 0; v < _nb_vehicles; ++v) {
         for (auto v_rank : update_candidates) {
-          best_gains[v][v_rank] = 0;
-          s_t_pairs.emplace_back(v, v_rank);
-          if (v != v_rank) {
-            s_t_pairs.emplace_back(v_rank, v);
+          if (_input.vehicle_ok_with_vehicle(v, v_rank)) {
+            best_gains[v][v_rank] = 0;
+            s_t_pairs.emplace_back(v, v_rank);
+            if (v != v_rank) {
+              s_t_pairs.emplace_back(v_rank, v);
+            }
           }
         }
       }

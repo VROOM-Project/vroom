@@ -177,6 +177,10 @@ bool Input::vehicle_ok_with_job(Index v_index, Index j_index) const {
   return _vehicle_to_job_compatibility[v_index][j_index];
 }
 
+bool Input::vehicle_ok_with_vehicle(Index v1_index, Index v2_index) const {
+  return _vehicle_to_vehicle_compatibility[v1_index][v2_index];
+}
+
 const Matrix<Cost>& Input::get_matrix() const {
   return _matrix;
 }
