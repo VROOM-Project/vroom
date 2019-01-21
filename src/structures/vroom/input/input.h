@@ -43,6 +43,7 @@ private:
   unsigned _amount_size;
   Amount _amount_lower_bound;
   std::vector<std::vector<bool>> _vehicle_to_job_compatibility;
+  std::vector<std::vector<bool>> _vehicle_to_vehicle_compatibility;
   std::unordered_set<Index> _matrix_used_index;
   bool _all_locations_have_coords;
 
@@ -52,7 +53,7 @@ private:
 
   void check_cost_bound() const;
 
-  void set_vehicle_to_job_compatibility();
+  void set_compatibility();
 
   void store_amount_lower_bound(const Amount& amount);
 
