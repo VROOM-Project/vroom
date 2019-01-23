@@ -8,6 +8,7 @@
 - `-r` command-line flag for explicit routing engine choice (#196)
 - Support for multiple named datasets when using `libosrm` (#181)
 - Generic `vroom` namespace and several other specializations (#135)
+- Support for OpenRouteService as routing engine (#204)
 
 ### Changed
 
