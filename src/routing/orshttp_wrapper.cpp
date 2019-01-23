@@ -152,7 +152,7 @@ void OrsHttpWrapper::add_route_info(Route& route) const {
     ordered_locations.push_back(step.location);
   }
 
-  std::string extra_args = "";
+  std::string extra_args = "geometry_simplify=false&continue_straight=false";
 
   std::string query =
     this->build_query(ordered_locations, "routes", extra_args);
