@@ -42,7 +42,7 @@ constexpr Cost INFINITE_COST = 3 * (std::numeric_limits<Cost>::max() / 4);
 const std::string DEFAULT_PROFILE = "car";
 
 // Available routing engines.
-enum class ROUTER { OSRM, LIBOSRM };
+enum class ROUTER { OSRM, LIBOSRM, ORS };
 
 // Used to describe a routing server.
 struct Server {

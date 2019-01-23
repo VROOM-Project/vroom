@@ -20,6 +20,7 @@ All rights reserved (see LICENSE).
 #if USE_LIBOSRM
 #include "routing/libosrm_wrapper.h"
 #endif
+#include "routing/orshttp_wrapper.h"
 #include "routing/routed_wrapper.h"
 #include "structures/cl_args.h"
 #include "structures/generic/matrix.h"
@@ -423,6 +424,15 @@ Input parse(const CLArgs& cl_args) {
     // Attempt to use libosrm while compiling without it.
     throw Exception("VROOM compiled without libosrm installed.");
 #endif
+    break;
+  case ROUTER::ORS:
+    // Use ORS http wrapper.
+    auto search = cl_args.servers.find(common_profile);
+    if (search == cl_args.servers.end()) {
+      throw Exception("Invalid profile: " + common_profile + ".");
+    }
+    routing_wrapper =
+      std::make_unique<routing::OrsHttpWrapper>(common_profile, search->second);
     break;
   }
   input.set_routing(std::move(routing_wrapper));

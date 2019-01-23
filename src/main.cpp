@@ -38,7 +38,7 @@ void display_usage() {
   usage += "\t-g,\t\t\t\t add detailed route geometry and indicators\n";
   usage += "\t-i FILE,\t\t\t read input from FILE rather than from stdin\n";
   usage += "\t-o OUTPUT,\t\t\t output file name\n";
-  usage += "\t-r ROUTER (=osrm),\t\t osrm or libosrm\n";
+  usage += "\t-r ROUTER (=osrm),\t\t osrm, libosrm or ors\n";
   usage += "\t-t THREADS (=4),\t\t number of threads to use\n";
   usage += "\t-x EXPLORE (=5),\t\t exploration level to use (0..5)";
   std::cout << usage << std::endl;
@@ -110,6 +110,8 @@ int main(int argc, char** argv) {
   // Determine routing engine (defaults to ROUTER::OSRM).
   if (router_arg == "libosrm") {
     cl_args.router = vroom::ROUTER::LIBOSRM;
+  } else if (router_arg == "ors") {
+    cl_args.router = vroom::ROUTER::ORS;
   } else if (!router_arg.empty() and router_arg != "osrm") {
     std::string message = "Invalid routing engine: " + router_arg;
     std::cerr << "[Error] " << message << std::endl;
