@@ -11,6 +11,7 @@
 - Support for OpenRouteService as routing engine (#204)
 - Spot more job/vehicle incompatibilities derived from constraints (#201)
 - Filter out irrelevant local search neighbourhoods for vehicles with disjoint job candidates (#202)
+- Specific status codes by error type (#182)
 
 ### Changed
 
