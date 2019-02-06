@@ -133,11 +133,22 @@ The computed solution is written as `json` on standard output or a file
 
 | Key         | Description |
 | ----------- | ----------- |
-| `code` | return code, `0` if no error was raised |
+| `code` | status code |
 | `error` | error message (present iff `code` is different from `0`) |
 | [`summary`](#summary) | object summarizing solution indicators |
 | `unassigned` | array of objects describing unassigned jobs with their `id` and `location` (if provided) |
 | [`routes`](#routes) | array of `route` objects |
+
+## Code
+
+Possible values for the status code are:
+
+| Value         | Status |
+| ------------- | ----------- |
+| `0` | no error raised |
+| `1` | internal error |
+| `2` | input error |
+| `3` | routing error |
 
 ## Summary
 
