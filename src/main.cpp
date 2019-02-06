@@ -21,6 +21,7 @@ All rights reserved (see LICENSE).
 #include "structures/typedefs.h"
 #include "structures/vroom/input/input.h"
 #include "utils/exception.h"
+#include "utils/helpers.h"
 #include "utils/input_parser.h"
 #include "utils/output_json.h"
 #include "utils/version.h"
@@ -149,8 +150,11 @@ int main(int argc, char** argv) {
     // Write solution.
     vroom::io::write_to_json(sol, cl_args.geometry, cl_args.output_file);
   } catch (const vroom::Exception& e) {
-    std::cerr << "[Error] " << e.get_message() << std::endl;
-    vroom::io::write_to_json({1, e.get_message()}, false, cl_args.output_file);
+    std::cerr << "[Error] " << vroom::utils::get_code(e.error) << ": "
+              << e.message << std::endl;
+    vroom::io::write_to_json({vroom::utils::get_code(e.error), e.message},
+                             false,
+                             cl_args.output_file);
     exit(1);
   }
 #if USE_LIBOSRM
