@@ -52,9 +52,11 @@ LibosrmWrapper::get_matrix(const std::vector<Location>& locs) const {
   osrm::Status status = _osrm.Table(params, result);
 
   if (status == osrm::Status::Error) {
-    throw Exception(
-      "libOSRM: " + result.values["code"].get<osrm::json::String>().value +
-      ": " + result.values["message"].get<osrm::json::String>().value);
+    throw Exception(ERROR::ROUTING,
+                    "libOSRM: " +
+                      result.values["code"].get<osrm::json::String>().value +
+                      ": " +
+                      result.values["message"].get<osrm::json::String>().value);
   }
 
   auto& table = result.values["durations"].get<osrm::json::Array>();
@@ -115,9 +117,11 @@ void LibosrmWrapper::add_route_info(Route& route) const {
   osrm::Status status = _osrm.Route(params, result);
 
   if (status == osrm::Status::Error) {
-    throw Exception(
-      "libOSRM: " + result.values["code"].get<osrm::json::String>().value +
-      ": " + result.values["message"].get<osrm::json::String>().value);
+    throw Exception(ERROR::ROUTING,
+                    "libOSRM: " +
+                      result.values["code"].get<osrm::json::String>().value +
+                      ": " +
+                      result.values["message"].get<osrm::json::String>().value);
   }
 
   auto& result_routes = result.values["routes"].get<osrm::json::Array>();

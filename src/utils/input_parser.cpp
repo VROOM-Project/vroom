@@ -433,7 +433,8 @@ Input parse(const CLArgs& cl_args) {
       routing_wrapper =
         std::make_unique<routing::LibosrmWrapper>(common_profile);
     } catch (const osrm::exception& e) {
-      throw Exception("Invalid shared memory region: " + common_profile);
+      throw Exception(ERROR::ROUTING,
+                      "Invalid shared memory region: " + common_profile);
     }
 #else
     // Attempt to use libosrm while compiling without it.
