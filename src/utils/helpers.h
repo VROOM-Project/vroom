@@ -352,11 +352,14 @@ inline Solution format_solution(const Input& input,
 inline unsigned get_code(ERROR e) {
   unsigned code = 0;
   switch (e) {
-  case ERROR::INPUT:
+  case ERROR::INTERNAL:
     code = 1;
     break;
-  case ERROR::ROUTING:
+  case ERROR::INPUT:
     code = 2;
+    break;
+  case ERROR::ROUTING:
+    code = 3;
     break;
   }
 

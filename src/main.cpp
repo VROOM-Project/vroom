@@ -171,9 +171,12 @@ int main(int argc, char** argv) {
 #endif
   catch (const std::exception& e) {
     // In case of an unhandled internal error.
+    auto error_code = vroom::utils::get_code(vroom::ERROR::INTERNAL);
     std::cerr << "[Error] " << e.what() << std::endl;
-    vroom::io::write_to_json({1, e.what()}, false, cl_args.output_file);
-    exit(1);
+    vroom::io::write_to_json({error_code, e.what()},
+                             false,
+                             cl_args.output_file);
+    exit(error_code);
   }
 
   return 0;
