@@ -177,6 +177,10 @@ bool Input::vehicle_ok_with_job(Index v_index, Index j_index) const {
   return _vehicle_to_job_compatibility[v_index][j_index];
 }
 
+bool Input::vehicle_ok_with_vehicle(Index v1_index, Index v2_index) const {
+  return _vehicle_to_vehicle_compatibility[v1_index][v2_index];
+}
+
 const Matrix<Cost>& Input::get_matrix() const {
   return _matrix;
 }
@@ -231,7 +235,7 @@ void Input::check_cost_bound() const {
   bound = utils::add_without_overflow(bound, end_bound);
 }
 
-void Input::set_vehicle_to_job_compatibility() {
+void Input::set_compatibility() {
   // Default to no restriction when no skills are provided.
   _vehicle_to_job_compatibility =
     std::vector<std::vector<bool>>(vehicles.size(),
@@ -252,6 +256,41 @@ void Input::set_vehicle_to_job_compatibility() {
           }
         }
         _vehicle_to_job_compatibility[v][j] = is_compatible;
+      }
+    }
+  }
+
+  // Derive potential extra incompatibilities : jobs with amount that
+  // does not fit into vehicle or that cannot be added to an empty
+  // route for vehicle based on the timing constraints (when they
+  // apply).
+  for (std::size_t v = 0; v < vehicles.size(); ++v) {
+    TWRoute empty_route(*this, v);
+    for (std::size_t j = 0; j < jobs.size(); ++j) {
+      if (_vehicle_to_job_compatibility[v][j]) {
+        auto is_compatible = (jobs[j].amount <= vehicles[v].capacity);
+        if (_has_TW) {
+          is_compatible &= empty_route.is_valid_addition_for_tw(*this, j, 0);
+        }
+
+        _vehicle_to_job_compatibility[v][j] = is_compatible;
+      }
+    }
+  }
+
+  _vehicle_to_vehicle_compatibility =
+    std::vector<std::vector<bool>>(vehicles.size(),
+                                   std::vector<bool>(vehicles.size(), false));
+  for (std::size_t v1 = 0; v1 < vehicles.size(); ++v1) {
+    _vehicle_to_vehicle_compatibility[v1][v1] = true;
+    for (std::size_t v2 = v1 + 1; v2 < vehicles.size(); ++v2) {
+      for (std::size_t j = 0; j < jobs.size(); ++j) {
+        if (_vehicle_to_job_compatibility[v1][j] and
+            _vehicle_to_job_compatibility[v2][j]) {
+          _vehicle_to_vehicle_compatibility[v1][v2] = true;
+          _vehicle_to_vehicle_compatibility[v2][v1] = true;
+          break;
+        }
       }
     }
   }
@@ -281,7 +320,7 @@ Solution Input::solve(unsigned exploration_level, unsigned nb_thread) {
   this->check_cost_bound();
 
   // Fill vehicle/job compatibility matrix.
-  this->set_vehicle_to_job_compatibility();
+  this->set_compatibility();
 
   // Load relevant problem.
   auto instance = this->get_problem();

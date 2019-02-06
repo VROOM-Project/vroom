@@ -9,6 +9,8 @@
 - Support for multiple named datasets when using `libosrm` (#181)
 - Generic `vroom` namespace and several other specializations (#135)
 - Support for OpenRouteService as routing engine (#204)
+- Spot more job/vehicle incompatibilities derived from constraints (#201)
+- Filter out irrelevant local search neighbourhoods for vehicles with disjoint job candidates (#202)
 
 ### Changed
 
