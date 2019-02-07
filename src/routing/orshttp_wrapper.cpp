@@ -26,31 +26,36 @@ OrsHttpWrapper::OrsHttpWrapper(const std::string& profile, const Server& server)
 std::string OrsHttpWrapper::build_query(const std::vector<Location>& locations,
                                         std::string service,
                                         std::string extra_args = "") const {
-  // Building query for ORS
-  std::string query = "GET /v2/" + service;
-
-  query += "?profile=" + _profile;
-
   // Adding locations.
+  std::string body = "{\"";
   if (service == "routes") {
-    query += "&coordinates=";
+    body += "coordinates";
   } else {
-    query += "&locations=";
+    body += "locations";
   }
+  body += "\":[";
   for (auto const& location : locations) {
-    query += std::to_string(location.lon()) + "," +
-             std::to_string(location.lat()) + "|";
+    body += "[" + std::to_string(location.lon()) + "," +
+             std::to_string(location.lat()) + "],";
   }
-  query.pop_back(); // Remove trailing '|'.
+  body.pop_back(); // Remove trailing ','.
+  body +="]}";
+
+  // Building query for ORS
+
+  std::string query = "POST /ors/v2/" + service + "/" + _profile;
 
   if (!extra_args.empty()) {
-    query += "&" + extra_args;
+    query += "?" + extra_args;
   }
 
   query += " HTTP/1.1\r\n";
-  query += "Host: " + _server.host + "\r\n";
   query += "Accept: */*\r\n";
-  query += "Connection: close\r\n\r\n";
+  query += "Content-Type: application/json\r\n";
+  query += "Content-Length: " + std::to_string(body.size()) + "\r\n";
+  query += "Host: " + _server.host + ":" + _server.port + "\r\n";
+  query += "Connection: close\r\n";
+  query += "\r\n" + body;
 
   return query;
 }
@@ -95,11 +100,12 @@ std::string OrsHttpWrapper::send_then_receive(std::string query) const {
 Matrix<Cost>
 OrsHttpWrapper::get_matrix(const std::vector<Location>& locs) const {
   std::string query = this->build_query(locs, "matrix");
-
   std::string response = this->send_then_receive(query);
 
   // Removing headers.
-  std::string json_content = response.substr(response.find("{"));
+  size_t json_start = response.find("{");
+  size_t json_length = response.rfind("}") - json_start + 1;
+  std::string json_content = response.substr(json_start, json_length);
 
   // Expected matrix size.
   std::size_t m_size = locs.size();
@@ -116,6 +122,7 @@ OrsHttpWrapper::get_matrix(const std::vector<Location>& locs) const {
                     "ORS matrix:" +
                       std::string(infos["error"]["message"].GetString()));
   }
+
   assert(infos["durations"].Size() == m_size);
 
   // Build matrix while checking for unfound routes to avoid
