@@ -20,8 +20,9 @@ Vehicle::Vehicle(Id id,
                  const TimeWindow& tw)
   : id(id), start(start), end(end), capacity(capacity), skills(skills), tw(tw) {
   if (!static_cast<bool>(start) and !static_cast<bool>(end)) {
-    throw Exception("No start or end specified for vehicle " +
-                    std::to_string(id) + '.');
+    throw Exception(ERROR::INPUT,
+                    "No start or end specified for vehicle " +
+                      std::to_string(id) + '.');
   }
 }
 

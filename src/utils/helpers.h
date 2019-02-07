@@ -23,7 +23,8 @@ using TWSolution = std::vector<TWRoute>;
 
 inline Cost add_without_overflow(Cost a, Cost b) {
   if (a > std::numeric_limits<Cost>::max() - b) {
-    throw Exception("Too high cost values, stopping to avoid overflowing.");
+    throw Exception(ERROR::INPUT,
+                    "Too high cost values, stopping to avoid overflowing.");
   }
   return a + b;
 }
@@ -346,6 +347,23 @@ inline Solution format_solution(const Input& input,
                   input.amount_size(),
                   std::move(routes),
                   std::move(unassigned_jobs));
+}
+
+inline unsigned get_code(ERROR e) {
+  unsigned code = 0;
+  switch (e) {
+  case ERROR::INTERNAL:
+    code = 1;
+    break;
+  case ERROR::INPUT:
+    code = 2;
+    break;
+  case ERROR::ROUTING:
+    code = 3;
+    break;
+  }
+
+  return code;
 }
 
 } // namespace utils

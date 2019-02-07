@@ -52,7 +52,7 @@ void Input::add_job(const Job& job) {
     _has_skills = !current_job.skills.empty();
   } else {
     if (_has_skills != !current_job.skills.empty()) {
-      throw Exception("Missing skills.");
+      throw Exception(ERROR::INPUT, "Missing skills.");
     }
   }
 
@@ -83,7 +83,7 @@ void Input::add_vehicle(const Vehicle& vehicle) {
     _has_skills = !current_v.skills.empty();
   } else {
     if (_has_skills != !current_v.skills.empty()) {
-      throw Exception("Missing skills.");
+      throw Exception(ERROR::INPUT, "Missing skills.");
     }
   }
 
@@ -146,9 +146,10 @@ void Input::check_amount_size(unsigned size) {
   } else {
     // Checking consistency for amount/capacity input lengths.
     if (size != _amount_size) {
-      throw Exception(
-        "Inconsistent amount/capacity lengths: " + std::to_string(size) +
-        " and " + std::to_string(_amount_size) + '.');
+      throw Exception(ERROR::INPUT,
+                      "Inconsistent amount/capacity lengths: " +
+                        std::to_string(size) + " and " +
+                        std::to_string(_amount_size) + '.');
     }
   }
 }
@@ -307,7 +308,8 @@ std::unique_ptr<VRP> Input::get_problem() const {
 Solution Input::solve(unsigned exploration_level, unsigned nb_thread) {
   if (_geometry and !_all_locations_have_coords) {
     // Early abort when info is required with missing coordinates.
-    throw Exception("Option -g is invalid with missing coordinates.");
+    throw Exception(ERROR::INPUT,
+                    "Route geometry request with missing coordinates.");
   }
 
   if (_matrix.size() < 2) {

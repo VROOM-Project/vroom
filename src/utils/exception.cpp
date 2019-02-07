@@ -11,11 +11,8 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
-Exception::Exception(const std::string message) : _message(message) {
-}
-
-const std::string Exception::get_message() const {
-  return _message;
+Exception::Exception(ERROR error, const std::string& message)
+  : error(error), message(message) {
 }
 
 } // namespace vroom
