@@ -22,6 +22,7 @@ namespace vroom {
 
 Input::Input()
   : _start_loading(std::chrono::high_resolution_clock::now()),
+    _no_addition_yet(true),
     _has_TW(false),
     _homogeneous_locations(true),
     _geometry(false),
@@ -48,8 +49,9 @@ void Input::add_job(const Job& job) {
   this->store_amount_lower_bound(current_job.amount);
 
   // Ensure that skills are either always or never provided.
-  if (_locations.empty()) {
+  if (_no_addition_yet) {
     _has_skills = !current_job.skills.empty();
+    _no_addition_yet = false;
   } else {
     if (_has_skills != !current_job.skills.empty()) {
       throw Exception(ERROR::INPUT, "Missing skills.");
@@ -79,8 +81,9 @@ void Input::add_vehicle(const Vehicle& vehicle) {
   this->check_amount_size(current_v.capacity.size());
 
   // Ensure that skills are either always or never provided.
-  if (_locations.empty()) {
+  if (_no_addition_yet) {
     _has_skills = !current_v.skills.empty();
+    _no_addition_yet = false;
   } else {
     if (_has_skills != !current_v.skills.empty()) {
       throw Exception(ERROR::INPUT, "Missing skills.");
@@ -313,7 +316,7 @@ Solution Input::solve(unsigned exploration_level, unsigned nb_thread) {
   }
 
   if (_matrix.size() < 2) {
-    // OSRM call if matrix not already provided.
+    // Call to routing engine if matrix not already provided.
     assert(_routing_wrapper);
     _matrix = _routing_wrapper->get_matrix(_locations);
   }
