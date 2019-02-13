@@ -51,7 +51,7 @@ bool Location::user_index() const {
 }
 
 bool Location::operator==(const Location& other) const {
-  return (_index == other.index()) or
+  return (_user_index and (_index == other.index())) or
          (this->has_coordinates() and other.has_coordinates() and
           (this->lon() == other.lon()) and (this->lat() == other.lat()));
 }
