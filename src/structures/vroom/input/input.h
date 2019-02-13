@@ -41,6 +41,7 @@ private:
   bool _geometry;
   Matrix<Cost> _matrix;
   std::vector<Location> _locations;
+  std::unordered_map<Location, Index> _locations_to_index;
   unsigned _amount_size;
   Amount _amount_lower_bound;
   std::vector<std::vector<bool>> _vehicle_to_job_compatibility;
