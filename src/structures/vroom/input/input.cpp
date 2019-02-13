@@ -63,13 +63,22 @@ void Input::add_job(const Job& job) {
 
   if (!current_job.location.user_index()) {
     // Index of this job in the matrix was not specified upon job
-    // creation, using current number of locations.
-    current_job.location.set_index(_locations.size());
+    // creation.
+    auto search = _locations_to_index.find(current_job.location);
+    if (search != _locations_to_index.end()) {
+      // Using stored index for existing location.
+      current_job.location.set_index(search->second);
+    } else {
+      // Append new location and store corresponding index.
+      auto new_index = _locations.size();
+      current_job.location.set_index(new_index);
+      _locations.push_back(current_job.location);
+      _locations_to_index.insert(
+        std::make_pair(current_job.location, new_index));
+    }
   }
   _matrix_used_index.insert(current_job.index());
   _all_locations_have_coords &= current_job.location.has_coordinates();
-
-  _locations.push_back(current_job.location);
 }
 
 void Input::add_vehicle(const Vehicle& vehicle) {
@@ -97,31 +106,51 @@ void Input::add_vehicle(const Vehicle& vehicle) {
   bool has_end = current_v.has_end();
 
   if (has_start) {
-    if (!current_v.start.get().user_index()) {
+    auto& start_loc = current_v.start.get();
+
+    if (!start_loc.user_index()) {
       // Index of this start in the matrix was not specified upon
-      // vehicle creation, using current number of locations.
-      assert(current_v.start.get().has_coordinates());
-      current_v.start.get().set_index(_locations.size());
+      // vehicle creation.
+      assert(start_loc.has_coordinates());
+      auto search = _locations_to_index.find(start_loc);
+      if (search != _locations_to_index.end()) {
+        // Using stored index for existing location.
+        start_loc.set_index(search->second);
+      } else {
+        // Append new location and store corresponding index.
+        auto new_index = _locations.size();
+        start_loc.set_index(new_index);
+        _locations.push_back(start_loc);
+        _locations_to_index.insert(std::make_pair(start_loc, new_index));
+      }
     }
 
-    _matrix_used_index.insert(current_v.start.get().index());
-    _all_locations_have_coords &= current_v.start.get().has_coordinates();
-
-    _locations.push_back(current_v.start.get());
+    _matrix_used_index.insert(start_loc.index());
+    _all_locations_have_coords &= start_loc.has_coordinates();
   }
 
   if (has_end) {
-    if (!current_v.end.get().user_index()) {
+    auto& end_loc = current_v.end.get();
+
+    if (!end_loc.user_index()) {
       // Index of this end in the matrix was not specified upon
-      // vehicle creation, using current number of locations.
-      assert(current_v.end.get().has_coordinates());
-      current_v.end.get().set_index(_locations.size());
+      // vehicle creation.
+      assert(end_loc.has_coordinates());
+      auto search = _locations_to_index.find(end_loc);
+      if (search != _locations_to_index.end()) {
+        // Using stored index for existing location.
+        end_loc.set_index(search->second);
+      } else {
+        // Append new location and store corresponding index.
+        auto new_index = _locations.size();
+        end_loc.set_index(new_index);
+        _locations.push_back(end_loc);
+        _locations_to_index.insert(std::make_pair(end_loc, new_index));
+      }
     }
 
-    _matrix_used_index.insert(current_v.end.get().index());
-    _all_locations_have_coords &= current_v.end.get().has_coordinates();
-
-    _locations.push_back(current_v.end.get());
+    _matrix_used_index.insert(end_loc.index());
+    _all_locations_have_coords &= end_loc.has_coordinates();
   }
 
   // Check for homogeneous locations among vehicles.
