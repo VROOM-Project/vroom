@@ -28,7 +28,7 @@ std::string OrsHttpWrapper::build_query(const std::vector<Location>& locations,
                                         std::string extra_args = "") const {
   // Adding locations.
   std::string body = "{\"";
-  if (service == "routes") {
+  if (service == "directions") {
     body += "coordinates";
   } else {
     body += "locations";
@@ -39,15 +39,16 @@ std::string OrsHttpWrapper::build_query(const std::vector<Location>& locations,
              std::to_string(location.lat()) + "],";
   }
   body.pop_back(); // Remove trailing ','.
-  body +="]}";
+  body += "]";
+  if (!extra_args.empty()) {
+    body += "," + extra_args;
+  }
+  body += "}";
 
   // Building query for ORS
 
   std::string query = "POST /ors/v2/" + service + "/" + _profile;
 
-  if (!extra_args.empty()) {
-    query += "?" + extra_args;
-  }
 
   query += " HTTP/1.1\r\n";
   query += "Accept: */*\r\n";
@@ -159,14 +160,16 @@ void OrsHttpWrapper::add_route_info(Route& route) const {
     ordered_locations.push_back(step.location);
   }
 
-  std::string extra_args = "geometry_simplify=false&continue_straight=false";
+  std::string extra_args = "\"geometry_simplify\":\"false\",\"continue_straight\":\"false\"";
 
   std::string query =
-    this->build_query(ordered_locations, "routes", extra_args);
+    this->build_query(ordered_locations, "directions", extra_args);
   std::string response = this->send_then_receive(query);
 
   // Removing headers
-  std::string json_content = response.substr(response.find("{"));
+  size_t json_start = response.find("{");
+  size_t json_length = response.rfind("}") - json_start + 1;
+  std::string json_content = response.substr(json_start, json_length);
 
   // Checking everything is fine in the response.
   rapidjson::Document infos;
@@ -176,7 +179,7 @@ void OrsHttpWrapper::add_route_info(Route& route) const {
   assert(!infos.Parse(json_content.c_str()).HasParseError());
 #endif
   if (infos.HasMember("error")) {
-    throw Exception("ORS routes: " +
+    throw Exception("ORS directions: " +
                     std::string(infos["error"]["message"].GetString()));
   }
 
