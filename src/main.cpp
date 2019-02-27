@@ -34,11 +34,11 @@ void display_usage() {
   usage += "Options:\n";
   usage += "\t-a PROFILE:HOST (=" + vroom::DEFAULT_PROFILE +
            ":0.0.0.0)\t routing server\n";
-  usage += "\t-p PROFILE:PORT (=" + vroom::DEFAULT_PROFILE +
-           ":5000),\t routing server port\n";
   usage += "\t-g,\t\t\t\t add detailed route geometry and indicators\n";
   usage += "\t-i FILE,\t\t\t read input from FILE rather than from stdin\n";
   usage += "\t-o OUTPUT,\t\t\t output file name\n";
+  usage += "\t-p PROFILE:PORT (=" + vroom::DEFAULT_PROFILE +
+           ":5000),\t routing server port\n";
   usage += "\t-r ROUTER (=osrm),\t\t osrm, libosrm or ors\n";
   usage += "\t-t THREADS (=4),\t\t number of threads to use\n";
   usage += "\t-x EXPLORE (=5),\t\t exploration level to use (0..5)";
@@ -51,17 +51,21 @@ int main(int argc, char** argv) {
   vroom::io::CLArgs cl_args;
 
   // Parsing command-line arguments.
-  const char* optString = "a:gi:o:p:r:t:x:h?";
+  const char* optString = "a:e:gi:o:p:r:t:x:h?";
   int opt = getopt(argc, argv, optString);
 
   std::string router_arg;
   std::string nb_threads_arg = std::to_string(cl_args.nb_threads);
   std::string exploration_level_arg = std::to_string(cl_args.exploration_level);
+  std::vector<std::string> heuristic_params_arg;
 
   while (opt != -1) {
     switch (opt) {
     case 'a':
       vroom::io::update_host(cl_args.servers, optarg);
+      break;
+    case 'e':
+      heuristic_params_arg.push_back(optarg);
       break;
     case 'g':
       cl_args.geometry = true;
@@ -119,6 +123,24 @@ int main(int argc, char** argv) {
     std::string message = "Invalid routing engine: " + router_arg + ".";
     std::cerr << "[Error] " << message << std::endl;
     vroom::io::write_to_json({error_code, message}, false, cl_args.output_file);
+    exit(error_code);
+  }
+
+  try {
+    // Force heuristic parameters from the command-line, useful for
+    // debugging.
+    std::transform(heuristic_params_arg.begin(),
+                   heuristic_params_arg.end(),
+                   std::back_inserter(cl_args.h_params),
+                   [](const auto& str_param) {
+                     return vroom::utils::str_to_heuristic_param(str_param);
+                   });
+  } catch (const vroom::Exception& e) {
+    auto error_code = vroom::utils::get_code(e.error);
+    std::cerr << "[Error] " << e.message << std::endl;
+    vroom::io::write_to_json({error_code, e.message},
+                             false,
+                             cl_args.output_file);
     exit(error_code);
   }
 

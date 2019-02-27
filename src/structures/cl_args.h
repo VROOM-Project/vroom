@@ -12,6 +12,7 @@ All rights reserved (see LICENSE).
 
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "structures/typedefs.h"
 
@@ -23,14 +24,15 @@ using Servers = std::unordered_map<std::string, Server>;
 
 struct CLArgs {
   // Listing command-line options.
-  Servers servers;            // -a and -p
-  bool geometry;              // -g
-  std::string input_file;     // -i
-  std::string output_file;    // -o
-  ROUTER router;              // -r
-  std::string input;          // cl arg
-  unsigned nb_threads;        // -t
-  unsigned exploration_level; // -x
+  Servers servers;                           // -a and -p
+  std::vector<HeuristicParameters> h_params; // -e
+  bool geometry;                             // -g
+  std::string input_file;                    // -i
+  std::string output_file;                   // -o
+  ROUTER router;                             // -r
+  std::string input;                         // cl arg
+  unsigned nb_threads;                       // -t
+  unsigned exploration_level;                // -x
 
   static const unsigned max_exploration_level;
 
