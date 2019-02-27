@@ -12,6 +12,7 @@
 - Spot more job/vehicle incompatibilities derived from constraints (#201)
 - Filter out irrelevant local search neighbourhoods for vehicles with disjoint job candidates (#202)
 - Specific status codes by error type (#182)
+- Nearest job route seeding option for VRPTW heuristic (#210)
 
 ### Changed
 
