@@ -13,6 +13,7 @@
 - Filter out irrelevant local search neighbourhoods for vehicles with disjoint job candidates (#202)
 - Specific status codes by error type (#182)
 - Avoid locations duplicates for matrix requests (#200)
+- Nearest job route seeding option for VRPTW heuristic (#210)
 
 ### Changed
 

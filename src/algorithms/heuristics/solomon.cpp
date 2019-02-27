@@ -79,6 +79,7 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
       // Initialize current route with the "best" valid job.
       Amount higher_amount(input.amount_size());
       Cost furthest_cost = 0;
+      Cost nearest_cost = std::numeric_limits<Cost>::max();
       Duration earliest_deadline = std::numeric_limits<Duration>::max();
       Index best_job_rank = 0;
       for (const auto job_rank : unassigned) {
@@ -104,11 +105,17 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
           furthest_cost = costs[job_rank];
           best_job_rank = job_rank;
         }
+        if (init == INIT::NEAREST and costs[job_rank] < nearest_cost) {
+          nearest_cost = costs[job_rank];
+          best_job_rank = job_rank;
+        }
       }
       if ((init == INIT::HIGHER_AMOUNT and route_amount << higher_amount) or
           (init == INIT::EARLIEST_DEADLINE and
            earliest_deadline < std::numeric_limits<Duration>::max()) or
-          (init == INIT::FURTHEST and furthest_cost > 0)) {
+          (init == INIT::FURTHEST and furthest_cost > 0) or
+          (init == INIT::NEAREST and
+           nearest_cost < std::numeric_limits<Cost>::max())) {
         current_r.add(input, best_job_rank, 0);
         route_amount += input.jobs[best_job_rank].amount;
         unassigned.erase(best_job_rank);
@@ -272,6 +279,7 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
       //  vehicle.
       Amount higher_amount(input.amount_size());
       Cost furthest_cost = 0;
+      Cost nearest_cost = std::numeric_limits<Cost>::max();
       Duration earliest_deadline = std::numeric_limits<Duration>::max();
       Index best_job_rank = 0;
       for (const auto job_rank : unassigned) {
@@ -300,11 +308,17 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
           furthest_cost = costs[job_rank][v_rank];
           best_job_rank = job_rank;
         }
+        if (init == INIT::NEAREST and costs[job_rank][v_rank] < nearest_cost) {
+          nearest_cost = costs[job_rank][v_rank];
+          best_job_rank = job_rank;
+        }
       }
       if ((init == INIT::HIGHER_AMOUNT and route_amount << higher_amount) or
           (init == INIT::EARLIEST_DEADLINE and
            earliest_deadline < std::numeric_limits<Duration>::max()) or
-          (init == INIT::FURTHEST and furthest_cost > 0)) {
+          (init == INIT::FURTHEST and furthest_cost > 0) or
+          (init == INIT::NEAREST and
+           nearest_cost < std::numeric_limits<Cost>::max())) {
         current_r.add(input, best_job_rank, 0);
         route_amount += input.jobs[best_job_rank].amount;
         unassigned.erase(best_job_rank);
