@@ -337,7 +337,9 @@ std::unique_ptr<VRP> Input::get_problem() const {
   }
 }
 
-Solution Input::solve(unsigned exploration_level, unsigned nb_thread) {
+Solution Input::solve(unsigned exploration_level,
+                      unsigned nb_thread,
+                      const std::vector<HeuristicParameters>& h_param) {
   if (_geometry and !_all_locations_have_coords) {
     // Early abort when info is required with missing coordinates.
     throw Exception(ERROR::INPUT,
@@ -365,7 +367,7 @@ Solution Input::solve(unsigned exploration_level, unsigned nb_thread) {
                    .count();
 
   // Solve.
-  auto sol = instance->solve(exploration_level, nb_thread);
+  auto sol = instance->solve(exploration_level, nb_thread, h_param);
 
   // Update timing info.
   sol.summary.computing_times.loading = loading;

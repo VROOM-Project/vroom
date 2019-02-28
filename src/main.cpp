@@ -168,8 +168,9 @@ int main(int argc, char** argv) {
     // Build problem.
     vroom::Input problem_instance = vroom::io::parse(cl_args);
 
-    vroom::Solution sol =
-      problem_instance.solve(cl_args.exploration_level, cl_args.nb_threads);
+    vroom::Solution sol = problem_instance.solve(cl_args.exploration_level,
+                                                 cl_args.nb_threads,
+                                                 cl_args.h_params);
 
     // Write solution.
     vroom::io::write_to_json(sol, cl_args.geometry, cl_args.output_file);
