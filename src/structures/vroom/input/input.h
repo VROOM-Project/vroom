@@ -34,15 +34,18 @@ private:
   std::chrono::high_resolution_clock::time_point _end_solving;
   std::chrono::high_resolution_clock::time_point _end_routing;
   std::unique_ptr<routing::Wrapper<Cost>> _routing_wrapper;
+  bool _no_addition_yet;
   bool _has_skills;
   bool _has_TW;
   bool _homogeneous_locations;
   bool _geometry;
   Matrix<Cost> _matrix;
   std::vector<Location> _locations;
+  std::unordered_map<Location, Index> _locations_to_index;
   unsigned _amount_size;
   Amount _amount_lower_bound;
   std::vector<std::vector<bool>> _vehicle_to_job_compatibility;
+  std::vector<std::vector<bool>> _vehicle_to_vehicle_compatibility;
   std::unordered_set<Index> _matrix_used_index;
   bool _all_locations_have_coords;
 
@@ -52,7 +55,7 @@ private:
 
   void check_cost_bound() const;
 
-  void set_vehicle_to_job_compatibility();
+  void set_compatibility();
 
   void store_amount_lower_bound(const Amount& amount);
 
@@ -81,6 +84,9 @@ public:
   bool has_homogeneous_locations() const;
 
   bool vehicle_ok_with_job(Index v_index, Index j_index) const;
+
+  // Returns true iff both vehicles have common job candidates.
+  bool vehicle_ok_with_vehicle(Index v1_index, Index v2_index) const;
 
   const Matrix<Cost>& get_matrix() const;
 

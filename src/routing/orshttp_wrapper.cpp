@@ -91,8 +91,9 @@ std::string OrsHttpWrapper::send_then_receive(std::string query) const {
       }
     }
   } catch (boost::system::system_error& e) {
-    throw Exception("Failed to connect to ORS at " + _server.host + ":" +
-                    _server.port);
+    throw Exception(ERROR::ROUTING,
+                    "Failed to connect to ORS at " + _server.host + ":" +
+                      _server.port);
   }
   return response;
 }
@@ -118,8 +119,9 @@ OrsHttpWrapper::get_matrix(const std::vector<Location>& locs) const {
   assert(!infos.Parse(json_content.c_str()).HasParseError());
 #endif
   if (infos.HasMember("error")) {
-    throw Exception("ORS matrix: " +
-                    std::string(infos["error"]["message"].GetString()));
+    throw Exception(ERROR::ROUTING,
+                    "ORS matrix:" +
+                      std::string(infos["error"]["message"].GetString()));
   }
 
   assert(infos["durations"].Size() == m_size);
@@ -179,8 +181,9 @@ void OrsHttpWrapper::add_route_info(Route& route) const {
   assert(!infos.Parse(json_content.c_str()).HasParseError());
 #endif
   if (infos.HasMember("error")) {
-    throw Exception("ORS directions: " +
-                    std::string(infos["error"]["message"].GetString()));
+    throw Exception(ERROR::ROUTING,
+                    "ORS routes: " +
+                      std::string(infos["error"]["message"].GetString()));
   }
 
   // Total distance and route geometry.

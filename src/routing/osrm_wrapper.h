@@ -56,7 +56,7 @@ protected:
       error_msg += "location [" + std::to_string(locs[error_loc].lon()) + ";" +
                    std::to_string(locs[error_loc].lat()) + "]";
 
-      throw Exception(error_msg);
+      throw Exception(ERROR::ROUTING, error_msg);
     }
   }
 

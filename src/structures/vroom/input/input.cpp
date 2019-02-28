@@ -22,6 +22,7 @@ namespace vroom {
 
 Input::Input()
   : _start_loading(std::chrono::high_resolution_clock::now()),
+    _no_addition_yet(true),
     _has_TW(false),
     _homogeneous_locations(true),
     _geometry(false),
@@ -48,11 +49,12 @@ void Input::add_job(const Job& job) {
   this->store_amount_lower_bound(current_job.amount);
 
   // Ensure that skills are either always or never provided.
-  if (_locations.empty()) {
+  if (_no_addition_yet) {
     _has_skills = !current_job.skills.empty();
+    _no_addition_yet = false;
   } else {
     if (_has_skills != !current_job.skills.empty()) {
-      throw Exception("Missing skills.");
+      throw Exception(ERROR::INPUT, "Missing skills.");
     }
   }
 
@@ -61,13 +63,22 @@ void Input::add_job(const Job& job) {
 
   if (!current_job.location.user_index()) {
     // Index of this job in the matrix was not specified upon job
-    // creation, using current number of locations.
-    current_job.location.set_index(_locations.size());
+    // creation.
+    auto search = _locations_to_index.find(current_job.location);
+    if (search != _locations_to_index.end()) {
+      // Using stored index for existing location.
+      current_job.location.set_index(search->second);
+    } else {
+      // Append new location and store corresponding index.
+      auto new_index = _locations.size();
+      current_job.location.set_index(new_index);
+      _locations.push_back(current_job.location);
+      _locations_to_index.insert(
+        std::make_pair(current_job.location, new_index));
+    }
   }
   _matrix_used_index.insert(current_job.index());
   _all_locations_have_coords &= current_job.location.has_coordinates();
-
-  _locations.push_back(current_job.location);
 }
 
 void Input::add_vehicle(const Vehicle& vehicle) {
@@ -79,11 +90,12 @@ void Input::add_vehicle(const Vehicle& vehicle) {
   this->check_amount_size(current_v.capacity.size());
 
   // Ensure that skills are either always or never provided.
-  if (_locations.empty()) {
+  if (_no_addition_yet) {
     _has_skills = !current_v.skills.empty();
+    _no_addition_yet = false;
   } else {
     if (_has_skills != !current_v.skills.empty()) {
-      throw Exception("Missing skills.");
+      throw Exception(ERROR::INPUT, "Missing skills.");
     }
   }
 
@@ -94,31 +106,51 @@ void Input::add_vehicle(const Vehicle& vehicle) {
   bool has_end = current_v.has_end();
 
   if (has_start) {
-    if (!current_v.start.get().user_index()) {
+    auto& start_loc = current_v.start.get();
+
+    if (!start_loc.user_index()) {
       // Index of this start in the matrix was not specified upon
-      // vehicle creation, using current number of locations.
-      assert(current_v.start.get().has_coordinates());
-      current_v.start.get().set_index(_locations.size());
+      // vehicle creation.
+      assert(start_loc.has_coordinates());
+      auto search = _locations_to_index.find(start_loc);
+      if (search != _locations_to_index.end()) {
+        // Using stored index for existing location.
+        start_loc.set_index(search->second);
+      } else {
+        // Append new location and store corresponding index.
+        auto new_index = _locations.size();
+        start_loc.set_index(new_index);
+        _locations.push_back(start_loc);
+        _locations_to_index.insert(std::make_pair(start_loc, new_index));
+      }
     }
 
-    _matrix_used_index.insert(current_v.start.get().index());
-    _all_locations_have_coords &= current_v.start.get().has_coordinates();
-
-    _locations.push_back(current_v.start.get());
+    _matrix_used_index.insert(start_loc.index());
+    _all_locations_have_coords &= start_loc.has_coordinates();
   }
 
   if (has_end) {
-    if (!current_v.end.get().user_index()) {
+    auto& end_loc = current_v.end.get();
+
+    if (!end_loc.user_index()) {
       // Index of this end in the matrix was not specified upon
-      // vehicle creation, using current number of locations.
-      assert(current_v.end.get().has_coordinates());
-      current_v.end.get().set_index(_locations.size());
+      // vehicle creation.
+      assert(end_loc.has_coordinates());
+      auto search = _locations_to_index.find(end_loc);
+      if (search != _locations_to_index.end()) {
+        // Using stored index for existing location.
+        end_loc.set_index(search->second);
+      } else {
+        // Append new location and store corresponding index.
+        auto new_index = _locations.size();
+        end_loc.set_index(new_index);
+        _locations.push_back(end_loc);
+        _locations_to_index.insert(std::make_pair(end_loc, new_index));
+      }
     }
 
-    _matrix_used_index.insert(current_v.end.get().index());
-    _all_locations_have_coords &= current_v.end.get().has_coordinates();
-
-    _locations.push_back(current_v.end.get());
+    _matrix_used_index.insert(end_loc.index());
+    _all_locations_have_coords &= end_loc.has_coordinates();
   }
 
   // Check for homogeneous locations among vehicles.
@@ -146,9 +178,10 @@ void Input::check_amount_size(unsigned size) {
   } else {
     // Checking consistency for amount/capacity input lengths.
     if (size != _amount_size) {
-      throw Exception(
-        "Inconsistent amount/capacity lengths: " + std::to_string(size) +
-        " and " + std::to_string(_amount_size) + '.');
+      throw Exception(ERROR::INPUT,
+                      "Inconsistent amount/capacity lengths: " +
+                        std::to_string(size) + " and " +
+                        std::to_string(_amount_size) + '.');
     }
   }
 }
@@ -175,6 +208,10 @@ bool Input::has_homogeneous_locations() const {
 
 bool Input::vehicle_ok_with_job(Index v_index, Index j_index) const {
   return _vehicle_to_job_compatibility[v_index][j_index];
+}
+
+bool Input::vehicle_ok_with_vehicle(Index v1_index, Index v2_index) const {
+  return _vehicle_to_vehicle_compatibility[v1_index][v2_index];
 }
 
 const Matrix<Cost>& Input::get_matrix() const {
@@ -231,7 +268,7 @@ void Input::check_cost_bound() const {
   bound = utils::add_without_overflow(bound, end_bound);
 }
 
-void Input::set_vehicle_to_job_compatibility() {
+void Input::set_compatibility() {
   // Default to no restriction when no skills are provided.
   _vehicle_to_job_compatibility =
     std::vector<std::vector<bool>>(vehicles.size(),
@@ -255,6 +292,41 @@ void Input::set_vehicle_to_job_compatibility() {
       }
     }
   }
+
+  // Derive potential extra incompatibilities : jobs with amount that
+  // does not fit into vehicle or that cannot be added to an empty
+  // route for vehicle based on the timing constraints (when they
+  // apply).
+  for (std::size_t v = 0; v < vehicles.size(); ++v) {
+    TWRoute empty_route(*this, v);
+    for (std::size_t j = 0; j < jobs.size(); ++j) {
+      if (_vehicle_to_job_compatibility[v][j]) {
+        auto is_compatible = (jobs[j].amount <= vehicles[v].capacity);
+        if (_has_TW) {
+          is_compatible &= empty_route.is_valid_addition_for_tw(*this, j, 0);
+        }
+
+        _vehicle_to_job_compatibility[v][j] = is_compatible;
+      }
+    }
+  }
+
+  _vehicle_to_vehicle_compatibility =
+    std::vector<std::vector<bool>>(vehicles.size(),
+                                   std::vector<bool>(vehicles.size(), false));
+  for (std::size_t v1 = 0; v1 < vehicles.size(); ++v1) {
+    _vehicle_to_vehicle_compatibility[v1][v1] = true;
+    for (std::size_t v2 = v1 + 1; v2 < vehicles.size(); ++v2) {
+      for (std::size_t j = 0; j < jobs.size(); ++j) {
+        if (_vehicle_to_job_compatibility[v1][j] and
+            _vehicle_to_job_compatibility[v2][j]) {
+          _vehicle_to_vehicle_compatibility[v1][v2] = true;
+          _vehicle_to_vehicle_compatibility[v2][v1] = true;
+          break;
+        }
+      }
+    }
+  }
 }
 
 std::unique_ptr<VRP> Input::get_problem() const {
@@ -268,11 +340,12 @@ std::unique_ptr<VRP> Input::get_problem() const {
 Solution Input::solve(unsigned exploration_level, unsigned nb_thread) {
   if (_geometry and !_all_locations_have_coords) {
     // Early abort when info is required with missing coordinates.
-    throw Exception("Option -g is invalid with missing coordinates.");
+    throw Exception(ERROR::INPUT,
+                    "Route geometry request with missing coordinates.");
   }
 
   if (_matrix.size() < 2) {
-    // OSRM call if matrix not already provided.
+    // Call to routing engine if matrix not already provided.
     assert(_routing_wrapper);
     _matrix = _routing_wrapper->get_matrix(_locations);
   }
@@ -281,7 +354,7 @@ Solution Input::solve(unsigned exploration_level, unsigned nb_thread) {
   this->check_cost_bound();
 
   // Fill vehicle/job compatibility matrix.
-  this->set_vehicle_to_job_compatibility();
+  this->set_compatibility();
 
   // Load relevant problem.
   auto instance = this->get_problem();

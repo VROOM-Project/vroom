@@ -21,6 +21,7 @@ All rights reserved (see LICENSE).
 #include "structures/typedefs.h"
 #include "structures/vroom/input/input.h"
 #include "utils/exception.h"
+#include "utils/helpers.h"
 #include "utils/input_parser.h"
 #include "utils/output_json.h"
 #include "utils/version.h"
@@ -101,10 +102,11 @@ int main(int argc, char** argv) {
     cl_args.exploration_level =
       std::min(cl_args.exploration_level, cl_args.max_exploration_level);
   } catch (const std::exception& e) {
-    std::string message = "Invalid numerical value.";
+    auto error_code = vroom::utils::get_code(vroom::ERROR::INPUT);
+    std::string message = "Invalid numerical value in option.";
     std::cerr << "[Error] " << message << std::endl;
-    vroom::io::write_to_json({1, message}, false, cl_args.output_file);
-    exit(1);
+    vroom::io::write_to_json({error_code, message}, false, cl_args.output_file);
+    exit(error_code);
   }
 
   // Determine routing engine (defaults to ROUTER::OSRM).
@@ -113,10 +115,11 @@ int main(int argc, char** argv) {
   } else if (router_arg == "ors") {
     cl_args.router = vroom::ROUTER::ORS;
   } else if (!router_arg.empty() and router_arg != "osrm") {
-    std::string message = "Invalid routing engine: " + router_arg;
+    auto error_code = vroom::utils::get_code(vroom::ERROR::INPUT);
+    std::string message = "Invalid routing engine: " + router_arg + ".";
     std::cerr << "[Error] " << message << std::endl;
-    vroom::io::write_to_json({1, message}, false, cl_args.output_file);
-    exit(1);
+    vroom::io::write_to_json({error_code, message}, false, cl_args.output_file);
+    exit(error_code);
   }
 
   // Add default server if none provided in input.
@@ -149,24 +152,31 @@ int main(int argc, char** argv) {
     // Write solution.
     vroom::io::write_to_json(sol, cl_args.geometry, cl_args.output_file);
   } catch (const vroom::Exception& e) {
-    std::cerr << "[Error] " << e.get_message() << std::endl;
-    vroom::io::write_to_json({1, e.get_message()}, false, cl_args.output_file);
-    exit(1);
+    auto error_code = vroom::utils::get_code(e.error);
+    std::cerr << "[Error] " << e.message << std::endl;
+    vroom::io::write_to_json({error_code, e.message},
+                             false,
+                             cl_args.output_file);
+    exit(error_code);
   }
 #if USE_LIBOSRM
   catch (const osrm::exception& e) {
     // In case of an unhandled routing error.
+    auto error_code = vroom::utils::get_code(vroom::ERROR::ROUTING);
     auto message = "Routing problem: " + std::string(e.what());
     std::cerr << "[Error] " << message << std::endl;
-    vroom::io::write_to_json({1, message}, false, cl_args.output_file);
-    exit(1);
+    vroom::io::write_to_json({error_code, message}, false, cl_args.output_file);
+    exit(error_code);
   }
 #endif
   catch (const std::exception& e) {
     // In case of an unhandled internal error.
+    auto error_code = vroom::utils::get_code(vroom::ERROR::INTERNAL);
     std::cerr << "[Error] " << e.what() << std::endl;
-    vroom::io::write_to_json({1, e.what()}, false, cl_args.output_file);
-    exit(1);
+    vroom::io::write_to_json({error_code, e.what()},
+                             false,
+                             cl_args.output_file);
+    exit(error_code);
   }
 
   return 0;

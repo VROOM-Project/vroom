@@ -57,6 +57,9 @@ struct Server {
   }
 };
 
+// Specific error statuses used when handling exceptions.
+enum class ERROR { INTERNAL, INPUT, ROUTING };
+
 // Available location status.
 enum class STEP_TYPE { START, JOB, END };
 

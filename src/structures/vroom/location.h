@@ -50,4 +50,14 @@ public:
 
 } // namespace vroom
 
+namespace std {
+template <> struct hash<vroom::Location> {
+  std::size_t operator()(const vroom::Location& l) const noexcept {
+    return ((hash<vroom::Coordinate>()(l.lon()) ^
+             (hash<vroom::Coordinate>()(l.lat()) << 1)) >>
+            1);
+  }
+};
+} // namespace std
+
 #endif

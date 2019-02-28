@@ -80,8 +80,9 @@ std::string RoutedWrapper::send_then_receive(std::string query) const {
       }
     }
   } catch (boost::system::system_error& e) {
-    throw Exception("Failed to connect to OSRM at " + _server.host + ":" +
-                    _server.port);
+    throw Exception(ERROR::ROUTING,
+                    "Failed to connect to OSRM at " + _server.host + ":" +
+                      _server.port);
   }
   return response;
 }
@@ -107,7 +108,8 @@ RoutedWrapper::get_matrix(const std::vector<Location>& locs) const {
   assert(infos.HasMember("code"));
 #endif
   if (infos["code"] != "Ok") {
-    throw Exception("OSRM table: " + std::string(infos["message"].GetString()));
+    throw Exception(ERROR::ROUTING,
+                    "OSRM table: " + std::string(infos["message"].GetString()));
   }
   assert(infos["durations"].Size() == m_size);
 
@@ -165,7 +167,8 @@ void RoutedWrapper::add_route_info(Route& route) const {
   assert(infos.HasMember("code"));
 #endif
   if (infos["code"] != "Ok") {
-    throw Exception("OSRM route: " + std::string(infos["message"].GetString()));
+    throw Exception(ERROR::ROUTING,
+                    "OSRM route: " + std::string(infos["message"].GetString()));
   }
 
   // Total distance and route geometry.

@@ -32,14 +32,16 @@ Job::Job(Id id,
                       tws[0].length,
                       [](auto sum, auto tw) { return sum + tw.length; })) {
   if (tws.size() == 0) {
-    throw Exception("Empty time-windows for job " + std::to_string(id) + ".");
+    throw Exception(ERROR::INPUT,
+                    "Empty time-windows for job " + std::to_string(id) + ".");
   }
 
   if (tws.size() > 1) {
     for (std::size_t i = 0; i < tws.size() - 1; ++i) {
       if (tws[i + 1].start <= tws[i].end) {
-        throw Exception("Unsorted or overlapping time-windows for job " +
-                        std::to_string(id) + ".");
+        throw Exception(ERROR::INPUT,
+                        "Unsorted or overlapping time-windows for job " +
+                          std::to_string(id) + ".");
       }
     }
   }
