@@ -26,8 +26,10 @@ public:
 
   virtual ~VRP();
 
-  virtual Solution solve(unsigned exploration_level,
-                         unsigned nb_threads) const = 0;
+  virtual Solution
+  solve(unsigned exploration_level,
+        unsigned nb_threads,
+        const std::vector<HeuristicParameters>& h_param) const = 0;
 };
 
 } // namespace vroom

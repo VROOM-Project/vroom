@@ -163,7 +163,7 @@ void run_example_with_osrm() {
 
     log_solution(sol, GEOMETRY);
   } catch (const vroom::Exception& e) {
-    std::cerr << "[Error] " << e.get_message() << std::endl;
+    std::cerr << "[Error] " << e.message << std::endl;
   }
 }
 
@@ -241,7 +241,7 @@ void run_example_with_custom_matrix() {
 
     log_solution(sol, GEOMETRY);
   } catch (const vroom::Exception& e) {
-    std::cerr << "[Error] " << e.get_message() << std::endl;
+    std::cerr << "[Error] " << e.message << std::endl;
   }
 }
 

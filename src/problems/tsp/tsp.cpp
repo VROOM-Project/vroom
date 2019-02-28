@@ -268,7 +268,9 @@ RawSolution TSP::raw_solve(unsigned, unsigned nb_threads) const {
   return {init_ranks_sol};
 }
 
-Solution TSP::solve(unsigned, unsigned nb_threads) const {
+Solution TSP::solve(unsigned,
+                    unsigned nb_threads,
+                    const std::vector<HeuristicParameters>&) const {
   return utils::format_solution(_input, raw_solve(0, nb_threads));
 }
 

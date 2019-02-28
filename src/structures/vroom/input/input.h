@@ -92,7 +92,10 @@ public:
 
   Matrix<Cost> get_sub_matrix(const std::vector<Index>& indices) const;
 
-  Solution solve(unsigned exploration_level, unsigned nb_thread);
+  Solution solve(unsigned exploration_level,
+                 unsigned nb_thread,
+                 const std::vector<HeuristicParameters>& h_param =
+                   std::vector<HeuristicParameters>());
 };
 
 } // namespace vroom

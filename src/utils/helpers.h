@@ -10,6 +10,8 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <sstream>
+
 #include "structures/typedefs.h"
 #include "structures/vroom/raw_route.h"
 #include "structures/vroom/tw_route.h"
@@ -27,6 +29,60 @@ inline Cost add_without_overflow(Cost a, Cost b) {
                     "Too high cost values, stopping to avoid overflowing.");
   }
   return a + b;
+}
+
+inline INIT get_init(const std::string& s) {
+  if (s == "NONE") {
+    return INIT::NONE;
+  } else if (s == "HIGHER_AMOUNT") {
+    return INIT::HIGHER_AMOUNT;
+  } else if (s == "NEAREST") {
+    return INIT::NEAREST;
+  } else if (s == "FURTHEST") {
+    return INIT::FURTHEST;
+  } else if (s == "EARLIEST_DEADLINE") {
+    return INIT::EARLIEST_DEADLINE;
+  } else {
+    throw Exception(ERROR::INPUT,
+                    "Invalid heuristic parameter in command-line.");
+  }
+}
+
+inline HeuristicParameters str_to_heuristic_param(const std::string& s) {
+  // Split command-line string describing parameters.
+  constexpr char delimiter = ',';
+  std::vector<std::string> tokens;
+  std::string token;
+  std::istringstream tokenStream(s);
+  while (std::getline(tokenStream, token, delimiter)) {
+    tokens.push_back(token);
+  }
+
+  if (tokens.size() != 3 or tokens[0].size() != 1) {
+    throw Exception(ERROR::INPUT,
+                    "Invalid heuristic parameter in command-line.");
+  }
+
+  auto init = get_init(tokens[1]);
+  try {
+    auto h = std::stoul(tokens[0]);
+
+    if (h != 0 and h != 1) {
+      throw Exception(ERROR::INPUT,
+                      "Invalid heuristic parameter in command-line.");
+    }
+
+    auto regret_coeff = std::stof(tokens[2]);
+    if (regret_coeff < 0) {
+      throw Exception(ERROR::INPUT,
+                      "Invalid heuristic parameter in command-line.");
+    }
+
+    return HeuristicParameters(static_cast<HEURISTIC>(h), init, regret_coeff);
+  } catch (const std::exception& e) {
+    throw Exception(ERROR::INPUT,
+                    "Invalid heuristic parameter in command-line.");
+  }
 }
 
 // Compute cost of adding job with rank job_rank in given route at

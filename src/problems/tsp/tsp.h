@@ -43,7 +43,10 @@ public:
 
   RawSolution raw_solve(unsigned, unsigned nb_threads) const;
 
-  virtual Solution solve(unsigned, unsigned nb_threads) const override;
+  virtual Solution
+  solve(unsigned,
+        unsigned nb_threads,
+        const std::vector<HeuristicParameters>&) const override;
 };
 
 } // namespace vroom

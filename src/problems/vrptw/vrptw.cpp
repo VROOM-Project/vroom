@@ -46,25 +46,113 @@ using LocalSearch = ls::LocalSearch<TWRoute,
                                     vrptw::IntraRelocate,
                                     vrptw::IntraOrOpt>;
 
-constexpr std::array<HeuristicParameters, 32> VRPTW::homogeneous_parameters;
-constexpr std::array<HeuristicParameters, 32> VRPTW::heterogeneous_parameters;
+const std::vector<HeuristicParameters> VRPTW::homogeneous_parameters =
+  {HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHER_AMOUNT, 0.3),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHER_AMOUNT, 0.4),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::EARLIEST_DEADLINE, 0.2),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::FURTHEST, 0.3),
+
+   HeuristicParameters(HEURISTIC::BASIC, INIT::NONE, 0.4),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHER_AMOUNT, 0.5),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::FURTHEST, 0.4),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::FURTHEST, 0.5),
+
+   HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHER_AMOUNT, 0.1),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHER_AMOUNT, 0.6),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::FURTHEST, 0.2),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::FURTHEST, 0.7),
+
+   HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHER_AMOUNT, 0.2),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHER_AMOUNT, 0.7),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHER_AMOUNT, 1.4),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::FURTHEST, 0.1),
+
+   HeuristicParameters(HEURISTIC::BASIC, INIT::NONE, 0),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::NONE, 0.1),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::NONE, 0.3),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::NONE, 0.8),
+
+   HeuristicParameters(HEURISTIC::BASIC, INIT::EARLIEST_DEADLINE, 0.5),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::EARLIEST_DEADLINE, 0.8),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::EARLIEST_DEADLINE, 2.4),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::FURTHEST, 1.2),
+
+   HeuristicParameters(HEURISTIC::BASIC, INIT::NONE, 1),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHER_AMOUNT, 1.3),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::EARLIEST_DEADLINE, 0),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::EARLIEST_DEADLINE, 0.3),
+
+   HeuristicParameters(HEURISTIC::BASIC, INIT::EARLIEST_DEADLINE, 2),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::FURTHEST, 0),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::FURTHEST, 0.9),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::FURTHEST, 1)};
+
+const std::vector<HeuristicParameters> VRPTW::heterogeneous_parameters =
+  {HeuristicParameters(HEURISTIC::DYNAMIC, INIT::HIGHER_AMOUNT, 0.5),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::HIGHER_AMOUNT, 0.9),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::EARLIEST_DEADLINE, 0.4),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::FURTHEST, 0.4),
+
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::HIGHER_AMOUNT, 0.8),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::EARLIEST_DEADLINE, 0.6),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::EARLIEST_DEADLINE, 0.9),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::FURTHEST, 0.6),
+
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::HIGHER_AMOUNT, 1.8),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::EARLIEST_DEADLINE, 1.1),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::EARLIEST_DEADLINE, 1.4),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::FURTHEST, 0.7),
+
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::NONE, 1.3),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::HIGHER_AMOUNT, 2.4),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::EARLIEST_DEADLINE, 0.3),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::FURTHEST, 1.2),
+
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::NONE, 1.2),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::HIGHER_AMOUNT, 0.6),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::HIGHER_AMOUNT, 1.6),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::EARLIEST_DEADLINE, 0.2),
+
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::EARLIEST_DEADLINE, 1.7),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::EARLIEST_DEADLINE, 2),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::FURTHEST, 0.5),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::FURTHEST, 1.5),
+
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::NONE, 1.5),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::NONE, 2.2),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::HIGHER_AMOUNT, 2.1),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::EARLIEST_DEADLINE, 0.5),
+
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::EARLIEST_DEADLINE, 1.2),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::FURTHEST, 0.1),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::FURTHEST, 0.9),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::FURTHEST, 1.1)};
 
 VRPTW::VRPTW(const Input& input) : VRP(input) {
 }
 
-Solution VRPTW::solve(unsigned exploration_level, unsigned nb_threads) const {
-  auto parameters = (_input.has_homogeneous_locations())
-                      ? homogeneous_parameters
-                      : heterogeneous_parameters;
-
-  // Local search parameter.
+Solution VRPTW::solve(unsigned exploration_level,
+                      unsigned nb_threads,
+                      const std::vector<HeuristicParameters>& h_param) const {
+  // Use vector of parameters when passed for debugging, else use
+  // predefined parameter set.
+  const auto& parameters = (!h_param.empty())
+                             ? h_param
+                             : (_input.has_homogeneous_locations())
+                                 ? homogeneous_parameters
+                                 : heterogeneous_parameters;
   unsigned max_nb_jobs_removal = exploration_level;
-  auto nb_init_solutions = 4 * (exploration_level + 1);
-  if (exploration_level >= 4) {
-    nb_init_solutions += 4;
-  }
-  if (exploration_level >= 5) {
-    nb_init_solutions += 4;
+  unsigned nb_init_solutions = h_param.size();
+
+  if (nb_init_solutions == 0) {
+    // Local search parameter.
+    nb_init_solutions = 4 * (exploration_level + 1);
+    if (exploration_level >= 4) {
+      nb_init_solutions += 4;
+    }
+    if (exploration_level >= 5) {
+      nb_init_solutions += 4;
+    }
   }
   assert(nb_init_solutions <= parameters.size());
 
