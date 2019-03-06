@@ -5,7 +5,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2018, Julien Coupey.
+Copyright (c) 2015-2019, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
