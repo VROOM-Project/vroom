@@ -121,9 +121,9 @@ inline TimeWindow get_vehicle_time_window(const rapidjson::Value& v) {
 inline std::vector<TimeWindow> get_job_time_windows(const rapidjson::Value& j) {
   std::vector<TimeWindow> tws;
   if (j.HasMember("time_windows")) {
-    if (!j["time_windows"].IsArray()) {
+    if (!j["time_windows"].IsArray() or j["time_windows"].Empty()) {
       throw Exception(ERROR::INPUT,
-                      "Invalid time_windows value for job " +
+                      "Invalid time_windows array for job " +
                         std::to_string(j["id"].GetUint64()) + ".");
     }
 
