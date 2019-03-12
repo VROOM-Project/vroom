@@ -28,6 +28,7 @@
 ### Fixed
 
 - Missing capacity check for initialization in parallel clustering heuristic (#198)
+- Segfault on job empty `time_windows` array (#221)
 
 ## [v1.3.0]
 
