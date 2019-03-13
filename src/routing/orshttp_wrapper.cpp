@@ -36,7 +36,7 @@ std::string OrsHttpWrapper::build_query(const std::vector<Location>& locations,
   body += "\":[";
   for (auto const& location : locations) {
     body += "[" + std::to_string(location.lon()) + "," +
-             std::to_string(location.lat()) + "],";
+            std::to_string(location.lat()) + "],";
   }
   body.pop_back(); // Remove trailing ','.
   body += "]";
@@ -46,11 +46,9 @@ std::string OrsHttpWrapper::build_query(const std::vector<Location>& locations,
   body += "}";
 
   // Building query for ORS
-
   std::string query = "POST /ors/v2/" + service + "/" + _profile;
 
-
-  query += " HTTP/1.1\r\n";
+  query += " HTTP/1.0\r\n";
   query += "Accept: */*\r\n";
   query += "Content-Type: application/json\r\n";
   query += "Content-Length: " + std::to_string(body.size()) + "\r\n";
@@ -104,8 +102,8 @@ OrsHttpWrapper::get_matrix(const std::vector<Location>& locs) const {
   std::string response = this->send_then_receive(query);
 
   // Removing headers.
-  size_t json_start = response.find("{");
-  size_t json_length = response.rfind("}") - json_start + 1;
+  std::size_t json_start = response.find("{");
+  std::size_t json_length = response.rfind("}") - json_start + 1;
   std::string json_content = response.substr(json_start, json_length);
 
   // Expected matrix size.
@@ -162,15 +160,16 @@ void OrsHttpWrapper::add_route_info(Route& route) const {
     ordered_locations.push_back(step.location);
   }
 
-  std::string extra_args = "\"geometry_simplify\":\"false\",\"continue_straight\":\"false\"";
+  std::string extra_args =
+    "\"geometry_simplify\":\"false\",\"continue_straight\":\"false\"";
 
   std::string query =
     this->build_query(ordered_locations, "directions", extra_args);
   std::string response = this->send_then_receive(query);
 
   // Removing headers
-  size_t json_start = response.find("{");
-  size_t json_length = response.rfind("}") - json_start + 1;
+  std::size_t json_start = response.find("{");
+  std::size_t json_length = response.rfind("}") - json_start + 1;
   std::string json_content = response.substr(json_start, json_length);
 
   // Checking everything is fine in the response.
