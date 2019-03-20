@@ -1,6 +1,6 @@
 # Changelog
 
-## [v1.4.0-rc.1]
+## [v1.4.0-rc.2]
 
 ### Added
 
