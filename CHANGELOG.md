@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [v1.4.0] - 2019-03-26
 
 ### Added
 
@@ -28,8 +28,9 @@
 ### Fixed
 
 - Missing capacity check for initialization in parallel clustering heuristic (#198)
+- Segfault on job empty `time_windows` array (#221)
 
-## [v1.3.0]
+## [v1.3.0] - 2018-12-10
 
 ### Added
 
