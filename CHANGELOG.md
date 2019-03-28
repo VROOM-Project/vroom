@@ -48,6 +48,10 @@
 - Remove unused `tw_length` member from `Job` and associated code
 - Scale `TimeWindow::length` from `UserDuration` to `Duration` (#1015)
 
+#### Routing
+
+- ORS: (previously) hard-coded `/ors/v2` slug now has to be added to the path using `-a` (#1036)
+
 #### Dependencies
 
 - Submodule and update Rapidjson (#929)
