@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- Parsing vehicle ids as `uint64_t` (#228)
+
 ## [v1.4.0] - 2019-03-26
 
 ### Added
