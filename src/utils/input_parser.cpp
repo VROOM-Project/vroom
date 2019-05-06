@@ -206,7 +206,7 @@ Input parse(const CLArgs& cl_args) {
         throw Exception(ERROR::INPUT,
                         "Invalid vehicle at " + std::to_string(i) + ".");
       }
-      auto v_id = json_vehicle["id"].GetUint();
+      auto v_id = json_vehicle["id"].GetUint64();
 
       // Check if vehicle has start_index or end_index.
       bool has_start_index = json_vehicle.HasMember("start_index");
@@ -362,7 +362,7 @@ Input parse(const CLArgs& cl_args) {
         end = boost::optional<Location>(parse_coordinates(json_vehicle, "end"));
       }
 
-      Vehicle current_v(json_vehicle["id"].GetUint(),
+      Vehicle current_v(json_vehicle["id"].GetUint64(),
                         start,
                         end,
                         get_amount(json_vehicle, "capacity"),
