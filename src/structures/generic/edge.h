@@ -9,7 +9,7 @@ Copyright (c) 2015-2019, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
-
+#include <string>
 #include "structures/typedefs.h"
 
 namespace vroom {

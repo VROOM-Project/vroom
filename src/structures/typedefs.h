@@ -15,7 +15,7 @@ All rights reserved (see LICENSE).
 #include <list>
 #include <unordered_set>
 #include <vector>
-
+#include <string>
 #include <boost/optional.hpp>
 
 namespace vroom {

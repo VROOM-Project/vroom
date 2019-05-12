@@ -12,7 +12,7 @@ All rights reserved (see LICENSE).
 
 #include <initializer_list>
 #include <vector>
-
+#include <string>
 #include "structures/typedefs.h"
 
 namespace vroom {
