@@ -13,6 +13,7 @@ All rights reserved (see LICENSE).
 #include <array>
 #include <limits>
 #include <list>
+#include <string>
 #include <unordered_set>
 #include <vector>
 

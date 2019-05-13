@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Implicit instantiation of undefined template error for macos g++ compiler (#231)
 - Parsing vehicle ids as `uint64_t` (#228)
 
 ## [v1.4.0] - 2019-03-26
