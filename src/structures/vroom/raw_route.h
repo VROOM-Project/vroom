@@ -11,7 +11,7 @@ All rights reserved (see LICENSE).
 */
 
 #include <vector>
-#include <string>
+
 #include "structures/typedefs.h"
 #include "structures/vroom/input/input.h"
 
