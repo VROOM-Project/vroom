@@ -10,23 +10,18 @@ All rights reserved (see LICENSE).
 
 */
 
+#include "routing/http_wrapper.h"
 #include "routing/routing_wrapper.h"
 
 namespace vroom {
 namespace routing {
 
-class OsrmRoutedWrapper : public RoutingWrapper {
+class OsrmRoutedWrapper : public RoutingWrapper, HttpWrapper {
 
 private:
-  Server _server;
-
-  void update_server();
-
-  std::string build_query(const std::vector<Location>& locations,
-                          std::string service,
-                          std::string extra_args) const;
-
-  std::string send_then_receive(std::string query) const;
+  virtual std::string build_query(const std::vector<Location>& locations,
+                                  std::string service,
+                                  std::string extra_args) const override;
 
 public:
   OsrmRoutedWrapper(const std::string& profile, const Server& server);

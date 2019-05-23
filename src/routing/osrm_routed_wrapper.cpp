@@ -9,19 +9,16 @@ All rights reserved (see LICENSE).
 
 #include "../include/rapidjson/document.h"
 #include "../include/rapidjson/error/en.h"
-#include <boost/asio.hpp>
 
 #include "routing/osrm_routed_wrapper.h"
 #include "utils/exception.h"
-
-using boost::asio::ip::tcp;
 
 namespace vroom {
 namespace routing {
 
 OsrmRoutedWrapper::OsrmRoutedWrapper(const std::string& profile,
                                      const Server& server)
-  : RoutingWrapper(profile), _server(server) {
+  : RoutingWrapper(profile), HttpWrapper(server) {
 }
 
 std::string
@@ -50,43 +47,6 @@ OsrmRoutedWrapper::build_query(const std::vector<Location>& locations,
   query += "Connection: close\r\n\r\n";
 
   return query;
-}
-
-std::string OsrmRoutedWrapper::send_then_receive(std::string query) const {
-  std::string response;
-
-  try {
-    boost::asio::io_service io_service;
-
-    tcp::resolver r(io_service);
-
-    tcp::resolver::query q(_server.host, _server.port);
-
-    tcp::socket s(io_service);
-    boost::asio::connect(s, r.resolve(q));
-
-    boost::asio::write(s, boost::asio::buffer(query));
-
-    char buf[512];
-    boost::system::error_code error;
-    for (;;) {
-      std::size_t len = s.read_some(boost::asio::buffer(buf), error);
-      response.append(buf, len);
-      if (error == boost::asio::error::eof) {
-        // Connection closed cleanly.
-        break;
-      } else {
-        if (error) {
-          throw boost::system::system_error(error);
-        }
-      }
-    }
-  } catch (boost::system::system_error& e) {
-    throw Exception(ERROR::ROUTING,
-                    "Failed to connect to OSRM at " + _server.host + ":" +
-                      _server.port);
-  }
-  return response;
 }
 
 Matrix<Cost>
