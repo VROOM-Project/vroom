@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- `HttpWrapper` class to factor code previously duplicated across routing wrappers (#224)
+
 ### Fixed
 
 - Implicit instantiation of undefined template error for macos g++ compiler (#231)
