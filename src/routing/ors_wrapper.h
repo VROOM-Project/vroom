@@ -1,5 +1,5 @@
-#ifndef ORSHTTP_WRAPPER_H
-#define ORSHTTP_WRAPPER_H
+#ifndef ORS_WRAPPER_H
+#define ORS_WRAPPER_H
 
 /*
 
@@ -10,12 +10,12 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "routing/osrm_wrapper.h"
+#include "routing/routing_wrapper.h"
 
 namespace vroom {
 namespace routing {
 
-class OrsHttpWrapper : public OSRMWrapper {
+class OrsWrapper : public RoutingWrapper {
 
 private:
   Server _server;
@@ -29,7 +29,7 @@ private:
   std::string send_then_receive(std::string query) const;
 
 public:
-  OrsHttpWrapper(const std::string& profile, const Server& server);
+  OrsWrapper(const std::string& profile, const Server& server);
 
   virtual Matrix<Cost>
   get_matrix(const std::vector<Location>& locs) const override;

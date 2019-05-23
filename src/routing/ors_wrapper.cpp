@@ -11,7 +11,7 @@ All rights reserved (see LICENSE).
 #include "../include/rapidjson/error/en.h"
 #include <boost/asio.hpp>
 
-#include "routing/orshttp_wrapper.h"
+#include "routing/ors_wrapper.h"
 #include "utils/exception.h"
 
 using boost::asio::ip::tcp;
@@ -19,13 +19,13 @@ using boost::asio::ip::tcp;
 namespace vroom {
 namespace routing {
 
-OrsHttpWrapper::OrsHttpWrapper(const std::string& profile, const Server& server)
-  : OSRMWrapper(profile), _server(server) {
+OrsWrapper::OrsWrapper(const std::string& profile, const Server& server)
+  : RoutingWrapper(profile), _server(server) {
 }
 
-std::string OrsHttpWrapper::build_query(const std::vector<Location>& locations,
-                                        std::string service,
-                                        std::string extra_args = "") const {
+std::string OrsWrapper::build_query(const std::vector<Location>& locations,
+                                    std::string service,
+                                    std::string extra_args = "") const {
   // Adding locations.
   std::string body = "{\"";
   if (service == "directions") {
@@ -59,7 +59,7 @@ std::string OrsHttpWrapper::build_query(const std::vector<Location>& locations,
   return query;
 }
 
-std::string OrsHttpWrapper::send_then_receive(std::string query) const {
+std::string OrsWrapper::send_then_receive(std::string query) const {
   std::string response;
 
   try {
@@ -96,8 +96,7 @@ std::string OrsHttpWrapper::send_then_receive(std::string query) const {
   return response;
 }
 
-Matrix<Cost>
-OrsHttpWrapper::get_matrix(const std::vector<Location>& locs) const {
+Matrix<Cost> OrsWrapper::get_matrix(const std::vector<Location>& locs) const {
   std::string query = this->build_query(locs, "matrix");
   std::string response = this->send_then_receive(query);
 
@@ -153,7 +152,7 @@ OrsHttpWrapper::get_matrix(const std::vector<Location>& locs) const {
   return m;
 }
 
-void OrsHttpWrapper::add_route_info(Route& route) const {
+void OrsWrapper::add_route_info(Route& route) const {
   // Ordering locations for the given steps.
   std::vector<Location> ordered_locations;
   for (const auto& step : route.steps) {
