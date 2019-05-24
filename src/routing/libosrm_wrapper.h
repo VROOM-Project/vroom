@@ -13,12 +13,12 @@ All rights reserved (see LICENSE).
 #include "osrm/engine_config.hpp"
 #include "osrm/osrm.hpp"
 
-#include "routing/osrm_wrapper.h"
+#include "routing/routing_wrapper.h"
 
 namespace vroom {
 namespace routing {
 
-class LibosrmWrapper : public OSRMWrapper {
+class LibosrmWrapper : public RoutingWrapper {
 
 private:
   osrm::EngineConfig _config;

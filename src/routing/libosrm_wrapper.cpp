@@ -19,7 +19,7 @@ namespace vroom {
 namespace routing {
 
 LibosrmWrapper::LibosrmWrapper(const std::string& profile)
-  : OSRMWrapper(profile),
+  : RoutingWrapper(profile),
     _config({
       {},     // storare_config
       -1,     // max_locations_trip
