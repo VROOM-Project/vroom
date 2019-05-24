@@ -20,8 +20,8 @@ All rights reserved (see LICENSE).
 #if USE_LIBOSRM
 #include "routing/libosrm_wrapper.h"
 #endif
-#include "routing/orshttp_wrapper.h"
-#include "routing/routed_wrapper.h"
+#include "routing/ors_wrapper.h"
+#include "routing/osrm_routed_wrapper.h"
 #include "structures/cl_args.h"
 #include "structures/generic/matrix.h"
 #include "structures/typedefs.h"
@@ -424,7 +424,8 @@ Input parse(const CLArgs& cl_args) {
       throw Exception(ERROR::INPUT, "Invalid profile: " + common_profile + ".");
     }
     routing_wrapper =
-      std::make_unique<routing::RoutedWrapper>(common_profile, search->second);
+      std::make_unique<routing::OsrmRoutedWrapper>(common_profile,
+                                                   search->second);
   } break;
   case ROUTER::LIBOSRM:
 #if USE_LIBOSRM
@@ -449,7 +450,7 @@ Input parse(const CLArgs& cl_args) {
       throw Exception(ERROR::INPUT, "Invalid profile: " + common_profile + ".");
     }
     routing_wrapper =
-      std::make_unique<routing::OrsHttpWrapper>(common_profile, search->second);
+      std::make_unique<routing::OrsWrapper>(common_profile, search->second);
     break;
   }
   input.set_routing(std::move(routing_wrapper));

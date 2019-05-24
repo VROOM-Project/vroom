@@ -1,5 +1,5 @@
-#ifndef OSRM_WRAPPER_H
-#define OSRM_WRAPPER_H
+#ifndef ROUTING_WRAPPER_H
+#define ROUTING_WRAPPER_H
 
 /*
 
@@ -19,14 +19,14 @@ All rights reserved (see LICENSE).
 namespace vroom {
 namespace routing {
 
-class OSRMWrapper : public Wrapper<Cost> {
+class RoutingWrapper : public Wrapper<Cost> {
 
 protected:
   static Cost round_cost(double value) {
     return static_cast<Cost>(value + 0.5);
   }
 
-  OSRMWrapper(const std::string& profile) : Wrapper(profile) {
+  RoutingWrapper(const std::string& profile) : Wrapper(profile) {
   }
 
   inline void

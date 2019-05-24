@@ -1,5 +1,5 @@
-#ifndef LIBOSRM_WRAPPER_H
-#define LIBOSRM_WRAPPER_H
+#ifndef ORS_WRAPPER_H
+#define ORS_WRAPPER_H
 
 /*
 
@@ -10,22 +10,21 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "osrm/engine_config.hpp"
-#include "osrm/osrm.hpp"
-
+#include "routing/http_wrapper.h"
 #include "routing/routing_wrapper.h"
 
 namespace vroom {
 namespace routing {
 
-class LibosrmWrapper : public RoutingWrapper {
+class OrsWrapper : public RoutingWrapper, HttpWrapper {
 
 private:
-  osrm::EngineConfig _config;
-  const osrm::OSRM _osrm;
+  virtual std::string build_query(const std::vector<Location>& locations,
+                                  std::string service,
+                                  std::string extra_args) const override;
 
 public:
-  LibosrmWrapper(const std::string& profile);
+  OrsWrapper(const std::string& profile, const Server& server);
 
   virtual Matrix<Cost>
   get_matrix(const std::vector<Location>& locs) const override;
