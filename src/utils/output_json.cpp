@@ -42,6 +42,14 @@ rapidjson::Document to_json(const Solution& sol, bool geometry) {
                            to_json(job.location, allocator),
                            allocator);
       }
+      if (job.amount.size() > 0) {
+        rapidjson::Value json_amount(rapidjson::kArrayType);
+        for (std::size_t i = 0; i < job.amount.size(); ++i) {
+          json_amount.PushBack(job.amount[i], allocator);
+        }
+        json_job.AddMember("amount", json_amount, allocator);
+      }
+      json_job.AddMember("service", job.service, allocator);
       json_unassigned.PushBack(json_job, allocator);
     }
 
@@ -173,6 +181,13 @@ rapidjson::Value to_json(const Step& s,
     json_step.AddMember("job", s.job, allocator);
     json_step.AddMember("service", s.service, allocator);
     json_step.AddMember("waiting_time", s.waiting_time, allocator);
+  }
+  if (s.amount.size() > 0) {
+    rapidjson::Value json_amount(rapidjson::kArrayType);
+    for (std::size_t i = 0; i < s.amount.size(); ++i) {
+      json_amount.PushBack(s.amount[i], allocator);
+    }
+    json_step.AddMember("amount", json_amount, allocator);
   }
 
   json_step.AddMember("arrival", s.arrival, allocator);
