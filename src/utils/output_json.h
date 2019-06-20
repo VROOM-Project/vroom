@@ -39,6 +39,9 @@ rapidjson::Value to_json(const Step& s,
 rapidjson::Value to_json(const Location& loc,
                          rapidjson::Document::AllocatorType& allocator);
 
+rapidjson::Value to_json(const TimeWindow& loc,
+                         rapidjson::Document::AllocatorType& allocator);
+
 void write_to_json(const Solution& sol,
                    bool geometry,
                    const std::string& output_file);
