@@ -9,7 +9,7 @@ _Good solutions, fast._
 VROOM is an open-source optimization engine written in C++14 that aim
 at providing good solutions to various real-life
 [vehicle routing problems](https://en.wikipedia.org/wiki/Vehicle_routing_problem)
-within a small computing time.
+within a small computing time. Take a look at the [wiki](https://github.com/VROOM-Project/vroom/wiki) on how to get started.
 
 ## Demo
 
