@@ -116,6 +116,13 @@ might be included at any time in any route, to the extent permitted by
 other constraints such as skills, capacity and other vehicles/jobs
 time windows.
 
+Start and end values of `time_window` are seconds, stored as 32 bits unsigned integers (uint32_t). It is up to the client to decide how the `time_window` property is expressed:
+
+- **relative values**, e.g. `[0, 14400]` for a 4 hours time window starting at the beginning of your planning horizon, whatever that means for you. In that case all times reported in output with the arrival key are relative to the start of the planning horizon;
+- **absolute values**, "real" timestamps. In that case all times reported in output with the arrival key can be interpreted as absolute timestamps.
+
+Omitting a time window for a vehicle or a job is just like providing an extra-large one starting at 0 and ending at the max value.
+
 ## Matrix
 
 A `matrix` object is an array of arrays of unsigned integers
