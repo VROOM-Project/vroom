@@ -25,6 +25,7 @@ struct Job {
   const Duration service;
   const Amount amount;
   const Skills skills;
+  const Priority priority;
   const std::vector<TimeWindow> tws;
   const Duration tw_length;
 
@@ -33,6 +34,7 @@ struct Job {
       Duration service = 0,
       const Amount& amount = Amount(0),
       const Skills& skills = Skills(),
+      Priority priority = 1,
       const std::vector<TimeWindow>& tws =
         std::vector<TimeWindow>(1, TimeWindow()));
 
