@@ -13,8 +13,9 @@ within a small computing time.
 
 ## Demo
 
-- The [demo frontend](http://map.vroom-project.org/) provides a simple
-  user interface.
+The [demo frontend](http://map.vroom-project.org/) provides a simple
+user interface.
 
-- For testing purposes, check out the
-  [demo server page](https://github.com/VROOM-Project/vroom/wiki/Demo-server).
+## Getting started
+
+Take a look at the [wiki](https://github.com/VROOM-Project/vroom/wiki) on how to get started.
