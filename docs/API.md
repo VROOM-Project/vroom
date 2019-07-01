@@ -109,19 +109,17 @@ provided.
 
 ### Time windows
 
+It is up to users to decide how to describe time windows:
+
+- **relative values**, e.g. `[0, 14400]` for a 4 hours time window starting at the beginning of the planning horizon. In that case all times reported in output with the `arrival` key are relative to the start of the planning horizon;
+- **absolute values**, "real" timestamps. In that case all times reported in output with the `arrival` key can be interpreted as timestamps.
+
 The absence of a time window in input means no timing constraint
 applies. In particular, a vehicle with no `time_window` key will be
 able to serve any number of jobs, and a job with no `time_windows` key
 might be included at any time in any route, to the extent permitted by
 other constraints such as skills, capacity and other vehicles/jobs
 time windows.
-
-Start and end values of `time_window` are seconds, stored as 32 bits unsigned integers (uint32_t). It is up to the client to decide how the `time_window` property is expressed:
-
-- **relative values**, e.g. `[0, 14400]` for a 4 hours time window starting at the beginning of your planning horizon, whatever that means for you. In that case all times reported in output with the arrival key are relative to the start of the planning horizon;
-- **absolute values**, "real" timestamps. In that case all times reported in output with the arrival key can be interpreted as absolute timestamps.
-
-Omitting a time window for a vehicle or a job is just like providing an extra-large one starting at 0 and ending at the max value.
 
 ## Matrix
 
