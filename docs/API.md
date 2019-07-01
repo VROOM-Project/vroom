@@ -109,6 +109,11 @@ provided.
 
 ### Time windows
 
+It is up to users to decide how to describe time windows:
+
+- **relative values**, e.g. `[0, 14400]` for a 4 hours time window starting at the beginning of the planning horizon. In that case all times reported in output with the `arrival` key are relative to the start of the planning horizon;
+- **absolute values**, "real" timestamps. In that case all times reported in output with the `arrival` key can be interpreted as timestamps.
+
 The absence of a time window in input means no timing constraint
 applies. In particular, a vehicle with no `time_window` key will be
 able to serve any number of jobs, and a job with no `time_windows` key
