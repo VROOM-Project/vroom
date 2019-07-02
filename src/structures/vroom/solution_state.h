@@ -25,23 +25,30 @@ using RawSolution = std::vector<RawRoute>;
 using TWSolution = std::vector<TWRoute>;
 
 struct SolutionIndicators {
+  Priority priority_sum;
   unsigned unassigned;
   Cost cost;
   unsigned used_vehicles;
 
   friend bool operator<(const SolutionIndicators& lhs,
                         const SolutionIndicators& rhs) {
-    if (lhs.unassigned < rhs.unassigned) {
+    if (lhs.priority_sum > rhs.priority_sum) {
       return true;
     }
-    if (lhs.unassigned == rhs.unassigned) {
-      if (lhs.cost < rhs.cost) {
+    if (lhs.priority_sum == rhs.priority_sum) {
+      if (lhs.unassigned < rhs.unassigned) {
         return true;
       }
-      if (lhs.cost == rhs.cost and lhs.used_vehicles < rhs.used_vehicles) {
-        return true;
+      if (lhs.unassigned == rhs.unassigned) {
+        if (lhs.cost < rhs.cost) {
+          return true;
+        }
+        if (lhs.cost == rhs.cost and lhs.used_vehicles < rhs.used_vehicles) {
+          return true;
+        }
       }
     }
+
     return false;
   }
 };
