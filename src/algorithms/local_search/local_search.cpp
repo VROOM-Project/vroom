@@ -84,11 +84,22 @@ LocalSearch<Route,
   // Setup solution state.
   _sol_state.setup(_sol);
 
-  _best_unassigned = _sol_state.unassigned.size();
+  _best_sol_indicators.priority_sum =
+    std::accumulate(_sol.begin(), _sol.end(), 0, [&](auto sum, const auto& r) {
+      return sum + utils::priority_sum_for_route(_input, r.route);
+    });
+
+  _best_sol_indicators.unassigned = _sol_state.unassigned.size();
+
   Index v_rank = 0;
-  _best_cost =
-    std::accumulate(_sol.begin(), _sol.end(), 0, [&](auto sum, auto r) {
+  _best_sol_indicators.cost =
+    std::accumulate(_sol.begin(), _sol.end(), 0, [&](auto sum, const auto& r) {
       return sum + utils::route_cost_for_vehicle(_input, v_rank++, r.route);
+    });
+
+  _best_sol_indicators.used_vehicles =
+    std::count_if(_sol.begin(), _sol.end(), [](const auto& r) {
+      return !r.empty();
     });
 }
 
@@ -755,29 +766,43 @@ void LocalSearch<Route,
     // A round of local search.
     run_ls_step();
 
-    // Remember best known solution.
-    auto current_unassigned = _sol_state.unassigned.size();
+    // Indicators for current solution.
+    utils::SolutionIndicators current_sol_indicators;
+    current_sol_indicators.priority_sum =
+      std::accumulate(_sol.begin(),
+                      _sol.end(),
+                      0,
+                      [&](auto sum, const auto& r) {
+                        return sum +
+                               utils::priority_sum_for_route(_input, r.route);
+                      });
+
+    current_sol_indicators.unassigned = _sol_state.unassigned.size();
+
     Index v_rank = 0;
-    Cost current_cost =
-      std::accumulate(_sol.begin(), _sol.end(), 0, [&](auto sum, auto r) {
-        return sum + utils::route_cost_for_vehicle(_input, v_rank++, r.route);
+    current_sol_indicators.cost =
+      std::accumulate(_sol.begin(),
+                      _sol.end(),
+                      0,
+                      [&](auto sum, const auto& r) {
+                        return sum + utils::route_cost_for_vehicle(_input,
+                                                                   v_rank++,
+                                                                   r.route);
+                      });
+
+    current_sol_indicators.used_vehicles =
+      std::count_if(_sol.begin(), _sol.end(), [](const auto& r) {
+        return !r.empty();
       });
 
-    bool solution_improved =
-      (current_unassigned < _best_unassigned or
-       (current_unassigned == _best_unassigned and current_cost < _best_cost));
-
-    if (solution_improved) {
-      _best_unassigned = current_unassigned;
-      _best_cost = current_cost;
+    if (current_sol_indicators < _best_sol_indicators) {
+      _best_sol_indicators = current_sol_indicators;
       _best_sol = _sol;
     } else {
       if (!first_step) {
         ++current_nb_removal;
       }
-      if (_best_unassigned < current_unassigned or
-          (_best_unassigned == current_unassigned and
-           _best_cost < current_cost)) {
+      if (_best_sol_indicators < current_sol_indicators) {
         // Back to best known solution for further steps.
         _sol = _best_sol;
         _sol_state.setup(_sol);
@@ -950,14 +975,7 @@ utils::SolutionIndicators LocalSearch<Route,
                                       IntraMixedExchange,
                                       IntraRelocate,
                                       IntraOrOpt>::indicators() const {
-  utils::SolutionIndicators si;
-
-  si.unassigned = _best_unassigned;
-  si.cost = _best_cost;
-  si.used_vehicles = std::count_if(_best_sol.begin(),
-                                   _best_sol.end(),
-                                   [](const auto& r) { return !r.empty(); });
-  return si;
+  return _best_sol_indicators;
 }
 
 template class LocalSearch<TWRoute,
