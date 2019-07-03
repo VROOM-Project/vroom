@@ -134,12 +134,18 @@ void LocalSearch<Route,
   bool job_added;
 
   do {
+    Priority best_priority = 0;
     double best_cost = std::numeric_limits<double>::max();
     Index best_job = 0;
     Index best_route = 0;
     Index best_rank = 0;
 
     for (const auto j : _sol_state.unassigned) {
+      auto job_priority = _input.jobs[j].priority;
+      if (job_priority < best_priority) {
+        // Insert higher priority jobs first.
+        continue;
+      }
       auto& current_amount = _input.jobs[j].amount;
       std::vector<Gain> best_costs(routes.size(),
                                    std::numeric_limits<Gain>::max());
@@ -201,7 +207,9 @@ void LocalSearch<Route,
         double eval = static_cast<double>(addition_cost) -
                       regret_coeff * static_cast<double>(regret_cost);
 
-        if (eval < best_cost) {
+        if ((job_priority > best_priority) or
+            (job_priority == best_priority and eval < best_cost)) {
+          best_priority = job_priority;
           best_cost = eval;
           best_job = j;
           best_route = routes[i];
