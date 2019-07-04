@@ -4,6 +4,7 @@
 
 ### Added
 
+- `priority` key for jobs to gain some control on which jobs are unassigned (#246)
 - `HttpWrapper` class to factor code previously duplicated across routing wrappers (#224)
 
 ### Fixed
