@@ -100,12 +100,15 @@ inline Duration get_service(const rapidjson::Value& object) {
 }
 
 inline Duration get_priority(const rapidjson::Value& object) {
-  Priority priority = 1;
+  Priority priority = 0;
   if (object.HasMember("priority")) {
     if (!object["priority"].IsUint()) {
       throw Exception(ERROR::INPUT, "Invalid priority value.");
     }
     priority = object["priority"].GetUint();
+    if (priority > 10) {
+      throw Exception(ERROR::INPUT, "Invalid priority value.");
+    }
   }
   return priority;
 }

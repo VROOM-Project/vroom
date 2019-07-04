@@ -31,7 +31,7 @@ using Duration = uint32_t;
 using Coordinate = double;
 using Capacity = int64_t;
 using Skill = uint32_t;
-using Priority = uint64_t;
+using Priority = uint32_t;
 
 // Type helpers.
 using Coordinates = std::array<Coordinate, 2>;
