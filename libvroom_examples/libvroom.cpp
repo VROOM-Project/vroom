@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "routing/routed_wrapper.h"
+#include "routing/osrm_routed_wrapper.h"
 #include "structures/vroom/input/input.h"
 #include "structures/vroom/job.h"
 #include "structures/vroom/vehicle.h"
@@ -72,10 +72,9 @@ void run_example_with_osrm() {
   bool GEOMETRY = true;
 
   // Set OSRM host and port.
-  auto routing_wrapper =
-    std::make_unique<vroom::routing::RoutedWrapper>("car",
-                                                    vroom::Server("localhost",
-                                                                  "5000"));
+  auto routing_wrapper = std::make_unique<
+    vroom::routing::OsrmRoutedWrapper>("car",
+                                       vroom::Server("localhost", "5000"));
 
   vroom::Input problem_instance;
   problem_instance.set_routing(std::move(routing_wrapper));
@@ -112,14 +111,16 @@ void run_example_with_osrm() {
   // Job to be done between 9 and 10 AM.
   std::vector<vroom::TimeWindow> job_1_tws({{32400, 36000}});
 
-  // Set jobs id, location, service time, amount and required skills.
-  // Last three can be omitted if no constraints are required.
+  // Set jobs id, location, service time, amount, required skills,
+  // priority and time windows. Constraints that are not required can
+  // be omitted.
   std::vector<vroom::Job> jobs;
   jobs.push_back(vroom::Job(1,
                             vroom::Coordinates({{1.98935, 48.701}}),
                             service,
                             job_amount,
-                            {1},
+                            {1}, // skills
+                            0,   // default priority
                             job_1_tws));
   jobs.push_back(vroom::Job(2,
                             vroom::Coordinates({{2.03655, 48.61128}}),
@@ -215,10 +216,10 @@ void run_example_with_custom_matrix() {
   std::vector<vroom::TimeWindow> job_1_tws({{32400, 36000}});
 
   // Set jobs id, index of location in the matrix (coordinates are
-  // optional), amount, required skills and time windows. Last three
-  // can be omitted if no constraints are required.
+  // optional), service time, amount, required skills, priority and
+  // time windows. Constraints that are not required can be omitted.
   std::vector<vroom::Job> jobs;
-  jobs.push_back(vroom::Job(1, 1, service, job_amount, {1}, job_1_tws));
+  jobs.push_back(vroom::Job(1, 1, service, job_amount, {1}, 0, job_1_tws));
   jobs.push_back(vroom::Job(2, 2, service, job_amount, {1}));
   jobs.push_back(vroom::Job(3, 3, service, job_amount, {2}));
   jobs.push_back(vroom::Job(4, 4, service, job_amount, {2}));
