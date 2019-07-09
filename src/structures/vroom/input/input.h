@@ -84,14 +84,14 @@ public:
   bool has_homogeneous_locations() const;
 
   bool vehicle_ok_with_job(size_t v_index, size_t j_index) const {
-      return (bool)_vehicle_to_job_compatibility[v_index][j_index];
+    return (bool)_vehicle_to_job_compatibility[v_index][j_index];
   }
 
   // Returns true iff both vehicles have common job candidates.
   bool vehicle_ok_with_vehicle(Index v1_index, Index v2_index) const;
 
   const Matrix<Cost>& get_matrix() const {
-      return _matrix;
+    return _matrix;
   }
 
   Matrix<Cost> get_sub_matrix(const std::vector<Index>& indices) const;

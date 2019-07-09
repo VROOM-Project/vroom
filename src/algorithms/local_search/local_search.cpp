@@ -371,7 +371,8 @@ void LocalSearch<Route,
         continue;
       }
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
-        auto s_free_amount = _input.vehicles[s_t.first].capacity - _sol_state.fwd_amounts[s_t.first][s_rank];
+        auto s_free_amount = _input.vehicles[s_t.first].capacity -
+                             _sol_state.fwd_amounts[s_t.first][s_rank];
         for (int t_rank = _sol[s_t.second].size() - 1; t_rank >= 0; --t_rank) {
           if (!(_sol_state.bwd_amounts[s_t.second][t_rank] <= s_free_amount)) {
             break;
@@ -398,7 +399,8 @@ void LocalSearch<Route,
         continue;
       }
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
-        auto s_free_amount = _input.vehicles[s_t.first].capacity - _sol_state.fwd_amounts[s_t.first][s_rank];
+        auto s_free_amount = _input.vehicles[s_t.first].capacity -
+                             _sol_state.fwd_amounts[s_t.first][s_rank];
         for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size(); ++t_rank) {
           if (!(_sol_state.fwd_amounts[s_t.second][t_rank] <= s_free_amount)) {
             break;

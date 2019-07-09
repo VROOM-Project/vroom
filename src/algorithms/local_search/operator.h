@@ -39,13 +39,13 @@ protected:
 
 public:
   Operator(const Input& input,
-          const utils::SolutionState& sol_state,
-          RawRoute& s_raw_route,
-          Index s_vehicle,
-          Index s_rank,
-          RawRoute& t_raw_route,
-          Index t_vehicle,
-          Index t_rank)
+           const utils::SolutionState& sol_state,
+           RawRoute& s_raw_route,
+           Index s_vehicle,
+           Index s_rank,
+           RawRoute& t_raw_route,
+           Index t_vehicle,
+           Index t_rank)
     : _input(input),
       _sol_state(sol_state),
       s_route(s_raw_route.route),

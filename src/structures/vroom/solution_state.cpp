@@ -102,9 +102,7 @@ void SolutionState::update_amounts(const std::vector<Index>& route, Index v) {
   std::transform(fwd_amounts[v].cbegin(),
                  fwd_amounts[v].cend(),
                  bwd_amounts[v].begin(),
-                 [&](const auto& a) {
-                   return total_amount - a;
-                 });
+                 [&](const auto& a) { return total_amount - a; });
 }
 
 void SolutionState::update_costs(const std::vector<Index>& route, Index v) {
