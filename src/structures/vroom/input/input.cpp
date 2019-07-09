@@ -210,9 +210,6 @@ bool Input::vehicle_ok_with_vehicle(Index v1_index, Index v2_index) const {
   return _vehicle_to_vehicle_compatibility[v1_index][v2_index];
 }
 
-const Matrix<Cost>& Input::get_matrix() const {
-  return _matrix;
-}
 
 Matrix<Cost> Input::get_sub_matrix(const std::vector<Index>& indices) const {
   return _matrix.get_sub_matrix(indices);

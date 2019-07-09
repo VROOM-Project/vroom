@@ -90,7 +90,9 @@ public:
   // Returns true iff both vehicles have common job candidates.
   bool vehicle_ok_with_vehicle(Index v1_index, Index v2_index) const;
 
-  const Matrix<Cost>& get_matrix() const;
+  const Matrix<Cost>& get_matrix() const {
+      return _matrix;
+  }
 
   Matrix<Cost> get_sub_matrix(const std::vector<Index>& indices) const;
 
