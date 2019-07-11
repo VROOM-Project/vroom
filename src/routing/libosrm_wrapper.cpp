@@ -18,24 +18,18 @@ All rights reserved (see LICENSE).
 namespace vroom {
 namespace routing {
 
+osrm::EngineConfig LibosrmWrapper::get_config(const std::string& profile) {
+  osrm::EngineConfig config;
+
+  // Only update non-default values.
+  config.max_alternatives = 1;
+  config.dataset_name = profile;
+
+  return config;
+}
+
 LibosrmWrapper::LibosrmWrapper(const std::string& profile)
-  : RoutingWrapper(profile),
-    _config({
-      {},     // storare_config
-      -1,     // max_locations_trip
-      -1,     // max_locations_viaroute
-      -1,     // max_locations_distance_table
-      -1,     // max_locations_map_matching
-      -1.0,   // max_radius_map_matching
-      -1,     // max_results_nearest
-      1,      // max_alternatives
-      true,   // use_shared_memory
-      {},     // memory_file
-      {},     // algorithm
-      {},     // verbosity
-      profile // dataset_name
-    }),
-    _osrm(_config) {
+  : RoutingWrapper(profile), _config(get_config(profile)), _osrm(_config) {
 }
 
 Matrix<Cost>
