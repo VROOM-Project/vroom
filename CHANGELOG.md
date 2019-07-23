@@ -6,6 +6,10 @@
 
 - `HttpWrapper` class to factor code previously duplicated across routing wrappers (#224)
 
+### Changed
+
+- Speed up solving by 25% for CVRP and up to 30% for VRPTW benchmark instances (#255)
+
 ### Fixed
 
 - Implicit instantiation of undefined template error for macos g++ compiler (#231)
