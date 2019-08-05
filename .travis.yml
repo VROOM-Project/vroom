@@ -20,6 +20,7 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-7
+            - libboost-all-dev
       env: COMPILER=g++-7
 
     # - os: linux
@@ -58,9 +59,10 @@ before_script:
   - cd ${BUILD_FOLDER}
   - export CXX=${COMPILER}
   - ${CXX} --version
-  - sudo apt install -y libboost-all-dev
+  - dpkg -s libboost-all-dev
 
 script:
+  - sudo apt install libboost-all-dev
   - CHANGED_FILES=`git diff --name-only master ${TRAVIS_COMMIT}`
   # # Check build without libosrm only if source files have been
   # # modified.
