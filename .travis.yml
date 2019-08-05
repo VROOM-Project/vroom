@@ -14,34 +14,40 @@ sudo: required
 matrix:
   include:
     - os: linux
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-7
-            - libboost-all-dev
-      env: COMPILER=g++-7
+      # addons:
+      #   apt:
+      #     sources:
+      #       - ubuntu-toolchain-r-test
+      #     packages:
+      #       - g++-7
+      #       - libboost-all-dev
+      env:
+        - COMPILER=g++-7
+        - CXX-PACKAGE=g++-7
 
     - os: linux
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-8
-            - libboost-all-dev
-      env: COMPILER=g++-8
+      # addons:
+      #   apt:
+      #     sources:
+      #       - ubuntu-toolchain-r-test
+      #     packages:
+      #       - g++-8
+      #       - libboost-all-dev
+      env:
+        - COMPILER=g++-8
+        - CXX-PACKAGE=g++-8
 
     - os: linux
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - clang-5.0
-            - libboost-all-dev
-      env: COMPILER=clang++-5.0
+      # addons:
+      #   apt:
+      #     sources:
+      #       - ubuntu-toolchain-r-test
+      #     packages:
+      #       - clang-5.0
+      #       - libboost-all-dev
+      env:
+        - COMPILER=clang++-5.0
+        - CXX-PACKAGE=clang-5.0
 
     - os: linux
       addons:
@@ -51,13 +57,16 @@ matrix:
           packages:
             - clang-6.0
             - libboost-all-dev
-      env: COMPILER=clang++-6.0
+      env:
+        - COMPILER=clang++-6.0
+        - CXX-PACKAGE=clang-6.0
 
 before_script:
   - export ROOT_FOLDER="$(pwd)"
   - export BUILD_FOLDER="$(pwd)/src"
   - cd ${BUILD_FOLDER}
   - export CXX=${COMPILER}
+  - sudo apt-get install -y ${CXX-PACKAGE}
   - ${CXX} --version
   - sudo apt-get install -y libboost-all-dev
 
