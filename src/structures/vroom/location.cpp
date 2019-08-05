@@ -32,10 +32,6 @@ bool Location::has_coordinates() const {
   return _coords != boost::none;
 }
 
-Index Location::index() const {
-  return _index;
-}
-
 Coordinate Location::lon() const {
   assert(this->has_coordinates());
   return _coords.get()[0];

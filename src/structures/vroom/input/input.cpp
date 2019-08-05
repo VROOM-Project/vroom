@@ -206,16 +206,8 @@ bool Input::has_homogeneous_locations() const {
   return _homogeneous_locations;
 }
 
-bool Input::vehicle_ok_with_job(Index v_index, Index j_index) const {
-  return _vehicle_to_job_compatibility[v_index][j_index];
-}
-
 bool Input::vehicle_ok_with_vehicle(Index v1_index, Index v2_index) const {
   return _vehicle_to_vehicle_compatibility[v1_index][v2_index];
-}
-
-const Matrix<Cost>& Input::get_matrix() const {
-  return _matrix;
 }
 
 Matrix<Cost> Input::get_sub_matrix(const std::vector<Index>& indices) const {
@@ -270,9 +262,9 @@ void Input::check_cost_bound() const {
 
 void Input::set_compatibility() {
   // Default to no restriction when no skills are provided.
-  _vehicle_to_job_compatibility =
-    std::vector<std::vector<bool>>(vehicles.size(),
-                                   std::vector<bool>(jobs.size(), true));
+  _vehicle_to_job_compatibility = std::vector<
+    std::vector<unsigned char>>(vehicles.size(),
+                                std::vector<unsigned char>(jobs.size(), true));
   if (_has_skills) {
     for (std::size_t v = 0; v < vehicles.size(); ++v) {
       const auto& v_skills = vehicles[v].skills;

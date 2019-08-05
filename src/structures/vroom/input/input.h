@@ -44,7 +44,7 @@ private:
   std::unordered_map<Location, Index> _locations_to_index;
   unsigned _amount_size;
   Amount _amount_lower_bound;
-  std::vector<std::vector<bool>> _vehicle_to_job_compatibility;
+  std::vector<std::vector<unsigned char>> _vehicle_to_job_compatibility;
   std::vector<std::vector<bool>> _vehicle_to_vehicle_compatibility;
   std::unordered_set<Index> _matrix_used_index;
   bool _all_locations_have_coords;
@@ -83,12 +83,16 @@ public:
 
   bool has_homogeneous_locations() const;
 
-  bool vehicle_ok_with_job(Index v_index, Index j_index) const;
+  bool vehicle_ok_with_job(size_t v_index, size_t j_index) const {
+    return (bool)_vehicle_to_job_compatibility[v_index][j_index];
+  }
 
   // Returns true iff both vehicles have common job candidates.
   bool vehicle_ok_with_vehicle(Index v1_index, Index v2_index) const;
 
-  const Matrix<Cost>& get_matrix() const;
+  const Matrix<Cost>& get_matrix() const {
+    return _matrix;
+  }
 
   Matrix<Cost> get_sub_matrix(const std::vector<Index>& indices) const;
 

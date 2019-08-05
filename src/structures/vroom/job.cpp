@@ -20,8 +20,8 @@ Job::Job(Id id,
          const Amount& amount,
          const Skills& skills,
          const std::vector<TimeWindow>& tws)
-  : id(id),
-    location(location),
+  : location(location),
+    id(id),
     service(service),
     amount(amount),
     skills(skills),
@@ -45,10 +45,6 @@ Job::Job(Id id,
       }
     }
   }
-}
-
-Index Job::index() const {
-  return location.index();
 }
 
 bool Job::is_valid_start(Duration time) const {
