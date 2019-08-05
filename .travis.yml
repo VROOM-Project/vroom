@@ -14,10 +14,9 @@ sudo: required
 matrix:
   include:
     - os: linux
+      # TODO restore when addons.apt.packages is enabled for bionic
       # addons:
       #   apt:
-      #     sources:
-      #       - ubuntu-toolchain-r-test
       #     packages:
       #       - g++-7
       #       - libboost-all-dev
@@ -26,10 +25,9 @@ matrix:
         - CXX-PACKAGE=g++-7
 
     - os: linux
+      # TODO restore when addons.apt.packages is enabled for bionic
       # addons:
       #   apt:
-      #     sources:
-      #       - ubuntu-toolchain-r-test
       #     packages:
       #       - g++-8
       #       - libboost-all-dev
@@ -38,10 +36,9 @@ matrix:
         - CXX-PACKAGE=g++-8
 
     - os: linux
+      # TODO restore when addons.apt.packages is enabled for bionic
       # addons:
       #   apt:
-      #     sources:
-      #       - ubuntu-toolchain-r-test
       #     packages:
       #       - clang-5.0
       #       - libboost-all-dev
@@ -50,13 +47,12 @@ matrix:
         - CXX-PACKAGE=clang-5.0
 
     - os: linux
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - clang-6.0
-            - libboost-all-dev
+      # TODO restore when addons.apt.packages is enabled for bionic
+      # addons:
+      #   apt:
+      #     packages:
+      #       - clang-6.0
+      #       - libboost-all-dev
       env:
         - COMPILER=clang++-6.0
         - CXX-PACKAGE=clang-6.0
@@ -66,19 +62,20 @@ before_script:
   - export BUILD_FOLDER="$(pwd)/src"
   - cd ${BUILD_FOLDER}
   - export CXX=${COMPILER}
+  # TODO remove when addons.apt.packages is enabled for bionic
   - sudo apt-get install -y ${CXX-PACKAGE}
-  - ${CXX} --version
   - sudo apt-get install -y libboost-all-dev
+  - ${CXX} --version
 
 script:
   - CHANGED_FILES=`git diff --name-only master ${TRAVIS_COMMIT}`
-  # # Check build without libosrm only if source files have been
-  # # modified.
-  # - if echo ${CHANGED_FILES} | grep -v -e "\.h" -e "\.cpp"; then travis_terminate 0; fi
+  # Check build without libosrm only if source files have been
+  # modified.
+  - if echo ${CHANGED_FILES} | grep -v -e "\.h" -e "\.cpp"; then travis_terminate 0; fi
   - make
-  # # Check build with libosrm installed only on master and if relevant
-  # # files have been modified.
-  # - if [ "$TRAVIS_PULL_REQUEST" != "false" ] && echo ${CHANGED_FILES} | grep -v "libosrm_wrapper"; then travis_terminate 0; fi
+  # Check build with libosrm installed only on master and if relevant
+  # files have been modified.
+  - if [ "$TRAVIS_PULL_REQUEST" != "false" ] && echo ${CHANGED_FILES} | grep -v "libosrm_wrapper"; then travis_terminate 0; fi
   - make clean
   - cd ${ROOT_FOLDER}
   - sudo apt-get install build-essential git cmake pkg-config libbz2-dev libstxxl-dev libstxxl1v5 libxml2-dev libzip-dev lua5.2 liblua5.2-dev libtbb-dev libluabind-dev libluabind0.9.1v5
