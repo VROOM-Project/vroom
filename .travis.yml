@@ -38,11 +38,9 @@ matrix:
         apt:
           sources:
             - ubuntu-toolchain-r-test
-            - llvm-toolchain-trusty-5.0
           packages:
             - clang-5.0
             - libboost-all-dev
-            - g++-7
       env: COMPILER=clang++-5.0
 
     - os: linux
@@ -50,11 +48,9 @@ matrix:
         apt:
           sources:
             - ubuntu-toolchain-r-test
-            - llvm-toolchain-trusty-6.0
           packages:
             - clang-6.0
             - libboost-all-dev
-            - g++-7
       env: COMPILER=clang++-6.0
 
 before_script:
