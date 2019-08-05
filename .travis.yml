@@ -59,10 +59,11 @@ before_script:
   - cd ${BUILD_FOLDER}
   - export CXX=${COMPILER}
   - ${CXX} --version
+  - cat /etc/apt/sources.list
+  - sudo apt-get install -y libboost-all-dev
   - dpkg -s libboost-all-dev
 
 script:
-  - sudo apt install libboost-all-dev
   - CHANGED_FILES=`git diff --name-only master ${TRAVIS_COMMIT}`
   # # Check build without libosrm only if source files have been
   # # modified.
