@@ -23,35 +23,35 @@ matrix:
             - libboost-all-dev
       env: COMPILER=g++-7
 
-    - os: linux
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-8
-            - libboost-all-dev
-      env: COMPILER=g++-8
+    # - os: linux
+    #   addons:
+    #     apt:
+    #       sources:
+    #         - ubuntu-toolchain-r-test
+    #       packages:
+    #         - g++-8
+    #         - libboost-all-dev
+    #   env: COMPILER=g++-8
 
-    - os: linux
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - clang-5.0
-            - libboost-all-dev
-      env: COMPILER=clang++-5.0
+    # - os: linux
+    #   addons:
+    #     apt:
+    #       sources:
+    #         - ubuntu-toolchain-r-test
+    #       packages:
+    #         - clang-5.0
+    #         - libboost-all-dev
+    #   env: COMPILER=clang++-5.0
 
-    - os: linux
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - clang-6.0
-            - libboost-all-dev
-      env: COMPILER=clang++-6.0
+    # - os: linux
+    #   addons:
+    #     apt:
+    #       sources:
+    #         - ubuntu-toolchain-r-test
+    #       packages:
+    #         - clang-6.0
+    #         - libboost-all-dev
+    #   env: COMPILER=clang++-6.0
 
 before_script:
   - export ROOT_FOLDER="$(pwd)"
@@ -74,7 +74,7 @@ script:
   - sudo apt-get install build-essential git cmake pkg-config libbz2-dev libstxxl-dev libstxxl1v5 libxml2-dev libzip-dev lua5.2 liblua5.2-dev libtbb-dev libluabind-dev libluabind0.9.1v5
   - git clone https://github.com/Project-OSRM/osrm-backend.git
   - cd osrm-backend
-  - git checkout v5.22.0
+  - git checkout v5.11.0
   - mkdir build
   - cd build
   - cmake .. -DCMAKE_BUILD_TYPE=Release
