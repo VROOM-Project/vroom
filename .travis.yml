@@ -65,7 +65,7 @@ script:
   # # Check build without libosrm only if source files have been
   # # modified.
   # - if echo ${CHANGED_FILES} | grep -v -e "\.h" -e "\.cpp"; then travis_terminate 0; fi
-  # - make
+  - make
   # # Check build with libosrm installed only on master and if relevant
   # # files have been modified.
   # - if [ "$TRAVIS_PULL_REQUEST" != "false" ] && echo ${CHANGED_FILES} | grep -v "libosrm_wrapper"; then travis_terminate 0; fi
@@ -74,7 +74,7 @@ script:
   - sudo apt-get install build-essential git cmake pkg-config libbz2-dev libstxxl-dev libstxxl1v5 libxml2-dev libzip-dev lua5.2 liblua5.2-dev libtbb-dev libluabind-dev libluabind0.9.1v5
   - git clone https://github.com/Project-OSRM/osrm-backend.git
   - cd osrm-backend
-  - git checkout v5.19.0
+  - git checkout v5.22.0
   - mkdir build
   - cd build
   - cmake .. -DCMAKE_BUILD_TYPE=Release
