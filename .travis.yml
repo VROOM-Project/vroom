@@ -1,4 +1,5 @@
 language: cpp
+dist: bionic
 
 git:
   quiet: true
@@ -13,64 +14,57 @@ sudo: required
 matrix:
   include:
     - os: linux
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-6
-            - libboost-all-dev
-      env: COMPILER=g++-6
+      # TODO restore when addons.apt.packages is enabled for bionic
+      # addons:
+      #   apt:
+      #     packages:
+      #       - g++-7
+      #       - libboost-all-dev
+      env:
+        - COMPILER=g++-7
+        - CXX-PACKAGE=g++-7
 
     - os: linux
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-7
-            - libboost-all-dev
-      env: COMPILER=g++-7
+      # TODO restore when addons.apt.packages is enabled for bionic
+      # addons:
+      #   apt:
+      #     packages:
+      #       - g++-8
+      #       - libboost-all-dev
+      env:
+        - COMPILER=g++-8
+        - CXX-PACKAGE=g++-8
 
     - os: linux
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-8
-            - libboost-all-dev
-      env: COMPILER=g++-8
+      # TODO restore when addons.apt.packages is enabled for bionic
+      # addons:
+      #   apt:
+      #     packages:
+      #       - clang-5.0
+      #       - libboost-all-dev
+      env:
+        - COMPILER=clang++-5.0
+        - CXX-PACKAGE=clang-5.0
 
     - os: linux
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-trusty-5.0
-          packages:
-            - clang-5.0
-            - libboost-all-dev
-            - g++-7
-      env: COMPILER=clang++-5.0
-
-    - os: linux
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-trusty-6.0
-          packages:
-            - clang-6.0
-            - libboost-all-dev
-            - g++-7
-      env: COMPILER=clang++-6.0
+      # TODO restore when addons.apt.packages is enabled for bionic
+      # addons:
+      #   apt:
+      #     packages:
+      #       - clang-6.0
+      #       - libboost-all-dev
+      env:
+        - COMPILER=clang++-6.0
+        - CXX-PACKAGE=clang-6.0
 
 before_script:
   - export ROOT_FOLDER="$(pwd)"
   - export BUILD_FOLDER="$(pwd)/src"
   - cd ${BUILD_FOLDER}
   - export CXX=${COMPILER}
+  # TODO remove when addons.apt.packages is enabled for bionic
+  - sudo apt-get install -y ${CXX-PACKAGE}
+  - sudo apt-get install -y libboost-all-dev
   - ${CXX} --version
 
 script:
@@ -84,7 +78,7 @@ script:
   - if [ "$TRAVIS_PULL_REQUEST" != "false" ] && echo ${CHANGED_FILES} | grep -v "libosrm_wrapper"; then travis_terminate 0; fi
   - make clean
   - cd ${ROOT_FOLDER}
-  - sudo apt-get install build-essential wget cmake3 pkg-config libbz2-dev libstxxl-dev libstxxl1 libxml2-dev libzip-dev lua5.2 liblua5.2-dev libtbb-dev
+  - sudo apt-get install build-essential git cmake pkg-config libbz2-dev libstxxl-dev libstxxl1v5 libxml2-dev libzip-dev lua5.2 liblua5.2-dev libtbb-dev libluabind-dev libluabind0.9.1v5
   - git clone https://github.com/Project-OSRM/osrm-backend.git
   - cd osrm-backend
   - git checkout v5.19.0
