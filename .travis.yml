@@ -20,7 +20,6 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-7
-            - libboost-all-dev
       env: COMPILER=g++-7
 
     # - os: linux
@@ -59,6 +58,7 @@ before_script:
   - cd ${BUILD_FOLDER}
   - export CXX=${COMPILER}
   - ${CXX} --version
+  - sudo apt install -y libboost-all-dev
 
 script:
   - CHANGED_FILES=`git diff --name-only master ${TRAVIS_COMMIT}`
@@ -71,7 +71,7 @@ script:
   # - if [ "$TRAVIS_PULL_REQUEST" != "false" ] && echo ${CHANGED_FILES} | grep -v "libosrm_wrapper"; then travis_terminate 0; fi
   - make clean
   - cd ${ROOT_FOLDER}
-  - sudo apt-get install build-essential git cmake pkg-config libbz2-dev libstxxl-dev libstxxl1v5 libxml2-dev libzip-dev lua5.2 liblua5.2-dev libtbb-dev libluabind-dev libluabind0.9.1v5
+  - sudo apt install build-essential git cmake pkg-config libbz2-dev libstxxl-dev libstxxl1v5 libxml2-dev libzip-dev lua5.2 liblua5.2-dev libtbb-dev libluabind-dev libluabind0.9.1v5
   - git clone https://github.com/Project-OSRM/osrm-backend.git
   - cd osrm-backend
   - git checkout v5.19.0
