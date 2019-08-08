@@ -206,24 +206,7 @@ void LocalSearch<Route,
       _sol[best_route].add(_input, best_job, best_rank);
 
       // Update amounts after addition.
-      const auto& job_amount = _input.jobs[best_job].amount;
-      auto& best_fwd_amounts = _sol_state.fwd_amounts[best_route];
-      auto previous_cumul = (best_rank == 0) ? Amount(_input.amount_size())
-                                             : best_fwd_amounts[best_rank - 1];
-      best_fwd_amounts.insert(best_fwd_amounts.begin() + best_rank,
-                              previous_cumul + job_amount);
-      std::for_each(best_fwd_amounts.begin() + best_rank + 1,
-                    best_fwd_amounts.end(),
-                    [&](auto& a) { a += job_amount; });
-
-      auto& best_bwd_amounts = _sol_state.bwd_amounts[best_route];
-      best_bwd_amounts.insert(best_bwd_amounts.begin() + best_rank,
-                              Amount(_input.amount_size())); // dummy init
-      auto total_amount = _sol_state.fwd_amounts[best_route].back();
-      for (std::size_t i = 0; i <= best_rank; ++i) {
-        _sol_state.bwd_amounts[best_route][i] =
-          total_amount - _sol_state.fwd_amounts[best_route][i];
-      }
+      _sol_state.update_amounts(_sol[best_route].route, best_route);
 
 #ifndef NDEBUG
       // Update cost after addition.
