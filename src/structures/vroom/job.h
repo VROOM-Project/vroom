@@ -24,6 +24,8 @@ struct Job {
   const Id id;
   const Duration service;
   const Amount amount;
+  const Amount delivery;
+  const Amount pickup;
   const Skills skills;
   const std::vector<TimeWindow> tws;
   const Duration tw_length;

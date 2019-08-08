@@ -14,6 +14,30 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
+Amount delivery_mask(const Amount& amount) {
+  Amount d(amount.size());
+
+  for (std::size_t i = 0; i < amount.size(); ++i) {
+    if (amount[i] > 0) {
+      d[i] = amount[i];
+    }
+  }
+
+  return d;
+}
+
+Amount pickup_mask(const Amount& amount) {
+  Amount p(amount.size());
+
+  for (std::size_t i = 0; i < amount.size(); ++i) {
+    if (amount[i] < 0) {
+      p[i] = -amount[i];
+    }
+  }
+
+  return p;
+}
+
 Job::Job(Id id,
          const Location& location,
          Duration service,
@@ -24,6 +48,8 @@ Job::Job(Id id,
     id(id),
     service(service),
     amount(amount),
+    delivery(delivery_mask(amount)),
+    pickup(pickup_mask(amount)),
     skills(skills),
     tws(tws),
     tw_length(
