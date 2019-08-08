@@ -23,7 +23,7 @@ struct Job {
   Location location;
   const Id id;
   const Duration service;
-  const Amount amount;
+  const Amount amount; // TODO remove
   const Amount delivery;
   const Amount pickup;
   const Skills skills;
