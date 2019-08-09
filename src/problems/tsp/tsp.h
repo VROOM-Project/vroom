@@ -41,7 +41,7 @@ public:
 
   Cost symmetrized_cost(const std::list<Index>& tour) const;
 
-  RawSolution raw_solve(unsigned, unsigned nb_threads) const;
+  std::vector<Index> raw_solve(unsigned nb_threads) const;
 
   virtual Solution
   solve(unsigned,

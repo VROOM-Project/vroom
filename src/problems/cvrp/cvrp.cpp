@@ -146,7 +146,10 @@ Solution CVRP::solve(unsigned exploration_level,
 
     TSP p(_input, job_ranks, 0);
 
-    return utils::format_solution(_input, p.raw_solve(0, nb_threads));
+    RawRoute r(_input, 0);
+    r.set_route(p.raw_solve(nb_threads));
+
+    return utils::format_solution(_input, {r});
   }
 
   // Use vector of parameters when passed for debugging, else use
@@ -171,7 +174,7 @@ Solution CVRP::solve(unsigned exploration_level,
   }
   assert(nb_init_solutions <= parameters.size());
 
-  std::vector<RawSolution> solutions(nb_init_solutions, RawSolution(nb_tsp));
+  std::vector<RawSolution> solutions(nb_init_solutions);
   std::vector<utils::SolutionIndicators> sol_indicators(nb_init_solutions);
 
   // Split the work among threads.
@@ -195,7 +198,8 @@ Solution CVRP::solve(unsigned exploration_level,
           }
           TSP p(_input, c.clusters[v], v);
 
-          solutions[rank][v] = p.raw_solve(0, 1)[0];
+          solutions[rank].emplace_back(_input, v);
+          solutions[rank][v].set_route(p.raw_solve(1));
         }
       } else {
         switch (p.heuristic) {

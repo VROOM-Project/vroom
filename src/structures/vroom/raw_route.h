@@ -19,17 +19,24 @@ namespace vroom {
 
 class RawRoute {
 public:
+  Index vehicle_rank;
+  bool has_start;
+  bool has_end;
+
   std::vector<Index> route;
 
-  RawRoute() : route(){};
+  RawRoute(const Input& input, Index i)
+    : vehicle_rank(i),
+      has_start(input.vehicles[i].has_start()),
+      has_end(input.vehicles[i].has_end()){};
 
-  RawRoute(const std::vector<Index>& r) : route(r){};
-
-  RawRoute(const Input&, Index) : route(){};
+  void set_route(const std::vector<Index>& r) {
+    route = r;
+  };
 
   bool empty() const {
     return route.empty();
-  }
+  };
 
   std::size_t size() const {
     return route.size();

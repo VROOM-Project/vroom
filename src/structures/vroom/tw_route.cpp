@@ -12,9 +12,7 @@ All rights reserved (see LICENSE).
 namespace vroom {
 
 TWRoute::TWRoute(const Input& input, Index i)
-  : vehicle_rank(i),
-    has_start(input.vehicles[i].has_start()),
-    has_end(input.vehicles[i].has_end()),
+  : RawRoute(input, i),
     v_start(input.vehicles[i].tw.start),
     v_end(input.vehicles[i].tw.end) {
 }
