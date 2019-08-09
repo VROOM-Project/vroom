@@ -272,7 +272,7 @@ Solution TSP::solve(unsigned,
                     unsigned nb_threads,
                     const std::vector<HeuristicParameters>&) const {
   RawRoute r(_input, 0);
-  r.set_route(raw_solve(nb_threads));
+  r.set_route(_input, raw_solve(nb_threads));
   return utils::format_solution(_input, {r});
 }
 

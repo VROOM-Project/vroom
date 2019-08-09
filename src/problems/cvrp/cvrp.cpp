@@ -147,7 +147,7 @@ Solution CVRP::solve(unsigned exploration_level,
     TSP p(_input, job_ranks, 0);
 
     RawRoute r(_input, 0);
-    r.set_route(p.raw_solve(nb_threads));
+    r.set_route(_input, p.raw_solve(nb_threads));
 
     return utils::format_solution(_input, {r});
   }
@@ -193,13 +193,13 @@ Solution CVRP::solve(unsigned exploration_level,
 
         // Populate vector of TSP solutions, one per cluster.
         for (std::size_t v = 0; v < nb_tsp; ++v) {
+          solutions[rank].emplace_back(_input, v);
           if (c.clusters[v].empty()) {
             continue;
           }
           TSP p(_input, c.clusters[v], v);
 
-          solutions[rank].emplace_back(_input, v);
-          solutions[rank][v].set_route(p.raw_solve(1));
+          solutions[rank][v].set_route(_input, p.raw_solve(1));
         }
       } else {
         switch (p.heuristic) {

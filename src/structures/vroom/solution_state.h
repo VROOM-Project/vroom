@@ -63,27 +63,6 @@ public:
   std::vector<std::vector<Amount>> fwd_amounts;
   std::vector<std::vector<Amount>> bwd_amounts;
 
-  // fwd_pickups[v][i] stores the total pickups up to rank i in the
-  // route for vehicle v.
-  std::vector<std::vector<Amount>> fwd_pickups;
-
-  // bwd_deliveries[v][i] stores the total deliveries pending after
-  // rank i in the route for vehicle v.
-  std::vector<std::vector<Amount>> bwd_deliveries; // TODO maybe no need to
-                                                   // store this.
-
-  // current_loads[v][s] stores the vehicle load at *step* s in the
-  // route for vehicle v (step 0 is the start, not the first job
-  // rank).
-  std::vector<std::vector<Amount>> current_loads;
-
-  // fwd_peaks[v][s] stores the peak load (component-wise) up to
-  // *step* s in the route for vehicle v. bwd_peaks[v][s] stores the
-  // peak load (component-wise) after *step* s in the route for
-  // vehicle v.
-  std::vector<std::vector<Amount>> fwd_peaks;
-  std::vector<std::vector<Amount>> bwd_peaks;
-
   // fwd_costs[v][i] stores the total cost from job at rank 0 to job
   // at rank i in the route for vehicle v, while bwd_costs[v][i]
   // stores the total cost from job at rank i to job at rank 0
@@ -140,6 +119,7 @@ public:
 
   void setup(const TWSolution& tw_sol);
 
+  // TODO remove
   void update_amounts(const std::vector<Index>& route, Index v);
 
   void update_costs(const std::vector<Index>& route, Index v);

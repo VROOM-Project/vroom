@@ -22,11 +22,6 @@ SolutionState::SolutionState(const Input& input)
     _empty_amount(_input.amount_size()),
     fwd_amounts(_nb_vehicles),
     bwd_amounts(_nb_vehicles),
-    fwd_pickups(_nb_vehicles),
-    bwd_deliveries(_nb_vehicles),
-    current_loads(_nb_vehicles),
-    fwd_peaks(_nb_vehicles),
-    bwd_peaks(_nb_vehicles),
     fwd_costs(_nb_vehicles),
     bwd_costs(_nb_vehicles),
     fwd_skill_rank(_nb_vehicles, std::vector<Index>(_nb_vehicles)),
@@ -94,66 +89,22 @@ void SolutionState::setup(const TWSolution& tw_sol) {
 }
 
 void SolutionState::update_amounts(const std::vector<Index>& route, Index v) {
-  auto step_size = route.empty() ? 0 : route.size() + 2;
   fwd_amounts[v].resize(route.size());
   bwd_amounts[v].resize(route.size());
-  fwd_pickups[v].resize(route.size());
-  bwd_deliveries[v].resize(route.size());
-  current_loads[v].resize(step_size);
-  fwd_peaks[v].resize(step_size);
-  bwd_peaks[v].resize(step_size);
-
-  if (route.empty()) {
-    return;
-  }
 
   Amount current_amount(_input.amount_size());
-  Amount current_pickups(_input.amount_size());
 
   for (std::size_t i = 0; i < route.size(); ++i) {
-    current_pickups += _input.jobs[route[i]].pickup;
-    fwd_pickups[v][i] = current_pickups;
-
     current_amount += _input.jobs[route[i]].amount;
     fwd_amounts[v][i] = current_amount;
   }
 
-  current_amount = _input.amount_size();
-  Amount current_deliveries(_input.amount_size());
-
-  current_loads[v].back() = fwd_pickups[v].back();
+  current_amount = Amount(_input.amount_size());
 
   for (std::size_t i = 0; i < route.size(); ++i) {
     auto bwd_i = route.size() - i - 1;
-
-    bwd_deliveries[v][bwd_i] = current_deliveries;
-    current_loads[v][bwd_i + 1] = fwd_pickups[v][bwd_i] + current_deliveries;
-    current_deliveries += _input.jobs[route[bwd_i]].delivery;
-
     bwd_amounts[v][bwd_i] = current_amount;
     current_amount += _input.jobs[route[bwd_i]].amount;
-  }
-  current_loads[v][0] = current_deliveries;
-
-  auto peak = current_loads[v][0];
-  fwd_peaks[v][0] = peak;
-  for (std::size_t s = 1; s < fwd_peaks[v].size(); ++s) {
-    // Handle max component-wise.
-    for (std::size_t r = 0; r < _input.amount_size(); ++r) {
-      peak[r] = std::max(peak[r], current_loads[v][s][r]);
-    }
-    fwd_peaks[v][s] = peak;
-  }
-
-  peak = current_loads[v].back();
-  bwd_peaks[v].back() = peak;
-  for (std::size_t s = 1; s < bwd_peaks[v].size(); ++s) {
-    auto bwd_s = bwd_peaks[v].size() - s - 1;
-    // Handle max component-wise.
-    for (std::size_t r = 0; r < _input.amount_size(); ++r) {
-      peak[r] = std::max(peak[r], current_loads[v][bwd_s][r]);
-    }
-    bwd_peaks[v][bwd_s] = peak;
   }
 }
 
