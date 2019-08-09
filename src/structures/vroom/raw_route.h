@@ -61,6 +61,10 @@ public:
                                       const Amount& delivery,
                                       const Index rank) const;
 
+  // Get vehicle load at *step* s (step 0 is the start, not the first
+  // job rank).
+  Amount get_load(Index s) const;
+
   bool is_valid_addition_for_tw(const Input&, const Index, const Index) const {
     return true;
   };

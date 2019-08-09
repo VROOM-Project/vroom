@@ -99,6 +99,10 @@ bool RawRoute::is_valid_addition_for_capacity(const Input&,
          (bwd_peaks[rank] + pickup <= capacity);
 }
 
+Amount RawRoute::get_load(Index s) const {
+  return current_loads[s];
+}
+
 void RawRoute::add(const Input& input, const Index job_rank, const Index rank) {
   route.insert(route.begin() + rank, job_rank);
   update_amounts(input);
