@@ -99,6 +99,20 @@ inline Duration get_service(const rapidjson::Value& object) {
   return service;
 }
 
+inline Duration get_priority(const rapidjson::Value& object) {
+  Priority priority = 0;
+  if (object.HasMember("priority")) {
+    if (!object["priority"].IsUint()) {
+      throw Exception(ERROR::INPUT, "Invalid priority value.");
+    }
+    priority = object["priority"].GetUint();
+    if (priority > 10) {
+      throw Exception(ERROR::INPUT, "Invalid priority value.");
+    }
+  }
+  return priority;
+}
+
 inline bool valid_vehicle(const rapidjson::Value& v) {
   return v.IsObject() and v.HasMember("id") and v["id"].IsUint64();
 }
@@ -328,6 +342,7 @@ Input parse(const CLArgs& cl_args) {
                       get_service(json_job),
                       get_amount(json_job, "amount"),
                       get_skills(json_job),
+                      get_priority(json_job),
                       get_job_time_windows(json_job));
 
       input.add_job(current_job);
@@ -408,6 +423,7 @@ Input parse(const CLArgs& cl_args) {
                       get_service(json_job),
                       get_amount(json_job, "amount"),
                       get_skills(json_job),
+                      get_priority(json_job),
                       get_job_time_windows(json_job));
 
       input.add_job(current_job);
