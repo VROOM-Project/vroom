@@ -25,38 +25,25 @@ public:
 
   std::vector<Index> route;
 
-  RawRoute(const Input& input, Index i)
-    : vehicle_rank(i),
-      has_start(input.vehicles[i].has_start()),
-      has_end(input.vehicles[i].has_end()){};
+  RawRoute(const Input& input, Index i);
 
-  void set_route(const std::vector<Index>& r) {
-    route = r;
-  };
+  void set_route(const std::vector<Index>& r);
 
-  bool empty() const {
-    return route.empty();
-  };
+  bool empty() const;
 
-  std::size_t size() const {
-    return route.size();
-  }
+  std::size_t size() const;
 
   bool is_valid_addition_for_tw(const Input&, const Index, const Index) const {
     return true;
   };
 
-  void add(const Input&, const Index job_rank, const Index rank) {
-    route.insert(route.begin() + rank, job_rank);
-  };
+  void add(const Input&, const Index job_rank, const Index rank);
 
   bool is_valid_removal(const Input&, const Index, const unsigned) const {
     return true;
   };
 
-  void remove(const Input&, const Index rank, const unsigned count) {
-    route.erase(route.begin() + rank, route.begin() + rank + count);
-  };
+  void remove(const Input&, const Index rank, const unsigned count);
 };
 
 } // namespace vroom
