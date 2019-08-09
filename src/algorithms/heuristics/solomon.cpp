@@ -117,6 +117,7 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
           (init == INIT::NEAREST and
            nearest_cost < std::numeric_limits<Cost>::max())) {
         current_r.add(input, best_job_rank, 0);
+        current_r.update_amounts(input);
         route_amount += input.jobs[best_job_rank].amount;
         unassigned.erase(best_job_rank);
       }
@@ -157,6 +158,7 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
 
       if (best_cost < std::numeric_limits<float>::max()) {
         current_r.add(input, best_job_rank, best_r);
+        current_r.update_amounts(input);
         route_amount += input.jobs[best_job_rank].amount;
         unassigned.erase(best_job_rank);
         keep_going = true;
@@ -320,6 +322,7 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
           (init == INIT::NEAREST and
            nearest_cost < std::numeric_limits<Cost>::max())) {
         current_r.add(input, best_job_rank, 0);
+        current_r.update_amounts(input);
         route_amount += input.jobs[best_job_rank].amount;
         unassigned.erase(best_job_rank);
       }
@@ -360,6 +363,7 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
 
       if (best_cost < std::numeric_limits<float>::max()) {
         current_r.add(input, best_job_rank, best_r);
+        current_r.update_amounts(input);
         route_amount += input.jobs[best_job_rank].amount;
         unassigned.erase(best_job_rank);
         keep_going = true;

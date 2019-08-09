@@ -14,7 +14,21 @@ namespace vroom {
 RawRoute::RawRoute(const Input& input, Index i)
   : vehicle_rank(i),
     has_start(input.vehicles[i].has_start()),
-    has_end(input.vehicles[i].has_end()) {
+    has_end(input.vehicles[i].has_end()),
+    capacity(input.vehicles[i].capacity) {
+}
+
+void RawRoute::set_route(const Input& input, const std::vector<Index>& r) {
+  route = r;
+  update_amounts(input);
+}
+
+bool RawRoute::empty() const {
+  return route.empty();
+}
+
+std::size_t RawRoute::size() const {
+  return route.size();
 }
 
 void RawRoute::update_amounts(const Input& input) {
@@ -26,6 +40,10 @@ void RawRoute::update_amounts(const Input& input) {
   bwd_peaks.resize(step_size);
 
   if (route.empty()) {
+    // So that check in is_valid_addition_for_capacity is consistent
+    // with empty routes.
+    std::fill(fwd_peaks.begin(), fwd_peaks.end(), Amount(input.amount_size()));
+    std::fill(bwd_peaks.begin(), bwd_peaks.end(), Amount(input.amount_size()));
     return;
   }
 
@@ -71,17 +89,14 @@ void RawRoute::update_amounts(const Input& input) {
   }
 }
 
-void RawRoute::set_route(const Input& input, const std::vector<Index>& r) {
-  route = r;
-  update_amounts(input);
-}
+bool RawRoute::is_valid_addition_for_capacity(const Input&,
+                                              const Amount& pickup,
+                                              const Amount& delivery,
+                                              const Index rank) const {
+  assert(rank <= route.size());
 
-bool RawRoute::empty() const {
-  return route.empty();
-}
-
-std::size_t RawRoute::size() const {
-  return route.size();
+  return (fwd_peaks[rank] + delivery <= capacity) and
+         (bwd_peaks[rank] + pickup <= capacity);
 }
 
 void RawRoute::add(const Input& input, const Index job_rank, const Index rank) {

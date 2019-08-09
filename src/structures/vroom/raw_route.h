@@ -37,12 +37,11 @@ private:
   std::vector<Amount> fwd_peaks;
   std::vector<Amount> bwd_peaks;
 
-  void update_amounts(const Input& input);
-
 public:
   Index vehicle_rank;
   bool has_start;
   bool has_end;
+  Amount capacity;
 
   std::vector<Index> route;
 
@@ -53,6 +52,14 @@ public:
   bool empty() const;
 
   std::size_t size() const;
+
+  void update_amounts(const Input& input);
+
+  // Check validity for addition of job(s) in current route at rank.
+  bool is_valid_addition_for_capacity(const Input&,
+                                      const Amount& pickup,
+                                      const Amount& delivery,
+                                      const Index rank) const;
 
   bool is_valid_addition_for_tw(const Input&, const Index, const Index) const {
     return true;

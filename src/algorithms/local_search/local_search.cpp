@@ -207,6 +207,7 @@ void LocalSearch<Route,
 
       // Update amounts after addition.
       _sol_state.update_amounts(_sol[best_route].route, best_route);
+      _sol[best_route].update_amounts(_input);
 
 #ifndef NDEBUG
       // Update cost after addition.
@@ -661,6 +662,7 @@ void LocalSearch<Route,
       // each addition.
       for (auto v_rank : update_candidates) {
         _sol_state.update_amounts(_sol[v_rank].route, v_rank);
+        _sol[v_rank].update_amounts(_input);
       }
 
       try_job_additions(best_ops[best_source][best_target]
@@ -784,6 +786,7 @@ void LocalSearch<Route,
       // Refill jobs (requires updated amounts).
       for (std::size_t v = 0; v < _sol.size(); ++v) {
         _sol_state.update_amounts(_sol[v].route, v);
+        _sol[v].update_amounts(_input);
       }
       try_job_additions(_all_routes, 1.5);
 
