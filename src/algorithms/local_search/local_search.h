@@ -46,8 +46,7 @@ private:
   std::vector<Route> _sol;
 
   std::vector<Route>& _best_sol;
-  unsigned _best_unassigned;
-  Cost _best_cost;
+  utils::SolutionIndicators _best_sol_indicators;
 
   void try_job_additions(const std::vector<Index>& routes, double regret_coeff);
 

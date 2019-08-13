@@ -38,7 +38,8 @@ A `job` object has the following properties:
 | [`location_index`] | index of relevant row and column in custom matrix |
 | [`service`] | job service duration (defaults to 0) |
 | [`amount`] | an array of integers describing multidimensional quantities |
-| [`skills`] | an array of integers defining mandatory skills for this job |
+| [`skills`] | an array of integers defining mandatory skills |
+| [`priority`] | an integer in the `[0, 10]` range describing priority level (defaults to 0) |
 | [`time_windows`] | an array of `time_window` objects describing valid slots for job service start |
 
 If a custom matrix is provided:
@@ -66,8 +67,8 @@ A `vehicle` object has the following properties:
 | [`end`] | coordinates array |
 | [`end_index`] | index of relevant row and column in custom matrix |
 | [`capacity`] | an array of integers describing multidimensional quantities |
-| [`skills`] | an array of integers defining skills for this vehicle |
-| [`time_window`] | a `time_window` object describing working hours for this vehicle |
+| [`skills`] | an array of integers defining skills |
+| [`time_window`] | a `time_window` object describing working hours |
 
 ## Notes
 
@@ -106,6 +107,13 @@ job `j` is eligible to vehicle `v` iff `j.skills` is included in
 In order to ease modeling problems with no skills required, it is
 assumed that there is no restriction at all if no `skills` keys are
 provided.
+
+### Job priorities
+
+Useful in situations where not all jobs can be performed, to gain some
+control on which jobs are unassigned. Setting a high `priority` value
+for some jobs will tend as much as possible to have them included in
+the solution over lower-priority jobs.
 
 ### Time windows
 

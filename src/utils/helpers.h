@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <numeric>
 #include <sstream>
 
 #include "structures/typedefs.h"
@@ -136,6 +137,16 @@ inline Gain addition_cost(const Input& input,
   }
 
   return previous_cost + next_cost - old_edge_cost;
+}
+
+inline Cost priority_sum_for_route(const Input& input,
+                                   const std::vector<Index>& route) {
+  return std::accumulate(route.begin(),
+                         route.end(),
+                         0,
+                         [&](auto sum, auto job_rank) {
+                           return sum + input.jobs[job_rank].priority;
+                         });
 }
 
 inline Cost route_cost_for_vehicle(const Input& input,
