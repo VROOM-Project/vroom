@@ -123,24 +123,20 @@ void OrOpt::compute_gain() {
 
 bool OrOpt::is_valid() {
   auto current_job_rank = s_route[s_rank];
-  // Already asserted in compute_gain.
   auto after_job_rank = s_route[s_rank + 1];
 
-  bool valid = _input.vehicle_ok_with_job(t_vehicle, current_job_rank);
-  valid &= _input.vehicle_ok_with_job(t_vehicle, after_job_rank);
-
-  if (_sol_state.fwd_amounts[t_vehicle].empty()) {
-    valid &= (_input.jobs[current_job_rank].amount +
-                _input.jobs[after_job_rank].amount <=
-              _input.vehicles[t_vehicle].capacity);
-  } else {
-    valid &= (_sol_state.fwd_amounts[t_vehicle].back() +
-                _input.jobs[current_job_rank].amount +
-                _input.jobs[after_job_rank].amount <=
-              _input.vehicles[t_vehicle].capacity);
-  }
-
-  return valid;
+  return _input.vehicle_ok_with_job(t_vehicle, current_job_rank) and
+         _input.vehicle_ok_with_job(t_vehicle, after_job_rank) and
+         target
+           .is_valid_addition_for_capacity(_input,
+                                           _input.jobs[current_job_rank]
+                                               .pickup +
+                                             _input.jobs[after_job_rank].pickup,
+                                           _input.jobs[current_job_rank]
+                                               .delivery +
+                                             _input.jobs[after_job_rank]
+                                               .delivery,
+                                           t_rank);
 }
 
 void OrOpt::apply() {
