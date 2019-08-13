@@ -293,8 +293,12 @@ void Input::set_compatibility() {
     TWRoute empty_route(*this, v);
     for (std::size_t j = 0; j < jobs.size(); ++j) {
       if (_vehicle_to_job_compatibility[v][j]) {
-        auto is_compatible = (jobs[j].amount <= vehicles[v].capacity);
-        if (_has_TW) {
+        bool is_compatible =
+          empty_route.is_valid_addition_for_capacity(*this,
+                                                     jobs[j].pickup,
+                                                     jobs[j].delivery,
+                                                     0);
+        if (is_compatible and _has_TW) {
           is_compatible &= empty_route.is_valid_addition_for_tw(*this, j, 0);
         }
 
