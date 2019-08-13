@@ -12,7 +12,9 @@ All rights reserved (see LICENSE).
 namespace vroom {
 
 RawRoute::RawRoute(const Input& input, Index i)
-  : vehicle_rank(i),
+  : fwd_peaks(2, Amount(input.amount_size())),
+    bwd_peaks(2, Amount(input.amount_size())),
+    vehicle_rank(i),
     has_start(input.vehicles[i].has_start()),
     has_end(input.vehicles[i].has_end()),
     capacity(input.vehicles[i].capacity) {
