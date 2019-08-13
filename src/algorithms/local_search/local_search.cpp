@@ -131,19 +131,21 @@ void LocalSearch<Route,
     Index best_rank = 0;
 
     for (const auto j : _sol_state.unassigned) {
-      auto& current_amount = _input.jobs[j].amount;
+      auto& current_job = _input.jobs[j];
 
       best_costs.assign(routes.size(), std::numeric_limits<Gain>::max());
       best_ranks.assign(routes.size(), 0);
       for (std::size_t i = 0; i < routes.size(); ++i) {
         auto v = routes[i];
         const auto& v_target = _input.vehicles[v];
-        const Amount& v_amount = _sol_state.total_amount(v);
 
-        if (_input.vehicle_ok_with_job(v, j) and
-            v_amount + current_amount <= _input.vehicles[v].capacity) {
+        if (_input.vehicle_ok_with_job(v, j)) {
           for (std::size_t r = 0; r <= _sol[v].size(); ++r) {
-            if (_sol[v].is_valid_addition_for_tw(_input, j, r)) {
+            if (_sol[v].is_valid_addition_for_capacity(_input,
+                                                       current_job.pickup,
+                                                       current_job.delivery,
+                                                       r) and
+                _sol[v].is_valid_addition_for_tw(_input, j, r)) {
               Gain current_cost = utils::addition_cost(_input,
                                                        _matrix,
                                                        j,
@@ -207,7 +209,6 @@ void LocalSearch<Route,
 
       // Update amounts after addition.
       _sol_state.update_amounts(_sol[best_route].route, best_route);
-      _sol[best_route].update_amounts(_input);
 
 #ifndef NDEBUG
       // Update cost after addition.
@@ -657,9 +658,7 @@ void LocalSearch<Route,
 #endif
 
       // We need to run update_amounts before try_job_additions to
-      // correctly evaluate amounts. No need to run it again after
-      // since try_before_additions will subsequently fix amounts upon
-      // each addition.
+      // correctly evaluate amounts.
       for (auto v_rank : update_candidates) {
         _sol_state.update_amounts(_sol[v_rank].route, v_rank);
         _sol[v_rank].update_amounts(_input);
@@ -786,7 +785,6 @@ void LocalSearch<Route,
       // Refill jobs (requires updated amounts).
       for (std::size_t v = 0; v < _sol.size(); ++v) {
         _sol_state.update_amounts(_sol[v].route, v);
-        _sol[v].update_amounts(_input);
       }
       try_job_additions(_all_routes, 1.5);
 

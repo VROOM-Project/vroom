@@ -289,6 +289,8 @@ void TWRoute::add(const Input& input, const Index job_rank, const Index rank) {
 
   fwd_update_earliest_from(input, rank);
   bwd_update_latest_from(input, rank);
+
+  update_amounts(input);
 }
 
 bool TWRoute::is_fwd_valid_removal(const Input& input,
@@ -497,6 +499,8 @@ void TWRoute::remove(const Input& input,
     fwd_update_earliest_with_TW_from(input, fwd_rank);
     bwd_update_latest_with_TW_from(input, bwd_rank);
   }
+
+  update_amounts(input);
 }
 
 template <class InputIterator>

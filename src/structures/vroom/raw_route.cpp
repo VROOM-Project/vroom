@@ -34,7 +34,7 @@ std::size_t RawRoute::size() const {
 }
 
 void RawRoute::update_amounts(const Input& input) {
-  auto step_size = route.empty() ? 0 : route.size() + 2;
+  auto step_size = route.size() + 2;
   fwd_pickups.resize(route.size());
   bwd_deliveries.resize(route.size());
   current_loads.resize(step_size);
@@ -96,6 +96,8 @@ bool RawRoute::is_valid_addition_for_capacity(const Input&,
                                               const Amount& delivery,
                                               const Index rank) const {
   assert(rank <= route.size());
+
+  assert(fwd_peaks.size() == route.size() + 2);
 
   return (fwd_peaks[rank] + delivery <= capacity) and
          (bwd_peaks[rank] + pickup <= capacity);
