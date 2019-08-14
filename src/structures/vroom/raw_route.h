@@ -24,8 +24,7 @@ private:
 
   // bwd_deliveries[i] stores the total deliveries pending after rank
   // i.
-  std::vector<Amount> bwd_deliveries; // TODO maybe no need to
-                                      // store this.
+  std::vector<Amount> bwd_deliveries;
 
   // current_loads[s] stores the vehicle load at *step* s (step 0 is
   // the start, not the first job rank).
@@ -60,6 +59,15 @@ public:
                                       const Amount& pickup,
                                       const Amount& delivery,
                                       const Index rank) const;
+
+  // Check validity for addition of job(s) in current route at rank
+  // first_rank and before last_rank *in place of* the current jobs
+  // that may be there.
+  bool is_valid_addition_for_capacity(const Input& input,
+                                      const Amount& pickup,
+                                      const Amount& delivery,
+                                      const Index first_rank,
+                                      const Index last_rank) const;
 
   // Get vehicle load at *step* s (step 0 is the start, not the first
   // job rank).

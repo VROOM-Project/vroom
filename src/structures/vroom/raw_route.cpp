@@ -103,6 +103,26 @@ bool RawRoute::is_valid_addition_for_capacity(const Input&,
          (bwd_peaks[rank] + pickup <= capacity);
 }
 
+bool RawRoute::is_valid_addition_for_capacity(const Input& input,
+                                              const Amount& pickup,
+                                              const Amount& delivery,
+                                              const Index first_rank,
+                                              const Index last_rank) const {
+  assert(first_rank < last_rank);
+  assert(last_rank <= route.size());
+
+  auto first_pickups = (first_rank == 0) ? Amount(input.amount_size())
+                                         : fwd_pickups[first_rank - 1];
+  auto first_deliveries =
+    (first_rank == 0) ? current_loads[0] : bwd_deliveries[first_rank - 1];
+  auto new_capacity =
+    Amount(capacity + fwd_pickups[last_rank - 1] - first_pickups +
+           first_deliveries - bwd_deliveries[last_rank - 1]);
+
+  return (fwd_peaks[first_rank] + delivery <= new_capacity) and
+         (bwd_peaks[last_rank] + pickup <= new_capacity);
+}
+
 Amount RawRoute::get_load(Index s) const {
   return current_loads[s];
 }
