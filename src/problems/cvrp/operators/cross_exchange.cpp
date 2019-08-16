@@ -159,19 +159,25 @@ bool CrossExchange::is_valid() {
   valid &= _input.vehicle_ok_with_job(s_vehicle, t_current_job_rank);
   valid &= _input.vehicle_ok_with_job(s_vehicle, t_after_job_rank);
 
-  valid &= (_sol_state.fwd_amounts[s_vehicle].back() -
-              _input.jobs[s_current_job_rank].amount -
-              _input.jobs[s_after_job_rank].amount +
-              _input.jobs[t_current_job_rank].amount +
-              _input.jobs[t_after_job_rank].amount <=
-            _input.vehicles[s_vehicle].capacity);
+  valid &=
+    source
+      .is_valid_addition_for_capacity(_input,
+                                      _input.jobs[t_current_job_rank].pickup +
+                                        _input.jobs[t_after_job_rank].pickup,
+                                      _input.jobs[t_current_job_rank].delivery +
+                                        _input.jobs[t_after_job_rank].delivery,
+                                      s_rank,
+                                      s_rank + 2);
 
-  valid &= (_sol_state.fwd_amounts[t_vehicle].back() -
-              _input.jobs[t_current_job_rank].amount -
-              _input.jobs[t_after_job_rank].amount +
-              _input.jobs[s_current_job_rank].amount +
-              _input.jobs[s_after_job_rank].amount <=
-            _input.vehicles[t_vehicle].capacity);
+  valid &=
+    target
+      .is_valid_addition_for_capacity(_input,
+                                      _input.jobs[s_current_job_rank].pickup +
+                                        _input.jobs[s_after_job_rank].pickup,
+                                      _input.jobs[s_current_job_rank].delivery +
+                                        _input.jobs[s_after_job_rank].delivery,
+                                      t_rank,
+                                      t_rank + 2);
 
   return valid;
 }

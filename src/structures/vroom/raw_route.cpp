@@ -109,7 +109,7 @@ bool RawRoute::is_valid_addition_for_capacity(const Input& input,
                                               const Index first_rank,
                                               const Index last_rank) const {
   assert(first_rank < last_rank);
-  assert(last_rank <= route.size());
+  assert(last_rank <= route.size() + 1);
 
   auto first_pickups = (first_rank == 0) ? Amount(input.amount_size())
                                          : fwd_pickups[first_rank - 1];
