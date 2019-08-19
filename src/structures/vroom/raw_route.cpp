@@ -127,6 +127,21 @@ Amount RawRoute::get_load(Index s) const {
   return current_loads[s];
 }
 
+Amount RawRoute::pickup_in_range(Index i, Index j) const {
+  assert(i <= j);
+  if (i == 0) {
+    return fwd_pickups[j];
+  } else {
+    return fwd_pickups[j] - fwd_pickups[i - 1];
+  }
+}
+
+Amount RawRoute::delivery_in_range(Index i, Index j) const {
+  assert(i <= j);
+  auto before_deliveries = (i == 0) ? current_loads[0] : bwd_deliveries[i - 1];
+  return before_deliveries - bwd_deliveries[j];
+}
+
 void RawRoute::add(const Input& input, const Index job_rank, const Index rank) {
   route.insert(route.begin() + rank, job_rank);
   update_amounts(input);

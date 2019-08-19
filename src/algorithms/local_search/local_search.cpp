@@ -495,7 +495,7 @@ void LocalSearch<Route,
 
     // Operators applied to a single route.
 
-    // Inner exchange stuff
+    // Intra exchange stuff
     for (const auto& s_t : s_t_pairs) {
       if (s_t.first != s_t.second or _sol[s_t.first].size() < 3) {
         continue;
@@ -518,7 +518,7 @@ void LocalSearch<Route,
       }
     }
 
-    // Inner CROSS-exchange stuff
+    // Intra CROSS-exchange stuff
     for (const auto& s_t : s_t_pairs) {
       if (s_t.first != s_t.second or _sol[s_t.first].size() < 5) {
         continue;
@@ -543,7 +543,7 @@ void LocalSearch<Route,
       }
     }
 
-    // Inner mixed-exchange stuff
+    // Intra mixed-exchange stuff
     for (const auto& s_t : s_t_pairs) {
       if (s_t.first != s_t.second or _sol[s_t.first].size() < 4) {
         continue;
@@ -570,7 +570,7 @@ void LocalSearch<Route,
       }
     }
 
-    // Inner relocate stuff
+    // Intra relocate stuff
     for (const auto& s_t : s_t_pairs) {
       if (s_t.first != s_t.second or _sol[s_t.first].size() < 2) {
         continue;
@@ -601,7 +601,7 @@ void LocalSearch<Route,
       }
     }
 
-    // Inner Or-opt stuff
+    // Intra Or-opt stuff
     for (const auto& s_t : s_t_pairs) {
       if (s_t.first != s_t.second or _sol[s_t.first].size() < 4) {
         continue;

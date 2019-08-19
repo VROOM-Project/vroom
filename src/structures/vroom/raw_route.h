@@ -73,6 +73,11 @@ public:
   // job rank).
   Amount get_load(Index s) const;
 
+  // Get sum of pickups (resp. deliveries) for all jobs between ranks
+  // i and j included.
+  Amount pickup_in_range(Index i, Index j) const;
+  Amount delivery_in_range(Index i, Index j) const;
+
   bool is_valid_addition_for_tw(const Input&, const Index, const Index) const {
     return true;
   };

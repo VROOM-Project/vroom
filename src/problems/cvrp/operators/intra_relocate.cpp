@@ -58,7 +58,14 @@ void IntraRelocate::compute_gain() {
 }
 
 bool IntraRelocate::is_valid() {
-  return true;
+  auto i = std::min(s_rank, t_rank);
+  auto j = std::max(s_rank, t_rank);
+
+  return source.is_valid_addition_for_capacity(_input,
+                                               source.pickup_in_range(i, j),
+                                               source.delivery_in_range(i, j),
+                                               i,
+                                               j + 1);
 }
 
 void IntraRelocate::apply() {
