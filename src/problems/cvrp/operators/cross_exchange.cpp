@@ -161,23 +161,39 @@ bool CrossExchange::is_valid() {
 
   valid &=
     source
-      .is_valid_addition_for_capacity(_input,
-                                      _input.jobs[t_current_job_rank].pickup +
-                                        _input.jobs[t_after_job_rank].pickup,
-                                      _input.jobs[t_current_job_rank].delivery +
-                                        _input.jobs[t_after_job_rank].delivery,
-                                      s_rank,
-                                      s_rank + 2);
+      .is_valid_addition_for_capacity_before_after(_input,
+                                                   _input
+                                                       .jobs[t_current_job_rank]
+                                                       .pickup +
+                                                     _input
+                                                       .jobs[t_after_job_rank]
+                                                       .pickup,
+                                                   _input
+                                                       .jobs[t_current_job_rank]
+                                                       .delivery +
+                                                     _input
+                                                       .jobs[t_after_job_rank]
+                                                       .delivery,
+                                                   s_rank,
+                                                   s_rank + 2);
 
   valid &=
     target
-      .is_valid_addition_for_capacity(_input,
-                                      _input.jobs[s_current_job_rank].pickup +
-                                        _input.jobs[s_after_job_rank].pickup,
-                                      _input.jobs[s_current_job_rank].delivery +
-                                        _input.jobs[s_after_job_rank].delivery,
-                                      t_rank,
-                                      t_rank + 2);
+      .is_valid_addition_for_capacity_before_after(_input,
+                                                   _input
+                                                       .jobs[s_current_job_rank]
+                                                       .pickup +
+                                                     _input
+                                                       .jobs[s_after_job_rank]
+                                                       .pickup,
+                                                   _input
+                                                       .jobs[s_current_job_rank]
+                                                       .delivery +
+                                                     _input
+                                                       .jobs[s_after_job_rank]
+                                                       .delivery,
+                                                   t_rank,
+                                                   t_rank + 2);
 
   return valid;
 }

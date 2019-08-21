@@ -54,18 +54,21 @@ public:
 
   void update_amounts(const Input& input);
 
-  // Check validity for addition of job(s) in current route at rank.
+  // Check validity for addition of a single job(s) in current route at rank.
   bool is_valid_addition_for_capacity(const Input&,
                                       const Amount& pickup,
                                       const Amount& delivery,
                                       const Index rank) const;
 
-  // Check validity for addition of job(s) in current route at rank
-  // first_rank and before last_rank *in place of* the current jobs
-  // that may be there.
+  // Check validity for inclusion of the range [first_job; last_job)
+  // in the existing route at rank first_rank and before last_rank *in
+  // place of* the current jobs that may be there.
+  template <class InputIterator>
   bool is_valid_addition_for_capacity(const Input& input,
                                       const Amount& pickup,
                                       const Amount& delivery,
+                                      InputIterator first_job,
+                                      InputIterator last_job,
                                       const Index first_rank,
                                       const Index last_rank) const;
 
@@ -73,8 +76,8 @@ public:
   // job rank).
   Amount get_load(Index s) const;
 
-  // Get sum of pickups (resp. deliveries) for all jobs between ranks
-  // i and j included.
+  // Get sum of pickups (resp. deliveries) for all jobs in the range
+  // [i, j).
   Amount pickup_in_range(Index i, Index j) const;
   Amount delivery_in_range(Index i, Index j) const;
 

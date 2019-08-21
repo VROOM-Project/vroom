@@ -20,10 +20,6 @@ class IntraRelocate : public cvrp::IntraRelocate {
 private:
   TWRoute& _tw_s_route;
 
-  std::vector<Index> _moved_jobs;
-  const Index _first_rank;
-  const Index _last_rank;
-
 public:
   IntraRelocate(const Input& input,
                 const utils::SolutionState& sol_state,

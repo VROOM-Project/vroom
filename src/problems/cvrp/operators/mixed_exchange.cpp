@@ -144,6 +144,8 @@ bool MixedExchange::is_valid() {
                                         _input.jobs[t_after_job_rank].pickup,
                                       _input.jobs[t_job_rank].delivery +
                                         _input.jobs[t_after_job_rank].delivery,
+                                      t_route.begin() + t_rank, // TODO
+                                      t_route.begin() + t_rank, // TODO
                                       s_rank,
                                       s_rank + 1);
 
@@ -151,6 +153,8 @@ bool MixedExchange::is_valid() {
     target.is_valid_addition_for_capacity(_input,
                                           _input.jobs[s_job_rank].pickup,
                                           _input.jobs[s_job_rank].delivery,
+                                          s_route.begin() + s_rank, // TODO
+                                          s_route.begin() + s_rank, // TODO
                                           t_rank,
                                           t_rank + 2);
 
