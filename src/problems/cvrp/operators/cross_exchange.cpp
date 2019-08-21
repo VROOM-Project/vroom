@@ -29,7 +29,11 @@ CrossExchange::CrossExchange(const Input& input,
              t_vehicle,
              t_rank),
     reverse_s_edge(false),
-    reverse_t_edge(false) {
+    reverse_t_edge(false),
+    _s_is_normal_valid(false),
+    _s_is_reverse_valid(false),
+    _t_is_normal_valid(false),
+    _t_is_reverse_valid(false) {
   assert(s_vehicle != t_vehicle);
   assert(s_route.size() >= 2);
   assert(t_route.size() >= 2);
@@ -91,8 +95,24 @@ void CrossExchange::compute_gain() {
                     reverse_edge_cost - reverse_previous_cost -
                     reverse_next_cost;
 
+  assert(_s_is_normal_valid or _s_is_reverse_valid);
+  Gain s_gain;
   if (reversed_s_gain > normal_s_gain) {
-    reverse_t_edge = true;
+    // Biggest potential gain is obtained when reversing edge.
+    if (_s_is_reverse_valid) {
+      s_gain = reversed_s_gain;
+      reverse_t_edge = true;
+    } else {
+      s_gain = normal_s_gain;
+    }
+  } else {
+    // Biggest potential gain is obtained when not reversing edge.
+    if (_s_is_normal_valid) {
+      s_gain = normal_s_gain;
+    } else {
+      s_gain = reversed_s_gain;
+      reverse_t_edge = true;
+    }
   }
 
   // For target vehicle, we consider the cost of replacing edge
@@ -137,12 +157,27 @@ void CrossExchange::compute_gain() {
                     reverse_edge_cost - reverse_previous_cost -
                     reverse_next_cost;
 
+  assert(_t_is_normal_valid or _t_is_reverse_valid);
+  Gain t_gain;
   if (reversed_t_gain > normal_t_gain) {
-    reverse_s_edge = true;
+    // Biggest potential gain is obtained when reversing edge.
+    if (_t_is_reverse_valid) {
+      t_gain = reversed_t_gain;
+      reverse_s_edge = true;
+    } else {
+      t_gain = normal_t_gain;
+    }
+  } else {
+    // Biggest potential gain is obtained when not reversing edge.
+    if (_t_is_normal_valid) {
+      t_gain = normal_t_gain;
+    } else {
+      t_gain = reversed_t_gain;
+      reverse_s_edge = true;
+    }
   }
 
-  stored_gain = std::max(normal_s_gain, reversed_s_gain) +
-                std::max(normal_t_gain, reversed_t_gain);
+  stored_gain = s_gain + t_gain;
 
   gain_computed = true;
 }
@@ -150,7 +185,6 @@ void CrossExchange::compute_gain() {
 bool CrossExchange::is_valid() {
   auto s_current_job_rank = s_route[s_rank];
   auto t_current_job_rank = t_route[t_rank];
-  // Already asserted in compute_gain.
   auto s_after_job_rank = s_route[s_rank + 1];
   auto t_after_job_rank = t_route[t_rank + 1];
 
@@ -159,41 +193,63 @@ bool CrossExchange::is_valid() {
   valid &= _input.vehicle_ok_with_job(s_vehicle, t_current_job_rank);
   valid &= _input.vehicle_ok_with_job(s_vehicle, t_after_job_rank);
 
-  valid &=
-    source
-      .is_valid_addition_for_capacity_before_after(_input,
-                                                   _input
-                                                       .jobs[t_current_job_rank]
-                                                       .pickup +
-                                                     _input
-                                                       .jobs[t_after_job_rank]
-                                                       .pickup,
-                                                   _input
-                                                       .jobs[t_current_job_rank]
-                                                       .delivery +
-                                                     _input
-                                                       .jobs[t_after_job_rank]
-                                                       .delivery,
-                                                   s_rank,
-                                                   s_rank + 2);
+  if (valid) {
+    auto target_pickup = _input.jobs[t_current_job_rank].pickup +
+                         _input.jobs[t_after_job_rank].pickup;
+    auto target_delivery = _input.jobs[t_current_job_rank].delivery +
+                           _input.jobs[t_after_job_rank].delivery;
 
-  valid &=
-    target
-      .is_valid_addition_for_capacity_before_after(_input,
-                                                   _input
-                                                       .jobs[s_current_job_rank]
-                                                       .pickup +
-                                                     _input
-                                                       .jobs[s_after_job_rank]
-                                                       .pickup,
-                                                   _input
-                                                       .jobs[s_current_job_rank]
-                                                       .delivery +
-                                                     _input
-                                                       .jobs[s_after_job_rank]
-                                                       .delivery,
-                                                   t_rank,
-                                                   t_rank + 2);
+    // Keep target edge direction when inserting in source route.
+    auto t_start = t_route.begin() + t_rank;
+    _s_is_normal_valid = source.is_valid_addition_for_capacity(_input,
+                                                               target_pickup,
+                                                               target_delivery,
+                                                               t_start,
+                                                               t_start + 2,
+                                                               s_rank,
+                                                               s_rank + 2);
+    // Reverse target edge direction when inserting in source route.
+    auto t_reverse_start = t_route.rbegin() + t_route.size() - 2 - t_rank;
+    _s_is_reverse_valid =
+      source.is_valid_addition_for_capacity(_input,
+                                            target_pickup,
+                                            target_delivery,
+                                            t_reverse_start,
+                                            t_reverse_start + 2,
+                                            s_rank,
+                                            s_rank + 2);
+
+    valid = _s_is_normal_valid or _s_is_reverse_valid;
+  }
+
+  if (valid) {
+    auto source_pickup = _input.jobs[s_current_job_rank].pickup +
+                         _input.jobs[s_after_job_rank].pickup;
+    auto source_delivery = _input.jobs[s_current_job_rank].delivery +
+                           _input.jobs[s_after_job_rank].delivery;
+
+    // Keep source edge direction when inserting in target route.
+    auto s_start = s_route.begin() + s_rank;
+    _t_is_normal_valid = target.is_valid_addition_for_capacity(_input,
+                                                               source_pickup,
+                                                               source_delivery,
+                                                               s_start,
+                                                               s_start + 2,
+                                                               t_rank,
+                                                               t_rank + 2);
+
+    // Reverse source edge direction when inserting in target route.
+    auto s_reverse_start = s_route.rbegin() + s_route.size() - 2 - s_rank;
+    _t_is_reverse_valid =
+      target.is_valid_addition_for_capacity(_input,
+                                            source_pickup,
+                                            source_delivery,
+                                            s_reverse_start,
+                                            s_reverse_start + 2,
+                                            t_rank,
+                                            t_rank + 2);
+    valid = _t_is_normal_valid or _t_is_reverse_valid;
+  }
 
   return valid;
 }

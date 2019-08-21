@@ -25,6 +25,11 @@ protected:
   bool reverse_s_edge;
   bool reverse_t_edge;
 
+  bool _s_is_normal_valid;
+  bool _s_is_reverse_valid;
+  bool _t_is_normal_valid;
+  bool _t_is_reverse_valid;
+
   virtual void compute_gain() override;
 
 public:

@@ -21,13 +21,6 @@ private:
   TWRoute& _tw_s_route;
   TWRoute& _tw_t_route;
 
-  bool _s_is_normal_valid;
-  bool _s_is_reverse_valid;
-  bool _t_is_normal_valid;
-  bool _t_is_reverse_valid;
-
-  virtual void compute_gain() override;
-
 public:
   CrossExchange(const Input& input,
                 const utils::SolutionState& sol_state,
