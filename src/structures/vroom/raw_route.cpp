@@ -108,14 +108,12 @@ bool RawRoute::is_valid_addition_for_capacity(const Input&,
          (bwd_peaks[rank] + pickup <= capacity);
 }
 
-template <class InputIterator>
-bool RawRoute::is_valid_addition_for_capacity(const Input& input,
-                                              const Amount& pickup,
-                                              const Amount& delivery,
-                                              InputIterator first_job,
-                                              InputIterator last_job,
-                                              const Index first_rank,
-                                              const Index last_rank) const {
+bool RawRoute::is_valid_addition_for_capacity_margins(
+  const Input& input,
+  const Amount& pickup,
+  const Amount& delivery,
+  const Index first_rank,
+  const Index last_rank) const {
   assert(first_rank < last_rank);
   assert(last_rank <= route.size() + 1);
 
@@ -127,23 +125,38 @@ bool RawRoute::is_valid_addition_for_capacity(const Input& input,
 
   auto replaced_deliveries = first_deliveries - bwd_deliveries[last_rank - 1];
 
-  bool valid =
-    (fwd_peaks[first_rank] + delivery <= capacity + replaced_deliveries) and
-    (bwd_peaks[last_rank] + pickup <=
-     capacity + fwd_pickups[last_rank - 1] - first_pickups);
+  return (fwd_peaks[first_rank] + delivery <=
+          capacity + replaced_deliveries) and
+         (bwd_peaks[last_rank] + pickup <=
+          capacity + fwd_pickups[last_rank - 1] - first_pickups);
+}
 
-  if (valid) {
-    Amount current_load =
-      current_loads[first_rank] - replaced_deliveries + delivery;
+template <class InputIterator>
+bool RawRoute::is_valid_addition_for_capacity_inclusion(
+  const Input& input,
+  const Amount& delivery,
+  InputIterator first_job,
+  InputIterator last_job,
+  const Index first_rank,
+  const Index last_rank) const {
+  assert(first_rank < last_rank);
+  assert(last_rank <= route.size() + 1);
 
-    for (auto job_iter = first_job; valid and job_iter != last_job;
-         ++job_iter) {
-      auto& job = input.jobs[*job_iter];
-      current_load += job.pickup;
-      current_load -= job.delivery;
+  auto first_deliveries =
+    (first_rank == 0) ? current_loads[0] : bwd_deliveries[first_rank - 1];
 
-      valid &= (current_load <= capacity);
-    }
+  auto replaced_deliveries = first_deliveries - bwd_deliveries[last_rank - 1];
+
+  bool valid = true;
+  Amount current_load =
+    current_loads[first_rank] - replaced_deliveries + delivery;
+
+  for (auto job_iter = first_job; valid and job_iter != last_job; ++job_iter) {
+    auto& job = input.jobs[*job_iter];
+    current_load += job.pickup;
+    current_load -= job.delivery;
+
+    valid &= (current_load <= capacity);
   }
 
   return valid;
@@ -180,17 +193,15 @@ void RawRoute::remove(const Input& input,
   update_amounts(input);
 }
 
-template bool
-RawRoute::is_valid_addition_for_capacity(const Input& input,
-                                         const Amount& pickup,
-                                         const Amount& delivery,
-                                         std::vector<Index>::iterator first_job,
-                                         std::vector<Index>::iterator last_job,
-                                         const Index first_rank,
-                                         const Index last_rank) const;
-template bool RawRoute::is_valid_addition_for_capacity(
+template bool RawRoute::is_valid_addition_for_capacity_inclusion(
   const Input& input,
-  const Amount& pickup,
+  const Amount& delivery,
+  std::vector<Index>::iterator first_job,
+  std::vector<Index>::iterator last_job,
+  const Index first_rank,
+  const Index last_rank) const;
+template bool RawRoute::is_valid_addition_for_capacity_inclusion(
+  const Input& input,
   const Amount& delivery,
   std::vector<Index>::reverse_iterator first_job,
   std::vector<Index>::reverse_iterator last_job,

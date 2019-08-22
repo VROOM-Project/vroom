@@ -116,22 +116,22 @@ bool Exchange::is_valid() {
   valid &= _input.vehicle_ok_with_job(s_vehicle, t_job_rank);
 
   valid &=
-    target.is_valid_addition_for_capacity(_input,
-                                          _input.jobs[s_route[s_rank]].pickup,
-                                          _input.jobs[s_route[s_rank]].delivery,
-                                          s_route.begin() + s_rank,
-                                          s_route.begin() + s_rank + 1,
-                                          t_rank,
-                                          t_rank + 1);
+    target.is_valid_addition_for_capacity_margins(_input,
+                                                  _input.jobs[s_route[s_rank]]
+                                                    .pickup,
+                                                  _input.jobs[s_route[s_rank]]
+                                                    .delivery,
+                                                  t_rank,
+                                                  t_rank + 1);
 
   valid &=
-    source.is_valid_addition_for_capacity(_input,
-                                          _input.jobs[t_route[t_rank]].pickup,
-                                          _input.jobs[t_route[t_rank]].delivery,
-                                          t_route.begin() + t_rank,
-                                          t_route.begin() + t_rank + 1,
-                                          s_rank,
-                                          s_rank + 1);
+    source.is_valid_addition_for_capacity_margins(_input,
+                                                  _input.jobs[t_route[t_rank]]
+                                                    .pickup,
+                                                  _input.jobs[t_route[t_rank]]
+                                                    .delivery,
+                                                  s_rank,
+                                                  s_rank + 1);
 
   return valid;
 }

@@ -74,15 +74,14 @@ void IntraRelocate::compute_gain() {
 
 bool IntraRelocate::is_valid() {
   return source
-    .is_valid_addition_for_capacity(_input,
-                                    source.pickup_in_range(_first_rank,
-                                                           _last_rank),
-                                    source.delivery_in_range(_first_rank,
-                                                             _last_rank),
-                                    _moved_jobs.begin(),
-                                    _moved_jobs.end(),
-                                    _first_rank,
-                                    _last_rank);
+    .is_valid_addition_for_capacity_inclusion(_input,
+                                              source
+                                                .delivery_in_range(_first_rank,
+                                                                   _last_rank),
+                                              _moved_jobs.begin(),
+                                              _moved_jobs.end(),
+                                              _first_rank,
+                                              _last_rank);
 }
 
 void IntraRelocate::apply() {

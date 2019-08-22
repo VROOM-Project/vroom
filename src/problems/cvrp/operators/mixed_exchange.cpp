@@ -138,25 +138,32 @@ bool MixedExchange::is_valid() {
   valid &= _input.vehicle_ok_with_job(s_vehicle, t_after_job_rank);
 
   valid &=
-    source
-      .is_valid_addition_for_capacity(_input,
-                                      _input.jobs[t_job_rank].pickup +
-                                        _input.jobs[t_after_job_rank].pickup,
-                                      _input.jobs[t_job_rank].delivery +
-                                        _input.jobs[t_after_job_rank].delivery,
-                                      t_route.begin() + t_rank, // TODO
-                                      t_route.begin() + t_rank, // TODO
-                                      s_rank,
-                                      s_rank + 1);
+    target
+      .is_valid_addition_for_capacity_margins(_input,
+                                              _input.jobs[s_job_rank].pickup,
+                                              _input.jobs[s_job_rank].delivery,
+                                              t_rank,
+                                              t_rank + 2);
 
-  valid &=
-    target.is_valid_addition_for_capacity(_input,
-                                          _input.jobs[s_job_rank].pickup,
-                                          _input.jobs[s_job_rank].delivery,
-                                          s_route.begin() + s_rank, // TODO
-                                          s_route.begin() + s_rank, // TODO
-                                          t_rank,
-                                          t_rank + 2);
+  auto target_pickup =
+    _input.jobs[t_job_rank].pickup + _input.jobs[t_after_job_rank].pickup;
+  auto target_delivery =
+    _input.jobs[t_job_rank].delivery + _input.jobs[t_after_job_rank].delivery;
+
+  valid &= source.is_valid_addition_for_capacity_margins(_input,
+                                                         target_pickup,
+                                                         target_delivery,
+                                                         s_rank,
+                                                         s_rank + 1);
+
+  auto t_start = t_route.begin() + t_rank;
+
+  valid &= source.is_valid_addition_for_capacity_inclusion(_input,
+                                                           target_delivery,
+                                                           t_start,
+                                                           t_start + 2,
+                                                           s_rank,
+                                                           s_rank + 1);
 
   return valid;
 }

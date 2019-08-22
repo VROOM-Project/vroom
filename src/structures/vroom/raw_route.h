@@ -60,17 +60,27 @@ public:
                                       const Amount& delivery,
                                       const Index rank) const;
 
-  // Check validity for inclusion of the range [first_job; last_job)
-  // in the existing route at rank first_rank and before last_rank *in
+  // Check validity for inclusion (with regard to not breaking
+  // capacity before and after inclusion) of some load in the existing
+  // route at rank first_rank and before last_rank *in place of* the
+  // current jobs that may be there.
+  bool is_valid_addition_for_capacity_margins(const Input& input,
+                                              const Amount& pickup,
+                                              const Amount& delivery,
+                                              const Index first_rank,
+                                              const Index last_rank) const;
+
+  // Check validity for inclusion (with regard to not breaking
+  // capacity for included jobs) of the range [first_job; last_job) in
+  // the existing route at rank first_rank and before last_rank *in
   // place of* the current jobs that may be there.
   template <class InputIterator>
-  bool is_valid_addition_for_capacity(const Input& input,
-                                      const Amount& pickup,
-                                      const Amount& delivery,
-                                      InputIterator first_job,
-                                      InputIterator last_job,
-                                      const Index first_rank,
-                                      const Index last_rank) const;
+  bool is_valid_addition_for_capacity_inclusion(const Input& input,
+                                                const Amount& delivery,
+                                                InputIterator first_job,
+                                                InputIterator last_job,
+                                                const Index first_rank,
+                                                const Index last_rank) const;
 
   // Get vehicle load at *step* s (step 0 is the start, not the first
   // job rank).

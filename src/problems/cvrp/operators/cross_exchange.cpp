@@ -193,61 +193,72 @@ bool CrossExchange::is_valid() {
   valid &= _input.vehicle_ok_with_job(s_vehicle, t_current_job_rank);
   valid &= _input.vehicle_ok_with_job(s_vehicle, t_after_job_rank);
 
+  auto target_pickup = _input.jobs[t_current_job_rank].pickup +
+                       _input.jobs[t_after_job_rank].pickup;
+  auto target_delivery = _input.jobs[t_current_job_rank].delivery +
+                         _input.jobs[t_after_job_rank].delivery;
+  valid &= source.is_valid_addition_for_capacity_margins(_input,
+                                                         target_pickup,
+                                                         target_delivery,
+                                                         s_rank,
+                                                         s_rank + 2);
+
   if (valid) {
-    auto target_pickup = _input.jobs[t_current_job_rank].pickup +
-                         _input.jobs[t_after_job_rank].pickup;
-    auto target_delivery = _input.jobs[t_current_job_rank].delivery +
-                           _input.jobs[t_after_job_rank].delivery;
 
     // Keep target edge direction when inserting in source route.
     auto t_start = t_route.begin() + t_rank;
-    _s_is_normal_valid = source.is_valid_addition_for_capacity(_input,
-                                                               target_pickup,
-                                                               target_delivery,
-                                                               t_start,
-                                                               t_start + 2,
-                                                               s_rank,
-                                                               s_rank + 2);
+    _s_is_normal_valid =
+      source.is_valid_addition_for_capacity_inclusion(_input,
+                                                      target_delivery,
+                                                      t_start,
+                                                      t_start + 2,
+                                                      s_rank,
+                                                      s_rank + 2);
     // Reverse target edge direction when inserting in source route.
     auto t_reverse_start = t_route.rbegin() + t_route.size() - 2 - t_rank;
     _s_is_reverse_valid =
-      source.is_valid_addition_for_capacity(_input,
-                                            target_pickup,
-                                            target_delivery,
-                                            t_reverse_start,
-                                            t_reverse_start + 2,
-                                            s_rank,
-                                            s_rank + 2);
+      source.is_valid_addition_for_capacity_inclusion(_input,
+                                                      target_delivery,
+                                                      t_reverse_start,
+                                                      t_reverse_start + 2,
+                                                      s_rank,
+                                                      s_rank + 2);
 
     valid = _s_is_normal_valid or _s_is_reverse_valid;
   }
 
+  auto source_pickup = _input.jobs[s_current_job_rank].pickup +
+                       _input.jobs[s_after_job_rank].pickup;
+  auto source_delivery = _input.jobs[s_current_job_rank].delivery +
+                         _input.jobs[s_after_job_rank].delivery;
+
+  valid &= target.is_valid_addition_for_capacity_margins(_input,
+                                                         source_pickup,
+                                                         source_delivery,
+                                                         t_rank,
+                                                         t_rank + 2);
+
   if (valid) {
-    auto source_pickup = _input.jobs[s_current_job_rank].pickup +
-                         _input.jobs[s_after_job_rank].pickup;
-    auto source_delivery = _input.jobs[s_current_job_rank].delivery +
-                           _input.jobs[s_after_job_rank].delivery;
 
     // Keep source edge direction when inserting in target route.
     auto s_start = s_route.begin() + s_rank;
-    _t_is_normal_valid = target.is_valid_addition_for_capacity(_input,
-                                                               source_pickup,
-                                                               source_delivery,
-                                                               s_start,
-                                                               s_start + 2,
-                                                               t_rank,
-                                                               t_rank + 2);
+    _t_is_normal_valid =
+      target.is_valid_addition_for_capacity_inclusion(_input,
+                                                      source_delivery,
+                                                      s_start,
+                                                      s_start + 2,
+                                                      t_rank,
+                                                      t_rank + 2);
 
     // Reverse source edge direction when inserting in target route.
     auto s_reverse_start = s_route.rbegin() + s_route.size() - 2 - s_rank;
     _t_is_reverse_valid =
-      target.is_valid_addition_for_capacity(_input,
-                                            source_pickup,
-                                            source_delivery,
-                                            s_reverse_start,
-                                            s_reverse_start + 2,
-                                            t_rank,
-                                            t_rank + 2);
+      target.is_valid_addition_for_capacity_inclusion(_input,
+                                                      source_delivery,
+                                                      s_reverse_start,
+                                                      s_reverse_start + 2,
+                                                      t_rank,
+                                                      t_rank + 2);
     valid = _t_is_normal_valid or _t_is_reverse_valid;
   }
 
