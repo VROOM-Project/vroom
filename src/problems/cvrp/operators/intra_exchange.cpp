@@ -15,24 +15,32 @@ namespace cvrp {
 
 IntraExchange::IntraExchange(const Input& input,
                              const utils::SolutionState& sol_state,
-                             RawRoute& s_route,
+                             RawRoute& s_raw_route,
                              Index s_vehicle,
                              Index s_rank,
                              Index t_rank)
   : Operator(input,
              sol_state,
-             s_route,
+             s_raw_route,
              s_vehicle,
              s_rank,
-             s_route,
+             s_raw_route,
              s_vehicle,
-             t_rank) {
+             t_rank),
+    _moved_jobs(t_rank - s_rank + 1),
+    _first_rank(s_rank),
+    _last_rank(t_rank + 1) {
   // Assume s_rank < t_rank for symmetry reasons. Set aside cases
   // where t_rank = s_rank + 1, as the move is also an intra_relocate.
   assert(0 < t_rank);
   assert(s_rank < t_rank - 1);
   assert(s_route.size() >= 3);
   assert(t_rank < s_route.size());
+
+  std::copy(s_route.begin() + _first_rank,
+            s_route.begin() + _last_rank,
+            _moved_jobs.begin());
+  std::swap(_moved_jobs[0], _moved_jobs.back());
 }
 
 void IntraExchange::compute_gain() {
@@ -92,7 +100,15 @@ void IntraExchange::compute_gain() {
 }
 
 bool IntraExchange::is_valid() {
-  return true;
+  return source
+    .is_valid_addition_for_capacity_inclusion(_input,
+                                              source
+                                                .delivery_in_range(_first_rank,
+                                                                   _last_rank),
+                                              _moved_jobs.begin(),
+                                              _moved_jobs.end(),
+                                              _first_rank,
+                                              _last_rank);
 }
 
 void IntraExchange::apply() {

@@ -17,6 +17,10 @@ namespace cvrp {
 
 class IntraExchange : public ls::Operator {
 protected:
+  std::vector<Index> _moved_jobs;
+  const Index _first_rank;
+  const Index _last_rank;
+
   virtual void compute_gain() override;
 
 public:
