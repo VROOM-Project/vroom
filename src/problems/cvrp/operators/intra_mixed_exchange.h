@@ -17,11 +17,16 @@ namespace cvrp {
 
 class IntraMixedExchange : public ls::Operator {
 protected:
-  Gain normal_s_gain;
-  Gain reversed_s_gain;
-  Gain t_gain;
-
   bool reverse_t_edge;
+
+  bool _s_is_normal_valid;
+  bool _s_is_reverse_valid;
+
+  std::vector<Index> _moved_jobs;
+  const Index _first_rank;
+  const Index _last_rank;
+  Index _t_edge_first;
+  Index _t_edge_last;
 
   virtual void compute_gain() override;
 
