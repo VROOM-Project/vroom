@@ -101,7 +101,6 @@ bool RawRoute::is_valid_addition_for_capacity(const Input&,
                                               const Amount& delivery,
                                               const Index rank) const {
   assert(rank <= route.size());
-
   assert(fwd_peaks.size() == route.size() + 2);
 
   return (fwd_peaks[rank] + delivery <= capacity) and
@@ -139,17 +138,25 @@ bool RawRoute::is_valid_addition_for_capacity_inclusion(
   InputIterator last_job,
   const Index first_rank,
   const Index last_rank) const {
-  assert(first_rank < last_rank);
+  assert(first_rank <= last_rank);
   assert(last_rank <= route.size() + 1);
 
+  auto init_load =
+    (route.empty()) ? Amount(input.amount_size()) : current_loads[0];
+
   auto first_deliveries =
-    (first_rank == 0) ? current_loads[0] : bwd_deliveries[first_rank - 1];
+    (first_rank == 0) ? init_load : bwd_deliveries[first_rank - 1];
 
-  auto replaced_deliveries = first_deliveries - bwd_deliveries[last_rank - 1];
+  auto last_deliveries =
+    (last_rank == 0) ? init_load : bwd_deliveries[last_rank - 1];
 
-  bool valid = true;
-  Amount current_load =
-    current_loads[first_rank] - replaced_deliveries + delivery;
+  auto replaced_deliveries = first_deliveries - last_deliveries;
+
+  Amount current_load = ((route.empty()) ? Amount(input.amount_size())
+                                         : current_loads[first_rank]) -
+                        replaced_deliveries + delivery;
+
+  bool valid = (current_load <= capacity);
 
   for (auto job_iter = first_job; valid and job_iter != last_job; ++job_iter) {
     auto& job = input.jobs[*job_iter];

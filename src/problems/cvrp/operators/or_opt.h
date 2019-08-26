@@ -17,10 +17,9 @@ namespace cvrp {
 
 class OrOpt : public ls::Operator {
 protected:
-  Gain normal_stored_gain;
-  Gain reversed_stored_gain;
-
   bool reverse_s_edge;
+  bool _is_normal_valid;
+  bool _is_reverse_valid;
 
   virtual void compute_gain() override;
 

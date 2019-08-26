@@ -28,7 +28,9 @@ OrOpt::OrOpt(const Input& input,
              t_route,
              t_vehicle,
              t_rank),
-    reverse_s_edge(false) {
+    reverse_s_edge(false),
+    _is_normal_valid(false),
+    _is_reverse_valid(false) {
   assert(s_vehicle != t_vehicle);
   assert(s_route.size() >= 2);
   assert(s_rank < s_route.size() - 1);
@@ -107,15 +109,23 @@ void OrOpt::compute_gain() {
   Gain reverse_t_gain = old_edge_cost + reverse_edge_cost -
                         reverse_previous_cost - reverse_next_cost;
 
-  normal_stored_gain = _sol_state.edge_gains[s_vehicle][s_rank] + t_gain;
-  reversed_stored_gain =
-    _sol_state.edge_gains[s_vehicle][s_rank] + reverse_t_gain;
-
-  stored_gain = normal_stored_gain;
-
+  assert(_is_normal_valid or _is_reverse_valid);
   if (reverse_t_gain > t_gain) {
-    reverse_s_edge = true;
-    stored_gain = reversed_stored_gain;
+    // Biggest potential gain is obtained when reversing edge.
+    if (_is_reverse_valid) {
+      reverse_s_edge = true;
+      stored_gain = _sol_state.edge_gains[s_vehicle][s_rank] + reverse_t_gain;
+    } else {
+      stored_gain = _sol_state.edge_gains[s_vehicle][s_rank] + t_gain;
+    }
+  } else {
+    // Biggest potential gain is obtained when not reversing edge.
+    if (_is_normal_valid) {
+      stored_gain = _sol_state.edge_gains[s_vehicle][s_rank] + t_gain;
+    } else {
+      reverse_s_edge = true;
+      stored_gain = _sol_state.edge_gains[s_vehicle][s_rank] + reverse_t_gain;
+    }
   }
 
   gain_computed = true;
@@ -125,18 +135,44 @@ bool OrOpt::is_valid() {
   auto current_job_rank = s_route[s_rank];
   auto after_job_rank = s_route[s_rank + 1];
 
-  return _input.vehicle_ok_with_job(t_vehicle, current_job_rank) and
-         _input.vehicle_ok_with_job(t_vehicle, after_job_rank) and
-         target
-           .is_valid_addition_for_capacity(_input,
-                                           _input.jobs[current_job_rank]
-                                               .pickup +
-                                             _input.jobs[after_job_rank].pickup,
-                                           _input.jobs[current_job_rank]
-                                               .delivery +
-                                             _input.jobs[after_job_rank]
-                                               .delivery,
-                                           t_rank);
+  auto edge_pickup =
+    _input.jobs[current_job_rank].pickup + _input.jobs[after_job_rank].pickup;
+  auto edge_delivery = _input.jobs[current_job_rank].delivery +
+                       _input.jobs[after_job_rank].delivery;
+
+  bool valid = _input.vehicle_ok_with_job(t_vehicle, current_job_rank) and
+               _input.vehicle_ok_with_job(t_vehicle, after_job_rank) and
+               target.is_valid_addition_for_capacity(_input,
+                                                     edge_pickup,
+                                                     edge_delivery,
+                                                     t_rank);
+
+  if (valid) {
+    // Keep edge direction.
+    auto s_start = s_route.begin() + s_rank;
+
+    _is_normal_valid =
+      target.is_valid_addition_for_capacity_inclusion(_input,
+                                                      edge_delivery,
+                                                      s_start,
+                                                      s_start + 2,
+                                                      t_rank,
+                                                      t_rank);
+
+    // Reverse edge direction.
+    auto s_reverse_start = s_route.rbegin() + s_route.size() - 2 - s_rank;
+    _is_reverse_valid =
+      target.is_valid_addition_for_capacity_inclusion(_input,
+                                                      edge_delivery,
+                                                      s_reverse_start,
+                                                      s_reverse_start + 2,
+                                                      t_rank,
+                                                      t_rank);
+
+    valid = (_is_normal_valid or _is_reverse_valid);
+  }
+
+  return valid;
 }
 
 void OrOpt::apply() {
