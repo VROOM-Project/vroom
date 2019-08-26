@@ -29,37 +29,7 @@ MixedExchange::MixedExchange(const Input& input,
                         t_vehicle,
                         t_rank),
     _tw_s_route(tw_s_route),
-    _tw_t_route(tw_t_route),
-    _s_is_normal_valid(false),
-    _s_is_reverse_valid(false) {
-}
-
-void MixedExchange::compute_gain() {
-  cvrp::MixedExchange::compute_gain();
-  assert(_s_is_normal_valid or _s_is_reverse_valid);
-
-  Gain s_gain;
-  if (reverse_t_edge) {
-    s_gain = reversed_s_gain;
-    if (!_s_is_reverse_valid) {
-      // Biggest potential gain is obtained when reversing edge, but
-      // this does not match TW constraints, so update gain and edge
-      // direction to not reverse.
-      s_gain = normal_s_gain;
-      reverse_t_edge = false;
-    }
-  } else {
-    s_gain = normal_s_gain;
-    if (!_s_is_normal_valid) {
-      // Biggest potential gain is obtained when not reversing edge,
-      // but this does not match TW constraints, so update gain and
-      // edge direction to reverse.
-      s_gain = reversed_s_gain;
-      reverse_t_edge = true;
-    }
-  }
-
-  stored_gain = s_gain + t_gain;
+    _tw_t_route(tw_t_route) {
 }
 
 bool MixedExchange::is_valid() {
@@ -74,14 +44,14 @@ bool MixedExchange::is_valid() {
   if (valid) {
     // Keep target edge direction when inserting in source route.
     auto t_start = t_route.begin() + t_rank;
-    _s_is_normal_valid = _tw_s_route.is_valid_addition_for_tw(_input,
-                                                              t_start,
-                                                              t_start + 2,
-                                                              s_rank,
-                                                              s_rank + 1);
+    _s_is_normal_valid &= _tw_s_route.is_valid_addition_for_tw(_input,
+                                                               t_start,
+                                                               t_start + 2,
+                                                               s_rank,
+                                                               s_rank + 1);
     // Reverse target edge direction when inserting in source route.
     auto t_reverse_start = t_route.rbegin() + t_route.size() - 2 - t_rank;
-    _s_is_reverse_valid =
+    _s_is_reverse_valid &=
       _tw_s_route.is_valid_addition_for_tw(_input,
                                            t_reverse_start,
                                            t_reverse_start + 2,

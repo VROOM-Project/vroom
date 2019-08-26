@@ -17,11 +17,10 @@ namespace cvrp {
 
 class MixedExchange : public ls::Operator {
 protected:
-  Gain normal_s_gain;
-  Gain reversed_s_gain;
-  Gain t_gain;
-
   bool reverse_t_edge;
+
+  bool _s_is_normal_valid;
+  bool _s_is_reverse_valid;
 
   virtual void compute_gain() override;
 

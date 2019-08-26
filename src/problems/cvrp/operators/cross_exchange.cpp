@@ -204,7 +204,6 @@ bool CrossExchange::is_valid() {
                                                          s_rank + 2);
 
   if (valid) {
-
     // Keep target edge direction when inserting in source route.
     auto t_start = t_route.begin() + t_rank;
     _s_is_normal_valid =

@@ -28,7 +28,9 @@ MixedExchange::MixedExchange(const Input& input,
              t_route,
              t_vehicle,
              t_rank),
-    reverse_t_edge(false) {
+    reverse_t_edge(false),
+    _s_is_normal_valid(false),
+    _s_is_reverse_valid(false) {
   assert(s_vehicle != t_vehicle);
   assert(s_route.size() >= 1);
   assert(t_route.size() >= 2);
@@ -79,17 +81,33 @@ void MixedExchange::compute_gain() {
     reverse_next_cost = m[t_index][n_index];
   }
 
-  normal_s_gain = _sol_state.edge_costs_around_node[s_vehicle][s_rank] -
-                  previous_cost - next_cost;
+  Gain normal_s_gain = _sol_state.edge_costs_around_node[s_vehicle][s_rank] -
+                       previous_cost - next_cost;
 
   Gain reverse_edge_cost = static_cast<Gain>(m[t_index][t_after_index]) -
                            static_cast<Gain>(m[t_after_index][t_index]);
-  reversed_s_gain = _sol_state.edge_costs_around_node[s_vehicle][s_rank] +
-                    reverse_edge_cost - reverse_previous_cost -
-                    reverse_next_cost;
+  Gain reversed_s_gain = _sol_state.edge_costs_around_node[s_vehicle][s_rank] +
+                         reverse_edge_cost - reverse_previous_cost -
+                         reverse_next_cost;
 
+  assert(_s_is_normal_valid or _s_is_reverse_valid);
+  Gain s_gain;
   if (reversed_s_gain > normal_s_gain) {
-    reverse_t_edge = true;
+    // Biggest potential gain is obtained when reversing edge.
+    if (_s_is_reverse_valid) {
+      s_gain = reversed_s_gain;
+      reverse_t_edge = true;
+    } else {
+      s_gain = normal_s_gain;
+    }
+  } else {
+    // Biggest potential gain is obtained when not reversing edge.
+    if (_s_is_normal_valid) {
+      s_gain = normal_s_gain;
+    } else {
+      s_gain = reversed_s_gain;
+      reverse_t_edge = true;
+    }
   }
 
   // For target vehicle, we consider the cost of replacing edge at
@@ -120,17 +138,16 @@ void MixedExchange::compute_gain() {
     next_cost = m[s_index][n_index];
   }
 
-  t_gain = _sol_state.edge_costs_around_edge[t_vehicle][t_rank] -
-           previous_cost - next_cost;
+  Gain t_gain = _sol_state.edge_costs_around_edge[t_vehicle][t_rank] -
+                previous_cost - next_cost;
 
-  stored_gain = std::max(normal_s_gain, reversed_s_gain) + t_gain;
+  stored_gain = s_gain + t_gain;
   gain_computed = true;
 }
 
 bool MixedExchange::is_valid() {
   auto s_job_rank = s_route[s_rank];
   auto t_job_rank = t_route[t_rank];
-  // Already asserted in compute_gain.
   auto t_after_job_rank = t_route[t_rank + 1];
 
   bool valid = _input.vehicle_ok_with_job(t_vehicle, s_job_rank);
@@ -156,14 +173,30 @@ bool MixedExchange::is_valid() {
                                                          s_rank,
                                                          s_rank + 1);
 
-  auto t_start = t_route.begin() + t_rank;
+  if (valid) {
+    // Keep target edge direction when inserting in source route.
+    auto t_start = t_route.begin() + t_rank;
 
-  valid &= source.is_valid_addition_for_capacity_inclusion(_input,
-                                                           target_delivery,
-                                                           t_start,
-                                                           t_start + 2,
-                                                           s_rank,
-                                                           s_rank + 1);
+    _s_is_normal_valid =
+      source.is_valid_addition_for_capacity_inclusion(_input,
+                                                      target_delivery,
+                                                      t_start,
+                                                      t_start + 2,
+                                                      s_rank,
+                                                      s_rank + 1);
+
+    // Reverse target edge direction when inserting in source route.
+    auto t_reverse_start = t_route.rbegin() + t_route.size() - 2 - t_rank;
+    _s_is_reverse_valid =
+      source.is_valid_addition_for_capacity_inclusion(_input,
+                                                      target_delivery,
+                                                      t_reverse_start,
+                                                      t_reverse_start + 2,
+                                                      s_rank,
+                                                      s_rank + 1);
+
+    valid = _s_is_normal_valid or _s_is_reverse_valid;
+  }
 
   return valid;
 }
