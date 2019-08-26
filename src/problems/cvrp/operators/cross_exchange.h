@@ -17,11 +17,6 @@ namespace cvrp {
 
 class CrossExchange : public ls::Operator {
 protected:
-  Gain normal_s_gain;
-  Gain reversed_s_gain;
-  Gain normal_t_gain;
-  Gain reversed_t_gain;
-
   bool reverse_s_edge;
   bool reverse_t_edge;
 

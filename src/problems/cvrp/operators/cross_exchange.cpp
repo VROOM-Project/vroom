@@ -86,14 +86,14 @@ void CrossExchange::compute_gain() {
     reverse_next_cost = m[t_index][n_index];
   }
 
-  normal_s_gain = _sol_state.edge_costs_around_edge[s_vehicle][s_rank] -
-                  previous_cost - next_cost;
+  Gain normal_s_gain = _sol_state.edge_costs_around_edge[s_vehicle][s_rank] -
+                       previous_cost - next_cost;
 
   Gain reverse_edge_cost = static_cast<Gain>(m[t_index][t_after_index]) -
                            static_cast<Gain>(m[t_after_index][t_index]);
-  reversed_s_gain = _sol_state.edge_costs_around_edge[s_vehicle][s_rank] +
-                    reverse_edge_cost - reverse_previous_cost -
-                    reverse_next_cost;
+  Gain reversed_s_gain = _sol_state.edge_costs_around_edge[s_vehicle][s_rank] +
+                         reverse_edge_cost - reverse_previous_cost -
+                         reverse_next_cost;
 
   assert(_s_is_normal_valid or _s_is_reverse_valid);
   Gain s_gain;
@@ -148,14 +148,14 @@ void CrossExchange::compute_gain() {
     reverse_next_cost = m[s_index][n_index];
   }
 
-  normal_t_gain = _sol_state.edge_costs_around_edge[t_vehicle][t_rank] -
-                  previous_cost - next_cost;
+  Gain normal_t_gain = _sol_state.edge_costs_around_edge[t_vehicle][t_rank] -
+                       previous_cost - next_cost;
 
   reverse_edge_cost = static_cast<Gain>(m[s_index][s_after_index]) -
                       static_cast<Gain>(m[s_after_index][s_index]);
-  reversed_t_gain = _sol_state.edge_costs_around_edge[t_vehicle][t_rank] +
-                    reverse_edge_cost - reverse_previous_cost -
-                    reverse_next_cost;
+  Gain reversed_t_gain = _sol_state.edge_costs_around_edge[t_vehicle][t_rank] +
+                         reverse_edge_cost - reverse_previous_cost -
+                         reverse_next_cost;
 
   assert(_t_is_normal_valid or _t_is_reverse_valid);
   Gain t_gain;

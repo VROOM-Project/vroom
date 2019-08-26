@@ -17,12 +17,18 @@ namespace cvrp {
 
 class IntraOrOpt : public ls::Operator {
 protected:
-  virtual void compute_gain() override;
-
-  Gain normal_stored_gain;
-  Gain reversed_stored_gain;
-
   bool reverse_s_edge;
+
+  bool _is_normal_valid;
+  bool _is_reverse_valid;
+
+  std::vector<Index> _moved_jobs;
+  const Index _first_rank;
+  const Index _last_rank;
+  Index _s_edge_first;
+  Index _s_edge_last;
+
+  virtual void compute_gain() override;
 
 public:
   IntraOrOpt(const Input& input,

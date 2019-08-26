@@ -15,23 +15,47 @@ namespace cvrp {
 
 IntraOrOpt::IntraOrOpt(const Input& input,
                        const utils::SolutionState& sol_state,
-                       RawRoute& s_route,
+                       RawRoute& s_raw_route,
                        Index s_vehicle,
                        Index s_rank,
                        Index t_rank)
   : Operator(input,
              sol_state,
-             s_route,
+             s_raw_route,
              s_vehicle,
              s_rank,
-             s_route,
+             s_raw_route,
              s_vehicle,
              t_rank),
-    reverse_s_edge(false) {
+    reverse_s_edge(false),
+    _is_normal_valid(false),
+    _is_reverse_valid(false),
+    _moved_jobs((s_rank < t_rank) ? t_rank - s_rank + 2 : s_rank - t_rank + 2),
+    _first_rank(std::min(s_rank, t_rank)),
+    _last_rank(std::max(s_rank, t_rank) + 2) {
   assert(s_route.size() >= 4);
   assert(s_rank < s_route.size() - 1);
   assert(t_rank <= s_route.size() - 2);
   assert(s_rank != t_rank);
+
+  if (t_rank < s_rank) {
+    _s_edge_first = 0;
+    _s_edge_last = 1;
+
+    std::copy(s_route.begin() + t_rank,
+              s_route.begin() + s_rank,
+              _moved_jobs.begin() + 2);
+  } else {
+    _s_edge_first = _moved_jobs.size() - 2;
+    _s_edge_last = _moved_jobs.size() - 1;
+
+    std::copy(s_route.begin() + s_rank + 2,
+              s_route.begin() + t_rank + 2,
+              _moved_jobs.begin());
+  }
+
+  _moved_jobs[_s_edge_first] = s_route[s_rank];
+  _moved_jobs[_s_edge_last] = s_route[s_rank + 1];
 }
 
 void IntraOrOpt::compute_gain() {
@@ -97,22 +121,56 @@ void IntraOrOpt::compute_gain() {
   Gain reverse_add_gain = old_edge_cost + reverse_edge_cost -
                           reverse_previous_cost - reverse_next_cost;
 
-  normal_stored_gain = _sol_state.edge_gains[s_vehicle][s_rank] + add_gain;
-  reversed_stored_gain =
+  Gain normal_s_gain = _sol_state.edge_gains[s_vehicle][s_rank] + add_gain;
+  Gain reversed_s_gain =
     _sol_state.edge_gains[s_vehicle][s_rank] + reverse_add_gain;
 
-  stored_gain = normal_stored_gain;
-
+  assert(_is_normal_valid or _is_reverse_valid);
   if (reverse_add_gain > add_gain) {
-    reverse_s_edge = true;
-    stored_gain = reversed_stored_gain;
+    // Biggest potential gain is obtained when reversing edge.
+    if (_is_reverse_valid) {
+      stored_gain = reversed_s_gain;
+      reverse_s_edge = true;
+    } else {
+      stored_gain = normal_s_gain;
+    }
+  } else {
+    // Biggest potential gain is obtained when not reversing edge.
+    if (_is_normal_valid) {
+      stored_gain = normal_s_gain;
+    } else {
+      stored_gain = reversed_s_gain;
+      reverse_s_edge = true;
+    }
   }
 
   gain_computed = true;
 }
 
 bool IntraOrOpt::is_valid() {
-  return true;
+  _is_normal_valid = source.is_valid_addition_for_capacity_inclusion(
+    _input,
+    source.delivery_in_range(_first_rank, _last_rank),
+    _moved_jobs.begin(),
+    _moved_jobs.end(),
+    _first_rank,
+    _last_rank);
+
+  std::swap(_moved_jobs[_s_edge_first], _moved_jobs[_s_edge_last]);
+
+  _is_reverse_valid = source.is_valid_addition_for_capacity_inclusion(
+    _input,
+    source.delivery_in_range(_first_rank, _last_rank),
+    _moved_jobs.begin(),
+    _moved_jobs.end(),
+    _first_rank,
+    _last_rank);
+
+  // Reset to initial situation before potential application or TW
+  // checks.
+  std::swap(_moved_jobs[_s_edge_first], _moved_jobs[_s_edge_last]);
+
+  return _is_normal_valid or _is_reverse_valid;
 }
 
 void IntraOrOpt::apply() {
