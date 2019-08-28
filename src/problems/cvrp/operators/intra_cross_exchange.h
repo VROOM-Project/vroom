@@ -17,13 +17,17 @@ namespace cvrp {
 
 class IntraCrossExchange : public ls::Operator {
 protected:
-  Gain normal_s_gain;
-  Gain reversed_s_gain;
-  Gain normal_t_gain;
-  Gain reversed_t_gain;
-
   bool reverse_s_edge;
   bool reverse_t_edge;
+
+  bool _s_normal_t_normal_is_valid;
+  bool _s_normal_t_reverse_is_valid;
+  bool _s_reverse_t_reverse_is_valid;
+  bool _s_reverse_t_normal_is_valid;
+
+  std::vector<Index> _moved_jobs;
+  const Index _first_rank;
+  const Index _last_rank;
 
   virtual void compute_gain() override;
 
