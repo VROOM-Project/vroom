@@ -113,7 +113,7 @@ bool RawRoute::is_valid_addition_for_capacity_margins(
   const Amount& delivery,
   const Index first_rank,
   const Index last_rank) const {
-  assert(first_rank < last_rank);
+  assert(1 <= last_rank);
   assert(last_rank <= route.size() + 1);
 
   auto first_deliveries =
@@ -174,7 +174,9 @@ Amount RawRoute::get_load(Index s) const {
 }
 
 Amount RawRoute::pickup_in_range(Index i, Index j) const {
-  assert(i < j);
+  if (i == j) {
+    return Amount(current_loads[0].size());
+  }
   if (i == 0) {
     return fwd_pickups[j - 1];
   } else {
@@ -183,7 +185,9 @@ Amount RawRoute::pickup_in_range(Index i, Index j) const {
 }
 
 Amount RawRoute::delivery_in_range(Index i, Index j) const {
-  assert(i < j);
+  if (i == j) {
+    return Amount(current_loads[0].size());
+  }
   auto before_deliveries = (i == 0) ? current_loads[0] : bwd_deliveries[i - 1];
   return before_deliveries - bwd_deliveries[j - 1];
 }

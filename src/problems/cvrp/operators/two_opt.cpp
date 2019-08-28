@@ -7,6 +7,8 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <iostream>
+
 #include "problems/cvrp/operators/two_opt.h"
 
 namespace vroom {
@@ -90,12 +92,39 @@ bool TwoOpt::is_valid() {
 
   valid &= (_sol_state.bwd_skill_rank[t_vehicle][s_vehicle] <= t_rank + 1);
 
-  valid &= (_sol_state.fwd_amounts[s_vehicle][s_rank] +
-              _sol_state.bwd_amounts[t_vehicle][t_rank] <=
-            _input.vehicles[s_vehicle].capacity);
-  valid &= (_sol_state.fwd_amounts[t_vehicle][t_rank] +
-              _sol_state.bwd_amounts[s_vehicle][s_rank] <=
-            _input.vehicles[t_vehicle].capacity);
+  auto t_delivery = target.delivery_in_range(t_rank + 1, t_route.size());
+  auto t_pickup = target.pickup_in_range(t_rank + 1, t_route.size());
+
+  valid &= source.is_valid_addition_for_capacity_margins(_input,
+                                                         t_pickup,
+                                                         t_delivery,
+                                                         s_rank + 1,
+                                                         s_route.size());
+
+  auto s_delivery = source.delivery_in_range(s_rank + 1, s_route.size());
+  auto s_pickup = source.pickup_in_range(s_rank + 1, s_route.size());
+
+  valid &= target.is_valid_addition_for_capacity_margins(_input,
+                                                         s_pickup,
+                                                         s_delivery,
+                                                         t_rank + 1,
+                                                         t_route.size());
+
+  valid &= source.is_valid_addition_for_capacity_inclusion(_input,
+                                                           t_delivery,
+                                                           t_route.begin() +
+                                                             t_rank + 1,
+                                                           t_route.end(),
+                                                           s_rank + 1,
+                                                           s_route.size());
+
+  valid &= target.is_valid_addition_for_capacity_inclusion(_input,
+                                                           s_delivery,
+                                                           s_route.begin() +
+                                                             s_rank + 1,
+                                                           s_route.end(),
+                                                           t_rank + 1,
+                                                           t_route.size());
 
   return valid;
 }
