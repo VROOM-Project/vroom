@@ -196,8 +196,8 @@ inline Solution format_solution(const Input& input,
 
     Cost cost = 0;
     Duration service = 0;
-    Amount amount(input.amount_size());
-    Amount sum_pickups(input.amount_size());
+    Amount amount(input.zero_amount());
+    Amount sum_pickups(input.zero_amount());
     Amount current_load = raw_routes[i].get_load(0); // All deliveries.
     assert(current_load <= v.capacity);
 
@@ -283,7 +283,7 @@ inline Solution format_solution(const Input& input,
                  [&](auto j) { return input.jobs[j]; });
 
   return Solution(0,
-                  input.amount_size(),
+                  input.zero_amount().size(),
                   std::move(routes),
                   std::move(unassigned_jobs));
 }
@@ -319,8 +319,8 @@ inline Route format_route(const Input& input,
 
   Cost cost = 0;
   Duration service = 0;
-  Amount amount(input.amount_size());
-  Amount sum_pickups(input.amount_size());
+  Amount amount(input.zero_amount());
+  Amount sum_pickups(input.zero_amount());
   Amount current_load = tw_r.get_load(0); // All deliveries.
   assert(current_load <= v.capacity);
 
@@ -444,7 +444,7 @@ inline Solution format_solution(const Input& input,
                  [&](auto j) { return input.jobs[j]; });
 
   return Solution(0,
-                  input.amount_size(),
+                  input.zero_amount().size(),
                   std::move(routes),
                   std::move(unassigned_jobs));
 }

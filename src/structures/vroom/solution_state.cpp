@@ -19,7 +19,6 @@ SolutionState::SolutionState(const Input& input)
   : _input(input),
     _m(_input.get_matrix()),
     _nb_vehicles(_input.vehicles.size()),
-    _empty_amount(_input.amount_size()),
     fwd_amounts(_nb_vehicles),
     bwd_amounts(_nb_vehicles),
     fwd_costs(_nb_vehicles),
@@ -92,14 +91,14 @@ void SolutionState::update_amounts(const std::vector<Index>& route, Index v) {
   fwd_amounts[v].resize(route.size());
   bwd_amounts[v].resize(route.size());
 
-  Amount current_amount(_input.amount_size());
+  Amount current_amount(_input.zero_amount());
 
   for (std::size_t i = 0; i < route.size(); ++i) {
     current_amount += _input.jobs[route[i]].amount;
     fwd_amounts[v][i] = current_amount;
   }
 
-  current_amount = Amount(_input.amount_size());
+  current_amount = _input.zero_amount();
 
   for (std::size_t i = 0; i < route.size(); ++i) {
     auto bwd_i = route.size() - i - 1;
@@ -434,7 +433,7 @@ const Amount& SolutionState::total_amount(Index v) const {
   if (!fwd_amounts[v].empty()) {
     return fwd_amounts[v].back();
   } else {
-    return _empty_amount;
+    return _input.zero_amount();
   }
 }
 

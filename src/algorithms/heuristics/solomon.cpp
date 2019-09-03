@@ -77,7 +77,7 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
       // Initialize current route with the "best" valid job.
       bool init_ok = false;
 
-      Amount higher_amount(input.amount_size());
+      Amount higher_amount(input.zero_amount());
       Cost furthest_cost = 0;
       Cost nearest_cost = std::numeric_limits<Cost>::max();
       Duration earliest_deadline = std::numeric_limits<Duration>::max();
@@ -293,7 +293,7 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
       //  vehicle.
       bool init_ok = false;
 
-      Amount higher_amount(input.amount_size());
+      Amount higher_amount(input.zero_amount());
       Cost furthest_cost = 0;
       Cost nearest_cost = std::numeric_limits<Cost>::max();
       Duration earliest_deadline = std::numeric_limits<Duration>::max();

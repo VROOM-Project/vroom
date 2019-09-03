@@ -44,6 +44,7 @@ private:
   std::unordered_map<Location, Index> _locations_to_index;
   unsigned _amount_size;
   Amount _amount_lower_bound;
+  Amount _zero;
   std::vector<std::vector<unsigned char>> _vehicle_to_job_compatibility;
   std::vector<std::vector<bool>> _vehicle_to_vehicle_compatibility;
   std::unordered_set<Index> _matrix_used_index;
@@ -75,7 +76,9 @@ public:
 
   void set_matrix(Matrix<Cost>&& m);
 
-  unsigned amount_size() const;
+  const Amount& zero_amount() const {
+    return _zero;
+  }
 
   Amount get_amount_lower_bound() const;
 

@@ -175,6 +175,7 @@ void Input::check_amount_size(unsigned size) {
   if (_locations.empty()) {
     // Updating real value on first call.
     _amount_size = size;
+    _zero = Amount(_amount_size);
   } else {
     // Checking consistency for amount/capacity input lengths.
     if (size != _amount_size) {
@@ -188,10 +189,6 @@ void Input::check_amount_size(unsigned size) {
 
 void Input::set_matrix(Matrix<Cost>&& m) {
   _matrix = std::move(m);
-}
-
-unsigned Input::amount_size() const {
-  return _amount_size;
 }
 
 Amount Input::get_amount_lower_bound() const {

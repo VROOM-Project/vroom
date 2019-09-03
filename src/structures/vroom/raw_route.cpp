@@ -12,8 +12,8 @@ All rights reserved (see LICENSE).
 namespace vroom {
 
 RawRoute::RawRoute(const Input& input, Index i)
-  : fwd_peaks(2, Amount(input.amount_size())),
-    bwd_peaks(2, Amount(input.amount_size())),
+  : fwd_peaks(2, input.zero_amount()),
+    bwd_peaks(2, input.zero_amount()),
     vehicle_rank(i),
     has_start(input.vehicles[i].has_start()),
     has_end(input.vehicles[i].has_end()),
@@ -44,19 +44,19 @@ void RawRoute::update_amounts(const Input& input) {
   if (route.empty()) {
     // So that check in is_valid_addition_for_capacity is consistent
     // with empty routes.
-    std::fill(fwd_peaks.begin(), fwd_peaks.end(), Amount(input.amount_size()));
-    std::fill(bwd_peaks.begin(), bwd_peaks.end(), Amount(input.amount_size()));
+    std::fill(fwd_peaks.begin(), fwd_peaks.end(), input.zero_amount());
+    std::fill(bwd_peaks.begin(), bwd_peaks.end(), input.zero_amount());
     return;
   }
 
-  Amount current_pickups(input.amount_size());
+  Amount current_pickups(input.zero_amount());
 
   for (std::size_t i = 0; i < route.size(); ++i) {
     current_pickups += input.jobs[route[i]].pickup;
     fwd_pickups[i] = current_pickups;
   }
 
-  Amount current_deliveries(input.amount_size());
+  Amount current_deliveries(input.zero_amount());
 
   current_loads.back() = fwd_pickups.back();
 
@@ -73,7 +73,7 @@ void RawRoute::update_amounts(const Input& input) {
   fwd_peaks[0] = peak;
   for (std::size_t s = 1; s < fwd_peaks.size(); ++s) {
     // Handle max component-wise.
-    for (std::size_t r = 0; r < input.amount_size(); ++r) {
+    for (std::size_t r = 0; r < input.zero_amount().size(); ++r) {
       peak[r] = std::max(peak[r], current_loads[s][r]);
     }
     fwd_peaks[s] = peak;
@@ -84,7 +84,7 @@ void RawRoute::update_amounts(const Input& input) {
   for (std::size_t s = 1; s < bwd_peaks.size(); ++s) {
     auto bwd_s = bwd_peaks.size() - s - 1;
     // Handle max component-wise.
-    for (std::size_t r = 0; r < input.amount_size(); ++r) {
+    for (std::size_t r = 0; r < input.zero_amount().size(); ++r) {
       peak[r] = std::max(peak[r], current_loads[bwd_s][r]);
     }
     bwd_peaks[bwd_s] = peak;
@@ -116,11 +116,11 @@ bool RawRoute::is_valid_addition_for_capacity_margins(
   assert(1 <= last_rank);
   assert(last_rank <= route.size() + 1);
 
-  auto first_deliveries =
+  auto& first_deliveries =
     (first_rank == 0) ? current_loads[0] : bwd_deliveries[first_rank - 1];
 
-  auto first_pickups = (first_rank == 0) ? Amount(input.amount_size())
-                                         : fwd_pickups[first_rank - 1];
+  auto& first_pickups =
+    (first_rank == 0) ? input.zero_amount() : fwd_pickups[first_rank - 1];
 
   auto replaced_deliveries = first_deliveries - bwd_deliveries[last_rank - 1];
 
@@ -141,20 +141,19 @@ bool RawRoute::is_valid_addition_for_capacity_inclusion(
   assert(first_rank <= last_rank);
   assert(last_rank <= route.size() + 1);
 
-  auto init_load =
-    (route.empty()) ? Amount(input.amount_size()) : current_loads[0];
+  auto& init_load = (route.empty()) ? input.zero_amount() : current_loads[0];
 
-  auto first_deliveries =
+  auto& first_deliveries =
     (first_rank == 0) ? init_load : bwd_deliveries[first_rank - 1];
 
-  auto last_deliveries =
+  auto& last_deliveries =
     (last_rank == 0) ? init_load : bwd_deliveries[last_rank - 1];
 
   auto replaced_deliveries = first_deliveries - last_deliveries;
 
-  Amount current_load = ((route.empty()) ? Amount(input.amount_size())
-                                         : current_loads[first_rank]) -
-                        replaced_deliveries + delivery;
+  Amount current_load =
+    ((route.empty()) ? input.zero_amount() : current_loads[first_rank]) -
+    replaced_deliveries + delivery;
 
   bool valid = (current_load <= capacity);
 
