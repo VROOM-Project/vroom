@@ -187,7 +187,7 @@ Amount RawRoute::delivery_in_range(Index i, Index j) const {
   if (i == j) {
     return Amount(current_loads[0].size());
   }
-  auto before_deliveries = (i == 0) ? current_loads[0] : bwd_deliveries[i - 1];
+  auto& before_deliveries = (i == 0) ? current_loads[0] : bwd_deliveries[i - 1];
   return before_deliveries - bwd_deliveries[j - 1];
 }
 
