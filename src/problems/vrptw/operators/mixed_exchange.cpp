@@ -44,20 +44,20 @@ bool MixedExchange::is_valid() {
   if (valid) {
     // Keep target edge direction when inserting in source route.
     auto t_start = t_route.begin() + t_rank;
-    _s_is_normal_valid &= _tw_s_route.is_valid_addition_for_tw(_input,
-                                                               t_start,
-                                                               t_start + 2,
-                                                               s_rank,
-                                                               s_rank + 1);
+    s_is_normal_valid &= _tw_s_route.is_valid_addition_for_tw(_input,
+                                                              t_start,
+                                                              t_start + 2,
+                                                              s_rank,
+                                                              s_rank + 1);
     // Reverse target edge direction when inserting in source route.
     auto t_reverse_start = t_route.rbegin() + t_route.size() - 2 - t_rank;
-    _s_is_reverse_valid &=
+    s_is_reverse_valid &=
       _tw_s_route.is_valid_addition_for_tw(_input,
                                            t_reverse_start,
                                            t_reverse_start + 2,
                                            s_rank,
                                            s_rank + 1);
-    valid = _s_is_normal_valid or _s_is_reverse_valid;
+    valid = s_is_normal_valid or s_is_reverse_valid;
   }
 
   return valid;
