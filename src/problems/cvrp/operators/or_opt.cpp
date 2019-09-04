@@ -28,16 +28,17 @@ OrOpt::OrOpt(const Input& input,
              t_route,
              t_vehicle,
              t_rank),
+    _gain_upper_bound_computed(false),
     reverse_s_edge(false),
-    _is_normal_valid(false),
-    _is_reverse_valid(false) {
+    is_normal_valid(false),
+    is_reverse_valid(false) {
   assert(s_vehicle != t_vehicle);
   assert(s_route.size() >= 2);
   assert(s_rank < s_route.size() - 1);
   assert(t_rank <= t_route.size());
 }
 
-void OrOpt::compute_gain() {
+Gain OrOpt::gain_upper_bound() {
   const auto& m = _input.get_matrix();
   const auto& v_target = _input.vehicles[t_vehicle];
 
@@ -101,30 +102,43 @@ void OrOpt::compute_gain() {
     }
   }
 
+  // Gain for source vehicle.
+  _s_gain = _sol_state.edge_gains[s_vehicle][s_rank];
+
   // Gain for target vehicle.
-  Gain t_gain = old_edge_cost - previous_cost - next_cost;
+  _normal_t_gain = old_edge_cost - previous_cost - next_cost;
 
   Gain reverse_edge_cost = static_cast<Gain>(m[s_index][after_s_index]) -
                            static_cast<Gain>(m[after_s_index][s_index]);
-  Gain reverse_t_gain = old_edge_cost + reverse_edge_cost -
-                        reverse_previous_cost - reverse_next_cost;
+  _reversed_t_gain = old_edge_cost + reverse_edge_cost - reverse_previous_cost -
+                     reverse_next_cost;
 
-  assert(_is_normal_valid or _is_reverse_valid);
-  if (reverse_t_gain > t_gain) {
+  _gain_upper_bound_computed = true;
+
+  return _s_gain + std::max(_normal_t_gain, _reversed_t_gain);
+}
+
+void OrOpt::compute_gain() {
+  assert(_gain_upper_bound_computed);
+  assert(is_normal_valid or is_reverse_valid);
+
+  stored_gain = _s_gain;
+
+  if (_reversed_t_gain > _normal_t_gain) {
     // Biggest potential gain is obtained when reversing edge.
-    if (_is_reverse_valid) {
+    if (is_reverse_valid) {
       reverse_s_edge = true;
-      stored_gain = _sol_state.edge_gains[s_vehicle][s_rank] + reverse_t_gain;
+      stored_gain += _reversed_t_gain;
     } else {
-      stored_gain = _sol_state.edge_gains[s_vehicle][s_rank] + t_gain;
+      stored_gain += _normal_t_gain;
     }
   } else {
     // Biggest potential gain is obtained when not reversing edge.
-    if (_is_normal_valid) {
-      stored_gain = _sol_state.edge_gains[s_vehicle][s_rank] + t_gain;
+    if (is_normal_valid) {
+      stored_gain += _normal_t_gain;
     } else {
       reverse_s_edge = true;
-      stored_gain = _sol_state.edge_gains[s_vehicle][s_rank] + reverse_t_gain;
+      stored_gain += _reversed_t_gain;
     }
   }
 
@@ -151,7 +165,7 @@ bool OrOpt::is_valid() {
     // Keep edge direction.
     auto s_start = s_route.begin() + s_rank;
 
-    _is_normal_valid =
+    is_normal_valid =
       target.is_valid_addition_for_capacity_inclusion(_input,
                                                       edge_delivery,
                                                       s_start,
@@ -161,7 +175,7 @@ bool OrOpt::is_valid() {
 
     // Reverse edge direction.
     auto s_reverse_start = s_route.rbegin() + s_route.size() - 2 - s_rank;
-    _is_reverse_valid =
+    is_reverse_valid =
       target.is_valid_addition_for_capacity_inclusion(_input,
                                                       edge_delivery,
                                                       s_reverse_start,
@@ -169,7 +183,7 @@ bool OrOpt::is_valid() {
                                                       t_rank,
                                                       t_rank);
 
-    valid = (_is_normal_valid or _is_reverse_valid);
+    valid = (is_normal_valid or is_reverse_valid);
   }
 
   return valid;
