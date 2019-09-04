@@ -28,12 +28,13 @@ CrossExchange::CrossExchange(const Input& input,
              t_route,
              t_vehicle,
              t_rank),
+    _gain_upper_bound_computed(false),
     reverse_s_edge(false),
     reverse_t_edge(false),
-    _s_is_normal_valid(false),
-    _s_is_reverse_valid(false),
-    _t_is_normal_valid(false),
-    _t_is_reverse_valid(false) {
+    s_is_normal_valid(false),
+    s_is_reverse_valid(false),
+    t_is_normal_valid(false),
+    t_is_reverse_valid(false) {
   assert(s_vehicle != t_vehicle);
   assert(s_route.size() >= 2);
   assert(t_route.size() >= 2);
@@ -41,7 +42,7 @@ CrossExchange::CrossExchange(const Input& input,
   assert(t_rank < t_route.size() - 1);
 }
 
-void CrossExchange::compute_gain() {
+Gain CrossExchange::gain_upper_bound() {
   const auto& m = _input.get_matrix();
   const auto& v_source = _input.vehicles[s_vehicle];
   const auto& v_target = _input.vehicles[t_vehicle];
@@ -86,34 +87,14 @@ void CrossExchange::compute_gain() {
     reverse_next_cost = m[t_index][n_index];
   }
 
-  Gain normal_s_gain = _sol_state.edge_costs_around_edge[s_vehicle][s_rank] -
-                       previous_cost - next_cost;
+  _normal_s_gain = _sol_state.edge_costs_around_edge[s_vehicle][s_rank] -
+                   previous_cost - next_cost;
 
   Gain reverse_edge_cost = static_cast<Gain>(m[t_index][t_after_index]) -
                            static_cast<Gain>(m[t_after_index][t_index]);
-  Gain reversed_s_gain = _sol_state.edge_costs_around_edge[s_vehicle][s_rank] +
-                         reverse_edge_cost - reverse_previous_cost -
-                         reverse_next_cost;
-
-  assert(_s_is_normal_valid or _s_is_reverse_valid);
-  Gain s_gain;
-  if (reversed_s_gain > normal_s_gain) {
-    // Biggest potential gain is obtained when reversing edge.
-    if (_s_is_reverse_valid) {
-      s_gain = reversed_s_gain;
-      reverse_t_edge = true;
-    } else {
-      s_gain = normal_s_gain;
-    }
-  } else {
-    // Biggest potential gain is obtained when not reversing edge.
-    if (_s_is_normal_valid) {
-      s_gain = normal_s_gain;
-    } else {
-      s_gain = reversed_s_gain;
-      reverse_t_edge = true;
-    }
-  }
+  _reversed_s_gain = _sol_state.edge_costs_around_edge[s_vehicle][s_rank] +
+                     reverse_edge_cost - reverse_previous_cost -
+                     reverse_next_cost;
 
   // For target vehicle, we consider the cost of replacing edge
   // starting at rank t_rank with source edge. Part of that cost (for
@@ -148,36 +129,60 @@ void CrossExchange::compute_gain() {
     reverse_next_cost = m[s_index][n_index];
   }
 
-  Gain normal_t_gain = _sol_state.edge_costs_around_edge[t_vehicle][t_rank] -
-                       previous_cost - next_cost;
+  _normal_t_gain = _sol_state.edge_costs_around_edge[t_vehicle][t_rank] -
+                   previous_cost - next_cost;
 
   reverse_edge_cost = static_cast<Gain>(m[s_index][s_after_index]) -
                       static_cast<Gain>(m[s_after_index][s_index]);
-  Gain reversed_t_gain = _sol_state.edge_costs_around_edge[t_vehicle][t_rank] +
-                         reverse_edge_cost - reverse_previous_cost -
-                         reverse_next_cost;
+  _reversed_t_gain = _sol_state.edge_costs_around_edge[t_vehicle][t_rank] +
+                     reverse_edge_cost - reverse_previous_cost -
+                     reverse_next_cost;
 
-  assert(_t_is_normal_valid or _t_is_reverse_valid);
-  Gain t_gain;
-  if (reversed_t_gain > normal_t_gain) {
+  _gain_upper_bound_computed = true;
+
+  return std::max(_normal_s_gain, _reversed_s_gain) +
+         std::max(_normal_t_gain, _reversed_t_gain);
+}
+
+void CrossExchange::compute_gain() {
+  assert(_gain_upper_bound_computed);
+  assert(s_is_normal_valid or s_is_reverse_valid);
+  if (_reversed_s_gain > _normal_s_gain) {
     // Biggest potential gain is obtained when reversing edge.
-    if (_t_is_reverse_valid) {
-      t_gain = reversed_t_gain;
-      reverse_s_edge = true;
+    if (s_is_reverse_valid) {
+      stored_gain += _reversed_s_gain;
+      reverse_t_edge = true;
     } else {
-      t_gain = normal_t_gain;
+      stored_gain += _normal_s_gain;
     }
   } else {
     // Biggest potential gain is obtained when not reversing edge.
-    if (_t_is_normal_valid) {
-      t_gain = normal_t_gain;
+    if (s_is_normal_valid) {
+      stored_gain += _normal_s_gain;
     } else {
-      t_gain = reversed_t_gain;
-      reverse_s_edge = true;
+      stored_gain += _reversed_s_gain;
+      reverse_t_edge = true;
     }
   }
 
-  stored_gain = s_gain + t_gain;
+  assert(t_is_normal_valid or t_is_reverse_valid);
+  if (_reversed_t_gain > _normal_t_gain) {
+    // Biggest potential gain is obtained when reversing edge.
+    if (t_is_reverse_valid) {
+      stored_gain += _reversed_t_gain;
+      reverse_s_edge = true;
+    } else {
+      stored_gain += _normal_t_gain;
+    }
+  } else {
+    // Biggest potential gain is obtained when not reversing edge.
+    if (t_is_normal_valid) {
+      stored_gain += _normal_t_gain;
+    } else {
+      stored_gain += _reversed_t_gain;
+      reverse_s_edge = true;
+    }
+  }
 
   gain_computed = true;
 }
@@ -206,7 +211,7 @@ bool CrossExchange::is_valid() {
   if (valid) {
     // Keep target edge direction when inserting in source route.
     auto t_start = t_route.begin() + t_rank;
-    _s_is_normal_valid =
+    s_is_normal_valid =
       source.is_valid_addition_for_capacity_inclusion(_input,
                                                       target_delivery,
                                                       t_start,
@@ -215,7 +220,7 @@ bool CrossExchange::is_valid() {
                                                       s_rank + 2);
     // Reverse target edge direction when inserting in source route.
     auto t_reverse_start = t_route.rbegin() + t_route.size() - 2 - t_rank;
-    _s_is_reverse_valid =
+    s_is_reverse_valid =
       source.is_valid_addition_for_capacity_inclusion(_input,
                                                       target_delivery,
                                                       t_reverse_start,
@@ -223,7 +228,7 @@ bool CrossExchange::is_valid() {
                                                       s_rank,
                                                       s_rank + 2);
 
-    valid = _s_is_normal_valid or _s_is_reverse_valid;
+    valid = s_is_normal_valid or s_is_reverse_valid;
   }
 
   auto source_pickup = _input.jobs[s_current_job_rank].pickup +
@@ -241,7 +246,7 @@ bool CrossExchange::is_valid() {
 
     // Keep source edge direction when inserting in target route.
     auto s_start = s_route.begin() + s_rank;
-    _t_is_normal_valid =
+    t_is_normal_valid =
       target.is_valid_addition_for_capacity_inclusion(_input,
                                                       source_delivery,
                                                       s_start,
@@ -251,14 +256,14 @@ bool CrossExchange::is_valid() {
 
     // Reverse source edge direction when inserting in target route.
     auto s_reverse_start = s_route.rbegin() + s_route.size() - 2 - s_rank;
-    _t_is_reverse_valid =
+    t_is_reverse_valid =
       target.is_valid_addition_for_capacity_inclusion(_input,
                                                       source_delivery,
                                                       s_reverse_start,
                                                       s_reverse_start + 2,
                                                       t_rank,
                                                       t_rank + 2);
-    valid = _t_is_normal_valid or _t_is_reverse_valid;
+    valid = t_is_normal_valid or t_is_reverse_valid;
   }
 
   return valid;

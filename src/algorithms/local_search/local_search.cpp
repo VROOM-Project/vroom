@@ -333,7 +333,9 @@ void LocalSearch<Route,
                           _sol[s_t.second],
                           s_t.second,
                           t_rank);
-          if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
+          auto& current_best = best_gains[s_t.first][s_t.second];
+          if (r.gain_upper_bound() > current_best and r.is_valid() and
+              r.gain() > current_best) {
             best_gains[s_t.first][s_t.second] = r.gain();
             best_ops[s_t.first][s_t.second] =
               std::make_unique<CrossExchange>(r);

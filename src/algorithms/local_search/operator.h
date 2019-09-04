@@ -58,7 +58,8 @@ public:
       t_route(t_raw_route.route),
       t_vehicle(t_vehicle),
       t_rank(t_rank),
-      gain_computed(false) {
+      gain_computed(false),
+      stored_gain(0) {
   }
 
   virtual Gain gain();
