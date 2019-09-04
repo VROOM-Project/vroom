@@ -307,7 +307,7 @@ void LocalSearch<Route,
                      _sol[s_t.second],
                      s_t.second,
                      t_rank);
-          if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
+          if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid()) {
             best_gains[s_t.first][s_t.second] = r.gain();
             best_ops[s_t.first][s_t.second] = std::make_unique<Exchange>(r);
           }
@@ -452,7 +452,7 @@ void LocalSearch<Route,
                      _sol[s_t.second],
                      s_t.second,
                      t_rank);
-          if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
+          if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid()) {
             best_gains[s_t.first][s_t.second] = r.gain();
             best_ops[s_t.first][s_t.second] = std::make_unique<Relocate>(r);
           }
