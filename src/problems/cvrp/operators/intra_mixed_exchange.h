@@ -16,11 +16,17 @@ namespace vroom {
 namespace cvrp {
 
 class IntraMixedExchange : public ls::Operator {
+private:
+  bool _gain_upper_bound_computed;
+  Gain _normal_s_gain;
+  Gain _reversed_s_gain;
+  Gain _t_gain;
+
 protected:
   bool reverse_t_edge;
 
-  bool _s_is_normal_valid;
-  bool _s_is_reverse_valid;
+  bool s_is_normal_valid;
+  bool s_is_reverse_valid;
 
   std::vector<Index> _moved_jobs;
   const Index _first_rank;
@@ -37,6 +43,11 @@ public:
                      Index s_vehicle,
                      Index s_rank,
                      Index t_rank);
+
+  // Compute and store all possible cost depending on whether edges
+  // are reversed or not. Return only an upper bound for gain as
+  // precise gain requires validity information.
+  Gain gain_upper_bound();
 
   virtual bool is_valid() override;
 

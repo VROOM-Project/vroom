@@ -569,8 +569,10 @@ void LocalSearch<Route,
                                s_t.first,
                                s_rank,
                                t_rank);
-          if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.first]) {
-            best_gains[s_t.first][s_t.first] = r.gain();
+          auto& current_best = best_gains[s_t.first][s_t.second];
+          if (r.gain_upper_bound() > current_best and r.is_valid() and
+              r.gain() > current_best) {
+            current_best = r.gain();
             best_ops[s_t.first][s_t.first] =
               std::make_unique<IntraMixedExchange>(r);
           }

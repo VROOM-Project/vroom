@@ -31,7 +31,7 @@ bool IntraMixedExchange::is_valid() {
   bool valid = cvrp::IntraMixedExchange::is_valid();
 
   if (valid) {
-    _s_is_normal_valid &=
+    s_is_normal_valid &=
       _tw_s_route.is_valid_addition_for_tw(_input,
                                            _moved_jobs.begin(),
                                            _moved_jobs.end(),
@@ -40,7 +40,7 @@ bool IntraMixedExchange::is_valid() {
 
     std::swap(_moved_jobs[_t_edge_first], _moved_jobs[_t_edge_last]);
 
-    _s_is_reverse_valid &=
+    s_is_reverse_valid &=
       _tw_s_route.is_valid_addition_for_tw(_input,
                                            _moved_jobs.begin(),
                                            _moved_jobs.end(),
@@ -50,7 +50,7 @@ bool IntraMixedExchange::is_valid() {
     // Reset to initial situation before potential application.
     std::swap(_moved_jobs[_t_edge_first], _moved_jobs[_t_edge_last]);
 
-    valid = _s_is_normal_valid or _s_is_reverse_valid;
+    valid = s_is_normal_valid or s_is_reverse_valid;
   }
 
   return valid;
