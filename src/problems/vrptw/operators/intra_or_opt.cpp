@@ -31,16 +31,15 @@ bool IntraOrOpt::is_valid() {
   bool valid = cvrp::IntraOrOpt::is_valid();
 
   if (valid) {
-    _is_normal_valid &=
-      _tw_s_route.is_valid_addition_for_tw(_input,
-                                           _moved_jobs.begin(),
-                                           _moved_jobs.end(),
-                                           _first_rank,
-                                           _last_rank);
+    is_normal_valid &= _tw_s_route.is_valid_addition_for_tw(_input,
+                                                            _moved_jobs.begin(),
+                                                            _moved_jobs.end(),
+                                                            _first_rank,
+                                                            _last_rank);
 
     std::swap(_moved_jobs[_s_edge_first], _moved_jobs[_s_edge_last]);
 
-    _is_reverse_valid &=
+    is_reverse_valid &=
       _tw_s_route.is_valid_addition_for_tw(_input,
                                            _moved_jobs.begin(),
                                            _moved_jobs.end(),
@@ -50,7 +49,7 @@ bool IntraOrOpt::is_valid() {
     // Reset to initial situation before potential application.
     std::swap(_moved_jobs[_s_edge_first], _moved_jobs[_s_edge_last]);
 
-    valid = (_is_normal_valid or _is_reverse_valid);
+    valid = (is_normal_valid or is_reverse_valid);
   }
 
   return valid;
