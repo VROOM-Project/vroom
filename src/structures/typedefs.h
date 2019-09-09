@@ -67,32 +67,17 @@ enum class STEP_TYPE { START, JOB, END };
 
 // Heuristic options.
 enum class HEURISTIC { BASIC, DYNAMIC };
-enum class CLUSTERING { PARALLEL, SEQUENTIAL };
 enum class INIT { NONE, HIGHER_AMOUNT, NEAREST, FURTHEST, EARLIEST_DEADLINE };
 
 struct HeuristicParameters {
-  bool is_clustering; // Use "heuristic" or "type".
   HEURISTIC heuristic;
-  CLUSTERING type;
   INIT init;
   float regret_coeff;
 
   constexpr HeuristicParameters(HEURISTIC heuristic,
                                 INIT init,
                                 float regret_coeff)
-    : is_clustering(false),
-      heuristic(heuristic),
-      type(CLUSTERING::SEQUENTIAL), // dummy init
-      init(init),
-      regret_coeff(regret_coeff) {
-  }
-
-  constexpr HeuristicParameters(CLUSTERING type, INIT init, float regret_coeff)
-    : is_clustering(true),
-      heuristic(HEURISTIC::BASIC), // dummy init
-      type(type),
-      init(init),
-      regret_coeff(regret_coeff) {
+    : heuristic(heuristic), init(init), regret_coeff(regret_coeff) {
   }
 };
 

@@ -10,7 +10,6 @@ All rights reserved (see LICENSE).
 #include <numeric>
 #include <thread>
 
-#include "algorithms/heuristics/clustering.h"
 #include "algorithms/heuristics/solomon.h"
 #include "algorithms/local_search/local_search.h"
 #include "problems/cvrp/cvrp.h"
@@ -189,32 +188,17 @@ Solution CVRP::solve(unsigned exploration_level,
     for (auto rank : param_ranks) {
       auto& p = parameters[rank];
 
-      if (p.is_clustering) {
-        heuristics::Clustering c(_input, p.type, p.init, p.regret_coeff);
-
-        // Populate vector of TSP solutions, one per cluster.
-        for (std::size_t v = 0; v < nb_tsp; ++v) {
-          solutions[rank].emplace_back(_input, v);
-          if (c.clusters[v].empty()) {
-            continue;
-          }
-          TSP p(_input, c.clusters[v], v);
-
-          solutions[rank][v].set_route(_input, p.raw_solve(1));
-        }
-      } else {
-        switch (p.heuristic) {
-        case HEURISTIC::BASIC:
-          solutions[rank] =
-            heuristics::basic<RawSolution>(_input, p.init, p.regret_coeff);
-          break;
-        case HEURISTIC::DYNAMIC:
-          solutions[rank] =
-            heuristics::dynamic_vehicle_choice<RawSolution>(_input,
-                                                            p.init,
-                                                            p.regret_coeff);
-          break;
-        }
+      switch (p.heuristic) {
+      case HEURISTIC::BASIC:
+        solutions[rank] =
+          heuristics::basic<RawSolution>(_input, p.init, p.regret_coeff);
+        break;
+      case HEURISTIC::DYNAMIC:
+        solutions[rank] =
+          heuristics::dynamic_vehicle_choice<RawSolution>(_input,
+                                                          p.init,
+                                                          p.regret_coeff);
+        break;
       }
 
       // Local search phase.

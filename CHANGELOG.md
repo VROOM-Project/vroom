@@ -11,6 +11,11 @@
 
 - Speed up solving by 25% for CVRP and up to 30% for VRPTW benchmark instances (#255)
 - Update Travis configuration to use Ubuntu Bionic (#260)
+- Cut down validity checks time (#266)
+
+### Removed
+
+- Deprecate clustering heuristics for CVRP (#267)
 
 ### Fixed
 
