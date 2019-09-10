@@ -20,13 +20,15 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
-Input::Input()
+Input::Input(unsigned amount_size)
   : _start_loading(std::chrono::high_resolution_clock::now()),
     _no_addition_yet(true),
     _has_TW(false),
     _homogeneous_locations(true),
     _geometry(false),
-    _all_locations_have_coords(true) {
+    _all_locations_have_coords(true),
+    _amount_size(amount_size),
+    _zero(_amount_size) {
 }
 
 void Input::set_geometry(bool geometry) {
@@ -43,8 +45,23 @@ void Input::add_job(const Job& job) {
 
   auto& current_job = jobs.back();
 
-  // Ensure amount size consistency.
-  this->check_amount_size(current_job.amount.size());
+  // Ensure delivery size consistency.
+  const auto& delivery_size = current_job.delivery.size();
+  if (delivery_size != _amount_size) {
+    throw Exception(ERROR::INPUT,
+                    "Inconsistent delivery length: " +
+                      std::to_string(delivery_size) + " instead of " +
+                      std::to_string(_amount_size) + '.');
+  }
+
+  // Ensure pickup size consistency.
+  const auto& pickup_size = current_job.pickup.size();
+  if (pickup_size != _amount_size) {
+    throw Exception(ERROR::INPUT,
+                    "Inconsistent pickup length: " +
+                      std::to_string(pickup_size) + " instead of " +
+                      std::to_string(_amount_size) + '.');
+  }
 
   // Ensure that skills are either always or never provided.
   if (_no_addition_yet) {
@@ -85,7 +102,13 @@ void Input::add_vehicle(const Vehicle& vehicle) {
   auto& current_v = vehicles.back();
 
   // Ensure amount size consistency.
-  this->check_amount_size(current_v.capacity.size());
+  const auto& vehicle_amount_size = current_v.capacity.size();
+  if (vehicle_amount_size != _amount_size) {
+    throw Exception(ERROR::INPUT,
+                    "Inconsistent capacity length: " +
+                      std::to_string(vehicle_amount_size) + " instead of " +
+                      std::to_string(_amount_size) + '.');
+  }
 
   // Ensure that skills are either always or never provided.
   if (_no_addition_yet) {
@@ -155,22 +178,6 @@ void Input::add_vehicle(const Vehicle& vehicle) {
   if (vehicles.size() > 1) {
     _homogeneous_locations &=
       vehicles.front().has_same_locations(vehicles.back());
-  }
-}
-
-void Input::check_amount_size(unsigned size) {
-  if (_locations.empty()) {
-    // Updating real value on first call.
-    _amount_size = size;
-    _zero = Amount(_amount_size);
-  } else {
-    // Checking consistency for amount/capacity input lengths.
-    if (size != _amount_size) {
-      throw Exception(ERROR::INPUT,
-                      "Inconsistent amount/capacity lengths: " +
-                        std::to_string(size) + " and " +
-                        std::to_string(_amount_size) + '.');
-    }
   }
 }
 

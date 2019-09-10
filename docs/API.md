@@ -15,6 +15,7 @@ Contents:
 - all timings are in seconds
 - all distances are in meters
 - a `time_window` object is a pair of timestamps in the form `[start, end]`
+- deprecated keys are crossed out
 
 # Input
 
@@ -37,7 +38,9 @@ A `job` object has the following properties:
 | [`location`] | coordinates array |
 | [`location_index`] | index of relevant row and column in custom matrix |
 | [`service`] | job service duration (defaults to 0) |
-| [`amount`] | an array of integers describing multidimensional quantities |
+| ~~[`amount`]~~ | ~~an array of integers describing multidimensional quantities~~ |
+| [`delivery`] | an array of integers describing multidimensional quantities for delivery |
+| [`pickup`] | an array of integers describing multidimensional quantities for pickup |
 | [`skills`] | an array of integers defining mandatory skills |
 | [`priority`] | an integer in the `[0, 10]` range describing priority level (defaults to 0) |
 | [`time_windows`] | an array of `time_window` objects describing valid slots for job service start |
@@ -87,14 +90,18 @@ A `vehicle` object has the following properties:
 
 ### Capacity restrictions
 
-Use `capacity` for vehicles and `amount` for jobs to describe a
-problem with capacity restrictions. Those arrays can be used to model
-custom restrictions for several metrics at once, e.g. number of items,
-weight, volume etc. A vehicle is only allowed to serve a set of jobs
-if the `amount` component sums are lower than the matching value in
-`capacity` for each metric. When using multiple components for
-`amount` and `capacity`, it is recommended to put the most
+Use amounts (`capacity` for vehicles, `delivery` and `pickup` for
+jobs) to describe a problem with capacity restrictions. Those arrays
+can be used to model custom restrictions for several metrics at once,
+e.g. number of items, weight, volume etc. A vehicle is only allowed to
+serve a set of jobs if the resulting load at each route step is lower
+than the matching value in `capacity` for each metric. When using
+multiple components for amounts, it is recommended to put the most
 important/limiting metrics first.
+
+It is assumed that all delivery-related amounts for jobs are loaded at
+vehicle start, while all pickup-related amounts for jobs are brought
+back at vehicle end.
 
 ### Skills
 
@@ -174,7 +181,7 @@ The `summary` object has the following properties:
 | `service` | total service time for all routes |
 | `duration` | total travel time for all routes |
 | `waiting_time` | total waiting time for all routes |
-| [`amount`] | total amount for all routes |
+| ~~[`amount`]~~ | ~~total amount for all routes~~ |
 | [`distance`]* | total distance for all routes |
 
 *: provided when using the `-g` flag with `OSRM`.
@@ -191,7 +198,7 @@ A `route` object has the following properties:
 | `service` | total service time for this route |
 | `duration` | total travel time for this route |
 | `waiting_time` | total waiting time for this route |
-| [`amount`] | total amount for jobs in this route |
+| ~~[`amount`]~~ | ~~total amount for jobs in this route~~ |
 | [`geometry`]* | polyline encoded route geometry |
 | [`distance`]* | total route distance |
 
@@ -245,7 +252,7 @@ and time window constraints, where matrix computing rely on OSRM:
     {
       "id": 1,
       "service": 300,
-      "amount": [1],
+      "delivery": [1],
       "location": [1.98935, 48.701],
       "skills": [1],
       "time_windows": [[32400, 36000]]
@@ -253,35 +260,35 @@ and time window constraints, where matrix computing rely on OSRM:
     {
       "id": 2,
       "service": 300,
-      "amount": [1],
+      "delivery": [1],
       "location": [2.03655, 48.61128],
       "skills": [1]
     },
     {
       "id": 3,
       "service": 300,
-      "amount": [1],
+      "delivery": [1],
       "location": [2.39719, 49.07611],
       "skills": [2]
     },
     {
       "id": 4,
       "service": 300,
-      "amount": [1],
+      "delivery": [1],
       "location": [2.41808, 49.22619],
       "skills": [2]
     },
     {
       "id": 5,
       "service": 300,
-      "amount": [1],
+      "delivery": [1],
       "location": [2.28325, 48.5958],
       "skills": [14]
     },
     {
       "id": 6,
       "service": 300,
-      "amount": [1],
+      "delivery": [1],
       "location": [2.89357, 48.90736],
       "skills": [14]
     }
@@ -297,7 +304,6 @@ producing a solution that looks like:
   "summary": {
     "cost": 17546,
     "unassigned": 1,
-    "amount": [5],
     "service": 1500,
     "duration": 17546,
     "waiting_time": 0,
@@ -313,7 +319,6 @@ producing a solution that looks like:
     {
       "vehicle": 1,
       "cost": 6826,
-      "amount": [3],
       "service": 900,
       "duration": 6826,
       "waiting_time": 0,
@@ -369,9 +374,6 @@ producing a solution that looks like:
     {
       "vehicle": 2,
       "cost": 10720,
-      "amount": [
-        2
-      ],
       "service": 600,
       "duration": 10720,
       "waiting_time": 0,
