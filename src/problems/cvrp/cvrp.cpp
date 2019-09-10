@@ -136,9 +136,7 @@ CVRP::CVRP(const Input& input) : VRP(input) {
 Solution CVRP::solve(unsigned exploration_level,
                      unsigned nb_threads,
                      const std::vector<HeuristicParameters>& h_param) const {
-  auto nb_tsp = _input.vehicles.size();
-
-  if (nb_tsp == 1 and !_input.has_skills() and
+  if (_input.vehicles.size() == 1 and !_input.has_skills() and
       _input.zero_amount().size() == 0) {
     // This is a plain TSP, no need to go through the trouble below.
     std::vector<Index> job_ranks(_input.jobs.size());

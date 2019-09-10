@@ -43,7 +43,6 @@ private:
   std::vector<Location> _locations;
   std::unordered_map<Location, Index> _locations_to_index;
   unsigned _amount_size;
-  Amount _amount_lower_bound;
   Amount _zero;
   std::vector<std::vector<unsigned char>> _vehicle_to_job_compatibility;
   std::vector<std::vector<bool>> _vehicle_to_vehicle_compatibility;
@@ -58,7 +57,7 @@ private:
 
   void set_compatibility();
 
-  void store_amount_lower_bound(const Amount& amount);
+  void set_compatibility();
 
 public:
   std::vector<Job> jobs;
@@ -79,8 +78,6 @@ public:
   const Amount& zero_amount() const {
     return _zero;
   }
-
-  Amount get_amount_lower_bound() const;
 
   bool has_skills() const;
 

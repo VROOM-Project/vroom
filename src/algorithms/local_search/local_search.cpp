@@ -71,8 +71,6 @@ LocalSearch<Route,
   : _input(input),
     _matrix(_input.get_matrix()),
     _nb_vehicles(_input.vehicles.size()),
-    _amount_lower_bound(_input.get_amount_lower_bound()),
-    _double_amount_lower_bound(_amount_lower_bound + _amount_lower_bound),
     _max_nb_jobs_removal(max_nb_jobs_removal),
     _all_routes(_nb_vehicles),
     _sol_state(input),
@@ -433,11 +431,8 @@ void LocalSearch<Route,
 
     // Relocate stuff
     for (const auto& s_t : s_t_pairs) {
-      if (s_t.first == s_t.second or _sol[s_t.first].size() == 0 or
-          !(_sol_state.total_amount(s_t.second) + _amount_lower_bound <=
-            _input.vehicles[s_t.second].capacity)) {
-        // Don't try to put things in a full vehicle or from an empty
-        // vehicle.
+      if (s_t.first == s_t.second or _sol[s_t.first].size() == 0) {
+        // Don't try to put things from an empty vehicle.
         continue;
       }
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
@@ -466,11 +461,8 @@ void LocalSearch<Route,
 
     // Or-opt stuff
     for (const auto& s_t : s_t_pairs) {
-      if (s_t.first == s_t.second or _sol[s_t.first].size() < 2 or
-          !(_sol_state.total_amount(s_t.second) + _double_amount_lower_bound <=
-            _input.vehicles[s_t.second].capacity)) {
-        // Don't try to put things in a full vehicle or from a
-        // (near-)empty vehicle.
+      if (s_t.first == s_t.second or _sol[s_t.first].size() < 2) {
+        // Don't try to put things from a (near-)empty vehicle.
         continue;
       }
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1; ++s_rank) {
