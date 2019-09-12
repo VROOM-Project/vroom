@@ -53,7 +53,7 @@ If a custom matrix is provided:
 
 If no custom matrix is provided:
 
-- a `table` query will be sent to OSRM
+- a `table` query will be sent to the routing engine
 - `location` is mandatory
 - `location_index` is irrelevant
 
@@ -140,9 +140,9 @@ time windows.
 
 A `matrix` object is an array of arrays of unsigned integers
 describing the rows of a custom travel-time matrix as an alternative
-to the travel-time matrix computed by OSRM. Therefore, if a custom
-matrix is provided, the `location`, `start` and `end` properties
-become optional. Instead of the coordinates, row and column
+to the travel-time matrix computed by the routing engine. Therefore,
+if a custom matrix is provided, the `location`, `start` and `end`
+properties become optional. Instead of the coordinates, row and column
 indications provided with the `*_index` keys are used during
 optimization.
 
@@ -182,9 +182,11 @@ The `summary` object has the following properties:
 | `duration` | total travel time for all routes |
 | `waiting_time` | total waiting time for all routes |
 | ~~[`amount`]~~ | ~~total amount for all routes~~ |
+| [`delivery`] | total delivery for all routes |
+| [`pickup`] | total pickup for all routes |
 | [`distance`]* | total distance for all routes |
 
-*: provided when using the `-g` flag with `OSRM`.
+*: provided when using the `-g` flag.
 
 ## Routes
 
@@ -199,10 +201,12 @@ A `route` object has the following properties:
 | `duration` | total travel time for this route |
 | `waiting_time` | total waiting time for this route |
 | ~~[`amount`]~~ | ~~total amount for jobs in this route~~ |
+| [`delivery`] | total delivery for jobs in this route |
+| [`pickup`] | total pickup for jobs in this route |
 | [`geometry`]* | polyline encoded route geometry |
 | [`distance`]* | total route distance |
 
-*: provided when using the `-g` flag with `OSRM`.
+*: provided when using the `-g` flag.
 
 ### Steps
 
@@ -215,18 +219,20 @@ A `step` object has the following properties:
 | `duration` | cumulated travel time upon arrival at this step |
 | [`location`] | coordinates array for this step (if provided in input) |
 | [`job`] | id of the job performed at this step, only provided if `type` value is `job` |
+| [`load`] | vehicle load after step completion (with capacity constraints) |
 | [`service`] | service time at this step, only provided if `type` value is `job` |
 | [`waiting_time`] | waiting time upon arrival at this step, only provided if `type` value is `job` |
 | [`distance`]* | traveled distance upon arrival at this step |
 
-*: provided when using the `-g` flag with `OSRM`.
+*: provided when using the `-g` flag.
 
 # Examples
 
-## Using OSRM
+## Using a routing engine (OSRM or Openrouteservice)
 
 Describe a problem with 2 vehicles and 6 jobs using capacity, skills
-and time window constraints, where matrix computing rely on OSRM:
+and time window constraints, where matrix computing rely on the
+routing engine:
 
 ```javascript
 {

@@ -66,12 +66,27 @@ rapidjson::Value to_json(const Summary& summary,
   json_summary.AddMember("cost", summary.cost, allocator);
   json_summary.AddMember("unassigned", summary.unassigned, allocator);
 
-  if (summary.amount.size() > 0) {
+  if (summary.delivery.size() > 0) {
+    rapidjson::Value json_delivery(rapidjson::kArrayType);
+    for (std::size_t i = 0; i < summary.delivery.size(); ++i) {
+      json_delivery.PushBack(summary.delivery[i], allocator);
+    }
+    json_summary.AddMember("delivery", json_delivery, allocator);
+
+    // Support for deprecated "amount" key.
     rapidjson::Value json_amount(rapidjson::kArrayType);
-    for (std::size_t i = 0; i < summary.amount.size(); ++i) {
-      json_amount.PushBack(summary.amount[i], allocator);
+    for (std::size_t i = 0; i < summary.delivery.size(); ++i) {
+      json_amount.PushBack(summary.delivery[i], allocator);
     }
     json_summary.AddMember("amount", json_amount, allocator);
+  }
+
+  if (summary.pickup.size() > 0) {
+    rapidjson::Value json_pickup(rapidjson::kArrayType);
+    for (std::size_t i = 0; i < summary.pickup.size(); ++i) {
+      json_pickup.PushBack(summary.pickup[i], allocator);
+    }
+    json_summary.AddMember("pickup", json_pickup, allocator);
   }
 
   json_summary.AddMember("service", summary.service, allocator);
@@ -97,12 +112,27 @@ rapidjson::Value to_json(const Route& route,
   json_route.AddMember("vehicle", route.vehicle, allocator);
   json_route.AddMember("cost", route.cost, allocator);
 
-  if (route.amount.size() > 0) {
+  if (route.delivery.size() > 0) {
+    rapidjson::Value json_delivery(rapidjson::kArrayType);
+    for (std::size_t i = 0; i < route.delivery.size(); ++i) {
+      json_delivery.PushBack(route.delivery[i], allocator);
+    }
+    json_route.AddMember("delivery", json_delivery, allocator);
+
+    // Support for deprecated "amount" key.
     rapidjson::Value json_amount(rapidjson::kArrayType);
-    for (std::size_t i = 0; i < route.amount.size(); ++i) {
-      json_amount.PushBack(route.amount[i], allocator);
+    for (std::size_t i = 0; i < route.delivery.size(); ++i) {
+      json_amount.PushBack(route.delivery[i], allocator);
     }
     json_route.AddMember("amount", json_amount, allocator);
+  }
+
+  if (route.pickup.size() > 0) {
+    rapidjson::Value json_pickup(rapidjson::kArrayType);
+    for (std::size_t i = 0; i < route.pickup.size(); ++i) {
+      json_pickup.PushBack(route.pickup[i], allocator);
+    }
+    json_route.AddMember("pickup", json_pickup, allocator);
   }
 
   json_route.AddMember("service", route.service, allocator);
@@ -173,6 +203,14 @@ rapidjson::Value to_json(const Step& s,
     json_step.AddMember("job", s.job, allocator);
     json_step.AddMember("service", s.service, allocator);
     json_step.AddMember("waiting_time", s.waiting_time, allocator);
+  }
+
+  if (s.load.size() > 0) {
+    rapidjson::Value json_load(rapidjson::kArrayType);
+    for (std::size_t i = 0; i < s.load.size(); ++i) {
+      json_load.PushBack(s.load[i], allocator);
+    }
+    json_step.AddMember("load", json_load, allocator);
   }
 
   json_step.AddMember("arrival", s.arrival, allocator);

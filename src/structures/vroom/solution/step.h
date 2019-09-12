@@ -20,16 +20,16 @@ struct Step {
   const Location location;
   const Id job;
   const Duration service;
-  const Amount amount;
+  const Amount load;
 
   Duration arrival;
   Duration duration;
   Duration waiting_time;
   Distance distance;
 
-  Step(STEP_TYPE type, Location location);
+  Step(STEP_TYPE type, Location location, const Amount& load);
 
-  Step(const Job& job);
+  Step(const Job& job, const Amount& load);
 };
 
 } // namespace vroom

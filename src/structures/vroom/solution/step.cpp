@@ -12,17 +12,22 @@ All rights reserved (see LICENSE).
 namespace vroom {
 
 // Dummy initialization value for unused job id.
-Step::Step(STEP_TYPE type, Location location)
-  : type(type), location(location), job(0), service(0), waiting_time(0) {
+Step::Step(STEP_TYPE type, Location location, const Amount& load)
+  : type(type),
+    location(location),
+    job(0),
+    service(0),
+    load(load),
+    waiting_time(0) {
   assert(type == STEP_TYPE::START or type == STEP_TYPE::END);
 }
 
-Step::Step(const Job& job)
+Step::Step(const Job& job, const Amount& load)
   : type(STEP_TYPE::JOB),
     location(job.location),
     job(job.id),
     service(job.service),
-    amount(job.amount),
+    load(load),
     waiting_time(0) {
 }
 

@@ -18,7 +18,8 @@ namespace vroom {
 struct Summary {
   Cost cost;
   const unsigned unassigned;
-  Amount amount;
+  Amount delivery;
+  Amount pickup;
   Duration service;
 
   Duration duration;

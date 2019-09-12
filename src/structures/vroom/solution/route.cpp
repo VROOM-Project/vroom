@@ -17,14 +17,16 @@ Route::Route(Id vehicle,
              Duration service,
              Duration duration,
              Duration waiting_time,
-             const Amount& amount)
+             const Amount& delivery,
+             const Amount& pickup)
   : vehicle(vehicle),
     steps(std::move(steps)),
     cost(cost),
     service(service),
     duration(duration),
     waiting_time(waiting_time),
-    amount(amount),
+    delivery(delivery),
+    pickup(pickup),
     distance(0) {
 }
 
