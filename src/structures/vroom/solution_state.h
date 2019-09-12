@@ -63,12 +63,6 @@ public:
   // Store unassigned jobs.
   std::unordered_set<Index> unassigned;
 
-  // fwd_amounts[v][i] stores the total amount up to rank i in the
-  // route for vehicle v, while bwd_amounts[v][i] stores the total
-  // amount *after* rank i in the route for vehicle v.
-  std::vector<std::vector<Amount>> fwd_amounts;
-  std::vector<std::vector<Amount>> bwd_amounts;
-
   // fwd_costs[v][i] stores the total cost from job at rank 0 to job
   // at rank i in the route for vehicle v, while bwd_costs[v][i]
   // stores the total cost from job at rank i to job at rank 0
@@ -125,9 +119,6 @@ public:
 
   void setup(const TWSolution& tw_sol);
 
-  // TODO remove
-  void update_amounts(const std::vector<Index>& route, Index v);
-
   void update_costs(const std::vector<Index>& route, Index v);
 
   void update_skills(const std::vector<Index>& route, Index v1);
@@ -142,8 +133,6 @@ public:
                                          Index v2);
 
   void update_route_cost(const std::vector<Index>& route, Index v);
-
-  const Amount& total_amount(Index v) const;
 };
 
 } // namespace utils

@@ -89,11 +89,6 @@ void RawRoute::update_amounts(const Input& input) {
     }
     bwd_peaks[bwd_s] = peak;
   }
-
-  for (const auto& load : current_loads) {
-    // TODO remove
-    assert(load <= capacity);
-  }
 }
 
 bool RawRoute::is_valid_addition_for_capacity(const Input&,

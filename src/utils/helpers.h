@@ -219,7 +219,7 @@ inline Solution format_solution(const Input& input,
     assert(input.vehicle_ok_with_job(i, route.front()));
     auto& first_job = input.jobs[route.front()];
     service += first_job.service;
-    amount += first_job.amount;
+    amount += first_job.delivery;
 
     current_load -= first_job.delivery;
     current_load += first_job.pickup;
@@ -242,7 +242,7 @@ inline Solution format_solution(const Input& input,
 
       auto& current_job = input.jobs[route[r + 1]];
       service += current_job.service;
-      amount += current_job.amount;
+      amount += current_job.delivery;
 
       current_load -= current_job.delivery;
       current_load += current_job.pickup;
@@ -352,7 +352,7 @@ inline Route format_route(const Input& input,
   assert(input.vehicle_ok_with_job(tw_r.vehicle_rank, tw_r.route.front()));
   auto& first_job = input.jobs[tw_r.route.front()];
   service += first_job.service;
-  amount += first_job.amount;
+  amount += first_job.delivery;
 
   current_load -= first_job.delivery;
   current_load += first_job.pickup;
@@ -376,7 +376,7 @@ inline Route format_route(const Input& input,
 
     auto& current_job = input.jobs[tw_r.route[r + 1]];
     service += current_job.service;
-    amount += current_job.amount;
+    amount += current_job.delivery;
 
     current_load -= current_job.delivery;
     current_load += current_job.pickup;

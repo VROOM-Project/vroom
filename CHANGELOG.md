@@ -4,8 +4,9 @@
 
 ### Added
 
-- `pickup` and `delivery` keys at `job` level in input (#262)
 - `priority` key for jobs to gain some control on which jobs are unassigned (#246)
+- `pickup` and `delivery` keys for `job` in input and for `route` and `summary` in output (#262)
+- `load` key at `step` level in output (#262)
 - `HttpWrapper` class to factor code previously duplicated across routing wrappers (#224)
 
 ### Changed
