@@ -24,6 +24,8 @@ private:
   osrm::EngineConfig _config;
   const osrm::OSRM _osrm;
 
+  static osrm::EngineConfig get_config(const std::string& profile);
+
 public:
   LibosrmWrapper(const std::string& profile);
 

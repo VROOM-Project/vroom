@@ -16,6 +16,7 @@
 
 - Implicit instantiation of undefined template error for macos g++ compiler (#231)
 - Parsing vehicle ids as `uint64_t` (#228)
+- `osrm::EngineConfig` initialization for use with recent `libosrm` versions (#259)
 
 ## [v1.4.0] - 2019-03-26
 
