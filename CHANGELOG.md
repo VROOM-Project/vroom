@@ -4,9 +4,10 @@
 
 ### Added
 
-- `priority` key for jobs to gain some control on which jobs are unassigned (#246)
+- Support for mixing independent pickups and deliveries (#241)
 - `pickup` and `delivery` keys for `job` in input and for `route` and `summary` in output (#262)
 - `load` key at `step` level in output (#262)
+- `priority` key for jobs to gain some control on which jobs are unassigned (#246)
 - `HttpWrapper` class to factor code previously duplicated across routing wrappers (#224)
 
 ### Changed
@@ -21,7 +22,7 @@
 
 ### Removed
 
-- Deprecate clustering heuristics for CVRP (#267)
+- Clustering heuristics for CVRP (#267)
 
 ### Fixed
 
