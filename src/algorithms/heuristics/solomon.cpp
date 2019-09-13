@@ -144,15 +144,6 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
         }
 
         for (Index r = 0; r <= current_r.size(); ++r) {
-          if (!current_r
-                 .is_valid_addition_for_capacity(input,
-                                                 input.jobs[job_rank].pickup,
-                                                 input.jobs[job_rank].delivery,
-                                                 r) or
-              !current_r.is_valid_addition_for_tw(input, job_rank, r)) {
-            continue;
-          }
-
           float current_add = utils::addition_cost(input,
                                                    m,
                                                    job_rank,
@@ -163,7 +154,13 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
           float current_cost =
             current_add - lambda * static_cast<float>(costs[job_rank]);
 
-          if (current_cost < best_cost) {
+          if (current_cost < best_cost and
+              current_r
+                .is_valid_addition_for_capacity(input,
+                                                input.jobs[job_rank].pickup,
+                                                input.jobs[job_rank].delivery,
+                                                r) and
+              current_r.is_valid_addition_for_tw(input, job_rank, r)) {
             best_cost = current_cost;
             best_job_rank = job_rank;
             best_r = r;
@@ -363,15 +360,6 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
         }
 
         for (Index r = 0; r <= current_r.size(); ++r) {
-          if (!current_r
-                 .is_valid_addition_for_capacity(input,
-                                                 input.jobs[job_rank].pickup,
-                                                 input.jobs[job_rank].delivery,
-                                                 r) or
-              !current_r.is_valid_addition_for_tw(input, job_rank, r)) {
-            continue;
-          }
-
           float current_add = utils::addition_cost(input,
                                                    m,
                                                    job_rank,
@@ -382,7 +370,13 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
           float current_cost =
             current_add - lambda * static_cast<float>(regrets[job_rank]);
 
-          if (current_cost < best_cost) {
+          if (current_cost < best_cost and
+              current_r
+                .is_valid_addition_for_capacity(input,
+                                                input.jobs[job_rank].pickup,
+                                                input.jobs[job_rank].delivery,
+                                                r) and
+              current_r.is_valid_addition_for_tw(input, job_rank, r)) {
             best_cost = current_cost;
             best_job_rank = job_rank;
             best_r = r;
