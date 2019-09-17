@@ -10,7 +10,6 @@ All rights reserved (see LICENSE).
 #include <numeric>
 #include <thread>
 
-#include "algorithms/heuristics/clustering.h"
 #include "algorithms/heuristics/solomon.h"
 #include "algorithms/local_search/local_search.h"
 #include "problems/cvrp/cvrp.h"
@@ -51,85 +50,85 @@ using LocalSearch = ls::LocalSearch<RawRoute,
 
 const std::vector<HeuristicParameters> CVRP::homogeneous_parameters =
   {HeuristicParameters(HEURISTIC::BASIC, INIT::NONE, 0.3),
-   HeuristicParameters(HEURISTIC::BASIC, INIT::NONE, 0.7),
    HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHER_AMOUNT, 0.1),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHER_AMOUNT, 0.5),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::FURTHEST, 0.3),
+
+   HeuristicParameters(HEURISTIC::BASIC, INIT::NONE, 0.7),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHER_AMOUNT, 0.3),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHER_AMOUNT, 2.1),
    HeuristicParameters(HEURISTIC::BASIC, INIT::FURTHEST, 0.2),
 
-   HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHER_AMOUNT, 2.1),
-   HeuristicParameters(HEURISTIC::BASIC, INIT::FURTHEST, 0.3),
-   HeuristicParameters(CLUSTERING::SEQUENTIAL, INIT::HIGHER_AMOUNT, 0.2),
-   HeuristicParameters(CLUSTERING::SEQUENTIAL, INIT::NEAREST, 0),
-
-   HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHER_AMOUNT, 0.9),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::NONE, 0.1),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::NONE, 0.6),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::NONE, 0.9),
    HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHER_AMOUNT, 2.4),
-   HeuristicParameters(CLUSTERING::SEQUENTIAL, INIT::FURTHEST, 0.2),
-   HeuristicParameters(CLUSTERING::SEQUENTIAL, INIT::FURTHEST, 0.6),
 
-   HeuristicParameters(HEURISTIC::BASIC, INIT::NONE, 0.4),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHER_AMOUNT, 0.2),
    HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHER_AMOUNT, 0.8),
-   HeuristicParameters(CLUSTERING::SEQUENTIAL, INIT::HIGHER_AMOUNT, 0.3),
-   HeuristicParameters(CLUSTERING::SEQUENTIAL, INIT::NEAREST, 2.4),
-
-   HeuristicParameters(HEURISTIC::BASIC, INIT::NONE, 0.2),
-   HeuristicParameters(HEURISTIC::BASIC, INIT::NONE, 1.2),
    HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHER_AMOUNT, 1.2),
    HeuristicParameters(HEURISTIC::BASIC, INIT::FURTHEST, 0.4),
 
-   HeuristicParameters(CLUSTERING::SEQUENTIAL, INIT::NONE, 0.9),
-   HeuristicParameters(CLUSTERING::SEQUENTIAL, INIT::NONE, 1.5),
-   HeuristicParameters(CLUSTERING::SEQUENTIAL, INIT::HIGHER_AMOUNT, 0.7),
-   HeuristicParameters(CLUSTERING::SEQUENTIAL, INIT::NEAREST, 1.7),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::NONE, 1.2),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHER_AMOUNT, 1),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHER_AMOUNT, 1.1),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::FURTHEST, 2.4),
+
+   HeuristicParameters(HEURISTIC::BASIC, INIT::NONE, 0.2),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHER_AMOUNT, 0),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHER_AMOUNT, 0.9),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::FURTHEST, 1.5),
 
    HeuristicParameters(HEURISTIC::BASIC, INIT::NONE, 0.5),
-   HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHER_AMOUNT, 1),
-   HeuristicParameters(HEURISTIC::BASIC, INIT::FURTHEST, 1.6),
-   HeuristicParameters(CLUSTERING::SEQUENTIAL, INIT::NONE, 0.5),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::NONE, 1.3),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHER_AMOUNT, 1.5),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::FURTHEST, 0.1),
 
-   HeuristicParameters(CLUSTERING::SEQUENTIAL, INIT::NONE, 0.7),
-   HeuristicParameters(CLUSTERING::SEQUENTIAL, INIT::NONE, 1),
-   HeuristicParameters(CLUSTERING::SEQUENTIAL, INIT::NEAREST, 0.4),
-   HeuristicParameters(CLUSTERING::SEQUENTIAL, INIT::NEAREST, 1.8)};
+   HeuristicParameters(HEURISTIC::BASIC, INIT::NONE, 0.4),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::NONE, 1.6),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHER_AMOUNT, 0.6),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::FURTHEST, 0.5)};
 
 const std::vector<HeuristicParameters> CVRP::heterogeneous_parameters =
-  {HeuristicParameters(HEURISTIC::DYNAMIC, INIT::HIGHER_AMOUNT, 0.2),
+  {HeuristicParameters(HEURISTIC::DYNAMIC, INIT::NONE, 0.4),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::HIGHER_AMOUNT, 0.2),
    HeuristicParameters(HEURISTIC::DYNAMIC, INIT::FURTHEST, 0.1),
    HeuristicParameters(HEURISTIC::DYNAMIC, INIT::FURTHEST, 0.3),
-   HeuristicParameters(CLUSTERING::PARALLEL, INIT::NONE, 0.3),
-
-   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::NONE, 0.4),
-   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::NONE, 0.6),
-   HeuristicParameters(CLUSTERING::PARALLEL, INIT::NONE, 0.9),
-   HeuristicParameters(CLUSTERING::PARALLEL, INIT::NEAREST, 0.6),
 
    HeuristicParameters(HEURISTIC::DYNAMIC, INIT::NONE, 0.3),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::NONE, 0.6),
    HeuristicParameters(HEURISTIC::DYNAMIC, INIT::HIGHER_AMOUNT, 0.1),
    HeuristicParameters(HEURISTIC::DYNAMIC, INIT::FURTHEST, 0.2),
-   HeuristicParameters(CLUSTERING::PARALLEL, INIT::NEAREST, 0),
-
-   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::HIGHER_AMOUNT, 0.3),
-   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::FURTHEST, 0.4),
-   HeuristicParameters(CLUSTERING::PARALLEL, INIT::NONE, 0.5),
-   HeuristicParameters(CLUSTERING::PARALLEL, INIT::NONE, 1.9),
 
    HeuristicParameters(HEURISTIC::DYNAMIC, INIT::NONE, 0.2),
    HeuristicParameters(HEURISTIC::DYNAMIC, INIT::NONE, 0.9),
-   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::FURTHEST, 0.6),
-   HeuristicParameters(CLUSTERING::PARALLEL, INIT::NONE, 0.4),
-
-   HeuristicParameters(CLUSTERING::PARALLEL, INIT::NEAREST, 0.1),
-   HeuristicParameters(CLUSTERING::PARALLEL, INIT::NEAREST, 0.5),
-   HeuristicParameters(CLUSTERING::PARALLEL, INIT::NEAREST, 0.9),
-   HeuristicParameters(CLUSTERING::PARALLEL, INIT::NEAREST, 1.8),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::HIGHER_AMOUNT, 0.3),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::FURTHEST, 0.4),
 
    HeuristicParameters(HEURISTIC::DYNAMIC, INIT::NONE, 0.1),
-   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::HIGHER_AMOUNT, 0.8),
-   HeuristicParameters(CLUSTERING::PARALLEL, INIT::NONE, 0),
-   HeuristicParameters(CLUSTERING::PARALLEL, INIT::NONE, 0.8),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::NONE, 0.5),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::HIGHER_AMOUNT, 1.4),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::FURTHEST, 0),
 
-   HeuristicParameters(CLUSTERING::PARALLEL, INIT::NONE, 1),
-   HeuristicParameters(CLUSTERING::PARALLEL, INIT::NEAREST, 0.3),
-   HeuristicParameters(CLUSTERING::PARALLEL, INIT::NEAREST, 1.2),
-   HeuristicParameters(CLUSTERING::PARALLEL, INIT::NEAREST, 2.3)};
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::NONE, 2.1),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::HIGHER_AMOUNT, 0),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::HIGHER_AMOUNT, 0.8),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::FURTHEST, 0.6),
+
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::NONE, 0),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::NONE, 0.8),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::HIGHER_AMOUNT, 0.4),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::HIGHER_AMOUNT, 0.5),
+
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::HIGHER_AMOUNT, 0.6),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::HIGHER_AMOUNT, 0.7),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::HIGHER_AMOUNT, 1.2),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::FURTHEST, 0.5),
+
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::NONE, 0.7),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::HIGHER_AMOUNT, 1),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::FURTHEST, 1.7),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::FURTHEST, 2.2)};
 
 CVRP::CVRP(const Input& input) : VRP(input) {
 }
@@ -137,16 +136,18 @@ CVRP::CVRP(const Input& input) : VRP(input) {
 Solution CVRP::solve(unsigned exploration_level,
                      unsigned nb_threads,
                      const std::vector<HeuristicParameters>& h_param) const {
-  auto nb_tsp = _input.vehicles.size();
-
-  if (nb_tsp == 1 and !_input.has_skills() and _input.amount_size() == 0) {
+  if (_input.vehicles.size() == 1 and !_input.has_skills() and
+      _input.zero_amount().size() == 0) {
     // This is a plain TSP, no need to go through the trouble below.
     std::vector<Index> job_ranks(_input.jobs.size());
     std::iota(job_ranks.begin(), job_ranks.end(), 0);
 
     TSP p(_input, job_ranks, 0);
 
-    return utils::format_solution(_input, p.raw_solve(0, nb_threads));
+    RawRoute r(_input, 0);
+    r.set_route(_input, p.raw_solve(nb_threads));
+
+    return utils::format_solution(_input, {r});
   }
 
   // Use vector of parameters when passed for debugging, else use
@@ -171,7 +172,7 @@ Solution CVRP::solve(unsigned exploration_level,
   }
   assert(nb_init_solutions <= parameters.size());
 
-  std::vector<RawSolution> solutions(nb_init_solutions, RawSolution(nb_tsp));
+  std::vector<RawSolution> solutions(nb_init_solutions);
   std::vector<utils::SolutionIndicators> sol_indicators(nb_init_solutions);
 
   // Split the work among threads.
@@ -185,31 +186,17 @@ Solution CVRP::solve(unsigned exploration_level,
     for (auto rank : param_ranks) {
       auto& p = parameters[rank];
 
-      if (p.is_clustering) {
-        heuristics::Clustering c(_input, p.type, p.init, p.regret_coeff);
-
-        // Populate vector of TSP solutions, one per cluster.
-        for (std::size_t v = 0; v < nb_tsp; ++v) {
-          if (c.clusters[v].empty()) {
-            continue;
-          }
-          TSP p(_input, c.clusters[v], v);
-
-          solutions[rank][v] = p.raw_solve(0, 1)[0];
-        }
-      } else {
-        switch (p.heuristic) {
-        case HEURISTIC::BASIC:
-          solutions[rank] =
-            heuristics::basic<RawSolution>(_input, p.init, p.regret_coeff);
-          break;
-        case HEURISTIC::DYNAMIC:
-          solutions[rank] =
-            heuristics::dynamic_vehicle_choice<RawSolution>(_input,
-                                                            p.init,
-                                                            p.regret_coeff);
-          break;
-        }
+      switch (p.heuristic) {
+      case HEURISTIC::BASIC:
+        solutions[rank] =
+          heuristics::basic<RawSolution>(_input, p.init, p.regret_coeff);
+        break;
+      case HEURISTIC::DYNAMIC:
+        solutions[rank] =
+          heuristics::dynamic_vehicle_choice<RawSolution>(_input,
+                                                          p.init,
+                                                          p.regret_coeff);
+        break;
       }
 
       // Local search phase.

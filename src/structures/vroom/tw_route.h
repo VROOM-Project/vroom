@@ -45,9 +45,6 @@ private:
                             const unsigned count) const;
 
 public:
-  Index vehicle_rank;
-  bool has_start;
-  bool has_end;
   Duration v_start;
   Duration v_end;
 

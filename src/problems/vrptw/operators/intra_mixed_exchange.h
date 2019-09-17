@@ -20,17 +20,6 @@ class IntraMixedExchange : public cvrp::IntraMixedExchange {
 private:
   TWRoute& _tw_s_route;
 
-  bool _s_is_normal_valid;
-  bool _s_is_reverse_valid;
-
-  std::vector<Index> _moved_jobs;
-  const Index _first_rank;
-  const Index _last_rank;
-  Index _t_edge_first;
-  Index _t_edge_last;
-
-  virtual void compute_gain() override;
-
 public:
   IntraMixedExchange(const Input& input,
                      const utils::SolutionState& sol_state,

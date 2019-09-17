@@ -21,11 +21,6 @@ private:
   TWRoute& _tw_s_route;
   TWRoute& _tw_t_route;
 
-  bool _is_normal_valid;
-  bool _is_reverse_valid;
-
-  virtual void compute_gain() override;
-
 public:
   OrOpt(const Input& input,
         const utils::SolutionState& sol_state,

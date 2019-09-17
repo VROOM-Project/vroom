@@ -157,7 +157,7 @@ Cost TSP::symmetrized_cost(const std::list<Index>& tour) const {
   return cost;
 }
 
-RawSolution TSP::raw_solve(unsigned, unsigned nb_threads) const {
+std::vector<Index> TSP::raw_solve(unsigned nb_threads) const {
   // Applying heuristic.
   std::list<Index> christo_sol = tsp::christofides(_symmetrized_matrix);
 
@@ -265,13 +265,15 @@ RawSolution TSP::raw_solve(unsigned, unsigned nb_threads) const {
                  std::back_inserter(init_ranks_sol),
                  [&](const auto& i) { return _job_ranks[i]; });
 
-  return {init_ranks_sol};
+  return init_ranks_sol;
 }
 
 Solution TSP::solve(unsigned,
                     unsigned nb_threads,
                     const std::vector<HeuristicParameters>&) const {
-  return utils::format_solution(_input, raw_solve(0, nb_threads));
+  RawRoute r(_input, 0);
+  r.set_route(_input, raw_solve(nb_threads));
+  return utils::format_solution(_input, {r});
 }
 
 } // namespace vroom

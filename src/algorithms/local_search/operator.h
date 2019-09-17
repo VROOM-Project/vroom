@@ -24,10 +24,12 @@ protected:
   const utils::SolutionState& _sol_state;
 
   // Source of move for this operator.
+  RawRoute& source;
   std::vector<Index>& s_route;
   const Index s_vehicle;
   const Index s_rank;
   // Target of move for this operator.
+  RawRoute& target;
   std::vector<Index>& t_route;
   const Index t_vehicle;
   const Index t_rank;
@@ -48,13 +50,16 @@ public:
            Index t_rank)
     : _input(input),
       _sol_state(sol_state),
+      source(s_raw_route),
       s_route(s_raw_route.route),
       s_vehicle(s_vehicle),
       s_rank(s_rank),
+      target(t_raw_route),
       t_route(t_raw_route.route),
       t_vehicle(t_vehicle),
       t_rank(t_rank),
-      gain_computed(false) {
+      gain_computed(false),
+      stored_gain(0) {
   }
 
   virtual Gain gain();

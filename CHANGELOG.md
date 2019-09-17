@@ -4,6 +4,9 @@
 
 ### Added
 
+- Support for mixing independent pickups and deliveries (#241)
+- `pickup` and `delivery` keys for `job` in input and for `route` and `summary` in output (#262)
+- `load` key at `step` level in output (#262)
 - `priority` key for jobs to gain some control on which jobs are unassigned (#246)
 - `HttpWrapper` class to factor code previously duplicated across routing wrappers (#224)
 
@@ -11,6 +14,15 @@
 
 - Speed up solving by 25% for CVRP and up to 30% for VRPTW benchmark instances (#255)
 - Update Travis configuration to use Ubuntu Bionic (#260)
+- Cut down validity checks time (#266)
+
+### Deprecated
+
+- `amount` key at `job` level in input and at `summary` and `route` level in output (#262)
+
+### Removed
+
+- Clustering heuristics for CVRP (#267)
 
 ### Fixed
 

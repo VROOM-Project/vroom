@@ -35,8 +35,6 @@ private:
   const Input& _input;
   const Matrix<Cost>& _matrix;
   const std::size_t _nb_vehicles;
-  const Amount _amount_lower_bound;
-  const Amount _double_amount_lower_bound;
 
   const unsigned _max_nb_jobs_removal;
   std::vector<Index> _all_routes;

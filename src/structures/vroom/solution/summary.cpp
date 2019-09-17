@@ -11,13 +11,14 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
-Summary::Summary() : cost(0), unassigned(0), amount(), service(0) {
+Summary::Summary() : cost(0), unassigned(0), service(0) {
 }
 
 Summary::Summary(unsigned unassigned, unsigned amount_size)
   : cost(0),
     unassigned(unassigned),
-    amount(amount_size),
+    delivery(amount_size),
+    pickup(amount_size),
     service(0),
     duration(0),
     waiting_time(0),

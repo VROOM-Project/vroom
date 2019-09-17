@@ -70,25 +70,29 @@ void log_solution(const vroom::Solution& sol, bool geometry) {
 
 void run_example_with_osrm() {
   bool GEOMETRY = true;
+  unsigned amount_dimension = 1;
 
   // Set OSRM host and port.
   auto routing_wrapper = std::make_unique<
     vroom::routing::OsrmRoutedWrapper>("car",
                                        vroom::Server("localhost", "5000"));
 
-  vroom::Input problem_instance;
+  vroom::Input problem_instance(amount_dimension);
   problem_instance.set_routing(std::move(routing_wrapper));
   problem_instance.set_geometry(GEOMETRY); // Query for route geometry
                                            // after solving.
 
   // Create one-dimension capacity restrictions to model the situation
-  // where one vehicle can handle 4 jobs.
+  // where one vehicle can handle 4 jobs with deliveries.
   vroom::Amount vehicle_capacity(1);
   vroom::TimeWindow vehicle_tw(28800, 43200); // Working hours.
-  vroom::Amount job_amount(1);
+  // Default "zero" amount data structures with relevant dimension.
+  vroom::Amount job_delivery(amount_dimension);
+  vroom::Amount job_pickup(amount_dimension);
+
   vroom::Duration service = 5 * 60; // 5 minutes
   vehicle_capacity[0] = 4;
-  job_amount[0] = 1;
+  job_delivery[0] = 1;
 
   // Define vehicles (use boost::none for no start or no end).
   vroom::Location depot(vroom::Coordinates({{2.35044, 48.71764}}));
@@ -118,34 +122,40 @@ void run_example_with_osrm() {
   jobs.push_back(vroom::Job(1,
                             vroom::Coordinates({{1.98935, 48.701}}),
                             service,
-                            job_amount,
+                            job_delivery,
+                            job_pickup,
                             {1}, // skills
                             0,   // default priority
                             job_1_tws));
   jobs.push_back(vroom::Job(2,
                             vroom::Coordinates({{2.03655, 48.61128}}),
                             service,
-                            job_amount,
+                            job_delivery,
+                            job_pickup,
                             {1}));
   jobs.push_back(vroom::Job(3,
                             vroom::Coordinates({{2.39719, 49.07611}}),
                             service,
-                            job_amount,
+                            job_delivery,
+                            job_pickup,
                             {2}));
   jobs.push_back(vroom::Job(4,
                             vroom::Coordinates({{2.41808, 49.22619}}),
                             service,
-                            job_amount,
+                            job_delivery,
+                            job_pickup,
                             {2}));
   jobs.push_back(vroom::Job(5,
                             vroom::Coordinates({{2.28325, 48.5958}}),
                             service,
-                            job_amount,
+                            job_delivery,
+                            job_pickup,
                             {14}));
   jobs.push_back(vroom::Job(6,
                             vroom::Coordinates({{2.89357, 48.90736}}),
                             service,
-                            job_amount,
+                            job_delivery,
+                            job_pickup,
                             {14}));
 
   for (const auto& j : jobs) {
@@ -170,8 +180,9 @@ void run_example_with_osrm() {
 
 void run_example_with_custom_matrix() {
   bool GEOMETRY = false;
+  unsigned amount_dimension = 1;
 
-  vroom::Input problem_instance;
+  vroom::Input problem_instance(amount_dimension);
 
   // Define custom matrix and bypass OSRM call.
   vroom::Matrix<vroom::Cost> matrix_input(
@@ -185,13 +196,16 @@ void run_example_with_custom_matrix() {
   problem_instance.set_matrix(std::move(matrix_input));
 
   // Create one-dimension capacity restrictions to model the situation
-  // where one vehicle can handle 4 jobs.
+  // where one vehicle can handle 4 jobs with deliveries.
   vroom::Amount vehicle_capacity(1);
   vroom::TimeWindow vehicle_tw(28800, 43200); // Working hours.
-  vroom::Amount job_amount(1);
+  // Default "zero" amount data structures with relevant dimension.
+  vroom::Amount job_delivery(amount_dimension);
+  vroom::Amount job_pickup(amount_dimension);
+
   vroom::Duration service = 5 * 60; // 5 minutes
   vehicle_capacity[0] = 4;
-  job_amount[0] = 1;
+  job_delivery[0] = 1;
 
   // Define vehicles (use boost::none for no start or no end).
   vroom::Location depot(0); // index in the provided matrix.
@@ -219,12 +233,13 @@ void run_example_with_custom_matrix() {
   // optional), service time, amount, required skills, priority and
   // time windows. Constraints that are not required can be omitted.
   std::vector<vroom::Job> jobs;
-  jobs.push_back(vroom::Job(1, 1, service, job_amount, {1}, 0, job_1_tws));
-  jobs.push_back(vroom::Job(2, 2, service, job_amount, {1}));
-  jobs.push_back(vroom::Job(3, 3, service, job_amount, {2}));
-  jobs.push_back(vroom::Job(4, 4, service, job_amount, {2}));
-  jobs.push_back(vroom::Job(5, 5, service, job_amount, {14}));
-  jobs.push_back(vroom::Job(6, 6, service, job_amount, {14}));
+  jobs.push_back(
+    vroom::Job(1, 1, service, job_delivery, job_pickup, {1}, 0, job_1_tws));
+  jobs.push_back(vroom::Job(2, 2, service, job_delivery, job_pickup, {1}));
+  jobs.push_back(vroom::Job(3, 3, service, job_delivery, job_pickup, {2}));
+  jobs.push_back(vroom::Job(4, 4, service, job_delivery, job_pickup, {2}));
+  jobs.push_back(vroom::Job(5, 5, service, job_delivery, job_pickup, {14}));
+  jobs.push_back(vroom::Job(6, 6, service, job_delivery, job_pickup, {14}));
 
   for (const auto& j : jobs) {
     problem_instance.add_job(j);

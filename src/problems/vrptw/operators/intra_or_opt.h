@@ -20,17 +20,6 @@ class IntraOrOpt : public cvrp::IntraOrOpt {
 private:
   TWRoute& _tw_s_route;
 
-  bool _is_normal_valid;
-  bool _is_reverse_valid;
-
-  std::vector<Index> _moved_jobs;
-  const Index _first_rank;
-  const Index _last_rank;
-  Index _s_edge_first;
-  Index _s_edge_last;
-
-  virtual void compute_gain() override;
-
 public:
   IntraOrOpt(const Input& input,
              const utils::SolutionState& sol_state,

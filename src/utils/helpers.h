@@ -196,7 +196,10 @@ inline Solution format_solution(const Input& input,
 
     Cost cost = 0;
     Duration service = 0;
-    Amount amount(input.amount_size());
+    Amount amount(input.zero_amount());
+    Amount sum_pickups(input.zero_amount());
+    Amount current_load = raw_routes[i].get_load(0); // All deliveries.
+    assert(current_load <= v.capacity);
 
     // Steps for current route.
     std::vector<Step> steps;
@@ -204,7 +207,7 @@ inline Solution format_solution(const Input& input,
     Duration ETA = 0;
     // Handle start.
     if (v.has_start()) {
-      steps.emplace_back(STEP_TYPE::START, v.start.get());
+      steps.emplace_back(STEP_TYPE::START, v.start.get(), current_load);
       steps.back().duration = 0;
       steps.back().arrival = 0;
       auto travel = m[v.start.get().index()][input.jobs[route.front()].index()];
@@ -214,12 +217,17 @@ inline Solution format_solution(const Input& input,
 
     // Handle jobs.
     assert(input.vehicle_ok_with_job(i, route.front()));
-    steps.emplace_back(input.jobs[route.front()]);
+    auto& first_job = input.jobs[route.front()];
+    service += first_job.service;
+    amount += first_job.delivery;
 
+    current_load -= first_job.delivery;
+    current_load += first_job.pickup;
+    sum_pickups += first_job.pickup;
+    assert(current_load <= v.capacity);
+
+    steps.emplace_back(first_job, current_load);
     auto& first = steps.back();
-    service += first.service;
-    amount += first.amount;
-
     first.duration = ETA;
     first.arrival = ETA;
     ETA += first.service;
@@ -232,20 +240,26 @@ inline Solution format_solution(const Input& input,
       ETA += travel;
       cost += travel;
 
-      steps.emplace_back(input.jobs[route[r + 1]]);
+      auto& current_job = input.jobs[route[r + 1]];
+      service += current_job.service;
+      amount += current_job.delivery;
+
+      current_load -= current_job.delivery;
+      current_load += current_job.pickup;
+      sum_pickups += current_job.pickup;
+      assert(current_load <= v.capacity);
+
+      steps.emplace_back(current_job, current_load);
       auto& current = steps.back();
-      service += current.service;
-      amount += current.amount;
       current.duration = cost;
       current.arrival = ETA;
-
       ETA += current.service;
       unassigned_ranks.erase(route[r + 1]);
     }
 
     // Handle end.
     if (v.has_end()) {
-      steps.emplace_back(STEP_TYPE::END, v.end.get());
+      steps.emplace_back(STEP_TYPE::END, v.end.get(), current_load);
       Duration travel =
         m[input.jobs[route.back()].index()][v.end.get().index()];
       ETA += travel;
@@ -255,7 +269,16 @@ inline Solution format_solution(const Input& input,
     }
 
     assert(amount <= v.capacity);
-    routes.emplace_back(v.id, std::move(steps), cost, service, cost, 0, amount);
+    assert(current_load == sum_pickups);
+
+    routes.emplace_back(v.id,
+                        std::move(steps),
+                        cost,
+                        service,
+                        cost,
+                        0,
+                        raw_routes[i].get_load(0), // all deliveries
+                        sum_pickups);
   }
 
   // Handle unassigned jobs.
@@ -266,7 +289,7 @@ inline Solution format_solution(const Input& input,
                  [&](auto j) { return input.jobs[j]; });
 
   return Solution(0,
-                  input.amount_size(),
+                  input.zero_amount().size(),
                   std::move(routes),
                   std::move(unassigned_jobs));
 }
@@ -302,13 +325,17 @@ inline Route format_route(const Input& input,
 
   Cost cost = 0;
   Duration service = 0;
-  Amount amount(input.amount_size());
+  Amount amount(input.zero_amount());
+  Amount sum_pickups(input.zero_amount());
+  Amount current_load = tw_r.get_load(0); // All deliveries.
+  assert(current_load <= v.capacity);
+
   // Steps for current route.
   std::vector<Step> steps;
 
   // Now pack everything ASAP based on first job start date.
   if (v.has_start()) {
-    steps.emplace_back(STEP_TYPE::START, v.start.get());
+    steps.emplace_back(STEP_TYPE::START, v.start.get(), current_load);
     steps.back().duration = 0;
 
     const auto& first_job = input.jobs[tw_r.route[0]];
@@ -321,12 +348,19 @@ inline Route format_route(const Input& input,
     steps.back().arrival = v_start;
   }
 
+  // Handle jobs.
   assert(input.vehicle_ok_with_job(tw_r.vehicle_rank, tw_r.route.front()));
-  steps.emplace_back(input.jobs[tw_r.route.front()]);
-  auto& first = steps.back();
-  service += first.service;
-  amount += first.amount;
+  auto& first_job = input.jobs[tw_r.route.front()];
+  service += first_job.service;
+  amount += first_job.delivery;
 
+  current_load -= first_job.delivery;
+  current_load += first_job.pickup;
+  sum_pickups += first_job.pickup;
+  assert(current_load <= v.capacity);
+
+  steps.emplace_back(first_job, current_load);
+  auto& first = steps.back();
   first.duration = cost;
   first.arrival = job_start;
   unassigned_ranks.erase(tw_r.route.front());
@@ -340,10 +374,17 @@ inline Route format_route(const Input& input,
     Duration travel = m[previous_job.index()][next_job.index()];
     cost += travel;
 
-    steps.emplace_back(input.jobs[tw_r.route[r + 1]]);
+    auto& current_job = input.jobs[tw_r.route[r + 1]];
+    service += current_job.service;
+    amount += current_job.delivery;
+
+    current_load -= current_job.delivery;
+    current_load += current_job.pickup;
+    sum_pickups += current_job.pickup;
+    assert(current_load <= v.capacity);
+
+    steps.emplace_back(current_job, current_load);
     auto& current = steps.back();
-    service += current.service;
-    amount += current.amount;
     current.duration = cost;
 
     Duration start_candidate = job_start + previous_job.service + travel;
@@ -367,7 +408,7 @@ inline Route format_route(const Input& input,
     Duration travel = m[last_job.index()][v.end.get().index()];
     cost += travel;
 
-    steps.emplace_back(STEP_TYPE::END, v.end.get());
+    steps.emplace_back(STEP_TYPE::END, v.end.get(), current_load);
     steps.back().duration = cost;
 
     Duration v_end = job_start + last_job.service + travel;
@@ -376,12 +417,20 @@ inline Route format_route(const Input& input,
   }
 
   assert(amount <= v.capacity);
+  assert(current_load == sum_pickups);
   assert(forward_wt == backward_wt);
   assert(steps.back().arrival + steps.back().waiting_time +
            steps.back().service - steps.front().arrival ==
          cost + service + forward_wt);
 
-  return Route(v.id, std::move(steps), cost, service, cost, forward_wt, amount);
+  return Route(v.id,
+               std::move(steps),
+               cost,
+               service,
+               cost,
+               forward_wt,
+               tw_r.get_load(0), // All deliveries.
+               sum_pickups);
 }
 
 inline Solution format_solution(const Input& input,
@@ -410,7 +459,7 @@ inline Solution format_solution(const Input& input,
                  [&](auto j) { return input.jobs[j]; });
 
   return Solution(0,
-                  input.amount_size(),
+                  input.zero_amount().size(),
                   std::move(routes),
                   std::move(unassigned_jobs));
 }

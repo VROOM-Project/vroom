@@ -16,13 +16,25 @@ namespace vroom {
 namespace cvrp {
 
 class IntraOrOpt : public ls::Operator {
+private:
+  bool _gain_upper_bound_computed;
+  Gain _s_gain;
+  Gain _normal_t_gain;
+  Gain _reversed_t_gain;
+
 protected:
-  virtual void compute_gain() override;
-
-  Gain normal_stored_gain;
-  Gain reversed_stored_gain;
-
   bool reverse_s_edge;
+
+  bool is_normal_valid;
+  bool is_reverse_valid;
+
+  std::vector<Index> _moved_jobs;
+  const Index _first_rank;
+  const Index _last_rank;
+  Index _s_edge_first;
+  Index _s_edge_last;
+
+  virtual void compute_gain() override;
 
 public:
   IntraOrOpt(const Input& input,
@@ -31,6 +43,11 @@ public:
              Index s_vehicle,
              Index s_rank,
              Index t_rank); // rank *after* removal.
+
+  // Compute and store all possible cost depending on whether edges
+  // are reversed or not. Return only an upper bound for gain as
+  // precise gain requires validity information.
+  Gain gain_upper_bound();
 
   virtual bool is_valid() override;
 

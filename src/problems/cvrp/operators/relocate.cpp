@@ -53,20 +53,13 @@ void Relocate::compute_gain() {
 }
 
 bool Relocate::is_valid() {
-  auto relocate_job_rank = s_route[s_rank];
-
-  bool valid = _input.vehicle_ok_with_job(t_vehicle, relocate_job_rank);
-
-  if (_sol_state.fwd_amounts[t_vehicle].empty()) {
-    valid &= (_input.jobs[relocate_job_rank].amount <=
-              _input.vehicles[t_vehicle].capacity);
-  } else {
-    valid &= (_sol_state.fwd_amounts[t_vehicle].back() +
-                _input.jobs[relocate_job_rank].amount <=
-              _input.vehicles[t_vehicle].capacity);
-  }
-
-  return valid;
+  return _input.vehicle_ok_with_job(t_vehicle, s_route[s_rank]) and
+         target
+           .is_valid_addition_for_capacity(_input,
+                                           _input.jobs[s_route[s_rank]].pickup,
+                                           _input.jobs[s_route[s_rank]]
+                                             .delivery,
+                                           t_rank);
 }
 
 void Relocate::apply() {

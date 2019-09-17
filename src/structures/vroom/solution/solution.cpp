@@ -26,7 +26,8 @@ Solution::Solution(unsigned code,
 
   for (const auto& route : this->routes) {
     summary.cost += route.cost;
-    summary.amount += route.amount;
+    summary.delivery += route.delivery;
+    summary.pickup += route.pickup;
     summary.service += route.service;
     summary.duration += route.duration;
     summary.waiting_time += route.waiting_time;

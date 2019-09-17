@@ -71,8 +71,6 @@ LocalSearch<Route,
   : _input(input),
     _matrix(_input.get_matrix()),
     _nb_vehicles(_input.vehicles.size()),
-    _amount_lower_bound(_input.get_amount_lower_bound()),
-    _double_amount_lower_bound(_amount_lower_bound + _amount_lower_bound),
     _max_nb_jobs_removal(max_nb_jobs_removal),
     _all_routes(_nb_vehicles),
     _sol_state(input),
@@ -143,24 +141,27 @@ void LocalSearch<Route,
     Index best_rank = 0;
 
     for (const auto j : _sol_state.unassigned) {
+      auto& current_job = _input.jobs[j];
       auto job_priority = _input.jobs[j].priority;
+
       if (job_priority < best_priority) {
         // Insert higher priority jobs first.
         continue;
       }
-      auto& current_amount = _input.jobs[j].amount;
 
       best_costs.assign(routes.size(), std::numeric_limits<Gain>::max());
       best_ranks.assign(routes.size(), 0);
       for (std::size_t i = 0; i < routes.size(); ++i) {
         auto v = routes[i];
         const auto& v_target = _input.vehicles[v];
-        const Amount& v_amount = _sol_state.total_amount(v);
 
-        if (_input.vehicle_ok_with_job(v, j) and
-            v_amount + current_amount <= _input.vehicles[v].capacity) {
+        if (_input.vehicle_ok_with_job(v, j)) {
           for (std::size_t r = 0; r <= _sol[v].size(); ++r) {
-            if (_sol[v].is_valid_addition_for_tw(_input, j, r)) {
+            if (_sol[v].is_valid_addition_for_capacity(_input,
+                                                       current_job.pickup,
+                                                       current_job.delivery,
+                                                       r) and
+                _sol[v].is_valid_addition_for_tw(_input, j, r)) {
               Gain current_cost = utils::addition_cost(_input,
                                                        _matrix,
                                                        j,
@@ -223,26 +224,6 @@ void LocalSearch<Route,
 
     if (job_added) {
       _sol[best_route].add(_input, best_job, best_rank);
-
-      // Update amounts after addition.
-      const auto& job_amount = _input.jobs[best_job].amount;
-      auto& best_fwd_amounts = _sol_state.fwd_amounts[best_route];
-      auto previous_cumul = (best_rank == 0) ? Amount(_input.amount_size())
-                                             : best_fwd_amounts[best_rank - 1];
-      best_fwd_amounts.insert(best_fwd_amounts.begin() + best_rank,
-                              previous_cumul + job_amount);
-      std::for_each(best_fwd_amounts.begin() + best_rank + 1,
-                    best_fwd_amounts.end(),
-                    [&](auto& a) { a += job_amount; });
-
-      auto& best_bwd_amounts = _sol_state.bwd_amounts[best_route];
-      best_bwd_amounts.insert(best_bwd_amounts.begin() + best_rank,
-                              Amount(_input.amount_size())); // dummy init
-      auto total_amount = _sol_state.fwd_amounts[best_route].back();
-      for (std::size_t i = 0; i <= best_rank; ++i) {
-        _sol_state.bwd_amounts[best_route][i] =
-          total_amount - _sol_state.fwd_amounts[best_route][i];
-      }
 
 #ifndef NDEBUG
       // Update cost after addition.
@@ -321,7 +302,7 @@ void LocalSearch<Route,
                      _sol[s_t.second],
                      s_t.second,
                      t_rank);
-          if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
+          if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid()) {
             best_gains[s_t.first][s_t.second] = r.gain();
             best_ops[s_t.first][s_t.second] = std::make_unique<Exchange>(r);
           }
@@ -347,8 +328,10 @@ void LocalSearch<Route,
                           _sol[s_t.second],
                           s_t.second,
                           t_rank);
-          if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
-            best_gains[s_t.first][s_t.second] = r.gain();
+          auto& current_best = best_gains[s_t.first][s_t.second];
+          if (r.gain_upper_bound() > current_best and r.is_valid() and
+              r.gain() > current_best) {
+            current_best = r.gain();
             best_ops[s_t.first][s_t.second] =
               std::make_unique<CrossExchange>(r);
           }
@@ -374,8 +357,10 @@ void LocalSearch<Route,
                           _sol[s_t.second],
                           s_t.second,
                           t_rank);
-          if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
-            best_gains[s_t.first][s_t.second] = r.gain();
+          auto& current_best = best_gains[s_t.first][s_t.second];
+          if (r.gain_upper_bound() > current_best and r.is_valid() and
+              r.gain() > current_best) {
+            current_best = r.gain();
             best_ops[s_t.first][s_t.second] =
               std::make_unique<MixedExchange>(r);
           }
@@ -390,12 +375,7 @@ void LocalSearch<Route,
         continue;
       }
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
-        auto s_free_amount = _input.vehicles[s_t.first].capacity -
-                             _sol_state.fwd_amounts[s_t.first][s_rank];
         for (int t_rank = _sol[s_t.second].size() - 1; t_rank >= 0; --t_rank) {
-          if (!(_sol_state.bwd_amounts[s_t.second][t_rank] <= s_free_amount)) {
-            break;
-          }
           TwoOpt r(_input,
                    _sol_state,
                    _sol[s_t.first],
@@ -418,12 +398,7 @@ void LocalSearch<Route,
         continue;
       }
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
-        auto s_free_amount = _input.vehicles[s_t.first].capacity -
-                             _sol_state.fwd_amounts[s_t.first][s_rank];
         for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size(); ++t_rank) {
-          if (!(_sol_state.fwd_amounts[s_t.second][t_rank] <= s_free_amount)) {
-            break;
-          }
           ReverseTwoOpt r(_input,
                           _sol_state,
                           _sol[s_t.first],
@@ -443,11 +418,8 @@ void LocalSearch<Route,
 
     // Relocate stuff
     for (const auto& s_t : s_t_pairs) {
-      if (s_t.first == s_t.second or _sol[s_t.first].size() == 0 or
-          !(_sol_state.total_amount(s_t.second) + _amount_lower_bound <=
-            _input.vehicles[s_t.second].capacity)) {
-        // Don't try to put things in a full vehicle or from an empty
-        // vehicle.
+      if (s_t.first == s_t.second or _sol[s_t.first].size() == 0) {
+        // Don't try to put things from an empty vehicle.
         continue;
       }
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
@@ -466,7 +438,7 @@ void LocalSearch<Route,
                      _sol[s_t.second],
                      s_t.second,
                      t_rank);
-          if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
+          if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid()) {
             best_gains[s_t.first][s_t.second] = r.gain();
             best_ops[s_t.first][s_t.second] = std::make_unique<Relocate>(r);
           }
@@ -476,11 +448,8 @@ void LocalSearch<Route,
 
     // Or-opt stuff
     for (const auto& s_t : s_t_pairs) {
-      if (s_t.first == s_t.second or _sol[s_t.first].size() < 2 or
-          !(_sol_state.total_amount(s_t.second) + _double_amount_lower_bound <=
-            _input.vehicles[s_t.second].capacity)) {
-        // Don't try to put things in a full vehicle or from a
-        // (near-)empty vehicle.
+      if (s_t.first == s_t.second or _sol[s_t.first].size() < 2) {
+        // Don't try to put things from a (near-)empty vehicle.
         continue;
       }
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1; ++s_rank) {
@@ -499,8 +468,10 @@ void LocalSearch<Route,
                   _sol[s_t.second],
                   s_t.second,
                   t_rank);
-          if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.second]) {
-            best_gains[s_t.first][s_t.second] = r.gain();
+          auto& current_best = best_gains[s_t.first][s_t.second];
+          if (r.gain_upper_bound() > current_best and r.is_valid() and
+              r.gain() > current_best) {
+            current_best = r.gain();
             best_ops[s_t.first][s_t.second] = std::make_unique<OrOpt>(r);
           }
         }
@@ -509,7 +480,7 @@ void LocalSearch<Route,
 
     // Operators applied to a single route.
 
-    // Inner exchange stuff
+    // Intra exchange stuff
     for (const auto& s_t : s_t_pairs) {
       if (s_t.first != s_t.second or _sol[s_t.first].size() < 3) {
         continue;
@@ -532,7 +503,7 @@ void LocalSearch<Route,
       }
     }
 
-    // Inner CROSS-exchange stuff
+    // Intra CROSS-exchange stuff
     for (const auto& s_t : s_t_pairs) {
       if (s_t.first != s_t.second or _sol[s_t.first].size() < 5) {
         continue;
@@ -548,8 +519,10 @@ void LocalSearch<Route,
                                s_t.first,
                                s_rank,
                                t_rank);
-          if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.first]) {
-            best_gains[s_t.first][s_t.first] = r.gain();
+          auto& current_best = best_gains[s_t.first][s_t.second];
+          if (r.gain_upper_bound() > current_best and r.is_valid() and
+              r.gain() > current_best) {
+            current_best = r.gain();
             best_ops[s_t.first][s_t.first] =
               std::make_unique<IntraCrossExchange>(r);
           }
@@ -557,7 +530,7 @@ void LocalSearch<Route,
       }
     }
 
-    // Inner mixed-exchange stuff
+    // Intra mixed-exchange stuff
     for (const auto& s_t : s_t_pairs) {
       if (s_t.first != s_t.second or _sol[s_t.first].size() < 4) {
         continue;
@@ -575,8 +548,10 @@ void LocalSearch<Route,
                                s_t.first,
                                s_rank,
                                t_rank);
-          if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.first]) {
-            best_gains[s_t.first][s_t.first] = r.gain();
+          auto& current_best = best_gains[s_t.first][s_t.second];
+          if (r.gain_upper_bound() > current_best and r.is_valid() and
+              r.gain() > current_best) {
+            current_best = r.gain();
             best_ops[s_t.first][s_t.first] =
               std::make_unique<IntraMixedExchange>(r);
           }
@@ -584,7 +559,7 @@ void LocalSearch<Route,
       }
     }
 
-    // Inner relocate stuff
+    // Intra relocate stuff
     for (const auto& s_t : s_t_pairs) {
       if (s_t.first != s_t.second or _sol[s_t.first].size() < 2) {
         continue;
@@ -615,7 +590,7 @@ void LocalSearch<Route,
       }
     }
 
-    // Inner Or-opt stuff
+    // Intra Or-opt stuff
     for (const auto& s_t : s_t_pairs) {
       if (s_t.first != s_t.second or _sol[s_t.first].size() < 4) {
         continue;
@@ -638,8 +613,10 @@ void LocalSearch<Route,
                        s_t.first,
                        s_rank,
                        t_rank);
-          if (r.is_valid() and r.gain() > best_gains[s_t.first][s_t.first]) {
-            best_gains[s_t.first][s_t.first] = r.gain();
+          auto& current_best = best_gains[s_t.first][s_t.second];
+          if (r.gain_upper_bound() > current_best and r.is_valid() and
+              r.gain() > current_best) {
+            current_best = r.gain();
             best_ops[s_t.first][s_t.first] = std::make_unique<IntraOrOpt>(r);
           }
         }
@@ -692,11 +669,9 @@ void LocalSearch<Route,
 #endif
 
       // We need to run update_amounts before try_job_additions to
-      // correctly evaluate amounts. No need to run it again after
-      // since try_before_additions will subsequently fix amounts upon
-      // each addition.
+      // correctly evaluate amounts.
       for (auto v_rank : update_candidates) {
-        _sol_state.update_amounts(_sol[v_rank].route, v_rank);
+        _sol[v_rank].update_amounts(_input);
       }
 
       try_job_additions(best_ops[best_source][best_target]
@@ -831,10 +806,7 @@ void LocalSearch<Route,
         }
       }
 
-      // Refill jobs (requires updated amounts).
-      for (std::size_t v = 0; v < _sol.size(); ++v) {
-        _sol_state.update_amounts(_sol[v].route, v);
-      }
+      // Refill jobs.
       try_job_additions(_all_routes, 1.5);
 
       // Reset what is needed in solution state.

@@ -15,28 +15,57 @@ namespace cvrp {
 
 IntraMixedExchange::IntraMixedExchange(const Input& input,
                                        const utils::SolutionState& sol_state,
-                                       RawRoute& s_route,
+                                       RawRoute& s_raw_route,
                                        Index s_vehicle,
                                        Index s_rank,
                                        Index t_rank)
   : Operator(input,
              sol_state,
-             s_route,
+             s_raw_route,
              s_vehicle,
              s_rank,
-             s_route,
+             s_raw_route,
              s_vehicle,
              t_rank),
-    reverse_t_edge(false) {
+    _gain_upper_bound_computed(false),
+    reverse_t_edge(false),
+    s_is_normal_valid(false),
+    s_is_reverse_valid(false),
+    _moved_jobs((s_rank < t_rank) ? t_rank - s_rank + 2 : s_rank - t_rank + 1),
+    _first_rank(std::min(s_rank, t_rank)),
+    _last_rank((t_rank < s_rank) ? s_rank + 1 : t_rank + 2) {
   // If node at s_rank is right before/after edge at t_rank, then the
   // move is a relocate.
   assert(s_rank + 1 < t_rank or t_rank + 2 < s_rank);
   assert(s_route.size() >= 4);
   assert(s_rank < s_route.size());
   assert(t_rank < s_route.size() - 1);
+
+  Index s_node;
+  if (t_rank < s_rank) {
+    s_node = 0;
+    _t_edge_first = _moved_jobs.size() - 2;
+    _t_edge_last = _moved_jobs.size() - 1;
+
+    std::copy(s_route.begin() + t_rank + 2,
+              s_route.begin() + s_rank,
+              _moved_jobs.begin() + 1);
+  } else {
+    _t_edge_first = 0;
+    _t_edge_last = 1;
+    s_node = _moved_jobs.size() - 1;
+
+    std::copy(s_route.begin() + s_rank + 1,
+              s_route.begin() + t_rank,
+              _moved_jobs.begin() + 2);
+  }
+
+  _moved_jobs[s_node] = s_route[s_rank];
+  _moved_jobs[_t_edge_first] = s_route[t_rank];
+  _moved_jobs[_t_edge_last] = s_route[t_rank + 1];
 }
 
-void IntraMixedExchange::compute_gain() {
+Gain IntraMixedExchange::gain_upper_bound() {
   const auto& m = _input.get_matrix();
   const auto& v = _input.vehicles[s_vehicle];
 
@@ -78,18 +107,14 @@ void IntraMixedExchange::compute_gain() {
     reverse_next_cost = m[t_index][n_index];
   }
 
-  normal_s_gain = _sol_state.edge_costs_around_node[s_vehicle][s_rank] -
-                  previous_cost - next_cost;
+  _normal_s_gain = _sol_state.edge_costs_around_node[s_vehicle][s_rank] -
+                   previous_cost - next_cost;
 
   Gain reverse_edge_cost = static_cast<Gain>(m[t_index][t_after_index]) -
                            static_cast<Gain>(m[t_after_index][t_index]);
-  reversed_s_gain = _sol_state.edge_costs_around_node[s_vehicle][s_rank] +
-                    reverse_edge_cost - reverse_previous_cost -
-                    reverse_next_cost;
-
-  if (reversed_s_gain > normal_s_gain) {
-    reverse_t_edge = true;
-  }
+  _reversed_s_gain = _sol_state.edge_costs_around_node[s_vehicle][s_rank] +
+                     reverse_edge_cost - reverse_previous_cost -
+                     reverse_next_cost;
 
   // Consider the cost of replacing edge starting at rank t_rank with
   // source node. Part of that cost (for adjacent edges) is stored in
@@ -119,16 +144,66 @@ void IntraMixedExchange::compute_gain() {
     next_cost = m[s_index][n_index];
   }
 
-  t_gain = _sol_state.edge_costs_around_edge[t_vehicle][t_rank] -
-           previous_cost - next_cost;
+  _t_gain = _sol_state.edge_costs_around_edge[t_vehicle][t_rank] -
+            previous_cost - next_cost;
 
-  stored_gain = std::max(normal_s_gain, reversed_s_gain) + t_gain;
+  _gain_upper_bound_computed = true;
+
+  return std::max(_normal_s_gain, _reversed_s_gain) + _t_gain;
+}
+
+void IntraMixedExchange::compute_gain() {
+  assert(_gain_upper_bound_computed);
+  assert(s_is_normal_valid or s_is_reverse_valid);
+  if (_reversed_s_gain > _normal_s_gain) {
+    // Biggest potential gain is obtained when reversing edge.
+    if (s_is_reverse_valid) {
+      stored_gain += _reversed_s_gain;
+      reverse_t_edge = true;
+    } else {
+      stored_gain += _normal_s_gain;
+    }
+  } else {
+    // Biggest potential gain is obtained when not reversing edge.
+    if (s_is_normal_valid) {
+      stored_gain += _normal_s_gain;
+    } else {
+      stored_gain += _reversed_s_gain;
+      reverse_t_edge = true;
+    }
+  }
+
+  stored_gain += _t_gain;
 
   gain_computed = true;
 }
 
 bool IntraMixedExchange::is_valid() {
-  return true;
+  auto delivery = source.delivery_in_range(_first_rank, _last_rank);
+
+  s_is_normal_valid =
+    source.is_valid_addition_for_capacity_inclusion(_input,
+                                                    delivery,
+                                                    _moved_jobs.begin(),
+                                                    _moved_jobs.end(),
+                                                    _first_rank,
+                                                    _last_rank);
+
+  std::swap(_moved_jobs[_t_edge_first], _moved_jobs[_t_edge_last]);
+
+  s_is_reverse_valid =
+    source.is_valid_addition_for_capacity_inclusion(_input,
+                                                    delivery,
+                                                    _moved_jobs.begin(),
+                                                    _moved_jobs.end(),
+                                                    _first_rank,
+                                                    _last_rank);
+
+  // Reset to initial situation before potential application or TW
+  // checks.
+  std::swap(_moved_jobs[_t_edge_first], _moved_jobs[_t_edge_last]);
+
+  return s_is_normal_valid or s_is_reverse_valid;
 }
 
 void IntraMixedExchange::apply() {

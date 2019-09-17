@@ -42,14 +42,13 @@ private:
   Matrix<Cost> _matrix;
   std::vector<Location> _locations;
   std::unordered_map<Location, Index> _locations_to_index;
-  unsigned _amount_size;
-  Amount _amount_lower_bound;
   std::vector<std::vector<unsigned char>> _vehicle_to_job_compatibility;
   std::vector<std::vector<bool>> _vehicle_to_vehicle_compatibility;
   std::unordered_set<Index> _matrix_used_index;
   bool _all_locations_have_coords;
 
-  void check_amount_size(unsigned size);
+  const unsigned _amount_size;
+  const Amount _zero;
 
   std::unique_ptr<VRP> get_problem() const;
 
@@ -57,13 +56,11 @@ private:
 
   void set_compatibility();
 
-  void store_amount_lower_bound(const Amount& amount);
-
 public:
   std::vector<Job> jobs;
   std::vector<Vehicle> vehicles;
 
-  Input();
+  Input(unsigned amount_size);
 
   void set_geometry(bool geometry);
 
@@ -75,9 +72,9 @@ public:
 
   void set_matrix(Matrix<Cost>&& m);
 
-  unsigned amount_size() const;
-
-  Amount get_amount_lower_bound() const;
+  const Amount& zero_amount() const {
+    return _zero;
+  }
 
   bool has_skills() const;
 

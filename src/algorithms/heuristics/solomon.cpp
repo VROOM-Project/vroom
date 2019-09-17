@@ -73,51 +73,60 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
 
     const auto& vehicle = input.vehicles[v_rank];
 
-    Amount route_amount(input.amount_size());
-
     if (init != INIT::NONE) {
       // Initialize current route with the "best" valid job.
-      Amount higher_amount(input.amount_size());
+      bool init_ok = false;
+
+      Amount higher_amount(input.zero_amount());
       Cost furthest_cost = 0;
       Cost nearest_cost = std::numeric_limits<Cost>::max();
       Duration earliest_deadline = std::numeric_limits<Duration>::max();
       Index best_job_rank = 0;
       for (const auto job_rank : unassigned) {
         if (!input.vehicle_ok_with_job(v_rank, job_rank) or
-            !(input.jobs[job_rank].amount <= vehicle.capacity) or
+            !current_r
+               .is_valid_addition_for_capacity(input,
+                                               input.jobs[job_rank].pickup,
+                                               input.jobs[job_rank].delivery,
+                                               0) or
             !current_r.is_valid_addition_for_tw(input, job_rank, 0)) {
           continue;
         }
 
-        if (init == INIT::HIGHER_AMOUNT and higher_amount
-                                              << input.jobs[job_rank].amount) {
-          higher_amount = input.jobs[job_rank].amount;
-          best_job_rank = job_rank;
+        if (init == INIT::HIGHER_AMOUNT) {
+          if (higher_amount << input.jobs[job_rank].pickup) {
+            higher_amount = input.jobs[job_rank].pickup;
+            best_job_rank = job_rank;
+            init_ok = true;
+          }
+          if (higher_amount << input.jobs[job_rank].delivery) {
+            higher_amount = input.jobs[job_rank].delivery;
+            best_job_rank = job_rank;
+            init_ok = true;
+          }
         }
         if (init == INIT::EARLIEST_DEADLINE) {
           Duration current_deadline = input.jobs[job_rank].tws.back().end;
           if (current_deadline < earliest_deadline) {
             earliest_deadline = current_deadline;
             best_job_rank = job_rank;
+            init_ok = true;
           }
         }
         if (init == INIT::FURTHEST and furthest_cost < costs[job_rank]) {
           furthest_cost = costs[job_rank];
           best_job_rank = job_rank;
+          init_ok = true;
         }
         if (init == INIT::NEAREST and costs[job_rank] < nearest_cost) {
           nearest_cost = costs[job_rank];
           best_job_rank = job_rank;
+          init_ok = true;
         }
       }
-      if ((init == INIT::HIGHER_AMOUNT and route_amount << higher_amount) or
-          (init == INIT::EARLIEST_DEADLINE and
-           earliest_deadline < std::numeric_limits<Duration>::max()) or
-          (init == INIT::FURTHEST and furthest_cost > 0) or
-          (init == INIT::NEAREST and
-           nearest_cost < std::numeric_limits<Cost>::max())) {
+      if (init_ok) {
         current_r.add(input, best_job_rank, 0);
-        route_amount += input.jobs[best_job_rank].amount;
+        current_r.update_amounts(input);
         unassigned.erase(best_job_rank);
       }
     }
@@ -130,8 +139,7 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
       Index best_r = 0;
 
       for (const auto job_rank : unassigned) {
-        if (!input.vehicle_ok_with_job(v_rank, job_rank) or
-            !(route_amount + input.jobs[job_rank].amount <= vehicle.capacity)) {
+        if (!input.vehicle_ok_with_job(v_rank, job_rank)) {
           continue;
         }
 
@@ -147,6 +155,11 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
             current_add - lambda * static_cast<float>(costs[job_rank]);
 
           if (current_cost < best_cost and
+              current_r
+                .is_valid_addition_for_capacity(input,
+                                                input.jobs[job_rank].pickup,
+                                                input.jobs[job_rank].delivery,
+                                                r) and
               current_r.is_valid_addition_for_tw(input, job_rank, r)) {
             best_cost = current_cost;
             best_job_rank = job_rank;
@@ -157,7 +170,7 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
 
       if (best_cost < std::numeric_limits<float>::max()) {
         current_r.add(input, best_job_rank, best_r);
-        route_amount += input.jobs[best_job_rank].amount;
+        current_r.update_amounts(input);
         unassigned.erase(best_job_rank);
         keep_going = true;
       }
@@ -271,13 +284,13 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
     const auto& vehicle = input.vehicles[v_rank];
     auto& current_r = routes[v_rank];
 
-    Amount route_amount(input.amount_size());
-
     if (init != INIT::NONE) {
       // Initialize current route with the "best" valid job that is
       //  closest for current vehicle than to any other remaining
       //  vehicle.
-      Amount higher_amount(input.amount_size());
+      bool init_ok = false;
+
+      Amount higher_amount(input.zero_amount());
       Cost furthest_cost = 0;
       Cost nearest_cost = std::numeric_limits<Cost>::max();
       Duration earliest_deadline = std::numeric_limits<Duration>::max();
@@ -286,41 +299,50 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
         if (jobs_min_costs[job_rank] < costs[job_rank][v_rank] or
             // One of the remaining vehicles is closest to that job.
             !input.vehicle_ok_with_job(v_rank, job_rank) or
-            !(input.jobs[job_rank].amount <= vehicle.capacity) or
+            !current_r
+               .is_valid_addition_for_capacity(input,
+                                               input.jobs[job_rank].pickup,
+                                               input.jobs[job_rank].delivery,
+                                               0) or
             !current_r.is_valid_addition_for_tw(input, job_rank, 0)) {
           continue;
         }
 
-        if (init == INIT::HIGHER_AMOUNT and higher_amount
-                                              << input.jobs[job_rank].amount) {
-          higher_amount = input.jobs[job_rank].amount;
-          best_job_rank = job_rank;
+        if (init == INIT::HIGHER_AMOUNT) {
+          if (higher_amount << input.jobs[job_rank].pickup) {
+            higher_amount = input.jobs[job_rank].pickup;
+            best_job_rank = job_rank;
+            init_ok = true;
+          }
+          if (higher_amount << input.jobs[job_rank].delivery) {
+            higher_amount = input.jobs[job_rank].delivery;
+            best_job_rank = job_rank;
+            init_ok = true;
+          }
         }
         if (init == INIT::EARLIEST_DEADLINE) {
           Duration current_deadline = input.jobs[job_rank].tws.back().end;
           if (current_deadline < earliest_deadline) {
             earliest_deadline = current_deadline;
             best_job_rank = job_rank;
+            init_ok = true;
           }
         }
         if (init == INIT::FURTHEST and
             furthest_cost < costs[job_rank][v_rank]) {
           furthest_cost = costs[job_rank][v_rank];
           best_job_rank = job_rank;
+          init_ok = true;
         }
         if (init == INIT::NEAREST and costs[job_rank][v_rank] < nearest_cost) {
           nearest_cost = costs[job_rank][v_rank];
           best_job_rank = job_rank;
+          init_ok = true;
         }
       }
-      if ((init == INIT::HIGHER_AMOUNT and route_amount << higher_amount) or
-          (init == INIT::EARLIEST_DEADLINE and
-           earliest_deadline < std::numeric_limits<Duration>::max()) or
-          (init == INIT::FURTHEST and furthest_cost > 0) or
-          (init == INIT::NEAREST and
-           nearest_cost < std::numeric_limits<Cost>::max())) {
+      if (init_ok) {
         current_r.add(input, best_job_rank, 0);
-        route_amount += input.jobs[best_job_rank].amount;
+        current_r.update_amounts(input);
         unassigned.erase(best_job_rank);
       }
     }
@@ -333,8 +355,7 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
       Index best_r = 0;
 
       for (const auto job_rank : unassigned) {
-        if (!input.vehicle_ok_with_job(v_rank, job_rank) or
-            !(route_amount + input.jobs[job_rank].amount <= vehicle.capacity)) {
+        if (!input.vehicle_ok_with_job(v_rank, job_rank)) {
           continue;
         }
 
@@ -350,6 +371,11 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
             current_add - lambda * static_cast<float>(regrets[job_rank]);
 
           if (current_cost < best_cost and
+              current_r
+                .is_valid_addition_for_capacity(input,
+                                                input.jobs[job_rank].pickup,
+                                                input.jobs[job_rank].delivery,
+                                                r) and
               current_r.is_valid_addition_for_tw(input, job_rank, r)) {
             best_cost = current_cost;
             best_job_rank = job_rank;
@@ -360,7 +386,7 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
 
       if (best_cost < std::numeric_limits<float>::max()) {
         current_r.add(input, best_job_rank, best_r);
-        route_amount += input.jobs[best_job_rank].amount;
+        current_r.update_amounts(input);
         unassigned.erase(best_job_rank);
         keep_going = true;
       }

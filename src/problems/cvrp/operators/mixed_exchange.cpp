@@ -28,7 +28,10 @@ MixedExchange::MixedExchange(const Input& input,
              t_route,
              t_vehicle,
              t_rank),
-    reverse_t_edge(false) {
+    _gain_upper_bound_computed(false),
+    reverse_t_edge(false),
+    s_is_normal_valid(false),
+    s_is_reverse_valid(false) {
   assert(s_vehicle != t_vehicle);
   assert(s_route.size() >= 1);
   assert(t_route.size() >= 2);
@@ -36,7 +39,7 @@ MixedExchange::MixedExchange(const Input& input,
   assert(t_rank < t_route.size() - 1);
 }
 
-void MixedExchange::compute_gain() {
+Gain MixedExchange::gain_upper_bound() {
   const auto& m = _input.get_matrix();
   const auto& v_source = _input.vehicles[s_vehicle];
   const auto& v_target = _input.vehicles[t_vehicle];
@@ -79,18 +82,14 @@ void MixedExchange::compute_gain() {
     reverse_next_cost = m[t_index][n_index];
   }
 
-  normal_s_gain = _sol_state.edge_costs_around_node[s_vehicle][s_rank] -
-                  previous_cost - next_cost;
+  _normal_s_gain = _sol_state.edge_costs_around_node[s_vehicle][s_rank] -
+                   previous_cost - next_cost;
 
   Gain reverse_edge_cost = static_cast<Gain>(m[t_index][t_after_index]) -
                            static_cast<Gain>(m[t_after_index][t_index]);
-  reversed_s_gain = _sol_state.edge_costs_around_node[s_vehicle][s_rank] +
-                    reverse_edge_cost - reverse_previous_cost -
-                    reverse_next_cost;
-
-  if (reversed_s_gain > normal_s_gain) {
-    reverse_t_edge = true;
-  }
+  _reversed_s_gain = _sol_state.edge_costs_around_node[s_vehicle][s_rank] +
+                     reverse_edge_cost - reverse_previous_cost -
+                     reverse_next_cost;
 
   // For target vehicle, we consider the cost of replacing edge at
   // rank t_rank with source job. Part of that cost (for adjacent
@@ -120,17 +119,43 @@ void MixedExchange::compute_gain() {
     next_cost = m[s_index][n_index];
   }
 
-  t_gain = _sol_state.edge_costs_around_edge[t_vehicle][t_rank] -
-           previous_cost - next_cost;
+  _t_gain = _sol_state.edge_costs_around_edge[t_vehicle][t_rank] -
+            previous_cost - next_cost;
 
-  stored_gain = std::max(normal_s_gain, reversed_s_gain) + t_gain;
+  _gain_upper_bound_computed = true;
+
+  return std::max(_normal_s_gain, _reversed_s_gain) + _t_gain;
+}
+
+void MixedExchange::compute_gain() {
+  assert(_gain_upper_bound_computed);
+  assert(s_is_normal_valid or s_is_reverse_valid);
+  if (_reversed_s_gain > _normal_s_gain) {
+    // Biggest potential gain is obtained when reversing edge.
+    if (s_is_reverse_valid) {
+      stored_gain += _reversed_s_gain;
+      reverse_t_edge = true;
+    } else {
+      stored_gain += _normal_s_gain;
+    }
+  } else {
+    // Biggest potential gain is obtained when not reversing edge.
+    if (s_is_normal_valid) {
+      stored_gain += _normal_s_gain;
+    } else {
+      stored_gain += _reversed_s_gain;
+      reverse_t_edge = true;
+    }
+  }
+
+  stored_gain += _t_gain;
+
   gain_computed = true;
 }
 
 bool MixedExchange::is_valid() {
   auto s_job_rank = s_route[s_rank];
   auto t_job_rank = t_route[t_rank];
-  // Already asserted in compute_gain.
   auto t_after_job_rank = t_route[t_rank + 1];
 
   bool valid = _input.vehicle_ok_with_job(t_vehicle, s_job_rank);
@@ -138,14 +163,48 @@ bool MixedExchange::is_valid() {
   valid &= _input.vehicle_ok_with_job(s_vehicle, t_after_job_rank);
 
   valid &=
-    (_sol_state.fwd_amounts[s_vehicle].back() - _input.jobs[s_job_rank].amount +
-       _input.jobs[t_job_rank].amount + _input.jobs[t_after_job_rank].amount <=
-     _input.vehicles[s_vehicle].capacity);
+    target
+      .is_valid_addition_for_capacity_margins(_input,
+                                              _input.jobs[s_job_rank].pickup,
+                                              _input.jobs[s_job_rank].delivery,
+                                              t_rank,
+                                              t_rank + 2);
 
-  valid &=
-    (_sol_state.fwd_amounts[t_vehicle].back() - _input.jobs[t_job_rank].amount -
-       _input.jobs[t_after_job_rank].amount + _input.jobs[s_job_rank].amount <=
-     _input.vehicles[t_vehicle].capacity);
+  auto target_pickup =
+    _input.jobs[t_job_rank].pickup + _input.jobs[t_after_job_rank].pickup;
+  auto target_delivery =
+    _input.jobs[t_job_rank].delivery + _input.jobs[t_after_job_rank].delivery;
+
+  valid &= source.is_valid_addition_for_capacity_margins(_input,
+                                                         target_pickup,
+                                                         target_delivery,
+                                                         s_rank,
+                                                         s_rank + 1);
+
+  if (valid) {
+    // Keep target edge direction when inserting in source route.
+    auto t_start = t_route.begin() + t_rank;
+
+    s_is_normal_valid =
+      source.is_valid_addition_for_capacity_inclusion(_input,
+                                                      target_delivery,
+                                                      t_start,
+                                                      t_start + 2,
+                                                      s_rank,
+                                                      s_rank + 1);
+
+    // Reverse target edge direction when inserting in source route.
+    auto t_reverse_start = t_route.rbegin() + t_route.size() - 2 - t_rank;
+    s_is_reverse_valid =
+      source.is_valid_addition_for_capacity_inclusion(_input,
+                                                      target_delivery,
+                                                      t_reverse_start,
+                                                      t_reverse_start + 2,
+                                                      s_rank,
+                                                      s_rank + 1);
+
+    valid = s_is_normal_valid or s_is_reverse_valid;
+  }
 
   return valid;
 }

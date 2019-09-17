@@ -19,9 +19,6 @@ SolutionState::SolutionState(const Input& input)
   : _input(input),
     _m(_input.get_matrix()),
     _nb_vehicles(_input.vehicles.size()),
-    _empty_amount(_input.amount_size()),
-    fwd_amounts(_nb_vehicles),
-    bwd_amounts(_nb_vehicles),
     fwd_costs(_nb_vehicles),
     bwd_costs(_nb_vehicles),
     fwd_skill_rank(_nb_vehicles, std::vector<Index>(_nb_vehicles)),
@@ -42,7 +39,6 @@ SolutionState::SolutionState(const Input& input)
 }
 
 void SolutionState::setup(const std::vector<Index>& r, Index v) {
-  update_amounts(r, v);
   update_costs(r, v);
   update_skills(r, v);
   set_node_gains(r, v);
@@ -86,23 +82,6 @@ void SolutionState::setup(const TWSolution& tw_sol) {
       unassigned.erase(i);
     }
   }
-}
-
-void SolutionState::update_amounts(const std::vector<Index>& route, Index v) {
-  fwd_amounts[v].resize(route.size());
-  bwd_amounts[v].resize(route.size());
-  Amount current_amount(_input.amount_size());
-
-  for (std::size_t i = 0; i < route.size(); ++i) {
-    current_amount += _input.jobs[route[i]].amount;
-    fwd_amounts[v][i] = current_amount;
-  }
-
-  const auto& total_amount = fwd_amounts[v].back();
-  std::transform(fwd_amounts[v].cbegin(),
-                 fwd_amounts[v].cend(),
-                 bwd_amounts[v].begin(),
-                 [&](const auto& a) { return total_amount - a; });
 }
 
 void SolutionState::update_costs(const std::vector<Index>& route, Index v) {
@@ -425,14 +404,6 @@ void SolutionState::update_nearest_job_rank_in_routes(
 void SolutionState::update_route_cost(const std::vector<Index>& route,
                                       Index v) {
   route_costs[v] = route_cost_for_vehicle(_input, v, route);
-}
-
-const Amount& SolutionState::total_amount(Index v) const {
-  if (!fwd_amounts[v].empty()) {
-    return fwd_amounts[v].back();
-  } else {
-    return _empty_amount;
-  }
 }
 
 } // namespace utils

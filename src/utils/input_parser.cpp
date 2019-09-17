@@ -50,21 +50,49 @@ inline std::string get_string(const rapidjson::Value& object, const char* key) {
   return object[key].GetString();
 }
 
-inline Amount get_amount(const rapidjson::Value& object, const char* key) {
-  // Default to empty amount.
-  Amount amount(0);
+inline unsigned get_amount_size(const rapidjson::Value& json_input) {
+  unsigned amount_size_candidate = 0;
+
+  // Only return the first non-zero capacity size as amount size
+  // consistency is further checked upon jobs/vehicles addition in
+  // Input.
+  for (rapidjson::SizeType i = 0; i < json_input["vehicles"].Size(); ++i) {
+    auto& json_vehicle = json_input["vehicles"][i];
+    if (json_vehicle.HasMember("capacity") and
+        json_vehicle["capacity"].IsArray() and
+        json_vehicle["capacity"].Size() > 0) {
+      amount_size_candidate = json_vehicle["capacity"].Size();
+      break;
+    }
+  }
+
+  return amount_size_candidate;
+}
+
+inline Amount get_amount(const rapidjson::Value& object,
+                         const char* key,
+                         unsigned size) {
+  // Default to zero amount with provided size.
+  Amount amount(size);
 
   if (object.HasMember(key)) {
     if (!object[key].IsArray()) {
       throw Exception(ERROR::INPUT, "Invalid " + std::string(key) + " array.");
     }
 
+    if (object[key].Size() != size) {
+      throw Exception(ERROR::INPUT,
+                      "Inconsistent " + std::string(key) +
+                        " length: " + std::to_string(object[key].Size()) +
+                        " and " + std::to_string(size) + '.');
+    }
+
     for (rapidjson::SizeType i = 0; i < object[key].Size(); ++i) {
-      if (!object[key][i].IsInt64()) {
+      if (!object[key][i].IsUint()) {
         throw Exception(ERROR::INPUT,
                         "Invalid " + std::string(key) + " value.");
       }
-      amount.push_back(object[key][i].GetInt64());
+      amount[i] = object[key][i].GetUint();
     }
   }
 
@@ -155,10 +183,6 @@ inline std::vector<TimeWindow> get_job_time_windows(const rapidjson::Value& j) {
 }
 
 Input parse(const CLArgs& cl_args) {
-  // Custom input object embedding jobs, vehicles and matrix.
-  Input input;
-  input.set_geometry(cl_args.geometry);
-
   // Input json object.
   rapidjson::Document json_input;
 
@@ -170,7 +194,7 @@ Input parse(const CLArgs& cl_args) {
     throw Exception(ERROR::INPUT, error_msg);
   }
 
-  // Main Checks for valid json input.
+  // Main checks for valid json input.
   if (!json_input.HasMember("jobs") or !json_input["jobs"].IsArray() or
       json_input["jobs"].Empty()) {
     throw Exception(ERROR::INPUT, "Invalid jobs.");
@@ -183,6 +207,11 @@ Input parse(const CLArgs& cl_args) {
 
   // Used to make sure all vehicles have the same profile.
   std::string common_profile;
+
+  // Custom input object embedding jobs, vehicles and matrix.
+  auto amount_size = get_amount_size(json_input);
+  Input input(amount_size);
+  input.set_geometry(cl_args.geometry);
 
   // Switch input type: explicit matrix or using OSRM.
   if (json_input.HasMember("matrix")) {
@@ -285,7 +314,7 @@ Input parse(const CLArgs& cl_args) {
       Vehicle current_v(v_id,
                         start,
                         end,
-                        get_amount(json_vehicle, "capacity"),
+                        get_amount(json_vehicle, "capacity", amount_size),
                         get_skills(json_vehicle),
                         get_vehicle_time_window(json_vehicle));
 
@@ -337,10 +366,20 @@ Input parse(const CLArgs& cl_args) {
           Location(job_loc_index, parse_coordinates(json_job, "location"));
       }
 
+      // Only for retro-compatibility: when no pickup and delivery
+      // keys are defined and (deprecated) amount key is present, it
+      // should be interpreted as a delivery.
+      bool need_amount_compat = json_job.HasMember("amount") and
+                                !json_job.HasMember("delivery") and
+                                !json_job.HasMember("pickup");
+
       Job current_job(j_id,
                       job_loc,
                       get_service(json_job),
-                      get_amount(json_job, "amount"),
+                      need_amount_compat
+                        ? get_amount(json_job, "amount", amount_size)
+                        : get_amount(json_job, "delivery", amount_size),
+                      get_amount(json_job, "pickup", amount_size),
                       get_skills(json_job),
                       get_priority(json_job),
                       get_job_time_windows(json_job));
@@ -380,7 +419,7 @@ Input parse(const CLArgs& cl_args) {
       Vehicle current_v(json_vehicle["id"].GetUint64(),
                         start,
                         end,
-                        get_amount(json_vehicle, "capacity"),
+                        get_amount(json_vehicle, "capacity", amount_size),
                         get_skills(json_vehicle),
                         get_vehicle_time_window(json_vehicle));
 
@@ -418,10 +457,20 @@ Input parse(const CLArgs& cl_args) {
                           ".");
       }
 
+      // Only for retro-compatibility: when no pickup and delivery
+      // keys are defined and (deprecated) amount key is present, it
+      // should be interpreted as a delivery.
+      bool need_amount_compat = json_job.HasMember("amount") and
+                                !json_job.HasMember("delivery") and
+                                !json_job.HasMember("pickup");
+
       Job current_job(j_id,
                       parse_coordinates(json_job, "location"),
                       get_service(json_job),
-                      get_amount(json_job, "amount"),
+                      need_amount_compat
+                        ? get_amount(json_job, "amount", amount_size)
+                        : get_amount(json_job, "delivery", amount_size),
+                      get_amount(json_job, "pickup", amount_size),
                       get_skills(json_job),
                       get_priority(json_job),
                       get_job_time_windows(json_job));

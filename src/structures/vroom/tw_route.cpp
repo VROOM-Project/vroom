@@ -12,9 +12,7 @@ All rights reserved (see LICENSE).
 namespace vroom {
 
 TWRoute::TWRoute(const Input& input, Index i)
-  : vehicle_rank(i),
-    has_start(input.vehicles[i].has_start()),
-    has_end(input.vehicles[i].has_end()),
+  : RawRoute(input, i),
     v_start(input.vehicles[i].tw.start),
     v_end(input.vehicles[i].tw.end) {
 }
@@ -291,6 +289,8 @@ void TWRoute::add(const Input& input, const Index job_rank, const Index rank) {
 
   fwd_update_earliest_from(input, rank);
   bwd_update_latest_from(input, rank);
+
+  update_amounts(input);
 }
 
 bool TWRoute::is_fwd_valid_removal(const Input& input,
@@ -499,6 +499,8 @@ void TWRoute::remove(const Input& input,
     fwd_update_earliest_with_TW_from(input, fwd_rank);
     bwd_update_latest_with_TW_from(input, bwd_rank);
   }
+
+  update_amounts(input);
 }
 
 template <class InputIterator>

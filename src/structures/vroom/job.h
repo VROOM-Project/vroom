@@ -23,7 +23,8 @@ struct Job {
   Location location;
   const Id id;
   const Duration service;
-  const Amount amount;
+  const Amount delivery;
+  const Amount pickup;
   const Skills skills;
   const Priority priority;
   const std::vector<TimeWindow> tws;
@@ -32,7 +33,8 @@ struct Job {
   Job(Id id,
       const Location& location,
       Duration service = 0,
-      const Amount& amount = Amount(0),
+      const Amount& delivery = Amount(0),
+      const Amount& pickup = Amount(0),
       const Skills& skills = Skills(),
       Priority priority = 0,
       const std::vector<TimeWindow>& tws =

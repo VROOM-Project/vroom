@@ -19,6 +19,10 @@ class IntraRelocate : public ls::Operator {
 protected:
   virtual void compute_gain() override;
 
+  std::vector<Index> _moved_jobs;
+  const Index _first_rank;
+  const Index _last_rank;
+
 public:
   IntraRelocate(const Input& input,
                 const utils::SolutionState& sol_state,

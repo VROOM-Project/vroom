@@ -20,10 +20,6 @@ class IntraExchange : public cvrp::IntraExchange {
 private:
   TWRoute& _tw_s_route;
 
-  std::vector<Index> _moved_jobs;
-  const Index _first_rank;
-  const Index _last_rank;
-
 public:
   IntraExchange(const Input& input,
                 const utils::SolutionState& sol_state,
