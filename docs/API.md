@@ -176,7 +176,7 @@ The `summary` object has the following properties:
 
 | Key         | Description |
 | ----------- | ----------- |
-| `cost` | total cost for all routes |
+| `cost` | total cost for all routes, as seen from the optimization point of view, currently equal to `duration` as optimization is done on travel time |
 | `unassigned` | number of jobs that could not be served |
 | `service` | total service time for all routes |
 | `duration` | total travel time for all routes |
@@ -196,7 +196,7 @@ A `route` object has the following properties:
 | ----------- | ----------- |
 | `vehicle` | id of the vehicle assigned to this route |
 | [`steps`](#steps) | array of `step` objects |
-| `cost` | cost for this route |
+| `cost` | cost for this route, as seen from the optimization point of view, currently equal to `duration` as optimization is done on travel time |
 | `service` | total service time for this route |
 | `duration` | total travel time for this route |
 | `waiting_time` | total waiting time for this route |
