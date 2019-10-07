@@ -22,6 +22,7 @@ namespace vroom {
 struct Job {
   Location location;
   const Id id;
+  const JOB_TYPE type;
   const Duration service;
   const Amount delivery;
   const Amount pickup;
@@ -31,6 +32,7 @@ struct Job {
   const Duration tw_length;
 
   Job(Id id,
+      JOB_TYPE type,
       const Location& location,
       Duration service = 0,
       const Amount& delivery = Amount(0),

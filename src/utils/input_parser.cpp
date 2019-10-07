@@ -195,9 +195,12 @@ Input parse(const CLArgs& cl_args) {
   }
 
   // Main checks for valid json input.
-  if (!json_input.HasMember("jobs") or !json_input["jobs"].IsArray() or
-      json_input["jobs"].Empty()) {
-    throw Exception(ERROR::INPUT, "Invalid jobs.");
+  bool no_jobs = !json_input.HasMember("jobs") or !json_input["jobs"].IsArray() or
+    json_input["jobs"].Empty();
+  bool no_shipments = !json_input.HasMember("shipments") or !json_input["shipments"].IsArray() or
+    json_input["shipments"].Empty();
+  if (no_jobs and no_shipments) {
+    throw Exception(ERROR::INPUT, "Invalid jobs or shipments.");
   }
 
   if (!json_input.HasMember("vehicles") or !json_input["vehicles"].IsArray() or
@@ -374,6 +377,7 @@ Input parse(const CLArgs& cl_args) {
                                 !json_job.HasMember("pickup");
 
       Job current_job(j_id,
+                      JOB_TYPE::SINGLE,
                       job_loc,
                       get_service(json_job),
                       need_amount_compat
@@ -465,6 +469,7 @@ Input parse(const CLArgs& cl_args) {
                                 !json_job.HasMember("pickup");
 
       Job current_job(j_id,
+                      JOB_TYPE::SINGLE,
                       parse_coordinates(json_job, "location"),
                       get_service(json_job),
                       need_amount_compat

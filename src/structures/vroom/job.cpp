@@ -15,6 +15,7 @@ All rights reserved (see LICENSE).
 namespace vroom {
 
 Job::Job(Id id,
+         JOB_TYPE type,
          const Location& location,
          Duration service,
          const Amount& delivery,
@@ -24,6 +25,7 @@ Job::Job(Id id,
          const std::vector<TimeWindow>& tws)
   : location(location),
     id(id),
+    type(type),
     service(service),
     delivery(delivery),
     pickup(pickup),
