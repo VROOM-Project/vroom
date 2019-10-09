@@ -40,13 +40,9 @@ void Input::set_routing(
   _routing_wrapper = std::move(routing_wrapper);
 }
 
-void Input::add_job(const Job& job) {
-  jobs.push_back(job);
-
-  auto& current_job = jobs.back();
-
+void Input::check_job(Job& job) {
   // Ensure delivery size consistency.
-  const auto& delivery_size = current_job.delivery.size();
+  const auto& delivery_size = job.delivery.size();
   if (delivery_size != _amount_size) {
     throw Exception(ERROR::INPUT,
                     "Inconsistent delivery length: " +
@@ -55,7 +51,7 @@ void Input::add_job(const Job& job) {
   }
 
   // Ensure pickup size consistency.
-  const auto& pickup_size = current_job.pickup.size();
+  const auto& pickup_size = job.pickup.size();
   if (pickup_size != _amount_size) {
     throw Exception(ERROR::INPUT,
                     "Inconsistent pickup length: " +
@@ -65,10 +61,10 @@ void Input::add_job(const Job& job) {
 
   // Ensure that skills are either always or never provided.
   if (_no_addition_yet) {
-    _has_skills = !current_job.skills.empty();
+    _has_skills = !job.skills.empty();
     _no_addition_yet = false;
   } else {
-    if (_has_skills != !current_job.skills.empty()) {
+    if (_has_skills != !job.skills.empty()) {
       throw Exception(ERROR::INPUT, "Missing skills.");
     }
   }
@@ -76,24 +72,46 @@ void Input::add_job(const Job& job) {
   // Check for time-windows.
   _has_TW |= (!(job.tws.size() == 1) or !job.tws[0].is_default());
 
-  if (!current_job.location.user_index()) {
+  if (!job.location.user_index()) {
     // Index of this job in the matrix was not specified upon job
     // creation.
-    auto search = _locations_to_index.find(current_job.location);
+    auto search = _locations_to_index.find(job.location);
     if (search != _locations_to_index.end()) {
       // Using stored index for existing location.
-      current_job.location.set_index(search->second);
+      job.location.set_index(search->second);
     } else {
       // Append new location and store corresponding index.
       auto new_index = _locations.size();
-      current_job.location.set_index(new_index);
-      _locations.push_back(current_job.location);
-      _locations_to_index.insert(
-        std::make_pair(current_job.location, new_index));
+      job.location.set_index(new_index);
+      _locations.push_back(job.location);
+      _locations_to_index.insert(std::make_pair(job.location, new_index));
     }
   }
-  _matrix_used_index.insert(current_job.index());
-  _all_locations_have_coords &= current_job.location.has_coordinates();
+
+  _matrix_used_index.insert(job.index());
+  _all_locations_have_coords &= job.location.has_coordinates();
+}
+
+void Input::add_job(const Job& job) {
+  if (job.type != JOB_TYPE::SINGLE) {
+    throw Exception(ERROR::INPUT, "Wrong job type.");
+  }
+  jobs.push_back(job);
+  check_job(jobs.back());
+}
+
+void Input::add_shipment(const Job& pickup, const Job& delivery) {
+  if (pickup.type != JOB_TYPE::PICKUP) {
+    throw Exception(ERROR::INPUT, "Wrong pickup type.");
+  }
+  jobs.push_back(pickup);
+  check_job(jobs.back());
+
+  if (delivery.type != JOB_TYPE::DELIVERY) {
+    throw Exception(ERROR::INPUT, "Wrong delivery type.");
+  }
+  jobs.push_back(delivery);
+  check_job(jobs.back());
 }
 
 void Input::add_vehicle(const Vehicle& vehicle) {

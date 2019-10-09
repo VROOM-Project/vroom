@@ -141,8 +141,48 @@ inline Duration get_priority(const rapidjson::Value& object) {
   return priority;
 }
 
-inline bool valid_vehicle(const rapidjson::Value& v) {
-  return v.IsObject() and v.HasMember("id") and v["id"].IsUint64();
+inline void check_id(const rapidjson::Value& v, const std::string& type) {
+  if (!v.IsObject()) {
+    throw Exception(ERROR::INPUT, "Invalid " + type + ".");
+  }
+  if (!v.HasMember("id") or !v["id"].IsUint64()) {
+    throw Exception(ERROR::INPUT, "Invalid or missing id for " + type + ".");
+  }
+}
+
+inline void check_shipment(const rapidjson::Value& v) {
+  if (!v.IsObject()) {
+    throw Exception(ERROR::INPUT, "Invalid shipment.");
+  }
+  if (!v.HasMember("pickup") or !v["pickup"].IsObject()) {
+    throw Exception(ERROR::INPUT, "Missing pickup for shipment.");
+  }
+  if (!v.HasMember("delivery") or !v["delivery"].IsObject()) {
+    throw Exception(ERROR::INPUT, "Missing delivery for shipment.");
+  }
+}
+
+inline void check_location_index(const rapidjson::Value& v,
+                                 const std::string& type,
+                                 rapidjson::SizeType matrix_size) {
+  if (!v.HasMember("location_index") or !v["location_index"].IsUint()) {
+    throw Exception(ERROR::INPUT,
+                    "Invalid location_index for " + type + " " +
+                      std::to_string(v["id"].GetUint64()) + ".");
+  }
+  if (matrix_size <= v["location_index"].GetUint()) {
+    throw Exception(ERROR::INPUT,
+                    "location_index exceeding matrix size for " + type + " " +
+                      std::to_string(v["id"].GetUint64()) + ".");
+  }
+}
+
+inline void check_location(const rapidjson::Value& v, const std::string& type) {
+  if (!v.HasMember("location") or !v["location"].IsArray()) {
+    throw Exception(ERROR::INPUT,
+                    "Invalid location for " + type + " " +
+                      std::to_string(v["id"].GetUint64()) + ".");
+  }
 }
 
 inline TimeWindow get_time_window(const rapidjson::Value& tw) {
@@ -195,11 +235,12 @@ Input parse(const CLArgs& cl_args) {
   }
 
   // Main checks for valid json input.
-  bool no_jobs = !json_input.HasMember("jobs") or !json_input["jobs"].IsArray() or
-    json_input["jobs"].Empty();
-  bool no_shipments = !json_input.HasMember("shipments") or !json_input["shipments"].IsArray() or
-    json_input["shipments"].Empty();
-  if (no_jobs and no_shipments) {
+  bool has_jobs = json_input.HasMember("jobs") and
+                  json_input["jobs"].IsArray() and !json_input["jobs"].Empty();
+  bool has_shipments = json_input.HasMember("shipments") and
+                       json_input["shipments"].IsArray() and
+                       !json_input["shipments"].Empty();
+  if (!has_jobs and !has_shipments) {
     throw Exception(ERROR::INPUT, "Invalid jobs or shipments.");
   }
 
@@ -248,10 +289,7 @@ Input parse(const CLArgs& cl_args) {
     // Add all vehicles.
     for (rapidjson::SizeType i = 0; i < json_input["vehicles"].Size(); ++i) {
       auto& json_vehicle = json_input["vehicles"][i];
-      if (!valid_vehicle(json_vehicle)) {
-        throw Exception(ERROR::INPUT,
-                        "Invalid vehicle at " + std::to_string(i) + ".");
-      }
+      check_id(json_vehicle, "vehicle");
       auto v_id = json_vehicle["id"].GetUint64();
 
       // Check if vehicle has start_index or end_index.
@@ -314,14 +352,14 @@ Input parse(const CLArgs& cl_args) {
         }
       }
 
-      Vehicle current_v(v_id,
-                        start,
-                        end,
-                        get_amount(json_vehicle, "capacity", amount_size),
-                        get_skills(json_vehicle),
-                        get_vehicle_time_window(json_vehicle));
+      Vehicle vehicle(v_id,
+                      start,
+                      end,
+                      get_amount(json_vehicle, "capacity", amount_size),
+                      get_skills(json_vehicle),
+                      get_vehicle_time_window(json_vehicle));
 
-      input.add_vehicle(current_v);
+      input.add_vehicle(vehicle);
 
       bool has_profile = json_vehicle.HasMember("profile");
       std::string current_profile =
@@ -338,57 +376,95 @@ Input parse(const CLArgs& cl_args) {
       }
     }
 
-    // Add the jobs
-    for (rapidjson::SizeType i = 0; i < json_input["jobs"].Size(); ++i) {
-      auto& json_job = json_input["jobs"][i];
-      if (!json_job.IsObject()) {
-        throw Exception(ERROR::INPUT, "Invalid job.");
-      }
-      if (!json_job.HasMember("id") or !json_job["id"].IsUint64()) {
-        throw Exception(ERROR::INPUT,
-                        "Invalid id for job at " + std::to_string(i) + ".");
-      }
-      auto j_id = json_job["id"].GetUint64();
-      if (!json_job.HasMember("location_index") or
-          !json_job["location_index"].IsUint()) {
-        throw Exception(ERROR::INPUT,
-                        "Invalid location_index for job " +
-                          std::to_string(j_id) + ".");
-      }
-      if (matrix_size <= json_job["location_index"].GetUint()) {
-        throw Exception(ERROR::INPUT,
-                        "location_index exceeding matrix size for job " +
-                          std::to_string(j_id) + ".");
-      }
+    if (has_jobs) {
+      // Add the jobs.
+      for (rapidjson::SizeType i = 0; i < json_input["jobs"].Size(); ++i) {
+        auto& json_job = json_input["jobs"][i];
 
-      auto job_loc_index = json_job["location_index"].GetUint();
-      Location job_loc(job_loc_index);
+        check_id(json_job, "job");
+        check_location_index(json_job, "job", matrix_size);
 
-      if (json_job.HasMember("location")) {
-        job_loc =
-          Location(job_loc_index, parse_coordinates(json_job, "location"));
+        auto job_loc_index = json_job["location_index"].GetUint();
+
+        // Only for retro-compatibility: when no pickup and delivery
+        // keys are defined and (deprecated) amount key is present, it
+        // should be interpreted as a delivery.
+        bool need_amount_compat = json_job.HasMember("amount") and
+                                  !json_job.HasMember("delivery") and
+                                  !json_job.HasMember("pickup");
+
+        Job job(json_job["id"].GetUint64(),
+                json_job.HasMember("location")
+                  ? Location(job_loc_index,
+                             parse_coordinates(json_job, "location"))
+                  : Location(job_loc_index),
+                get_service(json_job),
+                need_amount_compat
+                  ? get_amount(json_job, "amount", amount_size)
+                  : get_amount(json_job, "delivery", amount_size),
+                get_amount(json_job, "pickup", amount_size),
+                get_skills(json_job),
+                get_priority(json_job),
+                get_job_time_windows(json_job));
+
+        input.add_job(job);
       }
+    }
 
-      // Only for retro-compatibility: when no pickup and delivery
-      // keys are defined and (deprecated) amount key is present, it
-      // should be interpreted as a delivery.
-      bool need_amount_compat = json_job.HasMember("amount") and
-                                !json_job.HasMember("delivery") and
-                                !json_job.HasMember("pickup");
+    if (has_shipments) {
+      // Add the shipments.
+      for (rapidjson::SizeType i = 0; i < json_input["shipments"].Size(); ++i) {
+        auto& json_shipment = json_input["shipments"][i];
 
-      Job current_job(j_id,
-                      JOB_TYPE::SINGLE,
-                      job_loc,
-                      get_service(json_job),
-                      need_amount_compat
-                        ? get_amount(json_job, "amount", amount_size)
-                        : get_amount(json_job, "delivery", amount_size),
-                      get_amount(json_job, "pickup", amount_size),
-                      get_skills(json_job),
-                      get_priority(json_job),
-                      get_job_time_windows(json_job));
+        check_shipment(json_shipment);
 
-      input.add_job(current_job);
+        // Retrieve common stuff for both pickup and delivery.
+        auto amount = get_amount(json_shipment, "amount", amount_size);
+        auto skills = get_skills(json_shipment);
+        auto priority = get_priority(json_shipment);
+
+        // Defining pickup job.
+        auto& json_pickup = json_shipment["pickup"];
+
+        check_id(json_pickup, "pickup");
+        check_location_index(json_pickup, "pickup", matrix_size);
+
+        auto pickup_loc_index = json_pickup["location_index"].GetUint();
+
+        Job pickup(json_pickup["id"].GetUint64(),
+                   JOB_TYPE::PICKUP,
+                   json_pickup.HasMember("location")
+                     ? Location(pickup_loc_index,
+                                parse_coordinates(json_pickup, "location"))
+                     : Location(pickup_loc_index),
+                   get_service(json_pickup),
+                   amount,
+                   skills,
+                   priority,
+                   get_job_time_windows(json_pickup));
+
+        // Defining delivery job.
+        auto& json_delivery = json_shipment["delivery"];
+
+        check_id(json_delivery, "delivery");
+        check_location_index(json_delivery, "delivery", matrix_size);
+
+        auto delivery_loc_index = json_delivery["location_index"].GetUint();
+
+        Job delivery(json_delivery["id"].GetUint64(),
+                     JOB_TYPE::DELIVERY,
+                     json_delivery.HasMember("location")
+                       ? Location(delivery_loc_index,
+                                  parse_coordinates(json_delivery, "location"))
+                       : Location(delivery_loc_index),
+                     get_service(json_delivery),
+                     amount,
+                     skills,
+                     priority,
+                     get_job_time_windows(json_delivery));
+
+        input.add_shipment(pickup, delivery);
+      }
     }
   } else {
     // Adding vehicles and jobs only, matrix will be computed using
@@ -397,10 +473,7 @@ Input parse(const CLArgs& cl_args) {
     // All vehicles.
     for (rapidjson::SizeType i = 0; i < json_input["vehicles"].Size(); ++i) {
       auto& json_vehicle = json_input["vehicles"][i];
-      if (!valid_vehicle(json_vehicle)) {
-        throw Exception(ERROR::INPUT,
-                        "Invalid vehicle at " + std::to_string(i) + ".");
-      }
+      check_id(json_vehicle, "vehicle");
 
       // Start def is a ugly workaround as using plain:
       //
@@ -420,14 +493,14 @@ Input parse(const CLArgs& cl_args) {
         end = boost::optional<Location>(parse_coordinates(json_vehicle, "end"));
       }
 
-      Vehicle current_v(json_vehicle["id"].GetUint64(),
-                        start,
-                        end,
-                        get_amount(json_vehicle, "capacity", amount_size),
-                        get_skills(json_vehicle),
-                        get_vehicle_time_window(json_vehicle));
+      Vehicle vehicle(json_vehicle["id"].GetUint64(),
+                      start,
+                      end,
+                      get_amount(json_vehicle, "capacity", amount_size),
+                      get_skills(json_vehicle),
+                      get_vehicle_time_window(json_vehicle));
 
-      input.add_vehicle(current_v);
+      input.add_vehicle(vehicle);
 
       bool has_profile = json_vehicle.HasMember("profile");
       std::string current_profile =
@@ -444,43 +517,80 @@ Input parse(const CLArgs& cl_args) {
       }
     }
 
-    // Getting jobs.
-    for (rapidjson::SizeType i = 0; i < json_input["jobs"].Size(); ++i) {
-      auto& json_job = json_input["jobs"][i];
-      if (!json_job.IsObject()) {
-        throw Exception(ERROR::INPUT, "Invalid job.");
-      }
-      if (!json_job.HasMember("id") or !json_job["id"].IsUint64()) {
-        throw Exception(ERROR::INPUT,
-                        "Invalid id for job at " + std::to_string(i) + ".");
-      }
-      auto j_id = json_job["id"].GetUint64();
-      if (!json_job.HasMember("location") or !json_job["location"].IsArray()) {
-        throw Exception(ERROR::INPUT,
-                        "Invalid location for job " + std::to_string(j_id) +
-                          ".");
-      }
+    if (has_jobs) {
+      // Add the jobs.
+      for (rapidjson::SizeType i = 0; i < json_input["jobs"].Size(); ++i) {
+        auto& json_job = json_input["jobs"][i];
 
-      // Only for retro-compatibility: when no pickup and delivery
-      // keys are defined and (deprecated) amount key is present, it
-      // should be interpreted as a delivery.
-      bool need_amount_compat = json_job.HasMember("amount") and
-                                !json_job.HasMember("delivery") and
-                                !json_job.HasMember("pickup");
+        check_id(json_job, "job");
+        check_location(json_job, "job");
 
-      Job current_job(j_id,
-                      JOB_TYPE::SINGLE,
-                      parse_coordinates(json_job, "location"),
-                      get_service(json_job),
-                      need_amount_compat
-                        ? get_amount(json_job, "amount", amount_size)
-                        : get_amount(json_job, "delivery", amount_size),
-                      get_amount(json_job, "pickup", amount_size),
-                      get_skills(json_job),
-                      get_priority(json_job),
-                      get_job_time_windows(json_job));
+        // Only for retro-compatibility: when no pickup and delivery
+        // keys are defined and (deprecated) amount key is present, it
+        // should be interpreted as a delivery.
+        bool need_amount_compat = json_job.HasMember("amount") and
+                                  !json_job.HasMember("delivery") and
+                                  !json_job.HasMember("pickup");
 
-      input.add_job(current_job);
+        Job job(json_job["id"].GetUint64(),
+                parse_coordinates(json_job, "location"),
+                get_service(json_job),
+                need_amount_compat
+                  ? get_amount(json_job, "amount", amount_size)
+                  : get_amount(json_job, "delivery", amount_size),
+                get_amount(json_job, "pickup", amount_size),
+                get_skills(json_job),
+                get_priority(json_job),
+                get_job_time_windows(json_job));
+
+        input.add_job(job);
+      }
+    }
+
+    if (has_shipments) {
+      // Add the shipments.
+      for (rapidjson::SizeType i = 0; i < json_input["shipments"].Size(); ++i) {
+        auto& json_shipment = json_input["shipments"][i];
+
+        check_shipment(json_shipment);
+
+        // Retrieve common stuff for both pickup and delivery.
+        auto amount = get_amount(json_shipment, "amount", amount_size);
+        auto skills = get_skills(json_shipment);
+        auto priority = get_priority(json_shipment);
+
+        // Defining pickup job.
+        auto& json_pickup = json_shipment["pickup"];
+
+        check_id(json_pickup, "pickup");
+        check_location(json_pickup, "pickup");
+
+        Job pickup(json_pickup["id"].GetUint64(),
+                   JOB_TYPE::PICKUP,
+                   parse_coordinates(json_pickup, "location"),
+                   get_service(json_pickup),
+                   amount,
+                   skills,
+                   priority,
+                   get_job_time_windows(json_pickup));
+
+        // Defining delivery job.
+        auto& json_delivery = json_shipment["delivery"];
+
+        check_id(json_delivery, "delivery");
+        check_location(json_delivery, "delivery");
+
+        Job delivery(json_delivery["id"].GetUint64(),
+                     JOB_TYPE::DELIVERY,
+                     parse_coordinates(json_delivery, "location"),
+                     get_service(json_delivery),
+                     amount,
+                     skills,
+                     priority,
+                     get_job_time_windows(json_delivery));
+
+        input.add_shipment(pickup, delivery);
+      }
     }
   }
 

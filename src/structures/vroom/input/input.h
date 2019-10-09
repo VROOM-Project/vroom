@@ -52,6 +52,8 @@ private:
 
   std::unique_ptr<VRP> get_problem() const;
 
+  void check_job(Job& job);
+
   void check_cost_bound() const;
 
   void set_compatibility();
@@ -67,6 +69,8 @@ public:
   void set_routing(std::unique_ptr<routing::Wrapper<Cost>> routing_wrapper);
 
   void add_job(const Job& job);
+
+  void add_shipment(const Job& pickup, const Job& delivery);
 
   void add_vehicle(const Vehicle& vehicle);
 
