@@ -156,6 +156,9 @@ Solution VRPTW::solve(unsigned exploration_level,
   }
   assert(nb_init_solutions <= parameters.size());
 
+  // TODO remove
+  nb_init_solutions = 1;
+
   std::vector<TWSolution> tw_solutions(nb_init_solutions);
   std::vector<utils::SolutionIndicators> sol_indicators(nb_init_solutions);
 
