@@ -10,12 +10,13 @@ Contents:
 - [Output format](#output)
 - [Examples](#examples)
 
-**Note**:
+**Notes**:
 - the expected order for all coordinates arrays is `[lon, lat]`
 - all timings are in seconds
 - all distances are in meters
 - a `time_window` object is a pair of timestamps in the form `[start, end]`
 - deprecated keys are crossed out
+- `cost` values in output are the one used in the optimization objective (currently equal to `duration`)
 
 # Input
 
