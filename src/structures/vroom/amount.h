@@ -127,14 +127,6 @@ public:
     }
     return *this;
   }
-
-  Amount get_opposite() const {
-    Amount opposite(this->size());
-    for (std::size_t i = 0; i < this->size(); ++i) {
-      opposite[i] = -(*this)[i];
-    }
-    return opposite;
-  }
 };
 
 template <typename E1, typename E2>

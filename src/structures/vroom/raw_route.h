@@ -26,6 +26,9 @@ private:
   // i.
   std::vector<Amount> bwd_deliveries;
 
+  // pd_loads[i] stores the shipments load at rank i (included).
+  std::vector<Amount> pd_loads;
+
   // current_loads[s] stores the vehicle load at *step* s (step 0 is
   // the start, not the first job rank).
   std::vector<Amount> current_loads;

@@ -37,6 +37,8 @@ void RawRoute::update_amounts(const Input& input) {
   auto step_size = route.size() + 2;
   fwd_pickups.resize(route.size());
   bwd_deliveries.resize(route.size());
+  pd_loads.resize(route.size());
+
   current_loads.resize(step_size);
   fwd_peaks.resize(step_size);
   bwd_peaks.resize(step_size);
@@ -50,11 +52,26 @@ void RawRoute::update_amounts(const Input& input) {
   }
 
   Amount current_pickups(input.zero_amount());
+  Amount current_pd_load(input.zero_amount());
 
   for (std::size_t i = 0; i < route.size(); ++i) {
-    current_pickups += input.jobs[route[i]].pickup;
+    const auto& job = input.jobs[route[i]];
+    switch (job.type) {
+    case JOB_TYPE::SINGLE:
+      current_pickups += job.pickup;
+      break;
+    case JOB_TYPE::PICKUP:
+      current_pd_load += job.pickup;
+      break;
+    case JOB_TYPE::DELIVERY:
+      assert(job.delivery <= current_pd_load);
+      current_pd_load -= job.delivery;
+      break;
+    }
     fwd_pickups[i] = current_pickups;
+    pd_loads[i] = current_pd_load;
   }
+  assert(pd_loads.back() == input.zero_amount());
 
   Amount current_deliveries(input.zero_amount());
 
@@ -64,8 +81,12 @@ void RawRoute::update_amounts(const Input& input) {
     auto bwd_i = route.size() - i - 1;
 
     bwd_deliveries[bwd_i] = current_deliveries;
-    current_loads[bwd_i + 1] = fwd_pickups[bwd_i] + current_deliveries;
-    current_deliveries += input.jobs[route[bwd_i]].delivery;
+    current_loads[bwd_i + 1] =
+      fwd_pickups[bwd_i] + pd_loads[bwd_i] + current_deliveries;
+    const auto& job = input.jobs[route[bwd_i]];
+    if (job.type == JOB_TYPE::SINGLE) {
+      current_deliveries += job.delivery;
+    }
   }
   current_loads[0] = current_deliveries;
 
@@ -199,7 +220,7 @@ void RawRoute::remove(const Input& input,
 }
 
 template <class InputIterator>
-void RawRoute::replace(const Input& input,
+void RawRoute::replace(const Input&,
                        InputIterator first_job,
                        InputIterator last_job,
                        const Index first_rank,
