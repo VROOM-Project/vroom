@@ -165,6 +165,8 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
       float best_cost = std::numeric_limits<float>::max();
       Index best_job_rank = 0;
       Index best_r = 0;
+      Index best_pickup_r = 0;
+      Index best_delivery_r = 0;
 
       for (const auto job_rank : unassigned) {
         if (!input.vehicle_ok_with_job(v_rank, job_rank)) {
@@ -200,6 +202,68 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
             }
           }
         }
+
+        if (input.jobs[job_rank].type == JOB_TYPE::PICKUP) {
+          for (Index pickup_r = 0; pickup_r <= current_r.size(); ++pickup_r) {
+            for (Index delivery_r = pickup_r + 1;
+                 delivery_r <= current_r.size() + 1;
+                 ++delivery_r) {
+              float current_add = utils::addition_cost(input,
+                                                       m,
+                                                       job_rank,
+                                                       vehicle,
+                                                       current_r.route,
+                                                       pickup_r,
+                                                       delivery_r);
+
+              float current_cost =
+                current_add - lambda * static_cast<float>(costs[job_rank]);
+
+              if (current_cost < best_cost) {
+                // Build replacement sequence for current insertion.
+                std::vector<Index> p_to_d_sequence({job_rank});
+
+                Amount pickup = input.jobs[job_rank].pickup;
+                Amount delivery = input.jobs[job_rank].delivery;
+
+                for (Index i = pickup_r; i < delivery_r - 1; ++i) {
+                  p_to_d_sequence.push_back(current_r.route[i]);
+                  pickup += input.jobs[i].pickup;
+                  delivery += input.jobs[i].delivery;
+                }
+                p_to_d_sequence.push_back(job_rank + 1);
+                pickup += input.jobs[job_rank + 1].pickup;
+                delivery += input.jobs[job_rank + 1].delivery;
+
+                // Update best cost depending on validity.
+                bool is_valid =
+                  current_r
+                    .is_valid_addition_for_capacity_inclusion(input,
+                                                              delivery,
+                                                              p_to_d_sequence
+                                                                .begin(),
+                                                              p_to_d_sequence
+                                                                .end(),
+                                                              pickup_r,
+                                                              delivery_r - 1);
+
+                is_valid &=
+                  current_r.is_valid_addition_for_tw(input,
+                                                     p_to_d_sequence.begin(),
+                                                     p_to_d_sequence.end(),
+                                                     pickup_r,
+                                                     delivery_r - 1);
+
+                if (is_valid) {
+                  best_cost = current_cost;
+                  best_job_rank = job_rank;
+                  best_pickup_r = pickup_r;
+                  best_delivery_r = delivery_r;
+                }
+              }
+            }
+          }
+        }
       }
 
       if (best_cost < std::numeric_limits<float>::max()) {
@@ -207,6 +271,23 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
           current_r.add(input, best_job_rank, best_r);
           current_r.update_amounts(input);
           unassigned.erase(best_job_rank);
+          keep_going = true;
+        }
+        if (input.jobs[best_job_rank].type == JOB_TYPE::PICKUP) {
+          std::vector<Index> p_to_d_sequence({best_job_rank});
+          for (Index i = best_pickup_r; i < best_delivery_r - 1; ++i) {
+            p_to_d_sequence.push_back(current_r.route[i]);
+          }
+          p_to_d_sequence.push_back(best_job_rank + 1);
+
+          current_r.replace(input,
+                            p_to_d_sequence.begin(),
+                            p_to_d_sequence.end(),
+                            best_pickup_r,
+                            best_delivery_r - 1);
+          current_r.update_amounts(input);
+          unassigned.erase(best_job_rank);
+          unassigned.erase(best_job_rank + 1);
           keep_going = true;
         }
       }
@@ -417,6 +498,8 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
       float best_cost = std::numeric_limits<float>::max();
       Index best_job_rank = 0;
       Index best_r = 0;
+      Index best_pickup_r = 0;
+      Index best_delivery_r = 0;
 
       for (const auto job_rank : unassigned) {
         if (!input.vehicle_ok_with_job(v_rank, job_rank)) {
@@ -452,6 +535,68 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
             }
           }
         }
+
+        if (input.jobs[job_rank].type == JOB_TYPE::PICKUP) {
+          for (Index pickup_r = 0; pickup_r <= current_r.size(); ++pickup_r) {
+            for (Index delivery_r = pickup_r + 1;
+                 delivery_r <= current_r.size() + 1;
+                 ++delivery_r) {
+              float current_add = utils::addition_cost(input,
+                                                       m,
+                                                       job_rank,
+                                                       vehicle,
+                                                       current_r.route,
+                                                       pickup_r,
+                                                       delivery_r);
+
+              float current_cost =
+                current_add - lambda * static_cast<float>(regrets[job_rank]);
+
+              if (current_cost < best_cost) {
+                // Build replacement sequence for current insertion.
+                std::vector<Index> p_to_d_sequence({job_rank});
+
+                Amount pickup = input.jobs[job_rank].pickup;
+                Amount delivery = input.jobs[job_rank].delivery;
+
+                for (Index i = pickup_r; i < delivery_r - 1; ++i) {
+                  p_to_d_sequence.push_back(current_r.route[i]);
+                  pickup += input.jobs[i].pickup;
+                  delivery += input.jobs[i].delivery;
+                }
+                p_to_d_sequence.push_back(job_rank + 1);
+                pickup += input.jobs[job_rank + 1].pickup;
+                delivery += input.jobs[job_rank + 1].delivery;
+
+                // Update best cost depending on validity.
+                bool is_valid =
+                  current_r
+                    .is_valid_addition_for_capacity_inclusion(input,
+                                                              delivery,
+                                                              p_to_d_sequence
+                                                                .begin(),
+                                                              p_to_d_sequence
+                                                                .end(),
+                                                              pickup_r,
+                                                              delivery_r - 1);
+
+                is_valid &=
+                  current_r.is_valid_addition_for_tw(input,
+                                                     p_to_d_sequence.begin(),
+                                                     p_to_d_sequence.end(),
+                                                     pickup_r,
+                                                     delivery_r - 1);
+
+                if (is_valid) {
+                  best_cost = current_cost;
+                  best_job_rank = job_rank;
+                  best_pickup_r = pickup_r;
+                  best_delivery_r = delivery_r;
+                }
+              }
+            }
+          }
+        }
       }
 
       if (best_cost < std::numeric_limits<float>::max()) {
@@ -459,6 +604,23 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
           current_r.add(input, best_job_rank, best_r);
           current_r.update_amounts(input);
           unassigned.erase(best_job_rank);
+          keep_going = true;
+        }
+        if (input.jobs[best_job_rank].type == JOB_TYPE::PICKUP) {
+          std::vector<Index> p_to_d_sequence({best_job_rank});
+          for (Index i = best_pickup_r; i < best_delivery_r - 1; ++i) {
+            p_to_d_sequence.push_back(current_r.route[i]);
+          }
+          p_to_d_sequence.push_back(best_job_rank + 1);
+
+          current_r.replace(input,
+                            p_to_d_sequence.begin(),
+                            p_to_d_sequence.end(),
+                            best_pickup_r,
+                            best_delivery_r - 1);
+          current_r.update_amounts(input);
+          unassigned.erase(best_job_rank);
+          unassigned.erase(best_job_rank + 1);
           keep_going = true;
         }
       }
