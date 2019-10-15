@@ -226,6 +226,23 @@ inline Cost route_cost_for_vehicle(const Input& input,
   return cost;
 }
 
+inline void check_precedence(const Input& input,
+                             std::unordered_set<Index>& expected_delivery_ranks,
+                             Index job_rank) {
+  switch (input.jobs[job_rank].type) {
+  case JOB_TYPE::SINGLE:
+    break;
+  case JOB_TYPE::PICKUP:
+    expected_delivery_ranks.insert(job_rank + 1);
+    break;
+  case JOB_TYPE::DELIVERY:
+    // Associated pickup has been done before.
+    auto search = expected_delivery_ranks.find(job_rank);
+    assert(search != expected_delivery_ranks.end());
+    expected_delivery_ranks.erase(search);
+  }
+}
+
 inline Solution format_solution(const Input& input,
                                 const RawSolution& raw_routes) {
   const auto& m = input.get_matrix();
@@ -249,6 +266,7 @@ inline Solution format_solution(const Input& input,
     Duration service = 0;
     Amount sum_pickups(input.zero_amount());
     Amount sum_deliveries(input.zero_amount());
+    std::unordered_set<Index> expected_delivery_ranks;
     Amount current_load = raw_routes[i].get_startup_load();
     assert(current_load <= v.capacity);
 
@@ -277,6 +295,8 @@ inline Solution format_solution(const Input& input,
     sum_deliveries += first_job.delivery;
     assert(current_load <= v.capacity);
 
+    check_precedence(input, expected_delivery_ranks, route.front());
+
     steps.emplace_back(first_job, current_load);
     auto& first = steps.back();
     first.duration = ETA;
@@ -300,6 +320,8 @@ inline Solution format_solution(const Input& input,
       sum_deliveries += current_job.delivery;
       assert(current_load <= v.capacity);
 
+      check_precedence(input, expected_delivery_ranks, route[r + 1]);
+
       steps.emplace_back(current_job, current_load);
       auto& current = steps.back();
       current.duration = cost;
@@ -318,6 +340,8 @@ inline Solution format_solution(const Input& input,
       steps.back().duration = cost;
       steps.back().arrival = ETA;
     }
+
+    assert(expected_delivery_ranks.empty());
 
     routes.emplace_back(v.id,
                         std::move(steps),
@@ -375,6 +399,7 @@ inline Route format_route(const Input& input,
   Duration service = 0;
   Amount sum_pickups(input.zero_amount());
   Amount sum_deliveries(input.zero_amount());
+  std::unordered_set<Index> expected_delivery_ranks;
   Amount current_load = tw_r.get_startup_load();
   assert(current_load <= v.capacity);
 
@@ -407,6 +432,8 @@ inline Route format_route(const Input& input,
   sum_deliveries += first_job.delivery;
   assert(current_load <= v.capacity);
 
+  check_precedence(input, expected_delivery_ranks, tw_r.route.front());
+
   steps.emplace_back(first_job, current_load);
   auto& first = steps.back();
   first.duration = cost;
@@ -430,6 +457,8 @@ inline Route format_route(const Input& input,
     sum_pickups += current_job.pickup;
     sum_deliveries += current_job.delivery;
     assert(current_load <= v.capacity);
+
+    check_precedence(input, expected_delivery_ranks, tw_r.route[r + 1]);
 
     steps.emplace_back(current_job, current_load);
     auto& current = steps.back();
@@ -468,6 +497,8 @@ inline Route format_route(const Input& input,
   assert(steps.back().arrival + steps.back().waiting_time +
            steps.back().service - steps.front().arrival ==
          cost + service + forward_wt);
+
+  assert(expected_delivery_ranks.empty());
 
   return Route(v.id,
                std::move(steps),
