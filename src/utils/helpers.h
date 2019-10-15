@@ -247,9 +247,11 @@ inline Solution format_solution(const Input& input,
 
     Cost cost = 0;
     Duration service = 0;
-    Amount amount(input.zero_amount());
     Amount sum_pickups(input.zero_amount());
-    Amount current_load = raw_routes[i].get_load(0); // All deliveries.
+    Amount sum_deliveries(input.zero_amount());
+    Amount current_load = raw_routes[i].get_load(0); // All deliveries
+                                                     // for single
+                                                     // jobs.
     assert(current_load <= v.capacity);
 
     // Steps for current route.
@@ -270,11 +272,11 @@ inline Solution format_solution(const Input& input,
     assert(input.vehicle_ok_with_job(i, route.front()));
     auto& first_job = input.jobs[route.front()];
     service += first_job.service;
-    amount += first_job.delivery;
 
-    current_load -= first_job.delivery;
     current_load += first_job.pickup;
+    current_load -= first_job.delivery;
     sum_pickups += first_job.pickup;
+    sum_deliveries += first_job.delivery;
     assert(current_load <= v.capacity);
 
     steps.emplace_back(first_job, current_load);
@@ -293,11 +295,11 @@ inline Solution format_solution(const Input& input,
 
       auto& current_job = input.jobs[route[r + 1]];
       service += current_job.service;
-      amount += current_job.delivery;
 
-      current_load -= current_job.delivery;
       current_load += current_job.pickup;
+      current_load -= current_job.delivery;
       sum_pickups += current_job.pickup;
+      sum_deliveries += current_job.delivery;
       assert(current_load <= v.capacity);
 
       steps.emplace_back(current_job, current_load);
@@ -319,16 +321,13 @@ inline Solution format_solution(const Input& input,
       steps.back().arrival = ETA;
     }
 
-    assert(amount <= v.capacity);
-    assert(current_load == sum_pickups);
-
     routes.emplace_back(v.id,
                         std::move(steps),
                         cost,
                         service,
                         cost,
                         0,
-                        raw_routes[i].get_load(0), // all deliveries
+                        sum_deliveries,
                         sum_pickups);
   }
 
@@ -376,9 +375,10 @@ inline Route format_route(const Input& input,
 
   Cost cost = 0;
   Duration service = 0;
-  Amount amount(input.zero_amount());
   Amount sum_pickups(input.zero_amount());
-  Amount current_load = tw_r.get_load(0); // All deliveries.
+  Amount sum_deliveries(input.zero_amount());
+  Amount current_load = tw_r.get_load(0); // All deliveries for single
+                                          // jobs.
   assert(current_load <= v.capacity);
 
   // Steps for current route.
@@ -403,11 +403,11 @@ inline Route format_route(const Input& input,
   assert(input.vehicle_ok_with_job(tw_r.vehicle_rank, tw_r.route.front()));
   auto& first_job = input.jobs[tw_r.route.front()];
   service += first_job.service;
-  amount += first_job.delivery;
 
-  current_load -= first_job.delivery;
   current_load += first_job.pickup;
+  current_load -= first_job.delivery;
   sum_pickups += first_job.pickup;
+  sum_deliveries += first_job.delivery;
   assert(current_load <= v.capacity);
 
   steps.emplace_back(first_job, current_load);
@@ -427,11 +427,11 @@ inline Route format_route(const Input& input,
 
     auto& current_job = input.jobs[tw_r.route[r + 1]];
     service += current_job.service;
-    amount += current_job.delivery;
 
-    current_load -= current_job.delivery;
     current_load += current_job.pickup;
+    current_load -= current_job.delivery;
     sum_pickups += current_job.pickup;
+    sum_deliveries += current_job.delivery;
     assert(current_load <= v.capacity);
 
     steps.emplace_back(current_job, current_load);
@@ -467,8 +467,6 @@ inline Route format_route(const Input& input,
     steps.back().arrival = v_end;
   }
 
-  assert(amount <= v.capacity);
-  assert(current_load == sum_pickups);
   assert(forward_wt == backward_wt);
   assert(steps.back().arrival + steps.back().waiting_time +
            steps.back().service - steps.front().arrival ==
@@ -480,7 +478,7 @@ inline Route format_route(const Input& input,
                service,
                cost,
                forward_wt,
-               tw_r.get_load(0), // All deliveries.
+               sum_deliveries,
                sum_pickups);
 }
 
