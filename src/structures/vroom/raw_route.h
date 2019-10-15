@@ -54,7 +54,8 @@ public:
 
   void update_amounts(const Input& input);
 
-  // Check validity for addition of a single job(s) in current route at rank.
+  // Check validity for addition of a given load in current route at
+  // rank.
   bool is_valid_addition_for_capacity(const Input&,
                                       const Amount& pickup,
                                       const Amount& delivery,
@@ -95,6 +96,15 @@ public:
     return true;
   };
 
+  template <class InputIterator>
+  bool is_valid_addition_for_tw(const Input&,
+                                InputIterator,
+                                InputIterator,
+                                const Index,
+                                const Index) const {
+    return true;
+  }
+
   void add(const Input& input, const Index job_rank, const Index rank);
 
   bool is_valid_removal(const Input&, const Index, const unsigned) const {
@@ -102,6 +112,16 @@ public:
   };
 
   void remove(const Input& input, const Index rank, const unsigned count);
+
+  // Add the range [first_job; last_job) in the existing route at rank
+  // first_rank and before last_rank *in place of* the current jobs
+  // that may be there.
+  template <class InputIterator>
+  void replace(const Input& input,
+               InputIterator first_job,
+               InputIterator last_job,
+               const Index first_rank,
+               const Index last_rank);
 };
 
 } // namespace vroom

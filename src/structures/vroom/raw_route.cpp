@@ -198,6 +198,18 @@ void RawRoute::remove(const Input& input,
   update_amounts(input);
 }
 
+template <class InputIterator>
+void RawRoute::replace(const Input& input,
+                       InputIterator first_job,
+                       InputIterator last_job,
+                       const Index first_rank,
+                       const Index last_rank) {
+  assert(first_rank <= last_rank);
+
+  route.erase(route.begin() + first_rank, route.begin() + last_rank);
+  route.insert(route.begin() + first_rank, first_job, last_job);
+}
+
 template bool RawRoute::is_valid_addition_for_capacity_inclusion(
   const Input& input,
   const Amount& delivery,
@@ -212,5 +224,10 @@ template bool RawRoute::is_valid_addition_for_capacity_inclusion(
   std::vector<Index>::reverse_iterator last_job,
   const Index first_rank,
   const Index last_rank) const;
+template void RawRoute::replace(const Input& input,
+                                std::vector<Index>::iterator first_job,
+                                std::vector<Index>::iterator last_job,
+                                const Index first_rank,
+                                const Index last_rank);
 
 } // namespace vroom
