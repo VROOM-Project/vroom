@@ -94,6 +94,8 @@ inline Gain addition_cost(const Input& input,
                           const Vehicle& v,
                           const std::vector<Index>& route,
                           Index rank) {
+  assert(rank <= route.size());
+
   Index job_index = input.jobs[job_rank].index();
   Gain previous_cost = 0;
   Gain next_cost = 0;
@@ -137,6 +139,55 @@ inline Gain addition_cost(const Input& input,
   }
 
   return previous_cost + next_cost - old_edge_cost;
+}
+
+// Compute cost of adding pickup with rank job_rank and associated
+// delivery (with rank job_rank + 1) in given route for vehicle
+// v. Pickup is inserted at pickup_rank in route and delivery is
+// inserted at delivery_rank in route **with pickup**.
+inline Gain addition_cost(const Input& input,
+                          const Matrix<Cost>& m,
+                          Index job_rank,
+                          const Vehicle& v,
+                          const std::vector<Index>& route,
+                          Index pickup_rank,
+                          Index delivery_rank) {
+  assert(pickup_rank < delivery_rank and delivery_rank <= route.size() + 1);
+
+  // Start with pickup cost.
+  auto cost = addition_cost(input, m, job_rank, v, route, pickup_rank);
+
+  if (delivery_rank == pickup_rank + 1) {
+    // Delivery is inserted just after pickup.
+    Index p_index = input.jobs[job_rank].index();
+    Index d_index = input.jobs[job_rank + 1].index();
+    cost += m[p_index][d_index];
+
+    Gain after_delivery = 0;
+    Gain remove_after_pickup = 0;
+
+    if (pickup_rank == route.size()) {
+      // Addition at the end of a route.
+      if (v.has_end()) {
+        after_delivery = m[d_index][v.end.get().index()];
+        remove_after_pickup = m[p_index][v.end.get().index()];
+      }
+    } else {
+      // There is a job after insertion.
+      Index next_index = input.jobs[route[pickup_rank]].index();
+      after_delivery = m[d_index][next_index];
+      remove_after_pickup = m[p_index][next_index];
+    }
+
+    cost += after_delivery;
+    cost -= remove_after_pickup;
+  } else {
+    // Delivery is further away so edges sets for pickup and delivery
+    // addition are disjoint.
+    cost += addition_cost(input, m, job_rank + 1, v, route, delivery_rank - 1);
+  }
+
+  return cost;
 }
 
 inline Cost priority_sum_for_route(const Input& input,
