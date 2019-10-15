@@ -184,8 +184,8 @@ bool RawRoute::is_valid_addition_for_capacity_inclusion(
   return valid;
 }
 
-Amount RawRoute::get_load(Index s) const {
-  return current_loads[s];
+Amount RawRoute::get_startup_load() const {
+  return current_loads[0];
 }
 
 Amount RawRoute::pickup_in_range(Index i, Index j) const {

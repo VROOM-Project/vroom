@@ -249,9 +249,7 @@ inline Solution format_solution(const Input& input,
     Duration service = 0;
     Amount sum_pickups(input.zero_amount());
     Amount sum_deliveries(input.zero_amount());
-    Amount current_load = raw_routes[i].get_load(0); // All deliveries
-                                                     // for single
-                                                     // jobs.
+    Amount current_load = raw_routes[i].get_startup_load();
     assert(current_load <= v.capacity);
 
     // Steps for current route.
@@ -377,8 +375,7 @@ inline Route format_route(const Input& input,
   Duration service = 0;
   Amount sum_pickups(input.zero_amount());
   Amount sum_deliveries(input.zero_amount());
-  Amount current_load = tw_r.get_load(0); // All deliveries for single
-                                          // jobs.
+  Amount current_load = tw_r.get_startup_load();
   assert(current_load <= v.capacity);
 
   // Steps for current route.

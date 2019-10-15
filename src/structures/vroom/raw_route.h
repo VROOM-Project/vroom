@@ -86,9 +86,7 @@ public:
                                                 const Index first_rank,
                                                 const Index last_rank) const;
 
-  // Get vehicle load at *step* s (step 0 is the start, not the first
-  // job rank).
-  Amount get_load(Index s) const;
+  Amount get_startup_load() const;
 
   // Get sum of pickups (resp. deliveries) for all jobs in the range
   // [i, j).
