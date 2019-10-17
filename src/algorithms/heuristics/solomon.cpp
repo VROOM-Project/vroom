@@ -108,39 +108,50 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
           continue;
         }
 
-        // TODO remove
-        if (input.jobs[job_rank].type == JOB_TYPE::PICKUP) {
-          continue;
-        }
+        bool is_pickup = (input.jobs[job_rank].type == JOB_TYPE::PICKUP);
 
         bool try_validity = false;
 
         if (init == INIT::HIGHER_AMOUNT) {
-          if (higher_amount << input.jobs[job_rank].pickup or
-              higher_amount << input.jobs[job_rank].delivery) {
-            try_validity = true;
-          }
+          try_validity |= (higher_amount << input.jobs[job_rank].pickup or
+                           higher_amount << input.jobs[job_rank].delivery);
         }
         if (init == INIT::EARLIEST_DEADLINE) {
-          Duration current_deadline = input.jobs[job_rank].tws.back().end;
-          if (current_deadline < earliest_deadline) {
-            try_validity = true;
-          }
+          Duration current_deadline =
+            (is_pickup) ? input.jobs[job_rank + 1].tws.back().end
+                        : input.jobs[job_rank].tws.back().end;
+          try_validity |= (current_deadline < earliest_deadline);
         }
-        if (init == INIT::FURTHEST and furthest_cost < costs[job_rank]) {
-          try_validity = true;
+        if (init == INIT::FURTHEST) {
+          try_validity |= (furthest_cost < costs[job_rank]);
         }
-        if (init == INIT::NEAREST and costs[job_rank] < nearest_cost) {
-          try_validity = true;
+        if (init == INIT::NEAREST) {
+          try_validity |= (costs[job_rank] < nearest_cost);
         }
 
-        if (try_validity and
-            current_r
-              .is_valid_addition_for_capacity(input,
-                                              input.jobs[job_rank].pickup,
-                                              input.jobs[job_rank].delivery,
-                                              0) and
-            current_r.is_valid_addition_for_tw(input, job_rank, 0)) {
+        if (!try_validity) {
+          continue;
+        }
+
+        bool is_valid =
+          current_r
+            .is_valid_addition_for_capacity(input,
+                                            input.jobs[job_rank].pickup,
+                                            input.jobs[job_rank].delivery,
+                                            0);
+        if (is_pickup) {
+          std::vector<Index> p_d({job_rank, static_cast<Index>(job_rank + 1)});
+          is_valid &= current_r.is_valid_addition_for_tw(input,
+                                                         p_d.begin(),
+                                                         p_d.end(),
+                                                         0,
+                                                         0);
+        } else {
+          assert(input.jobs[job_rank].type == JOB_TYPE::SINGLE);
+          is_valid &= current_r.is_valid_addition_for_tw(input, job_rank, 0);
+        }
+
+        if (is_valid) {
           init_ok = true;
           best_job_rank = job_rank;
 
@@ -157,7 +168,9 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
             }
             break;
           case INIT::EARLIEST_DEADLINE:
-            earliest_deadline = input.jobs[job_rank].tws.back().end;
+            earliest_deadline = (is_pickup)
+                                  ? input.jobs[job_rank + 1].tws.back().end
+                                  : input.jobs[job_rank].tws.back().end;
             break;
           case INIT::FURTHEST:
             furthest_cost = costs[job_rank];
@@ -174,6 +187,14 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
           current_r.add(input, best_job_rank, 0);
           current_r.update_amounts(input);
           unassigned.erase(best_job_rank);
+        }
+        if (input.jobs[best_job_rank].type == JOB_TYPE::PICKUP) {
+          std::vector<Index> p_d(
+            {best_job_rank, static_cast<Index>(best_job_rank + 1)});
+          current_r.replace(input, p_d.begin(), p_d.end(), 0, 0);
+          current_r.update_amounts(input);
+          unassigned.erase(best_job_rank);
+          unassigned.erase(best_job_rank + 1);
         }
       }
     }
@@ -459,40 +480,51 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
           continue;
         }
 
-        // TODO remove
-        if (input.jobs[job_rank].type == JOB_TYPE::PICKUP) {
-          continue;
-        }
+        bool is_pickup = (input.jobs[job_rank].type == JOB_TYPE::PICKUP);
 
         bool try_validity = false;
 
         if (init == INIT::HIGHER_AMOUNT) {
-          if (higher_amount << input.jobs[job_rank].pickup or
-              higher_amount << input.jobs[job_rank].delivery) {
-            try_validity = true;
-          }
+          try_validity |= (higher_amount << input.jobs[job_rank].pickup or
+                           higher_amount << input.jobs[job_rank].delivery);
         }
         if (init == INIT::EARLIEST_DEADLINE) {
-          Duration current_deadline = input.jobs[job_rank].tws.back().end;
-          if (current_deadline < earliest_deadline) {
-            try_validity = true;
-          }
+          Duration current_deadline =
+            (is_pickup) ? input.jobs[job_rank + 1].tws.back().end
+                        : input.jobs[job_rank].tws.back().end;
+          try_validity |= (current_deadline < earliest_deadline);
         }
-        if (init == INIT::FURTHEST and
-            furthest_cost < costs[job_rank][v_rank]) {
-          try_validity = true;
+        if (init == INIT::FURTHEST) {
+          try_validity |= (furthest_cost < costs[job_rank][v_rank]);
         }
-        if (init == INIT::NEAREST and costs[job_rank][v_rank] < nearest_cost) {
-          try_validity = true;
+        if (init == INIT::NEAREST) {
+          try_validity |= (costs[job_rank][v_rank] < nearest_cost);
         }
 
-        if (try_validity and
-            current_r
-              .is_valid_addition_for_capacity(input,
-                                              input.jobs[job_rank].pickup,
-                                              input.jobs[job_rank].delivery,
-                                              0) and
-            current_r.is_valid_addition_for_tw(input, job_rank, 0)) {
+        if (!try_validity) {
+          continue;
+        }
+
+        bool is_valid =
+          current_r
+            .is_valid_addition_for_capacity(input,
+                                            input.jobs[job_rank].pickup,
+                                            input.jobs[job_rank].delivery,
+                                            0);
+
+        if (is_pickup) {
+          std::vector<Index> p_d({job_rank, static_cast<Index>(job_rank + 1)});
+          is_valid &= current_r.is_valid_addition_for_tw(input,
+                                                         p_d.begin(),
+                                                         p_d.end(),
+                                                         0,
+                                                         0);
+        } else {
+          assert(input.jobs[job_rank].type == JOB_TYPE::SINGLE);
+          is_valid &= current_r.is_valid_addition_for_tw(input, job_rank, 0);
+        }
+
+        if (is_valid) {
           init_ok = true;
           best_job_rank = job_rank;
 
@@ -509,7 +541,9 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
             }
             break;
           case INIT::EARLIEST_DEADLINE:
-            earliest_deadline = input.jobs[job_rank].tws.back().end;
+            earliest_deadline = (is_pickup)
+                                  ? input.jobs[job_rank + 1].tws.back().end
+                                  : input.jobs[job_rank].tws.back().end;
             break;
           case INIT::FURTHEST:
             furthest_cost = costs[job_rank][v_rank];
@@ -526,6 +560,14 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
           current_r.add(input, best_job_rank, 0);
           current_r.update_amounts(input);
           unassigned.erase(best_job_rank);
+        }
+        if (input.jobs[best_job_rank].type == JOB_TYPE::PICKUP) {
+          std::vector<Index> p_d(
+            {best_job_rank, static_cast<Index>(best_job_rank + 1)});
+          current_r.replace(input, p_d.begin(), p_d.end(), 0, 0);
+          current_r.update_amounts(input);
+          unassigned.erase(best_job_rank);
+          unassigned.erase(best_job_rank + 1);
         }
       }
     }
