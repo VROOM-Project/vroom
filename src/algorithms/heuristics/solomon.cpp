@@ -104,52 +104,71 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
       Index best_job_rank = 0;
       for (const auto job_rank : unassigned) {
         if (!input.vehicle_ok_with_job(v_rank, job_rank) or
-            !current_r
-               .is_valid_addition_for_capacity(input,
-                                               input.jobs[job_rank].pickup,
-                                               input.jobs[job_rank].delivery,
-                                               0) or
-            !current_r.is_valid_addition_for_tw(input, job_rank, 0)) {
+            input.jobs[job_rank].type == JOB_TYPE::DELIVERY) {
           continue;
         }
 
-        if (input.jobs[job_rank].type == JOB_TYPE::DELIVERY) {
+        // TODO remove
+        if (input.jobs[job_rank].type == JOB_TYPE::PICKUP) {
           continue;
         }
 
-        if (input.jobs[job_rank].type == JOB_TYPE::SINGLE) {
-          if (init == INIT::HIGHER_AMOUNT) {
+        bool try_validity = false;
+
+        if (init == INIT::HIGHER_AMOUNT) {
+          if (higher_amount << input.jobs[job_rank].pickup or
+              higher_amount << input.jobs[job_rank].delivery) {
+            try_validity = true;
+          }
+        }
+        if (init == INIT::EARLIEST_DEADLINE) {
+          Duration current_deadline = input.jobs[job_rank].tws.back().end;
+          if (current_deadline < earliest_deadline) {
+            try_validity = true;
+          }
+        }
+        if (init == INIT::FURTHEST and furthest_cost < costs[job_rank]) {
+          try_validity = true;
+        }
+        if (init == INIT::NEAREST and costs[job_rank] < nearest_cost) {
+          try_validity = true;
+        }
+
+        if (try_validity and
+            current_r
+              .is_valid_addition_for_capacity(input,
+                                              input.jobs[job_rank].pickup,
+                                              input.jobs[job_rank].delivery,
+                                              0) and
+            current_r.is_valid_addition_for_tw(input, job_rank, 0)) {
+          init_ok = true;
+          best_job_rank = job_rank;
+
+          switch (init) {
+          case INIT::NONE:
+            assert(false);
+            break;
+          case INIT::HIGHER_AMOUNT:
             if (higher_amount << input.jobs[job_rank].pickup) {
               higher_amount = input.jobs[job_rank].pickup;
-              best_job_rank = job_rank;
-              init_ok = true;
             }
             if (higher_amount << input.jobs[job_rank].delivery) {
               higher_amount = input.jobs[job_rank].delivery;
-              best_job_rank = job_rank;
-              init_ok = true;
             }
-          }
-          if (init == INIT::EARLIEST_DEADLINE) {
-            Duration current_deadline = input.jobs[job_rank].tws.back().end;
-            if (current_deadline < earliest_deadline) {
-              earliest_deadline = current_deadline;
-              best_job_rank = job_rank;
-              init_ok = true;
-            }
-          }
-          if (init == INIT::FURTHEST and furthest_cost < costs[job_rank]) {
+            break;
+          case INIT::EARLIEST_DEADLINE:
+            earliest_deadline = input.jobs[job_rank].tws.back().end;
+            break;
+          case INIT::FURTHEST:
             furthest_cost = costs[job_rank];
-            best_job_rank = job_rank;
-            init_ok = true;
-          }
-          if (init == INIT::NEAREST and costs[job_rank] < nearest_cost) {
+            break;
+          case INIT::NEAREST:
             nearest_cost = costs[job_rank];
-            best_job_rank = job_rank;
-            init_ok = true;
+            break;
           }
         }
       }
+
       if (init_ok) {
         if (input.jobs[best_job_rank].type == JOB_TYPE::SINGLE) {
           current_r.add(input, best_job_rank, 0);
@@ -436,53 +455,72 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
         if (jobs_min_costs[job_rank] < costs[job_rank][v_rank] or
             // One of the remaining vehicles is closest to that job.
             !input.vehicle_ok_with_job(v_rank, job_rank) or
-            !current_r
-               .is_valid_addition_for_capacity(input,
-                                               input.jobs[job_rank].pickup,
-                                               input.jobs[job_rank].delivery,
-                                               0) or
-            !current_r.is_valid_addition_for_tw(input, job_rank, 0)) {
+            input.jobs[job_rank].type == JOB_TYPE::DELIVERY) {
           continue;
         }
 
-        if (input.jobs[job_rank].type == JOB_TYPE::DELIVERY) {
+        // TODO remove
+        if (input.jobs[job_rank].type == JOB_TYPE::PICKUP) {
           continue;
         }
-        if (input.jobs[job_rank].type == JOB_TYPE::SINGLE) {
-          if (init == INIT::HIGHER_AMOUNT) {
+
+        bool try_validity = false;
+
+        if (init == INIT::HIGHER_AMOUNT) {
+          if (higher_amount << input.jobs[job_rank].pickup or
+              higher_amount << input.jobs[job_rank].delivery) {
+            try_validity = true;
+          }
+        }
+        if (init == INIT::EARLIEST_DEADLINE) {
+          Duration current_deadline = input.jobs[job_rank].tws.back().end;
+          if (current_deadline < earliest_deadline) {
+            try_validity = true;
+          }
+        }
+        if (init == INIT::FURTHEST and
+            furthest_cost < costs[job_rank][v_rank]) {
+          try_validity = true;
+        }
+        if (init == INIT::NEAREST and costs[job_rank][v_rank] < nearest_cost) {
+          try_validity = true;
+        }
+
+        if (try_validity and
+            current_r
+              .is_valid_addition_for_capacity(input,
+                                              input.jobs[job_rank].pickup,
+                                              input.jobs[job_rank].delivery,
+                                              0) and
+            current_r.is_valid_addition_for_tw(input, job_rank, 0)) {
+          init_ok = true;
+          best_job_rank = job_rank;
+
+          switch (init) {
+          case INIT::NONE:
+            assert(false);
+            break;
+          case INIT::HIGHER_AMOUNT:
             if (higher_amount << input.jobs[job_rank].pickup) {
               higher_amount = input.jobs[job_rank].pickup;
-              best_job_rank = job_rank;
-              init_ok = true;
             }
             if (higher_amount << input.jobs[job_rank].delivery) {
               higher_amount = input.jobs[job_rank].delivery;
-              best_job_rank = job_rank;
-              init_ok = true;
             }
-          }
-          if (init == INIT::EARLIEST_DEADLINE) {
-            Duration current_deadline = input.jobs[job_rank].tws.back().end;
-            if (current_deadline < earliest_deadline) {
-              earliest_deadline = current_deadline;
-              best_job_rank = job_rank;
-              init_ok = true;
-            }
-          }
-          if (init == INIT::FURTHEST and
-              furthest_cost < costs[job_rank][v_rank]) {
+            break;
+          case INIT::EARLIEST_DEADLINE:
+            earliest_deadline = input.jobs[job_rank].tws.back().end;
+            break;
+          case INIT::FURTHEST:
             furthest_cost = costs[job_rank][v_rank];
-            best_job_rank = job_rank;
-            init_ok = true;
-          }
-          if (init == INIT::NEAREST and
-              costs[job_rank][v_rank] < nearest_cost) {
+            break;
+          case INIT::NEAREST:
             nearest_cost = costs[job_rank][v_rank];
-            best_job_rank = job_rank;
-            init_ok = true;
+            break;
           }
         }
       }
+
       if (init_ok) {
         if (input.jobs[best_job_rank].type == JOB_TYPE::SINGLE) {
           current_r.add(input, best_job_rank, 0);
