@@ -142,6 +142,12 @@ void LocalSearch<Route,
 
     for (const auto j : _sol_state.unassigned) {
       auto& current_job = _input.jobs[j];
+      if (current_job.type == JOB_TYPE::PICKUP or
+          current_job.type == JOB_TYPE::DELIVERY) {
+        // Don't insert pickups and deliveries at all for now.
+        continue;
+      }
+
       auto job_priority = _input.jobs[j].priority;
 
       if (job_priority < best_priority) {
@@ -285,343 +291,359 @@ void LocalSearch<Route,
   while (best_gain > 0) {
     // Operators applied to a pair of (different) routes.
 
-    // Exchange stuff
-    for (const auto& s_t : s_t_pairs) {
-      if (s_t.second <= s_t.first or // This operator is symmetric.
-          _sol[s_t.first].size() == 0 or _sol[s_t.second].size() == 0) {
-        continue;
-      }
+    // // Exchange stuff
+    // for (const auto& s_t : s_t_pairs) {
+    //   if (s_t.second <= s_t.first or // This operator is symmetric.
+    //       _sol[s_t.first].size() == 0 or _sol[s_t.second].size() == 0) {
+    //     continue;
+    //   }
 
-      for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
-        for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size(); ++t_rank) {
-          Exchange r(_input,
-                     _sol_state,
-                     _sol[s_t.first],
-                     s_t.first,
-                     s_rank,
-                     _sol[s_t.second],
-                     s_t.second,
-                     t_rank);
-          if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid()) {
-            best_gains[s_t.first][s_t.second] = r.gain();
-            best_ops[s_t.first][s_t.second] = std::make_unique<Exchange>(r);
-          }
-        }
-      }
-    }
+    //   for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
+    //     for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size(); ++t_rank)
+    //     {
+    //       Exchange r(_input,
+    //                  _sol_state,
+    //                  _sol[s_t.first],
+    //                  s_t.first,
+    //                  s_rank,
+    //                  _sol[s_t.second],
+    //                  s_t.second,
+    //                  t_rank);
+    //       if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid())
+    //       {
+    //         best_gains[s_t.first][s_t.second] = r.gain();
+    //         best_ops[s_t.first][s_t.second] = std::make_unique<Exchange>(r);
+    //       }
+    //     }
+    //   }
+    // }
 
-    // CROSS-exchange stuff
-    for (const auto& s_t : s_t_pairs) {
-      if (s_t.second <= s_t.first or // This operator is symmetric.
-          _sol[s_t.first].size() < 2 or _sol[s_t.second].size() < 2) {
-        continue;
-      }
+    // // CROSS-exchange stuff
+    // for (const auto& s_t : s_t_pairs) {
+    //   if (s_t.second <= s_t.first or // This operator is symmetric.
+    //       _sol[s_t.first].size() < 2 or _sol[s_t.second].size() < 2) {
+    //     continue;
+    //   }
 
-      for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1; ++s_rank) {
-        for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size() - 1;
-             ++t_rank) {
-          CrossExchange r(_input,
-                          _sol_state,
-                          _sol[s_t.first],
-                          s_t.first,
-                          s_rank,
-                          _sol[s_t.second],
-                          s_t.second,
-                          t_rank);
-          auto& current_best = best_gains[s_t.first][s_t.second];
-          if (r.gain_upper_bound() > current_best and r.is_valid() and
-              r.gain() > current_best) {
-            current_best = r.gain();
-            best_ops[s_t.first][s_t.second] =
-              std::make_unique<CrossExchange>(r);
-          }
-        }
-      }
-    }
+    //   for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1;
+    //   ++s_rank) {
+    //     for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size() - 1;
+    //          ++t_rank) {
+    //       CrossExchange r(_input,
+    //                       _sol_state,
+    //                       _sol[s_t.first],
+    //                       s_t.first,
+    //                       s_rank,
+    //                       _sol[s_t.second],
+    //                       s_t.second,
+    //                       t_rank);
+    //       auto& current_best = best_gains[s_t.first][s_t.second];
+    //       if (r.gain_upper_bound() > current_best and r.is_valid() and
+    //           r.gain() > current_best) {
+    //         current_best = r.gain();
+    //         best_ops[s_t.first][s_t.second] =
+    //           std::make_unique<CrossExchange>(r);
+    //       }
+    //     }
+    //   }
+    // }
 
-    // Mixed-exchange stuff
-    for (const auto& s_t : s_t_pairs) {
-      if (s_t.first == s_t.second or _sol[s_t.first].size() == 0 or
-          _sol[s_t.second].size() < 2) {
-        continue;
-      }
+    // // Mixed-exchange stuff
+    // for (const auto& s_t : s_t_pairs) {
+    //   if (s_t.first == s_t.second or _sol[s_t.first].size() == 0 or
+    //       _sol[s_t.second].size() < 2) {
+    //     continue;
+    //   }
 
-      for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
-        for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size() - 1;
-             ++t_rank) {
-          MixedExchange r(_input,
-                          _sol_state,
-                          _sol[s_t.first],
-                          s_t.first,
-                          s_rank,
-                          _sol[s_t.second],
-                          s_t.second,
-                          t_rank);
-          auto& current_best = best_gains[s_t.first][s_t.second];
-          if (r.gain_upper_bound() > current_best and r.is_valid() and
-              r.gain() > current_best) {
-            current_best = r.gain();
-            best_ops[s_t.first][s_t.second] =
-              std::make_unique<MixedExchange>(r);
-          }
-        }
-      }
-    }
+    //   for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
+    //     for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size() - 1;
+    //          ++t_rank) {
+    //       MixedExchange r(_input,
+    //                       _sol_state,
+    //                       _sol[s_t.first],
+    //                       s_t.first,
+    //                       s_rank,
+    //                       _sol[s_t.second],
+    //                       s_t.second,
+    //                       t_rank);
+    //       auto& current_best = best_gains[s_t.first][s_t.second];
+    //       if (r.gain_upper_bound() > current_best and r.is_valid() and
+    //           r.gain() > current_best) {
+    //         current_best = r.gain();
+    //         best_ops[s_t.first][s_t.second] =
+    //           std::make_unique<MixedExchange>(r);
+    //       }
+    //     }
+    //   }
+    // }
 
-    // 2-opt* stuff
-    for (const auto& s_t : s_t_pairs) {
-      if (s_t.second <= s_t.first) {
-        // This operator is symmetric.
-        continue;
-      }
-      for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
-        for (int t_rank = _sol[s_t.second].size() - 1; t_rank >= 0; --t_rank) {
-          TwoOpt r(_input,
-                   _sol_state,
-                   _sol[s_t.first],
-                   s_t.first,
-                   s_rank,
-                   _sol[s_t.second],
-                   s_t.second,
-                   t_rank);
-          if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid()) {
-            best_gains[s_t.first][s_t.second] = r.gain();
-            best_ops[s_t.first][s_t.second] = std::make_unique<TwoOpt>(r);
-          }
-        }
-      }
-    }
+    // // 2-opt* stuff
+    // for (const auto& s_t : s_t_pairs) {
+    //   if (s_t.second <= s_t.first) {
+    //     // This operator is symmetric.
+    //     continue;
+    //   }
+    //   for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
+    //     for (int t_rank = _sol[s_t.second].size() - 1; t_rank >= 0; --t_rank)
+    //     {
+    //       TwoOpt r(_input,
+    //                _sol_state,
+    //                _sol[s_t.first],
+    //                s_t.first,
+    //                s_rank,
+    //                _sol[s_t.second],
+    //                s_t.second,
+    //                t_rank);
+    //       if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid())
+    //       {
+    //         best_gains[s_t.first][s_t.second] = r.gain();
+    //         best_ops[s_t.first][s_t.second] = std::make_unique<TwoOpt>(r);
+    //       }
+    //     }
+    //   }
+    // }
 
-    // Reverse 2-opt* stuff
-    for (const auto& s_t : s_t_pairs) {
-      if (s_t.first == s_t.second) {
-        continue;
-      }
-      for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
-        for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size(); ++t_rank) {
-          ReverseTwoOpt r(_input,
-                          _sol_state,
-                          _sol[s_t.first],
-                          s_t.first,
-                          s_rank,
-                          _sol[s_t.second],
-                          s_t.second,
-                          t_rank);
-          if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid()) {
-            best_gains[s_t.first][s_t.second] = r.gain();
-            best_ops[s_t.first][s_t.second] =
-              std::make_unique<ReverseTwoOpt>(r);
-          }
-        }
-      }
-    }
+    // // Reverse 2-opt* stuff
+    // for (const auto& s_t : s_t_pairs) {
+    //   if (s_t.first == s_t.second) {
+    //     continue;
+    //   }
+    //   for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
+    //     for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size(); ++t_rank)
+    //     {
+    //       ReverseTwoOpt r(_input,
+    //                       _sol_state,
+    //                       _sol[s_t.first],
+    //                       s_t.first,
+    //                       s_rank,
+    //                       _sol[s_t.second],
+    //                       s_t.second,
+    //                       t_rank);
+    //       if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid())
+    //       {
+    //         best_gains[s_t.first][s_t.second] = r.gain();
+    //         best_ops[s_t.first][s_t.second] =
+    //           std::make_unique<ReverseTwoOpt>(r);
+    //       }
+    //     }
+    //   }
+    // }
 
-    // Relocate stuff
-    for (const auto& s_t : s_t_pairs) {
-      if (s_t.first == s_t.second or _sol[s_t.first].size() == 0) {
-        // Don't try to put things from an empty vehicle.
-        continue;
-      }
-      for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
-        if (_sol_state.node_gains[s_t.first][s_rank] <=
-            best_gains[s_t.first][s_t.second]) {
-          // Except if addition cost in route s_t.second is negative
-          // (!!), overall gain can't exceed current known best gain.
-          continue;
-        }
-        for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size(); ++t_rank) {
-          Relocate r(_input,
-                     _sol_state,
-                     _sol[s_t.first],
-                     s_t.first,
-                     s_rank,
-                     _sol[s_t.second],
-                     s_t.second,
-                     t_rank);
-          if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid()) {
-            best_gains[s_t.first][s_t.second] = r.gain();
-            best_ops[s_t.first][s_t.second] = std::make_unique<Relocate>(r);
-          }
-        }
-      }
-    }
+    // // Relocate stuff
+    // for (const auto& s_t : s_t_pairs) {
+    //   if (s_t.first == s_t.second or _sol[s_t.first].size() == 0) {
+    //     // Don't try to put things from an empty vehicle.
+    //     continue;
+    //   }
+    //   for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
+    //     if (_sol_state.node_gains[s_t.first][s_rank] <=
+    //         best_gains[s_t.first][s_t.second]) {
+    //       // Except if addition cost in route s_t.second is negative
+    //       // (!!), overall gain can't exceed current known best gain.
+    //       continue;
+    //     }
+    //     for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size();
+    //     ++t_rank) {
+    //       Relocate r(_input,
+    //                  _sol_state,
+    //                  _sol[s_t.first],
+    //                  s_t.first,
+    //                  s_rank,
+    //                  _sol[s_t.second],
+    //                  s_t.second,
+    //                  t_rank);
+    //       if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid())
+    //       {
+    //         best_gains[s_t.first][s_t.second] = r.gain();
+    //         best_ops[s_t.first][s_t.second] = std::make_unique<Relocate>(r);
+    //       }
+    //     }
+    //   }
+    // }
 
-    // Or-opt stuff
-    for (const auto& s_t : s_t_pairs) {
-      if (s_t.first == s_t.second or _sol[s_t.first].size() < 2) {
-        // Don't try to put things from a (near-)empty vehicle.
-        continue;
-      }
-      for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1; ++s_rank) {
-        if (_sol_state.edge_gains[s_t.first][s_rank] <=
-            best_gains[s_t.first][s_t.second]) {
-          // Except if addition cost in route s_t.second is negative
-          // (!!), overall gain can't exceed current known best gain.
-          continue;
-        }
-        for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size(); ++t_rank) {
-          OrOpt r(_input,
-                  _sol_state,
-                  _sol[s_t.first],
-                  s_t.first,
-                  s_rank,
-                  _sol[s_t.second],
-                  s_t.second,
-                  t_rank);
-          auto& current_best = best_gains[s_t.first][s_t.second];
-          if (r.gain_upper_bound() > current_best and r.is_valid() and
-              r.gain() > current_best) {
-            current_best = r.gain();
-            best_ops[s_t.first][s_t.second] = std::make_unique<OrOpt>(r);
-          }
-        }
-      }
-    }
+    // // Or-opt stuff
+    // for (const auto& s_t : s_t_pairs) {
+    //   if (s_t.first == s_t.second or _sol[s_t.first].size() < 2) {
+    //     // Don't try to put things from a (near-)empty vehicle.
+    //     continue;
+    //   }
+    //   for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1;
+    //   ++s_rank) {
+    //     if (_sol_state.edge_gains[s_t.first][s_rank] <=
+    //         best_gains[s_t.first][s_t.second]) {
+    //       // Except if addition cost in route s_t.second is negative
+    //       // (!!), overall gain can't exceed current known best gain.
+    //       continue;
+    //     }
+    //     for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size();
+    //     ++t_rank) {
+    //       OrOpt r(_input,
+    //               _sol_state,
+    //               _sol[s_t.first],
+    //               s_t.first,
+    //               s_rank,
+    //               _sol[s_t.second],
+    //               s_t.second,
+    //               t_rank);
+    //       auto& current_best = best_gains[s_t.first][s_t.second];
+    //       if (r.gain_upper_bound() > current_best and r.is_valid() and
+    //           r.gain() > current_best) {
+    //         current_best = r.gain();
+    //         best_ops[s_t.first][s_t.second] = std::make_unique<OrOpt>(r);
+    //       }
+    //     }
+    //   }
+    // }
 
-    // Operators applied to a single route.
+    // // Operators applied to a single route.
 
-    // Intra exchange stuff
-    for (const auto& s_t : s_t_pairs) {
-      if (s_t.first != s_t.second or _sol[s_t.first].size() < 3) {
-        continue;
-      }
+    // // Intra exchange stuff
+    // for (const auto& s_t : s_t_pairs) {
+    //   if (s_t.first != s_t.second or _sol[s_t.first].size() < 3) {
+    //     continue;
+    //   }
 
-      for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 2; ++s_rank) {
-        for (unsigned t_rank = s_rank + 2; t_rank < _sol[s_t.first].size();
-             ++t_rank) {
-          IntraExchange r(_input,
-                          _sol_state,
-                          _sol[s_t.first],
-                          s_t.first,
-                          s_rank,
-                          t_rank);
-          if (r.gain() > best_gains[s_t.first][s_t.first] and r.is_valid()) {
-            best_gains[s_t.first][s_t.first] = r.gain();
-            best_ops[s_t.first][s_t.first] = std::make_unique<IntraExchange>(r);
-          }
-        }
-      }
-    }
+    //   for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 2;
+    //   ++s_rank) {
+    //     for (unsigned t_rank = s_rank + 2; t_rank < _sol[s_t.first].size();
+    //          ++t_rank) {
+    //       IntraExchange r(_input,
+    //                       _sol_state,
+    //                       _sol[s_t.first],
+    //                       s_t.first,
+    //                       s_rank,
+    //                       t_rank);
+    //       if (r.gain() > best_gains[s_t.first][s_t.first] and r.is_valid()) {
+    //         best_gains[s_t.first][s_t.first] = r.gain();
+    //         best_ops[s_t.first][s_t.first] =
+    //         std::make_unique<IntraExchange>(r);
+    //       }
+    //     }
+    //   }
+    // }
 
-    // Intra CROSS-exchange stuff
-    for (const auto& s_t : s_t_pairs) {
-      if (s_t.first != s_t.second or _sol[s_t.first].size() < 5) {
-        continue;
-      }
+    // // Intra CROSS-exchange stuff
+    // for (const auto& s_t : s_t_pairs) {
+    //   if (s_t.first != s_t.second or _sol[s_t.first].size() < 5) {
+    //     continue;
+    //   }
 
-      for (unsigned s_rank = 0; s_rank <= _sol[s_t.first].size() - 4;
-           ++s_rank) {
-        for (unsigned t_rank = s_rank + 3; t_rank < _sol[s_t.first].size() - 1;
-             ++t_rank) {
-          IntraCrossExchange r(_input,
-                               _sol_state,
-                               _sol[s_t.first],
-                               s_t.first,
-                               s_rank,
-                               t_rank);
-          auto& current_best = best_gains[s_t.first][s_t.second];
-          if (r.gain_upper_bound() > current_best and r.is_valid() and
-              r.gain() > current_best) {
-            current_best = r.gain();
-            best_ops[s_t.first][s_t.first] =
-              std::make_unique<IntraCrossExchange>(r);
-          }
-        }
-      }
-    }
+    //   for (unsigned s_rank = 0; s_rank <= _sol[s_t.first].size() - 4;
+    //        ++s_rank) {
+    //     for (unsigned t_rank = s_rank + 3; t_rank < _sol[s_t.first].size() -
+    //     1;
+    //          ++t_rank) {
+    //       IntraCrossExchange r(_input,
+    //                            _sol_state,
+    //                            _sol[s_t.first],
+    //                            s_t.first,
+    //                            s_rank,
+    //                            t_rank);
+    //       auto& current_best = best_gains[s_t.first][s_t.second];
+    //       if (r.gain_upper_bound() > current_best and r.is_valid() and
+    //           r.gain() > current_best) {
+    //         current_best = r.gain();
+    //         best_ops[s_t.first][s_t.first] =
+    //           std::make_unique<IntraCrossExchange>(r);
+    //       }
+    //     }
+    //   }
+    // }
 
-    // Intra mixed-exchange stuff
-    for (const auto& s_t : s_t_pairs) {
-      if (s_t.first != s_t.second or _sol[s_t.first].size() < 4) {
-        continue;
-      }
+    // // Intra mixed-exchange stuff
+    // for (const auto& s_t : s_t_pairs) {
+    //   if (s_t.first != s_t.second or _sol[s_t.first].size() < 4) {
+    //     continue;
+    //   }
 
-      for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
-        for (unsigned t_rank = 0; t_rank < _sol[s_t.first].size() - 1;
-             ++t_rank) {
-          if (t_rank <= s_rank + 1 and s_rank <= t_rank + 2) {
-            continue;
-          }
-          IntraMixedExchange r(_input,
-                               _sol_state,
-                               _sol[s_t.first],
-                               s_t.first,
-                               s_rank,
-                               t_rank);
-          auto& current_best = best_gains[s_t.first][s_t.second];
-          if (r.gain_upper_bound() > current_best and r.is_valid() and
-              r.gain() > current_best) {
-            current_best = r.gain();
-            best_ops[s_t.first][s_t.first] =
-              std::make_unique<IntraMixedExchange>(r);
-          }
-        }
-      }
-    }
+    //   for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
+    //     for (unsigned t_rank = 0; t_rank < _sol[s_t.first].size() - 1;
+    //          ++t_rank) {
+    //       if (t_rank <= s_rank + 1 and s_rank <= t_rank + 2) {
+    //         continue;
+    //       }
+    //       IntraMixedExchange r(_input,
+    //                            _sol_state,
+    //                            _sol[s_t.first],
+    //                            s_t.first,
+    //                            s_rank,
+    //                            t_rank);
+    //       auto& current_best = best_gains[s_t.first][s_t.second];
+    //       if (r.gain_upper_bound() > current_best and r.is_valid() and
+    //           r.gain() > current_best) {
+    //         current_best = r.gain();
+    //         best_ops[s_t.first][s_t.first] =
+    //           std::make_unique<IntraMixedExchange>(r);
+    //       }
+    //     }
+    //   }
+    // }
 
-    // Intra relocate stuff
-    for (const auto& s_t : s_t_pairs) {
-      if (s_t.first != s_t.second or _sol[s_t.first].size() < 2) {
-        continue;
-      }
-      for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
-        if (_sol_state.node_gains[s_t.first][s_rank] <=
-            best_gains[s_t.first][s_t.first]) {
-          // Except if addition cost in route is negative (!!),
-          // overall gain can't exceed current known best gain.
-          continue;
-        }
-        for (unsigned t_rank = 0; t_rank <= _sol[s_t.first].size() - 1;
-             ++t_rank) {
-          if (t_rank == s_rank) {
-            continue;
-          }
-          IntraRelocate r(_input,
-                          _sol_state,
-                          _sol[s_t.first],
-                          s_t.first,
-                          s_rank,
-                          t_rank);
-          if (r.gain() > best_gains[s_t.first][s_t.first] and r.is_valid()) {
-            best_gains[s_t.first][s_t.first] = r.gain();
-            best_ops[s_t.first][s_t.first] = std::make_unique<IntraRelocate>(r);
-          }
-        }
-      }
-    }
+    // // Intra relocate stuff
+    // for (const auto& s_t : s_t_pairs) {
+    //   if (s_t.first != s_t.second or _sol[s_t.first].size() < 2) {
+    //     continue;
+    //   }
+    //   for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
+    //     if (_sol_state.node_gains[s_t.first][s_rank] <=
+    //         best_gains[s_t.first][s_t.first]) {
+    //       // Except if addition cost in route is negative (!!),
+    //       // overall gain can't exceed current known best gain.
+    //       continue;
+    //     }
+    //     for (unsigned t_rank = 0; t_rank <= _sol[s_t.first].size() - 1;
+    //          ++t_rank) {
+    //       if (t_rank == s_rank) {
+    //         continue;
+    //       }
+    //       IntraRelocate r(_input,
+    //                       _sol_state,
+    //                       _sol[s_t.first],
+    //                       s_t.first,
+    //                       s_rank,
+    //                       t_rank);
+    //       if (r.gain() > best_gains[s_t.first][s_t.first] and r.is_valid()) {
+    //         best_gains[s_t.first][s_t.first] = r.gain();
+    //         best_ops[s_t.first][s_t.first] =
+    //         std::make_unique<IntraRelocate>(r);
+    //       }
+    //     }
+    //   }
+    // }
 
-    // Intra Or-opt stuff
-    for (const auto& s_t : s_t_pairs) {
-      if (s_t.first != s_t.second or _sol[s_t.first].size() < 4) {
-        continue;
-      }
-      for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1; ++s_rank) {
-        if (_sol_state.node_gains[s_t.first][s_rank] <=
-            best_gains[s_t.first][s_t.first]) {
-          // Except if addition cost in route is negative (!!),
-          // overall gain can't exceed current known best gain.
-          continue;
-        }
-        for (unsigned t_rank = 0; t_rank <= _sol[s_t.first].size() - 2;
-             ++t_rank) {
-          if (t_rank == s_rank) {
-            continue;
-          }
-          IntraOrOpt r(_input,
-                       _sol_state,
-                       _sol[s_t.first],
-                       s_t.first,
-                       s_rank,
-                       t_rank);
-          auto& current_best = best_gains[s_t.first][s_t.second];
-          if (r.gain_upper_bound() > current_best and r.is_valid() and
-              r.gain() > current_best) {
-            current_best = r.gain();
-            best_ops[s_t.first][s_t.first] = std::make_unique<IntraOrOpt>(r);
-          }
-        }
-      }
-    }
+    // // Intra Or-opt stuff
+    // for (const auto& s_t : s_t_pairs) {
+    //   if (s_t.first != s_t.second or _sol[s_t.first].size() < 4) {
+    //     continue;
+    //   }
+    //   for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1;
+    //   ++s_rank) {
+    //     if (_sol_state.node_gains[s_t.first][s_rank] <=
+    //         best_gains[s_t.first][s_t.first]) {
+    //       // Except if addition cost in route is negative (!!),
+    //       // overall gain can't exceed current known best gain.
+    //       continue;
+    //     }
+    //     for (unsigned t_rank = 0; t_rank <= _sol[s_t.first].size() - 2;
+    //          ++t_rank) {
+    //       if (t_rank == s_rank) {
+    //         continue;
+    //       }
+    //       IntraOrOpt r(_input,
+    //                    _sol_state,
+    //                    _sol[s_t.first],
+    //                    s_t.first,
+    //                    s_rank,
+    //                    t_rank);
+    //       auto& current_best = best_gains[s_t.first][s_t.second];
+    //       if (r.gain_upper_bound() > current_best and r.is_valid() and
+    //           r.gain() > current_best) {
+    //         current_best = r.gain();
+    //         best_ops[s_t.first][s_t.first] = std::make_unique<IntraOrOpt>(r);
+    //       }
+    //     }
+    //   }
+    // }
 
     // Find best overall gain.
     best_gain = 0;
@@ -871,12 +893,18 @@ void LocalSearch<Route,
     Gain best_gain = std::numeric_limits<Gain>::min();
 
     for (std::size_t r = 0; r < _sol[v].size(); ++r) {
+      auto& current_job = _input.jobs[_sol[v].route[r]];
+      if (current_job.type == JOB_TYPE::PICKUP or
+          current_job.type == JOB_TYPE::DELIVERY) {
+        // Don't remove pickups and deliveries at all for now.
+        continue;
+      }
       if (!_sol[v].is_valid_removal(_input, r, 1)) {
         continue;
       }
       Gain best_relocate_distance = static_cast<Gain>(INFINITE_COST);
 
-      auto current_index = _input.jobs[_sol[v].route[r]].index();
+      auto current_index = current_job.index();
 
       for (std::size_t other_v = 0; other_v < _sol.size(); ++other_v) {
         if (other_v == v or
@@ -919,7 +947,9 @@ void LocalSearch<Route,
       }
     }
 
-    routes_and_ranks.push_back(std::make_pair(v, best_rank));
+    if (best_gain > std::numeric_limits<Gain>::min()) {
+      routes_and_ranks.push_back(std::make_pair(v, best_rank));
+    }
   }
 
   for (const auto& r_r : routes_and_ranks) {

@@ -201,9 +201,7 @@ Solution CVRP::solve(unsigned exploration_level,
 
       // Local search phase.
       LocalSearch ls(_input, solutions[rank], max_nb_jobs_removal);
-
-      // TODO reapply
-      // ls.run();
+      ls.run();
 
       // Store solution indicators.
       sol_indicators[rank] = ls.indicators();
