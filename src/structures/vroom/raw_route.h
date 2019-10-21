@@ -64,6 +64,10 @@ public:
 
   bool has_pending_delivery_after_rank(const Index rank) const;
 
+  bool has_delivery_after_rank(const Index rank) const;
+
+  bool has_pickup_up_to_rank(const Index rank) const;
+
   // Check validity for addition of a given load in current route at
   // rank.
   bool is_valid_addition_for_capacity(const Input&,

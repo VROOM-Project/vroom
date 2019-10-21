@@ -125,6 +125,16 @@ bool RawRoute::has_pending_delivery_after_rank(const Index rank) const {
   return _nb_deliveries[rank] < _nb_pickups[rank];
 }
 
+bool RawRoute::has_delivery_after_rank(const Index rank) const {
+  assert(rank < _nb_deliveries.size());
+  return _nb_deliveries[rank] < _nb_deliveries.back();
+}
+
+bool RawRoute::has_pickup_up_to_rank(const Index rank) const {
+  assert(rank < _nb_pickups.size());
+  return 0 < _nb_pickups[rank];
+}
+
 bool RawRoute::is_valid_addition_for_capacity(const Input&,
                                               const Amount& pickup,
                                               const Amount& delivery,

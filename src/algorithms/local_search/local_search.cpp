@@ -408,31 +408,36 @@ void LocalSearch<Route,
       }
     }
 
-    // // Reverse 2-opt* stuff
-    // for (const auto& s_t : s_t_pairs) {
-    //   if (s_t.first == s_t.second) {
-    //     continue;
-    //   }
-    //   for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
-    //     for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size(); ++t_rank)
-    //     {
-    //       ReverseTwoOpt r(_input,
-    //                       _sol_state,
-    //                       _sol[s_t.first],
-    //                       s_t.first,
-    //                       s_rank,
-    //                       _sol[s_t.second],
-    //                       s_t.second,
-    //                       t_rank);
-    //       if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid())
-    //       {
-    //         best_gains[s_t.first][s_t.second] = r.gain();
-    //         best_ops[s_t.first][s_t.second] =
-    //           std::make_unique<ReverseTwoOpt>(r);
-    //       }
-    //     }
-    //   }
-    // }
+    // Reverse 2-opt* stuff
+    for (const auto& s_t : s_t_pairs) {
+      if (s_t.first == s_t.second) {
+        continue;
+      }
+      for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
+        if (_sol[s_t.first].has_delivery_after_rank(s_rank)) {
+          continue;
+        }
+        for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size(); ++t_rank) {
+          if (_sol[s_t.second].has_pickup_up_to_rank(t_rank)) {
+            continue;
+          }
+
+          ReverseTwoOpt r(_input,
+                          _sol_state,
+                          _sol[s_t.first],
+                          s_t.first,
+                          s_rank,
+                          _sol[s_t.second],
+                          s_t.second,
+                          t_rank);
+          if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid()) {
+            best_gains[s_t.first][s_t.second] = r.gain();
+            best_ops[s_t.first][s_t.second] =
+              std::make_unique<ReverseTwoOpt>(r);
+          }
+        }
+      }
+    }
 
     // // Relocate stuff
     // for (const auto& s_t : s_t_pairs) {
