@@ -19,25 +19,30 @@ namespace vroom {
 
 class RawRoute {
 private:
-  // fwd_pickups[i] stores the total pickups up to rank i.
-  std::vector<Amount> fwd_pickups;
+  // _fwd_pickups[i] stores the total pickups up to rank i.
+  std::vector<Amount> _fwd_pickups;
 
-  // bwd_deliveries[i] stores the total deliveries pending after rank
+  // _bwd_deliveries[i] stores the total deliveries pending after rank
   // i.
-  std::vector<Amount> bwd_deliveries;
+  std::vector<Amount> _bwd_deliveries;
 
-  // pd_loads[i] stores the shipments load at rank i (included).
-  std::vector<Amount> pd_loads;
+  // _pd_loads[i] stores the shipments load at rank i (included).
+  std::vector<Amount> _pd_loads;
 
-  // current_loads[s] stores the vehicle load at *step* s (step 0 is
+  // _nb_pickups[i] (resp. _nb_deliveries[i]) stores the number of
+  // pickups (resp. deliveries) up to rank i.
+  std::vector<unsigned> _nb_pickups;
+  std::vector<unsigned> _nb_deliveries;
+
+  // _current_loads[s] stores the vehicle load at *step* s (step 0 is
   // the start, not the first job rank).
-  std::vector<Amount> current_loads;
+  std::vector<Amount> _current_loads;
 
-  // fwd_peaks[s] stores the peak load (component-wise) up to *step*
-  // s. bwd_peaks[s] stores the peak load (component-wise) after
+  // _fwd_peaks[s] stores the peak load (component-wise) up to *step*
+  // s. _bwd_peaks[s] stores the peak load (component-wise) after
   // *step* s.
-  std::vector<Amount> fwd_peaks;
-  std::vector<Amount> bwd_peaks;
+  std::vector<Amount> _fwd_peaks;
+  std::vector<Amount> _bwd_peaks;
 
 public:
   Index vehicle_rank;
@@ -56,6 +61,8 @@ public:
   std::size_t size() const;
 
   void update_amounts(const Input& input);
+
+  bool has_pending_delivery_after_rank(const Index rank) const;
 
   // Check validity for addition of a given load in current route at
   // rank.
