@@ -291,34 +291,37 @@ void LocalSearch<Route,
   while (best_gain > 0) {
     // Operators applied to a pair of (different) routes.
 
-    // Exchange stuff
-    for (const auto& s_t : s_t_pairs) {
-      if (s_t.second <= s_t.first or // This operator is symmetric.
-          _sol[s_t.first].size() == 0 or _sol[s_t.second].size() == 0) {
-        continue;
-      }
-      for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
-        if (_input.jobs[_sol[s_t.first].route[s_rank]].type !=
-            JOB_TYPE::SINGLE) {
+    if (_input.has_jobs()) {
+      // Exchange stuff
+      for (const auto& s_t : s_t_pairs) {
+        if (s_t.second <= s_t.first or // This operator is symmetric.
+            _sol[s_t.first].size() == 0 or _sol[s_t.second].size() == 0) {
           continue;
         }
-        for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size(); ++t_rank) {
-          if (_input.jobs[_sol[s_t.second].route[t_rank]].type !=
+        for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
+          if (_input.jobs[_sol[s_t.first].route[s_rank]].type !=
               JOB_TYPE::SINGLE) {
             continue;
           }
+          for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size();
+               ++t_rank) {
+            if (_input.jobs[_sol[s_t.second].route[t_rank]].type !=
+                JOB_TYPE::SINGLE) {
+              continue;
+            }
 
-          Exchange r(_input,
-                     _sol_state,
-                     _sol[s_t.first],
-                     s_t.first,
-                     s_rank,
-                     _sol[s_t.second],
-                     s_t.second,
-                     t_rank);
-          if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid()) {
-            best_gains[s_t.first][s_t.second] = r.gain();
-            best_ops[s_t.first][s_t.second] = std::make_unique<Exchange>(r);
+            Exchange r(_input,
+                       _sol_state,
+                       _sol[s_t.first],
+                       s_t.first,
+                       s_rank,
+                       _sol[s_t.second],
+                       s_t.second,
+                       t_rank);
+            if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid()) {
+              best_gains[s_t.first][s_t.second] = r.gain();
+              best_ops[s_t.first][s_t.second] = std::make_unique<Exchange>(r);
+            }
           }
         }
       }
@@ -445,35 +448,38 @@ void LocalSearch<Route,
       }
     }
 
-    // Relocate stuff
-    for (const auto& s_t : s_t_pairs) {
-      if (s_t.first == s_t.second or _sol[s_t.first].size() == 0) {
-        // Don't try to put things from an empty vehicle.
-        continue;
-      }
-      for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
-        if (_sol_state.node_gains[s_t.first][s_rank] <=
-            best_gains[s_t.first][s_t.second]) {
-          // Except if addition cost in route s_t.second is negative
-          // (!!), overall gain can't exceed current known best gain.
+    if (_input.has_jobs()) {
+      // Relocate stuff
+      for (const auto& s_t : s_t_pairs) {
+        if (s_t.first == s_t.second or _sol[s_t.first].size() == 0) {
+          // Don't try to put things from an empty vehicle.
           continue;
         }
-        if (_input.jobs[_sol[s_t.first].route[s_rank]].type !=
-            JOB_TYPE::SINGLE) {
-          continue;
-        }
-        for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size(); ++t_rank) {
-          Relocate r(_input,
-                     _sol_state,
-                     _sol[s_t.first],
-                     s_t.first,
-                     s_rank,
-                     _sol[s_t.second],
-                     s_t.second,
-                     t_rank);
-          if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid()) {
-            best_gains[s_t.first][s_t.second] = r.gain();
-            best_ops[s_t.first][s_t.second] = std::make_unique<Relocate>(r);
+        for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
+          if (_sol_state.node_gains[s_t.first][s_rank] <=
+              best_gains[s_t.first][s_t.second]) {
+            // Except if addition cost in route s_t.second is negative
+            // (!!), overall gain can't exceed current known best gain.
+            continue;
+          }
+          if (_input.jobs[_sol[s_t.first].route[s_rank]].type !=
+              JOB_TYPE::SINGLE) {
+            continue;
+          }
+          for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size();
+               ++t_rank) {
+            Relocate r(_input,
+                       _sol_state,
+                       _sol[s_t.first],
+                       s_t.first,
+                       s_rank,
+                       _sol[s_t.second],
+                       s_t.second,
+                       t_rank);
+            if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid()) {
+              best_gains[s_t.first][s_t.second] = r.gain();
+              best_ops[s_t.first][s_t.second] = std::make_unique<Relocate>(r);
+            }
           }
         }
       }
