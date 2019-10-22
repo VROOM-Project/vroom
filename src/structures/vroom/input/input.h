@@ -39,6 +39,8 @@ private:
   bool _has_TW;
   bool _homogeneous_locations;
   bool _geometry;
+  bool _has_jobs;
+  bool _has_shipments;
   Matrix<Cost> _matrix;
   std::vector<Location> _locations;
   std::unordered_map<Location, Index> _locations_to_index;
@@ -81,6 +83,10 @@ public:
   }
 
   bool has_skills() const;
+
+  bool has_jobs() const;
+
+  bool has_shipments() const;
 
   bool has_homogeneous_locations() const;
 

@@ -26,6 +26,8 @@ Input::Input(unsigned amount_size)
     _has_TW(false),
     _homogeneous_locations(true),
     _geometry(false),
+    _has_jobs(false),
+    _has_shipments(false),
     _all_locations_have_coords(true),
     _amount_size(amount_size),
     _zero(_amount_size) {
@@ -98,6 +100,7 @@ void Input::add_job(const Job& job) {
   }
   jobs.push_back(job);
   check_job(jobs.back());
+  _has_jobs = true;
 }
 
 void Input::add_shipment(const Job& pickup, const Job& delivery) {
@@ -112,6 +115,7 @@ void Input::add_shipment(const Job& pickup, const Job& delivery) {
   }
   jobs.push_back(delivery);
   check_job(jobs.back());
+  _has_shipments = true;
 }
 
 void Input::add_vehicle(const Vehicle& vehicle) {
@@ -205,6 +209,14 @@ void Input::set_matrix(Matrix<Cost>&& m) {
 
 bool Input::has_skills() const {
   return _has_skills;
+}
+
+bool Input::has_jobs() const {
+  return _has_jobs;
+}
+
+bool Input::has_shipments() const {
+  return _has_shipments;
 }
 
 bool Input::has_homogeneous_locations() const {
