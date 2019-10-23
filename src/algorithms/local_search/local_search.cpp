@@ -292,21 +292,27 @@ void LocalSearch<Route,
     // Operators applied to a pair of (different) routes.
 
     if (_input.has_jobs()) {
+      // Move(s) that don't make sense for shipment-only instances.
+
       // Exchange stuff
       for (const auto& s_t : s_t_pairs) {
         if (s_t.second <= s_t.first or // This operator is symmetric.
             _sol[s_t.first].size() == 0 or _sol[s_t.second].size() == 0) {
           continue;
         }
+
         for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
           if (_input.jobs[_sol[s_t.first].route[s_rank]].type !=
               JOB_TYPE::SINGLE) {
+            // Don't try moving part of a shipment.
             continue;
           }
+
           for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size();
                ++t_rank) {
             if (_input.jobs[_sol[s_t.second].route[t_rank]].type !=
                 JOB_TYPE::SINGLE) {
+              // Don't try moving part of a shipment.
               continue;
             }
 
@@ -318,6 +324,7 @@ void LocalSearch<Route,
                        _sol[s_t.second],
                        s_t.second,
                        t_rank);
+
             if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid()) {
               best_gains[s_t.first][s_t.second] = r.gain();
               best_ops[s_t.first][s_t.second] = std::make_unique<Exchange>(r);
@@ -325,66 +332,98 @@ void LocalSearch<Route,
           }
         }
       }
+
+      // CROSS-exchange stuff
+      for (const auto& s_t : s_t_pairs) {
+        if (s_t.second <= s_t.first or // This operator is symmetric.
+            _sol[s_t.first].size() < 2 or _sol[s_t.second].size() < 2) {
+          continue;
+        }
+
+        for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1;
+             ++s_rank) {
+          if (_input.jobs[_sol[s_t.first].route[s_rank]].type !=
+                JOB_TYPE::SINGLE or
+              _input.jobs[_sol[s_t.first].route[s_rank + 1]].type !=
+                JOB_TYPE::SINGLE) {
+            // Don't try moving part of a shipment.
+            continue;
+          }
+
+          for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size() - 1;
+               ++t_rank) {
+            if (_input.jobs[_sol[s_t.second].route[t_rank]].type !=
+                  JOB_TYPE::SINGLE or
+                _input.jobs[_sol[s_t.second].route[t_rank + 1]].type !=
+                  JOB_TYPE::SINGLE) {
+              // Don't try moving part of a shipment.
+              continue;
+            }
+
+            CrossExchange r(_input,
+                            _sol_state,
+                            _sol[s_t.first],
+                            s_t.first,
+                            s_rank,
+                            _sol[s_t.second],
+                            s_t.second,
+                            t_rank);
+
+            auto& current_best = best_gains[s_t.first][s_t.second];
+            if (r.gain_upper_bound() > current_best and r.is_valid() and
+                r.gain() > current_best) {
+              current_best = r.gain();
+              best_ops[s_t.first][s_t.second] =
+                std::make_unique<CrossExchange>(r);
+            }
+          }
+        }
+      }
+
+      // Mixed-exchange stuff
+      for (const auto& s_t : s_t_pairs) {
+        if (s_t.first == s_t.second or _sol[s_t.first].size() == 0 or
+            _sol[s_t.second].size() < 2) {
+          continue;
+        }
+
+        for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
+          if (_input.jobs[_sol[s_t.first].route[s_rank]].type !=
+              JOB_TYPE::SINGLE) {
+            // Don't try moving part of a shipment.
+            continue;
+          }
+
+          for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size() - 1;
+               ++t_rank) {
+            if (_input.jobs[_sol[s_t.second].route[t_rank]].type !=
+                  JOB_TYPE::SINGLE or
+                _input.jobs[_sol[s_t.second].route[t_rank + 1]].type !=
+                  JOB_TYPE::SINGLE) {
+              // Don't try moving part of a shipment.
+              continue;
+            }
+
+            MixedExchange r(_input,
+                            _sol_state,
+                            _sol[s_t.first],
+                            s_t.first,
+                            s_rank,
+                            _sol[s_t.second],
+                            s_t.second,
+                            t_rank);
+
+            auto& current_best = best_gains[s_t.first][s_t.second];
+            if (r.gain_upper_bound() > current_best and r.is_valid() and
+                r.gain() > current_best) {
+              current_best = r.gain();
+              best_ops[s_t.first][s_t.second] =
+                std::make_unique<MixedExchange>(r);
+            }
+          }
+        }
+      }
     }
-
-    // // CROSS-exchange stuff
-    // for (const auto& s_t : s_t_pairs) {
-    //   if (s_t.second <= s_t.first or // This operator is symmetric.
-    //       _sol[s_t.first].size() < 2 or _sol[s_t.second].size() < 2) {
-    //     continue;
-    //   }
-
-    //   for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1;
-    //   ++s_rank) {
-    //     for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size() - 1;
-    //          ++t_rank) {
-    //       CrossExchange r(_input,
-    //                       _sol_state,
-    //                       _sol[s_t.first],
-    //                       s_t.first,
-    //                       s_rank,
-    //                       _sol[s_t.second],
-    //                       s_t.second,
-    //                       t_rank);
-    //       auto& current_best = best_gains[s_t.first][s_t.second];
-    //       if (r.gain_upper_bound() > current_best and r.is_valid() and
-    //           r.gain() > current_best) {
-    //         current_best = r.gain();
-    //         best_ops[s_t.first][s_t.second] =
-    //           std::make_unique<CrossExchange>(r);
-    //       }
-    //     }
-    //   }
-    // }
-
-    // // Mixed-exchange stuff
-    // for (const auto& s_t : s_t_pairs) {
-    //   if (s_t.first == s_t.second or _sol[s_t.first].size() == 0 or
-    //       _sol[s_t.second].size() < 2) {
-    //     continue;
-    //   }
-
-    //   for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
-    //     for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size() - 1;
-    //          ++t_rank) {
-    //       MixedExchange r(_input,
-    //                       _sol_state,
-    //                       _sol[s_t.first],
-    //                       s_t.first,
-    //                       s_rank,
-    //                       _sol[s_t.second],
-    //                       s_t.second,
-    //                       t_rank);
-    //       auto& current_best = best_gains[s_t.first][s_t.second];
-    //       if (r.gain_upper_bound() > current_best and r.is_valid() and
-    //           r.gain() > current_best) {
-    //         current_best = r.gain();
-    //         best_ops[s_t.first][s_t.second] =
-    //           std::make_unique<MixedExchange>(r);
-    //       }
-    //     }
-    //   }
-    // }
 
     // 2-opt* stuff
     for (const auto& s_t : s_t_pairs) {
@@ -392,10 +431,12 @@ void LocalSearch<Route,
         // This operator is symmetric.
         continue;
       }
+
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
         if (_sol[s_t.first].has_pending_delivery_after_rank(s_rank)) {
           continue;
         }
+
         for (int t_rank = _sol[s_t.second].size() - 1; t_rank >= 0; --t_rank) {
           if (_sol[s_t.second].has_pending_delivery_after_rank(t_rank)) {
             continue;
@@ -409,6 +450,7 @@ void LocalSearch<Route,
                    _sol[s_t.second],
                    s_t.second,
                    t_rank);
+
           if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid()) {
             best_gains[s_t.first][s_t.second] = r.gain();
             best_ops[s_t.first][s_t.second] = std::make_unique<TwoOpt>(r);
@@ -422,10 +464,12 @@ void LocalSearch<Route,
       if (s_t.first == s_t.second) {
         continue;
       }
+
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
         if (_sol[s_t.first].has_delivery_after_rank(s_rank)) {
           continue;
         }
+
         for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size(); ++t_rank) {
           if (_sol[s_t.second].has_pickup_up_to_rank(t_rank)) {
             continue;
@@ -439,6 +483,7 @@ void LocalSearch<Route,
                           _sol[s_t.second],
                           s_t.second,
                           t_rank);
+
           if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid()) {
             best_gains[s_t.first][s_t.second] = r.gain();
             best_ops[s_t.first][s_t.second] =
@@ -449,12 +494,15 @@ void LocalSearch<Route,
     }
 
     if (_input.has_jobs()) {
+      // Move(s) that don't make sense for shipment-only instances.
+
       // Relocate stuff
       for (const auto& s_t : s_t_pairs) {
         if (s_t.first == s_t.second or _sol[s_t.first].size() == 0) {
           // Don't try to put things from an empty vehicle.
           continue;
         }
+
         for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
           if (_sol_state.node_gains[s_t.first][s_rank] <=
               best_gains[s_t.first][s_t.second]) {
@@ -462,10 +510,12 @@ void LocalSearch<Route,
             // (!!), overall gain can't exceed current known best gain.
             continue;
           }
+
           if (_input.jobs[_sol[s_t.first].route[s_rank]].type !=
               JOB_TYPE::SINGLE) {
             continue;
           }
+
           for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size();
                ++t_rank) {
             Relocate r(_input,
@@ -476,6 +526,7 @@ void LocalSearch<Route,
                        _sol[s_t.second],
                        s_t.second,
                        t_rank);
+
             if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid()) {
               best_gains[s_t.first][s_t.second] = r.gain();
               best_ops[s_t.first][s_t.second] = std::make_unique<Relocate>(r);
@@ -483,41 +534,52 @@ void LocalSearch<Route,
           }
         }
       }
-    }
 
-    // // Or-opt stuff
-    // for (const auto& s_t : s_t_pairs) {
-    //   if (s_t.first == s_t.second or _sol[s_t.first].size() < 2) {
-    //     // Don't try to put things from a (near-)empty vehicle.
-    //     continue;
-    //   }
-    //   for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1;
-    //   ++s_rank) {
-    //     if (_sol_state.edge_gains[s_t.first][s_rank] <=
-    //         best_gains[s_t.first][s_t.second]) {
-    //       // Except if addition cost in route s_t.second is negative
-    //       // (!!), overall gain can't exceed current known best gain.
-    //       continue;
-    //     }
-    //     for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size();
-    //     ++t_rank) {
-    //       OrOpt r(_input,
-    //               _sol_state,
-    //               _sol[s_t.first],
-    //               s_t.first,
-    //               s_rank,
-    //               _sol[s_t.second],
-    //               s_t.second,
-    //               t_rank);
-    //       auto& current_best = best_gains[s_t.first][s_t.second];
-    //       if (r.gain_upper_bound() > current_best and r.is_valid() and
-    //           r.gain() > current_best) {
-    //         current_best = r.gain();
-    //         best_ops[s_t.first][s_t.second] = std::make_unique<OrOpt>(r);
-    //       }
-    //     }
-    //   }
-    // }
+      // Or-opt stuff
+      for (const auto& s_t : s_t_pairs) {
+        if (s_t.first == s_t.second or _sol[s_t.first].size() < 2) {
+          // Don't try to move things from a (near-)empty vehicle.
+          continue;
+        }
+
+        for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1;
+             ++s_rank) {
+          if (_sol_state.edge_gains[s_t.first][s_rank] <=
+              best_gains[s_t.first][s_t.second]) {
+            // Except if addition cost in route s_t.second is negative
+            // (!!), overall gain can't exceed current known best gain.
+            continue;
+          }
+
+          if (_input.jobs[_sol[s_t.first].route[s_rank]].type !=
+                JOB_TYPE::SINGLE or
+              _input.jobs[_sol[s_t.first].route[s_rank + 1]].type !=
+                JOB_TYPE::SINGLE) {
+            // Don't try moving part of a shipment.
+            continue;
+          }
+
+          for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size();
+               ++t_rank) {
+            OrOpt r(_input,
+                    _sol_state,
+                    _sol[s_t.first],
+                    s_t.first,
+                    s_rank,
+                    _sol[s_t.second],
+                    s_t.second,
+                    t_rank);
+
+            auto& current_best = best_gains[s_t.first][s_t.second];
+            if (r.gain_upper_bound() > current_best and r.is_valid() and
+                r.gain() > current_best) {
+              current_best = r.gain();
+              best_ops[s_t.first][s_t.second] = std::make_unique<OrOpt>(r);
+            }
+          }
+        }
+      }
+    }
 
     // // Operators applied to a single route.
 
