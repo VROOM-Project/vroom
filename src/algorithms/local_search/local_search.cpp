@@ -665,37 +665,51 @@ void LocalSearch<Route,
     //   }
     // }
 
-    // // Intra relocate stuff
-    // for (const auto& s_t : s_t_pairs) {
-    //   if (s_t.first != s_t.second or _sol[s_t.first].size() < 2) {
-    //     continue;
-    //   }
-    //   for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
-    //     if (_sol_state.node_gains[s_t.first][s_rank] <=
-    //         best_gains[s_t.first][s_t.first]) {
-    //       // Except if addition cost in route is negative (!!),
-    //       // overall gain can't exceed current known best gain.
-    //       continue;
-    //     }
-    //     for (unsigned t_rank = 0; t_rank <= _sol[s_t.first].size() - 1;
-    //          ++t_rank) {
-    //       if (t_rank == s_rank) {
-    //         continue;
-    //       }
-    //       IntraRelocate r(_input,
-    //                       _sol_state,
-    //                       _sol[s_t.first],
-    //                       s_t.first,
-    //                       s_rank,
-    //                       t_rank);
-    //       if (r.gain() > best_gains[s_t.first][s_t.first] and r.is_valid()) {
-    //         best_gains[s_t.first][s_t.first] = r.gain();
-    //         best_ops[s_t.first][s_t.first] =
-    //         std::make_unique<IntraRelocate>(r);
-    //       }
-    //     }
-    //   }
-    // }
+    // Intra relocate stuff
+    for (const auto& s_t : s_t_pairs) {
+      if (s_t.first != s_t.second or _sol[s_t.first].size() < 2) {
+        continue;
+      }
+
+      for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
+        if (_sol_state.node_gains[s_t.first][s_rank] <=
+            best_gains[s_t.first][s_t.first]) {
+          // Except if addition cost in route is negative (!!),
+          // overall gain can't exceed current known best gain.
+          continue;
+        }
+
+        unsigned min_t_rank = 0;
+        if (_input.jobs[_sol[s_t.first].route[s_rank]].type ==
+            JOB_TYPE::DELIVERY) {
+          min_t_rank = _sol[s_t.first].matching_pickup_rank(s_rank) + 1;
+        }
+
+        unsigned max_t_rank = _sol[s_t.first].size() - 1;
+        if (_input.jobs[_sol[s_t.first].route[s_rank]].type ==
+            JOB_TYPE::PICKUP) {
+          max_t_rank = _sol[s_t.first].matching_delivery_rank(s_rank) - 1;
+        }
+
+        for (unsigned t_rank = min_t_rank; t_rank <= max_t_rank; ++t_rank) {
+          if (t_rank == s_rank) {
+            continue;
+          }
+
+          IntraRelocate r(_input,
+                          _sol_state,
+                          _sol[s_t.first],
+                          s_t.first,
+                          s_rank,
+                          t_rank);
+
+          if (r.gain() > best_gains[s_t.first][s_t.first] and r.is_valid()) {
+            best_gains[s_t.first][s_t.first] = r.gain();
+            best_ops[s_t.first][s_t.first] = std::make_unique<IntraRelocate>(r);
+          }
+        }
+      }
+    }
 
     // // Intra Or-opt stuff
     // for (const auto& s_t : s_t_pairs) {
