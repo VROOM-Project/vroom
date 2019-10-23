@@ -7,6 +7,8 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <unordered_map>
+
 #include "structures/vroom/raw_route.h"
 
 namespace vroom {
@@ -40,6 +42,8 @@ void RawRoute::update_amounts(const Input& input) {
   _pd_loads.resize(route.size());
   _nb_pickups.resize(route.size());
   _nb_deliveries.resize(route.size());
+  _matching_delivery_rank.resize(route.size());
+  _matching_pickup_rank.resize(route.size());
 
   _current_loads.resize(step_size);
   _fwd_peaks.resize(step_size);
@@ -52,6 +56,9 @@ void RawRoute::update_amounts(const Input& input) {
     std::fill(_bwd_peaks.begin(), _bwd_peaks.end(), input.zero_amount());
     return;
   }
+
+  std::unordered_map<Index, Index> pickup_route_rank_to_input_rank;
+  std::unordered_map<Index, Index> delivery_input_rank_to_route_rank;
 
   Amount current_pickups(input.zero_amount());
   Amount current_pd_load(input.zero_amount());
@@ -67,11 +74,13 @@ void RawRoute::update_amounts(const Input& input) {
     case JOB_TYPE::PICKUP:
       current_pd_load += job.pickup;
       current_nb_pickups += 1;
+      pickup_route_rank_to_input_rank.insert({i, route[i]});
       break;
     case JOB_TYPE::DELIVERY:
       assert(job.delivery <= current_pd_load);
       current_pd_load -= job.delivery;
       current_nb_deliveries += 1;
+      delivery_input_rank_to_route_rank.insert({route[i], i});
       break;
     }
     _fwd_pickups[i] = current_pickups;
@@ -119,6 +128,19 @@ void RawRoute::update_amounts(const Input& input) {
     }
     _bwd_peaks[bwd_s] = peak;
   }
+
+  assert(pickup_route_rank_to_input_rank.size() ==
+         delivery_input_rank_to_route_rank.size());
+  for (const auto& pair : pickup_route_rank_to_input_rank) {
+    auto pickup_route_rank = pair.first;
+    auto delivery_input_rank = pair.second + 1;
+    auto search = delivery_input_rank_to_route_rank.find(delivery_input_rank);
+    assert(search != delivery_input_rank_to_route_rank.end());
+    auto delivery_route_rank = search->second;
+
+    _matching_delivery_rank[pickup_route_rank] = delivery_route_rank;
+    _matching_pickup_rank[delivery_route_rank] = pickup_route_rank;
+  }
 }
 
 bool RawRoute::has_pending_delivery_after_rank(const Index rank) const {
@@ -133,6 +155,14 @@ bool RawRoute::has_delivery_after_rank(const Index rank) const {
 bool RawRoute::has_pickup_up_to_rank(const Index rank) const {
   assert(rank < _nb_pickups.size());
   return 0 < _nb_pickups[rank];
+}
+
+Index RawRoute::matching_delivery_rank(const Index rank) const {
+  return _matching_delivery_rank[rank];
+}
+
+Index RawRoute::matching_pickup_rank(const Index rank) const {
+  return _matching_pickup_rank[rank];
 }
 
 bool RawRoute::is_valid_addition_for_capacity(const Input&,

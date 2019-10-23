@@ -34,6 +34,12 @@ private:
   std::vector<unsigned> _nb_pickups;
   std::vector<unsigned> _nb_deliveries;
 
+  // If job at rank i in route is a pickup (resp. delivery), then
+  // _matching_delivery_rank[i] (resp. _matching_pickup_rank[i])
+  // stores the rank of the matching delivery (resp. pickup).
+  std::vector<Index> _matching_delivery_rank;
+  std::vector<Index> _matching_pickup_rank;
+
   // _current_loads[s] stores the vehicle load at *step* s (step 0 is
   // the start, not the first job rank).
   std::vector<Amount> _current_loads;
@@ -67,6 +73,10 @@ public:
   bool has_delivery_after_rank(const Index rank) const;
 
   bool has_pickup_up_to_rank(const Index rank) const;
+
+  Index matching_delivery_rank(const Index rank) const;
+
+  Index matching_pickup_rank(const Index rank) const;
 
   // Check validity for addition of a given load in current route at
   // rank.
