@@ -581,32 +581,42 @@ void LocalSearch<Route,
       }
     }
 
-    // // Operators applied to a single route.
+    // Operators applied to a single route.
 
-    // // Intra exchange stuff
-    // for (const auto& s_t : s_t_pairs) {
-    //   if (s_t.first != s_t.second or _sol[s_t.first].size() < 3) {
-    //     continue;
-    //   }
+    // Intra exchange stuff
+    for (const auto& s_t : s_t_pairs) {
+      if (s_t.first != s_t.second or _sol[s_t.first].size() < 3) {
+        continue;
+      }
 
-    //   for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 2;
-    //   ++s_rank) {
-    //     for (unsigned t_rank = s_rank + 2; t_rank < _sol[s_t.first].size();
-    //          ++t_rank) {
-    //       IntraExchange r(_input,
-    //                       _sol_state,
-    //                       _sol[s_t.first],
-    //                       s_t.first,
-    //                       s_rank,
-    //                       t_rank);
-    //       if (r.gain() > best_gains[s_t.first][s_t.first] and r.is_valid()) {
-    //         best_gains[s_t.first][s_t.first] = r.gain();
-    //         best_ops[s_t.first][s_t.first] =
-    //         std::make_unique<IntraExchange>(r);
-    //       }
-    //     }
-    //   }
-    // }
+      for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 2; ++s_rank) {
+        unsigned max_t_rank = _sol[s_t.first].size() - 1;
+        if (_input.jobs[_sol[s_t.first].route[s_rank]].type ==
+            JOB_TYPE::PICKUP) {
+          max_t_rank = _sol[s_t.first].matching_delivery_rank(s_rank) - 1;
+        }
+
+        for (unsigned t_rank = s_rank + 2; t_rank <= max_t_rank; ++t_rank) {
+          if (_input.jobs[_sol[s_t.first].route[t_rank]].type ==
+                JOB_TYPE::DELIVERY and
+              s_rank <= _sol[s_t.first].matching_pickup_rank(t_rank)) {
+            continue;
+          }
+
+          IntraExchange r(_input,
+                          _sol_state,
+                          _sol[s_t.first],
+                          s_t.first,
+                          s_rank,
+                          t_rank);
+
+          if (r.gain() > best_gains[s_t.first][s_t.first] and r.is_valid()) {
+            best_gains[s_t.first][s_t.first] = r.gain();
+            best_ops[s_t.first][s_t.first] = std::make_unique<IntraExchange>(r);
+          }
+        }
+      }
+    }
 
     // // Intra CROSS-exchange stuff
     // for (const auto& s_t : s_t_pairs) {
