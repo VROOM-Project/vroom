@@ -1,5 +1,16 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- Support for pickup and delivery tasks (#274)
+- `shipments` array in input (#274)
+
+### Changed
+
+- Steps `type` in json output can also have value `pickup` and `delivery` (#274)
+
 ## [v1.5.0] - 2019-10-14
 
 ### Added
