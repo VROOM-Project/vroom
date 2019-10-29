@@ -25,6 +25,7 @@ The problem description is read from standard input or from a file
 | Key         | Description |
 |-----------|-----------|
 | [`jobs`](#jobs) |  array of `job` objects describing the places to visit |
+| [`shipments`](#shipments) |  array of `shipment` objects describing pickup and delivery tasks |
 | [`vehicles`](#vehicles) |  array of `vehicle` objects describing the available vehicles |
 | [[`matrix`](#matrix)] | optional two-dimensional array describing a custom matrix |
 
@@ -45,17 +46,27 @@ A `job` object has the following properties:
 | [`priority`] | an integer in the `[0, 10]` range describing priority level (defaults to 0) |
 | [`time_windows`] | an array of `time_window` objects describing valid slots for job service start |
 
-If a custom matrix is provided:
+## Shipments
 
-- `location_index` is mandatory
-- `location` is optional but can be set to retrieve coordinates in the
-  response
+A `shipment` object has the following properties:
 
-If no custom matrix is provided:
+| Key         | Description |
+| ----------- | ----------- |
+| `pickup` | a `shipment_step` object describing pickup |
+| `delivery` | a `shipment_step` object describing delivery |
+| [`amount`] | an array of integers describing multidimensional quantities |
+| [`skills`] | an array of integers defining mandatory skills |
+| [`priority`] | an integer in the `[0, 10]` range describing priority level (defaults to 0) |
 
-- a `table` query will be sent to the routing engine
-- `location` is mandatory
-- `location_index` is irrelevant
+A `shipment_step` is similar to a `job` object (expect for shared keys already present in `shipment`):
+
+| Key         | Description |
+| ----------- | ----------- |
+| `id` | an integer used as unique identifier |
+| [`location`] | coordinates array |
+| [`location_index`] | index of relevant row and column in custom matrix |
+| [`service`] | job service duration (defaults to 0) |
+| [`time_windows`] | an array of `time_window` objects describing valid slots for job service start |
 
 ## Vehicles
 
@@ -74,6 +85,20 @@ A `vehicle` object has the following properties:
 | [`time_window`] | a `time_window` object describing working hours |
 
 ## Notes
+
+### Job locations
+
+For `job`, `pickup` and `delivery` objects, if a custom matrix is provided:
+
+- `location_index` is mandatory
+- `location` is optional but can be set to retrieve coordinates in the
+  response
+
+If no custom matrix is provided:
+
+- a `table` query will be sent to the routing engine
+- `location` is mandatory
+- `location_index` is irrelevant
 
 ### `vehicle` locations
 
@@ -214,7 +239,7 @@ A `step` object has the following properties:
 
 | Key         | Description |
 | ----------- | ----------- |
-| `type` | a string that is either `start`, `job` or `end` |
+| `type` | a string (either `start`, `job`, `pickup`, `delivery` or `end`) |
 | `arrival` | estimated time of arrival at this step |
 | `duration` | cumulated travel time upon arrival at this step |
 | [`location`] | coordinates array for this step (if provided in input) |
