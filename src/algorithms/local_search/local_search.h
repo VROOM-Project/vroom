@@ -29,7 +29,8 @@ template <class Route,
           class IntraCrossExchange,
           class IntraMixedExchange,
           class IntraRelocate,
-          class IntraOrOpt>
+          class IntraOrOpt,
+          class PDRelocate>
 class LocalSearch {
 private:
   const Input& _input;

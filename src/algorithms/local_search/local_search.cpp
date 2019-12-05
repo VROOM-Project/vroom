@@ -20,6 +20,7 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/operators/intra_relocate.h"
 #include "problems/cvrp/operators/mixed_exchange.h"
 #include "problems/cvrp/operators/or_opt.h"
+#include "problems/cvrp/operators/pd_shift.h"
 #include "problems/cvrp/operators/relocate.h"
 #include "problems/cvrp/operators/reverse_two_opt.h"
 #include "problems/cvrp/operators/two_opt.h"
@@ -32,6 +33,7 @@ All rights reserved (see LICENSE).
 #include "problems/vrptw/operators/intra_relocate.h"
 #include "problems/vrptw/operators/mixed_exchange.h"
 #include "problems/vrptw/operators/or_opt.h"
+#include "problems/vrptw/operators/pd_shift.h"
 #include "problems/vrptw/operators/relocate.h"
 #include "problems/vrptw/operators/reverse_two_opt.h"
 #include "problems/vrptw/operators/two_opt.h"
@@ -52,7 +54,8 @@ template <class Route,
           class IntraCrossExchange,
           class IntraMixedExchange,
           class IntraRelocate,
-          class IntraOrOpt>
+          class IntraOrOpt,
+          class PDShift>
 LocalSearch<Route,
             Exchange,
             CrossExchange,
@@ -65,9 +68,10 @@ LocalSearch<Route,
             IntraCrossExchange,
             IntraMixedExchange,
             IntraRelocate,
-            IntraOrOpt>::LocalSearch(const Input& input,
-                                     std::vector<Route>& sol,
-                                     unsigned max_nb_jobs_removal)
+            IntraOrOpt,
+            PDShift>::LocalSearch(const Input& input,
+                                  std::vector<Route>& sol,
+                                  unsigned max_nb_jobs_removal)
   : _input(input),
     _matrix(_input.get_matrix()),
     _nb_vehicles(_input.vehicles.size()),
@@ -113,7 +117,8 @@ template <class Route,
           class IntraCrossExchange,
           class IntraMixedExchange,
           class IntraRelocate,
-          class IntraOrOpt>
+          class IntraOrOpt,
+          class PDShift>
 void LocalSearch<Route,
                  Exchange,
                  CrossExchange,
@@ -126,9 +131,9 @@ void LocalSearch<Route,
                  IntraCrossExchange,
                  IntraMixedExchange,
                  IntraRelocate,
-                 IntraOrOpt>::try_job_additions(const std::vector<Index>&
-                                                  routes,
-                                                double regret_coeff) {
+                 IntraOrOpt,
+                 PDShift>::try_job_additions(const std::vector<Index>& routes,
+                                             double regret_coeff) {
   bool job_added;
   std::vector<Gain> best_costs;
   std::vector<Index> best_ranks;
@@ -253,7 +258,8 @@ template <class Route,
           class IntraCrossExchange,
           class IntraMixedExchange,
           class IntraRelocate,
-          class IntraOrOpt>
+          class IntraOrOpt,
+          class PDShift>
 void LocalSearch<Route,
                  Exchange,
                  CrossExchange,
@@ -266,7 +272,8 @@ void LocalSearch<Route,
                  IntraCrossExchange,
                  IntraMixedExchange,
                  IntraRelocate,
-                 IntraOrOpt>::run_ls_step() {
+                 IntraOrOpt,
+                 PDShift>::run_ls_step() {
   std::vector<std::vector<std::unique_ptr<Operator>>> best_ops(_nb_vehicles);
   for (std::size_t v = 0; v < _nb_vehicles; ++v) {
     best_ops[v] = std::vector<std::unique_ptr<Operator>>(_nb_vehicles);
@@ -796,6 +803,65 @@ void LocalSearch<Route,
       }
     }
 
+    if (_input.has_shipments()) {
+      // Move(s) that don't make sense for job-only instances.
+
+      // P&D relocate stuff
+      for (const auto& s_t : s_t_pairs) {
+        if (s_t.first == s_t.second or _sol[s_t.first].size() == 0) {
+          // Don't try to put things from an empty vehicle.
+          continue;
+        }
+
+        for (unsigned s_p_rank = 0; s_p_rank < _sol[s_t.first].size();
+             ++s_p_rank) {
+          if (_input.jobs[_sol[s_t.first].route[s_p_rank]].type !=
+              JOB_TYPE::PICKUP) {
+            continue;
+          }
+
+          // Matching delivery rank in source route.
+          unsigned s_d_rank = _sol[s_t.first].matching_delivery_rank(s_p_rank);
+
+          if (!_input.vehicle_ok_with_job(s_t.second,
+                                          _sol[s_t.first].route[s_p_rank]) or
+              !_input.vehicle_ok_with_job(s_t.second,
+                                          _sol[s_t.first].route[s_d_rank])) {
+            continue;
+          }
+
+          if (_sol_state.node_gains[s_t.first][s_p_rank] <=
+              best_gains[s_t.first][s_t.second]) {
+            // Except if addition cost in route s_t.second is negative
+            // (!!), overall gain can't exceed current known best gain.
+            continue;
+          }
+
+          PDShift pdr(_input,
+                      _sol_state,
+                      _sol[s_t.first],
+                      s_t.first,
+                      s_p_rank,
+                      s_d_rank,
+                      _sol[s_t.second],
+                      s_t.second,
+                      best_gains[s_t.first][s_t.second]);
+
+          if (pdr.get_remove_gain() <= best_gains[s_t.first][s_t.second]) {
+            // Except if addition cost in route s_t.second is negative
+            // (!!), overall gain can't exceed current known best gain.
+            continue;
+          }
+
+          if (pdr.gain() > best_gains[s_t.first][s_t.second] and
+              pdr.is_valid()) {
+            best_gains[s_t.first][s_t.second] = pdr.gain();
+            best_ops[s_t.first][s_t.second] = std::make_unique<PDShift>(pdr);
+          }
+        }
+      }
+    }
+
     // Find best overall gain.
     best_gain = 0;
     Index best_source = 0;
@@ -900,7 +966,8 @@ template <class Route,
           class IntraCrossExchange,
           class IntraMixedExchange,
           class IntraRelocate,
-          class IntraOrOpt>
+          class IntraOrOpt,
+          class PDShift>
 void LocalSearch<Route,
                  Exchange,
                  CrossExchange,
@@ -913,7 +980,8 @@ void LocalSearch<Route,
                  IntraCrossExchange,
                  IntraMixedExchange,
                  IntraRelocate,
-                 IntraOrOpt>::run() {
+                 IntraOrOpt,
+                 PDShift>::run() {
   bool try_ls_step = true;
   bool first_step = true;
 
@@ -1002,7 +1070,8 @@ template <class Route,
           class IntraCrossExchange,
           class IntraMixedExchange,
           class IntraRelocate,
-          class IntraOrOpt>
+          class IntraOrOpt,
+          class PDShift>
 void LocalSearch<Route,
                  Exchange,
                  CrossExchange,
@@ -1015,7 +1084,8 @@ void LocalSearch<Route,
                  IntraCrossExchange,
                  IntraMixedExchange,
                  IntraRelocate,
-                 IntraOrOpt>::remove_from_routes() {
+                 IntraOrOpt,
+                 PDShift>::remove_from_routes() {
   // Store nearest job from and to any job in any route for constant
   // time access down the line.
   for (std::size_t v1 = 0; v1 < _nb_vehicles; ++v1) {
@@ -1123,7 +1193,8 @@ template <class Route,
           class IntraCrossExchange,
           class IntraMixedExchange,
           class IntraRelocate,
-          class IntraOrOpt>
+          class IntraOrOpt,
+          class PDShift>
 utils::SolutionIndicators LocalSearch<Route,
                                       Exchange,
                                       CrossExchange,
@@ -1136,7 +1207,8 @@ utils::SolutionIndicators LocalSearch<Route,
                                       IntraCrossExchange,
                                       IntraMixedExchange,
                                       IntraRelocate,
-                                      IntraOrOpt>::indicators() const {
+                                      IntraOrOpt,
+                                      PDShift>::indicators() const {
   return _best_sol_indicators;
 }
 
@@ -1152,7 +1224,8 @@ template class LocalSearch<TWRoute,
                            vrptw::IntraCrossExchange,
                            vrptw::IntraMixedExchange,
                            vrptw::IntraRelocate,
-                           vrptw::IntraOrOpt>;
+                           vrptw::IntraOrOpt,
+                           vrptw::PDShift>;
 
 template class LocalSearch<RawRoute,
                            cvrp::Exchange,
@@ -1166,7 +1239,8 @@ template class LocalSearch<RawRoute,
                            cvrp::IntraCrossExchange,
                            cvrp::IntraMixedExchange,
                            cvrp::IntraRelocate,
-                           cvrp::IntraOrOpt>;
+                           cvrp::IntraOrOpt,
+                           cvrp::PDShift>;
 
 } // namespace ls
 } // namespace vroom
