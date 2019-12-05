@@ -105,6 +105,16 @@ void PDShift::compute_gain() {
   // pickup and delivery target ranks, storing best ranks along the
   // way.
 
+  std::vector<Gain> t_d_gains(t_route.size() + 1);
+  for (unsigned t_d_rank = 0; t_d_rank <= t_route.size(); ++t_d_rank) {
+    t_d_gains[t_d_rank] = -utils::addition_cost(_input,
+                                                m,
+                                                s_route[_s_d_rank],
+                                                v,
+                                                t_route,
+                                                t_d_rank);
+  }
+
   for (unsigned t_p_rank = 0; t_p_rank < t_route.size(); ++t_p_rank) {
     Gain t_p_gain = -utils::addition_cost(_input,
                                           m,
@@ -133,13 +143,7 @@ void PDShift::compute_gain() {
                                             t_p_rank,
                                             t_p_rank + 1);
       } else {
-        // TODO precompute t_d_gain ?
-        target_gain = t_p_gain - utils::addition_cost(_input,
-                                                      m,
-                                                      s_route[_s_d_rank],
-                                                      v,
-                                                      t_route,
-                                                      t_d_rank);
+        target_gain = t_p_gain + t_d_gains[t_d_rank];
         modified_with_pd.push_back(t_route[t_d_rank - 1]);
       }
 
