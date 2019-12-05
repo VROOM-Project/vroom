@@ -123,12 +123,11 @@ void PDShift::compute_gain() {
                                           t_route,
                                           t_p_rank);
 
-    // TODO use early abort
-    // if (_remove_gain + t_p_gain < stored_gain) {
-    //   // Over best known gain stored so far even without delivery
-    //   // insertion.
-    //   continue;
-    // }
+    if (_remove_gain + t_p_gain < stored_gain) {
+      // Even without delivery insertion, the gain is lower than best
+      // known stored gain.
+      continue;
+    }
 
     std::vector<Index> modified_with_pd({s_route[_s_p_rank]});
 
