@@ -31,11 +31,29 @@ PDShift::PDShift(const Input& input,
                   static_cast<RawRoute&>(tw_t_route),
                   t_vehicle,
                   gain_threshold),
+    _is_valid_removal(true),
+    _source_without_pd(s_route.begin() + _s_p_rank + 1,
+                       s_route.begin() + _s_d_rank),
     _tw_s_route(tw_s_route),
     _tw_t_route(tw_t_route) {
 }
 
 void PDShift::compute_gain() {
+  // Check for valid removal wrt TW constraints.
+  if (_s_d_rank == _s_p_rank + 1) {
+    _is_valid_removal &= _tw_s_route.is_valid_removal(_input, _s_p_rank, 2);
+  } else {
+    _is_valid_removal &=
+      _tw_s_route.is_valid_addition_for_tw(_input,
+                                           _source_without_pd.begin(),
+                                           _source_without_pd.end(),
+                                           _s_p_rank,
+                                           _s_d_rank + 1);
+  }
+  if (!_is_valid_removal) {
+    return;
+  }
+
   const auto& m = _input.get_matrix();
   const auto& v = _input.vehicles[t_vehicle];
 
@@ -147,8 +165,8 @@ void PDShift::apply() {
                                          s_route.begin() + _s_d_rank);
 
     _tw_s_route.replace(_input,
-                        source_without_pd.begin(),
-                        source_without_pd.end(),
+                        _source_without_pd.begin(),
+                        _source_without_pd.end(),
                         _s_p_rank,
                         _s_d_rank + 1);
   }
