@@ -831,7 +831,7 @@ void LocalSearch<Route,
             continue;
           }
 
-          if (_sol_state.node_gains[s_t.first][s_p_rank] <=
+          if (_sol_state.pd_gains[s_t.first][s_p_rank] <=
               best_gains[s_t.first][s_t.second]) {
             // Except if addition cost in route s_t.second is negative
             // (!!), overall gain can't exceed current known best gain.
@@ -847,12 +847,6 @@ void LocalSearch<Route,
                       _sol[s_t.second],
                       s_t.second,
                       best_gains[s_t.first][s_t.second]);
-
-          if (pdr.get_remove_gain() <= best_gains[s_t.first][s_t.second]) {
-            // Except if addition cost in route s_t.second is negative
-            // (!!), overall gain can't exceed current known best gain.
-            continue;
-          }
 
           if (pdr.gain() > best_gains[s_t.first][s_t.second] and
               pdr.is_valid()) {

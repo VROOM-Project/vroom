@@ -40,8 +40,6 @@ public:
           Index t_vehicle,
           Gain gain_threshold);
 
-  Gain get_remove_gain() const;
-
   virtual bool is_valid() override;
 
   virtual void apply() override;

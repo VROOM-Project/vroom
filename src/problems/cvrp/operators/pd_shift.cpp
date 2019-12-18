@@ -35,10 +35,6 @@ PDShift::PDShift(const Input& input,
   stored_gain = gain_threshold;
 }
 
-Gain PDShift::get_remove_gain() const {
-  return _remove_gain;
-}
-
 void PDShift::compute_gain() {
   const auto& m = _input.get_matrix();
   const auto& v = _input.vehicles[t_vehicle];
