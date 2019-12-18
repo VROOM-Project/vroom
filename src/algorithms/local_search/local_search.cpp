@@ -932,6 +932,7 @@ void LocalSearch<Route,
         _sol_state.set_node_gains(_sol[v_rank].route, v_rank);
         _sol_state.set_edge_gains(_sol[v_rank].route, v_rank);
         _sol_state.set_pd_matching_ranks(_sol[v_rank].route, v_rank);
+        _sol_state.set_pd_gains(_sol[v_rank].route, v_rank);
       }
 
       // Set gains to zero for what needs to be recomputed in the next
@@ -1047,6 +1048,7 @@ void LocalSearch<Route,
         for (std::size_t v = 0; v < _sol.size(); ++v) {
           _sol_state.set_node_gains(_sol[v].route, v);
           _sol_state.set_pd_matching_ranks(_sol[v].route, v);
+          _sol_state.set_pd_gains(_sol[v].route, v);
         }
       }
 

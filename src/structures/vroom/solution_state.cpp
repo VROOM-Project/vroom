@@ -30,6 +30,7 @@ SolutionState::SolutionState(const Input& input)
     edge_costs_around_edge(_nb_vehicles),
     edge_gains(_nb_vehicles),
     edge_candidates(_nb_vehicles),
+    pd_gains(_nb_vehicles),
     matching_delivery_rank(_nb_vehicles),
     matching_pickup_rank(_nb_vehicles),
     nearest_job_rank_in_routes_from(_nb_vehicles,
@@ -47,6 +48,7 @@ void SolutionState::setup(const std::vector<Index>& r, Index v) {
   set_node_gains(r, v);
   set_edge_gains(r, v);
   set_pd_matching_ranks(r, v);
+  set_pd_gains(r, v);
 #ifndef NDEBUG
   update_route_cost(r, v);
 #endif
@@ -369,6 +371,74 @@ void SolutionState::set_edge_gains(const std::vector<Index>& route, Index v) {
 
   if (current_gain > best_gain) {
     edge_candidates[v] = last_edge_rank;
+  }
+}
+
+void SolutionState::set_pd_gains(const std::vector<Index>& route, Index v) {
+  // Expects to have valid values in node_gains, so should be run
+  // after set_node_gains. Expects to have valid values in
+  // matching_delivery_rank, so should be run after
+  // set_pd_matching_ranks.
+  pd_gains[v] = std::vector<Gain>(route.size());
+
+  for (std::size_t pickup_rank = 0; pickup_rank < route.size(); ++pickup_rank) {
+    if (_input.jobs[route[pickup_rank]].type != JOB_TYPE::PICKUP) {
+      continue;
+    }
+    Index pickup_index = _input.jobs[route[pickup_rank]].index();
+    unsigned delivery_rank = matching_delivery_rank[v][pickup_rank];
+    Index delivery_index = _input.jobs[route[delivery_rank]].index();
+
+    if (pickup_rank + 1 == delivery_rank) {
+      // Pickup and delivery in a row.
+      Gain previous_cost = 0;
+      Gain next_cost = 0;
+      Gain new_edge_cost = 0;
+      Index p_index;
+      Index n_index;
+
+      // Compute cost for step before pickup.
+      bool has_previous_step = false;
+      if (pickup_rank > 0) {
+        has_previous_step = true;
+        p_index = _input.jobs[route[pickup_rank - 1]].index();
+        previous_cost = _m[p_index][pickup_index];
+      } else {
+        if (_input.vehicles[v].has_start()) {
+          has_previous_step = true;
+          p_index = _input.vehicles[v].start.get().index();
+          previous_cost = _m[p_index][pickup_index];
+        }
+      }
+
+      // Compute cost for step after delivery.
+      bool has_next_step = false;
+      if (delivery_rank < route.size() - 1) {
+        has_next_step = true;
+        n_index = _input.jobs[route[delivery_rank + 1]].index();
+        next_cost = _m[delivery_index][n_index];
+      } else {
+        if (_input.vehicles[v].has_end()) {
+          has_next_step = true;
+          n_index = _input.vehicles[v].end.get().index();
+          next_cost = _m[delivery_index][n_index];
+        }
+      }
+
+      if (has_previous_step and has_next_step and (route.size() > 2)) {
+        // No new edge with an open trip or if removing P&D creates an
+        // empty route.
+        new_edge_cost = _m[p_index][n_index];
+      }
+
+      pd_gains[v][pickup_rank] = previous_cost +
+                                 _m[pickup_index][delivery_index] + next_cost -
+                                 new_edge_cost;
+    } else {
+      // Simply add both gains as neighbouring edges are disjoint.
+      pd_gains[v][pickup_rank] =
+        node_gains[v][pickup_rank] + node_gains[v][delivery_rank];
+    }
   }
 }
 

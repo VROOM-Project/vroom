@@ -19,10 +19,10 @@ class PDShift : public ls::Operator {
 protected:
   const Index _s_p_rank;
   const Index _s_d_rank;
+  const Gain _remove_gain;
   Index _best_t_p_rank;
   Index _best_t_d_rank;
   bool _valid;
-  Gain _remove_gain;
 
   virtual void compute_gain() override;
 

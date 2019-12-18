@@ -101,6 +101,10 @@ public:
   std::vector<std::vector<Gain>> edge_gains;
   std::vector<Index> edge_candidates;
 
+  // pd_gains[v][i] stores potential gain when removing pickup at rank
+  // i in route for vehicle v along with it's associated delivery.
+  std::vector<std::vector<Gain>> pd_gains;
+
   // If job at rank i in route for vehicle v is a pickup
   // (resp. delivery), then matching_delivery_rank[v][i]
   // (resp. _matching_pickup_rank[v][i]) stores the rank of the
@@ -133,6 +137,8 @@ public:
   void set_node_gains(const std::vector<Index>& route, Index v);
 
   void set_edge_gains(const std::vector<Index>& route, Index v);
+
+  void set_pd_gains(const std::vector<Index>& route, Index v);
 
   void set_pd_matching_ranks(const std::vector<Index>& route, Index v);
 

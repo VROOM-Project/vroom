@@ -25,6 +25,7 @@ PDShift::PDShift(const Input& input,
   : Operator(input, sol_state, s_route, s_vehicle, 0, t_route, t_vehicle, 0),
     _s_p_rank(s_p_rank),
     _s_d_rank(s_d_rank),
+    _remove_gain(_sol_state.pd_gains[s_vehicle][_s_p_rank]),
     _valid(false) {
   assert(s_vehicle != t_vehicle);
   assert(s_route.size() >= 2);
@@ -32,62 +33,6 @@ PDShift::PDShift(const Input& input,
   assert(s_d_rank < s_route.size());
 
   stored_gain = gain_threshold;
-
-  // Compute gain when removing P&D from source route.
-  const auto& m = _input.get_matrix();
-  const auto& v = _input.vehicles[s_vehicle];
-  Index pickup_index = _input.jobs[s_route.route[_s_p_rank]].index();
-  Index delivery_index = _input.jobs[s_route.route[_s_d_rank]].index();
-
-  if (_s_p_rank + 1 == _s_d_rank) {
-    // Pickup and delivery in a row.
-    Gain previous_cost = 0;
-    Gain next_cost = 0;
-    Gain new_edge_cost = 0;
-    Index p_index;
-    Index n_index;
-
-    // Compute cost for step before pickup.
-    bool has_previous_step = false;
-    if (_s_p_rank > 0) {
-      has_previous_step = true;
-      p_index = _input.jobs[s_route.route[_s_p_rank - 1]].index();
-      previous_cost = m[p_index][pickup_index];
-    } else {
-      if (v.has_start()) {
-        has_previous_step = true;
-        p_index = v.start.get().index();
-        previous_cost = m[p_index][pickup_index];
-      }
-    }
-
-    // Compute cost for step after delivery.
-    bool has_next_step = false;
-    if (_s_d_rank < s_route.size() - 1) {
-      has_next_step = true;
-      n_index = _input.jobs[s_route.route[_s_d_rank + 1]].index();
-      next_cost = m[delivery_index][n_index];
-    } else {
-      if (v.has_end()) {
-        has_next_step = true;
-        n_index = v.end.get().index();
-        next_cost = m[delivery_index][n_index];
-      }
-    }
-
-    if (has_previous_step and has_next_step and (s_route.size() > 2)) {
-      // No new edge with an open trip or if removing P&D creates an
-      // empty route.
-      new_edge_cost = m[p_index][n_index];
-    }
-
-    _remove_gain = previous_cost + m[pickup_index][delivery_index] + next_cost -
-                   new_edge_cost;
-  } else {
-    // Simply add both gains as neighbouring edges are disjoint.
-    _remove_gain = _sol_state.node_gains[s_vehicle][_s_p_rank] +
-                   _sol_state.node_gains[s_vehicle][s_d_rank];
-  }
 }
 
 Gain PDShift::get_remove_gain() const {
