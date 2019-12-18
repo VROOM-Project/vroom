@@ -101,6 +101,13 @@ public:
   std::vector<std::vector<Gain>> edge_gains;
   std::vector<Index> edge_candidates;
 
+  // If job at rank i in route for vehicle v is a pickup
+  // (resp. delivery), then matching_delivery_rank[v][i]
+  // (resp. _matching_pickup_rank[v][i]) stores the rank of the
+  // matching delivery (resp. pickup).
+  std::vector<std::vector<Index>> matching_delivery_rank;
+  std::vector<std::vector<Index>> matching_pickup_rank;
+
   // nearest_job_rank_in_routes_from[v1][v2][r1] stores the rank of
   // job in route v2 that minimize cost from job at rank r1 in v1.
   std::vector<std::vector<std::vector<Index>>> nearest_job_rank_in_routes_from;
@@ -126,6 +133,8 @@ public:
   void set_node_gains(const std::vector<Index>& route, Index v);
 
   void set_edge_gains(const std::vector<Index>& route, Index v);
+
+  void set_pd_matching_ranks(const std::vector<Index>& route, Index v);
 
   void update_nearest_job_rank_in_routes(const std::vector<Index>& route_1,
                                          const std::vector<Index>& route_2,

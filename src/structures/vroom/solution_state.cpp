@@ -8,6 +8,7 @@ All rights reserved (see LICENSE).
 */
 
 #include <numeric>
+#include <unordered_map>
 
 #include "structures/vroom/solution_state.h"
 #include "utils/helpers.h"
@@ -29,6 +30,8 @@ SolutionState::SolutionState(const Input& input)
     edge_costs_around_edge(_nb_vehicles),
     edge_gains(_nb_vehicles),
     edge_candidates(_nb_vehicles),
+    matching_delivery_rank(_nb_vehicles),
+    matching_pickup_rank(_nb_vehicles),
     nearest_job_rank_in_routes_from(_nb_vehicles,
                                     std::vector<std::vector<Index>>(
                                       _nb_vehicles)),
@@ -43,6 +46,7 @@ void SolutionState::setup(const std::vector<Index>& r, Index v) {
   update_skills(r, v);
   set_node_gains(r, v);
   set_edge_gains(r, v);
+  set_pd_matching_ranks(r, v);
 #ifndef NDEBUG
   update_route_cost(r, v);
 #endif
@@ -365,6 +369,43 @@ void SolutionState::set_edge_gains(const std::vector<Index>& route, Index v) {
 
   if (current_gain > best_gain) {
     edge_candidates[v] = last_edge_rank;
+  }
+}
+
+void SolutionState::set_pd_matching_ranks(const std::vector<Index>& route,
+                                          Index v) {
+  matching_delivery_rank[v] = std::vector<Index>(route.size());
+  matching_pickup_rank[v] = std::vector<Index>(route.size());
+
+  std::unordered_map<Index, Index> pickup_route_rank_to_input_rank;
+  std::unordered_map<Index, Index> delivery_input_rank_to_route_rank;
+
+  for (std::size_t i = 0; i < route.size(); ++i) {
+    switch (_input.jobs[route[i]].type) {
+    case JOB_TYPE::SINGLE:
+      break;
+    case JOB_TYPE::PICKUP:
+      pickup_route_rank_to_input_rank.insert({i, route[i]});
+      break;
+    case JOB_TYPE::DELIVERY:
+      delivery_input_rank_to_route_rank.insert({route[i], i});
+      break;
+    }
+  }
+
+  assert(pickup_route_rank_to_input_rank.size() ==
+         delivery_input_rank_to_route_rank.size());
+  for (const auto& pair : pickup_route_rank_to_input_rank) {
+    // Relies of the fact that associated pickup and delivery are
+    // stored sequentially in input jobs vector.
+    auto pickup_route_rank = pair.first;
+    auto delivery_input_rank = pair.second + 1;
+    auto search = delivery_input_rank_to_route_rank.find(delivery_input_rank);
+    assert(search != delivery_input_rank_to_route_rank.end());
+    auto delivery_route_rank = search->second;
+
+    matching_delivery_rank[v][pickup_route_rank] = delivery_route_rank;
+    matching_pickup_rank[v][delivery_route_rank] = pickup_route_rank;
   }
 }
 

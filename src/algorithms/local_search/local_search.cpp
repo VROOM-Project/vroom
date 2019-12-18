@@ -601,13 +601,13 @@ void LocalSearch<Route,
         if (_input.jobs[_sol[s_t.first].route[s_rank]].type ==
             JOB_TYPE::PICKUP) {
           // Don't move a pickup past its matching delivery.
-          max_t_rank = _sol[s_t.first].matching_delivery_rank(s_rank) - 1;
+          max_t_rank = _sol_state.matching_delivery_rank[s_t.first][s_rank] - 1;
         }
 
         for (unsigned t_rank = s_rank + 2; t_rank <= max_t_rank; ++t_rank) {
           if (_input.jobs[_sol[s_t.first].route[t_rank]].type ==
                 JOB_TYPE::DELIVERY and
-              s_rank <= _sol[s_t.first].matching_pickup_rank(t_rank)) {
+              s_rank <= _sol_state.matching_pickup_rank[s_t.first][t_rank]) {
             // Don't move a delivery before its matching pickup.
             continue;
           }
@@ -731,14 +731,14 @@ void LocalSearch<Route,
         if (_input.jobs[_sol[s_t.first].route[s_rank]].type ==
             JOB_TYPE::DELIVERY) {
           // Don't move a delivery before its matching pickup.
-          min_t_rank = _sol[s_t.first].matching_pickup_rank(s_rank) + 1;
+          min_t_rank = _sol_state.matching_pickup_rank[s_t.first][s_rank] + 1;
         }
 
         unsigned max_t_rank = _sol[s_t.first].size() - 1;
         if (_input.jobs[_sol[s_t.first].route[s_rank]].type ==
             JOB_TYPE::PICKUP) {
           // Don't move a pickup past its matching delivery.
-          max_t_rank = _sol[s_t.first].matching_delivery_rank(s_rank) - 1;
+          max_t_rank = _sol_state.matching_delivery_rank[s_t.first][s_rank] - 1;
         }
 
         for (unsigned t_rank = min_t_rank; t_rank <= max_t_rank; ++t_rank) {
@@ -821,7 +821,8 @@ void LocalSearch<Route,
           }
 
           // Matching delivery rank in source route.
-          unsigned s_d_rank = _sol[s_t.first].matching_delivery_rank(s_p_rank);
+          unsigned s_d_rank =
+            _sol_state.matching_delivery_rank[s_t.first][s_p_rank];
 
           if (!_input.vehicle_ok_with_job(s_t.second,
                                           _sol[s_t.first].route[s_p_rank]) or
@@ -930,6 +931,7 @@ void LocalSearch<Route,
       for (auto v_rank : update_candidates) {
         _sol_state.set_node_gains(_sol[v_rank].route, v_rank);
         _sol_state.set_edge_gains(_sol[v_rank].route, v_rank);
+        _sol_state.set_pd_matching_ranks(_sol[v_rank].route, v_rank);
       }
 
       // Set gains to zero for what needs to be recomputed in the next
@@ -1044,6 +1046,7 @@ void LocalSearch<Route,
         remove_from_routes();
         for (std::size_t v = 0; v < _sol.size(); ++v) {
           _sol_state.set_node_gains(_sol[v].route, v);
+          _sol_state.set_pd_matching_ranks(_sol[v].route, v);
         }
       }
 
