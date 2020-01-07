@@ -767,7 +767,7 @@ void LocalSearch<Route,
         continue;
       }
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1; ++s_rank) {
-        if (_sol_state.node_gains[s_t.first][s_rank] <=
+        if (_sol_state.edge_gains[s_t.first][s_rank] <=
             best_gains[s_t.first][s_t.first]) {
           // Except if addition cost in route is negative (!!),
           // overall gain can't exceed current known best gain.
