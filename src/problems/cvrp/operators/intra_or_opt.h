@@ -27,6 +27,7 @@ protected:
 
   bool is_normal_valid;
   bool is_reverse_valid;
+  const bool check_reverse;
 
   std::vector<Index> _moved_jobs;
   const Index _first_rank;
@@ -42,7 +43,8 @@ public:
              RawRoute& s_route,
              Index s_vehicle,
              Index s_rank,
-             Index t_rank); // rank *after* removal.
+             Index t_rank, // rank *after* removal.
+             bool check_reverse);
 
   // Compute and store all possible cost depending on whether edges
   // are reversed or not. Return only an upper bound for gain as

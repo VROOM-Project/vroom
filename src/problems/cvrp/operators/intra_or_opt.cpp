@@ -18,7 +18,8 @@ IntraOrOpt::IntraOrOpt(const Input& input,
                        RawRoute& s_raw_route,
                        Index s_vehicle,
                        Index s_rank,
-                       Index t_rank)
+                       Index t_rank,
+                       bool check_reverse)
   : Operator(input,
              sol_state,
              s_raw_route,
@@ -28,9 +29,13 @@ IntraOrOpt::IntraOrOpt(const Input& input,
              s_vehicle,
              t_rank),
     _gain_upper_bound_computed(false),
+    // Required for consistency in compute_gain if check_reverse is
+    // false.
+    _reversed_t_gain(std::numeric_limits<Gain>::min()),
     reverse_s_edge(false),
     is_normal_valid(false),
     is_reverse_valid(false),
+    check_reverse(check_reverse),
     _moved_jobs((s_rank < t_rank) ? t_rank - s_rank + 2 : s_rank - t_rank + 2),
     _first_rank(std::min(s_rank, t_rank)),
     _last_rank(std::max(s_rank, t_rank) + 2) {
@@ -38,6 +43,14 @@ IntraOrOpt::IntraOrOpt(const Input& input,
   assert(s_rank < s_route.size() - 1);
   assert(t_rank <= s_route.size() - 2);
   assert(s_rank != t_rank);
+  // Either moving an edge of single jobs or a whole shipment.
+  assert((_input.jobs[s_route[s_rank]].type == JOB_TYPE::SINGLE and
+          _input.jobs[s_route[s_rank + 1]].type == JOB_TYPE::SINGLE and
+          check_reverse) or
+         (_input.jobs[s_route[s_rank]].type == JOB_TYPE::PICKUP and
+          _input.jobs[s_route[s_rank + 1]].type == JOB_TYPE::DELIVERY and
+          !check_reverse and
+          _sol_state.matching_delivery_rank[s_vehicle][s_rank] == s_rank + 1));
 
   if (t_rank < s_rank) {
     _s_edge_first = 0;
@@ -120,14 +133,20 @@ Gain IntraOrOpt::gain_upper_bound() {
   // Gain for target vehicle.
   _normal_t_gain = old_edge_cost - previous_cost - next_cost;
 
-  Gain reverse_edge_cost = static_cast<Gain>(m[s_index][after_s_index]) -
-                           static_cast<Gain>(m[after_s_index][s_index]);
-  _reversed_t_gain = old_edge_cost + reverse_edge_cost - reverse_previous_cost -
-                     reverse_next_cost;
+  auto t_gain_upper_bound = _normal_t_gain;
+
+  if (check_reverse) {
+    Gain reverse_edge_cost = static_cast<Gain>(m[s_index][after_s_index]) -
+                             static_cast<Gain>(m[after_s_index][s_index]);
+    _reversed_t_gain = old_edge_cost + reverse_edge_cost -
+                       reverse_previous_cost - reverse_next_cost;
+
+    t_gain_upper_bound = std::max(_normal_t_gain, _reversed_t_gain);
+  }
 
   _gain_upper_bound_computed = true;
 
-  return _s_gain + std::max(_normal_t_gain, _reversed_t_gain);
+  return _s_gain + t_gain_upper_bound;
 }
 
 void IntraOrOpt::compute_gain() {
@@ -166,24 +185,30 @@ bool IntraOrOpt::is_valid() {
     _first_rank,
     _last_rank);
 
-  std::swap(_moved_jobs[_s_edge_first], _moved_jobs[_s_edge_last]);
+  if (check_reverse) {
+    std::swap(_moved_jobs[_s_edge_first], _moved_jobs[_s_edge_last]);
 
-  is_reverse_valid = source.is_valid_addition_for_capacity_inclusion(
-    _input,
-    source.delivery_in_range(_first_rank, _last_rank),
-    _moved_jobs.begin(),
-    _moved_jobs.end(),
-    _first_rank,
-    _last_rank);
+    is_reverse_valid = source.is_valid_addition_for_capacity_inclusion(
+      _input,
+      source.delivery_in_range(_first_rank, _last_rank),
+      _moved_jobs.begin(),
+      _moved_jobs.end(),
+      _first_rank,
+      _last_rank);
 
-  // Reset to initial situation before potential application or TW
-  // checks.
-  std::swap(_moved_jobs[_s_edge_first], _moved_jobs[_s_edge_last]);
+    // Reset to initial situation before potential application or TW
+    // checks.
+    std::swap(_moved_jobs[_s_edge_first], _moved_jobs[_s_edge_last]);
+  }
 
   return is_normal_valid or is_reverse_valid;
 }
 
 void IntraOrOpt::apply() {
+  assert(!reverse_s_edge or
+         (_input.jobs[s_route[s_rank]].type == JOB_TYPE::SINGLE and
+          _input.jobs[s_route[s_rank + 1]].type == JOB_TYPE::SINGLE));
+
   auto first_job_rank = s_route[s_rank];
   auto second_job_rank = s_route[s_rank + 1];
   s_route.erase(s_route.begin() + s_rank, s_route.begin() + s_rank + 2);

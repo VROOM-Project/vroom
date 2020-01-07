@@ -26,7 +26,8 @@ public:
              TWRoute& tw_s_route,
              Index s_vehicle,
              Index s_rank,
-             Index t_rank); // rank *after* removal.
+             Index t_rank, // rank *after* removal.
+             bool check_reverse);
 
   virtual bool is_valid() override;
 
