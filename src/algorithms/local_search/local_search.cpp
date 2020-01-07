@@ -339,54 +339,75 @@ void LocalSearch<Route,
           }
         }
       }
+    }
 
-      // CROSS-exchange stuff
-      for (const auto& s_t : s_t_pairs) {
-        if (s_t.second <= s_t.first or // This operator is symmetric.
-            _sol[s_t.first].size() < 2 or _sol[s_t.second].size() < 2) {
+    // CROSS-exchange stuff
+    for (const auto& s_t : s_t_pairs) {
+      if (s_t.second <= s_t.first or // This operator is symmetric.
+          _sol[s_t.first].size() < 2 or _sol[s_t.second].size() < 2) {
+        continue;
+      }
+
+      for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1; ++s_rank) {
+        const auto& job_s_type =
+          _input.jobs[_sol[s_t.first].route[s_rank]].type;
+        if (job_s_type == JOB_TYPE::DELIVERY or
+            _input.jobs[_sol[s_t.first].route[s_rank + 1]].type ==
+              JOB_TYPE::PICKUP) {
           continue;
         }
 
-        for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1;
-             ++s_rank) {
-          if (_input.jobs[_sol[s_t.first].route[s_rank]].type !=
-                JOB_TYPE::SINGLE or
-              _input.jobs[_sol[s_t.first].route[s_rank + 1]].type !=
-                JOB_TYPE::SINGLE) {
-            // Don't try moving (part of) a shipment.
+        bool is_s_pickup = (job_s_type == JOB_TYPE::PICKUP);
+        if (is_s_pickup and
+            _sol_state.matching_delivery_rank[s_t.first][s_rank] !=
+              s_rank + 1) {
+          // Operator only makes sense if next job is the matching
+          // delivery.
+          continue;
+        }
+
+        for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size() - 1;
+             ++t_rank) {
+          const auto& job_t_type =
+            _input.jobs[_sol[s_t.second].route[t_rank]].type;
+          if (job_t_type == JOB_TYPE::DELIVERY or
+              _input.jobs[_sol[s_t.second].route[t_rank + 1]].type ==
+                JOB_TYPE::PICKUP) {
             continue;
           }
 
-          for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size() - 1;
-               ++t_rank) {
-            if (_input.jobs[_sol[s_t.second].route[t_rank]].type !=
-                  JOB_TYPE::SINGLE or
-                _input.jobs[_sol[s_t.second].route[t_rank + 1]].type !=
-                  JOB_TYPE::SINGLE) {
-              // Don't try moving (part of) a shipment.
-              continue;
-            }
+          bool is_t_pickup = (job_t_type == JOB_TYPE::PICKUP);
+          if (is_t_pickup and
+              _sol_state.matching_delivery_rank[s_t.second][t_rank] !=
+                t_rank + 1) {
+            // Operator only makes sense if next job is the matching
+            // delivery.
+            continue;
+          }
 
-            CrossExchange r(_input,
-                            _sol_state,
-                            _sol[s_t.first],
-                            s_t.first,
-                            s_rank,
-                            _sol[s_t.second],
-                            s_t.second,
-                            t_rank);
+          CrossExchange r(_input,
+                          _sol_state,
+                          _sol[s_t.first],
+                          s_t.first,
+                          s_rank,
+                          _sol[s_t.second],
+                          s_t.second,
+                          t_rank,
+                          !is_s_pickup,
+                          !is_t_pickup);
 
-            auto& current_best = best_gains[s_t.first][s_t.second];
-            if (r.gain_upper_bound() > current_best and r.is_valid() and
-                r.gain() > current_best) {
-              current_best = r.gain();
-              best_ops[s_t.first][s_t.second] =
-                std::make_unique<CrossExchange>(r);
-            }
+          auto& current_best = best_gains[s_t.first][s_t.second];
+          if (r.gain_upper_bound() > current_best and r.is_valid() and
+              r.gain() > current_best) {
+            current_best = r.gain();
+            best_ops[s_t.first][s_t.second] =
+              std::make_unique<CrossExchange>(r);
           }
         }
       }
+    }
 
+    if (_input.has_jobs()) {
       // Mixed-exchange stuff
       for (const auto& s_t : s_t_pairs) {
         if (s_t.first == s_t.second or _sol[s_t.first].size() == 0 or

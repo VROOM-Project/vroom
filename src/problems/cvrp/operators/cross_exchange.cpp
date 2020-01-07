@@ -19,7 +19,9 @@ CrossExchange::CrossExchange(const Input& input,
                              Index s_rank,
                              RawRoute& t_route,
                              Index t_vehicle,
-                             Index t_rank)
+                             Index t_rank,
+                             bool check_s_reverse,
+                             bool check_t_reverse)
   : Operator(input,
              sol_state,
              s_route,
@@ -29,8 +31,14 @@ CrossExchange::CrossExchange(const Input& input,
              t_vehicle,
              t_rank),
     _gain_upper_bound_computed(false),
+    // Required for consistency in compute_gain if check_s_reverse or
+    // check_t_reverse are false.
+    _reversed_s_gain(std::numeric_limits<Gain>::min()),
+    _reversed_t_gain(std::numeric_limits<Gain>::min()),
     reverse_s_edge(false),
     reverse_t_edge(false),
+    check_s_reverse(check_s_reverse),
+    check_t_reverse(check_t_reverse),
     s_is_normal_valid(false),
     s_is_reverse_valid(false),
     t_is_normal_valid(false),
@@ -40,6 +48,22 @@ CrossExchange::CrossExchange(const Input& input,
   assert(t_route.size() >= 2);
   assert(s_rank < s_route.size() - 1);
   assert(t_rank < t_route.size() - 1);
+
+  // Either moving edges of single jobs or whole shipments.
+  assert((_input.jobs[this->s_route[s_rank]].type == JOB_TYPE::SINGLE and
+          _input.jobs[this->s_route[s_rank + 1]].type == JOB_TYPE::SINGLE and
+          check_s_reverse) or
+         (_input.jobs[this->s_route[s_rank]].type == JOB_TYPE::PICKUP and
+          _input.jobs[this->s_route[s_rank + 1]].type == JOB_TYPE::DELIVERY and
+          !check_s_reverse and
+          _sol_state.matching_delivery_rank[s_vehicle][s_rank] == s_rank + 1));
+  assert((_input.jobs[this->t_route[t_rank]].type == JOB_TYPE::SINGLE and
+          _input.jobs[this->t_route[t_rank + 1]].type == JOB_TYPE::SINGLE and
+          check_t_reverse) or
+         (_input.jobs[this->t_route[t_rank]].type == JOB_TYPE::PICKUP and
+          _input.jobs[this->t_route[t_rank + 1]].type == JOB_TYPE::DELIVERY and
+          !check_t_reverse and
+          _sol_state.matching_delivery_rank[t_vehicle][t_rank] == t_rank + 1));
 }
 
 Gain CrossExchange::gain_upper_bound() {
@@ -90,11 +114,17 @@ Gain CrossExchange::gain_upper_bound() {
   _normal_s_gain = _sol_state.edge_costs_around_edge[s_vehicle][s_rank] -
                    previous_cost - next_cost;
 
-  Gain reverse_edge_cost = static_cast<Gain>(m[t_index][t_after_index]) -
-                           static_cast<Gain>(m[t_after_index][t_index]);
-  _reversed_s_gain = _sol_state.edge_costs_around_edge[s_vehicle][s_rank] +
-                     reverse_edge_cost - reverse_previous_cost -
-                     reverse_next_cost;
+  auto s_gain_upper_bound = _normal_s_gain;
+
+  if (check_t_reverse) {
+    Gain reverse_edge_cost = static_cast<Gain>(m[t_index][t_after_index]) -
+                             static_cast<Gain>(m[t_after_index][t_index]);
+    _reversed_s_gain = _sol_state.edge_costs_around_edge[s_vehicle][s_rank] +
+                       reverse_edge_cost - reverse_previous_cost -
+                       reverse_next_cost;
+
+    s_gain_upper_bound = std::max(_normal_s_gain, _reversed_s_gain);
+  }
 
   // For target vehicle, we consider the cost of replacing edge
   // starting at rank t_rank with source edge. Part of that cost (for
@@ -132,16 +162,21 @@ Gain CrossExchange::gain_upper_bound() {
   _normal_t_gain = _sol_state.edge_costs_around_edge[t_vehicle][t_rank] -
                    previous_cost - next_cost;
 
-  reverse_edge_cost = static_cast<Gain>(m[s_index][s_after_index]) -
-                      static_cast<Gain>(m[s_after_index][s_index]);
-  _reversed_t_gain = _sol_state.edge_costs_around_edge[t_vehicle][t_rank] +
-                     reverse_edge_cost - reverse_previous_cost -
-                     reverse_next_cost;
+  auto t_gain_upper_bound = _normal_t_gain;
+
+  if (check_s_reverse) {
+    Gain reverse_edge_cost = static_cast<Gain>(m[s_index][s_after_index]) -
+                             static_cast<Gain>(m[s_after_index][s_index]);
+    _reversed_t_gain = _sol_state.edge_costs_around_edge[t_vehicle][t_rank] +
+                       reverse_edge_cost - reverse_previous_cost -
+                       reverse_next_cost;
+
+    t_gain_upper_bound = std::max(_normal_t_gain, _reversed_t_gain);
+  }
 
   _gain_upper_bound_computed = true;
 
-  return std::max(_normal_s_gain, _reversed_s_gain) +
-         std::max(_normal_t_gain, _reversed_t_gain);
+  return s_gain_upper_bound + t_gain_upper_bound;
 }
 
 void CrossExchange::compute_gain() {
@@ -218,15 +253,18 @@ bool CrossExchange::is_valid() {
                                                       t_start + 2,
                                                       s_rank,
                                                       s_rank + 2);
-    // Reverse target edge direction when inserting in source route.
-    auto t_reverse_start = t_route.rbegin() + t_route.size() - 2 - t_rank;
-    s_is_reverse_valid =
-      source.is_valid_addition_for_capacity_inclusion(_input,
-                                                      target_delivery,
-                                                      t_reverse_start,
-                                                      t_reverse_start + 2,
-                                                      s_rank,
-                                                      s_rank + 2);
+
+    if (check_t_reverse) {
+      // Reverse target edge direction when inserting in source route.
+      auto t_reverse_start = t_route.rbegin() + t_route.size() - 2 - t_rank;
+      s_is_reverse_valid =
+        source.is_valid_addition_for_capacity_inclusion(_input,
+                                                        target_delivery,
+                                                        t_reverse_start,
+                                                        t_reverse_start + 2,
+                                                        s_rank,
+                                                        s_rank + 2);
+    }
 
     valid = s_is_normal_valid or s_is_reverse_valid;
   }
@@ -243,7 +281,6 @@ bool CrossExchange::is_valid() {
                                                          t_rank + 2);
 
   if (valid) {
-
     // Keep source edge direction when inserting in target route.
     auto s_start = s_route.begin() + s_rank;
     t_is_normal_valid =
@@ -254,15 +291,18 @@ bool CrossExchange::is_valid() {
                                                       t_rank,
                                                       t_rank + 2);
 
-    // Reverse source edge direction when inserting in target route.
-    auto s_reverse_start = s_route.rbegin() + s_route.size() - 2 - s_rank;
-    t_is_reverse_valid =
-      target.is_valid_addition_for_capacity_inclusion(_input,
-                                                      source_delivery,
-                                                      s_reverse_start,
-                                                      s_reverse_start + 2,
-                                                      t_rank,
-                                                      t_rank + 2);
+    if (check_s_reverse) {
+      // Reverse source edge direction when inserting in target route.
+      auto s_reverse_start = s_route.rbegin() + s_route.size() - 2 - s_rank;
+      t_is_reverse_valid =
+        target.is_valid_addition_for_capacity_inclusion(_input,
+                                                        source_delivery,
+                                                        s_reverse_start,
+                                                        s_reverse_start + 2,
+                                                        t_rank,
+                                                        t_rank + 2);
+    }
+
     valid = t_is_normal_valid or t_is_reverse_valid;
   }
 
@@ -270,6 +310,13 @@ bool CrossExchange::is_valid() {
 }
 
 void CrossExchange::apply() {
+  assert(!reverse_s_edge or
+         (_input.jobs[s_route[s_rank]].type == JOB_TYPE::SINGLE and
+          _input.jobs[s_route[s_rank + 1]].type == JOB_TYPE::SINGLE));
+  assert(!reverse_t_edge or
+         (_input.jobs[t_route[t_rank]].type == JOB_TYPE::SINGLE and
+          _input.jobs[t_route[t_rank + 1]].type == JOB_TYPE::SINGLE));
+
   std::swap(s_route[s_rank], t_route[t_rank]);
   std::swap(s_route[s_rank + 1], t_route[t_rank + 1]);
 
