@@ -302,24 +302,42 @@ void Input::set_compatibility() {
     }
   }
 
-  // Derive potential extra incompatibilities : jobs with amount that
-  // does not fit into vehicle or that cannot be added to an empty
-  // route for vehicle based on the timing constraints (when they
-  // apply).
+  // Derive potential extra incompatibilities : jobs or shipments with
+  // amount that does not fit into vehicle or that cannot be added to
+  // an empty route for vehicle based on the timing constraints (when
+  // they apply).
   for (std::size_t v = 0; v < vehicles.size(); ++v) {
     TWRoute empty_route(*this, v);
-    for (std::size_t j = 0; j < jobs.size(); ++j) {
+    for (Index j = 0; j < jobs.size(); ++j) {
       if (_vehicle_to_job_compatibility[v][j]) {
         bool is_compatible =
           empty_route.is_valid_addition_for_capacity(*this,
                                                      jobs[j].pickup,
                                                      jobs[j].delivery,
                                                      0);
+
+        bool is_shipment_pickup = (jobs[j].type == JOB_TYPE::PICKUP);
+
         if (is_compatible and _has_TW) {
-          is_compatible &= empty_route.is_valid_addition_for_tw(*this, j, 0);
+          if (jobs[j].type == JOB_TYPE::SINGLE) {
+            is_compatible &= empty_route.is_valid_addition_for_tw(*this, j, 0);
+          } else {
+            assert(is_shipment_pickup);
+            std::vector<Index> p_d({j, static_cast<Index>(j + 1)});
+            is_compatible &= empty_route.is_valid_addition_for_tw(*this,
+                                                                  p_d.begin(),
+                                                                  p_d.end(),
+                                                                  0,
+                                                                  0);
+          }
         }
 
         _vehicle_to_job_compatibility[v][j] = is_compatible;
+        if (is_shipment_pickup) {
+          // Skipping matching delivery which is next in line in jobs.
+          _vehicle_to_job_compatibility[v][j + 1] = is_compatible;
+          ++j;
+        }
       }
     }
   }
