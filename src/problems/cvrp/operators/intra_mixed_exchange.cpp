@@ -18,7 +18,8 @@ IntraMixedExchange::IntraMixedExchange(const Input& input,
                                        RawRoute& s_raw_route,
                                        Index s_vehicle,
                                        Index s_rank,
-                                       Index t_rank)
+                                       Index t_rank,
+                                       bool check_t_reverse)
   : Operator(input,
              sol_state,
              s_raw_route,
@@ -28,7 +29,11 @@ IntraMixedExchange::IntraMixedExchange(const Input& input,
              s_vehicle,
              t_rank),
     _gain_upper_bound_computed(false),
+    // Required for consistency in compute_gain if check_t_reverse is
+    // false.
+    _reversed_s_gain(std::numeric_limits<Gain>::min()),
     reverse_t_edge(false),
+    check_t_reverse(check_t_reverse),
     s_is_normal_valid(false),
     s_is_reverse_valid(false),
     _moved_jobs((s_rank < t_rank) ? t_rank - s_rank + 2 : s_rank - t_rank + 1),
@@ -40,6 +45,15 @@ IntraMixedExchange::IntraMixedExchange(const Input& input,
   assert(s_route.size() >= 4);
   assert(s_rank < s_route.size());
   assert(t_rank < s_route.size() - 1);
+
+  // Either moving edge with single jobs or a whole shipment.
+  assert((_input.jobs[this->t_route[t_rank]].type == JOB_TYPE::SINGLE and
+          _input.jobs[this->t_route[t_rank + 1]].type == JOB_TYPE::SINGLE and
+          check_t_reverse) or
+         (_input.jobs[this->t_route[t_rank]].type == JOB_TYPE::PICKUP and
+          _input.jobs[this->t_route[t_rank + 1]].type == JOB_TYPE::DELIVERY and
+          !check_t_reverse and
+          _sol_state.matching_delivery_rank[t_vehicle][t_rank] == t_rank + 1));
 
   Index s_node;
   if (t_rank < s_rank) {
@@ -110,11 +124,17 @@ Gain IntraMixedExchange::gain_upper_bound() {
   _normal_s_gain = _sol_state.edge_costs_around_node[s_vehicle][s_rank] -
                    previous_cost - next_cost;
 
-  Gain reverse_edge_cost = static_cast<Gain>(m[t_index][t_after_index]) -
-                           static_cast<Gain>(m[t_after_index][t_index]);
-  _reversed_s_gain = _sol_state.edge_costs_around_node[s_vehicle][s_rank] +
-                     reverse_edge_cost - reverse_previous_cost -
-                     reverse_next_cost;
+  auto s_gain_upper_bound = _normal_s_gain;
+
+  if (check_t_reverse) {
+    Gain reverse_edge_cost = static_cast<Gain>(m[t_index][t_after_index]) -
+                             static_cast<Gain>(m[t_after_index][t_index]);
+    _reversed_s_gain = _sol_state.edge_costs_around_node[s_vehicle][s_rank] +
+                       reverse_edge_cost - reverse_previous_cost -
+                       reverse_next_cost;
+
+    s_gain_upper_bound = std::max(_normal_s_gain, _reversed_s_gain);
+  }
 
   // Consider the cost of replacing edge starting at rank t_rank with
   // source node. Part of that cost (for adjacent edges) is stored in
@@ -149,7 +169,7 @@ Gain IntraMixedExchange::gain_upper_bound() {
 
   _gain_upper_bound_computed = true;
 
-  return std::max(_normal_s_gain, _reversed_s_gain) + _t_gain;
+  return s_gain_upper_bound + _t_gain;
 }
 
 void IntraMixedExchange::compute_gain() {
@@ -189,24 +209,30 @@ bool IntraMixedExchange::is_valid() {
                                                     _first_rank,
                                                     _last_rank);
 
-  std::swap(_moved_jobs[_t_edge_first], _moved_jobs[_t_edge_last]);
+  if (check_t_reverse) {
+    std::swap(_moved_jobs[_t_edge_first], _moved_jobs[_t_edge_last]);
 
-  s_is_reverse_valid =
-    source.is_valid_addition_for_capacity_inclusion(_input,
-                                                    delivery,
-                                                    _moved_jobs.begin(),
-                                                    _moved_jobs.end(),
-                                                    _first_rank,
-                                                    _last_rank);
+    s_is_reverse_valid =
+      source.is_valid_addition_for_capacity_inclusion(_input,
+                                                      delivery,
+                                                      _moved_jobs.begin(),
+                                                      _moved_jobs.end(),
+                                                      _first_rank,
+                                                      _last_rank);
 
-  // Reset to initial situation before potential application or TW
-  // checks.
-  std::swap(_moved_jobs[_t_edge_first], _moved_jobs[_t_edge_last]);
+    // Reset to initial situation before potential application or TW
+    // checks.
+    std::swap(_moved_jobs[_t_edge_first], _moved_jobs[_t_edge_last]);
+  }
 
   return s_is_normal_valid or s_is_reverse_valid;
 }
 
 void IntraMixedExchange::apply() {
+  assert(!reverse_t_edge or
+         (_input.jobs[t_route[t_rank]].type == JOB_TYPE::SINGLE and
+          _input.jobs[t_route[t_rank + 1]].type == JOB_TYPE::SINGLE));
+
   if (reverse_t_edge) {
     std::swap(s_route[t_rank], s_route[t_rank + 1]);
   }
