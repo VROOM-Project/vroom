@@ -24,6 +24,7 @@ private:
 
 protected:
   bool reverse_t_edge;
+  const bool check_t_reverse;
 
   bool s_is_normal_valid;
   bool s_is_reverse_valid;
@@ -38,7 +39,8 @@ public:
                 Index s_rank,
                 RawRoute& t_route,
                 Index t_vehicle,
-                Index t_rank);
+                Index t_rank,
+                bool check_t_reverse);
 
   // Compute and store all possible cost depending on whether edges
   // are reversed or not. Return only an upper bound for gain as

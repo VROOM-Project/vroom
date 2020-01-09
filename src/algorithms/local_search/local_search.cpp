@@ -418,17 +418,26 @@ void LocalSearch<Route,
         for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
           if (_input.jobs[_sol[s_t.first].route[s_rank]].type !=
               JOB_TYPE::SINGLE) {
-            // Don't try moving (part of) a shipment.
+            // Don't try moving part of a shipment.
             continue;
           }
 
           for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size() - 1;
                ++t_rank) {
-            if (_input.jobs[_sol[s_t.second].route[t_rank]].type !=
-                  JOB_TYPE::SINGLE or
-                _input.jobs[_sol[s_t.second].route[t_rank + 1]].type !=
-                  JOB_TYPE::SINGLE) {
-              // Don't try moving (part of) a shipment.
+            const auto& job_t_type =
+              _input.jobs[_sol[s_t.second].route[t_rank]].type;
+            if (job_t_type == JOB_TYPE::DELIVERY or
+                _input.jobs[_sol[s_t.second].route[t_rank + 1]].type ==
+                  JOB_TYPE::PICKUP) {
+              continue;
+            }
+
+            bool is_t_pickup = (job_t_type == JOB_TYPE::PICKUP);
+            if (is_t_pickup and
+                _sol_state.matching_delivery_rank[s_t.second][t_rank] !=
+                  t_rank + 1) {
+              // Operator only makes sense if next job is the matching
+              // delivery.
               continue;
             }
 
@@ -439,7 +448,8 @@ void LocalSearch<Route,
                             s_rank,
                             _sol[s_t.second],
                             s_t.second,
-                            t_rank);
+                            t_rank,
+                            !is_t_pickup);
 
             auto& current_best = best_gains[s_t.first][s_t.second];
             if (r.gain_upper_bound() > current_best and r.is_valid() and

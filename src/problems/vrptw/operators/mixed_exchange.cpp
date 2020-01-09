@@ -19,7 +19,8 @@ MixedExchange::MixedExchange(const Input& input,
                              Index s_rank,
                              TWRoute& tw_t_route,
                              Index t_vehicle,
-                             Index t_rank)
+                             Index t_rank,
+                             bool check_t_reverse)
   : cvrp::MixedExchange(input,
                         sol_state,
                         static_cast<RawRoute&>(tw_s_route),
@@ -27,7 +28,8 @@ MixedExchange::MixedExchange(const Input& input,
                         s_rank,
                         static_cast<RawRoute&>(tw_t_route),
                         t_vehicle,
-                        t_rank),
+                        t_rank,
+                        check_t_reverse),
     _tw_s_route(tw_s_route),
     _tw_t_route(tw_t_route) {
 }
@@ -49,14 +51,18 @@ bool MixedExchange::is_valid() {
                                                               t_start + 2,
                                                               s_rank,
                                                               s_rank + 1);
-    // Reverse target edge direction when inserting in source route.
-    auto t_reverse_start = t_route.rbegin() + t_route.size() - 2 - t_rank;
-    s_is_reverse_valid &=
-      _tw_s_route.is_valid_addition_for_tw(_input,
-                                           t_reverse_start,
-                                           t_reverse_start + 2,
-                                           s_rank,
-                                           s_rank + 1);
+
+    if (check_t_reverse) {
+      // Reverse target edge direction when inserting in source route.
+      auto t_reverse_start = t_route.rbegin() + t_route.size() - 2 - t_rank;
+      s_is_reverse_valid &=
+        _tw_s_route.is_valid_addition_for_tw(_input,
+                                             t_reverse_start,
+                                             t_reverse_start + 2,
+                                             s_rank,
+                                             s_rank + 1);
+    }
+
     valid = s_is_normal_valid or s_is_reverse_valid;
   }
 
@@ -64,6 +70,10 @@ bool MixedExchange::is_valid() {
 }
 
 void MixedExchange::apply() {
+  assert(!reverse_t_edge or
+         (_input.jobs[t_route[t_rank]].type == JOB_TYPE::SINGLE and
+          _input.jobs[t_route[t_rank + 1]].type == JOB_TYPE::SINGLE));
+
   std::vector<Index> s_job_ranks({s_route[s_rank]});
   std::vector<Index> t_job_ranks;
   if (!reverse_t_edge) {
