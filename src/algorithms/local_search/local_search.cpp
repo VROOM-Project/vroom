@@ -1152,6 +1152,110 @@ template <class Route,
           class IntraRelocate,
           class IntraOrOpt,
           class PDShift>
+Gain LocalSearch<Route,
+                 Exchange,
+                 CrossExchange,
+                 MixedExchange,
+                 TwoOpt,
+                 ReverseTwoOpt,
+                 Relocate,
+                 OrOpt,
+                 IntraExchange,
+                 IntraCrossExchange,
+                 IntraMixedExchange,
+                 IntraRelocate,
+                 IntraOrOpt,
+                 PDShift>::job_route_cost(Index v_target, Index v, Index r) {
+  assert(v != v_target);
+
+  Gain cost = static_cast<Gain>(INFINITE_COST);
+  auto job_index = _input.jobs[_sol[v].route[r]].index();
+
+  if (_input.vehicles[v_target].has_start()) {
+    auto start_index = _input.vehicles[v_target].start.get().index();
+    Gain start_cost = _matrix[start_index][job_index];
+    cost = std::min(cost, start_cost);
+  }
+  if (_input.vehicles[v_target].has_end()) {
+    auto end_index = _input.vehicles[v_target].end.get().index();
+    Gain end_cost = _matrix[job_index][end_index];
+    cost = std::min(cost, end_cost);
+  }
+  if (_sol[v_target].size() != 0) {
+    auto nearest_from_rank =
+      _sol_state.nearest_job_rank_in_routes_from[v][v_target][r];
+    auto nearest_from_index =
+      _input.jobs[_sol[v_target].route[nearest_from_rank]].index();
+    Gain cost_from = _matrix[nearest_from_index][job_index];
+    cost = std::min(cost, cost_from);
+
+    auto nearest_to_rank =
+      _sol_state.nearest_job_rank_in_routes_to[v][v_target][r];
+    auto nearest_to_index =
+      _input.jobs[_sol[v_target].route[nearest_to_rank]].index();
+    Gain Costo = _matrix[job_index][nearest_to_index];
+    cost = std::min(cost, Costo);
+  }
+
+  return cost;
+}
+
+template <class Route,
+          class Exchange,
+          class CrossExchange,
+          class MixedExchange,
+          class TwoOpt,
+          class ReverseTwoOpt,
+          class Relocate,
+          class OrOpt,
+          class IntraExchange,
+          class IntraCrossExchange,
+          class IntraMixedExchange,
+          class IntraRelocate,
+          class IntraOrOpt,
+          class PDShift>
+Gain LocalSearch<Route,
+                 Exchange,
+                 CrossExchange,
+                 MixedExchange,
+                 TwoOpt,
+                 ReverseTwoOpt,
+                 Relocate,
+                 OrOpt,
+                 IntraExchange,
+                 IntraCrossExchange,
+                 IntraMixedExchange,
+                 IntraRelocate,
+                 IntraOrOpt,
+                 PDShift>::best_relocate_cost(Index v, Index r) {
+  Gain best_cost = static_cast<Gain>(INFINITE_COST);
+
+  for (std::size_t other_v = 0; other_v < _sol.size(); ++other_v) {
+    if (other_v == v or
+        !_input.vehicle_ok_with_job(other_v, _sol[v].route[r])) {
+      continue;
+    }
+
+    best_cost = std::min(best_cost, job_route_cost(other_v, v, r));
+  }
+
+  return best_cost;
+}
+
+template <class Route,
+          class Exchange,
+          class CrossExchange,
+          class MixedExchange,
+          class TwoOpt,
+          class ReverseTwoOpt,
+          class Relocate,
+          class OrOpt,
+          class IntraExchange,
+          class IntraCrossExchange,
+          class IntraMixedExchange,
+          class IntraRelocate,
+          class IntraOrOpt,
+          class PDShift>
 void LocalSearch<Route,
                  Exchange,
                  CrossExchange,
@@ -1203,44 +1307,9 @@ void LocalSearch<Route,
       if (!_sol[v].is_valid_removal(_input, r, 1)) {
         continue;
       }
-      Gain best_relocate_distance = static_cast<Gain>(INFINITE_COST);
 
-      auto current_index = current_job.index();
-
-      for (std::size_t other_v = 0; other_v < _sol.size(); ++other_v) {
-        if (other_v == v or
-            !_input.vehicle_ok_with_job(other_v, _sol[v].route[r])) {
-          continue;
-        }
-
-        if (_input.vehicles[other_v].has_start()) {
-          auto start_index = _input.vehicles[other_v].start.get().index();
-          Gain start_cost = _matrix[start_index][current_index];
-          best_relocate_distance = std::min(best_relocate_distance, start_cost);
-        }
-        if (_input.vehicles[other_v].has_end()) {
-          auto end_index = _input.vehicles[other_v].end.get().index();
-          Gain end_cost = _matrix[current_index][end_index];
-          best_relocate_distance = std::min(best_relocate_distance, end_cost);
-        }
-        if (_sol[other_v].size() != 0) {
-          auto nearest_from_rank =
-            _sol_state.nearest_job_rank_in_routes_from[v][other_v][r];
-          auto nearest_from_index =
-            _input.jobs[_sol[other_v].route[nearest_from_rank]].index();
-          Gain cost_from = _matrix[nearest_from_index][current_index];
-          best_relocate_distance = std::min(best_relocate_distance, cost_from);
-
-          auto nearest_to_rank =
-            _sol_state.nearest_job_rank_in_routes_to[v][other_v][r];
-          auto nearest_to_index =
-            _input.jobs[_sol[other_v].route[nearest_to_rank]].index();
-          Gain Costo = _matrix[current_index][nearest_to_index];
-          best_relocate_distance = std::min(best_relocate_distance, Costo);
-        }
-      }
-
-      Gain current_gain = _sol_state.node_gains[v][r] - best_relocate_distance;
+      Gain current_gain =
+        _sol_state.node_gains[v][r] - best_relocate_cost(v, r);
 
       if (current_gain > best_gain) {
         best_gain = current_gain;
