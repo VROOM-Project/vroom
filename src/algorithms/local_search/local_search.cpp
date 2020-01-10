@@ -1256,6 +1256,50 @@ template <class Route,
           class IntraRelocate,
           class IntraOrOpt,
           class PDShift>
+Gain LocalSearch<Route,
+                 Exchange,
+                 CrossExchange,
+                 MixedExchange,
+                 TwoOpt,
+                 ReverseTwoOpt,
+                 Relocate,
+                 OrOpt,
+                 IntraExchange,
+                 IntraCrossExchange,
+                 IntraMixedExchange,
+                 IntraRelocate,
+                 IntraOrOpt,
+                 PDShift>::best_relocate_cost(Index v, Index r1, Index r2) {
+  Gain best_cost = static_cast<Gain>(INFINITE_COST);
+
+  for (std::size_t other_v = 0; other_v < _sol.size(); ++other_v) {
+    if (other_v == v or
+        !_input.vehicle_ok_with_job(other_v, _sol[v].route[r1])) {
+      continue;
+    }
+
+    best_cost =
+      std::min(best_cost,
+               job_route_cost(other_v, v, r1) + job_route_cost(other_v, v, r2));
+  }
+
+  return best_cost;
+}
+
+template <class Route,
+          class Exchange,
+          class CrossExchange,
+          class MixedExchange,
+          class TwoOpt,
+          class ReverseTwoOpt,
+          class Relocate,
+          class OrOpt,
+          class IntraExchange,
+          class IntraCrossExchange,
+          class IntraMixedExchange,
+          class IntraRelocate,
+          class IntraOrOpt,
+          class PDShift>
 void LocalSearch<Route,
                  Exchange,
                  CrossExchange,
@@ -1299,19 +1343,44 @@ void LocalSearch<Route,
 
     for (std::size_t r = 0; r < _sol[v].size(); ++r) {
       auto& current_job = _input.jobs[_sol[v].route[r]];
-      if (current_job.type == JOB_TYPE::PICKUP or
-          current_job.type == JOB_TYPE::DELIVERY) {
-        // Don't remove pickups and deliveries at all for now.
-        continue;
-      }
-      if (!_sol[v].is_valid_removal(_input, r, 1)) {
+      if (current_job.type == JOB_TYPE::DELIVERY) {
         continue;
       }
 
-      Gain current_gain =
-        _sol_state.node_gains[v][r] - best_relocate_cost(v, r);
+      Gain current_gain;
+      bool valid_removal;
 
-      if (current_gain > best_gain) {
+      if (current_job.type == JOB_TYPE::SINGLE) {
+        current_gain = _sol_state.node_gains[v][r] - best_relocate_cost(v, r);
+
+        if (current_gain > best_gain) {
+          // Only check validity if required.
+          valid_removal = _sol[v].is_valid_removal(_input, r, 1);
+        }
+      } else {
+        assert(current_job.type == JOB_TYPE::PICKUP);
+        auto delivery_r = _sol_state.matching_delivery_rank[v][r];
+        current_gain =
+          _sol_state.pd_gains[v][r] - best_relocate_cost(v, r, delivery_r);
+
+        if (current_gain > best_gain) {
+          // Only check validity if required.
+          if (delivery_r == r + 1) {
+            valid_removal = _sol[v].is_valid_removal(_input, r, 2);
+          } else {
+            std::vector<Index> between_pd(_sol[v].route.begin() + r + 1,
+                                          _sol[v].route.begin() + delivery_r);
+
+            valid_removal = _sol[v].is_valid_addition_for_tw(_input,
+                                                             between_pd.begin(),
+                                                             between_pd.end(),
+                                                             r,
+                                                             delivery_r + 1);
+          }
+        }
+      }
+
+      if (current_gain > best_gain and valid_removal) {
         best_gain = current_gain;
         best_rank = r;
       }
@@ -1325,8 +1394,29 @@ void LocalSearch<Route,
   for (const auto& r_r : routes_and_ranks) {
     auto v = r_r.first;
     auto r = r_r.second;
+
     _sol_state.unassigned.insert(_sol[v].route[r]);
-    _sol[v].remove(_input, r, 1);
+
+    auto& current_job = _input.jobs[_sol[v].route[r]];
+    if (current_job.type == JOB_TYPE::SINGLE) {
+      _sol[v].remove(_input, r, 1);
+    } else {
+      assert(current_job.type == JOB_TYPE::PICKUP);
+      auto delivery_r = _sol_state.matching_delivery_rank[v][r];
+      _sol_state.unassigned.insert(_sol[v].route[delivery_r]);
+
+      if (delivery_r == r + 1) {
+        _sol[v].remove(_input, r, 2);
+      } else {
+        std::vector<Index> between_pd(_sol[v].route.begin() + r + 1,
+                                      _sol[v].route.begin() + delivery_r);
+        _sol[v].replace(_input,
+                        between_pd.begin(),
+                        between_pd.end(),
+                        r,
+                        delivery_r + 1);
+      }
+    }
   }
 }
 
