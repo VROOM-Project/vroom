@@ -160,27 +160,27 @@ void LocalSearch<Route,
         continue;
       }
 
-      best_costs.assign(routes.size(), std::numeric_limits<Gain>::max());
-      best_ranks.assign(routes.size(), 0);
-      for (std::size_t i = 0; i < routes.size(); ++i) {
-        auto v = routes[i];
-        const auto& v_target = _input.vehicles[v];
+      if (current_job.type == JOB_TYPE::SINGLE) {
+        best_costs.assign(routes.size(), std::numeric_limits<Gain>::max());
+        best_ranks.assign(routes.size(), 0);
+        for (std::size_t i = 0; i < routes.size(); ++i) {
+          auto v = routes[i];
+          const auto& v_target = _input.vehicles[v];
 
-        if (_input.vehicle_ok_with_job(v, j)) {
-          for (std::size_t r = 0; r <= _sol[v].size(); ++r) {
-            if (_sol[v].is_valid_addition_for_capacity(_input,
-                                                       current_job.pickup,
-                                                       current_job.delivery,
-                                                       r) and
-                _sol[v].is_valid_addition_for_tw(_input, j, r)) {
+          if (_input.vehicle_ok_with_job(v, j)) {
+            for (std::size_t r = 0; r <= _sol[v].size(); ++r) {
               Gain current_cost = utils::addition_cost(_input,
                                                        _matrix,
                                                        j,
                                                        v_target,
                                                        _sol[v].route,
                                                        r);
-
-              if (current_cost < best_costs[i]) {
+              if (current_cost < best_costs[i] and
+                  _sol[v].is_valid_addition_for_capacity(_input,
+                                                         current_job.pickup,
+                                                         current_job.delivery,
+                                                         r) and
+                  _sol[v].is_valid_addition_for_tw(_input, j, r)) {
                 best_costs[i] = current_cost;
                 best_ranks[i] = r;
               }
@@ -191,7 +191,7 @@ void LocalSearch<Route,
 
       auto smallest = std::numeric_limits<Gain>::max();
       auto second_smallest = std::numeric_limits<Gain>::max();
-      std::size_t smallest_idx = std::numeric_limits<Gain>::max();
+      std::size_t smallest_idx = std::numeric_limits<std::size_t>::max();
 
       for (std::size_t i = 0; i < routes.size(); ++i) {
         if (best_costs[i] < smallest) {
@@ -210,12 +210,7 @@ void LocalSearch<Route,
         if (addition_cost == std::numeric_limits<Gain>::max()) {
           continue;
         }
-        auto regret_cost = std::numeric_limits<Gain>::max();
-        if (i == smallest_idx) {
-          regret_cost = second_smallest;
-        } else {
-          regret_cost = smallest;
-        }
+        Gain regret_cost = (i == smallest_idx) ? second_smallest : smallest;
 
         double eval = static_cast<double>(addition_cost) -
                       regret_coeff * static_cast<double>(regret_cost);
