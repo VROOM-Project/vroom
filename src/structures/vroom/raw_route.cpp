@@ -253,6 +253,8 @@ void RawRoute::replace(const Input&,
 
   route.erase(route.begin() + first_rank, route.begin() + last_rank);
   route.insert(route.begin() + first_rank, first_job, last_job);
+
+  update_amounts(input);
 }
 
 template bool RawRoute::is_valid_addition_for_capacity_inclusion(

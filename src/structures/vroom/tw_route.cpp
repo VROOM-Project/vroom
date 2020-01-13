@@ -663,6 +663,8 @@ void TWRoute::replace(const Input& input,
     // Update latest dates backward.
     bwd_update_latest_with_TW_from(input, insert_rank);
   }
+
+  update_amounts(input);
 }
 
 template bool
