@@ -244,6 +244,9 @@ void MixedExchange::apply() {
   if (reverse_t_edge) {
     std::swap(s_route[s_rank], s_route[s_rank + 1]);
   }
+
+  source.update_amounts(_input);
+  target.update_amounts(_input);
 }
 
 std::vector<Index> MixedExchange::addition_candidates() const {

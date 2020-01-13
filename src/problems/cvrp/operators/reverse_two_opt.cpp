@@ -182,6 +182,9 @@ void ReverseTwoOpt::apply() {
                  t_route.rend() - nb_source);
   t_route.erase(t_route.begin() + nb_source,
                 t_route.begin() + nb_source + t_rank + 1);
+
+  source.update_amounts(_input);
+  target.update_amounts(_input);
 }
 
 std::vector<Index> ReverseTwoOpt::addition_candidates() const {

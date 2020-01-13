@@ -198,6 +198,9 @@ void OrOpt::apply() {
   }
 
   s_route.erase(s_route.begin() + s_rank, s_route.begin() + s_rank + 2);
+
+  source.update_amounts(_input);
+  target.update_amounts(_input);
 }
 
 std::vector<Index> OrOpt::addition_candidates() const {

@@ -983,12 +983,6 @@ void LocalSearch<Route,
       assert(new_cost + best_gain == previous_cost);
 #endif
 
-      // We need to run update_amounts before try_job_additions to
-      // correctly evaluate amounts.
-      for (auto v_rank : update_candidates) {
-        _sol[v_rank].update_amounts(_input);
-      }
-
       try_job_additions(best_ops[best_source][best_target]
                           ->addition_candidates(),
                         0);

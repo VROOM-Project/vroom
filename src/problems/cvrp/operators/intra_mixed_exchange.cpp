@@ -248,6 +248,8 @@ void IntraMixedExchange::apply() {
   }
 
   s_route.insert(s_route.begin() + end_t_rank, t_after);
+
+  source.update_amounts(_input);
 }
 
 std::vector<Index> IntraMixedExchange::addition_candidates() const {

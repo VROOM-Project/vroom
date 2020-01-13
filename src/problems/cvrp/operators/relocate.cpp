@@ -66,6 +66,9 @@ void Relocate::apply() {
   auto relocate_job_rank = s_route[s_rank];
   s_route.erase(s_route.begin() + s_rank);
   t_route.insert(t_route.begin() + t_rank, relocate_job_rank);
+
+  source.update_amounts(_input);
+  target.update_amounts(_input);
 }
 
 std::vector<Index> Relocate::addition_candidates() const {

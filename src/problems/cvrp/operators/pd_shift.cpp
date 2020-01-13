@@ -132,6 +132,7 @@ void PDShift::apply() {
 
   if (_s_d_rank == _s_p_rank + 1) {
     s_route.erase(s_route.begin() + _s_p_rank, s_route.begin() + _s_p_rank + 2);
+    source.update_amounts(_input);
   } else {
     std::vector<Index> source_without_pd(s_route.begin() + _s_p_rank + 1,
                                          s_route.begin() + _s_d_rank);

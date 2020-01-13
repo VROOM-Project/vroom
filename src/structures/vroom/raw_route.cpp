@@ -244,7 +244,7 @@ void RawRoute::remove(const Input& input,
 }
 
 template <class InputIterator>
-void RawRoute::replace(const Input&,
+void RawRoute::replace(const Input& input,
                        InputIterator first_job,
                        InputIterator last_job,
                        const Index first_rank,

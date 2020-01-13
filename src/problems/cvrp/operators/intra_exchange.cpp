@@ -113,6 +113,8 @@ bool IntraExchange::is_valid() {
 
 void IntraExchange::apply() {
   std::swap(s_route[s_rank], t_route[t_rank]);
+
+  source.update_amounts(_input);
 }
 
 std::vector<Index> IntraExchange::addition_candidates() const {

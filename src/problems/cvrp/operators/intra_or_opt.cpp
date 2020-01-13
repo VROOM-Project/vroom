@@ -216,6 +216,8 @@ void IntraOrOpt::apply() {
   if (reverse_s_edge) {
     std::swap(t_route[t_rank], t_route[t_rank + 1]);
   }
+
+  source.update_amounts(_input);
 }
 
 std::vector<Index> IntraOrOpt::addition_candidates() const {
