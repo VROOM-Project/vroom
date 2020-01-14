@@ -243,6 +243,10 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
 
         if (input.jobs[job_rank].type == JOB_TYPE::PICKUP) {
           for (Index pickup_r = 0; pickup_r <= current_r.size(); ++pickup_r) {
+            // Build replacement sequence for current insertion.
+            std::vector<Index> p_to_d_sequence({job_rank});
+            Amount delivery = input.jobs[job_rank].delivery;
+
             for (Index delivery_r = pickup_r + 1;
                  delivery_r <= current_r.size() + 1;
                  ++delivery_r) {
@@ -258,23 +262,17 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
                 current_add - lambda * static_cast<float>(costs[job_rank]);
 
               if (current_cost < best_cost) {
-                // Build replacement sequence for current insertion.
-                std::vector<Index> p_to_d_sequence({job_rank});
-
-                Amount delivery = input.jobs[job_rank].delivery;
-
-                for (Index i = pickup_r; i < delivery_r - 1; ++i) {
-                  p_to_d_sequence.push_back(current_r.route[i]);
-                  delivery += input.jobs[i].delivery;
-                }
                 p_to_d_sequence.push_back(job_rank + 1);
-                delivery += input.jobs[job_rank + 1].delivery;
 
                 // Update best cost depending on validity.
                 bool is_valid =
                   current_r
                     .is_valid_addition_for_capacity_inclusion(input,
-                                                              delivery,
+                                                              delivery +
+                                                                input
+                                                                  .jobs
+                                                                    [job_rank]
+                                                                  .delivery,
                                                               p_to_d_sequence
                                                                 .begin(),
                                                               p_to_d_sequence
@@ -295,6 +293,14 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
                   best_pickup_r = pickup_r;
                   best_delivery_r = delivery_r;
                 }
+
+                p_to_d_sequence.pop_back();
+              }
+
+              if (delivery_r < current_r.size() + 1) {
+                // Update replacement sequence for next insertion.
+                p_to_d_sequence.push_back(current_r.route[delivery_r - 1]);
+                delivery += input.jobs[delivery_r - 1].delivery;
               }
             }
           }
@@ -609,6 +615,10 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
 
         if (input.jobs[job_rank].type == JOB_TYPE::PICKUP) {
           for (Index pickup_r = 0; pickup_r <= current_r.size(); ++pickup_r) {
+            // Build replacement sequence for current insertion.
+            std::vector<Index> p_to_d_sequence({job_rank});
+            Amount delivery = input.jobs[job_rank].delivery;
+
             for (Index delivery_r = pickup_r + 1;
                  delivery_r <= current_r.size() + 1;
                  ++delivery_r) {
@@ -624,26 +634,18 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
                 current_add - lambda * static_cast<float>(regrets[job_rank]);
 
               if (current_cost < best_cost) {
-                // Build replacement sequence for current insertion.
-                std::vector<Index> p_to_d_sequence({job_rank});
-
-                Amount pickup = input.jobs[job_rank].pickup;
-                Amount delivery = input.jobs[job_rank].delivery;
-
-                for (Index i = pickup_r; i < delivery_r - 1; ++i) {
-                  p_to_d_sequence.push_back(current_r.route[i]);
-                  pickup += input.jobs[i].pickup;
-                  delivery += input.jobs[i].delivery;
-                }
                 p_to_d_sequence.push_back(job_rank + 1);
-                pickup += input.jobs[job_rank + 1].pickup;
-                delivery += input.jobs[job_rank + 1].delivery;
 
                 // Update best cost depending on validity.
                 bool is_valid =
                   current_r
                     .is_valid_addition_for_capacity_inclusion(input,
-                                                              delivery,
+                                                              delivery +
+                                                                input
+                                                                  .jobs
+                                                                    [job_rank +
+                                                                     1]
+                                                                  .delivery,
                                                               p_to_d_sequence
                                                                 .begin(),
                                                               p_to_d_sequence
@@ -664,6 +666,14 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
                   best_pickup_r = pickup_r;
                   best_delivery_r = delivery_r;
                 }
+
+                p_to_d_sequence.pop_back();
+              }
+
+              if (delivery_r < current_r.size() + 1) {
+                // Update replacement sequence for next insertion.
+                p_to_d_sequence.push_back(current_r.route[delivery_r - 1]);
+                delivery += input.jobs[delivery_r - 1].delivery;
               }
             }
           }

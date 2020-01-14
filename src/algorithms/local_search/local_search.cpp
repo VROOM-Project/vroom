@@ -172,23 +172,25 @@ void LocalSearch<Route,
           auto v = routes[i];
           const auto& v_target = _input.vehicles[v];
 
-          if (_input.vehicle_ok_with_job(v, j)) {
-            for (std::size_t r = 0; r <= _sol[v].size(); ++r) {
-              Gain current_cost = utils::addition_cost(_input,
-                                                       _matrix,
-                                                       j,
-                                                       v_target,
-                                                       _sol[v].route,
-                                                       r);
-              if (current_cost < best_costs[i] and
-                  _sol[v].is_valid_addition_for_capacity(_input,
-                                                         current_job.pickup,
-                                                         current_job.delivery,
-                                                         r) and
-                  _sol[v].is_valid_addition_for_tw(_input, j, r)) {
-                best_costs[i] = current_cost;
-                best_ranks[i] = r;
-              }
+          if (!_input.vehicle_ok_with_job(v, j)) {
+            continue;
+          }
+
+          for (std::size_t r = 0; r <= _sol[v].size(); ++r) {
+            Gain current_cost = utils::addition_cost(_input,
+                                                     _matrix,
+                                                     j,
+                                                     v_target,
+                                                     _sol[v].route,
+                                                     r);
+            if (current_cost < best_costs[i] and
+                _sol[v].is_valid_addition_for_capacity(_input,
+                                                       current_job.pickup,
+                                                       current_job.delivery,
+                                                       r) and
+                _sol[v].is_valid_addition_for_tw(_input, j, r)) {
+              best_costs[i] = current_cost;
+              best_ranks[i] = r;
             }
           }
         }
@@ -199,61 +201,68 @@ void LocalSearch<Route,
           auto v = routes[i];
           const auto& v_target = _input.vehicles[v];
 
-          if (_input.vehicle_ok_with_job(v, j)) {
-            for (Index pickup_r = 0; pickup_r <= _sol[v].size(); ++pickup_r) {
-              for (Index delivery_r = pickup_r + 1;
-                   delivery_r <= _sol[v].size() + 1;
-                   ++delivery_r) {
-                Gain pd_cost = utils::addition_cost(_input,
-                                                    _matrix,
-                                                    j,
-                                                    v_target,
-                                                    _sol[v].route,
-                                                    pickup_r,
-                                                    delivery_r);
+          if (!_input.vehicle_ok_with_job(v, j)) {
+            continue;
+          }
 
-                // Normalize cost per job for consistency with single jobs.
-                Gain current_cost =
-                  static_cast<Gain>(static_cast<double>(pd_cost) / 2);
+          for (Index pickup_r = 0; pickup_r <= _sol[v].size(); ++pickup_r) {
+            // Build replacement sequence for current insertion.
+            std::vector<Index> p_to_d_sequence({j});
+            Amount delivery = _input.jobs[j].delivery;
 
-                if (current_cost < best_costs[i]) {
-                  // Build replacement sequence for current insertion.
-                  std::vector<Index> p_to_d_sequence({j});
+            for (Index delivery_r = pickup_r + 1;
+                 delivery_r <= _sol[v].size() + 1;
+                 ++delivery_r) {
+              Gain pd_cost = utils::addition_cost(_input,
+                                                  _matrix,
+                                                  j,
+                                                  v_target,
+                                                  _sol[v].route,
+                                                  pickup_r,
+                                                  delivery_r);
 
-                  Amount delivery = _input.jobs[j].delivery;
+              // Normalize cost per job for consistency with single jobs.
+              Gain current_cost =
+                static_cast<Gain>(static_cast<double>(pd_cost) / 2);
 
-                  for (Index i = pickup_r; i < delivery_r - 1; ++i) {
-                    p_to_d_sequence.push_back(_sol[v].route[i]);
-                    delivery += _input.jobs[i].delivery;
-                  }
-                  p_to_d_sequence.push_back(j + 1);
-                  delivery += _input.jobs[j + 1].delivery;
+              if (current_cost < best_costs[i]) {
+                p_to_d_sequence.push_back(j + 1);
 
-                  // Update best cost depending on validity.
-                  bool is_valid =
-                    _sol[v]
-                      .is_valid_addition_for_capacity_inclusion(_input,
-                                                                delivery,
-                                                                p_to_d_sequence
-                                                                  .begin(),
-                                                                p_to_d_sequence
-                                                                  .end(),
-                                                                pickup_r,
-                                                                delivery_r - 1);
+                // Update best cost depending on validity.
+                bool is_valid =
+                  _sol[v]
+                    .is_valid_addition_for_capacity_inclusion(_input,
+                                                              delivery +
+                                                                _input
+                                                                  .jobs[j + 1]
+                                                                  .delivery,
+                                                              p_to_d_sequence
+                                                                .begin(),
+                                                              p_to_d_sequence
+                                                                .end(),
+                                                              pickup_r,
+                                                              delivery_r - 1);
 
-                  is_valid &=
-                    _sol[v].is_valid_addition_for_tw(_input,
-                                                     p_to_d_sequence.begin(),
-                                                     p_to_d_sequence.end(),
-                                                     pickup_r,
-                                                     delivery_r - 1);
+                is_valid &=
+                  _sol[v].is_valid_addition_for_tw(_input,
+                                                   p_to_d_sequence.begin(),
+                                                   p_to_d_sequence.end(),
+                                                   pickup_r,
+                                                   delivery_r - 1);
 
-                  if (is_valid) {
-                    best_costs[i] = current_cost;
-                    best_pickup_ranks[i] = pickup_r;
-                    best_delivery_ranks[i] = delivery_r;
-                  }
+                if (is_valid) {
+                  best_costs[i] = current_cost;
+                  best_pickup_ranks[i] = pickup_r;
+                  best_delivery_ranks[i] = delivery_r;
                 }
+
+                p_to_d_sequence.pop_back();
+              }
+
+              if (delivery_r < _sol[v].size() + 1) {
+                // Update replacement sequence for next insertion.
+                p_to_d_sequence.push_back(_sol[v].route[delivery_r - 1]);
+                delivery += _input.jobs[delivery_r - 1].delivery;
               }
             }
           }
