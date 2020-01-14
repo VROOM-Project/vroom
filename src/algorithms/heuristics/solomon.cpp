@@ -185,14 +185,12 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
       if (init_ok) {
         if (input.jobs[best_job_rank].type == JOB_TYPE::SINGLE) {
           current_r.add(input, best_job_rank, 0);
-          current_r.update_amounts(input);
           unassigned.erase(best_job_rank);
         }
         if (input.jobs[best_job_rank].type == JOB_TYPE::PICKUP) {
           std::vector<Index> p_d(
             {best_job_rank, static_cast<Index>(best_job_rank + 1)});
           current_r.replace(input, p_d.begin(), p_d.end(), 0, 0);
-          current_r.update_amounts(input);
           unassigned.erase(best_job_rank);
           unassigned.erase(best_job_rank + 1);
         }
@@ -263,16 +261,13 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
                 // Build replacement sequence for current insertion.
                 std::vector<Index> p_to_d_sequence({job_rank});
 
-                Amount pickup = input.jobs[job_rank].pickup;
                 Amount delivery = input.jobs[job_rank].delivery;
 
                 for (Index i = pickup_r; i < delivery_r - 1; ++i) {
                   p_to_d_sequence.push_back(current_r.route[i]);
-                  pickup += input.jobs[i].pickup;
                   delivery += input.jobs[i].delivery;
                 }
                 p_to_d_sequence.push_back(job_rank + 1);
-                pickup += input.jobs[job_rank + 1].pickup;
                 delivery += input.jobs[job_rank + 1].delivery;
 
                 // Update best cost depending on validity.
@@ -309,7 +304,6 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
       if (best_cost < std::numeric_limits<float>::max()) {
         if (input.jobs[best_job_rank].type == JOB_TYPE::SINGLE) {
           current_r.add(input, best_job_rank, best_r);
-          current_r.update_amounts(input);
           unassigned.erase(best_job_rank);
           keep_going = true;
         }
@@ -325,7 +319,6 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
                             p_to_d_sequence.end(),
                             best_pickup_r,
                             best_delivery_r - 1);
-          current_r.update_amounts(input);
           unassigned.erase(best_job_rank);
           unassigned.erase(best_job_rank + 1);
           keep_going = true;
@@ -558,14 +551,12 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
       if (init_ok) {
         if (input.jobs[best_job_rank].type == JOB_TYPE::SINGLE) {
           current_r.add(input, best_job_rank, 0);
-          current_r.update_amounts(input);
           unassigned.erase(best_job_rank);
         }
         if (input.jobs[best_job_rank].type == JOB_TYPE::PICKUP) {
           std::vector<Index> p_d(
             {best_job_rank, static_cast<Index>(best_job_rank + 1)});
           current_r.replace(input, p_d.begin(), p_d.end(), 0, 0);
-          current_r.update_amounts(input);
           unassigned.erase(best_job_rank);
           unassigned.erase(best_job_rank + 1);
         }
@@ -682,7 +673,6 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
       if (best_cost < std::numeric_limits<float>::max()) {
         if (input.jobs[best_job_rank].type == JOB_TYPE::SINGLE) {
           current_r.add(input, best_job_rank, best_r);
-          current_r.update_amounts(input);
           unassigned.erase(best_job_rank);
           keep_going = true;
         }
@@ -698,7 +688,6 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
                             p_to_d_sequence.end(),
                             best_pickup_r,
                             best_delivery_r - 1);
-          current_r.update_amounts(input);
           unassigned.erase(best_job_rank);
           unassigned.erase(best_job_rank + 1);
           keep_going = true;
