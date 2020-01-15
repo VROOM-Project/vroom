@@ -11,6 +11,10 @@
 
 - Steps `type` in json output can also have value `pickup` and `delivery` (#274)
 
+### Fixed
+
+- Missing valid moves for intra Or-opt (#286)
+
 ## [v1.5.0] - 2019-10-14
 
 ### Added
