@@ -104,6 +104,21 @@ void Input::add_job(const Job& job) {
 }
 
 void Input::add_shipment(const Job& pickup, const Job& delivery) {
+  if (pickup.priority != delivery.priority) {
+    throw Exception(ERROR::INPUT, "Inconsistent shipment priority.");
+  }
+  if (!(pickup.pickup == delivery.delivery)) {
+    throw Exception(ERROR::INPUT, "Inconsistent shipment amount.");
+  }
+  if (pickup.skills.size() != delivery.skills.size()) {
+    throw Exception(ERROR::INPUT, "Inconsistent shipment skills.");
+  }
+  for (const auto s : pickup.skills) {
+    if (delivery.skills.find(s) == delivery.skills.end()) {
+      throw Exception(ERROR::INPUT, "Inconsistent shipment skills.");
+    }
+  }
+
   if (pickup.type != JOB_TYPE::PICKUP) {
     throw Exception(ERROR::INPUT, "Wrong pickup type.");
   }
