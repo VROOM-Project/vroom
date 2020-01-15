@@ -31,22 +31,32 @@ void log_solution(const vroom::Solution& sol, bool geometry) {
 
     // Describe all route steps.
     for (const auto& step : route.steps) {
-      std::string step_type;
-      switch (step.type) {
+      std::string type;
+      switch (step.step_type) {
       case vroom::STEP_TYPE::START:
-        step_type = "Start";
+        type = "Start";
         break;
       case vroom::STEP_TYPE::END:
-        step_type = "End";
+        type = "End";
         break;
       case vroom::STEP_TYPE::JOB:
-        step_type = "Job";
+        switch (step.job_type) {
+        case vroom::JOB_TYPE::SINGLE:
+          type = "Job";
+          break;
+        case vroom::JOB_TYPE::PICKUP:
+          type = "Pickup";
+          break;
+        case vroom::JOB_TYPE::DELIVERY:
+          type = "Delivery";
+          break;
+        }
         break;
       }
-      std::cout << step_type;
+      std::cout << type;
 
       // Add job ids.
-      if (step.type == vroom::STEP_TYPE::JOB) {
+      if (step.step_type == vroom::STEP_TYPE::JOB) {
         std::cout << " " << step.job;
       }
 
@@ -133,18 +143,6 @@ void run_example_with_osrm() {
                             job_delivery,
                             job_pickup,
                             {1}));
-  jobs.push_back(vroom::Job(3,
-                            vroom::Coordinates({{2.39719, 49.07611}}),
-                            service,
-                            job_delivery,
-                            job_pickup,
-                            {2}));
-  jobs.push_back(vroom::Job(4,
-                            vroom::Coordinates({{2.41808, 49.22619}}),
-                            service,
-                            job_delivery,
-                            job_pickup,
-                            {2}));
   jobs.push_back(vroom::Job(5,
                             vroom::Coordinates({{2.28325, 48.5958}}),
                             service,
@@ -162,20 +160,36 @@ void run_example_with_osrm() {
     problem_instance.add_job(j);
   }
 
+  // Define a shipment.
+  vroom::Skills pd_skills({2});
+  vroom::Amount pd_amount(amount_dimension);
+  pd_amount[0] = 1;
+
+  vroom::Job pickup(3,
+                    vroom::JOB_TYPE::PICKUP,
+                    vroom::Coordinates({{2.39719, 49.07611}}),
+                    service,
+                    pd_amount,
+                    pd_skills);
+
+  vroom::Job delivery(4,
+                      vroom::JOB_TYPE::DELIVERY,
+                      vroom::Coordinates({{2.41808, 49.22619}}),
+                      service,
+                      pd_amount,
+                      pd_skills);
+  problem_instance.add_shipment(pickup, delivery);
+
   // Skills definitions set the following constraints:
   // - jobs 1 and 2 can only be served by vehicle 1
   // - jobs 3 and 4 can only be served by vehicle 2
   // - jobs 5 and 6 can be served by either one of the vehicles
 
   // Solve!
-  try {
-    auto sol = problem_instance.solve(5,  // Exploration level.
-                                      4); // Use 4 threads.
+  auto sol = problem_instance.solve(5,  // Exploration level.
+                                    4); // Use 4 threads.
 
-    log_solution(sol, GEOMETRY);
-  } catch (const vroom::Exception& e) {
-    std::cerr << "[Error] " << e.message << std::endl;
-  }
+  log_solution(sol, GEOMETRY);
 }
 
 void run_example_with_custom_matrix() {
@@ -251,19 +265,18 @@ void run_example_with_custom_matrix() {
   // - jobs 5 and 6 can be served by either one of the vehicles
 
   // Solve!
-  try {
-    auto sol = problem_instance.solve(5,  // Exploration level.
-                                      4); // Use 4 threads.
+  auto sol = problem_instance.solve(5,  // Exploration level.
+                                    4); // Use 4 threads.
 
-    log_solution(sol, GEOMETRY);
-  } catch (const vroom::Exception& e) {
-    std::cerr << "[Error] " << e.message << std::endl;
-  }
+  log_solution(sol, GEOMETRY);
 }
 
 int main() {
-  run_example_with_osrm();
-  // run_example_with_custom_matrix();
-
+  try {
+    run_example_with_osrm();
+    // run_example_with_custom_matrix();
+  } catch (const vroom::Exception& e) {
+    std::cerr << "[Error] " << e.message << std::endl;
+  }
   return 0;
 }
