@@ -453,18 +453,17 @@ void LocalSearch<Route,
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1; ++s_rank) {
         const auto& job_s_type =
           _input.jobs[_sol[s_t.first].route[s_rank]].type;
-        if (job_s_type == JOB_TYPE::DELIVERY or
-            _input.jobs[_sol[s_t.first].route[s_rank + 1]].type ==
-              JOB_TYPE::PICKUP) {
-          continue;
-        }
 
-        bool is_s_pickup = (job_s_type == JOB_TYPE::PICKUP);
-        if (is_s_pickup and
-            _sol_state.matching_delivery_rank[s_t.first][s_rank] !=
-              s_rank + 1) {
-          // Operator only makes sense if next job is the matching
-          // delivery.
+        bool both_s_single =
+          (job_s_type == JOB_TYPE::SINGLE) and
+          (_input.jobs[_sol[s_t.first].route[s_rank + 1]].type ==
+           JOB_TYPE::SINGLE);
+
+        bool is_s_pickup =
+          (job_s_type == JOB_TYPE::PICKUP) and
+          (_sol_state.matching_delivery_rank[s_t.first][s_rank] == s_rank + 1);
+
+        if (!both_s_single and !is_s_pickup) {
           continue;
         }
 
@@ -472,18 +471,18 @@ void LocalSearch<Route,
              ++t_rank) {
           const auto& job_t_type =
             _input.jobs[_sol[s_t.second].route[t_rank]].type;
-          if (job_t_type == JOB_TYPE::DELIVERY or
-              _input.jobs[_sol[s_t.second].route[t_rank + 1]].type ==
-                JOB_TYPE::PICKUP) {
-            continue;
-          }
 
-          bool is_t_pickup = (job_t_type == JOB_TYPE::PICKUP);
-          if (is_t_pickup and
-              _sol_state.matching_delivery_rank[s_t.second][t_rank] !=
-                t_rank + 1) {
-            // Operator only makes sense if next job is the matching
-            // delivery.
+          bool both_t_single =
+            (job_t_type == JOB_TYPE::SINGLE) and
+            (_input.jobs[_sol[s_t.second].route[t_rank + 1]].type ==
+             JOB_TYPE::SINGLE);
+
+          bool is_t_pickup =
+            (job_t_type == JOB_TYPE::PICKUP) and
+            (_sol_state.matching_delivery_rank[s_t.second][t_rank] ==
+             t_rank + 1);
+
+          if (!both_t_single and !is_t_pickup) {
             continue;
           }
 
@@ -528,18 +527,18 @@ void LocalSearch<Route,
                ++t_rank) {
             const auto& job_t_type =
               _input.jobs[_sol[s_t.second].route[t_rank]].type;
-            if (job_t_type == JOB_TYPE::DELIVERY or
-                _input.jobs[_sol[s_t.second].route[t_rank + 1]].type ==
-                  JOB_TYPE::PICKUP) {
-              continue;
-            }
 
-            bool is_t_pickup = (job_t_type == JOB_TYPE::PICKUP);
-            if (is_t_pickup and
-                _sol_state.matching_delivery_rank[s_t.second][t_rank] !=
-                  t_rank + 1) {
-              // Operator only makes sense if next job is the matching
-              // delivery.
+            bool both_t_single =
+              (job_t_type == JOB_TYPE::SINGLE) and
+              (_input.jobs[_sol[s_t.second].route[t_rank + 1]].type ==
+               JOB_TYPE::SINGLE);
+
+            bool is_t_pickup =
+              (job_t_type == JOB_TYPE::PICKUP) and
+              (_sol_state.matching_delivery_rank[s_t.second][t_rank] ==
+               t_rank + 1);
+
+            if (!both_t_single and !is_t_pickup) {
               continue;
             }
 
@@ -772,18 +771,17 @@ void LocalSearch<Route,
            ++s_rank) {
         const auto& job_s_type =
           _input.jobs[_sol[s_t.first].route[s_rank]].type;
-        if (job_s_type == JOB_TYPE::DELIVERY or
-            _input.jobs[_sol[s_t.first].route[s_rank + 1]].type ==
-              JOB_TYPE::PICKUP) {
-          continue;
-        }
 
-        bool is_s_pickup = (job_s_type == JOB_TYPE::PICKUP);
-        if (is_s_pickup and
-            _sol_state.matching_delivery_rank[s_t.first][s_rank] !=
-              s_rank + 1) {
-          // For a shipment, only try this operator if next job is the
-          // matching delivery.
+        bool both_s_single =
+          (job_s_type == JOB_TYPE::SINGLE) and
+          (_input.jobs[_sol[s_t.first].route[s_rank + 1]].type ==
+           JOB_TYPE::SINGLE);
+
+        bool is_s_pickup =
+          (job_s_type == JOB_TYPE::PICKUP) and
+          (_sol_state.matching_delivery_rank[s_t.first][s_rank] == s_rank + 1);
+
+        if (!both_s_single and !is_s_pickup) {
           continue;
         }
 
@@ -791,18 +789,18 @@ void LocalSearch<Route,
              ++t_rank) {
           const auto& job_t_type =
             _input.jobs[_sol[s_t.second].route[t_rank]].type;
-          if (job_t_type == JOB_TYPE::DELIVERY or
-              _input.jobs[_sol[s_t.second].route[t_rank + 1]].type ==
-                JOB_TYPE::PICKUP) {
-            continue;
-          }
 
-          bool is_t_pickup = (job_t_type == JOB_TYPE::PICKUP);
-          if (is_t_pickup and
-              _sol_state.matching_delivery_rank[s_t.second][t_rank] !=
-                t_rank + 1) {
-            // For a shipment, only try this operator if next job is
-            // the matching delivery.
+          bool both_t_single =
+            (job_t_type == JOB_TYPE::SINGLE) and
+            (_input.jobs[_sol[s_t.second].route[t_rank + 1]].type ==
+             JOB_TYPE::SINGLE);
+
+          bool is_t_pickup =
+            (job_t_type == JOB_TYPE::PICKUP) and
+            (_sol_state.matching_delivery_rank[s_t.second][t_rank] ==
+             t_rank + 1);
+
+          if (!both_t_single and !is_t_pickup) {
             continue;
           }
 
@@ -846,18 +844,18 @@ void LocalSearch<Route,
           }
           const auto& job_t_type =
             _input.jobs[_sol[s_t.second].route[t_rank]].type;
-          if (job_t_type == JOB_TYPE::DELIVERY or
-              _input.jobs[_sol[s_t.second].route[t_rank + 1]].type ==
-                JOB_TYPE::PICKUP) {
-            continue;
-          }
 
-          bool is_t_pickup = (job_t_type == JOB_TYPE::PICKUP);
-          if (is_t_pickup and
-              _sol_state.matching_delivery_rank[s_t.second][t_rank] !=
-                t_rank + 1) {
-            // For a shipment, only try this operator if next job is
-            // the matching delivery.
+          bool both_t_single =
+            (job_t_type == JOB_TYPE::SINGLE) and
+            (_input.jobs[_sol[s_t.first].route[t_rank + 1]].type ==
+             JOB_TYPE::SINGLE);
+
+          bool is_t_pickup =
+            (job_t_type == JOB_TYPE::PICKUP) and
+            (_sol_state.matching_delivery_rank[s_t.second][t_rank] ==
+             t_rank + 1);
+
+          if (!both_t_single and !is_t_pickup) {
             continue;
           }
 
@@ -934,20 +932,21 @@ void LocalSearch<Route,
       }
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1; ++s_rank) {
         const auto& job_type = _input.jobs[_sol[s_t.first].route[s_rank]].type;
-        if (job_type == JOB_TYPE::DELIVERY or
-            _input.jobs[_sol[s_t.first].route[s_rank + 1]].type ==
-              JOB_TYPE::PICKUP) {
+
+        bool both_single =
+          (job_type == JOB_TYPE::SINGLE) and
+          (_input.jobs[_sol[s_t.first].route[s_rank + 1]].type ==
+           JOB_TYPE::SINGLE);
+
+        bool is_pickup =
+          (job_type == JOB_TYPE::PICKUP) and
+          (_sol_state.matching_delivery_rank[s_t.first][s_rank] == s_rank + 1);
+
+        if (!both_single and !is_pickup) {
           continue;
         }
 
-        bool is_pickup = (job_type == JOB_TYPE::PICKUP);
         if (is_pickup) {
-          if (_sol_state.matching_delivery_rank[s_t.first][s_rank] !=
-              s_rank + 1) {
-            // Operator only makes sense if next job is the matching
-            // delivery.
-            continue;
-          }
           if (_sol_state.pd_gains[s_t.first][s_rank] <=
               best_gains[s_t.first][s_t.first]) {
             // Except if addition cost in route is negative (!!),
