@@ -41,6 +41,7 @@ private:
   bool _geometry;
   bool _has_jobs;
   bool _has_shipments;
+  bool _has_custom_matrix;
   Matrix<Cost> _matrix;
   std::vector<Location> _locations;
   std::unordered_map<Location, Index> _locations_to_index;
