@@ -140,7 +140,6 @@ bool RawRoute::is_valid_addition_for_capacity(const Input&,
                                               const Amount& delivery,
                                               const Index rank) const {
   assert(rank <= route.size());
-  assert(_fwd_peaks.size() == route.size() + 2);
 
   return (_fwd_peaks[rank] + delivery <= capacity) and
          (_bwd_peaks[rank] + pickup <= capacity);

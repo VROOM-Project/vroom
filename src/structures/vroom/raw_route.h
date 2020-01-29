@@ -19,11 +19,12 @@ namespace vroom {
 
 class RawRoute {
 private:
-  // _fwd_pickups[i] stores the total pickups up to rank i.
+  // _fwd_pickups[i] stores the total pickups for single jobs up to
+  // rank i.
   std::vector<Amount> _fwd_pickups;
 
-  // _bwd_deliveries[i] stores the total deliveries pending after rank
-  // i.
+  // _bwd_deliveries[i] stores the total deliveries for single jobs
+  // pending after rank i.
   std::vector<Amount> _bwd_deliveries;
 
   // _pd_loads[i] stores the shipments load at rank i (included).
@@ -34,8 +35,9 @@ private:
   std::vector<unsigned> _nb_pickups;
   std::vector<unsigned> _nb_deliveries;
 
-  // _current_loads[s] stores the vehicle load at *step* s (step 0 is
-  // the start, not the first job rank).
+  // _current_loads[s] stores the vehicle load (taking all job types
+  // into account) at *step* s (step 0 is the start, not the first job
+  // rank).
   std::vector<Amount> _current_loads;
 
   // _fwd_peaks[s] stores the peak load (component-wise) up to *step*

@@ -89,6 +89,7 @@ void PDShift::compute_gain() {
     }
 
     std::vector<Index> modified_with_pd({s_route[_s_p_rank]});
+    Amount modified_delivery = _input.zero_amount();
 
     for (unsigned t_d_rank = t_p_rank; t_d_rank <= t_route.size(); ++t_d_rank) {
       Gain target_gain;
@@ -103,6 +104,10 @@ void PDShift::compute_gain() {
       } else {
         target_gain = t_p_gain + t_d_gains[t_d_rank];
         modified_with_pd.push_back(t_route[t_d_rank - 1]);
+        const auto& new_modified_job = _input.jobs[t_route[t_d_rank - 1]];
+        if (new_modified_job.type == JOB_TYPE::SINGLE) {
+          modified_delivery += new_modified_job.delivery;
+        }
       }
 
       if (_remove_gain + target_gain > stored_gain) {
@@ -110,7 +115,7 @@ void PDShift::compute_gain() {
         bool valid =
           target
             .is_valid_addition_for_capacity_inclusion(_input,
-                                                      _input.zero_amount(),
+                                                      modified_delivery,
                                                       modified_with_pd.begin(),
                                                       modified_with_pd.end(),
                                                       t_p_rank,
