@@ -39,19 +39,20 @@ bool OrOpt::is_valid() {
   if (valid) {
     // Keep edge direction.
     auto s_start = s_route.begin() + s_rank;
-    is_normal_valid &= _tw_t_route.is_valid_addition_for_tw(_input,
-                                                            s_start,
-                                                            s_start + 2,
-                                                            t_rank,
-                                                            t_rank);
+    is_normal_valid =
+      is_normal_valid && _tw_t_route.is_valid_addition_for_tw(_input,
+                                                              s_start,
+                                                              s_start + 2,
+                                                              t_rank,
+                                                              t_rank);
     // Reverse edge direction.
     auto s_reverse_start = s_route.rbegin() + s_route.size() - 2 - s_rank;
-    is_reverse_valid &=
-      _tw_t_route.is_valid_addition_for_tw(_input,
-                                           s_reverse_start,
-                                           s_reverse_start + 2,
-                                           t_rank,
-                                           t_rank);
+    is_reverse_valid = is_reverse_valid &&
+                       _tw_t_route.is_valid_addition_for_tw(_input,
+                                                            s_reverse_start,
+                                                            s_reverse_start + 2,
+                                                            t_rank,
+                                                            t_rank);
 
     valid = is_normal_valid or is_reverse_valid;
   }

@@ -229,19 +229,20 @@ bool CrossExchange::is_valid() {
   auto t_after_job_rank = t_route[t_rank + 1];
 
   bool valid = _input.vehicle_ok_with_job(t_vehicle, s_current_job_rank);
-  valid &= _input.vehicle_ok_with_job(t_vehicle, s_after_job_rank);
-  valid &= _input.vehicle_ok_with_job(s_vehicle, t_current_job_rank);
-  valid &= _input.vehicle_ok_with_job(s_vehicle, t_after_job_rank);
+  valid = valid && _input.vehicle_ok_with_job(t_vehicle, s_after_job_rank);
+  valid = valid && _input.vehicle_ok_with_job(s_vehicle, t_current_job_rank);
+  valid = valid && _input.vehicle_ok_with_job(s_vehicle, t_after_job_rank);
 
   auto target_pickup = _input.jobs[t_current_job_rank].pickup +
                        _input.jobs[t_after_job_rank].pickup;
   auto target_delivery = _input.jobs[t_current_job_rank].delivery +
                          _input.jobs[t_after_job_rank].delivery;
-  valid &= source.is_valid_addition_for_capacity_margins(_input,
-                                                         target_pickup,
-                                                         target_delivery,
-                                                         s_rank,
-                                                         s_rank + 2);
+  valid =
+    valid && source.is_valid_addition_for_capacity_margins(_input,
+                                                           target_pickup,
+                                                           target_delivery,
+                                                           s_rank,
+                                                           s_rank + 2);
 
   if (valid) {
     // Keep target edge direction when inserting in source route.
@@ -274,11 +275,12 @@ bool CrossExchange::is_valid() {
   auto source_delivery = _input.jobs[s_current_job_rank].delivery +
                          _input.jobs[s_after_job_rank].delivery;
 
-  valid &= target.is_valid_addition_for_capacity_margins(_input,
-                                                         source_pickup,
-                                                         source_delivery,
-                                                         t_rank,
-                                                         t_rank + 2);
+  valid =
+    valid && target.is_valid_addition_for_capacity_margins(_input,
+                                                           source_pickup,
+                                                           source_delivery,
+                                                           t_rank,
+                                                           t_rank + 2);
 
   if (valid) {
     // Keep source edge direction when inserting in target route.

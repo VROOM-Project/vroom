@@ -34,16 +34,18 @@ Exchange::Exchange(const Input& input,
 
 bool Exchange::is_valid() {
   bool valid = cvrp::Exchange::is_valid();
-  valid &= _tw_t_route.is_valid_addition_for_tw(_input,
-                                                s_route.begin() + s_rank,
-                                                s_route.begin() + s_rank + 1,
-                                                t_rank,
-                                                t_rank + 1);
-  valid &= _tw_s_route.is_valid_addition_for_tw(_input,
-                                                t_route.begin() + t_rank,
-                                                t_route.begin() + t_rank + 1,
-                                                s_rank,
-                                                s_rank + 1);
+  valid =
+    valid && _tw_t_route.is_valid_addition_for_tw(_input,
+                                                  s_route.begin() + s_rank,
+                                                  s_route.begin() + s_rank + 1,
+                                                  t_rank,
+                                                  t_rank + 1);
+  valid =
+    valid && _tw_s_route.is_valid_addition_for_tw(_input,
+                                                  t_route.begin() + t_rank,
+                                                  t_route.begin() + t_rank + 1,
+                                                  s_rank,
+                                                  s_rank + 1);
   return valid;
 }
 

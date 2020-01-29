@@ -91,7 +91,8 @@ void Input::check_job(Job& job) {
   }
 
   _matrix_used_index.insert(job.index());
-  _all_locations_have_coords &= job.location.has_coordinates();
+  _all_locations_have_coords =
+    _all_locations_have_coords && job.location.has_coordinates();
 }
 
 void Input::add_job(const Job& job) {
@@ -184,7 +185,8 @@ void Input::add_vehicle(const Vehicle& vehicle) {
     }
 
     _matrix_used_index.insert(start_loc.index());
-    _all_locations_have_coords &= start_loc.has_coordinates();
+    _all_locations_have_coords =
+      _all_locations_have_coords && start_loc.has_coordinates();
   }
 
   if (has_end) {
@@ -208,12 +210,14 @@ void Input::add_vehicle(const Vehicle& vehicle) {
     }
 
     _matrix_used_index.insert(end_loc.index());
-    _all_locations_have_coords &= end_loc.has_coordinates();
+    _all_locations_have_coords =
+      _all_locations_have_coords && end_loc.has_coordinates();
   }
 
   // Check for homogeneous locations among vehicles.
   if (vehicles.size() > 1) {
-    _homogeneous_locations &=
+    _homogeneous_locations =
+      _homogeneous_locations &&
       vehicles.front().has_same_locations(vehicles.back());
   }
 }
