@@ -205,64 +205,83 @@ void LocalSearch<Route,
             continue;
           }
 
-          for (Index pickup_r = 0; pickup_r <= _sol[v].size(); ++pickup_r) {
-            // Build replacement sequence for current insertion.
-            std::vector<Index> p_to_d_sequence({j});
-            Amount delivery = _input.jobs[j].delivery;
-
-            for (Index delivery_r = pickup_r + 1;
-                 delivery_r <= _sol[v].size() + 1;
-                 ++delivery_r) {
-              Gain pd_cost = utils::addition_cost(_input,
+          // Pre-compute cost of addition for matching delivery.
+          std::vector<Gain> d_adds(_sol[v].route.size() + 1);
+          for (unsigned d_rank = 0; d_rank <= _sol[v].route.size(); ++d_rank) {
+            d_adds[d_rank] = utils::addition_cost(_input,
                                                   _matrix,
-                                                  j,
+                                                  j + 1,
                                                   v_target,
                                                   _sol[v].route,
-                                                  pickup_r,
-                                                  delivery_r);
+                                                  d_rank);
+          }
+
+          for (Index pickup_r = 0; pickup_r <= _sol[v].size(); ++pickup_r) {
+            Gain p_add = utils::addition_cost(_input,
+                                              _matrix,
+                                              j,
+                                              v_target,
+                                              _sol[v].route,
+                                              pickup_r);
+
+            // Build replacement sequence for current insertion.
+            std::vector<Index> modified_with_pd({j});
+            Amount modified_delivery = _input.zero_amount();
+
+            for (Index delivery_r = pickup_r; delivery_r <= _sol[v].size();
+                 ++delivery_r) {
+              Gain pd_cost;
+              if (pickup_r == delivery_r) {
+                pd_cost = utils::addition_cost(_input,
+                                               _matrix,
+                                               j,
+                                               v_target,
+                                               _sol[v].route,
+                                               pickup_r,
+                                               pickup_r + 1);
+              } else {
+                pd_cost = p_add + d_adds[delivery_r];
+                modified_with_pd.push_back(_sol[v].route[delivery_r - 1]);
+                const auto& new_modified_job =
+                  _input.jobs[_sol[v].route[delivery_r - 1]];
+                if (new_modified_job.type == JOB_TYPE::SINGLE) {
+                  modified_delivery += new_modified_job.delivery;
+                }
+              }
 
               // Normalize cost per job for consistency with single jobs.
               Gain current_cost =
                 static_cast<Gain>(static_cast<double>(pd_cost) / 2);
 
               if (current_cost < best_costs[i]) {
-                p_to_d_sequence.push_back(j + 1);
+                modified_with_pd.push_back(j + 1);
 
                 // Update best cost depending on validity.
                 bool is_valid =
                   _sol[v]
                     .is_valid_addition_for_capacity_inclusion(_input,
-                                                              delivery +
-                                                                _input
-                                                                  .jobs[j + 1]
-                                                                  .delivery,
-                                                              p_to_d_sequence
+                                                              modified_delivery,
+                                                              modified_with_pd
                                                                 .begin(),
-                                                              p_to_d_sequence
+                                                              modified_with_pd
                                                                 .end(),
                                                               pickup_r,
-                                                              delivery_r - 1);
+                                                              delivery_r);
 
                 is_valid &=
                   _sol[v].is_valid_addition_for_tw(_input,
-                                                   p_to_d_sequence.begin(),
-                                                   p_to_d_sequence.end(),
+                                                   modified_with_pd.begin(),
+                                                   modified_with_pd.end(),
                                                    pickup_r,
-                                                   delivery_r - 1);
+                                                   delivery_r);
+
+                modified_with_pd.pop_back();
 
                 if (is_valid) {
                   best_costs[i] = current_cost;
                   best_pickup_ranks[i] = pickup_r;
                   best_delivery_ranks[i] = delivery_r;
                 }
-
-                p_to_d_sequence.pop_back();
-              }
-
-              if (delivery_r < _sol[v].size() + 1) {
-                // Update replacement sequence for next insertion.
-                p_to_d_sequence.push_back(_sol[v].route[delivery_r - 1]);
-                delivery += _input.jobs[delivery_r - 1].delivery;
               }
             }
           }
@@ -323,17 +342,17 @@ void LocalSearch<Route,
       } else {
         assert(best_job.type == JOB_TYPE::PICKUP);
 
-        std::vector<Index> p_to_d_sequence({best_job_rank});
-        for (Index i = best_pickup_r; i < best_delivery_r - 1; ++i) {
-          p_to_d_sequence.push_back(_sol[best_route].route[i]);
-        }
-        p_to_d_sequence.push_back(best_job_rank + 1);
+        std::vector<Index> modified_with_pd({best_job_rank});
+        std::copy(_sol[best_route].route.begin() + best_pickup_r,
+                  _sol[best_route].route.begin() + best_delivery_r,
+                  std::back_inserter(modified_with_pd));
+        modified_with_pd.push_back(best_job_rank + 1);
 
         _sol[best_route].replace(_input,
-                                 p_to_d_sequence.begin(),
-                                 p_to_d_sequence.end(),
+                                 modified_with_pd.begin(),
+                                 modified_with_pd.end(),
                                  best_pickup_r,
-                                 best_delivery_r - 1);
+                                 best_delivery_r);
 
         assert(_sol_state.unassigned.find(best_job_rank + 1) !=
                _sol_state.unassigned.end());
