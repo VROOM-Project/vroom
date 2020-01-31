@@ -70,6 +70,13 @@ void PDShift::compute_gain() {
       continue;
     }
 
+    if (!target
+           .is_valid_addition_for_load(_input,
+                                       _input.jobs[s_route[_s_p_rank]].pickup,
+                                       t_p_rank)) {
+      continue;
+    }
+
     std::vector<Index> modified_with_pd({s_route[_s_p_rank]});
     Amount modified_delivery = _input.zero_amount();
 

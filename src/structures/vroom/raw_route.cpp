@@ -145,6 +145,15 @@ bool RawRoute::is_valid_addition_for_capacity(const Input&,
          (_bwd_peaks[rank] + pickup <= capacity);
 }
 
+bool RawRoute::is_valid_addition_for_load(const Input& input,
+                                          const Amount& pickup,
+                                          const Index rank) const {
+  assert(rank <= route.size());
+
+  auto& load = route.empty() ? input.zero_amount() : _current_loads[rank];
+  return load + pickup <= capacity;
+}
+
 bool RawRoute::is_valid_addition_for_capacity_margins(
   const Input& input,
   const Amount& pickup,

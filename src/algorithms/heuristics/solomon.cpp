@@ -262,6 +262,16 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
                                               current_r.route,
                                               pickup_r);
 
+            if (!current_r
+                   .is_valid_addition_for_load(input,
+                                               input.jobs[job_rank].pickup,
+                                               pickup_r) or
+                !current_r.is_valid_addition_for_tw(input,
+                                                    job_rank,
+                                                    pickup_r)) {
+              continue;
+            }
+
             // Build replacement sequence for current insertion.
             std::vector<Index> modified_with_pd({job_rank});
             Amount modified_delivery = input.zero_amount();
@@ -652,6 +662,16 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
                                               vehicle,
                                               current_r.route,
                                               pickup_r);
+
+            if (!current_r
+                   .is_valid_addition_for_load(input,
+                                               input.jobs[job_rank].pickup,
+                                               pickup_r) or
+                !current_r.is_valid_addition_for_tw(input,
+                                                    job_rank,
+                                                    pickup_r)) {
+              continue;
+            }
 
             // Build replacement sequence for current insertion.
             std::vector<Index> modified_with_pd({job_rank});

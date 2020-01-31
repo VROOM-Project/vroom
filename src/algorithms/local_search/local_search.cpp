@@ -224,6 +224,13 @@ void LocalSearch<Route,
                                               _sol[v].route,
                                               pickup_r);
 
+            if (!_sol[v].is_valid_addition_for_load(_input,
+                                                    current_job.pickup,
+                                                    pickup_r) or
+                !_sol[v].is_valid_addition_for_tw(_input, j, pickup_r)) {
+              continue;
+            }
+
             // Build replacement sequence for current insertion.
             std::vector<Index> modified_with_pd({j});
             Amount modified_delivery = _input.zero_amount();

@@ -77,6 +77,12 @@ public:
                                       const Amount& delivery,
                                       const Index rank) const;
 
+  // Check if current load allows the addition of a pickup, just
+  // considering capacity limitation at rank.
+  bool is_valid_addition_for_load(const Input& input,
+                                  const Amount& pickup,
+                                  const Index rank) const;
+
   // Check validity for inclusion (with regard to not breaking
   // capacity before and after inclusion) of some load in the existing
   // route at rank first_rank and before last_rank *in place of* the
