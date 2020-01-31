@@ -244,6 +244,9 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
         if (input.jobs[job_rank].type == JOB_TYPE::PICKUP) {
           // Pre-compute cost of addition for matching delivery.
           std::vector<Gain> d_adds(current_r.route.size() + 1);
+          std::vector<unsigned char> valid_delivery_insertions(
+            current_r.route.size() + 1);
+
           for (unsigned d_rank = 0; d_rank <= current_r.route.size();
                ++d_rank) {
             d_adds[d_rank] = utils::addition_cost(input,
@@ -252,6 +255,8 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
                                                   vehicle,
                                                   current_r.route,
                                                   d_rank);
+            valid_delivery_insertions[d_rank] =
+              current_r.is_valid_addition_for_tw(input, job_rank + 1, d_rank);
           }
 
           for (Index pickup_r = 0; pickup_r <= current_r.size(); ++pickup_r) {
@@ -278,6 +283,21 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
 
             for (Index delivery_r = pickup_r; delivery_r <= current_r.size();
                  ++delivery_r) {
+              // Update state variables along the way before potential
+              // early abort.
+              if (pickup_r < delivery_r) {
+                modified_with_pd.push_back(current_r.route[delivery_r - 1]);
+                const auto& new_modified_job =
+                  input.jobs[current_r.route[delivery_r - 1]];
+                if (new_modified_job.type == JOB_TYPE::SINGLE) {
+                  modified_delivery += new_modified_job.delivery;
+                }
+              }
+
+              if (!(bool)valid_delivery_insertions[delivery_r]) {
+                continue;
+              }
+
               float current_add;
               if (pickup_r == delivery_r) {
                 current_add = utils::addition_cost(input,
@@ -289,12 +309,6 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
                                                    pickup_r + 1);
               } else {
                 current_add = p_add + d_adds[delivery_r];
-                modified_with_pd.push_back(current_r.route[delivery_r - 1]);
-                const auto& new_modified_job =
-                  input.jobs[current_r.route[delivery_r - 1]];
-                if (new_modified_job.type == JOB_TYPE::SINGLE) {
-                  modified_delivery += new_modified_job.delivery;
-                }
               }
 
               float current_cost =
@@ -645,6 +659,9 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
         if (input.jobs[job_rank].type == JOB_TYPE::PICKUP) {
           // Pre-compute cost of addition for matching delivery.
           std::vector<Gain> d_adds(current_r.route.size() + 1);
+          std::vector<unsigned char> valid_delivery_insertions(
+            current_r.route.size() + 1);
+
           for (unsigned d_rank = 0; d_rank <= current_r.route.size();
                ++d_rank) {
             d_adds[d_rank] = utils::addition_cost(input,
@@ -653,6 +670,8 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
                                                   vehicle,
                                                   current_r.route,
                                                   d_rank);
+            valid_delivery_insertions[d_rank] =
+              current_r.is_valid_addition_for_tw(input, job_rank + 1, d_rank);
           }
 
           for (Index pickup_r = 0; pickup_r <= current_r.size(); ++pickup_r) {
@@ -679,6 +698,21 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
 
             for (Index delivery_r = pickup_r; delivery_r <= current_r.size();
                  ++delivery_r) {
+              // Update state variables along the way before potential
+              // early abort.
+              if (pickup_r < delivery_r) {
+                modified_with_pd.push_back(current_r.route[delivery_r - 1]);
+                const auto& new_modified_job =
+                  input.jobs[current_r.route[delivery_r - 1]];
+                if (new_modified_job.type == JOB_TYPE::SINGLE) {
+                  modified_delivery += new_modified_job.delivery;
+                }
+              }
+
+              if (!(bool)valid_delivery_insertions[delivery_r]) {
+                continue;
+              }
+
               float current_add;
               if (pickup_r == delivery_r) {
                 current_add = utils::addition_cost(input,
@@ -690,12 +724,6 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
                                                    pickup_r + 1);
               } else {
                 current_add = p_add + d_adds[delivery_r];
-                modified_with_pd.push_back(current_r.route[delivery_r - 1]);
-                const auto& new_modified_job =
-                  input.jobs[current_r.route[delivery_r - 1]];
-                if (new_modified_job.type == JOB_TYPE::SINGLE) {
-                  modified_delivery += new_modified_job.delivery;
-                }
               }
 
               float current_cost =

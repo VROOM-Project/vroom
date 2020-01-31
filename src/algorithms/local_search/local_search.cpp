@@ -207,6 +207,9 @@ void LocalSearch<Route,
 
           // Pre-compute cost of addition for matching delivery.
           std::vector<Gain> d_adds(_sol[v].route.size() + 1);
+          std::vector<unsigned char> valid_delivery_insertions(
+            _sol[v].route.size() + 1);
+
           for (unsigned d_rank = 0; d_rank <= _sol[v].route.size(); ++d_rank) {
             d_adds[d_rank] = utils::addition_cost(_input,
                                                   _matrix,
@@ -214,6 +217,8 @@ void LocalSearch<Route,
                                                   v_target,
                                                   _sol[v].route,
                                                   d_rank);
+            valid_delivery_insertions[d_rank] =
+              _sol[v].is_valid_addition_for_tw(_input, j + 1, d_rank);
           }
 
           for (Index pickup_r = 0; pickup_r <= _sol[v].size(); ++pickup_r) {
@@ -237,6 +242,21 @@ void LocalSearch<Route,
 
             for (Index delivery_r = pickup_r; delivery_r <= _sol[v].size();
                  ++delivery_r) {
+              // Update state variables along the way before potential
+              // early abort.
+              if (pickup_r < delivery_r) {
+                modified_with_pd.push_back(_sol[v].route[delivery_r - 1]);
+                const auto& new_modified_job =
+                  _input.jobs[_sol[v].route[delivery_r - 1]];
+                if (new_modified_job.type == JOB_TYPE::SINGLE) {
+                  modified_delivery += new_modified_job.delivery;
+                }
+              }
+
+              if (!(bool)valid_delivery_insertions[delivery_r]) {
+                continue;
+              }
+
               Gain pd_cost;
               if (pickup_r == delivery_r) {
                 pd_cost = utils::addition_cost(_input,
@@ -248,12 +268,6 @@ void LocalSearch<Route,
                                                pickup_r + 1);
               } else {
                 pd_cost = p_add + d_adds[delivery_r];
-                modified_with_pd.push_back(_sol[v].route[delivery_r - 1]);
-                const auto& new_modified_job =
-                  _input.jobs[_sol[v].route[delivery_r - 1]];
-                if (new_modified_job.type == JOB_TYPE::SINGLE) {
-                  modified_delivery += new_modified_job.delivery;
-                }
               }
 
               // Normalize cost per job for consistency with single jobs.

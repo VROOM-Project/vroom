@@ -65,6 +65,8 @@ void PDShift::compute_gain() {
   // way.
 
   std::vector<Gain> t_d_gains(t_route.size() + 1);
+  std::vector<unsigned char> valid_delivery_insertions(t_route.size() + 1);
+
   for (unsigned t_d_rank = 0; t_d_rank <= t_route.size(); ++t_d_rank) {
     t_d_gains[t_d_rank] = -utils::addition_cost(_input,
                                                 m,
@@ -72,6 +74,8 @@ void PDShift::compute_gain() {
                                                 v,
                                                 t_route,
                                                 t_d_rank);
+    valid_delivery_insertions[t_d_rank] =
+      target.is_valid_addition_for_tw(_input, s_route[_s_d_rank], t_d_rank);
   }
 
   for (unsigned t_p_rank = 0; t_p_rank < t_route.size(); ++t_p_rank) {
@@ -102,6 +106,20 @@ void PDShift::compute_gain() {
     Amount modified_delivery = _input.zero_amount();
 
     for (unsigned t_d_rank = t_p_rank; t_d_rank <= t_route.size(); ++t_d_rank) {
+      // Update state variables along the way before potential early
+      // abort.
+      if (t_p_rank < t_d_rank) {
+        modified_with_pd.push_back(t_route[t_d_rank - 1]);
+        const auto& new_modified_job = _input.jobs[t_route[t_d_rank - 1]];
+        if (new_modified_job.type == JOB_TYPE::SINGLE) {
+          modified_delivery += new_modified_job.delivery;
+        }
+      }
+
+      if (!(bool)valid_delivery_insertions[t_d_rank]) {
+        continue;
+      }
+
       Gain target_gain;
       if (t_p_rank == t_d_rank) {
         target_gain = -utils::addition_cost(_input,
@@ -113,11 +131,6 @@ void PDShift::compute_gain() {
                                             t_p_rank + 1);
       } else {
         target_gain = t_p_gain + t_d_gains[t_d_rank];
-        modified_with_pd.push_back(t_route[t_d_rank - 1]);
-        const auto& new_modified_job = _input.jobs[t_route[t_d_rank - 1]];
-        if (new_modified_job.type == JOB_TYPE::SINGLE) {
-          modified_delivery += new_modified_job.delivery;
-        }
       }
 
       if (_remove_gain + target_gain > stored_gain) {
