@@ -1,6 +1,6 @@
 # Changelog
 
-## [v1.5.0] - 2019-10-14
+## [Unreleased]
 
 ### Added
 
@@ -10,6 +10,7 @@
 ### Changed
 
 - Steps `type` in json output can also have value `pickup` and `delivery` (#274)
+- Extended range for valid priority values (#287)
 
 ### Fixed
 

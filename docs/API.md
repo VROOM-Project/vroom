@@ -44,7 +44,7 @@ A `job` object has the following properties:
 | [`delivery`] | an array of integers describing multidimensional quantities for delivery |
 | [`pickup`] | an array of integers describing multidimensional quantities for pickup |
 | [`skills`] | an array of integers defining mandatory skills |
-| [`priority`] | an integer in the `[0, 10]` range describing priority level (defaults to 0) |
+| [`priority`] | an integer in the `[0, 100]` range describing priority level (defaults to 0) |
 | [`time_windows`] | an array of `time_window` objects describing valid slots for job service start |
 
 ## Shipments
