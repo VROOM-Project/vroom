@@ -56,7 +56,12 @@ OsrmRoutedWrapper::get_matrix(const std::vector<Location>& locs) const {
   std::string response = this->send_then_receive(query);
 
   // Removing headers.
-  std::string json_content = response.substr(response.find("{"));
+  auto start = response.find("{");
+  assert(start != std::string::npos);
+  auto end = response.rfind("}");
+  assert(end != std::string::npos);
+
+  std::string json_content = response.substr(start, end - start + 1);
 
   // Expected matrix size.
   std::size_t m_size = locs.size();

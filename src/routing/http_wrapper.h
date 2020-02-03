@@ -25,6 +25,8 @@ protected:
 
   std::string send_then_receive(std::string query) const;
 
+  std::string ssl_send_then_receive(std::string query) const;
+
   virtual std::string build_query(const std::vector<Location>& locations,
                                   std::string service,
                                   std::string extra_args) const = 0;
