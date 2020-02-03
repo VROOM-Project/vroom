@@ -11,6 +11,7 @@
 
 - Steps `type` in json output can also have value `pickup` and `delivery` (#274)
 - Extended range for valid priority values (#287)
+- Use `operator&&` for short-circuit evaluation (#293)
 
 ### Fixed
 
