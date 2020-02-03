@@ -41,9 +41,11 @@ PDShift::PDShift(const Input& input,
 void PDShift::compute_gain() {
   // Check for valid removal wrt TW constraints.
   if (_s_d_rank == _s_p_rank + 1) {
-    _is_valid_removal &= _tw_s_route.is_valid_removal(_input, _s_p_rank, 2);
+    _is_valid_removal =
+      _is_valid_removal && _tw_s_route.is_valid_removal(_input, _s_p_rank, 2);
   } else {
-    _is_valid_removal &=
+    _is_valid_removal =
+      _is_valid_removal &&
       _tw_s_route.is_valid_addition_for_tw(_input,
                                            _source_without_pd.begin(),
                                            _source_without_pd.end(),
@@ -143,15 +145,17 @@ void PDShift::compute_gain() {
                                                       modified_with_pd.end(),
                                                       t_p_rank,
                                                       t_d_rank);
-        valid &= _tw_t_route.is_valid_addition_for_tw(_input,
-                                                      modified_with_pd.begin(),
-                                                      modified_with_pd.end(),
-                                                      t_p_rank,
-                                                      t_d_rank);
+        valid = valid &&
+                _tw_t_route.is_valid_addition_for_tw(_input,
+                                                     modified_with_pd.begin(),
+                                                     modified_with_pd.end(),
+                                                     t_p_rank,
+                                                     t_d_rank);
 
         // Checking for removal validity is like checking insertion of
         // source portion without P&D in place.
-        valid &=
+        valid =
+          valid &&
           _tw_s_route.is_valid_addition_for_tw(_input,
                                                s_route.begin() + _s_p_rank + 1,
                                                s_route.begin() + _s_d_rank,

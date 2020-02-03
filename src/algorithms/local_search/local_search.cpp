@@ -289,7 +289,8 @@ void LocalSearch<Route,
                                                               pickup_r,
                                                               delivery_r);
 
-                is_valid &=
+                is_valid =
+                  is_valid &&
                   _sol[v].is_valid_addition_for_tw(_input,
                                                    modified_with_pd.begin(),
                                                    modified_with_pd.end(),
