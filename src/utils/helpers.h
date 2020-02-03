@@ -94,6 +94,8 @@ inline Gain addition_cost(const Input& input,
                           const Vehicle& v,
                           const std::vector<Index>& route,
                           Index rank) {
+  assert(rank <= route.size());
+
   Index job_index = input.jobs[job_rank].index();
   Gain previous_cost = 0;
   Gain next_cost = 0;
@@ -139,6 +141,55 @@ inline Gain addition_cost(const Input& input,
   return previous_cost + next_cost - old_edge_cost;
 }
 
+// Compute cost of adding pickup with rank job_rank and associated
+// delivery (with rank job_rank + 1) in given route for vehicle
+// v. Pickup is inserted at pickup_rank in route and delivery is
+// inserted at delivery_rank in route **with pickup**.
+inline Gain addition_cost(const Input& input,
+                          const Matrix<Cost>& m,
+                          Index job_rank,
+                          const Vehicle& v,
+                          const std::vector<Index>& route,
+                          Index pickup_rank,
+                          Index delivery_rank) {
+  assert(pickup_rank < delivery_rank and delivery_rank <= route.size() + 1);
+
+  // Start with pickup cost.
+  auto cost = addition_cost(input, m, job_rank, v, route, pickup_rank);
+
+  if (delivery_rank == pickup_rank + 1) {
+    // Delivery is inserted just after pickup.
+    Index p_index = input.jobs[job_rank].index();
+    Index d_index = input.jobs[job_rank + 1].index();
+    cost += m[p_index][d_index];
+
+    Gain after_delivery = 0;
+    Gain remove_after_pickup = 0;
+
+    if (pickup_rank == route.size()) {
+      // Addition at the end of a route.
+      if (v.has_end()) {
+        after_delivery = m[d_index][v.end.get().index()];
+        remove_after_pickup = m[p_index][v.end.get().index()];
+      }
+    } else {
+      // There is a job after insertion.
+      Index next_index = input.jobs[route[pickup_rank]].index();
+      after_delivery = m[d_index][next_index];
+      remove_after_pickup = m[p_index][next_index];
+    }
+
+    cost += after_delivery;
+    cost -= remove_after_pickup;
+  } else {
+    // Delivery is further away so edges sets for pickup and delivery
+    // addition are disjoint.
+    cost += addition_cost(input, m, job_rank + 1, v, route, delivery_rank - 1);
+  }
+
+  return cost;
+}
+
 inline Cost priority_sum_for_route(const Input& input,
                                    const std::vector<Index>& route) {
   return std::accumulate(route.begin(),
@@ -175,6 +226,23 @@ inline Cost route_cost_for_vehicle(const Input& input,
   return cost;
 }
 
+inline void check_precedence(const Input& input,
+                             std::unordered_set<Index>& expected_delivery_ranks,
+                             Index job_rank) {
+  switch (input.jobs[job_rank].type) {
+  case JOB_TYPE::SINGLE:
+    break;
+  case JOB_TYPE::PICKUP:
+    expected_delivery_ranks.insert(job_rank + 1);
+    break;
+  case JOB_TYPE::DELIVERY:
+    // Associated pickup has been done before.
+    auto search = expected_delivery_ranks.find(job_rank);
+    assert(search != expected_delivery_ranks.end());
+    expected_delivery_ranks.erase(search);
+  }
+}
+
 inline Solution format_solution(const Input& input,
                                 const RawSolution& raw_routes) {
   const auto& m = input.get_matrix();
@@ -196,9 +264,10 @@ inline Solution format_solution(const Input& input,
 
     Cost cost = 0;
     Duration service = 0;
-    Amount amount(input.zero_amount());
     Amount sum_pickups(input.zero_amount());
-    Amount current_load = raw_routes[i].get_load(0); // All deliveries.
+    Amount sum_deliveries(input.zero_amount());
+    std::unordered_set<Index> expected_delivery_ranks;
+    Amount current_load = raw_routes[i].get_startup_load();
     assert(current_load <= v.capacity);
 
     // Steps for current route.
@@ -219,12 +288,14 @@ inline Solution format_solution(const Input& input,
     assert(input.vehicle_ok_with_job(i, route.front()));
     auto& first_job = input.jobs[route.front()];
     service += first_job.service;
-    amount += first_job.delivery;
 
-    current_load -= first_job.delivery;
     current_load += first_job.pickup;
+    current_load -= first_job.delivery;
     sum_pickups += first_job.pickup;
+    sum_deliveries += first_job.delivery;
     assert(current_load <= v.capacity);
+
+    check_precedence(input, expected_delivery_ranks, route.front());
 
     steps.emplace_back(first_job, current_load);
     auto& first = steps.back();
@@ -242,12 +313,14 @@ inline Solution format_solution(const Input& input,
 
       auto& current_job = input.jobs[route[r + 1]];
       service += current_job.service;
-      amount += current_job.delivery;
 
-      current_load -= current_job.delivery;
       current_load += current_job.pickup;
+      current_load -= current_job.delivery;
       sum_pickups += current_job.pickup;
+      sum_deliveries += current_job.delivery;
       assert(current_load <= v.capacity);
+
+      check_precedence(input, expected_delivery_ranks, route[r + 1]);
 
       steps.emplace_back(current_job, current_load);
       auto& current = steps.back();
@@ -268,8 +341,7 @@ inline Solution format_solution(const Input& input,
       steps.back().arrival = ETA;
     }
 
-    assert(amount <= v.capacity);
-    assert(current_load == sum_pickups);
+    assert(expected_delivery_ranks.empty());
 
     routes.emplace_back(v.id,
                         std::move(steps),
@@ -277,7 +349,7 @@ inline Solution format_solution(const Input& input,
                         service,
                         cost,
                         0,
-                        raw_routes[i].get_load(0), // all deliveries
+                        sum_deliveries,
                         sum_pickups);
   }
 
@@ -325,9 +397,10 @@ inline Route format_route(const Input& input,
 
   Cost cost = 0;
   Duration service = 0;
-  Amount amount(input.zero_amount());
   Amount sum_pickups(input.zero_amount());
-  Amount current_load = tw_r.get_load(0); // All deliveries.
+  Amount sum_deliveries(input.zero_amount());
+  std::unordered_set<Index> expected_delivery_ranks;
+  Amount current_load = tw_r.get_startup_load();
   assert(current_load <= v.capacity);
 
   // Steps for current route.
@@ -352,12 +425,14 @@ inline Route format_route(const Input& input,
   assert(input.vehicle_ok_with_job(tw_r.vehicle_rank, tw_r.route.front()));
   auto& first_job = input.jobs[tw_r.route.front()];
   service += first_job.service;
-  amount += first_job.delivery;
 
-  current_load -= first_job.delivery;
   current_load += first_job.pickup;
+  current_load -= first_job.delivery;
   sum_pickups += first_job.pickup;
+  sum_deliveries += first_job.delivery;
   assert(current_load <= v.capacity);
+
+  check_precedence(input, expected_delivery_ranks, tw_r.route.front());
 
   steps.emplace_back(first_job, current_load);
   auto& first = steps.back();
@@ -376,12 +451,14 @@ inline Route format_route(const Input& input,
 
     auto& current_job = input.jobs[tw_r.route[r + 1]];
     service += current_job.service;
-    amount += current_job.delivery;
 
-    current_load -= current_job.delivery;
     current_load += current_job.pickup;
+    current_load -= current_job.delivery;
     sum_pickups += current_job.pickup;
+    sum_deliveries += current_job.delivery;
     assert(current_load <= v.capacity);
+
+    check_precedence(input, expected_delivery_ranks, tw_r.route[r + 1]);
 
     steps.emplace_back(current_job, current_load);
     auto& current = steps.back();
@@ -416,12 +493,12 @@ inline Route format_route(const Input& input,
     steps.back().arrival = v_end;
   }
 
-  assert(amount <= v.capacity);
-  assert(current_load == sum_pickups);
   assert(forward_wt == backward_wt);
   assert(steps.back().arrival + steps.back().waiting_time +
            steps.back().service - steps.front().arrival ==
          cost + service + forward_wt);
+
+  assert(expected_delivery_ranks.empty());
 
   return Route(v.id,
                std::move(steps),
@@ -429,7 +506,7 @@ inline Route format_route(const Input& input,
                service,
                cost,
                forward_wt,
-               tw_r.get_load(0), // All deliveries.
+               sum_deliveries,
                sum_pickups);
 }
 

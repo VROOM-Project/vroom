@@ -138,6 +138,9 @@ bool Exchange::is_valid() {
 
 void Exchange::apply() {
   std::swap(s_route[s_rank], t_route[t_rank]);
+
+  source.update_amounts(_input);
+  target.update_amounts(_input);
 }
 
 std::vector<Index> Exchange::addition_candidates() const {

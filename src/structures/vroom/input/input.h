@@ -39,6 +39,8 @@ private:
   bool _has_TW;
   bool _homogeneous_locations;
   bool _geometry;
+  bool _has_jobs;
+  bool _has_shipments;
   Matrix<Cost> _matrix;
   std::vector<Location> _locations;
   std::unordered_map<Location, Index> _locations_to_index;
@@ -51,6 +53,8 @@ private:
   const Amount _zero;
 
   std::unique_ptr<VRP> get_problem() const;
+
+  void check_job(Job& job);
 
   void check_cost_bound() const;
 
@@ -68,6 +72,8 @@ public:
 
   void add_job(const Job& job);
 
+  void add_shipment(const Job& pickup, const Job& delivery);
+
   void add_vehicle(const Vehicle& vehicle);
 
   void set_matrix(Matrix<Cost>&& m);
@@ -77,6 +83,10 @@ public:
   }
 
   bool has_skills() const;
+
+  bool has_jobs() const;
+
+  bool has_shipments() const;
 
   bool has_homogeneous_locations() const;
 

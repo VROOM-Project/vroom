@@ -182,7 +182,7 @@ rapidjson::Value to_json(const Step& s,
 
   json_step.AddMember("type", rapidjson::Value(), allocator);
   std::string str_type;
-  switch (s.type) {
+  switch (s.step_type) {
   case STEP_TYPE::START:
     str_type = "start";
     break;
@@ -190,7 +190,17 @@ rapidjson::Value to_json(const Step& s,
     str_type = "end";
     break;
   case STEP_TYPE::JOB:
-    str_type = "job";
+    switch (s.job_type) {
+    case JOB_TYPE::SINGLE:
+      str_type = "job";
+      break;
+    case JOB_TYPE::PICKUP:
+      str_type = "pickup";
+      break;
+    case JOB_TYPE::DELIVERY:
+      str_type = "delivery";
+      break;
+    }
     break;
   }
   json_step["type"].SetString(str_type.c_str(), str_type.size(), allocator);
@@ -199,7 +209,7 @@ rapidjson::Value to_json(const Step& s,
     json_step.AddMember("location", to_json(s.location, allocator), allocator);
   }
 
-  if (s.type == STEP_TYPE::JOB) {
+  if (s.step_type == STEP_TYPE::JOB) {
     json_step.AddMember("job", s.job, allocator);
     json_step.AddMember("service", s.service, allocator);
     json_step.AddMember("waiting_time", s.waiting_time, allocator);

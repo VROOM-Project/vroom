@@ -4,6 +4,21 @@
 
 ### Added
 
+- Support for pickup and delivery tasks (#274)
+- `shipments` array in input (#274)
+
+### Changed
+
+- Steps `type` in json output can also have value `pickup` and `delivery` (#274)
+
+### Fixed
+
+- Missing valid moves for intra Or-opt (#286)
+
+## [v1.5.0] - 2019-10-14
+
+### Added
+
 - Support for mixing independent pickups and deliveries (#241)
 - `pickup` and `delivery` keys for `job` in input and for `route` and `summary` in output (#262)
 - `load` key at `step` level in output (#262)

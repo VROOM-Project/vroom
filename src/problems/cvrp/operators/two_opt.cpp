@@ -138,6 +138,9 @@ void TwoOpt::apply() {
                  t_route.begin() + t_rank + 1 + nb_source,
                  t_route.end());
   t_route.erase(t_route.begin() + t_rank + 1 + nb_source, t_route.end());
+
+  source.update_amounts(_input);
+  target.update_amounts(_input);
 }
 
 std::vector<Index> TwoOpt::addition_candidates() const {

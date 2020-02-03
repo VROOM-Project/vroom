@@ -16,7 +16,8 @@ All rights reserved (see LICENSE).
 namespace vroom {
 
 struct Step {
-  const STEP_TYPE type;
+  const STEP_TYPE step_type;
+  const JOB_TYPE job_type;
   const Location location;
   const Id job;
   const Duration service;

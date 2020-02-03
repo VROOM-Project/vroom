@@ -29,7 +29,8 @@ template <class Route,
           class IntraCrossExchange,
           class IntraMixedExchange,
           class IntraRelocate,
-          class IntraOrOpt>
+          class IntraOrOpt,
+          class PDShift>
 class LocalSearch {
 private:
   const Input& _input;
@@ -49,6 +50,16 @@ private:
   void try_job_additions(const std::vector<Index>& routes, double regret_coeff);
 
   void run_ls_step();
+
+  // Compute "cost" between route at rank v_target and job with rank r
+  // in route at rank v. Relies on
+  // _sol_state.nearest_job_rank_in_routes_* being up to date.
+  Gain job_route_cost(Index v_target, Index v, Index r);
+
+  // Compute best cost of relocating job at rank r (resp. jobs at rank
+  // r1 and r2) in route v to any other (compatible) route.
+  Gain best_relocate_cost(Index v, Index r);
+  Gain best_relocate_cost(Index v, Index r1, Index r2);
 
   void remove_from_routes();
 
