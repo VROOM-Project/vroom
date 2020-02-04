@@ -58,7 +58,7 @@ std::string OrsWrapper::build_query(const std::vector<Location>& locations,
 
 Matrix<Cost> OrsWrapper::get_matrix(const std::vector<Location>& locs) const {
   std::string query = this->build_query(locs, "matrix");
-  std::string response = this->send_then_receive(query);
+  std::string response = this->run_query(query);
 
   // Removing headers.
   std::size_t json_start = response.find("{");
@@ -124,7 +124,7 @@ void OrsWrapper::add_route_info(Route& route) const {
 
   std::string query =
     this->build_query(ordered_locations, "directions", extra_args);
-  std::string response = this->send_then_receive(query);
+  std::string response = this->run_query(query);
 
   // Removing headers
   std::size_t json_start = response.find("{");

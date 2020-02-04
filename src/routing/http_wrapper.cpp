@@ -18,10 +18,12 @@ using boost::asio::ip::tcp;
 namespace vroom {
 namespace routing {
 
+const std::string HttpWrapper::HTTPS_PORT = "443";
+
 HttpWrapper::HttpWrapper(const Server& server) : _server(server) {
 }
 
-std::string HttpWrapper::send_then_receive(std::string query) const {
+std::string HttpWrapper::send_then_receive(const std::string& query) const {
   std::string response;
 
   try {
@@ -58,7 +60,7 @@ std::string HttpWrapper::send_then_receive(std::string query) const {
   return response;
 }
 
-std::string HttpWrapper::ssl_send_then_receive(std::string query) const {
+std::string HttpWrapper::ssl_send_then_receive(const std::string& query) const {
   std::string response;
 
   try {
@@ -98,6 +100,11 @@ std::string HttpWrapper::ssl_send_then_receive(std::string query) const {
                       _server.port);
   }
   return response;
+}
+
+std::string HttpWrapper::run_query(const std::string& query) const {
+  return (_server.port == HTTPS_PORT) ? ssl_send_then_receive(query)
+                                      : send_then_receive(query);
 }
 
 } // namespace routing

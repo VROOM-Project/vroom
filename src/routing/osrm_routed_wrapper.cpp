@@ -53,7 +53,7 @@ Matrix<Cost>
 OsrmRoutedWrapper::get_matrix(const std::vector<Location>& locs) const {
   std::string query = this->build_query(locs, "table");
 
-  std::string response = this->send_then_receive(query);
+  std::string response = this->run_query(query);
 
   // Removing headers.
   auto start = response.find("{");
@@ -120,7 +120,7 @@ void OsrmRoutedWrapper::add_route_info(Route& route) const {
     "alternatives=false&steps=false&overview=full&continue_straight=false";
 
   std::string query = this->build_query(ordered_locations, "route", extra_args);
-  std::string response = this->send_then_receive(query);
+  std::string response = this->run_query(query);
 
   // Removing headers
   std::string json_content = response.substr(response.find("{"));
