@@ -28,6 +28,7 @@ Input::Input(unsigned amount_size)
     _geometry(false),
     _has_jobs(false),
     _has_shipments(false),
+    _has_custom_matrix(false),
     _all_locations_have_coords(true),
     _amount_size(amount_size),
     _zero(_amount_size) {
@@ -223,6 +224,7 @@ void Input::add_vehicle(const Vehicle& vehicle) {
 }
 
 void Input::set_matrix(Matrix<Cost>&& m) {
+  _has_custom_matrix = true;
   _matrix = std::move(m);
 }
 
@@ -397,7 +399,7 @@ Solution Input::solve(unsigned exploration_level,
                     "Route geometry request with missing coordinates.");
   }
 
-  if (_matrix.size() < 2) {
+  if (!_has_custom_matrix) {
     // Call to routing engine if matrix not already provided.
     assert(_routing_wrapper);
     _matrix = _routing_wrapper->get_matrix(_locations);

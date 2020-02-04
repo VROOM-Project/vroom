@@ -17,6 +17,7 @@
 ### Fixed
 
 - Missing valid moves for intra Or-opt (#286)
+- Unwanted routing engine request with 1x1 custom matrix (#291)
 
 ## [v1.5.0] - 2019-10-14
 
