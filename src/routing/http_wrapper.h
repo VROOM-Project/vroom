@@ -17,13 +17,19 @@ namespace vroom {
 namespace routing {
 
 class HttpWrapper {
+private:
+  std::string send_then_receive(const std::string& query) const;
+
+  std::string ssl_send_then_receive(const std::string& query) const;
+
+  static const std::string HTTPS_PORT;
 
 protected:
   const Server _server;
 
   HttpWrapper(const Server& server);
 
-  std::string send_then_receive(std::string query) const;
+  std::string run_query(const std::string& query) const;
 
   virtual std::string build_query(const std::vector<Location>& locations,
                                   std::string service,

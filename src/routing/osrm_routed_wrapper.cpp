@@ -53,10 +53,7 @@ Matrix<Cost>
 OsrmRoutedWrapper::get_matrix(const std::vector<Location>& locs) const {
   std::string query = this->build_query(locs, "table");
 
-  std::string response = this->send_then_receive(query);
-
-  // Removing headers.
-  std::string json_content = response.substr(response.find("{"));
+  std::string json_content = this->run_query(query);
 
   // Expected matrix size.
   std::size_t m_size = locs.size();
@@ -115,10 +112,8 @@ void OsrmRoutedWrapper::add_route_info(Route& route) const {
     "alternatives=false&steps=false&overview=full&continue_straight=false";
 
   std::string query = this->build_query(ordered_locations, "route", extra_args);
-  std::string response = this->send_then_receive(query);
 
-  // Removing headers
-  std::string json_content = response.substr(response.find("{"));
+  std::string json_content = this->run_query(query);
 
   // Checking everything is fine in the response.
   rapidjson::Document infos;

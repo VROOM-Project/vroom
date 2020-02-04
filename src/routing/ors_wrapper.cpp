@@ -58,12 +58,7 @@ std::string OrsWrapper::build_query(const std::vector<Location>& locations,
 
 Matrix<Cost> OrsWrapper::get_matrix(const std::vector<Location>& locs) const {
   std::string query = this->build_query(locs, "matrix");
-  std::string response = this->send_then_receive(query);
-
-  // Removing headers.
-  std::size_t json_start = response.find("{");
-  std::size_t json_length = response.rfind("}") - json_start + 1;
-  std::string json_content = response.substr(json_start, json_length);
+  std::string json_content = this->run_query(query);
 
   // Expected matrix size.
   std::size_t m_size = locs.size();
@@ -124,12 +119,7 @@ void OrsWrapper::add_route_info(Route& route) const {
 
   std::string query =
     this->build_query(ordered_locations, "directions", extra_args);
-  std::string response = this->send_then_receive(query);
-
-  // Removing headers
-  std::size_t json_start = response.find("{");
-  std::size_t json_length = response.rfind("}") - json_start + 1;
-  std::string json_content = response.substr(json_start, json_length);
+  std::string json_content = this->run_query(query);
 
   // Checking everything is fine in the response.
   rapidjson::Document infos;
