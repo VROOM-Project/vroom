@@ -18,16 +18,22 @@ template <class T> UndirectedGraph<T>::UndirectedGraph() {
 
 template <class T>
 UndirectedGraph<T>::UndirectedGraph(const Matrix<T>& m) : _size(m.size()) {
+#ifndef NDEBUG
   bool matrix_ok = true;
+#endif
   _edges.reserve(_size * _size);
   _adjacency_list.reserve(_size);
   for (Index i = 0; i < _size; ++i) {
     _adjacency_list[i].reserve(_size);
   }
   for (Index i = 0; i < _size; ++i) {
-    matrix_ok &= (m[i][i] == INFINITE_COST);
+#ifndef NDEBUG
+    matrix_ok = matrix_ok && (m[i][i] == INFINITE_COST);
+#endif
     for (Index j = i + 1; j < _size; ++j) {
-      matrix_ok &= (m[i][j] == m[j][i]);
+#ifndef NDEBUG
+      matrix_ok = matrix_ok && (m[i][j] == m[j][i]);
+#endif
       _edges.emplace_back(i, j, m[i][j]);
       _adjacency_list[i].push_back(j);
       _adjacency_list[j].push_back(i);

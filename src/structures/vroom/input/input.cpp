@@ -91,7 +91,8 @@ void Input::check_job(Job& job) {
   }
 
   _matrix_used_index.insert(job.index());
-  _all_locations_have_coords &= job.location.has_coordinates();
+  _all_locations_have_coords =
+    _all_locations_have_coords && job.location.has_coordinates();
 }
 
 void Input::add_job(const Job& job) {
@@ -184,7 +185,8 @@ void Input::add_vehicle(const Vehicle& vehicle) {
     }
 
     _matrix_used_index.insert(start_loc.index());
-    _all_locations_have_coords &= start_loc.has_coordinates();
+    _all_locations_have_coords =
+      _all_locations_have_coords && start_loc.has_coordinates();
   }
 
   if (has_end) {
@@ -208,12 +210,14 @@ void Input::add_vehicle(const Vehicle& vehicle) {
     }
 
     _matrix_used_index.insert(end_loc.index());
-    _all_locations_have_coords &= end_loc.has_coordinates();
+    _all_locations_have_coords =
+      _all_locations_have_coords && end_loc.has_coordinates();
   }
 
   // Check for homogeneous locations among vehicles.
   if (vehicles.size() > 1) {
-    _homogeneous_locations &=
+    _homogeneous_locations =
+      _homogeneous_locations &&
       vehicles.front().has_same_locations(vehicles.back());
   }
 }
@@ -306,9 +310,8 @@ void Input::set_compatibility() {
         bool is_compatible = true;
         assert(!jobs[j].skills.empty());
         for (const auto& s : jobs[j].skills) {
-          auto search = v_skills.find(s);
-          is_compatible &= (search != v_skills.end());
-          if (!is_compatible) {
+          if (v_skills.find(s) == v_skills.end()) {
+            is_compatible = false;
             break;
           }
         }
@@ -335,15 +338,17 @@ void Input::set_compatibility() {
 
         if (is_compatible and _has_TW) {
           if (jobs[j].type == JOB_TYPE::SINGLE) {
-            is_compatible &= empty_route.is_valid_addition_for_tw(*this, j, 0);
+            is_compatible = is_compatible &&
+                            empty_route.is_valid_addition_for_tw(*this, j, 0);
           } else {
             assert(is_shipment_pickup);
             std::vector<Index> p_d({j, static_cast<Index>(j + 1)});
-            is_compatible &= empty_route.is_valid_addition_for_tw(*this,
-                                                                  p_d.begin(),
-                                                                  p_d.end(),
-                                                                  0,
-                                                                  0);
+            is_compatible =
+              is_compatible && empty_route.is_valid_addition_for_tw(*this,
+                                                                    p_d.begin(),
+                                                                    p_d.end(),
+                                                                    0,
+                                                                    0);
           }
         }
 

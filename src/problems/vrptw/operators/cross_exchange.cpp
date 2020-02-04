@@ -42,16 +42,18 @@ bool CrossExchange::is_valid() {
   if (valid) {
     // Keep target edge direction when inserting in source route.
     auto t_start = t_route.begin() + t_rank;
-    s_is_normal_valid &= _tw_s_route.is_valid_addition_for_tw(_input,
-                                                              t_start,
-                                                              t_start + 2,
-                                                              s_rank,
-                                                              s_rank + 2);
+    s_is_normal_valid =
+      s_is_normal_valid && _tw_s_route.is_valid_addition_for_tw(_input,
+                                                                t_start,
+                                                                t_start + 2,
+                                                                s_rank,
+                                                                s_rank + 2);
 
     if (check_t_reverse) {
       // Reverse target edge direction when inserting in source route.
       auto t_reverse_start = t_route.rbegin() + t_route.size() - 2 - t_rank;
-      s_is_reverse_valid &=
+      s_is_reverse_valid =
+        s_is_reverse_valid &&
         _tw_s_route.is_valid_addition_for_tw(_input,
                                              t_reverse_start,
                                              t_reverse_start + 2,
@@ -65,16 +67,18 @@ bool CrossExchange::is_valid() {
   if (valid) {
     // Keep source edge direction when inserting in target route.
     auto s_start = s_route.begin() + s_rank;
-    t_is_normal_valid &= _tw_t_route.is_valid_addition_for_tw(_input,
-                                                              s_start,
-                                                              s_start + 2,
-                                                              t_rank,
-                                                              t_rank + 2);
+    t_is_normal_valid =
+      t_is_normal_valid && _tw_t_route.is_valid_addition_for_tw(_input,
+                                                                s_start,
+                                                                s_start + 2,
+                                                                t_rank,
+                                                                t_rank + 2);
 
     if (check_s_reverse) {
       // Reverse source edge direction when inserting in target route.
       auto s_reverse_start = s_route.rbegin() + s_route.size() - 2 - s_rank;
-      t_is_reverse_valid &=
+      t_is_reverse_valid =
+        t_is_reverse_valid &&
         _tw_t_route.is_valid_addition_for_tw(_input,
                                              s_reverse_start,
                                              s_reverse_start + 2,

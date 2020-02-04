@@ -141,14 +141,15 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
                                             0);
         if (is_pickup) {
           std::vector<Index> p_d({job_rank, static_cast<Index>(job_rank + 1)});
-          is_valid &= current_r.is_valid_addition_for_tw(input,
-                                                         p_d.begin(),
-                                                         p_d.end(),
-                                                         0,
-                                                         0);
+          is_valid = is_valid && current_r.is_valid_addition_for_tw(input,
+                                                                    p_d.begin(),
+                                                                    p_d.end(),
+                                                                    0,
+                                                                    0);
         } else {
           assert(input.jobs[job_rank].type == JOB_TYPE::SINGLE);
-          is_valid &= current_r.is_valid_addition_for_tw(input, job_rank, 0);
+          is_valid =
+            is_valid && current_r.is_valid_addition_for_tw(input, job_rank, 0);
         }
 
         if (is_valid) {
@@ -329,7 +330,8 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
                                                               pickup_r,
                                                               delivery_r);
 
-                valid &=
+                valid =
+                  valid &&
                   current_r.is_valid_addition_for_tw(input,
                                                      modified_with_pd.begin(),
                                                      modified_with_pd.end(),
@@ -556,14 +558,15 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
 
         if (is_pickup) {
           std::vector<Index> p_d({job_rank, static_cast<Index>(job_rank + 1)});
-          is_valid &= current_r.is_valid_addition_for_tw(input,
-                                                         p_d.begin(),
-                                                         p_d.end(),
-                                                         0,
-                                                         0);
+          is_valid = is_valid && current_r.is_valid_addition_for_tw(input,
+                                                                    p_d.begin(),
+                                                                    p_d.end(),
+                                                                    0,
+                                                                    0);
         } else {
           assert(input.jobs[job_rank].type == JOB_TYPE::SINGLE);
-          is_valid &= current_r.is_valid_addition_for_tw(input, job_rank, 0);
+          is_valid =
+            is_valid && current_r.is_valid_addition_for_tw(input, job_rank, 0);
         }
 
         if (is_valid) {
@@ -744,7 +747,8 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
                                                               pickup_r,
                                                               delivery_r);
 
-                is_valid &=
+                is_valid =
+                  is_valid &&
                   current_r.is_valid_addition_for_tw(input,
                                                      modified_with_pd.begin(),
                                                      modified_with_pd.end(),

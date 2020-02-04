@@ -107,7 +107,7 @@ TSP::TSP(const Input& input, std::vector<Index> job_ranks, Index vehicle_rank)
   for (Index i = 0; i < _matrix.size(); ++i) {
     _symmetrized_matrix[i][i] = _matrix[i][i];
     for (Index j = i + 1; j < _matrix.size(); ++j) {
-      _is_symmetric &= (_matrix[i][j] == _matrix[j][i]);
+      _is_symmetric = _is_symmetric && (_matrix[i][j] == _matrix[j][i]);
       Cost val = sym_f(_matrix[i][j], _matrix[j][i]);
       _symmetrized_matrix[i][j] = val;
       _symmetrized_matrix[j][i] = val;

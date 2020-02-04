@@ -88,41 +88,46 @@ void TwoOpt::compute_gain() {
 bool TwoOpt::is_valid() {
   bool valid = (_sol_state.bwd_skill_rank[s_vehicle][t_vehicle] <= s_rank + 1);
 
-  valid &= (_sol_state.bwd_skill_rank[t_vehicle][s_vehicle] <= t_rank + 1);
+  valid =
+    valid && (_sol_state.bwd_skill_rank[t_vehicle][s_vehicle] <= t_rank + 1);
 
   auto t_delivery = target.delivery_in_range(t_rank + 1, t_route.size());
   auto t_pickup = target.pickup_in_range(t_rank + 1, t_route.size());
 
-  valid &= source.is_valid_addition_for_capacity_margins(_input,
-                                                         t_pickup,
-                                                         t_delivery,
-                                                         s_rank + 1,
-                                                         s_route.size());
+  valid =
+    valid && source.is_valid_addition_for_capacity_margins(_input,
+                                                           t_pickup,
+                                                           t_delivery,
+                                                           s_rank + 1,
+                                                           s_route.size());
 
   auto s_delivery = source.delivery_in_range(s_rank + 1, s_route.size());
   auto s_pickup = source.pickup_in_range(s_rank + 1, s_route.size());
 
-  valid &= target.is_valid_addition_for_capacity_margins(_input,
-                                                         s_pickup,
-                                                         s_delivery,
-                                                         t_rank + 1,
-                                                         t_route.size());
-
-  valid &= source.is_valid_addition_for_capacity_inclusion(_input,
-                                                           t_delivery,
-                                                           t_route.begin() +
-                                                             t_rank + 1,
-                                                           t_route.end(),
-                                                           s_rank + 1,
-                                                           s_route.size());
-
-  valid &= target.is_valid_addition_for_capacity_inclusion(_input,
+  valid =
+    valid && target.is_valid_addition_for_capacity_margins(_input,
+                                                           s_pickup,
                                                            s_delivery,
-                                                           s_route.begin() +
-                                                             s_rank + 1,
-                                                           s_route.end(),
                                                            t_rank + 1,
                                                            t_route.size());
+
+  valid =
+    valid && source.is_valid_addition_for_capacity_inclusion(_input,
+                                                             t_delivery,
+                                                             t_route.begin() +
+                                                               t_rank + 1,
+                                                             t_route.end(),
+                                                             s_rank + 1,
+                                                             s_route.size());
+
+  valid =
+    valid && target.is_valid_addition_for_capacity_inclusion(_input,
+                                                             s_delivery,
+                                                             s_route.begin() +
+                                                               s_rank + 1,
+                                                             s_route.end(),
+                                                             t_rank + 1,
+                                                             t_route.size());
 
   return valid;
 }

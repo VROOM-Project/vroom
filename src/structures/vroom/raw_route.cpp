@@ -209,7 +209,7 @@ bool RawRoute::is_valid_addition_for_capacity_inclusion(
     current_load += job.pickup;
     current_load -= job.delivery;
 
-    valid &= (current_load <= capacity);
+    valid = (current_load <= capacity);
   }
 
   return valid;

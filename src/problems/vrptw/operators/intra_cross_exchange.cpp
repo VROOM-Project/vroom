@@ -35,7 +35,8 @@ bool IntraCrossExchange::is_valid() {
   bool valid = cvrp::IntraCrossExchange::is_valid();
 
   if (valid) {
-    s_normal_t_normal_is_valid &=
+    s_normal_t_normal_is_valid =
+      s_normal_t_normal_is_valid &&
       _tw_s_route.is_valid_addition_for_tw(_input,
                                            _moved_jobs.begin(),
                                            _moved_jobs.end(),
@@ -45,7 +46,8 @@ bool IntraCrossExchange::is_valid() {
     std::swap(_moved_jobs[0], _moved_jobs[1]);
 
     if (check_t_reverse) {
-      s_normal_t_reverse_is_valid &=
+      s_normal_t_reverse_is_valid =
+        s_normal_t_reverse_is_valid &&
         _tw_s_route.is_valid_addition_for_tw(_input,
                                              _moved_jobs.begin(),
                                              _moved_jobs.end(),
@@ -57,7 +59,8 @@ bool IntraCrossExchange::is_valid() {
               _moved_jobs[_moved_jobs.size() - 1]);
 
     if (check_s_reverse and check_t_reverse) {
-      s_reverse_t_reverse_is_valid &=
+      s_reverse_t_reverse_is_valid =
+        s_reverse_t_reverse_is_valid &&
         _tw_s_route.is_valid_addition_for_tw(_input,
                                              _moved_jobs.begin(),
                                              _moved_jobs.end(),
@@ -68,7 +71,8 @@ bool IntraCrossExchange::is_valid() {
     std::swap(_moved_jobs[0], _moved_jobs[1]);
 
     if (check_s_reverse) {
-      s_reverse_t_normal_is_valid &=
+      s_reverse_t_normal_is_valid =
+        s_reverse_t_normal_is_valid &&
         _tw_s_route.is_valid_addition_for_tw(_input,
                                              _moved_jobs.begin(),
                                              _moved_jobs.end(),

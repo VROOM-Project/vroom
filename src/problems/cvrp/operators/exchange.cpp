@@ -113,9 +113,10 @@ bool Exchange::is_valid() {
   auto t_job_rank = t_route[t_rank];
 
   bool valid = _input.vehicle_ok_with_job(t_vehicle, s_job_rank);
-  valid &= _input.vehicle_ok_with_job(s_vehicle, t_job_rank);
+  valid = valid && _input.vehicle_ok_with_job(s_vehicle, t_job_rank);
 
-  valid &=
+  valid =
+    valid &&
     target.is_valid_addition_for_capacity_margins(_input,
                                                   _input.jobs[s_route[s_rank]]
                                                     .pickup,
@@ -124,7 +125,8 @@ bool Exchange::is_valid() {
                                                   t_rank,
                                                   t_rank + 1);
 
-  valid &=
+  valid =
+    valid &&
     source.is_valid_addition_for_capacity_margins(_input,
                                                   _input.jobs[t_route[t_rank]]
                                                     .pickup,

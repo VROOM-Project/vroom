@@ -186,7 +186,7 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
     // The situation where there is no TW candidate should have been
     // previously filtered by early abort above.
     assert(overlap_candidate != j.tws.end());
-    valid &= overlap_candidate->start <= new_latest;
+    valid = overlap_candidate->start <= new_latest;
   }
 
   return valid;
