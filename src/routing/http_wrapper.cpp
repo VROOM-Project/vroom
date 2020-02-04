@@ -57,7 +57,16 @@ std::string HttpWrapper::send_then_receive(const std::string& query) const {
                     "Failed to connect to " + _server.host + ":" +
                       _server.port);
   }
-  return response;
+
+  // Removing headers.
+  auto start = response.find("{");
+  assert(start != std::string::npos);
+  auto end = response.rfind("}");
+  assert(end != std::string::npos);
+
+  std::string json_content = response.substr(start, end - start + 1);
+
+  return json_content;
 }
 
 std::string HttpWrapper::ssl_send_then_receive(const std::string& query) const {
@@ -99,7 +108,16 @@ std::string HttpWrapper::ssl_send_then_receive(const std::string& query) const {
                     "Failed to connect to " + _server.host + ":" +
                       _server.port);
   }
-  return response;
+
+  // Removing headers.
+  auto start = response.find("{");
+  assert(start != std::string::npos);
+  auto end = response.rfind("}");
+  assert(end != std::string::npos);
+
+  std::string json_content = response.substr(start, end - start + 1);
+
+  return json_content;
 }
 
 std::string HttpWrapper::run_query(const std::string& query) const {
