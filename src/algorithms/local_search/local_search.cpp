@@ -452,17 +452,21 @@ void LocalSearch<Route,
         }
 
         for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
-          if (_input.jobs[_sol[s_t.first].route[s_rank]].type !=
-              JOB_TYPE::SINGLE) {
-            // Don't try moving (part of) a shipment.
+          const auto& s_job_rank = _sol[s_t.first].route[s_rank];
+          if (_input.jobs[s_job_rank].type != JOB_TYPE::SINGLE or
+              !_input.vehicle_ok_with_job(s_t.second, s_job_rank)) {
+            // Don't try moving (part of) a shipment or an
+            // incompatible job.
             continue;
           }
 
           for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size();
                ++t_rank) {
-            if (_input.jobs[_sol[s_t.second].route[t_rank]].type !=
-                JOB_TYPE::SINGLE) {
-              // Don't try moving (part of) a shipment.
+            const auto& t_job_rank = _sol[s_t.second].route[t_rank];
+            if (_input.jobs[t_job_rank].type != JOB_TYPE::SINGLE or
+                !_input.vehicle_ok_with_job(s_t.first, t_job_rank)) {
+              // Don't try moving (part of) a shipment or an
+              // incompatible job.
               continue;
             }
 
