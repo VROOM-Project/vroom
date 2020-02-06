@@ -691,12 +691,24 @@ void LocalSearch<Route,
         continue;
       }
 
-      for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
+      // Determine first rank for inner loop based on vehicles/jobs
+      // compatibility along the routes.
+      unsigned first_s_rank = 0;
+      const auto first_s_candidate =
+        _sol_state.bwd_skill_rank[s_t.first][s_t.second];
+      if (first_s_candidate > 0) {
+        first_s_rank = first_s_candidate - 1;
+      }
+
+      for (unsigned s_rank = first_s_rank; s_rank < _sol[s_t.first].size();
+           ++s_rank) {
         if (_sol[s_t.first].has_delivery_after_rank(s_rank)) {
           continue;
         }
 
-        for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size(); ++t_rank) {
+        for (unsigned t_rank = 0;
+             t_rank < _sol_state.fwd_skill_rank[s_t.second][s_t.first];
+             ++t_rank) {
           if (_sol[s_t.second].has_pickup_up_to_rank(t_rank)) {
             continue;
           }
