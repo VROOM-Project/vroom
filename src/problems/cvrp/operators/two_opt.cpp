@@ -33,6 +33,9 @@ TwoOpt::TwoOpt(const Input& input,
   assert(t_route.size() >= 1);
   assert(s_rank < s_route.size());
   assert(t_rank < t_route.size());
+
+  assert(_sol_state.bwd_skill_rank[s_vehicle][t_vehicle] <= s_rank + 1);
+  assert(_sol_state.bwd_skill_rank[t_vehicle][s_vehicle] <= t_rank + 1);
 }
 
 void TwoOpt::compute_gain() {
@@ -86,20 +89,14 @@ void TwoOpt::compute_gain() {
 }
 
 bool TwoOpt::is_valid() {
-  bool valid = (_sol_state.bwd_skill_rank[s_vehicle][t_vehicle] <= s_rank + 1);
-
-  valid =
-    valid && (_sol_state.bwd_skill_rank[t_vehicle][s_vehicle] <= t_rank + 1);
-
   auto t_delivery = target.delivery_in_range(t_rank + 1, t_route.size());
   auto t_pickup = target.pickup_in_range(t_rank + 1, t_route.size());
 
-  valid =
-    valid && source.is_valid_addition_for_capacity_margins(_input,
-                                                           t_pickup,
-                                                           t_delivery,
-                                                           s_rank + 1,
-                                                           s_route.size());
+  bool valid = source.is_valid_addition_for_capacity_margins(_input,
+                                                             t_pickup,
+                                                             t_delivery,
+                                                             s_rank + 1,
+                                                             s_route.size());
 
   auto s_delivery = source.delivery_in_range(s_rank + 1, s_route.size());
   auto s_pickup = source.pickup_in_range(s_rank + 1, s_route.size());

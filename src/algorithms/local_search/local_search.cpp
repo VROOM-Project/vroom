@@ -640,12 +640,30 @@ void LocalSearch<Route,
         continue;
       }
 
-      for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
+      // Determine first ranks for inner loops based on vehicles/jobs
+      // compatibility along the routes.
+      unsigned first_s_rank = 0;
+      const auto first_s_candidate =
+        _sol_state.bwd_skill_rank[s_t.first][s_t.second];
+      if (first_s_candidate > 0) {
+        first_s_rank = first_s_candidate - 1;
+      }
+
+      int first_t_rank = 0;
+      const auto first_t_candidate =
+        _sol_state.bwd_skill_rank[s_t.second][s_t.first];
+      if (first_t_candidate > 0) {
+        first_t_rank = first_t_candidate - 1;
+      }
+
+      for (unsigned s_rank = first_s_rank; s_rank < _sol[s_t.first].size();
+           ++s_rank) {
         if (_sol[s_t.first].has_pending_delivery_after_rank(s_rank)) {
           continue;
         }
 
-        for (int t_rank = _sol[s_t.second].size() - 1; t_rank >= 0; --t_rank) {
+        for (int t_rank = _sol[s_t.second].size() - 1; t_rank >= first_t_rank;
+             --t_rank) {
           if (_sol[s_t.second].has_pending_delivery_after_rank(t_rank)) {
             continue;
           }
