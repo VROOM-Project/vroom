@@ -49,6 +49,11 @@ CrossExchange::CrossExchange(const Input& input,
   assert(s_rank < s_route.size() - 1);
   assert(t_rank < t_route.size() - 1);
 
+  assert(_input.vehicle_ok_with_job(t_vehicle, this->s_route[s_rank]));
+  assert(_input.vehicle_ok_with_job(t_vehicle, this->s_route[s_rank + 1]));
+  assert(_input.vehicle_ok_with_job(s_vehicle, this->t_route[t_rank]));
+  assert(_input.vehicle_ok_with_job(s_vehicle, this->t_route[t_rank + 1]));
+
   // Either moving edges of single jobs or whole shipments.
   assert((_input.jobs[this->s_route[s_rank]].type == JOB_TYPE::SINGLE and
           _input.jobs[this->s_route[s_rank + 1]].type == JOB_TYPE::SINGLE and
@@ -223,26 +228,16 @@ void CrossExchange::compute_gain() {
 }
 
 bool CrossExchange::is_valid() {
-  auto s_current_job_rank = s_route[s_rank];
-  auto t_current_job_rank = t_route[t_rank];
-  auto s_after_job_rank = s_route[s_rank + 1];
-  auto t_after_job_rank = t_route[t_rank + 1];
+  auto target_pickup = _input.jobs[t_route[t_rank]].pickup +
+                       _input.jobs[t_route[t_rank + 1]].pickup;
+  auto target_delivery = _input.jobs[t_route[t_rank]].delivery +
+                         _input.jobs[t_route[t_rank + 1]].delivery;
 
-  bool valid = _input.vehicle_ok_with_job(t_vehicle, s_current_job_rank);
-  valid = valid && _input.vehicle_ok_with_job(t_vehicle, s_after_job_rank);
-  valid = valid && _input.vehicle_ok_with_job(s_vehicle, t_current_job_rank);
-  valid = valid && _input.vehicle_ok_with_job(s_vehicle, t_after_job_rank);
-
-  auto target_pickup = _input.jobs[t_current_job_rank].pickup +
-                       _input.jobs[t_after_job_rank].pickup;
-  auto target_delivery = _input.jobs[t_current_job_rank].delivery +
-                         _input.jobs[t_after_job_rank].delivery;
-  valid =
-    valid && source.is_valid_addition_for_capacity_margins(_input,
-                                                           target_pickup,
-                                                           target_delivery,
-                                                           s_rank,
-                                                           s_rank + 2);
+  bool valid = source.is_valid_addition_for_capacity_margins(_input,
+                                                             target_pickup,
+                                                             target_delivery,
+                                                             s_rank,
+                                                             s_rank + 2);
 
   if (valid) {
     // Keep target edge direction when inserting in source route.
@@ -270,10 +265,10 @@ bool CrossExchange::is_valid() {
     valid = s_is_normal_valid or s_is_reverse_valid;
   }
 
-  auto source_pickup = _input.jobs[s_current_job_rank].pickup +
-                       _input.jobs[s_after_job_rank].pickup;
-  auto source_delivery = _input.jobs[s_current_job_rank].delivery +
-                         _input.jobs[s_after_job_rank].delivery;
+  auto source_pickup = _input.jobs[s_route[s_rank]].pickup +
+                       _input.jobs[s_route[s_rank + 1]].pickup;
+  auto source_delivery = _input.jobs[s_route[s_rank]].delivery +
+                         _input.jobs[s_route[s_rank + 1]].delivery;
 
   valid =
     valid && target.is_valid_addition_for_capacity_margins(_input,

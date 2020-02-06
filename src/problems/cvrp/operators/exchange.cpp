@@ -33,6 +33,8 @@ Exchange::Exchange(const Input& input,
   assert(t_route.size() >= 1);
   assert(s_rank < s_route.size());
   assert(t_rank < t_route.size());
+  assert(_input.vehicle_ok_with_job(t_vehicle, this->s_route[s_rank]));
+  assert(_input.vehicle_ok_with_job(s_vehicle, this->t_route[t_rank]));
 }
 
 void Exchange::compute_gain() {

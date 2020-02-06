@@ -496,6 +496,13 @@ void LocalSearch<Route,
       }
 
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1; ++s_rank) {
+        if (!_input.vehicle_ok_with_job(s_t.second,
+                                        _sol[s_t.first].route[s_rank]) or
+            !_input.vehicle_ok_with_job(s_t.second,
+                                        _sol[s_t.first].route[s_rank + 1])) {
+          continue;
+        }
+
         const auto& job_s_type =
           _input.jobs[_sol[s_t.first].route[s_rank]].type;
 
@@ -514,6 +521,13 @@ void LocalSearch<Route,
 
         for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size() - 1;
              ++t_rank) {
+          if (!_input.vehicle_ok_with_job(s_t.first,
+                                          _sol[s_t.second].route[t_rank]) or
+              !_input.vehicle_ok_with_job(s_t.first,
+                                          _sol[s_t.second].route[t_rank + 1])) {
+            continue;
+          }
+
           const auto& job_t_type =
             _input.jobs[_sol[s_t.second].route[t_rank]].type;
 
