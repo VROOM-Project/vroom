@@ -33,6 +33,8 @@ Exchange::Exchange(const Input& input,
   assert(t_route.size() >= 1);
   assert(s_rank < s_route.size());
   assert(t_rank < t_route.size());
+  assert(_input.vehicle_ok_with_job(t_vehicle, this->s_route[s_rank]));
+  assert(_input.vehicle_ok_with_job(s_vehicle, this->t_route[t_rank]));
 }
 
 void Exchange::compute_gain() {
@@ -109,14 +111,7 @@ void Exchange::compute_gain() {
 }
 
 bool Exchange::is_valid() {
-  auto s_job_rank = s_route[s_rank];
-  auto t_job_rank = t_route[t_rank];
-
-  bool valid = _input.vehicle_ok_with_job(t_vehicle, s_job_rank);
-  valid = valid && _input.vehicle_ok_with_job(s_vehicle, t_job_rank);
-
-  valid =
-    valid &&
+  bool valid =
     target.is_valid_addition_for_capacity_margins(_input,
                                                   _input.jobs[s_route[s_rank]]
                                                     .pickup,

@@ -33,6 +33,8 @@ Relocate::Relocate(const Input& input,
   assert(s_route.size() >= 1);
   assert(s_rank < s_route.size());
   assert(t_rank <= t_route.size());
+
+  assert(_input.vehicle_ok_with_job(t_vehicle, this->s_route[s_rank]));
 }
 
 void Relocate::compute_gain() {
@@ -53,13 +55,11 @@ void Relocate::compute_gain() {
 }
 
 bool Relocate::is_valid() {
-  return _input.vehicle_ok_with_job(t_vehicle, s_route[s_rank]) and
-         target
-           .is_valid_addition_for_capacity(_input,
-                                           _input.jobs[s_route[s_rank]].pickup,
-                                           _input.jobs[s_route[s_rank]]
-                                             .delivery,
-                                           t_rank);
+  return target
+    .is_valid_addition_for_capacity(_input,
+                                    _input.jobs[s_route[s_rank]].pickup,
+                                    _input.jobs[s_route[s_rank]].delivery,
+                                    t_rank);
 }
 
 void Relocate::apply() {

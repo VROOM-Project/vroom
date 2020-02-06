@@ -43,6 +43,10 @@ MixedExchange::MixedExchange(const Input& input,
   assert(s_rank < s_route.size());
   assert(t_rank < t_route.size() - 1);
 
+  assert(_input.vehicle_ok_with_job(t_vehicle, this->s_route[s_rank]));
+  assert(_input.vehicle_ok_with_job(s_vehicle, this->t_route[t_rank]));
+  assert(_input.vehicle_ok_with_job(s_vehicle, this->t_route[t_rank + 1]));
+
   // Either moving edge with single jobs or a whole shipment.
   assert((_input.jobs[this->t_route[t_rank]].type == JOB_TYPE::SINGLE and
           _input.jobs[this->t_route[t_rank + 1]].type == JOB_TYPE::SINGLE and
@@ -174,27 +178,19 @@ void MixedExchange::compute_gain() {
 }
 
 bool MixedExchange::is_valid() {
-  auto s_job_rank = s_route[s_rank];
-  auto t_job_rank = t_route[t_rank];
-  auto t_after_job_rank = t_route[t_rank + 1];
+  bool valid =
+    target.is_valid_addition_for_capacity_margins(_input,
+                                                  _input.jobs[s_route[s_rank]]
+                                                    .pickup,
+                                                  _input.jobs[s_route[s_rank]]
+                                                    .delivery,
+                                                  t_rank,
+                                                  t_rank + 2);
 
-  bool valid = _input.vehicle_ok_with_job(t_vehicle, s_job_rank);
-  valid = valid && _input.vehicle_ok_with_job(s_vehicle, t_job_rank);
-  valid = valid && _input.vehicle_ok_with_job(s_vehicle, t_after_job_rank);
-
-  valid =
-    valid &&
-    target
-      .is_valid_addition_for_capacity_margins(_input,
-                                              _input.jobs[s_job_rank].pickup,
-                                              _input.jobs[s_job_rank].delivery,
-                                              t_rank,
-                                              t_rank + 2);
-
-  auto target_pickup =
-    _input.jobs[t_job_rank].pickup + _input.jobs[t_after_job_rank].pickup;
-  auto target_delivery =
-    _input.jobs[t_job_rank].delivery + _input.jobs[t_after_job_rank].delivery;
+  auto target_pickup = _input.jobs[t_route[t_rank]].pickup +
+                       _input.jobs[t_route[t_rank + 1]].pickup;
+  auto target_delivery = _input.jobs[t_route[t_rank]].delivery +
+                         _input.jobs[t_route[t_rank + 1]].delivery;
 
   valid =
     valid && source.is_valid_addition_for_capacity_margins(_input,
