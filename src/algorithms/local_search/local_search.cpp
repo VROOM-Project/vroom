@@ -719,8 +719,11 @@ void LocalSearch<Route,
             continue;
           }
 
-          if (_input.jobs[_sol[s_t.first].route[s_rank]].type !=
-              JOB_TYPE::SINGLE) {
+          const auto& s_job_rank = _sol[s_t.first].route[s_rank];
+          if (_input.jobs[s_job_rank].type != JOB_TYPE::SINGLE or
+              !_input.vehicle_ok_with_job(s_t.second, s_job_rank)) {
+            // Don't try moving (part of) a shipment or an
+            // incompatible job.
             continue;
           }
 
