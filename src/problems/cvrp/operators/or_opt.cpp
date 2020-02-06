@@ -36,6 +36,9 @@ OrOpt::OrOpt(const Input& input,
   assert(s_route.size() >= 2);
   assert(s_rank < s_route.size() - 1);
   assert(t_rank <= t_route.size());
+
+  assert(_input.vehicle_ok_with_job(t_vehicle, this->s_route[s_rank]));
+  assert(_input.vehicle_ok_with_job(t_vehicle, this->s_route[s_rank + 1]));
 }
 
 Gain OrOpt::gain_upper_bound() {
@@ -146,17 +149,12 @@ void OrOpt::compute_gain() {
 }
 
 bool OrOpt::is_valid() {
-  auto current_job_rank = s_route[s_rank];
-  auto after_job_rank = s_route[s_rank + 1];
+  auto edge_pickup = _input.jobs[s_route[s_rank]].pickup +
+                     _input.jobs[s_route[s_rank + 1]].pickup;
+  auto edge_delivery = _input.jobs[s_route[s_rank]].delivery +
+                       _input.jobs[s_route[s_rank + 1]].delivery;
 
-  auto edge_pickup =
-    _input.jobs[current_job_rank].pickup + _input.jobs[after_job_rank].pickup;
-  auto edge_delivery = _input.jobs[current_job_rank].delivery +
-                       _input.jobs[after_job_rank].delivery;
-
-  bool valid = _input.vehicle_ok_with_job(t_vehicle, current_job_rank) and
-               _input.vehicle_ok_with_job(t_vehicle, after_job_rank) and
-               target.is_valid_addition_for_capacity(_input,
+  bool valid = target.is_valid_addition_for_capacity(_input,
                                                      edge_pickup,
                                                      edge_delivery,
                                                      t_rank);

@@ -762,6 +762,13 @@ void LocalSearch<Route,
             continue;
           }
 
+          if (!_input.vehicle_ok_with_job(s_t.second,
+                                          _sol[s_t.first].route[s_rank]) or
+              !_input.vehicle_ok_with_job(s_t.second,
+                                          _sol[s_t.first].route[s_rank + 1])) {
+            continue;
+          }
+
           if (_input.jobs[_sol[s_t.first].route[s_rank]].type !=
                 JOB_TYPE::SINGLE or
               _input.jobs[_sol[s_t.first].route[s_rank + 1]].type !=
