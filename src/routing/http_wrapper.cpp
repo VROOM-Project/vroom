@@ -75,8 +75,8 @@ std::string HttpWrapper::ssl_send_then_receive(const std::string& query) const {
   try {
     boost::asio::io_service io_service;
 
-    boost::asio::ssl::context
-      ctx(io_service, boost::asio::ssl::context::method::sslv23_client);
+    boost::asio::ssl::context ctx(
+      boost::asio::ssl::context::method::sslv23_client);
     boost::asio::ssl::stream<boost::asio::ip::tcp::socket> ssock(io_service,
                                                                  ctx);
 
