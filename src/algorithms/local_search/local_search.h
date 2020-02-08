@@ -30,7 +30,8 @@ template <class Route,
           class IntraMixedExchange,
           class IntraRelocate,
           class IntraOrOpt,
-          class PDShift>
+          class PDShift,
+          class RouteExchange>
 class LocalSearch {
 private:
   const Input& _input;

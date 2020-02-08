@@ -14,6 +14,7 @@ namespace vroom {
 RawRoute::RawRoute(const Input& input, Index i)
   : _fwd_peaks(2, input.zero_amount()),
     _bwd_peaks(2, input.zero_amount()),
+    _max_load(input.zero_amount()),
     vehicle_rank(i),
     has_start(input.vehicles[i].has_start()),
     has_end(input.vehicles[i].has_end()),
@@ -33,6 +34,12 @@ std::size_t RawRoute::size() const {
   return route.size();
 }
 
+void RawRoute::update_max_load(const Amount& step_load) {
+  for (unsigned i = 0; i < step_load.size(); ++i) {
+    _max_load[i] = std::max(_max_load[i], step_load[i]);
+  }
+}
+
 void RawRoute::update_amounts(const Input& input) {
   auto step_size = route.size() + 2;
   _fwd_pickups.resize(route.size());
@@ -44,6 +51,8 @@ void RawRoute::update_amounts(const Input& input) {
   _current_loads.resize(step_size);
   _fwd_peaks.resize(step_size);
   _bwd_peaks.resize(step_size);
+
+  _max_load = input.zero_amount();
 
   if (route.empty()) {
     // So that check in is_valid_addition_for_capacity is consistent
@@ -92,12 +101,14 @@ void RawRoute::update_amounts(const Input& input) {
     _bwd_deliveries[bwd_i] = current_deliveries;
     _current_loads[bwd_i + 1] =
       _fwd_pickups[bwd_i] + _pd_loads[bwd_i] + current_deliveries;
+    update_max_load(_current_loads[bwd_i + 1]);
     const auto& job = input.jobs[route[bwd_i]];
     if (job.type == JOB_TYPE::SINGLE) {
       current_deliveries += job.delivery;
     }
   }
   _current_loads[0] = current_deliveries;
+  update_max_load(_current_loads[0]);
 
   auto peak = _current_loads[0];
   _fwd_peaks[0] = peak;
@@ -133,6 +144,10 @@ bool RawRoute::has_delivery_after_rank(const Index rank) const {
 bool RawRoute::has_pickup_up_to_rank(const Index rank) const {
   assert(rank < _nb_pickups.size());
   return 0 < _nb_pickups[rank];
+}
+
+const Amount& RawRoute::max_load() const {
+  return _max_load;
 }
 
 bool RawRoute::is_valid_addition_for_capacity(const Input&,

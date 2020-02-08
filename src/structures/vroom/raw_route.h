@@ -46,6 +46,11 @@ private:
   std::vector<Amount> _fwd_peaks;
   std::vector<Amount> _bwd_peaks;
 
+  // Stores max overall load for route, component-wise.
+  Amount _max_load;
+
+  void update_max_load(const Amount& step_load);
+
 public:
   Index vehicle_rank;
   bool has_start;
@@ -69,6 +74,8 @@ public:
   bool has_delivery_after_rank(const Index rank) const;
 
   bool has_pickup_up_to_rank(const Index rank) const;
+
+  const Amount& max_load() const;
 
   // Check validity for addition of a given load in current route at
   // rank.
