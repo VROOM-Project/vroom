@@ -29,7 +29,9 @@ RouteExchange::RouteExchange(const Input& input,
   assert(s_vehicle != t_vehicle);
   assert(s_route.size() >= 1 or t_route.size() >= 1);
 
-  // TODO asserts about compatibilities.
+  // Whole routes should be transferable.
+  assert(_sol_state.bwd_skill_rank[s_vehicle][t_vehicle] == 0);
+  assert(_sol_state.bwd_skill_rank[t_vehicle][s_vehicle] == 0);
 }
 
 void RouteExchange::compute_gain() {
