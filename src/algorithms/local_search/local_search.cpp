@@ -1161,11 +1161,13 @@ void LocalSearch<Route,
       // Route exchange stuff
       for (const auto& s_t : s_t_pairs) {
         if (s_t.first == s_t.second or
-            (_sol[s_t.first].size() == 0 and _sol[s_t.second].size() == 0)) {
+            (_sol[s_t.first].size() == 0 and _sol[s_t.second].size() == 0) or
+            _sol_state.bwd_skill_rank[s_t.first][s_t.second] > 0 or
+            _sol_state.bwd_skill_rank[s_t.second][s_t.first] > 0) {
+          // Different routes, at least one non-empty and valid wrt
+          // vehicle/job compatibility.
           continue;
         }
-
-        // TODO early abort based on incompatibilities.
 
         RouteExchange re(_input,
                          _sol_state,
