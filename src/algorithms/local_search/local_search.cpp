@@ -1160,12 +1160,12 @@ void LocalSearch<Route,
     if (!_input.has_homogeneous_locations()) {
       // Route exchange stuff
       for (const auto& s_t : s_t_pairs) {
-        if (s_t.first == s_t.second or
+        if (s_t.second <= s_t.first or
             (_sol[s_t.first].size() == 0 and _sol[s_t.second].size() == 0) or
             _sol_state.bwd_skill_rank[s_t.first][s_t.second] > 0 or
             _sol_state.bwd_skill_rank[s_t.second][s_t.first] > 0) {
-          // Different routes, at least one non-empty and valid wrt
-          // vehicle/job compatibility.
+          // Different routes (and operator is symmetric), at least
+          // one non-empty and valid wrt vehicle/job compatibility.
           continue;
         }
 
