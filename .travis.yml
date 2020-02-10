@@ -14,57 +14,46 @@ sudo: required
 matrix:
   include:
     - os: linux
-      # TODO restore when addons.apt.packages is enabled for bionic
-      # addons:
-      #   apt:
-      #     packages:
-      #       - g++-7
-      #       - libboost-all-dev
+      addons:
+        apt:
+          packages:
+            - g++-7
+            - libboost-all-dev
       env:
         - COMPILER=g++-7
-        - CXX-PACKAGE=g++-7
 
     - os: linux
-      # TODO restore when addons.apt.packages is enabled for bionic
-      # addons:
-      #   apt:
-      #     packages:
-      #       - g++-8
-      #       - libboost-all-dev
+      addons:
+        apt:
+          packages:
+            - g++-8
+            - libboost-all-dev
       env:
         - COMPILER=g++-8
-        - CXX-PACKAGE=g++-8
 
     - os: linux
-      # TODO restore when addons.apt.packages is enabled for bionic
-      # addons:
-      #   apt:
-      #     packages:
-      #       - clang-5.0
-      #       - libboost-all-dev
+      addons:
+        apt:
+          packages:
+            - clang-5.0
+            - libboost-all-dev
       env:
         - COMPILER=clang++-5.0
-        - CXX-PACKAGE=clang-5.0
 
     - os: linux
-      # TODO restore when addons.apt.packages is enabled for bionic
-      # addons:
-      #   apt:
-      #     packages:
-      #       - clang-6.0
-      #       - libboost-all-dev
+      addons:
+        apt:
+          packages:
+            - clang-6.0
+            - libboost-all-dev
       env:
         - COMPILER=clang++-6.0
-        - CXX-PACKAGE=clang-6.0
 
 before_script:
   - export ROOT_FOLDER="$(pwd)"
   - export BUILD_FOLDER="$(pwd)/src"
   - cd ${BUILD_FOLDER}
   - export CXX=${COMPILER}
-  # TODO remove when addons.apt.packages is enabled for bionic
-  - sudo apt-get install -y ${CXX-PACKAGE}
-  - sudo apt-get install -y libboost-all-dev
   - ${CXX} --version
 
 script:
