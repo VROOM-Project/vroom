@@ -15,6 +15,7 @@
 - Extended range for valid priority values (#287)
 - Use `operator&&` for short-circuit evaluation (#293)
 - Earlier local search aborts based on incompatibilities (#281)
+- Travis script update (#301)
 
 ### Fixed
 
