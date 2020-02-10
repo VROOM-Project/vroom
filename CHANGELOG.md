@@ -7,6 +7,7 @@
 - Support for pickup and delivery tasks (#274)
 - `shipments` array in input (#274)
 - Use https for routing requests over port 443 (#289)
+- New local search operator for route exchange (#288)
 
 ### Changed
 

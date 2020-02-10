@@ -135,6 +135,10 @@ bool RawRoute::has_pickup_up_to_rank(const Index rank) const {
   return 0 < _nb_pickups[rank];
 }
 
+const Amount& RawRoute::max_load() const {
+  return _fwd_peaks.back();
+}
+
 bool RawRoute::is_valid_addition_for_capacity(const Input&,
                                               const Amount& pickup,
                                               const Amount& delivery,

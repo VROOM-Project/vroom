@@ -25,6 +25,7 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/operators/pd_shift.h"
 #include "problems/cvrp/operators/relocate.h"
 #include "problems/cvrp/operators/reverse_two_opt.h"
+#include "problems/cvrp/operators/route_exchange.h"
 #include "problems/cvrp/operators/two_opt.h"
 #include "problems/tsp/tsp.h"
 #include "structures/vroom/input/input.h"
@@ -48,7 +49,8 @@ using LocalSearch = ls::LocalSearch<RawRoute,
                                     cvrp::IntraMixedExchange,
                                     cvrp::IntraRelocate,
                                     cvrp::IntraOrOpt,
-                                    cvrp::PDShift>;
+                                    cvrp::PDShift,
+                                    cvrp::RouteExchange>;
 
 const std::vector<HeuristicParameters> CVRP::homogeneous_parameters =
   {HeuristicParameters(HEURISTIC::BASIC, INIT::NONE, 0.3),
