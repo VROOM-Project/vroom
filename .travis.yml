@@ -71,6 +71,7 @@ script:
   - CHANGED_FILES=`git diff --name-only master ${TRAVIS_COMMIT}`
   # Check build without libosrm only if source files have been
   # modified.
+  - echo ${CHANGED_FILES}
   - if echo ${CHANGED_FILES} | grep -v -e "\.h" -e "\.cpp"; then travis_terminate 0; fi
   - make
   # Check build with libosrm installed only on master and if relevant
