@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [v1.6.0] - 2020-02-18
+
 ### Added
 
 - Support for pickup and delivery tasks (#274)

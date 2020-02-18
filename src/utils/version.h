@@ -11,7 +11,7 @@ All rights reserved (see LICENSE).
 */
 
 #define MAJOR 1
-#define MINOR 6
+#define MINOR 7
 #define PATCH 0
 #define DEV 1
 #define RC 0
