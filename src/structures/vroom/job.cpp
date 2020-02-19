@@ -10,7 +10,7 @@ All rights reserved (see LICENSE).
 #include <numeric>
 
 #include "structures/vroom/job.h"
-#include "utils/exception.h"
+#include "utils/helpers.h"
 
 namespace vroom {
 
@@ -39,7 +39,7 @@ Job::Job(Id id,
     priority(priority),
     tws(tws),
     tw_length(get_tw_length(tws)) {
-  check_tws();
+  utils::check_tws(tws);
 }
 
 Job::Job(Id id,
@@ -61,7 +61,7 @@ Job::Job(Id id,
     tws(tws),
     tw_length(get_tw_length(tws)) {
   assert(type == JOB_TYPE::PICKUP or type == JOB_TYPE::DELIVERY);
-  check_tws();
+  utils::check_tws(tws);
 }
 
 bool Job::is_valid_start(Duration time) const {
@@ -75,23 +75,6 @@ bool Job::is_valid_start(Duration time) const {
   }
 
   return valid;
-}
-
-void Job::check_tws() const {
-  if (tws.size() == 0) {
-    throw Exception(ERROR::INPUT,
-                    "Empty time-windows for job " + std::to_string(id) + ".");
-  }
-
-  if (tws.size() > 1) {
-    for (std::size_t i = 0; i < tws.size() - 1; ++i) {
-      if (tws[i + 1].start <= tws[i].end) {
-        throw Exception(ERROR::INPUT,
-                        "Unsorted or overlapping time-windows for job " +
-                          std::to_string(id) + ".");
-      }
-    }
-  }
 }
 
 } // namespace vroom

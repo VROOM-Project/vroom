@@ -243,6 +243,20 @@ inline void check_precedence(const Input& input,
   }
 }
 
+inline void check_tws(const std::vector<TimeWindow>& tws) {
+  if (tws.size() == 0) {
+    throw Exception(ERROR::INPUT, "Empty time-windows.");
+  }
+
+  if (tws.size() > 1) {
+    for (std::size_t i = 0; i < tws.size() - 1; ++i) {
+      if (tws[i + 1].start <= tws[i].end) {
+        throw Exception(ERROR::INPUT, "Unsorted or overlapping time-windows.");
+      }
+    }
+  }
+}
+
 inline Solution format_solution(const Input& input,
                                 const RawSolution& raw_routes) {
   const auto& m = input.get_matrix();

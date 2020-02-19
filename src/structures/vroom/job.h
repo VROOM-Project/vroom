@@ -59,8 +59,6 @@ struct Job {
   }
 
   bool is_valid_start(Duration time) const;
-
-  void check_tws() const;
 };
 
 } // namespace vroom
