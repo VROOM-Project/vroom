@@ -104,6 +104,10 @@ void run_example_with_osrm() {
   vehicle_capacity[0] = 4;
   job_delivery[0] = 1;
 
+  // Define vehicle break, 20 minutes to be started between 10:00 and
+  // 10:30.
+  vroom::Break vehicle_break(1, {vroom::TimeWindow(36000, 37800)}, 20 * 60);
+
   // Define vehicles (use boost::none for no start or no end).
   vroom::Location depot(vroom::Coordinates({{2.35044, 48.71764}}));
   vroom::Vehicle v1(1,                // id
@@ -111,7 +115,8 @@ void run_example_with_osrm() {
                     depot,            // end
                     vehicle_capacity, // capacity
                     {1, 14},          // skills
-                    vehicle_tw);      // time window
+                    vehicle_tw,       // time window
+                    {vehicle_break}); // breaks
   problem_instance.add_vehicle(v1);
 
   vroom::Vehicle v2(2,                // id
@@ -119,7 +124,9 @@ void run_example_with_osrm() {
                     depot,            // end
                     vehicle_capacity, // capacity
                     {2, 14},          // skills
-                    vehicle_tw);      // time window
+                    vehicle_tw,       // time window
+                    {vehicle_break}); // breaks
+
   problem_instance.add_vehicle(v2);
 
   // Job to be done between 9 and 10 AM.

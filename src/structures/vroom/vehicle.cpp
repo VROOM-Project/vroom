@@ -17,8 +17,15 @@ Vehicle::Vehicle(Id id,
                  const boost::optional<Location>& end,
                  const Amount& capacity,
                  const Skills& skills,
-                 const TimeWindow& tw)
-  : id(id), start(start), end(end), capacity(capacity), skills(skills), tw(tw) {
+                 const TimeWindow& tw,
+                 const std::vector<Break>& breaks)
+  : id(id),
+    start(start),
+    end(end),
+    capacity(capacity),
+    skills(skills),
+    tw(tw),
+    breaks(breaks) {
   if (!static_cast<bool>(start) and !static_cast<bool>(end)) {
     throw Exception(ERROR::INPUT,
                     "No start or end specified for vehicle " +

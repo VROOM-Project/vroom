@@ -12,6 +12,7 @@ All rights reserved (see LICENSE).
 
 #include "structures/typedefs.h"
 #include "structures/vroom/amount.h"
+#include "structures/vroom/break.h"
 #include "structures/vroom/location.h"
 #include "structures/vroom/time_window.h"
 
@@ -24,13 +25,15 @@ struct Vehicle {
   const Amount capacity;
   const Skills skills;
   const TimeWindow tw;
+  const std::vector<Break>& breaks;
 
   Vehicle(Id id,
           const boost::optional<Location>& start,
           const boost::optional<Location>& end,
           const Amount& capacity = Amount(0),
           const Skills& skills = Skills(),
-          const TimeWindow& tw = TimeWindow());
+          const TimeWindow& tw = TimeWindow(),
+          const std::vector<Break>& breaks = std::vector<Break>());
 
   bool has_start() const;
 
