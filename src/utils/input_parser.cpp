@@ -26,6 +26,7 @@ All rights reserved (see LICENSE).
 #include "structures/generic/matrix.h"
 #include "structures/typedefs.h"
 #include "structures/vroom/amount.h"
+#include "structures/vroom/break.h"
 #include "structures/vroom/job.h"
 #include "structures/vroom/time_window.h"
 #include "structures/vroom/vehicle.h"
@@ -222,6 +223,49 @@ inline std::vector<TimeWindow> get_job_time_windows(const rapidjson::Value& j) {
   return tws;
 }
 
+inline std::vector<TimeWindow>
+get_break_time_windows(const rapidjson::Value& b) {
+  std::vector<TimeWindow> tws;
+  if (!b.HasMember("time_windows") or !b["time_windows"].IsArray() or
+      b["time_windows"].Empty()) {
+    throw Exception(ERROR::INPUT,
+                    "Invalid time_windows array for break " +
+                      std::to_string(b["id"].GetUint64()) + ".");
+  }
+
+  std::transform(b["time_windows"].Begin(),
+                 b["time_windows"].End(),
+                 std::back_inserter(tws),
+                 [](auto& tw) { return get_time_window(tw); });
+
+  std::sort(tws.begin(), tws.end());
+
+  return tws;
+}
+
+inline Break get_break(const rapidjson::Value& b) {
+  check_id(b, "break");
+  return Break(b["id"].GetUint64(), get_break_time_windows(b), get_service(b));
+}
+
+inline std::vector<Break> get_vehicle_breaks(const rapidjson::Value& v) {
+  std::vector<Break> breaks;
+  if (v.HasMember("breaks")) {
+    if (!v["breaks"].IsArray()) {
+      throw Exception(ERROR::INPUT,
+                      "Invalid breaks for vehicle " +
+                        std::to_string(v["id"].GetUint64()) + ".");
+    }
+
+    std::transform(v["breaks"].Begin(),
+                   v["breaks"].End(),
+                   std::back_inserter(breaks),
+                   [](auto& b) { return get_break(b); });
+  }
+
+  return breaks;
+}
+
 Input parse(const CLArgs& cl_args) {
   // Input json object.
   rapidjson::Document json_input;
@@ -357,7 +401,8 @@ Input parse(const CLArgs& cl_args) {
                       end,
                       get_amount(json_vehicle, "capacity", amount_size),
                       get_skills(json_vehicle),
-                      get_vehicle_time_window(json_vehicle));
+                      get_vehicle_time_window(json_vehicle),
+                      get_vehicle_breaks(json_vehicle));
 
       input.add_vehicle(vehicle);
 
@@ -498,7 +543,8 @@ Input parse(const CLArgs& cl_args) {
                       end,
                       get_amount(json_vehicle, "capacity", amount_size),
                       get_skills(json_vehicle),
-                      get_vehicle_time_window(json_vehicle));
+                      get_vehicle_time_window(json_vehicle),
+                      get_vehicle_breaks(json_vehicle));
 
       input.add_vehicle(vehicle);
 
