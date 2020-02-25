@@ -61,6 +61,7 @@ struct Job {
       const std::vector<TimeWindow>& tws);
 
   Index index() const {
+    assert(this->type != JOB_TYPE::BREAK);
     return location.index();
   }
 
