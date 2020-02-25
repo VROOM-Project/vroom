@@ -65,6 +65,10 @@ public:
   std::vector<Job> jobs;
   std::vector<Vehicle> vehicles;
 
+  // breaks_ranks_for_vehicle[v] stores the ranks (in jobs) of breaks
+  // for vehicle v.
+  std::vector<std::vector<Index>> breaks_ranks_for_vehicle;
+
   Input(unsigned amount_size);
 
   void set_geometry(bool geometry);

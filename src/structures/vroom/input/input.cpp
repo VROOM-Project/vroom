@@ -224,7 +224,12 @@ void Input::add_vehicle(const Vehicle& vehicle) {
 
   // Define vehicle breaks as jobs.
   _has_TW = _has_TW || !vehicle.breaks.empty();
+
+  breaks_ranks_for_vehicle.emplace_back();
+  auto& breaks_ranks = breaks_ranks_for_vehicle.back();
+
   for (const auto& b : vehicle.breaks) {
+    breaks_ranks.push_back(jobs.size());
     jobs.emplace_back(_amount_size, b.id, b.service, b.tws);
   }
 }
