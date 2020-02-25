@@ -321,59 +321,74 @@ void Input::set_compatibility() {
 
       for (std::size_t j = 0; j < jobs.size(); ++j) {
         bool is_compatible = true;
-        assert(!jobs[j].skills.empty());
-        for (const auto& s : jobs[j].skills) {
-          if (v_skills.find(s) == v_skills.end()) {
-            is_compatible = false;
-            break;
+
+        if (jobs[j].type == JOB_TYPE::BREAK) {
+          // Check if break is related to current vehicle.
+          auto result = std::find(breaks_ranks_for_vehicle[v].begin(),
+                                  breaks_ranks_for_vehicle[v].end(),
+                                  j);
+
+          is_compatible = (result != breaks_ranks_for_vehicle[v].end());
+        } else {
+          // Check whether job skills set is included in vehicle
+          // skills set.
+          assert(!jobs[j].skills.empty());
+          for (const auto& s : jobs[j].skills) {
+            if (v_skills.find(s) == v_skills.end()) {
+              is_compatible = false;
+              break;
+            }
           }
         }
         _vehicle_to_job_compatibility[v][j] = is_compatible;
       }
     }
   }
+
+  // TODO un-comment and adjust as "empty" routes may contain breaks.
 
   // Derive potential extra incompatibilities : jobs or shipments with
   // amount that does not fit into vehicle or that cannot be added to
   // an empty route for vehicle based on the timing constraints (when
   // they apply).
-  for (std::size_t v = 0; v < vehicles.size(); ++v) {
-    TWRoute empty_route(*this, v);
-    for (Index j = 0; j < jobs.size(); ++j) {
-      if (_vehicle_to_job_compatibility[v][j]) {
-        bool is_compatible =
-          empty_route.is_valid_addition_for_capacity(*this,
-                                                     jobs[j].pickup,
-                                                     jobs[j].delivery,
-                                                     0);
+  // for (std::size_t v = 0; v < vehicles.size(); ++v) {
+  //   TWRoute empty_route(*this, v);
+  //   for (Index j = 0; j < jobs.size(); ++j) {
+  //     if (_vehicle_to_job_compatibility[v][j]) {
+  //       bool is_compatible =
+  //         empty_route.is_valid_addition_for_capacity(*this,
+  //                                                    jobs[j].pickup,
+  //                                                    jobs[j].delivery,
+  //                                                    0);
 
-        bool is_shipment_pickup = (jobs[j].type == JOB_TYPE::PICKUP);
+  //       bool is_shipment_pickup = (jobs[j].type == JOB_TYPE::PICKUP);
 
-        if (is_compatible and _has_TW) {
-          if (jobs[j].type == JOB_TYPE::SINGLE) {
-            is_compatible = is_compatible &&
-                            empty_route.is_valid_addition_for_tw(*this, j, 0);
-          } else {
-            assert(is_shipment_pickup);
-            std::vector<Index> p_d({j, static_cast<Index>(j + 1)});
-            is_compatible =
-              is_compatible && empty_route.is_valid_addition_for_tw(*this,
-                                                                    p_d.begin(),
-                                                                    p_d.end(),
-                                                                    0,
-                                                                    0);
-          }
-        }
+  //       if (is_compatible and _has_TW) {
+  //         if (jobs[j].type == JOB_TYPE::SINGLE) {
+  //           is_compatible = is_compatible &&
+  //                           empty_route.is_valid_addition_for_tw(*this, j,
+  //                           0);
+  //         } else {
+  //           assert(is_shipment_pickup);
+  //           std::vector<Index> p_d({j, static_cast<Index>(j + 1)});
+  //           is_compatible =
+  //             is_compatible && empty_route.is_valid_addition_for_tw(*this,
+  //                                                                   p_d.begin(),
+  //                                                                   p_d.end(),
+  //                                                                   0,
+  //                                                                   0);
+  //         }
+  //       }
 
-        _vehicle_to_job_compatibility[v][j] = is_compatible;
-        if (is_shipment_pickup) {
-          // Skipping matching delivery which is next in line in jobs.
-          _vehicle_to_job_compatibility[v][j + 1] = is_compatible;
-          ++j;
-        }
-      }
-    }
-  }
+  //       _vehicle_to_job_compatibility[v][j] = is_compatible;
+  //       if (is_shipment_pickup) {
+  //         // Skipping matching delivery which is next in line in jobs.
+  //         _vehicle_to_job_compatibility[v][j + 1] = is_compatible;
+  //         ++j;
+  //       }
+  //     }
+  //   }
+  // }
 
   _vehicle_to_vehicle_compatibility =
     std::vector<std::vector<bool>>(vehicles.size(),
