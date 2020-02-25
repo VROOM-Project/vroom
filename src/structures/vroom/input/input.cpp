@@ -160,7 +160,7 @@ void Input::add_vehicle(const Vehicle& vehicle) {
   }
 
   // Check for time-windows.
-  _has_TW |= !vehicle.tw.is_default();
+  _has_TW = _has_TW || !vehicle.tw.is_default();
 
   bool has_start = current_v.has_start();
   bool has_end = current_v.has_end();
@@ -220,6 +220,12 @@ void Input::add_vehicle(const Vehicle& vehicle) {
     _homogeneous_locations =
       _homogeneous_locations &&
       vehicles.front().has_same_locations(vehicles.back());
+  }
+
+  // Define vehicle breaks as jobs.
+  _has_TW = _has_TW || !vehicle.breaks.empty();
+  for (const auto& b : vehicle.breaks) {
+    jobs.emplace_back(_amount_size, b.id, b.service, b.tws);
   }
 }
 
