@@ -64,6 +64,22 @@ Job::Job(Id id,
   utils::check_tws(tws);
 }
 
+Job::Job(unsigned amount_size,
+         Id id,
+         Duration service,
+         const std::vector<TimeWindow>& tws)
+  : location(0), // Dummy index value.
+    id(id),
+    type(JOB_TYPE::BREAK),
+    service(service),
+    delivery(Amount(amount_size)),
+    pickup(Amount(amount_size)),
+    priority(priority),
+    tws(tws),
+    tw_length(get_tw_length(tws)) {
+  utils::check_tws(tws);
+}
+
 bool Job::is_valid_start(Duration time) const {
   bool valid = false;
 

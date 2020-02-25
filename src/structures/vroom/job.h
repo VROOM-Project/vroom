@@ -54,6 +54,12 @@ struct Job {
       const std::vector<TimeWindow>& tws =
         std::vector<TimeWindow>(1, TimeWindow()));
 
+  // Constructor for break (JOB_TYPE::BREAK).
+  Job(unsigned amount_size,
+      Id id,
+      Duration service,
+      const std::vector<TimeWindow>& tws);
+
   Index index() const {
     return location.index();
   }
