@@ -1,0 +1,14 @@
+*.o
+*.d
+bin/
+lib/
+scripts/
+libvroom_examples/
+docs/
+.github/
+.git/
+Dockerfile
+README.md
+LICENSE
+CHANGELOG.md
+CONTRIBUTING.md
