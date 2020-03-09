@@ -27,7 +27,9 @@ TWRoute::TWRoute(const Input& input, Index v)
                       std::to_string(input.vehicles[v].id) + '.');
   }
 
-  this->replace(input, breaks_ranks.begin(), breaks_ranks.end(), 0, 0);
+  if (!breaks_ranks.empty()) {
+    this->replace(input, breaks_ranks.begin(), breaks_ranks.end(), 0, 0);
+  }
 }
 
 Duration TWRoute::new_earliest_candidate(const Input& input,
