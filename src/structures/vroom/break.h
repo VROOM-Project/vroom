@@ -22,7 +22,6 @@ struct Break {
   const Duration service;
   const std::vector<TimeWindow> tws;
 
-  // Constructor for regular one-stop job (JOB_TYPE::SINGLE).
   Break(Id id, const std::vector<TimeWindow>& tws, Duration service = 0);
 };
 

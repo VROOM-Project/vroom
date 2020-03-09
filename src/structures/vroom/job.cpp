@@ -74,7 +74,7 @@ Job::Job(unsigned amount_size,
     service(service),
     delivery(Amount(amount_size)),
     pickup(Amount(amount_size)),
-    priority(priority),
+    priority(0),
     tws(tws),
     tw_length(get_tw_length(tws)) {
   utils::check_tws(tws);

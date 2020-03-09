@@ -25,7 +25,7 @@ struct Vehicle {
   const Amount capacity;
   const Skills skills;
   const TimeWindow tw;
-  const std::vector<Break>& breaks;
+  const std::vector<Break> breaks;
 
   Vehicle(Id id,
           const boost::optional<Location>& start,
