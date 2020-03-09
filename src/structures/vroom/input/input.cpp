@@ -280,6 +280,9 @@ void Input::check_cost_bound() const {
   Cost jobs_departure_bound = 0;
   Cost jobs_arrival_bound = 0;
   for (const auto& j : jobs) {
+    if (j.type == JOB_TYPE::BREAK) {
+      continue;
+    }
     jobs_departure_bound =
       utils::add_without_overflow(jobs_departure_bound,
                                   max_cost_per_line[j.index()]);
