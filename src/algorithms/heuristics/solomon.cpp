@@ -27,7 +27,9 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
 
   std::set<Index> unassigned;
   for (Index j = 0; j < input.jobs.size(); ++j) {
-    unassigned.insert(j);
+    if (input.jobs[j].type != JOB_TYPE::BREAK) {
+      unassigned.insert(j);
+    }
   }
 
   // One level of indirection to allow easy ordering of the vehicles
@@ -390,7 +392,9 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
 
   std::set<Index> unassigned;
   for (Index j = 0; j < input.jobs.size(); ++j) {
-    unassigned.insert(j);
+    if (input.jobs[j].type != JOB_TYPE::BREAK) {
+      unassigned.insert(j);
+    }
   }
 
   std::vector<Index> vehicles_ranks(input.vehicles.size());
