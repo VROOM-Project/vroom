@@ -66,7 +66,7 @@ enum class ERROR { INTERNAL, INPUT, ROUTING };
 
 // 'Single' job is a regular one-stop job without precedence
 // constraints.
-enum class JOB_TYPE { SINGLE, BREAK, PICKUP, DELIVERY };
+enum class JOB_TYPE { SINGLE, PICKUP, DELIVERY };
 
 // Available location status.
 enum class STEP_TYPE { START, JOB, END };

@@ -16,20 +16,6 @@ TWRoute::TWRoute(const Input& input, Index v)
   : RawRoute(input, v),
     v_start(input.vehicles[v].tw.start),
     v_end(input.vehicles[v].tw.end) {
-  const auto& breaks_ranks = input.breaks_ranks_for_vehicle[v];
-  if (!this->is_valid_addition_for_tw(input,
-                                      breaks_ranks.begin(),
-                                      breaks_ranks.end(),
-                                      0,
-                                      0)) {
-    throw Exception(ERROR::INPUT,
-                    "Invalid breaks for vehicle " +
-                      std::to_string(input.vehicles[v].id) + '.');
-  }
-
-  if (!breaks_ranks.empty()) {
-    this->replace(input, breaks_ranks.begin(), breaks_ranks.end(), 0, 0);
-  }
 }
 
 Duration TWRoute::new_earliest_candidate(const Input& input,
