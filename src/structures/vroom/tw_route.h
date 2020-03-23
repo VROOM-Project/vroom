@@ -55,8 +55,6 @@ public:
   std::vector<Duration> latest;
   std::vector<Index> tw_ranks;
 
-  const std::vector<Break>& breaks;
-
   // Margin for break at rank i in breaks: break_earliest[i] and
   // break_latest[i] store earliest and latest date, considering we
   // use time window at rank break_tw_ranks[i] for this break.

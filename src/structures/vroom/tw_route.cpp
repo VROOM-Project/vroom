@@ -16,7 +16,51 @@ TWRoute::TWRoute(const Input& input, Index v)
   : RawRoute(input, v),
     v_start(input.vehicles[v].tw.start),
     v_end(input.vehicles[v].tw.end),
-    breaks(input.vehicles[v].breaks) {
+    break_earliest(input.vehicles[v].breaks.size()),
+    break_latest(input.vehicles[v].breaks.size()),
+    break_tw_ranks(input.vehicles[v].breaks.size()) {
+  std::string break_error = "Inconsistent breaks for vehicle " +
+                            std::to_string(input.vehicles[v].id) + ".";
+
+  const auto& breaks = input.vehicles[v].breaks;
+
+  Duration previous_earliest = v_start;
+
+  for (Index i = 0; i < breaks.size(); ++i) {
+    const auto& b = breaks[i];
+    auto tw_candidate =
+      std::find_if(b.tws.begin(), b.tws.end(), [&](const auto& tw) {
+        return previous_earliest <= tw.end;
+      });
+
+    if (tw_candidate == b.tws.end()) {
+      throw Exception(ERROR::INPUT, break_error);
+    }
+
+    break_earliest[i] = std::max(previous_earliest, tw_candidate->start);
+    break_tw_ranks[i] = std::distance(b.tws.begin(), tw_candidate);
+
+    previous_earliest = break_earliest[i] + b.service;
+  }
+
+  Duration next_latest = v_end;
+  for (Index r_i = 0; r_i < breaks.size(); ++r_i) {
+    Index i = breaks.size() - 1 - r_i;
+    const auto& b = breaks[i];
+
+    if (next_latest < b.service) {
+      throw Exception(ERROR::INPUT, break_error);
+    }
+
+    next_latest -= b.service;
+    next_latest = std::min(next_latest, b.tws[break_tw_ranks[i]].end);
+
+    break_latest[i] = next_latest;
+
+    if (break_latest[i] < break_earliest[i]) {
+      throw Exception(ERROR::INPUT, break_error);
+    }
+  }
 }
 
 Duration TWRoute::new_earliest_candidate(const Input& input,
