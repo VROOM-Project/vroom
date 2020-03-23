@@ -48,9 +48,21 @@ public:
   Duration v_start;
   Duration v_end;
 
+  // Margin for job at rank i in route: earliest[i] and latest[i]
+  // store earliest and latest date, considering we use time window at
+  // rank tw_ranks[i] for this job.
   std::vector<Duration> earliest;
   std::vector<Duration> latest;
   std::vector<Index> tw_ranks;
+
+  const std::vector<Break>& breaks;
+
+  // Margin for break at rank i in breaks: break_earliest[i] and
+  // break_latest[i] store earliest and latest date, considering we
+  // use time window at rank break_tw_ranks[i] for this break.
+  std::vector<Duration> break_earliest;
+  std::vector<Duration> break_latest;
+  std::vector<Index> break_tw_ranks;
 
   TWRoute(const Input& input, Index i);
 

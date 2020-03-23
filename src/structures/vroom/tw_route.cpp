@@ -15,7 +15,8 @@ namespace vroom {
 TWRoute::TWRoute(const Input& input, Index v)
   : RawRoute(input, v),
     v_start(input.vehicles[v].tw.start),
-    v_end(input.vehicles[v].tw.end) {
+    v_end(input.vehicles[v].tw.end),
+    breaks(input.vehicles[v].breaks) {
 }
 
 Duration TWRoute::new_earliest_candidate(const Input& input,
