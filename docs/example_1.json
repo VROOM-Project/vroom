@@ -6,7 +6,12 @@
       "end": [2.35044, 48.71764],
       "capacity": [4],
       "skills": [1, 14],
-      "time_window": [28800, 43200]
+      "time_window": [28800, 43200],
+      "breaks": [{
+        "id": 1,
+        "service": 300,
+        "time_windows": [[36000, 37800]]
+      }]
     },
     {
       "id": 2,
@@ -14,7 +19,12 @@
       "end": [2.35044, 48.71764],
       "capacity": [4],
       "skills": [2, 14],
-      "time_window": [28800, 43200]
+      "time_window": [28800, 43200],
+      "breaks": [{
+        "id": 2,
+        "service": 300,
+        "time_windows": [[36000, 37800]]
+      }]
     }
   ],
   "jobs": [
