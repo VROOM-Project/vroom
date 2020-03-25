@@ -304,6 +304,45 @@ void TWRoute::bwd_update_latest_with_TW_from(const Input& input, Index rank) {
   }
 }
 
+Margin TWRoute::addition_margin(const Input& input,
+                                const Index job_rank,
+                                const Index rank,
+                                const Index break_position) const {
+  const auto& m = input.get_matrix();
+  const auto& v = input.vehicles[vehicle_rank];
+  const auto& j = input.jobs[job_rank];
+
+  Duration job_earliest =
+    new_earliest_candidate(input, job_rank, rank, break_position);
+
+  if (j.tws.back().end < job_earliest) {
+    // Early abort if we're after the latest deadline for current job.
+    return std::numeric_limits<Margin>::min();
+  }
+
+  auto tw_candidate =
+    std::find_if(j.tws.begin(), j.tws.end(), [&](const auto& tw) {
+      return job_earliest <= tw.end;
+    });
+
+  // The situation where there is no TW candidate has been previously
+  // filtered by early abort above.
+  assert(tw_candidate != j.tws.end());
+  job_earliest = std::max(job_earliest, tw_candidate.start);
+
+  // // TODO test this early abort option.
+  // if (job_earliest > ((rank == route.size()) ? v_end: latest[rank])) {
+  //   return std::numeric_limits<Margin>::min();
+  // }
+
+  Duration job_latest =
+    new_latest_candidate(input, job_rank, rank, break_position);
+
+  job_latest = std::min(job_latest, tw_candidate.end);
+
+  return job_latest - job_earliest;
+}
+
 bool TWRoute::is_valid_addition_for_tw(const Input& input,
                                        const Index job_rank,
                                        const Index rank) const {

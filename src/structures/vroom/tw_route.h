@@ -57,6 +57,14 @@ private:
                             const Index rank,
                             const unsigned count) const;
 
+  // Compute (potentially negative) time margin for addition of job at
+  // job_rank in current route at rank and after "break_position"
+  // breaks.
+  Margin addition_margin(const Input& input,
+                         const Index job_rank,
+                         const Index rank,
+                         const Index break_position) const;
+
 public:
   Duration v_start;
   Duration v_end;
