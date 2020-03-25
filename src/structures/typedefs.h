@@ -28,6 +28,7 @@ using Cost = uint32_t;
 using Gain = int64_t;
 using Distance = uint32_t;
 using Duration = uint32_t;
+using Margin = int64_t;
 using Coordinate = double;
 using Capacity = int64_t;
 using Skill = uint32_t;

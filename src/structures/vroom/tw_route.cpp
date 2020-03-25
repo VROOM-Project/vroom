@@ -18,7 +18,9 @@ TWRoute::TWRoute(const Input& input, Index v)
     v_end(input.vehicles[v].tw.end),
     break_earliest(input.vehicles[v].breaks.size()),
     break_latest(input.vehicles[v].breaks.size()),
-    break_tw_ranks(input.vehicles[v].breaks.size()) {
+    break_tw_ranks(input.vehicles[v].breaks.size()),
+    breaks_counts({static_cast<unsigned>(input.vehicles[v].breaks.size())}),
+    breaks_at_rank({static_cast<unsigned>(input.vehicles[v].breaks.size())}) {
   std::string break_error = "Inconsistent breaks for vehicle " +
                             std::to_string(input.vehicles[v].id) + ".";
 
@@ -106,6 +108,114 @@ Duration TWRoute::new_latest_candidate(const Input& input,
   }
 
   assert(j.service + next_travel <= next_latest);
+  return next_latest - j.service - next_travel;
+}
+
+Duration TWRoute::new_earliest_candidate(const Input& input,
+                                         const Index job_rank,
+                                         const Index rank,
+                                         const Index break_position) const {
+  assert(break_position <= breaks_at_rank[rank]);
+
+  const auto& m = input.get_matrix();
+  const auto& v = input.vehicles[vehicle_rank];
+  const auto& j = input.jobs[job_rank];
+
+  Duration previous_earliest = v_start;
+  Duration previous_service = 0;
+  Duration previous_travel = 0;
+  if (rank > 0) {
+    const auto& previous_job = input.jobs[route[rank - 1]];
+    previous_earliest = earliest[rank - 1];
+    previous_service = previous_job.service;
+    previous_travel = m[previous_job.index()][j.index()];
+  } else {
+    if (has_start) {
+      previous_travel = m[v.start.get().index()][j.index()];
+    }
+  }
+
+  if (break_position > 0) {
+    // Some breaks are before insertion, use rank of previous break in
+    // vehicle breaks.
+    assert(breaks_at_rank[rank] + 1 <= breaks_counts[rank] + break_position);
+    Index break_rank =
+      (breaks_counts[rank] + break_position) - (breaks_at_rank[rank] + 1);
+
+    previous_earliest = break_earliest[break_rank];
+    previous_service = v.breaks[break_rank].service;
+
+    // Compute part of the travel time from last job that remains to
+    // be done.
+    auto breaks_travel_margin =
+      std::accumulate(breaks_travel_margin_before.begin() + break_rank,
+                      breaks_travel_margin_before.begin() + break_rank +
+                        break_position,
+                      0,
+                      [&](auto sum, const auto& m) { return sum + m; });
+
+    if (previous_travel <= breaks_travel_margin) {
+      // Margins before breaks can eat up all travel time.
+      previous_travel = 0;
+    } else {
+      // Remove travel time share that can be done before previous
+      // breaks.
+      previous_travel -= breaks_travel_margin;
+    }
+  }
+
+  return previous_earliest + previous_service + previous_travel;
+}
+
+Duration TWRoute::new_latest_candidate(const Input& input,
+                                       const Index job_rank,
+                                       const Index rank,
+                                       const Index break_position) const {
+  assert(break_position <= breaks_at_rank[rank]);
+
+  const auto& m = input.get_matrix();
+  const auto& v = input.vehicles[vehicle_rank];
+  const auto& j = input.jobs[job_rank];
+
+  Duration next_latest = v_end;
+  Duration next_travel = 0;
+  if (rank == route.size()) {
+    if (has_end) {
+      next_travel = m[j.index()][v.end.get().index()];
+    }
+  } else {
+    next_latest = latest[rank];
+    next_travel = m[j.index()][input.jobs[route[rank]].index()];
+  }
+
+  if (break_position < breaks_at_rank[rank]) {
+    // Some breaks are after insertion, use rank of next break in
+    // vehicle breaks.
+    assert(breaks_at_rank[rank] <= breaks_counts[rank] + break_position);
+    Index break_rank =
+      (breaks_counts[rank] + break_position) - breaks_at_rank[rank];
+
+    next_latest = break_latest[break_rank];
+
+    // Compute part of the travel time from last job that remains to
+    // be done.
+    auto breaks_travel_margin =
+      std::accumulate(breaks_travel_margin_after.begin() + break_rank,
+                      breaks_travel_margin_after.begin() + break_counts[rank],
+                      0,
+                      [&](auto sum, const auto& m) { return sum + m; });
+
+    if (next_travel <= breaks_travel_margin) {
+      // Margins after breaks can eat up all travel time.
+      next_travel = 0;
+    } else {
+      // Remove travel time share that can be done after next breaks.
+      next_travel -= breaks_travel_margin;
+    }
+  }
+
+  assert(j.service + next_travel <= next_latest);
+
   return next_latest - j.service - next_travel;
 }
 
