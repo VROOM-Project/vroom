@@ -114,6 +114,14 @@ public:
                                 const Index job_rank,
                                 const Index rank) const;
 
+  // Check validity for addition of job at job_rank in current route
+  // at rank. Stores best position (in term of time margin) of job
+  // with regard to existing breaks at this rank.
+  bool is_valid_addition_for_tw(const Input& input,
+                                const Index job_rank,
+                                const Index rank,
+                                Index& break_position) const;
+
   // Check validity for inclusion of the range [first_job; last_job)
   // in the existing route at rank first_rank and before last_rank *in
   // place of* the current jobs that may be there.

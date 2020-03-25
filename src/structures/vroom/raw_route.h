@@ -118,6 +118,13 @@ public:
     return true;
   };
 
+  bool is_valid_addition_for_tw(const Input&,
+                                const Index,
+                                const Index,
+                                Index&) const {
+    return true;
+  }
+
   template <class InputIterator>
   bool is_valid_addition_for_tw(const Input&,
                                 InputIterator,

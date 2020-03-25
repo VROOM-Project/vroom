@@ -387,6 +387,23 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
   return valid;
 }
 
+bool TWRoute::is_valid_addition_for_tw(const Input& input,
+                                       const Index job_rank,
+                                       const Index rank,
+                                       Index& break_position) const {
+  Margin best_margin = std::numeric_limits<Margin>::min();
+
+  for (unsigned break_pos = 0; break_pos <= breaks_at_rank[rank]; ++break_pos) {
+    auto current_margin = addition_margin(input, job_rank, rank, break_pos);
+    if (current_margin > best_margin) {
+      break_position = break_pos;
+      best_margin = current_margin;
+    }
+  }
+
+  return best_margin >= 0;
+}
+
 template <class InputIterator>
 bool TWRoute::is_valid_addition_for_tw(const Input& input,
                                        InputIterator first_job,
