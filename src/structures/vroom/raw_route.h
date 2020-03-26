@@ -134,7 +134,11 @@ public:
     return true;
   }
 
+  // TODO remove
   void add(const Input& input, const Index job_rank, const Index rank);
+
+  void
+  add(const Input& input, const Index job_rank, const Index rank, const Index);
 
   bool is_valid_removal(const Input&, const Index, const unsigned) const {
     return true;

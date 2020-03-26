@@ -16,11 +16,11 @@ TWRoute::TWRoute(const Input& input, Index v)
   : RawRoute(input, v),
     v_start(input.vehicles[v].tw.start),
     v_end(input.vehicles[v].tw.end),
+    breaks_at_rank({static_cast<unsigned>(input.vehicles[v].breaks.size())}),
+    breaks_counts({static_cast<unsigned>(input.vehicles[v].breaks.size())}),
     break_earliest(input.vehicles[v].breaks.size()),
     break_latest(input.vehicles[v].breaks.size()),
-    break_tw_ranks(input.vehicles[v].breaks.size()),
-    breaks_counts({static_cast<unsigned>(input.vehicles[v].breaks.size())}),
-    breaks_at_rank({static_cast<unsigned>(input.vehicles[v].breaks.size())}) {
+    break_tw_ranks(input.vehicles[v].breaks.size()) {
   std::string break_error = "Inconsistent breaks for vehicle " +
                             std::to_string(input.vehicles[v].id) + ".";
 
@@ -151,7 +151,7 @@ Duration TWRoute::new_earliest_candidate(const Input& input,
       std::accumulate(breaks_travel_margin_before.begin() + break_rank,
                       breaks_travel_margin_before.begin() + break_rank +
                         break_position,
-                      0,
+                      static_cast<Duration>(0),
                       [&](auto sum, const auto& m) { return sum + m; });
 
     if (previous_travel <= breaks_travel_margin) {
@@ -201,8 +201,8 @@ Duration TWRoute::new_latest_candidate(const Input& input,
     // be done.
     auto breaks_travel_margin =
       std::accumulate(breaks_travel_margin_after.begin() + break_rank,
-                      breaks_travel_margin_after.begin() + break_counts[rank],
-                      0,
+                      breaks_travel_margin_after.begin() + breaks_counts[rank],
+                      static_cast<Duration>(0),
                       [&](auto sum, const auto& m) { return sum + m; });
 
     if (next_travel <= breaks_travel_margin) {
@@ -308,8 +308,6 @@ Margin TWRoute::addition_margin(const Input& input,
                                 const Index job_rank,
                                 const Index rank,
                                 const Index break_position) const {
-  const auto& m = input.get_matrix();
-  const auto& v = input.vehicles[vehicle_rank];
   const auto& j = input.jobs[job_rank];
 
   Duration job_earliest =
@@ -328,7 +326,7 @@ Margin TWRoute::addition_margin(const Input& input,
   // The situation where there is no TW candidate has been previously
   // filtered by early abort above.
   assert(tw_candidate != j.tws.end());
-  job_earliest = std::max(job_earliest, tw_candidate.start);
+  job_earliest = std::max(job_earliest, tw_candidate->start);
 
   // // TODO test this early abort option.
   // if (job_earliest > ((rank == route.size()) ? v_end: latest[rank])) {
@@ -338,7 +336,7 @@ Margin TWRoute::addition_margin(const Input& input,
   Duration job_latest =
     new_latest_candidate(input, job_rank, rank, break_position);
 
-  job_latest = std::min(job_latest, tw_candidate.end);
+  job_latest = std::min(job_latest, tw_candidate->end);
 
   return job_latest - job_earliest;
 }

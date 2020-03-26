@@ -19,8 +19,8 @@ namespace vroom {
 
 struct Break {
   const Id id;
-  const Duration service;
   const std::vector<TimeWindow> tws;
+  const Duration service;
 
   Break(Id id, const std::vector<TimeWindow>& tws, Duration service = 0);
 };

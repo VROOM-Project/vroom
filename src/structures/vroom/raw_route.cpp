@@ -243,7 +243,16 @@ Amount RawRoute::delivery_in_range(Index i, Index j) const {
   return before_deliveries - _bwd_deliveries[j - 1];
 }
 
+// TODO remove
 void RawRoute::add(const Input& input, const Index job_rank, const Index rank) {
+  route.insert(route.begin() + rank, job_rank);
+  update_amounts(input);
+}
+
+void RawRoute::add(const Input& input,
+                   const Index job_rank,
+                   const Index rank,
+                   const Index) {
   route.insert(route.begin() + rank, job_rank);
   update_amounts(input);
 }
