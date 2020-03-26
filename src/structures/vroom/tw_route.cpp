@@ -522,6 +522,54 @@ void TWRoute::add(const Input& input, const Index job_rank, const Index rank) {
   update_amounts(input);
 }
 
+void TWRoute::add(const Input& input,
+                  const Index job_rank,
+                  const Index rank,
+                  const Index break_position) {
+  assert(rank <= route.size());
+
+  Duration job_earliest =
+    new_earliest_candidate(input, job_rank, rank, break_position);
+  auto signed_latest =
+    new_latest_candidate(input, job_rank, rank, break_position);
+  assert(signed_latest >= 0); // Else we're performing an invalid addition.
+  Duration job_latest = static_cast<Duration>(signed_latest);
+
+  // Pick first compatible TW.
+  const auto& tws = input.jobs[job_rank].tws;
+  auto candidate = std::find_if(tws.begin(), tws.end(), [&](const auto& tw) {
+    return job_earliest <= tw.end;
+  });
+  assert(candidate != tws.end());
+
+  job_earliest = std::max(job_earliest, candidate->start);
+  job_latest = std::min(job_latest, candidate->end);
+
+  tw_ranks.insert(tw_ranks.begin() + rank,
+                  std::distance(tws.begin(), candidate));
+
+  // Needs to be done after TW stuff as new_[earliest|latest] rely on
+  // route size before addition ; but before earliest/latest date
+  // propagation that rely on route structure after addition.
+  route.insert(route.begin() + rank, job_rank);
+
+  // Update earliest/latest date for new job, then propagate
+  // constraints.
+  earliest.insert(earliest.begin() + rank, job_earliest);
+  latest.insert(latest.begin() + rank, job_latest);
+
+  // Update breaks counts.
+  breaks_at_rank[rank] -= break_position;
+  breaks_at_rank.insert(breaks_at_rank.begin() + rank, break_position);
+  breaks_counts.insert(breaks_counts.begin() + rank,
+                       breaks_counts[rank] - breaks_at_rank[rank + 1]);
+
+  fwd_update_earliest_from(input, rank);
+  bwd_update_latest_from(input, rank);
+
+  update_amounts(input);
+}
+
 bool TWRoute::is_fwd_valid_removal(const Input& input,
                                    const Index rank,
                                    const unsigned count) const {

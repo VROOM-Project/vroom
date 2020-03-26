@@ -135,6 +135,13 @@ public:
 
   void add(const Input& input, const Index job_rank, const Index rank);
 
+  // Add job with index job_rank in current route at rank, and at
+  // break_position with regard to existing breaks at this rank.
+  void add(const Input& input,
+           const Index job_rank,
+           const Index rank,
+           const Index break_position);
+
   // Check validity for removing a set of jobs from current route at
   // rank. Required because removing a job can actually lead to an
   // invalid solution (see #172).
