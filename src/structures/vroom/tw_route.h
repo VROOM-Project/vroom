@@ -47,8 +47,6 @@ private:
 
   void fwd_update_earliest_from(const Input& input, Index rank);
   void bwd_update_latest_from(const Input& input, Index rank);
-  void fwd_update_earliest_with_TW_from(const Input& input, Index rank);
-  void bwd_update_latest_with_TW_from(const Input& input, Index rank);
 
   bool is_fwd_valid_removal(const Input& input,
                             const Index rank,

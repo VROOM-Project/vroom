@@ -222,48 +222,6 @@ Duration TWRoute::new_latest_candidate(const Input& input,
 void TWRoute::fwd_update_earliest_from(const Input& input, Index rank) {
   const auto& m = input.get_matrix();
 
-  Duration previous_earliest = earliest[rank];
-  for (Index i = rank + 1; i < route.size(); ++i) {
-    const auto& previous_j = input.jobs[route[i - 1]];
-    const auto& next_j = input.jobs[route[i]];
-    Duration next_earliest = previous_earliest + previous_j.service +
-                             m[previous_j.index()][next_j.index()];
-
-    if (next_earliest <= earliest[i]) {
-      break;
-    } else {
-      assert(next_earliest <= latest[i]);
-      earliest[i] = next_earliest;
-      previous_earliest = next_earliest;
-    }
-  }
-}
-
-void TWRoute::bwd_update_latest_from(const Input& input, Index rank) {
-  const auto& m = input.get_matrix();
-
-  Duration next_latest = latest[rank];
-  for (Index next_i = rank; next_i > 0; --next_i) {
-    const auto& previous_j = input.jobs[route[next_i - 1]];
-    const auto& next_j = input.jobs[route[next_i]];
-
-    Duration gap = previous_j.service + m[previous_j.index()][next_j.index()];
-    assert(gap <= next_latest);
-    Duration previous_latest = next_latest - gap;
-
-    if (latest[next_i - 1] <= previous_latest) {
-      break;
-    } else {
-      assert(earliest[next_i - 1] <= previous_latest);
-      latest[next_i - 1] = previous_latest;
-      next_latest = previous_latest;
-    }
-  }
-}
-
-void TWRoute::fwd_update_earliest_with_TW_from(const Input& input, Index rank) {
-  const auto& m = input.get_matrix();
-
   Duration current_earliest = earliest[rank];
   for (Index i = rank + 1; i < route.size(); ++i) {
     const auto& previous_j = input.jobs[route[i - 1]];
@@ -281,7 +239,7 @@ void TWRoute::fwd_update_earliest_with_TW_from(const Input& input, Index rank) {
   }
 }
 
-void TWRoute::bwd_update_latest_with_TW_from(const Input& input, Index rank) {
+void TWRoute::bwd_update_latest_from(const Input& input, Index rank) {
   const auto& m = input.get_matrix();
 
   Duration current_latest = latest[rank];
@@ -706,8 +664,8 @@ void TWRoute::remove(const Input& input,
 
   // Update earliest/latest dates.
   if (!empty_route) {
-    fwd_update_earliest_with_TW_from(input, fwd_rank);
-    bwd_update_latest_with_TW_from(input, bwd_rank);
+    fwd_update_earliest_from(input, fwd_rank);
+    bwd_update_latest_from(input, bwd_rank);
   }
 
   update_amounts(input);
@@ -788,7 +746,7 @@ void TWRoute::replace(const Input& input,
     route.insert(route.begin() + insert_rank, first_job, last_job);
 
     // Inserted values don't matter, they will be overwritten below or
-    // during [fwd|bwd]_update_latest_with_TW_from below.
+    // during [fwd|bwd]_update_latest_from below.
     auto to_insert = add_count - erase_count;
     earliest.insert(earliest.begin() + insert_rank, to_insert, 0);
     latest.insert(latest.begin() + insert_rank, to_insert, 0);
@@ -867,11 +825,11 @@ void TWRoute::replace(const Input& input,
         std::min(end_latest, new_last_j.tws[tw_ranks[insert_rank]].end);
     } else {
       // Update earliest dates forward in end of route.
-      fwd_update_earliest_with_TW_from(input, insert_rank - 1);
+      fwd_update_earliest_from(input, insert_rank - 1);
     }
 
     // Update latest dates backward.
-    bwd_update_latest_with_TW_from(input, insert_rank);
+    bwd_update_latest_from(input, insert_rank);
   }
 
   update_amounts(input);
