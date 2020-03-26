@@ -221,13 +221,45 @@ Duration TWRoute::new_latest_candidate(const Input& input,
 
 void TWRoute::fwd_update_earliest_from(const Input& input, Index rank) {
   const auto& m = input.get_matrix();
+  const auto& v = input.vehicles[vehicle_rank];
 
   Duration current_earliest = earliest[rank];
+  Duration previous_service = input.jobs[route[rank]].service;
+
   for (Index i = rank + 1; i < route.size(); ++i) {
-    const auto& previous_j = input.jobs[route[i - 1]];
     const auto& next_j = input.jobs[route[i]];
-    current_earliest +=
-      previous_j.service + m[previous_j.index()][next_j.index()];
+    Duration remaining_travel_time =
+      m[input.jobs[route[i - 1]].index()][next_j.index()];
+
+    // Update earliest dates and margins for breaks.
+    assert(breaks_at_rank[i] <= breaks_counts[i]);
+    Index break_rank = breaks_counts[i] - breaks_at_rank[i];
+
+    for (Index b = 0; b < breaks_at_rank[i]; ++b, ++break_rank) {
+      current_earliest += previous_service;
+
+      const auto& break_TW =
+        v.breaks[break_rank].tws[break_tw_ranks[break_rank]];
+      if (current_earliest < break_TW.start) {
+        auto margin = break_TW.start - current_earliest;
+        breaks_travel_margin_before[break_rank] = margin;
+        if (margin < remaining_travel_time) {
+          remaining_travel_time -= margin;
+        } else {
+          remaining_travel_time = 0;
+        }
+
+        current_earliest = break_TW.start;
+      } else {
+        breaks_travel_margin_before[break_rank] = 0;
+      }
+
+      previous_service = v.breaks[break_rank].service;
+    }
+
+    // Back to the job after breaks.
+    current_earliest += previous_service + remaining_travel_time;
+
     const auto& next_TW = next_j.tws[tw_ranks[i]];
     current_earliest = std::max(current_earliest, next_TW.start);
 
@@ -235,19 +267,50 @@ void TWRoute::fwd_update_earliest_from(const Input& input, Index rank) {
     if (current_earliest == earliest[i]) {
       break;
     }
+
     earliest[i] = current_earliest;
   }
 }
 
 void TWRoute::bwd_update_latest_from(const Input& input, Index rank) {
   const auto& m = input.get_matrix();
+  const auto& v = input.vehicles[vehicle_rank];
 
   Duration current_latest = latest[rank];
+
   for (Index next_i = rank; next_i > 0; --next_i) {
     const auto& previous_j = input.jobs[route[next_i - 1]];
-    const auto& next_j = input.jobs[route[next_i]];
+    Duration remaining_travel_time =
+      m[previous_j.index()][input.jobs[route[next_i]].index()];
 
-    auto gap = previous_j.service + m[previous_j.index()][next_j.index()];
+    // Update latest dates and margins for breaks.
+    assert(breaks_at_rank[next_i] <= breaks_counts[next_i]);
+    Index break_rank = breaks_counts[next_i];
+
+    for (Index b = 0; b < breaks_at_rank[next_i]; ++b) {
+      --break_rank;
+      assert(v.breaks[break_rank].service <= current_latest);
+      current_latest -= v.breaks[break_rank].service;
+
+      const auto& break_TW =
+        v.breaks[break_rank].tws[break_tw_ranks[break_rank]];
+      if (break_TW.end < current_latest) {
+        auto margin = current_latest - break_TW.end;
+        breaks_travel_margin_after[break_rank] = margin;
+        if (margin < remaining_travel_time) {
+          remaining_travel_time -= margin;
+        } else {
+          remaining_travel_time = 0;
+        }
+
+        current_latest = break_TW.end;
+      } else {
+        breaks_travel_margin_after[break_rank] = 0;
+      }
+    }
+
+    // Back to the job after breaks.
+    auto gap = previous_j.service + remaining_travel_time;
     assert(gap <= current_latest);
     current_latest -= gap;
 
@@ -258,6 +321,7 @@ void TWRoute::bwd_update_latest_from(const Input& input, Index rank) {
     if (current_latest == latest[next_i - 1]) {
       break;
     }
+
     latest[next_i - 1] = current_latest;
   }
 }
