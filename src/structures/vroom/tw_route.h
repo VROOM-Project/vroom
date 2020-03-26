@@ -35,15 +35,17 @@ private:
   // Compute new earliest and latest date for job at job_rank when
   // inserted in route at rank after break_position breaks. Only takes
   // into account existing timing constraints for surrounding
-  // jobs/breaks/start/end, not actual job time-windows.
+  // jobs/breaks/start/end, not actual job time-windows. For an
+  // invalid addition, new_latest_candidate may be a negative latest
+  // date.
   Duration new_earliest_candidate(const Input& input,
                                   const Index job_rank,
                                   const Index rank,
                                   const Index break_position) const;
-  Duration new_latest_candidate(const Input& input,
-                                const Index job_rank,
-                                const Index rank,
-                                const Index break_position) const;
+  Margin new_latest_candidate(const Input& input,
+                              const Index job_rank,
+                              const Index rank,
+                              const Index break_position) const;
 
   void fwd_update_earliest_from(const Input& input, Index rank);
   void bwd_update_latest_from(const Input& input, Index rank);

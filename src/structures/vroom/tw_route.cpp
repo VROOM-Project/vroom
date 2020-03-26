@@ -167,17 +167,17 @@ Duration TWRoute::new_earliest_candidate(const Input& input,
   return previous_earliest + previous_service + previous_travel;
 }
 
-Duration TWRoute::new_latest_candidate(const Input& input,
-                                       const Index job_rank,
-                                       const Index rank,
-                                       const Index break_position) const {
+Margin TWRoute::new_latest_candidate(const Input& input,
+                                     const Index job_rank,
+                                     const Index rank,
+                                     const Index break_position) const {
   assert(break_position <= breaks_at_rank[rank]);
 
   const auto& m = input.get_matrix();
   const auto& v = input.vehicles[vehicle_rank];
   const auto& j = input.jobs[job_rank];
 
-  Duration next_latest = v_end;
+  Margin next_latest = v_end;
   Duration next_travel = 0;
   if (rank == route.size()) {
     if (has_end) {
@@ -214,9 +214,7 @@ Duration TWRoute::new_latest_candidate(const Input& input,
     }
   }
 
-  assert(j.service + next_travel <= next_latest);
-
-  return next_latest - j.service - next_travel;
+  return next_latest - static_cast<Margin>(j.service + next_travel);
 }
 
 void TWRoute::fwd_update_earliest_from(const Input& input, Index rank) {
@@ -355,12 +353,11 @@ Margin TWRoute::addition_margin(const Input& input,
   //   return std::numeric_limits<Margin>::min();
   // }
 
-  Duration job_latest =
-    new_latest_candidate(input, job_rank, rank, break_position);
+  auto job_latest = new_latest_candidate(input, job_rank, rank, break_position);
 
-  job_latest = std::min(job_latest, tw_candidate->end);
+  job_latest = std::min(job_latest, static_cast<Margin>(tw_candidate->end));
 
-  return job_latest - job_earliest;
+  return job_latest - static_cast<Margin>(job_earliest);
 }
 
 bool TWRoute::is_valid_addition_for_tw(const Input& input,
