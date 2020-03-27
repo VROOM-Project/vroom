@@ -293,8 +293,8 @@ void TWRoute::fwd_update_earliest_from(const Input& input, Index rank) {
       const auto& break_TW =
         v.breaks[break_rank].tws[break_tw_ranks[break_rank]];
       if (current_earliest < break_TW.start) {
-        auto margin = break_TW.start - current_earliest;
-        breaks_travel_margin_before[break_rank] = margin;
+        breaks_travel_margin_before[break_rank] =
+          break_TW.start - current_earliest;
 
         current_earliest = break_TW.start;
       } else {
@@ -312,6 +312,7 @@ void TWRoute::bwd_update_latest_from(const Input& input, Index rank) {
   const auto& v = input.vehicles[vehicle_rank];
 
   Duration current_latest = latest[rank];
+  bool handle_first_breaks = true;
 
   for (Index next_i = rank; next_i > 0; --next_i) {
     const auto& previous_j = input.jobs[route[next_i - 1]];
@@ -358,10 +359,38 @@ void TWRoute::bwd_update_latest_from(const Input& input, Index rank) {
     if (current_latest == latest[next_i - 1]) {
       // There won't be any further update so stop latest date
       // propagation.
+      handle_first_breaks = false;
       break;
     }
 
     latest[next_i - 1] = current_latest;
+  }
+
+  if (handle_first_breaks) {
+    // Update latest dates and margins for breaks right before the
+    // first job.
+    Index next_i = 0;
+
+    assert(breaks_at_rank[next_i] <= breaks_counts[next_i]);
+    Index break_rank = breaks_counts[next_i];
+
+    for (Index b = 0; b < breaks_at_rank[next_i]; ++b) {
+      --break_rank;
+      assert(v.breaks[break_rank].service <= current_latest);
+      current_latest -= v.breaks[break_rank].service;
+
+      const auto& break_TW =
+        v.breaks[break_rank].tws[break_tw_ranks[break_rank]];
+      if (break_TW.end < current_latest) {
+        breaks_travel_margin_after[break_rank] = current_latest - break_TW.end;
+
+        current_latest = break_TW.end;
+      } else {
+        breaks_travel_margin_after[break_rank] = 0;
+      }
+
+      break_latest[break_rank] = current_latest;
+    }
   }
 }
 
