@@ -532,6 +532,7 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
       Cost nearest_cost = std::numeric_limits<Cost>::max();
       Duration earliest_deadline = std::numeric_limits<Duration>::max();
       Index best_job_rank = 0;
+      Index best_break_position = 0;
       for (const auto job_rank : unassigned) {
         if (jobs_min_costs[job_rank] < costs[job_rank][v_rank] or
             // One of the remaining vehicles is closest to that job.
@@ -572,6 +573,10 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
                                             input.jobs[job_rank].delivery,
                                             0);
 
+        // Insertion position with regard to possible break(s) in
+        // route at rank 0.
+        Index break_position = 0;
+
         if (is_pickup) {
           std::vector<Index> p_d({job_rank, static_cast<Index>(job_rank + 1)});
           is_valid = is_valid && current_r.is_valid_addition_for_tw(input,
@@ -582,12 +587,16 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
         } else {
           assert(input.jobs[job_rank].type == JOB_TYPE::SINGLE);
           is_valid =
-            is_valid && current_r.is_valid_addition_for_tw(input, job_rank, 0);
+            is_valid && current_r.is_valid_addition_for_tw(input,
+                                                           job_rank,
+                                                           0,
+                                                           break_position);
         }
 
         if (is_valid) {
           init_ok = true;
           best_job_rank = job_rank;
+          best_break_position = break_position;
 
           switch (init) {
           case INIT::NONE:
@@ -618,7 +627,7 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
 
       if (init_ok) {
         if (input.jobs[best_job_rank].type == JOB_TYPE::SINGLE) {
-          current_r.add(input, best_job_rank, 0);
+          current_r.add(input, best_job_rank, 0, best_break_position);
           unassigned.erase(best_job_rank);
         }
         if (input.jobs[best_job_rank].type == JOB_TYPE::PICKUP) {
@@ -636,6 +645,7 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
       keep_going = false;
       float best_cost = std::numeric_limits<float>::max();
       Index best_job_rank = 0;
+      Index best_break_position = 0;
       Index best_r = 0;
       Index best_pickup_r = 0;
       Index best_delivery_r = 0;
@@ -661,16 +671,21 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
             float current_cost =
               current_add - lambda * static_cast<float>(regrets[job_rank]);
 
+            Index break_position = 0;
             if (current_cost < best_cost and
                 current_r
                   .is_valid_addition_for_capacity(input,
                                                   input.jobs[job_rank].pickup,
                                                   input.jobs[job_rank].delivery,
                                                   r) and
-                current_r.is_valid_addition_for_tw(input, job_rank, r)) {
+                current_r.is_valid_addition_for_tw(input,
+                                                   job_rank,
+                                                   r,
+                                                   break_position)) {
               best_cost = current_cost;
               best_job_rank = job_rank;
               best_r = r;
+              best_break_position = break_position;
             }
           }
         }
@@ -787,7 +802,7 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
 
       if (best_cost < std::numeric_limits<float>::max()) {
         if (input.jobs[best_job_rank].type == JOB_TYPE::SINGLE) {
-          current_r.add(input, best_job_rank, best_r);
+          current_r.add(input, best_job_rank, best_r, best_break_position);
           unassigned.erase(best_job_rank);
           keep_going = true;
         }
