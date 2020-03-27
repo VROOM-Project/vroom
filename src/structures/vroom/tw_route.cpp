@@ -141,21 +141,20 @@ Duration TWRoute::new_earliest_candidate(const Input& input,
   }
 
   if (break_position > 0) {
-    // Some breaks are before insertion, use rank of previous break in
-    // vehicle breaks.
-    assert(breaks_at_rank[rank] + 1 <= breaks_counts[rank] + break_position);
-    Index break_rank =
-      (breaks_counts[rank] + break_position) - (breaks_at_rank[rank] + 1);
+    // Some breaks are before insertion, use rank of the first and
+    // last of those in vehicle breaks.
+    assert(breaks_at_rank[rank] <= breaks_counts[rank]);
+    Index first_break_rank = breaks_counts[rank] - breaks_at_rank[rank];
+    Index last_break_rank = first_break_rank + break_position - 1;
 
-    previous_earliest = break_earliest[break_rank];
-    previous_service = v.breaks[break_rank].service;
+    previous_earliest = break_earliest[last_break_rank];
+    previous_service = v.breaks[last_break_rank].service;
 
     // Compute part of the travel time from last job that remains to
     // be done.
     auto breaks_travel_margin =
-      std::accumulate(breaks_travel_margin_before.begin() + break_rank,
-                      breaks_travel_margin_before.begin() + break_rank +
-                        break_position,
+      std::accumulate(breaks_travel_margin_before.begin() + first_break_rank,
+                      breaks_travel_margin_before.begin() + last_break_rank + 1,
                       static_cast<Duration>(0),
                       [&](auto sum, const auto& m) { return sum + m; });
 
