@@ -280,7 +280,9 @@ inline Solution format_solution(const Input& input,
     Duration service = 0;
     Amount sum_pickups(input.zero_amount());
     Amount sum_deliveries(input.zero_amount());
+#ifndef NDEBUG
     std::unordered_set<Index> expected_delivery_ranks;
+#endif
     Amount current_load = raw_routes[i].get_startup_load();
     assert(current_load <= v.capacity);
 
@@ -309,7 +311,9 @@ inline Solution format_solution(const Input& input,
     sum_deliveries += first_job.delivery;
     assert(current_load <= v.capacity);
 
+#ifndef NDEBUG
     check_precedence(input, expected_delivery_ranks, route.front());
+#endif
 
     steps.emplace_back(first_job, current_load);
     auto& first = steps.back();
@@ -334,7 +338,9 @@ inline Solution format_solution(const Input& input,
       sum_deliveries += current_job.delivery;
       assert(current_load <= v.capacity);
 
+#ifndef NDEBUG
       check_precedence(input, expected_delivery_ranks, route[r + 1]);
+#endif
 
       steps.emplace_back(current_job, current_load);
       auto& current = steps.back();
@@ -413,7 +419,9 @@ inline Route format_route(const Input& input,
   Duration service = 0;
   Amount sum_pickups(input.zero_amount());
   Amount sum_deliveries(input.zero_amount());
+#ifndef NDEBUG
   std::unordered_set<Index> expected_delivery_ranks;
+#endif
   Amount current_load = tw_r.get_startup_load();
   assert(current_load <= v.capacity);
 
@@ -446,7 +454,9 @@ inline Route format_route(const Input& input,
   sum_deliveries += first_job.delivery;
   assert(current_load <= v.capacity);
 
+#ifndef NDEBUG
   check_precedence(input, expected_delivery_ranks, tw_r.route.front());
+#endif
 
   steps.emplace_back(first_job, current_load);
   auto& first = steps.back();
@@ -472,7 +482,9 @@ inline Route format_route(const Input& input,
     sum_deliveries += current_job.delivery;
     assert(current_load <= v.capacity);
 
+#ifndef NDEBUG
     check_precedence(input, expected_delivery_ranks, tw_r.route[r + 1]);
+#endif
 
     steps.emplace_back(current_job, current_load);
     auto& current = steps.back();
