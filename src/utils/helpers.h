@@ -401,8 +401,33 @@ inline Route format_route(const Input& input,
     const auto& current_job = input.jobs[tw_r.route[r]];
     const auto& previous_job = input.jobs[tw_r.route[r - 1]];
 
-    Duration diff =
-      previous_job.service + m[previous_job.index()][current_job.index()];
+    Duration remaining_travel_time =
+      m[previous_job.index()][current_job.index()];
+
+    // Take into account timing constraints for breaks before current
+    // job.
+    assert(tw_r.breaks_at_rank[r] <= tw_r.breaks_counts[r]);
+    Index break_rank = tw_r.breaks_counts[r];
+    for (Index b = 0; b < tw_r.breaks_at_rank[r]; ++b) {
+      --break_rank;
+      assert(v.breaks[break_rank].service <= job_start);
+      job_start -= v.breaks[break_rank].service;
+
+      const auto& break_TW =
+        v.breaks[break_rank].tws[tw_r.break_tw_ranks[break_rank]];
+      if (break_TW.end < job_start) {
+        auto margin = job_start - break_TW.end;
+        if (margin < remaining_travel_time) {
+          remaining_travel_time -= margin;
+        } else {
+          remaining_travel_time = 0;
+        }
+
+        job_start = break_TW.end;
+      }
+    }
+
+    Duration diff = previous_job.service + remaining_travel_time;
 
     assert(diff <= job_start);
     Duration candidate_start = job_start - diff;
@@ -434,11 +459,35 @@ inline Route format_route(const Input& input,
     steps.back().duration = 0;
 
     const auto& first_job = input.jobs[tw_r.route[0]];
-    Duration diff = m[v.start.get().index()][first_job.index()];
-    duration += diff;
+    Duration remaining_travel_time =
+      m[v.start.get().index()][first_job.index()];
+    duration += remaining_travel_time;
 
-    assert(diff <= job_start);
-    auto v_start = job_start - diff;
+    // Take into account timing constraints for breaks before first
+    // job.
+    assert(tw_r.breaks_at_rank[0] <= tw_r.breaks_counts[0]);
+    Index break_rank = tw_r.breaks_counts[0];
+    for (Index b = 0; b < tw_r.breaks_at_rank[0]; ++b) {
+      --break_rank;
+      assert(v.breaks[break_rank].service <= job_start);
+      job_start -= v.breaks[break_rank].service;
+
+      const auto& break_TW =
+        v.breaks[break_rank].tws[tw_r.break_tw_ranks[break_rank]];
+      if (break_TW.end < job_start) {
+        auto margin = job_start - break_TW.end;
+        if (margin < remaining_travel_time) {
+          remaining_travel_time -= margin;
+        } else {
+          remaining_travel_time = 0;
+        }
+
+        job_start = break_TW.end;
+      }
+    }
+
+    assert(remaining_travel_time <= job_start);
+    auto v_start = job_start - remaining_travel_time;
     assert(v.tw.contains(v_start));
     steps.back().arrival = v_start;
   }
