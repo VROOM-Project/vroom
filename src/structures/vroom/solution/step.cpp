@@ -33,4 +33,13 @@ Step::Step(const Job& job, const Amount& load)
     waiting_time(0) {
 }
 
+Step::Step(const Break& b)
+  : step_type(STEP_TYPE::BREAK),
+    job_type(JOB_TYPE::SINGLE), // Dummy value.
+    location(0),                // Dummy value.
+    job(b.id),
+    service(b.service),
+    waiting_time(0) {
+}
+
 } // namespace vroom

@@ -70,7 +70,7 @@ enum class ERROR { INTERNAL, INPUT, ROUTING };
 enum class JOB_TYPE { SINGLE, PICKUP, DELIVERY };
 
 // Available location status.
-enum class STEP_TYPE { START, JOB, END };
+enum class STEP_TYPE { START, JOB, BREAK, END };
 
 // Heuristic options.
 enum class HEURISTIC { BASIC, DYNAMIC };
