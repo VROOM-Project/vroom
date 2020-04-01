@@ -395,7 +395,7 @@ inline Route format_route(const Input& input,
   // ETA logic: aim at earliest possible arrival for last job then
   // determine latest possible start time in order to minimize waiting
   // times.
-  Duration job_start = tw_r.earliest.back();
+  Duration step_start = tw_r.earliest.back();
   Duration backward_wt = 0;
   for (std::size_t r = tw_r.route.size() - 1; r > 0; --r) {
     const auto& current_job = input.jobs[tw_r.route[r]];
@@ -410,40 +410,37 @@ inline Route format_route(const Input& input,
     Index break_rank = tw_r.breaks_counts[r];
     for (Index b = 0; b < tw_r.breaks_at_rank[r]; ++b) {
       --break_rank;
-      assert(v.breaks[break_rank].service <= job_start);
-      job_start -= v.breaks[break_rank].service;
+      assert(v.breaks[break_rank].service <= step_start);
+      step_start -= v.breaks[break_rank].service;
 
       const auto& break_TW =
         v.breaks[break_rank].tws[tw_r.break_tw_ranks[break_rank]];
-      if (break_TW.end < job_start) {
-        auto margin = job_start - break_TW.end;
+      if (break_TW.end < step_start) {
+        auto margin = step_start - break_TW.end;
         if (margin < remaining_travel_time) {
           remaining_travel_time -= margin;
         } else {
+          backward_wt += (margin - remaining_travel_time);
           remaining_travel_time = 0;
         }
 
-        job_start = break_TW.end;
+        step_start = break_TW.end;
       }
     }
 
     Duration diff = previous_job.service + remaining_travel_time;
 
-    assert(diff <= job_start);
-    Duration candidate_start = job_start - diff;
+    assert(diff <= step_start);
+    Duration candidate_start = step_start - diff;
     assert(tw_r.earliest[r - 1] <= candidate_start);
 
-    job_start = std::min(candidate_start, tw_r.latest[r - 1]);
-    if (job_start < candidate_start) {
-      backward_wt += (candidate_start - job_start);
+    step_start = std::min(candidate_start, tw_r.latest[r - 1]);
+    if (step_start < candidate_start) {
+      backward_wt += (candidate_start - step_start);
     }
-    assert(previous_job.is_valid_start(job_start));
+    assert(previous_job.is_valid_start(step_start));
   }
 
-  Duration duration = 0;
-  Duration service = 0;
-  Amount sum_pickups(input.zero_amount());
-  Amount sum_deliveries(input.zero_amount());
 #ifndef NDEBUG
   std::unordered_set<Index> expected_delivery_ranks;
 #endif
@@ -458,10 +455,8 @@ inline Route format_route(const Input& input,
     steps.emplace_back(STEP_TYPE::START, v.start.get(), current_load);
     steps.back().duration = 0;
 
-    const auto& first_job = input.jobs[tw_r.route[0]];
     Duration remaining_travel_time =
-      m[v.start.get().index()][first_job.index()];
-    duration += remaining_travel_time;
+      m[v.start.get().index()][input.jobs[tw_r.route[0]].index()];
 
     // Take into account timing constraints for breaks before first
     // job.
@@ -469,108 +464,203 @@ inline Route format_route(const Input& input,
     Index break_rank = tw_r.breaks_counts[0];
     for (Index b = 0; b < tw_r.breaks_at_rank[0]; ++b) {
       --break_rank;
-      assert(v.breaks[break_rank].service <= job_start);
-      job_start -= v.breaks[break_rank].service;
+      assert(v.breaks[break_rank].service <= step_start);
+      step_start -= v.breaks[break_rank].service;
 
       const auto& break_TW =
         v.breaks[break_rank].tws[tw_r.break_tw_ranks[break_rank]];
-      if (break_TW.end < job_start) {
-        auto margin = job_start - break_TW.end;
+      if (break_TW.end < step_start) {
+        auto margin = step_start - break_TW.end;
         if (margin < remaining_travel_time) {
           remaining_travel_time -= margin;
         } else {
+          backward_wt += (margin - remaining_travel_time);
           remaining_travel_time = 0;
         }
 
-        job_start = break_TW.end;
+        step_start = break_TW.end;
       }
     }
 
-    assert(remaining_travel_time <= job_start);
-    auto v_start = job_start - remaining_travel_time;
-    assert(v.tw.contains(v_start));
-    steps.back().arrival = v_start;
+    assert(remaining_travel_time <= step_start);
+    step_start -= remaining_travel_time;
+    assert(v.tw.contains(step_start));
+    steps.back().arrival = step_start;
   }
 
-  // Handle jobs.
-  assert(input.vehicle_ok_with_job(tw_r.vehicle_rank, tw_r.route.front()));
-  auto& first_job = input.jobs[tw_r.route.front()];
-  service += first_job.service;
-
-  current_load += first_job.pickup;
-  current_load -= first_job.delivery;
-  sum_pickups += first_job.pickup;
-  sum_deliveries += first_job.delivery;
-  assert(current_load <= v.capacity);
-
-#ifndef NDEBUG
-  check_precedence(input, expected_delivery_ranks, tw_r.route.front());
-#endif
-
-  steps.emplace_back(first_job, current_load);
-  auto& first = steps.back();
-  first.duration = duration;
-  first.arrival = job_start;
-  unassigned_ranks.erase(tw_r.route.front());
-
+  // Values summed up while going through the route.
+  Duration duration = 0;
+  Duration service = 0;
   Duration forward_wt = 0;
-  for (std::size_t r = 0; r < tw_r.route.size() - 1; ++r) {
-    assert(input.vehicle_ok_with_job(tw_r.vehicle_rank, tw_r.route[r + 1]));
-    const auto& previous_job = input.jobs[tw_r.route[r]];
-    const auto& next_job = input.jobs[tw_r.route[r + 1]];
+  Amount sum_pickups(input.zero_amount());
+  Amount sum_deliveries(input.zero_amount());
 
-    Duration travel = m[previous_job.index()][next_job.index()];
-    duration += travel;
+  //  Go through the whole route again to set jobs/breaks ASAP given
+  // the latest possible start time.
+  Duration travel_time =
+    v.has_start() ? m[v.start.get().index()][input.jobs[tw_r.route[0]].index()]
+                  : 0;
 
-    service += next_job.service;
+  for (std::size_t r = 0; r < tw_r.route.size(); ++r) {
+    assert(input.vehicle_ok_with_job(tw_r.vehicle_rank, tw_r.route[r]));
+    const auto& current_job = input.jobs[tw_r.route[r]];
 
-    current_load += next_job.pickup;
-    current_load -= next_job.delivery;
-    sum_pickups += next_job.pickup;
-    sum_deliveries += next_job.delivery;
+    if (r > 0) {
+      // For r == 0, travel_time already holds the relevant value
+      // depending on whether there is a start.
+      travel_time =
+        m[input.jobs[tw_r.route[r - 1]].index()][current_job.index()];
+    }
+
+    // Handles breaks before this job.
+    assert(tw_r.breaks_at_rank[r] <= tw_r.breaks_counts[r]);
+    Index break_rank = tw_r.breaks_counts[r] - tw_r.breaks_at_rank[r];
+
+    for (Index b = 0; b < tw_r.breaks_at_rank[r]; ++b, ++break_rank) {
+      const auto& break_TW =
+        v.breaks[break_rank].tws[tw_r.break_tw_ranks[break_rank]];
+
+      steps.emplace_back(v.breaks[break_rank]);
+      auto& current_break = steps.back();
+
+      if (step_start < break_TW.start) {
+        auto margin = break_TW.start - step_start;
+        if (margin <= travel_time) {
+          // Part of the remaining travel time is spent before this
+          // break, filling the whole margin.
+          duration += margin;
+          travel_time -= margin;
+          current_break.arrival = break_TW.start;
+        } else {
+          // The whole remaining travel time is spent before this
+          // break, not filling the whole margin.
+
+          Duration wt = margin - travel_time;
+          forward_wt += wt;
+
+          current_break.arrival = step_start + travel_time;
+          current_break.waiting_time = wt;
+
+          duration += travel_time;
+          travel_time = 0;
+        }
+
+        step_start = break_TW.start;
+      } else {
+        current_break.arrival = step_start;
+      }
+
+      current_break.duration = duration;
+
+      auto& current_service = v.breaks[break_rank].service;
+      service += current_service;
+      step_start += current_service;
+    }
+
+    // Back to current job.
+    duration += travel_time;
+    service += current_job.service;
+
+    current_load += current_job.pickup;
+    current_load -= current_job.delivery;
+    sum_pickups += current_job.pickup;
+    sum_deliveries += current_job.delivery;
     assert(current_load <= v.capacity);
 
 #ifndef NDEBUG
-    check_precedence(input, expected_delivery_ranks, tw_r.route[r + 1]);
+    check_precedence(input, expected_delivery_ranks, tw_r.route[r]);
 #endif
 
-    steps.emplace_back(next_job, current_load);
+    steps.emplace_back(current_job, current_load);
     auto& current = steps.back();
     current.duration = duration;
 
-    Duration start_candidate = job_start + previous_job.service + travel;
-    assert(start_candidate <= tw_r.latest[r + 1]);
+    step_start += travel_time;
+    assert(step_start <= tw_r.latest[r]);
 
-    current.arrival = start_candidate;
-    job_start = std::max(start_candidate, tw_r.earliest[r + 1]);
+    current.arrival = step_start;
 
-    if (start_candidate < tw_r.earliest[r + 1]) {
-      Duration wt = tw_r.earliest[r + 1] - start_candidate;
+    if (step_start < tw_r.earliest[r]) {
+      Duration wt = tw_r.earliest[r] - step_start;
       current.waiting_time = wt;
       forward_wt += wt;
-    }
-    assert(next_job.is_valid_start(current.arrival + current.waiting_time));
 
-    unassigned_ranks.erase(tw_r.route[r + 1]);
+      step_start = tw_r.earliest[r];
+    }
+    assert(current_job.is_valid_start(current.arrival + current.waiting_time));
+
+    step_start += current_job.service;
+
+    unassigned_ranks.erase(tw_r.route[r]);
+  }
+
+  // Handle breaks after last job.
+  travel_time =
+    (v.has_end())
+      ? m[input.jobs[tw_r.route.back()].index()][v.end.get().index()]
+      : 0;
+
+  auto r = tw_r.route.size();
+  assert(tw_r.breaks_at_rank[r] <= tw_r.breaks_counts[r]);
+  Index break_rank = tw_r.breaks_counts[r] - tw_r.breaks_at_rank[r];
+
+  for (Index b = 0; b < tw_r.breaks_at_rank[r]; ++b, ++break_rank) {
+    const auto& break_TW =
+      v.breaks[break_rank].tws[tw_r.break_tw_ranks[break_rank]];
+
+    steps.emplace_back(v.breaks[break_rank]);
+    auto& current_break = steps.back();
+
+    if (step_start < break_TW.start) {
+      auto margin = break_TW.start - step_start;
+      if (margin <= travel_time) {
+        // Part of the remaining travel time is spent before this
+        // break, filling the whole margin.
+        duration += margin;
+        travel_time -= margin;
+        current_break.arrival = break_TW.start;
+      } else {
+        // The whole remaining travel time is spent before this
+        // break, not filling the whole margin.
+
+        Duration wt = margin - travel_time;
+        forward_wt += wt;
+
+        current_break.arrival = step_start + travel_time;
+        current_break.waiting_time = wt;
+
+        duration += travel_time;
+        travel_time = 0;
+      }
+
+      step_start = break_TW.start;
+    } else {
+      current_break.arrival = step_start;
+    }
+
+    current_break.duration = duration;
+
+    auto& current_service = v.breaks[break_rank].service;
+    service += current_service;
+    step_start += current_service;
   }
 
   if (v.has_end()) {
-    const auto& last_job = input.jobs[tw_r.route.back()];
-    Duration travel = m[last_job.index()][v.end.get().index()];
-    duration += travel;
-
     steps.emplace_back(STEP_TYPE::END, v.end.get(), current_load);
+
+    duration += travel_time;
     steps.back().duration = duration;
 
-    Duration v_end = job_start + last_job.service + travel;
-    assert(v.tw.contains(v_end));
-    steps.back().arrival = v_end;
+    step_start += travel_time;
+    assert(v.tw.contains(step_start));
+    steps.back().arrival = step_start;
   }
 
   assert(forward_wt == backward_wt);
+
   assert(steps.back().arrival + steps.back().waiting_time +
-           steps.back().service - steps.front().arrival ==
-         duration + service + forward_wt);
+           steps.back().service ==
+         steps.front().arrival + duration + service + forward_wt);
 
   assert(expected_delivery_ranks.empty());
 
