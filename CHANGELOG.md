@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Deprecated
+
+- Steps `job` key is replaced by `id` for consistency with breaks
+
 ## [v1.6.0] - 2020-02-18
 
 ### Added

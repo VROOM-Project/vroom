@@ -20,7 +20,7 @@ struct Step {
   const STEP_TYPE step_type;
   const JOB_TYPE job_type;
   const Location location;
-  const Id job;
+  const Id id;
   const Duration service;
   const Amount load;
 

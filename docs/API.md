@@ -244,7 +244,8 @@ A `step` object has the following properties:
 | `arrival` | estimated time of arrival at this step |
 | `duration` | cumulated travel time upon arrival at this step |
 | [`location`] | coordinates array for this step (if provided in input) |
-| [`job`] | id of the job performed at this step, only provided if `type` value is `job` |
+| [`id`] | id of the task performed at this step, only provided if `type` value is `job`, `pickup`, `delivery` or `break` |
+| ~~[`job`]~~ | ~~id of the job performed at this step, only provided if `type` value is `job`~~ |
 | [`load`] | vehicle load after step completion (with capacity constraints) |
 | [`service`] | service time at this step, only provided if `type` value is `job` |
 | [`waiting_time`] | waiting time upon arrival at this step, only provided if `type` value is `job` |
