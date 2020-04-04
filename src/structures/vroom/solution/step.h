@@ -33,7 +33,7 @@ struct Step {
 
   Step(const Job& job, const Amount& load);
 
-  Step(const Break& b);
+  Step(const Break& b, const Amount& load);
 };
 
 } // namespace vroom

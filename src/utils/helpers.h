@@ -520,7 +520,7 @@ inline Route format_route(const Input& input,
       const auto& break_TW =
         v.breaks[break_rank].tws[tw_r.break_tw_ranks[break_rank]];
 
-      steps.emplace_back(v.breaks[break_rank]);
+      steps.emplace_back(v.breaks[break_rank], current_load);
       auto& current_break = steps.back();
 
       if (step_start < break_TW.start) {
@@ -608,7 +608,7 @@ inline Route format_route(const Input& input,
     const auto& break_TW =
       v.breaks[break_rank].tws[tw_r.break_tw_ranks[break_rank]];
 
-    steps.emplace_back(v.breaks[break_rank]);
+    steps.emplace_back(v.breaks[break_rank], current_load);
     auto& current_break = steps.back();
 
     if (step_start < break_TW.start) {
