@@ -665,6 +665,7 @@ inline Route format_route(const Input& input,
     steps.back().arrival = step_start;
   }
 
+  assert(step_start == tw_r.earliest_end);
   assert(forward_wt == backward_wt);
 
   assert(steps.back().arrival + steps.back().waiting_time +
