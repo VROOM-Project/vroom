@@ -392,17 +392,20 @@ inline Route format_route(const Input& input,
   const auto& m = input.get_matrix();
   const auto& v = input.vehicles[tw_r.vehicle_rank];
 
-  // ETA logic: aim at earliest possible arrival for last job then
-  // determine latest possible start time in order to minimize waiting
-  // times.
-  Duration step_start = tw_r.earliest.back();
+  // ETA logic: aim at earliest possible arrival then determine latest
+  // possible start time in order to minimize waiting times.
+  Duration step_start = tw_r.earliest_end;
   Duration backward_wt = 0;
-  for (std::size_t r = tw_r.route.size() - 1; r > 0; --r) {
-    const auto& current_job = input.jobs[tw_r.route[r]];
+  for (std::size_t r = tw_r.route.size(); r > 0; --r) {
     const auto& previous_job = input.jobs[tw_r.route[r - 1]];
 
+    // Remaining travel time is the time between two jobs, except for
+    // last rank where it depends whether the vehicle has an end or
+    // not.
     Duration remaining_travel_time =
-      m[previous_job.index()][current_job.index()];
+      (r < tw_r.route.size())
+        ? m[previous_job.index()][input.jobs[tw_r.route[r]].index()]
+        : (v.has_end()) ? m[previous_job.index()][v.end.get().index()] : 0;
 
     // Take into account timing constraints for breaks before current
     // job.
