@@ -550,6 +550,9 @@ inline Route format_route(const Input& input,
         current_break.arrival = step_start;
       }
 
+      assert(v.breaks[break_rank].is_valid_start(current_break.arrival +
+                                                 current_break.waiting_time));
+
       current_break.duration = duration;
 
       auto& current_service = v.breaks[break_rank].service;
@@ -637,6 +640,9 @@ inline Route format_route(const Input& input,
     } else {
       current_break.arrival = step_start;
     }
+
+    assert(v.breaks[break_rank].is_valid_start(current_break.arrival +
+                                               current_break.waiting_time));
 
     current_break.duration = duration;
 

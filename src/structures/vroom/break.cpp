@@ -17,4 +17,17 @@ Break::Break(Id id, const std::vector<TimeWindow>& tws, Duration service)
   utils::check_tws(tws);
 }
 
+bool Break::is_valid_start(Duration time) const {
+  bool valid = false;
+
+  for (const auto& tw : tws) {
+    if (tw.contains(time)) {
+      valid = true;
+      break;
+    }
+  }
+
+  return valid;
+}
+
 } // namespace vroom
