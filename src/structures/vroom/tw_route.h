@@ -77,6 +77,9 @@ public:
   std::vector<Duration> latest;
   std::vector<Index> tw_ranks;
 
+  // Store earliest date for route end.
+  Duration earliest_end;
+
   // A vector with route.size() + 1 elements. breaks_at_rank[i] is the
   // number of breaks that are to be taken right before job at
   // route[i]. breaks_at_rank[route.size()] is the number of breaks

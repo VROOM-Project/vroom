@@ -282,6 +282,10 @@ void TWRoute::fwd_update_earliest_from(const Input& input, Index rank) {
     // Update earliest dates and margins for potential breaks right
     // before route end.
     Index i = route.size();
+    Duration remaining_travel_time =
+      (v.has_end()) ? m[input.jobs[route[i - 1]].index()][v.end.get().index()]
+                    : 0;
+
     Duration previous_service = input.jobs[route[i - 1]].service;
 
     assert(breaks_at_rank[i] <= breaks_counts[i]);
@@ -293,8 +297,13 @@ void TWRoute::fwd_update_earliest_from(const Input& input, Index rank) {
       const auto& break_TW =
         v.breaks[break_rank].tws[break_tw_ranks[break_rank]];
       if (current_earliest < break_TW.start) {
-        breaks_travel_margin_before[break_rank] =
-          break_TW.start - current_earliest;
+        auto margin = break_TW.start - current_earliest;
+        breaks_travel_margin_before[break_rank] = margin;
+        if (margin < remaining_travel_time) {
+          remaining_travel_time -= margin;
+        } else {
+          remaining_travel_time = 0;
+        }
 
         current_earliest = break_TW.start;
       } else {
@@ -304,6 +313,9 @@ void TWRoute::fwd_update_earliest_from(const Input& input, Index rank) {
       break_earliest[break_rank] = current_earliest;
       previous_service = v.breaks[break_rank].service;
     }
+
+    earliest_end = current_earliest + previous_service + remaining_travel_time;
+    assert(earliest_end <= v_end);
   }
 }
 
