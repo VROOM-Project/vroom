@@ -32,20 +32,18 @@ private:
                                 Index job_rank,
                                 Index rank) const;
 
-  // Compute new earliest and latest date for job at job_rank when
-  // inserted in route at rank after break_position breaks. Only takes
-  // into account existing timing constraints for surrounding
-  // jobs/breaks/start/end, not actual job time-windows. For an
-  // invalid addition, new_latest_candidate may be a negative latest
-  // date.
-  Duration new_earliest_candidate(const Input& input,
-                                  const Index job_rank,
-                                  const Index rank,
-                                  const Index break_position) const;
-  Margin new_latest_candidate(const Input& input,
-                              const Index job_rank,
-                              const Index rank,
-                              const Index break_position) const;
+  // When inserting job at job_rank in route at rank, retrieve
+  // earliest end date (resp. latest start date) for previous
+  // (resp. next) step. Last argument holds the travel time from
+  // (resp. to) that step.
+  Duration previous_earliest_end(const Input& input,
+                                 Index job_rank,
+                                 Index rank,
+                                 Duration& previous_travel) const;
+  Duration next_latest_start(const Input& input,
+                             Index job_rank,
+                             Index rank,
+                             Duration& next_travel) const;
 
   void fwd_update_earliest_from(const Input& input, Index rank);
   void bwd_update_latest_from(const Input& input, Index rank);
@@ -57,14 +55,6 @@ private:
   bool is_bwd_valid_removal(const Input& input,
                             const Index rank,
                             const unsigned count) const;
-
-  // Compute (potentially negative) time margin for addition of job at
-  // job_rank in current route at rank and after "break_position"
-  // breaks.
-  Margin addition_margin(const Input& input,
-                         const Index job_rank,
-                         const Index rank,
-                         const Index break_position) const;
 
 public:
   Duration v_start;
@@ -118,14 +108,6 @@ public:
                                 const Index job_rank,
                                 const Index rank) const;
 
-  // Check validity for addition of job at job_rank in current route
-  // at rank. Stores best position (in term of time margin) of job
-  // with regard to existing breaks at this rank.
-  bool is_valid_addition_for_tw(const Input& input,
-                                const Index job_rank,
-                                const Index rank,
-                                Index& break_position) const;
-
   // Check validity for inclusion of the range [first_job; last_job)
   // in the existing route at rank first_rank and before last_rank *in
   // place of* the current jobs that may be there.
@@ -137,13 +119,6 @@ public:
                                 const Index last_rank) const;
 
   void add(const Input& input, const Index job_rank, const Index rank);
-
-  // Add job with index job_rank in current route at rank, and at
-  // break_position with regard to existing breaks at this rank.
-  void add(const Input& input,
-           const Index job_rank,
-           const Index rank,
-           const Index break_position);
 
   // Check validity for removing a set of jobs from current route at
   // rank. Required because removing a job can actually lead to an
