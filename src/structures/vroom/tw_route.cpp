@@ -581,31 +581,199 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
 void TWRoute::add(const Input& input, const Index job_rank, const Index rank) {
   assert(rank <= route.size());
 
-  Duration job_earliest = new_earliest_candidate(input, job_rank, rank);
-  Duration job_latest = new_latest_candidate(input, job_rank, rank);
+  const auto& v = input.vehicles[vehicle_rank];
+  const auto& j = input.jobs[job_rank];
 
-  // Pick first compatible TW.
-  const auto& tws = input.jobs[job_rank].tws;
-  auto candidate = std::find_if(tws.begin(), tws.end(), [&](const auto& tw) {
-    return job_earliest <= tw.end;
-  });
-  assert(candidate != tws.end());
+  Duration previous_travel = 0;
+  Duration current_earliest =
+    previous_earliest_end(input, job_rank, rank, previous_travel);
 
-  job_earliest = std::max(job_earliest, candidate->start);
-  job_latest = std::min(job_latest, candidate->end);
+  Duration next_travel = 0;
+  Duration current_latest =
+    next_latest_start(input, job_rank, rank, next_travel);
 
-  tw_ranks.insert(tw_ranks.begin() + rank,
-                  std::distance(tws.begin(), candidate));
+  bool job_added = false;
+  unsigned breaks_before = 0;
 
-  // Needs to be done after TW stuff as new_[earliest|latest] rely on
-  // route size before addition ; but before earliest/latest date
-  // propagation that rely on route structure after addition.
+  assert(breaks_at_rank[rank] <= breaks_counts[rank]);
+
+  // Decide on ordering between breaks and added job.
+  for (Index r = 0; r < breaks_at_rank[rank]; ++r) {
+    Index break_rank = (breaks_counts[rank] + r) - breaks_at_rank[rank];
+    auto& b = v.breaks[break_rank];
+
+    auto j_tw = std::find_if(j.tws.begin(), j.tws.end(), [&](const auto& tw) {
+      return current_earliest + previous_travel <= tw.end;
+    });
+    assert(j_tw != j.tws.end());
+
+    // Decide whether to include current break or job.
+    bool add_job_first = false;
+    bool add_break_first = false;
+
+    Duration job_then_break_end = 0; // Dummy init.
+    Duration break_then_job_end = 0; // Dummy init.
+
+    // Try putting job first then break.
+    Duration earliest_job_end =
+      std::max(current_earliest + previous_travel, j_tw->start) + j.service;
+
+    auto new_b_tw =
+      std::find_if(b.tws.begin(), b.tws.end(), [&](const auto& tw) {
+        return earliest_job_end <= tw.end;
+      });
+    if (new_b_tw == b.tws.end()) {
+      // Break does not fit after job due to its time windows.
+      add_break_first = true;
+    } else {
+      job_then_break_end =
+        std::max(earliest_job_end, new_b_tw->start) + b.service;
+    }
+
+    if (!add_break_first) {
+      // Try putting break first then job. Only thoroughly check this
+      // option if we're not already sure it's the only way.
+
+      Duration travel_after_break = previous_travel;
+      if (breaks_travel_margin_before[break_rank] < travel_after_break) {
+        travel_after_break -= breaks_travel_margin_before[break_rank];
+      } else {
+        travel_after_break = 0;
+      }
+
+      Duration earliest_job_start =
+        break_earliest[break_rank] + b.service + travel_after_break;
+
+      auto new_j_tw =
+        std::find_if(j.tws.begin(), j.tws.end(), [&](const auto& tw) {
+          return earliest_job_start <= tw.end;
+        });
+      if (new_j_tw == b.tws.end()) {
+        // Job does not fit after break due to its time windows.
+        add_job_first = true;
+      } else {
+        break_then_job_end =
+          std::max(earliest_job_start, new_j_tw->start) + j.service;
+      }
+    }
+
+    if (!add_job_first and !add_break_first) {
+      // In case where both ordering options are doable based on time
+      // windows, we pick the ordering that minimizes earliest end
+      // date for sequence.
+      if (break_then_job_end < job_then_break_end) {
+        add_break_first = true;
+      } else if (break_then_job_end == job_then_break_end) {
+        if (j_tw->end <= b.tws[break_tw_ranks[break_rank]].end) {
+          add_job_first = true;
+        } else {
+          add_break_first = true;
+        }
+      } else {
+        add_job_first = true;
+      }
+    }
+
+    // Now update next end time based on insertion choice.
+    assert(add_job_first xor add_break_first);
+    if (add_break_first) {
+      // Earliest/rank/margin data for breaks before added job is
+      // unchanged.
+      ++breaks_before;
+
+      if (breaks_travel_margin_before[break_rank] < previous_travel) {
+        previous_travel -= breaks_travel_margin_before[break_rank];
+      } else {
+        previous_travel = 0;
+      }
+
+      current_earliest = break_earliest[break_rank] + b.service;
+    }
+    if (add_job_first) {
+      current_earliest =
+        std::max(current_earliest + previous_travel, j_tw->start);
+
+      tw_ranks.insert(tw_ranks.begin() + rank,
+                      std::distance(j.tws.begin(), j_tw));
+      earliest.insert(earliest.begin() + rank, current_earliest);
+
+      current_earliest += j.service;
+      job_added = true;
+
+      // Earliest/rank data for breaks after added job will be updated
+      // through the call to fwd_update_earliest_from one break counts
+      // are straightened up.
+      break;
+    }
+  }
+
+  if (!job_added) {
+    current_earliest += previous_travel;
+    auto j_tw = std::find_if(j.tws.begin(), j.tws.end(), [&](const auto& tw) {
+      return current_earliest <= tw.end;
+    });
+    assert(j_tw != j.tws.end());
+
+    current_earliest = std::max(current_earliest, j_tw->start);
+
+    tw_ranks.insert(tw_ranks.begin() + rank,
+                    std::distance(j.tws.begin(), j_tw));
+    earliest.insert(earliest.begin() + rank, current_earliest);
+
+    current_earliest += j.service;
+  }
+
+  // Add breaks_* data for breaks before newly inserted job.
+  unsigned breaks_after = breaks_at_rank[rank] - breaks_before;
+  breaks_at_rank[rank] -= breaks_before;
+  breaks_at_rank.insert(breaks_at_rank.begin() + rank, breaks_before);
+  breaks_counts.insert(breaks_counts.begin() + rank,
+                       breaks_counts[rank] - breaks_after);
+
+  // Update latest dates for breaks after inserted job using updated
+  // break data.
+  Index break_rank = breaks_counts[rank + 1];
+  for (Index r = 0; r < breaks_after; ++r) {
+    --break_rank;
+    const auto& b = v.breaks[break_rank];
+
+    assert(b.service <= current_latest);
+    current_latest -= b.service;
+
+    const auto b_tw =
+      std::find_if(b.tws.rbegin(), b.tws.rend(), [&](const auto& tw) {
+        return tw.start <= current_latest;
+      });
+    assert(b_tw != b.tws.rend());
+
+    if (b_tw->end < current_latest) {
+      auto margin = current_latest - b_tw->end;
+      breaks_travel_margin_after[break_rank] = margin;
+      if (margin < next_travel) {
+        next_travel -= margin;
+      } else {
+        next_travel = 0;
+      }
+
+      current_latest = b_tw->end;
+    } else {
+      breaks_travel_margin_after[break_rank] = 0;
+    }
+
+    break_latest[break_rank] = current_latest;
+  }
+
+  // Update inserted job latest date.
+  assert(j.service + next_travel <= current_latest);
+  current_latest -= (j.service + next_travel);
+  current_latest = std::min(current_latest, j.tws[tw_ranks[rank]].end);
+  latest.insert(latest.begin() + rank, current_latest);
+
+  // Updating the route needs to be done after TW stuff as
+  // previous_earliest_end and next_latest_start rely on route size
+  // before addition ; but before earliest/latest date propagation
+  // that rely on route structure after addition.
   route.insert(route.begin() + rank, job_rank);
-
-  // Update earliest/latest date for new job, then propagate
-  // constraints.
-  earliest.insert(earliest.begin() + rank, job_earliest);
-  latest.insert(latest.begin() + rank, job_latest);
 
   fwd_update_earliest_from(input, rank);
   bwd_update_latest_from(input, rank);
