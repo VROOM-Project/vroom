@@ -83,7 +83,6 @@ public:
   // we use time window at rank break_tw_ranks[i] for this break.
   std::vector<Duration> break_earliest;
   std::vector<Duration> break_latest;
-  std::vector<Index> break_tw_ranks;
 
   // When a break's earliest date is delayed (resp. latest date is
   // advanced) because of it's time window start (resp. end), then

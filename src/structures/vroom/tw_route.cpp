@@ -20,7 +20,6 @@ TWRoute::TWRoute(const Input& input, Index v)
     breaks_counts({static_cast<unsigned>(input.vehicles[v].breaks.size())}),
     break_earliest(input.vehicles[v].breaks.size()),
     break_latest(input.vehicles[v].breaks.size()),
-    break_tw_ranks(input.vehicles[v].breaks.size()),
     breaks_travel_margin_before(input.vehicles[v].breaks.size()),
     breaks_travel_margin_after(input.vehicles[v].breaks.size()) {
   std::string break_error = "Inconsistent breaks for vehicle " +
@@ -32,17 +31,15 @@ TWRoute::TWRoute(const Input& input, Index v)
 
   for (Index i = 0; i < breaks.size(); ++i) {
     const auto& b = breaks[i];
-    const auto tw_candidate =
+    const auto b_tw =
       std::find_if(b.tws.begin(), b.tws.end(), [&](const auto& tw) {
         return previous_earliest <= tw.end;
       });
-
-    if (tw_candidate == b.tws.end()) {
+    if (b_tw == b.tws.end()) {
       throw Exception(ERROR::INPUT, break_error);
     }
 
-    break_tw_ranks[i] = std::distance(b.tws.begin(), tw_candidate);
-    break_earliest[i] = std::max(previous_earliest, tw_candidate->start);
+    break_earliest[i] = std::max(previous_earliest, b_tw->start);
     breaks_travel_margin_before[i] = break_earliest[i] - previous_earliest;
 
     previous_earliest = break_earliest[i] + b.service;
@@ -56,10 +53,17 @@ TWRoute::TWRoute(const Input& input, Index v)
     if (next_latest < b.service) {
       throw Exception(ERROR::INPUT, break_error);
     }
-
     next_latest -= b.service;
 
-    break_latest[i] = std::min(next_latest, b.tws[break_tw_ranks[i]].end);
+    const auto b_tw =
+      std::find_if(b.tws.rbegin(), b.tws.rend(), [&](const auto& tw) {
+        return tw.start <= next_latest;
+      });
+    if (b_tw == b.tws.rend()) {
+      throw Exception(ERROR::INPUT, break_error);
+    }
+
+    break_latest[i] = std::min(next_latest, b_tw->end);
     breaks_travel_margin_after[i] = next_latest - break_latest[i];
 
     next_latest = break_latest[i];
@@ -178,13 +182,19 @@ void TWRoute::fwd_update_earliest_from(const Input& input, Index rank) {
     assert(breaks_at_rank[i] <= breaks_counts[i]);
     Index break_rank = breaks_counts[i] - breaks_at_rank[i];
 
-    for (Index b = 0; b < breaks_at_rank[i]; ++b, ++break_rank) {
+    for (Index r = 0; r < breaks_at_rank[i]; ++r, ++break_rank) {
+      const auto& b = v.breaks[break_rank];
+
       current_earliest += previous_service;
 
-      const auto& break_TW =
-        v.breaks[break_rank].tws[break_tw_ranks[break_rank]];
-      if (current_earliest < break_TW.start) {
-        auto margin = break_TW.start - current_earliest;
+      const auto b_tw =
+        std::find_if(b.tws.begin(), b.tws.end(), [&](const auto& tw) {
+          return current_earliest <= tw.end;
+        });
+      assert(b_tw != b.tws.end());
+
+      if (current_earliest < b_tw->start) {
+        auto margin = b_tw->start - current_earliest;
         breaks_travel_margin_before[break_rank] = margin;
         if (margin < remaining_travel_time) {
           remaining_travel_time -= margin;
@@ -192,7 +202,7 @@ void TWRoute::fwd_update_earliest_from(const Input& input, Index rank) {
           remaining_travel_time = 0;
         }
 
-        current_earliest = break_TW.start;
+        current_earliest = b_tw->start;
       } else {
         breaks_travel_margin_before[break_rank] = 0;
       }
@@ -231,13 +241,18 @@ void TWRoute::fwd_update_earliest_from(const Input& input, Index rank) {
     assert(breaks_at_rank[i] <= breaks_counts[i]);
     Index break_rank = breaks_counts[i] - breaks_at_rank[i];
 
-    for (Index b = 0; b < breaks_at_rank[i]; ++b, ++break_rank) {
+    for (Index r = 0; r < breaks_at_rank[i]; ++r, ++break_rank) {
+      const auto& b = v.breaks[break_rank];
       current_earliest += previous_service;
 
-      const auto& break_TW =
-        v.breaks[break_rank].tws[break_tw_ranks[break_rank]];
-      if (current_earliest < break_TW.start) {
-        auto margin = break_TW.start - current_earliest;
+      const auto b_tw =
+        std::find_if(b.tws.begin(), b.tws.end(), [&](const auto& tw) {
+          return current_earliest <= tw.end;
+        });
+      assert(b_tw != b.tws.end());
+
+      if (current_earliest < b_tw->start) {
+        auto margin = b_tw->start - current_earliest;
         breaks_travel_margin_before[break_rank] = margin;
         if (margin < remaining_travel_time) {
           remaining_travel_time -= margin;
@@ -245,7 +260,7 @@ void TWRoute::fwd_update_earliest_from(const Input& input, Index rank) {
           remaining_travel_time = 0;
         }
 
-        current_earliest = break_TW.start;
+        current_earliest = b_tw->start;
       } else {
         breaks_travel_margin_before[break_rank] = 0;
       }
@@ -275,15 +290,21 @@ void TWRoute::bwd_update_latest_from(const Input& input, Index rank) {
     assert(breaks_at_rank[next_i] <= breaks_counts[next_i]);
     Index break_rank = breaks_counts[next_i];
 
-    for (Index b = 0; b < breaks_at_rank[next_i]; ++b) {
+    for (Index r = 0; r < breaks_at_rank[next_i]; ++r) {
       --break_rank;
-      assert(v.breaks[break_rank].service <= current_latest);
-      current_latest -= v.breaks[break_rank].service;
 
-      const auto& break_TW =
-        v.breaks[break_rank].tws[break_tw_ranks[break_rank]];
-      if (break_TW.end < current_latest) {
-        auto margin = current_latest - break_TW.end;
+      const auto& b = v.breaks[break_rank];
+      assert(b.service <= current_latest);
+      current_latest -= b.service;
+
+      const auto b_tw =
+        std::find_if(b.tws.rbegin(), b.tws.rend(), [&](const auto& tw) {
+          return tw.start <= current_latest;
+        });
+      assert(b_tw != b.tws.rend());
+
+      if (b_tw->end < current_latest) {
+        auto margin = current_latest - b_tw->end;
         breaks_travel_margin_after[break_rank] = margin;
         if (margin < remaining_travel_time) {
           remaining_travel_time -= margin;
@@ -291,7 +312,7 @@ void TWRoute::bwd_update_latest_from(const Input& input, Index rank) {
           remaining_travel_time = 0;
         }
 
-        current_latest = break_TW.end;
+        current_latest = b_tw->end;
       } else {
         breaks_travel_margin_after[break_rank] = 0;
       }
@@ -326,17 +347,22 @@ void TWRoute::bwd_update_latest_from(const Input& input, Index rank) {
     assert(breaks_at_rank[next_i] <= breaks_counts[next_i]);
     Index break_rank = breaks_counts[next_i];
 
-    for (Index b = 0; b < breaks_at_rank[next_i]; ++b) {
+    for (Index r = 0; r < breaks_at_rank[next_i]; ++r) {
       --break_rank;
-      assert(v.breaks[break_rank].service <= current_latest);
-      current_latest -= v.breaks[break_rank].service;
+      const auto& b = v.breaks[break_rank];
 
-      const auto& break_TW =
-        v.breaks[break_rank].tws[break_tw_ranks[break_rank]];
-      if (break_TW.end < current_latest) {
-        breaks_travel_margin_after[break_rank] = current_latest - break_TW.end;
+      assert(b.service <= current_latest);
+      current_latest -= b.service;
 
-        current_latest = break_TW.end;
+      const auto b_tw =
+        std::find_if(b.tws.rbegin(), b.tws.rend(), [&](const auto& tw) {
+          return tw.start <= current_latest;
+        });
+      assert(b_tw != b.tws.rend());
+      if (b_tw->end < current_latest) {
+        breaks_travel_margin_after[break_rank] = current_latest - b_tw->end;
+
+        current_latest = b_tw->end;
       } else {
         breaks_travel_margin_after[break_rank] = 0;
       }
@@ -365,7 +391,7 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
 
   for (Index r = 0; r < breaks_at_rank[rank]; ++r) {
     Index break_rank = (breaks_counts[rank] + r) - breaks_at_rank[rank];
-    auto& b = v.breaks[break_rank];
+    const auto& b = v.breaks[break_rank];
 
     const auto b_tw =
       std::find_if(b.tws.begin(), b.tws.end(), [&](const auto& tw) {
@@ -603,7 +629,7 @@ void TWRoute::add(const Input& input, const Index job_rank, const Index rank) {
   // Decide on ordering between breaks and added job.
   for (Index r = 0; r < breaks_at_rank[rank]; ++r) {
     Index break_rank = (breaks_counts[rank] + r) - breaks_at_rank[rank];
-    auto& b = v.breaks[break_rank];
+    const auto& b = v.breaks[break_rank];
 
     const auto j_tw =
       std::find_if(j.tws.begin(), j.tws.end(), [&](const auto& tw) {
@@ -668,7 +694,15 @@ void TWRoute::add(const Input& input, const Index job_rank, const Index rank) {
       if (break_then_job_end < job_then_break_end) {
         add_break_first = true;
       } else if (break_then_job_end == job_then_break_end) {
-        if (j_tw->end <= b.tws[break_tw_ranks[break_rank]].end) {
+        // If end date is the same for both ordering options, decide
+        // based on earliest deadline.
+        const auto b_tw =
+          std::find_if(b.tws.begin(), b.tws.end(), [&](const auto& tw) {
+            return current_earliest <= tw.end;
+          });
+        assert(b_tw != b.tws.end());
+
+        if (j_tw->end <= b_tw->end) {
           add_job_first = true;
         } else {
           add_break_first = true;

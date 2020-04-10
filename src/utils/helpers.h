@@ -411,15 +411,20 @@ inline Route format_route(const Input& input,
     // job.
     assert(tw_r.breaks_at_rank[r] <= tw_r.breaks_counts[r]);
     Index break_rank = tw_r.breaks_counts[r];
-    for (Index b = 0; b < tw_r.breaks_at_rank[r]; ++b) {
+    for (Index i = 0; i < tw_r.breaks_at_rank[r]; ++i) {
       --break_rank;
-      assert(v.breaks[break_rank].service <= step_start);
-      step_start -= v.breaks[break_rank].service;
+      const auto& b = v.breaks[break_rank];
+      assert(b.service <= step_start);
+      step_start -= b.service;
 
-      const auto& break_TW =
-        v.breaks[break_rank].tws[tw_r.break_tw_ranks[break_rank]];
-      if (break_TW.end < step_start) {
-        auto margin = step_start - break_TW.end;
+      const auto b_tw =
+        std::find_if(b.tws.rbegin(), b.tws.rend(), [&](const auto& tw) {
+          return tw.start <= step_start;
+        });
+      assert(b_tw != b.tws.rend());
+
+      if (b_tw->end < step_start) {
+        auto margin = step_start - b_tw->end;
         if (margin < remaining_travel_time) {
           remaining_travel_time -= margin;
         } else {
@@ -427,7 +432,7 @@ inline Route format_route(const Input& input,
           remaining_travel_time = 0;
         }
 
-        step_start = break_TW.end;
+        step_start = b_tw->end;
       }
     }
 
@@ -465,15 +470,20 @@ inline Route format_route(const Input& input,
     // job.
     assert(tw_r.breaks_at_rank[0] <= tw_r.breaks_counts[0]);
     Index break_rank = tw_r.breaks_counts[0];
-    for (Index b = 0; b < tw_r.breaks_at_rank[0]; ++b) {
+    for (Index r = 0; r < tw_r.breaks_at_rank[0]; ++r) {
       --break_rank;
-      assert(v.breaks[break_rank].service <= step_start);
-      step_start -= v.breaks[break_rank].service;
+      const auto& b = v.breaks[break_rank];
+      assert(b.service <= step_start);
+      step_start -= b.service;
 
-      const auto& break_TW =
-        v.breaks[break_rank].tws[tw_r.break_tw_ranks[break_rank]];
-      if (break_TW.end < step_start) {
-        auto margin = step_start - break_TW.end;
+      const auto b_tw =
+        std::find_if(b.tws.rbegin(), b.tws.rend(), [&](const auto& tw) {
+          return tw.start <= step_start;
+        });
+      assert(b_tw != b.tws.rend());
+
+      if (b_tw->end < step_start) {
+        auto margin = step_start - b_tw->end;
         if (margin < remaining_travel_time) {
           remaining_travel_time -= margin;
         } else {
@@ -481,7 +491,7 @@ inline Route format_route(const Input& input,
           remaining_travel_time = 0;
         }
 
-        step_start = break_TW.end;
+        step_start = b_tw->end;
       }
     }
 
@@ -519,21 +529,26 @@ inline Route format_route(const Input& input,
     assert(tw_r.breaks_at_rank[r] <= tw_r.breaks_counts[r]);
     Index break_rank = tw_r.breaks_counts[r] - tw_r.breaks_at_rank[r];
 
-    for (Index b = 0; b < tw_r.breaks_at_rank[r]; ++b, ++break_rank) {
-      const auto& break_TW =
-        v.breaks[break_rank].tws[tw_r.break_tw_ranks[break_rank]];
+    for (Index i = 0; i < tw_r.breaks_at_rank[r]; ++i, ++break_rank) {
+      const auto& b = v.breaks[break_rank];
 
-      steps.emplace_back(v.breaks[break_rank], current_load);
+      steps.emplace_back(b, current_load);
       auto& current_break = steps.back();
 
-      if (step_start < break_TW.start) {
-        auto margin = break_TW.start - step_start;
+      const auto b_tw =
+        std::find_if(b.tws.begin(), b.tws.end(), [&](const auto& tw) {
+          return step_start <= tw.end;
+        });
+      assert(b_tw != b.tws.end());
+
+      if (step_start < b_tw->start) {
+        auto margin = b_tw->start - step_start;
         if (margin <= travel_time) {
           // Part of the remaining travel time is spent before this
           // break, filling the whole margin.
           duration += margin;
           travel_time -= margin;
-          current_break.arrival = break_TW.start;
+          current_break.arrival = b_tw->start;
         } else {
           // The whole remaining travel time is spent before this
           // break, not filling the whole margin.
@@ -548,17 +563,17 @@ inline Route format_route(const Input& input,
           travel_time = 0;
         }
 
-        step_start = break_TW.start;
+        step_start = b_tw->start;
       } else {
         current_break.arrival = step_start;
       }
 
-      assert(v.breaks[break_rank].is_valid_start(current_break.arrival +
-                                                 current_break.waiting_time));
+      assert(
+        b.is_valid_start(current_break.arrival + current_break.waiting_time));
 
       current_break.duration = duration;
 
-      auto& current_service = v.breaks[break_rank].service;
+      auto& current_service = b.service;
       service += current_service;
       step_start += current_service;
     }
@@ -610,21 +625,26 @@ inline Route format_route(const Input& input,
   assert(tw_r.breaks_at_rank[r] <= tw_r.breaks_counts[r]);
   Index break_rank = tw_r.breaks_counts[r] - tw_r.breaks_at_rank[r];
 
-  for (Index b = 0; b < tw_r.breaks_at_rank[r]; ++b, ++break_rank) {
-    const auto& break_TW =
-      v.breaks[break_rank].tws[tw_r.break_tw_ranks[break_rank]];
+  for (Index i = 0; i < tw_r.breaks_at_rank[r]; ++i, ++break_rank) {
+    const auto& b = v.breaks[break_rank];
 
-    steps.emplace_back(v.breaks[break_rank], current_load);
+    steps.emplace_back(b, current_load);
     auto& current_break = steps.back();
 
-    if (step_start < break_TW.start) {
-      auto margin = break_TW.start - step_start;
+    const auto b_tw =
+      std::find_if(b.tws.begin(), b.tws.end(), [&](const auto& tw) {
+        return step_start <= tw.end;
+      });
+    assert(b_tw != b.tws.end());
+
+    if (step_start < b_tw->start) {
+      auto margin = b_tw->start - step_start;
       if (margin <= travel_time) {
         // Part of the remaining travel time is spent before this
         // break, filling the whole margin.
         duration += margin;
         travel_time -= margin;
-        current_break.arrival = break_TW.start;
+        current_break.arrival = b_tw->start;
       } else {
         // The whole remaining travel time is spent before this
         // break, not filling the whole margin.
@@ -639,17 +659,17 @@ inline Route format_route(const Input& input,
         travel_time = 0;
       }
 
-      step_start = break_TW.start;
+      step_start = b_tw->start;
     } else {
       current_break.arrival = step_start;
     }
 
-    assert(v.breaks[break_rank].is_valid_start(current_break.arrival +
-                                               current_break.waiting_time));
+    assert(
+      b.is_valid_start(current_break.arrival + current_break.waiting_time));
 
     current_break.duration = duration;
 
-    auto& current_service = v.breaks[break_rank].service;
+    auto& current_service = b.service;
     service += current_service;
     step_start += current_service;
   }
