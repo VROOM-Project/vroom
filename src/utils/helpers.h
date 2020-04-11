@@ -459,41 +459,42 @@ inline Route format_route(const Input& input,
   std::vector<Step> steps;
 
   // Now pack everything ASAP based on first job start date.
+  Duration remaining_travel_time =
+    (v.has_start())
+      ? m[v.start.get().index()][input.jobs[tw_r.route[0]].index()]
+      : 0;
+
+  // Take into account timing constraints for breaks before first job.
+  assert(tw_r.breaks_at_rank[0] <= tw_r.breaks_counts[0]);
+  Index break_rank = tw_r.breaks_counts[0];
+  for (Index r = 0; r < tw_r.breaks_at_rank[0]; ++r) {
+    --break_rank;
+    const auto& b = v.breaks[break_rank];
+    assert(b.service <= step_start);
+    step_start -= b.service;
+
+    const auto b_tw =
+      std::find_if(b.tws.rbegin(), b.tws.rend(), [&](const auto& tw) {
+        return tw.start <= step_start;
+      });
+    assert(b_tw != b.tws.rend());
+
+    if (b_tw->end < step_start) {
+      auto margin = step_start - b_tw->end;
+      if (margin < remaining_travel_time) {
+        remaining_travel_time -= margin;
+      } else {
+        backward_wt += (margin - remaining_travel_time);
+        remaining_travel_time = 0;
+      }
+
+      step_start = b_tw->end;
+    }
+  }
+
   if (v.has_start()) {
     steps.emplace_back(STEP_TYPE::START, v.start.get(), current_load);
     steps.back().duration = 0;
-
-    Duration remaining_travel_time =
-      m[v.start.get().index()][input.jobs[tw_r.route[0]].index()];
-
-    // Take into account timing constraints for breaks before first
-    // job.
-    assert(tw_r.breaks_at_rank[0] <= tw_r.breaks_counts[0]);
-    Index break_rank = tw_r.breaks_counts[0];
-    for (Index r = 0; r < tw_r.breaks_at_rank[0]; ++r) {
-      --break_rank;
-      const auto& b = v.breaks[break_rank];
-      assert(b.service <= step_start);
-      step_start -= b.service;
-
-      const auto b_tw =
-        std::find_if(b.tws.rbegin(), b.tws.rend(), [&](const auto& tw) {
-          return tw.start <= step_start;
-        });
-      assert(b_tw != b.tws.rend());
-
-      if (b_tw->end < step_start) {
-        auto margin = step_start - b_tw->end;
-        if (margin < remaining_travel_time) {
-          remaining_travel_time -= margin;
-        } else {
-          backward_wt += (margin - remaining_travel_time);
-          remaining_travel_time = 0;
-        }
-
-        step_start = b_tw->end;
-      }
-    }
 
     assert(remaining_travel_time <= step_start);
     step_start -= remaining_travel_time;
@@ -623,7 +624,7 @@ inline Route format_route(const Input& input,
 
   auto r = tw_r.route.size();
   assert(tw_r.breaks_at_rank[r] <= tw_r.breaks_counts[r]);
-  Index break_rank = tw_r.breaks_counts[r] - tw_r.breaks_at_rank[r];
+  break_rank = tw_r.breaks_counts[r] - tw_r.breaks_at_rank[r];
 
   for (Index i = 0; i < tw_r.breaks_at_rank[r]; ++i, ++break_rank) {
     const auto& b = v.breaks[break_rank];
