@@ -7,9 +7,6 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "../include/rapidjson/document.h"
-#include "../include/rapidjson/error/en.h"
-
 #include "routing/ors_wrapper.h"
 #include "utils/exception.h"
 
@@ -17,12 +14,17 @@ namespace vroom {
 namespace routing {
 
 OrsWrapper::OrsWrapper(const std::string& profile, const Server& server)
-  : RoutingWrapper(profile), HttpWrapper(server) {
+  : HttpWrapper(profile,
+                server,
+                "matrix",
+                "directions",
+                "\"geometry_simplify\":\"false\",\"continue_straight\":"
+                "\"false\"") {
 }
 
 std::string OrsWrapper::build_query(const std::vector<Location>& locations,
-                                    std::string service,
-                                    std::string extra_args = "") const {
+                                    const std::string& service,
+                                    const std::string& extra_args) const {
   // Adding locations.
   std::string body = "{\"";
   if (service == "directions") {
@@ -43,7 +45,7 @@ std::string OrsWrapper::build_query(const std::vector<Location>& locations,
   body += "}";
 
   // Building query for ORS
-  std::string query = "POST /ors/v2/" + service + "/" + _profile;
+  std::string query = "POST /ors/v2/" + service + "/" + profile;
 
   query += " HTTP/1.0\r\n";
   query += "Accept: */*\r\n";
@@ -56,15 +58,8 @@ std::string OrsWrapper::build_query(const std::vector<Location>& locations,
   return query;
 }
 
-Matrix<Cost> OrsWrapper::get_matrix(const std::vector<Location>& locs) const {
-  std::string query = this->build_query(locs, "matrix");
-  std::string json_content = this->run_query(query);
-
-  // Expected matrix size.
-  std::size_t m_size = locs.size();
-
-  // Checking everything is fine in the response.
-  rapidjson::Document infos;
+void OrsWrapper::parse_response(rapidjson::Document& infos,
+                                const std::string& json_content) const {
 #ifdef NDEBUG
   infos.Parse(json_content.c_str());
 #else
@@ -72,39 +67,8 @@ Matrix<Cost> OrsWrapper::get_matrix(const std::vector<Location>& locs) const {
 #endif
   if (infos.HasMember("error")) {
     throw Exception(ERROR::ROUTING,
-                    "ORS matrix:" +
-                      std::string(infos["error"]["message"].GetString()));
+                    std::string(infos["error"]["message"].GetString()));
   }
-
-  assert(infos["durations"].Size() == m_size);
-
-  // Build matrix while checking for unfound routes to avoid
-  // unexpected behavior (ORS raises 'null').
-  Matrix<Cost> m(m_size);
-
-  std::vector<unsigned> nb_unfound_from_loc(m_size, 0);
-  std::vector<unsigned> nb_unfound_to_loc(m_size, 0);
-
-  for (rapidjson::SizeType i = 0; i < infos["durations"].Size(); ++i) {
-    const auto& line = infos["durations"][i];
-    assert(line.Size() == m_size);
-    for (rapidjson::SizeType j = 0; j < line.Size(); ++j) {
-      if (line[j].IsNull()) {
-        // No route found between i and j. Just storing info as we
-        // don't know yet which location is responsible between i
-        // and j.
-        ++nb_unfound_from_loc[i];
-        ++nb_unfound_to_loc[j];
-      } else {
-        auto cost = round_cost(line[j].GetDouble());
-        m[i][j] = cost;
-      }
-    }
-  }
-
-  check_unfound(locs, nb_unfound_from_loc, nb_unfound_to_loc);
-
-  return m;
 }
 
 void OrsWrapper::add_route_info(Route& route) const {
@@ -114,25 +78,12 @@ void OrsWrapper::add_route_info(Route& route) const {
     ordered_locations.push_back(step.location);
   }
 
-  std::string extra_args =
-    "\"geometry_simplify\":\"false\",\"continue_straight\":\"false\"";
-
   std::string query =
-    this->build_query(ordered_locations, "directions", extra_args);
+    this->build_query(ordered_locations, _route_service, _extra_args);
   std::string json_content = this->run_query(query);
 
-  // Checking everything is fine in the response.
   rapidjson::Document infos;
-#ifdef NDEBUG
-  infos.Parse(json_content.c_str());
-#else
-  assert(!infos.Parse(json_content.c_str()).HasParseError());
-#endif
-  if (infos.HasMember("error")) {
-    throw Exception(ERROR::ROUTING,
-                    "ORS routes: " +
-                      std::string(infos["error"]["message"].GetString()));
-  }
+  this->parse_response(infos, json_content);
 
   // Total distance and route geometry.
   route.distance =
