@@ -24,10 +24,17 @@ private:
   virtual void parse_response(rapidjson::Document& input,
                               const std::string& json_content) const override;
 
+  virtual double
+  get_total_distance(const rapidjson::Value& route) const override;
+
+  virtual unsigned
+  get_legs_number(const rapidjson::Value& route) const override;
+
+  virtual double get_distance_for_leg(const rapidjson::Value& route,
+                                      rapidjson::SizeType i) const override;
+
 public:
   OrsWrapper(const std::string& profile, const Server& server);
-
-  virtual void add_route_info(Route& route) const override;
 };
 
 } // namespace routing

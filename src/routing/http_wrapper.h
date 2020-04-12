@@ -50,6 +50,15 @@ protected:
 
   virtual Matrix<Cost>
   get_matrix(const std::vector<Location>& locs) const override;
+
+  virtual double get_total_distance(const rapidjson::Value& route) const = 0;
+
+  virtual unsigned get_legs_number(const rapidjson::Value& route) const = 0;
+
+  virtual double get_distance_for_leg(const rapidjson::Value& route,
+                                      rapidjson::SizeType i) const = 0;
+
+  virtual void add_route_info(Route& route) const override;
 };
 
 } // namespace routing
