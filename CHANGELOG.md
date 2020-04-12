@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Refactor routing wrapper classes (#320)
+- Updated Travis script for CI builds (#301)
+
 ### Deprecated
 
 - Steps `job` key is replaced by `id` for consistency with breaks

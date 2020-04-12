@@ -29,7 +29,7 @@ osrm::EngineConfig LibosrmWrapper::get_config(const std::string& profile) {
 }
 
 LibosrmWrapper::LibosrmWrapper(const std::string& profile)
-  : RoutingWrapper(profile), _config(get_config(profile)), _osrm(_config) {
+  : Wrapper(profile), _config(get_config(profile)), _osrm(_config) {
 }
 
 Matrix<Cost>
