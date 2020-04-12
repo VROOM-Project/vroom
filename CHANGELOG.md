@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Refactor routing wrapper classes (#320)
+- Updated Travis script for CI builds (#301)
+
 ## [v1.6.0] - 2020-02-18
 
 ### Added

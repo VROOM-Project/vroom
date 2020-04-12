@@ -595,7 +595,7 @@ Input parse(const CLArgs& cl_args) {
   }
 
   // Set relevant routing wrapper.
-  std::unique_ptr<routing::Wrapper<Cost>> routing_wrapper;
+  std::unique_ptr<routing::Wrapper> routing_wrapper;
   switch (cl_args.router) {
   case ROUTER::OSRM: {
     // Use osrm-routed.

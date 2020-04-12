@@ -38,8 +38,7 @@ void Input::set_geometry(bool geometry) {
   _geometry = geometry;
 }
 
-void Input::set_routing(
-  std::unique_ptr<routing::Wrapper<Cost>> routing_wrapper) {
+void Input::set_routing(std::unique_ptr<routing::Wrapper> routing_wrapper) {
   _routing_wrapper = std::move(routing_wrapper);
 }
 
