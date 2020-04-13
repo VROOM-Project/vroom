@@ -175,14 +175,26 @@ Matrix<Cost> HttpWrapper::get_matrix(const std::vector<Location>& locs) const {
 }
 
 void HttpWrapper::add_route_info(Route& route) const {
-  // Ordering locations for the given steps.
-  std::vector<Location> ordered_locations;
+  // Ordering locations for the given steps, excluding
+  // breaks.
+  std::vector<Location> non_break_locations;
+  std::vector<unsigned> number_breaks_after;
+
   for (const auto& step : route.steps) {
-    ordered_locations.push_back(step.location);
+    if (step.step_type == STEP_TYPE::BREAK) {
+      if (!number_breaks_after.empty()) {
+        ++(number_breaks_after.back());
+      }
+    } else {
+      non_break_locations.push_back(step.location);
+      number_breaks_after.push_back(0);
+    }
   }
+  assert(!non_break_locations.empty());
 
   std::string query =
-    build_query(ordered_locations, _route_service, _extra_args);
+    build_query(non_break_locations, _route_service, _extra_args);
+
   std::string json_content = this->run_query(query);
 
   rapidjson::Document infos;
@@ -193,17 +205,49 @@ void HttpWrapper::add_route_info(Route& route) const {
   route.geometry = std::move(infos["routes"][0]["geometry"].GetString());
 
   auto nb_legs = get_legs_number(infos["routes"][0]);
-  assert(nb_legs == route.steps.size() - 1);
+  assert(nb_legs == non_break_locations.size() - 1);
 
-  // Accumulated travel distance stored for each step.
-  double current_distance = 0;
+  double sum_distance = 0;
 
-  route.steps[0].distance = 0;
+  // Locate first non-break stop.
+  const auto first_non_break =
+    std::find_if(route.steps.begin(), route.steps.end(), [&](const auto& s) {
+      return s.step_type != STEP_TYPE::BREAK;
+    });
+  unsigned steps_rank = std::distance(route.steps.begin(), first_non_break);
+
+  // Zero distance up to first non-break step.
+  for (unsigned i = 0; i <= steps_rank; ++i) {
+    route.steps[i].distance = 0;
+  }
 
   for (rapidjson::SizeType i = 0; i < nb_legs; ++i) {
-    // Update distance for step after current route leg.
-    current_distance += get_distance_for_leg(infos["routes"][0], i);
-    route.steps[i + 1].distance = round_cost(current_distance);
+    const auto& step = route.steps[steps_rank];
+
+    // Next element in steps that is not a break and associated
+    // distance after current route leg.
+    auto& next_step = route.steps[steps_rank + number_breaks_after[i] + 1];
+    Duration next_duration = next_step.duration - step.duration;
+    double next_distance = get_distance_for_leg(infos["routes"][0], i);
+
+    // Pro rata temporis distance update for breaks between current
+    // non-breaks steps.
+    for (unsigned b = 1; b <= number_breaks_after[i]; ++b) {
+      auto& break_step = route.steps[steps_rank + b];
+      break_step.distance = round_cost(
+        sum_distance + ((break_step.duration - step.duration) * next_distance) /
+                         next_duration);
+    }
+
+    sum_distance += next_distance;
+    next_step.distance = round_cost(sum_distance);
+
+    steps_rank += number_breaks_after[i] + 1;
+  }
+
+  // Unchanged distance after last non-break step.
+  for (auto i = steps_rank; i < route.steps.size(); ++i) {
+    route.steps[i].distance = sum_distance;
   }
 }
 
