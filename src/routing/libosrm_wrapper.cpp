@@ -100,20 +100,29 @@ void LibosrmWrapper::add_route_info(Route& route) const {
                                false // continue_straight
   );
 
-  // Ordering locations for the given steps.
+  // Ordering locations for the given steps, excluding
+  // breaks.
+  std::vector<unsigned> number_breaks_after;
   for (auto& step : route.steps) {
-    params.coordinates
-      .emplace_back(osrm::util::FloatLongitude({step.location.lon()}),
-                    osrm::util::FloatLatitude({step.location.lat()}));
+    if (step.step_type == STEP_TYPE::BREAK) {
+      if (!number_breaks_after.empty()) {
+        ++(number_breaks_after.back());
+      }
+    } else {
+      params.coordinates
+        .emplace_back(osrm::util::FloatLongitude({step.location.lon()}),
+                      osrm::util::FloatLatitude({step.location.lat()}));
+      number_breaks_after.push_back(0);
+    }
   }
+  assert(!number_breaks_after.empty());
 
   osrm::json::Object result;
   osrm::Status status = _osrm.Route(params, result);
 
   if (status == osrm::Status::Error) {
     throw Exception(ERROR::ROUTING,
-                    "libOSRM: " +
-                      result.values["code"].get<osrm::json::String>().value +
+                    result.values["code"].get<osrm::json::String>().value +
                       ": " +
                       result.values["message"].get<osrm::json::String>().value);
   }
@@ -129,18 +138,52 @@ void LibosrmWrapper::add_route_info(Route& route) const {
 
   auto& legs = json_route.values["legs"].get<osrm::json::Array>();
   auto nb_legs = legs.values.size();
-  assert(nb_legs == route.steps.size() - 1);
+  assert(nb_legs == number_breaks_after.size() - 1);
 
-  // Accumulated travel distance stored for each step.
-  double current_distance = 0;
+  double sum_distance = 0;
 
-  route.steps[0].distance = 0;
+  // Locate first non-break stop.
+  const auto first_non_break =
+    std::find_if(route.steps.begin(), route.steps.end(), [&](const auto& s) {
+      return s.step_type != STEP_TYPE::BREAK;
+    });
+  unsigned steps_rank = std::distance(route.steps.begin(), first_non_break);
+
+  // Zero distance up to first non-break step.
+  for (unsigned i = 0; i <= steps_rank; ++i) {
+    route.steps[i].distance = 0;
+  }
 
   for (unsigned i = 0; i < nb_legs; ++i) {
-    // Update distance for step after current route leg.
+    const auto& step = route.steps[steps_rank];
+
+    // Next element in steps that is not a break and associated
+    // distance after current route leg.
+    auto& next_step = route.steps[steps_rank + number_breaks_after[i] + 1];
+    Duration next_duration = next_step.duration - step.duration;
+
     auto& leg = legs.values.at(i).get<osrm::json::Object>();
-    current_distance += leg.values["distance"].get<osrm::json::Number>().value;
-    route.steps[i + 1].distance = round_cost(current_distance);
+    double next_distance =
+      leg.values["distance"].get<osrm::json::Number>().value;
+
+    // Pro rata temporis distance update for breaks between current
+    // non-breaks steps.
+    for (unsigned b = 1; b <= number_breaks_after[i]; ++b) {
+      auto& break_step = route.steps[steps_rank + b];
+      break_step.distance = round_cost(
+        sum_distance + ((break_step.duration - step.duration) * next_distance) /
+                         next_duration);
+    }
+
+    sum_distance += next_distance;
+    next_step.distance = round_cost(sum_distance);
+
+    steps_rank += number_breaks_after[i] + 1;
+  }
+
+  // Unchanged distance after last non-break step.
+  for (auto i = steps_rank; i < route.steps.size(); ++i) {
+    route.steps[i].distance = sum_distance;
   }
 }
 
