@@ -475,7 +475,7 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
           std::find_if(j.tws.begin(), j.tws.end(), [&](const auto& tw) {
             return earliest_job_start <= tw.end;
           });
-        if (new_j_tw == b.tws.end()) {
+        if (new_j_tw == j.tws.end()) {
           // Job does not fit after break due to its time windows.
           add_job_first = true;
         } else {
