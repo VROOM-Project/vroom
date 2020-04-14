@@ -19,6 +19,18 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
+struct OrderChoice {
+  bool add_job_first;
+  bool add_break_first;
+  const std::vector<TimeWindow>::const_iterator j_tw;
+  const std::vector<TimeWindow>::const_iterator b_tw;
+
+  OrderChoice(const Job& j,
+              const Break& b,
+              const Duration current_earliest,
+              const Duration previous_travel);
+};
+
 class TWRoute : public RawRoute {
 private:
   // Compute new earliest and latest date for job at job_rank when
@@ -55,6 +67,13 @@ private:
   bool is_bwd_valid_removal(const Input& input,
                             const Index rank,
                             const unsigned count) const;
+
+  // Define global policy wrt job/break respective insertion rule.
+  OrderChoice order_choice(const Input& input,
+                           const Job& j,
+                           const Break& b,
+                           const Duration current_earliest,
+                           const Duration previous_travel) const;
 
 public:
   Duration v_start;

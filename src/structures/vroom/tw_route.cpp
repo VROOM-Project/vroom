@@ -372,6 +372,107 @@ void TWRoute::bwd_update_latest_from(const Input& input, Index rank) {
   }
 }
 
+OrderChoice::OrderChoice(const Job& j,
+                         const Break& b,
+                         const Duration current_earliest,
+                         const Duration previous_travel)
+  : add_job_first(false),
+    add_break_first(false),
+    j_tw(std::find_if(j.tws.begin(),
+                      j.tws.end(),
+                      [&](const auto& tw) {
+                        return current_earliest + previous_travel <= tw.end;
+                      })),
+    b_tw(std::find_if(b.tws.begin(), b.tws.end(), [&](const auto& tw) {
+      return current_earliest <= tw.end;
+    })) {
+}
+
+OrderChoice TWRoute::order_choice(const Input& input,
+                                  const Job& j,
+                                  const Break& b,
+                                  const Duration current_earliest,
+                                  const Duration previous_travel) const {
+  OrderChoice oc(j, b, current_earliest, previous_travel);
+
+  if (oc.j_tw == j.tws.end() or oc.b_tw == b.tws.end()) {
+    // If either job or break can't fit first, then none of the
+    // orderings are valid.
+    return oc;
+  }
+
+  Duration job_then_break_end = 0; // Dummy init.
+  Duration break_then_job_end = 0; // Dummy init.
+
+  // Try putting job first then break.
+  Duration earliest_job_end =
+    std::max(current_earliest + previous_travel, oc.j_tw->start) + j.service;
+
+  const auto new_b_tw =
+    std::find_if(b.tws.begin(), b.tws.end(), [&](const auto& tw) {
+      return earliest_job_end <= tw.end;
+    });
+  if (new_b_tw == b.tws.end()) {
+    // Break does not fit after job due to its time windows. Only
+    // option is to choose break first.
+    oc.add_break_first = true;
+    return oc;
+  } else {
+    job_then_break_end =
+      std::max(earliest_job_end, new_b_tw->start) + b.service;
+  }
+
+  // Try putting break first then job.
+  Duration travel_after_break = previous_travel;
+  Duration earliest_job_start = current_earliest;
+
+  if (current_earliest < oc.b_tw->start) {
+    auto margin = oc.b_tw->start - current_earliest;
+    if (margin < travel_after_break) {
+      travel_after_break -= margin;
+    } else {
+      travel_after_break = 0;
+    }
+
+    earliest_job_start = oc.b_tw->start;
+  }
+
+  earliest_job_start += b.service + travel_after_break;
+
+  const auto new_j_tw =
+    std::find_if(j.tws.begin(), j.tws.end(), [&](const auto& tw) {
+      return earliest_job_start <= tw.end;
+    });
+  if (new_j_tw == j.tws.end()) {
+    // Job does not fit after break due to its time windows. Only
+    // option is to choose job first.
+    oc.add_job_first = true;
+    return oc;
+  } else {
+    break_then_job_end =
+      std::max(earliest_job_start, new_j_tw->start) + j.service;
+  }
+
+  // In case where both ordering options are doable based on time
+  // windows, we pick the ordering that minimizes earliest end date
+  // for sequence.
+  if (break_then_job_end < job_then_break_end) {
+    oc.add_break_first = true;
+  } else if (break_then_job_end == job_then_break_end) {
+    // If end date is the same for both ordering options, decide
+    // based on earliest deadline.
+    if (oc.j_tw->end <= oc.b_tw->end) {
+      oc.add_job_first = true;
+    } else {
+      oc.add_break_first = true;
+    }
+  } else {
+    oc.add_job_first = true;
+  }
+
+  return oc;
+}
+
 bool TWRoute::is_valid_addition_for_tw(const Input& input,
                                        const Index job_rank,
                                        const Index rank) const {
@@ -393,18 +494,18 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
     Index break_rank = (breaks_counts[rank] + r) - breaks_at_rank[rank];
     const auto& b = v.breaks[break_rank];
 
-    const auto b_tw =
-      std::find_if(b.tws.begin(), b.tws.end(), [&](const auto& tw) {
-        return current_earliest <= tw.end;
-      });
-
-    if (b_tw == b.tws.end()) {
-      // Break does not fit anyway due to its time windows.
-      return false;
-    }
-
     if (job_added) {
       // Compute earliest end date for current break.
+      const auto b_tw =
+        std::find_if(b.tws.begin(), b.tws.end(), [&](const auto& tw) {
+          return current_earliest <= tw.end;
+        });
+
+      if (b_tw == b.tws.end()) {
+        // Break does not fit due to its time windows.
+        return false;
+      }
+
       if (current_earliest < b_tw->start) {
         auto margin = b_tw->start - current_earliest;
         if (margin < next_travel) {
@@ -418,108 +519,35 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
 
       current_earliest += b.service;
     } else {
-      const auto j_tw =
-        std::find_if(j.tws.begin(), j.tws.end(), [&](const auto& tw) {
-          return current_earliest + previous_travel <= tw.end;
-        });
-      if (j_tw == j.tws.end()) {
-        // Job does not fit anyway due to its time windows.
+      // Decide on ordering between break and added job.
+      auto oc = order_choice(input, j, b, current_earliest, previous_travel);
+
+      if (!oc.add_job_first and !oc.add_break_first) {
+        // Infeasible insertion.
         return false;
       }
 
-      // Both break and job could fit next based on time windows, so
-      // we need to decide whether to include current break or job.
-      bool add_job_first = false;
-      bool add_break_first = false;
-
-      Duration job_then_break_end = 0; // Dummy init.
-      Duration break_then_job_end = 0; // Dummy init.
-
-      // Try putting job first then break.
-      Duration earliest_job_end =
-        std::max(current_earliest + previous_travel, j_tw->start) + j.service;
-
-      const auto new_b_tw =
-        std::find_if(b.tws.begin(), b.tws.end(), [&](const auto& tw) {
-          return earliest_job_end <= tw.end;
-        });
-      if (new_b_tw == b.tws.end()) {
-        // Break does not fit after job due to its time windows.
-        add_break_first = true;
-      } else {
-        job_then_break_end =
-          std::max(earliest_job_end, new_b_tw->start) + b.service;
-      }
-
-      if (!add_break_first) {
-        // Try putting break first then job. Only thoroughly check
-        // this option if we're not already sure it's the only way.
-
-        Duration travel_after_break = previous_travel;
-        Duration earliest_job_start = current_earliest;
-
-        if (current_earliest < b_tw->start) {
-          auto margin = b_tw->start - current_earliest;
-          if (margin < travel_after_break) {
-            travel_after_break -= margin;
-          } else {
-            travel_after_break = 0;
-          }
-
-          earliest_job_start = b_tw->start;
-        }
-
-        earliest_job_start += b.service + travel_after_break;
-
-        const auto new_j_tw =
-          std::find_if(j.tws.begin(), j.tws.end(), [&](const auto& tw) {
-            return earliest_job_start <= tw.end;
-          });
-        if (new_j_tw == j.tws.end()) {
-          // Job does not fit after break due to its time windows.
-          add_job_first = true;
-        } else {
-          break_then_job_end =
-            std::max(earliest_job_start, new_j_tw->start) + j.service;
-        }
-      }
-
-      if (!add_job_first and !add_break_first) {
-        // In case where both ordering options are doable based on
-        // time windows, we pick the ordering that minimizes earliest
-        // end date for sequence.
-        if (break_then_job_end < job_then_break_end) {
-          add_break_first = true;
-        } else if (break_then_job_end == job_then_break_end) {
-          if (j_tw->end <= b_tw->end) {
-            add_job_first = true;
-          } else {
-            add_break_first = true;
-          }
-        } else {
-          add_job_first = true;
-        }
-      }
-
-      // Now update next end time based on insertion choice.
-      assert(add_job_first xor add_break_first);
-      if (add_break_first) {
-        if (current_earliest < b_tw->start) {
-          auto margin = b_tw->start - current_earliest;
+      // Feasible insertion based on time windows, now update next end
+      // time with given insertion choice.
+      assert(oc.add_job_first xor oc.add_break_first);
+      if (oc.add_break_first) {
+        if (current_earliest < oc.b_tw->start) {
+          auto margin = oc.b_tw->start - current_earliest;
           if (margin < previous_travel) {
             previous_travel -= margin;
           } else {
             previous_travel = 0;
           }
 
-          current_earliest = b_tw->start;
+          current_earliest = oc.b_tw->start;
         }
 
         current_earliest += b.service;
       }
-      if (add_job_first) {
+      if (oc.add_job_first) {
         current_earliest =
-          std::max(current_earliest + previous_travel, j_tw->start) + j.service;
+          std::max(current_earliest + previous_travel, oc.j_tw->start) +
+          j.service;
         job_added = true;
       }
     }
@@ -626,95 +654,16 @@ void TWRoute::add(const Input& input, const Index job_rank, const Index rank) {
 
   assert(breaks_at_rank[rank] <= breaks_counts[rank]);
 
-  // Decide on ordering between breaks and added job.
   for (Index r = 0; r < breaks_at_rank[rank]; ++r) {
     Index break_rank = (breaks_counts[rank] + r) - breaks_at_rank[rank];
     const auto& b = v.breaks[break_rank];
 
-    const auto j_tw =
-      std::find_if(j.tws.begin(), j.tws.end(), [&](const auto& tw) {
-        return current_earliest + previous_travel <= tw.end;
-      });
-    assert(j_tw != j.tws.end());
-
-    // Decide whether to include current break or job.
-    bool add_job_first = false;
-    bool add_break_first = false;
-
-    Duration job_then_break_end = 0; // Dummy init.
-    Duration break_then_job_end = 0; // Dummy init.
-
-    // Try putting job first then break.
-    Duration earliest_job_end =
-      std::max(current_earliest + previous_travel, j_tw->start) + j.service;
-
-    const auto new_b_tw =
-      std::find_if(b.tws.begin(), b.tws.end(), [&](const auto& tw) {
-        return earliest_job_end <= tw.end;
-      });
-    if (new_b_tw == b.tws.end()) {
-      // Break does not fit after job due to its time windows.
-      add_break_first = true;
-    } else {
-      job_then_break_end =
-        std::max(earliest_job_end, new_b_tw->start) + b.service;
-    }
-
-    if (!add_break_first) {
-      // Try putting break first then job. Only thoroughly check this
-      // option if we're not already sure it's the only way.
-
-      Duration travel_after_break = previous_travel;
-      if (breaks_travel_margin_before[break_rank] < travel_after_break) {
-        travel_after_break -= breaks_travel_margin_before[break_rank];
-      } else {
-        travel_after_break = 0;
-      }
-
-      Duration earliest_job_start =
-        break_earliest[break_rank] + b.service + travel_after_break;
-
-      const auto new_j_tw =
-        std::find_if(j.tws.begin(), j.tws.end(), [&](const auto& tw) {
-          return earliest_job_start <= tw.end;
-        });
-      if (new_j_tw == b.tws.end()) {
-        // Job does not fit after break due to its time windows.
-        add_job_first = true;
-      } else {
-        break_then_job_end =
-          std::max(earliest_job_start, new_j_tw->start) + j.service;
-      }
-    }
-
-    if (!add_job_first and !add_break_first) {
-      // In case where both ordering options are doable based on time
-      // windows, we pick the ordering that minimizes earliest end
-      // date for sequence.
-      if (break_then_job_end < job_then_break_end) {
-        add_break_first = true;
-      } else if (break_then_job_end == job_then_break_end) {
-        // If end date is the same for both ordering options, decide
-        // based on earliest deadline.
-        const auto b_tw =
-          std::find_if(b.tws.begin(), b.tws.end(), [&](const auto& tw) {
-            return current_earliest <= tw.end;
-          });
-        assert(b_tw != b.tws.end());
-
-        if (j_tw->end <= b_tw->end) {
-          add_job_first = true;
-        } else {
-          add_break_first = true;
-        }
-      } else {
-        add_job_first = true;
-      }
-    }
+    // Decide on ordering between break and added job.
+    auto oc = order_choice(input, j, b, current_earliest, previous_travel);
+    assert(oc.add_job_first xor oc.add_break_first);
 
     // Now update next end time based on insertion choice.
-    assert(add_job_first xor add_break_first);
-    if (add_break_first) {
+    if (oc.add_break_first) {
       // Earliest/rank/margin data for breaks before added job is
       // unchanged.
       ++breaks_before;
@@ -727,12 +676,13 @@ void TWRoute::add(const Input& input, const Index job_rank, const Index rank) {
 
       current_earliest = break_earliest[break_rank] + b.service;
     }
-    if (add_job_first) {
+    if (oc.add_job_first) {
+      assert(oc.j_tw != j.tws.end());
       current_earliest =
-        std::max(current_earliest + previous_travel, j_tw->start);
+        std::max(current_earliest + previous_travel, oc.j_tw->start);
 
       tw_ranks.insert(tw_ranks.begin() + rank,
-                      std::distance(j.tws.begin(), j_tw));
+                      std::distance(j.tws.begin(), oc.j_tw));
       earliest.insert(earliest.begin() + rank, current_earliest);
 
       current_earliest += j.service;
@@ -758,8 +708,6 @@ void TWRoute::add(const Input& input, const Index job_rank, const Index rank) {
     tw_ranks.insert(tw_ranks.begin() + rank,
                     std::distance(j.tws.begin(), j_tw));
     earliest.insert(earliest.begin() + rank, current_earliest);
-
-    current_earliest += j.service;
   }
 
   // Add breaks_* data for breaks before newly inserted job.
