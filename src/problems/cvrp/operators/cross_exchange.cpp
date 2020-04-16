@@ -94,7 +94,7 @@ Gain CrossExchange::gain_upper_bound() {
 
   if (s_rank == 0) {
     if (v_source.has_start()) {
-      auto p_index = v_source.start.get().index();
+      auto p_index = v_source.start.value().index();
       previous_cost = m[p_index][t_index];
       reverse_previous_cost = m[p_index][t_after_index];
     }
@@ -106,7 +106,7 @@ Gain CrossExchange::gain_upper_bound() {
 
   if (s_rank == s_route.size() - 2) {
     if (v_source.has_end()) {
-      auto n_index = v_source.end.get().index();
+      auto n_index = v_source.end.value().index();
       next_cost = m[t_after_index][n_index];
       reverse_next_cost = m[t_index][n_index];
     }
@@ -142,7 +142,7 @@ Gain CrossExchange::gain_upper_bound() {
 
   if (t_rank == 0) {
     if (v_target.has_start()) {
-      auto p_index = v_target.start.get().index();
+      auto p_index = v_target.start.value().index();
       previous_cost = m[p_index][s_index];
       reverse_previous_cost = m[p_index][s_after_index];
     }
@@ -154,7 +154,7 @@ Gain CrossExchange::gain_upper_bound() {
 
   if (t_rank == t_route.size() - 2) {
     if (v_target.has_end()) {
-      auto n_index = v_target.end.get().index();
+      auto n_index = v_target.end.value().index();
       next_cost = m[s_after_index][n_index];
       reverse_next_cost = m[s_index][n_index];
     }

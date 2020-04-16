@@ -1417,12 +1417,12 @@ Gain LocalSearch<Route,
   auto job_index = _input.jobs[_sol[v].route[r]].index();
 
   if (_input.vehicles[v_target].has_start()) {
-    auto start_index = _input.vehicles[v_target].start.get().index();
+    auto start_index = _input.vehicles[v_target].start.value().index();
     Gain start_cost = _matrix[start_index][job_index];
     cost = std::min(cost, start_cost);
   }
   if (_input.vehicles[v_target].has_end()) {
-    auto end_index = _input.vehicles[v_target].end.get().index();
+    auto end_index = _input.vehicles[v_target].end.value().index();
     Gain end_cost = _matrix[job_index][end_index];
     cost = std::min(cost, end_cost);
   }

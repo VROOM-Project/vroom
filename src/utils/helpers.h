@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <algorithm>
 #include <numeric>
 #include <sstream>
 
@@ -105,17 +106,17 @@ inline Gain addition_cost(const Input& input,
     if (route.size() == 0) {
       // Adding job to an empty route.
       if (v.has_start()) {
-        previous_cost = m[v.start.get().index()][job_index];
+        previous_cost = m[v.start.value().index()][job_index];
       }
       if (v.has_end()) {
-        next_cost = m[job_index][v.end.get().index()];
+        next_cost = m[job_index][v.end.value().index()];
       }
     } else {
       // Adding job past the end after a real job.
       auto p_index = input.jobs[route[rank - 1]].index();
       previous_cost = m[p_index][job_index];
       if (v.has_end()) {
-        auto n_index = v.end.get().index();
+        auto n_index = v.end.value().index();
         old_edge_cost = m[p_index][n_index];
         next_cost = m[job_index][n_index];
       }
@@ -127,7 +128,7 @@ inline Gain addition_cost(const Input& input,
 
     if (rank == 0) {
       if (v.has_start()) {
-        auto p_index = v.start.get().index();
+        auto p_index = v.start.value().index();
         previous_cost = m[p_index][job_index];
         old_edge_cost = m[p_index][n_index];
       }
@@ -169,8 +170,8 @@ inline Gain addition_cost(const Input& input,
     if (pickup_rank == route.size()) {
       // Addition at the end of a route.
       if (v.has_end()) {
-        after_delivery = m[d_index][v.end.get().index()];
-        remove_after_pickup = m[p_index][v.end.get().index()];
+        after_delivery = m[d_index][v.end.value().index()];
+        remove_after_pickup = m[p_index][v.end.value().index()];
       }
     } else {
       // There is a job after insertion.
@@ -209,7 +210,7 @@ inline Cost route_cost_for_vehicle(const Input& input,
 
   if (route.size() > 0) {
     if (v.has_start()) {
-      cost += m[v.start.get().index()][input.jobs[route.front()].index()];
+      cost += m[v.start.value().index()][input.jobs[route.front()].index()];
     }
 
     Index previous = route.front();
@@ -219,7 +220,7 @@ inline Cost route_cost_for_vehicle(const Input& input,
     }
 
     if (v.has_end()) {
-      cost += m[input.jobs[route.back()].index()][v.end.get().index()];
+      cost += m[input.jobs[route.back()].index()][v.end.value().index()];
     }
   }
 
@@ -276,10 +277,11 @@ inline Solution format_solution(const Input& input,
     Duration ETA = 0;
     // Handle start.
     if (v.has_start()) {
-      steps.emplace_back(STEP_TYPE::START, v.start.get(), current_load);
+      steps.emplace_back(STEP_TYPE::START, v.start.value(), current_load);
       steps.back().duration = 0;
       steps.back().arrival = 0;
-      auto travel = m[v.start.get().index()][input.jobs[route.front()].index()];
+      auto travel =
+        m[v.start.value().index()][input.jobs[route.front()].index()];
       ETA += travel;
       cost += travel;
     }
@@ -332,9 +334,9 @@ inline Solution format_solution(const Input& input,
 
     // Handle end.
     if (v.has_end()) {
-      steps.emplace_back(STEP_TYPE::END, v.end.get(), current_load);
+      steps.emplace_back(STEP_TYPE::END, v.end.value(), current_load);
       Duration travel =
-        m[input.jobs[route.back()].index()][v.end.get().index()];
+        m[input.jobs[route.back()].index()][v.end.value().index()];
       ETA += travel;
       cost += travel;
       steps.back().duration = cost;
@@ -408,11 +410,11 @@ inline Route format_route(const Input& input,
 
   // Now pack everything ASAP based on first job start date.
   if (v.has_start()) {
-    steps.emplace_back(STEP_TYPE::START, v.start.get(), current_load);
+    steps.emplace_back(STEP_TYPE::START, v.start.value(), current_load);
     steps.back().duration = 0;
 
     const auto& first_job = input.jobs[tw_r.route[0]];
-    Duration diff = m[v.start.get().index()][first_job.index()];
+    Duration diff = m[v.start.value().index()][first_job.index()];
     cost += diff;
 
     assert(diff <= job_start);
@@ -482,10 +484,10 @@ inline Route format_route(const Input& input,
 
   if (v.has_end()) {
     const auto& last_job = input.jobs[tw_r.route.back()];
-    Duration travel = m[last_job.index()][v.end.get().index()];
+    Duration travel = m[last_job.index()][v.end.value().index()];
     cost += travel;
 
-    steps.emplace_back(STEP_TYPE::END, v.end.get(), current_load);
+    steps.emplace_back(STEP_TYPE::END, v.end.value(), current_load);
     steps.back().duration = cost;
 
     Duration v_end = job_start + last_job.service + travel;

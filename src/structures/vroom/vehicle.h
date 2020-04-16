@@ -19,15 +19,15 @@ namespace vroom {
 
 struct Vehicle {
   const Id id;
-  boost::optional<Location> start;
-  boost::optional<Location> end;
+  std::optional<Location> start;
+  std::optional<Location> end;
   const Amount capacity;
   const Skills skills;
   const TimeWindow tw;
 
   Vehicle(Id id,
-          const boost::optional<Location>& start,
-          const boost::optional<Location>& end,
+          const std::optional<Location>& start,
+          const std::optional<Location>& end,
           const Amount& capacity = Amount(0),
           const Skills& skills = Skills(),
           const TimeWindow& tw = TimeWindow());

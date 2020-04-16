@@ -58,7 +58,7 @@ void IntraExchange::compute_gain() {
 
   if (s_rank == 0) {
     if (v.has_start()) {
-      auto p_index = v.start.get().index();
+      auto p_index = v.start.value().index();
       new_previous_cost = m[p_index][t_index];
     }
   } else {
@@ -84,7 +84,7 @@ void IntraExchange::compute_gain() {
 
   if (t_rank == t_route.size() - 1) {
     if (v.has_end()) {
-      auto n_index = v.end.get().index();
+      auto n_index = v.end.value().index();
       new_next_cost = m[s_index][n_index];
     }
   } else {

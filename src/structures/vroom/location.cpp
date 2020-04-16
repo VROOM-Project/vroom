@@ -7,12 +7,14 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <cassert>
+
 #include "structures/vroom/location.h"
 
 namespace vroom {
 
 Location::Location(Index index)
-  : _index(index), _coords(boost::none), _user_index(true) {
+  : _index(index), _coords(std::nullopt), _user_index(true) {
 }
 
 Location::Location(Index index, const Coordinates& coords)
@@ -29,17 +31,17 @@ void Location::set_index(Index index) {
 }
 
 bool Location::has_coordinates() const {
-  return _coords != boost::none;
+  return _coords != std::nullopt;
 }
 
 Coordinate Location::lon() const {
   assert(this->has_coordinates());
-  return _coords.get()[0];
+  return _coords.value()[0];
 }
 
 Coordinate Location::lat() const {
   assert(this->has_coordinates());
-  return _coords.get()[1];
+  return _coords.value()[1];
 }
 
 bool Location::user_index() const {
