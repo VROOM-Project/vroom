@@ -336,20 +336,19 @@ Input parse(const CLArgs& cl_args) {
       std::optional<Location> start;
       if (has_start_index) {
         if (has_start_coords) {
-          start = std::optional<Location>(
-            Location({start_index, parse_coordinates(json_vehicle, "start")}));
+          start =
+            Location({start_index, parse_coordinates(json_vehicle, "start")});
         } else {
-          start = std::optional<Location>(start_index);
+          start = start_index;
         }
       }
 
       std::optional<Location> end;
       if (has_end_index) {
         if (has_end_coords) {
-          end = std::optional<Location>(
-            Location({end_index, parse_coordinates(json_vehicle, "end")}));
+          end = Location({end_index, parse_coordinates(json_vehicle, "end")});
         } else {
-          end = std::optional<Location>(end_index);
+          end = end_index;
         }
       }
 
@@ -478,13 +477,12 @@ Input parse(const CLArgs& cl_args) {
 
       std::optional<Location> start;
       if (json_vehicle.HasMember("start")) {
-        start =
-          std::optional<Location>(parse_coordinates(json_vehicle, "start"));
+        start = parse_coordinates(json_vehicle, "start");
       }
 
       std::optional<Location> end;
       if (json_vehicle.HasMember("end")) {
-        end = std::optional<Location>(parse_coordinates(json_vehicle, "end"));
+        end = parse_coordinates(json_vehicle, "end");
       }
 
       Vehicle vehicle(json_vehicle["id"].GetUint64(),
