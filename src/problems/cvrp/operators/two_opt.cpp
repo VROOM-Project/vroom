@@ -75,12 +75,12 @@ void TwoOpt::compute_gain() {
   // Handling end route cost change because vehicle ends can be
   // different or none.
   if (v_source.has_end()) {
-    auto end_s = v_source.end.get().index();
+    auto end_s = v_source.end.value().index();
     stored_gain += m[last_s][end_s];
     stored_gain -= m[new_last_s][end_s];
   }
   if (v_target.has_end()) {
-    auto end_t = v_target.end.get().index();
+    auto end_t = v_target.end.value().index();
     stored_gain += m[last_t][end_t];
     stored_gain -= m[new_last_t][end_t];
   }

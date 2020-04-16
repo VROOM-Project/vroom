@@ -96,7 +96,7 @@ Gain IntraCrossExchange::gain_upper_bound() {
 
   if (s_rank == 0) {
     if (v.has_start()) {
-      auto p_index = v.start.get().index();
+      auto p_index = v.start.value().index();
       previous_cost = m[p_index][t_index];
       reverse_previous_cost = m[p_index][t_after_index];
     }
@@ -139,7 +139,7 @@ Gain IntraCrossExchange::gain_upper_bound() {
 
   if (t_rank == s_route.size() - 2) {
     if (v.has_end()) {
-      auto n_index = v.end.get().index();
+      auto n_index = v.end.value().index();
       next_cost = m[s_after_index][n_index];
       reverse_next_cost = m[s_index][n_index];
     }

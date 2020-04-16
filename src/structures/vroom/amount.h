@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <cassert>
 #include <vector>
 
 #include "structures/typedefs.h"

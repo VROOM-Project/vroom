@@ -36,17 +36,19 @@ TSP::TSP(const Input& input, std::vector<Index> job_ranks, Index vehicle_rank)
   if (_has_start) {
     // Add start and remember rank in _matrix.
     _start = matrix_ranks.size();
-    matrix_ranks.push_back(_input.vehicles[_vehicle_rank].start.get().index());
+    matrix_ranks.push_back(
+      _input.vehicles[_vehicle_rank].start.value().index());
   }
   if (_has_end) {
     // Add end and remember rank in _matrix.
-    if (_has_start and (_input.vehicles[_vehicle_rank].start.get().index() ==
-                        _input.vehicles[_vehicle_rank].end.get().index())) {
+    if (_has_start and (_input.vehicles[_vehicle_rank].start.value().index() ==
+                        _input.vehicles[_vehicle_rank].end.value().index())) {
       // Avoiding duplicate for identical ranks.
       _end = _start;
     } else {
       _end = matrix_ranks.size();
-      matrix_ranks.push_back(_input.vehicles[_vehicle_rank].end.get().index());
+      matrix_ranks.push_back(
+        _input.vehicles[_vehicle_rank].end.value().index());
     }
   }
 

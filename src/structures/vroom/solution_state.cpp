@@ -151,7 +151,7 @@ void SolutionState::set_node_gains(const std::vector<Index>& route, Index v) {
 
   if (_input.vehicles[v].has_start()) {
     // There is a previous step before job at rank 0.
-    p_index = _input.vehicles[v].start.get().index();
+    p_index = _input.vehicles[v].start.value().index();
     previous_cost = _m[p_index][c_index];
 
     // Update next_cost with next job or end.
@@ -162,7 +162,7 @@ void SolutionState::set_node_gains(const std::vector<Index>& route, Index v) {
     } else {
       // route.size() is 1 and first job is also the last.
       if (_input.vehicles[v].has_end()) {
-        next_cost = _m[c_index][_input.vehicles[v].end.get().index()];
+        next_cost = _m[c_index][_input.vehicles[v].end.value().index()];
       }
     }
   } else {
@@ -172,7 +172,7 @@ void SolutionState::set_node_gains(const std::vector<Index>& route, Index v) {
       n_index = _input.jobs[route[1]].index();
     } else {
       assert(_input.vehicles[v].has_end());
-      n_index = _input.vehicles[v].end.get().index();
+      n_index = _input.vehicles[v].end.value().index();
     }
     next_cost = _m[c_index][n_index];
   }
@@ -219,7 +219,7 @@ void SolutionState::set_node_gains(const std::vector<Index>& route, Index v) {
 
   if (_input.vehicles[v].has_end()) {
     // There is a next step after last job.
-    n_index = _input.vehicles[v].end.get().index();
+    n_index = _input.vehicles[v].end.value().index();
     next_cost = _m[c_index][n_index];
 
     if (route.size() > 1) {
@@ -234,7 +234,7 @@ void SolutionState::set_node_gains(const std::vector<Index>& route, Index v) {
       p_index = _input.jobs[route[last_rank - 1]].index();
     } else {
       assert(_input.vehicles[v].has_start());
-      p_index = _input.vehicles[v].start.get().index();
+      p_index = _input.vehicles[v].start.value().index();
     }
     previous_cost = _m[p_index][c_index];
   }
@@ -272,7 +272,7 @@ void SolutionState::set_edge_gains(const std::vector<Index>& route, Index v) {
 
   if (_input.vehicles[v].has_start()) {
     // There is a previous step before job at rank 0.
-    p_index = _input.vehicles[v].start.get().index();
+    p_index = _input.vehicles[v].start.value().index();
     previous_cost = _m[p_index][c_index];
 
     // Update next_cost with next job or end.
@@ -283,7 +283,7 @@ void SolutionState::set_edge_gains(const std::vector<Index>& route, Index v) {
     } else {
       // route.size() is 2 and first edge is also the last.
       if (_input.vehicles[v].has_end()) {
-        next_cost = _m[after_c_index][_input.vehicles[v].end.get().index()];
+        next_cost = _m[after_c_index][_input.vehicles[v].end.value().index()];
       }
     }
   } else {
@@ -293,7 +293,7 @@ void SolutionState::set_edge_gains(const std::vector<Index>& route, Index v) {
       n_index = _input.jobs[route[2]].index();
     } else {
       assert(_input.vehicles[v].has_end());
-      n_index = _input.vehicles[v].end.get().index();
+      n_index = _input.vehicles[v].end.value().index();
     }
     next_cost = _m[after_c_index][n_index];
   }
@@ -343,7 +343,7 @@ void SolutionState::set_edge_gains(const std::vector<Index>& route, Index v) {
 
   if (_input.vehicles[v].has_end()) {
     // There is a next step after last job.
-    n_index = _input.vehicles[v].end.get().index();
+    n_index = _input.vehicles[v].end.value().index();
     next_cost = _m[after_c_index][n_index];
 
     if (route.size() > 2) {
@@ -358,7 +358,7 @@ void SolutionState::set_edge_gains(const std::vector<Index>& route, Index v) {
       p_index = _input.jobs[route[last_edge_rank - 1]].index();
     } else {
       assert(_input.vehicles[v].has_start());
-      p_index = _input.vehicles[v].start.get().index();
+      p_index = _input.vehicles[v].start.value().index();
     }
     previous_cost = _m[p_index][c_index];
   }
@@ -406,7 +406,7 @@ void SolutionState::set_pd_gains(const std::vector<Index>& route, Index v) {
       } else {
         if (_input.vehicles[v].has_start()) {
           has_previous_step = true;
-          p_index = _input.vehicles[v].start.get().index();
+          p_index = _input.vehicles[v].start.value().index();
           previous_cost = _m[p_index][pickup_index];
         }
       }
@@ -420,7 +420,7 @@ void SolutionState::set_pd_gains(const std::vector<Index>& route, Index v) {
       } else {
         if (_input.vehicles[v].has_end()) {
           has_next_step = true;
-          n_index = _input.vehicles[v].end.get().index();
+          n_index = _input.vehicles[v].end.value().index();
           next_cost = _m[delivery_index][n_index];
         }
       }

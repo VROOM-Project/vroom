@@ -13,8 +13,8 @@ All rights reserved (see LICENSE).
 namespace vroom {
 
 Vehicle::Vehicle(Id id,
-                 const boost::optional<Location>& start,
-                 const boost::optional<Location>& end,
+                 const std::optional<Location>& start,
+                 const std::optional<Location>& end,
                  const Amount& capacity,
                  const Skills& skills,
                  const TimeWindow& tw)
@@ -39,11 +39,11 @@ bool Vehicle::has_same_locations(const Vehicle& other) const {
               (this->has_end() == other.has_end());
 
   if (same and this->has_start()) {
-    same = this->start.get() == other.start.get();
+    same = this->start.value() == other.start.value();
   }
 
   if (same and this->has_end()) {
-    same = this->end.get() == other.end.get();
+    same = this->end.value() == other.end.value();
   }
 
   return same;

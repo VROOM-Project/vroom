@@ -7,6 +7,8 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <cassert>
+
 #include "structures/cl_args.h"
 
 namespace vroom {
