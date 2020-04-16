@@ -4,6 +4,8 @@
 
 ### Changed
 
+- Switch to C++17 (#311)
+- Use `std::optional` and drop dependency to boost/optional (#312)
 - Refactor routing wrapper classes (#320)
 - Updated Travis script for CI builds (#301)
 
