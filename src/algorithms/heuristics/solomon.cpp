@@ -63,7 +63,7 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
 
     Cost current_cost = 0;
     if (v.has_start()) {
-      current_cost += m[v.start.get().index()][j_index];
+      current_cost += m[v.start.value().index()][j_index];
     }
 
     Index last_job_index = j_index;
@@ -77,7 +77,7 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
     }
 
     if (v.has_end()) {
-      current_cost += m[last_job_index][v.end.get().index()];
+      current_cost += m[last_job_index][v.end.value().index()];
     }
     costs[j] = current_cost;
     if (is_pickup) {
@@ -421,10 +421,10 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
       const auto& vehicle = input.vehicles[vehicles_ranks[v]];
       Cost current_cost = is_pickup ? m[j_index][last_job_index] : 0;
       if (vehicle.has_start()) {
-        current_cost += m[vehicle.start.get().index()][j_index];
+        current_cost += m[vehicle.start.value().index()][j_index];
       }
       if (vehicle.has_end()) {
-        current_cost += m[last_job_index][vehicle.end.get().index()];
+        current_cost += m[last_job_index][vehicle.end.value().index()];
       }
       costs[j][v] = current_cost;
       if (is_pickup) {

@@ -7,6 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <algorithm>
 #include <numeric>
 #include <thread>
 #include <unordered_map>

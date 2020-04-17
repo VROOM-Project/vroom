@@ -7,6 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <algorithm>
 #include <array>
 #include <vector>
 
@@ -376,23 +377,22 @@ Input parse(const CLArgs& cl_args) {
       bool has_end_coords = json_vehicle.HasMember("end");
 
       // Add vehicle to input
-      boost::optional<Location> start;
+      std::optional<Location> start;
       if (has_start_index) {
         if (has_start_coords) {
-          start = boost::optional<Location>(
-            Location({start_index, parse_coordinates(json_vehicle, "start")}));
+          start =
+            Location({start_index, parse_coordinates(json_vehicle, "start")});
         } else {
-          start = boost::optional<Location>(start_index);
+          start = start_index;
         }
       }
 
-      boost::optional<Location> end;
+      std::optional<Location> end;
       if (has_end_index) {
         if (has_end_coords) {
-          end = boost::optional<Location>(
-            Location({end_index, parse_coordinates(json_vehicle, "end")}));
+          end = Location({end_index, parse_coordinates(json_vehicle, "end")});
         } else {
-          end = boost::optional<Location>(end_index);
+          end = end_index;
         }
       }
 
@@ -520,22 +520,14 @@ Input parse(const CLArgs& cl_args) {
       auto& json_vehicle = json_input["vehicles"][i];
       check_id(json_vehicle, "vehicle");
 
-      // Start def is a ugly workaround as using plain:
-      //
-      // boost::optional<Location> start;
-      //
-      // will raise a false positive -Wmaybe-uninitialized with gcc,
-      // see https://gcc.gnu.org/bugzilla/show_bug.cgi?id=47679
-
-      auto start([]() -> boost::optional<Location> { return boost::none; }());
+      std::optional<Location> start;
       if (json_vehicle.HasMember("start")) {
-        start =
-          boost::optional<Location>(parse_coordinates(json_vehicle, "start"));
+        start = parse_coordinates(json_vehicle, "start");
       }
 
-      boost::optional<Location> end;
+      std::optional<Location> end;
       if (json_vehicle.HasMember("end")) {
-        end = boost::optional<Location>(parse_coordinates(json_vehicle, "end"));
+        end = parse_coordinates(json_vehicle, "end");
       }
 
       Vehicle vehicle(json_vehicle["id"].GetUint64(),

@@ -85,7 +85,7 @@ void ReverseTwoOpt::compute_gain() {
     if (last_in_target) {
       if (v_target.has_end()) {
         // Handle target route new end.
-        auto end_t = v_target.end.get().index();
+        auto end_t = v_target.end.value().index();
         stored_gain += m[t_index][end_t];
         stored_gain -= m[next_s_index][end_t];
       }
@@ -98,14 +98,14 @@ void ReverseTwoOpt::compute_gain() {
 
   if (v_source.has_end()) {
     // Update cost to source end because last job changed.
-    auto end_s = v_source.end.get().index();
+    auto end_s = v_source.end.value().index();
     stored_gain += m[last_s][end_s];
     stored_gain -= m[first_t][end_s];
   }
 
   if (v_target.has_start()) {
     // Spare cost from target start because first job changed.
-    auto start_t = v_target.start.get().index();
+    auto start_t = v_target.start.value().index();
     stored_gain += m[start_t][first_t];
     if (!last_in_source) {
       stored_gain -= m[start_t][last_s];
@@ -119,7 +119,7 @@ void ReverseTwoOpt::compute_gain() {
         // Emptying the whole target route here, so also gaining cost
         // to end if it exists.
         if (v_target.has_end()) {
-          auto end_t = v_target.end.get().index();
+          auto end_t = v_target.end.value().index();
           stored_gain += m[t_index][end_t];
         }
       }

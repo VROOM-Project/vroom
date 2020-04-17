@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <algorithm>
 #include <numeric>
 #include <sstream>
 
@@ -105,17 +106,17 @@ inline Gain addition_cost(const Input& input,
     if (route.size() == 0) {
       // Adding job to an empty route.
       if (v.has_start()) {
-        previous_cost = m[v.start.get().index()][job_index];
+        previous_cost = m[v.start.value().index()][job_index];
       }
       if (v.has_end()) {
-        next_cost = m[job_index][v.end.get().index()];
+        next_cost = m[job_index][v.end.value().index()];
       }
     } else {
       // Adding job past the end after a real job.
       auto p_index = input.jobs[route[rank - 1]].index();
       previous_cost = m[p_index][job_index];
       if (v.has_end()) {
-        auto n_index = v.end.get().index();
+        auto n_index = v.end.value().index();
         old_edge_cost = m[p_index][n_index];
         next_cost = m[job_index][n_index];
       }
@@ -127,7 +128,7 @@ inline Gain addition_cost(const Input& input,
 
     if (rank == 0) {
       if (v.has_start()) {
-        auto p_index = v.start.get().index();
+        auto p_index = v.start.value().index();
         previous_cost = m[p_index][job_index];
         old_edge_cost = m[p_index][n_index];
       }
@@ -169,8 +170,8 @@ inline Gain addition_cost(const Input& input,
     if (pickup_rank == route.size()) {
       // Addition at the end of a route.
       if (v.has_end()) {
-        after_delivery = m[d_index][v.end.get().index()];
-        remove_after_pickup = m[p_index][v.end.get().index()];
+        after_delivery = m[d_index][v.end.value().index()];
+        remove_after_pickup = m[p_index][v.end.value().index()];
       }
     } else {
       // There is a job after insertion.
@@ -209,7 +210,7 @@ inline Cost route_cost_for_vehicle(const Input& input,
 
   if (route.size() > 0) {
     if (v.has_start()) {
-      cost += m[v.start.get().index()][input.jobs[route.front()].index()];
+      cost += m[v.start.value().index()][input.jobs[route.front()].index()];
     }
 
     Index previous = route.front();
@@ -219,7 +220,7 @@ inline Cost route_cost_for_vehicle(const Input& input,
     }
 
     if (v.has_end()) {
-      cost += m[input.jobs[route.back()].index()][v.end.get().index()];
+      cost += m[input.jobs[route.back()].index()][v.end.value().index()];
     }
   }
 
@@ -292,10 +293,11 @@ inline Solution format_solution(const Input& input,
     Duration ETA = 0;
     // Handle start.
     if (v.has_start()) {
-      steps.emplace_back(STEP_TYPE::START, v.start.get(), current_load);
+      steps.emplace_back(STEP_TYPE::START, v.start.value(), current_load);
       steps.back().duration = 0;
       steps.back().arrival = 0;
-      auto travel = m[v.start.get().index()][input.jobs[route.front()].index()];
+      auto travel =
+        m[v.start.value().index()][input.jobs[route.front()].index()];
       ETA += travel;
       duration += travel;
     }
@@ -352,9 +354,9 @@ inline Solution format_solution(const Input& input,
 
     // Handle end.
     if (v.has_end()) {
-      steps.emplace_back(STEP_TYPE::END, v.end.get(), current_load);
+      steps.emplace_back(STEP_TYPE::END, v.end.value(), current_load);
       Duration travel =
-        m[input.jobs[route.back()].index()][v.end.get().index()];
+        m[input.jobs[route.back()].index()][v.end.value().index()];
       ETA += travel;
       duration += travel;
       steps.back().duration = duration;
@@ -405,7 +407,7 @@ inline Route format_route(const Input& input,
     Duration remaining_travel_time =
       (r < tw_r.route.size())
         ? m[previous_job.index()][input.jobs[tw_r.route[r]].index()]
-        : (v.has_end()) ? m[previous_job.index()][v.end.get().index()] : 0;
+        : (v.has_end()) ? m[previous_job.index()][v.end.value().index()] : 0;
 
     // Take into account timing constraints for breaks before current
     // job.
@@ -461,7 +463,7 @@ inline Route format_route(const Input& input,
   // Now pack everything ASAP based on first job start date.
   Duration remaining_travel_time =
     (v.has_start())
-      ? m[v.start.get().index()][input.jobs[tw_r.route[0]].index()]
+      ? m[v.start.value().index()][input.jobs[tw_r.route[0]].index()]
       : 0;
 
   // Take into account timing constraints for breaks before first job.
@@ -493,7 +495,7 @@ inline Route format_route(const Input& input,
   }
 
   if (v.has_start()) {
-    steps.emplace_back(STEP_TYPE::START, v.start.get(), current_load);
+    steps.emplace_back(STEP_TYPE::START, v.start.value(), current_load);
     steps.back().duration = 0;
 
     assert(remaining_travel_time <= step_start);
@@ -512,8 +514,9 @@ inline Route format_route(const Input& input,
   //  Go through the whole route again to set jobs/breaks ASAP given
   // the latest possible start time.
   Duration travel_time =
-    v.has_start() ? m[v.start.get().index()][input.jobs[tw_r.route[0]].index()]
-                  : 0;
+    v.has_start()
+      ? m[v.start.value().index()][input.jobs[tw_r.route[0]].index()]
+      : 0;
 
   for (std::size_t r = 0; r < tw_r.route.size(); ++r) {
     assert(input.vehicle_ok_with_job(tw_r.vehicle_rank, tw_r.route[r]));
@@ -619,7 +622,7 @@ inline Route format_route(const Input& input,
   // Handle breaks after last job.
   travel_time =
     (v.has_end())
-      ? m[input.jobs[tw_r.route.back()].index()][v.end.get().index()]
+      ? m[input.jobs[tw_r.route.back()].index()][v.end.value().index()]
       : 0;
 
   auto r = tw_r.route.size();
@@ -676,7 +679,7 @@ inline Route format_route(const Input& input,
   }
 
   if (v.has_end()) {
-    steps.emplace_back(STEP_TYPE::END, v.end.get(), current_load);
+    steps.emplace_back(STEP_TYPE::END, v.end.value(), current_load);
 
     duration += travel_time;
     steps.back().duration = duration;

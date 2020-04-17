@@ -8,8 +8,6 @@ All rights reserved (see LICENSE).
 */
 #include <array>
 
-#include <boost/optional.hpp>
-
 #include "problems/cvrp/cvrp.h"
 #include "problems/tsp/tsp.h"
 #include "problems/vrp.h"
@@ -165,7 +163,7 @@ void Input::add_vehicle(const Vehicle& vehicle) {
   bool has_end = current_v.has_end();
 
   if (has_start) {
-    auto& start_loc = current_v.start.get();
+    auto& start_loc = current_v.start.value();
 
     if (!start_loc.user_index()) {
       // Index of this start in the matrix was not specified upon
@@ -190,7 +188,7 @@ void Input::add_vehicle(const Vehicle& vehicle) {
   }
 
   if (has_end) {
-    auto& end_loc = current_v.end.get();
+    auto& end_loc = current_v.end.value();
 
     if (!end_loc.user_index()) {
       // Index of this end in the matrix was not specified upon
@@ -284,12 +282,12 @@ void Input::check_cost_bound() const {
     if (v.has_start()) {
       start_bound =
         utils::add_without_overflow(start_bound,
-                                    max_cost_per_line[v.start.get().index()]);
+                                    max_cost_per_line[v.start.value().index()]);
     }
     if (v.has_end()) {
       end_bound =
         utils::add_without_overflow(end_bound,
-                                    max_cost_per_column[v.end.get().index()]);
+                                    max_cost_per_column[v.end.value().index()]);
     }
   }
 

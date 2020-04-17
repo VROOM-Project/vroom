@@ -108,7 +108,7 @@ void run_example_with_osrm() {
   // 10:30.
   vroom::Break vehicle_break(1, {vroom::TimeWindow(36000, 37800)}, 20 * 60);
 
-  // Define vehicles (use boost::none for no start or no end).
+  // Define vehicles (use std::nullopt for no start or no end).
   vroom::Location depot(vroom::Coordinates({{2.35044, 48.71764}}));
   vroom::Vehicle v1(1,                // id
                     depot,            // start
@@ -212,7 +212,7 @@ void run_example_with_custom_matrix() {
                                            {1299, 3153, 1102, 0}});
   problem_instance.set_matrix(std::move(matrix_input));
 
-  // Define vehicles (use boost::none for no start or no end).
+  // Define vehicles (use std::nullopt for no start or no end).
   vroom::Location v_start(0); // index in the provided matrix.
   vroom::Location v_end(3);   // index in the provided matrix.
 

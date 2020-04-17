@@ -65,12 +65,13 @@ Gain OrOpt::gain_upper_bound() {
     if (t_route.size() == 0) {
       // Adding edge to an empty route.
       if (v_target.has_start()) {
-        previous_cost = m[v_target.start.get().index()][s_index];
-        reverse_previous_cost = m[v_target.start.get().index()][after_s_index];
+        previous_cost = m[v_target.start.value().index()][s_index];
+        reverse_previous_cost =
+          m[v_target.start.value().index()][after_s_index];
       }
       if (v_target.has_end()) {
-        next_cost = m[after_s_index][v_target.end.get().index()];
-        reverse_next_cost = m[s_index][v_target.end.get().index()];
+        next_cost = m[after_s_index][v_target.end.value().index()];
+        reverse_next_cost = m[s_index][v_target.end.value().index()];
       }
     } else {
       // Adding edge past the end after a real job.
@@ -78,7 +79,7 @@ Gain OrOpt::gain_upper_bound() {
       previous_cost = m[p_index][s_index];
       reverse_previous_cost = m[p_index][after_s_index];
       if (v_target.has_end()) {
-        auto n_index = v_target.end.get().index();
+        auto n_index = v_target.end.value().index();
         old_edge_cost = m[p_index][n_index];
         next_cost = m[after_s_index][n_index];
         reverse_next_cost = m[s_index][n_index];
@@ -92,7 +93,7 @@ Gain OrOpt::gain_upper_bound() {
 
     if (t_rank == 0) {
       if (v_target.has_start()) {
-        auto p_index = v_target.start.get().index();
+        auto p_index = v_target.start.value().index();
         previous_cost = m[p_index][s_index];
         reverse_previous_cost = m[p_index][after_s_index];
         old_edge_cost = m[p_index][n_index];

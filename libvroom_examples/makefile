@@ -1,5 +1,5 @@
 CXX ?= g++
-CXXFLAGS = -I../src -std=c++14 -Wextra -Wpedantic -Wall -O3
+CXXFLAGS = -I../src -std=c++17 -Wextra -Wpedantic -Wall -O3
 LDLIBS = -L../lib/ -lvroom -lboost_system -lpthread -lssl -lcrypto
 
 MAIN = ./libvroom-example

@@ -45,36 +45,36 @@ void RouteExchange::compute_gain() {
   if (s_route.size() > 0) {
     auto first_s_index = _input.jobs[s_route.front()].index();
     if (v_source.has_start()) {
-      previous_cost += m[v_source.start.get().index()][first_s_index];
+      previous_cost += m[v_source.start.value().index()][first_s_index];
     }
     if (v_target.has_start()) {
-      new_cost += m[v_target.start.get().index()][first_s_index];
+      new_cost += m[v_target.start.value().index()][first_s_index];
     }
 
     auto last_s_index = _input.jobs[s_route.back()].index();
     if (v_source.has_end()) {
-      previous_cost += m[last_s_index][v_source.end.get().index()];
+      previous_cost += m[last_s_index][v_source.end.value().index()];
     }
     if (v_target.has_end()) {
-      new_cost += m[last_s_index][v_target.end.get().index()];
+      new_cost += m[last_s_index][v_target.end.value().index()];
     }
   }
 
   if (t_route.size() > 0) {
     auto first_t_index = _input.jobs[t_route.front()].index();
     if (v_target.has_start()) {
-      previous_cost += m[v_target.start.get().index()][first_t_index];
+      previous_cost += m[v_target.start.value().index()][first_t_index];
     }
     if (v_source.has_start()) {
-      new_cost += m[v_source.start.get().index()][first_t_index];
+      new_cost += m[v_source.start.value().index()][first_t_index];
     }
 
     auto last_t_index = _input.jobs[t_route.back()].index();
     if (v_target.has_end()) {
-      previous_cost += m[last_t_index][v_target.end.get().index()];
+      previous_cost += m[last_t_index][v_target.end.value().index()];
     }
     if (v_source.has_end()) {
-      new_cost += m[last_t_index][v_source.end.get().index()];
+      new_cost += m[last_t_index][v_source.end.value().index()];
     }
   }
 

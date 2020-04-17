@@ -6,6 +6,7 @@ Copyright (c) 2015-2020, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
+#include <algorithm>
 
 #include "structures/vroom/tw_route.h"
 #include "utils/exception.h"
@@ -91,7 +92,7 @@ Duration TWRoute::new_earliest_candidate(const Input& input,
     previous_travel = m[previous_job.index()][j.index()];
   } else {
     if (has_start) {
-      previous_travel = m[v.start.get().index()][j.index()];
+      previous_travel = m[v.start.value().index()][j.index()];
     }
   }
 
@@ -109,7 +110,7 @@ Duration TWRoute::new_latest_candidate(const Input& input,
   Duration next_travel = 0;
   if (rank == route.size()) {
     if (has_end) {
-      next_travel = m[j.index()][v.end.get().index()];
+      next_travel = m[j.index()][v.end.value().index()];
     }
   } else {
     next_latest = latest[rank];
@@ -137,7 +138,7 @@ Duration TWRoute::previous_earliest_end(const Input& input,
     previous_travel = m[previous_job.index()][j.index()];
   } else {
     if (has_start) {
-      previous_travel = m[v.start.get().index()][j.index()];
+      previous_travel = m[v.start.value().index()][j.index()];
     }
   }
 
@@ -155,7 +156,7 @@ Duration TWRoute::next_latest_start(const Input& input,
   Duration next_latest = v_end;
   if (rank == route.size()) {
     if (has_end) {
-      next_travel = m[j.index()][v.end.get().index()];
+      next_travel = m[j.index()][v.end.value().index()];
     }
   } else {
     next_latest = latest[rank];
@@ -233,7 +234,7 @@ void TWRoute::fwd_update_earliest_from(const Input& input, Index rank) {
     // before route end.
     Index i = route.size();
     Duration remaining_travel_time =
-      (v.has_end()) ? m[input.jobs[route[i - 1]].index()][v.end.get().index()]
+      (v.has_end()) ? m[input.jobs[route[i - 1]].index()][v.end.value().index()]
                     : 0;
 
     Duration previous_service = input.jobs[route[i - 1]].service;
@@ -625,7 +626,7 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
   Duration next_travel = 0;
   if (last_rank == route.size()) {
     if (has_end) {
-      next_travel = m[j.index()][v.end.get().index()];
+      next_travel = m[j.index()][v.end.value().index()];
     }
   } else {
     next_latest = latest[last_rank];
@@ -785,7 +786,7 @@ bool TWRoute::is_fwd_valid_removal(const Input& input,
       // Otherwise check for end date validity.
       const auto& new_last_job = input.jobs[route[rank - 1]];
       return earliest[rank - 1] + new_last_job.service +
-               m[new_last_job.index()][v.end.get().index()] <=
+               m[new_last_job.index()][v.end.value().index()] <=
              v_end;
     }
   }
@@ -803,7 +804,7 @@ bool TWRoute::is_fwd_valid_removal(const Input& input,
     previous_travel = m[previous_job.index()][current_index];
   } else {
     if (has_start) {
-      previous_travel = m[v.start.get().index()][current_index];
+      previous_travel = m[v.start.value().index()][current_index];
     }
   }
 
@@ -833,7 +834,7 @@ bool TWRoute::is_fwd_valid_removal(const Input& input,
         m[current_job.index()][input.jobs[route[current_rank + 1]].index()];
     } else {
       if (has_end) {
-        job_earliest += m[current_job.index()][v.end.get().index()];
+        job_earliest += m[current_job.index()][v.end.value().index()];
       }
     }
 
@@ -858,7 +859,8 @@ bool TWRoute::is_bwd_valid_removal(const Input& input,
 
     // Check for start date validity.
     const auto new_first_index = input.jobs[route[count]].index();
-    return v_start + m[v.start.get().index()][new_first_index] <= latest[count];
+    return v_start + m[v.start.value().index()][new_first_index] <=
+           latest[count];
   }
 
   // Check backward validity as of first non-removed job.
@@ -871,7 +873,7 @@ bool TWRoute::is_bwd_valid_removal(const Input& input,
 
   if (next_rank == route.size()) {
     if (has_end) {
-      next_travel = m[current_index][v.end.get().index()];
+      next_travel = m[current_index][v.end.value().index()];
     }
   } else {
     const auto& next_job = input.jobs[route[next_rank]];
@@ -905,7 +907,7 @@ bool TWRoute::is_bwd_valid_removal(const Input& input,
 
   next_travel = 0;
   if (has_start) {
-    next_travel = m[v.start.get().index()][current_index];
+    next_travel = m[v.start.value().index()][current_index];
   }
   return v_start + next_travel <= next_latest;
 }
@@ -942,7 +944,7 @@ void TWRoute::remove(const Input& input,
       const auto& new_first_j = input.jobs[route[count]];
       Duration start_earliest = v_start;
       if (has_start) {
-        start_earliest += m[v.start.get().index()][new_first_j.index()];
+        start_earliest += m[v.start.value().index()][new_first_j.index()];
       }
       const auto& new_first_TW = new_first_j.tws[tw_ranks[count]];
       earliest[count] = std::max(start_earliest, new_first_TW.start);
@@ -956,7 +958,7 @@ void TWRoute::remove(const Input& input,
       Duration end_latest = v_end;
       if (has_end) {
         auto gap =
-          new_last_j.service + m[new_last_j.index()][v.end.get().index()];
+          new_last_j.service + m[new_last_j.index()][v.end.value().index()];
         assert(gap <= v_end);
         end_latest -= gap;
       }
@@ -1003,7 +1005,7 @@ void TWRoute::replace(const Input& input,
     const auto& new_first_j = input.jobs[*first_job];
     current_earliest = v_start;
     if (has_start) {
-      current_earliest += m[v.start.get().index()][new_first_j.index()];
+      current_earliest += m[v.start.value().index()][new_first_j.index()];
     }
   }
 
@@ -1096,7 +1098,7 @@ void TWRoute::replace(const Input& input,
       const auto& current_j = input.jobs[route[insert_rank]];
       current_earliest = v_start;
       if (has_start) {
-        current_earliest += m[v.start.get().index()][current_j.index()];
+        current_earliest += m[v.start.value().index()][current_j.index()];
       }
 
       const auto tw_candidate =
@@ -1126,7 +1128,7 @@ void TWRoute::replace(const Input& input,
       Duration end_latest = v_end;
       if (has_end) {
         auto gap =
-          new_last_j.service + m[new_last_j.index()][v.end.get().index()];
+          new_last_j.service + m[new_last_j.index()][v.end.value().index()];
         assert(gap <= v_end);
         end_latest -= gap;
       }

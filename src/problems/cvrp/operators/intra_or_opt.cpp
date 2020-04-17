@@ -101,7 +101,7 @@ Gain IntraOrOpt::gain_upper_bound() {
     previous_cost = m[p_index][s_index];
     reverse_previous_cost = m[p_index][after_s_index];
     if (v.has_end()) {
-      auto n_index = v.end.get().index();
+      auto n_index = v.end.value().index();
       old_edge_cost = m[p_index][n_index];
       next_cost = m[after_s_index][n_index];
       reverse_next_cost = m[s_index][n_index];
@@ -114,7 +114,7 @@ Gain IntraOrOpt::gain_upper_bound() {
 
     if (new_rank == 0) {
       if (v.has_start()) {
-        auto p_index = v.start.get().index();
+        auto p_index = v.start.value().index();
         previous_cost = m[p_index][s_index];
         reverse_previous_cost = m[p_index][after_s_index];
         old_edge_cost = m[p_index][n_index];
