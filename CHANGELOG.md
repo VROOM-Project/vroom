@@ -2,12 +2,20 @@
 
 ## [Unreleased]
 
+### Added
+
+- Dependency to `libasio`, replacing boost/asio (#325)
+
 ### Changed
 
 - Switch to C++17 (#311)
 - Use `std::optional` and drop dependency to boost/optional (#312)
 - Refactor routing wrapper classes (#320)
 - Updated Travis script for CI builds (#301)
+
+### Removed
+
+- Drop boost dependency (#325)
 
 ## [v1.6.0] - 2020-02-18
 
