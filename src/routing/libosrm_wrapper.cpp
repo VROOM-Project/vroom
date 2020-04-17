@@ -15,9 +15,6 @@ All rights reserved (see LICENSE).
 
 #include "routing/libosrm_wrapper.h"
 
-// TODO remove this comment whose sole purpose is to trigger a Travis
-// build against libosrm.
-
 namespace vroom {
 namespace routing {
 
