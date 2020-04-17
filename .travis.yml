@@ -18,7 +18,7 @@ matrix:
         apt:
           packages:
             - g++-7
-            - libboost-all-dev
+            - libasio-dev
       env:
         - COMPILER=g++-7
 
@@ -27,7 +27,7 @@ matrix:
         apt:
           packages:
             - g++-8
-            - libboost-all-dev
+            - libasio-dev
       env:
         - COMPILER=g++-8
 
@@ -36,7 +36,7 @@ matrix:
         apt:
           packages:
             - clang-5.0
-            - libboost-all-dev
+            - libasio-dev
       env:
         - COMPILER=clang++-5.0
 
@@ -45,7 +45,7 @@ matrix:
         apt:
           packages:
             - clang-6.0
-            - libboost-all-dev
+            - libasio-dev
       env:
         - COMPILER=clang++-6.0
 
@@ -66,7 +66,7 @@ script:
   - if echo ${CHANGED_FILES} | grep -v "libosrm_wrapper"; then travis_terminate 0; fi
   - make clean
   - cd ${ROOT_FOLDER}
-  - sudo apt-get install build-essential git cmake pkg-config libbz2-dev libstxxl-dev libstxxl1v5 libxml2-dev libzip-dev lua5.2 liblua5.2-dev libtbb-dev libluabind-dev libluabind0.9.1v5
+  - sudo apt-get install build-essential git cmake pkg-config libbz2-dev libstxxl-dev libstxxl1v5 libxml2-dev libzip-dev libboost-all-dev lua5.2 liblua5.2-dev libtbb-dev libluabind-dev libluabind0.9.1v5
   - git clone https://github.com/Project-OSRM/osrm-backend.git
   - cd osrm-backend
   - git checkout v5.19.0
