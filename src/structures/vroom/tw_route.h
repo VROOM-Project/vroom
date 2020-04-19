@@ -40,9 +40,6 @@ private:
   Duration new_earliest_candidate(const Input& input,
                                   Index job_rank,
                                   Index rank) const;
-  Duration new_latest_candidate(const Input& input,
-                                Index job_rank,
-                                Index rank) const;
 
   // When inserting job at job_rank in route at rank, retrieve
   // earliest end date (resp. latest start date) for previous
@@ -69,8 +66,7 @@ private:
                             const unsigned count) const;
 
   // Define global policy wrt job/break respective insertion rule.
-  OrderChoice order_choice(const Input& input,
-                           const Job& j,
+  OrderChoice order_choice(const Job& j,
                            const Break& b,
                            const Duration current_earliest,
                            const Duration previous_travel) const;

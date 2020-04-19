@@ -99,28 +99,6 @@ Duration TWRoute::new_earliest_candidate(const Input& input,
   return previous_earliest + previous_service + previous_travel;
 }
 
-Duration TWRoute::new_latest_candidate(const Input& input,
-                                       Index job_rank,
-                                       Index rank) const {
-  const auto& m = input.get_matrix();
-  const auto& v = input.vehicles[vehicle_rank];
-  const auto& j = input.jobs[job_rank];
-
-  Duration next_latest = v_end;
-  Duration next_travel = 0;
-  if (rank == route.size()) {
-    if (has_end) {
-      next_travel = m[j.index()][v.end.value().index()];
-    }
-  } else {
-    next_latest = latest[rank];
-    next_travel = m[j.index()][input.jobs[route[rank]].index()];
-  }
-
-  assert(j.service + next_travel <= next_latest);
-  return next_latest - j.service - next_travel;
-}
-
 Duration TWRoute::previous_earliest_end(const Input& input,
                                         Index job_rank,
                                         Index rank,
@@ -389,8 +367,7 @@ OrderChoice::OrderChoice(const Job& j,
     })) {
 }
 
-OrderChoice TWRoute::order_choice(const Input& input,
-                                  const Job& j,
+OrderChoice TWRoute::order_choice(const Job& j,
                                   const Break& b,
                                   const Duration current_earliest,
                                   const Duration previous_travel) const {
@@ -402,8 +379,8 @@ OrderChoice TWRoute::order_choice(const Input& input,
     return oc;
   }
 
-  Duration job_then_break_end = 0; // Dummy init.
-  Duration break_then_job_end = 0; // Dummy init.
+  Duration job_then_break_end;
+  Duration break_then_job_end;
 
   // Try putting job first then break.
   Duration earliest_job_end =
@@ -521,7 +498,7 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
       current_earliest += b.service;
     } else {
       // Decide on ordering between break and added job.
-      auto oc = order_choice(input, j, b, current_earliest, previous_travel);
+      auto oc = order_choice(j, b, current_earliest, previous_travel);
 
       if (!oc.add_job_first and !oc.add_break_first) {
         // Infeasible insertion.
@@ -660,7 +637,7 @@ void TWRoute::add(const Input& input, const Index job_rank, const Index rank) {
     const auto& b = v.breaks[break_rank];
 
     // Decide on ordering between break and added job.
-    auto oc = order_choice(input, j, b, current_earliest, previous_travel);
+    auto oc = order_choice(j, b, current_earliest, previous_travel);
     assert(oc.add_job_first xor oc.add_break_first);
 
     // Now update next end time based on insertion choice.
