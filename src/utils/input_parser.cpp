@@ -264,6 +264,11 @@ inline std::vector<Break> get_vehicle_breaks(const rapidjson::Value& v) {
                    [](auto& b) { return get_break(b); });
   }
 
+  std::sort(breaks.begin(), breaks.end(), [](const auto& a, const auto& b) {
+    return a.tws[0].start < b.tws[0].start or
+           (a.tws[0].start == b.tws[0].start and a.tws[0].end < b.tws[0].end);
+  });
+
   return breaks;
 }
 
