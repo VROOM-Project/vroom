@@ -141,7 +141,7 @@ Solution CVRP::solve(unsigned exploration_level,
                      unsigned nb_threads,
                      const std::vector<HeuristicParameters>& h_param) const {
   if (_input.vehicles.size() == 1 and !_input.has_skills() and
-      _input.zero_amount().size() == 0) {
+      _input.zero_amount().size() == 0 and !_input.has_shipments()) {
     // This is a plain TSP, no need to go through the trouble below.
     std::vector<Index> job_ranks(_input.jobs.size());
     std::iota(job_ranks.begin(), job_ranks.end(), 0);
