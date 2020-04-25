@@ -719,11 +719,9 @@ inline Solution format_solution(const Input& input,
   }
 
   for (const auto& tw_route : tw_routes) {
-    if (tw_route.route.empty()) {
-      continue;
+    if (!tw_route.empty()) {
+      routes.push_back(format_route(input, tw_route, unassigned_ranks));
     }
-
-    routes.push_back(format_route(input, tw_route, unassigned_ranks));
   }
 
   // Handle unassigned jobs.
