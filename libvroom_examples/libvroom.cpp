@@ -39,6 +39,9 @@ void log_solution(const vroom::Solution& sol, bool geometry) {
       case vroom::STEP_TYPE::END:
         type = "End";
         break;
+      case vroom::STEP_TYPE::BREAK:
+        type = "Break";
+        break;
       case vroom::STEP_TYPE::JOB:
         switch (step.job_type) {
         case vroom::JOB_TYPE::SINGLE:
@@ -55,9 +58,10 @@ void log_solution(const vroom::Solution& sol, bool geometry) {
       }
       std::cout << type;
 
-      // Add job ids.
-      if (step.step_type == vroom::STEP_TYPE::JOB) {
-        std::cout << " " << step.job;
+      // Add job/pickup/delivery/break ids.
+      if (step.step_type != vroom::STEP_TYPE::START and
+          step.step_type != vroom::STEP_TYPE::END) {
+        std::cout << " " << step.id;
       }
 
       // Add location if known.
