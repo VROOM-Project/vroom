@@ -84,6 +84,15 @@ A `vehicle` object has the following properties:
 | [`capacity`] | an array of integers describing multidimensional quantities |
 | [`skills`] | an array of integers defining skills |
 | [`time_window`] | a `time_window` object describing working hours |
+| [`breaks`] | an array of `break` objects |
+
+A `break` object has the following properties:
+
+| Key         | Description |
+| ----------- | ----------- |
+| `id` | an integer used as unique identifier |
+| `time_windows` | an array of `time_window` objects describing valid slots for break start |
+| [`service`] | break duration (defaults to 0) |
 
 ## Notes
 
