@@ -126,13 +126,13 @@ If no custom matrix is provided:
 ### Capacity restrictions
 
 Use amounts (`capacity` for vehicles, `delivery` and `pickup` for
-jobs) to describe a problem with capacity restrictions. Those arrays
-can be used to model custom restrictions for several metrics at once,
-e.g. number of items, weight, volume etc. A vehicle is only allowed to
-serve a set of jobs if the resulting load at each route step is lower
-than the matching value in `capacity` for each metric. When using
-multiple components for amounts, it is recommended to put the most
-important/limiting metrics first.
+jobs, `amount` for shipments) to describe a problem with capacity
+restrictions. Those arrays can be used to model custom restrictions
+for several metrics at once, e.g. number of items, weight, volume
+etc. A vehicle is only allowed to serve a set of jobs if the resulting
+load at each route step is lower than the matching value in `capacity`
+for each metric. When using multiple components for amounts, it is
+recommended to put the most important/limiting metrics first.
 
 It is assumed that all delivery-related amounts for jobs are loaded at
 vehicle start, while all pickup-related amounts for jobs are brought
@@ -249,15 +249,15 @@ A `step` object has the following properties:
 
 | Key         | Description |
 | ----------- | ----------- |
-| `type` | a string (either `start`, `job`, `pickup`, `delivery` or `end`) |
+| `type` | a string (either `start`, `job`, `pickup`, `delivery`, `break` or `end`) |
 | `arrival` | estimated time of arrival at this step |
 | `duration` | cumulated travel time upon arrival at this step |
 | [`location`] | coordinates array for this step (if provided in input) |
 | [`id`] | id of the task performed at this step, only provided if `type` value is `job`, `pickup`, `delivery` or `break` |
 | ~~[`job`]~~ | ~~id of the job performed at this step, only provided if `type` value is `job`~~ |
 | [`load`] | vehicle load after step completion (with capacity constraints) |
-| [`service`] | service time at this step, only provided if `type` value is `job` |
-| [`waiting_time`] | waiting time upon arrival at this step, only provided if `type` value is `job` |
+| [`service`] | service time at this step (not provided for `start` and `end`) |
+| [`waiting_time`] | waiting time upon arrival at this step  (not provided for `start` and `end`) |
 | [`distance`]* | traveled distance upon arrival at this step |
 
 *: provided when using the `-g` flag.
