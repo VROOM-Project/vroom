@@ -4,6 +4,7 @@
 
 ### Added
 
+- Support for (multiple) driver breaks at vehicle level (#186)
 - Dependency to `libasio`, replacing boost/asio (#325)
 
 ### Changed
@@ -11,7 +12,10 @@
 - Switch to C++17 (#311)
 - Use `std::optional` and drop dependency to boost/optional (#312)
 - Refactor routing wrapper classes (#320)
-- Updated Travis script for CI builds (#301)
+
+### Deprecated
+
+- Steps `job` key is replaced by `id` for consistency with breaks
 
 ### Removed
 

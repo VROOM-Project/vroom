@@ -16,7 +16,7 @@ Step::Step(STEP_TYPE type, Location location, const Amount& load)
   : step_type(type),
     job_type(JOB_TYPE::SINGLE), // Dummy init.
     location(location),
-    job(0),
+    id(0),
     service(0),
     load(load),
     waiting_time(0) {
@@ -27,8 +27,18 @@ Step::Step(const Job& job, const Amount& load)
   : step_type(STEP_TYPE::JOB),
     job_type(job.type),
     location(job.location),
-    job(job.id),
+    id(job.id),
     service(job.service),
+    load(load),
+    waiting_time(0) {
+}
+
+Step::Step(const Break& b, const Amount& load)
+  : step_type(STEP_TYPE::BREAK),
+    job_type(JOB_TYPE::SINGLE), // Dummy value.
+    location(0),                // Dummy value.
+    id(b.id),
+    service(b.service),
     load(load),
     waiting_time(0) {
 }

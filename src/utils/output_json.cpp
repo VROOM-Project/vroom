@@ -189,6 +189,9 @@ rapidjson::Value to_json(const Step& s,
   case STEP_TYPE::END:
     str_type = "end";
     break;
+  case STEP_TYPE::BREAK:
+    str_type = "break";
+    break;
   case STEP_TYPE::JOB:
     switch (s.job_type) {
     case JOB_TYPE::SINGLE:
@@ -209,10 +212,15 @@ rapidjson::Value to_json(const Step& s,
     json_step.AddMember("location", to_json(s.location, allocator), allocator);
   }
 
-  if (s.step_type == STEP_TYPE::JOB) {
-    json_step.AddMember("job", s.job, allocator);
+  if (s.step_type == STEP_TYPE::JOB or s.step_type == STEP_TYPE::BREAK) {
+    json_step.AddMember("id", s.id, allocator);
     json_step.AddMember("service", s.service, allocator);
     json_step.AddMember("waiting_time", s.waiting_time, allocator);
+  }
+
+  // Should be removed at some point as step.job is deprecated.
+  if (s.step_type == STEP_TYPE::JOB) {
+    json_step.AddMember("job", s.id, allocator);
   }
 
   if (s.load.size() > 0) {

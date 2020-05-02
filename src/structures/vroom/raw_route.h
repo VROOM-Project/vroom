@@ -102,8 +102,8 @@ public:
   template <class InputIterator>
   bool is_valid_addition_for_capacity_inclusion(const Input& input,
                                                 const Amount& delivery,
-                                                InputIterator first_job,
-                                                InputIterator last_job,
+                                                const InputIterator first_job,
+                                                const InputIterator last_job,
                                                 const Index first_rank,
                                                 const Index last_rank) const;
 
@@ -120,8 +120,8 @@ public:
 
   template <class InputIterator>
   bool is_valid_addition_for_tw(const Input&,
-                                InputIterator,
-                                InputIterator,
+                                const InputIterator,
+                                const InputIterator,
                                 const Index,
                                 const Index) const {
     return true;
@@ -140,8 +140,8 @@ public:
   // that may be there.
   template <class InputIterator>
   void replace(const Input& input,
-               InputIterator first_job,
-               InputIterator last_job,
+               const InputIterator first_job,
+               const InputIterator last_job,
                const Index first_rank,
                const Index last_rank);
 };

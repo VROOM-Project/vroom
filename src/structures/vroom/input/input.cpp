@@ -157,7 +157,7 @@ void Input::add_vehicle(const Vehicle& vehicle) {
   }
 
   // Check for time-windows.
-  _has_TW |= !vehicle.tw.is_default();
+  _has_TW = _has_TW || !vehicle.tw.is_default();
 
   bool has_start = current_v.has_start();
   bool has_end = current_v.has_end();

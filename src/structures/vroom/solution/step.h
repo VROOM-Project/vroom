@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include "structures/vroom/break.h"
 #include "structures/vroom/job.h"
 #include "structures/vroom/location.h"
 
@@ -19,7 +20,7 @@ struct Step {
   const STEP_TYPE step_type;
   const JOB_TYPE job_type;
   const Location location;
-  const Id job;
+  const Id id;
   const Duration service;
   const Amount load;
 
@@ -31,6 +32,8 @@ struct Step {
   Step(STEP_TYPE type, Location location, const Amount& load);
 
   Step(const Job& job, const Amount& load);
+
+  Step(const Break& b, const Amount& load);
 };
 
 } // namespace vroom

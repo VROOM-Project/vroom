@@ -39,6 +39,9 @@ void log_solution(const vroom::Solution& sol, bool geometry) {
       case vroom::STEP_TYPE::END:
         type = "End";
         break;
+      case vroom::STEP_TYPE::BREAK:
+        type = "Break";
+        break;
       case vroom::STEP_TYPE::JOB:
         switch (step.job_type) {
         case vroom::JOB_TYPE::SINGLE:
@@ -55,9 +58,10 @@ void log_solution(const vroom::Solution& sol, bool geometry) {
       }
       std::cout << type;
 
-      // Add job ids.
-      if (step.step_type == vroom::STEP_TYPE::JOB) {
-        std::cout << " " << step.job;
+      // Add job/pickup/delivery/break ids.
+      if (step.step_type != vroom::STEP_TYPE::START and
+          step.step_type != vroom::STEP_TYPE::END) {
+        std::cout << " " << step.id;
       }
 
       // Add location if known.
@@ -98,11 +102,19 @@ void run_example_with_osrm() {
   vroom::TimeWindow vehicle_tw(28800, 43200); // Working hours.
   // Default "zero" amount data structures with relevant dimension.
   vroom::Amount job_delivery(amount_dimension);
+  vroom::Amount job_empty_delivery(amount_dimension);
+  job_delivery[0] = 1;
+
   vroom::Amount job_pickup(amount_dimension);
+  vroom::Amount job_empty_pickup(amount_dimension);
+  job_pickup[0] = 1;
 
   vroom::Duration service = 5 * 60; // 5 minutes
   vehicle_capacity[0] = 4;
-  job_delivery[0] = 1;
+
+  // Define vehicle breaks.
+  vroom::Break break_1(1, {vroom::TimeWindow(32400, 34200)}, 300);
+  vroom::Break break_2(2, {vroom::TimeWindow(34200, 36000)}, 300);
 
   // Define vehicles (use std::nullopt for no start or no end).
   vroom::Location depot(vroom::Coordinates({{2.35044, 48.71764}}));
@@ -111,7 +123,8 @@ void run_example_with_osrm() {
                     depot,            // end
                     vehicle_capacity, // capacity
                     {1, 14},          // skills
-                    vehicle_tw);      // time window
+                    vehicle_tw,       // time window
+                    {break_1});       // breaks
   problem_instance.add_vehicle(v1);
 
   vroom::Vehicle v2(2,                // id
@@ -119,7 +132,9 @@ void run_example_with_osrm() {
                     depot,            // end
                     vehicle_capacity, // capacity
                     {2, 14},          // skills
-                    vehicle_tw);      // time window
+                    vehicle_tw,       // time window
+                    {break_2});       // breaks
+
   problem_instance.add_vehicle(v2);
 
   // Job to be done between 9 and 10 AM.
@@ -133,27 +148,27 @@ void run_example_with_osrm() {
                             vroom::Coordinates({{1.98935, 48.701}}),
                             service,
                             job_delivery,
-                            job_pickup,
+                            job_empty_pickup,
                             {1}, // skills
                             0,   // default priority
                             job_1_tws));
   jobs.push_back(vroom::Job(2,
                             vroom::Coordinates({{2.03655, 48.61128}}),
                             service,
-                            job_delivery,
+                            job_empty_delivery,
                             job_pickup,
                             {1}));
   jobs.push_back(vroom::Job(5,
                             vroom::Coordinates({{2.28325, 48.5958}}),
                             service,
                             job_delivery,
-                            job_pickup,
+                            job_empty_pickup,
                             {14}));
   jobs.push_back(vroom::Job(6,
                             vroom::Coordinates({{2.89357, 48.90736}}),
                             service,
                             job_delivery,
-                            job_pickup,
+                            job_empty_pickup,
                             {14}));
 
   for (const auto& j : jobs) {
@@ -165,16 +180,16 @@ void run_example_with_osrm() {
   vroom::Amount pd_amount(amount_dimension);
   pd_amount[0] = 1;
 
-  vroom::Job pickup(3,
+  vroom::Job pickup(4,
                     vroom::JOB_TYPE::PICKUP,
-                    vroom::Coordinates({{2.39719, 49.07611}}),
+                    vroom::Coordinates({{2.41808, 49.22619}}),
                     service,
                     pd_amount,
                     pd_skills);
 
-  vroom::Job delivery(4,
+  vroom::Job delivery(3,
                       vroom::JOB_TYPE::DELIVERY,
-                      vroom::Coordinates({{2.41808, 49.22619}}),
+                      vroom::Coordinates({{2.39719, 49.07611}}),
                       service,
                       pd_amount,
                       pd_skills);
