@@ -17,6 +17,10 @@
 
 - Drop boost dependency (#325)
 
+### Fixed
+
+- Erroneous call to TSP code with amount-less shipments (#333)
+
 ## [v1.6.0] - 2020-02-18
 
 ### Added
