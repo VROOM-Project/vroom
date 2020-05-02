@@ -5,8 +5,8 @@
 
 # Variables.
 CXX ?= g++
-CXXFLAGS = -MMD -MP -I. -std=c++17 -Wextra -Wpedantic -Wall -O3
-LDLIBS = -lboost_system -lpthread -lssl -lcrypto
+CXXFLAGS = -MMD -MP -I. -std=c++17 -Wextra -Wpedantic -Wall -O3 -DASIO_STANDALONE
+LDLIBS = -lpthread -lssl -lcrypto
 
 # Using all cpp files in current directory.
 MAIN = ../bin/vroom
@@ -27,7 +27,7 @@ SRC = $(wildcard *.cpp)\
 
 # Checking for libosrm
 ifeq ($(shell pkg-config --exists libosrm && echo 1),1)
-LDLIBS += $(shell pkg-config --libs libosrm) -lboost_filesystem -lboost_iostreams -lboost_thread -lrt -ltbb
+LDLIBS += $(shell pkg-config --libs libosrm) -lboost_system -lboost_filesystem -lboost_iostreams -lboost_thread -lrt -ltbb
 LIBOSRMFLAGS = $(shell pkg-config --cflags libosrm)
 CXXFLAGS += $(filter-out -std=c++14, $(LIBOSRMFLAGS)) -D USE_LIBOSRM=true
 else
