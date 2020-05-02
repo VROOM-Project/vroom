@@ -6,6 +6,7 @@
 
 - Support for (multiple) driver breaks at vehicle level (#186)
 - Dependency to `libasio`, replacing boost/asio (#325)
+- More details on features and workflow in README (#335)
 
 ### Changed
 
