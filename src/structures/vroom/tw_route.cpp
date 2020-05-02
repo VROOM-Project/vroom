@@ -76,30 +76,6 @@ TWRoute::TWRoute(const Input& input, Index v)
   }
 }
 
-Duration TWRoute::new_earliest_candidate(const Input& input,
-                                         Index job_rank,
-                                         Index rank) const {
-  const auto& m = input.get_matrix();
-  const auto& v = input.vehicles[vehicle_rank];
-  const auto& j = input.jobs[job_rank];
-
-  Duration previous_earliest = v_start;
-  Duration previous_service = 0;
-  Duration previous_travel = 0;
-  if (rank > 0) {
-    const auto& previous_job = input.jobs[route[rank - 1]];
-    previous_earliest = earliest[rank - 1];
-    previous_service = previous_job.service;
-    previous_travel = m[previous_job.index()][j.index()];
-  } else {
-    if (has_start) {
-      previous_travel = m[v.start.value().index()][j.index()];
-    }
-  }
-
-  return previous_earliest + previous_service + previous_travel;
-}
-
 Duration TWRoute::previous_earliest_end(const Input& input,
                                         Index job_rank,
                                         Index rank,

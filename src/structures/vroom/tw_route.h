@@ -33,14 +33,6 @@ struct OrderChoice {
 
 class TWRoute : public RawRoute {
 private:
-  // Compute new earliest and latest date for job at job_rank when
-  // inserted in route at rank. Only takes into account existing
-  // timing constraints for surrounding jobs/start/end, not actual job
-  // time-windows (handled after call in is_valid_addition and add).
-  Duration new_earliest_candidate(const Input& input,
-                                  Index job_rank,
-                                  Index rank) const;
-
   // When inserting job at job_rank in route at rank, retrieve
   // earliest end date (resp. latest start date) for previous
   // (resp. next) step. Last argument holds the travel time from
@@ -85,16 +77,14 @@ public:
   std::vector<unsigned> breaks_at_rank;
   std::vector<unsigned> breaks_counts;
 
-  // Margin for break at rank i in vehicle breaks: break_earliest[i]
-  // and break_latest[i] store earliest and latest date, considering
-  // we use time window at rank break_tw_ranks[i] for this break.
+  // break_earliest[i] and break_latest[i] store earliest and latest
+  // date for break at rank i in vehicle breaks.
   std::vector<Duration> break_earliest;
   std::vector<Duration> break_latest;
 
   // When a break's earliest date is delayed (resp. latest date is
   // advanced) because of it's time window start (resp. end), then
-  // some amount of time before (resp. after) could be used for
-  // travel.
+  // some amount of time before (resp. after) can be used for travel.
   std::vector<Duration> breaks_travel_margin_before;
   std::vector<Duration> breaks_travel_margin_after;
 
