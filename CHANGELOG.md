@@ -25,6 +25,7 @@
 ### Fixed
 
 - Erroneous call to TSP code with amount-less shipments (#333)
+- Missing propagation of ealiest/latest dates in corner case (#339)
 
 ## [v1.6.0] - 2020-02-18
 
