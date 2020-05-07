@@ -13,8 +13,8 @@ All rights reserved (see LICENSE).
 #define MAJOR 1
 #define MINOR 7
 #define PATCH 0
-#define DEV 1
-#define RC 0
+#define DEV 0
+#define RC 1
 
 #include <string>
 
