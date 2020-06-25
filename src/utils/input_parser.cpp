@@ -463,7 +463,8 @@ Input parse(const CLArgs& cl_args) {
                 get_amount(json_job, "pickup", amount_size),
                 get_skills(json_job),
                 get_priority(json_job),
-                get_job_time_windows(json_job));
+                get_job_time_windows(json_job),
+                get_string(json_job, "description"));
 
         input.add_job(job);
       }
@@ -499,7 +500,8 @@ Input parse(const CLArgs& cl_args) {
                    amount,
                    skills,
                    priority,
-                   get_job_time_windows(json_pickup));
+                   get_job_time_windows(json_pickup),
+                   get_string(json_pickup, "description"));
 
         // Defining delivery job.
         auto& json_delivery = json_shipment["delivery"];
@@ -519,7 +521,8 @@ Input parse(const CLArgs& cl_args) {
                      amount,
                      skills,
                      priority,
-                     get_job_time_windows(json_delivery));
+                     get_job_time_windows(json_delivery),
+                     get_string(json_delivery, "description"));
 
         input.add_shipment(pickup, delivery);
       }
@@ -594,7 +597,8 @@ Input parse(const CLArgs& cl_args) {
                 get_amount(json_job, "pickup", amount_size),
                 get_skills(json_job),
                 get_priority(json_job),
-                get_job_time_windows(json_job));
+                get_job_time_windows(json_job),
+                get_string(json_job, "description"));
 
         input.add_job(job);
       }
@@ -625,7 +629,8 @@ Input parse(const CLArgs& cl_args) {
                    amount,
                    skills,
                    priority,
-                   get_job_time_windows(json_pickup));
+                   get_job_time_windows(json_pickup),
+                   get_string(json_pickup, "description"));
 
         // Defining delivery job.
         auto& json_delivery = json_shipment["delivery"];
@@ -640,7 +645,8 @@ Input parse(const CLArgs& cl_args) {
                      amount,
                      skills,
                      priority,
-                     get_job_time_windows(json_delivery));
+                     get_job_time_windows(json_delivery),
+                     get_string(json_delivery, "description"));
 
         input.add_shipment(pickup, delivery);
       }
