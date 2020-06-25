@@ -48,8 +48,14 @@ inline Coordinates parse_coordinates(const rapidjson::Value& object,
 }
 
 inline std::string get_string(const rapidjson::Value& object, const char* key) {
-  assert(object.HasMember(key));
-  return object[key].GetString();
+  std::string value;
+  if (object.HasMember(key)) {
+    if (!object[key].IsString()) {
+      throw Exception(ERROR::INPUT, "Invalid " + std::string(key) + " value.");
+    }
+    value = object[key].GetString();
+  }
+  return value;
 }
 
 inline unsigned get_amount_size(const rapidjson::Value& json_input) {
@@ -411,9 +417,10 @@ Input parse(const CLArgs& cl_args) {
 
       input.add_vehicle(vehicle);
 
-      bool has_profile = json_vehicle.HasMember("profile");
-      std::string current_profile =
-        (has_profile) ? get_string(json_vehicle, "profile") : DEFAULT_PROFILE;
+      std::string current_profile = get_string(json_vehicle, "profile");
+      if (current_profile.empty()) {
+        current_profile = DEFAULT_PROFILE;
+      }
 
       if (common_profile.empty()) {
         // First iteration only.
@@ -545,9 +552,10 @@ Input parse(const CLArgs& cl_args) {
 
       input.add_vehicle(vehicle);
 
-      bool has_profile = json_vehicle.HasMember("profile");
-      std::string current_profile =
-        (has_profile) ? get_string(json_vehicle, "profile") : DEFAULT_PROFILE;
+      std::string current_profile = get_string(json_vehicle, "profile");
+      if (current_profile.empty()) {
+        current_profile = DEFAULT_PROFILE;
+      }
 
       if (common_profile.empty()) {
         // First iteration only.
