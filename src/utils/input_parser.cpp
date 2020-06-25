@@ -413,7 +413,8 @@ Input parse(const CLArgs& cl_args) {
                       get_amount(json_vehicle, "capacity", amount_size),
                       get_skills(json_vehicle),
                       get_vehicle_time_window(json_vehicle),
-                      get_vehicle_breaks(json_vehicle));
+                      get_vehicle_breaks(json_vehicle),
+                      get_string(json_vehicle, "description"));
 
       input.add_vehicle(vehicle);
 
@@ -548,7 +549,8 @@ Input parse(const CLArgs& cl_args) {
                       get_amount(json_vehicle, "capacity", amount_size),
                       get_skills(json_vehicle),
                       get_vehicle_time_window(json_vehicle),
-                      get_vehicle_breaks(json_vehicle));
+                      get_vehicle_breaks(json_vehicle),
+                      get_string(json_vehicle, "description"));
 
       input.add_vehicle(vehicle);
 

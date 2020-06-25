@@ -18,14 +18,16 @@ Vehicle::Vehicle(Id id,
                  const Amount& capacity,
                  const Skills& skills,
                  const TimeWindow& tw,
-                 const std::vector<Break>& breaks)
+                 const std::vector<Break>& breaks,
+                 const std::string& description)
   : id(id),
     start(start),
     end(end),
     capacity(capacity),
     skills(skills),
     tw(tw),
-    breaks(breaks) {
+    breaks(breaks),
+    description(description) {
   if (!static_cast<bool>(start) and !static_cast<bool>(end)) {
     throw Exception(ERROR::INPUT,
                     "No start or end specified for vehicle " +

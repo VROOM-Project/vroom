@@ -372,7 +372,8 @@ inline Solution format_solution(const Input& input,
                         duration,
                         0,
                         sum_deliveries,
-                        sum_pickups);
+                        sum_pickups,
+                        v.description);
   }
 
   // Handle unassigned jobs.
@@ -705,7 +706,8 @@ inline Route format_route(const Input& input,
                duration,
                forward_wt,
                sum_deliveries,
-               sum_pickups);
+               sum_pickups,
+               v.description);
 }
 
 inline Solution format_solution(const Input& input,

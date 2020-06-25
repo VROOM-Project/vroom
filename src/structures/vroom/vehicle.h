@@ -10,6 +10,8 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <string>
+
 #include "structures/typedefs.h"
 #include "structures/vroom/amount.h"
 #include "structures/vroom/break.h"
@@ -26,6 +28,7 @@ struct Vehicle {
   const Skills skills;
   const TimeWindow tw;
   const std::vector<Break> breaks;
+  const std::string description;
 
   Vehicle(Id id,
           const std::optional<Location>& start,
@@ -33,7 +36,8 @@ struct Vehicle {
           const Amount& capacity = Amount(0),
           const Skills& skills = Skills(),
           const TimeWindow& tw = TimeWindow(),
-          const std::vector<Break>& breaks = std::vector<Break>());
+          const std::vector<Break>& breaks = std::vector<Break>(),
+          const std::string& description = "");
 
   bool has_start() const;
 
