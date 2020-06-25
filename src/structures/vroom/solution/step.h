@@ -10,6 +10,8 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <string>
+
 #include "structures/vroom/break.h"
 #include "structures/vroom/job.h"
 #include "structures/vroom/location.h"
@@ -23,6 +25,7 @@ struct Step {
   const Id id;
   const Duration service;
   const Amount load;
+  const std::string description;
 
   Duration arrival;
   Duration duration;

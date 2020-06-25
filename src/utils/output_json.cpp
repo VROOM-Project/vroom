@@ -215,6 +215,13 @@ rapidjson::Value to_json(const Step& s,
   }
   json_step["type"].SetString(str_type.c_str(), str_type.size(), allocator);
 
+  if (!s.description.empty()) {
+    json_step.AddMember("description", rapidjson::Value(), allocator);
+    json_step["description"].SetString(s.description.c_str(),
+                                       s.description.size(),
+                                       allocator);
+  }
+
   if (s.location.has_coordinates()) {
     json_step.AddMember("location", to_json(s.location, allocator), allocator);
   }

@@ -37,6 +37,7 @@ A `job` object has the following properties:
 | Key         | Description |
 | ----------- | ----------- |
 | `id` | an integer used as unique identifier |
+| [`description`] | a string describing this job |
 | [`location`] | coordinates array |
 | [`location_index`] | index of relevant row and column in custom matrix |
 | [`service`] | job service duration (defaults to 0) |
@@ -64,6 +65,7 @@ A `shipment_step` is similar to a `job` object (expect for shared keys already p
 | Key         | Description |
 | ----------- | ----------- |
 | `id` | an integer used as unique identifier |
+| [`description`] | a string describing this step |
 | [`location`] | coordinates array |
 | [`location_index`] | index of relevant row and column in custom matrix |
 | [`service`] | job service duration (defaults to 0) |
@@ -254,6 +256,7 @@ A `step` object has the following properties:
 | `type` | a string (either `start`, `job`, `pickup`, `delivery`, `break` or `end`) |
 | `arrival` | estimated time of arrival at this step |
 | `duration` | cumulated travel time upon arrival at this step |
+| [`description`] | step description, if provided in input |
 | [`location`] | coordinates array for this step (if provided in input) |
 | [`id`] | id of the task performed at this step, only provided if `type` value is `job`, `pickup`, `delivery` or `break` |
 | ~~[`job`]~~ | ~~id of the job performed at this step, only provided if `type` value is `job`~~ |
