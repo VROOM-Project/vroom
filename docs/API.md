@@ -77,6 +77,7 @@ A `vehicle` object has the following properties:
 | ----------- | ----------- |
 | `id` | an integer used as unique identifier |
 | [`profile`] | routing profile (defaults to `car`) |
+| [`description`] | a string describing this vehicle |
 | [`start`] | coordinates array |
 | [`start_index`] | index of relevant row and column in custom matrix |
 | [`end`] | coordinates array |
@@ -238,6 +239,7 @@ A `route` object has the following properties:
 | ~~[`amount`]~~ | ~~total amount for jobs in this route~~ |
 | [`delivery`] | total delivery for jobs in this route |
 | [`pickup`] | total pickup for jobs in this route |
+| [`description`] | vehicle description, if provided in input |
 | [`geometry`]* | polyline encoded route geometry |
 | [`distance`]* | total route distance |
 

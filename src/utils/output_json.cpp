@@ -112,6 +112,13 @@ rapidjson::Value to_json(const Route& route,
   json_route.AddMember("vehicle", route.vehicle, allocator);
   json_route.AddMember("cost", route.cost, allocator);
 
+  if (!route.description.empty()) {
+    json_route.AddMember("description", rapidjson::Value(), allocator);
+    json_route["description"].SetString(route.description.c_str(),
+                                        route.description.size(),
+                                        allocator);
+  }
+
   if (route.delivery.size() > 0) {
     rapidjson::Value json_delivery(rapidjson::kArrayType);
     for (std::size_t i = 0; i < route.delivery.size(); ++i) {
