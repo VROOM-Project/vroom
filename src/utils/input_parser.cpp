@@ -252,7 +252,10 @@ get_break_time_windows(const rapidjson::Value& b) {
 
 inline Break get_break(const rapidjson::Value& b) {
   check_id(b, "break");
-  return Break(b["id"].GetUint64(), get_break_time_windows(b), get_service(b));
+  return Break(b["id"].GetUint64(),
+               get_break_time_windows(b),
+               get_service(b),
+               get_string(b, "description"));
 }
 
 inline std::vector<Break> get_vehicle_breaks(const rapidjson::Value& v) {

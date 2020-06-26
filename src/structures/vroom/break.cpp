@@ -12,8 +12,11 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
-Break::Break(Id id, const std::vector<TimeWindow>& tws, Duration service)
-  : id(id), tws(tws), service(service) {
+Break::Break(Id id,
+             const std::vector<TimeWindow>& tws,
+             Duration service,
+             const std::string& description)
+  : id(id), tws(tws), service(service), description(description) {
   utils::check_tws(tws);
 }
 

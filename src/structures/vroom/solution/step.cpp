@@ -41,6 +41,7 @@ Step::Step(const Break& b, const Amount& load)
     id(b.id),
     service(b.service),
     load(load),
+    description(b.description),
     waiting_time(0) {
 }
 

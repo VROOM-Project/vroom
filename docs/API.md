@@ -96,6 +96,7 @@ A `break` object has the following properties:
 | `id` | an integer used as unique identifier |
 | `time_windows` | an array of `time_window` objects describing valid slots for break start |
 | [`service`] | break duration (defaults to 0) |
+| [`description`] | a string describing this break |
 
 ## Notes
 
