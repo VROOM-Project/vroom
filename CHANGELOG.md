@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [v1.7.0] - 2020-07-08
 
 ### Added
 
