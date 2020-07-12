@@ -63,11 +63,14 @@ before_script:
 script:
   # Check build without libosrm
   - make || travis_terminate 1
+  - cd ${ROOT_FOLDER}
+  - diff <(bin/vroom -i docs/example_2.json  | jq '.routes[].steps[]') <(jq '.routes[].steps[]' docs/example_2_sol.json) || travis_terminate 1
   # Check build with libosrm installed only if relevant files have
   # been modified.
   - CHANGED_FILES=`git diff --name-only master ${TRAVIS_COMMIT}`
   - echo ${CHANGED_FILES}
   - if echo ${CHANGED_FILES} | grep -v "libosrm_wrapper"; then travis_terminate 0; fi
+  - cd ${BUILD_FOLDER}
   - make clean
   - cd ${ROOT_FOLDER}
   - sudo apt-get install build-essential git cmake pkg-config libbz2-dev libstxxl-dev libstxxl1v5 libxml2-dev libzip-dev libboost-all-dev lua5.2 liblua5.2-dev libtbb-dev libluabind-dev libluabind0.9.1v5
