@@ -64,7 +64,7 @@ script:
   # Check build without libosrm
   - make || travis_terminate 1
   - cd ${ROOT_FOLDER}
-  - diff <(bin/vroom -i docs/example_2.json  | jq '.routes[].steps[]') <(jq '.routes[].steps[]' docs/example_2_sol.json) || travis_terminate 1
+  - diff <(bin/vroom -i docs/example_2.json  | jq '.routes[].steps[]' --sort-keys) <(jq '.routes[].steps[]' --sort-keys docs/example_2_sol.json) || travis_terminate 1
   # Check build with libosrm installed only if relevant files have
   # been modified.
   - CHANGED_FILES=`git diff --name-only master ${TRAVIS_COMMIT}`
