@@ -19,6 +19,7 @@ matrix:
           packages:
             - g++-7
             - libasio-dev
+            - jq
       env:
         - COMPILER=g++-7
 
@@ -28,6 +29,7 @@ matrix:
           packages:
             - g++-8
             - libasio-dev
+            - jq
       env:
         - COMPILER=g++-8
 
@@ -37,6 +39,7 @@ matrix:
           packages:
             - clang-5.0
             - libasio-dev
+            - jq
       env:
         - COMPILER=clang++-5.0
 
@@ -46,6 +49,7 @@ matrix:
           packages:
             - clang-6.0
             - libasio-dev
+            - jq
       env:
         - COMPILER=clang++-6.0
 
