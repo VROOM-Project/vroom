@@ -48,8 +48,14 @@ inline Coordinates parse_coordinates(const rapidjson::Value& object,
 }
 
 inline std::string get_string(const rapidjson::Value& object, const char* key) {
-  assert(object.HasMember(key));
-  return object[key].GetString();
+  std::string value;
+  if (object.HasMember(key)) {
+    if (!object[key].IsString()) {
+      throw Exception(ERROR::INPUT, "Invalid " + std::string(key) + " value.");
+    }
+    value = object[key].GetString();
+  }
+  return value;
 }
 
 inline unsigned get_amount_size(const rapidjson::Value& json_input) {
@@ -246,7 +252,10 @@ get_break_time_windows(const rapidjson::Value& b) {
 
 inline Break get_break(const rapidjson::Value& b) {
   check_id(b, "break");
-  return Break(b["id"].GetUint64(), get_break_time_windows(b), get_service(b));
+  return Break(b["id"].GetUint64(),
+               get_break_time_windows(b),
+               get_service(b),
+               get_string(b, "description"));
 }
 
 inline std::vector<Break> get_vehicle_breaks(const rapidjson::Value& v) {
@@ -407,13 +416,15 @@ Input parse(const CLArgs& cl_args) {
                       get_amount(json_vehicle, "capacity", amount_size),
                       get_skills(json_vehicle),
                       get_vehicle_time_window(json_vehicle),
-                      get_vehicle_breaks(json_vehicle));
+                      get_vehicle_breaks(json_vehicle),
+                      get_string(json_vehicle, "description"));
 
       input.add_vehicle(vehicle);
 
-      bool has_profile = json_vehicle.HasMember("profile");
-      std::string current_profile =
-        (has_profile) ? get_string(json_vehicle, "profile") : DEFAULT_PROFILE;
+      std::string current_profile = get_string(json_vehicle, "profile");
+      if (current_profile.empty()) {
+        current_profile = DEFAULT_PROFILE;
+      }
 
       if (common_profile.empty()) {
         // First iteration only.
@@ -455,7 +466,8 @@ Input parse(const CLArgs& cl_args) {
                 get_amount(json_job, "pickup", amount_size),
                 get_skills(json_job),
                 get_priority(json_job),
-                get_job_time_windows(json_job));
+                get_job_time_windows(json_job),
+                get_string(json_job, "description"));
 
         input.add_job(job);
       }
@@ -491,7 +503,8 @@ Input parse(const CLArgs& cl_args) {
                    amount,
                    skills,
                    priority,
-                   get_job_time_windows(json_pickup));
+                   get_job_time_windows(json_pickup),
+                   get_string(json_pickup, "description"));
 
         // Defining delivery job.
         auto& json_delivery = json_shipment["delivery"];
@@ -511,7 +524,8 @@ Input parse(const CLArgs& cl_args) {
                      amount,
                      skills,
                      priority,
-                     get_job_time_windows(json_delivery));
+                     get_job_time_windows(json_delivery),
+                     get_string(json_delivery, "description"));
 
         input.add_shipment(pickup, delivery);
       }
@@ -541,13 +555,15 @@ Input parse(const CLArgs& cl_args) {
                       get_amount(json_vehicle, "capacity", amount_size),
                       get_skills(json_vehicle),
                       get_vehicle_time_window(json_vehicle),
-                      get_vehicle_breaks(json_vehicle));
+                      get_vehicle_breaks(json_vehicle),
+                      get_string(json_vehicle, "description"));
 
       input.add_vehicle(vehicle);
 
-      bool has_profile = json_vehicle.HasMember("profile");
-      std::string current_profile =
-        (has_profile) ? get_string(json_vehicle, "profile") : DEFAULT_PROFILE;
+      std::string current_profile = get_string(json_vehicle, "profile");
+      if (current_profile.empty()) {
+        current_profile = DEFAULT_PROFILE;
+      }
 
       if (common_profile.empty()) {
         // First iteration only.
@@ -584,7 +600,8 @@ Input parse(const CLArgs& cl_args) {
                 get_amount(json_job, "pickup", amount_size),
                 get_skills(json_job),
                 get_priority(json_job),
-                get_job_time_windows(json_job));
+                get_job_time_windows(json_job),
+                get_string(json_job, "description"));
 
         input.add_job(job);
       }
@@ -615,7 +632,8 @@ Input parse(const CLArgs& cl_args) {
                    amount,
                    skills,
                    priority,
-                   get_job_time_windows(json_pickup));
+                   get_job_time_windows(json_pickup),
+                   get_string(json_pickup, "description"));
 
         // Defining delivery job.
         auto& json_delivery = json_shipment["delivery"];
@@ -630,7 +648,8 @@ Input parse(const CLArgs& cl_args) {
                      amount,
                      skills,
                      priority,
-                     get_job_time_windows(json_delivery));
+                     get_job_time_windows(json_delivery),
+                     get_string(json_delivery, "description"));
 
         input.add_shipment(pickup, delivery);
       }

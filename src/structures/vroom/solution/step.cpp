@@ -30,6 +30,7 @@ Step::Step(const Job& job, const Amount& load)
     id(job.id),
     service(job.service),
     load(load),
+    description(job.description),
     waiting_time(0) {
 }
 
@@ -40,6 +41,7 @@ Step::Step(const Break& b, const Amount& load)
     id(b.id),
     service(b.service),
     load(load),
+    description(b.description),
     waiting_time(0) {
 }
 

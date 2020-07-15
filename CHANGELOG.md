@@ -2,9 +2,14 @@
 
 ## [Unreleased]
 
+### Added
+
+- Support for string description of vehicles and tasks (#235)
+
 ### Fixed
 
 - Documentation mismatch (#361)
+- Profile type not checked in input (#355)
 
 ## [v1.7.0] - 2020-07-08
 

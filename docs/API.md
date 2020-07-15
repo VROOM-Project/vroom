@@ -37,6 +37,7 @@ A `job` object has the following properties:
 | Key         | Description |
 | ----------- | ----------- |
 | `id` | an integer used as unique identifier |
+| [`description`] | a string describing this job |
 | [`location`] | coordinates array |
 | [`location_index`] | index of relevant row and column in custom matrix |
 | [`service`] | job service duration (defaults to 0) |
@@ -64,6 +65,7 @@ A `shipment_step` is similar to a `job` object (expect for shared keys already p
 | Key         | Description |
 | ----------- | ----------- |
 | `id` | an integer used as unique identifier |
+| [`description`] | a string describing this step |
 | [`location`] | coordinates array |
 | [`location_index`] | index of relevant row and column in custom matrix |
 | [`service`] | job service duration (defaults to 0) |
@@ -77,6 +79,7 @@ A `vehicle` object has the following properties:
 | ----------- | ----------- |
 | `id` | an integer used as unique identifier |
 | [`profile`] | routing profile (defaults to `car`) |
+| [`description`] | a string describing this vehicle |
 | [`start`] | coordinates array |
 | [`start_index`] | index of relevant row and column in custom matrix |
 | [`end`] | coordinates array |
@@ -93,6 +96,7 @@ A `break` object has the following properties:
 | `id` | an integer used as unique identifier |
 | `time_windows` | an array of `time_window` objects describing valid slots for break start |
 | [`service`] | break duration (defaults to 0) |
+| [`description`] | a string describing this break |
 
 ## Notes
 
@@ -238,6 +242,7 @@ A `route` object has the following properties:
 | ~~[`amount`]~~ | ~~total amount for jobs in this route~~ |
 | [`delivery`] | total delivery for jobs in this route |
 | [`pickup`] | total pickup for jobs in this route |
+| [`description`] | vehicle description, if provided in input |
 | [`geometry`]* | polyline encoded route geometry |
 | [`distance`]* | total route distance |
 
@@ -252,6 +257,7 @@ A `step` object has the following properties:
 | `type` | a string (either `start`, `job`, `pickup`, `delivery`, `break` or `end`) |
 | `arrival` | estimated time of arrival at this step |
 | `duration` | cumulated travel time upon arrival at this step |
+| [`description`] | step description, if provided in input |
 | [`location`] | coordinates array for this step (if provided in input) |
 | [`id`] | id of the task performed at this step, only provided if `type` value is `job`, `pickup`, `delivery` or `break` |
 | ~~[`job`]~~ | ~~id of the job performed at this step, only provided if `type` value is `job`~~ |

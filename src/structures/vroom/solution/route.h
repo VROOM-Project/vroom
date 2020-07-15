@@ -26,6 +26,7 @@ struct Route {
   const Duration waiting_time;
   const Amount delivery;
   const Amount pickup;
+  const std::string description;
 
   std::string geometry;
   Distance distance;
@@ -37,7 +38,8 @@ struct Route {
         Duration duration,
         Duration waiting_time,
         const Amount& delivery,
-        const Amount& pickup);
+        const Amount& pickup,
+        const std::string& description);
 };
 
 } // namespace vroom

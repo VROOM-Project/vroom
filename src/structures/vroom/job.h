@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <string>
 #include <vector>
 
 #include "structures/typedefs.h"
@@ -29,6 +30,7 @@ struct Job {
   const Skills skills;
   const Priority priority;
   const std::vector<TimeWindow> tws;
+  const std::string description;
   const Duration tw_length;
 
   // Constructor for regular one-stop job (JOB_TYPE::SINGLE).
@@ -40,7 +42,8 @@ struct Job {
       const Skills& skills = Skills(),
       Priority priority = 0,
       const std::vector<TimeWindow>& tws =
-        std::vector<TimeWindow>(1, TimeWindow()));
+        std::vector<TimeWindow>(1, TimeWindow()),
+      const std::string& description = "");
 
   // Constructor for pickup and delivery jobs (JOB_TYPE::PICKUP or
   // JOB_TYPE::DELIVERY).
@@ -52,7 +55,8 @@ struct Job {
       const Skills& skills = Skills(),
       Priority priority = 0,
       const std::vector<TimeWindow>& tws =
-        std::vector<TimeWindow>(1, TimeWindow()));
+        std::vector<TimeWindow>(1, TimeWindow()),
+      const std::string& description = "");
 
   Index index() const {
     return location.index();
