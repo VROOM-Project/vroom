@@ -445,7 +445,13 @@ inline Route format_route(const Input& input,
     Duration candidate_start = step_start - diff;
     assert(tw_r.earliest[r - 1] <= candidate_start);
 
-    step_start = std::min(candidate_start, tw_r.latest[r - 1]);
+    const auto j_tw =
+      std::find_if(previous_job.tws.rbegin(),
+                   previous_job.tws.rend(),
+                   [&](const auto& tw) { return tw.start <= step_start; });
+    assert(j_tw != previous_job.tws.rend());
+
+    step_start = std::min(candidate_start, j_tw->end);
     if (step_start < candidate_start) {
       backward_wt += (candidate_start - step_start);
     }
@@ -606,12 +612,18 @@ inline Route format_route(const Input& input,
 
     current.arrival = step_start;
 
-    if (step_start < tw_r.earliest[r]) {
-      Duration wt = tw_r.earliest[r] - step_start;
+    const auto j_tw =
+      std::find_if(current_job.tws.begin(),
+                   current_job.tws.end(),
+                   [&](const auto& tw) { return step_start <= tw.end; });
+    assert(j_tw != current_job.tws.end());
+
+    if (step_start < j_tw->start) {
+      Duration wt = j_tw->start - step_start;
       current.waiting_time = wt;
       forward_wt += wt;
 
-      step_start = tw_r.earliest[r];
+      step_start = j_tw->start;
     }
     assert(current_job.is_valid_start(current.arrival + current.waiting_time));
 
