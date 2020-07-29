@@ -448,7 +448,7 @@ inline Route format_route(const Input& input,
     const auto j_tw =
       std::find_if(previous_job.tws.rbegin(),
                    previous_job.tws.rend(),
-                   [&](const auto& tw) { return tw.start <= step_start; });
+                   [&](const auto& tw) { return tw.start <= candidate_start; });
     assert(j_tw != previous_job.tws.rend());
 
     step_start = std::min(candidate_start, j_tw->end);
