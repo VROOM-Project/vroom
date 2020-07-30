@@ -60,11 +60,10 @@ public:
   Duration v_end;
 
   // Margin for job at rank i in route: earliest[i] and latest[i]
-  // store earliest and latest date, considering we use time window at
-  // rank tw_ranks[i] for this job.
+  // store earliest and latest date. Those are potentially derived
+  // from different time windows in multiple TW situations.
   std::vector<Duration> earliest;
   std::vector<Duration> latest;
-  std::vector<Index> tw_ranks;
 
   // Store earliest date for route end.
   Duration earliest_end;

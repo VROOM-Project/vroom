@@ -6,6 +6,10 @@
 
 - Support for string description of vehicles and tasks (#235)
 
+### Changed
+
+- Improved job earliest/latest dates handling internally (#330)
+
 ### Fixed
 
 - Documentation mismatch (#361)
