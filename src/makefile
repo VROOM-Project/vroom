@@ -5,7 +5,7 @@
 
 # Variables.
 CXX ?= g++
-CXXFLAGS = -MMD -MP -I. -std=c++17 -Wextra -Wpedantic -Wall -O3 -DASIO_STANDALONE
+CXXFLAGS = -MMD -MP -I. -std=c++17 -Wextra -Wpedantic -Wall -O3 -DASIO_STANDALONE -fsanitize=undefined
 LDLIBS = -lpthread -lssl -lcrypto
 
 # Using all cpp files in current directory.
