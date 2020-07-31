@@ -460,6 +460,24 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
   const Index last_break = breaks_counts[rank];
 
   while (!job_added or current_break != last_break) {
+    if (current_break == last_break) {
+      // Done with all breaks and job not added yet.
+      current_earliest += previous_travel;
+      const auto j_tw =
+        std::find_if(j.tws.begin(), j.tws.end(), [&](const auto& tw) {
+          return current_earliest <= tw.end;
+        });
+      if (j_tw == j.tws.end()) {
+        return false;
+      }
+
+      current_earliest = std::max(current_earliest, j_tw->start) + j.service;
+      break;
+    }
+
+    // There is actually a break to consider.
+    const auto& b = v.breaks[current_break];
+
     if (job_added) {
       // Compute earliest end date for current break.
       const auto& b = v.breaks[current_break];
@@ -491,24 +509,7 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
       continue;
     }
 
-    if (current_break == last_break) {
-      // Job necessarily not added yet, add now after all breaks then
-      // we're done with the while.
-      current_earliest += previous_travel;
-      const auto j_tw =
-        std::find_if(j.tws.begin(), j.tws.end(), [&](const auto& tw) {
-          return current_earliest <= tw.end;
-        });
-      if (j_tw == j.tws.end()) {
-        return false;
-      }
-
-      current_earliest = std::max(current_earliest, j_tw->start) + j.service;
-      break;
-    }
-
     // Decide on ordering between break and added job.
-    const auto& b = v.breaks[current_break];
     auto oc = order_choice(j, b, current_earliest, previous_travel);
 
     if (!oc.add_job_first and !oc.add_break_first) {
