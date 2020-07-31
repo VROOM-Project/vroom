@@ -460,6 +460,22 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
   const Index last_break = breaks_counts[rank];
 
   while (!job_added or current_break != last_break) {
+    if (current_break == last_break) {
+      // Done with all breaks and job not added yet.
+      current_earliest += previous_travel;
+      const auto j_tw =
+        std::find_if(j.tws.begin(), j.tws.end(), [&](const auto& tw) {
+          return current_earliest <= tw.end;
+        });
+      if (j_tw == j.tws.end()) {
+        return false;
+      }
+
+      current_earliest = std::max(current_earliest, j_tw->start) + j.service;
+      break;
+    }
+
+    // There is actually a break to consider.
     const auto& b = v.breaks[current_break];
 
     if (job_added) {
@@ -488,22 +504,6 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
       current_earliest += b.service;
 
       ++current_break;
-      continue;
-    }
-
-    if (current_break == last_break) {
-      current_earliest += previous_travel;
-      const auto j_tw =
-        std::find_if(j.tws.begin(), j.tws.end(), [&](const auto& tw) {
-          return current_earliest <= tw.end;
-        });
-      if (j_tw == j.tws.end()) {
-        return false;
-      }
-
-      current_earliest = std::max(current_earliest, j_tw->start) + j.service;
-
-      job_added = true;
       continue;
     }
 
