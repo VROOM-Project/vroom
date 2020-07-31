@@ -480,8 +480,6 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
 
     if (job_added) {
       // Compute earliest end date for current break.
-      const auto& b = v.breaks[current_break];
-
       const auto b_tw =
         std::find_if(b.tws.begin(), b.tws.end(), [&](const auto& tw) {
           return current_earliest <= tw.end;
