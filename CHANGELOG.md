@@ -14,6 +14,7 @@
 
 - Documentation mismatch (#361)
 - Profile type not checked in input (#355)
+- Error reported by UBSan (#371)
 
 ## [v1.7.0] - 2020-07-08
 
