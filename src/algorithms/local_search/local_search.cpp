@@ -444,8 +444,10 @@ void LocalSearch<Route,
   }
 
   // Store best gain for matching move.
-  std::vector<std::vector<Gain>> best_gains(_nb_vehicles,
-                                            std::vector<Gain>(_nb_vehicles, 0));
+  std::vector<std::vector<Gain>>
+    best_gains(_nb_vehicles,
+               std::vector<Gain>(_nb_vehicles,
+                                 std::numeric_limits<Gain>::min()));
 
   // Store best priority increase for matching move. Only operators
   // involving a single route and unassigned jobs can change overall
@@ -460,6 +462,51 @@ void LocalSearch<Route,
 
     if (_input.has_jobs()) {
       // Move(s) that don't make sense for shipment-only instances.
+
+      // Unassigned-exchange stuff
+      for (const Index u : _sol_state.unassigned) {
+        if (_input.jobs[u].type != JOB_TYPE::SINGLE) {
+          continue;
+        }
+
+        Priority u_priority = _input.jobs[u].priority;
+        for (const auto& s_t : s_t_pairs) {
+          if (s_t.first != s_t.second) {
+            continue;
+          }
+
+          for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
+            auto& current_job = _input.jobs[_sol[s_t.first].route[s_rank]];
+            if (current_job.type != JOB_TYPE::SINGLE or
+                u_priority < current_job.priority) {
+              continue;
+            }
+
+            Priority priority_gain = u_priority - current_job.priority;
+
+            if (best_priorities[s_t.first] <= priority_gain) {
+              UnassignedExchange r(_input,
+                                   _sol_state,
+                                   _sol[s_t.first],
+                                   s_t.first,
+                                   s_rank,
+                                   u_index);
+
+              bool better_if_valid =
+                (best_priorities[s_t.first] < priority_gain) or
+                (best_priorities[s_t.first] == priority_gain and
+                 r.gain() > best_gains[s_t.first][s_t.first]);
+
+              if (better_if_valid and r.is_valid()) {
+                best_priorities[s_t.first] = priority_gain;
+                best_gains[s_t.first][s_t.first] = r.gain();
+                best_ops[s_t.first][s_t.first] =
+                  std::make_unique<UnassignedExchange>(r);
+              }
+            }
+          }
+        }
+      }
 
       // Exchange stuff
       for (const auto& s_t : s_t_pairs) {
