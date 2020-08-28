@@ -426,6 +426,7 @@ void LocalSearch<Route,
                  IntraOrOpt,
                  PDShift,
                  RouteExchange>::run_ls_step() {
+  // Store best move involving a pair of routes.
   std::vector<std::vector<std::unique_ptr<Operator>>> best_ops(_nb_vehicles);
   for (std::size_t v = 0; v < _nb_vehicles; ++v) {
     best_ops[v] = std::vector<std::unique_ptr<Operator>>(_nb_vehicles);
@@ -442,12 +443,19 @@ void LocalSearch<Route,
     }
   }
 
+  // Store best gain for matching move.
   std::vector<std::vector<Gain>> best_gains(_nb_vehicles,
                                             std::vector<Gain>(_nb_vehicles, 0));
 
-  Gain best_gain = 1;
+  // Store best priority increase for matching move. Only operators
+  // involving a single route and unassigned jobs can change overall
+  // priority.
+  std::vector<Priority> best_priorities(_nb_vehicles, 0);
 
-  while (best_gain > 0) {
+  Gain best_gain = 1;
+  Priority best_priority = 0;
+
+  while (best_gain > 0 or best_priority > 0) {
     // Operators applied to a pair of (different) routes.
 
     if (_input.has_jobs()) {
@@ -1183,26 +1191,40 @@ void LocalSearch<Route,
       }
     }
 
-    // Find best overall gain.
+    // Find best overall move, first checking priority increase then
+    // best gain if no priority increase is available.
+    best_priority = 0;
     best_gain = 0;
     Index best_source = 0;
     Index best_target = 0;
 
     for (unsigned s_v = 0; s_v < _nb_vehicles; ++s_v) {
-      for (unsigned t_v = 0; t_v < _nb_vehicles; ++t_v) {
-        if (best_gains[s_v][t_v] > best_gain) {
-          best_gain = best_gains[s_v][t_v];
-          best_source = s_v;
-          best_target = t_v;
+      if (best_priorities[s_v] > best_priority) {
+        best_gain = best_gains[s_v][s_v];
+        best_source = s_v;
+        best_target = s_v;
+      }
+    }
+
+    if (best_priority == 0) {
+      for (unsigned s_v = 0; s_v < _nb_vehicles; ++s_v) {
+        for (unsigned t_v = 0; t_v < _nb_vehicles; ++t_v) {
+          if (best_gains[s_v][t_v] > best_gain) {
+            best_gain = best_gains[s_v][t_v];
+            best_source = s_v;
+            best_target = t_v;
+          }
         }
       }
     }
 
     // Apply matching operator.
-    if (best_gain > 0) {
+    if (best_priority > 0 or best_gain > 0) {
       assert(best_ops[best_source][best_target] != nullptr);
 
       best_ops[best_source][best_target]->apply();
+
+      // Todo if best_priority != 0: update unassigned jobs.
 
       auto update_candidates =
         best_ops[best_source][best_target]->update_candidates();
@@ -1254,6 +1276,7 @@ void LocalSearch<Route,
       s_t_pairs.clear();
       for (auto v_rank : update_candidates) {
         best_gains[v_rank].assign(_nb_vehicles, 0);
+        best_priorities[v_rank] = 0;
       }
 
       for (unsigned v = 0; v < _nb_vehicles; ++v) {
