@@ -53,7 +53,9 @@ private:
   OrderChoice order_choice(const Job& j,
                            const Break& b,
                            const Duration current_earliest,
-                           const Duration previous_travel) const;
+                           const Duration previous_travel,
+                           const Duration next_travel,
+                           const Duration next_start) const;
 
 public:
   Duration v_start;

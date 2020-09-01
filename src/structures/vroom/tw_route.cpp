@@ -357,7 +357,9 @@ OrderChoice::OrderChoice(const Job& j,
 OrderChoice TWRoute::order_choice(const Job& j,
                                   const Break& b,
                                   const Duration current_earliest,
-                                  const Duration previous_travel) const {
+                                  const Duration previous_travel,
+                                  const Duration next_travel,
+                                  const Duration next_start) const {
   OrderChoice oc(j, b, current_earliest, previous_travel);
 
   if (oc.j_tw == j.tws.end() or oc.b_tw == b.tws.end()) {
@@ -383,8 +385,25 @@ OrderChoice TWRoute::order_choice(const Job& j,
     oc.add_break_first = true;
     return oc;
   } else {
-    job_then_break_end =
-      std::max(earliest_job_end, new_b_tw->start) + b.service;
+    Duration travel_after_break = next_travel;
+    if (earliest_job_end < new_b_tw->start) {
+      auto margin = new_b_tw->start - earliest_job_end;
+      if (margin < travel_after_break) {
+        travel_after_break -= margin;
+      } else {
+        travel_after_break = 0;
+      }
+
+      job_then_break_end = oc.b_tw->start + b.service;
+    } else {
+      job_then_break_end = earliest_job_end + b.service;
+    }
+
+    if (job_then_break_end + travel_after_break > next_start) {
+      // Starting the break is possible but then next step is not.
+      oc.add_break_first = true;
+      return oc;
+    }
   }
 
   // Try putting break first then job.
@@ -416,10 +435,16 @@ OrderChoice TWRoute::order_choice(const Job& j,
   } else {
     break_then_job_end =
       std::max(earliest_job_start, new_j_tw->start) + j.service;
+
+    if (break_then_job_end + next_travel > next_start) {
+      // Arrival at the job is valid but next step is not.
+      oc.add_job_first = true;
+      return oc;
+    }
   }
 
-  // In case where both ordering options are doable based on time
-  // windows, we pick the ordering that minimizes earliest end date
+  // In case where both ordering options are doable based on timing
+  // constraints, we pick the ordering minimizing earliest end date
   // for sequence.
   if (break_then_job_end < job_then_break_end) {
     oc.add_break_first = true;
@@ -508,7 +533,12 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
     }
 
     // Decide on ordering between break and added job.
-    auto oc = order_choice(j, b, current_earliest, previous_travel);
+    auto oc = order_choice(j,
+                           b,
+                           current_earliest,
+                           previous_travel,
+                           next_travel,
+                           next_start);
 
     if (!oc.add_job_first and !oc.add_break_first) {
       // Infeasible insertion.
@@ -670,7 +700,12 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
     // ordering.
     const auto& b = v.breaks[current_break];
     const auto& j = input.jobs[*current_job];
-    auto oc = order_choice(j, b, current_earliest, previous_travel);
+    auto oc = order_choice(j,
+                           b,
+                           current_earliest,
+                           previous_travel,
+                           next_travel,
+                           current_latest);
 
     if (!oc.add_job_first and !oc.add_break_first) {
       // Infeasible insertion.
@@ -736,7 +771,12 @@ void TWRoute::add(const Input& input, const Index job_rank, const Index rank) {
     const auto& b = v.breaks[break_rank];
 
     // Decide on ordering between break and added job.
-    auto oc = order_choice(j, b, current_earliest, previous_travel);
+    auto oc = order_choice(j,
+                           b,
+                           current_earliest,
+                           previous_travel,
+                           next_travel,
+                           current_latest);
     assert(oc.add_job_first xor oc.add_break_first);
 
     // Now update next end time based on insertion choice.
@@ -1053,7 +1093,12 @@ void TWRoute::replace(const Input& input,
     // ordering.
     const auto& b = v.breaks[current_break];
     const auto& j = input.jobs[*current_job];
-    auto oc = order_choice(j, b, current_earliest, previous_travel);
+    auto oc = order_choice(j,
+                           b,
+                           current_earliest,
+                           previous_travel,
+                           next_travel,
+                           current_latest);
 
     assert(oc.add_job_first xor oc.add_break_first);
     if (oc.add_break_first) {
