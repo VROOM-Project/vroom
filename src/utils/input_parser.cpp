@@ -316,7 +316,7 @@ Input parse(const CLArgs& cl_args) {
   Input input(amount_size);
   input.set_geometry(cl_args.geometry);
 
-  // Switch input type: explicit matrix or using OSRM.
+  // Switch input type: explicit matrix or using routing engine.
   if (json_input.HasMember("matrix")) {
     if (!json_input["matrix"].IsArray()) {
       throw Exception(ERROR::INPUT, "Invalid matrix.");
@@ -532,7 +532,7 @@ Input parse(const CLArgs& cl_args) {
     }
   } else {
     // Adding vehicles and jobs only, matrix will be computed using
-    // OSRM upon solving.
+    // routing engine upon solving.
 
     // All vehicles.
     for (rapidjson::SizeType i = 0; i < json_input["vehicles"].Size(); ++i) {

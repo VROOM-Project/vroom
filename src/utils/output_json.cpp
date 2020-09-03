@@ -175,7 +175,7 @@ rapidjson::Value to_json(const ComputingTimes& ct,
   json_ct.AddMember("solving", ct.solving, allocator);
 
   if (geometry) {
-    // Log route information timing when using OSRM.
+    // Log route information timing when using routing engine.
     json_ct.AddMember("routing", ct.routing, allocator);
   }
 
