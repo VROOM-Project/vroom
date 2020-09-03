@@ -446,6 +446,11 @@ OrderChoice TWRoute::order_choice(const Job& j,
   // In case where both ordering options are doable based on timing
   // constraints, we pick the ordering minimizing earliest end date
   // for sequence.
+  if (j.type == JOB_TYPE::PICKUP) {
+    oc.add_job_first = true;
+    return oc;
+  }
+
   if (break_then_job_end < job_then_break_end) {
     oc.add_break_first = true;
   } else if (break_then_job_end == job_then_break_end) {
