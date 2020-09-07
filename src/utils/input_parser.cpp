@@ -17,6 +17,8 @@ All rights reserved (see LICENSE).
 
 #include "../include/rapidjson/document.h"
 #include "../include/rapidjson/error/en.h"
+#include "../include/rapidjson/stringbuffer.h"
+#include "../include/rapidjson/writer.h"
 
 #if USE_LIBOSRM
 #include "routing/libosrm_wrapper.h"
@@ -315,6 +317,9 @@ Input parse(const CLArgs& cl_args) {
   auto amount_size = get_amount_size(json_input);
   Input input(amount_size);
   input.set_geometry(cl_args.geometry);
+
+  // Experimental: store `avoid_polygons` value to pass to OrsWrapper.
+  std::string avoid_polygons;
 
   // Switch input type: explicit matrix or using routing engine.
   if (json_input.HasMember("matrix")) {
@@ -654,6 +659,17 @@ Input parse(const CLArgs& cl_args) {
         input.add_shipment(pickup, delivery);
       }
     }
+
+    // Experimental: parse optional `avoid_areas` key.
+    if (json_input.HasMember("avoid_areas")) {
+
+      rapidjson::StringBuffer buffer;
+      buffer.Clear();
+      rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+      json_input["avoid_areas"].Accept(writer);
+
+      avoid_polygons = std::string(buffer.GetString());
+    }
   }
 
   // Set relevant routing wrapper.
@@ -691,8 +707,9 @@ Input parse(const CLArgs& cl_args) {
     if (search == cl_args.servers.end()) {
       throw Exception(ERROR::INPUT, "Invalid profile: " + common_profile + ".");
     }
-    routing_wrapper =
-      std::make_unique<routing::OrsWrapper>(common_profile, search->second);
+    routing_wrapper = std::make_unique<routing::OrsWrapper>(common_profile,
+                                                            search->second,
+                                                            avoid_polygons);
     break;
   }
   input.set_routing(std::move(routing_wrapper));

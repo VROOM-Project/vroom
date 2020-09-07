@@ -17,6 +17,8 @@ namespace routing {
 
 class OrsWrapper : public HttpWrapper {
 private:
+  const std::string _avoid_polygons;
+
   virtual std::string build_query(const std::vector<Location>& locations,
                                   const std::string& service,
                                   const std::string& extra_args) const override;
@@ -34,7 +36,9 @@ private:
                                       rapidjson::SizeType i) const override;
 
 public:
-  OrsWrapper(const std::string& profile, const Server& server);
+  OrsWrapper(const std::string& profile,
+             const Server& server,
+             const std::string& avoid_polygons);
 };
 
 } // namespace routing

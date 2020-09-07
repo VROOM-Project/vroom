@@ -12,13 +12,16 @@ All rights reserved (see LICENSE).
 namespace vroom {
 namespace routing {
 
-OrsWrapper::OrsWrapper(const std::string& profile, const Server& server)
+OrsWrapper::OrsWrapper(const std::string& profile,
+                       const Server& server,
+                       const std::string& avoid_polygons)
   : HttpWrapper(profile,
                 server,
                 "matrix",
                 "directions",
                 "\"geometry_simplify\":\"false\",\"continue_straight\":"
-                "\"false\"") {
+                "\"false\""),
+    _avoid_polygons(avoid_polygons) {
 }
 
 std::string OrsWrapper::build_query(const std::vector<Location>& locations,
@@ -40,6 +43,13 @@ std::string OrsWrapper::build_query(const std::vector<Location>& locations,
   body += "]";
   if (!extra_args.empty()) {
     body += "," + extra_args;
+  }
+  if (!_avoid_polygons.empty()) {
+    if (service == "directions") {
+      body += ",\"options\":" + _avoid_polygons;
+    } else {
+      body += ",\"avoid_areas\":" + _avoid_polygons;
+    }
   }
   body += "}";
 
