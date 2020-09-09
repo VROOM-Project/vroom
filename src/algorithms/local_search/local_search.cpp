@@ -40,6 +40,7 @@ All rights reserved (see LICENSE).
 #include "problems/vrptw/operators/reverse_two_opt.h"
 #include "problems/vrptw/operators/route_exchange.h"
 #include "problems/vrptw/operators/two_opt.h"
+#include "problems/vrptw/operators/unassigned_exchange.h"
 #include "utils/helpers.h"
 
 namespace vroom {
