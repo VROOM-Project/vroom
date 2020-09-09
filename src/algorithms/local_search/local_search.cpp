@@ -515,6 +515,7 @@ void LocalSearch<Route,
       // Exchange stuff
       for (const auto& s_t : s_t_pairs) {
         if (s_t.second <= s_t.first or // This operator is symmetric.
+            best_priorities[s_t.first] > 0 or best_priorities[s_t.second] > 0 or
             _sol[s_t.first].size() == 0 or _sol[s_t.second].size() == 0) {
           continue;
         }
@@ -559,6 +560,7 @@ void LocalSearch<Route,
     // CROSS-exchange stuff
     for (const auto& s_t : s_t_pairs) {
       if (s_t.second <= s_t.first or // This operator is symmetric.
+          best_priorities[s_t.first] > 0 or best_priorities[s_t.second] > 0 or
           _sol[s_t.first].size() < 2 or _sol[s_t.second].size() < 2) {
         continue;
       }
@@ -638,7 +640,8 @@ void LocalSearch<Route,
     if (_input.has_jobs()) {
       // Mixed-exchange stuff
       for (const auto& s_t : s_t_pairs) {
-        if (s_t.first == s_t.second or _sol[s_t.first].size() == 0 or
+        if (s_t.first == s_t.second or best_priorities[s_t.first] > 0 or
+            best_priorities[s_t.second] > 0 or _sol[s_t.first].size() == 0 or
             _sol[s_t.second].size() < 2) {
           continue;
         }
@@ -703,8 +706,8 @@ void LocalSearch<Route,
 
     // 2-opt* stuff
     for (const auto& s_t : s_t_pairs) {
-      if (s_t.second <= s_t.first) {
-        // This operator is symmetric.
+      if (s_t.second <= s_t.first or // This operator is symmetric.
+          best_priorities[s_t.first] > 0 or best_priorities[s_t.second] > 0) {
         continue;
       }
 
@@ -755,7 +758,8 @@ void LocalSearch<Route,
 
     // Reverse 2-opt* stuff
     for (const auto& s_t : s_t_pairs) {
-      if (s_t.first == s_t.second) {
+      if (s_t.first == s_t.second or best_priorities[s_t.first] > 0 or
+          best_priorities[s_t.second] > 0) {
         continue;
       }
 
@@ -804,8 +808,8 @@ void LocalSearch<Route,
 
       // Relocate stuff
       for (const auto& s_t : s_t_pairs) {
-        if (s_t.first == s_t.second or _sol[s_t.first].size() == 0) {
-          // Don't try to put things from an empty vehicle.
+        if (s_t.first == s_t.second or best_priorities[s_t.first] > 0 or
+            best_priorities[s_t.second] > 0 or _sol[s_t.first].size() == 0) {
           continue;
         }
 
@@ -846,8 +850,8 @@ void LocalSearch<Route,
 
       // Or-opt stuff
       for (const auto& s_t : s_t_pairs) {
-        if (s_t.first == s_t.second or _sol[s_t.first].size() < 2) {
-          // Don't try to move things from a (near-)empty vehicle.
+        if (s_t.first == s_t.second or best_priorities[s_t.first] > 0 or
+            best_priorities[s_t.second] > 0 or _sol[s_t.first].size() < 2) {
           continue;
         }
 
@@ -903,7 +907,8 @@ void LocalSearch<Route,
 
     // Intra exchange stuff
     for (const auto& s_t : s_t_pairs) {
-      if (s_t.first != s_t.second or _sol[s_t.first].size() < 3) {
+      if (s_t.first != s_t.second or best_priorities[s_t.first] > 0 or
+          _sol[s_t.first].size() < 3) {
         continue;
       }
 
@@ -940,7 +945,8 @@ void LocalSearch<Route,
 
     // Intra CROSS-exchange stuff
     for (const auto& s_t : s_t_pairs) {
-      if (s_t.first != s_t.second or _sol[s_t.first].size() < 5) {
+      if (s_t.first != s_t.second or best_priorities[s_t.first] > 0 or
+          _sol[s_t.first].size() < 5) {
         continue;
       }
 
@@ -1003,7 +1009,8 @@ void LocalSearch<Route,
 
     // Intra mixed-exchange stuff
     for (const auto& s_t : s_t_pairs) {
-      if (s_t.first != s_t.second or _sol[s_t.first].size() < 4) {
+      if (s_t.first != s_t.second or best_priorities[s_t.first] > 0 or
+          _sol[s_t.first].size() < 4) {
         continue;
       }
 
@@ -1056,7 +1063,8 @@ void LocalSearch<Route,
 
     // Intra relocate stuff
     for (const auto& s_t : s_t_pairs) {
-      if (s_t.first != s_t.second or _sol[s_t.first].size() < 2) {
+      if (s_t.first != s_t.second or best_priorities[s_t.first] > 0 or
+          _sol[s_t.first].size() < 2) {
         continue;
       }
 
@@ -1104,7 +1112,8 @@ void LocalSearch<Route,
 
     // Intra Or-opt stuff
     for (const auto& s_t : s_t_pairs) {
-      if (s_t.first != s_t.second or _sol[s_t.first].size() < 4) {
+      if (s_t.first != s_t.second or best_priorities[s_t.first] > 0 or
+          _sol[s_t.first].size() < 4) {
         continue;
       }
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1; ++s_rank) {
@@ -1167,7 +1176,8 @@ void LocalSearch<Route,
 
       // P&D relocate stuff
       for (const auto& s_t : s_t_pairs) {
-        if (s_t.first == s_t.second or _sol[s_t.first].size() == 0) {
+        if (s_t.first == s_t.second or best_priorities[s_t.first] > 0 or
+            best_priorities[s_t.second] > 0 or _sol[s_t.first].size() == 0) {
           // Don't try to put things from an empty vehicle.
           continue;
         }
@@ -1219,7 +1229,8 @@ void LocalSearch<Route,
     if (!_input.has_homogeneous_locations()) {
       // Route exchange stuff
       for (const auto& s_t : s_t_pairs) {
-        if (s_t.second <= s_t.first or
+        if (s_t.second <= s_t.first or best_priorities[s_t.first] > 0 or
+            best_priorities[s_t.second] > 0 or
             (_sol[s_t.first].size() == 0 and _sol[s_t.second].size() == 0) or
             _sol_state.bwd_skill_rank[s_t.first][s_t.second] > 0 or
             _sol_state.bwd_skill_rank[s_t.second][s_t.first] > 0) {
