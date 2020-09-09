@@ -25,6 +25,7 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/operators/reverse_two_opt.h"
 #include "problems/cvrp/operators/route_exchange.h"
 #include "problems/cvrp/operators/two_opt.h"
+#include "problems/cvrp/operators/unassigned_exchange.h"
 #include "problems/vrptw/operators/cross_exchange.h"
 #include "problems/vrptw/operators/exchange.h"
 #include "problems/vrptw/operators/intra_cross_exchange.h"
@@ -477,7 +478,9 @@ void LocalSearch<Route,
 
         Priority u_priority = _input.jobs[u].priority;
         for (const auto& s_t : s_t_pairs) {
-          if (s_t.first != s_t.second or _sol[s_t.first].empty()) {
+          if (s_t.first != s_t.second or
+              !_input.vehicle_ok_with_job(s_t.first, u) or
+              _sol[s_t.first].empty()) {
             continue;
           }
 
@@ -493,8 +496,13 @@ void LocalSearch<Route,
             if (best_priorities[s_t.first] <= priority_gain) {
               for (unsigned t_rank = 0; t_rank <= _sol[s_t.first].size();
                    ++t_rank) {
+                if (t_rank == s_rank + 1) {
+                  // Same move as with t_rank == s_rank.
+                  continue;
+                }
                 UnassignedExchange r(_input,
                                      _sol_state,
+                                     _sol_state.unassigned,
                                      _sol[s_t.first],
                                      s_t.first,
                                      s_rank,
@@ -1292,8 +1300,6 @@ void LocalSearch<Route,
       assert(best_ops[best_source][best_target] != nullptr);
 
       best_ops[best_source][best_target]->apply();
-
-      // Todo if best_priority != 0: update unassigned jobs.
 
       auto update_candidates =
         best_ops[best_source][best_target]->update_candidates();

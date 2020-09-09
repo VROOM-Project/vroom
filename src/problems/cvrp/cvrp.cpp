@@ -27,6 +27,7 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/operators/reverse_two_opt.h"
 #include "problems/cvrp/operators/route_exchange.h"
 #include "problems/cvrp/operators/two_opt.h"
+#include "problems/cvrp/operators/unassigned_exchange.h"
 #include "problems/tsp/tsp.h"
 #include "structures/vroom/input/input.h"
 #include "structures/vroom/raw_route.h"
