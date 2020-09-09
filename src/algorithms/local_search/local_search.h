@@ -18,6 +18,7 @@ namespace vroom {
 namespace ls {
 
 template <class Route,
+          class UnassignedExchange,
           class Exchange,
           class CrossExchange,
           class MixedExchange,

@@ -35,6 +35,7 @@ namespace vroom {
 using TWSolution = std::vector<TWRoute>;
 
 using LocalSearch = ls::LocalSearch<TWRoute,
+                                    vrptw::UnassignedExchange,
                                     vrptw::Exchange,
                                     vrptw::CrossExchange,
                                     vrptw::MixedExchange,

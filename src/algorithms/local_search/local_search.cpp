@@ -45,6 +45,7 @@ namespace vroom {
 namespace ls {
 
 template <class Route,
+          class UnassignedExchange,
           class Exchange,
           class CrossExchange,
           class MixedExchange,
@@ -60,6 +61,7 @@ template <class Route,
           class PDShift,
           class RouteExchange>
 LocalSearch<Route,
+            UnassignedExchange,
             Exchange,
             CrossExchange,
             MixedExchange,
@@ -110,6 +112,7 @@ LocalSearch<Route,
 }
 
 template <class Route,
+          class UnassignedExchange,
           class Exchange,
           class CrossExchange,
           class MixedExchange,
@@ -125,6 +128,7 @@ template <class Route,
           class PDShift,
           class RouteExchange>
 void LocalSearch<Route,
+                 UnassignedExchange,
                  Exchange,
                  CrossExchange,
                  MixedExchange,
@@ -397,6 +401,7 @@ void LocalSearch<Route,
 }
 
 template <class Route,
+          class UnassignedExchange,
           class Exchange,
           class CrossExchange,
           class MixedExchange,
@@ -412,6 +417,7 @@ template <class Route,
           class PDShift,
           class RouteExchange>
 void LocalSearch<Route,
+                 UnassignedExchange,
                  Exchange,
                  CrossExchange,
                  MixedExchange,
@@ -1358,6 +1364,7 @@ void LocalSearch<Route,
 }
 
 template <class Route,
+          class UnassignedExchange,
           class Exchange,
           class CrossExchange,
           class MixedExchange,
@@ -1373,6 +1380,7 @@ template <class Route,
           class PDShift,
           class RouteExchange>
 void LocalSearch<Route,
+                 UnassignedExchange,
                  Exchange,
                  CrossExchange,
                  MixedExchange,
@@ -1466,6 +1474,7 @@ void LocalSearch<Route,
 }
 
 template <class Route,
+          class UnassignedExchange,
           class Exchange,
           class CrossExchange,
           class MixedExchange,
@@ -1481,6 +1490,7 @@ template <class Route,
           class PDShift,
           class RouteExchange>
 Gain LocalSearch<Route,
+                 UnassignedExchange,
                  Exchange,
                  CrossExchange,
                  MixedExchange,
@@ -1532,6 +1542,7 @@ Gain LocalSearch<Route,
 }
 
 template <class Route,
+          class UnassignedExchange,
           class Exchange,
           class CrossExchange,
           class MixedExchange,
@@ -1547,6 +1558,7 @@ template <class Route,
           class PDShift,
           class RouteExchange>
 Gain LocalSearch<Route,
+                 UnassignedExchange,
                  Exchange,
                  CrossExchange,
                  MixedExchange,
@@ -1576,6 +1588,7 @@ Gain LocalSearch<Route,
 }
 
 template <class Route,
+          class UnassignedExchange,
           class Exchange,
           class CrossExchange,
           class MixedExchange,
@@ -1591,6 +1604,7 @@ template <class Route,
           class PDShift,
           class RouteExchange>
 Gain LocalSearch<Route,
+                 UnassignedExchange,
                  Exchange,
                  CrossExchange,
                  MixedExchange,
@@ -1624,6 +1638,7 @@ Gain LocalSearch<Route,
 }
 
 template <class Route,
+          class UnassignedExchange,
           class Exchange,
           class CrossExchange,
           class MixedExchange,
@@ -1639,6 +1654,7 @@ template <class Route,
           class PDShift,
           class RouteExchange>
 void LocalSearch<Route,
+                 UnassignedExchange,
                  Exchange,
                  CrossExchange,
                  MixedExchange,
@@ -1760,6 +1776,7 @@ void LocalSearch<Route,
 }
 
 template <class Route,
+          class UnassignedExchange,
           class Exchange,
           class CrossExchange,
           class MixedExchange,
@@ -1775,6 +1792,7 @@ template <class Route,
           class PDShift,
           class RouteExchange>
 utils::SolutionIndicators LocalSearch<Route,
+                                      UnassignedExchange,
                                       Exchange,
                                       CrossExchange,
                                       MixedExchange,
@@ -1793,6 +1811,7 @@ utils::SolutionIndicators LocalSearch<Route,
 }
 
 template class LocalSearch<TWRoute,
+                           vrptw::UnassignedExchange,
                            vrptw::Exchange,
                            vrptw::CrossExchange,
                            vrptw::MixedExchange,
@@ -1809,6 +1828,7 @@ template class LocalSearch<TWRoute,
                            vrptw::RouteExchange>;
 
 template class LocalSearch<RawRoute,
+                           cvrp::UnassignedExchange,
                            cvrp::Exchange,
                            cvrp::CrossExchange,
                            cvrp::MixedExchange,

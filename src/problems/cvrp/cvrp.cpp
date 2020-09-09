@@ -37,6 +37,7 @@ namespace vroom {
 using RawSolution = std::vector<RawRoute>;
 
 using LocalSearch = ls::LocalSearch<RawRoute,
+                                    cvrp::UnassignedExchange,
                                     cvrp::Exchange,
                                     cvrp::CrossExchange,
                                     cvrp::MixedExchange,
