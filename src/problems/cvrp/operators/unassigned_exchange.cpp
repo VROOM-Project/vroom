@@ -172,5 +172,9 @@ std::vector<Index> UnassignedExchange::update_candidates() const {
   return {s_vehicle};
 }
 
+std::vector<Index> UnassignedExchange::required_unassigned() const {
+  return {_u};
+}
+
 } // namespace cvrp
 } // namespace vroom

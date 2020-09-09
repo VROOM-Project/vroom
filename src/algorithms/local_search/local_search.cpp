@@ -1353,16 +1353,37 @@ void LocalSearch<Route,
       for (auto v_rank : update_candidates) {
         best_gains[v_rank].assign(_nb_vehicles, 0);
         best_priorities[v_rank] = 0;
+        best_ops[v_rank] = std::vector<std::unique_ptr<Operator>>(_nb_vehicles);
       }
 
       for (unsigned v = 0; v < _nb_vehicles; ++v) {
         for (auto v_rank : update_candidates) {
           if (_input.vehicle_ok_with_vehicle(v, v_rank)) {
             best_gains[v][v_rank] = 0;
+            best_ops[v][v_rank] = std::unique_ptr<Operator>();
+
             s_t_pairs.emplace_back(v, v_rank);
             if (v != v_rank) {
               s_t_pairs.emplace_back(v_rank, v);
             }
+          }
+        }
+      }
+
+      for (unsigned v = 0; v < _nb_vehicles; ++v) {
+        if (best_ops[v][v] == nullptr) {
+          continue;
+        }
+        for (auto req_u : best_ops[v][v]->required_unassigned()) {
+          if (_sol_state.unassigned.find(req_u) ==
+              _sol_state.unassigned.end()) {
+            // This move should be invalidated because a required
+            // unassigned job has been added by try_job_additions in
+            // the meantime.
+            best_gains[v][v] = 0;
+            best_priorities[v] = 0;
+            best_ops[v][v] = std::unique_ptr<Operator>();
+            s_t_pairs.emplace_back(v, v);
           }
         }
       }

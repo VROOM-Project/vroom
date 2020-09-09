@@ -72,6 +72,8 @@ public:
 
   virtual std::vector<Index> update_candidates() const = 0;
 
+  virtual std::vector<Index> required_unassigned() const;
+
   virtual ~Operator() {
   }
 };

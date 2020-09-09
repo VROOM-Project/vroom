@@ -43,6 +43,8 @@ public:
   virtual std::vector<Index> addition_candidates() const override;
 
   virtual std::vector<Index> update_candidates() const override;
+
+  virtual std::vector<Index> required_unassigned() const override;
 };
 
 } // namespace cvrp
