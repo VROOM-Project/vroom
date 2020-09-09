@@ -471,7 +471,7 @@ void LocalSearch<Route,
 
         Priority u_priority = _input.jobs[u].priority;
         for (const auto& s_t : s_t_pairs) {
-          if (s_t.first != s_t.second) {
+          if (s_t.first != s_t.second or _sol[s_t.first].empty()) {
             continue;
           }
 
@@ -485,23 +485,27 @@ void LocalSearch<Route,
             Priority priority_gain = u_priority - current_job.priority;
 
             if (best_priorities[s_t.first] <= priority_gain) {
-              UnassignedExchange r(_input,
-                                   _sol_state,
-                                   _sol[s_t.first],
-                                   s_t.first,
-                                   s_rank,
-                                   u_index);
+              for (unsigned t_rank = 0; t_rank <= _sol[s_t.first].size();
+                   ++t_rank) {
+                UnassignedExchange r(_input,
+                                     _sol_state,
+                                     _sol[s_t.first],
+                                     s_t.first,
+                                     s_rank,
+                                     t_rank,
+                                     u);
 
-              bool better_if_valid =
-                (best_priorities[s_t.first] < priority_gain) or
-                (best_priorities[s_t.first] == priority_gain and
-                 r.gain() > best_gains[s_t.first][s_t.first]);
+                bool better_if_valid =
+                  (best_priorities[s_t.first] < priority_gain) or
+                  (best_priorities[s_t.first] == priority_gain and
+                   r.gain() > best_gains[s_t.first][s_t.first]);
 
-              if (better_if_valid and r.is_valid()) {
-                best_priorities[s_t.first] = priority_gain;
-                best_gains[s_t.first][s_t.first] = r.gain();
-                best_ops[s_t.first][s_t.first] =
-                  std::make_unique<UnassignedExchange>(r);
+                if (better_if_valid and r.is_valid()) {
+                  best_priorities[s_t.first] = priority_gain;
+                  best_gains[s_t.first][s_t.first] = r.gain();
+                  best_ops[s_t.first][s_t.first] =
+                    std::make_unique<UnassignedExchange>(r);
+                }
               }
             }
           }
@@ -1247,6 +1251,7 @@ void LocalSearch<Route,
 
     for (unsigned s_v = 0; s_v < _nb_vehicles; ++s_v) {
       if (best_priorities[s_v] > best_priority) {
+        best_priority = best_priorities[s_v];
         best_gain = best_gains[s_v][s_v];
         best_source = s_v;
         best_target = s_v;
