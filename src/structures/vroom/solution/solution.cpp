@@ -29,6 +29,7 @@ Solution::Solution(unsigned code,
     summary.delivery += route.delivery;
     summary.pickup += route.pickup;
     summary.service += route.service;
+    summary.priority += route.priority;
     summary.duration += route.duration;
     summary.waiting_time += route.waiting_time;
   }

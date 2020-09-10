@@ -21,6 +21,7 @@ struct Summary {
   Amount delivery;
   Amount pickup;
   Duration service;
+  Priority priority;
 
   Duration duration;
   Duration waiting_time;

@@ -92,6 +92,7 @@ rapidjson::Value to_json(const Summary& summary,
   json_summary.AddMember("service", summary.service, allocator);
   json_summary.AddMember("duration", summary.duration, allocator);
   json_summary.AddMember("waiting_time", summary.waiting_time, allocator);
+  json_summary.AddMember("priority", summary.priority, allocator);
 
   if (geometry) {
     json_summary.AddMember("distance", summary.distance, allocator);
@@ -145,6 +146,7 @@ rapidjson::Value to_json(const Route& route,
   json_route.AddMember("service", route.service, allocator);
   json_route.AddMember("duration", route.duration, allocator);
   json_route.AddMember("waiting_time", route.waiting_time, allocator);
+  json_route.AddMember("priority", route.priority, allocator);
 
   if (geometry) {
     json_route.AddMember("distance", route.distance, allocator);

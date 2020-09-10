@@ -24,6 +24,7 @@ struct Route {
   const Duration service;
   const Duration duration;
   const Duration waiting_time;
+  const Priority priority;
   const Amount delivery;
   const Amount pickup;
   const std::string description;
@@ -37,6 +38,7 @@ struct Route {
         Duration service,
         Duration duration,
         Duration waiting_time,
+        Priority priority,
         const Amount& delivery,
         const Amount& pickup,
         const std::string& description);
