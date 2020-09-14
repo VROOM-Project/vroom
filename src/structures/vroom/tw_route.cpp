@@ -338,14 +338,17 @@ void TWRoute::bwd_update_latest_from(const Input& input, Index rank) {
   }
 }
 
-OrderChoice::OrderChoice(const Job& j,
+OrderChoice::OrderChoice(const Input& input,
+                         Index job_rank,
                          const Break& b,
                          const Duration current_earliest,
                          const Duration previous_travel)
-  : add_job_first(false),
+  : input(input),
+    job_rank(job_rank),
+    add_job_first(false),
     add_break_first(false),
-    j_tw(std::find_if(j.tws.begin(),
-                      j.tws.end(),
+    j_tw(std::find_if(input.jobs[job_rank].tws.begin(),
+                      input.jobs[job_rank].tws.end(),
                       [&](const auto& tw) {
                         return current_earliest + previous_travel <= tw.end;
                       })),
@@ -354,13 +357,15 @@ OrderChoice::OrderChoice(const Job& j,
     })) {
 }
 
-OrderChoice TWRoute::order_choice(const Job& j,
+OrderChoice TWRoute::order_choice(const Input& input,
+                                  Index job_rank,
                                   const Break& b,
                                   const Duration current_earliest,
                                   const Duration previous_travel,
                                   const Duration next_travel,
                                   const Duration next_start) const {
-  OrderChoice oc(j, b, current_earliest, previous_travel);
+  OrderChoice oc(input, job_rank, b, current_earliest, previous_travel);
+  const auto& j = input.jobs[job_rank];
 
   if (oc.j_tw == j.tws.end() or oc.b_tw == b.tws.end()) {
     // If either job or break can't fit first, then none of the
@@ -372,8 +377,9 @@ OrderChoice TWRoute::order_choice(const Job& j,
   Duration break_then_job_end;
 
   // Try putting job first then break.
-  Duration earliest_job_end =
+  const Duration earliest_job_end =
     std::max(current_earliest + previous_travel, oc.j_tw->start) + j.service;
+  Duration job_then_break_margin = 0;
 
   const auto new_b_tw =
     std::find_if(b.tws.begin(), b.tws.end(), [&](const auto& tw) {
@@ -387,9 +393,9 @@ OrderChoice TWRoute::order_choice(const Job& j,
   } else {
     Duration travel_after_break = next_travel;
     if (earliest_job_end < new_b_tw->start) {
-      auto margin = new_b_tw->start - earliest_job_end;
-      if (margin < travel_after_break) {
-        travel_after_break -= margin;
+      job_then_break_margin = new_b_tw->start - earliest_job_end;
+      if (job_then_break_margin < travel_after_break) {
+        travel_after_break -= job_then_break_margin;
       } else {
         travel_after_break = 0;
       }
@@ -444,13 +450,67 @@ OrderChoice TWRoute::order_choice(const Job& j,
   }
 
   // In case where both ordering options are doable based on timing
-  // constraints, we pick the ordering minimizing earliest end date
-  // for sequence.
+  // constraints for a pickup, we favor putting the pickup first,
+  // except if adding the delivery afterwards is not possible. This is
+  // mandatory to avoid heuristically forcing a pickup -> break choice
+  // resulting in invalid options, while break -> pickup -> delivery
+  // might be valid.
   if (j.type == JOB_TYPE::PICKUP) {
-    oc.add_job_first = true;
+    const auto& matching_d = input.jobs[job_rank + 1];
+    assert(matching_d.type == JOB_TYPE::DELIVERY);
+    const auto& m = input.get_matrix();
+
+    // Try pickup -> break -> delivery.
+    auto delivery_travel = m[j.index()][matching_d.index()];
+    if (job_then_break_margin < delivery_travel) {
+      delivery_travel -= job_then_break_margin;
+    } else {
+      delivery_travel = 0;
+    }
+    const Duration pb_d_candidate = job_then_break_end + delivery_travel;
+    const auto pb_d_tw =
+      std::find_if(matching_d.tws.begin(),
+                   matching_d.tws.end(),
+                   [&](const auto& tw) { return pb_d_candidate <= tw.end; });
+    if (pb_d_tw != matching_d.tws.end()) {
+      // pickup -> break -> delivery is doable, choose pickup first.
+      oc.add_job_first = true;
+      return oc;
+    }
+
+    // Previous order not doable, so try pickup -> delivery -> break.
+    const Duration delivery_candidate =
+      earliest_job_end + m[j.index()][matching_d.index()];
+    const auto d_tw = std::find_if(matching_d.tws.begin(),
+                                   matching_d.tws.end(),
+                                   [&](const auto& tw) {
+                                     return delivery_candidate <= tw.end;
+                                   });
+
+    if (d_tw != matching_d.tws.end()) {
+      const Duration break_candidate =
+        std::max(delivery_candidate, d_tw->start) + matching_d.service;
+
+      const auto after_d_b_tw =
+        std::find_if(b.tws.begin(), b.tws.end(), [&](const auto& tw) {
+          return break_candidate <= tw.end;
+        });
+      if (after_d_b_tw != b.tws.end()) {
+        // pickup -> delivery -> break is doable, choose pickup first.
+        oc.add_job_first = true;
+        return oc;
+      }
+    }
+
+    // Doing pickup first actually leads to infeasible options, so put
+    // break first.
+    oc.add_break_first = true;
     return oc;
   }
 
+  // In case where both ordering options are doable based on timing
+  // constraints for a single job, we pick the ordering minimizing
+  // earliest end date for sequence.
   if (break_then_job_end < job_then_break_end) {
     oc.add_break_first = true;
   } else if (break_then_job_end == job_then_break_end) {
@@ -538,7 +598,8 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
     }
 
     // Decide on ordering between break and added job.
-    auto oc = order_choice(j,
+    auto oc = order_choice(input,
+                           job_rank,
                            b,
                            current_earliest,
                            previous_travel,
@@ -705,7 +766,9 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
     // ordering.
     const auto& b = v.breaks[current_break];
     const auto& j = input.jobs[*current_job];
-    auto oc = order_choice(j,
+
+    auto oc = order_choice(input,
+                           *current_job,
                            b,
                            current_earliest,
                            previous_travel,
@@ -776,7 +839,8 @@ void TWRoute::add(const Input& input, const Index job_rank, const Index rank) {
     const auto& b = v.breaks[break_rank];
 
     // Decide on ordering between break and added job.
-    auto oc = order_choice(j,
+    auto oc = order_choice(input,
+                           job_rank,
                            b,
                            current_earliest,
                            previous_travel,
@@ -1098,7 +1162,8 @@ void TWRoute::replace(const Input& input,
     // ordering.
     const auto& b = v.breaks[current_break];
     const auto& j = input.jobs[*current_job];
-    auto oc = order_choice(j,
+    auto oc = order_choice(input,
+                           *current_job,
                            b,
                            current_earliest,
                            previous_travel,
