@@ -17,6 +17,7 @@ Contents:
 - a `time_window` object is a pair of timestamps in the form `[start, end]`
 - deprecated keys are crossed out
 - `cost` values in output are the one used in the optimization objective (currently equal to `duration`)
+- a "task" is either a job, a pickup or a delivery
 
 # Input
 
@@ -68,8 +69,8 @@ A `shipment_step` is similar to a `job` object (expect for shared keys already p
 | [`description`] | a string describing this step |
 | [`location`] | coordinates array |
 | [`location_index`] | index of relevant row and column in custom matrix |
-| [`service`] | job service duration (defaults to 0) |
-| [`time_windows`] | an array of `time_window` objects describing valid slots for job service start |
+| [`service`] | task service duration (defaults to 0) |
+| [`time_windows`] | an array of `time_window` objects describing valid slots for task service start |
 
 ## Vehicles
 
@@ -100,7 +101,7 @@ A `break` object has the following properties:
 
 ## Notes
 
-### Job locations
+### Task locations
 
 For `job`, `pickup` and `delivery` objects, if a custom matrix is provided:
 
@@ -119,9 +120,9 @@ If no custom matrix is provided:
 - key `start` and `end` are optional for a `vehicle`, as long as at
   least one of them is present
 - if `end` is omitted, the resulting route will stop at the last
-  visited job, whose choice is determined by the optimization process
+  visited task, whose choice is determined by the optimization process
 - if `start` is omitted, the resulting route will start at the first
-  visited job, whose choice is determined by the optimization process
+  visited task, whose choice is determined by the optimization process
 - to request a round trip, just specify both `start` and `end` with
   the same coordinates
 - depending on if a custom matrix is provided, required fields follow
@@ -133,10 +134,11 @@ Use amounts (`capacity` for vehicles, `delivery` and `pickup` for
 jobs, `amount` for shipments) to describe a problem with capacity
 restrictions. Those arrays can be used to model custom restrictions
 for several metrics at once, e.g. number of items, weight, volume
-etc. A vehicle is only allowed to serve a set of jobs if the resulting
-load at each route step is lower than the matching value in `capacity`
-for each metric. When using multiple components for amounts, it is
-recommended to put the most important/limiting metrics first.
+etc. A vehicle is only allowed to serve a set of tasks if the
+resulting load at each route step is lower than the matching value in
+`capacity` for each metric. When using multiple components for
+amounts, it is recommended to put the most important/limiting metrics
+first.
 
 It is assumed that all delivery-related amounts for jobs are loaded at
 vehicle start, while all pickup-related amounts for jobs are brought
@@ -144,22 +146,22 @@ back at vehicle end.
 
 ### Skills
 
-Use `skills` to describe a problem where not all jobs can be served by
-all vehicles. Job skills are mandatory, i.e. a job can only be served
-by a vehicle that has **all** its required skills. In other words:
-job `j` is eligible to vehicle `v` iff `j.skills` is included in
-`v.skills`.
+Use `skills` to describe a problem where not all tasks can be served
+by all vehicles. Job skills are mandatory, i.e. a job can only be
+served by a vehicle that has **all** its required skills. In other
+words: job `j` is eligible to vehicle `v` iff `j.skills` is included
+in `v.skills`.
 
 In order to ease modeling problems with no skills required, it is
 assumed that there is no restriction at all if no `skills` keys are
 provided.
 
-### Job priorities
+### Task priorities
 
-Useful in situations where not all jobs can be performed, to gain some
-control on which jobs are unassigned. Setting a high `priority` value
-for some jobs will tend as much as possible to have them included in
-the solution over lower-priority jobs.
+Useful in situations where not all tasks can be performed, to gain
+some control on which tasks are unassigned. Setting a high `priority`
+value for some tasks will tend as much as possible to have them
+included in the solution over lower-priority tasks.
 
 ### Time windows
 
@@ -170,10 +172,10 @@ It is up to users to decide how to describe time windows:
 
 The absence of a time window in input means no timing constraint
 applies. In particular, a vehicle with no `time_window` key will be
-able to serve any number of jobs, and a job with no `time_windows` key
-might be included at any time in any route, to the extent permitted by
-other constraints such as skills, capacity and other vehicles/jobs
-time windows.
+able to serve any number of tasks, and a task with no `time_windows`
+key might be included at any time in any route, to the extent
+permitted by other constraints such as skills, capacity and other
+vehicles/tasks time windows.
 
 ## Matrix
 
@@ -195,7 +197,7 @@ The computed solution is written as `json` on standard output or a file
 | `code` | status code |
 | `error` | error message (present iff `code` is different from `0`) |
 | [`summary`](#summary) | object summarizing solution indicators |
-| `unassigned` | array of objects describing unassigned jobs with their `id` and `location` (if provided) |
+| `unassigned` | array of objects describing unassigned tasks with their `id` and `location` (if provided) |
 | [`routes`](#routes) | array of `route` objects |
 
 ## Code
@@ -216,11 +218,11 @@ The `summary` object has the following properties:
 | Key         | Description |
 | ----------- | ----------- |
 | `cost` | total cost for all routes |
-| `unassigned` | number of jobs that could not be served |
+| `unassigned` | number of tasks that could not be served |
 | `service` | total service time for all routes |
 | `duration` | total travel time for all routes |
 | `waiting_time` | total waiting time for all routes |
-| `priority` | total priority sum for all assigned jobs |
+| `priority` | total priority sum for all assigned tasks |
 | ~~[`amount`]~~ | ~~total amount for all routes~~ |
 | [`delivery`] | total delivery for all routes |
 | [`pickup`] | total pickup for all routes |
@@ -240,10 +242,10 @@ A `route` object has the following properties:
 | `service` | total service time for this route |
 | `duration` | total travel time for this route |
 | `waiting_time` | total waiting time for this route |
-| `priority` | total priority sum for jobs in this route |
+| `priority` | total priority sum for tasks in this route |
 | ~~[`amount`]~~ | ~~total amount for jobs in this route~~ |
-| [`delivery`] | total delivery for jobs in this route |
-| [`pickup`] | total pickup for jobs in this route |
+| [`delivery`] | total delivery for tasks in this route |
+| [`pickup`] | total pickup for tasks in this route |
 | [`description`] | vehicle description, if provided in input |
 | [`geometry`]* | polyline encoded route geometry |
 | [`distance`]* | total route distance |
