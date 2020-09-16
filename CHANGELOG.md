@@ -6,6 +6,7 @@
 
 - Local search move removing a job in a route and adding an unassigned one (#324)
 - Support for string description of vehicles and tasks (#235)
+- Priority sum report in output (#390)
 
 ### Changed
 

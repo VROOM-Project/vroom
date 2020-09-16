@@ -220,6 +220,7 @@ The `summary` object has the following properties:
 | `service` | total service time for all routes |
 | `duration` | total travel time for all routes |
 | `waiting_time` | total waiting time for all routes |
+| `priority` | total priority sum for all assigned jobs |
 | ~~[`amount`]~~ | ~~total amount for all routes~~ |
 | [`delivery`] | total delivery for all routes |
 | [`pickup`] | total pickup for all routes |
@@ -239,6 +240,7 @@ A `route` object has the following properties:
 | `service` | total service time for this route |
 | `duration` | total travel time for this route |
 | `waiting_time` | total waiting time for this route |
+| `priority` | total priority sum for jobs in this route |
 | ~~[`amount`]~~ | ~~total amount for jobs in this route~~ |
 | [`delivery`] | total delivery for jobs in this route |
 | [`pickup`] | total pickup for jobs in this route |
