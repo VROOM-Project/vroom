@@ -163,12 +163,12 @@ void LocalSearch<Route,
     Index best_delivery_r = 0;
 
     for (const auto j : _sol_state.unassigned) {
-      auto& current_job = _input.jobs[j];
+      const auto& current_job = _input.jobs[j];
       if (current_job.type == JOB_TYPE::DELIVERY) {
         continue;
       }
 
-      auto job_priority = current_job.priority;
+      const auto job_priority = current_job.priority;
 
       if (job_priority < best_priority) {
         // Insert higher priority jobs first.
@@ -182,7 +182,7 @@ void LocalSearch<Route,
 
       if (current_job.type == JOB_TYPE::SINGLE) {
         for (std::size_t i = 0; i < routes.size(); ++i) {
-          auto v = routes[i];
+          const auto v = routes[i];
           const auto& v_target = _input.vehicles[v];
 
           if (!_input.vehicle_ok_with_job(v, j)) {
@@ -211,7 +211,7 @@ void LocalSearch<Route,
 
       if (current_job.type == JOB_TYPE::PICKUP) {
         for (std::size_t i = 0; i < routes.size(); ++i) {
-          auto v = routes[i];
+          const auto v = routes[i];
           const auto& v_target = _input.vehicles[v];
 
           if (!_input.vehicle_ok_with_job(v, j)) {
@@ -340,14 +340,15 @@ void LocalSearch<Route,
       // Find best route for current job based on cost of addition and
       // regret cost of not adding.
       for (std::size_t i = 0; i < routes.size(); ++i) {
-        auto addition_cost = best_costs[i];
+        const auto addition_cost = best_costs[i];
         if (addition_cost == std::numeric_limits<Gain>::max()) {
           continue;
         }
-        Gain regret_cost = (i == smallest_idx) ? second_smallest : smallest;
+        const Gain regret_cost =
+          (i == smallest_idx) ? second_smallest : smallest;
 
-        double eval = static_cast<double>(addition_cost) -
-                      regret_coeff * static_cast<double>(regret_cost);
+        const double eval = static_cast<double>(addition_cost) -
+                            regret_coeff * static_cast<double>(regret_cost);
 
         if ((job_priority > best_priority) or
             (job_priority == best_priority and eval < best_cost)) {
@@ -370,7 +371,7 @@ void LocalSearch<Route,
 
     if (job_added) {
       _sol_state.unassigned.erase(best_job_rank);
-      auto& best_job = _input.jobs[best_job_rank];
+      const auto& best_job = _input.jobs[best_job_rank];
 
       if (best_job.type == JOB_TYPE::SINGLE) {
         _sol[best_route].add(_input, best_job_rank, best_rank);
@@ -459,7 +460,7 @@ void LocalSearch<Route,
 
   // Store best priority increase for matching move. Only operators
   // involving a single route and unassigned jobs can change overall
-  // priority.
+  // priority (currently only UnassignedExchange).
   std::vector<Priority> best_priorities(_nb_vehicles, 0);
 
   Gain best_gain = 1;
@@ -486,13 +487,14 @@ void LocalSearch<Route,
           }
 
           for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
-            auto& current_job = _input.jobs[_sol[s_t.first].route[s_rank]];
+            const auto& current_job =
+              _input.jobs[_sol[s_t.first].route[s_rank]];
             if (current_job.type != JOB_TYPE::SINGLE or
                 u_priority < current_job.priority) {
               continue;
             }
 
-            Priority priority_gain = u_priority - current_job.priority;
+            const Priority priority_gain = u_priority - current_job.priority;
 
             if (best_priorities[s_t.first] <= priority_gain) {
               for (unsigned t_rank = 0; t_rank <= _sol[s_t.first].size();
@@ -1307,7 +1309,7 @@ void LocalSearch<Route,
 
 #ifndef NDEBUG
       // Update route costs.
-      auto previous_cost =
+      const auto previous_cost =
         std::accumulate(update_candidates.begin(),
                         update_candidates.end(),
                         0,
@@ -1317,12 +1319,13 @@ void LocalSearch<Route,
       for (auto v_rank : update_candidates) {
         _sol_state.update_route_cost(_sol[v_rank].route, v_rank);
       }
-      auto new_cost = std::accumulate(update_candidates.begin(),
-                                      update_candidates.end(),
-                                      0,
-                                      [&](auto sum, auto c) {
-                                        return sum + _sol_state.route_costs[c];
-                                      });
+      const auto new_cost =
+        std::accumulate(update_candidates.begin(),
+                        update_candidates.end(),
+                        0,
+                        [&](auto sum, auto c) {
+                          return sum + _sol_state.route_costs[c];
+                        });
       assert(new_cost + best_gain == previous_cost);
 #endif
 
@@ -1538,31 +1541,31 @@ Gain LocalSearch<Route,
   assert(v != v_target);
 
   Gain cost = static_cast<Gain>(INFINITE_COST);
-  auto job_index = _input.jobs[_sol[v].route[r]].index();
+  const auto job_index = _input.jobs[_sol[v].route[r]].index();
 
   if (_input.vehicles[v_target].has_start()) {
-    auto start_index = _input.vehicles[v_target].start.value().index();
-    Gain start_cost = _matrix[start_index][job_index];
+    const auto start_index = _input.vehicles[v_target].start.value().index();
+    const Gain start_cost = _matrix[start_index][job_index];
     cost = std::min(cost, start_cost);
   }
   if (_input.vehicles[v_target].has_end()) {
-    auto end_index = _input.vehicles[v_target].end.value().index();
-    Gain end_cost = _matrix[job_index][end_index];
+    const auto end_index = _input.vehicles[v_target].end.value().index();
+    const Gain end_cost = _matrix[job_index][end_index];
     cost = std::min(cost, end_cost);
   }
   if (_sol[v_target].size() != 0) {
-    auto nearest_from_rank =
+    const auto nearest_from_rank =
       _sol_state.nearest_job_rank_in_routes_from[v][v_target][r];
-    auto nearest_from_index =
+    const auto nearest_from_index =
       _input.jobs[_sol[v_target].route[nearest_from_rank]].index();
-    Gain cost_from = _matrix[nearest_from_index][job_index];
+    const Gain cost_from = _matrix[nearest_from_index][job_index];
     cost = std::min(cost, cost_from);
 
-    auto nearest_to_rank =
+    const auto nearest_to_rank =
       _sol_state.nearest_job_rank_in_routes_to[v][v_target][r];
-    auto nearest_to_index =
+    const auto nearest_to_index =
       _input.jobs[_sol[v_target].route[nearest_to_rank]].index();
-    Gain Costo = _matrix[job_index][nearest_to_index];
+    const Gain Costo = _matrix[job_index][nearest_to_index];
     cost = std::min(cost, Costo);
   }
 
@@ -1725,7 +1728,7 @@ void LocalSearch<Route,
     Gain best_gain = std::numeric_limits<Gain>::min();
 
     for (std::size_t r = 0; r < _sol[v].size(); ++r) {
-      auto& current_job = _input.jobs[_sol[v].route[r]];
+      const auto& current_job = _input.jobs[_sol[v].route[r]];
       if (current_job.type == JOB_TYPE::DELIVERY) {
         continue;
       }
@@ -1775,17 +1778,17 @@ void LocalSearch<Route,
   }
 
   for (const auto& r_r : routes_and_ranks) {
-    auto v = r_r.first;
-    auto r = r_r.second;
+    const auto v = r_r.first;
+    const auto r = r_r.second;
 
     _sol_state.unassigned.insert(_sol[v].route[r]);
 
-    auto& current_job = _input.jobs[_sol[v].route[r]];
+    const auto& current_job = _input.jobs[_sol[v].route[r]];
     if (current_job.type == JOB_TYPE::SINGLE) {
       _sol[v].remove(_input, r, 1);
     } else {
       assert(current_job.type == JOB_TYPE::PICKUP);
-      auto delivery_r = _sol_state.matching_delivery_rank[v][r];
+      const auto delivery_r = _sol_state.matching_delivery_rank[v][r];
       _sol_state.unassigned.insert(_sol[v].route[delivery_r]);
 
       if (delivery_r == r + 1) {
