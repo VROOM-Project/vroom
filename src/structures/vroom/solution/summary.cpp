@@ -20,6 +20,7 @@ Summary::Summary(unsigned unassigned, unsigned amount_size)
     delivery(amount_size),
     pickup(amount_size),
     service(0),
+    priority(0),
     duration(0),
     waiting_time(0),
     distance(0) {

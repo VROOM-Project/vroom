@@ -19,5 +19,9 @@ Gain Operator::gain() {
   return stored_gain;
 }
 
+std::vector<Index> Operator::required_unassigned() const {
+  return std::vector<Index>();
+}
+
 } // namespace ls
 } // namespace vroom

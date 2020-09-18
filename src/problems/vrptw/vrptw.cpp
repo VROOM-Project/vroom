@@ -25,6 +25,7 @@ All rights reserved (see LICENSE).
 #include "problems/vrptw/operators/reverse_two_opt.h"
 #include "problems/vrptw/operators/route_exchange.h"
 #include "problems/vrptw/operators/two_opt.h"
+#include "problems/vrptw/operators/unassigned_exchange.h"
 #include "problems/vrptw/vrptw.h"
 #include "structures/vroom/input/input.h"
 #include "structures/vroom/tw_route.h"
@@ -35,6 +36,7 @@ namespace vroom {
 using TWSolution = std::vector<TWRoute>;
 
 using LocalSearch = ls::LocalSearch<TWRoute,
+                                    vrptw::UnassignedExchange,
                                     vrptw::Exchange,
                                     vrptw::CrossExchange,
                                     vrptw::MixedExchange,

@@ -279,6 +279,7 @@ inline Solution format_solution(const Input& input,
 
     Duration duration = 0;
     Duration service = 0;
+    Priority priority = 0;
     Amount sum_pickups(input.zero_amount());
     Amount sum_deliveries(input.zero_amount());
 #ifndef NDEBUG
@@ -306,6 +307,7 @@ inline Solution format_solution(const Input& input,
     assert(input.vehicle_ok_with_job(i, route.front()));
     auto& first_job = input.jobs[route.front()];
     service += first_job.service;
+    priority += first_job.priority;
 
     current_load += first_job.pickup;
     current_load -= first_job.delivery;
@@ -333,6 +335,7 @@ inline Solution format_solution(const Input& input,
 
       auto& current_job = input.jobs[route[r + 1]];
       service += current_job.service;
+      priority += current_job.priority;
 
       current_load += current_job.pickup;
       current_load -= current_job.delivery;
@@ -371,6 +374,7 @@ inline Solution format_solution(const Input& input,
                         service,
                         duration,
                         0,
+                        priority,
                         sum_deliveries,
                         sum_pickups,
                         v.description);
@@ -515,6 +519,7 @@ inline Route format_route(const Input& input,
   Duration duration = 0;
   Duration service = 0;
   Duration forward_wt = 0;
+  Priority priority = 0;
   Amount sum_pickups(input.zero_amount());
   Amount sum_deliveries(input.zero_amount());
 
@@ -592,6 +597,7 @@ inline Route format_route(const Input& input,
     // Back to current job.
     duration += travel_time;
     service += current_job.service;
+    priority += current_job.priority;
 
     current_load += current_job.pickup;
     current_load -= current_job.delivery;
@@ -717,6 +723,7 @@ inline Route format_route(const Input& input,
                service,
                duration,
                forward_wt,
+               priority,
                sum_deliveries,
                sum_pickups,
                v.description);
