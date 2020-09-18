@@ -718,7 +718,8 @@ producing a solution that looks like:
     "unassigned": 0,
     "service": 0,
     "duration": 5461,
-    "waiting_time": 0
+    "waiting_time": 0,
+    "priority": 0
   },
   "unassigned": [],
   "routes": [
@@ -728,6 +729,7 @@ producing a solution that looks like:
       "service": 0,
       "duration": 5461,
       "waiting_time": 0,
+      "priority": 0,
       "steps": [
         {
           "type": "start",
