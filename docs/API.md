@@ -59,7 +59,7 @@ A `shipment` object has the following properties:
 | `delivery` | a `shipment_step` object describing delivery |
 | [`amount`] | an array of integers describing multidimensional quantities |
 | [`skills`] | an array of integers defining mandatory skills |
-| [`priority`] | an integer in the `[0, 10]` range describing priority level (defaults to 0) |
+| [`priority`] | an integer in the `[0, 100]` range describing priority level (defaults to 0) |
 
 A `shipment_step` is similar to a `job` object (expect for shared keys already present in `shipment`):
 
