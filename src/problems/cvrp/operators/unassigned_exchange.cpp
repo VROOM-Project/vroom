@@ -142,7 +142,7 @@ void UnassignedExchange::apply() {
 }
 
 std::vector<Index> UnassignedExchange::addition_candidates() const {
-  return {};
+  return {s_vehicle};
 }
 
 std::vector<Index> UnassignedExchange::update_candidates() const {

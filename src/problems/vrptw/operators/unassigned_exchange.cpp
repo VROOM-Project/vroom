@@ -53,9 +53,5 @@ void UnassignedExchange::apply() {
   _unassigned.insert(_removed);
 }
 
-std::vector<Index> UnassignedExchange::addition_candidates() const {
-  return {s_vehicle};
-}
-
 } // namespace vrptw
 } // namespace vroom

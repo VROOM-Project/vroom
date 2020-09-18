@@ -33,8 +33,6 @@ public:
   virtual bool is_valid() override;
 
   virtual void apply() override;
-
-  virtual std::vector<Index> addition_candidates() const override;
 };
 
 } // namespace vrptw
