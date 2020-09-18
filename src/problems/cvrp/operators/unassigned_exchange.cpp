@@ -59,12 +59,8 @@ void UnassignedExchange::compute_gain() {
 
   const Index u_index = _input.jobs[_u].index();
 
-  Gain s_gain = 0;
-
-  // t_gain is current_cost - new_previous_cost - new_next_cost.
-  Gain new_previous_cost = 0;
-  Gain new_next_cost = 0;
-  Gain current_cost = 0;
+  Gain s_gain;
+  Gain t_gain;
 
   if (t_rank == s_rank) {
     // Removed job is replaced by the unassigned one so there is no
@@ -73,53 +69,34 @@ void UnassignedExchange::compute_gain() {
 
     // No old edge to remove when adding unassigned job in place of
     // removed job.
+    Gain previous_cost = 0;
+    Gain next_cost = 0;
+
     if (t_rank == 0) {
       if (v.has_start()) {
-        new_previous_cost = m[v.start.value().index()][u_index];
+        previous_cost = m[v.start.value().index()][u_index];
       }
     } else {
-      new_previous_cost = m[_input.jobs[s_route[t_rank - 1]].index()][u_index];
+      previous_cost = m[_input.jobs[s_route[t_rank - 1]].index()][u_index];
     }
 
     if (t_rank == s_route.size() - 1) {
       if (v.has_end()) {
-        new_next_cost = m[u_index][v.end.value().index()];
+        next_cost = m[u_index][v.end.value().index()];
       }
     } else {
-      new_next_cost = m[u_index][_input.jobs[s_route[s_rank + 1]].index()];
+      next_cost = m[u_index][_input.jobs[s_route[s_rank + 1]].index()];
     }
+
+    t_gain = -previous_cost - next_cost;
   } else {
     // No common edge so both gains can be computed independently.
     s_gain = _sol_state.node_gains[s_vehicle][s_rank];
 
-    // Consider the cost of unassigned job at rank t_rank.
-    if (t_rank == 0) {
-      if (v.has_start()) {
-        auto p_index = v.start.value().index();
-        new_previous_cost = m[p_index][u_index];
-        current_cost = m[p_index][_input.jobs[s_route[0]].index()];
-      }
-
-      new_next_cost = m[u_index][_input.jobs[s_route[0]].index()];
-    } else if (t_rank == s_route.size()) {
-      auto p_index = _input.jobs[s_route[t_rank - 1]].index();
-      new_previous_cost = m[p_index][u_index];
-
-      if (v.has_end()) {
-        new_next_cost = m[u_index][v.end.value().index()];
-        current_cost = m[p_index][v.end.value().index()];
-      }
-    } else {
-      auto p_index = _input.jobs[s_route[t_rank - 1]].index();
-      auto n_index = _input.jobs[s_route[t_rank]].index();
-
-      new_previous_cost = m[p_index][u_index];
-      new_next_cost = m[u_index][n_index];
-      current_cost = m[p_index][n_index];
-    }
+    t_gain = -utils::addition_cost(_input, m, _u, v, s_route, t_rank);
   }
 
-  stored_gain = s_gain + current_cost - new_previous_cost - new_next_cost;
+  stored_gain = s_gain + t_gain;
   gain_computed = true;
 }
 
