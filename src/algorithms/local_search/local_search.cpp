@@ -453,10 +453,8 @@ void LocalSearch<Route,
   }
 
   // Store best gain for matching move.
-  std::vector<std::vector<Gain>>
-    best_gains(_nb_vehicles,
-               std::vector<Gain>(_nb_vehicles,
-                                 std::numeric_limits<Gain>::min()));
+  std::vector<std::vector<Gain>> best_gains(_nb_vehicles,
+                                            std::vector<Gain>(_nb_vehicles, 0));
 
   // Store best priority increase for matching move. Only operators
   // involving a single route and unassigned jobs can change overall
@@ -519,6 +517,8 @@ void LocalSearch<Route,
 
                 if (better_if_valid and r.is_valid()) {
                   best_priorities[s_t.first] = priority_gain;
+                  // This may potentially define a negative value as
+                  // best gain in case priority_gain is non-zero.
                   best_gains[s_t.first][s_t.first] = r.gain();
                   best_ops[s_t.first][s_t.first] =
                     std::make_unique<UnassignedExchange>(r);
