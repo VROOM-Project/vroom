@@ -598,7 +598,7 @@ inline Route format_route(const Input& input,
     // Back to current job.
     duration += travel_time;
     service += current_job.service;
-    priority += current_job.priorities.at(v.id);
+    priority += current_job.priorities.at(i);
 
     current_load += current_job.pickup;
     current_load -= current_job.delivery;
