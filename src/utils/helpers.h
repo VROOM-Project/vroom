@@ -19,6 +19,9 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/tw_route.h"
 #include "utils/exception.h"
 
+#include <string>
+#include <iostream>
+
 namespace vroom {
 namespace utils {
 
@@ -194,6 +197,8 @@ inline Gain addition_cost(const Input& input,
 inline Cost priority_sum_for_route(const Input& input,
                                    const std::vector<Index>& route,
                                    const Index vehicle_rank) {
+  std::string strMytestString("Position 6");
+  std::cout << strMytestString;
   return std::accumulate(route.begin(),
                          route.end(),
                          0,
@@ -308,6 +313,8 @@ inline Solution format_solution(const Input& input,
     assert(input.vehicle_ok_with_job(i, route.front()));
     auto& first_job = input.jobs[route.front()];
     service += first_job.service;
+    std::string strMytestString("Position 3");
+    std::cout << strMytestString;
     priority += first_job.priorities.at(i);
 
     current_load += first_job.pickup;
@@ -336,6 +343,8 @@ inline Solution format_solution(const Input& input,
 
       auto& current_job = input.jobs[route[r + 1]];
       service += current_job.service;
+      std::string strMytestString("Position 4");
+      std::cout << strMytestString;
       priority += current_job.priorities.at(i);
 
       current_load += current_job.pickup;
@@ -598,6 +607,8 @@ inline Route format_route(const Input& input,
     // Back to current job.
     duration += travel_time;
     service += current_job.service;
+    std::string strMytestString("Position 5");
+    std::cout << strMytestString;
     priority += current_job.priorities.at(tw_r.vehicle_rank);
 
     current_load += current_job.pickup;

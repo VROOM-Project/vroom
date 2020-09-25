@@ -43,6 +43,9 @@ All rights reserved (see LICENSE).
 #include "problems/vrptw/operators/unassigned_exchange.h"
 #include "utils/helpers.h"
 
+#include <string>
+#include <iostream>
+
 namespace vroom {
 namespace ls {
 
@@ -172,6 +175,8 @@ void LocalSearch<Route,
       const auto job_priorities = current_job.priorities;
 
       // priority taken as the first priority
+      std::string strMytestString("Position 2");
+      std::cout << strMytestString;
       const auto job_priorities_first = job_priorities.at(routes[0]);
       if (job_priorities_first < best_priority) {
         // Insert higher priority jobs first.
@@ -492,6 +497,8 @@ void LocalSearch<Route,
           for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
             const auto& current_job =
               _input.jobs[_sol[s_t.first].route[s_rank]];
+              std::string strMytestString("Position 1");
+              std::cout << strMytestString;
             if (current_job.type != JOB_TYPE::SINGLE or
                 u_priorities.at(s_t.first) < current_job.priorities.at(s_t.first)) {
               continue;
