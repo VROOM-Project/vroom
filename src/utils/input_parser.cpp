@@ -145,7 +145,7 @@ inline Priorities get_priorities(const rapidjson::Value& object, std::vector<Id>
       if (!object["priorities"][i].IsUint()) {
         throw Exception(ERROR::INPUT, "Invalid priority value.");
       }
-      priorities.insert(std::pair<Id,Priority>(listIds.at(i),object["priorities"][i].GetUint()));
+      priorities.insert(std::pair<Id,Priority>((i),object["priorities"][i].GetUint()));
     }
   }
   return priorities;
