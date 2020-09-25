@@ -172,7 +172,7 @@ void LocalSearch<Route,
       const auto job_priorities = current_job.priorities;
 
       // priority taken as the first priority
-      const auto job_priorities_first = job_priorities.at(routes[0]);
+      const auto job_priorities_first = job_priorities.at(0);
       if (job_priorities_first < best_priority) {
         // Insert higher priority jobs first.
         continue;
@@ -493,11 +493,11 @@ void LocalSearch<Route,
             const auto& current_job =
               _input.jobs[_sol[s_t.first].route[s_rank]];
             if (current_job.type != JOB_TYPE::SINGLE or
-                u_priorities.at(s_t.first) < current_job.priorities.at(s_t.first)) {
+                u_priorities.at(0) < current_job.priorities.at(0)) {
               continue;
             }
 
-            const Priority priority_gain = u_priorities.at(s_t.first) - current_job.priorities.at(s_t.first);
+            const Priority priority_gain = u_priorities.at(0) - current_job.priorities.at(0);
 
             if (best_priorities[s_t.first] <= priority_gain) {
               for (unsigned t_rank = 0; t_rank <= _sol[s_t.first].size();
