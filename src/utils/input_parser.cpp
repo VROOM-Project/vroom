@@ -139,7 +139,7 @@ inline Priorities get_priorities(const rapidjson::Value& object, std::vector<Id>
   Priorities priorities;
   if (object.HasMember("priority")) {
     if(object["priority"].IsUint()) {
-      const valuePriority = object["priorities"].GetUint();
+      const Priority valuePriority = object["priorities"].GetUint();
       for (auto i = 0; i < listIds.size(); ++i){
         priorities.insert(std::pair<Id,Priority>((i),valuePriority));
       }
