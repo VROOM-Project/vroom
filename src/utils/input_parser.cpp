@@ -137,15 +137,23 @@ inline Duration get_service(const rapidjson::Value& object) {
 
 inline Priorities get_priorities(const rapidjson::Value& object, std::vector<Id> listIds) {
   Priorities priorities;
-  if (object.HasMember("priorities")) {
-    if (!object["priorities"].IsArray()) {
-      throw Exception(ERROR::INPUT, "Invalid priorities object.");
-    }
-    for (rapidjson::SizeType i = 0; i < object["priorities"].Size(); ++i) {
-      if (!object["priorities"][i].IsUint()) {
-        throw Exception(ERROR::INPUT, "Invalid priority value.");
+  if (object.HasMember("priority")) {
+    if(object["priority"].IsUint()) {
+      const valuePriority = object["priorities"].GetUint();
+      for (auto i = 0; i < listIds.size(); ++i){
+        priorities.insert(std::pair<Id,Priority>((i),valuePriority));
       }
-      priorities.insert(std::pair<Id,Priority>((i),object["priorities"][i].GetUint()));
+    }
+    else{
+      if (!object["priority"].IsArray()) {
+        throw Exception(ERROR::INPUT, "Invalid priorities object.");
+      }
+      for (rapidjson::SizeType i = 0; i < object["priority"].Size(); ++i) {
+        if (!object["priority"][i].IsUint()) {
+          throw Exception(ERROR::INPUT, "Invalid priority value.");
+        }
+        priorities.insert(std::pair<Id,Priority>((i),object["priorities"][i].GetUint()));
+      }
     }
   }
   return priorities;
