@@ -197,13 +197,11 @@ inline Gain addition_cost(const Input& input,
 inline Cost priority_sum_for_route(const Input& input,
                                    const std::vector<Index>& route,
                                    const Index vehicle_rank) {
-  std::string strMytestString("Position 6");
-  std::cout << strMytestString;
   return std::accumulate(route.begin(),
                          route.end(),
                          0,
                          [&](auto sum, auto job_rank) {
-                           return sum + input.jobs[job_rank].priorities.at(vehicle_rank);
+                           return sum + input.jobs[job_rank].priorities.at(0);
                          });
 }
 
@@ -313,8 +311,6 @@ inline Solution format_solution(const Input& input,
     assert(input.vehicle_ok_with_job(i, route.front()));
     auto& first_job = input.jobs[route.front()];
     service += first_job.service;
-    std::string strMytestString("Position 3");
-    std::cout << strMytestString;
     priority += first_job.priorities.at(i);
 
     current_load += first_job.pickup;

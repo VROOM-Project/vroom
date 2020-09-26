@@ -173,12 +173,8 @@ void LocalSearch<Route,
       }
 
       const auto job_priorities = current_job.priorities;
-
-      // priority taken as the first priority
-      std::string strMytestString("Position 2");
-      std::cout << strMytestString;
-      const auto job_priorities_first = job_priorities.at(routes[0]);
-      if (job_priorities_first < best_priority) {
+      const auto job_max_priority = current_job.max_priority;
+      if (job_max_priority < best_priority) {
         // Insert higher priority jobs first.
         continue;
       }
@@ -358,9 +354,9 @@ void LocalSearch<Route,
         const double eval = static_cast<double>(addition_cost) -
                             regret_coeff * static_cast<double>(regret_cost);
 
-        if ((job_priorities_first > best_priority) or
-            (job_priorities_first == best_priority and eval < best_cost)) {
-          best_priority = job_priorities_first;
+        if ((job_max_priority > best_priority) or
+            (job_max_priority == best_priority and eval < best_cost)) {
+          best_priority = job_max_priority;
           best_cost = eval;
           best_job_rank = j;
           best_route = routes[i];
@@ -497,8 +493,6 @@ void LocalSearch<Route,
           for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
             const auto& current_job =
               _input.jobs[_sol[s_t.first].route[s_rank]];
-              std::string strMytestString("Position 1");
-              std::cout << strMytestString;
             if (current_job.type != JOB_TYPE::SINGLE or
                 u_priorities.at(s_t.first) < current_job.priorities.at(s_t.first)) {
               continue;
@@ -1454,7 +1448,7 @@ void LocalSearch<Route,
                       0,
                       [&](auto sum, const auto& r) {
                         return sum +
-                               utils::priority_sum_for_route(_input, r.route, v_rank++);
+                               utils::priority_sum_for_route(_input, r.route, v_rank);
                       });
 
     current_sol_indicators.unassigned = _sol_state.unassigned.size();
@@ -1466,7 +1460,7 @@ void LocalSearch<Route,
                       0,
                       [&](auto sum, const auto& r) {
                         return sum + utils::route_cost_for_vehicle(_input,
-                                                                   v_rank++,
+                                                                   v_rank,
                                                                    r.route);
                       });
 
