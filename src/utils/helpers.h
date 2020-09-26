@@ -201,7 +201,7 @@ inline Cost priority_sum_for_route(const Input& input,
                          route.end(),
                          0,
                          [&](auto sum, auto job_rank) {
-                           return sum + input.jobs[job_rank].priorities.at(0);
+                           return sum + input.jobs[job_rank].priorities.at(vehicle_rank);
                          });
 }
 
