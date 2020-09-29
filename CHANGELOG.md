@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [v1.8.0] - 2020-09-29
+
 ### Added
 
 - Local search move removing a job in a route and adding an unassigned one (#324)
