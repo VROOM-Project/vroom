@@ -164,6 +164,12 @@ inline std::pair<Priorities, Priority> get_priorities(const rapidjson::Value& ob
       }
     }
   }
+  else {
+    for (auto i = 0; i < listIds.size(); ++i){
+        priorities.insert(std::pair<Id,Priority>((i),0));
+      }
+      max_priority = 0;
+  }
   std::pair<Priorities, Priority> result(priorities, max_priority);
   return result;
 }
