@@ -28,8 +28,7 @@ struct Job {
   const Amount delivery;
   const Amount pickup;
   const Skills skills;
-  Priorities priorities;
-  const Priority max_priority;
+  const Priority priority;
   const std::vector<TimeWindow> tws;
   const std::string description;
   const Duration tw_length;
@@ -41,8 +40,7 @@ struct Job {
       const Amount& delivery = Amount(0),
       const Amount& pickup = Amount(0),
       const Skills& skills = Skills(),
-      Priorities priorities =  Priorities(),
-      const Priority max_priority = Priority(0),
+      Priority priority = 0,
       const std::vector<TimeWindow>& tws =
         std::vector<TimeWindow>(1, TimeWindow()),
       const std::string& description = "");
@@ -55,8 +53,7 @@ struct Job {
       Duration service = 0,
       const Amount& amount = Amount(0),
       const Skills& skills = Skills(),
-      Priorities priorities =  Priorities(),
-      const Priority max_priority = Priority(0),
+      Priority priority = 0,
       const std::vector<TimeWindow>& tws =
         std::vector<TimeWindow>(1, TimeWindow()),
       const std::string& description = "");

@@ -43,9 +43,6 @@ All rights reserved (see LICENSE).
 #include "problems/vrptw/operators/unassigned_exchange.h"
 #include "utils/helpers.h"
 
-#include <string>
-#include <iostream>
-
 namespace vroom {
 namespace ls {
 
@@ -97,15 +94,14 @@ LocalSearch<Route,
   // Setup solution state.
   _sol_state.setup(_sol);
 
-  Index v_rank = 0;
   _best_sol_indicators.priority_sum =
     std::accumulate(_sol.begin(), _sol.end(), 0, [&](auto sum, const auto& r) {
-      return sum + utils::priority_sum_for_route(_input, r.route, v_rank++);
+      return sum + utils::priority_sum_for_route(_input, r.route);
     });
 
   _best_sol_indicators.unassigned = _sol_state.unassigned.size();
 
-  v_rank = 0;
+  Index v_rank = 0;
   _best_sol_indicators.cost =
     std::accumulate(_sol.begin(), _sol.end(), 0, [&](auto sum, const auto& r) {
       return sum + utils::route_cost_for_vehicle(_input, v_rank++, r.route);
@@ -172,9 +168,9 @@ void LocalSearch<Route,
         continue;
       }
 
-      const auto job_priorities = current_job.priorities;
-      const auto job_max_priority = current_job.max_priority;
-      if (job_max_priority < best_priority) {
+      const auto job_priority = current_job.priority;
+
+      if (job_priority < best_priority) {
         // Insert higher priority jobs first.
         continue;
       }
@@ -354,9 +350,9 @@ void LocalSearch<Route,
         const double eval = static_cast<double>(addition_cost) -
                             regret_coeff * static_cast<double>(regret_cost);
 
-        if ((job_max_priority > best_priority) or
-            (job_max_priority == best_priority and eval < best_cost)) {
-          best_priority = job_max_priority;
+        if ((job_priority > best_priority) or
+            (job_priority == best_priority and eval < best_cost)) {
+          best_priority = job_priority;
           best_cost = eval;
           best_job_rank = j;
           best_route = routes[i];
@@ -457,10 +453,8 @@ void LocalSearch<Route,
   }
 
   // Store best gain for matching move.
-  std::vector<std::vector<Gain>>
-    best_gains(_nb_vehicles,
-               std::vector<Gain>(_nb_vehicles,
-                                 std::numeric_limits<Gain>::min()));
+  std::vector<std::vector<Gain>> best_gains(_nb_vehicles,
+                                            std::vector<Gain>(_nb_vehicles, 0));
 
   // Store best priority increase for matching move. Only operators
   // involving a single route and unassigned jobs can change overall
@@ -482,7 +476,7 @@ void LocalSearch<Route,
           continue;
         }
 
-        Priorities u_priorities = _input.jobs[u].priorities;
+        Priority u_priority = _input.jobs[u].priority;
         for (const auto& s_t : s_t_pairs) {
           if (s_t.first != s_t.second or
               !_input.vehicle_ok_with_job(s_t.first, u) or
@@ -494,11 +488,11 @@ void LocalSearch<Route,
             const auto& current_job =
               _input.jobs[_sol[s_t.first].route[s_rank]];
             if (current_job.type != JOB_TYPE::SINGLE or
-                u_priorities.at(s_t.first) < current_job.priorities.at(s_t.first)) {
+                u_priority < current_job.priority) {
               continue;
             }
 
-            const Priority priority_gain = u_priorities.at(s_t.first) - current_job.priorities.at(s_t.first);
+            const Priority priority_gain = u_priority - current_job.priority;
 
             if (best_priorities[s_t.first] <= priority_gain) {
               for (unsigned t_rank = 0; t_rank <= _sol[s_t.first].size();
@@ -523,6 +517,8 @@ void LocalSearch<Route,
 
                 if (better_if_valid and r.is_valid()) {
                   best_priorities[s_t.first] = priority_gain;
+                  // This may potentially define a negative value as
+                  // best gain in case priority_gain is non-zero.
                   best_gains[s_t.first][s_t.first] = r.gain();
                   best_ops[s_t.first][s_t.first] =
                     std::make_unique<UnassignedExchange>(r);
@@ -1440,7 +1436,6 @@ void LocalSearch<Route,
     run_ls_step();
 
     // Indicators for current solution.
-    Index v_rank = 0;
     utils::SolutionIndicators current_sol_indicators;
     current_sol_indicators.priority_sum =
       std::accumulate(_sol.begin(),
@@ -1448,19 +1443,19 @@ void LocalSearch<Route,
                       0,
                       [&](auto sum, const auto& r) {
                         return sum +
-                               utils::priority_sum_for_route(_input, r.route, v_rank);
+                               utils::priority_sum_for_route(_input, r.route);
                       });
 
     current_sol_indicators.unassigned = _sol_state.unassigned.size();
 
-    v_rank = 0;
+    Index v_rank = 0;
     current_sol_indicators.cost =
       std::accumulate(_sol.begin(),
                       _sol.end(),
                       0,
                       [&](auto sum, const auto& r) {
                         return sum + utils::route_cost_for_vehicle(_input,
-                                                                   v_rank,
+                                                                   v_rank++,
                                                                    r.route);
                       });
 
