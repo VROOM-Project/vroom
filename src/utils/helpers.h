@@ -339,8 +339,6 @@ inline Solution format_solution(const Input& input,
 
       auto& current_job = input.jobs[route[r + 1]];
       service += current_job.service;
-      std::string strMytestString("Position 4");
-      std::cout << strMytestString;
       priority += current_job.priorities.at(i);
 
       current_load += current_job.pickup;
