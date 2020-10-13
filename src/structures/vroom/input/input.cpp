@@ -97,6 +97,11 @@ void Input::add_job(const Job& job) {
   if (job.type != JOB_TYPE::SINGLE) {
     throw Exception(ERROR::INPUT, "Wrong job type.");
   }
+  if (job_id_to_rank.find(job.id) != job_id_to_rank.end()) {
+    throw Exception(ERROR::INPUT,
+                    "Duplicate job id: " + std::to_string(job.id) + ".");
+  }
+  job_id_to_rank[job.id] = jobs.size();
   jobs.push_back(job);
   check_job(jobs.back());
   _has_jobs = true;
@@ -121,12 +126,23 @@ void Input::add_shipment(const Job& pickup, const Job& delivery) {
   if (pickup.type != JOB_TYPE::PICKUP) {
     throw Exception(ERROR::INPUT, "Wrong pickup type.");
   }
+  if (pickup_id_to_rank.find(pickup.id) != pickup_id_to_rank.end()) {
+    throw Exception(ERROR::INPUT,
+                    "Duplicate pickup id: " + std::to_string(pickup.id) + ".");
+  }
+  pickup_id_to_rank[pickup.id] = jobs.size();
   jobs.push_back(pickup);
   check_job(jobs.back());
 
   if (delivery.type != JOB_TYPE::DELIVERY) {
     throw Exception(ERROR::INPUT, "Wrong delivery type.");
   }
+  if (delivery_id_to_rank.find(delivery.id) != delivery_id_to_rank.end()) {
+    throw Exception(ERROR::INPUT,
+                    "Duplicate delivery id: " + std::to_string(delivery.id) +
+                      ".");
+  }
+  delivery_id_to_rank[delivery.id] = jobs.size();
   jobs.push_back(delivery);
   check_job(jobs.back());
   _has_shipments = true;

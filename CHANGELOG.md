@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Check for duplicate ids across tasks of the same type (`job`, `pickup`, `delivery`)
+
 ## [v1.8.0] - 2020-09-29
 
 ### Added
