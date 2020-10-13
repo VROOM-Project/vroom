@@ -11,6 +11,7 @@ All rights reserved (see LICENSE).
 */
 
 #include "structures/vroom/input/input.h"
+#include "structures/vroom/input/input_step.h"
 
 namespace vroom {
 namespace io {

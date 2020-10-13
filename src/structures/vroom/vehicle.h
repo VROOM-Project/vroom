@@ -15,6 +15,7 @@ All rights reserved (see LICENSE).
 #include "structures/typedefs.h"
 #include "structures/vroom/amount.h"
 #include "structures/vroom/break.h"
+#include "structures/vroom/input/input_step.h"
 #include "structures/vroom/location.h"
 #include "structures/vroom/time_window.h"
 
@@ -29,6 +30,7 @@ struct Vehicle {
   const TimeWindow tw;
   const std::vector<Break> breaks;
   const std::string description;
+  const std::vector<InputStep> input_steps;
 
   Vehicle(Id id,
           const std::optional<Location>& start,
@@ -37,7 +39,8 @@ struct Vehicle {
           const Skills& skills = Skills(),
           const TimeWindow& tw = TimeWindow(),
           const std::vector<Break>& breaks = std::vector<Break>(),
-          const std::string& description = "");
+          const std::string& description = "",
+          std::vector<InputStep>&& input_steps = std::vector<InputStep>());
 
   bool has_start() const;
 
