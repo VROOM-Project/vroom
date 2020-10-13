@@ -25,6 +25,7 @@ using Servers = std::unordered_map<std::string, Server>;
 struct CLArgs {
   // Listing command-line options.
   Servers servers;                           // -a and -p
+  bool check;                                // -c
   std::vector<HeuristicParameters> h_params; // -e
   bool geometry;                             // -g
   std::string input_file;                    // -i

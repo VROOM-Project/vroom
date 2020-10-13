@@ -34,6 +34,7 @@ void display_usage() {
   usage += "Options:\n";
   usage += "\t-a PROFILE:HOST (=" + vroom::DEFAULT_PROFILE +
            ":0.0.0.0)\t routing server\n";
+  usage += "\t-c,\t\t\t\t check for custom routes validity\n";
   usage += "\t-g,\t\t\t\t add detailed route geometry and indicators\n";
   usage += "\t-i FILE,\t\t\t read input from FILE rather than from stdin\n";
   usage += "\t-o OUTPUT,\t\t\t output file name\n";
@@ -51,7 +52,7 @@ int main(int argc, char** argv) {
   vroom::io::CLArgs cl_args;
 
   // Parsing command-line arguments.
-  const char* optString = "a:e:gi:o:p:r:t:x:h?";
+  const char* optString = "a:ce:gi:o:p:r:t:x:h?";
   int opt = getopt(argc, argv, optString);
 
   std::string router_arg;
@@ -63,6 +64,9 @@ int main(int argc, char** argv) {
     switch (opt) {
     case 'a':
       vroom::io::update_host(cl_args.servers, optarg);
+      break;
+    case 'c':
+      cl_args.check = true;
       break;
     case 'e':
       heuristic_params_arg.push_back(optarg);
