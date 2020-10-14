@@ -113,6 +113,8 @@ public:
                  unsigned nb_thread,
                  const std::vector<HeuristicParameters>& h_param =
                    std::vector<HeuristicParameters>());
+
+  Solution check(unsigned nb_thread);
 };
 
 } // namespace vroom

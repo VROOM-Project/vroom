@@ -8,6 +8,7 @@ All rights reserved (see LICENSE).
 */
 #include <array>
 
+#include "algorithms/validation/check.h"
 #include "problems/cvrp/cvrp.h"
 #include "problems/tsp/tsp.h"
 #include "problems/vrp.h"
@@ -437,6 +438,59 @@ Solution Input::solve(unsigned exploration_level,
 
   // Solve.
   auto sol = instance->solve(exploration_level, nb_thread, h_param);
+
+  // Update timing info.
+  sol.summary.computing_times.loading = loading;
+
+  _end_solving = std::chrono::high_resolution_clock::now();
+  sol.summary.computing_times.solving =
+    std::chrono::duration_cast<std::chrono::milliseconds>(_end_solving -
+                                                          _end_loading)
+      .count();
+
+  if (_geometry) {
+    for (auto& route : sol.routes) {
+      _routing_wrapper->add_route_info(route);
+      sol.summary.distance += route.distance;
+    }
+
+    _end_routing = std::chrono::high_resolution_clock::now();
+    auto routing = std::chrono::duration_cast<std::chrono::milliseconds>(
+                     _end_routing - _end_solving)
+                     .count();
+
+    sol.summary.computing_times.routing = routing;
+  }
+
+  return sol;
+}
+
+Solution Input::check(unsigned nb_thread) {
+  if (_geometry and !_all_locations_have_coords) {
+    // Early abort when info is required with missing coordinates.
+    throw Exception(ERROR::INPUT,
+                    "Route geometry request with missing coordinates.");
+  }
+
+  if (_matrix.size() < 2) {
+    // Call to routing engine if matrix not already provided.
+    assert(_routing_wrapper);
+    // TODO we don't need the whole matrix here.
+    _matrix = _routing_wrapper->get_matrix(_locations);
+  }
+
+  // Fill vehicle/job compatibility matrix.
+  // TODO remove unused extra compatibility checks.
+  this->set_compatibility();
+
+  _end_loading = std::chrono::high_resolution_clock::now();
+
+  auto loading = std::chrono::duration_cast<std::chrono::milliseconds>(
+                   _end_loading - _start_loading)
+                   .count();
+
+  // Check.
+  auto sol = validation::check_and_set_ETA(*this);
 
   // Update timing info.
   sol.summary.computing_times.loading = loading;
