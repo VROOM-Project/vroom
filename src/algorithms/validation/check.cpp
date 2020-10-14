@@ -7,11 +7,10 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <algorithm>
-#include <numeric>
-#include <set>
+#include <unordered_set>
 
 #include "algorithms/validation/check.h"
+#include "algorithms/validation/choose_invalid.h"
 #include "structures/vroom/tw_route.h"
 #include "utils/exception.h"
 #include "utils/helpers.h"
@@ -20,14 +19,11 @@ namespace vroom {
 namespace validation {
 
 Solution check_and_set_ETA(const Input& input) {
-  std::vector<TWRoute> tw_routes;
-  std::set<Index> unassigned;
-  for (Index j = 0; j < input.jobs.size(); ++j) {
-    unassigned.insert(j);
-  }
+  std::vector<Route> routes;
+  std::unordered_set<Index> unassigned_ranks;
 
-  for (Index v = 0; v < input.vehicles.size(); ++v) {
-    tw_routes.emplace_back(input, v);
+  for (Index j = 0; j < input.jobs.size(); ++j) {
+    unassigned_ranks.insert(j);
   }
 
   for (Index v = 0; v < input.vehicles.size(); ++v) {
@@ -71,20 +67,27 @@ Solution check_and_set_ETA(const Input& input) {
       }
     }
 
-    // TODO check for route amount and skills.
+    // TODO generate route directly if input steps make it a valid
+    // one.
 
-    // Populate new route by adding jobs if valid for TW.
-    auto& current_r = tw_routes[v];
-
-    for (const auto job_rank : job_ranks) {
-      const Index rank = current_r.route.size();
-      if (current_r.is_valid_addition_for_tw(input, job_rank, rank)) {
-        current_r.add(input, job_rank, rank);
-      }
+    routes.push_back(
+      choose_invalid_route(input, v, job_ranks, unassigned_ranks));
+    for (auto rank : job_ranks) {
+      unassigned_ranks.erase(rank);
     }
   }
 
-  return utils::format_solution(input, tw_routes);
+  // Handle unassigned jobs.
+  std::vector<Job> unassigned_jobs;
+  std::transform(unassigned_ranks.begin(),
+                 unassigned_ranks.end(),
+                 std::back_inserter(unassigned_jobs),
+                 [&](auto j) { return input.jobs[j]; });
+
+  return Solution(0,
+                  input.zero_amount().size(),
+                  std::move(routes),
+                  std::move(unassigned_jobs));
 }
 
 } // namespace validation

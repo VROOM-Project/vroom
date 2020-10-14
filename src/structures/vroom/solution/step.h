@@ -32,6 +32,9 @@ struct Step {
   Duration waiting_time;
   Distance distance;
 
+  Duration lead_time;
+  Duration delay;
+
   Step(STEP_TYPE type, Location location, const Amount& load);
 
   Step(const Job& job, const Amount& load);

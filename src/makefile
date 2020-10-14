@@ -6,7 +6,7 @@
 # Variables.
 CXX ?= g++
 CXXFLAGS = -MMD -MP -I. -std=c++17 -Wextra -Wpedantic -Wall -O3 -DASIO_STANDALONE
-LDLIBS = -lpthread -lssl -lcrypto
+LDLIBS = -lpthread -lssl -lcrypto -lglpk
 
 # Using all cpp files in current directory.
 MAIN = ../bin/vroom
