@@ -1,0 +1,47 @@
+\documentclass{article}
+\usepackage{amsmath}
+
+\begin{document}
+
+Let $R=\{T_0, T_1, \ldots, T_n, T_{n + 1}\}$ be the fixed order of
+tasks within the route for a given vehicle. The vehicle has to perform
+$n$ geolocated tasks ($T_1$ to $T_n$) while $T_0$ and $T_{n + 1}$ are
+its optional start and end tasks. For all $i$, we denote $s_i$ the
+service time for task $i$, $d_i$ the travel time from task $T_i$ to
+task $T_{i + 1}$ and $[a_i, b_i]$ the expected time window for start
+of $T_i$ ($a_i \leq b_i$). In particular at vehicle start and end, we
+have $s_0 = s_{n + 1} = 0$ while $[a_0, b_{n + 1}]$ is the vehicle
+available working time.
+
+The following program aim at deciding start times $t_i$ for all tasks
+$T_i$ in order to minimize timing violations measured by variable
+$Y_i$: either \textit{lead time} whenever a task starts earlier than
+it's available date, either \textit{delay} when a task starts later
+that it's deadline.
+
+
+\begin{quote}
+  Minimize
+  \begin{align}
+    M \times \sum_{i = 0}^{n + 1} Y_i + t_{n +1} - t_0 \label{obj}\tag{Obj}
+  \end{align}
+  Subject to
+  \begin{align}
+    t_{i + 1} - t_i &\geq s_i + d_i && 0 \leq i \leq n\label{precedence}\tag{$P_i$}\\
+    Y_i + t_i &\geq a_i && 0 \leq i \leq n \label{lead}\tag{$L_i$}\\
+    t_i - Y_i &\leq b_i && 1 \leq i \leq n + 1 \label{delay}\tag{$D_i$}\\
+    t_i &\geq 0 && 0 \leq i \leq n + 1 \nonumber\\
+    Y_i &\geq 0 && 0 \leq i \leq n + 1 \nonumber
+  \end{align}
+\end{quote}
+
+The optimization objective (\ref{obj}) combines the sum of time
+violations and the route makespan\footnote{Using a value $M > 1$
+  ensures no \textit{lead time} violation is added to decrease
+  makespan.}. Precedence constraints (\ref{precedence}) make sure
+service and travel times are accounted for between task start
+times. In the time violation constraints for lead time (\ref{lead})
+and delay (\ref{delay}), variable $Y_i$ is zero iff task start matches
+the expected time window.
+
+\end{document}
