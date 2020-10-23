@@ -1,7 +1,9 @@
 \documentclass{article}
-\usepackage{amsmath}
+\usepackage{nicematrix}
 
 \begin{document}
+
+\section{Mathematical model}
 
 Let $R=\{T_0, T_1, \ldots, T_n, T_{n + 1}\}$ be the fixed order of
 tasks within the route for a given vehicle. The vehicle has to perform
@@ -43,5 +45,27 @@ service and travel times are accounted for between task start
 times. In the time violation constraints for lead time (\ref{lead})
 and delay (\ref{delay}), variable $Y_i$ is zero iff task start matches
 the expected time window.
+
+\section{glpk matrix layout}
+
+\setcounter{MaxMatrixCols}{20}
+
+\[
+  \begin{NiceMatrix}
+    & t_0 & t_1 & \Cdots & t_n & t_{n + 1} & Y_0 & Y_1 & \Cdots & Y_n & Y_{n + 1} \\
+    P_0 & -1 & 1 \\
+    \Vdots & & \Ddots & \Ddots \\
+    \\
+    P_n & & & & -1 & 1 \\\hline
+    L_0 & 1 & & & & & 1 \\
+    \Vdots & & \Ddots  & & & & & \Ddots \\
+    \\
+    L_n & & & & 1 & & & & & 1 \\\hline
+    D_1 & & 1 & & & & & -1 \\
+    \Vdots & & & \Ddots & & & & & \Ddots\\
+    \\
+    D_{n + 1} & & & & & 1 & & & & & -1\\
+\end{NiceMatrix}
+\]
 
 \end{document}
