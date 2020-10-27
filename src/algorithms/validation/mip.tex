@@ -1,5 +1,6 @@
 \documentclass{article}
 \usepackage{nicematrix}
+\usepackage{fullpage}
 
 \begin{document}
 
@@ -10,16 +11,19 @@ tasks within the route for a given vehicle. The vehicle has to perform
 $n$ geolocated tasks ($T_1$ to $T_n$) while $T_0$ and $T_{n + 1}$ are
 its optional start and end tasks. For all $i$, we denote $s_i$ the
 service time for task $i$, $d_i$ the travel time from task $T_i$ to
-task $T_{i + 1}$ and $[a_i, b_i]$ the expected time window for start
-of $T_i$ ($a_i \leq b_i$). In particular at vehicle start and end, we
-have $s_0 = s_{n + 1} = 0$ while $[a_0, b_{n + 1}]$ is the vehicle
-available working time.
+task $T_{i + 1}$. Task $T_i$ ($1\leq i \leq n$) has $K_i$ time windows
+$[a_{i1}, b_{i1}]$, $\dots$, $[a_{iK_i}, b_{iK_i}]$ for expected task
+start. In particular for vehicle start and end, we have
+$s_0 = s_{n + 1} = 0$ while working hours associated to the vehicle
+are $[a, b]$.\\
 
 The following program aim at deciding start times $t_i$ for all tasks
 $T_i$ in order to minimize timing violations measured by variable
 $Y_i$: either \textit{lead time} whenever a task starts earlier than
 it's available date, either \textit{delay} when a task starts later
-that it's deadline.
+that it's deadline. For each task $T_i$ ($1\leq i\leq n$), the chosen
+time window is decided by binary variables $X_{ik}$
+($0\leq k \leq K_i$).
 
 
 \begin{quote}
@@ -30,8 +34,11 @@ that it's deadline.
   Subject to
   \begin{align}
     t_{i + 1} - t_i &\geq s_i + d_i && 0 \leq i \leq n\label{precedence}\tag{$P_i$}\\
-    Y_i + t_i &\geq a_i && 0 \leq i \leq n \label{lead}\tag{$L_i$}\\
-    t_i - Y_i &\leq b_i && 1 \leq i \leq n + 1 \label{delay}\tag{$D_i$}\\
+    Y_0 + t_0 &\geq a &&  \label{lead_start}\tag{$L_0$}\\
+    Y_i + t_i - \sum_{k = 0}^{K_i}a_{ik}X_{ik}&\geq 0 && 1 \leq i \leq n \label{lead}\tag{$L_i$}\\
+    t_i - Y_i - \sum_{k = 0}^{K_i}b_{ik}X_{ik} &\leq 0 && 1 \leq i \leq n \label{delay}\tag{$D_i$}\\
+    t_{n + 1} - Y_{n + 1} &\leq b && \label{delay_end}\tag{$D_{n + 1}$}\\
+    \sum_{k = 0}^{K_i}X_{ik} &= 1 && 1 \leq i \leq n \label{tw_sum}\tag{$S_i$}\\
     t_i &\geq 0 && 0 \leq i \leq n + 1 \nonumber\\
     Y_i &\geq 0 && 0 \leq i \leq n + 1 \nonumber
   \end{align}
@@ -44,7 +51,8 @@ violations and the route makespan\footnote{Using a value $M > 1$
 service and travel times are accounted for between task start
 times. In the time violation constraints for lead time (\ref{lead})
 and delay (\ref{delay}), variable $Y_i$ is zero iff task start matches
-the expected time window.
+the expected time window. Sums (\ref{tw_sum}) ensure exactly one time
+window is picked for each task.
 
 \section{glpk matrix layout}
 
@@ -52,19 +60,22 @@ the expected time window.
 
 \[
   \begin{NiceMatrix}
-    & t_0 & t_1 & \Cdots & t_n & t_{n + 1} & Y_0 & Y_1 & \Cdots & Y_n & Y_{n + 1} \\
+    & t_0 & t_1 & \Cdots & t_n & t_{n + 1} & Y_0 & Y_1 & \Cdots & Y_n & Y_{n + 1} & X_{10} & \Cdots & X_{1K_1} & \Cdots & X_{n0} & \Cdots & X_{nK_n}\\
     P_0 & -1 & 1 \\
     \Vdots & & \Ddots & \Ddots \\
     \\
     P_n & & & & -1 & 1 \\\hline
     L_0 & 1 & & & & & 1 \\
-    \Vdots & & \Ddots  & & & & & \Ddots \\
-    \\
-    L_n & & & & 1 & & & & & 1 \\\hline
-    D_1 & & 1 & & & & & -1 \\
-    \Vdots & & & \Ddots & & & & & \Ddots\\
-    \\
-    D_{n + 1} & & & & & 1 & & & & & -1\\
+    L_1 & & 1 & & & & & 1 & & & & -a_{10} & \Cdots & -a_{1K_1} \\
+    \Vdots & & & \Ddots & & & & & \Ddots & & & & & & \Ddots \\
+    L_n & & & & 1 & & & & & 1 & & & & & & -a_{n0} & \Cdots & -a_{nK_n} \\\hline
+    D_1 & & 1 & & & & & -1  & & & & -b_{10} & \Cdots & -b_{1K_1} \\
+    \Vdots & & & \Ddots & & & & & \Ddots & & & & & & \Ddots \\
+    D_n & & & & 1 & & & & & -1 & & & & & & -b_{n0} & \Cdots & -b_{nK_n} \\
+    D_{n + 1} & & & & & 1 & & & & & -1\\\hline
+    S_1 & & & & & & &  & & & & 1 & \Cdots & 1 \\
+    \Vdots & & & & & & & & & & & & & & \Ddots \\
+    S_n & & & & & & & & & & & & & & & 1 & \Cdots & 1 \\
 \end{NiceMatrix}
 \]
 
