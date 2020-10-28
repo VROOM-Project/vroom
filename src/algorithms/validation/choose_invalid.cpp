@@ -6,7 +6,6 @@ Copyright (c) 2015-2019, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
-#include <iostream>
 
 #include <numeric>
 
@@ -308,6 +307,7 @@ Route choose_invalid_route(const Input& input,
   delete[] ar;
 
   // Solve.
+  glp_term_out(GLP_OFF);
   glp_iocp parm;
   glp_init_iocp(&parm);
   parm.presolve = GLP_ON;
@@ -316,19 +316,13 @@ Route choose_invalid_route(const Input& input,
   // glp_print_mip(lp, "mip.sol");
 
   // Get output.
-  std::cout << "- Obj: " << glp_get_obj_val(lp) << std::endl;
-
   auto v_start = glp_mip_col_val(lp, 1);
   auto v_end = glp_mip_col_val(lp, n + 2);
 
-  std::cout << "start: " << v_start << std::endl;
   std::vector<Duration> job_ETA;
   for (unsigned i = 2; i <= n + 1; ++i) {
     job_ETA.push_back(glp_mip_col_val(lp, i));
-
-    std::cout << "t" << i - 1 << ": " << job_ETA.back() << std::endl;
   }
-  std::cout << "end: " << v_end << std::endl;
 
   // Populate vector storing picked time window ranks.
   current_X_rank = 2 * n + 4 + 1;
@@ -341,7 +335,6 @@ Route choose_invalid_route(const Input& input,
       if (val == 1) {
         job_tw_ranks.push_back(k);
       }
-      std::cout << "X" << i + 1 << "_" << k << ": " << val << std::endl;
 
       ++current_X_rank;
     }
