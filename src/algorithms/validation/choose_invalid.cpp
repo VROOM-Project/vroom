@@ -364,6 +364,9 @@ Route choose_invalid_route(const Input& input,
     }
   }
 
+  // TODO check for LOAD violation at route level in case there is no
+  // start.
+
   std::vector<Step> steps;
 
   Duration next_arrival;
@@ -377,6 +380,10 @@ Route choose_invalid_route(const Input& input,
       Duration lt = v.tw.start - v_start;
       steps.back().lead_time = lt;
       lead_time += lt;
+    }
+
+    if (!(current_load <= v.capacity)) {
+      steps.back().violations.insert(VIOLATION::LOAD);
     }
 
     auto travel =
@@ -420,6 +427,9 @@ Route choose_invalid_route(const Input& input,
     Duration dl = service_start - first_job.tws[first_tw_rank].end;
     first_step.delay = dl;
     delay += dl;
+  }
+  if (!(current_load <= v.capacity)) {
+    first_step.violations.insert(VIOLATION::LOAD);
   }
 
   unassigned_ranks.erase(job_ranks.front());
@@ -465,6 +475,9 @@ Route choose_invalid_route(const Input& input,
       current.delay = dl;
       delay += dl;
     }
+    if (!(current_load <= v.capacity)) {
+      current.violations.insert(VIOLATION::LOAD);
+    }
 
     unassigned_ranks.erase(job_ranks[r + 1]);
   }
@@ -485,6 +498,9 @@ Route choose_invalid_route(const Input& input,
       Duration dl = v_end - v.tw.end;
       steps.back().delay = dl;
       delay += dl;
+    }
+    if (!(current_load <= v.capacity)) {
+      steps.back().violations.insert(VIOLATION::LOAD);
     }
   }
 
