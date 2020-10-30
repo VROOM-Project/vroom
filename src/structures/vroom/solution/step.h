@@ -11,6 +11,7 @@ All rights reserved (see LICENSE).
 */
 
 #include <string>
+#include <unordered_set>
 
 #include "structures/vroom/break.h"
 #include "structures/vroom/job.h"
@@ -34,6 +35,7 @@ struct Step {
 
   Duration lead_time;
   Duration delay;
+  std::unordered_set<VIOLATION> violations;
 
   Step(STEP_TYPE type, Location location, const Amount& load);
 

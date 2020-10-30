@@ -373,6 +373,7 @@ Route choose_invalid_route(const Input& input,
     steps.back().duration = 0;
     steps.back().arrival = v_start;
     if (v_start < v.tw.start) {
+      steps.back().violations.insert(VIOLATION::LEAD_TIME);
       Duration lt = v.tw.start - v_start;
       steps.back().lead_time = lt;
       lead_time += lt;
@@ -409,11 +410,13 @@ Route choose_invalid_route(const Input& input,
 
   auto first_tw_rank = job_tw_ranks.front();
   if (service_start < first_job.tws[first_tw_rank].start) {
+    first_step.violations.insert(VIOLATION::LEAD_TIME);
     Duration lt = first_job.tws[first_tw_rank].start - service_start;
     first_step.lead_time = lt;
     lead_time += lt;
   }
   if (first_job.tws[first_tw_rank].end < service_start) {
+    first_step.violations.insert(VIOLATION::DELAY);
     Duration dl = service_start - first_job.tws[first_tw_rank].end;
     first_step.delay = dl;
     delay += dl;
@@ -451,11 +454,13 @@ Route choose_invalid_route(const Input& input,
     forward_wt += wt;
 
     if (service_start < next_job.tws[next_tw_rank].start) {
+      current.violations.insert(VIOLATION::LEAD_TIME);
       Duration lt = next_job.tws[next_tw_rank].start - service_start;
       current.lead_time = lt;
       lead_time += lt;
     }
     if (next_job.tws[next_tw_rank].end < service_start) {
+      current.violations.insert(VIOLATION::DELAY);
       Duration dl = service_start - next_job.tws[next_tw_rank].end;
       current.delay = dl;
       delay += dl;
@@ -476,6 +481,7 @@ Route choose_invalid_route(const Input& input,
     steps.back().arrival = v_end;
 
     if (v.tw.end < v_end) {
+      steps.back().violations.insert(VIOLATION::DELAY);
       Duration dl = v_end - v.tw.end;
       steps.back().delay = dl;
       delay += dl;

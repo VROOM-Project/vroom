@@ -19,6 +19,26 @@ All rights reserved (see LICENSE).
 namespace vroom {
 namespace io {
 
+inline std::string get_string_violation(const VIOLATION v) {
+  std::string v_str;
+  switch (v) {
+  case VIOLATION::LEAD_TIME:
+    v_str = "lead_time";
+    break;
+  case VIOLATION::DELAY:
+    v_str = "delay";
+    break;
+  case VIOLATION::LOAD:
+    v_str = "load";
+    break;
+  case VIOLATION::ORDER:
+    v_str = "order";
+    break;
+  }
+
+  return v_str;
+}
+
 rapidjson::Document to_json(const Solution& sol, bool geometry) {
   rapidjson::Document json_output;
   json_output.SetObject();
@@ -255,6 +275,16 @@ rapidjson::Value to_json(const Step& s,
 
   json_step.AddMember("arrival", s.arrival, allocator);
   json_step.AddMember("duration", s.duration, allocator);
+
+  rapidjson::Value json_violations(rapidjson::kArrayType);
+  for (const auto v : s.violations) {
+    auto v_str = get_string_violation(v);
+    json_violations.PushBack(rapidjson::Value{}.SetString(v_str.c_str(),
+                                                          v_str.length(),
+                                                          allocator),
+                             allocator);
+  }
+  json_step.AddMember("violations", json_violations, allocator);
 
   if (geometry) {
     json_step.AddMember("distance", s.distance, allocator);
