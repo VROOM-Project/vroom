@@ -31,8 +31,8 @@ inline std::string get_string_violation(const VIOLATION v) {
   case VIOLATION::LOAD:
     v_str = "load";
     break;
-  case VIOLATION::ORDER:
-    v_str = "order";
+  case VIOLATION::PRECEDENCE:
+    v_str = "precedence";
     break;
   }
 

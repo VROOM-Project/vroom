@@ -241,6 +241,7 @@ inline void check_precedence(const Input& input,
     auto search = expected_delivery_ranks.find(job_rank);
     assert(search != expected_delivery_ranks.end());
     expected_delivery_ranks.erase(search);
+    break;
   }
 }
 

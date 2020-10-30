@@ -367,6 +367,11 @@ Route choose_invalid_route(const Input& input,
   // TODO check for LOAD violation at route level in case there is no
   // start.
 
+  // Used for precedence violations.
+  std::unordered_set<Index> expected_delivery_ranks;
+  std::unordered_set<Index> delivery_first_ranks;
+  std::unordered_map<Index, Index> delivery_to_pickup_step_rank;
+
   std::vector<Step> steps;
 
   Duration next_arrival;
@@ -415,6 +420,7 @@ Route choose_invalid_route(const Input& input,
   first_step.waiting_time = wt;
   forward_wt += wt;
 
+  // Handle violations.
   auto first_tw_rank = job_tw_ranks.front();
   if (service_start < first_job.tws[first_tw_rank].start) {
     first_step.violations.insert(VIOLATION::LEAD_TIME);
@@ -431,12 +437,21 @@ Route choose_invalid_route(const Input& input,
   if (!(current_load <= v.capacity)) {
     first_step.violations.insert(VIOLATION::LOAD);
   }
+  if (first_job.type == JOB_TYPE::PICKUP) {
+    expected_delivery_ranks.insert(job_ranks.front() + 1);
+    delivery_to_pickup_step_rank.emplace(job_ranks.front() + 1, 0);
+  }
+  if (first_job.type == JOB_TYPE::DELIVERY) {
+    first_step.violations.insert(VIOLATION::PRECEDENCE);
+    delivery_first_ranks.insert(job_ranks.front());
+  }
 
   unassigned_ranks.erase(job_ranks.front());
 
   for (std::size_t r = 0; r < job_ranks.size() - 1; ++r) {
     const auto& previous_job = input.jobs[job_ranks[r]];
-    const auto& next_job = input.jobs[job_ranks[r + 1]];
+    const auto next_job_rank = job_ranks[r + 1];
+    const auto& next_job = input.jobs[next_job_rank];
     const auto& next_tw_rank = job_tw_ranks[r + 1];
 
     Duration travel = m[previous_job.index()][next_job.index()];
@@ -451,7 +466,7 @@ Route choose_invalid_route(const Input& input,
     sum_pickups += next_job.pickup;
     sum_deliveries += next_job.delivery;
 
-    steps.emplace_back(input.jobs[job_ranks[r + 1]], current_load);
+    steps.emplace_back(next_job, current_load);
     auto& current = steps.back();
     current.duration = duration;
 
@@ -463,6 +478,7 @@ Route choose_invalid_route(const Input& input,
     current.waiting_time = wt;
     forward_wt += wt;
 
+    // Handle violations.
     if (service_start < next_job.tws[next_tw_rank].start) {
       current.violations.insert(VIOLATION::LEAD_TIME);
       Duration lt = next_job.tws[next_tw_rank].start - service_start;
@@ -478,8 +494,31 @@ Route choose_invalid_route(const Input& input,
     if (!(current_load <= v.capacity)) {
       current.violations.insert(VIOLATION::LOAD);
     }
+    switch (next_job.type) {
+    case JOB_TYPE::SINGLE:
+      break;
+    case JOB_TYPE::PICKUP:
+      if (delivery_first_ranks.find(next_job_rank + 1) !=
+          delivery_first_ranks.end()) {
+        current.violations.insert(VIOLATION::PRECEDENCE);
+      } else {
+        expected_delivery_ranks.insert(next_job_rank + 1);
+        delivery_to_pickup_step_rank.emplace(next_job_rank + 1,
+                                             steps.size() - 1);
+      }
+      break;
+    case JOB_TYPE::DELIVERY:
+      auto search = expected_delivery_ranks.find(next_job_rank);
+      if (search == expected_delivery_ranks.end()) {
+        current.violations.insert(VIOLATION::PRECEDENCE);
+        delivery_first_ranks.insert(next_job_rank);
+      } else {
+        expected_delivery_ranks.erase(search);
+      }
+      break;
+    }
 
-    unassigned_ranks.erase(job_ranks[r + 1]);
+    unassigned_ranks.erase(next_job_rank);
   }
 
   if (v.has_end()) {
@@ -502,6 +541,13 @@ Route choose_invalid_route(const Input& input,
     if (!(current_load <= v.capacity)) {
       steps.back().violations.insert(VIOLATION::LOAD);
     }
+  }
+
+  // Precedence violations for pickups without a delivery.
+  for (const auto d_rank : expected_delivery_ranks) {
+    auto search = delivery_to_pickup_step_rank.find(d_rank);
+    assert(search != delivery_to_pickup_step_rank.end());
+    steps[search->second].violations.insert(VIOLATION::PRECEDENCE);
   }
 
   return Route(v.id,
