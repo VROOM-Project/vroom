@@ -17,6 +17,11 @@ namespace vroom {
 struct InputStep {
   const Id id;
   const JOB_TYPE type;
+  // Stores rank of current job/pickup/delivery in input.jobs vector.
+  Index rank;
+
+  InputStep(Id id, JOB_TYPE type) : id(id), type(type) {
+  }
 };
 
 } // namespace vroom

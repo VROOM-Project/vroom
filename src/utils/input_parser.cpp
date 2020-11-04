@@ -308,7 +308,7 @@ inline std::vector<InputStep> get_vehicle_steps(const rapidjson::Value& v) {
                           std::to_string(v["id"].GetUint64()) + ".");
       }
 
-      steps.push_back({json_step["id"].GetUint64(), type});
+      steps.emplace_back(json_step["id"].GetUint64(), type);
     }
   }
 

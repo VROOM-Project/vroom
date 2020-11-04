@@ -18,7 +18,7 @@ namespace validation {
 
 Route choose_invalid_route(const Input& input,
                            unsigned vehicle_rank,
-                           const std::vector<Index>& job_ranks,
+                           const std::vector<InputStep>& steps,
                            std::unordered_set<Index>& unassigned_ranks);
 
 } // namespace validation

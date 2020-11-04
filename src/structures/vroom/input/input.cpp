@@ -472,6 +472,44 @@ Solution Input::check(unsigned nb_thread) {
                     "Route geometry request with missing coordinates.");
   }
 
+  // Set all ranks for vehicles steps.
+  for (Index v = 0; v < vehicles.size(); ++v) {
+    auto& current_vehicle = vehicles[v];
+
+    for (auto& step : current_vehicle.input_steps) {
+      switch (step.type) {
+      case JOB_TYPE::SINGLE: {
+        auto search = job_id_to_rank.find(step.id);
+        if (search == job_id_to_rank.end()) {
+          throw Exception(ERROR::INPUT,
+                          "Invalid job id" + std::to_string(step.id) + " .");
+        }
+        step.rank = search->second;
+        break;
+      }
+      case JOB_TYPE::PICKUP: {
+        auto search = pickup_id_to_rank.find(step.id);
+        if (search == pickup_id_to_rank.end()) {
+          throw Exception(ERROR::INPUT,
+                          "Invalid pickup id" + std::to_string(step.id) + " .");
+        }
+        step.rank = search->second;
+        break;
+      }
+      case JOB_TYPE::DELIVERY: {
+        auto search = delivery_id_to_rank.find(step.id);
+        if (search == delivery_id_to_rank.end()) {
+          throw Exception(ERROR::INPUT,
+                          "Invalid delivery id" + std::to_string(step.id) +
+                            " .");
+        }
+        step.rank = search->second;
+        break;
+      }
+      }
+    }
+  }
+
   if (_matrix.size() < 2) {
     // Call to routing engine if matrix not already provided.
     assert(_routing_wrapper);

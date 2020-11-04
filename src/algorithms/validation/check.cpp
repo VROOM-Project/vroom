@@ -32,48 +32,15 @@ Solution check_and_set_ETA(const Input& input) {
       continue;
     }
 
-    // Get job ranks from ids.
-    std::vector<Index> job_ranks;
-    for (auto step : current_vehicle.input_steps) {
-      switch (step.type) {
-      case JOB_TYPE::SINGLE: {
-        auto search = input.job_id_to_rank.find(step.id);
-        if (search == input.job_id_to_rank.end()) {
-          throw Exception(ERROR::INPUT,
-                          "Invalid job id" + std::to_string(step.id) + " .");
-        }
-        job_ranks.push_back(search->second);
-        break;
-      }
-      case JOB_TYPE::PICKUP: {
-        auto search = input.pickup_id_to_rank.find(step.id);
-        if (search == input.pickup_id_to_rank.end()) {
-          throw Exception(ERROR::INPUT,
-                          "Invalid pickup id" + std::to_string(step.id) + " .");
-        }
-        job_ranks.push_back(search->second);
-        break;
-      }
-      case JOB_TYPE::DELIVERY: {
-        auto search = input.delivery_id_to_rank.find(step.id);
-        if (search == input.delivery_id_to_rank.end()) {
-          throw Exception(ERROR::INPUT,
-                          "Invalid delivery id" + std::to_string(step.id) +
-                            " .");
-        }
-        job_ranks.push_back(search->second);
-        break;
-      }
-      }
-    }
-
     // TODO generate route directly if input steps make it a valid
     // one.
 
-    routes.push_back(
-      choose_invalid_route(input, v, job_ranks, unassigned_ranks));
-    for (auto rank : job_ranks) {
-      unassigned_ranks.erase(rank);
+    routes.push_back(choose_invalid_route(input,
+                                          v,
+                                          current_vehicle.input_steps,
+                                          unassigned_ranks));
+    for (const auto& step : current_vehicle.input_steps) {
+      unassigned_ranks.erase(step.rank);
     }
   }
 

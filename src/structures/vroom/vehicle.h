@@ -30,7 +30,7 @@ struct Vehicle {
   const TimeWindow tw;
   const std::vector<Break> breaks;
   const std::string description;
-  const std::vector<InputStep> input_steps;
+  std::vector<InputStep> input_steps;
 
   Vehicle(Id id,
           const std::optional<Location>& start,

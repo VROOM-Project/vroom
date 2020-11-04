@@ -18,21 +18,21 @@ namespace validation {
 
 Route choose_invalid_route(const Input& input,
                            unsigned vehicle_rank,
-                           const std::vector<Index>& job_ranks,
+                           const std::vector<InputStep>& steps,
                            std::unordered_set<Index>& unassigned_ranks) {
   const auto& m = input.get_matrix();
-  const unsigned n = job_ranks.size();
+  const unsigned n = steps.size();
   const auto& v = input.vehicles[vehicle_rank];
 
   constexpr double M = 10.0;
 
   // Total number of time windows.
   const unsigned K =
-    std::accumulate(job_ranks.begin(),
-                    job_ranks.end(),
+    std::accumulate(steps.begin(),
+                    steps.end(),
                     0,
-                    [&](auto sum, auto job_rank) {
-                      return sum + input.jobs[job_rank].tws.size();
+                    [&](auto sum, const auto& step) {
+                      return sum + input.jobs[step.rank].tws.size();
                     });
 
   // Create problem.
@@ -54,16 +54,16 @@ Route choose_invalid_route(const Input& input,
   double first = 0;
   if (v.has_start()) {
     // Take into account time from start point to first job.
-    first = m[v.start.value().index()][input.jobs[job_ranks.front()].index()];
+    first = m[v.start.value().index()][input.jobs[steps.front().rank].index()];
   }
   glp_set_row_name(lp, current_row, "P0");
   glp_set_row_bnds(lp, current_row, GLP_LO, first, 0.0);
   ++current_row;
 
   for (unsigned i = 0; i < n - 1; ++i) {
-    double dist =
-      m[input.jobs[job_ranks[i]].index()][input.jobs[job_ranks[i + 1]].index()];
-    double service = input.jobs[job_ranks[i]].service;
+    double dist = m[input.jobs[steps[i].rank].index()]
+                   [input.jobs[steps[i + 1].rank].index()];
+    double service = input.jobs[steps[i].rank].service;
     auto name = "P" + std::to_string(i + 1);
     glp_set_row_name(lp, current_row, name.c_str());
     glp_set_row_bnds(lp, current_row, GLP_LO, dist + service, 0.0);
@@ -73,8 +73,8 @@ Route choose_invalid_route(const Input& input,
   double last = 0;
   if (v.has_end()) {
     // Take into account time from last job arrival to end point.
-    last = m[input.jobs[job_ranks.back()].index()][v.end.value().index()] +
-           input.jobs[job_ranks.back()].service;
+    last = m[input.jobs[steps.back().rank].index()][v.end.value().index()] +
+           input.jobs[steps.back().rank].service;
   }
   glp_set_row_name(lp, current_row, ("P" + std::to_string(n)).c_str());
   glp_set_row_bnds(lp, current_row, GLP_LO, last, 0.0);
@@ -153,7 +153,7 @@ Route choose_invalid_route(const Input& input,
 
   // Binary variables for job time window choice.
   for (unsigned i = 0; i < n; ++i) {
-    for (unsigned k = 0; k < input.jobs[job_ranks[i]].tws.size(); ++k) {
+    for (unsigned k = 0; k < input.jobs[steps[i].rank].tws.size(); ++k) {
       auto name = "X" + std::to_string(i + 1) + "_" + std::to_string(k);
       glp_set_col_name(lp, current_col, name.c_str());
       glp_set_col_kind(lp, current_col, GLP_BV);
@@ -216,7 +216,7 @@ Route choose_invalid_route(const Input& input,
     ar[r] = 1;
     ++r;
 
-    const auto& job = input.jobs[job_ranks[i - 2]];
+    const auto& job = input.jobs[steps[i - 2].rank];
     for (const auto& tw : job.tws) {
       // a[constraint_rank, current_X_rank] = - earliest_date for k-th TW of job
       ia[r] = constraint_rank;
@@ -248,7 +248,7 @@ Route choose_invalid_route(const Input& input,
     ar[r] = -1;
     ++r;
 
-    const auto& job = input.jobs[job_ranks[i - 2]];
+    const auto& job = input.jobs[steps[i - 2].rank];
     for (const auto& tw : job.tws) {
       // a[constraint_rank, current_X_rank] = - latest_date for k-th TW of job
       ia[r] = constraint_rank;
@@ -283,7 +283,7 @@ Route choose_invalid_route(const Input& input,
   current_X_rank = 2 * n + 4 + 1;
 
   for (unsigned i = 0; i < n; ++i) {
-    const auto& job = input.jobs[job_ranks[i]];
+    const auto& job = input.jobs[steps[i].rank];
     for (unsigned k = 0; k < job.tws.size(); ++k) {
       // a[constraint_rank, current_X_rank] = 1
       ia[r] = constraint_rank;
@@ -329,7 +329,7 @@ Route choose_invalid_route(const Input& input,
   std::vector<Index> job_tw_ranks;
 
   for (unsigned i = 0; i < n; ++i) {
-    const auto& job = input.jobs[job_ranks[i]];
+    const auto& job = input.jobs[steps[i].rank];
     for (unsigned k = 0; k < job.tws.size(); ++k) {
       auto val = glp_mip_col_val(lp, current_X_rank);
       if (val == 1) {
@@ -357,8 +357,8 @@ Route choose_invalid_route(const Input& input,
 
   // Startup load is the sum of deliveries for jobs.
   Amount current_load(input.zero_amount());
-  for (const auto job_rank : job_ranks) {
-    const auto& job = input.jobs[job_rank];
+  for (const auto& step : steps) {
+    const auto& job = input.jobs[step.rank];
     if (job.type == JOB_TYPE::SINGLE) {
       current_load += job.delivery;
     }
@@ -372,34 +372,34 @@ Route choose_invalid_route(const Input& input,
   std::unordered_set<Index> delivery_first_ranks;
   std::unordered_map<Index, Index> delivery_to_pickup_step_rank;
 
-  std::vector<Step> steps;
+  std::vector<Step> sol_steps;
 
   Duration next_arrival;
 
   if (v.has_start()) {
-    steps.emplace_back(STEP_TYPE::START, v.start.value(), current_load);
-    steps.back().duration = 0;
-    steps.back().arrival = v_start;
+    sol_steps.emplace_back(STEP_TYPE::START, v.start.value(), current_load);
+    sol_steps.back().duration = 0;
+    sol_steps.back().arrival = v_start;
     if (v_start < v.tw.start) {
-      steps.back().violations.insert(VIOLATION::LEAD_TIME);
+      sol_steps.back().violations.insert(VIOLATION::LEAD_TIME);
       Duration lt = v.tw.start - v_start;
-      steps.back().lead_time = lt;
+      sol_steps.back().lead_time = lt;
       lead_time += lt;
     }
 
     if (!(current_load <= v.capacity)) {
-      steps.back().violations.insert(VIOLATION::LOAD);
+      sol_steps.back().violations.insert(VIOLATION::LOAD);
     }
 
     auto travel =
-      m[v.start.value().index()][input.jobs[job_ranks.front()].index()];
+      m[v.start.value().index()][input.jobs[steps.front().rank].index()];
     duration += travel;
     next_arrival = v_start + travel;
   } else {
     next_arrival = job_ETA.front();
   }
 
-  auto& first_job = input.jobs[job_ranks.front()];
+  auto& first_job = input.jobs[steps.front().rank];
   service += first_job.service;
   priority += first_job.priority;
 
@@ -408,8 +408,8 @@ Route choose_invalid_route(const Input& input,
   sum_pickups += first_job.pickup;
   sum_deliveries += first_job.delivery;
 
-  steps.emplace_back(first_job, current_load);
-  auto& first_step = steps.back();
+  sol_steps.emplace_back(first_job, current_load);
+  auto& first_step = sol_steps.back();
   first_step.duration = duration;
   auto service_start = job_ETA.front();
   assert(next_arrival <= service_start);
@@ -438,19 +438,19 @@ Route choose_invalid_route(const Input& input,
     first_step.violations.insert(VIOLATION::LOAD);
   }
   if (first_job.type == JOB_TYPE::PICKUP) {
-    expected_delivery_ranks.insert(job_ranks.front() + 1);
-    delivery_to_pickup_step_rank.emplace(job_ranks.front() + 1, 0);
+    expected_delivery_ranks.insert(steps.front().rank + 1);
+    delivery_to_pickup_step_rank.emplace(steps.front().rank + 1, 0);
   }
   if (first_job.type == JOB_TYPE::DELIVERY) {
     first_step.violations.insert(VIOLATION::PRECEDENCE);
-    delivery_first_ranks.insert(job_ranks.front());
+    delivery_first_ranks.insert(steps.front().rank);
   }
 
-  unassigned_ranks.erase(job_ranks.front());
+  unassigned_ranks.erase(steps.front().rank);
 
-  for (std::size_t r = 0; r < job_ranks.size() - 1; ++r) {
-    const auto& previous_job = input.jobs[job_ranks[r]];
-    const auto next_job_rank = job_ranks[r + 1];
+  for (std::size_t r = 0; r < steps.size() - 1; ++r) {
+    const auto& previous_job = input.jobs[steps[r].rank];
+    const auto next_job_rank = steps[r + 1].rank;
     const auto& next_job = input.jobs[next_job_rank];
     const auto& next_tw_rank = job_tw_ranks[r + 1];
 
@@ -466,8 +466,8 @@ Route choose_invalid_route(const Input& input,
     sum_pickups += next_job.pickup;
     sum_deliveries += next_job.delivery;
 
-    steps.emplace_back(next_job, current_load);
-    auto& current = steps.back();
+    sol_steps.emplace_back(next_job, current_load);
+    auto& current = sol_steps.back();
     current.duration = duration;
 
     service_start = job_ETA[r + 1];
@@ -504,7 +504,7 @@ Route choose_invalid_route(const Input& input,
       } else {
         expected_delivery_ranks.insert(next_job_rank + 1);
         delivery_to_pickup_step_rank.emplace(next_job_rank + 1,
-                                             steps.size() - 1);
+                                             sol_steps.size() - 1);
       }
       break;
     case JOB_TYPE::DELIVERY:
@@ -522,24 +522,24 @@ Route choose_invalid_route(const Input& input,
   }
 
   if (v.has_end()) {
-    const auto& last_job = input.jobs[job_ranks.back()];
+    const auto& last_job = input.jobs[steps.back().rank];
     Duration travel = m[last_job.index()][v.end.value().index()];
     duration += travel;
 
     assert(service_start + last_job.service + travel == v_end);
 
-    steps.emplace_back(STEP_TYPE::END, v.end.value(), current_load);
-    steps.back().duration = duration;
-    steps.back().arrival = v_end;
+    sol_steps.emplace_back(STEP_TYPE::END, v.end.value(), current_load);
+    sol_steps.back().duration = duration;
+    sol_steps.back().arrival = v_end;
 
     if (v.tw.end < v_end) {
-      steps.back().violations.insert(VIOLATION::DELAY);
+      sol_steps.back().violations.insert(VIOLATION::DELAY);
       Duration dl = v_end - v.tw.end;
-      steps.back().delay = dl;
+      sol_steps.back().delay = dl;
       delay += dl;
     }
     if (!(current_load <= v.capacity)) {
-      steps.back().violations.insert(VIOLATION::LOAD);
+      sol_steps.back().violations.insert(VIOLATION::LOAD);
     }
   }
 
@@ -547,11 +547,11 @@ Route choose_invalid_route(const Input& input,
   for (const auto d_rank : expected_delivery_ranks) {
     auto search = delivery_to_pickup_step_rank.find(d_rank);
     assert(search != delivery_to_pickup_step_rank.end());
-    steps[search->second].violations.insert(VIOLATION::PRECEDENCE);
+    sol_steps[search->second].violations.insert(VIOLATION::PRECEDENCE);
   }
 
   return Route(v.id,
-               std::move(steps),
+               std::move(sol_steps),
                duration,
                service,
                duration,
