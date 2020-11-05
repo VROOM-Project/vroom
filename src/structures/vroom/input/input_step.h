@@ -16,12 +16,20 @@ namespace vroom {
 
 struct InputStep {
   const Id id;
-  const JOB_TYPE type;
-  // Stores rank of current job/pickup/delivery in input.jobs vector.
+  const STEP_TYPE type;
+  const JOB_TYPE job_type;
+  // Stores rank of current step (in input.jobs vector for a
+  // job/pickup/delivery and in vehicle.breaks for a break).
   Index rank;
 
-  InputStep(Id id, JOB_TYPE type) : id(id), type(type) {
-  }
+  // Used for start and end.
+  InputStep(STEP_TYPE type);
+
+  // Used for breaks.
+  InputStep(STEP_TYPE type, Id id);
+
+  // Used for single jobs, pickups and deliveries.
+  InputStep(JOB_TYPE job_type, Id id);
 };
 
 } // namespace vroom

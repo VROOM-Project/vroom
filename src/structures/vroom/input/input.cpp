@@ -481,7 +481,11 @@ Solution Input::check(unsigned nb_thread) {
     auto& current_vehicle = vehicles[v];
 
     for (auto& step : current_vehicle.input_steps) {
-      switch (step.type) {
+      if (step.type != STEP_TYPE::JOB) {
+        continue;
+      }
+
+      switch (step.job_type) {
       case JOB_TYPE::SINGLE: {
         auto search = job_id_to_rank.find(step.id);
         if (search == job_id_to_rank.end()) {

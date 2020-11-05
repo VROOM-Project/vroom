@@ -295,20 +295,19 @@ inline std::vector<InputStep> get_vehicle_steps(const rapidjson::Value& v) {
 
       const auto type_str = get_string(json_step, "type");
 
-      JOB_TYPE type;
       if (type_str == "job") {
-        type = JOB_TYPE::SINGLE;
+        steps.emplace_back(JOB_TYPE::SINGLE, json_step["id"].GetUint64());
       } else if (type_str == "pickup") {
-        type = JOB_TYPE::PICKUP;
+        steps.emplace_back(JOB_TYPE::PICKUP, json_step["id"].GetUint64());
       } else if (type_str == "delivery") {
-        type = JOB_TYPE::DELIVERY;
+        steps.emplace_back(JOB_TYPE::DELIVERY, json_step["id"].GetUint64());
+      } else if (type_str == "break") {
+        steps.emplace_back(STEP_TYPE::BREAK, json_step["id"].GetUint64());
       } else {
         throw Exception(ERROR::INPUT,
                         "Invalid type in steps for vehicle " +
                           std::to_string(v["id"].GetUint64()) + ".");
       }
-
-      steps.emplace_back(json_step["id"].GetUint64(), type);
     }
   }
 
