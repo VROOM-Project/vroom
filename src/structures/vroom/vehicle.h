@@ -42,7 +42,7 @@ struct Vehicle {
           const TimeWindow& tw = TimeWindow(),
           const std::vector<Break>& breaks = std::vector<Break>(),
           const std::string& description = "",
-          std::vector<InputStep>&& input_steps = std::vector<InputStep>());
+          const std::vector<InputStep>& input_steps = std::vector<InputStep>());
 
   bool has_start() const;
 
