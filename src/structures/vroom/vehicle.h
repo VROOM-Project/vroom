@@ -11,6 +11,7 @@ All rights reserved (see LICENSE).
 */
 
 #include <string>
+#include <unordered_map>
 
 #include "structures/typedefs.h"
 #include "structures/vroom/amount.h"
@@ -31,6 +32,7 @@ struct Vehicle {
   const std::vector<Break> breaks;
   const std::string description;
   std::vector<InputStep> input_steps;
+  std::unordered_map<Id, Index> break_id_to_rank;
 
   Vehicle(Id id,
           const std::optional<Location>& start,

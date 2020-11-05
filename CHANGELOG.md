@@ -5,6 +5,7 @@
 ### Changed
 
 - Check for duplicate ids across tasks of the same type (`job`, `pickup`, `delivery`)
+- Check for duplicate ids across `break` tasks for the same vehicle
 
 ## [v1.8.0] - 2020-09-29
 

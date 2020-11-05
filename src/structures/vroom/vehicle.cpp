@@ -35,6 +35,15 @@ Vehicle::Vehicle(Id id,
                     "No start or end specified for vehicle " +
                       std::to_string(id) + '.');
   }
+
+  for (unsigned i = 0; i < breaks.size(); ++i) {
+    const auto& b = breaks[i];
+    if (break_id_to_rank.find(b.id) != break_id_to_rank.end()) {
+      throw Exception(ERROR::INPUT,
+                      "Duplicate break id: " + std::to_string(b.id) + ".");
+    }
+    break_id_to_rank[b.id] = i;
+  }
 }
 
 bool Vehicle::has_start() const {
