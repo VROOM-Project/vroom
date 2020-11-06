@@ -287,13 +287,23 @@ inline std::vector<InputStep> get_vehicle_steps(const rapidjson::Value& v) {
   if (v.HasMember("steps") and v["steps"].IsArray()) {
     for (rapidjson::SizeType i = 0; i < v["steps"].Size(); ++i) {
       const auto& json_step = v["steps"][i];
+
+      const auto type_str = get_string(json_step, "type");
+
+      if (type_str == "start") {
+        steps.emplace_back(STEP_TYPE::START);
+        continue;
+      }
+      if (type_str == "end") {
+        steps.emplace_back(STEP_TYPE::END);
+        continue;
+      }
+
       if (!json_step.HasMember("id") or !json_step["id"].IsUint64()) {
         throw Exception(ERROR::INPUT,
                         "Invalid id in steps for vehicle " +
                           std::to_string(v["id"].GetUint64()) + ".");
       }
-
-      const auto type_str = get_string(json_step, "type");
 
       if (type_str == "job") {
         steps.emplace_back(JOB_TYPE::SINGLE, json_step["id"].GetUint64());

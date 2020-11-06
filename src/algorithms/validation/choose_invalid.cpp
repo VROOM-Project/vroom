@@ -21,19 +21,74 @@ Route choose_invalid_route(const Input& input,
                            const std::vector<InputStep>& steps,
                            std::unordered_set<Index>& unassigned_ranks) {
   const auto& m = input.get_matrix();
-  const unsigned n = steps.size();
   const auto& v = input.vehicles[vehicle_rank];
+
+  // Number of tasks except start and end.
+  const unsigned extra_steps = (v.has_start() ? 1 : 0) + (v.has_end() ? 1 : 0);
+  assert(extra_steps < steps.size());
+  const unsigned n = steps.size() - extra_steps;
+  const unsigned first_task_rank = (v.has_start() ? 1 : 0);
 
   constexpr double M = 10.0;
 
   // Total number of time windows.
-  const unsigned K =
-    std::accumulate(steps.begin(),
-                    steps.end(),
-                    0,
-                    [&](auto sum, const auto& step) {
-                      return sum + input.jobs[step.rank].tws.size();
-                    });
+  unsigned K = 0;
+
+  // For 0 <= i <= n, if i is in J (i.e. T_i is a non-break task),
+  // then B[i] is the number of tasks following T_i that are breaks,
+  // and durations[i] is the travel duration from task T_i to the next
+  // non-break task. Note: when vehicle has no start, T_0 is a "ghost"
+  // step.
+  std::vector<unsigned> J({0});
+  std::vector<unsigned> B({0});
+  std::vector<double> durations;
+
+  // Use max value for last_index as "unset".
+  std::optional<Index> last_index;
+
+  Index i = 1;
+  for (const auto& step : steps) {
+    switch (step.type) {
+    case STEP_TYPE::START:
+      assert(v.has_start());
+      last_index = v.start.value().index();
+      break;
+    case STEP_TYPE::JOB: {
+      K += input.jobs[step.rank].tws.size();
+
+      J.push_back(i);
+      B.push_back(0);
+
+      const auto job_index = input.jobs[step.rank].index();
+      if (last_index.has_value()) {
+        durations.push_back(m[last_index.value()][job_index]);
+      } else {
+        // Only happens for first duration in case vehicle has no
+        // start.
+        assert(durations.empty() and !v.has_start());
+        durations.push_back(0);
+      }
+      last_index = job_index;
+      ++i;
+      break;
+    }
+    case STEP_TYPE::BREAK:
+      K += v.breaks[step.rank].tws.size();
+
+      ++B.back();
+      ++i;
+      break;
+    case STEP_TYPE::END:
+      assert(v.has_end() and last_index.has_value());
+      durations.push_back(m[last_index.value()][v.end.value().index()]);
+      break;
+    }
+  }
+  assert(i == n + 1);
+
+  const unsigned nb_delta_constraints = J.size();
+  assert(B.size() == nb_delta_constraints);
+  assert(durations.size() == nb_delta_constraints);
 
   // Create problem.
   glp_prob* lp;
@@ -43,42 +98,32 @@ Route choose_invalid_route(const Input& input,
 
   // Define constraints and remember number of non-zero values in the
   // matrix.
-  const unsigned nb_constraints = 4 * n + 3;
-  const unsigned nb_non_zero = 2 * (3 * n + 3) + 3 * K;
+  const unsigned nb_constraints = 4 * n + 3 + nb_delta_constraints;
+  const unsigned nb_non_zero = 2 * (3 * n + 3) + 3 * K + 2 * n + 2;
 
   glp_add_rows(lp, nb_constraints);
 
   unsigned current_row = 1;
 
   // Precedence constraints.
-  double first = 0;
-  if (v.has_start()) {
-    // Take into account time from start point to first job.
-    first = m[v.start.value().index()][input.jobs[steps.front().rank].index()];
-  }
   glp_set_row_name(lp, current_row, "P0");
-  glp_set_row_bnds(lp, current_row, GLP_LO, first, 0.0);
+  glp_set_row_bnds(lp, current_row, GLP_LO, 0.0, 0.0);
   ++current_row;
 
-  for (unsigned i = 0; i < n - 1; ++i) {
-    double dist = m[input.jobs[steps[i].rank].index()]
-                   [input.jobs[steps[i + 1].rank].index()];
-    double service = input.jobs[steps[i].rank].service;
+  for (unsigned i = 0; i < n; ++i) {
     auto name = "P" + std::to_string(i + 1);
     glp_set_row_name(lp, current_row, name.c_str());
-    glp_set_row_bnds(lp, current_row, GLP_LO, dist + service, 0.0);
+    double service;
+    const auto& step = steps[first_task_rank + i];
+    if (step.type == STEP_TYPE::JOB) {
+      service = input.jobs[step.rank].service;
+    } else {
+      assert(step.type == STEP_TYPE::BREAK);
+      service = v.breaks[step.rank].service;
+    }
+    glp_set_row_bnds(lp, current_row, GLP_LO, service, 0.0);
     ++current_row;
   }
-
-  double last = 0;
-  if (v.has_end()) {
-    // Take into account time from last job arrival to end point.
-    last = m[input.jobs[steps.back().rank].index()][v.end.value().index()] +
-           input.jobs[steps.back().rank].service;
-  }
-  glp_set_row_name(lp, current_row, ("P" + std::to_string(n)).c_str());
-  glp_set_row_bnds(lp, current_row, GLP_LO, last, 0.0);
-  ++current_row;
 
   assert(current_row == n + 2);
 
@@ -116,15 +161,26 @@ Route choose_invalid_route(const Input& input,
 
   // Binary variable decision constraints.
   for (unsigned i = 1; i <= n; ++i) {
-    auto name = "s" + std::to_string(i);
+    auto name = "S" + std::to_string(i);
     glp_set_row_name(lp, current_row, name.c_str());
     glp_set_row_bnds(lp, current_row, GLP_FX, 1.0, 1.0);
+    ++current_row;
+  }
+  assert(current_row == 4 * n + 4);
+
+  // Delta constraints.
+  for (unsigned r = 0; r < J.size(); ++r) {
+    auto name = "Delta" + std::to_string(J[r]);
+    glp_set_row_name(lp, current_row, name.c_str());
+    glp_set_row_bnds(lp, current_row, GLP_FX, durations[r], durations[r]);
     ++current_row;
   }
   assert(current_row == nb_constraints + 1);
 
   // Set variables and coefficients.
-  const unsigned nb_var = 2 * n + 4 + K;
+  const unsigned start_X_col = 2 * n + 4 + 1;
+  const unsigned start_delta_col = start_X_col + K;
+  const unsigned nb_var = start_delta_col + n;
   glp_add_cols(lp, nb_var);
 
   unsigned current_col = 1;
@@ -153,12 +209,24 @@ Route choose_invalid_route(const Input& input,
 
   // Binary variables for job time window choice.
   for (unsigned i = 0; i < n; ++i) {
-    for (unsigned k = 0; k < input.jobs[steps[i].rank].tws.size(); ++k) {
+    const auto& step = steps[i + first_task_rank];
+    const auto& tws = (step.type == STEP_TYPE::JOB) ? input.jobs[step.rank].tws
+                                                    : v.breaks[step.rank].tws;
+    for (unsigned k = 0; k < tws.size(); ++k) {
       auto name = "X" + std::to_string(i + 1) + "_" + std::to_string(k);
       glp_set_col_name(lp, current_col, name.c_str());
       glp_set_col_kind(lp, current_col, GLP_BV);
       ++current_col;
     }
+  }
+  assert(current_col == start_delta_col);
+
+  // Delta variables.
+  for (unsigned i = 0; i <= n; ++i) {
+    auto name = "delta" + std::to_string(i);
+    glp_set_col_name(lp, current_col, name.c_str());
+    glp_set_col_bnds(lp, current_col, GLP_LO, 0.0, 0.0);
+    ++current_col;
   }
   assert(current_col == nb_var + 1);
 
@@ -181,6 +249,12 @@ Route choose_invalid_route(const Input& input,
     ja[r] = i + 1;
     ar[r] = 1;
     ++r;
+
+    // a[i, start_delta_col + i - 1] = -1
+    ia[r] = i;
+    ja[r] = start_delta_col + i - 1;
+    ar[r] = -1;
+    ++r;
   }
 
   unsigned constraint_rank = n + 2;
@@ -199,26 +273,29 @@ Route choose_invalid_route(const Input& input,
   ++r;
   ++constraint_rank;
 
-  // Coefficients other L_i constraints. current_X_rank is the rank
-  // for binaries that describe the time window choices.
-  unsigned current_X_rank = 2 * n + 4 + 1;
+  // Coefficients for other L_i constraints. current_X_rank is the
+  // rank for binaries that describe the time window choices.
+  unsigned current_X_rank = start_X_col;
 
-  for (unsigned i = 2; i <= n + 1; ++i) {
-    // a[constraint_rank, i] = 1
+  for (unsigned i = 0; i < n; ++i) {
+    // a[constraint_rank, i + 2] = 1
     ia[r] = constraint_rank;
-    ja[r] = i;
+    ja[r] = i + 2;
     ar[r] = 1;
     ++r;
 
-    // a[constraint_rank, n + 2 + i] = 1
+    // a[constraint_rank, n + 4 + i] = 1
     ia[r] = constraint_rank;
-    ja[r] = n + 2 + i;
+    ja[r] = n + 4 + i;
     ar[r] = 1;
     ++r;
 
-    const auto& job = input.jobs[steps[i - 2].rank];
-    for (const auto& tw : job.tws) {
-      // a[constraint_rank, current_X_rank] = - earliest_date for k-th TW of job
+    const auto& step = steps[i + first_task_rank];
+    const auto& tws = (step.type == STEP_TYPE::JOB) ? input.jobs[step.rank].tws
+                                                    : v.breaks[step.rank].tws;
+    for (const auto& tw : tws) {
+      // a[constraint_rank, current_X_rank] = - earliest_date for k-th
+      // TW of task.
       ia[r] = constraint_rank;
       ja[r] = current_X_rank;
       ar[r] = -static_cast<double>(tw.start);
@@ -229,28 +306,31 @@ Route choose_invalid_route(const Input& input,
 
     ++constraint_rank;
   }
-  assert(current_X_rank == 2 * n + 4 + K + 1);
+  assert(current_X_rank == start_delta_col);
   assert(constraint_rank == 2 * n + 3);
 
   // Coefficients for D_i constraints.
-  current_X_rank = 2 * n + 4 + 1;
+  current_X_rank = start_X_col;
 
-  for (unsigned i = 2; i <= n + 1; ++i) {
-    // a[constraint_rank, i] = 1
+  for (unsigned i = 0; i < n; ++i) {
+    // a[constraint_rank, i + 2] = 1
     ia[r] = constraint_rank;
-    ja[r] = i;
+    ja[r] = i + 2;
     ar[r] = 1;
     ++r;
 
-    // a[constraint_rank, n + 2 + i] = -1
+    // a[constraint_rank, n + 4 + i] = -1
     ia[r] = constraint_rank;
-    ja[r] = n + 2 + i;
+    ja[r] = n + 4 + i;
     ar[r] = -1;
     ++r;
 
-    const auto& job = input.jobs[steps[i - 2].rank];
-    for (const auto& tw : job.tws) {
-      // a[constraint_rank, current_X_rank] = - latest_date for k-th TW of job
+    const auto& step = steps[i + first_task_rank];
+    const auto& tws = (step.type == STEP_TYPE::JOB) ? input.jobs[step.rank].tws
+                                                    : v.breaks[step.rank].tws;
+    for (const auto& tw : tws) {
+      // a[constraint_rank, current_X_rank] = - latest_date for k-th
+      // TW of task.
       ia[r] = constraint_rank;
       ja[r] = current_X_rank;
       ar[r] = -static_cast<double>(tw.end);
@@ -280,11 +360,14 @@ Route choose_invalid_route(const Input& input,
   assert(constraint_rank == 3 * n + 4);
 
   // Decision constraints S_i for binary variables.
-  current_X_rank = 2 * n + 4 + 1;
+  current_X_rank = start_X_col;
 
   for (unsigned i = 0; i < n; ++i) {
-    const auto& job = input.jobs[steps[i].rank];
-    for (unsigned k = 0; k < job.tws.size(); ++k) {
+    const auto& step = steps[i + first_task_rank];
+    const auto& tws = (step.type == STEP_TYPE::JOB) ? input.jobs[step.rank].tws
+                                                    : v.breaks[step.rank].tws;
+
+    for (unsigned k = 0; k < tws.size(); ++k) {
       // a[constraint_rank, current_X_rank] = 1
       ia[r] = constraint_rank;
       ja[r] = current_X_rank;
@@ -295,7 +378,26 @@ Route choose_invalid_route(const Input& input,
     }
     ++constraint_rank;
   }
-  assert(current_X_rank == 2 * n + 4 + K + 1);
+  assert(current_X_rank == start_delta_col);
+  assert(constraint_rank == 4 * n + 4);
+
+  // Delta_i constraints.
+  unsigned current_delta_rank = start_delta_col;
+
+  for (const auto Bi : B) {
+    const auto row_limit = current_delta_rank + 1 + Bi;
+
+    while (current_delta_rank < row_limit) {
+      // a[constraint_rank, current_delta_rank] = 1
+      ia[r] = constraint_rank;
+      ja[r] = current_delta_rank;
+      ar[r] = 1;
+      ++r;
+      ++current_delta_rank;
+    }
+    ++constraint_rank;
+  }
+  assert(current_delta_rank = nb_var + 1);
   assert(constraint_rank == nb_constraints + 1);
 
   assert(r == nb_non_zero + 1);
@@ -318,29 +420,52 @@ Route choose_invalid_route(const Input& input,
   // Get output.
   auto v_start = glp_mip_col_val(lp, 1);
   auto v_end = glp_mip_col_val(lp, n + 2);
+  auto start_travel = glp_mip_col_val(lp, start_delta_col);
 
-  std::vector<Duration> job_ETA;
-  for (unsigned i = 2; i <= n + 1; ++i) {
-    job_ETA.push_back(glp_mip_col_val(lp, i));
+  std::vector<Duration> task_ETA;
+  std::vector<Duration> task_travels;
+  for (unsigned i = 0; i < n; ++i) {
+    task_ETA.push_back(glp_mip_col_val(lp, i + 2));
+    task_travels.push_back(glp_mip_col_val(lp, start_delta_col + 1 + i));
   }
 
   // Populate vector storing picked time window ranks.
-  current_X_rank = 2 * n + 4 + 1;
-  std::vector<Index> job_tw_ranks;
+  current_X_rank = start_X_col;
+  std::vector<Index> task_tw_ranks;
 
-  for (unsigned i = 0; i < n; ++i) {
-    const auto& job = input.jobs[steps[i].rank];
-    for (unsigned k = 0; k < job.tws.size(); ++k) {
-      auto val = glp_mip_col_val(lp, current_X_rank);
-      if (val == 1) {
-        job_tw_ranks.push_back(k);
+  for (const auto& step : steps) {
+    switch (step.type) {
+    case STEP_TYPE::START:
+      break;
+    case STEP_TYPE::JOB: {
+      const auto& job = input.jobs[step.rank];
+      for (unsigned k = 0; k < job.tws.size(); ++k) {
+        auto val = glp_mip_col_val(lp, current_X_rank);
+        if (val == 1) {
+          task_tw_ranks.push_back(k);
+        }
+
+        ++current_X_rank;
       }
-
-      ++current_X_rank;
+      break;
     }
-    assert(job_tw_ranks.size() == i + 1);
+    case STEP_TYPE::BREAK: {
+      const auto& b = v.breaks[step.rank];
+      for (unsigned k = 0; k < b.tws.size(); ++k) {
+        auto val = glp_mip_col_val(lp, current_X_rank);
+        if (val == 1) {
+          task_tw_ranks.push_back(k);
+        }
+
+        ++current_X_rank;
+      }
+    }
+    case STEP_TYPE::END:
+      break;
+    }
   }
-  assert(current_X_rank == 2 * n + 4 + K + 1);
+  assert(current_X_rank == start_delta_col);
+  assert(task_tw_ranks.size() == n);
 
   glp_delete_prob(lp);
   glp_free_env();
@@ -358,9 +483,8 @@ Route choose_invalid_route(const Input& input,
   // Startup load is the sum of deliveries for jobs.
   Amount current_load(input.zero_amount());
   for (const auto& step : steps) {
-    const auto& job = input.jobs[step.rank];
-    if (job.type == JOB_TYPE::SINGLE) {
-      current_load += job.delivery;
+    if (step.type == STEP_TYPE::JOB and step.job_type == JOB_TYPE::SINGLE) {
+      current_load += input.jobs[step.rank].delivery;
     }
   }
 
@@ -374,7 +498,7 @@ Route choose_invalid_route(const Input& input,
 
   std::vector<Step> sol_steps;
 
-  Duration next_arrival;
+  assert(v.has_start() or start_travel == 0);
 
   if (v.has_start()) {
     sol_steps.emplace_back(STEP_TYPE::START, v.start.value(), current_load);
@@ -390,156 +514,157 @@ Route choose_invalid_route(const Input& input,
     if (!(current_load <= v.capacity)) {
       sol_steps.back().violations.insert(VIOLATION::LOAD);
     }
-
-    auto travel =
-      m[v.start.value().index()][input.jobs[steps.front().rank].index()];
-    duration += travel;
-    next_arrival = v_start + travel;
-  } else {
-    next_arrival = job_ETA.front();
   }
 
-  auto& first_job = input.jobs[steps.front().rank];
-  service += first_job.service;
-  priority += first_job.priority;
+  Duration previous_start = v_start;
+  Duration previous_service = 0;
+  Duration previous_travel = start_travel;
+  unsigned task_rank = 0;
 
-  current_load += first_job.pickup;
-  current_load -= first_job.delivery;
-  sum_pickups += first_job.pickup;
-  sum_deliveries += first_job.delivery;
-
-  sol_steps.emplace_back(first_job, current_load);
-  auto& first_step = sol_steps.back();
-  first_step.duration = duration;
-  auto service_start = job_ETA.front();
-  assert(next_arrival <= service_start);
-
-  first_step.arrival = next_arrival;
-
-  Duration wt = service_start - next_arrival;
-  first_step.waiting_time = wt;
-  forward_wt += wt;
-
-  // Handle violations.
-  auto first_tw_rank = job_tw_ranks.front();
-  if (service_start < first_job.tws[first_tw_rank].start) {
-    first_step.violations.insert(VIOLATION::LEAD_TIME);
-    Duration lt = first_job.tws[first_tw_rank].start - service_start;
-    first_step.lead_time = lt;
-    lead_time += lt;
-  }
-  if (first_job.tws[first_tw_rank].end < service_start) {
-    first_step.violations.insert(VIOLATION::DELAY);
-    Duration dl = service_start - first_job.tws[first_tw_rank].end;
-    first_step.delay = dl;
-    delay += dl;
-  }
-  if (!(current_load <= v.capacity)) {
-    first_step.violations.insert(VIOLATION::LOAD);
-  }
-  if (first_job.type == JOB_TYPE::PICKUP) {
-    expected_delivery_ranks.insert(steps.front().rank + 1);
-    delivery_to_pickup_step_rank.emplace(steps.front().rank + 1, 0);
-  }
-  if (first_job.type == JOB_TYPE::DELIVERY) {
-    first_step.violations.insert(VIOLATION::PRECEDENCE);
-    delivery_first_ranks.insert(steps.front().rank);
-  }
-
-  unassigned_ranks.erase(steps.front().rank);
-
-  for (std::size_t r = 0; r < steps.size() - 1; ++r) {
-    const auto& previous_job = input.jobs[steps[r].rank];
-    const auto next_job_rank = steps[r + 1].rank;
-    const auto& next_job = input.jobs[next_job_rank];
-    const auto& next_tw_rank = job_tw_ranks[r + 1];
-
-    Duration travel = m[previous_job.index()][next_job.index()];
-    duration += travel;
-    next_arrival = service_start + previous_job.service + travel;
-
-    service += next_job.service;
-    priority += next_job.priority;
-
-    current_load += next_job.pickup;
-    current_load -= next_job.delivery;
-    sum_pickups += next_job.pickup;
-    sum_deliveries += next_job.delivery;
-
-    sol_steps.emplace_back(next_job, current_load);
-    auto& current = sol_steps.back();
-    current.duration = duration;
-
-    service_start = job_ETA[r + 1];
-    assert(next_arrival <= service_start);
-
-    current.arrival = next_arrival;
-    Duration wt = service_start - next_arrival;
-    current.waiting_time = wt;
-    forward_wt += wt;
-
-    // Handle violations.
-    if (service_start < next_job.tws[next_tw_rank].start) {
-      current.violations.insert(VIOLATION::LEAD_TIME);
-      Duration lt = next_job.tws[next_tw_rank].start - service_start;
-      current.lead_time = lt;
-      lead_time += lt;
-    }
-    if (next_job.tws[next_tw_rank].end < service_start) {
-      current.violations.insert(VIOLATION::DELAY);
-      Duration dl = service_start - next_job.tws[next_tw_rank].end;
-      current.delay = dl;
-      delay += dl;
-    }
-    if (!(current_load <= v.capacity)) {
-      current.violations.insert(VIOLATION::LOAD);
-    }
-    switch (next_job.type) {
-    case JOB_TYPE::SINGLE:
+  for (const auto& step : steps) {
+    switch (step.type) {
+    case STEP_TYPE::START:
+      continue;
       break;
-    case JOB_TYPE::PICKUP:
-      if (delivery_first_ranks.find(next_job_rank + 1) !=
-          delivery_first_ranks.end()) {
-        current.violations.insert(VIOLATION::PRECEDENCE);
-      } else {
-        expected_delivery_ranks.insert(next_job_rank + 1);
-        delivery_to_pickup_step_rank.emplace(next_job_rank + 1,
-                                             sol_steps.size() - 1);
+    case STEP_TYPE::JOB: {
+      auto job_rank = step.rank;
+      const auto& job = input.jobs[job_rank];
+
+      service += job.service;
+      priority += job.priority;
+
+      current_load += job.pickup;
+      current_load -= job.delivery;
+      sum_pickups += job.pickup;
+      sum_deliveries += job.delivery;
+
+      sol_steps.emplace_back(job, current_load);
+      auto& current = sol_steps.back();
+
+      duration += previous_travel;
+      current.duration = duration;
+
+      auto arrival = previous_start + previous_service + previous_travel;
+      auto service_start = task_ETA[task_rank];
+      assert(arrival <= service_start);
+
+      current.arrival = arrival;
+      Duration wt = service_start - arrival;
+      current.waiting_time = wt;
+      forward_wt += wt;
+
+      // Handle violations.
+      auto tw_rank = task_tw_ranks[task_rank];
+      if (service_start < job.tws[tw_rank].start) {
+        current.violations.insert(VIOLATION::LEAD_TIME);
+        Duration lt = job.tws[tw_rank].start - service_start;
+        current.lead_time = lt;
+        lead_time += lt;
+      }
+      if (job.tws[tw_rank].end < service_start) {
+        current.violations.insert(VIOLATION::DELAY);
+        Duration dl = service_start - job.tws[tw_rank].end;
+        current.delay = dl;
+        delay += dl;
+      }
+      if (!(current_load <= v.capacity)) {
+        current.violations.insert(VIOLATION::LOAD);
+      }
+      switch (job.type) {
+      case JOB_TYPE::SINGLE:
+        break;
+      case JOB_TYPE::PICKUP:
+        if (delivery_first_ranks.find(job_rank + 1) !=
+            delivery_first_ranks.end()) {
+          current.violations.insert(VIOLATION::PRECEDENCE);
+        } else {
+          expected_delivery_ranks.insert(job_rank + 1);
+          delivery_to_pickup_step_rank.emplace(job_rank + 1,
+                                               sol_steps.size() - 1);
+        }
+        break;
+      case JOB_TYPE::DELIVERY:
+        auto search = expected_delivery_ranks.find(job_rank);
+        if (search == expected_delivery_ranks.end()) {
+          current.violations.insert(VIOLATION::PRECEDENCE);
+          delivery_first_ranks.insert(job_rank);
+        } else {
+          expected_delivery_ranks.erase(search);
+        }
+        break;
+      }
+
+      unassigned_ranks.erase(job_rank);
+      previous_start = service_start;
+      previous_service = job.service;
+      previous_travel = task_travels[task_rank];
+      ++task_rank;
+      break;
+    }
+    case STEP_TYPE::BREAK: {
+      auto break_rank = step.rank;
+      const auto& b = v.breaks[break_rank];
+
+      service += b.service;
+
+      sol_steps.emplace_back(b, current_load);
+      auto& current = sol_steps.back();
+
+      duration += previous_travel;
+      current.duration = duration;
+
+      auto arrival = previous_start + previous_service + previous_travel;
+      auto service_start = task_ETA[task_rank];
+      assert(arrival <= service_start);
+
+      current.arrival = arrival;
+      Duration wt = service_start - arrival;
+      current.waiting_time = wt;
+      forward_wt += wt;
+
+      // Handle violations.
+      auto tw_rank = task_tw_ranks[task_rank];
+      if (service_start < b.tws[tw_rank].start) {
+        current.violations.insert(VIOLATION::LEAD_TIME);
+        Duration lt = b.tws[tw_rank].start - service_start;
+        current.lead_time = lt;
+        lead_time += lt;
+      }
+      if (b.tws[tw_rank].end < service_start) {
+        current.violations.insert(VIOLATION::DELAY);
+        Duration dl = service_start - b.tws[tw_rank].end;
+        current.delay = dl;
+        delay += dl;
+      }
+      if (!(current_load <= v.capacity)) {
+        current.violations.insert(VIOLATION::LOAD);
+      }
+
+      previous_start = service_start;
+      previous_service = b.service;
+      previous_travel = task_travels[task_rank];
+      ++task_rank;
+      break;
+    }
+    case STEP_TYPE::END:
+      duration += previous_travel;
+
+      assert(previous_start + previous_service + previous_travel == v_end);
+
+      sol_steps.emplace_back(STEP_TYPE::END, v.end.value(), current_load);
+      sol_steps.back().duration = duration;
+      sol_steps.back().arrival = v_end;
+
+      if (v.tw.end < v_end) {
+        sol_steps.back().violations.insert(VIOLATION::DELAY);
+        Duration dl = v_end - v.tw.end;
+        sol_steps.back().delay = dl;
+        delay += dl;
+      }
+      if (!(current_load <= v.capacity)) {
+        sol_steps.back().violations.insert(VIOLATION::LOAD);
       }
       break;
-    case JOB_TYPE::DELIVERY:
-      auto search = expected_delivery_ranks.find(next_job_rank);
-      if (search == expected_delivery_ranks.end()) {
-        current.violations.insert(VIOLATION::PRECEDENCE);
-        delivery_first_ranks.insert(next_job_rank);
-      } else {
-        expected_delivery_ranks.erase(search);
-      }
-      break;
-    }
-
-    unassigned_ranks.erase(next_job_rank);
-  }
-
-  if (v.has_end()) {
-    const auto& last_job = input.jobs[steps.back().rank];
-    Duration travel = m[last_job.index()][v.end.value().index()];
-    duration += travel;
-
-    assert(service_start + last_job.service + travel == v_end);
-
-    sol_steps.emplace_back(STEP_TYPE::END, v.end.value(), current_load);
-    sol_steps.back().duration = duration;
-    sol_steps.back().arrival = v_end;
-
-    if (v.tw.end < v_end) {
-      sol_steps.back().violations.insert(VIOLATION::DELAY);
-      Duration dl = v_end - v.tw.end;
-      sol_steps.back().delay = dl;
-      delay += dl;
-    }
-    if (!(current_load <= v.capacity)) {
-      sol_steps.back().violations.insert(VIOLATION::LOAD);
     }
   }
 
