@@ -50,6 +50,7 @@ struct Route {
   const Amount pickup;
   const std::string description;
   const TimingViolations timing_violations;
+  const std::unordered_set<VIOLATION> violations;
 
   std::string geometry;
   Distance distance;
@@ -64,7 +65,9 @@ struct Route {
         const Amount& delivery,
         const Amount& pickup,
         const std::string& description,
-        const TimingViolations&& timing_violations = TimingViolations());
+        const TimingViolations&& timing_violations = TimingViolations(),
+        const std::unordered_set<VIOLATION>&& violations =
+          std::unordered_set<VIOLATION>());
 };
 
 } // namespace vroom

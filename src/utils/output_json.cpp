@@ -19,24 +19,34 @@ All rights reserved (see LICENSE).
 namespace vroom {
 namespace io {
 
-inline std::string get_string_violation(const VIOLATION v) {
-  std::string v_str;
-  switch (v) {
-  case VIOLATION::LEAD_TIME:
-    v_str = "lead_time";
-    break;
-  case VIOLATION::DELAY:
-    v_str = "delay";
-    break;
-  case VIOLATION::LOAD:
-    v_str = "load";
-    break;
-  case VIOLATION::PRECEDENCE:
-    v_str = "precedence";
-    break;
+inline rapidjson::Value
+get_violations(const std::unordered_set<VIOLATION>& violations,
+               rapidjson::Document::AllocatorType& allocator) {
+  rapidjson::Value json_violations(rapidjson::kArrayType);
+  for (const auto v : violations) {
+    std::string v_str;
+    switch (v) {
+    case VIOLATION::LEAD_TIME:
+      v_str = "lead_time";
+      break;
+    case VIOLATION::DELAY:
+      v_str = "delay";
+      break;
+    case VIOLATION::LOAD:
+      v_str = "load";
+      break;
+    case VIOLATION::PRECEDENCE:
+      v_str = "precedence";
+      break;
+    }
+
+    json_violations.PushBack(rapidjson::Value{}.SetString(v_str.c_str(),
+                                                          v_str.length(),
+                                                          allocator),
+                             allocator);
   }
 
-  return v_str;
+  return json_violations;
 }
 
 rapidjson::Document to_json(const Solution& sol, bool geometry) {
@@ -190,6 +200,10 @@ rapidjson::Value to_json(const Route& route,
 
   json_route.AddMember("steps", json_steps, allocator);
 
+  json_route.AddMember("violations",
+                       get_violations(route.violations, allocator),
+                       allocator);
+
   if (!route.geometry.empty()) {
     json_route.AddMember("geometry", rapidjson::Value(), allocator);
     json_route["geometry"].SetString(route.geometry.c_str(),
@@ -284,15 +298,9 @@ rapidjson::Value to_json(const Step& s,
   json_step.AddMember("arrival", s.arrival, allocator);
   json_step.AddMember("duration", s.duration, allocator);
 
-  rapidjson::Value json_violations(rapidjson::kArrayType);
-  for (const auto v : s.violations) {
-    auto v_str = get_string_violation(v);
-    json_violations.PushBack(rapidjson::Value{}.SetString(v_str.c_str(),
-                                                          v_str.length(),
-                                                          allocator),
-                             allocator);
-  }
-  json_step.AddMember("violations", json_violations, allocator);
+  json_step.AddMember("violations",
+                      get_violations(s.violations, allocator),
+                      allocator);
 
   if (geometry) {
     json_step.AddMember("distance", s.distance, allocator);
