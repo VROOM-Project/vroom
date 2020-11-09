@@ -14,29 +14,9 @@ All rights reserved (see LICENSE).
 #include <vector>
 
 #include "structures/vroom/solution/step.h"
+#include "structures/vroom/solution/timing_violations.h"
 
 namespace vroom {
-
-struct TimingViolations {
-  const Duration start_lead_time;
-  const Duration lead_time;
-  const Duration end_delay;
-  const Duration delay;
-
-  TimingViolations()
-    : start_lead_time(0), lead_time(0), end_delay(0), delay(0) {
-  }
-
-  TimingViolations(const Duration start_lead_time,
-                   const Duration lead_time,
-                   const Duration end_delay,
-                   const Duration delay)
-    : start_lead_time(start_lead_time),
-      lead_time(lead_time),
-      end_delay(end_delay),
-      delay(delay) {
-  }
-};
 
 struct Route {
   const Id vehicle;

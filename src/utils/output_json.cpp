@@ -128,6 +128,21 @@ rapidjson::Value to_json(const Summary& summary,
     json_summary.AddMember("distance", summary.distance, allocator);
   }
 
+  json_summary.AddMember("start_lead_time",
+                         summary.timing_violations.start_lead_time,
+                         allocator);
+  json_summary.AddMember("lead_time",
+                         summary.timing_violations.lead_time,
+                         allocator);
+  json_summary.AddMember("delay", summary.timing_violations.delay, allocator);
+  json_summary.AddMember("end_delay",
+                         summary.timing_violations.end_delay,
+                         allocator);
+
+  json_summary.AddMember("violations",
+                         get_violations(summary.violations, allocator),
+                         allocator);
+
   json_summary.AddMember("computing_times",
                          to_json(summary.computing_times, geometry, allocator),
                          allocator);
