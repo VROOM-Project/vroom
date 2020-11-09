@@ -168,8 +168,16 @@ rapidjson::Value to_json(const Route& route,
   json_route.AddMember("waiting_time", route.waiting_time, allocator);
   json_route.AddMember("priority", route.priority, allocator);
 
-  json_route.AddMember("lead_time", route.lead_time, allocator);
-  json_route.AddMember("delay", route.delay, allocator);
+  json_route.AddMember("start_lead_time",
+                       route.timing_violations.start_lead_time,
+                       allocator);
+  json_route.AddMember("lead_time",
+                       route.timing_violations.lead_time,
+                       allocator);
+  json_route.AddMember("delay", route.timing_violations.delay, allocator);
+  json_route.AddMember("end_delay",
+                       route.timing_violations.end_delay,
+                       allocator);
 
   if (geometry) {
     json_route.AddMember("distance", route.distance, allocator);

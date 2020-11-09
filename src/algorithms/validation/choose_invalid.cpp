@@ -84,6 +84,9 @@ Route choose_invalid_route(const Input& input,
       break;
     }
   }
+  if (!v.has_end()) {
+    durations.push_back(0);
+  }
   assert(i == n + 1);
 
   const unsigned nb_delta_constraints = J.size();
@@ -151,10 +154,9 @@ Route choose_invalid_route(const Input& input,
   }
 
   // Vehicle TW end violation constraint.
-  double ub = v.tw.end;
-  auto name = "L" + std::to_string(n + 1);
+  auto name = "D" + std::to_string(n + 1);
   glp_set_row_name(lp, current_row, name.c_str());
-  glp_set_row_bnds(lp, current_row, GLP_UP, 0.0, ub);
+  glp_set_row_bnds(lp, current_row, GLP_UP, 0.0, v.tw.end);
   ++current_row;
 
   assert(current_row == 3 * n + 4);
@@ -415,11 +417,13 @@ Route choose_invalid_route(const Input& input,
   parm.presolve = GLP_ON;
   glp_intopt(lp, &parm);
 
-  // glp_print_mip(lp, "mip.sol");
+  glp_print_mip(lp, "mip.sol");
 
   // Get output.
   auto v_start = glp_mip_col_val(lp, 1);
   auto v_end = glp_mip_col_val(lp, n + 2);
+  auto start_lead_time = glp_mip_col_val(lp, n + 3);
+  auto end_delay = glp_mip_col_val(lp, 2 * n + 4);
   auto start_travel = glp_mip_col_val(lp, start_delta_col);
 
   std::vector<Duration> task_ETA;
@@ -514,6 +518,10 @@ Route choose_invalid_route(const Input& input,
     if (!(current_load <= v.capacity)) {
       sol_steps.back().violations.insert(VIOLATION::LOAD);
     }
+  } else {
+    // Vehicle time window violation at startup is not reported in
+    // steps as there is no start step.
+    lead_time += start_lead_time;
   }
 
   Duration previous_start = v_start;
@@ -668,6 +676,15 @@ Route choose_invalid_route(const Input& input,
     }
   }
 
+  if (!v.has_end()) {
+    // Vehicle time window violation on route end is not reported in
+    // steps as there is no end step.
+    delay += end_delay;
+  }
+
+  assert(!v.has_start() or start_lead_time == sol_steps.front().lead_time);
+  assert(!v.has_end() or end_delay == sol_steps.back().delay);
+
   // Precedence violations for pickups without a delivery.
   for (const auto d_rank : expected_delivery_ranks) {
     auto search = delivery_to_pickup_step_rank.find(d_rank);
@@ -685,8 +702,10 @@ Route choose_invalid_route(const Input& input,
                sum_deliveries,
                sum_pickups,
                v.description,
-               lead_time,
-               delay);
+               std::move(TimingViolations(start_lead_time,
+                                          lead_time,
+                                          end_delay,
+                                          delay)));
 }
 
 } // namespace validation

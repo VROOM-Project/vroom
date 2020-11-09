@@ -17,6 +17,27 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
+struct TimingViolations {
+  const Duration start_lead_time;
+  const Duration lead_time;
+  const Duration end_delay;
+  const Duration delay;
+
+  TimingViolations()
+    : start_lead_time(0), lead_time(0), end_delay(0), delay(0) {
+  }
+
+  TimingViolations(const Duration start_lead_time,
+                   const Duration lead_time,
+                   const Duration end_delay,
+                   const Duration delay)
+    : start_lead_time(start_lead_time),
+      lead_time(lead_time),
+      end_delay(end_delay),
+      delay(delay) {
+  }
+};
+
 struct Route {
   const Id vehicle;
   std::vector<Step> steps;
@@ -28,9 +49,7 @@ struct Route {
   const Amount delivery;
   const Amount pickup;
   const std::string description;
-
-  const Duration lead_time;
-  const Duration delay;
+  const TimingViolations timing_violations;
 
   std::string geometry;
   Distance distance;
@@ -45,8 +64,7 @@ struct Route {
         const Amount& delivery,
         const Amount& pickup,
         const std::string& description,
-        Duration lead_time = 0,
-        Duration delay = 0);
+        const TimingViolations&& timing_violations = TimingViolations());
 };
 
 } // namespace vroom

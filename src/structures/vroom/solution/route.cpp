@@ -21,8 +21,7 @@ Route::Route(Id vehicle,
              const Amount& delivery,
              const Amount& pickup,
              const std::string& description,
-             Duration lead_time,
-             Duration delay)
+             const TimingViolations&& timing_violations)
   : vehicle(vehicle),
     steps(std::move(steps)),
     cost(cost),
@@ -33,8 +32,7 @@ Route::Route(Id vehicle,
     delivery(delivery),
     pickup(pickup),
     description(description),
-    lead_time(lead_time),
-    delay(delay),
+    timing_violations(timing_violations),
     distance(0) {
 }
 
