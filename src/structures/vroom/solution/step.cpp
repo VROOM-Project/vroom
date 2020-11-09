@@ -19,9 +19,7 @@ Step::Step(STEP_TYPE type, Location location, const Amount& load)
     id(0),
     service(0),
     load(load),
-    waiting_time(0),
-    lead_time(0),
-    delay(0) {
+    waiting_time(0) {
   assert(step_type == STEP_TYPE::START or step_type == STEP_TYPE::END);
 }
 
@@ -33,9 +31,7 @@ Step::Step(const Job& job, const Amount& load)
     service(job.service),
     load(load),
     description(job.description),
-    waiting_time(0),
-    lead_time(0),
-    delay(0) {
+    waiting_time(0) {
 }
 
 Step::Step(const Break& b, const Amount& load)
@@ -46,9 +42,7 @@ Step::Step(const Break& b, const Amount& load)
     service(b.service),
     load(load),
     description(b.description),
-    waiting_time(0),
-    lead_time(0),
-    delay(0) {
+    waiting_time(0) {
 }
 
 } // namespace vroom

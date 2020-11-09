@@ -12,7 +12,7 @@ All rights reserved (see LICENSE).
 
 #include "structures/vroom/amount.h"
 #include "structures/vroom/solution/computing_times.h"
-#include "structures/vroom/solution/timing_violations.h"
+#include "structures/vroom/solution/violations.h"
 
 namespace vroom {
 
@@ -29,8 +29,7 @@ struct Summary {
   Distance distance;
   ComputingTimes computing_times;
 
-  TimingViolations timing_violations;
-  std::unordered_set<VIOLATION> violations;
+  Violations violations;
 
   Summary();
 

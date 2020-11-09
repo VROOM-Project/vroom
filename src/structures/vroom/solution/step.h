@@ -11,11 +11,11 @@ All rights reserved (see LICENSE).
 */
 
 #include <string>
-#include <unordered_set>
 
 #include "structures/vroom/break.h"
 #include "structures/vroom/job.h"
 #include "structures/vroom/location.h"
+#include "structures/vroom/solution/violations.h"
 
 namespace vroom {
 
@@ -33,9 +33,7 @@ struct Step {
   Duration waiting_time;
   Distance distance;
 
-  Duration lead_time;
-  Duration delay;
-  std::unordered_set<VIOLATION> violations;
+  Violations violations;
 
   Step(STEP_TYPE type, Location location, const Amount& load);
 

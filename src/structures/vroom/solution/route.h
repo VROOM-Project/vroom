@@ -14,7 +14,7 @@ All rights reserved (see LICENSE).
 #include <vector>
 
 #include "structures/vroom/solution/step.h"
-#include "structures/vroom/solution/timing_violations.h"
+#include "structures/vroom/solution/violations.h"
 
 namespace vroom {
 
@@ -29,8 +29,7 @@ struct Route {
   const Amount delivery;
   const Amount pickup;
   const std::string description;
-  const TimingViolations timing_violations;
-  const std::unordered_set<VIOLATION> violations;
+  const Violations violations;
 
   std::string geometry;
   Distance distance;
@@ -45,9 +44,7 @@ struct Route {
         const Amount& delivery,
         const Amount& pickup,
         const std::string& description,
-        const TimingViolations&& timing_violations = TimingViolations(),
-        const std::unordered_set<VIOLATION>&& violations =
-          std::unordered_set<VIOLATION>());
+        const Violations&& violations = Violations());
 };
 
 } // namespace vroom

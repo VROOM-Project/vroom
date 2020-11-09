@@ -21,8 +21,7 @@ Route::Route(Id vehicle,
              const Amount& delivery,
              const Amount& pickup,
              const std::string& description,
-             const TimingViolations&& timing_violations,
-             const std::unordered_set<VIOLATION>&& violations)
+             const Violations&& violations)
   : vehicle(vehicle),
     steps(std::move(steps)),
     cost(cost),
@@ -33,7 +32,6 @@ Route::Route(Id vehicle,
     delivery(delivery),
     pickup(pickup),
     description(description),
-    timing_violations(std::move(timing_violations)),
     violations(std::move(violations)),
     distance(0) {
 }

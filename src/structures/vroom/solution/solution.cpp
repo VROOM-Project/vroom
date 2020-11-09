@@ -32,11 +32,7 @@ Solution::Solution(unsigned code,
     summary.priority += route.priority;
     summary.duration += route.duration;
     summary.waiting_time += route.waiting_time;
-    summary.timing_violations += route.timing_violations;
-
-    for (const auto v : route.violations) {
-      summary.violations.insert(v);
-    }
+    summary.violations += route.violations;
   }
 }
 

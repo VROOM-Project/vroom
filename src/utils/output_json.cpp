@@ -20,12 +20,14 @@ namespace vroom {
 namespace io {
 
 inline rapidjson::Value
-get_violations(const std::unordered_set<VIOLATION>& violations,
+get_violations(const Violations& violations,
                rapidjson::Document::AllocatorType& allocator) {
-  rapidjson::Value json_violations(rapidjson::kArrayType);
-  for (const auto v : violations) {
+  rapidjson::Value json_violations(rapidjson::kObjectType);
+
+  rapidjson::Value json_types(rapidjson::kArrayType);
+  for (const auto type : violations.types) {
     std::string v_str;
-    switch (v) {
+    switch (type) {
     case VIOLATION::LEAD_TIME:
       v_str = "lead_time";
       break;
@@ -40,10 +42,25 @@ get_violations(const std::unordered_set<VIOLATION>& violations,
       break;
     }
 
-    json_violations.PushBack(rapidjson::Value{}.SetString(v_str.c_str(),
-                                                          v_str.length(),
-                                                          allocator),
-                             allocator);
+    json_types.PushBack(rapidjson::Value{}.SetString(v_str.c_str(),
+                                                     v_str.length(),
+                                                     allocator),
+                        allocator);
+  }
+  json_violations.AddMember("types", json_types, allocator);
+
+  json_violations.AddMember("lead_time", violations.lead_time, allocator);
+  json_violations.AddMember("delay", violations.delay, allocator);
+
+  if (violations.start_lead_time.has_value()) {
+    json_violations.AddMember("start_lead_time",
+                              violations.start_lead_time.value(),
+                              allocator);
+
+    assert(violations.end_delay.has_value());
+    json_violations.AddMember("end_delay",
+                              violations.end_delay.value(),
+                              allocator);
   }
 
   return json_violations;
@@ -128,17 +145,6 @@ rapidjson::Value to_json(const Summary& summary,
     json_summary.AddMember("distance", summary.distance, allocator);
   }
 
-  json_summary.AddMember("start_lead_time",
-                         summary.timing_violations.start_lead_time,
-                         allocator);
-  json_summary.AddMember("lead_time",
-                         summary.timing_violations.lead_time,
-                         allocator);
-  json_summary.AddMember("delay", summary.timing_violations.delay, allocator);
-  json_summary.AddMember("end_delay",
-                         summary.timing_violations.end_delay,
-                         allocator);
-
   json_summary.AddMember("violations",
                          get_violations(summary.violations, allocator),
                          allocator);
@@ -192,17 +198,6 @@ rapidjson::Value to_json(const Route& route,
   json_route.AddMember("duration", route.duration, allocator);
   json_route.AddMember("waiting_time", route.waiting_time, allocator);
   json_route.AddMember("priority", route.priority, allocator);
-
-  json_route.AddMember("start_lead_time",
-                       route.timing_violations.start_lead_time,
-                       allocator);
-  json_route.AddMember("lead_time",
-                       route.timing_violations.lead_time,
-                       allocator);
-  json_route.AddMember("delay", route.timing_violations.delay, allocator);
-  json_route.AddMember("end_delay",
-                       route.timing_violations.end_delay,
-                       allocator);
 
   if (geometry) {
     json_route.AddMember("distance", route.distance, allocator);
@@ -294,8 +289,6 @@ rapidjson::Value to_json(const Step& s,
 
   json_step.AddMember("service", s.service, allocator);
   json_step.AddMember("waiting_time", s.waiting_time, allocator);
-  json_step.AddMember("lead_time", s.lead_time, allocator);
-  json_step.AddMember("delay", s.delay, allocator);
 
   // Should be removed at some point as step.job is deprecated.
   if (s.step_type == STEP_TYPE::JOB) {

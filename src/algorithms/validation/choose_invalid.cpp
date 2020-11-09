@@ -510,15 +510,15 @@ Route choose_invalid_route(const Input& input,
     sol_steps.back().duration = 0;
     sol_steps.back().arrival = v_start;
     if (v_start < v.tw.start) {
-      sol_steps.back().violations.insert(VIOLATION::LEAD_TIME);
+      sol_steps.back().violations.types.insert(VIOLATION::LEAD_TIME);
       violations.insert(VIOLATION::LEAD_TIME);
       Duration lt = v.tw.start - v_start;
-      sol_steps.back().lead_time = lt;
+      sol_steps.back().violations.lead_time = lt;
       lead_time += lt;
     }
 
     if (!(current_load <= v.capacity)) {
-      sol_steps.back().violations.insert(VIOLATION::LOAD);
+      sol_steps.back().violations.types.insert(VIOLATION::LOAD);
       violations.insert(VIOLATION::LOAD);
     }
   } else {
@@ -567,21 +567,21 @@ Route choose_invalid_route(const Input& input,
       // Handle violations.
       auto tw_rank = task_tw_ranks[task_rank];
       if (service_start < job.tws[tw_rank].start) {
-        current.violations.insert(VIOLATION::LEAD_TIME);
+        current.violations.types.insert(VIOLATION::LEAD_TIME);
         violations.insert(VIOLATION::LEAD_TIME);
         Duration lt = job.tws[tw_rank].start - service_start;
-        current.lead_time = lt;
+        current.violations.lead_time = lt;
         lead_time += lt;
       }
       if (job.tws[tw_rank].end < service_start) {
-        current.violations.insert(VIOLATION::DELAY);
+        current.violations.types.insert(VIOLATION::DELAY);
         violations.insert(VIOLATION::DELAY);
         Duration dl = service_start - job.tws[tw_rank].end;
-        current.delay = dl;
+        current.violations.delay = dl;
         delay += dl;
       }
       if (!(current_load <= v.capacity)) {
-        current.violations.insert(VIOLATION::LOAD);
+        current.violations.types.insert(VIOLATION::LOAD);
         violations.insert(VIOLATION::LOAD);
       }
       switch (job.type) {
@@ -590,7 +590,7 @@ Route choose_invalid_route(const Input& input,
       case JOB_TYPE::PICKUP:
         if (delivery_first_ranks.find(job_rank + 1) !=
             delivery_first_ranks.end()) {
-          current.violations.insert(VIOLATION::PRECEDENCE);
+          current.violations.types.insert(VIOLATION::PRECEDENCE);
           violations.insert(VIOLATION::PRECEDENCE);
         } else {
           expected_delivery_ranks.insert(job_rank + 1);
@@ -601,7 +601,7 @@ Route choose_invalid_route(const Input& input,
       case JOB_TYPE::DELIVERY:
         auto search = expected_delivery_ranks.find(job_rank);
         if (search == expected_delivery_ranks.end()) {
-          current.violations.insert(VIOLATION::PRECEDENCE);
+          current.violations.types.insert(VIOLATION::PRECEDENCE);
           violations.insert(VIOLATION::PRECEDENCE);
           delivery_first_ranks.insert(job_rank);
         } else {
@@ -641,21 +641,21 @@ Route choose_invalid_route(const Input& input,
       // Handle violations.
       auto tw_rank = task_tw_ranks[task_rank];
       if (service_start < b.tws[tw_rank].start) {
-        current.violations.insert(VIOLATION::LEAD_TIME);
+        current.violations.types.insert(VIOLATION::LEAD_TIME);
         violations.insert(VIOLATION::LEAD_TIME);
         Duration lt = b.tws[tw_rank].start - service_start;
-        current.lead_time = lt;
+        current.violations.lead_time = lt;
         lead_time += lt;
       }
       if (b.tws[tw_rank].end < service_start) {
-        current.violations.insert(VIOLATION::DELAY);
+        current.violations.types.insert(VIOLATION::DELAY);
         violations.insert(VIOLATION::DELAY);
         Duration dl = service_start - b.tws[tw_rank].end;
-        current.delay = dl;
+        current.violations.delay = dl;
         delay += dl;
       }
       if (!(current_load <= v.capacity)) {
-        current.violations.insert(VIOLATION::LOAD);
+        current.violations.types.insert(VIOLATION::LOAD);
         violations.insert(VIOLATION::LOAD);
       }
 
@@ -675,14 +675,14 @@ Route choose_invalid_route(const Input& input,
       sol_steps.back().arrival = v_end;
 
       if (v.tw.end < v_end) {
-        sol_steps.back().violations.insert(VIOLATION::DELAY);
+        sol_steps.back().violations.types.insert(VIOLATION::DELAY);
         violations.insert(VIOLATION::DELAY);
         Duration dl = v_end - v.tw.end;
-        sol_steps.back().delay = dl;
+        sol_steps.back().violations.delay = dl;
         delay += dl;
       }
       if (!(current_load <= v.capacity)) {
-        sol_steps.back().violations.insert(VIOLATION::LOAD);
+        sol_steps.back().violations.types.insert(VIOLATION::LOAD);
         violations.insert(VIOLATION::LOAD);
       }
       break;
@@ -695,14 +695,15 @@ Route choose_invalid_route(const Input& input,
     delay += end_delay;
   }
 
-  assert(!v.has_start() or start_lead_time == sol_steps.front().lead_time);
-  assert(!v.has_end() or end_delay == sol_steps.back().delay);
+  assert(!v.has_start() or
+         start_lead_time == sol_steps.front().violations.lead_time);
+  assert(!v.has_end() or end_delay == sol_steps.back().violations.delay);
 
   // Precedence violations for pickups without a delivery.
   for (const auto d_rank : expected_delivery_ranks) {
     auto search = delivery_to_pickup_step_rank.find(d_rank);
     assert(search != delivery_to_pickup_step_rank.end());
-    sol_steps[search->second].violations.insert(VIOLATION::PRECEDENCE);
+    sol_steps[search->second].violations.types.insert(VIOLATION::PRECEDENCE);
     violations.insert(VIOLATION::PRECEDENCE);
   }
 
@@ -716,11 +717,11 @@ Route choose_invalid_route(const Input& input,
                sum_deliveries,
                sum_pickups,
                v.description,
-               std::move(TimingViolations(start_lead_time,
-                                          lead_time,
-                                          end_delay,
-                                          delay)),
-               std::move(violations));
+               std::move(Violations(lead_time,
+                                    delay,
+                                    start_lead_time,
+                                    end_delay,
+                                    std::move(violations))));
 }
 
 } // namespace validation
