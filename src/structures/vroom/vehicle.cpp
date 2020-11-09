@@ -64,7 +64,8 @@ Vehicle::Vehicle(Id id,
                         "Unexpected start in input steps for vehicle " +
                           std::to_string(id) + ".");
       }
-      if (steps[i].type == STEP_TYPE::END and (i != steps.size() - 1)) {
+      if (steps[i].type == STEP_TYPE::END and
+          ((i != steps.size() - 1) or !has_end())) {
         throw Exception(ERROR::INPUT,
                         "Unexpected end in input steps for vehicle " +
                           std::to_string(id) + ".");
