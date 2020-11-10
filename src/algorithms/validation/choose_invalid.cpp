@@ -29,7 +29,8 @@ Route choose_invalid_route(const Input& input,
   const unsigned n = steps.size() - extra_steps;
   const unsigned first_task_rank = (v.has_start() ? 1 : 0);
 
-  constexpr double M = 10.0;
+  constexpr double M1 = 100000000.0;
+  constexpr double M2 = 100000.0;
 
   // Total number of time windows.
   unsigned K = 0;
@@ -195,8 +196,11 @@ Route choose_invalid_route(const Input& input,
   }
 
   // Set makespan in objective.
-  glp_set_obj_coef(lp, 1, -1.0);
-  glp_set_obj_coef(lp, n + 2, 1.0);
+  glp_set_obj_coef(lp, 1, -M2);
+  for (unsigned i = 2; i <= n + 1; ++i) {
+    glp_set_obj_coef(lp, i, 1.0);
+  }
+  glp_set_obj_coef(lp, n + 2, M2);
 
   // Define variables for measure of TW violation and set in
   // objective.
@@ -204,7 +208,7 @@ Route choose_invalid_route(const Input& input,
     auto name = "Y" + std::to_string(i);
     glp_set_col_name(lp, current_col, name.c_str());
     glp_set_col_bnds(lp, current_col, GLP_LO, 0.0, 0.0);
-    glp_set_obj_coef(lp, current_col, M);
+    glp_set_obj_coef(lp, current_col, M1);
     ++current_col;
   }
   assert(current_col == 2 * n + 5);

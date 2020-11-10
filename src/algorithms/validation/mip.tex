@@ -31,7 +31,7 @@ task $T_i$ that are breaks.
 \begin{quote}
   Minimize
   \begin{align}
-    M \times \sum_{i = 0}^{n + 1} Y_i + t_{n +1} - t_0 \label{obj}\tag{Obj}
+    M_1 \times \sum_{i = 0}^{n + 1} Y_i + M_2 \times (t_{n +1} - t_0) + \sum_{i = 1}^{n}t_i \label{obj}\tag{Obj}
   \end{align}
   Subject to
   \begin{align}
@@ -49,18 +49,18 @@ task $T_i$ that are breaks.
   \end{align}
 \end{quote}
 
-The optimization objective (\ref{obj}) combines the sum of time
-violations and the route makespan\footnote{Using a value $M > 1$
-  ensures no \textit{lead time} violation is added to decrease
-  makespan.}. Precedence constraints (\ref{precedence}) make sure
-service and travel times are accounted for between task start
-times. In the time violation constraints for lead time (\ref{lead})
-and delay (\ref{delay}), variable $Y_i$ is zero iff task start matches
-the expected time window. Sums (\ref{tw_sum}) ensure exactly one time
-window is picked for each task. Sums (\ref{break_duration}) ensure the
-required travel duration between any two consecutive non-break tasks
-is split across all intermediate breaks. In particular if $T_i$ and
-$T_{i + 1}$ are both non-break tasks, we have $\delta_i = d_i$.
+The optimization objective (\ref{obj}) uses values $M_1 >> M_2 >> 1$
+to combine the sum of time violations as first objective, then route
+makespan as a secondary objective, then tasks start date. Precedence
+constraints (\ref{precedence}) make sure service and travel times are
+accounted for between task start times. In the time violation
+constraints for lead time (\ref{lead}) and delay (\ref{delay}),
+variable $Y_i$ is zero iff task start matches the expected time
+window. Sums (\ref{tw_sum}) ensure exactly one time window is picked
+for each task. Sums (\ref{break_duration}) ensure the required travel
+duration between any two consecutive non-break tasks is split across
+all intermediate breaks. In particular if $T_i$ and $T_{i + 1}$ are
+both non-break tasks, we have $\delta_i = d_i$.
 
 \section{glpk matrix layout}
 
