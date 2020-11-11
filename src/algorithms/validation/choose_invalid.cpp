@@ -29,9 +29,6 @@ Route choose_invalid_route(const Input& input,
   const unsigned n = steps.size() - extra_steps;
   const unsigned first_task_rank = (v.has_start() ? 1 : 0);
 
-  constexpr double M1 = 100000000.0;
-  constexpr double M2 = 100000.0;
-
   // Total number of time windows.
   unsigned K = 0;
 
@@ -47,6 +44,10 @@ Route choose_invalid_route(const Input& input,
   // Use max value for last_index as "unset".
   std::optional<Index> last_index;
 
+  // Route indicators.
+  Duration service_sum = 0;
+  Duration duration_sum = 0;
+
   Index i = 1;
   for (const auto& step : steps) {
     switch (step.type) {
@@ -55,33 +56,44 @@ Route choose_invalid_route(const Input& input,
       last_index = v.start.value().index();
       break;
     case STEP_TYPE::JOB: {
-      K += input.jobs[step.rank].tws.size();
+      const auto& job = input.jobs[step.rank];
+      K += job.tws.size();
 
       J.push_back(i);
       B.push_back(0);
 
-      const auto job_index = input.jobs[step.rank].index();
+      service_sum += job.service;
+
       if (last_index.has_value()) {
-        durations.push_back(m[last_index.value()][job_index]);
+        const auto& current_duration = m[last_index.value()][job.index()];
+        durations.push_back(current_duration);
+        duration_sum += current_duration;
       } else {
         // Only happens for first duration in case vehicle has no
         // start.
         assert(durations.empty() and !v.has_start());
         durations.push_back(0);
       }
-      last_index = job_index;
+      last_index = job.index();
       ++i;
       break;
     }
-    case STEP_TYPE::BREAK:
-      K += v.breaks[step.rank].tws.size();
+    case STEP_TYPE::BREAK: {
+      const auto& b = v.breaks[step.rank];
+      K += b.tws.size();
 
       ++B.back();
       ++i;
+
+      service_sum += b.service;
       break;
+    }
     case STEP_TYPE::END:
       assert(v.has_end() and last_index.has_value());
-      durations.push_back(m[last_index.value()][v.end.value().index()]);
+      const auto& current_duration =
+        m[last_index.value()][v.end.value().index()];
+      durations.push_back(current_duration);
+      duration_sum += current_duration;
       break;
     }
   }
@@ -93,6 +105,12 @@ Route choose_invalid_route(const Input& input,
   const unsigned nb_delta_constraints = J.size();
   assert(B.size() == nb_delta_constraints);
   assert(durations.size() == nb_delta_constraints);
+
+  // Determine objective constants.
+  const double makespan_estimate =
+    static_cast<double>(duration_sum + service_sum);
+  const double M2 = static_cast<double>(n) * makespan_estimate;
+  const double M1 = M2 * makespan_estimate;
 
   // Create problem.
   glp_prob* lp;
@@ -195,12 +213,12 @@ Route choose_invalid_route(const Input& input,
     ++current_col;
   }
 
-  // Set makespan in objective.
-  glp_set_obj_coef(lp, 1, -M2);
+  // Set makespan and sum(t_i - t_0) in objective.
+  glp_set_obj_coef(lp, 1, -M2 - static_cast<double>(n));
+  glp_set_obj_coef(lp, n + 2, M2);
   for (unsigned i = 2; i <= n + 1; ++i) {
     glp_set_obj_coef(lp, i, 1.0);
   }
-  glp_set_obj_coef(lp, n + 2, M2);
 
   // Define variables for measure of TW violation and set in
   // objective.
