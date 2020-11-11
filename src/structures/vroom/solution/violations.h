@@ -30,7 +30,8 @@ struct Violations {
              const Duration delay,
              const Duration start_lead_time,
              const Duration end_delay,
-             const std::unordered_set<VIOLATION>&& types);
+             const std::unordered_set<VIOLATION>&& types =
+               std::unordered_set<VIOLATION>());
 
   Violations& operator+=(const Violations& rhs);
 };

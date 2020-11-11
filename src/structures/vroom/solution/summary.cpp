@@ -23,7 +23,8 @@ Summary::Summary(unsigned unassigned, unsigned amount_size)
     priority(0),
     duration(0),
     waiting_time(0),
-    distance(0) {
+    distance(0),
+    violations(0, 0, 0, 0) {
 }
 
 } // namespace vroom

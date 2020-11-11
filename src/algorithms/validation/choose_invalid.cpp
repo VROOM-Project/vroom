@@ -487,7 +487,7 @@ Route choose_invalid_route(const Input& input,
   Amount sum_deliveries(input.zero_amount());
   Duration lead_time = 0;
   Duration delay = 0;
-  std::unordered_set<VIOLATION> violations;
+  std::unordered_set<VIOLATION> v_types;
 
   // Startup load is the sum of deliveries for jobs.
   Amount current_load(input.zero_amount());
@@ -515,7 +515,7 @@ Route choose_invalid_route(const Input& input,
     sol_steps.back().arrival = v_start;
     if (v_start < v.tw.start) {
       sol_steps.back().violations.types.insert(VIOLATION::LEAD_TIME);
-      violations.insert(VIOLATION::LEAD_TIME);
+      v_types.insert(VIOLATION::LEAD_TIME);
       Duration lt = v.tw.start - v_start;
       sol_steps.back().violations.lead_time = lt;
       lead_time += lt;
@@ -523,7 +523,7 @@ Route choose_invalid_route(const Input& input,
 
     if (!(current_load <= v.capacity)) {
       sol_steps.back().violations.types.insert(VIOLATION::LOAD);
-      violations.insert(VIOLATION::LOAD);
+      v_types.insert(VIOLATION::LOAD);
     }
   } else {
     // Vehicle time window violation at startup is not reported in
@@ -572,21 +572,21 @@ Route choose_invalid_route(const Input& input,
       auto tw_rank = task_tw_ranks[task_rank];
       if (service_start < job.tws[tw_rank].start) {
         current.violations.types.insert(VIOLATION::LEAD_TIME);
-        violations.insert(VIOLATION::LEAD_TIME);
+        v_types.insert(VIOLATION::LEAD_TIME);
         Duration lt = job.tws[tw_rank].start - service_start;
         current.violations.lead_time = lt;
         lead_time += lt;
       }
       if (job.tws[tw_rank].end < service_start) {
         current.violations.types.insert(VIOLATION::DELAY);
-        violations.insert(VIOLATION::DELAY);
+        v_types.insert(VIOLATION::DELAY);
         Duration dl = service_start - job.tws[tw_rank].end;
         current.violations.delay = dl;
         delay += dl;
       }
       if (!(current_load <= v.capacity)) {
         current.violations.types.insert(VIOLATION::LOAD);
-        violations.insert(VIOLATION::LOAD);
+        v_types.insert(VIOLATION::LOAD);
       }
       switch (job.type) {
       case JOB_TYPE::SINGLE:
@@ -595,7 +595,7 @@ Route choose_invalid_route(const Input& input,
         if (delivery_first_ranks.find(job_rank + 1) !=
             delivery_first_ranks.end()) {
           current.violations.types.insert(VIOLATION::PRECEDENCE);
-          violations.insert(VIOLATION::PRECEDENCE);
+          v_types.insert(VIOLATION::PRECEDENCE);
         } else {
           expected_delivery_ranks.insert(job_rank + 1);
           delivery_to_pickup_step_rank.emplace(job_rank + 1,
@@ -606,7 +606,7 @@ Route choose_invalid_route(const Input& input,
         auto search = expected_delivery_ranks.find(job_rank);
         if (search == expected_delivery_ranks.end()) {
           current.violations.types.insert(VIOLATION::PRECEDENCE);
-          violations.insert(VIOLATION::PRECEDENCE);
+          v_types.insert(VIOLATION::PRECEDENCE);
           delivery_first_ranks.insert(job_rank);
         } else {
           expected_delivery_ranks.erase(search);
@@ -646,21 +646,21 @@ Route choose_invalid_route(const Input& input,
       auto tw_rank = task_tw_ranks[task_rank];
       if (service_start < b.tws[tw_rank].start) {
         current.violations.types.insert(VIOLATION::LEAD_TIME);
-        violations.insert(VIOLATION::LEAD_TIME);
+        v_types.insert(VIOLATION::LEAD_TIME);
         Duration lt = b.tws[tw_rank].start - service_start;
         current.violations.lead_time = lt;
         lead_time += lt;
       }
       if (b.tws[tw_rank].end < service_start) {
         current.violations.types.insert(VIOLATION::DELAY);
-        violations.insert(VIOLATION::DELAY);
+        v_types.insert(VIOLATION::DELAY);
         Duration dl = service_start - b.tws[tw_rank].end;
         current.violations.delay = dl;
         delay += dl;
       }
       if (!(current_load <= v.capacity)) {
         current.violations.types.insert(VIOLATION::LOAD);
-        violations.insert(VIOLATION::LOAD);
+        v_types.insert(VIOLATION::LOAD);
       }
 
       previous_start = service_start;
@@ -680,14 +680,14 @@ Route choose_invalid_route(const Input& input,
 
       if (v.tw.end < v_end) {
         sol_steps.back().violations.types.insert(VIOLATION::DELAY);
-        violations.insert(VIOLATION::DELAY);
+        v_types.insert(VIOLATION::DELAY);
         Duration dl = v_end - v.tw.end;
         sol_steps.back().violations.delay = dl;
         delay += dl;
       }
       if (!(current_load <= v.capacity)) {
         sol_steps.back().violations.types.insert(VIOLATION::LOAD);
-        violations.insert(VIOLATION::LOAD);
+        v_types.insert(VIOLATION::LOAD);
       }
       break;
     }
@@ -708,7 +708,7 @@ Route choose_invalid_route(const Input& input,
     auto search = delivery_to_pickup_step_rank.find(d_rank);
     assert(search != delivery_to_pickup_step_rank.end());
     sol_steps[search->second].violations.types.insert(VIOLATION::PRECEDENCE);
-    violations.insert(VIOLATION::PRECEDENCE);
+    v_types.insert(VIOLATION::PRECEDENCE);
   }
 
   return Route(v.id,
@@ -725,7 +725,7 @@ Route choose_invalid_route(const Input& input,
                                     delay,
                                     start_lead_time,
                                     end_delay,
-                                    std::move(violations))));
+                                    std::move(v_types))));
 }
 
 } // namespace validation

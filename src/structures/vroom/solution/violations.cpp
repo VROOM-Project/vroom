@@ -36,16 +36,12 @@ Violations& Violations::operator+=(const Violations& rhs) {
   this->lead_time += rhs.lead_time;
   this->delay += rhs.delay;
 
-  assert(rhs.start_lead_time.has_value() and rhs.end_delay.has_value());
-  if (this->start_lead_time.has_value()) {
+  assert(this->start_lead_time.has_value() and this->end_delay.has_value());
+  if (rhs.start_lead_time.has_value()) {
     this->start_lead_time.value() += rhs.start_lead_time.value();
-  } else {
-    this->start_lead_time = rhs.start_lead_time;
   }
-  if (this->end_delay.has_value()) {
+  if (rhs.end_delay.has_value()) {
     this->end_delay.value() += rhs.end_delay.value();
-  } else {
-    this->end_delay = rhs.end_delay;
   }
 
   for (const auto t : rhs.types) {
