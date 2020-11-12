@@ -59,7 +59,9 @@ private:
 
   void check_cost_bound() const;
 
-  void set_compatibility();
+  void set_skills_compatibility();
+  void set_extra_compatibility();
+  void set_vehicles_compatibility();
 
 public:
   std::vector<Job> jobs;

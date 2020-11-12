@@ -312,7 +312,7 @@ void Input::check_cost_bound() const {
   bound = utils::add_without_overflow(bound, end_bound);
 }
 
-void Input::set_compatibility() {
+void Input::set_skills_compatibility() {
   // Default to no restriction when no skills are provided.
   _vehicle_to_job_compatibility = std::vector<
     std::vector<unsigned char>>(vehicles.size(),
@@ -335,7 +335,9 @@ void Input::set_compatibility() {
       }
     }
   }
+}
 
+void Input::set_extra_compatibility() {
   // Derive potential extra incompatibilities : jobs or shipments with
   // amount that does not fit into vehicle or that cannot be added to
   // an empty route for vehicle based on the timing constraints (when
@@ -377,7 +379,9 @@ void Input::set_compatibility() {
       }
     }
   }
+}
 
+void Input::set_vehicles_compatibility() {
   _vehicle_to_vehicle_compatibility =
     std::vector<std::vector<bool>>(vehicles.size(),
                                    std::vector<bool>(vehicles.size(), false));
@@ -423,13 +427,15 @@ Solution Input::solve(unsigned exploration_level,
   }
 
   // Check for potential overflow in solution cost.
-  this->check_cost_bound();
+  check_cost_bound();
 
-  // Fill vehicle/job compatibility matrix.
-  this->set_compatibility();
+  // Fill vehicle/job compatibility matrices.
+  set_skills_compatibility();
+  set_extra_compatibility();
+  set_vehicles_compatibility();
 
   // Load relevant problem.
-  auto instance = this->get_problem();
+  auto instance = get_problem();
   _end_loading = std::chrono::high_resolution_clock::now();
 
   auto loading = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -566,9 +572,11 @@ Solution Input::check(unsigned nb_thread) {
     _matrix = _routing_wrapper->get_matrix(_locations);
   }
 
-  // Fill vehicle/job compatibility matrix.
-  // TODO remove unused extra compatibility checks.
-  this->set_compatibility();
+  // Check for potential overflow in solution cost.
+  check_cost_bound();
+
+  // Fill basic skills compatibility matrix.
+  set_skills_compatibility();
 
   _end_loading = std::chrono::high_resolution_clock::now();
 
