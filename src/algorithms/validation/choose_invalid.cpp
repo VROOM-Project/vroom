@@ -515,8 +515,7 @@ Route choose_invalid_route(const Input& input,
     }
   }
 
-  // TODO check for LOAD violation at route level in case there is no
-  // start.
+  bool previous_over_capacity = !(current_load <= v.capacity);
 
   // Used for precedence violations.
   std::unordered_set<Index> expected_delivery_ranks;
@@ -539,7 +538,7 @@ Route choose_invalid_route(const Input& input,
       lead_time += lt;
     }
 
-    if (!(current_load <= v.capacity)) {
+    if (previous_over_capacity) {
       sol_steps.back().violations.types.insert(VIOLATION::LOAD);
       v_types.insert(VIOLATION::LOAD);
     }
@@ -602,10 +601,13 @@ Route choose_invalid_route(const Input& input,
         current.violations.delay = dl;
         delay += dl;
       }
-      if (!(current_load <= v.capacity)) {
+      bool over_capacity = !(current_load <= v.capacity);
+      if (previous_over_capacity or over_capacity) {
         current.violations.types.insert(VIOLATION::LOAD);
         v_types.insert(VIOLATION::LOAD);
       }
+      previous_over_capacity = over_capacity;
+
       switch (job.type) {
       case JOB_TYPE::SINGLE:
         break;
@@ -676,7 +678,7 @@ Route choose_invalid_route(const Input& input,
         current.violations.delay = dl;
         delay += dl;
       }
-      if (!(current_load <= v.capacity)) {
+      if (previous_over_capacity) {
         current.violations.types.insert(VIOLATION::LOAD);
         v_types.insert(VIOLATION::LOAD);
       }
@@ -703,7 +705,7 @@ Route choose_invalid_route(const Input& input,
         sol_steps.back().violations.delay = dl;
         delay += dl;
       }
-      if (!(current_load <= v.capacity)) {
+      if (previous_over_capacity) {
         sol_steps.back().violations.types.insert(VIOLATION::LOAD);
         v_types.insert(VIOLATION::LOAD);
       }
