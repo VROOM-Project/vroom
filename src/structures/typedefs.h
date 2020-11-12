@@ -86,7 +86,7 @@ struct HeuristicParameters {
 };
 
 // Possible violations.
-enum class VIOLATION { LEAD_TIME, DELAY, LOAD, PRECEDENCE };
+enum class VIOLATION { LEAD_TIME, DELAY, LOAD, SKILLS, PRECEDENCE };
 
 } // namespace vroom
 

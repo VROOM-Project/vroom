@@ -607,7 +607,10 @@ Route choose_invalid_route(const Input& input,
         v_types.insert(VIOLATION::LOAD);
       }
       previous_over_capacity = over_capacity;
-
+      if (!input.vehicle_ok_with_job(vehicle_rank, job_rank)) {
+        current.violations.types.insert(VIOLATION::SKILLS);
+        v_types.insert(VIOLATION::SKILLS);
+      }
       switch (job.type) {
       case JOB_TYPE::SINGLE:
         break;

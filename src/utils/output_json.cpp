@@ -37,6 +37,9 @@ get_violations(const Violations& violations,
     case VIOLATION::LOAD:
       v_str = "load";
       break;
+    case VIOLATION::SKILLS:
+      v_str = "skills";
+      break;
     case VIOLATION::PRECEDENCE:
       v_str = "precedence";
       break;
