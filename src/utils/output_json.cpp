@@ -43,6 +43,9 @@ get_violations(const Violations& violations,
     case VIOLATION::PRECEDENCE:
       v_str = "precedence";
       break;
+    case VIOLATION::MISSING_BREAK:
+      v_str = "missing_break";
+      break;
     }
 
     json_types.PushBack(rapidjson::Value{}.SetString(v_str.c_str(),

@@ -7,6 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <algorithm>
 #include <numeric>
 
 #include <glpk.h>
@@ -522,6 +523,13 @@ Route choose_invalid_route(const Input& input,
   std::unordered_set<Index> delivery_first_ranks;
   std::unordered_map<Index, Index> delivery_to_pickup_step_rank;
 
+  // Used to spot missing breaks.
+  std::unordered_set<Id> break_ids;
+  std::transform(v.breaks.begin(),
+                 v.breaks.end(),
+                 std::inserter(break_ids, break_ids.end()),
+                 [](const auto& b) { return b.id; });
+
   std::vector<Step> sol_steps;
 
   assert(v.has_start() or start_travel == 0);
@@ -648,6 +656,9 @@ Route choose_invalid_route(const Input& input,
       auto break_rank = step.rank;
       const auto& b = v.breaks[break_rank];
 
+      assert(break_ids.find(b.id) != break_ids.end());
+      break_ids.erase(b.id);
+
       service += b.service;
 
       sol_steps.emplace_back(b, current_load);
@@ -732,6 +743,10 @@ Route choose_invalid_route(const Input& input,
     assert(search != delivery_to_pickup_step_rank.end());
     sol_steps[search->second].violations.types.insert(VIOLATION::PRECEDENCE);
     v_types.insert(VIOLATION::PRECEDENCE);
+  }
+
+  if (!break_ids.empty()) {
+    v_types.insert(VIOLATION::MISSING_BREAK);
   }
 
   return Route(v.id,
