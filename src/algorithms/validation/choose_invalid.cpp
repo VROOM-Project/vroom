@@ -206,13 +206,50 @@ Route choose_invalid_route(const Input& input,
   glp_add_cols(lp, nb_var);
 
   unsigned current_col = 1;
-  // Wanabee ETA.
-  for (unsigned i = 0; i <= n + 1; ++i) {
+  i = 0;
+  // Variables for time of services (t_i values).
+  if (!v.has_start()) {
+    // Ghost step not included in steps.
     auto name = "t" + std::to_string(i);
     glp_set_col_name(lp, current_col, name.c_str());
     glp_set_col_bnds(lp, current_col, GLP_LO, 0.0, 0.0);
+    ++i;
     ++current_col;
   }
+  for (const auto& step : steps) {
+    auto name = "t" + std::to_string(i);
+    glp_set_col_name(lp, current_col, name.c_str());
+
+    if (step.forced_service.at.has_value()) {
+      // Fixed t_i value.
+      double service_at = static_cast<double>(step.forced_service.at.value());
+      glp_set_col_bnds(lp, current_col, GLP_FX, service_at, service_at);
+    } else {
+      // t_i value has a lower bound, either 0 or user-defined.
+      double LB = (step.forced_service.after.has_value())
+                    ? static_cast<double>(step.forced_service.after.value())
+                    : 0.0;
+      if (step.forced_service.before.has_value()) {
+        // t_i value has a user-defined upper bound.
+        double UB = static_cast<double>(step.forced_service.before.value());
+        glp_set_col_bnds(lp, current_col, GLP_DB, LB, UB);
+      } else {
+        // No upper bound for t_i value.
+        glp_set_col_bnds(lp, current_col, GLP_LO, LB, 0.0);
+      }
+    }
+    ++i;
+    ++current_col;
+  }
+  if (!v.has_end()) {
+    // Ghost step not included in steps.
+    auto name = "t" + std::to_string(i);
+    glp_set_col_name(lp, current_col, name.c_str());
+    glp_set_col_bnds(lp, current_col, GLP_LO, 0.0, 0.0);
+    ++i;
+    ++current_col;
+  }
+  assert(current_col == n + 3);
 
   // Set makespan and sum(t_i - t_0) in objective.
   glp_set_obj_coef(lp, 1, -M2 - static_cast<double>(n));

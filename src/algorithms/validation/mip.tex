@@ -60,7 +60,8 @@ window. Sums (\ref{tw_sum}) ensure exactly one time window is picked
 for each task. Sums (\ref{break_duration}) ensure the required travel
 duration between any two consecutive non-break tasks is split across
 all intermediate breaks. In particular if $T_i$ and $T_{i + 1}$ are
-both non-break tasks, we have $\delta_i = d_i$.
+both non-break tasks, we have $\delta_i = d_i$. In practice, variables
+$t_i$ can be bounded by additional user-defined hard constraints.
 
 \section{glpk matrix layout}
 
