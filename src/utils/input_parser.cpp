@@ -288,14 +288,42 @@ inline std::vector<InputStep> get_vehicle_steps(const rapidjson::Value& v) {
     for (rapidjson::SizeType i = 0; i < v["steps"].Size(); ++i) {
       const auto& json_step = v["steps"][i];
 
+      std::optional<Duration> at;
+      if (json_step.HasMember("service_at")) {
+        if (!json_step["service_at"].IsUint()) {
+          throw Exception(ERROR::INPUT, "Invalid service_at value.");
+        }
+
+        at = json_step["service_at"].GetUint();
+      }
+      std::optional<Duration> after;
+      if (json_step.HasMember("service_after")) {
+        if (!json_step["service_after"].IsUint()) {
+          throw Exception(ERROR::INPUT, "Invalid service_after value.");
+        }
+
+        after = json_step["service_after"].GetUint();
+      }
+      std::optional<Duration> before;
+      if (json_step.HasMember("service_before")) {
+        if (!json_step["service_before"].IsUint()) {
+          throw Exception(ERROR::INPUT, "Invalid service_before value.");
+        }
+
+        before = json_step["service_before"].GetUint();
+      }
+      ForcedService forced_service(std::move(at),
+                                   std::move(after),
+                                   std::move(before));
+
       const auto type_str = get_string(json_step, "type");
 
       if (type_str == "start") {
-        steps.emplace_back(STEP_TYPE::START);
+        steps.emplace_back(STEP_TYPE::START, std::move(forced_service));
         continue;
       }
       if (type_str == "end") {
-        steps.emplace_back(STEP_TYPE::END);
+        steps.emplace_back(STEP_TYPE::END, std::move(forced_service));
         continue;
       }
 
@@ -306,13 +334,21 @@ inline std::vector<InputStep> get_vehicle_steps(const rapidjson::Value& v) {
       }
 
       if (type_str == "job") {
-        steps.emplace_back(JOB_TYPE::SINGLE, json_step["id"].GetUint64());
+        steps.emplace_back(JOB_TYPE::SINGLE,
+                           json_step["id"].GetUint64(),
+                           std::move(forced_service));
       } else if (type_str == "pickup") {
-        steps.emplace_back(JOB_TYPE::PICKUP, json_step["id"].GetUint64());
+        steps.emplace_back(JOB_TYPE::PICKUP,
+                           json_step["id"].GetUint64(),
+                           std::move(forced_service));
       } else if (type_str == "delivery") {
-        steps.emplace_back(JOB_TYPE::DELIVERY, json_step["id"].GetUint64());
+        steps.emplace_back(JOB_TYPE::DELIVERY,
+                           json_step["id"].GetUint64(),
+                           std::move(forced_service));
       } else if (type_str == "break") {
-        steps.emplace_back(STEP_TYPE::BREAK, json_step["id"].GetUint64());
+        steps.emplace_back(STEP_TYPE::BREAK,
+                           json_step["id"].GetUint64(),
+                           std::move(forced_service));
       } else {
         throw Exception(ERROR::INPUT,
                         "Invalid type in steps for vehicle " +
