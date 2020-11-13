@@ -477,6 +477,15 @@ Route choose_invalid_route(const Input& input,
   parm.presolve = GLP_ON;
   glp_intopt(lp, &parm);
 
+  auto status = glp_mip_status(lp);
+  if (status == GLP_UNDEF or status == GLP_NOFEAS) {
+    throw Exception(ERROR::INPUT,
+                    "Infeasible route for vehicle " + std::to_string(v.id) +
+                      ".");
+  }
+  // We should not get GLP_FEAS.
+  assert(status == GLP_OPT);
+
   // glp_print_mip(lp, "mip.sol");
 
   // Get output.
