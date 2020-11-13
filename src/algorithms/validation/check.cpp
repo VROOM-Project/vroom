@@ -39,9 +39,6 @@ Solution check_and_set_ETA(const Input& input) {
                                           v,
                                           current_vehicle.input_steps,
                                           unassigned_ranks));
-    for (const auto& step : current_vehicle.input_steps) {
-      unassigned_ranks.erase(step.rank);
-    }
   }
 
   // Handle unassigned jobs.
