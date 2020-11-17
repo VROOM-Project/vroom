@@ -255,7 +255,7 @@ Route choose_invalid_route(const Input& input,
   glp_set_obj_coef(lp, 1, -M2 - static_cast<double>(n));
   glp_set_obj_coef(lp, n + 2, M2);
   for (unsigned i = 2; i <= n + 1; ++i) {
-    glp_set_obj_coef(lp, i, 1.0);
+    glp_set_obj_coef(lp, i, 2.0);
   }
 
   // Define variables for measure of TW violation and set in
