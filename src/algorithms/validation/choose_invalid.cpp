@@ -475,6 +475,10 @@ Route choose_invalid_route(const Input& input,
   glp_iocp parm;
   glp_init_iocp(&parm);
   parm.presolve = GLP_ON;
+  // Adjust branching heuristic due to
+  // https://lists.gnu.org/archive/html/bug-glpk/2020-11/msg00001.html
+  parm.br_tech = GLP_BR_MFV;
+
   glp_intopt(lp, &parm);
 
   auto status = glp_mip_status(lp);
@@ -486,6 +490,7 @@ Route choose_invalid_route(const Input& input,
   // We should not get GLP_FEAS.
   assert(status == GLP_OPT);
 
+  // glp_write_lp(lp, NULL, "mip.lp");
   // glp_print_mip(lp, "mip.sol");
 
   // Get output.
