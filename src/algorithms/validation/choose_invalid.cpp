@@ -41,6 +41,11 @@ Route choose_invalid_route(const Input& input,
   std::vector<unsigned> J({0});
   std::vector<unsigned> B({0});
   std::vector<double> durations;
+  // Dummy "fixed" variable to scale timestamps in objective.
+  Duration tau = std::numeric_limits<Duration>::max();
+  if (!v.tw.is_default()) {
+    tau = std::min(tau, v.tw.start);
+  }
 
   // Use max value for last_index as "unset".
   std::optional<Index> last_index;
@@ -64,6 +69,9 @@ Route choose_invalid_route(const Input& input,
       B.push_back(0);
 
       service_sum += job.service;
+      if (!job.tws.front().is_default()) {
+        tau = std::min(tau, job.tws.front().start);
+      }
 
       if (last_index.has_value()) {
         const auto& current_duration = m[last_index.value()][job.index()];
@@ -87,6 +95,9 @@ Route choose_invalid_route(const Input& input,
       ++i;
 
       service_sum += b.service;
+      if (!b.tws.front().is_default()) {
+        tau = std::min(tau, b.tws.front().start);
+      }
       break;
     }
     case STEP_TYPE::END:
@@ -100,6 +111,11 @@ Route choose_invalid_route(const Input& input,
   }
   if (!v.has_end()) {
     durations.push_back(0);
+  }
+  if (tau == std::numeric_limits<Duration>::max()) {
+    // No real time window in problem input, planning horizon will
+    // start at 0.
+    tau = 0;
   }
   assert(i == n + 1);
 
@@ -202,7 +218,7 @@ Route choose_invalid_route(const Input& input,
   // Set variables and coefficients.
   const unsigned start_X_col = 2 * n + 4 + 1;
   const unsigned start_delta_col = start_X_col + K;
-  const unsigned nb_var = start_delta_col + n;
+  const unsigned nb_var = start_delta_col + n + 1; // including deltas and tau
   glp_add_cols(lp, nb_var);
 
   unsigned current_col = 1;
@@ -251,12 +267,13 @@ Route choose_invalid_route(const Input& input,
   }
   assert(current_col == n + 3);
 
-  // Set makespan and sum(t_i - t_0) in objective.
-  glp_set_obj_coef(lp, 1, -M2 - static_cast<double>(n));
+  // Set makespan and sum(t_i - tau) in objective.
   glp_set_obj_coef(lp, n + 2, M2);
+  glp_set_obj_coef(lp, 1, -M2);
   for (unsigned i = 2; i <= n + 1; ++i) {
-    glp_set_obj_coef(lp, i, 2.0);
+    glp_set_obj_coef(lp, i, 1.0);
   }
+  glp_set_obj_coef(lp, nb_var, -static_cast<double>(n));
 
   // Define variables for measure of TW violation and set in
   // objective.
@@ -290,7 +307,14 @@ Route choose_invalid_route(const Input& input,
     glp_set_col_bnds(lp, current_col, GLP_LO, 0.0, 0.0);
     ++current_col;
   }
-  assert(current_col == nb_var + 1);
+  assert(current_col == nb_var);
+
+  // Dummy tau variable.
+  glp_set_col_bnds(lp,
+                   current_col,
+                   GLP_FX,
+                   static_cast<double>(tau),
+                   static_cast<double>(tau));
 
   // Define non-zero elements in matrix.
   int* ia = new int[1 + nb_non_zero];

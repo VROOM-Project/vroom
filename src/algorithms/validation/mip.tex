@@ -26,12 +26,13 @@ time window is decided by binary variables $X_{ik}$
 travel duration before and after a (set of) breaks. Let $J$ be the
 subset of indices $i$ ($0\leq i \leq n$) such that $T_i$ is not a
 break. For all $i\in J$, let $B_i$ be the number of tasks following
-task $T_i$ that are breaks.
+task $T_i$ that are breaks. A lower bound for allowed start times is
+$\tau = min(a, min_{1\leq i\leq n}(a_{i1}))$.
 
 \begin{quote}
   Minimize
   \begin{align}
-    M_1 \times \sum_{i = 0}^{n + 1} Y_i + M_2 \times (t_{n +1} - t_0) + \sum_{i = 1}^{n}(2t_i - t_0) \label{obj}\tag{Obj}
+    M_1 \times \sum_{i = 0}^{n + 1} Y_i + M_2 \times (t_{n +1} - t_0) + \sum_{i = 1}^{n}(t_i - \tau) \label{obj}\tag{Obj}
   \end{align}
   Subject to
   \begin{align}
@@ -70,7 +71,7 @@ $t_i$ can be bounded by additional user-defined hard constraints.
 \begin{center}
   \rotatebox[origin=c]{90}{
     $\begin{NiceMatrix}
-      & t_0 & t_1 & \Cdots & t_n & t_{n + 1} & Y_0 & Y_1 & \Cdots & Y_n & Y_{n + 1} & X_{10} & \Cdots & X_{1K_1} & \Cdots & X_{n0} & \Cdots & X_{nK_n} & \delta_0 & & \Cdots & \delta_n\\
+      & t_0 & t_1 & \Cdots & t_n & t_{n + 1} & Y_0 & Y_1 & \Cdots & Y_n & Y_{n + 1} & X_{10} & \Cdots & X_{1K_1} & \Cdots & X_{n0} & \Cdots & X_{nK_n} & \delta_0 & & \Cdots & \delta_n & \tau\\
       P_0 & -1 & 1 & & & & & & & & & & & & & & & & -1 \\
       \Vdots & & \Ddots & \Ddots & & & & & & & & & & & & & & & & \Ddots \\
       \Vdots & & &  \Ddots & \Ddots & & & & & & & & & & & & & & & & \Ddots \\
