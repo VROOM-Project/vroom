@@ -73,16 +73,15 @@ Route choose_invalid_route(const Input& input,
         tau = std::min(tau, job.tws.front().start);
       }
 
-      if (last_index.has_value()) {
-        const auto& current_duration = m[last_index.value()][job.index()];
-        durations.push_back(current_duration);
-        duration_sum += current_duration;
-      } else {
-        // Only happens for first duration in case vehicle has no
-        // start.
-        assert(durations.empty() and !v.has_start());
-        durations.push_back(0);
-      }
+      // Only case where last_index is not set is for first duration
+      // in case vehicle has no start.
+      assert(last_index.has_value() or (durations.empty() and !v.has_start()));
+
+      const auto current_duration =
+        (last_index.has_value()) ? m[last_index.value()][job.index()] : 0;
+      durations.push_back(current_duration);
+      duration_sum += current_duration;
+
       last_index = job.index();
       ++i;
       break;
@@ -215,12 +214,26 @@ Route choose_invalid_route(const Input& input,
   }
   assert(current_row == nb_constraints + 1);
 
-  // Set variables and coefficients.
+  // Column indices.
+  const unsigned start_Y_col = n + 3;
   const unsigned start_X_col = 2 * n + 4 + 1;
   const unsigned start_delta_col = start_X_col + K;
   const unsigned nb_var = start_delta_col + n + 1; // including deltas and tau
-  glp_add_cols(lp, nb_var);
 
+  // Set objective.
+  glp_add_cols(lp, nb_var);
+  for (unsigned i = 0; i <= n + 1; ++i) {
+    glp_set_obj_coef(lp, start_Y_col + i, M1);
+  }
+  glp_set_obj_coef(lp, n + 2, M2);
+  glp_set_obj_coef(lp, 1, -M2);
+
+  for (unsigned i = 2; i <= n + 1; ++i) {
+    glp_set_obj_coef(lp, i, 1.0);
+  }
+  glp_set_obj_coef(lp, nb_var, -static_cast<double>(n));
+
+  // Set variables and coefficients.
   unsigned current_col = 1;
   i = 0;
   // Variables for time of services (t_i values).
@@ -265,23 +278,13 @@ Route choose_invalid_route(const Input& input,
     ++i;
     ++current_col;
   }
-  assert(current_col == n + 3);
+  assert(current_col == start_Y_col);
 
-  // Set makespan and sum(t_i - tau) in objective.
-  glp_set_obj_coef(lp, n + 2, M2);
-  glp_set_obj_coef(lp, 1, -M2);
-  for (unsigned i = 2; i <= n + 1; ++i) {
-    glp_set_obj_coef(lp, i, 1.0);
-  }
-  glp_set_obj_coef(lp, nb_var, -static_cast<double>(n));
-
-  // Define variables for measure of TW violation and set in
-  // objective.
+  // Define variables for measure of TW violation.
   for (unsigned i = 0; i <= n + 1; ++i) {
     auto name = "Y" + std::to_string(i);
     glp_set_col_name(lp, current_col, name.c_str());
     glp_set_col_bnds(lp, current_col, GLP_LO, 0.0, 0.0);
-    glp_set_obj_coef(lp, current_col, M1);
     ++current_col;
   }
   assert(current_col == 2 * n + 5);
@@ -310,6 +313,7 @@ Route choose_invalid_route(const Input& input,
   assert(current_col == nb_var);
 
   // Dummy tau variable.
+  glp_set_col_name(lp, current_col, "tau");
   glp_set_col_bnds(lp,
                    current_col,
                    GLP_FX,
@@ -352,9 +356,9 @@ Route choose_invalid_route(const Input& input,
   ar[r] = 1;
   ++r;
 
-  // a[constraint_rank, n + 3] = 1
+  // a[constraint_rank, start_Y_col] = 1
   ia[r] = constraint_rank;
-  ja[r] = n + 3;
+  ja[r] = start_Y_col;
   ar[r] = 1;
   ++r;
   ++constraint_rank;
@@ -467,9 +471,9 @@ Route choose_invalid_route(const Input& input,
   assert(current_X_rank == start_delta_col);
   assert(constraint_rank == 4 * n + 4);
 
-  // Delta_i constraints.
+  // Delta_i constraints. Going through all delta variables exactly
+  // once using B.
   unsigned current_delta_rank = start_delta_col;
-
   for (const auto Bi : B) {
     const auto row_limit = current_delta_rank + 1 + Bi;
 
@@ -514,13 +518,13 @@ Route choose_invalid_route(const Input& input,
   // We should not get GLP_FEAS.
   assert(status == GLP_OPT);
 
-  // glp_write_lp(lp, NULL, "mip.lp");
-  // glp_print_mip(lp, "mip.sol");
+  // glp_write_lp(lp, NULL, ("mip_" + std::to_string(v.id) + ".lp").c_str());
+  // glp_print_mip(lp, ("mip_" + std::to_string(v.id) + ".sol").c_str());
 
   // Get output.
   auto v_start = glp_mip_col_val(lp, 1);
   auto v_end = glp_mip_col_val(lp, n + 2);
-  auto start_lead_time = glp_mip_col_val(lp, n + 3);
+  auto start_lead_time = glp_mip_col_val(lp, start_Y_col);
   auto end_delay = glp_mip_col_val(lp, 2 * n + 4);
   auto start_travel = glp_mip_col_val(lp, start_delta_col);
 
