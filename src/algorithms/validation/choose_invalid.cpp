@@ -41,10 +41,13 @@ Route choose_invalid_route(const Input& input,
   std::vector<unsigned> J({0});
   std::vector<unsigned> B({0});
   std::vector<double> durations;
-  // Dummy "fixed" variable to scale timestamps in objective.
-  Duration tau = std::numeric_limits<Duration>::max();
+  // Lower bound for timestamps in input in order to scale the MIP
+  // matrix values.
+  Duration horizon_start = std::numeric_limits<Duration>::max();
+  Duration horizon_end = 0;
   if (!v.tw.is_default()) {
-    tau = std::min(tau, v.tw.start);
+    horizon_start = std::min(horizon_start, v.tw.start);
+    horizon_end = std::max(horizon_end, v.tw.end);
   }
 
   // Use max value for last_index as "unset".
@@ -53,9 +56,25 @@ Route choose_invalid_route(const Input& input,
   // Route indicators.
   Duration service_sum = 0;
   Duration duration_sum = 0;
+  unsigned default_job_tw = 0;
 
   Index i = 1;
   for (const auto& step : steps) {
+    if (step.forced_service.at.has_value()) {
+      horizon_start = std::min(horizon_start, step.forced_service.at.value());
+      horizon_end = std::max(horizon_end, step.forced_service.at.value());
+    }
+    if (step.forced_service.after.has_value()) {
+      horizon_start =
+        std::min(horizon_start, step.forced_service.after.value());
+      horizon_end = std::max(horizon_end, step.forced_service.after.value());
+    }
+    if (step.forced_service.before.has_value()) {
+      horizon_start =
+        std::min(horizon_start, step.forced_service.before.value());
+      horizon_end = std::max(horizon_end, step.forced_service.before.value());
+    }
+
     switch (step.type) {
     case STEP_TYPE::START:
       assert(v.has_start());
@@ -69,8 +88,11 @@ Route choose_invalid_route(const Input& input,
       B.push_back(0);
 
       service_sum += job.service;
-      if (!job.tws.front().is_default()) {
-        tau = std::min(tau, job.tws.front().start);
+      if (job.tws.front().is_default()) {
+        ++default_job_tw;
+      } else {
+        horizon_start = std::min(horizon_start, job.tws.front().start);
+        horizon_end = std::max(horizon_end, job.tws.back().end);
       }
 
       // Only case where last_index is not set is for first duration
@@ -95,7 +117,8 @@ Route choose_invalid_route(const Input& input,
 
       service_sum += b.service;
       if (!b.tws.front().is_default()) {
-        tau = std::min(tau, b.tws.front().start);
+        horizon_start = std::min(horizon_start, b.tws.front().start);
+        horizon_end = std::max(horizon_end, b.tws.back().end);
       }
       break;
     }
@@ -108,37 +131,62 @@ Route choose_invalid_route(const Input& input,
       break;
     }
   }
+  assert(i == n + 1);
+
   if (!v.has_end()) {
     durations.push_back(0);
   }
-  if (tau == std::numeric_limits<Duration>::max()) {
+
+  const double makespan_estimate =
+    static_cast<double>(duration_sum + service_sum);
+
+  if (horizon_start == std::numeric_limits<Duration>::max()) {
     // No real time window in problem input, planning horizon will
     // start at 0.
-    tau = 0;
+    assert(horizon_end == 0);
+    horizon_start = 0;
+    horizon_end =
+      std::max(horizon_end, 10 * static_cast<Duration>(makespan_estimate));
+  } else {
+    // Advance "absolute" planning horizon start so as to allow lead
+    // time at startup.
+    if (5 * makespan_estimate < horizon_start) {
+      horizon_start -= 5 * makespan_estimate;
+    } else {
+      horizon_start = 0;
+    }
   }
-  assert(i == n + 1);
 
   const unsigned nb_delta_constraints = J.size();
   assert(B.size() == nb_delta_constraints);
   assert(durations.size() == nb_delta_constraints);
 
-  // Determine objective constants.
-  const double makespan_estimate =
-    static_cast<double>(duration_sum + service_sum);
-  const double M2 = static_cast<double>(n) * makespan_estimate;
-  const double M1 = M2 * makespan_estimate;
-
-  // Create problem.
+  // 1. create problem.
   glp_prob* lp;
   lp = glp_create_prob();
   glp_set_prob_name(lp, "choose_ETA");
   glp_set_obj_dir(lp, GLP_MIN);
 
-  // Define constraints and remember number of non-zero values in the
-  // matrix.
-  const unsigned nb_constraints = 4 * n + 3 + nb_delta_constraints;
-  const unsigned nb_non_zero = 2 * (3 * n + 3) + 3 * K + 2 * n + 2;
+  // Constants and column indices.
+  const unsigned nb_constraints = 4 * n + 3 + nb_delta_constraints + 1;
+  const unsigned nb_non_zero =
+    2 * (3 * n + 3) + 3 * K + 2 * n + 2 - default_job_tw + 2;
+  const unsigned start_Y_col = n + 3;
+  const unsigned start_X_col = 2 * n + 4 + 1;
+  const unsigned start_delta_col = start_X_col + K;
+  const unsigned nb_var = start_delta_col + n;
 
+  // Determine objective constants and set objective.
+  const double M = makespan_estimate;
+
+  glp_add_cols(lp, nb_var);
+  for (unsigned i = 0; i <= n + 1; ++i) {
+    glp_set_obj_coef(lp, start_Y_col + i, M);
+  }
+  glp_set_obj_coef(lp, n + 2, 1);
+  glp_set_obj_coef(lp, 1, -1);
+
+  // 2. handle constraints.
   glp_add_rows(lp, nb_constraints);
 
   unsigned current_row = 1;
@@ -162,13 +210,12 @@ Route choose_invalid_route(const Input& input,
     glp_set_row_bnds(lp, current_row, GLP_LO, service, 0.0);
     ++current_row;
   }
-
   assert(current_row == n + 2);
 
   // Vehicle TW start violation constraint.
-  double lb = v.tw.start;
   glp_set_row_name(lp, current_row, "L0");
-  glp_set_row_bnds(lp, current_row, GLP_LO, lb, 0.0);
+  const double start_LB = v.tw.is_default() ? 0 : v.tw.start - horizon_start;
+  glp_set_row_bnds(lp, current_row, GLP_LO, start_LB, 0.0);
   ++current_row;
 
   // Lead time ("earliest violation") constraints.
@@ -191,7 +238,8 @@ Route choose_invalid_route(const Input& input,
   // Vehicle TW end violation constraint.
   auto name = "D" + std::to_string(n + 1);
   glp_set_row_name(lp, current_row, name.c_str());
-  glp_set_row_bnds(lp, current_row, GLP_UP, 0.0, v.tw.end);
+  // Using v.tw.end is fine too for a default time window.
+  glp_set_row_bnds(lp, current_row, GLP_UP, 0.0, v.tw.end - horizon_start);
   ++current_row;
 
   assert(current_row == 3 * n + 4);
@@ -212,28 +260,14 @@ Route choose_invalid_route(const Input& input,
     glp_set_row_bnds(lp, current_row, GLP_FX, durations[r], durations[r]);
     ++current_row;
   }
-  assert(current_row == nb_constraints + 1);
+  assert(current_row == nb_constraints);
 
-  // Column indices.
-  const unsigned start_Y_col = n + 3;
-  const unsigned start_X_col = 2 * n + 4 + 1;
-  const unsigned start_delta_col = start_X_col + K;
-  const unsigned nb_var = start_delta_col + n + 1; // including deltas and tau
+  // Makespan dummy constraint (used for second solving phase).
+  name = "Makespan";
+  glp_set_row_name(lp, current_row, name.c_str());
+  glp_set_row_bnds(lp, current_row, GLP_LO, 0, 0);
 
-  // Set objective.
-  glp_add_cols(lp, nb_var);
-  for (unsigned i = 0; i <= n + 1; ++i) {
-    glp_set_obj_coef(lp, start_Y_col + i, M1);
-  }
-  glp_set_obj_coef(lp, n + 2, M2);
-  glp_set_obj_coef(lp, 1, -M2);
-
-  for (unsigned i = 2; i <= n + 1; ++i) {
-    glp_set_obj_coef(lp, i, 1.0);
-  }
-  glp_set_obj_coef(lp, nb_var, -static_cast<double>(n));
-
-  // Set variables and coefficients.
+  // 3. set variables and coefficients.
   unsigned current_col = 1;
   i = 0;
   // Variables for time of services (t_i values).
@@ -251,16 +285,19 @@ Route choose_invalid_route(const Input& input,
 
     if (step.forced_service.at.has_value()) {
       // Fixed t_i value.
-      double service_at = static_cast<double>(step.forced_service.at.value());
+      double service_at =
+        static_cast<double>(step.forced_service.at.value() - horizon_start);
       glp_set_col_bnds(lp, current_col, GLP_FX, service_at, service_at);
     } else {
       // t_i value has a lower bound, either 0 or user-defined.
       double LB = (step.forced_service.after.has_value())
-                    ? static_cast<double>(step.forced_service.after.value())
+                    ? static_cast<double>(step.forced_service.after.value() -
+                                          horizon_start)
                     : 0.0;
       if (step.forced_service.before.has_value()) {
         // t_i value has a user-defined upper bound.
-        double UB = static_cast<double>(step.forced_service.before.value());
+        double UB = static_cast<double>(step.forced_service.before.value() -
+                                        horizon_start);
         glp_set_col_bnds(lp, current_col, GLP_DB, LB, UB);
       } else {
         // No upper bound for t_i value.
@@ -310,15 +347,7 @@ Route choose_invalid_route(const Input& input,
     glp_set_col_bnds(lp, current_col, GLP_LO, 0.0, 0.0);
     ++current_col;
   }
-  assert(current_col == nb_var);
-
-  // Dummy tau variable.
-  glp_set_col_name(lp, current_col, "tau");
-  glp_set_col_bnds(lp,
-                   current_col,
-                   GLP_FX,
-                   static_cast<double>(tau),
-                   static_cast<double>(tau));
+  assert(current_col == nb_var + 1);
 
   // Define non-zero elements in matrix.
   int* ia = new int[1 + nb_non_zero];
@@ -383,15 +412,21 @@ Route choose_invalid_route(const Input& input,
     const auto& step = steps[i + first_task_rank];
     const auto& tws = (step.type == STEP_TYPE::JOB) ? input.jobs[step.rank].tws
                                                     : v.breaks[step.rank].tws;
-    for (const auto& tw : tws) {
-      // a[constraint_rank, current_X_rank] = - earliest_date for k-th
-      // TW of task.
-      ia[r] = constraint_rank;
-      ja[r] = current_X_rank;
-      ar[r] = -static_cast<double>(tw.start);
-      ++r;
-
+    if (step.type == STEP_TYPE::JOB and tws.front().is_default()) {
+      // Not setting a value in this case means the constraint will
+      // always be met with matching Y set to 0.
       ++current_X_rank;
+    } else {
+      for (const auto& tw : tws) {
+        // a[constraint_rank, current_X_rank] = - earliest_date for k-th
+        // TW of task.
+        ia[r] = constraint_rank;
+        ja[r] = current_X_rank;
+        ar[r] = -static_cast<double>(tw.start - horizon_start);
+        ++r;
+
+        ++current_X_rank;
+      }
     }
 
     ++constraint_rank;
@@ -418,15 +453,26 @@ Route choose_invalid_route(const Input& input,
     const auto& step = steps[i + first_task_rank];
     const auto& tws = (step.type == STEP_TYPE::JOB) ? input.jobs[step.rank].tws
                                                     : v.breaks[step.rank].tws;
-    for (const auto& tw : tws) {
-      // a[constraint_rank, current_X_rank] = - latest_date for k-th
-      // TW of task.
+    if (step.type == STEP_TYPE::JOB and tws.front().is_default()) {
+      // Set a value that makes sure this constraint is automatically
+      // met with matching Y value set to 0.
       ia[r] = constraint_rank;
       ja[r] = current_X_rank;
-      ar[r] = -static_cast<double>(tw.end);
+      ar[r] = -static_cast<double>(horizon_end);
       ++r;
 
       ++current_X_rank;
+    } else {
+      for (const auto& tw : tws) {
+        // a[constraint_rank, current_X_rank] = - latest_date for k-th
+        // TW of task.
+        ia[r] = constraint_rank;
+        ja[r] = current_X_rank;
+        ar[r] = -static_cast<double>(tw.end - horizon_start);
+        ++r;
+
+        ++current_X_rank;
+      }
     }
 
     ++constraint_rank;
@@ -488,7 +534,19 @@ Route choose_invalid_route(const Input& input,
     ++constraint_rank;
   }
   assert(current_delta_rank = nb_var + 1);
-  assert(constraint_rank == nb_constraints + 1);
+  assert(constraint_rank == nb_constraints);
+
+  // Makespan coefficients
+  // a[constraint_rank, 1] = -1
+  ia[r] = constraint_rank;
+  ja[r] = 1;
+  ar[r] = -1;
+  ++r;
+  // a[constraint_rank, n + 2] = 1
+  ia[r] = constraint_rank;
+  ja[r] = n + 2;
+  ar[r] = 1;
+  ++r;
 
   assert(r == nb_non_zero + 1);
 
@@ -498,7 +556,7 @@ Route choose_invalid_route(const Input& input,
   delete[] ja;
   delete[] ar;
 
-  // Solve.
+  // 4. Solve for violations and makespan.
   glp_term_out(GLP_OFF);
   glp_iocp parm;
   glp_init_iocp(&parm);
@@ -518,20 +576,58 @@ Route choose_invalid_route(const Input& input,
   // We should not get GLP_FEAS.
   assert(status == GLP_OPT);
 
-  // glp_write_lp(lp, NULL, ("mip_" + std::to_string(v.id) + ".lp").c_str());
-  // glp_print_mip(lp, ("mip_" + std::to_string(v.id) + ".sol").c_str());
+  // const auto v_str = std::to_string(v.id);
+  // glp_write_lp(lp, NULL, ("mip_1_v_" + v_str + ".lp").c_str());
+  // glp_print_mip(lp, ("mip_1_v_" + v_str + ".sol").c_str());
+
+  // 5. Solve for earliest start dates.
+  // Adjust objective.
+  for (unsigned i = 0; i <= n + 1; ++i) {
+    glp_set_obj_coef(lp, start_Y_col + i, 0);
+  }
+  glp_set_obj_coef(lp, n + 2, 0);
+  glp_set_obj_coef(lp, 1, 0);
+
+  for (unsigned i = 2; i <= n + 1; ++i) {
+    glp_set_obj_coef(lp, i, 1.0);
+  }
+
+  // Pin Y_i values.
+  for (unsigned i = 0; i <= n + 1; ++i) {
+    const auto Y_i = glp_mip_col_val(lp, start_Y_col + i);
+    glp_set_col_bnds(lp, start_Y_col + i, GLP_FX, Y_i, Y_i);
+  }
+
+  // Add constraint to fix makespan.
+  const auto best_makespan =
+    glp_mip_col_val(lp, n + 2) - glp_mip_col_val(lp, 1);
+  glp_set_row_bnds(lp, nb_constraints, GLP_FX, best_makespan, best_makespan);
+
+  glp_intopt(lp, &parm);
+
+  // glp_write_lp(lp, NULL, ("mip_2_v_" + v_str + ".lp").c_str());
+  // glp_print_mip(lp, ("mip_2_v_" + v_str + ".sol").c_str());
+
+  status = glp_mip_status(lp);
+  if (status == GLP_UNDEF or status == GLP_NOFEAS) {
+    throw Exception(ERROR::INPUT,
+                    "Infeasible route for vehicle " + std::to_string(v.id) +
+                      ".");
+  }
+  // We should not get GLP_FEAS.
+  assert(status == GLP_OPT);
 
   // Get output.
-  auto v_start = glp_mip_col_val(lp, 1);
-  auto v_end = glp_mip_col_val(lp, n + 2);
-  auto start_lead_time = glp_mip_col_val(lp, start_Y_col);
-  auto end_delay = glp_mip_col_val(lp, 2 * n + 4);
-  auto start_travel = glp_mip_col_val(lp, start_delta_col);
+  const auto v_start = horizon_start + glp_mip_col_val(lp, 1);
+  const auto v_end = horizon_start + glp_mip_col_val(lp, n + 2);
+  const auto start_lead_time = glp_mip_col_val(lp, start_Y_col);
+  const auto end_delay = glp_mip_col_val(lp, 2 * n + 4);
+  const auto start_travel = glp_mip_col_val(lp, start_delta_col);
 
   std::vector<Duration> task_ETA;
   std::vector<Duration> task_travels;
   for (unsigned i = 0; i < n; ++i) {
-    task_ETA.push_back(glp_mip_col_val(lp, i + 2));
+    task_ETA.push_back(horizon_start + glp_mip_col_val(lp, i + 2));
     task_travels.push_back(glp_mip_col_val(lp, start_delta_col + 1 + i));
   }
 
