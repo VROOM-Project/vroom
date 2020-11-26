@@ -168,20 +168,19 @@ Route choose_invalid_route(const Input& input,
   glp_set_obj_dir(lp, GLP_MIN);
 
   // Constants and column indices.
-  const unsigned nb_constraints = 4 * n + 3 + nb_delta_constraints + 1;
+  const unsigned nb_constraints = 4 * n + 3 + nb_delta_constraints + 2;
   const unsigned nb_non_zero =
-    2 * (3 * n + 3) + 3 * K + 2 * n + 2 - default_job_tw + 2;
+    2 * (3 * n + 3) + 3 * K + 2 * n + 2 - default_job_tw + 2 + n + 2;
   const unsigned start_Y_col = n + 3;
   const unsigned start_X_col = 2 * n + 4 + 1;
   const unsigned start_delta_col = start_X_col + K;
   const unsigned nb_var = start_delta_col + n;
 
-  // Determine objective constants and set objective.
-  const double M = makespan_estimate;
-
+  // Set objective for first optimization round (violations and
+  // makespan).
   glp_add_cols(lp, nb_var);
   for (unsigned i = 0; i <= n + 1; ++i) {
-    glp_set_obj_coef(lp, start_Y_col + i, M);
+    glp_set_obj_coef(lp, start_Y_col + i, makespan_estimate);
   }
   glp_set_obj_coef(lp, n + 2, 1);
   glp_set_obj_coef(lp, 1, -1);
@@ -260,10 +259,17 @@ Route choose_invalid_route(const Input& input,
     glp_set_row_bnds(lp, current_row, GLP_FX, durations[r], durations[r]);
     ++current_row;
   }
+
+  // Makespan and \sum Y_i dummy constraints (used for second solving
+  // phase).
+  name = "Makespan";
+  glp_set_row_name(lp, current_row, name.c_str());
+  glp_set_row_bnds(lp, current_row, GLP_LO, 0, 0);
+
+  ++current_row;
   assert(current_row == nb_constraints);
 
-  // Makespan dummy constraint (used for second solving phase).
-  name = "Makespan";
+  name = "Sigma_Y";
   glp_set_row_name(lp, current_row, name.c_str());
   glp_set_row_bnds(lp, current_row, GLP_LO, 0, 0);
 
@@ -534,7 +540,6 @@ Route choose_invalid_route(const Input& input,
     ++constraint_rank;
   }
   assert(current_delta_rank = nb_var + 1);
-  assert(constraint_rank == nb_constraints);
 
   // Makespan coefficients
   // a[constraint_rank, 1] = -1
@@ -548,6 +553,17 @@ Route choose_invalid_route(const Input& input,
   ar[r] = 1;
   ++r;
 
+  ++constraint_rank;
+  assert(constraint_rank == nb_constraints);
+
+  // \sum Y_i
+  for (unsigned i = start_Y_col; i < start_X_col; ++i) {
+    // a[constraint_rank, i] = 1
+    ia[r] = constraint_rank;
+    ja[r] = i;
+    ar[r] = 1;
+    ++r;
+  }
   assert(r == nb_non_zero + 1);
 
   glp_load_matrix(lp, nb_non_zero, ia, ja, ar);
@@ -582,26 +598,43 @@ Route choose_invalid_route(const Input& input,
 
   // 5. Solve for earliest start dates.
   // Adjust objective.
+  Duration delta_sum_majorant = 0;
+  current_delta_rank = start_delta_col;
+  for (unsigned i = 0; i < B.size(); ++i) {
+    for (unsigned k = current_delta_rank + 1; k < current_delta_rank + 1 + B[i];
+         ++k) {
+      glp_set_obj_coef(lp, k, k - current_delta_rank);
+    }
+    current_delta_rank += (1 + B[i]);
+    delta_sum_majorant += (B[i] * durations[i]);
+  }
+  assert(current_delta_rank = nb_var + 1);
+
   for (unsigned i = 0; i <= n + 1; ++i) {
     glp_set_obj_coef(lp, start_Y_col + i, 0);
   }
   glp_set_obj_coef(lp, n + 2, 0);
   glp_set_obj_coef(lp, 1, 0);
 
+  const auto M = (delta_sum_majorant == 0) ? 1 : delta_sum_majorant;
   for (unsigned i = 2; i <= n + 1; ++i) {
-    glp_set_obj_coef(lp, i, 1.0);
-  }
-
-  // Pin Y_i values.
-  for (unsigned i = 0; i <= n + 1; ++i) {
-    const auto Y_i = glp_mip_col_val(lp, start_Y_col + i);
-    glp_set_col_bnds(lp, start_Y_col + i, GLP_FX, Y_i, Y_i);
+    glp_set_obj_coef(lp, i, M);
   }
 
   // Add constraint to fix makespan.
   const auto best_makespan =
     glp_mip_col_val(lp, n + 2) - glp_mip_col_val(lp, 1);
-  glp_set_row_bnds(lp, nb_constraints, GLP_FX, best_makespan, best_makespan);
+  glp_set_row_bnds(lp,
+                   nb_constraints - 1,
+                   GLP_FX,
+                   best_makespan,
+                   best_makespan);
+  // Pin Y_i sum.
+  double sum_y_i = 0;
+  for (unsigned i = start_Y_col; i < start_X_col; ++i) {
+    sum_y_i += glp_mip_col_val(lp, i);
+  }
+  glp_set_row_bnds(lp, nb_constraints, GLP_FX, sum_y_i, sum_y_i);
 
   glp_intopt(lp, &parm);
 
@@ -618,11 +651,11 @@ Route choose_invalid_route(const Input& input,
   assert(status == GLP_OPT);
 
   // Get output.
-  const auto v_start = horizon_start + glp_mip_col_val(lp, 1);
-  const auto v_end = horizon_start + glp_mip_col_val(lp, n + 2);
-  const auto start_lead_time = glp_mip_col_val(lp, start_Y_col);
-  const auto end_delay = glp_mip_col_val(lp, 2 * n + 4);
-  const auto start_travel = glp_mip_col_val(lp, start_delta_col);
+  const Duration v_start = horizon_start + glp_mip_col_val(lp, 1);
+  const Duration v_end = horizon_start + glp_mip_col_val(lp, n + 2);
+  const Duration start_lead_time = glp_mip_col_val(lp, start_Y_col);
+  const Duration end_delay = glp_mip_col_val(lp, 2 * n + 4);
+  const Duration start_travel = glp_mip_col_val(lp, start_delta_col);
 
   std::vector<Duration> task_ETA;
   std::vector<Duration> task_travels;
