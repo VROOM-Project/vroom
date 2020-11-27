@@ -137,24 +137,27 @@ Route choose_invalid_route(const Input& input,
     durations.push_back(0);
   }
 
-  const double makespan_estimate =
-    static_cast<double>(duration_sum + service_sum);
+  auto makespan_estimate = duration_sum + service_sum;
 
   if (horizon_start == std::numeric_limits<Duration>::max()) {
     // No real time window in problem input, planning horizon will
     // start at 0.
     assert(horizon_end == 0);
     horizon_start = 0;
-    horizon_end =
-      std::max(horizon_end, 10 * static_cast<Duration>(makespan_estimate));
+    horizon_end = 10 * makespan_estimate;
   } else {
+    if (makespan_estimate == 0) {
+      makespan_estimate = horizon_end - horizon_start;
+    }
     // Advance "absolute" planning horizon start so as to allow lead
     // time at startup.
-    if (5 * makespan_estimate < horizon_start) {
-      horizon_start -= 5 * makespan_estimate;
+    if (2 * makespan_estimate < horizon_start) {
+      horizon_start -= 2 * makespan_estimate;
     } else {
       horizon_start = 0;
     }
+    // Push "absolute" planning horizon end.
+    horizon_end += 2 * makespan_estimate;
   }
 
   const unsigned nb_delta_constraints = J.size();
