@@ -151,13 +151,13 @@ Route choose_invalid_route(const Input& input,
     }
     // Advance "absolute" planning horizon start so as to allow lead
     // time at startup.
-    if (2 * makespan_estimate < horizon_start) {
-      horizon_start -= 2 * makespan_estimate;
+    if (makespan_estimate < horizon_start) {
+      horizon_start -= makespan_estimate;
     } else {
       horizon_start = 0;
     }
     // Push "absolute" planning horizon end.
-    horizon_end += 2 * makespan_estimate;
+    horizon_end += makespan_estimate;
   }
 
   const unsigned nb_delta_constraints = J.size();
