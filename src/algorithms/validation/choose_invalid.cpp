@@ -795,8 +795,8 @@ Route choose_invalid_route(const Input& input,
       duration += previous_travel;
       current.duration = duration;
 
-      auto arrival = previous_start + previous_service + previous_travel;
-      auto service_start = task_ETA[task_rank];
+      const auto arrival = previous_start + previous_service + previous_travel;
+      const auto service_start = task_ETA[task_rank];
       assert(arrival <= service_start);
 
       current.arrival = arrival;
@@ -878,8 +878,8 @@ Route choose_invalid_route(const Input& input,
       duration += previous_travel;
       current.duration = duration;
 
-      auto arrival = previous_start + previous_service + previous_travel;
-      auto service_start = task_ETA[task_rank];
+      const auto arrival = previous_start + previous_service + previous_travel;
+      const auto service_start = task_ETA[task_rank];
       assert(arrival <= service_start);
 
       current.arrival = arrival;
@@ -917,11 +917,15 @@ Route choose_invalid_route(const Input& input,
     case STEP_TYPE::END:
       duration += previous_travel;
 
-      assert(previous_start + previous_service + previous_travel == v_end);
+      const auto arrival = previous_start + previous_service + previous_travel;
+      assert(arrival <= v_end);
 
       sol_steps.emplace_back(STEP_TYPE::END, v.end.value(), current_load);
       sol_steps.back().duration = duration;
-      sol_steps.back().arrival = v_end;
+      sol_steps.back().arrival = arrival;
+      Duration wt = v_end - arrival;
+      sol_steps.back().waiting_time = wt;
+      forward_wt += wt;
 
       if (v.tw.end < v_end) {
         sol_steps.back().violations.types.insert(VIOLATION::DELAY);
