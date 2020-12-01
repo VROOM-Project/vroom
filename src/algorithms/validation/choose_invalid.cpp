@@ -38,11 +38,11 @@ Route choose_invalid_route(const Input& input,
   // Total number of time windows.
   unsigned K = 0;
 
-  // For 0 <= i <= n, if i is in J (i.e. T_i is a non-break task),
-  // then B[i] is the number of tasks following T_i that are breaks,
-  // and durations[i] is the travel duration from task T_i to the next
-  // non-break task. Note: when vehicle has no start, T_0 is a "ghost"
-  // step.
+  // For 0 <= i <= n, if i is in J at rank r (i.e. T_i is a non-break
+  // task), then B[r] is the number of tasks following T_i that are
+  // breaks, and durations[r] is the travel duration from task T_i to
+  // the next non-break task. Note: when vehicle has no start, T_0 is
+  // a "ghost" step.
   std::vector<unsigned> J({0});
   std::vector<unsigned> B({0});
   std::vector<double> durations;
@@ -154,11 +154,16 @@ Route choose_invalid_route(const Input& input,
   // Retrieve lower and upper bounds for t_i values.
   std::vector<Duration> t_i_LB;
   std::vector<Duration> t_i_UB;
+  Duration previous_LB = horizon_start;
+  Duration previous_service = 0;
+  Duration previous_travel = durations.front();
   if (!v.has_start()) {
     t_i_LB.push_back(horizon_start);
     t_i_UB.push_back(horizon_end);
   }
+  Index rank_in_J = 1;
   for (const auto& step : steps) {
+    // Derive basic bounds from user input.
     Duration LB = horizon_start;
     Duration UB = horizon_end;
     if (step.forced_service.at.has_value()) {
@@ -180,13 +185,38 @@ Route choose_invalid_route(const Input& input,
       horizon_end = std::max(horizon_end, forced_before);
       UB = forced_before;
     }
+
+    // Now propagate some timing constraints for tighter lower bounds.
+    switch (step.type) {
+    case STEP_TYPE::START:
+      previous_LB = LB;
+      break;
+    case STEP_TYPE::JOB: {
+      LB = std::max(LB, previous_LB + previous_service + previous_travel);
+      previous_LB = LB;
+      previous_service = input.jobs[step.rank].service;
+      previous_travel = durations[rank_in_J];
+      ++rank_in_J;
+      break;
+    }
+    case STEP_TYPE::BREAK: {
+      LB = std::max(LB, previous_LB + previous_service);
+      previous_LB = LB;
+      previous_service = v.breaks[step.rank].service;
+      break;
+    }
+    case STEP_TYPE::END:
+      LB = std::max(LB, previous_LB + previous_service + previous_travel);
+      break;
+    }
     t_i_LB.push_back(LB);
     t_i_UB.push_back(UB);
   }
   if (!v.has_end()) {
-    t_i_LB.push_back(horizon_start);
+    t_i_LB.push_back(previous_LB);
     t_i_UB.push_back(horizon_end);
   }
+  assert(rank_in_J == J.size());
   assert(t_i_LB.size() == n + 2);
   assert(t_i_UB.size() == n + 2);
 
@@ -783,8 +813,8 @@ Route choose_invalid_route(const Input& input,
   }
 
   Duration previous_start = v_start;
-  Duration previous_service = 0;
-  Duration previous_travel = start_travel;
+  previous_service = 0;
+  previous_travel = start_travel;
   unsigned task_rank = 0;
 
   for (const auto& step : steps) {
