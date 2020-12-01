@@ -65,21 +65,6 @@ Route choose_invalid_route(const Input& input,
 
   Index i = 1;
   for (const auto& step : steps) {
-    if (step.forced_service.at.has_value()) {
-      horizon_start = std::min(horizon_start, step.forced_service.at.value());
-      horizon_end = std::max(horizon_end, step.forced_service.at.value());
-    }
-    if (step.forced_service.after.has_value()) {
-      horizon_start =
-        std::min(horizon_start, step.forced_service.after.value());
-      horizon_end = std::max(horizon_end, step.forced_service.after.value());
-    }
-    if (step.forced_service.before.has_value()) {
-      horizon_start =
-        std::min(horizon_start, step.forced_service.before.value());
-      horizon_end = std::max(horizon_end, step.forced_service.before.value());
-    }
-
     switch (step.type) {
     case STEP_TYPE::START:
       assert(v.has_start());
@@ -142,6 +127,7 @@ Route choose_invalid_route(const Input& input,
     durations.push_back(0);
   }
 
+  // Refine planning horizon.
   auto makespan_estimate = duration_sum + service_sum;
 
   if (horizon_start == std::numeric_limits<Duration>::max()) {
@@ -164,6 +150,45 @@ Route choose_invalid_route(const Input& input,
     // Push "absolute" planning horizon end.
     horizon_end += makespan_estimate;
   }
+
+  // Retrieve lower and upper bounds for t_i values.
+  std::vector<Duration> t_i_LB;
+  std::vector<Duration> t_i_UB;
+  if (!v.has_start()) {
+    t_i_LB.push_back(horizon_start);
+    t_i_UB.push_back(horizon_end);
+  }
+  for (const auto& step : steps) {
+    Duration LB = horizon_start;
+    Duration UB = horizon_end;
+    if (step.forced_service.at.has_value()) {
+      const auto forced_at = step.forced_service.at.value();
+      horizon_start = std::min(horizon_start, forced_at);
+      horizon_end = std::max(horizon_end, forced_at);
+      LB = forced_at;
+      UB = forced_at;
+    }
+    if (step.forced_service.after.has_value()) {
+      const auto forced_after = step.forced_service.after.value();
+      horizon_start = std::min(horizon_start, forced_after);
+      horizon_end = std::max(horizon_end, forced_after);
+      LB = forced_after;
+    }
+    if (step.forced_service.before.has_value()) {
+      const auto forced_before = step.forced_service.before.value();
+      horizon_start = std::min(horizon_start, forced_before);
+      horizon_end = std::max(horizon_end, forced_before);
+      UB = forced_before;
+    }
+    t_i_LB.push_back(LB);
+    t_i_UB.push_back(UB);
+  }
+  if (!v.has_end()) {
+    t_i_LB.push_back(horizon_start);
+    t_i_UB.push_back(horizon_end);
+  }
+  assert(t_i_LB.size() == n + 2);
+  assert(t_i_UB.size() == n + 2);
 
   const unsigned nb_delta_constraints = J.size();
   assert(B.size() == nb_delta_constraints);
@@ -283,50 +308,30 @@ Route choose_invalid_route(const Input& input,
 
   // 3. set variables and coefficients.
   unsigned current_col = 1;
-  i = 0;
   // Variables for time of services (t_i values).
-  if (!v.has_start()) {
-    // Ghost step not included in steps.
-    auto name = "t" + std::to_string(i);
-    glp_set_col_name(lp, current_col, name.c_str());
-    glp_set_col_bnds(lp, current_col, GLP_LO, 0.0, 0.0);
-    ++i;
-    ++current_col;
-  }
-  for (const auto& step : steps) {
+  for (unsigned i = 0; i <= n + 1; ++i) {
     auto name = "t" + std::to_string(i);
     glp_set_col_name(lp, current_col, name.c_str());
 
-    if (step.forced_service.at.has_value()) {
+    const Duration LB = t_i_LB[i];
+    const Duration UB = t_i_UB[i];
+
+    if (UB < LB) {
+      throw Exception(ERROR::INPUT,
+                      "Infeasible route for vehicle " + std::to_string(v.id) +
+                        ".");
+    }
+
+    if (LB == UB) {
       // Fixed t_i value.
-      double service_at =
-        static_cast<double>(step.forced_service.at.value() - horizon_start);
+      double service_at = static_cast<double>(LB - horizon_start);
       glp_set_col_bnds(lp, current_col, GLP_FX, service_at, service_at);
     } else {
       // t_i value has a lower bound, either 0 or user-defined.
-      double LB = (step.forced_service.after.has_value())
-                    ? static_cast<double>(step.forced_service.after.value() -
-                                          horizon_start)
-                    : 0.0;
-      if (step.forced_service.before.has_value()) {
-        // t_i value has a user-defined upper bound.
-        double UB = static_cast<double>(step.forced_service.before.value() -
-                                        horizon_start);
-        glp_set_col_bnds(lp, current_col, GLP_DB, LB, UB);
-      } else {
-        // No upper bound for t_i value.
-        glp_set_col_bnds(lp, current_col, GLP_LO, LB, 0.0);
-      }
+      double service_after = static_cast<double>(LB - horizon_start);
+      double service_before = static_cast<double>(UB - horizon_start);
+      glp_set_col_bnds(lp, current_col, GLP_DB, service_after, service_before);
     }
-    ++i;
-    ++current_col;
-  }
-  if (!v.has_end()) {
-    // Ghost step not included in steps.
-    auto name = "t" + std::to_string(i);
-    glp_set_col_name(lp, current_col, name.c_str());
-    glp_set_col_bnds(lp, current_col, GLP_LO, 0.0, 0.0);
-    ++i;
     ++current_col;
   }
   assert(current_col == start_Y_col);
