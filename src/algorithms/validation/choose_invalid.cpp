@@ -8,6 +8,7 @@ All rights reserved (see LICENSE).
 */
 
 #include <algorithm>
+#include <cmath>
 #include <numeric>
 
 #include <glpk.h>
@@ -16,6 +17,10 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 namespace validation {
+
+inline Duration get_duration(double d) {
+  return static_cast<Duration>(std::round(d));
+}
 
 Route choose_invalid_route(const Input& input,
                            unsigned vehicle_rank,
@@ -625,17 +630,17 @@ Route choose_invalid_route(const Input& input,
   }
 
   // Add constraint to fix makespan.
-  const auto best_makespan =
-    glp_mip_col_val(lp, n + 2) - glp_mip_col_val(lp, 1);
+  const Duration best_makespan = get_duration(glp_mip_col_val(lp, n + 2)) -
+                                 get_duration(glp_mip_col_val(lp, 1));
   glp_set_row_bnds(lp,
                    nb_constraints - 1,
                    GLP_FX,
                    best_makespan,
                    best_makespan);
   // Pin Y_i sum.
-  double sum_y_i = 0;
+  Duration sum_y_i = 0;
   for (unsigned i = start_Y_col; i < start_X_col; ++i) {
-    sum_y_i += glp_mip_col_val(lp, i);
+    sum_y_i += get_duration(glp_mip_col_val(lp, i));
   }
   glp_set_row_bnds(lp, nb_constraints, GLP_FX, sum_y_i, sum_y_i);
 
@@ -654,17 +659,22 @@ Route choose_invalid_route(const Input& input,
   assert(status == GLP_OPT);
 
   // Get output.
-  const Duration v_start = horizon_start + glp_mip_col_val(lp, 1);
-  const Duration v_end = horizon_start + glp_mip_col_val(lp, n + 2);
-  const Duration start_lead_time = glp_mip_col_val(lp, start_Y_col);
-  const Duration end_delay = glp_mip_col_val(lp, 2 * n + 4);
-  const Duration start_travel = glp_mip_col_val(lp, start_delta_col);
+  const Duration v_start = horizon_start + get_duration(glp_mip_col_val(lp, 1));
+  const Duration v_end =
+    horizon_start + get_duration(glp_mip_col_val(lp, n + 2));
+  const Duration start_lead_time =
+    get_duration(glp_mip_col_val(lp, start_Y_col));
+  const Duration end_delay = get_duration(glp_mip_col_val(lp, 2 * n + 4));
+  const Duration start_travel =
+    get_duration(glp_mip_col_val(lp, start_delta_col));
 
   std::vector<Duration> task_ETA;
   std::vector<Duration> task_travels;
   for (unsigned i = 0; i < n; ++i) {
-    task_ETA.push_back(horizon_start + glp_mip_col_val(lp, i + 2));
-    task_travels.push_back(glp_mip_col_val(lp, start_delta_col + 1 + i));
+    task_ETA.push_back(horizon_start +
+                       get_duration(glp_mip_col_val(lp, i + 2)));
+    task_travels.push_back(
+      get_duration(glp_mip_col_val(lp, start_delta_col + 1 + i)));
   }
 
   // Populate vector storing picked time window ranks.
@@ -678,7 +688,7 @@ Route choose_invalid_route(const Input& input,
     case STEP_TYPE::JOB: {
       const auto& job = input.jobs[step.rank];
       for (unsigned k = 0; k < job.tws.size(); ++k) {
-        auto val = glp_mip_col_val(lp, current_X_rank);
+        auto val = get_duration(glp_mip_col_val(lp, current_X_rank));
         if (val == 1) {
           task_tw_ranks.push_back(k);
         }
@@ -690,7 +700,7 @@ Route choose_invalid_route(const Input& input,
     case STEP_TYPE::BREAK: {
       const auto& b = v.breaks[step.rank];
       for (unsigned k = 0; k < b.tws.size(); ++k) {
-        auto val = glp_mip_col_val(lp, current_X_rank);
+        auto val = get_duration(glp_mip_col_val(lp, current_X_rank));
         if (val == 1) {
           task_tw_ranks.push_back(k);
         }
