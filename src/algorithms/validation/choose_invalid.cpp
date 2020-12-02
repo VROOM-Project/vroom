@@ -43,7 +43,7 @@ Route choose_invalid_route(const Input& input,
   // a "ghost" step.
   std::vector<unsigned> J;
   std::vector<unsigned> B;
-  std::vector<double> durations;
+  std::vector<Duration> durations;
   // Lower bound for timestamps in input in order to scale the MIP
   // matrix values.
   Duration horizon_start = std::numeric_limits<Duration>::max();
@@ -153,16 +153,20 @@ Route choose_invalid_route(const Input& input,
     horizon_end += makespan_estimate;
   }
 
-  // Retrieve lower and upper bounds for t_i values and store along
-  // the way the rank of the first relevant TW (used below to force
-  // some binary variables to zero).
+  // Retrieve user-provided upper bounds for t_i values. Retrieve
+  // user-provided lower bounds for t_i values while propagating
+  // travel/service constraints. Along the way, we store the rank of
+  // the first relevant TW (used below to force some binary variables
+  // to zero).
   std::vector<Duration> t_i_LB;
   std::vector<Duration> t_i_UB;
   Duration previous_LB = horizon_start;
   Duration previous_service = 0;
   Duration previous_travel = durations.front();
   std::vector<unsigned> first_relevant_tw_rank;
+  bool UB_provided = false;
   Index rank_in_J = 0;
+
   for (const auto& step : steps) {
     // Derive basic bounds from user input.
     Duration LB = horizon_start;
@@ -173,6 +177,7 @@ Route choose_invalid_route(const Input& input,
       horizon_end = std::max(horizon_end, forced_at);
       LB = forced_at;
       UB = forced_at;
+      UB_provided = true;
     }
     if (step.forced_service.after.has_value()) {
       const auto forced_after = step.forced_service.after.value();
@@ -185,6 +190,7 @@ Route choose_invalid_route(const Input& input,
       horizon_start = std::min(horizon_start, forced_before);
       horizon_end = std::max(horizon_end, forced_before);
       UB = forced_before;
+      UB_provided = true;
     }
 
     // Now propagate some timing constraints for tighter lower bounds.
@@ -245,6 +251,55 @@ Route choose_invalid_route(const Input& input,
   assert(rank_in_J == J.size());
   assert(t_i_LB.size() == steps.size());
   assert(t_i_UB.size() == steps.size());
+
+  if (UB_provided) {
+    // We need to do a backward propagation for upper bounds based on
+    // travel/service constraints. Along the way, we store the rank of
+    // the last relevant TW (used below to force some binary variables
+    // to zero).
+    Duration next_UB = t_i_UB.back();
+    Duration break_travel_margin = 0;
+    for (unsigned i = 0; i < steps.size(); ++i) {
+      auto step_rank = steps.size() - 1 - i;
+      const auto& step = steps[step_rank];
+
+      switch (step.type) {
+      case STEP_TYPE::START:
+        assert(rank_in_J == 1);
+        t_i_UB[step_rank] = std::min(t_i_UB[step_rank], next_UB - durations[0]);
+        break;
+      case STEP_TYPE::JOB: {
+        --rank_in_J;
+        const auto service = input.jobs[step.rank].service;
+        const auto next_travel = (break_travel_margin < durations[rank_in_J])
+                                   ? durations[rank_in_J] - break_travel_margin
+                                   : 0;
+        assert(service + next_travel <= next_UB);
+        t_i_UB[step_rank] =
+          std::min(t_i_UB[step_rank], next_UB - next_travel - service);
+        next_UB = t_i_UB[step_rank];
+        break_travel_margin = 0;
+        break;
+      }
+      case STEP_TYPE::BREAK: {
+        const auto service = v.breaks[step.rank].service;
+        assert(service <= next_UB);
+        const auto candidate = next_UB - service;
+        if (t_i_UB[step_rank] < candidate) {
+          // User-provided constraints gives margin for travel after
+          // this break.
+          break_travel_margin += (candidate - t_i_UB[step_rank]);
+        } else {
+          t_i_UB[step_rank] = candidate;
+        }
+        next_UB = t_i_UB[step_rank];
+        break;
+      }
+      case STEP_TYPE::END:
+        break;
+      }
+    }
+  }
 
   const unsigned nb_delta_constraints = J.size();
   assert(B.size() == nb_delta_constraints);
