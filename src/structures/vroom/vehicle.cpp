@@ -45,17 +45,14 @@ Vehicle::Vehicle(Id id,
   }
 
   if (!steps.empty()) {
-    // Populating input_steps. We rely on having start and end steps
-    // in input, so just add them if they're missing (i.e. implicit
-    // from vehicle definition).
+    // Populating input_steps. We rely on always having start and end
+    // steps in input, so just add them if they're missing.
     unsigned rank_after_start = 0;
-    if (has_start()) {
-      if (steps.front().type == STEP_TYPE::START) {
-        input_steps.push_back(steps.front());
-        rank_after_start = 1;
-      } else {
-        input_steps.emplace_back(STEP_TYPE::START);
-      }
+    if (steps.front().type == STEP_TYPE::START) {
+      input_steps.push_back(steps.front());
+      rank_after_start = 1;
+    } else {
+      input_steps.emplace_back(STEP_TYPE::START);
     }
 
     for (unsigned i = rank_after_start; i < steps.size(); ++i) {
@@ -64,8 +61,7 @@ Vehicle::Vehicle(Id id,
                         "Unexpected start in input steps for vehicle " +
                           std::to_string(id) + ".");
       }
-      if (steps[i].type == STEP_TYPE::END and
-          ((i != steps.size() - 1) or !has_end())) {
+      if (steps[i].type == STEP_TYPE::END and (i != steps.size() - 1)) {
         throw Exception(ERROR::INPUT,
                         "Unexpected end in input steps for vehicle " +
                           std::to_string(id) + ".");
@@ -74,7 +70,7 @@ Vehicle::Vehicle(Id id,
       input_steps.push_back(steps[i]);
     }
 
-    if (has_end() and input_steps.back().type != STEP_TYPE::END) {
+    if (input_steps.back().type != STEP_TYPE::END) {
       input_steps.emplace_back(STEP_TYPE::END);
     }
   }

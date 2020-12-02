@@ -30,10 +30,8 @@ Route choose_invalid_route(const Input& input,
   const auto& v = input.vehicles[vehicle_rank];
 
   // Number of tasks except start and end.
-  const unsigned extra_steps = (v.has_start() ? 1 : 0) + (v.has_end() ? 1 : 0);
-  assert(extra_steps < steps.size());
-  const unsigned n = steps.size() - extra_steps;
-  const unsigned first_task_rank = (v.has_start() ? 1 : 0);
+  assert(2 < steps.size());
+  const unsigned n = steps.size() - 2;
 
   // Total number of time windows.
   unsigned K = 0;
@@ -43,8 +41,8 @@ Route choose_invalid_route(const Input& input,
   // breaks, and durations[r] is the travel duration from task T_i to
   // the next non-break task. Note: when vehicle has no start, T_0 is
   // a "ghost" step.
-  std::vector<unsigned> J({0});
-  std::vector<unsigned> B({0});
+  std::vector<unsigned> J;
+  std::vector<unsigned> B;
   std::vector<double> durations;
   // Lower bound for timestamps in input in order to scale the MIP
   // matrix values.
@@ -63,12 +61,16 @@ Route choose_invalid_route(const Input& input,
   Duration duration_sum = 0;
   unsigned default_job_tw = 0;
 
-  Index i = 1;
+  Index i = 0;
   for (const auto& step : steps) {
     switch (step.type) {
     case STEP_TYPE::START:
-      assert(v.has_start());
-      last_index = v.start.value().index();
+      if (v.has_start()) {
+        last_index = v.start.value().index();
+      }
+      J.push_back(i);
+      B.push_back(0);
+      ++i;
       break;
     case STEP_TYPE::JOB: {
       const auto& job = input.jobs[step.rank];
@@ -113,19 +115,19 @@ Route choose_invalid_route(const Input& input,
       break;
     }
     case STEP_TYPE::END:
-      assert(v.has_end() and last_index.has_value());
-      const auto& current_duration =
-        m[last_index.value()][v.end.value().index()];
-      durations.push_back(current_duration);
-      duration_sum += current_duration;
+      if (v.has_end()) {
+        assert(last_index.has_value());
+        const auto& current_duration =
+          m[last_index.value()][v.end.value().index()];
+        durations.push_back(current_duration);
+        duration_sum += current_duration;
+      } else {
+        durations.push_back(0);
+      }
       break;
     }
   }
   assert(i == n + 1);
-
-  if (!v.has_end()) {
-    durations.push_back(0);
-  }
 
   // Refine planning horizon.
   auto makespan_estimate = duration_sum + service_sum;
@@ -160,11 +162,7 @@ Route choose_invalid_route(const Input& input,
   Duration previous_service = 0;
   Duration previous_travel = durations.front();
   std::vector<unsigned> first_relevant_tw_rank;
-  if (!v.has_start()) {
-    t_i_LB.push_back(horizon_start);
-    t_i_UB.push_back(horizon_end);
-  }
-  Index rank_in_J = 1;
+  Index rank_in_J = 0;
   for (const auto& step : steps) {
     // Derive basic bounds from user input.
     Duration LB = horizon_start;
@@ -193,6 +191,7 @@ Route choose_invalid_route(const Input& input,
     switch (step.type) {
     case STEP_TYPE::START:
       previous_LB = LB;
+      ++rank_in_J;
       break;
     case STEP_TYPE::JOB: {
       LB = std::max(LB, previous_LB + previous_service + previous_travel);
@@ -242,14 +241,10 @@ Route choose_invalid_route(const Input& input,
       first_relevant_tw_rank.push_back(tw_rank);
     }
   }
-  if (!v.has_end()) {
-    t_i_LB.push_back(previous_LB);
-    t_i_UB.push_back(horizon_end);
-  }
   assert(first_relevant_tw_rank.size() == n);
   assert(rank_in_J == J.size());
-  assert(t_i_LB.size() == n + 2);
-  assert(t_i_UB.size() == n + 2);
+  assert(t_i_LB.size() == steps.size());
+  assert(t_i_UB.size() == steps.size());
 
   const unsigned nb_delta_constraints = J.size();
   assert(B.size() == nb_delta_constraints);
@@ -293,7 +288,7 @@ Route choose_invalid_route(const Input& input,
     auto name = "P" + std::to_string(i + 1);
     glp_set_row_name(lp, current_row, name.c_str());
     double service;
-    const auto& step = steps[first_task_rank + i];
+    const auto& step = steps[1 + i];
     if (step.type == STEP_TYPE::JOB) {
       service = input.jobs[step.rank].service;
     } else {
@@ -408,7 +403,7 @@ Route choose_invalid_route(const Input& input,
 
   // Binary variables for job time window choice.
   for (unsigned i = 0; i < n; ++i) {
-    const auto& step = steps[i + first_task_rank];
+    const auto& step = steps[1 + i];
     const auto& tws = (step.type == STEP_TYPE::JOB) ? input.jobs[step.rank].tws
                                                     : v.breaks[step.rank].tws;
     for (unsigned k = 0; k < tws.size(); ++k) {
@@ -492,7 +487,7 @@ Route choose_invalid_route(const Input& input,
     ar[r] = 1;
     ++r;
 
-    const auto& step = steps[i + first_task_rank];
+    const auto& step = steps[1 + i];
     const auto& tws = (step.type == STEP_TYPE::JOB) ? input.jobs[step.rank].tws
                                                     : v.breaks[step.rank].tws;
     if (step.type == STEP_TYPE::JOB and tws.front().is_default()) {
@@ -533,7 +528,7 @@ Route choose_invalid_route(const Input& input,
     ar[r] = -1;
     ++r;
 
-    const auto& step = steps[i + first_task_rank];
+    const auto& step = steps[1 + i];
     const auto& tws = (step.type == STEP_TYPE::JOB) ? input.jobs[step.rank].tws
                                                     : v.breaks[step.rank].tws;
     if (step.type == STEP_TYPE::JOB and tws.front().is_default()) {
@@ -582,7 +577,7 @@ Route choose_invalid_route(const Input& input,
   current_X_rank = start_X_col;
 
   for (unsigned i = 0; i < n; ++i) {
-    const auto& step = steps[i + first_task_rank];
+    const auto& step = steps[1 + i];
     const auto& tws = (step.type == STEP_TYPE::JOB) ? input.jobs[step.rank].tws
                                                     : v.breaks[step.rank].tws;
 
@@ -994,28 +989,31 @@ Route choose_invalid_route(const Input& input,
       break;
     }
     case STEP_TYPE::END:
-      duration += previous_travel;
+      if (v.has_end()) {
+        duration += previous_travel;
 
-      const auto arrival = previous_start + previous_service + previous_travel;
-      assert(arrival <= v_end);
+        const auto arrival =
+          previous_start + previous_service + previous_travel;
+        assert(arrival <= v_end);
 
-      sol_steps.emplace_back(STEP_TYPE::END, v.end.value(), current_load);
-      sol_steps.back().duration = duration;
-      sol_steps.back().arrival = arrival;
-      Duration wt = v_end - arrival;
-      sol_steps.back().waiting_time = wt;
-      forward_wt += wt;
+        sol_steps.emplace_back(STEP_TYPE::END, v.end.value(), current_load);
+        sol_steps.back().duration = duration;
+        sol_steps.back().arrival = arrival;
+        Duration wt = v_end - arrival;
+        sol_steps.back().waiting_time = wt;
+        forward_wt += wt;
 
-      if (v.tw.end < v_end) {
-        sol_steps.back().violations.types.insert(VIOLATION::DELAY);
-        v_types.insert(VIOLATION::DELAY);
-        Duration dl = v_end - v.tw.end;
-        sol_steps.back().violations.delay = dl;
-        delay += dl;
-      }
-      if (previous_over_capacity) {
-        sol_steps.back().violations.types.insert(VIOLATION::LOAD);
-        v_types.insert(VIOLATION::LOAD);
+        if (v.tw.end < v_end) {
+          sol_steps.back().violations.types.insert(VIOLATION::DELAY);
+          v_types.insert(VIOLATION::DELAY);
+          Duration dl = v_end - v.tw.end;
+          sol_steps.back().violations.delay = dl;
+          delay += dl;
+        }
+        if (previous_over_capacity) {
+          sol_steps.back().violations.types.insert(VIOLATION::LOAD);
+          v_types.insert(VIOLATION::LOAD);
+        }
       }
       break;
     }
