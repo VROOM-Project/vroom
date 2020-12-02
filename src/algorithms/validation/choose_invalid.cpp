@@ -164,7 +164,6 @@ Route choose_invalid_route(const Input& input,
   Duration previous_service = 0;
   Duration previous_travel = durations.front();
   std::vector<unsigned> first_relevant_tw_rank;
-  bool UB_provided = false;
   Index rank_in_J = 0;
 
   for (const auto& step : steps) {
@@ -177,7 +176,6 @@ Route choose_invalid_route(const Input& input,
       horizon_end = std::max(horizon_end, forced_at);
       LB = forced_at;
       UB = forced_at;
-      UB_provided = true;
     }
     if (step.forced_service.after.has_value()) {
       const auto forced_after = step.forced_service.after.value();
@@ -190,7 +188,6 @@ Route choose_invalid_route(const Input& input,
       horizon_start = std::min(horizon_start, forced_before);
       horizon_end = std::max(horizon_end, forced_before);
       UB = forced_before;
-      UB_provided = true;
     }
 
     // Now propagate some timing constraints for tighter lower bounds.
@@ -252,52 +249,77 @@ Route choose_invalid_route(const Input& input,
   assert(t_i_LB.size() == steps.size());
   assert(t_i_UB.size() == steps.size());
 
-  if (UB_provided) {
-    // We need to do a backward propagation for upper bounds based on
-    // travel/service constraints. Along the way, we store the rank of
-    // the last relevant TW (used below to force some binary variables
-    // to zero).
-    Duration next_UB = t_i_UB.back();
-    Duration break_travel_margin = 0;
-    for (unsigned i = 0; i < steps.size(); ++i) {
-      auto step_rank = steps.size() - 1 - i;
-      const auto& step = steps[step_rank];
+  // Backward propagation for upper bounds based on travel/service
+  // constraints. Along the way, we store the rank of the last
+  // relevant TW (used below to force some binary variables to zero).
+  std::vector<unsigned> last_relevant_tw_rank(n);
+  Duration next_UB = t_i_UB.back();
+  Duration break_travel_margin = 0;
+  for (unsigned i = 0; i < steps.size(); ++i) {
+    auto step_rank = steps.size() - 1 - i;
+    const auto& step = steps[step_rank];
 
-      switch (step.type) {
-      case STEP_TYPE::START:
-        assert(rank_in_J == 1);
-        t_i_UB[step_rank] = std::min(t_i_UB[step_rank], next_UB - durations[0]);
-        break;
-      case STEP_TYPE::JOB: {
-        --rank_in_J;
-        const auto service = input.jobs[step.rank].service;
-        const auto next_travel = (break_travel_margin < durations[rank_in_J])
-                                   ? durations[rank_in_J] - break_travel_margin
-                                   : 0;
-        assert(service + next_travel <= next_UB);
-        t_i_UB[step_rank] =
-          std::min(t_i_UB[step_rank], next_UB - next_travel - service);
-        next_UB = t_i_UB[step_rank];
-        break_travel_margin = 0;
-        break;
+    switch (step.type) {
+    case STEP_TYPE::START:
+      assert(rank_in_J == 1);
+      t_i_UB[step_rank] = std::min(t_i_UB[step_rank], next_UB - durations[0]);
+      break;
+    case STEP_TYPE::JOB: {
+      --rank_in_J;
+      const auto service = input.jobs[step.rank].service;
+      const auto next_travel = (break_travel_margin < durations[rank_in_J])
+                                 ? durations[rank_in_J] - break_travel_margin
+                                 : 0;
+      assert(service + next_travel <= next_UB);
+      t_i_UB[step_rank] =
+        std::min(t_i_UB[step_rank], next_UB - next_travel - service);
+      next_UB = t_i_UB[step_rank];
+      break_travel_margin = 0;
+      break;
+    }
+    case STEP_TYPE::BREAK: {
+      const auto service = v.breaks[step.rank].service;
+      assert(service <= next_UB);
+      const auto candidate = next_UB - service;
+      if (t_i_UB[step_rank] < candidate) {
+        // User-provided constraints gives margin for travel after
+        // this break.
+        break_travel_margin += (candidate - t_i_UB[step_rank]);
+      } else {
+        t_i_UB[step_rank] = candidate;
       }
-      case STEP_TYPE::BREAK: {
-        const auto service = v.breaks[step.rank].service;
-        assert(service <= next_UB);
-        const auto candidate = next_UB - service;
-        if (t_i_UB[step_rank] < candidate) {
-          // User-provided constraints gives margin for travel after
-          // this break.
-          break_travel_margin += (candidate - t_i_UB[step_rank]);
-        } else {
-          t_i_UB[step_rank] = candidate;
+      next_UB = t_i_UB[step_rank];
+      break;
+    }
+    case STEP_TYPE::END:
+      break;
+    }
+
+    if (step.type == STEP_TYPE::JOB or step.type == STEP_TYPE::BREAK) {
+      // Determine rank of the last relevant TW.
+      const auto UB = t_i_UB[step_rank];
+      const auto& tws = (step.type == STEP_TYPE::JOB)
+                          ? input.jobs[step.rank].tws
+                          : v.breaks[step.rank].tws;
+      unsigned tw_rank = tws.size() - 1;
+      const auto tw = std::find_if(tws.begin(), tws.end(), [&](const auto& tw) {
+        return UB <= tw.end;
+      });
+      if (tw != tws.end()) {
+        tw_rank -= (std::distance(tw, tws.end()) - 1);
+
+        if (UB < tw->start and tw != tws.begin()) {
+          // Lower bound is between two time windows.
+          auto prev_tw = std::prev(tw, 1);
+          if ((UB - prev_tw->end) < (tw->start - UB)) {
+            // Delay from the previous time window will always be
+            // cheaper than lead time to the current one, which can be
+            // discarded.
+            --tw_rank;
+          }
         }
-        next_UB = t_i_UB[step_rank];
-        break;
       }
-      case STEP_TYPE::END:
-        break;
-      }
+      last_relevant_tw_rank[step_rank - 1] = tw_rank;
     }
   }
 
@@ -465,7 +487,7 @@ Route choose_invalid_route(const Input& input,
       auto name = "X" + std::to_string(i + 1) + "_" + std::to_string(k);
       glp_set_col_name(lp, current_col, name.c_str());
       glp_set_col_kind(lp, current_col, GLP_BV);
-      if (k < first_relevant_tw_rank[i]) {
+      if (k < first_relevant_tw_rank[i] or k > last_relevant_tw_rank[i]) {
         glp_set_col_bnds(lp, current_col, GLP_FX, 0, 0);
       }
       ++current_col;
