@@ -151,12 +151,15 @@ Route choose_invalid_route(const Input& input,
     horizon_end += makespan_estimate;
   }
 
-  // Retrieve lower and upper bounds for t_i values.
+  // Retrieve lower and upper bounds for t_i values and store along
+  // the way the rank of the first relevant TW (used below to force
+  // some binary variables to zero).
   std::vector<Duration> t_i_LB;
   std::vector<Duration> t_i_UB;
   Duration previous_LB = horizon_start;
   Duration previous_service = 0;
   Duration previous_travel = durations.front();
+  std::vector<unsigned> first_relevant_tw_rank;
   if (!v.has_start()) {
     t_i_LB.push_back(horizon_start);
     t_i_UB.push_back(horizon_end);
@@ -211,11 +214,39 @@ Route choose_invalid_route(const Input& input,
     }
     t_i_LB.push_back(LB);
     t_i_UB.push_back(UB);
+
+    if (step.type == STEP_TYPE::JOB or step.type == STEP_TYPE::BREAK) {
+      // Determine rank of the first relevant TW.
+      const auto& tws = (step.type == STEP_TYPE::JOB)
+                          ? input.jobs[step.rank].tws
+                          : v.breaks[step.rank].tws;
+      unsigned tw_rank = 0;
+      const auto tw =
+        std::find_if(tws.rbegin(), tws.rend(), [&](const auto& tw) {
+          return tw.start <= LB;
+        });
+      if (tw != tws.rend()) {
+        tw_rank = std::distance(tw, tws.rend()) - 1;
+
+        if (tw->end < LB and tw != tws.rbegin()) {
+          // Lower bound is between two time windows.
+          auto next_tw = std::prev(tw, 1);
+          if ((next_tw->start - LB) < (LB - tw->end)) {
+            // Lead time to next time window will always be cheaper
+            // than delay from the current one, which can be
+            // discarded.
+            ++tw_rank;
+          }
+        }
+      }
+      first_relevant_tw_rank.push_back(tw_rank);
+    }
   }
   if (!v.has_end()) {
     t_i_LB.push_back(previous_LB);
     t_i_UB.push_back(horizon_end);
   }
+  assert(first_relevant_tw_rank.size() == n);
   assert(rank_in_J == J.size());
   assert(t_i_LB.size() == n + 2);
   assert(t_i_UB.size() == n + 2);
@@ -384,6 +415,9 @@ Route choose_invalid_route(const Input& input,
       auto name = "X" + std::to_string(i + 1) + "_" + std::to_string(k);
       glp_set_col_name(lp, current_col, name.c_str());
       glp_set_col_kind(lp, current_col, GLP_BV);
+      if (k < first_relevant_tw_rank[i]) {
+        glp_set_col_bnds(lp, current_col, GLP_FX, 0, 0);
+      }
       ++current_col;
     }
   }
