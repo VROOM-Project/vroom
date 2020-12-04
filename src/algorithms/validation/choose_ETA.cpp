@@ -13,7 +13,7 @@ All rights reserved (see LICENSE).
 
 #include <glpk.h>
 
-#include "algorithms/validation/choose_invalid.h"
+#include "algorithms/validation/choose_ETA.h"
 
 namespace vroom {
 namespace validation {
@@ -22,10 +22,10 @@ inline Duration get_duration(double d) {
   return static_cast<Duration>(std::round(d));
 }
 
-Route choose_invalid_route(const Input& input,
-                           unsigned vehicle_rank,
-                           const std::vector<InputStep>& steps,
-                           std::unordered_set<Index>& unassigned_ranks) {
+Route choose_ETA(const Input& input,
+                 unsigned vehicle_rank,
+                 const std::vector<InputStep>& steps,
+                 std::unordered_set<Index>& unassigned_ranks) {
   const auto& m = input.get_matrix();
   const auto& v = input.vehicles[vehicle_rank];
 

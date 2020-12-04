@@ -10,7 +10,7 @@ All rights reserved (see LICENSE).
 #include <unordered_set>
 
 #include "algorithms/validation/check.h"
-#include "algorithms/validation/choose_invalid.h"
+#include "algorithms/validation/choose_ETA.h"
 #include "structures/vroom/tw_route.h"
 #include "utils/exception.h"
 #include "utils/helpers.h"
@@ -32,13 +32,8 @@ Solution check_and_set_ETA(const Input& input) {
       continue;
     }
 
-    // TODO generate route directly if input steps make it a valid
-    // one.
-
-    routes.push_back(choose_invalid_route(input,
-                                          v,
-                                          current_vehicle.input_steps,
-                                          unassigned_ranks));
+    routes.push_back(
+      choose_ETA(input, v, current_vehicle.input_steps, unassigned_ranks));
   }
 
   // Handle unassigned jobs.

@@ -1,5 +1,5 @@
-#ifndef CHOOSE_INVALID_H
-#define CHOOSE_INVALID_H
+#ifndef CHOOSE_ETA_H
+#define CHOOSE_ETA_H
 
 /*
 
@@ -16,10 +16,10 @@ All rights reserved (see LICENSE).
 namespace vroom {
 namespace validation {
 
-Route choose_invalid_route(const Input& input,
-                           unsigned vehicle_rank,
-                           const std::vector<InputStep>& steps,
-                           std::unordered_set<Index>& unassigned_ranks);
+Route choose_ETA(const Input& input,
+                 unsigned vehicle_rank,
+                 const std::vector<InputStep>& steps,
+                 std::unordered_set<Index>& unassigned_ranks);
 
 } // namespace validation
 } // namespace vroom
