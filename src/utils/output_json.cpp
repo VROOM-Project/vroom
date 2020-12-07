@@ -58,12 +58,7 @@ get_violations(const Violations& violations,
   json_violations.AddMember("lead_time", violations.lead_time, allocator);
   json_violations.AddMember("delay", violations.delay, allocator);
 
-  if (violations.start_lead_time.has_value()) {
-    json_violations.AddMember("start_lead_time",
-                              violations.start_lead_time.value(),
-                              allocator);
-
-    assert(violations.end_delay.has_value());
+  if (violations.end_delay.has_value()) {
     json_violations.AddMember("end_delay",
                               violations.end_delay.value(),
                               allocator);

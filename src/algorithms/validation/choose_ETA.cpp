@@ -53,20 +53,20 @@ Route choose_ETA(const Input& input,
     horizon_end = std::max(horizon_end, v.tw.end);
   }
 
-  // Use max value for last_index as "unset".
-  std::optional<Index> last_index;
-
   // Route indicators.
   Duration service_sum = 0;
   Duration duration_sum = 0;
   unsigned default_job_tw = 0;
+  std::optional<Index> previous_index;
+  std::optional<Location> first_location;
 
   Index i = 0;
   for (const auto& step : steps) {
     switch (step.type) {
     case STEP_TYPE::START:
       if (v.has_start()) {
-        last_index = v.start.value().index();
+        previous_index = v.start.value().index();
+        first_location = v.start.value();
       }
       J.push_back(i);
       B.push_back(0);
@@ -87,16 +87,21 @@ Route choose_ETA(const Input& input,
         horizon_end = std::max(horizon_end, job.tws.back().end);
       }
 
-      // Only case where last_index is not set is for first duration
-      // in case vehicle has no start.
-      assert(last_index.has_value() or (durations.empty() and !v.has_start()));
+      // Only case where previous_index is not set is for first
+      // duration in case vehicle has no start.
+      assert(previous_index.has_value() or
+             (durations.empty() and !v.has_start()));
 
-      const auto current_duration =
-        (last_index.has_value()) ? m[last_index.value()][job.index()] : 0;
+      const auto current_duration = (previous_index.has_value())
+                                      ? m[previous_index.value()][job.index()]
+                                      : 0;
       durations.push_back(current_duration);
       duration_sum += current_duration;
 
-      last_index = job.index();
+      previous_index = job.index();
+      if (!first_location.has_value()) {
+        first_location = job.location;
+      }
       ++i;
       break;
     }
@@ -116,17 +121,22 @@ Route choose_ETA(const Input& input,
     }
     case STEP_TYPE::END:
       if (v.has_end()) {
-        assert(last_index.has_value());
+        assert(previous_index.has_value());
         const auto& current_duration =
-          m[last_index.value()][v.end.value().index()];
+          m[previous_index.value()][v.end.value().index()];
         durations.push_back(current_duration);
         duration_sum += current_duration;
+
+        if (!first_location.has_value()) {
+          first_location = v.end.value();
+        }
       } else {
         durations.push_back(0);
       }
       break;
     }
   }
+  assert(first_location.has_value());
   assert(i == n + 1);
 
   // Refine planning horizon.
@@ -803,8 +813,6 @@ Route choose_ETA(const Input& input,
   const Duration v_start = horizon_start + get_duration(glp_mip_col_val(lp, 1));
   const Duration v_end =
     horizon_start + get_duration(glp_mip_col_val(lp, n + 2));
-  const Duration start_lead_time =
-    get_duration(glp_mip_col_val(lp, start_Y_col));
   const Duration end_delay = get_duration(glp_mip_col_val(lp, 2 * n + 4));
   const Duration start_travel =
     get_duration(glp_mip_col_val(lp, start_delta_col));
@@ -878,8 +886,6 @@ Route choose_ETA(const Input& input,
     }
   }
 
-  bool previous_over_capacity = !(current_load <= v.capacity);
-
   // Used for precedence violations.
   std::unordered_set<Index> expected_delivery_ranks;
   std::unordered_set<Index> delivery_first_ranks;
@@ -896,26 +902,23 @@ Route choose_ETA(const Input& input,
 
   assert(v.has_start() or start_travel == 0);
 
-  if (v.has_start()) {
-    sol_steps.emplace_back(STEP_TYPE::START, v.start.value(), current_load);
-    sol_steps.back().duration = 0;
-    sol_steps.back().arrival = v_start;
-    if (v_start < v.tw.start) {
-      sol_steps.back().violations.types.insert(VIOLATION::LEAD_TIME);
-      v_types.insert(VIOLATION::LEAD_TIME);
-      Duration lt = v.tw.start - v_start;
-      sol_steps.back().violations.lead_time = lt;
-      lead_time += lt;
-    }
+  sol_steps.emplace_back(STEP_TYPE::START,
+                         first_location.value(),
+                         current_load);
+  sol_steps.back().duration = 0;
+  sol_steps.back().arrival = v_start;
+  if (v_start < v.tw.start) {
+    sol_steps.back().violations.types.insert(VIOLATION::LEAD_TIME);
+    v_types.insert(VIOLATION::LEAD_TIME);
+    Duration lt = v.tw.start - v_start;
+    sol_steps.back().violations.lead_time = lt;
+    lead_time += lt;
+    assert(lt == get_duration(glp_mip_col_val(lp, start_Y_col)));
+  }
 
-    if (previous_over_capacity) {
-      sol_steps.back().violations.types.insert(VIOLATION::LOAD);
-      v_types.insert(VIOLATION::LOAD);
-    }
-  } else {
-    // Vehicle time window violation at startup is not reported in
-    // steps as there is no start step.
-    lead_time += start_lead_time;
+  if (!(current_load <= v.capacity)) {
+    sol_steps.back().violations.types.insert(VIOLATION::LOAD);
+    v_types.insert(VIOLATION::LOAD);
   }
 
   Duration previous_start = v_start;
@@ -971,12 +974,10 @@ Route choose_ETA(const Input& input,
         current.violations.delay = dl;
         delay += dl;
       }
-      bool over_capacity = !(current_load <= v.capacity);
-      if (previous_over_capacity or over_capacity) {
+      if (!(current_load <= v.capacity)) {
         current.violations.types.insert(VIOLATION::LOAD);
         v_types.insert(VIOLATION::LOAD);
       }
-      previous_over_capacity = over_capacity;
       if (!input.vehicle_ok_with_job(vehicle_rank, job_rank)) {
         current.violations.types.insert(VIOLATION::SKILLS);
         v_types.insert(VIOLATION::SKILLS);
@@ -1054,7 +1055,7 @@ Route choose_ETA(const Input& input,
         current.violations.delay = dl;
         delay += dl;
       }
-      if (previous_over_capacity) {
+      if (!(current_load <= v.capacity)) {
         current.violations.types.insert(VIOLATION::LOAD);
         v_types.insert(VIOLATION::LOAD);
       }
@@ -1087,7 +1088,7 @@ Route choose_ETA(const Input& input,
           sol_steps.back().violations.delay = dl;
           delay += dl;
         }
-        if (previous_over_capacity) {
+        if (!(current_load <= v.capacity)) {
           sol_steps.back().violations.types.insert(VIOLATION::LOAD);
           v_types.insert(VIOLATION::LOAD);
         }
@@ -1102,8 +1103,6 @@ Route choose_ETA(const Input& input,
     delay += end_delay;
   }
 
-  assert(!v.has_start() or
-         start_lead_time == sol_steps.front().violations.lead_time);
   assert(!v.has_end() or end_delay == sol_steps.back().violations.delay);
 
   // Precedence violations for pickups without a delivery.
@@ -1128,11 +1127,8 @@ Route choose_ETA(const Input& input,
                sum_deliveries,
                sum_pickups,
                v.description,
-               std::move(Violations(lead_time,
-                                    delay,
-                                    start_lead_time,
-                                    end_delay,
-                                    std::move(v_types))));
+               std::move(
+                 Violations(lead_time, delay, end_delay, std::move(v_types))));
 }
 
 } // namespace validation
