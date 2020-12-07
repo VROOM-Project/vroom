@@ -44,7 +44,7 @@ struct Route {
         const Amount& delivery,
         const Amount& pickup,
         const std::string& description,
-        const Violations&& violations = Violations(0, 0, 0));
+        const Violations&& violations = Violations(0, 0));
 };
 
 } // namespace vroom

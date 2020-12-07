@@ -59,6 +59,7 @@ Route choose_ETA(const Input& input,
   unsigned default_job_tw = 0;
   std::optional<Index> previous_index;
   std::optional<Location> first_location;
+  std::optional<Location> last_location;
 
   Index i = 0;
   for (const auto& step : steps) {
@@ -67,6 +68,7 @@ Route choose_ETA(const Input& input,
       if (v.has_start()) {
         previous_index = v.start.value().index();
         first_location = v.start.value();
+        last_location = v.start.value();
       }
       J.push_back(i);
       B.push_back(0);
@@ -102,6 +104,7 @@ Route choose_ETA(const Input& input,
       if (!first_location.has_value()) {
         first_location = job.location;
       }
+      last_location = job.location;
       ++i;
       break;
     }
@@ -130,13 +133,14 @@ Route choose_ETA(const Input& input,
         if (!first_location.has_value()) {
           first_location = v.end.value();
         }
+        last_location = v.end.value();
       } else {
         durations.push_back(0);
       }
       break;
     }
   }
-  assert(first_location.has_value());
+  assert(first_location.has_value() and last_location.has_value());
   assert(i == n + 1);
 
   // Refine planning horizon.
@@ -813,7 +817,6 @@ Route choose_ETA(const Input& input,
   const Duration v_start = horizon_start + get_duration(glp_mip_col_val(lp, 1));
   const Duration v_end =
     horizon_start + get_duration(glp_mip_col_val(lp, n + 2));
-  const Duration end_delay = get_duration(glp_mip_col_val(lp, 2 * n + 4));
   const Duration start_travel =
     get_duration(glp_mip_col_val(lp, start_delta_col));
 
@@ -863,9 +866,6 @@ Route choose_ETA(const Input& input,
   }
   assert(current_X_rank == start_delta_col);
   assert(task_tw_ranks.size() == n);
-
-  glp_delete_prob(lp);
-  glp_free_env();
 
   // Generate route.
   Cost duration = 0;
@@ -1067,43 +1067,40 @@ Route choose_ETA(const Input& input,
       break;
     }
     case STEP_TYPE::END:
-      if (v.has_end()) {
-        duration += previous_travel;
+      duration += previous_travel;
 
-        const auto arrival =
-          previous_start + previous_service + previous_travel;
-        assert(arrival <= v_end);
+      const auto arrival = previous_start + previous_service + previous_travel;
+      assert(arrival <= v_end);
 
-        sol_steps.emplace_back(STEP_TYPE::END, v.end.value(), current_load);
-        sol_steps.back().duration = duration;
-        sol_steps.back().arrival = arrival;
-        Duration wt = v_end - arrival;
-        sol_steps.back().waiting_time = wt;
-        forward_wt += wt;
+      sol_steps.emplace_back(STEP_TYPE::END,
+                             last_location.value(),
+                             current_load);
+      sol_steps.back().duration = duration;
+      sol_steps.back().arrival = arrival;
+      Duration wt = v_end - arrival;
+      sol_steps.back().waiting_time = wt;
+      forward_wt += wt;
 
-        if (v.tw.end < v_end) {
-          sol_steps.back().violations.types.insert(VIOLATION::DELAY);
-          v_types.insert(VIOLATION::DELAY);
-          Duration dl = v_end - v.tw.end;
-          sol_steps.back().violations.delay = dl;
-          delay += dl;
-        }
-        if (!(current_load <= v.capacity)) {
-          sol_steps.back().violations.types.insert(VIOLATION::LOAD);
-          v_types.insert(VIOLATION::LOAD);
-        }
+      if (v.tw.end < v_end) {
+        sol_steps.back().violations.types.insert(VIOLATION::DELAY);
+        v_types.insert(VIOLATION::DELAY);
+        Duration dl = v_end - v.tw.end;
+        sol_steps.back().violations.delay = dl;
+        delay += dl;
+      }
+      if (!(current_load <= v.capacity)) {
+        sol_steps.back().violations.types.insert(VIOLATION::LOAD);
+        v_types.insert(VIOLATION::LOAD);
       }
       break;
     }
   }
 
-  if (!v.has_end()) {
-    // Vehicle time window violation on route end is not reported in
-    // steps as there is no end step.
-    delay += end_delay;
-  }
+  assert(get_duration(glp_mip_col_val(lp, 2 * n + 4)) ==
+         sol_steps.back().violations.delay);
 
-  assert(!v.has_end() or end_delay == sol_steps.back().violations.delay);
+  glp_delete_prob(lp);
+  glp_free_env();
 
   // Precedence violations for pickups without a delivery.
   for (const auto d_rank : expected_delivery_ranks) {
@@ -1127,8 +1124,7 @@ Route choose_ETA(const Input& input,
                sum_deliveries,
                sum_pickups,
                v.description,
-               std::move(
-                 Violations(lead_time, delay, end_delay, std::move(v_types))));
+               std::move(Violations(lead_time, delay, std::move(v_types))));
 }
 
 } // namespace validation
