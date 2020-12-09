@@ -6,7 +6,7 @@
 # Variables.
 CXX ?= g++
 CXXFLAGS = -MMD -MP -I. -std=c++17 -Wextra -Wpedantic -Wall -O3 -DASIO_STANDALONE
-LDLIBS = -lpthread -lssl -lcrypto -lglpk
+LDLIBS = -lpthread -lssl -lcrypto
 
 # Using all cpp files in current directory.
 MAIN = ../bin/vroom
@@ -27,11 +27,22 @@ SRC = $(wildcard *.cpp)\
 
 # Checking for libosrm
 ifeq ($(shell pkg-config --exists libosrm && echo 1),1)
-LDLIBS += $(shell pkg-config --libs libosrm) -lboost_system -lboost_filesystem -lboost_iostreams -lboost_thread -lrt -ltbb
-LIBOSRMFLAGS = $(shell pkg-config --cflags libosrm)
-CXXFLAGS += $(filter-out -std=c++14, $(LIBOSRMFLAGS)) -D USE_LIBOSRM=true
+	LDLIBS += $(shell pkg-config --libs libosrm) -lboost_system -lboost_filesystem -lboost_iostreams -lboost_thread -lrt -ltbb
+	LIBOSRMFLAGS = $(shell pkg-config --cflags libosrm)
+	CXXFLAGS += $(filter-out -std=c++14, $(LIBOSRMFLAGS)) -D USE_LIBOSRM=true
 else
 	SRC := $(filter-out ./routing/libosrm_wrapper.cpp, $(SRC))
+endif
+
+# Checking for libglpk based on whether the header file is found as
+# glpk does not provide a pkg-config setup.
+GLPK_HEADER := $(strip $(wildcard /usr/include/glpk.h))
+ifeq ($(GLPK_HEADER),)
+	SRC := $(filter-out ./algorithms/validation/check.cpp, $(SRC))
+	SRC := $(filter-out ./algorithms/validation/choose_ETA.cpp, $(SRC))
+else
+	LDLIBS += -lglpk
+	CXXFLAGS += -D USE_LIBGLPK=true
 endif
 
 OBJ = $(SRC:.cpp=.o)

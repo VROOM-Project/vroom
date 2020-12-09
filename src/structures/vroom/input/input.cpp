@@ -472,6 +472,7 @@ Solution Input::solve(unsigned exploration_level,
 }
 
 Solution Input::check(unsigned nb_thread) {
+#if USE_LIBGLPK
   if (_geometry and !_all_locations_have_coords) {
     // Early abort when info is required with missing coordinates.
     throw Exception(ERROR::INPUT,
@@ -611,6 +612,10 @@ Solution Input::check(unsigned nb_thread) {
   }
 
   return sol;
+#else
+  // Attempt to use libglpk while compiling without it.
+  throw Exception(ERROR::INPUT, "VROOM compiled without libglpk installed.");
+#endif
 }
 
 } // namespace vroom
