@@ -18,8 +18,7 @@ namespace validation {
 
 Route choose_ETA(const Input& input,
                  unsigned vehicle_rank,
-                 const std::vector<InputStep>& steps,
-                 std::unordered_set<Index>& unassigned_ranks);
+                 const std::vector<InputStep>& steps);
 
 } // namespace validation
 } // namespace vroom

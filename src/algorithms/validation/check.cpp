@@ -20,11 +20,7 @@ namespace validation {
 
 Solution check_and_set_ETA(const Input& input) {
   std::vector<Route> routes;
-  std::unordered_set<Index> unassigned_ranks;
-
-  for (Index j = 0; j < input.jobs.size(); ++j) {
-    unassigned_ranks.insert(j);
-  }
+  std::unordered_set<Index> assigned_ranks;
 
   for (Index v = 0; v < input.vehicles.size(); ++v) {
     const auto& current_vehicle = input.vehicles[v];
@@ -32,16 +28,22 @@ Solution check_and_set_ETA(const Input& input) {
       continue;
     }
 
-    routes.push_back(
-      choose_ETA(input, v, current_vehicle.input_steps, unassigned_ranks));
+    for (const auto& step : current_vehicle.input_steps) {
+      if (step.type == STEP_TYPE::JOB) {
+        assigned_ranks.insert(step.rank);
+      }
+    }
+
+    routes.push_back(choose_ETA(input, v, current_vehicle.input_steps));
   }
 
   // Handle unassigned jobs.
   std::vector<Job> unassigned_jobs;
-  std::transform(unassigned_ranks.begin(),
-                 unassigned_ranks.end(),
-                 std::back_inserter(unassigned_jobs),
-                 [&](auto j) { return input.jobs[j]; });
+  for (Index j = 0; j < input.jobs.size(); ++j) {
+    if (assigned_ranks.find(j) == assigned_ranks.end()) {
+      unassigned_jobs.push_back(input.jobs[j]);
+    }
+  }
 
   return Solution(0,
                   input.zero_amount().size(),

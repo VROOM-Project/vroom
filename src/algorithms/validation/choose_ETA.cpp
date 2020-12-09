@@ -24,8 +24,7 @@ inline Duration get_duration(double d) {
 
 Route choose_ETA(const Input& input,
                  unsigned vehicle_rank,
-                 const std::vector<InputStep>& steps,
-                 std::unordered_set<Index>& unassigned_ranks) {
+                 const std::vector<InputStep>& steps) {
   const auto& m = input.get_matrix();
   const auto& v = input.vehicles[vehicle_rank];
 
@@ -1008,7 +1007,6 @@ Route choose_ETA(const Input& input,
         break;
       }
 
-      unassigned_ranks.erase(job_rank);
       previous_start = service_start;
       previous_service = job.service;
       previous_travel = task_travels[task_rank];
