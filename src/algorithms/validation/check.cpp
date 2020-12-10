@@ -7,6 +7,8 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <thread>
+#include <unordered_map>
 #include <unordered_set>
 
 #include "algorithms/validation/check.h"
@@ -18,10 +20,22 @@ All rights reserved (see LICENSE).
 namespace vroom {
 namespace validation {
 
-Solution check_and_set_ETA(const Input& input) {
-  std::vector<Route> routes;
+Solution check_and_set_ETA(const Input& input, unsigned nb_thread) {
+  // Keep track of assigned job ranks.
   std::unordered_set<Index> assigned_ranks;
 
+  // Split the work among threads.
+  const unsigned nb_vehicles_with_input =
+    std::count_if(input.vehicles.begin(),
+                  input.vehicles.end(),
+                  [](const auto& v) { return !v.input_steps.empty(); });
+  const auto nb_buckets = std::min(nb_thread, nb_vehicles_with_input);
+
+  std::vector<std::vector<Index>> thread_ranks(nb_buckets,
+                                               std::vector<Index>());
+
+  unsigned actual_route_rank = 0;
+  std::unordered_map<Index, Index> v_rank_to_actual_route_rank;
   for (Index v = 0; v < input.vehicles.size(); ++v) {
     const auto& current_vehicle = input.vehicles[v];
     if (current_vehicle.input_steps.empty()) {
@@ -34,7 +48,30 @@ Solution check_and_set_ETA(const Input& input) {
       }
     }
 
-    routes.push_back(choose_ETA(input, v, current_vehicle.input_steps));
+    thread_ranks[actual_route_rank % nb_buckets].push_back(v);
+    v_rank_to_actual_route_rank.insert({v, actual_route_rank});
+    ++actual_route_rank;
+  }
+
+  std::vector<Route> routes(actual_route_rank);
+
+  auto run_check = [&](const std::vector<Index>& vehicle_ranks) {
+    for (auto v : vehicle_ranks) {
+      auto search = v_rank_to_actual_route_rank.find(v);
+      assert(search != v_rank_to_actual_route_rank.end());
+      const auto route_rank = search->second;
+
+      routes[route_rank] = choose_ETA(input, v, input.vehicles[v].input_steps);
+    }
+  };
+  std::vector<std::thread> solving_threads;
+
+  for (std::size_t i = 0; i < nb_buckets; ++i) {
+    solving_threads.emplace_back(run_check, thread_ranks[i]);
+  }
+
+  for (auto& t : solving_threads) {
+    t.join();
   }
 
   // Handle unassigned jobs.

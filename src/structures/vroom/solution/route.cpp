@@ -11,6 +11,9 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
+Route::Route() {
+}
+
 Route::Route(Id vehicle,
              std::vector<Step>&& steps,
              Cost cost,

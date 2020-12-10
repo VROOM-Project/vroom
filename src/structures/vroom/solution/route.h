@@ -19,20 +19,22 @@ All rights reserved (see LICENSE).
 namespace vroom {
 
 struct Route {
-  const Id vehicle;
+  Id vehicle;
   std::vector<Step> steps;
-  const Cost cost;
-  const Duration service;
-  const Duration duration;
-  const Duration waiting_time;
-  const Priority priority;
-  const Amount delivery;
-  const Amount pickup;
-  const std::string description;
-  const Violations violations;
+  Cost cost;
+  Duration service;
+  Duration duration;
+  Duration waiting_time;
+  Priority priority;
+  Amount delivery;
+  Amount pickup;
+  std::string description;
+  Violations violations;
 
   std::string geometry;
   Distance distance;
+
+  Route();
 
   Route(Id vehicle,
         std::vector<Step>&& steps,

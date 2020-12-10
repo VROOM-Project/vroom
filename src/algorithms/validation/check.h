@@ -16,7 +16,7 @@ All rights reserved (see LICENSE).
 namespace vroom {
 namespace validation {
 
-Solution check_and_set_ETA(const Input& input);
+Solution check_and_set_ETA(const Input& input, unsigned nb_thread);
 
 } // namespace validation
 } // namespace vroom

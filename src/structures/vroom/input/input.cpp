@@ -586,7 +586,7 @@ Solution Input::check(unsigned nb_thread) {
                    .count();
 
   // Check.
-  auto sol = validation::check_and_set_ETA(*this);
+  auto sol = validation::check_and_set_ETA(*this, nb_thread);
 
   // Update timing info.
   sol.summary.computing_times.loading = loading;
