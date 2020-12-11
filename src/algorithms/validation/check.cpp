@@ -2,7 +2,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2019, Julien Coupey.
+Copyright (c) 2015-2020, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -54,24 +54,35 @@ Solution check_and_set_ETA(const Input& input, unsigned nb_thread) {
   }
 
   std::vector<Route> routes(actual_route_rank);
+  std::vector<std::exception_ptr> thread_exceptions(nb_buckets, nullptr);
 
-  auto run_check = [&](const std::vector<Index>& vehicle_ranks) {
+  auto run_check = [&](unsigned bucket,
+                       const std::vector<Index>& vehicle_ranks) {
     for (auto v : vehicle_ranks) {
       auto search = v_rank_to_actual_route_rank.find(v);
       assert(search != v_rank_to_actual_route_rank.end());
       const auto route_rank = search->second;
 
-      routes[route_rank] = choose_ETA(input, v, input.vehicles[v].input_steps);
+      try {
+        routes[route_rank] =
+          choose_ETA(input, v, input.vehicles[v].input_steps);
+      } catch (...) {
+        thread_exceptions[bucket] = std::current_exception();
+      }
     }
   };
   std::vector<std::thread> solving_threads;
 
-  for (std::size_t i = 0; i < nb_buckets; ++i) {
-    solving_threads.emplace_back(run_check, thread_ranks[i]);
+  for (unsigned i = 0; i < nb_buckets; ++i) {
+    solving_threads.emplace_back(run_check, i, thread_ranks[i]);
   }
 
-  for (auto& t : solving_threads) {
-    t.join();
+  for (unsigned i = 0; i < nb_buckets; ++i) {
+    solving_threads[i].join();
+
+    if (thread_exceptions[i] != nullptr) {
+      std::rethrow_exception(thread_exceptions[i]);
+    }
   }
 
   // Handle unassigned jobs.
