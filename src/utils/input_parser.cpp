@@ -284,7 +284,13 @@ inline std::vector<Break> get_vehicle_breaks(const rapidjson::Value& v) {
 inline std::vector<InputStep> get_vehicle_steps(const rapidjson::Value& v) {
   std::vector<InputStep> steps;
 
-  if (v.HasMember("steps") and v["steps"].IsArray()) {
+  if (v.HasMember("steps")) {
+    if (!v["steps"].IsArray()) {
+      throw Exception(ERROR::INPUT,
+                      "Invalid steps for vehicle " +
+                        std::to_string(v["id"].GetUint64()) + ".");
+    }
+
     for (rapidjson::SizeType i = 0; i < v["steps"].Size(); ++i) {
       const auto& json_step = v["steps"][i];
 
