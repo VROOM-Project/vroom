@@ -22,6 +22,33 @@ inline Duration get_duration(double d) {
   return static_cast<Duration>(std::round(d));
 }
 
+inline Duration get_violation(const std::vector<TimeWindow>& tws,
+                              Duration arrival) {
+  Duration violation = 0;
+  const auto tw = std::find_if(tws.begin(), tws.end(), [&](const auto& tw) {
+    return arrival <= tw.end;
+  });
+  if (tw == tws.end()) {
+    // Delay from last time window.
+    violation = (arrival - tws.back().end);
+  } else {
+    // No violation if arrival in this time window (tw->start <=
+    // arrival).
+    if (arrival < tw->start) {
+      if (tw == tws.begin()) {
+        // No previous time window, so it's a lead time.
+        violation = (tw->start - arrival);
+      } else {
+        // Pick smallest violation between both time windows.
+        const auto previous_tw = std::prev(tw, 1);
+        violation = std::min(arrival - previous_tw->end, tw->start - arrival);
+      }
+    }
+  }
+
+  return violation;
+}
+
 Route choose_ETA(const Input& input,
                  unsigned vehicle_rank,
                  const std::vector<InputStep>& steps) {
@@ -52,10 +79,14 @@ Route choose_ETA(const Input& input,
     horizon_end = std::max(horizon_end, v.tw.end);
   }
 
-  // Route indicators.
+  // Route indicators. relative_ETA stores steps ETA relative to a
+  // start at 0 taking only travel and service times into account (no
+  // waiting).
   Duration service_sum = 0;
   Duration duration_sum = 0;
   unsigned default_job_tw = 0;
+  Duration relative_arrival = 0;
+  std::vector<Duration> relative_ETA;
   std::optional<Index> previous_index;
   std::optional<Location> first_location;
   std::optional<Location> last_location;
@@ -71,6 +102,7 @@ Route choose_ETA(const Input& input,
       }
       J.push_back(i);
       B.push_back(0);
+      relative_ETA.push_back(0);
       ++i;
       break;
     case STEP_TYPE::JOB: {
@@ -99,6 +131,10 @@ Route choose_ETA(const Input& input,
       durations.push_back(current_duration);
       duration_sum += current_duration;
 
+      relative_arrival += current_duration;
+      relative_ETA.push_back(relative_arrival);
+      relative_arrival += job.service;
+
       previous_index = job.index();
       if (!first_location.has_value()) {
         first_location = job.location;
@@ -119,6 +155,9 @@ Route choose_ETA(const Input& input,
         horizon_start = std::min(horizon_start, b.tws.front().start);
         horizon_end = std::max(horizon_end, b.tws.back().end);
       }
+
+      relative_ETA.push_back(relative_arrival);
+      relative_arrival += b.service;
       break;
     }
     case STEP_TYPE::END:
@@ -128,6 +167,7 @@ Route choose_ETA(const Input& input,
           m[previous_index.value()][v.end.value().index()];
         durations.push_back(current_duration);
         duration_sum += current_duration;
+        relative_arrival += current_duration;
 
         if (!first_location.has_value()) {
           first_location = v.end.value();
@@ -136,11 +176,98 @@ Route choose_ETA(const Input& input,
       } else {
         durations.push_back(0);
       }
+
+      relative_ETA.push_back(relative_arrival);
       break;
     }
   }
   assert(first_location.has_value() and last_location.has_value());
   assert(i == n + 1);
+  assert(relative_ETA.size() == steps.size());
+
+  // Determine earliest possible start based on "service_at" and
+  // "service_before" constraints.
+  std::vector<Duration> latest_dates(steps.size(),
+                                     std::numeric_limits<Duration>::max());
+  auto start_candidate = std::numeric_limits<Duration>::max();
+  for (unsigned s = 0; s < steps.size(); ++s) {
+    const auto& step = steps[s];
+
+    auto& latest_date = latest_dates[s];
+    if (step.forced_service.at.has_value()) {
+      latest_date = step.forced_service.at.value();
+    }
+    if (step.forced_service.before.has_value()) {
+      latest_date = std::min(latest_date, step.forced_service.before.value());
+    }
+    if (latest_date != std::numeric_limits<Duration>::max()) {
+      const auto reach_time = relative_ETA[s];
+      if (latest_date < reach_time) {
+        throw Exception(ERROR::INPUT,
+                        "Infeasible route for vehicle " + std::to_string(v.id) +
+                          ".");
+      }
+      start_candidate = std::min(start_candidate, latest_date - reach_time);
+    }
+  }
+
+  // Generate a sample solution yielding an upper bound for the sum of
+  // violations.
+  if (!v.tw.is_default()) {
+    // Start ASAP for vehicle with custom time window.
+    start_candidate = std::min(start_candidate, v.tw.start);
+  } else {
+    if (horizon_start == std::numeric_limits<Duration>::max()) {
+      // No real time window in problem input.
+      start_candidate = 0;
+    } else {
+      // Start ASAP based on other time windows.
+      start_candidate = std::min(start_candidate, horizon_start);
+    }
+  }
+  Duration sample_violations = 0;
+  auto earliest_date = start_candidate;
+  for (unsigned s = 0; s < steps.size(); ++s) {
+    const auto& step = steps[s];
+    if (s > 0) {
+      earliest_date += (relative_ETA[s] - relative_ETA[s - 1]);
+    }
+    if (step.forced_service.at.has_value()) {
+      earliest_date = std::max(earliest_date, step.forced_service.at.value());
+    }
+    if (step.forced_service.after.has_value()) {
+      earliest_date =
+        std::max(earliest_date, step.forced_service.after.value());
+    }
+    if (earliest_date > latest_dates[s]) {
+      throw Exception(ERROR::INPUT,
+                      "Infeasible route for vehicle " + std::to_string(v.id) +
+                        ".");
+    }
+
+    switch (step.type) {
+    case STEP_TYPE::START:
+      if (earliest_date < v.tw.start) {
+        sample_violations += (v.tw.start - earliest_date);
+      }
+      break;
+    case STEP_TYPE::JOB: {
+      sample_violations +=
+        get_violation(input.jobs[step.rank].tws, earliest_date);
+      break;
+    }
+    case STEP_TYPE::BREAK: {
+      sample_violations +=
+        get_violation(v.breaks[step.rank].tws, earliest_date);
+      break;
+    }
+    case STEP_TYPE::END:
+      if (v.tw.end < earliest_date) {
+        sample_violations += (earliest_date - v.tw.end);
+      }
+      break;
+    }
+  }
 
   // Refine planning horizon.
   auto makespan_estimate = duration_sum + service_sum;
@@ -245,7 +372,7 @@ Route choose_ETA(const Input& input,
 
         if (tw->end < LB and tw != tws.rbegin()) {
           // Lower bound is between two time windows.
-          auto next_tw = std::prev(tw, 1);
+          const auto next_tw = std::prev(tw, 1);
           if ((next_tw->start - LB) < (LB - tw->end)) {
             // Lead time to next time window will always be cheaper
             // than delay from the current one, which can be
