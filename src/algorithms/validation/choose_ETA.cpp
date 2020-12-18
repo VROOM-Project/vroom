@@ -303,25 +303,43 @@ Route choose_ETA(const Input& input,
     // start at 0.
     assert(horizon_end == 0);
     horizon_start = 0;
-    horizon_end = 10 * makespan_estimate;
+    horizon_end = std::numeric_limits<Duration>::max();
   } else {
-    if (makespan_estimate == 0) {
-      makespan_estimate = horizon_end - horizon_start;
-    }
     // Advance "absolute" planning horizon start so as to allow lead
-    // time at startup.
-    if (makespan_estimate < horizon_start) {
-      horizon_start -= makespan_estimate;
-    } else {
-      horizon_start = 0;
+    // time at startup. Compute minimal delay values for possible start of
+    // steps at horizon_end. See when it goes over our total
+    // violations upper bound in order to reduce margin used after
+    // horizon_end.
+    Duration horizon_start_margin = 0;
+    for (unsigned s = 0; s < steps.size(); ++s) {
+      // Compute minimal delay value when step at rank s happens
+      // exactly at horizon_start.
+      if (relative_ETA[s] > horizon_start) {
+        // Not that much margin for horizon start anyway, no point in
+        // not starting at 0.
+        horizon_start_margin = 0;
+        break;
+      }
+      horizon_start_margin = relative_ETA[s];
+      Duration minimal_lead_time = 0;
+      for (unsigned t = 0; t <= s; ++t) {
+        minimal_lead_time += horizon_start_lead_times[t];
+        minimal_lead_time += relative_ETA[s] - relative_ETA[t];
+      }
+
+      if (minimal_lead_time > sample_violations) {
+        break;
+      }
     }
+    assert(horizon_start_margin <= horizon_start);
+    horizon_start -= horizon_start_margin;
+
     // Push "absolute" planning horizon end so as to allow
     // delays. Compute minimal delay values for possible start of
     // steps at horizon_end. See when it goes over our total
     // violations upper bound in order to reduce margin used after
     // horizon_end.
     Duration horizon_end_margin = 0;
-
     for (unsigned s = 0; s < steps.size(); ++s) {
       const auto rev_s = steps.size() - 1 - s;
       // Compute minimal delay value when step at rank rev_s happens
@@ -337,8 +355,11 @@ Route choose_ETA(const Input& input,
         break;
       }
     }
-
     horizon_end += horizon_end_margin;
+
+    if (makespan_estimate == 0) {
+      makespan_estimate = horizon_end - horizon_start;
+    }
   }
 
   // Retrieve user-provided upper bounds for t_i values. Retrieve
