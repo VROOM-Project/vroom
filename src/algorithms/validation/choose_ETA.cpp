@@ -646,7 +646,11 @@ Route choose_ETA(const Input& input,
 
   name = "Sigma_Y";
   glp_set_row_name(lp, current_row, name.c_str());
-  glp_set_row_bnds(lp, current_row, GLP_LO, 0, 0);
+  if (sample_violations == 0) {
+    glp_set_row_bnds(lp, current_row, GLP_FX, 0, 0);
+  } else {
+    glp_set_row_bnds(lp, current_row, GLP_DB, 0, sample_violations);
+  }
 
   // 3. set variables and coefficients.
   unsigned current_col = 1;
