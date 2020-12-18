@@ -226,6 +226,10 @@ Route choose_ETA(const Input& input,
     }
   }
   Duration sample_violations = 0;
+  // Store margin between current horizon start (resp. end) and first
+  // availability date (resp. deadline).
+  std::vector<Duration> horizon_start_lead_times(steps.size(), 0);
+  std::vector<Duration> horizon_end_delays(steps.size(), 0);
   auto earliest_date = start_candidate;
   for (unsigned s = 0; s < steps.size(); ++s) {
     const auto& step = steps[s];
@@ -250,20 +254,42 @@ Route choose_ETA(const Input& input,
       if (earliest_date < v.tw.start) {
         sample_violations += (v.tw.start - earliest_date);
       }
+      if (!v.tw.is_default()) {
+        horizon_start_lead_times[s] = v.tw.start - horizon_start;
+      }
       break;
     case STEP_TYPE::JOB: {
       sample_violations +=
         get_violation(input.jobs[step.rank].tws, earliest_date);
+
+      const auto& tws = input.jobs[step.rank].tws;
+      if (!tws.front().is_default()) {
+        horizon_start_lead_times[s] = tws.front().start - horizon_start;
+      }
+      if (!tws.back().is_default()) {
+        horizon_end_delays[s] = horizon_end - tws.back().end;
+      }
       break;
     }
     case STEP_TYPE::BREAK: {
       sample_violations +=
         get_violation(v.breaks[step.rank].tws, earliest_date);
+
+      const auto& tws = v.breaks[step.rank].tws;
+      if (!tws.front().is_default()) {
+        horizon_start_lead_times[s] = tws.front().start - horizon_start;
+      }
+      if (!tws.back().is_default()) {
+        horizon_end_delays[s] = horizon_end - tws.back().end;
+      }
       break;
     }
     case STEP_TYPE::END:
       if (v.tw.end < earliest_date) {
         sample_violations += (earliest_date - v.tw.end);
+      }
+      if (!v.tw.is_default()) {
+        horizon_end_delays[s] = horizon_end - v.tw.end;
       }
       break;
     }
@@ -289,8 +315,30 @@ Route choose_ETA(const Input& input,
     } else {
       horizon_start = 0;
     }
-    // Push "absolute" planning horizon end.
-    horizon_end += makespan_estimate;
+    // Push "absolute" planning horizon end so as to allow
+    // delays. Compute minimal delay values for possible start of
+    // steps at horizon_end. See when it goes over our total
+    // violations upper bound in order to reduce margin used after
+    // horizon_end.
+    Duration horizon_end_margin = 0;
+
+    for (unsigned s = 0; s < steps.size(); ++s) {
+      const auto rev_s = steps.size() - 1 - s;
+      // Compute minimal delay value when step at rank rev_s happens
+      // exactly at horizon_end.
+      horizon_end_margin = relative_ETA.back() - relative_ETA[rev_s];
+      Duration minimal_delay = 0;
+      for (unsigned t = rev_s; t < steps.size(); ++t) {
+        minimal_delay += horizon_end_delays[t];
+        minimal_delay += relative_ETA[t] - relative_ETA[rev_s];
+      }
+
+      if (minimal_delay > sample_violations) {
+        break;
+      }
+    }
+
+    horizon_end += horizon_end_margin;
   }
 
   // Retrieve user-provided upper bounds for t_i values. Retrieve
