@@ -34,7 +34,7 @@ void display_usage() {
   usage += "Options:\n";
   usage += "\t-a PROFILE:HOST (=" + vroom::DEFAULT_PROFILE +
            ":0.0.0.0)\t routing server\n";
-  usage += "\t-c,\t\t\t\t check for custom routes validity\n";
+  usage += "\t-c,\t\t\t\t choose ETA for custom routes and report violations\n";
   usage += "\t-g,\t\t\t\t add detailed route geometry and indicators\n";
   usage += "\t-i FILE,\t\t\t read input from FILE rather than from stdin\n";
   usage += "\t-o OUTPUT,\t\t\t output file name\n";

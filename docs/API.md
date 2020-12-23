@@ -1,11 +1,12 @@
 <!-- This file is part of VROOM. -->
 
-<!-- Copyright (c) 2015-2018, Julien Coupey. -->
+<!-- Copyright (c) 2015-2020, Julien Coupey. -->
 <!-- All rights reserved (see LICENSE). -->
 
 This file describes the `vroom` API.
 
 Contents:
+- [Solving mode](#mode)
 - [Input format](#input)
 - [Output format](#output)
 - [Examples](#examples)
@@ -18,6 +19,22 @@ Contents:
 - deprecated keys are crossed out
 - `cost` values in output are the one used in the optimization objective (currently equal to `duration`)
 - a "task" is either a job, a pickup or a delivery
+
+# Solving mode
+
+## Default VRP
+
+The default solving mode takes as input the description of a vehicle
+routing problem and outputs a set of routes matching all constraints.
+
+## Plan mode
+
+Activated using `-c`, this mode aims at choosing ETA for all route
+steps. It takes the same input format augmented with a description of
+the expected route for each vehicle. All constraints in input
+implicitly become soft constraints. The output is a set of routes
+matching the expected description while minimizing timing violations
+and reporting all constraint violations.
 
 # Input
 
@@ -37,7 +54,7 @@ A `job` object has the following properties:
 
 | Key         | Description |
 | ----------- | ----------- |
-| `id` | an integer used as unique identifier |
+| `id` | integer |
 | [`description`] | a string describing this job |
 | [`location`] | coordinates array |
 | [`location_index`] | index of relevant row and column in custom matrix |
@@ -48,6 +65,8 @@ A `job` object has the following properties:
 | [`skills`] | an array of integers defining mandatory skills |
 | [`priority`] | an integer in the `[0, 100]` range describing priority level (defaults to 0) |
 | [`time_windows`] | an array of `time_window` objects describing valid slots for job service start |
+
+An error is reported if two `job` objects have the same `id`.
 
 ## Shipments
 
@@ -65,12 +84,14 @@ A `shipment_step` is similar to a `job` object (expect for shared keys already p
 
 | Key         | Description |
 | ----------- | ----------- |
-| `id` | an integer used as unique identifier |
+| `id` | integer |
 | [`description`] | a string describing this step |
 | [`location`] | coordinates array |
 | [`location_index`] | index of relevant row and column in custom matrix |
 | [`service`] | task service duration (defaults to 0) |
 | [`time_windows`] | an array of `time_window` objects describing valid slots for task service start |
+
+An error is reported if two `delivery` (resp. `pickup`) objects have the same `id`.
 
 ## Vehicles
 
@@ -78,7 +99,7 @@ A `vehicle` object has the following properties:
 
 | Key         | Description |
 | ----------- | ----------- |
-| `id` | an integer used as unique identifier |
+| `id` | integer |
 | [`profile`] | routing profile (defaults to `car`) |
 | [`description`] | a string describing this vehicle |
 | [`start`] | coordinates array |
@@ -89,15 +110,28 @@ A `vehicle` object has the following properties:
 | [`skills`] | an array of integers defining skills |
 | [`time_window`] | a `time_window` object describing working hours |
 | [`breaks`] | an array of `break` objects |
+| [`steps`] | an array of `input_step` objects describing a custom route for this vehicle (only makes sense when using `-c`) |
 
 A `break` object has the following properties:
 
 | Key         | Description |
 | ----------- | ----------- |
-| `id` | an integer used as unique identifier |
+| `id` | integer |
 | `time_windows` | an array of `time_window` objects describing valid slots for break start |
 | [`service`] | break duration (defaults to 0) |
 | [`description`] | a string describing this break |
+
+An error is reported if two `break` objects have the same `id` for the same vehicle.
+
+An `input_step` object has the following properties:
+
+| Key         | Description |
+| ----------- | ----------- |
+| `type` | a string (either `start`, `job`, `pickup`, `delivery`, `break` or `end`) |
+| [`id`] | id of the task performed at this step if `type` value is `job`, `pickup`, `delivery` or `break` |
+| [`service_at`] | hard constraint on service time |
+| [`service_after`] | hard constraint on service time lower bound |
+| [`service_before`] | hard constraint on service time upper bound |
 
 ## Notes
 
@@ -223,6 +257,7 @@ The `summary` object has the following properties:
 | `duration` | total travel time for all routes |
 | `waiting_time` | total waiting time for all routes |
 | `priority` | total priority sum for all assigned tasks |
+| `violations` | violation report aggregated for all routes |
 | ~~[`amount`]~~ | ~~total amount for all routes~~ |
 | [`delivery`] | total delivery for all routes |
 | [`pickup`] | total pickup for all routes |
@@ -243,6 +278,7 @@ A `route` object has the following properties:
 | `duration` | total travel time for this route |
 | `waiting_time` | total waiting time for this route |
 | `priority` | total priority sum for tasks in this route |
+| `violations` | violation report aggregated for all steps in this route |
 | ~~[`amount`]~~ | ~~total amount for jobs in this route~~ |
 | [`delivery`] | total delivery for tasks in this route |
 | [`pickup`] | total pickup for tasks in this route |
@@ -261,16 +297,41 @@ A `step` object has the following properties:
 | `type` | a string (either `start`, `job`, `pickup`, `delivery`, `break` or `end`) |
 | `arrival` | estimated time of arrival at this step |
 | `duration` | cumulated travel time upon arrival at this step |
+| `service` | service time at this step |
+| `waiting_time` | waiting time upon arrival at this step |
+| `violations` | violation report at this step |
 | [`description`] | step description, if provided in input |
 | [`location`] | coordinates array for this step (if provided in input) |
 | [`id`] | id of the task performed at this step, only provided if `type` value is `job`, `pickup`, `delivery` or `break` |
 | ~~[`job`]~~ | ~~id of the job performed at this step, only provided if `type` value is `job`~~ |
 | [`load`] | vehicle load after step completion (with capacity constraints) |
-| [`service`] | service time at this step (not provided for `start` and `end`) |
-| [`waiting_time`] | waiting time upon arrival at this step  (not provided for `start` and `end`) |
 | [`distance`]* | traveled distance upon arrival at this step |
 
 *: provided when using the `-g` flag.
+
+### Violations
+
+A `violations` object has the following properties:
+
+| Key         | Description |
+| ----------- | ----------- |
+| `types` | array listing causes of violations |
+| `lead_time` |  earliness if "lead_time" is in `types`|
+| `delay` |  lateness if "delay" is in `types`|
+
+Possible violations causes are:
+- "delay" if actual service start does not meet a task time window and is late on a time window end
+- "lead_time" if actual service start does not meet a task time window and is early on a time window start
+- "load" if the vehicle load goes over its capacity
+- "skills" if the vehicle does not hold all required skills for a task
+- "precedence" if a `shipment` precedence constraint is not met (`pickup` without matching `delivery`, `delivery` before/without matching `pickup`)
+- "missing_break" if a vehicle break has been omitted in its custom route
+
+Note on violations: reporting only really makes sense when using `-c`
+to choose ETA for custom routes described in input using the `steps`
+keys for a `vehicle`. When using regular optimization, violations are
+still reported for consistency, but are guaranteed to be "void",
+i.e. `types` is empty while `lead_time` and `delay` are `0`.
 
 # Examples
 
