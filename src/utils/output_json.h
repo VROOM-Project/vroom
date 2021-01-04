@@ -10,8 +10,6 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <string>
-
 #include "../include/rapidjson/document.h"
 #include "structures/vroom/solution/solution.h"
 

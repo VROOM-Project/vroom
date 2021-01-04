@@ -13,7 +13,6 @@ All rights reserved (see LICENSE).
 #include <unordered_map>
 
 #include "structures/generic/matrix.h"
-#include "structures/typedefs.h"
 
 namespace vroom {
 namespace utils {

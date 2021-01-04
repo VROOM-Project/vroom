@@ -7,25 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <numeric>
-
 #include "algorithms/local_search/local_search.h"
-#include "algorithms/local_search/operator.h"
-#include "problems/cvrp/operators/cross_exchange.h"
-#include "problems/cvrp/operators/exchange.h"
-#include "problems/cvrp/operators/intra_cross_exchange.h"
-#include "problems/cvrp/operators/intra_exchange.h"
-#include "problems/cvrp/operators/intra_mixed_exchange.h"
-#include "problems/cvrp/operators/intra_or_opt.h"
-#include "problems/cvrp/operators/intra_relocate.h"
-#include "problems/cvrp/operators/mixed_exchange.h"
-#include "problems/cvrp/operators/or_opt.h"
-#include "problems/cvrp/operators/pd_shift.h"
-#include "problems/cvrp/operators/relocate.h"
-#include "problems/cvrp/operators/reverse_two_opt.h"
-#include "problems/cvrp/operators/route_exchange.h"
-#include "problems/cvrp/operators/two_opt.h"
-#include "problems/cvrp/operators/unassigned_exchange.h"
 #include "problems/vrptw/operators/cross_exchange.h"
 #include "problems/vrptw/operators/exchange.h"
 #include "problems/vrptw/operators/intra_cross_exchange.h"

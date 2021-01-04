@@ -6,14 +6,10 @@ Copyright (c) 2015-2021, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
-#include <array>
 
-#include "problems/cvrp/cvrp.h"
-#include "problems/tsp/tsp.h"
-#include "problems/vrp.h"
-#include "problems/vrptw/vrptw.h"
 #include "structures/vroom/input/input.h"
-#include "utils/exception.h"
+#include "problems/cvrp/cvrp.h"
+#include "problems/vrptw/vrptw.h"
 #include "utils/helpers.h"
 
 namespace vroom {

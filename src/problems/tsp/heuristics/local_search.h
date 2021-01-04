@@ -10,9 +10,6 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <list>
-#include <vector>
-
 #include "structures/generic/matrix.h"
 #include "structures/typedefs.h"
 

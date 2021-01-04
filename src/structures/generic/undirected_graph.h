@@ -10,9 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <list>
 #include <unordered_map>
-#include <vector>
 
 #include "structures/generic/edge.h"
 #include "structures/generic/matrix.h"

@@ -12,7 +12,6 @@ All rights reserved (see LICENSE).
 
 #include <string>
 #include <unordered_map>
-#include <vector>
 
 #include "structures/typedefs.h"
 

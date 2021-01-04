@@ -11,7 +11,6 @@ All rights reserved (see LICENSE).
 */
 
 #include "problems/cvrp/operators/or_opt.h"
-#include "structures/vroom/tw_route.h"
 
 namespace vroom {
 namespace vrptw {

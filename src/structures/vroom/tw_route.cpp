@@ -10,7 +10,6 @@ All rights reserved (see LICENSE).
 #include <algorithm>
 
 #include "structures/vroom/tw_route.h"
-#include "utils/exception.h"
 
 namespace vroom {
 

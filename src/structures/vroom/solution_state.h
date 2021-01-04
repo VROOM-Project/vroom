@@ -10,12 +10,8 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <unordered_set>
-
 #include "structures/typedefs.h"
-#include "structures/vroom/amount.h"
 #include "structures/vroom/input/input.h"
-#include "structures/vroom/raw_route.h"
 #include "structures/vroom/tw_route.h"
 
 namespace vroom {

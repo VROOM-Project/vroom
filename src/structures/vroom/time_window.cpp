@@ -7,8 +7,6 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <string>
-
 #include "structures/vroom/time_window.h"
 #include "utils/exception.h"
 

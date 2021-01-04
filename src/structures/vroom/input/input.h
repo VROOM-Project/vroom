@@ -13,13 +13,10 @@ All rights reserved (see LICENSE).
 #include <chrono>
 #include <memory>
 #include <unordered_map>
-#include <unordered_set>
-#include <vector>
 
 #include "routing/wrapper.h"
 #include "structures/generic/matrix.h"
 #include "structures/typedefs.h"
-#include "structures/vroom/job.h"
 #include "structures/vroom/solution/solution.h"
 #include "structures/vroom/vehicle.h"
 

@@ -10,9 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "structures/vroom/raw_route.h"
 #include "structures/vroom/solution_state.h"
-#include "structures/vroom/tw_route.h"
 
 namespace vroom {
 namespace ls {

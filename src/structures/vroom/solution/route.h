@@ -11,7 +11,6 @@ All rights reserved (see LICENSE).
 */
 
 #include <string>
-#include <vector>
 
 #include "structures/vroom/solution/step.h"
 

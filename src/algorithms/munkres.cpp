@@ -9,11 +9,9 @@ All rights reserved (see LICENSE).
 
 #include <cassert>
 #include <limits>
-#include <list>
 #include <set>
 
 #include "algorithms/munkres.h"
-#include "structures/generic/edge.h"
 
 namespace vroom {
 namespace utils {

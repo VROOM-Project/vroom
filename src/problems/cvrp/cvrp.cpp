@@ -7,7 +7,6 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <numeric>
 #include <thread>
 
 #include "algorithms/heuristics/solomon.h"
@@ -29,8 +28,6 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/operators/two_opt.h"
 #include "problems/cvrp/operators/unassigned_exchange.h"
 #include "problems/tsp/tsp.h"
-#include "structures/vroom/input/input.h"
-#include "structures/vroom/raw_route.h"
 #include "utils/helpers.h"
 
 namespace vroom {

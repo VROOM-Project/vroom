@@ -7,9 +7,6 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <numeric>
-#include <unordered_map>
-
 #include "structures/vroom/solution_state.h"
 #include "utils/helpers.h"
 

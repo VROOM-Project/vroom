@@ -8,7 +8,6 @@ All rights reserved (see LICENSE).
 */
 
 #include <cassert>
-#include <random>
 #include <set>
 
 #include "algorithms/kruskal.h"

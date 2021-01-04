@@ -10,8 +10,6 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <vector>
-
 #include "problems/vrp.h"
 
 namespace vroom {

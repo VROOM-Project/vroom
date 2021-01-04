@@ -7,8 +7,6 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <iostream>
-
 #include "problems/vrptw/operators/reverse_two_opt.h"
 
 namespace vroom {

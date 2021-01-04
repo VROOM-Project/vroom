@@ -10,8 +10,6 @@ All rights reserved (see LICENSE).
 #include "problems/tsp/tsp.h"
 #include "problems/tsp/heuristics/christofides.h"
 #include "problems/tsp/heuristics/local_search.h"
-#include "structures/generic/undirected_graph.h"
-#include "structures/vroom/input/input.h"
 #include "utils/helpers.h"
 
 namespace vroom {

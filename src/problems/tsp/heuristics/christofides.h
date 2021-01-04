@@ -10,11 +10,6 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <list>
-
-#include "structures/generic/matrix.h"
-#include "structures/typedefs.h"
-
 namespace vroom {
 namespace tsp {
 

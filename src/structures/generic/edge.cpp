@@ -6,7 +6,6 @@ Copyright (c) 2015-2021, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
-#include <algorithm>
 
 #include "structures/generic/edge.h"
 

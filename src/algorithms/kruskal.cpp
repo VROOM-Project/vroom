@@ -9,11 +9,8 @@ All rights reserved (see LICENSE).
 
 #include <algorithm>
 #include <numeric>
-#include <vector>
 
 #include "algorithms/kruskal.h"
-#include "structures/generic/edge.h"
-#include "structures/typedefs.h"
 
 namespace vroom {
 namespace utils {

@@ -18,9 +18,6 @@ All rights reserved (see LICENSE).
 
 #include "problems/vrp.h"
 #include "structures/cl_args.h"
-#include "structures/typedefs.h"
-#include "structures/vroom/input/input.h"
-#include "utils/exception.h"
 #include "utils/helpers.h"
 #include "utils/input_parser.h"
 #include "utils/output_json.h"

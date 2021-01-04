@@ -8,7 +8,6 @@ All rights reserved (see LICENSE).
 */
 
 #include "problems/cvrp/operators/intra_or_opt.h"
-#include "utils/helpers.h"
 
 namespace vroom {
 namespace cvrp {

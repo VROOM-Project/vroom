@@ -10,8 +10,6 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <vector>
-
 #include "structures/typedefs.h"
 #include "structures/vroom/input/input.h"
 

@@ -14,7 +14,6 @@ All rights reserved (see LICENSE).
 #include "../include/rapidjson/writer.h"
 
 #include "utils/output_json.h"
-#include "utils/version.h"
 
 namespace vroom {
 namespace io {

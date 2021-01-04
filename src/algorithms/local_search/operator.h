@@ -12,7 +12,6 @@ All rights reserved (see LICENSE).
 
 #include "structures/typedefs.h"
 #include "structures/vroom/input/input.h"
-#include "structures/vroom/raw_route.h"
 #include "structures/vroom/solution_state.h"
 
 namespace vroom {
