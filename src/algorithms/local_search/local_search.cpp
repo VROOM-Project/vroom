@@ -316,9 +316,24 @@ void LocalSearch<Route,
                                                    double regret_coeff) {
 
   bool job_added;
-  std::vector<RouteInsertion> best_insert;
 
   do {
+    std::vector<std::vector<RouteInsertion>> route_job_insertions;
+
+    for (std::size_t i = 0; i < routes.size(); ++i) {
+      //TODO: tweak such that the vectors don't include all jobs
+      route_job_insertions.push_back(std::vector<RouteInsertion>(_input.jobs.size(), empty_insert));
+
+      const auto v = routes[i];
+      for (const auto j : _sol_state.unassigned) {
+        const auto& current_job = _input.jobs[j];
+        if (current_job.type == JOB_TYPE::DELIVERY) {
+          continue;
+        }
+        route_job_insertions[i][j] = compute_best_insertion(_input, j, v, _sol[v]);
+      }
+    }
+
     Priority best_priority = 0;
     RouteInsertion best_insertion = empty_insert;
     double best_cost = std::numeric_limits<double>::max();
@@ -337,31 +352,26 @@ void LocalSearch<Route,
         // Insert higher priority jobs first.
         continue;
       }
-      best_insert.assign(routes.size(), empty_insert);
 
-      for (std::size_t i = 0; i < routes.size(); ++i) {
-        const auto v = routes[i];
-        best_insert[i] = compute_best_insertion(_input, j, v, _sol[v]);
-      }
 
       auto smallest = std::numeric_limits<Gain>::max();
       auto second_smallest = std::numeric_limits<Gain>::max();
       std::size_t smallest_idx = std::numeric_limits<std::size_t>::max();
 
       for (std::size_t i = 0; i < routes.size(); ++i) {
-        if (best_insert[i].cost < smallest) {
+        if (route_job_insertions[i][j].cost < smallest) {
           smallest_idx = i;
           second_smallest = smallest;
-          smallest = best_insert[i].cost;
-        } else if (best_insert[i].cost < second_smallest) {
-          second_smallest = best_insert[i].cost;
+          smallest = route_job_insertions[i][j].cost;
+        } else if (route_job_insertions[i][j].cost < second_smallest) {
+          second_smallest = route_job_insertions[i][j].cost;
         }
       }
 
       // Find best route for current job based on cost of addition and
       // regret cost of not adding.
       for (std::size_t i = 0; i < routes.size(); ++i) {
-        const auto addition_cost = best_insert[i].cost;
+        const auto addition_cost = route_job_insertions[i][j].cost;
         if (addition_cost == std::numeric_limits<Gain>::max()) {
           continue;
         }
@@ -376,7 +386,7 @@ void LocalSearch<Route,
           best_priority = job_priority;
           best_job_rank = j;
           best_route = routes[i];
-          best_insertion = best_insert[i];
+          best_insertion = route_job_insertions[i][j];
           best_cost = eval;
         }
       }
