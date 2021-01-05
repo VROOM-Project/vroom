@@ -147,20 +147,23 @@ void LocalSearch<Route,
                  RouteExchange>::try_job_additions(const std::vector<Index>&
                                                      routes,
                                                    double regret_coeff) {
+  struct RouteInsertion {
+    Gain cost;
+    Index single_rank;
+    Index pickup_rank;
+    Index delivery_rank;
+  };
+  const RouteInsertion empty_insert = {std::numeric_limits<Gain>::max(), 0, 0, 0};
+
   bool job_added;
-  std::vector<Gain> best_costs;
-  std::vector<Index> best_ranks;
-  std::vector<Index> best_pickup_ranks;
-  std::vector<Index> best_delivery_ranks;
+  std::vector<RouteInsertion> best_insert;
 
   do {
     Priority best_priority = 0;
+    RouteInsertion best_insertion = empty_insert;
     double best_cost = std::numeric_limits<double>::max();
     Index best_job_rank = 0;
     Index best_route = 0;
-    Index best_rank = 0;
-    Index best_pickup_r = 0;
-    Index best_delivery_r = 0;
 
     for (const auto j : _sol_state.unassigned) {
       const auto& current_job = _input.jobs[j];
@@ -174,11 +177,7 @@ void LocalSearch<Route,
         // Insert higher priority jobs first.
         continue;
       }
-
-      best_costs.assign(routes.size(), std::numeric_limits<Gain>::max());
-      best_ranks.assign(routes.size(), 0);
-      best_pickup_ranks.assign(routes.size(), 0);
-      best_delivery_ranks.assign(routes.size(), 0);
+      best_insert.assign(routes.size(), empty_insert);
 
       if (current_job.type == JOB_TYPE::SINGLE) {
         for (std::size_t i = 0; i < routes.size(); ++i) {
@@ -189,21 +188,20 @@ void LocalSearch<Route,
             continue;
           }
 
-          for (std::size_t r = 0; r <= _sol[v].size(); ++r) {
+          for (Index r = 0; r <= _sol[v].size(); ++r) {
             Gain current_cost = utils::addition_cost(_input,
                                                      _matrix,
                                                      j,
                                                      v_target,
                                                      _sol[v].route,
                                                      r);
-            if (current_cost < best_costs[i] and
+            if (current_cost < best_insert[i].cost and
                 _sol[v].is_valid_addition_for_capacity(_input,
                                                        current_job.pickup,
                                                        current_job.delivery,
                                                        r) and
                 _sol[v].is_valid_addition_for_tw(_input, j, r)) {
-              best_costs[i] = current_cost;
-              best_ranks[i] = r;
+              best_insert[i] = {current_cost, r, 0, 0};
             }
           }
         }
@@ -287,7 +285,7 @@ void LocalSearch<Route,
               Gain current_cost =
                 static_cast<Gain>(static_cast<double>(pd_cost) / 2);
 
-              if (current_cost < best_costs[i]) {
+              if (current_cost < best_insert[i].cost) {
                 modified_with_pd.push_back(j + 1);
 
                 // Update best cost depending on validity.
@@ -313,9 +311,7 @@ void LocalSearch<Route,
                 modified_with_pd.pop_back();
 
                 if (is_valid) {
-                  best_costs[i] = current_cost;
-                  best_pickup_ranks[i] = pickup_r;
-                  best_delivery_ranks[i] = delivery_r;
+                  best_insert[i] = {current_cost, 0, pickup_r, delivery_r};
                 }
               }
             }
@@ -328,19 +324,19 @@ void LocalSearch<Route,
       std::size_t smallest_idx = std::numeric_limits<std::size_t>::max();
 
       for (std::size_t i = 0; i < routes.size(); ++i) {
-        if (best_costs[i] < smallest) {
+        if (best_insert[i].cost < smallest) {
           smallest_idx = i;
           second_smallest = smallest;
-          smallest = best_costs[i];
-        } else if (best_costs[i] < second_smallest) {
-          second_smallest = best_costs[i];
+          smallest = best_insert[i].cost;
+        } else if (best_insert[i].cost < second_smallest) {
+          second_smallest = best_insert[i].cost;
         }
       }
 
       // Find best route for current job based on cost of addition and
       // regret cost of not adding.
       for (std::size_t i = 0; i < routes.size(); ++i) {
-        const auto addition_cost = best_costs[i];
+        const auto addition_cost = best_insert[i].cost;
         if (addition_cost == std::numeric_limits<Gain>::max()) {
           continue;
         }
@@ -353,16 +349,10 @@ void LocalSearch<Route,
         if ((job_priority > best_priority) or
             (job_priority == best_priority and eval < best_cost)) {
           best_priority = job_priority;
-          best_cost = eval;
           best_job_rank = j;
           best_route = routes[i];
-          if (current_job.type == JOB_TYPE::SINGLE) {
-            best_rank = best_ranks[i];
-          }
-          if (current_job.type == JOB_TYPE::PICKUP) {
-            best_pickup_r = best_pickup_ranks[i];
-            best_delivery_r = best_delivery_ranks[i];
-          }
+          best_insertion = best_insert[i];
+          best_cost = eval;
         }
       }
     }
@@ -374,21 +364,21 @@ void LocalSearch<Route,
       const auto& best_job = _input.jobs[best_job_rank];
 
       if (best_job.type == JOB_TYPE::SINGLE) {
-        _sol[best_route].add(_input, best_job_rank, best_rank);
+        _sol[best_route].add(_input, best_job_rank, best_insertion.single_rank);
       } else {
         assert(best_job.type == JOB_TYPE::PICKUP);
 
         std::vector<Index> modified_with_pd({best_job_rank});
-        std::copy(_sol[best_route].route.begin() + best_pickup_r,
-                  _sol[best_route].route.begin() + best_delivery_r,
+        std::copy(_sol[best_route].route.begin() + best_insertion.pickup_rank,
+                  _sol[best_route].route.begin() + best_insertion.delivery_rank,
                   std::back_inserter(modified_with_pd));
         modified_with_pd.push_back(best_job_rank + 1);
 
         _sol[best_route].replace(_input,
                                  modified_with_pd.begin(),
                                  modified_with_pd.end(),
-                                 best_pickup_r,
-                                 best_delivery_r);
+                                 best_insertion.pickup_rank,
+                                 best_insertion.delivery_rank);
 
         assert(_sol_state.unassigned.find(best_job_rank + 1) !=
                _sol_state.unassigned.end());
