@@ -123,7 +123,7 @@ struct RouteInsertion {
 const RouteInsertion empty_insert = {std::numeric_limits<Gain>::max(), 0, 0, 0};
 
 template <class Route>
-RouteInsertion compute_best_insertion(const Input& input, const Index j, Index v, const Route& route) {
+RouteInsertion compute_best_insertion_single(const Input& input, const Index j, Index v, const Route& route) {
   const auto& matrix = input.get_matrix();
   RouteInsertion result = empty_insert;
   const auto& current_job = input.jobs[j];
@@ -266,6 +266,20 @@ RouteInsertion compute_best_insertion_pd(const Input& input, const Index j, Inde
   return result;
 }
 
+template <class Route>
+RouteInsertion compute_best_insertion(const Input& input, const Index j, Index v, const Route& route) {
+
+  const auto& current_job = input.jobs[j];
+  if (current_job.type == JOB_TYPE::SINGLE) {
+      return compute_best_insertion_single(input, j, v, route);
+  } else if (current_job.type == JOB_TYPE::PICKUP) {
+      return compute_best_insertion_pd(input, j, v, route);
+  } else {
+    return empty_insert;
+  }
+}
+
+
 template <class Route,
           class UnassignedExchange,
           class Exchange,
@@ -325,18 +339,9 @@ void LocalSearch<Route,
       }
       best_insert.assign(routes.size(), empty_insert);
 
-      if (current_job.type == JOB_TYPE::SINGLE) {
-        for (std::size_t i = 0; i < routes.size(); ++i) {
-          const auto v = routes[i];
-          best_insert[i] = compute_best_insertion(_input, j, v, _sol[v]);
-        }
-      }
-
-      if (current_job.type == JOB_TYPE::PICKUP) {
-        for (std::size_t i = 0; i < routes.size(); ++i) {
-          const auto v = routes[i];
-          best_insert[i] = compute_best_insertion_pd(_input, j, v, _sol[v]);
-        }
+      for (std::size_t i = 0; i < routes.size(); ++i) {
+        const auto v = routes[i];
+        best_insert[i] = compute_best_insertion(_input, j, v, _sol[v]);
       }
 
       auto smallest = std::numeric_limits<Gain>::max();
