@@ -149,10 +149,10 @@ back at vehicle end.
 Use `skills` to describe a problem where not all tasks can be served
 by all vehicles. Job skills are mandatory, i.e. a job can only be
 served by a vehicle that has **all** its required skills. In other
-words: job `j` is eligible to vehicle `v` iff `j.skills` is included
+words: job `j` is eligible to vehicle `v` if `j.skills` is included
 in `v.skills`.
 
-In order to ease modeling problems with no skills required, it is
+In order to ease modelling problems with no skills required, it is
 assumed that there is no restriction at all if no `skills` keys are
 provided.
 
@@ -195,7 +195,7 @@ The computed solution is written as `json` on standard output or a file
 | Key         | Description |
 | ----------- | ----------- |
 | `code` | status code |
-| `error` | error message (present iff `code` is different from `0`) |
+| `error` | error message (present if `code` is different from `0`) |
 | [`summary`](#summary) | object summarizing solution indicators |
 | `unassigned` | array of objects describing unassigned tasks with their `id` and `location` (if provided) |
 | [`routes`](#routes) | array of `route` objects |
