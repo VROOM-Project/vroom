@@ -316,29 +316,31 @@ void LocalSearch<Route,
                                                    double regret_coeff) {
 
   bool job_added;
+    
+  std::vector<std::vector<RouteInsertion>> route_job_insertions;
 
-  do {
-    std::vector<std::vector<RouteInsertion>> route_job_insertions;
-
-    for (std::size_t i = 0; i < routes.size(); ++i) {
+  for (std::size_t i = 0; i < routes.size(); ++i) {
       //TODO: tweak such that the vectors don't include all jobs
       route_job_insertions.push_back(std::vector<RouteInsertion>(_input.jobs.size(), empty_insert));
 
       const auto v = routes[i];
       for (const auto j : _sol_state.unassigned) {
-        const auto& current_job = _input.jobs[j];
-        if (current_job.type == JOB_TYPE::DELIVERY) {
-          continue;
-        }
-        route_job_insertions[i][j] = compute_best_insertion(_input, j, v, _sol[v]);
+          const auto& current_job = _input.jobs[j];
+          if (current_job.type == JOB_TYPE::DELIVERY) {
+              continue;
+          }
+          route_job_insertions[i][j] = compute_best_insertion(_input, j, v, _sol[v]);
       }
-    }
+  }
+
+  do {
 
     Priority best_priority = 0;
     RouteInsertion best_insertion = empty_insert;
     double best_cost = std::numeric_limits<double>::max();
     Index best_job_rank = 0;
     Index best_route = 0;
+    std::size_t best_route_idx = 0;
 
     for (const auto j : _sol_state.unassigned) {
       const auto& current_job = _input.jobs[j];
@@ -388,6 +390,7 @@ void LocalSearch<Route,
           best_route = routes[i];
           best_insertion = route_job_insertions[i][j];
           best_cost = eval;
+          best_route_idx = i;
         }
       }
     }
@@ -419,7 +422,14 @@ void LocalSearch<Route,
                _sol_state.unassigned.end());
         _sol_state.unassigned.erase(best_job_rank + 1);
       }
-
+      //Update route/job insertions for best_route
+      for (const auto j : _sol_state.unassigned) {
+          const auto& current_job = _input.jobs[j];
+          if (current_job.type == JOB_TYPE::DELIVERY) {
+              continue;
+          }
+          route_job_insertions[best_route_idx][j] = compute_best_insertion(_input, j, best_route, _sol[best_route]);
+      }
 #ifndef NDEBUG
       // Update cost after addition.
       _sol_state.update_route_cost(_sol[best_route].route, best_route);
