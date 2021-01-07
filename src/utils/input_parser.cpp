@@ -48,25 +48,6 @@ inline std::string get_string(const rapidjson::Value& object, const char* key) {
   return value;
 }
 
-inline unsigned get_amount_size(const rapidjson::Value& json_input) {
-  unsigned amount_size_candidate = 0;
-
-  // Only return the first non-zero capacity size as amount size
-  // consistency is further checked upon jobs/vehicles addition in
-  // Input.
-  for (rapidjson::SizeType i = 0; i < json_input["vehicles"].Size(); ++i) {
-    auto& json_vehicle = json_input["vehicles"][i];
-    if (json_vehicle.HasMember("capacity") and
-        json_vehicle["capacity"].IsArray() and
-        json_vehicle["capacity"].Size() > 0) {
-      amount_size_candidate = json_vehicle["capacity"].Size();
-      break;
-    }
-  }
-
-  return amount_size_candidate;
-}
-
 inline Amount get_amount(const rapidjson::Value& object,
                          const char* key,
                          unsigned size) {
@@ -299,12 +280,16 @@ Input parse(const CLArgs& cl_args) {
   }
   const auto& first_vehicle = json_input["vehicles"][0];
   check_id(first_vehicle, "vehicle");
+  bool first_vehicle_has_capacity = (first_vehicle.HasMember("capacity") and
+                                     first_vehicle["capacity"].IsArray() and
+                                     first_vehicle["capacity"].Size() > 0);
+  const unsigned amount_size =
+    first_vehicle_has_capacity ? first_vehicle["capacity"].Size() : 0;
 
   // Used to make sure all vehicles have the same profile.
   std::string common_profile;
 
   // Custom input object embedding jobs, vehicles and matrix.
-  auto amount_size = get_amount_size(json_input);
   Input input(amount_size);
   input.set_geometry(cl_args.geometry);
 
