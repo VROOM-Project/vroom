@@ -5,6 +5,7 @@
 ### Changed
 
 - Reduce build time by refactoring includes (#425)
+- Improve error message with wrong profile using libosrm (#397)
 
 ## [v1.8.0] - 2020-09-29
 
