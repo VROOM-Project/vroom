@@ -297,6 +297,8 @@ Input parse(const CLArgs& cl_args) {
       json_input["vehicles"].Empty()) {
     throw Exception(ERROR::INPUT, "Invalid vehicles.");
   }
+  const auto& first_vehicle = json_input["vehicles"][0];
+  check_id(first_vehicle, "vehicle");
 
   // Used to make sure all vehicles have the same profile.
   std::string common_profile;
