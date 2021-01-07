@@ -2,14 +2,12 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2020, Julien Coupey.
+Copyright (c) 2015-2021, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
 
 #include <algorithm>
-#include <array>
-#include <vector>
 
 #if USE_LIBOSRM
 #include "osrm/exception.hpp"
@@ -24,14 +22,6 @@ All rights reserved (see LICENSE).
 #include "routing/ors_wrapper.h"
 #include "routing/osrm_routed_wrapper.h"
 #include "structures/cl_args.h"
-#include "structures/generic/matrix.h"
-#include "structures/typedefs.h"
-#include "structures/vroom/amount.h"
-#include "structures/vroom/break.h"
-#include "structures/vroom/job.h"
-#include "structures/vroom/time_window.h"
-#include "structures/vroom/vehicle.h"
-#include "utils/exception.h"
 #include "utils/input_parser.h"
 
 namespace vroom {

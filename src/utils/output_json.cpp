@@ -2,7 +2,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2020, Julien Coupey.
+Copyright (c) 2015-2021, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -14,7 +14,6 @@ All rights reserved (see LICENSE).
 #include "../include/rapidjson/writer.h"
 
 #include "utils/output_json.h"
-#include "utils/version.h"
 
 namespace vroom {
 namespace io {

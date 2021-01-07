@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Reduce build time by refactoring includes (#425)
+
 ## [v1.8.0] - 2020-09-29
 
 ### Added

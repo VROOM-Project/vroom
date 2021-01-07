@@ -2,7 +2,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2020, Julien Coupey.
+Copyright (c) 2015-2021, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -10,8 +10,6 @@ All rights reserved (see LICENSE).
 #include "problems/tsp/tsp.h"
 #include "problems/tsp/heuristics/christofides.h"
 #include "problems/tsp/heuristics/local_search.h"
-#include "structures/generic/undirected_graph.h"
-#include "structures/vroom/input/input.h"
 #include "utils/helpers.h"
 
 namespace vroom {

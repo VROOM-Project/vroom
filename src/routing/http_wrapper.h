@@ -5,16 +5,14 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2020, Julien Coupey.
+Copyright (c) 2015-2021, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
 #include "../include/rapidjson/document.h"
-#include "../include/rapidjson/error/en.h"
 
 #include "routing/wrapper.h"
 #include "structures/typedefs.h"
-#include "structures/vroom/location.h"
 
 namespace vroom {
 namespace routing {
