@@ -344,3 +344,11 @@ i.e. `types` is empty while `lead_time` and `delay` are `0`.
 
 - [Input file](example_2.json)
 - [Possible output file](example_2_sol.json)
+
+## Using `-c` to choose ETA and report violations
+
+An example with an over-capacity route and one with lead time and
+delays.
+
+- [Input file](example_3.json)
+- [Possible output file](example_3_sol.json)
