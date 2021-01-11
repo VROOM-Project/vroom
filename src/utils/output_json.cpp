@@ -22,41 +22,39 @@ namespace io {
 inline rapidjson::Value
 get_violations(const Violations& violations,
                rapidjson::Document::AllocatorType& allocator) {
-  rapidjson::Value json_violations(rapidjson::kObjectType);
+  rapidjson::Value json_violations(rapidjson::kArrayType);
 
-  rapidjson::Value json_types(rapidjson::kArrayType);
   for (const auto type : violations.types) {
-    std::string v_str;
+    rapidjson::Value json_violation(rapidjson::kObjectType);
+    std::string cause;
     switch (type) {
     case VIOLATION::LEAD_TIME:
-      v_str = "lead_time";
+      cause = "lead_time";
+      json_violation.AddMember("duration", violations.lead_time, allocator);
       break;
     case VIOLATION::DELAY:
-      v_str = "delay";
+      cause = "delay";
+      json_violation.AddMember("duration", violations.delay, allocator);
       break;
     case VIOLATION::LOAD:
-      v_str = "load";
+      cause = "load";
       break;
     case VIOLATION::SKILLS:
-      v_str = "skills";
+      cause = "skills";
       break;
     case VIOLATION::PRECEDENCE:
-      v_str = "precedence";
+      cause = "precedence";
       break;
     case VIOLATION::MISSING_BREAK:
-      v_str = "missing_break";
+      cause = "missing_break";
       break;
     }
 
-    json_types.PushBack(rapidjson::Value{}.SetString(v_str.c_str(),
-                                                     v_str.length(),
-                                                     allocator),
-                        allocator);
-  }
-  json_violations.AddMember("types", json_types, allocator);
+    json_violation.AddMember("cause", rapidjson::Value(), allocator);
+    json_violation["cause"].SetString(cause.c_str(), cause.size(), allocator);
 
-  json_violations.AddMember("lead_time", violations.lead_time, allocator);
-  json_violations.AddMember("delay", violations.delay, allocator);
+    json_violations.PushBack(json_violation, allocator);
+  }
 
   return json_violations;
 }

@@ -110,7 +110,7 @@ A `vehicle` object has the following properties:
 | [`skills`] | an array of integers defining skills |
 | [`time_window`] | a `time_window` object describing working hours |
 | [`breaks`] | an array of `break` objects |
-| [`steps`] | an array of `input_step` objects describing a custom route for this vehicle (only makes sense when using `-c`) |
+| [`steps`] | an array of `vehicle_step` objects describing a custom route for this vehicle (only makes sense when using `-c`) |
 
 A `break` object has the following properties:
 
@@ -123,12 +123,12 @@ A `break` object has the following properties:
 
 An error is reported if two `break` objects have the same `id` for the same vehicle.
 
-An `input_step` object has the following properties:
+A `vehicle_step` object has the following properties:
 
 | Key         | Description |
 | ----------- | ----------- |
 | `type` | a string (either `start`, `job`, `pickup`, `delivery`, `break` or `end`) |
-| [`id`] | id of the task performed at this step if `type` value is `job`, `pickup`, `delivery` or `break` |
+| [`id`] | id of the task to be performed at this step if `type` value is `job`, `pickup`, `delivery` or `break` |
 | [`service_at`] | hard constraint on service time |
 | [`service_after`] | hard constraint on service time lower bound |
 | [`service_before`] | hard constraint on service time upper bound |
@@ -257,7 +257,7 @@ The `summary` object has the following properties:
 | `duration` | total travel time for all routes |
 | `waiting_time` | total waiting time for all routes |
 | `priority` | total priority sum for all assigned tasks |
-| `violations` | violation report aggregated for all routes |
+| `violations` | array of `violation` objects for all routes |
 | ~~[`amount`]~~ | ~~total amount for all routes~~ |
 | [`delivery`] | total delivery for all routes |
 | [`pickup`] | total pickup for all routes |
@@ -278,7 +278,7 @@ A `route` object has the following properties:
 | `duration` | total travel time for this route |
 | `waiting_time` | total waiting time for this route |
 | `priority` | total priority sum for tasks in this route |
-| `violations` | violation report aggregated for all steps in this route |
+| `violations` | array of `violation` objects for this route |
 | ~~[`amount`]~~ | ~~total amount for jobs in this route~~ |
 | [`delivery`] | total delivery for tasks in this route |
 | [`pickup`] | total pickup for tasks in this route |
@@ -299,7 +299,7 @@ A `step` object has the following properties:
 | `duration` | cumulated travel time upon arrival at this step |
 | `service` | service time at this step |
 | `waiting_time` | waiting time upon arrival at this step |
-| `violations` | violation report at this step |
+| `violations` | array of `violation` objects for this step |
 | [`description`] | step description, if provided in input |
 | [`location`] | coordinates array for this step (if provided in input) |
 | [`id`] | id of the task performed at this step, only provided if `type` value is `job`, `pickup`, `delivery` or `break` |
@@ -309,17 +309,16 @@ A `step` object has the following properties:
 
 *: provided when using the `-g` flag.
 
-### Violations
+### Violation
 
-A `violations` object has the following properties:
+A `violation` object has the following properties:
 
 | Key         | Description |
 | ----------- | ----------- |
-| `types` | array listing causes of violations |
-| `lead_time` |  earliness if "lead_time" is in `types`|
-| `delay` |  lateness if "delay" is in `types`|
+| `cause` | string describing the cause of violation |
+| [`duration`] |  Earliness (resp. lateness) if `cause` is "lead_time" (resp "delay") |
 
-Possible violations causes are:
+Possible violation causes are:
 - "delay" if actual service start does not meet a task time window and is late on a time window end
 - "lead_time" if actual service start does not meet a task time window and is early on a time window start
 - "load" if the vehicle load goes over its capacity
@@ -331,7 +330,7 @@ Note on violations: reporting only really makes sense when using `-c`
 to choose ETA for custom routes described in input using the `steps`
 keys for a `vehicle`. When using regular optimization, violations are
 still reported for consistency, but are guaranteed to be "void",
-i.e. `types` is empty while `lead_time` and `delay` are `0`.
+i.e. `violations` arrays are empty.
 
 # Examples
 

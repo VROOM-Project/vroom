@@ -7,11 +7,7 @@
     "duration": 5461,
     "waiting_time": 0,
     "priority": 0,
-    "violations": {
-      "types": [],
-      "lead_time": 0,
-      "delay": 0
-    }
+    "violations": []
   },
   "unassigned": [],
   "routes": [
@@ -29,11 +25,7 @@
           "waiting_time": 0,
           "arrival": 0,
           "duration": 0,
-          "violations": {
-            "types": [],
-            "lead_time": 0,
-            "delay": 0
-          }
+          "violations": []
         },
         {
           "type": "job",
@@ -43,11 +35,7 @@
           "job": 1414,
           "arrival": 2104,
           "duration": 2104,
-          "violations": {
-            "types": [],
-            "lead_time": 0,
-            "delay": 0
-          }
+          "violations": []
         },
         {
           "type": "job",
@@ -57,11 +45,7 @@
           "job": 1515,
           "arrival": 4359,
           "duration": 4359,
-          "violations": {
-            "types": [],
-            "lead_time": 0,
-            "delay": 0
-          }
+          "violations": []
         },
         {
           "type": "end",
@@ -69,18 +53,10 @@
           "waiting_time": 0,
           "arrival": 5461,
           "duration": 5461,
-          "violations": {
-            "types": [],
-            "lead_time": 0,
-            "delay": 0
-          }
+          "violations": []
         }
       ],
-      "violations": {
-        "types": [],
-        "lead_time": 0,
-        "delay": 0
-      }
+      "violations": []
     }
   ]
 }
