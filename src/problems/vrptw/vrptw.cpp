@@ -2,7 +2,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2020, Julien Coupey.
+Copyright (c) 2015-2021, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -27,8 +27,6 @@ All rights reserved (see LICENSE).
 #include "problems/vrptw/operators/two_opt.h"
 #include "problems/vrptw/operators/unassigned_exchange.h"
 #include "problems/vrptw/vrptw.h"
-#include "structures/vroom/input/input.h"
-#include "structures/vroom/tw_route.h"
 #include "utils/helpers.h"
 
 namespace vroom {

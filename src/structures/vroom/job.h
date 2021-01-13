@@ -5,13 +5,12 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2020, Julien Coupey.
+Copyright (c) 2015-2021, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
 
 #include <string>
-#include <vector>
 
 #include "structures/typedefs.h"
 #include "structures/vroom/amount.h"

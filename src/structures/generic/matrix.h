@@ -5,13 +5,12 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2020, Julien Coupey.
+Copyright (c) 2015-2021, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
 
 #include <initializer_list>
-#include <vector>
 
 #include "structures/typedefs.h"
 

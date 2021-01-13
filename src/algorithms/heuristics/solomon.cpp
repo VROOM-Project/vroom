@@ -2,18 +2,14 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2020, Julien Coupey.
+Copyright (c) 2015-2021, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
 
-#include <algorithm>
-#include <numeric>
 #include <set>
 
 #include "algorithms/heuristics/solomon.h"
-#include "structures/vroom/raw_route.h"
-#include "structures/vroom/tw_route.h"
 #include "utils/helpers.h"
 
 namespace vroom {

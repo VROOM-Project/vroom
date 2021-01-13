@@ -2,14 +2,12 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2020, Julien Coupey.
+Copyright (c) 2015-2021, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
 
 #include <algorithm>
-#include <array>
-#include <vector>
 
 #if USE_LIBOSRM
 #include "osrm/exception.hpp"
@@ -24,14 +22,6 @@ All rights reserved (see LICENSE).
 #include "routing/ors_wrapper.h"
 #include "routing/osrm_routed_wrapper.h"
 #include "structures/cl_args.h"
-#include "structures/generic/matrix.h"
-#include "structures/typedefs.h"
-#include "structures/vroom/amount.h"
-#include "structures/vroom/break.h"
-#include "structures/vroom/job.h"
-#include "structures/vroom/time_window.h"
-#include "structures/vroom/vehicle.h"
-#include "utils/exception.h"
 #include "utils/input_parser.h"
 
 namespace vroom {
@@ -56,25 +46,6 @@ inline std::string get_string(const rapidjson::Value& object, const char* key) {
     value = object[key].GetString();
   }
   return value;
-}
-
-inline unsigned get_amount_size(const rapidjson::Value& json_input) {
-  unsigned amount_size_candidate = 0;
-
-  // Only return the first non-zero capacity size as amount size
-  // consistency is further checked upon jobs/vehicles addition in
-  // Input.
-  for (rapidjson::SizeType i = 0; i < json_input["vehicles"].Size(); ++i) {
-    auto& json_vehicle = json_input["vehicles"][i];
-    if (json_vehicle.HasMember("capacity") and
-        json_vehicle["capacity"].IsArray() and
-        json_vehicle["capacity"].Size() > 0) {
-      amount_size_candidate = json_vehicle["capacity"].Size();
-      break;
-    }
-  }
-
-  return amount_size_candidate;
 }
 
 inline Amount get_amount(const rapidjson::Value& object,
@@ -392,12 +363,18 @@ Input parse(const CLArgs& cl_args) {
       json_input["vehicles"].Empty()) {
     throw Exception(ERROR::INPUT, "Invalid vehicles.");
   }
+  const auto& first_vehicle = json_input["vehicles"][0];
+  check_id(first_vehicle, "vehicle");
+  bool first_vehicle_has_capacity = (first_vehicle.HasMember("capacity") and
+                                     first_vehicle["capacity"].IsArray() and
+                                     first_vehicle["capacity"].Size() > 0);
+  const unsigned amount_size =
+    first_vehicle_has_capacity ? first_vehicle["capacity"].Size() : 0;
 
   // Used to make sure all vehicles have the same profile.
   std::string common_profile;
 
   // Custom input object embedding jobs, vehicles and matrix.
-  auto amount_size = get_amount_size(json_input);
   Input input(amount_size);
   input.set_geometry(cl_args.geometry);
 
@@ -763,8 +740,7 @@ Input parse(const CLArgs& cl_args) {
       routing_wrapper =
         std::make_unique<routing::LibosrmWrapper>(common_profile);
     } catch (const osrm::exception& e) {
-      throw Exception(ERROR::ROUTING,
-                      "Invalid shared memory region: " + common_profile);
+      throw Exception(ERROR::ROUTING, "Invalid profile: " + common_profile);
     }
 #else
     // Attempt to use libosrm while compiling without it.

@@ -11,10 +11,17 @@
 
 ### Changed
 
+- Reduce computing time by refactoring `LocalSearch::try_job_additions` (#392)
+- Reduce build time by refactoring includes (#425)
+- Improve error message with wrong profile using libosrm (#397)
 - Check for duplicate ids across tasks of the same type: `job`, `pickup`, `delivery` (#430)
 - Check for duplicate ids across `break` tasks for the same vehicle (#430)
 - Report `service` and `waiting_time` for all `step` objects in output (#430)
 - Always report a `start` and `end` step for the route, regardless of vehicle description (#430)
+
+### Fixed
+
+- Rapidjson assert on invalid syntax for first vehicle (#418)
 
 ## [v1.8.0] - 2020-09-29
 

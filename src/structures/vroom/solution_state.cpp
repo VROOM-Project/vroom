@@ -2,13 +2,10 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2020, Julien Coupey.
+Copyright (c) 2015-2021, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
-
-#include <numeric>
-#include <unordered_map>
 
 #include "structures/vroom/solution_state.h"
 #include "utils/helpers.h"
