@@ -28,7 +28,7 @@ Solution check_and_set_ETA(const Input& input, unsigned nb_thread) {
   const unsigned nb_vehicles_with_input =
     std::count_if(input.vehicles.begin(),
                   input.vehicles.end(),
-                  [](const auto& v) { return !v.input_steps.empty(); });
+                  [](const auto& v) { return !v.steps.empty(); });
   const auto nb_buckets = std::min(nb_thread, nb_vehicles_with_input);
 
   std::vector<std::vector<Index>> thread_ranks(nb_buckets,
@@ -38,11 +38,11 @@ Solution check_and_set_ETA(const Input& input, unsigned nb_thread) {
   std::unordered_map<Index, Index> v_rank_to_actual_route_rank;
   for (Index v = 0; v < input.vehicles.size(); ++v) {
     const auto& current_vehicle = input.vehicles[v];
-    if (current_vehicle.input_steps.empty()) {
+    if (current_vehicle.steps.empty()) {
       continue;
     }
 
-    for (const auto& step : current_vehicle.input_steps) {
+    for (const auto& step : current_vehicle.steps) {
       if (step.type == STEP_TYPE::JOB) {
         assigned_ranks.insert(step.rank);
       }
@@ -64,8 +64,7 @@ Solution check_and_set_ETA(const Input& input, unsigned nb_thread) {
       const auto route_rank = search->second;
 
       try {
-        routes[route_rank] =
-          choose_ETA(input, v, input.vehicles[v].input_steps);
+        routes[route_rank] = choose_ETA(input, v, input.vehicles[v].steps);
       } catch (...) {
         thread_exceptions[bucket] = std::current_exception();
       }

@@ -483,7 +483,7 @@ Solution Input::check(unsigned nb_thread) {
   for (Index v = 0; v < vehicles.size(); ++v) {
     auto& current_vehicle = vehicles[v];
 
-    for (auto& step : current_vehicle.input_steps) {
+    for (auto& step : current_vehicle.steps) {
       if (step.type == STEP_TYPE::BREAK) {
         auto search = current_vehicle.break_id_to_rank.find(step.id);
         if (search == current_vehicle.break_id_to_rank.end()) {

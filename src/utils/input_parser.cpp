@@ -252,8 +252,8 @@ inline std::vector<Break> get_vehicle_breaks(const rapidjson::Value& v) {
   return breaks;
 }
 
-inline std::vector<InputStep> get_vehicle_steps(const rapidjson::Value& v) {
-  std::vector<InputStep> steps;
+inline std::vector<VehicleStep> get_vehicle_steps(const rapidjson::Value& v) {
+  std::vector<VehicleStep> steps;
 
   if (v.HasMember("steps")) {
     if (!v["steps"].IsArray()) {

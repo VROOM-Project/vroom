@@ -51,7 +51,7 @@ inline Duration get_violation(const std::vector<TimeWindow>& tws,
 
 Route choose_ETA(const Input& input,
                  unsigned vehicle_rank,
-                 const std::vector<InputStep>& steps) {
+                 const std::vector<VehicleStep>& steps) {
   const auto& m = input.get_matrix();
   const auto& v = input.vehicles[vehicle_rank];
 

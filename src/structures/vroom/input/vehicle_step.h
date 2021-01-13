@@ -1,5 +1,5 @@
-#ifndef INPUT_STEP_H
-#define INPUT_STEP_H
+#ifndef VEHICLE_STEP_H
+#define VEHICLE_STEP_H
 
 /*
 
@@ -26,7 +26,7 @@ struct ForcedService {
                 std::optional<Duration>&& before);
 };
 
-struct InputStep {
+struct VehicleStep {
   const Id id;
   const STEP_TYPE type;
   const JOB_TYPE job_type;
@@ -37,13 +37,13 @@ struct InputStep {
   Index rank;
 
   // Used for start and end.
-  InputStep(STEP_TYPE type, ForcedService&& forced_service = ForcedService());
+  VehicleStep(STEP_TYPE type, ForcedService&& forced_service = ForcedService());
 
   // Used for breaks.
-  InputStep(STEP_TYPE type, Id id, ForcedService&& forced_service);
+  VehicleStep(STEP_TYPE type, Id id, ForcedService&& forced_service);
 
   // Used for single jobs, pickups and deliveries.
-  InputStep(JOB_TYPE job_type, Id id, ForcedService&& forced_service);
+  VehicleStep(JOB_TYPE job_type, Id id, ForcedService&& forced_service);
 };
 
 } // namespace vroom
