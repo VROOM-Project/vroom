@@ -113,172 +113,160 @@ LocalSearch<Route,
     });
 }
 
-
 struct RouteInsertion {
   Gain cost;
   Index single_rank;
   Index pickup_rank;
   Index delivery_rank;
 };
-const RouteInsertion empty_insert = {std::numeric_limits<Gain>::max(), 0, 0, 0};
+constexpr RouteInsertion empty_insert = {std::numeric_limits<Gain>::max(),
+                                         0,
+                                         0,
+                                         0};
 
 template <class Route>
-RouteInsertion compute_best_insertion_single(const Input& input, const Index j, Index v, const Route& route) {
+RouteInsertion compute_best_insertion_single(const Input& input,
+                                             const Index j,
+                                             Index v,
+                                             const Route& route) {
   const auto& matrix = input.get_matrix();
   RouteInsertion result = empty_insert;
   const auto& current_job = input.jobs[j];
   const auto& v_target = input.vehicles[v];
 
-  if (!input.vehicle_ok_with_job(v, j)) {
-      return result;
-  }
+  if (input.vehicle_ok_with_job(v, j)) {
 
-  for (Index rank = 0; rank <= route.size(); ++rank) {
-      Gain current_cost = utils::addition_cost(input,
-              matrix,
-              j,
-              v_target,
-              route.route,
-              rank);
+    for (Index rank = 0; rank <= route.size(); ++rank) {
+      Gain current_cost =
+        utils::addition_cost(input, matrix, j, v_target, route.route, rank);
       if (current_cost < result.cost and
-              route.is_valid_addition_for_capacity(input,
-                  current_job.pickup,
-                  current_job.delivery,
-                  rank) and
-              route.is_valid_addition_for_tw(input, j, rank)) {
-          result = {current_cost, rank, 0, 0};
+          route.is_valid_addition_for_capacity(input,
+                                               current_job.pickup,
+                                               current_job.delivery,
+                                               rank) and
+          route.is_valid_addition_for_tw(input, j, rank)) {
+        result = {current_cost, rank, 0, 0};
       }
+    }
   }
   return result;
 }
 
 template <class Route>
-RouteInsertion compute_best_insertion_pd(const Input& input, const Index j, Index v, const Route& route) {
+RouteInsertion compute_best_insertion_pd(const Input& input,
+                                         const Index j,
+                                         Index v,
+                                         const Route& route) {
   const auto& matrix = input.get_matrix();
   RouteInsertion result = empty_insert;
   const auto& current_job = input.jobs[j];
   const auto& v_target = input.vehicles[v];
 
   if (!input.vehicle_ok_with_job(v, j)) {
-      return result;
+    return result;
   }
 
   // Pre-compute cost of addition for matching delivery.
   std::vector<Gain> d_adds(route.size() + 1);
-  std::vector<unsigned char> valid_delivery_insertions(
-            route.size() + 1);
+  std::vector<unsigned char> valid_delivery_insertions(route.size() + 1);
 
   for (unsigned d_rank = 0; d_rank <= route.size(); ++d_rank) {
-      d_adds[d_rank] = utils::addition_cost(input,
-              matrix,
-              j + 1,
-              v_target,
-              route.route,
-              d_rank);
-      valid_delivery_insertions[d_rank] =
-          route.is_valid_addition_for_tw(input, j + 1, d_rank);
+    d_adds[d_rank] =
+      utils::addition_cost(input, matrix, j + 1, v_target, route.route, d_rank);
+    valid_delivery_insertions[d_rank] =
+      route.is_valid_addition_for_tw(input, j + 1, d_rank);
   }
 
   for (Index pickup_r = 0; pickup_r <= route.size(); ++pickup_r) {
-      Gain p_add = utils::addition_cost(input,
-              matrix,
-              j,
-              v_target,
-              route.route,
-              pickup_r);
+    Gain p_add =
+      utils::addition_cost(input, matrix, j, v_target, route.route, pickup_r);
 
-      if (!route.is_valid_addition_for_load(input,
-                  current_job.pickup,
-                  pickup_r) or
-              !route.is_valid_addition_for_tw(input, j, pickup_r)) {
-          continue;
+    if (!route.is_valid_addition_for_load(input,
+                                          current_job.pickup,
+                                          pickup_r) or
+        !route.is_valid_addition_for_tw(input, j, pickup_r)) {
+      continue;
+    }
+
+    // Build replacement sequence for current insertion.
+    std::vector<Index> modified_with_pd({j});
+    Amount modified_delivery = input.zero_amount();
+
+    for (Index delivery_r = pickup_r; delivery_r <= route.size();
+         ++delivery_r) {
+      // Update state variables along the way before potential
+      // early abort.
+      if (pickup_r < delivery_r) {
+        modified_with_pd.push_back(route.route[delivery_r - 1]);
+        const auto& new_modified_job = input.jobs[route.route[delivery_r - 1]];
+        if (new_modified_job.type == JOB_TYPE::SINGLE) {
+          modified_delivery += new_modified_job.delivery;
+        }
       }
 
-      // Build replacement sequence for current insertion.
-      std::vector<Index> modified_with_pd({j});
-      Amount modified_delivery = input.zero_amount();
-
-      for (Index delivery_r = pickup_r; delivery_r <= route.size();
-              ++delivery_r) {
-          // Update state variables along the way before potential
-          // early abort.
-          if (pickup_r < delivery_r) {
-              modified_with_pd.push_back(route.route[delivery_r - 1]);
-              const auto& new_modified_job =
-                  input.jobs[route.route[delivery_r - 1]];
-              if (new_modified_job.type == JOB_TYPE::SINGLE) {
-                  modified_delivery += new_modified_job.delivery;
-              }
-          }
-
-          if (!(bool)valid_delivery_insertions[delivery_r]) {
-              continue;
-          }
-
-          Gain pd_cost;
-          if (pickup_r == delivery_r) {
-              pd_cost = utils::addition_cost(input,
-                      matrix,
-                      j,
-                      v_target,
-                      route.route,
-                      pickup_r,
-                      pickup_r + 1);
-          } else {
-              pd_cost = p_add + d_adds[delivery_r];
-          }
-
-          // Normalize cost per job for consistency with single jobs.
-          Gain current_cost =
-              static_cast<Gain>(static_cast<double>(pd_cost) / 2);
-
-          if (current_cost < result.cost) {
-              modified_with_pd.push_back(j + 1);
-
-              // Update best cost depending on validity.
-              bool is_valid =
-                  route
-                  .is_valid_addition_for_capacity_inclusion(input,
-                          modified_delivery,
-                          modified_with_pd
-                          .begin(),
-                          modified_with_pd
-                          .end(),
-                          pickup_r,
-                          delivery_r);
-
-              is_valid =
-                  is_valid &&
-                  route.is_valid_addition_for_tw(input,
-                          modified_with_pd.begin(),
-                          modified_with_pd.end(),
-                          pickup_r,
-                          delivery_r);
-
-              modified_with_pd.pop_back();
-
-              if (is_valid) {
-                  result = {current_cost, 0, pickup_r, delivery_r};
-              }
-          }
+      if (!(bool)valid_delivery_insertions[delivery_r]) {
+        continue;
       }
+
+      Gain pd_cost;
+      if (pickup_r == delivery_r) {
+        pd_cost = utils::addition_cost(input,
+                                       matrix,
+                                       j,
+                                       v_target,
+                                       route.route,
+                                       pickup_r,
+                                       pickup_r + 1);
+      } else {
+        pd_cost = p_add + d_adds[delivery_r];
+      }
+
+      // Normalize cost per job for consistency with single jobs.
+      Gain current_cost = static_cast<Gain>(static_cast<double>(pd_cost) / 2);
+
+      if (current_cost < result.cost) {
+        modified_with_pd.push_back(j + 1);
+
+        // Update best cost depending on validity.
+        bool is_valid =
+          route
+            .is_valid_addition_for_capacity_inclusion(input,
+                                                      modified_delivery,
+                                                      modified_with_pd.begin(),
+                                                      modified_with_pd.end(),
+                                                      pickup_r,
+                                                      delivery_r);
+
+        is_valid =
+          is_valid && route.is_valid_addition_for_tw(input,
+                                                     modified_with_pd.begin(),
+                                                     modified_with_pd.end(),
+                                                     pickup_r,
+                                                     delivery_r);
+
+        modified_with_pd.pop_back();
+
+        if (is_valid) {
+          result = {current_cost, 0, pickup_r, delivery_r};
+        }
+      }
+    }
   }
   return result;
 }
 
 template <class Route>
-RouteInsertion compute_best_insertion(const Input& input, const Index j, Index v, const Route& route) {
-
+RouteInsertion compute_best_insertion(const Input& input,
+                                      const Index j,
+                                      Index v,
+                                      const Route& route) {
   const auto& current_job = input.jobs[j];
-  if (current_job.type == JOB_TYPE::SINGLE) {
-      return compute_best_insertion_single(input, j, v, route);
-  } else if (current_job.type == JOB_TYPE::PICKUP) {
-      return compute_best_insertion_pd(input, j, v, route);
-  } else {
-    return empty_insert;
-  }
+  assert(current_job.type == JOB_TYPE::PICKUP ||
+         current_job.type == JOB_TYPE::SINGLE);
+  return current_job.type == JOB_TYPE::SINGLE
+           ? compute_best_insertion_single(input, j, v, route)
+           : compute_best_insertion_pd(input, j, v, route);
 }
-
 
 template <class Route,
           class UnassignedExchange,
@@ -316,21 +304,22 @@ void LocalSearch<Route,
                                                    double regret_coeff) {
 
   bool job_added;
-    
+
   std::vector<std::vector<RouteInsertion>> route_job_insertions;
 
   for (std::size_t i = 0; i < routes.size(); ++i) {
-      //TODO: tweak such that the vectors don't include all jobs
-      route_job_insertions.push_back(std::vector<RouteInsertion>(_input.jobs.size(), empty_insert));
+    route_job_insertions.push_back(
+      std::vector<RouteInsertion>(_input.jobs.size(), empty_insert));
 
-      const auto v = routes[i];
-      for (const auto j : _sol_state.unassigned) {
-          const auto& current_job = _input.jobs[j];
-          if (current_job.type == JOB_TYPE::DELIVERY) {
-              continue;
-          }
-          route_job_insertions[i][j] = compute_best_insertion(_input, j, v, _sol[v]);
+    const auto v = routes[i];
+    for (const auto j : _sol_state.unassigned) {
+      const auto& current_job = _input.jobs[j];
+      if (current_job.type == JOB_TYPE::DELIVERY) {
+        continue;
       }
+      route_job_insertions[i][j] =
+        compute_best_insertion(_input, j, v, _sol[v]);
+    }
   }
 
   do {
@@ -354,7 +343,6 @@ void LocalSearch<Route,
         // Insert higher priority jobs first.
         continue;
       }
-
 
       auto smallest = std::numeric_limits<Gain>::max();
       auto second_smallest = std::numeric_limits<Gain>::max();
@@ -422,13 +410,14 @@ void LocalSearch<Route,
                _sol_state.unassigned.end());
         _sol_state.unassigned.erase(best_job_rank + 1);
       }
-      //Update route/job insertions for best_route
+      // Update route/job insertions for best_route
       for (const auto j : _sol_state.unassigned) {
-          const auto& current_job = _input.jobs[j];
-          if (current_job.type == JOB_TYPE::DELIVERY) {
-              continue;
-          }
-          route_job_insertions[best_route_idx][j] = compute_best_insertion(_input, j, best_route, _sol[best_route]);
+        const auto& current_job = _input.jobs[j];
+        if (current_job.type == JOB_TYPE::DELIVERY) {
+          continue;
+        }
+        route_job_insertions[best_route_idx][j] =
+          compute_best_insertion(_input, j, best_route, _sol[best_route]);
       }
 #ifndef NDEBUG
       // Update cost after addition.
