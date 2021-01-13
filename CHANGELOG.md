@@ -4,6 +4,7 @@
 
 ### Changed
 
+- Reduce computing time by refactoring `LocalSearch::try_job_additions` (#392)
 - Reduce build time by refactoring includes (#425)
 - Improve error message with wrong profile using libosrm (#397)
 
