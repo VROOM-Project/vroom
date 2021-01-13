@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Reduce computing time by refactoring `LocalSearch::try_job_additions` (#392)
+
 ## [v1.8.0] - 2020-09-29
 
 ### Added
