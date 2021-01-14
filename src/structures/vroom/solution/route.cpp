@@ -11,6 +11,9 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
+Route::Route() {
+}
+
 Route::Route(Id vehicle,
              std::vector<Step>&& steps,
              Cost cost,
@@ -20,7 +23,8 @@ Route::Route(Id vehicle,
              Priority priority,
              const Amount& delivery,
              const Amount& pickup,
-             const std::string& description)
+             const std::string& description,
+             const Violations&& violations)
   : vehicle(vehicle),
     steps(std::move(steps)),
     cost(cost),
@@ -31,6 +35,7 @@ Route::Route(Id vehicle,
     delivery(delivery),
     pickup(pickup),
     description(description),
+    violations(std::move(violations)),
     distance(0) {
 }
 

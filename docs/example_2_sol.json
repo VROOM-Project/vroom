@@ -6,7 +6,8 @@
     "service": 0,
     "duration": 5461,
     "waiting_time": 0,
-    "priority": 0
+    "priority": 0,
+    "violations": []
   },
   "unassigned": [],
   "routes": [
@@ -20,33 +21,42 @@
       "steps": [
         {
           "type": "start",
+          "service": 0,
+          "waiting_time": 0,
           "arrival": 0,
-          "duration": 0
+          "duration": 0,
+          "violations": []
         },
         {
+          "type": "job",
           "id": 1414,
-          "type": "job",
-          "job": 1414,
           "service": 0,
           "waiting_time": 0,
+          "job": 1414,
           "arrival": 2104,
-          "duration": 2104
+          "duration": 2104,
+          "violations": []
         },
         {
-          "id": 1515,
           "type": "job",
-          "job": 1515,
+          "id": 1515,
           "service": 0,
           "waiting_time": 0,
+          "job": 1515,
           "arrival": 4359,
-          "duration": 4359
+          "duration": 4359,
+          "violations": []
         },
         {
           "type": "end",
+          "service": 0,
+          "waiting_time": 0,
           "arrival": 5461,
-          "duration": 5461
+          "duration": 5461,
+          "violations": []
         }
-      ]
+      ],
+      "violations": []
     }
   ]
 }

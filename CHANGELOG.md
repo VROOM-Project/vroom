@@ -2,11 +2,22 @@
 
 ## [Unreleased]
 
+### Added
+
+- Ability to choose ETA and report violations for custom routes using `-c` (#430)
+- Custom route description using new `steps` key for a `vehicle` in input (#430)
+- A `violations` object is reported in output at `step`, `route` and `summary` level (#430)
+- `libglpk` used as an optional dependency, required for `-c` (#430)
+
 ### Changed
 
 - Reduce computing time by refactoring `LocalSearch::try_job_additions` (#392)
 - Reduce build time by refactoring includes (#425)
 - Improve error message with wrong profile using libosrm (#397)
+- Check for duplicate ids across tasks of the same type: `job`, `pickup`, `delivery` (#430)
+- Check for duplicate ids across `break` tasks for the same vehicle (#430)
+- Report `service` and `waiting_time` for all `step` objects in output (#430)
+- Always report a `start` and `end` step for the route, regardless of vehicle description (#430)
 
 ### Fixed
 

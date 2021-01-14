@@ -241,6 +241,7 @@ inline void check_precedence(const Input& input,
     auto search = expected_delivery_ranks.find(job_rank);
     assert(search != expected_delivery_ranks.end());
     expected_delivery_ranks.erase(search);
+    break;
   }
 }
 
@@ -292,20 +293,19 @@ inline Solution format_solution(const Input& input,
     std::vector<Step> steps;
 
     Duration ETA = 0;
+    const auto& first_job = input.jobs[route.front()];
+
     // Handle start.
+    const auto start_loc = v.has_start() ? v.start.value() : first_job.location;
+    steps.emplace_back(STEP_TYPE::START, start_loc, current_load);
     if (v.has_start()) {
-      steps.emplace_back(STEP_TYPE::START, v.start.value(), current_load);
-      steps.back().duration = 0;
-      steps.back().arrival = 0;
-      auto travel =
-        m[v.start.value().index()][input.jobs[route.front()].index()];
+      const auto travel = m[v.start.value().index()][first_job.index()];
       ETA += travel;
       duration += travel;
     }
 
     // Handle jobs.
     assert(input.vehicle_ok_with_job(i, route.front()));
-    auto& first_job = input.jobs[route.front()];
     service += first_job.service;
     priority += first_job.priority;
 
@@ -356,15 +356,16 @@ inline Solution format_solution(const Input& input,
     }
 
     // Handle end.
+    const auto& last_job = input.jobs[route.back()];
+    const auto end_loc = v.has_end() ? v.end.value() : last_job.location;
+    steps.emplace_back(STEP_TYPE::END, end_loc, current_load);
     if (v.has_end()) {
-      steps.emplace_back(STEP_TYPE::END, v.end.value(), current_load);
-      Duration travel =
-        m[input.jobs[route.back()].index()][v.end.value().index()];
+      const auto travel = m[last_job.index()][v.end.value().index()];
       ETA += travel;
       duration += travel;
-      steps.back().duration = duration;
-      steps.back().arrival = ETA;
     }
+    steps.back().duration = duration;
+    steps.back().arrival = ETA;
 
     assert(expected_delivery_ranks.empty());
 
@@ -403,8 +404,21 @@ inline Route format_route(const Input& input,
   // possible start time in order to minimize waiting times.
   Duration step_start = tw_r.earliest_end;
   Duration backward_wt = 0;
+  std::optional<Location> first_location;
+  std::optional<Location> last_location;
+
+  if (v.has_end()) {
+    first_location = v.end.value();
+    last_location = v.end.value();
+  }
+
   for (std::size_t r = tw_r.route.size(); r > 0; --r) {
     const auto& previous_job = input.jobs[tw_r.route[r - 1]];
+
+    if (!last_location.has_value()) {
+      last_location = previous_job.location;
+    }
+    first_location = previous_job.location;
 
     // Remaining travel time is the time between two jobs, except for
     // last rank where it depends whether the vehicle has an end or
@@ -506,14 +520,15 @@ inline Route format_route(const Input& input,
   }
 
   if (v.has_start()) {
-    steps.emplace_back(STEP_TYPE::START, v.start.value(), current_load);
-    steps.back().duration = 0;
-
+    first_location = v.start.value();
     assert(remaining_travel_time <= step_start);
     step_start -= remaining_travel_time;
-    assert(v.tw.contains(step_start));
-    steps.back().arrival = step_start;
   }
+
+  assert(first_location.has_value() and last_location.has_value());
+  steps.emplace_back(STEP_TYPE::START, first_location.value(), current_load);
+  assert(v.tw.contains(step_start));
+  steps.back().arrival = step_start;
 
   // Values summed up while going through the route.
   Duration duration = 0;
@@ -697,16 +712,14 @@ inline Route format_route(const Input& input,
     step_start += current_service;
   }
 
+  steps.emplace_back(STEP_TYPE::END, last_location.value(), current_load);
   if (v.has_end()) {
-    steps.emplace_back(STEP_TYPE::END, v.end.value(), current_load);
-
     duration += travel_time;
-    steps.back().duration = duration;
-
     step_start += travel_time;
-    assert(v.tw.contains(step_start));
-    steps.back().arrival = step_start;
   }
+  steps.back().duration = duration;
+  assert(v.tw.contains(step_start));
+  steps.back().arrival = step_start;
 
   assert(step_start == tw_r.earliest_end);
   assert(forward_wt == backward_wt);

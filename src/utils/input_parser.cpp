@@ -252,6 +252,91 @@ inline std::vector<Break> get_vehicle_breaks(const rapidjson::Value& v) {
   return breaks;
 }
 
+inline std::vector<VehicleStep> get_vehicle_steps(const rapidjson::Value& v) {
+  std::vector<VehicleStep> steps;
+
+  if (v.HasMember("steps")) {
+    if (!v["steps"].IsArray()) {
+      throw Exception(ERROR::INPUT,
+                      "Invalid steps for vehicle " +
+                        std::to_string(v["id"].GetUint64()) + ".");
+    }
+
+    for (rapidjson::SizeType i = 0; i < v["steps"].Size(); ++i) {
+      const auto& json_step = v["steps"][i];
+
+      std::optional<Duration> at;
+      if (json_step.HasMember("service_at")) {
+        if (!json_step["service_at"].IsUint()) {
+          throw Exception(ERROR::INPUT, "Invalid service_at value.");
+        }
+
+        at = json_step["service_at"].GetUint();
+      }
+      std::optional<Duration> after;
+      if (json_step.HasMember("service_after")) {
+        if (!json_step["service_after"].IsUint()) {
+          throw Exception(ERROR::INPUT, "Invalid service_after value.");
+        }
+
+        after = json_step["service_after"].GetUint();
+      }
+      std::optional<Duration> before;
+      if (json_step.HasMember("service_before")) {
+        if (!json_step["service_before"].IsUint()) {
+          throw Exception(ERROR::INPUT, "Invalid service_before value.");
+        }
+
+        before = json_step["service_before"].GetUint();
+      }
+      ForcedService forced_service(std::move(at),
+                                   std::move(after),
+                                   std::move(before));
+
+      const auto type_str = get_string(json_step, "type");
+
+      if (type_str == "start") {
+        steps.emplace_back(STEP_TYPE::START, std::move(forced_service));
+        continue;
+      }
+      if (type_str == "end") {
+        steps.emplace_back(STEP_TYPE::END, std::move(forced_service));
+        continue;
+      }
+
+      if (!json_step.HasMember("id") or !json_step["id"].IsUint64()) {
+        throw Exception(ERROR::INPUT,
+                        "Invalid id in steps for vehicle " +
+                          std::to_string(v["id"].GetUint64()) + ".");
+      }
+
+      if (type_str == "job") {
+        steps.emplace_back(JOB_TYPE::SINGLE,
+                           json_step["id"].GetUint64(),
+                           std::move(forced_service));
+      } else if (type_str == "pickup") {
+        steps.emplace_back(JOB_TYPE::PICKUP,
+                           json_step["id"].GetUint64(),
+                           std::move(forced_service));
+      } else if (type_str == "delivery") {
+        steps.emplace_back(JOB_TYPE::DELIVERY,
+                           json_step["id"].GetUint64(),
+                           std::move(forced_service));
+      } else if (type_str == "break") {
+        steps.emplace_back(STEP_TYPE::BREAK,
+                           json_step["id"].GetUint64(),
+                           std::move(forced_service));
+      } else {
+        throw Exception(ERROR::INPUT,
+                        "Invalid type in steps for vehicle " +
+                          std::to_string(v["id"].GetUint64()) + ".");
+      }
+    }
+  }
+
+  return steps;
+}
+
 Input parse(const CLArgs& cl_args) {
   // Input json object.
   rapidjson::Document json_input;
@@ -394,7 +479,8 @@ Input parse(const CLArgs& cl_args) {
                       get_skills(json_vehicle),
                       get_vehicle_time_window(json_vehicle),
                       get_vehicle_breaks(json_vehicle),
-                      get_string(json_vehicle, "description"));
+                      get_string(json_vehicle, "description"),
+                      get_vehicle_steps(json_vehicle));
 
       input.add_vehicle(vehicle);
 
@@ -533,7 +619,8 @@ Input parse(const CLArgs& cl_args) {
                       get_skills(json_vehicle),
                       get_vehicle_time_window(json_vehicle),
                       get_vehicle_breaks(json_vehicle),
-                      get_string(json_vehicle, "description"));
+                      get_string(json_vehicle, "description"),
+                      get_vehicle_steps(json_vehicle));
 
       input.add_vehicle(vehicle);
 

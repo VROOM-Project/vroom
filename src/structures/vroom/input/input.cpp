@@ -8,6 +8,7 @@ All rights reserved (see LICENSE).
 */
 
 #include "structures/vroom/input/input.h"
+#include "algorithms/validation/check.h"
 #include "problems/cvrp/cvrp.h"
 #include "problems/vrptw/vrptw.h"
 #include "utils/helpers.h"
@@ -93,6 +94,11 @@ void Input::add_job(const Job& job) {
   if (job.type != JOB_TYPE::SINGLE) {
     throw Exception(ERROR::INPUT, "Wrong job type.");
   }
+  if (job_id_to_rank.find(job.id) != job_id_to_rank.end()) {
+    throw Exception(ERROR::INPUT,
+                    "Duplicate job id: " + std::to_string(job.id) + ".");
+  }
+  job_id_to_rank[job.id] = jobs.size();
   jobs.push_back(job);
   check_job(jobs.back());
   _has_jobs = true;
@@ -117,12 +123,23 @@ void Input::add_shipment(const Job& pickup, const Job& delivery) {
   if (pickup.type != JOB_TYPE::PICKUP) {
     throw Exception(ERROR::INPUT, "Wrong pickup type.");
   }
+  if (pickup_id_to_rank.find(pickup.id) != pickup_id_to_rank.end()) {
+    throw Exception(ERROR::INPUT,
+                    "Duplicate pickup id: " + std::to_string(pickup.id) + ".");
+  }
+  pickup_id_to_rank[pickup.id] = jobs.size();
   jobs.push_back(pickup);
   check_job(jobs.back());
 
   if (delivery.type != JOB_TYPE::DELIVERY) {
     throw Exception(ERROR::INPUT, "Wrong delivery type.");
   }
+  if (delivery_id_to_rank.find(delivery.id) != delivery_id_to_rank.end()) {
+    throw Exception(ERROR::INPUT,
+                    "Duplicate delivery id: " + std::to_string(delivery.id) +
+                      ".");
+  }
+  delivery_id_to_rank[delivery.id] = jobs.size();
   jobs.push_back(delivery);
   check_job(jobs.back());
   _has_shipments = true;
@@ -291,7 +308,7 @@ void Input::check_cost_bound() const {
   bound = utils::add_without_overflow(bound, end_bound);
 }
 
-void Input::set_compatibility() {
+void Input::set_skills_compatibility() {
   // Default to no restriction when no skills are provided.
   _vehicle_to_job_compatibility = std::vector<
     std::vector<unsigned char>>(vehicles.size(),
@@ -314,7 +331,9 @@ void Input::set_compatibility() {
       }
     }
   }
+}
 
+void Input::set_extra_compatibility() {
   // Derive potential extra incompatibilities : jobs or shipments with
   // amount that does not fit into vehicle or that cannot be added to
   // an empty route for vehicle based on the timing constraints (when
@@ -356,7 +375,9 @@ void Input::set_compatibility() {
       }
     }
   }
+}
 
+void Input::set_vehicles_compatibility() {
   _vehicle_to_vehicle_compatibility =
     std::vector<std::vector<bool>>(vehicles.size(),
                                    std::vector<bool>(vehicles.size(), false));
@@ -402,13 +423,15 @@ Solution Input::solve(unsigned exploration_level,
   }
 
   // Check for potential overflow in solution cost.
-  this->check_cost_bound();
+  check_cost_bound();
 
-  // Fill vehicle/job compatibility matrix.
-  this->set_compatibility();
+  // Fill vehicle/job compatibility matrices.
+  set_skills_compatibility();
+  set_extra_compatibility();
+  set_vehicles_compatibility();
 
   // Load relevant problem.
-  auto instance = this->get_problem();
+  auto instance = get_problem();
   _end_loading = std::chrono::high_resolution_clock::now();
 
   auto loading = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -442,6 +465,153 @@ Solution Input::solve(unsigned exploration_level,
   }
 
   return sol;
+}
+
+Solution Input::check(unsigned nb_thread) {
+#if USE_LIBGLPK
+  if (_geometry and !_all_locations_have_coords) {
+    // Early abort when info is required with missing coordinates.
+    throw Exception(ERROR::INPUT,
+                    "Route geometry request with missing coordinates.");
+  }
+
+  // Set all ranks for vehicles steps.
+  std::unordered_set<Id> planned_job_ids;
+  std::unordered_set<Id> planned_pickup_ids;
+  std::unordered_set<Id> planned_delivery_ids;
+
+  for (Index v = 0; v < vehicles.size(); ++v) {
+    auto& current_vehicle = vehicles[v];
+
+    for (auto& step : current_vehicle.steps) {
+      if (step.type == STEP_TYPE::BREAK) {
+        auto search = current_vehicle.break_id_to_rank.find(step.id);
+        if (search == current_vehicle.break_id_to_rank.end()) {
+          throw Exception(ERROR::INPUT,
+                          "Invalid break id " + std::to_string(step.id) +
+                            " for vehicle " +
+                            std::to_string(current_vehicle.id) + ".");
+        }
+        step.rank = search->second;
+      }
+
+      if (step.type == STEP_TYPE::JOB) {
+        switch (step.job_type) {
+        case JOB_TYPE::SINGLE: {
+          auto search = job_id_to_rank.find(step.id);
+          if (search == job_id_to_rank.end()) {
+            throw Exception(ERROR::INPUT,
+                            "Invalid job id " + std::to_string(step.id) +
+                              " for vehicle " +
+                              std::to_string(current_vehicle.id) + ".");
+          }
+          step.rank = search->second;
+
+          auto planned_job = planned_job_ids.find(step.id);
+          if (planned_job != planned_job_ids.end()) {
+            throw Exception(ERROR::INPUT,
+                            "Duplicate job id " + std::to_string(step.id) +
+                              " in input steps for vehicle " +
+                              std::to_string(current_vehicle.id) + ".");
+          }
+          planned_job_ids.insert(step.id);
+          break;
+        }
+        case JOB_TYPE::PICKUP: {
+          auto search = pickup_id_to_rank.find(step.id);
+          if (search == pickup_id_to_rank.end()) {
+            throw Exception(ERROR::INPUT,
+                            "Invalid pickup id " + std::to_string(step.id) +
+                              " for vehicle " +
+                              std::to_string(current_vehicle.id) + ".");
+          }
+          step.rank = search->second;
+
+          auto planned_pickup = planned_pickup_ids.find(step.id);
+          if (planned_pickup != planned_pickup_ids.end()) {
+            throw Exception(ERROR::INPUT,
+                            "Duplicate pickup id " + std::to_string(step.id) +
+                              " in input steps for vehicle " +
+                              std::to_string(current_vehicle.id) + ".");
+          }
+          planned_pickup_ids.insert(step.id);
+          break;
+        }
+        case JOB_TYPE::DELIVERY: {
+          auto search = delivery_id_to_rank.find(step.id);
+          if (search == delivery_id_to_rank.end()) {
+            throw Exception(ERROR::INPUT,
+                            "Invalid delivery id " + std::to_string(step.id) +
+                              " for vehicle " +
+                              std::to_string(current_vehicle.id) + ".");
+          }
+          step.rank = search->second;
+
+          auto planned_delivery = planned_delivery_ids.find(step.id);
+          if (planned_delivery != planned_delivery_ids.end()) {
+            throw Exception(ERROR::INPUT,
+                            "Duplicate delivery id " + std::to_string(step.id) +
+                              " in input steps for vehicle " +
+                              std::to_string(current_vehicle.id) + ".");
+          }
+          planned_delivery_ids.insert(step.id);
+          break;
+        }
+        }
+      }
+    }
+  }
+
+  if (_matrix.size() < 2) {
+    // Call to routing engine if matrix not already provided.
+    assert(_routing_wrapper);
+    // TODO we don't need the whole matrix here.
+    _matrix = _routing_wrapper->get_matrix(_locations);
+  }
+
+  // Check for potential overflow in solution cost.
+  check_cost_bound();
+
+  // Fill basic skills compatibility matrix.
+  set_skills_compatibility();
+
+  _end_loading = std::chrono::high_resolution_clock::now();
+
+  auto loading = std::chrono::duration_cast<std::chrono::milliseconds>(
+                   _end_loading - _start_loading)
+                   .count();
+
+  // Check.
+  auto sol = validation::check_and_set_ETA(*this, nb_thread);
+
+  // Update timing info.
+  sol.summary.computing_times.loading = loading;
+
+  _end_solving = std::chrono::high_resolution_clock::now();
+  sol.summary.computing_times.solving =
+    std::chrono::duration_cast<std::chrono::milliseconds>(_end_solving -
+                                                          _end_loading)
+      .count();
+
+  if (_geometry) {
+    for (auto& route : sol.routes) {
+      _routing_wrapper->add_route_info(route);
+      sol.summary.distance += route.distance;
+    }
+
+    _end_routing = std::chrono::high_resolution_clock::now();
+    auto routing = std::chrono::duration_cast<std::chrono::milliseconds>(
+                     _end_routing - _end_solving)
+                     .count();
+
+    sol.summary.computing_times.routing = routing;
+  }
+
+  return sol;
+#else
+  // Attempt to use libglpk while compiling without it.
+  throw Exception(ERROR::INPUT, "VROOM compiled without libglpk installed.");
+#endif
 }
 
 } // namespace vroom

@@ -31,6 +31,7 @@ void display_usage() {
   usage += "Options:\n";
   usage += "\t-a PROFILE:HOST (=" + vroom::DEFAULT_PROFILE +
            ":0.0.0.0)\t routing server\n";
+  usage += "\t-c,\t\t\t\t choose ETA for custom routes and report violations\n";
   usage += "\t-g,\t\t\t\t add detailed route geometry and indicators\n";
   usage += "\t-i FILE,\t\t\t read input from FILE rather than from stdin\n";
   usage += "\t-o OUTPUT,\t\t\t output file name\n";
@@ -48,7 +49,7 @@ int main(int argc, char** argv) {
   vroom::io::CLArgs cl_args;
 
   // Parsing command-line arguments.
-  const char* optString = "a:e:gi:o:p:r:t:x:h?";
+  const char* optString = "a:ce:gi:o:p:r:t:x:h?";
   int opt = getopt(argc, argv, optString);
 
   std::string router_arg;
@@ -60,6 +61,9 @@ int main(int argc, char** argv) {
     switch (opt) {
     case 'a':
       vroom::io::update_host(cl_args.servers, optarg);
+      break;
+    case 'c':
+      cl_args.check = true;
       break;
     case 'e':
       heuristic_params_arg.push_back(optarg);
@@ -165,9 +169,11 @@ int main(int argc, char** argv) {
     // Build problem.
     vroom::Input problem_instance = vroom::io::parse(cl_args);
 
-    vroom::Solution sol = problem_instance.solve(cl_args.exploration_level,
-                                                 cl_args.nb_threads,
-                                                 cl_args.h_params);
+    vroom::Solution sol = (cl_args.check)
+                            ? problem_instance.check(cl_args.nb_threads)
+                            : problem_instance.solve(cl_args.exploration_level,
+                                                     cl_args.nb_threads,
+                                                     cl_args.h_params);
 
     // Write solution.
     vroom::io::write_to_json(sol, cl_args.geometry, cl_args.output_file);

@@ -19,7 +19,8 @@ Vehicle::Vehicle(Id id,
                  const Skills& skills,
                  const TimeWindow& tw,
                  const std::vector<Break>& breaks,
-                 const std::string& description)
+                 const std::string& description,
+                 const std::vector<VehicleStep>& input_steps)
   : id(id),
     start(start),
     end(end),
@@ -32,6 +33,47 @@ Vehicle::Vehicle(Id id,
     throw Exception(ERROR::INPUT,
                     "No start or end specified for vehicle " +
                       std::to_string(id) + '.');
+  }
+
+  for (unsigned i = 0; i < breaks.size(); ++i) {
+    const auto& b = breaks[i];
+    if (break_id_to_rank.find(b.id) != break_id_to_rank.end()) {
+      throw Exception(ERROR::INPUT,
+                      "Duplicate break id: " + std::to_string(b.id) + ".");
+    }
+    break_id_to_rank[b.id] = i;
+  }
+
+  if (!input_steps.empty()) {
+    // Populating steps. We rely on always having start and end steps
+    // in input, so just add them if they're missing.
+    unsigned rank_after_start = 0;
+    if (input_steps.front().type == STEP_TYPE::START) {
+      steps.push_back(input_steps.front());
+      rank_after_start = 1;
+    } else {
+      steps.emplace_back(STEP_TYPE::START);
+    }
+
+    for (unsigned i = rank_after_start; i < input_steps.size(); ++i) {
+      if (input_steps[i].type == STEP_TYPE::START) {
+        throw Exception(ERROR::INPUT,
+                        "Unexpected start in input steps for vehicle " +
+                          std::to_string(id) + ".");
+      }
+      if (input_steps[i].type == STEP_TYPE::END and
+          (i != input_steps.size() - 1)) {
+        throw Exception(ERROR::INPUT,
+                        "Unexpected end in input steps for vehicle " +
+                          std::to_string(id) + ".");
+      }
+
+      steps.push_back(input_steps[i]);
+    }
+
+    if (steps.back().type != STEP_TYPE::END) {
+      steps.emplace_back(STEP_TYPE::END);
+    }
   }
 }
 

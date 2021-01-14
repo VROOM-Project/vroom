@@ -1,0 +1,102 @@
+\documentclass{article}
+\usepackage{nicematrix}
+\usepackage{fullpage}
+
+\begin{document}
+
+\section{Mathematical model}
+
+Let $R=\{T_0, T_1, \ldots, T_n, T_{n + 1}\}$ be the fixed order of
+tasks within the route for a given vehicle. The vehicle has to perform
+$n$ geolocated tasks ($T_1$ to $T_n$) while $T_0$ and $T_{n + 1}$ are
+its optional start and end tasks. For all $i$, we denote $s_i$ the
+service time for task $i$, $d_i$ the travel duration from task $T_i$
+to the next non-break task. Task $T_i$ ($1\leq i \leq n$) has $K_i$
+time windows $[a_{i1}, b_{i1}]$, $\dots$, $[a_{iK_i}, b_{iK_i}]$ for
+expected task start. In particular for vehicle start we have $s_0 = 0$
+while working hours associated to the vehicle are $[a, b]$.\\
+
+The following program aim at deciding start times $t_i$ for all tasks
+$T_i$ in order to minimize timing violations measured by variable
+$Y_i$: either \textit{lead time} whenever a task starts earlier than
+it's available date, either \textit{delay} when a task starts later
+that it's deadline. For each task $T_i$ ($1\leq i\leq n$), the chosen
+time window is decided by binary variables $X_{ik}$
+($0\leq k \leq K_i$). Variables $\delta_i$ allow to split required
+travel duration before and after a (set of) breaks. Let $J$ be the
+subset of indices $i$ ($0\leq i \leq n$) such that $T_i$ is not a
+break. For all $i\in J$, let $B_i$ be the number of tasks following
+task $T_i$ that are breaks.
+
+\begin{quote}
+  Minimize
+  \begin{align}
+    M_1 \times \sum_{i = 0}^{n + 1} Y_i + M_2 \times (t_{n +1} - t_0) + M_3\times\sum_{i = 1}^{n}t_i + \sum_{i\in J}\sum_{k = i}^{i + B_i}(k - i)\times\delta_k\label{obj}\tag{Obj}
+  \end{align}
+  Subject to
+  \begin{align}
+    t_{i + 1} - t_i - \delta_i &\geq s_i && 0 \leq i \leq n\label{precedence}\tag{$P_i$}\\
+    Y_0 + t_0 &\geq a &&  \label{lead_start}\tag{$L_0$}\\
+    Y_i + t_i - \sum_{k = 0}^{K_i}a_{ik}X_{ik}&\geq 0 && 1 \leq i \leq n \label{lead}\tag{$L_i$}\\
+    t_i - Y_i - \sum_{k = 0}^{K_i}b_{ik}X_{ik} &\leq 0 && 1 \leq i \leq n \label{delay}\tag{$D_i$}\\
+    t_{n + 1} - Y_{n + 1} &\leq b && \label{delay_end}\tag{$D_{n + 1}$}\\
+    \sum_{k = 0}^{K_i}X_{ik} &= 1 && 1 \leq i \leq n \label{tw_sum}\tag{$S_i$}\\
+    \sum_{k = i}^{i + B_i}\delta_k &= d_i && \forall i\in J \label{break_duration}\tag{$\Delta_i$}\\
+    t_i &\geq 0 && 0 \leq i \leq n + 1 \nonumber\\
+    Y_i &\geq 0 && 0 \leq i \leq n + 1 \nonumber\\
+    \delta_i &\geq 0 && 0 \leq i \leq n \nonumber\\
+    X_i &\in \{0; 1\} && 1 \leq i \leq n \nonumber
+  \end{align}
+\end{quote}
+
+The optimization objective (\ref{obj}) uses values
+$M_1 >> M_2 >> M_3 >> 1$ to combine the sum of time violations as
+first objective, then route makespan as a secondary objective, then
+tasks start date, and last force split travel time to be done as soon
+as possible (required for situations with breaks surrounded by waiting
+time). Precedence constraints (\ref{precedence}) make sure service and
+travel times are accounted for between task start times. In the time
+violation constraints for lead time (\ref{lead}) and delay
+(\ref{delay}), variable $Y_i$ is zero iff task start matches the
+expected time window. Sums (\ref{tw_sum}) ensure exactly one time
+window is picked for each task. Sums (\ref{break_duration}) ensure the
+required travel duration between any two consecutive non-break tasks
+is split across all intermediate breaks. In particular if $T_i$ and
+$T_{i + 1}$ are both non-break tasks, we have $\delta_i = d_i$. In
+practice, variables $t_i$ can be bounded by additional user-defined
+hard constraints.
+
+\section{glpk matrix layout}
+
+\setcounter{MaxMatrixCols}{30}
+
+\begin{center}
+  \rotatebox[origin=c]{90}{
+    $\begin{NiceMatrix}
+      & t_0 & t_1 & \Cdots & t_n & t_{n + 1} & Y_0 & Y_1 & \Cdots & Y_n & Y_{n + 1} & X_{10} & \Cdots & X_{1K_1} & \Cdots & X_{n0} & \Cdots & X_{nK_n} & \delta_0 & & \Cdots & \delta_n\\
+      P_0 & -1 & 1 & & & & & & & & & & & & & & & & -1 \\
+      \Vdots & & \Ddots & \Ddots & & & & & & & & & & & & & & & & \Ddots \\
+      \Vdots & & &  \Ddots & \Ddots & & & & & & & & & & & & & & & & \Ddots \\
+      P_n & & & & -1 & 1 & & & & & & & & & & & & & & & & -1 \\\hline
+      L_0 & 1 & & & & & 1 \\
+      L_1 & & 1 & & & & & 1 & & & & -a_{10} & \Cdots & -a_{1K_1} \\
+      \Vdots & & & \Ddots & & & & & \Ddots & & & & & & \Ddots \\
+      L_n & & & & 1 & & & & & 1 & & & & & & -a_{n0} & \Cdots & -a_{nK_n} \\\hline
+      D_1 & & 1 & & & & & -1  & & & & -b_{10} & \Cdots & -b_{1K_1} \\
+      \Vdots & & & \Ddots & & & & & \Ddots & & & & & & \Ddots \\
+      D_n & & & & 1 & & & & & -1 & & & & & & -b_{n0} & \Cdots & -b_{nK_n} \\
+      D_{n + 1} & & & & & 1 & & & & & -1\\\hline
+      S_1 & & & & & & &  & & & & 1 & \Cdots & 1 \\
+      \Vdots & & & & & & & & & & & & & & \Ddots \\
+      S_n & & & & & & & & & & & & & & & 1 & \Cdots & 1 \\\hline
+      \Delta_0 & & & & & & & & & & & & & & & & & & 1\cdots \\
+      \Vdots & & & & & & & & & & & & & & & & & & & \Ddots \\
+      \Vdots & & & & & & & & & & & & & & & & & & & & \Ddots \\
+      \Delta_{max(J)} & & & & & & & & & & & & & & & & & & & & & \cdots 1 \\\hline
+      Makespan & -1 & & & & 1\\\hline
+      \sum_{i = 0}^{n + 1} Y_i & & & & & & 1 & \Cdots & \Cdots & \Cdots & 1 \\
+    \end{NiceMatrix}$
+  }
+\end{center}
+
+\end{document}

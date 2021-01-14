@@ -18,7 +18,11 @@ const unsigned CLArgs::max_exploration_level = 5;
 
 // Default values.
 CLArgs::CLArgs()
-  : geometry(false), router(ROUTER::OSRM), nb_threads(4), exploration_level(5) {
+  : check(false),
+    geometry(false),
+    router(ROUTER::OSRM),
+    nb_threads(4),
+    exploration_level(5) {
 }
 
 void update_host(Servers& servers, const std::string& value) {

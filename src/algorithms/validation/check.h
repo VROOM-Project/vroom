@@ -1,5 +1,5 @@
-#ifndef INPUT_PARSER_H
-#define INPUT_PARSER_H
+#ifndef CHECK_H
+#define CHECK_H
 
 /*
 
@@ -11,16 +11,14 @@ All rights reserved (see LICENSE).
 */
 
 #include "structures/vroom/input/input.h"
-#include "structures/vroom/input/vehicle_step.h"
+#include "structures/vroom/solution/solution.h"
 
 namespace vroom {
-namespace io {
+namespace validation {
 
-struct CLArgs;
+Solution check_and_set_ETA(const Input& input, unsigned nb_thread);
 
-Input parse(const CLArgs& cl_args);
-
-} // namespace io
+} // namespace validation
 } // namespace vroom
 
 #endif

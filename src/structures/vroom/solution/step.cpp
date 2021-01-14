@@ -11,7 +11,7 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
-// Dummy initialization value for unused job id.
+// Used for start and end steps.
 Step::Step(STEP_TYPE type, Location location, const Amount& load)
   : step_type(type),
     job_type(JOB_TYPE::SINGLE), // Dummy init.
@@ -19,6 +19,8 @@ Step::Step(STEP_TYPE type, Location location, const Amount& load)
     id(0),
     service(0),
     load(load),
+    arrival(0),
+    duration(0),
     waiting_time(0) {
   assert(step_type == STEP_TYPE::START or step_type == STEP_TYPE::END);
 }

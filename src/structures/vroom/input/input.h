@@ -56,11 +56,18 @@ private:
 
   void check_cost_bound() const;
 
-  void set_compatibility();
+  void set_skills_compatibility();
+  void set_extra_compatibility();
+  void set_vehicles_compatibility();
 
 public:
   std::vector<Job> jobs;
   std::vector<Vehicle> vehicles;
+
+  // Store rank in jobs accessible from job/pickup/delivery id.
+  std::unordered_map<Id, Index> job_id_to_rank;
+  std::unordered_map<Id, Index> pickup_id_to_rank;
+  std::unordered_map<Id, Index> delivery_id_to_rank;
 
   Input(unsigned amount_size);
 
@@ -105,6 +112,8 @@ public:
                  unsigned nb_thread,
                  const std::vector<HeuristicParameters>& h_param =
                    std::vector<HeuristicParameters>());
+
+  Solution check(unsigned nb_thread);
 };
 
 } // namespace vroom
