@@ -611,6 +611,8 @@ Solution Input::check(unsigned nb_thread) {
 #else
   // Attempt to use libglpk while compiling without it.
   throw Exception(ERROR::INPUT, "VROOM compiled without libglpk installed.");
+  // Silence -Wunused-parameter warning.
+  (void)nb_thread;
 #endif
 }
 
