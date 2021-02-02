@@ -11,6 +11,7 @@ All rights reserved (see LICENSE).
 #include <numeric>
 #include <thread>
 #include <unordered_map>
+#include <iterator>
 
 #include "problems/tsp/heuristics/local_search.h"
 

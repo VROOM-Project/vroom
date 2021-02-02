@@ -7,6 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 #include <cassert>
+#include <iterator>
 
 #include "structures/generic/undirected_graph.h"
 
