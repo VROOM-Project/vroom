@@ -22,6 +22,7 @@
 ### Fixed
 
 - Rapidjson assert on invalid syntax for first vehicle (#418)
+- Compatibility with Visual Studio 2019 (#448)
 
 ## [v1.8.0] - 2020-09-29
 
