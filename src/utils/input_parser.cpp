@@ -492,11 +492,6 @@ Input parse(const CLArgs& cl_args) {
       if (common_profile.empty()) {
         // First iteration only.
         common_profile = current_profile;
-      } else {
-        // Check profile consistency.
-        if (current_profile != common_profile) {
-          throw Exception(ERROR::INPUT, "Mixed vehicle profiles in input.");
-        }
       }
     }
 
@@ -632,11 +627,6 @@ Input parse(const CLArgs& cl_args) {
       if (common_profile.empty()) {
         // First iteration only.
         common_profile = current_profile;
-      } else {
-        // Check profile consistency.
-        if (current_profile != common_profile) {
-          throw Exception(ERROR::INPUT, "Mixed vehicle profiles in input.");
-        }
       }
     }
 
