@@ -6,6 +6,8 @@
 
 - Compatibility with Visual Studio 2019 (#448)
 
+## [v1.9.0-rc.1] - 2021-01-14
+
 ### Added
 
 - Ability to choose ETA and report violations for custom routes using `-c` (#430)
