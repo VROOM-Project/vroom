@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Compatibility with Visual Studio 2019 (#448)
+
 ### Added
 
 - Ability to choose ETA and report violations for custom routes using `-c` (#430)
@@ -22,7 +26,6 @@
 ### Fixed
 
 - Rapidjson assert on invalid syntax for first vehicle (#418)
-- Compatibility with Visual Studio 2019 (#448)
 
 ## [v1.8.0] - 2020-09-29
 

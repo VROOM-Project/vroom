@@ -13,7 +13,7 @@ All rights reserved (see LICENSE).
 #ifndef _WIN32
   #include <unistd.h>
 #else
-  #include "utils/getopt_win.h"
+  #include "getopt_win.h"
 #endif
 
 #if USE_LIBOSRM

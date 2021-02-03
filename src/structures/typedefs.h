@@ -21,14 +21,6 @@ All rights reserved (see LICENSE).
 #ifdef _MSC_VER
   // include support for "and"/"or"
   #include <iso646.h>
-  // some include defines MAX_PRIORITY..
-  #ifdef MAX_PRIORITY
-    #undef MAX_PRIORITY
-  #endif
-  // ERROR is already defined in WIN
-  #ifdef ERROR
-    #undef ERROR
-  #endif
 #endif
 
 namespace vroom {
