@@ -17,34 +17,12 @@ matrix:
       addons:
         apt:
           packages:
-            - g++-7
-            - libasio-dev
-            - libglpk-dev
-            - jq
-      env:
-        - COMPILER=g++-7
-
-    - os: linux
-      addons:
-        apt:
-          packages:
             - g++-8
             - libasio-dev
             - libglpk-dev
             - jq
       env:
         - COMPILER=g++-8
-
-    - os: linux
-      addons:
-        apt:
-          packages:
-            - clang-5.0
-            - libasio-dev
-            - libglpk-dev
-            - jq
-      env:
-        - COMPILER=clang++-5.0
 
     - os: linux
       addons:
