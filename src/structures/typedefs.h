@@ -16,6 +16,12 @@ All rights reserved (see LICENSE).
 #include <string>
 #include <unordered_set>
 #include <vector>
+#include <optional>
+
+#ifdef _MSC_VER
+  // include support for "and"/"or"
+  #include <iso646.h>
+#endif
 
 namespace vroom {
 

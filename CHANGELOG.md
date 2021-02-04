@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Compatibility with Visual Studio 2019 (#448)
+
 ## [v1.9.0-rc.1] - 2021-01-14
 
 ### Added

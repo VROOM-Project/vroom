@@ -2,3 +2,4 @@
 *.d
 bin/
 lib/
+build/
