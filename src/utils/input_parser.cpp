@@ -337,6 +337,72 @@ inline std::vector<VehicleStep> get_vehicle_steps(const rapidjson::Value& v) {
   return steps;
 }
 
+inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
+                           unsigned amount_size) {
+  check_id(json_vehicle, "vehicle");
+  auto v_id = json_vehicle["id"].GetUint64();
+
+  // Check what info are available for vehicle start, then build
+  // optional start location.
+  bool has_start_coords = json_vehicle.HasMember("start");
+  bool has_start_index = json_vehicle.HasMember("start_index");
+  if (has_start_index and !json_vehicle["start_index"].IsUint()) {
+    throw Exception(ERROR::INPUT,
+                    "Invalid start_index for vehicle " +
+                    std::to_string(v_id) + ".");
+  }
+
+  std::optional<Location> start;
+  if (has_start_index) {
+    // Custom provided matrices and index.
+    Index start_index = json_vehicle["start_index"].GetUint();
+    if (has_start_coords) {
+      start = Location({start_index, parse_coordinates(json_vehicle, "start")});
+    } else {
+      start = start_index;
+    }
+  } else {
+    if (has_start_coords) {
+      start = parse_coordinates(json_vehicle, "start");
+    }
+  }
+
+  // Check what info are available for vehicle end, then build
+  // optional end location.
+  bool has_end_coords = json_vehicle.HasMember("end");
+  bool has_end_index = json_vehicle.HasMember("end_index");
+  if (has_end_index and !json_vehicle["end_index"].IsUint()) {
+    throw Exception(ERROR::INPUT,
+                    "Invalid end_index for vehicle" +
+                    std::to_string(v_id) + ".");
+  }
+
+  std::optional<Location> end;
+  if (has_end_index) {
+    // Custom provided matrices and index.
+    Index end_index = json_vehicle["end_index"].GetUint();
+    if (has_end_coords) {
+      end = Location({end_index, parse_coordinates(json_vehicle, "end")});
+    } else {
+      end = end_index;
+    }
+  } else {
+    if (has_end_coords) {
+      end = parse_coordinates(json_vehicle, "end");
+    }
+  }
+
+  return Vehicle(v_id,
+                 start,
+                 end,
+                 get_amount(json_vehicle, "capacity", amount_size),
+                 get_skills(json_vehicle),
+                 get_vehicle_time_window(json_vehicle),
+                 get_vehicle_breaks(json_vehicle),
+                 get_string(json_vehicle, "description"),
+                 get_vehicle_steps(json_vehicle));
+}
+
 Input parse(const CLArgs& cl_args) {
   // Input json object.
   rapidjson::Document json_input;
@@ -410,79 +476,8 @@ Input parse(const CLArgs& cl_args) {
     // Add all vehicles.
     for (rapidjson::SizeType i = 0; i < json_input["vehicles"].Size(); ++i) {
       auto& json_vehicle = json_input["vehicles"][i];
-      check_id(json_vehicle, "vehicle");
-      auto v_id = json_vehicle["id"].GetUint64();
 
-      // Check if vehicle has start_index or end_index.
-      bool has_start_index = json_vehicle.HasMember("start_index");
-      Index start_index = 0; // Initial value actually never used.
-      if (has_start_index) {
-        if (!json_vehicle["start_index"].IsUint()) {
-          throw Exception(ERROR::INPUT,
-                          "Invalid start_index for vehicle " +
-                            std::to_string(v_id) + ".");
-        }
-        start_index = json_vehicle["start_index"].GetUint();
-
-        if (matrix_size <= start_index) {
-          throw Exception(ERROR::INPUT,
-                          "start_index exceeding matrix size for vehicle" +
-                            std::to_string(v_id) + ".");
-        }
-      }
-
-      bool has_start_coords = json_vehicle.HasMember("start");
-
-      bool has_end_index = json_vehicle.HasMember("end_index");
-      Index end_index = 0; // Initial value actually never used.
-      if (has_end_index) {
-        if (!json_vehicle["end_index"].IsUint()) {
-          throw Exception(ERROR::INPUT,
-                          "Invalid end_index for vehicle" +
-                            std::to_string(v_id) + ".");
-        }
-        end_index = json_vehicle["end_index"].GetUint();
-
-        if (matrix_size <= end_index) {
-          throw Exception(ERROR::INPUT,
-                          "end_index exceeding matrix size for vehicle" +
-                            std::to_string(v_id) + ".");
-        }
-      }
-
-      bool has_end_coords = json_vehicle.HasMember("end");
-
-      // Add vehicle to input
-      std::optional<Location> start;
-      if (has_start_index) {
-        if (has_start_coords) {
-          start =
-            Location({start_index, parse_coordinates(json_vehicle, "start")});
-        } else {
-          start = start_index;
-        }
-      }
-
-      std::optional<Location> end;
-      if (has_end_index) {
-        if (has_end_coords) {
-          end = Location({end_index, parse_coordinates(json_vehicle, "end")});
-        } else {
-          end = end_index;
-        }
-      }
-
-      Vehicle vehicle(v_id,
-                      start,
-                      end,
-                      get_amount(json_vehicle, "capacity", amount_size),
-                      get_skills(json_vehicle),
-                      get_vehicle_time_window(json_vehicle),
-                      get_vehicle_breaks(json_vehicle),
-                      get_string(json_vehicle, "description"),
-                      get_vehicle_steps(json_vehicle));
-
-      input.add_vehicle(vehicle);
+      input.add_vehicle(get_vehicle(json_vehicle, amount_size));
 
       std::string current_profile = get_string(json_vehicle, "profile");
       if (current_profile.empty()) {
@@ -595,29 +590,8 @@ Input parse(const CLArgs& cl_args) {
     // All vehicles.
     for (rapidjson::SizeType i = 0; i < json_input["vehicles"].Size(); ++i) {
       auto& json_vehicle = json_input["vehicles"][i];
-      check_id(json_vehicle, "vehicle");
 
-      std::optional<Location> start;
-      if (json_vehicle.HasMember("start")) {
-        start = parse_coordinates(json_vehicle, "start");
-      }
-
-      std::optional<Location> end;
-      if (json_vehicle.HasMember("end")) {
-        end = parse_coordinates(json_vehicle, "end");
-      }
-
-      Vehicle vehicle(json_vehicle["id"].GetUint64(),
-                      start,
-                      end,
-                      get_amount(json_vehicle, "capacity", amount_size),
-                      get_skills(json_vehicle),
-                      get_vehicle_time_window(json_vehicle),
-                      get_vehicle_breaks(json_vehicle),
-                      get_string(json_vehicle, "description"),
-                      get_vehicle_steps(json_vehicle));
-
-      input.add_vehicle(vehicle);
+      input.add_vehicle(get_vehicle(json_vehicle, amount_size));
 
       std::string current_profile = get_string(json_vehicle, "profile");
       if (current_profile.empty()) {
