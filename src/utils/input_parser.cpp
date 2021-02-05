@@ -141,21 +141,6 @@ inline void check_shipment(const rapidjson::Value& v) {
   }
 }
 
-inline void check_location_index(const rapidjson::Value& v,
-                                 const std::string& type,
-                                 rapidjson::SizeType matrix_size) {
-  if (!v.HasMember("location_index") or !v["location_index"].IsUint()) {
-    throw Exception(ERROR::INPUT,
-                    "Invalid location_index for " + type + " " +
-                      std::to_string(v["id"].GetUint64()) + ".");
-  }
-  if (matrix_size <= v["location_index"].GetUint()) {
-    throw Exception(ERROR::INPUT,
-                    "location_index exceeding matrix size for " + type + " " +
-                      std::to_string(v["id"].GetUint64()) + ".");
-  }
-}
-
 inline void check_location(const rapidjson::Value& v, const std::string& type) {
   if (!v.HasMember("location") or !v["location"].IsArray()) {
     throw Exception(ERROR::INPUT,
@@ -516,8 +501,51 @@ Input parse(const CLArgs& cl_args) {
     }
   }
 
-  // Switch input type: explicit matrix or using routing engine.
+  if (has_shipments) {
+    // Add the shipments.
+    for (rapidjson::SizeType i = 0; i < json_input["shipments"].Size(); ++i) {
+      auto& json_shipment = json_input["shipments"][i];
+      check_shipment(json_shipment);
+
+      // Retrieve common stuff for both pickup and delivery.
+      auto amount = get_amount(json_shipment, "amount", amount_size);
+      auto skills = get_skills(json_shipment);
+      auto priority = get_priority(json_shipment);
+
+      // Defining pickup job.
+      auto& json_pickup = json_shipment["pickup"];
+      check_id(json_pickup, "pickup");
+
+      Job pickup(json_pickup["id"].GetUint64(),
+                 JOB_TYPE::PICKUP,
+                 get_task_location(json_pickup, "pickup"),
+                 get_service(json_pickup),
+                 amount,
+                 skills,
+                 priority,
+                 get_job_time_windows(json_pickup),
+                 get_string(json_pickup, "description"));
+
+      // Defining delivery job.
+      auto& json_delivery = json_shipment["delivery"];
+      check_id(json_delivery, "delivery");
+
+      Job delivery(json_delivery["id"].GetUint64(),
+                   JOB_TYPE::DELIVERY,
+                   get_task_location(json_delivery, "delivery"),
+                   get_service(json_delivery),
+                   amount,
+                   skills,
+                   priority,
+                   get_job_time_windows(json_delivery),
+                   get_string(json_delivery, "description"));
+
+      input.add_shipment(pickup, delivery);
+    }
+  }
+
   if (json_input.HasMember("matrix")) {
+    // Parse user-provided matrix.
     if (!json_input["matrix"].IsArray()) {
       throw Exception(ERROR::INPUT, "Invalid matrix.");
     }
@@ -543,116 +571,8 @@ Input parse(const CLArgs& cl_args) {
         matrix_input[i][j] = cost;
       }
     }
+
     input.set_matrix(std::move(matrix_input));
-
-    if (has_shipments) {
-      // Add the shipments.
-      for (rapidjson::SizeType i = 0; i < json_input["shipments"].Size(); ++i) {
-        auto& json_shipment = json_input["shipments"][i];
-
-        check_shipment(json_shipment);
-
-        // Retrieve common stuff for both pickup and delivery.
-        auto amount = get_amount(json_shipment, "amount", amount_size);
-        auto skills = get_skills(json_shipment);
-        auto priority = get_priority(json_shipment);
-
-        // Defining pickup job.
-        auto& json_pickup = json_shipment["pickup"];
-
-        check_id(json_pickup, "pickup");
-        check_location_index(json_pickup, "pickup", matrix_size);
-
-        auto pickup_loc_index = json_pickup["location_index"].GetUint();
-
-        Job pickup(json_pickup["id"].GetUint64(),
-                   JOB_TYPE::PICKUP,
-                   json_pickup.HasMember("location")
-                     ? Location(pickup_loc_index,
-                                parse_coordinates(json_pickup, "location"))
-                     : Location(pickup_loc_index),
-                   get_service(json_pickup),
-                   amount,
-                   skills,
-                   priority,
-                   get_job_time_windows(json_pickup),
-                   get_string(json_pickup, "description"));
-
-        // Defining delivery job.
-        auto& json_delivery = json_shipment["delivery"];
-
-        check_id(json_delivery, "delivery");
-        check_location_index(json_delivery, "delivery", matrix_size);
-
-        auto delivery_loc_index = json_delivery["location_index"].GetUint();
-
-        Job delivery(json_delivery["id"].GetUint64(),
-                     JOB_TYPE::DELIVERY,
-                     json_delivery.HasMember("location")
-                       ? Location(delivery_loc_index,
-                                  parse_coordinates(json_delivery, "location"))
-                       : Location(delivery_loc_index),
-                     get_service(json_delivery),
-                     amount,
-                     skills,
-                     priority,
-                     get_job_time_windows(json_delivery),
-                     get_string(json_delivery, "description"));
-
-        input.add_shipment(pickup, delivery);
-      }
-    }
-  } else {
-    // Adding shipments only, matrix will be computed using routing
-    // engine upon solving.
-
-    if (has_shipments) {
-      // Add the shipments.
-      for (rapidjson::SizeType i = 0; i < json_input["shipments"].Size(); ++i) {
-        auto& json_shipment = json_input["shipments"][i];
-
-        check_shipment(json_shipment);
-
-        // Retrieve common stuff for both pickup and delivery.
-        auto amount = get_amount(json_shipment, "amount", amount_size);
-        auto skills = get_skills(json_shipment);
-        auto priority = get_priority(json_shipment);
-
-        // Defining pickup job.
-        auto& json_pickup = json_shipment["pickup"];
-
-        check_id(json_pickup, "pickup");
-        check_location(json_pickup, "pickup");
-
-        Job pickup(json_pickup["id"].GetUint64(),
-                   JOB_TYPE::PICKUP,
-                   parse_coordinates(json_pickup, "location"),
-                   get_service(json_pickup),
-                   amount,
-                   skills,
-                   priority,
-                   get_job_time_windows(json_pickup),
-                   get_string(json_pickup, "description"));
-
-        // Defining delivery job.
-        auto& json_delivery = json_shipment["delivery"];
-
-        check_id(json_delivery, "delivery");
-        check_location(json_delivery, "delivery");
-
-        Job delivery(json_delivery["id"].GetUint64(),
-                     JOB_TYPE::DELIVERY,
-                     parse_coordinates(json_delivery, "location"),
-                     get_service(json_delivery),
-                     amount,
-                     skills,
-                     priority,
-                     get_job_time_windows(json_delivery),
-                     get_string(json_delivery, "description"));
-
-        input.add_shipment(pickup, delivery);
-      }
-    }
   }
 
   // Set relevant routing wrapper.
