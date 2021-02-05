@@ -473,23 +473,6 @@ Input parse(const CLArgs& cl_args) {
     }
     input.set_matrix(std::move(matrix_input));
 
-    // Add all vehicles.
-    for (rapidjson::SizeType i = 0; i < json_input["vehicles"].Size(); ++i) {
-      auto& json_vehicle = json_input["vehicles"][i];
-
-      input.add_vehicle(get_vehicle(json_vehicle, amount_size));
-
-      std::string current_profile = get_string(json_vehicle, "profile");
-      if (current_profile.empty()) {
-        current_profile = DEFAULT_PROFILE;
-      }
-
-      if (common_profile.empty()) {
-        // First iteration only.
-        common_profile = current_profile;
-      }
-    }
-
     if (has_jobs) {
       // Add the jobs.
       for (rapidjson::SizeType i = 0; i < json_input["jobs"].Size(); ++i) {
@@ -584,25 +567,8 @@ Input parse(const CLArgs& cl_args) {
       }
     }
   } else {
-    // Adding vehicles and jobs only, matrix will be computed using
+    // Adding jobs and shipments only, matrix will be computed using
     // routing engine upon solving.
-
-    // All vehicles.
-    for (rapidjson::SizeType i = 0; i < json_input["vehicles"].Size(); ++i) {
-      auto& json_vehicle = json_input["vehicles"][i];
-
-      input.add_vehicle(get_vehicle(json_vehicle, amount_size));
-
-      std::string current_profile = get_string(json_vehicle, "profile");
-      if (current_profile.empty()) {
-        current_profile = DEFAULT_PROFILE;
-      }
-
-      if (common_profile.empty()) {
-        // First iteration only.
-        common_profile = current_profile;
-      }
-    }
 
     if (has_jobs) {
       // Add the jobs.
@@ -681,6 +647,23 @@ Input parse(const CLArgs& cl_args) {
 
         input.add_shipment(pickup, delivery);
       }
+    }
+  }
+
+  // Add all vehicles.
+  for (rapidjson::SizeType i = 0; i < json_input["vehicles"].Size(); ++i) {
+    auto& json_vehicle = json_input["vehicles"][i];
+
+    input.add_vehicle(get_vehicle(json_vehicle, amount_size));
+
+    std::string current_profile = get_string(json_vehicle, "profile");
+    if (current_profile.empty()) {
+      current_profile = DEFAULT_PROFILE;
+    }
+
+    if (common_profile.empty()) {
+      // First iteration only.
+      common_profile = current_profile;
     }
   }
 
