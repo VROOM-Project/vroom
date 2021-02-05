@@ -403,6 +403,53 @@ inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
                  get_vehicle_steps(json_vehicle));
 }
 
+inline Location get_task_location(const rapidjson::Value& v,
+                                  const std::string& type) {
+  // Check what info are available to build task location.
+  bool has_location_coords = v.HasMember("location");
+  bool has_location_index = v.HasMember("location_index");
+  if (has_location_index and !v["location_index"].IsUint()) {
+    throw Exception(ERROR::INPUT,
+                    "Invalid location_index for " + type + " " +
+                      std::to_string(v["id"].GetUint64()) + ".");
+  }
+
+  if (has_location_index) {
+    // Custom provided matrices and index.
+    Index location_index = v["location_index"].GetUint();
+    if (has_location_coords) {
+      return Location({location_index, parse_coordinates(v, "location")});
+    } else {
+      return Location(location_index);
+    }
+  } else {
+    check_location(v, type);
+    return parse_coordinates(v, "location");
+  }
+}
+
+inline Job get_job(const rapidjson::Value& json_job, unsigned amount_size) {
+  check_id(json_job, "job");
+
+  // Only for retro-compatibility: when no pickup and delivery keys
+  // are defined and (deprecated) amount key is present, it should be
+  // interpreted as a delivery.
+  bool need_amount_compat = json_job.HasMember("amount") and
+                            !json_job.HasMember("delivery") and
+                            !json_job.HasMember("pickup");
+
+  return Job(json_job["id"].GetUint64(),
+             get_task_location(json_job, "job"),
+             get_service(json_job),
+             need_amount_compat ? get_amount(json_job, "amount", amount_size)
+                                : get_amount(json_job, "delivery", amount_size),
+             get_amount(json_job, "pickup", amount_size),
+             get_skills(json_job),
+             get_priority(json_job),
+             get_job_time_windows(json_job),
+             get_string(json_job, "description"));
+}
+
 Input parse(const CLArgs& cl_args) {
   // Input json object.
   rapidjson::Document json_input;
@@ -461,6 +508,14 @@ Input parse(const CLArgs& cl_args) {
     }
   }
 
+  // Add all tasks.
+  if (has_jobs) {
+    // Add the jobs.
+    for (rapidjson::SizeType i = 0; i < json_input["jobs"].Size(); ++i) {
+      input.add_job(get_job(json_input["jobs"][i], amount_size));
+    }
+  }
+
   // Switch input type: explicit matrix or using routing engine.
   if (json_input.HasMember("matrix")) {
     if (!json_input["matrix"].IsArray()) {
@@ -489,42 +544,6 @@ Input parse(const CLArgs& cl_args) {
       }
     }
     input.set_matrix(std::move(matrix_input));
-
-    if (has_jobs) {
-      // Add the jobs.
-      for (rapidjson::SizeType i = 0; i < json_input["jobs"].Size(); ++i) {
-        auto& json_job = json_input["jobs"][i];
-
-        check_id(json_job, "job");
-        check_location_index(json_job, "job", matrix_size);
-
-        auto job_loc_index = json_job["location_index"].GetUint();
-
-        // Only for retro-compatibility: when no pickup and delivery
-        // keys are defined and (deprecated) amount key is present, it
-        // should be interpreted as a delivery.
-        bool need_amount_compat = json_job.HasMember("amount") and
-                                  !json_job.HasMember("delivery") and
-                                  !json_job.HasMember("pickup");
-
-        Job job(json_job["id"].GetUint64(),
-                json_job.HasMember("location")
-                  ? Location(job_loc_index,
-                             parse_coordinates(json_job, "location"))
-                  : Location(job_loc_index),
-                get_service(json_job),
-                need_amount_compat
-                  ? get_amount(json_job, "amount", amount_size)
-                  : get_amount(json_job, "delivery", amount_size),
-                get_amount(json_job, "pickup", amount_size),
-                get_skills(json_job),
-                get_priority(json_job),
-                get_job_time_windows(json_job),
-                get_string(json_job, "description"));
-
-        input.add_job(job);
-      }
-    }
 
     if (has_shipments) {
       // Add the shipments.
@@ -584,39 +603,8 @@ Input parse(const CLArgs& cl_args) {
       }
     }
   } else {
-    // Adding jobs and shipments only, matrix will be computed using
-    // routing engine upon solving.
-
-    if (has_jobs) {
-      // Add the jobs.
-      for (rapidjson::SizeType i = 0; i < json_input["jobs"].Size(); ++i) {
-        auto& json_job = json_input["jobs"][i];
-
-        check_id(json_job, "job");
-        check_location(json_job, "job");
-
-        // Only for retro-compatibility: when no pickup and delivery
-        // keys are defined and (deprecated) amount key is present, it
-        // should be interpreted as a delivery.
-        bool need_amount_compat = json_job.HasMember("amount") and
-                                  !json_job.HasMember("delivery") and
-                                  !json_job.HasMember("pickup");
-
-        Job job(json_job["id"].GetUint64(),
-                parse_coordinates(json_job, "location"),
-                get_service(json_job),
-                need_amount_compat
-                  ? get_amount(json_job, "amount", amount_size)
-                  : get_amount(json_job, "delivery", amount_size),
-                get_amount(json_job, "pickup", amount_size),
-                get_skills(json_job),
-                get_priority(json_job),
-                get_job_time_windows(json_job),
-                get_string(json_job, "description"));
-
-        input.add_job(job);
-      }
-    }
+    // Adding shipments only, matrix will be computed using routing
+    // engine upon solving.
 
     if (has_shipments) {
       // Add the shipments.
