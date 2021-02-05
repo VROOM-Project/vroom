@@ -444,6 +444,23 @@ Input parse(const CLArgs& cl_args) {
   Input input(amount_size);
   input.set_geometry(cl_args.geometry);
 
+  // Add all vehicles.
+  for (rapidjson::SizeType i = 0; i < json_input["vehicles"].Size(); ++i) {
+    auto& json_vehicle = json_input["vehicles"][i];
+
+    input.add_vehicle(get_vehicle(json_vehicle, amount_size));
+
+    std::string current_profile = get_string(json_vehicle, "profile");
+    if (current_profile.empty()) {
+      current_profile = DEFAULT_PROFILE;
+    }
+
+    if (common_profile.empty()) {
+      // First iteration only.
+      common_profile = current_profile;
+    }
+  }
+
   // Switch input type: explicit matrix or using routing engine.
   if (json_input.HasMember("matrix")) {
     if (!json_input["matrix"].IsArray()) {
@@ -647,23 +664,6 @@ Input parse(const CLArgs& cl_args) {
 
         input.add_shipment(pickup, delivery);
       }
-    }
-  }
-
-  // Add all vehicles.
-  for (rapidjson::SizeType i = 0; i < json_input["vehicles"].Size(); ++i) {
-    auto& json_vehicle = json_input["vehicles"][i];
-
-    input.add_vehicle(get_vehicle(json_vehicle, amount_size));
-
-    std::string current_profile = get_string(json_vehicle, "profile");
-    if (current_profile.empty()) {
-      current_profile = DEFAULT_PROFILE;
-    }
-
-    if (common_profile.empty()) {
-      // First iteration only.
-      common_profile = current_profile;
     }
   }
 

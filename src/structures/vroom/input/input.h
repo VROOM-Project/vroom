@@ -34,6 +34,7 @@ private:
   bool _no_addition_yet;
   bool _has_skills;
   bool _has_TW;
+  bool _has_custom_location_index;
   bool _homogeneous_locations;
   bool _geometry;
   bool _has_jobs;

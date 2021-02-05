@@ -159,24 +159,14 @@ void Input::add_vehicle(const Vehicle& vehicle) {
                       std::to_string(_amount_size) + '.');
   }
 
-  // Ensure that skills are either always or never provided.
-  if (_no_addition_yet) {
-    _has_skills = !current_v.skills.empty();
-    _no_addition_yet = false;
-  } else {
-    if (_has_skills != !current_v.skills.empty()) {
-      throw Exception(ERROR::INPUT, "Missing skills.");
-    }
-  }
-
   // Check for time-windows.
   _has_TW = _has_TW || !vehicle.tw.is_default();
 
-  bool has_start = current_v.has_start();
-  bool has_end = current_v.has_end();
-
-  if (has_start) {
+  bool has_location_index = false;
+  if (current_v.has_start()) {
     auto& start_loc = current_v.start.value();
+
+    has_location_index = start_loc.user_index();
 
     if (!start_loc.user_index()) {
       // Index of this start in the matrix was not specified upon
@@ -200,8 +190,16 @@ void Input::add_vehicle(const Vehicle& vehicle) {
       _all_locations_have_coords && start_loc.has_coordinates();
   }
 
-  if (has_end) {
+  if (current_v.has_end()) {
     auto& end_loc = current_v.end.value();
+
+    if (current_v.has_start() and (has_location_index != end_loc.user_index())) {
+      // Start and end provided in a non-consistent manner with regard
+      // to location index definition.
+      throw Exception(ERROR::INPUT, "Missing start_index or end_index.");
+    }
+
+    has_location_index = end_loc.user_index();
 
     if (!end_loc.user_index()) {
       // Index of this end in the matrix was not specified upon
@@ -223,6 +221,21 @@ void Input::add_vehicle(const Vehicle& vehicle) {
     _matrix_used_index.insert(end_loc.index());
     _all_locations_have_coords =
       _all_locations_have_coords && end_loc.has_coordinates();
+  }
+
+  // Ensure that skills or location index are either always or never
+  // provided.
+  if (_no_addition_yet) {
+    _has_skills = !current_v.skills.empty();
+    _no_addition_yet = false;
+    _has_custom_location_index = has_location_index;
+  } else {
+    if (_has_skills != !current_v.skills.empty()) {
+      throw Exception(ERROR::INPUT, "Missing skills.");
+    }
+    if (_has_custom_location_index != has_location_index) {
+      throw Exception(ERROR::INPUT, "Missing start_index or end_index.");
+    }
   }
 
   // Check for homogeneous locations among vehicles.
