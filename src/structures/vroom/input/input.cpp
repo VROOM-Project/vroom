@@ -56,13 +56,19 @@ void Input::check_job(Job& job) {
                       std::to_string(_amount_size) + '.');
   }
 
-  // Ensure that skills are either always or never provided.
+  // Ensure that skills or location index are either always or never
+  // provided.
+  bool has_location_index = job.location.user_index();
   if (_no_addition_yet) {
     _has_skills = !job.skills.empty();
     _no_addition_yet = false;
+    _has_custom_location_index = has_location_index;
   } else {
     if (_has_skills != !job.skills.empty()) {
       throw Exception(ERROR::INPUT, "Missing skills.");
+    }
+    if (_has_custom_location_index != has_location_index) {
+      throw Exception(ERROR::INPUT, "Missing location index.");
     }
   }
 
@@ -235,7 +241,7 @@ void Input::add_vehicle(const Vehicle& vehicle) {
       throw Exception(ERROR::INPUT, "Missing skills.");
     }
     if (_has_custom_location_index != has_location_index) {
-      throw Exception(ERROR::INPUT, "Missing start_index or end_index.");
+      throw Exception(ERROR::INPUT, "Missing location index.");
     }
   }
 
