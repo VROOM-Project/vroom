@@ -10,7 +10,11 @@ All rights reserved (see LICENSE).
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#ifndef _WIN32
 #include <unistd.h>
+#else
+#include "getopt_win.h"
+#endif
 
 #if USE_LIBOSRM
 #include "osrm/exception.hpp"

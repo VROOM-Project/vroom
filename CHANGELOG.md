@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Formatting script updated to use version 10 of clang-format (#452)
+
+### Fixed
+
+- Compatibility with Visual Studio 2019 (#448)
+
 ## [v1.9.0-rc.1] - 2021-01-14
 
 ### Added
