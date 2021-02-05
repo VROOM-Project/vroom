@@ -11,9 +11,9 @@ All rights reserved (see LICENSE).
 #include <iostream>
 #include <sstream>
 #ifndef _WIN32
-  #include <unistd.h>
+#include <unistd.h>
 #else
-  #include "getopt_win.h"
+#include "getopt_win.h"
 #endif
 
 #if USE_LIBOSRM

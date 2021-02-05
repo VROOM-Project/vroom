@@ -13,14 +13,14 @@ All rights reserved (see LICENSE).
 #include <array>
 #include <limits>
 #include <list>
+#include <optional>
 #include <string>
 #include <unordered_set>
 #include <vector>
-#include <optional>
 
 #ifdef _MSC_VER
-  // include support for "and"/"or"
-  #include <iso646.h>
+// include support for "and"/"or"
+#include <iso646.h>
 #endif
 
 namespace vroom {

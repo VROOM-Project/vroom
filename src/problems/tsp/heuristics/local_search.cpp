@@ -8,10 +8,10 @@ All rights reserved (see LICENSE).
 */
 
 #include <algorithm>
+#include <iterator>
 #include <numeric>
 #include <thread>
 #include <unordered_map>
-#include <iterator>
 
 #include "problems/tsp/heuristics/local_search.h"
 
