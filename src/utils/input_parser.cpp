@@ -348,8 +348,8 @@ inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
   bool has_start_index = json_vehicle.HasMember("start_index");
   if (has_start_index and !json_vehicle["start_index"].IsUint()) {
     throw Exception(ERROR::INPUT,
-                    "Invalid start_index for vehicle " +
-                    std::to_string(v_id) + ".");
+                    "Invalid start_index for vehicle " + std::to_string(v_id) +
+                      ".");
   }
 
   std::optional<Location> start;
@@ -373,8 +373,8 @@ inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
   bool has_end_index = json_vehicle.HasMember("end_index");
   if (has_end_index and !json_vehicle["end_index"].IsUint()) {
     throw Exception(ERROR::INPUT,
-                    "Invalid end_index for vehicle" +
-                    std::to_string(v_id) + ".");
+                    "Invalid end_index for vehicle" + std::to_string(v_id) +
+                      ".");
   }
 
   std::optional<Location> end;

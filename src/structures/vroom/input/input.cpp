@@ -193,7 +193,8 @@ void Input::add_vehicle(const Vehicle& vehicle) {
   if (current_v.has_end()) {
     auto& end_loc = current_v.end.value();
 
-    if (current_v.has_start() and (has_location_index != end_loc.user_index())) {
+    if (current_v.has_start() and
+        (has_location_index != end_loc.user_index())) {
       // Start and end provided in a non-consistent manner with regard
       // to location index definition.
       throw Exception(ERROR::INPUT, "Missing start_index or end_index.");
