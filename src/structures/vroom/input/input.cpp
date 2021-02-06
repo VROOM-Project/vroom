@@ -40,12 +40,14 @@ void Input::set_geometry(bool geometry) {
 }
 
 void Input::add_routing_wrapper(const std::string& profile) {
-  assert(_routing_wrappers.find(profile) == _routing_wrappers.end());
-  auto insertion =
-    _routing_wrappers.emplace(profile, std::unique_ptr<routing::Wrapper>());
+  assert(std::find_if(_routing_wrappers.begin(),
+                      _routing_wrappers.end(),
+                      [&](const auto& wr) { return wr->profile == profile; }) ==
+         _routing_wrappers.end());
 
-  assert(insertion.second);
-  auto& routing_wrapper = insertion.first->second;
+  _profiles.insert(profile);
+
+  auto& routing_wrapper = _routing_wrappers.emplace_back();
 
   switch (_router) {
   case ROUTER::OSRM: {
@@ -299,8 +301,8 @@ void Input::add_vehicle(const Vehicle& vehicle) {
   }
 
   // Check for new profile.
-  auto& profile = current_v.profile;
-  if (_routing_wrappers.find(profile) == _routing_wrappers.end()) {
+  const auto& profile = current_v.profile;
+  if (_profiles.find(profile) == _profiles.end()) {
     add_routing_wrapper(profile);
   }
 }
@@ -468,15 +470,15 @@ void Input::set_vehicles_compatibility() {
 }
 
 void Input::set_matrices() {
-  for (const auto& profile_routing_pair : _routing_wrappers) {
-    const auto& profile = profile_routing_pair.first;
+  for (const auto& routing_wrapper : _routing_wrappers) {
+    const auto& profile = routing_wrapper->profile;
 
     if (_matrices.find(profile) == _matrices.end()) {
       // Matrix has not been manually set.
       if (_locations.size() == 1) {
         _matrices.emplace(profile, Matrix<Cost>({{0}}));
       } else {
-        _matrices.emplace(profile, profile_routing_pair.second->get_matrix(_locations));
+        _matrices.emplace(profile, routing_wrapper->get_matrix(_locations));
       }
     } else {
       // TODO check matrix size against max location index in case a
@@ -505,7 +507,7 @@ Solution Input::solve(unsigned exploration_level,
   set_matrices();
 
   // Use first profile for now.
-  auto& profile = _routing_wrappers.begin()->first;
+  const auto& profile = _routing_wrappers.front()->profile;
   auto matrix_search = _matrices.find(profile);
   _matrix = matrix_search->second;
 
@@ -540,9 +542,13 @@ Solution Input::solve(unsigned exploration_level,
   if (_geometry) {
     for (auto& route : sol.routes) {
       const auto& profile = route.profile;
-      auto search = _routing_wrappers.find(profile);
-      assert(search != _routing_wrappers.end());
-      search->second->add_route_info(route);
+      auto rw =
+        std::find_if(_routing_wrappers.begin(),
+                     _routing_wrappers.end(),
+                     [&](const auto& wr) { return wr->profile == profile; });
+      assert(rw != _routing_wrappers.end());
+      (*rw)->add_route_info(route);
+
       sol.summary.distance += route.distance;
     }
 
@@ -656,7 +662,7 @@ Solution Input::check(unsigned nb_thread) {
   set_matrices();
 
   // Use first profile for now.
-  auto& profile = _routing_wrappers.begin()->first;
+  auto& profile = _routing_wrappers.front()->profile;
   auto matrix_search = _matrices.find(profile);
   _matrix = matrix_search->second;
 
@@ -687,9 +693,13 @@ Solution Input::check(unsigned nb_thread) {
   if (_geometry) {
     for (auto& route : sol.routes) {
       const auto& profile = route.profile;
-      auto search = _routing_wrappers.find(profile);
-      assert(search != _routing_wrappers.end());
-      search->second->add_route_info(route);
+      auto rw =
+        std::find_if(_routing_wrappers.begin(),
+                     _routing_wrappers.end(),
+                     [&](const auto& wr) { return wr->profile == profile; });
+      assert(rw != _routing_wrappers.end());
+      (*rw)->add_route_info(route);
+
       sol.summary.distance += route.distance;
     }
 
