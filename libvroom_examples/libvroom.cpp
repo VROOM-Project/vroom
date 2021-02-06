@@ -86,13 +86,15 @@ void run_example_with_osrm() {
   bool GEOMETRY = true;
   unsigned amount_dimension = 1;
 
-  // Set OSRM host and port.
-  auto routing_wrapper = std::make_unique<
-    vroom::routing::OsrmRoutedWrapper>("car",
-                                       vroom::Server("localhost", "5000"));
+  // Set OSRM host and port for "car" profile.
+  vroom::io::Servers servers;
+  servers["car"] = vroom::Server("localhost", "5000");
 
   vroom::Input problem_instance(amount_dimension);
-  problem_instance.set_routing(std::move(routing_wrapper));
+  problem_instance.add_routing_wrapper("car",
+                                       servers,
+                                       vroom::ROUTER::OSRM);
+
   problem_instance.set_geometry(GEOMETRY); // Query for route geometry
                                            // after solving.
 

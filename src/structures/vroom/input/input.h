@@ -22,6 +22,11 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
+namespace io {
+// Profile name used as key.
+using Servers = std::unordered_map<std::string, Server>;
+} // namespace io
+
 class VRP;
 
 class Input {
@@ -30,7 +35,8 @@ private:
   std::chrono::high_resolution_clock::time_point _end_loading;
   std::chrono::high_resolution_clock::time_point _end_solving;
   std::chrono::high_resolution_clock::time_point _end_routing;
-  std::unique_ptr<routing::Wrapper> _routing_wrapper;
+  std::unique_ptr<routing::Wrapper> _routing_wrapper; // TODO remove
+  std::vector<std::unique_ptr<routing::Wrapper>> _routing_wrappers;
   bool _no_addition_yet;
   bool _has_skills;
   bool _has_TW;
@@ -74,7 +80,12 @@ public:
 
   void set_geometry(bool geometry);
 
+  // TODO remove
   void set_routing(std::unique_ptr<routing::Wrapper> routing_wrapper);
+
+  void add_routing_wrapper(const std::string& profile,
+                           const io::Servers& servers,
+                           ROUTER router);
 
   void add_job(const Job& job);
 

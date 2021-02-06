@@ -17,10 +17,10 @@ All rights reserved (see LICENSE).
 #include "../include/rapidjson/error/en.h"
 
 #if USE_LIBOSRM
-#include "routing/libosrm_wrapper.h"
+#include "routing/libosrm_wrapper.h" // TODO remove
 #endif
-#include "routing/ors_wrapper.h"
-#include "routing/osrm_routed_wrapper.h"
+#include "routing/ors_wrapper.h" // TODO remove
+#include "routing/osrm_routed_wrapper.h" // TODO remove
 #include "structures/cl_args.h"
 #include "utils/input_parser.h"
 
@@ -469,8 +469,8 @@ Input parse(const CLArgs& cl_args) {
   const unsigned amount_size =
     first_vehicle_has_capacity ? first_vehicle["capacity"].Size() : 0;
 
-  // Used to make sure all vehicles have the same profile.
-  std::string common_profile;
+  // List vehicles profiles in input.
+  std::unordered_set<std::string> profiles;
 
   // Custom input object embedding jobs, vehicles and matrix.
   Input input(amount_size);
@@ -487,10 +487,7 @@ Input parse(const CLArgs& cl_args) {
       current_profile = DEFAULT_PROFILE;
     }
 
-    if (common_profile.empty()) {
-      // First iteration only.
-      common_profile = current_profile;
-    }
+    profiles.insert(current_profile);
   }
 
   // Add all tasks.
@@ -575,7 +572,14 @@ Input parse(const CLArgs& cl_args) {
     input.set_matrix(std::move(matrix_input));
   }
 
-  // Set relevant routing wrapper.
+  // Set relevant routing wrappers.
+  for (const auto& profile: profiles) {
+    input.add_routing_wrapper(profile, cl_args.servers, cl_args.router);
+  }
+
+  // TODO remove
+  // Set relevant routing wrappers.
+  auto common_profile = *(profiles.begin());
   std::unique_ptr<routing::Wrapper> routing_wrapper;
   switch (cl_args.router) {
   case ROUTER::OSRM: {

@@ -11,6 +11,11 @@ All rights reserved (see LICENSE).
 #include "algorithms/validation/check.h"
 #include "problems/cvrp/cvrp.h"
 #include "problems/vrptw/vrptw.h"
+#if USE_LIBOSRM
+#include "routing/libosrm_wrapper.h"
+#endif
+#include "routing/ors_wrapper.h"
+#include "routing/osrm_routed_wrapper.h"
 #include "utils/helpers.h"
 
 namespace vroom {
@@ -35,6 +40,47 @@ void Input::set_geometry(bool geometry) {
 
 void Input::set_routing(std::unique_ptr<routing::Wrapper> routing_wrapper) {
   _routing_wrapper = std::move(routing_wrapper);
+}
+
+void Input::add_routing_wrapper(const std::string& profile,
+                                const io::Servers& servers,
+                                ROUTER router) {
+  auto& routing_wrapper = _routing_wrappers.emplace_back();
+
+  switch (router) {
+  case ROUTER::OSRM: {
+    // Use osrm-routed.
+    auto search = servers.find(profile);
+    if (search == servers.end()) {
+      throw Exception(ERROR::INPUT, "Invalid profile: " + profile + ".");
+    }
+    routing_wrapper =
+      std::make_unique<routing::OsrmRoutedWrapper>(profile, search->second);
+  } break;
+  case ROUTER::LIBOSRM:
+#if USE_LIBOSRM
+    // Use libosrm.
+    try {
+      routing_wrapper = std::make_unique<routing::LibosrmWrapper>(profile);
+    } catch (const osrm::exception& e) {
+      throw Exception(ERROR::ROUTING, "Invalid profile: " + profile);
+    }
+#else
+    // Attempt to use libosrm while compiling without it.
+    throw Exception(ERROR::ROUTING,
+                    "VROOM compiled without libosrm installed.");
+#endif
+    break;
+  case ROUTER::ORS:
+    // Use ORS http wrapper.
+    auto search = servers.find(profile);
+    if (search == servers.end()) {
+      throw Exception(ERROR::INPUT, "Invalid profile: " + profile + ".");
+    }
+    routing_wrapper =
+      std::make_unique<routing::OrsWrapper>(profile, search->second);
+    break;
+  }
 }
 
 void Input::check_job(Job& job) {
