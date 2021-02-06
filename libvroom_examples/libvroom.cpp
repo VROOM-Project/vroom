@@ -91,7 +91,6 @@ void run_example_with_osrm() {
   servers["car"] = vroom::Server("localhost", "5000");
 
   vroom::Input problem_instance(amount_dimension, servers, vroom::ROUTER::OSRM);
-  problem_instance.add_routing_wrapper("car", servers, vroom::ROUTER::OSRM);
 
   problem_instance.set_geometry(GEOMETRY); // Query for route geometry
                                            // after solving.

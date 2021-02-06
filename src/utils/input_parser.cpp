@@ -16,11 +16,6 @@ All rights reserved (see LICENSE).
 #include "../include/rapidjson/document.h"
 #include "../include/rapidjson/error/en.h"
 
-#if USE_LIBOSRM
-#include "routing/libosrm_wrapper.h" // TODO remove
-#endif
-#include "routing/ors_wrapper.h"         // TODO remove
-#include "routing/osrm_routed_wrapper.h" // TODO remove
 #include "structures/cl_args.h"
 #include "utils/input_parser.h"
 
@@ -377,10 +372,15 @@ inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
     }
   }
 
+  std::string profile = get_string(json_vehicle, "profile");
+  if (profile.empty()) {
+    profile = DEFAULT_PROFILE;
+  }
+
   return Vehicle(v_id,
                  start,
                  end,
-                 get_string(json_vehicle, "profile"),
+                 profile,
                  get_amount(json_vehicle, "capacity", amount_size),
                  get_skills(json_vehicle),
                  get_vehicle_time_window(json_vehicle),
@@ -470,9 +470,6 @@ Input parse(const CLArgs& cl_args) {
   const unsigned amount_size =
     first_vehicle_has_capacity ? first_vehicle["capacity"].Size() : 0;
 
-  // List vehicles profiles in input.
-  std::unordered_set<std::string> profiles;
-
   // Custom input object embedding jobs, vehicles and matrix.
   Input input(amount_size, cl_args.servers, cl_args.router);
   input.set_geometry(cl_args.geometry);
@@ -482,13 +479,6 @@ Input parse(const CLArgs& cl_args) {
     auto& json_vehicle = json_input["vehicles"][i];
 
     input.add_vehicle(get_vehicle(json_vehicle, amount_size));
-
-    std::string current_profile = get_string(json_vehicle, "profile");
-    if (current_profile.empty()) {
-      current_profile = DEFAULT_PROFILE;
-    }
-
-    profiles.insert(current_profile);
   }
 
   // Add all tasks.
@@ -572,53 +562,6 @@ Input parse(const CLArgs& cl_args) {
 
     input.set_matrix(std::move(matrix_input));
   }
-
-  // Set relevant routing wrappers.
-  for (const auto& profile : profiles) {
-    input.add_routing_wrapper(profile, cl_args.servers, cl_args.router);
-  }
-
-  // TODO remove
-  // Set relevant routing wrappers.
-  auto common_profile = *(profiles.begin());
-  std::unique_ptr<routing::Wrapper> routing_wrapper;
-  switch (cl_args.router) {
-  case ROUTER::OSRM: {
-    // Use osrm-routed.
-    auto search = cl_args.servers.find(common_profile);
-    if (search == cl_args.servers.end()) {
-      throw Exception(ERROR::INPUT, "Invalid profile: " + common_profile + ".");
-    }
-    routing_wrapper =
-      std::make_unique<routing::OsrmRoutedWrapper>(common_profile,
-                                                   search->second);
-  } break;
-  case ROUTER::LIBOSRM:
-#if USE_LIBOSRM
-    // Use libosrm.
-    try {
-      routing_wrapper =
-        std::make_unique<routing::LibosrmWrapper>(common_profile);
-    } catch (const osrm::exception& e) {
-      throw Exception(ERROR::ROUTING, "Invalid profile: " + common_profile);
-    }
-#else
-    // Attempt to use libosrm while compiling without it.
-    throw Exception(ERROR::ROUTING,
-                    "VROOM compiled without libosrm installed.");
-#endif
-    break;
-  case ROUTER::ORS:
-    // Use ORS http wrapper.
-    auto search = cl_args.servers.find(common_profile);
-    if (search == cl_args.servers.end()) {
-      throw Exception(ERROR::INPUT, "Invalid profile: " + common_profile + ".");
-    }
-    routing_wrapper =
-      std::make_unique<routing::OrsWrapper>(common_profile, search->second);
-    break;
-  }
-  input.set_routing(std::move(routing_wrapper));
 
   return input;
 }

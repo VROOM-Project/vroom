@@ -35,8 +35,8 @@ private:
   std::chrono::high_resolution_clock::time_point _end_loading;
   std::chrono::high_resolution_clock::time_point _end_solving;
   std::chrono::high_resolution_clock::time_point _end_routing;
-  std::unique_ptr<routing::Wrapper> _routing_wrapper; // TODO remove
-  std::vector<std::unique_ptr<routing::Wrapper>> _routing_wrappers;
+  std::unordered_map<std::string, std::unique_ptr<routing::Wrapper>>
+    _routing_wrappers;
   bool _no_addition_yet;
   bool _has_skills;
   bool _has_TW;
@@ -45,8 +45,8 @@ private:
   bool _geometry;
   bool _has_jobs;
   bool _has_shipments;
-  bool _has_custom_matrix;
-  Matrix<Cost> _matrix;
+  Matrix<Cost> _matrix; // TODO remove
+  std::unordered_map<std::string, Matrix<Cost>> _matrices;
   std::vector<Location> _locations;
   std::unordered_map<Location, Index> _locations_to_index;
   std::vector<std::vector<unsigned char>> _vehicle_to_job_compatibility;
@@ -70,6 +70,8 @@ private:
   void set_extra_compatibility();
   void set_vehicles_compatibility();
 
+  void add_routing_wrapper(const std::string& profile);
+
 public:
   std::vector<Job> jobs;
   std::vector<Vehicle> vehicles;
@@ -84,13 +86,6 @@ public:
         ROUTER router = ROUTER::OSRM);
 
   void set_geometry(bool geometry);
-
-  // TODO remove
-  void set_routing(std::unique_ptr<routing::Wrapper> routing_wrapper);
-
-  void add_routing_wrapper(const std::string& profile,
-                           const io::Servers& servers,
-                           ROUTER router);
 
   void add_job(const Job& job);
 

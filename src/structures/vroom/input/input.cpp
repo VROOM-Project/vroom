@@ -28,7 +28,6 @@ Input::Input(unsigned amount_size, const io::Servers& servers, ROUTER router)
     _geometry(false),
     _has_jobs(false),
     _has_shipments(false),
-    _has_custom_matrix(false),
     _all_locations_have_coords(true),
     _amount_size(amount_size),
     _zero(_amount_size),
@@ -40,20 +39,19 @@ void Input::set_geometry(bool geometry) {
   _geometry = geometry;
 }
 
-void Input::set_routing(std::unique_ptr<routing::Wrapper> routing_wrapper) {
-  _routing_wrapper = std::move(routing_wrapper);
-}
+void Input::add_routing_wrapper(const std::string& profile) {
+  assert(_routing_wrappers.find(profile) == _routing_wrappers.end());
+  auto insertion =
+    _routing_wrappers.emplace(profile, std::unique_ptr<routing::Wrapper>());
 
-void Input::add_routing_wrapper(const std::string& profile,
-                                const io::Servers& servers,
-                                ROUTER router) {
-  auto& routing_wrapper = _routing_wrappers.emplace_back();
+  assert(insertion.second);
+  auto& routing_wrapper = insertion.first->second;
 
-  switch (router) {
+  switch (_router) {
   case ROUTER::OSRM: {
     // Use osrm-routed.
-    auto search = servers.find(profile);
-    if (search == servers.end()) {
+    auto search = _servers.find(profile);
+    if (search == _servers.end()) {
       throw Exception(ERROR::INPUT, "Invalid profile: " + profile + ".");
     }
     routing_wrapper =
@@ -75,8 +73,8 @@ void Input::add_routing_wrapper(const std::string& profile,
     break;
   case ROUTER::ORS:
     // Use ORS http wrapper.
-    auto search = servers.find(profile);
-    if (search == servers.end()) {
+    auto search = _servers.find(profile);
+    if (search == _servers.end()) {
       throw Exception(ERROR::INPUT, "Invalid profile: " + profile + ".");
     }
     routing_wrapper =
@@ -299,10 +297,17 @@ void Input::add_vehicle(const Vehicle& vehicle) {
       _homogeneous_locations &&
       vehicles.front().has_same_locations(vehicles.back());
   }
+
+  // Check for new profile.
+  auto& profile = current_v.profile;
+  auto matrix_search = _matrices.find(profile);
+  if (matrix_search == _matrices.end()) {
+    _matrices.emplace(profile, Matrix<Cost>());
+    add_routing_wrapper(profile);
+  }
 }
 
 void Input::set_matrix(Matrix<Cost>&& m) {
-  _has_custom_matrix = true;
   _matrix = std::move(m);
 }
 
@@ -481,12 +486,15 @@ Solution Input::solve(unsigned exploration_level,
                     "Route geometry request with missing coordinates.");
   }
 
-  if (!_has_custom_matrix) {
+  // Use first profile for now.
+  auto& profile = _matrices.begin()->first;
+  if (_matrices.find(profile)->second.size() == 0) {
     if (_locations.size() == 1) {
       _matrix = Matrix<Cost>({{0}});
     } else {
-      assert(_routing_wrapper);
-      _matrix = _routing_wrapper->get_matrix(_locations);
+      auto search = _routing_wrappers.find(profile);
+      assert(search != _routing_wrappers.end());
+      _matrix = search->second->get_matrix(_locations);
     }
   }
 
@@ -520,7 +528,10 @@ Solution Input::solve(unsigned exploration_level,
 
   if (_geometry) {
     for (auto& route : sol.routes) {
-      _routing_wrapper->add_route_info(route);
+      const auto& profile = route.profile;
+      auto search = _routing_wrappers.find(profile);
+      assert(search != _routing_wrappers.end());
+      search->second->add_route_info(route);
       sol.summary.distance += route.distance;
     }
 
@@ -630,11 +641,17 @@ Solution Input::check(unsigned nb_thread) {
     }
   }
 
-  if (_matrix.size() < 2) {
-    // Call to routing engine if matrix not already provided.
-    assert(_routing_wrapper);
-    // TODO we don't need the whole matrix here.
-    _matrix = _routing_wrapper->get_matrix(_locations);
+  // Use first profile for now.
+  auto& profile = _matrices.begin()->first;
+  if (_matrices.find(profile)->second.size() == 0) {
+    if (_locations.size() == 1) {
+      _matrix = Matrix<Cost>({{0}});
+    } else {
+      auto search = _routing_wrappers.find(profile);
+      assert(search != _routing_wrappers.end());
+      // TODO we don't need the whole matrix here.
+      _matrix = search->second->get_matrix(_locations);
+    }
   }
 
   // Check for potential overflow in solution cost.
@@ -663,7 +680,10 @@ Solution Input::check(unsigned nb_thread) {
 
   if (_geometry) {
     for (auto& route : sol.routes) {
-      _routing_wrapper->add_route_info(route);
+      const auto& profile = route.profile;
+      auto search = _routing_wrappers.find(profile);
+      assert(search != _routing_wrappers.end());
+      search->second->add_route_info(route);
       sol.summary.distance += route.distance;
     }
 
