@@ -27,6 +27,7 @@ struct Route {
   Priority priority;
   Amount delivery;
   Amount pickup;
+  std::string profile;
   std::string description;
   Violations violations;
 
@@ -44,6 +45,7 @@ struct Route {
         Priority priority,
         const Amount& delivery,
         const Amount& pickup,
+        const std::string& profile,
         const std::string& description,
         const Violations&& violations = Violations(0, 0));
 };

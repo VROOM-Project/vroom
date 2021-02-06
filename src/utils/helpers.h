@@ -378,6 +378,7 @@ inline Solution format_solution(const Input& input,
                         priority,
                         sum_deliveries,
                         sum_pickups,
+                        v.profile,
                         v.description);
   }
 
@@ -739,6 +740,7 @@ inline Route format_route(const Input& input,
                priority,
                sum_deliveries,
                sum_pickups,
+               v.profile,
                v.description);
 }
 
