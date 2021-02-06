@@ -474,7 +474,7 @@ Input parse(const CLArgs& cl_args) {
   std::unordered_set<std::string> profiles;
 
   // Custom input object embedding jobs, vehicles and matrix.
-  Input input(amount_size);
+  Input input(amount_size, cl_args.servers, cl_args.router);
   input.set_geometry(cl_args.geometry);
 
   // Add all vehicles.

@@ -57,6 +57,9 @@ private:
   const unsigned _amount_size;
   const Amount _zero;
 
+  const io::Servers _servers;
+  const ROUTER _router;
+
   std::unique_ptr<VRP> get_problem() const;
 
   void check_job(Job& job);
@@ -76,7 +79,9 @@ public:
   std::unordered_map<Id, Index> pickup_id_to_rank;
   std::unordered_map<Id, Index> delivery_id_to_rank;
 
-  Input(unsigned amount_size);
+  Input(unsigned amount_size,
+        const io::Servers& servers = {},
+        ROUTER router = ROUTER::OSRM);
 
   void set_geometry(bool geometry);
 

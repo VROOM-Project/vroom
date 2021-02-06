@@ -20,7 +20,7 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
-Input::Input(unsigned amount_size)
+Input::Input(unsigned amount_size, const io::Servers& servers, ROUTER router)
   : _start_loading(std::chrono::high_resolution_clock::now()),
     _no_addition_yet(true),
     _has_TW(false),
@@ -31,7 +31,9 @@ Input::Input(unsigned amount_size)
     _has_custom_matrix(false),
     _all_locations_have_coords(true),
     _amount_size(amount_size),
-    _zero(_amount_size) {
+    _zero(_amount_size),
+    _servers(servers),
+    _router(router) {
 }
 
 void Input::set_geometry(bool geometry) {

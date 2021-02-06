@@ -90,10 +90,8 @@ void run_example_with_osrm() {
   vroom::io::Servers servers;
   servers["car"] = vroom::Server("localhost", "5000");
 
-  vroom::Input problem_instance(amount_dimension);
-  problem_instance.add_routing_wrapper("car",
-                                       servers,
-                                       vroom::ROUTER::OSRM);
+  vroom::Input problem_instance(amount_dimension, servers, vroom::ROUTER::OSRM);
+  problem_instance.add_routing_wrapper("car", servers, vroom::ROUTER::OSRM);
 
   problem_instance.set_geometry(GEOMETRY); // Query for route geometry
                                            // after solving.
@@ -123,6 +121,7 @@ void run_example_with_osrm() {
   vroom::Vehicle v1(1,                // id
                     depot,            // start
                     depot,            // end
+                    "car",            // profile
                     vehicle_capacity, // capacity
                     {1, 14},          // skills
                     vehicle_tw,       // time window
@@ -132,6 +131,7 @@ void run_example_with_osrm() {
   vroom::Vehicle v2(2,                // id
                     depot,            // start
                     depot,            // end
+                    "car",            // profile
                     vehicle_capacity, // capacity
                     {2, 14},          // skills
                     vehicle_tw,       // time window
