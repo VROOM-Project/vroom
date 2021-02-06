@@ -300,9 +300,7 @@ void Input::add_vehicle(const Vehicle& vehicle) {
 
   // Check for new profile.
   auto& profile = current_v.profile;
-  auto matrix_search = _matrices.find(profile);
-  if (matrix_search == _matrices.end()) {
-    _matrices.emplace(profile, Matrix<Cost>());
+  if (_routing_wrappers.find(profile) == _routing_wrappers.end()) {
     add_routing_wrapper(profile);
   }
 }
@@ -469,6 +467,24 @@ void Input::set_vehicles_compatibility() {
   }
 }
 
+void Input::set_matrices() {
+  for (const auto& profile_routing_pair : _routing_wrappers) {
+    const auto& profile = profile_routing_pair.first;
+
+    if (_matrices.find(profile) == _matrices.end()) {
+      // Matrix has not been manually set.
+      if (_locations.size() == 1) {
+        _matrices.emplace(profile, Matrix<Cost>({{0}}));
+      } else {
+        _matrices.emplace(profile, profile_routing_pair.second->get_matrix(_locations));
+      }
+    } else {
+      // TODO check matrix size against max location index in case a
+      // user-defined matrix is too small.
+    }
+  }
+}
+
 std::unique_ptr<VRP> Input::get_problem() const {
   if (_has_TW) {
     return std::make_unique<VRPTW>(*this);
@@ -486,17 +502,12 @@ Solution Input::solve(unsigned exploration_level,
                     "Route geometry request with missing coordinates.");
   }
 
+  set_matrices();
+
   // Use first profile for now.
-  auto& profile = _matrices.begin()->first;
-  if (_matrices.find(profile)->second.size() == 0) {
-    if (_locations.size() == 1) {
-      _matrix = Matrix<Cost>({{0}});
-    } else {
-      auto search = _routing_wrappers.find(profile);
-      assert(search != _routing_wrappers.end());
-      _matrix = search->second->get_matrix(_locations);
-    }
-  }
+  auto& profile = _routing_wrappers.begin()->first;
+  auto matrix_search = _matrices.find(profile);
+  _matrix = matrix_search->second;
 
   // Check for potential overflow in solution cost.
   check_cost_bound();
@@ -641,18 +652,13 @@ Solution Input::check(unsigned nb_thread) {
     }
   }
 
+  // TODO we don't need the whole matrix here.
+  set_matrices();
+
   // Use first profile for now.
-  auto& profile = _matrices.begin()->first;
-  if (_matrices.find(profile)->second.size() == 0) {
-    if (_locations.size() == 1) {
-      _matrix = Matrix<Cost>({{0}});
-    } else {
-      auto search = _routing_wrappers.find(profile);
-      assert(search != _routing_wrappers.end());
-      // TODO we don't need the whole matrix here.
-      _matrix = search->second->get_matrix(_locations);
-    }
-  }
+  auto& profile = _routing_wrappers.begin()->first;
+  auto matrix_search = _matrices.find(profile);
+  _matrix = matrix_search->second;
 
   // Check for potential overflow in solution cost.
   check_cost_bound();
