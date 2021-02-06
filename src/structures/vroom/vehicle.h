@@ -26,6 +26,7 @@ struct Vehicle {
   const Id id;
   std::optional<Location> start;
   std::optional<Location> end;
+  const std::string profile;
   const Amount capacity;
   const Skills skills;
   const TimeWindow tw;
@@ -38,6 +39,7 @@ struct Vehicle {
     Id id,
     const std::optional<Location>& start,
     const std::optional<Location>& end,
+    const std::string& profile = DEFAULT_PROFILE,
     const Amount& capacity = Amount(0),
     const Skills& skills = Skills(),
     const TimeWindow& tw = TimeWindow(),

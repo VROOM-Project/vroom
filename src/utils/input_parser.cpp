@@ -19,7 +19,7 @@ All rights reserved (see LICENSE).
 #if USE_LIBOSRM
 #include "routing/libosrm_wrapper.h" // TODO remove
 #endif
-#include "routing/ors_wrapper.h" // TODO remove
+#include "routing/ors_wrapper.h"         // TODO remove
 #include "routing/osrm_routed_wrapper.h" // TODO remove
 #include "structures/cl_args.h"
 #include "utils/input_parser.h"
@@ -380,6 +380,7 @@ inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
   return Vehicle(v_id,
                  start,
                  end,
+                 get_string(json_vehicle, "profile"),
                  get_amount(json_vehicle, "capacity", amount_size),
                  get_skills(json_vehicle),
                  get_vehicle_time_window(json_vehicle),
@@ -573,7 +574,7 @@ Input parse(const CLArgs& cl_args) {
   }
 
   // Set relevant routing wrappers.
-  for (const auto& profile: profiles) {
+  for (const auto& profile : profiles) {
     input.add_routing_wrapper(profile, cl_args.servers, cl_args.router);
   }
 
