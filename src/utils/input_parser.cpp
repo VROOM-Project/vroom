@@ -436,6 +436,30 @@ inline Job get_job(const rapidjson::Value& json_job, unsigned amount_size) {
              get_string(json_job, "description"));
 }
 
+inline Matrix<Cost> get_matrix(rapidjson::Value& m) {
+  if (!m.IsArray()) {
+    throw Exception(ERROR::INPUT, "Invalid matrix.");
+  }
+  // Load custom matrix while checking if it is square.
+  rapidjson::SizeType matrix_size = m.Size();
+
+  Matrix<Cost> matrix(matrix_size);
+  for (rapidjson::SizeType i = 0; i < matrix_size; ++i) {
+    if (!m[i].IsArray() or m[i].Size() != matrix_size) {
+      throw Exception(ERROR::INPUT, "Unexpected matrix line length.");
+    }
+    rapidjson::Document::Array mi = m[i].GetArray();
+    for (rapidjson::SizeType j = 0; j < matrix_size; ++j) {
+      if (!mi[j].IsUint()) {
+        throw Exception(ERROR::INPUT, "Invalid matrix entry.");
+      }
+      matrix[i][j] = mi[j].GetUint();
+    }
+  }
+
+  return matrix;
+}
+
 Input parse(const CLArgs& cl_args) {
   // Input json object.
   rapidjson::Document json_input;
