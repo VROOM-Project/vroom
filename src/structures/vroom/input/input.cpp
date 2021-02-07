@@ -608,7 +608,11 @@ Solution Input::solve(unsigned exploration_level,
         std::find_if(_routing_wrappers.begin(),
                      _routing_wrappers.end(),
                      [&](const auto& wr) { return wr->profile == profile; });
-      assert(rw != _routing_wrappers.end());
+      if (rw == _routing_wrappers.end()) {
+        throw Exception(ERROR::INPUT,
+                        "Route geometry request with non-routable profile " +
+                          profile + ".");
+      }
       (*rw)->add_route_info(route);
 
       sol.summary.distance += route.distance;
@@ -759,7 +763,11 @@ Solution Input::check(unsigned nb_thread) {
         std::find_if(_routing_wrappers.begin(),
                      _routing_wrappers.end(),
                      [&](const auto& wr) { return wr->profile == profile; });
-      assert(rw != _routing_wrappers.end());
+      if (rw == _routing_wrappers.end()) {
+        throw Exception(ERROR::INPUT,
+                        "Route geometry request with non-routable profile " +
+                          profile + ".");
+      }
       (*rw)->add_route_info(route);
 
       sol.summary.distance += route.distance;
