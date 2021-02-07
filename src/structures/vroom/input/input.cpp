@@ -308,6 +308,7 @@ void Input::add_vehicle(const Vehicle& vehicle) {
 }
 
 void Input::set_matrix(const std::string& profile, Matrix<Cost>&& m) {
+  _custom_matrices.insert(profile);
   _matrices.insert_or_assign(profile, m);
 }
 
@@ -470,10 +471,14 @@ void Input::set_vehicles_compatibility() {
 }
 
 void Input::set_matrices() {
+  if (!_custom_matrices.empty() and !_has_custom_location_index) {
+    throw Exception(ERROR::INPUT, "Missing location index.");
+  }
+
   for (const auto& routing_wrapper : _routing_wrappers) {
     const auto& profile = routing_wrapper->profile;
 
-    if (_matrices.find(profile) == _matrices.end()) {
+    if (_custom_matrices.find(profile) == _custom_matrices.end()) {
       // Matrix has not been manually set.
       if (_locations.size() == 1) {
         _matrices.emplace(profile, Matrix<Cost>({{0}}));
