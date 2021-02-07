@@ -46,8 +46,6 @@ void Input::add_routing_wrapper(const std::string& profile) {
                       [&](const auto& wr) { return wr->profile == profile; }) ==
          _routing_wrappers.end());
 
-  _profiles.insert(profile);
-
   auto& routing_wrapper = _routing_wrappers.emplace_back();
 
   switch (_router) {
@@ -125,8 +123,8 @@ void Input::check_job(Job& job) {
   _has_TW |= (!(job.tws.size() == 1) or !job.tws[0].is_default());
 
   if (!job.location.user_index()) {
-    // Index of this job in the matrix was not specified upon job
-    // creation.
+    // Index of job in the matrices is not specified in input, check
+    // for already stored location or assign new index.
     auto search = _locations_to_index.find(job.location);
     if (search != _locations_to_index.end()) {
       // Using stored index for existing location.
@@ -137,6 +135,16 @@ void Input::check_job(Job& job) {
       job.location.set_index(new_index);
       _locations.push_back(job.location);
       _locations_to_index.insert(std::make_pair(job.location, new_index));
+    }
+  } else {
+    // All jobs have a location_index in input, we only store
+    // locations in case one profile matrix is not provided in input
+    // and need to be computed.
+    auto search = _locations_to_index.find(job.location);
+    if (search == _locations_to_index.end()) {
+      _locations.push_back(job.location);
+      _locations_to_index.insert(
+        std::make_pair(job.location, _locations.size() - 1));
     }
   }
 
@@ -225,8 +233,8 @@ void Input::add_vehicle(const Vehicle& vehicle) {
     has_location_index = start_loc.user_index();
 
     if (!start_loc.user_index()) {
-      // Index of this start in the matrix was not specified upon
-      // vehicle creation.
+      // Index of start in the matrices is not specified in input,
+      // check for already stored location or assign new index.
       assert(start_loc.has_coordinates());
       auto search = _locations_to_index.find(start_loc);
       if (search != _locations_to_index.end()) {
@@ -238,6 +246,16 @@ void Input::add_vehicle(const Vehicle& vehicle) {
         start_loc.set_index(new_index);
         _locations.push_back(start_loc);
         _locations_to_index.insert(std::make_pair(start_loc, new_index));
+      }
+    } else {
+      // All starts have a location_index in input, we only store
+      // locations in case one profile matrix is not provided in input
+      // and need to be computed.
+      auto search = _locations_to_index.find(start_loc);
+      if (search == _locations_to_index.end()) {
+        _locations.push_back(start_loc);
+        _locations_to_index.insert(
+          std::make_pair(start_loc, _locations.size() - 1));
       }
     }
 
@@ -275,6 +293,16 @@ void Input::add_vehicle(const Vehicle& vehicle) {
         _locations.push_back(end_loc);
         _locations_to_index.insert(std::make_pair(end_loc, new_index));
       }
+    } else {
+      // All ends have a location_index in input, we only store
+      // locations in case one profile matrix is not provided in input
+      // and need to be computed.
+      auto search = _locations_to_index.find(end_loc);
+      if (search == _locations_to_index.end()) {
+        _locations.push_back(end_loc);
+        _locations_to_index.insert(
+          std::make_pair(end_loc, _locations.size() - 1));
+      }
     }
 
     _matrix_used_index.insert(end_loc.index());
@@ -305,11 +333,7 @@ void Input::add_vehicle(const Vehicle& vehicle) {
       vehicles.front().has_same_locations(vehicles.back());
   }
 
-  // Check for new profile.
-  const auto& profile = current_v.profile;
-  if (_profiles.find(profile) == _profiles.end()) {
-    add_routing_wrapper(profile);
-  }
+  _profiles.insert(current_v.profile);
 }
 
 void Input::set_matrix(const std::string& profile, Matrix<Cost>&& m) {
@@ -480,15 +504,38 @@ void Input::set_matrices() {
     throw Exception(ERROR::INPUT, "Missing location index.");
   }
 
-  for (const auto& routing_wrapper : _routing_wrappers) {
-    const auto& profile = routing_wrapper->profile;
-
+  for (const auto& profile : _profiles) {
     if (_custom_matrices.find(profile) == _custom_matrices.end()) {
       // Matrix has not been manually set.
+      add_routing_wrapper(profile);
+
       if (_locations.size() == 1) {
         _matrices.emplace(profile, Matrix<Cost>({{0}}));
       } else {
-        _matrices.emplace(profile, routing_wrapper->get_matrix(_locations));
+        auto rw =
+          std::find_if(_routing_wrappers.begin(),
+                       _routing_wrappers.end(),
+                       [&](const auto& wr) { return wr->profile == profile; });
+        assert(rw != _routing_wrappers.end());
+
+        if (!_has_custom_location_index) {
+          // Location indices are set based on order in _locations.
+          _matrices.emplace(profile, std::move((*rw)->get_matrix(_locations)));
+        } else {
+          // Location indices are provided in input so we need an
+          // indirection based on order in _locations.
+          auto m = (*rw)->get_matrix(_locations);
+
+          Matrix<Cost> full_m(_max_matrix_used_index + 1);
+          for (Index i = 0; i < _locations.size(); ++i) {
+            const auto& loc_i = _locations[i];
+            for (Index j = 0; j < _locations.size(); ++j) {
+              full_m[loc_i.index()][_locations[j].index()] = m[i][j];
+            }
+          }
+
+          _matrices.emplace(profile, std::move(full_m));
+        }
       }
     }
 
