@@ -307,8 +307,8 @@ void Input::add_vehicle(const Vehicle& vehicle) {
   }
 }
 
-void Input::set_matrix(Matrix<Cost>&& m) {
-  _matrix = std::move(m);
+void Input::set_matrix(const std::string& profile, Matrix<Cost>&& m) {
+  _matrices.insert_or_assign(profile, m);
 }
 
 bool Input::has_skills() const {

@@ -494,7 +494,7 @@ Input parse(const CLArgs& cl_args) {
   const unsigned amount_size =
     first_vehicle_has_capacity ? first_vehicle["capacity"].Size() : 0;
 
-  // Custom input object embedding jobs, vehicles and matrix.
+  // Custom input object embedding jobs, vehicles and matrices.
   Input input(amount_size, cl_args.servers, cl_args.router);
   input.set_geometry(cl_args.geometry);
 
@@ -556,35 +556,25 @@ Input parse(const CLArgs& cl_args) {
     }
   }
 
-  if (json_input.HasMember("matrix")) {
-    // Parse user-provided matrix.
-    if (!json_input["matrix"].IsArray()) {
-      throw Exception(ERROR::INPUT, "Invalid matrix.");
+  if (json_input.HasMember("matrices")) {
+    if (!json_input["matrices"].IsObject()) {
+      throw Exception(ERROR::INPUT, "Unexpected matrices value.");
     }
-
-    // Load custom matrix while checking if it is square.
-    rapidjson::SizeType matrix_size = json_input["matrix"].Size();
-
-    Matrix<Cost> matrix_input(matrix_size);
-    for (rapidjson::SizeType i = 0; i < matrix_size; ++i) {
-      if (!json_input["matrix"][i].IsArray() or
-          (json_input["matrix"][i].Size() != matrix_size)) {
-        throw Exception(ERROR::INPUT,
-                        "Invalid matrix line " + std::to_string(i) + ".");
-      }
-      rapidjson::Document::Array mi = json_input["matrix"][i].GetArray();
-      for (rapidjson::SizeType j = 0; j < matrix_size; ++j) {
-        if (!mi[j].IsUint()) {
-          throw Exception(ERROR::INPUT,
-                          "Invalid matrix entry (" + std::to_string(i) + "," +
-                            std::to_string(j) + ").");
-        }
-        Cost cost = mi[j].GetUint();
-        matrix_input[i][j] = cost;
+    for (auto& profile_entry : json_input["matrices"].GetObject()) {
+      if (profile_entry.value.IsObject() and
+          profile_entry.value.HasMember("durations")) {
+        input.set_matrix(profile_entry.name.GetString(),
+                         std::move(
+                           get_matrix(profile_entry.value["durations"])));
       }
     }
-
-    input.set_matrix(std::move(matrix_input));
+  } else {
+    // Deprecated `matrix` key still interpreted as
+    // `matrices.DEFAULT_PROFILE.duration` for retro-compatibility.
+    if (json_input.HasMember("matrix")) {
+      input.set_matrix(DEFAULT_PROFILE,
+                       std::move(get_matrix(json_input["matrix"])));
+    }
   }
 
   return input;

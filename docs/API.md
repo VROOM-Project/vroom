@@ -46,7 +46,8 @@ The problem description is read from standard input or from a file
 | [`jobs`](#jobs) |  array of `job` objects describing the places to visit |
 | [`shipments`](#shipments) |  array of `shipment` objects describing pickup and delivery tasks |
 | [`vehicles`](#vehicles) |  array of `vehicle` objects describing the available vehicles |
-| [[`matrix`](#matrix)] | optional two-dimensional array describing a custom matrix |
+| [[`matrices`](#matrices)] | optional description of per-profile custom matrices |
+| ~~[`matrix`]~~ | optional two-dimensional array describing a custom matrix |
 
 ## Jobs
 
@@ -57,7 +58,7 @@ A `job` object has the following properties:
 | `id` | integer |
 | [`description`] | a string describing this job |
 | [`location`] | coordinates array |
-| [`location_index`] | index of relevant row and column in custom matrix |
+| [`location_index`] | index of relevant row and column in custom matrices |
 | [`service`] | job service duration (defaults to 0) |
 | ~~[`amount`]~~ | ~~an array of integers describing multidimensional quantities~~ |
 | [`delivery`] | an array of integers describing multidimensional quantities for delivery |
@@ -87,7 +88,7 @@ A `shipment_step` is similar to a `job` object (expect for shared keys already p
 | `id` | integer |
 | [`description`] | a string describing this step |
 | [`location`] | coordinates array |
-| [`location_index`] | index of relevant row and column in custom matrix |
+| [`location_index`] | index of relevant row and column in custom matrices |
 | [`service`] | task service duration (defaults to 0) |
 | [`time_windows`] | an array of `time_window` objects describing valid slots for task service start |
 
@@ -103,9 +104,9 @@ A `vehicle` object has the following properties:
 | [`profile`] | routing profile (defaults to `car`) |
 | [`description`] | a string describing this vehicle |
 | [`start`] | coordinates array |
-| [`start_index`] | index of relevant row and column in custom matrix |
+| [`start_index`] | index of relevant row and column in custom matrices |
 | [`end`] | coordinates array |
-| [`end_index`] | index of relevant row and column in custom matrix |
+| [`end_index`] | index of relevant row and column in custom matrices |
 | [`capacity`] | an array of integers describing multidimensional quantities |
 | [`skills`] | an array of integers defining skills |
 | [`time_window`] | a `time_window` object describing working hours |
@@ -137,7 +138,8 @@ A `vehicle_step` object has the following properties:
 
 ### Task locations
 
-For `job`, `pickup` and `delivery` objects, if a custom matrix is provided:
+For `job`, `pickup` and `delivery` objects, if custom matrices are
+provided:
 
 - `location_index` is mandatory
 - `location` is optional but can be set to retrieve coordinates in the
@@ -159,7 +161,7 @@ If no custom matrix is provided:
   visited task, whose choice is determined by the optimization process
 - to request a round trip, just specify both `start` and `end` with
   the same coordinates
-- depending on if a custom matrix is provided, required fields follow
+- depending on if custom matrices are provided, required fields follow
   the same logic than for `job` keys `location` and `location_index`
 
 ### Capacity restrictions
@@ -211,15 +213,28 @@ key might be included at any time in any route, to the extent
 permitted by other constraints such as skills, capacity and other
 vehicles/tasks time windows.
 
-## Matrix
+## Matrices
 
-A `matrix` object is an array of arrays of unsigned integers
-describing the rows of a custom travel-time matrix as an alternative
-to the travel-time matrix computed by the routing engine. Therefore,
-if a custom matrix is provided, the `location`, `start` and `end`
-properties become optional. Instead of the coordinates, row and column
-indications provided with the `*_index` keys are used during
-optimization.
+The `matrices` object allows to define a custom travel-time matrix per
+vehicle profile. Each matrix is an array of arrays of unsigned
+integers filed under the `profile` and then `durations` keys. Example
+of describing different matrices for different vehicle profiles:
+
+```
+"matrices": {
+    "car": {
+        "durations": [[0, 14], [21, 0]]
+    },
+    "bike": {
+        "durations": [[0, 57], [43, 0]]
+    }
+}
+```
+
+If custom matrices are provided for all required vehicle `profile`
+values, the `location`, `start` and `end` properties become
+optional. Instead of the coordinates, row and column indications
+provided with the `*_index` keys are used during optimization.
 
 # Output
 
@@ -339,7 +354,7 @@ i.e. `violations` arrays are empty.
 - [Input file](example_1.json)
 - [Possible output file](example_1_sol.json)
 
-## Using a custom matrix
+## Using custom matrices
 
 - [Input file](example_2.json)
 - [Possible output file](example_2_sol.json)

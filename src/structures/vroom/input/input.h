@@ -94,7 +94,7 @@ public:
 
   void add_vehicle(const Vehicle& vehicle);
 
-  void set_matrix(Matrix<Cost>&& m);
+  void set_matrix(const std::string& profile, Matrix<Cost>&& m);
 
   const Amount& zero_amount() const {
     return _zero;
