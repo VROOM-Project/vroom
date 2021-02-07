@@ -53,6 +53,7 @@ private:
   std::vector<std::vector<unsigned char>> _vehicle_to_job_compatibility;
   std::vector<std::vector<bool>> _vehicle_to_vehicle_compatibility;
   std::unordered_set<Index> _matrix_used_index;
+  Index _max_matrix_used_index;
   bool _all_locations_have_coords;
 
   const unsigned _amount_size;

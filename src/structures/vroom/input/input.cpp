@@ -7,7 +7,6 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "structures/vroom/input/input.h"
 #include "algorithms/validation/check.h"
 #include "problems/cvrp/cvrp.h"
 #include "problems/vrptw/vrptw.h"
@@ -16,6 +15,7 @@ All rights reserved (see LICENSE).
 #endif
 #include "routing/ors_wrapper.h"
 #include "routing/osrm_routed_wrapper.h"
+#include "structures/vroom/input/input.h"
 #include "utils/helpers.h"
 
 namespace vroom {
@@ -28,6 +28,7 @@ Input::Input(unsigned amount_size, const io::Servers& servers, ROUTER router)
     _geometry(false),
     _has_jobs(false),
     _has_shipments(false),
+    _max_matrix_used_index(0),
     _all_locations_have_coords(true),
     _amount_size(amount_size),
     _zero(_amount_size),
@@ -140,6 +141,7 @@ void Input::check_job(Job& job) {
   }
 
   _matrix_used_index.insert(job.index());
+  _max_matrix_used_index = std::max(_max_matrix_used_index, job.index());
   _all_locations_have_coords =
     _all_locations_have_coords && job.location.has_coordinates();
 }
@@ -240,6 +242,8 @@ void Input::add_vehicle(const Vehicle& vehicle) {
     }
 
     _matrix_used_index.insert(start_loc.index());
+    _max_matrix_used_index =
+      std::max(_max_matrix_used_index, start_loc.index());
     _all_locations_have_coords =
       _all_locations_have_coords && start_loc.has_coordinates();
   }
@@ -274,6 +278,7 @@ void Input::add_vehicle(const Vehicle& vehicle) {
     }
 
     _matrix_used_index.insert(end_loc.index());
+    _max_matrix_used_index = std::max(_max_matrix_used_index, end_loc.index());
     _all_locations_have_coords =
       _all_locations_have_coords && end_loc.has_coordinates();
   }
@@ -485,9 +490,14 @@ void Input::set_matrices() {
       } else {
         _matrices.emplace(profile, routing_wrapper->get_matrix(_locations));
       }
-    } else {
-      // TODO check matrix size against max location index in case a
-      // user-defined matrix is too small.
+    }
+
+    auto p_m = _matrices.find(profile);
+    assert(p_m != _matrices.end());
+    if (p_m->second.size() <= _max_matrix_used_index) {
+      throw Exception(ERROR::INPUT,
+                      "location_index exceeding matrix size for " + profile +
+                        " profile.");
     }
   }
 }
