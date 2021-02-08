@@ -564,16 +564,14 @@ Input parse(const CLArgs& cl_args) {
       if (profile_entry.value.IsObject() and
           profile_entry.value.HasMember("durations")) {
         input.set_matrix(profile_entry.name.GetString(),
-                         std::move(
-                           get_matrix(profile_entry.value["durations"])));
+                         get_matrix(profile_entry.value["durations"]));
       }
     }
   } else {
     // Deprecated `matrix` key still interpreted as
     // `matrices.DEFAULT_PROFILE.duration` for retro-compatibility.
     if (json_input.HasMember("matrix")) {
-      input.set_matrix(DEFAULT_PROFILE,
-                       std::move(get_matrix(json_input["matrix"])));
+      input.set_matrix(DEFAULT_PROFILE, get_matrix(json_input["matrix"]));
     }
   }
 

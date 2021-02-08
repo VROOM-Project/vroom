@@ -520,7 +520,7 @@ void Input::set_matrices() {
 
         if (!_has_custom_location_index) {
           // Location indices are set based on order in _locations.
-          _matrices.emplace(profile, std::move((*rw)->get_matrix(_locations)));
+          _matrices.emplace(profile, (*rw)->get_matrix(_locations));
         } else {
           // Location indices are provided in input so we need an
           // indirection based on order in _locations.
