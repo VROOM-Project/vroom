@@ -361,10 +361,6 @@ bool Input::vehicle_ok_with_vehicle(Index v1_index, Index v2_index) const {
   return _vehicle_to_vehicle_compatibility[v1_index][v2_index];
 }
 
-Matrix<Cost> Input::get_sub_matrix(const std::vector<Index>& indices) const {
-  return _matrix.get_sub_matrix(indices);
-}
-
 void Input::check_cost_bound() const {
   // Check that we don't have any overflow while computing an upper
   // bound for solution cost.

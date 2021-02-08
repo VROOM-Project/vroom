@@ -122,8 +122,6 @@ public:
     return _matrix;
   }
 
-  Matrix<Cost> get_sub_matrix(const std::vector<Index>& indices) const;
-
   Solution solve(unsigned exploration_level,
                  unsigned nb_thread,
                  const std::vector<HeuristicParameters>& h_param =
