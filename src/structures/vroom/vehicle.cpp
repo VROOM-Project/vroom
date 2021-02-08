@@ -32,7 +32,7 @@ Vehicle::Vehicle(Id id,
     tw(tw),
     breaks(breaks),
     description(description),
-    speed_factor(speed_factor) {
+    cost_wrapper(speed_factor) {
   if (!static_cast<bool>(start) and !static_cast<bool>(end)) {
     throw Exception(ERROR::INPUT,
                     "No start or end specified for vehicle " +

@@ -71,6 +71,7 @@ private:
   void set_skills_compatibility();
   void set_extra_compatibility();
   void set_vehicles_compatibility();
+  void set_vehicles_costs();
   void set_matrices();
 
   void add_routing_wrapper(const std::string& profile);

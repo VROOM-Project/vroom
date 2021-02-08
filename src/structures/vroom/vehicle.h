@@ -16,6 +16,7 @@ All rights reserved (see LICENSE).
 #include "structures/typedefs.h"
 #include "structures/vroom/amount.h"
 #include "structures/vroom/break.h"
+#include "structures/vroom/cost_wrapper.h"
 #include "structures/vroom/input/vehicle_step.h"
 #include "structures/vroom/location.h"
 #include "structures/vroom/time_window.h"
@@ -32,7 +33,7 @@ struct Vehicle {
   const TimeWindow tw;
   const std::vector<Break> breaks;
   const std::string description;
-  const double speed_factor;
+  CostWrapper cost_wrapper;
   std::vector<VehicleStep> steps;
   std::unordered_map<Id, Index> break_id_to_rank;
 

@@ -499,6 +499,15 @@ void Input::set_vehicles_compatibility() {
   }
 }
 
+void Input::set_vehicles_costs() {
+  for (std::size_t v = 0; v < vehicles.size(); ++v) {
+    auto& vehicle = vehicles[v];
+    auto search = _matrices.find(vehicle.profile);
+    assert(search != _matrices.end());
+    vehicle.cost_wrapper.set_durations_matrix(&(search->second));
+  }
+}
+
 void Input::set_matrices() {
   if (!_custom_matrices.empty() and !_has_custom_location_index) {
     throw Exception(ERROR::INPUT, "Missing location index.");
@@ -567,6 +576,7 @@ Solution Input::solve(unsigned exploration_level,
   }
 
   set_matrices();
+  set_vehicles_costs();
 
   // Use any profile for now.
   const auto& profile = *(_profiles.begin());
@@ -727,6 +737,7 @@ Solution Input::check(unsigned nb_thread) {
 
   // TODO we don't need the whole matrix here.
   set_matrices();
+  set_vehicles_costs();
 
   // Use any profile for now.
   const auto& profile = *(_profiles.begin());
