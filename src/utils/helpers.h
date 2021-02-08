@@ -205,22 +205,22 @@ inline Cost route_cost_for_vehicle(const Input& input,
                                    Index vehicle_rank,
                                    const std::vector<Index>& route) {
   const auto& v = input.vehicles[vehicle_rank];
-  const auto& m = input.get_matrix();
   auto cost = 0;
 
   if (route.size() > 0) {
     if (v.has_start()) {
-      cost += m[v.start.value().index()][input.jobs[route.front()].index()];
+      cost +=
+        v.cost(v.start.value().index(), input.jobs[route.front()].index());
     }
 
     Index previous = route.front();
     for (auto it = ++route.cbegin(); it != route.cend(); ++it) {
-      cost += m[input.jobs[previous].index()][input.jobs[*it].index()];
+      cost += v.cost(input.jobs[previous].index(), input.jobs[*it].index());
       previous = *it;
     }
 
     if (v.has_end()) {
-      cost += m[input.jobs[route.back()].index()][v.end.value().index()];
+      cost += v.cost(input.jobs[route.back()].index(), v.end.value().index());
     }
   }
 
@@ -261,8 +261,6 @@ inline void check_tws(const std::vector<TimeWindow>& tws) {
 
 inline Solution format_solution(const Input& input,
                                 const RawSolution& raw_routes) {
-  const auto& m = input.get_matrix();
-
   std::vector<Route> routes;
 
   // All job ranks start with unassigned status.
@@ -299,7 +297,8 @@ inline Solution format_solution(const Input& input,
     const auto start_loc = v.has_start() ? v.start.value() : first_job.location;
     steps.emplace_back(STEP_TYPE::START, start_loc, current_load);
     if (v.has_start()) {
-      const auto travel = m[v.start.value().index()][first_job.index()];
+      const auto travel =
+        v.duration(v.start.value().index(), first_job.index());
       ETA += travel;
       duration += travel;
     }
@@ -328,8 +327,8 @@ inline Solution format_solution(const Input& input,
 
     for (std::size_t r = 0; r < route.size() - 1; ++r) {
       assert(input.vehicle_ok_with_job(i, route[r + 1]));
-      Duration travel =
-        m[input.jobs[route[r]].index()][input.jobs[route[r + 1]].index()];
+      Duration travel = v.duration(input.jobs[route[r]].index(),
+                                   input.jobs[route[r + 1]].index());
       ETA += travel;
       duration += travel;
 
@@ -360,7 +359,7 @@ inline Solution format_solution(const Input& input,
     const auto end_loc = v.has_end() ? v.end.value() : last_job.location;
     steps.emplace_back(STEP_TYPE::END, end_loc, current_load);
     if (v.has_end()) {
-      const auto travel = m[last_job.index()][v.end.value().index()];
+      const auto travel = v.duration(last_job.index(), v.end.value().index());
       ETA += travel;
       duration += travel;
     }
@@ -398,7 +397,6 @@ inline Solution format_solution(const Input& input,
 inline Route format_route(const Input& input,
                           const TWRoute& tw_r,
                           std::unordered_set<Index>& unassigned_ranks) {
-  const auto& m = input.get_matrix();
   const auto& v = input.vehicles[tw_r.vehicle_rank];
 
   // ETA logic: aim at earliest possible arrival then determine latest
@@ -426,8 +424,10 @@ inline Route format_route(const Input& input,
     // not.
     Duration remaining_travel_time =
       (r < tw_r.route.size())
-        ? m[previous_job.index()][input.jobs[tw_r.route[r]].index()]
-        : (v.has_end()) ? m[previous_job.index()][v.end.value().index()] : 0;
+        ? v.duration(previous_job.index(), input.jobs[tw_r.route[r]].index())
+        : (v.has_end())
+            ? v.duration(previous_job.index(), v.end.value().index())
+            : 0;
 
     // Take into account timing constraints for breaks before current
     // job.
@@ -489,7 +489,7 @@ inline Route format_route(const Input& input,
   // Now pack everything ASAP based on first job start date.
   Duration remaining_travel_time =
     (v.has_start())
-      ? m[v.start.value().index()][input.jobs[tw_r.route[0]].index()]
+      ? v.duration(v.start.value().index(), input.jobs[tw_r.route[0]].index())
       : 0;
 
   // Take into account timing constraints for breaks before first job.
@@ -543,7 +543,7 @@ inline Route format_route(const Input& input,
   // the latest possible start time.
   Duration travel_time =
     v.has_start()
-      ? m[v.start.value().index()][input.jobs[tw_r.route[0]].index()]
+      ? v.duration(v.start.value().index(), input.jobs[tw_r.route[0]].index())
       : 0;
 
   for (std::size_t r = 0; r < tw_r.route.size(); ++r) {
@@ -554,7 +554,7 @@ inline Route format_route(const Input& input,
       // For r == 0, travel_time already holds the relevant value
       // depending on whether there is a start.
       travel_time =
-        m[input.jobs[tw_r.route[r - 1]].index()][current_job.index()];
+        v.duration(input.jobs[tw_r.route[r - 1]].index(), current_job.index());
     }
 
     // Handles breaks before this job.
@@ -657,7 +657,7 @@ inline Route format_route(const Input& input,
   // Handle breaks after last job.
   travel_time =
     (v.has_end())
-      ? m[input.jobs[tw_r.route.back()].index()][v.end.value().index()]
+      ? v.duration(input.jobs[tw_r.route.back()].index(), v.end.value().index())
       : 0;
 
   auto r = tw_r.route.size();

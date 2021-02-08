@@ -55,6 +55,18 @@ struct Vehicle {
   bool has_end() const;
 
   bool has_same_locations(const Vehicle& other) const;
+
+  Cost duration(Index i, Index j) const {
+    return static_cast<Cost>(
+      cost_wrapper.durations_factor *
+      static_cast<double>((*(cost_wrapper.durations_matrix))[i][j]));
+  }
+
+  Cost cost(Index i, Index j) const {
+    return static_cast<Cost>(
+      cost_wrapper.durations_factor *
+      static_cast<double>((*(cost_wrapper.durations_matrix))[i][j]));
+  }
 };
 
 } // namespace vroom

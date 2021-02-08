@@ -53,10 +53,10 @@ TSP::TSP(const Input& input, std::vector<Index> job_ranks, Index vehicle_rank)
   // Populate TSP-solving matrix.
   _matrix = Matrix<Cost>(matrix_ranks.size());
 
-  const auto& cw = _input.vehicles[vehicle_rank].cost_wrapper;
+  const auto& v = _input.vehicles[vehicle_rank];
   for (Index i = 0; i < matrix_ranks.size(); ++i) {
     for (Index j = 0; j < matrix_ranks.size(); ++j) {
-      _matrix[i][j] = cw.cost(matrix_ranks[i], matrix_ranks[j]);
+      _matrix[i][j] = v.cost(matrix_ranks[i], matrix_ranks[j]);
     }
   }
 
