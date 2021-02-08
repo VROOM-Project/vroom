@@ -56,7 +56,6 @@ void PDShift::compute_gain() {
     return;
   }
 
-  const auto& m = _input.get_matrix();
   const auto& v = _input.vehicles[t_vehicle];
 
   // For source vehicle, we consider the cost of removing P&D already
@@ -70,23 +69,15 @@ void PDShift::compute_gain() {
   std::vector<unsigned char> valid_delivery_insertions(t_route.size() + 1);
 
   for (unsigned t_d_rank = 0; t_d_rank <= t_route.size(); ++t_d_rank) {
-    t_d_gains[t_d_rank] = -utils::addition_cost(_input,
-                                                m,
-                                                s_route[_s_d_rank],
-                                                v,
-                                                t_route,
-                                                t_d_rank);
+    t_d_gains[t_d_rank] =
+      -utils::addition_cost(_input, s_route[_s_d_rank], v, t_route, t_d_rank);
     valid_delivery_insertions[t_d_rank] =
       target.is_valid_addition_for_tw(_input, s_route[_s_d_rank], t_d_rank);
   }
 
   for (unsigned t_p_rank = 0; t_p_rank < t_route.size(); ++t_p_rank) {
-    Gain t_p_gain = -utils::addition_cost(_input,
-                                          m,
-                                          s_route[_s_p_rank],
-                                          v,
-                                          t_route,
-                                          t_p_rank);
+    Gain t_p_gain =
+      -utils::addition_cost(_input, s_route[_s_p_rank], v, t_route, t_p_rank);
 
     if (_remove_gain + t_p_gain < stored_gain) {
       // Even without delivery insertion, the gain is lower than best
@@ -125,7 +116,6 @@ void PDShift::compute_gain() {
       Gain target_gain;
       if (t_p_rank == t_d_rank) {
         target_gain = -utils::addition_cost(_input,
-                                            m,
                                             s_route[_s_p_rank],
                                             v,
                                             t_route,

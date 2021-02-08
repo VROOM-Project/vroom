@@ -215,7 +215,6 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
         if (input.jobs[job_rank].type == JOB_TYPE::SINGLE) {
           for (Index r = 0; r <= current_r.size(); ++r) {
             float current_add = utils::addition_cost(input,
-                                                     m,
                                                      job_rank,
                                                      vehicle,
                                                      current_r.route,
@@ -247,7 +246,6 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
           for (unsigned d_rank = 0; d_rank <= current_r.route.size();
                ++d_rank) {
             d_adds[d_rank] = utils::addition_cost(input,
-                                                  m,
                                                   job_rank + 1,
                                                   vehicle,
                                                   current_r.route,
@@ -258,7 +256,6 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
 
           for (Index pickup_r = 0; pickup_r <= current_r.size(); ++pickup_r) {
             Gain p_add = utils::addition_cost(input,
-                                              m,
                                               job_rank,
                                               vehicle,
                                               current_r.route,
@@ -298,7 +295,6 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
               float current_add;
               if (pickup_r == delivery_r) {
                 current_add = utils::addition_cost(input,
-                                                   m,
                                                    job_rank,
                                                    vehicle,
                                                    current_r.route,
@@ -632,7 +628,6 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
         if (input.jobs[job_rank].type == JOB_TYPE::SINGLE) {
           for (Index r = 0; r <= current_r.size(); ++r) {
             float current_add = utils::addition_cost(input,
-                                                     m,
                                                      job_rank,
                                                      vehicle,
                                                      current_r.route,
@@ -664,7 +659,6 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
           for (unsigned d_rank = 0; d_rank <= current_r.route.size();
                ++d_rank) {
             d_adds[d_rank] = utils::addition_cost(input,
-                                                  m,
                                                   job_rank + 1,
                                                   vehicle,
                                                   current_r.route,
@@ -675,7 +669,6 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
 
           for (Index pickup_r = 0; pickup_r <= current_r.size(); ++pickup_r) {
             Gain p_add = utils::addition_cost(input,
-                                              m,
                                               job_rank,
                                               vehicle,
                                               current_r.route,
@@ -715,7 +708,6 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
               float current_add;
               if (pickup_r == delivery_r) {
                 current_add = utils::addition_cost(input,
-                                                   m,
                                                    job_rank,
                                                    vehicle,
                                                    current_r.route,

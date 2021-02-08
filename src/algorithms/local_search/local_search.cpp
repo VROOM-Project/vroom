@@ -111,7 +111,6 @@ RouteInsertion compute_best_insertion_single(const Input& input,
                                              const Index j,
                                              Index v,
                                              const Route& route) {
-  const auto& matrix = input.get_matrix();
   RouteInsertion result = empty_insert;
   const auto& current_job = input.jobs[j];
   const auto& v_target = input.vehicles[v];
@@ -120,7 +119,7 @@ RouteInsertion compute_best_insertion_single(const Input& input,
 
     for (Index rank = 0; rank <= route.size(); ++rank) {
       Gain current_cost =
-        utils::addition_cost(input, matrix, j, v_target, route.route, rank);
+        utils::addition_cost(input, j, v_target, route.route, rank);
       if (current_cost < result.cost and
           route.is_valid_addition_for_capacity(input,
                                                current_job.pickup,
@@ -139,7 +138,6 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
                                          const Index j,
                                          Index v,
                                          const Route& route) {
-  const auto& matrix = input.get_matrix();
   RouteInsertion result = empty_insert;
   const auto& current_job = input.jobs[j];
   const auto& v_target = input.vehicles[v];
@@ -154,14 +152,14 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
 
   for (unsigned d_rank = 0; d_rank <= route.size(); ++d_rank) {
     d_adds[d_rank] =
-      utils::addition_cost(input, matrix, j + 1, v_target, route.route, d_rank);
+      utils::addition_cost(input, j + 1, v_target, route.route, d_rank);
     valid_delivery_insertions[d_rank] =
       route.is_valid_addition_for_tw(input, j + 1, d_rank);
   }
 
   for (Index pickup_r = 0; pickup_r <= route.size(); ++pickup_r) {
     Gain p_add =
-      utils::addition_cost(input, matrix, j, v_target, route.route, pickup_r);
+      utils::addition_cost(input, j, v_target, route.route, pickup_r);
 
     if (!route.is_valid_addition_for_load(input,
                                           current_job.pickup,
@@ -193,7 +191,6 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
       Gain pd_cost;
       if (pickup_r == delivery_r) {
         pd_cost = utils::addition_cost(input,
-                                       matrix,
                                        j,
                                        v_target,
                                        route.route,
