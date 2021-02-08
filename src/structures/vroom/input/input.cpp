@@ -568,9 +568,10 @@ Solution Input::solve(unsigned exploration_level,
 
   set_matrices();
 
-  // Use first profile for now.
-  const auto& profile = _routing_wrappers.front()->profile;
+  // Use any profile for now.
+  const auto& profile = *(_profiles.begin());
   auto matrix_search = _matrices.find(profile);
+  assert(matrix_search != _matrices.end());
   _matrix = matrix_search->second;
 
   // Check for potential overflow in solution cost.
@@ -727,9 +728,10 @@ Solution Input::check(unsigned nb_thread) {
   // TODO we don't need the whole matrix here.
   set_matrices();
 
-  // Use first profile for now.
-  auto& profile = _routing_wrappers.front()->profile;
+  // Use any profile for now.
+  const auto& profile = *(_profiles.begin());
   auto matrix_search = _matrices.find(profile);
+  assert(matrix_search != _matrices.end());
   _matrix = matrix_search->second;
 
   // Check for potential overflow in solution cost.
