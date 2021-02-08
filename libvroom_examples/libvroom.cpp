@@ -219,7 +219,7 @@ void run_example_with_custom_matrix() {
                                            {2103, 0, 2255, 3152},
                                            {197, 2256, 0, 1102},
                                            {1299, 3153, 1102, 0}});
-  problem_instance.set_matrix(std::move(matrix_input));
+  problem_instance.set_matrix("car", std::move(matrix_input));
 
   // Define vehicles (use std::nullopt for no start or no end).
   vroom::Location v_start(0); // index in the provided matrix.
