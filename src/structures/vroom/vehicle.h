@@ -32,6 +32,7 @@ struct Vehicle {
   const TimeWindow tw;
   const std::vector<Break> breaks;
   const std::string description;
+  const double speed_factor;
   std::vector<VehicleStep> steps;
   std::unordered_map<Id, Index> break_id_to_rank;
 
@@ -45,6 +46,7 @@ struct Vehicle {
     const TimeWindow& tw = TimeWindow(),
     const std::vector<Break>& breaks = std::vector<Break>(),
     const std::string& description = "",
+    double speed_factor = 1.,
     const std::vector<VehicleStep>& input_steps = std::vector<VehicleStep>());
 
   bool has_start() const;

@@ -21,6 +21,7 @@ Vehicle::Vehicle(Id id,
                  const TimeWindow& tw,
                  const std::vector<Break>& breaks,
                  const std::string& description,
+                 double speed_factor,
                  const std::vector<VehicleStep>& input_steps)
   : id(id),
     start(start),
@@ -30,7 +31,8 @@ Vehicle::Vehicle(Id id,
     skills(skills),
     tw(tw),
     breaks(breaks),
-    description(description) {
+    description(description),
+    speed_factor(speed_factor) {
   if (!static_cast<bool>(start) and !static_cast<bool>(end)) {
     throw Exception(ERROR::INPUT,
                     "No start or end specified for vehicle " +

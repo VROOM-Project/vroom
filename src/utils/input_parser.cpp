@@ -43,6 +43,17 @@ inline std::string get_string(const rapidjson::Value& object, const char* key) {
   return value;
 }
 
+inline double get_double(const rapidjson::Value& object, const char* key) {
+  double value = 1.;
+  if (object.HasMember(key)) {
+    if (!object[key].IsNumber()) {
+      throw Exception(ERROR::INPUT, "Invalid " + std::string(key) + " value.");
+    }
+    value = object[key].GetDouble();
+  }
+  return value;
+}
+
 inline Amount get_amount(const rapidjson::Value& object,
                          const char* key,
                          unsigned size) {
@@ -386,6 +397,7 @@ inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
                  get_vehicle_time_window(json_vehicle),
                  get_vehicle_breaks(json_vehicle),
                  get_string(json_vehicle, "description"),
+                 get_double(json_vehicle, "speed_factor"),
                  get_vehicle_steps(json_vehicle));
 }
 

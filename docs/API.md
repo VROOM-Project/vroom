@@ -111,6 +111,7 @@ A `vehicle` object has the following properties:
 | [`skills`] | an array of integers defining skills |
 | [`time_window`] | a `time_window` object describing working hours |
 | [`breaks`] | an array of `break` objects |
+| [`speed_factor`] | a double value used to scale **all** vehicle travel times (defaults to 1.) |
 | [`steps`] | an array of `vehicle_step` objects describing a custom route for this vehicle (only makes sense when using `-c`) |
 
 A `break` object has the following properties:
