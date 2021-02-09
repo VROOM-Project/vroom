@@ -9,7 +9,7 @@ All rights reserved (see LICENSE).
 
 #include <set>
 
-#include "algorithms/heuristics/solomon.h"
+#include "algorithms/heuristics/heuristics.h"
 #include "utils/helpers.h"
 
 namespace vroom {
