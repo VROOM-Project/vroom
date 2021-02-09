@@ -1557,18 +1557,18 @@ Gain LocalSearch<Route,
     cost = std::min(cost, end_cost);
   }
   if (_sol[v_target].size() != 0) {
-    const auto nearest_from_rank =
-      _sol_state.nearest_job_rank_in_routes_from[v][v_target][r];
-    const auto nearest_from_index =
-      _input.jobs[_sol[v_target].route[nearest_from_rank]].index();
-    const Gain cost_from = _matrix[nearest_from_index][job_index];
+    const auto cheapest_from_rank =
+      _sol_state.cheapest_job_rank_in_routes_from[v][v_target][r];
+    const auto cheapest_from_index =
+      _input.jobs[_sol[v_target].route[cheapest_from_rank]].index();
+    const Gain cost_from = _matrix[cheapest_from_index][job_index];
     cost = std::min(cost, cost_from);
 
-    const auto nearest_to_rank =
-      _sol_state.nearest_job_rank_in_routes_to[v][v_target][r];
-    const auto nearest_to_index =
-      _input.jobs[_sol[v_target].route[nearest_to_rank]].index();
-    const Gain Costo = _matrix[job_index][nearest_to_index];
+    const auto cheapest_to_rank =
+      _sol_state.cheapest_job_rank_in_routes_to[v][v_target][r];
+    const auto cheapest_to_index =
+      _input.jobs[_sol[v_target].route[cheapest_to_rank]].index();
+    const Gain Costo = _matrix[job_index][cheapest_to_index];
     cost = std::min(cost, Costo);
   }
 
@@ -1710,10 +1710,10 @@ void LocalSearch<Route,
       if (v2 == v1) {
         continue;
       }
-      _sol_state.update_nearest_job_rank_in_routes(_sol[v1].route,
-                                                   _sol[v2].route,
-                                                   v1,
-                                                   v2);
+      _sol_state.update_cheapest_job_rank_in_routes(_sol[v1].route,
+                                                    _sol[v2].route,
+                                                    v1,
+                                                    v2);
     }
   }
 

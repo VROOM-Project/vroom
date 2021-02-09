@@ -53,7 +53,7 @@ private:
 
   // Compute "cost" between route at rank v_target and job with rank r
   // in route at rank v. Relies on
-  // _sol_state.nearest_job_rank_in_routes_* being up to date.
+  // _sol_state.cheapest_job_rank_in_routes_* being up to date.
   Gain job_route_cost(Index v_target, Index v, Index r);
 
   // Compute best cost of relocating job at rank r (resp. jobs at rank

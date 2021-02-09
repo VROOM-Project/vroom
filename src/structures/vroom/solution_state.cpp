@@ -30,12 +30,12 @@ SolutionState::SolutionState(const Input& input)
     pd_gains(_nb_vehicles),
     matching_delivery_rank(_nb_vehicles),
     matching_pickup_rank(_nb_vehicles),
-    nearest_job_rank_in_routes_from(_nb_vehicles,
-                                    std::vector<std::vector<Index>>(
-                                      _nb_vehicles)),
-    nearest_job_rank_in_routes_to(_nb_vehicles,
-                                  std::vector<std::vector<Index>>(
-                                    _nb_vehicles)),
+    cheapest_job_rank_in_routes_from(_nb_vehicles,
+                                     std::vector<std::vector<Index>>(
+                                       _nb_vehicles)),
+    cheapest_job_rank_in_routes_to(_nb_vehicles,
+                                   std::vector<std::vector<Index>>(
+                                     _nb_vehicles)),
     route_costs(_nb_vehicles) {
 }
 
@@ -476,13 +476,13 @@ void SolutionState::set_pd_matching_ranks(const std::vector<Index>& route,
   }
 }
 
-void SolutionState::update_nearest_job_rank_in_routes(
+void SolutionState::update_cheapest_job_rank_in_routes(
   const std::vector<Index>& route_1,
   const std::vector<Index>& route_2,
   Index v1,
   Index v2) {
-  nearest_job_rank_in_routes_from[v1][v2].assign(route_1.size(), 0);
-  nearest_job_rank_in_routes_to[v1][v2].assign(route_1.size(), 0);
+  cheapest_job_rank_in_routes_from[v1][v2].assign(route_1.size(), 0);
+  cheapest_job_rank_in_routes_to[v1][v2].assign(route_1.size(), 0);
 
   for (std::size_t r1 = 0; r1 < route_1.size(); ++r1) {
     Index index_r1 = _input.jobs[route_1[r1]].index();
@@ -504,8 +504,8 @@ void SolutionState::update_nearest_job_rank_in_routes(
       }
     }
 
-    nearest_job_rank_in_routes_from[v1][v2][r1] = best_from_rank;
-    nearest_job_rank_in_routes_to[v1][v2][r1] = best_to_rank;
+    cheapest_job_rank_in_routes_from[v1][v2][r1] = best_from_rank;
+    cheapest_job_rank_in_routes_to[v1][v2][r1] = best_to_rank;
   }
 }
 

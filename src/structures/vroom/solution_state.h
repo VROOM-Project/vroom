@@ -108,12 +108,12 @@ public:
   std::vector<std::vector<Index>> matching_delivery_rank;
   std::vector<std::vector<Index>> matching_pickup_rank;
 
-  // nearest_job_rank_in_routes_from[v1][v2][r1] stores the rank of
+  // cheapest_job_rank_in_routes_from[v1][v2][r1] stores the rank of
   // job in route v2 that minimize cost from job at rank r1 in v1.
-  std::vector<std::vector<std::vector<Index>>> nearest_job_rank_in_routes_from;
-  // nearest_job_rank_in_routes_to[v1][v2][r1] stores the rank of job
+  std::vector<std::vector<std::vector<Index>>> cheapest_job_rank_in_routes_from;
+  // cheapest_job_rank_in_routes_to[v1][v2][r1] stores the rank of job
   // in route v2 that minimize cost to job at rank r1 in v1.
-  std::vector<std::vector<std::vector<Index>>> nearest_job_rank_in_routes_to;
+  std::vector<std::vector<std::vector<Index>>> cheapest_job_rank_in_routes_to;
 
   // Only used for assertions in debug mode.
   std::vector<Cost> route_costs;
@@ -138,10 +138,10 @@ public:
 
   void set_pd_matching_ranks(const std::vector<Index>& route, Index v);
 
-  void update_nearest_job_rank_in_routes(const std::vector<Index>& route_1,
-                                         const std::vector<Index>& route_2,
-                                         Index v1,
-                                         Index v2);
+  void update_cheapest_job_rank_in_routes(const std::vector<Index>& route_1,
+                                          const std::vector<Index>& route_2,
+                                          Index v1,
+                                          Index v2);
 
   void update_route_cost(const std::vector<Index>& route, Index v);
 };
