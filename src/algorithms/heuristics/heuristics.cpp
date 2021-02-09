@@ -42,8 +42,6 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
                              v_lhs.tw.length > v_rhs.tw.length);
                    });
 
-  const auto& m = input.get_matrix();
-
   // For a single job j, costs[j] is the cost of fetching job j in an
   // empty route from one of the vehicles (consistent across vehicles
   // in the homogeneous case). For a pickup (resp. delivery) job j,
@@ -59,7 +57,7 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
 
     Cost current_cost = 0;
     if (v.has_start()) {
-      current_cost += m[v.start.value().index()][j_index];
+      current_cost += v.cost(v.start.value().index(), j_index);
     }
 
     Index last_job_index = j_index;
@@ -69,11 +67,11 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
 
       // Add delivery cost.
       last_job_index = input.jobs[j + 1].index();
-      current_cost += m[j_index][last_job_index];
+      current_cost += v.cost(j_index, last_job_index);
     }
 
     if (v.has_end()) {
-      current_cost += m[last_job_index][v.end.value().index()];
+      current_cost += v.cost(last_job_index, v.end.value().index());
     }
     costs[j] = current_cost;
     if (is_pickup) {
@@ -388,8 +386,6 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
   std::vector<Index> vehicles_ranks(input.vehicles.size());
   std::iota(vehicles_ranks.begin(), vehicles_ranks.end(), 0);
 
-  const auto& m = input.get_matrix();
-
   // For a single job j, costs[j][v] is the cost of fetching job j in
   // an empty route from vehicle at vehicles_ranks[v]. For a pickup
   // job j, costs[j][v] is the cost of fetching job j **and**
@@ -411,12 +407,13 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
 
     for (std::size_t v = 0; v < vehicles_ranks.size(); ++v) {
       const auto& vehicle = input.vehicles[vehicles_ranks[v]];
-      Cost current_cost = is_pickup ? m[j_index][last_job_index] : 0;
+      Cost current_cost = is_pickup ? vehicle.cost(j_index, last_job_index) : 0;
       if (vehicle.has_start()) {
-        current_cost += m[vehicle.start.value().index()][j_index];
+        current_cost += vehicle.cost(vehicle.start.value().index(), j_index);
       }
       if (vehicle.has_end()) {
-        current_cost += m[last_job_index][vehicle.end.value().index()];
+        current_cost +=
+          vehicle.cost(last_job_index, vehicle.end.value().index());
       }
       costs[j][v] = current_cost;
       if (is_pickup) {
