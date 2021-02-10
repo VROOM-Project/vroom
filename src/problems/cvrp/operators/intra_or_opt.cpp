@@ -72,7 +72,6 @@ IntraOrOpt::IntraOrOpt(const Input& input,
 }
 
 Gain IntraOrOpt::gain_upper_bound() {
-  const auto& m = _input.get_matrix();
   const auto& v = _input.vehicles[s_vehicle];
 
   // The cost of removing edge starting at rank s_rank is already
@@ -97,32 +96,32 @@ Gain IntraOrOpt::gain_upper_bound() {
   if (new_rank == s_route.size()) {
     // Adding edge past the end after a real job that was unmoved.
     auto p_index = _input.jobs[s_route[new_rank - 1]].index();
-    previous_cost = m[p_index][s_index];
-    reverse_previous_cost = m[p_index][after_s_index];
+    previous_cost = v.cost(p_index, s_index);
+    reverse_previous_cost = v.cost(p_index, after_s_index);
     if (v.has_end()) {
       auto n_index = v.end.value().index();
-      old_edge_cost = m[p_index][n_index];
-      next_cost = m[after_s_index][n_index];
-      reverse_next_cost = m[s_index][n_index];
+      old_edge_cost = v.cost(p_index, n_index);
+      next_cost = v.cost(after_s_index, n_index);
+      reverse_next_cost = v.cost(s_index, n_index);
     }
   } else {
     // Adding before one of the jobs.
     auto n_index = _input.jobs[s_route[new_rank]].index();
-    next_cost = m[after_s_index][n_index];
-    reverse_next_cost = m[s_index][n_index];
+    next_cost = v.cost(after_s_index, n_index);
+    reverse_next_cost = v.cost(s_index, n_index);
 
     if (new_rank == 0) {
       if (v.has_start()) {
         auto p_index = v.start.value().index();
-        previous_cost = m[p_index][s_index];
-        reverse_previous_cost = m[p_index][after_s_index];
-        old_edge_cost = m[p_index][n_index];
+        previous_cost = v.cost(p_index, s_index);
+        reverse_previous_cost = v.cost(p_index, after_s_index);
+        old_edge_cost = v.cost(p_index, n_index);
       }
     } else {
       auto p_index = _input.jobs[s_route[new_rank - 1]].index();
-      previous_cost = m[p_index][s_index];
-      reverse_previous_cost = m[p_index][after_s_index];
-      old_edge_cost = m[p_index][n_index];
+      previous_cost = v.cost(p_index, s_index);
+      reverse_previous_cost = v.cost(p_index, after_s_index);
+      old_edge_cost = v.cost(p_index, n_index);
     }
   }
 
@@ -135,8 +134,8 @@ Gain IntraOrOpt::gain_upper_bound() {
   auto t_gain_upper_bound = _normal_t_gain;
 
   if (check_reverse) {
-    Gain reverse_edge_cost = static_cast<Gain>(m[s_index][after_s_index]) -
-                             static_cast<Gain>(m[after_s_index][s_index]);
+    Gain reverse_edge_cost = static_cast<Gain>(v.cost(s_index, after_s_index)) -
+                             static_cast<Gain>(v.cost(after_s_index, s_index));
     _reversed_t_gain = old_edge_cost + reverse_edge_cost -
                        reverse_previous_cost - reverse_next_cost;
 

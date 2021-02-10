@@ -75,7 +75,6 @@ IntraCrossExchange::IntraCrossExchange(const Input& input,
 }
 
 Gain IntraCrossExchange::gain_upper_bound() {
-  const auto& m = _input.get_matrix();
   const auto& v = _input.vehicles[s_vehicle];
 
   // Consider the cost of replacing edge starting at rank s_rank with
@@ -96,18 +95,18 @@ Gain IntraCrossExchange::gain_upper_bound() {
   if (s_rank == 0) {
     if (v.has_start()) {
       auto p_index = v.start.value().index();
-      previous_cost = m[p_index][t_index];
-      reverse_previous_cost = m[p_index][t_after_index];
+      previous_cost = v.cost(p_index, t_index);
+      reverse_previous_cost = v.cost(p_index, t_after_index);
     }
   } else {
     auto p_index = _input.jobs[s_route[s_rank - 1]].index();
-    previous_cost = m[p_index][t_index];
-    reverse_previous_cost = m[p_index][t_after_index];
+    previous_cost = v.cost(p_index, t_index);
+    reverse_previous_cost = v.cost(p_index, t_after_index);
   }
 
   auto n_index = _input.jobs[s_route[s_rank + 2]].index();
-  next_cost = m[t_after_index][n_index];
-  reverse_next_cost = m[t_index][n_index];
+  next_cost = v.cost(t_after_index, n_index);
+  reverse_next_cost = v.cost(t_index, n_index);
 
   _normal_s_gain = _sol_state.edge_costs_around_edge[s_vehicle][s_rank] -
                    previous_cost - next_cost;
@@ -115,8 +114,8 @@ Gain IntraCrossExchange::gain_upper_bound() {
   auto s_gain_upper_bound = _normal_s_gain;
 
   if (check_t_reverse) {
-    Gain reverse_edge_cost = static_cast<Gain>(m[t_index][t_after_index]) -
-                             static_cast<Gain>(m[t_after_index][t_index]);
+    Gain reverse_edge_cost = static_cast<Gain>(v.cost(t_index, t_after_index)) -
+                             static_cast<Gain>(v.cost(t_after_index, t_index));
     _reversed_s_gain = _sol_state.edge_costs_around_edge[s_vehicle][s_rank] +
                        reverse_edge_cost - reverse_previous_cost -
                        reverse_next_cost;
@@ -133,19 +132,19 @@ Gain IntraCrossExchange::gain_upper_bound() {
   reverse_next_cost = 0;
 
   auto p_index = _input.jobs[s_route[t_rank - 1]].index();
-  previous_cost = m[p_index][s_index];
-  reverse_previous_cost = m[p_index][s_after_index];
+  previous_cost = v.cost(p_index, s_index);
+  reverse_previous_cost = v.cost(p_index, s_after_index);
 
   if (t_rank == s_route.size() - 2) {
     if (v.has_end()) {
       auto n_index = v.end.value().index();
-      next_cost = m[s_after_index][n_index];
-      reverse_next_cost = m[s_index][n_index];
+      next_cost = v.cost(s_after_index, n_index);
+      reverse_next_cost = v.cost(s_index, n_index);
     }
   } else {
     auto n_index = _input.jobs[s_route[t_rank + 2]].index();
-    next_cost = m[s_after_index][n_index];
-    reverse_next_cost = m[s_index][n_index];
+    next_cost = v.cost(s_after_index, n_index);
+    reverse_next_cost = v.cost(s_index, n_index);
   }
 
   _normal_t_gain = _sol_state.edge_costs_around_edge[t_vehicle][t_rank] -
@@ -154,8 +153,8 @@ Gain IntraCrossExchange::gain_upper_bound() {
   auto t_gain_upper_bound = _normal_t_gain;
 
   if (check_s_reverse) {
-    Gain reverse_edge_cost = static_cast<Gain>(m[s_index][s_after_index]) -
-                             static_cast<Gain>(m[s_after_index][s_index]);
+    Gain reverse_edge_cost = static_cast<Gain>(v.cost(s_index, s_after_index)) -
+                             static_cast<Gain>(v.cost(s_after_index, s_index));
     _reversed_t_gain = _sol_state.edge_costs_around_edge[t_vehicle][t_rank] +
                        reverse_edge_cost - reverse_previous_cost -
                        reverse_next_cost;
