@@ -39,9 +39,8 @@ TwoOpt::TwoOpt(const Input& input,
 }
 
 void TwoOpt::compute_gain() {
-  const auto& m = _input.get_matrix();
-  const auto& v_source = _input.vehicles[s_vehicle];
-  const auto& v_target = _input.vehicles[t_vehicle];
+  const auto& s_v = _input.vehicles[s_vehicle];
+  const auto& t_v = _input.vehicles[t_vehicle];
 
   Index s_index = _input.jobs[s_route[s_rank]].index();
   Index t_index = _input.jobs[t_route[t_rank]].index();
@@ -59,30 +58,30 @@ void TwoOpt::compute_gain() {
   // the route. Otherwise remember that last job does not change.
   if (s_rank < s_route.size() - 1) {
     Index next_index = _input.jobs[s_route[s_rank + 1]].index();
-    stored_gain += m[s_index][next_index];
-    stored_gain -= m[t_index][next_index];
+    stored_gain += s_v.cost(s_index, next_index);
+    stored_gain -= t_v.cost(t_index, next_index);
   } else {
     new_last_t = t_index;
   }
   if (t_rank < t_route.size() - 1) {
     Index next_index = _input.jobs[t_route[t_rank + 1]].index();
-    stored_gain += m[t_index][next_index];
-    stored_gain -= m[s_index][next_index];
+    stored_gain += t_v.cost(t_index, next_index);
+    stored_gain -= s_v.cost(s_index, next_index);
   } else {
     new_last_s = s_index;
   }
 
   // Handling end route cost change because vehicle ends can be
   // different or none.
-  if (v_source.has_end()) {
-    auto end_s = v_source.end.value().index();
-    stored_gain += m[last_s][end_s];
-    stored_gain -= m[new_last_s][end_s];
+  if (s_v.has_end()) {
+    auto end_s = s_v.end.value().index();
+    stored_gain += s_v.cost(last_s, end_s);
+    stored_gain -= s_v.cost(new_last_s, end_s);
   }
-  if (v_target.has_end()) {
-    auto end_t = v_target.end.value().index();
-    stored_gain += m[last_t][end_t];
-    stored_gain -= m[new_last_t][end_t];
+  if (t_v.has_end()) {
+    auto end_t = t_v.end.value().index();
+    stored_gain += t_v.cost(last_t, end_t);
+    stored_gain -= t_v.cost(new_last_t, end_t);
   }
 
   gain_computed = true;
