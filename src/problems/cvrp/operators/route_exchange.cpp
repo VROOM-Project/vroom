@@ -35,46 +35,45 @@ RouteExchange::RouteExchange(const Input& input,
 }
 
 void RouteExchange::compute_gain() {
-  const auto& m = _input.get_matrix();
-  const auto& v_source = _input.vehicles[s_vehicle];
-  const auto& v_target = _input.vehicles[t_vehicle];
+  const auto& s_v = _input.vehicles[s_vehicle];
+  const auto& t_v = _input.vehicles[t_vehicle];
 
   Gain new_cost = 0;
   Gain previous_cost = 0;
 
   if (s_route.size() > 0) {
     auto first_s_index = _input.jobs[s_route.front()].index();
-    if (v_source.has_start()) {
-      previous_cost += m[v_source.start.value().index()][first_s_index];
+    if (s_v.has_start()) {
+      previous_cost += s_v.cost(s_v.start.value().index(), first_s_index);
     }
-    if (v_target.has_start()) {
-      new_cost += m[v_target.start.value().index()][first_s_index];
+    if (t_v.has_start()) {
+      new_cost += t_v.cost(t_v.start.value().index(), first_s_index);
     }
 
     auto last_s_index = _input.jobs[s_route.back()].index();
-    if (v_source.has_end()) {
-      previous_cost += m[last_s_index][v_source.end.value().index()];
+    if (s_v.has_end()) {
+      previous_cost += s_v.cost(last_s_index, s_v.end.value().index());
     }
-    if (v_target.has_end()) {
-      new_cost += m[last_s_index][v_target.end.value().index()];
+    if (t_v.has_end()) {
+      new_cost += t_v.cost(last_s_index, t_v.end.value().index());
     }
   }
 
   if (t_route.size() > 0) {
     auto first_t_index = _input.jobs[t_route.front()].index();
-    if (v_target.has_start()) {
-      previous_cost += m[v_target.start.value().index()][first_t_index];
+    if (t_v.has_start()) {
+      previous_cost += t_v.cost(t_v.start.value().index(), first_t_index);
     }
-    if (v_source.has_start()) {
-      new_cost += m[v_source.start.value().index()][first_t_index];
+    if (s_v.has_start()) {
+      new_cost += s_v.cost(s_v.start.value().index(), first_t_index);
     }
 
     auto last_t_index = _input.jobs[t_route.back()].index();
-    if (v_target.has_end()) {
-      previous_cost += m[last_t_index][v_target.end.value().index()];
+    if (t_v.has_end()) {
+      previous_cost += t_v.cost(last_t_index, t_v.end.value().index());
     }
-    if (v_source.has_end()) {
-      new_cost += m[last_t_index][v_source.end.value().index()];
+    if (s_v.has_end()) {
+      new_cost += s_v.cost(last_t_index, s_v.end.value().index());
     }
   }
 

@@ -38,9 +38,8 @@ Exchange::Exchange(const Input& input,
 }
 
 void Exchange::compute_gain() {
-  const auto& m = _input.get_matrix();
-  const auto& v_source = _input.vehicles[s_vehicle];
-  const auto& v_target = _input.vehicles[t_vehicle];
+  const auto& s_v = _input.vehicles[s_vehicle];
+  const auto& t_v = _input.vehicles[t_vehicle];
 
   // For source vehicle, we consider the cost of replacing job at rank
   // s_rank with target job. Part of that cost (for adjacent
@@ -53,23 +52,23 @@ void Exchange::compute_gain() {
   Gain new_next_cost = 0;
 
   if (s_rank == 0) {
-    if (v_source.has_start()) {
-      auto p_index = v_source.start.value().index();
-      new_previous_cost = m[p_index][t_index];
+    if (s_v.has_start()) {
+      auto p_index = s_v.start.value().index();
+      new_previous_cost = s_v.cost(p_index, t_index);
     }
   } else {
     auto p_index = _input.jobs[s_route[s_rank - 1]].index();
-    new_previous_cost = m[p_index][t_index];
+    new_previous_cost = s_v.cost(p_index, t_index);
   }
 
   if (s_rank == s_route.size() - 1) {
-    if (v_source.has_end()) {
-      auto n_index = v_source.end.value().index();
-      new_next_cost = m[t_index][n_index];
+    if (s_v.has_end()) {
+      auto n_index = s_v.end.value().index();
+      new_next_cost = s_v.cost(t_index, n_index);
     }
   } else {
     auto n_index = _input.jobs[s_route[s_rank + 1]].index();
-    new_next_cost = m[t_index][n_index];
+    new_next_cost = s_v.cost(t_index, n_index);
   }
 
   Gain s_gain = _sol_state.edge_costs_around_node[s_vehicle][s_rank] -
@@ -84,23 +83,23 @@ void Exchange::compute_gain() {
   new_next_cost = 0;
 
   if (t_rank == 0) {
-    if (v_target.has_start()) {
-      auto p_index = v_target.start.value().index();
-      new_previous_cost = m[p_index][s_index];
+    if (t_v.has_start()) {
+      auto p_index = t_v.start.value().index();
+      new_previous_cost = t_v.cost(p_index, s_index);
     }
   } else {
     auto p_index = _input.jobs[t_route[t_rank - 1]].index();
-    new_previous_cost = m[p_index][s_index];
+    new_previous_cost = t_v.cost(p_index, s_index);
   }
 
   if (t_rank == t_route.size() - 1) {
-    if (v_target.has_end()) {
-      auto n_index = v_target.end.value().index();
-      new_next_cost = m[s_index][n_index];
+    if (t_v.has_end()) {
+      auto n_index = t_v.end.value().index();
+      new_next_cost = t_v.cost(s_index, n_index);
     }
   } else {
     auto n_index = _input.jobs[t_route[t_rank + 1]].index();
-    new_next_cost = m[s_index][n_index];
+    new_next_cost = t_v.cost(s_index, n_index);
   }
 
   Gain t_gain = _sol_state.edge_costs_around_node[t_vehicle][t_rank] -

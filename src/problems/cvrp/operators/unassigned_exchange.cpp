@@ -54,7 +54,6 @@ UnassignedExchange::UnassignedExchange(const Input& input,
 }
 
 void UnassignedExchange::compute_gain() {
-  const auto& m = _input.get_matrix();
   const auto& v = _input.vehicles[s_vehicle];
 
   const Index u_index = _input.jobs[_u].index();
@@ -74,18 +73,18 @@ void UnassignedExchange::compute_gain() {
 
     if (t_rank == 0) {
       if (v.has_start()) {
-        previous_cost = m[v.start.value().index()][u_index];
+        previous_cost = v.cost(v.start.value().index(), u_index);
       }
     } else {
-      previous_cost = m[_input.jobs[s_route[t_rank - 1]].index()][u_index];
+      previous_cost = v.cost(_input.jobs[s_route[t_rank - 1]].index(), u_index);
     }
 
     if (t_rank == s_route.size() - 1) {
       if (v.has_end()) {
-        next_cost = m[u_index][v.end.value().index()];
+        next_cost = v.cost(u_index, v.end.value().index());
       }
     } else {
-      next_cost = m[u_index][_input.jobs[s_route[s_rank + 1]].index()];
+      next_cost = v.cost(u_index, _input.jobs[s_route[s_rank + 1]].index());
     }
 
     t_gain = -previous_cost - next_cost;
