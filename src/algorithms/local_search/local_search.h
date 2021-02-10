@@ -34,7 +34,6 @@ template <class Route,
 class LocalSearch {
 private:
   const Input& _input;
-  const Matrix<Cost>& _matrix;
   const std::size_t _nb_vehicles;
 
   const unsigned _max_nb_jobs_removal;

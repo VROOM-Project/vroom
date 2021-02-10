@@ -15,7 +15,6 @@ namespace utils {
 
 SolutionState::SolutionState(const Input& input)
   : _input(input),
-    _m(_input.get_matrix()),
     _nb_vehicles(_input.vehicles.size()),
     fwd_costs(_nb_vehicles),
     bwd_costs(_nb_vehicles),
@@ -101,10 +100,12 @@ void SolutionState::update_costs(const std::vector<Index>& route, Index v) {
     bwd_costs[v][0] = current_bwd;
   }
 
+  const auto& vehicle = _input.vehicles[v];
+
   for (std::size_t i = 1; i < route.size(); ++i) {
     auto current_index = _input.jobs[route[i]].index();
-    current_fwd += _m[previous_index][current_index];
-    current_bwd += _m[current_index][previous_index];
+    current_fwd += vehicle.cost(previous_index, current_index);
+    current_bwd += vehicle.cost(current_index, previous_index);
     fwd_costs[v][i] = current_fwd;
     bwd_costs[v][i] = current_bwd;
     previous_index = current_index;
@@ -146,20 +147,21 @@ void SolutionState::set_node_gains(const std::vector<Index>& route, Index v) {
   Gain next_cost = 0;
   Gain new_edge_cost = 0;
 
-  if (_input.vehicles[v].has_start()) {
+  const auto& vehicle = _input.vehicles[v];
+  if (vehicle.has_start()) {
     // There is a previous step before job at rank 0.
-    p_index = _input.vehicles[v].start.value().index();
-    previous_cost = _m[p_index][c_index];
+    p_index = vehicle.start.value().index();
+    previous_cost = vehicle.cost(p_index, c_index);
 
     // Update next_cost with next job or end.
     if (route.size() > 1) {
       n_index = _input.jobs[route[1]].index();
-      next_cost = _m[c_index][n_index];
-      new_edge_cost = _m[p_index][n_index];
+      next_cost = vehicle.cost(c_index, n_index);
+      new_edge_cost = vehicle.cost(p_index, n_index);
     } else {
       // route.size() is 1 and first job is also the last.
-      if (_input.vehicles[v].has_end()) {
-        next_cost = _m[c_index][_input.vehicles[v].end.value().index()];
+      if (vehicle.has_end()) {
+        next_cost = vehicle.cost(c_index, vehicle.end.value().index());
       }
     }
   } else {
@@ -168,10 +170,10 @@ void SolutionState::set_node_gains(const std::vector<Index>& route, Index v) {
     if (route.size() > 1) {
       n_index = _input.jobs[route[1]].index();
     } else {
-      assert(_input.vehicles[v].has_end());
-      n_index = _input.vehicles[v].end.value().index();
+      assert(vehicle.has_end());
+      n_index = vehicle.end.value().index();
     }
-    next_cost = _m[c_index][n_index];
+    next_cost = vehicle.cost(c_index, n_index);
   }
 
   Gain edges_costs_around = previous_cost + next_cost;
@@ -194,10 +196,11 @@ void SolutionState::set_node_gains(const std::vector<Index>& route, Index v) {
     c_index = _input.jobs[route[i]].index();
     n_index = _input.jobs[route[i + 1]].index();
 
-    edges_costs_around = _m[p_index][c_index] + _m[c_index][n_index];
+    edges_costs_around =
+      vehicle.cost(p_index, c_index) + vehicle.cost(c_index, n_index);
     edge_costs_around_node[v][i] = edges_costs_around;
 
-    current_gain = edges_costs_around - _m[p_index][n_index];
+    current_gain = edges_costs_around - vehicle.cost(p_index, n_index);
     node_gains[v][i] = current_gain;
 
     if (current_gain > best_gain) {
@@ -214,15 +217,15 @@ void SolutionState::set_node_gains(const std::vector<Index>& route, Index v) {
   next_cost = 0;
   new_edge_cost = 0;
 
-  if (_input.vehicles[v].has_end()) {
+  if (vehicle.has_end()) {
     // There is a next step after last job.
-    n_index = _input.vehicles[v].end.value().index();
-    next_cost = _m[c_index][n_index];
+    n_index = vehicle.end.value().index();
+    next_cost = vehicle.cost(c_index, n_index);
 
     if (route.size() > 1) {
       p_index = _input.jobs[route[last_rank - 1]].index();
-      previous_cost = _m[p_index][c_index];
-      new_edge_cost = _m[p_index][n_index];
+      previous_cost = vehicle.cost(p_index, c_index);
+      new_edge_cost = vehicle.cost(p_index, n_index);
     }
   } else {
     // There is a previous cost either from previous job or from start
@@ -230,10 +233,10 @@ void SolutionState::set_node_gains(const std::vector<Index>& route, Index v) {
     if (route.size() > 1) {
       p_index = _input.jobs[route[last_rank - 1]].index();
     } else {
-      assert(_input.vehicles[v].has_start());
-      p_index = _input.vehicles[v].start.value().index();
+      assert(vehicle.has_start());
+      p_index = vehicle.start.value().index();
     }
-    previous_cost = _m[p_index][c_index];
+    previous_cost = vehicle.cost(p_index, c_index);
   }
 
   edges_costs_around = previous_cost + next_cost;
@@ -267,20 +270,21 @@ void SolutionState::set_edge_gains(const std::vector<Index>& route, Index v) {
   Gain next_cost = 0;
   Gain new_edge_cost = 0;
 
-  if (_input.vehicles[v].has_start()) {
+  const auto& vehicle = _input.vehicles[v];
+  if (vehicle.has_start()) {
     // There is a previous step before job at rank 0.
-    p_index = _input.vehicles[v].start.value().index();
-    previous_cost = _m[p_index][c_index];
+    p_index = vehicle.start.value().index();
+    previous_cost = vehicle.cost(p_index, c_index);
 
     // Update next_cost with next job or end.
     if (route.size() > 2) {
       n_index = _input.jobs[route[2]].index();
-      next_cost = _m[after_c_index][n_index];
-      new_edge_cost = _m[p_index][n_index];
+      next_cost = vehicle.cost(after_c_index, n_index);
+      new_edge_cost = vehicle.cost(p_index, n_index);
     } else {
       // route.size() is 2 and first edge is also the last.
-      if (_input.vehicles[v].has_end()) {
-        next_cost = _m[after_c_index][_input.vehicles[v].end.value().index()];
+      if (vehicle.has_end()) {
+        next_cost = vehicle.cost(after_c_index, vehicle.end.value().index());
       }
     }
   } else {
@@ -289,10 +293,10 @@ void SolutionState::set_edge_gains(const std::vector<Index>& route, Index v) {
     if (route.size() > 2) {
       n_index = _input.jobs[route[2]].index();
     } else {
-      assert(_input.vehicles[v].has_end());
-      n_index = _input.vehicles[v].end.value().index();
+      assert(vehicle.has_end());
+      n_index = vehicle.end.value().index();
     }
-    next_cost = _m[after_c_index][n_index];
+    next_cost = vehicle.cost(after_c_index, n_index);
   }
 
   Gain edges_costs_around = previous_cost + next_cost;
@@ -317,10 +321,11 @@ void SolutionState::set_edge_gains(const std::vector<Index>& route, Index v) {
     after_c_index = _input.jobs[route[i + 1]].index();
     n_index = _input.jobs[route[i + 2]].index();
 
-    edges_costs_around = _m[p_index][c_index] + _m[after_c_index][n_index];
+    edges_costs_around =
+      vehicle.cost(p_index, c_index) + vehicle.cost(after_c_index, n_index);
     edge_costs_around_edge[v][i] = edges_costs_around;
 
-    current_gain = edges_costs_around - _m[p_index][n_index];
+    current_gain = edges_costs_around - vehicle.cost(p_index, n_index);
     edge_gains[v][i] = current_gain;
 
     if (current_gain > best_gain) {
@@ -338,15 +343,15 @@ void SolutionState::set_edge_gains(const std::vector<Index>& route, Index v) {
   next_cost = 0;
   new_edge_cost = 0;
 
-  if (_input.vehicles[v].has_end()) {
+  if (vehicle.has_end()) {
     // There is a next step after last job.
-    n_index = _input.vehicles[v].end.value().index();
-    next_cost = _m[after_c_index][n_index];
+    n_index = vehicle.end.value().index();
+    next_cost = vehicle.cost(after_c_index, n_index);
 
     if (route.size() > 2) {
       p_index = _input.jobs[route[last_edge_rank - 1]].index();
-      previous_cost = _m[p_index][c_index];
-      new_edge_cost = _m[p_index][n_index];
+      previous_cost = vehicle.cost(p_index, c_index);
+      new_edge_cost = vehicle.cost(p_index, n_index);
     }
   } else {
     // There is a previous cost either from previous job or from start
@@ -354,10 +359,10 @@ void SolutionState::set_edge_gains(const std::vector<Index>& route, Index v) {
     if (route.size() > 2) {
       p_index = _input.jobs[route[last_edge_rank - 1]].index();
     } else {
-      assert(_input.vehicles[v].has_start());
-      p_index = _input.vehicles[v].start.value().index();
+      assert(vehicle.has_start());
+      p_index = vehicle.start.value().index();
     }
-    previous_cost = _m[p_index][c_index];
+    previous_cost = vehicle.cost(p_index, c_index);
   }
 
   edges_costs_around = previous_cost + next_cost;
@@ -377,6 +382,8 @@ void SolutionState::set_pd_gains(const std::vector<Index>& route, Index v) {
   // matching_delivery_rank, so should be run after
   // set_pd_matching_ranks.
   pd_gains[v] = std::vector<Gain>(route.size());
+
+  const auto& vehicle = _input.vehicles[v];
 
   for (std::size_t pickup_rank = 0; pickup_rank < route.size(); ++pickup_rank) {
     if (_input.jobs[route[pickup_rank]].type != JOB_TYPE::PICKUP) {
@@ -399,12 +406,12 @@ void SolutionState::set_pd_gains(const std::vector<Index>& route, Index v) {
       if (pickup_rank > 0) {
         has_previous_step = true;
         p_index = _input.jobs[route[pickup_rank - 1]].index();
-        previous_cost = _m[p_index][pickup_index];
+        previous_cost = vehicle.cost(p_index, pickup_index);
       } else {
-        if (_input.vehicles[v].has_start()) {
+        if (vehicle.has_start()) {
           has_previous_step = true;
-          p_index = _input.vehicles[v].start.value().index();
-          previous_cost = _m[p_index][pickup_index];
+          p_index = vehicle.start.value().index();
+          previous_cost = vehicle.cost(p_index, pickup_index);
         }
       }
 
@@ -413,24 +420,24 @@ void SolutionState::set_pd_gains(const std::vector<Index>& route, Index v) {
       if (delivery_rank < route.size() - 1) {
         has_next_step = true;
         n_index = _input.jobs[route[delivery_rank + 1]].index();
-        next_cost = _m[delivery_index][n_index];
+        next_cost = vehicle.cost(delivery_index, n_index);
       } else {
-        if (_input.vehicles[v].has_end()) {
+        if (vehicle.has_end()) {
           has_next_step = true;
-          n_index = _input.vehicles[v].end.value().index();
-          next_cost = _m[delivery_index][n_index];
+          n_index = vehicle.end.value().index();
+          next_cost = vehicle.cost(delivery_index, n_index);
         }
       }
 
       if (has_previous_step and has_next_step and (route.size() > 2)) {
         // No new edge with an open trip or if removing P&D creates an
         // empty route.
-        new_edge_cost = _m[p_index][n_index];
+        new_edge_cost = vehicle.cost(p_index, n_index);
       }
 
       pd_gains[v][pickup_rank] = previous_cost +
-                                 _m[pickup_index][delivery_index] + next_cost -
-                                 new_edge_cost;
+                                 vehicle.cost(pickup_index, delivery_index) +
+                                 next_cost - new_edge_cost;
     } else {
       // Simply add both gains as neighbouring edges are disjoint.
       pd_gains[v][pickup_rank] =
@@ -492,14 +499,17 @@ void SolutionState::update_cheapest_job_rank_in_routes(
     Index best_from_rank = 0;
     Index best_to_rank = 0;
 
+    const auto& vehicle = _input.vehicles[v2];
     for (std::size_t r2 = 0; r2 < route_2.size(); ++r2) {
-      Index index_r2 = _input.jobs[route_2[r2]].index();
-      if (_m[index_r1][index_r2] < min_from) {
-        min_from = _m[index_r1][index_r2];
+      const Index index_r2 = _input.jobs[route_2[r2]].index();
+      const auto cost_from = vehicle.cost(index_r1, index_r2);
+      if (cost_from < min_from) {
+        min_from = cost_from;
         best_from_rank = r2;
       }
-      if (_m[index_r2][index_r1] < min_to) {
-        min_to = _m[index_r2][index_r1];
+      const auto cost_to = vehicle.cost(index_r2, index_r1);
+      if (cost_to < min_to) {
+        min_to = cost_to;
         best_to_rank = r2;
       }
     }

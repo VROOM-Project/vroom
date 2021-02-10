@@ -52,7 +52,6 @@ struct SolutionIndicators {
 class SolutionState {
 private:
   const Input& _input;
-  const Matrix<Cost>& _m;
   const std::size_t _nb_vehicles;
 
 public:
@@ -109,10 +108,12 @@ public:
   std::vector<std::vector<Index>> matching_pickup_rank;
 
   // cheapest_job_rank_in_routes_from[v1][v2][r1] stores the rank of
-  // job in route v2 that minimize cost from job at rank r1 in v1.
+  // job in route v2 that minimize cost (as seen from the v2
+  // perspective) from job at rank r1 in v1.
   std::vector<std::vector<std::vector<Index>>> cheapest_job_rank_in_routes_from;
   // cheapest_job_rank_in_routes_to[v1][v2][r1] stores the rank of job
-  // in route v2 that minimize cost to job at rank r1 in v1.
+  // in route v2 that minimize cost (as seen from the v2 perspective)
+  // to job at rank r1 in v1.
   std::vector<std::vector<std::vector<Index>>> cheapest_job_rank_in_routes_to;
 
   // Only used for assertions in debug mode.

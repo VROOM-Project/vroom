@@ -63,7 +63,6 @@ LocalSearch<Route,
                                         std::vector<Route>& sol,
                                         unsigned max_nb_jobs_removal)
   : _input(input),
-    _matrix(_input.get_matrix()),
     _nb_vehicles(_input.vehicles.size()),
     _max_nb_jobs_removal(max_nb_jobs_removal),
     _all_routes(_nb_vehicles),
@@ -1546,14 +1545,15 @@ Gain LocalSearch<Route,
   Gain cost = static_cast<Gain>(INFINITE_COST);
   const auto job_index = _input.jobs[_sol[v].route[r]].index();
 
-  if (_input.vehicles[v_target].has_start()) {
-    const auto start_index = _input.vehicles[v_target].start.value().index();
-    const Gain start_cost = _matrix[start_index][job_index];
+  const auto& vehicle = _input.vehicles[v_target];
+  if (vehicle.has_start()) {
+    const auto start_index = vehicle.start.value().index();
+    const Gain start_cost = vehicle.cost(start_index, job_index);
     cost = std::min(cost, start_cost);
   }
-  if (_input.vehicles[v_target].has_end()) {
-    const auto end_index = _input.vehicles[v_target].end.value().index();
-    const Gain end_cost = _matrix[job_index][end_index];
+  if (vehicle.has_end()) {
+    const auto end_index = vehicle.end.value().index();
+    const Gain end_cost = vehicle.cost(job_index, end_index);
     cost = std::min(cost, end_cost);
   }
   if (_sol[v_target].size() != 0) {
@@ -1561,15 +1561,15 @@ Gain LocalSearch<Route,
       _sol_state.cheapest_job_rank_in_routes_from[v][v_target][r];
     const auto cheapest_from_index =
       _input.jobs[_sol[v_target].route[cheapest_from_rank]].index();
-    const Gain cost_from = _matrix[cheapest_from_index][job_index];
+    const Gain cost_from = vehicle.cost(cheapest_from_index, job_index);
     cost = std::min(cost, cost_from);
 
     const auto cheapest_to_rank =
       _sol_state.cheapest_job_rank_in_routes_to[v][v_target][r];
     const auto cheapest_to_index =
       _input.jobs[_sol[v_target].route[cheapest_to_rank]].index();
-    const Gain Costo = _matrix[job_index][cheapest_to_index];
-    cost = std::min(cost, Costo);
+    const Gain cost_to = vehicle.cost(job_index, cheapest_to_index);
+    cost = std::min(cost, cost_to);
   }
 
   return cost;
