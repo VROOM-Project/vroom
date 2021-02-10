@@ -1606,8 +1606,8 @@ Gain LocalSearch<Route,
                  IntraRelocate,
                  IntraOrOpt,
                  PDShift,
-                 RouteExchange>::best_relocate_cost(Index v, Index r) {
-  Gain best_cost = static_cast<Gain>(INFINITE_COST);
+                 RouteExchange>::relocate_cost_lower_bound(Index v, Index r) {
+  Gain best_bound = static_cast<Gain>(INFINITE_COST);
 
   for (std::size_t other_v = 0; other_v < _sol.size(); ++other_v) {
     if (other_v == v or
@@ -1615,10 +1615,10 @@ Gain LocalSearch<Route,
       continue;
     }
 
-    best_cost = std::min(best_cost, job_route_cost(other_v, v, r));
+    best_bound = std::min(best_bound, job_route_cost(other_v, v, r));
   }
 
-  return best_cost;
+  return best_bound;
 }
 
 template <class Route,
@@ -1652,10 +1652,10 @@ Gain LocalSearch<Route,
                  IntraRelocate,
                  IntraOrOpt,
                  PDShift,
-                 RouteExchange>::best_relocate_cost(Index v,
-                                                    Index r1,
-                                                    Index r2) {
-  Gain best_cost = static_cast<Gain>(INFINITE_COST);
+                 RouteExchange>::relocate_cost_lower_bound(Index v,
+                                                           Index r1,
+                                                           Index r2) {
+  Gain best_bound = static_cast<Gain>(INFINITE_COST);
 
   for (std::size_t other_v = 0; other_v < _sol.size(); ++other_v) {
     if (other_v == v or
@@ -1663,12 +1663,12 @@ Gain LocalSearch<Route,
       continue;
     }
 
-    best_cost =
-      std::min(best_cost,
+    best_bound =
+      std::min(best_bound,
                job_route_cost(other_v, v, r1) + job_route_cost(other_v, v, r2));
   }
 
-  return best_cost;
+  return best_bound;
 }
 
 template <class Route,
@@ -1740,7 +1740,8 @@ void LocalSearch<Route,
       bool valid_removal;
 
       if (current_job.type == JOB_TYPE::SINGLE) {
-        current_gain = _sol_state.node_gains[v][r] - best_relocate_cost(v, r);
+        current_gain =
+          _sol_state.node_gains[v][r] - relocate_cost_lower_bound(v, r);
 
         if (current_gain > best_gain) {
           // Only check validity if required.
@@ -1749,8 +1750,8 @@ void LocalSearch<Route,
       } else {
         assert(current_job.type == JOB_TYPE::PICKUP);
         auto delivery_r = _sol_state.matching_delivery_rank[v][r];
-        current_gain =
-          _sol_state.pd_gains[v][r] - best_relocate_cost(v, r, delivery_r);
+        current_gain = _sol_state.pd_gains[v][r] -
+                       relocate_cost_lower_bound(v, r, delivery_r);
 
         if (current_gain > best_gain) {
           // Only check validity if required.
