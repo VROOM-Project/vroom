@@ -45,15 +45,14 @@ private:
   bool _geometry;
   bool _has_jobs;
   bool _has_shipments;
-  Matrix<Cost> _matrix; // TODO remove
   std::unordered_map<std::string, Matrix<Cost>> _matrices;
   std::unordered_set<std::string> _custom_matrices;
   std::vector<Location> _locations;
   std::unordered_map<Location, Index> _locations_to_index;
   std::vector<std::vector<unsigned char>> _vehicle_to_job_compatibility;
   std::vector<std::vector<bool>> _vehicle_to_vehicle_compatibility;
-  std::unordered_set<Index> _matrix_used_index;
-  Index _max_matrix_used_index;
+  std::unordered_set<Index> _matrices_used_index;
+  Index _max_matrices_used_index;
   bool _all_locations_have_coords;
 
   const unsigned _amount_size;
@@ -117,10 +116,6 @@ public:
 
   // Returns true iff both vehicles have common job candidates.
   bool vehicle_ok_with_vehicle(Index v1_index, Index v2_index) const;
-
-  const Matrix<Cost>& get_matrix() const {
-    return _matrix;
-  }
 
   Solution solve(unsigned exploration_level,
                  unsigned nb_thread,

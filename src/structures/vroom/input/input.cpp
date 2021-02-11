@@ -28,7 +28,7 @@ Input::Input(unsigned amount_size, const io::Servers& servers, ROUTER router)
     _geometry(false),
     _has_jobs(false),
     _has_shipments(false),
-    _max_matrix_used_index(0),
+    _max_matrices_used_index(0),
     _all_locations_have_coords(true),
     _amount_size(amount_size),
     _zero(_amount_size),
@@ -148,8 +148,8 @@ void Input::check_job(Job& job) {
     }
   }
 
-  _matrix_used_index.insert(job.index());
-  _max_matrix_used_index = std::max(_max_matrix_used_index, job.index());
+  _matrices_used_index.insert(job.index());
+  _max_matrices_used_index = std::max(_max_matrices_used_index, job.index());
   _all_locations_have_coords =
     _all_locations_have_coords && job.location.has_coordinates();
 }
@@ -259,9 +259,9 @@ void Input::add_vehicle(const Vehicle& vehicle) {
       }
     }
 
-    _matrix_used_index.insert(start_loc.index());
-    _max_matrix_used_index =
-      std::max(_max_matrix_used_index, start_loc.index());
+    _matrices_used_index.insert(start_loc.index());
+    _max_matrices_used_index =
+      std::max(_max_matrices_used_index, start_loc.index());
     _all_locations_have_coords =
       _all_locations_have_coords && start_loc.has_coordinates();
   }
@@ -305,8 +305,9 @@ void Input::add_vehicle(const Vehicle& vehicle) {
       }
     }
 
-    _matrix_used_index.insert(end_loc.index());
-    _max_matrix_used_index = std::max(_max_matrix_used_index, end_loc.index());
+    _matrices_used_index.insert(end_loc.index());
+    _max_matrices_used_index =
+      std::max(_max_matrices_used_index, end_loc.index());
     _all_locations_have_coords =
       _all_locations_have_coords && end_loc.has_coordinates();
   }
@@ -368,8 +369,8 @@ void Input::check_cost_bound() const {
   std::vector<Cost> max_cost_per_line(_matrix.size(), 0);
   std::vector<Cost> max_cost_per_column(_matrix.size(), 0);
 
-  for (const auto i : _matrix_used_index) {
-    for (const auto j : _matrix_used_index) {
+  for (const auto i : _matrices_used_index) {
+    for (const auto j : _matrices_used_index) {
       max_cost_per_line[i] = std::max(max_cost_per_line[i], _matrix[i][j]);
       max_cost_per_column[j] = std::max(max_cost_per_column[j], _matrix[i][j]);
     }
@@ -531,7 +532,7 @@ void Input::set_matrices() {
           // indirection based on order in _locations.
           auto m = (*rw)->get_matrix(_locations);
 
-          Matrix<Cost> full_m(_max_matrix_used_index + 1);
+          Matrix<Cost> full_m(_max_matrices_used_index + 1);
           for (Index i = 0; i < _locations.size(); ++i) {
             const auto& loc_i = _locations[i];
             for (Index j = 0; j < _locations.size(); ++j) {
@@ -546,7 +547,7 @@ void Input::set_matrices() {
 
     auto p_m = _matrices.find(profile);
     assert(p_m != _matrices.end());
-    if (p_m->second.size() <= _max_matrix_used_index) {
+    if (p_m->second.size() <= _max_matrices_used_index) {
       throw Exception(ERROR::INPUT,
                       "location_index exceeding matrix size for " + profile +
                         " profile.");
@@ -573,12 +574,6 @@ Solution Input::solve(unsigned exploration_level,
 
   set_matrices();
   set_vehicles_costs();
-
-  // Use any profile for now.
-  const auto& profile = *(_profiles.begin());
-  auto matrix_search = _matrices.find(profile);
-  assert(matrix_search != _matrices.end());
-  _matrix = matrix_search->second;
 
   // Check for potential overflow in solution cost.
   check_cost_bound();
@@ -734,12 +729,6 @@ Solution Input::check(unsigned nb_thread) {
   // TODO we don't need the whole matrix here.
   set_matrices();
   set_vehicles_costs();
-
-  // Use any profile for now.
-  const auto& profile = *(_profiles.begin());
-  auto matrix_search = _matrices.find(profile);
-  assert(matrix_search != _matrices.end());
-  _matrix = matrix_search->second;
 
   // Check for potential overflow in solution cost.
   check_cost_bound();
