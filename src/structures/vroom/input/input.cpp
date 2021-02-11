@@ -362,17 +362,17 @@ bool Input::vehicle_ok_with_vehicle(Index v1_index, Index v2_index) const {
   return _vehicle_to_vehicle_compatibility[v1_index][v2_index];
 }
 
-void Input::check_cost_bound() const {
+void Input::check_cost_bound(const Matrix<Cost>& matrix) const {
   // Check that we don't have any overflow while computing an upper
   // bound for solution cost.
 
-  std::vector<Cost> max_cost_per_line(_matrix.size(), 0);
-  std::vector<Cost> max_cost_per_column(_matrix.size(), 0);
+  std::vector<Cost> max_cost_per_line(matrix.size(), 0);
+  std::vector<Cost> max_cost_per_column(matrix.size(), 0);
 
   for (const auto i : _matrices_used_index) {
     for (const auto j : _matrices_used_index) {
-      max_cost_per_line[i] = std::max(max_cost_per_line[i], _matrix[i][j]);
-      max_cost_per_column[j] = std::max(max_cost_per_column[j], _matrix[i][j]);
+      max_cost_per_line[i] = std::max(max_cost_per_line[i], matrix[i][j]);
+      max_cost_per_column[j] = std::max(max_cost_per_column[j], matrix[i][j]);
     }
   }
 
@@ -552,6 +552,9 @@ void Input::set_matrices() {
                       "location_index exceeding matrix size for " + profile +
                         " profile.");
     }
+
+    // Check for potential overflow in solution cost.
+    check_cost_bound(p_m->second);
   }
 }
 
@@ -574,9 +577,6 @@ Solution Input::solve(unsigned exploration_level,
 
   set_matrices();
   set_vehicles_costs();
-
-  // Check for potential overflow in solution cost.
-  check_cost_bound();
 
   // Fill vehicle/job compatibility matrices.
   set_skills_compatibility();
@@ -729,9 +729,6 @@ Solution Input::check(unsigned nb_thread) {
   // TODO we don't need the whole matrix here.
   set_matrices();
   set_vehicles_costs();
-
-  // Check for potential overflow in solution cost.
-  check_cost_bound();
 
   // Fill basic skills compatibility matrix.
   set_skills_compatibility();
