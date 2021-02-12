@@ -576,251 +576,261 @@ void LocalSearch<Route,
       }
     }
 
-    // CROSS-exchange stuff
-    for (const auto& s_t : s_t_pairs) {
-      if (s_t.second <= s_t.first or // This operator is symmetric.
-          best_priorities[s_t.first] > 0 or best_priorities[s_t.second] > 0 or
-          _sol[s_t.first].size() < 2 or _sol[s_t.second].size() < 2) {
-        continue;
-      }
+    // // CROSS-exchange stuff
+    // for (const auto& s_t : s_t_pairs) {
+    //   if (s_t.second <= s_t.first or // This operator is symmetric.
+    //       best_priorities[s_t.first] > 0 or best_priorities[s_t.second] > 0
+    //       or _sol[s_t.first].size() < 2 or _sol[s_t.second].size() < 2) {
+    //     continue;
+    //   }
 
-      for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1; ++s_rank) {
-        if (!_input.vehicle_ok_with_job(s_t.second,
-                                        _sol[s_t.first].route[s_rank]) or
-            !_input.vehicle_ok_with_job(s_t.second,
-                                        _sol[s_t.first].route[s_rank + 1])) {
-          continue;
-        }
+    //   for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1;
+    //   ++s_rank) {
+    //     if (!_input.vehicle_ok_with_job(s_t.second,
+    //                                     _sol[s_t.first].route[s_rank]) or
+    //         !_input.vehicle_ok_with_job(s_t.second,
+    //                                     _sol[s_t.first].route[s_rank + 1])) {
+    //       continue;
+    //     }
 
-        const auto& job_s_type =
-          _input.jobs[_sol[s_t.first].route[s_rank]].type;
+    //     const auto& job_s_type =
+    //       _input.jobs[_sol[s_t.first].route[s_rank]].type;
 
-        bool both_s_single =
-          (job_s_type == JOB_TYPE::SINGLE) and
-          (_input.jobs[_sol[s_t.first].route[s_rank + 1]].type ==
-           JOB_TYPE::SINGLE);
+    //     bool both_s_single =
+    //       (job_s_type == JOB_TYPE::SINGLE) and
+    //       (_input.jobs[_sol[s_t.first].route[s_rank + 1]].type ==
+    //        JOB_TYPE::SINGLE);
 
-        bool is_s_pickup =
-          (job_s_type == JOB_TYPE::PICKUP) and
-          (_sol_state.matching_delivery_rank[s_t.first][s_rank] == s_rank + 1);
+    //     bool is_s_pickup =
+    //       (job_s_type == JOB_TYPE::PICKUP) and
+    //       (_sol_state.matching_delivery_rank[s_t.first][s_rank] == s_rank +
+    //       1);
 
-        if (!both_s_single and !is_s_pickup) {
-          continue;
-        }
+    //     if (!both_s_single and !is_s_pickup) {
+    //       continue;
+    //     }
 
-        for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size() - 1;
-             ++t_rank) {
-          if (!_input.vehicle_ok_with_job(s_t.first,
-                                          _sol[s_t.second].route[t_rank]) or
-              !_input.vehicle_ok_with_job(s_t.first,
-                                          _sol[s_t.second].route[t_rank + 1])) {
-            continue;
-          }
+    //     for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size() - 1;
+    //          ++t_rank) {
+    //       if (!_input.vehicle_ok_with_job(s_t.first,
+    //                                       _sol[s_t.second].route[t_rank]) or
+    //           !_input.vehicle_ok_with_job(s_t.first,
+    //                                       _sol[s_t.second].route[t_rank +
+    //                                       1])) {
+    //         continue;
+    //       }
 
-          const auto& job_t_type =
-            _input.jobs[_sol[s_t.second].route[t_rank]].type;
+    //       const auto& job_t_type =
+    //         _input.jobs[_sol[s_t.second].route[t_rank]].type;
 
-          bool both_t_single =
-            (job_t_type == JOB_TYPE::SINGLE) and
-            (_input.jobs[_sol[s_t.second].route[t_rank + 1]].type ==
-             JOB_TYPE::SINGLE);
+    //       bool both_t_single =
+    //         (job_t_type == JOB_TYPE::SINGLE) and
+    //         (_input.jobs[_sol[s_t.second].route[t_rank + 1]].type ==
+    //          JOB_TYPE::SINGLE);
 
-          bool is_t_pickup =
-            (job_t_type == JOB_TYPE::PICKUP) and
-            (_sol_state.matching_delivery_rank[s_t.second][t_rank] ==
-             t_rank + 1);
+    //       bool is_t_pickup =
+    //         (job_t_type == JOB_TYPE::PICKUP) and
+    //         (_sol_state.matching_delivery_rank[s_t.second][t_rank] ==
+    //          t_rank + 1);
 
-          if (!both_t_single and !is_t_pickup) {
-            continue;
-          }
+    //       if (!both_t_single and !is_t_pickup) {
+    //         continue;
+    //       }
 
-          CrossExchange r(_input,
-                          _sol_state,
-                          _sol[s_t.first],
-                          s_t.first,
-                          s_rank,
-                          _sol[s_t.second],
-                          s_t.second,
-                          t_rank,
-                          !is_s_pickup,
-                          !is_t_pickup);
+    //       CrossExchange r(_input,
+    //                       _sol_state,
+    //                       _sol[s_t.first],
+    //                       s_t.first,
+    //                       s_rank,
+    //                       _sol[s_t.second],
+    //                       s_t.second,
+    //                       t_rank,
+    //                       !is_s_pickup,
+    //                       !is_t_pickup);
 
-          auto& current_best = best_gains[s_t.first][s_t.second];
-          if (r.gain_upper_bound() > current_best and r.is_valid() and
-              r.gain() > current_best) {
-            current_best = r.gain();
-            best_ops[s_t.first][s_t.second] =
-              std::make_unique<CrossExchange>(r);
-          }
-        }
-      }
-    }
+    //       auto& current_best = best_gains[s_t.first][s_t.second];
+    //       if (r.gain_upper_bound() > current_best and r.is_valid() and
+    //           r.gain() > current_best) {
+    //         current_best = r.gain();
+    //         best_ops[s_t.first][s_t.second] =
+    //           std::make_unique<CrossExchange>(r);
+    //       }
+    //     }
+    //   }
+    // }
 
-    if (_input.has_jobs()) {
-      // Mixed-exchange stuff
-      for (const auto& s_t : s_t_pairs) {
-        if (s_t.first == s_t.second or best_priorities[s_t.first] > 0 or
-            best_priorities[s_t.second] > 0 or _sol[s_t.first].size() == 0 or
-            _sol[s_t.second].size() < 2) {
-          continue;
-        }
+    // if (_input.has_jobs()) {
+    //   // Mixed-exchange stuff
+    //   for (const auto& s_t : s_t_pairs) {
+    //     if (s_t.first == s_t.second or best_priorities[s_t.first] > 0 or
+    //         best_priorities[s_t.second] > 0 or _sol[s_t.first].size() == 0 or
+    //         _sol[s_t.second].size() < 2) {
+    //       continue;
+    //     }
 
-        for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
-          const auto& s_job_rank = _sol[s_t.first].route[s_rank];
-          if (_input.jobs[s_job_rank].type != JOB_TYPE::SINGLE or
-              !_input.vehicle_ok_with_job(s_t.second, s_job_rank)) {
-            // Don't try moving part of a shipment or an incompatible
-            // job.
-            continue;
-          }
+    //     for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank)
+    //     {
+    //       const auto& s_job_rank = _sol[s_t.first].route[s_rank];
+    //       if (_input.jobs[s_job_rank].type != JOB_TYPE::SINGLE or
+    //           !_input.vehicle_ok_with_job(s_t.second, s_job_rank)) {
+    //         // Don't try moving part of a shipment or an incompatible
+    //         // job.
+    //         continue;
+    //       }
 
-          for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size() - 1;
-               ++t_rank) {
-            if (!_input.vehicle_ok_with_job(s_t.first,
-                                            _sol[s_t.second].route[t_rank]) or
-                !_input
-                   .vehicle_ok_with_job(s_t.first,
-                                        _sol[s_t.second].route[t_rank + 1])) {
-              continue;
-            }
+    //       for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size() - 1;
+    //            ++t_rank) {
+    //         if (!_input.vehicle_ok_with_job(s_t.first,
+    //                                         _sol[s_t.second].route[t_rank])
+    //                                         or
+    //             !_input
+    //                .vehicle_ok_with_job(s_t.first,
+    //                                     _sol[s_t.second].route[t_rank + 1]))
+    //                                     {
+    //           continue;
+    //         }
 
-            const auto& job_t_type =
-              _input.jobs[_sol[s_t.second].route[t_rank]].type;
+    //         const auto& job_t_type =
+    //           _input.jobs[_sol[s_t.second].route[t_rank]].type;
 
-            bool both_t_single =
-              (job_t_type == JOB_TYPE::SINGLE) and
-              (_input.jobs[_sol[s_t.second].route[t_rank + 1]].type ==
-               JOB_TYPE::SINGLE);
+    //         bool both_t_single =
+    //           (job_t_type == JOB_TYPE::SINGLE) and
+    //           (_input.jobs[_sol[s_t.second].route[t_rank + 1]].type ==
+    //            JOB_TYPE::SINGLE);
 
-            bool is_t_pickup =
-              (job_t_type == JOB_TYPE::PICKUP) and
-              (_sol_state.matching_delivery_rank[s_t.second][t_rank] ==
-               t_rank + 1);
+    //         bool is_t_pickup =
+    //           (job_t_type == JOB_TYPE::PICKUP) and
+    //           (_sol_state.matching_delivery_rank[s_t.second][t_rank] ==
+    //            t_rank + 1);
 
-            if (!both_t_single and !is_t_pickup) {
-              continue;
-            }
+    //         if (!both_t_single and !is_t_pickup) {
+    //           continue;
+    //         }
 
-            MixedExchange r(_input,
-                            _sol_state,
-                            _sol[s_t.first],
-                            s_t.first,
-                            s_rank,
-                            _sol[s_t.second],
-                            s_t.second,
-                            t_rank,
-                            !is_t_pickup);
+    //         MixedExchange r(_input,
+    //                         _sol_state,
+    //                         _sol[s_t.first],
+    //                         s_t.first,
+    //                         s_rank,
+    //                         _sol[s_t.second],
+    //                         s_t.second,
+    //                         t_rank,
+    //                         !is_t_pickup);
 
-            auto& current_best = best_gains[s_t.first][s_t.second];
-            if (r.gain_upper_bound() > current_best and r.is_valid() and
-                r.gain() > current_best) {
-              current_best = r.gain();
-              best_ops[s_t.first][s_t.second] =
-                std::make_unique<MixedExchange>(r);
-            }
-          }
-        }
-      }
-    }
+    //         auto& current_best = best_gains[s_t.first][s_t.second];
+    //         if (r.gain_upper_bound() > current_best and r.is_valid() and
+    //             r.gain() > current_best) {
+    //           current_best = r.gain();
+    //           best_ops[s_t.first][s_t.second] =
+    //             std::make_unique<MixedExchange>(r);
+    //         }
+    //       }
+    //     }
+    //   }
+    // }
 
-    // 2-opt* stuff
-    for (const auto& s_t : s_t_pairs) {
-      if (s_t.second <= s_t.first or // This operator is symmetric.
-          best_priorities[s_t.first] > 0 or best_priorities[s_t.second] > 0) {
-        continue;
-      }
+    // // 2-opt* stuff
+    // for (const auto& s_t : s_t_pairs) {
+    //   if (s_t.second <= s_t.first or // This operator is symmetric.
+    //       best_priorities[s_t.first] > 0 or best_priorities[s_t.second] > 0)
+    //       {
+    //     continue;
+    //   }
 
-      // Determine first ranks for inner loops based on vehicles/jobs
-      // compatibility along the routes.
-      unsigned first_s_rank = 0;
-      const auto first_s_candidate =
-        _sol_state.bwd_skill_rank[s_t.first][s_t.second];
-      if (first_s_candidate > 0) {
-        first_s_rank = first_s_candidate - 1;
-      }
+    //   // Determine first ranks for inner loops based on vehicles/jobs
+    //   // compatibility along the routes.
+    //   unsigned first_s_rank = 0;
+    //   const auto first_s_candidate =
+    //     _sol_state.bwd_skill_rank[s_t.first][s_t.second];
+    //   if (first_s_candidate > 0) {
+    //     first_s_rank = first_s_candidate - 1;
+    //   }
 
-      int first_t_rank = 0;
-      const auto first_t_candidate =
-        _sol_state.bwd_skill_rank[s_t.second][s_t.first];
-      if (first_t_candidate > 0) {
-        first_t_rank = first_t_candidate - 1;
-      }
+    //   int first_t_rank = 0;
+    //   const auto first_t_candidate =
+    //     _sol_state.bwd_skill_rank[s_t.second][s_t.first];
+    //   if (first_t_candidate > 0) {
+    //     first_t_rank = first_t_candidate - 1;
+    //   }
 
-      for (unsigned s_rank = first_s_rank; s_rank < _sol[s_t.first].size();
-           ++s_rank) {
-        if (_sol[s_t.first].has_pending_delivery_after_rank(s_rank)) {
-          continue;
-        }
+    //   for (unsigned s_rank = first_s_rank; s_rank < _sol[s_t.first].size();
+    //        ++s_rank) {
+    //     if (_sol[s_t.first].has_pending_delivery_after_rank(s_rank)) {
+    //       continue;
+    //     }
 
-        for (int t_rank = _sol[s_t.second].size() - 1; t_rank >= first_t_rank;
-             --t_rank) {
-          if (_sol[s_t.second].has_pending_delivery_after_rank(t_rank)) {
-            continue;
-          }
+    //     for (int t_rank = _sol[s_t.second].size() - 1; t_rank >=
+    //     first_t_rank;
+    //          --t_rank) {
+    //       if (_sol[s_t.second].has_pending_delivery_after_rank(t_rank)) {
+    //         continue;
+    //       }
 
-          TwoOpt r(_input,
-                   _sol_state,
-                   _sol[s_t.first],
-                   s_t.first,
-                   s_rank,
-                   _sol[s_t.second],
-                   s_t.second,
-                   t_rank);
+    //       TwoOpt r(_input,
+    //                _sol_state,
+    //                _sol[s_t.first],
+    //                s_t.first,
+    //                s_rank,
+    //                _sol[s_t.second],
+    //                s_t.second,
+    //                t_rank);
 
-          if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid()) {
-            best_gains[s_t.first][s_t.second] = r.gain();
-            best_ops[s_t.first][s_t.second] = std::make_unique<TwoOpt>(r);
-          }
-        }
-      }
-    }
+    //       if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid())
+    //       {
+    //         best_gains[s_t.first][s_t.second] = r.gain();
+    //         best_ops[s_t.first][s_t.second] = std::make_unique<TwoOpt>(r);
+    //       }
+    //     }
+    //   }
+    // }
 
-    // Reverse 2-opt* stuff
-    for (const auto& s_t : s_t_pairs) {
-      if (s_t.first == s_t.second or best_priorities[s_t.first] > 0 or
-          best_priorities[s_t.second] > 0) {
-        continue;
-      }
+    // // Reverse 2-opt* stuff
+    // for (const auto& s_t : s_t_pairs) {
+    //   if (s_t.first == s_t.second or best_priorities[s_t.first] > 0 or
+    //       best_priorities[s_t.second] > 0) {
+    //     continue;
+    //   }
 
-      // Determine first rank for inner loop based on vehicles/jobs
-      // compatibility along the routes.
-      unsigned first_s_rank = 0;
-      const auto first_s_candidate =
-        _sol_state.bwd_skill_rank[s_t.first][s_t.second];
-      if (first_s_candidate > 0) {
-        first_s_rank = first_s_candidate - 1;
-      }
+    //   // Determine first rank for inner loop based on vehicles/jobs
+    //   // compatibility along the routes.
+    //   unsigned first_s_rank = 0;
+    //   const auto first_s_candidate =
+    //     _sol_state.bwd_skill_rank[s_t.first][s_t.second];
+    //   if (first_s_candidate > 0) {
+    //     first_s_rank = first_s_candidate - 1;
+    //   }
 
-      for (unsigned s_rank = first_s_rank; s_rank < _sol[s_t.first].size();
-           ++s_rank) {
-        if (_sol[s_t.first].has_delivery_after_rank(s_rank)) {
-          continue;
-        }
+    //   for (unsigned s_rank = first_s_rank; s_rank < _sol[s_t.first].size();
+    //        ++s_rank) {
+    //     if (_sol[s_t.first].has_delivery_after_rank(s_rank)) {
+    //       continue;
+    //     }
 
-        for (unsigned t_rank = 0;
-             t_rank < _sol_state.fwd_skill_rank[s_t.second][s_t.first];
-             ++t_rank) {
-          if (_sol[s_t.second].has_pickup_up_to_rank(t_rank)) {
-            continue;
-          }
+    //     for (unsigned t_rank = 0;
+    //          t_rank < _sol_state.fwd_skill_rank[s_t.second][s_t.first];
+    //          ++t_rank) {
+    //       if (_sol[s_t.second].has_pickup_up_to_rank(t_rank)) {
+    //         continue;
+    //       }
 
-          ReverseTwoOpt r(_input,
-                          _sol_state,
-                          _sol[s_t.first],
-                          s_t.first,
-                          s_rank,
-                          _sol[s_t.second],
-                          s_t.second,
-                          t_rank);
+    //       ReverseTwoOpt r(_input,
+    //                       _sol_state,
+    //                       _sol[s_t.first],
+    //                       s_t.first,
+    //                       s_rank,
+    //                       _sol[s_t.second],
+    //                       s_t.second,
+    //                       t_rank);
 
-          if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid()) {
-            best_gains[s_t.first][s_t.second] = r.gain();
-            best_ops[s_t.first][s_t.second] =
-              std::make_unique<ReverseTwoOpt>(r);
-          }
-        }
-      }
-    }
+    //       if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid())
+    //       {
+    //         best_gains[s_t.first][s_t.second] = r.gain();
+    //         best_ops[s_t.first][s_t.second] =
+    //           std::make_unique<ReverseTwoOpt>(r);
+    //       }
+    //     }
+    //   }
+    // }
 
     if (_input.has_jobs()) {
       // Move(s) that don't make sense for shipment-only instances.
@@ -867,59 +877,60 @@ void LocalSearch<Route,
         }
       }
 
-      // Or-opt stuff
-      for (const auto& s_t : s_t_pairs) {
-        if (s_t.first == s_t.second or best_priorities[s_t.first] > 0 or
-            best_priorities[s_t.second] > 0 or _sol[s_t.first].size() < 2) {
-          continue;
-        }
+      // // Or-opt stuff
+      // for (const auto& s_t : s_t_pairs) {
+      //   if (s_t.first == s_t.second or best_priorities[s_t.first] > 0 or
+      //       best_priorities[s_t.second] > 0 or _sol[s_t.first].size() < 2) {
+      //     continue;
+      //   }
 
-        for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1;
-             ++s_rank) {
-          if (_sol_state.edge_gains[s_t.first][s_rank] <=
-              best_gains[s_t.first][s_t.second]) {
-            // Except if addition cost in route s_t.second is negative
-            // (!!), overall gain can't exceed current known best gain.
-            continue;
-          }
+      //   for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1;
+      //        ++s_rank) {
+      //     if (_sol_state.edge_gains[s_t.first][s_rank] <=
+      //         best_gains[s_t.first][s_t.second]) {
+      //       // Except if addition cost in route s_t.second is negative
+      //       // (!!), overall gain can't exceed current known best gain.
+      //       continue;
+      //     }
 
-          if (!_input.vehicle_ok_with_job(s_t.second,
-                                          _sol[s_t.first].route[s_rank]) or
-              !_input.vehicle_ok_with_job(s_t.second,
-                                          _sol[s_t.first].route[s_rank + 1])) {
-            continue;
-          }
+      //     if (!_input.vehicle_ok_with_job(s_t.second,
+      //                                     _sol[s_t.first].route[s_rank]) or
+      //         !_input.vehicle_ok_with_job(s_t.second,
+      //                                     _sol[s_t.first].route[s_rank + 1]))
+      //                                     {
+      //       continue;
+      //     }
 
-          if (_input.jobs[_sol[s_t.first].route[s_rank]].type !=
-                JOB_TYPE::SINGLE or
-              _input.jobs[_sol[s_t.first].route[s_rank + 1]].type !=
-                JOB_TYPE::SINGLE) {
-            // Don't try moving part of a shipment. Moving a full
-            // shipment as an edge is not tested because it's a
-            // special case of PDShift.
-            continue;
-          }
+      //     if (_input.jobs[_sol[s_t.first].route[s_rank]].type !=
+      //           JOB_TYPE::SINGLE or
+      //         _input.jobs[_sol[s_t.first].route[s_rank + 1]].type !=
+      //           JOB_TYPE::SINGLE) {
+      //       // Don't try moving part of a shipment. Moving a full
+      //       // shipment as an edge is not tested because it's a
+      //       // special case of PDShift.
+      //       continue;
+      //     }
 
-          for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size();
-               ++t_rank) {
-            OrOpt r(_input,
-                    _sol_state,
-                    _sol[s_t.first],
-                    s_t.first,
-                    s_rank,
-                    _sol[s_t.second],
-                    s_t.second,
-                    t_rank);
+      //     for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size();
+      //          ++t_rank) {
+      //       OrOpt r(_input,
+      //               _sol_state,
+      //               _sol[s_t.first],
+      //               s_t.first,
+      //               s_rank,
+      //               _sol[s_t.second],
+      //               s_t.second,
+      //               t_rank);
 
-            auto& current_best = best_gains[s_t.first][s_t.second];
-            if (r.gain_upper_bound() > current_best and r.is_valid() and
-                r.gain() > current_best) {
-              current_best = r.gain();
-              best_ops[s_t.first][s_t.second] = std::make_unique<OrOpt>(r);
-            }
-          }
-        }
-      }
+      //       auto& current_best = best_gains[s_t.first][s_t.second];
+      //       if (r.gain_upper_bound() > current_best and r.is_valid() and
+      //           r.gain() > current_best) {
+      //         current_best = r.gain();
+      //         best_ops[s_t.first][s_t.second] = std::make_unique<OrOpt>(r);
+      //       }
+      //     }
+      //   }
+      // }
     }
 
     // Operators applied to a single route.
@@ -1190,60 +1201,60 @@ void LocalSearch<Route,
       }
     }
 
-    if (_input.has_shipments()) {
-      // Move(s) that don't make sense for job-only instances.
+    // if (_input.has_shipments()) {
+    //   // Move(s) that don't make sense for job-only instances.
 
-      // P&D relocate stuff
-      for (const auto& s_t : s_t_pairs) {
-        if (s_t.first == s_t.second or best_priorities[s_t.first] > 0 or
-            best_priorities[s_t.second] > 0 or _sol[s_t.first].size() == 0) {
-          // Don't try to put things from an empty vehicle.
-          continue;
-        }
+    //   // P&D relocate stuff
+    //   for (const auto& s_t : s_t_pairs) {
+    //     if (s_t.first == s_t.second or best_priorities[s_t.first] > 0 or
+    //         best_priorities[s_t.second] > 0 or _sol[s_t.first].size() == 0) {
+    //       // Don't try to put things from an empty vehicle.
+    //       continue;
+    //     }
 
-        for (unsigned s_p_rank = 0; s_p_rank < _sol[s_t.first].size();
-             ++s_p_rank) {
-          if (_input.jobs[_sol[s_t.first].route[s_p_rank]].type !=
-              JOB_TYPE::PICKUP) {
-            continue;
-          }
+    //     for (unsigned s_p_rank = 0; s_p_rank < _sol[s_t.first].size();
+    //          ++s_p_rank) {
+    //       if (_input.jobs[_sol[s_t.first].route[s_p_rank]].type !=
+    //           JOB_TYPE::PICKUP) {
+    //         continue;
+    //       }
 
-          // Matching delivery rank in source route.
-          unsigned s_d_rank =
-            _sol_state.matching_delivery_rank[s_t.first][s_p_rank];
+    //       // Matching delivery rank in source route.
+    //       unsigned s_d_rank =
+    //         _sol_state.matching_delivery_rank[s_t.first][s_p_rank];
 
-          if (!_input.vehicle_ok_with_job(s_t.second,
-                                          _sol[s_t.first].route[s_p_rank]) or
-              !_input.vehicle_ok_with_job(s_t.second,
-                                          _sol[s_t.first].route[s_d_rank])) {
-            continue;
-          }
+    //       if (!_input.vehicle_ok_with_job(s_t.second,
+    //                                       _sol[s_t.first].route[s_p_rank]) or
+    //           !_input.vehicle_ok_with_job(s_t.second,
+    //                                       _sol[s_t.first].route[s_d_rank])) {
+    //         continue;
+    //       }
 
-          if (_sol_state.pd_gains[s_t.first][s_p_rank] <=
-              best_gains[s_t.first][s_t.second]) {
-            // Except if addition cost in route s_t.second is negative
-            // (!!), overall gain can't exceed current known best gain.
-            continue;
-          }
+    //       if (_sol_state.pd_gains[s_t.first][s_p_rank] <=
+    //           best_gains[s_t.first][s_t.second]) {
+    //         // Except if addition cost in route s_t.second is negative
+    //         // (!!), overall gain can't exceed current known best gain.
+    //         continue;
+    //       }
 
-          PDShift pdr(_input,
-                      _sol_state,
-                      _sol[s_t.first],
-                      s_t.first,
-                      s_p_rank,
-                      s_d_rank,
-                      _sol[s_t.second],
-                      s_t.second,
-                      best_gains[s_t.first][s_t.second]);
+    //       PDShift pdr(_input,
+    //                   _sol_state,
+    //                   _sol[s_t.first],
+    //                   s_t.first,
+    //                   s_p_rank,
+    //                   s_d_rank,
+    //                   _sol[s_t.second],
+    //                   s_t.second,
+    //                   best_gains[s_t.first][s_t.second]);
 
-          if (pdr.gain() > best_gains[s_t.first][s_t.second] and
-              pdr.is_valid()) {
-            best_gains[s_t.first][s_t.second] = pdr.gain();
-            best_ops[s_t.first][s_t.second] = std::make_unique<PDShift>(pdr);
-          }
-        }
-      }
-    }
+    //       if (pdr.gain() > best_gains[s_t.first][s_t.second] and
+    //           pdr.is_valid()) {
+    //         best_gains[s_t.first][s_t.second] = pdr.gain();
+    //         best_ops[s_t.first][s_t.second] = std::make_unique<PDShift>(pdr);
+    //       }
+    //     }
+    //   }
+    // }
 
     if (!_input.has_homogeneous_locations() or
         !_input.has_homogeneous_profiles()) {
