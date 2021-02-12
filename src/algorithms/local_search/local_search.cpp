@@ -659,75 +659,72 @@ void LocalSearch<Route,
     //   }
     // }
 
-    // if (_input.has_jobs()) {
-    //   // Mixed-exchange stuff
-    //   for (const auto& s_t : s_t_pairs) {
-    //     if (s_t.first == s_t.second or best_priorities[s_t.first] > 0 or
-    //         best_priorities[s_t.second] > 0 or _sol[s_t.first].size() == 0 or
-    //         _sol[s_t.second].size() < 2) {
-    //       continue;
-    //     }
+    if (_input.has_jobs()) {
+      // Mixed-exchange stuff
+      for (const auto& s_t : s_t_pairs) {
+        if (s_t.first == s_t.second or best_priorities[s_t.first] > 0 or
+            best_priorities[s_t.second] > 0 or _sol[s_t.first].size() == 0 or
+            _sol[s_t.second].size() < 2) {
+          continue;
+        }
 
-    //     for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank)
-    //     {
-    //       const auto& s_job_rank = _sol[s_t.first].route[s_rank];
-    //       if (_input.jobs[s_job_rank].type != JOB_TYPE::SINGLE or
-    //           !_input.vehicle_ok_with_job(s_t.second, s_job_rank)) {
-    //         // Don't try moving part of a shipment or an incompatible
-    //         // job.
-    //         continue;
-    //       }
+        for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
+          const auto& s_job_rank = _sol[s_t.first].route[s_rank];
+          if (_input.jobs[s_job_rank].type != JOB_TYPE::SINGLE or
+              !_input.vehicle_ok_with_job(s_t.second, s_job_rank)) {
+            // Don't try moving part of a shipment or an incompatible
+            // job.
+            continue;
+          }
 
-    //       for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size() - 1;
-    //            ++t_rank) {
-    //         if (!_input.vehicle_ok_with_job(s_t.first,
-    //                                         _sol[s_t.second].route[t_rank])
-    //                                         or
-    //             !_input
-    //                .vehicle_ok_with_job(s_t.first,
-    //                                     _sol[s_t.second].route[t_rank + 1]))
-    //                                     {
-    //           continue;
-    //         }
+          for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size() - 1;
+               ++t_rank) {
+            if (!_input.vehicle_ok_with_job(s_t.first,
+                                            _sol[s_t.second].route[t_rank]) or
+                !_input
+                   .vehicle_ok_with_job(s_t.first,
+                                        _sol[s_t.second].route[t_rank + 1])) {
+              continue;
+            }
 
-    //         const auto& job_t_type =
-    //           _input.jobs[_sol[s_t.second].route[t_rank]].type;
+            const auto& job_t_type =
+              _input.jobs[_sol[s_t.second].route[t_rank]].type;
 
-    //         bool both_t_single =
-    //           (job_t_type == JOB_TYPE::SINGLE) and
-    //           (_input.jobs[_sol[s_t.second].route[t_rank + 1]].type ==
-    //            JOB_TYPE::SINGLE);
+            bool both_t_single =
+              (job_t_type == JOB_TYPE::SINGLE) and
+              (_input.jobs[_sol[s_t.second].route[t_rank + 1]].type ==
+               JOB_TYPE::SINGLE);
 
-    //         bool is_t_pickup =
-    //           (job_t_type == JOB_TYPE::PICKUP) and
-    //           (_sol_state.matching_delivery_rank[s_t.second][t_rank] ==
-    //            t_rank + 1);
+            bool is_t_pickup =
+              (job_t_type == JOB_TYPE::PICKUP) and
+              (_sol_state.matching_delivery_rank[s_t.second][t_rank] ==
+               t_rank + 1);
 
-    //         if (!both_t_single and !is_t_pickup) {
-    //           continue;
-    //         }
+            if (!both_t_single and !is_t_pickup) {
+              continue;
+            }
 
-    //         MixedExchange r(_input,
-    //                         _sol_state,
-    //                         _sol[s_t.first],
-    //                         s_t.first,
-    //                         s_rank,
-    //                         _sol[s_t.second],
-    //                         s_t.second,
-    //                         t_rank,
-    //                         !is_t_pickup);
+            MixedExchange r(_input,
+                            _sol_state,
+                            _sol[s_t.first],
+                            s_t.first,
+                            s_rank,
+                            _sol[s_t.second],
+                            s_t.second,
+                            t_rank,
+                            !is_t_pickup);
 
-    //         auto& current_best = best_gains[s_t.first][s_t.second];
-    //         if (r.gain_upper_bound() > current_best and r.is_valid() and
-    //             r.gain() > current_best) {
-    //           current_best = r.gain();
-    //           best_ops[s_t.first][s_t.second] =
-    //             std::make_unique<MixedExchange>(r);
-    //         }
-    //       }
-    //     }
-    //   }
-    // }
+            auto& current_best = best_gains[s_t.first][s_t.second];
+            if (r.gain_upper_bound() > current_best and r.is_valid() and
+                r.gain() > current_best) {
+              current_best = r.gain();
+              best_ops[s_t.first][s_t.second] =
+                std::make_unique<MixedExchange>(r);
+            }
+          }
+        }
+      }
+    }
 
     // // 2-opt* stuff
     // for (const auto& s_t : s_t_pairs) {
