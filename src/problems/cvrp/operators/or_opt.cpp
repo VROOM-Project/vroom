@@ -42,6 +42,7 @@ OrOpt::OrOpt(const Input& input,
 }
 
 Gain OrOpt::gain_upper_bound() {
+  const auto& s_v = _input.vehicles[s_vehicle];
   const auto& t_v = _input.vehicles[t_vehicle];
 
   // For source vehicle, we consider the cost of removing edge
@@ -105,16 +106,16 @@ Gain OrOpt::gain_upper_bound() {
     }
   }
 
-  // Gain for source vehicle.
-  _s_gain = _sol_state.edge_gains[s_vehicle][s_rank];
+  // Gain for source vehicle, including cost of moved edge.
+  _s_gain =
+    _sol_state.edge_gains[s_vehicle][s_rank] + s_v.cost(s_index, after_s_index);
 
-  // Gain for target vehicle.
-  _normal_t_gain = old_edge_cost - previous_cost - next_cost;
+  // Gain for target vehicle, including cost of moved edge.
+  _normal_t_gain = old_edge_cost - previous_cost - next_cost -
+                   t_v.cost(s_index, after_s_index);
 
-  Gain reverse_edge_cost = static_cast<Gain>(t_v.cost(s_index, after_s_index)) -
-                           static_cast<Gain>(t_v.cost(after_s_index, s_index));
-  _reversed_t_gain = old_edge_cost + reverse_edge_cost - reverse_previous_cost -
-                     reverse_next_cost;
+  _reversed_t_gain = old_edge_cost - reverse_previous_cost - reverse_next_cost -
+                     t_v.cost(after_s_index, s_index);
 
   _gain_upper_bound_computed = true;
 

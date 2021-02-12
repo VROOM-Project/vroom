@@ -877,60 +877,59 @@ void LocalSearch<Route,
         }
       }
 
-      // // Or-opt stuff
-      // for (const auto& s_t : s_t_pairs) {
-      //   if (s_t.first == s_t.second or best_priorities[s_t.first] > 0 or
-      //       best_priorities[s_t.second] > 0 or _sol[s_t.first].size() < 2) {
-      //     continue;
-      //   }
+      // Or-opt stuff
+      for (const auto& s_t : s_t_pairs) {
+        if (s_t.first == s_t.second or best_priorities[s_t.first] > 0 or
+            best_priorities[s_t.second] > 0 or _sol[s_t.first].size() < 2) {
+          continue;
+        }
 
-      //   for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1;
-      //        ++s_rank) {
-      //     if (_sol_state.edge_gains[s_t.first][s_rank] <=
-      //         best_gains[s_t.first][s_t.second]) {
-      //       // Except if addition cost in route s_t.second is negative
-      //       // (!!), overall gain can't exceed current known best gain.
-      //       continue;
-      //     }
+        for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1;
+             ++s_rank) {
+          if (_sol_state.edge_gains[s_t.first][s_rank] <=
+              best_gains[s_t.first][s_t.second]) {
+            // Except if addition cost in route s_t.second is negative
+            // (!!), overall gain can't exceed current known best gain.
+            continue;
+          }
 
-      //     if (!_input.vehicle_ok_with_job(s_t.second,
-      //                                     _sol[s_t.first].route[s_rank]) or
-      //         !_input.vehicle_ok_with_job(s_t.second,
-      //                                     _sol[s_t.first].route[s_rank + 1]))
-      //                                     {
-      //       continue;
-      //     }
+          if (!_input.vehicle_ok_with_job(s_t.second,
+                                          _sol[s_t.first].route[s_rank]) or
+              !_input.vehicle_ok_with_job(s_t.second,
+                                          _sol[s_t.first].route[s_rank + 1])) {
+            continue;
+          }
 
-      //     if (_input.jobs[_sol[s_t.first].route[s_rank]].type !=
-      //           JOB_TYPE::SINGLE or
-      //         _input.jobs[_sol[s_t.first].route[s_rank + 1]].type !=
-      //           JOB_TYPE::SINGLE) {
-      //       // Don't try moving part of a shipment. Moving a full
-      //       // shipment as an edge is not tested because it's a
-      //       // special case of PDShift.
-      //       continue;
-      //     }
+          if (_input.jobs[_sol[s_t.first].route[s_rank]].type !=
+                JOB_TYPE::SINGLE or
+              _input.jobs[_sol[s_t.first].route[s_rank + 1]].type !=
+                JOB_TYPE::SINGLE) {
+            // Don't try moving part of a shipment. Moving a full
+            // shipment as an edge is not tested because it's a
+            // special case of PDShift.
+            continue;
+          }
 
-      //     for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size();
-      //          ++t_rank) {
-      //       OrOpt r(_input,
-      //               _sol_state,
-      //               _sol[s_t.first],
-      //               s_t.first,
-      //               s_rank,
-      //               _sol[s_t.second],
-      //               s_t.second,
-      //               t_rank);
+          for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size();
+               ++t_rank) {
+            OrOpt r(_input,
+                    _sol_state,
+                    _sol[s_t.first],
+                    s_t.first,
+                    s_rank,
+                    _sol[s_t.second],
+                    s_t.second,
+                    t_rank);
 
-      //       auto& current_best = best_gains[s_t.first][s_t.second];
-      //       if (r.gain_upper_bound() > current_best and r.is_valid() and
-      //           r.gain() > current_best) {
-      //         current_best = r.gain();
-      //         best_ops[s_t.first][s_t.second] = std::make_unique<OrOpt>(r);
-      //       }
-      //     }
-      //   }
-      // }
+            auto& current_best = best_gains[s_t.first][s_t.second];
+            if (r.gain_upper_bound() > current_best and r.is_valid() and
+                r.gain() > current_best) {
+              current_best = r.gain();
+              best_ops[s_t.first][s_t.second] = std::make_unique<OrOpt>(r);
+            }
+          }
+        }
+      }
     }
 
     // Operators applied to a single route.
