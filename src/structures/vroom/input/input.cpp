@@ -25,6 +25,7 @@ Input::Input(unsigned amount_size, const io::Servers& servers, ROUTER router)
     _no_addition_yet(true),
     _has_TW(false),
     _homogeneous_locations(true),
+    _homogeneous_profiles(true),
     _geometry(false),
     _has_jobs(false),
     _has_shipments(false),
@@ -332,6 +333,8 @@ void Input::add_vehicle(const Vehicle& vehicle) {
     _homogeneous_locations =
       _homogeneous_locations &&
       vehicles.front().has_same_locations(vehicles.back());
+    _homogeneous_profiles = _homogeneous_profiles &&
+                            vehicles.front().has_same_profile(vehicles.back());
   }
 
   _profiles.insert(current_v.profile);
@@ -356,6 +359,10 @@ bool Input::has_shipments() const {
 
 bool Input::has_homogeneous_locations() const {
   return _homogeneous_locations;
+}
+
+bool Input::has_homogeneous_profiles() const {
+  return _homogeneous_profiles;
 }
 
 bool Input::vehicle_ok_with_vehicle(Index v1_index, Index v2_index) const {

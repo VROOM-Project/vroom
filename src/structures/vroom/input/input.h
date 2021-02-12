@@ -42,6 +42,7 @@ private:
   bool _has_TW;
   bool _has_custom_location_index;
   bool _homogeneous_locations;
+  bool _homogeneous_profiles;
   bool _geometry;
   bool _has_jobs;
   bool _has_shipments;
@@ -109,6 +110,8 @@ public:
   bool has_shipments() const;
 
   bool has_homogeneous_locations() const;
+
+  bool has_homogeneous_profiles() const;
 
   bool vehicle_ok_with_job(size_t v_index, size_t j_index) const {
     return (bool)_vehicle_to_job_compatibility[v_index][j_index];
