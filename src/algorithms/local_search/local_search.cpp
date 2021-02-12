@@ -1245,7 +1245,8 @@ void LocalSearch<Route,
       }
     }
 
-    if (!_input.has_homogeneous_locations()) {
+    if (!_input.has_homogeneous_locations() or
+        !_input.has_homogeneous_profiles()) {
       // Route exchange stuff
       for (const auto& s_t : s_t_pairs) {
         if (s_t.second <= s_t.first or best_priorities[s_t.first] > 0 or
