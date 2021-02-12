@@ -104,4 +104,10 @@ bool Vehicle::has_same_locations(const Vehicle& other) const {
   return same;
 }
 
+bool Vehicle::has_same_profile(const Vehicle& other) const {
+  return (this->profile == other.profile) and
+         (this->cost_wrapper.durations_factor ==
+          other.cost_wrapper.durations_factor);
+}
+
 } // namespace vroom

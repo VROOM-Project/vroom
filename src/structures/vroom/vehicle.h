@@ -56,6 +56,8 @@ struct Vehicle {
 
   bool has_same_locations(const Vehicle& other) const;
 
+  bool has_same_profile(const Vehicle& other) const;
+
   Cost duration(Index i, Index j) const {
     return static_cast<Cost>(
       cost_wrapper.durations_factor *
