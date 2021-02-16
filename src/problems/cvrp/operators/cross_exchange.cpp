@@ -115,18 +115,17 @@ Gain CrossExchange::gain_upper_bound() {
     reverse_next_cost = s_v.cost(t_index, n_index);
   }
 
-  _normal_s_gain = _sol_state.edge_costs_around_edge[s_vehicle][s_rank] -
-                   previous_cost - next_cost;
+  _normal_s_gain = _sol_state.edge_costs_around_edge[s_vehicle][s_rank] +
+                   s_v.cost(s_index, s_after_index) - previous_cost -
+                   next_cost - s_v.cost(t_index, t_after_index);
 
   auto s_gain_upper_bound = _normal_s_gain;
 
   if (check_t_reverse) {
-    Gain reverse_edge_cost =
-      static_cast<Gain>(s_v.cost(t_index, t_after_index)) -
-      static_cast<Gain>(s_v.cost(t_after_index, t_index));
     _reversed_s_gain = _sol_state.edge_costs_around_edge[s_vehicle][s_rank] +
-                       reverse_edge_cost - reverse_previous_cost -
-                       reverse_next_cost;
+                       s_v.cost(s_index, s_after_index) -
+                       reverse_previous_cost - reverse_next_cost -
+                       s_v.cost(t_after_index, t_index);
 
     s_gain_upper_bound = std::max(_normal_s_gain, _reversed_s_gain);
   }
@@ -164,18 +163,17 @@ Gain CrossExchange::gain_upper_bound() {
     reverse_next_cost = t_v.cost(s_index, n_index);
   }
 
-  _normal_t_gain = _sol_state.edge_costs_around_edge[t_vehicle][t_rank] -
-                   previous_cost - next_cost;
+  _normal_t_gain = _sol_state.edge_costs_around_edge[t_vehicle][t_rank] +
+                   t_v.cost(t_index, t_after_index) - previous_cost -
+                   next_cost - t_v.cost(s_index, s_after_index);
 
   auto t_gain_upper_bound = _normal_t_gain;
 
   if (check_s_reverse) {
-    Gain reverse_edge_cost =
-      static_cast<Gain>(t_v.cost(s_index, s_after_index)) -
-      static_cast<Gain>(t_v.cost(s_after_index, s_index));
     _reversed_t_gain = _sol_state.edge_costs_around_edge[t_vehicle][t_rank] +
-                       reverse_edge_cost - reverse_previous_cost -
-                       reverse_next_cost;
+                       t_v.cost(t_index, t_after_index) -
+                       reverse_previous_cost - reverse_next_cost -
+                       t_v.cost(s_after_index, s_index);
 
     t_gain_upper_bound = std::max(_normal_t_gain, _reversed_t_gain);
   }
