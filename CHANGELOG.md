@@ -5,6 +5,7 @@
 ### Changed
 
 - Formatting script updated to use version 10 of clang-format (#452)
+- vroom will now read json input from stdin if no other input is specified (#457)
 
 ### Fixed
 
