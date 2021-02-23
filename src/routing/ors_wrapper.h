@@ -24,6 +24,12 @@ private:
   virtual void parse_response(rapidjson::Document& json_result,
                               const std::string& json_content) const override;
 
+  virtual bool
+  duration_value_is_null(const rapidjson::Value& matrix_entry) const override;
+
+  virtual Cost
+  get_duration_value(const rapidjson::Value& matrix_entry) const override;
+
   virtual double
   get_total_distance(const rapidjson::Value& route) const override;
 

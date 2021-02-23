@@ -1,5 +1,5 @@
-#ifndef OSRM_ROUTED_WRAPPER_H
-#define OSRM_ROUTED_WRAPPER_H
+#ifndef VALHALLA_WRAPPER_H
+#define VALHALLA_WRAPPER_H
 
 /*
 
@@ -15,13 +15,13 @@ All rights reserved (see LICENSE).
 namespace vroom {
 namespace routing {
 
-class OsrmRoutedWrapper : public HttpWrapper {
+class ValhallaWrapper : public HttpWrapper {
 private:
   virtual std::string build_query(const std::vector<Location>& locations,
                                   const std::string& service,
                                   const std::string& extra_args) const override;
 
-  virtual void parse_response(rapidjson::Document& json_result,
+  virtual void parse_response(rapidjson::Document& input,
                               const std::string& json_content) const override;
 
   virtual bool
@@ -40,7 +40,7 @@ private:
                                       rapidjson::SizeType i) const override;
 
 public:
-  OsrmRoutedWrapper(const std::string& profile, const Server& server);
+  ValhallaWrapper(const std::string& profile, const Server& server);
 };
 
 } // namespace routing

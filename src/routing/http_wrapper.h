@@ -51,6 +51,12 @@ protected:
   virtual Matrix<Cost>
   get_matrix(const std::vector<Location>& locs) const override;
 
+  virtual bool
+  duration_value_is_null(const rapidjson::Value& matrix_entry) const = 0;
+
+  virtual Cost
+  get_duration_value(const rapidjson::Value& matrix_entry) const = 0;
+
   virtual double get_total_distance(const rapidjson::Value& route) const = 0;
 
   virtual unsigned get_legs_number(const rapidjson::Value& route) const = 0;

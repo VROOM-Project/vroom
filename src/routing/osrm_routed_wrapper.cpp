@@ -65,6 +65,16 @@ void OsrmRoutedWrapper::parse_response(rapidjson::Document& json_result,
   }
 }
 
+bool OsrmRoutedWrapper::duration_value_is_null(
+  const rapidjson::Value& matrix_entry) const {
+  return matrix_entry.IsNull();
+}
+
+Cost OsrmRoutedWrapper::get_duration_value(
+  const rapidjson::Value& matrix_entry) const {
+  return round_cost(matrix_entry.GetDouble());
+}
+
 double
 OsrmRoutedWrapper::get_total_distance(const rapidjson::Value& route) const {
   return route["distance"].GetDouble();
