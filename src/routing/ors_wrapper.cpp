@@ -57,16 +57,16 @@ std::string OrsWrapper::build_query(const std::vector<Location>& locations,
   return query;
 }
 
-void OrsWrapper::parse_response(rapidjson::Document& infos,
+void OrsWrapper::parse_response(rapidjson::Document& json_result,
                                 const std::string& json_content) const {
 #ifdef NDEBUG
-  infos.Parse(json_content.c_str());
+  json_result.Parse(json_content.c_str());
 #else
-  assert(!infos.Parse(json_content.c_str()).HasParseError());
+  assert(!json_result.Parse(json_content.c_str()).HasParseError());
 #endif
-  if (infos.HasMember("error")) {
+  if (json_result.HasMember("error")) {
     throw Exception(ERROR::ROUTING,
-                    std::string(infos["error"]["message"].GetString()));
+                    std::string(json_result["error"]["message"].GetString()));
   }
 }
 

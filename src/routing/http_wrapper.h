@@ -43,7 +43,7 @@ protected:
                                   const std::string& service,
                                   const std::string& extra_args = "") const = 0;
 
-  virtual void parse_response(rapidjson::Document& input,
+  virtual void parse_response(rapidjson::Document& json_result,
                               const std::string& json_content) const = 0;
 
   virtual Matrix<Cost>
