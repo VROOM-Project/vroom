@@ -22,11 +22,13 @@ const std::string HttpWrapper::HTTPS_PORT = "443";
 HttpWrapper::HttpWrapper(const std::string& profile,
                          const Server& server,
                          const std::string& matrix_service,
+                         const std::string& matrix_durations_key,
                          const std::string& route_service,
                          const std::string& extra_args)
   : Wrapper(profile),
     _server(server),
     _matrix_service(matrix_service),
+    _matrix_durations_key(matrix_durations_key),
     _route_service(route_service),
     _extra_args(extra_args) {
 }
@@ -141,7 +143,10 @@ Matrix<Cost> HttpWrapper::get_matrix(const std::vector<Location>& locs) const {
   rapidjson::Document json_result;
   this->parse_response(json_result, json_string);
 
-  assert(json_result["durations"].Size() == m_size);
+  if (!json_result.HasMember(_matrix_durations_key.c_str())) {
+    throw Exception(ERROR::ROUTING, "Missing " + _matrix_durations_key + ".");
+  }
+  assert(json_result[_matrix_durations_key.c_str()].Size() == m_size);
 
   // Build matrix while checking for unfound routes ('null' values) to
   // avoid unexpected behavior.
@@ -150,8 +155,8 @@ Matrix<Cost> HttpWrapper::get_matrix(const std::vector<Location>& locs) const {
   std::vector<unsigned> nb_unfound_from_loc(m_size, 0);
   std::vector<unsigned> nb_unfound_to_loc(m_size, 0);
 
-  for (rapidjson::SizeType i = 0; i < json_result["durations"].Size(); ++i) {
-    const auto& line = json_result["durations"][i];
+  for (rapidjson::SizeType i = 0; i < m_size; ++i) {
+    const auto& line = json_result[_matrix_durations_key.c_str()][i];
     assert(line.Size() == m_size);
     for (rapidjson::SizeType j = 0; j < line.Size(); ++j) {
       if (line[j].IsNull()) {

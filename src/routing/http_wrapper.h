@@ -28,12 +28,14 @@ private:
 protected:
   const Server _server;
   const std::string _matrix_service;
+  const std::string _matrix_durations_key;
   const std::string _route_service;
   const std::string _extra_args;
 
   HttpWrapper(const std::string& profile,
               const Server& server,
               const std::string& matrix_service,
+              const std::string& matrix_durations_key,
               const std::string& route_service,
               const std::string& extra_args);
 

@@ -17,6 +17,7 @@ OsrmRoutedWrapper::OsrmRoutedWrapper(const std::string& profile,
   : HttpWrapper(profile,
                 server,
                 "table",
+                "durations",
                 "route",
                 "alternatives=false&steps=false&overview=full&continue_"
                 "straight=false") {

@@ -16,6 +16,7 @@ OrsWrapper::OrsWrapper(const std::string& profile, const Server& server)
   : HttpWrapper(profile,
                 server,
                 "matrix",
+                "durations",
                 "directions",
                 "\"geometry_simplify\":\"false\",\"continue_straight\":"
                 "\"false\"") {
