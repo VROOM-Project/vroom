@@ -50,7 +50,7 @@ const std::string DEFAULT_PROFILE = "car";
 constexpr Priority MAX_PRIORITY = 100;
 
 // Available routing engines.
-enum class ROUTER { OSRM, LIBOSRM, ORS };
+enum class ROUTER { OSRM, LIBOSRM, ORS, VALHALLA };
 
 // Used to describe a routing server.
 struct Server {

@@ -41,7 +41,7 @@ void display_usage() {
   usage += "\t-o OUTPUT,\t\t\t output file name\n";
   usage += "\t-p PROFILE:PORT (=" + vroom::DEFAULT_PROFILE +
            ":5000),\t routing server port\n";
-  usage += "\t-r ROUTER (=osrm),\t\t osrm, libosrm or ors\n";
+  usage += "\t-r ROUTER (=osrm),\t\t osrm, libosrm, ors or valhalla\n";
   usage += "\t-t THREADS (=4),\t\t number of threads to use\n";
   usage += "\t-x EXPLORE (=5),\t\t exploration level to use (0..5)";
   std::cout << usage << std::endl;
@@ -123,6 +123,8 @@ int main(int argc, char** argv) {
     cl_args.router = vroom::ROUTER::LIBOSRM;
   } else if (router_arg == "ors") {
     cl_args.router = vroom::ROUTER::ORS;
+  } else if (router_arg == "valhalla") {
+    cl_args.router = vroom::ROUTER::VALHALLA;
   } else if (!router_arg.empty() and router_arg != "osrm") {
     auto error_code = vroom::utils::get_code(vroom::ERROR::INPUT);
     std::string message = "Invalid routing engine: " + router_arg + ".";
