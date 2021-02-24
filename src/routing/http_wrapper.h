@@ -62,7 +62,7 @@ protected:
 
   virtual double get_total_distance(const rapidjson::Value& result) const = 0;
 
-  virtual unsigned get_legs_number(const rapidjson::Value& route) const = 0;
+  virtual unsigned get_legs_number(const rapidjson::Value& result) const = 0;
 
   virtual double get_distance_for_leg(const rapidjson::Value& route,
                                       rapidjson::SizeType i) const = 0;

@@ -76,8 +76,8 @@ OsrmRoutedWrapper::get_total_distance(const rapidjson::Value& result) const {
 }
 
 unsigned
-OsrmRoutedWrapper::get_legs_number(const rapidjson::Value& route) const {
-  return route["legs"].Size();
+OsrmRoutedWrapper::get_legs_number(const rapidjson::Value& result) const {
+  return result["routes"][0]["legs"].Size();
 }
 
 double OsrmRoutedWrapper::get_distance_for_leg(const rapidjson::Value& route,

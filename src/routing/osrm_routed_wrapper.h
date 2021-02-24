@@ -34,7 +34,7 @@ private:
   get_total_distance(const rapidjson::Value& result) const override;
 
   virtual unsigned
-  get_legs_number(const rapidjson::Value& route) const override;
+  get_legs_number(const rapidjson::Value& result) const override;
 
   virtual double get_distance_for_leg(const rapidjson::Value& route,
                                       rapidjson::SizeType i) const override;

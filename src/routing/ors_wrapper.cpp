@@ -80,8 +80,8 @@ double OrsWrapper::get_total_distance(const rapidjson::Value& result) const {
   return result["routes"][0]["summary"]["distance"].GetDouble();
 }
 
-unsigned OrsWrapper::get_legs_number(const rapidjson::Value& route) const {
-  return route["segments"].Size();
+unsigned OrsWrapper::get_legs_number(const rapidjson::Value& result) const {
+  return result["routes"][0]["segments"].Size();
 }
 
 double OrsWrapper::get_distance_for_leg(const rapidjson::Value& route,
