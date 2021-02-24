@@ -246,7 +246,9 @@ void HttpWrapper::add_route_info(Route& route) const {
 
   // Total distance and route geometry.
   route.distance = round_cost(get_total_distance(json_result));
-  route.geometry = std::move(json_result["routes"][0]["geometry"].GetString());
+  // Todo implement retrieving route geometry on a per-router basis.
+  // route.geometry =
+  // std::move(json_result["routes"][0]["geometry"].GetString());
 
   auto nb_legs = get_legs_number(json_result);
   assert(nb_legs == non_break_locations.size() - 1);
@@ -272,7 +274,7 @@ void HttpWrapper::add_route_info(Route& route) const {
     // distance after current route leg.
     auto& next_step = route.steps[steps_rank + number_breaks_after[i] + 1];
     Duration next_duration = next_step.duration - step.duration;
-    double next_distance = get_distance_for_leg(json_result["routes"][0], i);
+    double next_distance = get_distance_for_leg(json_result, i);
 
     // Pro rata temporis distance update for breaks between current
     // non-breaks steps.

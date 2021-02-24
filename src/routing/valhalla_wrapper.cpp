@@ -118,10 +118,9 @@ ValhallaWrapper::get_legs_number(const rapidjson::Value& result) const {
   return result["trip"]["legs"].Size();
 }
 
-double ValhallaWrapper::get_distance_for_leg(const rapidjson::Value& route,
+double ValhallaWrapper::get_distance_for_leg(const rapidjson::Value& result,
                                              rapidjson::SizeType i) const {
-  // TODO implement
-  return 0;
+  return 100 * result["trip"]["legs"][i]["summary"]["length"].GetDouble();
 }
 
 } // namespace routing

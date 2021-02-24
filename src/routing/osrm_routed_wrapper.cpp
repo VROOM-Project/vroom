@@ -80,9 +80,9 @@ OsrmRoutedWrapper::get_legs_number(const rapidjson::Value& result) const {
   return result["routes"][0]["legs"].Size();
 }
 
-double OsrmRoutedWrapper::get_distance_for_leg(const rapidjson::Value& route,
+double OsrmRoutedWrapper::get_distance_for_leg(const rapidjson::Value& result,
                                                rapidjson::SizeType i) const {
-  return route["legs"][i]["distance"].GetDouble();
+  return result["routes"][0]["legs"][i]["distance"].GetDouble();
 }
 
 } // namespace routing

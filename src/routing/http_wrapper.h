@@ -64,7 +64,7 @@ protected:
 
   virtual unsigned get_legs_number(const rapidjson::Value& result) const = 0;
 
-  virtual double get_distance_for_leg(const rapidjson::Value& route,
+  virtual double get_distance_for_leg(const rapidjson::Value& result,
                                       rapidjson::SizeType i) const = 0;
 
   virtual void add_route_info(Route& route) const override;
