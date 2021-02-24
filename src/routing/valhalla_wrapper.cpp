@@ -109,9 +109,8 @@ Cost ValhallaWrapper::get_duration_value(
 }
 
 double
-ValhallaWrapper::get_total_distance(const rapidjson::Value& route) const {
-  // TODO implement
-  return 0;
+ValhallaWrapper::get_total_distance(const rapidjson::Value& result) const {
+  return 100 * result["trip"]["summary"]["length"].GetDouble();
 }
 
 unsigned ValhallaWrapper::get_legs_number(const rapidjson::Value& route) const {

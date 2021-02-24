@@ -60,7 +60,7 @@ protected:
   virtual Cost
   get_duration_value(const rapidjson::Value& matrix_entry) const = 0;
 
-  virtual double get_total_distance(const rapidjson::Value& route) const = 0;
+  virtual double get_total_distance(const rapidjson::Value& result) const = 0;
 
   virtual unsigned get_legs_number(const rapidjson::Value& route) const = 0;
 

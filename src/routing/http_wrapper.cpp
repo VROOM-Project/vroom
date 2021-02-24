@@ -245,7 +245,7 @@ void HttpWrapper::add_route_info(Route& route) const {
   this->check_response(json_result, _route_service);
 
   // Total distance and route geometry.
-  route.distance = round_cost(get_total_distance(json_result["routes"][0]));
+  route.distance = round_cost(get_total_distance(json_result));
   route.geometry = std::move(json_result["routes"][0]["geometry"].GetString());
 
   auto nb_legs = get_legs_number(json_result["routes"][0]);

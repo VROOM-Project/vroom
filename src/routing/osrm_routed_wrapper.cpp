@@ -71,8 +71,8 @@ Cost OsrmRoutedWrapper::get_duration_value(
 }
 
 double
-OsrmRoutedWrapper::get_total_distance(const rapidjson::Value& route) const {
-  return route["distance"].GetDouble();
+OsrmRoutedWrapper::get_total_distance(const rapidjson::Value& result) const {
+  return result["routes"][0]["distance"].GetDouble();
 }
 
 unsigned

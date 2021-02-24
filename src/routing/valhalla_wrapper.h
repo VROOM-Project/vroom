@@ -36,7 +36,7 @@ private:
   get_duration_value(const rapidjson::Value& matrix_entry) const override;
 
   virtual double
-  get_total_distance(const rapidjson::Value& route) const override;
+  get_total_distance(const rapidjson::Value& result) const override;
 
   virtual unsigned
   get_legs_number(const rapidjson::Value& route) const override;
