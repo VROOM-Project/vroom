@@ -51,14 +51,9 @@ OsrmRoutedWrapper::build_query(const std::vector<Location>& locations,
   return query;
 }
 
-void OsrmRoutedWrapper::parse_response(rapidjson::Document& json_result,
-                                       const std::string& json_content) const {
-#ifdef NDEBUG
-  json_result.Parse(json_content.c_str());
-#else
-  assert(!json_result.Parse(json_content.c_str()).HasParseError());
+void OsrmRoutedWrapper::check_response(const rapidjson::Document& json_result,
+                                       const std::string&) const {
   assert(json_result.HasMember("code"));
-#endif
   if (json_result["code"] != "Ok") {
     throw Exception(ERROR::ROUTING,
                     std::string(json_result["message"].GetString()));

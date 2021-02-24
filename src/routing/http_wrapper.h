@@ -41,12 +41,15 @@ protected:
 
   std::string run_query(const std::string& query) const;
 
+  void parse_response(rapidjson::Document& json_result,
+                      const std::string& json_content) const;
+
   virtual std::string build_query(const std::vector<Location>& locations,
                                   const std::string& service,
                                   const std::string& extra_args = "") const = 0;
 
-  virtual void parse_response(rapidjson::Document& json_result,
-                              const std::string& json_content) const = 0;
+  virtual void check_response(const rapidjson::Document& json_result,
+                              const std::string& service) const = 0;
 
   virtual Matrix<Cost>
   get_matrix(const std::vector<Location>& locs) const override;

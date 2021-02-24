@@ -164,6 +164,15 @@ std::string HttpWrapper::run_query(const std::string& query) const {
                                       : send_then_receive(query);
 }
 
+void HttpWrapper::parse_response(rapidjson::Document& json_result,
+                                 const std::string& json_content) const {
+#ifdef NDEBUG
+  json_result.Parse(json_content.c_str());
+#else
+  assert(!json_result.Parse(json_content.c_str()).HasParseError());
+#endif
+}
+
 Matrix<Cost> HttpWrapper::get_matrix(const std::vector<Location>& locs) const {
   std::string query = this->build_query(locs, _matrix_service);
   std::string json_string = this->run_query(query);
@@ -173,6 +182,7 @@ Matrix<Cost> HttpWrapper::get_matrix(const std::vector<Location>& locs) const {
 
   rapidjson::Document json_result;
   this->parse_response(json_result, json_string);
+  this->check_response(json_result, _matrix_service);
 
   if (!json_result.HasMember(_matrix_durations_key.c_str())) {
     throw Exception(ERROR::ROUTING, "Missing " + _matrix_durations_key + ".");
@@ -232,6 +242,7 @@ void HttpWrapper::add_route_info(Route& route) const {
 
   rapidjson::Document json_result;
   parse_response(json_result, json_string);
+  this->check_response(json_result, _route_service);
 
   // Total distance and route geometry.
   route.distance = round_cost(get_total_distance(json_result["routes"][0]));

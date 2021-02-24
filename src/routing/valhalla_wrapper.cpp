@@ -83,13 +83,17 @@ std::string ValhallaWrapper::build_query(const std::vector<Location>& locations,
                                       : get_route_query(locations, extra_args);
 }
 
-void ValhallaWrapper::parse_response(rapidjson::Document& json_result,
-                                     const std::string& json_content) const {
-#ifdef NDEBUG
-  json_result.Parse(json_content.c_str());
-#else
-  assert(!json_result.Parse(json_content.c_str()).HasParseError());
-#endif
+void ValhallaWrapper::check_response(const rapidjson::Document& json_result,
+                                     const std::string& service) const {
+  if (service == _route_service) {
+    assert(json_result.HasMember("trip") and
+           json_result["trip"].HasMember("status"));
+    if (json_result["trip"]["status"] != 0) {
+      throw Exception(ERROR::ROUTING,
+                      std::string(
+                        json_result["trip"]["status_message"].GetString()));
+    }
+  }
 }
 
 bool ValhallaWrapper::duration_value_is_null(
