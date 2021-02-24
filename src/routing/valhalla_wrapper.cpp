@@ -19,14 +19,13 @@ ValhallaWrapper::ValhallaWrapper(const std::string& profile,
                 "sources_to_targets",
                 "sources_to_targets",
                 "route",
-                "") {
+                "\"directions_type\":\"none\"") {
 }
 
-std::string ValhallaWrapper::build_query(const std::vector<Location>& locations,
-                                         const std::string& service,
-                                         const std::string& extra_args) const {
-  // Building query for Valhalla
-  std::string query = "GET /" + service + "?json=";
+std::string ValhallaWrapper::get_matrix_query(
+  const std::vector<Location>& locations) const {
+  // Building matrix query for Valhalla.
+  std::string query = "GET /" + _matrix_service + "?json=";
 
   // List locations.
   std::string all_locations;
@@ -46,6 +45,42 @@ std::string ValhallaWrapper::build_query(const std::vector<Location>& locations,
   query += "Connection: close\r\n\r\n";
 
   return query;
+}
+
+std::string
+ValhallaWrapper::get_route_query(const std::vector<Location>& locations,
+                                 const std::string& extra_args) const {
+  // Building matrix query for Valhalla.
+  std::string query = "GET /" + _route_service + "?json={\"locations\":[";
+
+  for (auto const& location : locations) {
+    query += "{\"lon\":" + std::to_string(location.lon()) + "," +
+             "\"lat\":" + std::to_string(location.lat()) +
+             ",\"type\":\"break\"},";
+  }
+  query.pop_back(); // Remove trailing ','.
+
+  query += "],\"costing\":\"" + profile + "\"";
+  if (!extra_args.empty()) {
+    query += "," + extra_args;
+  }
+  query += "}";
+
+  query += " HTTP/1.1\r\n";
+  query += "Host: " + _server.host + "\r\n";
+  query += "Accept: */*\r\n";
+  query += "Connection: close\r\n\r\n";
+
+  return query;
+}
+
+std::string ValhallaWrapper::build_query(const std::vector<Location>& locations,
+                                         const std::string& service,
+                                         const std::string& extra_args) const {
+  assert(service == _matrix_service or service == _route_service);
+
+  return (service == _matrix_service) ? get_matrix_query(locations)
+                                      : get_route_query(locations, extra_args);
 }
 
 void ValhallaWrapper::parse_response(rapidjson::Document& json_result,

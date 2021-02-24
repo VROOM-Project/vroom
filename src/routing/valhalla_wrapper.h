@@ -17,6 +17,11 @@ namespace routing {
 
 class ValhallaWrapper : public HttpWrapper {
 private:
+  std::string get_matrix_query(const std::vector<Location>& locations) const;
+
+  std::string get_route_query(const std::vector<Location>& locations,
+                              const std::string& extra_args = "") const;
+
   virtual std::string build_query(const std::vector<Location>& locations,
                                   const std::string& service,
                                   const std::string& extra_args) const override;
