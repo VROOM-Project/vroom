@@ -23,7 +23,8 @@ SRC = $(wildcard *.cpp)\
 			$(wildcard ./structures/vroom/input/*.cpp)\
 			$(wildcard ./structures/vroom/solution/*.cpp)\
 			$(wildcard ./structures/*.cpp)\
-			$(wildcard ./utils/*.cpp)
+			$(wildcard ./utils/*.cpp)\
+			$(wildcard ../include/polylineencoder/*.cpp)
 
 # Checking for libosrm
 ifeq ($(shell pkg-config --exists libosrm && echo 1),1)
