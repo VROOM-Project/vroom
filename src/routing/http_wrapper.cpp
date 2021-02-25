@@ -50,35 +50,9 @@ std::string HttpWrapper::send_then_receive(const std::string& query) const {
 
     char buf[512];
     std::error_code error;
-    // Using Valhalla seems to hang on s.read_some below even with
-    // full response retrieved, so we never reach the asio::error::eof
-    // check as expected. Instead, we spot the content start and
-    // retrieve Content-Length as soon as it's been read, then stop
-    // based on the content length.
-    std::size_t json_start = 0;
-    std::size_t content_length = 0;
     for (;;) {
       std::size_t len = s.read_some(asio::buffer(buf), error);
       response.append(buf, len);
-
-      if (json_start == 0) {
-        auto start = response.find("{");
-        if (start != std::string::npos) {
-          json_start = start;
-
-          std::string cl = "Content-Length: ";
-          auto cl_start = response.find(cl);
-          assert(cl_start != std::string::npos);
-          cl_start += cl.size();
-
-          auto cl_end = response.find('\n', cl_start);
-          std::string content = response.substr(cl_start, cl_end - cl_start);
-
-          content_length =
-            std::stoul(response.substr(cl_start, cl_end - cl_start));
-        }
-      }
-
       if (error == asio::error::eof) {
         // Connection closed cleanly.
         break;
@@ -86,11 +60,6 @@ std::string HttpWrapper::send_then_receive(const std::string& query) const {
         if (error) {
           throw std::system_error(error);
         }
-      }
-
-      if (content_length == response.size() - json_start) {
-        // All expected json content received.
-        break;
       }
     }
   } catch (std::system_error& e) {
