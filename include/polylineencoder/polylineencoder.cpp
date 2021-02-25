@@ -204,5 +204,8 @@ void PolylineEncoder<Digits>::clear()
     m_polyline.clear();
 }
 
+template class PolylineEncoder<5>;
+template class PolylineEncoder<6>;
+
 } // namespace
 
