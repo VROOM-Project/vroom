@@ -10,6 +10,8 @@ All rights reserved (see LICENSE).
 #include "problems/vrptw/operators/pd_shift.h"
 #include "utils/helpers.h"
 
+#include "algorithms/local_search/insertion_search.h"
+
 namespace vroom {
 namespace vrptw {
 
@@ -55,6 +57,20 @@ void PDShift::compute_gain() {
   if (!_is_valid_removal) {
     return;
   }
+
+  ls::RouteInsertion rs = ls::compute_best_insertion_pd(_input,
+                                                        s_route[_s_p_rank],
+                                                        t_vehicle,
+                                                        _tw_t_route);
+
+  if (rs.cost < std::numeric_limits<Gain>::max()) {
+    _valid = true;
+    stored_gain = _remove_gain + -rs.cost;
+    _best_t_p_rank = rs.pickup_rank;
+    _best_t_d_rank = rs.delivery_rank;
+  }
+  gain_computed = true;
+  return;
 
   const auto& v = _input.vehicles[t_vehicle];
 
