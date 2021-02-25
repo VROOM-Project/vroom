@@ -112,7 +112,7 @@ Cost ValhallaWrapper::get_duration_value(
 
 double
 ValhallaWrapper::get_total_distance(const rapidjson::Value& result) const {
-  return 100 * result["trip"]["summary"]["length"].GetDouble();
+  return 1000 * result["trip"]["summary"]["length"].GetDouble();
 }
 
 unsigned
@@ -122,7 +122,7 @@ ValhallaWrapper::get_legs_number(const rapidjson::Value& result) const {
 
 double ValhallaWrapper::get_distance_for_leg(const rapidjson::Value& result,
                                              rapidjson::SizeType i) const {
-  return 100 * result["trip"]["legs"][i]["summary"]["length"].GetDouble();
+  return 1000 * result["trip"]["legs"][i]["summary"]["length"].GetDouble();
 }
 
 std::string ValhallaWrapper::get_geometry(rapidjson::Value& result) const {
