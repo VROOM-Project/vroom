@@ -7,6 +7,8 @@ All rights reserved (see LICENSE).
 
 */
 
+#include "../../include/polylineencoder/polylineencoder.h"
+
 #include "routing/valhalla_wrapper.h"
 
 namespace vroom {
@@ -121,6 +123,39 @@ ValhallaWrapper::get_legs_number(const rapidjson::Value& result) const {
 double ValhallaWrapper::get_distance_for_leg(const rapidjson::Value& result,
                                              rapidjson::SizeType i) const {
   return 100 * result["trip"]["legs"][i]["summary"]["length"].GetDouble();
+}
+
+std::string ValhallaWrapper::get_geometry(rapidjson::Value& result) const {
+  // Valhalla returns one polyline per route leg so we need to merge
+  // them. Also taking the opportunity to adjust the encoding
+  // precision as Valhalla uses 6 and we use 5 based on other routing
+  // engine output. Note: getting directly a single polyline (e.g. by
+  // not sending type=break for the route request) is not an option:
+  // first we need all the legs for intermediate time and distance
+  // values, then we have to force allowing u-turns in order to get
+  // consistent time/distance values between matrix and route request.
+
+  auto full_polyline = gepaf::PolylineEncoder<6>::decode(
+    result["trip"]["legs"][0]["shape"].GetString());
+
+  for (rapidjson::SizeType i = 1; i < result["trip"]["legs"].Size(); ++i) {
+    auto decoded_pts = gepaf::PolylineEncoder<6>::decode(
+      result["trip"]["legs"][i]["shape"].GetString());
+
+    if (!full_polyline.empty()) {
+      full_polyline.pop_back();
+    }
+    full_polyline.insert(full_polyline.end(),
+                         std::make_move_iterator(decoded_pts.begin()),
+                         std::make_move_iterator(decoded_pts.end()));
+  }
+
+  gepaf::PolylineEncoder<5> encoder;
+  for (const auto& p : full_polyline) {
+    encoder.addPoint(p.latitude(), p.longitude());
+  }
+
+  return encoder.encode();
 }
 
 } // namespace routing
