@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Support Valhalla as routing engine (#306)
+
 ### Changed
 
 - Formatting script updated to use version 10 of clang-format (#452)
