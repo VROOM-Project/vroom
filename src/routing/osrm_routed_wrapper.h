@@ -39,6 +39,8 @@ private:
   virtual double get_distance_for_leg(const rapidjson::Value& result,
                                       rapidjson::SizeType i) const override;
 
+  virtual std::string get_geometry(rapidjson::Value& result) const override;
+
 public:
   OsrmRoutedWrapper(const std::string& profile, const Server& server);
 };

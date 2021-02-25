@@ -67,6 +67,8 @@ protected:
   virtual double get_distance_for_leg(const rapidjson::Value& result,
                                       rapidjson::SizeType i) const = 0;
 
+  virtual std::string get_geometry(rapidjson::Value& result) const = 0;
+
   virtual void add_route_info(Route& route) const override;
 };
 

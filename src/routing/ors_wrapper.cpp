@@ -89,5 +89,9 @@ double OrsWrapper::get_distance_for_leg(const rapidjson::Value& result,
   return result["routes"][0]["segments"][i]["distance"].GetDouble();
 }
 
+std::string OrsWrapper::get_geometry(rapidjson::Value& result) const {
+  return result["routes"][0]["geometry"].GetString();
+}
+
 } // namespace routing
 } // namespace vroom

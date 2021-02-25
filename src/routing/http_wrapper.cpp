@@ -215,9 +215,7 @@ void HttpWrapper::add_route_info(Route& route) const {
 
   // Total distance and route geometry.
   route.distance = round_cost(get_total_distance(json_result));
-  // Todo implement retrieving route geometry on a per-router basis.
-  // route.geometry =
-  // std::move(json_result["routes"][0]["geometry"].GetString());
+  route.geometry = get_geometry(json_result);
 
   auto nb_legs = get_legs_number(json_result);
   assert(nb_legs == non_break_locations.size() - 1);
