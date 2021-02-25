@@ -89,6 +89,24 @@ void ValhallaWrapper::check_response(const rapidjson::Document& json_result,
                                      const std::string& service) const {
   assert(service == _matrix_service or service == _route_service);
 
+  if (json_result.HasMember("status_code") and
+      json_result["status_code"].IsUint() and
+      json_result["status_code"].GetUint() != 200) {
+    // Valhalla responses seem to only have a status_code key when a
+    // problem is encountered. In that case it's not really clear what
+    // keys can be expected so we're playing guesses. This happens
+    // e.g. when requested matrix/route size goes over the server
+    // limit.
+    std::string service_str = (service == _route_service) ? "route" : "matrix";
+    std::string error = "Valhalla " + service_str + " error (";
+
+    if (json_result.HasMember("error") and json_result["error"].IsString()) {
+      error += json_result["error"].GetString();
+      error += ").";
+    }
+    throw Exception(ERROR::ROUTING, error);
+  }
+
   if (service == _route_service) {
     assert(json_result.HasMember("trip") and
            json_result["trip"].HasMember("status"));
@@ -96,20 +114,6 @@ void ValhallaWrapper::check_response(const rapidjson::Document& json_result,
       throw Exception(ERROR::ROUTING,
                       std::string(
                         json_result["trip"]["status_message"].GetString()));
-    }
-  } else {
-    if (json_result.HasMember("status_code") and
-        json_result["status_code"].IsUint() and
-        json_result["status_code"].GetUint() != 200) {
-      // Valhalla matrix responses seem to only have a status_code key
-      // when a problem is encountered. In that case it's not really
-      // clear what keys can be expected so we're playing guesses.
-      std::string error = "Internal Valhalla error.";
-
-      if (json_result.HasMember("error") and json_result["error"].IsString()) {
-        error = json_result["error"].GetString();
-      }
-      throw Exception(ERROR::ROUTING, error);
     }
   }
 }
