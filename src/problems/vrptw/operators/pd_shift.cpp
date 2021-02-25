@@ -142,16 +142,6 @@ void PDShift::compute_gain() {
                                                      t_p_rank,
                                                      t_d_rank);
 
-        // Checking for removal validity is like checking insertion of
-        // source portion without P&D in place.
-        valid =
-          valid &&
-          _tw_s_route.is_valid_addition_for_tw(_input,
-                                               s_route.begin() + _s_p_rank + 1,
-                                               s_route.begin() + _s_d_rank,
-                                               _s_p_rank,
-                                               _s_d_rank + 1);
-
         modified_with_pd.pop_back();
 
         if (valid) {
@@ -183,9 +173,6 @@ void PDShift::apply() {
   if (_s_d_rank == _s_p_rank + 1) {
     _tw_s_route.remove(_input, _s_p_rank, 2);
   } else {
-    std::vector<Index> source_without_pd(s_route.begin() + _s_p_rank + 1,
-                                         s_route.begin() + _s_d_rank);
-
     _tw_s_route.replace(_input,
                         _source_without_pd.begin(),
                         _source_without_pd.end(),
