@@ -136,7 +136,11 @@ RouteInsertion compute_best_insertion(const Input& input,
   if (current_job.type == JOB_TYPE::SINGLE) {
     return compute_best_insertion_single(input, j, v, route);
   } else {
-    auto insert = compute_best_insertion_pd(input, j, v, route);
+    auto insert = compute_best_insertion_pd(input,
+                                            j,
+                                            v,
+                                            route,
+                                            std::numeric_limits<Gain>::max());
     // Normalize cost per job for consistency with single jobs.
     insert.cost = static_cast<Gain>(static_cast<double>(insert.cost) / 2);
     return insert;

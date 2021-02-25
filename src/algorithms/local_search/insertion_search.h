@@ -49,7 +49,8 @@ template <class Route>
 RouteInsertion compute_best_insertion_pd(const Input& input,
                                          const Index j,
                                          Index v,
-                                         const Route& route) {
+                                         const Route& route,
+                                         const Gain cost_threshold) {
   RouteInsertion result = empty_insert;
   const auto& current_job = input.jobs[j];
   const auto& v_target = input.vehicles[v];
@@ -57,6 +58,8 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
   if (!input.vehicle_ok_with_job(v, j)) {
     return result;
   }
+
+  result.cost = cost_threshold;
 
   // Pre-compute cost of addition for matching delivery.
   std::vector<Gain> d_adds(route.size() + 1);
@@ -72,6 +75,10 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
   for (Index pickup_r = 0; pickup_r <= route.size(); ++pickup_r) {
     Gain p_add =
       utils::addition_cost(input, j, v_target, route.route, pickup_r);
+    if (p_add > result.cost) {
+      // Even without delivery insertion more expensive then current best
+      continue;
+    }
 
     if (!route.is_valid_addition_for_load(input,
                                           current_job.pickup,
@@ -141,6 +148,9 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
         }
       }
     }
+  }
+  if (result.cost == cost_threshold) {
+    result.cost = std::numeric_limits<Gain>::max();
   }
   return result;
 }
