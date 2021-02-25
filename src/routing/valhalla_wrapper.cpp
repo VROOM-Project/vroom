@@ -42,7 +42,7 @@ std::string ValhallaWrapper::get_matrix_query(
   query += " HTTP/1.1\r\n";
   query += "Host: " + _server.host + "\r\n";
   query += "Accept: */*\r\n";
-  query += "Connection: close\r\n\r\n";
+  query += "Connection: Close\r\n\r\n";
 
   return query;
 }
@@ -69,7 +69,7 @@ ValhallaWrapper::get_route_query(const std::vector<Location>& locations,
   query += " HTTP/1.1\r\n";
   query += "Host: " + _server.host + "\r\n";
   query += "Accept: */*\r\n";
-  query += "Connection: close\r\n\r\n";
+  query += "Connection: Close\r\n\r\n";
 
   return query;
 }
