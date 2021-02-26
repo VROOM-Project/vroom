@@ -45,6 +45,30 @@ RouteInsertion compute_best_insertion_single(const Input& input,
   return result;
 }
 
+template <class Route, class Iter>
+bool valid_for_capacity(const Input& input,
+                        const Route& r,
+                        Iter start,
+                        Iter end,
+                        Index pickup_r,
+                        Index delivery_r) {
+  Amount amount = input.zero_amount();
+
+  for (auto it = start + 1; it != end - 1; ++it) {
+    const auto& new_modified_job = input.jobs[*it];
+    if (new_modified_job.type == JOB_TYPE::SINGLE) {
+      amount += new_modified_job.delivery;
+    }
+  }
+
+  return r.is_valid_addition_for_capacity_inclusion(input,
+                                                    std::move(amount),
+                                                    start,
+                                                    end,
+                                                    pickup_r,
+                                                    delivery_r);
+}
+
 template <class Route>
 RouteInsertion compute_best_insertion_pd(const Input& input,
                                          const Index j,
@@ -101,7 +125,6 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
 
     // Build replacement sequence for current insertion.
     std::vector<Index> modified_with_pd({j});
-    Amount modified_delivery = input.zero_amount();
 
     for (Index delivery_r = pickup_r; delivery_r <= route.size();
          ++delivery_r) {
@@ -109,10 +132,6 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
       // early abort.
       if (pickup_r < delivery_r) {
         modified_with_pd.push_back(route.route[delivery_r - 1]);
-        const auto& new_modified_job = input.jobs[route.route[delivery_r - 1]];
-        if (new_modified_job.type == JOB_TYPE::SINGLE) {
-          modified_delivery += new_modified_job.delivery;
-        }
       }
 
       if (!(bool)valid_delivery_insertions[delivery_r]) {
@@ -137,14 +156,22 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
         modified_with_pd.push_back(j + 1);
 
         // Update best cost depending on validity.
-        bool is_valid =
-          route
-            .is_valid_addition_for_capacity_inclusion(input,
-                                                      modified_delivery,
-                                                      modified_with_pd.begin(),
-                                                      modified_with_pd.end(),
-                                                      pickup_r,
-                                                      delivery_r);
+        bool is_valid = valid_for_capacity(input,
+                                           route,
+                                           modified_with_pd.begin(),
+                                           modified_with_pd.end(),
+                                           pickup_r,
+                                           delivery_r);
+
+        /* route */
+        /*   .is_valid_addition_for_capacity_inclusion(input, */
+        /*                                             modified_delivery, */
+        /*                                             modified_with_pd.begin(),
+         */
+        /*                                             modified_with_pd.end(),
+         */
+        /*                                             pickup_r, */
+        /*                                             delivery_r); */
 
         is_valid =
           is_valid && route.is_valid_addition_for_tw(input,
