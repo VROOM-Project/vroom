@@ -64,8 +64,10 @@ void PDShift::compute_gain() {
                                   t_vehicle,
                                   _tw_t_route,
                                   _remove_gain - stored_gain);
+  assert(s_route[_s_p_rank] + 1 == s_route[_s_d_rank]);
 
   if (rs.cost < std::numeric_limits<Gain>::max()) {
+    assert(_remove_gain + -rs.cost > stored_gain);
     _valid = true;
     stored_gain = _remove_gain + -rs.cost;
     _best_t_p_rank = rs.pickup_rank;
