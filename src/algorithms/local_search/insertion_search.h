@@ -65,11 +65,23 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
   std::vector<Gain> d_adds(route.size() + 1);
   std::vector<unsigned char> valid_delivery_insertions(route.size() + 1);
 
+  bool found_valid = false;
   for (unsigned d_rank = 0; d_rank <= route.size(); ++d_rank) {
     d_adds[d_rank] =
       utils::addition_cost(input, j + 1, v_target, route.route, d_rank);
-    valid_delivery_insertions[d_rank] =
-      route.is_valid_addition_for_tw(input, j + 1, d_rank);
+    if (d_adds[d_rank] > result.cost) {
+
+      valid_delivery_insertions[d_rank] = false;
+    } else {
+      valid_delivery_insertions[d_rank] =
+        route.is_valid_addition_for_tw(input, j + 1, d_rank);
+    }
+    found_valid |= valid_delivery_insertions[d_rank];
+  }
+
+  if (!found_valid) {
+    result.cost = std::numeric_limits<Gain>::max();
+    return result;
   }
 
   for (Index pickup_r = 0; pickup_r <= route.size(); ++pickup_r) {
