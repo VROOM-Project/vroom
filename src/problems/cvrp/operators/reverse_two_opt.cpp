@@ -57,9 +57,14 @@ void ReverseTwoOpt::compute_gain() {
   // Add new source -> target edge.
   stored_gain -= s_v.cost(s_index, t_index);
 
-  // Cost of reversing target route portion.
-  stored_gain += _sol_state.fwd_costs[t_vehicle][t_rank];
-  stored_gain -= _sol_state.bwd_costs[t_vehicle][t_rank];
+  // Cost of reversing target route portion. First remove forward cost
+  // for beginning of target route as seen from target vehicle. Then
+  // add backward cost for beginning of target route as seen from
+  // source vehicle since it's the new source route end.
+  const auto& t_fwd_costs = _sol_state.profile_fwd_costs.at(t_v.profile);
+  const auto& s_bwd_costs = _sol_state.profile_bwd_costs.at(s_v.profile);
+  stored_gain += t_v.scale_duration(t_fwd_costs[t_vehicle][t_rank]);
+  stored_gain -= s_v.scale_duration(s_bwd_costs[t_vehicle][t_rank]);
 
   if (!last_in_target) {
     // Spare next edge in target route.
@@ -75,11 +80,17 @@ void ReverseTwoOpt::compute_gain() {
     // Part of source route is moved to target route.
     Index next_s_index = _input.jobs[s_route[s_rank + 1]].index();
 
-    // Cost or reverting source route portion.
-    stored_gain += _sol_state.fwd_costs[s_vehicle].back();
-    stored_gain -= _sol_state.fwd_costs[s_vehicle][s_rank + 1];
-    stored_gain -= _sol_state.bwd_costs[s_vehicle].back();
-    stored_gain += _sol_state.bwd_costs[s_vehicle][s_rank + 1];
+    // Cost or reverting source route portion. First remove forward
+    // cost for end of source route as seen from source vehicle
+    // (subtracting overall cost with intermediate cost). Then add
+    // backward cost for end of source route as seen from target
+    // vehicle since it's the new target route start.
+    const auto& s_fwd_costs = _sol_state.profile_fwd_costs.at(s_v.profile);
+    const auto& t_bwd_costs = _sol_state.profile_bwd_costs.at(t_v.profile);
+    stored_gain += s_v.scale_duration(s_fwd_costs[s_vehicle].back());
+    stored_gain -= s_v.scale_duration(s_fwd_costs[s_vehicle][s_rank + 1]);
+    stored_gain -= t_v.scale_duration(t_bwd_costs[s_vehicle].back());
+    stored_gain += t_v.scale_duration(t_bwd_costs[s_vehicle][s_rank + 1]);
 
     if (last_in_target) {
       if (t_v.has_end()) {

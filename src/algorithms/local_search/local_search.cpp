@@ -778,53 +778,52 @@ void LocalSearch<Route,
     //   }
     // }
 
-    // // Reverse 2-opt* stuff
-    // for (const auto& s_t : s_t_pairs) {
-    //   if (s_t.first == s_t.second or best_priorities[s_t.first] > 0 or
-    //       best_priorities[s_t.second] > 0) {
-    //     continue;
-    //   }
+    // Reverse 2-opt* stuff
+    for (const auto& s_t : s_t_pairs) {
+      if (s_t.first == s_t.second or best_priorities[s_t.first] > 0 or
+          best_priorities[s_t.second] > 0) {
+        continue;
+      }
 
-    //   // Determine first rank for inner loop based on vehicles/jobs
-    //   // compatibility along the routes.
-    //   unsigned first_s_rank = 0;
-    //   const auto first_s_candidate =
-    //     _sol_state.bwd_skill_rank[s_t.first][s_t.second];
-    //   if (first_s_candidate > 0) {
-    //     first_s_rank = first_s_candidate - 1;
-    //   }
+      // Determine first rank for inner loop based on vehicles/jobs
+      // compatibility along the routes.
+      unsigned first_s_rank = 0;
+      const auto first_s_candidate =
+        _sol_state.bwd_skill_rank[s_t.first][s_t.second];
+      if (first_s_candidate > 0) {
+        first_s_rank = first_s_candidate - 1;
+      }
 
-    //   for (unsigned s_rank = first_s_rank; s_rank < _sol[s_t.first].size();
-    //        ++s_rank) {
-    //     if (_sol[s_t.first].has_delivery_after_rank(s_rank)) {
-    //       continue;
-    //     }
+      for (unsigned s_rank = first_s_rank; s_rank < _sol[s_t.first].size();
+           ++s_rank) {
+        if (_sol[s_t.first].has_delivery_after_rank(s_rank)) {
+          continue;
+        }
 
-    //     for (unsigned t_rank = 0;
-    //          t_rank < _sol_state.fwd_skill_rank[s_t.second][s_t.first];
-    //          ++t_rank) {
-    //       if (_sol[s_t.second].has_pickup_up_to_rank(t_rank)) {
-    //         continue;
-    //       }
+        for (unsigned t_rank = 0;
+             t_rank < _sol_state.fwd_skill_rank[s_t.second][s_t.first];
+             ++t_rank) {
+          if (_sol[s_t.second].has_pickup_up_to_rank(t_rank)) {
+            continue;
+          }
 
-    //       ReverseTwoOpt r(_input,
-    //                       _sol_state,
-    //                       _sol[s_t.first],
-    //                       s_t.first,
-    //                       s_rank,
-    //                       _sol[s_t.second],
-    //                       s_t.second,
-    //                       t_rank);
+          ReverseTwoOpt r(_input,
+                          _sol_state,
+                          _sol[s_t.first],
+                          s_t.first,
+                          s_rank,
+                          _sol[s_t.second],
+                          s_t.second,
+                          t_rank);
 
-    //       if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid())
-    //       {
-    //         best_gains[s_t.first][s_t.second] = r.gain();
-    //         best_ops[s_t.first][s_t.second] =
-    //           std::make_unique<ReverseTwoOpt>(r);
-    //       }
-    //     }
-    //   }
-    // }
+          if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid()) {
+            best_gains[s_t.first][s_t.second] = r.gain();
+            best_ops[s_t.first][s_t.second] =
+              std::make_unique<ReverseTwoOpt>(r);
+          }
+        }
+      }
+    }
 
     if (_input.has_jobs()) {
       // Move(s) that don't make sense for shipment-only instances.
