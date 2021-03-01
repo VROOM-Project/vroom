@@ -26,6 +26,10 @@ ValhallaWrapper::ValhallaWrapper(const std::string& profile,
 
 std::string ValhallaWrapper::get_matrix_query(
   const std::vector<Location>& locations) const {
+  const std::string extra_options =
+    "\"costing_options\":{\"bicycle\":{\"bicycle_type\":\"Hybrid\",\"cycling_"
+    "speed\":25,\"legal_speed\":57}}";
+
   // Building matrix query for Valhalla.
   std::string query = "GET /" + _matrix_service + "?json=";
 
@@ -39,7 +43,7 @@ std::string ValhallaWrapper::get_matrix_query(
 
   query += "{\"sources\":[" + all_locations;
   query += "],\"targets\":[" + all_locations;
-  query += "],\"costing\":\"" + profile + "\"}";
+  query += "],\"costing\":\"" + profile + "\"," + extra_options + "}";
 
   query += " HTTP/1.1\r\n";
   query += "Host: " + _server.host + "\r\n";
@@ -52,6 +56,10 @@ std::string ValhallaWrapper::get_matrix_query(
 std::string
 ValhallaWrapper::get_route_query(const std::vector<Location>& locations,
                                  const std::string& extra_args) const {
+  const std::string extra_options =
+    "\"costing_options\":{\"bicycle\":{\"bicycle_type\":\"Hybrid\",\"cycling_"
+    "speed\":25,\"legal_speed\":57}}";
+
   // Building matrix query for Valhalla.
   std::string query = "GET /" + _route_service + "?json={\"locations\":[";
 
@@ -66,7 +74,7 @@ ValhallaWrapper::get_route_query(const std::vector<Location>& locations,
   if (!extra_args.empty()) {
     query += "," + extra_args;
   }
-  query += "}";
+  query += "," + extra_options + "}";
 
   query += " HTTP/1.1\r\n";
   query += "Host: " + _server.host + "\r\n";
