@@ -1190,60 +1190,60 @@ void LocalSearch<Route,
       }
     }
 
-    // if (_input.has_shipments()) {
-    //   // Move(s) that don't make sense for job-only instances.
+    if (_input.has_shipments()) {
+      // Move(s) that don't make sense for job-only instances.
 
-    //   // P&D relocate stuff
-    //   for (const auto& s_t : s_t_pairs) {
-    //     if (s_t.first == s_t.second or best_priorities[s_t.first] > 0 or
-    //         best_priorities[s_t.second] > 0 or _sol[s_t.first].size() == 0) {
-    //       // Don't try to put things from an empty vehicle.
-    //       continue;
-    //     }
+      // P&D relocate stuff
+      for (const auto& s_t : s_t_pairs) {
+        if (s_t.first == s_t.second or best_priorities[s_t.first] > 0 or
+            best_priorities[s_t.second] > 0 or _sol[s_t.first].size() == 0) {
+          // Don't try to put things from an empty vehicle.
+          continue;
+        }
 
-    //     for (unsigned s_p_rank = 0; s_p_rank < _sol[s_t.first].size();
-    //          ++s_p_rank) {
-    //       if (_input.jobs[_sol[s_t.first].route[s_p_rank]].type !=
-    //           JOB_TYPE::PICKUP) {
-    //         continue;
-    //       }
+        for (unsigned s_p_rank = 0; s_p_rank < _sol[s_t.first].size();
+             ++s_p_rank) {
+          if (_input.jobs[_sol[s_t.first].route[s_p_rank]].type !=
+              JOB_TYPE::PICKUP) {
+            continue;
+          }
 
-    //       // Matching delivery rank in source route.
-    //       unsigned s_d_rank =
-    //         _sol_state.matching_delivery_rank[s_t.first][s_p_rank];
+          // Matching delivery rank in source route.
+          unsigned s_d_rank =
+            _sol_state.matching_delivery_rank[s_t.first][s_p_rank];
 
-    //       if (!_input.vehicle_ok_with_job(s_t.second,
-    //                                       _sol[s_t.first].route[s_p_rank]) or
-    //           !_input.vehicle_ok_with_job(s_t.second,
-    //                                       _sol[s_t.first].route[s_d_rank])) {
-    //         continue;
-    //       }
+          if (!_input.vehicle_ok_with_job(s_t.second,
+                                          _sol[s_t.first].route[s_p_rank]) or
+              !_input.vehicle_ok_with_job(s_t.second,
+                                          _sol[s_t.first].route[s_d_rank])) {
+            continue;
+          }
 
-    //       if (_sol_state.pd_gains[s_t.first][s_p_rank] <=
-    //           best_gains[s_t.first][s_t.second]) {
-    //         // Except if addition cost in route s_t.second is negative
-    //         // (!!), overall gain can't exceed current known best gain.
-    //         continue;
-    //       }
+          if (_sol_state.pd_gains[s_t.first][s_p_rank] <=
+              best_gains[s_t.first][s_t.second]) {
+            // Except if addition cost in route s_t.second is negative
+            // (!!), overall gain can't exceed current known best gain.
+            continue;
+          }
 
-    //       PDShift pdr(_input,
-    //                   _sol_state,
-    //                   _sol[s_t.first],
-    //                   s_t.first,
-    //                   s_p_rank,
-    //                   s_d_rank,
-    //                   _sol[s_t.second],
-    //                   s_t.second,
-    //                   best_gains[s_t.first][s_t.second]);
+          PDShift pdr(_input,
+                      _sol_state,
+                      _sol[s_t.first],
+                      s_t.first,
+                      s_p_rank,
+                      s_d_rank,
+                      _sol[s_t.second],
+                      s_t.second,
+                      best_gains[s_t.first][s_t.second]);
 
-    //       if (pdr.gain() > best_gains[s_t.first][s_t.second] and
-    //           pdr.is_valid()) {
-    //         best_gains[s_t.first][s_t.second] = pdr.gain();
-    //         best_ops[s_t.first][s_t.second] = std::make_unique<PDShift>(pdr);
-    //       }
-    //     }
-    //   }
-    // }
+          if (pdr.gain() > best_gains[s_t.first][s_t.second] and
+              pdr.is_valid()) {
+            best_gains[s_t.first][s_t.second] = pdr.gain();
+            best_ops[s_t.first][s_t.second] = std::make_unique<PDShift>(pdr);
+          }
+        }
+      }
+    }
 
     if (!_input.has_homogeneous_locations() or
         !_input.has_homogeneous_profiles()) {
