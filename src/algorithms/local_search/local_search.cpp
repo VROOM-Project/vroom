@@ -723,60 +723,57 @@ void LocalSearch<Route,
       }
     }
 
-    // // 2-opt* stuff
-    // for (const auto& s_t : s_t_pairs) {
-    //   if (s_t.second <= s_t.first or // This operator is symmetric.
-    //       best_priorities[s_t.first] > 0 or best_priorities[s_t.second] > 0)
-    //       {
-    //     continue;
-    //   }
+    // 2-opt* stuff
+    for (const auto& s_t : s_t_pairs) {
+      if (s_t.second <= s_t.first or // This operator is symmetric.
+          best_priorities[s_t.first] > 0 or best_priorities[s_t.second] > 0) {
+        continue;
+      }
 
-    //   // Determine first ranks for inner loops based on vehicles/jobs
-    //   // compatibility along the routes.
-    //   unsigned first_s_rank = 0;
-    //   const auto first_s_candidate =
-    //     _sol_state.bwd_skill_rank[s_t.first][s_t.second];
-    //   if (first_s_candidate > 0) {
-    //     first_s_rank = first_s_candidate - 1;
-    //   }
+      // Determine first ranks for inner loops based on vehicles/jobs
+      // compatibility along the routes.
+      unsigned first_s_rank = 0;
+      const auto first_s_candidate =
+        _sol_state.bwd_skill_rank[s_t.first][s_t.second];
+      if (first_s_candidate > 0) {
+        first_s_rank = first_s_candidate - 1;
+      }
 
-    //   int first_t_rank = 0;
-    //   const auto first_t_candidate =
-    //     _sol_state.bwd_skill_rank[s_t.second][s_t.first];
-    //   if (first_t_candidate > 0) {
-    //     first_t_rank = first_t_candidate - 1;
-    //   }
+      int first_t_rank = 0;
+      const auto first_t_candidate =
+        _sol_state.bwd_skill_rank[s_t.second][s_t.first];
+      if (first_t_candidate > 0) {
+        first_t_rank = first_t_candidate - 1;
+      }
 
-    //   for (unsigned s_rank = first_s_rank; s_rank < _sol[s_t.first].size();
-    //        ++s_rank) {
-    //     if (_sol[s_t.first].has_pending_delivery_after_rank(s_rank)) {
-    //       continue;
-    //     }
+      for (unsigned s_rank = first_s_rank; s_rank < _sol[s_t.first].size();
+           ++s_rank) {
+        if (_sol[s_t.first].has_pending_delivery_after_rank(s_rank)) {
+          continue;
+        }
 
-    //     for (int t_rank = _sol[s_t.second].size() - 1; t_rank >=
-    //     first_t_rank;
-    //          --t_rank) {
-    //       if (_sol[s_t.second].has_pending_delivery_after_rank(t_rank)) {
-    //         continue;
-    //       }
+        for (int t_rank = _sol[s_t.second].size() - 1; t_rank >= first_t_rank;
+             --t_rank) {
+          if (_sol[s_t.second].has_pending_delivery_after_rank(t_rank)) {
+            continue;
+          }
 
-    //       TwoOpt r(_input,
-    //                _sol_state,
-    //                _sol[s_t.first],
-    //                s_t.first,
-    //                s_rank,
-    //                _sol[s_t.second],
-    //                s_t.second,
-    //                t_rank);
+          TwoOpt r(_input,
+                   _sol_state,
+                   _sol[s_t.first],
+                   s_t.first,
+                   s_rank,
+                   _sol[s_t.second],
+                   s_t.second,
+                   t_rank);
 
-    //       if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid())
-    //       {
-    //         best_gains[s_t.first][s_t.second] = r.gain();
-    //         best_ops[s_t.first][s_t.second] = std::make_unique<TwoOpt>(r);
-    //       }
-    //     }
-    //   }
-    // }
+          if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid()) {
+            best_gains[s_t.first][s_t.second] = r.gain();
+            best_ops[s_t.first][s_t.second] = std::make_unique<TwoOpt>(r);
+          }
+        }
+      }
+    }
 
     // Reverse 2-opt* stuff
     for (const auto& s_t : s_t_pairs) {

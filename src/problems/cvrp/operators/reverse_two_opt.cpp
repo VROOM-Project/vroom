@@ -82,7 +82,7 @@ void ReverseTwoOpt::compute_gain() {
 
     // Cost or reverting source route portion. First remove forward
     // cost for end of source route as seen from source vehicle
-    // (subtracting overall cost with intermediate cost). Then add
+    // (subtracting intermediate cost to overall cost). Then add
     // backward cost for end of source route as seen from target
     // vehicle since it's the new target route start.
     const auto& s_fwd_costs = _sol_state.profile_fwd_costs.at(s_v.profile);
