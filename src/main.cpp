@@ -32,6 +32,7 @@ void display_usage() {
   usage += "Version: " + vroom::get_version() + "\n";
   usage += "Usage:\n\tvroom [OPTION]... \"INPUT\"";
   usage += "\n\tvroom [OPTION]... -i FILE\n";
+  usage += "\tvroom [OPTION]...\n";
   usage += "Options:\n";
   usage += "\t-a PROFILE:HOST (=" + vroom::DEFAULT_PROFILE +
            ":0.0.0.0)\t routing server\n";
@@ -154,19 +155,21 @@ int main(int argc, char** argv) {
     cl_args.servers.emplace(vroom::DEFAULT_PROFILE, vroom::Server());
   }
 
-  if (cl_args.input_file.empty()) {
-    // Getting input from command-line.
-    if (argc == optind) {
-      // Missing argument!
-      display_usage();
-    }
-    cl_args.input = argv[optind];
-  } else {
-    // Getting input from provided file.
-    std::ifstream ifs(cl_args.input_file);
+  // Read input problem
+  if (optind == argc) {
     std::stringstream buffer;
-    buffer << ifs.rdbuf();
+    if (cl_args.input_file.empty()) {
+      // Getting input from stdin.
+      buffer << std::cin.rdbuf();
+    } else {
+      // Getting input from provided file.
+      std::ifstream ifs(cl_args.input_file);
+      buffer << ifs.rdbuf();
+    }
     cl_args.input = buffer.str();
+  } else {
+    // Getting input from command-line.
+    cl_args.input = argv[optind];
   }
 
   try {

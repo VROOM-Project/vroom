@@ -5,10 +5,12 @@
 ### Changed
 
 - Formatting script updated to use version 10 of clang-format (#452)
+- vroom will now read json input from stdin if no other input is specified (#457)
 
 ### Fixed
 
 - Compatibility with Visual Studio 2019 (#448)
+- the pd_shift operation can now insert a shipment at the end of a route (#462)
 
 ## [v1.9.0-rc.1] - 2021-01-14
 
