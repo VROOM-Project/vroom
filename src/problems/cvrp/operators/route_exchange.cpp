@@ -38,10 +38,14 @@ void RouteExchange::compute_gain() {
   const auto& s_v = _input.vehicles[s_vehicle];
   const auto& t_v = _input.vehicles[t_vehicle];
 
+  const auto& s_fwd_costs = _sol_state.profile_fwd_costs.at(s_v.profile);
+  const auto& t_fwd_costs = _sol_state.profile_fwd_costs.at(t_v.profile);
+
   Gain new_cost = 0;
   Gain previous_cost = 0;
 
   if (s_route.size() > 0) {
+    // Handle changes at route start.
     auto first_s_index = _input.jobs[s_route.front()].index();
     if (s_v.has_start()) {
       previous_cost += s_v.cost(s_v.start.value().index(), first_s_index);
@@ -50,6 +54,7 @@ void RouteExchange::compute_gain() {
       new_cost += t_v.cost(t_v.start.value().index(), first_s_index);
     }
 
+    // Handle changes at route end.
     auto last_s_index = _input.jobs[s_route.back()].index();
     if (s_v.has_end()) {
       previous_cost += s_v.cost(last_s_index, s_v.end.value().index());
@@ -57,9 +62,14 @@ void RouteExchange::compute_gain() {
     if (t_v.has_end()) {
       new_cost += t_v.cost(last_s_index, t_v.end.value().index());
     }
+
+    // Handle inner cost change for route.
+    previous_cost += s_v.scale_duration(s_fwd_costs[s_vehicle].back());
+    new_cost += t_v.scale_duration(t_fwd_costs[s_vehicle].back());
   }
 
   if (t_route.size() > 0) {
+    // Handle changes at route start.
     auto first_t_index = _input.jobs[t_route.front()].index();
     if (t_v.has_start()) {
       previous_cost += t_v.cost(t_v.start.value().index(), first_t_index);
@@ -68,6 +78,7 @@ void RouteExchange::compute_gain() {
       new_cost += s_v.cost(s_v.start.value().index(), first_t_index);
     }
 
+    // Handle changes at route end.
     auto last_t_index = _input.jobs[t_route.back()].index();
     if (t_v.has_end()) {
       previous_cost += t_v.cost(last_t_index, t_v.end.value().index());
@@ -75,6 +86,10 @@ void RouteExchange::compute_gain() {
     if (s_v.has_end()) {
       new_cost += s_v.cost(last_t_index, s_v.end.value().index());
     }
+
+    // Handle inner cost change for route.
+    previous_cost += t_v.scale_duration(t_fwd_costs[t_vehicle].back());
+    new_cost += s_v.scale_duration(s_fwd_costs[t_vehicle].back());
   }
 
   stored_gain = previous_cost - new_cost;
