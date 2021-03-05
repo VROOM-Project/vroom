@@ -67,10 +67,10 @@ void TwoOpt::compute_gain() {
     // Account for the change in cost across vehicles for the end of
     // source route. Cost of remaining route retrieved by subtracting
     // intermediate cost to overall cost.
-    stored_gain += s_v.scale_duration(s_fwd_costs[s_vehicle].back());
-    stored_gain -= s_v.scale_duration(s_fwd_costs[s_vehicle][s_rank + 1]);
-    stored_gain -= t_v.scale_duration(t_fwd_costs[s_vehicle].back());
-    stored_gain += t_v.scale_duration(t_fwd_costs[s_vehicle][s_rank + 1]);
+    stored_gain += s_v.scale_duration(s_fwd_costs[s_vehicle].back() -
+                                      s_fwd_costs[s_vehicle][s_rank + 1]);
+    stored_gain -= t_v.scale_duration(t_fwd_costs[s_vehicle].back() -
+                                      t_fwd_costs[s_vehicle][s_rank + 1]);
   } else {
     new_last_t = t_index;
   }
@@ -82,10 +82,10 @@ void TwoOpt::compute_gain() {
     // Account for the change in cost across vehicles for the end of
     // target route. Cost of remaining route retrieved by subtracting
     // intermediate cost to overall cost.
-    stored_gain += t_v.scale_duration(t_fwd_costs[t_vehicle].back());
-    stored_gain -= t_v.scale_duration(t_fwd_costs[t_vehicle][t_rank + 1]);
-    stored_gain -= s_v.scale_duration(s_fwd_costs[t_vehicle].back());
-    stored_gain += s_v.scale_duration(s_fwd_costs[t_vehicle][t_rank + 1]);
+    stored_gain += t_v.scale_duration(t_fwd_costs[t_vehicle].back() -
+                                      t_fwd_costs[t_vehicle][t_rank + 1]);
+    stored_gain -= s_v.scale_duration(s_fwd_costs[t_vehicle].back() -
+                                      s_fwd_costs[t_vehicle][t_rank + 1]);
   } else {
     new_last_s = s_index;
   }

@@ -87,10 +87,10 @@ void ReverseTwoOpt::compute_gain() {
     // vehicle since it's the new target route start.
     const auto& s_fwd_costs = _sol_state.profile_fwd_costs.at(s_v.profile);
     const auto& t_bwd_costs = _sol_state.profile_bwd_costs.at(t_v.profile);
-    stored_gain += s_v.scale_duration(s_fwd_costs[s_vehicle].back());
-    stored_gain -= s_v.scale_duration(s_fwd_costs[s_vehicle][s_rank + 1]);
-    stored_gain -= t_v.scale_duration(t_bwd_costs[s_vehicle].back());
-    stored_gain += t_v.scale_duration(t_bwd_costs[s_vehicle][s_rank + 1]);
+    stored_gain += s_v.scale_duration(s_fwd_costs[s_vehicle].back() -
+                                      s_fwd_costs[s_vehicle][s_rank + 1]);
+    stored_gain -= t_v.scale_duration(t_bwd_costs[s_vehicle].back() -
+                                      t_bwd_costs[s_vehicle][s_rank + 1]);
 
     if (last_in_target) {
       if (t_v.has_end()) {
