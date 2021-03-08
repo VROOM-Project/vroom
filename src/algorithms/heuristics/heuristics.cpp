@@ -218,6 +218,15 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
           continue;
         }
 
+        // Compute regret in an inefficient but straightforward
+        // manner.
+        auto regret = std::numeric_limits<Cost>::max();
+        for (Index after_v = v + 1; after_v < input.vehicles.size();
+             ++after_v) {
+          auto after_v_rank = vehicles_ranks[after_v];
+          regret = std::min(regret, costs[job_rank][after_v_rank]);
+        }
+
         if (input.jobs[job_rank].type == JOB_TYPE::SINGLE) {
           for (Index r = 0; r <= current_r.size(); ++r) {
             float current_add = utils::addition_cost(input,
@@ -227,8 +236,7 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
                                                      r);
 
             float current_cost =
-              current_add -
-              lambda * static_cast<float>(costs[job_rank][v_rank]);
+              current_add - lambda * static_cast<float>(regret);
 
             if (current_cost < best_cost and
                 current_r
@@ -312,8 +320,7 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
               }
 
               float current_cost =
-                current_add -
-                lambda * static_cast<float>(costs[job_rank][v_rank]);
+                current_add - lambda * static_cast<float>(regret);
 
               if (current_cost < best_cost) {
                 modified_with_pd.push_back(job_rank + 1);
