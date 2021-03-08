@@ -69,10 +69,6 @@ struct Vehicle {
       cost_wrapper.durations_factor *
       static_cast<double>((*(cost_wrapper.durations_matrix))[i][j]));
   }
-
-  Cost scale_duration(double duration) const {
-    return static_cast<Cost>(cost_wrapper.durations_factor * duration);
-  }
 };
 
 } // namespace vroom

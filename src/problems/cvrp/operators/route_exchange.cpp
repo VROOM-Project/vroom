@@ -38,9 +38,6 @@ void RouteExchange::compute_gain() {
   const auto& s_v = _input.vehicles[s_vehicle];
   const auto& t_v = _input.vehicles[t_vehicle];
 
-  const auto& s_fwd_costs = _sol_state.profile_fwd_costs.at(s_v.profile);
-  const auto& t_fwd_costs = _sol_state.profile_fwd_costs.at(t_v.profile);
-
   Gain new_cost = 0;
   Gain previous_cost = 0;
 
@@ -64,8 +61,8 @@ void RouteExchange::compute_gain() {
     }
 
     // Handle inner cost change for route.
-    previous_cost += s_v.scale_duration(s_fwd_costs[s_vehicle].back());
-    new_cost += t_v.scale_duration(t_fwd_costs[s_vehicle].back());
+    previous_cost += _sol_state.fwd_costs[s_vehicle][s_vehicle].back();
+    new_cost += _sol_state.fwd_costs[s_vehicle][t_vehicle].back();
   }
 
   if (t_route.size() > 0) {
@@ -88,8 +85,8 @@ void RouteExchange::compute_gain() {
     }
 
     // Handle inner cost change for route.
-    previous_cost += t_v.scale_duration(t_fwd_costs[t_vehicle].back());
-    new_cost += s_v.scale_duration(s_fwd_costs[t_vehicle].back());
+    previous_cost += _sol_state.fwd_costs[t_vehicle][t_vehicle].back();
+    new_cost += _sol_state.fwd_costs[t_vehicle][s_vehicle].back();
   }
 
   stored_gain = previous_cost - new_cost;

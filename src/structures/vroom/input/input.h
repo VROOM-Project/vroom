@@ -120,8 +120,6 @@ public:
   // Returns true iff both vehicles have common job candidates.
   bool vehicle_ok_with_vehicle(Index v1_index, Index v2_index) const;
 
-  std::unordered_set<std::string> get_profiles() const;
-
   Cost get_duration(const std::string& profile, Index i, Index j) const {
     assert(_matrices.find(profile) != _matrices.end());
     return _matrices.at(profile)[i][j];

@@ -58,16 +58,14 @@ public:
   // Store unassigned jobs.
   std::unordered_set<Index> unassigned;
 
-  // profile_fwd_costs[p][v][i] stores the total cost from job at rank
-  // 0 to job at rank i in the route for vehicle v, from the point of
-  // view of a vehicle with profile p. profile_bwd_costs[p][v][i]
-  // stores the total cost from job at rank i to job at rank 0
-  // (i.e. when *reversing* all edges) in the route for vehicle v,
-  // from the point of view of a vehicle with profile p.
-  std::unordered_map<std::string, std::vector<std::vector<Cost>>>
-    profile_fwd_costs;
-  std::unordered_map<std::string, std::vector<std::vector<Cost>>>
-    profile_bwd_costs;
+  // fwd_costs[v][new_v][i] stores the total cost from job at rank 0
+  // to job at rank i in the route for vehicle v, from the point of
+  // view of a vehicle new_v. bwd_costs[v][new_v][i] stores the total
+  // cost from job at rank i to job at rank 0 (i.e. when *reversing*
+  // all edges) in the route for vehicle v, from the point of view of
+  // a vehicle new_v.
+  std::vector<std::vector<std::vector<Cost>>> fwd_costs;
+  std::vector<std::vector<std::vector<Cost>>> bwd_costs;
 
   // fwd_skill_rank[v1][v2] stores the maximum rank r for a step in
   // route for vehicle v1 such that v2 can handle all jobs from step 0

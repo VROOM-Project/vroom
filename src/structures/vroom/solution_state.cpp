@@ -16,6 +16,8 @@ namespace utils {
 SolutionState::SolutionState(const Input& input)
   : _input(input),
     _nb_vehicles(_input.vehicles.size()),
+    fwd_costs(_nb_vehicles, std::vector<std::vector<Cost>>(_nb_vehicles)),
+    bwd_costs(_nb_vehicles, std::vector<std::vector<Cost>>(_nb_vehicles)),
     fwd_skill_rank(_nb_vehicles, std::vector<Index>(_nb_vehicles)),
     bwd_skill_rank(_nb_vehicles, std::vector<Index>(_nb_vehicles)),
     edge_costs_around_node(_nb_vehicles),
@@ -34,12 +36,6 @@ SolutionState::SolutionState(const Input& input)
                                    std::vector<std::vector<Index>>(
                                      _nb_vehicles)),
     route_costs(_nb_vehicles) {
-  // Costs stored per profile.
-  const auto profiles = input.get_profiles();
-  for (const auto& p : profiles) {
-    profile_fwd_costs.emplace(p, std::vector<std::vector<Cost>>(_nb_vehicles));
-    profile_bwd_costs.emplace(p, std::vector<std::vector<Cost>>(_nb_vehicles));
-  }
 }
 
 void SolutionState::setup(const std::vector<Index>& r, Index v) {
@@ -91,35 +87,33 @@ void SolutionState::setup(const TWSolution& tw_sol) {
 }
 
 void SolutionState::update_costs(const std::vector<Index>& route, Index v) {
-  for (auto& p : profile_fwd_costs) {
-    const auto& profile = p.first;
-    auto& fwd_costs = p.second;
-    assert(profile_bwd_costs.find(profile) != profile_bwd_costs.end());
-    auto& bwd_costs = profile_bwd_costs[profile];
+  fwd_costs[v] =
+    std::vector<std::vector<Cost>>(_nb_vehicles,
+                                   std::vector<Cost>(route.size()));
+  bwd_costs[v] =
+    std::vector<std::vector<Cost>>(_nb_vehicles,
+                                   std::vector<Cost>(route.size()));
 
-    fwd_costs[v] = std::vector<Cost>(route.size());
-    bwd_costs[v] = std::vector<Cost>(route.size());
-
-    Cost current_fwd = 0;
-    Cost current_bwd = 0;
-
-    Index previous_index = 0; // dummy init
-    if (!route.empty()) {
-      previous_index = _input.jobs[route[0]].index();
-      fwd_costs[v][0] = current_fwd;
-      bwd_costs[v][0] = current_bwd;
+  Index previous_index = 0; // dummy init
+  if (!route.empty()) {
+    previous_index = _input.jobs[route[0]].index();
+    for (Index v_rank = 0; v_rank < _nb_vehicles; ++v_rank) {
+      fwd_costs[v][v_rank][0] = 0;
+      bwd_costs[v][v_rank][0] = 0;
     }
+  }
 
-    for (std::size_t i = 1; i < route.size(); ++i) {
-      auto current_index = _input.jobs[route[i]].index();
-      current_fwd +=
-        _input.get_duration(profile, previous_index, current_index);
-      current_bwd +=
-        _input.get_duration(profile, current_index, previous_index);
-      fwd_costs[v][i] = current_fwd;
-      bwd_costs[v][i] = current_bwd;
-      previous_index = current_index;
+  for (std::size_t i = 1; i < route.size(); ++i) {
+    const auto current_index = _input.jobs[route[i]].index();
+    for (Index v_rank = 0; v_rank < _nb_vehicles; ++v_rank) {
+      const auto& other_v = _input.vehicles[v_rank];
+      fwd_costs[v][v_rank][i] = fwd_costs[v][v_rank][i - 1] +
+                                other_v.duration(previous_index, current_index);
+
+      bwd_costs[v][v_rank][i] = bwd_costs[v][v_rank][i - 1] +
+                                other_v.duration(current_index, previous_index);
     }
+    previous_index = current_index;
   }
 }
 

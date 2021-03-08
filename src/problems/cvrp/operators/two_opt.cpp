@@ -54,9 +54,6 @@ void TwoOpt::compute_gain() {
   // s_rank with route for vehicle t_vehicle after step
   // t_rank.
 
-  const auto& s_fwd_costs = _sol_state.profile_fwd_costs.at(s_v.profile);
-  const auto& t_fwd_costs = _sol_state.profile_fwd_costs.at(t_v.profile);
-
   // Basic costs in case we really swap jobs and not only the end of
   // the route. Otherwise remember that last job does not change.
   if (s_rank < s_route.size() - 1) {
@@ -67,10 +64,10 @@ void TwoOpt::compute_gain() {
     // Account for the change in cost across vehicles for the end of
     // source route. Cost of remaining route retrieved by subtracting
     // intermediate cost to overall cost.
-    stored_gain += s_v.scale_duration(s_fwd_costs[s_vehicle].back() -
-                                      s_fwd_costs[s_vehicle][s_rank + 1]);
-    stored_gain -= t_v.scale_duration(t_fwd_costs[s_vehicle].back() -
-                                      t_fwd_costs[s_vehicle][s_rank + 1]);
+    stored_gain += _sol_state.fwd_costs[s_vehicle][s_vehicle].back();
+    stored_gain -= _sol_state.fwd_costs[s_vehicle][s_vehicle][s_rank + 1];
+    stored_gain -= _sol_state.fwd_costs[s_vehicle][t_vehicle].back();
+    stored_gain += _sol_state.fwd_costs[s_vehicle][t_vehicle][s_rank + 1];
   } else {
     new_last_t = t_index;
   }
@@ -82,10 +79,10 @@ void TwoOpt::compute_gain() {
     // Account for the change in cost across vehicles for the end of
     // target route. Cost of remaining route retrieved by subtracting
     // intermediate cost to overall cost.
-    stored_gain += t_v.scale_duration(t_fwd_costs[t_vehicle].back() -
-                                      t_fwd_costs[t_vehicle][t_rank + 1]);
-    stored_gain -= s_v.scale_duration(s_fwd_costs[t_vehicle].back() -
-                                      s_fwd_costs[t_vehicle][t_rank + 1]);
+    stored_gain += _sol_state.fwd_costs[t_vehicle][t_vehicle].back();
+    stored_gain -= _sol_state.fwd_costs[t_vehicle][t_vehicle][t_rank + 1];
+    stored_gain -= _sol_state.fwd_costs[t_vehicle][s_vehicle].back();
+    stored_gain += _sol_state.fwd_costs[t_vehicle][s_vehicle][t_rank + 1];
   } else {
     new_last_s = s_index;
   }
