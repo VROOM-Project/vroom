@@ -15,6 +15,51 @@ All rights reserved (see LICENSE).
 namespace vroom {
 namespace heuristics {
 
+std::vector<std::vector<Cost>> get_jobs_vehicles_costs(const Input& input) {
+  // For a single job j, costs[j][v] is the cost of fetching job j in
+  // an empty route from vehicle at rank v. For a pickup job j,
+  // costs[j][v] is the cost of fetching job j **and** associated
+  // delivery in an empty route from vehicle at rank v.
+  std::vector<std::vector<Cost>> costs(input.jobs.size(),
+                                       std::vector<Cost>(
+                                         input.vehicles.size()));
+  for (std::size_t j = 0; j < input.jobs.size(); ++j) {
+    Index j_index = input.jobs[j].index();
+    bool is_pickup = (input.jobs[j].type == JOB_TYPE::PICKUP);
+
+    Index last_job_index = j_index;
+    if (is_pickup) {
+      assert((j + 1 < input.jobs.size()) and
+             (input.jobs[j + 1].type == JOB_TYPE::DELIVERY));
+      last_job_index = input.jobs[j + 1].index();
+    }
+
+    for (std::size_t v = 0; v < input.vehicles.size(); ++v) {
+      const auto& vehicle = input.vehicles[v];
+      Cost current_cost = is_pickup ? vehicle.cost(j_index, last_job_index) : 0;
+      if (vehicle.has_start()) {
+        current_cost += vehicle.cost(vehicle.start.value().index(), j_index);
+      }
+      if (vehicle.has_end()) {
+        current_cost +=
+          vehicle.cost(last_job_index, vehicle.end.value().index());
+      }
+      costs[j][v] = current_cost;
+      if (is_pickup) {
+        // Assign same cost to delivery.
+        costs[j + 1][v] = current_cost;
+      }
+    }
+
+    if (is_pickup) {
+      // Skip delivery.
+      ++j;
+    }
+  }
+
+  return costs;
+}
+
 template <class T> T basic(const Input& input, INIT init, float lambda) {
   T routes;
   for (Index v = 0; v < input.vehicles.size(); ++v) {
@@ -386,47 +431,7 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
   std::vector<Index> vehicles_ranks(input.vehicles.size());
   std::iota(vehicles_ranks.begin(), vehicles_ranks.end(), 0);
 
-  // For a single job j, costs[j][v] is the cost of fetching job j in
-  // an empty route from vehicle at vehicles_ranks[v]. For a pickup
-  // job j, costs[j][v] is the cost of fetching job j **and**
-  // associated delivery in an empty route from vehicle at
-  // vehicles_ranks[v].
-  std::vector<std::vector<Cost>> costs(input.jobs.size(),
-                                       std::vector<Cost>(
-                                         input.vehicles.size()));
-  for (std::size_t j = 0; j < input.jobs.size(); ++j) {
-    Index j_index = input.jobs[j].index();
-    bool is_pickup = (input.jobs[j].type == JOB_TYPE::PICKUP);
-
-    Index last_job_index = j_index;
-    if (is_pickup) {
-      assert((j + 1 < input.jobs.size()) and
-             (input.jobs[j + 1].type == JOB_TYPE::DELIVERY));
-      last_job_index = input.jobs[j + 1].index();
-    }
-
-    for (std::size_t v = 0; v < vehicles_ranks.size(); ++v) {
-      const auto& vehicle = input.vehicles[vehicles_ranks[v]];
-      Cost current_cost = is_pickup ? vehicle.cost(j_index, last_job_index) : 0;
-      if (vehicle.has_start()) {
-        current_cost += vehicle.cost(vehicle.start.value().index(), j_index);
-      }
-      if (vehicle.has_end()) {
-        current_cost +=
-          vehicle.cost(last_job_index, vehicle.end.value().index());
-      }
-      costs[j][v] = current_cost;
-      if (is_pickup) {
-        // Assign same cost to delivery.
-        costs[j + 1][v] = current_cost;
-      }
-    }
-
-    if (is_pickup) {
-      // Skip delivery.
-      ++j;
-    }
-  }
+  auto costs = get_jobs_vehicles_costs(input);
 
   while (!vehicles_ranks.empty() and !unassigned.empty()) {
     // For any unassigned job at j, jobs_min_costs[j]
