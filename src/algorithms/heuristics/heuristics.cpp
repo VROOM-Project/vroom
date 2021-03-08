@@ -87,44 +87,7 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
                              v_lhs.tw.length > v_rhs.tw.length);
                    });
 
-  // For a single job j, costs[j] is the cost of fetching job j in an
-  // empty route from one of the vehicles (consistent across vehicles
-  // in the homogeneous case). For a pickup (resp. delivery) job j,
-  // costs[j] is the cost of fetching job j **and** associated
-  // delivery (resp. pickup) in an empty route from one of the
-  // vehicles.
-  const auto& v = input.vehicles[0];
-
-  std::vector<Cost> costs(input.jobs.size());
-  for (std::size_t j = 0; j < input.jobs.size(); ++j) {
-    Index j_index = input.jobs[j].index();
-    bool is_pickup = (input.jobs[j].type == JOB_TYPE::PICKUP);
-
-    Cost current_cost = 0;
-    if (v.has_start()) {
-      current_cost += v.cost(v.start.value().index(), j_index);
-    }
-
-    Index last_job_index = j_index;
-    if (is_pickup) {
-      assert((j + 1 < input.jobs.size()) and
-             (input.jobs[j + 1].type == JOB_TYPE::DELIVERY));
-
-      // Add delivery cost.
-      last_job_index = input.jobs[j + 1].index();
-      current_cost += v.cost(j_index, last_job_index);
-    }
-
-    if (v.has_end()) {
-      current_cost += v.cost(last_job_index, v.end.value().index());
-    }
-    costs[j] = current_cost;
-    if (is_pickup) {
-      // Assign same cost to delivery and skip it.
-      costs[j + 1] = current_cost;
-      ++j;
-    }
-  }
+  auto costs = get_jobs_vehicles_costs(input);
 
   for (Index v = 0; v < input.vehicles.size(); ++v) {
     auto v_rank = vehicles_ranks[v];
@@ -162,10 +125,10 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
           try_validity |= (current_deadline < earliest_deadline);
         }
         if (init == INIT::FURTHEST) {
-          try_validity |= (furthest_cost < costs[job_rank]);
+          try_validity |= (furthest_cost < costs[job_rank][v_rank]);
         }
         if (init == INIT::NEAREST) {
-          try_validity |= (costs[job_rank] < nearest_cost);
+          try_validity |= (costs[job_rank][v_rank] < nearest_cost);
         }
 
         if (!try_validity) {
@@ -213,10 +176,10 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
                                   : input.jobs[job_rank].tws.back().end;
             break;
           case INIT::FURTHEST:
-            furthest_cost = costs[job_rank];
+            furthest_cost = costs[job_rank][v_rank];
             break;
           case INIT::NEAREST:
-            nearest_cost = costs[job_rank];
+            nearest_cost = costs[job_rank][v_rank];
             break;
           }
         }
@@ -264,7 +227,8 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
                                                      r);
 
             float current_cost =
-              current_add - lambda * static_cast<float>(costs[job_rank]);
+              current_add -
+              lambda * static_cast<float>(costs[job_rank][v_rank]);
 
             if (current_cost < best_cost and
                 current_r
@@ -348,7 +312,8 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
               }
 
               float current_cost =
-                current_add - lambda * static_cast<float>(costs[job_rank]);
+                current_add -
+                lambda * static_cast<float>(costs[job_rank][v_rank]);
 
               if (current_cost < best_cost) {
                 modified_with_pd.push_back(job_rank + 1);
