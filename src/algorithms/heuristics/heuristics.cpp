@@ -61,8 +61,9 @@ std::vector<std::vector<Cost>> get_jobs_vehicles_costs(const Input& input) {
 }
 
 template <class T> T basic(const Input& input, INIT init, float lambda) {
+  auto nb_vehicles = input.vehicles.size();
   T routes;
-  for (Index v = 0; v < input.vehicles.size(); ++v) {
+  for (Index v = 0; v < nb_vehicles; ++v) {
     routes.emplace_back(input, v);
   }
 
@@ -73,7 +74,7 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
 
   // One level of indirection to allow easy ordering of the vehicles
   // within the heuristic.
-  std::vector<Index> vehicles_ranks(input.vehicles.size());
+  std::vector<Index> vehicles_ranks(nb_vehicles);
   std::iota(vehicles_ranks.begin(), vehicles_ranks.end(), 0);
   // Sort vehicles by "higher" capacity or by time window in case of
   // capacities ties.
@@ -89,7 +90,26 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
 
   auto costs = get_jobs_vehicles_costs(input);
 
-  for (Index v = 0; v < input.vehicles.size(); ++v) {
+  // regrets[v][j] holds the min cost for reaching job j in an empty
+  // route across all remaining vehicles **after** vehicle at rank v
+  // in vehicle_ranks.
+  std::vector<std::vector<Cost>> regrets(nb_vehicles,
+                                         std::vector<Cost>(input.jobs.size()));
+
+  // Last vehicle.
+  regrets.back() =
+    std::vector<Cost>(input.jobs.size(), std::numeric_limits<Cost>::max());
+
+  for (Index rev_v = 0; rev_v < nb_vehicles - 1; ++rev_v) {
+    // Going trough vehicles backward from second to last.
+    const auto v = nb_vehicles - 2 - rev_v;
+    for (Index j = 0; j < input.jobs.size(); ++j) {
+      regrets[v][j] =
+        std::min(regrets[v + 1][j], costs[j][vehicles_ranks[v + 1]]);
+    }
+  }
+
+  for (Index v = 0; v < nb_vehicles; ++v) {
     auto v_rank = vehicles_ranks[v];
     auto& current_r = routes[v_rank];
 
@@ -218,15 +238,6 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
           continue;
         }
 
-        // Compute regret in an inefficient but straightforward
-        // manner.
-        auto regret = std::numeric_limits<Cost>::max();
-        for (Index after_v = v + 1; after_v < input.vehicles.size();
-             ++after_v) {
-          auto after_v_rank = vehicles_ranks[after_v];
-          regret = std::min(regret, costs[job_rank][after_v_rank]);
-        }
-
         if (input.jobs[job_rank].type == JOB_TYPE::SINGLE) {
           for (Index r = 0; r <= current_r.size(); ++r) {
             float current_add = utils::addition_cost(input,
@@ -236,7 +247,7 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
                                                      r);
 
             float current_cost =
-              current_add - lambda * static_cast<float>(regret);
+              current_add - lambda * static_cast<float>(regrets[v][job_rank]);
 
             if (current_cost < best_cost and
                 current_r
@@ -320,7 +331,7 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
               }
 
               float current_cost =
-                current_add - lambda * static_cast<float>(regret);
+                current_add - lambda * static_cast<float>(regrets[v][job_rank]);
 
               if (current_cost < best_cost) {
                 modified_with_pd.push_back(job_rank + 1);
@@ -390,8 +401,9 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
 
 template <class T>
 T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
+  auto nb_vehicles = input.vehicles.size();
   T routes;
-  for (Index v = 0; v < input.vehicles.size(); ++v) {
+  for (Index v = 0; v < nb_vehicles; ++v) {
     routes.emplace_back(input, v);
   }
 
@@ -400,7 +412,7 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
     unassigned.insert(j);
   }
 
-  std::vector<Index> vehicles_ranks(input.vehicles.size());
+  std::vector<Index> vehicles_ranks(nb_vehicles);
   std::iota(vehicles_ranks.begin(), vehicles_ranks.end(), 0);
 
   auto costs = get_jobs_vehicles_costs(input);
@@ -429,7 +441,7 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
 
     // Pick vehicle that has the biggest number of compatible jobs
     // closest to him than to any other different vehicle.
-    std::vector<unsigned> closest_jobs_count(input.vehicles.size(), 0);
+    std::vector<unsigned> closest_jobs_count(nb_vehicles, 0);
     for (const auto job_rank : unassigned) {
       for (const auto v_rank : vehicles_ranks) {
         if (costs[job_rank][v_rank] == jobs_min_costs[job_rank]) {
