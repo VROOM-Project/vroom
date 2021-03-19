@@ -5,6 +5,7 @@
 ### Added
 
 - Support Valhalla as routing engine (#306)
+- Report `type` for unassigned tasks in output (#469)
 
 ### Changed
 
