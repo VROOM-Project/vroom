@@ -17,6 +17,7 @@ OsrmRoutedWrapper::OsrmRoutedWrapper(const std::string& profile,
   : HttpWrapper(profile,
                 server,
                 "table",
+                "durations",
                 "route",
                 "alternatives=false&steps=false&overview=full&continue_"
                 "straight=false") {
@@ -50,32 +51,42 @@ OsrmRoutedWrapper::build_query(const std::vector<Location>& locations,
   return query;
 }
 
-void OsrmRoutedWrapper::parse_response(rapidjson::Document& infos,
-                                       const std::string& json_content) const {
-#ifdef NDEBUG
-  infos.Parse(json_content.c_str());
-#else
-  assert(!infos.Parse(json_content.c_str()).HasParseError());
-  assert(infos.HasMember("code"));
-#endif
-  if (infos["code"] != "Ok") {
-    throw Exception(ERROR::ROUTING, std::string(infos["message"].GetString()));
+void OsrmRoutedWrapper::check_response(const rapidjson::Document& json_result,
+                                       const std::string&) const {
+  assert(json_result.HasMember("code"));
+  if (json_result["code"] != "Ok") {
+    throw Exception(ERROR::ROUTING,
+                    std::string(json_result["message"].GetString()));
   }
 }
 
+bool OsrmRoutedWrapper::duration_value_is_null(
+  const rapidjson::Value& matrix_entry) const {
+  return matrix_entry.IsNull();
+}
+
+Cost OsrmRoutedWrapper::get_duration_value(
+  const rapidjson::Value& matrix_entry) const {
+  return round_cost(matrix_entry.GetDouble());
+}
+
 double
-OsrmRoutedWrapper::get_total_distance(const rapidjson::Value& route) const {
-  return route["distance"].GetDouble();
+OsrmRoutedWrapper::get_total_distance(const rapidjson::Value& result) const {
+  return result["routes"][0]["distance"].GetDouble();
 }
 
 unsigned
-OsrmRoutedWrapper::get_legs_number(const rapidjson::Value& route) const {
-  return route["legs"].Size();
+OsrmRoutedWrapper::get_legs_number(const rapidjson::Value& result) const {
+  return result["routes"][0]["legs"].Size();
 }
 
-double OsrmRoutedWrapper::get_distance_for_leg(const rapidjson::Value& route,
+double OsrmRoutedWrapper::get_distance_for_leg(const rapidjson::Value& result,
                                                rapidjson::SizeType i) const {
-  return route["legs"][i]["distance"].GetDouble();
+  return result["routes"][0]["legs"][i]["distance"].GetDouble();
+}
+
+std::string OsrmRoutedWrapper::get_geometry(rapidjson::Value& result) const {
+  return result["routes"][0]["geometry"].GetString();
 }
 
 } // namespace routing

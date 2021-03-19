@@ -16,6 +16,7 @@ OrsWrapper::OrsWrapper(const std::string& profile, const Server& server)
   : HttpWrapper(profile,
                 server,
                 "matrix",
+                "durations",
                 "directions",
                 "\"geometry_simplify\":\"false\",\"continue_straight\":"
                 "\"false\"") {
@@ -57,30 +58,39 @@ std::string OrsWrapper::build_query(const std::vector<Location>& locations,
   return query;
 }
 
-void OrsWrapper::parse_response(rapidjson::Document& infos,
-                                const std::string& json_content) const {
-#ifdef NDEBUG
-  infos.Parse(json_content.c_str());
-#else
-  assert(!infos.Parse(json_content.c_str()).HasParseError());
-#endif
-  if (infos.HasMember("error")) {
+void OrsWrapper::check_response(const rapidjson::Document& json_result,
+                                const std::string&) const {
+  if (json_result.HasMember("error")) {
     throw Exception(ERROR::ROUTING,
-                    std::string(infos["error"]["message"].GetString()));
+                    std::string(json_result["error"]["message"].GetString()));
   }
 }
 
-double OrsWrapper::get_total_distance(const rapidjson::Value& route) const {
-  return route["summary"]["distance"].GetDouble();
+bool OrsWrapper::duration_value_is_null(
+  const rapidjson::Value& matrix_entry) const {
+  return matrix_entry.IsNull();
 }
 
-unsigned OrsWrapper::get_legs_number(const rapidjson::Value& route) const {
-  return route["segments"].Size();
+Cost OrsWrapper::get_duration_value(
+  const rapidjson::Value& matrix_entry) const {
+  return round_cost(matrix_entry.GetDouble());
 }
 
-double OrsWrapper::get_distance_for_leg(const rapidjson::Value& route,
+double OrsWrapper::get_total_distance(const rapidjson::Value& result) const {
+  return result["routes"][0]["summary"]["distance"].GetDouble();
+}
+
+unsigned OrsWrapper::get_legs_number(const rapidjson::Value& result) const {
+  return result["routes"][0]["segments"].Size();
+}
+
+double OrsWrapper::get_distance_for_leg(const rapidjson::Value& result,
                                         rapidjson::SizeType i) const {
-  return route["segments"][i]["distance"].GetDouble();
+  return result["routes"][0]["segments"][i]["distance"].GetDouble();
+}
+
+std::string OrsWrapper::get_geometry(rapidjson::Value& result) const {
+  return result["routes"][0]["geometry"].GetString();
 }
 
 } // namespace routing
