@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Report `type` for unassigned tasks in output (#469)
+
 ### Changed
 
 - Formatting script updated to use version 10 of clang-format (#452)
