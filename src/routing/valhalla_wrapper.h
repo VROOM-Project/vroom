@@ -1,5 +1,5 @@
-#ifndef ORS_WRAPPER_H
-#define ORS_WRAPPER_H
+#ifndef VALHALLA_WRAPPER_H
+#define VALHALLA_WRAPPER_H
 
 /*
 
@@ -15,13 +15,18 @@ All rights reserved (see LICENSE).
 namespace vroom {
 namespace routing {
 
-class OrsWrapper : public HttpWrapper {
+class ValhallaWrapper : public HttpWrapper {
 private:
+  std::string get_matrix_query(const std::vector<Location>& locations) const;
+
+  std::string get_route_query(const std::vector<Location>& locations,
+                              const std::string& extra_args = "") const;
+
   virtual std::string build_query(const std::vector<Location>& locations,
                                   const std::string& service,
                                   const std::string& extra_args) const override;
 
-  virtual void check_response(const rapidjson::Document& json_result,
+  virtual void check_response(const rapidjson::Document& input,
                               const std::string& service) const override;
 
   virtual bool
@@ -42,7 +47,7 @@ private:
   virtual std::string get_geometry(rapidjson::Value& result) const override;
 
 public:
-  OrsWrapper(const std::string& profile, const Server& server);
+  ValhallaWrapper(const std::string& profile, const Server& server);
 };
 
 } // namespace routing

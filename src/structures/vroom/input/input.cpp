@@ -15,6 +15,7 @@ All rights reserved (see LICENSE).
 #endif
 #include "routing/ors_wrapper.h"
 #include "routing/osrm_routed_wrapper.h"
+#include "routing/valhalla_wrapper.h"
 #include "structures/vroom/input/input.h"
 #include "utils/helpers.h"
 
@@ -73,7 +74,7 @@ void Input::add_routing_wrapper(const std::string& profile) {
                     "VROOM compiled without libosrm installed.");
 #endif
     break;
-  case ROUTER::ORS:
+  case ROUTER::ORS: {
     // Use ORS http wrapper.
     auto search = _servers.find(profile);
     if (search == _servers.end()) {
@@ -81,7 +82,16 @@ void Input::add_routing_wrapper(const std::string& profile) {
     }
     routing_wrapper =
       std::make_unique<routing::OrsWrapper>(profile, search->second);
-    break;
+  } break;
+  case ROUTER::VALHALLA: {
+    // Use Valhalla http wrapper.
+    auto search = _servers.find(profile);
+    if (search == _servers.end()) {
+      throw Exception(ERROR::INPUT, "Invalid profile: " + profile + ".");
+    }
+    routing_wrapper =
+      std::make_unique<routing::ValhallaWrapper>(profile, search->second);
+  } break;
   }
 }
 

@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Added
+
+- Support Valhalla as routing engine (#306)
+- Report `type` for unassigned tasks in output (#469)
+
 ### Changed
 
 - Formatting script updated to use version 10 of clang-format (#452)
@@ -12,7 +17,7 @@
 - Compatibility with Visual Studio 2019 (#448)
 - the pd_shift operation can now insert a shipment at the end of a route (#462)
 
-## [v1.9.0-rc.1] - 2021-01-14
+## [v1.9.0] - 2021-03-04
 
 ### Added
 

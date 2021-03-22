@@ -81,6 +81,21 @@ rapidjson::Document to_json(const Solution& sol, bool geometry) {
                            to_json(job.location, allocator),
                            allocator);
       }
+      json_job.AddMember("type", rapidjson::Value(), allocator);
+      std::string str_type;
+      switch (job.type) {
+      case JOB_TYPE::SINGLE:
+        str_type = "job";
+        break;
+      case JOB_TYPE::PICKUP:
+        str_type = "pickup";
+        break;
+      case JOB_TYPE::DELIVERY:
+        str_type = "delivery";
+        break;
+      }
+      json_job["type"].SetString(str_type.c_str(), str_type.size(), allocator);
+
       json_unassigned.PushBack(json_job, allocator);
     }
 
