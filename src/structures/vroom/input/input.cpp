@@ -531,7 +531,11 @@ void Input::set_matrices() {
     if (_custom_matrices.find(profile) == _custom_matrices.end()) {
       // Matrix has not been manually set.
       add_routing_wrapper(profile);
+    }
+  }
 
+  for (const auto& profile : _profiles) {
+    if (_custom_matrices.find(profile) == _custom_matrices.end()) {
       if (_locations.size() == 1) {
         _matrices.emplace(profile, Matrix<Cost>({{0}}));
       } else {
