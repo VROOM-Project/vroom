@@ -72,7 +72,7 @@ private:
   void set_extra_compatibility();
   void set_vehicles_compatibility();
   void set_vehicles_costs();
-  void set_matrices();
+  void set_matrices(unsigned nb_thread);
 
   void add_routing_wrapper(const std::string& profile);
 
