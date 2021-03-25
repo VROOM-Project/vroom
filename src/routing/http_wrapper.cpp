@@ -239,9 +239,14 @@ void HttpWrapper::add_route_info(Route& route) const {
     // non-breaks steps.
     for (unsigned b = 1; b <= number_breaks_after[i]; ++b) {
       auto& break_step = route.steps[steps_rank + b];
-      break_step.distance = round_cost(
-        sum_distance + ((break_step.duration - step.duration) * next_distance) /
-                         next_duration);
+      if (next_duration == 0) {
+        break_step.distance = round_cost(sum_distance);
+      } else {
+        break_step.distance =
+          round_cost(sum_distance +
+                     ((break_step.duration - step.duration) * next_distance) /
+                       next_duration);
+      }
     }
 
     sum_distance += next_distance;
