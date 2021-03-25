@@ -550,63 +550,74 @@ void Input::set_matrices(unsigned nb_thread) {
     }
   }
 
-  auto run_on_profiles = [&](const std::vector<std::string>& profiles) {
-    for (const auto& profile : profiles) {
-      auto p_m = _matrices.find(profile);
-      assert(p_m != _matrices.end());
+  std::vector<std::exception_ptr> thread_exceptions(nb_buckets, nullptr);
 
-      if (p_m->second.size() == 0) {
-        // Matrix not manually set so defined as empty above.
-        if (_locations.size() == 1) {
-          p_m->second = Matrix<Cost>({{0}});
-        } else {
-          auto rw = std::find_if(_routing_wrappers.begin(),
-                                 _routing_wrappers.end(),
-                                 [&](const auto& wr) {
-                                   return wr->profile == profile;
-                                 });
-          assert(rw != _routing_wrappers.end());
+  auto run_on_profiles = [&](unsigned bucket,
+                             const std::vector<std::string>& profiles) {
+    try {
+      for (const auto& profile : profiles) {
+        auto p_m = _matrices.find(profile);
+        assert(p_m != _matrices.end());
 
-          if (!_has_custom_location_index) {
-            // Location indices are set based on order in _locations.
-            p_m->second = (*rw)->get_matrix(_locations);
+        if (p_m->second.size() == 0) {
+          // Matrix not manually set so defined as empty above.
+          if (_locations.size() == 1) {
+            p_m->second = Matrix<Cost>({{0}});
           } else {
-            // Location indices are provided in input so we need an
-            // indirection based on order in _locations.
-            auto m = (*rw)->get_matrix(_locations);
+            auto rw = std::find_if(_routing_wrappers.begin(),
+                                   _routing_wrappers.end(),
+                                   [&](const auto& wr) {
+                                     return wr->profile == profile;
+                                   });
+            assert(rw != _routing_wrappers.end());
 
-            Matrix<Cost> full_m(_max_matrices_used_index + 1);
-            for (Index i = 0; i < _locations.size(); ++i) {
-              const auto& loc_i = _locations[i];
-              for (Index j = 0; j < _locations.size(); ++j) {
-                full_m[loc_i.index()][_locations[j].index()] = m[i][j];
+            if (!_has_custom_location_index) {
+              // Location indices are set based on order in _locations.
+              p_m->second = (*rw)->get_matrix(_locations);
+            } else {
+              // Location indices are provided in input so we need an
+              // indirection based on order in _locations.
+              auto m = (*rw)->get_matrix(_locations);
+
+              Matrix<Cost> full_m(_max_matrices_used_index + 1);
+              for (Index i = 0; i < _locations.size(); ++i) {
+                const auto& loc_i = _locations[i];
+                for (Index j = 0; j < _locations.size(); ++j) {
+                  full_m[loc_i.index()][_locations[j].index()] = m[i][j];
+                }
               }
-            }
 
-            p_m->second = std::move(full_m);
+              p_m->second = std::move(full_m);
+            }
           }
         }
-      }
 
-      if (p_m->second.size() <= _max_matrices_used_index) {
-        throw Exception(ERROR::INPUT,
-                        "location_index exceeding matrix size for " + profile +
-                          " profile.");
-      }
+        if (p_m->second.size() <= _max_matrices_used_index) {
+          throw Exception(ERROR::INPUT,
+                          "location_index exceeding matrix size for " +
+                            profile + " profile.");
+        }
 
-      // Check for potential overflow in solution cost.
-      check_cost_bound(p_m->second);
+        // Check for potential overflow in solution cost.
+        check_cost_bound(p_m->second);
+      }
+    } catch (...) {
+      thread_exceptions[bucket] = std::current_exception();
     }
   };
 
   std::vector<std::thread> matrix_threads;
 
   for (unsigned i = 0; i < nb_buckets; ++i) {
-    matrix_threads.emplace_back(run_on_profiles, thread_profiles[i]);
+    matrix_threads.emplace_back(run_on_profiles, i, thread_profiles[i]);
   }
 
   for (unsigned i = 0; i < nb_buckets; ++i) {
     matrix_threads[i].join();
+
+    if (thread_exceptions[i] != nullptr) {
+      std::rethrow_exception(thread_exceptions[i]);
+    }
   }
 }
 
