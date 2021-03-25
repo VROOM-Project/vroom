@@ -37,6 +37,8 @@ Route::Route(Id vehicle,
     description(description),
     violations(std::move(violations)),
     distance(0) {
+  assert(steps.empty() or (steps.front().step_type == STEP_TYPE::START and
+                           steps.back().step_type == STEP_TYPE::END));
 }
 
 } // namespace vroom
