@@ -529,12 +529,10 @@ void Input::set_matrices(unsigned nb_thread) {
     throw Exception(ERROR::INPUT, "Missing location index.");
   }
 
-  // Split computing matrices across threads. Number of buckets is
-  // based on number of non-custom matrices yet to compute.
-  assert(_custom_matrices.size() <= _profiles.size());
+  // Split computing matrices across threads based on number of
+  // profiles.
   const auto nb_buckets =
-    std::min(nb_thread,
-             static_cast<unsigned>(_profiles.size() - _custom_matrices.size()));
+    std::min(nb_thread, static_cast<unsigned>(_profiles.size()));
 
   std::vector<std::vector<std::string>>
     thread_profiles(nb_buckets, std::vector<std::string>());
