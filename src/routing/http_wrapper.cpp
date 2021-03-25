@@ -260,7 +260,7 @@ void HttpWrapper::add_route_info(Route& route) const {
 
   // Unchanged distance after last non-break step.
   for (auto i = steps_rank; i < route.steps.size(); ++i) {
-    route.steps[i].distance = sum_distance;
+    route.steps[i].distance = round_cost(sum_distance);
   }
 }
 
