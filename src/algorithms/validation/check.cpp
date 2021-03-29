@@ -7,6 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <mutex>
 #include <thread>
 #include <unordered_map>
 #include <unordered_set>
@@ -54,10 +55,11 @@ Solution check_and_set_ETA(const Input& input, unsigned nb_thread) {
   }
 
   std::vector<Route> routes(actual_route_rank);
-  std::vector<std::exception_ptr> thread_exceptions(nb_buckets, nullptr);
 
-  auto run_check = [&](unsigned bucket,
-                       const std::vector<Index>& vehicle_ranks) {
+  std::exception_ptr ep = nullptr;
+  std::mutex ep_m;
+
+  auto run_check = [&](const std::vector<Index>& vehicle_ranks) {
     for (auto v : vehicle_ranks) {
       auto search = v_rank_to_actual_route_rank.find(v);
       assert(search != v_rank_to_actual_route_rank.end());
@@ -66,22 +68,25 @@ Solution check_and_set_ETA(const Input& input, unsigned nb_thread) {
       try {
         routes[route_rank] = choose_ETA(input, v, input.vehicles[v].steps);
       } catch (...) {
-        thread_exceptions[bucket] = std::current_exception();
+        ep_m.lock();
+        ep = std::current_exception();
+        ep_m.unlock();
       }
     }
   };
+
   std::vector<std::thread> solving_threads;
 
-  for (unsigned i = 0; i < nb_buckets; ++i) {
-    solving_threads.emplace_back(run_check, i, thread_ranks[i]);
+  for (const auto& v_ranks : thread_ranks) {
+    solving_threads.emplace_back(run_check, v_ranks);
   }
 
-  for (unsigned i = 0; i < nb_buckets; ++i) {
-    solving_threads[i].join();
+  for (auto& t : solving_threads) {
+    t.join();
+  }
 
-    if (thread_exceptions[i] != nullptr) {
-      std::rethrow_exception(thread_exceptions[i]);
-    }
+  if (ep != nullptr) {
+    std::rethrow_exception(ep);
   }
 
   // Handle unassigned jobs.
