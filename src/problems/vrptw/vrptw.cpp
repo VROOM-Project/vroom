@@ -7,6 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <mutex>
 #include <thread>
 
 #include "algorithms/heuristics/solomon.h"
@@ -170,39 +171,52 @@ Solution VRPTW::solve(unsigned exploration_level,
     thread_ranks[i % nb_threads].push_back(i);
   }
 
+  std::exception_ptr ep = nullptr;
+  std::mutex ep_m;
+
   auto run_solve = [&](const std::vector<std::size_t>& param_ranks) {
-    for (auto rank : param_ranks) {
-      auto& p = parameters[rank];
-      switch (p.heuristic) {
-      case HEURISTIC::BASIC:
-        tw_solutions[rank] =
-          heuristics::basic<TWSolution>(_input, p.init, p.regret_coeff);
-        break;
-      case HEURISTIC::DYNAMIC:
-        tw_solutions[rank] =
-          heuristics::dynamic_vehicle_choice<TWSolution>(_input,
-                                                         p.init,
-                                                         p.regret_coeff);
-        break;
+    try {
+      for (auto rank : param_ranks) {
+        auto& p = parameters[rank];
+        switch (p.heuristic) {
+        case HEURISTIC::BASIC:
+          tw_solutions[rank] =
+            heuristics::basic<TWSolution>(_input, p.init, p.regret_coeff);
+          break;
+        case HEURISTIC::DYNAMIC:
+          tw_solutions[rank] =
+            heuristics::dynamic_vehicle_choice<TWSolution>(_input,
+                                                           p.init,
+                                                           p.regret_coeff);
+          break;
+        }
+
+        // Local search phase.
+        LocalSearch ls(_input, tw_solutions[rank], max_nb_jobs_removal);
+        ls.run();
+
+        // Store solution indicators.
+        sol_indicators[rank] = ls.indicators();
       }
-
-      // Local search phase.
-      LocalSearch ls(_input, tw_solutions[rank], max_nb_jobs_removal);
-      ls.run();
-
-      // Store solution indicators.
-      sol_indicators[rank] = ls.indicators();
+    } catch (...) {
+      ep_m.lock();
+      ep = std::current_exception();
+      ep_m.unlock();
     }
   };
 
   std::vector<std::thread> solving_threads;
 
-  for (std::size_t i = 0; i < nb_threads; ++i) {
-    solving_threads.emplace_back(run_solve, thread_ranks[i]);
+  for (const auto& param_ranks : thread_ranks) {
+    solving_threads.emplace_back(run_solve, param_ranks);
   }
 
   for (auto& t : solving_threads) {
     t.join();
+  }
+
+  if (ep != nullptr) {
+    std::rethrow_exception(ep);
   }
 
   auto best_indic =

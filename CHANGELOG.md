@@ -15,7 +15,8 @@
 ### Fixed
 
 - Compatibility with Visual Studio 2019 (#448)
-- the pd_shift operation can now insert a shipment at the end of a route (#462)
+- The pd_shift operation can now insert a shipment at the end of a route (#462)
+- Multi-thread exception handling (#417, #478)
 
 ## [v1.9.0] - 2021-03-04
 
