@@ -60,18 +60,18 @@ Solution check_and_set_ETA(const Input& input, unsigned nb_thread) {
   std::mutex ep_m;
 
   auto run_check = [&](const std::vector<Index>& vehicle_ranks) {
-    for (auto v : vehicle_ranks) {
-      auto search = v_rank_to_actual_route_rank.find(v);
-      assert(search != v_rank_to_actual_route_rank.end());
-      const auto route_rank = search->second;
+    try {
+      for (auto v : vehicle_ranks) {
+        auto search = v_rank_to_actual_route_rank.find(v);
+        assert(search != v_rank_to_actual_route_rank.end());
+        const auto route_rank = search->second;
 
-      try {
         routes[route_rank] = choose_ETA(input, v, input.vehicles[v].steps);
-      } catch (...) {
-        ep_m.lock();
-        ep = std::current_exception();
-        ep_m.unlock();
       }
+    } catch (...) {
+      ep_m.lock();
+      ep = std::current_exception();
+      ep_m.unlock();
     }
   };
 
