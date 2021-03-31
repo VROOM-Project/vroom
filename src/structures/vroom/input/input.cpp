@@ -7,6 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <mutex>
 #include <thread>
 
 #include "algorithms/validation/check.h"
@@ -550,10 +551,10 @@ void Input::set_matrices(unsigned nb_thread) {
     }
   }
 
-  std::vector<std::exception_ptr> thread_exceptions(nb_buckets, nullptr);
+  std::exception_ptr ep = nullptr;
+  std::mutex ep_m;
 
-  auto run_on_profiles = [&](unsigned bucket,
-                             const std::vector<std::string>& profiles) {
+  auto run_on_profiles = [&](const std::vector<std::string>& profiles) {
     try {
       for (const auto& profile : profiles) {
         auto p_m = _matrices.find(profile);
@@ -602,22 +603,24 @@ void Input::set_matrices(unsigned nb_thread) {
         check_cost_bound(p_m->second);
       }
     } catch (...) {
-      thread_exceptions[bucket] = std::current_exception();
+      ep_m.lock();
+      ep = std::current_exception();
+      ep_m.unlock();
     }
   };
 
   std::vector<std::thread> matrix_threads;
 
-  for (unsigned i = 0; i < nb_buckets; ++i) {
-    matrix_threads.emplace_back(run_on_profiles, i, thread_profiles[i]);
+  for (const auto& profiles : thread_profiles) {
+    matrix_threads.emplace_back(run_on_profiles, profiles);
   }
 
-  for (unsigned i = 0; i < nb_buckets; ++i) {
-    matrix_threads[i].join();
+  for (auto& t : matrix_threads) {
+    t.join();
+  }
 
-    if (thread_exceptions[i] != nullptr) {
-      std::rethrow_exception(thread_exceptions[i]);
-    }
+  if (ep != nullptr) {
+    std::rethrow_exception(ep);
   }
 }
 
