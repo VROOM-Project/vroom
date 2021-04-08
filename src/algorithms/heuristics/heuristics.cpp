@@ -96,9 +96,11 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
   std::vector<std::vector<Cost>> regrets(nb_vehicles,
                                          std::vector<Cost>(input.jobs.size()));
 
-  // Last vehicle.
-  regrets.back() =
-    std::vector<Cost>(input.jobs.size(), std::numeric_limits<Cost>::max());
+  // Use own cost for last vehicle regret values.
+  auto& last_regrets = regrets.back();
+  for (Index j = 0; j < input.jobs.size(); ++j) {
+    last_regrets[j] = costs[j][vehicles_ranks.back()];
+  }
 
   for (Index rev_v = 0; rev_v < nb_vehicles - 1; ++rev_v) {
     // Going trough vehicles backward from second to last.
