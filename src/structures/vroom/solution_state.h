@@ -52,19 +52,20 @@ struct SolutionIndicators {
 class SolutionState {
 private:
   const Input& _input;
-  const Matrix<Cost>& _m;
   const std::size_t _nb_vehicles;
 
 public:
   // Store unassigned jobs.
   std::unordered_set<Index> unassigned;
 
-  // fwd_costs[v][i] stores the total cost from job at rank 0 to job
-  // at rank i in the route for vehicle v, while bwd_costs[v][i]
-  // stores the total cost from job at rank i to job at rank 0
-  // (i.e. when *reversing* all edges).
-  std::vector<std::vector<Cost>> fwd_costs;
-  std::vector<std::vector<Cost>> bwd_costs;
+  // fwd_costs[v][new_v][i] stores the total cost from job at rank 0
+  // to job at rank i in the route for vehicle v, from the point of
+  // view of a vehicle new_v. bwd_costs[v][new_v][i] stores the total
+  // cost from job at rank i to job at rank 0 (i.e. when *reversing*
+  // all edges) in the route for vehicle v, from the point of view of
+  // a vehicle new_v.
+  std::vector<std::vector<std::vector<Cost>>> fwd_costs;
+  std::vector<std::vector<std::vector<Cost>>> bwd_costs;
 
   // fwd_skill_rank[v1][v2] stores the maximum rank r for a step in
   // route for vehicle v1 such that v2 can handle all jobs from step 0
@@ -108,12 +109,14 @@ public:
   std::vector<std::vector<Index>> matching_delivery_rank;
   std::vector<std::vector<Index>> matching_pickup_rank;
 
-  // nearest_job_rank_in_routes_from[v1][v2][r1] stores the rank of
-  // job in route v2 that minimize cost from job at rank r1 in v1.
-  std::vector<std::vector<std::vector<Index>>> nearest_job_rank_in_routes_from;
-  // nearest_job_rank_in_routes_to[v1][v2][r1] stores the rank of job
-  // in route v2 that minimize cost to job at rank r1 in v1.
-  std::vector<std::vector<std::vector<Index>>> nearest_job_rank_in_routes_to;
+  // cheapest_job_rank_in_routes_from[v1][v2][r1] stores the rank of
+  // job in route v2 that minimize cost (as seen from the v2
+  // perspective) from job at rank r1 in v1.
+  std::vector<std::vector<std::vector<Index>>> cheapest_job_rank_in_routes_from;
+  // cheapest_job_rank_in_routes_to[v1][v2][r1] stores the rank of job
+  // in route v2 that minimize cost (as seen from the v2 perspective)
+  // to job at rank r1 in v1.
+  std::vector<std::vector<std::vector<Index>>> cheapest_job_rank_in_routes_to;
 
   // Only used for assertions in debug mode.
   std::vector<Cost> route_costs;
@@ -138,10 +141,10 @@ public:
 
   void set_pd_matching_ranks(const std::vector<Index>& route, Index v);
 
-  void update_nearest_job_rank_in_routes(const std::vector<Index>& route_1,
-                                         const std::vector<Index>& route_2,
-                                         Index v1,
-                                         Index v2);
+  void update_cheapest_job_rank_in_routes(const std::vector<Index>& route_1,
+                                          const std::vector<Index>& route_2,
+                                          Index v1,
+                                          Index v2);
 
   void update_route_cost(const std::vector<Index>& route, Index v);
 };

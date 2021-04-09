@@ -16,6 +16,7 @@ All rights reserved (see LICENSE).
 #include "structures/typedefs.h"
 #include "structures/vroom/amount.h"
 #include "structures/vroom/break.h"
+#include "structures/vroom/cost_wrapper.h"
 #include "structures/vroom/input/vehicle_step.h"
 #include "structures/vroom/location.h"
 #include "structures/vroom/time_window.h"
@@ -26,11 +27,13 @@ struct Vehicle {
   const Id id;
   std::optional<Location> start;
   std::optional<Location> end;
+  const std::string profile;
   const Amount capacity;
   const Skills skills;
   const TimeWindow tw;
   const std::vector<Break> breaks;
   const std::string description;
+  CostWrapper cost_wrapper;
   std::vector<VehicleStep> steps;
   std::unordered_map<Id, Index> break_id_to_rank;
 
@@ -38,11 +41,13 @@ struct Vehicle {
     Id id,
     const std::optional<Location>& start,
     const std::optional<Location>& end,
+    const std::string& profile = DEFAULT_PROFILE,
     const Amount& capacity = Amount(0),
     const Skills& skills = Skills(),
     const TimeWindow& tw = TimeWindow(),
     const std::vector<Break>& breaks = std::vector<Break>(),
     const std::string& description = "",
+    double speed_factor = 1.,
     const std::vector<VehicleStep>& input_steps = std::vector<VehicleStep>());
 
   bool has_start() const;
@@ -50,6 +55,20 @@ struct Vehicle {
   bool has_end() const;
 
   bool has_same_locations(const Vehicle& other) const;
+
+  bool has_same_profile(const Vehicle& other) const;
+
+  Cost duration(Index i, Index j) const {
+    return static_cast<Cost>(
+      cost_wrapper.durations_factor *
+      static_cast<double>((*(cost_wrapper.durations_matrix))[i][j]));
+  }
+
+  Cost cost(Index i, Index j) const {
+    return static_cast<Cost>(
+      cost_wrapper.durations_factor *
+      static_cast<double>((*(cost_wrapper.durations_matrix))[i][j]));
+  }
 };
 
 } // namespace vroom

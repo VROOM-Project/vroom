@@ -16,12 +16,6 @@ All rights reserved (see LICENSE).
 #include "../include/rapidjson/document.h"
 #include "../include/rapidjson/error/en.h"
 
-#if USE_LIBOSRM
-#include "routing/libosrm_wrapper.h"
-#endif
-#include "routing/ors_wrapper.h"
-#include "routing/osrm_routed_wrapper.h"
-#include "routing/valhalla_wrapper.h"
 #include "structures/cl_args.h"
 #include "utils/input_parser.h"
 
@@ -45,6 +39,17 @@ inline std::string get_string(const rapidjson::Value& object, const char* key) {
       throw Exception(ERROR::INPUT, "Invalid " + std::string(key) + " value.");
     }
     value = object[key].GetString();
+  }
+  return value;
+}
+
+inline double get_double(const rapidjson::Value& object, const char* key) {
+  double value = 1.;
+  if (object.HasMember(key)) {
+    if (!object[key].IsNumber()) {
+      throw Exception(ERROR::INPUT, "Invalid " + std::string(key) + " value.");
+    }
+    value = object[key].GetDouble();
   }
   return value;
 }
@@ -139,21 +144,6 @@ inline void check_shipment(const rapidjson::Value& v) {
   }
   if (!v.HasMember("delivery") or !v["delivery"].IsObject()) {
     throw Exception(ERROR::INPUT, "Missing delivery for shipment.");
-  }
-}
-
-inline void check_location_index(const rapidjson::Value& v,
-                                 const std::string& type,
-                                 rapidjson::SizeType matrix_size) {
-  if (!v.HasMember("location_index") or !v["location_index"].IsUint()) {
-    throw Exception(ERROR::INPUT,
-                    "Invalid location_index for " + type + " " +
-                      std::to_string(v["id"].GetUint64()) + ".");
-  }
-  if (matrix_size <= v["location_index"].GetUint()) {
-    throw Exception(ERROR::INPUT,
-                    "location_index exceeding matrix size for " + type + " " +
-                      std::to_string(v["id"].GetUint64()) + ".");
   }
 }
 
@@ -338,6 +328,150 @@ inline std::vector<VehicleStep> get_vehicle_steps(const rapidjson::Value& v) {
   return steps;
 }
 
+inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
+                           unsigned amount_size) {
+  check_id(json_vehicle, "vehicle");
+  auto v_id = json_vehicle["id"].GetUint64();
+
+  // Check what info are available for vehicle start, then build
+  // optional start location.
+  bool has_start_coords = json_vehicle.HasMember("start");
+  bool has_start_index = json_vehicle.HasMember("start_index");
+  if (has_start_index and !json_vehicle["start_index"].IsUint()) {
+    throw Exception(ERROR::INPUT,
+                    "Invalid start_index for vehicle " + std::to_string(v_id) +
+                      ".");
+  }
+
+  std::optional<Location> start;
+  if (has_start_index) {
+    // Custom provided matrices and index.
+    Index start_index = json_vehicle["start_index"].GetUint();
+    if (has_start_coords) {
+      start = Location({start_index, parse_coordinates(json_vehicle, "start")});
+    } else {
+      start = start_index;
+    }
+  } else {
+    if (has_start_coords) {
+      start = parse_coordinates(json_vehicle, "start");
+    }
+  }
+
+  // Check what info are available for vehicle end, then build
+  // optional end location.
+  bool has_end_coords = json_vehicle.HasMember("end");
+  bool has_end_index = json_vehicle.HasMember("end_index");
+  if (has_end_index and !json_vehicle["end_index"].IsUint()) {
+    throw Exception(ERROR::INPUT,
+                    "Invalid end_index for vehicle" + std::to_string(v_id) +
+                      ".");
+  }
+
+  std::optional<Location> end;
+  if (has_end_index) {
+    // Custom provided matrices and index.
+    Index end_index = json_vehicle["end_index"].GetUint();
+    if (has_end_coords) {
+      end = Location({end_index, parse_coordinates(json_vehicle, "end")});
+    } else {
+      end = end_index;
+    }
+  } else {
+    if (has_end_coords) {
+      end = parse_coordinates(json_vehicle, "end");
+    }
+  }
+
+  std::string profile = get_string(json_vehicle, "profile");
+  if (profile.empty()) {
+    profile = DEFAULT_PROFILE;
+  }
+
+  return Vehicle(v_id,
+                 start,
+                 end,
+                 profile,
+                 get_amount(json_vehicle, "capacity", amount_size),
+                 get_skills(json_vehicle),
+                 get_vehicle_time_window(json_vehicle),
+                 get_vehicle_breaks(json_vehicle),
+                 get_string(json_vehicle, "description"),
+                 get_double(json_vehicle, "speed_factor"),
+                 get_vehicle_steps(json_vehicle));
+}
+
+inline Location get_task_location(const rapidjson::Value& v,
+                                  const std::string& type) {
+  // Check what info are available to build task location.
+  bool has_location_coords = v.HasMember("location");
+  bool has_location_index = v.HasMember("location_index");
+  if (has_location_index and !v["location_index"].IsUint()) {
+    throw Exception(ERROR::INPUT,
+                    "Invalid location_index for " + type + " " +
+                      std::to_string(v["id"].GetUint64()) + ".");
+  }
+
+  if (has_location_index) {
+    // Custom provided matrices and index.
+    Index location_index = v["location_index"].GetUint();
+    if (has_location_coords) {
+      return Location({location_index, parse_coordinates(v, "location")});
+    } else {
+      return Location(location_index);
+    }
+  } else {
+    check_location(v, type);
+    return parse_coordinates(v, "location");
+  }
+}
+
+inline Job get_job(const rapidjson::Value& json_job, unsigned amount_size) {
+  check_id(json_job, "job");
+
+  // Only for retro-compatibility: when no pickup and delivery keys
+  // are defined and (deprecated) amount key is present, it should be
+  // interpreted as a delivery.
+  bool need_amount_compat = json_job.HasMember("amount") and
+                            !json_job.HasMember("delivery") and
+                            !json_job.HasMember("pickup");
+
+  return Job(json_job["id"].GetUint64(),
+             get_task_location(json_job, "job"),
+             get_service(json_job),
+             need_amount_compat ? get_amount(json_job, "amount", amount_size)
+                                : get_amount(json_job, "delivery", amount_size),
+             get_amount(json_job, "pickup", amount_size),
+             get_skills(json_job),
+             get_priority(json_job),
+             get_job_time_windows(json_job),
+             get_string(json_job, "description"));
+}
+
+inline Matrix<Cost> get_matrix(rapidjson::Value& m) {
+  if (!m.IsArray()) {
+    throw Exception(ERROR::INPUT, "Invalid matrix.");
+  }
+  // Load custom matrix while checking if it is square.
+  rapidjson::SizeType matrix_size = m.Size();
+
+  Matrix<Cost> matrix(matrix_size);
+  for (rapidjson::SizeType i = 0; i < matrix_size; ++i) {
+    if (!m[i].IsArray() or m[i].Size() != matrix_size) {
+      throw Exception(ERROR::INPUT, "Unexpected matrix line length.");
+    }
+    rapidjson::Document::Array mi = m[i].GetArray();
+    for (rapidjson::SizeType j = 0; j < matrix_size; ++j) {
+      if (!mi[j].IsUint()) {
+        throw Exception(ERROR::INPUT, "Invalid matrix entry.");
+      }
+      matrix[i][j] = mi[j].GetUint();
+    }
+  }
+
+  return matrix;
+}
+
 Input parse(const CLArgs& cl_args) {
   // Input json object.
   rapidjson::Document json_input;
@@ -372,404 +506,86 @@ Input parse(const CLArgs& cl_args) {
   const unsigned amount_size =
     first_vehicle_has_capacity ? first_vehicle["capacity"].Size() : 0;
 
-  // Used to make sure all vehicles have the same profile.
-  std::string common_profile;
-
-  // Custom input object embedding jobs, vehicles and matrix.
-  Input input(amount_size);
+  // Custom input object embedding jobs, vehicles and matrices.
+  Input input(amount_size, cl_args.servers, cl_args.router);
   input.set_geometry(cl_args.geometry);
 
-  // Switch input type: explicit matrix or using routing engine.
-  if (json_input.HasMember("matrix")) {
-    if (!json_input["matrix"].IsArray()) {
-      throw Exception(ERROR::INPUT, "Invalid matrix.");
+  // Add all vehicles.
+  for (rapidjson::SizeType i = 0; i < json_input["vehicles"].Size(); ++i) {
+    auto& json_vehicle = json_input["vehicles"][i];
+
+    input.add_vehicle(get_vehicle(json_vehicle, amount_size));
+  }
+
+  // Add all tasks.
+  if (has_jobs) {
+    // Add the jobs.
+    for (rapidjson::SizeType i = 0; i < json_input["jobs"].Size(); ++i) {
+      input.add_job(get_job(json_input["jobs"][i], amount_size));
     }
+  }
 
-    // Load custom matrix while checking if it is square.
-    rapidjson::SizeType matrix_size = json_input["matrix"].Size();
+  if (has_shipments) {
+    // Add the shipments.
+    for (rapidjson::SizeType i = 0; i < json_input["shipments"].Size(); ++i) {
+      auto& json_shipment = json_input["shipments"][i];
+      check_shipment(json_shipment);
 
-    Matrix<Cost> matrix_input(matrix_size);
-    for (rapidjson::SizeType i = 0; i < matrix_size; ++i) {
-      if (!json_input["matrix"][i].IsArray() or
-          (json_input["matrix"][i].Size() != matrix_size)) {
-        throw Exception(ERROR::INPUT,
-                        "Invalid matrix line " + std::to_string(i) + ".");
-      }
-      rapidjson::Document::Array mi = json_input["matrix"][i].GetArray();
-      for (rapidjson::SizeType j = 0; j < matrix_size; ++j) {
-        if (!mi[j].IsUint()) {
-          throw Exception(ERROR::INPUT,
-                          "Invalid matrix entry (" + std::to_string(i) + "," +
-                            std::to_string(j) + ").");
-        }
-        Cost cost = mi[j].GetUint();
-        matrix_input[i][j] = cost;
-      }
-    }
-    input.set_matrix(std::move(matrix_input));
+      // Retrieve common stuff for both pickup and delivery.
+      auto amount = get_amount(json_shipment, "amount", amount_size);
+      auto skills = get_skills(json_shipment);
+      auto priority = get_priority(json_shipment);
 
-    // Add all vehicles.
-    for (rapidjson::SizeType i = 0; i < json_input["vehicles"].Size(); ++i) {
-      auto& json_vehicle = json_input["vehicles"][i];
-      check_id(json_vehicle, "vehicle");
-      auto v_id = json_vehicle["id"].GetUint64();
+      // Defining pickup job.
+      auto& json_pickup = json_shipment["pickup"];
+      check_id(json_pickup, "pickup");
 
-      // Check if vehicle has start_index or end_index.
-      bool has_start_index = json_vehicle.HasMember("start_index");
-      Index start_index = 0; // Initial value actually never used.
-      if (has_start_index) {
-        if (!json_vehicle["start_index"].IsUint()) {
-          throw Exception(ERROR::INPUT,
-                          "Invalid start_index for vehicle " +
-                            std::to_string(v_id) + ".");
-        }
-        start_index = json_vehicle["start_index"].GetUint();
+      Job pickup(json_pickup["id"].GetUint64(),
+                 JOB_TYPE::PICKUP,
+                 get_task_location(json_pickup, "pickup"),
+                 get_service(json_pickup),
+                 amount,
+                 skills,
+                 priority,
+                 get_job_time_windows(json_pickup),
+                 get_string(json_pickup, "description"));
 
-        if (matrix_size <= start_index) {
-          throw Exception(ERROR::INPUT,
-                          "start_index exceeding matrix size for vehicle" +
-                            std::to_string(v_id) + ".");
-        }
-      }
+      // Defining delivery job.
+      auto& json_delivery = json_shipment["delivery"];
+      check_id(json_delivery, "delivery");
 
-      bool has_start_coords = json_vehicle.HasMember("start");
-
-      bool has_end_index = json_vehicle.HasMember("end_index");
-      Index end_index = 0; // Initial value actually never used.
-      if (has_end_index) {
-        if (!json_vehicle["end_index"].IsUint()) {
-          throw Exception(ERROR::INPUT,
-                          "Invalid end_index for vehicle" +
-                            std::to_string(v_id) + ".");
-        }
-        end_index = json_vehicle["end_index"].GetUint();
-
-        if (matrix_size <= end_index) {
-          throw Exception(ERROR::INPUT,
-                          "end_index exceeding matrix size for vehicle" +
-                            std::to_string(v_id) + ".");
-        }
-      }
-
-      bool has_end_coords = json_vehicle.HasMember("end");
-
-      // Add vehicle to input
-      std::optional<Location> start;
-      if (has_start_index) {
-        if (has_start_coords) {
-          start =
-            Location({start_index, parse_coordinates(json_vehicle, "start")});
-        } else {
-          start = start_index;
-        }
-      }
-
-      std::optional<Location> end;
-      if (has_end_index) {
-        if (has_end_coords) {
-          end = Location({end_index, parse_coordinates(json_vehicle, "end")});
-        } else {
-          end = end_index;
-        }
-      }
-
-      Vehicle vehicle(v_id,
-                      start,
-                      end,
-                      get_amount(json_vehicle, "capacity", amount_size),
-                      get_skills(json_vehicle),
-                      get_vehicle_time_window(json_vehicle),
-                      get_vehicle_breaks(json_vehicle),
-                      get_string(json_vehicle, "description"),
-                      get_vehicle_steps(json_vehicle));
-
-      input.add_vehicle(vehicle);
-
-      std::string current_profile = get_string(json_vehicle, "profile");
-      if (current_profile.empty()) {
-        current_profile = DEFAULT_PROFILE;
-      }
-
-      if (common_profile.empty()) {
-        // First iteration only.
-        common_profile = current_profile;
-      } else {
-        // Check profile consistency.
-        if (current_profile != common_profile) {
-          throw Exception(ERROR::INPUT, "Mixed vehicle profiles in input.");
-        }
-      }
-    }
-
-    if (has_jobs) {
-      // Add the jobs.
-      for (rapidjson::SizeType i = 0; i < json_input["jobs"].Size(); ++i) {
-        auto& json_job = json_input["jobs"][i];
-
-        check_id(json_job, "job");
-        check_location_index(json_job, "job", matrix_size);
-
-        auto job_loc_index = json_job["location_index"].GetUint();
-
-        // Only for retro-compatibility: when no pickup and delivery
-        // keys are defined and (deprecated) amount key is present, it
-        // should be interpreted as a delivery.
-        bool need_amount_compat = json_job.HasMember("amount") and
-                                  !json_job.HasMember("delivery") and
-                                  !json_job.HasMember("pickup");
-
-        Job job(json_job["id"].GetUint64(),
-                json_job.HasMember("location")
-                  ? Location(job_loc_index,
-                             parse_coordinates(json_job, "location"))
-                  : Location(job_loc_index),
-                get_service(json_job),
-                need_amount_compat
-                  ? get_amount(json_job, "amount", amount_size)
-                  : get_amount(json_job, "delivery", amount_size),
-                get_amount(json_job, "pickup", amount_size),
-                get_skills(json_job),
-                get_priority(json_job),
-                get_job_time_windows(json_job),
-                get_string(json_job, "description"));
-
-        input.add_job(job);
-      }
-    }
-
-    if (has_shipments) {
-      // Add the shipments.
-      for (rapidjson::SizeType i = 0; i < json_input["shipments"].Size(); ++i) {
-        auto& json_shipment = json_input["shipments"][i];
-
-        check_shipment(json_shipment);
-
-        // Retrieve common stuff for both pickup and delivery.
-        auto amount = get_amount(json_shipment, "amount", amount_size);
-        auto skills = get_skills(json_shipment);
-        auto priority = get_priority(json_shipment);
-
-        // Defining pickup job.
-        auto& json_pickup = json_shipment["pickup"];
-
-        check_id(json_pickup, "pickup");
-        check_location_index(json_pickup, "pickup", matrix_size);
-
-        auto pickup_loc_index = json_pickup["location_index"].GetUint();
-
-        Job pickup(json_pickup["id"].GetUint64(),
-                   JOB_TYPE::PICKUP,
-                   json_pickup.HasMember("location")
-                     ? Location(pickup_loc_index,
-                                parse_coordinates(json_pickup, "location"))
-                     : Location(pickup_loc_index),
-                   get_service(json_pickup),
+      Job delivery(json_delivery["id"].GetUint64(),
+                   JOB_TYPE::DELIVERY,
+                   get_task_location(json_delivery, "delivery"),
+                   get_service(json_delivery),
                    amount,
                    skills,
                    priority,
-                   get_job_time_windows(json_pickup),
-                   get_string(json_pickup, "description"));
+                   get_job_time_windows(json_delivery),
+                   get_string(json_delivery, "description"));
 
-        // Defining delivery job.
-        auto& json_delivery = json_shipment["delivery"];
+      input.add_shipment(pickup, delivery);
+    }
+  }
 
-        check_id(json_delivery, "delivery");
-        check_location_index(json_delivery, "delivery", matrix_size);
-
-        auto delivery_loc_index = json_delivery["location_index"].GetUint();
-
-        Job delivery(json_delivery["id"].GetUint64(),
-                     JOB_TYPE::DELIVERY,
-                     json_delivery.HasMember("location")
-                       ? Location(delivery_loc_index,
-                                  parse_coordinates(json_delivery, "location"))
-                       : Location(delivery_loc_index),
-                     get_service(json_delivery),
-                     amount,
-                     skills,
-                     priority,
-                     get_job_time_windows(json_delivery),
-                     get_string(json_delivery, "description"));
-
-        input.add_shipment(pickup, delivery);
+  if (json_input.HasMember("matrices")) {
+    if (!json_input["matrices"].IsObject()) {
+      throw Exception(ERROR::INPUT, "Unexpected matrices value.");
+    }
+    for (auto& profile_entry : json_input["matrices"].GetObject()) {
+      if (profile_entry.value.IsObject() and
+          profile_entry.value.HasMember("durations")) {
+        input.set_matrix(profile_entry.name.GetString(),
+                         get_matrix(profile_entry.value["durations"]));
       }
     }
   } else {
-    // Adding vehicles and jobs only, matrix will be computed using
-    // routing engine upon solving.
-
-    // All vehicles.
-    for (rapidjson::SizeType i = 0; i < json_input["vehicles"].Size(); ++i) {
-      auto& json_vehicle = json_input["vehicles"][i];
-      check_id(json_vehicle, "vehicle");
-
-      std::optional<Location> start;
-      if (json_vehicle.HasMember("start")) {
-        start = parse_coordinates(json_vehicle, "start");
-      }
-
-      std::optional<Location> end;
-      if (json_vehicle.HasMember("end")) {
-        end = parse_coordinates(json_vehicle, "end");
-      }
-
-      Vehicle vehicle(json_vehicle["id"].GetUint64(),
-                      start,
-                      end,
-                      get_amount(json_vehicle, "capacity", amount_size),
-                      get_skills(json_vehicle),
-                      get_vehicle_time_window(json_vehicle),
-                      get_vehicle_breaks(json_vehicle),
-                      get_string(json_vehicle, "description"),
-                      get_vehicle_steps(json_vehicle));
-
-      input.add_vehicle(vehicle);
-
-      std::string current_profile = get_string(json_vehicle, "profile");
-      if (current_profile.empty()) {
-        current_profile = DEFAULT_PROFILE;
-      }
-
-      if (common_profile.empty()) {
-        // First iteration only.
-        common_profile = current_profile;
-      } else {
-        // Check profile consistency.
-        if (current_profile != common_profile) {
-          throw Exception(ERROR::INPUT, "Mixed vehicle profiles in input.");
-        }
-      }
-    }
-
-    if (has_jobs) {
-      // Add the jobs.
-      for (rapidjson::SizeType i = 0; i < json_input["jobs"].Size(); ++i) {
-        auto& json_job = json_input["jobs"][i];
-
-        check_id(json_job, "job");
-        check_location(json_job, "job");
-
-        // Only for retro-compatibility: when no pickup and delivery
-        // keys are defined and (deprecated) amount key is present, it
-        // should be interpreted as a delivery.
-        bool need_amount_compat = json_job.HasMember("amount") and
-                                  !json_job.HasMember("delivery") and
-                                  !json_job.HasMember("pickup");
-
-        Job job(json_job["id"].GetUint64(),
-                parse_coordinates(json_job, "location"),
-                get_service(json_job),
-                need_amount_compat
-                  ? get_amount(json_job, "amount", amount_size)
-                  : get_amount(json_job, "delivery", amount_size),
-                get_amount(json_job, "pickup", amount_size),
-                get_skills(json_job),
-                get_priority(json_job),
-                get_job_time_windows(json_job),
-                get_string(json_job, "description"));
-
-        input.add_job(job);
-      }
-    }
-
-    if (has_shipments) {
-      // Add the shipments.
-      for (rapidjson::SizeType i = 0; i < json_input["shipments"].Size(); ++i) {
-        auto& json_shipment = json_input["shipments"][i];
-
-        check_shipment(json_shipment);
-
-        // Retrieve common stuff for both pickup and delivery.
-        auto amount = get_amount(json_shipment, "amount", amount_size);
-        auto skills = get_skills(json_shipment);
-        auto priority = get_priority(json_shipment);
-
-        // Defining pickup job.
-        auto& json_pickup = json_shipment["pickup"];
-
-        check_id(json_pickup, "pickup");
-        check_location(json_pickup, "pickup");
-
-        Job pickup(json_pickup["id"].GetUint64(),
-                   JOB_TYPE::PICKUP,
-                   parse_coordinates(json_pickup, "location"),
-                   get_service(json_pickup),
-                   amount,
-                   skills,
-                   priority,
-                   get_job_time_windows(json_pickup),
-                   get_string(json_pickup, "description"));
-
-        // Defining delivery job.
-        auto& json_delivery = json_shipment["delivery"];
-
-        check_id(json_delivery, "delivery");
-        check_location(json_delivery, "delivery");
-
-        Job delivery(json_delivery["id"].GetUint64(),
-                     JOB_TYPE::DELIVERY,
-                     parse_coordinates(json_delivery, "location"),
-                     get_service(json_delivery),
-                     amount,
-                     skills,
-                     priority,
-                     get_job_time_windows(json_delivery),
-                     get_string(json_delivery, "description"));
-
-        input.add_shipment(pickup, delivery);
-      }
+    // Deprecated `matrix` key still interpreted as
+    // `matrices.DEFAULT_PROFILE.duration` for retro-compatibility.
+    if (json_input.HasMember("matrix")) {
+      input.set_matrix(DEFAULT_PROFILE, get_matrix(json_input["matrix"]));
     }
   }
-
-  // Set relevant routing wrapper.
-  std::unique_ptr<routing::Wrapper> routing_wrapper;
-  switch (cl_args.router) {
-  case ROUTER::OSRM: {
-    // Use osrm-routed.
-    auto search = cl_args.servers.find(common_profile);
-    if (search == cl_args.servers.end()) {
-      throw Exception(ERROR::INPUT, "Invalid profile: " + common_profile + ".");
-    }
-    routing_wrapper =
-      std::make_unique<routing::OsrmRoutedWrapper>(common_profile,
-                                                   search->second);
-  } break;
-  case ROUTER::LIBOSRM:
-#if USE_LIBOSRM
-    // Use libosrm.
-    try {
-      routing_wrapper =
-        std::make_unique<routing::LibosrmWrapper>(common_profile);
-    } catch (const osrm::exception& e) {
-      throw Exception(ERROR::ROUTING, "Invalid profile: " + common_profile);
-    }
-#else
-    // Attempt to use libosrm while compiling without it.
-    throw Exception(ERROR::ROUTING,
-                    "VROOM compiled without libosrm installed.");
-#endif
-    break;
-  case ROUTER::ORS: {
-    // Use ORS http wrapper.
-    auto search = cl_args.servers.find(common_profile);
-    if (search == cl_args.servers.end()) {
-      throw Exception(ERROR::INPUT, "Invalid profile: " + common_profile + ".");
-    }
-    routing_wrapper =
-      std::make_unique<routing::OrsWrapper>(common_profile, search->second);
-  } break;
-  case ROUTER::VALHALLA: {
-    // Use Valhalla http wrapper.
-    auto search = cl_args.servers.find(common_profile);
-    if (search == cl_args.servers.end()) {
-      throw Exception(ERROR::INPUT, "Invalid profile: " + common_profile + ".");
-    }
-    routing_wrapper =
-      std::make_unique<routing::ValhallaWrapper>(common_profile,
-                                                 search->second);
-  } break;
-  }
-  input.set_routing(std::move(routing_wrapper));
 
   return input;
 }

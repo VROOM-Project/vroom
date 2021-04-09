@@ -79,7 +79,6 @@ Duration TWRoute::previous_earliest_end(const Input& input,
                                         Index job_rank,
                                         Index rank,
                                         Duration& previous_travel) const {
-  const auto& m = input.get_matrix();
   const auto& v = input.vehicles[vehicle_rank];
   const auto& j = input.jobs[job_rank];
 
@@ -89,10 +88,10 @@ Duration TWRoute::previous_earliest_end(const Input& input,
     const auto& previous_job = input.jobs[route[rank - 1]];
     previous_earliest = earliest[rank - 1];
     previous_service = previous_job.service;
-    previous_travel = m[previous_job.index()][j.index()];
+    previous_travel = v.duration(previous_job.index(), j.index());
   } else {
     if (has_start) {
-      previous_travel = m[v.start.value().index()][j.index()];
+      previous_travel = v.duration(v.start.value().index(), j.index());
     }
   }
 
@@ -103,25 +102,23 @@ Duration TWRoute::next_latest_start(const Input& input,
                                     Index job_rank,
                                     Index rank,
                                     Duration& next_travel) const {
-  const auto& m = input.get_matrix();
   const auto& v = input.vehicles[vehicle_rank];
   const auto& j = input.jobs[job_rank];
 
   Duration next_latest = v_end;
   if (rank == route.size()) {
     if (has_end) {
-      next_travel = m[j.index()][v.end.value().index()];
+      next_travel = v.duration(j.index(), v.end.value().index());
     }
   } else {
     next_latest = latest[rank];
-    next_travel = m[j.index()][input.jobs[route[rank]].index()];
+    next_travel = v.duration(j.index(), input.jobs[route[rank]].index());
   }
 
   return next_latest;
 }
 
 void TWRoute::fwd_update_earliest_from(const Input& input, Index rank) {
-  const auto& m = input.get_matrix();
   const auto& v = input.vehicles[vehicle_rank];
 
   Duration current_earliest = earliest[rank];
@@ -130,7 +127,7 @@ void TWRoute::fwd_update_earliest_from(const Input& input, Index rank) {
   for (Index i = rank + 1; i < route.size(); ++i) {
     const auto& next_j = input.jobs[route[i]];
     Duration remaining_travel_time =
-      m[input.jobs[route[i - 1]].index()][next_j.index()];
+      v.duration(input.jobs[route[i - 1]].index(), next_j.index());
     Duration previous_service = input.jobs[route[i - 1]].service;
 
     // Update earliest dates and margins for breaks.
@@ -193,8 +190,9 @@ void TWRoute::fwd_update_earliest_from(const Input& input, Index rank) {
     // before route end.
     Index i = route.size();
     Duration remaining_travel_time =
-      (v.has_end()) ? m[input.jobs[route[i - 1]].index()][v.end.value().index()]
-                    : 0;
+      (v.has_end())
+        ? v.duration(input.jobs[route[i - 1]].index(), v.end.value().index())
+        : 0;
 
     Duration previous_service = input.jobs[route[i - 1]].service;
 
@@ -235,7 +233,6 @@ void TWRoute::fwd_update_earliest_from(const Input& input, Index rank) {
 }
 
 void TWRoute::bwd_update_latest_from(const Input& input, Index rank) {
-  const auto& m = input.get_matrix();
   const auto& v = input.vehicles[vehicle_rank];
 
   Duration current_latest = latest[rank];
@@ -244,7 +241,7 @@ void TWRoute::bwd_update_latest_from(const Input& input, Index rank) {
   for (Index next_i = rank; next_i > 0; --next_i) {
     const auto& previous_j = input.jobs[route[next_i - 1]];
     Duration remaining_travel_time =
-      m[previous_j.index()][input.jobs[route[next_i]].index()];
+      v.duration(previous_j.index(), input.jobs[route[next_i]].index());
 
     // Update latest dates and margins for breaks.
     assert(breaks_at_rank[next_i] <= breaks_counts[next_i]);
@@ -364,6 +361,7 @@ OrderChoice TWRoute::order_choice(const Input& input,
                                   const Duration next_travel,
                                   const Duration next_start) const {
   OrderChoice oc(input, job_rank, b, current_earliest, previous_travel);
+  const auto& v = input.vehicles[vehicle_rank];
   const auto& j = input.jobs[job_rank];
 
   if (oc.j_tw == j.tws.end() or oc.b_tw == b.tws.end()) {
@@ -457,10 +455,9 @@ OrderChoice TWRoute::order_choice(const Input& input,
   if (j.type == JOB_TYPE::PICKUP) {
     const auto& matching_d = input.jobs[job_rank + 1];
     assert(matching_d.type == JOB_TYPE::DELIVERY);
-    const auto& m = input.get_matrix();
 
     // Try pickup -> break -> delivery.
-    auto delivery_travel = m[j.index()][matching_d.index()];
+    auto delivery_travel = v.duration(j.index(), matching_d.index());
     if (job_then_break_margin < delivery_travel) {
       delivery_travel -= job_then_break_margin;
     } else {
@@ -479,7 +476,7 @@ OrderChoice TWRoute::order_choice(const Input& input,
 
     // Previous order not doable, so try pickup -> delivery -> break.
     const Duration delivery_candidate =
-      earliest_job_end + m[j.index()][matching_d.index()];
+      earliest_job_end + v.duration(j.index(), matching_d.index());
     const auto d_tw = std::find_if(matching_d.tws.begin(),
                                    matching_d.tws.end(),
                                    [&](const auto& tw) {
@@ -649,7 +646,6 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
   assert(first_job <= last_job);
   assert(first_rank <= last_rank);
 
-  const auto& m = input.get_matrix();
   const auto& v = input.vehicles[vehicle_rank];
 
   Duration previous_travel = 0;
@@ -677,19 +673,19 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
 
       if (last_rank < route.size()) {
         current_latest = latest[last_rank];
-        next_travel =
-          m[previous_job.index()][input.jobs[route[last_rank]].index()];
+        next_travel = v.duration(previous_job.index(),
+                                 input.jobs[route[last_rank]].index());
       } else {
         if (has_end) {
-          next_travel = m[previous_job.index()][v.end.value().index()];
+          next_travel = v.duration(previous_job.index(), v.end.value().index());
         }
       }
     } else {
       if (last_rank < route.size()) {
         current_latest = latest[last_rank];
         if (has_start) {
-          next_travel =
-            m[v.start.value().index()][input.jobs[route[last_rank]].index()];
+          next_travel = v.duration(v.start.value().index(),
+                                   input.jobs[route[last_rank]].index());
         }
       } else {
         // Emptying the whole route is valid.
@@ -756,7 +752,8 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
       ++current_job;
       if (current_job != last_job) {
         // Account for travel time to next current job.
-        previous_travel = m[j.index()][input.jobs[*current_job].index()];
+        previous_travel =
+          v.duration(j.index(), input.jobs[*current_job].index());
       }
       continue;
     }
@@ -806,7 +803,8 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
       ++current_job;
       if (current_job != last_job) {
         // Account for travel time to next current job.
-        previous_travel = m[j.index()][input.jobs[*current_job].index()];
+        previous_travel =
+          v.duration(j.index(), input.jobs[*current_job].index());
       }
     }
   }
@@ -986,7 +984,6 @@ void TWRoute::replace(const Input& input,
   assert(first_job <= last_job);
   assert(first_rank <= last_rank);
 
-  const auto& m = input.get_matrix();
   const auto& v = input.vehicles[vehicle_rank];
 
   Duration previous_travel = 0;
@@ -1014,19 +1011,19 @@ void TWRoute::replace(const Input& input,
 
       if (last_rank < route.size()) {
         current_latest = latest[last_rank];
-        next_travel =
-          m[previous_job.index()][input.jobs[route[last_rank]].index()];
+        next_travel = v.duration(previous_job.index(),
+                                 input.jobs[route[last_rank]].index());
       } else {
         if (has_end) {
-          next_travel = m[previous_job.index()][v.end.value().index()];
+          next_travel = v.duration(previous_job.index(), v.end.value().index());
         }
       }
     } else {
       if (last_rank < route.size()) {
         current_latest = latest[last_rank];
         if (has_start) {
-          next_travel =
-            m[v.start.value().index()][input.jobs[route[last_rank]].index()];
+          next_travel = v.duration(v.start.value().index(),
+                                   input.jobs[route[last_rank]].index());
         }
       }
     }
@@ -1152,7 +1149,8 @@ void TWRoute::replace(const Input& input,
       ++current_job;
       if (current_job != last_job) {
         // Account for travel time to next current job.
-        previous_travel = m[j.index()][input.jobs[*current_job].index()];
+        previous_travel =
+          v.duration(j.index(), input.jobs[*current_job].index());
       }
       continue;
     }
@@ -1208,7 +1206,8 @@ void TWRoute::replace(const Input& input,
       ++current_job;
       if (current_job != last_job) {
         // Account for travel time to next current job.
-        previous_travel = m[j.index()][input.jobs[*current_job].index()];
+        previous_travel =
+          v.duration(j.index(), input.jobs[*current_job].index());
       }
     }
   }

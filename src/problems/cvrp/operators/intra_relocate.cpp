@@ -49,7 +49,6 @@ IntraRelocate::IntraRelocate(const Input& input,
 }
 
 void IntraRelocate::compute_gain() {
-  const auto& m = _input.get_matrix();
   const auto& v_target = _input.vehicles[s_vehicle];
 
   // For removal, we consider the cost of removing job at rank s_rank,
@@ -61,12 +60,8 @@ void IntraRelocate::compute_gain() {
   if (s_rank < t_rank) {
     ++new_rank;
   }
-  Gain t_gain = -utils::addition_cost(_input,
-                                      m,
-                                      s_route[s_rank],
-                                      v_target,
-                                      t_route,
-                                      new_rank);
+  Gain t_gain =
+    -utils::addition_cost(_input, s_route[s_rank], v_target, t_route, new_rank);
 
   stored_gain = _sol_state.node_gains[s_vehicle][s_rank] + t_gain;
   gain_computed = true;

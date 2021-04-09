@@ -7,8 +7,6 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <cassert>
-
 #include "structures/vroom/location.h"
 
 namespace vroom {

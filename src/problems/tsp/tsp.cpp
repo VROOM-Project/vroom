@@ -50,7 +50,15 @@ TSP::TSP(const Input& input, std::vector<Index> job_ranks, Index vehicle_rank)
     }
   }
 
-  _matrix = _input.get_sub_matrix(matrix_ranks);
+  // Populate TSP-solving matrix.
+  _matrix = Matrix<Cost>(matrix_ranks.size());
+
+  const auto& v = _input.vehicles[vehicle_rank];
+  for (Index i = 0; i < matrix_ranks.size(); ++i) {
+    for (Index j = 0; j < matrix_ranks.size(); ++j) {
+      _matrix[i][j] = v.cost(matrix_ranks[i], matrix_ranks[j]);
+    }
+  }
 
   // Distances on the diagonal are never used except in the minimum
   // weight perfect matching (munkres call during the heuristic). This

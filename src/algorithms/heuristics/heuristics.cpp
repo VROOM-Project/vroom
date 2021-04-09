@@ -9,15 +9,61 @@ All rights reserved (see LICENSE).
 
 #include <set>
 
-#include "algorithms/heuristics/solomon.h"
+#include "algorithms/heuristics/heuristics.h"
 #include "utils/helpers.h"
 
 namespace vroom {
 namespace heuristics {
 
+std::vector<std::vector<Cost>> get_jobs_vehicles_costs(const Input& input) {
+  // For a single job j, costs[j][v] is the cost of fetching job j in
+  // an empty route from vehicle at rank v. For a pickup job j,
+  // costs[j][v] is the cost of fetching job j **and** associated
+  // delivery in an empty route from vehicle at rank v.
+  std::vector<std::vector<Cost>> costs(input.jobs.size(),
+                                       std::vector<Cost>(
+                                         input.vehicles.size()));
+  for (std::size_t j = 0; j < input.jobs.size(); ++j) {
+    Index j_index = input.jobs[j].index();
+    bool is_pickup = (input.jobs[j].type == JOB_TYPE::PICKUP);
+
+    Index last_job_index = j_index;
+    if (is_pickup) {
+      assert((j + 1 < input.jobs.size()) and
+             (input.jobs[j + 1].type == JOB_TYPE::DELIVERY));
+      last_job_index = input.jobs[j + 1].index();
+    }
+
+    for (std::size_t v = 0; v < input.vehicles.size(); ++v) {
+      const auto& vehicle = input.vehicles[v];
+      Cost current_cost = is_pickup ? vehicle.cost(j_index, last_job_index) : 0;
+      if (vehicle.has_start()) {
+        current_cost += vehicle.cost(vehicle.start.value().index(), j_index);
+      }
+      if (vehicle.has_end()) {
+        current_cost +=
+          vehicle.cost(last_job_index, vehicle.end.value().index());
+      }
+      costs[j][v] = current_cost;
+      if (is_pickup) {
+        // Assign same cost to delivery.
+        costs[j + 1][v] = current_cost;
+      }
+    }
+
+    if (is_pickup) {
+      // Skip delivery.
+      ++j;
+    }
+  }
+
+  return costs;
+}
+
 template <class T> T basic(const Input& input, INIT init, float lambda) {
+  auto nb_vehicles = input.vehicles.size();
   T routes;
-  for (Index v = 0; v < input.vehicles.size(); ++v) {
+  for (Index v = 0; v < nb_vehicles; ++v) {
     routes.emplace_back(input, v);
   }
 
@@ -28,7 +74,7 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
 
   // One level of indirection to allow easy ordering of the vehicles
   // within the heuristic.
-  std::vector<Index> vehicles_ranks(input.vehicles.size());
+  std::vector<Index> vehicles_ranks(nb_vehicles);
   std::iota(vehicles_ranks.begin(), vehicles_ranks.end(), 0);
   // Sort vehicles by "higher" capacity or by time window in case of
   // capacities ties.
@@ -42,48 +88,30 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
                              v_lhs.tw.length > v_rhs.tw.length);
                    });
 
-  const auto& m = input.get_matrix();
+  auto costs = get_jobs_vehicles_costs(input);
 
-  // For a single job j, costs[j] is the cost of fetching job j in an
-  // empty route from one of the vehicles (consistent across vehicles
-  // in the homogeneous case). For a pickup (resp. delivery) job j,
-  // costs[j] is the cost of fetching job j **and** associated
-  // delivery (resp. pickup) in an empty route from one of the
-  // vehicles.
-  const auto& v = input.vehicles[0];
+  // regrets[v][j] holds the min cost for reaching job j in an empty
+  // route across all remaining vehicles **after** vehicle at rank v
+  // in vehicle_ranks.
+  std::vector<std::vector<Cost>> regrets(nb_vehicles,
+                                         std::vector<Cost>(input.jobs.size()));
 
-  std::vector<Cost> costs(input.jobs.size());
-  for (std::size_t j = 0; j < input.jobs.size(); ++j) {
-    Index j_index = input.jobs[j].index();
-    bool is_pickup = (input.jobs[j].type == JOB_TYPE::PICKUP);
+  // Use own cost for last vehicle regret values.
+  auto& last_regrets = regrets.back();
+  for (Index j = 0; j < input.jobs.size(); ++j) {
+    last_regrets[j] = costs[j][vehicles_ranks.back()];
+  }
 
-    Cost current_cost = 0;
-    if (v.has_start()) {
-      current_cost += m[v.start.value().index()][j_index];
-    }
-
-    Index last_job_index = j_index;
-    if (is_pickup) {
-      assert((j + 1 < input.jobs.size()) and
-             (input.jobs[j + 1].type == JOB_TYPE::DELIVERY));
-
-      // Add delivery cost.
-      last_job_index = input.jobs[j + 1].index();
-      current_cost += m[j_index][last_job_index];
-    }
-
-    if (v.has_end()) {
-      current_cost += m[last_job_index][v.end.value().index()];
-    }
-    costs[j] = current_cost;
-    if (is_pickup) {
-      // Assign same cost to delivery and skip it.
-      costs[j + 1] = current_cost;
-      ++j;
+  for (Index rev_v = 0; rev_v < nb_vehicles - 1; ++rev_v) {
+    // Going trough vehicles backward from second to last.
+    const auto v = nb_vehicles - 2 - rev_v;
+    for (Index j = 0; j < input.jobs.size(); ++j) {
+      regrets[v][j] =
+        std::min(regrets[v + 1][j], costs[j][vehicles_ranks[v + 1]]);
     }
   }
 
-  for (Index v = 0; v < input.vehicles.size(); ++v) {
+  for (Index v = 0; v < nb_vehicles; ++v) {
     auto v_rank = vehicles_ranks[v];
     auto& current_r = routes[v_rank];
 
@@ -119,10 +147,10 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
           try_validity |= (current_deadline < earliest_deadline);
         }
         if (init == INIT::FURTHEST) {
-          try_validity |= (furthest_cost < costs[job_rank]);
+          try_validity |= (furthest_cost < costs[job_rank][v_rank]);
         }
         if (init == INIT::NEAREST) {
-          try_validity |= (costs[job_rank] < nearest_cost);
+          try_validity |= (costs[job_rank][v_rank] < nearest_cost);
         }
 
         if (!try_validity) {
@@ -170,10 +198,10 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
                                   : input.jobs[job_rank].tws.back().end;
             break;
           case INIT::FURTHEST:
-            furthest_cost = costs[job_rank];
+            furthest_cost = costs[job_rank][v_rank];
             break;
           case INIT::NEAREST:
-            nearest_cost = costs[job_rank];
+            nearest_cost = costs[job_rank][v_rank];
             break;
           }
         }
@@ -215,14 +243,13 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
         if (input.jobs[job_rank].type == JOB_TYPE::SINGLE) {
           for (Index r = 0; r <= current_r.size(); ++r) {
             float current_add = utils::addition_cost(input,
-                                                     m,
                                                      job_rank,
                                                      vehicle,
                                                      current_r.route,
                                                      r);
 
             float current_cost =
-              current_add - lambda * static_cast<float>(costs[job_rank]);
+              current_add - lambda * static_cast<float>(regrets[v][job_rank]);
 
             if (current_cost < best_cost and
                 current_r
@@ -247,7 +274,6 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
           for (unsigned d_rank = 0; d_rank <= current_r.route.size();
                ++d_rank) {
             d_adds[d_rank] = utils::addition_cost(input,
-                                                  m,
                                                   job_rank + 1,
                                                   vehicle,
                                                   current_r.route,
@@ -258,7 +284,6 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
 
           for (Index pickup_r = 0; pickup_r <= current_r.size(); ++pickup_r) {
             Gain p_add = utils::addition_cost(input,
-                                              m,
                                               job_rank,
                                               vehicle,
                                               current_r.route,
@@ -298,7 +323,6 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
               float current_add;
               if (pickup_r == delivery_r) {
                 current_add = utils::addition_cost(input,
-                                                   m,
                                                    job_rank,
                                                    vehicle,
                                                    current_r.route,
@@ -309,7 +333,7 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
               }
 
               float current_cost =
-                current_add - lambda * static_cast<float>(costs[job_rank]);
+                current_add - lambda * static_cast<float>(regrets[v][job_rank]);
 
               if (current_cost < best_cost) {
                 modified_with_pd.push_back(job_rank + 1);
@@ -379,8 +403,9 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
 
 template <class T>
 T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
+  auto nb_vehicles = input.vehicles.size();
   T routes;
-  for (Index v = 0; v < input.vehicles.size(); ++v) {
+  for (Index v = 0; v < nb_vehicles; ++v) {
     routes.emplace_back(input, v);
   }
 
@@ -389,51 +414,10 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
     unassigned.insert(j);
   }
 
-  std::vector<Index> vehicles_ranks(input.vehicles.size());
+  std::vector<Index> vehicles_ranks(nb_vehicles);
   std::iota(vehicles_ranks.begin(), vehicles_ranks.end(), 0);
 
-  const auto& m = input.get_matrix();
-
-  // For a single job j, costs[j][v] is the cost of fetching job j in
-  // an empty route from vehicle at vehicles_ranks[v]. For a pickup
-  // job j, costs[j][v] is the cost of fetching job j **and**
-  // associated delivery in an empty route from vehicle at
-  // vehicles_ranks[v].
-  std::vector<std::vector<Cost>> costs(input.jobs.size(),
-                                       std::vector<Cost>(
-                                         input.vehicles.size()));
-  for (std::size_t j = 0; j < input.jobs.size(); ++j) {
-    Index j_index = input.jobs[j].index();
-    bool is_pickup = (input.jobs[j].type == JOB_TYPE::PICKUP);
-
-    Index last_job_index = j_index;
-    if (is_pickup) {
-      assert((j + 1 < input.jobs.size()) and
-             (input.jobs[j + 1].type == JOB_TYPE::DELIVERY));
-      last_job_index = input.jobs[j + 1].index();
-    }
-
-    for (std::size_t v = 0; v < vehicles_ranks.size(); ++v) {
-      const auto& vehicle = input.vehicles[vehicles_ranks[v]];
-      Cost current_cost = is_pickup ? m[j_index][last_job_index] : 0;
-      if (vehicle.has_start()) {
-        current_cost += m[vehicle.start.value().index()][j_index];
-      }
-      if (vehicle.has_end()) {
-        current_cost += m[last_job_index][vehicle.end.value().index()];
-      }
-      costs[j][v] = current_cost;
-      if (is_pickup) {
-        // Assign same cost to delivery.
-        costs[j + 1][v] = current_cost;
-      }
-    }
-
-    if (is_pickup) {
-      // Skip delivery.
-      ++j;
-    }
-  }
+  auto costs = get_jobs_vehicles_costs(input);
 
   while (!vehicles_ranks.empty() and !unassigned.empty()) {
     // For any unassigned job at j, jobs_min_costs[j]
@@ -459,7 +443,7 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
 
     // Pick vehicle that has the biggest number of compatible jobs
     // closest to him than to any other different vehicle.
-    std::vector<unsigned> closest_jobs_count(input.vehicles.size(), 0);
+    std::vector<unsigned> closest_jobs_count(nb_vehicles, 0);
     for (const auto job_rank : unassigned) {
       for (const auto v_rank : vehicles_ranks) {
         if (costs[job_rank][v_rank] == jobs_min_costs[job_rank]) {
@@ -632,7 +616,6 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
         if (input.jobs[job_rank].type == JOB_TYPE::SINGLE) {
           for (Index r = 0; r <= current_r.size(); ++r) {
             float current_add = utils::addition_cost(input,
-                                                     m,
                                                      job_rank,
                                                      vehicle,
                                                      current_r.route,
@@ -664,7 +647,6 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
           for (unsigned d_rank = 0; d_rank <= current_r.route.size();
                ++d_rank) {
             d_adds[d_rank] = utils::addition_cost(input,
-                                                  m,
                                                   job_rank + 1,
                                                   vehicle,
                                                   current_r.route,
@@ -675,7 +657,6 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
 
           for (Index pickup_r = 0; pickup_r <= current_r.size(); ++pickup_r) {
             Gain p_add = utils::addition_cost(input,
-                                              m,
                                               job_rank,
                                               vehicle,
                                               current_r.route,
@@ -715,7 +696,6 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
               float current_add;
               if (pickup_r == delivery_r) {
                 current_add = utils::addition_cost(input,
-                                                   m,
                                                    job_rank,
                                                    vehicle,
                                                    current_r.route,

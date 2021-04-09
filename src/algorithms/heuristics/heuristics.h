@@ -1,5 +1,5 @@
-#ifndef SOLOMON_H
-#define SOLOMON_H
+#ifndef HEURISTICS_H
+#define HEURISTICS_H
 
 /*
 

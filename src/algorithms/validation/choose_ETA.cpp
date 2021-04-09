@@ -52,7 +52,6 @@ inline Duration get_violation(const std::vector<TimeWindow>& tws,
 Route choose_ETA(const Input& input,
                  unsigned vehicle_rank,
                  const std::vector<VehicleStep>& steps) {
-  const auto& m = input.get_matrix();
   const auto& v = input.vehicles[vehicle_rank];
 
   // Number of tasks except start and end.
@@ -125,9 +124,10 @@ Route choose_ETA(const Input& input,
       assert(previous_index.has_value() or
              (durations.empty() and !v.has_start()));
 
-      const auto current_duration = (previous_index.has_value())
-                                      ? m[previous_index.value()][job.index()]
-                                      : 0;
+      const auto current_duration =
+        (previous_index.has_value())
+          ? v.duration(previous_index.value(), job.index())
+          : 0;
       durations.push_back(current_duration);
       duration_sum += current_duration;
 
@@ -164,7 +164,7 @@ Route choose_ETA(const Input& input,
       if (v.has_end()) {
         assert(previous_index.has_value());
         const auto& current_duration =
-          m[previous_index.value()][v.end.value().index()];
+          v.duration(previous_index.value(), v.end.value().index());
         durations.push_back(current_duration);
         duration_sum += current_duration;
         relative_arrival += current_duration;
@@ -1321,6 +1321,7 @@ Route choose_ETA(const Input& input,
                priority,
                sum_deliveries,
                sum_pickups,
+               v.profile,
                v.description,
                std::move(Violations(lead_time, delay, std::move(v_types))));
 }

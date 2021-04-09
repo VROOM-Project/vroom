@@ -39,9 +39,8 @@ ReverseTwoOpt::ReverseTwoOpt(const Input& input,
 }
 
 void ReverseTwoOpt::compute_gain() {
-  const auto& m = _input.get_matrix();
-  const auto& v_source = _input.vehicles[s_vehicle];
-  const auto& v_target = _input.vehicles[t_vehicle];
+  const auto& s_v = _input.vehicles[s_vehicle];
+  const auto& t_v = _input.vehicles[t_vehicle];
 
   Index s_index = _input.jobs[s_route[s_rank]].index();
   Index t_index = _input.jobs[t_route[t_rank]].index();
@@ -56,71 +55,78 @@ void ReverseTwoOpt::compute_gain() {
   // t_rank, but reversed.
 
   // Add new source -> target edge.
-  stored_gain -= m[s_index][t_index];
+  stored_gain -= s_v.cost(s_index, t_index);
 
-  // Cost of reversing target route portion.
-  stored_gain += _sol_state.fwd_costs[t_vehicle][t_rank];
-  stored_gain -= _sol_state.bwd_costs[t_vehicle][t_rank];
+  // Cost of reversing target route portion. First remove forward cost
+  // for beginning of target route as seen from target vehicle. Then
+  // add backward cost for beginning of target route as seen from
+  // source vehicle since it's the new source route end.
+  stored_gain += _sol_state.fwd_costs[t_vehicle][t_vehicle][t_rank];
+  stored_gain -= _sol_state.bwd_costs[t_vehicle][s_vehicle][t_rank];
 
   if (!last_in_target) {
     // Spare next edge in target route.
     Index next_index = _input.jobs[t_route[t_rank + 1]].index();
-    stored_gain += m[t_index][next_index];
+    stored_gain += t_v.cost(t_index, next_index);
   }
 
   if (!last_in_source) {
     // Spare next edge in source route.
     Index next_index = _input.jobs[s_route[s_rank + 1]].index();
-    stored_gain += m[s_index][next_index];
+    stored_gain += s_v.cost(s_index, next_index);
 
     // Part of source route is moved to target route.
     Index next_s_index = _input.jobs[s_route[s_rank + 1]].index();
 
-    // Cost or reverting source route portion.
-    stored_gain += _sol_state.fwd_costs[s_vehicle].back();
-    stored_gain -= _sol_state.fwd_costs[s_vehicle][s_rank + 1];
-    stored_gain -= _sol_state.bwd_costs[s_vehicle].back();
-    stored_gain += _sol_state.bwd_costs[s_vehicle][s_rank + 1];
+    // Cost or reverting source route portion. First remove forward
+    // cost for end of source route as seen from source vehicle
+    // (subtracting intermediate cost to overall cost). Then add
+    // backward cost for end of source route as seen from target
+    // vehicle since it's the new target route start.
+    stored_gain += _sol_state.fwd_costs[s_vehicle][s_vehicle].back();
+    stored_gain -= _sol_state.fwd_costs[s_vehicle][s_vehicle][s_rank + 1];
+    stored_gain -= _sol_state.bwd_costs[s_vehicle][t_vehicle].back();
+    stored_gain += _sol_state.bwd_costs[s_vehicle][t_vehicle][s_rank + 1];
 
     if (last_in_target) {
-      if (v_target.has_end()) {
+      if (t_v.has_end()) {
         // Handle target route new end.
-        auto end_t = v_target.end.value().index();
-        stored_gain += m[t_index][end_t];
-        stored_gain -= m[next_s_index][end_t];
+        auto end_t = t_v.end.value().index();
+        stored_gain += t_v.cost(t_index, end_t);
+        stored_gain -= t_v.cost(next_s_index, end_t);
       }
     } else {
       // Add new target -> source edge.
       Index next_t_index = _input.jobs[t_route[t_rank + 1]].index();
-      stored_gain -= m[next_s_index][next_t_index];
+      stored_gain -= t_v.cost(next_s_index, next_t_index);
     }
   }
 
-  if (v_source.has_end()) {
+  if (s_v.has_end()) {
     // Update cost to source end because last job changed.
-    auto end_s = v_source.end.value().index();
-    stored_gain += m[last_s][end_s];
-    stored_gain -= m[first_t][end_s];
+    auto end_s = s_v.end.value().index();
+    stored_gain += s_v.cost(last_s, end_s);
+    stored_gain -= s_v.cost(first_t, end_s);
   }
 
-  if (v_target.has_start()) {
+  if (t_v.has_start()) {
     // Spare cost from target start because first job changed.
-    auto start_t = v_target.start.value().index();
-    stored_gain += m[start_t][first_t];
+    auto start_t = t_v.start.value().index();
+    stored_gain += t_v.cost(start_t, first_t);
     if (!last_in_source) {
-      stored_gain -= m[start_t][last_s];
+      stored_gain -= t_v.cost(start_t, last_s);
     } else {
       // No job from source route actually swapped to target route.
       if (!last_in_target) {
         // Going straight from start to next job in target route.
         Index next_index = _input.jobs[t_route[t_rank + 1]].index();
-        stored_gain -= m[start_t][next_index];
+        stored_gain -= t_v.cost(start_t, next_index);
       } else {
         // Emptying the whole target route here, so also gaining cost
         // to end if it exists.
-        if (v_target.has_end()) {
-          auto end_t = v_target.end.value().index();
-          stored_gain += m[t_index][end_t];
+        if (t_v.has_end()) {
+          auto end_t = t_v.end.value().index();
+          stored_gain += t_v.cost(t_index, end_t);
         }
       }
     }

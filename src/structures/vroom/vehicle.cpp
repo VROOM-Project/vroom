@@ -15,20 +15,24 @@ namespace vroom {
 Vehicle::Vehicle(Id id,
                  const std::optional<Location>& start,
                  const std::optional<Location>& end,
+                 const std::string& profile,
                  const Amount& capacity,
                  const Skills& skills,
                  const TimeWindow& tw,
                  const std::vector<Break>& breaks,
                  const std::string& description,
+                 double speed_factor,
                  const std::vector<VehicleStep>& input_steps)
   : id(id),
     start(start),
     end(end),
+    profile(profile),
     capacity(capacity),
     skills(skills),
     tw(tw),
     breaks(breaks),
-    description(description) {
+    description(description),
+    cost_wrapper(speed_factor) {
   if (!static_cast<bool>(start) and !static_cast<bool>(end)) {
     throw Exception(ERROR::INPUT,
                     "No start or end specified for vehicle " +
@@ -98,6 +102,12 @@ bool Vehicle::has_same_locations(const Vehicle& other) const {
   }
 
   return same;
+}
+
+bool Vehicle::has_same_profile(const Vehicle& other) const {
+  return (this->profile == other.profile) and
+         (this->cost_wrapper.durations_factor ==
+          other.cost_wrapper.durations_factor);
 }
 
 } // namespace vroom

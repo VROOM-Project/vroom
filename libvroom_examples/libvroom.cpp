@@ -86,13 +86,12 @@ void run_example_with_osrm() {
   bool GEOMETRY = true;
   unsigned amount_dimension = 1;
 
-  // Set OSRM host and port.
-  auto routing_wrapper = std::make_unique<
-    vroom::routing::OsrmRoutedWrapper>("car",
-                                       vroom::Server("localhost", "5000"));
+  // Set OSRM host and port for "car" profile.
+  vroom::io::Servers servers;
+  servers["car"] = vroom::Server("localhost", "5000");
 
-  vroom::Input problem_instance(amount_dimension);
-  problem_instance.set_routing(std::move(routing_wrapper));
+  vroom::Input problem_instance(amount_dimension, servers, vroom::ROUTER::OSRM);
+
   problem_instance.set_geometry(GEOMETRY); // Query for route geometry
                                            // after solving.
 
@@ -121,6 +120,7 @@ void run_example_with_osrm() {
   vroom::Vehicle v1(1,                // id
                     depot,            // start
                     depot,            // end
+                    "car",            // profile
                     vehicle_capacity, // capacity
                     {1, 14},          // skills
                     vehicle_tw,       // time window
@@ -130,6 +130,7 @@ void run_example_with_osrm() {
   vroom::Vehicle v2(2,                // id
                     depot,            // start
                     depot,            // end
+                    "car",            // profile
                     vehicle_capacity, // capacity
                     {2, 14},          // skills
                     vehicle_tw,       // time window
@@ -218,7 +219,7 @@ void run_example_with_custom_matrix() {
                                            {2103, 0, 2255, 3152},
                                            {197, 2256, 0, 1102},
                                            {1299, 3153, 1102, 0}});
-  problem_instance.set_matrix(std::move(matrix_input));
+  problem_instance.set_matrix("car", std::move(matrix_input));
 
   // Define vehicles (use std::nullopt for no start or no end).
   vroom::Location v_start(0); // index in the provided matrix.

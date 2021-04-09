@@ -9,7 +9,7 @@ All rights reserved (see LICENSE).
 
 #include <thread>
 
-#include "algorithms/heuristics/solomon.h"
+#include "algorithms/heuristics/heuristics.h"
 #include "algorithms/local_search/local_search.h"
 #include "problems/vrptw/operators/cross_exchange.h"
 #include "problems/vrptw/operators/exchange.h"
