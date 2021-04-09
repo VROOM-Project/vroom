@@ -159,18 +159,9 @@ void Input::add_vehicle(const Vehicle& vehicle) {
                       std::to_string(_amount_size) + '.');
   }
 
-  // Ensure that skills are either always or never provided.
-  if (_no_addition_yet) {
-    _has_skills = !current_v.skills.empty();
-    _no_addition_yet = false;
-  } else {
-    if (_has_skills != !current_v.skills.empty()) {
-      throw Exception(ERROR::INPUT, "Missing skills.");
-    }
-  }
-
-  // Check for time-windows.
+  // Check for time-windows and skills.
   _has_TW = _has_TW || !vehicle.tw.is_default();
+  _has_skills = _has_skills || !current_v.skills.empty();
 
   bool has_start = current_v.has_start();
   bool has_end = current_v.has_end();
