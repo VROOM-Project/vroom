@@ -297,11 +297,9 @@ void Input::set_skills_compatibility() {
   if (_has_skills) {
     for (std::size_t v = 0; v < vehicles.size(); ++v) {
       const auto& v_skills = vehicles[v].skills;
-      assert(!v_skills.empty());
 
       for (std::size_t j = 0; j < jobs.size(); ++j) {
         bool is_compatible = true;
-        assert(!jobs[j].skills.empty());
         for (const auto& s : jobs[j].skills) {
           if (v_skills.find(s) == v_skills.end()) {
             is_compatible = false;
