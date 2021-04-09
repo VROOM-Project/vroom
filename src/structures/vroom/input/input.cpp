@@ -17,7 +17,6 @@ namespace vroom {
 
 Input::Input(unsigned amount_size)
   : _start_loading(std::chrono::high_resolution_clock::now()),
-    _no_addition_yet(true),
     _has_TW(false),
     _homogeneous_locations(true),
     _geometry(false),

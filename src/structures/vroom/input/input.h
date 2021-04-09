@@ -31,7 +31,6 @@ private:
   std::chrono::high_resolution_clock::time_point _end_solving;
   std::chrono::high_resolution_clock::time_point _end_routing;
   std::unique_ptr<routing::Wrapper> _routing_wrapper;
-  bool _no_addition_yet;
   bool _has_skills;
   bool _has_TW;
   bool _homogeneous_locations;
