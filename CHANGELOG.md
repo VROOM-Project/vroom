@@ -9,6 +9,7 @@
 
 ### Changed
 
+- A mix of empty and non-empty `skills` arrays is allowed in input (#460)
 - Formatting script updated to use version 10 of clang-format (#452)
 - vroom will now read json input from stdin if no other input is specified (#457)
 
