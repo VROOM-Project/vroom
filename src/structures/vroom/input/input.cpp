@@ -56,18 +56,9 @@ void Input::check_job(Job& job) {
                       std::to_string(_amount_size) + '.');
   }
 
-  // Ensure that skills are either always or never provided.
-  if (_no_addition_yet) {
-    _has_skills = !job.skills.empty();
-    _no_addition_yet = false;
-  } else {
-    if (_has_skills != !job.skills.empty()) {
-      throw Exception(ERROR::INPUT, "Missing skills.");
-    }
-  }
-
-  // Check for time-windows.
-  _has_TW |= (!(job.tws.size() == 1) or !job.tws[0].is_default());
+  // Check for time-windows and skills.
+  _has_TW = _has_TW || (!(job.tws.size() == 1) or !job.tws[0].is_default());
+  _has_skills = _has_skills || !job.skills.empty();
 
   if (!job.location.user_index()) {
     // Index of this job in the matrix was not specified upon job
