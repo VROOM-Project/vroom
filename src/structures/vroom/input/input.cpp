@@ -117,24 +117,20 @@ void Input::check_job(Job& job) {
                       std::to_string(_amount_size) + '.');
   }
 
-  // Ensure that skills or location index are either always or never
-  // provided.
+  // Ensure that location index are either always or never provided.
   bool has_location_index = job.location.user_index();
   if (_no_addition_yet) {
-    _has_skills = !job.skills.empty();
     _no_addition_yet = false;
     _has_custom_location_index = has_location_index;
   } else {
-    if (_has_skills != !job.skills.empty()) {
-      throw Exception(ERROR::INPUT, "Missing skills.");
-    }
     if (_has_custom_location_index != has_location_index) {
       throw Exception(ERROR::INPUT, "Missing location index.");
     }
   }
 
-  // Check for time-windows.
-  _has_TW |= (!(job.tws.size() == 1) or !job.tws[0].is_default());
+  // Check for time-windows and skills.
+  _has_TW = _has_TW || (!(job.tws.size() == 1) or !job.tws[0].is_default());
+  _has_skills = _has_skills || !job.skills.empty();
 
   if (!job.location.user_index()) {
     // Index of job in the matrices is not specified in input, check
@@ -237,8 +233,9 @@ void Input::add_vehicle(const Vehicle& vehicle) {
                       std::to_string(_amount_size) + '.');
   }
 
-  // Check for time-windows.
+  // Check for time-windows and skills.
   _has_TW = _has_TW || !vehicle.tw.is_default();
+  _has_skills = _has_skills || !current_v.skills.empty();
 
   bool has_location_index = false;
   if (current_v.has_start()) {
@@ -436,11 +433,9 @@ void Input::set_skills_compatibility() {
   if (_has_skills) {
     for (std::size_t v = 0; v < vehicles.size(); ++v) {
       const auto& v_skills = vehicles[v].skills;
-      assert(!v_skills.empty());
 
       for (std::size_t j = 0; j < jobs.size(); ++j) {
         bool is_compatible = true;
-        assert(!jobs[j].skills.empty());
         for (const auto& s : jobs[j].skills) {
           if (v_skills.find(s) == v_skills.end()) {
             is_compatible = false;

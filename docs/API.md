@@ -189,9 +189,14 @@ served by a vehicle that has **all** its required skills. In other
 words: job `j` is eligible to vehicle `v` iff `j.skills` is included
 in `v.skills`.
 
-In order to ease modeling problems with no skills required, it is
-assumed that there is no restriction at all if no `skills` keys are
-provided.
+This definition implies in particular that:
+
+- a task without skills can be served by any vehicle;
+- a vehicle without skills can only serve tasks with no particular
+  need (i.e. without skills as well).
+
+In order to ease modeling problems with no skills required, not
+providing a `skills` key default to providing an empty array.
 
 ### Task priorities
 
