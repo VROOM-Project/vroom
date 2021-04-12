@@ -70,9 +70,13 @@ std::string HttpWrapper::send_then_receive(const std::string& query) const {
 
   // Removing headers.
   auto start = response.find("{");
-  assert(start != std::string::npos);
+  if (start == std::string::npos) {
+    throw Exception(ERROR::ROUTING, "Invalid routing response.");
+  }
   auto end = response.rfind("}");
-  assert(end != std::string::npos);
+  if (end == std::string::npos) {
+    throw Exception(ERROR::ROUTING, "Invalid routing response.");
+  }
 
   std::string json_string = response.substr(start, end - start + 1);
 

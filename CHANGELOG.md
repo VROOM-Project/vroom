@@ -13,6 +13,7 @@
 
 - Formatting script updated to use version 10 of clang-format (#452)
 - vroom will now read json input from stdin if no other input is specified (#457)
+- Clearer error message with invalid json response from http routing request (#471)
 
 ### Fixed
 
