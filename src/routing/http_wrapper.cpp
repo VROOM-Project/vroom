@@ -222,17 +222,9 @@ void HttpWrapper::add_route_info(Route& route) const {
 
   double sum_distance = 0;
 
-  // Locate first non-break stop.
-  const auto first_non_break =
-    std::find_if(route.steps.begin(), route.steps.end(), [&](const auto& s) {
-      return s.step_type != STEP_TYPE::BREAK;
-    });
-  unsigned steps_rank = std::distance(route.steps.begin(), first_non_break);
-
-  // Zero distance up to first non-break step.
-  for (unsigned i = 0; i <= steps_rank; ++i) {
-    route.steps[i].distance = 0;
-  }
+  // Start step has zero distance.
+  unsigned steps_rank = 0;
+  route.steps[0].distance = 0;
 
   for (rapidjson::SizeType i = 0; i < nb_legs; ++i) {
     const auto& step = route.steps[steps_rank];
@@ -247,20 +239,20 @@ void HttpWrapper::add_route_info(Route& route) const {
     // non-breaks steps.
     for (unsigned b = 1; b <= number_breaks_after[i]; ++b) {
       auto& break_step = route.steps[steps_rank + b];
-      break_step.distance = round_cost(
-        sum_distance + ((break_step.duration - step.duration) * next_distance) /
-                         next_duration);
+      if (next_duration == 0) {
+        break_step.distance = round_cost(sum_distance);
+      } else {
+        break_step.distance =
+          round_cost(sum_distance +
+                     ((break_step.duration - step.duration) * next_distance) /
+                       next_duration);
+      }
     }
 
     sum_distance += next_distance;
     next_step.distance = round_cost(sum_distance);
 
     steps_rank += number_breaks_after[i] + 1;
-  }
-
-  // Unchanged distance after last non-break step.
-  for (auto i = steps_rank; i < route.steps.size(); ++i) {
-    route.steps[i].distance = sum_distance;
   }
 }
 
