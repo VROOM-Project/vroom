@@ -51,7 +51,7 @@ void PDShift::compute_gain() {
       -utils::addition_cost(_input, s_route[_s_d_rank], v, t_route, t_d_rank);
   }
 
-  for (unsigned t_p_rank = 0; t_p_rank < t_route.size(); ++t_p_rank) {
+  for (unsigned t_p_rank = 0; t_p_rank <= t_route.size(); ++t_p_rank) {
     Gain t_p_gain =
       -utils::addition_cost(_input, s_route[_s_p_rank], v, t_route, t_p_rank);
 
