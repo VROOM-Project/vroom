@@ -9,10 +9,6 @@ All rights reserved (see LICENSE).
 
 #include <algorithm>
 
-#if USE_LIBOSRM
-#include "osrm/exception.hpp"
-#endif
-
 #include "../include/rapidjson/document.h"
 #include "../include/rapidjson/error/en.h"
 

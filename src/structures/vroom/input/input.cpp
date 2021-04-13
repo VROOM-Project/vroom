@@ -10,6 +10,10 @@ All rights reserved (see LICENSE).
 #include <mutex>
 #include <thread>
 
+#if USE_LIBOSRM
+#include "osrm/exception.hpp"
+#endif
+
 #include "algorithms/validation/check.h"
 #include "problems/cvrp/cvrp.h"
 #include "problems/vrptw/vrptw.h"
