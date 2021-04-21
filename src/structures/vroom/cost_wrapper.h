@@ -21,7 +21,7 @@ struct CostWrapper {
   const double durations_factor;
   const uint32_t discrete_factor;
   const Matrix<Cost>* durations_matrix;
-  
+
   std::size_t cost_matrix_size;
   const Cost* cost_data;
 
@@ -31,9 +31,8 @@ struct CostWrapper {
 
   Cost cost(Index i, Index j) const {
     Cost c = cost_data[i * cost_matrix_size + j];
-    return (c * discrete_factor)/ DIVISOR;
+    return (c * discrete_factor) / DIVISOR;
   }
-
 };
 
 } // namespace vroom

@@ -22,23 +22,22 @@ template <class T> class Matrix {
   std::vector<T> data;
 
 public:
-
   Matrix();
 
   Matrix(std::size_t n);
 
   Matrix<T> get_sub_matrix(const std::vector<Index>& indices) const;
-    
-   T* operator[](std::size_t i) {
-       return data.data() + (i * n);
-   }
-   const T* operator[](std::size_t i) const {
-       return data.data() + (i * n);
-   }
 
-   std::size_t size() const {
+  T* operator[](std::size_t i) {
+    return data.data() + (i * n);
+  }
+  const T* operator[](std::size_t i) const {
+    return data.data() + (i * n);
+  }
+
+  std::size_t size() const {
     return n;
-   }
+  }
 };
 
 } // namespace vroom
