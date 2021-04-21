@@ -22,6 +22,13 @@ struct CostWrapper {
   CostWrapper(double speed_factor);
 
   void set_durations_matrix(const Matrix<Cost>* matrix);
+
+  Cost cost(Index i, Index j) const {
+    return static_cast<Cost>(
+      durations_factor *
+      static_cast<double>((*(durations_matrix))[i][j]));
+  }
+
 };
 
 } // namespace vroom
