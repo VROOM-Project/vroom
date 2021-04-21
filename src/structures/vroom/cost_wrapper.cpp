@@ -17,6 +17,8 @@ CostWrapper::CostWrapper(double speed_factor)
 
 void CostWrapper::set_durations_matrix(const Matrix<Cost>* matrix) {
   durations_matrix = matrix;
+  cost_matrix_size = matrix->size();
+  cost_data = (*matrix)[0];
 }
 
 } // namespace vroom
