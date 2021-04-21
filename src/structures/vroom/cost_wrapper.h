@@ -16,7 +16,7 @@ All rights reserved (see LICENSE).
 namespace vroom {
 
 struct CostWrapper {
-  const static uint32_t DIVISOR = 128;
+  const static uint32_t DIVISOR = 100;
 
   const double durations_factor;
   const uint32_t discrete_factor;
