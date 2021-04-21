@@ -12,7 +12,8 @@ All rights reserved (see LICENSE).
 namespace vroom {
 
 CostWrapper::CostWrapper(double speed_factor)
-  : durations_factor(1. / speed_factor) {
+  : durations_factor(1. / speed_factor),
+    discrete_factor(durations_factor * DIVISOR){
 }
 
 void CostWrapper::set_durations_matrix(const Matrix<Cost>* matrix) {
