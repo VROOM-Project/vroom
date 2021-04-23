@@ -11,20 +11,11 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
-template <class T> Line<T>::Line(std::size_t n) : parent(n) {
-}
-
-template <class T> Line<T>::Line(std::initializer_list<T> l) : parent(l) {
-}
-
-template <class T> Matrix<T>::Matrix(std::size_t n) : parent(n, Line<T>(n)) {
+template <class T> Matrix<T>::Matrix(std::size_t n) : n(n) {
+  data.resize(n * n);
 }
 
 template <class T> Matrix<T>::Matrix() : Matrix(0) {
-}
-
-template <class T>
-Matrix<T>::Matrix(std::initializer_list<Line<T>> l) : parent(l) {
 }
 
 template <class T>
@@ -38,7 +29,6 @@ Matrix<T> Matrix<T>::get_sub_matrix(const std::vector<Index>& indices) const {
   return sub_matrix;
 }
 
-template class Line<Cost>;
 template class Matrix<Cost>;
 
 } // namespace vroom

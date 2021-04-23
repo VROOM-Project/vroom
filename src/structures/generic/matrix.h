@@ -16,34 +16,28 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
-template <class T> class Line : private std::vector<T> {
+template <class T> class Matrix {
 
-  using parent = std::vector<T>;
-
-public:
-  using parent::size;
-  using parent::operator[];
-
-  Line(std::size_t n);
-
-  Line(std::initializer_list<T> l);
-};
-
-template <class T> class Matrix : private std::vector<Line<T>> {
-
-  using parent = std::vector<Line<T>>;
+  std::size_t n;
+  std::vector<T> data;
 
 public:
-  using parent::size;
-  using parent::operator[];
-
   Matrix();
 
   Matrix(std::size_t n);
 
-  Matrix(std::initializer_list<Line<T>> l);
-
   Matrix<T> get_sub_matrix(const std::vector<Index>& indices) const;
+
+  T* operator[](std::size_t i) {
+    return data.data() + (i * n);
+  }
+  const T* operator[](std::size_t i) const {
+    return data.data() + (i * n);
+  }
+
+  std::size_t size() const {
+    return n;
+  }
 };
 
 } // namespace vroom
