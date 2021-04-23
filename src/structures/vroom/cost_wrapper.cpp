@@ -7,18 +7,16 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <cmath>
 #include "structures/vroom/cost_wrapper.h"
+#include <cmath>
 
 namespace vroom {
 
 CostWrapper::CostWrapper(double speed_factor)
-  : durations_factor(1. / speed_factor),
-    discrete_factor(std::round(durations_factor * DIVISOR)) {
+  : discrete_factor(std::round(1 / speed_factor * DIVISOR)) {
 }
 
 void CostWrapper::set_durations_matrix(const Matrix<Cost>* matrix) {
-  durations_matrix = matrix;
   cost_matrix_size = matrix->size();
   cost_data = (*matrix)[0];
 }

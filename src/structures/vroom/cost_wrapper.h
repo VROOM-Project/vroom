@@ -18,10 +18,7 @@ namespace vroom {
 struct CostWrapper {
   const static uint32_t DIVISOR = 100;
 
-  const double durations_factor;
   const uint32_t discrete_factor;
-  const Matrix<Cost>* durations_matrix;
-
   std::size_t cost_matrix_size;
   const Cost* cost_data;
 
