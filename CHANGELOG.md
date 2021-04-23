@@ -4,7 +4,7 @@
 
 ### Added
 
-- Support for heterogeneous vehicle routing profiles (#394)
+- Support for heterogeneous vehicle routing profiles (#394) (#490)
 - Optional `speed_factor` key for vehicle-level tuning (#450)
 - Support Valhalla as routing engine (#306)
 - Report `type` for unassigned tasks in output (#469)
