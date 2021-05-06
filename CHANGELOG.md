@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [v1.10.0] - 2021-05-06
+
 ### Added
 
 - Support for heterogeneous vehicle routing profiles (#394) (#490)
