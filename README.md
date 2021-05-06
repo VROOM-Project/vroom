@@ -60,6 +60,7 @@ engines.
 
 - [OSRM](http://project-osrm.org/)
 - [Openrouteservice](https://openrouteservice.org/)
+- [Valhalla](https://github.com/valhalla/valhalla)
 
 VROOM can also use a custom cost matrix computed from any other
 source.
