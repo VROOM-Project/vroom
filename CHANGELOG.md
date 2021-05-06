@@ -16,6 +16,10 @@
 - vroom will now read json input from stdin if no other input is specified (#457)
 - Clearer error message with invalid json response from http routing request (#471)
 
+### Deprecated
+
+- Top-level `matrix` key should be replaced using the new `matrices` syntax (#450)
+
 ### Fixed
 
 - Compatibility with Visual Studio 2019 (#448)
