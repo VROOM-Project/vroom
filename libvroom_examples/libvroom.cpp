@@ -215,10 +215,25 @@ void run_example_with_custom_matrix() {
   vroom::Input problem_instance(amount_dimension);
 
   // Define custom matrix and bypass OSRM call.
-  vroom::Matrix<vroom::Cost> matrix_input({{0, 2104, 197, 1299},
-                                           {2103, 0, 2255, 3152},
-                                           {197, 2256, 0, 1102},
-                                           {1299, 3153, 1102, 0}});
+  vroom::Matrix<vroom::Cost> matrix_input(4);
+
+  matrix_input[0][0] = 0;
+  matrix_input[0][1] = 2104;
+  matrix_input[0][2] = 197;
+  matrix_input[0][3] = 1299;
+  matrix_input[1][0] = 2103;
+  matrix_input[1][1] = 0;
+  matrix_input[1][2] = 2255;
+  matrix_input[1][3] = 3152;
+  matrix_input[2][0] = 197;
+  matrix_input[2][1] = 2256;
+  matrix_input[2][2] = 0;
+  matrix_input[2][3] = 1102;
+  matrix_input[3][0] = 1299;
+  matrix_input[3][1] = 3153;
+  matrix_input[3][2] = 1102;
+  matrix_input[3][3] = 0;
+
   problem_instance.set_matrix("car", std::move(matrix_input));
 
   // Define vehicles (use std::nullopt for no start or no end).
