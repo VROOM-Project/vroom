@@ -6,7 +6,7 @@
 This file describes the `vroom` API.
 
 Contents:
-- [Solving mode](#mode)
+- [Solving mode](#solving-mode)
 - [Input format](#input)
 - [Output format](#output)
 - [Examples](#examples)
