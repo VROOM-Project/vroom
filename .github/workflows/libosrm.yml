@@ -1,0 +1,45 @@
+name: Libosrm CI
+on:
+  pull_request:
+     branches:
+       - master
+     paths:
+       - '.github/workflows/libosrm.yml'
+       - '**libosrm_wrapper**'
+jobs:
+  libosrm:
+    strategy:
+      matrix: 
+        cxx: ['g++-9', 'clang++-10']
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout Vroom repository
+        uses: actions/checkout@v2
+      - name: Install Vroom dependencies
+        run: sudo apt-get install libasio-dev libglpk-dev jq
+      - name: Checkout OSRM repository
+        uses: actions/checkout@v2
+        with:
+          repository: Project-OSRM/osrm-backend
+          ref: v5.25.0
+          path: osrm-backend
+      - name : Install OSRM dependencies
+        run: sudo apt-get install build-essential git cmake pkg-config libbz2-dev libstxxl-dev libstxxl1v5 libxml2-dev libzip-dev libboost-all-dev lua5.2 liblua5.2-dev libtbb-dev libluabind-dev libluabind0.9.1d1
+        working-directory: osrm-backend
+      - name: Compile OSRM
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+          cmake --build .
+        working-directory: osrm-backend
+      - name: Install OSRM
+        run: sudo cmake --build . --target install
+        working-directory: osrm-backend/build
+      - name: Compile Vroom
+        run: make
+        env:
+          CXX: ${{ matrix.cxx }}
+        working-directory: src
+      - name: Validate output
+        run: diff <(bin/vroom -i docs/example_2.json  | jq '.routes[].steps[]' --sort-keys) <(jq '.routes[].steps[]' --sort-keys docs/example_2_sol.json)
