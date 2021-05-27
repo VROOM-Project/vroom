@@ -23,7 +23,16 @@ jobs:
         uses: actions/checkout@v2
       - name: Install Vroom dependencies
         run: sudo apt-get install libasio-dev libglpk-dev jq
+      - name: Cache OSRM
+        id: cache
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-node-modules
+        with:
+          path: ${{ github.workspace }}/osrm-backend
+          key: osrm-${{ matrix.cxx }}
       - name: Checkout OSRM repository
+        if: steps.cache.outputs.cache-hit != 'true'
         uses: actions/checkout@v2
         with:
           repository: Project-OSRM/osrm-backend
@@ -33,6 +42,7 @@ jobs:
         run: sudo apt-get install build-essential git cmake pkg-config libbz2-dev libstxxl-dev libstxxl1v5 libxml2-dev libzip-dev libboost-all-dev lua5.2 liblua5.2-dev libtbb-dev libluabind-dev libluabind0.9.1d1
         working-directory: osrm-backend
       - name: Compile OSRM
+        if: steps.cache.outputs.cache-hit != 'true'
         run: |
           mkdir build
           cd build
