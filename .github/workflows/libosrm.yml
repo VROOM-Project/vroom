@@ -1,5 +1,11 @@
 name: Libosrm CI
 on:
+  push:
+     branches:
+       - master
+     paths:
+       - '.github/workflows/libosrm.yml'
+       - '**libosrm_wrapper**'
   pull_request:
      branches:
        - master
