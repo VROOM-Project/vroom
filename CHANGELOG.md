@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Added
+- Github Actions CI (#436) (#455)
+
 ## [v1.10.0] - 2021-05-06
 
 ### Added
