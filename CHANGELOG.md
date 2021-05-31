@@ -10,6 +10,10 @@
 
 - CI builds now run on Ubuntu 20.04 (#455)
 
+### Removed
+
+- Travis CI builds (#436)
+
 ## [v1.10.0] - 2021-05-06
 
 ### Added
