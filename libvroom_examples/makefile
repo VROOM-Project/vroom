@@ -1,6 +1,6 @@
 CXX ?= g++
 CXXFLAGS = -I../src -std=c++17 -Wextra -Wpedantic -Wall -O3
-LDLIBS = -L../lib/ -lvroom -lboost_system -lpthread -lssl -lcrypto
+LDLIBS = -L../lib/ -lvroom -lpthread -lssl -lcrypto
 
 # Checking for libglpk based on whether the header file is found as
 # glpk does not provide a pkg-config setup.
