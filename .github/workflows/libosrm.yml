@@ -5,15 +5,16 @@ on:
       - master
     tags:
       - v*.*.*
-    paths:
-      - '!**.md'
+    paths-ignore:
+      - '**.md'
   pull_request:
     branches:
       - master
     paths:
       - '.github/workflows/libosrm.yml'
       - '**libosrm_wrapper**'
-      - '!**.md'
+    paths-ignore:
+      - '**.md'
 env:
   osrm-tag: v5.25.0
 jobs:
