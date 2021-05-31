@@ -106,7 +106,9 @@ page](https://github.com/VROOM-Project/vroom/wiki/Usage)
 
 ### CI builds
 
-[![vroom](https://github.com/VROOM-Project/vroom/actions/workflows/vroom.yml/badge.svg)](https://github.com/VROOM-Project/vroom/actions/workflows/vroom.yml)[![vroom + libosrm](https://github.com/VROOM-Project/vroom/actions/workflows/vroom_libosrm.yml/badge.svg?branch=master)](https://github.com/VROOM-Project/vroom/actions/workflows/vroom_libosrm.yml)
+[![vroom](https://github.com/VROOM-Project/vroom/actions/workflows/vroom.yml/badge.svg)](https://github.com/VROOM-Project/vroom/actions/workflows/vroom.yml)
+
+[![vroom + libosrm](https://github.com/VROOM-Project/vroom/actions/workflows/vroom_libosrm.yml/badge.svg?branch=master)](https://github.com/VROOM-Project/vroom/actions/workflows/vroom_libosrm.yml)
 
 [Github Actions](https://github.com/VROOM-Project/vroom/actions) are
 used to check the build across various compilers and settings.
