@@ -23,10 +23,15 @@ jobs:
         uses: actions/checkout@v2
       - name: Install dependencies
         run: sudo apt-get install libasio-dev libglpk-dev jq
-      - name: Make
+      - name: Build vroom
         run: make
         env:
           CXX: ${{ matrix.cxx }}
         working-directory: src
       - name: Validate output
         run: diff <(bin/vroom -i docs/example_2.json  | jq '.routes[].steps[]' --sort-keys) <(jq '.routes[].steps[]' --sort-keys docs/example_2_sol.json)
+      - name: Build libvroom example
+        run: make
+        env:
+          CXX: ${{ matrix.cxx }}
+        working-directory: libvroom_examples
