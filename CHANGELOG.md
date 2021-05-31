@@ -3,7 +3,12 @@
 ## [Unreleased]
 
 ### Added
-- Github Actions CI (#436) (#455)
+
+- Github Actions CI (#436)
+
+### Changed
+
+- CI builds now run on Ubuntu 20.04 (#455)
 
 ## [v1.10.0] - 2021-05-06
 
