@@ -1,4 +1,4 @@
-name: Libosrm CI
+name: vroom + libosrm
 on:
   push:
     branches:
@@ -13,21 +13,19 @@ on:
     paths:
       - '.github/workflows/libosrm.yml'
       - '**libosrm_wrapper**'
-    paths-ignore:
-      - '**.md'
 env:
   osrm-tag: v5.25.0
 jobs:
   libosrm:
     strategy:
-      matrix: 
+      matrix:
         cxx: ['g++-9', 'clang++-10']
     runs-on: ubuntu-20.04
     steps:
-      - name: Checkout Vroom repository
+      - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Install Vroom dependencies
-        run: sudo apt-get install libasio-dev libglpk-dev jq
+      - name: Install dependencies
+        run: sudo apt-get install libasio-dev libglpk-dev
       - name: Cache OSRM
         id: cache
         uses: actions/cache@v2
@@ -55,9 +53,8 @@ jobs:
       - name: Install OSRM
         run: sudo cmake --build . --target install
         working-directory: osrm-backend/build
-      - name: Compile Vroom
+      - name: Compile vroom
         run: make
         env:
           CXX: ${{ matrix.cxx }}
         working-directory: src
-

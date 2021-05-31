@@ -1,4 +1,4 @@
-name: Vroom CI
+name: vroom
 on:
   push:
     branches:
@@ -15,7 +15,7 @@ on:
 jobs:
   vroom:
     strategy:
-      matrix: 
+      matrix:
         cxx: ['g++-9', 'clang++-10']
     runs-on: ubuntu-20.04
     steps:
