@@ -10,8 +10,6 @@ on:
   pull_request:
     branches:
       - master
-    tags:
-      - v*.*.*
     paths:
       - '.github/workflows/libosrm.yml'
       - '**libosrm_wrapper**'
