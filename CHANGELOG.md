@@ -5,6 +5,7 @@
 ### Added
 
 - Github Actions CI (#436)
+- Check for libvroom example build in CI (#514)
 
 ### Changed
 
