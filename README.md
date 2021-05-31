@@ -106,9 +106,9 @@ page](https://github.com/VROOM-Project/vroom/wiki/Usage)
 
 ### CI builds
 
-[![Build Status](https://api.travis-ci.com/VROOM-Project/vroom.svg?branch=master)](https://travis-ci.com/github/VROOM-Project/vroom)
+[![vroom](https://github.com/VROOM-Project/vroom/actions/workflows/vroom.yml/badge.svg)](https://github.com/VROOM-Project/vroom/actions/workflows/vroom.yml)[![vroom + libosrm](https://github.com/VROOM-Project/vroom/actions/workflows/libosrm.yml/badge.svg?branch=master)](https://github.com/VROOM-Project/vroom/actions/workflows/vroom_libosrm.yml)
 
-[Travis builds](https://travis-ci.com/github/VROOM-Project/vroom) are
+[Github Actions](https://github.com/VROOM-Project/vroom/actions) are
 used to check the build across various compilers and settings.
 
 ### Functional tests
