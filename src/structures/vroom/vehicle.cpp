@@ -35,15 +35,13 @@ Vehicle::Vehicle(Id id,
     cost_wrapper(speed_factor) {
   if (!static_cast<bool>(start) and !static_cast<bool>(end)) {
     throw Exception(ERROR::INPUT,
-                    "No start or end specified for vehicle " +
-                      std::to_string(id) + '.');
+                    "No start or end specified for vehicle " + id + '.');
   }
 
   for (unsigned i = 0; i < breaks.size(); ++i) {
     const auto& b = breaks[i];
     if (break_id_to_rank.find(b.id) != break_id_to_rank.end()) {
-      throw Exception(ERROR::INPUT,
-                      "Duplicate break id: " + std::to_string(b.id) + ".");
+      throw Exception(ERROR::INPUT, "Duplicate break id: " + b.id + ".");
     }
     break_id_to_rank[b.id] = i;
   }
@@ -62,14 +60,14 @@ Vehicle::Vehicle(Id id,
     for (unsigned i = rank_after_start; i < input_steps.size(); ++i) {
       if (input_steps[i].type == STEP_TYPE::START) {
         throw Exception(ERROR::INPUT,
-                        "Unexpected start in input steps for vehicle " +
-                          std::to_string(id) + ".");
+                        "Unexpected start in input steps for vehicle " + id +
+                          ".");
       }
       if (input_steps[i].type == STEP_TYPE::END and
           (i != input_steps.size() - 1)) {
         throw Exception(ERROR::INPUT,
-                        "Unexpected end in input steps for vehicle " +
-                          std::to_string(id) + ".");
+                        "Unexpected end in input steps for vehicle " + id +
+                          ".");
       }
 
       steps.push_back(input_steps[i]);

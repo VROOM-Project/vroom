@@ -62,7 +62,6 @@ rapidjson::Document to_json(const Solution& sol, bool geometry) {
   rapidjson::Document json_output;
   json_output.SetObject();
   rapidjson::Document::AllocatorType& allocator = json_output.GetAllocator();
-
   json_output.AddMember("code", sol.code, allocator);
   if (sol.code != 0) {
     json_output.AddMember("error", rapidjson::Value(), allocator);
@@ -75,7 +74,11 @@ rapidjson::Document to_json(const Solution& sol, bool geometry) {
     rapidjson::Value json_unassigned(rapidjson::kArrayType);
     for (const auto& job : sol.unassigned) {
       rapidjson::Value json_job(rapidjson::kObjectType);
-      json_job.AddMember("id", job.id, allocator);
+      json_job.AddMember("id", rapidjson::Value(), allocator);
+      json_job["id"].SetString(job.id.c_str(),
+                                        job.id.size(),
+                                        allocator);
+
       if (job.location.has_coordinates()) {
         json_job.AddMember("location",
                            to_json(job.location, allocator),
@@ -168,7 +171,10 @@ rapidjson::Value to_json(const Route& route,
                          rapidjson::Document::AllocatorType& allocator) {
   rapidjson::Value json_route(rapidjson::kObjectType);
 
-  json_route.AddMember("vehicle", route.vehicle, allocator);
+  json_route.AddMember("vehicle", rapidjson::Value(), allocator);
+  json_route["vehicle"].SetString(route.vehicle.c_str(),
+                                        route.vehicle.size(),
+                                        allocator);
   json_route.AddMember("cost", route.cost, allocator);
 
   if (!route.description.empty()) {
@@ -291,7 +297,8 @@ rapidjson::Value to_json(const Step& s,
   }
 
   if (s.step_type == STEP_TYPE::JOB or s.step_type == STEP_TYPE::BREAK) {
-    json_step.AddMember("id", s.id, allocator);
+    json_step.AddMember("id", rapidjson::Value(), allocator);
+    json_step["id"].SetString(s.id.c_str(), s.id.size(), allocator);
   }
 
   json_step.AddMember("service", s.service, allocator);
@@ -299,7 +306,8 @@ rapidjson::Value to_json(const Step& s,
 
   // Should be removed at some point as step.job is deprecated.
   if (s.step_type == STEP_TYPE::JOB) {
-    json_step.AddMember("job", s.id, allocator);
+    json_step.AddMember("job", rapidjson::Value(), allocator);
+    json_step["job"].SetString(s.id.c_str(), s.id.size(), allocator);
   }
 
   if (s.load.size() > 0) {

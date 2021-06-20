@@ -9,6 +9,7 @@ All rights reserved (see LICENSE).
 
 #include <mutex>
 #include <thread>
+#include <iostream>
 
 #if USE_LIBOSRM
 #include "osrm/exception.hpp"
@@ -173,8 +174,7 @@ void Input::add_job(const Job& job) {
     throw Exception(ERROR::INPUT, "Wrong job type.");
   }
   if (job_id_to_rank.find(job.id) != job_id_to_rank.end()) {
-    throw Exception(ERROR::INPUT,
-                    "Duplicate job id: " + std::to_string(job.id) + ".");
+    throw Exception(ERROR::INPUT, "Duplicate job id: " + job.id + ".");
   }
   job_id_to_rank[job.id] = jobs.size();
   jobs.push_back(job);
@@ -202,8 +202,7 @@ void Input::add_shipment(const Job& pickup, const Job& delivery) {
     throw Exception(ERROR::INPUT, "Wrong pickup type.");
   }
   if (pickup_id_to_rank.find(pickup.id) != pickup_id_to_rank.end()) {
-    throw Exception(ERROR::INPUT,
-                    "Duplicate pickup id: " + std::to_string(pickup.id) + ".");
+    throw Exception(ERROR::INPUT, "Duplicate pickup id: " + pickup.id + ".");
   }
   pickup_id_to_rank[pickup.id] = jobs.size();
   jobs.push_back(pickup);
@@ -214,8 +213,7 @@ void Input::add_shipment(const Job& pickup, const Job& delivery) {
   }
   if (delivery_id_to_rank.find(delivery.id) != delivery_id_to_rank.end()) {
     throw Exception(ERROR::INPUT,
-                    "Duplicate delivery id: " + std::to_string(delivery.id) +
-                      ".");
+                    "Duplicate delivery id: " + delivery.id + ".");
   }
   delivery_id_to_rank[delivery.id] = jobs.size();
   jobs.push_back(delivery);

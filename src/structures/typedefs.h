@@ -26,7 +26,7 @@ All rights reserved (see LICENSE).
 namespace vroom {
 
 // To easily differentiate variable types.
-using Id = uint64_t;
+using Id = std::string;
 using Index = uint16_t;
 using Cost = uint32_t;
 using Gain = int64_t;

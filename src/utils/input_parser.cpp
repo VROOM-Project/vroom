@@ -8,6 +8,7 @@ All rights reserved (see LICENSE).
 */
 
 #include <algorithm>
+#include <iostream>
 
 #include "../include/rapidjson/document.h"
 #include "../include/rapidjson/error/en.h"
@@ -126,7 +127,7 @@ inline void check_id(const rapidjson::Value& v, const std::string& type) {
   if (!v.IsObject()) {
     throw Exception(ERROR::INPUT, "Invalid " + type + ".");
   }
-  if (!v.HasMember("id") or !v["id"].IsUint64()) {
+  if (!v.HasMember("id") or !v["id"].IsString()) {
     throw Exception(ERROR::INPUT, "Invalid or missing id for " + type + ".");
   }
 }
@@ -210,7 +211,7 @@ get_break_time_windows(const rapidjson::Value& b) {
 
 inline Break get_break(const rapidjson::Value& b) {
   check_id(b, "break");
-  return Break(b["id"].GetUint64(),
+  return Break(b["id"].GetString(),
                get_break_time_windows(b),
                get_service(b),
                get_string(b, "description"));
@@ -299,24 +300,24 @@ inline std::vector<VehicleStep> get_vehicle_steps(const rapidjson::Value& v) {
 
       if (type_str == "job") {
         steps.emplace_back(JOB_TYPE::SINGLE,
-                           json_step["id"].GetUint64(),
+                           json_step["id"].GetString(),
                            std::move(forced_service));
       } else if (type_str == "pickup") {
         steps.emplace_back(JOB_TYPE::PICKUP,
-                           json_step["id"].GetUint64(),
+                           json_step["id"].GetString(),
                            std::move(forced_service));
       } else if (type_str == "delivery") {
         steps.emplace_back(JOB_TYPE::DELIVERY,
-                           json_step["id"].GetUint64(),
+                           json_step["id"].GetString(),
                            std::move(forced_service));
       } else if (type_str == "break") {
         steps.emplace_back(STEP_TYPE::BREAK,
-                           json_step["id"].GetUint64(),
+                           json_step["id"].GetString(),
                            std::move(forced_service));
       } else {
         throw Exception(ERROR::INPUT,
                         "Invalid type in steps for vehicle " +
-                          std::to_string(v["id"].GetUint64()) + ".");
+                          std::string(v["id"].GetString()) + ".");
       }
     }
   }
@@ -327,7 +328,7 @@ inline std::vector<VehicleStep> get_vehicle_steps(const rapidjson::Value& v) {
 inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
                            unsigned amount_size) {
   check_id(json_vehicle, "vehicle");
-  auto v_id = json_vehicle["id"].GetUint64();
+  Id v_id = json_vehicle["id"].IsString() ? json_vehicle["id"].GetString() : std::to_string(json_vehicle["id"].GetUint64());
 
   // Check what info are available for vehicle start, then build
   // optional start location.
@@ -335,8 +336,7 @@ inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
   bool has_start_index = json_vehicle.HasMember("start_index");
   if (has_start_index and !json_vehicle["start_index"].IsUint()) {
     throw Exception(ERROR::INPUT,
-                    "Invalid start_index for vehicle " + std::to_string(v_id) +
-                      ".");
+                    "Invalid start_index for vehicle " + v_id + ".");
   }
 
   std::optional<Location> start;
@@ -359,9 +359,7 @@ inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
   bool has_end_coords = json_vehicle.HasMember("end");
   bool has_end_index = json_vehicle.HasMember("end_index");
   if (has_end_index and !json_vehicle["end_index"].IsUint()) {
-    throw Exception(ERROR::INPUT,
-                    "Invalid end_index for vehicle" + std::to_string(v_id) +
-                      ".");
+    throw Exception(ERROR::INPUT, "Invalid end_index for vehicle" + v_id + ".");
   }
 
   std::optional<Location> end;
@@ -432,7 +430,9 @@ inline Job get_job(const rapidjson::Value& json_job, unsigned amount_size) {
                             !json_job.HasMember("delivery") and
                             !json_job.HasMember("pickup");
 
-  return Job(json_job["id"].GetUint64(),
+  Id id = json_job["id"].IsString() ? json_job["id"].GetString() : std::to_string(json_job["id"].GetUint64());
+
+  return Job(id,
              get_task_location(json_job, "job"),
              get_service(json_job),
              need_amount_compat ? get_amount(json_job, "amount", amount_size)
@@ -509,7 +509,6 @@ Input parse(const CLArgs& cl_args) {
   // Add all vehicles.
   for (rapidjson::SizeType i = 0; i < json_input["vehicles"].Size(); ++i) {
     auto& json_vehicle = json_input["vehicles"][i];
-
     input.add_vehicle(get_vehicle(json_vehicle, amount_size));
   }
 
@@ -536,7 +535,7 @@ Input parse(const CLArgs& cl_args) {
       auto& json_pickup = json_shipment["pickup"];
       check_id(json_pickup, "pickup");
 
-      Job pickup(json_pickup["id"].GetUint64(),
+      Job pickup(json_pickup["id"].GetString(),
                  JOB_TYPE::PICKUP,
                  get_task_location(json_pickup, "pickup"),
                  get_service(json_pickup),
@@ -550,7 +549,7 @@ Input parse(const CLArgs& cl_args) {
       auto& json_delivery = json_shipment["delivery"];
       check_id(json_delivery, "delivery");
 
-      Job delivery(json_delivery["id"].GetUint64(),
+      Job delivery(json_delivery["id"].GetString(),
                    JOB_TYPE::DELIVERY,
                    get_task_location(json_delivery, "delivery"),
                    get_service(json_delivery),

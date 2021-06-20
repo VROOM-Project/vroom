@@ -13,6 +13,7 @@ All rights reserved (see LICENSE).
 #include <algorithm>
 #include <numeric>
 #include <sstream>
+#include <iostream>
 
 #include "structures/typedefs.h"
 #include "structures/vroom/raw_route.h"
@@ -423,9 +424,8 @@ inline Route format_route(const Input& input,
     Duration remaining_travel_time =
       (r < tw_r.route.size())
         ? v.duration(previous_job.index(), input.jobs[tw_r.route[r]].index())
-        : (v.has_end())
-            ? v.duration(previous_job.index(), v.end.value().index())
-            : 0;
+      : (v.has_end()) ? v.duration(previous_job.index(), v.end.value().index())
+                      : 0;
 
     // Take into account timing constraints for breaks before current
     // job.

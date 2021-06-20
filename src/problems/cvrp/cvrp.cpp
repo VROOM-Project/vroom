@@ -9,6 +9,7 @@ All rights reserved (see LICENSE).
 
 #include <mutex>
 #include <thread>
+#include <iostream>
 
 #include "algorithms/heuristics/heuristics.h"
 #include "algorithms/local_search/local_search.h"
@@ -145,7 +146,6 @@ Solution CVRP::solve(unsigned exploration_level,
     // This is a plain TSP, no need to go through the trouble below.
     std::vector<Index> job_ranks(_input.jobs.size());
     std::iota(job_ranks.begin(), job_ranks.end(), 0);
-
     TSP p(_input, job_ranks, 0);
 
     RawRoute r(_input, 0);
@@ -156,13 +156,13 @@ Solution CVRP::solve(unsigned exploration_level,
 
   // Use vector of parameters when passed for debugging, else use
   // predefined parameter set.
-  const auto& parameters = (!h_param.empty())
-                             ? h_param
-                             : (_input.has_homogeneous_locations())
-                                 ? homogeneous_parameters
-                                 : heterogeneous_parameters;
+  const auto& parameters = (!h_param.empty()) ? h_param
+                           : (_input.has_homogeneous_locations())
+                             ? homogeneous_parameters
+                             : heterogeneous_parameters;
   unsigned max_nb_jobs_removal = exploration_level;
   unsigned nb_init_solutions = h_param.size();
+
 
   if (nb_init_solutions == 0) {
     // Local search parameter.
@@ -220,7 +220,6 @@ Solution CVRP::solve(unsigned exploration_level,
       ep_m.unlock();
     }
   };
-
   std::vector<std::thread> solving_threads;
 
   for (const auto& param_ranks : thread_ranks) {

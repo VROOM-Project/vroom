@@ -16,7 +16,7 @@ Step::Step(STEP_TYPE type, Location location, const Amount& load)
   : step_type(type),
     job_type(JOB_TYPE::SINGLE), // Dummy init.
     location(location),
-    id(0),
+    id("0"),
     service(0),
     load(load),
     arrival(0),
