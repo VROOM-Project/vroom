@@ -328,7 +328,7 @@ inline std::vector<VehicleStep> get_vehicle_steps(const rapidjson::Value& v) {
 inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
                            unsigned amount_size) {
   check_id(json_vehicle, "vehicle");
-  Id v_id = json_vehicle["id"].IsString() ? json_vehicle["id"].GetString() : std::to_string(json_vehicle["id"].GetUint64());
+  Id v_id = json_vehicle["id"].GetString();
 
   // Check what info are available for vehicle start, then build
   // optional start location.
@@ -430,9 +430,7 @@ inline Job get_job(const rapidjson::Value& json_job, unsigned amount_size) {
                             !json_job.HasMember("delivery") and
                             !json_job.HasMember("pickup");
 
-  Id id = json_job["id"].IsString() ? json_job["id"].GetString() : std::to_string(json_job["id"].GetUint64());
-
-  return Job(id,
+  return Job(json_job["id"].GetString(),
              get_task_location(json_job, "job"),
              get_service(json_job),
              need_amount_compat ? get_amount(json_job, "amount", amount_size)
