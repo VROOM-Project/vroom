@@ -13,7 +13,7 @@ namespace vroom {
 
 std::string get_version() {
   std::string version = std::to_string(MAJOR) + "." + std::to_string(MINOR) +
-                        "." + std::to_string(PATCH);
+                        "." + std::to_string(PATCH) + "-norimasu";
   if (DEV) {
     version += "-dev";
   } else {
