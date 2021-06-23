@@ -12,7 +12,7 @@
   "unassigned": [],
   "routes": [
     {
-      "vehicle": 0,
+      "vehicle": "0",
       "cost": 5461,
       "service": 0,
       "duration": 5461,
@@ -29,20 +29,20 @@
         },
         {
           "type": "job",
-          "id": 1414,
+          "id": "1414",
           "service": 0,
           "waiting_time": 0,
-          "job": 1414,
+          "job": "1414",
           "arrival": 2104,
           "duration": 2104,
           "violations": []
         },
         {
           "type": "job",
-          "id": 1515,
+          "id": "1515",
           "service": 0,
           "waiting_time": 0,
-          "job": 1515,
+          "job": "1515",
           "arrival": 4359,
           "duration": 4359,
           "violations": []
