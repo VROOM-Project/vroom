@@ -23,8 +23,8 @@ TWRoute::TWRoute(const Input& input, Index v)
     break_latest(input.vehicles[v].breaks.size()),
     breaks_travel_margin_before(input.vehicles[v].breaks.size()),
     breaks_travel_margin_after(input.vehicles[v].breaks.size()) {
-  std::string break_error = "Inconsistent breaks for vehicle " +
-                            std::to_string(input.vehicles[v].id) + ".";
+  std::string break_error =
+    "Inconsistent breaks for vehicle " + input.vehicles[v].id + ".";
 
   const auto& breaks = input.vehicles[v].breaks;
 

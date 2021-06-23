@@ -45,7 +45,6 @@ void display_usage() {
   usage += "\t-r ROUTER (=osrm),\t\t osrm, libosrm, ors or valhalla\n";
   usage += "\t-t THREADS (=4),\t\t number of threads to use\n";
   usage += "\t-x EXPLORE (=5),\t\t exploration level to use (0..5)";
-  std::cout << usage << std::endl;
   exit(0);
 }
 
@@ -173,7 +172,6 @@ int main(int argc, char** argv) {
     // Getting input from command-line.
     cl_args.input = argv[optind];
   }
-
   try {
     // Build problem.
     vroom::Input problem_instance = vroom::io::parse(cl_args);
@@ -183,7 +181,6 @@ int main(int argc, char** argv) {
                             : problem_instance.solve(cl_args.exploration_level,
                                                      cl_args.nb_threads,
                                                      cl_args.h_params);
-
     // Write solution.
     vroom::io::write_to_json(sol, cl_args.geometry, cl_args.output_file);
   } catch (const vroom::Exception& e) {
@@ -213,6 +210,5 @@ int main(int argc, char** argv) {
                              cl_args.output_file);
     exit(error_code);
   }
-
   return 0;
 }

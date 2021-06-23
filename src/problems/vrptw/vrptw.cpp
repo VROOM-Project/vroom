@@ -141,11 +141,10 @@ Solution VRPTW::solve(unsigned exploration_level,
                       const std::vector<HeuristicParameters>& h_param) const {
   // Use vector of parameters when passed for debugging, else use
   // predefined parameter set.
-  const auto& parameters = (!h_param.empty())
-                             ? h_param
-                             : (_input.has_homogeneous_locations())
-                                 ? homogeneous_parameters
-                                 : heterogeneous_parameters;
+  const auto& parameters = (!h_param.empty()) ? h_param
+                           : (_input.has_homogeneous_locations())
+                             ? homogeneous_parameters
+                             : heterogeneous_parameters;
   unsigned max_nb_jobs_removal = exploration_level;
   unsigned nb_init_solutions = h_param.size();
 

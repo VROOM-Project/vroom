@@ -112,12 +112,12 @@ void run_example_with_osrm() {
   vehicle_capacity[0] = 4;
 
   // Define vehicle breaks.
-  vroom::Break break_1(1, {vroom::TimeWindow(32400, 34200)}, 300);
-  vroom::Break break_2(2, {vroom::TimeWindow(34200, 36000)}, 300);
+  vroom::Break break_1("1", {vroom::TimeWindow(32400, 34200)}, 300);
+  vroom::Break break_2("2", {vroom::TimeWindow(34200, 36000)}, 300);
 
   // Define vehicles (use std::nullopt for no start or no end).
   vroom::Location depot(vroom::Coordinates({{2.35044, 48.71764}}));
-  vroom::Vehicle v1(1,                // id
+  vroom::Vehicle v1("1",                // id
                     depot,            // start
                     depot,            // end
                     "car",            // profile
@@ -127,7 +127,7 @@ void run_example_with_osrm() {
                     {break_1});       // breaks
   problem_instance.add_vehicle(v1);
 
-  vroom::Vehicle v2(2,                // id
+  vroom::Vehicle v2("2",                // id
                     depot,            // start
                     depot,            // end
                     "car",            // profile
@@ -145,7 +145,7 @@ void run_example_with_osrm() {
   // priority and time windows. Constraints that are not required can
   // be omitted.
   std::vector<vroom::Job> jobs;
-  jobs.push_back(vroom::Job(1,
+  jobs.push_back(vroom::Job("1",
                             vroom::Coordinates({{1.98935, 48.701}}),
                             service,
                             job_delivery,
@@ -153,19 +153,19 @@ void run_example_with_osrm() {
                             {1}, // skills
                             0,   // default priority
                             job_1_tws));
-  jobs.push_back(vroom::Job(2,
+  jobs.push_back(vroom::Job("2",
                             vroom::Coordinates({{2.03655, 48.61128}}),
                             service,
                             job_empty_delivery,
                             job_pickup,
                             {1}));
-  jobs.push_back(vroom::Job(5,
+  jobs.push_back(vroom::Job("5",
                             vroom::Coordinates({{2.28325, 48.5958}}),
                             service,
                             job_delivery,
                             job_empty_pickup,
                             {14}));
-  jobs.push_back(vroom::Job(6,
+  jobs.push_back(vroom::Job("6",
                             vroom::Coordinates({{2.89357, 48.90736}}),
                             service,
                             job_delivery,
@@ -181,14 +181,14 @@ void run_example_with_osrm() {
   vroom::Amount pd_amount(amount_dimension);
   pd_amount[0] = 1;
 
-  vroom::Job pickup(4,
+  vroom::Job pickup("4",
                     vroom::JOB_TYPE::PICKUP,
                     vroom::Coordinates({{2.41808, 49.22619}}),
                     service,
                     pd_amount,
                     pd_skills);
 
-  vroom::Job delivery(3,
+  vroom::Job delivery("3",
                       vroom::JOB_TYPE::DELIVERY,
                       vroom::Coordinates({{2.39719, 49.07611}}),
                       service,
@@ -240,7 +240,7 @@ void run_example_with_custom_matrix() {
   vroom::Location v_start(0); // index in the provided matrix.
   vroom::Location v_end(3);   // index in the provided matrix.
 
-  vroom::Vehicle v(0,       // id
+  vroom::Vehicle v("0",       // id
                    v_start, // start
                    v_end);  // end
   problem_instance.add_vehicle(v);
@@ -249,8 +249,8 @@ void run_example_with_custom_matrix() {
   // (coordinates are optional). Constraints that are not required can
   // be omitted.
   std::vector<vroom::Job> jobs;
-  jobs.push_back(vroom::Job(1414, 1));
-  jobs.push_back(vroom::Job(1515, 2));
+  jobs.push_back(vroom::Job("1414", 1));
+  jobs.push_back(vroom::Job("1515", 2));
 
   for (const auto& j : jobs) {
     problem_instance.add_job(j);
