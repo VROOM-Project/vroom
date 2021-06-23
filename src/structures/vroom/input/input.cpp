@@ -7,9 +7,9 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <iostream>
 #include <mutex>
 #include <thread>
-#include <iostream>
 
 #if USE_LIBOSRM
 #include "osrm/exception.hpp"
@@ -715,9 +715,8 @@ Solution Input::check(unsigned nb_thread) {
         auto search = current_vehicle.break_id_to_rank.find(step.id);
         if (search == current_vehicle.break_id_to_rank.end()) {
           throw Exception(ERROR::INPUT,
-                          "Invalid break id " + std::to_string(step.id) +
-                            " for vehicle " +
-                            std::to_string(current_vehicle.id) + ".");
+                          "Invalid break id " + step.id + " for vehicle " +
+                            current_vehicle.id + ".");
         }
         step.rank = search->second;
       }
@@ -728,18 +727,17 @@ Solution Input::check(unsigned nb_thread) {
           auto search = job_id_to_rank.find(step.id);
           if (search == job_id_to_rank.end()) {
             throw Exception(ERROR::INPUT,
-                            "Invalid job id " + std::to_string(step.id) +
-                              " for vehicle " +
-                              std::to_string(current_vehicle.id) + ".");
+                            "Invalid job id " + step.id + " for vehicle " +
+                              current_vehicle.id + ".");
           }
           step.rank = search->second;
 
           auto planned_job = planned_job_ids.find(step.id);
           if (planned_job != planned_job_ids.end()) {
             throw Exception(ERROR::INPUT,
-                            "Duplicate job id " + std::to_string(step.id) +
+                            "Duplicate job id " + step.id +
                               " in input steps for vehicle " +
-                              std::to_string(current_vehicle.id) + ".");
+                              current_vehicle.id + ".");
           }
           planned_job_ids.insert(step.id);
           break;
@@ -748,18 +746,17 @@ Solution Input::check(unsigned nb_thread) {
           auto search = pickup_id_to_rank.find(step.id);
           if (search == pickup_id_to_rank.end()) {
             throw Exception(ERROR::INPUT,
-                            "Invalid pickup id " + std::to_string(step.id) +
-                              " for vehicle " +
-                              std::to_string(current_vehicle.id) + ".");
+                            "Invalid pickup id " + step.id + " for vehicle " +
+                              current_vehicle.id + ".");
           }
           step.rank = search->second;
 
           auto planned_pickup = planned_pickup_ids.find(step.id);
           if (planned_pickup != planned_pickup_ids.end()) {
             throw Exception(ERROR::INPUT,
-                            "Duplicate pickup id " + std::to_string(step.id) +
+                            "Duplicate pickup id " + step.id +
                               " in input steps for vehicle " +
-                              std::to_string(current_vehicle.id) + ".");
+                              current_vehicle.id + ".");
           }
           planned_pickup_ids.insert(step.id);
           break;
@@ -768,18 +765,17 @@ Solution Input::check(unsigned nb_thread) {
           auto search = delivery_id_to_rank.find(step.id);
           if (search == delivery_id_to_rank.end()) {
             throw Exception(ERROR::INPUT,
-                            "Invalid delivery id " + std::to_string(step.id) +
-                              " for vehicle " +
-                              std::to_string(current_vehicle.id) + ".");
+                            "Invalid delivery id " + step.id + " for vehicle " +
+                              current_vehicle.id + ".");
           }
           step.rank = search->second;
 
           auto planned_delivery = planned_delivery_ids.find(step.id);
           if (planned_delivery != planned_delivery_ids.end()) {
             throw Exception(ERROR::INPUT,
-                            "Duplicate delivery id " + std::to_string(step.id) +
+                            "Duplicate delivery id " + step.id +
                               " in input steps for vehicle " +
-                              std::to_string(current_vehicle.id) + ".");
+                              current_vehicle.id + ".");
           }
           planned_delivery_ids.insert(step.id);
           break;

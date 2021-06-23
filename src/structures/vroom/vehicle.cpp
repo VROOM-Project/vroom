@@ -60,14 +60,12 @@ Vehicle::Vehicle(Id id,
     for (unsigned i = rank_after_start; i < input_steps.size(); ++i) {
       if (input_steps[i].type == STEP_TYPE::START) {
         throw Exception(ERROR::INPUT,
-                        "Unexpected start in input steps for vehicle " + id +
-                          ".");
+                        "Unexpected start in input steps for vehicle " + id + ".");
       }
       if (input_steps[i].type == STEP_TYPE::END and
           (i != input_steps.size() - 1)) {
         throw Exception(ERROR::INPUT,
-                        "Unexpected end in input steps for vehicle " + id +
-                          ".");
+                        "Unexpected end in input steps for vehicle " + id + ".");
       }
 
       steps.push_back(input_steps[i]);
