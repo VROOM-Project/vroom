@@ -45,6 +45,7 @@ void display_usage() {
   usage += "\t-r ROUTER (=osrm),\t\t osrm, libosrm, ors or valhalla\n";
   usage += "\t-t THREADS (=4),\t\t number of threads to use\n";
   usage += "\t-x EXPLORE (=5),\t\t exploration level to use (0..5)";
+  std::cout << usage << std::endl;
   exit(0);
 }
 
