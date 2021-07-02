@@ -34,7 +34,7 @@ using Distance = uint32_t;
 using Duration = uint32_t;
 using Coordinate = double;
 using Capacity = int64_t;
-using Skill = uint32_t;
+using Skill = std::string;
 using Priority = uint32_t;
 
 // Type helpers.

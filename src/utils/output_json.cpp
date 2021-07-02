@@ -75,9 +75,7 @@ rapidjson::Document to_json(const Solution& sol, bool geometry) {
     for (const auto& job : sol.unassigned) {
       rapidjson::Value json_job(rapidjson::kObjectType);
       json_job.AddMember("id", rapidjson::Value(), allocator);
-      json_job["id"].SetString(job.id.c_str(),
-                                        job.id.size(),
-                                        allocator);
+      json_job["id"].SetString(job.id.c_str(), job.id.size(), allocator);
 
       if (job.location.has_coordinates()) {
         json_job.AddMember("location",
@@ -173,8 +171,8 @@ rapidjson::Value to_json(const Route& route,
 
   json_route.AddMember("vehicle", rapidjson::Value(), allocator);
   json_route["vehicle"].SetString(route.vehicle.c_str(),
-                                        route.vehicle.size(),
-                                        allocator);
+                                  route.vehicle.size(),
+                                  allocator);
   json_route.AddMember("cost", route.cost, allocator);
 
   if (!route.description.empty()) {
