@@ -88,13 +88,12 @@ inline Skills get_skills(const rapidjson::Value& object) {
       throw Exception(ERROR::INPUT, "Invalid skills object.");
     }
     for (rapidjson::SizeType i = 0; i < object["skills"].Size(); ++i) {
-      if (!object["skills"][i].IsUint()) {
+      if (!object["skills"][i].IsString()) {
         throw Exception(ERROR::INPUT, "Invalid skill value.");
       }
-      skills.insert(object["skills"][i].GetUint());
+      skills.insert(object["skills"][i].GetString());
     }
   }
-
   return skills;
 }
 

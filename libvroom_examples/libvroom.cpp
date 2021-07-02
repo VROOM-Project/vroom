@@ -122,7 +122,7 @@ void run_example_with_osrm() {
                     depot,            // end
                     "car",            // profile
                     vehicle_capacity, // capacity
-                    {1, 14},          // skills
+                    {"1", "14"},          // skills
                     vehicle_tw,       // time window
                     {break_1});       // breaks
   problem_instance.add_vehicle(v1);
@@ -132,7 +132,7 @@ void run_example_with_osrm() {
                     depot,            // end
                     "car",            // profile
                     vehicle_capacity, // capacity
-                    {2, 14},          // skills
+                    {"2", "14"},          // skills
                     vehicle_tw,       // time window
                     {break_2});       // breaks
 
@@ -150,7 +150,7 @@ void run_example_with_osrm() {
                             service,
                             job_delivery,
                             job_empty_pickup,
-                            {1}, // skills
+                            {"1"}, // skills
                             0,   // default priority
                             job_1_tws));
   jobs.push_back(vroom::Job("2",
@@ -158,26 +158,26 @@ void run_example_with_osrm() {
                             service,
                             job_empty_delivery,
                             job_pickup,
-                            {1}));
+                            {"1"}));
   jobs.push_back(vroom::Job("5",
                             vroom::Coordinates({{2.28325, 48.5958}}),
                             service,
                             job_delivery,
                             job_empty_pickup,
-                            {14}));
+                            {"14"}));
   jobs.push_back(vroom::Job("6",
                             vroom::Coordinates({{2.89357, 48.90736}}),
                             service,
                             job_delivery,
                             job_empty_pickup,
-                            {14}));
+                            {"14"}));
 
   for (const auto& j : jobs) {
     problem_instance.add_job(j);
   }
 
   // Define a shipment.
-  vroom::Skills pd_skills({2});
+  vroom::Skills pd_skills({"2"});
   vroom::Amount pd_amount(amount_dimension);
   pd_amount[0] = 1;
 
