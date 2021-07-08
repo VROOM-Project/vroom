@@ -135,6 +135,9 @@ inline void check_shipment(const rapidjson::Value& v) {
   if (!v.IsObject()) {
     throw Exception(ERROR::INPUT, "Invalid shipment.");
   }
+  if (!v.HasMember("id") or !v["id"].IsString()) {
+    throw Exception(ERROR::INPUT, "Invalid or missing id for shipment.");
+  }
   if (!v.HasMember("pickup") or !v["pickup"].IsObject()) {
     throw Exception(ERROR::INPUT, "Missing pickup for shipment.");
   }
@@ -533,6 +536,7 @@ Input parse(const CLArgs& cl_args) {
       check_id(json_pickup, "pickup");
 
       Job pickup(json_pickup["id"].GetString(),
+                 json_shipment["id"].GetString(),
                  JOB_TYPE::PICKUP,
                  get_task_location(json_pickup, "pickup"),
                  get_service(json_pickup),
@@ -547,6 +551,7 @@ Input parse(const CLArgs& cl_args) {
       check_id(json_delivery, "delivery");
 
       Job delivery(json_delivery["id"].GetString(),
+                   json_shipment["id"].GetString(),
                    JOB_TYPE::DELIVERY,
                    get_task_location(json_delivery, "delivery"),
                    get_service(json_delivery),

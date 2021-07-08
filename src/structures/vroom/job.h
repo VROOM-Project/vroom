@@ -22,6 +22,7 @@ namespace vroom {
 struct Job {
   Location location;
   const Id id;
+  const Id shipment_id;
   const JOB_TYPE type;
   const Duration service;
   const Amount delivery;
@@ -47,6 +48,7 @@ struct Job {
   // Constructor for pickup and delivery jobs (JOB_TYPE::PICKUP or
   // JOB_TYPE::DELIVERY).
   Job(Id id,
+      Id shipment_id,
       JOB_TYPE type,
       const Location& location,
       Duration service = 0,

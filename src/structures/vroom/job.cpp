@@ -45,6 +45,7 @@ Job::Job(Id id,
 }
 
 Job::Job(Id id,
+         Id shipment_id,
          JOB_TYPE type,
          const Location& location,
          Duration service,
@@ -55,6 +56,7 @@ Job::Job(Id id,
          const std::string& description)
   : location(location),
     id(id),
+    shipment_id(shipment_id),
     type(type),
     service(service),
     delivery((type == JOB_TYPE::DELIVERY) ? amount : Amount(amount.size())),

@@ -183,6 +183,9 @@ void Input::add_job(const Job& job) {
 }
 
 void Input::add_shipment(const Job& pickup, const Job& delivery) {
+  if (pickup.shipment_id != delivery.shipment_id) {
+    throw Exception(ERROR::INPUT, "Inconsistent shipment id.");
+  }
   if (pickup.priority != delivery.priority) {
     throw Exception(ERROR::INPUT, "Inconsistent shipment priority.");
   }
@@ -197,6 +200,12 @@ void Input::add_shipment(const Job& pickup, const Job& delivery) {
       throw Exception(ERROR::INPUT, "Inconsistent shipment skills.");
     }
   }
+
+  if (shipment_ids.find(pickup.shipment_id) != shipment_ids.end()) {
+    throw Exception(ERROR::INPUT,
+                    "Duplicate shipment id: " + pickup.shipment_id + ".");
+  }
+  shipment_ids.insert(pickup.shipment_id);
 
   if (pickup.type != JOB_TYPE::PICKUP) {
     throw Exception(ERROR::INPUT, "Wrong pickup type.");
