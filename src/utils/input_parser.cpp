@@ -138,7 +138,7 @@ inline void check_job(const rapidjson::Value& v) {
   if (!v.HasMember("id") or !v["id"].IsString()) {
     throw Exception(ERROR::INPUT, "Invalid or missing id for job.");
   }
-  if (!v.HasMember("shipment_id") or !v["shipment_id"].IsString()) {
+  if (!v.HasMember("shipmentId") or !v["shipmentId"].IsString()) {
     throw Exception(ERROR::INPUT, "Invalid or missing shipment id for job.");
   }
 }

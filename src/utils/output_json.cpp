@@ -300,8 +300,8 @@ rapidjson::Value to_json(const Step& s,
   }
 
   if (s.step_type == STEP_TYPE::JOB) {
-    json_step.AddMember("shipment_id", rapidjson::Value(), allocator);
-    json_step["shipment_id"].SetString(s.shipment_id.c_str(), s.shipment_id.size(), allocator);
+    json_step.AddMember("shipmentId", rapidjson::Value(), allocator);
+    json_step["shipmentId"].SetString(s.shipment_id.c_str(), s.shipment_id.size(), allocator);
   }
 
   json_step.AddMember("service", s.service, allocator);
