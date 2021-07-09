@@ -30,6 +30,7 @@ Step::Step(const Job& job, const Amount& load)
     job_type(job.type),
     location(job.location),
     id(job.id),
+    shipment_id(job.shipment_id),
     service(job.service),
     load(load),
     description(job.description),

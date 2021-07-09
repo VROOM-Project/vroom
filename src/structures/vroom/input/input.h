@@ -85,6 +85,8 @@ public:
   std::unordered_map<Id, Index> pickup_id_to_rank;
   std::unordered_map<Id, Index> delivery_id_to_rank;
 
+  std::unordered_set<Id> shipment_ids;
+
   Input(unsigned amount_size,
         const io::Servers& servers = {},
         ROUTER router = ROUTER::OSRM);

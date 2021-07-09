@@ -60,6 +60,7 @@
   "jobs": [
     {
       "id": "1",
+      "shipment_id": "shipment_1",
       "service": 300,
       "delivery": [
         1
@@ -80,6 +81,7 @@
     },
     {
       "id": "2",
+      "shipment_id": "shipment_2",
       "service": 300,
       "pickup": [
         1
@@ -94,6 +96,7 @@
     },
     {
       "id": "5",
+      "shipment_id": "shipment_5",
       "service": 300,
       "delivery": [
         1
@@ -108,6 +111,7 @@
     },
     {
       "id": "6",
+      "shipment_id": "shipment_6",
       "service": 300,
       "delivery": [
         1
@@ -123,6 +127,7 @@
   ],
   "shipments": [
     {
+      "id": "43",
       "amount": [
         1
       ],

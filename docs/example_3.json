@@ -84,6 +84,7 @@
         2
       ],
       "id": "1",
+      "shipment_id": "shipment_1",
       "service": 300,
       "location": [
         1.98935,
@@ -95,6 +96,7 @@
         2
       ],
       "id": "2",
+      "shipment_id": "shipment_2",
       "service": 300,
       "location": [
         2.03655,
@@ -106,6 +108,7 @@
         1
       ],
       "id": "3",
+      "shipment_id": "shipment_3",
       "service": 300,
       "location": [
         2.39719,
@@ -123,6 +126,7 @@
         1
       ],
       "id": "4",
+      "shipment_id": "shipment_4",
       "service": 300,
       "location": [
         2.41808,
@@ -140,6 +144,7 @@
         3
       ],
       "id": "5",
+      "shipment_id": "shipment_5",
       "service": 300,
       "location": [
         2.28325,
@@ -151,6 +156,7 @@
         1
       ],
       "id": "6",
+      "shipment_id": "shipment_6",
       "service": 300,
       "location": [
         2.89357,

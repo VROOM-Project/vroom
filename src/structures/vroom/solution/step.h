@@ -24,6 +24,7 @@ struct Step {
   const JOB_TYPE job_type;
   const Location location;
   const Id id;
+  const Id shipment_id;
   const Duration service;
   const Amount load;
   const std::string description;
