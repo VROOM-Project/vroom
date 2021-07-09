@@ -445,7 +445,7 @@ inline Job get_job(const rapidjson::Value& json_job, unsigned amount_size) {
                             !json_job.HasMember("pickup");
 
   return Job(json_job["id"].GetString(),
-             json_job["shipment_id"].GetString(),
+             json_job["shipmentId"].GetString(),
              get_task_location(json_job, "job"),
              get_service(json_job),
              need_amount_compat ? get_amount(json_job, "amount", amount_size)
