@@ -9,12 +9,12 @@
   "jobs": [
     {
       "id":"1414",
-      "shipment_id": "shipment_1414",
+      "shipmentId": "shipment_1414",
       "location_index":1
     },
     {
       "id":"1515",
-      "shipment_id": "shipment_1515",
+      "shipmentId": "shipment_1515",
       "location_index":2
     }
   ],

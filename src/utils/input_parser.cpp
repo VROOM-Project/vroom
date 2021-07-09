@@ -138,7 +138,7 @@ inline void check_job(const rapidjson::Value& v) {
   if (!v.HasMember("id") or !v["id"].IsString()) {
     throw Exception(ERROR::INPUT, "Invalid or missing id for job.");
   }
-  if (!v.HasMember("shipment_id") or !v["shipment_id"].IsString()) {
+  if (!v.HasMember("shipmentId") or !v["shipmentId"].IsString()) {
     throw Exception(ERROR::INPUT, "Invalid or missing shipment id for job.");
   }
 }
@@ -445,7 +445,7 @@ inline Job get_job(const rapidjson::Value& json_job, unsigned amount_size) {
                             !json_job.HasMember("pickup");
 
   return Job(json_job["id"].GetString(),
-             json_job["shipment_id"].GetString(),
+             json_job["shipmentId"].GetString(),
              get_task_location(json_job, "job"),
              get_service(json_job),
              need_amount_compat ? get_amount(json_job, "amount", amount_size)

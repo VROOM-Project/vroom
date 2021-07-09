@@ -56,7 +56,7 @@
             48.701
           ],
           "id": "1",
-          "shipment_id": "shipment_1",
+          "shipmentId": "shipment_1",
           "service": 300,
           "waiting_time": 0,
           "job": "1",
@@ -75,7 +75,7 @@
             48.61128
           ],
           "id": "2",
-          "shipment_id": "shipment_2",
+          "shipmentId": "shipment_2",
           "service": 300,
           "waiting_time": 0,
           "job": "2",
@@ -94,7 +94,7 @@
             48.5958
           ],
           "id": "5",
-          "shipment_id": "shipment_5",
+          "shipmentId": "shipment_5",
           "service": 300,
           "waiting_time": 0,
           "job": "5",
@@ -164,7 +164,7 @@
             48.90736
           ],
           "id": "6",
-          "shipment_id": "shipment_6",
+          "shipmentId": "shipment_6",
           "service": 300,
           "waiting_time": 0,
           "job": "6",
@@ -183,7 +183,7 @@
             49.22619
           ],
           "id": "4",
-          "shipment_id": "43",
+          "shipmentId": "43",
           "service": 300,
           "waiting_time": 0,
           "job": "4",
@@ -215,7 +215,7 @@
             49.07611
           ],
           "id": "3",
-          "shipment_id": "43",
+          "shipmentId": "43",
           "service": 300,
           "waiting_time": 0,
           "job": "3",
