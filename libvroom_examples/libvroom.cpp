@@ -146,6 +146,7 @@ void run_example_with_osrm() {
   // be omitted.
   std::vector<vroom::Job> jobs;
   jobs.push_back(vroom::Job("1",
+                            "shipment_1",
                             vroom::Coordinates({{1.98935, 48.701}}),
                             service,
                             job_delivery,
@@ -154,18 +155,21 @@ void run_example_with_osrm() {
                             0,   // default priority
                             job_1_tws));
   jobs.push_back(vroom::Job("2",
+                            "shipment_2",
                             vroom::Coordinates({{2.03655, 48.61128}}),
                             service,
                             job_empty_delivery,
                             job_pickup,
                             {"1"}));
   jobs.push_back(vroom::Job("5",
+                            "shipment_5",
                             vroom::Coordinates({{2.28325, 48.5958}}),
                             service,
                             job_delivery,
                             job_empty_pickup,
                             {"14"}));
   jobs.push_back(vroom::Job("6",
+                            "shipment_4",
                             vroom::Coordinates({{2.89357, 48.90736}}),
                             service,
                             job_delivery,
@@ -182,6 +186,7 @@ void run_example_with_osrm() {
   pd_amount[0] = 1;
 
   vroom::Job pickup("4",
+                    "shipment43",
                     vroom::JOB_TYPE::PICKUP,
                     vroom::Coordinates({{2.41808, 49.22619}}),
                     service,
@@ -189,6 +194,7 @@ void run_example_with_osrm() {
                     pd_skills);
 
   vroom::Job delivery("3",
+                      "shipment43",
                       vroom::JOB_TYPE::DELIVERY,
                       vroom::Coordinates({{2.39719, 49.07611}}),
                       service,
@@ -249,8 +255,8 @@ void run_example_with_custom_matrix() {
   // (coordinates are optional). Constraints that are not required can
   // be omitted.
   std::vector<vroom::Job> jobs;
-  jobs.push_back(vroom::Job("1414", 1));
-  jobs.push_back(vroom::Job("1515", 2));
+  jobs.push_back(vroom::Job("1414","shipment_1414", 1));
+  jobs.push_back(vroom::Job("1515","shipment_1515", 2));
 
   for (const auto& j : jobs) {
     problem_instance.add_job(j);
