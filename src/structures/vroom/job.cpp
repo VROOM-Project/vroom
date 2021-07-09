@@ -22,6 +22,7 @@ inline Duration get_tw_length(const std::vector<TimeWindow>& tws) {
 }
 
 Job::Job(Id id,
+         Id shipment_id,
          const Location& location,
          Duration service,
          const Amount& delivery,
@@ -32,6 +33,7 @@ Job::Job(Id id,
          const std::string& description)
   : location(location),
     id(id),
+    shipment_id(shipment_id),
     type(JOB_TYPE::SINGLE),
     service(service),
     delivery(delivery),

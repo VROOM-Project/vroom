@@ -131,6 +131,18 @@ inline void check_id(const rapidjson::Value& v, const std::string& type) {
   }
 }
 
+inline void check_job(const rapidjson::Value& v) {
+  if (!v.IsObject()) {
+    throw Exception(ERROR::INPUT, "Invalid job.");
+  }
+  if (!v.HasMember("id") or !v["id"].IsString()) {
+    throw Exception(ERROR::INPUT, "Invalid or missing id for job.");
+  }
+  if (!v.HasMember("shipment_id") or !v["shipment_id"].IsString()) {
+    throw Exception(ERROR::INPUT, "Invalid or missing shipment id for job.");
+  }
+}
+
 inline void check_shipment(const rapidjson::Value& v) {
   if (!v.IsObject()) {
     throw Exception(ERROR::INPUT, "Invalid shipment.");
@@ -423,7 +435,7 @@ inline Location get_task_location(const rapidjson::Value& v,
 }
 
 inline Job get_job(const rapidjson::Value& json_job, unsigned amount_size) {
-  check_id(json_job, "job");
+  check_job(json_job);
 
   // Only for retro-compatibility: when no pickup and delivery keys
   // are defined and (deprecated) amount key is present, it should be
@@ -433,6 +445,7 @@ inline Job get_job(const rapidjson::Value& json_job, unsigned amount_size) {
                             !json_job.HasMember("pickup");
 
   return Job(json_job["id"].GetString(),
+             json_job["shipment_id"].GetString(),
              get_task_location(json_job, "job"),
              get_service(json_job),
              need_amount_compat ? get_amount(json_job, "amount", amount_size)

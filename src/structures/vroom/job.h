@@ -35,6 +35,7 @@ struct Job {
 
   // Constructor for regular one-stop job (JOB_TYPE::SINGLE).
   Job(Id id,
+      Id shipment_id,
       const Location& location,
       Duration service = 0,
       const Amount& delivery = Amount(0),

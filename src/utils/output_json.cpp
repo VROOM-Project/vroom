@@ -299,6 +299,11 @@ rapidjson::Value to_json(const Step& s,
     json_step["id"].SetString(s.id.c_str(), s.id.size(), allocator);
   }
 
+  if (s.step_type == STEP_TYPE::JOB) {
+    json_step.AddMember("shipment_id", rapidjson::Value(), allocator);
+    json_step["shipment_id"].SetString(s.shipment_id.c_str(), s.shipment_id.size(), allocator);
+  }
+
   json_step.AddMember("service", s.service, allocator);
   json_step.AddMember("waiting_time", s.waiting_time, allocator);
 

@@ -176,7 +176,12 @@ void Input::add_job(const Job& job) {
   if (job_id_to_rank.find(job.id) != job_id_to_rank.end()) {
     throw Exception(ERROR::INPUT, "Duplicate job id: " + job.id + ".");
   }
+  if (shipment_ids.find(job.shipment_id) != shipment_ids.end()) {
+    throw Exception(ERROR::INPUT,
+                    "Duplicate shipment id: " + job.shipment_id + ".");
+  }
   job_id_to_rank[job.id] = jobs.size();
+  shipment_ids.insert(job.shipment_id);
   jobs.push_back(job);
   check_job(jobs.back());
   _has_jobs = true;
