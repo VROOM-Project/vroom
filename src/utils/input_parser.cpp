@@ -435,6 +435,7 @@ inline Job get_job(const rapidjson::Value& json_job, unsigned amount_size) {
 
   return Job(json_job["id"].GetUint64(),
              get_task_location(json_job, "job"),
+             get_duration(json_job, "setup"),
              get_duration(json_job, "service"),
              need_amount_compat ? get_amount(json_job, "amount", amount_size)
                                 : get_amount(json_job, "delivery", amount_size),
@@ -540,6 +541,7 @@ Input parse(const CLArgs& cl_args) {
       Job pickup(json_pickup["id"].GetUint64(),
                  JOB_TYPE::PICKUP,
                  get_task_location(json_pickup, "pickup"),
+                 get_duration(json_pickup, "setup"),
                  get_duration(json_pickup, "service"),
                  amount,
                  skills,
@@ -554,6 +556,7 @@ Input parse(const CLArgs& cl_args) {
       Job delivery(json_delivery["id"].GetUint64(),
                    JOB_TYPE::DELIVERY,
                    get_task_location(json_delivery, "delivery"),
+                   get_duration(json_delivery, "setup"),
                    get_duration(json_delivery, "service"),
                    amount,
                    skills,
