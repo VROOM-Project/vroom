@@ -344,9 +344,12 @@ void LocalSearch<Route,
           continue;
         }
 
-        if (!_sol[routes[i]].is_valid_addition_for_max_tasks(_input, j)) {
+        const auto& current_r = _sol[routes[i]];
+        const auto& vehicle = _input.vehicles[current_r.vehicle_rank];
+        bool is_pickup = (_input.jobs[j].type == JOB_TYPE::PICKUP);
+
+        if (current_r.size() + (is_pickup ? 2 : 1) > vehicle.max_number_of_tasks)
           continue;
-        }
 
         const Gain regret_cost =
           (i == smallest_idx) ? second_smallest : smallest;
