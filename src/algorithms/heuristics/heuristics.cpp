@@ -134,8 +134,9 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
 
         bool is_pickup = (input.jobs[job_rank].type == JOB_TYPE::PICKUP);
 
-        if (current_r.size() + (is_pickup ? 2 : 1) > vehicle.max_number_of_tasks)
+        if (current_r.size() + (is_pickup ? 2 : 1) > vehicle.max_number_of_tasks) {
           continue;
+        }
 
         bool try_validity = false;
 
@@ -242,9 +243,8 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
         if (input.jobs[job_rank].type == JOB_TYPE::DELIVERY) {
           continue;
         }
-
-
-        if (input.jobs[job_rank].type == JOB_TYPE::SINGLE and current_r.size() + 1 > vehicle.max_number_of_tasks) {
+   
+        if (input.jobs[job_rank].type == JOB_TYPE::SINGLE and current_r.size() + 1 <= vehicle.max_number_of_tasks) {
           for (Index r = 0; r <= current_r.size(); ++r) {
             float current_add = utils::addition_cost(input,
                                                      job_rank,
@@ -269,7 +269,7 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
           }
         }
 
-        if (input.jobs[job_rank].type == JOB_TYPE::PICKUP and current_r.size() + 2 > vehicle.max_number_of_tasks) {
+        if (input.jobs[job_rank].type == JOB_TYPE::PICKUP and current_r.size() + 2 <= vehicle.max_number_of_tasks) {
           // Pre-compute cost of addition for matching delivery.
           std::vector<Gain> d_adds(current_r.route.size() + 1);
           std::vector<unsigned char> valid_delivery_insertions(
@@ -510,8 +510,9 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
 
         bool is_pickup = (input.jobs[job_rank].type == JOB_TYPE::PICKUP);
 
-        if (current_r.size() + (is_pickup ? 2 : 1) > vehicle.max_number_of_tasks)
+        if (current_r.size() + (is_pickup ? 2 : 1) > vehicle.max_number_of_tasks) {
           continue;
+        }
 
         bool try_validity = false;
 
@@ -620,7 +621,7 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
           continue;
         }
 
-        if (input.jobs[job_rank].type == JOB_TYPE::SINGLE and current_r.size() + 1 > vehicle.max_number_of_tasks) {
+        if (input.jobs[job_rank].type == JOB_TYPE::SINGLE and current_r.size() + 1 <= vehicle.max_number_of_tasks) {
           for (Index r = 0; r <= current_r.size(); ++r) {
             float current_add = utils::addition_cost(input,
                                                      job_rank,
@@ -645,7 +646,7 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
           }
         }
 
-        if (input.jobs[job_rank].type == JOB_TYPE::PICKUP and current_r.size() + 2 > vehicle.max_number_of_tasks) {
+        if (input.jobs[job_rank].type == JOB_TYPE::PICKUP and current_r.size() + 2 <= vehicle.max_number_of_tasks) {
           // Pre-compute cost of addition for matching delivery.
           std::vector<Gain> d_adds(current_r.route.size() + 1);
           std::vector<unsigned char> valid_delivery_insertions(

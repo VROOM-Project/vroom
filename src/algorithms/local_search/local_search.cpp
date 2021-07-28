@@ -348,8 +348,9 @@ void LocalSearch<Route,
         const auto& vehicle = _input.vehicles[current_r.vehicle_rank];
         bool is_pickup = (_input.jobs[j].type == JOB_TYPE::PICKUP);
 
-        if (current_r.size() + (is_pickup ? 2 : 1) > vehicle.max_number_of_tasks)
+        if (current_r.size() + (is_pickup ? 2 : 1) > vehicle.max_number_of_tasks) {
           continue;
+        }
 
         const Gain regret_cost =
           (i == smallest_idx) ? second_smallest : smallest;
@@ -673,8 +674,8 @@ void LocalSearch<Route,
           continue;
         }
 
-        auto v_t = _input.vehicles[_sol[s_t.second].vehicle_rank];
-        if (_sol[s_t.second].size() + 1 > v_t.max_number_of_tasks) {
+        const auto& v_t = _input.vehicles[s_t.second];
+        if (_sol[s_t.first].size() + 1 > v_t.max_number_of_tasks) {
           continue;
         }
 
@@ -771,13 +772,13 @@ void LocalSearch<Route,
             continue;
           }
 
-          const auto& s_v = _input.vehicles[_sol[s_t.first].vehicle_rank];
-          const auto& t_v = _input.vehicles[_sol[s_t.second].vehicle_rank];
+          const auto& s_v = _input.vehicles[s_t.first];
+          const auto& t_v = _input.vehicles[s_t.second];
 
-          if (s_rank - t_rank + _sol[s_t.second].size() >
-                s_v.max_number_of_tasks or
-              t_rank - s_rank + _sol[s_t.first].size() >
-                t_v.max_number_of_tasks) {
+          if (s_rank + _sol[s_t.second].size() >
+                t_rank + s_v.max_number_of_tasks or
+              t_rank + _sol[s_t.first].size() >
+                s_rank + t_v.max_number_of_tasks) {
             continue;
           }
 
@@ -827,8 +828,8 @@ void LocalSearch<Route,
             continue;
           }
 
-          const auto& s_v = _input.vehicles[_sol[s_t.first].vehicle_rank];
-          const auto& t_v = _input.vehicles[_sol[s_t.second].vehicle_rank];
+          const auto& s_v = _input.vehicles[s_t.first];
+          const auto& t_v = _input.vehicles[s_t.second];
 
           if (s_rank + t_rank + 2 > s_v.max_number_of_tasks or
               (_sol[s_t.first].size() - s_rank - 1) +
@@ -865,7 +866,7 @@ void LocalSearch<Route,
           continue;
         }
 
-        auto v_t = _input.vehicles[_sol[s_t.second].vehicle_rank];
+        const auto& v_t = _input.vehicles[s_t.second];
         if (_sol[s_t.second].size() + 1 > v_t.max_number_of_tasks) {
           continue;
         }
@@ -912,7 +913,7 @@ void LocalSearch<Route,
           continue;
         }
 
-        auto v_t = _input.vehicles[_sol[s_t.second].vehicle_rank];
+        const auto& v_t = _input.vehicles[s_t.second];
         if (_sol[s_t.second].size() + 2 > v_t.max_number_of_tasks) {
           continue;
         }
@@ -1244,7 +1245,7 @@ void LocalSearch<Route,
           continue;
         }
 
-        auto v_t = _input.vehicles[_sol[s_t.second].vehicle_rank];
+        const auto& v_t = _input.vehicles[s_t.second];
         if (_sol[s_t.second].size() + 2 > v_t.max_number_of_tasks) {
           continue;
         }
@@ -1307,8 +1308,8 @@ void LocalSearch<Route,
           continue;
         }
 
-        const auto& s_v = _input.vehicles[_sol[s_t.first].vehicle_rank];
-        const auto& t_v = _input.vehicles[_sol[s_t.second].vehicle_rank];
+        const auto& s_v = _input.vehicles[s_t.first];
+        const auto& t_v = _input.vehicles[s_t.second];
 
         if (_sol[s_t.first].size() > t_v.max_number_of_tasks or
             _sol[s_t.second].size() > s_v.max_number_of_tasks) {
