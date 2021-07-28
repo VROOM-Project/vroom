@@ -129,10 +129,6 @@ inline size_t get_max_number_of_tasks(const rapidjson::Value& object) {
       throw Exception(ERROR::INPUT, "Invalid max_number_of_tasks value.");
     }
     max_number_of_tasks = object["max_number_of_tasks"].GetUint();
-    if (!max_number_of_tasks) {
-      throw Exception(ERROR::INPUT, "Invalid max_number_of_tasks value.");
-    }
-    
   }
   return max_number_of_tasks;
 }

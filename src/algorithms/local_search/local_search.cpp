@@ -1387,6 +1387,11 @@ void LocalSearch<Route,
                           return sum + _sol_state.route_costs[c];
                         });
       assert(new_cost + best_gain == previous_cost);
+      
+      for (auto v_rank : update_candidates) {
+        assert(_sol[v_rank].size() <= _input.vehicles[v_rank].max_number_of_tasks);
+      }     
+
 #endif
 
       try_job_additions(best_ops[best_source][best_target]
