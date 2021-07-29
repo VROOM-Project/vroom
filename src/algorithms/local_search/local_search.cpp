@@ -348,7 +348,8 @@ void LocalSearch<Route,
         const auto& vehicle = _input.vehicles[current_r.vehicle_rank];
         bool is_pickup = (_input.jobs[j].type == JOB_TYPE::PICKUP);
 
-        if (current_r.size() + (is_pickup ? 2 : 1) > vehicle.max_number_of_tasks) {
+        if (current_r.size() + (is_pickup ? 2 : 1) >
+            vehicle.max_number_of_tasks) {
           continue;
         }
 
@@ -674,8 +675,8 @@ void LocalSearch<Route,
           continue;
         }
 
-        const auto& v_t = _input.vehicles[s_t.second];
-        if (_sol[s_t.first].size() + 1 > v_t.max_number_of_tasks) {
+        const auto& v_s = _input.vehicles[s_t.first];
+        if (_sol[s_t.first].size() + 1 > v_s.max_number_of_tasks) {
           continue;
         }
 
@@ -775,10 +776,10 @@ void LocalSearch<Route,
           const auto& s_v = _input.vehicles[s_t.first];
           const auto& t_v = _input.vehicles[s_t.second];
 
-          if (s_rank + _sol[s_t.second].size() >
-                t_rank + s_v.max_number_of_tasks or
-              t_rank + _sol[s_t.first].size() >
-                s_rank + t_v.max_number_of_tasks) {
+          if (s_rank + _sol[s_t.second].size() - t_rank >
+                s_v.max_number_of_tasks or  
+              t_rank + _sol[s_t.first].size() - s_rank >
+                t_v.max_number_of_tasks) {
             continue;
           }
 
@@ -1378,6 +1379,8 @@ void LocalSearch<Route,
                         });
       for (auto v_rank : update_candidates) {
         _sol_state.update_route_cost(_sol[v_rank].route, v_rank);
+        assert(_sol[v_rank].size() <=
+               _input.vehicles[v_rank].max_number_of_tasks);
       }
       const auto new_cost =
         std::accumulate(update_candidates.begin(),
@@ -1387,10 +1390,6 @@ void LocalSearch<Route,
                           return sum + _sol_state.route_costs[c];
                         });
       assert(new_cost + best_gain == previous_cost);
-      
-      for (auto v_rank : update_candidates) {
-        assert(_sol[v_rank].size() <= _input.vehicles[v_rank].max_number_of_tasks);
-      }     
 
 #endif
 
