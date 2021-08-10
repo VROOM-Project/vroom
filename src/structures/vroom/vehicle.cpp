@@ -22,7 +22,7 @@ Vehicle::Vehicle(Id id,
                  const std::vector<Break>& breaks,
                  const std::string& description,
                  double speed_factor,
-                 const size_t max_number_of_tasks,
+                 const size_t max_tasks,
                  const std::vector<VehicleStep>& input_steps)
   : id(id),
     start(start),
@@ -34,7 +34,7 @@ Vehicle::Vehicle(Id id,
     breaks(breaks),
     description(description),
     cost_wrapper(speed_factor),
-    max_number_of_tasks(max_number_of_tasks) {
+    max_tasks(max_tasks) {
   if (!static_cast<bool>(start) and !static_cast<bool>(end)) {
     throw Exception(ERROR::INPUT,
                     "No start or end specified for vehicle " +

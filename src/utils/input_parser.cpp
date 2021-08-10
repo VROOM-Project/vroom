@@ -122,15 +122,15 @@ inline Duration get_priority(const rapidjson::Value& object) {
   return priority;
 }
 
-inline size_t get_max_number_of_tasks(const rapidjson::Value& object) {
-  size_t max_number_of_tasks = std::numeric_limits<size_t>::max();
-  if (object.HasMember("max_number_of_tasks")) {
-    if (!object["max_number_of_tasks"].IsUint()) {
-      throw Exception(ERROR::INPUT, "Invalid max_number_of_tasks value.");
+inline size_t get_max_tasks(const rapidjson::Value& object) {
+  size_t max_tasks = std::numeric_limits<size_t>::max();
+  if (object.HasMember("max_tasks")) {
+    if (!object["max_tasks"].IsUint()) {
+      throw Exception(ERROR::INPUT, "Invalid max_tasks value.");
     }
-    max_number_of_tasks = object["max_number_of_tasks"].GetUint();
+    max_tasks = object["max_tasks"].GetUint();
   }
-  return max_number_of_tasks;
+  return max_tasks;
 }
 
 inline void check_id(const rapidjson::Value& v, const std::string& type) {
@@ -405,7 +405,7 @@ inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
                  get_vehicle_breaks(json_vehicle),
                  get_string(json_vehicle, "description"),
                  get_double(json_vehicle, "speed_factor"),
-                 get_max_number_of_tasks(json_vehicle),
+                 get_max_tasks(json_vehicle),
                  get_vehicle_steps(json_vehicle));
 }
 
