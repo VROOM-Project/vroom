@@ -777,7 +777,7 @@ void LocalSearch<Route,
           const auto& t_v = _input.vehicles[s_t.second];
 
           if (s_rank + _sol[s_t.second].size() - t_rank >
-                s_v.max_number_of_tasks or  
+                s_v.max_number_of_tasks or
               t_rank + _sol[s_t.first].size() - s_rank >
                 t_v.max_number_of_tasks) {
             continue;
