@@ -37,12 +37,12 @@ private:
   // (resp. next) step. Last argument holds the travel time from
   // (resp. to) that step.
   Duration previous_earliest_end(const Input& input,
-                                 Index job_rank,
-                                 Index rank,
+                                 const Index job_rank,
+                                 const Index rank,
                                  Duration& previous_travel) const;
   Duration next_latest_start(const Input& input,
-                             Index job_rank,
-                             Index rank,
+                             const Index job_rank,
+                             const Index rank,
                              Duration& next_travel) const;
 
   void fwd_update_earliest_from(const Input& input, Index rank);

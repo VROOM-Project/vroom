@@ -76,8 +76,8 @@ TWRoute::TWRoute(const Input& input, Index v)
 }
 
 Duration TWRoute::previous_earliest_end(const Input& input,
-                                        Index job_rank,
-                                        Index rank,
+                                        const Index job_rank,
+                                        const Index rank,
                                         Duration& previous_travel) const {
   const auto& v = input.vehicles[vehicle_rank];
   const auto& j = input.jobs[job_rank];
@@ -99,8 +99,8 @@ Duration TWRoute::previous_earliest_end(const Input& input,
 }
 
 Duration TWRoute::next_latest_start(const Input& input,
-                                    Index job_rank,
-                                    Index rank,
+                                    const Index job_rank,
+                                    const Index rank,
                                     Duration& next_travel) const {
   const auto& v = input.vehicles[vehicle_rank];
   const auto& j = input.jobs[job_rank];
