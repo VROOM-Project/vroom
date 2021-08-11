@@ -345,7 +345,7 @@ void LocalSearch<Route,
         }
 
         const auto& current_r = _sol[routes[i]];
-        const auto& vehicle = _input.vehicles[current_r.vehicle_rank];
+        const auto& vehicle = _input.vehicles[routes[i]];
         bool is_pickup = (_input.jobs[j].type == JOB_TYPE::PICKUP);
 
         if (current_r.size() + (is_pickup ? 2 : 1) > vehicle.max_tasks) {
@@ -1386,7 +1386,6 @@ void LocalSearch<Route,
                           return sum + _sol_state.route_costs[c];
                         });
       assert(new_cost + best_gain == previous_cost);
-
 #endif
 
       try_job_additions(best_ops[best_source][best_target]
