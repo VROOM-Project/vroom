@@ -18,14 +18,13 @@ namespace vroom {
 
 struct OrderChoice {
   const Input& input;
-  Index job_rank;
   bool add_job_first;
   bool add_break_first;
   const std::vector<TimeWindow>::const_iterator j_tw;
   const std::vector<TimeWindow>::const_iterator b_tw;
 
   OrderChoice(const Input& input,
-              Index job_rank,
+              const Index job_rank,
               const Break& b,
               const Duration current_earliest,
               const Duration previous_travel);
@@ -51,7 +50,7 @@ private:
 
   // Define global policy wrt job/break respective insertion rule.
   OrderChoice order_choice(const Input& input,
-                           Index job_rank,
+                           const Index job_rank,
                            const Break& b,
                            const Duration current_earliest,
                            const Duration previous_travel,

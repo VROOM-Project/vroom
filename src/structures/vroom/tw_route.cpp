@@ -335,12 +335,11 @@ void TWRoute::bwd_update_latest_from(const Input& input, Index rank) {
 }
 
 OrderChoice::OrderChoice(const Input& input,
-                         Index job_rank,
+                         const Index job_rank,
                          const Break& b,
                          const Duration current_earliest,
                          const Duration previous_travel)
   : input(input),
-    job_rank(job_rank),
     add_job_first(false),
     add_break_first(false),
     j_tw(std::find_if(input.jobs[job_rank].tws.begin(),
@@ -354,7 +353,7 @@ OrderChoice::OrderChoice(const Input& input,
 }
 
 OrderChoice TWRoute::order_choice(const Input& input,
-                                  Index job_rank,
+                                  const Index job_rank,
                                   const Break& b,
                                   const Duration current_earliest,
                                   const Duration previous_travel,
