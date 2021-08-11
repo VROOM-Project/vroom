@@ -76,16 +76,18 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
   // within the heuristic.
   std::vector<Index> vehicles_ranks(nb_vehicles);
   std::iota(vehicles_ranks.begin(), vehicles_ranks.end(), 0);
-  // Sort vehicles by "higher" capacity or by time window in case of
-  // capacities ties.
+  // Sort vehicles by decreasing max number of tasks allowed, then
+  // capacity (not a total order), then working hours length.
   std::stable_sort(vehicles_ranks.begin(),
                    vehicles_ranks.end(),
                    [&](const auto lhs, const auto rhs) {
                      auto& v_lhs = input.vehicles[lhs];
                      auto& v_rhs = input.vehicles[rhs];
-                     return v_rhs.capacity << v_lhs.capacity or
-                            (v_lhs.capacity == v_rhs.capacity and
-                             v_lhs.tw.length > v_rhs.tw.length);
+                     return v_lhs.max_tasks > v_rhs.max_tasks or
+                            (v_lhs.max_tasks == v_rhs.max_tasks and
+                             (v_rhs.capacity << v_lhs.capacity or
+                              (v_lhs.capacity == v_rhs.capacity and
+                               v_lhs.tw.length > v_rhs.tw.length)));
                    });
 
   auto costs = get_jobs_vehicles_costs(input);
@@ -133,6 +135,10 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
         }
 
         bool is_pickup = (input.jobs[job_rank].type == JOB_TYPE::PICKUP);
+
+        if (current_r.size() + (is_pickup ? 2 : 1) > vehicle.max_tasks) {
+          continue;
+        }
 
         bool try_validity = false;
 
@@ -240,7 +246,8 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
           continue;
         }
 
-        if (input.jobs[job_rank].type == JOB_TYPE::SINGLE) {
+        if (input.jobs[job_rank].type == JOB_TYPE::SINGLE and
+            current_r.size() + 1 <= vehicle.max_tasks) {
           for (Index r = 0; r <= current_r.size(); ++r) {
             float current_add = utils::addition_cost(input,
                                                      job_rank,
@@ -265,7 +272,8 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
           }
         }
 
-        if (input.jobs[job_rank].type == JOB_TYPE::PICKUP) {
+        if (input.jobs[job_rank].type == JOB_TYPE::PICKUP and
+            current_r.size() + 2 <= vehicle.max_tasks) {
           // Pre-compute cost of addition for matching delivery.
           std::vector<Gain> d_adds(current_r.route.size() + 1);
           std::vector<unsigned char> valid_delivery_insertions(
@@ -506,6 +514,10 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
 
         bool is_pickup = (input.jobs[job_rank].type == JOB_TYPE::PICKUP);
 
+        if (current_r.size() + (is_pickup ? 2 : 1) > vehicle.max_tasks) {
+          continue;
+        }
+
         bool try_validity = false;
 
         if (init == INIT::HIGHER_AMOUNT) {
@@ -613,7 +625,8 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
           continue;
         }
 
-        if (input.jobs[job_rank].type == JOB_TYPE::SINGLE) {
+        if (input.jobs[job_rank].type == JOB_TYPE::SINGLE and
+            current_r.size() + 1 <= vehicle.max_tasks) {
           for (Index r = 0; r <= current_r.size(); ++r) {
             float current_add = utils::addition_cost(input,
                                                      job_rank,
@@ -638,7 +651,8 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
           }
         }
 
-        if (input.jobs[job_rank].type == JOB_TYPE::PICKUP) {
+        if (input.jobs[job_rank].type == JOB_TYPE::PICKUP and
+            current_r.size() + 2 <= vehicle.max_tasks) {
           // Pre-compute cost of addition for matching delivery.
           std::vector<Gain> d_adds(current_r.route.size() + 1);
           std::vector<unsigned char> valid_delivery_insertions(
