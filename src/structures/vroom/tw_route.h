@@ -30,20 +30,31 @@ struct OrderChoice {
               const Duration previous_travel);
 };
 
+// Data structures holding information about current previous/next leg
+// in a route, as computed by TWRoute::previous_info and
+// TWRoute::next_info.
+struct PreviousInfo {
+  // Earliest end date for previous step.
+  Duration earliest;
+  // Travel time from that step.
+  Duration travel;
+};
+
+struct NextInfo {
+  // Latest start date for next step.
+  Duration latest;
+  // Travel time to that step.
+  Duration travel;
+};
+
 class TWRoute : public RawRoute {
 private:
-  // When inserting job at job_rank in route at rank, retrieve
-  // earliest end date (resp. latest start date) for previous
-  // (resp. next) step. Last argument holds the travel time from
-  // (resp. to) that step.
-  Duration previous_earliest_end(const Input& input,
-                                 const Index job_rank,
-                                 const Index rank,
-                                 Duration& previous_travel) const;
-  Duration next_latest_start(const Input& input,
+  PreviousInfo previous_info(const Input& input,
                              const Index job_rank,
-                             const Index rank,
-                             Duration& next_travel) const;
+                             const Index rank) const;
+  NextInfo next_info(const Input& input,
+                     const Index job_rank,
+                     const Index rank) const;
 
   void fwd_update_earliest_from(const Input& input, Index rank);
   void bwd_update_latest_from(const Input& input, Index rank);
