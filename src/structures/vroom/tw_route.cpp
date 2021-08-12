@@ -81,26 +81,20 @@ PreviousInfo TWRoute::previous_info(const Input& input,
   const auto& v = input.vehicles[vehicle_rank];
   const auto& j = input.jobs[job_rank];
 
-  Duration previous_earliest = v_start;
-  Duration previous_travel = 0;
-  Index previous_location = std::numeric_limits<Index>::max();
-  Duration previous_service = 0;
+  PreviousInfo previous(v_start, 0);
   if (rank > 0) {
     const auto& previous_job = input.jobs[route[rank - 1]];
-    previous_earliest = earliest[rank - 1];
-    previous_service = previous_job.service;
-    previous_travel = v.duration(previous_job.index(), j.index());
-    previous_location = previous_job.location.index();
+    previous.earliest = earliest[rank - 1] + previous_job.service;
+    previous.travel = v.duration(previous_job.index(), j.index());
+    previous.location_index = previous_job.location.index();
   } else {
     if (has_start) {
-      previous_location = v.start.value().index();
-      previous_travel = v.duration(previous_location, j.index());
+      previous.location_index = v.start.value().index();
+      previous.travel = v.duration(previous.location_index, j.index());
     }
   }
 
-  return {previous_earliest + previous_service,
-          previous_travel,
-          previous_location};
+  return previous;
 }
 
 NextInfo TWRoute::next_info(const Input& input,
@@ -109,18 +103,17 @@ NextInfo TWRoute::next_info(const Input& input,
   const auto& v = input.vehicles[vehicle_rank];
   const auto& j = input.jobs[job_rank];
 
-  Duration next_latest = v_end;
-  Duration next_travel = 0;
+  NextInfo next(v_end, 0);
   if (rank == route.size()) {
     if (has_end) {
-      next_travel = v.duration(j.index(), v.end.value().index());
+      next.travel = v.duration(j.index(), v.end.value().index());
     }
   } else {
-    next_latest = latest[rank];
-    next_travel = v.duration(j.index(), input.jobs[route[rank]].index());
+    next.latest = latest[rank];
+    next.travel = v.duration(j.index(), input.jobs[route[rank]].index());
   }
 
-  return {next_latest, next_travel};
+  return next;
 }
 
 void TWRoute::fwd_update_earliest_from(const Input& input, Index rank) {
@@ -638,8 +631,8 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
 
   const auto& v = input.vehicles[vehicle_rank];
 
-  PreviousInfo current = {0, 0};
-  NextInfo next = {0, 0};
+  PreviousInfo current(0, 0);
+  NextInfo next(0, 0);
 
   // Value initialization differ whether there are actually jobs added
   // or not.
@@ -654,6 +647,7 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
     if (first_rank > 0) {
       const auto& previous_job = input.jobs[route[first_rank - 1]];
       current.earliest = earliest[first_rank - 1] + previous_job.service;
+      current.location_index = previous_job.index();
 
       if (last_rank < route.size()) {
         next.latest = latest[last_rank];
@@ -668,6 +662,7 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
       if (last_rank < route.size()) {
         next.latest = latest[last_rank];
         if (has_start) {
+          current.location_index = v.start.value().index();
           next.travel = v.duration(v.start.value().index(),
                                    input.jobs[route[last_rank]].index());
         }
@@ -952,8 +947,8 @@ void TWRoute::replace(const Input& input,
 
   const auto& v = input.vehicles[vehicle_rank];
 
-  PreviousInfo current = {0, 0};
-  NextInfo next = {0, 0};
+  PreviousInfo current(0, 0);
+  NextInfo next(0, 0);
 
   // Value initialization differ whether there are actually jobs added
   // or not.
@@ -968,6 +963,7 @@ void TWRoute::replace(const Input& input,
     if (first_rank > 0) {
       const auto& previous_job = input.jobs[route[first_rank - 1]];
       current.earliest = earliest[first_rank - 1] + previous_job.service;
+      current.location_index = previous_job.index();
 
       if (last_rank < route.size()) {
         next.latest = latest[last_rank];
@@ -982,6 +978,7 @@ void TWRoute::replace(const Input& input,
       if (last_rank < route.size()) {
         next.latest = latest[last_rank];
         if (has_start) {
+          current.location_index = v.start.value().index();
           next.travel = v.duration(v.start.value().index(),
                                    input.jobs[route[last_rank]].index());
         }
