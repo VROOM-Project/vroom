@@ -16,20 +16,6 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
-struct OrderChoice {
-  const Input& input;
-  bool add_job_first;
-  bool add_break_first;
-  const std::vector<TimeWindow>::const_iterator j_tw;
-  const std::vector<TimeWindow>::const_iterator b_tw;
-
-  OrderChoice(const Input& input,
-              const Index job_rank,
-              const Break& b,
-              const Duration current_earliest,
-              const Duration previous_travel);
-};
-
 // Data structures holding information about current previous/next leg
 // in a route, as computed by TWRoute::previous_info and
 // TWRoute::next_info.
@@ -50,6 +36,19 @@ struct NextInfo {
   Duration travel;
 };
 
+struct OrderChoice {
+  const Input& input;
+  bool add_job_first;
+  bool add_break_first;
+  const std::vector<TimeWindow>::const_iterator j_tw;
+  const std::vector<TimeWindow>::const_iterator b_tw;
+
+  OrderChoice(const Input& input,
+              const Index job_rank,
+              const Break& b,
+              const PreviousInfo& previous);
+};
+
 class TWRoute : public RawRoute {
 private:
   PreviousInfo previous_info(const Input& input,
@@ -66,10 +65,8 @@ private:
   OrderChoice order_choice(const Input& input,
                            const Index job_rank,
                            const Break& b,
-                           const Duration current_earliest,
-                           const Duration previous_travel,
-                           const Duration next_travel,
-                           const Duration next_start) const;
+                           const PreviousInfo& previous,
+                           const NextInfo& next) const;
 
 public:
   Duration v_start;
