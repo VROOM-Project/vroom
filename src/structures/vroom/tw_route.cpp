@@ -83,19 +83,24 @@ PreviousInfo TWRoute::previous_info(const Input& input,
 
   Duration previous_earliest = v_start;
   Duration previous_travel = 0;
+  Index previous_location = std::numeric_limits<Index>::max();
   Duration previous_service = 0;
   if (rank > 0) {
     const auto& previous_job = input.jobs[route[rank - 1]];
     previous_earliest = earliest[rank - 1];
     previous_service = previous_job.service;
     previous_travel = v.duration(previous_job.index(), j.index());
+    previous_location = previous_job.location.index();
   } else {
     if (has_start) {
-      previous_travel = v.duration(v.start.value().index(), j.index());
+      previous_location = v.start.value().index();
+      previous_travel = v.duration(previous_location, j.index());
     }
   }
 
-  return {previous_earliest + previous_service, previous_travel};
+  return {previous_earliest + previous_service,
+          previous_travel,
+          previous_location};
 }
 
 NextInfo TWRoute::next_info(const Input& input,

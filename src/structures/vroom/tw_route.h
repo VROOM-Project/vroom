@@ -36,8 +36,11 @@ struct OrderChoice {
 struct PreviousInfo {
   // Earliest end date for previous step.
   Duration earliest;
-  // Travel time from that step.
+  // Travel time from previous step.
   Duration travel;
+  // Location for previous step. A value of
+  // std::numeric_limits<Index>::max() means no previous step.
+  Index location_index;
 };
 
 struct NextInfo {
