@@ -75,6 +75,7 @@ private:
   // Define global policy wrt job/break respective insertion rule.
   OrderChoice order_choice(const Input& input,
                            const Index job_rank,
+                           const Duration job_action_time,
                            const Break& b,
                            const PreviousInfo& previous,
                            const NextInfo& next) const;

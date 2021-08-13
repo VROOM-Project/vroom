@@ -368,6 +368,7 @@ OrderChoice::OrderChoice(const Input& input,
 
 OrderChoice TWRoute::order_choice(const Input& input,
                                   const Index job_rank,
+                                  const Duration job_action_time,
                                   const Break& b,
                                   const PreviousInfo& previous,
                                   const NextInfo& next) const {
@@ -386,7 +387,8 @@ OrderChoice TWRoute::order_choice(const Input& input,
 
   // Try putting job first then break.
   const Duration earliest_job_end =
-    std::max(previous.earliest + previous.travel, oc.j_tw->start) + j.service;
+    std::max(previous.earliest + previous.travel, oc.j_tw->start) +
+    job_action_time;
   Duration job_then_break_margin = 0;
 
   const auto new_b_tw =
@@ -448,7 +450,7 @@ OrderChoice TWRoute::order_choice(const Input& input,
     return oc;
   } else {
     break_then_job_end =
-      std::max(earliest_job_start, new_j_tw->start) + j.service;
+      std::max(earliest_job_start, new_j_tw->start) + job_action_time;
 
     if (break_then_job_end + next.travel > next.latest) {
       // Arrival at the job is valid but next step is not.
@@ -495,8 +497,13 @@ OrderChoice TWRoute::order_choice(const Input& input,
                                    });
 
     if (d_tw != matching_d.tws.end()) {
+      const auto matching_d_action_time =
+        (matching_d.index() == j.index())
+          ? matching_d.service
+          : matching_d.setup + matching_d.service;
+
       const Duration break_candidate =
-        std::max(delivery_candidate, d_tw->start) + matching_d.service;
+        std::max(delivery_candidate, d_tw->start) + matching_d_action_time;
 
       const auto after_d_b_tw =
         std::find_if(b.tws.begin(), b.tws.end(), [&](const auto& tw) {
@@ -605,7 +612,7 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
     }
 
     // Decide on ordering between break and added job.
-    auto oc = order_choice(input, job_rank, b, current, next);
+    auto oc = order_choice(input, job_rank, job_action_time, b, current, next);
 
     if (!oc.add_job_first and !oc.add_break_first) {
       // Infeasible insertion.
@@ -766,8 +773,11 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
     // ordering.
     const auto& b = v.breaks[current_break];
     const auto& j = input.jobs[*current_job];
+    const auto job_action_time =
+      (j.index() == current.location_index) ? j.service : j.setup + j.service;
 
-    auto oc = order_choice(input, *current_job, b, current, next);
+    auto oc =
+      order_choice(input, *current_job, job_action_time, b, current, next);
 
     if (!oc.add_job_first and !oc.add_break_first) {
       // Infeasible insertion.
@@ -794,8 +804,6 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
       ++current_break;
     }
     if (oc.add_job_first) {
-      const auto job_action_time =
-        (j.index() == current.location_index) ? j.service : j.setup + j.service;
       current.location_index = j.index();
 
       current.earliest =
@@ -838,7 +846,7 @@ void TWRoute::add(const Input& input, const Index job_rank, const Index rank) {
     const auto& b = v.breaks[break_rank];
 
     // Decide on ordering between break and added job.
-    auto oc = order_choice(input, job_rank, b, current, next);
+    auto oc = order_choice(input, job_rank, job_action_time, b, current, next);
     assert(oc.add_job_first xor oc.add_break_first);
 
     // Now update next end time based on insertion choice.
@@ -1163,7 +1171,12 @@ void TWRoute::replace(const Input& input,
     // ordering.
     const auto& b = v.breaks[current_break];
     const auto& j = input.jobs[*current_job];
-    auto oc = order_choice(input, *current_job, b, current, next);
+
+    const auto job_action_time =
+      (j.index() == current.location_index) ? j.service : j.setup + j.service;
+
+    auto oc =
+      order_choice(input, *current_job, job_action_time, b, current, next);
 
     assert(oc.add_job_first xor oc.add_break_first);
     if (oc.add_break_first) {
@@ -1196,10 +1209,9 @@ void TWRoute::replace(const Input& input,
       breaks_at_rank[current_job_rank] = breaks_before;
       breaks_counts[current_job_rank] = previous_breaks_counts + breaks_before;
 
-      action_time[current_job_rank] =
-        (j.index() == current.location_index) ? j.service : j.setup + j.service;
+      action_time[current_job_rank] = job_action_time;
+      current.earliest += job_action_time;
       current.location_index = j.index();
-      current.earliest += action_time[current_job_rank];
 
       ++current_job_rank;
       previous_breaks_counts += breaks_before;
