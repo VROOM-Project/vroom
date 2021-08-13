@@ -987,16 +987,17 @@ void TWRoute::replace(const Input& input,
 
     if (first_rank > 0) {
       const auto& previous_job = input.jobs[route[first_rank - 1]];
-      current.earliest = earliest[first_rank - 1] + previous_job.service;
-      current.location_index = previous_job.index();
+      const auto previous_index = previous_job.index();
+      current.earliest = earliest[first_rank - 1] + action_time[first_rank - 1];
+      current.location_index = previous_index;
 
       if (last_rank < route.size()) {
         next.latest = latest[last_rank];
-        next.travel = v.duration(previous_job.index(),
-                                 input.jobs[route[last_rank]].index());
+        next.travel =
+          v.duration(previous_index, input.jobs[route[last_rank]].index());
       } else {
         if (has_end) {
-          next.travel = v.duration(previous_job.index(), v.end.value().index());
+          next.travel = v.duration(previous_index, v.end.value().index());
         }
       }
     } else {
@@ -1037,6 +1038,8 @@ void TWRoute::replace(const Input& input,
                    earliest.begin() + first_rank + to_erase);
     latest.erase(latest.begin() + first_rank,
                  latest.begin() + first_rank + to_erase);
+    action_time.erase(action_time.begin() + first_rank,
+                      action_time.begin() + first_rank + to_erase);
     breaks_at_rank.erase(breaks_at_rank.begin() + first_rank,
                          breaks_at_rank.begin() + first_rank + to_erase);
     breaks_counts.erase(breaks_counts.begin() + first_rank,
@@ -1060,16 +1063,17 @@ void TWRoute::replace(const Input& input,
     route.insert(route.begin() + first_rank, to_insert, 0);
     earliest.insert(earliest.begin() + first_rank, to_insert, 0);
     latest.insert(latest.begin() + first_rank, to_insert, 0);
+    action_time.insert(action_time.begin() + first_rank, to_insert, 0);
     breaks_at_rank.insert(breaks_at_rank.begin() + first_rank, to_insert, 0);
     breaks_counts.insert(breaks_counts.begin() + first_rank, to_insert, 0);
   }
 
-  // Current rank in route/earliest/latest vectors.
+  // Current rank in route/earliest/latest/action_time vectors.
   Index current_job_rank = first_rank;
   unsigned breaks_before = 0;
 
-  // Propagate earliest dates for all jobs and breaks in their
-  // respective addition ranges.
+  // Propagate earliest dates (and action times) for all jobs and
+  // breaks in their respective addition ranges.
   auto current_job = first_job;
   while (current_job != last_job or current_break != last_break) {
     if (current_job == last_job) {
@@ -1122,11 +1126,15 @@ void TWRoute::replace(const Input& input,
       earliest[current_job_rank] = current.earliest;
       breaks_at_rank[current_job_rank] = breaks_before;
       breaks_counts[current_job_rank] = previous_breaks_counts + breaks_before;
+
+      action_time[current_job_rank] =
+        (j.index() == current.location_index) ? j.service : j.setup + j.service;
+      current.location_index = j.index();
+      current.earliest += action_time[current_job_rank];
+
       ++current_job_rank;
       previous_breaks_counts += breaks_before;
       breaks_before = 0;
-
-      current.earliest += j.service;
 
       ++current_job;
       if (current_job != last_job) {
@@ -1173,11 +1181,15 @@ void TWRoute::replace(const Input& input,
       earliest[current_job_rank] = current.earliest;
       breaks_at_rank[current_job_rank] = breaks_before;
       breaks_counts[current_job_rank] = previous_breaks_counts + breaks_before;
+
+      action_time[current_job_rank] =
+        (j.index() == current.location_index) ? j.service : j.setup + j.service;
+      current.location_index = j.index();
+      current.earliest += action_time[current_job_rank];
+
       ++current_job_rank;
       previous_breaks_counts += breaks_before;
       breaks_before = 0;
-
-      current.earliest += j.service;
 
       ++current_job;
       if (current_job != last_job) {
@@ -1198,7 +1210,7 @@ void TWRoute::replace(const Input& input,
   if (!route.empty()) {
     if (current_job_rank == 0) {
       // First jobs in route have been erased and not replaced, so
-      // update new first job earliest date.
+      // update new first job earliest date and action time.
       const auto& j = input.jobs[route[0]];
 
       current.earliest += next.travel;
@@ -1211,12 +1223,21 @@ void TWRoute::replace(const Input& input,
       earliest[0] = std::max(current.earliest, j_tw->start);
       assert(earliest[0] <= latest[0]);
 
+      // TODO decide whether setup time should always be applied to
+      // first task even if its location is the same as vehicle
+      // start.
+      action_time[0] =
+        (j.index() == current.location_index) ? j.service : j.setup + j.service;
+      fwd_update_action_time_from(input, 0);
+
       fwd_update_earliest_from(input, 0);
     } else {
       if (current_job_rank < route.size()) {
         // If a valid rank, current_job_rank is the rank of the first
         // job with known latest date (see bwd_update_latest_from call
-        // below). Also update earliest dates forward in end of route.
+        // below). Also update action times and earliest dates forward
+        // in end of route.
+        fwd_update_action_time_from(input, current_job_rank - 1);
         fwd_update_earliest_from(input, current_job_rank - 1);
       } else {
         // Replacing last job(s) in route, so we need to update
@@ -1258,7 +1279,7 @@ void TWRoute::replace(const Input& input,
 
         // Latest date for new last job.
         const auto& j = input.jobs[route.back()];
-        auto gap = j.service + bwd_next_travel;
+        auto gap = action_time.back() + bwd_next_travel;
         assert(gap <= next.latest);
         next.latest -= gap;
 
