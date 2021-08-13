@@ -332,6 +332,22 @@ void TWRoute::bwd_update_latest_from(const Input& input, Index rank) {
   }
 }
 
+void TWRoute::fwd_update_action_time_from(const Input& input, Index rank) {
+  Index current_index = input.jobs[route[rank]].index();
+
+  for (Index i = rank + 1; i < route.size(); ++i) {
+    const auto& next_j = input.jobs[route[i]];
+    const auto next_index = next_j.index();
+
+    const auto next_action_time = (next_index == current_index)
+                                    ? next_j.service
+                                    : next_j.setup + next_j.service;
+
+    action_time[i] = next_action_time;
+    current_index = next_index;
+  }
+}
+
 OrderChoice::OrderChoice(const Input& input,
                          const Index job_rank,
                          const Break& b,
@@ -913,6 +929,10 @@ void TWRoute::add(const Input& input, const Index job_rank, const Index rank) {
   // but before earliest/latest date propagation that rely on route
   // structure after addition.
   route.insert(route.begin() + rank, job_rank);
+
+  // Action times must be updated before the call to
+  // fwd_update_earliest_from.
+  fwd_update_action_time_from(input, rank);
 
   fwd_update_earliest_from(input, rank);
   bwd_update_latest_from(input, rank);

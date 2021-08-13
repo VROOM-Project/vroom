@@ -70,6 +70,8 @@ private:
   void fwd_update_earliest_from(const Input& input, Index rank);
   void bwd_update_latest_from(const Input& input, Index rank);
 
+  void fwd_update_action_time_from(const Input& input, Index rank);
+
   // Define global policy wrt job/break respective insertion rule.
   OrderChoice order_choice(const Input& input,
                            const Index job_rank,
