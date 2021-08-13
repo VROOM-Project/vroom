@@ -793,6 +793,11 @@ void TWRoute::add(const Input& input, const Index job_rank, const Index rank) {
   auto current = previous_info(input, job_rank, rank);
   auto next = next_info(input, job_rank, rank);
 
+  // Compute action time for added job and store it.
+  const auto job_action_time =
+    (j.index() == current.location_index) ? j.service : j.setup + j.service;
+  action_time.insert(action_time.begin() + rank, job_action_time);
+
   bool job_added = false;
   unsigned breaks_before = 0;
 
@@ -827,7 +832,7 @@ void TWRoute::add(const Input& input, const Index job_rank, const Index rank) {
 
       earliest.insert(earliest.begin() + rank, current.earliest);
 
-      current.earliest += j.service;
+      current.earliest += job_action_time;
       job_added = true;
 
       // Earliest/rank data for breaks after added job will be updated
@@ -891,8 +896,8 @@ void TWRoute::add(const Input& input, const Index job_rank, const Index rank) {
   }
 
   // Update inserted job latest date.
-  assert(j.service + next.travel <= next.latest);
-  next.latest -= (j.service + next.travel);
+  assert(job_action_time + next.travel <= next.latest);
+  next.latest -= (job_action_time + next.travel);
 
   const auto j_tw =
     std::find_if(j.tws.rbegin(), j.tws.rend(), [&](const auto& tw) {

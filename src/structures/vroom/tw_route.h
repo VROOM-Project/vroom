@@ -87,6 +87,11 @@ public:
   std::vector<Duration> earliest;
   std::vector<Duration> latest;
 
+  // action_time[i] stores the total time spent for job at rank i in
+  // route. Based on previous location, can be either (setup +
+  // service) or only service for the job.
+  std::vector<Duration> action_time;
+
   // Store earliest date for route end.
   Duration earliest_end;
 
