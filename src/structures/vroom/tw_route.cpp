@@ -290,12 +290,13 @@ void TWRoute::bwd_update_latest_from(const Input& input, Index rank) {
     current_latest = std::min(current_latest, j_tw->end);
 
     assert(earliest[next_i - 1] <= current_latest);
-    if (current_latest == latest[next_i - 1]) {
-      // There won't be any further update so stop latest date
-      // propagation.
-      handle_first_breaks = false;
-      break;
-    }
+    // TODO reapply
+    // if (current_latest == latest[next_i - 1]) {
+    //   // There won't be any further update so stop latest date
+    //   // propagation.
+    //   handle_first_breaks = false;
+    //   break;
+    // }
 
     latest[next_i - 1] = current_latest;
   }
