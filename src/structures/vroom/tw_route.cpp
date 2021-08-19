@@ -1036,6 +1036,8 @@ void TWRoute::add(const Input& input, const Index job_rank, const Index rank) {
   fwd_update_earliest_from(input, rank);
   bwd_update_latest_from(input, rank);
 
+  // TODO add same logic as in replace for backward propagation.
+
   update_amounts(input);
 }
 
@@ -1311,97 +1313,69 @@ void TWRoute::replace(const Input& input,
          breaks_counts[current_job_rank]);
 
   if (!route.empty()) {
-    if (current_job_rank == 0) {
-      // First jobs in route have been erased and not replaced, so
-      // update new first job earliest date and action time.
-      const auto& j = input.jobs[route[0]];
+    auto valid_latest_date_rank = current_job_rank;
+    auto valid_earliest_date_rank = 0;
+    const bool replace_last_jobs = (current_job_rank == route.size());
+    bool do_update_last_latest_date = false;
 
-      current.earliest += next.travel;
-      const auto j_tw =
-        std::find_if(j.tws.begin(), j.tws.end(), [&](const auto& tw) {
-          return current.earliest <= tw.end;
-        });
-      assert(j_tw != j.tws.end());
+    if (replace_last_jobs) {
+      earliest_end = current.earliest + next.travel;
 
-      earliest[0] = std::max(current.earliest, j_tw->start);
-      assert(earliest[0] <= latest[0]);
+      do_update_last_latest_date = true;
+      valid_latest_date_rank = route.size() - 1;
+    } else {
+      // current_job_rank is the rank of the first non-replaced job.
+      const auto& j = input.jobs[route[current_job_rank]];
 
       // TODO decide whether setup time should always be applied to
-      // first task even if its location is the same as vehicle
-      // start.
-      action_time[0] =
+      // first task even if its location is the same as vehicle start.
+      const auto new_action_time =
         (j.index() == current.location_index) ? j.service : j.setup + j.service;
-      fwd_update_action_time_from(input, 0);
+      assert(action_time[current_job_rank] == j.service or
+             action_time[current_job_rank] == j.service + j.setup);
 
-      fwd_update_earliest_from(input, 0);
-    } else {
-      if (current_job_rank < route.size()) {
-        // If a valid rank, current_job_rank is the rank of the first
-        // job with known latest date (see bwd_update_latest_from call
-        // below). Also update action times and earliest dates forward
-        // in end of route.
-        fwd_update_action_time_from(input, current_job_rank - 1);
-        fwd_update_earliest_from(input, current_job_rank - 1);
-      } else {
-        // Replacing last job(s) in route, so we need to update
-        // earliest end for route, latest date for breaks before end
-        // and new last job.
-        earliest_end = current.earliest + next.travel;
-
-        // Latest date for breaks before end.
-        Index break_rank = breaks_counts[current_job_rank];
-        for (Index r = 0; r < breaks_at_rank[current_job_rank]; ++r) {
-          --break_rank;
-          const auto& b = v.breaks[break_rank];
-
-          assert(b.service <= next.latest);
-          next.latest -= b.service;
-
-          const auto b_tw =
-            std::find_if(b.tws.rbegin(), b.tws.rend(), [&](const auto& tw) {
-              return tw.start <= next.latest;
-            });
-          assert(b_tw != b.tws.rend());
-
-          if (b_tw->end < next.latest) {
-            auto margin = next.latest - b_tw->end;
-            breaks_travel_margin_after[break_rank] = margin;
-            if (margin < bwd_next_travel) {
-              bwd_next_travel -= margin;
-            } else {
-              bwd_next_travel = 0;
-            }
-
-            next.latest = b_tw->end;
-          } else {
-            breaks_travel_margin_after[break_rank] = 0;
-          }
-
-          break_latest[break_rank] = next.latest;
+      if (new_action_time != action_time[current_job_rank]) {
+        // Due to removal, total time spent at first non-replaced
+        // task changed, so we need its latest date updated, either
+        // directly if at the end of the route, either by going
+        // backward from next task (if any).
+        if (current_job_rank == route.size() - 1) {
+          do_update_last_latest_date = true;
+        } else {
+          valid_latest_date_rank = current_job_rank + 1;
         }
+      }
 
-        // Latest date for new last job.
-        const auto& j = input.jobs[route.back()];
-        auto gap = action_time.back() + bwd_next_travel;
-        assert(gap <= next.latest);
-        next.latest -= gap;
-
+      if (current_job_rank == 0) {
+        // First jobs in route have been erased and not replaced, so
+        // update new first job earliest date and action time.
+        current.earliest += next.travel;
         const auto j_tw =
-          std::find_if(j.tws.rbegin(), j.tws.rend(), [&](const auto& tw) {
-            return tw.start <= next.latest;
+          std::find_if(j.tws.begin(), j.tws.end(), [&](const auto& tw) {
+            return current.earliest <= tw.end;
           });
-        assert(j_tw != j.tws.rend());
+        assert(j_tw != j.tws.end());
 
-        latest.back() = std::min(next.latest, j_tw->end);
+        earliest[0] = std::max(current.earliest, j_tw->start);
+        assert(earliest[0] <= latest[0]);
 
-        // Set current_job_rank back to the rank of the first job with
-        // known latest date (the one that was just updated).
-        --current_job_rank;
+        action_time[0] = new_action_time;
+      } else {
+        valid_earliest_date_rank = current_job_rank - 1;
       }
     }
 
+    if (!replace_last_jobs) {
+      // Update earliest dates forward.
+      fwd_update_action_time_from(input, valid_earliest_date_rank);
+      fwd_update_earliest_from(input, valid_earliest_date_rank);
+    }
+
+    if (do_update_last_latest_date) {
+      update_last_latest_date(input);
+    }
     // Update latest dates backward.
-    bwd_update_latest_from(input, current_job_rank);
+    bwd_update_latest_from(input, valid_latest_date_rank);
   }
 
   update_amounts(input);
