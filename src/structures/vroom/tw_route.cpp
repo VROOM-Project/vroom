@@ -333,6 +333,59 @@ void TWRoute::bwd_update_latest_from(const Input& input, Index rank) {
   }
 }
 
+void TWRoute::update_last_latest_date(const Input& input) {
+  assert(!route.empty());
+
+  const auto& v = input.vehicles[vehicle_rank];
+  auto next = next_info(input, route.back(), route.size());
+
+  // Latest date for breaks before end.
+  Index break_rank = breaks_counts[route.size()];
+  for (Index r = 0; r < breaks_at_rank[route.size()]; ++r) {
+    --break_rank;
+    const auto& b = v.breaks[break_rank];
+
+    assert(b.service <= next.latest);
+    next.latest -= b.service;
+
+    const auto b_tw =
+      std::find_if(b.tws.rbegin(), b.tws.rend(), [&](const auto& tw) {
+        return tw.start <= next.latest;
+      });
+    assert(b_tw != b.tws.rend());
+
+    if (b_tw->end < next.latest) {
+      auto margin = next.latest - b_tw->end;
+      breaks_travel_margin_after[break_rank] = margin;
+      if (margin < next.travel) {
+        next.travel -= margin;
+      } else {
+        next.travel = 0;
+      }
+
+      next.latest = b_tw->end;
+    } else {
+      breaks_travel_margin_after[break_rank] = 0;
+    }
+
+    break_latest[break_rank] = next.latest;
+  }
+
+  // Latest date for last job.
+  const auto& j = input.jobs[route.back()];
+  const auto gap = action_time.back() + next.travel;
+  assert(gap <= next.latest);
+  next.latest -= gap;
+
+  const auto j_tw =
+    std::find_if(j.tws.rbegin(), j.tws.rend(), [&](const auto& tw) {
+      return tw.start <= next.latest;
+    });
+  assert(j_tw != j.tws.rend());
+
+  latest.back() = std::min(next.latest, j_tw->end);
+}
+
 void TWRoute::fwd_update_action_time_from(const Input& input, Index rank) {
   Index current_index = input.jobs[route[rank]].index();
 
@@ -835,8 +888,7 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
       // earliest date for next task with new setup time may make it
       // not doable anymore.
       const auto next_after = next_info(input, route[last_rank], last_rank + 1);
-      if (current.earliest + next.travel + new_action_time +
-            next_after.travel >
+      if (current.earliest + next.travel + new_action_time + next_after.travel >
           next_after.latest) {
         return false;
       }
