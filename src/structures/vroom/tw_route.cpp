@@ -646,6 +646,9 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
     }
   }
 
+  // TODO add same logic as in the is_valid_addition_for_tw range
+  // version below for next job check.
+
   return current.earliest + next.travel <= next.latest;
 }
 
@@ -815,6 +818,27 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
         // Account for travel time to next current job.
         current.travel =
           v.duration(j.index(), input.jobs[*current_job].index());
+      }
+    }
+  }
+
+  if (last_rank < route.size() and
+      input.jobs[route[last_rank]].index() != current.location_index) {
+    // There is a task right after replace range and setup time does
+    // apply to it.
+    const auto& j_after = input.jobs[route[last_rank]];
+    const auto new_action_time = j_after.setup + j_after.service;
+    if (action_time[last_rank] < new_action_time) {
+      // Setup time did not previously apply to that task as action
+      // time has increased. In that case the margin check for job at
+      // last_rank may be OK in the return clause below, BUT shifting
+      // earliest date for next task with new setup time may make it
+      // not doable anymore.
+      const auto next_after = next_info(input, route[last_rank], last_rank + 1);
+      if (current.earliest + next.travel + new_action_time +
+            next_after.travel >
+          next_after.latest) {
+        return false;
       }
     }
   }
