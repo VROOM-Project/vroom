@@ -354,7 +354,8 @@ void Input::add_vehicle(const Vehicle& vehicle) {
   _profiles.insert(current_v.profile);
 }
 
-void Input::set_matrix(const std::string& profile, Matrix<Cost>&& m) {
+void Input::set_durations_matrix(const std::string& profile,
+                                 Matrix<Duration>&& m) {
   _custom_matrices.insert(profile);
   _matrices.insert_or_assign(profile, m);
 }
