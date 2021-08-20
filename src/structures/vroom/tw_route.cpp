@@ -1113,8 +1113,6 @@ void TWRoute::replace(const Input& input,
     }
   }
 
-  Duration bwd_next_travel = next.travel; // Used for latest dates.
-
   // Determine break range between first_rank and last_rank.
   Index current_break = breaks_counts[first_rank] - breaks_at_rank[first_rank];
   const Index last_break = breaks_counts[last_rank];
