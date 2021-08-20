@@ -1142,7 +1142,8 @@ Route choose_ETA(const Input& input,
       sum_pickups += job.pickup;
       sum_deliveries += job.delivery;
 
-      sol_steps.emplace_back(job, current_load);
+      // TODO add setup time
+      sol_steps.emplace_back(job, 0, current_load);
       auto& current = sol_steps.back();
 
       duration += previous_travel;
@@ -1315,6 +1316,7 @@ Route choose_ETA(const Input& input,
   return Route(v.id,
                std::move(sol_steps),
                duration,
+               0, // TODO update with setup
                service,
                duration,
                forward_wt,
