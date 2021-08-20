@@ -546,8 +546,12 @@ inline Route format_route(const Input& input,
   assert(v.tw.contains(step_start));
   steps.back().arrival = step_start;
 
+  auto previous_location = (v.has_start()) ? v.start.value().index()
+                                           : std::numeric_limits<Index>::max();
+
   // Values summed up while going through the route.
   Duration duration = 0;
+  Duration setup = 0;
   Duration service = 0;
   Duration forward_wt = 0;
   Priority priority = 0;
@@ -630,6 +634,11 @@ inline Route format_route(const Input& input,
     service += current_job.service;
     priority += current_job.priority;
 
+    const auto current_setup =
+      (current_job.index() == previous_location) ? 0 : current_job.setup;
+    setup += current_setup;
+    previous_location = current_job.index();
+
     current_load += current_job.pickup;
     current_load -= current_job.delivery;
     sum_pickups += current_job.pickup;
@@ -640,7 +649,7 @@ inline Route format_route(const Input& input,
     check_precedence(input, expected_delivery_ranks, tw_r.route[r]);
 #endif
 
-    steps.emplace_back(current_job, current_load);
+    steps.emplace_back(current_job, current_setup, current_load);
     auto& current = steps.back();
     current.duration = duration;
 
@@ -664,7 +673,7 @@ inline Route format_route(const Input& input,
     }
     assert(current_job.is_valid_start(current.arrival + current.waiting_time));
 
-    step_start += current_job.service;
+    step_start += (current_setup + current_job.service);
 
     unassigned_ranks.erase(tw_r.route[r]);
   }
@@ -749,6 +758,7 @@ inline Route format_route(const Input& input,
   return Route(v.id,
                std::move(steps),
                duration,
+               setup,
                service,
                duration,
                forward_wt,
