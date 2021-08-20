@@ -473,7 +473,14 @@ inline Route format_route(const Input& input,
       }
     }
 
-    Duration diff = previous_job.service + remaining_travel_time;
+    bool same_location = (r > 1 and input.jobs[tw_r.route[r - 2]].index() ==
+                                      previous_job.index()) or
+                         (r == 0 and v.has_start() and
+                          v.start.value().index() == previous_job.index());
+    const auto current_setup = (same_location) ? 0 : previous_job.setup;
+
+    Duration diff =
+      current_setup + previous_job.service + remaining_travel_time;
 
     assert(diff <= step_start);
     Duration candidate_start = step_start - diff;
@@ -751,7 +758,7 @@ inline Route format_route(const Input& input,
 
   assert(steps.back().arrival + steps.back().waiting_time +
            steps.back().service ==
-         steps.front().arrival + duration + service + forward_wt);
+         steps.front().arrival + duration + setup + service + forward_wt);
 
   assert(expected_delivery_ranks.empty());
 
