@@ -456,14 +456,14 @@ inline Job get_job(const rapidjson::Value& json_job, unsigned amount_size) {
              get_string(json_job, "description"));
 }
 
-inline Matrix<Cost> get_matrix(rapidjson::Value& m) {
+template <class T> inline Matrix<T> get_matrix(rapidjson::Value& m) {
   if (!m.IsArray()) {
     throw Exception(ERROR::INPUT, "Invalid matrix.");
   }
   // Load custom matrix while checking if it is square.
   rapidjson::SizeType matrix_size = m.Size();
 
-  Matrix<Cost> matrix(matrix_size);
+  Matrix<T> matrix(matrix_size);
   for (rapidjson::SizeType i = 0; i < matrix_size; ++i) {
     if (!m[i].IsArray() or m[i].Size() != matrix_size) {
       throw Exception(ERROR::INPUT, "Unexpected matrix line length.");
@@ -584,7 +584,7 @@ Input parse(const CLArgs& cl_args) {
       if (profile_entry.value.IsObject() and
           profile_entry.value.HasMember("durations")) {
         input.set_durations_matrix(profile_entry.name.GetString(),
-                                   get_matrix(
+                                   get_matrix<Duration>(
                                      profile_entry.value["durations"]));
       }
     }
@@ -593,7 +593,7 @@ Input parse(const CLArgs& cl_args) {
     // `matrices.DEFAULT_PROFILE.duration` for retro-compatibility.
     if (json_input.HasMember("matrix")) {
       input.set_durations_matrix(DEFAULT_PROFILE,
-                                 get_matrix(json_input["matrix"]));
+                                 get_matrix<Duration>(json_input["matrix"]));
     }
   }
 
