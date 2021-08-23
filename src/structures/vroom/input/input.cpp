@@ -359,6 +359,10 @@ void Input::set_durations_matrix(const std::string& profile,
   _durations_matrices.insert_or_assign(profile, m);
 }
 
+void Input::set_costs_matrix(const std::string& profile, Matrix<Cost>&& m) {
+  _costs_matrices.insert_or_assign(profile, m);
+}
+
 bool Input::has_skills() const {
   return _has_skills;
 }

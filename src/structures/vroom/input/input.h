@@ -47,6 +47,7 @@ private:
   bool _has_jobs;
   bool _has_shipments;
   std::unordered_map<std::string, Matrix<Duration>> _durations_matrices;
+  std::unordered_map<std::string, Matrix<Duration>> _costs_matrices;
   std::vector<Location> _locations;
   std::unordered_map<Location, Index> _locations_to_index;
   std::vector<std::vector<unsigned char>> _vehicle_to_job_compatibility;
@@ -97,6 +98,7 @@ public:
   void add_vehicle(const Vehicle& vehicle);
 
   void set_durations_matrix(const std::string& profile, Matrix<Duration>&& m);
+  void set_costs_matrix(const std::string& profile, Matrix<Cost>&& m);
 
   const Amount& zero_amount() const {
     return _zero;
