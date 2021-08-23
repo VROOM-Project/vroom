@@ -1332,7 +1332,9 @@ void TWRoute::replace(const Input& input,
       assert(action_time[current_job_rank] == j.service or
              action_time[current_job_rank] == j.service + j.setup);
 
-      if (new_action_time != action_time[current_job_rank]) {
+      const bool current_action_time_changed =
+        (new_action_time != action_time[current_job_rank]);
+      if (current_action_time_changed) {
         // Due to removal, total time spent at first non-replaced
         // task changed, so we need its latest date updated, either
         // directly if at the end of the route, either by going
@@ -1360,6 +1362,13 @@ void TWRoute::replace(const Input& input,
         action_time[0] = new_action_time;
       } else {
         valid_earliest_date_rank = current_job_rank - 1;
+        if (current_action_time_changed) {
+          // We need to update earliest dates for the following jobs
+          // **after** current_job_rank, but fwd_update_earliest_from
+          // has a stop criterion for propagation that will trigger if
+          // earliest date happens to not change at current_job_rank.
+          earliest[current_job_rank] = 0;
+        }
       }
     }
 
