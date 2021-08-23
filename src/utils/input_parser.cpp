@@ -581,11 +581,17 @@ Input parse(const CLArgs& cl_args) {
       throw Exception(ERROR::INPUT, "Unexpected matrices value.");
     }
     for (auto& profile_entry : json_input["matrices"].GetObject()) {
-      if (profile_entry.value.IsObject() and
-          profile_entry.value.HasMember("durations")) {
-        input.set_durations_matrix(profile_entry.name.GetString(),
-                                   get_matrix<Duration>(
-                                     profile_entry.value["durations"]));
+      if (profile_entry.value.IsObject()) {
+        if (profile_entry.value.HasMember("durations")) {
+          input.set_durations_matrix(profile_entry.name.GetString(),
+                                     get_matrix<Duration>(
+                                       profile_entry.value["durations"]));
+        }
+        if (profile_entry.value.HasMember("costs")) {
+          input.set_costs_matrix(profile_entry.name.GetString(),
+                                 get_matrix<Cost>(
+                                   profile_entry.value["costs"]));
+        }
       }
     }
   } else {
