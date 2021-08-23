@@ -120,11 +120,6 @@ public:
   // Returns true iff both vehicles have common job candidates.
   bool vehicle_ok_with_vehicle(Index v1_index, Index v2_index) const;
 
-  Cost get_duration(const std::string& profile, Index i, Index j) const {
-    assert(_matrices.find(profile) != _matrices.end());
-    return _matrices.at(profile)[i][j];
-  }
-
   Solution solve(unsigned exploration_level,
                  unsigned nb_thread,
                  const std::vector<HeuristicParameters>& h_param =
