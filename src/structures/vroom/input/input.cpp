@@ -356,7 +356,6 @@ void Input::add_vehicle(const Vehicle& vehicle) {
 
 void Input::set_durations_matrix(const std::string& profile,
                                  Matrix<Duration>&& m) {
-  _custom_durations_matrices.insert(profile);
   _durations_matrices.insert_or_assign(profile, m);
 }
 
@@ -526,7 +525,7 @@ void Input::set_vehicles_costs() {
 }
 
 void Input::set_matrices(unsigned nb_thread) {
-  if (!_custom_durations_matrices.empty() and !_has_custom_location_index) {
+  if (!_durations_matrices.empty() and !_has_custom_location_index) {
     throw Exception(ERROR::INPUT, "Missing location index.");
   }
 
@@ -542,12 +541,10 @@ void Input::set_matrices(unsigned nb_thread) {
   for (const auto& profile : _profiles) {
     thread_profiles[t_rank % nb_buckets].push_back(profile);
     ++t_rank;
-    if (_custom_durations_matrices.find(profile) ==
-        _custom_durations_matrices.end()) {
+    if (_durations_matrices.find(profile) == _durations_matrices.end()) {
       // Matrix has not been manually set, create routing wrapper and
       // empty matrix to allow for concurrent modification later on.
       add_routing_wrapper(profile);
-      assert(_durations_matrices.find(profile) == _durations_matrices.end());
       _durations_matrices.emplace(profile, Matrix<Duration>());
     }
   }
