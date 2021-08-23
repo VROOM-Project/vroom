@@ -356,8 +356,8 @@ void Input::add_vehicle(const Vehicle& vehicle) {
 
 void Input::set_durations_matrix(const std::string& profile,
                                  Matrix<Duration>&& m) {
-  _custom_matrices.insert(profile);
-  _matrices.insert_or_assign(profile, m);
+  _custom_durations_matrices.insert(profile);
+  _durations_matrices.insert_or_assign(profile, m);
 }
 
 bool Input::has_skills() const {
@@ -519,14 +519,14 @@ void Input::set_vehicles_compatibility() {
 void Input::set_vehicles_costs() {
   for (std::size_t v = 0; v < vehicles.size(); ++v) {
     auto& vehicle = vehicles[v];
-    auto search = _matrices.find(vehicle.profile);
-    assert(search != _matrices.end());
+    auto search = _durations_matrices.find(vehicle.profile);
+    assert(search != _durations_matrices.end());
     vehicle.cost_wrapper.set_durations_matrix(&(search->second));
   }
 }
 
 void Input::set_matrices(unsigned nb_thread) {
-  if (!_custom_matrices.empty() and !_has_custom_location_index) {
+  if (!_custom_durations_matrices.empty() and !_has_custom_location_index) {
     throw Exception(ERROR::INPUT, "Missing location index.");
   }
 
@@ -542,12 +542,13 @@ void Input::set_matrices(unsigned nb_thread) {
   for (const auto& profile : _profiles) {
     thread_profiles[t_rank % nb_buckets].push_back(profile);
     ++t_rank;
-    if (_custom_matrices.find(profile) == _custom_matrices.end()) {
+    if (_custom_durations_matrices.find(profile) ==
+        _custom_durations_matrices.end()) {
       // Matrix has not been manually set, create routing wrapper and
       // empty matrix to allow for concurrent modification later on.
       add_routing_wrapper(profile);
-      assert(_matrices.find(profile) == _matrices.end());
-      _matrices.emplace(profile, Matrix<Cost>());
+      assert(_durations_matrices.find(profile) == _durations_matrices.end());
+      _durations_matrices.emplace(profile, Matrix<Duration>());
     }
   }
 
@@ -557,11 +558,12 @@ void Input::set_matrices(unsigned nb_thread) {
   auto run_on_profiles = [&](const std::vector<std::string>& profiles) {
     try {
       for (const auto& profile : profiles) {
-        auto p_m = _matrices.find(profile);
-        assert(p_m != _matrices.end());
+        auto p_m = _durations_matrices.find(profile);
+        assert(p_m != _durations_matrices.end());
 
         if (p_m->second.size() == 0) {
-          // Matrix not manually set so defined as empty above.
+          // Durations matrix not manually set so defined as empty
+          // above.
           if (_locations.size() == 1) {
             p_m->second = Matrix<Cost>({{0}});
           } else {
@@ -580,7 +582,7 @@ void Input::set_matrices(unsigned nb_thread) {
               // indirection based on order in _locations.
               auto m = (*rw)->get_matrix(_locations);
 
-              Matrix<Cost> full_m(_max_matrices_used_index + 1);
+              Matrix<Duration> full_m(_max_matrices_used_index + 1);
               for (Index i = 0; i < _locations.size(); ++i) {
                 const auto& loc_i = _locations[i];
                 for (Index j = 0; j < _locations.size(); ++j) {

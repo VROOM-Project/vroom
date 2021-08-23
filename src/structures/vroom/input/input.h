@@ -46,8 +46,8 @@ private:
   bool _geometry;
   bool _has_jobs;
   bool _has_shipments;
-  std::unordered_map<std::string, Matrix<Cost>> _matrices;
-  std::unordered_set<std::string> _custom_matrices;
+  std::unordered_map<std::string, Matrix<Duration>> _durations_matrices;
+  std::unordered_set<std::string> _custom_durations_matrices;
   std::vector<Location> _locations;
   std::unordered_map<Location, Index> _locations_to_index;
   std::vector<std::vector<unsigned char>> _vehicle_to_job_compatibility;
