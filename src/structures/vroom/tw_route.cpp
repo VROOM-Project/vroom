@@ -1366,7 +1366,7 @@ void TWRoute::replace(const Input& input,
           // **after** current_job_rank, but fwd_update_earliest_from
           // has a stop criterion for propagation that will trigger if
           // earliest date happens to not change at current_job_rank.
-          earliest[current_job_rank] = 0;
+          earliest[current_job_rank] = std::numeric_limits<Duration>::max();
         }
       }
     }
