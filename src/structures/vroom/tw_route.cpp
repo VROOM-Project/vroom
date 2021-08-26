@@ -1342,6 +1342,11 @@ void TWRoute::replace(const Input& input,
           do_update_last_latest_date = true;
         } else {
           valid_latest_date_rank = current_job_rank + 1;
+          // We need to update latest dates for the previous jobs
+          // **before** current_job_rank, but bwd_update_latest_from
+          // has a stop criterion for propagation that will trigger if
+          // latest date happens to not change at current_job_rank.
+          latest[current_job_rank] = 0;
         }
       }
 
