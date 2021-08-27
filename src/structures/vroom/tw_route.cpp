@@ -172,7 +172,10 @@ void TWRoute::fwd_update_earliest_from(const Input& input, Index rank) {
 
     current_earliest = std::max(current_earliest, j_tw->start);
 
-    assert(current_earliest <= latest[i]);
+    // Check consistency except for situation where latest date has
+    // been reset to 0 to force backward propagation after this call
+    // to fwd_update_earliest_from.
+    assert(current_earliest <= latest[i] or (i == rank + 1 and latest[i] == 0));
     if (current_earliest == earliest[i]) {
       // There won't be any further update so stop earliest date
       // propagation.
