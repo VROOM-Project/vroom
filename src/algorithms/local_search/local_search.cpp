@@ -343,6 +343,15 @@ void LocalSearch<Route,
         if (addition_cost == std::numeric_limits<Gain>::max()) {
           continue;
         }
+
+        const auto& current_r = _sol[routes[i]];
+        const auto& vehicle = _input.vehicles[routes[i]];
+        bool is_pickup = (_input.jobs[j].type == JOB_TYPE::PICKUP);
+
+        if (current_r.size() + (is_pickup ? 2 : 1) > vehicle.max_tasks) {
+          continue;
+        }
+
         const Gain regret_cost =
           (i == smallest_idx) ? second_smallest : smallest;
 
@@ -665,6 +674,11 @@ void LocalSearch<Route,
           continue;
         }
 
+        const auto& v_s = _input.vehicles[s_t.first];
+        if (_sol[s_t.first].size() + 1 > v_s.max_tasks) {
+          continue;
+        }
+
         for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
           const auto& s_job_rank = _sol[s_t.first].route[s_rank];
           if (_input.jobs[s_job_rank].type != JOB_TYPE::SINGLE or
@@ -758,6 +772,14 @@ void LocalSearch<Route,
             continue;
           }
 
+          const auto& s_v = _input.vehicles[s_t.first];
+          const auto& t_v = _input.vehicles[s_t.second];
+
+          if (s_rank + _sol[s_t.second].size() - t_rank > s_v.max_tasks or
+              t_rank + _sol[s_t.first].size() - s_rank > t_v.max_tasks) {
+            continue;
+          }
+
           TwoOpt r(_input,
                    _sol_state,
                    _sol[s_t.first],
@@ -804,6 +826,16 @@ void LocalSearch<Route,
             continue;
           }
 
+          const auto& s_v = _input.vehicles[s_t.first];
+          const auto& t_v = _input.vehicles[s_t.second];
+
+          if (s_rank + t_rank + 2 > s_v.max_tasks or
+              (_sol[s_t.first].size() - s_rank - 1) +
+                  (_sol[s_t.second].size() - t_rank - 1) >
+                t_v.max_tasks) {
+            continue;
+          }
+
           ReverseTwoOpt r(_input,
                           _sol_state,
                           _sol[s_t.first],
@@ -829,6 +861,11 @@ void LocalSearch<Route,
       for (const auto& s_t : s_t_pairs) {
         if (s_t.first == s_t.second or best_priorities[s_t.first] > 0 or
             best_priorities[s_t.second] > 0 or _sol[s_t.first].size() == 0) {
+          continue;
+        }
+
+        const auto& v_t = _input.vehicles[s_t.second];
+        if (_sol[s_t.second].size() + 1 > v_t.max_tasks) {
           continue;
         }
 
@@ -871,6 +908,11 @@ void LocalSearch<Route,
       for (const auto& s_t : s_t_pairs) {
         if (s_t.first == s_t.second or best_priorities[s_t.first] > 0 or
             best_priorities[s_t.second] > 0 or _sol[s_t.first].size() < 2) {
+          continue;
+        }
+
+        const auto& v_t = _input.vehicles[s_t.second];
+        if (_sol[s_t.second].size() + 2 > v_t.max_tasks) {
           continue;
         }
 
@@ -1201,6 +1243,11 @@ void LocalSearch<Route,
           continue;
         }
 
+        const auto& v_t = _input.vehicles[s_t.second];
+        if (_sol[s_t.second].size() + 2 > v_t.max_tasks) {
+          continue;
+        }
+
         for (unsigned s_p_rank = 0; s_p_rank < _sol[s_t.first].size();
              ++s_p_rank) {
           if (_input.jobs[_sol[s_t.first].route[s_p_rank]].type !=
@@ -1256,6 +1303,14 @@ void LocalSearch<Route,
             _sol_state.bwd_skill_rank[s_t.second][s_t.first] > 0) {
           // Different routes (and operator is symmetric), at least
           // one non-empty and valid wrt vehicle/job compatibility.
+          continue;
+        }
+
+        const auto& s_v = _input.vehicles[s_t.first];
+        const auto& t_v = _input.vehicles[s_t.second];
+
+        if (_sol[s_t.first].size() > t_v.max_tasks or
+            _sol[s_t.second].size() > s_v.max_tasks) {
           continue;
         }
 
@@ -1321,6 +1376,7 @@ void LocalSearch<Route,
                         });
       for (auto v_rank : update_candidates) {
         _sol_state.update_route_cost(_sol[v_rank].route, v_rank);
+        assert(_sol[v_rank].size() <= _input.vehicles[v_rank].max_tasks);
       }
       const auto new_cost =
         std::accumulate(update_candidates.begin(),
