@@ -1327,8 +1327,6 @@ void TWRoute::replace(const Input& input,
       // current_job_rank is the rank of the first non-replaced job.
       const auto& j = input.jobs[route[current_job_rank]];
 
-      // TODO decide whether setup time should always be applied to
-      // first task even if its location is the same as vehicle start.
       const auto new_action_time =
         (j.index() == current.location_index) ? j.service : j.setup + j.service;
       assert(action_time[current_job_rank] == j.service or
