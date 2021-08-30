@@ -1362,7 +1362,8 @@ void TWRoute::replace(const Input& input,
         assert(j_tw != j.tws.end());
 
         earliest[0] = std::max(current.earliest, j_tw->start);
-        assert(earliest[0] <= latest[0]);
+        assert(earliest[0] <= latest[0] or
+               (current_action_time_changed and latest[current_job_rank] == 0));
 
         action_time[0] = new_action_time;
       } else {
