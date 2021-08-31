@@ -371,13 +371,13 @@ Route choose_ETA(const Input& input,
 
   // Retrieve user-provided upper bounds for t_i values. Retrieve
   // user-provided lower bounds for t_i values while propagating
-  // travel/service constraints. Along the way, we store the rank of
+  // travel/action constraints. Along the way, we store the rank of
   // the first relevant TW (used below to force some binary variables
   // to zero).
   std::vector<Duration> t_i_LB;
   std::vector<Duration> t_i_UB;
   Duration previous_LB = horizon_start;
-  Duration previous_service = 0;
+  Duration previous_action = 0;
   Duration previous_travel = durations.front();
   std::vector<unsigned> first_relevant_tw_rank;
   Index rank_in_J = 0;
@@ -413,21 +413,21 @@ Route choose_ETA(const Input& input,
       ++rank_in_J;
       break;
     case STEP_TYPE::JOB: {
-      LB = std::max(LB, previous_LB + previous_service + previous_travel);
+      LB = std::max(LB, previous_LB + previous_action + previous_travel);
       previous_LB = LB;
-      previous_service = input.jobs[step.rank].service;
+      previous_action = action_times[rank_in_J];
       previous_travel = durations[rank_in_J];
       ++rank_in_J;
       break;
     }
     case STEP_TYPE::BREAK: {
-      LB = std::max(LB, previous_LB + previous_service);
+      LB = std::max(LB, previous_LB + previous_action);
       previous_LB = LB;
-      previous_service = v.breaks[step.rank].service;
+      previous_action = v.breaks[step.rank].service;
       break;
     }
     case STEP_TYPE::END:
-      LB = std::max(LB, previous_LB + previous_service + previous_travel);
+      LB = std::max(LB, previous_LB + previous_action + previous_travel);
       break;
     }
     t_i_LB.push_back(LB);
@@ -465,7 +465,7 @@ Route choose_ETA(const Input& input,
   assert(t_i_LB.size() == steps.size());
   assert(t_i_UB.size() == steps.size());
 
-  // Backward propagation for upper bounds based on travel/service
+  // Backward propagation for upper bounds based on travel/action
   // constraints. Along the way, we store the rank of the last
   // relevant TW (used below to force some binary variables to zero).
   std::vector<unsigned> last_relevant_tw_rank(n);
@@ -482,13 +482,13 @@ Route choose_ETA(const Input& input,
       break;
     case STEP_TYPE::JOB: {
       --rank_in_J;
-      const auto service = input.jobs[step.rank].service;
+      const auto action = action_times[rank_in_J];
       const auto next_travel = (break_travel_margin < durations[rank_in_J])
                                  ? durations[rank_in_J] - break_travel_margin
                                  : 0;
-      assert(service + next_travel <= next_UB);
+      assert(action + next_travel <= next_UB);
       t_i_UB[step_rank] =
-        std::min(t_i_UB[step_rank], next_UB - next_travel - service);
+        std::min(t_i_UB[step_rank], next_UB - next_travel - action);
       next_UB = t_i_UB[step_rank];
       break_travel_margin = 0;
       break;
@@ -577,20 +577,23 @@ Route choose_ETA(const Input& input,
   glp_set_row_bnds(lp, current_row, GLP_LO, 0.0, 0.0);
   ++current_row;
 
+  rank_in_J = 1;
   for (unsigned i = 0; i < n; ++i) {
     auto name = "P" + std::to_string(i + 1);
     glp_set_row_name(lp, current_row, name.c_str());
-    double service;
+    double action;
     const auto& step = steps[1 + i];
     if (step.type == STEP_TYPE::JOB) {
-      service = input.jobs[step.rank].service;
+      action = action_times[rank_in_J];
+      ++rank_in_J;
     } else {
       assert(step.type == STEP_TYPE::BREAK);
-      service = v.breaks[step.rank].service;
+      action = v.breaks[step.rank].service;
     }
-    glp_set_row_bnds(lp, current_row, GLP_LO, service, 0.0);
+    glp_set_row_bnds(lp, current_row, GLP_LO, action, 0.0);
     ++current_row;
   }
+  assert(rank_in_J == J.size());
   assert(current_row == n + 2);
 
   // Vehicle TW start violation constraint.
@@ -1128,7 +1131,7 @@ Route choose_ETA(const Input& input,
   }
 
   Duration previous_start = v_start;
-  previous_service = 0;
+  previous_action = 0;
   previous_travel = start_travel;
   unsigned task_rank = 0;
 
@@ -1156,7 +1159,7 @@ Route choose_ETA(const Input& input,
       duration += previous_travel;
       current.duration = duration;
 
-      const auto arrival = previous_start + previous_service + previous_travel;
+      const auto arrival = previous_start + previous_action + previous_travel;
       const auto service_start = task_ETA[task_rank];
       assert(arrival <= service_start);
 
@@ -1216,7 +1219,8 @@ Route choose_ETA(const Input& input,
       }
 
       previous_start = service_start;
-      previous_service = job.service;
+      // TODO take setup into account.
+      previous_action = job.service;
       previous_travel = task_travels[task_rank];
       ++task_rank;
       break;
@@ -1236,7 +1240,7 @@ Route choose_ETA(const Input& input,
       duration += previous_travel;
       current.duration = duration;
 
-      const auto arrival = previous_start + previous_service + previous_travel;
+      const auto arrival = previous_start + previous_action + previous_travel;
       const auto service_start = task_ETA[task_rank];
       assert(arrival <= service_start);
 
@@ -1267,7 +1271,7 @@ Route choose_ETA(const Input& input,
       }
 
       previous_start = service_start;
-      previous_service = b.service;
+      previous_action = b.service;
       previous_travel = task_travels[task_rank];
       ++task_rank;
       break;
@@ -1275,7 +1279,7 @@ Route choose_ETA(const Input& input,
     case STEP_TYPE::END:
       duration += previous_travel;
 
-      const auto arrival = previous_start + previous_service + previous_travel;
+      const auto arrival = previous_start + previous_action + previous_travel;
       assert(arrival <= v_end);
 
       sol_steps.emplace_back(STEP_TYPE::END,
