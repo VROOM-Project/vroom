@@ -63,12 +63,14 @@ Route choose_ETA(const Input& input,
 
   // For 0 <= i <= n, if i is in J at rank r (i.e. T_i is a non-break
   // task), then B[r] is the number of tasks following T_i that are
-  // breaks, and durations[r] is the travel duration from task T_i to
-  // the next non-break task. Note: when vehicle has no start, T_0 is
-  // a "ghost" step.
+  // breaks, durations[r] is the travel duration from task T_i to the
+  // next non-break task and action_time[r] is the action time
+  // (service or setup + service) for job i. Note: when vehicle has no
+  // start, T_0 is a "ghost" step.
   std::vector<unsigned> J;
   std::vector<unsigned> B;
   std::vector<Duration> durations;
+  std::vector<Duration> action_times;
   // Lower bound for timestamps in input in order to scale the MIP
   // matrix values.
   Duration horizon_start = std::numeric_limits<Duration>::max();
@@ -79,9 +81,9 @@ Route choose_ETA(const Input& input,
   }
 
   // Route indicators. relative_ETA stores steps ETA relative to a
-  // start at 0 taking only travel and service times into account (no
+  // start at 0 taking only travel and action times into account (no
   // waiting).
-  Duration service_sum = 0;
+  Duration action_sum = 0;
   Duration duration_sum = 0;
   unsigned default_job_tw = 0;
   Duration relative_arrival = 0;
@@ -101,6 +103,7 @@ Route choose_ETA(const Input& input,
       }
       J.push_back(i);
       B.push_back(0);
+      action_times.push_back(0);
       relative_ETA.push_back(0);
       ++i;
       break;
@@ -111,7 +114,6 @@ Route choose_ETA(const Input& input,
       J.push_back(i);
       B.push_back(0);
 
-      service_sum += job.service;
       if (job.tws.front().is_default()) {
         ++default_job_tw;
       } else {
@@ -133,7 +135,12 @@ Route choose_ETA(const Input& input,
 
       relative_arrival += current_duration;
       relative_ETA.push_back(relative_arrival);
-      relative_arrival += job.service;
+
+      // TODO take setup into account.
+      const auto current_action = job.service;
+      action_times.push_back(current_action);
+      action_sum += current_action;
+      relative_arrival += current_action;
 
       previous_index = job.index();
       if (!first_location.has_value()) {
@@ -150,7 +157,7 @@ Route choose_ETA(const Input& input,
       ++B.back();
       ++i;
 
-      service_sum += b.service;
+      action_sum += b.service;
       if (!b.tws.front().is_default()) {
         horizon_start = std::min(horizon_start, b.tws.front().start);
         horizon_end = std::max(horizon_end, b.tws.back().end);
@@ -296,7 +303,7 @@ Route choose_ETA(const Input& input,
   }
 
   // Refine planning horizon.
-  auto makespan_estimate = duration_sum + service_sum;
+  auto makespan_estimate = duration_sum + action_sum;
 
   if (horizon_start == std::numeric_limits<Duration>::max()) {
     // No real time window in problem input, planning horizon will
