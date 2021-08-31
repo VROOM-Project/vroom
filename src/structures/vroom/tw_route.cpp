@@ -529,8 +529,8 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
                                        const Index rank) const {
   assert(rank <= route.size());
 
-  const std::vector v({job_rank});
-  return is_valid_addition_for_tw(input, v.begin(), v.end(), rank, rank);
+  const std::array<Index, 1> a({job_rank});
+  return is_valid_addition_for_tw(input, a.begin(), a.end(), rank, rank);
 }
 
 template <class InputIterator>
@@ -711,8 +711,8 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
 void TWRoute::add(const Input& input, const Index job_rank, const Index rank) {
   assert(rank <= route.size());
 
-  const std::vector v({job_rank});
-  replace(input, v.begin(), v.end(), rank, rank);
+  const std::array<Index, 1> a({job_rank});
+  replace(input, a.begin(), a.end(), rank, rank);
 }
 
 bool TWRoute::is_valid_removal(const Input& input,
