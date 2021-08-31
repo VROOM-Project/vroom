@@ -524,15 +524,6 @@ OrderChoice TWRoute::order_choice(const Input& input,
   return oc;
 }
 
-bool TWRoute::is_valid_addition_for_tw(const Input& input,
-                                       const Index job_rank,
-                                       const Index rank) const {
-  assert(rank <= route.size());
-
-  const std::array<Index, 1> a({job_rank});
-  return is_valid_addition_for_tw(input, a.begin(), a.end(), rank, rank);
-}
-
 template <class InputIterator>
 bool TWRoute::is_valid_addition_for_tw(const Input& input,
                                        const InputIterator first_job,
@@ -706,34 +697,6 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
   }
 
   return current_earliest + next_travel <= current_latest;
-}
-
-void TWRoute::add(const Input& input, const Index job_rank, const Index rank) {
-  assert(rank <= route.size());
-
-  const std::array<Index, 1> a({job_rank});
-  replace(input, a.begin(), a.end(), rank, rank);
-}
-
-bool TWRoute::is_valid_removal(const Input& input,
-                               const Index rank,
-                               const unsigned count) const {
-  assert(!route.empty());
-  assert(rank + count <= route.size());
-
-  return is_valid_addition_for_tw(input,
-                                  route.begin(),
-                                  route.begin(),
-                                  rank,
-                                  rank + count);
-}
-
-void TWRoute::remove(const Input& input,
-                     const Index rank,
-                     const unsigned count) {
-  assert(rank + count <= route.size());
-
-  replace(input, route.begin(), route.begin(), rank, rank + count);
 }
 
 template <class InputIterator>
