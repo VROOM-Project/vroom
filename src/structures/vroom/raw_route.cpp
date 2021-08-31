@@ -208,9 +208,6 @@ bool RawRoute::is_valid_addition_for_capacity_inclusion(
   delivery +=
     ((route.empty()) ? input.zero_amount() : _current_loads[first_rank]) -
     replaced_deliveries;
-  /* Amount current_load = */
-  /*   ((route.empty()) ? input.zero_amount() : _current_loads[first_rank]) - */
-  /*   replaced_deliveries + delivery; */
 
   bool valid = (delivery <= capacity);
 

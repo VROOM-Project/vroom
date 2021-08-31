@@ -163,16 +163,6 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
                                            pickup_r,
                                            delivery_r);
 
-        /* route */
-        /*   .is_valid_addition_for_capacity_inclusion(input, */
-        /*                                             modified_delivery, */
-        /*                                             modified_with_pd.begin(),
-         */
-        /*                                             modified_with_pd.end(),
-         */
-        /*                                             pickup_r, */
-        /*                                             delivery_r); */
-
         is_valid =
           is_valid && route.is_valid_addition_for_tw(input,
                                                      modified_with_pd.begin(),
