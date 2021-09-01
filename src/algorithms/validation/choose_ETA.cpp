@@ -136,8 +136,10 @@ Route choose_ETA(const Input& input,
       relative_arrival += current_duration;
       relative_ETA.push_back(relative_arrival);
 
-      // TODO take setup into account.
-      const auto current_action = job.service;
+      const bool has_setup_time =
+        !previous_index.has_value() or (previous_index.value() != job.index());
+      const auto current_action =
+        has_setup_time ? job.setup + job.service : job.service;
       action_times.push_back(current_action);
       action_sum += current_action;
       relative_arrival += current_action;
