@@ -1080,6 +1080,7 @@ Route choose_ETA(const Input& input,
 
   // Generate route.
   Cost duration = 0;
+  Duration setup = 0;
   Duration service = 0;
   Duration forward_wt = 0;
   Priority priority = 0;
@@ -1136,6 +1137,8 @@ Route choose_ETA(const Input& input,
   previous_action = 0;
   previous_travel = start_travel;
   unsigned task_rank = 0;
+  auto previous_location = (v.has_start()) ? v.start.value().index()
+                                           : std::numeric_limits<Index>::max();
 
   for (const auto& step : steps) {
     switch (step.type) {
@@ -1146,6 +1149,11 @@ Route choose_ETA(const Input& input,
       auto job_rank = step.rank;
       const auto& job = input.jobs[job_rank];
 
+      const auto current_setup =
+        (previous_location != job.index()) ? job.setup : 0;
+      previous_location = job.index();
+
+      setup += current_setup;
       service += job.service;
       priority += job.priority;
 
@@ -1154,8 +1162,7 @@ Route choose_ETA(const Input& input,
       sum_pickups += job.pickup;
       sum_deliveries += job.delivery;
 
-      // TODO add setup time
-      sol_steps.emplace_back(job, 0, current_load);
+      sol_steps.emplace_back(job, current_setup, current_load);
       auto& current = sol_steps.back();
 
       duration += previous_travel;
@@ -1221,8 +1228,7 @@ Route choose_ETA(const Input& input,
       }
 
       previous_start = service_start;
-      // TODO take setup into account.
-      previous_action = job.service;
+      previous_action = current_setup + job.service;
       previous_travel = task_travels[task_rank];
       ++task_rank;
       break;
@@ -1329,7 +1335,7 @@ Route choose_ETA(const Input& input,
   return Route(v.id,
                std::move(sol_steps),
                duration,
-               0, // TODO update with setup
+               setup,
                service,
                duration,
                forward_wt,
