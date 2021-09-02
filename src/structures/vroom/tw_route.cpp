@@ -524,119 +524,6 @@ OrderChoice TWRoute::order_choice(const Input& input,
   return oc;
 }
 
-bool TWRoute::is_valid_addition_for_tw(const Input& input,
-                                       const Index job_rank,
-                                       const Index rank) const {
-  const auto& v = input.vehicles[vehicle_rank];
-  const auto& j = input.jobs[job_rank];
-
-  Duration previous_travel = 0;
-  Duration current_earliest =
-    previous_earliest_end(input, job_rank, rank, previous_travel);
-
-  Duration next_travel = 0;
-  Duration next_start = next_latest_start(input, job_rank, rank, next_travel);
-
-  bool job_added = false;
-
-  assert(breaks_at_rank[rank] <= breaks_counts[rank]);
-
-  // Determine break range.
-  Index current_break = breaks_counts[rank] - breaks_at_rank[rank];
-  const Index last_break = breaks_counts[rank];
-
-  while (!job_added or current_break != last_break) {
-    if (current_break == last_break) {
-      // Done with all breaks and job not added yet.
-      current_earliest += previous_travel;
-      const auto j_tw =
-        std::find_if(j.tws.begin(), j.tws.end(), [&](const auto& tw) {
-          return current_earliest <= tw.end;
-        });
-      if (j_tw == j.tws.end()) {
-        return false;
-      }
-
-      current_earliest = std::max(current_earliest, j_tw->start) + j.service;
-      break;
-    }
-
-    // There is actually a break to consider.
-    const auto& b = v.breaks[current_break];
-
-    if (job_added) {
-      // Compute earliest end date for current break.
-      const auto b_tw =
-        std::find_if(b.tws.begin(), b.tws.end(), [&](const auto& tw) {
-          return current_earliest <= tw.end;
-        });
-
-      if (b_tw == b.tws.end()) {
-        // Break does not fit due to its time windows.
-        return false;
-      }
-
-      if (current_earliest < b_tw->start) {
-        auto margin = b_tw->start - current_earliest;
-        if (margin < next_travel) {
-          next_travel -= margin;
-        } else {
-          next_travel = 0;
-        }
-
-        current_earliest = b_tw->start;
-      }
-
-      current_earliest += b.service;
-
-      ++current_break;
-      continue;
-    }
-
-    // Decide on ordering between break and added job.
-    auto oc = order_choice(input,
-                           job_rank,
-                           b,
-                           current_earliest,
-                           previous_travel,
-                           next_travel,
-                           next_start);
-
-    if (!oc.add_job_first and !oc.add_break_first) {
-      // Infeasible insertion.
-      return false;
-    }
-
-    // Feasible insertion based on time windows, now update next end
-    // time with given insertion choice.
-    assert(oc.add_job_first xor oc.add_break_first);
-    if (oc.add_break_first) {
-      if (current_earliest < oc.b_tw->start) {
-        auto margin = oc.b_tw->start - current_earliest;
-        if (margin < previous_travel) {
-          previous_travel -= margin;
-        } else {
-          previous_travel = 0;
-        }
-
-        current_earliest = oc.b_tw->start;
-      }
-
-      current_earliest += b.service;
-
-      ++current_break;
-    }
-    if (oc.add_job_first) {
-      current_earliest =
-        std::max(current_earliest + previous_travel, oc.j_tw->start) +
-        j.service;
-      job_added = true;
-    }
-  }
-
-  return current_earliest + next_travel <= next_start;
-}
-
 template <class InputIterator>
 bool TWRoute::is_valid_addition_for_tw(const Input& input,
                                        const InputIterator first_job,
@@ -810,169 +697,6 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
   }
 
   return current_earliest + next_travel <= current_latest;
-}
-
-void TWRoute::add(const Input& input, const Index job_rank, const Index rank) {
-  assert(rank <= route.size());
-
-  const auto& v = input.vehicles[vehicle_rank];
-  const auto& j = input.jobs[job_rank];
-
-  Duration previous_travel = 0;
-  Duration current_earliest =
-    previous_earliest_end(input, job_rank, rank, previous_travel);
-
-  Duration next_travel = 0;
-  Duration current_latest =
-    next_latest_start(input, job_rank, rank, next_travel);
-
-  bool job_added = false;
-  unsigned breaks_before = 0;
-
-  assert(breaks_at_rank[rank] <= breaks_counts[rank]);
-
-  for (Index r = 0; r < breaks_at_rank[rank]; ++r) {
-    Index break_rank = (breaks_counts[rank] + r) - breaks_at_rank[rank];
-    const auto& b = v.breaks[break_rank];
-
-    // Decide on ordering between break and added job.
-    auto oc = order_choice(input,
-                           job_rank,
-                           b,
-                           current_earliest,
-                           previous_travel,
-                           next_travel,
-                           current_latest);
-    assert(oc.add_job_first xor oc.add_break_first);
-
-    // Now update next end time based on insertion choice.
-    if (oc.add_break_first) {
-      // Earliest/rank/margin data for breaks before added job is
-      // unchanged.
-      ++breaks_before;
-
-      if (breaks_travel_margin_before[break_rank] < previous_travel) {
-        previous_travel -= breaks_travel_margin_before[break_rank];
-      } else {
-        previous_travel = 0;
-      }
-
-      current_earliest = break_earliest[break_rank] + b.service;
-    }
-    if (oc.add_job_first) {
-      assert(oc.j_tw != j.tws.end());
-      current_earliest =
-        std::max(current_earliest + previous_travel, oc.j_tw->start);
-
-      earliest.insert(earliest.begin() + rank, current_earliest);
-
-      current_earliest += j.service;
-      job_added = true;
-
-      // Earliest/rank data for breaks after added job will be updated
-      // through the call to fwd_update_earliest_from one break counts
-      // are straightened up.
-      break;
-    }
-  }
-
-  if (!job_added) {
-    current_earliest += previous_travel;
-    const auto j_tw =
-      std::find_if(j.tws.begin(), j.tws.end(), [&](const auto& tw) {
-        return current_earliest <= tw.end;
-      });
-    assert(j_tw != j.tws.end());
-
-    current_earliest = std::max(current_earliest, j_tw->start);
-
-    earliest.insert(earliest.begin() + rank, current_earliest);
-  }
-
-  // Add breaks_* data for breaks before newly inserted job.
-  unsigned breaks_after = breaks_at_rank[rank] - breaks_before;
-  breaks_at_rank[rank] -= breaks_before;
-  breaks_at_rank.insert(breaks_at_rank.begin() + rank, breaks_before);
-  breaks_counts.insert(breaks_counts.begin() + rank,
-                       breaks_counts[rank] - breaks_after);
-
-  // Update latest dates for breaks after inserted job using updated
-  // break data.
-  Index break_rank = breaks_counts[rank + 1];
-  for (Index r = 0; r < breaks_after; ++r) {
-    --break_rank;
-    const auto& b = v.breaks[break_rank];
-
-    assert(b.service <= current_latest);
-    current_latest -= b.service;
-
-    const auto b_tw =
-      std::find_if(b.tws.rbegin(), b.tws.rend(), [&](const auto& tw) {
-        return tw.start <= current_latest;
-      });
-    assert(b_tw != b.tws.rend());
-
-    if (b_tw->end < current_latest) {
-      auto margin = current_latest - b_tw->end;
-      breaks_travel_margin_after[break_rank] = margin;
-      if (margin < next_travel) {
-        next_travel -= margin;
-      } else {
-        next_travel = 0;
-      }
-
-      current_latest = b_tw->end;
-    } else {
-      breaks_travel_margin_after[break_rank] = 0;
-    }
-
-    break_latest[break_rank] = current_latest;
-  }
-
-  // Update inserted job latest date.
-  assert(j.service + next_travel <= current_latest);
-  current_latest -= (j.service + next_travel);
-
-  const auto j_tw =
-    std::find_if(j.tws.rbegin(), j.tws.rend(), [&](const auto& tw) {
-      return tw.start <= current_latest;
-    });
-  assert(j_tw != j.tws.rend());
-
-  current_latest = std::min(current_latest, j_tw->end);
-  latest.insert(latest.begin() + rank, current_latest);
-
-  // Updating the route needs to be done after TW stuff as
-  // previous_earliest_end and next_latest_start rely on route size
-  // before addition ; but before earliest/latest date propagation
-  // that rely on route structure after addition.
-  route.insert(route.begin() + rank, job_rank);
-
-  fwd_update_earliest_from(input, rank);
-  bwd_update_latest_from(input, rank);
-
-  update_amounts(input);
-}
-
-bool TWRoute::is_valid_removal(const Input& input,
-                               const Index rank,
-                               const unsigned count) const {
-  assert(!route.empty());
-  assert(rank + count <= route.size());
-
-  return is_valid_addition_for_tw(input,
-                                  route.begin(),
-                                  route.begin(),
-                                  rank,
-                                  rank + count);
-}
-
-void TWRoute::remove(const Input& input,
-                     const Index rank,
-                     const unsigned count) {
-  assert(rank + count <= route.size());
-
-  replace(input, route.begin(), route.begin(), rank, rank + count);
 }
 
 template <class InputIterator>
@@ -1313,10 +1037,25 @@ TWRoute::is_valid_addition_for_tw(const Input& input,
                                   const std::vector<Index>::iterator last_job,
                                   const Index first_rank,
                                   const Index last_rank) const;
+
 template bool TWRoute::is_valid_addition_for_tw(
   const Input& input,
   const std::vector<Index>::reverse_iterator first_job,
   const std::vector<Index>::reverse_iterator last_job,
+  const Index first_rank,
+  const Index last_rank) const;
+
+template bool TWRoute::is_valid_addition_for_tw(
+  const Input& input,
+  const std::array<Index, 1>::const_iterator first_job,
+  const std::array<Index, 1>::const_iterator last_job,
+  const Index first_rank,
+  const Index last_rank) const;
+
+template bool TWRoute::is_valid_addition_for_tw(
+  const Input& input,
+  const std::vector<Index>::const_iterator first_job,
+  const std::vector<Index>::const_iterator last_job,
   const Index first_rank,
   const Index last_rank) const;
 
@@ -1329,6 +1068,13 @@ template void
 TWRoute::replace(const Input& input,
                  const std::vector<Index>::reverse_iterator first_job,
                  const std::vector<Index>::reverse_iterator last_job,
+                 const Index first_rank,
+                 const Index last_rank);
+
+template void
+TWRoute::replace(const Input& input,
+                 const std::array<Index, 1>::const_iterator first_job,
+                 const std::array<Index, 1>::const_iterator last_job,
                  const Index first_rank,
                  const Index last_rank);
 
