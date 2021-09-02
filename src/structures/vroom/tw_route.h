@@ -133,7 +133,11 @@ public:
   // at rank.
   bool is_valid_addition_for_tw(const Input& input,
                                 const Index job_rank,
-                                const Index rank) const;
+                                const Index rank) const {
+    assert(rank <= route.size());
+    const std::array<Index, 1> a({job_rank});
+    return is_valid_addition_for_tw(input, a.begin(), a.end(), rank, rank);
+  };
 
   // Check validity for inclusion of the range [first_job; last_job)
   // in the existing route at rank first_rank and before last_rank *in
@@ -145,16 +149,31 @@ public:
                                 const Index first_rank,
                                 const Index last_rank) const;
 
-  void add(const Input& input, const Index job_rank, const Index rank);
+  void add(const Input& input, const Index job_rank, const Index rank) {
+    assert(rank <= route.size());
+    const std::array<Index, 1> a({job_rank});
+    replace(input, a.begin(), a.end(), rank, rank);
+  };
 
   // Check validity for removing a set of jobs from current route at
   // rank. Required because removing a job can actually lead to an
   // invalid solution (see #172).
   bool is_valid_removal(const Input& input,
                         const Index rank,
-                        const unsigned count) const;
+                        const unsigned count) const {
+    assert(!route.empty());
+    assert(rank + count <= route.size());
+    return is_valid_addition_for_tw(input,
+                                    route.begin(),
+                                    route.begin(),
+                                    rank,
+                                    rank + count);
+  };
 
-  void remove(const Input& input, const Index rank, const unsigned count);
+  void remove(const Input& input, const Index rank, const unsigned count) {
+    assert(rank + count <= route.size());
+    replace(input, route.begin(), route.begin(), rank, rank + count);
+  };
 
   // Add the range [first_job; last_job) in the existing route at rank
   // first_rank and before last_rank *in place of* the current jobs
