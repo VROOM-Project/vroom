@@ -11,6 +11,7 @@
 ### Changed
 
 - CI builds now run on Ubuntu 20.04 (#455)
+- Simplified time window handling logic in TWRoute (#557)
 
 ### Removed
 
