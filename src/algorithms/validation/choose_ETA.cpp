@@ -236,9 +236,12 @@ Route choose_ETA(const Input& input,
   }
   Duration sample_violations = 0;
   // Store margin between current horizon start (resp. end) and first
-  // availability date (resp. deadline).
+  // availability date (resp. deadline). step_has_TW will help down
+  // the line to decide whether going past current horizon actually
+  // incurs a violation or not.
   std::vector<Duration> horizon_start_lead_times(steps.size(), 0);
   std::vector<Duration> horizon_end_delays(steps.size(), 0);
+  std::vector<bool> step_has_TW(steps.size(), false);
   auto earliest_date = start_candidate;
   for (unsigned s = 0; s < steps.size(); ++s) {
     const auto& step = steps[s];
@@ -260,10 +263,12 @@ Route choose_ETA(const Input& input,
 
     switch (step.type) {
     case STEP_TYPE::START:
-      if (earliest_date < v.tw.start) {
-        sample_violations += (v.tw.start - earliest_date);
-      }
       if (!v.tw.is_default()) {
+        step_has_TW[s] = true;
+
+        if (earliest_date < v.tw.start) {
+          sample_violations += (v.tw.start - earliest_date);
+        }
         horizon_start_lead_times[s] = v.tw.start - horizon_start;
       }
       break;
@@ -272,10 +277,10 @@ Route choose_ETA(const Input& input,
         get_violation(input.jobs[step.rank].tws, earliest_date);
 
       const auto& tws = input.jobs[step.rank].tws;
-      if (!tws.front().is_default()) {
+      if ((tws.size() != 1) or !tws.front().is_default()) {
+        step_has_TW[s] = true;
+
         horizon_start_lead_times[s] = tws.front().start - horizon_start;
-      }
-      if (!tws.back().is_default()) {
         horizon_end_delays[s] = horizon_end - tws.back().end;
       }
       break;
@@ -285,19 +290,21 @@ Route choose_ETA(const Input& input,
         get_violation(v.breaks[step.rank].tws, earliest_date);
 
       const auto& tws = v.breaks[step.rank].tws;
-      if (!tws.front().is_default()) {
+      if ((tws.size() != 1) or !tws.front().is_default()) {
+        step_has_TW[s] = true;
+
         horizon_start_lead_times[s] = tws.front().start - horizon_start;
-      }
-      if (!tws.back().is_default()) {
         horizon_end_delays[s] = horizon_end - tws.back().end;
       }
       break;
     }
     case STEP_TYPE::END:
-      if (v.tw.end < earliest_date) {
-        sample_violations += (earliest_date - v.tw.end);
-      }
       if (!v.tw.is_default()) {
+        step_has_TW[s] = true;
+
+        if (v.tw.end < earliest_date) {
+          sample_violations += (earliest_date - v.tw.end);
+        }
         horizon_end_delays[s] = horizon_end - v.tw.end;
       }
       break;
@@ -333,7 +340,9 @@ Route choose_ETA(const Input& input,
       Duration minimal_lead_time = 0;
       for (unsigned t = 0; t <= s; ++t) {
         minimal_lead_time += horizon_start_lead_times[t];
-        minimal_lead_time += relative_ETA[s] - relative_ETA[t];
+        if (step_has_TW[t]) {
+          minimal_lead_time += relative_ETA[s] - relative_ETA[t];
+        }
       }
 
       if (minimal_lead_time > sample_violations) {
@@ -357,7 +366,9 @@ Route choose_ETA(const Input& input,
       Duration minimal_delay = 0;
       for (unsigned t = rev_s; t < steps.size(); ++t) {
         minimal_delay += horizon_end_delays[t];
-        minimal_delay += relative_ETA[t] - relative_ETA[rev_s];
+        if (step_has_TW[t]) {
+          minimal_delay += relative_ETA[t] - relative_ETA[rev_s];
+        }
       }
 
       if (minimal_delay > sample_violations) {

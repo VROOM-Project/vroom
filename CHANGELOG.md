@@ -18,6 +18,10 @@
 
 - Travis CI builds (#436)
 
+### Fixed
+
+-  "Infeasible route" error while an existing route plan exists (#506)
+
 ## [v1.10.0] - 2021-05-06
 
 ### Added
