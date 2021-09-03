@@ -141,8 +141,10 @@ RouteInsertion compute_best_insertion(const Input& input,
                                             v,
                                             route,
                                             std::numeric_limits<Gain>::max());
-    // Normalize cost per job for consistency with single jobs.
-    insert.cost = static_cast<Gain>(static_cast<double>(insert.cost) / 2);
+    if (insert.cost < std::numeric_limits<Gain>::max()) {
+      // Normalize cost per job for consistency with single jobs.
+      insert.cost = static_cast<Gain>(static_cast<double>(insert.cost) / 2);
+    }
     return insert;
   }
 }
