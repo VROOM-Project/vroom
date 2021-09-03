@@ -16,47 +16,71 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
+// Data structures holding information about current previous/next leg
+// in a route, as computed by TWRoute::previous_info and
+// TWRoute::next_info.
+struct PreviousInfo {
+  // Earliest end date for previous step.
+  Duration earliest;
+  // Travel time from previous step.
+  Duration travel;
+  // Location for previous step. A value of
+  // std::numeric_limits<Index>::max() means no previous step.
+  Index location_index;
+
+  PreviousInfo(Duration earliest, Duration travel)
+    : earliest(earliest),
+      travel(travel),
+      location_index(std::numeric_limits<Index>::max()) {
+  }
+};
+
+struct NextInfo {
+  // Latest start date for next step.
+  Duration latest;
+  // Travel time to that step.
+  Duration travel;
+
+  NextInfo(Duration latest, Duration travel) : latest(latest), travel(travel) {
+  }
+};
+
 struct OrderChoice {
   const Input& input;
-  Index job_rank;
   bool add_job_first;
   bool add_break_first;
   const std::vector<TimeWindow>::const_iterator j_tw;
   const std::vector<TimeWindow>::const_iterator b_tw;
 
   OrderChoice(const Input& input,
-              Index job_rank,
+              const Index job_rank,
               const Break& b,
-              const Duration current_earliest,
-              const Duration previous_travel);
+              const PreviousInfo& previous);
 };
 
 class TWRoute : public RawRoute {
 private:
-  // When inserting job at job_rank in route at rank, retrieve
-  // earliest end date (resp. latest start date) for previous
-  // (resp. next) step. Last argument holds the travel time from
-  // (resp. to) that step.
-  Duration previous_earliest_end(const Input& input,
-                                 Index job_rank,
-                                 Index rank,
-                                 Duration& previous_travel) const;
-  Duration next_latest_start(const Input& input,
-                             Index job_rank,
-                             Index rank,
-                             Duration& next_travel) const;
+  PreviousInfo previous_info(const Input& input,
+                             const Index job_rank,
+                             const Index rank) const;
+  NextInfo next_info(const Input& input,
+                     const Index job_rank,
+                     const Index rank) const;
 
   void fwd_update_earliest_from(const Input& input, Index rank);
   void bwd_update_latest_from(const Input& input, Index rank);
 
+  void update_last_latest_date(const Input& input);
+
+  void fwd_update_action_time_from(const Input& input, Index rank);
+
   // Define global policy wrt job/break respective insertion rule.
   OrderChoice order_choice(const Input& input,
-                           Index job_rank,
+                           const Index job_rank,
+                           const Duration job_action_time,
                            const Break& b,
-                           const Duration current_earliest,
-                           const Duration previous_travel,
-                           const Duration next_travel,
-                           const Duration next_start) const;
+                           const PreviousInfo& previous,
+                           const NextInfo& next) const;
 
 public:
   Duration v_start;
@@ -67,6 +91,11 @@ public:
   // from different time windows in multiple TW situations.
   std::vector<Duration> earliest;
   std::vector<Duration> latest;
+
+  // action_time[i] stores the total time spent for job at rank i in
+  // route. Based on previous location, can be either (setup +
+  // service) or only service for the job.
+  std::vector<Duration> action_time;
 
   // Store earliest date for route end.
   Duration earliest_end;

@@ -9,6 +9,7 @@
     "pickup": [
       0
     ],
+    "setup": 0,
     "service": 1800,
     "duration": 18711,
     "waiting_time": 0,
@@ -39,6 +40,7 @@
       "pickup": [
         0
       ],
+      "setup": 0,
       "service": 900,
       "duration": 6565,
       "waiting_time": 0,
@@ -51,6 +53,7 @@
             2.35044,
             48.71764
           ],
+          "setup": 0,
           "service": 0,
           "waiting_time": 0,
           "load": [
@@ -72,6 +75,7 @@
             48.701
           ],
           "id": 1,
+          "setup": 0,
           "service": 300,
           "waiting_time": 0,
           "job": 1,
@@ -94,6 +98,7 @@
             48.61128
           ],
           "id": 2,
+          "setup": 0,
           "service": 300,
           "waiting_time": 0,
           "job": 2,
@@ -112,6 +117,7 @@
             48.5958
           ],
           "id": 5,
+          "setup": 0,
           "service": 300,
           "waiting_time": 0,
           "job": 5,
@@ -129,6 +135,7 @@
             2.35044,
             48.71764
           ],
+          "setup": 0,
           "service": 0,
           "waiting_time": 0,
           "load": [
@@ -156,6 +163,7 @@
       "pickup": [
         0
       ],
+      "setup": 0,
       "service": 900,
       "duration": 12146,
       "waiting_time": 0,
@@ -168,6 +176,7 @@
             2.35044,
             48.71764
           ],
+          "setup": 0,
           "service": 0,
           "waiting_time": 0,
           "load": [
@@ -190,6 +199,7 @@
             48.90736
           ],
           "id": 6,
+          "setup": 0,
           "service": 300,
           "waiting_time": 0,
           "job": 6,
@@ -208,6 +218,7 @@
             49.22619
           ],
           "id": 4,
+          "setup": 0,
           "service": 300,
           "waiting_time": 0,
           "job": 4,
@@ -226,6 +237,7 @@
             49.07611
           ],
           "id": 3,
+          "setup": 0,
           "service": 300,
           "waiting_time": 0,
           "job": 3,
@@ -248,6 +260,7 @@
             2.35044,
             48.71764
           ],
+          "setup": 0,
           "service": 0,
           "waiting_time": 0,
           "load": [
