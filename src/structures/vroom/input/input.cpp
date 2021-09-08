@@ -558,6 +558,12 @@ void Input::set_matrices(unsigned nb_thread) {
       // empty matrix to allow for concurrent modification later on.
       add_routing_wrapper(profile);
       _durations_matrices.emplace(profile, Matrix<Duration>());
+    } else {
+      if (_geometry) {
+        // Even with a custom matrix, we may still want routing
+        // afterward.
+        add_routing_wrapper(profile);
+      }
     }
   }
 

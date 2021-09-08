@@ -22,6 +22,7 @@
 
 - "Infeasible route" error while an existing route plan exists (#506)
 - Break omitted with no other time window (#497)
+- Routing error with custom matrix and `-g` (#561)
 - Crash on empty custom matrix (#570)
 
 ## [v1.10.0] - 2021-05-06
