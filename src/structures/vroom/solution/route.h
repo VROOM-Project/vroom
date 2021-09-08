@@ -21,6 +21,7 @@ struct Route {
   Id vehicle;
   std::vector<Step> steps;
   Cost cost;
+  Duration setup;
   Duration service;
   Duration duration;
   Duration waiting_time;
@@ -39,6 +40,7 @@ struct Route {
   Route(Id vehicle,
         std::vector<Step>&& steps,
         Cost cost,
+        Duration setup,
         Duration service,
         Duration duration,
         Duration waiting_time,

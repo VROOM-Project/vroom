@@ -59,6 +59,7 @@ A `job` object has the following properties:
 | [`description`] | a string describing this job |
 | [`location`] | coordinates array |
 | [`location_index`] | index of relevant row and column in custom matrices |
+| [`setup`] | job setup duration (defaults to 0) |
 | [`service`] | job service duration (defaults to 0) |
 | ~~[`amount`]~~ | ~~an array of integers describing multidimensional quantities~~ |
 | [`delivery`] | an array of integers describing multidimensional quantities for delivery |
@@ -89,6 +90,7 @@ A `shipment_step` is similar to a `job` object (expect for shared keys already p
 | [`description`] | a string describing this step |
 | [`location`] | coordinates array |
 | [`location_index`] | index of relevant row and column in custom matrices |
+| [`setup`] | task setup duration (defaults to 0) |
 | [`service`] | task service duration (defaults to 0) |
 | [`time_windows`] | an array of `time_window` objects describing valid slots for task service start |
 
@@ -206,6 +208,15 @@ some control on which tasks are unassigned. Setting a high `priority`
 value for some tasks will tend as much as possible to have them
 included in the solution over lower-priority tasks.
 
+### Task setup times
+
+Setup times serve as a mean to describe the time it takes to *get
+started* for a task at a given location. This models a duration that
+should not be re-applied for other tasks following at the same
+place. So the total "action time" for a task is `setup + service` upon
+arriving at a new location or `service` only if performing a new task
+at the previous vehicle location.
+
 ### Time windows
 
 It is up to users to decide how to describe time windows:
@@ -276,6 +287,7 @@ The `summary` object has the following properties:
 | ----------- | ----------- |
 | `cost` | total cost for all routes |
 | `unassigned` | number of tasks that could not be served |
+| `setup` | total setup time for all routes |
 | `service` | total service time for all routes |
 | `duration` | total travel time for all routes |
 | `waiting_time` | total waiting time for all routes |
@@ -297,6 +309,7 @@ A `route` object has the following properties:
 | `vehicle` | id of the vehicle assigned to this route |
 | [`steps`](#steps) | array of `step` objects |
 | `cost` | cost for this route |
+| `setup` | total setup time for this route |
 | `service` | total service time for this route |
 | `duration` | total travel time for this route |
 | `waiting_time` | total waiting time for this route |
@@ -320,6 +333,7 @@ A `step` object has the following properties:
 | `type` | a string (either `start`, `job`, `pickup`, `delivery`, `break` or `end`) |
 | `arrival` | estimated time of arrival at this step |
 | `duration` | cumulated travel time upon arrival at this step |
+| `setup` | setup time at this step |
 | `service` | service time at this step |
 | `waiting_time` | waiting time upon arrival at this step |
 | `violations` | array of `violation` objects for this step |

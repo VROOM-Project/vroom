@@ -4,6 +4,7 @@
 
 ### Added
 
+- `setup` key for tasks to refine service time modeling (#358)
 - `max_tasks` key limiting route size at vehicle level (#421)
 - Github Actions CI (#436)
 - Check for libvroom example build in CI (#514)
@@ -11,6 +12,7 @@
 ### Changed
 
 - CI builds now run on Ubuntu 20.04 (#455)
+- Simplified time window handling logic in TWRoute (#557)
 
 ### Removed
 
@@ -18,6 +20,8 @@
 
 ### Fixed
 
+- "Infeasible route" error while an existing route plan exists (#506)
+- Break omitted with no other time window (#497)
 - Crash on empty custom matrix (#570)
 
 ## [v1.10.0] - 2021-05-06

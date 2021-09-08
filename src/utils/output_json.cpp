@@ -143,6 +143,7 @@ rapidjson::Value to_json(const Summary& summary,
     json_summary.AddMember("pickup", json_pickup, allocator);
   }
 
+  json_summary.AddMember("setup", summary.setup, allocator);
   json_summary.AddMember("service", summary.service, allocator);
   json_summary.AddMember("duration", summary.duration, allocator);
   json_summary.AddMember("waiting_time", summary.waiting_time, allocator);
@@ -201,6 +202,7 @@ rapidjson::Value to_json(const Route& route,
     json_route.AddMember("pickup", json_pickup, allocator);
   }
 
+  json_route.AddMember("setup", route.setup, allocator);
   json_route.AddMember("service", route.service, allocator);
   json_route.AddMember("duration", route.duration, allocator);
   json_route.AddMember("waiting_time", route.waiting_time, allocator);
@@ -294,6 +296,7 @@ rapidjson::Value to_json(const Step& s,
     json_step.AddMember("id", s.id, allocator);
   }
 
+  json_step.AddMember("setup", s.setup, allocator);
   json_step.AddMember("service", s.service, allocator);
   json_step.AddMember("waiting_time", s.waiting_time, allocator);
 

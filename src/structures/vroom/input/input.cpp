@@ -238,7 +238,7 @@ void Input::add_vehicle(const Vehicle& vehicle) {
   }
 
   // Check for time-windows and skills.
-  _has_TW = _has_TW || !vehicle.tw.is_default();
+  _has_TW = _has_TW || !vehicle.tw.is_default() || !vehicle.breaks.empty();
   _has_skills = _has_skills || !current_v.skills.empty();
 
   bool has_location_index = false;

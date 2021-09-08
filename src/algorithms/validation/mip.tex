@@ -9,11 +9,15 @@
 Let $R=\{T_0, T_1, \ldots, T_n, T_{n + 1}\}$ be the fixed order of
 tasks within the route for a given vehicle. The vehicle has to perform
 $n$ geolocated tasks ($T_1$ to $T_n$) while $T_0$ and $T_{n + 1}$ are
-its optional start and end tasks. For all $i$, we denote $s_i$ the
-service time for task $i$, $d_i$ the travel duration from task $T_i$
-to the next non-break task. Task $T_i$ ($1\leq i \leq n$) has $K_i$
-time windows $[a_{i1}, b_{i1}]$, $\dots$, $[a_{iK_i}, b_{iK_i}]$ for
-expected task start. In particular for vehicle start we have $s_0 = 0$
+its optional start and end tasks. For all $i$, we denote $A_i$ the
+action time\footnote{Action time for a task is a combination of
+  service time and setup time, the latter only applied to a non-break
+  task if its location is different than the location visited in the
+  previous non-break task.} for task $i$, $d_i$ the travel duration
+from task $T_i$ to the next non-break task. Task $T_i$
+($1\leq i \leq n$) has $K_i$ time windows $[a_{i1}, b_{i1}]$, $\dots$,
+$[a_{iK_i}, b_{iK_i}]$ for expected task start. In particular for
+vehicle start we have $s_0 = 0$
 while working hours associated to the vehicle are $[a, b]$.\\
 
 The following program aim at deciding start times $t_i$ for all tasks
@@ -35,12 +39,12 @@ task $T_i$ that are breaks.
   \end{align}
   Subject to
   \begin{align}
-    t_{i + 1} - t_i - \delta_i &\geq s_i && 0 \leq i \leq n\label{precedence}\tag{$P_i$}\\
+    t_{i + 1} - t_i - \delta_i &\geq A_i && 0 \leq i \leq n\label{precedence}\tag{$P_i$}\\
     Y_0 + t_0 &\geq a &&  \label{lead_start}\tag{$L_0$}\\
     Y_i + t_i - \sum_{k = 0}^{K_i}a_{ik}X_{ik}&\geq 0 && 1 \leq i \leq n \label{lead}\tag{$L_i$}\\
     t_i - Y_i - \sum_{k = 0}^{K_i}b_{ik}X_{ik} &\leq 0 && 1 \leq i \leq n \label{delay}\tag{$D_i$}\\
     t_{n + 1} - Y_{n + 1} &\leq b && \label{delay_end}\tag{$D_{n + 1}$}\\
-    \sum_{k = 0}^{K_i}X_{ik} &= 1 && 1 \leq i \leq n \label{tw_sum}\tag{$S_i$}\\
+    \sum_{k = 0}^{K_i}X_{ik} &= 1 && 1 \leq i \leq n \label{tw_sum}\tag{$A_i$}\\
     \sum_{k = i}^{i + B_i}\delta_k &= d_i && \forall i\in J \label{break_duration}\tag{$\Delta_i$}\\
     t_i &\geq 0 && 0 \leq i \leq n + 1 \nonumber\\
     Y_i &\geq 0 && 0 \leq i \leq n + 1 \nonumber\\
