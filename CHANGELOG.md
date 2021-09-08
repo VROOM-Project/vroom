@@ -16,6 +16,10 @@
 
 - Travis CI builds (#436)
 
+### Fixed
+
+- Crash on empty custom matrix (#570)
+
 ## [v1.10.0] - 2021-05-06
 
 ### Added

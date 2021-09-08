@@ -222,10 +222,11 @@ vehicles/tasks time windows.
 
 ## Matrices
 
-The `matrices` object allows to define a custom travel-time matrix per
-vehicle profile. Each matrix is an array of arrays of unsigned
-integers filed under the `profile` and then `durations` keys. Example
-of describing different matrices for different vehicle profiles:
+The `matrices` object allows to define a (non-empty) custom
+travel-time matrix per vehicle profile. Each matrix is an array of
+arrays of unsigned integers filed under the `profile` and then
+`durations` keys. Example of describing different matrices for
+different vehicle profiles:
 
 ```
 "matrices": {

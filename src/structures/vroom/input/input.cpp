@@ -356,10 +356,18 @@ void Input::add_vehicle(const Vehicle& vehicle) {
 
 void Input::set_durations_matrix(const std::string& profile,
                                  Matrix<Duration>&& m) {
+  if (m.size() == 0) {
+    throw Exception(ERROR::INPUT,
+                    "Empty durations matrix for " + profile + " profile.");
+  }
   _durations_matrices.insert_or_assign(profile, m);
 }
 
 void Input::set_costs_matrix(const std::string& profile, Matrix<Cost>&& m) {
+  if (m.size() == 0) {
+    throw Exception(ERROR::INPUT,
+                    "Empty costs matrix for " + profile + " profile.");
+  }
   _costs_matrices.insert_or_assign(profile, m);
 }
 
