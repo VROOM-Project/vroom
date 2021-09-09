@@ -551,34 +551,13 @@ void Input::set_matrices(unsigned nb_thread) {
     thread_profiles(nb_buckets, std::vector<std::string>());
 
   std::size_t t_rank = 0;
-  std::unordered_set<std::string> durations_to_compute;
-
   for (const auto& profile : _profiles) {
     thread_profiles[t_rank % nb_buckets].push_back(profile);
     ++t_rank;
-
-    const bool no_custom_durations =
-      (_durations_matrices.find(profile) == _durations_matrices.end());
-    bool compute_durations = false;
-    if (_costs_matrices.find(profile) == _costs_matrices.end()) {
-      if (no_custom_durations) {
-        // Durations matrix is required as it will serve for cost
-        // estimates anyway.
-        compute_durations = true;
-      }
-    } else {
-      if (no_custom_durations and _has_TW) {
-        // Durations matrix won't be used for costs but is required
-        // for time window validity checks.
-        compute_durations = true;
-      }
-    }
-
-    if (compute_durations) {
-      // Durations matrix is required and has not been manually set,
-      // create routing wrapper and empty matrix to allow for
-      // concurrent modification later on.
-      durations_to_compute.insert(profile);
+    if (_durations_matrices.find(profile) == _durations_matrices.end()) {
+      // Durations matrix has not been manually set, create routing
+      // wrapper and empty matrix to allow for concurrent modification
+      // later on.
       add_routing_wrapper(profile);
       _durations_matrices.emplace(profile, Matrix<Duration>());
     } else {
@@ -596,13 +575,12 @@ void Input::set_matrices(unsigned nb_thread) {
   auto run_on_profiles = [&](const std::vector<std::string>& profiles) {
     try {
       for (const auto& profile : profiles) {
-        if (durations_to_compute.find(profile) != durations_to_compute.end()) {
+        auto d_m = _durations_matrices.find(profile);
+        assert(d_m != _durations_matrices.end());
+
+        if (d_m->second.size() == 0) {
           // Durations matrix not manually set so defined as empty
           // above.
-          auto d_m = _durations_matrices.find(profile);
-          assert(d_m != _durations_matrices.end());
-          assert(d_m->second.size() == 0);
-
           if (_locations.size() == 1) {
             d_m->second = Matrix<Cost>({{0}});
           } else {
@@ -634,9 +612,7 @@ void Input::set_matrices(unsigned nb_thread) {
           }
         }
 
-        auto d_m = _durations_matrices.find(profile);
-        if (d_m != _durations_matrices.end() and
-            d_m->second.size() <= _max_matrices_used_index) {
+        if (d_m->second.size() <= _max_matrices_used_index) {
           throw Exception(ERROR::INPUT,
                           "location_index exceeding matrix size for " +
                             profile + " profile.");
@@ -653,8 +629,7 @@ void Input::set_matrices(unsigned nb_thread) {
           // Check for potential overflow in solution cost.
           check_cost_bound(c_m->second);
         } else {
-          // Durations matrix is used for costs.
-          assert(d_m != _durations_matrices.end());
+          // Durations matrix will be used for costs.
           check_cost_bound(d_m->second);
         }
       }
