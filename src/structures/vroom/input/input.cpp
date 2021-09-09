@@ -550,18 +550,40 @@ void Input::set_matrices(unsigned nb_thread) {
     thread_profiles(nb_buckets, std::vector<std::string>());
 
   std::size_t t_rank = 0;
+  std::unordered_set<std::string> durations_to_compute;
+
   for (const auto& profile : _profiles) {
     thread_profiles[t_rank % nb_buckets].push_back(profile);
     ++t_rank;
-    if (_durations_matrices.find(profile) == _durations_matrices.end()) {
-      // Matrix has not been manually set, create routing wrapper and
-      // empty matrix to allow for concurrent modification later on.
+
+    const bool no_custom_durations =
+      (_durations_matrices.find(profile) == _durations_matrices.end());
+    bool compute_durations = false;
+    if (_costs_matrices.find(profile) == _costs_matrices.end()) {
+      if (no_custom_durations) {
+        // Durations matrix is required as it will serve for cost
+        // estimates anyway.
+        compute_durations = true;
+      }
+    } else {
+      if (no_custom_durations and _has_TW) {
+        // Durations matrix won't be used for costs but is required
+        // for time window validity checks.
+        compute_durations = true;
+      }
+    }
+
+    if (compute_durations) {
+      // Durations matrix is required and has not been manually set,
+      // create routing wrapper and empty matrix to allow for
+      // concurrent modification later on.
+      durations_to_compute.insert(profile);
       add_routing_wrapper(profile);
       _durations_matrices.emplace(profile, Matrix<Duration>());
     } else {
       if (_geometry) {
-        // Even with a custom matrix, we may still want routing
-        // afterward.
+        // Even with a custom matrix, we still want routing after
+        // optimization.
         add_routing_wrapper(profile);
       }
     }
@@ -573,12 +595,13 @@ void Input::set_matrices(unsigned nb_thread) {
   auto run_on_profiles = [&](const std::vector<std::string>& profiles) {
     try {
       for (const auto& profile : profiles) {
-        auto p_m = _durations_matrices.find(profile);
-        assert(p_m != _durations_matrices.end());
-
-        if (p_m->second.size() == 0) {
+        if (durations_to_compute.find(profile) != durations_to_compute.end()) {
           // Durations matrix not manually set so defined as empty
           // above.
+          auto p_m = _durations_matrices.find(profile);
+          assert(p_m != _durations_matrices.end());
+          assert(p_m->second.size() == 0);
+
           if (_locations.size() == 1) {
             p_m->second = Matrix<Cost>({{0}});
           } else {
