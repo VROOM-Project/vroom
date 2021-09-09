@@ -277,6 +277,7 @@ inline Solution format_solution(const Input& input,
     auto previous_location = (v.has_start())
                                ? v.start.value().index()
                                : std::numeric_limits<Index>::max();
+    Cost cost = 0;
     Duration duration = 0;
     Duration setup = 0;
     Duration service = 0;
@@ -303,6 +304,7 @@ inline Solution format_solution(const Input& input,
         v.duration(v.start.value().index(), first_job.index());
       ETA += travel;
       duration += travel;
+      cost += v.cost(v.start.value().index(), first_job.index());
     }
 
     // Handle jobs.
@@ -335,10 +337,13 @@ inline Solution format_solution(const Input& input,
 
     for (std::size_t r = 0; r < route.size() - 1; ++r) {
       assert(input.vehicle_ok_with_job(i, route[r + 1]));
-      Duration travel = v.duration(input.jobs[route[r]].index(),
-                                   input.jobs[route[r + 1]].index());
+      const auto travel = v.duration(input.jobs[route[r]].index(),
+                                     input.jobs[route[r + 1]].index());
       ETA += travel;
       duration += travel;
+
+      cost +=
+        v.cost(input.jobs[route[r]].index(), input.jobs[route[r + 1]].index());
 
       auto& current_job = input.jobs[route[r + 1]];
 
@@ -376,6 +381,7 @@ inline Solution format_solution(const Input& input,
       const auto travel = v.duration(last_job.index(), v.end.value().index());
       ETA += travel;
       duration += travel;
+      cost += v.cost(last_job.index(), v.end.value().index());
     }
     steps.back().duration = duration;
     steps.back().arrival = ETA;
@@ -384,7 +390,7 @@ inline Solution format_solution(const Input& input,
 
     routes.emplace_back(v.id,
                         std::move(steps),
-                        duration,
+                        cost,
                         setup,
                         service,
                         duration,
