@@ -530,9 +530,20 @@ void Input::set_vehicles_compatibility() {
 void Input::set_vehicles_costs() {
   for (std::size_t v = 0; v < vehicles.size(); ++v) {
     auto& vehicle = vehicles[v];
-    auto search = _durations_matrices.find(vehicle.profile);
-    assert(search != _durations_matrices.end());
-    vehicle.cost_wrapper.set_durations_matrix(&(search->second));
+
+    auto d_m = _durations_matrices.find(vehicle.profile);
+    assert(d_m != _durations_matrices.end());
+
+    auto c_m = _costs_matrices.find(vehicle.profile);
+    if (c_m != _costs_matrices.end()) {
+      // No fancy scaling for costs, use plain custom costs matrix.
+      vehicle.cost_wrapper.set_costs_factor(1.);
+      vehicle.cost_wrapper.set_costs_matrix(&(c_m->second));
+    } else {
+      vehicle.cost_wrapper.set_costs_matrix(&(d_m->second));
+    }
+
+    vehicle.cost_wrapper.set_durations_matrix(&(d_m->second));
   }
 }
 
