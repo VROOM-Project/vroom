@@ -85,6 +85,7 @@ Route choose_ETA(const Input& input,
   // waiting).
   Duration action_sum = 0;
   Duration duration_sum = 0;
+  Cost cost_sum = 0;
   unsigned default_job_tw = 0;
   Duration relative_arrival = 0;
   std::vector<Duration> relative_ETA;
@@ -133,6 +134,10 @@ Route choose_ETA(const Input& input,
       durations.push_back(current_duration);
       duration_sum += current_duration;
 
+      cost_sum += (previous_index.has_value())
+                    ? v.cost(previous_index.value(), job.index())
+                    : 0;
+
       relative_arrival += current_duration;
       relative_ETA.push_back(relative_arrival);
 
@@ -177,6 +182,8 @@ Route choose_ETA(const Input& input,
         durations.push_back(current_duration);
         duration_sum += current_duration;
         relative_arrival += current_duration;
+
+        cost_sum += v.cost(previous_index.value(), v.end.value().index());
 
         if (!first_location.has_value()) {
           first_location = v.end.value();
@@ -1090,7 +1097,7 @@ Route choose_ETA(const Input& input,
   assert(task_tw_ranks.size() == n);
 
   // Generate route.
-  Cost duration = 0;
+  Duration duration = 0;
   Duration setup = 0;
   Duration service = 0;
   Duration forward_wt = 0;
@@ -1345,7 +1352,7 @@ Route choose_ETA(const Input& input,
 
   return Route(v.id,
                std::move(sol_steps),
-               duration,
+               cost_sum,
                setup,
                service,
                duration,
