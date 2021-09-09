@@ -563,6 +563,7 @@ inline Route format_route(const Input& input,
                                            : std::numeric_limits<Index>::max();
 
   // Values summed up while going through the route.
+  Cost cost = 0;
   Duration duration = 0;
   Duration setup = 0;
   Duration service = 0;
@@ -578,6 +579,10 @@ inline Route format_route(const Input& input,
       ? v.duration(v.start.value().index(), input.jobs[tw_r.route[0]].index())
       : 0;
 
+  Cost current_cost = v.has_start() ? v.cost(v.start.value().index(),
+                                             input.jobs[tw_r.route[0]].index())
+                                    : 0;
+
   for (std::size_t r = 0; r < tw_r.route.size(); ++r) {
     assert(input.vehicle_ok_with_job(tw_r.vehicle_rank, tw_r.route[r]));
     const auto& current_job = input.jobs[tw_r.route[r]];
@@ -587,6 +592,8 @@ inline Route format_route(const Input& input,
       // depending on whether there is a start.
       travel_time =
         v.duration(input.jobs[tw_r.route[r - 1]].index(), current_job.index());
+      current_cost =
+        v.cost(input.jobs[tw_r.route[r - 1]].index(), current_job.index());
     }
 
     // Handles breaks before this job.
@@ -644,6 +651,7 @@ inline Route format_route(const Input& input,
 
     // Back to current job.
     duration += travel_time;
+    cost += current_cost;
     service += current_job.service;
     priority += current_job.priority;
 
@@ -696,6 +704,9 @@ inline Route format_route(const Input& input,
     (v.has_end())
       ? v.duration(input.jobs[tw_r.route.back()].index(), v.end.value().index())
       : 0;
+  current_cost = (v.has_end()) ? v.cost(input.jobs[tw_r.route.back()].index(),
+                                        v.end.value().index())
+                               : 0;
 
   auto r = tw_r.route.size();
   assert(tw_r.breaks_at_rank[r] <= tw_r.breaks_counts[r]);
@@ -753,6 +764,7 @@ inline Route format_route(const Input& input,
   steps.emplace_back(STEP_TYPE::END, last_location.value(), current_load);
   if (v.has_end()) {
     duration += travel_time;
+    cost += current_cost;
     step_start += travel_time;
   }
   steps.back().duration = duration;
@@ -770,7 +782,7 @@ inline Route format_route(const Input& input,
 
   return Route(v.id,
                std::move(steps),
-               duration,
+               cost,
                setup,
                service,
                duration,
