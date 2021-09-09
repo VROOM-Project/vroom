@@ -12,14 +12,18 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
-CostWrapper::CostWrapper(double speed_factor, double cost_factor)
+CostWrapper::CostWrapper(double speed_factor)
   : discrete_duration_factor(std::round(1 / speed_factor * DIVISOR)),
-    discrete_cost_factor(std::round(cost_factor * DIVISOR)) {
+    discrete_cost_factor(std::round(1 / speed_factor * DIVISOR)) {
 }
 
 void CostWrapper::set_durations_matrix(const Matrix<Duration>* matrix) {
   duration_matrix_size = matrix->size();
   duration_data = (*matrix)[0];
+}
+
+void CostWrapper::set_costs_factor(double cost_factor) {
+  discrete_cost_factor = std::round(cost_factor * DIVISOR);
 }
 
 void CostWrapper::set_costs_matrix(const Matrix<Cost>* matrix) {
