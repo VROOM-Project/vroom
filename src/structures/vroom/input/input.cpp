@@ -537,7 +537,8 @@ void Input::set_vehicles_costs() {
 }
 
 void Input::set_matrices(unsigned nb_thread) {
-  if (!_durations_matrices.empty() and !_has_custom_location_index) {
+  if ((!_durations_matrices.empty() or !_costs_matrices.empty()) and
+      !_has_custom_location_index) {
     throw Exception(ERROR::INPUT, "Missing location index.");
   }
 
@@ -598,12 +599,12 @@ void Input::set_matrices(unsigned nb_thread) {
         if (durations_to_compute.find(profile) != durations_to_compute.end()) {
           // Durations matrix not manually set so defined as empty
           // above.
-          auto p_m = _durations_matrices.find(profile);
-          assert(p_m != _durations_matrices.end());
-          assert(p_m->second.size() == 0);
+          auto d_m = _durations_matrices.find(profile);
+          assert(d_m != _durations_matrices.end());
+          assert(d_m->second.size() == 0);
 
           if (_locations.size() == 1) {
-            p_m->second = Matrix<Cost>({{0}});
+            d_m->second = Matrix<Cost>({{0}});
           } else {
             auto rw = std::find_if(_routing_wrappers.begin(),
                                    _routing_wrappers.end(),
@@ -614,7 +615,7 @@ void Input::set_matrices(unsigned nb_thread) {
 
             if (!_has_custom_location_index) {
               // Location indices are set based on order in _locations.
-              p_m->second = (*rw)->get_matrix(_locations);
+              d_m->second = (*rw)->get_matrix(_locations);
             } else {
               // Location indices are provided in input so we need an
               // indirection based on order in _locations.
@@ -628,19 +629,34 @@ void Input::set_matrices(unsigned nb_thread) {
                 }
               }
 
-              p_m->second = std::move(full_m);
+              d_m->second = std::move(full_m);
             }
           }
         }
 
-        if (p_m->second.size() <= _max_matrices_used_index) {
+        auto d_m = _durations_matrices.find(profile);
+        if (d_m != _durations_matrices.end() and
+            d_m->second.size() <= _max_matrices_used_index) {
           throw Exception(ERROR::INPUT,
                           "location_index exceeding matrix size for " +
                             profile + " profile.");
         }
 
-        // Check for potential overflow in solution cost.
-        check_cost_bound(p_m->second);
+        auto c_m = _costs_matrices.find(profile);
+        if (c_m != _costs_matrices.end()) {
+          if (c_m->second.size() <= _max_matrices_used_index) {
+            throw Exception(ERROR::INPUT,
+                            "location_index exceeding matrix size for " +
+                              profile + " profile.");
+          }
+
+          // Check for potential overflow in solution cost.
+          check_cost_bound(c_m->second);
+        } else {
+          // Durations matrix is used for costs.
+          assert(d_m != _durations_matrices.end());
+          check_cost_bound(d_m->second);
+        }
       }
     } catch (...) {
       ep_m.lock();
