@@ -33,7 +33,6 @@ PDShift::PDShift(const Input& input,
                   static_cast<RawRoute&>(tw_t_route),
                   t_vehicle,
                   gain_threshold),
-    _is_valid_removal(true),
     _source_without_pd(s_route.begin() + _s_p_rank + 1,
                        s_route.begin() + _s_d_rank),
     _tw_s_route(tw_s_route),
@@ -42,19 +41,13 @@ PDShift::PDShift(const Input& input,
 
 void PDShift::compute_gain() {
   // Check for valid removal wrt TW constraints.
-  if (_s_d_rank == _s_p_rank + 1) {
-    _is_valid_removal =
-      _is_valid_removal && _tw_s_route.is_valid_removal(_input, _s_p_rank, 2);
-  } else {
-    _is_valid_removal =
-      _is_valid_removal &&
-      _tw_s_route.is_valid_addition_for_tw(_input,
-                                           _source_without_pd.begin(),
-                                           _source_without_pd.end(),
-                                           _s_p_rank,
-                                           _s_d_rank + 1);
-  }
-  if (!_is_valid_removal) {
+  bool is_valid_removal =
+    _tw_s_route.is_valid_addition_for_tw(_input,
+                                         _source_without_pd.begin(),
+                                         _source_without_pd.end(),
+                                         _s_p_rank,
+                                         _s_d_rank + 1);
+  if (!is_valid_removal) {
     return;
   }
 
@@ -64,12 +57,10 @@ void PDShift::compute_gain() {
                                   t_vehicle,
                                   _tw_t_route,
                                   _remove_gain - stored_gain);
-  assert(s_route[_s_p_rank] + 1 == s_route[_s_d_rank]);
 
   if (rs.cost < std::numeric_limits<Gain>::max()) {
-    assert(_remove_gain + -rs.cost > stored_gain);
     _valid = true;
-    stored_gain = _remove_gain + -rs.cost;
+    stored_gain = _remove_gain - rs.cost;
     _best_t_p_rank = rs.pickup_rank;
     _best_t_d_rank = rs.delivery_rank;
   }

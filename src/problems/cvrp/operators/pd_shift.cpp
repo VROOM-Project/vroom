@@ -39,6 +39,7 @@ PDShift::PDShift(const Input& input,
   assert(s_route.size() >= 2);
   assert(s_p_rank < s_d_rank);
   assert(s_d_rank < s_route.size());
+  assert(s_route.route[s_p_rank] + 1 == s_route.route[s_d_rank]);
 
   stored_gain = gain_threshold;
 }

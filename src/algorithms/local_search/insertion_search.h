@@ -178,6 +178,7 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
       }
     }
   }
+  assert(result.cost <= cost_threshold);
   if (result.cost == cost_threshold) {
     result.cost = std::numeric_limits<Gain>::max();
   }
