@@ -25,6 +25,7 @@ struct Step {
   const Location location;
   const Id id;
   const Id shipment_id;
+  const Duration setup;
   const Duration service;
   const Amount load;
   const std::string description;
@@ -38,7 +39,7 @@ struct Step {
 
   Step(STEP_TYPE type, Location location, const Amount& load);
 
-  Step(const Job& job, const Amount& load);
+  Step(const Job& job, const Duration setup, const Amount& load);
 
   Step(const Break& b, const Amount& load);
 };

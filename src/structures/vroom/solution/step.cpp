@@ -17,6 +17,7 @@ Step::Step(STEP_TYPE type, Location location, const Amount& load)
     job_type(JOB_TYPE::SINGLE), // Dummy init.
     location(location),
     id("0"),
+    setup(0),
     service(0),
     load(load),
     arrival(0),
@@ -25,12 +26,13 @@ Step::Step(STEP_TYPE type, Location location, const Amount& load)
   assert(step_type == STEP_TYPE::START or step_type == STEP_TYPE::END);
 }
 
-Step::Step(const Job& job, const Amount& load)
+Step::Step(const Job& job, const Duration setup, const Amount& load)
   : step_type(STEP_TYPE::JOB),
     job_type(job.type),
     location(job.location),
     id(job.id),
     shipment_id(job.shipment_id),
+    setup(setup),
     service(job.service),
     load(load),
     description(job.description),
@@ -42,6 +44,7 @@ Step::Step(const Break& b, const Amount& load)
     job_type(JOB_TYPE::SINGLE), // Dummy value.
     location(0),                // Dummy value.
     id(b.id),
+    setup(0),
     service(b.service),
     load(load),
     description(b.description),

@@ -97,15 +97,16 @@ inline Skills get_skills(const rapidjson::Value& object) {
   return skills;
 }
 
-inline Duration get_service(const rapidjson::Value& object) {
-  Duration service = 0;
-  if (object.HasMember("service")) {
-    if (!object["service"].IsUint()) {
-      throw Exception(ERROR::INPUT, "Invalid service value.");
+inline Duration get_duration(const rapidjson::Value& object, const char* key) {
+  Duration duration = 0;
+  if (object.HasMember(key)) {
+    if (!object[key].IsUint()) {
+      throw Exception(ERROR::INPUT,
+                      "Invalid " + std::string(key) + " duration.");
     }
-    service = object["service"].GetUint();
+    duration = object[key].GetUint();
   }
-  return service;
+  return duration;
 }
 
 inline Duration get_priority(const rapidjson::Value& object) {
@@ -238,7 +239,7 @@ inline Break get_break(const rapidjson::Value& b) {
   check_id(b, "break");
   return Break(b["id"].GetString(),
                get_break_time_windows(b),
-               get_service(b),
+               get_duration(b, "service"),
                get_string(b, "description"));
 }
 
@@ -459,7 +460,8 @@ inline Job get_job(const rapidjson::Value& json_job, unsigned amount_size) {
   return Job(json_job["id"].GetString(),
              json_job["shipmentId"].GetString(),
              get_task_location(json_job, "job"),
-             get_service(json_job),
+             get_duration(json_job, "setup"),
+             get_duration(json_job, "service"),
              need_amount_compat ? get_amount(json_job, "amount", amount_size)
                                 : get_amount(json_job, "delivery", amount_size),
              get_amount(json_job, "pickup", amount_size),
@@ -564,7 +566,8 @@ Input parse(const CLArgs& cl_args) {
                  json_shipment["id"].GetString(),
                  JOB_TYPE::PICKUP,
                  get_task_location(json_pickup, "pickup"),
-                 get_service(json_pickup),
+                 get_duration(json_pickup, "setup"),
+                 get_duration(json_pickup, "service"),
                  amount,
                  skills,
                  priority,
@@ -579,7 +582,8 @@ Input parse(const CLArgs& cl_args) {
                    json_shipment["id"].GetString(),
                    JOB_TYPE::DELIVERY,
                    get_task_location(json_delivery, "delivery"),
-                   get_service(json_delivery),
+                   get_duration(json_delivery, "setup"),
+                   get_duration(json_delivery, "service"),
                    amount,
                    skills,
                    priority,
