@@ -21,6 +21,7 @@ struct Summary {
   const unsigned unassigned;
   Amount delivery;
   Amount pickup;
+  Duration setup;
   Duration service;
   Priority priority;
 

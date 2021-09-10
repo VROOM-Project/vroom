@@ -28,6 +28,7 @@ Solution::Solution(unsigned code,
     summary.cost += route.cost;
     summary.delivery += route.delivery;
     summary.pickup += route.pickup;
+    summary.setup += route.setup;
     summary.service += route.service;
     summary.priority += route.priority;
     summary.duration += route.duration;

@@ -24,6 +24,7 @@ struct Job {
   const Id id;
   const Id shipment_id;
   const JOB_TYPE type;
+  const Duration setup;
   const Duration service;
   const Amount delivery;
   const Amount pickup;
@@ -37,6 +38,7 @@ struct Job {
   Job(Id id,
       Id shipment_id,
       const Location& location,
+      Duration setup = 0,
       Duration service = 0,
       const Amount& delivery = Amount(0),
       const Amount& pickup = Amount(0),
@@ -52,6 +54,7 @@ struct Job {
       Id shipment_id,
       JOB_TYPE type,
       const Location& location,
+      Duration setup = 0,
       Duration service = 0,
       const Amount& amount = Amount(0),
       const Skills& skills = Skills(),
