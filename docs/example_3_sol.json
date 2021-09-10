@@ -9,6 +9,7 @@
     "pickup": [
       0
     ],
+    "setup": 0,
     "service": 1800,
     "duration": 18711,
     "waiting_time": 0,
@@ -39,6 +40,7 @@
       "pickup": [
         0
       ],
+      "setup": 0,
       "service": 900,
       "duration": 6565,
       "waiting_time": 0,
@@ -51,6 +53,7 @@
             2.35044,
             48.71764
           ],
+          "setup": 0,
           "service": 0,
           "waiting_time": 0,
           "load": [
@@ -73,6 +76,7 @@
           ],
           "id": "1",
           "shipmentId": "shipment_1",
+          "setup": 0,
           "service": 300,
           "waiting_time": 0,
           "job": "1",
@@ -96,6 +100,7 @@
           ],
           "id": "2",
           "shipmentId": "shipment_2",
+          "setup": 0,
           "service": 300,
           "waiting_time": 0,
           "job": "2",
@@ -115,6 +120,7 @@
           ],
           "id": "5",
           "shipmentId": "shipment_5",
+          "setup": 0,
           "service": 300,
           "waiting_time": 0,
           "job": "5",
@@ -132,6 +138,7 @@
             2.35044,
             48.71764
           ],
+          "setup": 0,
           "service": 0,
           "waiting_time": 0,
           "load": [
@@ -159,6 +166,7 @@
       "pickup": [
         0
       ],
+      "setup": 0,
       "service": 900,
       "duration": 12146,
       "waiting_time": 0,
@@ -171,6 +179,7 @@
             2.35044,
             48.71764
           ],
+          "setup": 0,
           "service": 0,
           "waiting_time": 0,
           "load": [
@@ -194,6 +203,7 @@
           ],
           "id": "6",
           "shipmentId": "shipment_6",
+          "setup": 0,
           "service": 300,
           "waiting_time": 0,
           "job": "6",
@@ -213,6 +223,7 @@
           ],
           "id": "4",
           "shipmentId": "shipment_4",
+          "setup": 0,
           "service": 300,
           "waiting_time": 0,
           "job": "4",
@@ -232,6 +243,7 @@
           ],
           "id": "3",
           "shipmentId": "shipment_3",
+          "setup": 0,
           "service": 300,
           "waiting_time": 0,
           "job": "3",
@@ -254,6 +266,7 @@
             2.35044,
             48.71764
           ],
+          "setup": 0,
           "service": 0,
           "waiting_time": 0,
           "load": [
