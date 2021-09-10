@@ -3,6 +3,7 @@
   "summary": {
     "cost": 5461,
     "unassigned": 0,
+    "setup": 0,
     "service": 0,
     "duration": 5461,
     "waiting_time": 0,
@@ -14,6 +15,7 @@
     {
       "vehicle": "0",
       "cost": 5461,
+      "setup": 0,
       "service": 0,
       "duration": 5461,
       "waiting_time": 0,
@@ -21,6 +23,7 @@
       "steps": [
         {
           "type": "start",
+          "setup": 0,
           "service": 0,
           "waiting_time": 0,
           "arrival": 0,
@@ -31,6 +34,7 @@
           "type": "job",
           "id": "1414",
           "shipmentId": "shipment_1414",
+          "setup": 0,
           "service": 0,
           "waiting_time": 0,
           "job": "1414",
@@ -42,6 +46,7 @@
           "type": "job",
           "id": "1515",
           "shipmentId": "shipment_1515",
+          "setup": 0,
           "service": 0,
           "waiting_time": 0,
           "job": "1515",
@@ -51,6 +56,7 @@
         },
         {
           "type": "end",
+          "setup": 0,
           "service": 0,
           "waiting_time": 0,
           "arrival": 5461,
