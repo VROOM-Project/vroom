@@ -125,11 +125,11 @@ inline Duration get_priority(const rapidjson::Value& object) {
 
 inline size_t get_max_tasks(const rapidjson::Value& object) {
   size_t max_tasks = std::numeric_limits<size_t>::max();
-  if (object.HasMember("max_tasks")) {
-    if (!object["max_tasks"].IsUint()) {
-      throw Exception(ERROR::INPUT, "Invalid max_tasks value.");
+  if (object.HasMember("maxTasks")) {
+    if (!object["maxTasks"].IsUint()) {
+      throw Exception(ERROR::INPUT, "Invalid maxTasks value.");
     }
-    max_tasks = object["max_tasks"].GetUint();
+    max_tasks = object["maxTasks"].GetUint();
   }
   return max_tasks;
 }
