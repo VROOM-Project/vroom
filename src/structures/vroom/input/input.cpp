@@ -383,7 +383,7 @@ bool Input::vehicle_ok_with_vehicle(Index v1_index, Index v2_index) const {
   return _vehicle_to_vehicle_compatibility[v1_index][v2_index];
 }
 
-void Input::check_cost_bound(const Matrix<Cost>& matrix) const {
+Cost Input::check_cost_bound(const Matrix<Cost>& matrix) const {
   // Check that we don't have any overflow while computing an upper
   // bound for solution cost.
 
@@ -426,7 +426,7 @@ void Input::check_cost_bound(const Matrix<Cost>& matrix) const {
   }
 
   Cost bound = utils::add_without_overflow(start_bound, jobs_bound);
-  bound = utils::add_without_overflow(bound, end_bound);
+  return utils::add_without_overflow(bound, end_bound);
 }
 
 void Input::set_skills_compatibility() {

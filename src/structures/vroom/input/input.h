@@ -66,7 +66,7 @@ private:
 
   void check_job(Job& job);
 
-  void check_cost_bound(const Matrix<Cost>& matrix) const;
+  Cost check_cost_bound(const Matrix<Cost>& matrix) const;
 
   void set_skills_compatibility();
   void set_extra_compatibility();
