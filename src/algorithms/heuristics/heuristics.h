@@ -16,11 +16,11 @@ namespace vroom {
 namespace heuristics {
 
 // Implementation of a variant of the Solomon I1 heuristic.
-template <class T> T basic(const Input& input, INIT init, float lambda);
+template <class T> T basic(const Input& input, INIT init, double lambda);
 
 // Adjusting the above for situation with heterogeneous fleet.
 template <class T>
-T dynamic_vehicle_choice(const Input& input, INIT init, float lambda);
+T dynamic_vehicle_choice(const Input& input, INIT init, double lambda);
 
 } // namespace heuristics
 } // namespace vroom

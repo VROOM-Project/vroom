@@ -23,6 +23,7 @@
 
 - "Infeasible route" error while an existing route plan exists (#506)
 - Break omitted with no other time window (#497)
+- Biased evaluation in `try_job_additions` (#572)
 - Routing error with custom matrix and `-g` (#561)
 - Crash on empty custom matrix (#570)
 
