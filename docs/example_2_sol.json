@@ -2,6 +2,7 @@
   "code": 0,
   "summary": {
     "cost": 5461,
+    "routes": 1,
     "unassigned": 0,
     "setup": 0,
     "service": 0,

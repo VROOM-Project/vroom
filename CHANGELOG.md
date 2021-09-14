@@ -6,6 +6,7 @@
 
 - `setup` key for tasks to refine service time modeling (#358)
 - `max_tasks` key limiting route size at vehicle level (#421)
+- number of routes in solution summary (#524)
 - Github Actions CI (#436)
 - Check for libvroom example build in CI (#514)
 
