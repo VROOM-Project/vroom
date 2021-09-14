@@ -285,6 +285,7 @@ The `summary` object has the following properties:
 | Key         | Description |
 | ----------- | ----------- |
 | `cost` | total cost for all routes |
+| `routes` | number of routes in the solution |
 | `unassigned` | number of tasks that could not be served |
 | `setup` | total setup time for all routes |
 | `service` | total service time for all routes |

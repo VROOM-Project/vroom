@@ -118,6 +118,7 @@ rapidjson::Value to_json(const Summary& summary,
   rapidjson::Value json_summary(rapidjson::kObjectType);
 
   json_summary.AddMember("cost", summary.cost, allocator);
+  json_summary.AddMember("routes", summary.routes, allocator);
   json_summary.AddMember("unassigned", summary.unassigned, allocator);
 
   if (summary.delivery.size() > 0) {
