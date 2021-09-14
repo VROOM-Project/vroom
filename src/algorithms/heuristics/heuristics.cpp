@@ -482,8 +482,7 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
     // Once current vehicle is decided, regrets[j] holds the min cost
     // of picking the job in an empty route for other remaining
     // vehicles.
-    std::vector<Cost> regrets(input.jobs.size(),
-                              std::numeric_limits<Cost>::max());
+    std::vector<Cost> regrets(input.jobs.size(), input.get_cost_upper_bound());
     for (const auto job_rank : unassigned) {
       if (jobs_min_costs[job_rank] < costs[job_rank][v_rank]) {
         regrets[job_rank] = jobs_min_costs[job_rank];
