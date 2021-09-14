@@ -110,6 +110,10 @@ public:
 
   bool has_shipments() const;
 
+  Cost get_cost_upper_bound() const {
+    return _cost_upper_bound;
+  }
+
   bool has_homogeneous_locations() const;
 
   bool has_homogeneous_profiles() const;
