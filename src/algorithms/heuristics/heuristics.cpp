@@ -60,7 +60,7 @@ std::vector<std::vector<Cost>> get_jobs_vehicles_costs(const Input& input) {
   return costs;
 }
 
-template <class T> T basic(const Input& input, INIT init, float lambda) {
+template <class T> T basic(const Input& input, INIT init, double lambda) {
   auto nb_vehicles = input.vehicles.size();
   T routes;
   for (Index v = 0; v < nb_vehicles; ++v) {
@@ -231,7 +231,7 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
     bool keep_going = true;
     while (keep_going) {
       keep_going = false;
-      float best_cost = std::numeric_limits<float>::max();
+      double best_cost = std::numeric_limits<double>::max();
       Index best_job_rank = 0;
       Index best_r = 0;
       Index best_pickup_r = 0;
@@ -249,14 +249,15 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
         if (input.jobs[job_rank].type == JOB_TYPE::SINGLE and
             current_r.size() + 1 <= vehicle.max_tasks) {
           for (Index r = 0; r <= current_r.size(); ++r) {
-            float current_add = utils::addition_cost(input,
-                                                     job_rank,
-                                                     vehicle,
-                                                     current_r.route,
-                                                     r);
+            const auto current_add = utils::addition_cost(input,
+                                                          job_rank,
+                                                          vehicle,
+                                                          current_r.route,
+                                                          r);
 
-            float current_cost =
-              current_add - lambda * static_cast<float>(regrets[v][job_rank]);
+            double current_cost =
+              static_cast<double>(current_add) -
+              lambda * static_cast<double>(regrets[v][job_rank]);
 
             if (current_cost < best_cost and
                 current_r
@@ -328,7 +329,7 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
                 continue;
               }
 
-              float current_add;
+              double current_add;
               if (pickup_r == delivery_r) {
                 current_add = utils::addition_cost(input,
                                                    job_rank,
@@ -340,8 +341,9 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
                 current_add = p_add + d_adds[delivery_r];
               }
 
-              float current_cost =
-                current_add - lambda * static_cast<float>(regrets[v][job_rank]);
+              double current_cost =
+                current_add -
+                lambda * static_cast<double>(regrets[v][job_rank]);
 
               if (current_cost < best_cost) {
                 modified_with_pd.push_back(job_rank + 1);
@@ -380,7 +382,7 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
         }
       }
 
-      if (best_cost < std::numeric_limits<float>::max()) {
+      if (best_cost < std::numeric_limits<double>::max()) {
         if (input.jobs[best_job_rank].type == JOB_TYPE::SINGLE) {
           current_r.add(input, best_job_rank, best_r);
           unassigned.erase(best_job_rank);
@@ -410,7 +412,7 @@ template <class T> T basic(const Input& input, INIT init, float lambda) {
 }
 
 template <class T>
-T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
+T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
   auto nb_vehicles = input.vehicles.size();
   T routes;
   for (Index v = 0; v < nb_vehicles; ++v) {
@@ -480,8 +482,7 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
     // Once current vehicle is decided, regrets[j] holds the min cost
     // of picking the job in an empty route for other remaining
     // vehicles.
-    std::vector<Cost> regrets(input.jobs.size(),
-                              std::numeric_limits<Cost>::max());
+    std::vector<Cost> regrets(input.jobs.size(), input.get_cost_upper_bound());
     for (const auto job_rank : unassigned) {
       if (jobs_min_costs[job_rank] < costs[job_rank][v_rank]) {
         regrets[job_rank] = jobs_min_costs[job_rank];
@@ -610,7 +611,7 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
     bool keep_going = true;
     while (keep_going) {
       keep_going = false;
-      float best_cost = std::numeric_limits<float>::max();
+      double best_cost = std::numeric_limits<double>::max();
       Index best_job_rank = 0;
       Index best_r = 0;
       Index best_pickup_r = 0;
@@ -628,14 +629,15 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
         if (input.jobs[job_rank].type == JOB_TYPE::SINGLE and
             current_r.size() + 1 <= vehicle.max_tasks) {
           for (Index r = 0; r <= current_r.size(); ++r) {
-            float current_add = utils::addition_cost(input,
-                                                     job_rank,
-                                                     vehicle,
-                                                     current_r.route,
-                                                     r);
+            const auto current_add = utils::addition_cost(input,
+                                                          job_rank,
+                                                          vehicle,
+                                                          current_r.route,
+                                                          r);
 
-            float current_cost =
-              current_add - lambda * static_cast<float>(regrets[job_rank]);
+            double current_cost =
+              static_cast<double>(current_add) -
+              lambda * static_cast<double>(regrets[job_rank]);
 
             if (current_cost < best_cost and
                 current_r
@@ -707,7 +709,7 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
                 continue;
               }
 
-              float current_add;
+              double current_add;
               if (pickup_r == delivery_r) {
                 current_add = utils::addition_cost(input,
                                                    job_rank,
@@ -719,8 +721,8 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
                 current_add = p_add + d_adds[delivery_r];
               }
 
-              float current_cost =
-                current_add - lambda * static_cast<float>(regrets[job_rank]);
+              double current_cost =
+                current_add - lambda * static_cast<double>(regrets[job_rank]);
 
               if (current_cost < best_cost) {
                 modified_with_pd.push_back(job_rank + 1);
@@ -759,7 +761,7 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
         }
       }
 
-      if (best_cost < std::numeric_limits<float>::max()) {
+      if (best_cost < std::numeric_limits<double>::max()) {
         if (input.jobs[best_job_rank].type == JOB_TYPE::SINGLE) {
           current_r.add(input, best_job_rank, best_r);
           unassigned.erase(best_job_rank);
@@ -791,17 +793,17 @@ T dynamic_vehicle_choice(const Input& input, INIT init, float lambda) {
 using RawSolution = std::vector<RawRoute>;
 using TWSolution = std::vector<TWRoute>;
 
-template RawSolution basic(const Input& input, INIT init, float lambda);
+template RawSolution basic(const Input& input, INIT init, double lambda);
 
 template RawSolution dynamic_vehicle_choice(const Input& input,
                                             INIT init,
-                                            float lambda);
+                                            double lambda);
 
-template TWSolution basic(const Input& input, INIT init, float lambda);
+template TWSolution basic(const Input& input, INIT init, double lambda);
 
 template TWSolution dynamic_vehicle_choice(const Input& input,
                                            INIT init,
-                                           float lambda);
+                                           double lambda);
 
 } // namespace heuristics
 } // namespace vroom

@@ -37,6 +37,7 @@ Input::Input(unsigned amount_size, const io::Servers& servers, ROUTER router)
     _geometry(false),
     _has_jobs(false),
     _has_shipments(false),
+    _cost_upper_bound(0),
     _max_matrices_used_index(0),
     _all_locations_have_coords(true),
     _amount_size(amount_size),
@@ -383,7 +384,7 @@ bool Input::vehicle_ok_with_vehicle(Index v1_index, Index v2_index) const {
   return _vehicle_to_vehicle_compatibility[v1_index][v2_index];
 }
 
-void Input::check_cost_bound(const Matrix<Cost>& matrix) const {
+Cost Input::check_cost_bound(const Matrix<Cost>& matrix) const {
   // Check that we don't have any overflow while computing an upper
   // bound for solution cost.
 
@@ -426,7 +427,7 @@ void Input::check_cost_bound(const Matrix<Cost>& matrix) const {
   }
 
   Cost bound = utils::add_without_overflow(start_bound, jobs_bound);
-  bound = utils::add_without_overflow(bound, end_bound);
+  return utils::add_without_overflow(bound, end_bound);
 }
 
 void Input::set_skills_compatibility() {
@@ -550,6 +551,8 @@ void Input::set_matrices(unsigned nb_thread) {
     }
   }
 
+  std::unordered_map<std::string, Cost> profile_cost_bounds;
+
   std::exception_ptr ep = nullptr;
   std::mutex ep_m;
 
@@ -598,8 +601,10 @@ void Input::set_matrices(unsigned nb_thread) {
                             profile + " profile.");
         }
 
-        // Check for potential overflow in solution cost.
-        check_cost_bound(p_m->second);
+        // Check for potential overflow in solution cost and store
+        // cost bound for current profile.
+        assert(profile_cost_bounds.find(profile) == profile_cost_bounds.end());
+        profile_cost_bounds.emplace(profile, check_cost_bound(p_m->second));
       }
     } catch (...) {
       ep_m.lock();
@@ -620,6 +625,12 @@ void Input::set_matrices(unsigned nb_thread) {
 
   if (ep != nullptr) {
     std::rethrow_exception(ep);
+  }
+
+  for (const auto& profile : _profiles) {
+    auto profile_bound = profile_cost_bounds.find(profile);
+    assert(profile_bound != profile_cost_bounds.end());
+    _cost_upper_bound = std::max(_cost_upper_bound, profile_bound->second);
   }
 }
 

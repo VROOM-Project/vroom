@@ -48,6 +48,7 @@ private:
   bool _has_shipments;
   std::unordered_map<std::string, Matrix<Cost>> _matrices;
   std::unordered_set<std::string> _custom_matrices;
+  Cost _cost_upper_bound;
   std::vector<Location> _locations;
   std::unordered_map<Location, Index> _locations_to_index;
   std::vector<std::vector<unsigned char>> _vehicle_to_job_compatibility;
@@ -66,7 +67,7 @@ private:
 
   void check_job(Job& job);
 
-  void check_cost_bound(const Matrix<Cost>& matrix) const;
+  Cost check_cost_bound(const Matrix<Cost>& matrix) const;
 
   void set_skills_compatibility();
   void set_extra_compatibility();
@@ -108,6 +109,10 @@ public:
   bool has_jobs() const;
 
   bool has_shipments() const;
+
+  Cost get_cost_upper_bound() const {
+    return _cost_upper_bound;
+  }
 
   bool has_homogeneous_locations() const;
 

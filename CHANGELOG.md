@@ -22,6 +22,7 @@
 
 - "Infeasible route" error while an existing route plan exists (#506)
 - Break omitted with no other time window (#497)
+- Biased evaluation in `try_job_additions` (#572)
 
 ## [v1.10.0] - 2021-05-06
 
