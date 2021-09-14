@@ -20,7 +20,7 @@ Solution::Solution(unsigned code,
                    std::vector<Route>&& routes,
                    std::vector<Job>&& unassigned)
   : code(code),
-    summary(unassigned.size(), amount_size),
+    summary(routes.size(), unassigned.size(), amount_size),
     routes(std::move(routes)),
     unassigned(std::move(unassigned)) {
 
