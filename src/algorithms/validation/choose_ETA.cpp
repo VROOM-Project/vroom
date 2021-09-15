@@ -1099,6 +1099,7 @@ Route choose_ETA(const Input& input,
   Amount sum_deliveries(input.zero_amount());
   Duration lead_time = 0;
   Duration delay = 0;
+  unsigned number_of_tasks = 0;
   std::unordered_set<VIOLATION> v_types;
 
   // Startup load is the sum of deliveries for jobs.
@@ -1212,6 +1213,12 @@ Route choose_ETA(const Input& input,
         current.violations.types.insert(VIOLATION::SKILLS);
         v_types.insert(VIOLATION::SKILLS);
       }
+      ++number_of_tasks;
+      if (v.max_tasks < number_of_tasks) {
+        current.violations.types.insert(VIOLATION::MAX_TASKS);
+        v_types.insert(VIOLATION::MAX_TASKS);
+      }
+
       switch (job.type) {
       case JOB_TYPE::SINGLE:
         break;
