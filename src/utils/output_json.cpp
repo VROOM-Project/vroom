@@ -38,6 +38,9 @@ get_violations(const Violations& violations,
     case VIOLATION::LOAD:
       cause = "load";
       break;
+    case VIOLATION::MAX_TASKS:
+      cause = "max_tasks";
+      break;
     case VIOLATION::SKILLS:
       cause = "skills";
       break;
