@@ -8,6 +8,7 @@ All rights reserved (see LICENSE).
 */
 
 #include "problems/cvrp/operators/exchange.h"
+#include "utils/helpers.h"
 
 namespace vroom {
 namespace cvrp {
@@ -44,66 +45,16 @@ void Exchange::compute_gain() {
   // For source vehicle, we consider the cost of replacing job at rank
   // s_rank with target job. Part of that cost (for adjacent
   // edges) is stored in _sol_state.edge_costs_around_node.
-  Index s_index = _input.jobs[s_route[s_rank]].index();
-  Index t_index = _input.jobs[t_route[t_rank]].index();
-
-  // Determine costs added with target job.
-  Gain new_previous_cost = 0;
-  Gain new_next_cost = 0;
-
-  if (s_rank == 0) {
-    if (s_v.has_start()) {
-      auto p_index = s_v.start.value().index();
-      new_previous_cost = s_v.cost(p_index, t_index);
-    }
-  } else {
-    auto p_index = _input.jobs[s_route[s_rank - 1]].index();
-    new_previous_cost = s_v.cost(p_index, t_index);
-  }
-
-  if (s_rank == s_route.size() - 1) {
-    if (s_v.has_end()) {
-      auto n_index = s_v.end.value().index();
-      new_next_cost = s_v.cost(t_index, n_index);
-    }
-  } else {
-    auto n_index = _input.jobs[s_route[s_rank + 1]].index();
-    new_next_cost = s_v.cost(t_index, n_index);
-  }
-
-  Gain s_gain = _sol_state.edge_costs_around_node[s_vehicle][s_rank] -
-                new_previous_cost - new_next_cost;
+  Gain s_gain =
+    _sol_state.edge_costs_around_node[s_vehicle][s_rank] -
+    utils::new_edges_cost(_input, t_route[t_rank], s_v, s_route, s_rank);
 
   // For target vehicle, we consider the cost of replacing job at rank
   // t_rank with source job. Part of that cost (for adjacent
   // edges) is stored in _sol_state.edge_costs_around_node.
-
-  // Determine costs added with source job.
-  new_previous_cost = 0;
-  new_next_cost = 0;
-
-  if (t_rank == 0) {
-    if (t_v.has_start()) {
-      auto p_index = t_v.start.value().index();
-      new_previous_cost = t_v.cost(p_index, s_index);
-    }
-  } else {
-    auto p_index = _input.jobs[t_route[t_rank - 1]].index();
-    new_previous_cost = t_v.cost(p_index, s_index);
-  }
-
-  if (t_rank == t_route.size() - 1) {
-    if (t_v.has_end()) {
-      auto n_index = t_v.end.value().index();
-      new_next_cost = t_v.cost(s_index, n_index);
-    }
-  } else {
-    auto n_index = _input.jobs[t_route[t_rank + 1]].index();
-    new_next_cost = t_v.cost(s_index, n_index);
-  }
-
-  Gain t_gain = _sol_state.edge_costs_around_node[t_vehicle][t_rank] -
-                new_previous_cost - new_next_cost;
+  Gain t_gain =
+    _sol_state.edge_costs_around_node[t_vehicle][t_rank] -
+    utils::new_edges_cost(_input, s_route[s_rank], t_v, t_route, t_rank);
 
   stored_gain = s_gain + t_gain;
   gain_computed = true;
