@@ -21,6 +21,7 @@ All rights reserved (see LICENSE).
 #include "problems/vrptw/operators/relocate.h"
 #include "problems/vrptw/operators/reverse_two_opt.h"
 #include "problems/vrptw/operators/route_exchange.h"
+#include "problems/vrptw/operators/swap_star.h"
 #include "problems/vrptw/operators/two_opt.h"
 #include "problems/vrptw/operators/unassigned_exchange.h"
 #include "utils/helpers.h"
@@ -30,6 +31,7 @@ namespace ls {
 
 template <class Route,
           class UnassignedExchange,
+          class SwapStar,
           class Exchange,
           class CrossExchange,
           class MixedExchange,
@@ -46,6 +48,7 @@ template <class Route,
           class RouteExchange>
 LocalSearch<Route,
             UnassignedExchange,
+            SwapStar,
             Exchange,
             CrossExchange,
             MixedExchange,
@@ -248,6 +251,7 @@ RouteInsertion compute_best_insertion(const Input& input,
 
 template <class Route,
           class UnassignedExchange,
+          class SwapStar,
           class Exchange,
           class CrossExchange,
           class MixedExchange,
@@ -264,6 +268,7 @@ template <class Route,
           class RouteExchange>
 void LocalSearch<Route,
                  UnassignedExchange,
+                 SwapStar,
                  Exchange,
                  CrossExchange,
                  MixedExchange,
@@ -416,6 +421,7 @@ void LocalSearch<Route,
 
 template <class Route,
           class UnassignedExchange,
+          class SwapStar,
           class Exchange,
           class CrossExchange,
           class MixedExchange,
@@ -432,6 +438,7 @@ template <class Route,
           class RouteExchange>
 void LocalSearch<Route,
                  UnassignedExchange,
+                 SwapStar,
                  Exchange,
                  CrossExchange,
                  MixedExchange,
@@ -537,6 +544,28 @@ void LocalSearch<Route,
               }
             }
           }
+        }
+      }
+
+      // Swap* stuff
+      for (const auto& s_t : s_t_pairs) {
+        if (s_t.second <= s_t.first or // This operator is symmetric.
+            best_priorities[s_t.first] > 0 or best_priorities[s_t.second] > 0 or
+            _sol[s_t.first].size() == 0 or _sol[s_t.second].size() == 0 or
+            !_input.vehicle_ok_with_vehicle(s_t.first, s_t.second)) {
+          continue;
+        }
+
+        SwapStar r(_input,
+                   _sol_state,
+                   _sol[s_t.first],
+                   s_t.first,
+                   _sol[s_t.second],
+                   s_t.second);
+
+        if (r.gain() > best_gains[s_t.first][s_t.second]) {
+          best_gains[s_t.first][s_t.second] = r.gain();
+          best_ops[s_t.first][s_t.second] = std::make_unique<SwapStar>(r);
         }
       }
 
@@ -1455,6 +1484,7 @@ void LocalSearch<Route,
 
 template <class Route,
           class UnassignedExchange,
+          class SwapStar,
           class Exchange,
           class CrossExchange,
           class MixedExchange,
@@ -1471,6 +1501,7 @@ template <class Route,
           class RouteExchange>
 void LocalSearch<Route,
                  UnassignedExchange,
+                 SwapStar,
                  Exchange,
                  CrossExchange,
                  MixedExchange,
@@ -1565,6 +1596,7 @@ void LocalSearch<Route,
 
 template <class Route,
           class UnassignedExchange,
+          class SwapStar,
           class Exchange,
           class CrossExchange,
           class MixedExchange,
@@ -1581,6 +1613,7 @@ template <class Route,
           class RouteExchange>
 Gain LocalSearch<Route,
                  UnassignedExchange,
+                 SwapStar,
                  Exchange,
                  CrossExchange,
                  MixedExchange,
@@ -1634,6 +1667,7 @@ Gain LocalSearch<Route,
 
 template <class Route,
           class UnassignedExchange,
+          class SwapStar,
           class Exchange,
           class CrossExchange,
           class MixedExchange,
@@ -1650,6 +1684,7 @@ template <class Route,
           class RouteExchange>
 Gain LocalSearch<Route,
                  UnassignedExchange,
+                 SwapStar,
                  Exchange,
                  CrossExchange,
                  MixedExchange,
@@ -1680,6 +1715,7 @@ Gain LocalSearch<Route,
 
 template <class Route,
           class UnassignedExchange,
+          class SwapStar,
           class Exchange,
           class CrossExchange,
           class MixedExchange,
@@ -1696,6 +1732,7 @@ template <class Route,
           class RouteExchange>
 Gain LocalSearch<Route,
                  UnassignedExchange,
+                 SwapStar,
                  Exchange,
                  CrossExchange,
                  MixedExchange,
@@ -1730,6 +1767,7 @@ Gain LocalSearch<Route,
 
 template <class Route,
           class UnassignedExchange,
+          class SwapStar,
           class Exchange,
           class CrossExchange,
           class MixedExchange,
@@ -1746,6 +1784,7 @@ template <class Route,
           class RouteExchange>
 void LocalSearch<Route,
                  UnassignedExchange,
+                 SwapStar,
                  Exchange,
                  CrossExchange,
                  MixedExchange,
@@ -1869,6 +1908,7 @@ void LocalSearch<Route,
 
 template <class Route,
           class UnassignedExchange,
+          class SwapStar,
           class Exchange,
           class CrossExchange,
           class MixedExchange,
@@ -1885,6 +1925,7 @@ template <class Route,
           class RouteExchange>
 utils::SolutionIndicators LocalSearch<Route,
                                       UnassignedExchange,
+                                      SwapStar,
                                       Exchange,
                                       CrossExchange,
                                       MixedExchange,
@@ -1904,6 +1945,7 @@ utils::SolutionIndicators LocalSearch<Route,
 
 template class LocalSearch<TWRoute,
                            vrptw::UnassignedExchange,
+                           vrptw::SwapStar,
                            vrptw::Exchange,
                            vrptw::CrossExchange,
                            vrptw::MixedExchange,
@@ -1921,6 +1963,7 @@ template class LocalSearch<TWRoute,
 
 template class LocalSearch<RawRoute,
                            cvrp::UnassignedExchange,
+                           cvrp::SwapStar,
                            cvrp::Exchange,
                            cvrp::CrossExchange,
                            cvrp::MixedExchange,

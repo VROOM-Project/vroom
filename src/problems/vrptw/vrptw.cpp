@@ -25,6 +25,7 @@ All rights reserved (see LICENSE).
 #include "problems/vrptw/operators/relocate.h"
 #include "problems/vrptw/operators/reverse_two_opt.h"
 #include "problems/vrptw/operators/route_exchange.h"
+#include "problems/vrptw/operators/swap_star.h"
 #include "problems/vrptw/operators/two_opt.h"
 #include "problems/vrptw/operators/unassigned_exchange.h"
 #include "problems/vrptw/vrptw.h"
@@ -36,6 +37,7 @@ using TWSolution = std::vector<TWRoute>;
 
 using LocalSearch = ls::LocalSearch<TWRoute,
                                     vrptw::UnassignedExchange,
+                                    vrptw::SwapStar,
                                     vrptw::Exchange,
                                     vrptw::CrossExchange,
                                     vrptw::MixedExchange,
