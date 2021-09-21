@@ -11,12 +11,15 @@ All rights reserved (see LICENSE).
 */
 
 #include "algorithms/local_search/operator.h"
+#include "algorithms/local_search/swap_star_utils.h"
 
 namespace vroom {
 namespace cvrp {
 
 class SwapStar : public ls::Operator {
 protected:
+  ls::SwapChoice choice;
+
   virtual void compute_gain() override;
 
 public:

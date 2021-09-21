@@ -27,6 +27,11 @@ SwapStar::SwapStar(const Input& input,
 }
 
 void SwapStar::compute_gain() {
+  choice =
+    ls::compute_best_swap_star_choice(_input, _sol_state, source, target);
+  if (choice.gain > 0) {
+    stored_gain = choice.gain;
+  }
   gain_computed = true;
 }
 
@@ -38,6 +43,7 @@ bool SwapStar::is_valid() {
 
 void SwapStar::apply() {
   // TODO
+  assert(false);
 }
 
 std::vector<Index> SwapStar::addition_candidates() const {
