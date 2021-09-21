@@ -168,12 +168,131 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
       const auto current_delta = source_delta + target_delta;
 
       if (current_delta < best_delta) {
-        best_delta = current_delta;
-        choice = {-current_delta,
-                  s_rank,
-                  t_rank,
-                  (use_k_prime_for_min) ? k_prime->rank : s_rank,
-                  (use_k_for_min) ? k->rank : t_rank};
+        const auto insertion_in_source =
+          (use_k_prime_for_min) ? k_prime->rank : s_rank;
+        const auto insertion_in_target = (use_k_for_min) ? k->rank : t_rank;
+
+        std::vector<Index> source_range;
+        Index first_rank;
+        Index last_rank;
+        if (s_rank == insertion_in_source) {
+          source_range.push_back(target.route[t_rank]);
+          first_rank = s_rank;
+          last_rank = s_rank + 1;
+        } else {
+          if (s_rank < insertion_in_source) {
+            std::copy(source.route.begin() + s_rank + 1,
+                      source.route.begin() + insertion_in_source,
+                      std::back_inserter(source_range));
+            source_range.push_back(target.route[t_rank]);
+            first_rank = s_rank;
+            last_rank = insertion_in_source;
+          } else {
+            source_range.push_back(target.route[t_rank]);
+            std::copy(source.route.begin() + insertion_in_source,
+                      source.route.begin() + s_rank,
+                      std::back_inserter(source_range));
+            first_rank = insertion_in_source;
+            last_rank = s_rank + 1;
+          }
+        }
+
+        auto source_pickup =
+          std::accumulate(source_range.begin(),
+                          source_range.end(),
+                          input.zero_amount(),
+                          [&](auto sum, const auto i) {
+                            return sum + input.jobs[i].pickup;
+                          });
+        auto source_delivery =
+          std::accumulate(source_range.begin(),
+                          source_range.end(),
+                          input.zero_amount(),
+                          [&](auto sum, const auto i) {
+                            return sum + input.jobs[i].delivery;
+                          });
+
+        bool source_valid =
+          source.is_valid_addition_for_capacity_margins(input,
+                                                        source_pickup,
+                                                        source_delivery,
+                                                        first_rank,
+                                                        last_rank);
+
+        source_valid =
+          source_valid &&
+          source.is_valid_addition_for_capacity_inclusion(input,
+                                                          source_delivery,
+                                                          source_range.begin(),
+                                                          source_range.end(),
+                                                          first_rank,
+                                                          last_rank);
+
+        if (source_valid) {
+          std::vector<Index> target_range;
+          if (t_rank == insertion_in_target) {
+            target_range.push_back(source.route[s_rank]);
+            first_rank = t_rank;
+            last_rank = t_rank + 1;
+          } else {
+            if (t_rank < insertion_in_target) {
+              std::copy(target.route.begin() + t_rank + 1,
+                        target.route.begin() + insertion_in_target,
+                        std::back_inserter(target_range));
+              target_range.push_back(source.route[s_rank]);
+              first_rank = t_rank;
+              last_rank = insertion_in_target;
+            } else {
+              target_range.push_back(source.route[s_rank]);
+              std::copy(target.route.begin() + insertion_in_target,
+                        target.route.begin() + t_rank,
+                        std::back_inserter(target_range));
+              first_rank = insertion_in_target;
+              last_rank = t_rank + 1;
+            }
+          }
+
+          auto target_pickup =
+            std::accumulate(target_range.begin(),
+                            target_range.end(),
+                            input.zero_amount(),
+                            [&](auto sum, const auto i) {
+                              return sum + input.jobs[i].pickup;
+                            });
+          auto target_delivery =
+            std::accumulate(target_range.begin(),
+                            target_range.end(),
+                            input.zero_amount(),
+                            [&](auto sum, const auto i) {
+                              return sum + input.jobs[i].delivery;
+                            });
+
+          bool target_valid =
+            target.is_valid_addition_for_capacity_margins(input,
+                                                          target_pickup,
+                                                          target_delivery,
+                                                          first_rank,
+                                                          last_rank);
+
+          target_valid =
+            target_valid &&
+            target
+              .is_valid_addition_for_capacity_inclusion(input,
+                                                        target_delivery,
+                                                        target_range.begin(),
+                                                        target_range.end(),
+                                                        first_rank,
+                                                        last_rank);
+
+          if (target_valid) {
+            best_delta = current_delta;
+            choice = {-current_delta,
+                      s_rank,
+                      t_rank,
+                      insertion_in_source,
+                      insertion_in_target};
+          }
+        }
       }
     }
   }
