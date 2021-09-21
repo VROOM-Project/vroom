@@ -62,8 +62,8 @@ ThreeInsertions find_top_3_insertions(const Input& input,
 
 struct SwapChoice {
   Gain gain;
-  Index source_rank;
-  Index target_rank;
+  Index s_rank;
+  Index t_rank;
   Index insertion_in_source;
   Index insertion_in_target;
 };

@@ -42,8 +42,43 @@ bool SwapStar::is_valid() {
 }
 
 void SwapStar::apply() {
-  // TODO
-  assert(false);
+  const auto s_value = s_route[choice.s_rank];
+  const auto t_value = t_route[choice.t_rank];
+
+  if (choice.s_rank == choice.insertion_in_source) {
+    s_route[choice.s_rank] = t_value;
+  } else {
+    if (choice.s_rank < choice.insertion_in_source) {
+      std::copy(s_route.begin() + choice.s_rank + 1,
+                s_route.begin() + choice.insertion_in_source,
+                s_route.begin() + choice.s_rank);
+      s_route[choice.insertion_in_source - 1] = t_value;
+    } else {
+      std::copy(s_route.rend() - choice.s_rank,
+                s_route.rend() - choice.insertion_in_source,
+                s_route.rend() - choice.s_rank - 1);
+      s_route[choice.insertion_in_source] = t_value;
+    }
+  }
+
+  if (choice.t_rank == choice.insertion_in_target) {
+    t_route[choice.t_rank] = s_value;
+  } else {
+    if (choice.t_rank < choice.insertion_in_target) {
+      std::copy(t_route.begin() + choice.t_rank + 1,
+                t_route.begin() + choice.insertion_in_target,
+                t_route.begin() + choice.t_rank);
+      t_route[choice.insertion_in_target - 1] = s_value;
+    } else {
+      std::copy(t_route.rend() - choice.t_rank,
+                t_route.rend() - choice.insertion_in_target,
+                t_route.rend() - choice.t_rank - 1);
+      t_route[choice.insertion_in_target] = s_value;
+    }
+  }
+
+  source.update_amounts(_input);
+  target.update_amounts(_input);
 }
 
 std::vector<Index> SwapStar::addition_candidates() const {
