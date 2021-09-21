@@ -102,11 +102,17 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
   auto choice = empty_choice;
   Gain best_delta = 0;
 
-  for (const auto& [s_rank, target_insertions] : top_insertions_in_target) {
+  for (const auto& s_element : top_insertions_in_target) {
+    const auto s_rank = s_element.first;
+    const auto& target_insertions = s_element.second;
+
     const auto source_remove_gain =
       sol_state.node_gains[source.vehicle_rank][s_rank];
 
-    for (const auto& [t_rank, source_insertions] : top_insertions_in_source) {
+    for (const auto& t_element : top_insertions_in_source) {
+      const auto t_rank = t_element.first;
+      const auto& source_insertions = t_element.second;
+
       const auto target_remove_gain =
         sol_state.node_gains[target.vehicle_rank][t_rank];
 
