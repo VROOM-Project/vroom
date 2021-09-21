@@ -569,49 +569,52 @@ void LocalSearch<Route,
         }
       }
 
-      // Exchange stuff
-      for (const auto& s_t : s_t_pairs) {
-        if (s_t.second <= s_t.first or // This operator is symmetric.
-            best_priorities[s_t.first] > 0 or best_priorities[s_t.second] > 0 or
-            _sol[s_t.first].size() == 0 or _sol[s_t.second].size() == 0) {
-          continue;
-        }
+      // // Exchange stuff
+      // for (const auto& s_t : s_t_pairs) {
+      //   if (s_t.second <= s_t.first or // This operator is symmetric.
+      //       best_priorities[s_t.first] > 0 or best_priorities[s_t.second] > 0
+      //       or _sol[s_t.first].size() == 0 or _sol[s_t.second].size() == 0) {
+      //     continue;
+      //   }
 
-        for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
-          const auto& s_job_rank = _sol[s_t.first].route[s_rank];
-          if (_input.jobs[s_job_rank].type != JOB_TYPE::SINGLE or
-              !_input.vehicle_ok_with_job(s_t.second, s_job_rank)) {
-            // Don't try moving (part of) a shipment or an
-            // incompatible job.
-            continue;
-          }
+      //   for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank)
+      //   {
+      //     const auto& s_job_rank = _sol[s_t.first].route[s_rank];
+      //     if (_input.jobs[s_job_rank].type != JOB_TYPE::SINGLE or
+      //         !_input.vehicle_ok_with_job(s_t.second, s_job_rank)) {
+      //       // Don't try moving (part of) a shipment or an
+      //       // incompatible job.
+      //       continue;
+      //     }
 
-          for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size();
-               ++t_rank) {
-            const auto& t_job_rank = _sol[s_t.second].route[t_rank];
-            if (_input.jobs[t_job_rank].type != JOB_TYPE::SINGLE or
-                !_input.vehicle_ok_with_job(s_t.first, t_job_rank)) {
-              // Don't try moving (part of) a shipment or an
-              // incompatible job.
-              continue;
-            }
+      //     for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size();
+      //          ++t_rank) {
+      //       const auto& t_job_rank = _sol[s_t.second].route[t_rank];
+      //       if (_input.jobs[t_job_rank].type != JOB_TYPE::SINGLE or
+      //           !_input.vehicle_ok_with_job(s_t.first, t_job_rank)) {
+      //         // Don't try moving (part of) a shipment or an
+      //         // incompatible job.
+      //         continue;
+      //       }
 
-            Exchange r(_input,
-                       _sol_state,
-                       _sol[s_t.first],
-                       s_t.first,
-                       s_rank,
-                       _sol[s_t.second],
-                       s_t.second,
-                       t_rank);
+      //       Exchange r(_input,
+      //                  _sol_state,
+      //                  _sol[s_t.first],
+      //                  s_t.first,
+      //                  s_rank,
+      //                  _sol[s_t.second],
+      //                  s_t.second,
+      //                  t_rank);
 
-            if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid()) {
-              best_gains[s_t.first][s_t.second] = r.gain();
-              best_ops[s_t.first][s_t.second] = std::make_unique<Exchange>(r);
-            }
-          }
-        }
-      }
+      //       if (r.gain() > best_gains[s_t.first][s_t.second] and
+      //       r.is_valid()) {
+      //         best_gains[s_t.first][s_t.second] = r.gain();
+      //         best_ops[s_t.first][s_t.second] =
+      //         std::make_unique<Exchange>(r);
+      //       }
+      //     }
+      //   }
+      // }
     }
 
     // CROSS-exchange stuff
