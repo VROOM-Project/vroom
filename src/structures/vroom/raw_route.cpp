@@ -282,6 +282,13 @@ template bool RawRoute::is_valid_addition_for_capacity_inclusion(
 template bool RawRoute::is_valid_addition_for_capacity_inclusion(
   const Input& input,
   const Amount& delivery,
+  const std::vector<Index>::const_iterator first_job,
+  const std::vector<Index>::const_iterator last_job,
+  const Index first_rank,
+  const Index last_rank) const;
+template bool RawRoute::is_valid_addition_for_capacity_inclusion(
+  const Input& input,
+  const Amount& delivery,
   const std::vector<Index>::reverse_iterator first_job,
   const std::vector<Index>::reverse_iterator last_job,
   const Index first_rank,
