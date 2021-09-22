@@ -29,7 +29,27 @@ SwapStar::SwapStar(const Input& input,
 }
 
 void SwapStar::apply() {
-  // TODO
+  const auto s_insert = ls::get_insert_range(s_route,
+                                             choice.s_rank,
+                                             t_route[choice.t_rank],
+                                             choice.insertion_in_source);
+
+  const auto t_insert = ls::get_insert_range(t_route,
+                                             choice.t_rank,
+                                             s_route[choice.s_rank],
+                                             choice.insertion_in_target);
+
+  _tw_s_route.replace(_input,
+                      s_insert.range.begin(),
+                      s_insert.range.end(),
+                      s_insert.first_rank,
+                      s_insert.last_rank);
+
+  _tw_t_route.replace(_input,
+                      t_insert.range.begin(),
+                      t_insert.range.end(),
+                      t_insert.first_rank,
+                      t_insert.last_rank);
 }
 
 } // namespace vrptw
