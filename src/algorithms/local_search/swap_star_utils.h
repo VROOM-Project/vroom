@@ -253,6 +253,13 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
                                                       s_insert.first_rank,
                                                       s_insert.last_rank);
 
+        source_valid = source_valid &&
+                       source.is_valid_addition_for_tw(input,
+                                                       s_insert.range.begin(),
+                                                       s_insert.range.end(),
+                                                       s_insert.first_rank,
+                                                       s_insert.last_rank);
+
         if (source_valid) {
           const auto t_insert = get_insert_range(target.route,
                                                  t_rank,
@@ -290,6 +297,13 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
                                                         t_insert.range.end(),
                                                         t_insert.first_rank,
                                                         t_insert.last_rank);
+
+          target_valid = target_valid &&
+                         target.is_valid_addition_for_tw(input,
+                                                         t_insert.range.begin(),
+                                                         t_insert.range.end(),
+                                                         t_insert.first_rank,
+                                                         t_insert.last_rank);
 
           if (target_valid) {
             best_delta = current_delta;
