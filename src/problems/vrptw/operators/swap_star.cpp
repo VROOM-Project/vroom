@@ -28,6 +28,19 @@ SwapStar::SwapStar(const Input& input,
     _tw_t_route(tw_t_route) {
 }
 
+void SwapStar::compute_gain() {
+  // Similar to cvrp::SwapStar::compute_gain but makes sure to trigger
+  // ls::compute_best_swap_star_choice<TWRoute>.
+  choice = ls::compute_best_swap_star_choice(_input,
+                                             _sol_state,
+                                             _tw_s_route,
+                                             _tw_t_route);
+  if (choice.gain > 0) {
+    stored_gain = choice.gain;
+  }
+  gain_computed = true;
+}
+
 void SwapStar::apply() {
   const auto s_insert = ls::get_insert_range(s_route,
                                              choice.s_rank,

@@ -20,6 +20,8 @@ private:
   TWRoute& _tw_s_route;
   TWRoute& _tw_t_route;
 
+  virtual void compute_gain() override;
+
 public:
   SwapStar(const Input& input,
            const utils::SolutionState& sol_state,
