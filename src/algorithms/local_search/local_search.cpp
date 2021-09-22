@@ -547,28 +547,6 @@ void LocalSearch<Route,
         }
       }
 
-      // Swap* stuff
-      for (const auto& s_t : s_t_pairs) {
-        if (s_t.second <= s_t.first or // This operator is symmetric.
-            best_priorities[s_t.first] > 0 or best_priorities[s_t.second] > 0 or
-            _sol[s_t.first].size() == 0 or _sol[s_t.second].size() == 0 or
-            !_input.vehicle_ok_with_vehicle(s_t.first, s_t.second)) {
-          continue;
-        }
-
-        SwapStar r(_input,
-                   _sol_state,
-                   _sol[s_t.first],
-                   s_t.first,
-                   _sol[s_t.second],
-                   s_t.second);
-
-        if (r.gain() > best_gains[s_t.first][s_t.second]) {
-          best_gains[s_t.first][s_t.second] = r.gain();
-          best_ops[s_t.first][s_t.second] = std::make_unique<SwapStar>(r);
-        }
-      }
-
       // // Exchange stuff
       // for (const auto& s_t : s_t_pairs) {
       //   if (s_t.second <= s_t.first or // This operator is symmetric.
@@ -1356,6 +1334,31 @@ void LocalSearch<Route,
         if (re.gain() > best_gains[s_t.first][s_t.second] and re.is_valid()) {
           best_gains[s_t.first][s_t.second] = re.gain();
           best_ops[s_t.first][s_t.second] = std::make_unique<RouteExchange>(re);
+        }
+      }
+    }
+
+    if (_input.has_jobs()) {
+      // Swap* stuff
+      for (const auto& s_t : s_t_pairs) {
+        if (s_t.second <= s_t.first or // This operator is symmetric.
+            best_priorities[s_t.first] > 0 or best_priorities[s_t.second] > 0 or
+            _sol[s_t.first].size() == 0 or _sol[s_t.second].size() == 0 or
+            !_input.vehicle_ok_with_vehicle(s_t.first, s_t.second)) {
+          continue;
+        }
+
+        SwapStar r(_input,
+                   _sol_state,
+                   _sol[s_t.first],
+                   s_t.first,
+                   _sol[s_t.second],
+                   s_t.second,
+                   best_gains[s_t.first][s_t.second]);
+
+        if (r.gain() > best_gains[s_t.first][s_t.second]) {
+          best_gains[s_t.first][s_t.second] = r.gain();
+          best_ops[s_t.first][s_t.second] = std::make_unique<SwapStar>(r);
         }
       }
     }
