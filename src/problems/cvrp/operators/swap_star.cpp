@@ -17,9 +17,11 @@ SwapStar::SwapStar(const Input& input,
                    RawRoute& s_route,
                    Index s_vehicle,
                    RawRoute& t_route,
-                   Index t_vehicle)
+                   Index t_vehicle,
+                   Gain best_known_gain)
   // Use dummy 0 values for unused ranks.
-  : Operator(input, sol_state, s_route, s_vehicle, 0, t_route, t_vehicle, 0) {
+  : Operator(input, sol_state, s_route, s_vehicle, 0, t_route, t_vehicle, 0),
+    _best_known_gain(best_known_gain) {
   assert(s_vehicle != t_vehicle);
   assert(s_route.size() >= 1);
   assert(t_route.size() >= 1);
@@ -27,8 +29,11 @@ SwapStar::SwapStar(const Input& input,
 }
 
 void SwapStar::compute_gain() {
-  choice =
-    ls::compute_best_swap_star_choice(_input, _sol_state, source, target);
+  choice = ls::compute_best_swap_star_choice(_input,
+                                             _sol_state,
+                                             source,
+                                             target,
+                                             _best_known_gain);
   if (choice.gain > 0) {
     stored_gain = choice.gain;
   }

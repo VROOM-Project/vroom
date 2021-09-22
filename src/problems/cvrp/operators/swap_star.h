@@ -18,6 +18,7 @@ namespace cvrp {
 
 class SwapStar : public ls::Operator {
 protected:
+  const Gain _best_known_gain;
   ls::SwapChoice choice;
 
   virtual void compute_gain() override;
@@ -28,7 +29,8 @@ public:
            RawRoute& s_route,
            Index s_vehicle,
            RawRoute& t_route,
-           Index t_vehicle);
+           Index t_vehicle,
+           Gain best_known_gain);
 
   virtual bool is_valid() override;
 

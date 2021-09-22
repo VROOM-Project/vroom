@@ -112,7 +112,8 @@ template <class Route>
 SwapChoice compute_best_swap_star_choice(const Input& input,
                                          const utils::SolutionState& sol_state,
                                          const Route& source,
-                                         const Route& target) {
+                                         const Route& target,
+                                         Gain best_known_gain) {
   // Preprocessing phase.
   std::unordered_map<Index, ThreeInsertions> top_insertions_in_target;
   for (unsigned s_rank = 0; s_rank < source.route.size(); ++s_rank) {
@@ -138,7 +139,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
 
   // Search phase.
   auto choice = empty_choice;
-  Gain best_delta = 0;
+  Gain best_delta = -best_known_gain;
 
   for (const auto& s_element : top_insertions_in_target) {
     const auto s_rank = s_element.first;

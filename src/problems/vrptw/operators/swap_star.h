@@ -28,7 +28,8 @@ public:
            TWRoute& tw_s_route,
            Index s_vehicle,
            TWRoute& tw_t_route,
-           Index t_vehicle);
+           Index t_vehicle,
+           Gain best_known_gain);
 
   virtual void apply() override;
 };
