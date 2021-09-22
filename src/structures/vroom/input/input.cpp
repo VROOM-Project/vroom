@@ -551,10 +551,9 @@ void Input::set_matrices(unsigned nb_thread) {
     }
   }
 
-  std::unordered_map<std::string, Cost> profile_cost_bounds;
-
   std::exception_ptr ep = nullptr;
   std::mutex ep_m;
+  std::mutex cost_bound_m;
 
   auto run_on_profiles = [&](const std::vector<std::string>& profiles) {
     try {
@@ -603,8 +602,10 @@ void Input::set_matrices(unsigned nb_thread) {
 
         // Check for potential overflow in solution cost and store
         // cost bound for current profile.
-        assert(profile_cost_bounds.find(profile) == profile_cost_bounds.end());
-        profile_cost_bounds.emplace(profile, check_cost_bound(p_m->second));
+        const auto current_bound = check_cost_bound(p_m->second);
+        cost_bound_m.lock();
+        _cost_upper_bound = std::max(_cost_upper_bound, current_bound);
+        cost_bound_m.unlock();
       }
     } catch (...) {
       ep_m.lock();
@@ -625,12 +626,6 @@ void Input::set_matrices(unsigned nb_thread) {
 
   if (ep != nullptr) {
     std::rethrow_exception(ep);
-  }
-
-  for (const auto& profile : _profiles) {
-    auto profile_bound = profile_cost_bounds.find(profile);
-    assert(profile_bound != profile_cost_bounds.end());
-    _cost_upper_bound = std::max(_cost_upper_bound, profile_bound->second);
   }
 }
 
