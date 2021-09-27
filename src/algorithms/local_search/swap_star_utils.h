@@ -10,6 +10,8 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <set>
+
 #include "structures/typedefs.h"
 #include "structures/vroom/input/input.h"
 #include "structures/vroom/solution_state.h"
@@ -142,8 +144,8 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
   }
 
   // Search phase.
-  auto choice = empty_choice;
-  Gain best_delta = -best_known_gain;
+  auto best_choice = empty_choice;
+  Gain best_gain = best_known_gain;
 
   for (const auto& s_element : top_insertions_in_target) {
     const auto s_rank = s_element.first;
@@ -159,7 +161,6 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
       const auto target_remove_gain =
         sol_state.node_gains[target.vehicle_rank][t_rank];
 
-      // Compute delta for target route.
       const auto target_in_place_delta =
         utils::in_place_delta_cost(input,
                                    source.route[s_rank],
@@ -167,26 +168,6 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
                                    target.route,
                                    t_rank);
 
-      auto target_delta = target_in_place_delta;
-
-      bool use_k_for_min = false;
-      const auto k =
-        std::find_if(target_insertions.begin(),
-                     target_insertions.end(),
-                     [&](const auto& option) {
-                       return (option.rank != t_rank) and
-                              (option.rank != t_rank + 1) and
-                              (option.cost != std::numeric_limits<Gain>::max());
-                     });
-
-      if (k != target_insertions.end() and k->cost < target_in_place_delta) {
-        target_delta = k->cost;
-        use_k_for_min = true;
-      }
-
-      target_delta -= source_remove_gain;
-
-      // Compute delta for source route.
       const auto source_in_place_delta =
         utils::in_place_delta_cost(input,
                                    target.route[t_rank],
@@ -194,37 +175,71 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
                                    source.route,
                                    s_rank);
 
-      auto source_delta = source_in_place_delta;
+      auto swap_choice_options =
+        std::set<SwapChoice, decltype(SwapChoiceCmp)>(SwapChoiceCmp);
 
-      bool use_k_prime_for_min = false;
-      const auto k_prime =
-        std::find_if(source_insertions.begin(),
-                     source_insertions.end(),
-                     [&](const auto& option) {
-                       return (option.rank != s_rank) and
-                              (option.rank != s_rank + 1) and
-                              (option.cost != std::numeric_limits<Gain>::max());
-                     });
+      // Options for in-place insertion in source route include
+      // in-place insertion in target route and other relevant
+      // positions from target_insertions.
+      const Gain in_place_source_insertion_gain =
+        target_remove_gain - source_in_place_delta;
+      const Gain in_place_target_insertion_gain =
+        source_remove_gain - target_in_place_delta;
 
-      if (k_prime != source_insertions.end() and
-          k_prime->cost < source_in_place_delta) {
-        source_delta = k_prime->cost;
-        use_k_prime_for_min = true;
+      swap_choice_options.insert(
+        {in_place_target_insertion_gain + in_place_source_insertion_gain,
+         s_rank,
+         t_rank,
+         s_rank,
+         t_rank});
+
+      for (const auto& ti : target_insertions) {
+        if ((ti.rank != t_rank) and (ti.rank != t_rank + 1) and
+            (ti.cost != std::numeric_limits<Gain>::max())) {
+          const Gain t_gain = source_remove_gain - ti.cost;
+          swap_choice_options.insert({in_place_source_insertion_gain + t_gain,
+                                      s_rank,
+                                      t_rank,
+                                      s_rank,
+                                      ti.rank});
+        }
       }
 
-      source_delta -= target_remove_gain;
+      // Options for other relevant positions for insertion in source
+      // route (from source_insertions) include in-place insertion in
+      // target route and other relevant positions from
+      // target_insertions.
+      for (const auto& si : source_insertions) {
+        if ((si.rank != s_rank) and (si.rank != s_rank + 1) and
+            (si.cost != std::numeric_limits<Gain>::max())) {
+          const Gain s_gain = target_remove_gain - si.cost;
 
-      const auto current_delta = source_delta + target_delta;
+          swap_choice_options.insert({s_gain + in_place_target_insertion_gain,
+                                      s_rank,
+                                      t_rank,
+                                      si.rank,
+                                      t_rank});
 
-      if (current_delta < best_delta) {
-        const auto insertion_in_source =
-          (use_k_prime_for_min) ? k_prime->rank : s_rank;
-        const auto insertion_in_target = (use_k_for_min) ? k->rank : t_rank;
+          for (const auto& ti : target_insertions) {
+            if ((ti.rank != t_rank) and (ti.rank != t_rank + 1) and
+                (ti.cost != std::numeric_limits<Gain>::max())) {
+              const Gain t_gain = source_remove_gain - ti.cost;
+              swap_choice_options.insert(
+                {s_gain + t_gain, s_rank, t_rank, si.rank, ti.rank});
+            }
+          }
+        }
+      }
 
+      assert(swap_choice_options.size() <= 16);
+
+      const auto& sc = *(swap_choice_options.begin());
+
+      if (best_gain < sc.gain) {
         const auto s_insert = get_insert_range(source.route,
                                                s_rank,
                                                target.route[t_rank],
-                                               insertion_in_source);
+                                               sc.insertion_in_source);
 
         auto source_pickup =
           std::accumulate(s_insert.range.begin(),
@@ -269,7 +284,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
           const auto t_insert = get_insert_range(target.route,
                                                  t_rank,
                                                  source.route[s_rank],
-                                                 insertion_in_target);
+                                                 sc.insertion_in_target);
 
           auto target_pickup =
             std::accumulate(t_insert.range.begin(),
@@ -311,19 +326,15 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
                                                          t_insert.last_rank);
 
           if (target_valid) {
-            best_delta = current_delta;
-            choice = {-current_delta,
-                      s_rank,
-                      t_rank,
-                      insertion_in_source,
-                      insertion_in_target};
+            best_gain = sc.gain;
+            best_choice = sc;
           }
         }
       }
     }
   }
 
-  return choice;
+  return best_choice;
 }
 
 } // namespace ls
