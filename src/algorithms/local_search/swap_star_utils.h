@@ -236,9 +236,9 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
 
       assert(swap_choice_options.size() <= 16);
 
-      const auto& sc = *(swap_choice_options.begin());
-
-      if (best_gain < sc.gain) {
+      for (const auto& sc : swap_choice_options) {
+        // Browse interesting options by decreasing gain and check for
+        // validity.
         const auto s_insert = get_insert_range(source.route,
                                                s_rank,
                                                target.route[t_rank],
@@ -331,6 +331,9 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
           if (target_valid) {
             best_gain = sc.gain;
             best_choice = sc;
+            // Options are ordered by decreasing gain so we stop at
+            // the first valid one.
+            break;
           }
         }
       }
