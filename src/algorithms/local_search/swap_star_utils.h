@@ -186,22 +186,22 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
       const Gain in_place_target_insertion_gain =
         source_remove_gain - target_in_place_delta;
 
-      swap_choice_options.insert(
-        {in_place_target_insertion_gain + in_place_source_insertion_gain,
-         s_rank,
-         t_rank,
-         s_rank,
-         t_rank});
+      Gain current_gain =
+        in_place_target_insertion_gain + in_place_source_insertion_gain;
+      if (current_gain > best_gain) {
+        swap_choice_options.insert(
+          {current_gain, s_rank, t_rank, s_rank, t_rank});
+      }
 
       for (const auto& ti : target_insertions) {
         if ((ti.rank != t_rank) and (ti.rank != t_rank + 1) and
             (ti.cost != std::numeric_limits<Gain>::max())) {
           const Gain t_gain = source_remove_gain - ti.cost;
-          swap_choice_options.insert({in_place_source_insertion_gain + t_gain,
-                                      s_rank,
-                                      t_rank,
-                                      s_rank,
-                                      ti.rank});
+          current_gain = in_place_source_insertion_gain + t_gain;
+          if (current_gain > best_gain) {
+            swap_choice_options.insert(
+              {current_gain, s_rank, t_rank, s_rank, ti.rank});
+          }
         }
       }
 
@@ -214,18 +214,21 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
             (si.cost != std::numeric_limits<Gain>::max())) {
           const Gain s_gain = target_remove_gain - si.cost;
 
-          swap_choice_options.insert({s_gain + in_place_target_insertion_gain,
-                                      s_rank,
-                                      t_rank,
-                                      si.rank,
-                                      t_rank});
+          current_gain = s_gain + in_place_target_insertion_gain;
+          if (current_gain > best_gain) {
+            swap_choice_options.insert(
+              {current_gain, s_rank, t_rank, si.rank, t_rank});
+          }
 
           for (const auto& ti : target_insertions) {
             if ((ti.rank != t_rank) and (ti.rank != t_rank + 1) and
                 (ti.cost != std::numeric_limits<Gain>::max())) {
               const Gain t_gain = source_remove_gain - ti.cost;
-              swap_choice_options.insert(
-                {s_gain + t_gain, s_rank, t_rank, si.rank, ti.rank});
+              current_gain = s_gain + t_gain;
+              if (current_gain > best_gain) {
+                swap_choice_options.insert(
+                  {current_gain, s_rank, t_rank, si.rank, ti.rank});
+              }
             }
           }
         }
