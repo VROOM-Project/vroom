@@ -68,6 +68,10 @@ struct SwapChoice {
   Index insertion_in_target;
 };
 
+auto SwapChoiceCmp = [](const SwapChoice& lhs, const SwapChoice& rhs) {
+  return lhs.gain > rhs.gain;
+};
+
 constexpr SwapChoice empty_choice = {0, 0, 0, 0, 0};
 
 struct InsertionRange {
