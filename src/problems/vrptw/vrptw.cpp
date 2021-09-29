@@ -13,7 +13,6 @@ All rights reserved (see LICENSE).
 #include "algorithms/heuristics/heuristics.h"
 #include "algorithms/local_search/local_search.h"
 #include "problems/vrptw/operators/cross_exchange.h"
-#include "problems/vrptw/operators/exchange.h"
 #include "problems/vrptw/operators/intra_cross_exchange.h"
 #include "problems/vrptw/operators/intra_exchange.h"
 #include "problems/vrptw/operators/intra_mixed_exchange.h"
@@ -38,7 +37,6 @@ using TWSolution = std::vector<TWRoute>;
 using LocalSearch = ls::LocalSearch<TWRoute,
                                     vrptw::UnassignedExchange,
                                     vrptw::SwapStar,
-                                    vrptw::Exchange,
                                     vrptw::CrossExchange,
                                     vrptw::MixedExchange,
                                     vrptw::TwoOpt,
