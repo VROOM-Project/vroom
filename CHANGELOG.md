@@ -6,7 +6,8 @@
 
 - `setup` key for tasks to refine service time modeling (#358)
 - `max_tasks` key limiting route size at vehicle level (#421, #566)
-- number of routes in solution summary (#524)
+- Number of routes in solution summary (#524)
+- Implementation for extended SWAP* local search operator (#507)
 - Github Actions CI (#436)
 - Check for libvroom example build in CI (#514)
 
@@ -18,6 +19,7 @@
 ### Removed
 
 - Travis CI builds (#436)
+- Exchange local search operator (#507)
 
 ### Fixed
 

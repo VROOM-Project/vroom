@@ -17,6 +17,10 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/solution_state.h"
 #include "utils/helpers.h"
 
+// This file implements an adjusted version of the SWAP* operator
+// described in https://arxiv.org/abs/2012.10384, extended to support
+// additional constraint checks (back-hauls and time windows).
+
 namespace vroom {
 namespace ls {
 
