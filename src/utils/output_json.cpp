@@ -38,6 +38,9 @@ get_violations(const Violations& violations,
     case VIOLATION::LOAD:
       cause = "load";
       break;
+    case VIOLATION::MAX_TASKS:
+      cause = "max_tasks";
+      break;
     case VIOLATION::SKILLS:
       cause = "skills";
       break;
@@ -118,6 +121,7 @@ rapidjson::Value to_json(const Summary& summary,
   rapidjson::Value json_summary(rapidjson::kObjectType);
 
   json_summary.AddMember("cost", summary.cost, allocator);
+  json_summary.AddMember("routes", summary.routes, allocator);
   json_summary.AddMember("unassigned", summary.unassigned, allocator);
 
   if (summary.delivery.size() > 0) {
