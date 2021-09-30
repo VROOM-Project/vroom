@@ -355,9 +355,21 @@ void Input::add_vehicle(const Vehicle& vehicle) {
   _profiles.insert(current_v.profile);
 }
 
-void Input::set_matrix(const std::string& profile, Matrix<Cost>&& m) {
-  _custom_matrices.insert(profile);
-  _matrices.insert_or_assign(profile, m);
+void Input::set_durations_matrix(const std::string& profile,
+                                 Matrix<Duration>&& m) {
+  if (m.size() == 0) {
+    throw Exception(ERROR::INPUT,
+                    "Empty durations matrix for " + profile + " profile.");
+  }
+  _durations_matrices.insert_or_assign(profile, m);
+}
+
+void Input::set_costs_matrix(const std::string& profile, Matrix<Cost>&& m) {
+  if (m.size() == 0) {
+    throw Exception(ERROR::INPUT,
+                    "Empty costs matrix for " + profile + " profile.");
+  }
+  _costs_matrices.insert_or_assign(profile, m);
 }
 
 bool Input::has_skills() const {
@@ -519,14 +531,26 @@ void Input::set_vehicles_compatibility() {
 void Input::set_vehicles_costs() {
   for (std::size_t v = 0; v < vehicles.size(); ++v) {
     auto& vehicle = vehicles[v];
-    auto search = _matrices.find(vehicle.profile);
-    assert(search != _matrices.end());
-    vehicle.cost_wrapper.set_durations_matrix(&(search->second));
+
+    auto d_m = _durations_matrices.find(vehicle.profile);
+    assert(d_m != _durations_matrices.end());
+
+    auto c_m = _costs_matrices.find(vehicle.profile);
+    if (c_m != _costs_matrices.end()) {
+      // No fancy scaling for costs, use plain custom costs matrix.
+      vehicle.cost_wrapper.set_costs_factor(1.);
+      vehicle.cost_wrapper.set_costs_matrix(&(c_m->second));
+    } else {
+      vehicle.cost_wrapper.set_costs_matrix(&(d_m->second));
+    }
+
+    vehicle.cost_wrapper.set_durations_matrix(&(d_m->second));
   }
 }
 
 void Input::set_matrices(unsigned nb_thread) {
-  if (!_custom_matrices.empty() and !_has_custom_location_index) {
+  if ((!_durations_matrices.empty() or !_costs_matrices.empty()) and
+      !_has_custom_location_index) {
     throw Exception(ERROR::INPUT, "Missing location index.");
   }
 
@@ -542,12 +566,18 @@ void Input::set_matrices(unsigned nb_thread) {
   for (const auto& profile : _profiles) {
     thread_profiles[t_rank % nb_buckets].push_back(profile);
     ++t_rank;
-    if (_custom_matrices.find(profile) == _custom_matrices.end()) {
-      // Matrix has not been manually set, create routing wrapper and
-      // empty matrix to allow for concurrent modification later on.
+    if (_durations_matrices.find(profile) == _durations_matrices.end()) {
+      // Durations matrix has not been manually set, create routing
+      // wrapper and empty matrix to allow for concurrent modification
+      // later on.
       add_routing_wrapper(profile);
-      assert(_matrices.find(profile) == _matrices.end());
-      _matrices.emplace(profile, Matrix<Cost>());
+      _durations_matrices.emplace(profile, Matrix<Duration>());
+    } else {
+      if (_geometry) {
+        // Even with a custom matrix, we still want routing after
+        // optimization.
+        add_routing_wrapper(profile);
+      }
     }
   }
 
@@ -558,13 +588,14 @@ void Input::set_matrices(unsigned nb_thread) {
   auto run_on_profiles = [&](const std::vector<std::string>& profiles) {
     try {
       for (const auto& profile : profiles) {
-        auto p_m = _matrices.find(profile);
-        assert(p_m != _matrices.end());
+        auto d_m = _durations_matrices.find(profile);
+        assert(d_m != _durations_matrices.end());
 
-        if (p_m->second.size() == 0) {
-          // Matrix not manually set so defined as empty above.
+        if (d_m->second.size() == 0) {
+          // Durations matrix not manually set so defined as empty
+          // above.
           if (_locations.size() == 1) {
-            p_m->second = Matrix<Cost>({{0}});
+            d_m->second = Matrix<Cost>({{0}});
           } else {
             auto rw = std::find_if(_routing_wrappers.begin(),
                                    _routing_wrappers.end(),
@@ -575,13 +606,13 @@ void Input::set_matrices(unsigned nb_thread) {
 
             if (!_has_custom_location_index) {
               // Location indices are set based on order in _locations.
-              p_m->second = (*rw)->get_matrix(_locations);
+              d_m->second = (*rw)->get_matrix(_locations);
             } else {
               // Location indices are provided in input so we need an
               // indirection based on order in _locations.
               auto m = (*rw)->get_matrix(_locations);
 
-              Matrix<Cost> full_m(_max_matrices_used_index + 1);
+              Matrix<Duration> full_m(_max_matrices_used_index + 1);
               for (Index i = 0; i < _locations.size(); ++i) {
                 const auto& loc_i = _locations[i];
                 for (Index j = 0; j < _locations.size(); ++j) {
@@ -589,23 +620,38 @@ void Input::set_matrices(unsigned nb_thread) {
                 }
               }
 
-              p_m->second = std::move(full_m);
+              d_m->second = std::move(full_m);
             }
           }
         }
 
-        if (p_m->second.size() <= _max_matrices_used_index) {
+        if (d_m->second.size() <= _max_matrices_used_index) {
           throw Exception(ERROR::INPUT,
                           "location_index exceeding matrix size for " +
                             profile + " profile.");
         }
 
-        // Check for potential overflow in solution cost and store
-        // cost bound for current profile.
-        const auto current_bound = check_cost_bound(p_m->second);
-        cost_bound_m.lock();
-        _cost_upper_bound = std::max(_cost_upper_bound, current_bound);
-        cost_bound_m.unlock();
+        const auto c_m = _costs_matrices.find(profile);
+
+        if (c_m != _costs_matrices.end()) {
+          if (c_m->second.size() <= _max_matrices_used_index) {
+            throw Exception(ERROR::INPUT,
+                            "location_index exceeding matrix size for " +
+                              profile + " profile.");
+          }
+
+          // Check for potential overflow in solution cost.
+          const auto current_bound = check_cost_bound(c_m->second);
+          cost_bound_m.lock();
+          _cost_upper_bound = std::max(_cost_upper_bound, current_bound);
+          cost_bound_m.unlock();
+        } else {
+          // Durations matrix will be used for costs.
+          const auto current_bound = check_cost_bound(d_m->second);
+          cost_bound_m.lock();
+          _cost_upper_bound = std::max(_cost_upper_bound, current_bound);
+          cost_bound_m.unlock();
+        }
       }
     } catch (...) {
       ep_m.lock();

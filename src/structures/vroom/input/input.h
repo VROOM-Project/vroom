@@ -46,8 +46,8 @@ private:
   bool _geometry;
   bool _has_jobs;
   bool _has_shipments;
-  std::unordered_map<std::string, Matrix<Cost>> _matrices;
-  std::unordered_set<std::string> _custom_matrices;
+  std::unordered_map<std::string, Matrix<Duration>> _durations_matrices;
+  std::unordered_map<std::string, Matrix<Duration>> _costs_matrices;
   Cost _cost_upper_bound;
   std::vector<Location> _locations;
   std::unordered_map<Location, Index> _locations_to_index;
@@ -98,7 +98,8 @@ public:
 
   void add_vehicle(const Vehicle& vehicle);
 
-  void set_matrix(const std::string& profile, Matrix<Cost>&& m);
+  void set_durations_matrix(const std::string& profile, Matrix<Duration>&& m);
+  void set_costs_matrix(const std::string& profile, Matrix<Cost>&& m);
 
   const Amount& zero_amount() const {
     return _zero;
@@ -124,11 +125,6 @@ public:
 
   // Returns true iff both vehicles have common job candidates.
   bool vehicle_ok_with_vehicle(Index v1_index, Index v2_index) const;
-
-  Cost get_duration(const std::string& profile, Index i, Index j) const {
-    assert(_matrices.find(profile) != _matrices.end());
-    return _matrices.at(profile)[i][j];
-  }
 
   Solution solve(unsigned exploration_level,
                  unsigned nb_thread,

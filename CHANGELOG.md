@@ -6,6 +6,7 @@
 
 - `setup` key for tasks to refine service time modeling (#358)
 - `max_tasks` key limiting route size at vehicle level (#421, #566)
+- Support for custom cost matrices (#415)
 - number of routes in solution summary (#524)
 - Github Actions CI (#436)
 - Check for libvroom example build in CI (#514)
@@ -24,6 +25,8 @@
 - "Infeasible route" error while an existing route plan exists (#506)
 - Break omitted with no other time window (#497)
 - Biased evaluation in `try_job_additions` (#572)
+- Routing error with custom matrix and `-g` (#561)
+- Crash on empty custom matrix (#570)
 
 ## [v1.10.0] - 2021-05-06
 

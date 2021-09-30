@@ -108,10 +108,10 @@ void SolutionState::update_costs(const std::vector<Index>& route, Index v) {
     for (Index v_rank = 0; v_rank < _nb_vehicles; ++v_rank) {
       const auto& other_v = _input.vehicles[v_rank];
       fwd_costs[v][v_rank][i] = fwd_costs[v][v_rank][i - 1] +
-                                other_v.duration(previous_index, current_index);
+                                other_v.cost(previous_index, current_index);
 
       bwd_costs[v][v_rank][i] = bwd_costs[v][v_rank][i - 1] +
-                                other_v.duration(current_index, previous_index);
+                                other_v.cost(current_index, previous_index);
     }
     previous_index = current_index;
   }
