@@ -481,7 +481,7 @@ inline Route format_route(const Input& input,
 
     bool same_location = (r > 1 and input.jobs[tw_r.route[r - 2]].index() ==
                                       previous_job.index()) or
-                         (r == 0 and v.has_start() and
+                         (r == 1 and v.has_start() and
                           v.start.value().index() == previous_job.index());
     const auto current_setup = (same_location) ? 0 : previous_job.setup;
 
