@@ -155,27 +155,44 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
     const auto s_rank = s_element.first;
     const auto& target_insertions = s_element.second;
 
-    const auto source_remove_gain =
-      sol_state.node_gains[source.vehicle_rank][s_rank];
+    const auto& v_source = input.vehicles[source.vehicle_rank];
+    // sol_state.node_gains contains the Delta value we're looking for
+    // except in the case of a single-step route with a start an end,
+    // where the start->end cost is not accounted for.
+    const auto source_start_end_cost =
+      (source.size() == 1 and v_source.has_start() and v_source.has_end())
+        ? v_source.cost(v_source.start.value().index(),
+                        v_source.end.value().index())
+        : 0;
+    const auto source_delta =
+      sol_state.node_gains[source.vehicle_rank][s_rank] - source_start_end_cost;
 
     for (const auto& t_element : top_insertions_in_source) {
       const auto t_rank = t_element.first;
       const auto& source_insertions = t_element.second;
 
-      const auto target_remove_gain =
-        sol_state.node_gains[target.vehicle_rank][t_rank];
+      const auto& v_target = input.vehicles[target.vehicle_rank];
+      // Same as above.
+      const auto target_start_end_cost =
+        (target.size() == 1 and v_target.has_start() and v_target.has_end())
+          ? v_target.cost(v_target.start.value().index(),
+                          v_target.end.value().index())
+          : 0;
+      const auto target_delta =
+        sol_state.node_gains[target.vehicle_rank][t_rank] -
+        target_start_end_cost;
 
       const auto target_in_place_delta =
         utils::in_place_delta_cost(input,
                                    source.route[s_rank],
-                                   input.vehicles[target.vehicle_rank],
+                                   v_target,
                                    target.route,
                                    t_rank);
 
       const auto source_in_place_delta =
         utils::in_place_delta_cost(input,
                                    target.route[t_rank],
-                                   input.vehicles[source.vehicle_rank],
+                                   v_source,
                                    source.route,
                                    s_rank);
 
@@ -186,9 +203,9 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
       // in-place insertion in target route and other relevant
       // positions from target_insertions.
       const Gain in_place_source_insertion_gain =
-        target_remove_gain - source_in_place_delta;
+        target_delta - source_in_place_delta;
       const Gain in_place_target_insertion_gain =
-        source_remove_gain - target_in_place_delta;
+        source_delta - target_in_place_delta;
 
       Gain current_gain =
         in_place_target_insertion_gain + in_place_source_insertion_gain;
@@ -200,7 +217,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
       for (const auto& ti : target_insertions) {
         if ((ti.rank != t_rank) and (ti.rank != t_rank + 1) and
             (ti.cost != std::numeric_limits<Gain>::max())) {
-          const Gain t_gain = source_remove_gain - ti.cost;
+          const Gain t_gain = source_delta - ti.cost;
           current_gain = in_place_source_insertion_gain + t_gain;
           if (current_gain > best_gain) {
             swap_choice_options.insert(
@@ -216,7 +233,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
       for (const auto& si : source_insertions) {
         if ((si.rank != s_rank) and (si.rank != s_rank + 1) and
             (si.cost != std::numeric_limits<Gain>::max())) {
-          const Gain s_gain = target_remove_gain - si.cost;
+          const Gain s_gain = target_delta - si.cost;
 
           current_gain = s_gain + in_place_target_insertion_gain;
           if (current_gain > best_gain) {
@@ -227,7 +244,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
           for (const auto& ti : target_insertions) {
             if ((ti.rank != t_rank) and (ti.rank != t_rank + 1) and
                 (ti.cost != std::numeric_limits<Gain>::max())) {
-              const Gain t_gain = source_remove_gain - ti.cost;
+              const Gain t_gain = source_delta - ti.cost;
               current_gain = s_gain + t_gain;
               if (current_gain > best_gain) {
                 swap_choice_options.insert(
