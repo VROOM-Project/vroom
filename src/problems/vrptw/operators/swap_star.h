@@ -1,5 +1,5 @@
-#ifndef VRPTW_EXCHANGE_H
-#define VRPTW_EXCHANGE_H
+#ifndef VRPTW_SWAP_STAR_H
+#define VRPTW_SWAP_STAR_H
 
 /*
 
@@ -10,27 +10,26 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/cvrp/operators/exchange.h"
+#include "problems/cvrp/operators/swap_star.h"
 
 namespace vroom {
 namespace vrptw {
 
-class Exchange : public cvrp::Exchange {
+class SwapStar : public cvrp::SwapStar {
 private:
   TWRoute& _tw_s_route;
   TWRoute& _tw_t_route;
 
+  virtual void compute_gain() override;
+
 public:
-  Exchange(const Input& input,
+  SwapStar(const Input& input,
            const utils::SolutionState& sol_state,
            TWRoute& tw_s_route,
            Index s_vehicle,
-           Index s_rank,
            TWRoute& tw_t_route,
            Index t_vehicle,
-           Index t_rank);
-
-  virtual bool is_valid() override;
+           Gain best_known_gain);
 
   virtual void apply() override;
 };

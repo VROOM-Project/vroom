@@ -14,7 +14,6 @@ All rights reserved (see LICENSE).
 #include "algorithms/local_search/local_search.h"
 #include "problems/cvrp/cvrp.h"
 #include "problems/cvrp/operators/cross_exchange.h"
-#include "problems/cvrp/operators/exchange.h"
 #include "problems/cvrp/operators/intra_cross_exchange.h"
 #include "problems/cvrp/operators/intra_exchange.h"
 #include "problems/cvrp/operators/intra_mixed_exchange.h"
@@ -26,6 +25,7 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/operators/relocate.h"
 #include "problems/cvrp/operators/reverse_two_opt.h"
 #include "problems/cvrp/operators/route_exchange.h"
+#include "problems/cvrp/operators/swap_star.h"
 #include "problems/cvrp/operators/two_opt.h"
 #include "problems/cvrp/operators/unassigned_exchange.h"
 #include "problems/tsp/tsp.h"
@@ -37,7 +37,7 @@ using RawSolution = std::vector<RawRoute>;
 
 using LocalSearch = ls::LocalSearch<RawRoute,
                                     cvrp::UnassignedExchange,
-                                    cvrp::Exchange,
+                                    cvrp::SwapStar,
                                     cvrp::CrossExchange,
                                     cvrp::MixedExchange,
                                     cvrp::TwoOpt,

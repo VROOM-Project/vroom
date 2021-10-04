@@ -17,7 +17,7 @@ namespace ls {
 
 template <class Route,
           class UnassignedExchange,
-          class Exchange,
+          class SwapStar,
           class CrossExchange,
           class MixedExchange,
           class TwoOpt,

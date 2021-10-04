@@ -1,5 +1,5 @@
-#ifndef CVRP_EXCHANGE_H
-#define CVRP_EXCHANGE_H
+#ifndef CVRP_SWAP_STAR_H
+#define CVRP_SWAP_STAR_H
 
 /*
 
@@ -11,23 +11,26 @@ All rights reserved (see LICENSE).
 */
 
 #include "algorithms/local_search/operator.h"
+#include "algorithms/local_search/swap_star_utils.h"
 
 namespace vroom {
 namespace cvrp {
 
-class Exchange : public ls::Operator {
+class SwapStar : public ls::Operator {
 protected:
+  const Gain _best_known_gain;
+  ls::SwapChoice choice;
+
   virtual void compute_gain() override;
 
 public:
-  Exchange(const Input& input,
+  SwapStar(const Input& input,
            const utils::SolutionState& sol_state,
            RawRoute& s_route,
            Index s_vehicle,
-           Index s_rank,
            RawRoute& t_route,
            Index t_vehicle,
-           Index t_rank);
+           Gain best_known_gain);
 
   virtual bool is_valid() override;
 

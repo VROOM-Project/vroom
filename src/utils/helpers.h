@@ -189,6 +189,85 @@ inline Gain addition_cost(const Input& input,
   return cost;
 }
 
+// Compute cost of new edges when replacing job at rank in route with
+// job at job_rank.
+inline Gain new_edges_cost(const Input& input,
+                           Index job_rank,
+                           const Vehicle& v,
+                           const std::vector<Index>& route,
+                           Index rank) {
+  Index new_index = input.jobs[job_rank].index();
+
+  Gain new_previous_cost = 0;
+  Gain new_next_cost = 0;
+
+  if (rank == 0) {
+    if (v.has_start()) {
+      auto p_index = v.start.value().index();
+      new_previous_cost = v.cost(p_index, new_index);
+    }
+  } else {
+    auto p_index = input.jobs[route[rank - 1]].index();
+    new_previous_cost = v.cost(p_index, new_index);
+  }
+
+  if (rank == route.size() - 1) {
+    if (v.has_end()) {
+      auto n_index = v.end.value().index();
+      new_next_cost = v.cost(new_index, n_index);
+    }
+  } else {
+    auto n_index = input.jobs[route[rank + 1]].index();
+    new_next_cost = v.cost(new_index, n_index);
+  }
+
+  return new_previous_cost + new_next_cost;
+}
+
+// Helper function for SwapStar operator, computing part of the cost
+// for in-place replacing of job at rank in route with job at
+// job_rank.
+inline Gain in_place_delta_cost(const Input& input,
+                                Index job_rank,
+                                const Vehicle& v,
+                                const std::vector<Index>& route,
+                                Index rank) {
+  assert(!route.empty());
+  Index new_index = input.jobs[job_rank].index();
+
+  Gain new_previous_cost = 0;
+  Gain new_next_cost = 0;
+  std::optional<Index> p_index;
+  std::optional<Index> n_index;
+
+  if (rank == 0) {
+    if (v.has_start()) {
+      p_index = v.start.value().index();
+      new_previous_cost = v.cost(p_index.value(), new_index);
+    }
+  } else {
+    p_index = input.jobs[route[rank - 1]].index();
+    new_previous_cost = v.cost(p_index.value(), new_index);
+  }
+
+  if (rank == route.size() - 1) {
+    if (v.has_end()) {
+      n_index = v.end.value().index();
+      new_next_cost = v.cost(new_index, n_index.value());
+    }
+  } else {
+    n_index = input.jobs[route[rank + 1]].index();
+    new_next_cost = v.cost(new_index, n_index.value());
+  }
+
+  Gain old_virtual_cost = 0;
+  if (p_index and n_index) {
+    old_virtual_cost = v.cost(p_index.value(), n_index.value());
+  }
+
+  return new_previous_cost + new_next_cost - old_virtual_cost;
+}
+
 inline Cost priority_sum_for_route(const Input& input,
                                    const std::vector<Index>& route) {
   return std::accumulate(route.begin(),

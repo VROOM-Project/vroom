@@ -85,6 +85,7 @@ void RawRoute::update_amounts(const Input& input) {
   Amount current_deliveries(input.zero_amount());
 
   _current_loads.back() = _fwd_pickups.back();
+  assert(_current_loads.back() <= capacity);
 
   for (std::size_t i = 0; i < route.size(); ++i) {
     auto bwd_i = route.size() - i - 1;
@@ -92,12 +93,14 @@ void RawRoute::update_amounts(const Input& input) {
     _bwd_deliveries[bwd_i] = current_deliveries;
     _current_loads[bwd_i + 1] =
       _fwd_pickups[bwd_i] + _pd_loads[bwd_i] + current_deliveries;
+    assert(_current_loads[bwd_i + 1] <= capacity);
     const auto& job = input.jobs[route[bwd_i]];
     if (job.type == JOB_TYPE::SINGLE) {
       current_deliveries += job.delivery;
     }
   }
   _current_loads[0] = current_deliveries;
+  assert(_current_loads[0] <= capacity);
 
   auto peak = _current_loads[0];
   _fwd_peaks[0] = peak;
@@ -274,6 +277,13 @@ template bool RawRoute::is_valid_addition_for_capacity_inclusion(
   const Amount& delivery,
   const std::vector<Index>::iterator first_job,
   const std::vector<Index>::iterator last_job,
+  const Index first_rank,
+  const Index last_rank) const;
+template bool RawRoute::is_valid_addition_for_capacity_inclusion(
+  const Input& input,
+  const Amount& delivery,
+  const std::vector<Index>::const_iterator first_job,
+  const std::vector<Index>::const_iterator last_job,
   const Index first_rank,
   const Index last_rank) const;
 template bool RawRoute::is_valid_addition_for_capacity_inclusion(
