@@ -31,6 +31,7 @@ namespace vroom {
 Input::Input(unsigned amount_size, const io::Servers& servers, ROUTER router)
   : _start_loading(std::chrono::high_resolution_clock::now()),
     _no_addition_yet(true),
+    _has_skills(false),
     _has_TW(false),
     _homogeneous_locations(true),
     _homogeneous_profiles(true),
@@ -331,13 +332,9 @@ void Input::add_vehicle(const Vehicle& vehicle) {
   // Ensure that skills or location index are either always or never
   // provided.
   if (_no_addition_yet) {
-    _has_skills = !current_v.skills.empty();
     _no_addition_yet = false;
     _has_custom_location_index = has_location_index;
   } else {
-    if (_has_skills != !current_v.skills.empty()) {
-      throw Exception(ERROR::INPUT, "Missing skills.");
-    }
     if (_has_custom_location_index != has_location_index) {
       throw Exception(ERROR::INPUT, "Missing location index.");
     }

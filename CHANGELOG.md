@@ -27,6 +27,7 @@
 - Biased evaluation in `try_job_additions` (#572)
 - Routing error with custom matrix and `-g` (#561)
 - Crash on empty custom matrix (#570)
+- Properly allow empty skills arrays (#586)
 
 ## [v1.10.0] - 2021-05-06
 
