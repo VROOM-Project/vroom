@@ -113,7 +113,7 @@ A `vehicle` object has the following properties:
 | [`skills`] | an array of integers defining skills |
 | [`time_window`] | a `time_window` object describing working hours |
 | [`breaks`] | an array of `break` objects |
-| [`speed_factor`] | a double value used to scale **all** vehicle travel times (defaults to 1.), the respected precision is limited to two digits after the decimal point |
+| [`speed_factor`] | a double value in the range `(0, 5]` used to scale **all** vehicle travel times (defaults to 1.), the respected precision is limited to two digits after the decimal point |
 | [`max_tasks`] | an integer defining the maximum number of tasks in a route for this vehicle |
 | [`steps`] | an array of `vehicle_step` objects describing a custom route for this vehicle (only makes sense when using `-c`) |
 
@@ -167,6 +167,13 @@ If no custom matrix is provided:
   the same coordinates
 - depending on if custom matrices are provided, required fields follow
   the same logic than for `job` keys `location` and `location_index`
+
+### Vehicle speed factor
+
+- Range of allowed values: `0 < speed_factor <= 5`.
+- For custom travel-time matrix, in order to solve for higher range
+  of `speed_factor`, users should have their own scaling logic of
+  computing the matrix.
 
 ### Capacity restrictions
 
