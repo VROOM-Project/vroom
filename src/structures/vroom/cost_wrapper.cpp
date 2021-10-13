@@ -8,6 +8,7 @@ All rights reserved (see LICENSE).
 */
 
 #include "structures/vroom/cost_wrapper.h"
+#include "utils/exception.h"
 #include <cmath>
 
 namespace vroom {
@@ -15,6 +16,10 @@ namespace vroom {
 CostWrapper::CostWrapper(double speed_factor)
   : discrete_duration_factor(std::round(1 / speed_factor * DIVISOR)),
     discrete_cost_factor(std::round(1 / speed_factor * DIVISOR)) {
+  if (speed_factor <= 0 || speed_factor > MAX_SPEED_FACTOR) {
+    throw Exception(ERROR::INPUT,
+                    "Invalid speed factor: " + std::to_string(speed_factor));
+  }
 }
 
 void CostWrapper::set_durations_matrix(const Matrix<Duration>* matrix) {
