@@ -48,6 +48,7 @@ constexpr Cost INFINITE_COST = 3 * (std::numeric_limits<Cost>::max() / 4);
 const std::string DEFAULT_PROFILE = "car";
 
 constexpr Priority MAX_PRIORITY = 100;
+constexpr double MAX_SPEED_FACTOR = 5.0;
 
 // Available routing engines.
 enum class ROUTER { OSRM, LIBOSRM, ORS, VALHALLA };
