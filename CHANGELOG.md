@@ -30,6 +30,7 @@
 - Routing error with custom matrix and `-g` (#561)
 - Crash on empty custom matrix (#570)
 - Properly allow empty skills arrays (#586)
+- Restrict `speed_factor` in the range `(0, 5]` (#591)
 
 ## [v1.10.0] - 2021-05-06
 
