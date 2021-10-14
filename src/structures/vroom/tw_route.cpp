@@ -780,8 +780,18 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
       // last_rank may be OK in the return clause below, BUT shifting
       // earliest date for next task with new setup time may make it
       // not doable anymore.
+      auto earliest_after = current.earliest + next.travel;
+      const auto j_after_tw =
+        std::find_if(j_after.tws.begin(),
+                     j_after.tws.end(),
+                     [&](const auto& tw) { return earliest_after <= tw.end; });
+      if (j_after_tw == j_after.tws.end()) {
+        return false;
+      }
+      earliest_after = std::max(earliest_after, j_after_tw->start);
+
       const auto next_after = next_info(input, route[last_rank], last_rank + 1);
-      if (current.earliest + next.travel + new_action_time + next_after.travel >
+      if (earliest_after + new_action_time + next_after.travel >
           next_after.latest) {
         return false;
       }
