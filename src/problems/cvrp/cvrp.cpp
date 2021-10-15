@@ -192,6 +192,12 @@ Solution CVRP::solve(unsigned exploration_level,
 
   auto run_solve = [&](const std::vector<std::size_t>& param_ranks) {
     try {
+      // Decide time allocated for each search.
+      Timeout search_time;
+      if (timeout.has_value()) {
+        search_time = timeout.value() / param_ranks.size();
+      }
+
       for (auto rank : param_ranks) {
         auto& p = parameters[rank];
 
