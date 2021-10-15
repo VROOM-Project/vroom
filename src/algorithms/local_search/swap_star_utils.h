@@ -74,7 +74,7 @@ struct SwapChoice {
   Index insertion_in_target;
 };
 
-auto SwapChoiceCmp = [](const SwapChoice& lhs, const SwapChoice& rhs) {
+const auto SwapChoiceCmp = [](const SwapChoice& lhs, const SwapChoice& rhs) {
   return lhs.gain > rhs.gain;
 };
 
