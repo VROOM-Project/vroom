@@ -706,8 +706,19 @@ Solution Input::solve(unsigned exploration_level,
                    _end_loading - _start_loading)
                    .count();
 
+  // Decide time allocated for solving, 0 means only heuristics will
+  // be applied.
+  Timeout solve_time;
+  if (timeout.has_value()) {
+    if (loading <= timeout.value()) {
+      solve_time = timeout.value() - loading;
+    } else {
+      solve_time = 0;
+    }
+  }
+
   // Solve.
-  auto sol = instance->solve(exploration_level, nb_thread, timeout, h_param);
+  auto sol = instance->solve(exploration_level, nb_thread, solve_time, h_param);
 
   // Update timing info.
   sol.summary.computing_times.loading = loading;

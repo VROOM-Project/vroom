@@ -112,7 +112,8 @@ int main(int argc, char** argv) {
     // Needs to be done after previous switch to make sure the
     // appropriate output file is set.
     if (!limit_arg.empty()) {
-      cl_args.timeout = std::stoul(limit_arg);
+      // Internally timeout is in milliseconds.
+      cl_args.timeout = 1000 * std::stoul(limit_arg);
     }
     cl_args.nb_threads = std::stoul(nb_threads_arg);
     cl_args.exploration_level = std::stoul(exploration_level_arg);

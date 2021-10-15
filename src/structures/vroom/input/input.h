@@ -128,7 +128,7 @@ public:
 
   Solution solve(unsigned exploration_level,
                  unsigned nb_thread,
-                 const Timeout& timeout,
+                 const Timeout& timeout = Timeout(),
                  const std::vector<HeuristicParameters>& h_param =
                    std::vector<HeuristicParameters>());
 
