@@ -190,6 +190,7 @@ int main(int argc, char** argv) {
                             ? problem_instance.check(cl_args.nb_threads)
                             : problem_instance.solve(cl_args.exploration_level,
                                                      cl_args.nb_threads,
+                                                     cl_args.timeout,
                                                      cl_args.h_params);
 
     // Write solution.

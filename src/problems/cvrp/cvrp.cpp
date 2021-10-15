@@ -139,6 +139,7 @@ CVRP::CVRP(const Input& input) : VRP(input) {
 
 Solution CVRP::solve(unsigned exploration_level,
                      unsigned nb_threads,
+                     const Timeout& timeout,
                      const std::vector<HeuristicParameters>& h_param) const {
   if (_input.vehicles.size() == 1 and !_input.has_skills() and
       _input.zero_amount().size() == 0 and !_input.has_shipments()) {

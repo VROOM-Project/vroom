@@ -51,10 +51,6 @@ void Input::set_geometry(bool geometry) {
   _geometry = geometry;
 }
 
-void Input::set_solve_timeout(const Timeout& timeout) {
-  _timeout = timeout;
-}
-
 void Input::add_routing_wrapper(const std::string& profile) {
   assert(std::find_if(_routing_wrappers.begin(),
                       _routing_wrappers.end(),
@@ -686,6 +682,7 @@ std::unique_ptr<VRP> Input::get_problem() const {
 
 Solution Input::solve(unsigned exploration_level,
                       unsigned nb_thread,
+                      const Timeout& timeout,
                       const std::vector<HeuristicParameters>& h_param) {
   if (_geometry and !_all_locations_have_coords) {
     // Early abort when info is required with missing coordinates.
@@ -710,7 +707,7 @@ Solution Input::solve(unsigned exploration_level,
                    .count();
 
   // Solve.
-  auto sol = instance->solve(exploration_level, nb_thread, h_param);
+  auto sol = instance->solve(exploration_level, nb_thread, timeout, h_param);
 
   // Update timing info.
   sol.summary.computing_times.loading = loading;

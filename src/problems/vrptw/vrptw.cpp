@@ -138,6 +138,7 @@ VRPTW::VRPTW(const Input& input) : VRP(input) {
 
 Solution VRPTW::solve(unsigned exploration_level,
                       unsigned nb_threads,
+                      const Timeout& timeout,
                       const std::vector<HeuristicParameters>& h_param) const {
   // Use vector of parameters when passed for debugging, else use
   // predefined parameter set.

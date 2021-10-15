@@ -35,7 +35,6 @@ private:
   TimePoint _end_loading;
   TimePoint _end_solving;
   TimePoint _end_routing;
-  Timeout _timeout;
   std::unordered_set<std::string> _profiles;
   std::vector<std::unique_ptr<routing::Wrapper>> _routing_wrappers;
   bool _no_addition_yet;
@@ -93,8 +92,6 @@ public:
 
   void set_geometry(bool geometry);
 
-  void set_solve_timeout(const Timeout& timeout);
-
   void add_job(const Job& job);
 
   void add_shipment(const Job& pickup, const Job& delivery);
@@ -131,6 +128,7 @@ public:
 
   Solution solve(unsigned exploration_level,
                  unsigned nb_thread,
+                 const Timeout& timeout,
                  const std::vector<HeuristicParameters>& h_param =
                    std::vector<HeuristicParameters>());
 
