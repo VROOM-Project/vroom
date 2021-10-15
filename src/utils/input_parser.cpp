@@ -519,6 +519,7 @@ Input parse(const CLArgs& cl_args) {
   // Custom input object embedding jobs, vehicles and matrices.
   Input input(amount_size, cl_args.servers, cl_args.router);
   input.set_geometry(cl_args.geometry);
+  input.set_solve_timeout(cl_args.timeout);
 
   // Add all vehicles.
   for (rapidjson::SizeType i = 0; i < json_input["vehicles"].Size(); ++i) {

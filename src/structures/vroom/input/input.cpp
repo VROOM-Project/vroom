@@ -51,6 +51,10 @@ void Input::set_geometry(bool geometry) {
   _geometry = geometry;
 }
 
+void Input::set_solve_timeout(const Timeout& timeout) {
+  _timeout = timeout;
+}
+
 void Input::add_routing_wrapper(const std::string& profile) {
   assert(std::find_if(_routing_wrappers.begin(),
                       _routing_wrappers.end(),
