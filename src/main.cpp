@@ -39,6 +39,7 @@ void display_usage() {
   usage += "\t-c,\t\t\t\t choose ETA for custom routes and report violations\n";
   usage += "\t-g,\t\t\t\t add detailed route geometry and indicators\n";
   usage += "\t-i FILE,\t\t\t read input from FILE rather than from stdin\n";
+  usage += "\t-l LIMIT,\t\t\t stop solving process after LIMIT seconds\n";
   usage += "\t-o OUTPUT,\t\t\t output file name\n";
   usage += "\t-p PROFILE:PORT (=" + vroom::DEFAULT_PROFILE +
            ":5000),\t routing server port\n";
@@ -54,10 +55,11 @@ int main(int argc, char** argv) {
   vroom::io::CLArgs cl_args;
 
   // Parsing command-line arguments.
-  const char* optString = "a:ce:gi:o:p:r:t:x:h?";
+  const char* optString = "a:ce:gi:l:o:p:r:t:x:h?";
   int opt = getopt(argc, argv, optString);
 
   std::string router_arg;
+  std::string limit_arg = "";
   std::string nb_threads_arg = std::to_string(cl_args.nb_threads);
   std::string exploration_level_arg = std::to_string(cl_args.exploration_level);
   std::vector<std::string> heuristic_params_arg;
@@ -81,6 +83,9 @@ int main(int argc, char** argv) {
       break;
     case 'i':
       cl_args.input_file = optarg;
+      break;
+    case 'l':
+      limit_arg = optarg;
       break;
     case 'o':
       cl_args.output_file = optarg;
