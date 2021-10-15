@@ -199,7 +199,10 @@ Solution VRPTW::solve(unsigned exploration_level,
         }
 
         // Local search phase.
-        LocalSearch ls(_input, tw_solutions[rank], max_nb_jobs_removal);
+        LocalSearch ls(_input,
+                       tw_solutions[rank],
+                       max_nb_jobs_removal,
+                       search_time);
         ls.run();
 
         // Store solution indicators.
