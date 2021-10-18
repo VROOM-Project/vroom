@@ -9,6 +9,7 @@
 - Support for custom cost matrices (#415)
 - Number of routes in solution summary (#524)
 - Implementation for extended SWAP* local search operator (#507)
+- `-l` command-line flag for user-provided timeout (#594)
 - Github Actions CI (#436)
 - Check for libvroom example build in CI (#514)
 
