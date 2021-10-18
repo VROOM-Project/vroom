@@ -68,7 +68,7 @@ LocalSearch<Route,
     _max_nb_jobs_removal(max_nb_jobs_removal),
     _deadline(timeout.has_value()
                 ? utils::now() + std::chrono::milliseconds(timeout.value())
-                : std::optional<TimePoint>()),
+                : Deadline()),
     _all_routes(_nb_vehicles),
     _sol_state(input),
     _sol(sol),

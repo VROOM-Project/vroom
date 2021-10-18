@@ -37,7 +37,7 @@ private:
   const std::size_t _nb_vehicles;
 
   const unsigned _max_nb_jobs_removal;
-  const std::optional<TimePoint> _deadline;
+  const Deadline _deadline;
 
   std::vector<Index> _all_routes;
 
