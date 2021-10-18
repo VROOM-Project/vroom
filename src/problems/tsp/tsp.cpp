@@ -165,7 +165,8 @@ Cost TSP::symmetrized_cost(const std::list<Index>& tour) const {
   return cost;
 }
 
-std::vector<Index> TSP::raw_solve(unsigned nb_threads) const {
+std::vector<Index> TSP::raw_solve(unsigned nb_threads,
+                                  const Timeout& timeout) const {
   // Applying heuristic.
   std::list<Index> christo_sol = tsp::christofides(_symmetrized_matrix);
 
@@ -281,7 +282,7 @@ Solution TSP::solve(unsigned,
                     const Timeout& timeout,
                     const std::vector<HeuristicParameters>&) const {
   RawRoute r(_input, 0);
-  r.set_route(_input, raw_solve(nb_threads));
+  r.set_route(_input, raw_solve(nb_threads, timeout));
   return utils::format_solution(_input, {r});
 }
 
