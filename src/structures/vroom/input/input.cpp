@@ -710,11 +710,7 @@ Solution Input::solve(unsigned exploration_level,
   // be applied.
   Timeout solve_time;
   if (timeout.has_value()) {
-    if (loading <= timeout.value()) {
-      solve_time = timeout.value() - loading;
-    } else {
-      solve_time = 0;
-    }
+    solve_time = (loading <= timeout.value()) ? (timeout.value() - loading) : 0;
   }
 
   // Solve.

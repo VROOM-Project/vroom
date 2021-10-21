@@ -1525,13 +1525,10 @@ void LocalSearch<Route,
       }
     }
 
-    if (_deadline.has_value() and _deadline.value() < utils::now()) {
-      break;
-    }
-
     // Try again on each improvement until we reach last job removal
-    // level.
-    try_ls_step = (current_nb_removal <= _max_nb_jobs_removal);
+    // level or deadline is met.
+    try_ls_step = (current_nb_removal <= _max_nb_jobs_removal) and
+                  (!_deadline.has_value() or _deadline.value() < utils::now());
 
     if (try_ls_step) {
       // Get a looser situation by removing jobs.
