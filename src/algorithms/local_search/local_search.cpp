@@ -61,10 +61,14 @@ LocalSearch<Route,
             PDShift,
             RouteExchange>::LocalSearch(const Input& input,
                                         std::vector<Route>& sol,
-                                        unsigned max_nb_jobs_removal)
+                                        unsigned max_nb_jobs_removal,
+                                        const Timeout& timeout)
   : _input(input),
     _nb_vehicles(_input.vehicles.size()),
     _max_nb_jobs_removal(max_nb_jobs_removal),
+    _deadline(timeout.has_value()
+                ? utils::now() + std::chrono::milliseconds(timeout.value())
+                : Deadline()),
     _all_routes(_nb_vehicles),
     _sol_state(input),
     _sol(sol),
@@ -476,8 +480,11 @@ void LocalSearch<Route,
   Priority best_priority = 0;
 
   while (best_gain > 0 or best_priority > 0) {
-    // Operators applied to a pair of (different) routes.
+    if (_deadline.has_value() and _deadline.value() < utils::now()) {
+      break;
+    }
 
+    // Operators applied to a pair of (different) routes.
     if (_input.has_jobs()) {
       // Move(s) that don't make sense for shipment-only instances.
 
@@ -1519,8 +1526,9 @@ void LocalSearch<Route,
     }
 
     // Try again on each improvement until we reach last job removal
-    // level.
-    try_ls_step = (current_nb_removal <= _max_nb_jobs_removal);
+    // level or deadline is met.
+    try_ls_step = (current_nb_removal <= _max_nb_jobs_removal) and
+                  (!_deadline.has_value() or _deadline.value() < utils::now());
 
     if (try_ls_step) {
       // Get a looser situation by removing jobs.

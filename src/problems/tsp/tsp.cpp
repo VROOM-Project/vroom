@@ -165,9 +165,33 @@ Cost TSP::symmetrized_cost(const std::list<Index>& tour) const {
   return cost;
 }
 
-std::vector<Index> TSP::raw_solve(unsigned nb_threads) const {
+std::vector<Index> TSP::raw_solve(unsigned nb_threads,
+                                  const Timeout& timeout) const {
+  // Compute deadline including heuristic computing time.
+  const Deadline deadline =
+    timeout.has_value()
+      ? utils::now() + std::chrono::milliseconds(timeout.value())
+      : Deadline();
+
   // Applying heuristic.
   std::list<Index> christo_sol = tsp::christofides(_symmetrized_matrix);
+
+  Deadline sym_deadline = deadline;
+  if (deadline.has_value() and !_is_symmetric) {
+    // Rule of thumb if problem is asymmetric: dedicate 70% of the
+    // remaining available solving time to the symmetric local search,
+    // then the rest to the asymmetric version.
+    const auto after_heuristic = utils::now();
+    const auto remaining_ms =
+      (after_heuristic < deadline.value())
+        ? std::chrono::duration_cast<std::chrono::milliseconds>(
+            deadline.value() - after_heuristic)
+            .count()
+        : 0;
+    sym_deadline =
+      after_heuristic +
+      std::chrono::milliseconds(static_cast<unsigned>(0.7 * remaining_ms));
+  }
 
   // Local search on symmetric problem.
   // Applying deterministic, fast local search to improve the current
@@ -187,13 +211,13 @@ std::vector<Index> TSP::raw_solve(unsigned nb_threads) const {
 
   do {
     // All possible 2-opt moves.
-    sym_two_opt_gain = sym_ls.perform_all_two_opt_steps();
+    sym_two_opt_gain = sym_ls.perform_all_two_opt_steps(sym_deadline);
 
     // All relocate moves.
-    sym_relocate_gain = sym_ls.perform_all_relocate_steps();
+    sym_relocate_gain = sym_ls.perform_all_relocate_steps(sym_deadline);
 
     // All or-opt moves.
-    sym_or_opt_gain = sym_ls.perform_all_or_opt_steps();
+    sym_or_opt_gain = sym_ls.perform_all_or_opt_steps(sym_deadline);
   } while ((sym_two_opt_gain > 0) or (sym_relocate_gain > 0) or
            (sym_or_opt_gain > 0));
 
@@ -231,16 +255,16 @@ std::vector<Index> TSP::raw_solve(unsigned nb_threads) const {
 
     do {
       // All avoid-loops moves.
-      asym_avoid_loops_gain = asym_ls.perform_all_avoid_loop_steps();
+      asym_avoid_loops_gain = asym_ls.perform_all_avoid_loop_steps(deadline);
 
       // All possible 2-opt moves.
-      asym_two_opt_gain = asym_ls.perform_all_asym_two_opt_steps();
+      asym_two_opt_gain = asym_ls.perform_all_asym_two_opt_steps(deadline);
 
       // All relocate moves.
-      asym_relocate_gain = asym_ls.perform_all_relocate_steps();
+      asym_relocate_gain = asym_ls.perform_all_relocate_steps(deadline);
 
       // All or-opt moves.
-      asym_or_opt_gain = asym_ls.perform_all_or_opt_steps();
+      asym_or_opt_gain = asym_ls.perform_all_or_opt_steps(deadline);
     } while ((asym_two_opt_gain > 0) or (asym_relocate_gain > 0) or
              (asym_or_opt_gain > 0) or (asym_avoid_loops_gain > 0));
 
@@ -278,9 +302,10 @@ std::vector<Index> TSP::raw_solve(unsigned nb_threads) const {
 
 Solution TSP::solve(unsigned,
                     unsigned nb_threads,
+                    const Timeout& timeout,
                     const std::vector<HeuristicParameters>&) const {
   RawRoute r(_input, 0);
-  r.set_route(_input, raw_solve(nb_threads));
+  r.set_route(_input, raw_solve(nb_threads, timeout));
   return utils::format_solution(_input, {r});
 }
 

@@ -31,10 +31,10 @@ class VRP;
 
 class Input {
 private:
-  std::chrono::high_resolution_clock::time_point _start_loading;
-  std::chrono::high_resolution_clock::time_point _end_loading;
-  std::chrono::high_resolution_clock::time_point _end_solving;
-  std::chrono::high_resolution_clock::time_point _end_routing;
+  TimePoint _start_loading;
+  TimePoint _end_loading;
+  TimePoint _end_solving;
+  TimePoint _end_routing;
   std::unordered_set<std::string> _profiles;
   std::vector<std::unique_ptr<routing::Wrapper>> _routing_wrappers;
   bool _no_addition_yet;
@@ -128,6 +128,7 @@ public:
 
   Solution solve(unsigned exploration_level,
                  unsigned nb_thread,
+                 const Timeout& timeout = Timeout(),
                  const std::vector<HeuristicParameters>& h_param =
                    std::vector<HeuristicParameters>());
 

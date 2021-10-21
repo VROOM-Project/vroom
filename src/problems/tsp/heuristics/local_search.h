@@ -33,23 +33,23 @@ public:
 
   Cost relocate_step();
 
-  Cost perform_all_relocate_steps();
+  Cost perform_all_relocate_steps(const Deadline& deadline);
 
   Cost avoid_loop_step();
 
-  Cost perform_all_avoid_loop_steps();
+  Cost perform_all_avoid_loop_steps(const Deadline& deadline);
 
   Cost two_opt_step();
 
   Cost asym_two_opt_step();
 
-  Cost perform_all_two_opt_steps();
+  Cost perform_all_two_opt_steps(const Deadline& deadline);
 
-  Cost perform_all_asym_two_opt_steps();
+  Cost perform_all_asym_two_opt_steps(const Deadline& deadline);
 
   Cost or_opt_step();
 
-  Cost perform_all_or_opt_steps();
+  Cost perform_all_or_opt_steps(const Deadline& deadline);
 
   std::list<Index> get_tour(Index first_index) const;
 };

@@ -11,6 +11,7 @@ All rights reserved (see LICENSE).
 */
 
 #include <array>
+#include <chrono>
 #include <limits>
 #include <list>
 #include <optional>
@@ -41,6 +42,9 @@ using Priority = uint32_t;
 using Coordinates = std::array<Coordinate, 2>;
 using OptionalCoordinates = std::optional<Coordinates>;
 using Skills = std::unordered_set<Skill>;
+using TimePoint = std::chrono::high_resolution_clock::time_point;
+using Timeout = std::optional<unsigned>;
+using Deadline = std::optional<TimePoint>;
 
 // Setting max value would cause trouble with further additions.
 constexpr Cost INFINITE_COST = 3 * (std::numeric_limits<Cost>::max() / 4);

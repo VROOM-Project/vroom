@@ -14,6 +14,7 @@ All rights reserved (see LICENSE).
 #include <unordered_map>
 
 #include "problems/tsp/heuristics/local_search.h"
+#include "utils/helpers.h"
 
 namespace vroom {
 namespace tsp {
@@ -211,11 +212,15 @@ Cost LocalSearch::relocate_step() {
   return best_gain;
 }
 
-Cost LocalSearch::perform_all_relocate_steps() {
+Cost LocalSearch::perform_all_relocate_steps(const Deadline& deadline) {
   Cost total_gain = 0;
   unsigned relocate_iter = 0;
   Cost gain = 0;
   do {
+    if (deadline.has_value() and deadline.value() < utils::now()) {
+      break;
+    }
+
     gain = this->relocate_step();
 
     if (gain > 0) {
@@ -361,11 +366,15 @@ Cost LocalSearch::avoid_loop_step() {
   return gain;
 }
 
-Cost LocalSearch::perform_all_avoid_loop_steps() {
+Cost LocalSearch::perform_all_avoid_loop_steps(const Deadline& deadline) {
   Cost total_gain = 0;
   unsigned relocate_iter = 0;
   Cost gain = 0;
   do {
+    if (deadline.has_value() and deadline.value() < utils::now()) {
+      break;
+    }
+
     gain = this->avoid_loop_step();
 
     if (gain > 0) {
@@ -625,11 +634,15 @@ Cost LocalSearch::asym_two_opt_step() {
   return best_gain;
 }
 
-Cost LocalSearch::perform_all_two_opt_steps() {
+Cost LocalSearch::perform_all_two_opt_steps(const Deadline& deadline) {
   Cost total_gain = 0;
   unsigned two_opt_iter = 0;
   Cost gain = 0;
   do {
+    if (deadline.has_value() and deadline.value() < utils::now()) {
+      break;
+    }
+
     gain = this->two_opt_step();
 
     if (gain > 0) {
@@ -641,11 +654,15 @@ Cost LocalSearch::perform_all_two_opt_steps() {
   return total_gain;
 }
 
-Cost LocalSearch::perform_all_asym_two_opt_steps() {
+Cost LocalSearch::perform_all_asym_two_opt_steps(const Deadline& deadline) {
   Cost total_gain = 0;
   unsigned two_opt_iter = 0;
   Cost gain = 0;
   do {
+    if (deadline.has_value() and deadline.value() < utils::now()) {
+      break;
+    }
+
     gain = this->asym_two_opt_step();
 
     if (gain > 0) {
@@ -756,11 +773,15 @@ Cost LocalSearch::or_opt_step() {
   return best_gain;
 }
 
-Cost LocalSearch::perform_all_or_opt_steps() {
+Cost LocalSearch::perform_all_or_opt_steps(const Deadline& deadline) {
   Cost total_gain = 0;
   unsigned or_opt_iter = 0;
   Cost gain = 0;
   do {
+    if (deadline.has_value() and deadline.value() < utils::now()) {
+      break;
+    }
+
     gain = this->or_opt_step();
     if (gain > 0) {
       total_gain += gain;
