@@ -27,6 +27,7 @@ public:
   virtual Solution
   solve(unsigned exploration_level,
         unsigned nb_threads,
+        const Timeout& timeout,
         const std::vector<HeuristicParameters>& h_param) const override;
 };
 

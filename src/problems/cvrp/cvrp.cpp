@@ -139,6 +139,7 @@ CVRP::CVRP(const Input& input) : VRP(input) {
 
 Solution CVRP::solve(unsigned exploration_level,
                      unsigned nb_threads,
+                     const Timeout& timeout,
                      const std::vector<HeuristicParameters>& h_param) const {
   if (_input.vehicles.size() == 1 and !_input.has_skills() and
       _input.zero_amount().size() == 0 and !_input.has_shipments()) {
@@ -149,7 +150,7 @@ Solution CVRP::solve(unsigned exploration_level,
     TSP p(_input, job_ranks, 0);
 
     RawRoute r(_input, 0);
-    r.set_route(_input, p.raw_solve(nb_threads));
+    r.set_route(_input, p.raw_solve(nb_threads, timeout));
 
     return utils::format_solution(_input, {r});
   }
@@ -191,6 +192,12 @@ Solution CVRP::solve(unsigned exploration_level,
 
   auto run_solve = [&](const std::vector<std::size_t>& param_ranks) {
     try {
+      // Decide time allocated for each search.
+      Timeout search_time;
+      if (timeout.has_value()) {
+        search_time = timeout.value() / param_ranks.size();
+      }
+
       for (auto rank : param_ranks) {
         auto& p = parameters[rank];
 
@@ -208,7 +215,10 @@ Solution CVRP::solve(unsigned exploration_level,
         }
 
         // Local search phase.
-        LocalSearch ls(_input, solutions[rank], max_nb_jobs_removal);
+        LocalSearch ls(_input,
+                       solutions[rank],
+                       max_nb_jobs_removal,
+                       search_time);
         ls.run();
 
         // Store solution indicators.

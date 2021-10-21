@@ -28,6 +28,7 @@ struct CLArgs {
   std::vector<HeuristicParameters> h_params; // -e
   bool geometry;                             // -g
   std::string input_file;                    // -i
+  Timeout timeout;                           // -l
   std::string output_file;                   // -o
   ROUTER router;                             // -r
   std::string input;                         // cl arg

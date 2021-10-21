@@ -25,6 +25,10 @@ namespace utils {
 using RawSolution = std::vector<RawRoute>;
 using TWSolution = std::vector<TWRoute>;
 
+inline TimePoint now() {
+  return std::chrono::high_resolution_clock::now();
+}
+
 inline Cost add_without_overflow(Cost a, Cost b) {
   if (a > std::numeric_limits<Cost>::max() - b) {
     throw Exception(ERROR::INPUT,

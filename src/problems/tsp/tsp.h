@@ -41,11 +41,13 @@ public:
 
   Cost symmetrized_cost(const std::list<Index>& tour) const;
 
-  std::vector<Index> raw_solve(unsigned nb_threads) const;
+  std::vector<Index> raw_solve(unsigned nb_threads,
+                               const Timeout& timeout) const;
 
   virtual Solution
   solve(unsigned,
         unsigned nb_threads,
+        const Timeout& timeout,
         const std::vector<HeuristicParameters>&) const override;
 };
 

@@ -682,6 +682,7 @@ std::unique_ptr<VRP> Input::get_problem() const {
 
 Solution Input::solve(unsigned exploration_level,
                       unsigned nb_thread,
+                      const Timeout& timeout,
                       const std::vector<HeuristicParameters>& h_param) {
   if (_geometry and !_all_locations_have_coords) {
     // Early abort when info is required with missing coordinates.
@@ -705,8 +706,15 @@ Solution Input::solve(unsigned exploration_level,
                    _end_loading - _start_loading)
                    .count();
 
+  // Decide time allocated for solving, 0 means only heuristics will
+  // be applied.
+  Timeout solve_time;
+  if (timeout.has_value()) {
+    solve_time = (loading <= timeout.value()) ? (timeout.value() - loading) : 0;
+  }
+
   // Solve.
-  auto sol = instance->solve(exploration_level, nb_thread, h_param);
+  auto sol = instance->solve(exploration_level, nb_thread, solve_time, h_param);
 
   // Update timing info.
   sol.summary.computing_times.loading = loading;

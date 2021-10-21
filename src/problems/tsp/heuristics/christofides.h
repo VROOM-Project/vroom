@@ -10,6 +10,10 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <list>
+
+#include "utils/helpers.h"
+
 namespace vroom {
 namespace tsp {
 

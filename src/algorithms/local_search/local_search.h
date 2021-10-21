@@ -37,6 +37,8 @@ private:
   const std::size_t _nb_vehicles;
 
   const unsigned _max_nb_jobs_removal;
+  const Deadline _deadline;
+
   std::vector<Index> _all_routes;
 
   utils::SolutionState _sol_state;
@@ -66,7 +68,8 @@ private:
 public:
   LocalSearch(const Input& input,
               std::vector<Route>& tw_sol,
-              unsigned max_nb_jobs_removal);
+              unsigned max_nb_jobs_removal,
+              const Timeout& timeout);
 
   utils::SolutionIndicators indicators() const;
 
