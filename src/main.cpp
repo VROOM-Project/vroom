@@ -12,14 +12,13 @@ All rights reserved (see LICENSE).
 #include <sstream>
 #ifndef _WIN32
 #include <unistd.h>
-#else
-#include "getopt_win.h"
 #endif
 
 #if USE_LIBOSRM
 #include "osrm/exception.hpp"
 #endif
 
+#include "../include/cxxopts.hpp"
 #include "problems/vrp.h"
 #include "structures/cl_args.h"
 #include "utils/helpers.h"
@@ -27,86 +26,55 @@ All rights reserved (see LICENSE).
 #include "utils/output_json.h"
 #include "utils/version.h"
 
-void display_usage() {
-  std::string usage = "VROOM Copyright (C) 2015-2021, Julien Coupey\n";
-  usage += "Version: " + vroom::get_version() + "\n";
-  usage += "Usage:\n\tvroom [OPTION]... \"INPUT\"";
-  usage += "\n\tvroom [OPTION]... -i FILE\n";
-  usage += "\tvroom [OPTION]...\n";
-  usage += "Options:\n";
-  usage += "\t-a PROFILE:HOST (=" + vroom::DEFAULT_PROFILE +
-           ":0.0.0.0)\t routing server\n";
-  usage += "\t-c,\t\t\t\t choose ETA for custom routes and report violations\n";
-  usage += "\t-g,\t\t\t\t add detailed route geometry and indicators\n";
-  usage += "\t-i FILE,\t\t\t read input from FILE rather than from stdin\n";
-  usage += "\t-l LIMIT,\t\t\t stop solving process after LIMIT seconds\n";
-  usage += "\t-o OUTPUT,\t\t\t output file name\n";
-  usage += "\t-p PROFILE:PORT (=" + vroom::DEFAULT_PROFILE +
-           ":5000),\t routing server port\n";
-  usage += "\t-r ROUTER (=osrm),\t\t osrm, libosrm, ors or valhalla\n";
-  usage += "\t-t THREADS (=4),\t\t number of threads to use\n";
-  usage += "\t-x EXPLORE (=5),\t\t exploration level to use (0..5)";
-  std::cout << usage << std::endl;
-  exit(0);
-}
-
 int main(int argc, char** argv) {
-  // Load default command-line options.
   vroom::io::CLArgs cl_args;
-
-  // Parsing command-line arguments.
-  const char* optString = "a:ce:gi:l:o:p:r:t:x:h?";
-  int opt = getopt(argc, argv, optString);
-
+  std::string host_arg;
+  std::string port_arg;
   std::string router_arg;
-  std::string limit_arg = "";
-  std::string nb_threads_arg = std::to_string(cl_args.nb_threads);
-  std::string exploration_level_arg = std::to_string(cl_args.exploration_level);
+  std::string limit_arg;
+  std::string nb_threads_arg;
+  std::string exploration_level_arg;
   std::vector<std::string> heuristic_params_arg;
 
-  while (opt != -1) {
-    switch (opt) {
-    case 'a':
-      vroom::io::update_host(cl_args.servers, optarg);
-      break;
-    case 'c':
-      cl_args.check = true;
-      break;
-    case 'e':
-      heuristic_params_arg.push_back(optarg);
-      break;
-    case 'g':
-      cl_args.geometry = true;
-      break;
-    case 'h':
-      display_usage();
-      break;
-    case 'i':
-      cl_args.input_file = optarg;
-      break;
-    case 'l':
-      limit_arg = optarg;
-      break;
-    case 'o':
-      cl_args.output_file = optarg;
-      break;
-    case 'p':
-      vroom::io::update_port(cl_args.servers, optarg);
-      break;
-    case 'r':
-      router_arg = optarg;
-      break;
-    case 't':
-      nb_threads_arg = optarg;
-      break;
-    case 'x':
-      exploration_level_arg = optarg;
-      break;
-    default:
-      break;
-    }
-    opt = getopt(argc, argv, optString);
+  // clang-format off
+  cxxopts::Options options(
+    "vroom",
+    "VROOM Copyright (C) 2015-2021, Julien Coupey\n"
+    "Version: " + vroom::get_version() + "\n"
+    "A command-line utility to solve complex vehicle routing problems."
+    );
+
+  options.add_options()
+    ("h,help", "Print this help message.")
+    ("v,version", "Print the version of this software.")
+    ("a,host", "The host for the routing profile, e.g. '" + vroom::DEFAULT_PROFILE + ":0.0.0.0'", cxxopts::value<std::string>(host_arg)->default_value("car:0.0.0.0"))
+    ("c,choose-eta", "Choose ETA for custom routes and report violations.", cxxopts::value<bool>(cl_args.check)->default_value("false"))
+    ("g,geometry", "Add detailed route geometry and indicators", cxxopts::value<bool>(cl_args.geometry)->default_value("false"))
+    ("i,input-file", "Read input from 'input-file' rather than from stdin", cxxopts::value<std::string>(cl_args.input_file))
+    ("l,limit", "Stop solving process after 'limit' seconds", cxxopts::value<std::string>(limit_arg)->default_value(""))
+    ("o,output", "Output file name", cxxopts::value<std::string>(cl_args.output_file))
+    ("p,port", "The host port for the routing profile, e.g. '" + vroom::DEFAULT_PROFILE + ":5000'", cxxopts::value<std::string>(port_arg)->default_value("car:5000"))
+    ("r,router", "osrm, libosrm, ors or valhalla", cxxopts::value<std::string>(router_arg)->default_value("osrm"))
+    ("t,threads", "Number of threads to use", cxxopts::value<std::string>(nb_threads_arg)->default_value("4"))
+    ("x,explore", "Exploration level to use (0..5)", cxxopts::value<std::string>(exploration_level_arg)->default_value("5"))
+    ("e,heuristic-param", "Heuristic parameter, useful for debugging", cxxopts::value<std::string>(exploration_level_arg));
+  // clang-format on
+
+  auto parsed_args = options.parse(argc, argv);
+
+  if (parsed_args.count("help")) {
+    std::cout << options.help() << "\n";
+    exit(0);
   }
+
+  if (parsed_args.count("version")) {
+    std::cout << "vroom " << vroom::get_version() << "\n";
+    exit(0);
+  }
+
+  // parse and update host and port
+  vroom::io::update_host(cl_args.servers, host_arg);
+  vroom::io::update_port(cl_args.servers, port_arg);
 
   try {
     // Needs to be done after previous switch to make sure the
