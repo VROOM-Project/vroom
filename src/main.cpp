@@ -33,7 +33,6 @@ int main(int argc, char** argv) {
   std::string router_arg;
   std::string limit_arg;
   std::string nb_threads_arg;
-  std::string exploration_level_arg;
   std::vector<std::string> heuristic_params_arg;
 
   // clang-format off
@@ -55,9 +54,9 @@ int main(int argc, char** argv) {
     ("o,output", "Output file name", cxxopts::value<std::string>(cl_args.output_file))
     ("p,port", "The host port for the routing profile, e.g. '" + vroom::DEFAULT_PROFILE + ":5000'", cxxopts::value<std::string>(port_arg)->default_value("car:5000"))
     ("r,router", "osrm, libosrm, ors or valhalla", cxxopts::value<std::string>(router_arg)->default_value("osrm"))
-    ("t,threads", "Number of threads to use", cxxopts::value<std::string>(nb_threads_arg)->default_value("4"))
-    ("x,explore", "Exploration level to use (0..5)", cxxopts::value<std::string>(exploration_level_arg)->default_value("5"))
-    ("e,heuristic-param", "Heuristic parameter, useful for debugging", cxxopts::value<std::string>(exploration_level_arg));
+    ("t,threads", "Number of threads to use", cxxopts::value<unsigned>(cl_args.nb_threads)->default_value("4"))
+    ("x,explore", "Exploration level to use (0..5)", cxxopts::value<unsigned>(cl_args.exploration_level)->default_value("5"))
+    ("e,heuristic-param", "Heuristic parameter, useful for debugging", cxxopts::value<std::vector<std::string>>(heuristic_params_arg));
   // clang-format on
 
   auto parsed_args = options.parse(argc, argv);
@@ -72,29 +71,15 @@ int main(int argc, char** argv) {
     exit(0);
   }
 
-  // parse and update host and port
+  // parse and update some params
   vroom::io::update_host(cl_args.servers, host_arg);
   vroom::io::update_port(cl_args.servers, port_arg);
-
-  try {
-    // Needs to be done after previous switch to make sure the
-    // appropriate output file is set.
-    if (!limit_arg.empty()) {
-      // Internally timeout is in milliseconds.
-      cl_args.timeout = 1000 * std::stof(limit_arg);
-    }
-    cl_args.nb_threads = std::stoul(nb_threads_arg);
-    cl_args.exploration_level = std::stoul(exploration_level_arg);
-
-    cl_args.exploration_level =
-      std::min(cl_args.exploration_level, cl_args.max_exploration_level);
-  } catch (const std::exception& e) {
-    auto error_code = vroom::utils::get_code(vroom::ERROR::INPUT);
-    std::string message = "Invalid numerical value in option.";
-    std::cerr << "[Error] " << message << std::endl;
-    vroom::io::write_to_json({error_code, message}, false, cl_args.output_file);
-    exit(error_code);
+  if (!limit_arg.empty()) {
+    // Internally timeout is in milliseconds.
+    cl_args.timeout = 1000 * std::stof(limit_arg);
   }
+  cl_args.exploration_level =
+    std::min(cl_args.exploration_level, cl_args.max_exploration_level);
 
   // Determine routing engine (defaults to ROUTER::OSRM).
   if (router_arg == "libosrm") {
@@ -127,11 +112,6 @@ int main(int argc, char** argv) {
                              false,
                              cl_args.output_file);
     exit(error_code);
-  }
-
-  // Add default server if none provided in input.
-  if (cl_args.servers.empty()) {
-    cl_args.servers.emplace(vroom::DEFAULT_PROFILE, vroom::Server());
   }
 
   // Read input problem

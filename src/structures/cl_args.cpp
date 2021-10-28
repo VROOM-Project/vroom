@@ -17,13 +17,7 @@ namespace io {
 const unsigned CLArgs::max_exploration_level = 5;
 
 // Default values.
-CLArgs::CLArgs()
-  : check(false),
-    geometry(false),
-    router(ROUTER::OSRM),
-    nb_threads(4),
-    exploration_level(5) {
-}
+CLArgs::CLArgs(){}
 
 void update_host(Servers& servers, const std::string& value) {
   // Determine profile and host from a "car:0.0.0.0"-like value.
