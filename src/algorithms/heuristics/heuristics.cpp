@@ -790,6 +790,12 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
   return routes;
 }
 
+template <class T> T initial_routes(const Input& input) {
+  // TODO implement
+  T routes;
+  return routes;
+}
+
 using RawSolution = std::vector<RawRoute>;
 using TWSolution = std::vector<TWRoute>;
 
@@ -799,11 +805,15 @@ template RawSolution dynamic_vehicle_choice(const Input& input,
                                             INIT init,
                                             double lambda);
 
+template RawSolution initial_routes(const Input& input);
+
 template TWSolution basic(const Input& input, INIT init, double lambda);
 
 template TWSolution dynamic_vehicle_choice(const Input& input,
                                            INIT init,
                                            double lambda);
+
+template TWSolution initial_routes(const Input& input);
 
 } // namespace heuristics
 } // namespace vroom

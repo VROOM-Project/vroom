@@ -186,6 +186,9 @@ Solution VRPTW::solve(unsigned exploration_level,
       for (auto rank : param_ranks) {
         auto& p = parameters[rank];
         switch (p.heuristic) {
+        case HEURISTIC::INIT_ROUTES:
+          tw_solutions[rank] = heuristics::initial_routes<TWSolution>(_input);
+          break;
         case HEURISTIC::BASIC:
           tw_solutions[rank] =
             heuristics::basic<TWSolution>(_input, p.init, p.regret_coeff);

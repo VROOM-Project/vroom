@@ -203,6 +203,9 @@ Solution CVRP::solve(unsigned exploration_level,
         auto& p = parameters[rank];
 
         switch (p.heuristic) {
+        case HEURISTIC::INIT_ROUTES:
+          solutions[rank] = heuristics::initial_routes<RawSolution>(_input);
+          break;
         case HEURISTIC::BASIC:
           solutions[rank] =
             heuristics::basic<RawSolution>(_input, p.init, p.regret_coeff);

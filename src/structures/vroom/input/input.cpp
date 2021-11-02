@@ -715,7 +715,12 @@ Solution Input::solve(unsigned exploration_level,
   }
 
   // Solve.
-  auto sol = instance->solve(exploration_level, nb_thread, solve_time, h_param);
+  const std::vector<HeuristicParameters> h_init_routes(1,
+                                                       HEURISTIC::INIT_ROUTES);
+  auto sol = instance->solve(exploration_level,
+                             nb_thread,
+                             solve_time,
+                             (_has_initial_routes) ? h_init_routes : h_param);
 
   // Update timing info.
   sol.summary.computing_times.loading = loading;
