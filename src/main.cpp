@@ -18,7 +18,7 @@ All rights reserved (see LICENSE).
 #include "osrm/exception.hpp"
 #endif
 
-#include "../include/cxxopts.hpp"
+#include "../include/cxxopts/include/cxxopts.hpp"
 #include "problems/vrp.h"
 #include "structures/cl_args.h"
 #include "utils/helpers.h"
@@ -43,7 +43,10 @@ int main(int argc, char** argv) {
     "A command-line utility to solve complex vehicle routing problems."
     );
 
-  options.add_options()
+  options
+    .set_width(80)
+    .set_tab_expansion()
+    .add_options("main_group")
     ("h,help", "Print this help message.")
     ("v,version", "Print the version of this software.")
     ("a,host", "The host for the routing profile, e.g. '" + vroom::DEFAULT_PROFILE + ":0.0.0.0'", cxxopts::value<std::string>(host_arg)->default_value("car:0.0.0.0"))
@@ -55,14 +58,17 @@ int main(int argc, char** argv) {
     ("p,port", "The host port for the routing profile, e.g. '" + vroom::DEFAULT_PROFILE + ":5000'", cxxopts::value<std::string>(port_arg)->default_value("car:5000"))
     ("r,router", "osrm, libosrm, ors or valhalla", cxxopts::value<std::string>(router_arg)->default_value("osrm"))
     ("t,threads", "Number of threads to use", cxxopts::value<unsigned>(cl_args.nb_threads)->default_value("4"))
-    ("x,explore", "Exploration level to use (0..5)", cxxopts::value<unsigned>(cl_args.exploration_level)->default_value("5"))
+    ("x,explore", "Exploration level to use (0..5)", cxxopts::value<unsigned>(cl_args.exploration_level)->default_value("5"));
+  
+  // we don't want to print debug args on --help
+  options.add_options("debug_group")
     ("e,heuristic-param", "Heuristic parameter, useful for debugging", cxxopts::value<std::vector<std::string>>(heuristic_params_arg));
   // clang-format on
 
   auto parsed_args = options.parse(argc, argv);
 
   if (parsed_args.count("help")) {
-    std::cout << options.help() << "\n";
+    std::cout << options.help({"main_group"}) << "\n";
     exit(0);
   }
 
