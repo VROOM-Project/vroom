@@ -329,8 +329,7 @@ void Input::add_vehicle(const Vehicle& vehicle) {
       _all_locations_have_coords && end_loc.has_coordinates();
   }
 
-  // Ensure that skills or location index are either always or never
-  // provided.
+  // Ensure that location index are either always or never provided.
   if (_no_addition_yet) {
     _no_addition_yet = false;
     _has_custom_location_index = has_location_index;
@@ -339,6 +338,8 @@ void Input::add_vehicle(const Vehicle& vehicle) {
       throw Exception(ERROR::INPUT, "Missing location index.");
     }
   }
+
+  _has_initial_routes = _has_initial_routes or !current_v.steps.empty();
 
   // Check for homogeneous locations among vehicles.
   if (vehicles.size() > 1) {

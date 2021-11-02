@@ -41,6 +41,7 @@ private:
   bool _has_skills;
   bool _has_TW;
   bool _has_custom_location_index;
+  bool _has_initial_routes;
   bool _homogeneous_locations;
   bool _homogeneous_profiles;
   bool _geometry;
