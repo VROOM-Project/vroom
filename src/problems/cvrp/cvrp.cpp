@@ -238,7 +238,9 @@ Solution CVRP::solve(unsigned exploration_level,
   std::vector<std::thread> solving_threads;
 
   for (const auto& param_ranks : thread_ranks) {
-    solving_threads.emplace_back(run_solve, param_ranks);
+    if (!param_ranks.empty()) {
+      solving_threads.emplace_back(run_solve, param_ranks);
+    }
   }
 
   for (auto& t : solving_threads) {
