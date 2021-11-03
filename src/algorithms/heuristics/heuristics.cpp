@@ -791,8 +791,105 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
 }
 
 template <class T> T initial_routes(const Input& input) {
-  // TODO implement
   T routes;
+  for (Index v = 0; v < input.vehicles.size(); ++v) {
+    routes.emplace_back(input, v);
+
+    const auto& vehicle = input.vehicles[v];
+    auto& current_r = routes.back();
+
+    // Startup load is the sum of deliveries for jobs.
+    Amount current_load(input.zero_amount());
+    for (const auto& step : vehicle.steps) {
+      if (step.type == STEP_TYPE::JOB and step.job_type == JOB_TYPE::SINGLE) {
+        current_load += input.jobs[step.rank].delivery;
+      }
+    }
+    if (!(current_load <= vehicle.capacity)) {
+      throw Exception(ERROR::INPUT,
+                      "Route over capacity for vehicle " +
+                        std::to_string(vehicle.id) + ".");
+    }
+
+    std::vector<Index> job_indices;
+    std::unordered_set<Index> expected_delivery_ranks;
+    for (const auto& step : vehicle.steps) {
+      if (step.type != STEP_TYPE::JOB) {
+        continue;
+      }
+
+      auto job_rank = step.rank;
+      const auto& job = input.jobs[job_rank];
+      job_indices.push_back(job_rank);
+
+      if (!input.vehicle_ok_with_job(v, job_rank)) {
+        throw Exception(ERROR::INPUT,
+                        "Missing skill or step out of reach for vehicle " +
+                          std::to_string(vehicle.id) + ".");
+      }
+
+      switch (step.job_type) {
+      case JOB_TYPE::SINGLE: {
+        current_load += job.pickup;
+        current_load -= job.delivery;
+        break;
+      }
+      case JOB_TYPE::PICKUP: {
+        expected_delivery_ranks.insert(job_rank + 1);
+
+        current_load += job.pickup;
+        break;
+      }
+      case JOB_TYPE::DELIVERY: {
+        auto search = expected_delivery_ranks.find(job_rank);
+        if (search == expected_delivery_ranks.end()) {
+          throw Exception(ERROR::INPUT,
+                          "Invalid shipment in route for vehicle " +
+                            std::to_string(vehicle.id) + ".");
+        }
+        expected_delivery_ranks.erase(search);
+
+        current_load -= job.delivery;
+        break;
+      }
+      }
+
+      // Check validity after this step wrt capacity.
+      if (!(current_load <= vehicle.capacity)) {
+        throw Exception(ERROR::INPUT,
+                        "Route over capacity for vehicle " +
+                          std::to_string(vehicle.id) + ".");
+      }
+    }
+
+    if (vehicle.max_tasks < job_indices.size()) {
+      throw Exception(ERROR::INPUT,
+                      "Too many tasks for vehicle " +
+                        std::to_string(vehicle.id) + ".");
+    }
+
+    if (!expected_delivery_ranks.empty()) {
+      throw Exception(ERROR::INPUT,
+                      "Invalid shipment in route for vehicle " +
+                        std::to_string(vehicle.id) + ".");
+    }
+
+    // Now route is OK both for capacity and precedence constraints.
+    if (!job_indices.empty()) {
+      if (!current_r.is_valid_addition_for_tw(input,
+                                              job_indices.begin(),
+                                              job_indices.end(),
+                                              0,
+                                              0)) {
+        throw Exception(ERROR::INPUT,
+                        "Infeasible route for vehicle " +
+                          std::to_string(vehicle.id) + ".");
+      }
+
+      current_r.replace(input, job_indices.begin(), job_indices.end(), 0, 0);
+    }
+  }
+
   return routes;
 }
 
