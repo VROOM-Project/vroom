@@ -33,6 +33,7 @@ Input::Input(unsigned amount_size, const io::Servers& servers, ROUTER router)
     _no_addition_yet(true),
     _has_skills(false),
     _has_TW(false),
+    _has_initial_routes(false),
     _homogeneous_locations(true),
     _homogeneous_profiles(true),
     _geometry(false),
