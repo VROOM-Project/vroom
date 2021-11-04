@@ -1528,7 +1528,7 @@ void LocalSearch<Route,
     // Try again on each improvement until we reach last job removal
     // level or deadline is met.
     try_ls_step = (current_nb_removal <= _max_nb_jobs_removal) and
-                  (!_deadline.has_value() or _deadline.value() < utils::now());
+                  (!_deadline.has_value() or utils::now() < _deadline.value());
 
     if (try_ls_step) {
       // Get a looser situation by removing jobs.

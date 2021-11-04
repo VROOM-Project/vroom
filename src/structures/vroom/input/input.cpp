@@ -33,6 +33,7 @@ Input::Input(unsigned amount_size, const io::Servers& servers, ROUTER router)
     _no_addition_yet(true),
     _has_skills(false),
     _has_TW(false),
+    _has_initial_routes(false),
     _homogeneous_locations(true),
     _homogeneous_profiles(true),
     _geometry(false),
@@ -329,8 +330,7 @@ void Input::add_vehicle(const Vehicle& vehicle) {
       _all_locations_have_coords && end_loc.has_coordinates();
   }
 
-  // Ensure that skills or location index are either always or never
-  // provided.
+  // Ensure that location index are either always or never provided.
   if (_no_addition_yet) {
     _no_addition_yet = false;
     _has_custom_location_index = has_location_index;
@@ -339,6 +339,8 @@ void Input::add_vehicle(const Vehicle& vehicle) {
       throw Exception(ERROR::INPUT, "Missing location index.");
     }
   }
+
+  _has_initial_routes = _has_initial_routes or !current_v.steps.empty();
 
   // Check for homogeneous locations among vehicles.
   if (vehicles.size() > 1) {
@@ -545,6 +547,94 @@ void Input::set_vehicles_costs() {
   }
 }
 
+void Input::set_vehicle_steps_ranks() {
+  std::unordered_set<Id> planned_job_ids;
+  std::unordered_set<Id> planned_pickup_ids;
+  std::unordered_set<Id> planned_delivery_ids;
+
+  for (Index v = 0; v < vehicles.size(); ++v) {
+    auto& current_vehicle = vehicles[v];
+
+    for (auto& step : current_vehicle.steps) {
+      if (step.type == STEP_TYPE::BREAK) {
+        auto search = current_vehicle.break_id_to_rank.find(step.id);
+        if (search == current_vehicle.break_id_to_rank.end()) {
+          throw Exception(ERROR::INPUT,
+                          "Invalid break id " + std::to_string(step.id) +
+                            " for vehicle " +
+                            std::to_string(current_vehicle.id) + ".");
+        }
+        step.rank = search->second;
+      }
+
+      if (step.type == STEP_TYPE::JOB) {
+        switch (step.job_type) {
+        case JOB_TYPE::SINGLE: {
+          auto search = job_id_to_rank.find(step.id);
+          if (search == job_id_to_rank.end()) {
+            throw Exception(ERROR::INPUT,
+                            "Invalid job id " + std::to_string(step.id) +
+                              " for vehicle " +
+                              std::to_string(current_vehicle.id) + ".");
+          }
+          step.rank = search->second;
+
+          auto planned_job = planned_job_ids.find(step.id);
+          if (planned_job != planned_job_ids.end()) {
+            throw Exception(ERROR::INPUT,
+                            "Duplicate job id " + std::to_string(step.id) +
+                              " in input steps for vehicle " +
+                              std::to_string(current_vehicle.id) + ".");
+          }
+          planned_job_ids.insert(step.id);
+          break;
+        }
+        case JOB_TYPE::PICKUP: {
+          auto search = pickup_id_to_rank.find(step.id);
+          if (search == pickup_id_to_rank.end()) {
+            throw Exception(ERROR::INPUT,
+                            "Invalid pickup id " + std::to_string(step.id) +
+                              " for vehicle " +
+                              std::to_string(current_vehicle.id) + ".");
+          }
+          step.rank = search->second;
+
+          auto planned_pickup = planned_pickup_ids.find(step.id);
+          if (planned_pickup != planned_pickup_ids.end()) {
+            throw Exception(ERROR::INPUT,
+                            "Duplicate pickup id " + std::to_string(step.id) +
+                              " in input steps for vehicle " +
+                              std::to_string(current_vehicle.id) + ".");
+          }
+          planned_pickup_ids.insert(step.id);
+          break;
+        }
+        case JOB_TYPE::DELIVERY: {
+          auto search = delivery_id_to_rank.find(step.id);
+          if (search == delivery_id_to_rank.end()) {
+            throw Exception(ERROR::INPUT,
+                            "Invalid delivery id " + std::to_string(step.id) +
+                              " for vehicle " +
+                              std::to_string(current_vehicle.id) + ".");
+          }
+          step.rank = search->second;
+
+          auto planned_delivery = planned_delivery_ids.find(step.id);
+          if (planned_delivery != planned_delivery_ids.end()) {
+            throw Exception(ERROR::INPUT,
+                            "Duplicate delivery id " + std::to_string(step.id) +
+                              " in input steps for vehicle " +
+                              std::to_string(current_vehicle.id) + ".");
+          }
+          planned_delivery_ids.insert(step.id);
+          break;
+        }
+        }
+      }
+    }
+  }
+}
+
 void Input::set_matrices(unsigned nb_thread) {
   if ((!_durations_matrices.empty() or !_costs_matrices.empty()) and
       !_has_custom_location_index) {
@@ -690,6 +780,10 @@ Solution Input::solve(unsigned exploration_level,
                     "Route geometry request with missing coordinates.");
   }
 
+  if (_has_initial_routes) {
+    set_vehicle_steps_ranks();
+  }
+
   set_matrices(nb_thread);
   set_vehicles_costs();
 
@@ -714,7 +808,12 @@ Solution Input::solve(unsigned exploration_level,
   }
 
   // Solve.
-  auto sol = instance->solve(exploration_level, nb_thread, solve_time, h_param);
+  const std::vector<HeuristicParameters> h_init_routes(1,
+                                                       HEURISTIC::INIT_ROUTES);
+  auto sol = instance->solve(exploration_level,
+                             nb_thread,
+                             solve_time,
+                             (_has_initial_routes) ? h_init_routes : h_param);
 
   // Update timing info.
   sol.summary.computing_times.loading = loading;
@@ -761,92 +860,7 @@ Solution Input::check(unsigned nb_thread) {
                     "Route geometry request with missing coordinates.");
   }
 
-  // Set all ranks for vehicles steps.
-  std::unordered_set<Id> planned_job_ids;
-  std::unordered_set<Id> planned_pickup_ids;
-  std::unordered_set<Id> planned_delivery_ids;
-
-  for (Index v = 0; v < vehicles.size(); ++v) {
-    auto& current_vehicle = vehicles[v];
-
-    for (auto& step : current_vehicle.steps) {
-      if (step.type == STEP_TYPE::BREAK) {
-        auto search = current_vehicle.break_id_to_rank.find(step.id);
-        if (search == current_vehicle.break_id_to_rank.end()) {
-          throw Exception(ERROR::INPUT,
-                          "Invalid break id " + std::to_string(step.id) +
-                            " for vehicle " +
-                            std::to_string(current_vehicle.id) + ".");
-        }
-        step.rank = search->second;
-      }
-
-      if (step.type == STEP_TYPE::JOB) {
-        switch (step.job_type) {
-        case JOB_TYPE::SINGLE: {
-          auto search = job_id_to_rank.find(step.id);
-          if (search == job_id_to_rank.end()) {
-            throw Exception(ERROR::INPUT,
-                            "Invalid job id " + std::to_string(step.id) +
-                              " for vehicle " +
-                              std::to_string(current_vehicle.id) + ".");
-          }
-          step.rank = search->second;
-
-          auto planned_job = planned_job_ids.find(step.id);
-          if (planned_job != planned_job_ids.end()) {
-            throw Exception(ERROR::INPUT,
-                            "Duplicate job id " + std::to_string(step.id) +
-                              " in input steps for vehicle " +
-                              std::to_string(current_vehicle.id) + ".");
-          }
-          planned_job_ids.insert(step.id);
-          break;
-        }
-        case JOB_TYPE::PICKUP: {
-          auto search = pickup_id_to_rank.find(step.id);
-          if (search == pickup_id_to_rank.end()) {
-            throw Exception(ERROR::INPUT,
-                            "Invalid pickup id " + std::to_string(step.id) +
-                              " for vehicle " +
-                              std::to_string(current_vehicle.id) + ".");
-          }
-          step.rank = search->second;
-
-          auto planned_pickup = planned_pickup_ids.find(step.id);
-          if (planned_pickup != planned_pickup_ids.end()) {
-            throw Exception(ERROR::INPUT,
-                            "Duplicate pickup id " + std::to_string(step.id) +
-                              " in input steps for vehicle " +
-                              std::to_string(current_vehicle.id) + ".");
-          }
-          planned_pickup_ids.insert(step.id);
-          break;
-        }
-        case JOB_TYPE::DELIVERY: {
-          auto search = delivery_id_to_rank.find(step.id);
-          if (search == delivery_id_to_rank.end()) {
-            throw Exception(ERROR::INPUT,
-                            "Invalid delivery id " + std::to_string(step.id) +
-                              " for vehicle " +
-                              std::to_string(current_vehicle.id) + ".");
-          }
-          step.rank = search->second;
-
-          auto planned_delivery = planned_delivery_ids.find(step.id);
-          if (planned_delivery != planned_delivery_ids.end()) {
-            throw Exception(ERROR::INPUT,
-                            "Duplicate delivery id " + std::to_string(step.id) +
-                              " in input steps for vehicle " +
-                              std::to_string(current_vehicle.id) + ".");
-          }
-          planned_delivery_ids.insert(step.id);
-          break;
-        }
-        }
-      }
-    }
-  }
+  set_vehicle_steps_ranks();
 
   // TODO we don't need the whole matrix here.
   set_matrices(nb_thread);

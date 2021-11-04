@@ -186,6 +186,9 @@ Solution VRPTW::solve(unsigned exploration_level,
       for (auto rank : param_ranks) {
         auto& p = parameters[rank];
         switch (p.heuristic) {
+        case HEURISTIC::INIT_ROUTES:
+          tw_solutions[rank] = heuristics::initial_routes<TWSolution>(_input);
+          break;
         case HEURISTIC::BASIC:
           tw_solutions[rank] =
             heuristics::basic<TWSolution>(_input, p.init, p.regret_coeff);
@@ -218,7 +221,9 @@ Solution VRPTW::solve(unsigned exploration_level,
   std::vector<std::thread> solving_threads;
 
   for (const auto& param_ranks : thread_ranks) {
-    solving_threads.emplace_back(run_solve, param_ranks);
+    if (!param_ranks.empty()) {
+      solving_threads.emplace_back(run_solve, param_ranks);
+    }
   }
 
   for (auto& t : solving_threads) {

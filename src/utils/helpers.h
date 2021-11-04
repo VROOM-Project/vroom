@@ -322,6 +322,8 @@ inline Solution format_solution(const Input& input,
     }
     const auto& v = input.vehicles[i];
 
+    assert(route.size() <= v.max_tasks);
+
     auto previous_location = (v.has_start())
                                ? v.start.value().index()
                                : std::numeric_limits<Index>::max();
@@ -467,6 +469,8 @@ inline Route format_route(const Input& input,
                           const TWRoute& tw_r,
                           std::unordered_set<Index>& unassigned_ranks) {
   const auto& v = input.vehicles[tw_r.vehicle_rank];
+
+  assert(tw_r.size() <= v.max_tasks);
 
   // ETA logic: aim at earliest possible arrival then determine latest
   // possible start time in order to minimize waiting times.

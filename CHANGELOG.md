@@ -10,11 +10,13 @@
 - Number of routes in solution summary (#524)
 - Implementation for extended SWAP* local search operator (#507)
 - `-l` command-line flag for user-provided timeout (#594)
+- Ability to start the search from user-defined solution (#376)
 - Github Actions CI (#436)
 - Check for libvroom example build in CI (#514)
 
 ### Changed
 
+- `vehicle.steps` are now used in solving mode (#606)
 - CI builds now run on Ubuntu 20.04 (#455)
 - Simplified time window handling logic in TWRoute (#557)
 
