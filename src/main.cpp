@@ -39,8 +39,8 @@ int main(int argc, char** argv) {
   cxxopts::Options options(
     "vroom",
     "VROOM Copyright (C) 2015-2021, Julien Coupey\n"
-    "Version: " + vroom::get_version() + "\n"
-    "A command-line utility to solve complex vehicle routing problems."
+    "Version: " + vroom::get_version() + "\n\n"
+    "A command-line utility to solve complex vehicle routing problems.\n"
     );
 
   options
@@ -58,13 +58,16 @@ int main(int argc, char** argv) {
     ("p,port", "The host port for the routing profile, e.g. '" + vroom::DEFAULT_PROFILE + ":5000'", cxxopts::value<std::string>(port_arg)->default_value("car:5000"))
     ("r,router", "osrm, libosrm, ors or valhalla", cxxopts::value<std::string>(router_arg)->default_value("osrm"))
     ("t,threads", "Number of threads to use", cxxopts::value<unsigned>(cl_args.nb_threads)->default_value("4"))
-    ("x,explore", "Exploration level to use (0..5)", cxxopts::value<unsigned>(cl_args.exploration_level)->default_value("5"));
+    ("x,explore", "Exploration level to use (0..5)", cxxopts::value<unsigned>(cl_args.exploration_level)->default_value("5"))
+    ("input", "optional input positional arg", cxxopts::value<std::string>(cl_args.input));
   
   // we don't want to print debug args on --help
   options.add_options("debug_group")
-    ("e,heuristic-param", "Heuristic parameter, useful for debugging", cxxopts::value<std::vector<std::string>>(heuristic_params_arg));
+    ("e,heuristic-param", "Heuristic parameter", cxxopts::value<std::vector<std::string>>(heuristic_params_arg));
   // clang-format on
 
+  options.parse_positional({"input"});
+  options.positional_help("OPTIONAL INLINE JSON");
   auto parsed_args = options.parse(argc, argv);
 
   if (parsed_args.count("help")) {
@@ -121,20 +124,15 @@ int main(int argc, char** argv) {
   }
 
   // Read input problem
-  if (optind == argc) {
+  if (cl_args.input.empty()) {
     std::stringstream buffer;
-    if (cl_args.input_file.empty()) {
-      // Getting input from stdin.
-      buffer << std::cin.rdbuf();
-    } else {
-      // Getting input from provided file.
+    if (!cl_args.input_file.empty()) {
       std::ifstream ifs(cl_args.input_file);
       buffer << ifs.rdbuf();
+    } else {
+      buffer << std::cin.rdbuf();
     }
     cl_args.input = buffer.str();
-  } else {
-    // Getting input from command-line.
-    cl_args.input = argv[optind];
   }
 
   try {
