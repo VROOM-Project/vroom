@@ -1109,7 +1109,7 @@ Route choose_ETA(const Input& input,
   unsigned number_of_tasks = 0;
   std::unordered_set<VIOLATION> v_types;
 
-  // Startup load is the sum of deliveries for jobs.
+  // Startup load is the sum of deliveries for (single) jobs.
   Amount current_load(input.zero_amount());
   for (const auto& step : steps) {
     if (step.type == STEP_TYPE::JOB and step.job_type == JOB_TYPE::SINGLE) {

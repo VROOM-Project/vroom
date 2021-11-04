@@ -115,7 +115,7 @@ A `vehicle` object has the following properties:
 | [`breaks`] | an array of `break` objects |
 | [`speed_factor`] | a double value in the range `(0, 5]` used to scale **all** vehicle travel times (defaults to 1.), the respected precision is limited to two digits after the decimal point |
 | [`max_tasks`] | an integer defining the maximum number of tasks in a route for this vehicle |
-| [`steps`] | an array of `vehicle_step` objects describing a custom route for this vehicle (only makes sense when using `-c`) |
+| [`steps`] | an array of `vehicle_step` objects describing a custom route for this vehicle |
 
 A `break` object has the following properties:
 
@@ -230,6 +230,33 @@ able to serve any number of tasks, and a task with no `time_windows`
 key might be included at any time in any route, to the extent
 permitted by other constraints such as skills, capacity and other
 vehicles/tasks time windows.
+
+### Vehicle `steps`
+
+#### In plan mode
+
+The `steps` array describes exactly the route ordering that will be
+generated in response. The (optional) `service_*` keys for
+`vehicle_step` objects are used as additional hard timing constraints.
+
+#### In solving mode
+
+Using `steps` for vehicles in default VRP solving mode is a way to
+force starting the search from the matching user-defined solution, if
+valid. Unlike the default solving behavior of running several
+concurrent searches, this means in particular that a single search
+path is followed, starting from the provided solution. Resulting
+quality is thus obviously expected to be highly dependent on the
+user-defined starting point.
+
+In that context:
+- only steps with `type=job`, `pickup` or `delivery` are used to
+  decide initial routes ordering
+- `service_*` keys are not used
+
+An error is raised if for any of the vehicles the provided `steps`
+describe a route that is invalid with regard to any of the
+constraints.
 
 ## Matrices
 
