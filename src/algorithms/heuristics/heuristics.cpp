@@ -798,7 +798,7 @@ template <class T> T initial_routes(const Input& input) {
     const auto& vehicle = input.vehicles[v];
     auto& current_r = routes.back();
 
-    // Startup load is the sum of deliveries for jobs.
+    // Startup load is the sum of deliveries for (single) jobs.
     Amount current_load(input.zero_amount());
     for (const auto& step : vehicle.steps) {
       if (step.type == STEP_TYPE::JOB and step.job_type == JOB_TYPE::SINGLE) {
@@ -811,16 +811,16 @@ template <class T> T initial_routes(const Input& input) {
                         std::to_string(vehicle.id) + ".");
     }
 
-    std::vector<Index> job_indices;
+    std::vector<Index> job_ranks;
     std::unordered_set<Index> expected_delivery_ranks;
     for (const auto& step : vehicle.steps) {
       if (step.type != STEP_TYPE::JOB) {
         continue;
       }
 
-      auto job_rank = step.rank;
+      const auto job_rank = step.rank;
       const auto& job = input.jobs[job_rank];
-      job_indices.push_back(job_rank);
+      job_ranks.push_back(job_rank);
 
       if (!input.vehicle_ok_with_job(v, job_rank)) {
         throw Exception(ERROR::INPUT,
@@ -862,7 +862,7 @@ template <class T> T initial_routes(const Input& input) {
       }
     }
 
-    if (vehicle.max_tasks < job_indices.size()) {
+    if (vehicle.max_tasks < job_ranks.size()) {
       throw Exception(ERROR::INPUT,
                       "Too many tasks for vehicle " +
                         std::to_string(vehicle.id) + ".");
@@ -874,11 +874,12 @@ template <class T> T initial_routes(const Input& input) {
                         std::to_string(vehicle.id) + ".");
     }
 
-    // Now route is OK both for capacity and precedence constraints.
-    if (!job_indices.empty()) {
+    // Now route is OK with regard to capacity, precedence and skills
+    // constraints.
+    if (!job_ranks.empty()) {
       if (!current_r.is_valid_addition_for_tw(input,
-                                              job_indices.begin(),
-                                              job_indices.end(),
+                                              job_ranks.begin(),
+                                              job_ranks.end(),
                                               0,
                                               0)) {
         throw Exception(ERROR::INPUT,
@@ -886,7 +887,7 @@ template <class T> T initial_routes(const Input& input) {
                           std::to_string(vehicle.id) + ".");
       }
 
-      current_r.replace(input, job_indices.begin(), job_indices.end(), 0, 0);
+      current_r.replace(input, job_ranks.begin(), job_ranks.end(), 0, 0);
     }
   }
 
