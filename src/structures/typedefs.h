@@ -99,7 +99,7 @@ struct HeuristicParameters {
   // Only makes sense for user-defined initial routes.
   constexpr HeuristicParameters(HEURISTIC heuristic)
     : heuristic(heuristic), init(INIT::NONE), regret_coeff(0) {
-    assert(heuristic = HEURISTIC::INIT_ROUTES);
+    assert(heuristic == HEURISTIC::INIT_ROUTES);
   }
 };
 
