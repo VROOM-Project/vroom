@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [v1.11.0] - 2021-11-19
+
 ### Added
 
 - `setup` key for tasks to refine service time modeling (#358)
