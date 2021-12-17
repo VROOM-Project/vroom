@@ -99,6 +99,13 @@ rapidjson::Document to_json(const Solution& sol, bool geometry) {
       }
       json_job["type"].SetString(str_type.c_str(), str_type.size(), allocator);
 
+      if (!job.description.empty()) {
+        json_job.AddMember("description", rapidjson::Value(), allocator);
+        json_job["description"].SetString(job.description.c_str(),
+                                          job.description.size(),
+                                          allocator);
+      }
+
       json_unassigned.PushBack(json_job, allocator);
     }
 
