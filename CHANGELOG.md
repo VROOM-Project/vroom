@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Added
+
+- `description` key to unallocated tasks in the output, if provided (#403)
+- `location_index` key to to unassigned tasks and each step, if provided (#625)
+- Shared target to makefile, for creating Position Independent Code (#617)
+
 ## [v1.11.0] - 2021-11-19
 
 ### Added
