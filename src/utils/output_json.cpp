@@ -84,6 +84,9 @@ rapidjson::Document to_json(const Solution& sol, bool geometry) {
                            to_json(job.location, allocator),
                            allocator);
       }
+      if (job.location.user_index()) {
+        json_job.AddMember("location_index", job.location.index(), allocator);
+      }
       json_job.AddMember("type", rapidjson::Value(), allocator);
       std::string str_type;
       switch (job.type) {
@@ -301,6 +304,10 @@ rapidjson::Value to_json(const Step& s,
 
   if (s.location.has_coordinates()) {
     json_step.AddMember("location", to_json(s.location, allocator), allocator);
+  }
+
+  if (s.location.user_index()) {
+    json_step.AddMember("location_index", s.location.index(), allocator);
   }
 
   if (s.step_type == STEP_TYPE::JOB or s.step_type == STEP_TYPE::BREAK) {
