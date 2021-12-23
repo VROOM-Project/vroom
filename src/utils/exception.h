@@ -22,6 +22,8 @@ public:
   const std::string message;
 
   Exception(ERROR error, const std::string& message);
+
+  const char* what() const noexcept override { return message.c_str(); }
 };
 
 } // namespace vroom

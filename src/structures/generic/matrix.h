@@ -38,6 +38,10 @@ public:
   std::size_t size() const {
     return n;
   }
+
+  T* get_data() {
+    return data.data();
+  }
 };
 
 } // namespace vroom
