@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Removed redundant braced-scalar-init in Matrix declaration (#637)
+
 ## [v1.11.0] - 2021-11-19
 
 ### Added
