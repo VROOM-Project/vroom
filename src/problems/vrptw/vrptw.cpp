@@ -34,7 +34,7 @@ namespace vroom {
 
 using TWSolution = std::vector<TWRoute>;
 
-using LocalSearch = ls::LocalSearch<TWRoute,
+using LocalSearch_ = ls::LocalSearch<TWRoute,
                                     vrptw::UnassignedExchange,
                                     vrptw::SwapStar,
                                     vrptw::CrossExchange,
@@ -202,7 +202,7 @@ Solution VRPTW::solve(unsigned exploration_level,
         }
 
         // Local search phase.
-        LocalSearch ls(_input,
+        LocalSearch_ ls(_input,
                        tw_solutions[rank],
                        max_nb_jobs_removal,
                        search_time);
