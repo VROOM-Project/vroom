@@ -682,7 +682,7 @@ void Input::set_matrices(unsigned nb_thread) {
           // Durations matrix not manually set so defined as empty
           // above.
           if (_locations.size() == 1) {
-            d_m->second = Matrix<Cost>({{0}});
+            d_m->second = Matrix<Cost>(0);
           } else {
             auto rw = std::find_if(_routing_wrappers.begin(),
                                    _routing_wrappers.end(),
