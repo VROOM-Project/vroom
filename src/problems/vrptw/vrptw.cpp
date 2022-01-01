@@ -34,7 +34,9 @@ namespace vroom {
 
 using TWSolution = std::vector<TWRoute>;
 
-using LocalSearch_ = ls::LocalSearch<TWRoute,
+namespace vrptw {
+
+using LocalSearch = ls::LocalSearch<TWRoute,
                                     vrptw::UnassignedExchange,
                                     vrptw::SwapStar,
                                     vrptw::CrossExchange,
@@ -50,6 +52,7 @@ using LocalSearch_ = ls::LocalSearch<TWRoute,
                                     vrptw::IntraOrOpt,
                                     vrptw::PDShift,
                                     vrptw::RouteExchange>;
+} // namespace vrptw
 
 const std::vector<HeuristicParameters> VRPTW::homogeneous_parameters =
   {HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHER_AMOUNT, 0.3),
@@ -202,10 +205,10 @@ Solution VRPTW::solve(unsigned exploration_level,
         }
 
         // Local search phase.
-        LocalSearch_ ls(_input,
-                       tw_solutions[rank],
-                       max_nb_jobs_removal,
-                       search_time);
+        vrptw::LocalSearch ls(_input,
+                              tw_solutions[rank],
+                              max_nb_jobs_removal,
+                              search_time);
         ls.run();
 
         // Store solution indicators.
