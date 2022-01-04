@@ -153,12 +153,11 @@ int main(int argc, char** argv) {
                      return vroom::utils::str_to_heuristic_param(str_param);
                    });
   } catch (const vroom::Exception& e) {
-    auto error_code = vroom::utils::get_code(e.error);
     std::cerr << "[Error] " << e.message << std::endl;
-    vroom::io::write_to_json({error_code, e.message},
+    vroom::io::write_to_json({e.error_code, e.message},
                              false,
                              cl_args.output_file);
-    exit(error_code);
+    exit(e.error_code);
   }
 
   // Add default server if none provided in input.
@@ -197,12 +196,11 @@ int main(int argc, char** argv) {
     // Write solution.
     vroom::io::write_to_json(sol, cl_args.geometry, cl_args.output_file);
   } catch (const vroom::Exception& e) {
-    auto error_code = vroom::utils::get_code(e.error);
     std::cerr << "[Error] " << e.message << std::endl;
-    vroom::io::write_to_json({error_code, e.message},
+    vroom::io::write_to_json({e.error_code, e.message},
                              false,
                              cl_args.output_file);
-    exit(error_code);
+    exit(e.error_code);
   }
 #if USE_LIBOSRM
   catch (const osrm::exception& e) {

@@ -55,8 +55,7 @@ void OsrmRoutedWrapper::check_response(const rapidjson::Document& json_result,
                                        const std::string&) const {
   assert(json_result.HasMember("code"));
   if (json_result["code"] != "Ok") {
-    throw Exception(ERROR::ROUTING,
-                    std::string(json_result["message"].GetString()));
+    throw RoutingException(std::string(json_result["message"].GetString()));
   }
 }
 

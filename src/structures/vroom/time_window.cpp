@@ -22,9 +22,8 @@ TimeWindow::TimeWindow()
 TimeWindow::TimeWindow(Duration start, Duration end)
   : start(start), end(end), length(end - start) {
   if (start > end) {
-    throw Exception(ERROR::INPUT,
-                    "Invalid time window: [" + std::to_string(start) + ", " +
-                      std::to_string(end) + "]");
+    throw InputException("Invalid time window: [" + std::to_string(start) +
+                         ", " + std::to_string(end) + "]");
   }
 }
 
