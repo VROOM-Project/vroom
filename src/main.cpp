@@ -26,6 +26,7 @@ All rights reserved (see LICENSE).
 #include "utils/input_parser.h"
 #include "utils/output_json.h"
 #include "utils/version.h"
+#include "utils/exception.h"
 
 void display_usage() {
   std::string usage = "VROOM Copyright (C) 2015-2021, Julien Coupey\n";
