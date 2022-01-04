@@ -206,7 +206,7 @@ int main(int argc, char** argv) {
 #if USE_LIBOSRM
   catch (const osrm::exception& e) {
     // In case of an unhandled routing error.
-    auto error_code = vroom::RouterException("").error_code;
+    auto error_code = vroom::RoutingException("").error_code;
     auto message = "Routing problem: " + std::string(e.what());
     std::cerr << "[Error] " << message << std::endl;
     vroom::io::write_to_json({error_code, message}, false, cl_args.output_file);
