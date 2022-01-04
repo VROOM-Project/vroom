@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Refactor exception class (#639)
+
 ### Fixed
 
 - Remove duplicate definition of LocalSearch (#638)
