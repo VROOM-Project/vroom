@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Remove duplicate definition of LocalSearch (#638)
+
 ## [v1.11.0] - 2021-11-19
 
 ### Added
