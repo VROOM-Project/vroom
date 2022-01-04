@@ -870,23 +870,6 @@ inline Solution format_solution(const Input& input,
                   std::move(unassigned_jobs));
 }
 
-inline unsigned get_code(ERROR e) {
-  unsigned code = 0;
-  switch (e) {
-  case ERROR::INTERNAL:
-    code = 1;
-    break;
-  case ERROR::INPUT:
-    code = 2;
-    break;
-  case ERROR::ROUTING:
-    code = 3;
-    break;
-  }
-
-  return code;
-}
-
 } // namespace utils
 } // namespace vroom
 

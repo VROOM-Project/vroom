@@ -71,9 +71,6 @@ struct Server {
   }
 };
 
-// Specific error statuses used when handling exceptions.
-enum class ERROR { INTERNAL, INPUT, ROUTING };
-
 // 'Single' job is a regular one-stop job without precedence
 // constraints.
 enum class JOB_TYPE { SINGLE, PICKUP, DELIVERY };

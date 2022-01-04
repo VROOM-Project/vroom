@@ -18,11 +18,10 @@ namespace vroom {
 
 class Exception : public std::exception {
 public:
-  const ERROR error;
   const std::string message;
   unsigned int error_code;
 
-  Exception(ERROR error, const std::string& message, unsigned int error_code);
+  Exception(const std::string& message, unsigned int error_code);
 
   const char* what() const noexcept override {
     return message.c_str();
