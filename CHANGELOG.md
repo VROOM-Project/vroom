@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Exposing some internals for Python through compile flags (#640)
+
 ### Fixed
 
 - Remove duplicate definition of LocalSearch (#638)
