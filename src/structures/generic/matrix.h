@@ -38,6 +38,12 @@ public:
   std::size_t size() const {
     return n;
   }
+
+#if USE_PYTHON_BINDINGS
+  T* get_data() {
+    return data.data();
+  };
+#endif
 };
 
 } // namespace vroom

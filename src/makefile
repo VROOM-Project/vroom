@@ -51,6 +51,10 @@ DEPS = $(SRC:.cpp=.d)
 # Main target.
 all : $(MAIN) $(LIB)
 
+# Shared target, for creating Position Independent Code (PIC)
+shared : CXXFLAGS += -fPIC
+shared : all
+
 $(MAIN) : $(OBJ) main.o
 	mkdir -p $(@D)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBS)
