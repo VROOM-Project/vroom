@@ -128,6 +128,12 @@ public:
     }
     return *this;
   }
+
+#if USE_PYTHON_BINDINGS
+  Capacity* get_data() {
+    return elems.data();
+  };
+#endif
 };
 
 template <typename E1, typename E2>
