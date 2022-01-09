@@ -12,6 +12,7 @@
 ### Fixed
 
 - Remove duplicate definition of LocalSearch (#638)
+- Move priority check to Job constructor instead of input parser (#628)
 
 ## [v1.11.0] - 2021-11-19
 
