@@ -116,9 +116,6 @@ inline Duration get_priority(const rapidjson::Value& object) {
       throw Exception(ERROR::INPUT, "Invalid priority value.");
     }
     priority = object["priority"].GetUint();
-    if (priority > MAX_PRIORITY) {
-      throw Exception(ERROR::INPUT, "Invalid priority value.");
-    }
   }
   return priority;
 }

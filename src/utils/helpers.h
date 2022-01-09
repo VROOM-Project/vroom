@@ -305,6 +305,12 @@ inline void check_tws(const std::vector<TimeWindow>& tws) {
   }
 }
 
+inline void check_priority(const Priority priority) {
+  if (priority > MAX_PRIORITY) {
+    throw Exception(ERROR::INPUT, "Invalid priority value.");
+  }
+}
+
 inline Solution format_solution(const Input& input,
                                 const RawSolution& raw_routes) {
   std::vector<Route> routes;
