@@ -22,11 +22,11 @@ All rights reserved (see LICENSE).
 
 #include "problems/vrp.h"
 #include "structures/cl_args.h"
+#include "utils/exception.h"
 #include "utils/helpers.h"
 #include "utils/input_parser.h"
 #include "utils/output_json.h"
 #include "utils/version.h"
-#include "utils/exception.h"
 
 void display_usage() {
   std::string usage = "VROOM Copyright (C) 2015-2022, Julien Coupey\n";
