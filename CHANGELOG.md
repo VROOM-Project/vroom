@@ -9,6 +9,10 @@
 - Shared target to makefile, for creating Position Independent Code (#617)
 - Exposing some internals for Python through compile flags (#640)
 
+### Changed
+
+- Refactor exception class (#639)
+
 ### Fixed
 
 - Remove duplicate definition of LocalSearch (#638)

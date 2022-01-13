@@ -11,8 +11,20 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
-Exception::Exception(ERROR error, const std::string& message)
-  : error(error), message(message) {
+Exception::Exception(const std::string& message, unsigned int error_code)
+  : message(message), error_code(error_code) {
+}
+
+InternalException::InternalException(const std::string& message)
+  : Exception(message, 1) {
+}
+
+InputException::InputException(const std::string& message)
+  : Exception(message, 2) {
+}
+
+RoutingException::RoutingException(const std::string& message)
+  : Exception(message, 3) {
 }
 
 } // namespace vroom

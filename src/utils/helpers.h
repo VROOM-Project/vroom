@@ -31,8 +31,8 @@ inline TimePoint now() {
 
 inline Cost add_without_overflow(Cost a, Cost b) {
   if (a > std::numeric_limits<Cost>::max() - b) {
-    throw Exception(ERROR::INPUT,
-                    "Too high cost values, stopping to avoid overflowing.");
+    throw InputException(
+      "Too high cost values, stopping to avoid overflowing.");
   }
   return a + b;
 }
@@ -49,8 +49,7 @@ inline INIT get_init(const std::string& s) {
   } else if (s == "EARLIEST_DEADLINE") {
     return INIT::EARLIEST_DEADLINE;
   } else {
-    throw Exception(ERROR::INPUT,
-                    "Invalid heuristic parameter in command-line.");
+    throw InputException("Invalid heuristic parameter in command-line.");
   }
 }
 
@@ -65,8 +64,7 @@ inline HeuristicParameters str_to_heuristic_param(const std::string& s) {
   }
 
   if (tokens.size() != 3 or tokens[0].size() != 1) {
-    throw Exception(ERROR::INPUT,
-                    "Invalid heuristic parameter in command-line.");
+    throw InputException("Invalid heuristic parameter in command-line.");
   }
 
   auto init = get_init(tokens[1]);
@@ -74,20 +72,17 @@ inline HeuristicParameters str_to_heuristic_param(const std::string& s) {
     auto h = std::stoul(tokens[0]);
 
     if (h != 0 and h != 1) {
-      throw Exception(ERROR::INPUT,
-                      "Invalid heuristic parameter in command-line.");
+      throw InputException("Invalid heuristic parameter in command-line.");
     }
 
     auto regret_coeff = std::stof(tokens[2]);
     if (regret_coeff < 0) {
-      throw Exception(ERROR::INPUT,
-                      "Invalid heuristic parameter in command-line.");
+      throw InputException("Invalid heuristic parameter in command-line.");
     }
 
     return HeuristicParameters(static_cast<HEURISTIC>(h), init, regret_coeff);
   } catch (const std::exception& e) {
-    throw Exception(ERROR::INPUT,
-                    "Invalid heuristic parameter in command-line.");
+    throw InputException("Invalid heuristic parameter in command-line.");
   }
 }
 
@@ -293,13 +288,13 @@ inline void check_precedence(const Input& input,
 
 inline void check_tws(const std::vector<TimeWindow>& tws) {
   if (tws.size() == 0) {
-    throw Exception(ERROR::INPUT, "Empty time-windows.");
+    throw InputException("Empty time-windows.");
   }
 
   if (tws.size() > 1) {
     for (std::size_t i = 0; i < tws.size() - 1; ++i) {
       if (tws[i + 1].start <= tws[i].end) {
-        throw Exception(ERROR::INPUT, "Unsorted or overlapping time-windows.");
+        throw InputException("Unsorted or overlapping time-windows.");
       }
     }
   }
@@ -873,23 +868,6 @@ inline Solution format_solution(const Input& input,
                   input.zero_amount().size(),
                   std::move(routes),
                   std::move(unassigned_jobs));
-}
-
-inline unsigned get_code(ERROR e) {
-  unsigned code = 0;
-  switch (e) {
-  case ERROR::INTERNAL:
-    code = 1;
-    break;
-  case ERROR::INPUT:
-    code = 2;
-    break;
-  case ERROR::ROUTING:
-    code = 3;
-    break;
-  }
-
-  return code;
 }
 
 } // namespace utils

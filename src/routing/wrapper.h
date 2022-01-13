@@ -67,7 +67,7 @@ protected:
       error_msg += "location [" + std::to_string(locs[error_loc].lon()) + ";" +
                    std::to_string(locs[error_loc].lat()) + "]";
 
-      throw Exception(ERROR::ROUTING, error_msg);
+      throw RoutingException(error_msg);
     }
   }
 };

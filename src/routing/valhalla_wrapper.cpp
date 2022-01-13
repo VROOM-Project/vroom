@@ -104,16 +104,15 @@ void ValhallaWrapper::check_response(const rapidjson::Document& json_result,
       error += json_result["error"].GetString();
       error += ").";
     }
-    throw Exception(ERROR::ROUTING, error);
+    throw RoutingException(error);
   }
 
   if (service == _route_service) {
     assert(json_result.HasMember("trip") and
            json_result["trip"].HasMember("status"));
     if (json_result["trip"]["status"] != 0) {
-      throw Exception(ERROR::ROUTING,
-                      std::string(
-                        json_result["trip"]["status_message"].GetString()));
+      throw RoutingException(
+        std::string(json_result["trip"]["status_message"].GetString()));
     }
   }
 }
