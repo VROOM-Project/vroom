@@ -12,6 +12,7 @@
 ### Changed
 
 - Refactor exception class (#639)
+- CI builds now run against `libosrm` v5.26.0 (#651)
 
 ### Fixed
 
