@@ -42,21 +42,21 @@ SolutionState::SolutionState(const Input& input)
 {
 }
 
-void SolutionState::setup(const std::vector<Index>& r, Index v) {
-  update_costs(r, v);
-  update_skills(r, v);
-  set_node_gains(r, v);
-  set_edge_gains(r, v);
-  set_pd_matching_ranks(r, v);
-  set_pd_gains(r, v);
+template <class Route> void SolutionState::setup(const Route& r, Index v) {
+  update_costs(r.route, v);
+  update_skills(r.route, v);
+  set_node_gains(r.route, v);
+  set_edge_gains(r.route, v);
+  set_pd_matching_ranks(r.route, v);
+  set_pd_gains(r.route, v);
 #ifndef NDEBUG
-  update_route_cost(r, v);
+  update_route_cost(r.route, v);
 #endif
 }
 
-void SolutionState::setup(const RawSolution& sol) {
+template <class Solution> void SolutionState::setup(const Solution& sol) {
   for (std::size_t v = 0; v < _nb_vehicles; ++v) {
-    setup(sol[v].route, v);
+    setup(sol[v], v);
   }
 
   // Initialize unassigned jobs.
@@ -65,26 +65,8 @@ void SolutionState::setup(const RawSolution& sol) {
                   _input.jobs.size(),
                   [&] { return x++; });
 
-  for (const auto& s : sol) {
-    for (const auto i : s.route) {
-      unassigned.erase(i);
-    }
-  }
-}
-
-void SolutionState::setup(const TWSolution& tw_sol) {
-  for (std::size_t v = 0; v < _nb_vehicles; ++v) {
-    setup(tw_sol[v].route, v);
-  }
-
-  // Initialize unassigned jobs.
-  Index x = 0;
-  std::generate_n(std::inserter(unassigned, unassigned.end()),
-                  _input.jobs.size(),
-                  [&] { return x++; });
-
-  for (const auto& tw_r : tw_sol) {
-    for (const auto i : tw_r.route) {
+  for (const auto& r : sol) {
+    for (const auto i : r.route) {
       unassigned.erase(i);
     }
   }
@@ -534,6 +516,9 @@ void SolutionState::update_route_cost(const std::vector<Index>& route,
   route_costs[v] = route_cost_for_vehicle(_input, v, route);
 }
 #endif
+
+template void SolutionState::setup(const RawSolution&);
+template void SolutionState::setup(const TWSolution&);
 
 } // namespace utils
 } // namespace vroom

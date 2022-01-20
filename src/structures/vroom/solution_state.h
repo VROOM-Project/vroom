@@ -125,11 +125,9 @@ public:
 
   SolutionState(const Input& input);
 
-  void setup(const std::vector<Index>& r, Index v);
+  template <class Route> void setup(const Route& r, Index v);
 
-  void setup(const RawSolution& sol);
-
-  void setup(const TWSolution& tw_sol);
+  template <class Solution> void setup(const Solution& sol);
 
   void update_costs(const std::vector<Index>& route, Index v);
 
