@@ -1308,17 +1308,14 @@ void LocalSearch<Route,
                           ->addition_candidates(),
                         0);
 
-      // Running update_costs only after try_job_additions is fine.
       for (auto v_rank : update_candidates) {
+        // Running update_costs only after try_job_additions is fine.
         _sol_state.update_costs(_sol[v_rank].route, v_rank);
-      }
 
-      for (auto v_rank : update_candidates) {
         _sol_state.update_skills(_sol[v_rank].route, v_rank);
-      }
 
-      // Update candidates.
-      for (auto v_rank : update_candidates) {
+        _sol_state.set_insertion_ranks(_sol[v_rank], v_rank);
+
         _sol_state.set_node_gains(_sol[v_rank].route, v_rank);
         _sol_state.set_edge_gains(_sol[v_rank].route, v_rank);
         _sol_state.set_pd_matching_ranks(_sol[v_rank].route, v_rank);
