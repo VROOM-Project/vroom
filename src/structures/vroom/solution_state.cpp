@@ -34,8 +34,12 @@ SolutionState::SolutionState(const Input& input)
                                        _nb_vehicles)),
     cheapest_job_rank_in_routes_to(_nb_vehicles,
                                    std::vector<std::vector<Index>>(
-                                     _nb_vehicles)),
-    route_costs(_nb_vehicles) {
+                                     _nb_vehicles))
+#ifndef NDEBUG
+    ,
+    route_costs(_nb_vehicles)
+#endif
+{
 }
 
 void SolutionState::setup(const std::vector<Index>& r, Index v) {
@@ -524,10 +528,12 @@ void SolutionState::update_cheapest_job_rank_in_routes(
   }
 }
 
+#ifndef NDEBUG
 void SolutionState::update_route_cost(const std::vector<Index>& route,
                                       Index v) {
   route_costs[v] = route_cost_for_vehicle(_input, v, route);
 }
+#endif
 
 } // namespace utils
 } // namespace vroom

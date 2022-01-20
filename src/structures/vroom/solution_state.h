@@ -118,8 +118,10 @@ public:
   // to job at rank r1 in v1.
   std::vector<std::vector<std::vector<Index>>> cheapest_job_rank_in_routes_to;
 
-  // Only used for assertions in debug mode.
+#ifndef NDEBUG
+  // Only used for assertion checks in debug mode.
   std::vector<Cost> route_costs;
+#endif
 
   SolutionState(const Input& input);
 
@@ -146,7 +148,9 @@ public:
                                           Index v1,
                                           Index v2);
 
+#ifndef NDEBUG
   void update_route_cost(const std::vector<Index>& route, Index v);
+#endif
 };
 
 } // namespace utils
