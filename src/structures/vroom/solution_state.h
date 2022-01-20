@@ -104,7 +104,7 @@ public:
 
   // If job at rank i in route for vehicle v is a pickup
   // (resp. delivery), then matching_delivery_rank[v][i]
-  // (resp. _matching_pickup_rank[v][i]) stores the rank of the
+  // (resp. matching_pickup_rank[v][i]) stores the rank of the
   // matching delivery (resp. pickup).
   std::vector<std::vector<Index>> matching_delivery_rank;
   std::vector<std::vector<Index>> matching_pickup_rank;
@@ -117,6 +117,13 @@ public:
   // in route v2 that minimize cost (as seen from the v2 perspective)
   // to job at rank r1 in v1.
   std::vector<std::vector<std::vector<Index>>> cheapest_job_rank_in_routes_to;
+
+  // Store values such that inserting job at rank j in route for
+  // vehicle v strictly before rank insertion_ranks_begin[v][j]
+  // (resp. at rank insertion_ranks_end[v][j] or after) is bound to
+  // fail.
+  std::vector<std::vector<Index>> insertion_ranks_begin;
+  std::vector<std::vector<Index>> insertion_ranks_end;
 
 #ifndef NDEBUG
   // Only used for assertion checks in debug mode.
@@ -145,6 +152,9 @@ public:
                                           const std::vector<Index>& route_2,
                                           Index v1,
                                           Index v2);
+
+  void set_insertion_ranks(const RawRoute& r, Index v);
+  void set_insertion_ranks(const TWRoute& r, Index v);
 
 #ifndef NDEBUG
   void update_route_cost(const std::vector<Index>& route, Index v);
