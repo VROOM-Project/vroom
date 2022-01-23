@@ -46,6 +46,7 @@ void display_usage() {
            ":5000),\t routing server port\n";
   usage += "\t-r ROUTER (=osrm),\t\t osrm, libosrm, ors or valhalla\n";
   usage += "\t-t THREADS (=4),\t\t number of threads to use\n";
+  usage += "\t-v,\t\t\t\t print version\n";
   usage += "\t-x EXPLORE (=5),\t\t exploration level to use (0..5)";
   std::cout << usage << std::endl;
   exit(0);
@@ -56,7 +57,7 @@ int main(int argc, char** argv) {
   vroom::io::CLArgs cl_args;
 
   // Parsing command-line arguments.
-  const char* optString = "a:ce:gi:l:o:p:r:t:x:h?";
+  const char* optString = "a:ce:gi:l:o:p:r:t:vi:x:h?";
   int opt = getopt(argc, argv, optString);
 
   std::string router_arg;
@@ -100,6 +101,9 @@ int main(int argc, char** argv) {
     case 't':
       nb_threads_arg = optarg;
       break;
+    case 'v':
+      std::cout << vroom::get_version() << std::endl;
+      return 0;
     case 'x':
       exploration_level_arg = optarg;
       break;
