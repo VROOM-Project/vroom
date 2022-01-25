@@ -734,7 +734,7 @@ void LocalSearch<Route,
             continue;
           }
 
-          const auto& s_job_rank = _sol[s_t.first].route[s_rank];
+          const auto s_job_rank = _sol[s_t.first].route[s_rank];
           if (_input.jobs[s_job_rank].type != JOB_TYPE::SINGLE or
               !_input.vehicle_ok_with_job(s_t.second, s_job_rank)) {
             // Don't try moving (part of) a shipment or an
@@ -742,7 +742,9 @@ void LocalSearch<Route,
             continue;
           }
 
-          for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size();
+          for (unsigned t_rank =
+                 _sol_state.insertion_ranks_begin[s_t.second][s_job_rank];
+               t_rank < _sol_state.insertion_ranks_end[s_t.second][s_job_rank];
                ++t_rank) {
 #ifdef LOG_LS_OPERATORS
             ++tried_moves[OperatorName::Relocate];
