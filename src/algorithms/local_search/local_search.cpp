@@ -766,7 +766,7 @@ void LocalSearch<Route,
         }
       }
 
-      // Or-opt stuff
+      // OrOpt stuff
       for (const auto& s_t : s_t_pairs) {
         if (s_t.first == s_t.second or best_priorities[s_t.first] > 0 or
             best_priorities[s_t.second] > 0 or _sol[s_t.first].size() < 2) {
@@ -787,24 +787,31 @@ void LocalSearch<Route,
             continue;
           }
 
-          if (!_input.vehicle_ok_with_job(s_t.second,
-                                          _sol[s_t.first].route[s_rank]) or
-              !_input.vehicle_ok_with_job(s_t.second,
-                                          _sol[s_t.first].route[s_rank + 1])) {
+          const auto s_job_rank = _sol[s_t.first].route[s_rank];
+          const auto s_next_job_rank = _sol[s_t.first].route[s_rank + 1];
+
+          if (!_input.vehicle_ok_with_job(s_t.second, s_job_rank) or
+              !_input.vehicle_ok_with_job(s_t.second, s_next_job_rank)) {
             continue;
           }
 
-          if (_input.jobs[_sol[s_t.first].route[s_rank]].type !=
-                JOB_TYPE::SINGLE or
-              _input.jobs[_sol[s_t.first].route[s_rank + 1]].type !=
-                JOB_TYPE::SINGLE) {
+          if (_input.jobs[s_job_rank].type != JOB_TYPE::SINGLE or
+              _input.jobs[s_next_job_rank].type != JOB_TYPE::SINGLE) {
             // Don't try moving part of a shipment. Moving a full
             // shipment as an edge is not tested because it's a
             // special case of PDShift.
             continue;
           }
 
-          for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size();
+          const auto insertion_start =
+            std::max(_sol_state.insertion_ranks_begin[s_t.second][s_job_rank],
+                     _sol_state
+                       .insertion_ranks_begin[s_t.second][s_next_job_rank]);
+          const auto insertion_end =
+            std::min(_sol_state.insertion_ranks_end[s_t.second][s_job_rank],
+                     _sol_state
+                       .insertion_ranks_end[s_t.second][s_next_job_rank]);
+          for (unsigned t_rank = insertion_start; t_rank < insertion_end;
                ++t_rank) {
 #ifdef LOG_LS_OPERATORS
             ++tried_moves[OperatorName::OrOpt];
