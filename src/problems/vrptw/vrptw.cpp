@@ -244,25 +244,34 @@ Solution VRPTW::solve(unsigned exploration_level,
   }
 
 #ifndef NDEBUG
-//   // Sum indicators per operator.
-//   std::vector<std::string> names;
-//   assert(!ls_stats.empty());
-//   std::transform(ls_stats[0].begin(),
-//                  ls_stats[0].end(),
-//                  std::back_inserter(names),
-//                  [] (const auto& op) { return op.name; });
+  // // Sum indicators per operator.
+  // std::vector<std::string> names;
+  // assert(!ls_stats.empty());
+  // std::transform(ls_stats[0].begin(),
+  //                ls_stats[0].end(),
+  //                std::back_inserter(names),
+  //                [](const auto& op) { return op.name; });
 
-//   std::vector<unsigned> tried_sums(names.size(), 0);
+  // std::vector<unsigned> tried_sums(names.size(), 0);
+  // std::vector<unsigned> applied_sums(names.size(), 0);
 
-//   for (const auto& ls_run : ls_stats) {
-//     for (std::size_t i = 0; i < ls_run.size(); ++i) {
-//       tried_sums[i] += ls_run[i].tried_moves;
-//     }
-//   }
+  // unsigned total_tried = 0;
+  // unsigned total_applied = 0;
+  // for (const auto& ls_run : ls_stats) {
+  //   for (std::size_t i = 0; i < ls_run.size(); ++i) {
+  //     tried_sums[i] += ls_run[i].tried_moves;
+  //     total_tried += ls_run[i].tried_moves;
 
-//   for (std::size_t i = 0; i < names.size(); ++i) {
-//     std::cout << names[i] << "," << tried_sums[i] << std::endl;
-//   }
+  //     applied_sums[i] += ls_run[i].applied_moves;
+  //     total_applied += ls_run[i].applied_moves;
+  //   }
+  // }
+
+  // for (std::size_t i = 0; i < names.size(); ++i) {
+  //   std::cout << names[i] << "," << tried_sums[i] << "," << applied_sums[i]
+  //             << std::endl;
+  // }
+  // std::cout << "Total," << total_tried << "," << total_applied << std::endl;
 #endif
 
   auto best_indic =

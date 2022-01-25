@@ -22,9 +22,12 @@ namespace ls {
 struct OperatorStats {
   const std::string name;
   const unsigned tried_moves;
+  const unsigned applied_moves;
 
-  OperatorStats(const std::string& name, const unsigned tried_moves)
-    : name(name), tried_moves(tried_moves) {
+  OperatorStats(const std::string& name,
+                const unsigned tried_moves,
+                const unsigned applied_moves)
+    : name(name), tried_moves(tried_moves), applied_moves(applied_moves) {
   }
 };
 #endif
@@ -65,6 +68,7 @@ private:
 #ifndef NDEBUG
   // Store operator usage stats.
   std::unordered_map<std::string, unsigned> tried_moves;
+  std::unordered_map<std::string, unsigned> applied_moves;
 #endif
 
   void try_job_additions(const std::vector<Index>& routes, double regret_coeff);

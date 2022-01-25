@@ -118,6 +118,7 @@ LocalSearch<Route,
 #ifndef NDEBUG
   for (const auto& op : operators) {
     tried_moves.insert({op, 0});
+    applied_moves.insert({op, 0});
   }
 #endif
 }
@@ -1423,6 +1424,8 @@ void LocalSearch<Route,
         best_ops[best_source][best_target]->update_candidates();
 
 #ifndef NDEBUG
+      ++applied_moves.at(best_ops[best_source][best_target]->get_name());
+
       // Update route costs.
       const auto previous_cost =
         std::accumulate(update_candidates.begin(),
@@ -1656,7 +1659,7 @@ std::vector<OperatorStats> LocalSearch<Route,
                                        RouteExchange>::get_stats() const {
   std::vector<OperatorStats> stats;
   for (const auto& op : operators) {
-    stats.emplace_back(op, tried_moves.at(op));
+    stats.emplace_back(op, tried_moves.at(op), applied_moves.at(op));
   }
 
   return stats;
