@@ -20,7 +20,15 @@ SwapStar::SwapStar(const Input& input,
                    Index t_vehicle,
                    Gain best_known_gain)
   // Use dummy 0 values for unused ranks.
-  : Operator(input, sol_state, s_route, s_vehicle, 0, t_route, t_vehicle, 0),
+  : Operator("SwapStar",
+             input,
+             sol_state,
+             s_route,
+             s_vehicle,
+             0,
+             t_route,
+             t_vehicle,
+             0),
     _best_known_gain(best_known_gain) {
   assert(s_vehicle != t_vehicle);
   assert(s_route.size() >= 1);

@@ -28,6 +28,24 @@ All rights reserved (see LICENSE).
 namespace vroom {
 namespace ls {
 
+#ifndef NDEBUG
+const std::vector<std::string> operators = {"UnassignedExchange",
+                                            "SwapStar",
+                                            "CrossExchange",
+                                            "MixedExchange",
+                                            "TwoOpt",
+                                            "ReverseTwoOpt",
+                                            "Relocate",
+                                            "OrOpt",
+                                            "IntraExchange",
+                                            "IntraCrossExchange",
+                                            "IntraMixedExchange",
+                                            "IntraRelocate",
+                                            "IntraOrOpt",
+                                            "PDShift",
+                                            "RouteExchange"};
+#endif
+
 template <class Route,
           class UnassignedExchange,
           class SwapStar,
@@ -96,6 +114,13 @@ LocalSearch<Route,
     std::count_if(_sol.begin(), _sol.end(), [](const auto& r) {
       return !r.empty();
     });
+
+#ifndef NDEBUG
+  for (const auto& op : operators) {
+    tried_moves.insert({op, 0});
+    applied_moves.insert({op, 0});
+  }
+#endif
 }
 
 struct RouteInsertion {
@@ -519,6 +544,9 @@ void LocalSearch<Route,
                   // Same move as with t_rank == s_rank.
                   continue;
                 }
+#ifndef NDEBUG
+                ++tried_moves["UnassignedExchange"];
+#endif
                 UnassignedExchange r(_input,
                                      _sol_state,
                                      _sol_state.unassigned,
@@ -606,6 +634,9 @@ void LocalSearch<Route,
             continue;
           }
 
+#ifndef NDEBUG
+          ++tried_moves["CrossExchange"];
+#endif
           CrossExchange r(_input,
                           _sol_state,
                           _sol[s_t.first],
@@ -678,6 +709,9 @@ void LocalSearch<Route,
               continue;
             }
 
+#ifndef NDEBUG
+            ++tried_moves["MixedExchange"];
+#endif
             MixedExchange r(_input,
                             _sol_state,
                             _sol[s_t.first],
@@ -743,6 +777,9 @@ void LocalSearch<Route,
             continue;
           }
 
+#ifndef NDEBUG
+          ++tried_moves["TwoOpt"];
+#endif
           TwoOpt r(_input,
                    _sol_state,
                    _sol[s_t.first],
@@ -799,6 +836,9 @@ void LocalSearch<Route,
             continue;
           }
 
+#ifndef NDEBUG
+          ++tried_moves["ReverseTwoOpt"];
+#endif
           ReverseTwoOpt r(_input,
                           _sol_state,
                           _sol[s_t.first],
@@ -850,6 +890,9 @@ void LocalSearch<Route,
 
           for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size();
                ++t_rank) {
+#ifndef NDEBUG
+            ++tried_moves["Relocate"];
+#endif
             Relocate r(_input,
                        _sol_state,
                        _sol[s_t.first],
@@ -907,6 +950,9 @@ void LocalSearch<Route,
 
           for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size();
                ++t_rank) {
+#ifndef NDEBUG
+            ++tried_moves["OrOpt"];
+#endif
             OrOpt r(_input,
                     _sol_state,
                     _sol[s_t.first],
@@ -952,6 +998,9 @@ void LocalSearch<Route,
             continue;
           }
 
+#ifndef NDEBUG
+          ++tried_moves["IntraExchange"];
+#endif
           IntraExchange r(_input,
                           _sol_state,
                           _sol[s_t.first],
@@ -1011,6 +1060,9 @@ void LocalSearch<Route,
             continue;
           }
 
+#ifndef NDEBUG
+          ++tried_moves["IntraCrossExchange"];
+#endif
           IntraCrossExchange r(_input,
                                _sol_state,
                                _sol[s_t.first],
@@ -1067,6 +1119,9 @@ void LocalSearch<Route,
             continue;
           }
 
+#ifndef NDEBUG
+          ++tried_moves["IntraMixedExchange"];
+#endif
           IntraMixedExchange r(_input,
                                _sol_state,
                                _sol[s_t.first],
@@ -1119,6 +1174,9 @@ void LocalSearch<Route,
             continue;
           }
 
+#ifndef NDEBUG
+          ++tried_moves["IntraRelocate"];
+#endif
           IntraRelocate r(_input,
                           _sol_state,
                           _sol[s_t.first],
@@ -1178,6 +1236,9 @@ void LocalSearch<Route,
           if (t_rank == s_rank) {
             continue;
           }
+#ifndef NDEBUG
+          ++tried_moves["IntraOrOpt"];
+#endif
           IntraOrOpt r(_input,
                        _sol_state,
                        _sol[s_t.first],
@@ -1236,6 +1297,9 @@ void LocalSearch<Route,
             continue;
           }
 
+#ifndef NDEBUG
+          ++tried_moves["PDShift"];
+#endif
           PDShift pdr(_input,
                       _sol_state,
                       _sol[s_t.first],
@@ -1277,6 +1341,9 @@ void LocalSearch<Route,
           continue;
         }
 
+#ifndef NDEBUG
+        ++tried_moves["RouteExchange"];
+#endif
         RouteExchange re(_input,
                          _sol_state,
                          _sol[s_t.first],
@@ -1301,6 +1368,9 @@ void LocalSearch<Route,
           continue;
         }
 
+#ifndef NDEBUG
+        ++tried_moves["SwapStar"];
+#endif
         SwapStar r(_input,
                    _sol_state,
                    _sol[s_t.first],
@@ -1354,6 +1424,8 @@ void LocalSearch<Route,
         best_ops[best_source][best_target]->update_candidates();
 
 #ifndef NDEBUG
+      ++applied_moves.at(best_ops[best_source][best_target]->get_name());
+
       // Update route costs.
       const auto previous_cost =
         std::accumulate(update_candidates.begin(),
@@ -1551,6 +1623,48 @@ void LocalSearch<Route,
     first_step = false;
   }
 }
+
+#ifndef NDEBUG
+template <class Route,
+          class UnassignedExchange,
+          class SwapStar,
+          class CrossExchange,
+          class MixedExchange,
+          class TwoOpt,
+          class ReverseTwoOpt,
+          class Relocate,
+          class OrOpt,
+          class IntraExchange,
+          class IntraCrossExchange,
+          class IntraMixedExchange,
+          class IntraRelocate,
+          class IntraOrOpt,
+          class PDShift,
+          class RouteExchange>
+std::vector<OperatorStats> LocalSearch<Route,
+                                       UnassignedExchange,
+                                       SwapStar,
+                                       CrossExchange,
+                                       MixedExchange,
+                                       TwoOpt,
+                                       ReverseTwoOpt,
+                                       Relocate,
+                                       OrOpt,
+                                       IntraExchange,
+                                       IntraCrossExchange,
+                                       IntraMixedExchange,
+                                       IntraRelocate,
+                                       IntraOrOpt,
+                                       PDShift,
+                                       RouteExchange>::get_stats() const {
+  std::vector<OperatorStats> stats;
+  for (const auto& op : operators) {
+    stats.emplace_back(op, tried_moves.at(op), applied_moves.at(op));
+  }
+
+  return stats;
+}
+#endif
 
 template <class Route,
           class UnassignedExchange,
