@@ -9,11 +9,25 @@ Copyright (c) 2015-2022, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
+#ifndef NDEBUG
+#include <unordered_map>
+#endif
 
 #include "structures/vroom/solution_state.h"
 
 namespace vroom {
 namespace ls {
+
+#ifndef NDEBUG
+struct OperatorStats {
+  const std::string name;
+  const unsigned tried_moves;
+
+  OperatorStats(const std::string& name, const unsigned tried_moves)
+    : name(name), tried_moves(tried_moves) {
+  }
+};
+#endif
 
 template <class Route,
           class UnassignedExchange,
@@ -48,6 +62,11 @@ private:
   std::vector<Route>& _best_sol;
   utils::SolutionIndicators _best_sol_indicators;
 
+#ifndef NDEBUG
+  // Store operator usage stats.
+  std::unordered_map<std::string, unsigned> tried_moves;
+#endif
+
   void try_job_additions(const std::vector<Index>& routes, double regret_coeff);
 
   void run_ls_step();
@@ -74,6 +93,10 @@ public:
   utils::SolutionIndicators indicators() const;
 
   void run();
+
+#ifndef NDEBUG
+  std::vector<OperatorStats> get_stats() const;
+#endif
 };
 
 } // namespace ls
