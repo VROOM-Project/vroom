@@ -548,6 +548,64 @@ void Input::set_vehicles_costs() {
   }
 }
 
+void Input::set_vehicles_max_tasks() {
+  if (_has_jobs and !_has_shipments and _amount_size > 0) {
+    // Compute an upper bound of the number of single jobs for each
+    // vehicle. This requires sorting single jobs and pickup/delivery
+    // values across all amount components.
+    struct JobAmount {
+      Index rank;
+      Capacity amount;
+
+      bool operator<(const JobAmount& rhs) {
+        return this->amount < rhs.amount;
+      }
+    };
+
+    std::vector<std::vector<JobAmount>> sorted_job_pickups_per_component(
+      _amount_size);
+    for (std::size_t i = 0; i < _amount_size; ++i) {
+      for (Index j = 0; j < jobs.size(); ++j) {
+        if (jobs[j].type == JOB_TYPE::SINGLE) {
+          sorted_job_pickups_per_component[i].push_back({j, jobs[j].pickup[i]});
+        }
+      }
+
+      std::sort(sorted_job_pickups_per_component[i].begin(),
+                sorted_job_pickups_per_component[i].end());
+    }
+
+    const auto nb_single_jobs = sorted_job_pickups_per_component[0].size();
+
+    for (Index v = 0; v < vehicles.size(); ++v) {
+      std::size_t max_pickups = nb_single_jobs;
+
+      for (std::size_t i = 0; i < _amount_size; ++i) {
+        assert(nb_single_jobs == sorted_job_pickups_per_component[i].size());
+        Capacity component_sum = 0;
+        std::size_t compatible_tasks_ok = 0;
+
+        for (std::size_t j = 0;
+             j < nb_single_jobs and compatible_tasks_ok < max_pickups;
+             ++j) {
+          if (vehicle_ok_with_job(v,
+                                  sorted_job_pickups_per_component[i][j]
+                                    .rank)) {
+            component_sum += sorted_job_pickups_per_component[i][j].amount;
+            if (component_sum > vehicles[v].capacity[i]) {
+              break;
+            }
+            ++compatible_tasks_ok;
+          }
+        }
+        max_pickups = std::min(max_pickups, compatible_tasks_ok);
+      }
+
+      vehicles[v].max_tasks = std::min(vehicles[v].max_tasks, max_pickups);
+    }
+  }
+}
+
 void Input::set_vehicle_steps_ranks() {
   std::unordered_set<Id> planned_job_ids;
   std::unordered_set<Id> planned_pickup_ids;
@@ -784,6 +842,9 @@ Solution Input::solve(unsigned exploration_level,
   set_skills_compatibility();
   set_extra_compatibility();
   set_vehicles_compatibility();
+
+  // Add implicit max_tasks constraints derived from capacity and TW.
+  set_vehicles_max_tasks();
 
   // Load relevant problem.
   auto instance = get_problem();
