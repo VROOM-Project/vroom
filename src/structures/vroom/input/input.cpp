@@ -152,6 +152,7 @@ void Input::check_job(Job& job) {
     if (search != _locations_to_index.end()) {
       // Using stored index for existing location.
       job.location.set_index(search->second);
+      _locations_used_several_times.insert(job.location);
     } else {
       // Append new location and store corresponding index.
       auto new_index = _locations.size();
@@ -168,6 +169,8 @@ void Input::check_job(Job& job) {
       _locations.push_back(job.location);
       _locations_to_index.insert(
         std::make_pair(job.location, _locations.size() - 1));
+    } else {
+      _locations_used_several_times.insert(job.location);
     }
   }
 
@@ -261,6 +264,7 @@ void Input::add_vehicle(const Vehicle& vehicle) {
       if (search != _locations_to_index.end()) {
         // Using stored index for existing location.
         start_loc.set_index(search->second);
+        _locations_used_several_times.insert(start_loc);
       } else {
         // Append new location and store corresponding index.
         auto new_index = _locations.size();
@@ -277,6 +281,8 @@ void Input::add_vehicle(const Vehicle& vehicle) {
         _locations.push_back(start_loc);
         _locations_to_index.insert(
           std::make_pair(start_loc, _locations.size() - 1));
+      } else {
+        _locations_used_several_times.insert(start_loc);
       }
     }
 
@@ -307,6 +313,7 @@ void Input::add_vehicle(const Vehicle& vehicle) {
       if (search != _locations_to_index.end()) {
         // Using stored index for existing location.
         end_loc.set_index(search->second);
+        _locations_used_several_times.insert(end_loc);
       } else {
         // Append new location and store corresponding index.
         auto new_index = _locations.size();
@@ -323,6 +330,8 @@ void Input::add_vehicle(const Vehicle& vehicle) {
         _locations.push_back(end_loc);
         _locations_to_index.insert(
           std::make_pair(end_loc, _locations.size() - 1));
+      } else {
+        _locations_used_several_times.insert(end_loc);
       }
     }
 

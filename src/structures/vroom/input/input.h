@@ -52,6 +52,7 @@ private:
   Cost _cost_upper_bound;
   std::vector<Location> _locations;
   std::unordered_map<Location, Index> _locations_to_index;
+  std::unordered_set<Location> _locations_used_several_times;
   std::vector<std::vector<unsigned char>> _vehicle_to_job_compatibility;
   std::vector<std::vector<bool>> _vehicle_to_vehicle_compatibility;
   std::unordered_set<Index> _matrices_used_index;
