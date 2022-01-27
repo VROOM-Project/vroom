@@ -34,7 +34,7 @@ struct Vehicle {
   const std::vector<Break> breaks;
   const std::string description;
   CostWrapper cost_wrapper;
-  const size_t max_tasks;
+  size_t max_tasks;
   std::vector<VehicleStep> steps;
   std::unordered_map<Id, Index> break_id_to_rank;
 
