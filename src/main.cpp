@@ -185,7 +185,10 @@ int main(int argc, char** argv) {
 
   try {
     // Build problem.
-    vroom::Input problem_instance = vroom::io::parse(cl_args);
+    vroom::Input problem_instance = vroom::io::parse(cl_args.input,
+                                                     cl_args.servers,
+                                                     cl_args.router,
+                                                     cl_args.geometry);
 
     vroom::Solution sol = (cl_args.check)
                             ? problem_instance.check(cl_args.nb_threads)
