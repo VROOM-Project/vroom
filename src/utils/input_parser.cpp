@@ -465,12 +465,12 @@ template <class T> inline Matrix<T> get_matrix(rapidjson::Value& m) {
   return matrix;
 }
 
-Input parse(std::string input, Servers& servers, ROUTER router, bool geometry) {
+Input parse(std::string input_str, Servers& servers, ROUTER router, bool geometry) {
   // Input json object.
   rapidjson::Document json_input;
 
   // Parsing input string to populate the input object.
-  if (json_input.Parse(input.c_str()).HasParseError()) {
+  if (json_input.Parse(input_str.c_str()).HasParseError()) {
     std::string error_msg =
       std::string(rapidjson::GetParseError_En(json_input.GetParseError())) +
       " (offset: " + std::to_string(json_input.GetErrorOffset()) + ")";
