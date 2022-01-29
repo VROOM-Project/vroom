@@ -18,7 +18,7 @@ namespace io {
 
 struct CLArgs;
 
-Input parse(const CLArgs& cl_args);
+Input parse(std::string input, Servers& servers, ROUTER router, bool geometry);
 
 } // namespace io
 } // namespace vroom

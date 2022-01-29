@@ -465,10 +465,7 @@ template <class T> inline Matrix<T> get_matrix(rapidjson::Value& m) {
   return matrix;
 }
 
-Input parse(std::string input,
-            Servers& servers,
-            ROUTER router,
-            bool geometry) {
+Input parse(std::string input, Servers& servers, ROUTER router, bool geometry) {
   // Input json object.
   rapidjson::Document json_input;
 
