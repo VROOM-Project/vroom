@@ -36,8 +36,6 @@ struct CLArgs {
   unsigned exploration_level;                // -x
 
   static const unsigned max_exploration_level;
-
-  CLArgs();
 };
 
 void update_host(Servers& servers, const std::string& value);

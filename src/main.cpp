@@ -49,6 +49,7 @@ int main(int argc, char** argv) {
     .set_tab_expansion()
     .add_options("main_group")
     ("h,help", "Print this help message.")
+    ("v,version", "Print the version of this software.")
     ("a,host", "The host for the routing profile, e.g. '" + vroom::DEFAULT_PROFILE + ":0.0.0.0'", cxxopts::value<std::string>(host_arg)->default_value("car:0.0.0.0"))
     ("c,choose-eta", "Choose ETA for custom routes and report violations.", cxxopts::value<bool>(cl_args.check)->default_value("false"))
     ("g,geometry", "Add detailed route geometry and indicators", cxxopts::value<bool>(cl_args.geometry)->default_value("false"))
@@ -58,27 +59,33 @@ int main(int argc, char** argv) {
     ("p,port", "The host port for the routing profile, e.g. '" + vroom::DEFAULT_PROFILE + ":5000'", cxxopts::value<std::string>(port_arg)->default_value("car:5000"))
     ("r,router", "osrm, libosrm, ors or valhalla", cxxopts::value<std::string>(router_arg)->default_value("osrm"))
     ("t,threads", "Number of threads to use", cxxopts::value<unsigned>(cl_args.nb_threads)->default_value("4"))
-    ("v,version", "Print the version of this software.")
     ("x,explore", "Exploration level to use (0..5)", cxxopts::value<unsigned>(cl_args.exploration_level)->default_value("5"))
     ("input", "optional input positional arg", cxxopts::value<std::string>(cl_args.input));
   
-  // we don't want to print debug args on --help
-  options.add_options("debug_group")
-    ("e,heuristic-param", "Heuristic parameter", cxxopts::value<std::vector<std::string>>(heuristic_params_arg));
-  // clang-format on
+  try {
+    // we don't want to print debug args on --help
+    options.add_options("debug_group")
+      ("e,heuristic-param", "Heuristic parameter", cxxopts::value<std::vector<std::string>>(heuristic_params_arg));
+    // clang-format on
 
-  options.parse_positional({"input"});
-  options.positional_help("OPTIONAL INLINE JSON");
-  auto parsed_args = options.parse(argc, argv);
+    options.parse_positional({"input"});
+    options.positional_help("OPTIONAL INLINE JSON");
+    auto parsed_args = options.parse(argc, argv);
 
-  if (parsed_args.count("help")) {
-    std::cout << options.help({"main_group"}) << "\n";
-    exit(0);
-  }
+    if (parsed_args.count("help")) {
+      std::cout << options.help({"main_group"}) << "\n";
+      exit(0);
+    }
 
-  if (parsed_args.count("version")) {
-    std::cout << "vroom " << vroom::get_version() << "\n";
-    exit(0);
+    if (parsed_args.count("version")) {
+      std::cout << "vroom " << vroom::get_version() << "\n";
+      exit(0);
+    }
+  } catch (const cxxopts::OptionException& e) {
+    auto error_code = vroom::InputException("").error_code;
+    std::cerr << "[Error] " << e.what() << std::endl;
+    vroom::io::write_to_json({error_code, e.what()}, false, cl_args.output_file);
+    exit(error_code);
   }
 
   // parse and update some params

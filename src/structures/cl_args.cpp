@@ -16,9 +16,6 @@ namespace io {
 
 const unsigned CLArgs::max_exploration_level = 5;
 
-// Default values.
-CLArgs::CLArgs(){}
-
 void update_host(Servers& servers, const std::string& value) {
   // Determine profile and host from a "car:0.0.0.0"-like value.
   std::string profile = DEFAULT_PROFILE;
