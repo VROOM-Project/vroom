@@ -9,7 +9,8 @@ Copyright (c) 2015-2022, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
-#ifndef NDEBUG
+
+#ifdef LOG_LS_OPERATORS
 #include <unordered_map>
 #endif
 
@@ -18,7 +19,7 @@ All rights reserved (see LICENSE).
 namespace vroom {
 namespace ls {
 
-#ifndef NDEBUG
+#ifdef LOG_LS_OPERATORS
 struct OperatorStats {
   const std::string name;
   const unsigned tried_moves;
@@ -65,7 +66,7 @@ private:
   std::vector<Route>& _best_sol;
   utils::SolutionIndicators _best_sol_indicators;
 
-#ifndef NDEBUG
+#ifdef LOG_LS_OPERATORS
   // Store operator usage stats.
   std::unordered_map<std::string, unsigned> tried_moves;
   std::unordered_map<std::string, unsigned> applied_moves;
@@ -98,7 +99,7 @@ public:
 
   void run();
 
-#ifndef NDEBUG
+#ifdef LOG_LS_OPERATORS
   std::vector<OperatorStats> get_stats() const;
 #endif
 };
