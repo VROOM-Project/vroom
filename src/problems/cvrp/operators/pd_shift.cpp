@@ -22,7 +22,7 @@ PDShift::PDShift(const Input& input,
                  RawRoute& t_route,
                  Index t_vehicle,
                  Gain gain_threshold)
-  : Operator("PDShift",
+  : Operator(OperatorName::PDShift,
              input,
              sol_state,
              s_route,

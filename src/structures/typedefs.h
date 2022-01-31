@@ -111,6 +111,26 @@ enum class VIOLATION {
   MISSING_BREAK
 };
 
+#ifdef LOG_LS_OPERATORS
+enum OperatorName {
+  UnassignedExchange,
+  SwapStar,
+  CrossExchange,
+  MixedExchange,
+  TwoOpt,
+  ReverseTwoOpt,
+  Relocate,
+  OrOpt,
+  IntraExchange,
+  IntraCrossExchange,
+  IntraMixedExchange,
+  IntraRelocate,
+  IntraOrOpt,
+  PDShift,
+  RouteExchange
+};
+#endif
+
 } // namespace vroom
 
 #endif

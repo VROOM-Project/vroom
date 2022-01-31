@@ -254,7 +254,7 @@ Solution VRPTW::solve(unsigned exploration_level,
   std::transform(ls_stats[0].begin(),
                  ls_stats[0].end(),
                  std::back_inserter(names),
-                 [](const auto& op) { return op.name; });
+                 [](const auto& op) { return utils::operator_name(op.name); });
 
   std::vector<unsigned> tried_sums(names.size(), 0);
   std::vector<unsigned> applied_sums(names.size(), 0);

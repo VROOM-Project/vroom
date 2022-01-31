@@ -19,7 +19,7 @@ IntraMixedExchange::IntraMixedExchange(const Input& input,
                                        Index s_rank,
                                        Index t_rank,
                                        bool check_t_reverse)
-  : Operator("IntraMixedExchange",
+  : Operator(OperatorName::IntraMixedExchange,
              input,
              sol_state,
              s_raw_route,

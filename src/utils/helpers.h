@@ -53,6 +53,65 @@ inline INIT get_init(const std::string& s) {
   }
 }
 
+#ifdef LOG_LS_OPERATORS
+inline std::string operator_name(OperatorName name) {
+  std::string str_name;
+
+  switch (name) {
+  case OperatorName::UnassignedExchange:
+    str_name = "UnassignedExchange";
+    break;
+  case OperatorName::SwapStar:
+    str_name = "SwapStar";
+    break;
+  case OperatorName::CrossExchange:
+    str_name = "CrossExchange";
+    break;
+  case OperatorName::MixedExchange:
+    str_name = "MixedExchange";
+    break;
+  case OperatorName::TwoOpt:
+    str_name = "TwoOpt";
+    break;
+  case OperatorName::ReverseTwoOpt:
+    str_name = "ReverseTwoOpt";
+    break;
+  case OperatorName::Relocate:
+    str_name = "Relocate";
+    break;
+  case OperatorName::OrOpt:
+    str_name = "OrOpt";
+    break;
+  case OperatorName::IntraExchange:
+    str_name = "IntraExchange";
+    break;
+  case OperatorName::IntraCrossExchange:
+    str_name = "IntraCrossExchange";
+    break;
+  case OperatorName::IntraMixedExchange:
+    str_name = "IntraMixedExchange";
+    break;
+  case OperatorName::IntraRelocate:
+    str_name = "IntraRelocate";
+    break;
+  case OperatorName::IntraOrOpt:
+    str_name = "IntraOrOpt";
+    break;
+  case OperatorName::PDShift:
+    str_name = "PDShift";
+    break;
+  case OperatorName::RouteExchange:
+    str_name = "RouteExchange";
+    break;
+  default:
+    assert(false);
+    break;
+  }
+
+  return str_name;
+}
+#endif
+
 inline HeuristicParameters str_to_heuristic_param(const std::string& s) {
   // Split command-line string describing parameters.
   constexpr char delimiter = ',';

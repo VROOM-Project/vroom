@@ -28,24 +28,6 @@ All rights reserved (see LICENSE).
 namespace vroom {
 namespace ls {
 
-#ifdef LOG_LS_OPERATORS
-const std::vector<std::string> operators = {"UnassignedExchange",
-                                            "SwapStar",
-                                            "CrossExchange",
-                                            "MixedExchange",
-                                            "TwoOpt",
-                                            "ReverseTwoOpt",
-                                            "Relocate",
-                                            "OrOpt",
-                                            "IntraExchange",
-                                            "IntraCrossExchange",
-                                            "IntraMixedExchange",
-                                            "IntraRelocate",
-                                            "IntraOrOpt",
-                                            "PDShift",
-                                            "RouteExchange"};
-#endif
-
 template <class Route,
           class UnassignedExchange,
           class SwapStar,
@@ -116,10 +98,37 @@ LocalSearch<Route,
     });
 
 #ifdef LOG_LS_OPERATORS
-  for (const auto& op : operators) {
-    tried_moves.insert({op, 0});
-    applied_moves.insert({op, 0});
-  }
+  tried_moves.insert({OperatorName::UnassignedExchange, 0});
+  tried_moves.insert({OperatorName::SwapStar, 0});
+  tried_moves.insert({OperatorName::CrossExchange, 0});
+  tried_moves.insert({OperatorName::MixedExchange, 0});
+  tried_moves.insert({OperatorName::TwoOpt, 0});
+  tried_moves.insert({OperatorName::ReverseTwoOpt, 0});
+  tried_moves.insert({OperatorName::Relocate, 0});
+  tried_moves.insert({OperatorName::OrOpt, 0});
+  tried_moves.insert({OperatorName::IntraExchange, 0});
+  tried_moves.insert({OperatorName::IntraCrossExchange, 0});
+  tried_moves.insert({OperatorName::IntraMixedExchange, 0});
+  tried_moves.insert({OperatorName::IntraRelocate, 0});
+  tried_moves.insert({OperatorName::IntraOrOpt, 0});
+  tried_moves.insert({OperatorName::PDShift, 0});
+  tried_moves.insert({OperatorName::RouteExchange, 0});
+
+  applied_moves.insert({OperatorName::UnassignedExchange, 0});
+  applied_moves.insert({OperatorName::SwapStar, 0});
+  applied_moves.insert({OperatorName::CrossExchange, 0});
+  applied_moves.insert({OperatorName::MixedExchange, 0});
+  applied_moves.insert({OperatorName::TwoOpt, 0});
+  applied_moves.insert({OperatorName::ReverseTwoOpt, 0});
+  applied_moves.insert({OperatorName::Relocate, 0});
+  applied_moves.insert({OperatorName::OrOpt, 0});
+  applied_moves.insert({OperatorName::IntraExchange, 0});
+  applied_moves.insert({OperatorName::IntraCrossExchange, 0});
+  applied_moves.insert({OperatorName::IntraMixedExchange, 0});
+  applied_moves.insert({OperatorName::IntraRelocate, 0});
+  applied_moves.insert({OperatorName::IntraOrOpt, 0});
+  applied_moves.insert({OperatorName::PDShift, 0});
+  applied_moves.insert({OperatorName::RouteExchange, 0});
 #endif
 }
 
@@ -545,7 +554,7 @@ void LocalSearch<Route,
                   continue;
                 }
 #ifdef LOG_LS_OPERATORS
-                ++tried_moves["UnassignedExchange"];
+                ++tried_moves[OperatorName::UnassignedExchange];
 #endif
                 UnassignedExchange r(_input,
                                      _sol_state,
@@ -635,7 +644,7 @@ void LocalSearch<Route,
           }
 
 #ifdef LOG_LS_OPERATORS
-          ++tried_moves["CrossExchange"];
+          ++tried_moves[OperatorName::CrossExchange];
 #endif
           CrossExchange r(_input,
                           _sol_state,
@@ -710,7 +719,7 @@ void LocalSearch<Route,
             }
 
 #ifdef LOG_LS_OPERATORS
-            ++tried_moves["MixedExchange"];
+            ++tried_moves[OperatorName::MixedExchange];
 #endif
             MixedExchange r(_input,
                             _sol_state,
@@ -778,7 +787,7 @@ void LocalSearch<Route,
           }
 
 #ifdef LOG_LS_OPERATORS
-          ++tried_moves["TwoOpt"];
+          ++tried_moves[OperatorName::TwoOpt];
 #endif
           TwoOpt r(_input,
                    _sol_state,
@@ -837,7 +846,7 @@ void LocalSearch<Route,
           }
 
 #ifdef LOG_LS_OPERATORS
-          ++tried_moves["ReverseTwoOpt"];
+          ++tried_moves[OperatorName::ReverseTwoOpt];
 #endif
           ReverseTwoOpt r(_input,
                           _sol_state,
@@ -891,7 +900,7 @@ void LocalSearch<Route,
           for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size();
                ++t_rank) {
 #ifdef LOG_LS_OPERATORS
-            ++tried_moves["Relocate"];
+            ++tried_moves[OperatorName::Relocate];
 #endif
             Relocate r(_input,
                        _sol_state,
@@ -951,7 +960,7 @@ void LocalSearch<Route,
           for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size();
                ++t_rank) {
 #ifdef LOG_LS_OPERATORS
-            ++tried_moves["OrOpt"];
+            ++tried_moves[OperatorName::OrOpt];
 #endif
             OrOpt r(_input,
                     _sol_state,
@@ -999,7 +1008,7 @@ void LocalSearch<Route,
           }
 
 #ifdef LOG_LS_OPERATORS
-          ++tried_moves["IntraExchange"];
+          ++tried_moves[OperatorName::IntraExchange];
 #endif
           IntraExchange r(_input,
                           _sol_state,
@@ -1061,7 +1070,7 @@ void LocalSearch<Route,
           }
 
 #ifdef LOG_LS_OPERATORS
-          ++tried_moves["IntraCrossExchange"];
+          ++tried_moves[OperatorName::IntraCrossExchange];
 #endif
           IntraCrossExchange r(_input,
                                _sol_state,
@@ -1120,7 +1129,7 @@ void LocalSearch<Route,
           }
 
 #ifdef LOG_LS_OPERATORS
-          ++tried_moves["IntraMixedExchange"];
+          ++tried_moves[OperatorName::IntraMixedExchange];
 #endif
           IntraMixedExchange r(_input,
                                _sol_state,
@@ -1175,7 +1184,7 @@ void LocalSearch<Route,
           }
 
 #ifdef LOG_LS_OPERATORS
-          ++tried_moves["IntraRelocate"];
+          ++tried_moves[OperatorName::IntraRelocate];
 #endif
           IntraRelocate r(_input,
                           _sol_state,
@@ -1237,7 +1246,7 @@ void LocalSearch<Route,
             continue;
           }
 #ifdef LOG_LS_OPERATORS
-          ++tried_moves["IntraOrOpt"];
+          ++tried_moves[OperatorName::IntraOrOpt];
 #endif
           IntraOrOpt r(_input,
                        _sol_state,
@@ -1298,7 +1307,7 @@ void LocalSearch<Route,
           }
 
 #ifdef LOG_LS_OPERATORS
-          ++tried_moves["PDShift"];
+          ++tried_moves[OperatorName::PDShift];
 #endif
           PDShift pdr(_input,
                       _sol_state,
@@ -1342,7 +1351,7 @@ void LocalSearch<Route,
         }
 
 #ifdef LOG_LS_OPERATORS
-        ++tried_moves["RouteExchange"];
+        ++tried_moves[OperatorName::RouteExchange];
 #endif
         RouteExchange re(_input,
                          _sol_state,
@@ -1369,7 +1378,7 @@ void LocalSearch<Route,
         }
 
 #ifdef LOG_LS_OPERATORS
-        ++tried_moves["SwapStar"];
+        ++tried_moves[OperatorName::SwapStar];
 #endif
         SwapStar r(_input,
                    _sol_state,
@@ -1659,10 +1668,54 @@ std::vector<OperatorStats> LocalSearch<Route,
                                        IntraOrOpt,
                                        PDShift,
                                        RouteExchange>::get_stats() const {
-  std::vector<OperatorStats> stats;
-  for (const auto& op : operators) {
-    stats.emplace_back(op, tried_moves.at(op), applied_moves.at(op));
-  }
+  std::vector<OperatorStats> stats(
+    {{OperatorName::UnassignedExchange,
+      tried_moves.at(OperatorName::UnassignedExchange),
+      applied_moves.at(OperatorName::UnassignedExchange)},
+     {OperatorName::SwapStar,
+      tried_moves.at(OperatorName::SwapStar),
+      applied_moves.at(OperatorName::SwapStar)},
+     {OperatorName::CrossExchange,
+      tried_moves.at(OperatorName::CrossExchange),
+      applied_moves.at(OperatorName::CrossExchange)},
+     {OperatorName::MixedExchange,
+      tried_moves.at(OperatorName::MixedExchange),
+      applied_moves.at(OperatorName::MixedExchange)},
+     {OperatorName::TwoOpt,
+      tried_moves.at(OperatorName::TwoOpt),
+      applied_moves.at(OperatorName::TwoOpt)},
+     {OperatorName::ReverseTwoOpt,
+      tried_moves.at(OperatorName::ReverseTwoOpt),
+      applied_moves.at(OperatorName::ReverseTwoOpt)},
+     {OperatorName::Relocate,
+      tried_moves.at(OperatorName::Relocate),
+      applied_moves.at(OperatorName::Relocate)},
+     {OperatorName::OrOpt,
+      tried_moves.at(OperatorName::OrOpt),
+      applied_moves.at(OperatorName::OrOpt)},
+     {OperatorName::IntraExchange,
+      tried_moves.at(OperatorName::IntraExchange),
+      applied_moves.at(OperatorName::IntraExchange)},
+     {OperatorName::IntraCrossExchange,
+      tried_moves.at(OperatorName::IntraCrossExchange),
+      applied_moves.at(OperatorName::IntraCrossExchange)},
+     {OperatorName::IntraMixedExchange,
+      tried_moves.at(OperatorName::IntraMixedExchange),
+      applied_moves.at(OperatorName::IntraMixedExchange)},
+     {OperatorName::IntraRelocate,
+      tried_moves.at(OperatorName::IntraRelocate),
+      applied_moves.at(OperatorName::IntraRelocate)},
+     {OperatorName::IntraOrOpt,
+      tried_moves.at(OperatorName::IntraOrOpt),
+      applied_moves.at(OperatorName::IntraOrOpt)},
+     {OperatorName::PDShift,
+      tried_moves.at(OperatorName::PDShift),
+      applied_moves.at(OperatorName::PDShift)},
+     {OperatorName::RouteExchange,
+      tried_moves.at(OperatorName::RouteExchange),
+      applied_moves.at(OperatorName::RouteExchange)}
+
+    });
 
   return stats;
 }

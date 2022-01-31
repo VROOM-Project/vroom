@@ -20,7 +20,7 @@ SwapStar::SwapStar(const Input& input,
                    Index t_vehicle,
                    Gain best_known_gain)
   // Use dummy 0 values for unused ranks.
-  : Operator("SwapStar",
+  : Operator(OperatorName::SwapStar,
              input,
              sol_state,
              s_route,

@@ -21,7 +21,7 @@ UnassignedExchange::UnassignedExchange(const Input& input,
                                        Index s_rank,
                                        Index t_rank,
                                        Index u)
-  : Operator("UnassignedExchange",
+  : Operator(OperatorName::UnassignedExchange,
              input,
              sol_state,
              s_raw_route,
