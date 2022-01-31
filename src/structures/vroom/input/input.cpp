@@ -72,7 +72,7 @@ void Input::set_amount_size(unsigned amount_size) {
   assert(!_has_amount_size);
   _amount_size = amount_size;
   _zero = amount_size;
-  _has_amount_size = true,
+  _has_amount_size = true;
 }
 
 void Input::set_geometry(bool geometry) {
