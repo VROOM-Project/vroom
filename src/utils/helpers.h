@@ -14,6 +14,10 @@ All rights reserved (see LICENSE).
 #include <numeric>
 #include <sstream>
 
+#ifdef LOG_LS_OPERATORS
+#include <iostream>
+#endif
+
 #include "structures/typedefs.h"
 #include "structures/vroom/raw_route.h"
 #include "structures/vroom/tw_route.h"
@@ -109,6 +113,38 @@ inline std::string operator_name(OperatorName name) {
   }
 
   return str_name;
+}
+
+inline void
+log_LS_operators(const std::vector<std::vector<ls::OperatorStats>>& ls_stats) {
+  // Sum indicators per operator.
+  std::vector<std::string> names;
+  assert(!ls_stats.empty());
+  std::transform(ls_stats[0].begin(),
+                 ls_stats[0].end(),
+                 std::back_inserter(names),
+                 [](const auto& op) { return utils::operator_name(op.name); });
+
+  std::vector<unsigned> tried_sums(names.size(), 0);
+  std::vector<unsigned> applied_sums(names.size(), 0);
+
+  unsigned total_tried = 0;
+  unsigned total_applied = 0;
+  for (const auto& ls_run : ls_stats) {
+    for (std::size_t i = 0; i < ls_run.size(); ++i) {
+      tried_sums[i] += ls_run[i].tried_moves;
+      total_tried += ls_run[i].tried_moves;
+
+      applied_sums[i] += ls_run[i].applied_moves;
+      total_applied += ls_run[i].applied_moves;
+    }
+  }
+
+  for (std::size_t i = 0; i < names.size(); ++i) {
+    std::cout << names[i] << "," << tried_sums[i] << "," << applied_sums[i]
+              << std::endl;
+  }
+  std::cout << "Total," << total_tried << "," << total_applied << std::endl;
 }
 #endif
 

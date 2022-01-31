@@ -111,7 +111,6 @@ enum class VIOLATION {
   MISSING_BREAK
 };
 
-#ifdef LOG_LS_OPERATORS
 enum OperatorName {
   UnassignedExchange,
   SwapStar,
@@ -129,6 +128,21 @@ enum OperatorName {
   PDShift,
   RouteExchange
 };
+
+#ifdef LOG_LS_OPERATORS
+namespace ls {
+struct OperatorStats {
+  const OperatorName name;
+  const unsigned tried_moves;
+  const unsigned applied_moves;
+
+  OperatorStats(const OperatorName name,
+                const unsigned tried_moves,
+                const unsigned applied_moves)
+    : name(name), tried_moves(tried_moves), applied_moves(applied_moves) {
+  }
+};
+} // namespace ls
 #endif
 
 } // namespace vroom

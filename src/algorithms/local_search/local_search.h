@@ -19,20 +19,6 @@ All rights reserved (see LICENSE).
 namespace vroom {
 namespace ls {
 
-#ifdef LOG_LS_OPERATORS
-struct OperatorStats {
-  const OperatorName name;
-  const unsigned tried_moves;
-  const unsigned applied_moves;
-
-  OperatorStats(const OperatorName name,
-                const unsigned tried_moves,
-                const unsigned applied_moves)
-    : name(name), tried_moves(tried_moves), applied_moves(applied_moves) {
-  }
-};
-#endif
-
 template <class Route,
           class UnassignedExchange,
           class SwapStar,
