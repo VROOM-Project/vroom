@@ -19,6 +19,7 @@ All rights reserved (see LICENSE).
 #endif
 
 #include "../include/cxxopts/include/cxxopts.hpp"
+
 #include "problems/vrp.h"
 #include "structures/cl_args.h"
 #include "utils/exception.h"
@@ -36,7 +37,6 @@ int main(int argc, char** argv) {
   std::string nb_threads_arg;
   std::vector<std::string> heuristic_params_arg;
 
-  // clang-format off
   cxxopts::Options options(
     "vroom",
     "VROOM Copyright (C) 2015-2022, Julien Coupey\n"
@@ -50,23 +50,33 @@ int main(int argc, char** argv) {
     .add_options("main_group")
     ("h,help", "Print this help message.")
     ("v,version", "Print the version of this software.")
-    ("a,host", "The host for the routing profile, e.g. '" + vroom::DEFAULT_PROFILE + ":0.0.0.0'", cxxopts::value<std::string>(host_arg)->default_value("car:0.0.0.0"))
-    ("c,choose-eta", "Choose ETA for custom routes and report violations.", cxxopts::value<bool>(cl_args.check)->default_value("false"))
-    ("g,geometry", "Add detailed route geometry and indicators", cxxopts::value<bool>(cl_args.geometry)->default_value("false"))
-    ("i,input-file", "Read input from 'input-file' rather than from stdin", cxxopts::value<std::string>(cl_args.input_file))
-    ("l,limit", "Stop solving process after 'limit' seconds", cxxopts::value<std::string>(limit_arg)->default_value(""))
+    ("a,host", "The host for the routing profile, e.g. '" + vroom::DEFAULT_PROFILE + ":0.0.0.0'",
+      cxxopts::value<std::string>(host_arg)->default_value("car:0.0.0.0"))
+    ("c,choose-eta", "Choose ETA for custom routes and report violations.",
+      cxxopts::value<bool>(cl_args.check)->default_value("false"))
+    ("g,geometry", "Add detailed route geometry and indicators",
+      cxxopts::value<bool>(cl_args.geometry)->default_value("false"))
+    ("i,input-file", "Read input from 'input-file' rather than from stdin",
+      cxxopts::value<std::string>(cl_args.input_file))
+    ("l,limit", "Stop solving process after 'limit' seconds",
+      cxxopts::value<std::string>(limit_arg)->default_value(""))
     ("o,output", "Output file name", cxxopts::value<std::string>(cl_args.output_file))
-    ("p,port", "The host port for the routing profile, e.g. '" + vroom::DEFAULT_PROFILE + ":5000'", cxxopts::value<std::string>(port_arg)->default_value("car:5000"))
-    ("r,router", "osrm, libosrm, ors or valhalla", cxxopts::value<std::string>(router_arg)->default_value("osrm"))
-    ("t,threads", "Number of threads to use", cxxopts::value<unsigned>(cl_args.nb_threads)->default_value("4"))
-    ("x,explore", "Exploration level to use (0..5)", cxxopts::value<unsigned>(cl_args.exploration_level)->default_value("5"))
-    ("input", "optional input positional arg", cxxopts::value<std::string>(cl_args.input));
+    ("p,port", "The host port for the routing profile, e.g. '" + vroom::DEFAULT_PROFILE + ":5000'",
+      cxxopts::value<std::string>(port_arg)->default_value("car:5000"))
+    ("r,router", "osrm, libosrm, ors or valhalla",
+      cxxopts::value<std::string>(router_arg)->default_value("osrm"))
+    ("t,threads", "Number of threads to use",
+      cxxopts::value<unsigned>(cl_args.nb_threads)->default_value("4"))
+    ("x,explore", "Exploration level to use (0..5)",
+      cxxopts::value<unsigned>(cl_args.exploration_level)->default_value("5"))
+    ("input", "optional input positional arg",
+      cxxopts::value<std::string>(cl_args.input));
   
   try {
     // we don't want to print debug args on --help
     options.add_options("debug_group")
-      ("e,heuristic-param", "Heuristic parameter", cxxopts::value<std::vector<std::string>>(heuristic_params_arg));
-    // clang-format on
+      ("e,heuristic-param", "Heuristic parameter",
+      cxxopts::value<std::vector<std::string>>(heuristic_params_arg));
 
     options.parse_positional({"input"});
     options.positional_help("OPTIONAL INLINE JSON");
