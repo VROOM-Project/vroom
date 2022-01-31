@@ -16,7 +16,7 @@ All rights reserved (see LICENSE).
 namespace vroom {
 namespace io {
 
-void parse(Input& input, const std::string input_str, bool geometry);
+void parse(Input& input, const std::string& input_str, bool geometry);
 
 } // namespace io
 } // namespace vroom

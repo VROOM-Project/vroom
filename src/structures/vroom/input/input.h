@@ -58,7 +58,6 @@ private:
   Index _max_matrices_used_index;
   bool _all_locations_have_coords;
 
-  bool _has_amount_size;
   unsigned _amount_size;
   Amount _zero;
 
@@ -89,10 +88,6 @@ public:
   std::unordered_map<Id, Index> pickup_id_to_rank;
   std::unordered_map<Id, Index> delivery_id_to_rank;
 
-  Input(unsigned amount_size,
-        const io::Servers& servers = {},
-        ROUTER router = ROUTER::OSRM);
-
   Input(const io::Servers& servers = {}, ROUTER router = ROUTER::OSRM);
 
   void set_amount_size(unsigned amount_size);
@@ -109,7 +104,6 @@ public:
   void set_costs_matrix(const std::string& profile, Matrix<Cost>&& m);
 
   const Amount& zero_amount() const {
-    assert(_has_amount_size);
     return _zero;
   }
 

@@ -28,27 +28,6 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
-Input::Input(unsigned amount_size, const io::Servers& servers, ROUTER router)
-  : _start_loading(std::chrono::high_resolution_clock::now()),
-    _no_addition_yet(true),
-    _has_skills(false),
-    _has_TW(false),
-    _has_initial_routes(false),
-    _homogeneous_locations(true),
-    _homogeneous_profiles(true),
-    _geometry(false),
-    _has_jobs(false),
-    _has_shipments(false),
-    _cost_upper_bound(0),
-    _max_matrices_used_index(0),
-    _all_locations_have_coords(true),
-    _amount_size(amount_size),
-    _has_amount_size(true),
-    _zero(_amount_size),
-    _servers(servers),
-    _router(router) {
-}
-
 Input::Input(const io::Servers& servers, ROUTER router)
   : _start_loading(std::chrono::high_resolution_clock::now()),
     _no_addition_yet(true),
@@ -63,16 +42,15 @@ Input::Input(const io::Servers& servers, ROUTER router)
     _cost_upper_bound(0),
     _max_matrices_used_index(0),
     _all_locations_have_coords(true),
-    _has_amount_size(false),
+    _amount_size(0),
+    _zero(0),
     _servers(servers),
     _router(router) {
 }
 
 void Input::set_amount_size(unsigned amount_size) {
-  assert(!_has_amount_size);
   _amount_size = amount_size;
   _zero = amount_size;
-  _has_amount_size = true;
 }
 
 void Input::set_geometry(bool geometry) {
@@ -133,7 +111,6 @@ void Input::add_routing_wrapper(const std::string& profile) {
 
 void Input::check_job(Job& job) {
   // Ensure delivery size consistency.
-  assert(_has_amount_size);
   const auto& delivery_size = job.delivery.size();
   if (delivery_size != _amount_size) {
     throw InputException(
@@ -250,7 +227,6 @@ void Input::add_shipment(const Job& pickup, const Job& delivery) {
 }
 
 void Input::add_vehicle(const Vehicle& vehicle) {
-  assert(_has_amount_size);
   vehicles.push_back(vehicle);
 
   auto& current_v = vehicles.back();
