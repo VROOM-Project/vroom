@@ -465,7 +465,7 @@ template <class T> inline Matrix<T> get_matrix(rapidjson::Value& m) {
   return matrix;
 }
 
-Input parse(std::string input_str, Servers& servers, ROUTER router, bool geometry) {
+void parse(Input& input, const std::string input_str, bool geometry) {
   // Input json object.
   rapidjson::Document json_input;
 
@@ -499,8 +499,7 @@ Input parse(std::string input_str, Servers& servers, ROUTER router, bool geometr
   const unsigned amount_size =
     first_vehicle_has_capacity ? first_vehicle["capacity"].Size() : 0;
 
-  // Custom input object embedding jobs, vehicles and matrices.
-  Input input(amount_size, servers, router);
+  input.set_amount_size(amount_size);
   input.set_geometry(geometry);
 
   // Add all vehicles.
@@ -589,8 +588,6 @@ Input parse(std::string input_str, Servers& servers, ROUTER router, bool geometr
                                  get_matrix<Duration>(json_input["matrix"]));
     }
   }
-
-  return input;
 }
 
 } // namespace io

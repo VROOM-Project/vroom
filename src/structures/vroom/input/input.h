@@ -58,8 +58,9 @@ private:
   Index _max_matrices_used_index;
   bool _all_locations_have_coords;
 
-  const unsigned _amount_size;
-  const Amount _zero;
+  bool _has_amount_size;
+  unsigned _amount_size;
+  Amount _zero;
 
   const io::Servers _servers;
   const ROUTER _router;
@@ -92,6 +93,10 @@ public:
         const io::Servers& servers = {},
         ROUTER router = ROUTER::OSRM);
 
+  Input(const io::Servers& servers = {}, ROUTER router = ROUTER::OSRM);
+
+  void set_amount_size(unsigned amount_size);
+
   void set_geometry(bool geometry);
 
   void add_job(const Job& job);
@@ -104,6 +109,7 @@ public:
   void set_costs_matrix(const std::string& profile, Matrix<Cost>&& m);
 
   const Amount& zero_amount() const {
+    assert(_has_amount_size);
     return _zero;
   }
 

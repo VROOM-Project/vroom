@@ -16,9 +16,7 @@ All rights reserved (see LICENSE).
 namespace vroom {
 namespace io {
 
-struct CLArgs;
-
-Input parse(std::string input_str, Servers& servers, ROUTER router, bool geometry);
+void parse(Input& input, const std::string input_str, bool geometry);
 
 } // namespace io
 } // namespace vroom
