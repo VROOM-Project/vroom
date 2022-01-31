@@ -99,7 +99,7 @@ public:
   // place of* the current jobs that may be there.
   template <class InputIterator>
   bool is_valid_addition_for_capacity_inclusion(const Input& input,
-                                                const Amount& delivery,
+                                                Amount delivery,
                                                 const InputIterator first_job,
                                                 const InputIterator last_job,
                                                 const Index first_rank,

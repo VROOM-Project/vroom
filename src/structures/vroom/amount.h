@@ -134,6 +134,24 @@ public:
     return elems.data();
   };
 #endif
+  
+  template <class AmountExpression>
+  Amount& operator+=(const AmountExpression& rhs) {
+    assert(this->size() == rhs.size());
+    for (std::size_t i = 0; i < this->size(); ++i) {
+      (*this)[i] += rhs[i];
+    }
+    return *this;
+  }
+
+  template <class AmountExpression>
+  Amount& operator-=(const AmountExpression& rhs) {
+    assert(this->size() == rhs.size());
+    for (std::size_t i = 0; i < this->size(); ++i) {
+      (*this)[i] -= rhs[i];
+    }
+    return *this;
+  }
 };
 
 template <typename E1, typename E2>

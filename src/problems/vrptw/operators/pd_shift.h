@@ -17,7 +17,6 @@ namespace vrptw {
 
 class PDShift : public cvrp::PDShift {
 private:
-  bool _is_valid_removal;
   std::vector<Index> _source_without_pd;
   TWRoute& _tw_s_route;
   TWRoute& _tw_t_route;
