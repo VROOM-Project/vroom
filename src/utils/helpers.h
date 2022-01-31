@@ -5,7 +5,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2021, Julien Coupey.
+Copyright (c) 2015-2022, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -31,8 +31,8 @@ inline TimePoint now() {
 
 inline Cost add_without_overflow(Cost a, Cost b) {
   if (a > std::numeric_limits<Cost>::max() - b) {
-    throw Exception(ERROR::INPUT,
-                    "Too high cost values, stopping to avoid overflowing.");
+    throw InputException(
+      "Too high cost values, stopping to avoid overflowing.");
   }
   return a + b;
 }
@@ -49,8 +49,7 @@ inline INIT get_init(const std::string& s) {
   } else if (s == "EARLIEST_DEADLINE") {
     return INIT::EARLIEST_DEADLINE;
   } else {
-    throw Exception(ERROR::INPUT,
-                    "Invalid heuristic parameter in command-line.");
+    throw InputException("Invalid heuristic parameter in command-line.");
   }
 }
 
@@ -65,8 +64,7 @@ inline HeuristicParameters str_to_heuristic_param(const std::string& s) {
   }
 
   if (tokens.size() != 3 or tokens[0].size() != 1) {
-    throw Exception(ERROR::INPUT,
-                    "Invalid heuristic parameter in command-line.");
+    throw InputException("Invalid heuristic parameter in command-line.");
   }
 
   auto init = get_init(tokens[1]);
@@ -74,20 +72,17 @@ inline HeuristicParameters str_to_heuristic_param(const std::string& s) {
     auto h = std::stoul(tokens[0]);
 
     if (h != 0 and h != 1) {
-      throw Exception(ERROR::INPUT,
-                      "Invalid heuristic parameter in command-line.");
+      throw InputException("Invalid heuristic parameter in command-line.");
     }
 
     auto regret_coeff = std::stof(tokens[2]);
     if (regret_coeff < 0) {
-      throw Exception(ERROR::INPUT,
-                      "Invalid heuristic parameter in command-line.");
+      throw InputException("Invalid heuristic parameter in command-line.");
     }
 
     return HeuristicParameters(static_cast<HEURISTIC>(h), init, regret_coeff);
   } catch (const std::exception& e) {
-    throw Exception(ERROR::INPUT,
-                    "Invalid heuristic parameter in command-line.");
+    throw InputException("Invalid heuristic parameter in command-line.");
   }
 }
 
@@ -293,15 +288,21 @@ inline void check_precedence(const Input& input,
 
 inline void check_tws(const std::vector<TimeWindow>& tws) {
   if (tws.size() == 0) {
-    throw Exception(ERROR::INPUT, "Empty time-windows.");
+    throw InputException("Empty time-windows.");
   }
 
   if (tws.size() > 1) {
     for (std::size_t i = 0; i < tws.size() - 1; ++i) {
       if (tws[i + 1].start <= tws[i].end) {
-        throw Exception(ERROR::INPUT, "Unsorted or overlapping time-windows.");
+        throw InputException("Unsorted or overlapping time-windows.");
       }
     }
+  }
+}
+
+inline void check_priority(const Priority priority) {
+  if (priority > MAX_PRIORITY) {
+    throw InputException("Invalid priority value.");
   }
 }
 
@@ -321,6 +322,8 @@ inline Solution format_solution(const Input& input,
       continue;
     }
     const auto& v = input.vehicles[i];
+
+    assert(route.size() <= v.max_tasks);
 
     auto previous_location = (v.has_start())
                                ? v.start.value().index()
@@ -467,6 +470,8 @@ inline Route format_route(const Input& input,
                           const TWRoute& tw_r,
                           std::unordered_set<Index>& unassigned_ranks) {
   const auto& v = input.vehicles[tw_r.vehicle_rank];
+
+  assert(tw_r.size() <= v.max_tasks);
 
   // ETA logic: aim at earliest possible arrival then determine latest
   // possible start time in order to minimize waiting times.
@@ -869,23 +874,6 @@ inline Solution format_solution(const Input& input,
                   input.zero_amount().size(),
                   std::move(routes),
                   std::move(unassigned_jobs));
-}
-
-inline unsigned get_code(ERROR e) {
-  unsigned code = 0;
-  switch (e) {
-  case ERROR::INTERNAL:
-    code = 1;
-    break;
-  case ERROR::INPUT:
-    code = 2;
-    break;
-  case ERROR::ROUTING:
-    code = 3;
-    break;
-  }
-
-  return code;
 }
 
 } // namespace utils

@@ -1,6 +1,6 @@
 <!-- This file is part of VROOM. -->
 
-<!-- Copyright (c) 2015-2021, Julien Coupey. -->
+<!-- Copyright (c) 2015-2022, Julien Coupey. -->
 <!-- All rights reserved (see LICENSE). -->
 
 This file describes the `vroom` API.
@@ -115,7 +115,7 @@ A `vehicle` object has the following properties:
 | [`breaks`] | an array of `break` objects |
 | [`speed_factor`] | a double value in the range `(0, 5]` used to scale **all** vehicle travel times (defaults to 1.), the respected precision is limited to two digits after the decimal point |
 | [`max_tasks`] | an integer defining the maximum number of tasks in a route for this vehicle |
-| [`steps`] | an array of `vehicle_step` objects describing a custom route for this vehicle (only makes sense when using `-c`) |
+| [`steps`] | an array of `vehicle_step` objects describing a custom route for this vehicle |
 
 A `break` object has the following properties:
 
@@ -231,6 +231,33 @@ key might be included at any time in any route, to the extent
 permitted by other constraints such as skills, capacity and other
 vehicles/tasks time windows.
 
+### Vehicle `steps`
+
+#### In plan mode
+
+The `steps` array describes exactly the route ordering that will be
+generated in response. The (optional) `service_*` keys for
+`vehicle_step` objects are used as additional hard timing constraints.
+
+#### In solving mode
+
+Using `steps` for vehicles in default VRP solving mode is a way to
+force starting the search from the matching user-defined solution, if
+valid. Unlike the default solving behavior of running several
+concurrent searches, this means in particular that a single search
+path is followed, starting from the provided solution. Resulting
+quality is thus obviously expected to be highly dependent on the
+user-defined starting point.
+
+In that context:
+- only steps with `type=job`, `pickup` or `delivery` are used to
+  decide initial routes ordering
+- `service_*` keys are not used
+
+An error is raised if for any of the vehicles the provided `steps`
+describe a route that is invalid with regard to any of the
+constraints.
+
 ## Matrices
 
 The `matrices` object allows to input (non-empty) custom matrices for
@@ -274,7 +301,7 @@ The computed solution is written as `json` on standard output or a file
 | `code` | status code |
 | `error` | error message (present iff `code` is different from `0`) |
 | [`summary`](#summary) | object summarizing solution indicators |
-| `unassigned` | array of objects describing unassigned tasks with their `id`, `type` and `location` (if provided) |
+| `unassigned` | array of objects describing unassigned tasks with their `id`, `type`, and if provided, `description`, `location` and `location_index` |
 | [`routes`](#routes) | array of `route` objects |
 
 ## Code
@@ -349,6 +376,7 @@ A `step` object has the following properties:
 | `violations` | array of `violation` objects for this step |
 | [`description`] | step description, if provided in input |
 | [`location`] | coordinates array for this step (if provided in input) |
+| [`location_index`] | index of relevant row and column in custom matrices for this step (if provided in input) |
 | [`id`] | id of the task performed at this step, only provided if `type` value is `job`, `pickup`, `delivery` or `break` |
 | ~~[`job`]~~ | ~~id of the job performed at this step, only provided if `type` value is `job`~~ |
 | [`load`] | vehicle load after step completion (with capacity constraints) |

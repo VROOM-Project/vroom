@@ -5,7 +5,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2021, Julien Coupey.
+Copyright (c) 2015-2022, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -21,6 +21,9 @@ template <class T> T basic(const Input& input, INIT init, double lambda);
 // Adjusting the above for situation with heterogeneous fleet.
 template <class T>
 T dynamic_vehicle_choice(const Input& input, INIT init, double lambda);
+
+// Populate routes with user-defined vehicle steps.
+template <class T> T initial_routes(const Input& input);
 
 } // namespace heuristics
 } // namespace vroom

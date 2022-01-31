@@ -5,7 +5,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2021, Julien Coupey.
+Copyright (c) 2015-2022, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -18,10 +18,29 @@ namespace vroom {
 
 class Exception : public std::exception {
 public:
-  const ERROR error;
   const std::string message;
+  unsigned int error_code;
 
-  Exception(ERROR error, const std::string& message);
+  Exception(const std::string& message, unsigned int error_code);
+
+  const char* what() const noexcept override {
+    return message.c_str();
+  };
+};
+
+class InternalException : public Exception {
+public:
+  InternalException(const std::string& message);
+};
+
+class InputException : public Exception {
+public:
+  InputException(const std::string& message);
+};
+
+class RoutingException : public Exception {
+public:
+  RoutingException(const std::string& message);
 };
 
 } // namespace vroom

@@ -2,7 +2,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2021, Julien Coupey.
+Copyright (c) 2015-2022, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -34,6 +34,8 @@ namespace vroom {
 
 using TWSolution = std::vector<TWRoute>;
 
+namespace vrptw {
+
 using LocalSearch = ls::LocalSearch<TWRoute,
                                     vrptw::UnassignedExchange,
                                     vrptw::SwapStar,
@@ -50,6 +52,7 @@ using LocalSearch = ls::LocalSearch<TWRoute,
                                     vrptw::IntraOrOpt,
                                     vrptw::PDShift,
                                     vrptw::RouteExchange>;
+} // namespace vrptw
 
 const std::vector<HeuristicParameters> VRPTW::homogeneous_parameters =
   {HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHER_AMOUNT, 0.3),
@@ -164,6 +167,9 @@ Solution VRPTW::solve(unsigned exploration_level,
 
   std::vector<TWSolution> tw_solutions(nb_init_solutions);
   std::vector<utils::SolutionIndicators> sol_indicators(nb_init_solutions);
+#ifndef NDEBUG
+  std::vector<std::vector<ls::OperatorStats>> ls_stats(nb_init_solutions);
+#endif
 
   // Split the work among threads.
   std::vector<std::vector<std::size_t>>
@@ -186,6 +192,9 @@ Solution VRPTW::solve(unsigned exploration_level,
       for (auto rank : param_ranks) {
         auto& p = parameters[rank];
         switch (p.heuristic) {
+        case HEURISTIC::INIT_ROUTES:
+          tw_solutions[rank] = heuristics::initial_routes<TWSolution>(_input);
+          break;
         case HEURISTIC::BASIC:
           tw_solutions[rank] =
             heuristics::basic<TWSolution>(_input, p.init, p.regret_coeff);
@@ -199,14 +208,17 @@ Solution VRPTW::solve(unsigned exploration_level,
         }
 
         // Local search phase.
-        LocalSearch ls(_input,
-                       tw_solutions[rank],
-                       max_nb_jobs_removal,
-                       search_time);
+        vrptw::LocalSearch ls(_input,
+                              tw_solutions[rank],
+                              max_nb_jobs_removal,
+                              search_time);
         ls.run();
 
         // Store solution indicators.
         sol_indicators[rank] = ls.indicators();
+#ifndef NDEBUG
+        ls_stats[rank] = ls.get_stats();
+#endif
       }
     } catch (...) {
       ep_m.lock();
@@ -218,7 +230,9 @@ Solution VRPTW::solve(unsigned exploration_level,
   std::vector<std::thread> solving_threads;
 
   for (const auto& param_ranks : thread_ranks) {
-    solving_threads.emplace_back(run_solve, param_ranks);
+    if (!param_ranks.empty()) {
+      solving_threads.emplace_back(run_solve, param_ranks);
+    }
   }
 
   for (auto& t : solving_threads) {
@@ -228,6 +242,37 @@ Solution VRPTW::solve(unsigned exploration_level,
   if (ep != nullptr) {
     std::rethrow_exception(ep);
   }
+
+#ifndef NDEBUG
+  // // Sum indicators per operator.
+  // std::vector<std::string> names;
+  // assert(!ls_stats.empty());
+  // std::transform(ls_stats[0].begin(),
+  //                ls_stats[0].end(),
+  //                std::back_inserter(names),
+  //                [](const auto& op) { return op.name; });
+
+  // std::vector<unsigned> tried_sums(names.size(), 0);
+  // std::vector<unsigned> applied_sums(names.size(), 0);
+
+  // unsigned total_tried = 0;
+  // unsigned total_applied = 0;
+  // for (const auto& ls_run : ls_stats) {
+  //   for (std::size_t i = 0; i < ls_run.size(); ++i) {
+  //     tried_sums[i] += ls_run[i].tried_moves;
+  //     total_tried += ls_run[i].tried_moves;
+
+  //     applied_sums[i] += ls_run[i].applied_moves;
+  //     total_applied += ls_run[i].applied_moves;
+  //   }
+  // }
+
+  // for (std::size_t i = 0; i < names.size(); ++i) {
+  //   std::cout << names[i] << "," << tried_sums[i] << "," << applied_sums[i]
+  //             << std::endl;
+  // }
+  // std::cout << "Total," << total_tried << "," << total_applied << std::endl;
+#endif
 
   auto best_indic =
     std::min_element(sol_indicators.cbegin(), sol_indicators.cend());

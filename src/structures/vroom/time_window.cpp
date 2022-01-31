@@ -2,7 +2,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2021, Julien Coupey.
+Copyright (c) 2015-2022, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -22,9 +22,8 @@ TimeWindow::TimeWindow()
 TimeWindow::TimeWindow(Duration start, Duration end)
   : start(start), end(end), length(end - start) {
   if (start > end) {
-    throw Exception(ERROR::INPUT,
-                    "Invalid time window: [" + std::to_string(start) + ", " +
-                      std::to_string(end) + "]");
+    throw InputException("Invalid time window: [" + std::to_string(start) +
+                         ", " + std::to_string(end) + "]");
   }
 }
 

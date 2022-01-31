@@ -2,7 +2,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2021, Julien Coupey.
+Copyright (c) 2015-2022, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -37,7 +37,7 @@ TWRoute::TWRoute(const Input& input, Index v)
         return previous_earliest <= tw.end;
       });
     if (b_tw == b.tws.end()) {
-      throw Exception(ERROR::INPUT, break_error);
+      throw InputException(break_error);
     }
 
     break_earliest[i] = std::max(previous_earliest, b_tw->start);
@@ -52,7 +52,7 @@ TWRoute::TWRoute(const Input& input, Index v)
     const auto& b = breaks[i];
 
     if (next_latest < b.service) {
-      throw Exception(ERROR::INPUT, break_error);
+      throw InputException(break_error);
     }
     next_latest -= b.service;
 
@@ -61,7 +61,7 @@ TWRoute::TWRoute(const Input& input, Index v)
         return tw.start <= next_latest;
       });
     if (b_tw == b.tws.rend()) {
-      throw Exception(ERROR::INPUT, break_error);
+      throw InputException(break_error);
     }
 
     break_latest[i] = std::min(next_latest, b_tw->end);
@@ -70,7 +70,7 @@ TWRoute::TWRoute(const Input& input, Index v)
     next_latest = break_latest[i];
 
     if (break_latest[i] < break_earliest[i]) {
-      throw Exception(ERROR::INPUT, break_error);
+      throw InputException(break_error);
     }
   }
 }

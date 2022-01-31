@@ -2,12 +2,13 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2021, Julien Coupey.
+Copyright (c) 2015-2022, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
 
 #include "algorithms/local_search/local_search.h"
+#include "algorithms/local_search/insertion_search.h"
 #include "problems/vrptw/operators/cross_exchange.h"
 #include "problems/vrptw/operators/intra_cross_exchange.h"
 #include "problems/vrptw/operators/intra_exchange.h"
@@ -27,6 +28,24 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 namespace ls {
+
+#ifndef NDEBUG
+const std::vector<std::string> operators = {"UnassignedExchange",
+                                            "SwapStar",
+                                            "CrossExchange",
+                                            "MixedExchange",
+                                            "TwoOpt",
+                                            "ReverseTwoOpt",
+                                            "Relocate",
+                                            "OrOpt",
+                                            "IntraExchange",
+                                            "IntraCrossExchange",
+                                            "IntraMixedExchange",
+                                            "IntraRelocate",
+                                            "IntraOrOpt",
+                                            "PDShift",
+                                            "RouteExchange"};
+#endif
 
 template <class Route,
           class UnassignedExchange,
@@ -96,145 +115,13 @@ LocalSearch<Route,
     std::count_if(_sol.begin(), _sol.end(), [](const auto& r) {
       return !r.empty();
     });
-}
 
-struct RouteInsertion {
-  Gain cost;
-  Index single_rank;
-  Index pickup_rank;
-  Index delivery_rank;
-};
-constexpr RouteInsertion empty_insert = {std::numeric_limits<Gain>::max(),
-                                         0,
-                                         0,
-                                         0};
-
-template <class Route>
-RouteInsertion compute_best_insertion_single(const Input& input,
-                                             const Index j,
-                                             Index v,
-                                             const Route& route) {
-  RouteInsertion result = empty_insert;
-  const auto& current_job = input.jobs[j];
-  const auto& v_target = input.vehicles[v];
-
-  if (input.vehicle_ok_with_job(v, j)) {
-
-    for (Index rank = 0; rank <= route.size(); ++rank) {
-      Gain current_cost =
-        utils::addition_cost(input, j, v_target, route.route, rank);
-      if (current_cost < result.cost and
-          route.is_valid_addition_for_capacity(input,
-                                               current_job.pickup,
-                                               current_job.delivery,
-                                               rank) and
-          route.is_valid_addition_for_tw(input, j, rank)) {
-        result = {current_cost, rank, 0, 0};
-      }
-    }
+#ifndef NDEBUG
+  for (const auto& op : operators) {
+    tried_moves.insert({op, 0});
+    applied_moves.insert({op, 0});
   }
-  return result;
-}
-
-template <class Route>
-RouteInsertion compute_best_insertion_pd(const Input& input,
-                                         const Index j,
-                                         Index v,
-                                         const Route& route) {
-  RouteInsertion result = empty_insert;
-  const auto& current_job = input.jobs[j];
-  const auto& v_target = input.vehicles[v];
-
-  if (!input.vehicle_ok_with_job(v, j)) {
-    return result;
-  }
-
-  // Pre-compute cost of addition for matching delivery.
-  std::vector<Gain> d_adds(route.size() + 1);
-  std::vector<unsigned char> valid_delivery_insertions(route.size() + 1);
-
-  for (unsigned d_rank = 0; d_rank <= route.size(); ++d_rank) {
-    d_adds[d_rank] =
-      utils::addition_cost(input, j + 1, v_target, route.route, d_rank);
-    valid_delivery_insertions[d_rank] =
-      route.is_valid_addition_for_tw(input, j + 1, d_rank);
-  }
-
-  for (Index pickup_r = 0; pickup_r <= route.size(); ++pickup_r) {
-    Gain p_add =
-      utils::addition_cost(input, j, v_target, route.route, pickup_r);
-
-    if (!route.is_valid_addition_for_load(input,
-                                          current_job.pickup,
-                                          pickup_r) or
-        !route.is_valid_addition_for_tw(input, j, pickup_r)) {
-      continue;
-    }
-
-    // Build replacement sequence for current insertion.
-    std::vector<Index> modified_with_pd({j});
-    Amount modified_delivery = input.zero_amount();
-
-    for (Index delivery_r = pickup_r; delivery_r <= route.size();
-         ++delivery_r) {
-      // Update state variables along the way before potential
-      // early abort.
-      if (pickup_r < delivery_r) {
-        modified_with_pd.push_back(route.route[delivery_r - 1]);
-        const auto& new_modified_job = input.jobs[route.route[delivery_r - 1]];
-        if (new_modified_job.type == JOB_TYPE::SINGLE) {
-          modified_delivery += new_modified_job.delivery;
-        }
-      }
-
-      if (!(bool)valid_delivery_insertions[delivery_r]) {
-        continue;
-      }
-
-      Gain pd_cost;
-      if (pickup_r == delivery_r) {
-        pd_cost = utils::addition_cost(input,
-                                       j,
-                                       v_target,
-                                       route.route,
-                                       pickup_r,
-                                       pickup_r + 1);
-      } else {
-        pd_cost = p_add + d_adds[delivery_r];
-      }
-
-      // Normalize cost per job for consistency with single jobs.
-      Gain current_cost = static_cast<Gain>(static_cast<double>(pd_cost) / 2);
-
-      if (current_cost < result.cost) {
-        modified_with_pd.push_back(j + 1);
-
-        // Update best cost depending on validity.
-        bool is_valid =
-          route
-            .is_valid_addition_for_capacity_inclusion(input,
-                                                      modified_delivery,
-                                                      modified_with_pd.begin(),
-                                                      modified_with_pd.end(),
-                                                      pickup_r,
-                                                      delivery_r);
-
-        is_valid =
-          is_valid && route.is_valid_addition_for_tw(input,
-                                                     modified_with_pd.begin(),
-                                                     modified_with_pd.end(),
-                                                     pickup_r,
-                                                     delivery_r);
-
-        modified_with_pd.pop_back();
-
-        if (is_valid) {
-          result = {current_cost, 0, pickup_r, delivery_r};
-        }
-      }
-    }
-  }
-  return result;
+#endif
 }
 
 template <class Route>
@@ -245,9 +132,21 @@ RouteInsertion compute_best_insertion(const Input& input,
   const auto& current_job = input.jobs[j];
   assert(current_job.type == JOB_TYPE::PICKUP ||
          current_job.type == JOB_TYPE::SINGLE);
-  return current_job.type == JOB_TYPE::SINGLE
-           ? compute_best_insertion_single(input, j, v, route)
-           : compute_best_insertion_pd(input, j, v, route);
+
+  if (current_job.type == JOB_TYPE::SINGLE) {
+    return compute_best_insertion_single(input, j, v, route);
+  } else {
+    auto insert = compute_best_insertion_pd(input,
+                                            j,
+                                            v,
+                                            route,
+                                            std::numeric_limits<Gain>::max());
+    if (insert.cost < std::numeric_limits<Gain>::max()) {
+      // Normalize cost per job for consistency with single jobs.
+      insert.cost = static_cast<Gain>(static_cast<double>(insert.cost) / 2);
+    }
+    return insert;
+  }
 }
 
 template <class Route,
@@ -519,6 +418,9 @@ void LocalSearch<Route,
                   // Same move as with t_rank == s_rank.
                   continue;
                 }
+#ifndef NDEBUG
+                ++tried_moves["UnassignedExchange"];
+#endif
                 UnassignedExchange r(_input,
                                      _sol_state,
                                      _sol_state.unassigned,
@@ -606,6 +508,9 @@ void LocalSearch<Route,
             continue;
           }
 
+#ifndef NDEBUG
+          ++tried_moves["CrossExchange"];
+#endif
           CrossExchange r(_input,
                           _sol_state,
                           _sol[s_t.first],
@@ -678,6 +583,9 @@ void LocalSearch<Route,
               continue;
             }
 
+#ifndef NDEBUG
+            ++tried_moves["MixedExchange"];
+#endif
             MixedExchange r(_input,
                             _sol_state,
                             _sol[s_t.first],
@@ -743,6 +651,9 @@ void LocalSearch<Route,
             continue;
           }
 
+#ifndef NDEBUG
+          ++tried_moves["TwoOpt"];
+#endif
           TwoOpt r(_input,
                    _sol_state,
                    _sol[s_t.first],
@@ -799,6 +710,9 @@ void LocalSearch<Route,
             continue;
           }
 
+#ifndef NDEBUG
+          ++tried_moves["ReverseTwoOpt"];
+#endif
           ReverseTwoOpt r(_input,
                           _sol_state,
                           _sol[s_t.first],
@@ -850,6 +764,9 @@ void LocalSearch<Route,
 
           for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size();
                ++t_rank) {
+#ifndef NDEBUG
+            ++tried_moves["Relocate"];
+#endif
             Relocate r(_input,
                        _sol_state,
                        _sol[s_t.first],
@@ -907,6 +824,9 @@ void LocalSearch<Route,
 
           for (unsigned t_rank = 0; t_rank <= _sol[s_t.second].size();
                ++t_rank) {
+#ifndef NDEBUG
+            ++tried_moves["OrOpt"];
+#endif
             OrOpt r(_input,
                     _sol_state,
                     _sol[s_t.first],
@@ -952,6 +872,9 @@ void LocalSearch<Route,
             continue;
           }
 
+#ifndef NDEBUG
+          ++tried_moves["IntraExchange"];
+#endif
           IntraExchange r(_input,
                           _sol_state,
                           _sol[s_t.first],
@@ -1011,6 +934,9 @@ void LocalSearch<Route,
             continue;
           }
 
+#ifndef NDEBUG
+          ++tried_moves["IntraCrossExchange"];
+#endif
           IntraCrossExchange r(_input,
                                _sol_state,
                                _sol[s_t.first],
@@ -1067,6 +993,9 @@ void LocalSearch<Route,
             continue;
           }
 
+#ifndef NDEBUG
+          ++tried_moves["IntraMixedExchange"];
+#endif
           IntraMixedExchange r(_input,
                                _sol_state,
                                _sol[s_t.first],
@@ -1119,6 +1048,9 @@ void LocalSearch<Route,
             continue;
           }
 
+#ifndef NDEBUG
+          ++tried_moves["IntraRelocate"];
+#endif
           IntraRelocate r(_input,
                           _sol_state,
                           _sol[s_t.first],
@@ -1178,6 +1110,9 @@ void LocalSearch<Route,
           if (t_rank == s_rank) {
             continue;
           }
+#ifndef NDEBUG
+          ++tried_moves["IntraOrOpt"];
+#endif
           IntraOrOpt r(_input,
                        _sol_state,
                        _sol[s_t.first],
@@ -1236,6 +1171,9 @@ void LocalSearch<Route,
             continue;
           }
 
+#ifndef NDEBUG
+          ++tried_moves["PDShift"];
+#endif
           PDShift pdr(_input,
                       _sol_state,
                       _sol[s_t.first],
@@ -1277,6 +1215,9 @@ void LocalSearch<Route,
           continue;
         }
 
+#ifndef NDEBUG
+        ++tried_moves["RouteExchange"];
+#endif
         RouteExchange re(_input,
                          _sol_state,
                          _sol[s_t.first],
@@ -1301,6 +1242,9 @@ void LocalSearch<Route,
           continue;
         }
 
+#ifndef NDEBUG
+        ++tried_moves["SwapStar"];
+#endif
         SwapStar r(_input,
                    _sol_state,
                    _sol[s_t.first],
@@ -1354,6 +1298,8 @@ void LocalSearch<Route,
         best_ops[best_source][best_target]->update_candidates();
 
 #ifndef NDEBUG
+      ++applied_moves.at(best_ops[best_source][best_target]->get_name());
+
       // Update route costs.
       const auto previous_cost =
         std::accumulate(update_candidates.begin(),
@@ -1528,7 +1474,7 @@ void LocalSearch<Route,
     // Try again on each improvement until we reach last job removal
     // level or deadline is met.
     try_ls_step = (current_nb_removal <= _max_nb_jobs_removal) and
-                  (!_deadline.has_value() or _deadline.value() < utils::now());
+                  (!_deadline.has_value() or utils::now() < _deadline.value());
 
     if (try_ls_step) {
       // Get a looser situation by removing jobs.
@@ -1551,6 +1497,48 @@ void LocalSearch<Route,
     first_step = false;
   }
 }
+
+#ifndef NDEBUG
+template <class Route,
+          class UnassignedExchange,
+          class SwapStar,
+          class CrossExchange,
+          class MixedExchange,
+          class TwoOpt,
+          class ReverseTwoOpt,
+          class Relocate,
+          class OrOpt,
+          class IntraExchange,
+          class IntraCrossExchange,
+          class IntraMixedExchange,
+          class IntraRelocate,
+          class IntraOrOpt,
+          class PDShift,
+          class RouteExchange>
+std::vector<OperatorStats> LocalSearch<Route,
+                                       UnassignedExchange,
+                                       SwapStar,
+                                       CrossExchange,
+                                       MixedExchange,
+                                       TwoOpt,
+                                       ReverseTwoOpt,
+                                       Relocate,
+                                       OrOpt,
+                                       IntraExchange,
+                                       IntraCrossExchange,
+                                       IntraMixedExchange,
+                                       IntraRelocate,
+                                       IntraOrOpt,
+                                       PDShift,
+                                       RouteExchange>::get_stats() const {
+  std::vector<OperatorStats> stats;
+  for (const auto& op : operators) {
+    stats.emplace_back(op, tried_moves.at(op), applied_moves.at(op));
+  }
+
+  return stats;
+}
+#endif
 
 template <class Route,
           class UnassignedExchange,

@@ -5,7 +5,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2021, Julien Coupey.
+Copyright (c) 2015-2022, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -17,7 +17,6 @@ namespace vrptw {
 
 class PDShift : public cvrp::PDShift {
 private:
-  bool _is_valid_removal;
   std::vector<Index> _source_without_pd;
   TWRoute& _tw_s_route;
   TWRoute& _tw_t_route;

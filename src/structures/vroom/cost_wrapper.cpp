@@ -2,7 +2,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2021, Julien Coupey.
+Copyright (c) 2015-2022, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -17,8 +17,8 @@ CostWrapper::CostWrapper(double speed_factor)
   : discrete_duration_factor(std::round(1 / speed_factor * DIVISOR)),
     discrete_cost_factor(std::round(1 / speed_factor * DIVISOR)) {
   if (speed_factor <= 0 || speed_factor > MAX_SPEED_FACTOR) {
-    throw Exception(ERROR::INPUT,
-                    "Invalid speed factor: " + std::to_string(speed_factor));
+    throw InputException("Invalid speed factor: " +
+                         std::to_string(speed_factor));
   }
 }
 

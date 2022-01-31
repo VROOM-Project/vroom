@@ -5,12 +5,13 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2021, Julien Coupey.
+Copyright (c) 2015-2022, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
 
 #include <array>
+#include <cassert>
 #include <chrono>
 #include <limits>
 #include <list>
@@ -70,9 +71,6 @@ struct Server {
   }
 };
 
-// Specific error statuses used when handling exceptions.
-enum class ERROR { INTERNAL, INPUT, ROUTING };
-
 // 'Single' job is a regular one-stop job without precedence
 // constraints.
 enum class JOB_TYPE { SINGLE, PICKUP, DELIVERY };
@@ -81,7 +79,7 @@ enum class JOB_TYPE { SINGLE, PICKUP, DELIVERY };
 enum class STEP_TYPE { START, JOB, BREAK, END };
 
 // Heuristic options.
-enum class HEURISTIC { BASIC, DYNAMIC };
+enum class HEURISTIC { BASIC, DYNAMIC, INIT_ROUTES };
 enum class INIT { NONE, HIGHER_AMOUNT, NEAREST, FURTHEST, EARLIEST_DEADLINE };
 
 struct HeuristicParameters {
@@ -93,6 +91,12 @@ struct HeuristicParameters {
                                 INIT init,
                                 float regret_coeff)
     : heuristic(heuristic), init(init), regret_coeff(regret_coeff) {
+  }
+
+  // Only makes sense for user-defined initial routes.
+  constexpr HeuristicParameters(HEURISTIC heuristic)
+    : heuristic(heuristic), init(INIT::NONE), regret_coeff(0) {
+    assert(heuristic == HEURISTIC::INIT_ROUTES);
   }
 };
 

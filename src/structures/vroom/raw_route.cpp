@@ -2,7 +2,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2021, Julien Coupey.
+Copyright (c) 2015-2022, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -187,7 +187,7 @@ bool RawRoute::is_valid_addition_for_capacity_margins(
 template <class InputIterator>
 bool RawRoute::is_valid_addition_for_capacity_inclusion(
   const Input& input,
-  const Amount& delivery,
+  Amount delivery,
   const InputIterator first_job,
   const InputIterator last_job,
   const Index first_rank,
@@ -205,18 +205,18 @@ bool RawRoute::is_valid_addition_for_capacity_inclusion(
 
   auto replaced_deliveries = first_deliveries - last_deliveries;
 
-  Amount current_load =
+  delivery +=
     ((route.empty()) ? input.zero_amount() : _current_loads[first_rank]) -
-    replaced_deliveries + delivery;
+    replaced_deliveries;
 
-  bool valid = (current_load <= capacity);
+  bool valid = (delivery <= capacity);
 
   for (auto job_iter = first_job; valid and job_iter != last_job; ++job_iter) {
     auto& job = input.jobs[*job_iter];
-    current_load += job.pickup;
-    current_load -= job.delivery;
+    delivery += job.pickup;
+    delivery -= job.delivery;
 
-    valid = (current_load <= capacity);
+    valid = (delivery <= capacity);
   }
 
   return valid;
@@ -274,21 +274,21 @@ void RawRoute::replace(const Input& input,
 
 template bool RawRoute::is_valid_addition_for_capacity_inclusion(
   const Input& input,
-  const Amount& delivery,
+  Amount delivery,
   const std::vector<Index>::iterator first_job,
   const std::vector<Index>::iterator last_job,
   const Index first_rank,
   const Index last_rank) const;
 template bool RawRoute::is_valid_addition_for_capacity_inclusion(
   const Input& input,
-  const Amount& delivery,
+  Amount delivery,
   const std::vector<Index>::const_iterator first_job,
   const std::vector<Index>::const_iterator last_job,
   const Index first_rank,
   const Index last_rank) const;
 template bool RawRoute::is_valid_addition_for_capacity_inclusion(
   const Input& input,
-  const Amount& delivery,
+  Amount delivery,
   const std::vector<Index>::reverse_iterator first_job,
   const std::vector<Index>::reverse_iterator last_job,
   const Index first_rank,

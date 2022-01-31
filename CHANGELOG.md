@@ -4,17 +4,40 @@
 
 ### Added
 
+- `description` key for unassigned tasks in output, if provided (#403)
+- `location_index` key for unassigned tasks and each step, if provided (#625)
+- Shared target to makefile, for creating Position Independent Code (#617)
+- Exposing some internals for Python through compile flags (#640)
+- Stats on local search operators use for dev/debug purposes (#658)
+
+### Changed
+
+- Refactor exception class (#639)
+- CI builds now run against `libosrm` v5.26.0 (#651)
+- Reduce computing time on PDPTW benchmarks by around 20% (#559)
+
+### Fixed
+
+- Remove duplicate definition of LocalSearch (#638)
+- Move priority check to Job constructor instead of input parser (#628)
+
+## [v1.11.0] - 2021-11-19
+
+### Added
+
 - `setup` key for tasks to refine service time modeling (#358)
 - `max_tasks` key limiting route size at vehicle level (#421, #566)
 - Support for custom cost matrices (#415)
 - Number of routes in solution summary (#524)
 - Implementation for extended SWAP* local search operator (#507)
 - `-l` command-line flag for user-provided timeout (#594)
+- Ability to start the search from user-defined solution (#376)
 - Github Actions CI (#436)
 - Check for libvroom example build in CI (#514)
 
 ### Changed
 
+- `vehicle.steps` are now used in solving mode (#606)
 - CI builds now run on Ubuntu 20.04 (#455)
 - Simplified time window handling logic in TWRoute (#557)
 

@@ -5,7 +5,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2021, Julien Coupey.
+Copyright (c) 2015-2022, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -41,6 +41,7 @@ private:
   bool _has_skills;
   bool _has_TW;
   bool _has_custom_location_index;
+  bool _has_initial_routes;
   bool _homogeneous_locations;
   bool _homogeneous_profiles;
   bool _geometry;
@@ -73,6 +74,7 @@ private:
   void set_extra_compatibility();
   void set_vehicles_compatibility();
   void set_vehicles_costs();
+  void set_vehicle_steps_ranks();
   void set_matrices(unsigned nb_thread);
 
   void add_routing_wrapper(const std::string& profile);
