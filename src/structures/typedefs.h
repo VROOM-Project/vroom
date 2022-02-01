@@ -133,14 +133,14 @@ enum OperatorName {
 #ifdef LOG_LS_OPERATORS
 namespace ls {
 struct OperatorStats {
-  const OperatorName name;
-  const unsigned tried_moves;
-  const unsigned applied_moves;
+  unsigned tried_moves;
+  unsigned applied_moves;
 
-  OperatorStats(const OperatorName name,
-                const unsigned tried_moves,
-                const unsigned applied_moves)
-    : name(name), tried_moves(tried_moves), applied_moves(applied_moves) {
+  OperatorStats() : tried_moves(0), applied_moves(0) {
+  }
+
+  OperatorStats(const unsigned tried_moves, const unsigned applied_moves)
+    : tried_moves(tried_moves), applied_moves(applied_moves) {
   }
 };
 } // namespace ls

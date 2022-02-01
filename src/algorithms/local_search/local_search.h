@@ -82,7 +82,7 @@ public:
   void run();
 
 #ifdef LOG_LS_OPERATORS
-  std::vector<OperatorStats> get_stats() const;
+  std::array<OperatorStats, OperatorName::MAX> get_stats() const;
 #endif
 };
 
