@@ -111,6 +111,41 @@ enum class VIOLATION {
   MISSING_BREAK
 };
 
+enum OperatorName {
+  UnassignedExchange,
+  SwapStar,
+  CrossExchange,
+  MixedExchange,
+  TwoOpt,
+  ReverseTwoOpt,
+  Relocate,
+  OrOpt,
+  IntraExchange,
+  IntraCrossExchange,
+  IntraMixedExchange,
+  IntraRelocate,
+  IntraOrOpt,
+  PDShift,
+  RouteExchange,
+  MAX
+};
+
+#ifdef LOG_LS_OPERATORS
+namespace ls {
+struct OperatorStats {
+  unsigned tried_moves;
+  unsigned applied_moves;
+
+  OperatorStats() : tried_moves(0), applied_moves(0) {
+  }
+
+  OperatorStats(const unsigned tried_moves, const unsigned applied_moves)
+    : tried_moves(tried_moves), applied_moves(applied_moves) {
+  }
+};
+} // namespace ls
+#endif
+
 } // namespace vroom
 
 #endif

@@ -14,6 +14,10 @@ All rights reserved (see LICENSE).
 #include <numeric>
 #include <sstream>
 
+#ifdef LOG_LS_OPERATORS
+#include <iostream>
+#endif
+
 #include "structures/typedefs.h"
 #include "structures/vroom/raw_route.h"
 #include "structures/vroom/tw_route.h"
@@ -52,6 +56,55 @@ inline INIT get_init(const std::string& s) {
     throw InputException("Invalid heuristic parameter in command-line.");
   }
 }
+
+#ifdef LOG_LS_OPERATORS
+const std::array<std::string, OperatorName::MAX>
+  operator_names({"UnassignedExchange",
+                  "SwapStar",
+                  "CrossExchange",
+                  "MixedExchange",
+                  "TwoOpt",
+                  "ReverseTwoOpt",
+                  "Relocate",
+                  "OrOpt",
+                  "IntraExchange",
+                  "IntraCrossExchange",
+                  "IntraMixedExchange",
+                  "IntraRelocate",
+                  "IntraOrOpt",
+                  "PDShift",
+                  "RouteExchange"});
+
+inline void log_LS_operators(
+  const std::vector<std::array<ls::OperatorStats, OperatorName::MAX>>&
+    ls_stats) {
+  assert(!ls_stats.empty());
+
+  // Sum indicators per operator.
+  std::array<unsigned, OperatorName::MAX> tried_sums;
+  std::array<unsigned, OperatorName::MAX> applied_sums;
+  tried_sums.fill(0);
+  applied_sums.fill(0);
+
+  unsigned total_tried = 0;
+  unsigned total_applied = 0;
+  for (const auto& ls_run : ls_stats) {
+    for (auto op = 0; op < OperatorName::MAX; ++op) {
+      tried_sums[op] += ls_run[op].tried_moves;
+      total_tried += ls_run[op].tried_moves;
+
+      applied_sums[op] += ls_run[op].applied_moves;
+      total_applied += ls_run[op].applied_moves;
+    }
+  }
+
+  for (auto op = 0; op < OperatorName::MAX; ++op) {
+    std::cout << operator_names[op] << "," << tried_sums[op] << ","
+              << applied_sums[op] << std::endl;
+  }
+  std::cout << "Total," << total_tried << "," << total_applied << std::endl;
+}
+#endif
 
 inline HeuristicParameters str_to_heuristic_param(const std::string& s) {
   // Split command-line string describing parameters.

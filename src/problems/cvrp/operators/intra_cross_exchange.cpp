@@ -20,7 +20,7 @@ IntraCrossExchange::IntraCrossExchange(const Input& input,
                                        Index t_rank,
                                        bool check_s_reverse,
                                        bool check_t_reverse)
-  : Operator("IntraCrossExchange",
+  : Operator(OperatorName::IntraCrossExchange,
              input,
              sol_state,
              s_raw_route,

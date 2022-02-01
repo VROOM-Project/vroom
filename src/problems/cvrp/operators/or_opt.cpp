@@ -20,7 +20,7 @@ OrOpt::OrOpt(const Input& input,
              RawRoute& t_route,
              Index t_vehicle,
              Index t_rank)
-  : Operator("OrOpt",
+  : Operator(OperatorName::OrOpt,
              input,
              sol_state,
              s_route,

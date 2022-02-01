@@ -19,7 +19,7 @@ namespace ls {
 
 class Operator {
 protected:
-  const std::string _name;
+  const OperatorName _name;
   const Input& _input;
   const utils::SolutionState& _sol_state;
 
@@ -40,7 +40,7 @@ protected:
   virtual void compute_gain() = 0;
 
 public:
-  Operator(const std::string name,
+  Operator(OperatorName name,
            const Input& input,
            const utils::SolutionState& sol_state,
            RawRoute& s_raw_route,
@@ -64,7 +64,7 @@ public:
       stored_gain(0) {
   }
 
-  std::string get_name() const;
+  OperatorName get_name() const;
 
   virtual Gain gain();
 

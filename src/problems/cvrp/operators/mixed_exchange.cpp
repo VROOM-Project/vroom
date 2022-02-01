@@ -21,7 +21,7 @@ MixedExchange::MixedExchange(const Input& input,
                              Index t_vehicle,
                              Index t_rank,
                              bool check_t_reverse)
-  : Operator("MixedExchange",
+  : Operator(OperatorName::MixedExchange,
              input,
              sol_state,
              s_route,

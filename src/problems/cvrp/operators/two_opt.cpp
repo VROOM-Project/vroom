@@ -20,7 +20,7 @@ TwoOpt::TwoOpt(const Input& input,
                RawRoute& t_route,
                Index t_vehicle,
                Index t_rank)
-  : Operator("TwoOpt",
+  : Operator(OperatorName::TwoOpt,
              input,
              sol_state,
              s_route,

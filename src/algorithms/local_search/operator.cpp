@@ -12,7 +12,7 @@ All rights reserved (see LICENSE).
 namespace vroom {
 namespace ls {
 
-std::string Operator::get_name() const {
+OperatorName Operator::get_name() const {
   return _name;
 }
 

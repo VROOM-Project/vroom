@@ -18,7 +18,7 @@ RouteExchange::RouteExchange(const Input& input,
                              Index s_vehicle,
                              RawRoute& t_route,
                              Index t_vehicle)
-  : Operator("RouteExchange",
+  : Operator(OperatorName::RouteExchange,
              input,
              sol_state,
              s_route,
