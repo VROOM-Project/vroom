@@ -12,7 +12,6 @@ All rights reserved (see LICENSE).
 #include "../include/rapidjson/document.h"
 #include "../include/rapidjson/error/en.h"
 
-#include "structures/cl_args.h"
 #include "utils/input_parser.h"
 
 namespace vroom {
@@ -466,12 +465,12 @@ template <class T> inline Matrix<T> get_matrix(rapidjson::Value& m) {
   return matrix;
 }
 
-Input parse(const CLArgs& cl_args) {
+void parse(Input& input, const std::string& input_str, bool geometry) {
   // Input json object.
   rapidjson::Document json_input;
 
   // Parsing input string to populate the input object.
-  if (json_input.Parse(cl_args.input.c_str()).HasParseError()) {
+  if (json_input.Parse(input_str.c_str()).HasParseError()) {
     std::string error_msg =
       std::string(rapidjson::GetParseError_En(json_input.GetParseError())) +
       " (offset: " + std::to_string(json_input.GetErrorOffset()) + ")";
@@ -500,9 +499,8 @@ Input parse(const CLArgs& cl_args) {
   const unsigned amount_size =
     first_vehicle_has_capacity ? first_vehicle["capacity"].Size() : 0;
 
-  // Custom input object embedding jobs, vehicles and matrices.
-  Input input(amount_size, cl_args.servers, cl_args.router);
-  input.set_geometry(cl_args.geometry);
+  input.set_amount_size(amount_size);
+  input.set_geometry(geometry);
 
   // Add all vehicles.
   for (rapidjson::SizeType i = 0; i < json_input["vehicles"].Size(); ++i) {
@@ -590,8 +588,6 @@ Input parse(const CLArgs& cl_args) {
                                  get_matrix<Duration>(json_input["matrix"]));
     }
   }
-
-  return input;
 }
 
 } // namespace io

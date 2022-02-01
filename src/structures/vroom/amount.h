@@ -134,7 +134,7 @@ public:
     return elems.data();
   };
 #endif
-  
+
   template <class AmountExpression>
   Amount& operator+=(const AmountExpression& rhs) {
     assert(this->size() == rhs.size());
