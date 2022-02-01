@@ -98,37 +98,8 @@ LocalSearch<Route,
     });
 
 #ifdef LOG_LS_OPERATORS
-  tried_moves.insert({OperatorName::UnassignedExchange, 0});
-  tried_moves.insert({OperatorName::SwapStar, 0});
-  tried_moves.insert({OperatorName::CrossExchange, 0});
-  tried_moves.insert({OperatorName::MixedExchange, 0});
-  tried_moves.insert({OperatorName::TwoOpt, 0});
-  tried_moves.insert({OperatorName::ReverseTwoOpt, 0});
-  tried_moves.insert({OperatorName::Relocate, 0});
-  tried_moves.insert({OperatorName::OrOpt, 0});
-  tried_moves.insert({OperatorName::IntraExchange, 0});
-  tried_moves.insert({OperatorName::IntraCrossExchange, 0});
-  tried_moves.insert({OperatorName::IntraMixedExchange, 0});
-  tried_moves.insert({OperatorName::IntraRelocate, 0});
-  tried_moves.insert({OperatorName::IntraOrOpt, 0});
-  tried_moves.insert({OperatorName::PDShift, 0});
-  tried_moves.insert({OperatorName::RouteExchange, 0});
-
-  applied_moves.insert({OperatorName::UnassignedExchange, 0});
-  applied_moves.insert({OperatorName::SwapStar, 0});
-  applied_moves.insert({OperatorName::CrossExchange, 0});
-  applied_moves.insert({OperatorName::MixedExchange, 0});
-  applied_moves.insert({OperatorName::TwoOpt, 0});
-  applied_moves.insert({OperatorName::ReverseTwoOpt, 0});
-  applied_moves.insert({OperatorName::Relocate, 0});
-  applied_moves.insert({OperatorName::OrOpt, 0});
-  applied_moves.insert({OperatorName::IntraExchange, 0});
-  applied_moves.insert({OperatorName::IntraCrossExchange, 0});
-  applied_moves.insert({OperatorName::IntraMixedExchange, 0});
-  applied_moves.insert({OperatorName::IntraRelocate, 0});
-  applied_moves.insert({OperatorName::IntraOrOpt, 0});
-  applied_moves.insert({OperatorName::PDShift, 0});
-  applied_moves.insert({OperatorName::RouteExchange, 0});
+  tried_moves.fill(0);
+  applied_moves.fill(0);
 #endif
 }
 

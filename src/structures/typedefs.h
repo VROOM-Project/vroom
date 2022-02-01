@@ -126,7 +126,8 @@ enum OperatorName {
   IntraRelocate,
   IntraOrOpt,
   PDShift,
-  RouteExchange
+  RouteExchange,
+  MAX
 };
 
 #ifdef LOG_LS_OPERATORS

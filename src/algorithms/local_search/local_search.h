@@ -10,10 +10,6 @@ All rights reserved (see LICENSE).
 
 */
 
-#ifdef LOG_LS_OPERATORS
-#include <unordered_map>
-#endif
-
 #include "structures/vroom/solution_state.h"
 
 namespace vroom {
@@ -54,8 +50,8 @@ private:
 
 #ifdef LOG_LS_OPERATORS
   // Store operator usage stats.
-  std::unordered_map<OperatorName, unsigned> tried_moves;
-  std::unordered_map<OperatorName, unsigned> applied_moves;
+  std::array<unsigned, OperatorName::MAX> tried_moves;
+  std::array<unsigned, OperatorName::MAX> applied_moves;
 #endif
 
   void try_job_additions(const std::vector<Index>& routes, double regret_coeff);
