@@ -58,91 +58,49 @@ inline INIT get_init(const std::string& s) {
 }
 
 #ifdef LOG_LS_OPERATORS
-inline std::string operator_name(OperatorName name) {
-  std::string str_name;
+const std::array<std::string, OperatorName::MAX>
+  operator_names({"UnassignedExchange",
+                  "SwapStar",
+                  "CrossExchange",
+                  "MixedExchange",
+                  "TwoOpt",
+                  "ReverseTwoOpt",
+                  "Relocate",
+                  "OrOpt",
+                  "IntraExchange",
+                  "IntraCrossExchange",
+                  "IntraMixedExchange",
+                  "IntraRelocate",
+                  "IntraOrOpt",
+                  "PDShift",
+                  "RouteExchange"});
 
-  switch (name) {
-  case OperatorName::UnassignedExchange:
-    str_name = "UnassignedExchange";
-    break;
-  case OperatorName::SwapStar:
-    str_name = "SwapStar";
-    break;
-  case OperatorName::CrossExchange:
-    str_name = "CrossExchange";
-    break;
-  case OperatorName::MixedExchange:
-    str_name = "MixedExchange";
-    break;
-  case OperatorName::TwoOpt:
-    str_name = "TwoOpt";
-    break;
-  case OperatorName::ReverseTwoOpt:
-    str_name = "ReverseTwoOpt";
-    break;
-  case OperatorName::Relocate:
-    str_name = "Relocate";
-    break;
-  case OperatorName::OrOpt:
-    str_name = "OrOpt";
-    break;
-  case OperatorName::IntraExchange:
-    str_name = "IntraExchange";
-    break;
-  case OperatorName::IntraCrossExchange:
-    str_name = "IntraCrossExchange";
-    break;
-  case OperatorName::IntraMixedExchange:
-    str_name = "IntraMixedExchange";
-    break;
-  case OperatorName::IntraRelocate:
-    str_name = "IntraRelocate";
-    break;
-  case OperatorName::IntraOrOpt:
-    str_name = "IntraOrOpt";
-    break;
-  case OperatorName::PDShift:
-    str_name = "PDShift";
-    break;
-  case OperatorName::RouteExchange:
-    str_name = "RouteExchange";
-    break;
-  default:
-    assert(false);
-    break;
-  }
-
-  return str_name;
-}
-
-inline void
-log_LS_operators(const std::vector<std::vector<ls::OperatorStats>>& ls_stats) {
-  // Sum indicators per operator.
-  std::vector<std::string> names;
+inline void log_LS_operators(
+  const std::vector<std::array<ls::OperatorStats, OperatorName::MAX>>&
+    ls_stats) {
   assert(!ls_stats.empty());
-  std::transform(ls_stats[0].begin(),
-                 ls_stats[0].end(),
-                 std::back_inserter(names),
-                 [](const auto& op) { return utils::operator_name(op.name); });
 
-  std::vector<unsigned> tried_sums(names.size(), 0);
-  std::vector<unsigned> applied_sums(names.size(), 0);
+  // Sum indicators per operator.
+  std::array<unsigned, OperatorName::MAX> tried_sums;
+  std::array<unsigned, OperatorName::MAX> applied_sums;
+  tried_sums.fill(0);
+  applied_sums.fill(0);
 
   unsigned total_tried = 0;
   unsigned total_applied = 0;
   for (const auto& ls_run : ls_stats) {
-    for (std::size_t i = 0; i < ls_run.size(); ++i) {
-      tried_sums[i] += ls_run[i].tried_moves;
-      total_tried += ls_run[i].tried_moves;
+    for (auto op = 0; op < OperatorName::MAX; ++op) {
+      tried_sums[op] += ls_run[op].tried_moves;
+      total_tried += ls_run[op].tried_moves;
 
-      applied_sums[i] += ls_run[i].applied_moves;
-      total_applied += ls_run[i].applied_moves;
+      applied_sums[op] += ls_run[op].applied_moves;
+      total_applied += ls_run[op].applied_moves;
     }
   }
 
-  for (std::size_t i = 0; i < names.size(); ++i) {
-    std::cout << names[i] << "," << tried_sums[i] << "," << applied_sums[i]
-              << std::endl;
+  for (auto op = 0; op < OperatorName::MAX; ++op) {
+    std::cout << operator_names[op] << "," << tried_sums[op] << ","
+              << applied_sums[op] << std::endl;
   }
   std::cout << "Total," << total_tried << "," << total_applied << std::endl;
 }
