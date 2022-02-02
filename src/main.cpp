@@ -10,9 +10,6 @@ All rights reserved (see LICENSE).
 #include <fstream>
 #include <iostream>
 #include <sstream>
-#ifndef _WIN32
-#include <unistd.h>
-#endif
 
 #if USE_LIBOSRM
 #include "osrm/exception.hpp"
@@ -33,8 +30,7 @@ int main(int argc, char** argv) {
   std::string host_arg;
   std::string port_arg;
   std::string router_arg;
-  std::string limit_arg;
-  std::string nb_threads_arg;
+  unsigned limit_arg;
   std::vector<std::string> heuristic_params_arg;
 
   cxxopts::Options options(
@@ -58,8 +54,8 @@ int main(int argc, char** argv) {
       cxxopts::value<bool>(cl_args.geometry)->default_value("false"))
     ("i,input-file", "Read input from 'input-file' rather than from stdin",
       cxxopts::value<std::string>(cl_args.input_file))
-    ("l,limit", "Stop solving process after 'limit' seconds",
-      cxxopts::value<std::string>(limit_arg)->default_value(""))
+    ("l,limit", "Stop solving process after 'limit' seconds. Default 0, i.e. unlimited.",
+      cxxopts::value<unsigned>(limit_arg)->default_value("0"))
     ("o,output", "Output file name", cxxopts::value<std::string>(cl_args.output_file))
     ("p,port", "The host port for the routing profile, e.g. '" + vroom::DEFAULT_PROFILE + ":5000'",
       cxxopts::value<std::string>(port_arg)->default_value("car:5000"))
@@ -92,18 +88,20 @@ int main(int argc, char** argv) {
       exit(0);
     }
   } catch (const cxxopts::OptionException& e) {
-    auto error_code = vroom::InputException("").error_code;
-    std::cerr << "[Error] " << e.what() << std::endl;
-    vroom::io::write_to_json({error_code, e.what()}, false, cl_args.output_file);
-    exit(error_code);
+    // cxxopts outputs the failed parameter but no other details, so we add some (likely) context
+    auto exc = vroom::InputException(", invalid numerical value.");
+    auto msg =  e.what() + exc.message;
+    std::cerr << "[Error] " << msg << std::endl;
+    vroom::io::write_to_json({exc.error_code, msg}, false, cl_args.output_file);
+    exit(exc.error_code);
   }
 
   // parse and update some params
   vroom::io::update_host(cl_args.servers, host_arg);
   vroom::io::update_port(cl_args.servers, port_arg);
-  if (!limit_arg.empty()) {
+  if (limit_arg) {
     // Internally timeout is in milliseconds.
-    cl_args.timeout = 1000 * std::stof(limit_arg);
+    cl_args.timeout = 1000 * limit_arg;
   }
   cl_args.exploration_level =
     std::min(cl_args.exploration_level, cl_args.max_exploration_level);
@@ -121,6 +119,8 @@ int main(int argc, char** argv) {
     std::cerr << "[Error] " << message << std::endl;
     vroom::io::write_to_json({error_code, message}, false, cl_args.output_file);
     exit(error_code);
+  } else {
+    cl_args.router = vroom::ROUTER::OSRM;
   }
 
   try {
