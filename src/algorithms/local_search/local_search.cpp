@@ -1003,7 +1003,7 @@ void LocalSearch<Route,
       }
     }
 
-    // Intra relocate stuff
+    // IntraRelocate stuff
     for (const auto& s_t : s_t_pairs) {
       if (s_t.first != s_t.second or best_priorities[s_t.first] > 0 or
           _sol[s_t.first].size() < 2) {
@@ -1018,23 +1018,32 @@ void LocalSearch<Route,
           continue;
         }
 
-        unsigned min_t_rank = 0;
-        if (_input.jobs[_sol[s_t.first].route[s_rank]].type ==
-            JOB_TYPE::DELIVERY) {
+        const auto s_job_rank = _sol[s_t.first].route[s_rank];
+        auto begin_t_rank =
+          _sol_state.weak_insertion_ranks_begin[s_t.first][s_job_rank];
+        if (_input.jobs[s_job_rank].type == JOB_TYPE::DELIVERY) {
           // Don't move a delivery before its matching pickup.
-          min_t_rank = _sol_state.matching_pickup_rank[s_t.first][s_rank] + 1;
+          Index begin_candidate =
+            _sol_state.matching_pickup_rank[s_t.first][s_rank] + 1;
+          begin_t_rank = std::max(begin_t_rank, begin_candidate);
         }
 
-        unsigned max_t_rank = _sol[s_t.first].size() - 1;
-        if (_input.jobs[_sol[s_t.first].route[s_rank]].type ==
-            JOB_TYPE::PICKUP) {
+        auto end_t_rank = _sol[s_t.first].size();
+        if (_input.jobs[s_job_rank].type == JOB_TYPE::PICKUP) {
           // Don't move a pickup past its matching delivery.
-          max_t_rank = _sol_state.matching_delivery_rank[s_t.first][s_rank] - 1;
+          end_t_rank = _sol_state.matching_delivery_rank[s_t.first][s_rank];
         }
 
-        for (unsigned t_rank = min_t_rank; t_rank <= max_t_rank; ++t_rank) {
+        for (unsigned t_rank = begin_t_rank; t_rank < end_t_rank; ++t_rank) {
           if (t_rank == s_rank) {
             continue;
+          }
+          if (t_rank > s_rank and
+              _sol_state.weak_insertion_ranks_end[s_t.first][s_job_rank] <=
+                t_rank + 1) {
+            // Relocating past t_rank (new rank *after* removal) won't
+            // work.
+            break;
           }
 
 #ifdef LOG_LS_OPERATORS
