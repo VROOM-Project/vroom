@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
     ("h,help", "Print this help message.")
     ("v,version", "Print the version of this software.")
     ("a,host", "The host for the routing profile, e.g. '" + vroom::DEFAULT_PROFILE + ":0.0.0.0'",
-      cxxopts::value<std::string>(host_arg)->default_value("car:0.0.0.0"))
+      cxxopts::value<std::string>(host_arg)->default_value(vroom::DEFAULT_PROFILE + ":0.0.0.0"))
     ("c,choose-eta", "Choose ETA for custom routes and report violations.",
       cxxopts::value<bool>(cl_args.check)->default_value("false"))
     ("g,geometry", "Add detailed route geometry and indicators",
@@ -58,7 +58,7 @@ int main(int argc, char** argv) {
       cxxopts::value<unsigned>(limit_arg)->default_value("0"))
     ("o,output", "Output file name", cxxopts::value<std::string>(cl_args.output_file))
     ("p,port", "The host port for the routing profile, e.g. '" + vroom::DEFAULT_PROFILE + ":5000'",
-      cxxopts::value<std::string>(port_arg)->default_value("car:5000"))
+      cxxopts::value<std::string>(port_arg)->default_value(vroom::DEFAULT_PROFILE + ":5000"))
     ("r,router", "osrm, libosrm, ors or valhalla",
       cxxopts::value<std::string>(router_arg)->default_value("osrm"))
     ("t,threads", "Number of threads to use",
