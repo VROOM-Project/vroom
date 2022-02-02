@@ -18,7 +18,7 @@ IntraExchange::IntraExchange(const Input& input,
                              Index s_vehicle,
                              Index s_rank,
                              Index t_rank)
-  : Operator("IntraExchange",
+  : Operator(OperatorName::IntraExchange,
              input,
              sol_state,
              s_raw_route,

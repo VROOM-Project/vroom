@@ -22,7 +22,7 @@ CrossExchange::CrossExchange(const Input& input,
                              Index t_rank,
                              bool check_s_reverse,
                              bool check_t_reverse)
-  : Operator("CrossExchange",
+  : Operator(OperatorName::CrossExchange,
              input,
              sol_state,
              s_route,

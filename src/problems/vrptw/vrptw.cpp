@@ -167,8 +167,9 @@ Solution VRPTW::solve(unsigned exploration_level,
 
   std::vector<TWSolution> tw_solutions(nb_init_solutions);
   std::vector<utils::SolutionIndicators> sol_indicators(nb_init_solutions);
-#ifndef NDEBUG
-  std::vector<std::vector<ls::OperatorStats>> ls_stats(nb_init_solutions);
+#ifdef LOG_LS_OPERATORS
+  std::vector<std::array<ls::OperatorStats, OperatorName::MAX>> ls_stats(
+    nb_init_solutions);
 #endif
 
   // Split the work among threads.
@@ -216,7 +217,7 @@ Solution VRPTW::solve(unsigned exploration_level,
 
         // Store solution indicators.
         sol_indicators[rank] = ls.indicators();
-#ifndef NDEBUG
+#ifdef LOG_LS_OPERATORS
         ls_stats[rank] = ls.get_stats();
 #endif
       }
@@ -243,35 +244,8 @@ Solution VRPTW::solve(unsigned exploration_level,
     std::rethrow_exception(ep);
   }
 
-#ifndef NDEBUG
-  // // Sum indicators per operator.
-  // std::vector<std::string> names;
-  // assert(!ls_stats.empty());
-  // std::transform(ls_stats[0].begin(),
-  //                ls_stats[0].end(),
-  //                std::back_inserter(names),
-  //                [](const auto& op) { return op.name; });
-
-  // std::vector<unsigned> tried_sums(names.size(), 0);
-  // std::vector<unsigned> applied_sums(names.size(), 0);
-
-  // unsigned total_tried = 0;
-  // unsigned total_applied = 0;
-  // for (const auto& ls_run : ls_stats) {
-  //   for (std::size_t i = 0; i < ls_run.size(); ++i) {
-  //     tried_sums[i] += ls_run[i].tried_moves;
-  //     total_tried += ls_run[i].tried_moves;
-
-  //     applied_sums[i] += ls_run[i].applied_moves;
-  //     total_applied += ls_run[i].applied_moves;
-  //   }
-  // }
-
-  // for (std::size_t i = 0; i < names.size(); ++i) {
-  //   std::cout << names[i] << "," << tried_sums[i] << "," << applied_sums[i]
-  //             << std::endl;
-  // }
-  // std::cout << "Total," << total_tried << "," << total_applied << std::endl;
+#ifdef LOG_LS_OPERATORS
+  utils::log_LS_operators(ls_stats);
 #endif
 
   auto best_indic =

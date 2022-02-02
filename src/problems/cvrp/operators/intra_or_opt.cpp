@@ -19,7 +19,7 @@ IntraOrOpt::IntraOrOpt(const Input& input,
                        Index s_rank,
                        Index t_rank,
                        bool check_reverse)
-  : Operator("IntraOrOpt",
+  : Operator(OperatorName::IntraOrOpt,
              input,
              sol_state,
              s_raw_route,

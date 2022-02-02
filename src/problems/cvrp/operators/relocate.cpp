@@ -21,7 +21,7 @@ Relocate::Relocate(const Input& input,
                    RawRoute& t_route,
                    Index t_vehicle,
                    Index t_rank)
-  : Operator("Relocate",
+  : Operator(OperatorName::Relocate,
              input,
              sol_state,
              s_route,

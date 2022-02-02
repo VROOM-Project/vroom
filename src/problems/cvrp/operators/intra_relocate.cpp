@@ -19,7 +19,7 @@ IntraRelocate::IntraRelocate(const Input& input,
                              Index s_vehicle,
                              Index s_rank,
                              Index t_rank)
-  : Operator("IntraRelocate",
+  : Operator(OperatorName::IntraRelocate,
              input,
              sol_state,
              s_raw_route,
