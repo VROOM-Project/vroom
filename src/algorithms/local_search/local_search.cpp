@@ -672,7 +672,7 @@ void LocalSearch<Route,
       }
     }
 
-    // Reverse 2-opt* stuff
+    // ReverseTwoOpt stuff
     for (const auto& s_t : s_t_pairs) {
       if (s_t.first == s_t.second or best_priorities[s_t.first] > 0 or
           best_priorities[s_t.second] > 0) {
@@ -694,10 +694,29 @@ void LocalSearch<Route,
           continue;
         }
 
-        for (unsigned t_rank = 0;
+        Index begin_t_rank = 0;
+        if (s_rank + 1 < _sol[s_t.first].size()) {
+          // There is a route end after s_rank in source route.
+          const auto s_next_job_rank = _sol[s_t.first].route[s_rank + 1];
+          const auto unmodified_begin =
+            _sol_state.weak_insertion_ranks_begin[s_t.second][s_next_job_rank];
+          if (unmodified_begin > 0) {
+            begin_t_rank = unmodified_begin - 1;
+          }
+        }
+
+        for (unsigned t_rank = begin_t_rank;
              t_rank < _sol_state.fwd_skill_rank[s_t.second][s_t.first];
              ++t_rank) {
           if (_sol[s_t.second].has_pickup_up_to_rank(t_rank)) {
+            continue;
+          }
+
+          const auto t_job_rank = _sol[s_t.second].route[t_rank];
+          if (_sol_state.weak_insertion_ranks_end[s_t.first][t_job_rank] <=
+              s_rank) {
+            // Job at t_rank won't fit after job at s_rank in source
+            // route.
             continue;
           }
 
