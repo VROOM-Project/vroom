@@ -36,7 +36,9 @@ SolutionState::SolutionState(const Input& input)
                                    std::vector<std::vector<Index>>(
                                      _nb_vehicles)),
     insertion_ranks_begin(_nb_vehicles),
-    insertion_ranks_end(_nb_vehicles)
+    insertion_ranks_end(_nb_vehicles),
+    weak_insertion_ranks_begin(_nb_vehicles),
+    weak_insertion_ranks_end(_nb_vehicles)
 #ifndef NDEBUG
     ,
     route_costs(_nb_vehicles)
@@ -481,12 +483,20 @@ void SolutionState::set_insertion_ranks(const RawRoute& r, Index v) {
   insertion_ranks_end[v] =
     std::vector<Index>(_input.jobs.size(), r.route.size() + 1);
   insertion_ranks_begin[v] = std::vector<Index>(_input.jobs.size(), 0);
+
+  weak_insertion_ranks_end[v] =
+    std::vector<Index>(_input.jobs.size(), r.route.size() + 1);
+  weak_insertion_ranks_begin[v] = std::vector<Index>(_input.jobs.size(), 0);
 }
 
 void SolutionState::set_insertion_ranks(const TWRoute& tw_r, Index v) {
   insertion_ranks_end[v] =
     std::vector<Index>(_input.jobs.size(), tw_r.route.size() + 1);
   insertion_ranks_begin[v] = std::vector<Index>(_input.jobs.size(), 0);
+
+  weak_insertion_ranks_end[v] =
+    std::vector<Index>(_input.jobs.size(), tw_r.route.size() + 1);
+  weak_insertion_ranks_begin[v] = std::vector<Index>(_input.jobs.size(), 0);
 
   if (tw_r.size() == 0) {
     return;
@@ -506,24 +516,63 @@ void SolutionState::set_insertion_ranks(const TWRoute& tw_r, Index v) {
     const auto job_deadline = job.tws.back().end;
     const auto job_index = job.index();
 
+    // Handle insertion_ranks_*
     for (std::size_t t = 0; t < tw_r.route.size(); ++t) {
+      if (tw_r.route[t] == j) {
+        continue;
+      }
       if (job_deadline <
           tw_r.earliest[t] + tw_r.action_time[t] +
             vehicle.duration(_input.jobs[tw_r.route[t]].index(), job_index)) {
-        // Too late to perform job any time after task at t.
+        // Too late to perform job any time after task at t based on
+        // its earliest date in route for v.
         insertion_ranks_end[v][j] = t + 1;
         break;
       }
     }
     for (std::size_t t = 0; t < tw_r.route.size(); ++t) {
       const auto rev_t = tw_r.route.size() - 1 - t;
+      if (tw_r.route[rev_t] == j) {
+        continue;
+      }
       if (tw_r.latest[rev_t] <
           job_available + job.service +
             vehicle.duration(job_index,
                              _input.jobs[tw_r.route[rev_t]].index())) {
         // Job is available too late to be performed any time before
-        // task at rev_t.
+        // task at rev_t based on its latest date in route for v.
         insertion_ranks_begin[v][j] = rev_t + 1;
+        break;
+      }
+    }
+
+    // Handle weak_insertion_ranks_*
+    for (std::size_t t = 0; t < tw_r.route.size(); ++t) {
+      if (tw_r.route[t] == j) {
+        continue;
+      }
+      const auto& task = _input.jobs[tw_r.route[t]];
+      if (job_deadline < task.tws.front().start + task.service +
+                           vehicle.duration(task.index(), job_index)) {
+        // Too late to perform job any time after task at t solely
+        // based on its TW.
+        weak_insertion_ranks_end[v][j] = t + 1;
+        assert(insertion_ranks_end[v][j] <= weak_insertion_ranks_end[v][j]);
+        break;
+      }
+    }
+    for (std::size_t t = 0; t < tw_r.route.size(); ++t) {
+      const auto rev_t = tw_r.route.size() - 1 - t;
+      if (tw_r.route[rev_t] == j) {
+        continue;
+      }
+      const auto& task = _input.jobs[tw_r.route[rev_t]];
+      if (task.tws.back().end < job_available + job.service +
+                                  vehicle.duration(job_index, task.index())) {
+        // Job is available too late to be performed any time before
+        // task at rev_t solely based on its TW.
+        weak_insertion_ranks_begin[v][j] = rev_t + 1;
+        assert(weak_insertion_ranks_begin[v][j] <= insertion_ranks_begin[v][j]);
         break;
       }
     }

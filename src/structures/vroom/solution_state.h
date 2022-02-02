@@ -121,9 +121,19 @@ public:
   // Store values such that inserting job at rank j in route for
   // vehicle v strictly before rank insertion_ranks_begin[v][j]
   // (resp. at rank insertion_ranks_end[v][j] or after) is bound to
-  // fail.
+  // fail based on job constraints and earliest/latest dates in route.
   std::vector<std::vector<Index>> insertion_ranks_begin;
   std::vector<std::vector<Index>> insertion_ranks_end;
+
+  // Store values such that inserting job at rank j in route for
+  // vehicle v strictly before rank weak_insertion_ranks_begin[v][j]
+  // (resp. at rank weak_insertion_ranks_end[v][j] or after) is bound
+  // to fail based on job constraints and route tasks time
+  // windows. The range restriction is weaker than right above but has
+  // the advantage of remaining valid for use in operators that modify
+  // route for vehicle v.
+  std::vector<std::vector<Index>> weak_insertion_ranks_begin;
+  std::vector<std::vector<Index>> weak_insertion_ranks_end;
 
 #ifndef NDEBUG
   // Only used for assertion checks in debug mode.
