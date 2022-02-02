@@ -588,7 +588,7 @@ void LocalSearch<Route,
       }
     }
 
-    // 2-opt* stuff
+    // TwoOpt stuff
     for (const auto& s_t : s_t_pairs) {
       if (s_t.second <= s_t.first or // This operator is symmetric.
           best_priorities[s_t.first] > 0 or best_priorities[s_t.second] > 0) {
@@ -617,10 +617,31 @@ void LocalSearch<Route,
           continue;
         }
 
-        for (int t_rank = _sol[s_t.second].size() - 1; t_rank >= first_t_rank;
-             --t_rank) {
+        Index end_t_rank = _sol[s_t.second].size();
+        if (s_rank + 1 < _sol[s_t.first].size()) {
+          // There is a route end after s_rank in source route.
+          const auto s_next_job_rank = _sol[s_t.first].route[s_rank + 1];
+          end_t_rank =
+            std::min(end_t_rank,
+                     _sol_state
+                       .weak_insertion_ranks_end[s_t.second][s_next_job_rank]);
+        }
+
+        for (int t_rank = end_t_rank - 1; t_rank >= first_t_rank; --t_rank) {
           if (_sol[s_t.second].has_pending_delivery_after_rank(t_rank)) {
             continue;
+          }
+
+          if (t_rank + 1 < static_cast<int>(_sol[s_t.second].size())) {
+            // There is a route end after t_rank in target route.
+            const auto t_next_job_rank = _sol[s_t.second].route[t_rank + 1];
+            if (_sol_state
+                  .weak_insertion_ranks_end[s_t.first][t_next_job_rank] <=
+                s_rank) {
+              // Job right after t_rank won't fit after job at s_rank
+              // in source route.
+              continue;
+            }
           }
 
           const auto& s_v = _input.vehicles[s_t.first];
