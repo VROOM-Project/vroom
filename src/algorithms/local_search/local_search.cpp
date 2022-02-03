@@ -929,7 +929,7 @@ void LocalSearch<Route,
       }
     }
 
-    // Intra CROSS-exchange stuff
+    // IntraCrossExchange stuff
     for (const auto& s_t : s_t_pairs) {
       if (s_t.first != s_t.second or best_priorities[s_t.first] > 0 or
           _sol[s_t.first].size() < 5) {
@@ -954,8 +954,14 @@ void LocalSearch<Route,
           continue;
         }
 
-        for (unsigned t_rank = s_rank + 3; t_rank < _sol[s_t.first].size() - 1;
-             ++t_rank) {
+        Index end_t_rank = _sol[s_t.first].size() - 1;
+        const auto s_next_job_rank = _sol[s_t.first].route[s_rank + 1];
+        const auto end_s_next =
+          _sol_state.weak_insertion_ranks_end[s_t.first][s_next_job_rank];
+        assert(end_s_next > 1);
+        end_t_rank = std::min(end_t_rank, static_cast<Index>(end_s_next - 2));
+
+        for (unsigned t_rank = s_rank + 3; t_rank < end_t_rank; ++t_rank) {
           const auto& job_t_type =
             _input.jobs[_sol[s_t.second].route[t_rank]].type;
 
@@ -970,6 +976,12 @@ void LocalSearch<Route,
              t_rank + 1);
 
           if (!both_t_single and !is_t_pickup) {
+            continue;
+          }
+
+          const auto t_job_rank = _sol[s_t.first].route[t_rank];
+          if (_sol_state.weak_insertion_ranks_begin[s_t.first][t_job_rank] >
+              s_rank + 2) {
             continue;
           }
 
