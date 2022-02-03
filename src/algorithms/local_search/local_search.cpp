@@ -1104,7 +1104,7 @@ void LocalSearch<Route,
       }
     }
 
-    // Intra Or-opt stuff
+    // IntraOrOpt stuff
     for (const auto& s_t : s_t_pairs) {
       if (s_t.first != s_t.second or best_priorities[s_t.first] > 0 or
           _sol[s_t.first].size() < 4) {
@@ -1143,11 +1143,25 @@ void LocalSearch<Route,
           }
         }
 
-        for (unsigned t_rank = 0; t_rank <= _sol[s_t.first].size() - 2;
+        const auto s_job_rank = _sol[s_t.first].route[s_rank];
+        const auto s_next_job_rank = _sol[s_t.first].route[s_rank + 1];
+        const auto begin_t_rank =
+          _sol_state.weak_insertion_ranks_begin[s_t.first][s_job_rank];
+
+        for (unsigned t_rank = begin_t_rank;
+             t_rank <= _sol[s_t.first].size() - 2;
              ++t_rank) {
           if (t_rank == s_rank) {
             continue;
           }
+          if (t_rank > s_rank and
+              _sol_state.weak_insertion_ranks_end[s_t.first][s_next_job_rank] <=
+                t_rank + 2) {
+            // Relocating past t_rank (new rank *after* removal) won't
+            // work.
+            break;
+          }
+
 #ifdef LOG_LS_OPERATORS
           ++tried_moves[OperatorName::IntraOrOpt];
 #endif
