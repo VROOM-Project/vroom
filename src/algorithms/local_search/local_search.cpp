@@ -430,7 +430,7 @@ void LocalSearch<Route,
       }
     }
 
-    // CROSS-exchange stuff
+    // CrossExchange stuff
     for (const auto& s_t : s_t_pairs) {
       if (s_t.second <= s_t.first or // This operator is symmetric.
           best_priorities[s_t.first] > 0 or best_priorities[s_t.second] > 0 or
@@ -439,20 +439,19 @@ void LocalSearch<Route,
       }
 
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1; ++s_rank) {
-        if (!_input.vehicle_ok_with_job(s_t.second,
-                                        _sol[s_t.first].route[s_rank]) or
-            !_input.vehicle_ok_with_job(s_t.second,
-                                        _sol[s_t.first].route[s_rank + 1])) {
+        const auto s_job_rank = _sol[s_t.first].route[s_rank];
+        const auto s_next_job_rank = _sol[s_t.first].route[s_rank + 1];
+
+        if (!_input.vehicle_ok_with_job(s_t.second, s_job_rank) or
+            !_input.vehicle_ok_with_job(s_t.second, s_next_job_rank)) {
           continue;
         }
 
-        const auto& job_s_type =
-          _input.jobs[_sol[s_t.first].route[s_rank]].type;
+        const auto& job_s_type = _input.jobs[s_job_rank].type;
 
         bool both_s_single =
           (job_s_type == JOB_TYPE::SINGLE) and
-          (_input.jobs[_sol[s_t.first].route[s_rank + 1]].type ==
-           JOB_TYPE::SINGLE);
+          (_input.jobs[s_next_job_rank].type == JOB_TYPE::SINGLE);
 
         bool is_s_pickup =
           (job_s_type == JOB_TYPE::PICKUP) and
@@ -462,22 +461,37 @@ void LocalSearch<Route,
           continue;
         }
 
-        for (unsigned t_rank = 0; t_rank < _sol[s_t.second].size() - 1;
-             ++t_rank) {
-          if (!_input.vehicle_ok_with_job(s_t.first,
-                                          _sol[s_t.second].route[t_rank]) or
-              !_input.vehicle_ok_with_job(s_t.first,
-                                          _sol[s_t.second].route[t_rank + 1])) {
+        Index end_t_rank = _sol[s_t.second].size() - 1;
+        const auto end_s =
+          _sol_state.weak_insertion_ranks_end[s_t.second][s_job_rank];
+        const auto end_s_next =
+          _sol_state.weak_insertion_ranks_end[s_t.second][s_next_job_rank];
+        end_t_rank = std::min(end_t_rank, end_s);
+        end_t_rank = std::min(end_t_rank, end_s_next);
+
+        Index begin_t_rank = 0;
+        const auto begin_s =
+          _sol_state.weak_insertion_ranks_begin[s_t.second][s_job_rank];
+        const auto begin_s_next =
+          _sol_state.weak_insertion_ranks_begin[s_t.second][s_next_job_rank];
+        begin_t_rank = std::max(begin_t_rank, begin_s);
+        begin_t_rank = std::max(begin_t_rank, begin_s_next);
+        begin_t_rank = (begin_t_rank > 1) ? begin_t_rank - 2 : 0;
+
+        for (unsigned t_rank = begin_t_rank; t_rank < end_t_rank; ++t_rank) {
+          const auto t_job_rank = _sol[s_t.second].route[t_rank];
+          const auto t_next_job_rank = _sol[s_t.second].route[t_rank + 1];
+
+          if (!_input.vehicle_ok_with_job(s_t.first, t_job_rank) or
+              !_input.vehicle_ok_with_job(s_t.first, t_next_job_rank)) {
             continue;
           }
 
-          const auto& job_t_type =
-            _input.jobs[_sol[s_t.second].route[t_rank]].type;
+          const auto& job_t_type = _input.jobs[t_job_rank].type;
 
           bool both_t_single =
             (job_t_type == JOB_TYPE::SINGLE) and
-            (_input.jobs[_sol[s_t.second].route[t_rank + 1]].type ==
-             JOB_TYPE::SINGLE);
+            (_input.jobs[t_next_job_rank].type == JOB_TYPE::SINGLE);
 
           bool is_t_pickup =
             (job_t_type == JOB_TYPE::PICKUP) and
@@ -485,6 +499,26 @@ void LocalSearch<Route,
              t_rank + 1);
 
           if (!both_t_single and !is_t_pickup) {
+            continue;
+          }
+
+          if (s_rank >=
+              std::min(_sol_state
+                         .weak_insertion_ranks_end[s_t.first][t_job_rank],
+                       _sol_state.weak_insertion_ranks_end[s_t.first]
+                                                          [t_next_job_rank])) {
+            continue;
+          }
+
+          Index begin_s_rank = 0;
+          const auto begin_t =
+            _sol_state.weak_insertion_ranks_begin[s_t.first][t_job_rank];
+          const auto begin_t_next =
+            _sol_state.weak_insertion_ranks_begin[s_t.first][t_next_job_rank];
+          begin_s_rank = std::max(begin_s_rank, begin_t);
+          begin_s_rank = std::max(begin_s_rank, begin_t_next);
+          begin_s_rank = (begin_s_rank > 1) ? begin_s_rank - 2 : 0;
+          if (s_rank < begin_s_rank) {
             continue;
           }
 
