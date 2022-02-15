@@ -571,8 +571,7 @@ void LocalSearch<Route,
 
           auto end_t_rank =
             std::min(static_cast<Index>(_sol[s_t.second].size() - 1),
-                     _sol_state
-                       .weak_insertion_ranks_end[s_t.second][s_job_rank]);
+                     _sol_state.insertion_ranks_end[s_t.second][s_job_rank]);
 
           for (unsigned t_rank = 0; t_rank < end_t_rank; ++t_rank) {
             if (!_input.vehicle_ok_with_job(s_t.first,
@@ -601,10 +600,9 @@ void LocalSearch<Route,
             }
 
             const auto source_begin =
-              std::min(_sol_state
-                         .weak_insertion_ranks_begin[s_t.first][t_job_rank],
-                       _sol_state.weak_insertion_ranks_begin[s_t.first]
-                                                            [t_next_job_rank]);
+              std::min(_sol_state.insertion_ranks_begin[s_t.first][t_job_rank],
+                       _sol_state
+                         .insertion_ranks_begin[s_t.first][t_next_job_rank]);
             if (source_begin > s_rank + 1) {
               continue;
             }
