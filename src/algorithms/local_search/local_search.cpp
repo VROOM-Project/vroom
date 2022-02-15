@@ -573,7 +573,11 @@ void LocalSearch<Route,
             std::min(static_cast<Index>(_sol[s_t.second].size() - 1),
                      _sol_state.insertion_ranks_end[s_t.second][s_job_rank]);
 
-          for (unsigned t_rank = 0; t_rank < end_t_rank; ++t_rank) {
+          auto begin_t_rank =
+            _sol_state.insertion_ranks_begin[s_t.second][s_job_rank];
+          begin_t_rank = (begin_t_rank > 1) ? begin_t_rank - 2 : 0;
+
+          for (unsigned t_rank = begin_t_rank; t_rank < end_t_rank; ++t_rank) {
             if (!_input.vehicle_ok_with_job(s_t.first,
                                             _sol[s_t.second].route[t_rank]) or
                 !_input
@@ -596,6 +600,13 @@ void LocalSearch<Route,
                t_rank + 1);
 
             if (!both_t_single and !is_t_pickup) {
+              continue;
+            }
+
+            if (s_rank >=
+                std::min(_sol_state.insertion_ranks_end[s_t.first][t_job_rank],
+                         _sol_state
+                           .insertion_ranks_end[s_t.first][t_next_job_rank])) {
               continue;
             }
 
