@@ -118,20 +118,27 @@ public:
   // to job at rank r1 in v1.
   std::vector<std::vector<std::vector<Index>>> cheapest_job_rank_in_routes_to;
 
-  // Store values such that inserting job at rank j in route for
-  // vehicle v strictly before rank insertion_ranks_begin[v][j]
-  // (resp. at rank insertion_ranks_end[v][j] or after) is bound to
-  // fail based on job constraints and earliest/latest dates in route.
+  // insertion_ranks_begin[v][j] is the highest rank in route for
+  // vehicle v such that inserting job at rank j strictly before
+  // insertion_ranks_begin[v][j] is bound to fail based on job
+  // constraints and earliest/latest dates in route.
+  // insertion_ranks_end[v][j] is the lowest rank in route for vehicle
+  // v such that inserting job at rank j at insertion_ranks_end[v][j]
+  // or after is bound to fail based on job constraints and
+  // earliest/latest dates in route.
   std::vector<std::vector<Index>> insertion_ranks_begin;
   std::vector<std::vector<Index>> insertion_ranks_end;
 
-  // Store values such that inserting job at rank j in route for
-  // vehicle v strictly before rank weak_insertion_ranks_begin[v][j]
-  // (resp. at rank weak_insertion_ranks_end[v][j] or after) is bound
-  // to fail based on job constraints and route tasks time
-  // windows. The range restriction is weaker than right above but has
-  // the advantage of remaining valid for use in operators that modify
-  // route for vehicle v.
+  // insertion_ranks_begin[v][j] is the highest rank in route for
+  // vehicle v such that inserting job at rank j strictly before
+  // insertion_ranks_begin[v][j] is bound to fail based on job
+  // constraints and route tasks time windows.
+  // insertion_ranks_end[v][j] is the lowest rank in route for vehicle
+  // v such that inserting job at rank j at insertion_ranks_end[v][j]
+  // or after is bound to fail based on job constraints and route
+  // tasks time windows. The range restriction is weaker than right
+  // above but has the advantage of remaining valid for use in
+  // operators that modify route for vehicle v.
   std::vector<std::vector<Index>> weak_insertion_ranks_begin;
   std::vector<std::vector<Index>> weak_insertion_ranks_end;
 
