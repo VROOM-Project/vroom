@@ -367,7 +367,7 @@ void LocalSearch<Route,
     if (_input.has_jobs()) {
       // Move(s) that don't make sense for shipment-only instances.
 
-      // Unassigned-exchange stuff
+      // UnassignedExchange stuff
       for (const Index u : _sol_state.unassigned) {
         if (_input.jobs[u].type != JOB_TYPE::SINGLE) {
           continue;
@@ -381,6 +381,15 @@ void LocalSearch<Route,
             continue;
           }
 
+          const auto begin_t_rank_candidate =
+            _sol_state.insertion_ranks_begin[s_t.first][u];
+          const auto begin_t_rank_weak_candidate =
+            _sol_state.weak_insertion_ranks_begin[s_t.first][u];
+          const auto end_t_rank_candidate =
+            _sol_state.insertion_ranks_end[s_t.first][u];
+          const auto end_t_rank_weak_candidate =
+            _sol_state.weak_insertion_ranks_end[s_t.first][u];
+
           for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
             const auto& current_job =
               _input.jobs[_sol[s_t.first].route[s_rank]];
@@ -392,7 +401,34 @@ void LocalSearch<Route,
             const Priority priority_gain = u_priority - current_job.priority;
 
             if (best_priorities[s_t.first] <= priority_gain) {
-              for (unsigned t_rank = 0; t_rank <= _sol[s_t.first].size();
+
+              auto begin_t_rank = 0;
+              if (s_rank + 1 != begin_t_rank_weak_candidate) {
+                // Weak constraint is only invalidated when removing
+                // job right before.
+                begin_t_rank = begin_t_rank_weak_candidate;
+              }
+
+              if (s_rank + 1 < begin_t_rank_candidate) {
+                // Strong constraint still holds when removing job at
+                // s_rank.
+                begin_t_rank = begin_t_rank_candidate;
+              }
+
+              Index end_t_rank = _sol[s_t.first].size();
+              if (s_rank + 1 != end_t_rank_weak_candidate) {
+                // Weak constraint is only invalidated when removing
+                // job right before.
+                end_t_rank = std::min(end_t_rank, end_t_rank_weak_candidate);
+              }
+
+              if (end_t_rank_candidate <= s_rank) {
+                // Strong constraint still holds when removing job at
+                // s_rank.
+                end_t_rank = std::min(end_t_rank, end_t_rank_candidate);
+              }
+
+              for (unsigned t_rank = begin_t_rank; t_rank <= end_t_rank;
                    ++t_rank) {
                 if (t_rank == s_rank + 1) {
                   // Same move as with t_rank == s_rank.
