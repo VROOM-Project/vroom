@@ -993,13 +993,12 @@ void LocalSearch<Route,
 
       for (unsigned s_rank = 0; s_rank <= _sol[s_t.first].size() - 4;
            ++s_rank) {
-        const auto& job_s_type =
-          _input.jobs[_sol[s_t.first].route[s_rank]].type;
+        const auto job_s_type = _input.jobs[_sol[s_t.first].route[s_rank]].type;
+        const auto s_next_job_rank = _sol[s_t.first].route[s_rank + 1];
 
         bool both_s_single =
           (job_s_type == JOB_TYPE::SINGLE) and
-          (_input.jobs[_sol[s_t.first].route[s_rank + 1]].type ==
-           JOB_TYPE::SINGLE);
+          (_input.jobs[s_next_job_rank].type == JOB_TYPE::SINGLE);
 
         bool is_s_pickup =
           (job_s_type == JOB_TYPE::PICKUP) and
@@ -1010,7 +1009,6 @@ void LocalSearch<Route,
         }
 
         Index end_t_rank = _sol[s_t.first].size() - 1;
-        const auto s_next_job_rank = _sol[s_t.first].route[s_rank + 1];
         const auto end_s_next =
           _sol_state.weak_insertion_ranks_end[s_t.first][s_next_job_rank];
         assert(end_s_next > 1);
@@ -1083,6 +1081,8 @@ void LocalSearch<Route,
           _sol_state.weak_insertion_ranks_end[s_t.first][s_job_rank];
         if (end_s > 1) {
           end_t_rank = std::min(end_t_rank, static_cast<Index>(end_s - 2));
+        } else {
+          end_t_rank = std::min(end_t_rank, end_s);
         }
 
         for (unsigned t_rank = 0; t_rank < end_t_rank; ++t_rank) {
