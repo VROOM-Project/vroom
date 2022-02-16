@@ -106,6 +106,7 @@ LocalSearch<Route,
 
 template <class Route>
 RouteInsertion compute_best_insertion(const Input& input,
+                                      const utils::SolutionState& sol_state,
                                       const Index j,
                                       Index v,
                                       const Route& route) {
@@ -117,6 +118,7 @@ RouteInsertion compute_best_insertion(const Input& input,
     return compute_best_insertion_single(input, j, v, route);
   } else {
     auto insert = compute_best_insertion_pd(input,
+                                            sol_state,
                                             j,
                                             v,
                                             route,
@@ -179,7 +181,7 @@ void LocalSearch<Route,
         continue;
       }
       route_job_insertions[i][j] =
-        compute_best_insertion(_input, j, v, _sol[v]);
+        compute_best_insertion(_input, _sol_state, j, v, _sol[v]);
     }
   }
 
@@ -287,7 +289,11 @@ void LocalSearch<Route,
           continue;
         }
         route_job_insertions[best_route_idx][j] =
-          compute_best_insertion(_input, j, best_route, _sol[best_route]);
+          compute_best_insertion(_input,
+                                 _sol_state,
+                                 j,
+                                 best_route,
+                                 _sol[best_route]);
       }
 #ifndef NDEBUG
       // Update cost after addition.
@@ -1312,7 +1318,7 @@ void LocalSearch<Route,
     if (_input.has_shipments()) {
       // Move(s) that don't make sense for job-only instances.
 
-      // P&D relocate stuff
+      // PDShift stuff
       for (const auto& s_t : s_t_pairs) {
         if (s_t.first == s_t.second or best_priorities[s_t.first] > 0 or
             best_priorities[s_t.second] > 0 or _sol[s_t.first].size() == 0) {

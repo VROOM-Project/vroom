@@ -8,9 +8,8 @@ All rights reserved (see LICENSE).
 */
 
 #include "problems/vrptw/operators/pd_shift.h"
-#include "utils/helpers.h"
-
 #include "algorithms/local_search/insertion_search.h"
+#include "utils/helpers.h"
 
 namespace vroom {
 namespace vrptw {
@@ -53,6 +52,7 @@ void PDShift::compute_gain() {
 
   ls::RouteInsertion rs =
     ls::compute_best_insertion_pd(_input,
+                                  _sol_state,
                                   s_route[_s_p_rank],
                                   t_vehicle,
                                   _tw_t_route,

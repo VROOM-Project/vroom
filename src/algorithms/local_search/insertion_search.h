@@ -2,6 +2,7 @@
 #define INSERTION_SEARCH_H
 
 #include "structures/typedefs.h"
+#include "structures/vroom/solution_state.h"
 #include "utils/helpers.h"
 
 namespace vroom {
@@ -71,6 +72,7 @@ bool valid_for_capacity(const Input& input,
 
 template <class Route>
 RouteInsertion compute_best_insertion_pd(const Input& input,
+                                         const utils::SolutionState& sol_state,
                                          const Index j,
                                          Index v,
                                          const Route& route,
