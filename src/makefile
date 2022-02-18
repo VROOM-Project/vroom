@@ -7,7 +7,7 @@
 CXX ?= g++
 USE_ROUTING ?= true
 CXXFLAGS = -MMD -MP -I. -std=c++17 -Wextra -Wpedantic -Wall -O3 -DASIO_STANDALONE -DUSE_ROUTING=$(USE_ROUTING)
-LDLIBS = -lpthread -lssl -lcrypto
+LDLIBS = -lpthread
 
 # Using all cpp files in current directory.
 MAIN = ../bin/vroom
@@ -29,6 +29,8 @@ SRC = $(wildcard *.cpp)\
 # Remove routing if we don't require it
 ifeq ($(USE_ROUTING),false)
 	SRC := $(filter-out $(wildcard ./routing/*.cpp), $(SRC))
+else
+	LDLIBS += -lssl -lcrypto
 endif
 
 # Checking for libosrm
