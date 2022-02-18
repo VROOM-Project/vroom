@@ -5,7 +5,8 @@
 
 # Variables.
 CXX ?= g++
-CXXFLAGS = -MMD -MP -I. -std=c++17 -Wextra -Wpedantic -Wall -O3 -DASIO_STANDALONE
+USE_ROUTING ?= true
+CXXFLAGS = -MMD -MP -I. -std=c++17 -Wextra -Wpedantic -Wall -O3 -DASIO_STANDALONE -DUSE_ROUTING=$(USE_ROUTING)
 LDLIBS = -lpthread -lssl -lcrypto
 
 # Using all cpp files in current directory.
@@ -24,6 +25,11 @@ SRC = $(wildcard *.cpp)\
 			$(wildcard ./structures/vroom/solution/*.cpp)\
 			$(wildcard ./structures/*.cpp)\
 			$(wildcard ./utils/*.cpp)
+
+# Remove routing if we don't require it
+ifeq ($(USE_ROUTING),false)
+	SRC := $(filter-out $(wildcard ./routing/*.cpp), $(SRC))
+endif
 
 # Checking for libosrm
 ifeq ($(shell pkg-config --exists libosrm && echo 1),1)

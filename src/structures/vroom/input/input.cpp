@@ -17,12 +17,14 @@ All rights reserved (see LICENSE).
 #include "algorithms/validation/check.h"
 #include "problems/cvrp/cvrp.h"
 #include "problems/vrptw/vrptw.h"
+#if USE_ROUTING
 #if USE_LIBOSRM
 #include "routing/libosrm_wrapper.h"
 #endif
 #include "routing/ors_wrapper.h"
 #include "routing/osrm_routed_wrapper.h"
 #include "routing/valhalla_wrapper.h"
+#endif
 #include "structures/vroom/input/input.h"
 #include "utils/helpers.h"
 
@@ -57,6 +59,7 @@ void Input::set_geometry(bool geometry) {
   _geometry = geometry;
 }
 
+#if USE_ROUTING
 void Input::add_routing_wrapper(const std::string& profile) {
   assert(std::find_if(_routing_wrappers.begin(),
                       _routing_wrappers.end(),
@@ -108,6 +111,7 @@ void Input::add_routing_wrapper(const std::string& profile) {
   } break;
   }
 }
+#endif
 
 void Input::check_job(Job& job) {
   // Ensure delivery size consistency.
@@ -645,6 +649,7 @@ void Input::set_matrices(unsigned nb_thread) {
   for (const auto& profile : _profiles) {
     thread_profiles[t_rank % nb_buckets].push_back(profile);
     ++t_rank;
+    #if USE_ROUTING
     if (_durations_matrices.find(profile) == _durations_matrices.end()) {
       // Durations matrix has not been manually set, create routing
       // wrapper and empty matrix to allow for concurrent modification
@@ -658,6 +663,7 @@ void Input::set_matrices(unsigned nb_thread) {
         add_routing_wrapper(profile);
       }
     }
+    #endif
   }
 
   std::exception_ptr ep = nullptr;
