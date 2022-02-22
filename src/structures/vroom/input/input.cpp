@@ -17,14 +17,12 @@ All rights reserved (see LICENSE).
 #include "algorithms/validation/check.h"
 #include "problems/cvrp/cvrp.h"
 #include "problems/vrptw/vrptw.h"
-#if USE_ROUTING
 #if USE_LIBOSRM
 #include "routing/libosrm_wrapper.h"
 #endif
 #include "routing/ors_wrapper.h"
 #include "routing/osrm_routed_wrapper.h"
 #include "routing/valhalla_wrapper.h"
-#endif
 #include "structures/vroom/input/input.h"
 #include "utils/helpers.h"
 
@@ -59,8 +57,11 @@ void Input::set_geometry(bool geometry) {
   _geometry = geometry;
 }
 
-#if USE_ROUTING
 void Input::add_routing_wrapper(const std::string& profile) {
+  #if !USE_ROUTING
+    throw RoutingException("VROOM compiled without routing support.");
+  #endif
+
   assert(std::find_if(_routing_wrappers.begin(),
                       _routing_wrappers.end(),
                       [&](const auto& wr) { return wr->profile == profile; }) ==
@@ -111,7 +112,6 @@ void Input::add_routing_wrapper(const std::string& profile) {
   } break;
   }
 }
-#endif
 
 void Input::check_job(Job& job) {
   // Ensure delivery size consistency.
@@ -653,21 +653,13 @@ void Input::set_matrices(unsigned nb_thread) {
       // Durations matrix has not been manually set, create routing
       // wrapper and empty matrix to allow for concurrent modification
       // later on.
-      #if USE_ROUTING
       add_routing_wrapper(profile);
       _durations_matrices.emplace(profile, Matrix<Duration>());
-      #else
-        throw RoutingException("VROOM compiled without routing support."); 
-      #endif
     } else {
       if (_geometry) {
         // Even with a custom matrix, we still want routing after
         // optimization.
-        #if USE_ROUTING
         add_routing_wrapper(profile);
-        #else
-          throw RoutingException("VROOM compiled without routing support."); 
-        #endif
       }
     }
   }

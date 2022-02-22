@@ -77,9 +77,7 @@ private:
   void set_vehicle_steps_ranks();
   void set_matrices(unsigned nb_thread);
 
-  #if USE_ROUTING
   void add_routing_wrapper(const std::string& profile);
-  #endif
 
 public:
   std::vector<Job> jobs;
