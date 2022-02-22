@@ -58,9 +58,9 @@ void Input::set_geometry(bool geometry) {
 }
 
 void Input::add_routing_wrapper(const std::string& profile) {
-  #if !USE_ROUTING
-    throw RoutingException("VROOM compiled without routing support.");
-  #endif
+#if !USE_ROUTING
+  throw RoutingException("VROOM compiled without routing support.");
+#endif
 
   assert(std::find_if(_routing_wrappers.begin(),
                       _routing_wrappers.end(),
