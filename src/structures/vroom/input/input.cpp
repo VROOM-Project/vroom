@@ -649,21 +649,27 @@ void Input::set_matrices(unsigned nb_thread) {
   for (const auto& profile : _profiles) {
     thread_profiles[t_rank % nb_buckets].push_back(profile);
     ++t_rank;
-    #if USE_ROUTING
     if (_durations_matrices.find(profile) == _durations_matrices.end()) {
       // Durations matrix has not been manually set, create routing
       // wrapper and empty matrix to allow for concurrent modification
       // later on.
+      #if USE_ROUTING
       add_routing_wrapper(profile);
       _durations_matrices.emplace(profile, Matrix<Duration>());
+      #else
+        throw RoutingException("VROOM compiled without routing support."); 
+      #endif
     } else {
       if (_geometry) {
         // Even with a custom matrix, we still want routing after
         // optimization.
+        #if USE_ROUTING
         add_routing_wrapper(profile);
+        #else
+          throw RoutingException("VROOM compiled without routing support."); 
+        #endif
       }
     }
-    #endif
   }
 
   std::exception_ptr ep = nullptr;
