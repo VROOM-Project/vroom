@@ -273,11 +273,11 @@
 - Support for user-defined matrices (#47)
 - New flag `-x` to set the trade-off between computing time and exploration depth (#131)
 - Provide ETA at step level in the routes, using optional service time for each job (#101, #103)
-- Experimental\* support to use `vroom` directly from C++ as a library (#42)
+- Experimental* support to use `vroom` directly from C++ as a library (#42)
 - Automatic code formatting script based on `clang-format` (#66)
 - PR template
 
-\*: read "functional with no C++ API stability guarantee"
+*: read "functional with no C++ API stability guarantee"
 
 ### Changed
 
@@ -322,7 +322,7 @@
 
 ### Added
 
-- Support for OSRM v5.\*
+- Support for OSRM v5.*
 - Dedicated folder for API documentation
 
 ### Changed
@@ -332,7 +332,7 @@
 
 ### Removed
 
-- Drop support for OSRM v4.\*
+- Drop support for OSRM v4.*
 - Flags `-s` and `-e` (see new API)
 
 ### Fixed
@@ -363,7 +363,7 @@
 - New local search operator to improve results in specific asymmetric
   context (e.g. many locations in a dense urban area with lots of
   one-way streets).
-- OSRM v4.9.\* compatibility.
+- OSRM v4.9.* compatibility.
 - Use rapidjson for json i/o (#19)
 - Append the `tour` key to the solution in any case.
 
@@ -422,3 +422,4 @@
   solution and execution details.
 - Optional ready-to-use detailed route.
 - Optional use of euclidean distance for matrix computation.
+
