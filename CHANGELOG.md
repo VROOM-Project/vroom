@@ -9,6 +9,7 @@
 - Shared target to makefile, for creating Position Independent Code (#617)
 - Exposing some internals for Python through compile flags (#640)
 - Stats on local search operators use for dev/debug purposes (#658)
+- Project can be compiled without routing support to limit dependencies (#676)
 
 ### Changed
 
