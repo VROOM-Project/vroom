@@ -89,14 +89,16 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
 
   // Pre-compute cost of addition for matching delivery.
   std::vector<Gain> d_adds(route.size() + 1);
-  std::vector<unsigned char> valid_delivery_insertions(route.size() + 1);
+  std::vector<unsigned char> valid_delivery_insertions(route.size() + 1, false);
+
+  const auto begin_d_rank = sol_state.insertion_ranks_begin[v][j + 1];
+  const auto end_d_rank = sol_state.insertion_ranks_end[v][j + 1];
 
   bool found_valid = false;
-  for (unsigned d_rank = 0; d_rank <= route.size(); ++d_rank) {
+  for (unsigned d_rank = begin_d_rank; d_rank < end_d_rank; ++d_rank) {
     d_adds[d_rank] =
       utils::addition_cost(input, j + 1, v_target, route.route, d_rank);
     if (d_adds[d_rank] > result.cost) {
-
       valid_delivery_insertions[d_rank] = false;
     } else {
       valid_delivery_insertions[d_rank] =
@@ -110,7 +112,9 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
     return result;
   }
 
-  for (Index pickup_r = 0; pickup_r <= route.size(); ++pickup_r) {
+  for (Index pickup_r = sol_state.insertion_ranks_begin[v][j];
+       pickup_r < sol_state.insertion_ranks_end[v][j];
+       ++pickup_r) {
     Gain p_add =
       utils::addition_cost(input, j, v_target, route.route, pickup_r);
     if (p_add > result.cost) {
@@ -128,8 +132,9 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
     // Build replacement sequence for current insertion.
     std::vector<Index> modified_with_pd({j});
 
-    for (Index delivery_r = pickup_r; delivery_r <= route.size();
-         ++delivery_r) {
+    // No need to use begin_d_rank here thanks to
+    // valid_delivery_insertions values.
+    for (Index delivery_r = pickup_r; delivery_r < end_d_rank; ++delivery_r) {
       // Update state variables along the way before potential
       // early abort.
       if (pickup_r < delivery_r) {

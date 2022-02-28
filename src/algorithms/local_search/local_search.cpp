@@ -283,6 +283,8 @@ void LocalSearch<Route,
         _sol_state.unassigned.erase(best_job_rank + 1);
       }
       // Update route/job insertions for best_route
+      _sol_state.set_insertion_ranks(_sol[best_route], best_route);
+
       for (const auto j : _sol_state.unassigned) {
         const auto& current_job = _input.jobs[j];
         if (current_job.type == JOB_TYPE::DELIVERY) {
@@ -1669,6 +1671,11 @@ void LocalSearch<Route,
           _sol_state.set_pd_matching_ranks(_sol[v].route, v);
           _sol_state.set_pd_gains(_sol[v].route, v);
         }
+      }
+
+      // Update insertion ranks ranges.
+      for (std::size_t v = 0; v < _sol.size(); ++v) {
+        _sol_state.set_insertion_ranks(_sol[v], v);
       }
 
       // Refill jobs.
