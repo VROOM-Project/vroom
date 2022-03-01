@@ -20,17 +20,21 @@ constexpr RouteInsertion empty_insert = {std::numeric_limits<Gain>::max(),
                                          0};
 
 template <class Route>
-RouteInsertion compute_best_insertion_single(const Input& input,
-                                             const Index j,
-                                             Index v,
-                                             const Route& route) {
+RouteInsertion
+compute_best_insertion_single(const Input& input,
+                              const utils::SolutionState& sol_state,
+                              const Index j,
+                              Index v,
+                              const Route& route) {
   RouteInsertion result = empty_insert;
   const auto& current_job = input.jobs[j];
   const auto& v_target = input.vehicles[v];
 
   if (input.vehicle_ok_with_job(v, j)) {
 
-    for (Index rank = 0; rank <= route.size(); ++rank) {
+    for (Index rank = sol_state.insertion_ranks_begin[v][j];
+         rank < sol_state.insertion_ranks_end[v][j];
+         ++rank) {
       Gain current_cost =
         utils::addition_cost(input, j, v_target, route.route, rank);
       if (current_cost < result.cost and

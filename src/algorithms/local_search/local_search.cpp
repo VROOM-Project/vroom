@@ -115,7 +115,7 @@ RouteInsertion compute_best_insertion(const Input& input,
          current_job.type == JOB_TYPE::SINGLE);
 
   if (current_job.type == JOB_TYPE::SINGLE) {
-    return compute_best_insertion_single(input, j, v, route);
+    return compute_best_insertion_single(input, sol_state, j, v, route);
   } else {
     auto insert = compute_best_insertion_pd(input,
                                             sol_state,
@@ -282,6 +282,7 @@ void LocalSearch<Route,
                _sol_state.unassigned.end());
         _sol_state.unassigned.erase(best_job_rank + 1);
       }
+
       // Update route/job insertions for best_route
       _sol_state.set_insertion_ranks(_sol[best_route], best_route);
 
@@ -1511,6 +1512,10 @@ void LocalSearch<Route,
       assert(new_cost + best_gain == previous_cost);
 #endif
 
+      for (auto v_rank : update_candidates) {
+        _sol_state.set_insertion_ranks(_sol[v_rank], v_rank);
+      }
+
       try_job_additions(best_ops[best_source][best_target]
                           ->addition_candidates(),
                         0);
@@ -1520,8 +1525,6 @@ void LocalSearch<Route,
         _sol_state.update_costs(_sol[v_rank].route, v_rank);
 
         _sol_state.update_skills(_sol[v_rank].route, v_rank);
-
-        _sol_state.set_insertion_ranks(_sol[v_rank], v_rank);
 
         _sol_state.set_node_gains(_sol[v_rank].route, v_rank);
         _sol_state.set_edge_gains(_sol[v_rank].route, v_rank);
