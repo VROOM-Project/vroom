@@ -10,8 +10,6 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <set>
-
 #include "structures/typedefs.h"
 #include "structures/vroom/input/input.h"
 #include "structures/vroom/solution_state.h"
@@ -196,8 +194,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
                                    source.route,
                                    s_rank);
 
-      auto swap_choice_options =
-        std::set<SwapChoice, decltype(SwapChoiceCmp)>(SwapChoiceCmp);
+      std::vector<SwapChoice> swap_choice_options;
 
       // Options for in-place insertion in source route include
       // in-place insertion in target route and other relevant
@@ -210,7 +207,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
       Gain current_gain =
         in_place_target_insertion_gain + in_place_source_insertion_gain;
       if (current_gain > best_gain) {
-        swap_choice_options.insert(
+        swap_choice_options.push_back(
           {current_gain, s_rank, t_rank, s_rank, t_rank});
       }
 
@@ -220,7 +217,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
           const Gain t_gain = source_delta - ti.cost;
           current_gain = in_place_source_insertion_gain + t_gain;
           if (current_gain > best_gain) {
-            swap_choice_options.insert(
+            swap_choice_options.push_back(
               {current_gain, s_rank, t_rank, s_rank, ti.rank});
           }
         }
@@ -237,7 +234,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
 
           current_gain = s_gain + in_place_target_insertion_gain;
           if (current_gain > best_gain) {
-            swap_choice_options.insert(
+            swap_choice_options.push_back(
               {current_gain, s_rank, t_rank, si.rank, t_rank});
           }
 
@@ -247,13 +244,17 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
               const Gain t_gain = source_delta - ti.cost;
               current_gain = s_gain + t_gain;
               if (current_gain > best_gain) {
-                swap_choice_options.insert(
+                swap_choice_options.push_back(
                   {current_gain, s_rank, t_rank, si.rank, ti.rank});
               }
             }
           }
         }
       }
+
+      std::sort(swap_choice_options.begin(),
+                swap_choice_options.end(),
+                SwapChoiceCmp);
 
       assert(swap_choice_options.size() <= 16);
 

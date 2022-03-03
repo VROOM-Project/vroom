@@ -16,6 +16,7 @@
 - CI builds now run against `libosrm` v5.26.0 (#651)
 - Reduce computing time on PDPTW benchmarks by around 20% (#559)
 - Change Input and parser signature to simplify downstream usage (#665)
+- Consider move options in SWAP* that were previously wrongly discarded (#682)
 
 ### Fixed
 
