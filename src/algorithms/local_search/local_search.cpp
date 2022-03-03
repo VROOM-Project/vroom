@@ -1421,7 +1421,7 @@ void LocalSearch<Route,
     }
 
     if (_input.has_jobs()) {
-      // Swap* stuff
+      // SwapStar stuff
       for (const auto& s_t : s_t_pairs) {
         if (s_t.second <= s_t.first or // This operator is symmetric.
             best_priorities[s_t.first] > 0 or best_priorities[s_t.second] > 0 or

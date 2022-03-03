@@ -39,7 +39,9 @@ SwapStar::SwapStar(const Input& input,
 void SwapStar::compute_gain() {
   choice = ls::compute_best_swap_star_choice(_input,
                                              _sol_state,
+                                             s_vehicle,
                                              source,
+                                             t_vehicle,
                                              target,
                                              _best_known_gain);
   if (choice.gain > 0) {
