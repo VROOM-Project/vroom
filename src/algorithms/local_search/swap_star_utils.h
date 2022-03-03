@@ -101,6 +101,20 @@ bool valid_choice_for_insertion_ranks(const utils::SolutionState& sol_state,
               sc.insertion_in_source <
                 sol_state.insertion_ranks_end[s_vehicle][target_job_rank]);
 
+  // If t_rank is strictly lower than insertion_in_target, then strong
+  // insertion rank begin is still valid when removing in target.
+  valid =
+    valid && (sc.t_rank >= sc.insertion_in_target or
+              sol_state.insertion_ranks_begin[t_vehicle][source_job_rank] <=
+                sc.insertion_in_target);
+
+  // If s_rank is strictly lower than insertion_in_source, then strong
+  // insertion rank begin is still valid when removing in source.
+  valid =
+    valid && (sc.s_rank >= sc.insertion_in_source or
+              sol_state.insertion_ranks_begin[s_vehicle][target_job_rank] <=
+                sc.insertion_in_source);
+
   return valid;
 }
 
@@ -242,7 +256,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
                                              t_vehicle,
                                              target,
                                              sc)) {
-          swap_choice_options.push_back(sc);
+          swap_choice_options.push_back(std::move(sc));
         }
       }
 
@@ -259,7 +273,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
                                                  t_vehicle,
                                                  target,
                                                  sc)) {
-              swap_choice_options.push_back(sc);
+              swap_choice_options.push_back(std::move(sc));
             }
           }
         }
@@ -283,7 +297,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
                                                  t_vehicle,
                                                  target,
                                                  sc)) {
-              swap_choice_options.push_back(sc);
+              swap_choice_options.push_back(std::move(sc));
             }
           }
 
@@ -300,7 +314,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
                                                      t_vehicle,
                                                      target,
                                                      sc)) {
-                  swap_choice_options.push_back(sc);
+                  swap_choice_options.push_back(std::move(sc));
                 }
               }
             }
