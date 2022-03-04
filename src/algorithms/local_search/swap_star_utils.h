@@ -88,11 +88,46 @@ bool valid_choice_for_insertion_ranks(const utils::SolutionState& sol_state,
   const auto source_job_rank = source.route[sc.s_rank];
   const auto target_job_rank = target.route[sc.t_rank];
 
+  // Weak insertion rank begin in target route is still valid except
+  // if we remove precisely the job in target that triggered this
+  // value.
+  bool valid =
+    sol_state.weak_insertion_ranks_begin[t_vehicle][source_job_rank] ==
+      sc.t_rank + 1 or
+    sol_state.weak_insertion_ranks_begin[t_vehicle][source_job_rank] <=
+      sc.insertion_in_target;
+
+  // Weak insertion rank end in target route is still valid except if
+  // we remove precisely the job in target that triggered this value.
+  valid =
+    valid && (sol_state.weak_insertion_ranks_end[t_vehicle][source_job_rank] ==
+                sc.t_rank + 1 or
+              sc.insertion_in_target <
+                sol_state.weak_insertion_ranks_end[t_vehicle][source_job_rank]);
+
+  // Weak insertion rank begin in source route is still valid except
+  // if we remove precisely the job in source that triggered this
+  // value.
+  valid = valid &&
+          (sol_state.weak_insertion_ranks_begin[s_vehicle][target_job_rank] ==
+             sc.s_rank + 1 or
+           sol_state.weak_insertion_ranks_begin[s_vehicle][target_job_rank] <=
+             sc.insertion_in_source);
+
+  // Weak insertion rank end in source route is still valid except if
+  // we remove precisely the job in source that triggered this value.
+  valid =
+    valid && (sol_state.weak_insertion_ranks_end[s_vehicle][target_job_rank] ==
+                sc.s_rank + 1 or
+              sc.insertion_in_source <
+                sol_state.weak_insertion_ranks_end[s_vehicle][target_job_rank]);
+
   // If t_rank is greater or equal to insertion_in_target, then strong
   // insertion rank end is still valid when removing in target.
-  bool valid = sc.t_rank < sc.insertion_in_target or
-               sc.insertion_in_target <
-                 sol_state.insertion_ranks_end[t_vehicle][source_job_rank];
+  valid =
+    valid && (sc.t_rank < sc.insertion_in_target or
+              sc.insertion_in_target <
+                sol_state.insertion_ranks_end[t_vehicle][source_job_rank]);
 
   // If s_rank is greater or equal to insertion_in_source, then strong
   // insertion rank end is still valid when removing in source.
