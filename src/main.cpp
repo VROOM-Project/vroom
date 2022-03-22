@@ -15,8 +15,6 @@ All rights reserved (see LICENSE).
 #include "osrm/exception.hpp"
 #endif
 
-// so we don't split heuristic param by comma
-#define CXXOPTS_VECTOR_DELIMITER ';'
 #include "../include/cxxopts/include/cxxopts.hpp"
 
 #include "problems/vrp.h"
@@ -29,8 +27,8 @@ All rights reserved (see LICENSE).
 
 int main(int argc, char** argv) {
   vroom::io::CLArgs cl_args;
-  std::string host_arg;
-  std::string port_arg;
+  std::vector<std::string> host_args;
+  std::vector<std::string> port_args;
   std::string router_arg;
   std::string limit_arg;
   std::vector<std::string> heuristic_params_arg;
@@ -49,7 +47,7 @@ int main(int argc, char** argv) {
     ("h,help", "Print this help message.")
     ("v,version", "Print the version of this software.")
     ("a,host", "The host for the routing profile, e.g. '" + vroom::DEFAULT_PROFILE + ":0.0.0.0'",
-      cxxopts::value<std::string>(host_arg)->default_value(vroom::DEFAULT_PROFILE + ":0.0.0.0"))
+      cxxopts::value<std::vector<std::string>>(host_args)->default_value({vroom::DEFAULT_PROFILE + ":0.0.0.0"}))
     ("c,choose-eta", "Choose ETA for custom routes and report violations.",
       cxxopts::value<bool>(cl_args.check)->default_value("false"))
     ("g,geometry", "Add detailed route geometry and indicators",
@@ -60,7 +58,7 @@ int main(int argc, char** argv) {
       cxxopts::value<std::string>(limit_arg))
     ("o,output", "Output file name", cxxopts::value<std::string>(cl_args.output_file))
     ("p,port", "The host port for the routing profile, e.g. '" + vroom::DEFAULT_PROFILE + ":5000'",
-      cxxopts::value<std::string>(port_arg)->default_value(vroom::DEFAULT_PROFILE + ":5000"))
+      cxxopts::value<std::vector<std::string>>(port_args)->default_value({vroom::DEFAULT_PROFILE + ":5000"}))
     ("r,router", "osrm, libosrm, ors or valhalla",
       cxxopts::value<std::string>(router_arg)->default_value("osrm"))
     ("t,threads", "Number of threads to use",
@@ -108,8 +106,12 @@ int main(int argc, char** argv) {
   }
 
   // parse and update some params
-  vroom::io::update_host(cl_args.servers, host_arg);
-  vroom::io::update_port(cl_args.servers, port_arg);
+  for (const auto& host : host_args) {
+    vroom::io::update_host(cl_args.servers, host);
+  }
+  for (const auto& port : port_args) {
+    vroom::io::update_port(cl_args.servers, port);  
+  }
   cl_args.exploration_level =
     std::min(cl_args.exploration_level, cl_args.max_exploration_level);
 
