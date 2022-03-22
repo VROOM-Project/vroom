@@ -15,6 +15,8 @@ All rights reserved (see LICENSE).
 #include "osrm/exception.hpp"
 #endif
 
+// so we don't split heuristic param by comma
+#define CXXOPTS_VECTOR_DELIMITER ';'
 #include "../include/cxxopts/include/cxxopts.hpp"
 
 #include "problems/vrp.h"
