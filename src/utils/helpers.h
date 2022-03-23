@@ -108,7 +108,7 @@ inline void log_LS_operators(
 
 inline HeuristicParameters str_to_heuristic_param(const std::string& s) {
   // Split command-line string describing parameters.
-  constexpr char delimiter = ',';
+  constexpr char delimiter = ';';
   std::vector<std::string> tokens;
   std::string token;
   std::istringstream tokenStream(s);
