@@ -45,40 +45,40 @@ int main(int argc, char** argv) {
   options
     .set_width(80)
     .set_tab_expansion()
-    .add_options("main_group")
-    ("h,help", "Print this help message.")
-    ("v,version", "Print the version of this software.")
+    .add_options("Solving")
     ("a,host",
-     "The host for the routing profile, e.g. '" + vroom::DEFAULT_PROFILE + ":0.0.0.0'",
+     "host for the routing profile",
      cxxopts::value<std::vector<std::string>>(host_args)->default_value({vroom::DEFAULT_PROFILE + ":0.0.0.0"}))
     ("c,choose-eta",
-     "Choose ETA for custom routes and report violations.",
+     "choose ETA for custom routes and report violations",
      cxxopts::value<bool>(cl_args.check)->default_value("false"))
     ("g,geometry",
-     "Add detailed route geometry and indicators",
+     "add detailed route geometry and distance",
      cxxopts::value<bool>(cl_args.geometry)->default_value("false"))
-    ("i,input-file",
-     "Read input from 'input-file' rather than from stdin",
+    ("h,help", "display this help and exit")
+    ("i,input",
+     "read input from a file rather than from stdin",
      cxxopts::value<std::string>(cl_args.input_file))
     ("l,limit",
-     "Stop solving process after 'limit' seconds.",
+     "stop solving process after 'limit' seconds",
      cxxopts::value<std::string>(limit_arg))
     ("o,output",
-     "Output file name",
+     "write output to a file rather than stdout",
      cxxopts::value<std::string>(cl_args.output_file))
     ("p,port",
-     "The host port for the routing profile, e.g. '" + vroom::DEFAULT_PROFILE + ":5000'",
+     "host port for the routing profile",
      cxxopts::value<std::vector<std::string>>(port_args)->default_value({vroom::DEFAULT_PROFILE + ":5000"}))
     ("r,router",
      "osrm, libosrm, ors or valhalla",
      cxxopts::value<std::string>(router_arg)->default_value("osrm"))
     ("t,threads",
-     "Number of threads to use",
+     "number of available threads",
      cxxopts::value<unsigned>(cl_args.nb_threads)->default_value("4"))
+    ("v,version", "output version information and exit")
     ("x,explore",
-     "Exploration level to use (0..5)",
+     "exploration level to use (0..5)",
      cxxopts::value<unsigned>(cl_args.exploration_level)->default_value("5"))
-    ("input",
+    ("stdin",
      "optional input positional arg",
      cxxopts::value<std::string>(cl_args.input));
 
@@ -90,7 +90,7 @@ int main(int argc, char** argv) {
                                        cxxopts::value<std::vector<std::string>>(
                                          heuristic_params_arg));
 
-    options.parse_positional({"input"});
+    options.parse_positional({"stdin"});
     options.positional_help("OPTIONAL INLINE JSON");
     auto parsed_args = options.parse(argc, argv);
 
@@ -105,7 +105,7 @@ int main(int argc, char** argv) {
     }
 
     if (parsed_args.count("help")) {
-      std::cout << options.help({"main_group"}) << "\n";
+      std::cout << options.help({"Solving"}) << "\n";
       exit(0);
     }
 
