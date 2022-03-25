@@ -5,7 +5,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2021, Julien Coupey.
+Copyright (c) 2015-2022, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -42,6 +42,11 @@ public:
   T* get_data() {
     return data.data();
   }
+#if USE_PYTHON_BINDINGS
+  T* get_data() {
+    return data.data();
+  };
+#endif
 };
 
 } // namespace vroom

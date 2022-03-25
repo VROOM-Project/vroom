@@ -5,7 +5,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2021, Julien Coupey.
+Copyright (c) 2015-2022, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -71,9 +71,6 @@ struct Server {
   }
 };
 
-// Specific error statuses used when handling exceptions.
-enum class ERROR { INTERNAL, INPUT, ROUTING };
-
 // 'Single' job is a regular one-stop job without precedence
 // constraints.
 enum class JOB_TYPE { SINGLE, PICKUP, DELIVERY };
@@ -113,6 +110,41 @@ enum class VIOLATION {
   PRECEDENCE,
   MISSING_BREAK
 };
+
+enum OperatorName {
+  UnassignedExchange,
+  SwapStar,
+  CrossExchange,
+  MixedExchange,
+  TwoOpt,
+  ReverseTwoOpt,
+  Relocate,
+  OrOpt,
+  IntraExchange,
+  IntraCrossExchange,
+  IntraMixedExchange,
+  IntraRelocate,
+  IntraOrOpt,
+  PDShift,
+  RouteExchange,
+  MAX
+};
+
+#ifdef LOG_LS_OPERATORS
+namespace ls {
+struct OperatorStats {
+  unsigned tried_moves;
+  unsigned applied_moves;
+
+  OperatorStats() : tried_moves(0), applied_moves(0) {
+  }
+
+  OperatorStats(const unsigned tried_moves, const unsigned applied_moves)
+    : tried_moves(tried_moves), applied_moves(applied_moves) {
+  }
+};
+} // namespace ls
+#endif
 
 } // namespace vroom
 

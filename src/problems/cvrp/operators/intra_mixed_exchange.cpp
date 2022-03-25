@@ -2,7 +2,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2021, Julien Coupey.
+Copyright (c) 2015-2022, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -19,7 +19,8 @@ IntraMixedExchange::IntraMixedExchange(const Input& input,
                                        Index s_rank,
                                        Index t_rank,
                                        bool check_t_reverse)
-  : Operator(input,
+  : Operator(OperatorName::IntraMixedExchange,
+             input,
              sol_state,
              s_raw_route,
              s_vehicle,

@@ -5,7 +5,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2021, Julien Coupey.
+Copyright (c) 2015-2022, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -16,9 +16,7 @@ All rights reserved (see LICENSE).
 namespace vroom {
 namespace io {
 
-struct CLArgs;
-
-Input parse(const CLArgs& cl_args);
+void parse(Input& input, const std::string& input_str, bool geometry);
 
 } // namespace io
 } // namespace vroom

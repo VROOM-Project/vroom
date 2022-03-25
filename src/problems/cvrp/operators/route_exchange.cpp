@@ -2,7 +2,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2021, Julien Coupey.
+Copyright (c) 2015-2022, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -18,7 +18,8 @@ RouteExchange::RouteExchange(const Input& input,
                              Index s_vehicle,
                              RawRoute& t_route,
                              Index t_vehicle)
-  : Operator(input,
+  : Operator(OperatorName::RouteExchange,
+             input,
              sol_state,
              s_route,
              s_vehicle,

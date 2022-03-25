@@ -2,7 +2,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2021, Julien Coupey.
+Copyright (c) 2015-2022, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -18,7 +18,8 @@ IntraExchange::IntraExchange(const Input& input,
                              Index s_vehicle,
                              Index s_rank,
                              Index t_rank)
-  : Operator(input,
+  : Operator(OperatorName::IntraExchange,
+             input,
              sol_state,
              s_raw_route,
              s_vehicle,

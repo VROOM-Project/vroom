@@ -2,7 +2,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2021, Julien Coupey.
+Copyright (c) 2015-2022, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -219,9 +219,8 @@ Route choose_ETA(const Input& input,
     if (latest_date != std::numeric_limits<Duration>::max()) {
       const auto reach_time = relative_ETA[s];
       if (latest_date < reach_time) {
-        throw Exception(ERROR::INPUT,
-                        "Infeasible route for vehicle " + std::to_string(v.id) +
-                          ".");
+        throw InputException("Infeasible route for vehicle " +
+                             std::to_string(v.id) + ".");
       }
       start_candidate = std::min(start_candidate, latest_date - reach_time);
     }
@@ -263,9 +262,8 @@ Route choose_ETA(const Input& input,
         std::max(earliest_date, step.forced_service.after.value());
     }
     if (earliest_date > latest_dates[s]) {
-      throw Exception(ERROR::INPUT,
-                      "Infeasible route for vehicle " + std::to_string(v.id) +
-                        ".");
+      throw InputException("Infeasible route for vehicle " +
+                           std::to_string(v.id) + ".");
     }
 
     switch (step.type) {
@@ -693,9 +691,8 @@ Route choose_ETA(const Input& input,
     const Duration UB = t_i_UB[i];
 
     if (UB < LB) {
-      throw Exception(ERROR::INPUT,
-                      "Infeasible route for vehicle " + std::to_string(v.id) +
-                        ".");
+      throw InputException("Infeasible route for vehicle " +
+                           std::to_string(v.id) + ".");
     }
 
     if (LB == UB) {
@@ -977,9 +974,8 @@ Route choose_ETA(const Input& input,
 
   auto status = glp_mip_status(lp);
   if (status == GLP_UNDEF or status == GLP_NOFEAS) {
-    throw Exception(ERROR::INPUT,
-                    "Infeasible route for vehicle " + std::to_string(v.id) +
-                      ".");
+    throw InputException("Infeasible route for vehicle " +
+                         std::to_string(v.id) + ".");
   }
   // We should not get GLP_FEAS.
   assert(status == GLP_OPT);
@@ -1035,9 +1031,8 @@ Route choose_ETA(const Input& input,
 
   status = glp_mip_status(lp);
   if (status == GLP_UNDEF or status == GLP_NOFEAS) {
-    throw Exception(ERROR::INPUT,
-                    "Infeasible route for vehicle " + std::to_string(v.id) +
-                      ".");
+    throw InputException("Infeasible route for vehicle " +
+                         std::to_string(v.id) + ".");
   }
   // We should not get GLP_FEAS.
   assert(status == GLP_OPT);

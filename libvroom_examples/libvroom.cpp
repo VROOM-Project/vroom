@@ -90,14 +90,16 @@ void run_example_with_osrm() {
   vroom::io::Servers servers;
   servers["car"] = vroom::Server("localhost", "5000");
 
-  vroom::Input problem_instance(amount_dimension, servers, vroom::ROUTER::OSRM);
+  vroom::Input problem_instance(servers, vroom::ROUTER::OSRM);
 
   problem_instance.set_geometry(GEOMETRY); // Query for route geometry
                                            // after solving.
 
   // Create one-dimension capacity restrictions to model the situation
   // where one vehicle can handle 4 jobs with deliveries.
+  problem_instance.set_amount_size(amount_dimension);
   vroom::Amount vehicle_capacity(1);
+
   vroom::TimeWindow vehicle_tw(28800, 43200); // Working hours.
   // Default "zero" amount data structures with relevant dimension.
   vroom::Amount job_delivery(amount_dimension);
@@ -217,9 +219,8 @@ void run_example_with_osrm() {
 
 void run_example_with_custom_matrix() {
   bool GEOMETRY = false;
-  unsigned amount_dimension = 0; // No capacity constraint.
 
-  vroom::Input problem_instance(amount_dimension);
+  vroom::Input problem_instance;
 
   // Define custom matrix and bypass OSRM call.
   vroom::Matrix<vroom::Duration> matrix_input(4);

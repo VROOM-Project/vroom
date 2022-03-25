@@ -2,7 +2,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2021, Julien Coupey.
+Copyright (c) 2015-2022, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -36,16 +36,14 @@ Vehicle::Vehicle(Id id,
     cost_wrapper(speed_factor),
     max_tasks(max_tasks) {
   if (!static_cast<bool>(start) and !static_cast<bool>(end)) {
-    throw Exception(ERROR::INPUT,
-                    "No start or end specified for vehicle " +
-                      std::to_string(id) + '.');
+    throw InputException("No start or end specified for vehicle " +
+                         std::to_string(id) + '.');
   }
 
   for (unsigned i = 0; i < breaks.size(); ++i) {
     const auto& b = breaks[i];
     if (break_id_to_rank.find(b.id) != break_id_to_rank.end()) {
-      throw Exception(ERROR::INPUT,
-                      "Duplicate break id: " + std::to_string(b.id) + ".");
+      throw InputException("Duplicate break id: " + std::to_string(b.id) + ".");
     }
     break_id_to_rank[b.id] = i;
   }
@@ -63,15 +61,13 @@ Vehicle::Vehicle(Id id,
 
     for (unsigned i = rank_after_start; i < input_steps.size(); ++i) {
       if (input_steps[i].type == STEP_TYPE::START) {
-        throw Exception(ERROR::INPUT,
-                        "Unexpected start in input steps for vehicle " +
-                          std::to_string(id) + ".");
+        throw InputException("Unexpected start in input steps for vehicle " +
+                             std::to_string(id) + ".");
       }
       if (input_steps[i].type == STEP_TYPE::END and
           (i != input_steps.size() - 1)) {
-        throw Exception(ERROR::INPUT,
-                        "Unexpected end in input steps for vehicle " +
-                          std::to_string(id) + ".");
+        throw InputException("Unexpected end in input steps for vehicle " +
+                             std::to_string(id) + ".");
       }
 
       steps.push_back(input_steps[i]);

@@ -2,7 +2,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2021, Julien Coupey.
+Copyright (c) 2015-2022, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -806,9 +806,8 @@ template <class T> T initial_routes(const Input& input) {
       }
     }
     if (!(current_load <= vehicle.capacity)) {
-      throw Exception(ERROR::INPUT,
-                      "Route over capacity for vehicle " +
-                        std::to_string(vehicle.id) + ".");
+      throw InputException("Route over capacity for vehicle " +
+                           std::to_string(vehicle.id) + ".");
     }
 
     std::vector<Index> job_ranks;
@@ -823,9 +822,8 @@ template <class T> T initial_routes(const Input& input) {
       job_ranks.push_back(job_rank);
 
       if (!input.vehicle_ok_with_job(v, job_rank)) {
-        throw Exception(ERROR::INPUT,
-                        "Missing skill or step out of reach for vehicle " +
-                          std::to_string(vehicle.id) + ".");
+        throw InputException("Missing skill or step out of reach for vehicle " +
+                             std::to_string(vehicle.id) + ".");
       }
 
       switch (step.job_type) {
@@ -843,9 +841,8 @@ template <class T> T initial_routes(const Input& input) {
       case JOB_TYPE::DELIVERY: {
         auto search = expected_delivery_ranks.find(job_rank);
         if (search == expected_delivery_ranks.end()) {
-          throw Exception(ERROR::INPUT,
-                          "Invalid shipment in route for vehicle " +
-                            std::to_string(vehicle.id) + ".");
+          throw InputException("Invalid shipment in route for vehicle " +
+                               std::to_string(vehicle.id) + ".");
         }
         expected_delivery_ranks.erase(search);
 
@@ -856,22 +853,19 @@ template <class T> T initial_routes(const Input& input) {
 
       // Check validity after this step wrt capacity.
       if (!(current_load <= vehicle.capacity)) {
-        throw Exception(ERROR::INPUT,
-                        "Route over capacity for vehicle " +
-                          std::to_string(vehicle.id) + ".");
+        throw InputException("Route over capacity for vehicle " +
+                             std::to_string(vehicle.id) + ".");
       }
     }
 
     if (vehicle.max_tasks < job_ranks.size()) {
-      throw Exception(ERROR::INPUT,
-                      "Too many tasks for vehicle " +
-                        std::to_string(vehicle.id) + ".");
+      throw InputException("Too many tasks for vehicle " +
+                           std::to_string(vehicle.id) + ".");
     }
 
     if (!expected_delivery_ranks.empty()) {
-      throw Exception(ERROR::INPUT,
-                      "Invalid shipment in route for vehicle " +
-                        std::to_string(vehicle.id) + ".");
+      throw InputException("Invalid shipment in route for vehicle " +
+                           std::to_string(vehicle.id) + ".");
     }
 
     // Now route is OK with regard to capacity, precedence and skills
@@ -882,9 +876,8 @@ template <class T> T initial_routes(const Input& input) {
                                               job_ranks.end(),
                                               0,
                                               0)) {
-        throw Exception(ERROR::INPUT,
-                        "Infeasible route for vehicle " +
-                          std::to_string(vehicle.id) + ".");
+        throw InputException("Infeasible route for vehicle " +
+                             std::to_string(vehicle.id) + ".");
       }
 
       current_r.replace(input, job_ranks.begin(), job_ranks.end(), 0, 0);

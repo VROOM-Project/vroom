@@ -2,7 +2,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2021, Julien Coupey.
+Copyright (c) 2015-2022, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -46,11 +46,9 @@ LibosrmWrapper::get_matrix(const std::vector<Location>& locs) const {
   osrm::Status status = _osrm.Table(params, result);
 
   if (status == osrm::Status::Error) {
-    throw Exception(ERROR::ROUTING,
-                    "libOSRM: " +
-                      result.values["code"].get<osrm::json::String>().value +
-                      ": " +
-                      result.values["message"].get<osrm::json::String>().value);
+    throw RoutingException(
+      "libOSRM: " + result.values["code"].get<osrm::json::String>().value +
+      ": " + result.values["message"].get<osrm::json::String>().value);
   }
 
   auto& table = result.values["durations"].get<osrm::json::Array>();
@@ -121,10 +119,9 @@ void LibosrmWrapper::add_route_info(Route& route) const {
   osrm::Status status = _osrm.Route(params, result);
 
   if (status == osrm::Status::Error) {
-    throw Exception(ERROR::ROUTING,
-                    result.values["code"].get<osrm::json::String>().value +
-                      ": " +
-                      result.values["message"].get<osrm::json::String>().value);
+    throw RoutingException(
+      result.values["code"].get<osrm::json::String>().value + ": " +
+      result.values["message"].get<osrm::json::String>().value);
   }
 
   auto& result_routes = result.values["routes"].get<osrm::json::Array>();

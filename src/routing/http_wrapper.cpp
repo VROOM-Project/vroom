@@ -2,7 +2,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2021, Julien Coupey.
+Copyright (c) 2015-2022, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -63,19 +63,18 @@ std::string HttpWrapper::send_then_receive(const std::string& query) const {
       }
     }
   } catch (std::system_error& e) {
-    throw Exception(ERROR::ROUTING,
-                    "Failed to connect to " + _server.host + ":" +
-                      _server.port);
+    throw RoutingException("Failed to connect to " + _server.host + ":" +
+                           _server.port);
   }
 
   // Removing headers.
   auto start = response.find("{");
   if (start == std::string::npos) {
-    throw Exception(ERROR::ROUTING, "Invalid routing response.");
+    throw RoutingException("Invalid routing response.");
   }
   auto end = response.rfind("}");
   if (end == std::string::npos) {
-    throw Exception(ERROR::ROUTING, "Invalid routing response.");
+    throw RoutingException("Invalid routing response.");
   }
 
   std::string json_string = response.substr(start, end - start + 1);
@@ -116,9 +115,8 @@ std::string HttpWrapper::ssl_send_then_receive(const std::string& query) const {
       }
     }
   } catch (std::system_error& e) {
-    throw Exception(ERROR::ROUTING,
-                    "Failed to connect to " + _server.host + ":" +
-                      _server.port);
+    throw RoutingException("Failed to connect to " + _server.host + ":" +
+                           _server.port);
   }
 
   // Removing headers.
@@ -158,7 +156,7 @@ Matrix<Cost> HttpWrapper::get_matrix(const std::vector<Location>& locs) const {
   this->check_response(json_result, _matrix_service);
 
   if (!json_result.HasMember(_matrix_durations_key.c_str())) {
-    throw Exception(ERROR::ROUTING, "Missing " + _matrix_durations_key + ".");
+    throw RoutingException("Missing " + _matrix_durations_key + ".");
   }
   assert(json_result[_matrix_durations_key.c_str()].Size() == m_size);
 

@@ -11,10 +11,10 @@ on:
     branches:
       - master
     paths:
-      - '.github/workflows/libosrm.yml'
+      - '.github/workflows/vroom_libosrm.yml'
       - '**libosrm_wrapper**'
 env:
-  osrm-tag: v5.25.0
+  osrm-tag: v5.26.0
 jobs:
   libosrm:
     strategy:
@@ -24,6 +24,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+        with:
+          submodules: true
       - name: Install dependencies
         run: sudo apt-get install libasio-dev libglpk-dev
       - name: Cache OSRM
@@ -39,7 +41,7 @@ jobs:
           repository: Project-OSRM/osrm-backend
           ref: ${{ env.osrm-tag }}
           path: osrm-backend
-      - name : Install OSRM dependencies
+      - name: Install OSRM dependencies
         run: sudo apt-get install build-essential git cmake pkg-config libbz2-dev libstxxl-dev libstxxl1v5 libxml2-dev libzip-dev libboost-all-dev lua5.2 liblua5.2-dev libtbb-dev libluabind-dev libluabind0.9.1d1
         working-directory: osrm-backend
       - name: Compile OSRM

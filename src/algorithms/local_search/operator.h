@@ -5,7 +5,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2021, Julien Coupey.
+Copyright (c) 2015-2022, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -19,6 +19,7 @@ namespace ls {
 
 class Operator {
 protected:
+  const OperatorName _name;
   const Input& _input;
   const utils::SolutionState& _sol_state;
 
@@ -39,7 +40,8 @@ protected:
   virtual void compute_gain() = 0;
 
 public:
-  Operator(const Input& input,
+  Operator(OperatorName name,
+           const Input& input,
            const utils::SolutionState& sol_state,
            RawRoute& s_raw_route,
            Index s_vehicle,
@@ -47,7 +49,8 @@ public:
            RawRoute& t_raw_route,
            Index t_vehicle,
            Index t_rank)
-    : _input(input),
+    : _name(name),
+      _input(input),
       _sol_state(sol_state),
       source(s_raw_route),
       s_route(s_raw_route.route),
@@ -60,6 +63,8 @@ public:
       gain_computed(false),
       stored_gain(0) {
   }
+
+  OperatorName get_name() const;
 
   virtual Gain gain();
 

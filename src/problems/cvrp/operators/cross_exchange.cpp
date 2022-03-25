@@ -2,7 +2,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2021, Julien Coupey.
+Copyright (c) 2015-2022, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -22,7 +22,8 @@ CrossExchange::CrossExchange(const Input& input,
                              Index t_rank,
                              bool check_s_reverse,
                              bool check_t_reverse)
-  : Operator(input,
+  : Operator(OperatorName::CrossExchange,
+             input,
              sol_state,
              s_route,
              s_vehicle,

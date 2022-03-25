@@ -5,7 +5,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2021, Julien Coupey.
+Copyright (c) 2015-2022, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -58,8 +58,8 @@ private:
   Index _max_matrices_used_index;
   bool _all_locations_have_coords;
 
-  const unsigned _amount_size;
-  const Amount _zero;
+  unsigned _amount_size;
+  Amount _zero;
 
   const io::Servers _servers;
   const ROUTER _router;
@@ -88,9 +88,9 @@ public:
   std::unordered_map<Id, Index> pickup_id_to_rank;
   std::unordered_map<Id, Index> delivery_id_to_rank;
 
-  Input(unsigned amount_size,
-        const io::Servers& servers = {},
-        ROUTER router = ROUTER::OSRM);
+  Input(const io::Servers& servers = {}, ROUTER router = ROUTER::OSRM);
+
+  void set_amount_size(unsigned amount_size);
 
   void set_geometry(bool geometry);
 

@@ -2,7 +2,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2021, Julien Coupey.
+Copyright (c) 2015-2022, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -84,6 +84,9 @@ rapidjson::Document to_json(const Solution& sol, bool geometry) {
                            to_json(job.location, allocator),
                            allocator);
       }
+      if (job.location.user_index()) {
+        json_job.AddMember("location_index", job.location.index(), allocator);
+      }
       json_job.AddMember("type", rapidjson::Value(), allocator);
       std::string str_type;
       switch (job.type) {
@@ -98,6 +101,13 @@ rapidjson::Document to_json(const Solution& sol, bool geometry) {
         break;
       }
       json_job["type"].SetString(str_type.c_str(), str_type.size(), allocator);
+
+      if (!job.description.empty()) {
+        json_job.AddMember("description", rapidjson::Value(), allocator);
+        json_job["description"].SetString(job.description.c_str(),
+                                          job.description.size(),
+                                          allocator);
+      }
 
       json_unassigned.PushBack(json_job, allocator);
     }
@@ -294,6 +304,10 @@ rapidjson::Value to_json(const Step& s,
 
   if (s.location.has_coordinates()) {
     json_step.AddMember("location", to_json(s.location, allocator), allocator);
+  }
+
+  if (s.location.user_index()) {
+    json_step.AddMember("location_index", s.location.index(), allocator);
   }
 
   if (s.step_type == STEP_TYPE::JOB or s.step_type == STEP_TYPE::BREAK) {

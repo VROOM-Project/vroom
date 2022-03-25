@@ -2,7 +2,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2021, Julien Coupey.
+Copyright (c) 2015-2022, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -28,7 +28,7 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
-Input::Input(unsigned amount_size, const io::Servers& servers, ROUTER router)
+Input::Input(const io::Servers& servers, ROUTER router)
   : _start_loading(std::chrono::high_resolution_clock::now()),
     _no_addition_yet(true),
     _has_skills(false),
@@ -42,10 +42,15 @@ Input::Input(unsigned amount_size, const io::Servers& servers, ROUTER router)
     _cost_upper_bound(0),
     _max_matrices_used_index(0),
     _all_locations_have_coords(true),
-    _amount_size(amount_size),
-    _zero(_amount_size),
+    _amount_size(0),
+    _zero(0),
     _servers(servers),
     _router(router) {
+}
+
+void Input::set_amount_size(unsigned amount_size) {
+  _amount_size = amount_size;
+  _zero = amount_size;
 }
 
 void Input::set_geometry(bool geometry) {
@@ -53,6 +58,10 @@ void Input::set_geometry(bool geometry) {
 }
 
 void Input::add_routing_wrapper(const std::string& profile) {
+#if !USE_ROUTING
+  throw RoutingException("VROOM compiled without routing support.");
+#endif
+
   assert(std::find_if(_routing_wrappers.begin(),
                       _routing_wrappers.end(),
                       [&](const auto& wr) { return wr->profile == profile; }) ==
@@ -65,7 +74,7 @@ void Input::add_routing_wrapper(const std::string& profile) {
     // Use osrm-routed.
     auto search = _servers.find(profile);
     if (search == _servers.end()) {
-      throw Exception(ERROR::INPUT, "Invalid profile: " + profile + ".");
+      throw InputException("Invalid profile: " + profile + ".");
     }
     routing_wrapper =
       std::make_unique<routing::OsrmRoutedWrapper>(profile, search->second);
@@ -76,19 +85,18 @@ void Input::add_routing_wrapper(const std::string& profile) {
     try {
       routing_wrapper = std::make_unique<routing::LibosrmWrapper>(profile);
     } catch (const osrm::exception& e) {
-      throw Exception(ERROR::ROUTING, "Invalid profile: " + profile);
+      throw RoutingException("Invalid profile: " + profile);
     }
 #else
     // Attempt to use libosrm while compiling without it.
-    throw Exception(ERROR::ROUTING,
-                    "VROOM compiled without libosrm installed.");
+    throw RoutingException("VROOM compiled without libosrm installed.");
 #endif
     break;
   case ROUTER::ORS: {
     // Use ORS http wrapper.
     auto search = _servers.find(profile);
     if (search == _servers.end()) {
-      throw Exception(ERROR::INPUT, "Invalid profile: " + profile + ".");
+      throw InputException("Invalid profile: " + profile + ".");
     }
     routing_wrapper =
       std::make_unique<routing::OrsWrapper>(profile, search->second);
@@ -97,7 +105,7 @@ void Input::add_routing_wrapper(const std::string& profile) {
     // Use Valhalla http wrapper.
     auto search = _servers.find(profile);
     if (search == _servers.end()) {
-      throw Exception(ERROR::INPUT, "Invalid profile: " + profile + ".");
+      throw InputException("Invalid profile: " + profile + ".");
     }
     routing_wrapper =
       std::make_unique<routing::ValhallaWrapper>(profile, search->second);
@@ -109,19 +117,17 @@ void Input::check_job(Job& job) {
   // Ensure delivery size consistency.
   const auto& delivery_size = job.delivery.size();
   if (delivery_size != _amount_size) {
-    throw Exception(ERROR::INPUT,
-                    "Inconsistent delivery length: " +
-                      std::to_string(delivery_size) + " instead of " +
-                      std::to_string(_amount_size) + '.');
+    throw InputException(
+      "Inconsistent delivery length: " + std::to_string(delivery_size) +
+      " instead of " + std::to_string(_amount_size) + '.');
   }
 
   // Ensure pickup size consistency.
   const auto& pickup_size = job.pickup.size();
   if (pickup_size != _amount_size) {
-    throw Exception(ERROR::INPUT,
-                    "Inconsistent pickup length: " +
-                      std::to_string(pickup_size) + " instead of " +
-                      std::to_string(_amount_size) + '.');
+    throw InputException(
+      "Inconsistent pickup length: " + std::to_string(pickup_size) +
+      " instead of " + std::to_string(_amount_size) + '.');
   }
 
   // Ensure that location index are either always or never provided.
@@ -131,7 +137,7 @@ void Input::check_job(Job& job) {
     _has_custom_location_index = has_location_index;
   } else {
     if (_has_custom_location_index != has_location_index) {
-      throw Exception(ERROR::INPUT, "Missing location index.");
+      throw InputException("Missing location index.");
     }
   }
 
@@ -173,11 +179,10 @@ void Input::check_job(Job& job) {
 
 void Input::add_job(const Job& job) {
   if (job.type != JOB_TYPE::SINGLE) {
-    throw Exception(ERROR::INPUT, "Wrong job type.");
+    throw InputException("Wrong job type.");
   }
   if (job_id_to_rank.find(job.id) != job_id_to_rank.end()) {
-    throw Exception(ERROR::INPUT,
-                    "Duplicate job id: " + std::to_string(job.id) + ".");
+    throw InputException("Duplicate job id: " + std::to_string(job.id) + ".");
   }
   job_id_to_rank[job.id] = jobs.size();
   jobs.push_back(job);
@@ -187,38 +192,37 @@ void Input::add_job(const Job& job) {
 
 void Input::add_shipment(const Job& pickup, const Job& delivery) {
   if (pickup.priority != delivery.priority) {
-    throw Exception(ERROR::INPUT, "Inconsistent shipment priority.");
+    throw InputException("Inconsistent shipment priority.");
   }
   if (!(pickup.pickup == delivery.delivery)) {
-    throw Exception(ERROR::INPUT, "Inconsistent shipment amount.");
+    throw InputException("Inconsistent shipment amount.");
   }
   if (pickup.skills.size() != delivery.skills.size()) {
-    throw Exception(ERROR::INPUT, "Inconsistent shipment skills.");
+    throw InputException("Inconsistent shipment skills.");
   }
   for (const auto s : pickup.skills) {
     if (delivery.skills.find(s) == delivery.skills.end()) {
-      throw Exception(ERROR::INPUT, "Inconsistent shipment skills.");
+      throw InputException("Inconsistent shipment skills.");
     }
   }
 
   if (pickup.type != JOB_TYPE::PICKUP) {
-    throw Exception(ERROR::INPUT, "Wrong pickup type.");
+    throw InputException("Wrong pickup type.");
   }
   if (pickup_id_to_rank.find(pickup.id) != pickup_id_to_rank.end()) {
-    throw Exception(ERROR::INPUT,
-                    "Duplicate pickup id: " + std::to_string(pickup.id) + ".");
+    throw InputException("Duplicate pickup id: " + std::to_string(pickup.id) +
+                         ".");
   }
   pickup_id_to_rank[pickup.id] = jobs.size();
   jobs.push_back(pickup);
   check_job(jobs.back());
 
   if (delivery.type != JOB_TYPE::DELIVERY) {
-    throw Exception(ERROR::INPUT, "Wrong delivery type.");
+    throw InputException("Wrong delivery type.");
   }
   if (delivery_id_to_rank.find(delivery.id) != delivery_id_to_rank.end()) {
-    throw Exception(ERROR::INPUT,
-                    "Duplicate delivery id: " + std::to_string(delivery.id) +
-                      ".");
+    throw InputException(
+      "Duplicate delivery id: " + std::to_string(delivery.id) + ".");
   }
   delivery_id_to_rank[delivery.id] = jobs.size();
   jobs.push_back(delivery);
@@ -234,10 +238,9 @@ void Input::add_vehicle(const Vehicle& vehicle) {
   // Ensure amount size consistency.
   const auto& vehicle_amount_size = current_v.capacity.size();
   if (vehicle_amount_size != _amount_size) {
-    throw Exception(ERROR::INPUT,
-                    "Inconsistent capacity length: " +
-                      std::to_string(vehicle_amount_size) + " instead of " +
-                      std::to_string(_amount_size) + '.');
+    throw InputException(
+      "Inconsistent capacity length: " + std::to_string(vehicle_amount_size) +
+      " instead of " + std::to_string(_amount_size) + '.');
   }
 
   // Check for time-windows and skills.
@@ -291,7 +294,7 @@ void Input::add_vehicle(const Vehicle& vehicle) {
         (has_location_index != end_loc.user_index())) {
       // Start and end provided in a non-consistent manner with regard
       // to location index definition.
-      throw Exception(ERROR::INPUT, "Missing start_index or end_index.");
+      throw InputException("Missing start_index or end_index.");
     }
 
     has_location_index = end_loc.user_index();
@@ -336,7 +339,7 @@ void Input::add_vehicle(const Vehicle& vehicle) {
     _has_custom_location_index = has_location_index;
   } else {
     if (_has_custom_location_index != has_location_index) {
-      throw Exception(ERROR::INPUT, "Missing location index.");
+      throw InputException("Missing location index.");
     }
   }
 
@@ -357,16 +360,14 @@ void Input::add_vehicle(const Vehicle& vehicle) {
 void Input::set_durations_matrix(const std::string& profile,
                                  Matrix<Duration>&& m) {
   if (m.size() == 0) {
-    throw Exception(ERROR::INPUT,
-                    "Empty durations matrix for " + profile + " profile.");
+    throw InputException("Empty durations matrix for " + profile + " profile.");
   }
   _durations_matrices.insert_or_assign(profile, m);
 }
 
 void Input::set_costs_matrix(const std::string& profile, Matrix<Cost>&& m) {
   if (m.size() == 0) {
-    throw Exception(ERROR::INPUT,
-                    "Empty costs matrix for " + profile + " profile.");
+    throw InputException("Empty costs matrix for " + profile + " profile.");
   }
   _costs_matrices.insert_or_assign(profile, m);
 }
@@ -559,10 +560,9 @@ void Input::set_vehicle_steps_ranks() {
       if (step.type == STEP_TYPE::BREAK) {
         auto search = current_vehicle.break_id_to_rank.find(step.id);
         if (search == current_vehicle.break_id_to_rank.end()) {
-          throw Exception(ERROR::INPUT,
-                          "Invalid break id " + std::to_string(step.id) +
-                            " for vehicle " +
-                            std::to_string(current_vehicle.id) + ".");
+          throw InputException("Invalid break id " + std::to_string(step.id) +
+                               " for vehicle " +
+                               std::to_string(current_vehicle.id) + ".");
         }
         step.rank = search->second;
       }
@@ -572,19 +572,17 @@ void Input::set_vehicle_steps_ranks() {
         case JOB_TYPE::SINGLE: {
           auto search = job_id_to_rank.find(step.id);
           if (search == job_id_to_rank.end()) {
-            throw Exception(ERROR::INPUT,
-                            "Invalid job id " + std::to_string(step.id) +
-                              " for vehicle " +
-                              std::to_string(current_vehicle.id) + ".");
+            throw InputException("Invalid job id " + std::to_string(step.id) +
+                                 " for vehicle " +
+                                 std::to_string(current_vehicle.id) + ".");
           }
           step.rank = search->second;
 
           auto planned_job = planned_job_ids.find(step.id);
           if (planned_job != planned_job_ids.end()) {
-            throw Exception(ERROR::INPUT,
-                            "Duplicate job id " + std::to_string(step.id) +
-                              " in input steps for vehicle " +
-                              std::to_string(current_vehicle.id) + ".");
+            throw InputException("Duplicate job id " + std::to_string(step.id) +
+                                 " in input steps for vehicle " +
+                                 std::to_string(current_vehicle.id) + ".");
           }
           planned_job_ids.insert(step.id);
           break;
@@ -592,19 +590,18 @@ void Input::set_vehicle_steps_ranks() {
         case JOB_TYPE::PICKUP: {
           auto search = pickup_id_to_rank.find(step.id);
           if (search == pickup_id_to_rank.end()) {
-            throw Exception(ERROR::INPUT,
-                            "Invalid pickup id " + std::to_string(step.id) +
-                              " for vehicle " +
-                              std::to_string(current_vehicle.id) + ".");
+            throw InputException("Invalid pickup id " +
+                                 std::to_string(step.id) + " for vehicle " +
+                                 std::to_string(current_vehicle.id) + ".");
           }
           step.rank = search->second;
 
           auto planned_pickup = planned_pickup_ids.find(step.id);
           if (planned_pickup != planned_pickup_ids.end()) {
-            throw Exception(ERROR::INPUT,
-                            "Duplicate pickup id " + std::to_string(step.id) +
-                              " in input steps for vehicle " +
-                              std::to_string(current_vehicle.id) + ".");
+            throw InputException("Duplicate pickup id " +
+                                 std::to_string(step.id) +
+                                 " in input steps for vehicle " +
+                                 std::to_string(current_vehicle.id) + ".");
           }
           planned_pickup_ids.insert(step.id);
           break;
@@ -612,19 +609,18 @@ void Input::set_vehicle_steps_ranks() {
         case JOB_TYPE::DELIVERY: {
           auto search = delivery_id_to_rank.find(step.id);
           if (search == delivery_id_to_rank.end()) {
-            throw Exception(ERROR::INPUT,
-                            "Invalid delivery id " + std::to_string(step.id) +
-                              " for vehicle " +
-                              std::to_string(current_vehicle.id) + ".");
+            throw InputException("Invalid delivery id " +
+                                 std::to_string(step.id) + " for vehicle " +
+                                 std::to_string(current_vehicle.id) + ".");
           }
           step.rank = search->second;
 
           auto planned_delivery = planned_delivery_ids.find(step.id);
           if (planned_delivery != planned_delivery_ids.end()) {
-            throw Exception(ERROR::INPUT,
-                            "Duplicate delivery id " + std::to_string(step.id) +
-                              " in input steps for vehicle " +
-                              std::to_string(current_vehicle.id) + ".");
+            throw InputException("Duplicate delivery id " +
+                                 std::to_string(step.id) +
+                                 " in input steps for vehicle " +
+                                 std::to_string(current_vehicle.id) + ".");
           }
           planned_delivery_ids.insert(step.id);
           break;
@@ -638,7 +634,7 @@ void Input::set_vehicle_steps_ranks() {
 void Input::set_matrices(unsigned nb_thread) {
   if ((!_durations_matrices.empty() or !_costs_matrices.empty()) and
       !_has_custom_location_index) {
-    throw Exception(ERROR::INPUT, "Missing location index.");
+    throw InputException("Missing location index.");
   }
 
   // Split computing matrices across threads based on number of
@@ -713,18 +709,16 @@ void Input::set_matrices(unsigned nb_thread) {
         }
 
         if (d_m->second.size() <= _max_matrices_used_index) {
-          throw Exception(ERROR::INPUT,
-                          "location_index exceeding matrix size for " +
-                            profile + " profile.");
+          throw InputException("location_index exceeding matrix size for " +
+                               profile + " profile.");
         }
 
         const auto c_m = _costs_matrices.find(profile);
 
         if (c_m != _costs_matrices.end()) {
           if (c_m->second.size() <= _max_matrices_used_index) {
-            throw Exception(ERROR::INPUT,
-                            "location_index exceeding matrix size for " +
-                              profile + " profile.");
+            throw InputException("location_index exceeding matrix size for " +
+                                 profile + " profile.");
           }
 
           // Check for potential overflow in solution cost.
@@ -776,8 +770,7 @@ Solution Input::solve(unsigned exploration_level,
                       const std::vector<HeuristicParameters>& h_param) {
   if (_geometry and !_all_locations_have_coords) {
     // Early abort when info is required with missing coordinates.
-    throw Exception(ERROR::INPUT,
-                    "Route geometry request with missing coordinates.");
+    throw InputException("Route geometry request with missing coordinates.");
   }
 
   if (_has_initial_routes) {
@@ -832,9 +825,8 @@ Solution Input::solve(unsigned exploration_level,
                      _routing_wrappers.end(),
                      [&](const auto& wr) { return wr->profile == profile; });
       if (rw == _routing_wrappers.end()) {
-        throw Exception(ERROR::INPUT,
-                        "Route geometry request with non-routable profile " +
-                          profile + ".");
+        throw InputException(
+          "Route geometry request with non-routable profile " + profile + ".");
       }
       (*rw)->add_route_info(route);
 
@@ -856,8 +848,7 @@ Solution Input::check(unsigned nb_thread) {
 #if USE_LIBGLPK
   if (_geometry and !_all_locations_have_coords) {
     // Early abort when info is required with missing coordinates.
-    throw Exception(ERROR::INPUT,
-                    "Route geometry request with missing coordinates.");
+    throw InputException("Route geometry request with missing coordinates.");
   }
 
   set_vehicle_steps_ranks();
@@ -895,9 +886,8 @@ Solution Input::check(unsigned nb_thread) {
                      _routing_wrappers.end(),
                      [&](const auto& wr) { return wr->profile == profile; });
       if (rw == _routing_wrappers.end()) {
-        throw Exception(ERROR::INPUT,
-                        "Route geometry request with non-routable profile " +
-                          profile + ".");
+        throw InputException(
+          "Route geometry request with non-routable profile " + profile + ".");
       }
       (*rw)->add_route_info(route);
 
@@ -915,7 +905,7 @@ Solution Input::check(unsigned nb_thread) {
   return sol;
 #else
   // Attempt to use libglpk while compiling without it.
-  throw Exception(ERROR::INPUT, "VROOM compiled without libglpk installed.");
+  throw InputException("VROOM compiled without libglpk installed.");
   // Silence -Wunused-parameter warning.
   (void)nb_thread;
 #endif

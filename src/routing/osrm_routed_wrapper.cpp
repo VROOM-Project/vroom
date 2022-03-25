@@ -2,7 +2,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2021, Julien Coupey.
+Copyright (c) 2015-2022, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -55,8 +55,7 @@ void OsrmRoutedWrapper::check_response(const rapidjson::Document& json_result,
                                        const std::string&) const {
   assert(json_result.HasMember("code"));
   if (json_result["code"] != "Ok") {
-    throw Exception(ERROR::ROUTING,
-                    std::string(json_result["message"].GetString()));
+    throw RoutingException(std::string(json_result["message"].GetString()));
   }
 }
 

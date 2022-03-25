@@ -2,7 +2,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2021, Julien Coupey.
+Copyright (c) 2015-2022, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -20,7 +20,8 @@ OrOpt::OrOpt(const Input& input,
              RawRoute& t_route,
              Index t_vehicle,
              Index t_rank)
-  : Operator(input,
+  : Operator(OperatorName::OrOpt,
+             input,
              sol_state,
              s_route,
              s_vehicle,

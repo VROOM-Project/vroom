@@ -1,12 +1,13 @@
 # This file is part of VROOM.
 #
-# Copyright (c) 2015-2021, Julien Coupey.
+# Copyright (c) 2015-2022, Julien Coupey.
 # All rights reserved (see LICENSE).
 
 # Variables.
 CXX ?= g++
-CXXFLAGS = -MMD -MP -I. -std=c++17 -Wextra -Wpedantic -Wall -O3 -DASIO_STANDALONE -DNDEBUG
-LDLIBS = -lpthread -lssl -lcrypto
+USE_ROUTING ?= true
+CXXFLAGS = -MMD -MP -I. -std=c++17 -Wextra -Wpedantic -Wall -O3 -DASIO_STANDALONE -DUSE_ROUTING=$(USE_ROUTING)
+LDLIBS = -lpthread
 
 # Using all cpp files in current directory.
 MAIN = ../bin/vroom
@@ -25,13 +26,20 @@ SRC = $(wildcard *.cpp)\
 			$(wildcard ./structures/*.cpp)\
 			$(wildcard ./utils/*.cpp)
 
-# Checking for libosrm
-ifeq ($(shell pkg-config --exists libosrm && echo 1),1)
-	LDLIBS += $(shell pkg-config --libs libosrm) -lboost_system -lboost_filesystem -lboost_iostreams -lboost_thread -lrt -ltbb
-	LIBOSRMFLAGS = $(shell pkg-config --cflags libosrm)
-	CXXFLAGS += $(filter-out -std=c++14, $(LIBOSRMFLAGS)) -D USE_LIBOSRM=true
+# Remove routing if we don't require it
+ifeq ($(USE_ROUTING),false)
+	SRC := $(filter-out $(wildcard ./routing/*.cpp), $(SRC))
 else
-	SRC := $(filter-out ./routing/libosrm_wrapper.cpp, $(SRC))
+	LDLIBS += -lssl -lcrypto
+
+	# Checking for libosrm
+	ifeq ($(shell pkg-config --exists libosrm && echo 1),1)
+		LDLIBS += $(shell pkg-config --libs libosrm) -lboost_system -lboost_filesystem -lboost_iostreams -lboost_thread -lrt -ltbb
+		LIBOSRMFLAGS = $(shell pkg-config --cflags libosrm)
+		CXXFLAGS += $(filter-out -std=c++14, $(LIBOSRMFLAGS)) -D USE_LIBOSRM=true
+	else
+		SRC := $(filter-out ./routing/libosrm_wrapper.cpp, $(SRC))
+	endif
 endif
 
 # Checking for libglpk based on whether the header file is found as
@@ -50,6 +58,10 @@ DEPS = $(SRC:.cpp=.d)
 
 # Main target.
 all : $(MAIN) $(LIB)
+
+# Shared target, for creating Position Independent Code (PIC)
+shared : CXXFLAGS += -fPIC
+shared : all
 
 $(MAIN) : $(OBJ) main.o
 	mkdir -p $(@D)

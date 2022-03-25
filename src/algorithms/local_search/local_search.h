@@ -5,7 +5,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2021, Julien Coupey.
+Copyright (c) 2015-2022, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -48,6 +48,12 @@ private:
   std::vector<Route>& _best_sol;
   utils::SolutionIndicators _best_sol_indicators;
 
+#ifdef LOG_LS_OPERATORS
+  // Store operator usage stats.
+  std::array<unsigned, OperatorName::MAX> tried_moves;
+  std::array<unsigned, OperatorName::MAX> applied_moves;
+#endif
+
   void try_job_additions(const std::vector<Index>& routes, double regret_coeff);
 
   void run_ls_step();
@@ -74,6 +80,10 @@ public:
   utils::SolutionIndicators indicators() const;
 
   void run();
+
+#ifdef LOG_LS_OPERATORS
+  std::array<OperatorStats, OperatorName::MAX> get_stats() const;
+#endif
 };
 
 } // namespace ls

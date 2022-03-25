@@ -2,7 +2,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2021, Julien Coupey.
+Copyright (c) 2015-2022, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -35,6 +35,8 @@ namespace vroom {
 
 using RawSolution = std::vector<RawRoute>;
 
+namespace cvrp {
+
 using LocalSearch = ls::LocalSearch<RawRoute,
                                     cvrp::UnassignedExchange,
                                     cvrp::SwapStar,
@@ -51,6 +53,7 @@ using LocalSearch = ls::LocalSearch<RawRoute,
                                     cvrp::IntraOrOpt,
                                     cvrp::PDShift,
                                     cvrp::RouteExchange>;
+} // namespace cvrp
 
 const std::vector<HeuristicParameters> CVRP::homogeneous_parameters =
   {HeuristicParameters(HEURISTIC::BASIC, INIT::NONE, 0.3),
@@ -181,6 +184,10 @@ Solution CVRP::solve(unsigned exploration_level,
 
   std::vector<RawSolution> solutions(nb_init_solutions);
   std::vector<utils::SolutionIndicators> sol_indicators(nb_init_solutions);
+#ifdef LOG_LS_OPERATORS
+  std::vector<std::array<ls::OperatorStats, OperatorName::MAX>> ls_stats(
+    nb_init_solutions);
+#endif
 
   // Split the work among threads.
   std::vector<std::vector<std::size_t>>
@@ -220,14 +227,17 @@ Solution CVRP::solve(unsigned exploration_level,
         }
 
         // Local search phase.
-        LocalSearch ls(_input,
-                       solutions[rank],
-                       max_nb_jobs_removal,
-                       search_time);
+        cvrp::LocalSearch ls(_input,
+                             solutions[rank],
+                             max_nb_jobs_removal,
+                             search_time);
         ls.run();
 
         // Store solution indicators.
         sol_indicators[rank] = ls.indicators();
+#ifdef LOG_LS_OPERATORS
+        ls_stats[rank] = ls.get_stats();
+#endif
       }
     } catch (...) {
       ep_m.lock();
@@ -251,6 +261,10 @@ Solution CVRP::solve(unsigned exploration_level,
   if (ep != nullptr) {
     std::rethrow_exception(ep);
   }
+
+#ifdef LOG_LS_OPERATORS
+  utils::log_LS_operators(ls_stats);
+#endif
 
   auto best_indic =
     std::min_element(sol_indicators.cbegin(), sol_indicators.cend());

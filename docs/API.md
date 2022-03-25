@@ -1,6 +1,6 @@
 <!-- This file is part of VROOM. -->
 
-<!-- Copyright (c) 2015-2021, Julien Coupey. -->
+<!-- Copyright (c) 2015-2022, Julien Coupey. -->
 <!-- All rights reserved (see LICENSE). -->
 
 This file describes the `vroom` API.
@@ -301,7 +301,7 @@ The computed solution is written as `json` on standard output or a file
 | `code` | status code |
 | `error` | error message (present iff `code` is different from `0`) |
 | [`summary`](#summary) | object summarizing solution indicators |
-| `unassigned` | array of objects describing unassigned tasks with their `id`, `type` and `location` (if provided) |
+| `unassigned` | array of objects describing unassigned tasks with their `id`, `type`, and if provided, `description`, `location` and `location_index` |
 | [`routes`](#routes) | array of `route` objects |
 
 ## Code
@@ -376,6 +376,7 @@ A `step` object has the following properties:
 | `violations` | array of `violation` objects for this step |
 | [`description`] | step description, if provided in input |
 | [`location`] | coordinates array for this step (if provided in input) |
+| [`location_index`] | index of relevant row and column in custom matrices for this step (if provided in input) |
 | [`id`] | id of the task performed at this step, only provided if `type` value is `job`, `pickup`, `delivery` or `break` |
 | ~~[`job`]~~ | ~~id of the job performed at this step, only provided if `type` value is `job`~~ |
 | [`load`] | vehicle load after step completion (with capacity constraints) |

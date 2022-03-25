@@ -5,7 +5,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2021, Julien Coupey.
+Copyright (c) 2015-2022, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -67,7 +67,7 @@ protected:
       error_msg += "location [" + std::to_string(locs[error_loc].lon()) + ";" +
                    std::to_string(locs[error_loc].lat()) + "]";
 
-      throw Exception(ERROR::ROUTING, error_msg);
+      throw RoutingException(error_msg);
     }
   }
 };

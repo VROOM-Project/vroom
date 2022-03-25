@@ -5,7 +5,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2021, Julien Coupey.
+Copyright (c) 2015-2022, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -36,8 +36,6 @@ struct CLArgs {
   unsigned exploration_level;                // -x
 
   static const unsigned max_exploration_level;
-
-  CLArgs();
 };
 
 void update_host(Servers& servers, const std::string& value);

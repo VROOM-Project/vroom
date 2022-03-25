@@ -2,7 +2,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2021, Julien Coupey.
+Copyright (c) 2015-2022, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -44,6 +44,7 @@ Job::Job(Id id,
     description(description),
     tw_length(get_tw_length(tws)) {
   utils::check_tws(tws);
+  utils::check_priority(priority);
 }
 
 Job::Job(Id id,
@@ -70,6 +71,7 @@ Job::Job(Id id,
     tw_length(get_tw_length(tws)) {
   assert(type == JOB_TYPE::PICKUP or type == JOB_TYPE::DELIVERY);
   utils::check_tws(tws);
+  utils::check_priority(priority);
 }
 
 bool Job::is_valid_start(Duration time) const {

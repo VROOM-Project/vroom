@@ -5,7 +5,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2021, Julien Coupey.
+Copyright (c) 2015-2022, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -13,6 +13,10 @@ All rights reserved (see LICENSE).
 #include <algorithm>
 #include <numeric>
 #include <sstream>
+
+#ifdef LOG_LS_OPERATORS
+#include <iostream>
+#endif
 
 #include "structures/typedefs.h"
 #include "structures/vroom/raw_route.h"
@@ -31,8 +35,8 @@ inline TimePoint now() {
 
 inline Cost add_without_overflow(Cost a, Cost b) {
   if (a > std::numeric_limits<Cost>::max() - b) {
-    throw Exception(ERROR::INPUT,
-                    "Too high cost values, stopping to avoid overflowing.");
+    throw InputException(
+      "Too high cost values, stopping to avoid overflowing.");
   }
   return a + b;
 }
@@ -49,14 +53,62 @@ inline INIT get_init(const std::string& s) {
   } else if (s == "EARLIEST_DEADLINE") {
     return INIT::EARLIEST_DEADLINE;
   } else {
-    throw Exception(ERROR::INPUT,
-                    "Invalid heuristic parameter in command-line.");
+    throw InputException("Invalid heuristic parameter in command-line.");
   }
 }
 
+#ifdef LOG_LS_OPERATORS
+const std::array<std::string, OperatorName::MAX>
+  operator_names({"UnassignedExchange",
+                  "SwapStar",
+                  "CrossExchange",
+                  "MixedExchange",
+                  "TwoOpt",
+                  "ReverseTwoOpt",
+                  "Relocate",
+                  "OrOpt",
+                  "IntraExchange",
+                  "IntraCrossExchange",
+                  "IntraMixedExchange",
+                  "IntraRelocate",
+                  "IntraOrOpt",
+                  "PDShift",
+                  "RouteExchange"});
+
+inline void log_LS_operators(
+  const std::vector<std::array<ls::OperatorStats, OperatorName::MAX>>&
+    ls_stats) {
+  assert(!ls_stats.empty());
+
+  // Sum indicators per operator.
+  std::array<unsigned, OperatorName::MAX> tried_sums;
+  std::array<unsigned, OperatorName::MAX> applied_sums;
+  tried_sums.fill(0);
+  applied_sums.fill(0);
+
+  unsigned total_tried = 0;
+  unsigned total_applied = 0;
+  for (const auto& ls_run : ls_stats) {
+    for (auto op = 0; op < OperatorName::MAX; ++op) {
+      tried_sums[op] += ls_run[op].tried_moves;
+      total_tried += ls_run[op].tried_moves;
+
+      applied_sums[op] += ls_run[op].applied_moves;
+      total_applied += ls_run[op].applied_moves;
+    }
+  }
+
+  for (auto op = 0; op < OperatorName::MAX; ++op) {
+    std::cout << operator_names[op] << "," << tried_sums[op] << ","
+              << applied_sums[op] << std::endl;
+  }
+  std::cout << "Total," << total_tried << "," << total_applied << std::endl;
+}
+#endif
+
 inline HeuristicParameters str_to_heuristic_param(const std::string& s) {
   // Split command-line string describing parameters.
-  constexpr char delimiter = ',';
+  constexpr char delimiter = ';';
   std::vector<std::string> tokens;
   std::string token;
   std::istringstream tokenStream(s);
@@ -65,8 +117,7 @@ inline HeuristicParameters str_to_heuristic_param(const std::string& s) {
   }
 
   if (tokens.size() != 3 or tokens[0].size() != 1) {
-    throw Exception(ERROR::INPUT,
-                    "Invalid heuristic parameter in command-line.");
+    throw InputException("Invalid heuristic parameter in command-line.");
   }
 
   auto init = get_init(tokens[1]);
@@ -74,20 +125,17 @@ inline HeuristicParameters str_to_heuristic_param(const std::string& s) {
     auto h = std::stoul(tokens[0]);
 
     if (h != 0 and h != 1) {
-      throw Exception(ERROR::INPUT,
-                      "Invalid heuristic parameter in command-line.");
+      throw InputException("Invalid heuristic parameter in command-line.");
     }
 
     auto regret_coeff = std::stof(tokens[2]);
     if (regret_coeff < 0) {
-      throw Exception(ERROR::INPUT,
-                      "Invalid heuristic parameter in command-line.");
+      throw InputException("Invalid heuristic parameter in command-line.");
     }
 
     return HeuristicParameters(static_cast<HEURISTIC>(h), init, regret_coeff);
   } catch (const std::exception& e) {
-    throw Exception(ERROR::INPUT,
-                    "Invalid heuristic parameter in command-line.");
+    throw InputException("Invalid heuristic parameter in command-line.");
   }
 }
 
@@ -293,15 +341,21 @@ inline void check_precedence(const Input& input,
 
 inline void check_tws(const std::vector<TimeWindow>& tws) {
   if (tws.size() == 0) {
-    throw Exception(ERROR::INPUT, "Empty time-windows.");
+    throw InputException("Empty time-windows.");
   }
 
   if (tws.size() > 1) {
     for (std::size_t i = 0; i < tws.size() - 1; ++i) {
       if (tws[i + 1].start <= tws[i].end) {
-        throw Exception(ERROR::INPUT, "Unsorted or overlapping time-windows.");
+        throw InputException("Unsorted or overlapping time-windows.");
       }
     }
+  }
+}
+
+inline void check_priority(const Priority priority) {
+  if (priority > MAX_PRIORITY) {
+    throw InputException("Invalid priority value.");
   }
 }
 
@@ -873,23 +927,6 @@ inline Solution format_solution(const Input& input,
                   input.zero_amount().size(),
                   std::move(routes),
                   std::move(unassigned_jobs));
-}
-
-inline unsigned get_code(ERROR e) {
-  unsigned code = 0;
-  switch (e) {
-  case ERROR::INTERNAL:
-    code = 1;
-    break;
-  case ERROR::INPUT:
-    code = 2;
-    break;
-  case ERROR::ROUTING:
-    code = 3;
-    break;
-  }
-
-  return code;
 }
 
 } // namespace utils
