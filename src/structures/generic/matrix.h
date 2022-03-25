@@ -39,9 +39,6 @@ public:
     return n;
   }
 
-  T* get_data() {
-    return data.data();
-  }
 #if USE_PYTHON_BINDINGS
   T* get_data() {
     return data.data();
