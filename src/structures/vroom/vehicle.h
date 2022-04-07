@@ -60,6 +60,8 @@ struct Vehicle {
 
   bool has_same_profile(const Vehicle& other) const;
 
+  Duration available_duration() const;
+
   Cost duration(Index i, Index j) const {
     return cost_wrapper.duration(i, j);
   }

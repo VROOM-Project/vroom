@@ -618,6 +618,48 @@ void Input::set_vehicles_max_tasks() {
       vehicles[v].max_tasks = std::min(vehicles[v].max_tasks, max_tasks);
     }
   }
+
+  if (_has_TW) {
+    // Compute an upper bound of the number of tasks for each vehicle
+    // based on time window amplitude and lower bounds of tasks times.
+    struct JobTime {
+      Index rank;
+      Duration time;
+
+      bool operator<(const JobTime& rhs) {
+        return this->time < rhs.time;
+      }
+    };
+
+    std::vector<JobTime> job_times(jobs.size());
+    for (Index j = 0; j < jobs.size(); ++j) {
+      // TODO take setup time and lower bound of travel time to job in
+      // account.
+      job_times[j] = {j, jobs[j].service};
+    }
+
+    std::sort(job_times.begin(), job_times.end());
+
+    for (Index v = 0; v < vehicles.size(); ++v) {
+      const auto vehicle_duration = vehicles[v].available_duration();
+      std::size_t max_tasks = jobs.size();
+      Duration time_sum = 0;
+      std::size_t doable_tasks = 0;
+
+      for (std::size_t j = 0; j < jobs.size(); ++j) {
+        if (vehicle_ok_with_job(v, job_times[j].rank)) {
+          ++doable_tasks;
+          time_sum += job_times[j].time;
+          if (time_sum > vehicle_duration) {
+            max_tasks = doable_tasks;
+            break;
+          }
+        }
+      }
+
+      vehicles[v].max_tasks = std::min(vehicles[v].max_tasks, max_tasks);
+    }
+  }
 }
 
 void Input::set_vehicle_steps_ranks() {
