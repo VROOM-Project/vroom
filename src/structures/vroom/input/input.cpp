@@ -624,40 +624,77 @@ void Input::set_vehicles_max_tasks() {
     // based on time window amplitude and lower bounds of tasks times.
     struct JobTime {
       Index rank;
-      Duration time;
+      Duration service;
+      // Only one of the following is set to a non-zero value below.
+      Duration min_time_to;
+      Duration min_time_from;
 
       bool operator<(const JobTime& rhs) {
-        return this->time < rhs.time;
+        return this->service + this->min_time_to + this->min_time_from <
+               rhs.service + rhs.min_time_to + rhs.min_time_from;
       }
     };
 
-    std::vector<JobTime> job_times(jobs.size());
-    for (Index j = 0; j < jobs.size(); ++j) {
-      // TODO take setup time and lower bound of travel time to job in
-      // account.
-      job_times[j] = {j, jobs[j].service};
-    }
-
-    std::sort(job_times.begin(), job_times.end());
-
     for (Index v = 0; v < vehicles.size(); ++v) {
-      const auto vehicle_duration = vehicles[v].available_duration();
-      std::size_t max_tasks = jobs.size();
-      Duration time_sum = 0;
+      auto& vehicle = vehicles[v];
+      const auto vehicle_duration = vehicle.available_duration();
       std::size_t doable_tasks = 0;
+      Duration time_sum = 0;
 
-      for (std::size_t j = 0; j < jobs.size(); ++j) {
-        if (vehicle_ok_with_job(v, job_times[j].rank)) {
-          ++doable_tasks;
-          time_sum += job_times[j].time;
-          if (time_sum > vehicle_duration) {
-            max_tasks = doable_tasks;
-            break;
+      // Populate a vector of vehicle-dependent JobTime objects.
+      std::vector<JobTime> job_times(jobs.size());
+
+      if (vehicle.has_start()) {
+        // Sort the vector based on min_time_to + service.
+        for (Index i = 0; i < jobs.size(); ++i) {
+          auto i_index = jobs[i].index();
+          auto min_time_to =
+            vehicle.duration(vehicle.start.value().index(), i_index);
+          for (Index j = 0; j < jobs.size(); ++j) {
+            if (i != j) {
+              min_time_to =
+                std::min(min_time_to,
+                         vehicle.duration(jobs[j].index(), i_index));
+            }
           }
+
+          job_times[i] = {i, jobs[i].service, min_time_to, 0};
+        }
+      } else {
+        assert(vehicle.has_end());
+        // Sort the vector based on service + min_time_from.
+        for (Index i = 0; i < jobs.size(); ++i) {
+          auto i_index = jobs[i].index();
+          auto min_time_from =
+            vehicle.duration(i_index, vehicle.end.value().index());
+          for (Index j = 0; j < jobs.size(); ++j) {
+            if (i != j) {
+              min_time_from =
+                std::min(min_time_from,
+                         vehicle.duration(i_index, jobs[j].index()));
+            }
+          }
+
+          job_times[i] = {i, jobs[i].service, 0, min_time_from};
         }
       }
 
-      vehicles[v].max_tasks = std::min(vehicles[v].max_tasks, max_tasks);
+      std::sort(job_times.begin(), job_times.end());
+
+      for (std::size_t j = 0; j < jobs.size(); ++j) {
+        if (time_sum > vehicle_duration) {
+          break;
+        }
+        if (vehicle_ok_with_job(v, job_times[j].rank)) {
+          ++doable_tasks;
+          assert(job_times[j].min_time_to == 0 or
+                 job_times[j].min_time_from == 0);
+          time_sum += job_times[j].service + job_times[j].min_time_from +
+                      job_times[j].min_time_to;
+        }
+      }
+
+      vehicle.max_tasks = std::min(vehicles[v].max_tasks, doable_tasks);
     }
   }
 }
