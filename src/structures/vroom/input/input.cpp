@@ -559,9 +559,10 @@ void Input::set_vehicles_costs() {
 
 void Input::set_vehicles_max_tasks() {
   if (_has_jobs and !_has_shipments and _amount_size > 0) {
-    // Compute an upper bound of the number of single jobs for each
-    // vehicle. This requires sorting single jobs and pickup/delivery
-    // values across all amount components.
+    // For job-only instances where capacity restrictions apply:
+    // compute an upper bound of the number of jobs for each vehicle
+    // based on pickups load and delivery loads. This requires sorting
+    // jobs and pickup/delivery values across all amount components.
     struct JobAmount {
       Index rank;
       Capacity amount;
@@ -571,61 +572,47 @@ void Input::set_vehicles_max_tasks() {
       }
     };
 
-    std::vector<std::vector<JobAmount>> sorted_job_pickups_per_component(
-      _amount_size);
+    std::vector<std::vector<JobAmount>>
+      job_pickups_per_component(_amount_size,
+                                std::vector<JobAmount>(jobs.size()));
+    std::vector<std::vector<JobAmount>>
+      job_deliveries_per_component(_amount_size,
+                                   std::vector<JobAmount>(jobs.size()));
     for (std::size_t i = 0; i < _amount_size; ++i) {
       for (Index j = 0; j < jobs.size(); ++j) {
-        if (jobs[j].type == JOB_TYPE::SINGLE) {
-          sorted_job_pickups_per_component[i].push_back({j, jobs[j].pickup[i]});
-        }
+        job_pickups_per_component[i][j] = JobAmount({j, jobs[j].pickup[i]});
+        job_deliveries_per_component[i][j] =
+          JobAmount({j, jobs[j].delivery[i]});
       }
 
-      std::sort(sorted_job_pickups_per_component[i].begin(),
-                sorted_job_pickups_per_component[i].end());
+      std::sort(job_pickups_per_component[i].begin(),
+                job_pickups_per_component[i].end());
+
+      std::sort(job_deliveries_per_component[i].begin(),
+                job_deliveries_per_component[i].end());
     }
-
-    std::vector<std::vector<JobAmount>> sorted_job_deliveries_per_component(
-      _amount_size);
-    for (std::size_t i = 0; i < _amount_size; ++i) {
-      for (Index j = 0; j < jobs.size(); ++j) {
-        if (jobs[j].type == JOB_TYPE::SINGLE) {
-          sorted_job_deliveries_per_component[i].push_back(
-            {j, jobs[j].delivery[i]});
-        }
-      }
-
-      std::sort(sorted_job_deliveries_per_component[i].begin(),
-                sorted_job_deliveries_per_component[i].end());
-    }
-
-    const auto nb_single_jobs = sorted_job_pickups_per_component[0].size();
 
     for (Index v = 0; v < vehicles.size(); ++v) {
-      std::size_t max_tasks = nb_single_jobs;
+      std::size_t max_tasks = jobs.size();
 
       for (std::size_t i = 0; i < _amount_size; ++i) {
-        assert(nb_single_jobs == sorted_job_pickups_per_component[i].size());
-        assert(nb_single_jobs == sorted_job_deliveries_per_component[i].size());
         Capacity pickup_sum = 0;
         Capacity delivery_sum = 0;
-        std::size_t compatible_tasks_ok = 0;
+        std::size_t doable_tasks = 0;
 
-        for (std::size_t j = 0;
-             j < nb_single_jobs and compatible_tasks_ok < max_tasks;
+        for (std::size_t j = 0; j < jobs.size() and doable_tasks < max_tasks;
              ++j) {
-          if (vehicle_ok_with_job(v,
-                                  sorted_job_pickups_per_component[i][j]
-                                    .rank)) {
-            pickup_sum += sorted_job_pickups_per_component[i][j].amount;
-            delivery_sum += sorted_job_deliveries_per_component[i][j].amount;
+          if (vehicle_ok_with_job(v, job_pickups_per_component[i][j].rank)) {
+            pickup_sum += job_pickups_per_component[i][j].amount;
+            delivery_sum += job_deliveries_per_component[i][j].amount;
             if (pickup_sum > vehicles[v].capacity[i] or
                 delivery_sum > vehicles[v].capacity[i]) {
               break;
             }
-            ++compatible_tasks_ok;
+            ++doable_tasks;
           }
         }
-        max_tasks = std::min(max_tasks, compatible_tasks_ok);
+        max_tasks = std::min(max_tasks, doable_tasks);
       }
 
       vehicles[v].max_tasks = std::min(vehicles[v].max_tasks, max_tasks);
