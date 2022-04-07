@@ -660,9 +660,22 @@ void Input::set_vehicles_max_tasks() {
 
           job_times[i] = {i, jobs[i].service, min_time_to, 0};
         }
+
+        if (vehicle.has_end()) {
+          // Also use bound for time after last job.
+          auto min_end = std::numeric_limits<Duration>::max();
+          const auto& end_index = vehicle.end.value().index();
+          for (std::size_t j = 0; j < jobs.size(); ++j) {
+            if (vehicle_ok_with_job(v, j)) {
+              min_end =
+                std::min(min_end, vehicle.duration(jobs[j].index(), end_index));
+            }
+          }
+          time_sum += min_end;
+        }
       } else {
-        assert(vehicle.has_end());
         // Sort the vector based on service + min_time_from.
+        assert(vehicle.has_end());
         for (Index i = 0; i < jobs.size(); ++i) {
           auto i_index = jobs[i].index();
           auto min_time_from =
