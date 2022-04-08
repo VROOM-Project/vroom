@@ -637,6 +637,12 @@ void Input::set_vehicles_max_tasks() {
 
     for (Index v = 0; v < vehicles.size(); ++v) {
       auto& vehicle = vehicles[v];
+
+      if (vehicle.tw.is_default()) {
+        // No restriction will apply.
+        continue;
+      }
+
       const auto vehicle_duration = vehicle.available_duration();
       std::size_t doable_tasks = 0;
       Duration time_sum = 0;
