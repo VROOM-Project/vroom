@@ -109,6 +109,8 @@ public:
     return _zero;
   }
 
+  bool is_used_several_times(const Location& location) const;
+
   bool has_skills() const;
 
   bool has_jobs() const;

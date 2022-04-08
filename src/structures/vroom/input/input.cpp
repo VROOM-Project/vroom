@@ -381,6 +381,11 @@ void Input::set_costs_matrix(const std::string& profile, Matrix<Cost>&& m) {
   _costs_matrices.insert_or_assign(profile, m);
 }
 
+bool Input::is_used_several_times(const Location& location) const {
+  return _locations_used_several_times.find(location) !=
+         _locations_used_several_times.end();
+}
+
 bool Input::has_skills() const {
   return _has_skills;
 }
@@ -624,14 +629,14 @@ void Input::set_vehicles_max_tasks() {
     // based on time window amplitude and lower bounds of tasks times.
     struct JobTime {
       Index rank;
-      Duration service;
+      Duration action;
       // Only one of the following is set to a non-zero value below.
       Duration min_time_to;
       Duration min_time_from;
 
       bool operator<(const JobTime& rhs) {
-        return this->service + this->min_time_to + this->min_time_from <
-               rhs.service + rhs.min_time_to + rhs.min_time_from;
+        return this->action + this->min_time_to + this->min_time_from <
+               rhs.action + rhs.min_time_to + rhs.min_time_from;
       }
     };
 
@@ -651,7 +656,7 @@ void Input::set_vehicles_max_tasks() {
       std::vector<JobTime> job_times(jobs.size());
 
       if (vehicle.has_start()) {
-        // Sort the vector based on min_time_to + service.
+        // Sort the vector based on min_time_to + action.
         for (Index i = 0; i < jobs.size(); ++i) {
           auto i_index = jobs[i].index();
           auto min_time_to =
@@ -664,7 +669,10 @@ void Input::set_vehicles_max_tasks() {
             }
           }
 
-          job_times[i] = {i, jobs[i].service, min_time_to, 0};
+          const auto action =
+            jobs[i].service +
+            (is_used_several_times(jobs[i].location) ? 0 : jobs[i].setup);
+          job_times[i] = {i, action, min_time_to, 0};
         }
 
         if (vehicle.has_end()) {
@@ -680,7 +688,7 @@ void Input::set_vehicles_max_tasks() {
           time_sum += min_end;
         }
       } else {
-        // Sort the vector based on service + min_time_from.
+        // Sort the vector based on action + min_time_from.
         assert(vehicle.has_end());
         for (Index i = 0; i < jobs.size(); ++i) {
           auto i_index = jobs[i].index();
@@ -694,7 +702,10 @@ void Input::set_vehicles_max_tasks() {
             }
           }
 
-          job_times[i] = {i, jobs[i].service, 0, min_time_from};
+          const auto action =
+            jobs[i].service +
+            (is_used_several_times(jobs[i].location) ? 0 : jobs[i].setup);
+          job_times[i] = {i, action, 0, min_time_from};
         }
       }
 
@@ -708,7 +719,7 @@ void Input::set_vehicles_max_tasks() {
           ++doable_tasks;
           assert(job_times[j].min_time_to == 0 or
                  job_times[j].min_time_from == 0);
-          time_sum += job_times[j].service + job_times[j].min_time_from +
+          time_sum += job_times[j].action + job_times[j].min_time_from +
                       job_times[j].min_time_to;
         }
       }
