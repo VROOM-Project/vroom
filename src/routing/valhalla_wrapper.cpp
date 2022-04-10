@@ -7,7 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "../../include/polylineencoder.h"
+#include "../../include/polylineencoder/src/polylineencoder.h"
 
 #include "routing/valhalla_wrapper.h"
 
