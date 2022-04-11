@@ -18,6 +18,7 @@
 - Reduce computing time on PDPTW benchmarks by around 20% (#559)
 - Change Input and parser signature to simplify downstream usage (#665)
 - Use cxxopts as command line parser instead of getopt (#602)
+- Change polylineencoder usage to submodule instead of plain header (#686) 
 
 ### Fixed
 
