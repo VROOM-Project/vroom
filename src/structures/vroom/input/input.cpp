@@ -662,11 +662,23 @@ void Input::set_vehicles_max_tasks() {
           auto min_time_to =
             vehicle.duration(vehicle.start.value().index(), i_index);
           for (Index j = 0; j < jobs.size(); ++j) {
-            if (i != j) {
-              min_time_to =
-                std::min(min_time_to,
-                         vehicle.duration(jobs[j].index(), i_index));
+            if (i == j) {
+              continue;
             }
+
+            // Only consider jobs that can fit before jobs[i].
+            const auto j_i_duration =
+              vehicle.duration(jobs[j].index(), i_index);
+            auto earliest =
+              jobs[j].tws[0].start + jobs[j].service + j_i_duration;
+            if (!is_used_several_times(jobs[j].location)) {
+              earliest += jobs[j].setup;
+            }
+            if (jobs[i].tws.back().end < earliest) {
+              continue;
+            }
+
+            min_time_to = std::min(min_time_to, j_i_duration);
           }
 
           const auto action =
@@ -695,11 +707,23 @@ void Input::set_vehicles_max_tasks() {
           auto min_time_from =
             vehicle.duration(i_index, vehicle.end.value().index());
           for (Index j = 0; j < jobs.size(); ++j) {
-            if (i != j) {
-              min_time_from =
-                std::min(min_time_from,
-                         vehicle.duration(i_index, jobs[j].index()));
+            if (i == j) {
+              continue;
             }
+
+            // Only consider jobs that can fit after jobs[i].
+            const auto i_j_duration =
+              vehicle.duration(i_index, jobs[j].index());
+            auto earliest =
+              jobs[i].tws[0].start + jobs[i].service + i_j_duration;
+            if (!is_used_several_times(jobs[i].location)) {
+              earliest += jobs[i].setup;
+            }
+            if (jobs[j].tws.back().end < earliest) {
+              continue;
+            }
+
+            min_time_from = std::min(min_time_from, i_j_duration);
           }
 
           const auto action =
