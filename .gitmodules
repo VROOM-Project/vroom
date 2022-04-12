@@ -4,4 +4,3 @@
 [submodule "include/polylineencoder"]
 	path = include/polylineencoder
 	url = https://github.com/vahancho/polylineencoder
-	branch = v1.1.2
