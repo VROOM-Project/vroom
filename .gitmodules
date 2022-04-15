@@ -1,0 +1,6 @@
+[submodule "include/cxxopts"]
+	path = include/cxxopts
+	url = https://github.com/jarro2783/cxxopts
+[submodule "include/polylineencoder"]
+	path = include/polylineencoder
+	url = https://github.com/vahancho/polylineencoder

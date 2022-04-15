@@ -9,6 +9,7 @@
 - Shared target to makefile, for creating Position Independent Code (#617)
 - Exposing some internals for Python through compile flags (#640)
 - Stats on local search operators use for dev/debug purposes (#658)
+- Project can be compiled without routing support to limit dependencies (#676)
 
 ### Changed
 
@@ -17,6 +18,8 @@
 - Reduce computing time on PDPTW benchmarks by around 20% (#559)
 - Change Input and parser signature to simplify downstream usage (#665)
 - Consider move options in SWAP* that were previously wrongly discarded (#682)
+- Use cxxopts as command line parser instead of getopt (#602)
+- Change polylineencoder usage to submodule instead of plain header (#686)
 
 ### Fixed
 
