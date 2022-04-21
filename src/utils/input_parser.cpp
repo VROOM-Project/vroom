@@ -586,7 +586,7 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
     input.set_durations_matrix(DEFAULT_PROFILE,
                                 get_matrix<Duration>(json_input["matrix"]));
   } else if (input.has_custom_location_index()) {
-    throw InputException("Unexpected index attributes while no custom matrices provided.");
+    throw InputException("Unexpected location index while no custom matrices provided.");
   }
 }
 
