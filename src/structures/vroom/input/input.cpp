@@ -376,6 +376,10 @@ bool Input::has_skills() const {
   return _has_skills;
 }
 
+bool Input::has_custom_location_index() const {
+  return _has_custom_location_index;
+}
+
 bool Input::has_jobs() const {
   return _has_jobs;
 }
