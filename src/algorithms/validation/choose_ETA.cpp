@@ -928,7 +928,7 @@ Route choose_ETA(const Input& input,
     }
     ++constraint_rank;
   }
-  assert(current_delta_rank = nb_var + 1);
+  assert(current_delta_rank == nb_var + 1);
 
   // Makespan coefficients
   // a[constraint_rank, 1] = -1
@@ -996,7 +996,7 @@ Route choose_ETA(const Input& input,
     current_delta_rank += (1 + B[i]);
     delta_sum_majorant += (B[i] * durations[i]);
   }
-  assert(current_delta_rank = nb_var + 1);
+  assert(current_delta_rank == nb_var + 1);
 
   for (unsigned i = 0; i <= n + 1; ++i) {
     glp_set_obj_coef(lp, start_Y_col + i, 0);
