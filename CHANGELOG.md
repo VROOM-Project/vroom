@@ -24,6 +24,7 @@
 
 - Remove duplicate definition of LocalSearch (#638)
 - Move priority check to Job constructor instead of input parser (#628)
+- Fix assertions to do equality checks instead of assignments (#701)
 
 ## [v1.11.0] - 2021-11-19
 
