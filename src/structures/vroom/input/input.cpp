@@ -376,10 +376,6 @@ bool Input::has_skills() const {
   return _has_skills;
 }
 
-bool Input::has_custom_location_index() const {
-  return _has_custom_location_index;
-}
-
 bool Input::has_jobs() const {
   return _has_jobs;
 }
@@ -639,6 +635,10 @@ void Input::set_matrices(unsigned nb_thread) {
   if ((!_durations_matrices.empty() or !_costs_matrices.empty()) and
       !_has_custom_location_index) {
     throw InputException("Missing location index.");
+  }
+  if ((_durations_matrices.empty() and _costs_matrices.empty()) and
+      _has_custom_location_index) {
+    throw InputException("Unexpected location index while no custom matrices provided.");
   }
 
   // Split computing matrices across threads based on number of

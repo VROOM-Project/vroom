@@ -585,8 +585,8 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
     // `matrices.DEFAULT_PROFILE.duration` for retro-compatibility.
     input.set_durations_matrix(DEFAULT_PROFILE,
                                 get_matrix<Duration>(json_input["matrix"]));
-  } else if (input.has_custom_location_index()) {
-    throw InputException("Unexpected location index while no custom matrices provided.");
+  } else {
+    // SanityCheck for inappropriate index attributes takes place in Input::set_matrices()
   }
 }
 

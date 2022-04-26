@@ -109,8 +109,6 @@ public:
 
   bool has_skills() const;
 
-  bool has_custom_location_index() const;
-
   bool has_jobs() const;
 
   bool has_shipments() const;
