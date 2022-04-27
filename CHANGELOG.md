@@ -13,6 +13,7 @@
 
 ### Changed
 
+- Prune local search moves based on TW constraints (#583)
 - Refactor exception class (#639)
 - CI builds now run against `libosrm` v5.26.0 (#651)
 - Reduce computing time on PDPTW benchmarks by around 20% (#559)
