@@ -129,16 +129,17 @@ public:
   std::vector<std::vector<Index>> insertion_ranks_begin;
   std::vector<std::vector<Index>> insertion_ranks_end;
 
-  // insertion_ranks_begin[v][j] is the highest rank in route for
+  // weak_insertion_ranks_begin[v][j] is the highest rank in route for
   // vehicle v such that inserting job at rank j strictly before
-  // insertion_ranks_begin[v][j] is bound to fail based on job
+  // weak_insertion_ranks_begin[v][j] is bound to fail based on job
   // constraints and route tasks time windows.
-  // insertion_ranks_end[v][j] is the lowest rank in route for vehicle
-  // v such that inserting job at rank j at insertion_ranks_end[v][j]
-  // or after is bound to fail based on job constraints and route
-  // tasks time windows. The range restriction is weaker than right
-  // above but has the advantage of remaining valid for use in
-  // operators that modify route for vehicle v.
+  // weak_insertion_ranks_end[v][j] is the lowest rank in route for
+  // vehicle v such that inserting job at rank j at
+  // weak_insertion_ranks_end[v][j] or after is bound to fail based on
+  // job constraints and route tasks time windows. The range
+  // restriction is weaker than right above but has the advantage of
+  // remaining valid for use in operators that modify route for
+  // vehicle v.
   std::vector<std::vector<Index>> weak_insertion_ranks_begin;
   std::vector<std::vector<Index>> weak_insertion_ranks_end;
 
