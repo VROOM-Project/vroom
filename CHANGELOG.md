@@ -18,13 +18,15 @@
 - Reduce computing time on PDPTW benchmarks by around 20% (#559)
 - Change Input and parser signature to simplify downstream usage (#665)
 - Use cxxopts as command line parser instead of getopt (#602)
-- Change polylineencoder usage to submodule instead of plain header (#686) 
+- Change polylineencoder usage to submodule instead of plain header (#686)
 
 ### Fixed
 
 - Remove duplicate definition of LocalSearch (#638)
 - Move priority check to Job constructor instead of input parser (#628)
 - Wrong index values without custom matrix (#683)
+- Assignments instead of equality checks in some plan mode assertions (#701)
+- Initialization of single-entry matrix (#699)
 
 ## [v1.11.0] - 2021-11-19
 
