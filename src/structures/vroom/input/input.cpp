@@ -636,6 +636,11 @@ void Input::set_matrices(unsigned nb_thread) {
       !_has_custom_location_index) {
     throw InputException("Missing location index.");
   }
+  if ((_durations_matrices.empty() and _costs_matrices.empty()) and
+      _has_custom_location_index) {
+    throw InputException(
+      "Unexpected location index while no custom matrices provided.");
+  }
 
   // Split computing matrices across threads based on number of
   // profiles.
@@ -678,7 +683,7 @@ void Input::set_matrices(unsigned nb_thread) {
           // Durations matrix not manually set so defined as empty
           // above.
           if (_locations.size() == 1) {
-            d_m->second = Matrix<Cost>({{0}});
+            d_m->second = Matrix<Cost>(1);
           } else {
             auto rw = std::find_if(_routing_wrappers.begin(),
                                    _routing_wrappers.end(),
