@@ -636,6 +636,11 @@ void Input::set_matrices(unsigned nb_thread) {
       !_has_custom_location_index) {
     throw InputException("Missing location index.");
   }
+  if ((_durations_matrices.empty() and _costs_matrices.empty()) and
+      _has_custom_location_index) {
+    throw InputException(
+      "Unexpected location index while no custom matrices provided.");
+  }
 
   // Split computing matrices across threads based on number of
   // profiles.
