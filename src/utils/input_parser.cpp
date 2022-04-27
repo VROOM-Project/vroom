@@ -580,13 +580,13 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
         }
       }
     }
-  } else if (json_input.HasMember("matrix")) {
+  } else {
     // Deprecated `matrix` key still interpreted as
     // `matrices.DEFAULT_PROFILE.duration` for retro-compatibility.
-    input.set_durations_matrix(DEFAULT_PROFILE,
-                                get_matrix<Duration>(json_input["matrix"]));
-  } else {
-    // SanityCheck for inappropriate index attributes takes place in Input::set_matrices()
+    if (json_input.HasMember("matrix")) {
+      input.set_durations_matrix(DEFAULT_PROFILE,
+                                 get_matrix<Duration>(json_input["matrix"]));
+    }
   }
 }
 
