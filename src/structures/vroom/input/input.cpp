@@ -638,7 +638,8 @@ void Input::set_matrices(unsigned nb_thread) {
   }
   if ((_durations_matrices.empty() and _costs_matrices.empty()) and
       _has_custom_location_index) {
-    throw InputException("Unexpected location index while no custom matrices provided.");
+    throw InputException(
+      "Unexpected location index while no custom matrices provided.");
   }
 
   // Split computing matrices across threads based on number of
