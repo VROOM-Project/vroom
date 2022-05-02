@@ -125,6 +125,7 @@ enum OperatorName {
   IntraMixedExchange,
   IntraRelocate,
   IntraOrOpt,
+  IntraTwoOpt,
   PDShift,
   RouteExchange,
   MAX

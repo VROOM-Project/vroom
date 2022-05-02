@@ -15,6 +15,7 @@ All rights reserved (see LICENSE).
 #include "problems/vrptw/operators/intra_mixed_exchange.h"
 #include "problems/vrptw/operators/intra_or_opt.h"
 #include "problems/vrptw/operators/intra_relocate.h"
+#include "problems/vrptw/operators/intra_two_opt.h"
 #include "problems/vrptw/operators/mixed_exchange.h"
 #include "problems/vrptw/operators/or_opt.h"
 #include "problems/vrptw/operators/pd_shift.h"
@@ -43,6 +44,7 @@ template <class Route,
           class IntraMixedExchange,
           class IntraRelocate,
           class IntraOrOpt,
+          class IntraTwoOpt,
           class PDShift,
           class RouteExchange>
 LocalSearch<Route,
@@ -59,6 +61,7 @@ LocalSearch<Route,
             IntraMixedExchange,
             IntraRelocate,
             IntraOrOpt,
+            IntraTwoOpt,
             PDShift,
             RouteExchange>::LocalSearch(const Input& input,
                                         std::vector<Route>& sol,
@@ -143,6 +146,7 @@ template <class Route,
           class IntraMixedExchange,
           class IntraRelocate,
           class IntraOrOpt,
+          class IntraTwoOpt,
           class PDShift,
           class RouteExchange>
 void LocalSearch<Route,
@@ -159,6 +163,7 @@ void LocalSearch<Route,
                  IntraMixedExchange,
                  IntraRelocate,
                  IntraOrOpt,
+                 IntraTwoOpt,
                  PDShift,
                  RouteExchange>::try_job_additions(const std::vector<Index>&
                                                      routes,
@@ -311,6 +316,7 @@ template <class Route,
           class IntraMixedExchange,
           class IntraRelocate,
           class IntraOrOpt,
+          class IntraTwoOpt,
           class PDShift,
           class RouteExchange>
 void LocalSearch<Route,
@@ -327,6 +333,7 @@ void LocalSearch<Route,
                  IntraMixedExchange,
                  IntraRelocate,
                  IntraOrOpt,
+                 IntraTwoOpt,
                  PDShift,
                  RouteExchange>::run_ls_step() {
   // Store best move involving a pair of routes.
@@ -1383,6 +1390,7 @@ template <class Route,
           class IntraMixedExchange,
           class IntraRelocate,
           class IntraOrOpt,
+          class IntraTwoOpt,
           class PDShift,
           class RouteExchange>
 void LocalSearch<Route,
@@ -1399,6 +1407,7 @@ void LocalSearch<Route,
                  IntraMixedExchange,
                  IntraRelocate,
                  IntraOrOpt,
+                 IntraTwoOpt,
                  PDShift,
                  RouteExchange>::run() {
   bool try_ls_step = true;
@@ -1495,6 +1504,7 @@ template <class Route,
           class IntraMixedExchange,
           class IntraRelocate,
           class IntraOrOpt,
+          class IntraTwoOpt,
           class PDShift,
           class RouteExchange>
 std::array<OperatorStats, OperatorName::MAX>
@@ -1512,6 +1522,7 @@ LocalSearch<Route,
             IntraMixedExchange,
             IntraRelocate,
             IntraOrOpt,
+            IntraTwoOpt,
             PDShift,
             RouteExchange>::get_stats() const {
   std::array<OperatorStats, OperatorName::MAX> stats;
@@ -1537,6 +1548,7 @@ template <class Route,
           class IntraMixedExchange,
           class IntraRelocate,
           class IntraOrOpt,
+          class IntraTwoOpt,
           class PDShift,
           class RouteExchange>
 Gain LocalSearch<Route,
@@ -1553,6 +1565,7 @@ Gain LocalSearch<Route,
                  IntraMixedExchange,
                  IntraRelocate,
                  IntraOrOpt,
+                 IntraTwoOpt,
                  PDShift,
                  RouteExchange>::job_route_cost(Index v_target,
                                                 Index v,
@@ -1606,6 +1619,7 @@ template <class Route,
           class IntraMixedExchange,
           class IntraRelocate,
           class IntraOrOpt,
+          class IntraTwoOpt,
           class PDShift,
           class RouteExchange>
 Gain LocalSearch<Route,
@@ -1622,6 +1636,7 @@ Gain LocalSearch<Route,
                  IntraMixedExchange,
                  IntraRelocate,
                  IntraOrOpt,
+                 IntraTwoOpt,
                  PDShift,
                  RouteExchange>::relocate_cost_lower_bound(Index v, Index r) {
   Gain best_bound = static_cast<Gain>(INFINITE_COST);
@@ -1652,6 +1667,7 @@ template <class Route,
           class IntraMixedExchange,
           class IntraRelocate,
           class IntraOrOpt,
+          class IntraTwoOpt,
           class PDShift,
           class RouteExchange>
 Gain LocalSearch<Route,
@@ -1668,6 +1684,7 @@ Gain LocalSearch<Route,
                  IntraMixedExchange,
                  IntraRelocate,
                  IntraOrOpt,
+                 IntraTwoOpt,
                  PDShift,
                  RouteExchange>::relocate_cost_lower_bound(Index v,
                                                            Index r1,
@@ -1702,6 +1719,7 @@ template <class Route,
           class IntraMixedExchange,
           class IntraRelocate,
           class IntraOrOpt,
+          class IntraTwoOpt,
           class PDShift,
           class RouteExchange>
 void LocalSearch<Route,
@@ -1718,6 +1736,7 @@ void LocalSearch<Route,
                  IntraMixedExchange,
                  IntraRelocate,
                  IntraOrOpt,
+                 IntraTwoOpt,
                  PDShift,
                  RouteExchange>::remove_from_routes() {
   // Store nearest job from and to any job in any route for constant
@@ -1841,6 +1860,7 @@ template <class Route,
           class IntraMixedExchange,
           class IntraRelocate,
           class IntraOrOpt,
+          class IntraTwoOpt,
           class PDShift,
           class RouteExchange>
 utils::SolutionIndicators LocalSearch<Route,
@@ -1857,6 +1877,7 @@ utils::SolutionIndicators LocalSearch<Route,
                                       IntraMixedExchange,
                                       IntraRelocate,
                                       IntraOrOpt,
+                                      IntraTwoOpt,
                                       PDShift,
                                       RouteExchange>::indicators() const {
   return _best_sol_indicators;
@@ -1876,6 +1897,7 @@ template class LocalSearch<TWRoute,
                            vrptw::IntraMixedExchange,
                            vrptw::IntraRelocate,
                            vrptw::IntraOrOpt,
+                           vrptw::IntraTwoOpt,
                            vrptw::PDShift,
                            vrptw::RouteExchange>;
 
@@ -1893,6 +1915,7 @@ template class LocalSearch<RawRoute,
                            cvrp::IntraMixedExchange,
                            cvrp::IntraRelocate,
                            cvrp::IntraOrOpt,
+                           cvrp::IntraTwoOpt,
                            cvrp::PDShift,
                            cvrp::RouteExchange>;
 
