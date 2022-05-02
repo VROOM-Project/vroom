@@ -1117,6 +1117,34 @@ void LocalSearch<Route,
       }
     }
 
+    // IntraTwoOpt stuff
+    for (const auto& s_t : s_t_pairs) {
+      if (s_t.first != s_t.second or best_priorities[s_t.first] > 0 or
+          _sol[s_t.first].size() < 4) {
+        continue;
+      }
+      for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 2; ++s_rank) {
+        // TODO make sure we don't reverse a full shipment.
+        for (unsigned t_rank = s_rank + 2; t_rank < _sol[s_t.first].size();
+             ++t_rank) {
+#ifdef LOG_LS_OPERATORS
+          ++tried_moves[OperatorName::IntraTwoOpt];
+#endif
+          IntraTwoOpt r(_input,
+                        _sol_state,
+                        _sol[s_t.first],
+                        s_t.first,
+                        s_rank,
+                        t_rank);
+          auto& current_best = best_gains[s_t.first][s_t.second];
+          if (r.gain() > current_best and r.is_valid()) {
+            current_best = r.gain();
+            best_ops[s_t.first][s_t.first] = std::make_unique<IntraTwoOpt>(r);
+          }
+        }
+      }
+    }
+
     if (_input.has_shipments()) {
       // Move(s) that don't make sense for job-only instances.
 
