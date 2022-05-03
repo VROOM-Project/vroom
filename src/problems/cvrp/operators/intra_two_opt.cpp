@@ -31,6 +31,7 @@ IntraTwoOpt::IntraTwoOpt(const Input& input,
   // where t_rank = s_rank + 1, as the move is also an intra_relocate.
   assert(s_route.size() >= 3);
   assert(s_rank < t_rank - 1);
+  assert(t_rank < s_route.size());
 }
 
 void IntraTwoOpt::compute_gain() {
@@ -77,8 +78,18 @@ void IntraTwoOpt::compute_gain() {
 }
 
 bool IntraTwoOpt::is_valid() {
-  // TODO
-  return true;
+  auto rev_t = s_route.rbegin() + (s_route.size() - t_rank - 1);
+  auto rev_s_next = s_route.rbegin() + (s_route.size() - s_rank);
+
+  return source
+    .is_valid_addition_for_capacity_inclusion(_input,
+                                              source.delivery_in_range(s_rank,
+                                                                       t_rank +
+                                                                         1),
+                                              rev_t,
+                                              rev_s_next,
+                                              s_rank,
+                                              t_rank + 1);
 }
 
 void IntraTwoOpt::apply() {
