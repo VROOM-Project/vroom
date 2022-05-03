@@ -7,6 +7,8 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <algorithm>
+
 #include "problems/cvrp/operators/intra_two_opt.h"
 
 namespace vroom {
@@ -93,7 +95,9 @@ bool IntraTwoOpt::is_valid() {
 }
 
 void IntraTwoOpt::apply() {
-  // TODO
+  std::reverse(s_route.begin() + s_rank, s_route.begin() + t_rank + 1);
+
+  source.update_amounts(_input);
 }
 
 std::vector<Index> IntraTwoOpt::addition_candidates() const {
