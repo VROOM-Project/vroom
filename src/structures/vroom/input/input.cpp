@@ -603,20 +603,24 @@ void Input::set_vehicles_max_tasks() {
       for (std::size_t i = 0; i < _amount_size; ++i) {
         Capacity pickup_sum = 0;
         Capacity delivery_sum = 0;
-        std::size_t doable_tasks = 0;
+        std::size_t doable_pickups = 0;
+        std::size_t doable_deliveries = 0;
 
-        for (std::size_t j = 0; j < jobs.size() and doable_tasks < max_tasks;
-             ++j) {
-          if (vehicle_ok_with_job(v, job_pickups_per_component[i][j].rank)) {
+        for (std::size_t j = 0; j < jobs.size(); ++j) {
+          if (vehicle_ok_with_job(v, job_pickups_per_component[i][j].rank) and
+              pickup_sum <= vehicles[v].capacity[i]) {
             pickup_sum += job_pickups_per_component[i][j].amount;
+            ++doable_pickups;
+          }
+          if (vehicle_ok_with_job(v,
+                                  job_deliveries_per_component[i][j].rank) and
+              delivery_sum <= vehicles[v].capacity[i]) {
             delivery_sum += job_deliveries_per_component[i][j].amount;
-            if (pickup_sum > vehicles[v].capacity[i] or
-                delivery_sum > vehicles[v].capacity[i]) {
-              break;
-            }
-            ++doable_tasks;
+            ++doable_deliveries;
           }
         }
+
+        const auto doable_tasks = std::min(doable_pickups, doable_deliveries);
         max_tasks = std::min(max_tasks, doable_tasks);
       }
 
