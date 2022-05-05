@@ -634,15 +634,20 @@ void Input::set_vehicles_max_tasks() {
     struct JobTime {
       Index rank;
       Duration action;
-      // Only one of the following is set to a non-zero value below.
-      Duration min_time_to;
-      Duration min_time_from;
 
       bool operator<(const JobTime& rhs) {
-        return this->action + this->min_time_to + this->min_time_from <
-               rhs.action + rhs.min_time_to + rhs.min_time_from;
+        return this->action < rhs.action;
       }
     };
+
+    std::vector<JobTime> job_times(jobs.size());
+    for (Index j = 0; j < jobs.size(); ++j) {
+      const auto action =
+        jobs[j].service +
+        (is_used_several_times(jobs[j].location) ? 0 : jobs[j].setup);
+      job_times[j] = {j, action};
+    }
+    std::sort(job_times.begin(), job_times.end());
 
     for (Index v = 0; v < vehicles.size(); ++v) {
       auto& vehicle = vehicles[v];
@@ -656,103 +661,17 @@ void Input::set_vehicles_max_tasks() {
       std::size_t doable_tasks = 0;
       Duration time_sum = 0;
 
-      // Populate a vector of vehicle-dependent JobTime objects.
-      std::vector<JobTime> job_times(jobs.size());
-
-      if (vehicle.has_start()) {
-        // Sort the vector based on min_time_to + action.
-        for (Index i = 0; i < jobs.size(); ++i) {
-          auto i_index = jobs[i].index();
-          auto min_time_to =
-            vehicle.duration(vehicle.start.value().index(), i_index);
-          for (Index j = 0; j < jobs.size(); ++j) {
-            if (i == j) {
-              continue;
-            }
-
-            // Only consider jobs that can fit before jobs[i].
-            const auto j_i_duration =
-              vehicle.duration(jobs[j].index(), i_index);
-            auto earliest =
-              jobs[j].tws[0].start + jobs[j].service + j_i_duration;
-            if (!is_used_several_times(jobs[j].location)) {
-              earliest += jobs[j].setup;
-            }
-            if (jobs[i].tws.back().end < earliest) {
-              continue;
-            }
-
-            min_time_to = std::min(min_time_to, j_i_duration);
-          }
-
-          const auto action =
-            jobs[i].service +
-            (is_used_several_times(jobs[i].location) ? 0 : jobs[i].setup);
-          job_times[i] = {i, action, min_time_to, 0};
-        }
-
-        if (vehicle.has_end()) {
-          // Also use bound for time after last job.
-          auto min_end = std::numeric_limits<Duration>::max();
-          const auto& end_index = vehicle.end.value().index();
-          for (std::size_t j = 0; j < jobs.size(); ++j) {
-            if (vehicle_ok_with_job(v, j)) {
-              min_end =
-                std::min(min_end, vehicle.duration(jobs[j].index(), end_index));
-            }
-          }
-          time_sum += min_end;
-        }
-      } else {
-        // Sort the vector based on action + min_time_from.
-        assert(vehicle.has_end());
-        for (Index i = 0; i < jobs.size(); ++i) {
-          auto i_index = jobs[i].index();
-          auto min_time_from =
-            vehicle.duration(i_index, vehicle.end.value().index());
-          for (Index j = 0; j < jobs.size(); ++j) {
-            if (i == j) {
-              continue;
-            }
-
-            // Only consider jobs that can fit after jobs[i].
-            const auto i_j_duration =
-              vehicle.duration(i_index, jobs[j].index());
-            auto earliest =
-              jobs[i].tws[0].start + jobs[i].service + i_j_duration;
-            if (!is_used_several_times(jobs[i].location)) {
-              earliest += jobs[i].setup;
-            }
-            if (jobs[j].tws.back().end < earliest) {
-              continue;
-            }
-
-            min_time_from = std::min(min_time_from, i_j_duration);
-          }
-
-          const auto action =
-            jobs[i].service +
-            (is_used_several_times(jobs[i].location) ? 0 : jobs[i].setup);
-          job_times[i] = {i, action, 0, min_time_from};
-        }
-      }
-
-      std::sort(job_times.begin(), job_times.end());
-
       for (std::size_t j = 0; j < jobs.size(); ++j) {
         if (time_sum > vehicle_duration) {
           break;
         }
         if (vehicle_ok_with_job(v, job_times[j].rank)) {
           ++doable_tasks;
-          assert(job_times[j].min_time_to == 0 or
-                 job_times[j].min_time_from == 0);
-          time_sum += job_times[j].action + job_times[j].min_time_from +
-                      job_times[j].min_time_to;
+          time_sum += job_times[j].action;
         }
       }
 
-      vehicle.max_tasks = std::min(vehicles[v].max_tasks, doable_tasks);
+      vehicle.max_tasks = std::min(vehicle.max_tasks, doable_tasks);
     }
   }
 }
