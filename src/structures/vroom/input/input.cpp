@@ -913,7 +913,9 @@ Solution Input::solve(unsigned exploration_level,
   set_extra_compatibility();
   set_vehicles_compatibility();
 
-  // Add implicit max_tasks constraints derived from capacity and TW.
+  // Add implicit max_tasks constraints derived from capacity and
+  // TW. Note: rely on set_extra_compatibility being run previously to
+  // catch wrong breaks definition.
   set_vehicles_max_tasks();
 
   // Load relevant problem.
