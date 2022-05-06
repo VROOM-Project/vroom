@@ -40,7 +40,14 @@ bool IntraTwoOpt::is_valid() {
 }
 
 void IntraTwoOpt::apply() {
-  // TODO
+  std::vector<Index> reversed(s_route.rbegin() + (s_route.size() - t_rank - 1),
+                              s_route.rbegin() + (s_route.size() - s_rank));
+
+  _tw_s_route.replace(_input,
+                      reversed.begin(),
+                      reversed.end(),
+                      s_rank,
+                      t_rank + 1);
 }
 
 } // namespace vrptw
