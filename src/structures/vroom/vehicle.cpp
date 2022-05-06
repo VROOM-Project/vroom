@@ -7,6 +7,8 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <numeric>
+
 #include "structures/vroom/vehicle.h"
 #include "utils/exception.h"
 
@@ -106,6 +108,20 @@ bool Vehicle::has_same_profile(const Vehicle& other) const {
   return (this->profile == other.profile) and
          (this->cost_wrapper.discrete_duration_factor ==
           other.cost_wrapper.discrete_duration_factor);
+}
+
+Duration Vehicle::available_duration() const {
+  Duration available = tw.end - tw.start;
+
+  Duration breaks_duration =
+    std::accumulate(breaks.begin(),
+                    breaks.end(),
+                    0,
+                    [](auto sum, const auto& b) { return sum + b.service; });
+
+  assert(breaks_duration <= available);
+
+  return available - breaks_duration;
 }
 
 } // namespace vroom

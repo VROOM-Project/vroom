@@ -10,6 +10,7 @@
 - Exposing some internals for Python through compile flags (#640)
 - Stats on local search operators use for dev/debug purposes (#658)
 - Project can be compiled without routing support to limit dependencies (#676)
+- Internal `max_tasks` constraints derived from input to speed up local-search (#648)
 
 ### Changed
 

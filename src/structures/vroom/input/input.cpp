@@ -152,6 +152,7 @@ void Input::check_job(Job& job) {
     if (search != _locations_to_index.end()) {
       // Using stored index for existing location.
       job.location.set_index(search->second);
+      _locations_used_several_times.insert(job.location);
     } else {
       // Append new location and store corresponding index.
       auto new_index = _locations.size();
@@ -168,6 +169,8 @@ void Input::check_job(Job& job) {
       _locations.push_back(job.location);
       _locations_to_index.insert(
         std::make_pair(job.location, _locations.size() - 1));
+    } else {
+      _locations_used_several_times.insert(job.location);
     }
   }
 
@@ -261,6 +264,7 @@ void Input::add_vehicle(const Vehicle& vehicle) {
       if (search != _locations_to_index.end()) {
         // Using stored index for existing location.
         start_loc.set_index(search->second);
+        _locations_used_several_times.insert(start_loc);
       } else {
         // Append new location and store corresponding index.
         auto new_index = _locations.size();
@@ -277,6 +281,8 @@ void Input::add_vehicle(const Vehicle& vehicle) {
         _locations.push_back(start_loc);
         _locations_to_index.insert(
           std::make_pair(start_loc, _locations.size() - 1));
+      } else {
+        _locations_used_several_times.insert(start_loc);
       }
     }
 
@@ -307,6 +313,7 @@ void Input::add_vehicle(const Vehicle& vehicle) {
       if (search != _locations_to_index.end()) {
         // Using stored index for existing location.
         end_loc.set_index(search->second);
+        _locations_used_several_times.insert(end_loc);
       } else {
         // Append new location and store corresponding index.
         auto new_index = _locations.size();
@@ -323,6 +330,8 @@ void Input::add_vehicle(const Vehicle& vehicle) {
         _locations.push_back(end_loc);
         _locations_to_index.insert(
           std::make_pair(end_loc, _locations.size() - 1));
+      } else {
+        _locations_used_several_times.insert(end_loc);
       }
     }
 
@@ -370,6 +379,11 @@ void Input::set_costs_matrix(const std::string& profile, Matrix<Cost>&& m) {
     throw InputException("Empty costs matrix for " + profile + " profile.");
   }
   _costs_matrices.insert_or_assign(profile, m);
+}
+
+bool Input::is_used_several_times(const Location& location) const {
+  return _locations_used_several_times.find(location) !=
+         _locations_used_several_times.end();
 }
 
 bool Input::has_skills() const {
@@ -545,6 +559,120 @@ void Input::set_vehicles_costs() {
     }
 
     vehicle.cost_wrapper.set_durations_matrix(&(d_m->second));
+  }
+}
+
+void Input::set_vehicles_max_tasks() {
+  if (_has_jobs and !_has_shipments and _amount_size > 0) {
+    // For job-only instances where capacity restrictions apply:
+    // compute an upper bound of the number of jobs for each vehicle
+    // based on pickups load and delivery loads. This requires sorting
+    // jobs and pickup/delivery values across all amount components.
+    struct JobAmount {
+      Index rank;
+      Capacity amount;
+
+      bool operator<(const JobAmount& rhs) {
+        return this->amount < rhs.amount;
+      }
+    };
+
+    std::vector<std::vector<JobAmount>>
+      job_pickups_per_component(_amount_size,
+                                std::vector<JobAmount>(jobs.size()));
+    std::vector<std::vector<JobAmount>>
+      job_deliveries_per_component(_amount_size,
+                                   std::vector<JobAmount>(jobs.size()));
+    for (std::size_t i = 0; i < _amount_size; ++i) {
+      for (Index j = 0; j < jobs.size(); ++j) {
+        job_pickups_per_component[i][j] = JobAmount({j, jobs[j].pickup[i]});
+        job_deliveries_per_component[i][j] =
+          JobAmount({j, jobs[j].delivery[i]});
+      }
+
+      std::sort(job_pickups_per_component[i].begin(),
+                job_pickups_per_component[i].end());
+
+      std::sort(job_deliveries_per_component[i].begin(),
+                job_deliveries_per_component[i].end());
+    }
+
+    for (Index v = 0; v < vehicles.size(); ++v) {
+      std::size_t max_tasks = jobs.size();
+
+      for (std::size_t i = 0; i < _amount_size; ++i) {
+        Capacity pickup_sum = 0;
+        Capacity delivery_sum = 0;
+        std::size_t doable_pickups = 0;
+        std::size_t doable_deliveries = 0;
+
+        for (std::size_t j = 0; j < jobs.size(); ++j) {
+          if (vehicle_ok_with_job(v, job_pickups_per_component[i][j].rank) and
+              pickup_sum <= vehicles[v].capacity[i]) {
+            pickup_sum += job_pickups_per_component[i][j].amount;
+            ++doable_pickups;
+          }
+          if (vehicle_ok_with_job(v,
+                                  job_deliveries_per_component[i][j].rank) and
+              delivery_sum <= vehicles[v].capacity[i]) {
+            delivery_sum += job_deliveries_per_component[i][j].amount;
+            ++doable_deliveries;
+          }
+        }
+
+        const auto doable_tasks = std::min(doable_pickups, doable_deliveries);
+        max_tasks = std::min(max_tasks, doable_tasks);
+      }
+
+      vehicles[v].max_tasks = std::min(vehicles[v].max_tasks, max_tasks);
+    }
+  }
+
+  if (_has_TW) {
+    // Compute an upper bound of the number of tasks for each vehicle
+    // based on time window amplitude and lower bounds of tasks times.
+    struct JobTime {
+      Index rank;
+      Duration action;
+
+      bool operator<(const JobTime& rhs) {
+        return this->action < rhs.action;
+      }
+    };
+
+    std::vector<JobTime> job_times(jobs.size());
+    for (Index j = 0; j < jobs.size(); ++j) {
+      const auto action =
+        jobs[j].service +
+        (is_used_several_times(jobs[j].location) ? 0 : jobs[j].setup);
+      job_times[j] = {j, action};
+    }
+    std::sort(job_times.begin(), job_times.end());
+
+    for (Index v = 0; v < vehicles.size(); ++v) {
+      auto& vehicle = vehicles[v];
+
+      if (vehicle.tw.is_default()) {
+        // No restriction will apply.
+        continue;
+      }
+
+      const auto vehicle_duration = vehicle.available_duration();
+      std::size_t doable_tasks = 0;
+      Duration time_sum = 0;
+
+      for (std::size_t j = 0; j < jobs.size(); ++j) {
+        if (time_sum > vehicle_duration) {
+          break;
+        }
+        if (vehicle_ok_with_job(v, job_times[j].rank)) {
+          ++doable_tasks;
+          time_sum += job_times[j].action;
+        }
+      }
+
+      vehicle.max_tasks = std::min(vehicle.max_tasks, doable_tasks);
+    }
   }
 }
 
@@ -789,6 +917,11 @@ Solution Input::solve(unsigned exploration_level,
   set_skills_compatibility();
   set_extra_compatibility();
   set_vehicles_compatibility();
+
+  // Add implicit max_tasks constraints derived from capacity and
+  // TW. Note: rely on set_extra_compatibility being run previously to
+  // catch wrong breaks definition.
+  set_vehicles_max_tasks();
 
   // Load relevant problem.
   auto instance = get_problem();

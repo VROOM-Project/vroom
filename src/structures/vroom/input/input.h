@@ -52,6 +52,7 @@ private:
   Cost _cost_upper_bound;
   std::vector<Location> _locations;
   std::unordered_map<Location, Index> _locations_to_index;
+  std::unordered_set<Location> _locations_used_several_times;
   std::vector<std::vector<unsigned char>> _vehicle_to_job_compatibility;
   std::vector<std::vector<bool>> _vehicle_to_vehicle_compatibility;
   std::unordered_set<Index> _matrices_used_index;
@@ -74,6 +75,7 @@ private:
   void set_extra_compatibility();
   void set_vehicles_compatibility();
   void set_vehicles_costs();
+  void set_vehicles_max_tasks();
   void set_vehicle_steps_ranks();
   void set_matrices(unsigned nb_thread);
 
@@ -106,6 +108,8 @@ public:
   const Amount& zero_amount() const {
     return _zero;
   }
+
+  bool is_used_several_times(const Location& location) const;
 
   bool has_skills() const;
 

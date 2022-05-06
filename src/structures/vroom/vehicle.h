@@ -34,7 +34,7 @@ struct Vehicle {
   const std::vector<Break> breaks;
   const std::string description;
   CostWrapper cost_wrapper;
-  const size_t max_tasks;
+  size_t max_tasks;
   std::vector<VehicleStep> steps;
   std::unordered_map<Id, Index> break_id_to_rank;
 
@@ -59,6 +59,8 @@ struct Vehicle {
   bool has_same_locations(const Vehicle& other) const;
 
   bool has_same_profile(const Vehicle& other) const;
+
+  Duration available_duration() const;
 
   Cost duration(Index i, Index j) const {
     return cost_wrapper.duration(i, j);
