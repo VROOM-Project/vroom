@@ -79,19 +79,43 @@ void IntraTwoOpt::compute_gain() {
   gain_computed = true;
 }
 
-bool IntraTwoOpt::is_valid() {
-  auto rev_t = s_route.rbegin() + (s_route.size() - t_rank - 1);
-  auto rev_s_next = s_route.rbegin() + (s_route.size() - s_rank);
+bool IntraTwoOpt::reversal_ok_for_shipments() const {
+  bool valid = true;
+  Index current = s_rank;
 
-  return source
-    .is_valid_addition_for_capacity_inclusion(_input,
-                                              source.delivery_in_range(s_rank,
+  while (valid and current < t_rank) {
+    const auto& job = _input.jobs[s_route[current]];
+    valid = (job.type != JOB_TYPE::PICKUP) or
+            (_sol_state.matching_delivery_rank[s_vehicle][current] > t_rank);
+
+    ++current;
+  }
+
+  return valid;
+}
+
+bool IntraTwoOpt::is_valid() {
+  bool valid = !_input.has_shipments() or reversal_ok_for_shipments();
+
+  if (valid) {
+    auto rev_t = s_route.rbegin() + (s_route.size() - t_rank - 1);
+    auto rev_s_next = s_route.rbegin() + (s_route.size() - s_rank);
+
+    valid =
+      valid &&
+      source
+        .is_valid_addition_for_capacity_inclusion(_input,
+                                                  source
+                                                    .delivery_in_range(s_rank,
                                                                        t_rank +
                                                                          1),
-                                              rev_t,
-                                              rev_s_next,
-                                              s_rank,
-                                              t_rank + 1);
+                                                  rev_t,
+                                                  rev_s_next,
+                                                  s_rank,
+                                                  t_rank + 1);
+  }
+
+  return valid;
 }
 
 void IntraTwoOpt::apply() {

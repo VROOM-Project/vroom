@@ -27,6 +27,8 @@ public:
               Index s_rank,
               Index t_rank);
 
+  bool reversal_ok_for_shipments() const;
+
   virtual bool is_valid() override;
 
   virtual void apply() override;

@@ -104,7 +104,7 @@ public:
 
   // If job at rank i in route for vehicle v is a pickup
   // (resp. delivery), then matching_delivery_rank[v][i]
-  // (resp. _matching_pickup_rank[v][i]) stores the rank of the
+  // (resp. matching_pickup_rank[v][i]) stores the rank of the
   // matching delivery (resp. pickup).
   std::vector<std::vector<Index>> matching_delivery_rank;
   std::vector<std::vector<Index>> matching_pickup_rank;
