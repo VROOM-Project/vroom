@@ -2,6 +2,7 @@
 #define INSERTION_SEARCH_H
 
 #include "structures/typedefs.h"
+#include "structures/vroom/solution_state.h"
 #include "utils/helpers.h"
 
 namespace vroom {
@@ -19,17 +20,21 @@ constexpr RouteInsertion empty_insert = {std::numeric_limits<Gain>::max(),
                                          0};
 
 template <class Route>
-RouteInsertion compute_best_insertion_single(const Input& input,
-                                             const Index j,
-                                             Index v,
-                                             const Route& route) {
+RouteInsertion
+compute_best_insertion_single(const Input& input,
+                              const utils::SolutionState& sol_state,
+                              const Index j,
+                              Index v,
+                              const Route& route) {
   RouteInsertion result = empty_insert;
   const auto& current_job = input.jobs[j];
   const auto& v_target = input.vehicles[v];
 
   if (input.vehicle_ok_with_job(v, j)) {
 
-    for (Index rank = 0; rank <= route.size(); ++rank) {
+    for (Index rank = sol_state.insertion_ranks_begin[v][j];
+         rank < sol_state.insertion_ranks_end[v][j];
+         ++rank) {
       Gain current_cost =
         utils::addition_cost(input, j, v_target, route.route, rank);
       if (current_cost < result.cost and
@@ -71,6 +76,7 @@ bool valid_for_capacity(const Input& input,
 
 template <class Route>
 RouteInsertion compute_best_insertion_pd(const Input& input,
+                                         const utils::SolutionState& sol_state,
                                          const Index j,
                                          Index v,
                                          const Route& route,
@@ -87,14 +93,16 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
 
   // Pre-compute cost of addition for matching delivery.
   std::vector<Gain> d_adds(route.size() + 1);
-  std::vector<unsigned char> valid_delivery_insertions(route.size() + 1);
+  std::vector<unsigned char> valid_delivery_insertions(route.size() + 1, false);
+
+  const auto begin_d_rank = sol_state.insertion_ranks_begin[v][j + 1];
+  const auto end_d_rank = sol_state.insertion_ranks_end[v][j + 1];
 
   bool found_valid = false;
-  for (unsigned d_rank = 0; d_rank <= route.size(); ++d_rank) {
+  for (unsigned d_rank = begin_d_rank; d_rank < end_d_rank; ++d_rank) {
     d_adds[d_rank] =
       utils::addition_cost(input, j + 1, v_target, route.route, d_rank);
     if (d_adds[d_rank] > result.cost) {
-
       valid_delivery_insertions[d_rank] = false;
     } else {
       valid_delivery_insertions[d_rank] =
@@ -108,7 +116,9 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
     return result;
   }
 
-  for (Index pickup_r = 0; pickup_r <= route.size(); ++pickup_r) {
+  for (Index pickup_r = sol_state.insertion_ranks_begin[v][j];
+       pickup_r < sol_state.insertion_ranks_end[v][j];
+       ++pickup_r) {
     Gain p_add =
       utils::addition_cost(input, j, v_target, route.route, pickup_r);
     if (p_add > result.cost) {
@@ -126,8 +136,9 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
     // Build replacement sequence for current insertion.
     std::vector<Index> modified_with_pd({j});
 
-    for (Index delivery_r = pickup_r; delivery_r <= route.size();
-         ++delivery_r) {
+    // No need to use begin_d_rank here thanks to
+    // valid_delivery_insertions values.
+    for (Index delivery_r = pickup_r; delivery_r < end_d_rank; ++delivery_r) {
       // Update state variables along the way before potential
       // early abort.
       if (pickup_r < delivery_r) {

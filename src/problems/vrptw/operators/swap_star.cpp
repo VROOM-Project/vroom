@@ -35,7 +35,9 @@ void SwapStar::compute_gain() {
   // ls::compute_best_swap_star_choice<TWRoute>.
   choice = ls::compute_best_swap_star_choice(_input,
                                              _sol_state,
+                                             s_vehicle,
                                              _tw_s_route,
+                                             t_vehicle,
                                              _tw_t_route,
                                              _best_known_gain);
   if (choice.gain > 0) {

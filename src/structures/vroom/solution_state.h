@@ -104,7 +104,7 @@ public:
 
   // If job at rank i in route for vehicle v is a pickup
   // (resp. delivery), then matching_delivery_rank[v][i]
-  // (resp. _matching_pickup_rank[v][i]) stores the rank of the
+  // (resp. matching_pickup_rank[v][i]) stores the rank of the
   // matching delivery (resp. pickup).
   std::vector<std::vector<Index>> matching_delivery_rank;
   std::vector<std::vector<Index>> matching_pickup_rank;
@@ -118,16 +118,41 @@ public:
   // to job at rank r1 in v1.
   std::vector<std::vector<std::vector<Index>>> cheapest_job_rank_in_routes_to;
 
-  // Only used for assertions in debug mode.
+  // insertion_ranks_begin[v][j] is the highest rank in route for
+  // vehicle v such that inserting job at rank j strictly before
+  // insertion_ranks_begin[v][j] is bound to fail based on job
+  // constraints and earliest/latest dates in route.
+  // insertion_ranks_end[v][j] is the lowest rank in route for vehicle
+  // v such that inserting job at rank j at insertion_ranks_end[v][j]
+  // or after is bound to fail based on job constraints and
+  // earliest/latest dates in route.
+  std::vector<std::vector<Index>> insertion_ranks_begin;
+  std::vector<std::vector<Index>> insertion_ranks_end;
+
+  // weak_insertion_ranks_begin[v][j] is the highest rank in route for
+  // vehicle v such that inserting job at rank j strictly before
+  // weak_insertion_ranks_begin[v][j] is bound to fail based on job
+  // constraints and route tasks time windows.
+  // weak_insertion_ranks_end[v][j] is the lowest rank in route for
+  // vehicle v such that inserting job at rank j at
+  // weak_insertion_ranks_end[v][j] or after is bound to fail based on
+  // job constraints and route tasks time windows. The range
+  // restriction is weaker than right above but has the advantage of
+  // remaining valid for use in operators that modify route for
+  // vehicle v.
+  std::vector<std::vector<Index>> weak_insertion_ranks_begin;
+  std::vector<std::vector<Index>> weak_insertion_ranks_end;
+
+#ifndef NDEBUG
+  // Only used for assertion checks in debug mode.
   std::vector<Cost> route_costs;
+#endif
 
   SolutionState(const Input& input);
 
-  void setup(const std::vector<Index>& r, Index v);
+  template <class Route> void setup(const Route& r, Index v);
 
-  void setup(const RawSolution& sol);
-
-  void setup(const TWSolution& tw_sol);
+  template <class Solution> void setup(const Solution& sol);
 
   void update_costs(const std::vector<Index>& route, Index v);
 
@@ -146,7 +171,12 @@ public:
                                           Index v1,
                                           Index v2);
 
+  void set_insertion_ranks(const RawRoute& r, Index v);
+  void set_insertion_ranks(const TWRoute& r, Index v);
+
+#ifndef NDEBUG
   void update_route_cost(const std::vector<Index>& route, Index v);
+#endif
 };
 
 } // namespace utils

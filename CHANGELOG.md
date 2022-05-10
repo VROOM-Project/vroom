@@ -14,10 +14,12 @@
 
 ### Changed
 
+- Prune local search moves based on TW constraints (#583)
 - Refactor exception class (#639)
 - CI builds now run against `libosrm` v5.26.0 (#651)
 - Reduce computing time on PDPTW benchmarks by around 20% (#559)
 - Change Input and parser signature to simplify downstream usage (#665)
+- Consider move options in SWAP* that were previously wrongly discarded (#682)
 - Use cxxopts as command line parser instead of getopt (#602)
 - Change polylineencoder usage to submodule instead of plain header (#686)
 
