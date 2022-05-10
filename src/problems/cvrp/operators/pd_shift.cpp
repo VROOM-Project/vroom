@@ -47,9 +47,9 @@ PDShift::PDShift(const Input& input,
 }
 
 void PDShift::compute_gain() {
-
   ls::RouteInsertion rs =
     ls::compute_best_insertion_pd(_input,
+                                  _sol_state,
                                   s_route[_s_p_rank],
                                   t_vehicle,
                                   target,

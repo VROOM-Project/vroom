@@ -35,24 +35,33 @@ SolutionState::SolutionState(const Input& input)
     cheapest_job_rank_in_routes_to(_nb_vehicles,
                                    std::vector<std::vector<Index>>(
                                      _nb_vehicles)),
-    route_costs(_nb_vehicles) {
+    insertion_ranks_begin(_nb_vehicles),
+    insertion_ranks_end(_nb_vehicles),
+    weak_insertion_ranks_begin(_nb_vehicles),
+    weak_insertion_ranks_end(_nb_vehicles)
+#ifndef NDEBUG
+    ,
+    route_costs(_nb_vehicles)
+#endif
+{
 }
 
-void SolutionState::setup(const std::vector<Index>& r, Index v) {
-  update_costs(r, v);
-  update_skills(r, v);
-  set_node_gains(r, v);
-  set_edge_gains(r, v);
-  set_pd_matching_ranks(r, v);
-  set_pd_gains(r, v);
+template <class Route> void SolutionState::setup(const Route& r, Index v) {
+  update_costs(r.route, v);
+  update_skills(r.route, v);
+  set_node_gains(r.route, v);
+  set_edge_gains(r.route, v);
+  set_pd_matching_ranks(r.route, v);
+  set_pd_gains(r.route, v);
+  set_insertion_ranks(r, v);
 #ifndef NDEBUG
-  update_route_cost(r, v);
+  update_route_cost(r.route, v);
 #endif
 }
 
-void SolutionState::setup(const RawSolution& sol) {
+template <class Solution> void SolutionState::setup(const Solution& sol) {
   for (std::size_t v = 0; v < _nb_vehicles; ++v) {
-    setup(sol[v].route, v);
+    setup(sol[v], v);
   }
 
   // Initialize unassigned jobs.
@@ -61,26 +70,8 @@ void SolutionState::setup(const RawSolution& sol) {
                   _input.jobs.size(),
                   [&] { return x++; });
 
-  for (const auto& s : sol) {
-    for (const auto i : s.route) {
-      unassigned.erase(i);
-    }
-  }
-}
-
-void SolutionState::setup(const TWSolution& tw_sol) {
-  for (std::size_t v = 0; v < _nb_vehicles; ++v) {
-    setup(tw_sol[v].route, v);
-  }
-
-  // Initialize unassigned jobs.
-  Index x = 0;
-  std::generate_n(std::inserter(unassigned, unassigned.end()),
-                  _input.jobs.size(),
-                  [&] { return x++; });
-
-  for (const auto& tw_r : tw_sol) {
-    for (const auto i : tw_r.route) {
+  for (const auto& r : sol) {
+    for (const auto i : r.route) {
       unassigned.erase(i);
     }
   }
@@ -488,6 +479,106 @@ void SolutionState::set_pd_matching_ranks(const std::vector<Index>& route,
   }
 }
 
+void SolutionState::set_insertion_ranks(const RawRoute& r, Index v) {
+  insertion_ranks_end[v] =
+    std::vector<Index>(_input.jobs.size(), r.route.size() + 1);
+  insertion_ranks_begin[v] = std::vector<Index>(_input.jobs.size(), 0);
+
+  weak_insertion_ranks_end[v] =
+    std::vector<Index>(_input.jobs.size(), r.route.size() + 1);
+  weak_insertion_ranks_begin[v] = std::vector<Index>(_input.jobs.size(), 0);
+}
+
+void SolutionState::set_insertion_ranks(const TWRoute& tw_r, Index v) {
+  insertion_ranks_end[v] =
+    std::vector<Index>(_input.jobs.size(), tw_r.route.size() + 1);
+  insertion_ranks_begin[v] = std::vector<Index>(_input.jobs.size(), 0);
+
+  weak_insertion_ranks_end[v] =
+    std::vector<Index>(_input.jobs.size(), tw_r.route.size() + 1);
+  weak_insertion_ranks_begin[v] = std::vector<Index>(_input.jobs.size(), 0);
+
+  if (tw_r.size() == 0) {
+    return;
+  }
+
+  const auto& vehicle = _input.vehicles[v];
+
+  for (std::size_t j = 0; j < _input.jobs.size(); ++j) {
+    if (!_input.vehicle_ok_with_job(v, j)) {
+      insertion_ranks_end[v][j] = 0;
+      continue;
+    }
+
+    const auto& job = _input.jobs[j];
+
+    const auto job_available = job.tws.front().start;
+    const auto job_deadline = job.tws.back().end;
+    const auto job_index = job.index();
+
+    // Handle insertion_ranks_*
+    for (std::size_t t = 0; t < tw_r.route.size(); ++t) {
+      if (tw_r.route[t] == j) {
+        continue;
+      }
+      if (job_deadline <
+          tw_r.earliest[t] + tw_r.action_time[t] +
+            vehicle.duration(_input.jobs[tw_r.route[t]].index(), job_index)) {
+        // Too late to perform job any time after task at t based on
+        // its earliest date in route for v.
+        insertion_ranks_end[v][j] = t + 1;
+        break;
+      }
+    }
+    for (std::size_t t = 0; t < tw_r.route.size(); ++t) {
+      const auto rev_t = tw_r.route.size() - 1 - t;
+      if (tw_r.route[rev_t] == j) {
+        continue;
+      }
+      if (tw_r.latest[rev_t] <
+          job_available + job.service +
+            vehicle.duration(job_index,
+                             _input.jobs[tw_r.route[rev_t]].index())) {
+        // Job is available too late to be performed any time before
+        // task at rev_t based on its latest date in route for v.
+        insertion_ranks_begin[v][j] = rev_t + 1;
+        break;
+      }
+    }
+
+    // Handle weak_insertion_ranks_*
+    for (std::size_t t = 0; t < tw_r.route.size(); ++t) {
+      if (tw_r.route[t] == j) {
+        continue;
+      }
+      const auto& task = _input.jobs[tw_r.route[t]];
+      if (job_deadline < task.tws.front().start + task.service +
+                           vehicle.duration(task.index(), job_index)) {
+        // Too late to perform job any time after task at t solely
+        // based on its TW.
+        weak_insertion_ranks_end[v][j] = t + 1;
+        assert(insertion_ranks_end[v][j] <= weak_insertion_ranks_end[v][j]);
+        break;
+      }
+    }
+    for (std::size_t t = 0; t < tw_r.route.size(); ++t) {
+      const auto rev_t = tw_r.route.size() - 1 - t;
+      if (tw_r.route[rev_t] == j) {
+        continue;
+      }
+      const auto& task = _input.jobs[tw_r.route[rev_t]];
+      if (task.tws.back().end < job_available + job.service +
+                                  vehicle.duration(job_index, task.index())) {
+        // Job is available too late to be performed any time before
+        // task at rev_t solely based on its TW.
+        weak_insertion_ranks_begin[v][j] = rev_t + 1;
+        assert(weak_insertion_ranks_begin[v][j] <= insertion_ranks_begin[v][j]);
+        break;
+      }
+    }
+  }
+}
+
 void SolutionState::update_cheapest_job_rank_in_routes(
   const std::vector<Index>& route_1,
   const std::vector<Index>& route_2,
@@ -524,10 +615,15 @@ void SolutionState::update_cheapest_job_rank_in_routes(
   }
 }
 
+#ifndef NDEBUG
 void SolutionState::update_route_cost(const std::vector<Index>& route,
                                       Index v) {
   route_costs[v] = route_cost_for_vehicle(_input, v, route);
 }
+#endif
+
+template void SolutionState::setup(const RawSolution&);
+template void SolutionState::setup(const TWSolution&);
 
 } // namespace utils
 } // namespace vroom
