@@ -1332,9 +1332,14 @@ void LocalSearch<Route,
         continue;
       }
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 2; ++s_rank) {
-        // TODO make sure we don't reverse a full shipment.
-        for (unsigned t_rank = s_rank + 2; t_rank < _sol[s_t.first].size();
-             ++t_rank) {
+        const auto s_job_rank = _sol[s_t.first].route[s_rank];
+        const auto end_s =
+          _sol_state.weak_insertion_ranks_end[s_t.first][s_job_rank];
+        assert(end_s != 0);
+        auto end_t_rank = std::min(static_cast<Index>(_sol[s_t.first].size()),
+                                   static_cast<Index>(end_s - 1));
+
+        for (unsigned t_rank = s_rank + 2; t_rank < end_t_rank; ++t_rank) {
 #ifdef LOG_LS_OPERATORS
           ++tried_moves[OperatorName::IntraTwoOpt];
 #endif
