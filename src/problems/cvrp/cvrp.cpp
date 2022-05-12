@@ -19,6 +19,7 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/operators/intra_mixed_exchange.h"
 #include "problems/cvrp/operators/intra_or_opt.h"
 #include "problems/cvrp/operators/intra_relocate.h"
+#include "problems/cvrp/operators/intra_two_opt.h"
 #include "problems/cvrp/operators/mixed_exchange.h"
 #include "problems/cvrp/operators/or_opt.h"
 #include "problems/cvrp/operators/pd_shift.h"
@@ -51,6 +52,7 @@ using LocalSearch = ls::LocalSearch<RawRoute,
                                     cvrp::IntraMixedExchange,
                                     cvrp::IntraRelocate,
                                     cvrp::IntraOrOpt,
+                                    cvrp::IntraTwoOpt,
                                     cvrp::PDShift,
                                     cvrp::RouteExchange>;
 } // namespace cvrp

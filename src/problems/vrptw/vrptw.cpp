@@ -18,6 +18,7 @@ All rights reserved (see LICENSE).
 #include "problems/vrptw/operators/intra_mixed_exchange.h"
 #include "problems/vrptw/operators/intra_or_opt.h"
 #include "problems/vrptw/operators/intra_relocate.h"
+#include "problems/vrptw/operators/intra_two_opt.h"
 #include "problems/vrptw/operators/mixed_exchange.h"
 #include "problems/vrptw/operators/or_opt.h"
 #include "problems/vrptw/operators/pd_shift.h"
@@ -50,6 +51,7 @@ using LocalSearch = ls::LocalSearch<TWRoute,
                                     vrptw::IntraMixedExchange,
                                     vrptw::IntraRelocate,
                                     vrptw::IntraOrOpt,
+                                    vrptw::IntraTwoOpt,
                                     vrptw::PDShift,
                                     vrptw::RouteExchange>;
 } // namespace vrptw

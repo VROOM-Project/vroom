@@ -72,6 +72,7 @@ const std::array<std::string, OperatorName::MAX>
                   "IntraMixedExchange",
                   "IntraRelocate",
                   "IntraOrOpt",
+                  "IntraTwoOpt",
                   "PDShift",
                   "RouteExchange"});
 

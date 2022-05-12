@@ -4,6 +4,7 @@
 
 ### Added
 
+- `IntraTwoOpt` local search operator (#706)
 - `description` key for unassigned tasks in output, if provided (#403)
 - `location_index` key for unassigned tasks and each step, if provided (#625)
 - Shared target to makefile, for creating Position Independent Code (#617)
