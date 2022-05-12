@@ -102,7 +102,6 @@ bool IntraTwoOpt::is_valid() {
     auto rev_s_next = s_route.rbegin() + (s_route.size() - s_rank);
 
     valid =
-      valid &&
       source
         .is_valid_addition_for_capacity_inclusion(_input,
                                                   source

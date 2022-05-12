@@ -28,15 +28,20 @@ IntraTwoOpt::IntraTwoOpt(const Input& input,
 }
 
 bool IntraTwoOpt::is_valid() {
-  auto rev_t = s_route.rbegin() + (s_route.size() - t_rank - 1);
-  auto rev_s_next = s_route.rbegin() + (s_route.size() - s_rank);
+  bool valid = cvrp::IntraTwoOpt::is_valid();
 
-  return cvrp::IntraTwoOpt::is_valid() and
-         _tw_s_route.is_valid_addition_for_tw(_input,
-                                              rev_t,
-                                              rev_s_next,
-                                              s_rank,
-                                              t_rank + 1);
+  if (valid) {
+    auto rev_t = s_route.rbegin() + (s_route.size() - t_rank - 1);
+    auto rev_s_next = s_route.rbegin() + (s_route.size() - s_rank);
+
+    valid = _tw_s_route.is_valid_addition_for_tw(_input,
+                                                 rev_t,
+                                                 rev_s_next,
+                                                 s_rank,
+                                                 t_rank + 1);
+  }
+
+  return valid;
 }
 
 void IntraTwoOpt::apply() {
