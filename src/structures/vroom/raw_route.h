@@ -105,7 +105,7 @@ public:
                                                 const Index first_rank,
                                                 const Index last_rank) const;
 
-  Amount get_startup_load() const;
+  Amount job_deliveries_sum() const;
 
   // Get sum of pickups (resp. deliveries) for all jobs in the range
   // [i, j).

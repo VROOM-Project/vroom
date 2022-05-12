@@ -222,7 +222,7 @@ bool RawRoute::is_valid_addition_for_capacity_inclusion(
   return valid;
 }
 
-Amount RawRoute::get_startup_load() const {
+Amount RawRoute::job_deliveries_sum() const {
   return _current_loads[0];
 }
 

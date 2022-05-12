@@ -392,7 +392,7 @@ inline Solution format_solution(const Input& input,
 #ifndef NDEBUG
     std::unordered_set<Index> expected_delivery_ranks;
 #endif
-    Amount current_load = raw_routes[i].get_startup_load();
+    Amount current_load = raw_routes[i].job_deliveries_sum();
     assert(current_load <= v.capacity);
 
     // Steps for current route.
@@ -615,7 +615,7 @@ inline Route format_route(const Input& input,
 #ifndef NDEBUG
   std::unordered_set<Index> expected_delivery_ranks;
 #endif
-  Amount current_load = tw_r.get_startup_load();
+  Amount current_load = tw_r.job_deliveries_sum();
   assert(current_load <= v.capacity);
 
   // Steps for current route.
