@@ -873,6 +873,9 @@ void LocalSearch<Route,
           continue;
         }
 
+        const auto t_deliveries_sum = _sol[s_t.second].job_deliveries_sum();
+        const auto t_pickups_sum = _sol[s_t.second].job_pickups_sum();
+
         for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
           if (_sol_state.node_gains[s_t.first][s_rank] <=
               best_gains[s_t.first][s_t.second]) {
@@ -886,6 +889,14 @@ void LocalSearch<Route,
               !_input.vehicle_ok_with_job(s_t.second, s_job_rank)) {
             // Don't try moving (part of) a shipment or an
             // incompatible job.
+            continue;
+          }
+
+          const auto& s_pickup = _input.jobs[s_job_rank].pickup;
+          const auto& s_delivery = _input.jobs[s_job_rank].delivery;
+
+          if (!(t_deliveries_sum + s_delivery <= v_t.capacity) or
+              !(t_pickups_sum + s_pickup <= v_t.capacity)) {
             continue;
           }
 
