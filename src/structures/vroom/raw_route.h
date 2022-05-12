@@ -107,6 +107,8 @@ public:
 
   Amount job_deliveries_sum() const;
 
+  Amount job_pickups_sum() const;
+
   // Get sum of pickups (resp. deliveries) for all jobs in the range
   // [i, j).
   Amount pickup_in_range(Index i, Index j) const;

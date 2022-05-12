@@ -226,6 +226,10 @@ Amount RawRoute::job_deliveries_sum() const {
   return _current_loads[0];
 }
 
+Amount RawRoute::job_pickups_sum() const {
+  return _fwd_pickups.back();
+}
+
 Amount RawRoute::pickup_in_range(Index i, Index j) const {
   if (i == j) {
     return Amount(_current_loads[0].size());
