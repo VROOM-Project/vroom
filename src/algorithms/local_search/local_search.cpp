@@ -785,6 +785,17 @@ void LocalSearch<Route,
           continue;
         }
 
+        const auto& s_v = _input.vehicles[s_t.first];
+
+        const auto s_fwd_delivery =
+          _sol[s_t.first].delivery_in_range(0, s_rank + 1);
+        const auto s_fwd_pickup =
+          _sol[s_t.first].pickup_in_range(0, s_rank + 1);
+        const auto s_bwd_delivery =
+          _sol[s_t.first].delivery_in_range(s_rank + 1, _sol[s_t.first].size());
+        const auto s_bwd_pickup =
+          _sol[s_t.first].pickup_in_range(s_rank + 1, _sol[s_t.first].size());
+
         Index end_t_rank = _sol[s_t.second].size();
         if (s_rank + 1 < _sol[s_t.first].size()) {
           // There is a route end after s_rank in source route.
@@ -812,11 +823,34 @@ void LocalSearch<Route,
             }
           }
 
-          const auto& s_v = _input.vehicles[s_t.first];
           const auto& t_v = _input.vehicles[s_t.second];
 
           if (s_rank + _sol[s_t.second].size() - t_rank > s_v.max_tasks or
               t_rank + _sol[s_t.first].size() - s_rank > t_v.max_tasks) {
+            continue;
+          }
+
+          const auto t_bwd_delivery =
+            _sol[s_t.second].delivery_in_range(t_rank + 1,
+                                               _sol[s_t.second].size());
+          const auto t_bwd_pickup =
+            _sol[s_t.second].pickup_in_range(t_rank + 1,
+                                             _sol[s_t.second].size());
+
+          if (!(s_fwd_delivery + t_bwd_delivery <= s_v.capacity) or
+              !(s_fwd_pickup + t_bwd_pickup <= s_v.capacity)) {
+            // Stop current loop since we're going backward with
+            // t_rank.
+            break;
+          }
+
+          const auto t_fwd_delivery =
+            _sol[s_t.second].delivery_in_range(0, t_rank + 1);
+          const auto t_fwd_pickup =
+            _sol[s_t.second].pickup_in_range(0, t_rank + 1);
+
+          if (!(t_fwd_delivery + s_bwd_delivery <= t_v.capacity) or
+              !(t_fwd_pickup + s_bwd_pickup <= t_v.capacity)) {
             continue;
           }
 
