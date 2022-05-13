@@ -647,10 +647,17 @@ void LocalSearch<Route,
           continue;
         }
 
-        const auto& v_s = _input.vehicles[s_t.first];
-        if (_sol[s_t.first].size() + 1 > v_s.max_tasks) {
+        const auto& s_v = _input.vehicles[s_t.first];
+        if (_sol[s_t.first].size() + 1 > s_v.max_tasks) {
           continue;
         }
+
+        const auto& t_v = _input.vehicles[s_t.second];
+
+        const auto s_deliveries_sum = _sol[s_t.first].job_deliveries_sum();
+        const auto s_pickups_sum = _sol[s_t.first].job_pickups_sum();
+        const auto t_deliveries_sum = _sol[s_t.second].job_deliveries_sum();
+        const auto t_pickups_sum = _sol[s_t.second].job_pickups_sum();
 
         for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
           const auto s_job_rank = _sol[s_t.first].route[s_rank];
@@ -660,6 +667,9 @@ void LocalSearch<Route,
             // job.
             continue;
           }
+
+          const auto s_delivery = _input.jobs[s_job_rank].delivery;
+          const auto s_pickup = _input.jobs[s_job_rank].pickup;
 
           auto end_t_rank =
             std::min(static_cast<Index>(_sol[s_t.second].size() - 1),
@@ -707,6 +717,17 @@ void LocalSearch<Route,
                        _sol_state
                          .insertion_ranks_begin[s_t.first][t_next_job_rank]);
             if (source_begin > s_rank + 1) {
+              continue;
+            }
+
+            const auto t_delivery = _input.jobs[t_job_rank].delivery +
+                                    _input.jobs[t_next_job_rank].delivery;
+            const auto t_pickup = _input.jobs[t_job_rank].pickup +
+                                  _input.jobs[t_next_job_rank].pickup;
+            if (!(s_deliveries_sum + t_delivery <= s_v.capacity + s_delivery) or
+                !(s_pickups_sum + t_pickup <= s_v.capacity + s_pickup) or
+                !(t_deliveries_sum + s_delivery <= t_v.capacity + t_delivery) or
+                !(t_pickups_sum + s_pickup <= t_v.capacity + t_pickup)) {
               continue;
             }
 
