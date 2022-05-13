@@ -1463,7 +1463,7 @@ void LocalSearch<Route,
 
     if (!_input.has_homogeneous_locations() or
         !_input.has_homogeneous_profiles()) {
-      // Route exchange stuff
+      // RouteExchange stuff
       for (const auto& s_t : s_t_pairs) {
         if (s_t.second <= s_t.first or best_priorities[s_t.first] > 0 or
             best_priorities[s_t.second] > 0 or
@@ -1480,6 +1480,18 @@ void LocalSearch<Route,
 
         if (_sol[s_t.first].size() > t_v.max_tasks or
             _sol[s_t.second].size() > s_v.max_tasks) {
+          continue;
+        }
+
+        const auto s_deliveries_sum = _sol[s_t.first].job_deliveries_sum();
+        const auto s_pickups_sum = _sol[s_t.first].job_pickups_sum();
+        const auto t_deliveries_sum = _sol[s_t.second].job_deliveries_sum();
+        const auto t_pickups_sum = _sol[s_t.second].job_pickups_sum();
+
+        if (!(t_deliveries_sum <= s_v.capacity) or
+            !(t_pickups_sum <= s_v.capacity) or
+            !(s_deliveries_sum <= t_v.capacity) or
+            !(s_pickups_sum <= t_v.capacity)) {
           continue;
         }
 
