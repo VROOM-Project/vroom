@@ -936,6 +936,9 @@ void LocalSearch<Route,
           continue;
         }
 
+        const auto t_deliveries_sum = _sol[s_t.second].job_deliveries_sum();
+        const auto t_pickups_sum = _sol[s_t.second].job_pickups_sum();
+
         for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1;
              ++s_rank) {
           if (_sol_state.edge_gains[s_t.first][s_rank] <=
@@ -958,6 +961,16 @@ void LocalSearch<Route,
             // Don't try moving part of a shipment. Moving a full
             // shipment as an edge is not tested because it's a
             // special case of PDShift.
+            continue;
+          }
+
+          const auto& s_pickup = _input.jobs[s_job_rank].pickup +
+                                 _input.jobs[s_next_job_rank].pickup;
+          const auto& s_delivery = _input.jobs[s_job_rank].delivery +
+                                   _input.jobs[s_next_job_rank].delivery;
+
+          if (!(t_deliveries_sum + s_delivery <= v_t.capacity) or
+              !(t_pickups_sum + s_pickup <= v_t.capacity)) {
             continue;
           }
 
