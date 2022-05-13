@@ -17,6 +17,8 @@ namespace vroom {
 
 class RawRoute {
 private:
+  Amount _zero;
+
   // _fwd_pickups[i] stores the total pickups for single jobs up to
   // rank i.
   std::vector<Amount> _fwd_pickups;
@@ -52,7 +54,7 @@ public:
 
   std::vector<Index> route;
 
-  RawRoute(const Input& input, Index i);
+  RawRoute(const Input& input, Index i, unsigned amount_size);
 
   void set_route(const Input& input, const std::vector<Index>& r);
 

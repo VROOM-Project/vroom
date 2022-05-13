@@ -485,7 +485,7 @@ void Input::set_extra_compatibility() {
   // an empty route for vehicle based on the timing constraints (when
   // they apply).
   for (std::size_t v = 0; v < vehicles.size(); ++v) {
-    TWRoute empty_route(*this, v);
+    TWRoute empty_route(*this, v, _zero.size());
     for (Index j = 0; j < jobs.size(); ++j) {
       if (_vehicle_to_job_compatibility[v][j]) {
         bool is_compatible =
