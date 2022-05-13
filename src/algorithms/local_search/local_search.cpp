@@ -788,12 +788,10 @@ void LocalSearch<Route,
           continue;
         }
 
-        const auto s_fwd_delivery =
-          _sol[s_t.first].delivery_in_range(0, s_rank + 1);
+        const auto& s_fwd_delivery = _sol[s_t.first].fwd_deliveries(s_rank);
         const auto& s_fwd_pickup = _sol[s_t.first].fwd_pickups(s_rank);
         const auto& s_bwd_delivery = _sol[s_t.first].bwd_deliveries(s_rank);
-        const auto s_bwd_pickup =
-          _sol[s_t.first].pickup_in_range(s_rank + 1, _sol[s_t.first].size());
+        const auto& s_bwd_pickup = _sol[s_t.first].bwd_pickups(s_rank);
 
         Index end_t_rank = _sol[s_t.second].size();
         if (s_rank + 1 < _sol[s_t.first].size()) {
@@ -828,9 +826,7 @@ void LocalSearch<Route,
           }
 
           const auto& t_bwd_delivery = _sol[s_t.second].bwd_deliveries(t_rank);
-          const auto t_bwd_pickup =
-            _sol[s_t.second].pickup_in_range(t_rank + 1,
-                                             _sol[s_t.second].size());
+          const auto& t_bwd_pickup = _sol[s_t.second].bwd_pickups(t_rank);
 
           if (!(s_fwd_delivery + t_bwd_delivery <= s_v.capacity) or
               !(s_fwd_pickup + t_bwd_pickup <= s_v.capacity)) {
@@ -839,8 +835,7 @@ void LocalSearch<Route,
             break;
           }
 
-          const auto t_fwd_delivery =
-            _sol[s_t.second].delivery_in_range(0, t_rank + 1);
+          const auto& t_fwd_delivery = _sol[s_t.second].fwd_deliveries(t_rank);
           const auto& t_fwd_pickup = _sol[s_t.second].fwd_pickups(t_rank);
 
           if (!(t_fwd_delivery + s_bwd_delivery <= t_v.capacity) or
@@ -893,12 +888,10 @@ void LocalSearch<Route,
           continue;
         }
 
-        const auto s_fwd_delivery =
-          _sol[s_t.first].delivery_in_range(0, s_rank + 1);
+        const auto& s_fwd_delivery = _sol[s_t.first].fwd_deliveries(s_rank);
         const auto& s_fwd_pickup = _sol[s_t.first].fwd_pickups(s_rank);
         const auto& s_bwd_delivery = _sol[s_t.first].bwd_deliveries(s_rank);
-        const auto s_bwd_pickup =
-          _sol[s_t.first].pickup_in_range(s_rank + 1, _sol[s_t.first].size());
+        const auto& s_bwd_pickup = _sol[s_t.first].bwd_pickups(s_rank);
 
         Index begin_t_rank = 0;
         if (s_rank + 1 < _sol[s_t.first].size()) {
@@ -933,8 +926,7 @@ void LocalSearch<Route,
             continue;
           }
 
-          const auto t_fwd_delivery =
-            _sol[s_t.second].delivery_in_range(0, t_rank + 1);
+          const auto& t_fwd_delivery = _sol[s_t.second].fwd_deliveries(t_rank);
           const auto& t_fwd_pickup = _sol[s_t.second].fwd_pickups(t_rank);
 
           if (!(s_fwd_delivery + t_fwd_delivery <= s_v.capacity) or
@@ -943,9 +935,7 @@ void LocalSearch<Route,
           }
 
           const auto& t_bwd_delivery = _sol[s_t.second].bwd_deliveries(t_rank);
-          const auto t_bwd_pickup =
-            _sol[s_t.second].pickup_in_range(t_rank + 1,
-                                             _sol[s_t.second].size());
+          const auto& t_bwd_pickup = _sol[s_t.second].bwd_pickups(t_rank);
 
           if (!(t_bwd_delivery + s_bwd_delivery <= t_v.capacity) or
               !(t_bwd_pickup + s_bwd_pickup <= t_v.capacity)) {

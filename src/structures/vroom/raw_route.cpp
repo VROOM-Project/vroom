@@ -37,7 +37,9 @@ std::size_t RawRoute::size() const {
 void RawRoute::update_amounts(const Input& input) {
   auto step_size = route.size() + 2;
   _fwd_pickups.resize(route.size());
+  _fwd_deliveries.resize(route.size());
   _bwd_deliveries.resize(route.size());
+  _bwd_pickups.resize(route.size());
   _pd_loads.resize(route.size());
   _nb_pickups.resize(route.size());
   _nb_deliveries.resize(route.size());
@@ -55,6 +57,7 @@ void RawRoute::update_amounts(const Input& input) {
   }
 
   Amount current_pickups(_zero);
+  Amount current_deliveries(_zero);
   Amount current_pd_load(_zero);
   unsigned current_nb_pickups = 0;
   unsigned current_nb_deliveries = 0;
@@ -64,6 +67,7 @@ void RawRoute::update_amounts(const Input& input) {
     switch (job.type) {
     case JOB_TYPE::SINGLE:
       current_pickups += job.pickup;
+      current_deliveries += job.delivery;
       break;
     case JOB_TYPE::PICKUP:
       current_pd_load += job.pickup;
@@ -76,6 +80,7 @@ void RawRoute::update_amounts(const Input& input) {
       break;
     }
     _fwd_pickups[i] = current_pickups;
+    _fwd_deliveries[i] = current_deliveries;
     _pd_loads[i] = current_pd_load;
     assert(current_nb_deliveries <= current_nb_pickups);
     _nb_pickups[i] = current_nb_pickups;
@@ -83,7 +88,8 @@ void RawRoute::update_amounts(const Input& input) {
   }
   assert(_pd_loads.back() == _zero);
 
-  Amount current_deliveries(_zero);
+  current_deliveries = _zero;
+  current_pickups = _zero;
 
   _current_loads.back() = _fwd_pickups.back();
   assert(_current_loads.back() <= capacity);
@@ -92,12 +98,14 @@ void RawRoute::update_amounts(const Input& input) {
     auto bwd_i = route.size() - i - 1;
 
     _bwd_deliveries[bwd_i] = current_deliveries;
+    _bwd_pickups[bwd_i] = current_pickups;
     _current_loads[bwd_i + 1] =
       _fwd_pickups[bwd_i] + _pd_loads[bwd_i] + current_deliveries;
     assert(_current_loads[bwd_i + 1] <= capacity);
     const auto& job = input.jobs[route[bwd_i]];
     if (job.type == JOB_TYPE::SINGLE) {
       current_deliveries += job.delivery;
+      current_pickups += job.pickup;
     }
   }
   _current_loads[0] = current_deliveries;

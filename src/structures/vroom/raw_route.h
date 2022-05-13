@@ -19,13 +19,15 @@ class RawRoute {
 private:
   Amount _zero;
 
-  // _fwd_pickups[i] stores the total pickups for single jobs up to
-  // rank i.
+  // _fwd_pickups[i] (resp. _fwd_deliveries[i]) stores the total
+  // pickups (resp. deliveries) for single jobs up to rank i.
   std::vector<Amount> _fwd_pickups;
+  std::vector<Amount> _fwd_deliveries;
 
-  // _bwd_deliveries[i] stores the total deliveries for single jobs
-  // pending after rank i.
+  // _bwd_deliveries[i] (resp. _bwd_pickups[i]) stores the total
+  // deliveries (resp. pickups) for single jobs pending after rank i.
   std::vector<Amount> _bwd_deliveries;
+  std::vector<Amount> _bwd_pickups;
 
   // _pd_loads[i] stores the shipments load at rank i (included).
   std::vector<Amount> _pd_loads;
@@ -118,6 +120,14 @@ public:
 
   const Amount& bwd_deliveries(Index i) const {
     return _bwd_deliveries[i];
+  }
+
+  const Amount& fwd_deliveries(Index i) const {
+    return _fwd_deliveries[i];
+  }
+
+  const Amount& bwd_pickups(Index i) const {
+    return _bwd_pickups[i];
   }
 
   const Amount& fwd_pickups(Index i) const {
