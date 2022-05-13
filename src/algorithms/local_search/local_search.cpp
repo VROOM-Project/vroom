@@ -763,6 +763,9 @@ void LocalSearch<Route,
         continue;
       }
 
+      const auto& s_v = _input.vehicles[s_t.first];
+      const auto& t_v = _input.vehicles[s_t.second];
+
       // Determine first ranks for inner loops based on vehicles/jobs
       // compatibility along the routes.
       unsigned first_s_rank = 0;
@@ -784,8 +787,6 @@ void LocalSearch<Route,
         if (_sol[s_t.first].has_pending_delivery_after_rank(s_rank)) {
           continue;
         }
-
-        const auto& s_v = _input.vehicles[s_t.first];
 
         const auto s_fwd_delivery =
           _sol[s_t.first].delivery_in_range(0, s_rank + 1);
@@ -822,8 +823,6 @@ void LocalSearch<Route,
               continue;
             }
           }
-
-          const auto& t_v = _input.vehicles[s_t.second];
 
           if (s_rank + _sol[s_t.second].size() - t_rank > s_v.max_tasks or
               t_rank + _sol[s_t.first].size() - s_rank > t_v.max_tasks) {
@@ -881,6 +880,9 @@ void LocalSearch<Route,
         continue;
       }
 
+      const auto& s_v = _input.vehicles[s_t.first];
+      const auto& t_v = _input.vehicles[s_t.second];
+
       // Determine first rank for inner loop based on vehicles/jobs
       // compatibility along the routes.
       unsigned first_s_rank = 0;
@@ -895,6 +897,15 @@ void LocalSearch<Route,
         if (_sol[s_t.first].has_delivery_after_rank(s_rank)) {
           continue;
         }
+
+        const auto s_fwd_delivery =
+          _sol[s_t.first].delivery_in_range(0, s_rank + 1);
+        const auto s_fwd_pickup =
+          _sol[s_t.first].pickup_in_range(0, s_rank + 1);
+        const auto s_bwd_delivery =
+          _sol[s_t.first].delivery_in_range(s_rank + 1, _sol[s_t.first].size());
+        const auto s_bwd_pickup =
+          _sol[s_t.first].pickup_in_range(s_rank + 1, _sol[s_t.first].size());
 
         Index begin_t_rank = 0;
         if (s_rank + 1 < _sol[s_t.first].size()) {
@@ -922,13 +933,32 @@ void LocalSearch<Route,
             continue;
           }
 
-          const auto& s_v = _input.vehicles[s_t.first];
-          const auto& t_v = _input.vehicles[s_t.second];
-
           if (s_rank + t_rank + 2 > s_v.max_tasks or
               (_sol[s_t.first].size() - s_rank - 1) +
                   (_sol[s_t.second].size() - t_rank - 1) >
                 t_v.max_tasks) {
+            continue;
+          }
+
+          const auto t_fwd_delivery =
+            _sol[s_t.second].delivery_in_range(0, t_rank + 1);
+          const auto t_fwd_pickup =
+            _sol[s_t.second].pickup_in_range(0, t_rank + 1);
+
+          if (!(s_fwd_delivery + t_fwd_delivery <= s_v.capacity) or
+              !(s_fwd_pickup + t_fwd_pickup <= s_v.capacity)) {
+            break;
+          }
+
+          const auto t_bwd_delivery =
+            _sol[s_t.second].delivery_in_range(t_rank + 1,
+                                               _sol[s_t.second].size());
+          const auto t_bwd_pickup =
+            _sol[s_t.second].pickup_in_range(t_rank + 1,
+                                             _sol[s_t.second].size());
+
+          if (!(t_bwd_delivery + s_bwd_delivery <= t_v.capacity) or
+              !(t_bwd_pickup + s_bwd_pickup <= t_v.capacity)) {
             continue;
           }
 
