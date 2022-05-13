@@ -390,12 +390,20 @@ void LocalSearch<Route,
         }
 
         Priority u_priority = _input.jobs[u].priority;
+        const auto& u_pickup = _input.jobs[u].pickup;
+        const auto& u_delivery = _input.jobs[u].delivery;
+
         for (const auto& s_t : s_t_pairs) {
           if (s_t.first != s_t.second or
               !_input.vehicle_ok_with_job(s_t.first, u) or
               _sol[s_t.first].empty()) {
             continue;
           }
+
+          const auto t_deliveries_sum = _sol[s_t.second].job_deliveries_sum();
+          const auto t_pickups_sum = _sol[s_t.second].job_pickups_sum();
+
+          const auto& v_capacity = _input.vehicles[s_t.second].capacity;
 
           const auto begin_t_rank_candidate =
             _sol_state.insertion_ranks_begin[s_t.first][u];
@@ -417,6 +425,14 @@ void LocalSearch<Route,
             const Priority priority_gain = u_priority - current_job.priority;
 
             if (best_priorities[s_t.first] <= priority_gain) {
+
+              const auto& s_pickup = current_job.pickup;
+              const auto& s_delivery = current_job.delivery;
+
+              if (!(t_deliveries_sum + u_delivery <= v_capacity + s_delivery) or
+                  !(t_pickups_sum + u_pickup <= v_capacity + s_pickup)) {
+                continue;
+              }
 
               auto begin_t_rank = 0;
               if (s_rank + 1 != begin_t_rank_weak_candidate) {
