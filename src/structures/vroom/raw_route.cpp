@@ -223,16 +223,17 @@ bool RawRoute::is_valid_addition_for_capacity_inclusion(
 }
 
 Amount RawRoute::job_deliveries_sum() const {
-  return _current_loads[0];
+  return route.empty() ? _zero : _current_loads[0];
 }
 
 Amount RawRoute::job_pickups_sum() const {
-  return _fwd_pickups.back();
+  return route.empty() ? _zero : _fwd_pickups.back();
 }
 
 Amount RawRoute::pickup_in_range(Index i, Index j) const {
-  if (i == j) {
-    return Amount(_current_loads[0].size());
+  assert(i <= j and j <= _fwd_pickups.size());
+  if (i == j or route.empty()) {
+    return _zero;
   }
   if (i == 0) {
     return _fwd_pickups[j - 1];
@@ -242,8 +243,9 @@ Amount RawRoute::pickup_in_range(Index i, Index j) const {
 }
 
 Amount RawRoute::delivery_in_range(Index i, Index j) const {
-  if (i == j) {
-    return Amount(_current_loads[0].size());
+  assert(i <= j and j <= _bwd_deliveries.size());
+  if (i == j or route.empty()) {
+    return _zero;
   }
   auto& before_deliveries =
     (i == 0) ? _current_loads[0] : _bwd_deliveries[i - 1];
