@@ -116,6 +116,14 @@ public:
   Amount pickup_in_range(Index i, Index j) const;
   Amount delivery_in_range(Index i, Index j) const;
 
+  const Amount& bwd_deliveries(Index i) const {
+    return _bwd_deliveries[i];
+  }
+
+  const Amount& fwd_pickups(Index i) const {
+    return _fwd_pickups[i];
+  }
+
   bool is_valid_addition_for_tw(const Input&, const Index, const Index) const {
     return true;
   };
