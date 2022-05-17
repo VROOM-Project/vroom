@@ -400,10 +400,8 @@ void LocalSearch<Route,
             continue;
           }
 
-          const auto t_deliveries_sum = _sol[s_t.second].job_deliveries_sum();
-          const auto t_pickups_sum = _sol[s_t.second].job_pickups_sum();
-
-          const auto& v_capacity = _input.vehicles[s_t.second].capacity;
+          const auto& delivery_margin = _sol[s_t.second].delivery_margin();
+          const auto& pickup_margin = _sol[s_t.second].pickup_margin();
 
           const auto begin_t_rank_candidate =
             _sol_state.insertion_ranks_begin[s_t.first][u];
@@ -429,8 +427,8 @@ void LocalSearch<Route,
               const auto& s_pickup = current_job.pickup;
               const auto& s_delivery = current_job.delivery;
 
-              if (!(t_deliveries_sum + u_delivery <= v_capacity + s_delivery) or
-                  !(t_pickups_sum + u_pickup <= v_capacity + s_pickup)) {
+              if (!(u_delivery <= delivery_margin + s_delivery) or
+                  !(u_pickup <= pickup_margin + s_pickup)) {
                 continue;
               }
 
@@ -506,13 +504,10 @@ void LocalSearch<Route,
         continue;
       }
 
-      const auto& s_v = _input.vehicles[s_t.first];
-      const auto& t_v = _input.vehicles[s_t.second];
-
-      const auto s_deliveries_sum = _sol[s_t.first].job_deliveries_sum();
-      const auto s_pickups_sum = _sol[s_t.first].job_pickups_sum();
-      const auto t_deliveries_sum = _sol[s_t.second].job_deliveries_sum();
-      const auto t_pickups_sum = _sol[s_t.second].job_pickups_sum();
+      const auto& s_delivery_margin = _sol[s_t.first].delivery_margin();
+      const auto& s_pickup_margin = _sol[s_t.first].pickup_margin();
+      const auto& t_delivery_margin = _sol[s_t.second].delivery_margin();
+      const auto& t_pickup_margin = _sol[s_t.second].pickup_margin();
 
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1; ++s_rank) {
         const auto s_job_rank = _sol[s_t.first].route[s_rank];
@@ -606,10 +601,10 @@ void LocalSearch<Route,
                                   _input.jobs[t_next_job_rank].delivery;
           const auto t_pickup = _input.jobs[t_job_rank].pickup +
                                 _input.jobs[t_next_job_rank].pickup;
-          if (!(s_deliveries_sum + t_delivery <= s_v.capacity + s_delivery) or
-              !(s_pickups_sum + t_pickup <= s_v.capacity + s_pickup) or
-              !(t_deliveries_sum + s_delivery <= t_v.capacity + t_delivery) or
-              !(t_pickups_sum + s_pickup <= t_v.capacity + t_pickup)) {
+          if (!(t_delivery <= s_delivery_margin + s_delivery) or
+              !(t_pickup <= s_pickup_margin + s_pickup) or
+              !(s_delivery <= t_delivery_margin + t_delivery) or
+              !(s_pickup <= t_pickup_margin + t_pickup)) {
             continue;
           }
 
@@ -652,12 +647,10 @@ void LocalSearch<Route,
           continue;
         }
 
-        const auto& t_v = _input.vehicles[s_t.second];
-
-        const auto s_deliveries_sum = _sol[s_t.first].job_deliveries_sum();
-        const auto s_pickups_sum = _sol[s_t.first].job_pickups_sum();
-        const auto t_deliveries_sum = _sol[s_t.second].job_deliveries_sum();
-        const auto t_pickups_sum = _sol[s_t.second].job_pickups_sum();
+        const auto& s_delivery_margin = _sol[s_t.first].delivery_margin();
+        const auto& s_pickup_margin = _sol[s_t.first].pickup_margin();
+        const auto& t_delivery_margin = _sol[s_t.second].delivery_margin();
+        const auto& t_pickup_margin = _sol[s_t.second].pickup_margin();
 
         for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
           const auto s_job_rank = _sol[s_t.first].route[s_rank];
@@ -668,8 +661,8 @@ void LocalSearch<Route,
             continue;
           }
 
-          const auto s_delivery = _input.jobs[s_job_rank].delivery;
-          const auto s_pickup = _input.jobs[s_job_rank].pickup;
+          const auto& s_delivery = _input.jobs[s_job_rank].delivery;
+          const auto& s_pickup = _input.jobs[s_job_rank].pickup;
 
           auto end_t_rank =
             std::min(static_cast<Index>(_sol[s_t.second].size() - 1),
@@ -724,10 +717,10 @@ void LocalSearch<Route,
                                     _input.jobs[t_next_job_rank].delivery;
             const auto t_pickup = _input.jobs[t_job_rank].pickup +
                                   _input.jobs[t_next_job_rank].pickup;
-            if (!(s_deliveries_sum + t_delivery <= s_v.capacity + s_delivery) or
-                !(s_pickups_sum + t_pickup <= s_v.capacity + s_pickup) or
-                !(t_deliveries_sum + s_delivery <= t_v.capacity + t_delivery) or
-                !(t_pickups_sum + s_pickup <= t_v.capacity + t_pickup)) {
+            if (!(t_delivery <= s_delivery_margin + s_delivery) or
+                !(t_pickup <= s_pickup_margin + s_pickup) or
+                !(s_delivery <= t_delivery_margin + t_delivery) or
+                !(s_pickup <= t_pickup_margin + t_pickup)) {
               continue;
             }
 
@@ -978,8 +971,8 @@ void LocalSearch<Route,
           continue;
         }
 
-        const auto t_deliveries_sum = _sol[s_t.second].job_deliveries_sum();
-        const auto t_pickups_sum = _sol[s_t.second].job_pickups_sum();
+        const auto& t_delivery_margin = _sol[s_t.second].delivery_margin();
+        const auto& t_pickup_margin = _sol[s_t.second].pickup_margin();
 
         for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
           if (_sol_state.node_gains[s_t.first][s_rank] <=
@@ -1000,8 +993,8 @@ void LocalSearch<Route,
           const auto& s_pickup = _input.jobs[s_job_rank].pickup;
           const auto& s_delivery = _input.jobs[s_job_rank].delivery;
 
-          if (!(t_deliveries_sum + s_delivery <= v_t.capacity) or
-              !(t_pickups_sum + s_pickup <= v_t.capacity)) {
+          if (!(s_delivery <= t_delivery_margin) or
+              !(s_pickup <= t_pickup_margin)) {
             continue;
           }
 
@@ -1041,8 +1034,8 @@ void LocalSearch<Route,
           continue;
         }
 
-        const auto t_deliveries_sum = _sol[s_t.second].job_deliveries_sum();
-        const auto t_pickups_sum = _sol[s_t.second].job_pickups_sum();
+        const auto& t_delivery_margin = _sol[s_t.second].delivery_margin();
+        const auto& t_pickup_margin = _sol[s_t.second].pickup_margin();
 
         for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1;
              ++s_rank) {
@@ -1074,8 +1067,8 @@ void LocalSearch<Route,
           const auto s_delivery = _input.jobs[s_job_rank].delivery +
                                   _input.jobs[s_next_job_rank].delivery;
 
-          if (!(t_deliveries_sum + s_delivery <= v_t.capacity) or
-              !(t_pickups_sum + s_pickup <= v_t.capacity)) {
+          if (!(s_delivery <= t_delivery_margin) or
+              !(s_pickup <= t_pickup_margin)) {
             continue;
           }
 
@@ -1572,10 +1565,10 @@ void LocalSearch<Route,
           continue;
         }
 
-        const auto s_deliveries_sum = _sol[s_t.first].job_deliveries_sum();
-        const auto s_pickups_sum = _sol[s_t.first].job_pickups_sum();
-        const auto t_deliveries_sum = _sol[s_t.second].job_deliveries_sum();
-        const auto t_pickups_sum = _sol[s_t.second].job_pickups_sum();
+        const auto& s_deliveries_sum = _sol[s_t.first].job_deliveries_sum();
+        const auto& s_pickups_sum = _sol[s_t.first].job_pickups_sum();
+        const auto& t_deliveries_sum = _sol[s_t.second].job_deliveries_sum();
+        const auto& t_pickups_sum = _sol[s_t.second].job_pickups_sum();
 
         if (!(t_deliveries_sum <= s_v.capacity) or
             !(t_pickups_sum <= s_v.capacity) or
