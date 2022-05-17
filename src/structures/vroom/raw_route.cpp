@@ -15,6 +15,8 @@ RawRoute::RawRoute(const Input& input, Index i, unsigned amount_size)
   : _zero(amount_size),
     _fwd_peaks(2, _zero),
     _bwd_peaks(2, _zero),
+    _delivery_margin(input.vehicles[i].capacity),
+    _pickup_margin(input.vehicles[i].capacity),
     vehicle_rank(i),
     has_start(input.vehicles[i].has_start()),
     has_end(input.vehicles[i].has_end()),
@@ -131,6 +133,18 @@ void RawRoute::update_amounts(const Input& input) {
     }
     _bwd_peaks[bwd_s] = peak;
   }
+
+  if (route.empty()) {
+    _delivery_margin = capacity;
+    _pickup_margin = capacity;
+  } else {
+    const auto& pickups_sum = _fwd_pickups.back();
+
+    for (unsigned i = 0; i < _zero.size(); ++i) {
+      _delivery_margin[i] = capacity[i] - _current_loads[0][i];
+      _pickup_margin[i] = capacity[i] - pickups_sum[i];
+    }
+  }
 }
 
 bool RawRoute::has_pending_delivery_after_rank(const Index rank) const {
@@ -230,12 +244,20 @@ bool RawRoute::is_valid_addition_for_capacity_inclusion(
   return valid;
 }
 
-Amount RawRoute::job_deliveries_sum() const {
+const Amount& RawRoute::job_deliveries_sum() const {
   return route.empty() ? _zero : _current_loads[0];
 }
 
-Amount RawRoute::job_pickups_sum() const {
+const Amount& RawRoute::job_pickups_sum() const {
   return route.empty() ? _zero : _fwd_pickups.back();
+}
+
+const Amount& RawRoute::delivery_margin() const {
+  return _delivery_margin;
+}
+
+const Amount& RawRoute::pickup_margin() const {
+  return _pickup_margin;
 }
 
 Amount RawRoute::pickup_in_range(Index i, Index j) const {

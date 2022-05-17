@@ -48,6 +48,11 @@ private:
   std::vector<Amount> _fwd_peaks;
   std::vector<Amount> _bwd_peaks;
 
+  // Store the difference between sum of single jobs deliveries
+  // (resp. pickups) and vehicle capacity.
+  Amount _delivery_margin;
+  Amount _pickup_margin;
+
 public:
   Index vehicle_rank;
   bool has_start;
@@ -109,9 +114,13 @@ public:
                                                 const Index first_rank,
                                                 const Index last_rank) const;
 
-  Amount job_deliveries_sum() const;
+  const Amount& job_deliveries_sum() const;
 
-  Amount job_pickups_sum() const;
+  const Amount& job_pickups_sum() const;
+
+  const Amount& delivery_margin() const;
+
+  const Amount& pickup_margin() const;
 
   // Get sum of pickups (resp. deliveries) for all jobs in the range
   // [i, j).
