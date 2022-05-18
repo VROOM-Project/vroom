@@ -390,12 +390,18 @@ void LocalSearch<Route,
         }
 
         Priority u_priority = _input.jobs[u].priority;
+        const auto& u_pickup = _input.jobs[u].pickup;
+        const auto& u_delivery = _input.jobs[u].delivery;
+
         for (const auto& s_t : s_t_pairs) {
           if (s_t.first != s_t.second or
               !_input.vehicle_ok_with_job(s_t.first, u) or
               _sol[s_t.first].empty()) {
             continue;
           }
+
+          const auto& delivery_margin = _sol[s_t.first].delivery_margin();
+          const auto& pickup_margin = _sol[s_t.first].pickup_margin();
 
           const auto begin_t_rank_candidate =
             _sol_state.insertion_ranks_begin[s_t.first][u];
@@ -417,6 +423,10 @@ void LocalSearch<Route,
             const Priority priority_gain = u_priority - current_job.priority;
 
             if (best_priorities[s_t.first] <= priority_gain) {
+              if (!(u_delivery <= delivery_margin + current_job.delivery) or
+                  !(u_pickup <= pickup_margin + current_job.pickup)) {
+                continue;
+              }
 
               auto begin_t_rank = 0;
               if (s_rank + 1 != begin_t_rank_weak_candidate) {
@@ -490,6 +500,11 @@ void LocalSearch<Route,
         continue;
       }
 
+      const auto& s_delivery_margin = _sol[s_t.first].delivery_margin();
+      const auto& s_pickup_margin = _sol[s_t.first].pickup_margin();
+      const auto& t_delivery_margin = _sol[s_t.second].delivery_margin();
+      const auto& t_pickup_margin = _sol[s_t.second].pickup_margin();
+
       for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1; ++s_rank) {
         const auto s_job_rank = _sol[s_t.first].route[s_rank];
         const auto s_next_job_rank = _sol[s_t.first].route[s_rank + 1];
@@ -512,6 +527,11 @@ void LocalSearch<Route,
         if (!both_s_single and !is_s_pickup) {
           continue;
         }
+
+        const auto s_delivery = _input.jobs[s_job_rank].delivery +
+                                _input.jobs[s_next_job_rank].delivery;
+        const auto s_pickup =
+          _input.jobs[s_job_rank].pickup + _input.jobs[s_next_job_rank].pickup;
 
         Index end_t_rank = _sol[s_t.second].size() - 1;
         const auto end_s =
@@ -573,6 +593,17 @@ void LocalSearch<Route,
             continue;
           }
 
+          const auto t_delivery = _input.jobs[t_job_rank].delivery +
+                                  _input.jobs[t_next_job_rank].delivery;
+          const auto t_pickup = _input.jobs[t_job_rank].pickup +
+                                _input.jobs[t_next_job_rank].pickup;
+          if (!(t_delivery <= s_delivery_margin + s_delivery) or
+              !(t_pickup <= s_pickup_margin + s_pickup) or
+              !(s_delivery <= t_delivery_margin + t_delivery) or
+              !(s_pickup <= t_pickup_margin + t_pickup)) {
+            continue;
+          }
+
 #ifdef LOG_LS_OPERATORS
           ++tried_moves[OperatorName::CrossExchange];
 #endif
@@ -607,10 +638,15 @@ void LocalSearch<Route,
           continue;
         }
 
-        const auto& v_s = _input.vehicles[s_t.first];
-        if (_sol[s_t.first].size() + 1 > v_s.max_tasks) {
+        const auto& s_v = _input.vehicles[s_t.first];
+        if (_sol[s_t.first].size() + 1 > s_v.max_tasks) {
           continue;
         }
+
+        const auto& s_delivery_margin = _sol[s_t.first].delivery_margin();
+        const auto& s_pickup_margin = _sol[s_t.first].pickup_margin();
+        const auto& t_delivery_margin = _sol[s_t.second].delivery_margin();
+        const auto& t_pickup_margin = _sol[s_t.second].pickup_margin();
 
         for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
           const auto s_job_rank = _sol[s_t.first].route[s_rank];
@@ -620,6 +656,9 @@ void LocalSearch<Route,
             // job.
             continue;
           }
+
+          const auto& s_delivery = _input.jobs[s_job_rank].delivery;
+          const auto& s_pickup = _input.jobs[s_job_rank].pickup;
 
           auto end_t_rank =
             std::min(static_cast<Index>(_sol[s_t.second].size() - 1),
@@ -670,6 +709,17 @@ void LocalSearch<Route,
               continue;
             }
 
+            const auto t_delivery = _input.jobs[t_job_rank].delivery +
+                                    _input.jobs[t_next_job_rank].delivery;
+            const auto t_pickup = _input.jobs[t_job_rank].pickup +
+                                  _input.jobs[t_next_job_rank].pickup;
+            if (!(t_delivery <= s_delivery_margin + s_delivery) or
+                !(t_pickup <= s_pickup_margin + s_pickup) or
+                !(s_delivery <= t_delivery_margin + t_delivery) or
+                !(s_pickup <= t_pickup_margin + t_pickup)) {
+              continue;
+            }
+
 #ifdef LOG_LS_OPERATORS
             ++tried_moves[OperatorName::MixedExchange];
 #endif
@@ -702,6 +752,9 @@ void LocalSearch<Route,
         continue;
       }
 
+      const auto& s_v = _input.vehicles[s_t.first];
+      const auto& t_v = _input.vehicles[s_t.second];
+
       // Determine first ranks for inner loops based on vehicles/jobs
       // compatibility along the routes.
       unsigned first_s_rank = 0;
@@ -723,6 +776,11 @@ void LocalSearch<Route,
         if (_sol[s_t.first].has_pending_delivery_after_rank(s_rank)) {
           continue;
         }
+
+        const auto& s_fwd_delivery = _sol[s_t.first].fwd_deliveries(s_rank);
+        const auto& s_fwd_pickup = _sol[s_t.first].fwd_pickups(s_rank);
+        const auto& s_bwd_delivery = _sol[s_t.first].bwd_deliveries(s_rank);
+        const auto& s_bwd_pickup = _sol[s_t.first].bwd_pickups(s_rank);
 
         Index end_t_rank = _sol[s_t.second].size();
         if (s_rank + 1 < _sol[s_t.first].size()) {
@@ -751,11 +809,26 @@ void LocalSearch<Route,
             }
           }
 
-          const auto& s_v = _input.vehicles[s_t.first];
-          const auto& t_v = _input.vehicles[s_t.second];
-
           if (s_rank + _sol[s_t.second].size() - t_rank > s_v.max_tasks or
               t_rank + _sol[s_t.first].size() - s_rank > t_v.max_tasks) {
+            continue;
+          }
+
+          const auto& t_bwd_delivery = _sol[s_t.second].bwd_deliveries(t_rank);
+          const auto& t_bwd_pickup = _sol[s_t.second].bwd_pickups(t_rank);
+
+          if (!(s_fwd_delivery + t_bwd_delivery <= s_v.capacity) or
+              !(s_fwd_pickup + t_bwd_pickup <= s_v.capacity)) {
+            // Stop current loop since we're going backward with
+            // t_rank.
+            break;
+          }
+
+          const auto& t_fwd_delivery = _sol[s_t.second].fwd_deliveries(t_rank);
+          const auto& t_fwd_pickup = _sol[s_t.second].fwd_pickups(t_rank);
+
+          if (!(t_fwd_delivery + s_bwd_delivery <= t_v.capacity) or
+              !(t_fwd_pickup + s_bwd_pickup <= t_v.capacity)) {
             continue;
           }
 
@@ -786,6 +859,9 @@ void LocalSearch<Route,
         continue;
       }
 
+      const auto& s_v = _input.vehicles[s_t.first];
+      const auto& t_v = _input.vehicles[s_t.second];
+
       // Determine first rank for inner loop based on vehicles/jobs
       // compatibility along the routes.
       unsigned first_s_rank = 0;
@@ -800,6 +876,11 @@ void LocalSearch<Route,
         if (_sol[s_t.first].has_delivery_after_rank(s_rank)) {
           continue;
         }
+
+        const auto& s_fwd_delivery = _sol[s_t.first].fwd_deliveries(s_rank);
+        const auto& s_fwd_pickup = _sol[s_t.first].fwd_pickups(s_rank);
+        const auto& s_bwd_delivery = _sol[s_t.first].bwd_deliveries(s_rank);
+        const auto& s_bwd_pickup = _sol[s_t.first].bwd_pickups(s_rank);
 
         Index begin_t_rank = 0;
         if (s_rank + 1 < _sol[s_t.first].size()) {
@@ -827,13 +908,26 @@ void LocalSearch<Route,
             continue;
           }
 
-          const auto& s_v = _input.vehicles[s_t.first];
-          const auto& t_v = _input.vehicles[s_t.second];
-
           if (s_rank + t_rank + 2 > s_v.max_tasks or
               (_sol[s_t.first].size() - s_rank - 1) +
                   (_sol[s_t.second].size() - t_rank - 1) >
                 t_v.max_tasks) {
+            continue;
+          }
+
+          const auto& t_fwd_delivery = _sol[s_t.second].fwd_deliveries(t_rank);
+          const auto& t_fwd_pickup = _sol[s_t.second].fwd_pickups(t_rank);
+
+          if (!(s_fwd_delivery + t_fwd_delivery <= s_v.capacity) or
+              !(s_fwd_pickup + t_fwd_pickup <= s_v.capacity)) {
+            break;
+          }
+
+          const auto& t_bwd_delivery = _sol[s_t.second].bwd_deliveries(t_rank);
+          const auto& t_bwd_pickup = _sol[s_t.second].bwd_pickups(t_rank);
+
+          if (!(t_bwd_delivery + s_bwd_delivery <= t_v.capacity) or
+              !(t_bwd_pickup + s_bwd_pickup <= t_v.capacity)) {
             continue;
           }
 
@@ -873,6 +967,9 @@ void LocalSearch<Route,
           continue;
         }
 
+        const auto& t_delivery_margin = _sol[s_t.second].delivery_margin();
+        const auto& t_pickup_margin = _sol[s_t.second].pickup_margin();
+
         for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
           if (_sol_state.node_gains[s_t.first][s_rank] <=
               best_gains[s_t.first][s_t.second]) {
@@ -886,6 +983,14 @@ void LocalSearch<Route,
               !_input.vehicle_ok_with_job(s_t.second, s_job_rank)) {
             // Don't try moving (part of) a shipment or an
             // incompatible job.
+            continue;
+          }
+
+          const auto& s_pickup = _input.jobs[s_job_rank].pickup;
+          const auto& s_delivery = _input.jobs[s_job_rank].delivery;
+
+          if (!(s_delivery <= t_delivery_margin) or
+              !(s_pickup <= t_pickup_margin)) {
             continue;
           }
 
@@ -925,6 +1030,9 @@ void LocalSearch<Route,
           continue;
         }
 
+        const auto& t_delivery_margin = _sol[s_t.second].delivery_margin();
+        const auto& t_pickup_margin = _sol[s_t.second].pickup_margin();
+
         for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1;
              ++s_rank) {
           if (_sol_state.edge_gains[s_t.first][s_rank] <=
@@ -947,6 +1055,16 @@ void LocalSearch<Route,
             // Don't try moving part of a shipment. Moving a full
             // shipment as an edge is not tested because it's a
             // special case of PDShift.
+            continue;
+          }
+
+          const auto s_pickup = _input.jobs[s_job_rank].pickup +
+                                _input.jobs[s_next_job_rank].pickup;
+          const auto s_delivery = _input.jobs[s_job_rank].delivery +
+                                  _input.jobs[s_next_job_rank].delivery;
+
+          if (!(s_delivery <= t_delivery_margin) or
+              !(s_pickup <= t_pickup_margin)) {
             continue;
           }
 
@@ -1423,7 +1541,7 @@ void LocalSearch<Route,
 
     if (!_input.has_homogeneous_locations() or
         !_input.has_homogeneous_profiles()) {
-      // Route exchange stuff
+      // RouteExchange stuff
       for (const auto& s_t : s_t_pairs) {
         if (s_t.second <= s_t.first or best_priorities[s_t.first] > 0 or
             best_priorities[s_t.second] > 0 or
@@ -1440,6 +1558,18 @@ void LocalSearch<Route,
 
         if (_sol[s_t.first].size() > t_v.max_tasks or
             _sol[s_t.second].size() > s_v.max_tasks) {
+          continue;
+        }
+
+        const auto& s_deliveries_sum = _sol[s_t.first].job_deliveries_sum();
+        const auto& s_pickups_sum = _sol[s_t.first].job_pickups_sum();
+        const auto& t_deliveries_sum = _sol[s_t.second].job_deliveries_sum();
+        const auto& t_pickups_sum = _sol[s_t.second].job_pickups_sum();
+
+        if (!(t_deliveries_sum <= s_v.capacity) or
+            !(t_pickups_sum <= s_v.capacity) or
+            !(s_deliveries_sum <= t_v.capacity) or
+            !(s_pickups_sum <= t_v.capacity)) {
           continue;
         }
 

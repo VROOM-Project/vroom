@@ -156,7 +156,7 @@ Solution CVRP::solve(unsigned exploration_level,
 
     TSP p(_input, job_ranks, 0);
 
-    RawRoute r(_input, 0);
+    RawRoute r(_input, 0, 0);
     r.set_route(_input, p.raw_solve(nb_threads, timeout));
 
     return utils::format_solution(_input, {r});

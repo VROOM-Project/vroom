@@ -226,11 +226,18 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
   auto best_choice = empty_choice;
   Gain best_gain = best_known_gain;
 
+  const auto& v_source = input.vehicles[source.vehicle_rank];
+  const auto& v_target = input.vehicles[target.vehicle_rank];
+
+  const auto& s_delivery_margin = source.delivery_margin();
+  const auto& s_pickup_margin = source.pickup_margin();
+  const auto& t_delivery_margin = target.delivery_margin();
+  const auto& t_pickup_margin = target.pickup_margin();
+
   for (const auto& s_element : top_insertions_in_target) {
     const auto s_rank = s_element.first;
     const auto& target_insertions = s_element.second;
 
-    const auto& v_source = input.vehicles[source.vehicle_rank];
     // sol_state.node_gains contains the Delta value we're looking for
     // except in the case of a single-step route with a start and end,
     // where the start->end cost is not accounted for.
@@ -246,7 +253,6 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
       const auto t_rank = t_element.first;
       const auto& source_insertions = t_element.second;
 
-      const auto& v_target = input.vehicles[target.vehicle_rank];
       // Same as above.
       const auto target_start_end_cost =
         (target.size() == 1 and v_target.has_start() and v_target.has_end())
@@ -366,6 +372,22 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
       for (const auto& sc : swap_choice_options) {
         // Browse interesting options by decreasing gain and check for
         // validity.
+
+        // Early abort on invalid capacity bounds.
+        const auto s_index = source.route[sc.s_rank];
+        const auto& s_delivery = input.jobs[s_index].delivery;
+        const auto& s_pickup = input.jobs[s_index].pickup;
+        const auto t_index = target.route[sc.t_rank];
+        const auto& t_delivery = input.jobs[t_index].delivery;
+        const auto& t_pickup = input.jobs[t_index].pickup;
+
+        if (!(t_delivery <= s_delivery_margin + s_delivery) or
+            !(t_pickup <= s_pickup_margin + s_pickup) or
+            !(s_delivery <= t_delivery_margin + t_delivery) or
+            !(s_pickup <= t_pickup_margin + t_pickup)) {
+          continue;
+        }
+
         const auto s_insert = get_insert_range(source.route,
                                                s_rank,
                                                target.route[t_rank],

@@ -105,8 +105,8 @@ void TwoOpt::compute_gain() {
 }
 
 bool TwoOpt::is_valid() {
-  auto t_delivery = target.delivery_in_range(t_rank + 1, t_route.size());
-  auto t_pickup = target.pickup_in_range(t_rank + 1, t_route.size());
+  const auto& t_delivery = target.bwd_deliveries(t_rank);
+  const auto& t_pickup = target.bwd_pickups(t_rank);
 
   bool valid = source.is_valid_addition_for_capacity_margins(_input,
                                                              t_pickup,
@@ -114,8 +114,8 @@ bool TwoOpt::is_valid() {
                                                              s_rank + 1,
                                                              s_route.size());
 
-  auto s_delivery = source.delivery_in_range(s_rank + 1, s_route.size());
-  auto s_pickup = source.pickup_in_range(s_rank + 1, s_route.size());
+  const auto& s_delivery = source.bwd_deliveries(s_rank);
+  const auto& s_pickup = source.bwd_pickups(s_rank);
 
   valid =
     valid && target.is_valid_addition_for_capacity_margins(_input,

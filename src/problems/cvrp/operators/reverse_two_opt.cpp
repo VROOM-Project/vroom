@@ -137,8 +137,8 @@ void ReverseTwoOpt::compute_gain() {
 }
 
 bool ReverseTwoOpt::is_valid() {
-  auto t_delivery = target.delivery_in_range(0, t_rank + 1);
-  auto t_pickup = target.pickup_in_range(0, t_rank + 1);
+  const auto& t_delivery = target.fwd_deliveries(t_rank);
+  const auto& t_pickup = target.fwd_pickups(t_rank);
 
   bool valid = source.is_valid_addition_for_capacity_margins(_input,
                                                              t_pickup,
@@ -146,8 +146,8 @@ bool ReverseTwoOpt::is_valid() {
                                                              s_rank + 1,
                                                              s_route.size());
 
-  auto s_delivery = source.delivery_in_range(s_rank + 1, s_route.size());
-  auto s_pickup = source.pickup_in_range(s_rank + 1, s_route.size());
+  const auto& s_delivery = source.bwd_deliveries(s_rank);
+  const auto& s_pickup = source.bwd_pickups(s_rank);
 
   valid = valid && target.is_valid_addition_for_capacity_margins(_input,
                                                                  s_pickup,

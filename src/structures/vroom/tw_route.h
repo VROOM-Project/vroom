@@ -119,7 +119,7 @@ public:
   std::vector<Duration> breaks_travel_margin_before;
   std::vector<Duration> breaks_travel_margin_after;
 
-  TWRoute(const Input& input, Index i);
+  TWRoute(const Input& input, Index i, unsigned amount_size);
 
   bool empty() const {
     return route.empty();

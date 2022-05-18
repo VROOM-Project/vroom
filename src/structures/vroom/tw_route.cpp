@@ -13,8 +13,8 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
-TWRoute::TWRoute(const Input& input, Index v)
-  : RawRoute(input, v),
+TWRoute::TWRoute(const Input& input, Index v, unsigned amount_size)
+  : RawRoute(input, v, amount_size),
     v_start(input.vehicles[v].tw.start),
     v_end(input.vehicles[v].tw.end),
     breaks_at_rank({static_cast<unsigned>(input.vehicles[v].breaks.size())}),

@@ -11,9 +11,12 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
-RawRoute::RawRoute(const Input& input, Index i)
-  : _fwd_peaks(2, input.zero_amount()),
-    _bwd_peaks(2, input.zero_amount()),
+RawRoute::RawRoute(const Input& input, Index i, unsigned amount_size)
+  : _zero(amount_size),
+    _fwd_peaks(2, _zero),
+    _bwd_peaks(2, _zero),
+    _delivery_margin(input.vehicles[i].capacity),
+    _pickup_margin(input.vehicles[i].capacity),
     vehicle_rank(i),
     has_start(input.vehicles[i].has_start()),
     has_end(input.vehicles[i].has_end()),
@@ -36,7 +39,9 @@ std::size_t RawRoute::size() const {
 void RawRoute::update_amounts(const Input& input) {
   auto step_size = route.size() + 2;
   _fwd_pickups.resize(route.size());
+  _fwd_deliveries.resize(route.size());
   _bwd_deliveries.resize(route.size());
+  _bwd_pickups.resize(route.size());
   _pd_loads.resize(route.size());
   _nb_pickups.resize(route.size());
   _nb_deliveries.resize(route.size());
@@ -48,13 +53,14 @@ void RawRoute::update_amounts(const Input& input) {
   if (route.empty()) {
     // So that check in is_valid_addition_for_capacity is consistent
     // with empty routes.
-    std::fill(_fwd_peaks.begin(), _fwd_peaks.end(), input.zero_amount());
-    std::fill(_bwd_peaks.begin(), _bwd_peaks.end(), input.zero_amount());
+    std::fill(_fwd_peaks.begin(), _fwd_peaks.end(), _zero);
+    std::fill(_bwd_peaks.begin(), _bwd_peaks.end(), _zero);
     return;
   }
 
-  Amount current_pickups(input.zero_amount());
-  Amount current_pd_load(input.zero_amount());
+  Amount current_pickups(_zero);
+  Amount current_deliveries(_zero);
+  Amount current_pd_load(_zero);
   unsigned current_nb_pickups = 0;
   unsigned current_nb_deliveries = 0;
 
@@ -63,6 +69,7 @@ void RawRoute::update_amounts(const Input& input) {
     switch (job.type) {
     case JOB_TYPE::SINGLE:
       current_pickups += job.pickup;
+      current_deliveries += job.delivery;
       break;
     case JOB_TYPE::PICKUP:
       current_pd_load += job.pickup;
@@ -75,14 +82,16 @@ void RawRoute::update_amounts(const Input& input) {
       break;
     }
     _fwd_pickups[i] = current_pickups;
+    _fwd_deliveries[i] = current_deliveries;
     _pd_loads[i] = current_pd_load;
     assert(current_nb_deliveries <= current_nb_pickups);
     _nb_pickups[i] = current_nb_pickups;
     _nb_deliveries[i] = current_nb_deliveries;
   }
-  assert(_pd_loads.back() == input.zero_amount());
+  assert(_pd_loads.back() == _zero);
 
-  Amount current_deliveries(input.zero_amount());
+  current_deliveries = _zero;
+  current_pickups = _zero;
 
   _current_loads.back() = _fwd_pickups.back();
   assert(_current_loads.back() <= capacity);
@@ -91,12 +100,14 @@ void RawRoute::update_amounts(const Input& input) {
     auto bwd_i = route.size() - i - 1;
 
     _bwd_deliveries[bwd_i] = current_deliveries;
+    _bwd_pickups[bwd_i] = current_pickups;
     _current_loads[bwd_i + 1] =
       _fwd_pickups[bwd_i] + _pd_loads[bwd_i] + current_deliveries;
     assert(_current_loads[bwd_i + 1] <= capacity);
     const auto& job = input.jobs[route[bwd_i]];
     if (job.type == JOB_TYPE::SINGLE) {
       current_deliveries += job.delivery;
+      current_pickups += job.pickup;
     }
   }
   _current_loads[0] = current_deliveries;
@@ -106,7 +117,7 @@ void RawRoute::update_amounts(const Input& input) {
   _fwd_peaks[0] = peak;
   for (std::size_t s = 1; s < _fwd_peaks.size(); ++s) {
     // Handle max component-wise.
-    for (std::size_t r = 0; r < input.zero_amount().size(); ++r) {
+    for (std::size_t r = 0; r < _zero.size(); ++r) {
       peak[r] = std::max(peak[r], _current_loads[s][r]);
     }
     _fwd_peaks[s] = peak;
@@ -117,10 +128,23 @@ void RawRoute::update_amounts(const Input& input) {
   for (std::size_t s = 1; s < _bwd_peaks.size(); ++s) {
     auto bwd_s = _bwd_peaks.size() - s - 1;
     // Handle max component-wise.
-    for (std::size_t r = 0; r < input.zero_amount().size(); ++r) {
+    for (std::size_t r = 0; r < _zero.size(); ++r) {
       peak[r] = std::max(peak[r], _current_loads[bwd_s][r]);
     }
     _bwd_peaks[bwd_s] = peak;
+  }
+
+  if (route.empty()) {
+    _delivery_margin = capacity;
+    _pickup_margin = capacity;
+  } else {
+    assert(!_fwd_pickups.empty());
+    const auto& pickups_sum = _fwd_pickups.back();
+
+    for (unsigned i = 0; i < _zero.size(); ++i) {
+      _delivery_margin[i] = capacity[i] - _current_loads[0][i];
+      _pickup_margin[i] = capacity[i] - pickups_sum[i];
+    }
   }
 }
 
@@ -152,17 +176,17 @@ bool RawRoute::is_valid_addition_for_capacity(const Input&,
          (_bwd_peaks[rank] + pickup <= capacity);
 }
 
-bool RawRoute::is_valid_addition_for_load(const Input& input,
+bool RawRoute::is_valid_addition_for_load(const Input&,
                                           const Amount& pickup,
                                           const Index rank) const {
   assert(rank <= route.size());
 
-  auto& load = route.empty() ? input.zero_amount() : _current_loads[rank];
+  auto& load = route.empty() ? _zero : _current_loads[rank];
   return load + pickup <= capacity;
 }
 
 bool RawRoute::is_valid_addition_for_capacity_margins(
-  const Input& input,
+  const Input&,
   const Amount& pickup,
   const Amount& delivery,
   const Index first_rank,
@@ -174,7 +198,7 @@ bool RawRoute::is_valid_addition_for_capacity_margins(
     (first_rank == 0) ? _current_loads[0] : _bwd_deliveries[first_rank - 1];
 
   auto& first_pickups =
-    (first_rank == 0) ? input.zero_amount() : _fwd_pickups[first_rank - 1];
+    (first_rank == 0) ? _zero : _fwd_pickups[first_rank - 1];
 
   auto replaced_deliveries = first_deliveries - _bwd_deliveries[last_rank - 1];
 
@@ -195,7 +219,7 @@ bool RawRoute::is_valid_addition_for_capacity_inclusion(
   assert(first_rank <= last_rank);
   assert(last_rank <= route.size() + 1);
 
-  auto& init_load = (route.empty()) ? input.zero_amount() : _current_loads[0];
+  auto& init_load = (route.empty()) ? _zero : _current_loads[0];
 
   auto& first_deliveries =
     (first_rank == 0) ? init_load : _bwd_deliveries[first_rank - 1];
@@ -205,9 +229,8 @@ bool RawRoute::is_valid_addition_for_capacity_inclusion(
 
   auto replaced_deliveries = first_deliveries - last_deliveries;
 
-  delivery +=
-    ((route.empty()) ? input.zero_amount() : _current_loads[first_rank]) -
-    replaced_deliveries;
+  delivery += ((route.empty()) ? _zero : _current_loads[first_rank]) -
+              replaced_deliveries;
 
   bool valid = (delivery <= capacity);
 
@@ -222,13 +245,26 @@ bool RawRoute::is_valid_addition_for_capacity_inclusion(
   return valid;
 }
 
-Amount RawRoute::get_startup_load() const {
-  return _current_loads[0];
+const Amount& RawRoute::job_deliveries_sum() const {
+  return route.empty() ? _zero : _current_loads[0];
+}
+
+const Amount& RawRoute::job_pickups_sum() const {
+  return route.empty() ? _zero : _fwd_pickups.back();
+}
+
+const Amount& RawRoute::delivery_margin() const {
+  return _delivery_margin;
+}
+
+const Amount& RawRoute::pickup_margin() const {
+  return _pickup_margin;
 }
 
 Amount RawRoute::pickup_in_range(Index i, Index j) const {
-  if (i == j) {
-    return Amount(_current_loads[0].size());
+  assert(i <= j and j <= _fwd_pickups.size());
+  if (i == j or route.empty()) {
+    return _zero;
   }
   if (i == 0) {
     return _fwd_pickups[j - 1];
@@ -238,8 +274,9 @@ Amount RawRoute::pickup_in_range(Index i, Index j) const {
 }
 
 Amount RawRoute::delivery_in_range(Index i, Index j) const {
-  if (i == j) {
-    return Amount(_current_loads[0].size());
+  assert(i <= j and j <= _bwd_deliveries.size());
+  if (i == j or route.empty()) {
+    return _zero;
   }
   auto& before_deliveries =
     (i == 0) ? _current_loads[0] : _bwd_deliveries[i - 1];

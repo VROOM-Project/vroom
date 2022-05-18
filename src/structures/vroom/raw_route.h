@@ -17,13 +17,17 @@ namespace vroom {
 
 class RawRoute {
 private:
-  // _fwd_pickups[i] stores the total pickups for single jobs up to
-  // rank i.
-  std::vector<Amount> _fwd_pickups;
+  Amount _zero;
 
-  // _bwd_deliveries[i] stores the total deliveries for single jobs
-  // pending after rank i.
+  // _fwd_pickups[i] (resp. _fwd_deliveries[i]) stores the total
+  // pickups (resp. deliveries) for single jobs up to rank i.
+  std::vector<Amount> _fwd_pickups;
+  std::vector<Amount> _fwd_deliveries;
+
+  // _bwd_deliveries[i] (resp. _bwd_pickups[i]) stores the total
+  // deliveries (resp. pickups) for single jobs pending after rank i.
   std::vector<Amount> _bwd_deliveries;
+  std::vector<Amount> _bwd_pickups;
 
   // _pd_loads[i] stores the shipments load at rank i (included).
   std::vector<Amount> _pd_loads;
@@ -44,6 +48,11 @@ private:
   std::vector<Amount> _fwd_peaks;
   std::vector<Amount> _bwd_peaks;
 
+  // Store the difference between sum of single jobs deliveries
+  // (resp. pickups) and vehicle capacity.
+  Amount _delivery_margin;
+  Amount _pickup_margin;
+
 public:
   Index vehicle_rank;
   bool has_start;
@@ -52,7 +61,7 @@ public:
 
   std::vector<Index> route;
 
-  RawRoute(const Input& input, Index i);
+  RawRoute(const Input& input, Index i, unsigned amount_size);
 
   void set_route(const Input& input, const std::vector<Index>& r);
 
@@ -105,12 +114,34 @@ public:
                                                 const Index first_rank,
                                                 const Index last_rank) const;
 
-  Amount get_startup_load() const;
+  const Amount& job_deliveries_sum() const;
+
+  const Amount& job_pickups_sum() const;
+
+  const Amount& delivery_margin() const;
+
+  const Amount& pickup_margin() const;
 
   // Get sum of pickups (resp. deliveries) for all jobs in the range
   // [i, j).
   Amount pickup_in_range(Index i, Index j) const;
   Amount delivery_in_range(Index i, Index j) const;
+
+  const Amount& bwd_deliveries(Index i) const {
+    return _bwd_deliveries[i];
+  }
+
+  const Amount& fwd_deliveries(Index i) const {
+    return _fwd_deliveries[i];
+  }
+
+  const Amount& bwd_pickups(Index i) const {
+    return _bwd_pickups[i];
+  }
+
+  const Amount& fwd_pickups(Index i) const {
+    return _fwd_pickups[i];
+  }
 
   bool is_valid_addition_for_tw(const Input&, const Index, const Index) const {
     return true;

@@ -304,7 +304,7 @@ Solution TSP::solve(unsigned,
                     unsigned nb_threads,
                     const Timeout& timeout,
                     const std::vector<HeuristicParameters>&) const {
-  RawRoute r(_input, 0);
+  RawRoute r(_input, 0, 0);
   r.set_route(_input, raw_solve(nb_threads, timeout));
   return utils::format_solution(_input, {r});
 }
