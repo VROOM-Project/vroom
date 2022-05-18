@@ -400,8 +400,8 @@ void LocalSearch<Route,
             continue;
           }
 
-          const auto& delivery_margin = _sol[s_t.second].delivery_margin();
-          const auto& pickup_margin = _sol[s_t.second].pickup_margin();
+          const auto& delivery_margin = _sol[s_t.first].delivery_margin();
+          const auto& pickup_margin = _sol[s_t.first].pickup_margin();
 
           const auto begin_t_rank_candidate =
             _sol_state.insertion_ranks_begin[s_t.first][u];
@@ -423,12 +423,8 @@ void LocalSearch<Route,
             const Priority priority_gain = u_priority - current_job.priority;
 
             if (best_priorities[s_t.first] <= priority_gain) {
-
-              const auto& s_pickup = current_job.pickup;
-              const auto& s_delivery = current_job.delivery;
-
-              if (!(u_delivery <= delivery_margin + s_delivery) or
-                  !(u_pickup <= pickup_margin + s_pickup)) {
+              if (!(u_delivery <= delivery_margin + current_job.delivery) or
+                  !(u_pickup <= pickup_margin + current_job.pickup)) {
                 continue;
               }
 

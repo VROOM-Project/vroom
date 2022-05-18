@@ -138,6 +138,7 @@ void RawRoute::update_amounts(const Input& input) {
     _delivery_margin = capacity;
     _pickup_margin = capacity;
   } else {
+    assert(!_fwd_pickups.empty());
     const auto& pickups_sum = _fwd_pickups.back();
 
     for (unsigned i = 0; i < _zero.size(); ++i) {

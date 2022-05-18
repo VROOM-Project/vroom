@@ -62,10 +62,9 @@ std::vector<std::vector<Cost>> get_jobs_vehicles_costs(const Input& input) {
 
 template <class T> T basic(const Input& input, INIT init, double lambda) {
   const auto nb_vehicles = input.vehicles.size();
-  const auto amount_size = input.zero_amount().size();
   T routes;
   for (Index v = 0; v < nb_vehicles; ++v) {
-    routes.emplace_back(input, v, amount_size);
+    routes.emplace_back(input, v, input.zero_amount().size());
   }
 
   std::set<Index> unassigned;
@@ -415,10 +414,9 @@ template <class T> T basic(const Input& input, INIT init, double lambda) {
 template <class T>
 T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
   const auto nb_vehicles = input.vehicles.size();
-  const auto amount_size = input.zero_amount().size();
   T routes;
   for (Index v = 0; v < nb_vehicles; ++v) {
-    routes.emplace_back(input, v, amount_size);
+    routes.emplace_back(input, v, input.zero_amount().size());
   }
 
   std::set<Index> unassigned;
@@ -794,9 +792,8 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
 
 template <class T> T initial_routes(const Input& input) {
   T routes;
-  const auto amount_size = input.zero_amount().size();
   for (Index v = 0; v < input.vehicles.size(); ++v) {
-    routes.emplace_back(input, v, amount_size);
+    routes.emplace_back(input, v, input.zero_amount().size());
 
     const auto& vehicle = input.vehicles[v];
     auto& current_r = routes.back();
