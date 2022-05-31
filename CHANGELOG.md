@@ -4,6 +4,14 @@
 
 ### Added
 
+### Changed
+
+### Fixed
+
+## [v1.12.0] - 2022-05-31
+
+### Added
+
 - `IntraTwoOpt` local search operator (#706)
 - `description` key for unassigned tasks in output, if provided (#403)
 - `location_index` key for unassigned tasks and each step, if provided (#625)
