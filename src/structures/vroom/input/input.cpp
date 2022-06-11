@@ -572,7 +572,7 @@ void Input::set_vehicles_max_tasks() {
       Index rank;
       Capacity amount;
 
-      bool operator<(const JobAmount& rhs) {
+      bool operator<(const JobAmount& rhs) const {
         return this->amount < rhs.amount;
       }
     };
@@ -635,7 +635,7 @@ void Input::set_vehicles_max_tasks() {
       Index rank;
       Duration action;
 
-      bool operator<(const JobTime& rhs) {
+      bool operator<(const JobTime& rhs) const {
         return this->action < rhs.action;
       }
     };
