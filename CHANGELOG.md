@@ -8,6 +8,8 @@
 
 ### Fixed
 
+- Mark `JobAmount` and `JobTime` comparison operators as `const` (#724)
+
 ## [v1.12.0] - 2022-05-31
 
 ### Added
