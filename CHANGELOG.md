@@ -6,6 +6,8 @@
 
 ### Changed
 
+- Use `std::chrono::milliseconds` for `Timeout` value (#728)
+
 ### Fixed
 
 - Mark `JobAmount` and `JobTime` comparison operators as `const` (#724)
