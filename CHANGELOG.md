@@ -6,6 +6,8 @@
 
 ### Changed
 
+- Use `struct` for storing `Coordinates` instead of an `std::array` (#730)
+
 ### Fixed
 
 - Mark `JobAmount` and `JobTime` comparison operators as `const` (#724)
