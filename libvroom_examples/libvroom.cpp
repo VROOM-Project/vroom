@@ -119,7 +119,7 @@ void run_example_with_osrm() {
   vroom::Break break_2(2, {vroom::TimeWindow(34200, 36000)}, 300);
 
   // Define vehicles (use std::nullopt for no start or no end).
-  vroom::Location depot(vroom::Coordinates({{2.35044, 48.71764}}));
+  vroom::Location depot(vroom::Coordinates{2.35044, 48.71764});
   vroom::Vehicle v1(1,                // id
                     depot,            // start
                     depot,            // end
@@ -149,7 +149,7 @@ void run_example_with_osrm() {
   // be omitted.
   std::vector<vroom::Job> jobs;
   jobs.push_back(vroom::Job(1,
-                            vroom::Coordinates({{1.98935, 48.701}}),
+                            vroom::Coordinates{1.98935, 48.701},
                             setup,
                             service,
                             job_delivery,
@@ -158,21 +158,21 @@ void run_example_with_osrm() {
                             0,   // default priority
                             job_1_tws));
   jobs.push_back(vroom::Job(2,
-                            vroom::Coordinates({{2.03655, 48.61128}}),
+                            vroom::Coordinates{2.03655, 48.61128},
                             setup,
                             service,
                             job_empty_delivery,
                             job_pickup,
                             {1}));
   jobs.push_back(vroom::Job(5,
-                            vroom::Coordinates({{2.28325, 48.5958}}),
+                            vroom::Coordinates{2.28325, 48.5958},
                             setup,
                             service,
                             job_delivery,
                             job_empty_pickup,
                             {14}));
   jobs.push_back(vroom::Job(6,
-                            vroom::Coordinates({{2.89357, 48.90736}}),
+                            vroom::Coordinates{2.89357, 48.90736},
                             setup,
                             service,
                             job_delivery,
@@ -190,7 +190,7 @@ void run_example_with_osrm() {
 
   vroom::Job pickup(4,
                     vroom::JOB_TYPE::PICKUP,
-                    vroom::Coordinates({{2.41808, 49.22619}}),
+                    vroom::Coordinates{2.41808, 49.22619},
                     setup,
                     service,
                     pd_amount,
@@ -198,7 +198,7 @@ void run_example_with_osrm() {
 
   vroom::Job delivery(3,
                       vroom::JOB_TYPE::DELIVERY,
-                      vroom::Coordinates({{2.39719, 49.07611}}),
+                      vroom::Coordinates{2.39719, 49.07611},
                       setup,
                       service,
                       pd_amount,
