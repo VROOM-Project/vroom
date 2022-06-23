@@ -34,12 +34,12 @@ bool Location::has_coordinates() const {
 
 Coordinate Location::lon() const {
   assert(this->has_coordinates());
-  return _coords.value()[0];
+  return _coords.value().lon;
 }
 
 Coordinate Location::lat() const {
   assert(this->has_coordinates());
-  return _coords.value()[1];
+  return _coords.value().lat;
 }
 
 bool Location::user_index() const {
