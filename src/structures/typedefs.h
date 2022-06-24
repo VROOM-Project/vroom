@@ -40,7 +40,11 @@ using Skill = uint32_t;
 using Priority = uint32_t;
 
 // Type helpers.
-using Coordinates = std::array<Coordinate, 2>;
+struct Coordinates {
+  Coordinate lon;
+  Coordinate lat;
+};
+
 using OptionalCoordinates = std::optional<Coordinates>;
 using Skills = std::unordered_set<Skill>;
 using TimePoint = std::chrono::high_resolution_clock::time_point;
