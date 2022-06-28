@@ -4,6 +4,8 @@
 
 ### Added
 
+- Advertise `libvroom` in README and wiki (#42)
+
 ### Changed
 
 - Use `struct` for storing `Coordinates` instead of an `std::array` (#730)
