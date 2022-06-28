@@ -97,10 +97,8 @@ int main(int argc, char** argv) {
     try {
       if (!limit_arg.empty()) {
         // Internally timeout is in milliseconds.
-        const auto timeout = std::chrono::duration<double, std::milli>(
-          1000 * std::stof(limit_arg));
-        cl_args.timeout =
-          std::chrono::duration_cast<std::chrono::milliseconds>(timeout);
+        cl_args.timeout = std::chrono::milliseconds(
+          static_cast<int>(1000 * std::stof(limit_arg)));
       }
     } catch (const std::exception& e) {
       throw cxxopts::OptionException("Argument '" + limit_arg +
