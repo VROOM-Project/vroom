@@ -19,6 +19,7 @@ All rights reserved (see LICENSE).
 #endif
 
 #include "structures/typedefs.h"
+#include "structures/vroom/gain.h"
 #include "structures/vroom/raw_route.h"
 #include "structures/vroom/tw_route.h"
 #include "utils/exception.h"
@@ -150,44 +151,44 @@ inline Gain addition_cost(const Input& input,
   assert(rank <= route.size());
 
   Index job_index = input.jobs[job_rank].index();
-  Gain previous_cost = 0;
-  Gain next_cost = 0;
-  Gain old_edge_cost = 0;
+  Gain previous_cost;
+  Gain next_cost;
+  Gain old_edge_cost;
 
   if (rank == route.size()) {
     if (route.size() == 0) {
       // Adding job to an empty route.
       if (v.has_start()) {
-        previous_cost = v.cost(v.start.value().index(), job_index);
+        previous_cost = v.eval(v.start.value().index(), job_index);
       }
       if (v.has_end()) {
-        next_cost = v.cost(job_index, v.end.value().index());
+        next_cost = v.eval(job_index, v.end.value().index());
       }
     } else {
       // Adding job past the end after a real job.
       auto p_index = input.jobs[route[rank - 1]].index();
-      previous_cost = v.cost(p_index, job_index);
+      previous_cost = v.eval(p_index, job_index);
       if (v.has_end()) {
         auto n_index = v.end.value().index();
-        old_edge_cost = v.cost(p_index, n_index);
-        next_cost = v.cost(job_index, n_index);
+        old_edge_cost = v.eval(p_index, n_index);
+        next_cost = v.eval(job_index, n_index);
       }
     }
   } else {
     // Adding before one of the jobs.
     auto n_index = input.jobs[route[rank]].index();
-    next_cost = v.cost(job_index, n_index);
+    next_cost = v.eval(job_index, n_index);
 
     if (rank == 0) {
       if (v.has_start()) {
         auto p_index = v.start.value().index();
-        previous_cost = v.cost(p_index, job_index);
-        old_edge_cost = v.cost(p_index, n_index);
+        previous_cost = v.eval(p_index, job_index);
+        old_edge_cost = v.eval(p_index, n_index);
       }
     } else {
       auto p_index = input.jobs[route[rank - 1]].index();
-      previous_cost = v.cost(p_index, job_index);
-      old_edge_cost = v.cost(p_index, n_index);
+      previous_cost = v.eval(p_index, job_index);
+      old_edge_cost = v.eval(p_index, n_index);
     }
   }
 
@@ -213,22 +214,22 @@ inline Gain addition_cost(const Input& input,
     // Delivery is inserted just after pickup.
     Index p_index = input.jobs[job_rank].index();
     Index d_index = input.jobs[job_rank + 1].index();
-    cost += v.cost(p_index, d_index);
+    cost += v.eval(p_index, d_index);
 
-    Gain after_delivery = 0;
-    Gain remove_after_pickup = 0;
+    Gain after_delivery;
+    Gain remove_after_pickup;
 
     if (pickup_rank == route.size()) {
       // Addition at the end of a route.
       if (v.has_end()) {
-        after_delivery = v.cost(d_index, v.end.value().index());
-        remove_after_pickup = v.cost(p_index, v.end.value().index());
+        after_delivery = v.eval(d_index, v.end.value().index());
+        remove_after_pickup = v.eval(p_index, v.end.value().index());
       }
     } else {
       // There is a job after insertion.
       Index next_index = input.jobs[route[pickup_rank]].index();
-      after_delivery = v.cost(d_index, next_index);
-      remove_after_pickup = v.cost(p_index, next_index);
+      after_delivery = v.eval(d_index, next_index);
+      remove_after_pickup = v.eval(p_index, next_index);
     }
 
     cost += after_delivery;
@@ -253,34 +254,34 @@ inline Gain in_place_delta_cost(const Input& input,
   assert(!route.empty());
   Index new_index = input.jobs[job_rank].index();
 
-  Gain new_previous_cost = 0;
-  Gain new_next_cost = 0;
+  Gain new_previous_cost;
+  Gain new_next_cost;
   std::optional<Index> p_index;
   std::optional<Index> n_index;
 
   if (rank == 0) {
     if (v.has_start()) {
       p_index = v.start.value().index();
-      new_previous_cost = v.cost(p_index.value(), new_index);
+      new_previous_cost = v.eval(p_index.value(), new_index);
     }
   } else {
     p_index = input.jobs[route[rank - 1]].index();
-    new_previous_cost = v.cost(p_index.value(), new_index);
+    new_previous_cost = v.eval(p_index.value(), new_index);
   }
 
   if (rank == route.size() - 1) {
     if (v.has_end()) {
       n_index = v.end.value().index();
-      new_next_cost = v.cost(new_index, n_index.value());
+      new_next_cost = v.eval(new_index, n_index.value());
     }
   } else {
     n_index = input.jobs[route[rank + 1]].index();
-    new_next_cost = v.cost(new_index, n_index.value());
+    new_next_cost = v.eval(new_index, n_index.value());
   }
 
-  Gain old_virtual_cost = 0;
+  Gain old_virtual_cost;
   if (p_index and n_index) {
-    old_virtual_cost = v.cost(p_index.value(), n_index.value());
+    old_virtual_cost = v.eval(p_index.value(), n_index.value());
   }
 
   return new_previous_cost + new_next_cost - old_virtual_cost;
