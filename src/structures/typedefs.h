@@ -31,9 +31,10 @@ namespace vroom {
 using Id = uint64_t;
 using Index = uint16_t;
 using Cost = uint32_t;
-using Gain = int64_t;
+using SignedCost = int64_t;
 using Distance = uint32_t;
 using Duration = uint32_t;
+using SignedDuration = int64_t;
 using Coordinate = double;
 using Capacity = int64_t;
 using Skill = uint32_t;
