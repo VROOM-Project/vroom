@@ -17,6 +17,7 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/amount.h"
 #include "structures/vroom/break.h"
 #include "structures/vroom/cost_wrapper.h"
+#include "structures/vroom/eval.h"
 #include "structures/vroom/input/vehicle_step.h"
 #include "structures/vroom/location.h"
 #include "structures/vroom/time_window.h"
@@ -68,6 +69,10 @@ struct Vehicle {
 
   Cost cost(Index i, Index j) const {
     return cost_wrapper.cost(i, j);
+  }
+
+  Eval eval(Index i, Index j) const {
+    return Eval(cost_wrapper.cost(i, j), cost_wrapper.duration(i, j));
   }
 };
 
