@@ -59,8 +59,8 @@ void UnassignedExchange::compute_gain() {
 
   const Index u_index = _input.jobs[_u].index();
 
-  Gain s_gain;
-  Gain t_gain;
+  Eval s_gain;
+  Eval t_gain;
 
   if (t_rank == s_rank) {
     // Removed job is replaced by the unassigned one so there is no
@@ -69,8 +69,8 @@ void UnassignedExchange::compute_gain() {
 
     // No old edge to remove when adding unassigned job in place of
     // removed job.
-    Gain previous_cost = 0;
-    Gain next_cost = 0;
+    Eval previous_cost = 0;
+    Eval next_cost = 0;
 
     if (t_rank == 0) {
       if (v.has_start()) {

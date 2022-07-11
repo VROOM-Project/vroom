@@ -47,7 +47,7 @@ void Relocate::compute_gain() {
 
   // For target vehicle, we consider the cost of adding source job at
   // rank t_rank.
-  Gain t_gain =
+  Eval t_gain =
     -utils::addition_cost(_input, s_route[s_rank], v, t_route, t_rank);
 
   stored_gain = _sol_state.node_gains[s_vehicle][s_rank] + t_gain;

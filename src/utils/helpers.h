@@ -19,7 +19,6 @@ All rights reserved (see LICENSE).
 #endif
 
 #include "structures/typedefs.h"
-#include "structures/vroom/gain.h"
 #include "structures/vroom/raw_route.h"
 #include "structures/vroom/tw_route.h"
 #include "utils/exception.h"
@@ -141,9 +140,9 @@ inline HeuristicParameters str_to_heuristic_param(const std::string& s) {
   }
 }
 
-// Compute cost of adding job with rank job_rank in given route at
-// given rank for vehicle v.
-inline Gain addition_cost(const Input& input,
+// Evaluate adding job with rank job_rank in given route at given rank
+// for vehicle v.
+inline Eval addition_cost(const Input& input,
                           Index job_rank,
                           const Vehicle& v,
                           const std::vector<Index>& route,
@@ -151,55 +150,55 @@ inline Gain addition_cost(const Input& input,
   assert(rank <= route.size());
 
   Index job_index = input.jobs[job_rank].index();
-  Gain previous_cost;
-  Gain next_cost;
-  Gain old_edge_cost;
+  Eval previous_eval;
+  Eval next_eval;
+  Eval old_edge_eval;
 
   if (rank == route.size()) {
     if (route.size() == 0) {
       // Adding job to an empty route.
       if (v.has_start()) {
-        previous_cost = v.eval(v.start.value().index(), job_index);
+        previous_eval = v.eval(v.start.value().index(), job_index);
       }
       if (v.has_end()) {
-        next_cost = v.eval(job_index, v.end.value().index());
+        next_eval = v.eval(job_index, v.end.value().index());
       }
     } else {
       // Adding job past the end after a real job.
       auto p_index = input.jobs[route[rank - 1]].index();
-      previous_cost = v.eval(p_index, job_index);
+      previous_eval = v.eval(p_index, job_index);
       if (v.has_end()) {
         auto n_index = v.end.value().index();
-        old_edge_cost = v.eval(p_index, n_index);
-        next_cost = v.eval(job_index, n_index);
+        old_edge_eval = v.eval(p_index, n_index);
+        next_eval = v.eval(job_index, n_index);
       }
     }
   } else {
     // Adding before one of the jobs.
     auto n_index = input.jobs[route[rank]].index();
-    next_cost = v.eval(job_index, n_index);
+    next_eval = v.eval(job_index, n_index);
 
     if (rank == 0) {
       if (v.has_start()) {
         auto p_index = v.start.value().index();
-        previous_cost = v.eval(p_index, job_index);
-        old_edge_cost = v.eval(p_index, n_index);
+        previous_eval = v.eval(p_index, job_index);
+        old_edge_eval = v.eval(p_index, n_index);
       }
     } else {
       auto p_index = input.jobs[route[rank - 1]].index();
-      previous_cost = v.eval(p_index, job_index);
-      old_edge_cost = v.eval(p_index, n_index);
+      previous_eval = v.eval(p_index, job_index);
+      old_edge_eval = v.eval(p_index, n_index);
     }
   }
 
-  return previous_cost + next_cost - old_edge_cost;
+  return previous_eval + next_eval - old_edge_eval;
 }
 
-// Compute cost of adding pickup with rank job_rank and associated
-// delivery (with rank job_rank + 1) in given route for vehicle
-// v. Pickup is inserted at pickup_rank in route and delivery is
-// inserted at delivery_rank in route **with pickup**.
-inline Gain addition_cost(const Input& input,
+// Evaluate adding pickup with rank job_rank and associated delivery
+// (with rank job_rank + 1) in given route for vehicle v. Pickup is
+// inserted at pickup_rank in route and delivery is inserted at
+// delivery_rank in route **with pickup**.
+inline Eval addition_cost(const Input& input,
                           Index job_rank,
                           const Vehicle& v,
                           const std::vector<Index>& route,
@@ -207,17 +206,17 @@ inline Gain addition_cost(const Input& input,
                           Index delivery_rank) {
   assert(pickup_rank < delivery_rank and delivery_rank <= route.size() + 1);
 
-  // Start with pickup cost.
-  auto cost = addition_cost(input, job_rank, v, route, pickup_rank);
+  // Start with pickup eval.
+  auto eval = addition_cost(input, job_rank, v, route, pickup_rank);
 
   if (delivery_rank == pickup_rank + 1) {
     // Delivery is inserted just after pickup.
     Index p_index = input.jobs[job_rank].index();
     Index d_index = input.jobs[job_rank + 1].index();
-    cost += v.eval(p_index, d_index);
+    eval += v.eval(p_index, d_index);
 
-    Gain after_delivery;
-    Gain remove_after_pickup;
+    Eval after_delivery;
+    Eval remove_after_pickup;
 
     if (pickup_rank == route.size()) {
       // Addition at the end of a route.
@@ -232,21 +231,21 @@ inline Gain addition_cost(const Input& input,
       remove_after_pickup = v.eval(p_index, next_index);
     }
 
-    cost += after_delivery;
-    cost -= remove_after_pickup;
+    eval += after_delivery;
+    eval -= remove_after_pickup;
   } else {
     // Delivery is further away so edges sets for pickup and delivery
     // addition are disjoint.
-    cost += addition_cost(input, job_rank + 1, v, route, delivery_rank - 1);
+    eval += addition_cost(input, job_rank + 1, v, route, delivery_rank - 1);
   }
 
-  return cost;
+  return eval;
 }
 
-// Helper function for SwapStar operator, computing part of the cost
+// Helper function for SwapStar operator, computing part of the eval
 // for in-place replacing of job at rank in route with job at
 // job_rank.
-inline Gain in_place_delta_cost(const Input& input,
+inline Eval in_place_delta_cost(const Input& input,
                                 Index job_rank,
                                 const Vehicle& v,
                                 const std::vector<Index>& route,
@@ -254,41 +253,41 @@ inline Gain in_place_delta_cost(const Input& input,
   assert(!route.empty());
   Index new_index = input.jobs[job_rank].index();
 
-  Gain new_previous_cost;
-  Gain new_next_cost;
+  Eval new_previous_eval;
+  Eval new_next_eval;
   std::optional<Index> p_index;
   std::optional<Index> n_index;
 
   if (rank == 0) {
     if (v.has_start()) {
       p_index = v.start.value().index();
-      new_previous_cost = v.eval(p_index.value(), new_index);
+      new_previous_eval = v.eval(p_index.value(), new_index);
     }
   } else {
     p_index = input.jobs[route[rank - 1]].index();
-    new_previous_cost = v.eval(p_index.value(), new_index);
+    new_previous_eval = v.eval(p_index.value(), new_index);
   }
 
   if (rank == route.size() - 1) {
     if (v.has_end()) {
       n_index = v.end.value().index();
-      new_next_cost = v.eval(new_index, n_index.value());
+      new_next_eval = v.eval(new_index, n_index.value());
     }
   } else {
     n_index = input.jobs[route[rank + 1]].index();
-    new_next_cost = v.eval(new_index, n_index.value());
+    new_next_eval = v.eval(new_index, n_index.value());
   }
 
-  Gain old_virtual_cost;
+  Eval old_virtual_eval;
   if (p_index and n_index) {
-    old_virtual_cost = v.eval(p_index.value(), n_index.value());
+    old_virtual_eval = v.eval(p_index.value(), n_index.value());
   }
 
-  return new_previous_cost + new_next_cost - old_virtual_cost;
+  return new_previous_eval + new_next_eval - old_virtual_eval;
 }
 
-inline Cost priority_sum_for_route(const Input& input,
-                                   const std::vector<Index>& route) {
+inline Priority priority_sum_for_route(const Input& input,
+                                       const std::vector<Index>& route) {
   return std::accumulate(route.begin(),
                          route.end(),
                          0,
@@ -297,26 +296,26 @@ inline Cost priority_sum_for_route(const Input& input,
                          });
 }
 
-inline Cost route_cost_for_vehicle(const Input& input,
+inline Eval route_cost_for_vehicle(const Input& input,
                                    Index vehicle_rank,
                                    const std::vector<Index>& route) {
   const auto& v = input.vehicles[vehicle_rank];
-  auto cost = 0;
+  Eval cost;
 
   if (route.size() > 0) {
     if (v.has_start()) {
       cost +=
-        v.cost(v.start.value().index(), input.jobs[route.front()].index());
+        v.eval(v.start.value().index(), input.jobs[route.front()].index());
     }
 
     Index previous = route.front();
     for (auto it = ++route.cbegin(); it != route.cend(); ++it) {
-      cost += v.cost(input.jobs[previous].index(), input.jobs[*it].index());
+      cost += v.eval(input.jobs[previous].index(), input.jobs[*it].index());
       previous = *it;
     }
 
     if (v.has_end()) {
-      cost += v.cost(input.jobs[route.back()].index(), v.end.value().index());
+      cost += v.eval(input.jobs[route.back()].index(), v.end.value().index());
     }
   }
 
@@ -383,7 +382,7 @@ inline Solution format_solution(const Input& input,
     auto previous_location = (v.has_start())
                                ? v.start.value().index()
                                : std::numeric_limits<Index>::max();
-    Cost cost = 0;
+    Eval eval;
     Duration duration = 0;
     Duration setup = 0;
     Duration service = 0;
@@ -410,7 +409,7 @@ inline Solution format_solution(const Input& input,
         v.duration(v.start.value().index(), first_job.index());
       ETA += travel;
       duration += travel;
-      cost += v.cost(v.start.value().index(), first_job.index());
+      eval += v.eval(v.start.value().index(), first_job.index());
     }
 
     // Handle jobs.
@@ -448,8 +447,8 @@ inline Solution format_solution(const Input& input,
       ETA += travel;
       duration += travel;
 
-      cost +=
-        v.cost(input.jobs[route[r]].index(), input.jobs[route[r + 1]].index());
+      eval +=
+        v.eval(input.jobs[route[r]].index(), input.jobs[route[r + 1]].index());
 
       auto& current_job = input.jobs[route[r + 1]];
 
@@ -487,7 +486,7 @@ inline Solution format_solution(const Input& input,
       const auto travel = v.duration(last_job.index(), v.end.value().index());
       ETA += travel;
       duration += travel;
-      cost += v.cost(last_job.index(), v.end.value().index());
+      eval += v.eval(last_job.index(), v.end.value().index());
     }
     steps.back().duration = duration;
     steps.back().arrival = ETA;
@@ -496,7 +495,7 @@ inline Solution format_solution(const Input& input,
 
     routes.emplace_back(v.id,
                         std::move(steps),
-                        cost,
+                        eval.cost,
                         setup,
                         service,
                         duration,
@@ -671,7 +670,7 @@ inline Route format_route(const Input& input,
                                            : std::numeric_limits<Index>::max();
 
   // Values summed up while going through the route.
-  Cost cost = 0;
+  Eval eval;
   Duration duration = 0;
   Duration setup = 0;
   Duration service = 0;
@@ -687,9 +686,9 @@ inline Route format_route(const Input& input,
       ? v.duration(v.start.value().index(), input.jobs[tw_r.route[0]].index())
       : 0;
 
-  Cost current_cost = v.has_start() ? v.cost(v.start.value().index(),
+  Eval current_eval = v.has_start() ? v.eval(v.start.value().index(),
                                              input.jobs[tw_r.route[0]].index())
-                                    : 0;
+                                    : Eval();
 
   for (std::size_t r = 0; r < tw_r.route.size(); ++r) {
     assert(input.vehicle_ok_with_job(tw_r.vehicle_rank, tw_r.route[r]));
@@ -700,8 +699,8 @@ inline Route format_route(const Input& input,
       // depending on whether there is a start.
       travel_time =
         v.duration(input.jobs[tw_r.route[r - 1]].index(), current_job.index());
-      current_cost =
-        v.cost(input.jobs[tw_r.route[r - 1]].index(), current_job.index());
+      current_eval =
+        v.eval(input.jobs[tw_r.route[r - 1]].index(), current_job.index());
     }
 
     // Handles breaks before this job.
@@ -759,7 +758,7 @@ inline Route format_route(const Input& input,
 
     // Back to current job.
     duration += travel_time;
-    cost += current_cost;
+    eval += current_eval;
     service += current_job.service;
     priority += current_job.priority;
 
@@ -812,9 +811,9 @@ inline Route format_route(const Input& input,
     (v.has_end())
       ? v.duration(input.jobs[tw_r.route.back()].index(), v.end.value().index())
       : 0;
-  current_cost = (v.has_end()) ? v.cost(input.jobs[tw_r.route.back()].index(),
+  current_eval = (v.has_end()) ? v.eval(input.jobs[tw_r.route.back()].index(),
                                         v.end.value().index())
-                               : 0;
+                               : Eval();
 
   auto r = tw_r.route.size();
   assert(tw_r.breaks_at_rank[r] <= tw_r.breaks_counts[r]);
@@ -872,7 +871,7 @@ inline Route format_route(const Input& input,
   steps.emplace_back(STEP_TYPE::END, last_location.value(), current_load);
   if (v.has_end()) {
     duration += travel_time;
-    cost += current_cost;
+    eval += current_eval;
     step_start += travel_time;
   }
   steps.back().duration = duration;
@@ -890,7 +889,7 @@ inline Route format_route(const Input& input,
 
   return Route(v.id,
                std::move(steps),
-               cost,
+               eval.cost,
                setup,
                service,
                duration,

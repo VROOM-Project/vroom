@@ -127,7 +127,7 @@ void SolutionState::update_skills(const std::vector<Index>& route, Index v1) {
 }
 
 void SolutionState::set_node_gains(const std::vector<Index>& route, Index v) {
-  node_gains[v] = std::vector<Gain>(route.size());
+  node_gains[v] = std::vector<Eval>(route.size());
   edge_evals_around_node[v] = std::vector<Eval>(route.size());
 
   if (route.size() == 0) {
@@ -175,9 +175,9 @@ void SolutionState::set_node_gains(const std::vector<Index>& route, Index v) {
   Eval edges_evals_around = previous_eval + next_eval;
   edge_evals_around_node[v][0] = edges_evals_around;
 
-  Gain current_gain = Gain(edges_evals_around) - Gain(new_edge_eval);
+  Eval current_gain = edges_evals_around - new_edge_eval;
   node_gains[v][0] = current_gain;
-  Gain best_gain = current_gain;
+  Eval best_gain = current_gain;
   node_candidates[v] = 0;
 
   if (route.size() == 1) {
@@ -196,8 +196,7 @@ void SolutionState::set_node_gains(const std::vector<Index>& route, Index v) {
       vehicle.eval(p_index, c_index) + vehicle.eval(c_index, n_index);
     edge_evals_around_node[v][i] = edges_evals_around;
 
-    current_gain =
-      Gain(edges_evals_around) - vehicle.eval_gain(p_index, n_index);
+    current_gain = edges_evals_around - vehicle.eval(p_index, n_index);
     node_gains[v][i] = current_gain;
 
     if (best_gain < current_gain) {
@@ -239,7 +238,7 @@ void SolutionState::set_node_gains(const std::vector<Index>& route, Index v) {
   edges_evals_around = previous_eval + next_eval;
   edge_evals_around_node[v][last_rank] = edges_evals_around;
 
-  current_gain = Gain(edges_evals_around) - Gain(new_edge_eval);
+  current_gain = edges_evals_around - new_edge_eval;
   node_gains[v][last_rank] = current_gain;
 
   if (best_gain < current_gain) {
@@ -250,7 +249,7 @@ void SolutionState::set_node_gains(const std::vector<Index>& route, Index v) {
 void SolutionState::set_edge_gains(const std::vector<Index>& route, Index v) {
   std::size_t nb_edges = (route.size() < 2) ? 0 : route.size() - 1;
 
-  edge_gains[v] = std::vector<Gain>(nb_edges);
+  edge_gains[v] = std::vector<Eval>(nb_edges);
   edge_evals_around_edge[v] = std::vector<Eval>(nb_edges);
 
   if (route.size() < 2) {
@@ -299,9 +298,9 @@ void SolutionState::set_edge_gains(const std::vector<Index>& route, Index v) {
   Eval edges_evals_around = previous_eval + next_eval;
   edge_evals_around_edge[v][0] = edges_evals_around;
 
-  Gain current_gain = Gain(edges_evals_around) - Gain(new_edge_eval);
+  Eval current_gain = edges_evals_around - new_edge_eval;
   edge_gains[v][0] = current_gain;
-  Gain best_gain = current_gain;
+  Eval best_gain = current_gain;
   edge_candidates[v] = 0;
 
   if (route.size() == 2) {
@@ -322,8 +321,7 @@ void SolutionState::set_edge_gains(const std::vector<Index>& route, Index v) {
       vehicle.eval(p_index, c_index) + vehicle.eval(after_c_index, n_index);
     edge_evals_around_edge[v][i] = edges_evals_around;
 
-    current_gain =
-      Gain(edges_evals_around) - Gain(vehicle.eval(p_index, n_index));
+    current_gain = edges_evals_around - vehicle.eval(p_index, n_index);
     edge_gains[v][i] = current_gain;
 
     if (best_gain < current_gain) {
@@ -366,7 +364,7 @@ void SolutionState::set_edge_gains(const std::vector<Index>& route, Index v) {
   edges_evals_around = previous_eval + next_eval;
   edge_evals_around_edge[v][last_edge_rank] = edges_evals_around;
 
-  current_gain = Gain(edges_evals_around) - Gain(new_edge_eval);
+  current_gain = edges_evals_around - new_edge_eval;
   edge_gains[v][last_edge_rank] = current_gain;
 
   if (best_gain < current_gain) {
@@ -379,7 +377,7 @@ void SolutionState::set_pd_gains(const std::vector<Index>& route, Index v) {
   // after set_node_gains. Expects to have valid values in
   // matching_delivery_rank, so should be run after
   // set_pd_matching_ranks.
-  pd_gains[v] = std::vector<Gain>(route.size());
+  pd_gains[v] = std::vector<Eval>(route.size());
 
   const auto& vehicle = _input.vehicles[v];
 
@@ -393,9 +391,9 @@ void SolutionState::set_pd_gains(const std::vector<Index>& route, Index v) {
 
     if (pickup_rank + 1 == delivery_rank) {
       // Pickup and delivery in a row.
-      Gain previous_eval;
-      Gain next_eval;
-      Gain new_edge_eval;
+      Eval previous_eval;
+      Eval next_eval;
+      Eval new_edge_eval;
       Index p_index;
       Index n_index;
 

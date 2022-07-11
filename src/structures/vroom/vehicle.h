@@ -18,7 +18,6 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/break.h"
 #include "structures/vroom/cost_wrapper.h"
 #include "structures/vroom/eval.h"
-#include "structures/vroom/gain.h"
 #include "structures/vroom/input/vehicle_step.h"
 #include "structures/vroom/location.h"
 #include "structures/vroom/time_window.h"
@@ -64,7 +63,7 @@ struct Vehicle {
 
   Duration available_duration() const;
 
-  Cost duration(Index i, Index j) const {
+  Duration duration(Index i, Index j) const {
     return cost_wrapper.duration(i, j);
   }
 
@@ -74,10 +73,6 @@ struct Vehicle {
 
   Eval eval(Index i, Index j) const {
     return Eval(cost_wrapper.cost(i, j), cost_wrapper.duration(i, j));
-  }
-
-  Gain eval_gain(Index i, Index j) const {
-    return Gain(cost_wrapper.cost(i, j), cost_wrapper.duration(i, j));
   }
 };
 

@@ -11,7 +11,6 @@ All rights reserved (see LICENSE).
 */
 
 #include "structures/typedefs.h"
-#include "structures/vroom/gain.h"
 #include "structures/vroom/input/input.h"
 #include "structures/vroom/tw_route.h"
 
@@ -85,7 +84,7 @@ public:
   // v. node_candidates[v] is the rank that yields the biggest such
   // gain for vehicle v.
   std::vector<std::vector<Eval>> edge_evals_around_node;
-  std::vector<std::vector<Gain>> node_gains;
+  std::vector<std::vector<Eval>> node_gains;
   std::vector<Index> node_candidates;
 
   // edge_evals_around_edge[v][i] evaluates the sum of edges that
@@ -96,12 +95,12 @@ public:
   // v. edge_candidates[v] is the rank that yields the biggest such
   // gain for vehicle v.
   std::vector<std::vector<Eval>> edge_evals_around_edge;
-  std::vector<std::vector<Gain>> edge_gains;
+  std::vector<std::vector<Eval>> edge_gains;
   std::vector<Index> edge_candidates;
 
   // pd_gains[v][i] stores potential gain when removing pickup at rank
   // i in route for vehicle v along with it's associated delivery.
-  std::vector<std::vector<Gain>> pd_gains;
+  std::vector<std::vector<Eval>> pd_gains;
 
   // If job at rank i in route for vehicle v is a pickup
   // (resp. delivery), then matching_delivery_rank[v][i]
