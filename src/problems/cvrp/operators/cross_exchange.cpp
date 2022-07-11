@@ -79,7 +79,7 @@ Gain CrossExchange::gain_upper_bound() {
   // For source vehicle, we consider the cost of replacing edge
   // starting at rank s_rank with target edge. Part of that cost
   // (for adjacent edges) is stored in
-  // _sol_state.edge_costs_around_edge.  reverse_* checks whether we
+  // _sol_state.edge_evals_around_edge.  reverse_* checks whether we
   // should change the target edge order.
   Index s_index = _input.jobs[s_route[s_rank]].index();
   Index s_after_index = _input.jobs[s_route[s_rank + 1]].index();
@@ -116,14 +116,14 @@ Gain CrossExchange::gain_upper_bound() {
     reverse_next_cost = s_v.cost(t_index, n_index);
   }
 
-  _normal_s_gain = _sol_state.edge_costs_around_edge[s_vehicle][s_rank] +
+  _normal_s_gain = _sol_state.edge_evals_around_edge[s_vehicle][s_rank] +
                    s_v.cost(s_index, s_after_index) - previous_cost -
                    next_cost - s_v.cost(t_index, t_after_index);
 
   auto s_gain_upper_bound = _normal_s_gain;
 
   if (check_t_reverse) {
-    _reversed_s_gain = _sol_state.edge_costs_around_edge[s_vehicle][s_rank] +
+    _reversed_s_gain = _sol_state.edge_evals_around_edge[s_vehicle][s_rank] +
                        s_v.cost(s_index, s_after_index) -
                        reverse_previous_cost - reverse_next_cost -
                        s_v.cost(t_after_index, t_index);
@@ -133,7 +133,7 @@ Gain CrossExchange::gain_upper_bound() {
 
   // For target vehicle, we consider the cost of replacing edge
   // starting at rank t_rank with source edge. Part of that cost (for
-  // adjacent edges) is stored in _sol_state.edge_costs_around_edge.
+  // adjacent edges) is stored in _sol_state.edge_evals_around_edge.
   // reverse_* checks whether we should change the source edge order.
   previous_cost = 0;
   next_cost = 0;
@@ -164,14 +164,14 @@ Gain CrossExchange::gain_upper_bound() {
     reverse_next_cost = t_v.cost(s_index, n_index);
   }
 
-  _normal_t_gain = _sol_state.edge_costs_around_edge[t_vehicle][t_rank] +
+  _normal_t_gain = _sol_state.edge_evals_around_edge[t_vehicle][t_rank] +
                    t_v.cost(t_index, t_after_index) - previous_cost -
                    next_cost - t_v.cost(s_index, s_after_index);
 
   auto t_gain_upper_bound = _normal_t_gain;
 
   if (check_s_reverse) {
-    _reversed_t_gain = _sol_state.edge_costs_around_edge[t_vehicle][t_rank] +
+    _reversed_t_gain = _sol_state.edge_evals_around_edge[t_vehicle][t_rank] +
                        t_v.cost(t_index, t_after_index) -
                        reverse_previous_cost - reverse_next_cost -
                        t_v.cost(s_after_index, s_index);

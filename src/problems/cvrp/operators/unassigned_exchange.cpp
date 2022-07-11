@@ -65,7 +65,7 @@ void UnassignedExchange::compute_gain() {
   if (t_rank == s_rank) {
     // Removed job is replaced by the unassigned one so there is no
     // new edge in place of removal.
-    s_gain = _sol_state.edge_costs_around_node[s_vehicle][s_rank];
+    s_gain = _sol_state.edge_evals_around_node[s_vehicle][s_rank];
 
     // No old edge to remove when adding unassigned job in place of
     // removed job.

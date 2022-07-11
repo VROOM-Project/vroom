@@ -64,7 +64,7 @@ Gain MixedExchange::gain_upper_bound() {
 
   // For source vehicle, we consider the cost of replacing job at rank
   // s_rank with target edge. Part of that cost (for adjacent edges)
-  // is stored in _sol_state.edge_costs_around_node. reverse_t_edge
+  // is stored in _sol_state.edge_evals_around_node. reverse_t_edge
   // checks whether we should change the target edge order.
   Index s_index = _input.jobs[s_route[s_rank]].index();
   Index t_index = _input.jobs[t_route[t_rank]].index();
@@ -100,13 +100,13 @@ Gain MixedExchange::gain_upper_bound() {
     reverse_next_cost = s_v.cost(t_index, n_index);
   }
 
-  _normal_s_gain = _sol_state.edge_costs_around_node[s_vehicle][s_rank] -
+  _normal_s_gain = _sol_state.edge_evals_around_node[s_vehicle][s_rank] -
                    previous_cost - next_cost - s_v.cost(t_index, t_after_index);
 
   auto s_gain_upper_bound = _normal_s_gain;
 
   if (check_t_reverse) {
-    _reversed_s_gain = _sol_state.edge_costs_around_node[s_vehicle][s_rank] -
+    _reversed_s_gain = _sol_state.edge_evals_around_node[s_vehicle][s_rank] -
                        reverse_previous_cost - reverse_next_cost -
                        s_v.cost(t_after_index, t_index);
 
@@ -115,7 +115,7 @@ Gain MixedExchange::gain_upper_bound() {
 
   // For target vehicle, we consider the cost of replacing edge at
   // rank t_rank with source job. Part of that cost (for adjacent
-  // edges) is stored in _sol_state.edge_costs_around_edges.
+  // edges) is stored in _sol_state.edge_evals_around_edges.
 
   // Determine costs added with source job.
   previous_cost = 0;
@@ -141,7 +141,7 @@ Gain MixedExchange::gain_upper_bound() {
     next_cost = t_v.cost(s_index, n_index);
   }
 
-  _t_gain = _sol_state.edge_costs_around_edge[t_vehicle][t_rank] +
+  _t_gain = _sol_state.edge_evals_around_edge[t_vehicle][t_rank] +
             t_v.cost(t_index, t_after_index) - previous_cost - next_cost;
 
   _gain_upper_bound_computed = true;

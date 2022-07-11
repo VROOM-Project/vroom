@@ -84,7 +84,7 @@ Gain IntraMixedExchange::gain_upper_bound() {
 
   // Consider the cost of replacing node at rank s_rank with target
   // edge. Part of that cost (for adjacent edges) is stored in
-  // _sol_state.edge_costs_around_node.  reverse_* checks whether we
+  // _sol_state.edge_evals_around_node.  reverse_* checks whether we
   // should change the target edge order.
   Index s_index = _input.jobs[s_route[s_rank]].index();
   Index t_index = _input.jobs[s_route[t_rank]].index();
@@ -120,7 +120,7 @@ Gain IntraMixedExchange::gain_upper_bound() {
     reverse_next_cost = v.cost(t_index, n_index);
   }
 
-  _normal_s_gain = _sol_state.edge_costs_around_node[s_vehicle][s_rank] -
+  _normal_s_gain = _sol_state.edge_evals_around_node[s_vehicle][s_rank] -
                    previous_cost - next_cost;
 
   auto s_gain_upper_bound = _normal_s_gain;
@@ -128,7 +128,7 @@ Gain IntraMixedExchange::gain_upper_bound() {
   if (check_t_reverse) {
     Gain reverse_edge_cost = static_cast<Gain>(v.cost(t_index, t_after_index)) -
                              static_cast<Gain>(v.cost(t_after_index, t_index));
-    _reversed_s_gain = _sol_state.edge_costs_around_node[s_vehicle][s_rank] +
+    _reversed_s_gain = _sol_state.edge_evals_around_node[s_vehicle][s_rank] +
                        reverse_edge_cost - reverse_previous_cost -
                        reverse_next_cost;
 
@@ -137,7 +137,7 @@ Gain IntraMixedExchange::gain_upper_bound() {
 
   // Consider the cost of replacing edge starting at rank t_rank with
   // source node. Part of that cost (for adjacent edges) is stored in
-  // _sol_state.edge_costs_around_edge.  reverse_* checks whether we
+  // _sol_state.edge_evals_around_edge.  reverse_* checks whether we
   // should change the source edge order.
   previous_cost = 0;
   next_cost = 0;
@@ -163,7 +163,7 @@ Gain IntraMixedExchange::gain_upper_bound() {
     next_cost = v.cost(s_index, n_index);
   }
 
-  _t_gain = _sol_state.edge_costs_around_edge[t_vehicle][t_rank] -
+  _t_gain = _sol_state.edge_evals_around_edge[t_vehicle][t_rank] -
             previous_cost - next_cost;
 
   _gain_upper_bound_computed = true;

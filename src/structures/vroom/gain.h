@@ -49,6 +49,10 @@ struct Gain {
     lhs -= rhs;
     return lhs;
   }
+
+  friend bool operator<(const Gain& lhs, const Gain& rhs) {
+    return lhs.cost < rhs.cost;
+  }
 };
 
 } // namespace vroom
