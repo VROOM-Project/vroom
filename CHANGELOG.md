@@ -4,6 +4,8 @@
 
 ### Added
 
+- Advertise `libvroom` in README and wiki (#42)
+
 ### Changed
 
 - Use `std::chrono::milliseconds` for `Timeout` value (#728)

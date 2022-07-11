@@ -81,10 +81,15 @@ it easy to send sample optimization requests for testing purposes.
 
 Several options are available to get `vroom` running on command-line.
 
-1. Use
-[`vroom-docker`](https://github.com/VROOM-Project/vroom-docker).
-2. Build from source following [the wiki
+1. Build from source following [the wiki
 instructions](https://github.com/VROOM-Project/vroom/wiki/Building).
+2. Use
+[`vroom-docker`](https://github.com/VROOM-Project/vroom-docker).
+
+### Command-line usage
+
+Refer to [this wiki
+page](https://github.com/VROOM-Project/vroom/wiki/Usage)
 
 #### Http wrapper
 
@@ -92,15 +97,11 @@ instructions](https://github.com/VROOM-Project/vroom/wiki/Building).
 simple wrapper to use `vroom` with http requests. It's already bundled
 in the `vroom-docker` setup.
 
-#### Use from C++
+#### Using libvroom from C++
 
-The project can be used as a library as shown in [this
-example](https://github.com/VROOM-Project/vroom/blob/master/libvroom_examples/libvroom.cpp).
-
-### Usage
-
-Refer to [this wiki
-page](https://github.com/VROOM-Project/vroom/wiki/Usage)
+The project can also used as a library from any C++ project, refer to
+[this wiki
+page](https://github.com/VROOM-Project/vroom/wiki/Using-libvroom).
 
 ## Tests
 
