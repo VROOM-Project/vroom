@@ -64,8 +64,8 @@ public:
   // cost from job at rank i to job at rank 0 (i.e. when *reversing*
   // all edges) in the route for vehicle v, from the point of view of
   // a vehicle new_v.
-  std::vector<std::vector<std::vector<Cost>>> fwd_costs;
-  std::vector<std::vector<std::vector<Cost>>> bwd_costs;
+  std::vector<std::vector<std::vector<Eval>>> fwd_costs;
+  std::vector<std::vector<std::vector<Eval>>> bwd_costs;
 
   // fwd_skill_rank[v1][v2] stores the maximum rank r for a step in
   // route for vehicle v1 such that v2 can handle all jobs from step 0
