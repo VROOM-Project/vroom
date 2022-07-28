@@ -40,6 +40,10 @@ struct Eval {
     return *this;
   }
 
+  Eval operator-() const {
+    return {-cost, -duration};
+  }
+
   friend Eval operator+(Eval lhs, const Eval& rhs) {
     lhs += rhs;
     return lhs;
@@ -72,6 +76,7 @@ struct Eval {
 };
 
 constexpr Eval NO_EVAL = {std::numeric_limits<SignedCost>::max(), 0};
+constexpr Eval NO_GAIN = {std::numeric_limits<SignedCost>::min(), 0};
 
 } // namespace vroom
 

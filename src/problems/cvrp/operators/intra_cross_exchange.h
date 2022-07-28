@@ -18,10 +18,10 @@ namespace cvrp {
 class IntraCrossExchange : public ls::Operator {
 private:
   bool _gain_upper_bound_computed;
-  Gain _normal_s_gain;
-  Gain _reversed_s_gain;
-  Gain _normal_t_gain;
-  Gain _reversed_t_gain;
+  Eval _normal_s_gain;
+  Eval _reversed_s_gain;
+  Eval _normal_t_gain;
+  Eval _reversed_t_gain;
 
 protected:
   bool reverse_s_edge;
@@ -53,7 +53,7 @@ public:
   // Compute and store all possible cost depending on whether edges
   // are reversed or not. Return only an upper bound for gain as
   // precise gain requires validity information.
-  Gain gain_upper_bound();
+  Eval gain_upper_bound();
 
   virtual bool is_valid() override;
 

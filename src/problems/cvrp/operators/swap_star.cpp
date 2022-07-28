@@ -44,7 +44,7 @@ void SwapStar::compute_gain() {
                                              t_vehicle,
                                              target,
                                              _best_known_gain);
-  if (choice.gain > 0) {
+  if (choice.gain.cost > 0) {
     stored_gain = choice.gain;
   }
   gain_computed = true;

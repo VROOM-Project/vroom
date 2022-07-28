@@ -243,9 +243,9 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
     // where the start->end cost is not accounted for.
     const auto source_start_end_cost =
       (source.size() == 1 and v_source.has_start() and v_source.has_end())
-        ? v_source.cost(v_source.start.value().index(),
+        ? v_source.eval(v_source.start.value().index(),
                         v_source.end.value().index())
-        : 0;
+        : Eval();
     const auto source_delta =
       sol_state.node_gains[source.vehicle_rank][s_rank] - source_start_end_cost;
 
@@ -256,9 +256,9 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
       // Same as above.
       const auto target_start_end_cost =
         (target.size() == 1 and v_target.has_start() and v_target.has_end())
-          ? v_target.cost(v_target.start.value().index(),
+          ? v_target.eval(v_target.start.value().index(),
                           v_target.end.value().index())
-          : 0;
+          : Eval();
       const auto target_delta =
         sol_state.node_gains[target.vehicle_rank][t_rank] -
         target_start_end_cost;

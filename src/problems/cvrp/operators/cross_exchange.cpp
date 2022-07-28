@@ -34,8 +34,8 @@ CrossExchange::CrossExchange(const Input& input,
     _gain_upper_bound_computed(false),
     // Required for consistency in compute_gain if check_s_reverse or
     // check_t_reverse are false.
-    _reversed_s_gain(std::numeric_limits<SignedCost>::min(), 0),
-    _reversed_t_gain(std::numeric_limits<SignedCost>::min(), 0),
+    _reversed_s_gain(NO_GAIN),
+    _reversed_t_gain(NO_GAIN),
     reverse_s_edge(false),
     reverse_t_edge(false),
     check_s_reverse(check_s_reverse),
