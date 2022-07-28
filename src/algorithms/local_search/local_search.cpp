@@ -1926,7 +1926,7 @@ template <class Route,
           class IntraTwoOpt,
           class PDShift,
           class RouteExchange>
-Gain LocalSearch<Route,
+Eval LocalSearch<Route,
                  UnassignedExchange,
                  SwapStar,
                  CrossExchange,
@@ -1947,37 +1947,37 @@ Gain LocalSearch<Route,
                                                 Index r) {
   assert(v != v_target);
 
-  Gain cost = static_cast<Gain>(INFINITE_COST);
+  Eval eval(INFINITE_COST, 0);
   const auto job_index = _input.jobs[_sol[v].route[r]].index();
 
   const auto& vehicle = _input.vehicles[v_target];
   if (vehicle.has_start()) {
     const auto start_index = vehicle.start.value().index();
-    const Gain start_cost = vehicle.cost(start_index, job_index);
-    cost = std::min(cost, start_cost);
+    const auto start_eval = vehicle.eval(start_index, job_index);
+    eval = std::min(eval, start_eval);
   }
   if (vehicle.has_end()) {
     const auto end_index = vehicle.end.value().index();
-    const Gain end_cost = vehicle.cost(job_index, end_index);
-    cost = std::min(cost, end_cost);
+    const auto end_eval = vehicle.eval(job_index, end_index);
+    eval = std::min(eval, end_eval);
   }
   if (_sol[v_target].size() != 0) {
     const auto cheapest_from_rank =
       _sol_state.cheapest_job_rank_in_routes_from[v][v_target][r];
     const auto cheapest_from_index =
       _input.jobs[_sol[v_target].route[cheapest_from_rank]].index();
-    const Gain cost_from = vehicle.cost(cheapest_from_index, job_index);
-    cost = std::min(cost, cost_from);
+    const auto eval_from = vehicle.eval(cheapest_from_index, job_index);
+    eval = std::min(eval, eval_from);
 
     const auto cheapest_to_rank =
       _sol_state.cheapest_job_rank_in_routes_to[v][v_target][r];
     const auto cheapest_to_index =
       _input.jobs[_sol[v_target].route[cheapest_to_rank]].index();
-    const Gain cost_to = vehicle.cost(job_index, cheapest_to_index);
-    cost = std::min(cost, cost_to);
+    const auto eval_to = vehicle.eval(job_index, cheapest_to_index);
+    eval = std::min(eval, eval_to);
   }
 
-  return cost;
+  return eval;
 }
 
 template <class Route,
@@ -1997,7 +1997,7 @@ template <class Route,
           class IntraTwoOpt,
           class PDShift,
           class RouteExchange>
-Gain LocalSearch<Route,
+Eval LocalSearch<Route,
                  UnassignedExchange,
                  SwapStar,
                  CrossExchange,
@@ -2014,7 +2014,7 @@ Gain LocalSearch<Route,
                  IntraTwoOpt,
                  PDShift,
                  RouteExchange>::relocate_cost_lower_bound(Index v, Index r) {
-  Gain best_bound = static_cast<Gain>(INFINITE_COST);
+  Eval best_bound(INFINITE_COST, 0);
 
   for (std::size_t other_v = 0; other_v < _sol.size(); ++other_v) {
     if (other_v == v or
@@ -2045,7 +2045,7 @@ template <class Route,
           class IntraTwoOpt,
           class PDShift,
           class RouteExchange>
-Gain LocalSearch<Route,
+Eval LocalSearch<Route,
                  UnassignedExchange,
                  SwapStar,
                  CrossExchange,
@@ -2064,7 +2064,7 @@ Gain LocalSearch<Route,
                  RouteExchange>::relocate_cost_lower_bound(Index v,
                                                            Index r1,
                                                            Index r2) {
-  Gain best_bound = static_cast<Gain>(INFINITE_COST);
+  Eval best_bound(INFINITE_COST, 0);
 
   for (std::size_t other_v = 0; other_v < _sol.size(); ++other_v) {
     if (other_v == v or
@@ -2139,7 +2139,7 @@ void LocalSearch<Route,
     // Try removing the best node (good gain on current route and
     // small cost to closest node in another compatible route).
     Index best_rank = 0;
-    Gain best_gain = std::numeric_limits<Gain>::min();
+    Eval best_gain = NO_GAIN;
 
     for (std::size_t r = 0; r < _sol[v].size(); ++r) {
       const auto& current_job = _input.jobs[_sol[v].route[r]];
@@ -2147,7 +2147,7 @@ void LocalSearch<Route,
         continue;
       }
 
-      Gain current_gain;
+      Eval current_gain;
       bool valid_removal;
 
       if (current_job.type == JOB_TYPE::SINGLE) {
@@ -2187,7 +2187,7 @@ void LocalSearch<Route,
       }
     }
 
-    if (best_gain > std::numeric_limits<Gain>::min()) {
+    if (best_gain != NO_GAIN) {
       routes_and_ranks.push_back(std::make_pair(v, best_rank));
     }
   }
