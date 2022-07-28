@@ -214,20 +214,19 @@ void LocalSearch<Route,
       std::size_t smallest_idx = std::numeric_limits<std::size_t>::max();
 
       for (std::size_t i = 0; i < routes.size(); ++i) {
-        if (route_job_insertions[i][j].cost < smallest) {
+        if (route_job_insertions[i][j].eval.cost < smallest) {
           smallest_idx = i;
           second_smallest = smallest;
-          smallest = route_job_insertions[i][j].cost;
-        } else if (route_job_insertions[i][j].cost < second_smallest) {
-          second_smallest = route_job_insertions[i][j].cost;
+          smallest = route_job_insertions[i][j].eval.cost;
+        } else if (route_job_insertions[i][j].eval.cost < second_smallest) {
+          second_smallest = route_job_insertions[i][j].eval.cost;
         }
       }
 
       // Find best route for current job based on cost of addition and
       // regret cost of not adding.
       for (std::size_t i = 0; i < routes.size(); ++i) {
-        const auto addition_cost = route_job_insertions[i][j].cost;
-        if (addition_cost == std::numeric_limits<Gain>::max()) {
+        if (route_job_insertions[i][j].eval == NO_EVAL) {
           continue;
         }
 
@@ -239,19 +238,20 @@ void LocalSearch<Route,
           continue;
         }
 
-        const Gain regret_cost =
+        const auto regret_cost =
           (i == smallest_idx) ? second_smallest : smallest;
 
-        const double eval = static_cast<double>(addition_cost) -
-                            regret_coeff * static_cast<double>(regret_cost);
+        const double current_cost =
+          static_cast<double>(route_job_insertions[i][j].eval.cost) -
+          regret_coeff * static_cast<double>(regret_cost);
 
         if ((job_priority > best_priority) or
-            (job_priority == best_priority and eval < best_cost)) {
+            (job_priority == best_priority and current_cost < best_cost)) {
           best_priority = job_priority;
           best_job_rank = j;
           best_route = routes[i];
           best_insertion = route_job_insertions[i][j];
-          best_cost = eval;
+          best_cost = current_cost;
           best_route_idx = i;
         }
       }
