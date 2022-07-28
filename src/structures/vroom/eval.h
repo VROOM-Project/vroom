@@ -54,6 +54,10 @@ struct Eval {
     return lhs.cost < rhs.cost;
   }
 
+  friend bool operator<=(const Eval& lhs, const Eval& rhs) {
+    return lhs.cost <= rhs.cost;
+  }
+
   friend bool operator==(const Eval& lhs, const Eval& rhs) {
     return lhs.cost == rhs.cost and lhs.duration == rhs.duration;
   }
@@ -62,6 +66,8 @@ struct Eval {
     return lhs.cost != rhs.cost or lhs.duration != rhs.duration;
   }
 };
+
+constexpr Eval NO_EVAL = {std::numeric_limits<SignedCost>::max(), 0};
 
 } // namespace vroom
 

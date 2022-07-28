@@ -29,8 +29,7 @@ struct InsertionOption {
 
 using ThreeInsertions = std::array<InsertionOption, 3>;
 
-constexpr Eval no_eval = {std::numeric_limits<SignedCost>::max(), 0};
-constexpr InsertionOption no_insert = {no_eval, 0};
+constexpr InsertionOption no_insert = {NO_EVAL, 0};
 constexpr ThreeInsertions
   empty_three_insertions({no_insert, no_insert, no_insert});
 
@@ -304,7 +303,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
 
       for (const auto& ti : target_insertions) {
         if ((ti.rank != t_rank) and (ti.rank != t_rank + 1) and
-            (ti.cost != no_eval)) {
+            (ti.cost != NO_EVAL)) {
           const Eval t_gain = source_delta - ti.cost;
           current_gain = in_place_source_insertion_gain + t_gain;
           if (best_gain < current_gain) {
@@ -327,7 +326,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
       // target_insertions.
       for (const auto& si : source_insertions) {
         if ((si.rank != s_rank) and (si.rank != s_rank + 1) and
-            (si.cost != no_eval)) {
+            (si.cost != NO_EVAL)) {
           const Eval s_gain = target_delta - si.cost;
 
           current_gain = s_gain + in_place_target_insertion_gain;
@@ -345,7 +344,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
 
           for (const auto& ti : target_insertions) {
             if ((ti.rank != t_rank) and (ti.rank != t_rank + 1) and
-                (ti.cost != no_eval)) {
+                (ti.cost != NO_EVAL)) {
               const Eval t_gain = source_delta - ti.cost;
               current_gain = s_gain + t_gain;
               if (best_gain < current_gain) {
