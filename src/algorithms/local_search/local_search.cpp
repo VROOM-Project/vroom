@@ -360,18 +360,20 @@ void LocalSearch<Route,
   }
 
   // Store best gain for matching move.
-  std::vector<std::vector<Gain>> best_gains(_nb_vehicles,
-                                            std::vector<Gain>(_nb_vehicles, 0));
+  std::vector<std::vector<Eval>> best_gains(_nb_vehicles,
+                                            std::vector<Eval>(_nb_vehicles,
+                                                              Eval()));
 
   // Store best priority increase for matching move. Only operators
   // involving a single route and unassigned jobs can change overall
   // priority (currently only UnassignedExchange).
   std::vector<Priority> best_priorities(_nb_vehicles, 0);
 
-  Gain best_gain = 1;
+  // Dummy init to enter first loop.
+  Eval best_gain(static_cast<Cost>(1), static_cast<Cost>(0));
   Priority best_priority = 0;
 
-  while (best_gain > 0 or best_priority > 0) {
+  while (best_gain.cost > 0 or best_priority > 0) {
     if (_deadline.has_value() and _deadline.value() < utils::now()) {
       break;
     }
@@ -1618,7 +1620,7 @@ void LocalSearch<Route,
     // Find best overall move, first checking priority increase then
     // best gain if no priority increase is available.
     best_priority = 0;
-    best_gain = 0;
+    best_gain = Eval();
     Index best_source = 0;
     Index best_target = 0;
 
@@ -1644,7 +1646,7 @@ void LocalSearch<Route,
     }
 
     // Apply matching operator.
-    if (best_priority > 0 or best_gain > 0) {
+    if (best_priority > 0 or best_gain.cost > 0) {
       assert(best_ops[best_source][best_target] != nullptr);
 
       best_ops[best_source][best_target]->apply();
@@ -1676,7 +1678,7 @@ void LocalSearch<Route,
                         [&](auto sum, auto c) {
                           return sum + _sol_state.route_costs[c];
                         });
-      assert(new_cost + best_gain == previous_cost);
+      assert(new_cost + best_gain.cost == previous_cost);
 #endif
 
       for (auto v_rank : update_candidates) {
@@ -1703,7 +1705,7 @@ void LocalSearch<Route,
       // round and set route pairs accordingly.
       s_t_pairs.clear();
       for (auto v_rank : update_candidates) {
-        best_gains[v_rank].assign(_nb_vehicles, 0);
+        best_gains[v_rank].assign(_nb_vehicles, Eval());
         best_priorities[v_rank] = 0;
         best_ops[v_rank] = std::vector<std::unique_ptr<Operator>>(_nb_vehicles);
       }
@@ -1711,7 +1713,7 @@ void LocalSearch<Route,
       for (unsigned v = 0; v < _nb_vehicles; ++v) {
         for (auto v_rank : update_candidates) {
           if (_input.vehicle_ok_with_vehicle(v, v_rank)) {
-            best_gains[v][v_rank] = 0;
+            best_gains[v][v_rank] = Eval();
             best_ops[v][v_rank] = std::unique_ptr<Operator>();
 
             s_t_pairs.emplace_back(v, v_rank);
@@ -1732,7 +1734,7 @@ void LocalSearch<Route,
             // This move should be invalidated because a required
             // unassigned job has been added by try_job_additions in
             // the meantime.
-            best_gains[v][v] = 0;
+            best_gains[v][v] = Eval();
             best_priorities[v] = 0;
             best_ops[v][v] = std::unique_ptr<Operator>();
             s_t_pairs.emplace_back(v, v);
