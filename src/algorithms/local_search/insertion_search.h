@@ -9,7 +9,7 @@ namespace vroom {
 namespace ls {
 
 struct RouteInsertion {
-  Eval cost;
+  Eval eval;
   Index single_rank;
   Index pickup_rank;
   Index delivery_rank;
@@ -32,15 +32,15 @@ compute_best_insertion_single(const Input& input,
     for (Index rank = sol_state.insertion_ranks_begin[v][j];
          rank < sol_state.insertion_ranks_end[v][j];
          ++rank) {
-      Eval current_cost =
+      Eval current_eval =
         utils::addition_cost(input, j, v_target, route.route, rank);
-      if (current_cost < result.cost and
+      if (current_eval.cost < result.eval.cost and
           route.is_valid_addition_for_capacity(input,
                                                current_job.pickup,
                                                current_job.delivery,
                                                rank) and
           route.is_valid_addition_for_tw(input, j, rank)) {
-        result = {current_cost, rank, 0, 0};
+        result = {current_eval, rank, 0, 0};
       }
     }
   }
@@ -86,7 +86,7 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
     return result;
   }
 
-  result.cost = cost_threshold;
+  result.eval = cost_threshold;
 
   // Pre-compute cost of addition for matching delivery.
   std::vector<Eval> d_adds(route.size() + 1);
@@ -99,7 +99,7 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
   for (unsigned d_rank = begin_d_rank; d_rank < end_d_rank; ++d_rank) {
     d_adds[d_rank] =
       utils::addition_cost(input, j + 1, v_target, route.route, d_rank);
-    if (result.cost < d_adds[d_rank]) {
+    if (d_adds[d_rank] > result.eval) {
       valid_delivery_insertions[d_rank] = false;
     } else {
       valid_delivery_insertions[d_rank] =
@@ -109,7 +109,7 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
   }
 
   if (!found_valid) {
-    result.cost = NO_EVAL;
+    result.eval = NO_EVAL;
     return result;
   }
 
@@ -118,7 +118,7 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
        ++pickup_r) {
     Eval p_add =
       utils::addition_cost(input, j, v_target, route.route, pickup_r);
-    if (result.cost < p_add) {
+    if (p_add > result.eval) {
       // Even without delivery insertion more expensive then current best
       continue;
     }
@@ -146,21 +146,19 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
         continue;
       }
 
-      Eval pd_cost;
+      Eval pd_eval;
       if (pickup_r == delivery_r) {
-        pd_cost = utils::addition_cost(input,
+        pd_eval = utils::addition_cost(input,
                                        j,
                                        v_target,
                                        route.route,
                                        pickup_r,
                                        pickup_r + 1);
       } else {
-        pd_cost = p_add + d_adds[delivery_r];
+        pd_eval = p_add + d_adds[delivery_r];
       }
 
-      Eval current_cost = pd_cost;
-
-      if (current_cost < result.cost) {
+      if (pd_eval < result.eval) {
         modified_with_pd.push_back(j + 1);
 
         // Update best cost depending on validity.
@@ -181,14 +179,14 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
         modified_with_pd.pop_back();
 
         if (is_valid) {
-          result = {current_cost, 0, pickup_r, delivery_r};
+          result = {pd_eval, 0, pickup_r, delivery_r};
         }
       }
     }
   }
-  assert(result.cost <= cost_threshold);
-  if (result.cost == cost_threshold) {
-    result.cost = NO_EVAL;
+  assert(result.eval <= cost_threshold);
+  if (result.eval == cost_threshold) {
+    result.eval = NO_EVAL;
   }
   return result;
 }

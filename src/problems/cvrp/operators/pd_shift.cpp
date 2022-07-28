@@ -55,9 +55,9 @@ void PDShift::compute_gain() {
                                   target,
                                   _remove_gain - stored_gain);
 
-  if (rs.cost != NO_EVAL) {
+  if (rs.eval != NO_EVAL) {
     _valid = true;
-    stored_gain = _remove_gain - rs.cost;
+    stored_gain = _remove_gain - rs.eval;
     _best_t_p_rank = rs.pickup_rank;
     _best_t_d_rank = rs.delivery_rank;
   }
