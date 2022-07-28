@@ -35,7 +35,7 @@ protected:
   const Index t_rank;
 
   bool gain_computed;
-  Gain stored_gain;
+  Eval stored_gain;
 
   virtual void compute_gain() = 0;
 
@@ -65,7 +65,7 @@ public:
 
   OperatorName get_name() const;
 
-  virtual Gain gain();
+  virtual Eval gain();
 
   virtual bool is_valid() = 0;
 
