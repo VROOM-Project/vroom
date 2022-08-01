@@ -71,6 +71,23 @@ template <class Route> struct SolutionIndicators {
 
     return false;
   }
+
+  bool operator==(const SolutionIndicators& other) const {
+    bool equal =
+      (cost = other.cost) and (priority_sum == other.priority_sum) and
+      (assigned == other.assigned) and (used_vehicles = other.used_vehicles);
+
+    if (equal) {
+      for (unsigned i = 0; i < routes_costs.size(); ++i) {
+        if (routes_costs[i] != other.routes_costs[i]) {
+          equal = false;
+          break;
+        }
+      }
+    }
+
+    return equal;
+  }
 };
 
 } // namespace utils
