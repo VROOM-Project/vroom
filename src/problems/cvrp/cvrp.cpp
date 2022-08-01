@@ -185,7 +185,8 @@ Solution CVRP::solve(unsigned exploration_level,
   assert(nb_init_solutions <= parameters.size());
 
   std::vector<RawSolution> solutions(nb_init_solutions);
-  std::vector<utils::SolutionIndicators> sol_indicators(nb_init_solutions);
+  std::vector<utils::SolutionIndicators<RawRoute>> sol_indicators(
+    nb_init_solutions);
 #ifdef LOG_LS_OPERATORS
   std::vector<std::array<ls::OperatorStats, OperatorName::MAX>> ls_stats(
     nb_init_solutions);
