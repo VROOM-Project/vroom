@@ -22,7 +22,7 @@ using TWSolution = std::vector<TWRoute>;
 
 struct SolutionIndicators {
   Priority priority_sum;
-  unsigned unassigned;
+  unsigned assigned;
   Cost cost;
   unsigned used_vehicles;
 
@@ -32,10 +32,10 @@ struct SolutionIndicators {
       return true;
     }
     if (lhs.priority_sum == rhs.priority_sum) {
-      if (lhs.unassigned < rhs.unassigned) {
+      if (lhs.assigned > rhs.assigned) {
         return true;
       }
-      if (lhs.unassigned == rhs.unassigned) {
+      if (lhs.assigned == rhs.assigned) {
         if (lhs.cost < rhs.cost) {
           return true;
         }

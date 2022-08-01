@@ -88,7 +88,10 @@ LocalSearch<Route,
       return sum + utils::priority_sum_for_route(_input, r.route);
     });
 
-  _best_sol_indicators.unassigned = _sol_state.unassigned.size();
+  _best_sol_indicators.assigned =
+    std::accumulate(_sol.begin(), _sol.end(), 0, [&](auto sum, const auto& r) {
+      return sum + r.route.size();
+    });
 
   Index v_rank = 0;
   _best_sol_indicators.cost =
@@ -1800,7 +1803,13 @@ void LocalSearch<Route,
                                utils::priority_sum_for_route(_input, r.route);
                       });
 
-    current_sol_indicators.unassigned = _sol_state.unassigned.size();
+    current_sol_indicators.assigned =
+      std::accumulate(_sol.begin(),
+                      _sol.end(),
+                      0,
+                      [&](auto sum, const auto& r) {
+                        return sum + r.route.size();
+                      });
 
     Index v_rank = 0;
     current_sol_indicators.cost =
