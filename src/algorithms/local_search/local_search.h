@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include "structures/vroom/solution_indicators.h"
 #include "structures/vroom/solution_state.h"
 
 namespace vroom {

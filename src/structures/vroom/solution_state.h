@@ -17,38 +17,6 @@ All rights reserved (see LICENSE).
 namespace vroom {
 namespace utils {
 
-using RawSolution = std::vector<RawRoute>;
-using TWSolution = std::vector<TWRoute>;
-
-struct SolutionIndicators {
-  Priority priority_sum;
-  unsigned assigned;
-  Cost cost;
-  unsigned used_vehicles;
-
-  friend bool operator<(const SolutionIndicators& lhs,
-                        const SolutionIndicators& rhs) {
-    if (lhs.priority_sum > rhs.priority_sum) {
-      return true;
-    }
-    if (lhs.priority_sum == rhs.priority_sum) {
-      if (lhs.assigned > rhs.assigned) {
-        return true;
-      }
-      if (lhs.assigned == rhs.assigned) {
-        if (lhs.cost < rhs.cost) {
-          return true;
-        }
-        if (lhs.cost == rhs.cost and lhs.used_vehicles < rhs.used_vehicles) {
-          return true;
-        }
-      }
-    }
-
-    return false;
-  }
-};
-
 class SolutionState {
 private:
   const Input& _input;

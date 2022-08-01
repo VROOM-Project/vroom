@@ -622,8 +622,8 @@ void SolutionState::update_route_cost(const std::vector<Index>& route,
 }
 #endif
 
-template void SolutionState::setup(const RawSolution&);
-template void SolutionState::setup(const TWSolution&);
+template void SolutionState::setup(const std::vector<RawRoute>&);
+template void SolutionState::setup(const std::vector<TWRoute>&);
 
 } // namespace utils
 } // namespace vroom
