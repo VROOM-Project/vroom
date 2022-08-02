@@ -185,14 +185,8 @@ Solution CVRP::solve(unsigned exploration_level,
   assert(nb_init_solutions <= parameters.size());
 
   std::vector<RawSolution> solutions(nb_init_solutions);
-  std::vector<utils::SolutionIndicators<RawRoute>> sol_indicators(
-    nb_init_solutions);
-#ifdef LOG_LS_OPERATORS
-  std::vector<std::array<ls::OperatorStats, OperatorName::MAX>> ls_stats(
-    nb_init_solutions);
-#endif
 
-  // Split the work among threads.
+  // Split the heuristic parameters among threads.
   std::vector<std::vector<std::size_t>>
     thread_ranks(nb_threads, std::vector<std::size_t>());
   for (std::size_t i = 0; i < nb_init_solutions; ++i) {
@@ -202,14 +196,8 @@ Solution CVRP::solve(unsigned exploration_level,
   std::exception_ptr ep = nullptr;
   std::mutex ep_m;
 
-  auto run_solve = [&](const std::vector<std::size_t>& param_ranks) {
+  auto run_heuristics = [&](const std::vector<std::size_t>& param_ranks) {
     try {
-      // Decide time allocated for each search.
-      Timeout search_time;
-      if (timeout.has_value()) {
-        search_time = timeout.value() / param_ranks.size();
-      }
-
       for (auto rank : param_ranks) {
         auto& p = parameters[rank];
 
@@ -228,7 +216,56 @@ Solution CVRP::solve(unsigned exploration_level,
                                                             p.regret_coeff);
           break;
         }
+      }
+    } catch (...) {
+      ep_m.lock();
+      ep = std::current_exception();
+      ep_m.unlock();
+    }
+  };
 
+  std::vector<std::thread> heuristics_threads;
+
+  for (const auto& param_ranks : thread_ranks) {
+    if (!param_ranks.empty()) {
+      heuristics_threads.emplace_back(run_heuristics, param_ranks);
+    }
+  }
+
+  for (auto& t : heuristics_threads) {
+    t.join();
+  }
+
+  if (ep != nullptr) {
+    std::rethrow_exception(ep);
+  }
+
+  // TODO Filter out duplicate heuristics solutions.
+
+  // Split local searches across threads.
+  unsigned nb_solutions = solutions.size();
+  std::vector<utils::SolutionIndicators<RawRoute>> sol_indicators(nb_solutions);
+#ifdef LOG_LS_OPERATORS
+  std::vector<std::array<ls::OperatorStats, OperatorName::MAX>> ls_stats(
+    nb_solutions);
+#endif
+
+  std::fill(thread_ranks.begin(),
+            thread_ranks.end(),
+            std::vector<std::size_t>());
+  for (std::size_t i = 0; i < nb_solutions; ++i) {
+    thread_ranks[i % nb_threads].push_back(i);
+  }
+
+  auto run_ls = [&](const std::vector<std::size_t>& sol_ranks) {
+    try {
+      // Decide time allocated for each search.
+      Timeout search_time;
+      if (timeout.has_value()) {
+        search_time = timeout.value() / sol_ranks.size();
+      }
+
+      for (auto rank : sol_ranks) {
         // Local search phase.
         cvrp::LocalSearch ls(_input,
                              solutions[rank],
@@ -249,15 +286,15 @@ Solution CVRP::solve(unsigned exploration_level,
     }
   };
 
-  std::vector<std::thread> solving_threads;
+  std::vector<std::thread> ls_threads;
 
-  for (const auto& param_ranks : thread_ranks) {
-    if (!param_ranks.empty()) {
-      solving_threads.emplace_back(run_solve, param_ranks);
+  for (const auto& sol_ranks : thread_ranks) {
+    if (!sol_ranks.empty()) {
+      ls_threads.emplace_back(run_ls, sol_ranks);
     }
   }
 
-  for (auto& t : solving_threads) {
+  for (auto& t : ls_threads) {
     t.join();
   }
 
