@@ -7,7 +7,10 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <iostream>
+
 #include <mutex>
+#include <set>
 #include <thread>
 
 #include "algorithms/heuristics/heuristics.h"
@@ -240,7 +243,20 @@ Solution CVRP::solve(unsigned exploration_level,
     std::rethrow_exception(ep);
   }
 
-  // TODO Filter out duplicate heuristics solutions.
+  // Filter out duplicate heuristics solutions.
+  std::set<utils::SolutionIndicators<RawRoute>> unique_indicators;
+  std::vector<unsigned> to_remove;
+  for (unsigned i = 0; i < solutions.size(); ++i) {
+    const auto result = unique_indicators.emplace(_input, solutions[i]);
+    if (!result.second) {
+      // No insertion means an equivalent solution already exists.
+      to_remove.push_back(i);
+    }
+  }
+  std::cout << "solutions.size() = " << solutions.size() << std::endl;
+  std::cout << "to_remove.size() = " << to_remove.size() << std::endl;
+
+  exit(0);
 
   // Split local searches across threads.
   unsigned nb_solutions = solutions.size();
