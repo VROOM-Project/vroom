@@ -7,7 +7,10 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <iostream>
+
 #include <mutex>
+#include <set>
 #include <thread>
 
 #include "algorithms/heuristics/heuristics.h"
@@ -168,14 +171,8 @@ Solution VRPTW::solve(unsigned exploration_level,
   assert(nb_init_solutions <= parameters.size());
 
   std::vector<TWSolution> tw_solutions(nb_init_solutions);
-  std::vector<utils::SolutionIndicators<TWRoute>> sol_indicators(
-    nb_init_solutions);
-#ifdef LOG_LS_OPERATORS
-  std::vector<std::array<ls::OperatorStats, OperatorName::MAX>> ls_stats(
-    nb_init_solutions);
-#endif
 
-  // Split the work among threads.
+  // Split the heuristic parameters among threads.
   std::vector<std::vector<std::size_t>>
     thread_ranks(nb_threads, std::vector<std::size_t>());
   for (std::size_t i = 0; i < nb_init_solutions; ++i) {
@@ -185,16 +182,11 @@ Solution VRPTW::solve(unsigned exploration_level,
   std::exception_ptr ep = nullptr;
   std::mutex ep_m;
 
-  auto run_solve = [&](const std::vector<std::size_t>& param_ranks) {
+  auto run_heuristics = [&](const std::vector<std::size_t>& param_ranks) {
     try {
-      // Decide time allocated for each search.
-      Timeout search_time;
-      if (timeout.has_value()) {
-        search_time = timeout.value() / param_ranks.size();
-      }
-
       for (auto rank : param_ranks) {
         auto& p = parameters[rank];
+
         switch (p.heuristic) {
         case HEURISTIC::INIT_ROUTES:
           tw_solutions[rank] = heuristics::initial_routes<TWSolution>(_input);
@@ -210,7 +202,69 @@ Solution VRPTW::solve(unsigned exploration_level,
                                                            p.regret_coeff);
           break;
         }
+      }
+    } catch (...) {
+      ep_m.lock();
+      ep = std::current_exception();
+      ep_m.unlock();
+    }
+  };
 
+  std::vector<std::thread> heuristics_threads;
+
+  for (const auto& param_ranks : thread_ranks) {
+    if (!param_ranks.empty()) {
+      heuristics_threads.emplace_back(run_heuristics, param_ranks);
+    }
+  }
+
+  for (auto& t : heuristics_threads) {
+    t.join();
+  }
+
+  if (ep != nullptr) {
+    std::rethrow_exception(ep);
+  }
+
+  // Filter out duplicate heuristics solutions.
+  std::set<utils::SolutionIndicators<TWRoute>> unique_indicators;
+  std::vector<unsigned> to_remove;
+  for (unsigned i = 0; i < tw_solutions.size(); ++i) {
+    const auto result = unique_indicators.emplace(_input, tw_solutions[i]);
+    if (!result.second) {
+      // No insertion means an equivalent solution already exists.
+      to_remove.push_back(i);
+    }
+  }
+  std::cout << "tw_solutions.size() = " << tw_solutions.size() << std::endl;
+  std::cout << "to_remove.size() = " << to_remove.size() << std::endl;
+
+  exit(0);
+
+  // Split local searches across threads.
+  unsigned nb_solutions = tw_solutions.size();
+  std::vector<utils::SolutionIndicators<TWRoute>> sol_indicators(nb_solutions);
+#ifdef LOG_LS_OPERATORS
+  std::vector<std::array<ls::OperatorStats, OperatorName::MAX>> ls_stats(
+    nb_solutions);
+#endif
+
+  std::fill(thread_ranks.begin(),
+            thread_ranks.end(),
+            std::vector<std::size_t>());
+  for (std::size_t i = 0; i < nb_solutions; ++i) {
+    thread_ranks[i % nb_threads].push_back(i);
+  }
+
+  auto run_ls = [&](const std::vector<std::size_t>& sol_ranks) {
+    try {
+      // Decide time allocated for each search.
+      Timeout search_time;
+      if (timeout.has_value()) {
+        search_time = timeout.value() / sol_ranks.size();
+      }
+
+      for (auto rank : sol_ranks) {
         // Local search phase.
         vrptw::LocalSearch ls(_input,
                               tw_solutions[rank],
@@ -231,15 +285,15 @@ Solution VRPTW::solve(unsigned exploration_level,
     }
   };
 
-  std::vector<std::thread> solving_threads;
+  std::vector<std::thread> ls_threads;
 
-  for (const auto& param_ranks : thread_ranks) {
-    if (!param_ranks.empty()) {
-      solving_threads.emplace_back(run_solve, param_ranks);
+  for (const auto& sol_ranks : thread_ranks) {
+    if (!sol_ranks.empty()) {
+      ls_threads.emplace_back(run_ls, sol_ranks);
     }
   }
 
-  for (auto& t : solving_threads) {
+  for (auto& t : ls_threads) {
     t.join();
   }
 
