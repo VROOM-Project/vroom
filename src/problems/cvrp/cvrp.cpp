@@ -7,8 +7,6 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <iostream>
-
 #include <mutex>
 #include <set>
 #include <thread>
@@ -253,10 +251,11 @@ Solution CVRP::solve(unsigned exploration_level,
       to_remove.push_back(i);
     }
   }
-  std::cout << "solutions.size() = " << solutions.size() << std::endl;
-  std::cout << "to_remove.size() = " << to_remove.size() << std::endl;
 
-  exit(0);
+  for (auto remove_rank = to_remove.rbegin(); remove_rank != to_remove.rend();
+       remove_rank++) {
+    solutions.erase(solutions.begin() + *remove_rank);
+  }
 
   // Split local searches across threads.
   unsigned nb_solutions = solutions.size();
