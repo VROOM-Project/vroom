@@ -10,8 +10,6 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <algorithm>
-
 #include "structures/typedefs.h"
 #include "structures/vroom/input/input.h"
 #include "utils/helpers.h"
@@ -65,16 +63,8 @@ template <class Route> struct SolutionIndicators {
         if (lhs.cost < rhs.cost) {
           return true;
         }
-        if (lhs.cost == rhs.cost) {
-          if (lhs.used_vehicles < rhs.used_vehicles) {
-            return true;
-          }
-          if (lhs.used_vehicles == rhs.used_vehicles) {
-            return std::lexicographical_compare(lhs.routes_costs.begin(),
-                                                lhs.routes_costs.end(),
-                                                rhs.routes_costs.begin(),
-                                                rhs.routes_costs.end());
-          }
+        if (lhs.cost == rhs.cost and lhs.used_vehicles < rhs.used_vehicles) {
+          return true;
         }
       }
     }
