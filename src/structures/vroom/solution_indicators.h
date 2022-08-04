@@ -20,28 +20,21 @@ namespace utils {
 template <class Route> struct SolutionIndicators {
   Priority priority_sum;
   unsigned assigned;
-  std::vector<Cost> routes_costs;
   Cost cost;
   unsigned used_vehicles;
 
-  SolutionIndicators(unsigned nb_routes = 0)
-    : priority_sum(0),
-      assigned(0),
-      routes_costs(nb_routes),
-      cost(0),
-      used_vehicles(0) {
+  SolutionIndicators()
+    : priority_sum(0), assigned(0), cost(0), used_vehicles(0) {
   }
 
   SolutionIndicators(const Input& input, const std::vector<Route>& sol)
-    : SolutionIndicators(sol.size()) {
+    : SolutionIndicators() {
     Index v_rank = 0;
     for (const auto& r : sol) {
       priority_sum += utils::priority_sum_for_route(input, r.route);
       assigned += r.route.size();
 
-      routes_costs[v_rank] =
-        utils::route_cost_for_vehicle(input, v_rank, r.route);
-      cost += routes_costs[v_rank];
+      cost += utils::route_cost_for_vehicle(input, v_rank, r.route);
       ++v_rank;
 
       if (!r.empty()) {
