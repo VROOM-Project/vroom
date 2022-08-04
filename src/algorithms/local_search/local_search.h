@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include "structures/vroom/solution_indicators.h"
 #include "structures/vroom/solution_state.h"
 
 namespace vroom {
@@ -47,7 +48,7 @@ private:
   std::vector<Route> _sol;
 
   std::vector<Route>& _best_sol;
-  utils::SolutionIndicators _best_sol_indicators;
+  utils::SolutionIndicators<Route> _best_sol_indicators;
 
 #ifdef LOG_LS_OPERATORS
   // Store operator usage stats.
@@ -78,7 +79,7 @@ public:
               unsigned max_nb_jobs_removal,
               const Timeout& timeout);
 
-  utils::SolutionIndicators indicators() const;
+  utils::SolutionIndicators<Route> indicators() const;
 
   void run();
 

@@ -10,6 +10,7 @@
 
 - Use `std::chrono::milliseconds` for `Timeout` value (#728)
 - Use `struct` for storing `Coordinates` instead of an `std::array` (#730)
+- Refactor `SolutionIndicators` struct (#750)
 
 ### Fixed
 

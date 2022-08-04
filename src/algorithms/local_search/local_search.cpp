@@ -76,30 +76,13 @@ LocalSearch<Route,
     _all_routes(_nb_vehicles),
     _sol_state(input),
     _sol(sol),
-    _best_sol(sol) {
+    _best_sol(sol),
+    _best_sol_indicators(_input, _sol) {
   // Initialize all route indices.
   std::iota(_all_routes.begin(), _all_routes.end(), 0);
 
   // Setup solution state.
   _sol_state.setup(_sol);
-
-  _best_sol_indicators.priority_sum =
-    std::accumulate(_sol.begin(), _sol.end(), 0, [&](auto sum, const auto& r) {
-      return sum + utils::priority_sum_for_route(_input, r.route);
-    });
-
-  _best_sol_indicators.unassigned = _sol_state.unassigned.size();
-
-  Index v_rank = 0;
-  _best_sol_indicators.cost =
-    std::accumulate(_sol.begin(), _sol.end(), 0, [&](auto sum, const auto& r) {
-      return sum + utils::route_cost_for_vehicle(_input, v_rank++, r.route);
-    });
-
-  _best_sol_indicators.used_vehicles =
-    std::count_if(_sol.begin(), _sol.end(), [](const auto& r) {
-      return !r.empty();
-    });
 
 #ifdef LOG_LS_OPERATORS
   tried_moves.fill(0);
@@ -1790,33 +1773,7 @@ void LocalSearch<Route,
     run_ls_step();
 
     // Indicators for current solution.
-    utils::SolutionIndicators current_sol_indicators;
-    current_sol_indicators.priority_sum =
-      std::accumulate(_sol.begin(),
-                      _sol.end(),
-                      0,
-                      [&](auto sum, const auto& r) {
-                        return sum +
-                               utils::priority_sum_for_route(_input, r.route);
-                      });
-
-    current_sol_indicators.unassigned = _sol_state.unassigned.size();
-
-    Index v_rank = 0;
-    current_sol_indicators.cost =
-      std::accumulate(_sol.begin(),
-                      _sol.end(),
-                      0,
-                      [&](auto sum, const auto& r) {
-                        return sum + utils::route_cost_for_vehicle(_input,
-                                                                   v_rank++,
-                                                                   r.route);
-                      });
-
-    current_sol_indicators.used_vehicles =
-      std::count_if(_sol.begin(), _sol.end(), [](const auto& r) {
-        return !r.empty();
-      });
+    utils::SolutionIndicators<Route> current_sol_indicators(_input, _sol);
 
     if (current_sol_indicators < _best_sol_indicators) {
       _best_sol_indicators = current_sol_indicators;
@@ -2238,23 +2195,24 @@ template <class Route,
           class IntraTwoOpt,
           class PDShift,
           class RouteExchange>
-utils::SolutionIndicators LocalSearch<Route,
-                                      UnassignedExchange,
-                                      SwapStar,
-                                      CrossExchange,
-                                      MixedExchange,
-                                      TwoOpt,
-                                      ReverseTwoOpt,
-                                      Relocate,
-                                      OrOpt,
-                                      IntraExchange,
-                                      IntraCrossExchange,
-                                      IntraMixedExchange,
-                                      IntraRelocate,
-                                      IntraOrOpt,
-                                      IntraTwoOpt,
-                                      PDShift,
-                                      RouteExchange>::indicators() const {
+utils::SolutionIndicators<Route>
+LocalSearch<Route,
+            UnassignedExchange,
+            SwapStar,
+            CrossExchange,
+            MixedExchange,
+            TwoOpt,
+            ReverseTwoOpt,
+            Relocate,
+            OrOpt,
+            IntraExchange,
+            IntraCrossExchange,
+            IntraMixedExchange,
+            IntraRelocate,
+            IntraOrOpt,
+            IntraTwoOpt,
+            PDShift,
+            RouteExchange>::indicators() const {
   return _best_sol_indicators;
 }
 
