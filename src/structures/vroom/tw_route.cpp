@@ -674,7 +674,7 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
       }
 
       if (current.earliest < b_tw->start) {
-        auto margin = b_tw->start - current.earliest;
+        const auto margin = b_tw->start - current.earliest;
         if (margin < next.travel) {
           next.travel -= margin;
         } else {
@@ -773,7 +773,7 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
     // There is a task right after replace range and setup time does
     // apply to it.
     const auto& j_after = input.jobs[route[last_rank]];
-    const auto new_action_time = j_after.setup + j_after.service;
+    auto new_action_time = j_after.setup + j_after.service;
     if (action_time[last_rank] < new_action_time) {
       // Setup time did not previously apply to that task as action
       // time has increased. In that case the margin check for job at
@@ -790,7 +790,40 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
       }
       earliest_after = std::max(earliest_after, j_after_tw->start);
 
-      const auto next_after = next_info(input, route[last_rank], last_rank + 1);
+      auto next_after = next_info(input, route[last_rank], last_rank + 1);
+
+      // Go through breaks right after.
+      Index break_rank =
+        breaks_counts[last_rank + 1] - breaks_at_rank[last_rank + 1];
+
+      for (Index r = 0; r < breaks_at_rank[last_rank + 1]; ++r, ++break_rank) {
+        const auto& b = v.breaks[break_rank];
+
+        earliest_after += new_action_time;
+
+        const auto b_tw =
+          std::find_if(b.tws.begin(), b.tws.end(), [&](const auto& tw) {
+            return earliest_after <= tw.end;
+          });
+        if (b_tw == b.tws.end()) {
+          // Break does not fit due to its time windows.
+          return false;
+        }
+
+        if (earliest_after < b_tw->start) {
+          const auto margin = b_tw->start - earliest_after;
+          if (margin < next_after.travel) {
+            next_after.travel -= margin;
+          } else {
+            next_after.travel = 0;
+          }
+
+          earliest_after = b_tw->start;
+        }
+
+        new_action_time = v.breaks[break_rank].service;
+      }
+
       if (earliest_after + new_action_time + next_after.travel >
           next_after.latest) {
         return false;
