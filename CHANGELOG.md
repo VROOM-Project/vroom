@@ -11,11 +11,14 @@
 - Use `std::chrono::milliseconds` for `Timeout` value (#728)
 - Use `struct` for storing `Coordinates` instead of an `std::array` (#730)
 - Refactor `SolutionIndicators` struct (#750)
+- Add message on invalid routing response (#764)
+- Consistent exception type on invalid profile (#771)
 
 ### Fixed
 
 - Missing break validity check (#754)
 - Mark `JobAmount` and `JobTime` comparison operators as `const` (#724)
+- Update `ssl_send_and_receive` to throw RoutingExceptions (#770)
 
 ## [v1.12.0] - 2022-05-31
 

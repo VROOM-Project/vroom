@@ -85,7 +85,7 @@ void Input::add_routing_wrapper(const std::string& profile) {
     try {
       routing_wrapper = std::make_unique<routing::LibosrmWrapper>(profile);
     } catch (const osrm::exception& e) {
-      throw RoutingException("Invalid profile: " + profile);
+      throw InputException("Invalid profile: " + profile);
     }
 #else
     // Attempt to use libosrm while compiling without it.
