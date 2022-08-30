@@ -121,10 +121,13 @@ std::string HttpWrapper::ssl_send_then_receive(const std::string& query) const {
 
   // Removing headers.
   auto start = response.find("{");
-  assert(start != std::string::npos);
+  if (start == std::string::npos) {
+    throw RoutingException("Invalid routing response: " + response);
+  }
   auto end = response.rfind("}");
-  assert(end != std::string::npos);
-
+  if (end == std::string::npos) {
+    throw RoutingException("Invalid routing response: " + response);
+  }
   std::string json_string = response.substr(start, end - start + 1);
 
   return json_string;
