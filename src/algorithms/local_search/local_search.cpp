@@ -122,7 +122,7 @@ RouteInsertion compute_best_insertion(const Input& input,
   } else {
     auto insert =
       compute_best_insertion_pd(input, sol_state, j, v, route, NO_EVAL);
-    if (insert.eval < NO_EVAL) {
+    if (insert.eval != NO_EVAL) {
       // Normalize cost per job for consistency with single jobs.
       insert.eval.cost =
         static_cast<SignedCost>(static_cast<double>(insert.eval.cost) / 2);

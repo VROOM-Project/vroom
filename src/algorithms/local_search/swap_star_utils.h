@@ -73,7 +73,7 @@ struct SwapChoice {
 };
 
 const auto SwapChoiceCmp = [](const SwapChoice& lhs, const SwapChoice& rhs) {
-  return rhs.gain < lhs.gain;
+  return lhs.gain > rhs.gain;
 };
 
 constexpr SwapChoice empty_choice = {Eval(), 0, 0, 0, 0};
@@ -289,7 +289,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
 
       Eval current_gain =
         in_place_target_insertion_gain + in_place_source_insertion_gain;
-      if (best_gain < current_gain) {
+      if (current_gain > best_gain) {
         SwapChoice sc({current_gain, s_rank, t_rank, s_rank, t_rank});
         if (valid_choice_for_insertion_ranks(sol_state,
                                              s_vehicle,
@@ -306,7 +306,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
             (ti.cost != NO_EVAL)) {
           const Eval t_gain = source_delta - ti.cost;
           current_gain = in_place_source_insertion_gain + t_gain;
-          if (best_gain < current_gain) {
+          if (current_gain > best_gain) {
             SwapChoice sc({current_gain, s_rank, t_rank, s_rank, ti.rank});
             if (valid_choice_for_insertion_ranks(sol_state,
                                                  s_vehicle,
@@ -330,7 +330,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
           const Eval s_gain = target_delta - si.cost;
 
           current_gain = s_gain + in_place_target_insertion_gain;
-          if (best_gain < current_gain) {
+          if (current_gain > best_gain) {
             SwapChoice sc({current_gain, s_rank, t_rank, si.rank, t_rank});
             if (valid_choice_for_insertion_ranks(sol_state,
                                                  s_vehicle,
@@ -347,7 +347,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
                 (ti.cost != NO_EVAL)) {
               const Eval t_gain = source_delta - ti.cost;
               current_gain = s_gain + t_gain;
-              if (best_gain < current_gain) {
+              if (current_gain > best_gain) {
                 SwapChoice sc({current_gain, s_rank, t_rank, si.rank, ti.rank});
                 if (valid_choice_for_insertion_ranks(sol_state,
                                                      s_vehicle,
