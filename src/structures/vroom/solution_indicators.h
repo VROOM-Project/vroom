@@ -20,11 +20,11 @@ namespace utils {
 template <class Route> struct SolutionIndicators {
   Priority priority_sum;
   unsigned assigned;
-  Cost cost;
+  Eval eval;
   unsigned used_vehicles;
 
   SolutionIndicators()
-    : priority_sum(0), assigned(0), cost(0), used_vehicles(0) {
+    : priority_sum(0), assigned(0), eval(), used_vehicles(0) {
   }
 
   SolutionIndicators(const Input& input, const std::vector<Route>& sol)
@@ -34,7 +34,7 @@ template <class Route> struct SolutionIndicators {
       priority_sum += utils::priority_sum_for_route(input, r.route);
       assigned += r.route.size();
 
-      cost += utils::route_cost_for_vehicle(input, v_rank, r.route);
+      eval += utils::route_eval_for_vehicle(input, v_rank, r.route);
       ++v_rank;
 
       if (!r.empty()) {
@@ -53,11 +53,17 @@ template <class Route> struct SolutionIndicators {
         return true;
       }
       if (lhs.assigned == rhs.assigned) {
-        if (lhs.cost < rhs.cost) {
+        if (lhs.eval.cost < rhs.eval.cost) {
           return true;
         }
-        if (lhs.cost == rhs.cost and lhs.used_vehicles < rhs.used_vehicles) {
-          return true;
+        if (lhs.eval.cost == rhs.eval.cost) {
+          if (lhs.eval.duration < rhs.eval.duration) {
+            return true;
+          }
+          if (lhs.eval.duration == rhs.eval.duration and
+              lhs.used_vehicles < rhs.used_vehicles) {
+            return true;
+          }
         }
       }
     }

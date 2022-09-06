@@ -296,30 +296,30 @@ inline Priority priority_sum_for_route(const Input& input,
                          });
 }
 
-inline Cost route_cost_for_vehicle(const Input& input,
+inline Eval route_eval_for_vehicle(const Input& input,
                                    Index vehicle_rank,
                                    const std::vector<Index>& route) {
   const auto& v = input.vehicles[vehicle_rank];
-  Cost cost = 0;
+  Eval eval;
 
   if (route.size() > 0) {
     if (v.has_start()) {
-      cost +=
-        v.cost(v.start.value().index(), input.jobs[route.front()].index());
+      eval +=
+        v.eval(v.start.value().index(), input.jobs[route.front()].index());
     }
 
     Index previous = route.front();
     for (auto it = ++route.cbegin(); it != route.cend(); ++it) {
-      cost += v.cost(input.jobs[previous].index(), input.jobs[*it].index());
+      eval += v.eval(input.jobs[previous].index(), input.jobs[*it].index());
       previous = *it;
     }
 
     if (v.has_end()) {
-      cost += v.cost(input.jobs[route.back()].index(), v.end.value().index());
+      eval += v.eval(input.jobs[route.back()].index(), v.end.value().index());
     }
   }
 
-  return cost;
+  return eval;
 }
 
 inline void check_precedence(const Input& input,

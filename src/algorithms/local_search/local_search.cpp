@@ -284,8 +284,8 @@ void LocalSearch<Route,
                                  _sol[best_route]);
       }
 #ifndef NDEBUG
-      // Update cost after addition.
-      _sol_state.update_route_cost(_sol[best_route].route, best_route);
+      // Update evaluation after addition.
+      _sol_state.update_route_eval(_sol[best_route].route, best_route);
 #endif
     }
   } while (job_added);
@@ -1643,25 +1643,25 @@ void LocalSearch<Route,
 
 #ifndef NDEBUG
       // Update route costs.
-      const auto previous_cost =
+      const auto previous_eval =
         std::accumulate(update_candidates.begin(),
                         update_candidates.end(),
-                        0,
+                        Eval(),
                         [&](auto sum, auto c) {
-                          return sum + _sol_state.route_costs[c];
+                          return sum + _sol_state.route_evals[c];
                         });
       for (auto v_rank : update_candidates) {
-        _sol_state.update_route_cost(_sol[v_rank].route, v_rank);
+        _sol_state.update_route_eval(_sol[v_rank].route, v_rank);
         assert(_sol[v_rank].size() <= _input.vehicles[v_rank].max_tasks);
       }
-      const auto new_cost =
+      const auto new_eval =
         std::accumulate(update_candidates.begin(),
                         update_candidates.end(),
-                        0,
+                        Eval(),
                         [&](auto sum, auto c) {
-                          return sum + _sol_state.route_costs[c];
+                          return sum + _sol_state.route_evals[c];
                         });
-      assert(new_cost + best_gain.cost == previous_cost);
+      assert(new_eval + best_gain == previous_eval);
 #endif
 
       for (auto v_rank : update_candidates) {

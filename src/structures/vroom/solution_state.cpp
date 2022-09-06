@@ -41,7 +41,7 @@ SolutionState::SolutionState(const Input& input)
     weak_insertion_ranks_end(_nb_vehicles)
 #ifndef NDEBUG
     ,
-    route_costs(_nb_vehicles)
+    route_evals(_nb_vehicles)
 #endif
 {
 }
@@ -55,7 +55,7 @@ template <class Route> void SolutionState::setup(const Route& r, Index v) {
   set_pd_gains(r.route, v);
   set_insertion_ranks(r, v);
 #ifndef NDEBUG
-  update_route_cost(r.route, v);
+  update_route_eval(r.route, v);
 #endif
 }
 
@@ -616,9 +616,9 @@ void SolutionState::update_cheapest_job_rank_in_routes(
 }
 
 #ifndef NDEBUG
-void SolutionState::update_route_cost(const std::vector<Index>& route,
+void SolutionState::update_route_eval(const std::vector<Index>& route,
                                       Index v) {
-  route_costs[v] = route_cost_for_vehicle(_input, v, route);
+  route_evals[v] = route_eval_for_vehicle(_input, v, route);
 }
 #endif
 

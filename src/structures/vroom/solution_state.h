@@ -113,7 +113,7 @@ public:
 
 #ifndef NDEBUG
   // Only used for assertion checks in debug mode.
-  std::vector<Cost> route_costs;
+  std::vector<Eval> route_evals;
 #endif
 
   SolutionState(const Input& input);
@@ -143,7 +143,7 @@ public:
   void set_insertion_ranks(const TWRoute& r, Index v);
 
 #ifndef NDEBUG
-  void update_route_cost(const std::vector<Index>& route, Index v);
+  void update_route_eval(const std::vector<Index>& route, Index v);
 #endif
 };
 
