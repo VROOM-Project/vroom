@@ -105,7 +105,7 @@ inline Duration get_duration(const rapidjson::Value& object, const char* key) {
   return duration;
 }
 
-inline Duration get_priority(const rapidjson::Value& object) {
+inline Priority get_priority(const rapidjson::Value& object) {
   Priority priority = 0;
   if (object.HasMember("priority")) {
     if (!object["priority"].IsUint()) {
@@ -125,6 +125,17 @@ inline size_t get_max_tasks(const rapidjson::Value& object) {
     max_tasks = object["max_tasks"].GetUint();
   }
   return max_tasks;
+}
+
+inline Duration get_max_travel_time(const rapidjson::Value& object) {
+  Duration max_travel_time = std::numeric_limits<Duration>::max();
+  if (object.HasMember("max_travel_time")) {
+    if (!object["max_travel_time"].IsUint()) {
+      throw InputException("Invalid max_travel_time value.");
+    }
+    max_travel_time = object["max_travel_time"].GetUint();
+  }
+  return max_travel_time;
 }
 
 inline void check_id(const rapidjson::Value& v, const std::string& type) {
@@ -391,6 +402,7 @@ inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
                  get_string(json_vehicle, "description"),
                  get_double(json_vehicle, "speed_factor"),
                  get_max_tasks(json_vehicle),
+                 get_max_travel_time(json_vehicle),
                  get_vehicle_steps(json_vehicle));
 }
 
