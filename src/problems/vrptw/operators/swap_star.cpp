@@ -18,7 +18,7 @@ SwapStar::SwapStar(const Input& input,
                    Index s_vehicle,
                    TWRoute& tw_t_route,
                    Index t_vehicle,
-                   Gain best_known_gain)
+                   const Eval& best_known_gain)
   : cvrp::SwapStar(input,
                    sol_state,
                    static_cast<RawRoute&>(tw_s_route),
@@ -40,7 +40,7 @@ void SwapStar::compute_gain() {
                                              t_vehicle,
                                              _tw_t_route,
                                              _best_known_gain);
-  if (choice.gain > 0) {
+  if (choice.gain.cost > 0) {
     stored_gain = choice.gain;
   }
   gain_computed = true;

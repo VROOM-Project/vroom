@@ -256,7 +256,7 @@ template <class T> T basic(const Input& input, INIT init, double lambda) {
                                                           r);
 
             double current_cost =
-              static_cast<double>(current_add) -
+              static_cast<double>(current_add.cost) -
               lambda * static_cast<double>(regrets[v][job_rank]);
 
             if (current_cost < best_cost and
@@ -276,7 +276,7 @@ template <class T> T basic(const Input& input, INIT init, double lambda) {
         if (input.jobs[job_rank].type == JOB_TYPE::PICKUP and
             current_r.size() + 2 <= vehicle.max_tasks) {
           // Pre-compute cost of addition for matching delivery.
-          std::vector<Gain> d_adds(current_r.route.size() + 1);
+          std::vector<Eval> d_adds(current_r.route.size() + 1);
           std::vector<unsigned char> valid_delivery_insertions(
             current_r.route.size() + 1);
 
@@ -292,11 +292,11 @@ template <class T> T basic(const Input& input, INIT init, double lambda) {
           }
 
           for (Index pickup_r = 0; pickup_r <= current_r.size(); ++pickup_r) {
-            Gain p_add = utils::addition_cost(input,
-                                              job_rank,
-                                              vehicle,
-                                              current_r.route,
-                                              pickup_r);
+            const auto p_add = utils::addition_cost(input,
+                                                    job_rank,
+                                                    vehicle,
+                                                    current_r.route,
+                                                    pickup_r);
 
             if (!current_r
                    .is_valid_addition_for_load(input,
@@ -329,7 +329,7 @@ template <class T> T basic(const Input& input, INIT init, double lambda) {
                 continue;
               }
 
-              double current_add;
+              Eval current_add;
               if (pickup_r == delivery_r) {
                 current_add = utils::addition_cost(input,
                                                    job_rank,
@@ -342,7 +342,7 @@ template <class T> T basic(const Input& input, INIT init, double lambda) {
               }
 
               double current_cost =
-                current_add -
+                current_add.cost -
                 lambda * static_cast<double>(regrets[v][job_rank]);
 
               if (current_cost < best_cost) {
@@ -636,7 +636,7 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
                                                           r);
 
             double current_cost =
-              static_cast<double>(current_add) -
+              static_cast<double>(current_add.cost) -
               lambda * static_cast<double>(regrets[job_rank]);
 
             if (current_cost < best_cost and
@@ -656,7 +656,7 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
         if (input.jobs[job_rank].type == JOB_TYPE::PICKUP and
             current_r.size() + 2 <= vehicle.max_tasks) {
           // Pre-compute cost of addition for matching delivery.
-          std::vector<Gain> d_adds(current_r.route.size() + 1);
+          std::vector<Eval> d_adds(current_r.route.size() + 1);
           std::vector<unsigned char> valid_delivery_insertions(
             current_r.route.size() + 1);
 
@@ -672,11 +672,11 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
           }
 
           for (Index pickup_r = 0; pickup_r <= current_r.size(); ++pickup_r) {
-            Gain p_add = utils::addition_cost(input,
-                                              job_rank,
-                                              vehicle,
-                                              current_r.route,
-                                              pickup_r);
+            const auto p_add = utils::addition_cost(input,
+                                                    job_rank,
+                                                    vehicle,
+                                                    current_r.route,
+                                                    pickup_r);
 
             if (!current_r
                    .is_valid_addition_for_load(input,
@@ -709,7 +709,7 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
                 continue;
               }
 
-              double current_add;
+              Eval current_add;
               if (pickup_r == delivery_r) {
                 current_add = utils::addition_cost(input,
                                                    job_rank,
@@ -722,7 +722,8 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
               }
 
               double current_cost =
-                current_add - lambda * static_cast<double>(regrets[job_rank]);
+                current_add.cost -
+                lambda * static_cast<double>(regrets[job_rank]);
 
               if (current_cost < best_cost) {
                 modified_with_pd.push_back(job_rank + 1);

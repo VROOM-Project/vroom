@@ -16,7 +16,7 @@ OperatorName Operator::get_name() const {
   return _name;
 }
 
-Gain Operator::gain() {
+Eval Operator::gain() {
   if (!gain_computed) {
     this->compute_gain();
   }

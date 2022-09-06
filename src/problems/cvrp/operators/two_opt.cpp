@@ -47,7 +47,7 @@ void TwoOpt::compute_gain() {
   Index t_index = _input.jobs[t_route[t_rank]].index();
   Index last_s = _input.jobs[s_route.back()].index();
   Index last_t = _input.jobs[t_route.back()].index();
-  stored_gain = 0;
+  stored_gain = Eval();
   Index new_last_s = last_t;
   Index new_last_t = last_s;
 
@@ -59,8 +59,8 @@ void TwoOpt::compute_gain() {
   // the route. Otherwise remember that last job does not change.
   if (s_rank < s_route.size() - 1) {
     Index next_index = _input.jobs[s_route[s_rank + 1]].index();
-    stored_gain += s_v.cost(s_index, next_index);
-    stored_gain -= t_v.cost(t_index, next_index);
+    stored_gain += s_v.eval(s_index, next_index);
+    stored_gain -= t_v.eval(t_index, next_index);
 
     // Account for the change in cost across vehicles for the end of
     // source route. Cost of remaining route retrieved by subtracting
@@ -74,8 +74,8 @@ void TwoOpt::compute_gain() {
   }
   if (t_rank < t_route.size() - 1) {
     Index next_index = _input.jobs[t_route[t_rank + 1]].index();
-    stored_gain += t_v.cost(t_index, next_index);
-    stored_gain -= s_v.cost(s_index, next_index);
+    stored_gain += t_v.eval(t_index, next_index);
+    stored_gain -= s_v.eval(s_index, next_index);
 
     // Account for the change in cost across vehicles for the end of
     // target route. Cost of remaining route retrieved by subtracting
@@ -92,13 +92,13 @@ void TwoOpt::compute_gain() {
   // different or none.
   if (s_v.has_end()) {
     auto end_s = s_v.end.value().index();
-    stored_gain += s_v.cost(last_s, end_s);
-    stored_gain -= s_v.cost(new_last_s, end_s);
+    stored_gain += s_v.eval(last_s, end_s);
+    stored_gain -= s_v.eval(new_last_s, end_s);
   }
   if (t_v.has_end()) {
     auto end_t = t_v.end.value().index();
-    stored_gain += t_v.cost(last_t, end_t);
-    stored_gain -= t_v.cost(new_last_t, end_t);
+    stored_gain += t_v.eval(last_t, end_t);
+    stored_gain -= t_v.eval(new_last_t, end_t);
   }
 
   gain_computed = true;

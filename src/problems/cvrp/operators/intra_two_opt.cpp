@@ -41,7 +41,7 @@ void IntraTwoOpt::compute_gain() {
 
   Index s_index = _input.jobs[s_route[s_rank]].index();
   Index t_index = _input.jobs[t_route[t_rank]].index();
-  stored_gain = 0;
+  stored_gain = Eval();
 
   // Cost of reversing vehicle route between s_rank and t_rank
   // included.
@@ -53,26 +53,26 @@ void IntraTwoOpt::compute_gain() {
   // Cost of going to t_rank first instead of s_rank.
   if (s_rank > 0) {
     Index previous_index = _input.jobs[s_route[s_rank - 1]].index();
-    stored_gain += s_v.cost(previous_index, s_index);
-    stored_gain -= s_v.cost(previous_index, t_index);
+    stored_gain += s_v.eval(previous_index, s_index);
+    stored_gain -= s_v.eval(previous_index, t_index);
   } else {
     if (s_v.has_start()) {
       Index start_index = s_v.start.value().index();
-      stored_gain += s_v.cost(start_index, s_index);
-      stored_gain -= s_v.cost(start_index, t_index);
+      stored_gain += s_v.eval(start_index, s_index);
+      stored_gain -= s_v.eval(start_index, t_index);
     }
   }
 
   // Cost of going from s_rank after instead of t_rank.
   if (t_rank < s_route.size() - 1) {
     Index next_index = _input.jobs[s_route[t_rank + 1]].index();
-    stored_gain += s_v.cost(t_index, next_index);
-    stored_gain -= s_v.cost(s_index, next_index);
+    stored_gain += s_v.eval(t_index, next_index);
+    stored_gain -= s_v.eval(s_index, next_index);
   } else {
     if (s_v.has_end()) {
       Index end_index = s_v.end.value().index();
-      stored_gain += s_v.cost(t_index, end_index);
-      stored_gain -= s_v.cost(s_index, end_index);
+      stored_gain += s_v.eval(t_index, end_index);
+      stored_gain -= s_v.eval(s_index, end_index);
     }
   }
 

@@ -63,13 +63,13 @@ private:
   // Compute "cost" between route at rank v_target and job with rank r
   // in route at rank v. Relies on
   // _sol_state.cheapest_job_rank_in_routes_* being up to date.
-  Gain job_route_cost(Index v_target, Index v, Index r);
+  Eval job_route_cost(Index v_target, Index v, Index r);
 
   // Compute lower bound for the cost of relocating job at rank r
   // (resp. jobs at rank r1 and r2) in route v to any other
   // (compatible) route.
-  Gain relocate_cost_lower_bound(Index v, Index r);
-  Gain relocate_cost_lower_bound(Index v, Index r1, Index r2);
+  Eval relocate_cost_lower_bound(Index v, Index r);
+  Eval relocate_cost_lower_bound(Index v, Index r1, Index r2);
 
   void remove_from_routes();
 

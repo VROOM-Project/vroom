@@ -22,7 +22,7 @@ PDShift::PDShift(const Input& input,
                  Index s_d_rank,
                  TWRoute& tw_t_route,
                  Index t_vehicle,
-                 Gain gain_threshold)
+                 const Eval& gain_threshold)
   : cvrp::PDShift(input,
                   sol_state,
                   static_cast<RawRoute&>(tw_s_route),
@@ -58,14 +58,13 @@ void PDShift::compute_gain() {
                                   _tw_t_route,
                                   _remove_gain - stored_gain);
 
-  if (rs.cost < std::numeric_limits<Gain>::max()) {
+  if (rs.eval != NO_EVAL) {
     _valid = true;
-    stored_gain = _remove_gain - rs.cost;
+    stored_gain = _remove_gain - rs.eval;
     _best_t_p_rank = rs.pickup_rank;
     _best_t_d_rank = rs.delivery_rank;
   }
   gain_computed = true;
-  return;
 }
 
 void PDShift::apply() {

@@ -32,7 +32,7 @@ public:
           Index s_d_rank,
           TWRoute& tw_t_route,
           Index t_vehicle,
-          Gain gain_threshold);
+          const Eval& gain_threshold);
 
   void log_route(const std::vector<Index>& route) const;
 

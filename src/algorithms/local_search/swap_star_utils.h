@@ -23,13 +23,13 @@ namespace vroom {
 namespace ls {
 
 struct InsertionOption {
-  Gain cost;
+  Eval cost;
   Index rank;
 };
 
 using ThreeInsertions = std::array<InsertionOption, 3>;
 
-constexpr InsertionOption no_insert = {std::numeric_limits<Gain>::max(), 0};
+constexpr InsertionOption no_insert = {NO_EVAL, 0};
 constexpr ThreeInsertions
   empty_three_insertions({no_insert, no_insert, no_insert});
 
@@ -65,7 +65,7 @@ ThreeInsertions find_top_3_insertions(const Input& input,
 }
 
 struct SwapChoice {
-  Gain gain;
+  Eval gain;
   Index s_rank;
   Index t_rank;
   Index insertion_in_source;
@@ -76,7 +76,7 @@ const auto SwapChoiceCmp = [](const SwapChoice& lhs, const SwapChoice& rhs) {
   return lhs.gain > rhs.gain;
 };
 
-constexpr SwapChoice empty_choice = {0, 0, 0, 0, 0};
+constexpr SwapChoice empty_choice = {Eval(), 0, 0, 0, 0};
 
 template <class Route>
 bool valid_choice_for_insertion_ranks(const utils::SolutionState& sol_state,
@@ -198,7 +198,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
                                          const Route& source,
                                          const Index t_vehicle,
                                          const Route& target,
-                                         const Gain best_known_gain) {
+                                         const Eval& best_known_gain) {
   // Preprocessing phase.
   std::unordered_map<Index, ThreeInsertions> top_insertions_in_target;
   for (unsigned s_rank = 0; s_rank < source.route.size(); ++s_rank) {
@@ -224,7 +224,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
 
   // Search phase.
   auto best_choice = empty_choice;
-  Gain best_gain = best_known_gain;
+  Eval best_gain = best_known_gain;
 
   const auto& v_source = input.vehicles[source.vehicle_rank];
   const auto& v_target = input.vehicles[target.vehicle_rank];
@@ -243,9 +243,9 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
     // where the start->end cost is not accounted for.
     const auto source_start_end_cost =
       (source.size() == 1 and v_source.has_start() and v_source.has_end())
-        ? v_source.cost(v_source.start.value().index(),
+        ? v_source.eval(v_source.start.value().index(),
                         v_source.end.value().index())
-        : 0;
+        : Eval();
     const auto source_delta =
       sol_state.node_gains[source.vehicle_rank][s_rank] - source_start_end_cost;
 
@@ -256,9 +256,9 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
       // Same as above.
       const auto target_start_end_cost =
         (target.size() == 1 and v_target.has_start() and v_target.has_end())
-          ? v_target.cost(v_target.start.value().index(),
+          ? v_target.eval(v_target.start.value().index(),
                           v_target.end.value().index())
-          : 0;
+          : Eval();
       const auto target_delta =
         sol_state.node_gains[target.vehicle_rank][t_rank] -
         target_start_end_cost;
@@ -282,12 +282,12 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
       // Options for in-place insertion in source route include
       // in-place insertion in target route and other relevant
       // positions from target_insertions.
-      const Gain in_place_source_insertion_gain =
+      const Eval in_place_source_insertion_gain =
         target_delta - source_in_place_delta;
-      const Gain in_place_target_insertion_gain =
+      const Eval in_place_target_insertion_gain =
         source_delta - target_in_place_delta;
 
-      Gain current_gain =
+      Eval current_gain =
         in_place_target_insertion_gain + in_place_source_insertion_gain;
       if (current_gain > best_gain) {
         SwapChoice sc({current_gain, s_rank, t_rank, s_rank, t_rank});
@@ -303,8 +303,8 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
 
       for (const auto& ti : target_insertions) {
         if ((ti.rank != t_rank) and (ti.rank != t_rank + 1) and
-            (ti.cost != std::numeric_limits<Gain>::max())) {
-          const Gain t_gain = source_delta - ti.cost;
+            (ti.cost != NO_EVAL)) {
+          const Eval t_gain = source_delta - ti.cost;
           current_gain = in_place_source_insertion_gain + t_gain;
           if (current_gain > best_gain) {
             SwapChoice sc({current_gain, s_rank, t_rank, s_rank, ti.rank});
@@ -326,8 +326,8 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
       // target_insertions.
       for (const auto& si : source_insertions) {
         if ((si.rank != s_rank) and (si.rank != s_rank + 1) and
-            (si.cost != std::numeric_limits<Gain>::max())) {
-          const Gain s_gain = target_delta - si.cost;
+            (si.cost != NO_EVAL)) {
+          const Eval s_gain = target_delta - si.cost;
 
           current_gain = s_gain + in_place_target_insertion_gain;
           if (current_gain > best_gain) {
@@ -344,8 +344,8 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
 
           for (const auto& ti : target_insertions) {
             if ((ti.rank != t_rank) and (ti.rank != t_rank + 1) and
-                (ti.cost != std::numeric_limits<Gain>::max())) {
-              const Gain t_gain = source_delta - ti.cost;
+                (ti.cost != NO_EVAL)) {
+              const Eval t_gain = source_delta - ti.cost;
               current_gain = s_gain + t_gain;
               if (current_gain > best_gain) {
                 SwapChoice sc({current_gain, s_rank, t_rank, si.rank, ti.rank});

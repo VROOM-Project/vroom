@@ -8,6 +8,7 @@
 
 ### Changed
 
+- Use new struct to evaluate edges internally (#738)
 - Use `std::chrono::milliseconds` for `Timeout` value (#728)
 - Use `struct` for storing `Coordinates` instead of an `std::array` (#730)
 - Refactor `SolutionIndicators` struct (#750)

@@ -35,7 +35,7 @@ protected:
   const Index t_rank;
 
   bool gain_computed;
-  Gain stored_gain;
+  Eval stored_gain;
 
   virtual void compute_gain() = 0;
 
@@ -60,13 +60,12 @@ public:
       t_route(t_raw_route.route),
       t_vehicle(t_vehicle),
       t_rank(t_rank),
-      gain_computed(false),
-      stored_gain(0) {
+      gain_computed(false) {
   }
 
   OperatorName get_name() const;
 
-  virtual Gain gain();
+  virtual Eval gain();
 
   virtual bool is_valid() = 0;
 

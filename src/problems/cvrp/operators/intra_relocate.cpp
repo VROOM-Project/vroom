@@ -61,7 +61,7 @@ void IntraRelocate::compute_gain() {
   if (s_rank < t_rank) {
     ++new_rank;
   }
-  Gain t_gain =
+  Eval t_gain =
     -utils::addition_cost(_input, s_route[s_rank], v_target, t_route, new_rank);
 
   stored_gain = _sol_state.node_gains[s_vehicle][s_rank] + t_gain;

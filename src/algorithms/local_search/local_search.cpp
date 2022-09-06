@@ -103,15 +103,12 @@ RouteInsertion compute_best_insertion(const Input& input,
   if (current_job.type == JOB_TYPE::SINGLE) {
     return compute_best_insertion_single(input, sol_state, j, v, route);
   } else {
-    auto insert = compute_best_insertion_pd(input,
-                                            sol_state,
-                                            j,
-                                            v,
-                                            route,
-                                            std::numeric_limits<Gain>::max());
-    if (insert.cost < std::numeric_limits<Gain>::max()) {
+    auto insert =
+      compute_best_insertion_pd(input, sol_state, j, v, route, NO_EVAL);
+    if (insert.eval != NO_EVAL) {
       // Normalize cost per job for consistency with single jobs.
-      insert.cost = static_cast<Gain>(static_cast<double>(insert.cost) / 2);
+      insert.eval.cost =
+        static_cast<SignedCost>(static_cast<double>(insert.eval.cost) / 2);
     }
     return insert;
   }
@@ -200,20 +197,19 @@ void LocalSearch<Route,
       std::size_t smallest_idx = std::numeric_limits<std::size_t>::max();
 
       for (std::size_t i = 0; i < routes.size(); ++i) {
-        if (route_job_insertions[i][j].cost < smallest) {
+        if (route_job_insertions[i][j].eval.cost < smallest) {
           smallest_idx = i;
           second_smallest = smallest;
-          smallest = route_job_insertions[i][j].cost;
-        } else if (route_job_insertions[i][j].cost < second_smallest) {
-          second_smallest = route_job_insertions[i][j].cost;
+          smallest = route_job_insertions[i][j].eval.cost;
+        } else if (route_job_insertions[i][j].eval.cost < second_smallest) {
+          second_smallest = route_job_insertions[i][j].eval.cost;
         }
       }
 
       // Find best route for current job based on cost of addition and
       // regret cost of not adding.
       for (std::size_t i = 0; i < routes.size(); ++i) {
-        const auto addition_cost = route_job_insertions[i][j].cost;
-        if (addition_cost == std::numeric_limits<Gain>::max()) {
+        if (route_job_insertions[i][j].eval == NO_EVAL) {
           continue;
         }
 
@@ -225,19 +221,20 @@ void LocalSearch<Route,
           continue;
         }
 
-        const Gain regret_cost =
+        const auto regret_cost =
           (i == smallest_idx) ? second_smallest : smallest;
 
-        const double eval = static_cast<double>(addition_cost) -
-                            regret_coeff * static_cast<double>(regret_cost);
+        const double current_cost =
+          static_cast<double>(route_job_insertions[i][j].eval.cost) -
+          regret_coeff * static_cast<double>(regret_cost);
 
         if ((job_priority > best_priority) or
-            (job_priority == best_priority and eval < best_cost)) {
+            (job_priority == best_priority and current_cost < best_cost)) {
           best_priority = job_priority;
           best_job_rank = j;
           best_route = routes[i];
           best_insertion = route_job_insertions[i][j];
-          best_cost = eval;
+          best_cost = current_cost;
           best_route_idx = i;
         }
       }
@@ -346,18 +343,20 @@ void LocalSearch<Route,
   }
 
   // Store best gain for matching move.
-  std::vector<std::vector<Gain>> best_gains(_nb_vehicles,
-                                            std::vector<Gain>(_nb_vehicles, 0));
+  std::vector<std::vector<Eval>> best_gains(_nb_vehicles,
+                                            std::vector<Eval>(_nb_vehicles,
+                                                              Eval()));
 
   // Store best priority increase for matching move. Only operators
   // involving a single route and unassigned jobs can change overall
   // priority (currently only UnassignedExchange).
   std::vector<Priority> best_priorities(_nb_vehicles, 0);
 
-  Gain best_gain = 1;
+  // Dummy init to enter first loop.
+  Eval best_gain(static_cast<Cost>(1), static_cast<Cost>(0));
   Priority best_priority = 0;
 
-  while (best_gain > 0 or best_priority > 0) {
+  while (best_gain.cost > 0 or best_priority > 0) {
     if (_deadline.has_value() and _deadline.value() < utils::now()) {
       break;
     }
@@ -1604,7 +1603,7 @@ void LocalSearch<Route,
     // Find best overall move, first checking priority increase then
     // best gain if no priority increase is available.
     best_priority = 0;
-    best_gain = 0;
+    best_gain = Eval();
     Index best_source = 0;
     Index best_target = 0;
 
@@ -1630,7 +1629,7 @@ void LocalSearch<Route,
     }
 
     // Apply matching operator.
-    if (best_priority > 0 or best_gain > 0) {
+    if (best_priority > 0 or best_gain.cost > 0) {
       assert(best_ops[best_source][best_target] != nullptr);
 
       best_ops[best_source][best_target]->apply();
@@ -1662,7 +1661,7 @@ void LocalSearch<Route,
                         [&](auto sum, auto c) {
                           return sum + _sol_state.route_costs[c];
                         });
-      assert(new_cost + best_gain == previous_cost);
+      assert(new_cost + best_gain.cost == previous_cost);
 #endif
 
       for (auto v_rank : update_candidates) {
@@ -1689,7 +1688,7 @@ void LocalSearch<Route,
       // round and set route pairs accordingly.
       s_t_pairs.clear();
       for (auto v_rank : update_candidates) {
-        best_gains[v_rank].assign(_nb_vehicles, 0);
+        best_gains[v_rank].assign(_nb_vehicles, Eval());
         best_priorities[v_rank] = 0;
         best_ops[v_rank] = std::vector<std::unique_ptr<Operator>>(_nb_vehicles);
       }
@@ -1697,7 +1696,7 @@ void LocalSearch<Route,
       for (unsigned v = 0; v < _nb_vehicles; ++v) {
         for (auto v_rank : update_candidates) {
           if (_input.vehicle_ok_with_vehicle(v, v_rank)) {
-            best_gains[v][v_rank] = 0;
+            best_gains[v][v_rank] = Eval();
             best_ops[v][v_rank] = std::unique_ptr<Operator>();
 
             s_t_pairs.emplace_back(v, v_rank);
@@ -1718,7 +1717,7 @@ void LocalSearch<Route,
             // This move should be invalidated because a required
             // unassigned job has been added by try_job_additions in
             // the meantime.
-            best_gains[v][v] = 0;
+            best_gains[v][v] = Eval();
             best_priorities[v] = 0;
             best_ops[v][v] = std::unique_ptr<Operator>();
             s_t_pairs.emplace_back(v, v);
@@ -1883,7 +1882,7 @@ template <class Route,
           class IntraTwoOpt,
           class PDShift,
           class RouteExchange>
-Gain LocalSearch<Route,
+Eval LocalSearch<Route,
                  UnassignedExchange,
                  SwapStar,
                  CrossExchange,
@@ -1904,37 +1903,37 @@ Gain LocalSearch<Route,
                                                 Index r) {
   assert(v != v_target);
 
-  Gain cost = static_cast<Gain>(INFINITE_COST);
+  Eval eval(INFINITE_COST, 0);
   const auto job_index = _input.jobs[_sol[v].route[r]].index();
 
   const auto& vehicle = _input.vehicles[v_target];
   if (vehicle.has_start()) {
     const auto start_index = vehicle.start.value().index();
-    const Gain start_cost = vehicle.cost(start_index, job_index);
-    cost = std::min(cost, start_cost);
+    const auto start_eval = vehicle.eval(start_index, job_index);
+    eval = std::min(eval, start_eval);
   }
   if (vehicle.has_end()) {
     const auto end_index = vehicle.end.value().index();
-    const Gain end_cost = vehicle.cost(job_index, end_index);
-    cost = std::min(cost, end_cost);
+    const auto end_eval = vehicle.eval(job_index, end_index);
+    eval = std::min(eval, end_eval);
   }
   if (_sol[v_target].size() != 0) {
     const auto cheapest_from_rank =
       _sol_state.cheapest_job_rank_in_routes_from[v][v_target][r];
     const auto cheapest_from_index =
       _input.jobs[_sol[v_target].route[cheapest_from_rank]].index();
-    const Gain cost_from = vehicle.cost(cheapest_from_index, job_index);
-    cost = std::min(cost, cost_from);
+    const auto eval_from = vehicle.eval(cheapest_from_index, job_index);
+    eval = std::min(eval, eval_from);
 
     const auto cheapest_to_rank =
       _sol_state.cheapest_job_rank_in_routes_to[v][v_target][r];
     const auto cheapest_to_index =
       _input.jobs[_sol[v_target].route[cheapest_to_rank]].index();
-    const Gain cost_to = vehicle.cost(job_index, cheapest_to_index);
-    cost = std::min(cost, cost_to);
+    const auto eval_to = vehicle.eval(job_index, cheapest_to_index);
+    eval = std::min(eval, eval_to);
   }
 
-  return cost;
+  return eval;
 }
 
 template <class Route,
@@ -1954,7 +1953,7 @@ template <class Route,
           class IntraTwoOpt,
           class PDShift,
           class RouteExchange>
-Gain LocalSearch<Route,
+Eval LocalSearch<Route,
                  UnassignedExchange,
                  SwapStar,
                  CrossExchange,
@@ -1971,7 +1970,7 @@ Gain LocalSearch<Route,
                  IntraTwoOpt,
                  PDShift,
                  RouteExchange>::relocate_cost_lower_bound(Index v, Index r) {
-  Gain best_bound = static_cast<Gain>(INFINITE_COST);
+  Eval best_bound(INFINITE_COST, 0);
 
   for (std::size_t other_v = 0; other_v < _sol.size(); ++other_v) {
     if (other_v == v or
@@ -2002,7 +2001,7 @@ template <class Route,
           class IntraTwoOpt,
           class PDShift,
           class RouteExchange>
-Gain LocalSearch<Route,
+Eval LocalSearch<Route,
                  UnassignedExchange,
                  SwapStar,
                  CrossExchange,
@@ -2021,7 +2020,7 @@ Gain LocalSearch<Route,
                  RouteExchange>::relocate_cost_lower_bound(Index v,
                                                            Index r1,
                                                            Index r2) {
-  Gain best_bound = static_cast<Gain>(INFINITE_COST);
+  Eval best_bound(INFINITE_COST, 0);
 
   for (std::size_t other_v = 0; other_v < _sol.size(); ++other_v) {
     if (other_v == v or
@@ -2096,7 +2095,7 @@ void LocalSearch<Route,
     // Try removing the best node (good gain on current route and
     // small cost to closest node in another compatible route).
     Index best_rank = 0;
-    Gain best_gain = std::numeric_limits<Gain>::min();
+    Eval best_gain = NO_GAIN;
 
     for (std::size_t r = 0; r < _sol[v].size(); ++r) {
       const auto& current_job = _input.jobs[_sol[v].route[r]];
@@ -2104,7 +2103,7 @@ void LocalSearch<Route,
         continue;
       }
 
-      Gain current_gain;
+      Eval current_gain;
       bool valid_removal;
 
       if (current_job.type == JOB_TYPE::SINGLE) {
@@ -2144,7 +2143,7 @@ void LocalSearch<Route,
       }
     }
 
-    if (best_gain > std::numeric_limits<Gain>::min()) {
+    if (best_gain != NO_GAIN) {
       routes_and_ranks.push_back(std::make_pair(v, best_rank));
     }
   }

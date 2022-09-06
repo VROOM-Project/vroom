@@ -59,33 +59,33 @@ void UnassignedExchange::compute_gain() {
 
   const Index u_index = _input.jobs[_u].index();
 
-  Gain s_gain;
-  Gain t_gain;
+  Eval s_gain;
+  Eval t_gain;
 
   if (t_rank == s_rank) {
     // Removed job is replaced by the unassigned one so there is no
     // new edge in place of removal.
-    s_gain = _sol_state.edge_costs_around_node[s_vehicle][s_rank];
+    s_gain = _sol_state.edge_evals_around_node[s_vehicle][s_rank];
 
     // No old edge to remove when adding unassigned job in place of
     // removed job.
-    Gain previous_cost = 0;
-    Gain next_cost = 0;
+    Eval previous_cost;
+    Eval next_cost;
 
     if (t_rank == 0) {
       if (v.has_start()) {
-        previous_cost = v.cost(v.start.value().index(), u_index);
+        previous_cost = v.eval(v.start.value().index(), u_index);
       }
     } else {
-      previous_cost = v.cost(_input.jobs[s_route[t_rank - 1]].index(), u_index);
+      previous_cost = v.eval(_input.jobs[s_route[t_rank - 1]].index(), u_index);
     }
 
     if (t_rank == s_route.size() - 1) {
       if (v.has_end()) {
-        next_cost = v.cost(u_index, v.end.value().index());
+        next_cost = v.eval(u_index, v.end.value().index());
       }
     } else {
-      next_cost = v.cost(u_index, _input.jobs[s_route[s_rank + 1]].index());
+      next_cost = v.eval(u_index, _input.jobs[s_route[s_rank + 1]].index());
     }
 
     t_gain = -previous_cost - next_cost;
