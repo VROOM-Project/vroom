@@ -1652,7 +1652,10 @@ void LocalSearch<Route,
                         });
       for (auto v_rank : update_candidates) {
         _sol_state.update_route_eval(_sol[v_rank].route, v_rank);
+
         assert(_sol[v_rank].size() <= _input.vehicles[v_rank].max_tasks);
+        assert(_sol_state.route_evals[v_rank].duration <=
+               _input.vehicles[v_rank].max_travel_time);
       }
       const auto new_eval =
         std::accumulate(update_candidates.begin(),
