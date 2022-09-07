@@ -15,13 +15,13 @@ All rights reserved (see LICENSE).
 namespace vroom {
 namespace heuristics {
 
-std::vector<std::vector<Cost>> get_jobs_vehicles_costs(const Input& input) {
-  // For a single job j, costs[j][v] is the cost of fetching job j in
-  // an empty route from vehicle at rank v. For a pickup job j,
-  // costs[j][v] is the cost of fetching job j **and** associated
-  // delivery in an empty route from vehicle at rank v.
-  std::vector<std::vector<Cost>> costs(input.jobs.size(),
-                                       std::vector<Cost>(
+std::vector<std::vector<Eval>> get_jobs_vehicles_evals(const Input& input) {
+  // For a single job j, evals[j][v] evaluates fetching job j in an
+  // empty route from vehicle at rank v. For a pickup job j,
+  // evals[j][v] evaluates fetching job j **and** associated delivery
+  // in an empty route from vehicle at rank v.
+  std::vector<std::vector<Eval>> evals(input.jobs.size(),
+                                       std::vector<Eval>(
                                          input.vehicles.size()));
   for (std::size_t j = 0; j < input.jobs.size(); ++j) {
     Index j_index = input.jobs[j].index();
@@ -36,18 +36,19 @@ std::vector<std::vector<Cost>> get_jobs_vehicles_costs(const Input& input) {
 
     for (std::size_t v = 0; v < input.vehicles.size(); ++v) {
       const auto& vehicle = input.vehicles[v];
-      Cost current_cost = is_pickup ? vehicle.cost(j_index, last_job_index) : 0;
+      Eval current_eval =
+        is_pickup ? vehicle.eval(j_index, last_job_index) : Eval();
       if (vehicle.has_start()) {
-        current_cost += vehicle.cost(vehicle.start.value().index(), j_index);
+        current_eval += vehicle.eval(vehicle.start.value().index(), j_index);
       }
       if (vehicle.has_end()) {
-        current_cost +=
-          vehicle.cost(last_job_index, vehicle.end.value().index());
+        current_eval +=
+          vehicle.eval(last_job_index, vehicle.end.value().index());
       }
-      costs[j][v] = current_cost;
+      evals[j][v] = current_eval;
       if (is_pickup) {
-        // Assign same cost to delivery.
-        costs[j + 1][v] = current_cost;
+        // Assign same eval to delivery.
+        evals[j + 1][v] = current_eval;
       }
     }
 
@@ -57,7 +58,7 @@ std::vector<std::vector<Cost>> get_jobs_vehicles_costs(const Input& input) {
     }
   }
 
-  return costs;
+  return evals;
 }
 
 template <class T> T basic(const Input& input, INIT init, double lambda) {
@@ -90,18 +91,19 @@ template <class T> T basic(const Input& input, INIT init, double lambda) {
                                v_lhs.tw.length > v_rhs.tw.length)));
                    });
 
-  auto costs = get_jobs_vehicles_costs(input);
+  auto evals = get_jobs_vehicles_evals(input);
 
   // regrets[v][j] holds the min cost for reaching job j in an empty
   // route across all remaining vehicles **after** vehicle at rank v
   // in vehicle_ranks.
-  std::vector<std::vector<Cost>> regrets(nb_vehicles,
-                                         std::vector<Cost>(input.jobs.size()));
+  std::vector<std::vector<SignedCost>> regrets(nb_vehicles,
+                                               std::vector<SignedCost>(
+                                                 input.jobs.size()));
 
   // Use own cost for last vehicle regret values.
   auto& last_regrets = regrets.back();
   for (Index j = 0; j < input.jobs.size(); ++j) {
-    last_regrets[j] = costs[j][vehicles_ranks.back()];
+    last_regrets[j] = evals[j][vehicles_ranks.back()].cost;
   }
 
   for (Index rev_v = 0; rev_v < nb_vehicles - 1; ++rev_v) {
@@ -109,7 +111,7 @@ template <class T> T basic(const Input& input, INIT init, double lambda) {
     const auto v = nb_vehicles - 2 - rev_v;
     for (Index j = 0; j < input.jobs.size(); ++j) {
       regrets[v][j] =
-        std::min(regrets[v + 1][j], costs[j][vehicles_ranks[v + 1]]);
+        std::min(regrets[v + 1][j], (evals[j][vehicles_ranks[v + 1]]).cost);
     }
   }
 
@@ -153,10 +155,10 @@ template <class T> T basic(const Input& input, INIT init, double lambda) {
           try_validity |= (current_deadline < earliest_deadline);
         }
         if (init == INIT::FURTHEST) {
-          try_validity |= (furthest_cost < costs[job_rank][v_rank]);
+          try_validity |= (furthest_cost < evals[job_rank][v_rank].cost);
         }
         if (init == INIT::NEAREST) {
-          try_validity |= (costs[job_rank][v_rank] < nearest_cost);
+          try_validity |= (evals[job_rank][v_rank].cost < nearest_cost);
         }
 
         if (!try_validity) {
@@ -204,10 +206,10 @@ template <class T> T basic(const Input& input, INIT init, double lambda) {
                                   : input.jobs[job_rank].tws.back().end;
             break;
           case INIT::FURTHEST:
-            furthest_cost = costs[job_rank][v_rank];
+            furthest_cost = evals[job_rank][v_rank].cost;
             break;
           case INIT::NEAREST:
-            nearest_cost = costs[job_rank][v_rank];
+            nearest_cost = evals[job_rank][v_rank].cost;
             break;
           }
         }
@@ -427,25 +429,26 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
   std::vector<Index> vehicles_ranks(nb_vehicles);
   std::iota(vehicles_ranks.begin(), vehicles_ranks.end(), 0);
 
-  auto costs = get_jobs_vehicles_costs(input);
+  auto evals = get_jobs_vehicles_evals(input);
 
   while (!vehicles_ranks.empty() and !unassigned.empty()) {
     // For any unassigned job at j, jobs_min_costs[j]
     // (resp. jobs_second_min_costs[j]) holds the min cost
     // (resp. second min cost) of picking the job in an empty route
     // for any remaining vehicle.
-    std::vector<Cost> jobs_min_costs(input.jobs.size(),
-                                     std::numeric_limits<Cost>::max());
-    std::vector<Cost> jobs_second_min_costs(input.jobs.size(),
-                                            std::numeric_limits<Cost>::max());
+    std::vector<SignedCost> jobs_min_costs(input.jobs.size(),
+                                           std::numeric_limits<Cost>::max());
+    std::vector<SignedCost>
+      jobs_second_min_costs(input.jobs.size(),
+                            std::numeric_limits<Cost>::max());
     for (const auto job_rank : unassigned) {
       for (const auto v_rank : vehicles_ranks) {
-        if (costs[job_rank][v_rank] <= jobs_min_costs[job_rank]) {
+        if (evals[job_rank][v_rank].cost <= jobs_min_costs[job_rank]) {
           jobs_second_min_costs[job_rank] = jobs_min_costs[job_rank];
-          jobs_min_costs[job_rank] = costs[job_rank][v_rank];
+          jobs_min_costs[job_rank] = evals[job_rank][v_rank].cost;
         } else {
-          if (costs[job_rank][v_rank] < jobs_second_min_costs[job_rank]) {
-            jobs_second_min_costs[job_rank] = costs[job_rank][v_rank];
+          if (evals[job_rank][v_rank].cost < jobs_second_min_costs[job_rank]) {
+            jobs_second_min_costs[job_rank] = evals[job_rank][v_rank].cost;
           }
         }
       }
@@ -456,7 +459,7 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
     std::vector<unsigned> closest_jobs_count(nb_vehicles, 0);
     for (const auto job_rank : unassigned) {
       for (const auto v_rank : vehicles_ranks) {
-        if (costs[job_rank][v_rank] == jobs_min_costs[job_rank]) {
+        if (evals[job_rank][v_rank].cost == jobs_min_costs[job_rank]) {
           ++closest_jobs_count[v_rank];
         }
       }
@@ -484,7 +487,7 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
     // vehicles.
     std::vector<Cost> regrets(input.jobs.size(), input.get_cost_upper_bound());
     for (const auto job_rank : unassigned) {
-      if (jobs_min_costs[job_rank] < costs[job_rank][v_rank]) {
+      if (jobs_min_costs[job_rank] < evals[job_rank][v_rank].cost) {
         regrets[job_rank] = jobs_min_costs[job_rank];
       } else {
         regrets[job_rank] = jobs_second_min_costs[job_rank];
@@ -506,7 +509,7 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
       Duration earliest_deadline = std::numeric_limits<Duration>::max();
       Index best_job_rank = 0;
       for (const auto job_rank : unassigned) {
-        if (jobs_min_costs[job_rank] < costs[job_rank][v_rank] or
+        if (jobs_min_costs[job_rank] < evals[job_rank][v_rank].cost or
             // One of the remaining vehicles is closest to that job.
             !input.vehicle_ok_with_job(v_rank, job_rank) or
             input.jobs[job_rank].type == JOB_TYPE::DELIVERY) {
@@ -532,10 +535,10 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
           try_validity |= (current_deadline < earliest_deadline);
         }
         if (init == INIT::FURTHEST) {
-          try_validity |= (furthest_cost < costs[job_rank][v_rank]);
+          try_validity |= (furthest_cost < evals[job_rank][v_rank].cost);
         }
         if (init == INIT::NEAREST) {
-          try_validity |= (costs[job_rank][v_rank] < nearest_cost);
+          try_validity |= (evals[job_rank][v_rank].cost < nearest_cost);
         }
 
         if (!try_validity) {
@@ -584,10 +587,10 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
                                   : input.jobs[job_rank].tws.back().end;
             break;
           case INIT::FURTHEST:
-            furthest_cost = costs[job_rank][v_rank];
+            furthest_cost = evals[job_rank][v_rank].cost;
             break;
           case INIT::NEAREST:
-            nearest_cost = costs[job_rank][v_rank];
+            nearest_cost = evals[job_rank][v_rank].cost;
             break;
           }
         }
