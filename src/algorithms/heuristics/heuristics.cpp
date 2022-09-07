@@ -515,6 +515,8 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
     const auto& vehicle = input.vehicles[v_rank];
     auto& current_r = routes[v_rank];
 
+    Duration current_route_duration = 0;
+
     if (init != INIT::NONE) {
       // Initialize current route with the "best" valid job that is
       // closest for current vehicle than to any other remaining
@@ -564,6 +566,10 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
         }
 
         bool is_valid =
+          (evals[job_rank][v_rank].duration <= vehicle.max_travel_time);
+
+        is_valid =
+          is_valid &&
           current_r
             .is_valid_addition_for_capacity(input,
                                             input.jobs[job_rank].pickup,
@@ -626,6 +632,7 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
           unassigned.erase(best_job_rank);
           unassigned.erase(best_job_rank + 1);
         }
+        current_route_duration += evals[best_job_rank][v_rank].duration;
       }
     }
 
@@ -637,6 +644,7 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
       Index best_r = 0;
       Index best_pickup_r = 0;
       Index best_delivery_r = 0;
+      Duration best_duration_addition = 0;
 
       for (const auto job_rank : unassigned) {
         if (!input.vehicle_ok_with_job(v_rank, job_rank)) {
@@ -661,6 +669,8 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
               lambda * static_cast<double>(regrets[job_rank]);
 
             if (current_cost < best_cost and
+                (current_route_duration + current_add.duration <=
+                 vehicle.max_travel_time) and
                 current_r
                   .is_valid_addition_for_capacity(input,
                                                   input.jobs[job_rank].pickup,
@@ -670,6 +680,7 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
               best_cost = current_cost;
               best_job_rank = job_rank;
               best_r = r;
+              best_duration_addition = current_add.duration;
             }
           }
         }
@@ -750,7 +761,11 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
                 modified_with_pd.push_back(job_rank + 1);
 
                 // Update best cost depending on validity.
-                bool is_valid =
+                bool valid = (current_route_duration + current_add.duration <=
+                              vehicle.max_travel_time);
+
+                valid =
+                  valid &&
                   current_r
                     .is_valid_addition_for_capacity_inclusion(input,
                                                               modified_delivery,
@@ -761,8 +776,8 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
                                                               pickup_r,
                                                               delivery_r);
 
-                is_valid =
-                  is_valid &&
+                valid =
+                  valid &&
                   current_r.is_valid_addition_for_tw(input,
                                                      modified_with_pd.begin(),
                                                      modified_with_pd.end(),
@@ -771,11 +786,12 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
 
                 modified_with_pd.pop_back();
 
-                if (is_valid) {
+                if (valid) {
                   best_cost = current_cost;
                   best_job_rank = job_rank;
                   best_pickup_r = pickup_r;
                   best_delivery_r = delivery_r;
+                  best_duration_addition = current_add.duration;
                 }
               }
             }
@@ -805,6 +821,8 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
           unassigned.erase(best_job_rank + 1);
           keep_going = true;
         }
+
+        current_route_duration += best_duration_addition;
       }
     }
   }
