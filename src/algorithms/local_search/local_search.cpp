@@ -268,7 +268,8 @@ void LocalSearch<Route,
         _sol_state.unassigned.erase(best_job_rank + 1);
       }
 
-      // Update route/job insertions for best_route
+      // Update best_route data required for consistency.
+      _sol_state.update_costs(_sol[best_route].route, best_route);
       _sol_state.set_insertion_ranks(_sol[best_route], best_route);
 
       for (const auto j : _sol_state.unassigned) {
@@ -1668,6 +1669,9 @@ void LocalSearch<Route,
 #endif
 
       for (auto v_rank : update_candidates) {
+        // Only those two are actually required for consistency inside
+        // try_job_additions.
+        _sol_state.update_costs(_sol[v_rank].route, v_rank);
         _sol_state.set_insertion_ranks(_sol[v_rank], v_rank);
       }
 
@@ -1676,11 +1680,7 @@ void LocalSearch<Route,
                         0);
 
       for (auto v_rank : update_candidates) {
-        // Running update_costs only after try_job_additions is fine.
-        _sol_state.update_costs(_sol[v_rank].route, v_rank);
-
         _sol_state.update_skills(_sol[v_rank].route, v_rank);
-
         _sol_state.set_node_gains(_sol[v_rank].route, v_rank);
         _sol_state.set_edge_gains(_sol[v_rank].route, v_rank);
         _sol_state.set_pd_matching_ranks(_sol[v_rank].route, v_rank);
@@ -1801,6 +1801,9 @@ void LocalSearch<Route,
       for (unsigned i = 0; i < current_nb_removal; ++i) {
         remove_from_routes();
         for (std::size_t v = 0; v < _sol.size(); ++v) {
+          // Update what is required for consistency in
+          // remove_from_route.
+          _sol_state.update_costs(_sol[v].route, v);
           _sol_state.set_node_gains(_sol[v].route, v);
           _sol_state.set_pd_matching_ranks(_sol[v].route, v);
           _sol_state.set_pd_gains(_sol[v].route, v);
@@ -1815,8 +1818,18 @@ void LocalSearch<Route,
       // Refill jobs.
       try_job_additions(_all_routes, 1.5);
 
-      // Reset what is needed in solution state.
-      _sol_state.setup(_sol);
+      // Update everything except what has already been updated in
+      // try_job_additions.
+      for (std::size_t v = 0; v < _sol.size(); ++v) {
+        _sol_state.update_skills(_sol[v].route, v);
+        _sol_state.set_node_gains(_sol[v].route, v);
+        _sol_state.set_edge_gains(_sol[v].route, v);
+        _sol_state.set_pd_matching_ranks(_sol[v].route, v);
+        _sol_state.set_pd_gains(_sol[v].route, v);
+#ifndef NDEBUG
+        _sol_state.update_route_eval(_sol[v].route, v);
+#endif
+      }
     }
 
     first_step = false;
