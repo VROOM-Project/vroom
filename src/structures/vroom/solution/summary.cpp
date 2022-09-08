@@ -14,12 +14,12 @@ namespace vroom {
 Summary::Summary() : cost(0), routes(0), unassigned(0), setup(0), service(0) {
 }
 
-Summary::Summary(unsigned routes, unsigned unassigned, unsigned amount_size)
+Summary::Summary(unsigned routes, unsigned unassigned, const Amount& zero_amount)
   : cost(0),
     routes(routes),
     unassigned(unassigned),
-    delivery(amount_size),
-    pickup(amount_size),
+    delivery(zero_amount),
+    pickup(zero_amount),
     setup(0),
     service(0),
     priority(0),

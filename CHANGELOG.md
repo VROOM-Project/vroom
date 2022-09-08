@@ -14,6 +14,7 @@
 - Refactor `SolutionIndicators` struct (#750)
 - Add message on invalid routing response (#764)
 - Consistent exception type on invalid profile (#771)
+- Pass zero amount directly instead of its size (#776)
 
 ### Fixed
 

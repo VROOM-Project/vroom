@@ -98,7 +98,7 @@ Solution check_and_set_ETA(const Input& input, unsigned nb_thread) {
   }
 
   return Solution(0,
-                  input.zero_amount().size(),
+                  input.zero_amount(),
                   std::move(routes),
                   std::move(unassigned_jobs));
 }

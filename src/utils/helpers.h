@@ -515,7 +515,7 @@ inline Solution format_solution(const Input& input,
                  [&](auto j) { return input.jobs[j]; });
 
   return Solution(0,
-                  input.zero_amount().size(),
+                  input.zero_amount(),
                   std::move(routes),
                   std::move(unassigned_jobs));
 }
@@ -925,7 +925,7 @@ inline Solution format_solution(const Input& input,
                  [&](auto j) { return input.jobs[j]; });
 
   return Solution(0,
-                  input.zero_amount().size(),
+                  input.zero_amount(),
                   std::move(routes),
                   std::move(unassigned_jobs));
 }

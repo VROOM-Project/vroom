@@ -35,7 +35,7 @@ struct Summary {
 
   Summary();
 
-  Summary(unsigned routes, unsigned unassigned, unsigned amount_size);
+  Summary(unsigned routes, unsigned unassigned, const Amount& zero_amount);
 };
 
 } // namespace vroom
