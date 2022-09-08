@@ -18,7 +18,6 @@ namespace cvrp {
 class OrOpt : public ls::Operator {
 private:
   bool _gain_upper_bound_computed;
-  Eval _s_gain;
   Eval _normal_t_gain;
   Eval _reversed_t_gain;
 
