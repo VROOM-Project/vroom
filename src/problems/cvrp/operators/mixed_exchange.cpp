@@ -141,12 +141,12 @@ Eval MixedExchange::gain_upper_bound() {
     next_cost = t_v.eval(s_index, n_index);
   }
 
-  _t_gain = _sol_state.edge_evals_around_edge[t_vehicle][t_rank] +
-            t_v.eval(t_index, t_after_index) - previous_cost - next_cost;
+  t_gain = _sol_state.edge_evals_around_edge[t_vehicle][t_rank] +
+           t_v.eval(t_index, t_after_index) - previous_cost - next_cost;
 
   _gain_upper_bound_computed = true;
 
-  return s_gain_upper_bound + _t_gain;
+  return s_gain_upper_bound + t_gain;
 }
 
 void MixedExchange::compute_gain() {
@@ -170,13 +170,19 @@ void MixedExchange::compute_gain() {
     }
   }
 
-  stored_gain += _t_gain;
+  stored_gain += t_gain;
 
   gain_computed = true;
 }
 
 bool MixedExchange::is_valid() {
-  bool valid =
+  const auto& t_v = _input.vehicles[t_vehicle];
+  const auto t_travel_time = _sol_state.route_evals[t_vehicle].duration;
+
+  bool valid = (t_travel_time <= t_v.max_travel_time + t_gain.duration);
+
+  valid =
+    valid &&
     target.is_valid_addition_for_capacity_margins(_input,
                                                   _input.jobs[s_route[s_rank]]
                                                     .pickup,
@@ -201,7 +207,11 @@ bool MixedExchange::is_valid() {
     // Keep target edge direction when inserting in source route.
     auto t_start = t_route.begin() + t_rank;
 
+    const auto& s_v = _input.vehicles[s_vehicle];
+    const auto s_travel_time = _sol_state.route_evals[s_vehicle].duration;
+
     s_is_normal_valid =
+      (s_travel_time <= s_v.max_travel_time + _normal_s_gain.duration) and
       source.is_valid_addition_for_capacity_inclusion(_input,
                                                       target_delivery,
                                                       t_start,
@@ -212,6 +222,7 @@ bool MixedExchange::is_valid() {
       // Reverse target edge direction when inserting in source route.
       auto t_reverse_start = t_route.rbegin() + t_route.size() - 2 - t_rank;
       s_is_reverse_valid =
+        (s_travel_time <= s_v.max_travel_time + _reversed_s_gain.duration) and
         source.is_valid_addition_for_capacity_inclusion(_input,
                                                         target_delivery,
                                                         t_reverse_start,
