@@ -269,7 +269,7 @@ void LocalSearch<Route,
       }
 
       // Update best_route data required for consistency.
-      _sol_state.update_costs(_sol[best_route].route, best_route);
+      _sol_state.update_route_eval(_sol[best_route].route, best_route);
       _sol_state.set_insertion_ranks(_sol[best_route], best_route);
 
       for (const auto j : _sol_state.unassigned) {
@@ -284,10 +284,6 @@ void LocalSearch<Route,
                                  best_route,
                                  _sol[best_route]);
       }
-#ifndef NDEBUG
-      // Update evaluation after addition.
-      _sol_state.update_route_eval(_sol[best_route].route, best_route);
-#endif
     }
   } while (job_added);
 }
@@ -1651,6 +1647,8 @@ void LocalSearch<Route,
                         [&](auto sum, auto c) {
                           return sum + _sol_state.route_evals[c];
                         });
+#endif
+
       for (auto v_rank : update_candidates) {
         _sol_state.update_route_eval(_sol[v_rank].route, v_rank);
 
@@ -1658,6 +1656,8 @@ void LocalSearch<Route,
         assert(_sol_state.route_evals[v_rank].duration <=
                _input.vehicles[v_rank].max_travel_time);
       }
+
+#ifndef NDEBUG
       const auto new_eval =
         std::accumulate(update_candidates.begin(),
                         update_candidates.end(),
@@ -1669,9 +1669,8 @@ void LocalSearch<Route,
 #endif
 
       for (auto v_rank : update_candidates) {
-        // Only those two are actually required for consistency inside
-        // try_job_additions.
-        _sol_state.update_costs(_sol[v_rank].route, v_rank);
+        // Only this update (and update_route_eval done above) are
+        // actually required for consistency inside try_job_additions.
         _sol_state.set_insertion_ranks(_sol[v_rank], v_rank);
       }
 
@@ -1680,6 +1679,7 @@ void LocalSearch<Route,
                         0);
 
       for (auto v_rank : update_candidates) {
+        _sol_state.update_costs(_sol[v_rank].route, v_rank);
         _sol_state.update_skills(_sol[v_rank].route, v_rank);
         _sol_state.set_node_gains(_sol[v_rank].route, v_rank);
         _sol_state.set_edge_gains(_sol[v_rank].route, v_rank);
@@ -1803,7 +1803,7 @@ void LocalSearch<Route,
         for (std::size_t v = 0; v < _sol.size(); ++v) {
           // Update what is required for consistency in
           // remove_from_route.
-          _sol_state.update_costs(_sol[v].route, v);
+          _sol_state.update_route_eval(_sol[v].route, v);
           _sol_state.set_node_gains(_sol[v].route, v);
           _sol_state.set_pd_matching_ranks(_sol[v].route, v);
           _sol_state.set_pd_gains(_sol[v].route, v);
@@ -1821,14 +1821,12 @@ void LocalSearch<Route,
       // Update everything except what has already been updated in
       // try_job_additions.
       for (std::size_t v = 0; v < _sol.size(); ++v) {
+        _sol_state.update_costs(_sol[v].route, v);
         _sol_state.update_skills(_sol[v].route, v);
         _sol_state.set_node_gains(_sol[v].route, v);
         _sol_state.set_edge_gains(_sol[v].route, v);
         _sol_state.set_pd_matching_ranks(_sol[v].route, v);
         _sol_state.set_pd_gains(_sol[v].route, v);
-#ifndef NDEBUG
-        _sol_state.update_route_eval(_sol[v].route, v);
-#endif
       }
     }
 
