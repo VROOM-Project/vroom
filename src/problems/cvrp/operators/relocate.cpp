@@ -42,24 +42,39 @@ void Relocate::compute_gain() {
   const auto& v = _input.vehicles[t_vehicle];
 
   // For source vehicle, we consider the cost of removing job at rank
-  // s_rank, already stored in
-  // _sol_state.node_gains[s_vehicle][s_rank].
+  // s_rank, already stored.
+  s_gain = _sol_state.node_gains[s_vehicle][s_rank];
 
   // For target vehicle, we consider the cost of adding source job at
   // rank t_rank.
-  Eval t_gain =
-    -utils::addition_cost(_input, s_route[s_rank], v, t_route, t_rank);
+  t_gain = -utils::addition_cost(_input, s_route[s_rank], v, t_route, t_rank);
 
-  stored_gain = _sol_state.node_gains[s_vehicle][s_rank] + t_gain;
+  stored_gain = s_gain + t_gain;
   gain_computed = true;
 }
 
 bool Relocate::is_valid() {
-  return target
-    .is_valid_addition_for_capacity(_input,
-                                    _input.jobs[s_route[s_rank]].pickup,
-                                    _input.jobs[s_route[s_rank]].delivery,
-                                    t_rank);
+  assert(gain_computed);
+
+  const auto& s_v = _input.vehicles[s_vehicle];
+  const auto s_travel_time = _sol_state.route_evals[s_vehicle].duration;
+  bool valid = (s_travel_time <= s_v.max_travel_time + s_gain.duration);
+
+  if (valid) {
+    const auto& t_v = _input.vehicles[t_vehicle];
+    const auto t_travel_time = _sol_state.route_evals[t_vehicle].duration;
+
+    valid = (t_travel_time <= t_v.max_travel_time + t_gain.duration);
+  }
+
+  valid =
+    valid &&
+    target.is_valid_addition_for_capacity(_input,
+                                          _input.jobs[s_route[s_rank]].pickup,
+                                          _input.jobs[s_route[s_rank]].delivery,
+                                          t_rank);
+
+  return valid;
 }
 
 void Relocate::apply() {

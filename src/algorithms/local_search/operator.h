@@ -35,6 +35,8 @@ protected:
   const Index t_rank;
 
   bool gain_computed;
+  Eval s_gain;
+  Eval t_gain;
   Eval stored_gain;
 
   virtual void compute_gain() = 0;
