@@ -156,6 +156,14 @@ bool ReverseTwoOpt::is_valid() {
                                                                  0,
                                                                  t_rank + 1);
 
+  const auto& s_v = _input.vehicles[s_vehicle];
+  const auto s_travel_time = _sol_state.route_evals[s_vehicle].duration;
+  valid = valid && (s_travel_time <= s_v.max_travel_time + s_gain.duration);
+
+  const auto& t_v = _input.vehicles[t_vehicle];
+  const auto t_travel_time = _sol_state.route_evals[t_vehicle].duration;
+  valid = valid && (t_travel_time <= t_v.max_travel_time + t_gain.duration);
+
   valid =
     valid && source.is_valid_addition_for_capacity_inclusion(_input,
                                                              t_delivery,
