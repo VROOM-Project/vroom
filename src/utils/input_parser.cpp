@@ -51,19 +51,18 @@ inline double get_double(const rapidjson::Value& object, const char* key) {
 
 inline Amount get_amount(const rapidjson::Value& object,
                          const char* key,
-                         unsigned size) {
-  // Default to zero amount with provided size.
-  Amount amount(size);
+                         const Amount& zero_amount) {
+  Amount amount(zero_amount);
 
   if (object.HasMember(key)) {
     if (!object[key].IsArray()) {
       throw InputException("Invalid " + std::string(key) + " array.");
     }
 
-    if (object[key].Size() != size) {
+    if (object[key].Size() != amount.size()) {
       throw InputException("Inconsistent " + std::string(key) +
                            " length: " + std::to_string(object[key].Size()) +
-                           " and " + std::to_string(size) + '.');
+                           " and " + std::to_string(amount.size()) + '.');
     }
 
     for (rapidjson::SizeType i = 0; i < object[key].Size(); ++i) {
@@ -323,7 +322,7 @@ inline std::vector<VehicleStep> get_vehicle_steps(const rapidjson::Value& v) {
 }
 
 inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
-                           unsigned amount_size) {
+                           const Amount& zero_amount) {
   check_id(json_vehicle, "vehicle");
   auto v_id = json_vehicle["id"].GetUint64();
 
@@ -384,7 +383,7 @@ inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
                  start,
                  end,
                  profile,
-                 get_amount(json_vehicle, "capacity", amount_size),
+                 get_amount(json_vehicle, "capacity", zero_amount),
                  get_skills(json_vehicle),
                  get_vehicle_time_window(json_vehicle),
                  get_vehicle_breaks(json_vehicle),
@@ -418,7 +417,7 @@ inline Location get_task_location(const rapidjson::Value& v,
   }
 }
 
-inline Job get_job(const rapidjson::Value& json_job, unsigned amount_size) {
+inline Job get_job(const rapidjson::Value& json_job, const Amount& zero_amount) {
   check_id(json_job, "job");
 
   // Only for retro-compatibility: when no pickup and delivery keys
@@ -432,9 +431,9 @@ inline Job get_job(const rapidjson::Value& json_job, unsigned amount_size) {
              get_task_location(json_job, "job"),
              get_duration(json_job, "setup"),
              get_duration(json_job, "service"),
-             need_amount_compat ? get_amount(json_job, "amount", amount_size)
-                                : get_amount(json_job, "delivery", amount_size),
-             get_amount(json_job, "pickup", amount_size),
+             need_amount_compat ? get_amount(json_job, "amount", zero_amount)
+                                : get_amount(json_job, "delivery", zero_amount),
+             get_amount(json_job, "pickup", zero_amount),
              get_skills(json_job),
              get_priority(json_job),
              get_job_time_windows(json_job),
@@ -506,14 +505,14 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
   for (rapidjson::SizeType i = 0; i < json_input["vehicles"].Size(); ++i) {
     auto& json_vehicle = json_input["vehicles"][i];
 
-    input.add_vehicle(get_vehicle(json_vehicle, zero_amount.size()));
+    input.add_vehicle(get_vehicle(json_vehicle, zero_amount));
   }
 
   // Add all tasks.
   if (has_jobs) {
     // Add the jobs.
     for (rapidjson::SizeType i = 0; i < json_input["jobs"].Size(); ++i) {
-      input.add_job(get_job(json_input["jobs"][i], zero_amount.size()));
+      input.add_job(get_job(json_input["jobs"][i], zero_amount));
     }
   }
 
@@ -524,7 +523,7 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
       check_shipment(json_shipment);
 
       // Retrieve common stuff for both pickup and delivery.
-      auto amount = get_amount(json_shipment, "amount", zero_amount.size());
+      auto amount = get_amount(json_shipment, "amount", zero_amount);
       auto skills = get_skills(json_shipment);
       auto priority = get_priority(json_shipment);
 
