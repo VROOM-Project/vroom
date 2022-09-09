@@ -15,6 +15,7 @@
 - Add message on invalid routing response (#764)
 - Consistent exception type on invalid profile (#771)
 - Pass zero amount directly instead of its size (#776)
+- Change `Input` to accept the zero amount instead of just its size (#781)
 
 ### Fixed
 
