@@ -55,26 +55,14 @@ void Relocate::compute_gain() {
 
 bool Relocate::is_valid() {
   assert(gain_computed);
-
-  const auto& s_v = _input.vehicles[s_vehicle];
-  const auto s_travel_time = _sol_state.route_evals[s_vehicle].duration;
-  bool valid = (s_travel_time <= s_v.max_travel_time + s_gain.duration);
-
-  if (valid) {
-    const auto& t_v = _input.vehicles[t_vehicle];
-    const auto t_travel_time = _sol_state.route_evals[t_vehicle].duration;
-
-    valid = (t_travel_time <= t_v.max_travel_time + t_gain.duration);
-  }
-
-  valid =
-    valid &&
-    target.is_valid_addition_for_capacity(_input,
-                                          _input.jobs[s_route[s_rank]].pickup,
-                                          _input.jobs[s_route[s_rank]].delivery,
-                                          t_rank);
-
-  return valid;
+  return is_valid_for_source_max_travel_time() &&
+         is_valid_for_target_max_travel_time() &&
+         target
+           .is_valid_addition_for_capacity(_input,
+                                           _input.jobs[s_route[s_rank]].pickup,
+                                           _input.jobs[s_route[s_rank]]
+                                             .delivery,
+                                           t_rank);
 }
 
 void Relocate::apply() {

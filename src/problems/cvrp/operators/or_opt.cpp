@@ -151,19 +151,18 @@ void OrOpt::compute_gain() {
 }
 
 bool OrOpt::is_valid() {
-  const auto& s_v = _input.vehicles[s_vehicle];
-  const auto s_travel_time = _sol_state.route_evals[s_vehicle].duration;
-  bool valid = (s_travel_time <= s_v.max_travel_time + s_gain.duration);
+  assert(_gain_upper_bound_computed);
 
   auto edge_pickup = _input.jobs[s_route[s_rank]].pickup +
                      _input.jobs[s_route[s_rank + 1]].pickup;
   auto edge_delivery = _input.jobs[s_route[s_rank]].delivery +
                        _input.jobs[s_route[s_rank + 1]].delivery;
 
-  valid = target.is_valid_addition_for_capacity(_input,
-                                                edge_pickup,
-                                                edge_delivery,
-                                                t_rank);
+  bool valid = is_valid_for_source_max_travel_time() &&
+               target.is_valid_addition_for_capacity(_input,
+                                                     edge_pickup,
+                                                     edge_delivery,
+                                                     t_rank);
 
   if (valid) {
     // Keep edge direction.

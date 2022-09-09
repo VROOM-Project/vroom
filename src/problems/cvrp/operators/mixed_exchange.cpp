@@ -176,13 +176,10 @@ void MixedExchange::compute_gain() {
 }
 
 bool MixedExchange::is_valid() {
-  const auto& t_v = _input.vehicles[t_vehicle];
-  const auto t_travel_time = _sol_state.route_evals[t_vehicle].duration;
+  assert(_gain_upper_bound_computed);
 
-  bool valid = (t_travel_time <= t_v.max_travel_time + t_gain.duration);
-
-  valid =
-    valid &&
+  bool valid =
+    is_valid_for_target_max_travel_time() &&
     target.is_valid_addition_for_capacity_margins(_input,
                                                   _input.jobs[s_route[s_rank]]
                                                     .pickup,

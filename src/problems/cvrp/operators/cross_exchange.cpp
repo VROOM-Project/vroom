@@ -228,6 +228,8 @@ void CrossExchange::compute_gain() {
 }
 
 bool CrossExchange::is_valid() {
+  assert(_gain_upper_bound_computed);
+
   auto target_pickup = _input.jobs[t_route[t_rank]].pickup +
                        _input.jobs[t_route[t_rank + 1]].pickup;
   auto target_delivery = _input.jobs[t_route[t_rank]].delivery +

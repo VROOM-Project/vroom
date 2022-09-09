@@ -138,53 +138,42 @@ void ReverseTwoOpt::compute_gain() {
 }
 
 bool ReverseTwoOpt::is_valid() {
+  assert(gain_computed);
+
   const auto& t_delivery = target.fwd_deliveries(t_rank);
   const auto& t_pickup = target.fwd_pickups(t_rank);
-
-  bool valid = source.is_valid_addition_for_capacity_margins(_input,
-                                                             t_pickup,
-                                                             t_delivery,
-                                                             s_rank + 1,
-                                                             s_route.size());
 
   const auto& s_delivery = source.bwd_deliveries(s_rank);
   const auto& s_pickup = source.bwd_pickups(s_rank);
 
-  valid = valid && target.is_valid_addition_for_capacity_margins(_input,
-                                                                 s_pickup,
-                                                                 s_delivery,
-                                                                 0,
-                                                                 t_rank + 1);
-
-  const auto& s_v = _input.vehicles[s_vehicle];
-  const auto s_travel_time = _sol_state.route_evals[s_vehicle].duration;
-  valid = valid && (s_travel_time <= s_v.max_travel_time + s_gain.duration);
-
-  const auto& t_v = _input.vehicles[t_vehicle];
-  const auto t_travel_time = _sol_state.route_evals[t_vehicle].duration;
-  valid = valid && (t_travel_time <= t_v.max_travel_time + t_gain.duration);
-
-  valid =
-    valid && source.is_valid_addition_for_capacity_inclusion(_input,
-                                                             t_delivery,
-                                                             t_route.rbegin() +
-                                                               t_route.size() -
-                                                               1 - t_rank,
-                                                             t_route.rend(),
-                                                             s_rank + 1,
-                                                             s_route.size());
-
-  valid =
-    valid && target.is_valid_addition_for_capacity_inclusion(_input,
-                                                             s_delivery,
-                                                             s_route.rbegin(),
-                                                             s_route.rbegin() +
-                                                               s_route.size() -
-                                                               1 - s_rank,
-                                                             0,
-                                                             t_rank + 1);
-
-  return valid;
+  return is_valid_for_source_max_travel_time() &&
+         is_valid_for_target_max_travel_time() &&
+         source.is_valid_addition_for_capacity_margins(_input,
+                                                       t_pickup,
+                                                       t_delivery,
+                                                       s_rank + 1,
+                                                       s_route.size()) &&
+         target.is_valid_addition_for_capacity_margins(_input,
+                                                       s_pickup,
+                                                       s_delivery,
+                                                       0,
+                                                       t_rank + 1) &&
+         source.is_valid_addition_for_capacity_inclusion(_input,
+                                                         t_delivery,
+                                                         t_route.rbegin() +
+                                                           t_route.size() - 1 -
+                                                           t_rank,
+                                                         t_route.rend(),
+                                                         s_rank + 1,
+                                                         s_route.size()) &&
+         target.is_valid_addition_for_capacity_inclusion(_input,
+                                                         s_delivery,
+                                                         s_route.rbegin(),
+                                                         s_route.rbegin() +
+                                                           s_route.size() - 1 -
+                                                           s_rank,
+                                                         0,
+                                                         t_rank + 1);
 }
 
 void ReverseTwoOpt::apply() {

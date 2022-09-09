@@ -41,6 +41,10 @@ protected:
 
   virtual void compute_gain() = 0;
 
+  bool is_valid_for_source_max_travel_time() const;
+
+  bool is_valid_for_target_max_travel_time() const;
+
 public:
   Operator(OperatorName name,
            const Input& input,
