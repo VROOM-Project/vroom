@@ -7,8 +7,10 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <algorithm>
 #include <mutex>
 #include <thread>
+#include <vector>
 #include <unordered_map>
 #include <unordered_set>
 
