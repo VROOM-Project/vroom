@@ -84,7 +84,7 @@ void log_solution(const vroom::Solution& sol, bool geometry) {
 
 void run_example_with_osrm() {
   bool GEOMETRY = true;
-  unsigned amount_dimension = 1;
+  const unsigned amount_dimension = 1;
 
   // Set OSRM host and port for "car" profile.
   vroom::io::Servers servers;
