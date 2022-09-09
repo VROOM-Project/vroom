@@ -59,7 +59,6 @@ private:
   Index _max_matrices_used_index;
   bool _all_locations_have_coords;
 
-  unsigned _amount_size;
   Amount _zero;
 
   const io::Servers _servers;
@@ -92,7 +91,7 @@ public:
 
   Input(const io::Servers& servers = {}, ROUTER router = ROUTER::OSRM);
 
-  void set_amount_size(unsigned amount_size);
+  void set_zero_amount(const Amount& zero_amount);
 
   void set_geometry(bool geometry);
 

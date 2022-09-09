@@ -97,7 +97,7 @@ void run_example_with_osrm() {
 
   // Create one-dimension capacity restrictions to model the situation
   // where one vehicle can handle 4 jobs with deliveries.
-  problem_instance.set_amount_size(amount_dimension);
+  problem_instance.set_zero_amount(vroom::Amount(amount_dimension));
   vroom::Amount vehicle_capacity(1);
 
   vroom::TimeWindow vehicle_tw(28800, 43200); // Working hours.

@@ -496,24 +496,24 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
   bool first_vehicle_has_capacity = (first_vehicle.HasMember("capacity") and
                                      first_vehicle["capacity"].IsArray() and
                                      first_vehicle["capacity"].Size() > 0);
-  const unsigned amount_size =
-    first_vehicle_has_capacity ? first_vehicle["capacity"].Size() : 0;
+  const auto zero_amount = Amount(
+    first_vehicle_has_capacity ? first_vehicle["capacity"].Size() : 0);
 
-  input.set_amount_size(amount_size);
+  input.set_zero_amount(zero_amount);
   input.set_geometry(geometry);
 
   // Add all vehicles.
   for (rapidjson::SizeType i = 0; i < json_input["vehicles"].Size(); ++i) {
     auto& json_vehicle = json_input["vehicles"][i];
 
-    input.add_vehicle(get_vehicle(json_vehicle, amount_size));
+    input.add_vehicle(get_vehicle(json_vehicle, zero_amount.size()));
   }
 
   // Add all tasks.
   if (has_jobs) {
     // Add the jobs.
     for (rapidjson::SizeType i = 0; i < json_input["jobs"].Size(); ++i) {
-      input.add_job(get_job(json_input["jobs"][i], amount_size));
+      input.add_job(get_job(json_input["jobs"][i], zero_amount.size()));
     }
   }
 
@@ -524,7 +524,7 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
       check_shipment(json_shipment);
 
       // Retrieve common stuff for both pickup and delivery.
-      auto amount = get_amount(json_shipment, "amount", amount_size);
+      auto amount = get_amount(json_shipment, "amount", zero_amount.size());
       auto skills = get_skills(json_shipment);
       auto priority = get_priority(json_shipment);
 
