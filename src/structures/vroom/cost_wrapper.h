@@ -22,15 +22,14 @@ struct CostWrapper {
   std::size_t duration_matrix_size;
   const Duration* duration_data;
 
-  uint32_t discrete_cost_factor;
+  const uint32_t discrete_costs_factor;
   std::size_t cost_matrix_size;
   const Cost* cost_data;
 
-  CostWrapper(double speed_factor);
+  CostWrapper(double speed_factor, double costs_factor);
 
   void set_durations_matrix(const Matrix<Duration>* matrix);
 
-  void set_costs_factor(double cost_factor);
   void set_costs_matrix(const Matrix<Cost>* matrix);
 
   Duration duration(Index i, Index j) const {
@@ -40,7 +39,7 @@ struct CostWrapper {
 
   Cost cost(Index i, Index j) const {
     Cost c = cost_data[i * cost_matrix_size + j];
-    return (c * discrete_cost_factor) / DIVISOR;
+    return (c * discrete_costs_factor) / DIVISOR;
   }
 };
 

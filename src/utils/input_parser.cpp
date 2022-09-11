@@ -390,6 +390,7 @@ inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
                  get_vehicle_breaks(json_vehicle),
                  get_string(json_vehicle, "description"),
                  get_double(json_vehicle, "speed_factor"),
+                 get_double(json_vehicle, "costs_factor"),
                  get_max_tasks(json_vehicle),
                  get_vehicle_steps(json_vehicle));
 }

@@ -50,6 +50,7 @@ struct Vehicle {
     const std::vector<Break>& breaks = std::vector<Break>(),
     const std::string& description = "",
     double speed_factor = 1.,
+    double costs_factor = 1.,
     const size_t max_tasks = std::numeric_limits<size_t>::max(),
     const std::vector<VehicleStep>& input_steps = std::vector<VehicleStep>());
 
