@@ -1,24 +1,28 @@
 {
   "code": 0,
   "summary": {
-    "cost": 5461,
+    "cost": 10922,
     "routes": 1,
     "unassigned": 0,
     "setup": 0,
     "service": 0,
-    "duration": 5461,
+    "duration": 10922,
     "waiting_time": 0,
     "priority": 0,
-    "violations": []
+    "violations": [],
+    "computing_times": {
+      "loading": 0,
+      "solving": 1
+    }
   },
   "unassigned": [],
   "routes": [
     {
       "vehicle": 0,
-      "cost": 5461,
+      "cost": 10922,
       "setup": 0,
       "service": 0,
-      "duration": 5461,
+      "duration": 10922,
       "waiting_time": 0,
       "priority": 0,
       "steps": [
@@ -34,26 +38,26 @@
         },
         {
           "type": "job",
-          "id": 1414,
           "location_index": 1,
+          "id": 1414,
           "setup": 0,
           "service": 0,
           "waiting_time": 0,
           "job": 1414,
-          "arrival": 2104,
-          "duration": 2104,
+          "arrival": 4208,
+          "duration": 4208,
           "violations": []
         },
         {
           "type": "job",
-          "id": 1515,
           "location_index": 2,
+          "id": 1515,
           "setup": 0,
           "service": 0,
           "waiting_time": 0,
           "job": 1515,
-          "arrival": 4359,
-          "duration": 4359,
+          "arrival": 8718,
+          "duration": 8718,
           "violations": []
         },
         {
@@ -62,8 +66,8 @@
           "setup": 0,
           "service": 0,
           "waiting_time": 0,
-          "arrival": 5461,
-          "duration": 5461,
+          "arrival": 10922,
+          "duration": 10922,
           "violations": []
         }
       ],
