@@ -127,7 +127,7 @@ Eval IntraOrOpt::gain_upper_bound() {
   }
 
   // Gain for source vehicle.
-  _s_gain = _sol_state.edge_gains[s_vehicle][s_rank];
+  s_gain = _sol_state.edge_gains[s_vehicle][s_rank];
 
   // Gain for target vehicle.
   _normal_t_gain = old_edge_cost - previous_cost - next_cost;
@@ -145,14 +145,14 @@ Eval IntraOrOpt::gain_upper_bound() {
 
   _gain_upper_bound_computed = true;
 
-  return _s_gain + t_gain_upper_bound;
+  return s_gain + t_gain_upper_bound;
 }
 
 void IntraOrOpt::compute_gain() {
   assert(_gain_upper_bound_computed);
   assert(is_normal_valid or is_reverse_valid);
 
-  stored_gain = _s_gain;
+  stored_gain = s_gain;
 
   if (_reversed_t_gain > _normal_t_gain) {
     // Biggest potential gain is obtained when reversing edge.
@@ -176,28 +176,39 @@ void IntraOrOpt::compute_gain() {
 }
 
 bool IntraOrOpt::is_valid() {
-  is_normal_valid = source.is_valid_addition_for_capacity_inclusion(
-    _input,
-    source.delivery_in_range(_first_rank, _last_rank),
-    _moved_jobs.begin(),
-    _moved_jobs.end(),
-    _first_rank,
-    _last_rank);
+  assert(_gain_upper_bound_computed);
+
+  const auto& s_v = _input.vehicles[s_vehicle];
+  const auto s_travel_time = _sol_state.route_evals[s_vehicle].duration;
+  const auto normal_duration = s_gain.duration + _normal_t_gain.duration;
+
+  is_normal_valid = (s_travel_time <= s_v.max_travel_time + normal_duration) and
+                    source.is_valid_addition_for_capacity_inclusion(
+                      _input,
+                      source.delivery_in_range(_first_rank, _last_rank),
+                      _moved_jobs.begin(),
+                      _moved_jobs.end(),
+                      _first_rank,
+                      _last_rank);
 
   if (check_reverse) {
-    std::swap(_moved_jobs[_s_edge_first], _moved_jobs[_s_edge_last]);
+    const auto reversed_duration = s_gain.duration + _reversed_t_gain.duration;
 
-    is_reverse_valid = source.is_valid_addition_for_capacity_inclusion(
-      _input,
-      source.delivery_in_range(_first_rank, _last_rank),
-      _moved_jobs.begin(),
-      _moved_jobs.end(),
-      _first_rank,
-      _last_rank);
+    if (s_travel_time <= s_v.max_travel_time + reversed_duration) {
+      std::swap(_moved_jobs[_s_edge_first], _moved_jobs[_s_edge_last]);
 
-    // Reset to initial situation before potential application or TW
-    // checks.
-    std::swap(_moved_jobs[_s_edge_first], _moved_jobs[_s_edge_last]);
+      is_reverse_valid = source.is_valid_addition_for_capacity_inclusion(
+        _input,
+        source.delivery_in_range(_first_rank, _last_rank),
+        _moved_jobs.begin(),
+        _moved_jobs.end(),
+        _first_rank,
+        _last_rank);
+
+      // Reset to initial situation before potential application or TW
+      // checks.
+      std::swap(_moved_jobs[_s_edge_first], _moved_jobs[_s_edge_last]);
+    }
   }
 
   return is_normal_valid or is_reverse_valid;
