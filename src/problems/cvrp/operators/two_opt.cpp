@@ -106,44 +106,40 @@ void TwoOpt::compute_gain() {
 }
 
 bool TwoOpt::is_valid() {
+  assert(gain_computed);
+
   const auto& t_delivery = target.bwd_deliveries(t_rank);
   const auto& t_pickup = target.bwd_pickups(t_rank);
-
-  bool valid = source.is_valid_addition_for_capacity_margins(_input,
-                                                             t_pickup,
-                                                             t_delivery,
-                                                             s_rank + 1,
-                                                             s_route.size());
 
   const auto& s_delivery = source.bwd_deliveries(s_rank);
   const auto& s_pickup = source.bwd_pickups(s_rank);
 
-  valid =
-    valid && target.is_valid_addition_for_capacity_margins(_input,
-                                                           s_pickup,
-                                                           s_delivery,
+  return is_valid_for_source_max_travel_time() &&
+         is_valid_for_target_max_travel_time() &&
+         source.is_valid_addition_for_capacity_margins(_input,
+                                                       t_pickup,
+                                                       t_delivery,
+                                                       s_rank + 1,
+                                                       s_route.size()) &&
+         target.is_valid_addition_for_capacity_margins(_input,
+                                                       s_pickup,
+                                                       s_delivery,
+                                                       t_rank + 1,
+                                                       t_route.size()) &&
+         source.is_valid_addition_for_capacity_inclusion(_input,
+                                                         t_delivery,
+                                                         t_route.begin() +
                                                            t_rank + 1,
-                                                           t_route.size());
-
-  valid =
-    valid && source.is_valid_addition_for_capacity_inclusion(_input,
-                                                             t_delivery,
-                                                             t_route.begin() +
-                                                               t_rank + 1,
-                                                             t_route.end(),
-                                                             s_rank + 1,
-                                                             s_route.size());
-
-  valid =
-    valid && target.is_valid_addition_for_capacity_inclusion(_input,
-                                                             s_delivery,
-                                                             s_route.begin() +
-                                                               s_rank + 1,
-                                                             s_route.end(),
-                                                             t_rank + 1,
-                                                             t_route.size());
-
-  return valid;
+                                                         t_route.end(),
+                                                         s_rank + 1,
+                                                         s_route.size()) &&
+         target.is_valid_addition_for_capacity_inclusion(_input,
+                                                         s_delivery,
+                                                         s_route.begin() +
+                                                           s_rank + 1,
+                                                         s_route.end(),
+                                                         t_rank + 1,
+                                                         t_route.size());
 }
 
 void TwoOpt::apply() {
