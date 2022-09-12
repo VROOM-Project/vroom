@@ -205,7 +205,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
     const auto source_job_rank = source.route[s_rank];
 
     if (input.jobs[source_job_rank].type == JOB_TYPE::SINGLE and
-        input.vehicle_ok_with_job(target.vehicle_rank, source_job_rank)) {
+        input.vehicle_ok_with_job(t_vehicle, source_job_rank)) {
       top_insertions_in_target[s_rank] =
         find_top_3_insertions(input, source_job_rank, target);
     }
@@ -216,7 +216,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
     const auto target_job_rank = target.route[t_rank];
 
     if (input.jobs[target_job_rank].type == JOB_TYPE::SINGLE and
-        input.vehicle_ok_with_job(source.vehicle_rank, target_job_rank)) {
+        input.vehicle_ok_with_job(s_vehicle, target_job_rank)) {
       top_insertions_in_source[t_rank] =
         find_top_3_insertions(input, target_job_rank, source);
     }
@@ -226,8 +226,8 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
   auto best_choice = empty_choice;
   Eval best_gain = best_known_gain;
 
-  const auto& v_source = input.vehicles[source.vehicle_rank];
-  const auto& v_target = input.vehicles[target.vehicle_rank];
+  const auto& s_v = input.vehicles[s_vehicle];
+  const auto& t_v = input.vehicles[t_vehicle];
 
   const auto& s_delivery_margin = source.delivery_margin();
   const auto& s_pickup_margin = source.pickup_margin();
@@ -242,12 +242,11 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
     // except in the case of a single-step route with a start and end,
     // where the start->end cost is not accounted for.
     const auto source_start_end_cost =
-      (source.size() == 1 and v_source.has_start() and v_source.has_end())
-        ? v_source.eval(v_source.start.value().index(),
-                        v_source.end.value().index())
+      (source.size() == 1 and s_v.has_start() and s_v.has_end())
+        ? s_v.eval(s_v.start.value().index(), s_v.end.value().index())
         : Eval();
     const auto source_delta =
-      sol_state.node_gains[source.vehicle_rank][s_rank] - source_start_end_cost;
+      sol_state.node_gains[s_vehicle][s_rank] - source_start_end_cost;
 
     for (const auto& t_element : top_insertions_in_source) {
       const auto t_rank = t_element.first;
@@ -255,25 +254,23 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
 
       // Same as above.
       const auto target_start_end_cost =
-        (target.size() == 1 and v_target.has_start() and v_target.has_end())
-          ? v_target.eval(v_target.start.value().index(),
-                          v_target.end.value().index())
+        (target.size() == 1 and t_v.has_start() and t_v.has_end())
+          ? t_v.eval(t_v.start.value().index(), t_v.end.value().index())
           : Eval();
       const auto target_delta =
-        sol_state.node_gains[target.vehicle_rank][t_rank] -
-        target_start_end_cost;
+        sol_state.node_gains[t_vehicle][t_rank] - target_start_end_cost;
 
       const auto target_in_place_delta =
         utils::in_place_delta_cost(input,
                                    source.route[s_rank],
-                                   v_target,
+                                   t_v,
                                    target.route,
                                    t_rank);
 
       const auto source_in_place_delta =
         utils::in_place_delta_cost(input,
                                    target.route[t_rank],
-                                   v_source,
+                                   s_v,
                                    source.route,
                                    s_rank);
 
