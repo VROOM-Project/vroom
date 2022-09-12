@@ -47,7 +47,7 @@ void TwoOpt::compute_gain() {
   Index t_index = _input.jobs[t_route[t_rank]].index();
   Index last_s = _input.jobs[s_route.back()].index();
   Index last_t = _input.jobs[t_route.back()].index();
-  stored_gain = Eval();
+
   Index new_last_s = last_t;
   Index new_last_t = last_s;
 
@@ -59,31 +59,31 @@ void TwoOpt::compute_gain() {
   // the route. Otherwise remember that last job does not change.
   if (s_rank < s_route.size() - 1) {
     Index next_index = _input.jobs[s_route[s_rank + 1]].index();
-    stored_gain += s_v.eval(s_index, next_index);
-    stored_gain -= t_v.eval(t_index, next_index);
+    s_gain += s_v.eval(s_index, next_index);
+    t_gain -= t_v.eval(t_index, next_index);
 
     // Account for the change in cost across vehicles for the end of
     // source route. Cost of remaining route retrieved by subtracting
     // intermediate cost to overall cost.
-    stored_gain += _sol_state.fwd_costs[s_vehicle][s_vehicle].back();
-    stored_gain -= _sol_state.fwd_costs[s_vehicle][s_vehicle][s_rank + 1];
-    stored_gain -= _sol_state.fwd_costs[s_vehicle][t_vehicle].back();
-    stored_gain += _sol_state.fwd_costs[s_vehicle][t_vehicle][s_rank + 1];
+    s_gain += _sol_state.fwd_costs[s_vehicle][s_vehicle].back();
+    s_gain -= _sol_state.fwd_costs[s_vehicle][s_vehicle][s_rank + 1];
+    t_gain -= _sol_state.fwd_costs[s_vehicle][t_vehicle].back();
+    t_gain += _sol_state.fwd_costs[s_vehicle][t_vehicle][s_rank + 1];
   } else {
     new_last_t = t_index;
   }
   if (t_rank < t_route.size() - 1) {
     Index next_index = _input.jobs[t_route[t_rank + 1]].index();
-    stored_gain += t_v.eval(t_index, next_index);
-    stored_gain -= s_v.eval(s_index, next_index);
+    t_gain += t_v.eval(t_index, next_index);
+    s_gain -= s_v.eval(s_index, next_index);
 
     // Account for the change in cost across vehicles for the end of
     // target route. Cost of remaining route retrieved by subtracting
     // intermediate cost to overall cost.
-    stored_gain += _sol_state.fwd_costs[t_vehicle][t_vehicle].back();
-    stored_gain -= _sol_state.fwd_costs[t_vehicle][t_vehicle][t_rank + 1];
-    stored_gain -= _sol_state.fwd_costs[t_vehicle][s_vehicle].back();
-    stored_gain += _sol_state.fwd_costs[t_vehicle][s_vehicle][t_rank + 1];
+    t_gain += _sol_state.fwd_costs[t_vehicle][t_vehicle].back();
+    t_gain -= _sol_state.fwd_costs[t_vehicle][t_vehicle][t_rank + 1];
+    s_gain -= _sol_state.fwd_costs[t_vehicle][s_vehicle].back();
+    s_gain += _sol_state.fwd_costs[t_vehicle][s_vehicle][t_rank + 1];
   } else {
     new_last_s = s_index;
   }
@@ -92,15 +92,16 @@ void TwoOpt::compute_gain() {
   // different or none.
   if (s_v.has_end()) {
     auto end_s = s_v.end.value().index();
-    stored_gain += s_v.eval(last_s, end_s);
-    stored_gain -= s_v.eval(new_last_s, end_s);
+    s_gain += s_v.eval(last_s, end_s);
+    s_gain -= s_v.eval(new_last_s, end_s);
   }
   if (t_v.has_end()) {
     auto end_t = t_v.end.value().index();
-    stored_gain += t_v.eval(last_t, end_t);
-    stored_gain -= t_v.eval(new_last_t, end_t);
+    t_gain += t_v.eval(last_t, end_t);
+    t_gain -= t_v.eval(new_last_t, end_t);
   }
 
+  stored_gain = s_gain + t_gain;
   gain_computed = true;
 }
 
