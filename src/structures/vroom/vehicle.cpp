@@ -108,7 +108,9 @@ bool Vehicle::has_same_locations(const Vehicle& other) const {
 bool Vehicle::has_same_profile(const Vehicle& other) const {
   return (this->profile == other.profile) and
          (this->cost_wrapper.discrete_duration_factor ==
-          other.cost_wrapper.discrete_duration_factor);
+          other.cost_wrapper.discrete_duration_factor) and
+         (this->cost_wrapper.discrete_costs_factor ==
+          other.cost_wrapper.discrete_costs_factor);
 }
 
 Duration Vehicle::available_duration() const {
