@@ -61,18 +61,15 @@ void IntraRelocate::compute_gain() {
   if (s_rank < t_rank) {
     ++new_rank;
   }
-  s_gain =
+  stored_gain =
     _sol_state.node_gains[s_vehicle][s_rank] -
     utils::addition_cost(_input, s_route[s_rank], v_target, t_route, new_rank);
 
-  stored_gain = s_gain;
   gain_computed = true;
 }
 
 bool IntraRelocate::is_valid() {
-  assert(gain_computed);
-
-  return is_valid_for_source_max_travel_time() &&
+  return is_valid_for_max_travel_time() &&
          source.is_valid_addition_for_capacity_inclusion(
            _input,
            source.delivery_in_range(_first_rank, _last_rank),

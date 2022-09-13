@@ -45,6 +45,9 @@ protected:
 
   bool is_valid_for_target_max_travel_time() const;
 
+  // Used for internal operators only.
+  bool is_valid_for_max_travel_time() const;
+
 public:
   Operator(OperatorName name,
            const Input& input,

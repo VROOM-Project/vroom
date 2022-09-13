@@ -35,6 +35,15 @@ bool Operator::is_valid_for_target_max_travel_time() const {
   return t_travel_time <= t_v.max_travel_time + t_gain.duration;
 }
 
+bool Operator::is_valid_for_max_travel_time() const {
+  assert(s_vehicle == t_vehicle);
+  assert(gain_computed);
+
+  const auto& s_v = _input.vehicles[s_vehicle];
+  const auto s_travel_time = _sol_state.route_evals[s_vehicle].duration;
+  return s_travel_time <= s_v.max_travel_time + stored_gain.duration;
+}
+
 std::vector<Index> Operator::required_unassigned() const {
   return std::vector<Index>();
 }
