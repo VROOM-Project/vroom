@@ -99,15 +99,14 @@ void IntraExchange::compute_gain() {
 }
 
 bool IntraExchange::is_valid() {
-  return source
-    .is_valid_addition_for_capacity_inclusion(_input,
-                                              source
-                                                .delivery_in_range(_first_rank,
-                                                                   _last_rank),
-                                              _moved_jobs.begin(),
-                                              _moved_jobs.end(),
-                                              _first_rank,
-                                              _last_rank);
+  return is_valid_for_max_travel_time() &&
+         source.is_valid_addition_for_capacity_inclusion(
+           _input,
+           source.delivery_in_range(_first_rank, _last_rank),
+           _moved_jobs.begin(),
+           _moved_jobs.end(),
+           _first_rank,
+           _last_rank);
 }
 
 void IntraExchange::apply() {
