@@ -81,6 +81,7 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
   RouteInsertion result = empty_insert;
   const auto& current_job = input.jobs[j];
   const auto& v_target = input.vehicles[v];
+  const auto target_travel_time = sol_state.route_evals[v].duration;
 
   if (!input.vehicle_ok_with_job(v, j)) {
     return result;
@@ -119,7 +120,7 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
     Eval p_add =
       utils::addition_cost(input, j, v_target, route.route, pickup_r);
     if (p_add > result.eval) {
-      // Even without delivery insertion more expensive then current best
+      // Even without delivery insertion more expensive than current best.
       continue;
     }
 
@@ -158,7 +159,8 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
         pd_eval = p_add + d_adds[delivery_r];
       }
 
-      if (pd_eval < result.eval) {
+      if (pd_eval < result.eval &&
+          target_travel_time + pd_eval.duration <= v_target.max_travel_time) {
         modified_with_pd.push_back(j + 1);
 
         // Update best cost depending on validity.
@@ -184,6 +186,7 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
       }
     }
   }
+
   assert(result.eval <= cost_threshold);
   if (result.eval == cost_threshold) {
     result.eval = NO_EVAL;
