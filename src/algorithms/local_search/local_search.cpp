@@ -1496,6 +1496,16 @@ void LocalSearch<Route,
             continue;
           }
 
+          const auto& v_s = _input.vehicles[s_t.first];
+          const auto s_travel_time = _sol_state.route_evals[s_t.first].duration;
+          const auto s_removal_duration_gain =
+            _sol_state.pd_gains[s_t.first][s_p_rank].duration;
+          if (s_travel_time > v_s.max_travel_time + s_removal_duration_gain) {
+            // Removing shipment from source route actually breaks
+            // max_travel_time constraint in source.
+            continue;
+          }
+
 #ifdef LOG_LS_OPERATORS
           ++tried_moves[OperatorName::PDShift];
 #endif
