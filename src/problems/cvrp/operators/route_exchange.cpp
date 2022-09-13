@@ -92,7 +92,11 @@ void RouteExchange::compute_gain() {
 }
 
 bool RouteExchange::is_valid() {
-  return (source.max_load() <= _input.vehicles[t_vehicle].capacity) &&
+  assert(gain_computed);
+
+  return is_valid_for_source_max_travel_time() &&
+         is_valid_for_target_max_travel_time() &&
+         (source.max_load() <= _input.vehicles[t_vehicle].capacity) &&
          (target.max_load() <= _input.vehicles[s_vehicle].capacity);
 }
 
