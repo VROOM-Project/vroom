@@ -229,6 +229,9 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
   const auto& s_v = input.vehicles[s_vehicle];
   const auto& t_v = input.vehicles[t_vehicle];
 
+  const auto s_travel_time = sol_state.route_evals[s_vehicle].duration;
+  const auto t_travel_time = sol_state.route_evals[t_vehicle].duration;
+
   const auto& s_delivery_margin = source.delivery_margin();
   const auto& s_pickup_margin = source.pickup_margin();
   const auto& t_delivery_margin = target.delivery_margin();
@@ -279,39 +282,43 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
       // Options for in-place insertion in source route include
       // in-place insertion in target route and other relevant
       // positions from target_insertions.
-      const Eval in_place_source_insertion_gain =
-        target_delta - source_in_place_delta;
-      const Eval in_place_target_insertion_gain =
-        source_delta - target_in_place_delta;
+      const Eval in_place_s_gain = source_delta - source_in_place_delta;
+      const Eval in_place_t_gain = target_delta - target_in_place_delta;
 
-      Eval current_gain =
-        in_place_target_insertion_gain + in_place_source_insertion_gain;
-      if (current_gain > best_gain) {
-        SwapChoice sc({current_gain, s_rank, t_rank, s_rank, t_rank});
-        if (valid_choice_for_insertion_ranks(sol_state,
-                                             s_vehicle,
-                                             source,
-                                             t_vehicle,
-                                             target,
-                                             sc)) {
-          swap_choice_options.push_back(std::move(sc));
+      Eval current_gain = in_place_s_gain + in_place_t_gain;
+
+      if (s_travel_time <= s_v.max_travel_time + in_place_s_gain.duration) {
+        // Only bother further checking in-place insertion in source
+        // route if max travel time constraint is OK.
+        if (current_gain > best_gain and
+            t_travel_time <= t_v.max_travel_time + in_place_t_gain.duration) {
+          SwapChoice sc({current_gain, s_rank, t_rank, s_rank, t_rank});
+          if (valid_choice_for_insertion_ranks(sol_state,
+                                               s_vehicle,
+                                               source,
+                                               t_vehicle,
+                                               target,
+                                               sc)) {
+            swap_choice_options.push_back(std::move(sc));
+          }
         }
-      }
 
-      for (const auto& ti : target_insertions) {
-        if ((ti.rank != t_rank) and (ti.rank != t_rank + 1) and
-            (ti.cost != NO_EVAL)) {
-          const Eval t_gain = source_delta - ti.cost;
-          current_gain = in_place_source_insertion_gain + t_gain;
-          if (current_gain > best_gain) {
-            SwapChoice sc({current_gain, s_rank, t_rank, s_rank, ti.rank});
-            if (valid_choice_for_insertion_ranks(sol_state,
-                                                 s_vehicle,
-                                                 source,
-                                                 t_vehicle,
-                                                 target,
-                                                 sc)) {
-              swap_choice_options.push_back(std::move(sc));
+        for (const auto& ti : target_insertions) {
+          if ((ti.rank != t_rank) and (ti.rank != t_rank + 1) and
+              (ti.cost != NO_EVAL)) {
+            const Eval t_gain = target_delta - ti.cost;
+            current_gain = in_place_s_gain + t_gain;
+            if (current_gain > best_gain and
+                t_travel_time <= t_v.max_travel_time + t_gain.duration) {
+              SwapChoice sc({current_gain, s_rank, t_rank, s_rank, ti.rank});
+              if (valid_choice_for_insertion_ranks(sol_state,
+                                                   s_vehicle,
+                                                   source,
+                                                   t_vehicle,
+                                                   target,
+                                                   sc)) {
+                swap_choice_options.push_back(std::move(sc));
+              }
             }
           }
         }
@@ -324,10 +331,17 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
       for (const auto& si : source_insertions) {
         if ((si.rank != s_rank) and (si.rank != s_rank + 1) and
             (si.cost != NO_EVAL)) {
-          const Eval s_gain = target_delta - si.cost;
+          const Eval s_gain = source_delta - si.cost;
 
-          current_gain = s_gain + in_place_target_insertion_gain;
-          if (current_gain > best_gain) {
+          if (s_travel_time > s_v.max_travel_time + s_gain.duration) {
+            // Don't bother further checking if max travel time
+            // constraint is violated for source route.
+            continue;
+          }
+
+          current_gain = s_gain + in_place_t_gain;
+          if (current_gain > best_gain and
+              t_travel_time <= t_v.max_travel_time + in_place_t_gain.duration) {
             SwapChoice sc({current_gain, s_rank, t_rank, si.rank, t_rank});
             if (valid_choice_for_insertion_ranks(sol_state,
                                                  s_vehicle,
@@ -342,9 +356,10 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
           for (const auto& ti : target_insertions) {
             if ((ti.rank != t_rank) and (ti.rank != t_rank + 1) and
                 (ti.cost != NO_EVAL)) {
-              const Eval t_gain = source_delta - ti.cost;
+              const Eval t_gain = target_delta - ti.cost;
               current_gain = s_gain + t_gain;
-              if (current_gain > best_gain) {
+              if (current_gain > best_gain and
+                  t_travel_time <= t_v.max_travel_time + t_gain.duration) {
                 SwapChoice sc({current_gain, s_rank, t_rank, si.rank, ti.rank});
                 if (valid_choice_for_insertion_ranks(sol_state,
                                                      s_vehicle,
