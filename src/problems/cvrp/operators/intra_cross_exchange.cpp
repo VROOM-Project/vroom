@@ -233,10 +233,10 @@ bool IntraCrossExchange::is_valid() {
                                                     _first_rank,
                                                     _last_rank);
 
-  const auto s_normal_t_reversed_duration =
-    _normal_s_gain.duration + _reversed_t_gain.duration;
+  const auto s_normal_t_reverse_duration =
+    _reversed_s_gain.duration + _normal_t_gain.duration;
 
-  if (s_travel_time <= s_v.max_travel_time + s_normal_t_reversed_duration) {
+  if (s_travel_time <= s_v.max_travel_time + s_normal_t_reverse_duration) {
     std::swap(_moved_jobs[0], _moved_jobs[1]);
 
     if (check_t_reverse) {
@@ -267,10 +267,10 @@ bool IntraCrossExchange::is_valid() {
                                                       _last_rank);
   }
 
-  const auto s_reversed_t_normal_duration =
-    _reversed_s_gain.duration + _normal_t_gain.duration;
+  const auto s_reverse_t_normal_duration =
+    _normal_s_gain.duration + _reversed_t_gain.duration;
 
-  if (s_travel_time <= s_v.max_travel_time + s_reversed_t_normal_duration) {
+  if (s_travel_time <= s_v.max_travel_time + s_reverse_t_normal_duration) {
     std::swap(_moved_jobs[0], _moved_jobs[1]);
 
     if (check_s_reverse) {
