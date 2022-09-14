@@ -233,25 +233,24 @@ bool IntraCrossExchange::is_valid() {
                                                     _first_rank,
                                                     _last_rank);
 
-  const auto s_normal_t_reverse_duration =
-    _reversed_s_gain.duration + _normal_t_gain.duration;
+  std::swap(_moved_jobs[0], _moved_jobs[1]);
 
-  if (s_travel_time <= s_v.max_travel_time + s_normal_t_reverse_duration) {
-    std::swap(_moved_jobs[0], _moved_jobs[1]);
+  if (check_t_reverse) {
+    const auto s_normal_t_reverse_duration =
+      _reversed_s_gain.duration + _normal_t_gain.duration;
 
-    if (check_t_reverse) {
-      s_normal_t_reverse_is_valid =
-        source.is_valid_addition_for_capacity_inclusion(_input,
-                                                        delivery,
-                                                        _moved_jobs.begin(),
-                                                        _moved_jobs.end(),
-                                                        _first_rank,
-                                                        _last_rank);
-    }
-
-    std::swap(_moved_jobs[_moved_jobs.size() - 2],
-              _moved_jobs[_moved_jobs.size() - 1]);
+    s_normal_t_reverse_is_valid =
+      (s_travel_time <= s_v.max_travel_time + s_normal_t_reverse_duration) &&
+      source.is_valid_addition_for_capacity_inclusion(_input,
+                                                      delivery,
+                                                      _moved_jobs.begin(),
+                                                      _moved_jobs.end(),
+                                                      _first_rank,
+                                                      _last_rank);
   }
+
+  std::swap(_moved_jobs[_moved_jobs.size() - 2],
+            _moved_jobs[_moved_jobs.size() - 1]);
 
   if (check_s_reverse and check_t_reverse) {
     const auto s_reversed_t_reversed_duration =
@@ -267,27 +266,26 @@ bool IntraCrossExchange::is_valid() {
                                                       _last_rank);
   }
 
-  const auto s_reverse_t_normal_duration =
-    _normal_s_gain.duration + _reversed_t_gain.duration;
+  std::swap(_moved_jobs[0], _moved_jobs[1]);
 
-  if (s_travel_time <= s_v.max_travel_time + s_reverse_t_normal_duration) {
-    std::swap(_moved_jobs[0], _moved_jobs[1]);
+  if (check_s_reverse) {
+    const auto s_reverse_t_normal_duration =
+      _normal_s_gain.duration + _reversed_t_gain.duration;
 
-    if (check_s_reverse) {
-      s_reverse_t_normal_is_valid =
-        source.is_valid_addition_for_capacity_inclusion(_input,
-                                                        delivery,
-                                                        _moved_jobs.begin(),
-                                                        _moved_jobs.end(),
-                                                        _first_rank,
-                                                        _last_rank);
-    }
-
-    // Reset to initial situation before potential application and TW
-    // checks.
-    std::swap(_moved_jobs[_moved_jobs.size() - 2],
-              _moved_jobs[_moved_jobs.size() - 1]);
+    s_reverse_t_normal_is_valid =
+      (s_travel_time <= s_v.max_travel_time + s_reverse_t_normal_duration) &&
+      source.is_valid_addition_for_capacity_inclusion(_input,
+                                                      delivery,
+                                                      _moved_jobs.begin(),
+                                                      _moved_jobs.end(),
+                                                      _first_rank,
+                                                      _last_rank);
   }
+
+  // Reset to initial situation before potential application and TW
+  // checks.
+  std::swap(_moved_jobs[_moved_jobs.size() - 2],
+            _moved_jobs[_moved_jobs.size() - 1]);
 
   return s_normal_t_normal_is_valid or s_normal_t_reverse_is_valid or
          s_reverse_t_reverse_is_valid or s_reverse_t_normal_is_valid;
