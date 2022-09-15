@@ -2121,6 +2121,9 @@ void LocalSearch<Route,
     Index best_rank = 0;
     Eval best_gain = NO_GAIN;
 
+    const auto max_travel_time = _input.vehicles[v].max_travel_time;
+    const auto current_travel_time = _sol_state.route_evals[v].duration;
+
     for (std::size_t r = 0; r < _sol[v].size(); ++r) {
       const auto& current_job = _input.jobs[_sol[v].route[r]];
       if (current_job.type == JOB_TYPE::DELIVERY) {
@@ -2128,23 +2131,27 @@ void LocalSearch<Route,
       }
 
       Eval current_gain;
-      bool valid_removal;
+      bool valid_removal = false;
 
       if (current_job.type == JOB_TYPE::SINGLE) {
-        current_gain =
-          _sol_state.node_gains[v][r] - relocate_cost_lower_bound(v, r);
+        const auto& removal_gain = _sol_state.node_gains[v][r];
+        current_gain = removal_gain - relocate_cost_lower_bound(v, r);
 
         if (current_gain > best_gain) {
           // Only check validity if required.
-          valid_removal = _sol[v].is_valid_removal(_input, r, 1);
+          valid_removal =
+            (current_travel_time <= max_travel_time + removal_gain.duration) &&
+            _sol[v].is_valid_removal(_input, r, 1);
         }
       } else {
         assert(current_job.type == JOB_TYPE::PICKUP);
-        auto delivery_r = _sol_state.matching_delivery_rank[v][r];
-        current_gain = _sol_state.pd_gains[v][r] -
-                       relocate_cost_lower_bound(v, r, delivery_r);
+        const auto delivery_r = _sol_state.matching_delivery_rank[v][r];
+        const auto& removal_gain = _sol_state.pd_gains[v][r];
+        current_gain =
+          removal_gain - relocate_cost_lower_bound(v, r, delivery_r);
 
-        if (current_gain > best_gain) {
+        if (current_gain > best_gain &&
+            (current_travel_time <= max_travel_time + removal_gain.duration)) {
           // Only check validity if required.
           if (delivery_r == r + 1) {
             valid_removal = _sol[v].is_valid_removal(_input, r, 2);
