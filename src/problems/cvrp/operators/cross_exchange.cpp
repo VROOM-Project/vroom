@@ -228,6 +228,8 @@ void CrossExchange::compute_gain() {
 }
 
 bool CrossExchange::is_valid() {
+  assert(_gain_upper_bound_computed);
+
   auto target_pickup = _input.jobs[t_route[t_rank]].pickup +
                        _input.jobs[t_route[t_rank + 1]].pickup;
   auto target_delivery = _input.jobs[t_route[t_rank]].delivery +
@@ -240,9 +242,13 @@ bool CrossExchange::is_valid() {
                                                              s_rank + 2);
 
   if (valid) {
+    const auto& s_v = _input.vehicles[s_vehicle];
+    const auto s_travel_time = _sol_state.route_evals[s_vehicle].duration;
+
     // Keep target edge direction when inserting in source route.
     auto t_start = t_route.begin() + t_rank;
     s_is_normal_valid =
+      (s_travel_time <= s_v.max_travel_time + _normal_s_gain.duration) and
       source.is_valid_addition_for_capacity_inclusion(_input,
                                                       target_delivery,
                                                       t_start,
@@ -254,6 +260,7 @@ bool CrossExchange::is_valid() {
       // Reverse target edge direction when inserting in source route.
       auto t_reverse_start = t_route.rbegin() + t_route.size() - 2 - t_rank;
       s_is_reverse_valid =
+        (s_travel_time <= s_v.max_travel_time + _reversed_s_gain.duration) and
         source.is_valid_addition_for_capacity_inclusion(_input,
                                                         target_delivery,
                                                         t_reverse_start,
@@ -278,9 +285,13 @@ bool CrossExchange::is_valid() {
                                                            t_rank + 2);
 
   if (valid) {
+    const auto& t_v = _input.vehicles[t_vehicle];
+    const auto t_travel_time = _sol_state.route_evals[t_vehicle].duration;
+
     // Keep source edge direction when inserting in target route.
     auto s_start = s_route.begin() + s_rank;
     t_is_normal_valid =
+      (t_travel_time <= t_v.max_travel_time + _normal_t_gain.duration) and
       target.is_valid_addition_for_capacity_inclusion(_input,
                                                       source_delivery,
                                                       s_start,
@@ -292,6 +303,7 @@ bool CrossExchange::is_valid() {
       // Reverse source edge direction when inserting in target route.
       auto s_reverse_start = s_route.rbegin() + s_route.size() - 2 - s_rank;
       t_is_reverse_valid =
+        (t_travel_time <= t_v.max_travel_time + _reversed_t_gain.duration) and
         target.is_valid_addition_for_capacity_inclusion(_input,
                                                         source_delivery,
                                                         s_reverse_start,

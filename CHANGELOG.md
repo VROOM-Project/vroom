@@ -4,6 +4,7 @@
 
 ### Added
 
+- Support for `max_travel_time` at vehicle level (#273)
 - Advertise `libvroom` in README and wiki (#42)
 
 ### Changed

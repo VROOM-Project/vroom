@@ -59,9 +59,6 @@ void UnassignedExchange::compute_gain() {
 
   const Index u_index = _input.jobs[_u].index();
 
-  Eval s_gain;
-  Eval t_gain;
-
   if (t_rank == s_rank) {
     // Removed job is replaced by the unassigned one so there is no
     // new edge in place of removal.
@@ -69,34 +66,28 @@ void UnassignedExchange::compute_gain() {
 
     // No old edge to remove when adding unassigned job in place of
     // removed job.
-    Eval previous_cost;
-    Eval next_cost;
-
     if (t_rank == 0) {
       if (v.has_start()) {
-        previous_cost = v.eval(v.start.value().index(), u_index);
+        s_gain -= v.eval(v.start.value().index(), u_index);
       }
     } else {
-      previous_cost = v.eval(_input.jobs[s_route[t_rank - 1]].index(), u_index);
+      s_gain -= v.eval(_input.jobs[s_route[t_rank - 1]].index(), u_index);
     }
 
     if (t_rank == s_route.size() - 1) {
       if (v.has_end()) {
-        next_cost = v.eval(u_index, v.end.value().index());
+        s_gain -= v.eval(u_index, v.end.value().index());
       }
     } else {
-      next_cost = v.eval(u_index, _input.jobs[s_route[s_rank + 1]].index());
+      s_gain -= v.eval(u_index, _input.jobs[s_route[s_rank + 1]].index());
     }
-
-    t_gain = -previous_cost - next_cost;
   } else {
     // No common edge so both gains can be computed independently.
-    s_gain = _sol_state.node_gains[s_vehicle][s_rank];
-
-    t_gain = -utils::addition_cost(_input, _u, v, s_route, t_rank);
+    s_gain = _sol_state.node_gains[s_vehicle][s_rank] -
+             utils::addition_cost(_input, _u, v, s_route, t_rank);
   }
 
-  stored_gain = s_gain + t_gain;
+  stored_gain = s_gain;
   gain_computed = true;
 }
 
@@ -124,6 +115,18 @@ bool UnassignedExchange::is_valid() {
                                                           _moved_jobs.end(),
                                                           _first_rank,
                                                           _last_rank);
+
+  if (valid) {
+    // Check validity with regard to max_travel_time, requires valid
+    // gain value.
+    if (!gain_computed) {
+      // May happen that we don't check gain before validity if priority
+      // is improved.
+      this->compute_gain();
+    }
+
+    valid = is_valid_for_source_max_travel_time();
+  }
 
   return valid;
 }

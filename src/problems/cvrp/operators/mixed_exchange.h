@@ -20,7 +20,6 @@ private:
   bool _gain_upper_bound_computed;
   Eval _normal_s_gain;
   Eval _reversed_s_gain;
-  Eval _t_gain;
 
 protected:
   bool reverse_t_edge;

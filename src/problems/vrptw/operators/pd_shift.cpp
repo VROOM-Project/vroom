@@ -50,17 +50,17 @@ void PDShift::compute_gain() {
     return;
   }
 
-  ls::RouteInsertion rs =
-    ls::compute_best_insertion_pd(_input,
-                                  _sol_state,
-                                  s_route[_s_p_rank],
-                                  t_vehicle,
-                                  _tw_t_route,
-                                  _remove_gain - stored_gain);
+  ls::RouteInsertion rs = ls::compute_best_insertion_pd(_input,
+                                                        _sol_state,
+                                                        s_route[_s_p_rank],
+                                                        t_vehicle,
+                                                        _tw_t_route,
+                                                        s_gain - stored_gain);
 
   if (rs.eval != NO_EVAL) {
     _valid = true;
-    stored_gain = _remove_gain - rs.eval;
+    t_gain = -rs.eval;
+    stored_gain = s_gain + t_gain;
     _best_t_p_rank = rs.pickup_rank;
     _best_t_d_rank = rs.delivery_rank;
   }

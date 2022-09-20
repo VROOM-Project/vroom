@@ -47,7 +47,7 @@ void ReverseTwoOpt::compute_gain() {
   Index t_index = _input.jobs[t_route[t_rank]].index();
   Index last_s = _input.jobs[s_route.back()].index();
   Index first_t = _input.jobs[t_route.front()].index();
-  stored_gain = Eval();
+
   bool last_in_source = (s_rank == s_route.size() - 1);
   bool last_in_target = (t_rank == t_route.size() - 1);
 
@@ -56,25 +56,25 @@ void ReverseTwoOpt::compute_gain() {
   // t_rank, but reversed.
 
   // Add new source -> target edge.
-  stored_gain -= s_v.eval(s_index, t_index);
+  s_gain -= s_v.eval(s_index, t_index);
 
   // Cost of reversing target route portion. First remove forward cost
   // for beginning of target route as seen from target vehicle. Then
   // add backward cost for beginning of target route as seen from
   // source vehicle since it's the new source route end.
-  stored_gain += _sol_state.fwd_costs[t_vehicle][t_vehicle][t_rank];
-  stored_gain -= _sol_state.bwd_costs[t_vehicle][s_vehicle][t_rank];
+  t_gain += _sol_state.fwd_costs[t_vehicle][t_vehicle][t_rank];
+  s_gain -= _sol_state.bwd_costs[t_vehicle][s_vehicle][t_rank];
 
   if (!last_in_target) {
     // Spare next edge in target route.
     Index next_index = _input.jobs[t_route[t_rank + 1]].index();
-    stored_gain += t_v.eval(t_index, next_index);
+    t_gain += t_v.eval(t_index, next_index);
   }
 
   if (!last_in_source) {
     // Spare next edge in source route.
     Index next_index = _input.jobs[s_route[s_rank + 1]].index();
-    stored_gain += s_v.eval(s_index, next_index);
+    s_gain += s_v.eval(s_index, next_index);
 
     // Part of source route is moved to target route.
     Index next_s_index = _input.jobs[s_route[s_rank + 1]].index();
@@ -84,98 +84,96 @@ void ReverseTwoOpt::compute_gain() {
     // (subtracting intermediate cost to overall cost). Then add
     // backward cost for end of source route as seen from target
     // vehicle since it's the new target route start.
-    stored_gain += _sol_state.fwd_costs[s_vehicle][s_vehicle].back();
-    stored_gain -= _sol_state.fwd_costs[s_vehicle][s_vehicle][s_rank + 1];
-    stored_gain -= _sol_state.bwd_costs[s_vehicle][t_vehicle].back();
-    stored_gain += _sol_state.bwd_costs[s_vehicle][t_vehicle][s_rank + 1];
+    s_gain += _sol_state.fwd_costs[s_vehicle][s_vehicle].back();
+    s_gain -= _sol_state.fwd_costs[s_vehicle][s_vehicle][s_rank + 1];
+    t_gain -= _sol_state.bwd_costs[s_vehicle][t_vehicle].back();
+    t_gain += _sol_state.bwd_costs[s_vehicle][t_vehicle][s_rank + 1];
 
     if (last_in_target) {
       if (t_v.has_end()) {
         // Handle target route new end.
         auto end_t = t_v.end.value().index();
-        stored_gain += t_v.eval(t_index, end_t);
-        stored_gain -= t_v.eval(next_s_index, end_t);
+        t_gain += t_v.eval(t_index, end_t);
+        t_gain -= t_v.eval(next_s_index, end_t);
       }
     } else {
       // Add new target -> source edge.
       Index next_t_index = _input.jobs[t_route[t_rank + 1]].index();
-      stored_gain -= t_v.eval(next_s_index, next_t_index);
+      t_gain -= t_v.eval(next_s_index, next_t_index);
     }
   }
 
   if (s_v.has_end()) {
     // Update cost to source end because last job changed.
     auto end_s = s_v.end.value().index();
-    stored_gain += s_v.eval(last_s, end_s);
-    stored_gain -= s_v.eval(first_t, end_s);
+    s_gain += s_v.eval(last_s, end_s);
+    s_gain -= s_v.eval(first_t, end_s);
   }
 
   if (t_v.has_start()) {
     // Spare cost from target start because first job changed.
     auto start_t = t_v.start.value().index();
-    stored_gain += t_v.eval(start_t, first_t);
+    t_gain += t_v.eval(start_t, first_t);
     if (!last_in_source) {
-      stored_gain -= t_v.eval(start_t, last_s);
+      t_gain -= t_v.eval(start_t, last_s);
     } else {
       // No job from source route actually swapped to target route.
       if (!last_in_target) {
         // Going straight from start to next job in target route.
         Index next_index = _input.jobs[t_route[t_rank + 1]].index();
-        stored_gain -= t_v.eval(start_t, next_index);
+        t_gain -= t_v.eval(start_t, next_index);
       } else {
         // Emptying the whole target route here, so also gaining cost
         // to end if it exists.
         if (t_v.has_end()) {
           auto end_t = t_v.end.value().index();
-          stored_gain += t_v.eval(t_index, end_t);
+          t_gain += t_v.eval(t_index, end_t);
         }
       }
     }
   }
 
+  stored_gain = s_gain + t_gain;
   gain_computed = true;
 }
 
 bool ReverseTwoOpt::is_valid() {
+  assert(gain_computed);
+
   const auto& t_delivery = target.fwd_deliveries(t_rank);
   const auto& t_pickup = target.fwd_pickups(t_rank);
-
-  bool valid = source.is_valid_addition_for_capacity_margins(_input,
-                                                             t_pickup,
-                                                             t_delivery,
-                                                             s_rank + 1,
-                                                             s_route.size());
 
   const auto& s_delivery = source.bwd_deliveries(s_rank);
   const auto& s_pickup = source.bwd_pickups(s_rank);
 
-  valid = valid && target.is_valid_addition_for_capacity_margins(_input,
-                                                                 s_pickup,
-                                                                 s_delivery,
-                                                                 0,
-                                                                 t_rank + 1);
-
-  valid =
-    valid && source.is_valid_addition_for_capacity_inclusion(_input,
-                                                             t_delivery,
-                                                             t_route.rbegin() +
-                                                               t_route.size() -
-                                                               1 - t_rank,
-                                                             t_route.rend(),
-                                                             s_rank + 1,
-                                                             s_route.size());
-
-  valid =
-    valid && target.is_valid_addition_for_capacity_inclusion(_input,
-                                                             s_delivery,
-                                                             s_route.rbegin(),
-                                                             s_route.rbegin() +
-                                                               s_route.size() -
-                                                               1 - s_rank,
-                                                             0,
-                                                             t_rank + 1);
-
-  return valid;
+  return is_valid_for_source_max_travel_time() &&
+         is_valid_for_target_max_travel_time() &&
+         source.is_valid_addition_for_capacity_margins(_input,
+                                                       t_pickup,
+                                                       t_delivery,
+                                                       s_rank + 1,
+                                                       s_route.size()) &&
+         target.is_valid_addition_for_capacity_margins(_input,
+                                                       s_pickup,
+                                                       s_delivery,
+                                                       0,
+                                                       t_rank + 1) &&
+         source.is_valid_addition_for_capacity_inclusion(_input,
+                                                         t_delivery,
+                                                         t_route.rbegin() +
+                                                           t_route.size() - 1 -
+                                                           t_rank,
+                                                         t_route.rend(),
+                                                         s_rank + 1,
+                                                         s_route.size()) &&
+         target.is_valid_addition_for_capacity_inclusion(_input,
+                                                         s_delivery,
+                                                         s_route.rbegin(),
+                                                         s_route.rbegin() +
+                                                           s_route.size() - 1 -
+                                                           s_rank,
+                                                         0,
+                                                         t_rank + 1);
 }
 
 void ReverseTwoOpt::apply() {

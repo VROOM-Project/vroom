@@ -111,10 +111,8 @@ public:
   std::vector<std::vector<Index>> weak_insertion_ranks_begin;
   std::vector<std::vector<Index>> weak_insertion_ranks_end;
 
-#ifndef NDEBUG
   // Only used for assertion checks in debug mode.
-  std::vector<Cost> route_costs;
-#endif
+  std::vector<Eval> route_evals;
 
   SolutionState(const Input& input);
 
@@ -142,9 +140,7 @@ public:
   void set_insertion_ranks(const RawRoute& r, Index v);
   void set_insertion_ranks(const TWRoute& r, Index v);
 
-#ifndef NDEBUG
-  void update_route_cost(const std::vector<Index>& route, Index v);
-#endif
+  void update_route_eval(const std::vector<Index>& route, Index v);
 };
 
 } // namespace utils

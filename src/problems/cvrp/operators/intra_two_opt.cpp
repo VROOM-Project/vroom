@@ -41,7 +41,6 @@ void IntraTwoOpt::compute_gain() {
 
   Index s_index = _input.jobs[s_route[s_rank]].index();
   Index t_index = _input.jobs[t_route[t_rank]].index();
-  stored_gain = Eval();
 
   // Cost of reversing vehicle route between s_rank and t_rank
   // included.
@@ -95,7 +94,8 @@ bool IntraTwoOpt::reversal_ok_for_shipments() const {
 }
 
 bool IntraTwoOpt::is_valid() {
-  bool valid = !_input.has_shipments() or reversal_ok_for_shipments();
+  bool valid = (!_input.has_shipments() or reversal_ok_for_shipments()) &&
+               is_valid_for_max_travel_time();
 
   if (valid) {
     auto rev_t = s_route.rbegin() + (s_route.size() - t_rank - 1);

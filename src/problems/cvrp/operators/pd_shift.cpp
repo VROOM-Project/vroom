@@ -35,7 +35,6 @@ PDShift::PDShift(const Input& input,
              0),
     _s_p_rank(s_p_rank),
     _s_d_rank(s_d_rank),
-    _remove_gain(_sol_state.pd_gains[s_vehicle][_s_p_rank]),
     _valid(false) {
   assert(s_vehicle != t_vehicle);
   assert(s_route.size() >= 2);
@@ -43,21 +42,24 @@ PDShift::PDShift(const Input& input,
   assert(s_d_rank < s_route.size());
   assert(s_route.route[s_p_rank] + 1 == s_route.route[s_d_rank]);
 
+  s_gain = _sol_state.pd_gains[s_vehicle][_s_p_rank];
+  assert(_sol_state.route_evals[s_vehicle].duration <=
+         _input.vehicles[s_vehicle].max_travel_time + s_gain.duration);
   stored_gain = gain_threshold;
 }
 
 void PDShift::compute_gain() {
-  ls::RouteInsertion rs =
-    ls::compute_best_insertion_pd(_input,
-                                  _sol_state,
-                                  s_route[_s_p_rank],
-                                  t_vehicle,
-                                  target,
-                                  _remove_gain - stored_gain);
+  ls::RouteInsertion rs = ls::compute_best_insertion_pd(_input,
+                                                        _sol_state,
+                                                        s_route[_s_p_rank],
+                                                        t_vehicle,
+                                                        target,
+                                                        s_gain - stored_gain);
 
   if (rs.eval != NO_EVAL) {
     _valid = true;
-    stored_gain = _remove_gain - rs.eval;
+    t_gain = -rs.eval;
+    stored_gain = s_gain + t_gain;
     _best_t_p_rank = rs.pickup_rank;
     _best_t_d_rank = rs.delivery_rank;
   }

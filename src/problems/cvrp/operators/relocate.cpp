@@ -42,24 +42,27 @@ void Relocate::compute_gain() {
   const auto& v = _input.vehicles[t_vehicle];
 
   // For source vehicle, we consider the cost of removing job at rank
-  // s_rank, already stored in
-  // _sol_state.node_gains[s_vehicle][s_rank].
+  // s_rank, already stored.
+  s_gain = _sol_state.node_gains[s_vehicle][s_rank];
 
   // For target vehicle, we consider the cost of adding source job at
   // rank t_rank.
-  Eval t_gain =
-    -utils::addition_cost(_input, s_route[s_rank], v, t_route, t_rank);
+  t_gain = -utils::addition_cost(_input, s_route[s_rank], v, t_route, t_rank);
 
-  stored_gain = _sol_state.node_gains[s_vehicle][s_rank] + t_gain;
+  stored_gain = s_gain + t_gain;
   gain_computed = true;
 }
 
 bool Relocate::is_valid() {
-  return target
-    .is_valid_addition_for_capacity(_input,
-                                    _input.jobs[s_route[s_rank]].pickup,
-                                    _input.jobs[s_route[s_rank]].delivery,
-                                    t_rank);
+  assert(gain_computed);
+  return is_valid_for_source_max_travel_time() &&
+         is_valid_for_target_max_travel_time() &&
+         target
+           .is_valid_addition_for_capacity(_input,
+                                           _input.jobs[s_route[s_rank]].pickup,
+                                           _input.jobs[s_route[s_rank]]
+                                             .delivery,
+                                           t_rank);
 }
 
 void Relocate::apply() {

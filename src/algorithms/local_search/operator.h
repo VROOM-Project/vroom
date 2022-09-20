@@ -35,9 +35,18 @@ protected:
   const Index t_rank;
 
   bool gain_computed;
+  Eval s_gain;
+  Eval t_gain;
   Eval stored_gain;
 
   virtual void compute_gain() = 0;
+
+  bool is_valid_for_source_max_travel_time() const;
+
+  bool is_valid_for_target_max_travel_time() const;
+
+  // Used for internal operators only.
+  bool is_valid_for_max_travel_time() const;
 
 public:
   Operator(OperatorName name,

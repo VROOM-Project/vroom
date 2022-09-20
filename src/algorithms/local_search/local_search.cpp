@@ -268,7 +268,8 @@ void LocalSearch<Route,
         _sol_state.unassigned.erase(best_job_rank + 1);
       }
 
-      // Update route/job insertions for best_route
+      // Update best_route data required for consistency.
+      _sol_state.update_route_eval(_sol[best_route].route, best_route);
       _sol_state.set_insertion_ranks(_sol[best_route], best_route);
 
       for (const auto j : _sol_state.unassigned) {
@@ -283,10 +284,6 @@ void LocalSearch<Route,
                                  best_route,
                                  _sol[best_route]);
       }
-#ifndef NDEBUG
-      // Update cost after addition.
-      _sol_state.update_route_cost(_sol[best_route].route, best_route);
-#endif
     }
   } while (job_added);
 }
@@ -1499,6 +1496,16 @@ void LocalSearch<Route,
             continue;
           }
 
+          const auto& v_s = _input.vehicles[s_t.first];
+          const auto s_travel_time = _sol_state.route_evals[s_t.first].duration;
+          const auto s_removal_duration_gain =
+            _sol_state.pd_gains[s_t.first][s_p_rank].duration;
+          if (s_travel_time > v_s.max_travel_time + s_removal_duration_gain) {
+            // Removing shipment from source route actually breaks
+            // max_travel_time constraint in source.
+            continue;
+          }
+
 #ifdef LOG_LS_OPERATORS
           ++tried_moves[OperatorName::PDShift];
 #endif
@@ -1643,28 +1650,37 @@ void LocalSearch<Route,
 
 #ifndef NDEBUG
       // Update route costs.
-      const auto previous_cost =
+      const auto previous_eval =
         std::accumulate(update_candidates.begin(),
                         update_candidates.end(),
-                        0,
+                        Eval(),
                         [&](auto sum, auto c) {
-                          return sum + _sol_state.route_costs[c];
+                          return sum + _sol_state.route_evals[c];
                         });
-      for (auto v_rank : update_candidates) {
-        _sol_state.update_route_cost(_sol[v_rank].route, v_rank);
-        assert(_sol[v_rank].size() <= _input.vehicles[v_rank].max_tasks);
-      }
-      const auto new_cost =
-        std::accumulate(update_candidates.begin(),
-                        update_candidates.end(),
-                        0,
-                        [&](auto sum, auto c) {
-                          return sum + _sol_state.route_costs[c];
-                        });
-      assert(new_cost + best_gain.cost == previous_cost);
 #endif
 
       for (auto v_rank : update_candidates) {
+        _sol_state.update_route_eval(_sol[v_rank].route, v_rank);
+
+        assert(_sol[v_rank].size() <= _input.vehicles[v_rank].max_tasks);
+        assert(_sol_state.route_evals[v_rank].duration <=
+               _input.vehicles[v_rank].max_travel_time);
+      }
+
+#ifndef NDEBUG
+      const auto new_eval =
+        std::accumulate(update_candidates.begin(),
+                        update_candidates.end(),
+                        Eval(),
+                        [&](auto sum, auto c) {
+                          return sum + _sol_state.route_evals[c];
+                        });
+      assert(new_eval + best_gain == previous_eval);
+#endif
+
+      for (auto v_rank : update_candidates) {
+        // Only this update (and update_route_eval done above) are
+        // actually required for consistency inside try_job_additions.
         _sol_state.set_insertion_ranks(_sol[v_rank], v_rank);
       }
 
@@ -1673,11 +1689,8 @@ void LocalSearch<Route,
                         0);
 
       for (auto v_rank : update_candidates) {
-        // Running update_costs only after try_job_additions is fine.
         _sol_state.update_costs(_sol[v_rank].route, v_rank);
-
         _sol_state.update_skills(_sol[v_rank].route, v_rank);
-
         _sol_state.set_node_gains(_sol[v_rank].route, v_rank);
         _sol_state.set_edge_gains(_sol[v_rank].route, v_rank);
         _sol_state.set_pd_matching_ranks(_sol[v_rank].route, v_rank);
@@ -1798,6 +1811,9 @@ void LocalSearch<Route,
       for (unsigned i = 0; i < current_nb_removal; ++i) {
         remove_from_routes();
         for (std::size_t v = 0; v < _sol.size(); ++v) {
+          // Update what is required for consistency in
+          // remove_from_route.
+          _sol_state.update_route_eval(_sol[v].route, v);
           _sol_state.set_node_gains(_sol[v].route, v);
           _sol_state.set_pd_matching_ranks(_sol[v].route, v);
           _sol_state.set_pd_gains(_sol[v].route, v);
@@ -1812,8 +1828,16 @@ void LocalSearch<Route,
       // Refill jobs.
       try_job_additions(_all_routes, 1.5);
 
-      // Reset what is needed in solution state.
-      _sol_state.setup(_sol);
+      // Update everything except what has already been updated in
+      // try_job_additions.
+      for (std::size_t v = 0; v < _sol.size(); ++v) {
+        _sol_state.update_costs(_sol[v].route, v);
+        _sol_state.update_skills(_sol[v].route, v);
+        _sol_state.set_node_gains(_sol[v].route, v);
+        _sol_state.set_edge_gains(_sol[v].route, v);
+        _sol_state.set_pd_matching_ranks(_sol[v].route, v);
+        _sol_state.set_pd_gains(_sol[v].route, v);
+      }
     }
 
     first_step = false;
@@ -2097,6 +2121,9 @@ void LocalSearch<Route,
     Index best_rank = 0;
     Eval best_gain = NO_GAIN;
 
+    const auto max_travel_time = _input.vehicles[v].max_travel_time;
+    const auto current_travel_time = _sol_state.route_evals[v].duration;
+
     for (std::size_t r = 0; r < _sol[v].size(); ++r) {
       const auto& current_job = _input.jobs[_sol[v].route[r]];
       if (current_job.type == JOB_TYPE::DELIVERY) {
@@ -2104,23 +2131,27 @@ void LocalSearch<Route,
       }
 
       Eval current_gain;
-      bool valid_removal;
+      bool valid_removal = false;
 
       if (current_job.type == JOB_TYPE::SINGLE) {
-        current_gain =
-          _sol_state.node_gains[v][r] - relocate_cost_lower_bound(v, r);
+        const auto& removal_gain = _sol_state.node_gains[v][r];
+        current_gain = removal_gain - relocate_cost_lower_bound(v, r);
 
         if (current_gain > best_gain) {
           // Only check validity if required.
-          valid_removal = _sol[v].is_valid_removal(_input, r, 1);
+          valid_removal =
+            (current_travel_time <= max_travel_time + removal_gain.duration) &&
+            _sol[v].is_valid_removal(_input, r, 1);
         }
       } else {
         assert(current_job.type == JOB_TYPE::PICKUP);
-        auto delivery_r = _sol_state.matching_delivery_rank[v][r];
-        current_gain = _sol_state.pd_gains[v][r] -
-                       relocate_cost_lower_bound(v, r, delivery_r);
+        const auto delivery_r = _sol_state.matching_delivery_rank[v][r];
+        const auto& removal_gain = _sol_state.pd_gains[v][r];
+        current_gain =
+          removal_gain - relocate_cost_lower_bound(v, r, delivery_r);
 
-        if (current_gain > best_gain) {
+        if (current_gain > best_gain &&
+            (current_travel_time <= max_travel_time + removal_gain.duration)) {
           // Only check validity if required.
           if (delivery_r == r + 1) {
             valid_removal = _sol[v].is_valid_removal(_input, r, 2);

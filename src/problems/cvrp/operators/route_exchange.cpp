@@ -39,63 +39,64 @@ void RouteExchange::compute_gain() {
   const auto& s_v = _input.vehicles[s_vehicle];
   const auto& t_v = _input.vehicles[t_vehicle];
 
-  Eval new_cost;
-  Eval previous_cost;
-
   if (s_route.size() > 0) {
     // Handle changes at route start.
     auto first_s_index = _input.jobs[s_route.front()].index();
     if (s_v.has_start()) {
-      previous_cost += s_v.eval(s_v.start.value().index(), first_s_index);
+      s_gain += s_v.eval(s_v.start.value().index(), first_s_index);
     }
     if (t_v.has_start()) {
-      new_cost += t_v.eval(t_v.start.value().index(), first_s_index);
+      t_gain -= t_v.eval(t_v.start.value().index(), first_s_index);
     }
 
     // Handle changes at route end.
     auto last_s_index = _input.jobs[s_route.back()].index();
     if (s_v.has_end()) {
-      previous_cost += s_v.eval(last_s_index, s_v.end.value().index());
+      s_gain += s_v.eval(last_s_index, s_v.end.value().index());
     }
     if (t_v.has_end()) {
-      new_cost += t_v.eval(last_s_index, t_v.end.value().index());
+      t_gain -= t_v.eval(last_s_index, t_v.end.value().index());
     }
 
     // Handle inner cost change for route.
-    previous_cost += _sol_state.fwd_costs[s_vehicle][s_vehicle].back();
-    new_cost += _sol_state.fwd_costs[s_vehicle][t_vehicle].back();
+    s_gain += _sol_state.fwd_costs[s_vehicle][s_vehicle].back();
+    t_gain -= _sol_state.fwd_costs[s_vehicle][t_vehicle].back();
   }
 
   if (t_route.size() > 0) {
     // Handle changes at route start.
     auto first_t_index = _input.jobs[t_route.front()].index();
     if (t_v.has_start()) {
-      previous_cost += t_v.eval(t_v.start.value().index(), first_t_index);
+      t_gain += t_v.eval(t_v.start.value().index(), first_t_index);
     }
     if (s_v.has_start()) {
-      new_cost += s_v.eval(s_v.start.value().index(), first_t_index);
+      s_gain -= s_v.eval(s_v.start.value().index(), first_t_index);
     }
 
     // Handle changes at route end.
     auto last_t_index = _input.jobs[t_route.back()].index();
     if (t_v.has_end()) {
-      previous_cost += t_v.eval(last_t_index, t_v.end.value().index());
+      t_gain += t_v.eval(last_t_index, t_v.end.value().index());
     }
     if (s_v.has_end()) {
-      new_cost += s_v.eval(last_t_index, s_v.end.value().index());
+      s_gain -= s_v.eval(last_t_index, s_v.end.value().index());
     }
 
     // Handle inner cost change for route.
-    previous_cost += _sol_state.fwd_costs[t_vehicle][t_vehicle].back();
-    new_cost += _sol_state.fwd_costs[t_vehicle][s_vehicle].back();
+    t_gain += _sol_state.fwd_costs[t_vehicle][t_vehicle].back();
+    s_gain -= _sol_state.fwd_costs[t_vehicle][s_vehicle].back();
   }
 
-  stored_gain = previous_cost - new_cost;
+  stored_gain = s_gain + t_gain;
   gain_computed = true;
 }
 
 bool RouteExchange::is_valid() {
-  return (source.max_load() <= _input.vehicles[t_vehicle].capacity) &&
+  assert(gain_computed);
+
+  return is_valid_for_source_max_travel_time() &&
+         is_valid_for_target_max_travel_time() &&
+         (source.max_load() <= _input.vehicles[t_vehicle].capacity) &&
          (target.max_load() <= _input.vehicles[s_vehicle].capacity);
 }
 

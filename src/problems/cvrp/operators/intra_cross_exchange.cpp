@@ -215,9 +215,17 @@ void IntraCrossExchange::compute_gain() {
 }
 
 bool IntraCrossExchange::is_valid() {
-  auto delivery = source.delivery_in_range(_first_rank, _last_rank);
+  assert(_gain_upper_bound_computed);
+
+  const auto delivery = source.delivery_in_range(_first_rank, _last_rank);
+
+  const auto& s_v = _input.vehicles[s_vehicle];
+  const auto s_travel_time = _sol_state.route_evals[s_vehicle].duration;
+  const auto s_normal_t_normal_duration =
+    _normal_s_gain.duration + _normal_t_gain.duration;
 
   s_normal_t_normal_is_valid =
+    (s_travel_time <= s_v.max_travel_time + s_normal_t_normal_duration) and
     source.is_valid_addition_for_capacity_inclusion(_input,
                                                     delivery,
                                                     _moved_jobs.begin(),
@@ -228,7 +236,11 @@ bool IntraCrossExchange::is_valid() {
   std::swap(_moved_jobs[0], _moved_jobs[1]);
 
   if (check_t_reverse) {
+    const auto s_normal_t_reverse_duration =
+      _reversed_s_gain.duration + _normal_t_gain.duration;
+
     s_normal_t_reverse_is_valid =
+      (s_travel_time <= s_v.max_travel_time + s_normal_t_reverse_duration) &&
       source.is_valid_addition_for_capacity_inclusion(_input,
                                                       delivery,
                                                       _moved_jobs.begin(),
@@ -241,7 +253,11 @@ bool IntraCrossExchange::is_valid() {
             _moved_jobs[_moved_jobs.size() - 1]);
 
   if (check_s_reverse and check_t_reverse) {
+    const auto s_reversed_t_reversed_duration =
+      _reversed_s_gain.duration + _reversed_t_gain.duration;
     s_reverse_t_reverse_is_valid =
+      (s_travel_time <=
+       s_v.max_travel_time + s_reversed_t_reversed_duration) and
       source.is_valid_addition_for_capacity_inclusion(_input,
                                                       delivery,
                                                       _moved_jobs.begin(),
@@ -253,7 +269,11 @@ bool IntraCrossExchange::is_valid() {
   std::swap(_moved_jobs[0], _moved_jobs[1]);
 
   if (check_s_reverse) {
+    const auto s_reverse_t_normal_duration =
+      _normal_s_gain.duration + _reversed_t_gain.duration;
+
     s_reverse_t_normal_is_valid =
+      (s_travel_time <= s_v.max_travel_time + s_reverse_t_normal_duration) &&
       source.is_valid_addition_for_capacity_inclusion(_input,
                                                       delivery,
                                                       _moved_jobs.begin(),
