@@ -24,6 +24,12 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
+struct VehicleCosts {
+  const Cost fixed;
+
+  VehicleCosts(Cost fixed) : fixed(fixed){};
+};
+
 struct Vehicle {
   const Id id;
   std::optional<Location> start;
@@ -34,6 +40,7 @@ struct Vehicle {
   const TimeWindow tw;
   const std::vector<Break> breaks;
   const std::string description;
+  const VehicleCosts costs;
   CostWrapper cost_wrapper;
   size_t max_tasks;
   const Duration max_travel_time;
@@ -50,6 +57,7 @@ struct Vehicle {
     const TimeWindow& tw = TimeWindow(),
     const std::vector<Break>& breaks = std::vector<Break>(),
     const std::string& description = "",
+    const VehicleCosts& costs = VehicleCosts(0),
     double speed_factor = 1.,
     const size_t max_tasks = std::numeric_limits<size_t>::max(),
     const Duration max_travel_time = std::numeric_limits<Duration>::max(),
