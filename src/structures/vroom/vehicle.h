@@ -36,7 +36,7 @@ struct Vehicle {
   const std::string description;
   CostWrapper cost_wrapper;
   size_t max_tasks;
-  Duration max_travel_time;
+  const Duration max_travel_time;
   std::vector<VehicleStep> steps;
   std::unordered_map<Id, Index> break_id_to_rank;
 
