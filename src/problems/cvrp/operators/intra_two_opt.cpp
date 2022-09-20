@@ -94,9 +94,8 @@ bool IntraTwoOpt::reversal_ok_for_shipments() const {
 }
 
 bool IntraTwoOpt::is_valid() {
-  bool valid = !_input.has_shipments() or reversal_ok_for_shipments();
-
-  valid = valid && is_valid_for_max_travel_time();
+  bool valid = (!_input.has_shipments() or reversal_ok_for_shipments()) &&
+               is_valid_for_max_travel_time();
 
   if (valid) {
     auto rev_t = s_route.rbegin() + (s_route.size() - t_rank - 1);

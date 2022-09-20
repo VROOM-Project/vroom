@@ -168,10 +168,7 @@ template <class T> T basic(const Input& input, INIT init, double lambda) {
         }
 
         bool is_valid =
-          (evals[job_rank][v_rank].duration <= vehicle.max_travel_time);
-
-        is_valid =
-          is_valid &&
+          (evals[job_rank][v_rank].duration <= vehicle.max_travel_time) &&
           current_r
             .is_valid_addition_for_capacity(input,
                                             input.jobs[job_rank].pickup,
@@ -362,11 +359,9 @@ template <class T> T basic(const Input& input, INIT init, double lambda) {
                 modified_with_pd.push_back(job_rank + 1);
 
                 // Update best cost depending on validity.
-                bool valid = (current_route_duration + current_add.duration <=
-                              vehicle.max_travel_time);
-
-                valid =
-                  valid &&
+                bool valid =
+                  (current_route_duration + current_add.duration <=
+                   vehicle.max_travel_time) &&
                   current_r
                     .is_valid_addition_for_capacity_inclusion(input,
                                                               modified_delivery,
@@ -566,10 +561,7 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
         }
 
         bool is_valid =
-          (evals[job_rank][v_rank].duration <= vehicle.max_travel_time);
-
-        is_valid =
-          is_valid &&
+          (evals[job_rank][v_rank].duration <= vehicle.max_travel_time) &&
           current_r
             .is_valid_addition_for_capacity(input,
                                             input.jobs[job_rank].pickup,
@@ -761,11 +753,9 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
                 modified_with_pd.push_back(job_rank + 1);
 
                 // Update best cost depending on validity.
-                bool valid = (current_route_duration + current_add.duration <=
-                              vehicle.max_travel_time);
-
-                valid =
-                  valid &&
+                bool valid =
+                  (current_route_duration + current_add.duration <=
+                   vehicle.max_travel_time) &&
                   current_r
                     .is_valid_addition_for_capacity_inclusion(input,
                                                               modified_delivery,
@@ -774,10 +764,7 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
                                                               modified_with_pd
                                                                 .end(),
                                                               pickup_r,
-                                                              delivery_r);
-
-                valid =
-                  valid &&
+                                                              delivery_r) &&
                   current_r.is_valid_addition_for_tw(input,
                                                      modified_with_pd.begin(),
                                                      modified_with_pd.end(),
