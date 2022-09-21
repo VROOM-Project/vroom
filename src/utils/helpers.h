@@ -680,16 +680,13 @@ inline Route format_route(const Input& input,
   Amount sum_pickups(input.zero_amount());
   Amount sum_deliveries(input.zero_amount());
 
-  //  Go through the whole route again to set jobs/breaks ASAP given
+  // Go through the whole route again to set jobs/breaks ASAP given
   // the latest possible start time.
-  Duration travel_time =
-    v.has_start()
-      ? v.duration(v.start.value().index(), input.jobs[tw_r.route[0]].index())
-      : 0;
-
   Eval current_eval = v.has_start() ? v.eval(v.start.value().index(),
                                              input.jobs[tw_r.route[0]].index())
                                     : Eval();
+
+  Duration travel_time = current_eval.duration;
 
   for (std::size_t r = 0; r < tw_r.route.size(); ++r) {
     assert(input.vehicle_ok_with_job(tw_r.vehicle_rank, tw_r.route[r]));
@@ -698,10 +695,9 @@ inline Route format_route(const Input& input,
     if (r > 0) {
       // For r == 0, travel_time already holds the relevant value
       // depending on whether there is a start.
-      travel_time =
-        v.duration(input.jobs[tw_r.route[r - 1]].index(), current_job.index());
       current_eval =
         v.eval(input.jobs[tw_r.route[r - 1]].index(), current_job.index());
+      travel_time = current_eval.duration;
     }
 
     // Handles breaks before this job.
@@ -808,13 +804,10 @@ inline Route format_route(const Input& input,
   }
 
   // Handle breaks after last job.
-  travel_time =
-    (v.has_end())
-      ? v.duration(input.jobs[tw_r.route.back()].index(), v.end.value().index())
-      : 0;
   current_eval = (v.has_end()) ? v.eval(input.jobs[tw_r.route.back()].index(),
                                         v.end.value().index())
                                : Eval();
+  travel_time = current_eval.duration;
 
   auto r = tw_r.route.size();
   assert(tw_r.breaks_at_rank[r] <= tw_r.breaks_counts[r]);
