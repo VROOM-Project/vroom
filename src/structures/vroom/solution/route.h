@@ -12,6 +12,7 @@ All rights reserved (see LICENSE).
 
 #include <string>
 
+#include "structures/vroom/eval.h"
 #include "structures/vroom/solution/step.h"
 #include "structures/vroom/solution/violations.h"
 
@@ -39,10 +40,9 @@ struct Route {
 
   Route(Id vehicle,
         std::vector<Step>&& steps,
-        Cost cost,
+        const Eval& eval,
         Duration setup,
         Duration service,
-        Duration duration,
         Duration waiting_time,
         Priority priority,
         const Amount& delivery,

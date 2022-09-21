@@ -383,7 +383,6 @@ inline Solution format_solution(const Input& input,
                                ? v.start.value().index()
                                : std::numeric_limits<Index>::max();
     Eval eval;
-    Duration duration = 0;
     Duration setup = 0;
     Duration service = 0;
     Priority priority = 0;
@@ -405,11 +404,9 @@ inline Solution format_solution(const Input& input,
     const auto start_loc = v.has_start() ? v.start.value() : first_job.location;
     steps.emplace_back(STEP_TYPE::START, start_loc, current_load);
     if (v.has_start()) {
-      const auto travel =
-        v.duration(v.start.value().index(), first_job.index());
-      ETA += travel;
-      duration += travel;
-      eval += v.eval(v.start.value().index(), first_job.index());
+      const auto next_leg = v.eval(v.start.value().index(), first_job.index());
+      ETA += next_leg.duration;
+      eval += next_leg;
     }
 
     // Handle jobs.
@@ -442,13 +439,10 @@ inline Solution format_solution(const Input& input,
 
     for (std::size_t r = 0; r < route.size() - 1; ++r) {
       assert(input.vehicle_ok_with_job(i, route[r + 1]));
-      const auto travel = v.duration(input.jobs[route[r]].index(),
-                                     input.jobs[route[r + 1]].index());
-      ETA += travel;
-      duration += travel;
-
-      eval +=
+      const auto next_leg =
         v.eval(input.jobs[route[r]].index(), input.jobs[route[r + 1]].index());
+      ETA += next_leg.duration;
+      eval += next_leg;
 
       auto& current_job = input.jobs[route[r + 1]];
 
@@ -472,7 +466,7 @@ inline Solution format_solution(const Input& input,
 
       steps.emplace_back(current_job, current_setup, current_load);
       auto& current = steps.back();
-      current.duration = duration;
+      current.duration = eval.duration;
       current.arrival = ETA;
       ETA += (current_setup + current.service);
       unassigned_ranks.erase(route[r + 1]);
@@ -483,12 +477,11 @@ inline Solution format_solution(const Input& input,
     const auto end_loc = v.has_end() ? v.end.value() : last_job.location;
     steps.emplace_back(STEP_TYPE::END, end_loc, current_load);
     if (v.has_end()) {
-      const auto travel = v.duration(last_job.index(), v.end.value().index());
-      ETA += travel;
-      duration += travel;
-      eval += v.eval(last_job.index(), v.end.value().index());
+      const auto next_leg = v.eval(last_job.index(), v.end.value().index());
+      ETA += next_leg.duration;
+      eval += next_leg;
     }
-    steps.back().duration = duration;
+    steps.back().duration = eval.duration;
     steps.back().arrival = ETA;
 
     assert(expected_delivery_ranks.empty());
@@ -496,10 +489,9 @@ inline Solution format_solution(const Input& input,
 
     routes.emplace_back(v.id,
                         std::move(steps),
-                        eval.cost,
+                        eval,
                         setup,
                         service,
-                        duration,
                         0,
                         priority,
                         sum_deliveries,
@@ -880,14 +872,15 @@ inline Route format_route(const Input& input,
          steps.front().arrival + duration + setup + service + forward_wt);
 
   assert(expected_delivery_ranks.empty());
+
+  assert(eval.duration == duration);
   assert(eval.duration <= v.max_travel_time);
 
   return Route(v.id,
                std::move(steps),
-               eval.cost,
+               eval,
                setup,
                service,
-               duration,
                forward_wt,
                priority,
                sum_deliveries,
