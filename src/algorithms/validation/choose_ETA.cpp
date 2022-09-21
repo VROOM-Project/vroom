@@ -84,7 +84,7 @@ Route choose_ETA(const Input& input,
   // start at 0 taking only travel and action times into account (no
   // waiting).
   Duration action_sum = 0;
-  Eval eval_sum;
+  Eval eval_sum(v.fixed_cost(), 0);
   unsigned default_job_tw = 0;
   Duration relative_arrival = 0;
   std::vector<Duration> relative_ETA;

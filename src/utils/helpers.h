@@ -384,7 +384,7 @@ inline Solution format_solution(const Input& input,
     auto previous_location = (v.has_start())
                                ? v.start.value().index()
                                : std::numeric_limits<Index>::max();
-    Eval eval;
+    Eval eval(v.fixed_cost(), 0);
     Duration setup = 0;
     Duration service = 0;
     Priority priority = 0;
@@ -665,7 +665,7 @@ inline Route format_route(const Input& input,
                                            : std::numeric_limits<Index>::max();
 
   // Values summed up while going through the route.
-  Eval eval;
+  Eval eval(v.fixed_cost(), 0);
   Duration duration = 0;
   Duration setup = 0;
   Duration service = 0;
