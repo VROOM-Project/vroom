@@ -73,6 +73,10 @@ struct Vehicle {
 
   Duration available_duration() const;
 
+  Cost fixed_cost() const {
+    return costs.fixed;
+  }
+
   Duration duration(Index i, Index j) const {
     return cost_wrapper.duration(i, j);
   }

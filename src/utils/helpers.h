@@ -303,6 +303,8 @@ inline Eval route_eval_for_vehicle(const Input& input,
   Eval eval;
 
   if (route.size() > 0) {
+    eval.cost += v.fixed_cost();
+
     if (v.has_start()) {
       eval +=
         v.eval(v.start.value().index(), input.jobs[route.front()].index());
