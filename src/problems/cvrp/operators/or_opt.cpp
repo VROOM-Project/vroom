@@ -111,12 +111,21 @@ Eval OrOpt::gain_upper_bound() {
   s_gain =
     _sol_state.edge_gains[s_vehicle][s_rank] + s_v.eval(s_index, after_s_index);
 
+  if (s_route.size() == 2) {
+    s_gain.cost += s_v.fixed_cost();
+  }
+
   // Gain for target vehicle, including cost of moved edge.
   _normal_t_gain = old_edge_cost - previous_cost - next_cost -
                    t_v.eval(s_index, after_s_index);
 
   _reversed_t_gain = old_edge_cost - reverse_previous_cost - reverse_next_cost -
                      t_v.eval(after_s_index, s_index);
+
+  if (t_route.empty()) {
+    _normal_t_gain.cost -= t_v.fixed_cost();
+    _reversed_t_gain.cost -= t_v.fixed_cost();
+  }
 
   _gain_upper_bound_computed = true;
 
