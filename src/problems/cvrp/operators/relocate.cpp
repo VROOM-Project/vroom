@@ -39,15 +39,22 @@ Relocate::Relocate(const Input& input,
 }
 
 void Relocate::compute_gain() {
-  const auto& v = _input.vehicles[t_vehicle];
-
   // For source vehicle, we consider the cost of removing job at rank
   // s_rank, already stored.
   s_gain = _sol_state.node_gains[s_vehicle][s_rank];
 
+  if (s_route.size() == 1) {
+    s_gain.cost += _input.vehicles[s_vehicle].fixed_cost();
+  }
+
   // For target vehicle, we consider the cost of adding source job at
   // rank t_rank.
-  t_gain = -utils::addition_cost(_input, s_route[s_rank], v, t_route, t_rank);
+  const auto& t_v = _input.vehicles[t_vehicle];
+  t_gain = -utils::addition_cost(_input, s_route[s_rank], t_v, t_route, t_rank);
+
+  if (t_route.empty()) {
+    t_gain.cost -= t_v.fixed_cost();
+  }
 
   stored_gain = s_gain + t_gain;
   gain_computed = true;
