@@ -26,7 +26,8 @@ struct Break {
   std::optional<Amount> max_load;
 
   Break(Id id,
-        const std::vector<TimeWindow>& tws,
+        const std::vector<TimeWindow>& tws =
+          std::vector<TimeWindow>(1, TimeWindow()),
         Duration service = 0,
         const std::string& description = "",
         const std::optional<Amount>& max_load = std::optional<Amount>());
