@@ -711,6 +711,8 @@ inline Route format_route(const Input& input,
     for (Index i = 0; i < tw_r.breaks_at_rank[r]; ++i, ++break_rank) {
       const auto& b = v.breaks[break_rank];
 
+      assert(b.is_valid_for_load(current_load));
+
       steps.emplace_back(b, current_load);
       auto& current_break = steps.back();
 
@@ -822,6 +824,8 @@ inline Route format_route(const Input& input,
 
   for (Index i = 0; i < tw_r.breaks_at_rank[r]; ++i, ++break_rank) {
     const auto& b = v.breaks[break_rank];
+
+    assert(b.is_valid_for_load(current_load));
 
     steps.emplace_back(b, current_load);
     auto& current_break = steps.back();
