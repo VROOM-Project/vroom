@@ -15,8 +15,13 @@ namespace vroom {
 Break::Break(Id id,
              const std::vector<TimeWindow>& tws,
              Duration service,
-             const std::string& description)
-  : id(id), tws(tws), service(service), description(description) {
+             const std::string& description,
+             const std::optional<Amount>& max_load)
+  : id(id),
+    tws(tws),
+    service(service),
+    description(description),
+    max_load(max_load) {
   utils::check_tws(tws);
 }
 
