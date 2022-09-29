@@ -51,19 +51,19 @@ inline double get_double(const rapidjson::Value& object, const char* key) {
 
 inline Amount get_amount(const rapidjson::Value& object,
                          const char* key,
-                         unsigned size) {
+                         unsigned amount_size) {
   // Default to zero amount with provided size.
-  Amount amount(size);
+  Amount amount(amount_size);
 
   if (object.HasMember(key)) {
     if (!object[key].IsArray()) {
       throw InputException("Invalid " + std::string(key) + " array.");
     }
 
-    if (object[key].Size() != size) {
+    if (object[key].Size() != amount_size) {
       throw InputException("Inconsistent " + std::string(key) +
                            " length: " + std::to_string(object[key].Size()) +
-                           " and " + std::to_string(size) + '.');
+                           " and " + std::to_string(amount_size) + '.');
     }
 
     for (rapidjson::SizeType i = 0; i < object[key].Size(); ++i) {
@@ -221,15 +221,22 @@ get_break_time_windows(const rapidjson::Value& b) {
   return tws;
 }
 
-inline Break get_break(const rapidjson::Value& b) {
+inline Break get_break(const rapidjson::Value& b, unsigned amount_size) {
   check_id(b, "break");
+
+  const auto max_load = b.HasMember("max_load")
+                          ? get_amount(b, "max_load", amount_size)
+                          : std::optional<Amount>();
+
   return Break(b["id"].GetUint64(),
                get_break_time_windows(b),
                get_duration(b, "service"),
-               get_string(b, "description"));
+               get_string(b, "description"),
+               max_load);
 }
 
-inline std::vector<Break> get_vehicle_breaks(const rapidjson::Value& v) {
+inline std::vector<Break> get_vehicle_breaks(const rapidjson::Value& v,
+                                             unsigned amount_size) {
   std::vector<Break> breaks;
   if (v.HasMember("breaks")) {
     if (!v["breaks"].IsArray()) {
@@ -240,7 +247,7 @@ inline std::vector<Break> get_vehicle_breaks(const rapidjson::Value& v) {
     std::transform(v["breaks"].Begin(),
                    v["breaks"].End(),
                    std::back_inserter(breaks),
-                   [](auto& b) { return get_break(b); });
+                   [&](auto& b) { return get_break(b, amount_size); });
   }
 
   std::sort(breaks.begin(), breaks.end(), [](const auto& a, const auto& b) {
@@ -398,7 +405,7 @@ inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
                  get_amount(json_vehicle, "capacity", amount_size),
                  get_skills(json_vehicle),
                  get_vehicle_time_window(json_vehicle),
-                 get_vehicle_breaks(json_vehicle),
+                 get_vehicle_breaks(json_vehicle, amount_size),
                  get_string(json_vehicle, "description"),
                  get_double(json_vehicle, "speed_factor"),
                  get_max_tasks(json_vehicle),
