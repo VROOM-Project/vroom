@@ -32,6 +32,8 @@ struct Break {
         const std::optional<Amount>& max_load = std::optional<Amount>());
 
   bool is_valid_start(Duration time) const;
+
+  bool is_valid_for_load(const Amount& load) const;
 };
 
 } // namespace vroom
