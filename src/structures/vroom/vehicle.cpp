@@ -46,10 +46,17 @@ Vehicle::Vehicle(Id id,
 
   for (unsigned i = 0; i < breaks.size(); ++i) {
     const auto& b = breaks[i];
+
     if (break_id_to_rank.find(b.id) != break_id_to_rank.end()) {
       throw InputException("Duplicate break id: " + std::to_string(b.id) + ".");
     }
     break_id_to_rank[b.id] = i;
+
+    if (b.max_load.has_value() and
+        b.max_load.value().size() != capacity.size()) {
+      throw InputException("Inconsistent break max_load size for break: " +
+                           std::to_string(b.id) + ".");
+    }
   }
 
   if (!input_steps.empty()) {
