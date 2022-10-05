@@ -170,7 +170,7 @@ std::vector<Index> TSP::raw_solve(unsigned nb_threads,
   // Compute deadline including heuristic computing time.
   const Deadline deadline =
     timeout.has_value()
-      ? utils::now() + std::chrono::milliseconds(timeout.value())
+      ? utils::now() + timeout.value()
       : Deadline();
 
   // Applying heuristic.
