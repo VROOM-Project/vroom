@@ -84,7 +84,7 @@ void log_solution(const vroom::Solution& sol, bool geometry) {
 
 void run_example_with_osrm() {
   bool GEOMETRY = true;
-  unsigned amount_dimension = 1;
+  const unsigned amount_dimension = 1;
 
   // Set OSRM host and port for "car" profile.
   vroom::io::Servers servers;
@@ -98,7 +98,7 @@ void run_example_with_osrm() {
   // Create one-dimension capacity restrictions to model the situation
   // where one vehicle can handle 4 jobs with deliveries.
   problem_instance.set_amount_size(amount_dimension);
-  vroom::Amount vehicle_capacity(1);
+  vroom::Amount vehicle_capacity(amount_dimension);
 
   vroom::TimeWindow vehicle_tw(28800, 43200); // Working hours.
   // Default "zero" amount data structures with relevant dimension.
