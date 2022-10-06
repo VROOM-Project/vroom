@@ -10,9 +10,9 @@ All rights reserved (see LICENSE).
 #include <algorithm>
 #include <mutex>
 #include <thread>
-#include <vector>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 #include "algorithms/validation/check.h"
 #include "algorithms/validation/choose_ETA.h"
