@@ -14,7 +14,9 @@ namespace vroom {
 Summary::Summary() : cost(0), routes(0), unassigned(0), setup(0), service(0) {
 }
 
-Summary::Summary(unsigned routes, unsigned unassigned, const Amount& zero_amount)
+Summary::Summary(unsigned routes,
+                 unsigned unassigned,
+                 const Amount& zero_amount)
   : cost(0),
     routes(routes),
     unassigned(unassigned),
