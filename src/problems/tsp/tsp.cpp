@@ -169,9 +169,7 @@ std::vector<Index> TSP::raw_solve(unsigned nb_threads,
                                   const Timeout& timeout) const {
   // Compute deadline including heuristic computing time.
   const Deadline deadline =
-    timeout.has_value()
-      ? utils::now() + std::chrono::milliseconds(timeout.value())
-      : Deadline();
+    timeout.has_value() ? utils::now() + timeout.value() : Deadline();
 
   // Applying heuristic.
   std::list<Index> christo_sol = tsp::christofides(_symmetrized_matrix);
