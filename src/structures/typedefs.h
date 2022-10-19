@@ -118,7 +118,6 @@ enum class VIOLATION {
 
 enum OperatorName {
   UnassignedExchange,
-  SwapStar,
   CrossExchange,
   MixedExchange,
   TwoOpt,
@@ -133,6 +132,8 @@ enum OperatorName {
   IntraTwoOpt,
   PDShift,
   RouteExchange,
+  SwapStar,
+  RouteSplit,
   MAX
 };
 

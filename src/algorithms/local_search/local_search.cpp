@@ -22,6 +22,7 @@ All rights reserved (see LICENSE).
 #include "problems/vrptw/operators/relocate.h"
 #include "problems/vrptw/operators/reverse_two_opt.h"
 #include "problems/vrptw/operators/route_exchange.h"
+#include "problems/vrptw/operators/route_split.h"
 #include "problems/vrptw/operators/swap_star.h"
 #include "problems/vrptw/operators/two_opt.h"
 #include "problems/vrptw/operators/unassigned_exchange.h"
@@ -32,7 +33,6 @@ namespace ls {
 
 template <class Route,
           class UnassignedExchange,
-          class SwapStar,
           class CrossExchange,
           class MixedExchange,
           class TwoOpt,
@@ -46,10 +46,11 @@ template <class Route,
           class IntraOrOpt,
           class IntraTwoOpt,
           class PDShift,
-          class RouteExchange>
+          class RouteExchange,
+          class SwapStar,
+          class RouteSplit>
 LocalSearch<Route,
             UnassignedExchange,
-            SwapStar,
             CrossExchange,
             MixedExchange,
             TwoOpt,
@@ -63,10 +64,12 @@ LocalSearch<Route,
             IntraOrOpt,
             IntraTwoOpt,
             PDShift,
-            RouteExchange>::LocalSearch(const Input& input,
-                                        std::vector<Route>& sol,
-                                        unsigned max_nb_jobs_removal,
-                                        const Timeout& timeout)
+            RouteExchange,
+            SwapStar,
+            RouteSplit>::LocalSearch(const Input& input,
+                                     std::vector<Route>& sol,
+                                     unsigned max_nb_jobs_removal,
+                                     const Timeout& timeout)
   : _input(input),
     _nb_vehicles(_input.vehicles.size()),
     _max_nb_jobs_removal(max_nb_jobs_removal),
@@ -116,7 +119,6 @@ RouteInsertion compute_best_insertion(const Input& input,
 
 template <class Route,
           class UnassignedExchange,
-          class SwapStar,
           class CrossExchange,
           class MixedExchange,
           class TwoOpt,
@@ -130,10 +132,11 @@ template <class Route,
           class IntraOrOpt,
           class IntraTwoOpt,
           class PDShift,
-          class RouteExchange>
+          class RouteExchange,
+          class SwapStar,
+          class RouteSplit>
 void LocalSearch<Route,
                  UnassignedExchange,
-                 SwapStar,
                  CrossExchange,
                  MixedExchange,
                  TwoOpt,
@@ -147,9 +150,11 @@ void LocalSearch<Route,
                  IntraOrOpt,
                  IntraTwoOpt,
                  PDShift,
-                 RouteExchange>::try_job_additions(const std::vector<Index>&
-                                                     routes,
-                                                   double regret_coeff) {
+                 RouteExchange,
+                 SwapStar,
+                 RouteSplit>::try_job_additions(const std::vector<Index>&
+                                                  routes,
+                                                double regret_coeff) {
 
   bool job_added;
 
@@ -290,7 +295,6 @@ void LocalSearch<Route,
 
 template <class Route,
           class UnassignedExchange,
-          class SwapStar,
           class CrossExchange,
           class MixedExchange,
           class TwoOpt,
@@ -304,10 +308,11 @@ template <class Route,
           class IntraOrOpt,
           class IntraTwoOpt,
           class PDShift,
-          class RouteExchange>
+          class RouteExchange,
+          class SwapStar,
+          class RouteSplit>
 void LocalSearch<Route,
                  UnassignedExchange,
-                 SwapStar,
                  CrossExchange,
                  MixedExchange,
                  TwoOpt,
@@ -321,7 +326,9 @@ void LocalSearch<Route,
                  IntraOrOpt,
                  IntraTwoOpt,
                  PDShift,
-                 RouteExchange>::run_ls_step() {
+                 RouteExchange,
+                 SwapStar,
+                 RouteSplit>::run_ls_step() {
   // Store best move involving a pair of routes.
   std::vector<std::vector<std::unique_ptr<Operator>>> best_ops(_nb_vehicles);
   for (std::size_t v = 0; v < _nb_vehicles; ++v) {
@@ -1607,6 +1614,41 @@ void LocalSearch<Route,
       }
     }
 
+    // RouteSplit stuff
+    std::vector<Index> empty_route_ranks;
+    std::vector<std::reference_wrapper<Route>> empty_route_refs;
+    for (Index v = 0; v < _input.vehicles.size(); ++v) {
+      if (_sol[v].empty()) {
+        empty_route_ranks.push_back(v);
+        empty_route_refs.push_back(std::ref(_sol[v]));
+      }
+    }
+
+    if (empty_route_ranks.size() >= 2) {
+      for (const auto& s_t : s_t_pairs) {
+        if (s_t.second != s_t.first or best_priorities[s_t.first] > 0 or
+            _sol[s_t.first].size() < 2) {
+          continue;
+        }
+
+#ifdef LOG_LS_OPERATORS
+        ++tried_moves[OperatorName::RouteSplit];
+#endif
+        RouteSplit r(_input,
+                     _sol_state,
+                     _sol[s_t.first],
+                     s_t.first,
+                     empty_route_ranks,
+                     empty_route_refs,
+                     best_gains[s_t.first][s_t.second]);
+
+        if (r.gain() > best_gains[s_t.first][s_t.second]) {
+          best_gains[s_t.first][s_t.second] = r.gain();
+          best_ops[s_t.first][s_t.second] = std::make_unique<RouteSplit>(r);
+        }
+      }
+    }
+
     // Find best overall move, first checking priority increase then
     // best gain if no priority increase is available.
     best_priority = 0;
@@ -1743,7 +1785,6 @@ void LocalSearch<Route,
 
 template <class Route,
           class UnassignedExchange,
-          class SwapStar,
           class CrossExchange,
           class MixedExchange,
           class TwoOpt,
@@ -1757,10 +1798,11 @@ template <class Route,
           class IntraOrOpt,
           class IntraTwoOpt,
           class PDShift,
-          class RouteExchange>
+          class RouteExchange,
+          class SwapStar,
+          class RouteSplit>
 void LocalSearch<Route,
                  UnassignedExchange,
-                 SwapStar,
                  CrossExchange,
                  MixedExchange,
                  TwoOpt,
@@ -1774,7 +1816,9 @@ void LocalSearch<Route,
                  IntraOrOpt,
                  IntraTwoOpt,
                  PDShift,
-                 RouteExchange>::run() {
+                 RouteExchange,
+                 SwapStar,
+                 RouteSplit>::run() {
   bool try_ls_step = true;
   bool first_step = true;
 
@@ -1847,7 +1891,6 @@ void LocalSearch<Route,
 #ifdef LOG_LS_OPERATORS
 template <class Route,
           class UnassignedExchange,
-          class SwapStar,
           class CrossExchange,
           class MixedExchange,
           class TwoOpt,
@@ -1861,11 +1904,12 @@ template <class Route,
           class IntraOrOpt,
           class IntraTwoOpt,
           class PDShift,
-          class RouteExchange>
+          class RouteExchange,
+          class SwapStar,
+          class RouteSplit>
 std::array<OperatorStats, OperatorName::MAX>
 LocalSearch<Route,
             UnassignedExchange,
-            SwapStar,
             CrossExchange,
             MixedExchange,
             TwoOpt,
@@ -1879,7 +1923,9 @@ LocalSearch<Route,
             IntraOrOpt,
             IntraTwoOpt,
             PDShift,
-            RouteExchange>::get_stats() const {
+            RouteExchange,
+            SwapStar,
+            RouteSplit>::get_stats() const {
   std::array<OperatorStats, OperatorName::MAX> stats;
   for (auto op = 0; op < OperatorName::MAX; ++op) {
     stats[op] = OperatorStats(tried_moves.at(op), applied_moves.at(op));
@@ -1891,7 +1937,6 @@ LocalSearch<Route,
 
 template <class Route,
           class UnassignedExchange,
-          class SwapStar,
           class CrossExchange,
           class MixedExchange,
           class TwoOpt,
@@ -1905,10 +1950,11 @@ template <class Route,
           class IntraOrOpt,
           class IntraTwoOpt,
           class PDShift,
-          class RouteExchange>
+          class RouteExchange,
+          class SwapStar,
+          class RouteSplit>
 Eval LocalSearch<Route,
                  UnassignedExchange,
-                 SwapStar,
                  CrossExchange,
                  MixedExchange,
                  TwoOpt,
@@ -1922,9 +1968,9 @@ Eval LocalSearch<Route,
                  IntraOrOpt,
                  IntraTwoOpt,
                  PDShift,
-                 RouteExchange>::job_route_cost(Index v_target,
-                                                Index v,
-                                                Index r) {
+                 RouteExchange,
+                 SwapStar,
+                 RouteSplit>::job_route_cost(Index v_target, Index v, Index r) {
   assert(v != v_target);
 
   Eval eval(INFINITE_COST, 0);
@@ -1962,7 +2008,6 @@ Eval LocalSearch<Route,
 
 template <class Route,
           class UnassignedExchange,
-          class SwapStar,
           class CrossExchange,
           class MixedExchange,
           class TwoOpt,
@@ -1976,10 +2021,11 @@ template <class Route,
           class IntraOrOpt,
           class IntraTwoOpt,
           class PDShift,
-          class RouteExchange>
+          class RouteExchange,
+          class SwapStar,
+          class RouteSplit>
 Eval LocalSearch<Route,
                  UnassignedExchange,
-                 SwapStar,
                  CrossExchange,
                  MixedExchange,
                  TwoOpt,
@@ -1993,7 +2039,9 @@ Eval LocalSearch<Route,
                  IntraOrOpt,
                  IntraTwoOpt,
                  PDShift,
-                 RouteExchange>::relocate_cost_lower_bound(Index v, Index r) {
+                 RouteExchange,
+                 SwapStar,
+                 RouteSplit>::relocate_cost_lower_bound(Index v, Index r) {
   Eval best_bound(INFINITE_COST, 0);
 
   for (std::size_t other_v = 0; other_v < _sol.size(); ++other_v) {
@@ -2010,7 +2058,6 @@ Eval LocalSearch<Route,
 
 template <class Route,
           class UnassignedExchange,
-          class SwapStar,
           class CrossExchange,
           class MixedExchange,
           class TwoOpt,
@@ -2024,10 +2071,11 @@ template <class Route,
           class IntraOrOpt,
           class IntraTwoOpt,
           class PDShift,
-          class RouteExchange>
+          class RouteExchange,
+          class SwapStar,
+          class RouteSplit>
 Eval LocalSearch<Route,
                  UnassignedExchange,
-                 SwapStar,
                  CrossExchange,
                  MixedExchange,
                  TwoOpt,
@@ -2041,9 +2089,11 @@ Eval LocalSearch<Route,
                  IntraOrOpt,
                  IntraTwoOpt,
                  PDShift,
-                 RouteExchange>::relocate_cost_lower_bound(Index v,
-                                                           Index r1,
-                                                           Index r2) {
+                 RouteExchange,
+                 SwapStar,
+                 RouteSplit>::relocate_cost_lower_bound(Index v,
+                                                        Index r1,
+                                                        Index r2) {
   Eval best_bound(INFINITE_COST, 0);
 
   for (std::size_t other_v = 0; other_v < _sol.size(); ++other_v) {
@@ -2062,7 +2112,6 @@ Eval LocalSearch<Route,
 
 template <class Route,
           class UnassignedExchange,
-          class SwapStar,
           class CrossExchange,
           class MixedExchange,
           class TwoOpt,
@@ -2076,10 +2125,11 @@ template <class Route,
           class IntraOrOpt,
           class IntraTwoOpt,
           class PDShift,
-          class RouteExchange>
+          class RouteExchange,
+          class SwapStar,
+          class RouteSplit>
 void LocalSearch<Route,
                  UnassignedExchange,
-                 SwapStar,
                  CrossExchange,
                  MixedExchange,
                  TwoOpt,
@@ -2093,7 +2143,9 @@ void LocalSearch<Route,
                  IntraOrOpt,
                  IntraTwoOpt,
                  PDShift,
-                 RouteExchange>::remove_from_routes() {
+                 RouteExchange,
+                 SwapStar,
+                 RouteSplit>::remove_from_routes() {
   // Store nearest job from and to any job in any route for constant
   // time access down the line.
   for (std::size_t v1 = 0; v1 < _nb_vehicles; ++v1) {
@@ -2210,7 +2262,6 @@ void LocalSearch<Route,
 
 template <class Route,
           class UnassignedExchange,
-          class SwapStar,
           class CrossExchange,
           class MixedExchange,
           class TwoOpt,
@@ -2224,31 +2275,32 @@ template <class Route,
           class IntraOrOpt,
           class IntraTwoOpt,
           class PDShift,
-          class RouteExchange>
-utils::SolutionIndicators<Route>
-LocalSearch<Route,
-            UnassignedExchange,
-            SwapStar,
-            CrossExchange,
-            MixedExchange,
-            TwoOpt,
-            ReverseTwoOpt,
-            Relocate,
-            OrOpt,
-            IntraExchange,
-            IntraCrossExchange,
-            IntraMixedExchange,
-            IntraRelocate,
-            IntraOrOpt,
-            IntraTwoOpt,
-            PDShift,
-            RouteExchange>::indicators() const {
+          class RouteExchange,
+          class SwapStar,
+          class RouteSplit>
+utils::SolutionIndicators<Route> LocalSearch<Route,
+                                             UnassignedExchange,
+                                             CrossExchange,
+                                             MixedExchange,
+                                             TwoOpt,
+                                             ReverseTwoOpt,
+                                             Relocate,
+                                             OrOpt,
+                                             IntraExchange,
+                                             IntraCrossExchange,
+                                             IntraMixedExchange,
+                                             IntraRelocate,
+                                             IntraOrOpt,
+                                             IntraTwoOpt,
+                                             PDShift,
+                                             RouteExchange,
+                                             SwapStar,
+                                             RouteSplit>::indicators() const {
   return _best_sol_indicators;
 }
 
 template class LocalSearch<TWRoute,
                            vrptw::UnassignedExchange,
-                           vrptw::SwapStar,
                            vrptw::CrossExchange,
                            vrptw::MixedExchange,
                            vrptw::TwoOpt,
@@ -2262,11 +2314,12 @@ template class LocalSearch<TWRoute,
                            vrptw::IntraOrOpt,
                            vrptw::IntraTwoOpt,
                            vrptw::PDShift,
-                           vrptw::RouteExchange>;
+                           vrptw::RouteExchange,
+                           vrptw::SwapStar,
+                           vrptw::RouteSplit>;
 
 template class LocalSearch<RawRoute,
                            cvrp::UnassignedExchange,
-                           cvrp::SwapStar,
                            cvrp::CrossExchange,
                            cvrp::MixedExchange,
                            cvrp::TwoOpt,
@@ -2280,7 +2333,9 @@ template class LocalSearch<RawRoute,
                            cvrp::IntraOrOpt,
                            cvrp::IntraTwoOpt,
                            cvrp::PDShift,
-                           cvrp::RouteExchange>;
+                           cvrp::RouteExchange,
+                           cvrp::SwapStar,
+                           cvrp::RouteSplit>;
 
 } // namespace ls
 } // namespace vroom

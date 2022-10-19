@@ -25,6 +25,7 @@ All rights reserved (see LICENSE).
 #include "problems/vrptw/operators/relocate.h"
 #include "problems/vrptw/operators/reverse_two_opt.h"
 #include "problems/vrptw/operators/route_exchange.h"
+#include "problems/vrptw/operators/route_split.h"
 #include "problems/vrptw/operators/swap_star.h"
 #include "problems/vrptw/operators/two_opt.h"
 #include "problems/vrptw/operators/unassigned_exchange.h"
@@ -39,7 +40,6 @@ namespace vrptw {
 
 using LocalSearch = ls::LocalSearch<TWRoute,
                                     vrptw::UnassignedExchange,
-                                    vrptw::SwapStar,
                                     vrptw::CrossExchange,
                                     vrptw::MixedExchange,
                                     vrptw::TwoOpt,
@@ -53,7 +53,9 @@ using LocalSearch = ls::LocalSearch<TWRoute,
                                     vrptw::IntraOrOpt,
                                     vrptw::IntraTwoOpt,
                                     vrptw::PDShift,
-                                    vrptw::RouteExchange>;
+                                    vrptw::RouteExchange,
+                                    vrptw::SwapStar,
+                                    vrptw::RouteSplit>;
 } // namespace vrptw
 
 const std::vector<HeuristicParameters> VRPTW::homogeneous_parameters =

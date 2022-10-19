@@ -60,7 +60,6 @@ inline INIT get_init(const std::string& s) {
 #ifdef LOG_LS_OPERATORS
 const std::array<std::string, OperatorName::MAX>
   operator_names({"UnassignedExchange",
-                  "SwapStar",
                   "CrossExchange",
                   "MixedExchange",
                   "TwoOpt",
@@ -74,7 +73,9 @@ const std::array<std::string, OperatorName::MAX>
                   "IntraOrOpt",
                   "IntraTwoOpt",
                   "PDShift",
-                  "RouteExchange"});
+                  "RouteExchange",
+                  "SwapStar",
+                  "RouteSplit"});
 
 inline void log_LS_operators(
   const std::vector<std::array<ls::OperatorStats, OperatorName::MAX>>&
