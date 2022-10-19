@@ -77,7 +77,17 @@ public:
 
   bool has_pickup_up_to_rank(const Index rank) const;
 
-  const Amount& max_load() const;
+  const Amount& max_load() const {
+    return _fwd_peaks.back();
+  }
+
+  const Amount& fwd_peak(Index rank) const {
+    return _fwd_peaks[rank];
+  }
+
+  const Amount& bwd_peak(Index rank) const {
+    return _bwd_peaks[rank];
+  }
 
   // Check validity for addition of a given load in current route at
   // rank.
