@@ -29,6 +29,9 @@ using Servers = std::unordered_map<std::string, Server>;
 
 class VRP;
 
+constexpr unsigned DEFAULT_EXPLORATION_LEVEL = 5;
+constexpr unsigned DEFAULT_THREADS_NUMBER = 4;
+
 class Input {
 private:
   TimePoint _start_loading;
