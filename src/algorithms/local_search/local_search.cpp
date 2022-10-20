@@ -1614,37 +1614,40 @@ void LocalSearch<Route,
       }
     }
 
-    // RouteSplit stuff
-    std::vector<Index> empty_route_ranks;
-    std::vector<std::reference_wrapper<Route>> empty_route_refs;
-    for (Index v = 0; v < _input.vehicles.size(); ++v) {
-      if (_sol[v].empty()) {
-        empty_route_ranks.push_back(v);
-        empty_route_refs.push_back(std::ref(_sol[v]));
-      }
-    }
-
-    if (empty_route_ranks.size() >= 2) {
-      for (const auto& s_t : s_t_pairs) {
-        if (s_t.second != s_t.first or best_priorities[s_t.first] > 0 or
-            _sol[s_t.first].size() < 2) {
-          continue;
+    if (!_input.has_homogeneous_locations() or
+        !_input.has_homogeneous_profiles()) {
+      // RouteSplit stuff
+      std::vector<Index> empty_route_ranks;
+      std::vector<std::reference_wrapper<Route>> empty_route_refs;
+      for (Index v = 0; v < _input.vehicles.size(); ++v) {
+        if (_sol[v].empty()) {
+          empty_route_ranks.push_back(v);
+          empty_route_refs.push_back(std::ref(_sol[v]));
         }
+      }
+
+      if (empty_route_ranks.size() >= 2) {
+        for (const auto& s_t : s_t_pairs) {
+          if (s_t.second != s_t.first or best_priorities[s_t.first] > 0 or
+              _sol[s_t.first].size() < 2) {
+            continue;
+          }
 
 #ifdef LOG_LS_OPERATORS
-        ++tried_moves[OperatorName::RouteSplit];
+          ++tried_moves[OperatorName::RouteSplit];
 #endif
-        RouteSplit r(_input,
-                     _sol_state,
-                     _sol[s_t.first],
-                     s_t.first,
-                     empty_route_ranks,
-                     empty_route_refs,
-                     best_gains[s_t.first][s_t.second]);
+          RouteSplit r(_input,
+                       _sol_state,
+                       _sol[s_t.first],
+                       s_t.first,
+                       empty_route_ranks,
+                       empty_route_refs,
+                       best_gains[s_t.first][s_t.second]);
 
-        if (r.gain() > best_gains[s_t.first][s_t.second]) {
-          best_gains[s_t.first][s_t.second] = r.gain();
-          best_ops[s_t.first][s_t.second] = std::make_unique<RouteSplit>(r);
+          if (r.gain() > best_gains[s_t.first][s_t.second]) {
+            best_gains[s_t.first][s_t.second] = r.gain();
+            best_ops[s_t.first][s_t.second] = std::make_unique<RouteSplit>(r);
+          }
         }
       }
     }
