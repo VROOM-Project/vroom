@@ -104,6 +104,12 @@ compute_best_route_split_choice(const Input& input,
       continue;
     }
 
+    const auto& init_eval = sol_state.route_evals[s_vehicle];
+    if (init_eval - first_best_end_eval <= best_known_gain) {
+      // Overall gain will be even lower with begin route cost.
+      continue;
+    }
+
     auto first_best_begin_eval = NO_EVAL;
     Index first_v_begin = 0; // dummy init
     auto second_best_begin_eval = NO_EVAL;
@@ -160,7 +166,6 @@ compute_best_route_split_choice(const Input& input,
     // Now we have at least one valid candidate for begin and end
     // route.
     SplitChoice current_split_choice;
-    const auto& init_eval = sol_state.route_evals[s_vehicle];
 
     if (first_v_begin != first_v_end) {
       current_split_choice = {init_eval - first_best_begin_eval -
