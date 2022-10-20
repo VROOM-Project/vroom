@@ -34,7 +34,8 @@ RouteSplit::RouteSplit(
              0),
     _best_known_gain(best_known_gain),
     _empty_route_ranks(empty_route_ranks),
-    _empty_route_refs(empty_route_refs) {
+    _empty_route_refs(empty_route_refs),
+    choice(ls::empty_route_split_choice) {
   assert(s_route.size() >= 2);
   assert(_empty_route_ranks.size() >= 2);
 }
@@ -94,6 +95,12 @@ std::vector<Index> RouteSplit::update_candidates() const {
   return {s_vehicle,
           _empty_route_ranks[choice.v_begin],
           _empty_route_ranks[choice.v_end]};
+}
+
+bool RouteSplit::invalidated_by(Index rank) const {
+  assert(choice.gain != NO_GAIN);
+  return rank == _empty_route_ranks[choice.v_begin] or
+         rank == _empty_route_ranks[choice.v_end];
 }
 
 } // namespace cvrp

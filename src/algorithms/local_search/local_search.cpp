@@ -1766,17 +1766,30 @@ void LocalSearch<Route,
         if (best_ops[v][v] == nullptr) {
           continue;
         }
+
+        bool invalidate_move = false;
+
         for (auto req_u : best_ops[v][v]->required_unassigned()) {
           if (_sol_state.unassigned.find(req_u) ==
               _sol_state.unassigned.end()) {
             // This move should be invalidated because a required
             // unassigned job has been added by try_job_additions in
             // the meantime.
-            best_gains[v][v] = Eval();
-            best_priorities[v] = 0;
-            best_ops[v][v] = std::unique_ptr<Operator>();
-            s_t_pairs.emplace_back(v, v);
+            invalidate_move = true;
+            break;
           }
+        }
+
+        for (auto v_rank : update_candidates) {
+          invalidate_move =
+            invalidate_move or best_ops[v][v]->invalidated_by(v_rank);
+        }
+
+        if (invalidate_move) {
+          best_gains[v][v] = Eval();
+          best_priorities[v] = 0;
+          best_ops[v][v] = std::unique_ptr<Operator>();
+          s_t_pairs.emplace_back(v, v);
         }
       }
     }

@@ -44,6 +44,8 @@ public:
   virtual std::vector<Index> addition_candidates() const override;
 
   virtual std::vector<Index> update_candidates() const override;
+
+  virtual bool invalidated_by(Index rank) const override;
 };
 
 } // namespace cvrp
