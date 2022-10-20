@@ -5,6 +5,7 @@
 ### Added
 
 - Support for `max_travel_time` at vehicle level (#273)
+- `RouteSplit` local search operator (#788)
 - Advertise `libvroom` in README and wiki (#42)
 
 ### Changed
