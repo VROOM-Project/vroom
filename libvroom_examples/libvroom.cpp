@@ -211,8 +211,10 @@ void run_example_with_osrm() {
   // - jobs 5 and 6 can be served by either one of the vehicles
 
   // Solve!
-  auto sol = problem_instance.solve(5,  // Exploration level.
-                                    4); // Use 4 threads.
+  auto sol =
+    problem_instance.solve(vroom::DEFAULT_EXPLORATION_LEVEL, // Exploration
+                                                             // level.
+                           vroom::DEFAULT_THREADS_NUMBER);   // Use 4 threads.
 
   log_solution(sol, GEOMETRY);
 }
@@ -265,8 +267,10 @@ void run_example_with_custom_matrix() {
   }
 
   // Solve!
-  auto sol = problem_instance.solve(5,  // Exploration level.
-                                    4); // Use 4 threads.
+  auto sol =
+    problem_instance.solve(vroom::DEFAULT_EXPLORATION_LEVEL, // Exploration
+                                                             // level.
+                           vroom::DEFAULT_THREADS_NUMBER);   // Use 4 threads.
 
   log_solution(sol, GEOMETRY);
 }

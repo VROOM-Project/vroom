@@ -60,6 +60,9 @@ const std::string DEFAULT_PROFILE = "car";
 constexpr Priority MAX_PRIORITY = 100;
 constexpr double MAX_SPEED_FACTOR = 5.0;
 
+constexpr unsigned DEFAULT_EXPLORATION_LEVEL = 5;
+constexpr unsigned DEFAULT_THREADS_NUMBER = 4;
+
 // Available routing engines.
 enum class ROUTER { OSRM, LIBOSRM, ORS, VALHALLA };
 
