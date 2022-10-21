@@ -89,21 +89,27 @@ enum class STEP_TYPE { START, JOB, BREAK, END };
 // Heuristic options.
 enum class HEURISTIC { BASIC, DYNAMIC, INIT_ROUTES };
 enum class INIT { NONE, HIGHER_AMOUNT, NEAREST, FURTHEST, EARLIEST_DEADLINE };
+enum class SORT { CAPACITY, FIXED_COST };
 
 struct HeuristicParameters {
   HEURISTIC heuristic;
   INIT init;
   float regret_coeff;
+  SORT sort;
 
   constexpr HeuristicParameters(HEURISTIC heuristic,
                                 INIT init,
-                                float regret_coeff)
-    : heuristic(heuristic), init(init), regret_coeff(regret_coeff) {
+                                float regret_coeff,
+                                SORT sort = SORT::CAPACITY)
+    : heuristic(heuristic), init(init), regret_coeff(regret_coeff), sort(sort) {
   }
 
   // Only makes sense for user-defined initial routes.
   constexpr HeuristicParameters(HEURISTIC heuristic)
-    : heuristic(heuristic), init(INIT::NONE), regret_coeff(0) {
+    : heuristic(heuristic),
+      init(INIT::NONE),
+      regret_coeff(0),
+      sort(SORT::CAPACITY) {
     assert(heuristic == HEURISTIC::INIT_ROUTES);
   }
 };

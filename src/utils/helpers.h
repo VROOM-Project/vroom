@@ -61,6 +61,16 @@ inline INIT get_init(const std::string& s) {
   }
 }
 
+inline SORT get_sort(const std::string& s) {
+  if (s == "CAPACITY") {
+    return SORT::CAPACITY;
+  } else if (s == "FIXED_COST") {
+    return SORT::FIXED_COST;
+  } else {
+    throw InputException("Invalid heuristic parameter in command-line.");
+  }
+}
+
 #ifdef LOG_LS_OPERATORS
 const std::array<std::string, OperatorName::MAX>
   operator_names({"UnassignedExchange",
@@ -122,11 +132,13 @@ inline HeuristicParameters str_to_heuristic_param(const std::string& s) {
     tokens.push_back(token);
   }
 
-  if (tokens.size() != 3 or tokens[0].size() != 1) {
+  if ((tokens.size() != 3 and tokens.size() != 4) or tokens[0].size() != 1) {
     throw InputException("Invalid heuristic parameter in command-line.");
   }
 
   auto init = get_init(tokens[1]);
+  auto sort = (tokens.size() == 3) ? SORT::CAPACITY : get_sort(tokens[3]);
+
   try {
     auto h = std::stoul(tokens[0]);
 
@@ -139,7 +151,10 @@ inline HeuristicParameters str_to_heuristic_param(const std::string& s) {
       throw InputException("Invalid heuristic parameter in command-line.");
     }
 
-    return HeuristicParameters(static_cast<HEURISTIC>(h), init, regret_coeff);
+    return HeuristicParameters(static_cast<HEURISTIC>(h),
+                               init,
+                               regret_coeff,
+                               sort);
   } catch (const std::exception& e) {
     throw InputException("Invalid heuristic parameter in command-line.");
   }

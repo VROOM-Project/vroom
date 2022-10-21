@@ -61,7 +61,8 @@ std::vector<std::vector<Eval>> get_jobs_vehicles_evals(const Input& input) {
   return evals;
 }
 
-template <class T> T basic(const Input& input, INIT init, double lambda) {
+template <class T>
+T basic(const Input& input, INIT init, double lambda, SORT sort) {
   const auto nb_vehicles = input.vehicles.size();
   T routes;
   for (Index v = 0; v < nb_vehicles; ++v) {
@@ -77,19 +78,40 @@ template <class T> T basic(const Input& input, INIT init, double lambda) {
   // within the heuristic.
   std::vector<Index> vehicles_ranks(nb_vehicles);
   std::iota(vehicles_ranks.begin(), vehicles_ranks.end(), 0);
-  // Sort vehicles by decreasing max number of tasks allowed, then
-  // capacity (not a total order), then working hours length.
-  std::stable_sort(vehicles_ranks.begin(),
-                   vehicles_ranks.end(),
-                   [&](const auto lhs, const auto rhs) {
-                     auto& v_lhs = input.vehicles[lhs];
-                     auto& v_rhs = input.vehicles[rhs];
-                     return v_lhs.max_tasks > v_rhs.max_tasks or
-                            (v_lhs.max_tasks == v_rhs.max_tasks and
-                             (v_rhs.capacity << v_lhs.capacity or
-                              (v_lhs.capacity == v_rhs.capacity and
-                               v_lhs.tw.length > v_rhs.tw.length)));
-                   });
+
+  switch (sort) {
+  case SORT::CAPACITY:
+    // Sort vehicles by decreasing max number of tasks allowed, then
+    // capacity (not a total order), then working hours length.
+    std::stable_sort(vehicles_ranks.begin(),
+                     vehicles_ranks.end(),
+                     [&](const auto lhs, const auto rhs) {
+                       auto& v_lhs = input.vehicles[lhs];
+                       auto& v_rhs = input.vehicles[rhs];
+                       return v_lhs.max_tasks > v_rhs.max_tasks or
+                              (v_lhs.max_tasks == v_rhs.max_tasks and
+                               (v_rhs.capacity << v_lhs.capacity or
+                                (v_lhs.capacity == v_rhs.capacity and
+                                 v_lhs.tw.length > v_rhs.tw.length)));
+                     });
+    break;
+  case SORT::FIXED_COST:
+    // Sort vehicles by increasing fixed cost, then same as above.
+    std::stable_sort(vehicles_ranks.begin(),
+                     vehicles_ranks.end(),
+                     [&](const auto lhs, const auto rhs) {
+                       auto& v_lhs = input.vehicles[lhs];
+                       auto& v_rhs = input.vehicles[rhs];
+                       return v_lhs.costs.fixed < v_rhs.costs.fixed or
+                              (v_lhs.costs.fixed == v_rhs.costs.fixed and
+                               (v_lhs.max_tasks > v_rhs.max_tasks or
+                                (v_lhs.max_tasks == v_rhs.max_tasks and
+                                 (v_rhs.capacity << v_lhs.capacity or
+                                  (v_lhs.capacity == v_rhs.capacity and
+                                   v_lhs.tw.length > v_rhs.tw.length)))));
+                     });
+    break;
+  }
 
   auto evals = get_jobs_vehicles_evals(input);
 
@@ -427,7 +449,10 @@ template <class T> T basic(const Input& input, INIT init, double lambda) {
 }
 
 template <class T>
-T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
+T dynamic_vehicle_choice(const Input& input,
+                         INIT init,
+                         double lambda,
+                         SORT sort) {
   const auto nb_vehicles = input.vehicles.size();
   T routes;
   for (Index v = 0; v < nb_vehicles; ++v) {
@@ -478,22 +503,47 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
       }
     }
 
-    const auto chosen_vehicle =
-      std::min_element(vehicles_ranks.begin(),
-                       vehicles_ranks.end(),
-                       [&](const auto lhs, const auto rhs) {
-                         auto& v_lhs = input.vehicles[lhs];
-                         auto& v_rhs = input.vehicles[rhs];
-                         return closest_jobs_count[lhs] >
-                                  closest_jobs_count[rhs] or
-                                (closest_jobs_count[lhs] ==
-                                   closest_jobs_count[rhs] and
-                                 (v_rhs.capacity << v_lhs.capacity or
-                                  (v_lhs.capacity == v_rhs.capacity and
-                                   v_lhs.tw.length > v_rhs.tw.length)));
-                       });
-    auto v_rank = *chosen_vehicle;
-    vehicles_ranks.erase(chosen_vehicle);
+    Index v_rank;
+
+    if (sort == SORT::CAPACITY) {
+      const auto chosen_vehicle =
+        std::min_element(vehicles_ranks.begin(),
+                         vehicles_ranks.end(),
+                         [&](const auto lhs, const auto rhs) {
+                           auto& v_lhs = input.vehicles[lhs];
+                           auto& v_rhs = input.vehicles[rhs];
+                           return closest_jobs_count[lhs] >
+                                    closest_jobs_count[rhs] or
+                                  (closest_jobs_count[lhs] ==
+                                     closest_jobs_count[rhs] and
+                                   (v_rhs.capacity << v_lhs.capacity or
+                                    (v_lhs.capacity == v_rhs.capacity and
+                                     v_lhs.tw.length > v_rhs.tw.length)));
+                         });
+      v_rank = *chosen_vehicle;
+      vehicles_ranks.erase(chosen_vehicle);
+    } else {
+      assert(sort == SORT::FIXED_COST);
+
+      const auto chosen_vehicle =
+        std::min_element(vehicles_ranks.begin(),
+                         vehicles_ranks.end(),
+                         [&](const auto lhs, const auto rhs) {
+                           auto& v_lhs = input.vehicles[lhs];
+                           auto& v_rhs = input.vehicles[rhs];
+                           return closest_jobs_count[lhs] >
+                                    closest_jobs_count[rhs] or
+                                  (closest_jobs_count[lhs] ==
+                                     closest_jobs_count[rhs] and
+                                   (v_lhs.costs.fixed < v_rhs.costs.fixed or
+                                    (v_lhs.costs.fixed == v_rhs.costs.fixed and
+                                     (v_rhs.capacity << v_lhs.capacity or
+                                      (v_lhs.capacity == v_rhs.capacity and
+                                       v_lhs.tw.length > v_rhs.tw.length)))));
+                         });
+      v_rank = *chosen_vehicle;
+      vehicles_ranks.erase(chosen_vehicle);
+    }
 
     // Once current vehicle is decided, regrets[j] holds the min cost
     // of picking the job in an empty route for other remaining
@@ -917,19 +967,19 @@ template <class T> T initial_routes(const Input& input) {
 using RawSolution = std::vector<RawRoute>;
 using TWSolution = std::vector<TWRoute>;
 
-template RawSolution basic(const Input& input, INIT init, double lambda);
+template RawSolution
+basic(const Input& input, INIT init, double lambda, SORT sort);
 
-template RawSolution dynamic_vehicle_choice(const Input& input,
-                                            INIT init,
-                                            double lambda);
+template RawSolution
+dynamic_vehicle_choice(const Input& input, INIT init, double lambda, SORT sort);
 
 template RawSolution initial_routes(const Input& input);
 
-template TWSolution basic(const Input& input, INIT init, double lambda);
+template TWSolution
+basic(const Input& input, INIT init, double lambda, SORT sort);
 
-template TWSolution dynamic_vehicle_choice(const Input& input,
-                                           INIT init,
-                                           double lambda);
+template TWSolution
+dynamic_vehicle_choice(const Input& input, INIT init, double lambda, SORT sort);
 
 template TWSolution initial_routes(const Input& input);
 

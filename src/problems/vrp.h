@@ -82,11 +82,12 @@ protected:
             solutions[rank] =
               heuristics::basic<std::vector<Route>>(_input,
                                                     p.init,
-                                                    p.regret_coeff);
+                                                    p.regret_coeff,
+                                                    p.sort);
             break;
           case HEURISTIC::DYNAMIC:
             solutions[rank] = heuristics::dynamic_vehicle_choice<
-              std::vector<Route>>(_input, p.init, p.regret_coeff);
+              std::vector<Route>>(_input, p.init, p.regret_coeff, p.sort);
             break;
           }
         }
