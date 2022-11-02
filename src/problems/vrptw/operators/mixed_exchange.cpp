@@ -38,17 +38,20 @@ bool MixedExchange::is_valid() {
   bool valid = cvrp::MixedExchange::is_valid();
 
   valid =
-    valid && _tw_t_route.is_valid_addition_for_tw(_input,
-                                                  s_route.begin() + s_rank,
-                                                  s_route.begin() + s_rank + 1,
-                                                  t_rank,
-                                                  t_rank + 1);
+    valid &&
+    _tw_t_route.is_valid_addition_for_tw(_input,
+                                         _input.jobs[s_route[s_rank]].delivery,
+                                         s_route.begin() + s_rank,
+                                         s_route.begin() + s_rank + 1,
+                                         t_rank,
+                                         t_rank + 1);
 
   if (valid) {
     // Keep target edge direction when inserting in source route.
     auto t_start = t_route.begin() + t_rank;
     s_is_normal_valid =
       s_is_normal_valid && _tw_s_route.is_valid_addition_for_tw(_input,
+                                                                target_delivery,
                                                                 t_start,
                                                                 t_start + 2,
                                                                 s_rank,
@@ -60,6 +63,7 @@ bool MixedExchange::is_valid() {
       s_is_reverse_valid =
         s_is_reverse_valid &&
         _tw_s_route.is_valid_addition_for_tw(_input,
+                                             target_delivery,
                                              t_reverse_start,
                                              t_reverse_start + 2,
                                              s_rank,

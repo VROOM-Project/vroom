@@ -36,6 +36,7 @@ bool IntraMixedExchange::is_valid() {
     s_is_normal_valid =
       s_is_normal_valid &&
       _tw_s_route.is_valid_addition_for_tw(_input,
+                                           _delivery,
                                            _moved_jobs.begin(),
                                            _moved_jobs.end(),
                                            _first_rank,
@@ -47,6 +48,7 @@ bool IntraMixedExchange::is_valid() {
       s_is_reverse_valid =
         s_is_reverse_valid &&
         _tw_s_route.is_valid_addition_for_tw(_input,
+                                             _delivery,
                                              _moved_jobs.begin(),
                                              _moved_jobs.end(),
                                              _first_rank,

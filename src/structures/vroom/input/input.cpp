@@ -505,6 +505,7 @@ void Input::set_extra_compatibility() {
             std::vector<Index> p_d({j, static_cast<Index>(j + 1)});
             is_compatible =
               is_compatible && empty_route.is_valid_addition_for_tw(*this,
+                                                                    _zero,
                                                                     p_d.begin(),
                                                                     p_d.end(),
                                                                     0,

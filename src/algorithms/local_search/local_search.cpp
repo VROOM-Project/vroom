@@ -2159,11 +2159,13 @@ void LocalSearch<Route,
             std::vector<Index> between_pd(_sol[v].route.begin() + r + 1,
                                           _sol[v].route.begin() + delivery_r);
 
-            valid_removal = _sol[v].is_valid_addition_for_tw(_input,
-                                                             between_pd.begin(),
-                                                             between_pd.end(),
-                                                             r,
-                                                             delivery_r + 1);
+            valid_removal =
+              _sol[v].is_valid_addition_for_tw(_input,
+                                               _input.zero_amount(),
+                                               between_pd.begin(),
+                                               between_pd.end(),
+                                               r,
+                                               delivery_r + 1);
           }
         }
       }

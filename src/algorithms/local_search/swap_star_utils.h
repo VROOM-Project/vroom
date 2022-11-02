@@ -439,6 +439,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
 
         source_valid = source_valid &&
                        source.is_valid_addition_for_tw(input,
+                                                       source_delivery,
                                                        s_insert.range.begin(),
                                                        s_insert.range.end(),
                                                        s_insert.first_rank,
@@ -484,6 +485,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
 
           target_valid = target_valid &&
                          target.is_valid_addition_for_tw(input,
+                                                         target_delivery,
                                                          t_insert.range.begin(),
                                                          t_insert.range.end(),
                                                          t_insert.first_rank,

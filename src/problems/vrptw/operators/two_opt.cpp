@@ -35,11 +35,13 @@ TwoOpt::TwoOpt(const Input& input,
 bool TwoOpt::is_valid() {
   return cvrp::TwoOpt::is_valid() and
          _tw_t_route.is_valid_addition_for_tw(_input,
+                                              _s_delivery,
                                               s_route.begin() + s_rank + 1,
                                               s_route.end(),
                                               t_rank + 1,
                                               t_route.size()) and
          _tw_s_route.is_valid_addition_for_tw(_input,
+                                              _t_delivery,
                                               t_route.begin() + t_rank + 1,
                                               t_route.end(),
                                               s_rank + 1,

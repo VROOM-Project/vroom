@@ -44,6 +44,7 @@ bool CrossExchange::is_valid() {
     auto t_start = t_route.begin() + t_rank;
     s_is_normal_valid =
       s_is_normal_valid && _tw_s_route.is_valid_addition_for_tw(_input,
+                                                                target_delivery,
                                                                 t_start,
                                                                 t_start + 2,
                                                                 s_rank,
@@ -55,6 +56,7 @@ bool CrossExchange::is_valid() {
       s_is_reverse_valid =
         s_is_reverse_valid &&
         _tw_s_route.is_valid_addition_for_tw(_input,
+                                             target_delivery,
                                              t_reverse_start,
                                              t_reverse_start + 2,
                                              s_rank,
@@ -69,6 +71,7 @@ bool CrossExchange::is_valid() {
     auto s_start = s_route.begin() + s_rank;
     t_is_normal_valid =
       t_is_normal_valid && _tw_t_route.is_valid_addition_for_tw(_input,
+                                                                source_delivery,
                                                                 s_start,
                                                                 s_start + 2,
                                                                 t_rank,
@@ -80,6 +83,7 @@ bool CrossExchange::is_valid() {
       t_is_reverse_valid =
         t_is_reverse_valid &&
         _tw_t_route.is_valid_addition_for_tw(_input,
+                                             source_delivery,
                                              s_reverse_start,
                                              s_reverse_start + 2,
                                              t_rank,

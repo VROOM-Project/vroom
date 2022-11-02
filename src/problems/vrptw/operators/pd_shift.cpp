@@ -42,6 +42,7 @@ void PDShift::compute_gain() {
   // Check for valid removal wrt TW constraints.
   bool is_valid_removal =
     _tw_s_route.is_valid_addition_for_tw(_input,
+                                         _input.zero_amount(),
                                          _source_without_pd.begin(),
                                          _source_without_pd.end(),
                                          _s_p_rank,

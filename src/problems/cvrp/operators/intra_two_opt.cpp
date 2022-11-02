@@ -28,7 +28,8 @@ IntraTwoOpt::IntraTwoOpt(const Input& input,
              s_rank,
              s_route,
              s_vehicle,
-             t_rank) {
+             t_rank),
+    delivery(source.delivery_in_range(s_rank, t_rank + 1)) {
   // Assume s_rank < t_rank for symmetry reasons. Set aside cases
   // where t_rank = s_rank + 1, as the move is also an intra_relocate.
   assert(s_route.size() >= 3);
@@ -101,17 +102,12 @@ bool IntraTwoOpt::is_valid() {
     auto rev_t = s_route.rbegin() + (s_route.size() - t_rank - 1);
     auto rev_s_next = s_route.rbegin() + (s_route.size() - s_rank);
 
-    valid =
-      source
-        .is_valid_addition_for_capacity_inclusion(_input,
-                                                  source
-                                                    .delivery_in_range(s_rank,
-                                                                       t_rank +
-                                                                         1),
-                                                  rev_t,
-                                                  rev_s_next,
-                                                  s_rank,
-                                                  t_rank + 1);
+    valid = source.is_valid_addition_for_capacity_inclusion(_input,
+                                                            delivery,
+                                                            rev_t,
+                                                            rev_s_next,
+                                                            s_rank,
+                                                            t_rank + 1);
   }
 
   return valid;

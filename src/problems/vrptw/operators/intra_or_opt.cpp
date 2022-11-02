@@ -35,6 +35,7 @@ bool IntraOrOpt::is_valid() {
   if (valid) {
     is_normal_valid = is_normal_valid &&
                       _tw_s_route.is_valid_addition_for_tw(_input,
+                                                           _delivery,
                                                            _moved_jobs.begin(),
                                                            _moved_jobs.end(),
                                                            _first_rank,
@@ -46,6 +47,7 @@ bool IntraOrOpt::is_valid() {
       is_reverse_valid =
         is_reverse_valid &&
         _tw_s_route.is_valid_addition_for_tw(_input,
+                                             _delivery,
                                              _moved_jobs.begin(),
                                              _moved_jobs.end(),
                                              _first_rank,

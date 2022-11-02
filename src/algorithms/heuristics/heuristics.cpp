@@ -176,11 +176,13 @@ template <class T> T basic(const Input& input, INIT init, double lambda) {
                                             0);
         if (is_pickup) {
           std::vector<Index> p_d({job_rank, static_cast<Index>(job_rank + 1)});
-          is_valid = is_valid && current_r.is_valid_addition_for_tw(input,
-                                                                    p_d.begin(),
-                                                                    p_d.end(),
-                                                                    0,
-                                                                    0);
+          is_valid =
+            is_valid && current_r.is_valid_addition_for_tw(input,
+                                                           input.zero_amount(),
+                                                           p_d.begin(),
+                                                           p_d.end(),
+                                                           0,
+                                                           0);
         } else {
           assert(input.jobs[job_rank].type == JOB_TYPE::SINGLE);
           is_valid =
@@ -375,6 +377,7 @@ template <class T> T basic(const Input& input, INIT init, double lambda) {
                 valid =
                   valid &&
                   current_r.is_valid_addition_for_tw(input,
+                                                     modified_delivery,
                                                      modified_with_pd.begin(),
                                                      modified_with_pd.end(),
                                                      pickup_r,
@@ -570,11 +573,13 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
 
         if (is_pickup) {
           std::vector<Index> p_d({job_rank, static_cast<Index>(job_rank + 1)});
-          is_valid = is_valid && current_r.is_valid_addition_for_tw(input,
-                                                                    p_d.begin(),
-                                                                    p_d.end(),
-                                                                    0,
-                                                                    0);
+          is_valid =
+            is_valid && current_r.is_valid_addition_for_tw(input,
+                                                           input.zero_amount(),
+                                                           p_d.begin(),
+                                                           p_d.end(),
+                                                           0,
+                                                           0);
         } else {
           assert(input.jobs[job_rank].type == JOB_TYPE::SINGLE);
           is_valid =
@@ -766,6 +771,7 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
                                                               pickup_r,
                                                               delivery_r) &&
                   current_r.is_valid_addition_for_tw(input,
+                                                     modified_delivery,
                                                      modified_with_pd.begin(),
                                                      modified_with_pd.end(),
                                                      pickup_r,
@@ -826,16 +832,19 @@ template <class T> T initial_routes(const Input& input) {
     auto& current_r = routes.back();
 
     // Startup load is the sum of deliveries for (single) jobs.
-    Amount current_load(input.zero_amount());
+    Amount single_jobs_deliveries(input.zero_amount());
     for (const auto& step : vehicle.steps) {
       if (step.type == STEP_TYPE::JOB and step.job_type == JOB_TYPE::SINGLE) {
-        current_load += input.jobs[step.rank].delivery;
+        single_jobs_deliveries += input.jobs[step.rank].delivery;
       }
     }
-    if (!(current_load <= vehicle.capacity)) {
+    if (!(single_jobs_deliveries <= vehicle.capacity)) {
       throw InputException("Route over capacity for vehicle " +
                            std::to_string(vehicle.id) + ".");
     }
+
+    // Startup load is the sum of deliveries for (single) jobs.
+    Amount current_load = single_jobs_deliveries;
 
     std::vector<Index> job_ranks;
     std::unordered_set<Index> expected_delivery_ranks;
@@ -899,6 +908,7 @@ template <class T> T initial_routes(const Input& input) {
     // constraints.
     if (!job_ranks.empty()) {
       if (!current_r.is_valid_addition_for_tw(input,
+                                              single_jobs_deliveries,
                                               job_ranks.begin(),
                                               job_ranks.end(),
                                               0,

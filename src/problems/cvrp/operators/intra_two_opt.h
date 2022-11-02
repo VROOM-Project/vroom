@@ -19,6 +19,8 @@ class IntraTwoOpt : public ls::Operator {
 protected:
   virtual void compute_gain() override;
 
+  const Amount delivery;
+
 public:
   IntraTwoOpt(const Input& input,
               const utils::SolutionState& sol_state,

@@ -134,6 +134,7 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
 
     // Build replacement sequence for current insertion.
     std::vector<Index> modified_with_pd({j});
+    Amount modified_delivery = input.zero_amount();
 
     // No need to use begin_d_rank here thanks to
     // valid_delivery_insertions values.
@@ -142,6 +143,10 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
       // early abort.
       if (pickup_r < delivery_r) {
         modified_with_pd.push_back(route.route[delivery_r - 1]);
+        const auto& new_modified_job = input.jobs[route.route[delivery_r - 1]];
+        if (new_modified_job.type == JOB_TYPE::SINGLE) {
+          modified_delivery += new_modified_job.delivery;
+        }
       }
 
       if (!(bool)valid_delivery_insertions[delivery_r]) {
@@ -174,6 +179,7 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
 
         is_valid =
           is_valid && route.is_valid_addition_for_tw(input,
+                                                     modified_delivery,
                                                      modified_with_pd.begin(),
                                                      modified_with_pd.end(),
                                                      pickup_r,

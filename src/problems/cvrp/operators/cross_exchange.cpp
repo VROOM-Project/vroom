@@ -43,7 +43,11 @@ CrossExchange::CrossExchange(const Input& input,
     s_is_normal_valid(false),
     s_is_reverse_valid(false),
     t_is_normal_valid(false),
-    t_is_reverse_valid(false) {
+    t_is_reverse_valid(false),
+    source_delivery(_input.jobs[this->s_route[s_rank]].delivery +
+                    _input.jobs[this->s_route[s_rank + 1]].delivery),
+    target_delivery(_input.jobs[this->t_route[t_rank]].delivery +
+                    _input.jobs[this->t_route[t_rank + 1]].delivery) {
   assert(s_vehicle != t_vehicle);
   assert(s_route.size() >= 2);
   assert(t_route.size() >= 2);
@@ -232,8 +236,6 @@ bool CrossExchange::is_valid() {
 
   auto target_pickup = _input.jobs[t_route[t_rank]].pickup +
                        _input.jobs[t_route[t_rank + 1]].pickup;
-  auto target_delivery = _input.jobs[t_route[t_rank]].delivery +
-                         _input.jobs[t_route[t_rank + 1]].delivery;
 
   bool valid = source.is_valid_addition_for_capacity_margins(_input,
                                                              target_pickup,
@@ -274,8 +276,6 @@ bool CrossExchange::is_valid() {
 
   auto source_pickup = _input.jobs[s_route[s_rank]].pickup +
                        _input.jobs[s_route[s_rank + 1]].pickup;
-  auto source_delivery = _input.jobs[s_route[s_rank]].delivery +
-                         _input.jobs[s_route[s_rank + 1]].delivery;
 
   valid =
     valid && target.is_valid_addition_for_capacity_margins(_input,

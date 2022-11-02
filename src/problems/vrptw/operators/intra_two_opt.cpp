@@ -35,6 +35,7 @@ bool IntraTwoOpt::is_valid() {
     auto rev_s_next = s_route.rbegin() + (s_route.size() - s_rank);
 
     valid = _tw_s_route.is_valid_addition_for_tw(_input,
+                                                 delivery,
                                                  rev_t,
                                                  rev_s_next,
                                                  s_rank,

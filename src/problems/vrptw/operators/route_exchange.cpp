@@ -30,16 +30,20 @@ RouteExchange::RouteExchange(const Input& input,
 
 bool RouteExchange::is_valid() {
   bool valid = cvrp::RouteExchange::is_valid();
-  valid = valid && _tw_t_route.is_valid_addition_for_tw(_input,
-                                                        s_route.begin(),
-                                                        s_route.end(),
-                                                        0,
-                                                        t_route.size());
-  valid = valid && _tw_s_route.is_valid_addition_for_tw(_input,
-                                                        t_route.begin(),
-                                                        t_route.end(),
-                                                        0,
-                                                        s_route.size());
+  valid =
+    valid && _tw_t_route.is_valid_addition_for_tw(_input,
+                                                  source.job_deliveries_sum(),
+                                                  s_route.begin(),
+                                                  s_route.end(),
+                                                  0,
+                                                  t_route.size());
+  valid =
+    valid && _tw_s_route.is_valid_addition_for_tw(_input,
+                                                  target.job_deliveries_sum(),
+                                                  t_route.begin(),
+                                                  t_route.end(),
+                                                  0,
+                                                  s_route.size());
   return valid;
 }
 

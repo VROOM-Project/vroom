@@ -44,7 +44,8 @@ IntraCrossExchange::IntraCrossExchange(const Input& input,
     s_reverse_t_normal_is_valid(false),
     _moved_jobs(t_rank - s_rank + 2),
     _first_rank(s_rank),
-    _last_rank(t_rank + 2) {
+    _last_rank(t_rank + 2),
+    _delivery(source.delivery_in_range(_first_rank, _last_rank)) {
   // Use s_rank as smallest rank for symmetry reasons.
   assert(s_rank + 2 < t_rank); // Avoid common edge.
   assert(s_route.size() >= 5);
@@ -217,8 +218,6 @@ void IntraCrossExchange::compute_gain() {
 bool IntraCrossExchange::is_valid() {
   assert(_gain_upper_bound_computed);
 
-  const auto delivery = source.delivery_in_range(_first_rank, _last_rank);
-
   const auto& s_v = _input.vehicles[s_vehicle];
   const auto s_travel_time = _sol_state.route_evals[s_vehicle].duration;
   const auto s_normal_t_normal_duration =
@@ -227,7 +226,7 @@ bool IntraCrossExchange::is_valid() {
   s_normal_t_normal_is_valid =
     (s_travel_time <= s_v.max_travel_time + s_normal_t_normal_duration) and
     source.is_valid_addition_for_capacity_inclusion(_input,
-                                                    delivery,
+                                                    _delivery,
                                                     _moved_jobs.begin(),
                                                     _moved_jobs.end(),
                                                     _first_rank,
@@ -242,7 +241,7 @@ bool IntraCrossExchange::is_valid() {
     s_normal_t_reverse_is_valid =
       (s_travel_time <= s_v.max_travel_time + s_normal_t_reverse_duration) &&
       source.is_valid_addition_for_capacity_inclusion(_input,
-                                                      delivery,
+                                                      _delivery,
                                                       _moved_jobs.begin(),
                                                       _moved_jobs.end(),
                                                       _first_rank,
@@ -259,7 +258,7 @@ bool IntraCrossExchange::is_valid() {
       (s_travel_time <=
        s_v.max_travel_time + s_reversed_t_reversed_duration) and
       source.is_valid_addition_for_capacity_inclusion(_input,
-                                                      delivery,
+                                                      _delivery,
                                                       _moved_jobs.begin(),
                                                       _moved_jobs.end(),
                                                       _first_rank,
@@ -275,7 +274,7 @@ bool IntraCrossExchange::is_valid() {
     s_reverse_t_normal_is_valid =
       (s_travel_time <= s_v.max_travel_time + s_reverse_t_normal_duration) &&
       source.is_valid_addition_for_capacity_inclusion(_input,
-                                                      delivery,
+                                                      _delivery,
                                                       _moved_jobs.begin(),
                                                       _moved_jobs.end(),
                                                       _first_rank,
