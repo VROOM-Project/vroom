@@ -600,6 +600,7 @@ OrderChoice TWRoute::order_choice(const Input& input,
 
 template <class InputIterator>
 bool TWRoute::is_valid_addition_for_tw(const Input& input,
+                                       Amount delivery,
                                        const InputIterator first_job,
                                        const InputIterator last_job,
                                        const Index first_rank,
@@ -1166,6 +1167,7 @@ void TWRoute::replace(const Input& input,
 
 template bool
 TWRoute::is_valid_addition_for_tw(const Input& input,
+                                  Amount delivery,
                                   const std::vector<Index>::iterator first_job,
                                   const std::vector<Index>::iterator last_job,
                                   const Index first_rank,
@@ -1173,6 +1175,7 @@ TWRoute::is_valid_addition_for_tw(const Input& input,
 
 template bool TWRoute::is_valid_addition_for_tw(
   const Input& input,
+  Amount delivery,
   const std::vector<Index>::reverse_iterator first_job,
   const std::vector<Index>::reverse_iterator last_job,
   const Index first_rank,
@@ -1180,6 +1183,7 @@ template bool TWRoute::is_valid_addition_for_tw(
 
 template bool TWRoute::is_valid_addition_for_tw(
   const Input& input,
+  Amount delivery,
   const std::array<Index, 1>::const_iterator first_job,
   const std::array<Index, 1>::const_iterator last_job,
   const Index first_rank,
@@ -1187,6 +1191,7 @@ template bool TWRoute::is_valid_addition_for_tw(
 
 template bool TWRoute::is_valid_addition_for_tw(
   const Input& input,
+  Amount delivery,
   const std::vector<Index>::const_iterator first_job,
   const std::vector<Index>::const_iterator last_job,
   const Index first_rank,

@@ -136,7 +136,12 @@ public:
                                 const Index rank) const {
     assert(rank <= route.size());
     const std::array<Index, 1> a({job_rank});
-    return is_valid_addition_for_tw(input, a.begin(), a.end(), rank, rank);
+    return is_valid_addition_for_tw(input,
+                                    input.jobs[job_rank].delivery,
+                                    a.begin(),
+                                    a.end(),
+                                    rank,
+                                    rank);
   };
 
   // Check validity for inclusion of the range [first_job; last_job)
@@ -144,6 +149,7 @@ public:
   // place of* the current jobs that may be there.
   template <class InputIterator>
   bool is_valid_addition_for_tw(const Input& input,
+                                Amount delivery,
                                 const InputIterator first_job,
                                 const InputIterator last_job,
                                 const Index first_rank,
@@ -164,6 +170,7 @@ public:
     assert(!route.empty());
     assert(rank + count <= route.size());
     return is_valid_addition_for_tw(input,
+                                    input.zero_amount(),
                                     route.begin(),
                                     route.begin(),
                                     rank,
