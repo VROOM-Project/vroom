@@ -16,8 +16,24 @@ jobs:
   vroom:
     strategy:
       matrix:
-        cxx: ['g++-9', 'clang++-10']
-    runs-on: ubuntu-20.04
+        config:
+          - {
+              os: ubuntu-20.04,
+              cxx: 'g++-9'
+            }
+          - {
+              os: ubuntu-20.04,
+              cxx: 'clang++-10'
+            }
+          - {
+              os: ubuntu-22.04,
+              cxx: 'g++'
+            }
+          - {
+              os: ubuntu-22.04,
+              cxx: 'clang++'
+            }
+    runs-on: ${{ matrix.config.os }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -28,12 +44,12 @@ jobs:
       - name: Build vroom
         run: make
         env:
-          CXX: ${{ matrix.cxx }}
+          CXX: ${{ matrix.config.cxx }}
         working-directory: src
       - name: Validate output
         run: diff <(bin/vroom -i docs/example_2.json  | jq '.routes[].steps[]' --sort-keys) <(jq '.routes[].steps[]' --sort-keys docs/example_2_sol.json)
       - name: Build libvroom example
         run: make
         env:
-          CXX: ${{ matrix.cxx }}
+          CXX: ${{ matrix.config.cxx }}
         working-directory: libvroom_examples
