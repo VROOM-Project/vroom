@@ -7,9 +7,9 @@ All rights reserved (see LICENSE).
 
 */
 
+#include "problems/cvrp/cvrp.h"
 #include "algorithms/heuristics/heuristics.h"
 #include "algorithms/local_search/local_search.h"
-#include "problems/cvrp/cvrp.h"
 #include "problems/cvrp/operators/cross_exchange.h"
 #include "problems/cvrp/operators/intra_cross_exchange.h"
 #include "problems/cvrp/operators/intra_exchange.h"
@@ -159,7 +159,13 @@ Solution CVRP::solve(unsigned exploration_level,
     return utils::format_solution(_input, {r});
   }
 
-  return VRP::solve<RawRoute, RawSolution, cvrp::LocalSearch>(exploration_level, nb_threads, timeout, h_param, homogeneous_parameters, heterogeneous_parameters);
+  return VRP::
+    solve<RawRoute, RawSolution, cvrp::LocalSearch>(exploration_level,
+                                                    nb_threads,
+                                                    timeout,
+                                                    h_param,
+                                                    homogeneous_parameters,
+                                                    heterogeneous_parameters);
 }
 
 } // namespace vroom

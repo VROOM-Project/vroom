@@ -7,6 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include "problems/vrptw/vrptw.h"
 #include "algorithms/heuristics/heuristics.h"
 #include "algorithms/local_search/local_search.h"
 #include "problems/vrptw/operators/cross_exchange.h"
@@ -25,7 +26,6 @@ All rights reserved (see LICENSE).
 #include "problems/vrptw/operators/swap_star.h"
 #include "problems/vrptw/operators/two_opt.h"
 #include "problems/vrptw/operators/unassigned_exchange.h"
-#include "problems/vrptw/vrptw.h"
 #include "utils/helpers.h"
 
 namespace vroom {
@@ -142,7 +142,13 @@ Solution VRPTW::solve(unsigned exploration_level,
                       unsigned nb_threads,
                       const Timeout& timeout,
                       const std::vector<HeuristicParameters>& h_param) const {
-  return VRP::solve<TWRoute, TWSolution, vrptw::LocalSearch>(exploration_level, nb_threads, timeout, h_param, homogeneous_parameters, heterogeneous_parameters);
+  return VRP::
+    solve<TWRoute, TWSolution, vrptw::LocalSearch>(exploration_level,
+                                                   nb_threads,
+                                                   timeout,
+                                                   h_param,
+                                                   homogeneous_parameters,
+                                                   heterogeneous_parameters);
 }
 
 } // namespace vroom

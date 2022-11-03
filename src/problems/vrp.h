@@ -14,10 +14,10 @@ All rights reserved (see LICENSE).
 #include <set>
 #include <thread>
 
-#include "structures/vroom/solution/solution.h"
-#include "structures/vroom/input/input.h"
 #include "algorithms/heuristics/heuristics.h"
 #include "algorithms/local_search/local_search.h"
+#include "structures/vroom/input/input.h"
+#include "structures/vroom/solution/solution.h"
 
 namespace vroom {
 
@@ -26,15 +26,21 @@ class VRP {
 protected:
   const Input& _input;
 
-  template<class TRoute, class TSolution, class TLocalSearch>
-  Solution solve(unsigned exploration_level, unsigned nb_threads, const Timeout& timeout, const std::vector<HeuristicParameters>& h_param, const std::vector<HeuristicParameters>& homogeneous_parameters, const std::vector<HeuristicParameters>& heterogeneous_parameters) const {
+  template <class TRoute, class TSolution, class TLocalSearch>
+  Solution solve(
+    unsigned exploration_level,
+    unsigned nb_threads,
+    const Timeout& timeout,
+    const std::vector<HeuristicParameters>& h_param,
+    const std::vector<HeuristicParameters>& homogeneous_parameters,
+    const std::vector<HeuristicParameters>& heterogeneous_parameters) const {
     // Use vector of parameters when passed for debugging, else use
     // predefined parameter set.
     const auto& parameters = (!h_param.empty())
-                              ? h_param
-                              : (_input.has_homogeneous_locations())
-                                  ? homogeneous_parameters
-                                  : heterogeneous_parameters;
+                               ? h_param
+                               : (_input.has_homogeneous_locations())
+                                   ? homogeneous_parameters
+                                   : heterogeneous_parameters;
     unsigned max_nb_jobs_removal = exploration_level;
     unsigned nb_init_solutions = h_param.size();
 
@@ -118,7 +124,7 @@ protected:
     }
 
     for (auto remove_rank = to_remove.rbegin(); remove_rank != to_remove.rend();
-        remove_rank++) {
+         remove_rank++) {
       solutions.erase(solutions.begin() + *remove_rank);
     }
 
