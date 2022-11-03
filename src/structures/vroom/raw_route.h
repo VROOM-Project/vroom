@@ -143,6 +143,10 @@ public:
     return _fwd_pickups[i];
   }
 
+  const Amount& load_at_step(Index s) const {
+    return _current_loads[s];
+  }
+
   bool is_valid_addition_for_tw(const Input&, const Index, const Index) const {
     return true;
   };

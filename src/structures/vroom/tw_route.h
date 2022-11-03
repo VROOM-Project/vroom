@@ -149,7 +149,7 @@ public:
   // place of* the current jobs that may be there.
   template <class InputIterator>
   bool is_valid_addition_for_tw(const Input& input,
-                                Amount delivery,
+                                const Amount& delivery,
                                 const InputIterator first_job,
                                 const InputIterator last_job,
                                 const Index first_rank,

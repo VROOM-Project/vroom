@@ -600,7 +600,7 @@ OrderChoice TWRoute::order_choice(const Input& input,
 
 template <class InputIterator>
 bool TWRoute::is_valid_addition_for_tw(const Input& input,
-                                       Amount delivery,
+                                       const Amount& delivery,
                                        const InputIterator first_job,
                                        const InputIterator last_job,
                                        const Index first_rank,
@@ -652,6 +652,14 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
     }
   }
 
+  // Maintain current load while adding insertion range. Initial load
+  // is lowered based on removed range.
+  auto previous_route_load =
+    (route.empty()) ? input.zero_amount() : load_at_step(first_rank);
+  assert(delivery_in_range(first_rank, last_rank) <= previous_route_load);
+  Amount current_load =
+    previous_route_load - delivery_in_range(first_rank, last_rank) + delivery;
+
   // Determine break range between first_rank and last_rank.
   Index current_break = breaks_counts[first_rank] - breaks_at_rank[first_rank];
   const Index last_break = breaks_counts[last_rank];
@@ -691,10 +699,11 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
       continue;
     }
 
+    // We still have jobs to go through.
+    const auto& j = input.jobs[*current_job];
+
     if (current_break == last_break) {
       // Compute earliest end date for job after last inserted breaks.
-      const auto& j = input.jobs[*current_job];
-
       current.earliest += current.travel;
 
       const auto j_tw =
@@ -710,6 +719,9 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
       current.earliest =
         std::max(current.earliest, j_tw->start) + job_action_time;
 
+      assert(j.delivery <= current_load);
+      current_load += (j.pickup - j.delivery);
+
       ++current_job;
       if (current_job != last_job) {
         // Account for travel time to next current job.
@@ -722,7 +734,6 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
     // We still have both jobs and breaks to go through, so decide on
     // ordering.
     const auto& b = v.breaks[current_break];
-    const auto& j = input.jobs[*current_job];
     const auto job_action_time =
       (j.index() == current.location_index) ? j.service : j.setup + j.service;
 
@@ -759,6 +770,9 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
       current.earliest =
         std::max(current.earliest + current.travel, oc.j_tw->start) +
         job_action_time;
+
+      assert(j.delivery <= current_load);
+      current_load += (j.pickup - j.delivery);
 
       ++current_job;
       if (current_job != last_job) {
@@ -1167,7 +1181,7 @@ void TWRoute::replace(const Input& input,
 
 template bool
 TWRoute::is_valid_addition_for_tw(const Input& input,
-                                  Amount delivery,
+                                  const Amount& delivery,
                                   const std::vector<Index>::iterator first_job,
                                   const std::vector<Index>::iterator last_job,
                                   const Index first_rank,
@@ -1175,7 +1189,7 @@ TWRoute::is_valid_addition_for_tw(const Input& input,
 
 template bool TWRoute::is_valid_addition_for_tw(
   const Input& input,
-  Amount delivery,
+  const Amount& delivery,
   const std::vector<Index>::reverse_iterator first_job,
   const std::vector<Index>::reverse_iterator last_job,
   const Index first_rank,
@@ -1183,7 +1197,7 @@ template bool TWRoute::is_valid_addition_for_tw(
 
 template bool TWRoute::is_valid_addition_for_tw(
   const Input& input,
-  Amount delivery,
+  const Amount& delivery,
   const std::array<Index, 1>::const_iterator first_job,
   const std::array<Index, 1>::const_iterator last_job,
   const Index first_rank,
@@ -1191,7 +1205,7 @@ template bool TWRoute::is_valid_addition_for_tw(
 
 template bool TWRoute::is_valid_addition_for_tw(
   const Input& input,
-  Amount delivery,
+  const Amount& delivery,
   const std::vector<Index>::const_iterator first_job,
   const std::vector<Index>::const_iterator last_job,
   const Index first_rank,
