@@ -34,8 +34,6 @@ private:
   Matrix<Cost> _symmetrized_matrix;
   bool _round_trip;
 
-  Cost compute_cost(const std::list<Index>& tour, const Matrix<Cost>& matrix) const;
-
 public:
   TSP(const Input& input, std::vector<Index> job_ranks, Index vehicle_rank);
 

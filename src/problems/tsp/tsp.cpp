@@ -12,6 +12,31 @@ All rights reserved (see LICENSE).
 #include "problems/tsp/heuristics/local_search.h"
 #include "utils/helpers.h"
 
+namespace {
+
+vroom::Cost compute_cost(const std::list<vroom::Index>& tour, const vroom::Matrix<vroom::Cost>& matrix) {
+  vroom::Cost cost = 0;
+  vroom::Index init_step = 0; // Initialization actually never used.
+
+  auto step = tour.cbegin();
+  if (tour.size() > 0) {
+    init_step = *step;
+  }
+
+  vroom::Index previous_step = init_step;
+  ++step;
+  for (; step != tour.cend(); ++step) {
+    cost += matrix[previous_step][*step];
+    previous_step = *step;
+  }
+  if (tour.size() > 0) {
+    cost += matrix[previous_step][init_step];
+  }
+  return cost;
+}
+
+}
+
 namespace vroom {
 
 TSP::TSP(const Input& input, std::vector<Index> job_ranks, Index vehicle_rank)
@@ -129,27 +154,6 @@ Cost TSP::cost(const std::list<Index>& tour) const {
 
 Cost TSP::symmetrized_cost(const std::list<Index>& tour) const {
   return compute_cost(tour, _symmetrized_matrix);
-}
-
-Cost TSP::compute_cost(const std::list<Index>& tour, const Matrix<Cost>& matrix) const {
-  Cost cost = 0;
-  Index init_step = 0; // Initialization actually never used.
-
-  auto step = tour.cbegin();
-  if (tour.size() > 0) {
-    init_step = *step;
-  }
-
-  Index previous_step = init_step;
-  ++step;
-  for (; step != tour.cend(); ++step) {
-    cost += matrix[previous_step][*step];
-    previous_step = *step;
-  }
-  if (tour.size() > 0) {
-    cost += matrix[previous_step][init_step];
-  }
-  return cost;
 }
 
 std::vector<Index> TSP::raw_solve(unsigned nb_threads,
