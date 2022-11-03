@@ -12,19 +12,18 @@ All rights reserved (see LICENSE).
 #include "problems/tsp/heuristics/local_search.h"
 #include "utils/helpers.h"
 
-namespace {
+namespace vroom {
 
-vroom::Cost compute_cost(const std::list<vroom::Index>& tour,
-                         const vroom::Matrix<vroom::Cost>& matrix) {
-  vroom::Cost cost = 0;
-  vroom::Index init_step = 0; // Initialization actually never used.
+Cost compute_cost(const std::list<Index>& tour, const Matrix<Cost>& matrix) {
+  Cost cost = 0;
+  Index init_step = 0; // Initialization actually never used.
 
   auto step = tour.cbegin();
   if (tour.size() > 0) {
     init_step = *step;
   }
 
-  vroom::Index previous_step = init_step;
+  Index previous_step = init_step;
   ++step;
   for (; step != tour.cend(); ++step) {
     cost += matrix[previous_step][*step];
@@ -35,10 +34,6 @@ vroom::Cost compute_cost(const std::list<vroom::Index>& tour,
   }
   return cost;
 }
-
-} // namespace
-
-namespace vroom {
 
 TSP::TSP(const Input& input, std::vector<Index> job_ranks, Index vehicle_rank)
   : VRP(input),
