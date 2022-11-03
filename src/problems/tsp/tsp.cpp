@@ -14,7 +14,8 @@ All rights reserved (see LICENSE).
 
 namespace {
 
-vroom::Cost compute_cost(const std::list<vroom::Index>& tour, const vroom::Matrix<vroom::Cost>& matrix) {
+vroom::Cost compute_cost(const std::list<vroom::Index>& tour,
+                         const vroom::Matrix<vroom::Cost>& matrix) {
   vroom::Cost cost = 0;
   vroom::Index init_step = 0; // Initialization actually never used.
 
@@ -35,7 +36,7 @@ vroom::Cost compute_cost(const std::list<vroom::Index>& tour, const vroom::Matri
   return cost;
 }
 
-}
+} // namespace
 
 namespace vroom {
 
