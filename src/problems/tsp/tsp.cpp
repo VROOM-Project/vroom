@@ -14,6 +14,27 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
+Cost compute_cost(const std::list<Index>& tour, const Matrix<Cost>& matrix) {
+  Cost cost = 0;
+  Index init_step = 0; // Initialization actually never used.
+
+  auto step = tour.cbegin();
+  if (tour.size() > 0) {
+    init_step = *step;
+  }
+
+  Index previous_step = init_step;
+  ++step;
+  for (; step != tour.cend(); ++step) {
+    cost += matrix[previous_step][*step];
+    previous_step = *step;
+  }
+  if (tour.size() > 0) {
+    cost += matrix[previous_step][init_step];
+  }
+  return cost;
+}
+
 TSP::TSP(const Input& input, std::vector<Index> job_ranks, Index vehicle_rank)
   : VRP(input),
     _vehicle_rank(vehicle_rank),
@@ -124,45 +145,11 @@ TSP::TSP(const Input& input, std::vector<Index> job_ranks, Index vehicle_rank)
 }
 
 Cost TSP::cost(const std::list<Index>& tour) const {
-  Cost cost = 0;
-  Index init_step = 0; // Initialization actually never used.
-
-  auto step = tour.cbegin();
-  if (tour.size() > 0) {
-    init_step = *step;
-  }
-
-  Index previous_step = init_step;
-  ++step;
-  for (; step != tour.cend(); ++step) {
-    cost += _matrix[previous_step][*step];
-    previous_step = *step;
-  }
-  if (tour.size() > 0) {
-    cost += _matrix[previous_step][init_step];
-  }
-  return cost;
+  return compute_cost(tour, _matrix);
 }
 
 Cost TSP::symmetrized_cost(const std::list<Index>& tour) const {
-  Cost cost = 0;
-  Index init_step = 0; // Initialization actually never used.
-
-  auto step = tour.cbegin();
-  if (tour.size() > 0) {
-    init_step = *step;
-  }
-
-  Index previous_step = init_step;
-  ++step;
-  for (; step != tour.cend(); ++step) {
-    cost += _symmetrized_matrix[previous_step][*step];
-    previous_step = *step;
-  }
-  if (tour.size() > 0) {
-    cost += _symmetrized_matrix[previous_step][init_step];
-  }
-  return cost;
+  return compute_cost(tour, _symmetrized_matrix);
 }
 
 std::vector<Index> TSP::raw_solve(unsigned nb_threads,
