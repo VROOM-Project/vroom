@@ -19,6 +19,7 @@
 - Pass zero amount directly instead of its size (#776)
 - Add named constants for default threads number and exploration level (#805)
 - Refactor `TSP` cost functions (#812)
+- Refactor `CVRP::solve` and `VRPTW::solve` functions (#818)
 
 ### Fixed
 
