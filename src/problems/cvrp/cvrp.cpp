@@ -7,10 +7,6 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <mutex>
-#include <set>
-#include <thread>
-
 #include "algorithms/heuristics/heuristics.h"
 #include "algorithms/local_search/local_search.h"
 #include "problems/cvrp/cvrp.h"
