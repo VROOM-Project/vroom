@@ -677,8 +677,8 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
           return current.earliest <= tw.end;
         });
 
-      if (b_tw == b.tws.end()) {
-        // Break does not fit due to its time windows.
+      if (b_tw == b.tws.end() or !b.is_valid_for_load(current_load)) {
+        // Break does not fit due to its time windows or current load.
         return false;
       }
 
