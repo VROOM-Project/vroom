@@ -901,6 +901,14 @@ void TWRoute::replace(const Input& input,
     }
   }
 
+  // Maintain current load while adding insertion range. Initial load
+  // is lowered based on removed range.
+  auto previous_route_load =
+    (route.empty()) ? input.zero_amount() : load_at_step(first_rank);
+  assert(delivery_in_range(first_rank, last_rank) <= previous_route_load);
+  Amount current_load =
+    previous_route_load - delivery_in_range(first_rank, last_rank) + delivery;
+
   // Determine break range between first_rank and last_rank.
   Index current_break = breaks_counts[first_rank] - breaks_at_rank[first_rank];
   const Index last_break = breaks_counts[last_rank];
@@ -995,10 +1003,11 @@ void TWRoute::replace(const Input& input,
       continue;
     }
 
+    // We still have jobs to go through.
+    const auto& j = input.jobs[*current_job];
+
     if (current_break == last_break) {
       // Compute earliest end date for job after last inserted breaks.
-      const auto& j = input.jobs[*current_job];
-
       current.earliest += current.travel;
 
       const auto j_tw =
@@ -1023,6 +1032,9 @@ void TWRoute::replace(const Input& input,
       previous_breaks_counts += breaks_before;
       breaks_before = 0;
 
+      assert(j.delivery <= current_load);
+      current_load += (j.pickup - j.delivery);
+
       ++current_job;
       if (current_job != last_job) {
         // Account for travel time to next current job.
@@ -1035,7 +1047,6 @@ void TWRoute::replace(const Input& input,
     // We still have both jobs and breaks to go through, so decide on
     // ordering.
     const auto& b = v.breaks[current_break];
-    const auto& j = input.jobs[*current_job];
 
     const auto job_action_time =
       (j.index() == current.location_index) ? j.service : j.setup + j.service;
@@ -1081,6 +1092,9 @@ void TWRoute::replace(const Input& input,
       ++current_job_rank;
       previous_breaks_counts += breaks_before;
       breaks_before = 0;
+
+      assert(j.delivery <= current_load);
+      current_load += (j.pickup - j.delivery);
 
       ++current_job;
       if (current_job != last_job) {
