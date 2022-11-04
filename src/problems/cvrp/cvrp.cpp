@@ -159,13 +159,12 @@ Solution CVRP::solve(unsigned exploration_level,
     return utils::format_solution(_input, {r});
   }
 
-  return VRP::
-    solve<RawRoute, RawSolution, cvrp::LocalSearch>(exploration_level,
-                                                    nb_threads,
-                                                    timeout,
-                                                    h_param,
-                                                    homogeneous_parameters,
-                                                    heterogeneous_parameters);
+  return VRP::solve<RawRoute, cvrp::LocalSearch>(exploration_level,
+                                                 nb_threads,
+                                                 timeout,
+                                                 h_param,
+                                                 homogeneous_parameters,
+                                                 heterogeneous_parameters);
 }
 
 } // namespace vroom

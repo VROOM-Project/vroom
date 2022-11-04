@@ -26,7 +26,7 @@ class VRP {
 protected:
   const Input& _input;
 
-  template <class TRoute, class TSolution, class TLocalSearch>
+  template <class TRoute, class TLocalSearch>
   Solution solve(
     unsigned exploration_level,
     unsigned nb_threads,
@@ -56,7 +56,7 @@ protected:
     }
     assert(nb_init_solutions <= parameters.size());
 
-    std::vector<TSolution> solutions(nb_init_solutions);
+    std::vector<std::vector<TRoute>> solutions(nb_init_solutions);
 
     // Split the heuristic parameters among threads.
     std::vector<std::vector<std::size_t>>
@@ -75,17 +75,18 @@ protected:
 
           switch (p.heuristic) {
           case HEURISTIC::INIT_ROUTES:
-            solutions[rank] = heuristics::initial_routes<TSolution>(_input);
+            solutions[rank] =
+              heuristics::initial_routes<std::vector<TRoute>>(_input);
             break;
           case HEURISTIC::BASIC:
             solutions[rank] =
-              heuristics::basic<TSolution>(_input, p.init, p.regret_coeff);
+              heuristics::basic<std::vector<TRoute>>(_input,
+                                                     p.init,
+                                                     p.regret_coeff);
             break;
           case HEURISTIC::DYNAMIC:
-            solutions[rank] =
-              heuristics::dynamic_vehicle_choice<TSolution>(_input,
-                                                            p.init,
-                                                            p.regret_coeff);
+            solutions[rank] = heuristics::dynamic_vehicle_choice<
+              std::vector<TRoute>>(_input, p.init, p.regret_coeff);
             break;
           }
         }

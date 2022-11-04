@@ -142,13 +142,12 @@ Solution VRPTW::solve(unsigned exploration_level,
                       unsigned nb_threads,
                       const Timeout& timeout,
                       const std::vector<HeuristicParameters>& h_param) const {
-  return VRP::
-    solve<TWRoute, TWSolution, vrptw::LocalSearch>(exploration_level,
-                                                   nb_threads,
-                                                   timeout,
-                                                   h_param,
-                                                   homogeneous_parameters,
-                                                   heterogeneous_parameters);
+  return VRP::solve<TWRoute, vrptw::LocalSearch>(exploration_level,
+                                                 nb_threads,
+                                                 timeout,
+                                                 h_param,
+                                                 homogeneous_parameters,
+                                                 heterogeneous_parameters);
 }
 
 } // namespace vroom
