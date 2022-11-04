@@ -405,20 +405,15 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
                                                target.route[t_rank],
                                                sc.insertion_in_source);
 
-        auto source_pickup =
-          std::accumulate(s_insert.range.begin(),
-                          s_insert.range.end(),
-                          input.zero_amount(),
-                          [&](auto sum, const auto i) {
-                            return sum + input.jobs[i].pickup;
-                          });
-        auto source_delivery =
-          std::accumulate(s_insert.range.begin(),
-                          s_insert.range.end(),
-                          input.zero_amount(),
-                          [&](auto sum, const auto i) {
-                            return sum + input.jobs[i].delivery;
-                          });
+        Amount source_pickup = input.zero_amount();
+        Amount source_delivery = input.zero_amount();
+        for (auto i : s_insert.range) {
+          const auto& job = input.jobs[i];
+          if (job.type == JOB_TYPE::SINGLE) {
+            source_pickup += job.pickup;
+            source_delivery += job.delivery;
+          }
+        }
 
         bool source_valid =
           source.is_valid_addition_for_capacity_margins(input,
@@ -451,20 +446,15 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
                                                  source.route[s_rank],
                                                  sc.insertion_in_target);
 
-          auto target_pickup =
-            std::accumulate(t_insert.range.begin(),
-                            t_insert.range.end(),
-                            input.zero_amount(),
-                            [&](auto sum, const auto i) {
-                              return sum + input.jobs[i].pickup;
-                            });
-          auto target_delivery =
-            std::accumulate(t_insert.range.begin(),
-                            t_insert.range.end(),
-                            input.zero_amount(),
-                            [&](auto sum, const auto i) {
-                              return sum + input.jobs[i].delivery;
-                            });
+          Amount target_pickup = input.zero_amount();
+          Amount target_delivery = input.zero_amount();
+          for (auto i : t_insert.range) {
+            const auto& job = input.jobs[i];
+            if (job.type == JOB_TYPE::SINGLE) {
+              target_pickup += job.pickup;
+              target_delivery += job.delivery;
+            }
+          }
 
           bool target_valid =
             target.is_valid_addition_for_capacity_margins(input,
