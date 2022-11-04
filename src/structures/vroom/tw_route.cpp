@@ -974,6 +974,7 @@ void TWRoute::replace(const Input& input,
     if (current_job == last_job) {
       // Compute earliest end date for break after last inserted jobs.
       const auto& b = v.breaks[current_break];
+      assert(b.is_valid_for_load(current_load));
 
       const auto b_tw =
         std::find_if(b.tws.begin(), b.tws.end(), [&](const auto& tw) {
@@ -1056,6 +1057,8 @@ void TWRoute::replace(const Input& input,
 
     assert(oc.add_job_first xor oc.add_break_first);
     if (oc.add_break_first) {
+      assert(b.is_valid_for_load(current_load));
+
       if (current.earliest < oc.b_tw->start) {
         auto margin = oc.b_tw->start - current.earliest;
         breaks_travel_margin_before[current_break] = margin;
