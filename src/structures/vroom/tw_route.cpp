@@ -454,8 +454,8 @@ OrderChoice TWRoute::order_choice(const Input& input,
     });
   if (new_b_tw == b.tws.end()) {
     // Break does not fit after job due to its time windows. Only
-    // option is to choose break first.
-    oc.add_break_first = true;
+    // option is to choose break first, if valid for max_load.
+    oc.add_break_first = b.is_valid_for_load(current_load);
     return oc;
   } else {
     Duration travel_after_break = next.travel;
@@ -472,14 +472,24 @@ OrderChoice TWRoute::order_choice(const Input& input,
       job_then_break_end = earliest_job_end + b.service;
     }
 
-    if (job_then_break_end + travel_after_break > next.latest) {
-      // Starting the break is possible but then next step is not.
-      oc.add_break_first = true;
+    if (job_then_break_end + travel_after_break > next.latest or
+        !b.is_valid_for_load(current_load + j.pickup - j.delivery)) {
+      // Starting break after job is not possible, either timewise due
+      // to next step, or wrt max_load. Only option is to choose break
+      // first, if valid for max_load.
+      oc.add_break_first = b.is_valid_for_load(current_load);
       return oc;
     }
   }
 
   // Try putting break first then job.
+  if (!b.is_valid_for_load(current_load)) {
+    // Not doable based on max_load, only option is to choose job
+    // first.
+    oc.add_job_first = true;
+    return oc;
+  }
+
   Duration travel_after_break = previous.travel;
   Duration earliest_job_start = previous.earliest;
 
@@ -500,6 +510,7 @@ OrderChoice TWRoute::order_choice(const Input& input,
     std::find_if(j.tws.begin(), j.tws.end(), [&](const auto& tw) {
       return earliest_job_start <= tw.end;
     });
+
   if (new_j_tw == j.tws.end()) {
     // Job does not fit after break due to its time windows. Only
     // option is to choose job first.
@@ -516,12 +527,14 @@ OrderChoice TWRoute::order_choice(const Input& input,
     }
   }
 
-  // In case where both ordering options are doable based on timing
-  // constraints for a pickup, we favor putting the pickup first,
-  // except if adding the delivery afterwards is not possible. This is
-  // mandatory to avoid heuristically forcing a pickup -> break choice
-  // resulting in invalid options, while break -> pickup -> delivery
-  // might be valid.
+  // Now both ordering options are doable based on timing constraints
+  // and break max_load.
+
+  // For a pickup, we favor putting the pickup first, except if adding
+  // the delivery afterwards is not possible. This is mandatory to
+  // avoid heuristically forcing a pickup -> break choice resulting in
+  // invalid options, while break -> pickup -> delivery might be
+  // valid.
   if (j.type == JOB_TYPE::PICKUP) {
     const auto& matching_d = input.jobs[job_rank + 1];
     assert(matching_d.type == JOB_TYPE::DELIVERY);
@@ -579,9 +592,8 @@ OrderChoice TWRoute::order_choice(const Input& input,
     return oc;
   }
 
-  // In case where both ordering options are doable based on timing
-  // constraints for a single job, we pick the ordering minimizing
-  // earliest end date for sequence.
+  // For a single job, we pick the ordering minimizing earliest end
+  // date for sequence.
   if (break_then_job_end < job_then_break_end) {
     oc.add_break_first = true;
   } else if (break_then_job_end == job_then_break_end) {
@@ -755,6 +767,8 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
     // time with given insertion choice.
     assert(oc.add_job_first xor oc.add_break_first);
     if (oc.add_break_first) {
+      assert(b.is_valid_for_load(current_load));
+
       if (current.earliest < oc.b_tw->start) {
         auto margin = oc.b_tw->start - current.earliest;
         if (margin < current.travel) {
