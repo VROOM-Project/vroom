@@ -10,11 +10,19 @@ namespace ls {
 
 struct RouteInsertion {
   Eval eval;
+  Amount delivery;
   Index single_rank;
   Index pickup_rank;
   Index delivery_rank;
+
+  RouteInsertion(unsigned amount_size)
+    : eval(NO_EVAL),
+      delivery(Amount(amount_size)),
+      single_rank(0),
+      pickup_rank(0),
+      delivery_rank(0) {
+  }
 };
-constexpr RouteInsertion empty_insert = {NO_EVAL, 0, 0, 0};
 
 template <class Route>
 RouteInsertion
@@ -23,7 +31,7 @@ compute_best_insertion_single(const Input& input,
                               const Index j,
                               Index v,
                               const Route& route) {
-  RouteInsertion result = empty_insert;
+  RouteInsertion result(input.get_amount_size());
   const auto& current_job = input.jobs[j];
   const auto& v_target = input.vehicles[v];
 
@@ -41,7 +49,9 @@ compute_best_insertion_single(const Input& input,
                                                current_job.delivery,
                                                rank) &&
           route.is_valid_addition_for_tw(input, j, rank)) {
-        result = {current_eval, rank, 0, 0};
+        result.eval = current_eval;
+        result.delivery = current_job.delivery;
+        result.single_rank = rank;
       }
     }
   }
@@ -79,7 +89,7 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
                                          Index v,
                                          const Route& route,
                                          const Eval& cost_threshold) {
-  RouteInsertion result = empty_insert;
+  RouteInsertion result(input.get_amount_size());
   const auto& current_job = input.jobs[j];
   const auto& v_target = input.vehicles[v];
   const auto target_travel_time = sol_state.route_evals[v].duration;
@@ -188,7 +198,10 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
         modified_with_pd.pop_back();
 
         if (is_valid) {
-          result = {pd_eval, 0, pickup_r, delivery_r};
+          result.eval = pd_eval;
+          result.delivery = modified_delivery;
+          result.pickup_rank = pickup_r;
+          result.delivery_rank = delivery_r;
         }
       }
     }
