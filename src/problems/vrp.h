@@ -26,7 +26,7 @@ class VRP {
 protected:
   const Input& _input;
 
-  template <class TRoute, class TLocalSearch>
+  template <class Route, class LocalSearch>
   Solution solve(
     unsigned exploration_level,
     unsigned nb_threads,
@@ -56,7 +56,7 @@ protected:
     }
     assert(nb_init_solutions <= parameters.size());
 
-    std::vector<std::vector<TRoute>> solutions(nb_init_solutions);
+    std::vector<std::vector<Route>> solutions(nb_init_solutions);
 
     // Split the heuristic parameters among threads.
     std::vector<std::vector<std::size_t>>
@@ -76,17 +76,17 @@ protected:
           switch (p.heuristic) {
           case HEURISTIC::INIT_ROUTES:
             solutions[rank] =
-              heuristics::initial_routes<std::vector<TRoute>>(_input);
+              heuristics::initial_routes<std::vector<Route>>(_input);
             break;
           case HEURISTIC::BASIC:
             solutions[rank] =
-              heuristics::basic<std::vector<TRoute>>(_input,
-                                                     p.init,
-                                                     p.regret_coeff);
+              heuristics::basic<std::vector<Route>>(_input,
+                                                    p.init,
+                                                    p.regret_coeff);
             break;
           case HEURISTIC::DYNAMIC:
             solutions[rank] = heuristics::dynamic_vehicle_choice<
-              std::vector<TRoute>>(_input, p.init, p.regret_coeff);
+              std::vector<Route>>(_input, p.init, p.regret_coeff);
             break;
           }
         }
@@ -114,7 +114,7 @@ protected:
     }
 
     // Filter out duplicate heuristics solutions.
-    std::set<utils::SolutionIndicators<TRoute>> unique_indicators;
+    std::set<utils::SolutionIndicators<Route>> unique_indicators;
     std::vector<unsigned> to_remove;
     for (unsigned i = 0; i < solutions.size(); ++i) {
       const auto result = unique_indicators.emplace(_input, solutions[i]);
@@ -131,7 +131,7 @@ protected:
 
     // Split local searches across threads.
     unsigned nb_solutions = solutions.size();
-    std::vector<utils::SolutionIndicators<TRoute>> sol_indicators(nb_solutions);
+    std::vector<utils::SolutionIndicators<Route>> sol_indicators(nb_solutions);
 #ifdef LOG_LS_OPERATORS
     std::vector<std::array<ls::OperatorStats, OperatorName::MAX>> ls_stats(
       nb_solutions);
@@ -154,10 +154,10 @@ protected:
 
         for (auto rank : sol_ranks) {
           // Local search phase.
-          TLocalSearch ls(_input,
-                          solutions[rank],
-                          max_nb_jobs_removal,
-                          search_time);
+          LocalSearch ls(_input,
+                         solutions[rank],
+                         max_nb_jobs_removal,
+                         search_time);
           ls.run();
 
           // Store solution indicators.
