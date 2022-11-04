@@ -56,7 +56,7 @@ jobs:
         run: sudo cmake --build . --target install
         working-directory: osrm-backend/build
       - name: Compile vroom
-        run: make
+        run: make -j
         env:
           CXX: ${{ matrix.cxx }}
         working-directory: src
