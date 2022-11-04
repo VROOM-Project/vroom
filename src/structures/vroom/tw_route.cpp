@@ -851,6 +851,7 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
 
 template <class InputIterator>
 void TWRoute::replace(const Input& input,
+                      const Amount& delivery,
                       const InputIterator first_job,
                       const InputIterator last_job,
                       const Index first_rank,
@@ -1212,18 +1213,21 @@ template bool TWRoute::is_valid_addition_for_tw(
   const Index last_rank) const;
 
 template void TWRoute::replace(const Input& input,
+                               const Amount& delivery,
                                const std::vector<Index>::iterator first_job,
                                const std::vector<Index>::iterator last_job,
                                const Index first_rank,
                                const Index last_rank);
 template void
 TWRoute::replace(const Input& input,
+                 const Amount& delivery,
                  const std::vector<Index>::const_iterator first_job,
                  const std::vector<Index>::const_iterator last_job,
                  const Index first_rank,
                  const Index last_rank);
 template void
 TWRoute::replace(const Input& input,
+                 const Amount& delivery,
                  const std::vector<Index>::reverse_iterator first_job,
                  const std::vector<Index>::reverse_iterator last_job,
                  const Index first_rank,
@@ -1231,6 +1235,7 @@ TWRoute::replace(const Input& input,
 
 template void
 TWRoute::replace(const Input& input,
+                 const Amount& delivery,
                  const std::array<Index, 1>::const_iterator first_job,
                  const std::array<Index, 1>::const_iterator last_job,
                  const Index first_rank,

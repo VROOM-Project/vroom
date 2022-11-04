@@ -146,7 +146,8 @@ public:
 
   // Check validity for inclusion of the range [first_job; last_job)
   // in the existing route at rank first_rank and before last_rank *in
-  // place of* the current jobs that may be there.
+  // place of* the current jobs that may be there. "delivery" is the
+  // amount delivered in single jobs for inclusion range.
   template <class InputIterator>
   bool is_valid_addition_for_tw(const Input& input,
                                 const Amount& delivery,
@@ -158,7 +159,12 @@ public:
   void add(const Input& input, const Index job_rank, const Index rank) {
     assert(rank <= route.size());
     const std::array<Index, 1> a({job_rank});
-    replace(input, a.begin(), a.end(), rank, rank);
+    replace(input,
+            input.jobs[job_rank].delivery,
+            a.begin(),
+            a.end(),
+            rank,
+            rank);
   };
 
   // Check validity for removing a set of jobs from current route at
@@ -179,14 +185,21 @@ public:
 
   void remove(const Input& input, const Index rank, const unsigned count) {
     assert(rank + count <= route.size());
-    replace(input, route.begin(), route.begin(), rank, rank + count);
+    replace(input,
+            input.zero_amount(),
+            route.begin(),
+            route.begin(),
+            rank,
+            rank + count);
   };
 
   // Add the range [first_job; last_job) in the existing route at rank
   // first_rank and before last_rank *in place of* the current jobs
-  // that may be there.
+  // that may be there. "delivery" is the amount delivered in single
+  // jobs for inclusion range.
   template <class InputIterator>
   void replace(const Input& input,
+               const Amount& delivery,
                const InputIterator first_job,
                const InputIterator last_job,
                const Index first_rank,
