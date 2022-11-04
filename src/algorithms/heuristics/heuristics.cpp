@@ -228,7 +228,8 @@ template <class T> T basic(const Input& input, INIT init, double lambda) {
         if (input.jobs[best_job_rank].type == JOB_TYPE::PICKUP) {
           std::vector<Index> p_d(
             {best_job_rank, static_cast<Index>(best_job_rank + 1)});
-          current_r.replace(input, p_d.begin(), p_d.end(), 0, 0);
+          current_r
+            .replace(input, input.zero_amount(), p_d.begin(), p_d.end(), 0, 0);
           unassigned.erase(best_job_rank);
           unassigned.erase(best_job_rank + 1);
         }
@@ -244,6 +245,7 @@ template <class T> T basic(const Input& input, INIT init, double lambda) {
       Index best_r = 0;
       Index best_pickup_r = 0;
       Index best_delivery_r = 0;
+      Amount best_modified_delivery = input.zero_amount();
       Duration best_duration_addition = 0;
 
       for (const auto job_rank : unassigned) {
@@ -390,6 +392,7 @@ template <class T> T basic(const Input& input, INIT init, double lambda) {
                   best_job_rank = job_rank;
                   best_pickup_r = pickup_r;
                   best_delivery_r = delivery_r;
+                  best_modified_delivery = modified_delivery;
                   best_duration_addition = current_add.duration;
                 }
               }
@@ -412,6 +415,7 @@ template <class T> T basic(const Input& input, INIT init, double lambda) {
           modified_with_pd.push_back(best_job_rank + 1);
 
           current_r.replace(input,
+                            best_modified_delivery,
                             modified_with_pd.begin(),
                             modified_with_pd.end(),
                             best_pickup_r,
@@ -625,7 +629,8 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
         if (input.jobs[best_job_rank].type == JOB_TYPE::PICKUP) {
           std::vector<Index> p_d(
             {best_job_rank, static_cast<Index>(best_job_rank + 1)});
-          current_r.replace(input, p_d.begin(), p_d.end(), 0, 0);
+          current_r
+            .replace(input, input.zero_amount(), p_d.begin(), p_d.end(), 0, 0);
           unassigned.erase(best_job_rank);
           unassigned.erase(best_job_rank + 1);
         }
@@ -641,6 +646,7 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
       Index best_r = 0;
       Index best_pickup_r = 0;
       Index best_delivery_r = 0;
+      Amount best_modified_delivery = input.zero_amount();
       Duration best_duration_addition = 0;
 
       for (const auto job_rank : unassigned) {
@@ -784,6 +790,7 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
                   best_job_rank = job_rank;
                   best_pickup_r = pickup_r;
                   best_delivery_r = delivery_r;
+                  best_modified_delivery = modified_delivery;
                   best_duration_addition = current_add.duration;
                 }
               }
@@ -806,6 +813,7 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
           modified_with_pd.push_back(best_job_rank + 1);
 
           current_r.replace(input,
+                            best_modified_delivery,
                             modified_with_pd.begin(),
                             modified_with_pd.end(),
                             best_pickup_r,
@@ -917,7 +925,12 @@ template <class T> T initial_routes(const Input& input) {
                              std::to_string(vehicle.id) + ".");
       }
 
-      current_r.replace(input, job_ranks.begin(), job_ranks.end(), 0, 0);
+      current_r.replace(input,
+                        single_jobs_deliveries,
+                        job_ranks.begin(),
+                        job_ranks.end(),
+                        0,
+                        0);
     }
   }
 

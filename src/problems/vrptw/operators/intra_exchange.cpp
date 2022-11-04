@@ -39,6 +39,7 @@ bool IntraExchange::is_valid() {
 
 void IntraExchange::apply() {
   _tw_s_route.replace(_input,
+                      _delivery,
                       _moved_jobs.begin(),
                       _moved_jobs.end(),
                       _first_rank,

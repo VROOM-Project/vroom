@@ -93,12 +93,14 @@ void MixedExchange::apply() {
   }
 
   _tw_s_route.replace(_input,
+                      target_delivery,
                       t_job_ranks.begin(),
                       t_job_ranks.end(),
                       s_rank,
                       s_rank + 1);
 
   _tw_t_route.replace(_input,
+                      _input.jobs[s_route[s_rank]].delivery,
                       s_job_ranks.begin(),
                       s_job_ranks.end(),
                       t_rank,

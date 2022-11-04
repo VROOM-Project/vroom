@@ -55,11 +55,13 @@ void TwoOpt::apply() {
                      t_route.end());
 
   _tw_t_route.replace(_input,
+                      _s_delivery,
                       s_route.begin() + s_rank + 1,
                       s_route.end(),
                       t_rank + 1,
                       t_route.size());
   _tw_s_route.replace(_input,
+                      _t_delivery,
                       t_job_ranks.begin(),
                       t_job_ranks.end(),
                       s_rank + 1,

@@ -57,12 +57,14 @@ void ReverseTwoOpt::apply() {
                      t_route.rend());
 
   _tw_t_route.replace(_input,
+                      _s_delivery,
                       s_route.rbegin(),
                       s_route.rbegin() + s_route.size() - 1 - s_rank,
                       0,
                       t_rank + 1);
 
   _tw_s_route.replace(_input,
+                      _t_delivery,
                       t_job_ranks.begin(),
                       t_job_ranks.end(),
                       s_rank + 1,
