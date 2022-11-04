@@ -14,7 +14,7 @@ on:
       - '.github/workflows/vroom_libosrm.yml'
       - '**libosrm_wrapper**'
 env:
-  osrm-tag: v5.26.0
+  osrm-tag: v5.27.1
 jobs:
   libosrm:
     strategy:
