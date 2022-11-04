@@ -427,7 +427,8 @@ OrderChoice TWRoute::order_choice(const Input& input,
                                   const Duration job_action_time,
                                   const Break& b,
                                   const PreviousInfo& previous,
-                                  const NextInfo& next) const {
+                                  const NextInfo& next,
+                                  const Amount& current_load) const {
   OrderChoice oc(input, job_rank, b, previous);
   const auto& v = input.vehicles[vehicle_rank];
   const auto& j = input.jobs[job_rank];
@@ -737,8 +738,13 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
     const auto job_action_time =
       (j.index() == current.location_index) ? j.service : j.setup + j.service;
 
-    auto oc =
-      order_choice(input, *current_job, job_action_time, b, current, next);
+    auto oc = order_choice(input,
+                           *current_job,
+                           job_action_time,
+                           b,
+                           current,
+                           next,
+                           current_load);
 
     if (!oc.add_job_first and !oc.add_break_first) {
       // Infeasible insertion.
@@ -1052,8 +1058,13 @@ void TWRoute::replace(const Input& input,
     const auto job_action_time =
       (j.index() == current.location_index) ? j.service : j.setup + j.service;
 
-    auto oc =
-      order_choice(input, *current_job, job_action_time, b, current, next);
+    auto oc = order_choice(input,
+                           *current_job,
+                           job_action_time,
+                           b,
+                           current,
+                           next,
+                           current_load);
 
     assert(oc.add_job_first xor oc.add_break_first);
     if (oc.add_break_first) {

@@ -80,7 +80,8 @@ private:
                            const Duration job_action_time,
                            const Break& b,
                            const PreviousInfo& previous,
-                           const NextInfo& next) const;
+                           const NextInfo& next,
+                           const Amount& current_load) const;
 
 public:
   Duration v_start;
