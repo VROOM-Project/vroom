@@ -6,7 +6,7 @@
 
 - Support for `max_travel_time` at vehicle level (#273)
 - Advertise `libvroom` in README and wiki (#42)
-- CI builds now include clang++ and g++ on Ubuntu 22.04 (#816)
+- CI builds now use clang++ 14 and g++ 11 on Ubuntu 22.04 (#816)
 
 ### Changed
 
