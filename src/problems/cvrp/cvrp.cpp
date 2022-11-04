@@ -31,8 +31,6 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
-using RawSolution = std::vector<RawRoute>;
-
 namespace cvrp {
 
 using LocalSearch = ls::LocalSearch<RawRoute,

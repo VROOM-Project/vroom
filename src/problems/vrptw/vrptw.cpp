@@ -30,8 +30,6 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
-using TWSolution = std::vector<TWRoute>;
-
 namespace vrptw {
 
 using LocalSearch = ls::LocalSearch<TWRoute,
