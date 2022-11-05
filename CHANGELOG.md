@@ -20,6 +20,7 @@
 - Add named constants for default threads number and exploration level (#805)
 - Refactor `TSP` cost functions (#812)
 - CI builds now use clang++ 14 and g++ 11 on Ubuntu 22.04 (#816)
+- Refactor `CVRP::solve` and `VRPTW::solve` functions (#818)
 
 ### Fixed
 
