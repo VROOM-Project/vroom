@@ -14,13 +14,13 @@ on:
       - '.github/workflows/vroom_libosrm.yml'
       - '**libosrm_wrapper**'
 env:
-  osrm-tag: v5.26.0
+  osrm-tag: v5.27.1
 jobs:
   libosrm:
     strategy:
       matrix:
-        cxx: ['g++-9', 'clang++-10']
-    runs-on: ubuntu-20.04
+        cxx: ['g++-11', 'clang++-14']
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2

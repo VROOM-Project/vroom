@@ -19,6 +19,7 @@
 - Pass zero amount directly instead of its size (#776)
 - Add named constants for default threads number and exploration level (#805)
 - Refactor `TSP` cost functions (#812)
+- CI builds now use clang++ 14 and g++ 11 on Ubuntu 22.04 (#816)
 
 ### Fixed
 
