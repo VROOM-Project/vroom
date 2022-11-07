@@ -38,6 +38,7 @@ MixedExchange::MixedExchange(const Input& input,
     check_t_reverse(check_t_reverse),
     s_is_normal_valid(false),
     s_is_reverse_valid(false),
+    source_delivery(_input.jobs[this->s_route[s_rank]].delivery),
     target_delivery(_input.jobs[this->t_route[t_rank]].delivery +
                     _input.jobs[this->t_route[t_rank + 1]].delivery) {
   assert(s_vehicle != t_vehicle);
@@ -185,8 +186,7 @@ bool MixedExchange::is_valid() {
     target.is_valid_addition_for_capacity_margins(_input,
                                                   _input.jobs[s_route[s_rank]]
                                                     .pickup,
-                                                  _input.jobs[s_route[s_rank]]
-                                                    .delivery,
+                                                  source_delivery,
                                                   t_rank,
                                                   t_rank + 2);
 
