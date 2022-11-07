@@ -44,7 +44,7 @@ bool MixedExchange::is_valid() {
                                          s_route.begin() + s_rank,
                                          s_route.begin() + s_rank + 1,
                                          t_rank,
-                                         t_rank + 1);
+                                         t_rank + 2);
 
   if (valid) {
     // Keep target edge direction when inserting in source route.

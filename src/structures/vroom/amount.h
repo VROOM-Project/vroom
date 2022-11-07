@@ -99,19 +99,19 @@ public:
 
   void push_back(Capacity c) {
     elems.push_back(c);
-  };
+  }
 
   Capacity operator[](std::size_t i) const {
     return elems[i];
-  };
+  }
 
   Capacity& operator[](std::size_t i) {
     return elems[i];
-  };
+  }
 
   std::size_t size() const {
     return elems.size();
-  };
+  }
 
   Amount& operator+=(const Amount& rhs) {
     assert(this->size() == rhs.size());
@@ -162,15 +162,15 @@ class AmountSum : public AmountExpression<AmountSum<E1, E2>> {
 public:
   AmountSum(const E1& a, const E2& b) : lhs(a), rhs(b) {
     assert(a.size() == b.size());
-  };
+  }
 
   Capacity operator[](std::size_t i) const {
     return lhs[i] + rhs[i];
-  };
+  }
 
   std::size_t size() const {
     return lhs.size();
-  };
+  }
 };
 
 template <typename E1, typename E2>
@@ -187,15 +187,15 @@ class AmountDiff : public AmountExpression<AmountDiff<E1, E2>> {
 public:
   AmountDiff(const E1& a, const E2& b) : lhs(a), rhs(b) {
     assert(a.size() == b.size());
-  };
+  }
 
   Capacity operator[](std::size_t i) const {
     return lhs[i] - rhs[i];
-  };
+  }
 
   std::size_t size() const {
     return lhs.size();
-  };
+  }
 };
 
 template <typename E1, typename E2>

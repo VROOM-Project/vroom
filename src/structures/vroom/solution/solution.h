@@ -11,6 +11,7 @@ All rights reserved (see LICENSE).
 */
 
 #include <string>
+#include <vector>
 
 #include "structures/vroom/job.h"
 #include "structures/vroom/solution/route.h"
