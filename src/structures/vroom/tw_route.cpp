@@ -22,13 +22,22 @@ TWRoute::TWRoute(const Input& input, Index v, unsigned amount_size)
     break_earliest(input.vehicles[v].breaks.size()),
     break_latest(input.vehicles[v].breaks.size()),
     breaks_travel_margin_before(input.vehicles[v].breaks.size()),
-    breaks_travel_margin_after(input.vehicles[v].breaks.size()) {
-  std::string break_error = "Inconsistent breaks for vehicle " +
-                            std::to_string(input.vehicles[v].id) + ".";
+    breaks_travel_margin_after(input.vehicles[v].breaks.size()),
+    fwd_smallest_breaks_load_margin(input.vehicles[v].breaks.size()),
+    bwd_smallest_breaks_load_margin(input.vehicles[v].breaks.size()) {
+  const std::string break_error = "Inconsistent breaks for vehicle " +
+                                  std::to_string(input.vehicles[v].id) + ".";
 
   const auto& breaks = input.vehicles[v].breaks;
 
   Duration previous_earliest = v_start;
+
+  // Store smallest margin component-wise.
+  Amount fwd_smallest_margin(amount_size);
+  for (std::size_t a = 0; a < amount_size; ++a) {
+    fwd_smallest_margin[a] = std::numeric_limits<Capacity>::max();
+  }
+  Amount bwd_smallest_margin = fwd_smallest_margin;
 
   for (Index i = 0; i < breaks.size(); ++i) {
     const auto& b = breaks[i];
@@ -44,11 +53,21 @@ TWRoute::TWRoute(const Input& input, Index v, unsigned amount_size)
     breaks_travel_margin_before[i] = break_earliest[i] - previous_earliest;
 
     previous_earliest = break_earliest[i] + b.service;
+
+    if (b.max_load.has_value()) {
+      const auto& max_load = b.max_load.value();
+      for (std::size_t a = 0; a < amount_size; ++a) {
+        if (max_load[a] < fwd_smallest_margin[a]) {
+          fwd_smallest_margin[a] = max_load[a];
+        }
+      }
+    }
+    fwd_smallest_breaks_load_margin[i] = fwd_smallest_margin;
   }
 
   Duration next_latest = v_end;
   for (Index r_i = 0; r_i < breaks.size(); ++r_i) {
-    Index i = breaks.size() - 1 - r_i;
+    const Index i = breaks.size() - 1 - r_i;
     const auto& b = breaks[i];
 
     if (next_latest < b.service) {
@@ -72,6 +91,16 @@ TWRoute::TWRoute(const Input& input, Index v, unsigned amount_size)
     if (break_latest[i] < break_earliest[i]) {
       throw InputException(break_error);
     }
+
+    if (b.max_load.has_value()) {
+      const auto& max_load = b.max_load.value();
+      for (std::size_t a = 0; a < amount_size; ++a) {
+        if (max_load[a] < bwd_smallest_margin[a]) {
+          bwd_smallest_margin[a] = max_load[a];
+        }
+      }
+    }
+    bwd_smallest_breaks_load_margin[i] = bwd_smallest_margin;
   }
 }
 

@@ -120,6 +120,12 @@ public:
   std::vector<Duration> breaks_travel_margin_before;
   std::vector<Duration> breaks_travel_margin_after;
 
+  // fwd_smallest_breaks_load_margin[i] (resp. bwd_...) store minimal
+  // margin between current load and max load for all breaks up to
+  // rank i (resp. after rank i included) in vehicle breaks.
+  std::vector<Amount> fwd_smallest_breaks_load_margin;
+  std::vector<Amount> bwd_smallest_breaks_load_margin;
+
   TWRoute(const Input& input, Index i, unsigned amount_size);
 
   bool empty() const {
