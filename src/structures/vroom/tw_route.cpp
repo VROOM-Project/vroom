@@ -692,17 +692,25 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
     }
   }
 
-  // Maintain current load while adding insertion range. Initial load
-  // is lowered based on removed range.
-  auto previous_route_load =
-    (route.empty()) ? input.zero_amount() : load_at_step(first_rank);
-  assert(delivery_in_range(first_rank, last_rank) <= previous_route_load);
-  Amount current_load =
-    previous_route_load - delivery_in_range(first_rank, last_rank) + delivery;
-
   // Determine break range between first_rank and last_rank.
   Index current_break = breaks_counts[first_rank] - breaks_at_rank[first_rank];
   const Index last_break = breaks_counts[last_rank];
+
+  // Maintain current load while adding insertion range. Initial load
+  // is lowered based on removed range.
+  auto previous_init_load =
+    (route.empty()) ? input.zero_amount() : load_at_step(first_rank);
+  auto previous_final_load =
+    (route.empty()) ? input.zero_amount() : load_at_step(last_rank);
+  assert(delivery_in_range(first_rank, last_rank) <= previous_init_load);
+  Amount delta_delivery = delivery - delivery_in_range(first_rank, last_rank);
+
+  if (current_break != 0 and
+      !(delta_delivery <= fwd_smallest_breaks_load_margin[current_break - 1])) {
+    return false;
+  }
+
+  Amount current_load = previous_init_load + delta_delivery;
 
   // Propagate earliest dates for all jobs and breaks in their
   // respective addition ranges.
@@ -828,6 +836,12 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
           v.duration(j.index(), input.jobs[*current_job].index());
       }
     }
+  }
+
+  Amount delta_pickup = current_load - previous_final_load;
+  if (last_break < v.breaks.size() and
+      !(delta_pickup <= bwd_smallest_breaks_load_margin[last_break])) {
+    return false;
   }
 
   if (last_rank < route.size() and
