@@ -1205,6 +1205,14 @@ void TWRoute::replace(const Input& input,
 
   assert(current_job_rank == first_rank + add_count);
 
+  // Update all break load margins after modified range.
+  Amount delta_pickup = current_load - previous_final_load;
+  assert(last_break == v.breaks.size() or
+         delta_pickup <= bwd_smallest_breaks_load_margin[last_break]);
+  for (std::size_t i = last_break; i < v.breaks.size(); ++i) {
+    bwd_smallest_breaks_load_margin[i] -= delta_pickup;
+  }
+
   // Update remaining number of breaks due before next step.
   breaks_at_rank[current_job_rank] = breaks_before;
   assert(previous_breaks_counts + breaks_at_rank[current_job_rank] ==
@@ -1290,6 +1298,8 @@ void TWRoute::replace(const Input& input,
   }
 
   update_amounts(input);
+
+  // Todo propagate fwd/bwd_smallest_breaks_load_margin updates
 }
 
 template bool
