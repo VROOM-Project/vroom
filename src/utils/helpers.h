@@ -37,6 +37,14 @@ inline TimePoint now() {
   return std::chrono::high_resolution_clock::now();
 }
 
+inline Amount max_amount(std::size_t size) {
+  Amount max(size);
+  for (std::size_t i = 0; i < size; ++i) {
+    max[i] = std::numeric_limits<Capacity>::max();
+  }
+  return max;
+}
+
 inline Cost add_without_overflow(Cost a, Cost b) {
   if (a > std::numeric_limits<Cost>::max() - b) {
     throw InputException(

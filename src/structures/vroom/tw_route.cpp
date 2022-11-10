@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 #include <algorithm>
 
 #include "structures/vroom/tw_route.h"
+#include "utils/helpers.h"
 
 namespace vroom {
 
@@ -33,11 +34,8 @@ TWRoute::TWRoute(const Input& input, Index v, unsigned amount_size)
   Duration previous_earliest = v_start;
 
   // Store smallest margin component-wise.
-  Amount fwd_smallest_margin(amount_size);
-  for (std::size_t a = 0; a < amount_size; ++a) {
-    fwd_smallest_margin[a] = std::numeric_limits<Capacity>::max();
-  }
-  Amount bwd_smallest_margin = fwd_smallest_margin;
+  Amount fwd_smallest_margin = utils::max_amount(amount_size);
+  Amount bwd_smallest_margin = utils::max_amount(amount_size);
 
   for (Index i = 0; i < breaks.size(); ++i) {
     const auto& b = breaks[i];
