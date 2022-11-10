@@ -1055,6 +1055,23 @@ void TWRoute::replace(const Input& input,
 
       current.earliest += b.service;
 
+      // Update break max load margin.
+      auto current_margin = (b.max_load.has_value())
+                              ? b.max_load.value() - current_load
+                              : utils::max_amount(input.get_amount_size());
+      if (current_break == 0) {
+        // New fwd_smallest_breaks_load_margin is solely based on this
+        // break max_load.
+        fwd_smallest_breaks_load_margin[current_break] = current_margin;
+      } else {
+        const auto& previous_margin =
+          fwd_smallest_breaks_load_margin[current_break - 1];
+        for (std::size_t i = 0; i < previous_margin.size(); ++i) {
+          fwd_smallest_breaks_load_margin[current_break][i] =
+            std::min(previous_margin[i], current_margin[i]);
+        }
+      }
+
       ++breaks_before;
       ++current_break;
       continue;
@@ -1136,6 +1153,23 @@ void TWRoute::replace(const Input& input,
       break_earliest[current_break] = current.earliest;
 
       current.earliest += b.service;
+
+      // Update break max load margin.
+      auto current_margin = (b.max_load.has_value())
+                              ? b.max_load.value() - current_load
+                              : utils::max_amount(input.get_amount_size());
+      if (current_break == 0) {
+        // New fwd_smallest_breaks_load_margin is solely based on this
+        // break max_load.
+        fwd_smallest_breaks_load_margin[current_break] = current_margin;
+      } else {
+        const auto& previous_margin =
+          fwd_smallest_breaks_load_margin[current_break - 1];
+        for (std::size_t i = 0; i < previous_margin.size(); ++i) {
+          fwd_smallest_breaks_load_margin[current_break][i] =
+            std::min(previous_margin[i], current_margin[i]);
+        }
+      }
 
       ++breaks_before;
       ++current_break;
