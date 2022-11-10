@@ -948,17 +948,26 @@ void TWRoute::replace(const Input& input,
     }
   }
 
-  // Maintain current load while adding insertion range. Initial load
-  // is lowered based on removed range.
-  auto previous_route_load =
-    (route.empty()) ? input.zero_amount() : load_at_step(first_rank);
-  assert(delivery_in_range(first_rank, last_rank) <= previous_route_load);
-  Amount current_load =
-    previous_route_load - delivery_in_range(first_rank, last_rank) + delivery;
-
   // Determine break range between first_rank and last_rank.
   Index current_break = breaks_counts[first_rank] - breaks_at_rank[first_rank];
   const Index last_break = breaks_counts[last_rank];
+
+  // Maintain current load while adding insertion range. Initial load
+  // is lowered based on removed range.
+  auto previous_init_load =
+    (route.empty()) ? input.zero_amount() : load_at_step(first_rank);
+  auto previous_final_load =
+    (route.empty()) ? input.zero_amount() : load_at_step(last_rank);
+  assert(delivery_in_range(first_rank, last_rank) <= previous_init_load);
+  Amount delta_delivery = delivery - delivery_in_range(first_rank, last_rank);
+  Amount current_load = previous_init_load + delta_delivery;
+
+  // Update all break load margins prior to modified range.
+  assert(current_break == 0 or
+         delta_delivery <= fwd_smallest_breaks_load_margin[current_break - 1]);
+  for (std::size_t i = 0; i < current_break; ++i) {
+    fwd_smallest_breaks_load_margin[i] -= delta_delivery;
+  }
 
   unsigned previous_breaks_counts =
     (first_rank != 0) ? breaks_counts[first_rank - 1] : 0;
