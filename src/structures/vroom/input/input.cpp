@@ -36,6 +36,7 @@ Input::Input(const io::Servers& servers, ROUTER router)
     _has_initial_routes(false),
     _homogeneous_locations(true),
     _homogeneous_profiles(true),
+    _homogeneous_fixed_costs(true),
     _geometry(false),
     _has_jobs(false),
     _has_shipments(false),
@@ -361,6 +362,9 @@ void Input::add_vehicle(const Vehicle& vehicle) {
       vehicles.front().has_same_locations(vehicles.back());
     _homogeneous_profiles = _homogeneous_profiles &&
                             vehicles.front().has_same_profile(vehicles.back());
+    _homogeneous_fixed_costs =
+      _homogeneous_fixed_costs &&
+      vehicles.front().fixed_cost() == vehicles.back().fixed_cost();
   }
 
   _profiles.insert(current_v.profile);
@@ -404,6 +408,10 @@ bool Input::has_homogeneous_locations() const {
 
 bool Input::has_homogeneous_profiles() const {
   return _homogeneous_profiles;
+}
+
+bool Input::has_homogeneous_fixed_costs() const {
+  return _homogeneous_fixed_costs;
 }
 
 bool Input::vehicle_ok_with_vehicle(Index v1_index, Index v2_index) const {
