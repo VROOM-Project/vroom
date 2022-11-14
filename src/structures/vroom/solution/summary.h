@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include "structures/typedefs.h"
 #include "structures/vroom/amount.h"
 #include "structures/vroom/solution/computing_times.h"
 #include "structures/vroom/solution/violations.h"

@@ -11,8 +11,12 @@ All rights reserved (see LICENSE).
 */
 
 #include <algorithm>
+#include <chrono>
 #include <numeric>
+#include <optional>
 #include <sstream>
+#include <string>
+#include <vector>
 
 #ifdef LOG_LS_OPERATORS
 #include <iostream>

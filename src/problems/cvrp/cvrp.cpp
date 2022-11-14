@@ -7,12 +7,9 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <mutex>
-#include <thread>
-
+#include "problems/cvrp/cvrp.h"
 #include "algorithms/heuristics/heuristics.h"
 #include "algorithms/local_search/local_search.h"
-#include "problems/cvrp/cvrp.h"
 #include "problems/cvrp/operators/cross_exchange.h"
 #include "problems/cvrp/operators/intra_cross_exchange.h"
 #include "problems/cvrp/operators/intra_exchange.h"
@@ -34,8 +31,6 @@ All rights reserved (see LICENSE).
 #include "utils/helpers.h"
 
 namespace vroom {
-
-using RawSolution = std::vector<RawRoute>;
 
 namespace cvrp {
 
@@ -164,119 +159,12 @@ Solution CVRP::solve(unsigned exploration_level,
     return utils::format_solution(_input, {r});
   }
 
-  // Use vector of parameters when passed for debugging, else use
-  // predefined parameter set.
-  const auto& parameters = (!h_param.empty())
-                             ? h_param
-                             : (_input.has_homogeneous_locations())
-                                 ? homogeneous_parameters
-                                 : heterogeneous_parameters;
-  unsigned max_nb_jobs_removal = exploration_level;
-  unsigned nb_init_solutions = h_param.size();
-
-  if (nb_init_solutions == 0) {
-    // Local search parameter.
-    nb_init_solutions = 4 * (exploration_level + 1);
-    if (exploration_level >= 4) {
-      nb_init_solutions += 4;
-    }
-    if (exploration_level >= 5) {
-      nb_init_solutions += 4;
-    }
-  }
-  assert(nb_init_solutions <= parameters.size());
-
-  std::vector<RawSolution> solutions(nb_init_solutions);
-  std::vector<utils::SolutionIndicators<RawRoute>> sol_indicators(
-    nb_init_solutions);
-#ifdef LOG_LS_OPERATORS
-  std::vector<std::array<ls::OperatorStats, OperatorName::MAX>> ls_stats(
-    nb_init_solutions);
-#endif
-
-  // Split the work among threads.
-  std::vector<std::vector<std::size_t>>
-    thread_ranks(nb_threads, std::vector<std::size_t>());
-  for (std::size_t i = 0; i < nb_init_solutions; ++i) {
-    thread_ranks[i % nb_threads].push_back(i);
-  }
-
-  std::exception_ptr ep = nullptr;
-  std::mutex ep_m;
-
-  auto run_solve = [&](const std::vector<std::size_t>& param_ranks) {
-    try {
-      // Decide time allocated for each search.
-      Timeout search_time;
-      if (timeout.has_value()) {
-        search_time = timeout.value() / param_ranks.size();
-      }
-
-      for (auto rank : param_ranks) {
-        auto& p = parameters[rank];
-
-        switch (p.heuristic) {
-        case HEURISTIC::INIT_ROUTES:
-          solutions[rank] = heuristics::initial_routes<RawSolution>(_input);
-          break;
-        case HEURISTIC::BASIC:
-          solutions[rank] =
-            heuristics::basic<RawSolution>(_input, p.init, p.regret_coeff);
-          break;
-        case HEURISTIC::DYNAMIC:
-          solutions[rank] =
-            heuristics::dynamic_vehicle_choice<RawSolution>(_input,
-                                                            p.init,
-                                                            p.regret_coeff);
-          break;
-        }
-
-        // Local search phase.
-        cvrp::LocalSearch ls(_input,
-                             solutions[rank],
-                             max_nb_jobs_removal,
-                             search_time);
-        ls.run();
-
-        // Store solution indicators.
-        sol_indicators[rank] = ls.indicators();
-#ifdef LOG_LS_OPERATORS
-        ls_stats[rank] = ls.get_stats();
-#endif
-      }
-    } catch (...) {
-      ep_m.lock();
-      ep = std::current_exception();
-      ep_m.unlock();
-    }
-  };
-
-  std::vector<std::thread> solving_threads;
-
-  for (const auto& param_ranks : thread_ranks) {
-    if (!param_ranks.empty()) {
-      solving_threads.emplace_back(run_solve, param_ranks);
-    }
-  }
-
-  for (auto& t : solving_threads) {
-    t.join();
-  }
-
-  if (ep != nullptr) {
-    std::rethrow_exception(ep);
-  }
-
-#ifdef LOG_LS_OPERATORS
-  utils::log_LS_operators(ls_stats);
-#endif
-
-  auto best_indic =
-    std::min_element(sol_indicators.cbegin(), sol_indicators.cend());
-
-  return utils::format_solution(_input,
-                                solutions[std::distance(sol_indicators.cbegin(),
-                                                        best_indic)]);
+  return VRP::solve<RawRoute, cvrp::LocalSearch>(exploration_level,
+                                                 nb_threads,
+                                                 timeout,
+                                                 h_param,
+                                                 homogeneous_parameters,
+                                                 heterogeneous_parameters);
 }
 
 } // namespace vroom

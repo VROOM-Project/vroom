@@ -14,15 +14,22 @@
 - Use `std::chrono::milliseconds` for `Timeout` value (#728)
 - Use `struct` for storing `Coordinates` instead of an `std::array` (#730)
 - Refactor `SolutionIndicators` struct (#750)
+- Do not duplicate local search for identical heuristic solutions (#750)
 - Add message on invalid routing response (#764)
 - Consistent exception type on invalid profile (#771)
 - Pass zero amount directly instead of its size (#776)
+- Add named constants for default threads number and exploration level (#805)
+- Refactor `TSP` cost functions (#812)
+- CI builds now use clang++ 14 and g++ 11 on Ubuntu 22.04 (#816)
+- Refactor `CVRP::solve` and `VRPTW::solve` functions (#818)
 
 ### Fixed
 
 - Missing break validity check (#754)
 - Mark `JobAmount` and `JobTime` comparison operators as `const` (#724)
 - Update `ssl_send_and_receive` to throw RoutingExceptions (#770)
+- Timeout not observed with multiple long heuristics per thread (#792)
+- Wrong validity check range in `vrptw::MixedExchange` (#821)
 
 ## [v1.12.0] - 2022-05-31
 
