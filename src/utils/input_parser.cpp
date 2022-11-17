@@ -127,8 +127,9 @@ inline size_t get_max_tasks(const rapidjson::Value& object) {
   return max_tasks;
 }
 
-inline Duration get_max_travel_time(const rapidjson::Value& object) {
-  Duration max_travel_time = std::numeric_limits<Duration>::max();
+inline std::optional<Duration>
+get_max_travel_time(const rapidjson::Value& object) {
+  std::optional<Duration> max_travel_time;
   if (object.HasMember("max_travel_time")) {
     if (!object["max_travel_time"].IsUint()) {
       throw InputException("Invalid max_travel_time value.");

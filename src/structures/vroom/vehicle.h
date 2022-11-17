@@ -52,7 +52,7 @@ struct Vehicle {
     const std::string& description = "",
     double speed_factor = 1.,
     const size_t max_tasks = std::numeric_limits<size_t>::max(),
-    const Duration max_travel_time = std::numeric_limits<Duration>::max(),
+    const std::optional<Duration>& max_travel_time = std::optional<Duration>(),
     const std::vector<VehicleStep>& input_steps = std::vector<VehicleStep>());
 
   bool has_start() const;

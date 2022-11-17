@@ -25,7 +25,7 @@ Vehicle::Vehicle(Id id,
                  const std::string& description,
                  double speed_factor,
                  const size_t max_tasks,
-                 const Duration max_travel_time,
+                 const std::optional<Duration>& max_travel_time,
                  const std::vector<VehicleStep>& input_steps)
   : id(id),
     start(start),
@@ -38,7 +38,13 @@ Vehicle::Vehicle(Id id,
     description(description),
     cost_wrapper(speed_factor),
     max_tasks(max_tasks),
-    max_travel_time(max_travel_time) {
+    max_travel_time(max_travel_time.has_value()
+                      ? DURATION_FACTOR * max_travel_time.value()
+                      : std::numeric_limits<Duration>::max()) {
+  assert(!max_travel_time.has_value() or
+         max_travel_time.value() <
+           (std::numeric_limits<Duration>::max() / DURATION_FACTOR));
+
   if (!static_cast<bool>(start) and !static_cast<bool>(end)) {
     throw InputException("No start or end specified for vehicle " +
                          std::to_string(id) + '.');
