@@ -27,8 +27,8 @@ void CostWrapper::set_durations_matrix(const Matrix<Duration>* matrix) {
   duration_data = (*matrix)[0];
 }
 
-void CostWrapper::set_costs_factor(double cost_factor) {
-  discrete_cost_factor = std::round(cost_factor * DURATION_FACTOR);
+void CostWrapper::set_costs_factor(uint32_t cost_factor) {
+  discrete_cost_factor = cost_factor * DURATION_FACTOR;
 }
 
 void CostWrapper::set_costs_matrix(const Matrix<Cost>* matrix) {

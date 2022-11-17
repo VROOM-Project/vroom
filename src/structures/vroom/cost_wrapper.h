@@ -28,7 +28,7 @@ struct CostWrapper {
 
   void set_durations_matrix(const Matrix<Duration>* matrix);
 
-  void set_costs_factor(double cost_factor);
+  void set_costs_factor(uint32_t cost_factor);
   void set_costs_matrix(const Matrix<Cost>* matrix);
 
   Duration duration(Index i, Index j) const {
