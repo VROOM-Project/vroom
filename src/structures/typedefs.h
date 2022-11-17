@@ -30,10 +30,10 @@ namespace vroom {
 // To easily differentiate variable types.
 using Id = uint64_t;
 using Index = uint16_t;
-using Cost = uint32_t;
+using Cost = uint64_t;
 using SignedCost = int64_t;
 using Distance = uint32_t;
-using Duration = uint32_t;
+using Duration = uint64_t;
 using SignedDuration = int64_t;
 using Coordinate = double;
 using Capacity = int64_t;
