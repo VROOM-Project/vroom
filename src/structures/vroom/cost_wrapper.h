@@ -32,13 +32,12 @@ struct CostWrapper {
   void set_costs_matrix(const Matrix<Cost>* matrix);
 
   Duration duration(Index i, Index j) const {
-    Duration c = duration_data[i * duration_matrix_size + j];
-    return (c * discrete_duration_factor) / DURATION_FACTOR;
+    return discrete_duration_factor *
+           duration_data[i * duration_matrix_size + j];
   }
 
   Cost cost(Index i, Index j) const {
-    Cost c = cost_data[i * cost_matrix_size + j];
-    return (c * discrete_cost_factor) / DURATION_FACTOR;
+    return discrete_cost_factor * cost_data[i * cost_matrix_size + j];
   }
 };
 
