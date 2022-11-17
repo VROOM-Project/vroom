@@ -14,8 +14,8 @@ All rights reserved (see LICENSE).
 namespace vroom {
 
 CostWrapper::CostWrapper(double speed_factor)
-  : discrete_duration_factor(std::round(1 / speed_factor * DIVISOR)),
-    discrete_cost_factor(std::round(1 / speed_factor * DIVISOR)) {
+  : discrete_duration_factor(std::round(1 / speed_factor * DURATION_FACTOR)),
+    discrete_cost_factor(std::round(1 / speed_factor * DURATION_FACTOR)) {
   if (speed_factor <= 0 || speed_factor > MAX_SPEED_FACTOR) {
     throw InputException("Invalid speed factor: " +
                          std::to_string(speed_factor));
@@ -28,7 +28,7 @@ void CostWrapper::set_durations_matrix(const Matrix<Duration>* matrix) {
 }
 
 void CostWrapper::set_costs_factor(double cost_factor) {
-  discrete_cost_factor = std::round(cost_factor * DIVISOR);
+  discrete_cost_factor = std::round(cost_factor * DURATION_FACTOR);
 }
 
 void CostWrapper::set_costs_matrix(const Matrix<Cost>* matrix) {

@@ -57,6 +57,8 @@ constexpr Cost INFINITE_COST = 3 * (std::numeric_limits<Cost>::max() / 4);
 
 const std::string DEFAULT_PROFILE = "car";
 
+constexpr uint32_t DURATION_FACTOR = 100;
+
 constexpr Priority MAX_PRIORITY = 100;
 constexpr double MAX_SPEED_FACTOR = 5.0;
 
