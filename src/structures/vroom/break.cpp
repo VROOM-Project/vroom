@@ -16,7 +16,10 @@ Break::Break(Id id,
              const std::vector<TimeWindow>& tws,
              Duration service,
              const std::string& description)
-  : id(id), tws(tws), service(service), description(description) {
+  : id(id),
+    tws(tws),
+    service(DURATION_FACTOR * service),
+    description(description) {
   utils::check_tws(tws);
 }
 
