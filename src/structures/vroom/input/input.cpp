@@ -63,6 +63,10 @@ void Input::add_routing_wrapper(const std::string& profile) {
   throw RoutingException("VROOM compiled without routing support.");
 #endif
 
+  if (!_has_all_coordinates) {
+    throw InputException("Missing coordinates for routing engine.");
+  }
+
   assert(std::find_if(_routing_wrappers.begin(),
                       _routing_wrappers.end(),
                       [&](const auto& wr) { return wr->profile == profile; }) ==
