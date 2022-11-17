@@ -16,11 +16,11 @@ All rights reserved (see LICENSE).
 namespace vroom {
 
 struct CostWrapper {
-  const uint32_t discrete_duration_factor;
+  const Duration discrete_duration_factor;
   std::size_t duration_matrix_size;
   const Duration* duration_data;
 
-  uint32_t discrete_cost_factor;
+  Cost discrete_cost_factor;
   std::size_t cost_matrix_size;
   const Cost* cost_data;
 
@@ -28,7 +28,7 @@ struct CostWrapper {
 
   void set_durations_matrix(const Matrix<Duration>* matrix);
 
-  void set_costs_factor(uint32_t cost_factor);
+  void set_costs_factor(Cost cost_factor);
   void set_costs_matrix(const Matrix<Cost>* matrix);
 
   Duration duration(Index i, Index j) const {
