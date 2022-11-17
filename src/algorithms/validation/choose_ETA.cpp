@@ -324,7 +324,9 @@ Route choose_ETA(const Input& input,
     // start at 0.
     assert(horizon_end == 0);
     horizon_start = 0;
-    horizon_end = std::numeric_limits<Duration>::max();
+    // Do not use max value for a uint64_t here since it messes up
+    // precision withing glpk.
+    horizon_end = std::numeric_limits<uint32_t>::max();
   } else {
     // Advance "absolute" planning horizon start so as to allow lead
     // time at startup. Compute minimal delay values for possible start of
