@@ -128,8 +128,8 @@ template <class T> T basic(const Input& input, INIT init, double lambda) {
       bool init_ok = false;
 
       Amount higher_amount(input.zero_amount());
-      Cost furthest_cost = 0;
-      Cost nearest_cost = std::numeric_limits<Cost>::max();
+      SignedCost furthest_cost = 0;
+      SignedCost nearest_cost = std::numeric_limits<SignedCost>::max();
       Duration earliest_deadline = std::numeric_limits<Duration>::max();
       Index best_job_rank = 0;
       for (const auto job_rank : unassigned) {
@@ -168,7 +168,7 @@ template <class T> T basic(const Input& input, INIT init, double lambda) {
         }
 
         bool is_valid =
-          (evals[job_rank][v_rank].duration <= vehicle.max_travel_time) &&
+          (vehicle.ok_for_travel_time(evals[job_rank][v_rank].duration)) &&
           current_r
             .is_valid_addition_for_capacity(input,
                                             input.jobs[job_rank].pickup,
@@ -267,8 +267,8 @@ template <class T> T basic(const Input& input, INIT init, double lambda) {
               lambda * static_cast<double>(regrets[v][job_rank]);
 
             if (current_cost < best_cost and
-                (current_route_duration + current_add.duration <=
-                 vehicle.max_travel_time) and
+                (vehicle.ok_for_travel_time(current_route_duration +
+                                            current_add.duration)) and
                 current_r
                   .is_valid_addition_for_capacity(input,
                                                   input.jobs[job_rank].pickup,
@@ -360,8 +360,8 @@ template <class T> T basic(const Input& input, INIT init, double lambda) {
 
                 // Update best cost depending on validity.
                 bool valid =
-                  (current_route_duration + current_add.duration <=
-                   vehicle.max_travel_time) &&
+                  (vehicle.ok_for_travel_time(current_route_duration +
+                                              current_add.duration)) &&
                   current_r
                     .is_valid_addition_for_capacity_inclusion(input,
                                                               modified_delivery,
@@ -519,8 +519,8 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
       bool init_ok = false;
 
       Amount higher_amount(input.zero_amount());
-      Cost furthest_cost = 0;
-      Cost nearest_cost = std::numeric_limits<Cost>::max();
+      SignedCost furthest_cost = 0;
+      SignedCost nearest_cost = std::numeric_limits<SignedCost>::max();
       Duration earliest_deadline = std::numeric_limits<Duration>::max();
       Index best_job_rank = 0;
       for (const auto job_rank : unassigned) {
@@ -561,7 +561,7 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
         }
 
         bool is_valid =
-          (evals[job_rank][v_rank].duration <= vehicle.max_travel_time) &&
+          (vehicle.ok_for_travel_time(evals[job_rank][v_rank].duration)) &&
           current_r
             .is_valid_addition_for_capacity(input,
                                             input.jobs[job_rank].pickup,
@@ -661,8 +661,8 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
               lambda * static_cast<double>(regrets[job_rank]);
 
             if (current_cost < best_cost and
-                (current_route_duration + current_add.duration <=
-                 vehicle.max_travel_time) and
+                (vehicle.ok_for_travel_time(current_route_duration +
+                                            current_add.duration)) and
                 current_r
                   .is_valid_addition_for_capacity(input,
                                                   input.jobs[job_rank].pickup,
@@ -754,8 +754,8 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
 
                 // Update best cost depending on validity.
                 bool valid =
-                  (current_route_duration + current_add.duration <=
-                   vehicle.max_travel_time) &&
+                  (vehicle.ok_for_travel_time(current_route_duration +
+                                              current_add.duration)) &&
                   current_r
                     .is_valid_addition_for_capacity_inclusion(input,
                                                               modified_delivery,

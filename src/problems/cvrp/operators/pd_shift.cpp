@@ -43,8 +43,8 @@ PDShift::PDShift(const Input& input,
   assert(s_route.route[s_p_rank] + 1 == s_route.route[s_d_rank]);
 
   s_gain = _sol_state.pd_gains[s_vehicle][_s_p_rank];
-  assert(_sol_state.route_evals[s_vehicle].duration <=
-         _input.vehicles[s_vehicle].max_travel_time + s_gain.duration);
+  assert(_input.vehicles[s_vehicle].ok_for_travel_time(
+    _sol_state.route_evals[s_vehicle].duration - s_gain.duration));
   stored_gain = gain_threshold;
 }
 

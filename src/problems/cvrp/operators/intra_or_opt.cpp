@@ -182,7 +182,7 @@ bool IntraOrOpt::is_valid() {
   const auto s_travel_time = _sol_state.route_evals[s_vehicle].duration;
   const auto normal_duration = s_gain.duration + _normal_t_gain.duration;
 
-  is_normal_valid = (s_travel_time <= s_v.max_travel_time + normal_duration) and
+  is_normal_valid = s_v.ok_for_travel_time(s_travel_time - normal_duration) and
                     source.is_valid_addition_for_capacity_inclusion(
                       _input,
                       source.delivery_in_range(_first_rank, _last_rank),
@@ -194,7 +194,7 @@ bool IntraOrOpt::is_valid() {
   if (check_reverse) {
     const auto reversed_duration = s_gain.duration + _reversed_t_gain.duration;
 
-    if (s_travel_time <= s_v.max_travel_time + reversed_duration) {
+    if (s_v.ok_for_travel_time(s_travel_time - reversed_duration)) {
       std::swap(_moved_jobs[_s_edge_first], _moved_jobs[_s_edge_last]);
 
       is_reverse_valid = source.is_valid_addition_for_capacity_inclusion(

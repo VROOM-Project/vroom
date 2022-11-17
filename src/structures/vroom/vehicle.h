@@ -76,6 +76,11 @@ struct Vehicle {
   Eval eval(Index i, Index j) const {
     return Eval(cost_wrapper.cost(i, j), cost_wrapper.duration(i, j));
   }
+
+  bool ok_for_travel_time(SignedDuration d) const {
+    assert(0 <= d);
+    return static_cast<Duration>(d) <= max_travel_time;
+  }
 };
 
 } // namespace vroom

@@ -207,7 +207,7 @@ bool IntraMixedExchange::is_valid() {
   const auto normal_duration = _normal_s_gain.duration + t_gain.duration;
 
   s_is_normal_valid =
-    (s_travel_time <= s_v.max_travel_time + normal_duration) and
+    s_v.ok_for_travel_time(s_travel_time - normal_duration) and
     source.is_valid_addition_for_capacity_inclusion(_input,
                                                     delivery,
                                                     _moved_jobs.begin(),
@@ -218,7 +218,7 @@ bool IntraMixedExchange::is_valid() {
   if (check_t_reverse) {
     const auto reversed_duration = _reversed_s_gain.duration + t_gain.duration;
 
-    if (s_travel_time <= s_v.max_travel_time + reversed_duration) {
+    if (s_v.ok_for_travel_time(s_travel_time - reversed_duration)) {
       std::swap(_moved_jobs[_t_edge_first], _moved_jobs[_t_edge_last]);
 
       s_is_reverse_valid =

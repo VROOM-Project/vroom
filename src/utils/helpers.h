@@ -496,7 +496,7 @@ inline Solution format_solution(const Input& input,
     steps.back().arrival = ETA;
 
     assert(expected_delivery_ranks.empty());
-    assert(eval.duration <= v.max_travel_time);
+    assert(v.ok_for_travel_time(eval.duration));
 
     routes.emplace_back(v.id,
                         std::move(steps),
@@ -891,7 +891,7 @@ inline Route format_route(const Input& input,
          steps.front().arrival + duration + setup + service + forward_wt);
 
   assert(expected_delivery_ranks.empty());
-  assert(eval.duration <= v.max_travel_time);
+  assert(v.ok_for_travel_time(eval.duration));
 
   return Route(v.id,
                std::move(steps),
