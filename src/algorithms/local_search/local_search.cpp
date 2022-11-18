@@ -1927,7 +1927,7 @@ Eval LocalSearch<Route,
                                                 Index r) {
   assert(v != v_target);
 
-  Eval eval(INFINITE_COST, 0);
+  Eval eval = NO_EVAL;
   const auto job_index = _input.jobs[_sol[v].route[r]].index();
 
   const auto& vehicle = _input.vehicles[v_target];
@@ -1994,7 +1994,7 @@ Eval LocalSearch<Route,
                  IntraTwoOpt,
                  PDShift,
                  RouteExchange>::relocate_cost_lower_bound(Index v, Index r) {
-  Eval best_bound(INFINITE_COST, 0);
+  Eval best_bound = NO_EVAL;
 
   for (std::size_t other_v = 0; other_v < _sol.size(); ++other_v) {
     if (other_v == v or
@@ -2044,7 +2044,7 @@ Eval LocalSearch<Route,
                  RouteExchange>::relocate_cost_lower_bound(Index v,
                                                            Index r1,
                                                            Index r2) {
-  Eval best_bound(INFINITE_COST, 0);
+  Eval best_bound = NO_EVAL;
 
   for (std::size_t other_v = 0; other_v < _sol.size(); ++other_v) {
     if (other_v == v or
