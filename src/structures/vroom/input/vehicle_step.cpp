@@ -19,18 +19,17 @@ ForcedService::ForcedService()
     before(std::optional<Duration>()) {
 }
 
-ForcedService::ForcedService(std::optional<Duration>&& at,
-                             std::optional<Duration>&& after,
-                             std::optional<Duration>&& before)
-  : at(std::move(at)), after(std::move(after)), before(std::move(before)) {
-  if (this->at.has_value()) {
-    this->at = DURATION_FACTOR * this->at.value();
+ForcedService::ForcedService(const std::optional<UserDuration>& at,
+                             const std::optional<UserDuration>& after,
+                             const std::optional<UserDuration>& before) {
+  if (at.has_value()) {
+    this->at = DURATION_FACTOR * at.value();
   }
-  if (this->after.has_value()) {
-    this->after = DURATION_FACTOR * this->after.value();
+  if (after.has_value()) {
+    this->after = DURATION_FACTOR * after.value();
   }
-  if (this->before.has_value()) {
-    this->before = DURATION_FACTOR * this->before.value();
+  if (before.has_value()) {
+    this->before = DURATION_FACTOR * before.value();
   }
 }
 

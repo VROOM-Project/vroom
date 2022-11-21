@@ -71,8 +71,8 @@ bool OrsWrapper::duration_value_is_null(
   return matrix_entry.IsNull();
 }
 
-Cost OrsWrapper::get_duration_value(
-  const rapidjson::Value& matrix_entry) const {
+UserDuration
+OrsWrapper::get_duration_value(const rapidjson::Value& matrix_entry) const {
   return round_cost(matrix_entry.GetDouble());
 }
 

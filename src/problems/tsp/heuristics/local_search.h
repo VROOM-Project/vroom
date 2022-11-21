@@ -18,7 +18,7 @@ namespace tsp {
 
 class LocalSearch {
 private:
-  const Matrix<Cost>& _matrix;
+  const Matrix<UserCost>& _matrix;
   const std::pair<bool, Index> _avoid_start_relocate;
   std::vector<Index> _edges;
   unsigned _nb_threads;
@@ -26,30 +26,30 @@ private:
   std::vector<Index> _sym_two_opt_rank_limits;
 
 public:
-  LocalSearch(const Matrix<Cost>& matrix,
+  LocalSearch(const Matrix<UserCost>& matrix,
               std::pair<bool, Index> avoid_start_relocate,
               const std::list<Index>& tour,
               unsigned nb_threads);
 
-  Cost relocate_step();
+  UserCost relocate_step();
 
-  Cost perform_all_relocate_steps(const Deadline& deadline);
+  UserCost perform_all_relocate_steps(const Deadline& deadline);
 
-  Cost avoid_loop_step();
+  UserCost avoid_loop_step();
 
-  Cost perform_all_avoid_loop_steps(const Deadline& deadline);
+  UserCost perform_all_avoid_loop_steps(const Deadline& deadline);
 
-  Cost two_opt_step();
+  UserCost two_opt_step();
 
-  Cost asym_two_opt_step();
+  UserCost asym_two_opt_step();
 
-  Cost perform_all_two_opt_steps(const Deadline& deadline);
+  UserCost perform_all_two_opt_steps(const Deadline& deadline);
 
-  Cost perform_all_asym_two_opt_steps(const Deadline& deadline);
+  UserCost perform_all_asym_two_opt_steps(const Deadline& deadline);
 
-  Cost or_opt_step();
+  UserCost or_opt_step();
 
-  Cost perform_all_or_opt_steps(const Deadline& deadline);
+  UserCost perform_all_or_opt_steps(const Deadline& deadline);
 
   std::list<Index> get_tour(Index first_index) const;
 };

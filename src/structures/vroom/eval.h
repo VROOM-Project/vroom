@@ -20,9 +20,6 @@ struct Eval {
 
   constexpr Eval() : cost(0), duration(0){};
 
-  constexpr Eval(Cost cost, Duration duration)
-    : cost(cost), duration(duration){};
-
   constexpr Eval(SignedCost cost, SignedDuration duration)
     : cost(cost), duration(duration){};
 

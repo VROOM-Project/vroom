@@ -47,9 +47,9 @@ private:
   bool _geometry;
   bool _has_jobs;
   bool _has_shipments;
-  std::unordered_map<std::string, Matrix<Duration>> _durations_matrices;
-  std::unordered_map<std::string, Matrix<Duration>> _costs_matrices;
-  Cost _cost_upper_bound;
+  std::unordered_map<std::string, Matrix<UserDuration>> _durations_matrices;
+  std::unordered_map<std::string, Matrix<UserCost>> _costs_matrices;
+  UserCost _cost_upper_bound;
   std::vector<Location> _locations;
   std::unordered_map<Location, Index> _locations_to_index;
   std::unordered_set<Location> _locations_used_several_times;
@@ -69,7 +69,7 @@ private:
 
   void check_job(Job& job);
 
-  Cost check_cost_bound(const Matrix<Cost>& matrix) const;
+  UserCost check_cost_bound(const Matrix<UserCost>& matrix) const;
 
   void set_skills_compatibility();
   void set_extra_compatibility();
@@ -102,8 +102,9 @@ public:
 
   void add_vehicle(const Vehicle& vehicle);
 
-  void set_durations_matrix(const std::string& profile, Matrix<Duration>&& m);
-  void set_costs_matrix(const std::string& profile, Matrix<Cost>&& m);
+  void set_durations_matrix(const std::string& profile,
+                            Matrix<UserDuration>&& m);
+  void set_costs_matrix(const std::string& profile, Matrix<UserCost>&& m);
 
   const Amount& zero_amount() const {
     return _zero;

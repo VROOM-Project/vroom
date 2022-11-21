@@ -453,7 +453,7 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
       jobs_min_costs(input.jobs.size(), std::numeric_limits<SignedCost>::max());
     std::vector<SignedCost>
       jobs_second_min_costs(input.jobs.size(),
-                            std::numeric_limits<Cost>::max());
+                            std::numeric_limits<SignedCost>::max());
     for (const auto job_rank : unassigned) {
       for (const auto v_rank : vehicles_ranks) {
         if (evals[job_rank][v_rank].cost <= jobs_min_costs[job_rank]) {

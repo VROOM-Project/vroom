@@ -19,7 +19,7 @@ TimeWindow::TimeWindow()
   : start(0), end(std::numeric_limits<Duration>::max()), length(end - start) {
 }
 
-TimeWindow::TimeWindow(Duration start, Duration end)
+TimeWindow::TimeWindow(UserDuration start, UserDuration end)
   : start(DURATION_FACTOR * start),
     end(DURATION_FACTOR * end),
     length(end - start) {

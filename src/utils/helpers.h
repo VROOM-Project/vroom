@@ -37,8 +37,8 @@ inline TimePoint now() {
   return std::chrono::high_resolution_clock::now();
 }
 
-inline Cost add_without_overflow(Cost a, Cost b) {
-  if (a > std::numeric_limits<Cost>::max() - b) {
+inline UserCost add_without_overflow(UserCost a, UserCost b) {
+  if (a > std::numeric_limits<UserCost>::max() - b) {
     throw InputException(
       "Too high cost values, stopping to avoid overflowing.");
   }

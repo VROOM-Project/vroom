@@ -20,11 +20,11 @@ namespace vroom {
 struct Route {
   Id vehicle;
   std::vector<Step> steps;
-  Cost cost;
-  Duration setup;
-  Duration service;
-  Duration duration;
-  Duration waiting_time;
+  UserCost cost;
+  UserDuration setup;
+  UserDuration service;
+  UserDuration duration;
+  UserDuration waiting_time;
   Priority priority;
   Amount delivery;
   Amount pickup;

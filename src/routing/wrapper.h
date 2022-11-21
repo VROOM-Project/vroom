@@ -25,7 +25,8 @@ class Wrapper {
 public:
   std::string profile;
 
-  virtual Matrix<Cost> get_matrix(const std::vector<Location>& locs) const = 0;
+  virtual Matrix<UserCost>
+  get_matrix(const std::vector<Location>& locs) const = 0;
 
   virtual void add_route_info(Route& route) const = 0;
 
@@ -36,8 +37,8 @@ protected:
   Wrapper(const std::string& profile) : profile(profile) {
   }
 
-  static Cost round_cost(double value) {
-    return static_cast<Cost>(value + 0.5);
+  static UserCost round_cost(double value) {
+    return static_cast<UserCost>(value + 0.5);
   }
 
   inline void

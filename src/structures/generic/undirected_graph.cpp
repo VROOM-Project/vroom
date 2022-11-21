@@ -76,7 +76,7 @@ UndirectedGraph<T>::get_adjacency_list() const {
   return result;
 }
 
-template class UndirectedGraph<Cost>;
+template class UndirectedGraph<UserCost>;
 
 } // namespace utils
 } // namespace vroom

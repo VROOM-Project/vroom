@@ -21,9 +21,9 @@ struct ForcedService {
 
   ForcedService();
 
-  ForcedService(std::optional<Duration>&& at,
-                std::optional<Duration>&& after,
-                std::optional<Duration>&& before);
+  ForcedService(const std::optional<UserDuration>& at,
+                const std::optional<UserDuration>& after,
+                const std::optional<UserDuration>& before);
 };
 
 struct VehicleStep {

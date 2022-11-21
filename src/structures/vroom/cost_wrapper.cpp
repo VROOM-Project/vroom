@@ -22,7 +22,7 @@ CostWrapper::CostWrapper(double speed_factor)
   }
 }
 
-void CostWrapper::set_durations_matrix(const Matrix<Duration>* matrix) {
+void CostWrapper::set_durations_matrix(const Matrix<UserDuration>* matrix) {
   duration_matrix_size = matrix->size();
   duration_data = (*matrix)[0];
 }
@@ -31,7 +31,7 @@ void CostWrapper::set_costs_factor(Cost cost_factor) {
   discrete_cost_factor = cost_factor * DURATION_FACTOR;
 }
 
-void CostWrapper::set_costs_matrix(const Matrix<Cost>* matrix) {
+void CostWrapper::set_costs_matrix(const Matrix<UserCost>* matrix) {
   cost_matrix_size = matrix->size();
   cost_data = (*matrix)[0];
 }

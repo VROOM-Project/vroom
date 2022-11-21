@@ -367,14 +367,14 @@ void Input::add_vehicle(const Vehicle& vehicle) {
 }
 
 void Input::set_durations_matrix(const std::string& profile,
-                                 Matrix<Duration>&& m) {
+                                 Matrix<UserDuration>&& m) {
   if (m.size() == 0) {
     throw InputException("Empty durations matrix for " + profile + " profile.");
   }
   _durations_matrices.insert_or_assign(profile, m);
 }
 
-void Input::set_costs_matrix(const std::string& profile, Matrix<Cost>&& m) {
+void Input::set_costs_matrix(const std::string& profile, Matrix<UserCost>&& m) {
   if (m.size() == 0) {
     throw InputException("Empty costs matrix for " + profile + " profile.");
   }
@@ -410,12 +410,12 @@ bool Input::vehicle_ok_with_vehicle(Index v1_index, Index v2_index) const {
   return _vehicle_to_vehicle_compatibility[v1_index][v2_index];
 }
 
-Cost Input::check_cost_bound(const Matrix<Cost>& matrix) const {
+UserCost Input::check_cost_bound(const Matrix<UserCost>& matrix) const {
   // Check that we don't have any overflow while computing an upper
   // bound for solution cost.
 
-  std::vector<Cost> max_cost_per_line(matrix.size(), 0);
-  std::vector<Cost> max_cost_per_column(matrix.size(), 0);
+  std::vector<UserCost> max_cost_per_line(matrix.size(), 0);
+  std::vector<UserCost> max_cost_per_column(matrix.size(), 0);
 
   for (const auto i : _matrices_used_index) {
     for (const auto j : _matrices_used_index) {
@@ -424,8 +424,8 @@ Cost Input::check_cost_bound(const Matrix<Cost>& matrix) const {
     }
   }
 
-  Cost jobs_departure_bound = 0;
-  Cost jobs_arrival_bound = 0;
+  UserCost jobs_departure_bound = 0;
+  UserCost jobs_arrival_bound = 0;
   for (const auto& j : jobs) {
     jobs_departure_bound =
       utils::add_without_overflow(jobs_departure_bound,
@@ -435,10 +435,10 @@ Cost Input::check_cost_bound(const Matrix<Cost>& matrix) const {
                                   max_cost_per_column[j.index()]);
   }
 
-  Cost jobs_bound = std::max(jobs_departure_bound, jobs_arrival_bound);
+  UserCost jobs_bound = std::max(jobs_departure_bound, jobs_arrival_bound);
 
-  Cost start_bound = 0;
-  Cost end_bound = 0;
+  UserCost start_bound = 0;
+  UserCost end_bound = 0;
   for (const auto& v : vehicles) {
     if (v.has_start()) {
       start_bound =
@@ -452,7 +452,7 @@ Cost Input::check_cost_bound(const Matrix<Cost>& matrix) const {
     }
   }
 
-  Cost bound = utils::add_without_overflow(start_bound, jobs_bound);
+  UserCost bound = utils::add_without_overflow(start_bound, jobs_bound);
   return utils::add_without_overflow(bound, end_bound);
 }
 
@@ -787,7 +787,7 @@ void Input::set_matrices(unsigned nb_thread) {
       // wrapper and empty matrix to allow for concurrent modification
       // later on.
       add_routing_wrapper(profile);
-      _durations_matrices.emplace(profile, Matrix<Duration>());
+      _durations_matrices.emplace(profile, Matrix<UserDuration>());
     } else {
       if (_geometry) {
         // Even with a custom matrix, we still want routing after
@@ -811,7 +811,7 @@ void Input::set_matrices(unsigned nb_thread) {
           // Durations matrix not manually set so defined as empty
           // above.
           if (_locations.size() == 1) {
-            d_m->second = Matrix<Cost>(1);
+            d_m->second = Matrix<UserCost>(1);
           } else {
             auto rw = std::find_if(_routing_wrappers.begin(),
                                    _routing_wrappers.end(),
@@ -828,7 +828,7 @@ void Input::set_matrices(unsigned nb_thread) {
               // indirection based on order in _locations.
               auto m = (*rw)->get_matrix(_locations);
 
-              Matrix<Duration> full_m(_max_matrices_used_index + 1);
+              Matrix<UserDuration> full_m(_max_matrices_used_index + 1);
               for (Index i = 0; i < _locations.size(); ++i) {
                 const auto& loc_i = _locations[i];
                 for (Index j = 0; j < _locations.size(); ++j) {

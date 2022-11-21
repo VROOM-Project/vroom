@@ -26,7 +26,7 @@ Step::Step(STEP_TYPE type, Location location, const Amount& load)
   assert(step_type == STEP_TYPE::START or step_type == STEP_TYPE::END);
 }
 
-Step::Step(const Job& job, const Duration setup, const Amount& load)
+Step::Step(const Job& job, const UserDuration setup, const Amount& load)
   : step_type(STEP_TYPE::JOB),
     job_type(job.type),
     location(job.location),

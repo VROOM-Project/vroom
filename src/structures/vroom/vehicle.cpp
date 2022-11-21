@@ -25,7 +25,7 @@ Vehicle::Vehicle(Id id,
                  const std::string& description,
                  double speed_factor,
                  const size_t max_tasks,
-                 const std::optional<Duration>& max_travel_time,
+                 const std::optional<UserDuration>& max_travel_time,
                  const std::vector<VehicleStep>& input_steps)
   : id(id),
     start(start),
