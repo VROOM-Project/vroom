@@ -8,6 +8,7 @@ All rights reserved (see LICENSE).
 */
 
 #include "structures/vroom/solution/step.h"
+#include "utils/helpers.h"
 
 namespace vroom {
 
@@ -32,7 +33,7 @@ Step::Step(const Job& job, const UserDuration setup, const Amount& load)
     location(job.location),
     id(job.id),
     setup(setup),
-    service(job.service),
+    service(utils::scale_to_user_duration(job.service)),
     load(load),
     description(job.description),
     waiting_time(0) {
@@ -44,7 +45,7 @@ Step::Step(const Break& b, const Amount& load)
     location(0),                // Dummy value.
     id(b.id),
     setup(0),
-    service(b.service),
+    service(utils::scale_to_user_duration(b.service)),
     load(load),
     description(b.description),
     waiting_time(0) {

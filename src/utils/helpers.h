@@ -49,6 +49,10 @@ inline Duration scale_from_user_duration(UserDuration d) {
   return DURATION_FACTOR * static_cast<Duration>(d);
 }
 
+inline UserDuration scale_to_user_duration(Duration d) {
+  return static_cast<UserDuration>(d / DURATION_FACTOR);
+}
+
 inline INIT get_init(const std::string& s) {
   if (s == "NONE") {
     return INIT::NONE;

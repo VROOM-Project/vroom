@@ -16,11 +16,11 @@ Route::Route() {
 
 Route::Route(Id vehicle,
              std::vector<Step>&& steps,
-             Cost cost,
-             Duration setup,
-             Duration service,
-             Duration duration,
-             Duration waiting_time,
+             UserCost cost,
+             UserDuration setup,
+             UserDuration service,
+             UserDuration duration,
+             UserDuration waiting_time,
              Priority priority,
              const Amount& delivery,
              const Amount& pickup,
@@ -29,11 +29,11 @@ Route::Route(Id vehicle,
              const Violations&& violations)
   : vehicle(vehicle),
     steps(std::move(steps)),
-    cost(cost / DURATION_FACTOR),
-    setup(setup / DURATION_FACTOR),
-    service(service / DURATION_FACTOR),
-    duration(duration / DURATION_FACTOR),
-    waiting_time(waiting_time / DURATION_FACTOR),
+    cost(cost),
+    setup(setup),
+    service(service),
+    duration(duration),
+    waiting_time(waiting_time),
     priority(priority),
     delivery(delivery),
     pickup(pickup),
@@ -43,21 +43,6 @@ Route::Route(Id vehicle,
     distance(0) {
   assert(steps.empty() or (steps.front().step_type == STEP_TYPE::START and
                            steps.back().step_type == STEP_TYPE::END));
-
-  // Scale values back to seconds.
-  this->violations.lead_time /= DURATION_FACTOR;
-  this->violations.delay /= DURATION_FACTOR;
-
-  for (auto& step : this->steps) {
-    step.setup /= DURATION_FACTOR;
-    step.service /= DURATION_FACTOR;
-    step.arrival /= DURATION_FACTOR;
-    step.duration /= DURATION_FACTOR;
-    step.waiting_time /= DURATION_FACTOR;
-
-    step.violations.lead_time /= DURATION_FACTOR;
-    step.violations.delay /= DURATION_FACTOR;
-  }
 }
 
 } // namespace vroom

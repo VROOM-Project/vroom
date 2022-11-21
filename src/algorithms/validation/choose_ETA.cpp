@@ -14,6 +14,7 @@ All rights reserved (see LICENSE).
 #include <glpk.h>
 
 #include "algorithms/validation/choose_ETA.h"
+#include "utils/helpers.h"
 
 namespace vroom {
 namespace validation {
@@ -1066,7 +1067,9 @@ Route choose_ETA(const Input& input,
     case STEP_TYPE::JOB: {
       const auto& job = input.jobs[step.rank];
       for (unsigned k = 0; k < job.tws.size(); ++k) {
-        auto val = get_duration(glp_mip_col_val(lp, current_X_rank));
+        auto val = static_cast<uint32_t>(
+          std::round(glp_mip_col_val(lp, current_X_rank)));
+        assert(val == 0 or val == 1);
         if (val == 1) {
           task_tw_ranks.push_back(k);
         }
@@ -1078,7 +1081,9 @@ Route choose_ETA(const Input& input,
     case STEP_TYPE::BREAK: {
       const auto& b = v.breaks[step.rank];
       for (unsigned k = 0; k < b.tws.size(); ++k) {
-        auto val = get_duration(glp_mip_col_val(lp, current_X_rank));
+        auto val = static_cast<uint32_t>(
+          std::round(glp_mip_col_val(lp, current_X_rank)));
+        assert(val == 0 or val == 1);
         if (val == 1) {
           task_tw_ranks.push_back(k);
         }
@@ -1134,12 +1139,12 @@ Route choose_ETA(const Input& input,
                          first_location.value(),
                          current_load);
   sol_steps.back().duration = 0;
-  sol_steps.back().arrival = v_start;
+  sol_steps.back().arrival = utils::scale_to_user_duration(v_start);
   if (v_start < v.tw.start) {
     sol_steps.back().violations.types.insert(VIOLATION::LEAD_TIME);
     v_types.insert(VIOLATION::LEAD_TIME);
     Duration lt = v.tw.start - v_start;
-    sol_steps.back().violations.lead_time = lt;
+    sol_steps.back().violations.lead_time = utils::scale_to_user_duration(lt);
     lead_time += lt;
     assert(lt == get_duration(glp_mip_col_val(lp, start_Y_col)));
   }
@@ -1178,19 +1183,21 @@ Route choose_ETA(const Input& input,
       sum_pickups += job.pickup;
       sum_deliveries += job.delivery;
 
-      sol_steps.emplace_back(job, current_setup, current_load);
+      sol_steps.emplace_back(job,
+                             utils::scale_to_user_duration(current_setup),
+                             current_load);
       auto& current = sol_steps.back();
 
       duration += previous_travel;
-      current.duration = duration;
+      current.duration = utils::scale_to_user_duration(duration);
 
       const auto arrival = previous_start + previous_action + previous_travel;
       const auto service_start = task_ETA[task_rank];
       assert(arrival <= service_start);
 
-      current.arrival = arrival;
+      current.arrival = utils::scale_to_user_duration(arrival);
       Duration wt = service_start - arrival;
-      current.waiting_time = wt;
+      current.waiting_time = utils::scale_to_user_duration(wt);
       forward_wt += wt;
 
       // Handle violations.
@@ -1199,14 +1206,14 @@ Route choose_ETA(const Input& input,
         current.violations.types.insert(VIOLATION::LEAD_TIME);
         v_types.insert(VIOLATION::LEAD_TIME);
         Duration lt = job.tws[tw_rank].start - service_start;
-        current.violations.lead_time = lt;
+        current.violations.lead_time = utils::scale_to_user_duration(lt);
         lead_time += lt;
       }
       if (job.tws[tw_rank].end < service_start) {
         current.violations.types.insert(VIOLATION::DELAY);
         v_types.insert(VIOLATION::DELAY);
         Duration dl = service_start - job.tws[tw_rank].end;
-        current.violations.delay = dl;
+        current.violations.delay = utils::scale_to_user_duration(dl);
         delay += dl;
       }
       if (!(current_load <= v.capacity)) {
@@ -1268,15 +1275,15 @@ Route choose_ETA(const Input& input,
       auto& current = sol_steps.back();
 
       duration += previous_travel;
-      current.duration = duration;
+      current.duration = utils::scale_to_user_duration(duration);
 
       const auto arrival = previous_start + previous_action + previous_travel;
       const auto service_start = task_ETA[task_rank];
       assert(arrival <= service_start);
 
-      current.arrival = arrival;
+      current.arrival = utils::scale_to_user_duration(arrival);
       Duration wt = service_start - arrival;
-      current.waiting_time = wt;
+      current.waiting_time = utils::scale_to_user_duration(wt);
       forward_wt += wt;
 
       // Handle violations.
@@ -1285,14 +1292,14 @@ Route choose_ETA(const Input& input,
         current.violations.types.insert(VIOLATION::LEAD_TIME);
         v_types.insert(VIOLATION::LEAD_TIME);
         Duration lt = b.tws[tw_rank].start - service_start;
-        current.violations.lead_time = lt;
+        current.violations.lead_time = utils::scale_to_user_duration(lt);
         lead_time += lt;
       }
       if (b.tws[tw_rank].end < service_start) {
         current.violations.types.insert(VIOLATION::DELAY);
         v_types.insert(VIOLATION::DELAY);
         Duration dl = service_start - b.tws[tw_rank].end;
-        current.violations.delay = dl;
+        current.violations.delay = utils::scale_to_user_duration(dl);
         delay += dl;
       }
       if (!(current_load <= v.capacity)) {
@@ -1315,17 +1322,17 @@ Route choose_ETA(const Input& input,
       sol_steps.emplace_back(STEP_TYPE::END,
                              last_location.value(),
                              current_load);
-      sol_steps.back().duration = duration;
-      sol_steps.back().arrival = arrival;
+      sol_steps.back().duration = utils::scale_to_user_duration(duration);
+      sol_steps.back().arrival = utils::scale_to_user_duration(arrival);
       Duration wt = v_end - arrival;
-      sol_steps.back().waiting_time = wt;
+      sol_steps.back().waiting_time = utils::scale_to_user_duration(wt);
       forward_wt += wt;
 
       if (v.tw.end < v_end) {
         sol_steps.back().violations.types.insert(VIOLATION::DELAY);
         v_types.insert(VIOLATION::DELAY);
         Duration dl = v_end - v.tw.end;
-        sol_steps.back().violations.delay = dl;
+        sol_steps.back().violations.delay = utils::scale_to_user_duration(dl);
         delay += dl;
       }
       if (!(current_load <= v.capacity)) {
@@ -1336,7 +1343,8 @@ Route choose_ETA(const Input& input,
     }
   }
 
-  assert(get_duration(glp_mip_col_val(lp, 2 * n + 4)) ==
+  assert(utils::scale_to_user_duration(
+           get_duration(glp_mip_col_val(lp, 2 * n + 4))) ==
          sol_steps.back().violations.delay);
 
   glp_delete_prob(lp);
@@ -1356,17 +1364,19 @@ Route choose_ETA(const Input& input,
 
   return Route(v.id,
                std::move(sol_steps),
-               cost_sum,
-               setup,
-               service,
-               duration,
-               forward_wt,
+               utils::scale_to_user_duration(cost_sum),
+               utils::scale_to_user_duration(setup),
+               utils::scale_to_user_duration(service),
+               utils::scale_to_user_duration(duration),
+               utils::scale_to_user_duration(forward_wt),
                priority,
                sum_deliveries,
                sum_pickups,
                v.profile,
                v.description,
-               std::move(Violations(lead_time, delay, std::move(v_types))));
+               std::move(Violations(utils::scale_to_user_duration(lead_time),
+                                    utils::scale_to_user_duration(delay),
+                                    std::move(v_types))));
 }
 
 } // namespace validation
