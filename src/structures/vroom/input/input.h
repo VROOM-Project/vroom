@@ -118,8 +118,8 @@ public:
 
   bool has_shipments() const;
 
-  SignedCost get_cost_upper_bound() const {
-    return DURATION_FACTOR * static_cast<SignedCost>(_cost_upper_bound);
+  Cost get_cost_upper_bound() const {
+    return DURATION_FACTOR * static_cast<Cost>(_cost_upper_bound);
   }
 
   bool has_homogeneous_locations() const;

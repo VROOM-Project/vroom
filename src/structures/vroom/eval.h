@@ -15,12 +15,12 @@ All rights reserved (see LICENSE).
 namespace vroom {
 
 struct Eval {
-  SignedCost cost;
+  Cost cost;
   SignedDuration duration;
 
   constexpr Eval() : cost(0), duration(0){};
 
-  constexpr Eval(SignedCost cost, SignedDuration duration)
+  constexpr Eval(Cost cost, SignedDuration duration)
     : cost(cost), duration(duration){};
 
   Eval& operator+=(const Eval& rhs) {
@@ -72,8 +72,8 @@ struct Eval {
   }
 };
 
-constexpr Eval NO_EVAL = {std::numeric_limits<SignedCost>::max(), 0};
-constexpr Eval NO_GAIN = {std::numeric_limits<SignedCost>::min(), 0};
+constexpr Eval NO_EVAL = {std::numeric_limits<Cost>::max(), 0};
+constexpr Eval NO_GAIN = {std::numeric_limits<Cost>::min(), 0};
 
 } // namespace vroom
 

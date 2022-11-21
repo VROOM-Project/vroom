@@ -96,9 +96,8 @@ template <class T> T basic(const Input& input, INIT init, double lambda) {
   // regrets[v][j] holds the min cost for reaching job j in an empty
   // route across all remaining vehicles **after** vehicle at rank v
   // in vehicle_ranks.
-  std::vector<std::vector<SignedCost>> regrets(nb_vehicles,
-                                               std::vector<SignedCost>(
-                                                 input.jobs.size()));
+  std::vector<std::vector<Cost>> regrets(nb_vehicles,
+                                         std::vector<Cost>(input.jobs.size()));
 
   // Use own cost for last vehicle regret values.
   auto& last_regrets = regrets.back();
@@ -128,8 +127,8 @@ template <class T> T basic(const Input& input, INIT init, double lambda) {
       bool init_ok = false;
 
       Amount higher_amount(input.zero_amount());
-      SignedCost furthest_cost = 0;
-      SignedCost nearest_cost = std::numeric_limits<SignedCost>::max();
+      Cost furthest_cost = 0;
+      Cost nearest_cost = std::numeric_limits<Cost>::max();
       Duration earliest_deadline = std::numeric_limits<Duration>::max();
       Index best_job_rank = 0;
       for (const auto job_rank : unassigned) {
@@ -449,11 +448,10 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
     // (resp. jobs_second_min_costs[j]) holds the min cost
     // (resp. second min cost) of picking the job in an empty route
     // for any remaining vehicle.
-    std::vector<SignedCost>
-      jobs_min_costs(input.jobs.size(), std::numeric_limits<SignedCost>::max());
-    std::vector<SignedCost>
-      jobs_second_min_costs(input.jobs.size(),
-                            std::numeric_limits<SignedCost>::max());
+    std::vector<Cost> jobs_min_costs(input.jobs.size(),
+                                     std::numeric_limits<Cost>::max());
+    std::vector<Cost> jobs_second_min_costs(input.jobs.size(),
+                                            std::numeric_limits<Cost>::max());
     for (const auto job_rank : unassigned) {
       for (const auto v_rank : vehicles_ranks) {
         if (evals[job_rank][v_rank].cost <= jobs_min_costs[job_rank]) {
@@ -498,8 +496,7 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
     // Once current vehicle is decided, regrets[j] holds the min cost
     // of picking the job in an empty route for other remaining
     // vehicles.
-    std::vector<SignedCost> regrets(input.jobs.size(),
-                                    input.get_cost_upper_bound());
+    std::vector<Cost> regrets(input.jobs.size(), input.get_cost_upper_bound());
     for (const auto job_rank : unassigned) {
       if (jobs_min_costs[job_rank] < evals[job_rank][v_rank].cost) {
         regrets[job_rank] = jobs_min_costs[job_rank];
@@ -520,8 +517,8 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
       bool init_ok = false;
 
       Amount higher_amount(input.zero_amount());
-      SignedCost furthest_cost = 0;
-      SignedCost nearest_cost = std::numeric_limits<SignedCost>::max();
+      Cost furthest_cost = 0;
+      Cost nearest_cost = std::numeric_limits<Cost>::max();
       Duration earliest_deadline = std::numeric_limits<Duration>::max();
       Index best_job_rank = 0;
       for (const auto job_rank : unassigned) {
