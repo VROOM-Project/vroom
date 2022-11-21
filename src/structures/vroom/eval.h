@@ -16,11 +16,11 @@ namespace vroom {
 
 struct Eval {
   Cost cost;
-  SignedDuration duration;
+  Duration duration;
 
   constexpr Eval() : cost(0), duration(0){};
 
-  constexpr Eval(Cost cost, SignedDuration duration)
+  constexpr Eval(Cost cost, Duration duration)
     : cost(cost), duration(duration){};
 
   Eval& operator+=(const Eval& rhs) {

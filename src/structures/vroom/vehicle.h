@@ -78,9 +78,9 @@ struct Vehicle {
     return Eval(cost_wrapper.cost(i, j), cost_wrapper.duration(i, j));
   }
 
-  bool ok_for_travel_time(SignedDuration d) const {
+  bool ok_for_travel_time(Duration d) const {
     assert(0 <= d);
-    return static_cast<Duration>(d) <= max_travel_time;
+    return d <= max_travel_time;
   }
 };
 
