@@ -447,8 +447,8 @@ inline Solution format_solution(const Input& input,
 
     steps.emplace_back(first_job, first_job_setup, current_load);
     auto& first = steps.back();
-    first.duration = ETA;
-    first.arrival = ETA;
+    first.duration = scale_to_user_duration(ETA);
+    first.arrival = scale_to_user_duration(ETA);
     ETA += (first.setup + first.service);
     unassigned_ranks.erase(route.front());
 
@@ -484,8 +484,8 @@ inline Solution format_solution(const Input& input,
 
       steps.emplace_back(current_job, current_setup, current_load);
       auto& current = steps.back();
-      current.duration = duration;
-      current.arrival = ETA;
+      current.duration = scale_to_user_duration(duration);
+      current.arrival = scale_to_user_duration(ETA);
       ETA += (current_setup + current.service);
       unassigned_ranks.erase(route[r + 1]);
     }
@@ -500,18 +500,18 @@ inline Solution format_solution(const Input& input,
       duration += travel;
       eval += v.eval(last_job.index(), v.end.value().index());
     }
-    steps.back().duration = duration;
-    steps.back().arrival = ETA;
+    steps.back().duration = scale_to_user_duration(duration);
+    steps.back().arrival = scale_to_user_duration(ETA);
 
     assert(expected_delivery_ranks.empty());
     assert(v.ok_for_travel_time(eval.duration));
 
     routes.emplace_back(v.id,
                         std::move(steps),
-                        eval.cost,
-                        setup,
-                        service,
-                        duration,
+                        scale_to_user_duration(eval.cost),
+                        scale_to_user_duration(setup),
+                        scale_to_user_duration(service),
+                        scale_to_user_duration(duration),
                         0,
                         priority,
                         sum_deliveries,
@@ -677,7 +677,7 @@ inline Route format_route(const Input& input,
   assert(first_location.has_value() and last_location.has_value());
   steps.emplace_back(STEP_TYPE::START, first_location.value(), current_load);
   assert(v.tw.contains(step_start));
-  steps.back().arrival = step_start;
+  steps.back().arrival = scale_to_user_duration(step_start);
 
   auto previous_location = (v.has_start()) ? v.start.value().index()
                                            : std::numeric_limits<Index>::max();
@@ -739,7 +739,7 @@ inline Route format_route(const Input& input,
           // break, filling the whole margin.
           duration += margin;
           travel_time -= margin;
-          current_break.arrival = b_tw->start;
+          current_break.arrival = scale_to_user_duration(b_tw->start);
         } else {
           // The whole remaining travel time is spent before this
           // break, not filling the whole margin.
@@ -747,8 +747,9 @@ inline Route format_route(const Input& input,
           Duration wt = margin - travel_time;
           forward_wt += wt;
 
-          current_break.arrival = step_start + travel_time;
-          current_break.waiting_time = wt;
+          current_break.arrival =
+            scale_to_user_duration(step_start + travel_time);
+          current_break.waiting_time = scale_to_user_duration(wt);
 
           duration += travel_time;
           travel_time = 0;
@@ -756,13 +757,13 @@ inline Route format_route(const Input& input,
 
         step_start = b_tw->start;
       } else {
-        current_break.arrival = step_start;
+        current_break.arrival = scale_to_user_duration(step_start);
       }
 
-      assert(
-        b.is_valid_start(current_break.arrival + current_break.waiting_time));
+      assert(b.is_valid_start(scale_from_user_duration(
+        current_break.arrival + current_break.waiting_time)));
 
-      current_break.duration = duration;
+      current_break.duration = scale_to_user_duration(duration);
 
       auto& current_service = b.service;
       service += current_service;
@@ -790,14 +791,16 @@ inline Route format_route(const Input& input,
     check_precedence(input, expected_delivery_ranks, tw_r.route[r]);
 #endif
 
-    steps.emplace_back(current_job, current_setup, current_load);
+    steps.emplace_back(current_job,
+                       scale_to_user_duration(current_setup),
+                       current_load);
     auto& current = steps.back();
-    current.duration = duration;
+    current.duration = scale_to_user_duration(duration);
 
     step_start += travel_time;
     assert(step_start <= tw_r.latest[r]);
 
-    current.arrival = step_start;
+    current.arrival = scale_to_user_duration(step_start);
 
     const auto j_tw =
       std::find_if(current_job.tws.begin(),
@@ -807,12 +810,13 @@ inline Route format_route(const Input& input,
 
     if (step_start < j_tw->start) {
       Duration wt = j_tw->start - step_start;
-      current.waiting_time = wt;
+      current.waiting_time = scale_to_user_duration(wt);
       forward_wt += wt;
 
       step_start = j_tw->start;
     }
-    assert(current_job.is_valid_start(current.arrival + current.waiting_time));
+    assert(current_job.is_valid_start(
+      scale_from_user_duration(current.arrival + current.waiting_time)));
 
     step_start += (current_setup + current_job.service);
 
@@ -851,7 +855,7 @@ inline Route format_route(const Input& input,
         // break, filling the whole margin.
         duration += margin;
         travel_time -= margin;
-        current_break.arrival = b_tw->start;
+        current_break.arrival = scale_to_user_duration(b_tw->start);
       } else {
         // The whole remaining travel time is spent before this
         // break, not filling the whole margin.
@@ -859,8 +863,9 @@ inline Route format_route(const Input& input,
         Duration wt = margin - travel_time;
         forward_wt += wt;
 
-        current_break.arrival = step_start + travel_time;
-        current_break.waiting_time = wt;
+        current_break.arrival =
+          scale_to_user_duration(step_start + travel_time);
+        current_break.waiting_time = scale_to_user_duration(wt);
 
         duration += travel_time;
         travel_time = 0;
@@ -868,13 +873,13 @@ inline Route format_route(const Input& input,
 
       step_start = b_tw->start;
     } else {
-      current_break.arrival = step_start;
+      current_break.arrival = scale_to_user_duration(step_start);
     }
 
-    assert(
-      b.is_valid_start(current_break.arrival + current_break.waiting_time));
+    assert(b.is_valid_start(scale_from_user_duration(
+      current_break.arrival + current_break.waiting_time)));
 
-    current_break.duration = duration;
+    current_break.duration = scale_to_user_duration(duration);
 
     auto& current_service = b.service;
     service += current_service;
@@ -887,27 +892,29 @@ inline Route format_route(const Input& input,
     eval += current_eval;
     step_start += travel_time;
   }
-  steps.back().duration = duration;
+  steps.back().duration = scale_to_user_duration(duration);
   assert(v.tw.contains(step_start));
-  steps.back().arrival = step_start;
+  steps.back().arrival = scale_to_user_duration(step_start);
 
   assert(step_start == tw_r.earliest_end);
   assert(forward_wt == backward_wt);
 
-  assert(steps.back().arrival + steps.back().waiting_time +
-           steps.back().service ==
-         steps.front().arrival + duration + setup + service + forward_wt);
+  assert(scale_from_user_duration(steps.back().arrival +
+                                  steps.back().waiting_time +
+                                  steps.back().service) ==
+         scale_from_user_duration(steps.front().arrival) + duration + setup +
+           service + forward_wt);
 
   assert(expected_delivery_ranks.empty());
   assert(v.ok_for_travel_time(eval.duration));
 
   return Route(v.id,
                std::move(steps),
-               eval.cost,
-               setup,
-               service,
-               duration,
-               forward_wt,
+               scale_to_user_duration(eval.cost),
+               scale_to_user_duration(setup),
+               scale_to_user_duration(service),
+               scale_to_user_duration(duration),
+               scale_to_user_duration(forward_wt),
                priority,
                sum_deliveries,
                sum_pickups,
