@@ -136,6 +136,7 @@ enum OperatorName {
   IntraTwoOpt,
   PDShift,
   RouteExchange,
+  RouteShift,
   MAX
 };
 

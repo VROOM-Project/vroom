@@ -78,7 +78,8 @@ const std::array<std::string, OperatorName::MAX>
                   "IntraOrOpt",
                   "IntraTwoOpt",
                   "PDShift",
-                  "RouteExchange"});
+                  "RouteExchange",
+                  "RouteShift"});
 
 inline void log_LS_operators(
   const std::vector<std::array<ls::OperatorStats, OperatorName::MAX>>&
