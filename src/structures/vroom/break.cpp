@@ -18,7 +18,7 @@ Break::Break(Id id,
              const std::string& description)
   : id(id),
     tws(tws),
-    service(DURATION_FACTOR * service),
+    service(utils::scale_from_user_duration(service)),
     description(description) {
   utils::check_tws(tws);
 }

@@ -11,6 +11,7 @@ All rights reserved (see LICENSE).
 
 #include "structures/vroom/vehicle.h"
 #include "utils/exception.h"
+#include "utils/helpers.h"
 
 namespace vroom {
 
@@ -39,12 +40,8 @@ Vehicle::Vehicle(Id id,
     cost_wrapper(speed_factor),
     max_tasks(max_tasks),
     max_travel_time(max_travel_time.has_value()
-                      ? DURATION_FACTOR * max_travel_time.value()
+                      ? utils::scale_from_user_duration(max_travel_time.value())
                       : std::numeric_limits<Duration>::max()) {
-  assert(!max_travel_time.has_value() or
-         max_travel_time.value() <
-           (std::numeric_limits<Duration>::max() / DURATION_FACTOR));
-
   if (!static_cast<bool>(start) and !static_cast<bool>(end)) {
     throw InputException("No start or end specified for vehicle " +
                          std::to_string(id) + '.');

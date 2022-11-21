@@ -9,6 +9,7 @@ All rights reserved (see LICENSE).
 
 #include "structures/vroom/time_window.h"
 #include "utils/exception.h"
+#include "utils/helpers.h"
 
 namespace vroom {
 
@@ -20,8 +21,8 @@ TimeWindow::TimeWindow()
 }
 
 TimeWindow::TimeWindow(UserDuration start, UserDuration end)
-  : start(DURATION_FACTOR * start),
-    end(DURATION_FACTOR * end),
+  : start(utils::scale_from_user_duration(start)),
+    end(utils::scale_from_user_duration(end)),
     length(end - start) {
   if (start > end) {
     throw InputException("Invalid time window: [" + std::to_string(start) +

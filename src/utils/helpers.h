@@ -45,6 +45,10 @@ inline UserCost add_without_overflow(UserCost a, UserCost b) {
   return a + b;
 }
 
+inline Duration scale_from_user_duration(UserDuration d) {
+  return DURATION_FACTOR * static_cast<Duration>(d);
+}
+
 inline INIT get_init(const std::string& s) {
   if (s == "NONE") {
     return INIT::NONE;
