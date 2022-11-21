@@ -29,7 +29,7 @@ UndirectedGraph<T>::UndirectedGraph(const Matrix<T>& m) : _size(m.size()) {
   }
   for (Index i = 0; i < _size; ++i) {
 #ifndef NDEBUG
-    matrix_ok = matrix_ok && (m[i][i] == INFINITE_COST);
+    matrix_ok = matrix_ok && (m[i][i] == INFINITE_USER_COST);
 #endif
     for (Index j = i + 1; j < _size; ++j) {
 #ifndef NDEBUG

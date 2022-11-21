@@ -55,7 +55,6 @@ using Deadline = std::optional<TimePoint>;
 // Setting max value would cause trouble with further additions.
 constexpr UserCost INFINITE_USER_COST =
   3 * (std::numeric_limits<UserCost>::max() / 4);
-constexpr Cost INFINITE_COST = 3 * (std::numeric_limits<Cost>::max() / 4);
 
 const std::string DEFAULT_PROFILE = "car";
 
