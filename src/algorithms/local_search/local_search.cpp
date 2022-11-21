@@ -191,8 +191,8 @@ void LocalSearch<Route,
         continue;
       }
 
-      SignedCost smallest = _input.get_cost_upper_bound();
-      SignedCost second_smallest = _input.get_cost_upper_bound();
+      auto smallest = _input.get_cost_upper_bound();
+      auto second_smallest = _input.get_cost_upper_bound();
       std::size_t smallest_idx = std::numeric_limits<std::size_t>::max();
 
       for (std::size_t i = 0; i < routes.size(); ++i) {
