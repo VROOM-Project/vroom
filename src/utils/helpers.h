@@ -679,6 +679,10 @@ inline Route format_route(const Input& input,
   assert(v.tw.contains(step_start));
   steps.back().arrival = scale_to_user_duration(step_start);
 
+#ifndef NDEBUG
+  const auto front_step_arrival = step_start;
+#endif
+
   auto previous_location = (v.has_start()) ? v.start.value().index()
                                            : std::numeric_limits<Index>::max();
 
@@ -760,9 +764,6 @@ inline Route format_route(const Input& input,
         current_break.arrival = scale_to_user_duration(step_start);
       }
 
-      assert(b.is_valid_start(scale_from_user_duration(
-        current_break.arrival + current_break.waiting_time)));
-
       current_break.duration = scale_to_user_duration(duration);
 
       auto& current_service = b.service;
@@ -815,8 +816,6 @@ inline Route format_route(const Input& input,
 
       step_start = j_tw->start;
     }
-    assert(current_job.is_valid_start(
-      scale_from_user_duration(current.arrival + current.waiting_time)));
 
     step_start += (current_setup + current_job.service);
 
@@ -876,9 +875,6 @@ inline Route format_route(const Input& input,
       current_break.arrival = scale_to_user_duration(step_start);
     }
 
-    assert(b.is_valid_start(scale_from_user_duration(
-      current_break.arrival + current_break.waiting_time)));
-
     current_break.duration = scale_to_user_duration(duration);
 
     auto& current_service = b.service;
@@ -899,11 +895,8 @@ inline Route format_route(const Input& input,
   assert(step_start == tw_r.earliest_end);
   assert(forward_wt == backward_wt);
 
-  assert(scale_from_user_duration(steps.back().arrival +
-                                  steps.back().waiting_time +
-                                  steps.back().service) ==
-         scale_from_user_duration(steps.front().arrival) + duration + setup +
-           service + forward_wt);
+  assert(step_start ==
+         front_step_arrival + duration + setup + service + forward_wt);
 
   assert(expected_delivery_ranks.empty());
   assert(v.ok_for_travel_time(eval.duration));
