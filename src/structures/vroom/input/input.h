@@ -49,7 +49,7 @@ private:
   bool _has_shipments;
   std::unordered_map<std::string, Matrix<UserDuration>> _durations_matrices;
   std::unordered_map<std::string, Matrix<UserCost>> _costs_matrices;
-  UserCost _cost_upper_bound;
+  Cost _cost_upper_bound;
   std::vector<Location> _locations;
   std::unordered_map<Location, Index> _locations_to_index;
   std::unordered_set<Location> _locations_used_several_times;
@@ -119,7 +119,7 @@ public:
   bool has_shipments() const;
 
   Cost get_cost_upper_bound() const {
-    return DURATION_FACTOR * static_cast<Cost>(_cost_upper_bound);
+    return _cost_upper_bound;
   }
 
   bool has_homogeneous_locations() const;

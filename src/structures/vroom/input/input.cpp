@@ -855,15 +855,19 @@ void Input::set_matrices(unsigned nb_thread) {
           }
 
           // Check for potential overflow in solution cost.
-          const auto current_bound = check_cost_bound(c_m->second);
+          const UserCost current_bound = check_cost_bound(c_m->second);
           cost_bound_m.lock();
-          _cost_upper_bound = std::max(_cost_upper_bound, current_bound);
+          _cost_upper_bound =
+            std::max(_cost_upper_bound,
+                     utils::scale_from_user_duration(current_bound));
           cost_bound_m.unlock();
         } else {
           // Durations matrix will be used for costs.
-          const auto current_bound = check_cost_bound(d_m->second);
+          const UserCost current_bound = check_cost_bound(d_m->second);
           cost_bound_m.lock();
-          _cost_upper_bound = std::max(_cost_upper_bound, current_bound);
+          _cost_upper_bound =
+            std::max(_cost_upper_bound,
+                     utils::scale_from_user_duration(current_bound));
           cost_bound_m.unlock();
         }
       }
