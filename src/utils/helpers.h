@@ -678,6 +678,7 @@ inline Route format_route(const Input& input,
   steps.emplace_back(STEP_TYPE::START, first_location.value(), current_load);
   assert(v.tw.contains(step_start));
   steps.back().arrival = scale_to_user_duration(step_start);
+  UserDuration user_previous_end = steps.back().arrival;
 
 #ifndef NDEBUG
   const auto front_step_arrival = step_start;
@@ -689,6 +690,7 @@ inline Route format_route(const Input& input,
   // Values summed up while going through the route.
   Eval eval;
   Duration duration = 0;
+  UserDuration user_duration = 0;
   Duration setup = 0;
   Duration service = 0;
   Duration forward_wt = 0;
@@ -768,13 +770,21 @@ inline Route format_route(const Input& input,
         current_break.arrival = scale_to_user_duration(step_start);
       }
 
-      current_break.duration = scale_to_user_duration(duration);
       assert(b_tw->start % DURATION_FACTOR == 0 and
              scale_to_user_duration(b_tw->start) <=
                current_break.arrival + current_break.waiting_time and
              (current_break.waiting_time == 0 or
               scale_to_user_duration(b_tw->start) ==
                 current_break.arrival + current_break.waiting_time));
+
+      // Recompute cumulated durations in a consistent way as seen
+      // from UserDuration.
+      assert(user_previous_end <= current_break.arrival);
+      auto user_travel_time = current_break.arrival - user_previous_end;
+      user_duration += user_travel_time;
+      current_break.duration = user_duration;
+      user_previous_end = current_break.arrival + current_break.waiting_time +
+                          current_break.service;
 
       auto& current_service = b.service;
       service += current_service;
@@ -806,7 +816,6 @@ inline Route format_route(const Input& input,
                        scale_to_user_duration(current_setup),
                        current_load);
     auto& current = steps.back();
-    current.duration = scale_to_user_duration(duration);
 
     step_start += travel_time;
     assert(step_start <= tw_r.latest[r]);
@@ -830,6 +839,15 @@ inline Route format_route(const Input& input,
 
       step_start = j_tw->start;
     }
+
+    // Recompute cumulated durations in a consistent way as seen from
+    // UserDuration.
+    assert(user_previous_end <= current.arrival);
+    auto user_travel_time = current.arrival - user_previous_end;
+    user_duration += user_travel_time;
+    current.duration = user_duration;
+    user_previous_end =
+      current.arrival + current.waiting_time + current.setup + current.service;
 
     assert(
       j_tw->start % DURATION_FACTOR == 0 and
@@ -900,7 +918,6 @@ inline Route format_route(const Input& input,
       current_break.arrival = scale_to_user_duration(step_start);
     }
 
-    current_break.duration = scale_to_user_duration(duration);
     assert(b_tw->start % DURATION_FACTOR == 0 and
            scale_to_user_duration(b_tw->start) <=
              current_break.arrival + current_break.waiting_time and
@@ -908,20 +925,36 @@ inline Route format_route(const Input& input,
             scale_to_user_duration(b_tw->start) ==
               current_break.arrival + current_break.waiting_time));
 
+    // Recompute cumulated durations in a consistent way as seen from
+    // UserDuration.
+    assert(user_previous_end <= current_break.arrival);
+    auto user_travel_time = current_break.arrival - user_previous_end;
+    user_duration += user_travel_time;
+    current_break.duration = user_duration;
+    user_previous_end = current_break.arrival + current_break.waiting_time +
+                        current_break.service;
+
     auto& current_service = b.service;
     service += current_service;
     step_start += current_service;
   }
 
   steps.emplace_back(STEP_TYPE::END, last_location.value(), current_load);
+  auto& end_step = steps.back();
   if (v.has_end()) {
     duration += travel_time;
     eval += current_eval;
     step_start += travel_time;
   }
-  steps.back().duration = scale_to_user_duration(duration);
   assert(v.tw.contains(step_start));
-  steps.back().arrival = scale_to_user_duration(step_start);
+  end_step.arrival = scale_to_user_duration(step_start);
+
+  // Recompute cumulated durations in a consistent way as seen from
+  // UserDuration.
+  assert(user_previous_end <= end_step.arrival);
+  auto user_travel_time = end_step.arrival - user_previous_end;
+  user_duration += user_travel_time;
+  end_step.duration = user_duration;
 
   assert(step_start == tw_r.earliest_end);
   assert(forward_wt == backward_wt);
@@ -937,7 +970,7 @@ inline Route format_route(const Input& input,
                scale_to_user_duration(eval.cost),
                scale_to_user_duration(setup),
                scale_to_user_duration(service),
-               scale_to_user_duration(duration),
+               user_duration,
                scale_to_user_duration(forward_wt),
                priority,
                sum_deliveries,
