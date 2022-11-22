@@ -43,6 +43,9 @@ Route::Route(Id vehicle,
     distance(0) {
   assert(steps.empty() or (steps.front().step_type == STEP_TYPE::START and
                            steps.back().step_type == STEP_TYPE::END));
+
+  assert(this->steps.back().arrival == this->steps.front().arrival + duration +
+                                         setup + service + waiting_time);
 }
 
 } // namespace vroom
