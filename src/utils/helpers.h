@@ -753,7 +753,11 @@ inline Route format_route(const Input& input,
 
           current_break.arrival =
             scale_to_user_duration(step_start + travel_time);
-          current_break.waiting_time = scale_to_user_duration(wt);
+
+          // Recompute user-reported waiting time rather than using
+          // scale_to_user_duration(wt) to avoid rounding problems.
+          current_break.waiting_time =
+            scale_to_user_duration(b_tw->start) - current_break.arrival;
 
           duration += travel_time;
           travel_time = 0;
@@ -765,6 +769,12 @@ inline Route format_route(const Input& input,
       }
 
       current_break.duration = scale_to_user_duration(duration);
+      assert(b_tw->start % DURATION_FACTOR == 0 and
+             scale_to_user_duration(b_tw->start) <=
+               current_break.arrival + current_break.waiting_time and
+             (current_break.waiting_time == 0 or
+              scale_to_user_duration(b_tw->start) ==
+                current_break.arrival + current_break.waiting_time));
 
       auto& current_service = b.service;
       service += current_service;
@@ -811,11 +821,22 @@ inline Route format_route(const Input& input,
 
     if (step_start < j_tw->start) {
       Duration wt = j_tw->start - step_start;
-      current.waiting_time = scale_to_user_duration(wt);
       forward_wt += wt;
+
+      // Recompute user-reported waiting time rather than using
+      // scale_to_user_duration(wt) to avoid rounding problems.
+      current.waiting_time =
+        scale_to_user_duration(j_tw->start) - current.arrival;
 
       step_start = j_tw->start;
     }
+
+    assert(
+      j_tw->start % DURATION_FACTOR == 0 and
+      scale_to_user_duration(j_tw->start) <=
+        current.arrival + current.waiting_time and
+      (current.waiting_time == 0 or scale_to_user_duration(j_tw->start) ==
+                                      current.arrival + current.waiting_time));
 
     step_start += (current_setup + current_job.service);
 
@@ -864,7 +885,11 @@ inline Route format_route(const Input& input,
 
         current_break.arrival =
           scale_to_user_duration(step_start + travel_time);
-        current_break.waiting_time = scale_to_user_duration(wt);
+
+        // Recompute user-reported waiting time rather than using
+        // scale_to_user_duration(wt) to avoid rounding problems.
+        current_break.waiting_time =
+          scale_to_user_duration(b_tw->start) - current_break.arrival;
 
         duration += travel_time;
         travel_time = 0;
@@ -876,6 +901,12 @@ inline Route format_route(const Input& input,
     }
 
     current_break.duration = scale_to_user_duration(duration);
+    assert(b_tw->start % DURATION_FACTOR == 0 and
+           scale_to_user_duration(b_tw->start) <=
+             current_break.arrival + current_break.waiting_time and
+           (current_break.waiting_time == 0 or
+            scale_to_user_duration(b_tw->start) ==
+              current_break.arrival + current_break.waiting_time));
 
     auto& current_service = b.service;
     service += current_service;
