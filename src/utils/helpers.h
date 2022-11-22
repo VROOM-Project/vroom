@@ -691,6 +691,7 @@ inline Route format_route(const Input& input,
   Eval eval;
   Duration duration = 0;
   UserDuration user_duration = 0;
+  UserDuration user_waiting_time = 0;
   Duration setup = 0;
   Duration service = 0;
   Duration forward_wt = 0;
@@ -760,6 +761,7 @@ inline Route format_route(const Input& input,
           // scale_to_user_duration(wt) to avoid rounding problems.
           current_break.waiting_time =
             scale_to_user_duration(b_tw->start) - current_break.arrival;
+          user_waiting_time += current_break.waiting_time;
 
           duration += travel_time;
           travel_time = 0;
@@ -836,6 +838,7 @@ inline Route format_route(const Input& input,
       // scale_to_user_duration(wt) to avoid rounding problems.
       current.waiting_time =
         scale_to_user_duration(j_tw->start) - current.arrival;
+      user_waiting_time += current.waiting_time;
 
       step_start = j_tw->start;
     }
@@ -908,6 +911,7 @@ inline Route format_route(const Input& input,
         // scale_to_user_duration(wt) to avoid rounding problems.
         current_break.waiting_time =
           scale_to_user_duration(b_tw->start) - current_break.arrival;
+        user_waiting_time += current_break.waiting_time;
 
         duration += travel_time;
         travel_time = 0;
@@ -971,7 +975,7 @@ inline Route format_route(const Input& input,
                scale_to_user_duration(setup),
                scale_to_user_duration(service),
                user_duration,
-               scale_to_user_duration(forward_wt),
+               user_waiting_time,
                priority,
                sum_deliveries,
                sum_pickups,
