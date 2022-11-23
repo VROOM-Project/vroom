@@ -449,7 +449,9 @@ inline Solution format_solution(const Input& input,
     check_precedence(input, expected_delivery_ranks, route.front());
 #endif
 
-    steps.emplace_back(first_job, first_job_setup, current_load);
+    steps.emplace_back(first_job,
+                       scale_to_user_duration(first_job_setup),
+                       current_load);
     auto& first = steps.back();
     first.duration = scale_to_user_duration(ETA);
     first.arrival = scale_to_user_duration(ETA);
@@ -486,7 +488,9 @@ inline Solution format_solution(const Input& input,
       check_precedence(input, expected_delivery_ranks, route[r + 1]);
 #endif
 
-      steps.emplace_back(current_job, current_setup, current_load);
+      steps.emplace_back(current_job,
+                         scale_to_user_duration(current_setup),
+                         current_load);
       auto& current = steps.back();
       current.duration = scale_to_user_duration(duration);
       current.arrival = scale_to_user_duration(ETA);
