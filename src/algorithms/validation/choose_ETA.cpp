@@ -1390,9 +1390,12 @@ Route choose_ETA(const Input& input,
     v_types.insert(VIOLATION::MISSING_BREAK);
   }
 
+  UserCost user_cost_sum =
+    v.cost_is_duration() ? user_duration : utils::scale_to_user_cost(cost_sum);
+
   return Route(v.id,
                std::move(sol_steps),
-               utils::scale_to_user_duration(cost_sum),
+               user_cost_sum,
                utils::scale_to_user_duration(setup),
                utils::scale_to_user_duration(service),
                user_duration,

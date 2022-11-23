@@ -53,6 +53,10 @@ inline UserDuration scale_to_user_duration(Duration d) {
   return static_cast<UserDuration>(d / DURATION_FACTOR);
 }
 
+inline UserCost scale_to_user_cost(Cost d) {
+  return static_cast<UserCost>(d / DURATION_FACTOR);
+}
+
 inline INIT get_init(const std::string& s) {
   if (s == "NONE") {
     return INIT::NONE;
@@ -969,9 +973,12 @@ inline Route format_route(const Input& input,
   assert(expected_delivery_ranks.empty());
   assert(v.ok_for_travel_time(eval.duration));
 
+  UserCost user_cost_sum =
+    v.cost_is_duration() ? user_duration : scale_to_user_cost(eval.cost);
+
   return Route(v.id,
                std::move(steps),
-               scale_to_user_duration(eval.cost),
+               user_cost_sum,
                scale_to_user_duration(setup),
                scale_to_user_duration(service),
                user_duration,
