@@ -551,9 +551,9 @@ void Input::set_vehicles_costs() {
 
     auto c_m = _costs_matrices.find(vehicle.profile);
     if (c_m != _costs_matrices.end()) {
-      // No fancy scaling for costs, use plain custom costs matrix.
-      vehicle.cost_wrapper.set_costs_factor(1);
-      vehicle.cost_wrapper.set_costs_matrix(&(c_m->second));
+      // Set plain custom costs matrix and reset cost factor.
+      constexpr bool reset_cost_factor = true;
+      vehicle.cost_wrapper.set_costs_matrix(&(c_m->second), reset_cost_factor);
     } else {
       vehicle.cost_wrapper.set_costs_matrix(&(d_m->second));
     }

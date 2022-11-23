@@ -27,13 +27,14 @@ void CostWrapper::set_durations_matrix(const Matrix<UserDuration>* matrix) {
   duration_data = (*matrix)[0];
 }
 
-void CostWrapper::set_costs_factor(Cost cost_factor) {
-  discrete_cost_factor = cost_factor * DURATION_FACTOR;
-}
-
-void CostWrapper::set_costs_matrix(const Matrix<UserCost>* matrix) {
+void CostWrapper::set_costs_matrix(const Matrix<UserCost>* matrix,
+                                   bool reset_cost_factor) {
   cost_matrix_size = matrix->size();
   cost_data = (*matrix)[0];
+
+  if (reset_cost_factor) {
+    discrete_cost_factor = DURATION_FACTOR;
+  }
 }
 
 } // namespace vroom
