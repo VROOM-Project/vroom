@@ -453,7 +453,7 @@ inline Solution format_solution(const Input& input,
     auto& first = steps.back();
     first.duration = scale_to_user_duration(ETA);
     first.arrival = scale_to_user_duration(ETA);
-    ETA += (first.setup + first.service);
+    ETA += (first_job_setup + first_job.service);
     unassigned_ranks.erase(route.front());
 
     for (std::size_t r = 0; r < route.size() - 1; ++r) {
@@ -490,7 +490,7 @@ inline Solution format_solution(const Input& input,
       auto& current = steps.back();
       current.duration = scale_to_user_duration(duration);
       current.arrival = scale_to_user_duration(ETA);
-      ETA += (current_setup + current.service);
+      ETA += (current_setup + current_job.service);
       unassigned_ranks.erase(route[r + 1]);
     }
 
