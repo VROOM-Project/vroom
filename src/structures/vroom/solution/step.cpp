@@ -51,4 +51,8 @@ Step::Step(const Break& b, const Amount& load)
     waiting_time(0) {
 }
 
+UserDuration Step::departure() const {
+  return arrival + waiting_time + setup + service;
+}
+
 } // namespace vroom

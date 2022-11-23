@@ -41,6 +41,8 @@ struct Step {
   Step(const Job& job, const UserDuration setup, const Amount& load);
 
   Step(const Break& b, const Amount& load);
+
+  UserDuration departure() const;
 };
 
 } // namespace vroom

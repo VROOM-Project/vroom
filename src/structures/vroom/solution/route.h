@@ -50,6 +50,8 @@ struct Route {
         const std::string& profile,
         const std::string& description,
         const Violations&& violations = Violations(0, 0));
+
+  void check_timing_consistency() const;
 };
 
 } // namespace vroom
