@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 #include <cassert>
 
 #include "structures/vroom/input/vehicle_step.h"
+#include "utils/helpers.h"
 
 namespace vroom {
 
@@ -19,10 +20,18 @@ ForcedService::ForcedService()
     before(std::optional<Duration>()) {
 }
 
-ForcedService::ForcedService(std::optional<Duration>&& at,
-                             std::optional<Duration>&& after,
-                             std::optional<Duration>&& before)
-  : at(std::move(at)), after(std::move(after)), before(std::move(before)) {
+ForcedService::ForcedService(const std::optional<UserDuration>& at,
+                             const std::optional<UserDuration>& after,
+                             const std::optional<UserDuration>& before) {
+  if (at.has_value()) {
+    this->at = utils::scale_from_user_duration(at.value());
+  }
+  if (after.has_value()) {
+    this->after = utils::scale_from_user_duration(after.value());
+  }
+  if (before.has_value()) {
+    this->before = utils::scale_from_user_duration(before.value());
+  }
 }
 
 VehicleStep::VehicleStep(STEP_TYPE type, ForcedService&& forced_service)

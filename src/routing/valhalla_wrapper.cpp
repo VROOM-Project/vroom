@@ -123,7 +123,7 @@ bool ValhallaWrapper::duration_value_is_null(
   return matrix_entry["time"].IsNull();
 }
 
-Cost ValhallaWrapper::get_duration_value(
+UserDuration ValhallaWrapper::get_duration_value(
   const rapidjson::Value& matrix_entry) const {
   assert(matrix_entry["time"].IsUint());
   return matrix_entry["time"].GetUint();

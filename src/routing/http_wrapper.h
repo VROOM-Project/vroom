@@ -51,13 +51,13 @@ protected:
   virtual void check_response(const rapidjson::Document& json_result,
                               const std::string& service) const = 0;
 
-  virtual Matrix<Cost>
+  virtual Matrix<UserCost>
   get_matrix(const std::vector<Location>& locs) const override;
 
   virtual bool
   duration_value_is_null(const rapidjson::Value& matrix_entry) const = 0;
 
-  virtual Cost
+  virtual UserDuration
   get_duration_value(const rapidjson::Value& matrix_entry) const = 0;
 
   virtual double get_total_distance(const rapidjson::Value& result) const = 0;

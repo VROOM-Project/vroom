@@ -29,6 +29,6 @@ Matrix<T> Matrix<T>::get_sub_matrix(const std::vector<Index>& indices) const {
   return sub_matrix;
 }
 
-template class Matrix<Cost>;
+template class Matrix<UserCost>;
 
 } // namespace vroom

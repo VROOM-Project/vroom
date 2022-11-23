@@ -96,9 +96,8 @@ template <class T> T basic(const Input& input, INIT init, double lambda) {
   // regrets[v][j] holds the min cost for reaching job j in an empty
   // route across all remaining vehicles **after** vehicle at rank v
   // in vehicle_ranks.
-  std::vector<std::vector<SignedCost>> regrets(nb_vehicles,
-                                               std::vector<SignedCost>(
-                                                 input.jobs.size()));
+  std::vector<std::vector<Cost>> regrets(nb_vehicles,
+                                         std::vector<Cost>(input.jobs.size()));
 
   // Use own cost for last vehicle regret values.
   auto& last_regrets = regrets.back();
@@ -168,7 +167,7 @@ template <class T> T basic(const Input& input, INIT init, double lambda) {
         }
 
         bool is_valid =
-          (evals[job_rank][v_rank].duration <= vehicle.max_travel_time) &&
+          (vehicle.ok_for_travel_time(evals[job_rank][v_rank].duration)) &&
           current_r
             .is_valid_addition_for_capacity(input,
                                             input.jobs[job_rank].pickup,
@@ -267,8 +266,8 @@ template <class T> T basic(const Input& input, INIT init, double lambda) {
               lambda * static_cast<double>(regrets[v][job_rank]);
 
             if (current_cost < best_cost and
-                (current_route_duration + current_add.duration <=
-                 vehicle.max_travel_time) and
+                (vehicle.ok_for_travel_time(current_route_duration +
+                                            current_add.duration)) and
                 current_r
                   .is_valid_addition_for_capacity(input,
                                                   input.jobs[job_rank].pickup,
@@ -360,8 +359,8 @@ template <class T> T basic(const Input& input, INIT init, double lambda) {
 
                 // Update best cost depending on validity.
                 bool valid =
-                  (current_route_duration + current_add.duration <=
-                   vehicle.max_travel_time) &&
+                  (vehicle.ok_for_travel_time(current_route_duration +
+                                              current_add.duration)) &&
                   current_r
                     .is_valid_addition_for_capacity_inclusion(input,
                                                               modified_delivery,
@@ -449,11 +448,10 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
     // (resp. jobs_second_min_costs[j]) holds the min cost
     // (resp. second min cost) of picking the job in an empty route
     // for any remaining vehicle.
-    std::vector<SignedCost>
-      jobs_min_costs(input.jobs.size(), std::numeric_limits<SignedCost>::max());
-    std::vector<SignedCost>
-      jobs_second_min_costs(input.jobs.size(),
-                            std::numeric_limits<Cost>::max());
+    std::vector<Cost> jobs_min_costs(input.jobs.size(),
+                                     std::numeric_limits<Cost>::max());
+    std::vector<Cost> jobs_second_min_costs(input.jobs.size(),
+                                            std::numeric_limits<Cost>::max());
     for (const auto job_rank : unassigned) {
       for (const auto v_rank : vehicles_ranks) {
         if (evals[job_rank][v_rank].cost <= jobs_min_costs[job_rank]) {
@@ -498,8 +496,7 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
     // Once current vehicle is decided, regrets[j] holds the min cost
     // of picking the job in an empty route for other remaining
     // vehicles.
-    std::vector<SignedCost> regrets(input.jobs.size(),
-                                    input.get_cost_upper_bound());
+    std::vector<Cost> regrets(input.jobs.size(), input.get_cost_upper_bound());
     for (const auto job_rank : unassigned) {
       if (jobs_min_costs[job_rank] < evals[job_rank][v_rank].cost) {
         regrets[job_rank] = jobs_min_costs[job_rank];
@@ -562,7 +559,7 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
         }
 
         bool is_valid =
-          (evals[job_rank][v_rank].duration <= vehicle.max_travel_time) &&
+          (vehicle.ok_for_travel_time(evals[job_rank][v_rank].duration)) &&
           current_r
             .is_valid_addition_for_capacity(input,
                                             input.jobs[job_rank].pickup,
@@ -662,8 +659,8 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
               lambda * static_cast<double>(regrets[job_rank]);
 
             if (current_cost < best_cost and
-                (current_route_duration + current_add.duration <=
-                 vehicle.max_travel_time) and
+                (vehicle.ok_for_travel_time(current_route_duration +
+                                            current_add.duration)) and
                 current_r
                   .is_valid_addition_for_capacity(input,
                                                   input.jobs[job_rank].pickup,
@@ -755,8 +752,8 @@ T dynamic_vehicle_choice(const Input& input, INIT init, double lambda) {
 
                 // Update best cost depending on validity.
                 bool valid =
-                  (current_route_duration + current_add.duration <=
-                   vehicle.max_travel_time) &&
+                  (vehicle.ok_for_travel_time(current_route_duration +
+                                              current_add.duration)) &&
                   current_r
                     .is_valid_addition_for_capacity_inclusion(input,
                                                               modified_delivery,

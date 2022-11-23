@@ -17,13 +17,13 @@ All rights reserved (see LICENSE).
 namespace vroom {
 namespace tsp {
 
-std::list<Index> christofides(const Matrix<Cost>& sym_matrix) {
+std::list<Index> christofides(const Matrix<UserCost>& sym_matrix) {
   // The eulerian sub-graph further used is made of a minimum spanning
   // tree with a minimum weight perfect matching on its odd degree
   // vertices.
 
   // Compute symmetric graph from the matrix.
-  auto sym_graph = utils::UndirectedGraph<Cost>(sym_matrix);
+  auto sym_graph = utils::UndirectedGraph<UserCost>(sym_matrix);
 
   // Work on a minimum spanning tree seen as a graph.
   auto mst_graph = utils::minimum_spanning_tree(sym_graph);
@@ -42,7 +42,7 @@ std::list<Index> christofides(const Matrix<Cost>& sym_matrix) {
   }
 
   // Getting corresponding matrix for the generated sub-graph.
-  Matrix<Cost> sub_matrix = sym_matrix.get_sub_matrix(mst_odd_vertices);
+  Matrix<UserCost> sub_matrix = sym_matrix.get_sub_matrix(mst_odd_vertices);
 
   // Computing minimum weight perfect matching.
   std::unordered_map<Index, Index> mwpm =
@@ -81,7 +81,8 @@ std::list<Index> christofides(const Matrix<Cost>& sym_matrix) {
   }
 
   // Building eulerian graph.
-  std::vector<utils::Edge<Cost>> eulerian_graph_edges = mst_graph.get_edges();
+  std::vector<utils::Edge<UserCost>> eulerian_graph_edges =
+    mst_graph.get_edges();
 
   // Adding edges from minimum weight perfect matching (with the
   // original vertices index). Edges appear twice in matching so we
@@ -99,7 +100,7 @@ std::list<Index> christofides(const Matrix<Cost>& sym_matrix) {
   }
 
   // Building Eulerian graph from the edges.
-  utils::UndirectedGraph<Cost> eulerian_graph(eulerian_graph_edges);
+  utils::UndirectedGraph<UserCost> eulerian_graph(eulerian_graph_edges);
   assert(eulerian_graph.size() >= 2);
 
   // Hierholzer's algorithm: building and joining closed tours with

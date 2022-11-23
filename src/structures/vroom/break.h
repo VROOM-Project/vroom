@@ -25,7 +25,7 @@ struct Break {
 
   Break(Id id,
         const std::vector<TimeWindow>& tws,
-        Duration service = 0,
+        UserDuration service = 0,
         const std::string& description = "");
 
   bool is_valid_start(Duration time) const;

@@ -30,11 +30,11 @@ namespace vroom {
 // To easily differentiate variable types.
 using Id = uint64_t;
 using Index = uint16_t;
-using Cost = uint32_t;
-using SignedCost = int64_t;
+using UserCost = uint32_t;
+using Cost = int64_t;
 using Distance = uint32_t;
-using Duration = uint32_t;
-using SignedDuration = int64_t;
+using UserDuration = uint32_t;
+using Duration = int64_t;
 using Coordinate = double;
 using Capacity = int64_t;
 using Skill = uint32_t;
@@ -53,9 +53,12 @@ using Timeout = std::optional<std::chrono::milliseconds>;
 using Deadline = std::optional<TimePoint>;
 
 // Setting max value would cause trouble with further additions.
-constexpr Cost INFINITE_COST = 3 * (std::numeric_limits<Cost>::max() / 4);
+constexpr UserCost INFINITE_USER_COST =
+  3 * (std::numeric_limits<UserCost>::max() / 4);
 
 const std::string DEFAULT_PROFILE = "car";
+
+constexpr Duration DURATION_FACTOR = 100;
 
 constexpr Priority MAX_PRIORITY = 100;
 constexpr double MAX_SPEED_FACTOR = 5.0;

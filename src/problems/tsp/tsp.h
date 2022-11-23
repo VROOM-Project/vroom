@@ -30,16 +30,16 @@ private:
   Index _start;
   bool _has_end;
   Index _end;
-  Matrix<Cost> _matrix;
-  Matrix<Cost> _symmetrized_matrix;
+  Matrix<UserCost> _matrix;
+  Matrix<UserCost> _symmetrized_matrix;
   bool _round_trip;
+
+  UserCost cost(const std::list<Index>& tour) const;
+
+  UserCost symmetrized_cost(const std::list<Index>& tour) const;
 
 public:
   TSP(const Input& input, std::vector<Index> job_ranks, Index vehicle_rank);
-
-  Cost cost(const std::list<Index>& tour) const;
-
-  Cost symmetrized_cost(const std::list<Index>& tour) const;
 
   std::vector<Index> raw_solve(unsigned nb_threads,
                                const Timeout& timeout) const;

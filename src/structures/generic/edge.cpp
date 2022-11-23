@@ -30,7 +30,7 @@ template <class T> bool Edge<T>::operator==(const Edge& rhs) const {
          (this->_second_vertex == rhs._second_vertex);
 }
 
-template class Edge<Cost>;
+template class Edge<UserCost>;
 
 } // namespace utils
 } // namespace vroom

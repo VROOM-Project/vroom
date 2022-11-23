@@ -23,7 +23,7 @@ struct TimeWindow {
   // Default "no-constraint" time-window.
   TimeWindow();
 
-  TimeWindow(Duration start, Duration end);
+  TimeWindow(UserDuration start, UserDuration end);
 
   bool contains(Duration time) const;
 

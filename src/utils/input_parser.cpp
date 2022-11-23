@@ -94,8 +94,9 @@ inline Skills get_skills(const rapidjson::Value& object) {
   return skills;
 }
 
-inline Duration get_duration(const rapidjson::Value& object, const char* key) {
-  Duration duration = 0;
+inline UserDuration get_duration(const rapidjson::Value& object,
+                                 const char* key) {
+  UserDuration duration = 0;
   if (object.HasMember(key)) {
     if (!object[key].IsUint()) {
       throw InputException("Invalid " + std::string(key) + " duration.");
@@ -127,8 +128,9 @@ inline size_t get_max_tasks(const rapidjson::Value& object) {
   return max_tasks;
 }
 
-inline Duration get_max_travel_time(const rapidjson::Value& object) {
-  Duration max_travel_time = std::numeric_limits<Duration>::max();
+inline std::optional<UserDuration>
+get_max_travel_time(const rapidjson::Value& object) {
+  std::optional<UserDuration> max_travel_time;
   if (object.HasMember("max_travel_time")) {
     if (!object["max_travel_time"].IsUint()) {
       throw InputException("Invalid max_travel_time value.");
@@ -263,7 +265,7 @@ inline std::vector<VehicleStep> get_vehicle_steps(const rapidjson::Value& v) {
     for (rapidjson::SizeType i = 0; i < v["steps"].Size(); ++i) {
       const auto& json_step = v["steps"][i];
 
-      std::optional<Duration> at;
+      std::optional<UserDuration> at;
       if (json_step.HasMember("service_at")) {
         if (!json_step["service_at"].IsUint()) {
           throw InputException("Invalid service_at value.");
@@ -271,7 +273,7 @@ inline std::vector<VehicleStep> get_vehicle_steps(const rapidjson::Value& v) {
 
         at = json_step["service_at"].GetUint();
       }
-      std::optional<Duration> after;
+      std::optional<UserDuration> after;
       if (json_step.HasMember("service_after")) {
         if (!json_step["service_after"].IsUint()) {
           throw InputException("Invalid service_after value.");
@@ -279,7 +281,7 @@ inline std::vector<VehicleStep> get_vehicle_steps(const rapidjson::Value& v) {
 
         after = json_step["service_after"].GetUint();
       }
-      std::optional<Duration> before;
+      std::optional<UserDuration> before;
       if (json_step.HasMember("service_before")) {
         if (!json_step["service_before"].IsUint()) {
           throw InputException("Invalid service_before value.");
@@ -287,9 +289,7 @@ inline std::vector<VehicleStep> get_vehicle_steps(const rapidjson::Value& v) {
 
         before = json_step["service_before"].GetUint();
       }
-      ForcedService forced_service(std::move(at),
-                                   std::move(after),
-                                   std::move(before));
+      ForcedService forced_service(at, after, before);
 
       const auto type_str = get_string(json_step, "type");
 
@@ -582,12 +582,12 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
       if (profile_entry.value.IsObject()) {
         if (profile_entry.value.HasMember("durations")) {
           input.set_durations_matrix(profile_entry.name.GetString(),
-                                     get_matrix<Duration>(
+                                     get_matrix<UserDuration>(
                                        profile_entry.value["durations"]));
         }
         if (profile_entry.value.HasMember("costs")) {
           input.set_costs_matrix(profile_entry.name.GetString(),
-                                 get_matrix<Cost>(
+                                 get_matrix<UserCost>(
                                    profile_entry.value["costs"]));
         }
       }
@@ -597,7 +597,8 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
     // `matrices.DEFAULT_PROFILE.duration` for retro-compatibility.
     if (json_input.HasMember("matrix")) {
       input.set_durations_matrix(DEFAULT_PROFILE,
-                                 get_matrix<Duration>(json_input["matrix"]));
+                                 get_matrix<UserDuration>(
+                                   json_input["matrix"]));
     }
   }
 }

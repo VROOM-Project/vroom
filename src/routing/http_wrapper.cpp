@@ -147,7 +147,8 @@ void HttpWrapper::parse_response(rapidjson::Document& json_result,
 #endif
 }
 
-Matrix<Cost> HttpWrapper::get_matrix(const std::vector<Location>& locs) const {
+Matrix<UserCost>
+HttpWrapper::get_matrix(const std::vector<Location>& locs) const {
   std::string query = this->build_query(locs, _matrix_service);
   std::string json_string = this->run_query(query);
 
@@ -165,7 +166,7 @@ Matrix<Cost> HttpWrapper::get_matrix(const std::vector<Location>& locs) const {
 
   // Build matrix while checking for unfound routes ('null' values) to
   // avoid unexpected behavior.
-  Matrix<Cost> m(m_size);
+  Matrix<UserCost> m(m_size);
 
   std::vector<unsigned> nb_unfound_from_loc(m_size, 0);
   std::vector<unsigned> nb_unfound_to_loc(m_size, 0);
@@ -237,7 +238,8 @@ void HttpWrapper::add_route_info(Route& route) const {
     // Next element in steps that is not a break and associated
     // distance after current route leg.
     auto& next_step = route.steps[steps_rank + number_breaks_after[i] + 1];
-    Duration next_duration = next_step.duration - step.duration;
+    assert(step.duration <= next_step.duration);
+    auto next_duration = next_step.duration - step.duration;
     double next_distance = get_distance_for_leg(json_result, i);
 
     // Pro rata temporis distance update for breaks between current
