@@ -64,6 +64,8 @@ struct Vehicle {
 
   bool has_same_profile(const Vehicle& other) const;
 
+  bool cost_is_duration() const;
+
   Duration available_duration() const;
 
   Duration duration(Index i, Index j) const {

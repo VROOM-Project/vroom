@@ -25,6 +25,8 @@ private:
   std::size_t cost_matrix_size;
   const UserCost* cost_data;
 
+  bool _cost_is_duration;
+
 public:
   CostWrapper(double speed_factor);
 
@@ -35,6 +37,10 @@ public:
 
   Duration get_discrete_duration_factor() const {
     return discrete_duration_factor;
+  }
+
+  bool cost_is_duration() const {
+    return _cost_is_duration;
   }
 
   Duration duration(Index i, Index j) const {
