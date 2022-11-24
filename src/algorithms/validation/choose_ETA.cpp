@@ -84,7 +84,7 @@ Route choose_ETA(const Input& input,
   // start at 0 taking only travel and action times into account (no
   // waiting).
   Duration action_sum = 0;
-  Eval eval_sum(v.fixed_cost(), 0);
+  Eval eval_sum;
   unsigned default_job_tw = 0;
   Duration relative_arrival = 0;
   std::vector<Duration> relative_ETA;
@@ -1383,13 +1383,16 @@ Route choose_ETA(const Input& input,
     v_types.insert(VIOLATION::MISSING_BREAK);
   }
 
-  UserCost user_cost_sum = v.cost_is_duration()
-                             ? user_duration
-                             : utils::scale_to_user_cost(eval_sum.cost);
+  assert(v.fixed_cost() % DURATION_FACTOR == 0);
+  const UserCost user_fixed_cost =
+    utils::scale_to_user_duration(v.fixed_cost());
+  const UserCost user_cost = v.cost_is_duration()
+                               ? user_duration
+                               : utils::scale_to_user_cost(eval_sum.cost);
 
   return Route(v.id,
                std::move(sol_steps),
-               user_cost_sum,
+               user_fixed_cost + user_cost,
                user_duration,
                utils::scale_to_user_duration(setup),
                utils::scale_to_user_duration(service),

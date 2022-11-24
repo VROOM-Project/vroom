@@ -414,7 +414,7 @@ inline Solution format_solution(const Input& input,
     auto previous_location = (v.has_start())
                                ? v.start.value().index()
                                : std::numeric_limits<Index>::max();
-    Eval eval(v.fixed_cost(), 0);
+    Eval eval_sum;
     Duration setup = 0;
     Duration service = 0;
     Priority priority = 0;
@@ -438,7 +438,7 @@ inline Solution format_solution(const Input& input,
     if (v.has_start()) {
       const auto next_leg = v.eval(v.start.value().index(), first_job.index());
       ETA += next_leg.duration;
-      eval += next_leg;
+      eval_sum += next_leg;
     }
 
     // Handle jobs.
@@ -476,7 +476,7 @@ inline Solution format_solution(const Input& input,
       const auto next_leg =
         v.eval(input.jobs[route[r]].index(), input.jobs[route[r + 1]].index());
       ETA += next_leg.duration;
-      eval += next_leg;
+      eval_sum += next_leg;
 
       auto& current_job = input.jobs[route[r + 1]];
 
@@ -502,7 +502,7 @@ inline Solution format_solution(const Input& input,
                          scale_to_user_duration(current_setup),
                          current_load);
       auto& current = steps.back();
-      current.duration = scale_to_user_duration(eval.duration);
+      current.duration = scale_to_user_duration(eval_sum.duration);
       current.arrival = scale_to_user_duration(ETA);
       ETA += (current_setup + current_job.service);
       unassigned_ranks.erase(route[r + 1]);
@@ -515,18 +515,21 @@ inline Solution format_solution(const Input& input,
     if (v.has_end()) {
       const auto next_leg = v.eval(last_job.index(), v.end.value().index());
       ETA += next_leg.duration;
-      eval += next_leg;
+      eval_sum += next_leg;
     }
-    steps.back().duration = scale_to_user_duration(eval.duration);
+    steps.back().duration = scale_to_user_duration(eval_sum.duration);
     steps.back().arrival = scale_to_user_duration(ETA);
 
     assert(expected_delivery_ranks.empty());
-    assert(v.ok_for_travel_time(eval.duration));
+    assert(v.ok_for_travel_time(eval_sum.duration));
+
+    assert(v.fixed_cost() % DURATION_FACTOR == 0);
+    const UserCost user_fixed_cost = scale_to_user_duration(v.fixed_cost());
 
     routes.emplace_back(v.id,
                         std::move(steps),
-                        scale_to_user_cost(eval.cost),
-                        scale_to_user_duration(eval.duration),
+                        user_fixed_cost + scale_to_user_cost(eval_sum.cost),
+                        scale_to_user_duration(eval_sum.duration),
                         scale_to_user_duration(setup),
                         scale_to_user_duration(service),
                         0,
@@ -705,7 +708,7 @@ inline Route format_route(const Input& input,
                                            : std::numeric_limits<Index>::max();
 
   // Values summed up while going through the route.
-  Eval eval(v.fixed_cost(), 0);
+  Eval eval_sum;
   Duration duration = 0;
   UserDuration user_duration = 0;
   UserDuration user_waiting_time = 0;
@@ -808,7 +811,7 @@ inline Route format_route(const Input& input,
 
     // Back to current job.
     duration += travel_time;
-    eval += current_eval;
+    eval_sum += current_eval;
     service += current_job.service;
     priority += current_job.priority;
 
@@ -957,7 +960,7 @@ inline Route format_route(const Input& input,
   auto& end_step = steps.back();
   if (v.has_end()) {
     duration += travel_time;
-    eval += current_eval;
+    eval_sum += current_eval;
     step_start += travel_time;
   }
   assert(v.tw.contains(step_start));
@@ -978,15 +981,19 @@ inline Route format_route(const Input& input,
 
   assert(expected_delivery_ranks.empty());
 
-  assert(eval.duration == duration);
-  assert(v.ok_for_travel_time(eval.duration));
+  assert(eval_sum.duration == duration);
+  assert(v.ok_for_travel_time(eval_sum.duration));
 
-  UserCost user_cost_sum =
-    v.cost_is_duration() ? user_duration : scale_to_user_cost(eval.cost);
+  assert(v.fixed_cost() % DURATION_FACTOR == 0);
+  const UserCost user_fixed_cost =
+    utils::scale_to_user_duration(v.fixed_cost());
+  const UserCost user_cost = v.cost_is_duration()
+                               ? user_duration
+                               : utils::scale_to_user_cost(eval_sum.cost);
 
   return Route(v.id,
                std::move(steps),
-               user_cost_sum,
+               user_fixed_cost + user_cost,
                user_duration,
                scale_to_user_duration(setup),
                scale_to_user_duration(service),
