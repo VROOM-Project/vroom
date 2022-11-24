@@ -18,7 +18,7 @@ namespace vroom {
 namespace tsp {
 
 // Implementing a variant of the Christofides heuristic.
-std::list<Index> christofides(const Matrix<Cost>& sym_matrix);
+std::list<Index> christofides(const Matrix<UserCost>& sym_matrix);
 
 } // namespace tsp
 } // namespace vroom

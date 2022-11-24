@@ -8,6 +8,7 @@ All rights reserved (see LICENSE).
 */
 
 #include "structures/vroom/solution/step.h"
+#include "utils/helpers.h"
 
 namespace vroom {
 
@@ -26,13 +27,13 @@ Step::Step(STEP_TYPE type, Location location, const Amount& load)
   assert(step_type == STEP_TYPE::START or step_type == STEP_TYPE::END);
 }
 
-Step::Step(const Job& job, const Duration setup, const Amount& load)
+Step::Step(const Job& job, const UserDuration setup, const Amount& load)
   : step_type(STEP_TYPE::JOB),
     job_type(job.type),
     location(job.location),
     id(job.id),
     setup(setup),
-    service(job.service),
+    service(utils::scale_to_user_duration(job.service)),
     load(load),
     description(job.description),
     waiting_time(0) {
@@ -44,10 +45,14 @@ Step::Step(const Break& b, const Amount& load)
     location(0),                // Dummy value.
     id(b.id),
     setup(0),
-    service(b.service),
+    service(utils::scale_to_user_duration(b.service)),
     load(load),
     description(b.description),
     waiting_time(0) {
+}
+
+UserDuration Step::departure() const {
+  return arrival + waiting_time + setup + service;
 }
 
 } // namespace vroom

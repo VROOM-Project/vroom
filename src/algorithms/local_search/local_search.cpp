@@ -110,7 +110,7 @@ RouteInsertion compute_best_insertion(const Input& input,
     if (insert.eval != NO_EVAL) {
       // Normalize cost per job for consistency with single jobs.
       insert.eval.cost =
-        static_cast<SignedCost>(static_cast<double>(insert.eval.cost) / 2);
+        static_cast<Cost>(static_cast<double>(insert.eval.cost) / 2);
     }
     return insert;
   }
@@ -1506,7 +1506,8 @@ void LocalSearch<Route,
           const auto s_travel_time = _sol_state.route_evals[s_t.first].duration;
           const auto s_removal_duration_gain =
             _sol_state.pd_gains[s_t.first][s_p_rank].duration;
-          if (s_travel_time > v_s.max_travel_time + s_removal_duration_gain) {
+          if (!v_s.ok_for_travel_time(s_travel_time -
+                                      s_removal_duration_gain)) {
             // Removing shipment from source route actually breaks
             // max_travel_time constraint in source.
             continue;
@@ -1707,8 +1708,8 @@ void LocalSearch<Route,
         _sol_state.update_route_eval(_sol[v_rank].route, v_rank);
 
         assert(_sol[v_rank].size() <= _input.vehicles[v_rank].max_tasks);
-        assert(_sol_state.route_evals[v_rank].duration <=
-               _input.vehicles[v_rank].max_travel_time);
+        assert(_input.vehicles[v_rank].ok_for_travel_time(
+          _sol_state.route_evals[v_rank].duration));
       }
 
 #ifndef NDEBUG
@@ -1988,7 +1989,7 @@ Eval LocalSearch<Route,
                  RouteSplit>::job_route_cost(Index v_target, Index v, Index r) {
   assert(v != v_target);
 
-  Eval eval(INFINITE_COST, 0);
+  Eval eval = NO_EVAL;
   const auto job_index = _input.jobs[_sol[v].route[r]].index();
 
   const auto& vehicle = _input.vehicles[v_target];
@@ -2057,7 +2058,7 @@ Eval LocalSearch<Route,
                  RouteExchange,
                  SwapStar,
                  RouteSplit>::relocate_cost_lower_bound(Index v, Index r) {
-  Eval best_bound(INFINITE_COST, 0);
+  Eval best_bound = NO_EVAL;
 
   for (std::size_t other_v = 0; other_v < _sol.size(); ++other_v) {
     if (other_v == v or
@@ -2109,7 +2110,7 @@ Eval LocalSearch<Route,
                  RouteSplit>::relocate_cost_lower_bound(Index v,
                                                         Index r1,
                                                         Index r2) {
-  Eval best_bound(INFINITE_COST, 0);
+  Eval best_bound = NO_EVAL;
 
   for (std::size_t other_v = 0; other_v < _sol.size(); ++other_v) {
     if (other_v == v or
@@ -2188,7 +2189,6 @@ void LocalSearch<Route,
     Index best_rank = 0;
     Eval best_gain = NO_GAIN;
 
-    const auto max_travel_time = _input.vehicles[v].max_travel_time;
     const auto current_travel_time = _sol_state.route_evals[v].duration;
 
     for (std::size_t r = 0; r < _sol[v].size(); ++r) {
@@ -2206,9 +2206,9 @@ void LocalSearch<Route,
 
         if (current_gain > best_gain) {
           // Only check validity if required.
-          valid_removal =
-            (current_travel_time <= max_travel_time + removal_gain.duration) &&
-            _sol[v].is_valid_removal(_input, r, 1);
+          valid_removal = _input.vehicles[v].ok_for_travel_time(
+                            current_travel_time - removal_gain.duration) &&
+                          _sol[v].is_valid_removal(_input, r, 1);
         }
       } else {
         assert(current_job.type == JOB_TYPE::PICKUP);
@@ -2218,7 +2218,8 @@ void LocalSearch<Route,
           removal_gain - relocate_cost_lower_bound(v, r, delivery_r);
 
         if (current_gain > best_gain &&
-            (current_travel_time <= max_travel_time + removal_gain.duration)) {
+            _input.vehicles[v].ok_for_travel_time(current_travel_time -
+                                                  removal_gain.duration)) {
           // Only check validity if required.
           if (delivery_r == r + 1) {
             valid_removal = _sol[v].is_valid_removal(_input, r, 2);

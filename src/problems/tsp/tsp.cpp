@@ -14,8 +14,9 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
-Cost compute_cost(const std::list<Index>& tour, const Matrix<Cost>& matrix) {
-  Cost cost = 0;
+UserCost compute_cost(const std::list<Index>& tour,
+                      const Matrix<UserCost>& matrix) {
+  UserCost cost = 0;
   Index init_step = 0; // Initialization actually never used.
 
   auto step = tour.cbegin();
@@ -72,7 +73,7 @@ TSP::TSP(const Input& input, std::vector<Index> job_ranks, Index vehicle_rank)
   }
 
   // Populate TSP-solving matrix.
-  _matrix = Matrix<Cost>(matrix_ranks.size());
+  _matrix = Matrix<UserCost>(matrix_ranks.size());
 
   const auto& v = _input.vehicles[vehicle_rank];
   for (Index i = 0; i < matrix_ranks.size(); ++i) {
@@ -85,7 +86,7 @@ TSP::TSP(const Input& input, std::vector<Index> job_ranks, Index vehicle_rank)
   // weight perfect matching (munkres call during the heuristic). This
   // makes sure no node will be matched with itself at that time.
   for (Index i = 0; i < _matrix.size(); ++i) {
-    _matrix[i][i] = INFINITE_COST;
+    _matrix[i][i] = INFINITE_USER_COST;
   }
 
   _round_trip = _has_start and _has_end and (_start == _end);
@@ -118,37 +119,38 @@ TSP::TSP(const Input& input, std::vector<Index> job_ranks, Index vehicle_rank)
       _matrix[_end][_start] = 0;
       for (Index j = 0; j < _matrix.size(); ++j) {
         if ((j != _start) and (j != _end)) {
-          _matrix[_end][j] = INFINITE_COST;
+          _matrix[_end][j] = INFINITE_USER_COST;
         }
       }
     }
   }
 
   // Compute symmetrized matrix and update _is_symmetric flag.
-  _symmetrized_matrix = Matrix<Cost>(_matrix.size());
+  _symmetrized_matrix = Matrix<UserCost>(_matrix.size());
 
-  const Cost& (*sym_f)(const Cost&, const Cost&) = std::min<Cost>;
+  const UserCost& (*sym_f)(const UserCost&, const UserCost&) =
+    std::min<UserCost>;
   if ((_has_start and !_has_end) or (!_has_start and _has_end)) {
     // Using symmetrization with max as when only start or only end is
     // forced, the matrix has a line or a column filled with zeros.
-    sym_f = std::max<Cost>;
+    sym_f = std::max<UserCost>;
   }
   for (Index i = 0; i < _matrix.size(); ++i) {
     _symmetrized_matrix[i][i] = _matrix[i][i];
     for (Index j = i + 1; j < _matrix.size(); ++j) {
       _is_symmetric = _is_symmetric && (_matrix[i][j] == _matrix[j][i]);
-      Cost val = sym_f(_matrix[i][j], _matrix[j][i]);
+      UserCost val = sym_f(_matrix[i][j], _matrix[j][i]);
       _symmetrized_matrix[i][j] = val;
       _symmetrized_matrix[j][i] = val;
     }
   }
 }
 
-Cost TSP::cost(const std::list<Index>& tour) const {
+UserCost TSP::cost(const std::list<Index>& tour) const {
   return compute_cost(tour, _matrix);
 }
 
-Cost TSP::symmetrized_cost(const std::list<Index>& tour) const {
+UserCost TSP::symmetrized_cost(const std::list<Index>& tour) const {
   return compute_cost(tour, _symmetrized_matrix);
 }
 
@@ -190,9 +192,9 @@ std::vector<Index> TSP::raw_solve(unsigned nb_threads,
                           christo_sol,
                           nb_threads);
 
-  Cost sym_two_opt_gain = 0;
-  Cost sym_relocate_gain = 0;
-  Cost sym_or_opt_gain = 0;
+  UserCost sym_two_opt_gain = 0;
+  UserCost sym_relocate_gain = 0;
+  UserCost sym_or_opt_gain = 0;
 
   do {
     // All possible 2-opt moves.
@@ -223,8 +225,8 @@ std::vector<Index> TSP::raw_solve(unsigned nb_threads,
     // Back to the asymmetric problem, picking the best way.
     std::list<Index> reverse_current_sol(current_sol);
     reverse_current_sol.reverse();
-    Cost direct_cost = this->cost(current_sol);
-    Cost reverse_cost = this->cost(reverse_current_sol);
+    UserCost direct_cost = this->cost(current_sol);
+    UserCost reverse_cost = this->cost(reverse_current_sol);
 
     // Local search on asymmetric problem.
     tsp::LocalSearch
@@ -233,10 +235,10 @@ std::vector<Index> TSP::raw_solve(unsigned nb_threads,
               (direct_cost <= reverse_cost) ? current_sol : reverse_current_sol,
               nb_threads);
 
-    Cost asym_two_opt_gain = 0;
-    Cost asym_relocate_gain = 0;
-    Cost asym_or_opt_gain = 0;
-    Cost asym_avoid_loops_gain = 0;
+    UserCost asym_two_opt_gain = 0;
+    UserCost asym_relocate_gain = 0;
+    UserCost asym_or_opt_gain = 0;
+    UserCost asym_avoid_loops_gain = 0;
 
     do {
       // All avoid-loops moves.

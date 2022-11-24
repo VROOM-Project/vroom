@@ -16,8 +16,8 @@ namespace vroom {
 Violations::Violations() : lead_time(0), delay(0) {
 }
 
-Violations::Violations(const Duration lead_time,
-                       const Duration delay,
+Violations::Violations(const UserDuration lead_time,
+                       const UserDuration delay,
                        const std::unordered_set<VIOLATION>&& types)
   : lead_time(lead_time), delay(delay), types(std::move(types)) {
 }

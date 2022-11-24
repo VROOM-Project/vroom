@@ -15,32 +15,42 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
-struct CostWrapper {
-  const static uint32_t DIVISOR = 100;
-
-  const uint32_t discrete_duration_factor;
+class CostWrapper {
+private:
+  const Duration discrete_duration_factor;
   std::size_t duration_matrix_size;
-  const Duration* duration_data;
+  const UserDuration* duration_data;
 
-  uint32_t discrete_cost_factor;
+  Cost discrete_cost_factor;
   std::size_t cost_matrix_size;
-  const Cost* cost_data;
+  const UserCost* cost_data;
 
+  bool _cost_is_duration;
+
+public:
   CostWrapper(double speed_factor);
 
-  void set_durations_matrix(const Matrix<Duration>* matrix);
+  void set_durations_matrix(const Matrix<UserDuration>* matrix);
 
-  void set_costs_factor(double cost_factor);
-  void set_costs_matrix(const Matrix<Cost>* matrix);
+  void set_costs_matrix(const Matrix<UserCost>* matrix,
+                        bool reset_cost_factor = false);
+
+  Duration get_discrete_duration_factor() const {
+    return discrete_duration_factor;
+  }
+
+  bool cost_is_duration() const {
+    return _cost_is_duration;
+  }
 
   Duration duration(Index i, Index j) const {
-    Duration c = duration_data[i * duration_matrix_size + j];
-    return (c * discrete_duration_factor) / DIVISOR;
+    return discrete_duration_factor *
+           static_cast<Duration>(duration_data[i * duration_matrix_size + j]);
   }
 
   Cost cost(Index i, Index j) const {
-    Cost c = cost_data[i * cost_matrix_size + j];
-    return (c * discrete_cost_factor) / DIVISOR;
+    return discrete_cost_factor *
+           static_cast<Cost>(cost_data[i * cost_matrix_size + j]);
   }
 };
 

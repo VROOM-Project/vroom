@@ -225,7 +225,7 @@ bool IntraCrossExchange::is_valid() {
     _normal_s_gain.duration + _normal_t_gain.duration;
 
   s_normal_t_normal_is_valid =
-    (s_travel_time <= s_v.max_travel_time + s_normal_t_normal_duration) and
+    s_v.ok_for_travel_time(s_travel_time - s_normal_t_normal_duration) and
     source.is_valid_addition_for_capacity_inclusion(_input,
                                                     delivery,
                                                     _moved_jobs.begin(),
@@ -240,7 +240,7 @@ bool IntraCrossExchange::is_valid() {
       _reversed_s_gain.duration + _normal_t_gain.duration;
 
     s_normal_t_reverse_is_valid =
-      (s_travel_time <= s_v.max_travel_time + s_normal_t_reverse_duration) &&
+      s_v.ok_for_travel_time(s_travel_time - s_normal_t_reverse_duration) &&
       source.is_valid_addition_for_capacity_inclusion(_input,
                                                       delivery,
                                                       _moved_jobs.begin(),
@@ -256,8 +256,7 @@ bool IntraCrossExchange::is_valid() {
     const auto s_reversed_t_reversed_duration =
       _reversed_s_gain.duration + _reversed_t_gain.duration;
     s_reverse_t_reverse_is_valid =
-      (s_travel_time <=
-       s_v.max_travel_time + s_reversed_t_reversed_duration) and
+      s_v.ok_for_travel_time(s_travel_time - s_reversed_t_reversed_duration) and
       source.is_valid_addition_for_capacity_inclusion(_input,
                                                       delivery,
                                                       _moved_jobs.begin(),
@@ -273,7 +272,7 @@ bool IntraCrossExchange::is_valid() {
       _normal_s_gain.duration + _reversed_t_gain.duration;
 
     s_reverse_t_normal_is_valid =
-      (s_travel_time <= s_v.max_travel_time + s_reverse_t_normal_duration) &&
+      s_v.ok_for_travel_time(s_travel_time - s_reverse_t_normal_duration) &&
       source.is_valid_addition_for_capacity_inclusion(_input,
                                                       delivery,
                                                       _moved_jobs.begin(),

@@ -32,7 +32,7 @@ LibosrmWrapper::LibosrmWrapper(const std::string& profile)
   : Wrapper(profile), _config(get_config(profile)), _osrm(_config) {
 }
 
-Matrix<Cost>
+Matrix<UserCost>
 LibosrmWrapper::get_matrix(const std::vector<Location>& locs) const {
   osrm::TableParameters params;
   for (auto const& location : locs) {
@@ -59,7 +59,7 @@ LibosrmWrapper::get_matrix(const std::vector<Location>& locs) const {
 
   // Build matrix while checking for unfound routes to avoid
   // unexpected behavior (OSRM raises 'null').
-  Matrix<Cost> m(m_size);
+  Matrix<UserCost> m(m_size);
 
   std::vector<unsigned> nb_unfound_from_loc(m_size, 0);
   std::vector<unsigned> nb_unfound_to_loc(m_size, 0);
@@ -157,7 +157,8 @@ void LibosrmWrapper::add_route_info(Route& route) const {
     // Next element in steps that is not a break and associated
     // distance after current route leg.
     auto& next_step = route.steps[steps_rank + number_breaks_after[i] + 1];
-    Duration next_duration = next_step.duration - step.duration;
+    assert(step.duration <= next_step.duration);
+    auto next_duration = next_step.duration - step.duration;
 
     auto& leg = legs.values.at(i).get<osrm::json::Object>();
     double next_distance =

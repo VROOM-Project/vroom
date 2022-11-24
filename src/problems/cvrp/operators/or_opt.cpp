@@ -181,7 +181,7 @@ bool OrOpt::is_valid() {
     const auto t_travel_time = _sol_state.route_evals[t_vehicle].duration;
 
     is_normal_valid =
-      (t_travel_time <= t_v.max_travel_time + _normal_t_gain.duration) and
+      t_v.ok_for_travel_time(t_travel_time - _normal_t_gain.duration) and
       target.is_valid_addition_for_capacity_inclusion(_input,
                                                       edge_delivery,
                                                       s_start,
@@ -192,7 +192,7 @@ bool OrOpt::is_valid() {
     // Reverse edge direction.
     auto s_reverse_start = s_route.rbegin() + s_route.size() - 2 - s_rank;
     is_reverse_valid =
-      (t_travel_time <= t_v.max_travel_time + _reversed_t_gain.duration) and
+      t_v.ok_for_travel_time(t_travel_time - _reversed_t_gain.duration) and
       target.is_valid_addition_for_capacity_inclusion(_input,
                                                       edge_delivery,
                                                       s_reverse_start,
