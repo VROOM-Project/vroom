@@ -570,12 +570,13 @@ void Input::set_vehicles_costs() {
 
     auto d_m = _durations_matrices.find(vehicle.profile);
     assert(d_m != _durations_matrices.end());
+    vehicle.cost_wrapper.set_durations_matrix(&(d_m->second));
 
     auto c_m = _costs_matrices.find(vehicle.profile);
     if (c_m != _costs_matrices.end()) {
       // A custom cost matrix is provided for this vehicle.
 
-      if (vehicle.costs.per_hour != DEFAULT_PER_HOUR) {
+      if (vehicle.costs.per_hour != DEFAULT_COST_PER_HOUR) {
         // Using a non-default "per-hour" value means defining costs
         // based on durations with a multiplicative factor. This is
         // inconsistent with providing a custom costs matrix.
@@ -589,8 +590,6 @@ void Input::set_vehicles_costs() {
     } else {
       vehicle.cost_wrapper.set_costs_matrix(&(d_m->second));
     }
-
-    vehicle.cost_wrapper.set_durations_matrix(&(d_m->second));
   }
 }
 

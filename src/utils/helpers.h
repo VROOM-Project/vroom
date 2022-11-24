@@ -523,8 +523,8 @@ inline Solution format_solution(const Input& input,
     assert(expected_delivery_ranks.empty());
     assert(v.ok_for_travel_time(eval_sum.duration));
 
-    assert(v.fixed_cost() % DURATION_FACTOR == 0);
-    const UserCost user_fixed_cost = scale_to_user_duration(v.fixed_cost());
+    assert(v.fixed_cost() % (DURATION_FACTOR * COST_FACTOR) == 0);
+    const UserCost user_fixed_cost = scale_to_user_cost(v.fixed_cost());
 
     routes.emplace_back(v.id,
                         std::move(steps),
@@ -984,12 +984,12 @@ inline Route format_route(const Input& input,
   assert(eval_sum.duration == duration);
   assert(v.ok_for_travel_time(eval_sum.duration));
 
-  assert(v.fixed_cost() % DURATION_FACTOR == 0);
-  const UserCost user_fixed_cost =
-    utils::scale_to_user_duration(v.fixed_cost());
-  const UserCost user_cost = v.cost_is_duration()
-                               ? user_duration
-                               : utils::scale_to_user_cost(eval_sum.cost);
+  assert(v.fixed_cost() % (DURATION_FACTOR * COST_FACTOR) == 0);
+  const UserCost user_fixed_cost = utils::scale_to_user_cost(v.fixed_cost());
+  const UserCost user_cost =
+    v.cost_based_on_duration()
+      ? v.cost_wrapper.user_cost_from_user_duration(user_duration)
+      : utils::scale_to_user_cost(eval_sum.cost);
 
   return Route(v.id,
                std::move(steps),

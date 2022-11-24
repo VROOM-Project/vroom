@@ -58,9 +58,17 @@ constexpr UserCost INFINITE_USER_COST =
 
 const std::string DEFAULT_PROFILE = "car";
 
+// Our internal time measure is the hundredth of a second.
 constexpr Duration DURATION_FACTOR = 100;
 
-constexpr UserCost DEFAULT_COST_PER_HOUR = 1;
+// Costs can be derived from travel times with a cost per hour for
+// vehicles. So we scale all costs in order to not use floating point
+// values while avoiding rounding issues internally.
+constexpr Cost COST_FACTOR = 3600;
+// This means a cost of one per second so that we default to
+// outputting exact same values for duration and cost if per_hour
+// values are not set.
+constexpr UserCost DEFAULT_COST_PER_HOUR = 3600;
 
 constexpr Priority MAX_PRIORITY = 100;
 constexpr double MAX_SPEED_FACTOR = 5.0;
@@ -161,7 +169,7 @@ inline UserDuration scale_to_user_duration(Duration d) {
 }
 
 inline UserCost scale_to_user_cost(Cost d) {
-  return static_cast<UserCost>(d / DURATION_FACTOR);
+  return static_cast<UserCost>(d / (DURATION_FACTOR * COST_FACTOR));
 }
 } // namespace utils
 
