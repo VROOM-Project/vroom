@@ -27,7 +27,8 @@ namespace vroom {
 struct VehicleCosts {
   const Cost fixed;
 
-  VehicleCosts(Cost fixed) : fixed(fixed){};
+  VehicleCosts(UserCost fixed)
+    : fixed(utils::scale_from_user_duration(fixed)){};
 };
 
 struct Vehicle {

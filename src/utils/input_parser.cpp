@@ -254,7 +254,7 @@ inline std::vector<Break> get_vehicle_breaks(const rapidjson::Value& v) {
 }
 
 inline VehicleCosts get_vehicle_costs(const rapidjson::Value& v) {
-  Cost fixed = 0;
+  UserCost fixed = 0;
 
   if (v.HasMember("costs")) {
     if (!v["costs"].IsObject()) {
