@@ -40,6 +40,7 @@ private:
   bool _no_addition_yet;
   bool _has_skills;
   bool _has_TW;
+  bool _has_all_coordinates;
   bool _has_custom_location_index;
   bool _has_initial_routes;
   bool _homogeneous_locations;

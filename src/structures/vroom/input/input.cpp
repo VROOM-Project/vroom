@@ -33,6 +33,7 @@ Input::Input(const io::Servers& servers, ROUTER router)
     _no_addition_yet(true),
     _has_skills(false),
     _has_TW(false),
+    _has_all_coordinates(true),
     _has_initial_routes(false),
     _homogeneous_locations(true),
     _homogeneous_profiles(true),
@@ -61,6 +62,10 @@ void Input::add_routing_wrapper(const std::string& profile) {
 #if !USE_ROUTING
   throw RoutingException("VROOM compiled without routing support.");
 #endif
+
+  if (!_has_all_coordinates) {
+    throw InputException("Missing coordinates for routing engine.");
+  }
 
   assert(std::find_if(_routing_wrappers.begin(),
                       _routing_wrappers.end(),
@@ -140,6 +145,9 @@ void Input::check_job(Job& job) {
       throw InputException("Missing location index.");
     }
   }
+
+  // Check whether all locations have coordinates.
+  _has_all_coordinates = _has_all_coordinates && job.location.has_coordinates();
 
   // Check for time-windows and skills.
   _has_TW = _has_TW || (!(job.tws.size() == 1) or !job.tws[0].is_default());
@@ -251,10 +259,12 @@ void Input::add_vehicle(const Vehicle& vehicle) {
   _has_skills = _has_skills || !current_v.skills.empty();
 
   bool has_location_index = false;
+  bool has_all_coordinates = true;
   if (current_v.has_start()) {
     auto& start_loc = current_v.start.value();
 
     has_location_index = start_loc.user_index();
+    has_all_coordinates = start_loc.has_coordinates();
 
     if (!start_loc.user_index()) {
       // Index of start in the matrices is not specified in input,
@@ -304,6 +314,7 @@ void Input::add_vehicle(const Vehicle& vehicle) {
     }
 
     has_location_index = end_loc.user_index();
+    has_all_coordinates = has_all_coordinates && end_loc.has_coordinates();
 
     if (!end_loc.user_index()) {
       // Index of this end in the matrix was not specified upon
@@ -351,6 +362,9 @@ void Input::add_vehicle(const Vehicle& vehicle) {
       throw InputException("Missing location index.");
     }
   }
+
+  // Check whether all locations have coordinates.
+  _has_all_coordinates = _has_all_coordinates && has_all_coordinates;
 
   _has_initial_routes = _has_initial_routes or !current_v.steps.empty();
 

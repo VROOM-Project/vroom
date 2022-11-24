@@ -31,6 +31,7 @@
 - Timeout not observed with multiple long heuristics per thread (#792)
 - Wrong validity check range in `vrptw::MixedExchange` (#821)
 - Underflow in insertion regrets (#831)
+- Crash with missing location coordinates and only `costs` custom matrix (#826)
 
 ## [v1.12.0] - 2022-05-31
 
