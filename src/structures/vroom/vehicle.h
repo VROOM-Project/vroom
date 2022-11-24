@@ -26,9 +26,11 @@ namespace vroom {
 
 struct VehicleCosts {
   const Cost fixed;
+  const Cost per_hour;
 
-  VehicleCosts(UserCost fixed)
-    : fixed(utils::scale_from_user_duration(fixed)){};
+  VehicleCosts(UserCost fixed = 0, UserCost per_hour = DEFAULT_COST_PER_HOUR)
+    : fixed(utils::scale_from_user_duration(fixed)),
+      per_hour(static_cast<Cost>(per_hour)){};
 };
 
 struct Vehicle {
@@ -58,7 +60,7 @@ struct Vehicle {
     const TimeWindow& tw = TimeWindow(),
     const std::vector<Break>& breaks = std::vector<Break>(),
     const std::string& description = "",
-    const VehicleCosts& costs = VehicleCosts(0),
+    const VehicleCosts& costs = VehicleCosts(),
     double speed_factor = 1.,
     const size_t max_tasks = std::numeric_limits<size_t>::max(),
     const std::optional<UserDuration>& max_travel_time =

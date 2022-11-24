@@ -60,6 +60,8 @@ const std::string DEFAULT_PROFILE = "car";
 
 constexpr Duration DURATION_FACTOR = 100;
 
+constexpr UserCost DEFAULT_COST_PER_HOUR = 1;
+
 constexpr Priority MAX_PRIORITY = 100;
 constexpr double MAX_SPEED_FACTOR = 5.0;
 
