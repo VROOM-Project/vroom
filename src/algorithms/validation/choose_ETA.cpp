@@ -14,7 +14,6 @@ All rights reserved (see LICENSE).
 #include <glpk.h>
 
 #include "algorithms/validation/choose_ETA.h"
-#include "utils/helpers.h"
 
 namespace vroom {
 namespace validation {

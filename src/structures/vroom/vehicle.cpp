@@ -11,7 +11,6 @@ All rights reserved (see LICENSE).
 
 #include "structures/vroom/vehicle.h"
 #include "utils/exception.h"
-#include "utils/helpers.h"
 
 namespace vroom {
 
