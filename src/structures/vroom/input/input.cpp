@@ -573,6 +573,16 @@ void Input::set_vehicles_costs() {
 
     auto c_m = _costs_matrices.find(vehicle.profile);
     if (c_m != _costs_matrices.end()) {
+      // A custom cost matrix is provided for this vehicle.
+
+      if (vehicle.costs.per_hour != DEFAULT_PER_HOUR) {
+        // Using a non-default "per-hour" value means defining costs
+        // based on durations with a multiplicative factor. This is
+        // inconsistent with providing a custom costs matrix.
+        throw InputException(
+          "Custom costs are incompatible with using a per_hour value.");
+      }
+
       // Set plain custom costs matrix and reset cost factor.
       constexpr bool reset_cost_factor = true;
       vehicle.cost_wrapper.set_costs_matrix(&(c_m->second), reset_cost_factor);
