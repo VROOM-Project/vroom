@@ -113,6 +113,7 @@ bool Vehicle::has_same_locations(const Vehicle& other) const {
 bool Vehicle::has_same_profile(const Vehicle& other) const {
   return (this->profile == other.profile) and
          (this->costs.fixed == other.costs.fixed) and
+         (this->costs.per_hour == other.costs.per_hour) and
          (this->cost_wrapper.get_discrete_duration_factor() ==
           other.cost_wrapper.get_discrete_duration_factor());
 }
