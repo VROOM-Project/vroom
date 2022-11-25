@@ -64,8 +64,8 @@ inline INIT get_init(const std::string& s) {
 inline SORT get_sort(const std::string& s) {
   if (s == "CAPACITY") {
     return SORT::CAPACITY;
-  } else if (s == "FIXED_COST") {
-    return SORT::FIXED_COST;
+  } else if (s == "COST") {
+    return SORT::COST;
   } else {
     throw InputException("Invalid heuristic parameter in command-line.");
   }

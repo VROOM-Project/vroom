@@ -95,15 +95,15 @@ T basic(const Input& input, INIT init, double lambda, SORT sort) {
                                  v_lhs.tw.length > v_rhs.tw.length)));
                      });
     break;
-  case SORT::FIXED_COST:
+  case SORT::COST:
     // Sort vehicles by increasing fixed cost, then same as above.
     std::stable_sort(vehicles_ranks.begin(),
                      vehicles_ranks.end(),
                      [&](const auto lhs, const auto rhs) {
                        auto& v_lhs = input.vehicles[lhs];
                        auto& v_rhs = input.vehicles[rhs];
-                       return v_lhs.costs.fixed < v_rhs.costs.fixed or
-                              (v_lhs.costs.fixed == v_rhs.costs.fixed and
+                       return v_lhs.costs < v_rhs.costs or
+                              (v_lhs.costs == v_rhs.costs and
                                (v_lhs.max_tasks > v_rhs.max_tasks or
                                 (v_lhs.max_tasks == v_rhs.max_tasks and
                                  (v_rhs.capacity << v_lhs.capacity or
@@ -521,7 +521,7 @@ T dynamic_vehicle_choice(const Input& input,
       v_rank = *chosen_vehicle;
       vehicles_ranks.erase(chosen_vehicle);
     } else {
-      assert(sort == SORT::FIXED_COST);
+      assert(sort == SORT::COST);
 
       const auto chosen_vehicle =
         std::min_element(vehicles_ranks.begin(),
@@ -533,8 +533,8 @@ T dynamic_vehicle_choice(const Input& input,
                                     closest_jobs_count[rhs] or
                                   (closest_jobs_count[lhs] ==
                                      closest_jobs_count[rhs] and
-                                   (v_lhs.costs.fixed < v_rhs.costs.fixed or
-                                    (v_lhs.costs.fixed == v_rhs.costs.fixed and
+                                   (v_lhs.costs < v_rhs.costs or
+                                    (v_lhs.costs == v_rhs.costs and
                                      (v_rhs.capacity << v_lhs.capacity or
                                       (v_lhs.capacity == v_rhs.capacity and
                                        v_lhs.tw.length > v_rhs.tw.length)))));

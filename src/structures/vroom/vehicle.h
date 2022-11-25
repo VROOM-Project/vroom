@@ -35,6 +35,11 @@ struct VehicleCosts {
   friend bool operator==(const VehicleCosts& lhs, const VehicleCosts& rhs) {
     return lhs.fixed == rhs.fixed and lhs.per_hour == rhs.per_hour;
   }
+
+  friend bool operator<(const VehicleCosts& lhs, const VehicleCosts& rhs) {
+    return lhs.fixed < rhs.fixed or
+           (lhs.fixed == rhs.fixed and lhs.per_hour < rhs.per_hour);
+  }
 };
 
 struct Vehicle {

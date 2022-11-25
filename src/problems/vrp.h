@@ -103,18 +103,14 @@ protected:
               assert(false);
               break;
             case HEURISTIC::BASIC:
-              other_sol =
-                heuristics::basic<std::vector<Route>>(_input,
-                                                      p.init,
-                                                      p.regret_coeff,
-                                                      SORT::FIXED_COST);
+              other_sol = heuristics::basic<std::vector<Route>>(_input,
+                                                                p.init,
+                                                                p.regret_coeff,
+                                                                SORT::COST);
               break;
             case HEURISTIC::DYNAMIC:
               other_sol = heuristics::dynamic_vehicle_choice<
-                std::vector<Route>>(_input,
-                                    p.init,
-                                    p.regret_coeff,
-                                    SORT::FIXED_COST);
+                std::vector<Route>>(_input, p.init, p.regret_coeff, SORT::COST);
               break;
             }
 
