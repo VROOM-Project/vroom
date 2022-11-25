@@ -91,7 +91,7 @@ protected:
             break;
           }
 
-          if (!_input.has_homogeneous_fixed_costs() and
+          if (!_input.has_homogeneous_costs() and
               p.heuristic != HEURISTIC::INIT_ROUTES and h_param.empty() and
               p.sort == SORT::CAPACITY) {
             // Worth trying another vehicle ordering scheme in

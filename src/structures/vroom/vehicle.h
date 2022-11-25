@@ -31,6 +31,10 @@ struct VehicleCosts {
   VehicleCosts(UserCost fixed = 0, UserCost per_hour = DEFAULT_COST_PER_HOUR)
     : fixed(COST_FACTOR * utils::scale_from_user_duration(fixed)),
       per_hour(static_cast<Cost>(per_hour)){};
+
+  friend bool operator==(const VehicleCosts& lhs, const VehicleCosts& rhs) {
+    return lhs.fixed == rhs.fixed and lhs.per_hour == rhs.per_hour;
+  }
 };
 
 struct Vehicle {

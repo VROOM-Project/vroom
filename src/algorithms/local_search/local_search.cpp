@@ -1536,7 +1536,7 @@ void LocalSearch<Route,
     }
 
     if (!_input.has_homogeneous_locations() or
-        !_input.has_homogeneous_profiles()) {
+        !_input.has_homogeneous_profiles() or !_input.has_homogeneous_costs()) {
       // RouteExchange stuff
       for (const auto& s_t : s_t_pairs) {
         if (s_t.second <= s_t.first or best_priorities[s_t.first] > 0 or
@@ -1615,7 +1615,7 @@ void LocalSearch<Route,
     }
 
     if (!_input.has_homogeneous_locations() or
-        !_input.has_homogeneous_profiles()) {
+        !_input.has_homogeneous_profiles() or !_input.has_homogeneous_costs()) {
       // RouteSplit stuff
       std::vector<Index> empty_route_ranks;
       std::vector<std::reference_wrapper<Route>> empty_route_refs;

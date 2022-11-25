@@ -45,7 +45,7 @@ private:
   bool _has_initial_routes;
   bool _homogeneous_locations;
   bool _homogeneous_profiles;
-  bool _homogeneous_fixed_costs;
+  bool _homogeneous_costs;
   bool _geometry;
   bool _has_jobs;
   bool _has_shipments;
@@ -128,7 +128,7 @@ public:
 
   bool has_homogeneous_profiles() const;
 
-  bool has_homogeneous_fixed_costs() const;
+  bool has_homogeneous_costs() const;
 
   bool vehicle_ok_with_job(size_t v_index, size_t j_index) const {
     return (bool)_vehicle_to_job_compatibility[v_index][j_index];
