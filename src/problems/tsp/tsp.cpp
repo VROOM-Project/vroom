@@ -78,7 +78,11 @@ TSP::TSP(const Input& input, std::vector<Index> job_ranks, Index vehicle_rank)
   const auto& v = _input.vehicles[vehicle_rank];
   for (Index i = 0; i < matrix_ranks.size(); ++i) {
     for (Index j = 0; j < matrix_ranks.size(); ++j) {
-      _matrix[i][j] = v.cost(matrix_ranks[i], matrix_ranks[j]);
+      // The TSP solving cost stays in the UserCost unsigned world so
+      // we need to undo the default scaling occurring in
+      // Vehicle::cost.
+      _matrix[i][j] =
+        utils::scale_to_user_cost(v.cost(matrix_ranks[i], matrix_ranks[j]));
     }
   }
 
