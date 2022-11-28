@@ -50,6 +50,10 @@ compute_best_route_split_choice(const Input& input,
     // route from start up to r (excluded) and "end" route from r to
     // the end.
 
+    if (source.has_pending_delivery_after_rank(r - 1)) {
+      continue;
+    }
+
     auto first_best_end_eval = NO_EVAL;
     Index first_v_end = 0; // dummy init
     auto second_best_end_eval = NO_EVAL;
