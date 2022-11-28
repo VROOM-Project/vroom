@@ -154,7 +154,6 @@ void LocalSearch<Route,
                  RouteSplit>::try_job_additions(const std::vector<Index>&
                                                   routes,
                                                 double regret_coeff) {
-
   bool job_added;
 
   std::vector<std::vector<RouteInsertion>> route_job_insertions;
@@ -164,6 +163,9 @@ void LocalSearch<Route,
       std::vector<RouteInsertion>(_input.jobs.size(), empty_insert));
 
     const auto v = routes[i];
+    const auto fixed_cost =
+      _sol[v].empty() ? _input.vehicles[v].fixed_cost() : 0;
+
     for (const auto j : _sol_state.unassigned) {
       const auto& current_job = _input.jobs[j];
       if (current_job.type == JOB_TYPE::DELIVERY) {
@@ -171,11 +173,14 @@ void LocalSearch<Route,
       }
       route_job_insertions[i][j] =
         compute_best_insertion(_input, _sol_state, j, v, _sol[v]);
+
+      if (route_job_insertions[i][j].eval != NO_EVAL) {
+        route_job_insertions[i][j].eval.cost += fixed_cost;
+      }
     }
   }
 
   do {
-
     Priority best_priority = 0;
     RouteInsertion best_insertion = empty_insert;
     double best_cost = std::numeric_limits<double>::max();
@@ -276,6 +281,9 @@ void LocalSearch<Route,
       _sol_state.update_route_eval(_sol[best_route].route, best_route);
       _sol_state.set_insertion_ranks(_sol[best_route], best_route);
 
+      const auto fixed_cost =
+        _sol[best_route].empty() ? _input.vehicles[best_route].fixed_cost() : 0;
+
       for (const auto j : _sol_state.unassigned) {
         const auto& current_job = _input.jobs[j];
         if (current_job.type == JOB_TYPE::DELIVERY) {
@@ -287,6 +295,10 @@ void LocalSearch<Route,
                                  j,
                                  best_route,
                                  _sol[best_route]);
+
+        if (route_job_insertions[best_route_idx][j].eval != NO_EVAL) {
+          route_job_insertions[best_route_idx][j].eval.cost += fixed_cost;
+        }
       }
     }
   } while (job_added);
