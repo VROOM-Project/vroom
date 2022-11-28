@@ -48,6 +48,10 @@ PDShift::PDShift(const Input& input,
     s_gain.cost += _input.vehicles[s_vehicle].fixed_cost();
   }
 
+  if (t_route.empty()) {
+    t_gain.cost -= _input.vehicles[t_vehicle].fixed_cost();
+  }
+
   assert(_input.vehicles[s_vehicle].ok_for_travel_time(
     _sol_state.route_evals[s_vehicle].duration - s_gain.duration));
 
@@ -64,7 +68,7 @@ void PDShift::compute_gain() {
 
   if (rs.eval != NO_EVAL) {
     _valid = true;
-    t_gain = -rs.eval;
+    t_gain -= rs.eval;
     stored_gain = s_gain + t_gain;
     _best_t_p_rank = rs.pickup_rank;
     _best_t_d_rank = rs.delivery_rank;
