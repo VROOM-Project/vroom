@@ -25,14 +25,14 @@ Eval Operator::gain() {
 
 bool Operator::is_valid_for_source_max_travel_time() const {
   const auto& s_v = _input.vehicles[s_vehicle];
-  const auto s_travel_time = _sol_state.route_evals[s_vehicle].duration;
-  return s_travel_time <= s_v.max_travel_time + s_gain.duration;
+  return s_v.ok_for_travel_time(_sol_state.route_evals[s_vehicle].duration -
+                                s_gain.duration);
 }
 
 bool Operator::is_valid_for_target_max_travel_time() const {
   const auto& t_v = _input.vehicles[t_vehicle];
-  const auto t_travel_time = _sol_state.route_evals[t_vehicle].duration;
-  return t_travel_time <= t_v.max_travel_time + t_gain.duration;
+  return t_v.ok_for_travel_time(_sol_state.route_evals[t_vehicle].duration -
+                                t_gain.duration);
 }
 
 bool Operator::is_valid_for_max_travel_time() const {
@@ -40,12 +40,16 @@ bool Operator::is_valid_for_max_travel_time() const {
   assert(gain_computed);
 
   const auto& s_v = _input.vehicles[s_vehicle];
-  const auto s_travel_time = _sol_state.route_evals[s_vehicle].duration;
-  return s_travel_time <= s_v.max_travel_time + stored_gain.duration;
+  return s_v.ok_for_travel_time(_sol_state.route_evals[s_vehicle].duration -
+                                stored_gain.duration);
 }
 
 std::vector<Index> Operator::required_unassigned() const {
   return std::vector<Index>();
+}
+
+bool Operator::invalidated_by(Index) const {
+  return false;
 }
 
 } // namespace ls

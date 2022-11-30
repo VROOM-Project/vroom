@@ -113,12 +113,21 @@ Eval OrOpt::gain_upper_bound() {
   s_gain =
     _sol_state.edge_gains[s_vehicle][s_rank] + s_v.eval(s_index, after_s_index);
 
+  if (s_route.size() == 2) {
+    s_gain.cost += s_v.fixed_cost();
+  }
+
   // Gain for target vehicle, including cost of moved edge.
   _normal_t_gain = old_edge_cost - previous_cost - next_cost -
                    t_v.eval(s_index, after_s_index);
 
   _reversed_t_gain = old_edge_cost - reverse_previous_cost - reverse_next_cost -
                      t_v.eval(after_s_index, s_index);
+
+  if (t_route.empty()) {
+    _normal_t_gain.cost -= t_v.fixed_cost();
+    _reversed_t_gain.cost -= t_v.fixed_cost();
+  }
 
   _gain_upper_bound_computed = true;
 
@@ -172,7 +181,7 @@ bool OrOpt::is_valid() {
     const auto t_travel_time = _sol_state.route_evals[t_vehicle].duration;
 
     is_normal_valid =
-      (t_travel_time <= t_v.max_travel_time + _normal_t_gain.duration) and
+      t_v.ok_for_travel_time(t_travel_time - _normal_t_gain.duration) and
       target.is_valid_addition_for_capacity_inclusion(_input,
                                                       edge_delivery,
                                                       s_start,
@@ -183,7 +192,7 @@ bool OrOpt::is_valid() {
     // Reverse edge direction.
     auto s_reverse_start = s_route.rbegin() + s_route.size() - 2 - s_rank;
     is_reverse_valid =
-      (t_travel_time <= t_v.max_travel_time + _reversed_t_gain.duration) and
+      t_v.ok_for_travel_time(t_travel_time - _reversed_t_gain.duration) and
       target.is_valid_addition_for_capacity_inclusion(_input,
                                                       edge_delivery,
                                                       s_reverse_start,

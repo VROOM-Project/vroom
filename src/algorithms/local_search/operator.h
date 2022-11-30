@@ -84,7 +84,13 @@ public:
 
   virtual std::vector<Index> update_candidates() const = 0;
 
+  // Used to check if a move should be made invalid due to a change in
+  // unassigned jobs.
   virtual std::vector<Index> required_unassigned() const;
+
+  // Used to check if a move should be made invalid due to an indirect
+  // change in another route.
+  virtual bool invalidated_by(Index rank) const;
 
   virtual ~Operator() {
   }

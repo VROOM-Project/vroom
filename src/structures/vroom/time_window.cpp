@@ -19,8 +19,10 @@ TimeWindow::TimeWindow()
   : start(0), end(std::numeric_limits<Duration>::max()), length(end - start) {
 }
 
-TimeWindow::TimeWindow(Duration start, Duration end)
-  : start(start), end(end), length(end - start) {
+TimeWindow::TimeWindow(UserDuration start, UserDuration end)
+  : start(utils::scale_from_user_duration(start)),
+    end(utils::scale_from_user_duration(end)),
+    length(end - start) {
   if (start > end) {
     throw InputException("Invalid time window: [" + std::to_string(start) +
                          ", " + std::to_string(end) + "]");

@@ -135,6 +135,11 @@ void ReverseTwoOpt::compute_gain() {
     }
   }
 
+  if (last_in_source and last_in_target) {
+    // Emptying target route.
+    t_gain.cost += t_v.fixed_cost();
+  }
+
   stored_gain = s_gain + t_gain;
   gain_computed = true;
 }

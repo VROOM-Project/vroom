@@ -23,9 +23,10 @@ Vehicle::Vehicle(Id id,
                  const TimeWindow& tw,
                  const std::vector<Break>& breaks,
                  const std::string& description,
+                 const VehicleCosts& costs,
                  double speed_factor,
                  const size_t max_tasks,
-                 const Duration max_travel_time,
+                 const std::optional<UserDuration>& max_travel_time,
                  const std::vector<VehicleStep>& input_steps)
   : id(id),
     start(start),
@@ -36,9 +37,12 @@ Vehicle::Vehicle(Id id,
     tw(tw),
     breaks(breaks),
     description(description),
-    cost_wrapper(speed_factor),
+    costs(costs),
+    cost_wrapper(speed_factor, costs.per_hour),
     max_tasks(max_tasks),
-    max_travel_time(max_travel_time) {
+    max_travel_time(max_travel_time.has_value()
+                      ? utils::scale_from_user_duration(max_travel_time.value())
+                      : std::numeric_limits<Duration>::max()) {
   if (!static_cast<bool>(start) and !static_cast<bool>(end)) {
     throw InputException("No start or end specified for vehicle " +
                          std::to_string(id) + '.');
@@ -115,8 +119,12 @@ bool Vehicle::has_same_locations(const Vehicle& other) const {
 
 bool Vehicle::has_same_profile(const Vehicle& other) const {
   return (this->profile == other.profile) and
-         (this->cost_wrapper.discrete_duration_factor ==
-          other.cost_wrapper.discrete_duration_factor);
+         (this->cost_wrapper.get_discrete_duration_factor() ==
+          other.cost_wrapper.get_discrete_duration_factor());
+}
+
+bool Vehicle::cost_based_on_duration() const {
+  return cost_wrapper.cost_based_on_duration();
 }
 
 Duration Vehicle::available_duration() const {

@@ -110,6 +110,7 @@ A `vehicle` object has the following properties:
 | [`end`] | coordinates array |
 | [`end_index`] | index of relevant row and column in custom matrices |
 | [`capacity`] | an array of integers describing multidimensional quantities |
+| [`costs`] | a `cost` object defining costs for this vehicle |
 | [`skills`] | an array of integers defining skills |
 | [`time_window`] | a `time_window` object describing working hours |
 | [`breaks`] | an array of `break` objects |
@@ -117,6 +118,18 @@ A `vehicle` object has the following properties:
 | [`max_tasks`] | an integer defining the maximum number of tasks in a route for this vehicle |
 | [`max_travel_time`] | an integer defining the maximum travel time for this vehicle |
 | [`steps`] | an array of `vehicle_step` objects describing a custom route for this vehicle |
+
+A `cost` object has the following properties:
+
+| Key         | Description |
+| ----------- | ----------- |
+| [`fixed`] | integer defining the cost of using this vehicle in the solution (defaults to `0`) |
+| [`per_hour`] | integer defining the cost for one hour of travel time with this vehicle (defaults to `3600`) |
+
+Using a non-default `per-hour` value means defining travel costs based
+on travel times with a multiplicative factor. So in particular
+providing a custom costs matrix for the vehicle is inconsistent and
+will raise an error.
 
 A `break` object has the following properties:
 
@@ -402,6 +415,7 @@ Possible violation causes are:
 - "skills" if the vehicle does not hold all required skills for a task
 - "precedence" if a `shipment` precedence constraint is not met (`pickup` without matching `delivery`, `delivery` before/without matching `pickup`)
 - "missing_break" if a vehicle break has been omitted in its custom route
+- "max_travel_time" if the vehicle has more travel time than its `max_travel_time` value
 
 Note on violations: reporting only really makes sense when using `-c`
 to choose ETA for custom routes described in input using the `steps`

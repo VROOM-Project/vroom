@@ -110,8 +110,8 @@ void run_example_with_osrm() {
   vroom::Amount job_empty_pickup(amount_dimension);
   job_pickup[0] = 1;
 
-  vroom::Duration setup = 0;
-  vroom::Duration service = 5 * 60; // 5 minutes
+  vroom::UserDuration setup = 0;
+  vroom::UserDuration service = 5 * 60; // 5 minutes
   vehicle_capacity[0] = 4;
 
   // Define vehicle breaks.
@@ -225,7 +225,7 @@ void run_example_with_custom_matrix() {
   vroom::Input problem_instance;
 
   // Define custom matrix and bypass OSRM call.
-  vroom::Matrix<vroom::Duration> matrix_input(4);
+  vroom::Matrix<vroom::UserDuration> matrix_input(4);
 
   matrix_input[0][0] = 0;
   matrix_input[0][1] = 2104;

@@ -250,7 +250,7 @@ bool CrossExchange::is_valid() {
     // Keep target edge direction when inserting in source route.
     auto t_start = t_route.begin() + t_rank;
     s_is_normal_valid =
-      (s_travel_time <= s_v.max_travel_time + _normal_s_gain.duration) and
+      s_v.ok_for_travel_time(s_travel_time - _normal_s_gain.duration) and
       source.is_valid_addition_for_capacity_inclusion(_input,
                                                       target_delivery,
                                                       t_start,
@@ -262,7 +262,7 @@ bool CrossExchange::is_valid() {
       // Reverse target edge direction when inserting in source route.
       auto t_reverse_start = t_route.rbegin() + t_route.size() - 2 - t_rank;
       s_is_reverse_valid =
-        (s_travel_time <= s_v.max_travel_time + _reversed_s_gain.duration) and
+        s_v.ok_for_travel_time(s_travel_time - _reversed_s_gain.duration) and
         source.is_valid_addition_for_capacity_inclusion(_input,
                                                         target_delivery,
                                                         t_reverse_start,
@@ -291,7 +291,7 @@ bool CrossExchange::is_valid() {
     // Keep source edge direction when inserting in target route.
     auto s_start = s_route.begin() + s_rank;
     t_is_normal_valid =
-      (t_travel_time <= t_v.max_travel_time + _normal_t_gain.duration) and
+      t_v.ok_for_travel_time(t_travel_time - _normal_t_gain.duration) and
       target.is_valid_addition_for_capacity_inclusion(_input,
                                                       source_delivery,
                                                       s_start,
@@ -303,7 +303,7 @@ bool CrossExchange::is_valid() {
       // Reverse source edge direction when inserting in target route.
       auto s_reverse_start = s_route.rbegin() + s_route.size() - 2 - s_rank;
       t_is_reverse_valid =
-        (t_travel_time <= t_v.max_travel_time + _reversed_t_gain.duration) and
+        t_v.ok_for_travel_time(t_travel_time - _reversed_t_gain.duration) and
         target.is_valid_addition_for_capacity_inclusion(_input,
                                                         source_delivery,
                                                         s_reverse_start,

@@ -24,6 +24,24 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
+struct VehicleCosts {
+  const Cost fixed;
+  const Cost per_hour;
+
+  VehicleCosts(UserCost fixed = 0, UserCost per_hour = DEFAULT_COST_PER_HOUR)
+    : fixed(COST_FACTOR * utils::scale_from_user_duration(fixed)),
+      per_hour(static_cast<Cost>(per_hour)){};
+
+  friend bool operator==(const VehicleCosts& lhs, const VehicleCosts& rhs) {
+    return lhs.fixed == rhs.fixed and lhs.per_hour == rhs.per_hour;
+  }
+
+  friend bool operator<(const VehicleCosts& lhs, const VehicleCosts& rhs) {
+    return lhs.fixed < rhs.fixed or
+           (lhs.fixed == rhs.fixed and lhs.per_hour < rhs.per_hour);
+  }
+};
+
 struct Vehicle {
   const Id id;
   std::optional<Location> start;
@@ -34,6 +52,7 @@ struct Vehicle {
   const TimeWindow tw;
   const std::vector<Break> breaks;
   const std::string description;
+  const VehicleCosts costs;
   CostWrapper cost_wrapper;
   size_t max_tasks;
   const Duration max_travel_time;
@@ -50,9 +69,11 @@ struct Vehicle {
     const TimeWindow& tw = TimeWindow(),
     const std::vector<Break>& breaks = std::vector<Break>(),
     const std::string& description = "",
+    const VehicleCosts& costs = VehicleCosts(),
     double speed_factor = 1.,
     const size_t max_tasks = std::numeric_limits<size_t>::max(),
-    const Duration max_travel_time = std::numeric_limits<Duration>::max(),
+    const std::optional<UserDuration>& max_travel_time =
+      std::optional<UserDuration>(),
     const std::vector<VehicleStep>& input_steps = std::vector<VehicleStep>());
 
   bool has_start() const;
@@ -63,7 +84,13 @@ struct Vehicle {
 
   bool has_same_profile(const Vehicle& other) const;
 
+  bool cost_based_on_duration() const;
+
   Duration available_duration() const;
+
+  Cost fixed_cost() const {
+    return costs.fixed;
+  }
 
   Duration duration(Index i, Index j) const {
     return cost_wrapper.duration(i, j);
@@ -75,6 +102,11 @@ struct Vehicle {
 
   Eval eval(Index i, Index j) const {
     return Eval(cost_wrapper.cost(i, j), cost_wrapper.duration(i, j));
+  }
+
+  bool ok_for_travel_time(Duration d) const {
+    assert(0 <= d);
+    return d <= max_travel_time;
   }
 };
 

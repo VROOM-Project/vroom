@@ -5,6 +5,9 @@
 ### Added
 
 - Support for `max_travel_time` at vehicle level (#273)
+- Support for vehicle fixed costs (#528)
+- Support for cost per hour for vehicles (#732)
+- `RouteSplit` local search operator (#788)
 - Advertise `libvroom` in README and wiki (#42)
 
 ### Changed
@@ -21,6 +24,7 @@
 - Refactor `TSP` cost functions (#812)
 - CI builds now use clang++ 14 and g++ 11 on Ubuntu 22.04 (#816)
 - Refactor `CVRP::solve` and `VRPTW::solve` functions (#818)
+- Refactor `CostWrapper` (#828)
 
 ### Fixed
 
@@ -29,6 +33,8 @@
 - Update `ssl_send_and_receive` to throw RoutingExceptions (#770)
 - Timeout not observed with multiple long heuristics per thread (#792)
 - Wrong validity check range in `vrptw::MixedExchange` (#821)
+- Underflow in insertion regrets (#831)
+- Crash with missing location coordinates and only `costs` custom matrix (#826)
 
 ## [v1.12.0] - 2022-05-31
 

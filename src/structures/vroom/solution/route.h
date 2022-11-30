@@ -20,11 +20,11 @@ namespace vroom {
 struct Route {
   Id vehicle;
   std::vector<Step> steps;
-  Cost cost;
-  Duration setup;
-  Duration service;
-  Duration duration;
-  Duration waiting_time;
+  UserCost cost;
+  UserDuration duration;
+  UserDuration setup;
+  UserDuration service;
+  UserDuration waiting_time;
   Priority priority;
   Amount delivery;
   Amount pickup;
@@ -39,17 +39,19 @@ struct Route {
 
   Route(Id vehicle,
         std::vector<Step>&& steps,
-        Cost cost,
-        Duration setup,
-        Duration service,
-        Duration duration,
-        Duration waiting_time,
+        UserCost cost,
+        UserDuration duration,
+        UserDuration setup,
+        UserDuration service,
+        UserDuration waiting_time,
         Priority priority,
         const Amount& delivery,
         const Amount& pickup,
         const std::string& profile,
         const std::string& description,
         const Violations&& violations = Violations(0, 0));
+
+  void check_timing_consistency() const;
 };
 
 } // namespace vroom

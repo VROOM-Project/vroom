@@ -32,7 +32,7 @@ private:
   virtual bool
   duration_value_is_null(const rapidjson::Value& matrix_entry) const override;
 
-  virtual Cost
+  virtual UserDuration
   get_duration_value(const rapidjson::Value& matrix_entry) const override;
 
   virtual double
