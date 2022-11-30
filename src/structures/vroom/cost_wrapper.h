@@ -25,10 +25,11 @@ private:
   std::size_t cost_matrix_size;
   const UserCost* cost_data;
 
-  bool _cost_is_duration;
+  Cost _per_hour;
+  bool _cost_based_on_duration;
 
 public:
-  CostWrapper(double speed_factor);
+  CostWrapper(double speed_factor, Cost per_hour);
 
   void set_durations_matrix(const Matrix<UserDuration>* matrix);
 
@@ -39,8 +40,8 @@ public:
     return discrete_duration_factor;
   }
 
-  bool cost_is_duration() const {
-    return _cost_is_duration;
+  bool cost_based_on_duration() const {
+    return _cost_based_on_duration;
   }
 
   Duration duration(Index i, Index j) const {
@@ -52,6 +53,8 @@ public:
     return discrete_cost_factor *
            static_cast<Cost>(cost_data[i * cost_matrix_size + j]);
   }
+
+  UserCost user_cost_from_user_duration(UserDuration d) const;
 };
 
 } // namespace vroom

@@ -48,5 +48,9 @@ std::vector<Index> Operator::required_unassigned() const {
   return std::vector<Index>();
 }
 
+bool Operator::invalidated_by(Index) const {
+  return false;
+}
+
 } // namespace ls
 } // namespace vroom

@@ -14,7 +14,6 @@ All rights reserved (see LICENSE).
 #include <glpk.h>
 
 #include "algorithms/validation/choose_ETA.h"
-#include "utils/helpers.h"
 
 namespace vroom {
 namespace validation {
@@ -85,8 +84,7 @@ Route choose_ETA(const Input& input,
   // start at 0 taking only travel and action times into account (no
   // waiting).
   Duration action_sum = 0;
-  Duration duration_sum = 0;
-  Cost cost_sum = 0;
+  Eval eval_sum;
   unsigned default_job_tw = 0;
   Duration relative_arrival = 0;
   std::vector<Duration> relative_ETA;
@@ -128,18 +126,14 @@ Route choose_ETA(const Input& input,
       assert(previous_index.has_value() or
              (durations.empty() and !v.has_start()));
 
-      const auto current_duration =
-        (previous_index.has_value())
-          ? v.duration(previous_index.value(), job.index())
-          : 0;
-      durations.push_back(current_duration);
-      duration_sum += current_duration;
+      const auto current_eval = (previous_index.has_value())
+                                  ? v.eval(previous_index.value(), job.index())
+                                  : Eval();
+      durations.push_back(current_eval.duration);
 
-      cost_sum += (previous_index.has_value())
-                    ? v.cost(previous_index.value(), job.index())
-                    : 0;
+      eval_sum += current_eval;
 
-      relative_arrival += current_duration;
+      relative_arrival += current_eval.duration;
       relative_ETA.push_back(relative_arrival);
 
       const bool has_setup_time =
@@ -178,13 +172,12 @@ Route choose_ETA(const Input& input,
     case STEP_TYPE::END:
       if (v.has_end()) {
         assert(previous_index.has_value());
-        const auto& current_duration =
-          v.duration(previous_index.value(), v.end.value().index());
-        durations.push_back(current_duration);
-        duration_sum += current_duration;
-        relative_arrival += current_duration;
+        const auto current_eval =
+          v.eval(previous_index.value(), v.end.value().index());
+        durations.push_back(current_eval.duration);
+        relative_arrival += current_eval.duration;
 
-        cost_sum += v.cost(previous_index.value(), v.end.value().index());
+        eval_sum += current_eval;
 
         if (!first_location.has_value()) {
           first_location = v.end.value();
@@ -318,7 +311,7 @@ Route choose_ETA(const Input& input,
   }
 
   // Refine planning horizon.
-  auto makespan_estimate = duration_sum + action_sum;
+  auto makespan_estimate = eval_sum.duration + action_sum;
 
   if (horizon_start == std::numeric_limits<Duration>::max()) {
     // No real time window in problem input, planning horizon will
@@ -1390,15 +1383,19 @@ Route choose_ETA(const Input& input,
     v_types.insert(VIOLATION::MISSING_BREAK);
   }
 
-  UserCost user_cost_sum =
-    v.cost_is_duration() ? user_duration : utils::scale_to_user_cost(cost_sum);
+  assert(v.fixed_cost() % (DURATION_FACTOR * COST_FACTOR) == 0);
+  const UserCost user_fixed_cost = utils::scale_to_user_cost(v.fixed_cost());
+  const UserCost user_cost =
+    v.cost_based_on_duration()
+      ? v.cost_wrapper.user_cost_from_user_duration(user_duration)
+      : utils::scale_to_user_cost(eval_sum.cost);
 
   return Route(v.id,
                std::move(sol_steps),
-               user_cost_sum,
+               user_fixed_cost + user_cost,
+               user_duration,
                utils::scale_to_user_duration(setup),
                utils::scale_to_user_duration(service),
-               user_duration,
                user_waiting_time,
                priority,
                sum_deliveries,

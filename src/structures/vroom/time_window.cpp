@@ -9,7 +9,6 @@ All rights reserved (see LICENSE).
 
 #include "structures/vroom/time_window.h"
 #include "utils/exception.h"
-#include "utils/helpers.h"
 
 namespace vroom {
 

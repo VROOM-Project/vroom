@@ -253,6 +253,38 @@ inline std::vector<Break> get_vehicle_breaks(const rapidjson::Value& v) {
   return breaks;
 }
 
+inline VehicleCosts get_vehicle_costs(const rapidjson::Value& v) {
+  UserCost fixed = 0;
+  UserCost per_hour = DEFAULT_COST_PER_HOUR;
+
+  if (v.HasMember("costs")) {
+    if (!v["costs"].IsObject()) {
+      throw InputException("Invalid costs for vehicle " +
+                           std::to_string(v["id"].GetUint64()) + ".");
+    }
+
+    if (v["costs"].HasMember("fixed")) {
+      if (!v["costs"]["fixed"].IsUint()) {
+        throw InputException("Invalid fixed cost for vehicle " +
+                             std::to_string(v["id"].GetUint64()) + ".");
+      }
+
+      fixed = v["costs"]["fixed"].GetUint();
+    }
+
+    if (v["costs"].HasMember("per_hour")) {
+      if (!v["costs"]["per_hour"].IsUint()) {
+        throw InputException("Invalid per_hour cost for vehicle " +
+                             std::to_string(v["id"].GetUint64()) + ".");
+      }
+
+      per_hour = v["costs"]["per_hour"].GetUint();
+    }
+  }
+
+  return VehicleCosts(fixed, per_hour);
+}
+
 inline std::vector<VehicleStep> get_vehicle_steps(const rapidjson::Value& v) {
   std::vector<VehicleStep> steps;
 
@@ -400,6 +432,7 @@ inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
                  get_vehicle_time_window(json_vehicle),
                  get_vehicle_breaks(json_vehicle),
                  get_string(json_vehicle, "description"),
+                 get_vehicle_costs(json_vehicle),
                  get_double(json_vehicle, "speed_factor"),
                  get_max_tasks(json_vehicle),
                  get_max_travel_time(json_vehicle),

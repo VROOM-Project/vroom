@@ -18,7 +18,6 @@ namespace ls {
 
 template <class Route,
           class UnassignedExchange,
-          class SwapStar,
           class CrossExchange,
           class MixedExchange,
           class TwoOpt,
@@ -32,7 +31,9 @@ template <class Route,
           class IntraOrOpt,
           class IntraTwoOpt,
           class PDShift,
-          class RouteExchange>
+          class RouteExchange,
+          class SwapStar,
+          class RouteSplit>
 class LocalSearch {
 private:
   const Input& _input;

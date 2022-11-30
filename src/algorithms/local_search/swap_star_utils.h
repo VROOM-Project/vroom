@@ -76,7 +76,7 @@ const auto SwapChoiceCmp = [](const SwapChoice& lhs, const SwapChoice& rhs) {
   return lhs.gain > rhs.gain;
 };
 
-constexpr SwapChoice empty_choice = {Eval(), 0, 0, 0, 0};
+constexpr SwapChoice empty_swap_choice = {Eval(), 0, 0, 0, 0};
 
 template <class Route>
 bool valid_choice_for_insertion_ranks(const utils::SolutionState& sol_state,
@@ -223,7 +223,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
   }
 
   // Search phase.
-  auto best_choice = empty_choice;
+  auto best_choice = empty_swap_choice;
   Eval best_gain = best_known_gain;
 
   const auto& s_v = input.vehicles[s_vehicle];

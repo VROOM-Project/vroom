@@ -23,6 +23,7 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/operators/relocate.h"
 #include "problems/cvrp/operators/reverse_two_opt.h"
 #include "problems/cvrp/operators/route_exchange.h"
+#include "problems/cvrp/operators/route_split.h"
 #include "problems/cvrp/operators/swap_star.h"
 #include "problems/cvrp/operators/two_opt.h"
 #include "problems/cvrp/operators/unassigned_exchange.h"
@@ -35,7 +36,6 @@ namespace cvrp {
 
 using LocalSearch = ls::LocalSearch<RawRoute,
                                     cvrp::UnassignedExchange,
-                                    cvrp::SwapStar,
                                     cvrp::CrossExchange,
                                     cvrp::MixedExchange,
                                     cvrp::TwoOpt,
@@ -49,7 +49,9 @@ using LocalSearch = ls::LocalSearch<RawRoute,
                                     cvrp::IntraOrOpt,
                                     cvrp::IntraTwoOpt,
                                     cvrp::PDShift,
-                                    cvrp::RouteExchange>;
+                                    cvrp::RouteExchange,
+                                    cvrp::SwapStar,
+                                    cvrp::RouteSplit>;
 } // namespace cvrp
 
 const std::vector<HeuristicParameters> CVRP::homogeneous_parameters =

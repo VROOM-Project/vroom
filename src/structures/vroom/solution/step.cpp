@@ -8,7 +8,6 @@ All rights reserved (see LICENSE).
 */
 
 #include "structures/vroom/solution/step.h"
-#include "utils/helpers.h"
 
 namespace vroom {
 

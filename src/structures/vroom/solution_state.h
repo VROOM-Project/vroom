@@ -111,7 +111,7 @@ public:
   std::vector<std::vector<Index>> weak_insertion_ranks_begin;
   std::vector<std::vector<Index>> weak_insertion_ranks_end;
 
-  // Only used for assertion checks in debug mode.
+  // Store evaluation of all routes, including fixed and travel costs.
   std::vector<Eval> route_evals;
 
   SolutionState(const Input& input);

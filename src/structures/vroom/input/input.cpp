@@ -37,6 +37,7 @@ Input::Input(const io::Servers& servers, ROUTER router)
     _has_initial_routes(false),
     _homogeneous_locations(true),
     _homogeneous_profiles(true),
+    _homogeneous_costs(true),
     _geometry(false),
     _has_jobs(false),
     _has_shipments(false),
@@ -375,6 +376,8 @@ void Input::add_vehicle(const Vehicle& vehicle) {
       vehicles.front().has_same_locations(vehicles.back());
     _homogeneous_profiles = _homogeneous_profiles &&
                             vehicles.front().has_same_profile(vehicles.back());
+    _homogeneous_costs =
+      _homogeneous_costs && vehicles.front().costs == vehicles.back().costs;
   }
 
   _profiles.insert(current_v.profile);
@@ -418,6 +421,10 @@ bool Input::has_homogeneous_locations() const {
 
 bool Input::has_homogeneous_profiles() const {
   return _homogeneous_profiles;
+}
+
+bool Input::has_homogeneous_costs() const {
+  return _homogeneous_costs;
 }
 
 bool Input::vehicle_ok_with_vehicle(Index v1_index, Index v2_index) const {
@@ -562,17 +569,26 @@ void Input::set_vehicles_costs() {
 
     auto d_m = _durations_matrices.find(vehicle.profile);
     assert(d_m != _durations_matrices.end());
+    vehicle.cost_wrapper.set_durations_matrix(&(d_m->second));
 
     auto c_m = _costs_matrices.find(vehicle.profile);
     if (c_m != _costs_matrices.end()) {
+      // A custom cost matrix is provided for this vehicle.
+
+      if (vehicle.costs.per_hour != DEFAULT_COST_PER_HOUR) {
+        // Using a non-default "per-hour" value means defining costs
+        // based on durations with a multiplicative factor. This is
+        // inconsistent with providing a custom costs matrix.
+        throw InputException(
+          "Custom costs are incompatible with using a per_hour value.");
+      }
+
       // Set plain custom costs matrix and reset cost factor.
       constexpr bool reset_cost_factor = true;
       vehicle.cost_wrapper.set_costs_matrix(&(c_m->second), reset_cost_factor);
     } else {
       vehicle.cost_wrapper.set_costs_matrix(&(d_m->second));
     }
-
-    vehicle.cost_wrapper.set_durations_matrix(&(d_m->second));
   }
 }
 

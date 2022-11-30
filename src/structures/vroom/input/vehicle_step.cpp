@@ -10,7 +10,6 @@ All rights reserved (see LICENSE).
 #include <cassert>
 
 #include "structures/vroom/input/vehicle_step.h"
-#include "utils/helpers.h"
 
 namespace vroom {
 

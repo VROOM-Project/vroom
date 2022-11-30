@@ -5,6 +5,9 @@
 ### Added
 
 - Support for `max_travel_time` at vehicle level (#273)
+- Support for vehicle fixed costs (#528)
+- Support for cost per hour for vehicles (#732)
+- `RouteSplit` local search operator (#788)
 - Advertise `libvroom` in README and wiki (#42)
 
 ### Changed

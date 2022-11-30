@@ -61,6 +61,9 @@ void RouteExchange::compute_gain() {
     // Handle inner cost change for route.
     s_gain += _sol_state.fwd_costs[s_vehicle][s_vehicle].back();
     t_gain -= _sol_state.fwd_costs[s_vehicle][t_vehicle].back();
+  } else {
+    s_gain.cost -= s_v.fixed_cost();
+    t_gain.cost += t_v.fixed_cost();
   }
 
   if (t_route.size() > 0) {
@@ -85,6 +88,9 @@ void RouteExchange::compute_gain() {
     // Handle inner cost change for route.
     t_gain += _sol_state.fwd_costs[t_vehicle][t_vehicle].back();
     s_gain -= _sol_state.fwd_costs[t_vehicle][s_vehicle].back();
+  } else {
+    t_gain.cost -= t_v.fixed_cost();
+    s_gain.cost += s_v.fixed_cost();
   }
 
   stored_gain = s_gain + t_gain;

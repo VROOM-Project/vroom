@@ -45,18 +45,6 @@ inline UserCost add_without_overflow(UserCost a, UserCost b) {
   return a + b;
 }
 
-inline Duration scale_from_user_duration(UserDuration d) {
-  return DURATION_FACTOR * static_cast<Duration>(d);
-}
-
-inline UserDuration scale_to_user_duration(Duration d) {
-  return static_cast<UserDuration>(d / DURATION_FACTOR);
-}
-
-inline UserCost scale_to_user_cost(Cost d) {
-  return static_cast<UserCost>(d / DURATION_FACTOR);
-}
-
 inline INIT get_init(const std::string& s) {
   if (s == "NONE") {
     return INIT::NONE;
@@ -73,10 +61,19 @@ inline INIT get_init(const std::string& s) {
   }
 }
 
+inline SORT get_sort(const std::string& s) {
+  if (s == "CAPACITY") {
+    return SORT::CAPACITY;
+  } else if (s == "COST") {
+    return SORT::COST;
+  } else {
+    throw InputException("Invalid heuristic parameter in command-line.");
+  }
+}
+
 #ifdef LOG_LS_OPERATORS
 const std::array<std::string, OperatorName::MAX>
   operator_names({"UnassignedExchange",
-                  "SwapStar",
                   "CrossExchange",
                   "MixedExchange",
                   "TwoOpt",
@@ -90,7 +87,9 @@ const std::array<std::string, OperatorName::MAX>
                   "IntraOrOpt",
                   "IntraTwoOpt",
                   "PDShift",
-                  "RouteExchange"});
+                  "RouteExchange",
+                  "SwapStar",
+                  "RouteSplit"});
 
 inline void log_LS_operators(
   const std::vector<std::array<ls::OperatorStats, OperatorName::MAX>>&
@@ -133,11 +132,13 @@ inline HeuristicParameters str_to_heuristic_param(const std::string& s) {
     tokens.push_back(token);
   }
 
-  if (tokens.size() != 3 or tokens[0].size() != 1) {
+  if ((tokens.size() != 3 and tokens.size() != 4) or tokens[0].size() != 1) {
     throw InputException("Invalid heuristic parameter in command-line.");
   }
 
   auto init = get_init(tokens[1]);
+  auto sort = (tokens.size() == 3) ? SORT::CAPACITY : get_sort(tokens[3]);
+
   try {
     auto h = std::stoul(tokens[0]);
 
@@ -150,7 +151,10 @@ inline HeuristicParameters str_to_heuristic_param(const std::string& s) {
       throw InputException("Invalid heuristic parameter in command-line.");
     }
 
-    return HeuristicParameters(static_cast<HEURISTIC>(h), init, regret_coeff);
+    return HeuristicParameters(static_cast<HEURISTIC>(h),
+                               init,
+                               regret_coeff,
+                               sort);
   } catch (const std::exception& e) {
     throw InputException("Invalid heuristic parameter in command-line.");
   }
@@ -312,30 +316,42 @@ inline Priority priority_sum_for_route(const Input& input,
                          });
 }
 
-inline Eval route_eval_for_vehicle(const Input& input,
-                                   Index vehicle_rank,
-                                   const std::vector<Index>& route) {
+inline Eval
+route_eval_for_vehicle(const Input& input,
+                       Index vehicle_rank,
+                       const std::vector<Index>::const_iterator first_job,
+                       const std::vector<Index>::const_iterator last_job) {
   const auto& v = input.vehicles[vehicle_rank];
   Eval eval;
 
-  if (route.size() > 0) {
+  if (first_job != last_job) {
+    eval.cost += v.fixed_cost();
+
     if (v.has_start()) {
-      eval +=
-        v.eval(v.start.value().index(), input.jobs[route.front()].index());
+      eval += v.eval(v.start.value().index(), input.jobs[*first_job].index());
     }
 
-    Index previous = route.front();
-    for (auto it = ++route.cbegin(); it != route.cend(); ++it) {
+    Index previous = *first_job;
+    for (auto it = std::next(first_job); it != last_job; ++it) {
       eval += v.eval(input.jobs[previous].index(), input.jobs[*it].index());
       previous = *it;
     }
 
     if (v.has_end()) {
-      eval += v.eval(input.jobs[route.back()].index(), v.end.value().index());
+      eval += v.eval(input.jobs[previous].index(), v.end.value().index());
     }
   }
 
   return eval;
+}
+
+inline Eval route_eval_for_vehicle(const Input& input,
+                                   Index vehicle_rank,
+                                   const std::vector<Index>& route) {
+  return route_eval_for_vehicle(input,
+                                vehicle_rank,
+                                route.begin(),
+                                route.end());
 }
 
 inline void check_precedence(const Input& input,
@@ -398,8 +414,7 @@ inline Solution format_solution(const Input& input,
     auto previous_location = (v.has_start())
                                ? v.start.value().index()
                                : std::numeric_limits<Index>::max();
-    Eval eval;
-    Duration duration = 0;
+    Eval eval_sum;
     Duration setup = 0;
     Duration service = 0;
     Priority priority = 0;
@@ -421,11 +436,9 @@ inline Solution format_solution(const Input& input,
     const auto start_loc = v.has_start() ? v.start.value() : first_job.location;
     steps.emplace_back(STEP_TYPE::START, start_loc, current_load);
     if (v.has_start()) {
-      const auto travel =
-        v.duration(v.start.value().index(), first_job.index());
-      ETA += travel;
-      duration += travel;
-      eval += v.eval(v.start.value().index(), first_job.index());
+      const auto next_leg = v.eval(v.start.value().index(), first_job.index());
+      ETA += next_leg.duration;
+      eval_sum += next_leg;
     }
 
     // Handle jobs.
@@ -460,13 +473,10 @@ inline Solution format_solution(const Input& input,
 
     for (std::size_t r = 0; r < route.size() - 1; ++r) {
       assert(input.vehicle_ok_with_job(i, route[r + 1]));
-      const auto travel = v.duration(input.jobs[route[r]].index(),
-                                     input.jobs[route[r + 1]].index());
-      ETA += travel;
-      duration += travel;
-
-      eval +=
+      const auto next_leg =
         v.eval(input.jobs[route[r]].index(), input.jobs[route[r + 1]].index());
+      ETA += next_leg.duration;
+      eval_sum += next_leg;
 
       auto& current_job = input.jobs[route[r + 1]];
 
@@ -492,7 +502,7 @@ inline Solution format_solution(const Input& input,
                          scale_to_user_duration(current_setup),
                          current_load);
       auto& current = steps.back();
-      current.duration = scale_to_user_duration(duration);
+      current.duration = scale_to_user_duration(eval_sum.duration);
       current.arrival = scale_to_user_duration(ETA);
       ETA += (current_setup + current_job.service);
       unassigned_ranks.erase(route[r + 1]);
@@ -503,23 +513,25 @@ inline Solution format_solution(const Input& input,
     const auto end_loc = v.has_end() ? v.end.value() : last_job.location;
     steps.emplace_back(STEP_TYPE::END, end_loc, current_load);
     if (v.has_end()) {
-      const auto travel = v.duration(last_job.index(), v.end.value().index());
-      ETA += travel;
-      duration += travel;
-      eval += v.eval(last_job.index(), v.end.value().index());
+      const auto next_leg = v.eval(last_job.index(), v.end.value().index());
+      ETA += next_leg.duration;
+      eval_sum += next_leg;
     }
-    steps.back().duration = scale_to_user_duration(duration);
+    steps.back().duration = scale_to_user_duration(eval_sum.duration);
     steps.back().arrival = scale_to_user_duration(ETA);
 
     assert(expected_delivery_ranks.empty());
-    assert(v.ok_for_travel_time(eval.duration));
+    assert(v.ok_for_travel_time(eval_sum.duration));
+
+    assert(v.fixed_cost() % (DURATION_FACTOR * COST_FACTOR) == 0);
+    const UserCost user_fixed_cost = scale_to_user_cost(v.fixed_cost());
 
     routes.emplace_back(v.id,
                         std::move(steps),
-                        scale_to_user_duration(eval.cost),
+                        user_fixed_cost + scale_to_user_cost(eval_sum.cost),
+                        scale_to_user_duration(eval_sum.duration),
                         scale_to_user_duration(setup),
                         scale_to_user_duration(service),
-                        scale_to_user_duration(duration),
                         0,
                         priority,
                         sum_deliveries,
@@ -696,7 +708,7 @@ inline Route format_route(const Input& input,
                                            : std::numeric_limits<Index>::max();
 
   // Values summed up while going through the route.
-  Eval eval;
+  Eval eval_sum;
   Duration duration = 0;
   UserDuration user_duration = 0;
   UserDuration user_waiting_time = 0;
@@ -707,16 +719,13 @@ inline Route format_route(const Input& input,
   Amount sum_pickups(input.zero_amount());
   Amount sum_deliveries(input.zero_amount());
 
-  //  Go through the whole route again to set jobs/breaks ASAP given
+  // Go through the whole route again to set jobs/breaks ASAP given
   // the latest possible start time.
-  Duration travel_time =
-    v.has_start()
-      ? v.duration(v.start.value().index(), input.jobs[tw_r.route[0]].index())
-      : 0;
-
   Eval current_eval = v.has_start() ? v.eval(v.start.value().index(),
                                              input.jobs[tw_r.route[0]].index())
                                     : Eval();
+
+  Duration travel_time = current_eval.duration;
 
   for (std::size_t r = 0; r < tw_r.route.size(); ++r) {
     assert(input.vehicle_ok_with_job(tw_r.vehicle_rank, tw_r.route[r]));
@@ -725,10 +734,9 @@ inline Route format_route(const Input& input,
     if (r > 0) {
       // For r == 0, travel_time already holds the relevant value
       // depending on whether there is a start.
-      travel_time =
-        v.duration(input.jobs[tw_r.route[r - 1]].index(), current_job.index());
       current_eval =
         v.eval(input.jobs[tw_r.route[r - 1]].index(), current_job.index());
+      travel_time = current_eval.duration;
     }
 
     // Handles breaks before this job.
@@ -803,7 +811,7 @@ inline Route format_route(const Input& input,
 
     // Back to current job.
     duration += travel_time;
-    eval += current_eval;
+    eval_sum += current_eval;
     service += current_job.service;
     priority += current_job.priority;
 
@@ -873,13 +881,10 @@ inline Route format_route(const Input& input,
   }
 
   // Handle breaks after last job.
-  travel_time =
-    (v.has_end())
-      ? v.duration(input.jobs[tw_r.route.back()].index(), v.end.value().index())
-      : 0;
   current_eval = (v.has_end()) ? v.eval(input.jobs[tw_r.route.back()].index(),
                                         v.end.value().index())
                                : Eval();
+  travel_time = current_eval.duration;
 
   auto r = tw_r.route.size();
   assert(tw_r.breaks_at_rank[r] <= tw_r.breaks_counts[r]);
@@ -955,7 +960,7 @@ inline Route format_route(const Input& input,
   auto& end_step = steps.back();
   if (v.has_end()) {
     duration += travel_time;
-    eval += current_eval;
+    eval_sum += current_eval;
     step_start += travel_time;
   }
   assert(v.tw.contains(step_start));
@@ -975,17 +980,23 @@ inline Route format_route(const Input& input,
          front_step_arrival + duration + setup + service + forward_wt);
 
   assert(expected_delivery_ranks.empty());
-  assert(v.ok_for_travel_time(eval.duration));
 
-  UserCost user_cost_sum =
-    v.cost_is_duration() ? user_duration : scale_to_user_cost(eval.cost);
+  assert(eval_sum.duration == duration);
+  assert(v.ok_for_travel_time(eval_sum.duration));
+
+  assert(v.fixed_cost() % (DURATION_FACTOR * COST_FACTOR) == 0);
+  const UserCost user_fixed_cost = utils::scale_to_user_cost(v.fixed_cost());
+  const UserCost user_cost =
+    v.cost_based_on_duration()
+      ? v.cost_wrapper.user_cost_from_user_duration(user_duration)
+      : utils::scale_to_user_cost(eval_sum.cost);
 
   return Route(v.id,
                std::move(steps),
-               user_cost_sum,
+               user_fixed_cost + user_cost,
+               user_duration,
                scale_to_user_duration(setup),
                scale_to_user_duration(service),
-               user_duration,
                user_waiting_time,
                priority,
                sum_deliveries,
