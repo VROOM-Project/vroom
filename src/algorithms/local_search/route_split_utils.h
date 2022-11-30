@@ -60,6 +60,7 @@ compute_best_route_split_choice(const Input& input,
     Index second_v_end = 0; // dummy init
 
     const auto& end_load = source.bwd_peak(r);
+    const auto end_delivery = source.delivery_in_range(r, source.size());
 
     for (Index v_rank = 0; v_rank < empty_route_ranks.size(); ++v_rank) {
       const auto v = empty_route_ranks[v_rank];
@@ -81,6 +82,7 @@ compute_best_route_split_choice(const Input& input,
         // Worth checking end route full validity.
 
         if (empty_routes[v_rank].is_valid_addition_for_tw(input,
+                                                          end_delivery,
                                                           source.route.begin() +
                                                             r,
                                                           source.route.end(),
@@ -120,6 +122,7 @@ compute_best_route_split_choice(const Input& input,
     Index second_v_begin = 0; // dummy init
 
     const auto& begin_load = source.fwd_peak(r - 1);
+    const auto begin_delivery = source.delivery_in_range(0, r);
 
     for (Index v_rank = 0; v_rank < empty_route_ranks.size(); ++v_rank) {
       const auto v = empty_route_ranks[v_rank];
@@ -140,6 +143,7 @@ compute_best_route_split_choice(const Input& input,
         // Worth checking begin route full validity.
 
         if (empty_routes[v_rank].is_valid_addition_for_tw(input,
+                                                          begin_delivery,
                                                           source.route.begin(),
                                                           source.route.begin() +
                                                             r,
