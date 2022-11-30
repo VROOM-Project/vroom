@@ -135,7 +135,8 @@ enum class VIOLATION {
   MAX_TASKS,
   SKILLS,
   PRECEDENCE,
-  MISSING_BREAK
+  MISSING_BREAK,
+  MAX_TRAVEL_TIME
 };
 
 enum OperatorName {

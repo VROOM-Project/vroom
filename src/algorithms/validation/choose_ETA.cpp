@@ -1237,6 +1237,11 @@ Route choose_ETA(const Input& input,
         current.violations.types.insert(VIOLATION::MAX_TASKS);
         v_types.insert(VIOLATION::MAX_TASKS);
       }
+      if (!v.ok_for_travel_time(
+            utils::scale_from_user_duration(user_duration))) {
+        current.violations.types.insert(VIOLATION::MAX_TRAVEL_TIME);
+        v_types.insert(VIOLATION::MAX_TRAVEL_TIME);
+      }
 
       switch (job.type) {
       case JOB_TYPE::SINGLE:
@@ -1323,6 +1328,11 @@ Route choose_ETA(const Input& input,
         current.violations.types.insert(VIOLATION::LOAD);
         v_types.insert(VIOLATION::LOAD);
       }
+      if (!v.ok_for_travel_time(
+            utils::scale_from_user_duration(user_duration))) {
+        current.violations.types.insert(VIOLATION::MAX_TRAVEL_TIME);
+        v_types.insert(VIOLATION::MAX_TRAVEL_TIME);
+      }
 
       previous_start = service_start;
       previous_action = b.service;
@@ -1330,7 +1340,7 @@ Route choose_ETA(const Input& input,
       ++task_rank;
       break;
     }
-    case STEP_TYPE::END:
+    case STEP_TYPE::END: {
       const auto arrival = previous_start + previous_action + previous_travel;
       assert(arrival == v_end);
 
@@ -1360,7 +1370,14 @@ Route choose_ETA(const Input& input,
         end_step.violations.types.insert(VIOLATION::LOAD);
         v_types.insert(VIOLATION::LOAD);
       }
+      if (!v.ok_for_travel_time(
+            utils::scale_from_user_duration(user_duration))) {
+        end_step.violations.types.insert(VIOLATION::MAX_TRAVEL_TIME);
+        v_types.insert(VIOLATION::MAX_TRAVEL_TIME);
+      }
+
       break;
+    }
     }
   }
 

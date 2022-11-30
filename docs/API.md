@@ -415,6 +415,7 @@ Possible violation causes are:
 - "skills" if the vehicle does not hold all required skills for a task
 - "precedence" if a `shipment` precedence constraint is not met (`pickup` without matching `delivery`, `delivery` before/without matching `pickup`)
 - "missing_break" if a vehicle break has been omitted in its custom route
+- "max_travel_time" if the vehicle has more travel time than its `max_travel_time` value
 
 Note on violations: reporting only really makes sense when using `-c`
 to choose ETA for custom routes described in input using the `steps`
