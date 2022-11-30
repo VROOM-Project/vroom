@@ -1333,6 +1333,10 @@ Route choose_ETA(const Input& input,
         current.violations.types.insert(VIOLATION::MAX_TRAVEL_TIME);
         v_types.insert(VIOLATION::MAX_TRAVEL_TIME);
       }
+      if (!b.is_valid_for_load(current_load)) {
+        current.violations.types.insert(VIOLATION::MAX_LOAD);
+        v_types.insert(VIOLATION::MAX_LOAD);
+      }
 
       previous_start = service_start;
       previous_action = b.service;
