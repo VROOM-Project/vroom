@@ -12,7 +12,6 @@ All rights reserved (see LICENSE).
 
 #include <string>
 
-#include "structures/vroom/eval.h"
 #include "structures/vroom/solution/step.h"
 #include "structures/vroom/solution/violations.h"
 
