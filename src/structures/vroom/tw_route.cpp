@@ -432,6 +432,41 @@ void TWRoute::fwd_update_action_time_from(const Input& input, Index rank) {
   }
 }
 
+void TWRoute::fwd_update_breaks_load_margin_from(const Input& input,
+                                                 Index rank) {
+  const auto& v = input.vehicles[vehicle_rank];
+
+  // Last valid fwd_smallest value, if any.
+  auto fwd_smallest =
+    (breaks_counts[rank] == 0)
+      ? utils::max_amount(input.get_amount_size())
+      : fwd_smallest_breaks_load_margin[breaks_counts[rank] - 1];
+
+  for (Index i = rank; i <= route.size(); ++i) {
+    if (breaks_at_rank[i] != 0) {
+      // Update for breaks right before job at rank i.
+      const auto& current_load = load_at_step(i);
+
+      for (auto break_rank = breaks_counts[i] - breaks_at_rank[i];
+           break_rank < breaks_counts[i];
+           ++break_rank) {
+        const auto& b = v.breaks[break_rank];
+
+        assert(b.is_valid_for_load(current_load));
+        auto current_margin = (b.max_load.has_value())
+                                ? b.max_load.value() - current_load
+                                : utils::max_amount(input.get_amount_size());
+
+        for (std::size_t a = 0; a < fwd_smallest.size(); ++a) {
+          fwd_smallest[a] = std::min(fwd_smallest[a], current_margin[a]);
+        }
+
+        fwd_smallest_breaks_load_margin[break_rank] = fwd_smallest;
+      }
+    }
+  }
+}
+
 OrderChoice::OrderChoice(const Input& input,
                          const Index job_rank,
                          const Break& b,
@@ -980,6 +1015,7 @@ void TWRoute::replace(const Input& input,
   assert(current_break == 0 or
          delta_delivery <= fwd_smallest_breaks_load_margin[current_break - 1]);
   for (std::size_t i = 0; i < current_break; ++i) {
+    assert(delta_delivery <= fwd_smallest_breaks_load_margin[i]);
     fwd_smallest_breaks_load_margin[i] -= delta_delivery;
   }
 
@@ -1221,9 +1257,8 @@ void TWRoute::replace(const Input& input,
 
   // Update all break load margins after modified range.
   Amount delta_pickup = current_load - previous_final_load;
-  assert(last_break == v.breaks.size() or
-         delta_pickup <= bwd_smallest_breaks_load_margin[last_break]);
   for (std::size_t i = last_break; i < v.breaks.size(); ++i) {
+    assert(delta_pickup <= bwd_smallest_breaks_load_margin[i]);
     bwd_smallest_breaks_load_margin[i] -= delta_pickup;
   }
 
@@ -1313,7 +1348,10 @@ void TWRoute::replace(const Input& input,
 
   update_amounts(input);
 
-  // Todo propagate fwd/bwd_smallest_breaks_load_margin updates
+  // Propagate fwd/bwd_smallest_breaks_load_margin if required.
+  if (last_break < v.breaks.size()) {
+    fwd_update_breaks_load_margin_from(input, current_job_rank);
+  }
 }
 
 template bool
