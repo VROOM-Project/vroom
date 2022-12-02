@@ -467,6 +467,41 @@ void TWRoute::fwd_update_breaks_load_margin_from(const Input& input,
   }
 }
 
+void TWRoute::bwd_update_breaks_load_margin_from(const Input& input,
+                                                 Index rank) {
+  const auto& v = input.vehicles[vehicle_rank];
+
+  // Last valid bwd_smallest value, if any.
+  auto bwd_smallest = (breaks_counts[rank] == breaks_counts.back())
+                        ? utils::max_amount(input.get_amount_size())
+                        : bwd_smallest_breaks_load_margin[breaks_counts[rank]];
+
+  for (Index bwd_i = 0; bwd_i <= rank; ++bwd_i) {
+    const auto i = rank - bwd_i;
+    if (breaks_at_rank[i] != 0) {
+      // Update for breaks right before job at rank i.
+      const auto& current_load = load_at_step(i);
+
+      for (unsigned bwd_break_count = 0; bwd_break_count < breaks_at_rank[i];
+           ++bwd_break_count) {
+        const auto break_rank = breaks_counts[i] - 1 - bwd_break_count;
+        const auto& b = v.breaks[break_rank];
+
+        assert(b.is_valid_for_load(current_load));
+        auto current_margin = (b.max_load.has_value())
+                                ? b.max_load.value() - current_load
+                                : utils::max_amount(input.get_amount_size());
+
+        for (std::size_t a = 0; a < bwd_smallest.size(); ++a) {
+          bwd_smallest[a] = std::min(bwd_smallest[a], current_margin[a]);
+        }
+
+        bwd_smallest_breaks_load_margin[break_rank] = bwd_smallest;
+      }
+    }
+  }
+}
+
 OrderChoice::OrderChoice(const Input& input,
                          const Index job_rank,
                          const Break& b,
@@ -1351,6 +1386,9 @@ void TWRoute::replace(const Input& input,
   // Propagate fwd/bwd_smallest_breaks_load_margin if required.
   if (last_break < v.breaks.size()) {
     fwd_update_breaks_load_margin_from(input, current_job_rank);
+  }
+  if (last_break > 0) {
+    bwd_update_breaks_load_margin_from(input, current_job_rank);
   }
 }
 
