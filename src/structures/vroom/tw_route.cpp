@@ -696,7 +696,7 @@ OrderChoice TWRoute::order_choice(const Input& input,
   } else if (break_then_job_end == job_then_break_end) {
     // If end date is the same for both ordering options, decide
     // based on earliest deadline.
-    if (oc.j_tw->end <= oc.b_tw->end) {
+    if (j.type == JOB_TYPE::DELIVERY or oc.j_tw->end <= oc.b_tw->end) {
       oc.add_job_first = true;
     } else {
       oc.add_break_first = true;

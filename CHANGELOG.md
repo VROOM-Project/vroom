@@ -29,6 +29,7 @@
 ### Fixed
 
 - Missing break validity check (#754)
+- Unecessary waiting with multiple breaks and shipments (#840)
 - Mark `JobAmount` and `JobTime` comparison operators as `const` (#724)
 - Update `ssl_send_and_receive` to throw RoutingExceptions (#770)
 - Timeout not observed with multiple long heuristics per thread (#792)
