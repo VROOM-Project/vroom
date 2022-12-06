@@ -515,15 +515,13 @@ OrderChoice TWRoute::order_choice(const Input& input,
     }
   }
 
-  // From now on both ordering options are doable based on timing
-  // constraints.
-  switch (j.type) {
-  case JOB_TYPE::PICKUP: {
-    // For a pickup, we favor putting the pickup first, except if
-    // adding the delivery afterwards is not possible. This is
-    // mandatory to avoid heuristically forcing a pickup -> break
-    // choice resulting in invalid options, while break -> pickup ->
-    // delivery might be valid.
+  // In case where both ordering options are doable based on timing
+  // constraints for a pickup, we favor putting the pickup first,
+  // except if adding the delivery afterwards is not possible. This is
+  // mandatory to avoid heuristically forcing a pickup -> break choice
+  // resulting in invalid options, while break -> pickup -> delivery
+  // might be valid.
+  if (j.type == JOB_TYPE::PICKUP) {
     const auto& matching_d = input.jobs[job_rank + 1];
     assert(matching_d.type == JOB_TYPE::DELIVERY);
 
@@ -577,34 +575,24 @@ OrderChoice TWRoute::order_choice(const Input& input,
     // Doing pickup first actually leads to infeasible options, so put
     // break first.
     oc.add_break_first = true;
-    break;
+    return oc;
   }
-  case JOB_TYPE::DELIVERY: {
-    // For a delivery, we favor putting the delivery before the break
-    // to avoid adding a long waiting time before the break that is
-    // impossible to fill if the vehicle is full before the delivery.
-    oc.add_job_first = true;
-    break;
-  }
-  case JOB_TYPE::SINGLE: {
-    // In case where both ordering options are doable based on timing
-    // constraints for a single job, we pick the ordering minimizing
-    // earliest end date for sequence.
-    if (break_then_job_end < job_then_break_end) {
-      oc.add_break_first = true;
-    } else if (break_then_job_end == job_then_break_end) {
-      // If end date is the same for both ordering options, decide
-      // based on earliest deadline.
-      if (oc.j_tw->end <= oc.b_tw->end) {
-        oc.add_job_first = true;
-      } else {
-        oc.add_break_first = true;
-      }
-    } else {
+
+  // In case where both ordering options are doable based on timing
+  // constraints for a single job, we pick the ordering minimizing
+  // earliest end date for sequence.
+  if (break_then_job_end < job_then_break_end) {
+    oc.add_break_first = true;
+  } else if (break_then_job_end == job_then_break_end) {
+    // If end date is the same for both ordering options, decide
+    // based on earliest deadline.
+    if (j.type == JOB_TYPE::DELIVERY or oc.j_tw->end <= oc.b_tw->end) {
       oc.add_job_first = true;
+    } else {
+      oc.add_break_first = true;
     }
-    break;
-  }
+  } else {
+    oc.add_job_first = true;
   }
 
   return oc;
