@@ -145,6 +145,7 @@ public:
                                 const Index job_rank,
                                 const Index rank) const {
     assert(rank <= route.size());
+    assert(input.jobs[job_rank].type == JOB_TYPE::SINGLE);
     const std::array<Index, 1> a({job_rank});
     return is_valid_addition_for_tw(input,
                                     input.jobs[job_rank].delivery,
@@ -168,6 +169,7 @@ public:
 
   void add(const Input& input, const Index job_rank, const Index rank) {
     assert(rank <= route.size());
+    assert(input.jobs[job_rank].type == JOB_TYPE::SINGLE);
     const std::array<Index, 1> a({job_rank});
     replace(input,
             input.jobs[job_rank].delivery,

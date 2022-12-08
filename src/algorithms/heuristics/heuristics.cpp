@@ -322,8 +322,10 @@ T basic(const Input& input, INIT init, double lambda, SORT sort) {
                                                   vehicle,
                                                   current_r.route,
                                                   d_rank);
-            valid_delivery_insertions[d_rank] =
-              current_r.is_valid_addition_for_tw(input, job_rank + 1, d_rank);
+            valid_delivery_insertions[d_rank] = true;
+            // valid_delivery_insertions[d_rank] =
+            //   current_r.is_valid_addition_for_tw(input, job_rank + 1,
+            //   d_rank);
           }
 
           for (Index pickup_r = 0; pickup_r <= current_r.size(); ++pickup_r) {
@@ -336,10 +338,11 @@ T basic(const Input& input, INIT init, double lambda, SORT sort) {
             if (!current_r
                    .is_valid_addition_for_load(input,
                                                input.jobs[job_rank].pickup,
-                                               pickup_r) or
-                !current_r.is_valid_addition_for_tw(input,
-                                                    job_rank,
-                                                    pickup_r)) {
+                                               pickup_r) //  or
+                // !current_r.is_valid_addition_for_tw(input,
+                //                                     job_rank,
+                //                                     pickup_r)) {
+            ) {
               continue;
             }
 
@@ -750,8 +753,10 @@ T dynamic_vehicle_choice(const Input& input,
                                                   vehicle,
                                                   current_r.route,
                                                   d_rank);
-            valid_delivery_insertions[d_rank] =
-              current_r.is_valid_addition_for_tw(input, job_rank + 1, d_rank);
+            valid_delivery_insertions[d_rank] = true;
+            // valid_delivery_insertions[d_rank] =
+            //   current_r.is_valid_addition_for_tw(input, job_rank + 1,
+            //   d_rank);
           }
 
           for (Index pickup_r = 0; pickup_r <= current_r.size(); ++pickup_r) {
@@ -764,10 +769,11 @@ T dynamic_vehicle_choice(const Input& input,
             if (!current_r
                    .is_valid_addition_for_load(input,
                                                input.jobs[job_rank].pickup,
-                                               pickup_r) or
-                !current_r.is_valid_addition_for_tw(input,
-                                                    job_rank,
-                                                    pickup_r)) {
+                                               pickup_r) //  or
+                // !current_r.is_valid_addition_for_tw(input,
+                //                                     job_rank,
+                //                                     pickup_r)) {
+            ) {
               continue;
             }
 
