@@ -114,9 +114,8 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
     if (d_adds[d_rank] > result.eval) {
       valid_delivery_insertions[d_rank] = false;
     } else {
-      valid_delivery_insertions[d_rank] = true;
-      // valid_delivery_insertions[d_rank] =
-      //   route.is_valid_addition_for_tw(input, j + 1, d_rank);
+      valid_delivery_insertions[d_rank] =
+        route.is_valid_addition_for_tw_without_max_load(input, j + 1, d_rank);
     }
     found_valid |= valid_delivery_insertions[d_rank];
   }
@@ -138,9 +137,8 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
 
     if (!route.is_valid_addition_for_load(input,
                                           current_job.pickup,
-                                          pickup_r) //  or
-        // !route.is_valid_addition_for_tw(input, j, pickup_r)) {
-    ) {
+                                          pickup_r) or
+        !route.is_valid_addition_for_tw_without_max_load(input, j, pickup_r)) {
       continue;
     }
 

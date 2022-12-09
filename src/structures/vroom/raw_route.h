@@ -161,6 +161,12 @@ public:
     return true;
   };
 
+  bool is_valid_addition_for_tw_without_max_load(const Input&,
+                                                 const Index,
+                                                 const Index) const {
+    return true;
+  };
+
   template <class InputIterator>
   bool is_valid_addition_for_tw(const Input&,
                                 const Amount,
