@@ -156,6 +156,22 @@ public:
                                     rank);
   };
 
+  // Check validity for addition of job at job_rank in current route
+  // at rank, bypassing any break max_load checks.
+  bool is_valid_addition_for_tw_without_max_load(const Input& input,
+                                                 const Index job_rank,
+                                                 const Index rank) const {
+    assert(rank <= route.size());
+    const std::array<Index, 1> a({job_rank});
+    return is_valid_addition_for_tw(input,
+                                    input.jobs[job_rank].delivery,
+                                    a.begin(),
+                                    a.end(),
+                                    rank,
+                                    rank,
+                                    false);
+  };
+
   // Check validity for inclusion of the range [first_job; last_job)
   // in the existing route at rank first_rank and before last_rank *in
   // place of* the current jobs that may be there. "delivery" is the
