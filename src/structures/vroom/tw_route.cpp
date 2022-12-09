@@ -525,7 +525,8 @@ OrderChoice TWRoute::order_choice(const Input& input,
                                   const Break& b,
                                   const PreviousInfo& previous,
                                   const NextInfo& next,
-                                  const Amount& current_load) const {
+                                  const Amount& current_load,
+                                  bool check_max_load) const {
   OrderChoice oc(input, job_rank, b, previous);
   const auto& v = input.vehicles[vehicle_rank];
   const auto& j = input.jobs[job_rank];
@@ -552,7 +553,7 @@ OrderChoice TWRoute::order_choice(const Input& input,
   if (new_b_tw == b.tws.end()) {
     // Break does not fit after job due to its time windows. Only
     // option is to choose break first, if valid for max_load.
-    oc.add_break_first = b.is_valid_for_load(current_load);
+    oc.add_break_first = !check_max_load or b.is_valid_for_load(current_load);
     return oc;
   } else {
     Duration travel_after_break = next.travel;
@@ -569,18 +570,22 @@ OrderChoice TWRoute::order_choice(const Input& input,
       job_then_break_end = earliest_job_end + b.service;
     }
 
-    if (job_then_break_end + travel_after_break > next.latest or
-        (j.type == JOB_TYPE::SINGLE and
-         !b.is_valid_for_load(current_load + j.pickup - j.delivery))) {
-      // Starting the break is possible but then next step is not, or
-      // break won't fit after this job for load reason.
+    if (job_then_break_end + travel_after_break > next.latest) {
+      // Starting the break is possible but then next step is not.
+      oc.add_break_first = true;
+      return oc;
+    }
+
+    if (check_max_load and j.type == JOB_TYPE::SINGLE and
+        !b.is_valid_for_load(current_load + j.pickup - j.delivery)) {
+      // Break won't fit right after job for load reason.
       oc.add_break_first = b.is_valid_for_load(current_load);
       return oc;
     }
   }
 
   // Try putting break first then job.
-  if (!b.is_valid_for_load(current_load)) {
+  if (check_max_load and !b.is_valid_for_load(current_load)) {
     // Not doable based on max_load, only option is to choose job
     // first.
     oc.add_job_first = true;
@@ -648,7 +653,7 @@ OrderChoice TWRoute::order_choice(const Input& input,
                    matching_d.tws.end(),
                    [&](const auto& tw) { return pb_d_candidate <= tw.end; });
     if (pb_d_tw != matching_d.tws.end() and
-        b.is_valid_for_load(current_load + j.pickup)) {
+        (!check_max_load or b.is_valid_for_load(current_load + j.pickup))) {
       // pickup -> break -> delivery is doable, choose pickup first.
       oc.add_job_first = true;
       return oc;
@@ -678,7 +683,7 @@ OrderChoice TWRoute::order_choice(const Input& input,
         });
       if (after_d_b_tw != b.tws.end()) {
         // pickup -> delivery -> break is doable, choose pickup first.
-        assert(b.is_valid_for_load(current_load));
+        assert(!check_max_load or b.is_valid_for_load(current_load));
         oc.add_job_first = true;
         return oc;
       }
@@ -715,7 +720,8 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
                                        const InputIterator first_job,
                                        const InputIterator last_job,
                                        const Index first_rank,
-                                       const Index last_rank) const {
+                                       const Index last_rank,
+                                       bool check_max_load) const {
   assert(first_job <= last_job);
   assert(first_rank <= last_rank);
 
@@ -769,14 +775,14 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
 
   // Maintain current load while adding insertion range. Initial load
   // is lowered based on removed range.
-  auto previous_init_load =
+  const auto previous_init_load =
     (route.empty()) ? input.zero_amount() : load_at_step(first_rank);
-  auto previous_final_load =
+  const auto previous_final_load =
     (route.empty()) ? input.zero_amount() : load_at_step(last_rank);
   assert(delivery_in_range(first_rank, last_rank) <= previous_init_load);
   Amount delta_delivery = delivery - delivery_in_range(first_rank, last_rank);
 
-  if (current_break != 0 and
+  if (check_max_load and current_break != 0 and
       !(delta_delivery <= fwd_smallest_breaks_load_margin[current_break - 1])) {
     return false;
   }
@@ -796,8 +802,13 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
           return current.earliest <= tw.end;
         });
 
-      if (b_tw == b.tws.end() or !b.is_valid_for_load(current_load)) {
-        // Break does not fit due to its time windows or current load.
+      if (b_tw == b.tws.end()) {
+        // Break does not fit due to its time windows.
+        return false;
+      }
+
+      if (check_max_load and !b.is_valid_for_load(current_load)) {
+        // Break does not fit due to current load.
         return false;
       }
 
@@ -862,7 +873,8 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
                            b,
                            current,
                            next,
-                           current_load);
+                           current_load,
+                           check_max_load);
 
     if (!oc.add_job_first and !oc.add_break_first) {
       // Infeasible insertion.
@@ -873,7 +885,9 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
     // time with given insertion choice.
     assert(oc.add_job_first xor oc.add_break_first);
     if (oc.add_break_first) {
-      assert(b.is_valid_for_load(current_load));
+      if (check_max_load and !b.is_valid_for_load(current_load)) {
+        return false;
+      }
 
       if (current.earliest < oc.b_tw->start) {
         auto margin = oc.b_tw->start - current.earliest;
@@ -909,10 +923,12 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
     }
   }
 
-  Amount delta_pickup = current_load - previous_final_load;
-  if (last_break < v.breaks.size() and
-      !(delta_pickup <= bwd_smallest_breaks_load_margin[last_break])) {
-    return false;
+  if (check_max_load and last_break < v.breaks.size()) {
+    const Amount delta_pickup = current_load - previous_final_load;
+
+    if (!(delta_pickup <= bwd_smallest_breaks_load_margin[last_break])) {
+      return false;
+    }
   }
 
   if (last_rank < route.size() and
@@ -1039,9 +1055,9 @@ void TWRoute::replace(const Input& input,
 
   // Maintain current load while adding insertion range. Initial load
   // is lowered based on removed range.
-  auto previous_init_load =
+  const auto previous_init_load =
     (route.empty()) ? input.zero_amount() : load_at_step(first_rank);
-  auto previous_final_load =
+  const auto previous_final_load =
     (route.empty()) ? input.zero_amount() : load_at_step(last_rank);
   assert(delivery_in_range(first_rank, last_rank) <= previous_init_load);
   Amount delta_delivery = delivery - delivery_in_range(first_rank, last_rank);
@@ -1399,7 +1415,8 @@ TWRoute::is_valid_addition_for_tw(const Input& input,
                                   const std::vector<Index>::iterator first_job,
                                   const std::vector<Index>::iterator last_job,
                                   const Index first_rank,
-                                  const Index last_rank) const;
+                                  const Index last_rank,
+                                  bool check_max_load) const;
 
 template bool TWRoute::is_valid_addition_for_tw(
   const Input& input,
@@ -1407,7 +1424,8 @@ template bool TWRoute::is_valid_addition_for_tw(
   const std::vector<Index>::reverse_iterator first_job,
   const std::vector<Index>::reverse_iterator last_job,
   const Index first_rank,
-  const Index last_rank) const;
+  const Index last_rank,
+  bool check_max_load) const;
 
 template bool TWRoute::is_valid_addition_for_tw(
   const Input& input,
@@ -1415,7 +1433,8 @@ template bool TWRoute::is_valid_addition_for_tw(
   const std::array<Index, 1>::const_iterator first_job,
   const std::array<Index, 1>::const_iterator last_job,
   const Index first_rank,
-  const Index last_rank) const;
+  const Index last_rank,
+  bool check_max_load) const;
 
 template bool TWRoute::is_valid_addition_for_tw(
   const Input& input,
@@ -1423,7 +1442,8 @@ template bool TWRoute::is_valid_addition_for_tw(
   const std::vector<Index>::const_iterator first_job,
   const std::vector<Index>::const_iterator last_job,
   const Index first_rank,
-  const Index last_rank) const;
+  const Index last_rank,
+  bool check_max_load) const;
 
 template void TWRoute::replace(const Input& input,
                                const Amount& delivery,
