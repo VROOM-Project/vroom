@@ -25,6 +25,7 @@
 - CI builds now use clang++ 14 and g++ 11 on Ubuntu 22.04 (#816)
 - Refactor `CVRP::solve` and `VRPTW::solve` functions (#818)
 - Refactor `CostWrapper` (#828)
+- Improve error messages (#848)
 
 ### Fixed
 
