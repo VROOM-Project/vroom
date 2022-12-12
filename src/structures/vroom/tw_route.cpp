@@ -461,6 +461,7 @@ void TWRoute::fwd_update_breaks_load_margin_from(const Input& input,
           fwd_smallest[a] = std::min(fwd_smallest[a], current_margin[a]);
         }
 
+        assert(input.zero_amount() <= fwd_smallest);
         fwd_smallest_breaks_load_margin[break_rank] = fwd_smallest;
       }
     }
@@ -496,6 +497,7 @@ void TWRoute::bwd_update_breaks_load_margin_from(const Input& input,
           bwd_smallest[a] = std::min(bwd_smallest[a], current_margin[a]);
         }
 
+        assert(input.zero_amount() <= bwd_smallest);
         bwd_smallest_breaks_load_margin[break_rank] = bwd_smallest;
       }
     }
@@ -1074,7 +1076,8 @@ void TWRoute::replace(const Input& input,
   const auto previous_final_load =
     (route.empty()) ? input.zero_amount() : load_at_step(last_rank);
   assert(delivery_in_range(first_rank, last_rank) <= previous_init_load);
-  Amount delta_delivery = delivery - delivery_in_range(first_rank, last_rank);
+  const Amount delta_delivery =
+    delivery - delivery_in_range(first_rank, last_rank);
   Amount current_load = previous_init_load + delta_delivery;
 
   // Update all break load margins prior to modified range.
@@ -1082,7 +1085,19 @@ void TWRoute::replace(const Input& input,
          delta_delivery <= fwd_smallest_breaks_load_margin[current_break - 1]);
   for (std::size_t i = 0; i < current_break; ++i) {
     assert(delta_delivery <= fwd_smallest_breaks_load_margin[i]);
-    fwd_smallest_breaks_load_margin[i] -= delta_delivery;
+
+    // Manually decrement margin to avoid overflows that would end up
+    // in a negative margin with a plain
+    // fwd_smallest_breaks_load_margin[i] -= delta_delivery;
+    for (std::size_t a = 0; a < delta_delivery.size(); ++a) {
+      if ((-delta_delivery[a]) <= (std::numeric_limits<Capacity>::max() -
+                                   fwd_smallest_breaks_load_margin[i][a])) {
+        fwd_smallest_breaks_load_margin[i][a] -= delta_delivery[a];
+      } else {
+        fwd_smallest_breaks_load_margin[i][a] =
+          std::numeric_limits<Capacity>::max();
+      }
+    }
   }
 
   unsigned previous_breaks_counts =
@@ -1322,10 +1337,22 @@ void TWRoute::replace(const Input& input,
   assert(current_job_rank == first_rank + add_count);
 
   // Update all break load margins after modified range.
-  Amount delta_pickup = current_load - previous_final_load;
+  const Amount delta_pickup = current_load - previous_final_load;
   for (std::size_t i = last_break; i < v.breaks.size(); ++i) {
     assert(delta_pickup <= bwd_smallest_breaks_load_margin[i]);
-    bwd_smallest_breaks_load_margin[i] -= delta_pickup;
+
+    // Manually decrement margin to avoid overflows that would end up
+    // in a negative margin with a plain
+    // bwd_smallest_breaks_load_margin[i] -= delta_pickup;
+    for (std::size_t a = 0; a < delta_pickup.size(); ++a) {
+      if ((-delta_pickup[a]) <= (std::numeric_limits<Capacity>::max() -
+                                 bwd_smallest_breaks_load_margin[i][a])) {
+        bwd_smallest_breaks_load_margin[i][a] -= delta_pickup[a];
+      } else {
+        bwd_smallest_breaks_load_margin[i][a] =
+          std::numeric_limits<Capacity>::max();
+      }
+    }
   }
 
   // Update remaining number of breaks due before next step.
