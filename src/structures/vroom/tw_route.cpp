@@ -727,6 +727,10 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
 
   const auto& v = input.vehicles[vehicle_rank];
 
+  // Override this value if vehicle does not need this check anyway to
+  // spare some work.
+  check_max_load = v.has_break_max_load and check_max_load;
+
   PreviousInfo current(0, 0);
   NextInfo next(0, 0);
 
@@ -775,19 +779,22 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
 
   // Maintain current load while adding insertion range. Initial load
   // is lowered based on removed range.
-  const auto previous_init_load =
-    (route.empty()) ? input.zero_amount() : load_at_step(first_rank);
-  const auto previous_final_load =
-    (route.empty()) ? input.zero_amount() : load_at_step(last_rank);
-  assert(delivery_in_range(first_rank, last_rank) <= previous_init_load);
-  Amount delta_delivery = delivery - delivery_in_range(first_rank, last_rank);
+  Amount current_load;
 
-  if (check_max_load and current_break != 0 and
-      !(delta_delivery <= fwd_smallest_breaks_load_margin[current_break - 1])) {
-    return false;
+  if (check_max_load) {
+    const auto previous_init_load =
+      (route.empty()) ? input.zero_amount() : load_at_step(first_rank);
+    assert(delivery_in_range(first_rank, last_rank) <= previous_init_load);
+    Amount delta_delivery = delivery - delivery_in_range(first_rank, last_rank);
+
+    if (current_break != 0 and
+        !(delta_delivery <=
+          fwd_smallest_breaks_load_margin[current_break - 1])) {
+      return false;
+    }
+
+    current_load = previous_init_load + delta_delivery;
   }
-
-  Amount current_load = previous_init_load + delta_delivery;
 
   // Propagate earliest dates for all jobs and breaks in their
   // respective addition ranges.
@@ -849,8 +856,10 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
       current.earliest =
         std::max(current.earliest, j_tw->start) + job_action_time;
 
-      assert(j.delivery <= current_load);
-      current_load += (j.pickup - j.delivery);
+      if (check_max_load) {
+        assert(j.delivery <= current_load);
+        current_load += (j.pickup - j.delivery);
+      }
 
       ++current_job;
       if (current_job != last_job) {
@@ -911,8 +920,10 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
         std::max(current.earliest + current.travel, oc.j_tw->start) +
         job_action_time;
 
-      assert(j.delivery <= current_load);
-      current_load += (j.pickup - j.delivery);
+      if (check_max_load) {
+        assert(j.delivery <= current_load);
+        current_load += (j.pickup - j.delivery);
+      }
 
       ++current_job;
       if (current_job != last_job) {
@@ -924,6 +935,9 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
   }
 
   if (check_max_load and last_break < v.breaks.size()) {
+    const auto previous_final_load =
+      (route.empty()) ? input.zero_amount() : load_at_step(last_rank);
+
     const Amount delta_pickup = current_load - previous_final_load;
 
     if (!(delta_pickup <= bwd_smallest_breaks_load_margin[last_break])) {
