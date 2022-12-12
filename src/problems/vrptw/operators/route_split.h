@@ -18,7 +18,7 @@ namespace vrptw {
 class RouteSplit : public cvrp::RouteSplit {
 private:
   TWRoute& _tw_s_route;
-  std::vector<std::reference_wrapper<TWRoute>>& _empty_tw_route_refs;
+  const std::vector<std::reference_wrapper<TWRoute>> _empty_tw_route_refs;
 
   virtual void compute_gain() override;
 

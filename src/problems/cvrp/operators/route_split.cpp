@@ -65,6 +65,7 @@ void RouteSplit::apply() {
   // Empty route holding the end of the split.
   auto& end_route = _empty_route_refs[choice.v_end].get();
   assert(end_route.empty());
+  assert(end_route.vehicle_rank == _empty_route_ranks[choice.v_end]);
 
   std::move(s_route.begin() + choice.split_rank,
             s_route.end(),
@@ -73,6 +74,7 @@ void RouteSplit::apply() {
   // Empty route holding the beginning of the split.
   auto& begin_route = _empty_route_refs[choice.v_begin].get();
   assert(begin_route.empty());
+  assert(begin_route.vehicle_rank == _empty_route_ranks[choice.v_begin]);
 
   std::move(s_route.begin(),
             s_route.begin() + choice.split_rank,
