@@ -109,6 +109,8 @@ struct Vehicle {
     assert(0 <= d);
     return d <= max_travel_time;
   }
+
+  Index break_rank(Id id) const;
 };
 
 } // namespace vroom

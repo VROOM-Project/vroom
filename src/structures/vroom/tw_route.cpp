@@ -579,7 +579,8 @@ OrderChoice TWRoute::order_choice(const Input& input,
     }
 
     if (check_max_load and j.type == JOB_TYPE::SINGLE and
-        !b.is_valid_for_load(current_load + j.pickup - j.delivery)) {
+        (!b.is_valid_for_load(current_load + j.pickup - j.delivery) or
+         !(j.pickup <= bwd_smallest_breaks_load_margin[v.break_rank(b.id)]))) {
       // Break won't fit right after job for load reason.
       oc.add_break_first = b.is_valid_for_load(current_load);
       return oc;
@@ -702,8 +703,10 @@ OrderChoice TWRoute::order_choice(const Input& input,
   if (break_then_job_end < job_then_break_end) {
     oc.add_break_first = true;
   } else if (break_then_job_end == job_then_break_end) {
-    // If end date is the same for both ordering options, decide
-    // based on earliest deadline.
+    // If end date is the same for both ordering options, decide based
+    // on earliest deadline, except for deliveries. If a delivery
+    // without TW constraint is postponed, it can introduce arbitrary
+    // waiting time between zero max_load breaks.
     if (j.type == JOB_TYPE::DELIVERY or oc.j_tw->end <= oc.b_tw->end) {
       oc.add_job_first = true;
     } else {

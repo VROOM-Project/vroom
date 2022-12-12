@@ -146,4 +146,10 @@ Duration Vehicle::available_duration() const {
   return available - breaks_duration;
 }
 
+Index Vehicle::break_rank(Id id) const {
+  auto search = break_id_to_rank.find(id);
+  assert(search != break_id_to_rank.end());
+  return search->second;
+}
+
 } // namespace vroom
