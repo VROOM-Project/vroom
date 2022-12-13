@@ -32,7 +32,9 @@ OrOpt::OrOpt(const Input& input,
     _gain_upper_bound_computed(false),
     reverse_s_edge(false),
     is_normal_valid(false),
-    is_reverse_valid(false) {
+    is_reverse_valid(false),
+    edge_delivery(_input.jobs[this->s_route[s_rank]].delivery +
+                  _input.jobs[this->s_route[s_rank + 1]].delivery) {
   assert(s_vehicle != t_vehicle);
   assert(s_route.size() >= 2);
   assert(s_rank < s_route.size() - 1);
@@ -164,8 +166,6 @@ bool OrOpt::is_valid() {
 
   auto edge_pickup = _input.jobs[s_route[s_rank]].pickup +
                      _input.jobs[s_route[s_rank + 1]].pickup;
-  auto edge_delivery = _input.jobs[s_route[s_rank]].delivery +
-                       _input.jobs[s_route[s_rank + 1]].delivery;
 
   bool valid = is_valid_for_source_max_travel_time() &&
                target.is_valid_addition_for_capacity(_input,

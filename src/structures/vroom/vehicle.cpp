@@ -7,6 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <algorithm>
 #include <numeric>
 
 #include "structures/vroom/vehicle.h"
@@ -42,7 +43,11 @@ Vehicle::Vehicle(Id id,
     max_tasks(max_tasks),
     max_travel_time(max_travel_time.has_value()
                       ? utils::scale_from_user_duration(max_travel_time.value())
-                      : std::numeric_limits<Duration>::max()) {
+                      : std::numeric_limits<Duration>::max()),
+    has_break_max_load(
+      std::any_of(breaks.cbegin(), breaks.cend(), [](const auto& b) {
+        return b.max_load.has_value();
+      })) {
   if (!static_cast<bool>(start) and !static_cast<bool>(end)) {
     throw InputException("No start or end specified for vehicle " +
                          std::to_string(id) + '.');
@@ -50,10 +55,17 @@ Vehicle::Vehicle(Id id,
 
   for (unsigned i = 0; i < breaks.size(); ++i) {
     const auto& b = breaks[i];
+
     if (break_id_to_rank.find(b.id) != break_id_to_rank.end()) {
       throw InputException("Duplicate break id: " + std::to_string(b.id) + ".");
     }
     break_id_to_rank[b.id] = i;
+
+    if (b.max_load.has_value() and
+        b.max_load.value().size() != capacity.size()) {
+      throw InputException("Inconsistent break max_load size for break: " +
+                           std::to_string(b.id) + ".");
+    }
   }
 
   if (!input_steps.empty()) {
@@ -132,6 +144,12 @@ Duration Vehicle::available_duration() const {
   assert(breaks_duration <= available);
 
   return available - breaks_duration;
+}
+
+Index Vehicle::break_rank(Id id) const {
+  auto search = break_id_to_rank.find(id);
+  assert(search != break_id_to_rank.end());
+  return search->second;
 }
 
 } // namespace vroom

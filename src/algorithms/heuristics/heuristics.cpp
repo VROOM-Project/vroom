@@ -197,11 +197,13 @@ T basic(const Input& input, INIT init, double lambda, SORT sort) {
                                             0);
         if (is_pickup) {
           std::vector<Index> p_d({job_rank, static_cast<Index>(job_rank + 1)});
-          is_valid = is_valid && current_r.is_valid_addition_for_tw(input,
-                                                                    p_d.begin(),
-                                                                    p_d.end(),
-                                                                    0,
-                                                                    0);
+          is_valid =
+            is_valid && current_r.is_valid_addition_for_tw(input,
+                                                           input.zero_amount(),
+                                                           p_d.begin(),
+                                                           p_d.end(),
+                                                           0,
+                                                           0);
         } else {
           assert(input.jobs[job_rank].type == JOB_TYPE::SINGLE);
           is_valid =
@@ -247,7 +249,8 @@ T basic(const Input& input, INIT init, double lambda, SORT sort) {
         if (input.jobs[best_job_rank].type == JOB_TYPE::PICKUP) {
           std::vector<Index> p_d(
             {best_job_rank, static_cast<Index>(best_job_rank + 1)});
-          current_r.replace(input, p_d.begin(), p_d.end(), 0, 0);
+          current_r
+            .replace(input, input.zero_amount(), p_d.begin(), p_d.end(), 0, 0);
           unassigned.erase(best_job_rank);
           unassigned.erase(best_job_rank + 1);
         }
@@ -263,6 +266,7 @@ T basic(const Input& input, INIT init, double lambda, SORT sort) {
       Index best_r = 0;
       Index best_pickup_r = 0;
       Index best_delivery_r = 0;
+      Amount best_modified_delivery = input.zero_amount();
       Duration best_duration_addition = 0;
 
       for (const auto job_rank : unassigned) {
@@ -319,7 +323,9 @@ T basic(const Input& input, INIT init, double lambda, SORT sort) {
                                                   current_r.route,
                                                   d_rank);
             valid_delivery_insertions[d_rank] =
-              current_r.is_valid_addition_for_tw(input, job_rank + 1, d_rank);
+              current_r.is_valid_addition_for_tw_without_max_load(input,
+                                                                  job_rank + 1,
+                                                                  d_rank);
           }
 
           for (Index pickup_r = 0; pickup_r <= current_r.size(); ++pickup_r) {
@@ -333,9 +339,10 @@ T basic(const Input& input, INIT init, double lambda, SORT sort) {
                    .is_valid_addition_for_load(input,
                                                input.jobs[job_rank].pickup,
                                                pickup_r) or
-                !current_r.is_valid_addition_for_tw(input,
-                                                    job_rank,
-                                                    pickup_r)) {
+                !current_r
+                   .is_valid_addition_for_tw_without_max_load(input,
+                                                              job_rank,
+                                                              pickup_r)) {
               continue;
             }
 
@@ -396,6 +403,7 @@ T basic(const Input& input, INIT init, double lambda, SORT sort) {
                 valid =
                   valid &&
                   current_r.is_valid_addition_for_tw(input,
+                                                     modified_delivery,
                                                      modified_with_pd.begin(),
                                                      modified_with_pd.end(),
                                                      pickup_r,
@@ -408,6 +416,7 @@ T basic(const Input& input, INIT init, double lambda, SORT sort) {
                   best_job_rank = job_rank;
                   best_pickup_r = pickup_r;
                   best_delivery_r = delivery_r;
+                  best_modified_delivery = modified_delivery;
                   best_duration_addition = current_add.duration;
                 }
               }
@@ -430,6 +439,7 @@ T basic(const Input& input, INIT init, double lambda, SORT sort) {
           modified_with_pd.push_back(best_job_rank + 1);
 
           current_r.replace(input,
+                            best_modified_delivery,
                             modified_with_pd.begin(),
                             modified_with_pd.end(),
                             best_pickup_r,
@@ -618,11 +628,13 @@ T dynamic_vehicle_choice(const Input& input,
 
         if (is_pickup) {
           std::vector<Index> p_d({job_rank, static_cast<Index>(job_rank + 1)});
-          is_valid = is_valid && current_r.is_valid_addition_for_tw(input,
-                                                                    p_d.begin(),
-                                                                    p_d.end(),
-                                                                    0,
-                                                                    0);
+          is_valid =
+            is_valid && current_r.is_valid_addition_for_tw(input,
+                                                           input.zero_amount(),
+                                                           p_d.begin(),
+                                                           p_d.end(),
+                                                           0,
+                                                           0);
         } else {
           assert(input.jobs[job_rank].type == JOB_TYPE::SINGLE);
           is_valid =
@@ -668,7 +680,8 @@ T dynamic_vehicle_choice(const Input& input,
         if (input.jobs[best_job_rank].type == JOB_TYPE::PICKUP) {
           std::vector<Index> p_d(
             {best_job_rank, static_cast<Index>(best_job_rank + 1)});
-          current_r.replace(input, p_d.begin(), p_d.end(), 0, 0);
+          current_r
+            .replace(input, input.zero_amount(), p_d.begin(), p_d.end(), 0, 0);
           unassigned.erase(best_job_rank);
           unassigned.erase(best_job_rank + 1);
         }
@@ -684,6 +697,7 @@ T dynamic_vehicle_choice(const Input& input,
       Index best_r = 0;
       Index best_pickup_r = 0;
       Index best_delivery_r = 0;
+      Amount best_modified_delivery = input.zero_amount();
       Duration best_duration_addition = 0;
 
       for (const auto job_rank : unassigned) {
@@ -740,7 +754,9 @@ T dynamic_vehicle_choice(const Input& input,
                                                   current_r.route,
                                                   d_rank);
             valid_delivery_insertions[d_rank] =
-              current_r.is_valid_addition_for_tw(input, job_rank + 1, d_rank);
+              current_r.is_valid_addition_for_tw_without_max_load(input,
+                                                                  job_rank + 1,
+                                                                  d_rank);
           }
 
           for (Index pickup_r = 0; pickup_r <= current_r.size(); ++pickup_r) {
@@ -754,9 +770,10 @@ T dynamic_vehicle_choice(const Input& input,
                    .is_valid_addition_for_load(input,
                                                input.jobs[job_rank].pickup,
                                                pickup_r) or
-                !current_r.is_valid_addition_for_tw(input,
-                                                    job_rank,
-                                                    pickup_r)) {
+                !current_r
+                   .is_valid_addition_for_tw_without_max_load(input,
+                                                              job_rank,
+                                                              pickup_r)) {
               continue;
             }
 
@@ -814,6 +831,7 @@ T dynamic_vehicle_choice(const Input& input,
                                                               pickup_r,
                                                               delivery_r) &&
                   current_r.is_valid_addition_for_tw(input,
+                                                     modified_delivery,
                                                      modified_with_pd.begin(),
                                                      modified_with_pd.end(),
                                                      pickup_r,
@@ -826,6 +844,7 @@ T dynamic_vehicle_choice(const Input& input,
                   best_job_rank = job_rank;
                   best_pickup_r = pickup_r;
                   best_delivery_r = delivery_r;
+                  best_modified_delivery = modified_delivery;
                   best_duration_addition = current_add.duration;
                 }
               }
@@ -848,6 +867,7 @@ T dynamic_vehicle_choice(const Input& input,
           modified_with_pd.push_back(best_job_rank + 1);
 
           current_r.replace(input,
+                            best_modified_delivery,
                             modified_with_pd.begin(),
                             modified_with_pd.end(),
                             best_pickup_r,
@@ -874,16 +894,19 @@ template <class T> T initial_routes(const Input& input) {
     auto& current_r = routes.back();
 
     // Startup load is the sum of deliveries for (single) jobs.
-    Amount current_load(input.zero_amount());
+    Amount single_jobs_deliveries(input.zero_amount());
     for (const auto& step : vehicle.steps) {
       if (step.type == STEP_TYPE::JOB and step.job_type == JOB_TYPE::SINGLE) {
-        current_load += input.jobs[step.rank].delivery;
+        single_jobs_deliveries += input.jobs[step.rank].delivery;
       }
     }
-    if (!(current_load <= vehicle.capacity)) {
+    if (!(single_jobs_deliveries <= vehicle.capacity)) {
       throw InputException("Route over capacity for vehicle " +
                            std::to_string(vehicle.id) + ".");
     }
+
+    // Startup load is the sum of deliveries for (single) jobs.
+    Amount current_load = single_jobs_deliveries;
 
     std::vector<Index> job_ranks;
     std::unordered_set<Index> expected_delivery_ranks;
@@ -947,6 +970,7 @@ template <class T> T initial_routes(const Input& input) {
     // constraints.
     if (!job_ranks.empty()) {
       if (!current_r.is_valid_addition_for_tw(input,
+                                              single_jobs_deliveries,
                                               job_ranks.begin(),
                                               job_ranks.end(),
                                               0,
@@ -955,7 +979,12 @@ template <class T> T initial_routes(const Input& input) {
                              std::to_string(vehicle.id) + ".");
       }
 
-      current_r.replace(input, job_ranks.begin(), job_ranks.end(), 0, 0);
+      current_r.replace(input,
+                        single_jobs_deliveries,
+                        job_ranks.begin(),
+                        job_ranks.end(),
+                        0,
+                        0);
     }
   }
 

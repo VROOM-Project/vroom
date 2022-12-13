@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 #include <algorithm>
 
 #include "structures/vroom/tw_route.h"
+#include "utils/helpers.h"
 
 namespace vroom {
 
@@ -22,13 +23,19 @@ TWRoute::TWRoute(const Input& input, Index v, unsigned amount_size)
     break_earliest(input.vehicles[v].breaks.size()),
     break_latest(input.vehicles[v].breaks.size()),
     breaks_travel_margin_before(input.vehicles[v].breaks.size()),
-    breaks_travel_margin_after(input.vehicles[v].breaks.size()) {
-  std::string break_error = "Inconsistent breaks for vehicle " +
-                            std::to_string(input.vehicles[v].id) + ".";
+    breaks_travel_margin_after(input.vehicles[v].breaks.size()),
+    fwd_smallest_breaks_load_margin(input.vehicles[v].breaks.size()),
+    bwd_smallest_breaks_load_margin(input.vehicles[v].breaks.size()) {
+  const std::string break_error = "Inconsistent breaks for vehicle " +
+                                  std::to_string(input.vehicles[v].id) + ".";
 
   const auto& breaks = input.vehicles[v].breaks;
 
   Duration previous_earliest = v_start;
+
+  // Store smallest margin component-wise.
+  Amount fwd_smallest_margin = utils::max_amount(amount_size);
+  Amount bwd_smallest_margin = utils::max_amount(amount_size);
 
   for (Index i = 0; i < breaks.size(); ++i) {
     const auto& b = breaks[i];
@@ -44,11 +51,21 @@ TWRoute::TWRoute(const Input& input, Index v, unsigned amount_size)
     breaks_travel_margin_before[i] = break_earliest[i] - previous_earliest;
 
     previous_earliest = break_earliest[i] + b.service;
+
+    if (b.max_load.has_value()) {
+      const auto& max_load = b.max_load.value();
+      for (std::size_t a = 0; a < amount_size; ++a) {
+        if (max_load[a] < fwd_smallest_margin[a]) {
+          fwd_smallest_margin[a] = max_load[a];
+        }
+      }
+    }
+    fwd_smallest_breaks_load_margin[i] = fwd_smallest_margin;
   }
 
   Duration next_latest = v_end;
   for (Index r_i = 0; r_i < breaks.size(); ++r_i) {
-    Index i = breaks.size() - 1 - r_i;
+    const Index i = breaks.size() - 1 - r_i;
     const auto& b = breaks[i];
 
     if (next_latest < b.service) {
@@ -72,6 +89,16 @@ TWRoute::TWRoute(const Input& input, Index v, unsigned amount_size)
     if (break_latest[i] < break_earliest[i]) {
       throw InputException(break_error);
     }
+
+    if (b.max_load.has_value()) {
+      const auto& max_load = b.max_load.value();
+      for (std::size_t a = 0; a < amount_size; ++a) {
+        if (max_load[a] < bwd_smallest_margin[a]) {
+          bwd_smallest_margin[a] = max_load[a];
+        }
+      }
+    }
+    bwd_smallest_breaks_load_margin[i] = bwd_smallest_margin;
   }
 }
 
@@ -405,6 +432,78 @@ void TWRoute::fwd_update_action_time_from(const Input& input, Index rank) {
   }
 }
 
+void TWRoute::fwd_update_breaks_load_margin_from(const Input& input,
+                                                 Index rank) {
+  const auto& v = input.vehicles[vehicle_rank];
+
+  // Last valid fwd_smallest value, if any.
+  auto fwd_smallest =
+    (breaks_counts[rank] == 0)
+      ? utils::max_amount(input.get_amount_size())
+      : fwd_smallest_breaks_load_margin[breaks_counts[rank] - 1];
+
+  for (Index i = rank; i <= route.size(); ++i) {
+    if (breaks_at_rank[i] != 0) {
+      // Update for breaks right before job at rank i.
+      const auto& current_load = load_at_step(i);
+
+      for (auto break_rank = breaks_counts[i] - breaks_at_rank[i];
+           break_rank < breaks_counts[i];
+           ++break_rank) {
+        const auto& b = v.breaks[break_rank];
+
+        assert(b.is_valid_for_load(current_load));
+        auto current_margin = (b.max_load.has_value())
+                                ? b.max_load.value() - current_load
+                                : utils::max_amount(input.get_amount_size());
+
+        for (std::size_t a = 0; a < fwd_smallest.size(); ++a) {
+          fwd_smallest[a] = std::min(fwd_smallest[a], current_margin[a]);
+        }
+
+        assert(input.zero_amount() <= fwd_smallest);
+        fwd_smallest_breaks_load_margin[break_rank] = fwd_smallest;
+      }
+    }
+  }
+}
+
+void TWRoute::bwd_update_breaks_load_margin_from(const Input& input,
+                                                 Index rank) {
+  const auto& v = input.vehicles[vehicle_rank];
+
+  // Last valid bwd_smallest value, if any.
+  auto bwd_smallest = (breaks_counts[rank] == breaks_counts.back())
+                        ? utils::max_amount(input.get_amount_size())
+                        : bwd_smallest_breaks_load_margin[breaks_counts[rank]];
+
+  for (Index bwd_i = 0; bwd_i <= rank; ++bwd_i) {
+    const auto i = rank - bwd_i;
+    if (breaks_at_rank[i] != 0) {
+      // Update for breaks right before job at rank i.
+      const auto& current_load = load_at_step(i);
+
+      for (unsigned bwd_break_count = 0; bwd_break_count < breaks_at_rank[i];
+           ++bwd_break_count) {
+        const auto break_rank = breaks_counts[i] - 1 - bwd_break_count;
+        const auto& b = v.breaks[break_rank];
+
+        assert(b.is_valid_for_load(current_load));
+        auto current_margin = (b.max_load.has_value())
+                                ? b.max_load.value() - current_load
+                                : utils::max_amount(input.get_amount_size());
+
+        for (std::size_t a = 0; a < bwd_smallest.size(); ++a) {
+          bwd_smallest[a] = std::min(bwd_smallest[a], current_margin[a]);
+        }
+
+        assert(input.zero_amount() <= bwd_smallest);
+        bwd_smallest_breaks_load_margin[break_rank] = bwd_smallest;
+      }
+    }
+  }
+}
+
 OrderChoice::OrderChoice(const Input& input,
                          const Index job_rank,
                          const Break& b,
@@ -427,7 +526,9 @@ OrderChoice TWRoute::order_choice(const Input& input,
                                   const Duration job_action_time,
                                   const Break& b,
                                   const PreviousInfo& previous,
-                                  const NextInfo& next) const {
+                                  const NextInfo& next,
+                                  const Amount& current_load,
+                                  bool check_max_load) const {
   OrderChoice oc(input, job_rank, b, previous);
   const auto& v = input.vehicles[vehicle_rank];
   const auto& j = input.jobs[job_rank];
@@ -453,8 +554,8 @@ OrderChoice TWRoute::order_choice(const Input& input,
     });
   if (new_b_tw == b.tws.end()) {
     // Break does not fit after job due to its time windows. Only
-    // option is to choose break first.
-    oc.add_break_first = true;
+    // option is to choose break first, if valid for max_load.
+    oc.add_break_first = !check_max_load or b.is_valid_for_load(current_load);
     return oc;
   } else {
     Duration travel_after_break = next.travel;
@@ -476,9 +577,24 @@ OrderChoice TWRoute::order_choice(const Input& input,
       oc.add_break_first = true;
       return oc;
     }
+
+    if (check_max_load and j.type == JOB_TYPE::SINGLE and
+        (!b.is_valid_for_load(current_load + j.pickup - j.delivery) or
+         !(j.pickup <= bwd_smallest_breaks_load_margin[v.break_rank(b.id)]))) {
+      // Break won't fit right after job for load reason.
+      oc.add_break_first = b.is_valid_for_load(current_load);
+      return oc;
+    }
   }
 
   // Try putting break first then job.
+  if (check_max_load and !b.is_valid_for_load(current_load)) {
+    // Not doable based on max_load, only option is to choose job
+    // first.
+    oc.add_job_first = true;
+    return oc;
+  }
+
   Duration travel_after_break = previous.travel;
   Duration earliest_job_start = previous.earliest;
 
@@ -499,6 +615,7 @@ OrderChoice TWRoute::order_choice(const Input& input,
     std::find_if(j.tws.begin(), j.tws.end(), [&](const auto& tw) {
       return earliest_job_start <= tw.end;
     });
+
   if (new_j_tw == j.tws.end()) {
     // Job does not fit after break due to its time windows. Only
     // option is to choose job first.
@@ -515,12 +632,13 @@ OrderChoice TWRoute::order_choice(const Input& input,
     }
   }
 
-  // In case where both ordering options are doable based on timing
-  // constraints for a pickup, we favor putting the pickup first,
-  // except if adding the delivery afterwards is not possible. This is
-  // mandatory to avoid heuristically forcing a pickup -> break choice
-  // resulting in invalid options, while break -> pickup -> delivery
-  // might be valid.
+  // Now both ordering options are doable based on timing constraints.
+
+  // For a pickup, we favor putting the pickup first, except if adding
+  // the delivery afterwards is not possible. This is mandatory to
+  // avoid heuristically forcing a pickup -> break choice resulting in
+  // invalid options, while break -> pickup -> delivery might be
+  // valid.
   if (j.type == JOB_TYPE::PICKUP) {
     const auto& matching_d = input.jobs[job_rank + 1];
     assert(matching_d.type == JOB_TYPE::DELIVERY);
@@ -537,7 +655,8 @@ OrderChoice TWRoute::order_choice(const Input& input,
       std::find_if(matching_d.tws.begin(),
                    matching_d.tws.end(),
                    [&](const auto& tw) { return pb_d_candidate <= tw.end; });
-    if (pb_d_tw != matching_d.tws.end()) {
+    if (pb_d_tw != matching_d.tws.end() and
+        (!check_max_load or b.is_valid_for_load(current_load + j.pickup))) {
       // pickup -> break -> delivery is doable, choose pickup first.
       oc.add_job_first = true;
       return oc;
@@ -567,6 +686,7 @@ OrderChoice TWRoute::order_choice(const Input& input,
         });
       if (after_d_b_tw != b.tws.end()) {
         // pickup -> delivery -> break is doable, choose pickup first.
+        assert(!check_max_load or b.is_valid_for_load(current_load));
         oc.add_job_first = true;
         return oc;
       }
@@ -578,14 +698,15 @@ OrderChoice TWRoute::order_choice(const Input& input,
     return oc;
   }
 
-  // In case where both ordering options are doable based on timing
-  // constraints for a single job, we pick the ordering minimizing
-  // earliest end date for sequence.
+  // For a single job, we pick the ordering minimizing earliest end
+  // date for sequence.
   if (break_then_job_end < job_then_break_end) {
     oc.add_break_first = true;
   } else if (break_then_job_end == job_then_break_end) {
-    // If end date is the same for both ordering options, decide
-    // based on earliest deadline.
+    // If end date is the same for both ordering options, decide based
+    // on earliest deadline, except for deliveries. If a delivery
+    // without TW constraint is postponed, it can introduce arbitrary
+    // waiting time between zero max_load breaks.
     if (j.type == JOB_TYPE::DELIVERY or oc.j_tw->end <= oc.b_tw->end) {
       oc.add_job_first = true;
     } else {
@@ -600,14 +721,20 @@ OrderChoice TWRoute::order_choice(const Input& input,
 
 template <class InputIterator>
 bool TWRoute::is_valid_addition_for_tw(const Input& input,
+                                       const Amount& delivery,
                                        const InputIterator first_job,
                                        const InputIterator last_job,
                                        const Index first_rank,
-                                       const Index last_rank) const {
+                                       const Index last_rank,
+                                       bool check_max_load) const {
   assert(first_job <= last_job);
   assert(first_rank <= last_rank);
 
   const auto& v = input.vehicles[vehicle_rank];
+
+  // Override this value if vehicle does not need this check anyway to
+  // spare some work.
+  check_max_load = v.has_break_max_load and check_max_load;
 
   PreviousInfo current(0, 0);
   NextInfo next(0, 0);
@@ -655,6 +782,25 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
   Index current_break = breaks_counts[first_rank] - breaks_at_rank[first_rank];
   const Index last_break = breaks_counts[last_rank];
 
+  // Maintain current load while adding insertion range. Initial load
+  // is lowered based on removed range.
+  Amount current_load;
+
+  if (check_max_load) {
+    const auto previous_init_load =
+      (route.empty()) ? input.zero_amount() : load_at_step(first_rank);
+    assert(delivery_in_range(first_rank, last_rank) <= previous_init_load);
+    Amount delta_delivery = delivery - delivery_in_range(first_rank, last_rank);
+
+    if (current_break != 0 and
+        !(delta_delivery <=
+          fwd_smallest_breaks_load_margin[current_break - 1])) {
+      return false;
+    }
+
+    current_load = previous_init_load + delta_delivery;
+  }
+
   // Propagate earliest dates for all jobs and breaks in their
   // respective addition ranges.
   auto current_job = first_job;
@@ -670,6 +816,11 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
 
       if (b_tw == b.tws.end()) {
         // Break does not fit due to its time windows.
+        return false;
+      }
+
+      if (check_max_load and !b.is_valid_for_load(current_load)) {
+        // Break does not fit due to current load.
         return false;
       }
 
@@ -690,10 +841,11 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
       continue;
     }
 
+    // We still have jobs to go through.
+    const auto& j = input.jobs[*current_job];
+
     if (current_break == last_break) {
       // Compute earliest end date for job after last inserted breaks.
-      const auto& j = input.jobs[*current_job];
-
       current.earliest += current.travel;
 
       const auto j_tw =
@@ -709,6 +861,11 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
       current.earliest =
         std::max(current.earliest, j_tw->start) + job_action_time;
 
+      if (check_max_load) {
+        assert(j.delivery <= current_load);
+        current_load += (j.pickup - j.delivery);
+      }
+
       ++current_job;
       if (current_job != last_job) {
         // Account for travel time to next current job.
@@ -721,12 +878,17 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
     // We still have both jobs and breaks to go through, so decide on
     // ordering.
     const auto& b = v.breaks[current_break];
-    const auto& j = input.jobs[*current_job];
     const auto job_action_time =
       (j.index() == current.location_index) ? j.service : j.setup + j.service;
 
-    auto oc =
-      order_choice(input, *current_job, job_action_time, b, current, next);
+    auto oc = order_choice(input,
+                           *current_job,
+                           job_action_time,
+                           b,
+                           current,
+                           next,
+                           current_load,
+                           check_max_load);
 
     if (!oc.add_job_first and !oc.add_break_first) {
       // Infeasible insertion.
@@ -737,6 +899,10 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
     // time with given insertion choice.
     assert(oc.add_job_first xor oc.add_break_first);
     if (oc.add_break_first) {
+      if (check_max_load and !b.is_valid_for_load(current_load)) {
+        return false;
+      }
+
       if (current.earliest < oc.b_tw->start) {
         auto margin = oc.b_tw->start - current.earliest;
         if (margin < current.travel) {
@@ -759,12 +925,28 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
         std::max(current.earliest + current.travel, oc.j_tw->start) +
         job_action_time;
 
+      if (check_max_load) {
+        assert(j.delivery <= current_load);
+        current_load += (j.pickup - j.delivery);
+      }
+
       ++current_job;
       if (current_job != last_job) {
         // Account for travel time to next current job.
         current.travel =
           v.duration(j.index(), input.jobs[*current_job].index());
       }
+    }
+  }
+
+  if (check_max_load and last_break < v.breaks.size()) {
+    const auto previous_final_load =
+      (route.empty()) ? input.zero_amount() : load_at_step(last_rank);
+
+    const Amount delta_pickup = current_load - previous_final_load;
+
+    if (!(delta_pickup <= bwd_smallest_breaks_load_margin[last_break])) {
+      return false;
     }
   }
 
@@ -836,6 +1018,7 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
 
 template <class InputIterator>
 void TWRoute::replace(const Input& input,
+                      const Amount& delivery,
                       const InputIterator first_job,
                       const InputIterator last_job,
                       const Index first_rank,
@@ -888,6 +1071,37 @@ void TWRoute::replace(const Input& input,
   // Determine break range between first_rank and last_rank.
   Index current_break = breaks_counts[first_rank] - breaks_at_rank[first_rank];
   const Index last_break = breaks_counts[last_rank];
+
+  // Maintain current load while adding insertion range. Initial load
+  // is lowered based on removed range.
+  const auto previous_init_load =
+    (route.empty()) ? input.zero_amount() : load_at_step(first_rank);
+  const auto previous_final_load =
+    (route.empty()) ? input.zero_amount() : load_at_step(last_rank);
+  assert(delivery_in_range(first_rank, last_rank) <= previous_init_load);
+  const Amount delta_delivery =
+    delivery - delivery_in_range(first_rank, last_rank);
+  Amount current_load = previous_init_load + delta_delivery;
+
+  // Update all break load margins prior to modified range.
+  assert(current_break == 0 or
+         delta_delivery <= fwd_smallest_breaks_load_margin[current_break - 1]);
+  for (std::size_t i = 0; i < current_break; ++i) {
+    assert(delta_delivery <= fwd_smallest_breaks_load_margin[i]);
+
+    // Manually decrement margin to avoid overflows that would end up
+    // in a negative margin with a plain
+    // fwd_smallest_breaks_load_margin[i] -= delta_delivery;
+    for (std::size_t a = 0; a < delta_delivery.size(); ++a) {
+      if ((-delta_delivery[a]) <= (std::numeric_limits<Capacity>::max() -
+                                   fwd_smallest_breaks_load_margin[i][a])) {
+        fwd_smallest_breaks_load_margin[i][a] -= delta_delivery[a];
+      } else {
+        fwd_smallest_breaks_load_margin[i][a] =
+          std::numeric_limits<Capacity>::max();
+      }
+    }
+  }
 
   unsigned previous_breaks_counts =
     (first_rank != 0) ? breaks_counts[first_rank - 1] : 0;
@@ -950,6 +1164,7 @@ void TWRoute::replace(const Input& input,
     if (current_job == last_job) {
       // Compute earliest end date for break after last inserted jobs.
       const auto& b = v.breaks[current_break];
+      assert(b.is_valid_for_load(current_load));
 
       const auto b_tw =
         std::find_if(b.tws.begin(), b.tws.end(), [&](const auto& tw) {
@@ -974,15 +1189,33 @@ void TWRoute::replace(const Input& input,
 
       current.earliest += b.service;
 
+      // Update break max load margin.
+      auto current_margin = (b.max_load.has_value())
+                              ? b.max_load.value() - current_load
+                              : utils::max_amount(input.get_amount_size());
+      if (current_break == 0) {
+        // New fwd_smallest_breaks_load_margin is solely based on this
+        // break max_load.
+        fwd_smallest_breaks_load_margin[current_break] = current_margin;
+      } else {
+        const auto& previous_margin =
+          fwd_smallest_breaks_load_margin[current_break - 1];
+        for (std::size_t i = 0; i < previous_margin.size(); ++i) {
+          fwd_smallest_breaks_load_margin[current_break][i] =
+            std::min(previous_margin[i], current_margin[i]);
+        }
+      }
+
       ++breaks_before;
       ++current_break;
       continue;
     }
 
+    // We still have jobs to go through.
+    const auto& j = input.jobs[*current_job];
+
     if (current_break == last_break) {
       // Compute earliest end date for job after last inserted breaks.
-      const auto& j = input.jobs[*current_job];
-
       current.earliest += current.travel;
 
       const auto j_tw =
@@ -1007,6 +1240,9 @@ void TWRoute::replace(const Input& input,
       previous_breaks_counts += breaks_before;
       breaks_before = 0;
 
+      assert(j.delivery <= current_load);
+      current_load += (j.pickup - j.delivery);
+
       ++current_job;
       if (current_job != last_job) {
         // Account for travel time to next current job.
@@ -1019,16 +1255,22 @@ void TWRoute::replace(const Input& input,
     // We still have both jobs and breaks to go through, so decide on
     // ordering.
     const auto& b = v.breaks[current_break];
-    const auto& j = input.jobs[*current_job];
 
     const auto job_action_time =
       (j.index() == current.location_index) ? j.service : j.setup + j.service;
 
-    auto oc =
-      order_choice(input, *current_job, job_action_time, b, current, next);
+    auto oc = order_choice(input,
+                           *current_job,
+                           job_action_time,
+                           b,
+                           current,
+                           next,
+                           current_load);
 
     assert(oc.add_job_first xor oc.add_break_first);
     if (oc.add_break_first) {
+      assert(b.is_valid_for_load(current_load));
+
       if (current.earliest < oc.b_tw->start) {
         auto margin = oc.b_tw->start - current.earliest;
         breaks_travel_margin_before[current_break] = margin;
@@ -1045,6 +1287,23 @@ void TWRoute::replace(const Input& input,
       break_earliest[current_break] = current.earliest;
 
       current.earliest += b.service;
+
+      // Update break max load margin.
+      auto current_margin = (b.max_load.has_value())
+                              ? b.max_load.value() - current_load
+                              : utils::max_amount(input.get_amount_size());
+      if (current_break == 0) {
+        // New fwd_smallest_breaks_load_margin is solely based on this
+        // break max_load.
+        fwd_smallest_breaks_load_margin[current_break] = current_margin;
+      } else {
+        const auto& previous_margin =
+          fwd_smallest_breaks_load_margin[current_break - 1];
+        for (std::size_t i = 0; i < previous_margin.size(); ++i) {
+          fwd_smallest_breaks_load_margin[current_break][i] =
+            std::min(previous_margin[i], current_margin[i]);
+        }
+      }
 
       ++breaks_before;
       ++current_break;
@@ -1066,6 +1325,9 @@ void TWRoute::replace(const Input& input,
       previous_breaks_counts += breaks_before;
       breaks_before = 0;
 
+      assert(j.delivery <= current_load);
+      current_load += (j.pickup - j.delivery);
+
       ++current_job;
       if (current_job != last_job) {
         // Account for travel time to next current job.
@@ -1076,6 +1338,25 @@ void TWRoute::replace(const Input& input,
   }
 
   assert(current_job_rank == first_rank + add_count);
+
+  // Update all break load margins after modified range.
+  const Amount delta_pickup = current_load - previous_final_load;
+  for (std::size_t i = last_break; i < v.breaks.size(); ++i) {
+    assert(delta_pickup <= bwd_smallest_breaks_load_margin[i]);
+
+    // Manually decrement margin to avoid overflows that would end up
+    // in a negative margin with a plain
+    // bwd_smallest_breaks_load_margin[i] -= delta_pickup;
+    for (std::size_t a = 0; a < delta_pickup.size(); ++a) {
+      if ((-delta_pickup[a]) <= (std::numeric_limits<Capacity>::max() -
+                                 bwd_smallest_breaks_load_margin[i][a])) {
+        bwd_smallest_breaks_load_margin[i][a] -= delta_pickup[a];
+      } else {
+        bwd_smallest_breaks_load_margin[i][a] =
+          std::numeric_limits<Capacity>::max();
+      }
+    }
+  }
 
   // Update remaining number of breaks due before next step.
   breaks_at_rank[current_job_rank] = breaks_before;
@@ -1162,49 +1443,68 @@ void TWRoute::replace(const Input& input,
   }
 
   update_amounts(input);
+
+  // Propagate fwd/bwd_smallest_breaks_load_margin if required.
+  if (last_break < v.breaks.size()) {
+    fwd_update_breaks_load_margin_from(input, current_job_rank);
+  }
+  if (last_break > 0) {
+    bwd_update_breaks_load_margin_from(input, current_job_rank);
+  }
 }
 
 template bool
 TWRoute::is_valid_addition_for_tw(const Input& input,
+                                  const Amount& delivery,
                                   const std::vector<Index>::iterator first_job,
                                   const std::vector<Index>::iterator last_job,
                                   const Index first_rank,
-                                  const Index last_rank) const;
+                                  const Index last_rank,
+                                  bool check_max_load) const;
 
 template bool TWRoute::is_valid_addition_for_tw(
   const Input& input,
+  const Amount& delivery,
   const std::vector<Index>::reverse_iterator first_job,
   const std::vector<Index>::reverse_iterator last_job,
   const Index first_rank,
-  const Index last_rank) const;
+  const Index last_rank,
+  bool check_max_load) const;
 
 template bool TWRoute::is_valid_addition_for_tw(
   const Input& input,
+  const Amount& delivery,
   const std::array<Index, 1>::const_iterator first_job,
   const std::array<Index, 1>::const_iterator last_job,
   const Index first_rank,
-  const Index last_rank) const;
+  const Index last_rank,
+  bool check_max_load) const;
 
 template bool TWRoute::is_valid_addition_for_tw(
   const Input& input,
+  const Amount& delivery,
   const std::vector<Index>::const_iterator first_job,
   const std::vector<Index>::const_iterator last_job,
   const Index first_rank,
-  const Index last_rank) const;
+  const Index last_rank,
+  bool check_max_load) const;
 
 template void TWRoute::replace(const Input& input,
+                               const Amount& delivery,
                                const std::vector<Index>::iterator first_job,
                                const std::vector<Index>::iterator last_job,
                                const Index first_rank,
                                const Index last_rank);
 template void
 TWRoute::replace(const Input& input,
+                 const Amount& delivery,
                  const std::vector<Index>::const_iterator first_job,
                  const std::vector<Index>::const_iterator last_job,
                  const Index first_rank,
                  const Index last_rank);
 template void
 TWRoute::replace(const Input& input,
+                 const Amount& delivery,
                  const std::vector<Index>::reverse_iterator first_job,
                  const std::vector<Index>::reverse_iterator last_job,
                  const Index first_rank,
@@ -1212,6 +1512,7 @@ TWRoute::replace(const Input& input,
 
 template void
 TWRoute::replace(const Input& input,
+                 const Amount& delivery,
                  const std::array<Index, 1>::const_iterator first_job,
                  const std::array<Index, 1>::const_iterator last_job,
                  const Index first_rank,

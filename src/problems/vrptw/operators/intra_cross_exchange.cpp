@@ -38,6 +38,7 @@ bool IntraCrossExchange::is_valid() {
     s_normal_t_normal_is_valid =
       s_normal_t_normal_is_valid &&
       _tw_s_route.is_valid_addition_for_tw(_input,
+                                           _delivery,
                                            _moved_jobs.begin(),
                                            _moved_jobs.end(),
                                            _first_rank,
@@ -49,6 +50,7 @@ bool IntraCrossExchange::is_valid() {
       s_normal_t_reverse_is_valid =
         s_normal_t_reverse_is_valid &&
         _tw_s_route.is_valid_addition_for_tw(_input,
+                                             _delivery,
                                              _moved_jobs.begin(),
                                              _moved_jobs.end(),
                                              _first_rank,
@@ -62,6 +64,7 @@ bool IntraCrossExchange::is_valid() {
       s_reverse_t_reverse_is_valid =
         s_reverse_t_reverse_is_valid &&
         _tw_s_route.is_valid_addition_for_tw(_input,
+                                             _delivery,
                                              _moved_jobs.begin(),
                                              _moved_jobs.end(),
                                              _first_rank,
@@ -74,6 +77,7 @@ bool IntraCrossExchange::is_valid() {
       s_reverse_t_normal_is_valid =
         s_reverse_t_normal_is_valid &&
         _tw_s_route.is_valid_addition_for_tw(_input,
+                                             _delivery,
                                              _moved_jobs.begin(),
                                              _moved_jobs.end(),
                                              _first_rank,
@@ -108,6 +112,7 @@ void IntraCrossExchange::apply() {
   }
 
   _tw_s_route.replace(_input,
+                      _delivery,
                       _moved_jobs.begin(),
                       _moved_jobs.end(),
                       _first_rank,

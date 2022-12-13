@@ -25,6 +25,7 @@ protected:
   bool reverse_s_edge;
   bool is_normal_valid;
   bool is_reverse_valid;
+  const Amount edge_delivery;
 
   virtual void compute_gain() override;
 

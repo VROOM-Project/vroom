@@ -38,7 +38,8 @@ IntraMixedExchange::IntraMixedExchange(const Input& input,
     s_is_reverse_valid(false),
     _moved_jobs((s_rank < t_rank) ? t_rank - s_rank + 2 : s_rank - t_rank + 1),
     _first_rank(std::min(s_rank, t_rank)),
-    _last_rank((t_rank < s_rank) ? s_rank + 1 : t_rank + 2) {
+    _last_rank((t_rank < s_rank) ? s_rank + 1 : t_rank + 2),
+    _delivery(source.delivery_in_range(_first_rank, _last_rank)) {
   // If node at s_rank is right before/after edge at t_rank, then the
   // move is a relocate.
   assert(s_rank + 1 < t_rank or t_rank + 2 < s_rank);
@@ -200,8 +201,6 @@ void IntraMixedExchange::compute_gain() {
 bool IntraMixedExchange::is_valid() {
   assert(_gain_upper_bound_computed);
 
-  const auto delivery = source.delivery_in_range(_first_rank, _last_rank);
-
   const auto& s_v = _input.vehicles[s_vehicle];
   const auto s_travel_time = _sol_state.route_evals[s_vehicle].duration;
   const auto normal_duration = _normal_s_gain.duration + t_gain.duration;
@@ -209,7 +208,7 @@ bool IntraMixedExchange::is_valid() {
   s_is_normal_valid =
     s_v.ok_for_travel_time(s_travel_time - normal_duration) and
     source.is_valid_addition_for_capacity_inclusion(_input,
-                                                    delivery,
+                                                    _delivery,
                                                     _moved_jobs.begin(),
                                                     _moved_jobs.end(),
                                                     _first_rank,
@@ -223,7 +222,7 @@ bool IntraMixedExchange::is_valid() {
 
       s_is_reverse_valid =
         source.is_valid_addition_for_capacity_inclusion(_input,
-                                                        delivery,
+                                                        _delivery,
                                                         _moved_jobs.begin(),
                                                         _moved_jobs.end(),
                                                         _first_rank,

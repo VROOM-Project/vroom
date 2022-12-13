@@ -51,19 +51,19 @@ inline double get_double(const rapidjson::Value& object, const char* key) {
 
 inline Amount get_amount(const rapidjson::Value& object,
                          const char* key,
-                         unsigned size) {
+                         unsigned amount_size) {
   // Default to zero amount with provided size.
-  Amount amount(size);
+  Amount amount(amount_size);
 
   if (object.HasMember(key)) {
     if (!object[key].IsArray()) {
       throw InputException("Invalid " + std::string(key) + " array.");
     }
 
-    if (object[key].Size() != size) {
+    if (object[key].Size() != amount_size) {
       throw InputException("Inconsistent " + std::string(key) +
                            " length: " + std::to_string(object[key].Size()) +
-                           " and " + std::to_string(size) + '.');
+                           " and " + std::to_string(amount_size) + '.');
     }
 
     for (rapidjson::SizeType i = 0; i < object[key].Size(); ++i) {
@@ -183,16 +183,16 @@ inline TimeWindow get_vehicle_time_window(const rapidjson::Value& v) {
   return v_tw;
 }
 
-inline std::vector<TimeWindow> get_job_time_windows(const rapidjson::Value& j) {
+inline std::vector<TimeWindow> get_time_windows(const rapidjson::Value& o) {
   std::vector<TimeWindow> tws;
-  if (j.HasMember("time_windows")) {
-    if (!j["time_windows"].IsArray() or j["time_windows"].Empty()) {
-      throw InputException("Invalid time_windows array for job " +
-                           std::to_string(j["id"].GetUint64()) + ".");
+  if (o.HasMember("time_windows")) {
+    if (!o["time_windows"].IsArray() or o["time_windows"].Empty()) {
+      throw InputException("Invalid time_windows array for object " +
+                           std::to_string(o["id"].GetUint64()) + ".");
     }
 
-    std::transform(j["time_windows"].Begin(),
-                   j["time_windows"].End(),
+    std::transform(o["time_windows"].Begin(),
+                   o["time_windows"].End(),
                    std::back_inserter(tws),
                    [](auto& tw) { return get_time_window(tw); });
 
@@ -204,34 +204,22 @@ inline std::vector<TimeWindow> get_job_time_windows(const rapidjson::Value& j) {
   return tws;
 }
 
-inline std::vector<TimeWindow>
-get_break_time_windows(const rapidjson::Value& b) {
-  std::vector<TimeWindow> tws;
-  if (!b.HasMember("time_windows") or !b["time_windows"].IsArray() or
-      b["time_windows"].Empty()) {
-    throw InputException("Invalid time_windows array for break " +
-                         std::to_string(b["id"].GetUint64()) + ".");
-  }
-
-  std::transform(b["time_windows"].Begin(),
-                 b["time_windows"].End(),
-                 std::back_inserter(tws),
-                 [](auto& tw) { return get_time_window(tw); });
-
-  std::sort(tws.begin(), tws.end());
-
-  return tws;
-}
-
-inline Break get_break(const rapidjson::Value& b) {
+inline Break get_break(const rapidjson::Value& b, unsigned amount_size) {
   check_id(b, "break");
+
+  const auto max_load = b.HasMember("max_load")
+                          ? get_amount(b, "max_load", amount_size)
+                          : std::optional<Amount>();
+
   return Break(b["id"].GetUint64(),
-               get_break_time_windows(b),
+               get_time_windows(b),
                get_duration(b, "service"),
-               get_string(b, "description"));
+               get_string(b, "description"),
+               max_load);
 }
 
-inline std::vector<Break> get_vehicle_breaks(const rapidjson::Value& v) {
+inline std::vector<Break> get_vehicle_breaks(const rapidjson::Value& v,
+                                             unsigned amount_size) {
   std::vector<Break> breaks;
   if (v.HasMember("breaks")) {
     if (!v["breaks"].IsArray()) {
@@ -242,7 +230,7 @@ inline std::vector<Break> get_vehicle_breaks(const rapidjson::Value& v) {
     std::transform(v["breaks"].Begin(),
                    v["breaks"].End(),
                    std::back_inserter(breaks),
-                   [](auto& b) { return get_break(b); });
+                   [&](auto& b) { return get_break(b, amount_size); });
   }
 
   std::sort(breaks.begin(), breaks.end(), [](const auto& a, const auto& b) {
@@ -430,7 +418,7 @@ inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
                  get_amount(json_vehicle, "capacity", amount_size),
                  get_skills(json_vehicle),
                  get_vehicle_time_window(json_vehicle),
-                 get_vehicle_breaks(json_vehicle),
+                 get_vehicle_breaks(json_vehicle, amount_size),
                  get_string(json_vehicle, "description"),
                  get_vehicle_costs(json_vehicle),
                  get_double(json_vehicle, "speed_factor"),
@@ -482,7 +470,7 @@ inline Job get_job(const rapidjson::Value& json_job, unsigned amount_size) {
              get_amount(json_job, "pickup", amount_size),
              get_skills(json_job),
              get_priority(json_job),
-             get_job_time_windows(json_job),
+             get_time_windows(json_job),
              get_string(json_job, "description"));
 }
 
@@ -585,7 +573,7 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
                  amount,
                  skills,
                  priority,
-                 get_job_time_windows(json_pickup),
+                 get_time_windows(json_pickup),
                  get_string(json_pickup, "description"));
 
       // Defining delivery job.
@@ -600,7 +588,7 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
                    amount,
                    skills,
                    priority,
-                   get_job_time_windows(json_delivery),
+                   get_time_windows(json_delivery),
                    get_string(json_delivery, "description"));
 
       input.add_shipment(pickup, delivery);

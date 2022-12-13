@@ -39,6 +39,7 @@ bool MixedExchange::is_valid() {
 
   valid =
     valid && _tw_t_route.is_valid_addition_for_tw(_input,
+                                                  source_delivery,
                                                   s_route.begin() + s_rank,
                                                   s_route.begin() + s_rank + 1,
                                                   t_rank,
@@ -49,6 +50,7 @@ bool MixedExchange::is_valid() {
     auto t_start = t_route.begin() + t_rank;
     s_is_normal_valid =
       s_is_normal_valid && _tw_s_route.is_valid_addition_for_tw(_input,
+                                                                target_delivery,
                                                                 t_start,
                                                                 t_start + 2,
                                                                 s_rank,
@@ -60,6 +62,7 @@ bool MixedExchange::is_valid() {
       s_is_reverse_valid =
         s_is_reverse_valid &&
         _tw_s_route.is_valid_addition_for_tw(_input,
+                                             target_delivery,
                                              t_reverse_start,
                                              t_reverse_start + 2,
                                              s_rank,
@@ -89,12 +92,14 @@ void MixedExchange::apply() {
   }
 
   _tw_s_route.replace(_input,
+                      target_delivery,
                       t_job_ranks.begin(),
                       t_job_ranks.end(),
                       s_rank,
                       s_rank + 1);
 
   _tw_t_route.replace(_input,
+                      source_delivery,
                       s_job_ranks.begin(),
                       s_job_ranks.end(),
                       t_rank,

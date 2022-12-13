@@ -56,6 +56,7 @@ struct Vehicle {
   CostWrapper cost_wrapper;
   size_t max_tasks;
   const Duration max_travel_time;
+  const bool has_break_max_load;
   std::vector<VehicleStep> steps;
   std::unordered_map<Id, Index> break_id_to_rank;
 
@@ -108,6 +109,8 @@ struct Vehicle {
     assert(0 <= d);
     return d <= max_travel_time;
   }
+
+  Index break_rank(Id id) const;
 };
 
 } // namespace vroom

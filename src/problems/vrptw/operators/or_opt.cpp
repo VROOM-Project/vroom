@@ -41,6 +41,7 @@ bool OrOpt::is_valid() {
     auto s_start = s_route.begin() + s_rank;
     is_normal_valid =
       is_normal_valid && _tw_t_route.is_valid_addition_for_tw(_input,
+                                                              edge_delivery,
                                                               s_start,
                                                               s_start + 2,
                                                               t_rank,
@@ -49,6 +50,7 @@ bool OrOpt::is_valid() {
     auto s_reverse_start = s_route.rbegin() + s_route.size() - 2 - s_rank;
     is_reverse_valid = is_reverse_valid &&
                        _tw_t_route.is_valid_addition_for_tw(_input,
+                                                            edge_delivery,
                                                             s_reverse_start,
                                                             s_reverse_start + 2,
                                                             t_rank,
@@ -64,6 +66,7 @@ void OrOpt::apply() {
   if (reverse_s_edge) {
     auto s_reverse_start = s_route.rbegin() + s_route.size() - 2 - s_rank;
     _tw_t_route.replace(_input,
+                        edge_delivery,
                         s_reverse_start,
                         s_reverse_start + 2,
                         t_rank,
@@ -71,7 +74,8 @@ void OrOpt::apply() {
     _tw_s_route.remove(_input, s_rank, 2);
   } else {
     auto s_start = s_route.begin() + s_rank;
-    _tw_t_route.replace(_input, s_start, s_start + 2, t_rank, t_rank);
+    _tw_t_route
+      .replace(_input, edge_delivery, s_start, s_start + 2, t_rank, t_rank);
     _tw_s_route.remove(_input, s_rank, 2);
   }
 }

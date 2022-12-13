@@ -139,6 +139,7 @@ A `break` object has the following properties:
 | `time_windows` | an array of `time_window` objects describing valid slots for break start |
 | [`service`] | break duration (defaults to 0) |
 | [`description`] | a string describing this break |
+| [`max_load`] | maximum vehicle load value for which this break can happen |
 
 An error is reported if two `break` objects have the same `id` for the same vehicle.
 
@@ -416,6 +417,7 @@ Possible violation causes are:
 - "precedence" if a `shipment` precedence constraint is not met (`pickup` without matching `delivery`, `delivery` before/without matching `pickup`)
 - "missing_break" if a vehicle break has been omitted in its custom route
 - "max_travel_time" if the vehicle has more travel time than its `max_travel_time` value
+- "max_load" if the load during a break exceed its `max_load` value
 
 Note on violations: reporting only really makes sense when using `-c`
 to choose ETA for custom routes described in input using the `steps`

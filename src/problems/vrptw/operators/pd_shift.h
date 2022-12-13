@@ -20,6 +20,7 @@ private:
   std::vector<Index> _source_without_pd;
   TWRoute& _tw_s_route;
   TWRoute& _tw_t_route;
+  Amount _best_t_delivery;
 
   virtual void compute_gain() override;
 

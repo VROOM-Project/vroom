@@ -27,6 +27,8 @@ protected:
 
   bool s_is_normal_valid;
   bool s_is_reverse_valid;
+  const Amount source_delivery;
+  const Amount target_delivery;
 
   virtual void compute_gain() override;
 

@@ -153,12 +153,23 @@ public:
     return _fwd_pickups[i];
   }
 
+  const Amount& load_at_step(Index s) const {
+    return _current_loads[s];
+  }
+
   bool is_valid_addition_for_tw(const Input&, const Index, const Index) const {
+    return true;
+  };
+
+  bool is_valid_addition_for_tw_without_max_load(const Input&,
+                                                 const Index,
+                                                 const Index) const {
     return true;
   };
 
   template <class InputIterator>
   bool is_valid_addition_for_tw(const Input&,
+                                const Amount,
                                 const InputIterator,
                                 const InputIterator,
                                 const Index,
@@ -183,6 +194,16 @@ public:
                const InputIterator last_job,
                const Index first_rank,
                const Index last_rank);
+
+  template <class InputIterator>
+  void replace(const Input& input,
+               const Amount&,
+               const InputIterator first_job,
+               const InputIterator last_job,
+               const Index first_rank,
+               const Index last_rank) {
+    replace(input, first_job, last_job, first_rank, last_rank);
+  }
 };
 
 } // namespace vroom

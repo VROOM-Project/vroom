@@ -38,7 +38,8 @@ IntraOrOpt::IntraOrOpt(const Input& input,
     check_reverse(check_reverse),
     _moved_jobs((s_rank < t_rank) ? t_rank - s_rank + 2 : s_rank - t_rank + 2),
     _first_rank(std::min(s_rank, t_rank)),
-    _last_rank(std::max(s_rank, t_rank) + 2) {
+    _last_rank(std::max(s_rank, t_rank) + 2),
+    _delivery(source.delivery_in_range(_first_rank, _last_rank)) {
   assert(s_route.size() >= 4);
   assert(s_rank < s_route.size() - 1);
   assert(t_rank <= s_route.size() - 2);
@@ -182,14 +183,14 @@ bool IntraOrOpt::is_valid() {
   const auto s_travel_time = _sol_state.route_evals[s_vehicle].duration;
   const auto normal_duration = s_gain.duration + _normal_t_gain.duration;
 
-  is_normal_valid = s_v.ok_for_travel_time(s_travel_time - normal_duration) and
-                    source.is_valid_addition_for_capacity_inclusion(
-                      _input,
-                      source.delivery_in_range(_first_rank, _last_rank),
-                      _moved_jobs.begin(),
-                      _moved_jobs.end(),
-                      _first_rank,
-                      _last_rank);
+  is_normal_valid =
+    s_v.ok_for_travel_time(s_travel_time - normal_duration) and
+    source.is_valid_addition_for_capacity_inclusion(_input,
+                                                    _delivery,
+                                                    _moved_jobs.begin(),
+                                                    _moved_jobs.end(),
+                                                    _first_rank,
+                                                    _last_rank);
 
   if (check_reverse) {
     const auto reversed_duration = s_gain.duration + _reversed_t_gain.duration;
@@ -197,13 +198,13 @@ bool IntraOrOpt::is_valid() {
     if (s_v.ok_for_travel_time(s_travel_time - reversed_duration)) {
       std::swap(_moved_jobs[_s_edge_first], _moved_jobs[_s_edge_last]);
 
-      is_reverse_valid = source.is_valid_addition_for_capacity_inclusion(
-        _input,
-        source.delivery_in_range(_first_rank, _last_rank),
-        _moved_jobs.begin(),
-        _moved_jobs.end(),
-        _first_rank,
-        _last_rank);
+      is_reverse_valid =
+        source.is_valid_addition_for_capacity_inclusion(_input,
+                                                        _delivery,
+                                                        _moved_jobs.begin(),
+                                                        _moved_jobs.end(),
+                                                        _first_rank,
+                                                        _last_rank);
 
       // Reset to initial situation before potential application or TW
       // checks.
