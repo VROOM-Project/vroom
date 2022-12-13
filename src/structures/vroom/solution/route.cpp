@@ -46,6 +46,7 @@ Route::Route(Id vehicle,
 #endif
 }
 
+#ifndef NDEBUG
 void Route::check_timing_consistency() const {
   if (steps.empty()) {
     return;
@@ -91,5 +92,6 @@ void Route::check_timing_consistency() const {
   assert(total_service == service);
   assert(total_waiting_time == waiting_time);
 }
+#endif
 
 } // namespace vroom
