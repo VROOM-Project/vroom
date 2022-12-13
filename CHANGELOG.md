@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [v1.13.0-rc.1] - 2022-12-13
 
 ### Added
 
