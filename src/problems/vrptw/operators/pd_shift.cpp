@@ -31,8 +31,6 @@ PDShift::PDShift(const Input& input,
                   static_cast<RawRoute&>(tw_t_route),
                   t_vehicle,
                   gain_threshold),
-    _source_without_pd(s_route.begin() + _s_p_rank + 1,
-                       s_route.begin() + _s_d_rank),
     _tw_s_route(tw_s_route),
     _tw_t_route(tw_t_route) {
 }
@@ -42,8 +40,8 @@ void PDShift::compute_gain() {
   bool is_valid_removal =
     _tw_s_route.is_valid_addition_for_tw(_input,
                                          _input.zero_amount(),
-                                         _source_without_pd.begin(),
-                                         _source_without_pd.end(),
+                                         s_route.begin() + _s_p_rank + 1,
+                                         s_route.begin() + _s_d_rank,
                                          _s_p_rank,
                                          _s_d_rank + 1);
   if (!is_valid_removal) {
@@ -85,10 +83,13 @@ void PDShift::apply() {
   if (_s_d_rank == _s_p_rank + 1) {
     _tw_s_route.remove(_input, _s_p_rank, 2);
   } else {
+    std::vector<Index> source_without_pd(s_route.begin() + _s_p_rank + 1,
+                                         s_route.begin() + _s_d_rank);
+
     _tw_s_route.replace(_input,
                         _tw_s_route.delivery_in_range(_s_p_rank + 1, _s_d_rank),
-                        _source_without_pd.begin(),
-                        _source_without_pd.end(),
+                        source_without_pd.begin(),
+                        source_without_pd.end(),
                         _s_p_rank,
                         _s_d_rank + 1);
   }
