@@ -85,15 +85,8 @@ void PDShift::apply() {
   if (_s_d_rank == _s_p_rank + 1) {
     _tw_s_route.remove(_input, _s_p_rank, 2);
   } else {
-    Amount delivery = _input.zero_amount();
-    for (unsigned i = _s_p_rank + 1; i < _s_d_rank; ++i) {
-      const auto& job = _input.jobs[s_route[i]];
-      if (job.type == JOB_TYPE::SINGLE) {
-        delivery += job.delivery;
-      }
-    }
     _tw_s_route.replace(_input,
-                        delivery,
+                        _tw_s_route.delivery_in_range(_s_p_rank + 1, _s_d_rank),
                         _source_without_pd.begin(),
                         _source_without_pd.end(),
                         _s_p_rank,
