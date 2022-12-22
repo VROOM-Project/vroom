@@ -15,11 +15,13 @@ namespace vroom {
 Break::Break(Id id,
              const std::vector<TimeWindow>& tws,
              UserDuration service,
-             const std::string& description)
+             const std::string& description,
+             const std::optional<Amount>& max_load)
   : id(id),
     tws(tws),
     service(utils::scale_from_user_duration(service)),
-    description(description) {
+    description(description),
+    max_load(max_load) {
   utils::check_tws(tws, id, "break");
 }
 
@@ -34,6 +36,10 @@ bool Break::is_valid_start(Duration time) const {
   }
 
   return valid;
+}
+
+bool Break::is_valid_for_load(const Amount& load) const {
+  return !max_load.has_value() or load <= max_load.value();
 }
 
 } // namespace vroom

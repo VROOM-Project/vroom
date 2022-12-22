@@ -29,7 +29,8 @@ IntraExchange::IntraExchange(const Input& input,
              t_rank),
     _moved_jobs(t_rank - s_rank + 1),
     _first_rank(s_rank),
-    _last_rank(t_rank + 1) {
+    _last_rank(t_rank + 1),
+    _delivery(source.delivery_in_range(_first_rank, _last_rank)) {
   // Assume s_rank < t_rank for symmetry reasons. Set aside cases
   // where t_rank = s_rank + 1, as the move is also an intra_relocate.
   assert(0 < t_rank);
@@ -100,13 +101,12 @@ void IntraExchange::compute_gain() {
 
 bool IntraExchange::is_valid() {
   return is_valid_for_max_travel_time() &&
-         source.is_valid_addition_for_capacity_inclusion(
-           _input,
-           source.delivery_in_range(_first_rank, _last_rank),
-           _moved_jobs.begin(),
-           _moved_jobs.end(),
-           _first_rank,
-           _last_rank);
+         source.is_valid_addition_for_capacity_inclusion(_input,
+                                                         _delivery,
+                                                         _moved_jobs.begin(),
+                                                         _moved_jobs.end(),
+                                                         _first_rank,
+                                                         _last_rank);
 }
 
 void IntraExchange::apply() {

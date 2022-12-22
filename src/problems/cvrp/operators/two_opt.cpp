@@ -28,7 +28,9 @@ TwoOpt::TwoOpt(const Input& input,
              s_rank,
              t_route,
              t_vehicle,
-             t_rank) {
+             t_rank),
+    _s_delivery(source.bwd_deliveries(s_rank)),
+    _t_delivery(target.bwd_deliveries(t_rank)) {
   assert(s_vehicle != t_vehicle);
   assert(s_route.size() >= 1);
   assert(t_route.size() >= 1);
@@ -108,33 +110,31 @@ void TwoOpt::compute_gain() {
 bool TwoOpt::is_valid() {
   assert(gain_computed);
 
-  const auto& t_delivery = target.bwd_deliveries(t_rank);
   const auto& t_pickup = target.bwd_pickups(t_rank);
 
-  const auto& s_delivery = source.bwd_deliveries(s_rank);
   const auto& s_pickup = source.bwd_pickups(s_rank);
 
   return is_valid_for_source_max_travel_time() &&
          is_valid_for_target_max_travel_time() &&
          source.is_valid_addition_for_capacity_margins(_input,
                                                        t_pickup,
-                                                       t_delivery,
+                                                       _t_delivery,
                                                        s_rank + 1,
                                                        s_route.size()) &&
          target.is_valid_addition_for_capacity_margins(_input,
                                                        s_pickup,
-                                                       s_delivery,
+                                                       _s_delivery,
                                                        t_rank + 1,
                                                        t_route.size()) &&
          source.is_valid_addition_for_capacity_inclusion(_input,
-                                                         t_delivery,
+                                                         _t_delivery,
                                                          t_route.begin() +
                                                            t_rank + 1,
                                                          t_route.end(),
                                                          s_rank + 1,
                                                          s_route.size()) &&
          target.is_valid_addition_for_capacity_inclusion(_input,
-                                                         s_delivery,
+                                                         _s_delivery,
                                                          s_route.begin() +
                                                            s_rank + 1,
                                                          s_route.end(),

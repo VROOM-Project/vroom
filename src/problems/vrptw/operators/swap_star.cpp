@@ -58,12 +58,14 @@ void SwapStar::apply() {
                                              choice.insertion_in_target);
 
   _tw_s_route.replace(_input,
+                      choice.source_range_delivery,
                       s_insert.range.begin(),
                       s_insert.range.end(),
                       s_insert.first_rank,
                       s_insert.last_rank);
 
   _tw_t_route.replace(_input,
+                      choice.target_range_delivery,
                       t_insert.range.begin(),
                       t_insert.range.end(),
                       t_insert.first_rank,

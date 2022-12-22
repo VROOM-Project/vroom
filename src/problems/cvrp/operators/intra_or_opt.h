@@ -31,6 +31,7 @@ protected:
   std::vector<Index> _moved_jobs;
   const Index _first_rank;
   const Index _last_rank;
+  const Amount _delivery;
   Index _s_edge_first;
   Index _s_edge_last;
 

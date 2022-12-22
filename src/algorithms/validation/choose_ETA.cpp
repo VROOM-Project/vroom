@@ -1035,8 +1035,10 @@ Route choose_ETA(const Input& input,
 
   // Get output.
   const Duration v_start = horizon_start + get_duration(glp_mip_col_val(lp, 1));
+#ifndef NDEBUG
   const Duration v_end =
     horizon_start + get_duration(glp_mip_col_val(lp, n + 2));
+#endif
   const Duration start_travel =
     get_duration(glp_mip_col_val(lp, start_delta_col));
 
@@ -1332,6 +1334,10 @@ Route choose_ETA(const Input& input,
             utils::scale_from_user_duration(user_duration))) {
         current.violations.types.insert(VIOLATION::MAX_TRAVEL_TIME);
         v_types.insert(VIOLATION::MAX_TRAVEL_TIME);
+      }
+      if (!b.is_valid_for_load(current_load)) {
+        current.violations.types.insert(VIOLATION::MAX_LOAD);
+        v_types.insert(VIOLATION::MAX_LOAD);
       }
 
       previous_start = service_start;

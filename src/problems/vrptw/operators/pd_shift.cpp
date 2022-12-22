@@ -42,6 +42,7 @@ void PDShift::compute_gain() {
   // Check for valid removal wrt TW constraints.
   bool is_valid_removal =
     _tw_s_route.is_valid_addition_for_tw(_input,
+                                         _input.zero_amount(),
                                          _source_without_pd.begin(),
                                          _source_without_pd.end(),
                                          _s_p_rank,
@@ -63,6 +64,7 @@ void PDShift::compute_gain() {
     stored_gain = s_gain + t_gain;
     _best_t_p_rank = rs.pickup_rank;
     _best_t_d_rank = rs.delivery_rank;
+    _best_t_delivery = rs.delivery;
   }
   gain_computed = true;
 }
@@ -75,6 +77,7 @@ void PDShift::apply() {
   target_with_pd.push_back(s_route[_s_d_rank]);
 
   _tw_t_route.replace(_input,
+                      _best_t_delivery,
                       target_with_pd.begin(),
                       target_with_pd.end(),
                       _best_t_p_rank,
@@ -83,7 +86,15 @@ void PDShift::apply() {
   if (_s_d_rank == _s_p_rank + 1) {
     _tw_s_route.remove(_input, _s_p_rank, 2);
   } else {
+    Amount delivery = _input.zero_amount();
+    for (unsigned i = _s_p_rank + 1; i < _s_d_rank; ++i) {
+      const auto& job = _input.jobs[s_route[i]];
+      if (job.type == JOB_TYPE::SINGLE) {
+        delivery += job.delivery;
+      }
+    }
     _tw_s_route.replace(_input,
+                        delivery,
                         _source_without_pd.begin(),
                         _source_without_pd.end(),
                         _s_p_rank,

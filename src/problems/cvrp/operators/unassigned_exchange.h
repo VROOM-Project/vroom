@@ -23,6 +23,7 @@ protected:
   const Index _last_rank;
   std::vector<Index> _moved_jobs;
   const Index _removed;
+  Amount _delivery;
 
   virtual void compute_gain() override;
 

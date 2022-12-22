@@ -55,6 +55,9 @@ void RawRoute::update_amounts(const Input& input) {
     // with empty routes.
     std::fill(_fwd_peaks.begin(), _fwd_peaks.end(), _zero);
     std::fill(_bwd_peaks.begin(), _bwd_peaks.end(), _zero);
+    // So that check against break max_load and margins computations
+    // are consistent with empty routes.
+    std::fill(_current_loads.begin(), _current_loads.end(), _zero);
     return;
   }
 

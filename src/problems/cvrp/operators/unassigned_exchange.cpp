@@ -35,11 +35,16 @@ UnassignedExchange::UnassignedExchange(const Input& input,
     _first_rank(std::min(s_rank, t_rank)),
     _last_rank((s_rank < t_rank) ? t_rank : s_rank + 1),
     _moved_jobs(_last_rank - _first_rank),
-    _removed(s_route[s_rank]) {
+    _removed(s_route[s_rank]),
+    _delivery(source.delivery_in_range(_first_rank, _last_rank)) {
   assert(t_rank != s_rank + 1);
   assert(!s_route.empty());
   assert(s_rank < s_route.size());
   assert(t_rank <= s_route.size());
+
+  assert(_input.jobs[_removed].delivery <= _delivery);
+  _delivery -= _input.jobs[_removed].delivery;
+  _delivery += _input.jobs[_u].delivery;
 
   if (s_rank < t_rank) {
     std::copy(s_route.begin() + s_rank + 1,
@@ -97,20 +102,15 @@ bool UnassignedExchange::is_valid() {
   pickup -= _input.jobs[_removed].pickup;
   pickup += _input.jobs[_u].pickup;
 
-  auto delivery = source.delivery_in_range(_first_rank, _last_rank);
-  assert(_input.jobs[_removed].delivery <= delivery);
-  delivery -= _input.jobs[_removed].delivery;
-  delivery += _input.jobs[_u].delivery;
-
   bool valid = source.is_valid_addition_for_capacity_margins(_input,
                                                              pickup,
-                                                             delivery,
+                                                             _delivery,
                                                              _first_rank,
                                                              _last_rank);
 
   valid = valid &&
           source.is_valid_addition_for_capacity_inclusion(_input,
-                                                          delivery,
+                                                          _delivery,
                                                           _moved_jobs.begin(),
                                                           _moved_jobs.end(),
                                                           _first_rank,

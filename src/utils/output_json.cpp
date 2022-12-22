@@ -53,6 +53,9 @@ get_violations(const Violations& violations,
     case VIOLATION::MAX_TRAVEL_TIME:
       cause = "max_travel_time";
       break;
+    case VIOLATION::MAX_LOAD:
+      cause = "max_load";
+      break;
     }
 
     json_violation.AddMember("cause", rapidjson::Value(), allocator);

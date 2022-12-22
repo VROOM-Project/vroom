@@ -74,13 +74,18 @@ private:
 
   void fwd_update_action_time_from(const Input& input, Index rank);
 
+  void fwd_update_breaks_load_margin_from(const Input& input, Index rank);
+  void bwd_update_breaks_load_margin_from(const Input& input, Index rank);
+
   // Define global policy wrt job/break respective insertion rule.
   OrderChoice order_choice(const Input& input,
                            const Index job_rank,
                            const Duration job_action_time,
                            const Break& b,
                            const PreviousInfo& previous,
-                           const NextInfo& next) const;
+                           const NextInfo& next,
+                           const Amount& current_load,
+                           bool check_max_load = true) const;
 
 public:
   Duration v_start;
@@ -119,6 +124,12 @@ public:
   std::vector<Duration> breaks_travel_margin_before;
   std::vector<Duration> breaks_travel_margin_after;
 
+  // fwd_smallest_breaks_load_margin[i] (resp. bwd_...) store minimal
+  // margin between current load and max load for all breaks up to
+  // rank i (resp. after rank i included) in vehicle breaks.
+  std::vector<Amount> fwd_smallest_breaks_load_margin;
+  std::vector<Amount> bwd_smallest_breaks_load_margin;
+
   TWRoute(const Input& input, Index i, unsigned amount_size);
 
   bool empty() const {
@@ -135,24 +146,55 @@ public:
                                 const Index job_rank,
                                 const Index rank) const {
     assert(rank <= route.size());
+    assert(input.jobs[job_rank].type == JOB_TYPE::SINGLE);
     const std::array<Index, 1> a({job_rank});
-    return is_valid_addition_for_tw(input, a.begin(), a.end(), rank, rank);
+    return is_valid_addition_for_tw(input,
+                                    input.jobs[job_rank].delivery,
+                                    a.begin(),
+                                    a.end(),
+                                    rank,
+                                    rank);
+  };
+
+  // Check validity for addition of job at job_rank in current route
+  // at rank, bypassing any break max_load checks.
+  bool is_valid_addition_for_tw_without_max_load(const Input& input,
+                                                 const Index job_rank,
+                                                 const Index rank) const {
+    assert(rank <= route.size());
+    const std::array<Index, 1> a({job_rank});
+    return is_valid_addition_for_tw(input,
+                                    input.jobs[job_rank].delivery,
+                                    a.begin(),
+                                    a.end(),
+                                    rank,
+                                    rank,
+                                    false);
   };
 
   // Check validity for inclusion of the range [first_job; last_job)
   // in the existing route at rank first_rank and before last_rank *in
-  // place of* the current jobs that may be there.
+  // place of* the current jobs that may be there. "delivery" is the
+  // amount delivered in single jobs for inclusion range.
   template <class InputIterator>
   bool is_valid_addition_for_tw(const Input& input,
+                                const Amount& delivery,
                                 const InputIterator first_job,
                                 const InputIterator last_job,
                                 const Index first_rank,
-                                const Index last_rank) const;
+                                const Index last_rank,
+                                bool check_max_load = true) const;
 
   void add(const Input& input, const Index job_rank, const Index rank) {
     assert(rank <= route.size());
+    assert(input.jobs[job_rank].type == JOB_TYPE::SINGLE);
     const std::array<Index, 1> a({job_rank});
-    replace(input, a.begin(), a.end(), rank, rank);
+    replace(input,
+            input.jobs[job_rank].delivery,
+            a.begin(),
+            a.end(),
+            rank,
+            rank);
   };
 
   // Check validity for removing a set of jobs from current route at
@@ -164,6 +206,7 @@ public:
     assert(!route.empty());
     assert(rank + count <= route.size());
     return is_valid_addition_for_tw(input,
+                                    input.zero_amount(),
                                     route.begin(),
                                     route.begin(),
                                     rank,
@@ -172,14 +215,21 @@ public:
 
   void remove(const Input& input, const Index rank, const unsigned count) {
     assert(rank + count <= route.size());
-    replace(input, route.begin(), route.begin(), rank, rank + count);
+    replace(input,
+            input.zero_amount(),
+            route.begin(),
+            route.begin(),
+            rank,
+            rank + count);
   };
 
   // Add the range [first_job; last_job) in the existing route at rank
   // first_rank and before last_rank *in place of* the current jobs
-  // that may be there.
+  // that may be there. "delivery" is the amount delivered in single
+  // jobs for inclusion range.
   template <class InputIterator>
   void replace(const Input& input,
+               const Amount& delivery,
                const InputIterator first_job,
                const InputIterator last_job,
                const Index first_rank,

@@ -96,6 +96,10 @@ public:
 
   void set_amount_size(unsigned amount_size);
 
+  unsigned get_amount_size() const {
+    return _amount_size;
+  }
+
   void set_geometry(bool geometry);
 
   void add_job(const Job& job);

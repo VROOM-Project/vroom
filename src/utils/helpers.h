@@ -37,6 +37,14 @@ inline TimePoint now() {
   return std::chrono::high_resolution_clock::now();
 }
 
+inline Amount max_amount(std::size_t size) {
+  Amount max(size);
+  for (std::size_t i = 0; i < size; ++i) {
+    max[i] = std::numeric_limits<Capacity>::max();
+  }
+  return max;
+}
+
 inline UserCost add_without_overflow(UserCost a, UserCost b) {
   if (a > std::numeric_limits<UserCost>::max() - b) {
     throw InputException(
@@ -753,6 +761,8 @@ inline Route format_route(const Input& input,
     for (Index i = 0; i < tw_r.breaks_at_rank[r]; ++i, ++break_rank) {
       const auto& b = v.breaks[break_rank];
 
+      assert(b.is_valid_for_load(current_load));
+
       steps.emplace_back(b, current_load);
       auto& current_break = steps.back();
 
@@ -899,6 +909,8 @@ inline Route format_route(const Input& input,
 
   for (Index i = 0; i < tw_r.breaks_at_rank[r]; ++i, ++break_rank) {
     const auto& b = v.breaks[break_rank];
+
+    assert(b.is_valid_for_load(current_load));
 
     steps.emplace_back(b, current_load);
     auto& current_break = steps.back();

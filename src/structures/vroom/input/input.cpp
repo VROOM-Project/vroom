@@ -529,13 +529,17 @@ void Input::set_extra_compatibility() {
 
         if (is_compatible and _has_TW) {
           if (jobs[j].type == JOB_TYPE::SINGLE) {
-            is_compatible = is_compatible &&
-                            empty_route.is_valid_addition_for_tw(*this, j, 0);
+            is_compatible =
+              is_compatible &&
+              empty_route.is_valid_addition_for_tw_without_max_load(*this,
+                                                                    j,
+                                                                    0);
           } else {
             assert(is_shipment_pickup);
             std::vector<Index> p_d({j, static_cast<Index>(j + 1)});
             is_compatible =
               is_compatible && empty_route.is_valid_addition_for_tw(*this,
+                                                                    _zero,
                                                                     p_d.begin(),
                                                                     p_d.end(),
                                                                     0,

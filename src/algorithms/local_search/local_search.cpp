@@ -160,7 +160,8 @@ void LocalSearch<Route,
 
   for (std::size_t i = 0; i < routes.size(); ++i) {
     route_job_insertions.push_back(
-      std::vector<RouteInsertion>(_input.jobs.size(), empty_insert));
+      std::vector<RouteInsertion>(_input.jobs.size(),
+                                  RouteInsertion(_input.get_amount_size())));
 
     const auto v = routes[i];
     const auto fixed_cost =
@@ -182,7 +183,7 @@ void LocalSearch<Route,
 
   do {
     Priority best_priority = 0;
-    RouteInsertion best_insertion = empty_insert;
+    RouteInsertion best_insertion(_input.get_amount_size());
     double best_cost = std::numeric_limits<double>::max();
     Index best_job_rank = 0;
     Index best_route = 0;
@@ -267,6 +268,7 @@ void LocalSearch<Route,
         modified_with_pd.push_back(best_job_rank + 1);
 
         _sol[best_route].replace(_input,
+                                 best_insertion.delivery,
                                  modified_with_pd.begin(),
                                  modified_with_pd.end(),
                                  best_insertion.pickup_rank,
@@ -2239,11 +2241,13 @@ void LocalSearch<Route,
             std::vector<Index> between_pd(_sol[v].route.begin() + r + 1,
                                           _sol[v].route.begin() + delivery_r);
 
-            valid_removal = _sol[v].is_valid_addition_for_tw(_input,
-                                                             between_pd.begin(),
-                                                             between_pd.end(),
-                                                             r,
-                                                             delivery_r + 1);
+            valid_removal =
+              _sol[v].is_valid_addition_for_tw(_input,
+                                               _input.zero_amount(),
+                                               between_pd.begin(),
+                                               between_pd.end(),
+                                               r,
+                                               delivery_r + 1);
           }
         }
       }
@@ -2278,7 +2282,16 @@ void LocalSearch<Route,
       } else {
         std::vector<Index> between_pd(_sol[v].route.begin() + r + 1,
                                       _sol[v].route.begin() + delivery_r);
+
+        Amount delivery = _input.zero_amount();
+        for (unsigned i = r + 1; i < delivery_r; ++i) {
+          const auto& job = _input.jobs[_sol[v].route[i]];
+          if (job.type == JOB_TYPE::SINGLE) {
+            delivery += job.delivery;
+          }
+        }
         _sol[v].replace(_input,
+                        delivery,
                         between_pd.begin(),
                         between_pd.end(),
                         r,

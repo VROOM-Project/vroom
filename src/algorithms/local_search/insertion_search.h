@@ -10,11 +10,19 @@ namespace ls {
 
 struct RouteInsertion {
   Eval eval;
+  Amount delivery;
   Index single_rank;
   Index pickup_rank;
   Index delivery_rank;
+
+  RouteInsertion(unsigned amount_size)
+    : eval(NO_EVAL),
+      delivery(Amount(amount_size)),
+      single_rank(0),
+      pickup_rank(0),
+      delivery_rank(0) {
+  }
 };
-constexpr RouteInsertion empty_insert = {NO_EVAL, 0, 0, 0};
 
 template <class Route>
 RouteInsertion
@@ -23,7 +31,7 @@ compute_best_insertion_single(const Input& input,
                               const Index j,
                               Index v,
                               const Route& route) {
-  RouteInsertion result = empty_insert;
+  RouteInsertion result(input.get_amount_size());
   const auto& current_job = input.jobs[j];
   const auto& v_target = input.vehicles[v];
 
@@ -41,7 +49,9 @@ compute_best_insertion_single(const Input& input,
                                                current_job.delivery,
                                                rank) &&
           route.is_valid_addition_for_tw(input, j, rank)) {
-        result = {current_eval, rank, 0, 0};
+        result.eval = current_eval;
+        result.delivery = current_job.delivery;
+        result.single_rank = rank;
       }
     }
   }
@@ -79,7 +89,7 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
                                          Index v,
                                          const Route& route,
                                          const Eval& cost_threshold) {
-  RouteInsertion result = empty_insert;
+  RouteInsertion result(input.get_amount_size());
   const auto& current_job = input.jobs[j];
   const auto& v_target = input.vehicles[v];
   const auto target_travel_time = sol_state.route_evals[v].duration;
@@ -105,7 +115,7 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
       valid_delivery_insertions[d_rank] = false;
     } else {
       valid_delivery_insertions[d_rank] =
-        route.is_valid_addition_for_tw(input, j + 1, d_rank);
+        route.is_valid_addition_for_tw_without_max_load(input, j + 1, d_rank);
     }
     found_valid |= valid_delivery_insertions[d_rank];
   }
@@ -128,12 +138,13 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
     if (!route.is_valid_addition_for_load(input,
                                           current_job.pickup,
                                           pickup_r) or
-        !route.is_valid_addition_for_tw(input, j, pickup_r)) {
+        !route.is_valid_addition_for_tw_without_max_load(input, j, pickup_r)) {
       continue;
     }
 
     // Build replacement sequence for current insertion.
     std::vector<Index> modified_with_pd({j});
+    Amount modified_delivery = input.zero_amount();
 
     // No need to use begin_d_rank here thanks to
     // valid_delivery_insertions values.
@@ -142,6 +153,10 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
       // early abort.
       if (pickup_r < delivery_r) {
         modified_with_pd.push_back(route.route[delivery_r - 1]);
+        const auto& new_modified_job = input.jobs[route.route[delivery_r - 1]];
+        if (new_modified_job.type == JOB_TYPE::SINGLE) {
+          modified_delivery += new_modified_job.delivery;
+        }
       }
 
       if (!(bool)valid_delivery_insertions[delivery_r]) {
@@ -174,6 +189,7 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
 
         is_valid =
           is_valid && route.is_valid_addition_for_tw(input,
+                                                     modified_delivery,
                                                      modified_with_pd.begin(),
                                                      modified_with_pd.end(),
                                                      pickup_r,
@@ -182,7 +198,10 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
         modified_with_pd.pop_back();
 
         if (is_valid) {
-          result = {pd_eval, 0, pickup_r, delivery_r};
+          result.eval = pd_eval;
+          result.delivery = modified_delivery;
+          result.pickup_rank = pickup_r;
+          result.delivery_rank = delivery_r;
         }
       }
     }

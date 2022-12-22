@@ -70,13 +70,39 @@ struct SwapChoice {
   Index t_rank;
   Index insertion_in_source;
   Index insertion_in_target;
+  Amount source_range_delivery;
+  Amount target_range_delivery;
+
+  SwapChoice()
+    : gain(),
+      s_rank(0),
+      t_rank(0),
+      insertion_in_source(0),
+      insertion_in_target(0),
+      source_range_delivery(0),
+      target_range_delivery(0) {
+  }
+
+  SwapChoice(Eval gain,
+             Index s_rank,
+             Index t_rank,
+             Index insertion_in_source,
+             Index insertion_in_target)
+    : gain(gain),
+      s_rank(s_rank),
+      t_rank(t_rank),
+      insertion_in_source(insertion_in_source),
+      insertion_in_target(insertion_in_target),
+      source_range_delivery(0),
+      target_range_delivery(0) {
+  }
 };
 
 const auto SwapChoiceCmp = [](const SwapChoice& lhs, const SwapChoice& rhs) {
   return lhs.gain > rhs.gain;
 };
 
-constexpr SwapChoice empty_swap_choice = {Eval(), 0, 0, 0, 0};
+const SwapChoice empty_swap_choice = {Eval(), 0, 0, 0, 0};
 
 template <class Route>
 bool valid_choice_for_insertion_ranks(const utils::SolutionState& sol_state,
@@ -292,7 +318,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
         // route if max travel time constraint is OK.
         if (current_gain > best_gain and
             t_v.ok_for_travel_time(t_travel_time - in_place_t_gain.duration)) {
-          SwapChoice sc({current_gain, s_rank, t_rank, s_rank, t_rank});
+          SwapChoice sc(current_gain, s_rank, t_rank, s_rank, t_rank);
           if (valid_choice_for_insertion_ranks(sol_state,
                                                s_vehicle,
                                                source,
@@ -310,7 +336,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
             current_gain = in_place_s_gain + t_gain;
             if (current_gain > best_gain and
                 t_v.ok_for_travel_time(t_travel_time - t_gain.duration)) {
-              SwapChoice sc({current_gain, s_rank, t_rank, s_rank, ti.rank});
+              SwapChoice sc(current_gain, s_rank, t_rank, s_rank, ti.rank);
               if (valid_choice_for_insertion_ranks(sol_state,
                                                    s_vehicle,
                                                    source,
@@ -343,7 +369,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
           if (current_gain > best_gain and
               t_v.ok_for_travel_time(t_travel_time -
                                      in_place_t_gain.duration)) {
-            SwapChoice sc({current_gain, s_rank, t_rank, si.rank, t_rank});
+            SwapChoice sc(current_gain, s_rank, t_rank, si.rank, t_rank);
             if (valid_choice_for_insertion_ranks(sol_state,
                                                  s_vehicle,
                                                  source,
@@ -361,7 +387,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
               current_gain = s_gain + t_gain;
               if (current_gain > best_gain and
                   t_v.ok_for_travel_time(t_travel_time - t_gain.duration)) {
-                SwapChoice sc({current_gain, s_rank, t_rank, si.rank, ti.rank});
+                SwapChoice sc(current_gain, s_rank, t_rank, si.rank, ti.rank);
                 if (valid_choice_for_insertion_ranks(sol_state,
                                                      s_vehicle,
                                                      source,
@@ -406,20 +432,15 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
                                                target.route[t_rank],
                                                sc.insertion_in_source);
 
-        auto source_pickup =
-          std::accumulate(s_insert.range.begin(),
-                          s_insert.range.end(),
-                          input.zero_amount(),
-                          [&](auto sum, const auto i) {
-                            return sum + input.jobs[i].pickup;
-                          });
-        auto source_delivery =
-          std::accumulate(s_insert.range.begin(),
-                          s_insert.range.end(),
-                          input.zero_amount(),
-                          [&](auto sum, const auto i) {
-                            return sum + input.jobs[i].delivery;
-                          });
+        Amount source_pickup = input.zero_amount();
+        Amount source_delivery = input.zero_amount();
+        for (auto i : s_insert.range) {
+          const auto& job = input.jobs[i];
+          if (job.type == JOB_TYPE::SINGLE) {
+            source_pickup += job.pickup;
+            source_delivery += job.delivery;
+          }
+        }
 
         bool source_valid =
           source.is_valid_addition_for_capacity_margins(input,
@@ -440,6 +461,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
 
         source_valid = source_valid &&
                        source.is_valid_addition_for_tw(input,
+                                                       source_delivery,
                                                        s_insert.range.begin(),
                                                        s_insert.range.end(),
                                                        s_insert.first_rank,
@@ -451,20 +473,15 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
                                                  source.route[s_rank],
                                                  sc.insertion_in_target);
 
-          auto target_pickup =
-            std::accumulate(t_insert.range.begin(),
-                            t_insert.range.end(),
-                            input.zero_amount(),
-                            [&](auto sum, const auto i) {
-                              return sum + input.jobs[i].pickup;
-                            });
-          auto target_delivery =
-            std::accumulate(t_insert.range.begin(),
-                            t_insert.range.end(),
-                            input.zero_amount(),
-                            [&](auto sum, const auto i) {
-                              return sum + input.jobs[i].delivery;
-                            });
+          Amount target_pickup = input.zero_amount();
+          Amount target_delivery = input.zero_amount();
+          for (auto i : t_insert.range) {
+            const auto& job = input.jobs[i];
+            if (job.type == JOB_TYPE::SINGLE) {
+              target_pickup += job.pickup;
+              target_delivery += job.delivery;
+            }
+          }
 
           bool target_valid =
             target.is_valid_addition_for_capacity_margins(input,
@@ -485,6 +502,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
 
           target_valid = target_valid &&
                          target.is_valid_addition_for_tw(input,
+                                                         target_delivery,
                                                          t_insert.range.begin(),
                                                          t_insert.range.end(),
                                                          t_insert.first_rank,
@@ -493,6 +511,8 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
           if (target_valid) {
             best_gain = sc.gain;
             best_choice = sc;
+            best_choice.source_range_delivery = source_delivery;
+            best_choice.target_range_delivery = target_delivery;
             // Options are ordered by decreasing gain so we stop at
             // the first valid one.
             break;
