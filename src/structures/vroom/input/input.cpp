@@ -204,31 +204,31 @@ void Input::add_job(const Job& job) {
 
 void Input::add_shipment(const Job& pickup, const Job& delivery) {
   if (pickup.priority != delivery.priority) {
-    throw InputException("Inconsistent shipment priority for jobs " +
-                         std::to_string(pickup.id) + ", " +
+    throw InputException("Inconsistent shipment priority for pickup " +
+                         std::to_string(pickup.id) + " and delivery " +
                          std::to_string(delivery.id) + ".");
   }
   if (!(pickup.pickup == delivery.delivery)) {
-    throw InputException("Inconsistent shipment amount for jobs " +
-                         std::to_string(pickup.id) + ", " +
+    throw InputException("Inconsistent shipment amount for pickup " +
+                         std::to_string(pickup.id) + " and delivery " +
                          std::to_string(delivery.id) + ".");
   }
   if (pickup.skills.size() != delivery.skills.size()) {
-    throw InputException("Inconsistent shipment skills for jobs " +
-                         std::to_string(pickup.id) + ", " +
+    throw InputException("Inconsistent shipment skills for pickup " +
+                         std::to_string(pickup.id) + " and delivery " +
                          std::to_string(delivery.id) + ".");
   }
   for (const auto s : pickup.skills) {
     if (delivery.skills.find(s) == delivery.skills.end()) {
-      throw InputException("Inconsistent shipment skills for jobs" +
-                           std::to_string(pickup.id) + ", " +
+      throw InputException("Inconsistent shipment skills for pickup " +
+                           std::to_string(pickup.id) + " and " +
                            std::to_string(delivery.id) + ".");
     }
   }
 
   if (pickup.type != JOB_TYPE::PICKUP) {
-    throw InputException("Wrong pickup type for job " +
-                         std::to_string(pickup.id) + ".");
+    throw InputException("Wrong type for pickup " + std::to_string(pickup.id) +
+                         ".");
   }
   if (pickup_id_to_rank.find(pickup.id) != pickup_id_to_rank.end()) {
     throw InputException("Duplicate pickup id: " + std::to_string(pickup.id) +
@@ -239,7 +239,7 @@ void Input::add_shipment(const Job& pickup, const Job& delivery) {
   check_job(jobs.back());
 
   if (delivery.type != JOB_TYPE::DELIVERY) {
-    throw InputException("Wrong delivery type for job " +
+    throw InputException("Wrong type for delivery " +
                          std::to_string(delivery.id) + ".");
   }
   if (delivery_id_to_rank.find(delivery.id) != delivery_id_to_rank.end()) {
