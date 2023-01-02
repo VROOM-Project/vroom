@@ -5,6 +5,7 @@
 ### Changed
 
 - Update GitHub Actions (#857)
+- Improve error messages (#848)
 
 ## [v1.13.0-rc.1] - 2022-12-13
 

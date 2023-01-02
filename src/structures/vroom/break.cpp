@@ -22,7 +22,7 @@ Break::Break(Id id,
     service(utils::scale_from_user_duration(service)),
     description(description),
     max_load(max_load) {
-  utils::check_tws(tws);
+  utils::check_tws(tws, id, "break");
 }
 
 bool Break::is_valid_start(Duration time) const {

@@ -43,8 +43,8 @@ Job::Job(Id id,
     tws(tws),
     description(description),
     tw_length(get_tw_length(tws)) {
-  utils::check_tws(tws);
-  utils::check_priority(priority);
+  utils::check_tws(tws, id, "job");
+  utils::check_priority(priority, id, "job");
 }
 
 Job::Job(Id id,
@@ -70,8 +70,8 @@ Job::Job(Id id,
     description(description),
     tw_length(get_tw_length(tws)) {
   assert(type == JOB_TYPE::PICKUP or type == JOB_TYPE::DELIVERY);
-  utils::check_tws(tws);
-  utils::check_priority(priority);
+  utils::check_tws(tws, id, "job");
+  utils::check_priority(priority, id, "job");
 }
 
 bool Job::is_valid_start(Duration time) const {
