@@ -1,0 +1,17 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Resources:
+  function:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./build/vroomlambda.zip
+      Handler: vroomlambda
+      Runtime: provided
+      Layers:
+        - !Ref layer
+  layer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      ContentUri: ./build/vroomlambda.zip
+      CompatibleRuntimes:
+        - provided  
