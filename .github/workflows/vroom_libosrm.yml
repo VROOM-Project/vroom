@@ -23,20 +23,20 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: true
       - name: Install dependencies
         run: sudo apt-get install libasio-dev libglpk-dev
       - name: Cache OSRM
         id: cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ${{ github.workspace }}/osrm-backend
           key: osrm-${{ env.osrm-tag }}-${{ matrix.cxx }}
       - name: Checkout OSRM repository
         if: steps.cache.outputs.cache-hit != 'true'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: Project-OSRM/osrm-backend
           ref: ${{ env.osrm-tag }}
