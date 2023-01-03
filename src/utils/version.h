@@ -14,7 +14,7 @@ All rights reserved (see LICENSE).
 #define MINOR 13
 #define PATCH 0
 #define DEV 0
-#define RC 1
+#define RC 2
 
 #include <string>
 
