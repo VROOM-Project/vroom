@@ -1,5 +1,5 @@
 CXX ?= g++
-CXXFLAGS = -I../src -std=c++20 -Wextra -Wpedantic -Wall -O3
+CXXFLAGS = -I../src -std=c++20 -Wextra -Wpedantic -Wall -Werror -O3
 LDLIBS = -L../lib/ -lvroom -lpthread -lssl -lcrypto
 
 # Checking for libglpk based on whether the header file is found as
