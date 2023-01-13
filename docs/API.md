@@ -139,7 +139,7 @@ A `break` object has the following properties:
 | `time_windows` | an array of `time_window` objects describing valid slots for break start |
 | [`service`] | break duration (defaults to 0) |
 | [`description`] | a string describing this break |
-| [`max_load`] | maximum vehicle load value for which this break can happen |
+| [`max_load`] | an array of integers describing the maximum vehicle load for which this break can happen |
 
 An error is reported if two `break` objects have the same `id` for the same vehicle.
 
