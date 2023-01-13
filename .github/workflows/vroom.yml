@@ -24,7 +24,9 @@ jobs:
         with:
           submodules: true
       - name: Install dependencies
-        run: sudo apt-get install libasio-dev libglpk-dev jq
+        run: |
+          sudo apt-get update
+          sudo apt-get install libasio-dev libglpk-dev jq
       - name: Build vroom
         run: make -j
         env:
