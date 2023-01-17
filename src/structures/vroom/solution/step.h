@@ -33,6 +33,7 @@ struct Step {
   Duration duration;
   Duration waiting_time;
   Distance distance;
+  std::string geometry;
 
   Violations violations;
 

@@ -69,6 +69,7 @@ void log_solution(const vroom::Solution& sol, bool geometry) {
         std::cout << " - " << step.location.lon() << ";" << step.location.lat();
       }
 
+      std::cout << " - geometry: " << step.geometry;
       std::cout << " - arrival: " << step.arrival;
       std::cout << " - duration: " << step.duration;
       std::cout << " - service: " << step.service;

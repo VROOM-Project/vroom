@@ -139,9 +139,19 @@ ValhallaWrapper::get_legs_number(const rapidjson::Value& result) const {
   return result["trip"]["legs"].Size();
 }
 
+unsigned
+ValhallaWrapper::get_steps_number(const rapidjson::Value& result, rapidjson::SizeType i) const {
+  return result["trip"]["legs"].Size();
+}
+
 double ValhallaWrapper::get_distance_for_leg(const rapidjson::Value& result,
                                              rapidjson::SizeType i) const {
   return 1000 * result["trip"]["legs"][i]["summary"]["length"].GetDouble();
+}
+
+std::string ValhallaWrapper::get_geometry_for_leg(const rapidjson::Value& result,
+                                             rapidjson::SizeType i, rapidjson::SizeType s) const {
+  return result["routes"][0]["legs"][i]["steps"][s]["geometry"].GetString();
 }
 
 std::string ValhallaWrapper::get_geometry(rapidjson::Value& result) const {
