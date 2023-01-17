@@ -9,8 +9,8 @@ All rights reserved (see LICENSE).
 
 #include <asio.hpp>
 #include <asio/ssl.hpp>
-
 #include "routing/http_wrapper.h"
+#include "../../include/polylineencoder/src/polylineencoder.h"
 
 using asio::ip::tcp;
 
@@ -251,8 +251,20 @@ void HttpWrapper::add_route_info(Route& route) const {
       }
     }
 
+    gepaf::PolylineEncoder<> encoder;
+    auto nb_steps = get_steps_number(json_result, i);
+
+    for (rapidjson::SizeType s = 0; s < nb_steps; ++s) {
+      auto polylines = gepaf::PolylineEncoder<>::decode(get_geometry_for_leg(json_result,i, s));
+      
+      for (const auto& p : polylines) {
+        encoder.addPoint(p.latitude(), p.longitude());
+      }
+    }
+
     sum_distance += next_distance;
     next_step.distance = round_cost(sum_distance);
+    next_step.geometry = encoder.encode();
 
     steps_rank += number_breaks_after[i] + 1;
   }

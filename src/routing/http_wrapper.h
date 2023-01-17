@@ -64,8 +64,13 @@ protected:
 
   virtual unsigned get_legs_number(const rapidjson::Value& result) const = 0;
 
+  virtual unsigned get_steps_number(const rapidjson::Value& result, rapidjson::SizeType i) const = 0;
+
   virtual double get_distance_for_leg(const rapidjson::Value& result,
                                       rapidjson::SizeType i) const = 0;
+
+  virtual std::string get_geometry_for_leg(const rapidjson::Value& result,
+                                      rapidjson::SizeType i, rapidjson::SizeType s) const = 0;
 
   virtual std::string get_geometry(rapidjson::Value& result) const = 0;
 
