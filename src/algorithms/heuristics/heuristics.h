@@ -16,11 +16,15 @@ namespace vroom {
 namespace heuristics {
 
 // Implementation of a variant of the Solomon I1 heuristic.
-template <class T> T basic(const Input& input, INIT init, double lambda);
+template <class T>
+T basic(const Input& input, INIT init, double lambda, SORT sort);
 
 // Adjusting the above for situation with heterogeneous fleet.
 template <class T>
-T dynamic_vehicle_choice(const Input& input, INIT init, double lambda);
+T dynamic_vehicle_choice(const Input& input,
+                         INIT init,
+                         double lambda,
+                         SORT sort);
 
 // Populate routes with user-defined vehicle steps.
 template <class T> T initial_routes(const Input& input);

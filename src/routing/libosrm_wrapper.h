@@ -29,7 +29,7 @@ private:
 public:
   LibosrmWrapper(const std::string& profile);
 
-  virtual Matrix<Cost>
+  virtual Matrix<UserCost>
   get_matrix(const std::vector<Location>& locs) const override;
 
   virtual void add_route_info(Route& route) const override;

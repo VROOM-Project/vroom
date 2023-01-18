@@ -22,7 +22,7 @@ PDShift::PDShift(const Input& input,
                  Index s_d_rank,
                  TWRoute& tw_t_route,
                  Index t_vehicle,
-                 Gain gain_threshold)
+                 const Eval& gain_threshold)
   : cvrp::PDShift(input,
                   sol_state,
                   static_cast<RawRoute&>(tw_s_route),
@@ -42,6 +42,7 @@ void PDShift::compute_gain() {
   // Check for valid removal wrt TW constraints.
   bool is_valid_removal =
     _tw_s_route.is_valid_addition_for_tw(_input,
+                                         _input.zero_amount(),
                                          _source_without_pd.begin(),
                                          _source_without_pd.end(),
                                          _s_p_rank,
@@ -50,22 +51,22 @@ void PDShift::compute_gain() {
     return;
   }
 
-  ls::RouteInsertion rs =
-    ls::compute_best_insertion_pd(_input,
-                                  _sol_state,
-                                  s_route[_s_p_rank],
-                                  t_vehicle,
-                                  _tw_t_route,
-                                  _remove_gain - stored_gain);
+  ls::RouteInsertion rs = ls::compute_best_insertion_pd(_input,
+                                                        _sol_state,
+                                                        s_route[_s_p_rank],
+                                                        t_vehicle,
+                                                        _tw_t_route,
+                                                        s_gain - stored_gain);
 
-  if (rs.cost < std::numeric_limits<Gain>::max()) {
+  if (rs.eval != NO_EVAL) {
     _valid = true;
-    stored_gain = _remove_gain - rs.cost;
+    t_gain -= rs.eval;
+    stored_gain = s_gain + t_gain;
     _best_t_p_rank = rs.pickup_rank;
     _best_t_d_rank = rs.delivery_rank;
+    _best_t_delivery = rs.delivery;
   }
   gain_computed = true;
-  return;
 }
 
 void PDShift::apply() {
@@ -76,6 +77,7 @@ void PDShift::apply() {
   target_with_pd.push_back(s_route[_s_d_rank]);
 
   _tw_t_route.replace(_input,
+                      _best_t_delivery,
                       target_with_pd.begin(),
                       target_with_pd.end(),
                       _best_t_p_rank,
@@ -84,7 +86,15 @@ void PDShift::apply() {
   if (_s_d_rank == _s_p_rank + 1) {
     _tw_s_route.remove(_input, _s_p_rank, 2);
   } else {
+    Amount delivery = _input.zero_amount();
+    for (unsigned i = _s_p_rank + 1; i < _s_d_rank; ++i) {
+      const auto& job = _input.jobs[s_route[i]];
+      if (job.type == JOB_TYPE::SINGLE) {
+        delivery += job.delivery;
+      }
+    }
     _tw_s_route.replace(_input,
+                        delivery,
                         _source_without_pd.begin(),
                         _source_without_pd.end(),
                         _s_p_rank,

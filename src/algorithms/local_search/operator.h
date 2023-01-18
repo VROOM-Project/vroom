@@ -35,9 +35,18 @@ protected:
   const Index t_rank;
 
   bool gain_computed;
-  Gain stored_gain;
+  Eval s_gain;
+  Eval t_gain;
+  Eval stored_gain;
 
   virtual void compute_gain() = 0;
+
+  bool is_valid_for_source_max_travel_time() const;
+
+  bool is_valid_for_target_max_travel_time() const;
+
+  // Used for internal operators only.
+  bool is_valid_for_max_travel_time() const;
 
 public:
   Operator(OperatorName name,
@@ -60,13 +69,12 @@ public:
       t_route(t_raw_route.route),
       t_vehicle(t_vehicle),
       t_rank(t_rank),
-      gain_computed(false),
-      stored_gain(0) {
+      gain_computed(false) {
   }
 
   OperatorName get_name() const;
 
-  virtual Gain gain();
+  virtual Eval gain();
 
   virtual bool is_valid() = 0;
 
@@ -76,7 +84,13 @@ public:
 
   virtual std::vector<Index> update_candidates() const = 0;
 
+  // Used to check if a move should be made invalid due to a change in
+  // unassigned jobs.
   virtual std::vector<Index> required_unassigned() const;
+
+  // Used to check if a move should be made invalid due to an indirect
+  // change in another route.
+  virtual bool invalidated_by(Index rank) const;
 
   virtual ~Operator() {
   }

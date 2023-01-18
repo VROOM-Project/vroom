@@ -17,38 +17,6 @@ All rights reserved (see LICENSE).
 namespace vroom {
 namespace utils {
 
-using RawSolution = std::vector<RawRoute>;
-using TWSolution = std::vector<TWRoute>;
-
-struct SolutionIndicators {
-  Priority priority_sum;
-  unsigned unassigned;
-  Cost cost;
-  unsigned used_vehicles;
-
-  friend bool operator<(const SolutionIndicators& lhs,
-                        const SolutionIndicators& rhs) {
-    if (lhs.priority_sum > rhs.priority_sum) {
-      return true;
-    }
-    if (lhs.priority_sum == rhs.priority_sum) {
-      if (lhs.unassigned < rhs.unassigned) {
-        return true;
-      }
-      if (lhs.unassigned == rhs.unassigned) {
-        if (lhs.cost < rhs.cost) {
-          return true;
-        }
-        if (lhs.cost == rhs.cost and lhs.used_vehicles < rhs.used_vehicles) {
-          return true;
-        }
-      }
-    }
-
-    return false;
-  }
-};
-
 class SolutionState {
 private:
   const Input& _input;
@@ -64,8 +32,8 @@ public:
   // cost from job at rank i to job at rank 0 (i.e. when *reversing*
   // all edges) in the route for vehicle v, from the point of view of
   // a vehicle new_v.
-  std::vector<std::vector<std::vector<Cost>>> fwd_costs;
-  std::vector<std::vector<std::vector<Cost>>> bwd_costs;
+  std::vector<std::vector<std::vector<Eval>>> fwd_costs;
+  std::vector<std::vector<std::vector<Eval>>> bwd_costs;
 
   // fwd_skill_rank[v1][v2] stores the maximum rank r for a step in
   // route for vehicle v1 such that v2 can handle all jobs from step 0
@@ -76,31 +44,31 @@ public:
   std::vector<std::vector<Index>> fwd_skill_rank;
   std::vector<std::vector<Index>> bwd_skill_rank;
 
-  // edge_costs_around_node[v][i] stores the sum of costs for edges
-  // that appear before and after job at rank i in route for vehicle v
+  // edge_evals_around_node[v][i] evaluates the sum of edges that
+  // appear before and after job at rank i in route for vehicle v
   // (handling cases where those edges are absent or linked with
   // start/end of vehicle). node_gains[v][i] stores potential gain
   // when removing job at rank i in route for vehicle
   // v. node_candidates[v] is the rank that yields the biggest such
   // gain for vehicle v.
-  std::vector<std::vector<Gain>> edge_costs_around_node;
-  std::vector<std::vector<Gain>> node_gains;
+  std::vector<std::vector<Eval>> edge_evals_around_node;
+  std::vector<std::vector<Eval>> node_gains;
   std::vector<Index> node_candidates;
 
-  // edge_costs_around_edge[v][i] stores the sum of costs for edges
-  // that appear before and after edge starting at rank i in route for
+  // edge_evals_around_edge[v][i] evaluates the sum of edges that
+  // appear before and after edge starting at rank i in route for
   // vehicle v (handling cases where those edges are absent or linked
   // with start/end of vehicle). edge_gains[v][i] stores potential
   // gain when removing edge starting at rank i in route for vehicle
   // v. edge_candidates[v] is the rank that yields the biggest such
   // gain for vehicle v.
-  std::vector<std::vector<Gain>> edge_costs_around_edge;
-  std::vector<std::vector<Gain>> edge_gains;
+  std::vector<std::vector<Eval>> edge_evals_around_edge;
+  std::vector<std::vector<Eval>> edge_gains;
   std::vector<Index> edge_candidates;
 
   // pd_gains[v][i] stores potential gain when removing pickup at rank
   // i in route for vehicle v along with it's associated delivery.
-  std::vector<std::vector<Gain>> pd_gains;
+  std::vector<std::vector<Eval>> pd_gains;
 
   // If job at rank i in route for vehicle v is a pickup
   // (resp. delivery), then matching_delivery_rank[v][i]
@@ -143,10 +111,8 @@ public:
   std::vector<std::vector<Index>> weak_insertion_ranks_begin;
   std::vector<std::vector<Index>> weak_insertion_ranks_end;
 
-#ifndef NDEBUG
-  // Only used for assertion checks in debug mode.
-  std::vector<Cost> route_costs;
-#endif
+  // Store evaluation of all routes, including fixed and travel costs.
+  std::vector<Eval> route_evals;
 
   SolutionState(const Input& input);
 
@@ -174,9 +140,7 @@ public:
   void set_insertion_ranks(const RawRoute& r, Index v);
   void set_insertion_ranks(const TWRoute& r, Index v);
 
-#ifndef NDEBUG
-  void update_route_cost(const std::vector<Index>& route, Index v);
-#endif
+  void update_route_eval(const std::vector<Index>& route, Index v);
 };
 
 } // namespace utils

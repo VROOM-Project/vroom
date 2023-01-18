@@ -73,11 +73,11 @@ int main(int argc, char** argv) {
      cxxopts::value<std::string>(router_arg)->default_value("osrm"))
     ("t,threads",
      "number of available threads",
-     cxxopts::value<unsigned>(cl_args.nb_threads)->default_value("4"))
+     cxxopts::value<unsigned>(cl_args.nb_threads)->default_value(std::to_string(vroom::DEFAULT_THREADS_NUMBER)))
     ("v,version", "output version information and exit")
     ("x,explore",
      "exploration level to use (0..5)",
-     cxxopts::value<unsigned>(cl_args.exploration_level)->default_value("5"))
+     cxxopts::value<unsigned>(cl_args.exploration_level)->default_value(std::to_string(vroom::DEFAULT_EXPLORATION_LEVEL)))
     ("stdin",
      "optional input positional arg",
      cxxopts::value<std::string>(cl_args.input));
@@ -97,7 +97,9 @@ int main(int argc, char** argv) {
     try {
       if (!limit_arg.empty()) {
         // Internally timeout is in milliseconds.
-        cl_args.timeout = 1000 * std::stof(limit_arg);
+        cl_args.timeout =
+          std::chrono::milliseconds(static_cast<std::chrono::milliseconds::rep>(
+            1000 * std::stof(limit_arg)));
       }
     } catch (const std::exception& e) {
       throw cxxopts::OptionException("Argument '" + limit_arg +

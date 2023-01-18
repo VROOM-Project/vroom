@@ -16,11 +16,11 @@ Solution::Solution(unsigned code, std::string error)
 }
 
 Solution::Solution(unsigned code,
-                   unsigned amount_size,
+                   const Amount& zero_amount,
                    std::vector<Route>&& routes,
                    std::vector<Job>&& unassigned)
   : code(code),
-    summary(routes.size(), unassigned.size(), amount_size),
+    summary(routes.size(), unassigned.size(), zero_amount),
     routes(std::move(routes)),
     unassigned(std::move(unassigned)) {
 

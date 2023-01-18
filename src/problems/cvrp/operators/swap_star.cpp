@@ -18,7 +18,7 @@ SwapStar::SwapStar(const Input& input,
                    Index s_vehicle,
                    RawRoute& t_route,
                    Index t_vehicle,
-                   Gain best_known_gain)
+                   const Eval& best_known_gain)
   // Use dummy 0 values for unused ranks.
   : Operator(OperatorName::SwapStar,
              input,
@@ -44,7 +44,7 @@ void SwapStar::compute_gain() {
                                              t_vehicle,
                                              target,
                                              _best_known_gain);
-  if (choice.gain > 0) {
+  if (choice.gain.cost > 0) {
     stored_gain = choice.gain;
   }
   gain_computed = true;

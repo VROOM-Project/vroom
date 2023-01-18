@@ -28,7 +28,9 @@ TwoOpt::TwoOpt(const Input& input,
              s_rank,
              t_route,
              t_vehicle,
-             t_rank) {
+             t_rank),
+    _s_delivery(source.bwd_deliveries(s_rank)),
+    _t_delivery(target.bwd_deliveries(t_rank)) {
   assert(s_vehicle != t_vehicle);
   assert(s_route.size() >= 1);
   assert(t_route.size() >= 1);
@@ -47,7 +49,7 @@ void TwoOpt::compute_gain() {
   Index t_index = _input.jobs[t_route[t_rank]].index();
   Index last_s = _input.jobs[s_route.back()].index();
   Index last_t = _input.jobs[t_route.back()].index();
-  stored_gain = 0;
+
   Index new_last_s = last_t;
   Index new_last_t = last_s;
 
@@ -59,31 +61,31 @@ void TwoOpt::compute_gain() {
   // the route. Otherwise remember that last job does not change.
   if (s_rank < s_route.size() - 1) {
     Index next_index = _input.jobs[s_route[s_rank + 1]].index();
-    stored_gain += s_v.cost(s_index, next_index);
-    stored_gain -= t_v.cost(t_index, next_index);
+    s_gain += s_v.eval(s_index, next_index);
+    t_gain -= t_v.eval(t_index, next_index);
 
     // Account for the change in cost across vehicles for the end of
     // source route. Cost of remaining route retrieved by subtracting
     // intermediate cost to overall cost.
-    stored_gain += _sol_state.fwd_costs[s_vehicle][s_vehicle].back();
-    stored_gain -= _sol_state.fwd_costs[s_vehicle][s_vehicle][s_rank + 1];
-    stored_gain -= _sol_state.fwd_costs[s_vehicle][t_vehicle].back();
-    stored_gain += _sol_state.fwd_costs[s_vehicle][t_vehicle][s_rank + 1];
+    s_gain += _sol_state.fwd_costs[s_vehicle][s_vehicle].back();
+    s_gain -= _sol_state.fwd_costs[s_vehicle][s_vehicle][s_rank + 1];
+    t_gain -= _sol_state.fwd_costs[s_vehicle][t_vehicle].back();
+    t_gain += _sol_state.fwd_costs[s_vehicle][t_vehicle][s_rank + 1];
   } else {
     new_last_t = t_index;
   }
   if (t_rank < t_route.size() - 1) {
     Index next_index = _input.jobs[t_route[t_rank + 1]].index();
-    stored_gain += t_v.cost(t_index, next_index);
-    stored_gain -= s_v.cost(s_index, next_index);
+    t_gain += t_v.eval(t_index, next_index);
+    s_gain -= s_v.eval(s_index, next_index);
 
     // Account for the change in cost across vehicles for the end of
     // target route. Cost of remaining route retrieved by subtracting
     // intermediate cost to overall cost.
-    stored_gain += _sol_state.fwd_costs[t_vehicle][t_vehicle].back();
-    stored_gain -= _sol_state.fwd_costs[t_vehicle][t_vehicle][t_rank + 1];
-    stored_gain -= _sol_state.fwd_costs[t_vehicle][s_vehicle].back();
-    stored_gain += _sol_state.fwd_costs[t_vehicle][s_vehicle][t_rank + 1];
+    t_gain += _sol_state.fwd_costs[t_vehicle][t_vehicle].back();
+    t_gain -= _sol_state.fwd_costs[t_vehicle][t_vehicle][t_rank + 1];
+    s_gain -= _sol_state.fwd_costs[t_vehicle][s_vehicle].back();
+    s_gain += _sol_state.fwd_costs[t_vehicle][s_vehicle][t_rank + 1];
   } else {
     new_last_s = s_index;
   }
@@ -92,57 +94,52 @@ void TwoOpt::compute_gain() {
   // different or none.
   if (s_v.has_end()) {
     auto end_s = s_v.end.value().index();
-    stored_gain += s_v.cost(last_s, end_s);
-    stored_gain -= s_v.cost(new_last_s, end_s);
+    s_gain += s_v.eval(last_s, end_s);
+    s_gain -= s_v.eval(new_last_s, end_s);
   }
   if (t_v.has_end()) {
     auto end_t = t_v.end.value().index();
-    stored_gain += t_v.cost(last_t, end_t);
-    stored_gain -= t_v.cost(new_last_t, end_t);
+    t_gain += t_v.eval(last_t, end_t);
+    t_gain -= t_v.eval(new_last_t, end_t);
   }
 
+  stored_gain = s_gain + t_gain;
   gain_computed = true;
 }
 
 bool TwoOpt::is_valid() {
-  const auto& t_delivery = target.bwd_deliveries(t_rank);
+  assert(gain_computed);
+
   const auto& t_pickup = target.bwd_pickups(t_rank);
 
-  bool valid = source.is_valid_addition_for_capacity_margins(_input,
-                                                             t_pickup,
-                                                             t_delivery,
-                                                             s_rank + 1,
-                                                             s_route.size());
-
-  const auto& s_delivery = source.bwd_deliveries(s_rank);
   const auto& s_pickup = source.bwd_pickups(s_rank);
 
-  valid =
-    valid && target.is_valid_addition_for_capacity_margins(_input,
-                                                           s_pickup,
-                                                           s_delivery,
+  return is_valid_for_source_max_travel_time() &&
+         is_valid_for_target_max_travel_time() &&
+         source.is_valid_addition_for_capacity_margins(_input,
+                                                       t_pickup,
+                                                       _t_delivery,
+                                                       s_rank + 1,
+                                                       s_route.size()) &&
+         target.is_valid_addition_for_capacity_margins(_input,
+                                                       s_pickup,
+                                                       _s_delivery,
+                                                       t_rank + 1,
+                                                       t_route.size()) &&
+         source.is_valid_addition_for_capacity_inclusion(_input,
+                                                         _t_delivery,
+                                                         t_route.begin() +
                                                            t_rank + 1,
-                                                           t_route.size());
-
-  valid =
-    valid && source.is_valid_addition_for_capacity_inclusion(_input,
-                                                             t_delivery,
-                                                             t_route.begin() +
-                                                               t_rank + 1,
-                                                             t_route.end(),
-                                                             s_rank + 1,
-                                                             s_route.size());
-
-  valid =
-    valid && target.is_valid_addition_for_capacity_inclusion(_input,
-                                                             s_delivery,
-                                                             s_route.begin() +
-                                                               s_rank + 1,
-                                                             s_route.end(),
-                                                             t_rank + 1,
-                                                             t_route.size());
-
-  return valid;
+                                                         t_route.end(),
+                                                         s_rank + 1,
+                                                         s_route.size()) &&
+         target.is_valid_addition_for_capacity_inclusion(_input,
+                                                         _s_delivery,
+                                                         s_route.begin() +
+                                                           s_rank + 1,
+                                                         s_route.end(),
+                                                         t_rank + 1,
+                                                         t_route.size());
 }
 
 void TwoOpt::apply() {

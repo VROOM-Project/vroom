@@ -110,12 +110,26 @@ A `vehicle` object has the following properties:
 | [`end`] | coordinates array |
 | [`end_index`] | index of relevant row and column in custom matrices |
 | [`capacity`] | an array of integers describing multidimensional quantities |
+| [`costs`] | a `cost` object defining costs for this vehicle |
 | [`skills`] | an array of integers defining skills |
 | [`time_window`] | a `time_window` object describing working hours |
 | [`breaks`] | an array of `break` objects |
 | [`speed_factor`] | a double value in the range `(0, 5]` used to scale **all** vehicle travel times (defaults to 1.), the respected precision is limited to two digits after the decimal point |
 | [`max_tasks`] | an integer defining the maximum number of tasks in a route for this vehicle |
+| [`max_travel_time`] | an integer defining the maximum travel time for this vehicle |
 | [`steps`] | an array of `vehicle_step` objects describing a custom route for this vehicle |
+
+A `cost` object has the following properties:
+
+| Key         | Description |
+| ----------- | ----------- |
+| [`fixed`] | integer defining the cost of using this vehicle in the solution (defaults to `0`) |
+| [`per_hour`] | integer defining the cost for one hour of travel time with this vehicle (defaults to `3600`) |
+
+Using a non-default `per-hour` value means defining travel costs based
+on travel times with a multiplicative factor. So in particular
+providing a custom costs matrix for the vehicle is inconsistent and
+will raise an error.
 
 A `break` object has the following properties:
 
@@ -125,6 +139,7 @@ A `break` object has the following properties:
 | `time_windows` | an array of `time_window` objects describing valid slots for break start |
 | [`service`] | break duration (defaults to 0) |
 | [`description`] | a string describing this break |
+| [`max_load`] | an array of integers describing the maximum vehicle load for which this break can happen |
 
 An error is reported if two `break` objects have the same `id` for the same vehicle.
 
@@ -401,6 +416,8 @@ Possible violation causes are:
 - "skills" if the vehicle does not hold all required skills for a task
 - "precedence" if a `shipment` precedence constraint is not met (`pickup` without matching `delivery`, `delivery` before/without matching `pickup`)
 - "missing_break" if a vehicle break has been omitted in its custom route
+- "max_travel_time" if the vehicle has more travel time than its `max_travel_time` value
+- "max_load" if the load during a break exceed its `max_load` value
 
 Note on violations: reporting only really makes sense when using `-c`
 to choose ETA for custom routes described in input using the `steps`

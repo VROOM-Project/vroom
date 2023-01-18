@@ -55,6 +55,9 @@ void RawRoute::update_amounts(const Input& input) {
     // with empty routes.
     std::fill(_fwd_peaks.begin(), _fwd_peaks.end(), _zero);
     std::fill(_bwd_peaks.begin(), _bwd_peaks.end(), _zero);
+    // So that check against break max_load and margins computations
+    // are consistent with empty routes.
+    std::fill(_current_loads.begin(), _current_loads.end(), _zero);
     return;
   }
 
@@ -160,10 +163,6 @@ bool RawRoute::has_delivery_after_rank(const Index rank) const {
 bool RawRoute::has_pickup_up_to_rank(const Index rank) const {
   assert(rank < _nb_pickups.size());
   return 0 < _nb_pickups[rank];
-}
-
-const Amount& RawRoute::max_load() const {
-  return _fwd_peaks.back();
 }
 
 bool RawRoute::is_valid_addition_for_capacity(const Input&,

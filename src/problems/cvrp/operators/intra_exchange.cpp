@@ -29,7 +29,8 @@ IntraExchange::IntraExchange(const Input& input,
              t_rank),
     _moved_jobs(t_rank - s_rank + 1),
     _first_rank(s_rank),
-    _last_rank(t_rank + 1) {
+    _last_rank(t_rank + 1),
+    _delivery(source.delivery_in_range(_first_rank, _last_rank)) {
   // Assume s_rank < t_rank for symmetry reasons. Set aside cases
   // where t_rank = s_rank + 1, as the move is also an intra_relocate.
   assert(0 < t_rank);
@@ -48,50 +49,50 @@ void IntraExchange::compute_gain() {
 
   // Consider the cost of replacing job at rank s_rank with target
   // job. Part of that cost (for adjacent edges) is stored in
-  // _sol_state.edge_costs_around_node.
+  // _sol_state.edge_evals_around_node.
   Index s_index = _input.jobs[s_route[s_rank]].index();
   Index t_index = _input.jobs[t_route[t_rank]].index();
 
   // Determine costs added with target job.
-  Gain new_previous_cost = 0;
+  Eval new_previous_cost;
 
   if (s_rank == 0) {
     if (v.has_start()) {
       auto p_index = v.start.value().index();
-      new_previous_cost = v.cost(p_index, t_index);
+      new_previous_cost = v.eval(p_index, t_index);
     }
   } else {
     auto p_index = _input.jobs[s_route[s_rank - 1]].index();
-    new_previous_cost = v.cost(p_index, t_index);
+    new_previous_cost = v.eval(p_index, t_index);
   }
 
   auto n_index = _input.jobs[s_route[s_rank + 1]].index();
-  Gain new_next_cost = v.cost(t_index, n_index);
+  Eval new_next_cost = v.eval(t_index, n_index);
 
-  Gain s_gain = _sol_state.edge_costs_around_node[s_vehicle][s_rank] -
+  Eval s_gain = _sol_state.edge_evals_around_node[s_vehicle][s_rank] -
                 new_previous_cost - new_next_cost;
 
   // Consider the cost of replacing job at rank t_rank with source
   // job. Part of that cost (for adjacent edges) is stored in
-  // _sol_state.edge_costs_around_node.
+  // _sol_state.edge_evals_around_node.
 
   // Determine costs added with source job.
-  new_next_cost = 0;
+  new_next_cost = Eval();
 
   auto p_index = _input.jobs[t_route[t_rank - 1]].index();
-  new_previous_cost = v.cost(p_index, s_index);
+  new_previous_cost = v.eval(p_index, s_index);
 
   if (t_rank == t_route.size() - 1) {
     if (v.has_end()) {
       auto n_index = v.end.value().index();
-      new_next_cost = v.cost(s_index, n_index);
+      new_next_cost = v.eval(s_index, n_index);
     }
   } else {
     auto n_index = _input.jobs[t_route[t_rank + 1]].index();
-    new_next_cost = v.cost(s_index, n_index);
+    new_next_cost = v.eval(s_index, n_index);
   }
 
-  Gain t_gain = _sol_state.edge_costs_around_node[s_vehicle][t_rank] -
+  Eval t_gain = _sol_state.edge_evals_around_node[s_vehicle][t_rank] -
                 new_previous_cost - new_next_cost;
 
   stored_gain = s_gain + t_gain;
@@ -99,15 +100,13 @@ void IntraExchange::compute_gain() {
 }
 
 bool IntraExchange::is_valid() {
-  return source
-    .is_valid_addition_for_capacity_inclusion(_input,
-                                              source
-                                                .delivery_in_range(_first_rank,
-                                                                   _last_rank),
-                                              _moved_jobs.begin(),
-                                              _moved_jobs.end(),
-                                              _first_rank,
-                                              _last_rank);
+  return is_valid_for_max_travel_time() &&
+         source.is_valid_addition_for_capacity_inclusion(_input,
+                                                         _delivery,
+                                                         _moved_jobs.begin(),
+                                                         _moved_jobs.end(),
+                                                         _first_rank,
+                                                         _last_rank);
 }
 
 void IntraExchange::apply() {

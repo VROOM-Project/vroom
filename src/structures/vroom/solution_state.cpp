@@ -16,14 +16,14 @@ namespace utils {
 SolutionState::SolutionState(const Input& input)
   : _input(input),
     _nb_vehicles(_input.vehicles.size()),
-    fwd_costs(_nb_vehicles, std::vector<std::vector<Cost>>(_nb_vehicles)),
-    bwd_costs(_nb_vehicles, std::vector<std::vector<Cost>>(_nb_vehicles)),
+    fwd_costs(_nb_vehicles, std::vector<std::vector<Eval>>(_nb_vehicles)),
+    bwd_costs(_nb_vehicles, std::vector<std::vector<Eval>>(_nb_vehicles)),
     fwd_skill_rank(_nb_vehicles, std::vector<Index>(_nb_vehicles)),
     bwd_skill_rank(_nb_vehicles, std::vector<Index>(_nb_vehicles)),
-    edge_costs_around_node(_nb_vehicles),
+    edge_evals_around_node(_nb_vehicles),
     node_gains(_nb_vehicles),
     node_candidates(_nb_vehicles),
-    edge_costs_around_edge(_nb_vehicles),
+    edge_evals_around_edge(_nb_vehicles),
     edge_gains(_nb_vehicles),
     edge_candidates(_nb_vehicles),
     pd_gains(_nb_vehicles),
@@ -38,12 +38,8 @@ SolutionState::SolutionState(const Input& input)
     insertion_ranks_begin(_nb_vehicles),
     insertion_ranks_end(_nb_vehicles),
     weak_insertion_ranks_begin(_nb_vehicles),
-    weak_insertion_ranks_end(_nb_vehicles)
-#ifndef NDEBUG
-    ,
-    route_costs(_nb_vehicles)
-#endif
-{
+    weak_insertion_ranks_end(_nb_vehicles),
+    route_evals(_nb_vehicles) {
 }
 
 template <class Route> void SolutionState::setup(const Route& r, Index v) {
@@ -54,9 +50,7 @@ template <class Route> void SolutionState::setup(const Route& r, Index v) {
   set_pd_matching_ranks(r.route, v);
   set_pd_gains(r.route, v);
   set_insertion_ranks(r, v);
-#ifndef NDEBUG
-  update_route_cost(r.route, v);
-#endif
+  update_route_eval(r.route, v);
 }
 
 template <class Solution> void SolutionState::setup(const Solution& sol) {
@@ -79,18 +73,18 @@ template <class Solution> void SolutionState::setup(const Solution& sol) {
 
 void SolutionState::update_costs(const std::vector<Index>& route, Index v) {
   fwd_costs[v] =
-    std::vector<std::vector<Cost>>(_nb_vehicles,
-                                   std::vector<Cost>(route.size()));
+    std::vector<std::vector<Eval>>(_nb_vehicles,
+                                   std::vector<Eval>(route.size()));
   bwd_costs[v] =
-    std::vector<std::vector<Cost>>(_nb_vehicles,
-                                   std::vector<Cost>(route.size()));
+    std::vector<std::vector<Eval>>(_nb_vehicles,
+                                   std::vector<Eval>(route.size()));
 
   Index previous_index = 0; // dummy init
   if (!route.empty()) {
     previous_index = _input.jobs[route[0]].index();
     for (Index v_rank = 0; v_rank < _nb_vehicles; ++v_rank) {
-      fwd_costs[v][v_rank][0] = 0;
-      bwd_costs[v][v_rank][0] = 0;
+      fwd_costs[v][v_rank][0] = Eval();
+      bwd_costs[v][v_rank][0] = Eval();
     }
   }
 
@@ -99,10 +93,10 @@ void SolutionState::update_costs(const std::vector<Index>& route, Index v) {
     for (Index v_rank = 0; v_rank < _nb_vehicles; ++v_rank) {
       const auto& other_v = _input.vehicles[v_rank];
       fwd_costs[v][v_rank][i] = fwd_costs[v][v_rank][i - 1] +
-                                other_v.cost(previous_index, current_index);
+                                other_v.eval(previous_index, current_index);
 
       bwd_costs[v][v_rank][i] = bwd_costs[v][v_rank][i - 1] +
-                                other_v.cost(current_index, previous_index);
+                                other_v.eval(current_index, previous_index);
     }
     previous_index = current_index;
   }
@@ -127,8 +121,8 @@ void SolutionState::update_skills(const std::vector<Index>& route, Index v1) {
 }
 
 void SolutionState::set_node_gains(const std::vector<Index>& route, Index v) {
-  node_gains[v] = std::vector<Gain>(route.size());
-  edge_costs_around_node[v] = std::vector<Gain>(route.size());
+  node_gains[v] = std::vector<Eval>(route.size());
+  edge_evals_around_node[v] = std::vector<Eval>(route.size());
 
   if (route.size() == 0) {
     return;
@@ -139,29 +133,29 @@ void SolutionState::set_node_gains(const std::vector<Index>& route, Index v) {
   Index c_index = _input.jobs[route[0]].index();
   Index n_index;
 
-  Gain previous_cost = 0;
-  Gain next_cost = 0;
-  Gain new_edge_cost = 0;
+  Eval previous_eval;
+  Eval next_eval;
+  Eval new_edge_eval;
 
   const auto& vehicle = _input.vehicles[v];
   if (vehicle.has_start()) {
     // There is a previous step before job at rank 0.
     p_index = vehicle.start.value().index();
-    previous_cost = vehicle.cost(p_index, c_index);
+    previous_eval = vehicle.eval(p_index, c_index);
 
-    // Update next_cost with next job or end.
+    // Update next_eval with next job or end.
     if (route.size() > 1) {
       n_index = _input.jobs[route[1]].index();
-      next_cost = vehicle.cost(c_index, n_index);
-      new_edge_cost = vehicle.cost(p_index, n_index);
+      next_eval = vehicle.eval(c_index, n_index);
+      new_edge_eval = vehicle.eval(p_index, n_index);
     } else {
       // route.size() is 1 and first job is also the last.
       if (vehicle.has_end()) {
-        next_cost = vehicle.cost(c_index, vehicle.end.value().index());
+        next_eval = vehicle.eval(c_index, vehicle.end.value().index());
       }
     }
   } else {
-    // There is a next cost either to next job or to end of route, but
+    // There is a next eval either to next job or to end of route, but
     // no new edge.
     if (route.size() > 1) {
       n_index = _input.jobs[route[1]].index();
@@ -169,15 +163,15 @@ void SolutionState::set_node_gains(const std::vector<Index>& route, Index v) {
       assert(vehicle.has_end());
       n_index = vehicle.end.value().index();
     }
-    next_cost = vehicle.cost(c_index, n_index);
+    next_eval = vehicle.eval(c_index, n_index);
   }
 
-  Gain edges_costs_around = previous_cost + next_cost;
-  edge_costs_around_node[v][0] = edges_costs_around;
+  Eval edges_evals_around = previous_eval + next_eval;
+  edge_evals_around_node[v][0] = edges_evals_around;
 
-  Gain current_gain = edges_costs_around - new_edge_cost;
+  Eval current_gain = edges_evals_around - new_edge_eval;
   node_gains[v][0] = current_gain;
-  Gain best_gain = current_gain;
+  Eval best_gain = current_gain;
   node_candidates[v] = 0;
 
   if (route.size() == 1) {
@@ -192,11 +186,11 @@ void SolutionState::set_node_gains(const std::vector<Index>& route, Index v) {
     c_index = _input.jobs[route[i]].index();
     n_index = _input.jobs[route[i + 1]].index();
 
-    edges_costs_around =
-      vehicle.cost(p_index, c_index) + vehicle.cost(c_index, n_index);
-    edge_costs_around_node[v][i] = edges_costs_around;
+    edges_evals_around =
+      vehicle.eval(p_index, c_index) + vehicle.eval(c_index, n_index);
+    edge_evals_around_node[v][i] = edges_evals_around;
 
-    current_gain = edges_costs_around - vehicle.cost(p_index, n_index);
+    current_gain = edges_evals_around - vehicle.eval(p_index, n_index);
     node_gains[v][i] = current_gain;
 
     if (current_gain > best_gain) {
@@ -209,22 +203,22 @@ void SolutionState::set_node_gains(const std::vector<Index>& route, Index v) {
   auto last_rank = route.size() - 1;
   c_index = _input.jobs[route[last_rank]].index();
 
-  previous_cost = 0;
-  next_cost = 0;
-  new_edge_cost = 0;
+  previous_eval = Eval();
+  next_eval = Eval();
+  new_edge_eval = Eval();
 
   if (vehicle.has_end()) {
     // There is a next step after last job.
     n_index = vehicle.end.value().index();
-    next_cost = vehicle.cost(c_index, n_index);
+    next_eval = vehicle.eval(c_index, n_index);
 
     if (route.size() > 1) {
       p_index = _input.jobs[route[last_rank - 1]].index();
-      previous_cost = vehicle.cost(p_index, c_index);
-      new_edge_cost = vehicle.cost(p_index, n_index);
+      previous_eval = vehicle.eval(p_index, c_index);
+      new_edge_eval = vehicle.eval(p_index, n_index);
     }
   } else {
-    // There is a previous cost either from previous job or from start
+    // There is a previous eval either from previous job or from start
     // of route, but no new edge.
     if (route.size() > 1) {
       p_index = _input.jobs[route[last_rank - 1]].index();
@@ -232,13 +226,13 @@ void SolutionState::set_node_gains(const std::vector<Index>& route, Index v) {
       assert(vehicle.has_start());
       p_index = vehicle.start.value().index();
     }
-    previous_cost = vehicle.cost(p_index, c_index);
+    previous_eval = vehicle.eval(p_index, c_index);
   }
 
-  edges_costs_around = previous_cost + next_cost;
-  edge_costs_around_node[v][last_rank] = edges_costs_around;
+  edges_evals_around = previous_eval + next_eval;
+  edge_evals_around_node[v][last_rank] = edges_evals_around;
 
-  current_gain = edges_costs_around - new_edge_cost;
+  current_gain = edges_evals_around - new_edge_eval;
   node_gains[v][last_rank] = current_gain;
 
   if (current_gain > best_gain) {
@@ -249,8 +243,8 @@ void SolutionState::set_node_gains(const std::vector<Index>& route, Index v) {
 void SolutionState::set_edge_gains(const std::vector<Index>& route, Index v) {
   std::size_t nb_edges = (route.size() < 2) ? 0 : route.size() - 1;
 
-  edge_gains[v] = std::vector<Gain>(nb_edges);
-  edge_costs_around_edge[v] = std::vector<Gain>(nb_edges);
+  edge_gains[v] = std::vector<Eval>(nb_edges);
+  edge_evals_around_edge[v] = std::vector<Eval>(nb_edges);
 
   if (route.size() < 2) {
     return;
@@ -262,29 +256,29 @@ void SolutionState::set_edge_gains(const std::vector<Index>& route, Index v) {
   Index after_c_index = _input.jobs[route[1]].index();
   Index n_index;
 
-  Gain previous_cost = 0;
-  Gain next_cost = 0;
-  Gain new_edge_cost = 0;
+  Eval previous_eval;
+  Eval next_eval;
+  Eval new_edge_eval;
 
   const auto& vehicle = _input.vehicles[v];
   if (vehicle.has_start()) {
     // There is a previous step before job at rank 0.
     p_index = vehicle.start.value().index();
-    previous_cost = vehicle.cost(p_index, c_index);
+    previous_eval = vehicle.eval(p_index, c_index);
 
-    // Update next_cost with next job or end.
+    // Update next_eval with next job or end.
     if (route.size() > 2) {
       n_index = _input.jobs[route[2]].index();
-      next_cost = vehicle.cost(after_c_index, n_index);
-      new_edge_cost = vehicle.cost(p_index, n_index);
+      next_eval = vehicle.eval(after_c_index, n_index);
+      new_edge_eval = vehicle.eval(p_index, n_index);
     } else {
       // route.size() is 2 and first edge is also the last.
       if (vehicle.has_end()) {
-        next_cost = vehicle.cost(after_c_index, vehicle.end.value().index());
+        next_eval = vehicle.eval(after_c_index, vehicle.end.value().index());
       }
     }
   } else {
-    // There is a next cost either to next job or to end of route, but
+    // There is a next eval either to next job or to end of route, but
     // no new edge.
     if (route.size() > 2) {
       n_index = _input.jobs[route[2]].index();
@@ -292,15 +286,15 @@ void SolutionState::set_edge_gains(const std::vector<Index>& route, Index v) {
       assert(vehicle.has_end());
       n_index = vehicle.end.value().index();
     }
-    next_cost = vehicle.cost(after_c_index, n_index);
+    next_eval = vehicle.eval(after_c_index, n_index);
   }
 
-  Gain edges_costs_around = previous_cost + next_cost;
-  edge_costs_around_edge[v][0] = edges_costs_around;
+  Eval edges_evals_around = previous_eval + next_eval;
+  edge_evals_around_edge[v][0] = edges_evals_around;
 
-  Gain current_gain = edges_costs_around - new_edge_cost;
+  Eval current_gain = edges_evals_around - new_edge_eval;
   edge_gains[v][0] = current_gain;
-  Gain best_gain = current_gain;
+  Eval best_gain = current_gain;
   edge_candidates[v] = 0;
 
   if (route.size() == 2) {
@@ -317,11 +311,11 @@ void SolutionState::set_edge_gains(const std::vector<Index>& route, Index v) {
     after_c_index = _input.jobs[route[i + 1]].index();
     n_index = _input.jobs[route[i + 2]].index();
 
-    edges_costs_around =
-      vehicle.cost(p_index, c_index) + vehicle.cost(after_c_index, n_index);
-    edge_costs_around_edge[v][i] = edges_costs_around;
+    edges_evals_around =
+      vehicle.eval(p_index, c_index) + vehicle.eval(after_c_index, n_index);
+    edge_evals_around_edge[v][i] = edges_evals_around;
 
-    current_gain = edges_costs_around - vehicle.cost(p_index, n_index);
+    current_gain = edges_evals_around - vehicle.eval(p_index, n_index);
     edge_gains[v][i] = current_gain;
 
     if (current_gain > best_gain) {
@@ -335,22 +329,22 @@ void SolutionState::set_edge_gains(const std::vector<Index>& route, Index v) {
   c_index = _input.jobs[route[last_edge_rank]].index();
   after_c_index = _input.jobs[route[last_edge_rank + 1]].index();
 
-  previous_cost = 0;
-  next_cost = 0;
-  new_edge_cost = 0;
+  previous_eval = Eval();
+  next_eval = Eval();
+  new_edge_eval = Eval();
 
   if (vehicle.has_end()) {
     // There is a next step after last job.
     n_index = vehicle.end.value().index();
-    next_cost = vehicle.cost(after_c_index, n_index);
+    next_eval = vehicle.eval(after_c_index, n_index);
 
     if (route.size() > 2) {
       p_index = _input.jobs[route[last_edge_rank - 1]].index();
-      previous_cost = vehicle.cost(p_index, c_index);
-      new_edge_cost = vehicle.cost(p_index, n_index);
+      previous_eval = vehicle.eval(p_index, c_index);
+      new_edge_eval = vehicle.eval(p_index, n_index);
     }
   } else {
-    // There is a previous cost either from previous job or from start
+    // There is a previous eval either from previous job or from start
     // of route, but no new edge.
     if (route.size() > 2) {
       p_index = _input.jobs[route[last_edge_rank - 1]].index();
@@ -358,13 +352,13 @@ void SolutionState::set_edge_gains(const std::vector<Index>& route, Index v) {
       assert(vehicle.has_start());
       p_index = vehicle.start.value().index();
     }
-    previous_cost = vehicle.cost(p_index, c_index);
+    previous_eval = vehicle.eval(p_index, c_index);
   }
 
-  edges_costs_around = previous_cost + next_cost;
-  edge_costs_around_edge[v][last_edge_rank] = edges_costs_around;
+  edges_evals_around = previous_eval + next_eval;
+  edge_evals_around_edge[v][last_edge_rank] = edges_evals_around;
 
-  current_gain = edges_costs_around - new_edge_cost;
+  current_gain = edges_evals_around - new_edge_eval;
   edge_gains[v][last_edge_rank] = current_gain;
 
   if (current_gain > best_gain) {
@@ -377,7 +371,7 @@ void SolutionState::set_pd_gains(const std::vector<Index>& route, Index v) {
   // after set_node_gains. Expects to have valid values in
   // matching_delivery_rank, so should be run after
   // set_pd_matching_ranks.
-  pd_gains[v] = std::vector<Gain>(route.size());
+  pd_gains[v] = std::vector<Eval>(route.size());
 
   const auto& vehicle = _input.vehicles[v];
 
@@ -391,49 +385,49 @@ void SolutionState::set_pd_gains(const std::vector<Index>& route, Index v) {
 
     if (pickup_rank + 1 == delivery_rank) {
       // Pickup and delivery in a row.
-      Gain previous_cost = 0;
-      Gain next_cost = 0;
-      Gain new_edge_cost = 0;
+      Eval previous_eval;
+      Eval next_eval;
+      Eval new_edge_eval;
       Index p_index;
       Index n_index;
 
-      // Compute cost for step before pickup.
+      // Compute eval for step before pickup.
       bool has_previous_step = false;
       if (pickup_rank > 0) {
         has_previous_step = true;
         p_index = _input.jobs[route[pickup_rank - 1]].index();
-        previous_cost = vehicle.cost(p_index, pickup_index);
+        previous_eval = vehicle.eval(p_index, pickup_index);
       } else {
         if (vehicle.has_start()) {
           has_previous_step = true;
           p_index = vehicle.start.value().index();
-          previous_cost = vehicle.cost(p_index, pickup_index);
+          previous_eval = vehicle.eval(p_index, pickup_index);
         }
       }
 
-      // Compute cost for step after delivery.
+      // Compute eval for step after delivery.
       bool has_next_step = false;
       if (delivery_rank < route.size() - 1) {
         has_next_step = true;
         n_index = _input.jobs[route[delivery_rank + 1]].index();
-        next_cost = vehicle.cost(delivery_index, n_index);
+        next_eval = vehicle.eval(delivery_index, n_index);
       } else {
         if (vehicle.has_end()) {
           has_next_step = true;
           n_index = vehicle.end.value().index();
-          next_cost = vehicle.cost(delivery_index, n_index);
+          next_eval = vehicle.eval(delivery_index, n_index);
         }
       }
 
       if (has_previous_step and has_next_step and (route.size() > 2)) {
         // No new edge with an open trip or if removing P&D creates an
         // empty route.
-        new_edge_cost = vehicle.cost(p_index, n_index);
+        new_edge_eval = vehicle.eval(p_index, n_index);
       }
 
-      pd_gains[v][pickup_rank] = previous_cost +
-                                 vehicle.cost(pickup_index, delivery_index) +
-                                 next_cost - new_edge_cost;
+      pd_gains[v][pickup_rank] = previous_eval +
+                                 vehicle.eval(pickup_index, delivery_index) +
+                                 next_eval - new_edge_eval;
     } else {
       // Simply add both gains as neighbouring edges are disjoint.
       pd_gains[v][pickup_rank] =
@@ -615,15 +609,13 @@ void SolutionState::update_cheapest_job_rank_in_routes(
   }
 }
 
-#ifndef NDEBUG
-void SolutionState::update_route_cost(const std::vector<Index>& route,
+void SolutionState::update_route_eval(const std::vector<Index>& route,
                                       Index v) {
-  route_costs[v] = route_cost_for_vehicle(_input, v, route);
+  route_evals[v] = route_eval_for_vehicle(_input, v, route);
 }
-#endif
 
-template void SolutionState::setup(const RawSolution&);
-template void SolutionState::setup(const TWSolution&);
+template void SolutionState::setup(const std::vector<RawRoute>&);
+template void SolutionState::setup(const std::vector<TWRoute>&);
 
 } // namespace utils
 } // namespace vroom

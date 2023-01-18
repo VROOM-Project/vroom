@@ -22,6 +22,7 @@ All rights reserved (see LICENSE).
 #include "problems/vrptw/operators/relocate.h"
 #include "problems/vrptw/operators/reverse_two_opt.h"
 #include "problems/vrptw/operators/route_exchange.h"
+#include "problems/vrptw/operators/route_split.h"
 #include "problems/vrptw/operators/swap_star.h"
 #include "problems/vrptw/operators/two_opt.h"
 #include "problems/vrptw/operators/unassigned_exchange.h"
@@ -32,7 +33,6 @@ namespace ls {
 
 template <class Route,
           class UnassignedExchange,
-          class SwapStar,
           class CrossExchange,
           class MixedExchange,
           class TwoOpt,
@@ -46,10 +46,11 @@ template <class Route,
           class IntraOrOpt,
           class IntraTwoOpt,
           class PDShift,
-          class RouteExchange>
+          class RouteExchange,
+          class SwapStar,
+          class RouteSplit>
 LocalSearch<Route,
             UnassignedExchange,
-            SwapStar,
             CrossExchange,
             MixedExchange,
             TwoOpt,
@@ -63,43 +64,27 @@ LocalSearch<Route,
             IntraOrOpt,
             IntraTwoOpt,
             PDShift,
-            RouteExchange>::LocalSearch(const Input& input,
-                                        std::vector<Route>& sol,
-                                        unsigned max_nb_jobs_removal,
-                                        const Timeout& timeout)
+            RouteExchange,
+            SwapStar,
+            RouteSplit>::LocalSearch(const Input& input,
+                                     std::vector<Route>& sol,
+                                     unsigned max_nb_jobs_removal,
+                                     const Timeout& timeout)
   : _input(input),
     _nb_vehicles(_input.vehicles.size()),
     _max_nb_jobs_removal(max_nb_jobs_removal),
-    _deadline(timeout.has_value()
-                ? utils::now() + std::chrono::milliseconds(timeout.value())
-                : Deadline()),
+    _deadline(timeout.has_value() ? utils::now() + timeout.value()
+                                  : Deadline()),
     _all_routes(_nb_vehicles),
     _sol_state(input),
     _sol(sol),
-    _best_sol(sol) {
+    _best_sol(sol),
+    _best_sol_indicators(_input, _sol) {
   // Initialize all route indices.
   std::iota(_all_routes.begin(), _all_routes.end(), 0);
 
   // Setup solution state.
   _sol_state.setup(_sol);
-
-  _best_sol_indicators.priority_sum =
-    std::accumulate(_sol.begin(), _sol.end(), 0, [&](auto sum, const auto& r) {
-      return sum + utils::priority_sum_for_route(_input, r.route);
-    });
-
-  _best_sol_indicators.unassigned = _sol_state.unassigned.size();
-
-  Index v_rank = 0;
-  _best_sol_indicators.cost =
-    std::accumulate(_sol.begin(), _sol.end(), 0, [&](auto sum, const auto& r) {
-      return sum + utils::route_cost_for_vehicle(_input, v_rank++, r.route);
-    });
-
-  _best_sol_indicators.used_vehicles =
-    std::count_if(_sol.begin(), _sol.end(), [](const auto& r) {
-      return !r.empty();
-    });
 
 #ifdef LOG_LS_OPERATORS
   tried_moves.fill(0);
@@ -120,15 +105,12 @@ RouteInsertion compute_best_insertion(const Input& input,
   if (current_job.type == JOB_TYPE::SINGLE) {
     return compute_best_insertion_single(input, sol_state, j, v, route);
   } else {
-    auto insert = compute_best_insertion_pd(input,
-                                            sol_state,
-                                            j,
-                                            v,
-                                            route,
-                                            std::numeric_limits<Gain>::max());
-    if (insert.cost < std::numeric_limits<Gain>::max()) {
+    auto insert =
+      compute_best_insertion_pd(input, sol_state, j, v, route, NO_EVAL);
+    if (insert.eval != NO_EVAL) {
       // Normalize cost per job for consistency with single jobs.
-      insert.cost = static_cast<Gain>(static_cast<double>(insert.cost) / 2);
+      insert.eval.cost =
+        static_cast<Cost>(static_cast<double>(insert.eval.cost) / 2);
     }
     return insert;
   }
@@ -136,7 +118,6 @@ RouteInsertion compute_best_insertion(const Input& input,
 
 template <class Route,
           class UnassignedExchange,
-          class SwapStar,
           class CrossExchange,
           class MixedExchange,
           class TwoOpt,
@@ -150,10 +131,11 @@ template <class Route,
           class IntraOrOpt,
           class IntraTwoOpt,
           class PDShift,
-          class RouteExchange>
+          class RouteExchange,
+          class SwapStar,
+          class RouteSplit>
 void LocalSearch<Route,
                  UnassignedExchange,
-                 SwapStar,
                  CrossExchange,
                  MixedExchange,
                  TwoOpt,
@@ -167,19 +149,24 @@ void LocalSearch<Route,
                  IntraOrOpt,
                  IntraTwoOpt,
                  PDShift,
-                 RouteExchange>::try_job_additions(const std::vector<Index>&
-                                                     routes,
-                                                   double regret_coeff) {
-
+                 RouteExchange,
+                 SwapStar,
+                 RouteSplit>::try_job_additions(const std::vector<Index>&
+                                                  routes,
+                                                double regret_coeff) {
   bool job_added;
 
   std::vector<std::vector<RouteInsertion>> route_job_insertions;
 
   for (std::size_t i = 0; i < routes.size(); ++i) {
     route_job_insertions.push_back(
-      std::vector<RouteInsertion>(_input.jobs.size(), empty_insert));
+      std::vector<RouteInsertion>(_input.jobs.size(),
+                                  RouteInsertion(_input.get_amount_size())));
 
     const auto v = routes[i];
+    const auto fixed_cost =
+      _sol[v].empty() ? _input.vehicles[v].fixed_cost() : 0;
+
     for (const auto j : _sol_state.unassigned) {
       const auto& current_job = _input.jobs[j];
       if (current_job.type == JOB_TYPE::DELIVERY) {
@@ -187,13 +174,16 @@ void LocalSearch<Route,
       }
       route_job_insertions[i][j] =
         compute_best_insertion(_input, _sol_state, j, v, _sol[v]);
+
+      if (route_job_insertions[i][j].eval != NO_EVAL) {
+        route_job_insertions[i][j].eval.cost += fixed_cost;
+      }
     }
   }
 
   do {
-
     Priority best_priority = 0;
-    RouteInsertion best_insertion = empty_insert;
+    RouteInsertion best_insertion(_input.get_amount_size());
     double best_cost = std::numeric_limits<double>::max();
     Index best_job_rank = 0;
     Index best_route = 0;
@@ -217,20 +207,19 @@ void LocalSearch<Route,
       std::size_t smallest_idx = std::numeric_limits<std::size_t>::max();
 
       for (std::size_t i = 0; i < routes.size(); ++i) {
-        if (route_job_insertions[i][j].cost < smallest) {
+        if (route_job_insertions[i][j].eval.cost < smallest) {
           smallest_idx = i;
           second_smallest = smallest;
-          smallest = route_job_insertions[i][j].cost;
-        } else if (route_job_insertions[i][j].cost < second_smallest) {
-          second_smallest = route_job_insertions[i][j].cost;
+          smallest = route_job_insertions[i][j].eval.cost;
+        } else if (route_job_insertions[i][j].eval.cost < second_smallest) {
+          second_smallest = route_job_insertions[i][j].eval.cost;
         }
       }
 
       // Find best route for current job based on cost of addition and
       // regret cost of not adding.
       for (std::size_t i = 0; i < routes.size(); ++i) {
-        const auto addition_cost = route_job_insertions[i][j].cost;
-        if (addition_cost == std::numeric_limits<Gain>::max()) {
+        if (route_job_insertions[i][j].eval == NO_EVAL) {
           continue;
         }
 
@@ -242,19 +231,20 @@ void LocalSearch<Route,
           continue;
         }
 
-        const Gain regret_cost =
+        const auto regret_cost =
           (i == smallest_idx) ? second_smallest : smallest;
 
-        const double eval = static_cast<double>(addition_cost) -
-                            regret_coeff * static_cast<double>(regret_cost);
+        const double current_cost =
+          static_cast<double>(route_job_insertions[i][j].eval.cost) -
+          regret_coeff * static_cast<double>(regret_cost);
 
         if ((job_priority > best_priority) or
-            (job_priority == best_priority and eval < best_cost)) {
+            (job_priority == best_priority and current_cost < best_cost)) {
           best_priority = job_priority;
           best_job_rank = j;
           best_route = routes[i];
           best_insertion = route_job_insertions[i][j];
-          best_cost = eval;
+          best_cost = current_cost;
           best_route_idx = i;
         }
       }
@@ -278,6 +268,7 @@ void LocalSearch<Route,
         modified_with_pd.push_back(best_job_rank + 1);
 
         _sol[best_route].replace(_input,
+                                 best_insertion.delivery,
                                  modified_with_pd.begin(),
                                  modified_with_pd.end(),
                                  best_insertion.pickup_rank,
@@ -288,8 +279,12 @@ void LocalSearch<Route,
         _sol_state.unassigned.erase(best_job_rank + 1);
       }
 
-      // Update route/job insertions for best_route
+      // Update best_route data required for consistency.
+      _sol_state.update_route_eval(_sol[best_route].route, best_route);
       _sol_state.set_insertion_ranks(_sol[best_route], best_route);
+
+      const auto fixed_cost =
+        _sol[best_route].empty() ? _input.vehicles[best_route].fixed_cost() : 0;
 
       for (const auto j : _sol_state.unassigned) {
         const auto& current_job = _input.jobs[j];
@@ -302,18 +297,17 @@ void LocalSearch<Route,
                                  j,
                                  best_route,
                                  _sol[best_route]);
+
+        if (route_job_insertions[best_route_idx][j].eval != NO_EVAL) {
+          route_job_insertions[best_route_idx][j].eval.cost += fixed_cost;
+        }
       }
-#ifndef NDEBUG
-      // Update cost after addition.
-      _sol_state.update_route_cost(_sol[best_route].route, best_route);
-#endif
     }
   } while (job_added);
 }
 
 template <class Route,
           class UnassignedExchange,
-          class SwapStar,
           class CrossExchange,
           class MixedExchange,
           class TwoOpt,
@@ -327,10 +321,11 @@ template <class Route,
           class IntraOrOpt,
           class IntraTwoOpt,
           class PDShift,
-          class RouteExchange>
+          class RouteExchange,
+          class SwapStar,
+          class RouteSplit>
 void LocalSearch<Route,
                  UnassignedExchange,
-                 SwapStar,
                  CrossExchange,
                  MixedExchange,
                  TwoOpt,
@@ -344,7 +339,9 @@ void LocalSearch<Route,
                  IntraOrOpt,
                  IntraTwoOpt,
                  PDShift,
-                 RouteExchange>::run_ls_step() {
+                 RouteExchange,
+                 SwapStar,
+                 RouteSplit>::run_ls_step() {
   // Store best move involving a pair of routes.
   std::vector<std::vector<std::unique_ptr<Operator>>> best_ops(_nb_vehicles);
   for (std::size_t v = 0; v < _nb_vehicles; ++v) {
@@ -363,18 +360,20 @@ void LocalSearch<Route,
   }
 
   // Store best gain for matching move.
-  std::vector<std::vector<Gain>> best_gains(_nb_vehicles,
-                                            std::vector<Gain>(_nb_vehicles, 0));
+  std::vector<std::vector<Eval>> best_gains(_nb_vehicles,
+                                            std::vector<Eval>(_nb_vehicles,
+                                                              Eval()));
 
   // Store best priority increase for matching move. Only operators
   // involving a single route and unassigned jobs can change overall
   // priority (currently only UnassignedExchange).
   std::vector<Priority> best_priorities(_nb_vehicles, 0);
 
-  Gain best_gain = 1;
+  // Dummy init to enter first loop.
+  Eval best_gain(static_cast<Cost>(1), static_cast<Cost>(0));
   Priority best_priority = 0;
 
-  while (best_gain > 0 or best_priority > 0) {
+  while (best_gain.cost > 0 or best_priority > 0) {
     if (_deadline.has_value() and _deadline.value() < utils::now()) {
       break;
     }
@@ -1517,6 +1516,17 @@ void LocalSearch<Route,
             continue;
           }
 
+          const auto& v_s = _input.vehicles[s_t.first];
+          const auto s_travel_time = _sol_state.route_evals[s_t.first].duration;
+          const auto s_removal_duration_gain =
+            _sol_state.pd_gains[s_t.first][s_p_rank].duration;
+          if (!v_s.ok_for_travel_time(s_travel_time -
+                                      s_removal_duration_gain)) {
+            // Removing shipment from source route actually breaks
+            // max_travel_time constraint in source.
+            continue;
+          }
+
 #ifdef LOG_LS_OPERATORS
           ++tried_moves[OperatorName::PDShift];
 #endif
@@ -1540,7 +1550,7 @@ void LocalSearch<Route,
     }
 
     if (!_input.has_homogeneous_locations() or
-        !_input.has_homogeneous_profiles()) {
+        !_input.has_homogeneous_profiles() or !_input.has_homogeneous_costs()) {
       // RouteExchange stuff
       for (const auto& s_t : s_t_pairs) {
         if (s_t.second <= s_t.first or best_priorities[s_t.first] > 0 or
@@ -1618,10 +1628,48 @@ void LocalSearch<Route,
       }
     }
 
+    if (!_input.has_homogeneous_locations() or
+        !_input.has_homogeneous_profiles() or !_input.has_homogeneous_costs()) {
+      // RouteSplit stuff
+      std::vector<Index> empty_route_ranks;
+      std::vector<std::reference_wrapper<Route>> empty_route_refs;
+      for (Index v = 0; v < _input.vehicles.size(); ++v) {
+        if (_sol[v].empty()) {
+          empty_route_ranks.push_back(v);
+          empty_route_refs.push_back(std::ref(_sol[v]));
+        }
+      }
+
+      if (empty_route_ranks.size() >= 2) {
+        for (const auto& s_t : s_t_pairs) {
+          if (s_t.second != s_t.first or best_priorities[s_t.first] > 0 or
+              _sol[s_t.first].size() < 2) {
+            continue;
+          }
+
+#ifdef LOG_LS_OPERATORS
+          ++tried_moves[OperatorName::RouteSplit];
+#endif
+          RouteSplit r(_input,
+                       _sol_state,
+                       _sol[s_t.first],
+                       s_t.first,
+                       empty_route_ranks,
+                       empty_route_refs,
+                       best_gains[s_t.first][s_t.second]);
+
+          if (r.gain() > best_gains[s_t.first][s_t.second]) {
+            best_gains[s_t.first][s_t.second] = r.gain();
+            best_ops[s_t.first][s_t.second] = std::make_unique<RouteSplit>(r);
+          }
+        }
+      }
+    }
+
     // Find best overall move, first checking priority increase then
     // best gain if no priority increase is available.
     best_priority = 0;
-    best_gain = 0;
+    best_gain = Eval();
     Index best_source = 0;
     Index best_target = 0;
 
@@ -1647,7 +1695,7 @@ void LocalSearch<Route,
     }
 
     // Apply matching operator.
-    if (best_priority > 0 or best_gain > 0) {
+    if (best_priority > 0 or best_gain.cost > 0) {
       assert(best_ops[best_source][best_target] != nullptr);
 
       best_ops[best_source][best_target]->apply();
@@ -1661,28 +1709,37 @@ void LocalSearch<Route,
 
 #ifndef NDEBUG
       // Update route costs.
-      const auto previous_cost =
+      const auto previous_eval =
         std::accumulate(update_candidates.begin(),
                         update_candidates.end(),
-                        0,
+                        Eval(),
                         [&](auto sum, auto c) {
-                          return sum + _sol_state.route_costs[c];
+                          return sum + _sol_state.route_evals[c];
                         });
-      for (auto v_rank : update_candidates) {
-        _sol_state.update_route_cost(_sol[v_rank].route, v_rank);
-        assert(_sol[v_rank].size() <= _input.vehicles[v_rank].max_tasks);
-      }
-      const auto new_cost =
-        std::accumulate(update_candidates.begin(),
-                        update_candidates.end(),
-                        0,
-                        [&](auto sum, auto c) {
-                          return sum + _sol_state.route_costs[c];
-                        });
-      assert(new_cost + best_gain == previous_cost);
 #endif
 
       for (auto v_rank : update_candidates) {
+        _sol_state.update_route_eval(_sol[v_rank].route, v_rank);
+
+        assert(_sol[v_rank].size() <= _input.vehicles[v_rank].max_tasks);
+        assert(_input.vehicles[v_rank].ok_for_travel_time(
+          _sol_state.route_evals[v_rank].duration));
+      }
+
+#ifndef NDEBUG
+      const auto new_eval =
+        std::accumulate(update_candidates.begin(),
+                        update_candidates.end(),
+                        Eval(),
+                        [&](auto sum, auto c) {
+                          return sum + _sol_state.route_evals[c];
+                        });
+      assert(new_eval + best_gain == previous_eval);
+#endif
+
+      for (auto v_rank : update_candidates) {
+        // Only this update (and update_route_eval done above) are
+        // actually required for consistency inside try_job_additions.
         _sol_state.set_insertion_ranks(_sol[v_rank], v_rank);
       }
 
@@ -1691,11 +1748,8 @@ void LocalSearch<Route,
                         0);
 
       for (auto v_rank : update_candidates) {
-        // Running update_costs only after try_job_additions is fine.
         _sol_state.update_costs(_sol[v_rank].route, v_rank);
-
         _sol_state.update_skills(_sol[v_rank].route, v_rank);
-
         _sol_state.set_node_gains(_sol[v_rank].route, v_rank);
         _sol_state.set_edge_gains(_sol[v_rank].route, v_rank);
         _sol_state.set_pd_matching_ranks(_sol[v_rank].route, v_rank);
@@ -1706,7 +1760,7 @@ void LocalSearch<Route,
       // round and set route pairs accordingly.
       s_t_pairs.clear();
       for (auto v_rank : update_candidates) {
-        best_gains[v_rank].assign(_nb_vehicles, 0);
+        best_gains[v_rank].assign(_nb_vehicles, Eval());
         best_priorities[v_rank] = 0;
         best_ops[v_rank] = std::vector<std::unique_ptr<Operator>>(_nb_vehicles);
       }
@@ -1714,7 +1768,7 @@ void LocalSearch<Route,
       for (unsigned v = 0; v < _nb_vehicles; ++v) {
         for (auto v_rank : update_candidates) {
           if (_input.vehicle_ok_with_vehicle(v, v_rank)) {
-            best_gains[v][v_rank] = 0;
+            best_gains[v][v_rank] = Eval();
             best_ops[v][v_rank] = std::unique_ptr<Operator>();
 
             s_t_pairs.emplace_back(v, v_rank);
@@ -1729,17 +1783,30 @@ void LocalSearch<Route,
         if (best_ops[v][v] == nullptr) {
           continue;
         }
+
+        bool invalidate_move = false;
+
         for (auto req_u : best_ops[v][v]->required_unassigned()) {
           if (_sol_state.unassigned.find(req_u) ==
               _sol_state.unassigned.end()) {
             // This move should be invalidated because a required
             // unassigned job has been added by try_job_additions in
             // the meantime.
-            best_gains[v][v] = 0;
-            best_priorities[v] = 0;
-            best_ops[v][v] = std::unique_ptr<Operator>();
-            s_t_pairs.emplace_back(v, v);
+            invalidate_move = true;
+            break;
           }
+        }
+
+        for (auto v_rank : update_candidates) {
+          invalidate_move =
+            invalidate_move or best_ops[v][v]->invalidated_by(v_rank);
+        }
+
+        if (invalidate_move) {
+          best_gains[v][v] = Eval();
+          best_priorities[v] = 0;
+          best_ops[v][v] = std::unique_ptr<Operator>();
+          s_t_pairs.emplace_back(v, v);
         }
       }
     }
@@ -1748,7 +1815,6 @@ void LocalSearch<Route,
 
 template <class Route,
           class UnassignedExchange,
-          class SwapStar,
           class CrossExchange,
           class MixedExchange,
           class TwoOpt,
@@ -1762,10 +1828,11 @@ template <class Route,
           class IntraOrOpt,
           class IntraTwoOpt,
           class PDShift,
-          class RouteExchange>
+          class RouteExchange,
+          class SwapStar,
+          class RouteSplit>
 void LocalSearch<Route,
                  UnassignedExchange,
-                 SwapStar,
                  CrossExchange,
                  MixedExchange,
                  TwoOpt,
@@ -1779,7 +1846,9 @@ void LocalSearch<Route,
                  IntraOrOpt,
                  IntraTwoOpt,
                  PDShift,
-                 RouteExchange>::run() {
+                 RouteExchange,
+                 SwapStar,
+                 RouteSplit>::run() {
   bool try_ls_step = true;
   bool first_step = true;
 
@@ -1790,33 +1859,7 @@ void LocalSearch<Route,
     run_ls_step();
 
     // Indicators for current solution.
-    utils::SolutionIndicators current_sol_indicators;
-    current_sol_indicators.priority_sum =
-      std::accumulate(_sol.begin(),
-                      _sol.end(),
-                      0,
-                      [&](auto sum, const auto& r) {
-                        return sum +
-                               utils::priority_sum_for_route(_input, r.route);
-                      });
-
-    current_sol_indicators.unassigned = _sol_state.unassigned.size();
-
-    Index v_rank = 0;
-    current_sol_indicators.cost =
-      std::accumulate(_sol.begin(),
-                      _sol.end(),
-                      0,
-                      [&](auto sum, const auto& r) {
-                        return sum + utils::route_cost_for_vehicle(_input,
-                                                                   v_rank++,
-                                                                   r.route);
-                      });
-
-    current_sol_indicators.used_vehicles =
-      std::count_if(_sol.begin(), _sol.end(), [](const auto& r) {
-        return !r.empty();
-      });
+    utils::SolutionIndicators<Route> current_sol_indicators(_input, _sol);
 
     if (current_sol_indicators < _best_sol_indicators) {
       _best_sol_indicators = current_sol_indicators;
@@ -1842,6 +1885,9 @@ void LocalSearch<Route,
       for (unsigned i = 0; i < current_nb_removal; ++i) {
         remove_from_routes();
         for (std::size_t v = 0; v < _sol.size(); ++v) {
+          // Update what is required for consistency in
+          // remove_from_route.
+          _sol_state.update_route_eval(_sol[v].route, v);
           _sol_state.set_node_gains(_sol[v].route, v);
           _sol_state.set_pd_matching_ranks(_sol[v].route, v);
           _sol_state.set_pd_gains(_sol[v].route, v);
@@ -1856,8 +1902,16 @@ void LocalSearch<Route,
       // Refill jobs.
       try_job_additions(_all_routes, 1.5);
 
-      // Reset what is needed in solution state.
-      _sol_state.setup(_sol);
+      // Update everything except what has already been updated in
+      // try_job_additions.
+      for (std::size_t v = 0; v < _sol.size(); ++v) {
+        _sol_state.update_costs(_sol[v].route, v);
+        _sol_state.update_skills(_sol[v].route, v);
+        _sol_state.set_node_gains(_sol[v].route, v);
+        _sol_state.set_edge_gains(_sol[v].route, v);
+        _sol_state.set_pd_matching_ranks(_sol[v].route, v);
+        _sol_state.set_pd_gains(_sol[v].route, v);
+      }
     }
 
     first_step = false;
@@ -1867,7 +1921,6 @@ void LocalSearch<Route,
 #ifdef LOG_LS_OPERATORS
 template <class Route,
           class UnassignedExchange,
-          class SwapStar,
           class CrossExchange,
           class MixedExchange,
           class TwoOpt,
@@ -1881,11 +1934,12 @@ template <class Route,
           class IntraOrOpt,
           class IntraTwoOpt,
           class PDShift,
-          class RouteExchange>
+          class RouteExchange,
+          class SwapStar,
+          class RouteSplit>
 std::array<OperatorStats, OperatorName::MAX>
 LocalSearch<Route,
             UnassignedExchange,
-            SwapStar,
             CrossExchange,
             MixedExchange,
             TwoOpt,
@@ -1899,7 +1953,9 @@ LocalSearch<Route,
             IntraOrOpt,
             IntraTwoOpt,
             PDShift,
-            RouteExchange>::get_stats() const {
+            RouteExchange,
+            SwapStar,
+            RouteSplit>::get_stats() const {
   std::array<OperatorStats, OperatorName::MAX> stats;
   for (auto op = 0; op < OperatorName::MAX; ++op) {
     stats[op] = OperatorStats(tried_moves.at(op), applied_moves.at(op));
@@ -1911,7 +1967,6 @@ LocalSearch<Route,
 
 template <class Route,
           class UnassignedExchange,
-          class SwapStar,
           class CrossExchange,
           class MixedExchange,
           class TwoOpt,
@@ -1925,10 +1980,11 @@ template <class Route,
           class IntraOrOpt,
           class IntraTwoOpt,
           class PDShift,
-          class RouteExchange>
-Gain LocalSearch<Route,
+          class RouteExchange,
+          class SwapStar,
+          class RouteSplit>
+Eval LocalSearch<Route,
                  UnassignedExchange,
-                 SwapStar,
                  CrossExchange,
                  MixedExchange,
                  TwoOpt,
@@ -1942,47 +1998,46 @@ Gain LocalSearch<Route,
                  IntraOrOpt,
                  IntraTwoOpt,
                  PDShift,
-                 RouteExchange>::job_route_cost(Index v_target,
-                                                Index v,
-                                                Index r) {
+                 RouteExchange,
+                 SwapStar,
+                 RouteSplit>::job_route_cost(Index v_target, Index v, Index r) {
   assert(v != v_target);
 
-  Gain cost = static_cast<Gain>(INFINITE_COST);
+  Eval eval = NO_EVAL;
   const auto job_index = _input.jobs[_sol[v].route[r]].index();
 
   const auto& vehicle = _input.vehicles[v_target];
   if (vehicle.has_start()) {
     const auto start_index = vehicle.start.value().index();
-    const Gain start_cost = vehicle.cost(start_index, job_index);
-    cost = std::min(cost, start_cost);
+    const auto start_eval = vehicle.eval(start_index, job_index);
+    eval = std::min(eval, start_eval);
   }
   if (vehicle.has_end()) {
     const auto end_index = vehicle.end.value().index();
-    const Gain end_cost = vehicle.cost(job_index, end_index);
-    cost = std::min(cost, end_cost);
+    const auto end_eval = vehicle.eval(job_index, end_index);
+    eval = std::min(eval, end_eval);
   }
   if (_sol[v_target].size() != 0) {
     const auto cheapest_from_rank =
       _sol_state.cheapest_job_rank_in_routes_from[v][v_target][r];
     const auto cheapest_from_index =
       _input.jobs[_sol[v_target].route[cheapest_from_rank]].index();
-    const Gain cost_from = vehicle.cost(cheapest_from_index, job_index);
-    cost = std::min(cost, cost_from);
+    const auto eval_from = vehicle.eval(cheapest_from_index, job_index);
+    eval = std::min(eval, eval_from);
 
     const auto cheapest_to_rank =
       _sol_state.cheapest_job_rank_in_routes_to[v][v_target][r];
     const auto cheapest_to_index =
       _input.jobs[_sol[v_target].route[cheapest_to_rank]].index();
-    const Gain cost_to = vehicle.cost(job_index, cheapest_to_index);
-    cost = std::min(cost, cost_to);
+    const auto eval_to = vehicle.eval(job_index, cheapest_to_index);
+    eval = std::min(eval, eval_to);
   }
 
-  return cost;
+  return eval;
 }
 
 template <class Route,
           class UnassignedExchange,
-          class SwapStar,
           class CrossExchange,
           class MixedExchange,
           class TwoOpt,
@@ -1996,10 +2051,11 @@ template <class Route,
           class IntraOrOpt,
           class IntraTwoOpt,
           class PDShift,
-          class RouteExchange>
-Gain LocalSearch<Route,
+          class RouteExchange,
+          class SwapStar,
+          class RouteSplit>
+Eval LocalSearch<Route,
                  UnassignedExchange,
-                 SwapStar,
                  CrossExchange,
                  MixedExchange,
                  TwoOpt,
@@ -2013,8 +2069,10 @@ Gain LocalSearch<Route,
                  IntraOrOpt,
                  IntraTwoOpt,
                  PDShift,
-                 RouteExchange>::relocate_cost_lower_bound(Index v, Index r) {
-  Gain best_bound = static_cast<Gain>(INFINITE_COST);
+                 RouteExchange,
+                 SwapStar,
+                 RouteSplit>::relocate_cost_lower_bound(Index v, Index r) {
+  Eval best_bound = NO_EVAL;
 
   for (std::size_t other_v = 0; other_v < _sol.size(); ++other_v) {
     if (other_v == v or
@@ -2030,7 +2088,6 @@ Gain LocalSearch<Route,
 
 template <class Route,
           class UnassignedExchange,
-          class SwapStar,
           class CrossExchange,
           class MixedExchange,
           class TwoOpt,
@@ -2044,10 +2101,11 @@ template <class Route,
           class IntraOrOpt,
           class IntraTwoOpt,
           class PDShift,
-          class RouteExchange>
-Gain LocalSearch<Route,
+          class RouteExchange,
+          class SwapStar,
+          class RouteSplit>
+Eval LocalSearch<Route,
                  UnassignedExchange,
-                 SwapStar,
                  CrossExchange,
                  MixedExchange,
                  TwoOpt,
@@ -2061,10 +2119,12 @@ Gain LocalSearch<Route,
                  IntraOrOpt,
                  IntraTwoOpt,
                  PDShift,
-                 RouteExchange>::relocate_cost_lower_bound(Index v,
-                                                           Index r1,
-                                                           Index r2) {
-  Gain best_bound = static_cast<Gain>(INFINITE_COST);
+                 RouteExchange,
+                 SwapStar,
+                 RouteSplit>::relocate_cost_lower_bound(Index v,
+                                                        Index r1,
+                                                        Index r2) {
+  Eval best_bound = NO_EVAL;
 
   for (std::size_t other_v = 0; other_v < _sol.size(); ++other_v) {
     if (other_v == v or
@@ -2082,7 +2142,6 @@ Gain LocalSearch<Route,
 
 template <class Route,
           class UnassignedExchange,
-          class SwapStar,
           class CrossExchange,
           class MixedExchange,
           class TwoOpt,
@@ -2096,10 +2155,11 @@ template <class Route,
           class IntraOrOpt,
           class IntraTwoOpt,
           class PDShift,
-          class RouteExchange>
+          class RouteExchange,
+          class SwapStar,
+          class RouteSplit>
 void LocalSearch<Route,
                  UnassignedExchange,
-                 SwapStar,
                  CrossExchange,
                  MixedExchange,
                  TwoOpt,
@@ -2113,7 +2173,9 @@ void LocalSearch<Route,
                  IntraOrOpt,
                  IntraTwoOpt,
                  PDShift,
-                 RouteExchange>::remove_from_routes() {
+                 RouteExchange,
+                 SwapStar,
+                 RouteSplit>::remove_from_routes() {
   // Store nearest job from and to any job in any route for constant
   // time access down the line.
   for (std::size_t v1 = 0; v1 < _nb_vehicles; ++v1) {
@@ -2139,7 +2201,9 @@ void LocalSearch<Route,
     // Try removing the best node (good gain on current route and
     // small cost to closest node in another compatible route).
     Index best_rank = 0;
-    Gain best_gain = std::numeric_limits<Gain>::min();
+    Eval best_gain = NO_GAIN;
+
+    const auto current_travel_time = _sol_state.route_evals[v].duration;
 
     for (std::size_t r = 0; r < _sol[v].size(); ++r) {
       const auto& current_job = _input.jobs[_sol[v].route[r]];
@@ -2147,24 +2211,29 @@ void LocalSearch<Route,
         continue;
       }
 
-      Gain current_gain;
-      bool valid_removal;
+      Eval current_gain;
+      bool valid_removal = false;
 
       if (current_job.type == JOB_TYPE::SINGLE) {
-        current_gain =
-          _sol_state.node_gains[v][r] - relocate_cost_lower_bound(v, r);
+        const auto& removal_gain = _sol_state.node_gains[v][r];
+        current_gain = removal_gain - relocate_cost_lower_bound(v, r);
 
         if (current_gain > best_gain) {
           // Only check validity if required.
-          valid_removal = _sol[v].is_valid_removal(_input, r, 1);
+          valid_removal = _input.vehicles[v].ok_for_travel_time(
+                            current_travel_time - removal_gain.duration) &&
+                          _sol[v].is_valid_removal(_input, r, 1);
         }
       } else {
         assert(current_job.type == JOB_TYPE::PICKUP);
-        auto delivery_r = _sol_state.matching_delivery_rank[v][r];
-        current_gain = _sol_state.pd_gains[v][r] -
-                       relocate_cost_lower_bound(v, r, delivery_r);
+        const auto delivery_r = _sol_state.matching_delivery_rank[v][r];
+        const auto& removal_gain = _sol_state.pd_gains[v][r];
+        current_gain =
+          removal_gain - relocate_cost_lower_bound(v, r, delivery_r);
 
-        if (current_gain > best_gain) {
+        if (current_gain > best_gain &&
+            _input.vehicles[v].ok_for_travel_time(current_travel_time -
+                                                  removal_gain.duration)) {
           // Only check validity if required.
           if (delivery_r == r + 1) {
             valid_removal = _sol[v].is_valid_removal(_input, r, 2);
@@ -2172,11 +2241,13 @@ void LocalSearch<Route,
             std::vector<Index> between_pd(_sol[v].route.begin() + r + 1,
                                           _sol[v].route.begin() + delivery_r);
 
-            valid_removal = _sol[v].is_valid_addition_for_tw(_input,
-                                                             between_pd.begin(),
-                                                             between_pd.end(),
-                                                             r,
-                                                             delivery_r + 1);
+            valid_removal =
+              _sol[v].is_valid_addition_for_tw(_input,
+                                               _input.zero_amount(),
+                                               between_pd.begin(),
+                                               between_pd.end(),
+                                               r,
+                                               delivery_r + 1);
           }
         }
       }
@@ -2187,7 +2258,7 @@ void LocalSearch<Route,
       }
     }
 
-    if (best_gain > std::numeric_limits<Gain>::min()) {
+    if (best_gain != NO_GAIN) {
       routes_and_ranks.push_back(std::make_pair(v, best_rank));
     }
   }
@@ -2211,7 +2282,16 @@ void LocalSearch<Route,
       } else {
         std::vector<Index> between_pd(_sol[v].route.begin() + r + 1,
                                       _sol[v].route.begin() + delivery_r);
+
+        Amount delivery = _input.zero_amount();
+        for (unsigned i = r + 1; i < delivery_r; ++i) {
+          const auto& job = _input.jobs[_sol[v].route[i]];
+          if (job.type == JOB_TYPE::SINGLE) {
+            delivery += job.delivery;
+          }
+        }
         _sol[v].replace(_input,
+                        delivery,
                         between_pd.begin(),
                         between_pd.end(),
                         r,
@@ -2223,7 +2303,6 @@ void LocalSearch<Route,
 
 template <class Route,
           class UnassignedExchange,
-          class SwapStar,
           class CrossExchange,
           class MixedExchange,
           class TwoOpt,
@@ -2237,30 +2316,32 @@ template <class Route,
           class IntraOrOpt,
           class IntraTwoOpt,
           class PDShift,
-          class RouteExchange>
-utils::SolutionIndicators LocalSearch<Route,
-                                      UnassignedExchange,
-                                      SwapStar,
-                                      CrossExchange,
-                                      MixedExchange,
-                                      TwoOpt,
-                                      ReverseTwoOpt,
-                                      Relocate,
-                                      OrOpt,
-                                      IntraExchange,
-                                      IntraCrossExchange,
-                                      IntraMixedExchange,
-                                      IntraRelocate,
-                                      IntraOrOpt,
-                                      IntraTwoOpt,
-                                      PDShift,
-                                      RouteExchange>::indicators() const {
+          class RouteExchange,
+          class SwapStar,
+          class RouteSplit>
+utils::SolutionIndicators<Route> LocalSearch<Route,
+                                             UnassignedExchange,
+                                             CrossExchange,
+                                             MixedExchange,
+                                             TwoOpt,
+                                             ReverseTwoOpt,
+                                             Relocate,
+                                             OrOpt,
+                                             IntraExchange,
+                                             IntraCrossExchange,
+                                             IntraMixedExchange,
+                                             IntraRelocate,
+                                             IntraOrOpt,
+                                             IntraTwoOpt,
+                                             PDShift,
+                                             RouteExchange,
+                                             SwapStar,
+                                             RouteSplit>::indicators() const {
   return _best_sol_indicators;
 }
 
 template class LocalSearch<TWRoute,
                            vrptw::UnassignedExchange,
-                           vrptw::SwapStar,
                            vrptw::CrossExchange,
                            vrptw::MixedExchange,
                            vrptw::TwoOpt,
@@ -2274,11 +2355,12 @@ template class LocalSearch<TWRoute,
                            vrptw::IntraOrOpt,
                            vrptw::IntraTwoOpt,
                            vrptw::PDShift,
-                           vrptw::RouteExchange>;
+                           vrptw::RouteExchange,
+                           vrptw::SwapStar,
+                           vrptw::RouteSplit>;
 
 template class LocalSearch<RawRoute,
                            cvrp::UnassignedExchange,
-                           cvrp::SwapStar,
                            cvrp::CrossExchange,
                            cvrp::MixedExchange,
                            cvrp::TwoOpt,
@@ -2292,7 +2374,9 @@ template class LocalSearch<RawRoute,
                            cvrp::IntraOrOpt,
                            cvrp::IntraTwoOpt,
                            cvrp::PDShift,
-                           cvrp::RouteExchange>;
+                           cvrp::RouteExchange,
+                           cvrp::SwapStar,
+                           cvrp::RouteSplit>;
 
 } // namespace ls
 } // namespace vroom

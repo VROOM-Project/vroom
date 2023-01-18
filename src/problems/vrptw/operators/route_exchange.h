@@ -20,6 +20,9 @@ private:
   TWRoute& _tw_s_route;
   TWRoute& _tw_t_route;
 
+  const Amount _source_job_deliveries_sum;
+  const Amount _target_job_deliveries_sum;
+
 public:
   RouteExchange(const Input& input,
                 const utils::SolutionState& sol_state,

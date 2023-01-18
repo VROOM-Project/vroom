@@ -60,8 +60,8 @@ UndirectedGraph<T> minimum_spanning_tree(const UndirectedGraph<T>& graph) {
   return UndirectedGraph<T>(mst);
 }
 
-template UndirectedGraph<Cost>
-minimum_spanning_tree(const UndirectedGraph<Cost>& graph);
+template UndirectedGraph<UserCost>
+minimum_spanning_tree(const UndirectedGraph<UserCost>& graph);
 
 } // namespace utils
 } // namespace vroom

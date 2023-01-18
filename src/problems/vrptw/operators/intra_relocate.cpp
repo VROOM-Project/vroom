@@ -30,6 +30,7 @@ IntraRelocate::IntraRelocate(const Input& input,
 bool IntraRelocate::is_valid() {
   return cvrp::IntraRelocate::is_valid() and
          _tw_s_route.is_valid_addition_for_tw(_input,
+                                              _delivery,
                                               _moved_jobs.begin(),
                                               _moved_jobs.end(),
                                               _first_rank,
@@ -38,6 +39,7 @@ bool IntraRelocate::is_valid() {
 
 void IntraRelocate::apply() {
   _tw_s_route.replace(_input,
+                      _delivery,
                       _moved_jobs.begin(),
                       _moved_jobs.end(),
                       _first_rank,

@@ -19,6 +19,9 @@ class ReverseTwoOpt : public ls::Operator {
 protected:
   virtual void compute_gain() override;
 
+  const Amount _s_delivery;
+  const Amount _t_delivery;
+
 public:
   ReverseTwoOpt(const Input& input,
                 const utils::SolutionState& sol_state,

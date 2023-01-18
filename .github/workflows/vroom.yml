@@ -16,24 +16,26 @@ jobs:
   vroom:
     strategy:
       matrix:
-        cxx: ['g++-9', 'clang++-10']
-    runs-on: ubuntu-20.04
+        cxx: ['g++-11', 'clang++-14']
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: true
       - name: Install dependencies
-        run: sudo apt-get install libasio-dev libglpk-dev jq
+        run: |
+          sudo apt-get update
+          sudo apt-get install libasio-dev libglpk-dev jq
       - name: Build vroom
-        run: make
+        run: make -j
         env:
           CXX: ${{ matrix.cxx }}
         working-directory: src
       - name: Validate output
         run: diff <(bin/vroom -i docs/example_2.json  | jq '.routes[].steps[]' --sort-keys) <(jq '.routes[].steps[]' --sort-keys docs/example_2_sol.json)
       - name: Build libvroom example
-        run: make
+        run: make -j
         env:
           CXX: ${{ matrix.cxx }}
         working-directory: libvroom_examples

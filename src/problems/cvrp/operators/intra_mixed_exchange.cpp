@@ -31,14 +31,15 @@ IntraMixedExchange::IntraMixedExchange(const Input& input,
     _gain_upper_bound_computed(false),
     // Required for consistency in compute_gain if check_t_reverse is
     // false.
-    _reversed_s_gain(std::numeric_limits<Gain>::min()),
+    _reversed_s_gain(NO_GAIN),
     reverse_t_edge(false),
     check_t_reverse(check_t_reverse),
     s_is_normal_valid(false),
     s_is_reverse_valid(false),
     _moved_jobs((s_rank < t_rank) ? t_rank - s_rank + 2 : s_rank - t_rank + 1),
     _first_rank(std::min(s_rank, t_rank)),
-    _last_rank((t_rank < s_rank) ? s_rank + 1 : t_rank + 2) {
+    _last_rank((t_rank < s_rank) ? s_rank + 1 : t_rank + 2),
+    _delivery(source.delivery_in_range(_first_rank, _last_rank)) {
   // If node at s_rank is right before/after edge at t_rank, then the
   // move is a relocate.
   assert(s_rank + 1 < t_rank or t_rank + 2 < s_rank);
@@ -79,56 +80,56 @@ IntraMixedExchange::IntraMixedExchange(const Input& input,
   _moved_jobs[_t_edge_last] = s_route[t_rank + 1];
 }
 
-Gain IntraMixedExchange::gain_upper_bound() {
+Eval IntraMixedExchange::gain_upper_bound() {
   const auto& v = _input.vehicles[s_vehicle];
 
   // Consider the cost of replacing node at rank s_rank with target
   // edge. Part of that cost (for adjacent edges) is stored in
-  // _sol_state.edge_costs_around_node.  reverse_* checks whether we
+  // _sol_state.edge_evals_around_node.  reverse_* checks whether we
   // should change the target edge order.
   Index s_index = _input.jobs[s_route[s_rank]].index();
   Index t_index = _input.jobs[s_route[t_rank]].index();
   Index t_after_index = _input.jobs[s_route[t_rank + 1]].index();
 
   // Determine costs added with target edge.
-  Gain previous_cost = 0;
-  Gain next_cost = 0;
-  Gain reverse_previous_cost = 0;
-  Gain reverse_next_cost = 0;
+  Eval previous_cost;
+  Eval next_cost;
+  Eval reverse_previous_cost;
+  Eval reverse_next_cost;
 
   if (s_rank == 0) {
     if (v.has_start()) {
       auto p_index = v.start.value().index();
-      previous_cost = v.cost(p_index, t_index);
-      reverse_previous_cost = v.cost(p_index, t_after_index);
+      previous_cost = v.eval(p_index, t_index);
+      reverse_previous_cost = v.eval(p_index, t_after_index);
     }
   } else {
     auto p_index = _input.jobs[s_route[s_rank - 1]].index();
-    previous_cost = v.cost(p_index, t_index);
-    reverse_previous_cost = v.cost(p_index, t_after_index);
+    previous_cost = v.eval(p_index, t_index);
+    reverse_previous_cost = v.eval(p_index, t_after_index);
   }
 
   if (s_rank == s_route.size() - 1) {
     if (v.has_end()) {
       auto n_index = v.end.value().index();
-      next_cost = v.cost(t_after_index, n_index);
-      reverse_next_cost = v.cost(t_index, n_index);
+      next_cost = v.eval(t_after_index, n_index);
+      reverse_next_cost = v.eval(t_index, n_index);
     }
   } else {
     auto n_index = _input.jobs[s_route[s_rank + 1]].index();
-    next_cost = v.cost(t_after_index, n_index);
-    reverse_next_cost = v.cost(t_index, n_index);
+    next_cost = v.eval(t_after_index, n_index);
+    reverse_next_cost = v.eval(t_index, n_index);
   }
 
-  _normal_s_gain = _sol_state.edge_costs_around_node[s_vehicle][s_rank] -
+  _normal_s_gain = _sol_state.edge_evals_around_node[s_vehicle][s_rank] -
                    previous_cost - next_cost;
 
   auto s_gain_upper_bound = _normal_s_gain;
 
   if (check_t_reverse) {
-    Gain reverse_edge_cost = static_cast<Gain>(v.cost(t_index, t_after_index)) -
-                             static_cast<Gain>(v.cost(t_after_index, t_index));
-    _reversed_s_gain = _sol_state.edge_costs_around_node[s_vehicle][s_rank] +
+    const auto reverse_edge_cost =
+      v.eval(t_index, t_after_index) - v.eval(t_after_index, t_index);
+    _reversed_s_gain = _sol_state.edge_evals_around_node[s_vehicle][s_rank] +
                        reverse_edge_cost - reverse_previous_cost -
                        reverse_next_cost;
 
@@ -137,38 +138,38 @@ Gain IntraMixedExchange::gain_upper_bound() {
 
   // Consider the cost of replacing edge starting at rank t_rank with
   // source node. Part of that cost (for adjacent edges) is stored in
-  // _sol_state.edge_costs_around_edge.  reverse_* checks whether we
+  // _sol_state.edge_evals_around_edge.  reverse_* checks whether we
   // should change the source edge order.
-  previous_cost = 0;
-  next_cost = 0;
+  previous_cost = Eval();
+  next_cost = Eval();
 
   if (t_rank == 0) {
     if (v.has_start()) {
       auto p_index = v.start.value().index();
-      previous_cost = v.cost(p_index, s_index);
+      previous_cost = v.eval(p_index, s_index);
     }
   } else {
     auto p_index = _input.jobs[s_route[t_rank - 1]].index();
-    previous_cost = v.cost(p_index, s_index);
+    previous_cost = v.eval(p_index, s_index);
   }
 
   if (t_rank == s_route.size() - 2) {
     if (v.has_end()) {
       auto n_index = v.end.value().index();
-      next_cost = v.cost(s_index, n_index);
-      reverse_next_cost = v.cost(s_index, n_index);
+      next_cost = v.eval(s_index, n_index);
+      reverse_next_cost = v.eval(s_index, n_index);
     }
   } else {
     auto n_index = _input.jobs[s_route[t_rank + 2]].index();
-    next_cost = v.cost(s_index, n_index);
+    next_cost = v.eval(s_index, n_index);
   }
 
-  _t_gain = _sol_state.edge_costs_around_edge[t_vehicle][t_rank] -
-            previous_cost - next_cost;
+  t_gain = _sol_state.edge_evals_around_edge[t_vehicle][t_rank] -
+           previous_cost - next_cost;
 
   _gain_upper_bound_computed = true;
 
-  return s_gain_upper_bound + _t_gain;
+  return s_gain_upper_bound + t_gain;
 }
 
 void IntraMixedExchange::compute_gain() {
@@ -192,36 +193,45 @@ void IntraMixedExchange::compute_gain() {
     }
   }
 
-  stored_gain += _t_gain;
+  stored_gain += t_gain;
 
   gain_computed = true;
 }
 
 bool IntraMixedExchange::is_valid() {
-  auto delivery = source.delivery_in_range(_first_rank, _last_rank);
+  assert(_gain_upper_bound_computed);
+
+  const auto& s_v = _input.vehicles[s_vehicle];
+  const auto s_travel_time = _sol_state.route_evals[s_vehicle].duration;
+  const auto normal_duration = _normal_s_gain.duration + t_gain.duration;
 
   s_is_normal_valid =
+    s_v.ok_for_travel_time(s_travel_time - normal_duration) and
     source.is_valid_addition_for_capacity_inclusion(_input,
-                                                    delivery,
+                                                    _delivery,
                                                     _moved_jobs.begin(),
                                                     _moved_jobs.end(),
                                                     _first_rank,
                                                     _last_rank);
 
   if (check_t_reverse) {
-    std::swap(_moved_jobs[_t_edge_first], _moved_jobs[_t_edge_last]);
+    const auto reversed_duration = _reversed_s_gain.duration + t_gain.duration;
 
-    s_is_reverse_valid =
-      source.is_valid_addition_for_capacity_inclusion(_input,
-                                                      delivery,
-                                                      _moved_jobs.begin(),
-                                                      _moved_jobs.end(),
-                                                      _first_rank,
-                                                      _last_rank);
+    if (s_v.ok_for_travel_time(s_travel_time - reversed_duration)) {
+      std::swap(_moved_jobs[_t_edge_first], _moved_jobs[_t_edge_last]);
 
-    // Reset to initial situation before potential application or TW
-    // checks.
-    std::swap(_moved_jobs[_t_edge_first], _moved_jobs[_t_edge_last]);
+      s_is_reverse_valid =
+        source.is_valid_addition_for_capacity_inclusion(_input,
+                                                        _delivery,
+                                                        _moved_jobs.begin(),
+                                                        _moved_jobs.end(),
+                                                        _first_rank,
+                                                        _last_rank);
+
+      // Reset to initial situation before potential application or TW
+      // checks.
+      std::swap(_moved_jobs[_t_edge_first], _moved_jobs[_t_edge_last]);
+    }
   }
 
   return s_is_normal_valid or s_is_reverse_valid;

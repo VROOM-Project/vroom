@@ -85,7 +85,7 @@ void log_solution(const vroom::Solution& sol, bool geometry) {
 
 void run_example_with_osrm() {
   bool GEOMETRY = true;
-  unsigned amount_dimension = 1;
+  const unsigned amount_dimension = 1;
 
   // Set OSRM host and port for "car" profile.
   vroom::io::Servers servers;
@@ -99,7 +99,7 @@ void run_example_with_osrm() {
   // Create one-dimension capacity restrictions to model the situation
   // where one vehicle can handle 4 jobs with deliveries.
   problem_instance.set_amount_size(amount_dimension);
-  vroom::Amount vehicle_capacity(1);
+  vroom::Amount vehicle_capacity(amount_dimension);
 
   vroom::TimeWindow vehicle_tw(28800, 43200); // Working hours.
   // Default "zero" amount data structures with relevant dimension.
@@ -111,8 +111,8 @@ void run_example_with_osrm() {
   vroom::Amount job_empty_pickup(amount_dimension);
   job_pickup[0] = 1;
 
-  vroom::Duration setup = 0;
-  vroom::Duration service = 5 * 60; // 5 minutes
+  vroom::UserDuration setup = 0;
+  vroom::UserDuration service = 5 * 60; // 5 minutes
   vehicle_capacity[0] = 4;
 
   // Define vehicle breaks.
@@ -120,7 +120,7 @@ void run_example_with_osrm() {
   vroom::Break break_2(2, {vroom::TimeWindow(34200, 36000)}, 300);
 
   // Define vehicles (use std::nullopt for no start or no end).
-  vroom::Location depot(vroom::Coordinates({{2.35044, 48.71764}}));
+  vroom::Location depot(vroom::Coordinates{2.35044, 48.71764});
   vroom::Vehicle v1(1,                // id
                     depot,            // start
                     depot,            // end
@@ -150,7 +150,7 @@ void run_example_with_osrm() {
   // be omitted.
   std::vector<vroom::Job> jobs;
   jobs.push_back(vroom::Job(1,
-                            vroom::Coordinates({{1.98935, 48.701}}),
+                            vroom::Coordinates{1.98935, 48.701},
                             setup,
                             service,
                             job_delivery,
@@ -159,21 +159,21 @@ void run_example_with_osrm() {
                             0,   // default priority
                             job_1_tws));
   jobs.push_back(vroom::Job(2,
-                            vroom::Coordinates({{2.03655, 48.61128}}),
+                            vroom::Coordinates{2.03655, 48.61128},
                             setup,
                             service,
                             job_empty_delivery,
                             job_pickup,
                             {1}));
   jobs.push_back(vroom::Job(5,
-                            vroom::Coordinates({{2.28325, 48.5958}}),
+                            vroom::Coordinates{2.28325, 48.5958},
                             setup,
                             service,
                             job_delivery,
                             job_empty_pickup,
                             {14}));
   jobs.push_back(vroom::Job(6,
-                            vroom::Coordinates({{2.89357, 48.90736}}),
+                            vroom::Coordinates{2.89357, 48.90736},
                             setup,
                             service,
                             job_delivery,
@@ -191,7 +191,7 @@ void run_example_with_osrm() {
 
   vroom::Job pickup(4,
                     vroom::JOB_TYPE::PICKUP,
-                    vroom::Coordinates({{2.41808, 49.22619}}),
+                    vroom::Coordinates{2.41808, 49.22619},
                     setup,
                     service,
                     pd_amount,
@@ -199,7 +199,7 @@ void run_example_with_osrm() {
 
   vroom::Job delivery(3,
                       vroom::JOB_TYPE::DELIVERY,
-                      vroom::Coordinates({{2.39719, 49.07611}}),
+                      vroom::Coordinates{2.39719, 49.07611},
                       setup,
                       service,
                       pd_amount,
@@ -212,8 +212,10 @@ void run_example_with_osrm() {
   // - jobs 5 and 6 can be served by either one of the vehicles
 
   // Solve!
-  auto sol = problem_instance.solve(5,  // Exploration level.
-                                    4); // Use 4 threads.
+  auto sol =
+    problem_instance.solve(vroom::DEFAULT_EXPLORATION_LEVEL, // Exploration
+                                                             // level.
+                           vroom::DEFAULT_THREADS_NUMBER);   // Use 4 threads.
 
   log_solution(sol, GEOMETRY);
 }
@@ -224,7 +226,7 @@ void run_example_with_custom_matrix() {
   vroom::Input problem_instance;
 
   // Define custom matrix and bypass OSRM call.
-  vroom::Matrix<vroom::Duration> matrix_input(4);
+  vroom::Matrix<vroom::UserDuration> matrix_input(4);
 
   matrix_input[0][0] = 0;
   matrix_input[0][1] = 2104;
@@ -266,8 +268,10 @@ void run_example_with_custom_matrix() {
   }
 
   // Solve!
-  auto sol = problem_instance.solve(5,  // Exploration level.
-                                    4); // Use 4 threads.
+  auto sol =
+    problem_instance.solve(vroom::DEFAULT_EXPLORATION_LEVEL, // Exploration
+                                                             // level.
+                           vroom::DEFAULT_THREADS_NUMBER);   // Use 4 threads.
 
   log_solution(sol, GEOMETRY);
 }

@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include "structures/vroom/solution_indicators.h"
 #include "structures/vroom/solution_state.h"
 
 namespace vroom {
@@ -17,7 +18,6 @@ namespace ls {
 
 template <class Route,
           class UnassignedExchange,
-          class SwapStar,
           class CrossExchange,
           class MixedExchange,
           class TwoOpt,
@@ -31,7 +31,9 @@ template <class Route,
           class IntraOrOpt,
           class IntraTwoOpt,
           class PDShift,
-          class RouteExchange>
+          class RouteExchange,
+          class SwapStar,
+          class RouteSplit>
 class LocalSearch {
 private:
   const Input& _input;
@@ -47,7 +49,7 @@ private:
   std::vector<Route> _sol;
 
   std::vector<Route>& _best_sol;
-  utils::SolutionIndicators _best_sol_indicators;
+  utils::SolutionIndicators<Route> _best_sol_indicators;
 
 #ifdef LOG_LS_OPERATORS
   // Store operator usage stats.
@@ -62,13 +64,13 @@ private:
   // Compute "cost" between route at rank v_target and job with rank r
   // in route at rank v. Relies on
   // _sol_state.cheapest_job_rank_in_routes_* being up to date.
-  Gain job_route_cost(Index v_target, Index v, Index r);
+  Eval job_route_cost(Index v_target, Index v, Index r);
 
   // Compute lower bound for the cost of relocating job at rank r
   // (resp. jobs at rank r1 and r2) in route v to any other
   // (compatible) route.
-  Gain relocate_cost_lower_bound(Index v, Index r);
-  Gain relocate_cost_lower_bound(Index v, Index r1, Index r2);
+  Eval relocate_cost_lower_bound(Index v, Index r);
+  Eval relocate_cost_lower_bound(Index v, Index r1, Index r2);
 
   void remove_from_routes();
 
@@ -78,7 +80,7 @@ public:
               unsigned max_nb_jobs_removal,
               const Timeout& timeout);
 
-  utils::SolutionIndicators indicators() const;
+  utils::SolutionIndicators<Route> indicators() const;
 
   void run();
 

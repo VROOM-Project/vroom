@@ -24,7 +24,7 @@ inline Coordinates parse_coordinates(const rapidjson::Value& object,
       !object[key][0].IsNumber() or !object[key][1].IsNumber()) {
     throw InputException("Invalid " + std::string(key) + " array.");
   }
-  return {{object[key][0].GetDouble(), object[key][1].GetDouble()}};
+  return {object[key][0].GetDouble(), object[key][1].GetDouble()};
 }
 
 inline std::string get_string(const rapidjson::Value& object, const char* key) {
@@ -51,19 +51,19 @@ inline double get_double(const rapidjson::Value& object, const char* key) {
 
 inline Amount get_amount(const rapidjson::Value& object,
                          const char* key,
-                         unsigned size) {
+                         unsigned amount_size) {
   // Default to zero amount with provided size.
-  Amount amount(size);
+  Amount amount(amount_size);
 
   if (object.HasMember(key)) {
     if (!object[key].IsArray()) {
       throw InputException("Invalid " + std::string(key) + " array.");
     }
 
-    if (object[key].Size() != size) {
+    if (object[key].Size() != amount_size) {
       throw InputException("Inconsistent " + std::string(key) +
                            " length: " + std::to_string(object[key].Size()) +
-                           " and " + std::to_string(size) + '.');
+                           " and " + std::to_string(amount_size) + '.');
     }
 
     for (rapidjson::SizeType i = 0; i < object[key].Size(); ++i) {
@@ -94,8 +94,9 @@ inline Skills get_skills(const rapidjson::Value& object) {
   return skills;
 }
 
-inline Duration get_duration(const rapidjson::Value& object, const char* key) {
-  Duration duration = 0;
+inline UserDuration get_duration(const rapidjson::Value& object,
+                                 const char* key) {
+  UserDuration duration = 0;
   if (object.HasMember(key)) {
     if (!object[key].IsUint()) {
       throw InputException("Invalid " + std::string(key) + " duration.");
@@ -105,7 +106,7 @@ inline Duration get_duration(const rapidjson::Value& object, const char* key) {
   return duration;
 }
 
-inline Duration get_priority(const rapidjson::Value& object) {
+inline Priority get_priority(const rapidjson::Value& object) {
   Priority priority = 0;
   if (object.HasMember("priority")) {
     if (!object["priority"].IsUint()) {
@@ -125,6 +126,18 @@ inline size_t get_max_tasks(const rapidjson::Value& object) {
     max_tasks = object["max_tasks"].GetUint();
   }
   return max_tasks;
+}
+
+inline std::optional<UserDuration>
+get_max_travel_time(const rapidjson::Value& object) {
+  std::optional<UserDuration> max_travel_time;
+  if (object.HasMember("max_travel_time")) {
+    if (!object["max_travel_time"].IsUint()) {
+      throw InputException("Invalid max_travel_time value.");
+    }
+    max_travel_time = object["max_travel_time"].GetUint();
+  }
+  return max_travel_time;
 }
 
 inline void check_id(const rapidjson::Value& v, const std::string& type) {
@@ -170,16 +183,16 @@ inline TimeWindow get_vehicle_time_window(const rapidjson::Value& v) {
   return v_tw;
 }
 
-inline std::vector<TimeWindow> get_job_time_windows(const rapidjson::Value& j) {
+inline std::vector<TimeWindow> get_time_windows(const rapidjson::Value& o) {
   std::vector<TimeWindow> tws;
-  if (j.HasMember("time_windows")) {
-    if (!j["time_windows"].IsArray() or j["time_windows"].Empty()) {
-      throw InputException("Invalid time_windows array for job " +
-                           std::to_string(j["id"].GetUint64()) + ".");
+  if (o.HasMember("time_windows")) {
+    if (!o["time_windows"].IsArray() or o["time_windows"].Empty()) {
+      throw InputException("Invalid time_windows array for object " +
+                           std::to_string(o["id"].GetUint64()) + ".");
     }
 
-    std::transform(j["time_windows"].Begin(),
-                   j["time_windows"].End(),
+    std::transform(o["time_windows"].Begin(),
+                   o["time_windows"].End(),
                    std::back_inserter(tws),
                    [](auto& tw) { return get_time_window(tw); });
 
@@ -191,34 +204,22 @@ inline std::vector<TimeWindow> get_job_time_windows(const rapidjson::Value& j) {
   return tws;
 }
 
-inline std::vector<TimeWindow>
-get_break_time_windows(const rapidjson::Value& b) {
-  std::vector<TimeWindow> tws;
-  if (!b.HasMember("time_windows") or !b["time_windows"].IsArray() or
-      b["time_windows"].Empty()) {
-    throw InputException("Invalid time_windows array for break " +
-                         std::to_string(b["id"].GetUint64()) + ".");
-  }
-
-  std::transform(b["time_windows"].Begin(),
-                 b["time_windows"].End(),
-                 std::back_inserter(tws),
-                 [](auto& tw) { return get_time_window(tw); });
-
-  std::sort(tws.begin(), tws.end());
-
-  return tws;
-}
-
-inline Break get_break(const rapidjson::Value& b) {
+inline Break get_break(const rapidjson::Value& b, unsigned amount_size) {
   check_id(b, "break");
+
+  const auto max_load = b.HasMember("max_load")
+                          ? get_amount(b, "max_load", amount_size)
+                          : std::optional<Amount>();
+
   return Break(b["id"].GetUint64(),
-               get_break_time_windows(b),
+               get_time_windows(b),
                get_duration(b, "service"),
-               get_string(b, "description"));
+               get_string(b, "description"),
+               max_load);
 }
 
-inline std::vector<Break> get_vehicle_breaks(const rapidjson::Value& v) {
+inline std::vector<Break> get_vehicle_breaks(const rapidjson::Value& v,
+                                             unsigned amount_size) {
   std::vector<Break> breaks;
   if (v.HasMember("breaks")) {
     if (!v["breaks"].IsArray()) {
@@ -229,7 +230,7 @@ inline std::vector<Break> get_vehicle_breaks(const rapidjson::Value& v) {
     std::transform(v["breaks"].Begin(),
                    v["breaks"].End(),
                    std::back_inserter(breaks),
-                   [](auto& b) { return get_break(b); });
+                   [&](auto& b) { return get_break(b, amount_size); });
   }
 
   std::sort(breaks.begin(), breaks.end(), [](const auto& a, const auto& b) {
@@ -238,6 +239,38 @@ inline std::vector<Break> get_vehicle_breaks(const rapidjson::Value& v) {
   });
 
   return breaks;
+}
+
+inline VehicleCosts get_vehicle_costs(const rapidjson::Value& v) {
+  UserCost fixed = 0;
+  UserCost per_hour = DEFAULT_COST_PER_HOUR;
+
+  if (v.HasMember("costs")) {
+    if (!v["costs"].IsObject()) {
+      throw InputException("Invalid costs for vehicle " +
+                           std::to_string(v["id"].GetUint64()) + ".");
+    }
+
+    if (v["costs"].HasMember("fixed")) {
+      if (!v["costs"]["fixed"].IsUint()) {
+        throw InputException("Invalid fixed cost for vehicle " +
+                             std::to_string(v["id"].GetUint64()) + ".");
+      }
+
+      fixed = v["costs"]["fixed"].GetUint();
+    }
+
+    if (v["costs"].HasMember("per_hour")) {
+      if (!v["costs"]["per_hour"].IsUint()) {
+        throw InputException("Invalid per_hour cost for vehicle " +
+                             std::to_string(v["id"].GetUint64()) + ".");
+      }
+
+      per_hour = v["costs"]["per_hour"].GetUint();
+    }
+  }
+
+  return VehicleCosts(fixed, per_hour);
 }
 
 inline std::vector<VehicleStep> get_vehicle_steps(const rapidjson::Value& v) {
@@ -252,7 +285,7 @@ inline std::vector<VehicleStep> get_vehicle_steps(const rapidjson::Value& v) {
     for (rapidjson::SizeType i = 0; i < v["steps"].Size(); ++i) {
       const auto& json_step = v["steps"][i];
 
-      std::optional<Duration> at;
+      std::optional<UserDuration> at;
       if (json_step.HasMember("service_at")) {
         if (!json_step["service_at"].IsUint()) {
           throw InputException("Invalid service_at value.");
@@ -260,7 +293,7 @@ inline std::vector<VehicleStep> get_vehicle_steps(const rapidjson::Value& v) {
 
         at = json_step["service_at"].GetUint();
       }
-      std::optional<Duration> after;
+      std::optional<UserDuration> after;
       if (json_step.HasMember("service_after")) {
         if (!json_step["service_after"].IsUint()) {
           throw InputException("Invalid service_after value.");
@@ -268,7 +301,7 @@ inline std::vector<VehicleStep> get_vehicle_steps(const rapidjson::Value& v) {
 
         after = json_step["service_after"].GetUint();
       }
-      std::optional<Duration> before;
+      std::optional<UserDuration> before;
       if (json_step.HasMember("service_before")) {
         if (!json_step["service_before"].IsUint()) {
           throw InputException("Invalid service_before value.");
@@ -276,9 +309,7 @@ inline std::vector<VehicleStep> get_vehicle_steps(const rapidjson::Value& v) {
 
         before = json_step["service_before"].GetUint();
       }
-      ForcedService forced_service(std::move(at),
-                                   std::move(after),
-                                   std::move(before));
+      ForcedService forced_service(at, after, before);
 
       const auto type_str = get_string(json_step, "type");
 
@@ -387,10 +418,12 @@ inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
                  get_amount(json_vehicle, "capacity", amount_size),
                  get_skills(json_vehicle),
                  get_vehicle_time_window(json_vehicle),
-                 get_vehicle_breaks(json_vehicle),
+                 get_vehicle_breaks(json_vehicle, amount_size),
                  get_string(json_vehicle, "description"),
+                 get_vehicle_costs(json_vehicle),
                  get_double(json_vehicle, "speed_factor"),
                  get_max_tasks(json_vehicle),
+                 get_max_travel_time(json_vehicle),
                  get_vehicle_steps(json_vehicle));
 }
 
@@ -437,7 +470,7 @@ inline Job get_job(const rapidjson::Value& json_job, unsigned amount_size) {
              get_amount(json_job, "pickup", amount_size),
              get_skills(json_job),
              get_priority(json_job),
-             get_job_time_windows(json_job),
+             get_time_windows(json_job),
              get_string(json_job, "description"));
 }
 
@@ -540,7 +573,7 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
                  amount,
                  skills,
                  priority,
-                 get_job_time_windows(json_pickup),
+                 get_time_windows(json_pickup),
                  get_string(json_pickup, "description"));
 
       // Defining delivery job.
@@ -555,7 +588,7 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
                    amount,
                    skills,
                    priority,
-                   get_job_time_windows(json_delivery),
+                   get_time_windows(json_delivery),
                    get_string(json_delivery, "description"));
 
       input.add_shipment(pickup, delivery);
@@ -570,12 +603,12 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
       if (profile_entry.value.IsObject()) {
         if (profile_entry.value.HasMember("durations")) {
           input.set_durations_matrix(profile_entry.name.GetString(),
-                                     get_matrix<Duration>(
+                                     get_matrix<UserDuration>(
                                        profile_entry.value["durations"]));
         }
         if (profile_entry.value.HasMember("costs")) {
           input.set_costs_matrix(profile_entry.name.GetString(),
-                                 get_matrix<Cost>(
+                                 get_matrix<UserCost>(
                                    profile_entry.value["costs"]));
         }
       }
@@ -585,7 +618,8 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
     // `matrices.DEFAULT_PROFILE.duration` for retro-compatibility.
     if (json_input.HasMember("matrix")) {
       input.set_durations_matrix(DEFAULT_PROFILE,
-                                 get_matrix<Duration>(json_input["matrix"]));
+                                 get_matrix<UserDuration>(
+                                   json_input["matrix"]));
     }
   }
 }

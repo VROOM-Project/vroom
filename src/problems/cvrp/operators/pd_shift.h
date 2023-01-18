@@ -19,7 +19,6 @@ class PDShift : public ls::Operator {
 protected:
   const Index _s_p_rank;
   const Index _s_d_rank;
-  const Gain _remove_gain;
   Index _best_t_p_rank;
   Index _best_t_d_rank;
   bool _valid;
@@ -38,7 +37,7 @@ public:
           Index s_d_rank,
           RawRoute& t_route,
           Index t_vehicle,
-          Gain gain_threshold);
+          const Eval& gain_threshold);
 
   virtual bool is_valid() override;
 

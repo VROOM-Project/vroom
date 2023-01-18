@@ -20,6 +20,7 @@ private:
   std::vector<Index> _source_without_pd;
   TWRoute& _tw_s_route;
   TWRoute& _tw_t_route;
+  Amount _best_t_delivery;
 
   virtual void compute_gain() override;
 
@@ -32,7 +33,7 @@ public:
           Index s_d_rank,
           TWRoute& tw_t_route,
           Index t_vehicle,
-          Gain gain_threshold);
+          const Eval& gain_threshold);
 
   void log_route(const std::vector<Index>& route) const;
 

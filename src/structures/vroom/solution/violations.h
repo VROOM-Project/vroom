@@ -15,8 +15,8 @@ All rights reserved (see LICENSE).
 namespace vroom {
 
 struct Violations {
-  Duration lead_time;
-  Duration delay;
+  UserDuration lead_time;
+  UserDuration delay;
 
   std::unordered_set<VIOLATION> types;
 
@@ -24,8 +24,8 @@ struct Violations {
   Violations();
 
   // Used for route/summary.
-  Violations(const Duration lead_time,
-             const Duration delay,
+  Violations(const UserDuration lead_time,
+             const UserDuration delay,
              const std::unordered_set<VIOLATION>&& types =
                std::unordered_set<VIOLATION>());
 

@@ -32,7 +32,9 @@ OrOpt::OrOpt(const Input& input,
     _gain_upper_bound_computed(false),
     reverse_s_edge(false),
     is_normal_valid(false),
-    is_reverse_valid(false) {
+    is_reverse_valid(false),
+    edge_delivery(_input.jobs[this->s_route[s_rank]].delivery +
+                  _input.jobs[this->s_route[s_rank + 1]].delivery) {
   assert(s_vehicle != t_vehicle);
   assert(s_route.size() >= 2);
   assert(s_rank < s_route.size() - 1);
@@ -42,7 +44,7 @@ OrOpt::OrOpt(const Input& input,
   assert(_input.vehicle_ok_with_job(t_vehicle, this->s_route[s_rank + 1]));
 }
 
-Gain OrOpt::gain_upper_bound() {
+Eval OrOpt::gain_upper_bound() {
   const auto& s_v = _input.vehicles[s_vehicle];
   const auto& t_v = _input.vehicles[t_vehicle];
 
@@ -56,78 +58,87 @@ Gain OrOpt::gain_upper_bound() {
   Index s_index = _input.jobs[s_route[s_rank]].index();
   Index after_s_index = _input.jobs[s_route[s_rank + 1]].index();
 
-  Gain previous_cost = 0;
-  Gain next_cost = 0;
-  Gain reverse_previous_cost = 0;
-  Gain reverse_next_cost = 0;
-  Gain old_edge_cost = 0;
+  Eval previous_cost;
+  Eval next_cost;
+  Eval reverse_previous_cost;
+  Eval reverse_next_cost;
+  Eval old_edge_cost;
 
   if (t_rank == t_route.size()) {
     if (t_route.size() == 0) {
       // Adding edge to an empty route.
       if (t_v.has_start()) {
-        previous_cost = t_v.cost(t_v.start.value().index(), s_index);
+        previous_cost = t_v.eval(t_v.start.value().index(), s_index);
         reverse_previous_cost =
-          t_v.cost(t_v.start.value().index(), after_s_index);
+          t_v.eval(t_v.start.value().index(), after_s_index);
       }
       if (t_v.has_end()) {
-        next_cost = t_v.cost(after_s_index, t_v.end.value().index());
-        reverse_next_cost = t_v.cost(s_index, t_v.end.value().index());
+        next_cost = t_v.eval(after_s_index, t_v.end.value().index());
+        reverse_next_cost = t_v.eval(s_index, t_v.end.value().index());
       }
     } else {
       // Adding edge past the end after a real job.
       auto p_index = _input.jobs[t_route[t_rank - 1]].index();
-      previous_cost = t_v.cost(p_index, s_index);
-      reverse_previous_cost = t_v.cost(p_index, after_s_index);
+      previous_cost = t_v.eval(p_index, s_index);
+      reverse_previous_cost = t_v.eval(p_index, after_s_index);
       if (t_v.has_end()) {
         auto n_index = t_v.end.value().index();
-        old_edge_cost = t_v.cost(p_index, n_index);
-        next_cost = t_v.cost(after_s_index, n_index);
-        reverse_next_cost = t_v.cost(s_index, n_index);
+        old_edge_cost = t_v.eval(p_index, n_index);
+        next_cost = t_v.eval(after_s_index, n_index);
+        reverse_next_cost = t_v.eval(s_index, n_index);
       }
     }
   } else {
     // Adding before one of the jobs.
     auto n_index = _input.jobs[t_route[t_rank]].index();
-    next_cost = t_v.cost(after_s_index, n_index);
-    reverse_next_cost = t_v.cost(s_index, n_index);
+    next_cost = t_v.eval(after_s_index, n_index);
+    reverse_next_cost = t_v.eval(s_index, n_index);
 
     if (t_rank == 0) {
       if (t_v.has_start()) {
         auto p_index = t_v.start.value().index();
-        previous_cost = t_v.cost(p_index, s_index);
-        reverse_previous_cost = t_v.cost(p_index, after_s_index);
-        old_edge_cost = t_v.cost(p_index, n_index);
+        previous_cost = t_v.eval(p_index, s_index);
+        reverse_previous_cost = t_v.eval(p_index, after_s_index);
+        old_edge_cost = t_v.eval(p_index, n_index);
       }
     } else {
       auto p_index = _input.jobs[t_route[t_rank - 1]].index();
-      previous_cost = t_v.cost(p_index, s_index);
-      reverse_previous_cost = t_v.cost(p_index, after_s_index);
-      old_edge_cost = t_v.cost(p_index, n_index);
+      previous_cost = t_v.eval(p_index, s_index);
+      reverse_previous_cost = t_v.eval(p_index, after_s_index);
+      old_edge_cost = t_v.eval(p_index, n_index);
     }
   }
 
   // Gain for source vehicle, including cost of moved edge.
-  _s_gain =
-    _sol_state.edge_gains[s_vehicle][s_rank] + s_v.cost(s_index, after_s_index);
+  s_gain =
+    _sol_state.edge_gains[s_vehicle][s_rank] + s_v.eval(s_index, after_s_index);
+
+  if (s_route.size() == 2) {
+    s_gain.cost += s_v.fixed_cost();
+  }
 
   // Gain for target vehicle, including cost of moved edge.
   _normal_t_gain = old_edge_cost - previous_cost - next_cost -
-                   t_v.cost(s_index, after_s_index);
+                   t_v.eval(s_index, after_s_index);
 
   _reversed_t_gain = old_edge_cost - reverse_previous_cost - reverse_next_cost -
-                     t_v.cost(after_s_index, s_index);
+                     t_v.eval(after_s_index, s_index);
+
+  if (t_route.empty()) {
+    _normal_t_gain.cost -= t_v.fixed_cost();
+    _reversed_t_gain.cost -= t_v.fixed_cost();
+  }
 
   _gain_upper_bound_computed = true;
 
-  return _s_gain + std::max(_normal_t_gain, _reversed_t_gain);
+  return s_gain + std::max(_normal_t_gain, _reversed_t_gain);
 }
 
 void OrOpt::compute_gain() {
   assert(_gain_upper_bound_computed);
   assert(is_normal_valid or is_reverse_valid);
 
-  stored_gain = _s_gain;
+  stored_gain = s_gain;
 
   if (_reversed_t_gain > _normal_t_gain) {
     // Biggest potential gain is obtained when reversing edge.
@@ -151,12 +162,13 @@ void OrOpt::compute_gain() {
 }
 
 bool OrOpt::is_valid() {
+  assert(_gain_upper_bound_computed);
+
   auto edge_pickup = _input.jobs[s_route[s_rank]].pickup +
                      _input.jobs[s_route[s_rank + 1]].pickup;
-  auto edge_delivery = _input.jobs[s_route[s_rank]].delivery +
-                       _input.jobs[s_route[s_rank + 1]].delivery;
 
-  bool valid = target.is_valid_addition_for_capacity(_input,
+  bool valid = is_valid_for_source_max_travel_time() &&
+               target.is_valid_addition_for_capacity(_input,
                                                      edge_pickup,
                                                      edge_delivery,
                                                      t_rank);
@@ -165,7 +177,11 @@ bool OrOpt::is_valid() {
     // Keep edge direction.
     auto s_start = s_route.begin() + s_rank;
 
+    const auto& t_v = _input.vehicles[t_vehicle];
+    const auto t_travel_time = _sol_state.route_evals[t_vehicle].duration;
+
     is_normal_valid =
+      t_v.ok_for_travel_time(t_travel_time - _normal_t_gain.duration) and
       target.is_valid_addition_for_capacity_inclusion(_input,
                                                       edge_delivery,
                                                       s_start,
@@ -176,6 +192,7 @@ bool OrOpt::is_valid() {
     // Reverse edge direction.
     auto s_reverse_start = s_route.rbegin() + s_route.size() - 2 - s_rank;
     is_reverse_valid =
+      t_v.ok_for_travel_time(t_travel_time - _reversed_t_gain.duration) and
       target.is_valid_addition_for_capacity_inclusion(_input,
                                                       edge_delivery,
                                                       s_reverse_start,

@@ -11,6 +11,7 @@ All rights reserved (see LICENSE).
 */
 
 #include <string>
+#include <vector>
 
 #include "structures/vroom/job.h"
 #include "structures/vroom/solution/route.h"
@@ -28,7 +29,7 @@ struct Solution {
   Solution(unsigned code, std::string error);
 
   Solution(unsigned code,
-           unsigned amount_size,
+           const Amount& zero_amount,
            std::vector<Route>&& routes,
            std::vector<Job>&& unassigned);
 };

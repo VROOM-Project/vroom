@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include "structures/typedefs.h"
 #include "structures/vroom/amount.h"
 #include "structures/vroom/solution/computing_times.h"
 #include "structures/vroom/solution/violations.h"
@@ -17,17 +18,17 @@ All rights reserved (see LICENSE).
 namespace vroom {
 
 struct Summary {
-  Cost cost;
+  UserCost cost;
   const unsigned routes;
   const unsigned unassigned;
   Amount delivery;
   Amount pickup;
-  Duration setup;
-  Duration service;
+  UserDuration setup;
+  UserDuration service;
   Priority priority;
 
-  Duration duration;
-  Duration waiting_time;
+  UserDuration duration;
+  UserDuration waiting_time;
   Distance distance;
   ComputingTimes computing_times;
 
@@ -35,7 +36,7 @@ struct Summary {
 
   Summary();
 
-  Summary(unsigned routes, unsigned unassigned, unsigned amount_size);
+  Summary(unsigned routes, unsigned unassigned, const Amount& zero_amount);
 };
 
 } // namespace vroom

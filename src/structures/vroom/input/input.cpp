@@ -33,9 +33,11 @@ Input::Input(const io::Servers& servers, ROUTER router)
     _no_addition_yet(true),
     _has_skills(false),
     _has_TW(false),
+    _has_all_coordinates(true),
     _has_initial_routes(false),
     _homogeneous_locations(true),
     _homogeneous_profiles(true),
+    _homogeneous_costs(true),
     _geometry(false),
     _has_jobs(false),
     _has_shipments(false),
@@ -62,6 +64,10 @@ void Input::add_routing_wrapper(const std::string& profile) {
   throw RoutingException("VROOM compiled without routing support.");
 #endif
 
+  if (!_has_all_coordinates) {
+    throw InputException("Missing coordinates for routing engine.");
+  }
+
   assert(std::find_if(_routing_wrappers.begin(),
                       _routing_wrappers.end(),
                       [&](const auto& wr) { return wr->profile == profile; }) ==
@@ -85,7 +91,7 @@ void Input::add_routing_wrapper(const std::string& profile) {
     try {
       routing_wrapper = std::make_unique<routing::LibosrmWrapper>(profile);
     } catch (const osrm::exception& e) {
-      throw RoutingException("Invalid profile: " + profile);
+      throw InputException("Invalid profile: " + profile);
     }
 #else
     // Attempt to use libosrm while compiling without it.
@@ -141,6 +147,9 @@ void Input::check_job(Job& job) {
     }
   }
 
+  // Check whether all locations have coordinates.
+  _has_all_coordinates = _has_all_coordinates && job.location.has_coordinates();
+
   // Check for time-windows and skills.
   _has_TW = _has_TW || (!(job.tws.size() == 1) or !job.tws[0].is_default());
   _has_skills = _has_skills || !job.skills.empty();
@@ -195,22 +204,31 @@ void Input::add_job(const Job& job) {
 
 void Input::add_shipment(const Job& pickup, const Job& delivery) {
   if (pickup.priority != delivery.priority) {
-    throw InputException("Inconsistent shipment priority.");
+    throw InputException("Inconsistent shipment priority for pickup " +
+                         std::to_string(pickup.id) + " and delivery " +
+                         std::to_string(delivery.id) + ".");
   }
   if (!(pickup.pickup == delivery.delivery)) {
-    throw InputException("Inconsistent shipment amount.");
+    throw InputException("Inconsistent shipment amount for pickup " +
+                         std::to_string(pickup.id) + " and delivery " +
+                         std::to_string(delivery.id) + ".");
   }
   if (pickup.skills.size() != delivery.skills.size()) {
-    throw InputException("Inconsistent shipment skills.");
+    throw InputException("Inconsistent shipment skills for pickup " +
+                         std::to_string(pickup.id) + " and delivery " +
+                         std::to_string(delivery.id) + ".");
   }
   for (const auto s : pickup.skills) {
     if (delivery.skills.find(s) == delivery.skills.end()) {
-      throw InputException("Inconsistent shipment skills.");
+      throw InputException("Inconsistent shipment skills for pickup " +
+                           std::to_string(pickup.id) + " and " +
+                           std::to_string(delivery.id) + ".");
     }
   }
 
   if (pickup.type != JOB_TYPE::PICKUP) {
-    throw InputException("Wrong pickup type.");
+    throw InputException("Wrong type for pickup " + std::to_string(pickup.id) +
+                         ".");
   }
   if (pickup_id_to_rank.find(pickup.id) != pickup_id_to_rank.end()) {
     throw InputException("Duplicate pickup id: " + std::to_string(pickup.id) +
@@ -221,7 +239,8 @@ void Input::add_shipment(const Job& pickup, const Job& delivery) {
   check_job(jobs.back());
 
   if (delivery.type != JOB_TYPE::DELIVERY) {
-    throw InputException("Wrong delivery type.");
+    throw InputException("Wrong type for delivery " +
+                         std::to_string(delivery.id) + ".");
   }
   if (delivery_id_to_rank.find(delivery.id) != delivery_id_to_rank.end()) {
     throw InputException(
@@ -251,10 +270,12 @@ void Input::add_vehicle(const Vehicle& vehicle) {
   _has_skills = _has_skills || !current_v.skills.empty();
 
   bool has_location_index = false;
+  bool has_all_coordinates = true;
   if (current_v.has_start()) {
     auto& start_loc = current_v.start.value();
 
     has_location_index = start_loc.user_index();
+    has_all_coordinates = start_loc.has_coordinates();
 
     if (!start_loc.user_index()) {
       // Index of start in the matrices is not specified in input,
@@ -304,6 +325,7 @@ void Input::add_vehicle(const Vehicle& vehicle) {
     }
 
     has_location_index = end_loc.user_index();
+    has_all_coordinates = has_all_coordinates && end_loc.has_coordinates();
 
     if (!end_loc.user_index()) {
       // Index of this end in the matrix was not specified upon
@@ -352,6 +374,9 @@ void Input::add_vehicle(const Vehicle& vehicle) {
     }
   }
 
+  // Check whether all locations have coordinates.
+  _has_all_coordinates = _has_all_coordinates && has_all_coordinates;
+
   _has_initial_routes = _has_initial_routes or !current_v.steps.empty();
 
   // Check for homogeneous locations among vehicles.
@@ -361,20 +386,22 @@ void Input::add_vehicle(const Vehicle& vehicle) {
       vehicles.front().has_same_locations(vehicles.back());
     _homogeneous_profiles = _homogeneous_profiles &&
                             vehicles.front().has_same_profile(vehicles.back());
+    _homogeneous_costs =
+      _homogeneous_costs && vehicles.front().costs == vehicles.back().costs;
   }
 
   _profiles.insert(current_v.profile);
 }
 
 void Input::set_durations_matrix(const std::string& profile,
-                                 Matrix<Duration>&& m) {
+                                 Matrix<UserDuration>&& m) {
   if (m.size() == 0) {
     throw InputException("Empty durations matrix for " + profile + " profile.");
   }
   _durations_matrices.insert_or_assign(profile, m);
 }
 
-void Input::set_costs_matrix(const std::string& profile, Matrix<Cost>&& m) {
+void Input::set_costs_matrix(const std::string& profile, Matrix<UserCost>&& m) {
   if (m.size() == 0) {
     throw InputException("Empty costs matrix for " + profile + " profile.");
   }
@@ -406,16 +433,20 @@ bool Input::has_homogeneous_profiles() const {
   return _homogeneous_profiles;
 }
 
+bool Input::has_homogeneous_costs() const {
+  return _homogeneous_costs;
+}
+
 bool Input::vehicle_ok_with_vehicle(Index v1_index, Index v2_index) const {
   return _vehicle_to_vehicle_compatibility[v1_index][v2_index];
 }
 
-Cost Input::check_cost_bound(const Matrix<Cost>& matrix) const {
+UserCost Input::check_cost_bound(const Matrix<UserCost>& matrix) const {
   // Check that we don't have any overflow while computing an upper
   // bound for solution cost.
 
-  std::vector<Cost> max_cost_per_line(matrix.size(), 0);
-  std::vector<Cost> max_cost_per_column(matrix.size(), 0);
+  std::vector<UserCost> max_cost_per_line(matrix.size(), 0);
+  std::vector<UserCost> max_cost_per_column(matrix.size(), 0);
 
   for (const auto i : _matrices_used_index) {
     for (const auto j : _matrices_used_index) {
@@ -424,8 +455,8 @@ Cost Input::check_cost_bound(const Matrix<Cost>& matrix) const {
     }
   }
 
-  Cost jobs_departure_bound = 0;
-  Cost jobs_arrival_bound = 0;
+  UserCost jobs_departure_bound = 0;
+  UserCost jobs_arrival_bound = 0;
   for (const auto& j : jobs) {
     jobs_departure_bound =
       utils::add_without_overflow(jobs_departure_bound,
@@ -435,10 +466,10 @@ Cost Input::check_cost_bound(const Matrix<Cost>& matrix) const {
                                   max_cost_per_column[j.index()]);
   }
 
-  Cost jobs_bound = std::max(jobs_departure_bound, jobs_arrival_bound);
+  UserCost jobs_bound = std::max(jobs_departure_bound, jobs_arrival_bound);
 
-  Cost start_bound = 0;
-  Cost end_bound = 0;
+  UserCost start_bound = 0;
+  UserCost end_bound = 0;
   for (const auto& v : vehicles) {
     if (v.has_start()) {
       start_bound =
@@ -452,7 +483,7 @@ Cost Input::check_cost_bound(const Matrix<Cost>& matrix) const {
     }
   }
 
-  Cost bound = utils::add_without_overflow(start_bound, jobs_bound);
+  UserCost bound = utils::add_without_overflow(start_bound, jobs_bound);
   return utils::add_without_overflow(bound, end_bound);
 }
 
@@ -498,13 +529,17 @@ void Input::set_extra_compatibility() {
 
         if (is_compatible and _has_TW) {
           if (jobs[j].type == JOB_TYPE::SINGLE) {
-            is_compatible = is_compatible &&
-                            empty_route.is_valid_addition_for_tw(*this, j, 0);
+            is_compatible =
+              is_compatible &&
+              empty_route.is_valid_addition_for_tw_without_max_load(*this,
+                                                                    j,
+                                                                    0);
           } else {
             assert(is_shipment_pickup);
             std::vector<Index> p_d({j, static_cast<Index>(j + 1)});
             is_compatible =
               is_compatible && empty_route.is_valid_addition_for_tw(*this,
+                                                                    _zero,
                                                                     p_d.begin(),
                                                                     p_d.end(),
                                                                     0,
@@ -548,17 +583,26 @@ void Input::set_vehicles_costs() {
 
     auto d_m = _durations_matrices.find(vehicle.profile);
     assert(d_m != _durations_matrices.end());
+    vehicle.cost_wrapper.set_durations_matrix(&(d_m->second));
 
     auto c_m = _costs_matrices.find(vehicle.profile);
     if (c_m != _costs_matrices.end()) {
-      // No fancy scaling for costs, use plain custom costs matrix.
-      vehicle.cost_wrapper.set_costs_factor(1.);
-      vehicle.cost_wrapper.set_costs_matrix(&(c_m->second));
+      // A custom cost matrix is provided for this vehicle.
+
+      if (vehicle.costs.per_hour != DEFAULT_COST_PER_HOUR) {
+        // Using a non-default "per-hour" value means defining costs
+        // based on durations with a multiplicative factor. This is
+        // inconsistent with providing a custom costs matrix.
+        throw InputException(
+          "Custom costs are incompatible with using a per_hour value.");
+      }
+
+      // Set plain custom costs matrix and reset cost factor.
+      constexpr bool reset_cost_factor = true;
+      vehicle.cost_wrapper.set_costs_matrix(&(c_m->second), reset_cost_factor);
     } else {
       vehicle.cost_wrapper.set_costs_matrix(&(d_m->second));
     }
-
-    vehicle.cost_wrapper.set_durations_matrix(&(d_m->second));
   }
 }
 
@@ -572,7 +616,7 @@ void Input::set_vehicles_max_tasks() {
       Index rank;
       Capacity amount;
 
-      bool operator<(const JobAmount& rhs) {
+      bool operator<(const JobAmount& rhs) const {
         return this->amount < rhs.amount;
       }
     };
@@ -635,7 +679,7 @@ void Input::set_vehicles_max_tasks() {
       Index rank;
       Duration action;
 
-      bool operator<(const JobTime& rhs) {
+      bool operator<(const JobTime& rhs) const {
         return this->action < rhs.action;
       }
     };
@@ -787,7 +831,7 @@ void Input::set_matrices(unsigned nb_thread) {
       // wrapper and empty matrix to allow for concurrent modification
       // later on.
       add_routing_wrapper(profile);
-      _durations_matrices.emplace(profile, Matrix<Duration>());
+      _durations_matrices.emplace(profile, Matrix<UserDuration>());
     } else {
       if (_geometry) {
         // Even with a custom matrix, we still want routing after
@@ -811,7 +855,7 @@ void Input::set_matrices(unsigned nb_thread) {
           // Durations matrix not manually set so defined as empty
           // above.
           if (_locations.size() == 1) {
-            d_m->second = Matrix<Cost>(1);
+            d_m->second = Matrix<UserCost>(1);
           } else {
             auto rw = std::find_if(_routing_wrappers.begin(),
                                    _routing_wrappers.end(),
@@ -828,7 +872,7 @@ void Input::set_matrices(unsigned nb_thread) {
               // indirection based on order in _locations.
               auto m = (*rw)->get_matrix(_locations);
 
-              Matrix<Duration> full_m(_max_matrices_used_index + 1);
+              Matrix<UserDuration> full_m(_max_matrices_used_index + 1);
               for (Index i = 0; i < _locations.size(); ++i) {
                 const auto& loc_i = _locations[i];
                 for (Index j = 0; j < _locations.size(); ++j) {
@@ -855,15 +899,19 @@ void Input::set_matrices(unsigned nb_thread) {
           }
 
           // Check for potential overflow in solution cost.
-          const auto current_bound = check_cost_bound(c_m->second);
+          const UserCost current_bound = check_cost_bound(c_m->second);
           cost_bound_m.lock();
-          _cost_upper_bound = std::max(_cost_upper_bound, current_bound);
+          _cost_upper_bound =
+            std::max(_cost_upper_bound,
+                     utils::scale_from_user_duration(current_bound));
           cost_bound_m.unlock();
         } else {
           // Durations matrix will be used for costs.
-          const auto current_bound = check_cost_bound(d_m->second);
+          const UserCost current_bound = check_cost_bound(d_m->second);
           cost_bound_m.lock();
-          _cost_upper_bound = std::max(_cost_upper_bound, current_bound);
+          _cost_upper_bound =
+            std::max(_cost_upper_bound,
+                     utils::scale_from_user_duration(current_bound));
           cost_bound_m.unlock();
         }
       }
@@ -928,14 +976,14 @@ Solution Input::solve(unsigned exploration_level,
   _end_loading = std::chrono::high_resolution_clock::now();
 
   auto loading = std::chrono::duration_cast<std::chrono::milliseconds>(
-                   _end_loading - _start_loading)
-                   .count();
+    _end_loading - _start_loading);
 
   // Decide time allocated for solving, 0 means only heuristics will
   // be applied.
   Timeout solve_time;
   if (timeout.has_value()) {
-    solve_time = (loading <= timeout.value()) ? (timeout.value() - loading) : 0;
+    solve_time = (loading <= timeout.value()) ? (timeout.value() - loading)
+                                              : std::chrono::milliseconds(0);
   }
 
   // Solve.
@@ -947,7 +995,7 @@ Solution Input::solve(unsigned exploration_level,
                              (_has_initial_routes) ? h_init_routes : h_param);
 
   // Update timing info.
-  sol.summary.computing_times.loading = loading;
+  sol.summary.computing_times.loading = loading.count();
 
   _end_solving = std::chrono::high_resolution_clock::now();
   sol.summary.computing_times.solving =

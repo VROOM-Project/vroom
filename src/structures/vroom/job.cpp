@@ -23,8 +23,8 @@ inline Duration get_tw_length(const std::vector<TimeWindow>& tws) {
 
 Job::Job(Id id,
          const Location& location,
-         Duration setup,
-         Duration service,
+         UserDuration setup,
+         UserDuration service,
          const Amount& delivery,
          const Amount& pickup,
          const Skills& skills,
@@ -34,8 +34,8 @@ Job::Job(Id id,
   : location(location),
     id(id),
     type(JOB_TYPE::SINGLE),
-    setup(setup),
-    service(service),
+    setup(utils::scale_from_user_duration(setup)),
+    service(utils::scale_from_user_duration(service)),
     delivery(delivery),
     pickup(pickup),
     skills(skills),
@@ -43,15 +43,15 @@ Job::Job(Id id,
     tws(tws),
     description(description),
     tw_length(get_tw_length(tws)) {
-  utils::check_tws(tws);
-  utils::check_priority(priority);
+  utils::check_tws(tws, id, "job");
+  utils::check_priority(priority, id, "job");
 }
 
 Job::Job(Id id,
          JOB_TYPE type,
          const Location& location,
-         Duration setup,
-         Duration service,
+         UserDuration setup,
+         UserDuration service,
          const Amount& amount,
          const Skills& skills,
          Priority priority,
@@ -60,8 +60,8 @@ Job::Job(Id id,
   : location(location),
     id(id),
     type(type),
-    setup(setup),
-    service(service),
+    setup(utils::scale_from_user_duration(setup)),
+    service(utils::scale_from_user_duration(service)),
     delivery((type == JOB_TYPE::DELIVERY) ? amount : Amount(amount.size())),
     pickup((type == JOB_TYPE::PICKUP) ? amount : Amount(amount.size())),
     skills(skills),
@@ -70,8 +70,8 @@ Job::Job(Id id,
     description(description),
     tw_length(get_tw_length(tws)) {
   assert(type == JOB_TYPE::PICKUP or type == JOB_TYPE::DELIVERY);
-  utils::check_tws(tws);
-  utils::check_priority(priority);
+  utils::check_tws(tws, id, "job");
+  utils::check_priority(priority, id, "job");
 }
 
 bool Job::is_valid_start(Duration time) const {

@@ -14,29 +14,31 @@ on:
       - '.github/workflows/vroom_libosrm.yml'
       - '**libosrm_wrapper**'
 env:
-  osrm-tag: v5.26.0
+  osrm-tag: v5.27.1
 jobs:
   libosrm:
     strategy:
       matrix:
-        cxx: ['g++-9', 'clang++-10']
-    runs-on: ubuntu-20.04
+        cxx: ['g++-11', 'clang++-14']
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: true
       - name: Install dependencies
-        run: sudo apt-get install libasio-dev libglpk-dev
+        run: |
+          sudo apt-get update
+          sudo apt-get install libasio-dev libglpk-dev
       - name: Cache OSRM
         id: cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ${{ github.workspace }}/osrm-backend
           key: osrm-${{ env.osrm-tag }}-${{ matrix.cxx }}
       - name: Checkout OSRM repository
         if: steps.cache.outputs.cache-hit != 'true'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: Project-OSRM/osrm-backend
           ref: ${{ env.osrm-tag }}
@@ -56,7 +58,7 @@ jobs:
         run: sudo cmake --build . --target install
         working-directory: osrm-backend/build
       - name: Compile vroom
-        run: make
+        run: make -j
         env:
           CXX: ${{ matrix.cxx }}
         working-directory: src

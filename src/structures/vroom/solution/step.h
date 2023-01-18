@@ -24,14 +24,14 @@ struct Step {
   const JOB_TYPE job_type;
   const Location location;
   const Id id;
-  const Duration setup;
-  const Duration service;
+  UserDuration setup;
+  UserDuration service;
   const Amount load;
   const std::string description;
 
-  Duration arrival;
-  Duration duration;
-  Duration waiting_time;
+  UserDuration arrival;
+  UserDuration duration;
+  UserDuration waiting_time;
   Distance distance;
   std::string geometry;
 
@@ -39,9 +39,11 @@ struct Step {
 
   Step(STEP_TYPE type, Location location, const Amount& load);
 
-  Step(const Job& job, const Duration setup, const Amount& load);
+  Step(const Job& job, const UserDuration setup, const Amount& load);
 
   Step(const Break& b, const Amount& load);
+
+  UserDuration departure() const;
 };
 
 } // namespace vroom

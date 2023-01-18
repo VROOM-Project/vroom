@@ -31,14 +31,15 @@ IntraOrOpt::IntraOrOpt(const Input& input,
     _gain_upper_bound_computed(false),
     // Required for consistency in compute_gain if check_reverse is
     // false.
-    _reversed_t_gain(std::numeric_limits<Gain>::min()),
+    _reversed_t_gain(NO_GAIN),
     reverse_s_edge(false),
     is_normal_valid(false),
     is_reverse_valid(false),
     check_reverse(check_reverse),
     _moved_jobs((s_rank < t_rank) ? t_rank - s_rank + 2 : s_rank - t_rank + 2),
     _first_rank(std::min(s_rank, t_rank)),
-    _last_rank(std::max(s_rank, t_rank) + 2) {
+    _last_rank(std::max(s_rank, t_rank) + 2),
+    _delivery(source.delivery_in_range(_first_rank, _last_rank)) {
   assert(s_route.size() >= 4);
   assert(s_rank < s_route.size() - 1);
   assert(t_rank <= s_route.size() - 2);
@@ -72,7 +73,7 @@ IntraOrOpt::IntraOrOpt(const Input& input,
   _moved_jobs[_s_edge_last] = s_route[s_rank + 1];
 }
 
-Gain IntraOrOpt::gain_upper_bound() {
+Eval IntraOrOpt::gain_upper_bound() {
   const auto& v = _input.vehicles[s_vehicle];
 
   // The cost of removing edge starting at rank s_rank is already
@@ -88,46 +89,46 @@ Gain IntraOrOpt::gain_upper_bound() {
   Index s_index = _input.jobs[s_route[s_rank]].index();
   Index after_s_index = _input.jobs[s_route[s_rank + 1]].index();
 
-  Gain previous_cost = 0;
-  Gain next_cost = 0;
-  Gain reverse_previous_cost = 0;
-  Gain reverse_next_cost = 0;
-  Gain old_edge_cost = 0;
+  Eval previous_cost;
+  Eval next_cost;
+  Eval reverse_previous_cost;
+  Eval reverse_next_cost;
+  Eval old_edge_cost;
 
   if (new_rank == s_route.size()) {
     // Adding edge past the end after a real job that was unmoved.
     auto p_index = _input.jobs[s_route[new_rank - 1]].index();
-    previous_cost = v.cost(p_index, s_index);
-    reverse_previous_cost = v.cost(p_index, after_s_index);
+    previous_cost = v.eval(p_index, s_index);
+    reverse_previous_cost = v.eval(p_index, after_s_index);
     if (v.has_end()) {
       auto n_index = v.end.value().index();
-      old_edge_cost = v.cost(p_index, n_index);
-      next_cost = v.cost(after_s_index, n_index);
-      reverse_next_cost = v.cost(s_index, n_index);
+      old_edge_cost = v.eval(p_index, n_index);
+      next_cost = v.eval(after_s_index, n_index);
+      reverse_next_cost = v.eval(s_index, n_index);
     }
   } else {
     // Adding before one of the jobs.
     auto n_index = _input.jobs[s_route[new_rank]].index();
-    next_cost = v.cost(after_s_index, n_index);
-    reverse_next_cost = v.cost(s_index, n_index);
+    next_cost = v.eval(after_s_index, n_index);
+    reverse_next_cost = v.eval(s_index, n_index);
 
     if (new_rank == 0) {
       if (v.has_start()) {
         auto p_index = v.start.value().index();
-        previous_cost = v.cost(p_index, s_index);
-        reverse_previous_cost = v.cost(p_index, after_s_index);
-        old_edge_cost = v.cost(p_index, n_index);
+        previous_cost = v.eval(p_index, s_index);
+        reverse_previous_cost = v.eval(p_index, after_s_index);
+        old_edge_cost = v.eval(p_index, n_index);
       }
     } else {
       auto p_index = _input.jobs[s_route[new_rank - 1]].index();
-      previous_cost = v.cost(p_index, s_index);
-      reverse_previous_cost = v.cost(p_index, after_s_index);
-      old_edge_cost = v.cost(p_index, n_index);
+      previous_cost = v.eval(p_index, s_index);
+      reverse_previous_cost = v.eval(p_index, after_s_index);
+      old_edge_cost = v.eval(p_index, n_index);
     }
   }
 
   // Gain for source vehicle.
-  _s_gain = _sol_state.edge_gains[s_vehicle][s_rank];
+  s_gain = _sol_state.edge_gains[s_vehicle][s_rank];
 
   // Gain for target vehicle.
   _normal_t_gain = old_edge_cost - previous_cost - next_cost;
@@ -135,8 +136,8 @@ Gain IntraOrOpt::gain_upper_bound() {
   auto t_gain_upper_bound = _normal_t_gain;
 
   if (check_reverse) {
-    Gain reverse_edge_cost = static_cast<Gain>(v.cost(s_index, after_s_index)) -
-                             static_cast<Gain>(v.cost(after_s_index, s_index));
+    const auto reverse_edge_cost =
+      v.eval(s_index, after_s_index) - v.eval(after_s_index, s_index);
     _reversed_t_gain = old_edge_cost + reverse_edge_cost -
                        reverse_previous_cost - reverse_next_cost;
 
@@ -145,14 +146,14 @@ Gain IntraOrOpt::gain_upper_bound() {
 
   _gain_upper_bound_computed = true;
 
-  return _s_gain + t_gain_upper_bound;
+  return s_gain + t_gain_upper_bound;
 }
 
 void IntraOrOpt::compute_gain() {
   assert(_gain_upper_bound_computed);
   assert(is_normal_valid or is_reverse_valid);
 
-  stored_gain = _s_gain;
+  stored_gain = s_gain;
 
   if (_reversed_t_gain > _normal_t_gain) {
     // Biggest potential gain is obtained when reversing edge.
@@ -176,28 +177,39 @@ void IntraOrOpt::compute_gain() {
 }
 
 bool IntraOrOpt::is_valid() {
-  is_normal_valid = source.is_valid_addition_for_capacity_inclusion(
-    _input,
-    source.delivery_in_range(_first_rank, _last_rank),
-    _moved_jobs.begin(),
-    _moved_jobs.end(),
-    _first_rank,
-    _last_rank);
+  assert(_gain_upper_bound_computed);
+
+  const auto& s_v = _input.vehicles[s_vehicle];
+  const auto s_travel_time = _sol_state.route_evals[s_vehicle].duration;
+  const auto normal_duration = s_gain.duration + _normal_t_gain.duration;
+
+  is_normal_valid =
+    s_v.ok_for_travel_time(s_travel_time - normal_duration) and
+    source.is_valid_addition_for_capacity_inclusion(_input,
+                                                    _delivery,
+                                                    _moved_jobs.begin(),
+                                                    _moved_jobs.end(),
+                                                    _first_rank,
+                                                    _last_rank);
 
   if (check_reverse) {
-    std::swap(_moved_jobs[_s_edge_first], _moved_jobs[_s_edge_last]);
+    const auto reversed_duration = s_gain.duration + _reversed_t_gain.duration;
 
-    is_reverse_valid = source.is_valid_addition_for_capacity_inclusion(
-      _input,
-      source.delivery_in_range(_first_rank, _last_rank),
-      _moved_jobs.begin(),
-      _moved_jobs.end(),
-      _first_rank,
-      _last_rank);
+    if (s_v.ok_for_travel_time(s_travel_time - reversed_duration)) {
+      std::swap(_moved_jobs[_s_edge_first], _moved_jobs[_s_edge_last]);
 
-    // Reset to initial situation before potential application or TW
-    // checks.
-    std::swap(_moved_jobs[_s_edge_first], _moved_jobs[_s_edge_last]);
+      is_reverse_valid =
+        source.is_valid_addition_for_capacity_inclusion(_input,
+                                                        _delivery,
+                                                        _moved_jobs.begin(),
+                                                        _moved_jobs.end(),
+                                                        _first_rank,
+                                                        _last_rank);
+
+      // Reset to initial situation before potential application or TW
+      // checks.
+      std::swap(_moved_jobs[_s_edge_first], _moved_jobs[_s_edge_last]);
+    }
   }
 
   return is_normal_valid or is_reverse_valid;

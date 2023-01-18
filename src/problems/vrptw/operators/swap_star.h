@@ -29,7 +29,7 @@ public:
            Index s_vehicle,
            TWRoute& tw_t_route,
            Index t_vehicle,
-           Gain best_known_gain);
+           const Eval& best_known_gain);
 
   virtual void apply() override;
 };

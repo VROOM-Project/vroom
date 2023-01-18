@@ -19,7 +19,7 @@ All rights reserved (see LICENSE).
 namespace vroom {
 namespace tsp {
 
-LocalSearch::LocalSearch(const Matrix<Cost>& matrix,
+LocalSearch::LocalSearch(const Matrix<UserCost>& matrix,
                          std::pair<bool, Index> avoid_start_relocate,
                          const std::list<Index>& tour,
                          unsigned nb_threads)
@@ -101,7 +101,7 @@ LocalSearch::LocalSearch(const Matrix<Cost>& matrix,
   _sym_two_opt_rank_limits.push_back(_edges.size());
 }
 
-Cost LocalSearch::relocate_step() {
+UserCost LocalSearch::relocate_step() {
   if (_edges.size() < 3) {
     // Not enough edges for the operator to make sense.
     return 0;
@@ -111,7 +111,7 @@ Cost LocalSearch::relocate_step() {
   // elements from _edges.
   auto look_up = [&](Index start,
                      Index end,
-                     Cost& best_gain,
+                     UserCost& best_gain,
                      Index& best_edge_1_start,
                      Index& best_edge_2_start) {
     for (Index edge_1_start = start; edge_1_start < end; ++edge_1_start) {
@@ -125,9 +125,9 @@ Cost LocalSearch::relocate_step() {
       Index next = _edges[edge_1_end];
 
       // Precomputing weights not depending on edge_2_*.
-      Cost first_potential_add = _matrix[edge_1_start][next];
-      Cost edge_1_weight = _matrix[edge_1_start][edge_1_end];
-      Cost edge_1_end_next_weight = _matrix[edge_1_end][next];
+      auto first_potential_add = _matrix[edge_1_start][next];
+      auto edge_1_weight = _matrix[edge_1_start][edge_1_end];
+      auto edge_1_end_next_weight = _matrix[edge_1_end][next];
 
       if (edge_1_weight + edge_1_end_next_weight - first_potential_add <
           best_gain) {
@@ -144,14 +144,14 @@ Cost LocalSearch::relocate_step() {
       Index edge_2_start = next;
       while (edge_2_start != edge_1_start) {
         Index edge_2_end = _edges[edge_2_start];
-        Cost before_cost = edge_1_weight + edge_1_end_next_weight +
+        auto before_cost = edge_1_weight + edge_1_end_next_weight +
                            _matrix[edge_2_start][edge_2_end];
-        Cost after_cost = first_potential_add +
+        auto after_cost = first_potential_add +
                           _matrix[edge_2_start][edge_1_end] +
                           _matrix[edge_1_end][edge_2_end];
 
         if (before_cost > after_cost) {
-          Cost gain = before_cost - after_cost;
+          auto gain = before_cost - after_cost;
           if (gain > best_gain) {
             best_edge_1_start = edge_1_start;
             best_edge_2_start = edge_2_start;
@@ -165,7 +165,7 @@ Cost LocalSearch::relocate_step() {
   };
 
   // Store best values per thread.
-  std::vector<Cost> best_gains(_nb_threads, 0);
+  std::vector<UserCost> best_gains(_nb_threads, 0);
   std::vector<Index> best_edge_1_starts(_nb_threads);
   std::vector<Index> best_edge_2_starts(_nb_threads);
 
@@ -195,7 +195,7 @@ Cost LocalSearch::relocate_step() {
   auto best_rank =
     std::distance(best_gains.begin(),
                   std::max_element(best_gains.begin(), best_gains.end()));
-  Cost best_gain = best_gains[best_rank];
+  auto best_gain = best_gains[best_rank];
   Index best_edge_1_start = best_edge_1_starts[best_rank];
   Index best_edge_2_start = best_edge_2_starts[best_rank];
 
@@ -212,10 +212,10 @@ Cost LocalSearch::relocate_step() {
   return best_gain;
 }
 
-Cost LocalSearch::perform_all_relocate_steps(const Deadline& deadline) {
-  Cost total_gain = 0;
+UserCost LocalSearch::perform_all_relocate_steps(const Deadline& deadline) {
+  UserCost total_gain = 0;
   unsigned relocate_iter = 0;
-  Cost gain = 0;
+  UserCost gain = 0;
   do {
     if (deadline.has_value() and deadline.value() < utils::now()) {
       break;
@@ -232,7 +232,7 @@ Cost LocalSearch::perform_all_relocate_steps(const Deadline& deadline) {
   return total_gain;
 }
 
-Cost LocalSearch::avoid_loop_step() {
+UserCost LocalSearch::avoid_loop_step() {
   // In some cases, the solution can contain "loops" that other
   // operators can't fix. Those are found with two steps:
   //
@@ -246,7 +246,7 @@ Cost LocalSearch::avoid_loop_step() {
   // 3) relocate all nodes along the chain until an amelioration pops
   // out, meaning a "loop" has been undone.
 
-  Cost gain = 0;
+  UserCost gain = 0;
 
   // Going through all candidate nodes for relocation.
   Index previous_candidate = 0;
@@ -308,8 +308,8 @@ Cost LocalSearch::avoid_loop_step() {
   bool amelioration_found = false;
   for (auto const& chain : relocatable_chains) {
     // Going through step 3. for all chains by decreasing length.
-    Cost before_cost = 0;
-    Cost after_cost = 0;
+    UserCost before_cost = 0;
+    UserCost after_cost = 0;
 
     // Work on copies as modifications are needed while going through
     // the chain.
@@ -366,10 +366,10 @@ Cost LocalSearch::avoid_loop_step() {
   return gain;
 }
 
-Cost LocalSearch::perform_all_avoid_loop_steps(const Deadline& deadline) {
-  Cost total_gain = 0;
+UserCost LocalSearch::perform_all_avoid_loop_steps(const Deadline& deadline) {
+  UserCost total_gain = 0;
   unsigned relocate_iter = 0;
-  Cost gain = 0;
+  UserCost gain = 0;
   do {
     if (deadline.has_value() and deadline.value() < utils::now()) {
       break;
@@ -386,7 +386,7 @@ Cost LocalSearch::perform_all_avoid_loop_steps(const Deadline& deadline) {
   return total_gain;
 }
 
-Cost LocalSearch::two_opt_step() {
+UserCost LocalSearch::two_opt_step() {
   if (_edges.size() < 4) {
     // Not enough edges for the operator to make sense.
     return 0;
@@ -396,7 +396,7 @@ Cost LocalSearch::two_opt_step() {
   // elements from _edges.
   auto look_up = [&](Index start,
                      Index end,
-                     Cost& best_gain,
+                     UserCost& best_gain,
                      Index& best_edge_1_start,
                      Index& best_edge_2_start) {
     for (Index edge_1_start = start; edge_1_start < end; ++edge_1_start) {
@@ -420,13 +420,13 @@ Cost LocalSearch::two_opt_step() {
           continue;
         }
 
-        Cost before_cost =
+        auto before_cost =
           _matrix[edge_1_start][edge_1_end] + _matrix[edge_2_start][edge_2_end];
-        Cost after_cost =
+        auto after_cost =
           _matrix[edge_1_start][edge_2_start] + _matrix[edge_1_end][edge_2_end];
 
         if (before_cost > after_cost) {
-          Cost gain = before_cost - after_cost;
+          auto gain = before_cost - after_cost;
           if (gain > best_gain) {
             best_gain = gain;
             best_edge_1_start = edge_1_start;
@@ -438,7 +438,7 @@ Cost LocalSearch::two_opt_step() {
   };
 
   // Store best values per thread.
-  std::vector<Cost> best_gains(_nb_threads, 0);
+  std::vector<UserCost> best_gains(_nb_threads, 0);
   std::vector<Index> best_edge_1_starts(_nb_threads);
   std::vector<Index> best_edge_2_starts(_nb_threads);
 
@@ -468,7 +468,7 @@ Cost LocalSearch::two_opt_step() {
   auto best_rank =
     std::distance(best_gains.begin(),
                   std::max_element(best_gains.begin(), best_gains.end()));
-  Cost best_gain = best_gains[best_rank];
+  auto best_gain = best_gains[best_rank];
   Index best_edge_1_start = best_edge_1_starts[best_rank];
   Index best_edge_2_start = best_edge_2_starts[best_rank];
 
@@ -494,7 +494,7 @@ Cost LocalSearch::two_opt_step() {
   return best_gain;
 }
 
-Cost LocalSearch::asym_two_opt_step() {
+UserCost LocalSearch::asym_two_opt_step() {
   if (_edges.size() < 4) {
     // Not enough edges for the operator to make sense.
     return 0;
@@ -509,7 +509,7 @@ Cost LocalSearch::asym_two_opt_step() {
   // elements from _edges.
   auto look_up = [&](Index start,
                      Index end,
-                     Cost& best_gain,
+                     UserCost& best_gain,
                      Index& best_edge_1_start,
                      Index& best_edge_2_start) {
     Index edge_1_start = start;
@@ -525,17 +525,17 @@ Cost LocalSearch::asym_two_opt_step() {
       // edge_2_end are replaced by edge_1_start --> edge_2_start and
       // edge_1_end --> edge_2_end. The tour between edge_1_end and
       // edge_2_start need to be reversed.
-      Cost before_reversed_part_cost = 0;
-      Cost after_reversed_part_cost = 0;
+      UserCost before_reversed_part_cost = 0;
+      UserCost after_reversed_part_cost = 0;
       Index previous = edge_1_end;
 
       while (edge_2_end != edge_1_start) {
         // Going through the edges in the order of the current tour
         // (mandatory for before_cost and after_cost efficient
         // computation).
-        Cost before_cost =
+        auto before_cost =
           _matrix[edge_1_start][edge_1_end] + _matrix[edge_2_start][edge_2_end];
-        Cost after_cost =
+        auto after_cost =
           _matrix[edge_1_start][edge_2_start] + _matrix[edge_1_end][edge_2_end];
 
         // Updating the cost of the part of the tour that needs to be
@@ -548,7 +548,7 @@ Cost LocalSearch::asym_two_opt_step() {
         after_cost += after_reversed_part_cost;
 
         if (before_cost > after_cost) {
-          Cost gain = before_cost - after_cost;
+          auto gain = before_cost - after_cost;
           if (gain > best_gain) {
             best_gain = gain;
             best_edge_1_start = edge_1_start;
@@ -565,7 +565,7 @@ Cost LocalSearch::asym_two_opt_step() {
   };
 
   // Store best values per thread.
-  std::vector<Cost> best_gains(_nb_threads, 0);
+  std::vector<UserCost> best_gains(_nb_threads, 0);
   std::vector<Index> best_edge_1_starts(_nb_threads);
   std::vector<Index> best_edge_2_starts(_nb_threads);
   std::size_t thread_range = _edges.size() / _nb_threads;
@@ -608,7 +608,7 @@ Cost LocalSearch::asym_two_opt_step() {
   auto best_rank =
     std::distance(best_gains.begin(),
                   std::max_element(best_gains.begin(), best_gains.end()));
-  Cost best_gain = best_gains[best_rank];
+  auto best_gain = best_gains[best_rank];
   Index best_edge_1_start = best_edge_1_starts[best_rank];
   Index best_edge_2_start = best_edge_2_starts[best_rank];
 
@@ -634,10 +634,10 @@ Cost LocalSearch::asym_two_opt_step() {
   return best_gain;
 }
 
-Cost LocalSearch::perform_all_two_opt_steps(const Deadline& deadline) {
-  Cost total_gain = 0;
+UserCost LocalSearch::perform_all_two_opt_steps(const Deadline& deadline) {
+  UserCost total_gain = 0;
   unsigned two_opt_iter = 0;
-  Cost gain = 0;
+  UserCost gain = 0;
   do {
     if (deadline.has_value() and deadline.value() < utils::now()) {
       break;
@@ -654,10 +654,10 @@ Cost LocalSearch::perform_all_two_opt_steps(const Deadline& deadline) {
   return total_gain;
 }
 
-Cost LocalSearch::perform_all_asym_two_opt_steps(const Deadline& deadline) {
-  Cost total_gain = 0;
+UserCost LocalSearch::perform_all_asym_two_opt_steps(const Deadline& deadline) {
+  UserCost total_gain = 0;
   unsigned two_opt_iter = 0;
-  Cost gain = 0;
+  UserCost gain = 0;
   do {
     if (deadline.has_value() and deadline.value() < utils::now()) {
       break;
@@ -674,7 +674,7 @@ Cost LocalSearch::perform_all_asym_two_opt_steps(const Deadline& deadline) {
   return total_gain;
 }
 
-Cost LocalSearch::or_opt_step() {
+UserCost LocalSearch::or_opt_step() {
   if (_edges.size() < 4) {
     // Not enough edges for the operator to make sense.
     return 0;
@@ -684,7 +684,7 @@ Cost LocalSearch::or_opt_step() {
   // elements from _edges.
   auto look_up = [&](Index start,
                      Index end,
-                     Cost& best_gain,
+                     UserCost& best_gain,
                      Index& best_edge_1_start,
                      Index& best_edge_2_start) {
     for (Index edge_1_start = start; edge_1_start < end; ++edge_1_start) {
@@ -701,19 +701,19 @@ Cost LocalSearch::or_opt_step() {
       // --> next --> edge_2_end.
 
       // Precomputing weights not depending on edge_2.
-      Cost first_potential_add = _matrix[edge_1_start][next_2];
-      Cost edge_1_weight = _matrix[edge_1_start][edge_1_end];
-      Cost next_next_2_weight = _matrix[next][next_2];
+      auto first_potential_add = _matrix[edge_1_start][next_2];
+      auto edge_1_weight = _matrix[edge_1_start][edge_1_end];
+      auto next_next_2_weight = _matrix[next][next_2];
 
       while (edge_2_start != edge_1_start) {
         Index edge_2_end = _edges[edge_2_start];
-        Cost before_cost = edge_1_weight + next_next_2_weight +
+        auto before_cost = edge_1_weight + next_next_2_weight +
                            _matrix[edge_2_start][edge_2_end];
-        Cost after_cost = first_potential_add +
+        auto after_cost = first_potential_add +
                           _matrix[edge_2_start][edge_1_end] +
                           _matrix[next][edge_2_end];
         if (before_cost > after_cost) {
-          Cost gain = before_cost - after_cost;
+          auto gain = before_cost - after_cost;
           if (gain > best_gain) {
             best_gain = gain;
             best_edge_1_start = edge_1_start;
@@ -727,7 +727,7 @@ Cost LocalSearch::or_opt_step() {
   };
 
   // Store best values per thread.
-  std::vector<Cost> best_gains(_nb_threads, 0);
+  std::vector<UserCost> best_gains(_nb_threads, 0);
   std::vector<Index> best_edge_1_starts(_nb_threads);
   std::vector<Index> best_edge_2_starts(_nb_threads);
 
@@ -757,7 +757,7 @@ Cost LocalSearch::or_opt_step() {
   auto best_rank =
     std::distance(best_gains.begin(),
                   std::max_element(best_gains.begin(), best_gains.end()));
-  Cost best_gain = best_gains[best_rank];
+  auto best_gain = best_gains[best_rank];
   Index best_edge_1_start = best_edge_1_starts[best_rank];
   Index best_edge_2_start = best_edge_2_starts[best_rank];
 
@@ -773,10 +773,10 @@ Cost LocalSearch::or_opt_step() {
   return best_gain;
 }
 
-Cost LocalSearch::perform_all_or_opt_steps(const Deadline& deadline) {
-  Cost total_gain = 0;
+UserCost LocalSearch::perform_all_or_opt_steps(const Deadline& deadline) {
+  UserCost total_gain = 0;
   unsigned or_opt_iter = 0;
-  Cost gain = 0;
+  UserCost gain = 0;
   do {
     if (deadline.has_value() and deadline.value() < utils::now()) {
       break;
