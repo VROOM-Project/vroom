@@ -84,9 +84,18 @@ unsigned OrsWrapper::get_legs_number(const rapidjson::Value& result) const {
   return result["routes"][0]["segments"].Size();
 }
 
+unsigned OrsWrapper::get_steps_number(const rapidjson::Value& result, rapidjson::SizeType i) const {
+  return result["routes"][0]["segments"].Size();
+}
+
 double OrsWrapper::get_distance_for_leg(const rapidjson::Value& result,
                                         rapidjson::SizeType i) const {
   return result["routes"][0]["segments"][i]["distance"].GetDouble();
+}
+
+std::string OrsWrapper::get_geometry_for_leg(const rapidjson::Value& result,
+                                        rapidjson::SizeType i, rapidjson::SizeType s) const {
+  return result["routes"][0]["legs"][i]["steps"][s]["geometry"].GetString();
 }
 
 std::string OrsWrapper::get_geometry(rapidjson::Value& result) const {

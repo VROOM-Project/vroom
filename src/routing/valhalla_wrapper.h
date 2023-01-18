@@ -41,8 +41,15 @@ private:
   virtual unsigned
   get_legs_number(const rapidjson::Value& result) const override;
 
+  virtual unsigned
+  get_steps_number(const rapidjson::Value& result, 
+                                      rapidjson::SizeType i) const override;
+
   virtual double get_distance_for_leg(const rapidjson::Value& result,
                                       rapidjson::SizeType i) const override;
+
+  virtual std::string get_geometry_for_leg(const rapidjson::Value& result,
+                                      rapidjson::SizeType i, rapidjson::SizeType s) const override;
 
   virtual std::string get_geometry(rapidjson::Value& result) const override;
 

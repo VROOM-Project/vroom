@@ -19,7 +19,7 @@ OsrmRoutedWrapper::OsrmRoutedWrapper(const std::string& profile,
                 "table",
                 "durations",
                 "route",
-                "alternatives=false&steps=false&overview=full&continue_"
+                "alternatives=false&steps=true&overview=full&continue_"
                 "straight=false") {
 }
 
@@ -79,9 +79,19 @@ OsrmRoutedWrapper::get_legs_number(const rapidjson::Value& result) const {
   return result["routes"][0]["legs"].Size();
 }
 
+unsigned
+OsrmRoutedWrapper::get_steps_number(const rapidjson::Value& result, rapidjson::SizeType i) const {
+  return result["routes"][0]["legs"][i]["steps"].Size();
+}
+
 double OsrmRoutedWrapper::get_distance_for_leg(const rapidjson::Value& result,
                                                rapidjson::SizeType i) const {
   return result["routes"][0]["legs"][i]["distance"].GetDouble();
+}
+
+std::string OsrmRoutedWrapper::get_geometry_for_leg(const rapidjson::Value& result,
+                                               rapidjson::SizeType i, rapidjson::SizeType s) const {
+  return result["routes"][0]["legs"][i]["steps"][s]["geometry"].GetString();
 }
 
 std::string OsrmRoutedWrapper::get_geometry(rapidjson::Value& result) const {

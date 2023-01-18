@@ -321,6 +321,13 @@ rapidjson::Value to_json(const Step& s,
   }
 
   json_step.AddMember("setup", s.setup, allocator);
+
+  if (!s.geometry.empty()) {
+    json_step.AddMember("geometry", s.setup, allocator);
+    json_step["geometry"].SetString(s.geometry.c_str(),
+                                     s.geometry.size());
+  }
+  
   json_step.AddMember("service", s.service, allocator);
   json_step.AddMember("waiting_time", s.waiting_time, allocator);
 
