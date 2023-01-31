@@ -8,7 +8,7 @@
 - Improve error messages (#848)
 - Add running `apt-get update` in CI jobs (#863)
 
-## [v1.13.0-rc.1] - 2022-12-13
+## [v1.13.0] - 2023-01-31
 
 ### Added
 
