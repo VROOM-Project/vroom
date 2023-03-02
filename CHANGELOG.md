@@ -7,6 +7,7 @@
 - Update GitHub Actions (#857)
 - Improve error messages (#848)
 - Add running `apt-get update` in CI jobs (#863)
+- Update formatting script to use `clang-format` 14 (#894)
 
 ## [v1.13.0] - 2023-01-31
 
