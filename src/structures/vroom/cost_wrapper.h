@@ -55,9 +55,13 @@ public:
            static_cast<Cost>(cost_data[i * cost_matrix_size + j]);
   }
 
-  double get_speed_factor() const { return _speed_factor;};
+  double get_speed_factor() const {
+    return _speed_factor;
+  }
 
-  double get_per_hour() const { return _per_hour;};
+  double get_per_hour() const {
+    return _per_hour;
+  }
 
   UserCost user_cost_from_user_duration(UserDuration d) const;
 };
