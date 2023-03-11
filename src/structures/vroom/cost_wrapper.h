@@ -27,6 +27,7 @@ private:
 
   Cost _per_hour;
   bool _cost_based_on_duration;
+  const double _speed_factor;
 
 public:
   CostWrapper(double speed_factor, Cost per_hour);
@@ -53,6 +54,10 @@ public:
     return discrete_cost_factor *
            static_cast<Cost>(cost_data[i * cost_matrix_size + j]);
   }
+
+  double get_speed_factor() const { return _speed_factor;};
+
+  double get_per_hour() const { return _per_hour;};
 
   UserCost user_cost_from_user_duration(UserDuration d) const;
 };
