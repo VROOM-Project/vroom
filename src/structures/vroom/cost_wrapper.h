@@ -59,7 +59,7 @@ public:
     return _speed_factor;
   }
 
-  double get_per_hour() const {
+  Cost get_per_hour() const {
     return _per_hour;
   }
 
