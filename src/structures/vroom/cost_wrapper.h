@@ -25,9 +25,9 @@ private:
   std::size_t cost_matrix_size;
   const UserCost* cost_data;
 
+  const double _speed_factor;
   Cost _per_hour;
   bool _cost_based_on_duration;
-  const double _speed_factor;
 
 public:
   CostWrapper(double speed_factor, Cost per_hour);
