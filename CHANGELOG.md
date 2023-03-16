@@ -4,6 +4,7 @@
 
 ### Changed
 
+- Exposed internal variables to get feature parity for pyvroom (#901)
 - Update GitHub Actions (#857)
 - Improve error messages (#848)
 - Add running `apt-get update` in CI jobs (#863)

@@ -25,6 +25,7 @@ private:
   std::size_t cost_matrix_size;
   const UserCost* cost_data;
 
+  const double _speed_factor;
   Cost _per_hour;
   bool _cost_based_on_duration;
 
@@ -52,6 +53,14 @@ public:
   Cost cost(Index i, Index j) const {
     return discrete_cost_factor *
            static_cast<Cost>(cost_data[i * cost_matrix_size + j]);
+  }
+
+  double get_speed_factor() const {
+    return _speed_factor;
+  }
+
+  Cost get_per_hour() const {
+    return _per_hour;
   }
 
   UserCost user_cost_from_user_duration(UserDuration d) const;
