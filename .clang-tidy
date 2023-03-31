@@ -1,4 +1,5 @@
 ---
 Checks: >
     -clang-analyzer-*,
-    modernize-concat-nested-namespaces
+    modernize-concat-nested-namespaces,
+    modernize-raw-string-literal

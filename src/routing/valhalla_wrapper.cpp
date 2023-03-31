@@ -20,7 +20,7 @@ ValhallaWrapper::ValhallaWrapper(const std::string& profile,
                 "sources_to_targets",
                 "sources_to_targets",
                 "route",
-                "\"directions_type\":\"none\"") {
+                R"("directions_type":"none")") {
 }
 
 std::string ValhallaWrapper::get_matrix_query(
@@ -38,7 +38,7 @@ std::string ValhallaWrapper::get_matrix_query(
 
   query += "{\"sources\":[" + all_locations;
   query += "],\"targets\":[" + all_locations;
-  query += "],\"costing\":\"" + profile + "\"}";
+  query += R"(],"costing":")" + profile + "\"}";
 
   query += " HTTP/1.1\r\n";
   query += "Host: " + _server.host + "\r\n";
@@ -57,11 +57,11 @@ ValhallaWrapper::get_route_query(const std::vector<Location>& locations,
   for (auto const& location : locations) {
     query += "{\"lon\":" + std::to_string(location.lon()) + "," +
              "\"lat\":" + std::to_string(location.lat()) +
-             ",\"type\":\"break\"},";
+             R"(,"type":"break"},)";
   }
   query.pop_back(); // Remove trailing ','.
 
-  query += "],\"costing\":\"" + profile + "\"";
+  query += R"(],"costing":")" + profile + "\"";
   if (!extra_args.empty()) {
     query += "," + extra_args;
   }
