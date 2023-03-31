@@ -57,13 +57,13 @@ public:
 namespace std {
 template <> struct hash<vroom::Location> {
   std::size_t operator()(const vroom::Location& l) const noexcept {
-    if (l.has_coordinates()) {
+    if (l.user_index()) {
+      return hash<vroom::Index>()(l.index());
+    } else {
+      assert(l.has_coordinates());
       return ((hash<vroom::Coordinate>()(l.lon()) ^
                (hash<vroom::Coordinate>()(l.lat()) << 1)) >>
               1);
-    } else {
-      assert(l.user_index());
-      return hash<vroom::Index>()(l.index());
     }
   }
 };
