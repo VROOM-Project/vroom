@@ -15,8 +15,7 @@ All rights reserved (see LICENSE).
 
 #include "algorithms/validation/choose_ETA.h"
 
-namespace vroom {
-namespace validation {
+namespace vroom::validation {
 
 inline Duration get_duration(double d) {
   return static_cast<Duration>(std::round(d));
@@ -1429,5 +1428,4 @@ Route choose_ETA(const Input& input,
                  Violations(user_lead_time, user_delay, std::move(v_types))));
 }
 
-} // namespace validation
-} // namespace vroom
+} // namespace vroom::validation

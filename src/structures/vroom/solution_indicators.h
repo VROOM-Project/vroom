@@ -14,8 +14,7 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/input/input.h"
 #include "utils/helpers.h"
 
-namespace vroom {
-namespace utils {
+namespace vroom::utils {
 
 template <class Route> struct SolutionIndicators {
   Priority priority_sum;
@@ -72,7 +71,6 @@ template <class Route> struct SolutionIndicators {
   }
 };
 
-} // namespace utils
-} // namespace vroom
+} // namespace vroom::utils
 
 #endif

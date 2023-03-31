@@ -14,8 +14,7 @@ All rights reserved (see LICENSE).
 #include "routing/wrapper.h"
 #include "structures/typedefs.h"
 
-namespace vroom {
-namespace routing {
+namespace vroom::routing {
 
 class HttpWrapper : public Wrapper {
 private:
@@ -72,7 +71,6 @@ protected:
   virtual void add_route_info(Route& route) const override;
 };
 
-} // namespace routing
-} // namespace vroom
+} // namespace vroom::routing
 
 #endif

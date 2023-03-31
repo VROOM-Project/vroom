@@ -12,8 +12,7 @@ All rights reserved (see LICENSE).
 
 #include "problems/cvrp/operators/intra_or_opt.h"
 
-namespace vroom {
-namespace vrptw {
+namespace vroom::vrptw {
 
 class IntraOrOpt : public cvrp::IntraOrOpt {
 private:
@@ -35,7 +34,6 @@ public:
   virtual std::vector<Index> addition_candidates() const override;
 };
 
-} // namespace vrptw
-} // namespace vroom
+} // namespace vroom::vrptw
 
 #endif

@@ -11,8 +11,7 @@ All rights reserved (see LICENSE).
 #include "algorithms/local_search/insertion_search.h"
 #include "utils/helpers.h"
 
-namespace vroom {
-namespace vrptw {
+namespace vroom::vrptw {
 
 PDShift::PDShift(const Input& input,
                  const utils::SolutionState& sol_state,
@@ -102,5 +101,4 @@ void PDShift::apply() {
   }
 }
 
-} // namespace vrptw
-} // namespace vroom
+} // namespace vroom::vrptw

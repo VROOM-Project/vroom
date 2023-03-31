@@ -5,8 +5,7 @@
 #include "structures/vroom/solution_state.h"
 #include "utils/helpers.h"
 
-namespace vroom {
-namespace ls {
+namespace vroom::ls {
 
 struct RouteInsertion {
   Eval eval;
@@ -214,6 +213,5 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
   return result;
 }
 
-} // namespace ls
-} // namespace vroom
+} // namespace vroom::ls
 #endif

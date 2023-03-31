@@ -9,8 +9,7 @@ All rights reserved (see LICENSE).
 
 #include "problems/vrptw/operators/intra_two_opt.h"
 
-namespace vroom {
-namespace vrptw {
+namespace vroom::vrptw {
 
 IntraTwoOpt::IntraTwoOpt(const Input& input,
                          const utils::SolutionState& sol_state,
@@ -57,5 +56,4 @@ void IntraTwoOpt::apply() {
                       t_rank + 1);
 }
 
-} // namespace vrptw
-} // namespace vroom
+} // namespace vroom::vrptw

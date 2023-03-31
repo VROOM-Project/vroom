@@ -19,8 +19,7 @@ All rights reserved (see LICENSE).
 // described in https://arxiv.org/abs/2012.10384, extended to support
 // additional constraint checks (back-hauls and time windows).
 
-namespace vroom {
-namespace ls {
+namespace vroom::ls {
 
 struct InsertionOption {
   Eval cost;
@@ -525,7 +524,6 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
   return best_choice;
 }
 
-} // namespace ls
-} // namespace vroom
+} // namespace vroom::ls
 
 #endif

@@ -9,8 +9,7 @@ All rights reserved (see LICENSE).
 
 #include "problems/vrptw/operators/relocate.h"
 
-namespace vroom {
-namespace vrptw {
+namespace vroom::vrptw {
 
 Relocate::Relocate(const Input& input,
                    const utils::SolutionState& sol_state,
@@ -47,5 +46,4 @@ void Relocate::apply() {
   _tw_t_route.add(_input, relocate_job_rank, t_rank);
 }
 
-} // namespace vrptw
-} // namespace vroom
+} // namespace vroom::vrptw

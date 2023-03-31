@@ -12,8 +12,7 @@ All rights reserved (see LICENSE).
 
 #include "problems/cvrp/operators/two_opt.h"
 
-namespace vroom {
-namespace vrptw {
+namespace vroom::vrptw {
 
 class TwoOpt : public cvrp::TwoOpt {
 private:
@@ -35,7 +34,6 @@ public:
   virtual void apply() override;
 };
 
-} // namespace vrptw
-} // namespace vroom
+} // namespace vroom::vrptw
 
 #endif

@@ -11,8 +11,7 @@ All rights reserved (see LICENSE).
 
 #include "routing/valhalla_wrapper.h"
 
-namespace vroom {
-namespace routing {
+namespace vroom::routing {
 
 ValhallaWrapper::ValhallaWrapper(const std::string& profile,
                                  const Server& server)
@@ -177,5 +176,4 @@ std::string ValhallaWrapper::get_geometry(rapidjson::Value& result) const {
   return encoder.encode();
 }
 
-} // namespace routing
-} // namespace vroom
+} // namespace vroom::routing

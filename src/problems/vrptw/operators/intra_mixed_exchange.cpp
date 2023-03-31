@@ -9,8 +9,7 @@ All rights reserved (see LICENSE).
 
 #include "problems/vrptw/operators/intra_mixed_exchange.h"
 
-namespace vroom {
-namespace vrptw {
+namespace vroom::vrptw {
 
 IntraMixedExchange::IntraMixedExchange(const Input& input,
                                        const utils::SolutionState& sol_state,
@@ -85,5 +84,4 @@ std::vector<Index> IntraMixedExchange::addition_candidates() const {
   return {s_vehicle};
 }
 
-} // namespace vrptw
-} // namespace vroom
+} // namespace vroom::vrptw

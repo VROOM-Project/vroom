@@ -10,8 +10,7 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/solution_state.h"
 #include "utils/helpers.h"
 
-namespace vroom {
-namespace utils {
+namespace vroom::utils {
 
 SolutionState::SolutionState(const Input& input)
   : _input(input),
@@ -617,5 +616,4 @@ void SolutionState::update_route_eval(const std::vector<Index>& route,
 template void SolutionState::setup(const std::vector<RawRoute>&);
 template void SolutionState::setup(const std::vector<TWRoute>&);
 
-} // namespace utils
-} // namespace vroom
+} // namespace vroom::utils

@@ -14,8 +14,7 @@ All rights reserved (see LICENSE).
 
 using asio::ip::tcp;
 
-namespace vroom {
-namespace routing {
+namespace vroom::routing {
 
 const std::string HttpWrapper::HTTPS_PORT = "443";
 
@@ -263,5 +262,4 @@ void HttpWrapper::add_route_info(Route& route) const {
   }
 }
 
-} // namespace routing
-} // namespace vroom
+} // namespace vroom::routing

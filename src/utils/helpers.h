@@ -27,8 +27,7 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/tw_route.h"
 #include "utils/exception.h"
 
-namespace vroom {
-namespace utils {
+namespace vroom::utils {
 
 using RawSolution = std::vector<RawRoute>;
 using TWSolution = std::vector<TWRoute>;
@@ -1052,7 +1051,6 @@ inline Solution format_solution(const Input& input,
                   std::move(unassigned_jobs));
 }
 
-} // namespace utils
-} // namespace vroom
+} // namespace vroom::utils
 
 #endif

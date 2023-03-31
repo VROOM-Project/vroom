@@ -12,8 +12,7 @@ All rights reserved (see LICENSE).
 
 #include "algorithms/local_search/insertion_search.h"
 
-namespace vroom {
-namespace cvrp {
+namespace vroom::cvrp {
 
 PDShift::PDShift(const Input& input,
                  const utils::SolutionState& sol_state,
@@ -117,5 +116,4 @@ std::vector<Index> PDShift::update_candidates() const {
   return {s_vehicle, t_vehicle};
 }
 
-} // namespace cvrp
-} // namespace vroom
+} // namespace vroom::cvrp

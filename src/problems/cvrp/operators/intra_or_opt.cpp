@@ -9,8 +9,7 @@ All rights reserved (see LICENSE).
 
 #include "problems/cvrp/operators/intra_or_opt.h"
 
-namespace vroom {
-namespace cvrp {
+namespace vroom::cvrp {
 
 IntraOrOpt::IntraOrOpt(const Input& input,
                        const utils::SolutionState& sol_state,
@@ -239,5 +238,4 @@ std::vector<Index> IntraOrOpt::update_candidates() const {
   return {s_vehicle};
 }
 
-} // namespace cvrp
-} // namespace vroom
+} // namespace vroom::cvrp

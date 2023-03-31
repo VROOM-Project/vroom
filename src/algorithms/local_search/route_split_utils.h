@@ -15,8 +15,7 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/solution_state.h"
 #include "utils/helpers.h"
 
-namespace vroom {
-namespace ls {
+namespace vroom::ls {
 
 struct SplitChoice {
   Eval gain;
@@ -232,7 +231,6 @@ compute_best_route_split_choice(const Input& input,
   return best_choice;
 }
 
-} // namespace ls
-} // namespace vroom
+} // namespace vroom::ls
 
 #endif

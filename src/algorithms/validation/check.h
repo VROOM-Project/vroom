@@ -13,12 +13,10 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/input/input.h"
 #include "structures/vroom/solution/solution.h"
 
-namespace vroom {
-namespace validation {
+namespace vroom::validation {
 
 Solution check_and_set_ETA(const Input& input, unsigned nb_thread);
 
-} // namespace validation
-} // namespace vroom
+} // namespace vroom::validation
 
 #endif

@@ -83,4 +83,4 @@ clean :
 	$(RM) $(LIB)
 
 tidy : $(SRC)
-	clang-tidy $(SRC) -- $(CXXFLAGS) -I/usr/include/c++/11/ -I/usr/include/x86_64-linux-gnu/c++/11/
+	clang-tidy $(SRC) -fix -- $(CXXFLAGS) -I/usr/include/c++/11/ -I/usr/include/x86_64-linux-gnu/c++/11/

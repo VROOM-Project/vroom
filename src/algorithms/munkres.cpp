@@ -13,8 +13,7 @@ All rights reserved (see LICENSE).
 
 #include "algorithms/munkres.h"
 
-namespace vroom {
-namespace utils {
+namespace vroom::utils {
 
 template <class T>
 std::unordered_map<Index, Index>
@@ -229,5 +228,4 @@ minimum_weight_perfect_matching(const Matrix<UserCost>& m);
 template std::unordered_map<Index, Index>
 greedy_symmetric_approx_mwpm(const Matrix<UserCost>& m);
 
-} // namespace utils
-} // namespace vroom
+} // namespace vroom::utils

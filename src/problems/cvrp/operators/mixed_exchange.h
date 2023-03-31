@@ -12,8 +12,7 @@ All rights reserved (see LICENSE).
 
 #include "algorithms/local_search/operator.h"
 
-namespace vroom {
-namespace cvrp {
+namespace vroom::cvrp {
 
 class MixedExchange : public ls::Operator {
 private:
@@ -57,7 +56,6 @@ public:
   virtual std::vector<Index> update_candidates() const override;
 };
 
-} // namespace cvrp
-} // namespace vroom
+} // namespace vroom::cvrp
 
 #endif

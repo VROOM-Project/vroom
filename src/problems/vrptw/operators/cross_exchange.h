@@ -12,8 +12,7 @@ All rights reserved (see LICENSE).
 
 #include "problems/cvrp/operators/cross_exchange.h"
 
-namespace vroom {
-namespace vrptw {
+namespace vroom::vrptw {
 
 class CrossExchange : public cvrp::CrossExchange {
 private:
@@ -37,7 +36,6 @@ public:
   virtual void apply() override;
 };
 
-} // namespace vrptw
-} // namespace vroom
+} // namespace vroom::vrptw
 
 #endif

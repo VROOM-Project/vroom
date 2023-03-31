@@ -9,8 +9,7 @@ All rights reserved (see LICENSE).
 
 #include "problems/cvrp/operators/route_split.h"
 
-namespace vroom {
-namespace cvrp {
+namespace vroom::cvrp {
 
 std::vector<std::reference_wrapper<RawRoute>> RouteSplit::dummy_route_refs;
 
@@ -105,5 +104,4 @@ bool RouteSplit::invalidated_by(Index rank) const {
          rank == _empty_route_ranks[choice.v_end];
 }
 
-} // namespace cvrp
-} // namespace vroom
+} // namespace vroom::cvrp

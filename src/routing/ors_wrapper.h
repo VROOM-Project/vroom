@@ -12,8 +12,7 @@ All rights reserved (see LICENSE).
 
 #include "routing/http_wrapper.h"
 
-namespace vroom {
-namespace routing {
+namespace vroom::routing {
 
 class OrsWrapper : public HttpWrapper {
 private:
@@ -45,7 +44,6 @@ public:
   OrsWrapper(const std::string& profile, const Server& server);
 };
 
-} // namespace routing
-} // namespace vroom
+} // namespace vroom::routing
 
 #endif

@@ -9,8 +9,7 @@ All rights reserved (see LICENSE).
 
 #include "problems/vrptw/operators/route_split.h"
 
-namespace vroom {
-namespace vrptw {
+namespace vroom::vrptw {
 
 RouteSplit::RouteSplit(
   const Input& input,
@@ -82,5 +81,4 @@ void RouteSplit::apply() {
   _tw_s_route.remove(_input, 0, s_route.size());
 }
 
-} // namespace vrptw
-} // namespace vroom
+} // namespace vroom::vrptw

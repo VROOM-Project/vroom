@@ -12,8 +12,7 @@ All rights reserved (see LICENSE).
 #include "algorithms/heuristics/heuristics.h"
 #include "utils/helpers.h"
 
-namespace vroom {
-namespace heuristics {
+namespace vroom::heuristics {
 
 std::vector<std::vector<Eval>> get_jobs_vehicles_evals(const Input& input) {
   // For a single job j, evals[j][v] evaluates fetching job j in an
@@ -1010,5 +1009,4 @@ dynamic_vehicle_choice(const Input& input, INIT init, double lambda, SORT sort);
 
 template TWSolution initial_routes(const Input& input);
 
-} // namespace heuristics
-} // namespace vroom
+} // namespace vroom::heuristics

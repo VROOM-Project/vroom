@@ -11,8 +11,7 @@ All rights reserved (see LICENSE).
 
 #include "structures/cl_args.h"
 
-namespace vroom {
-namespace io {
+namespace vroom::io {
 
 const unsigned CLArgs::max_exploration_level = 5;
 
@@ -62,5 +61,4 @@ void update_port(Servers& servers, const std::string& value) {
   }
 }
 
-} // namespace io
-} // namespace vroom
+} // namespace vroom::io

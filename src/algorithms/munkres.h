@@ -14,8 +14,7 @@ All rights reserved (see LICENSE).
 
 #include "structures/generic/matrix.h"
 
-namespace vroom {
-namespace utils {
+namespace vroom::utils {
 
 template <class T>
 std::unordered_map<Index, Index>
@@ -25,7 +24,6 @@ template <class T>
 std::unordered_map<Index, Index>
 greedy_symmetric_approx_mwpm(const Matrix<T>& m);
 
-} // namespace utils
-} // namespace vroom
+} // namespace vroom::utils
 
 #endif

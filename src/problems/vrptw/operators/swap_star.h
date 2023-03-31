@@ -12,8 +12,7 @@ All rights reserved (see LICENSE).
 
 #include "problems/cvrp/operators/swap_star.h"
 
-namespace vroom {
-namespace vrptw {
+namespace vroom::vrptw {
 
 class SwapStar : public cvrp::SwapStar {
 private:
@@ -34,7 +33,6 @@ public:
   virtual void apply() override;
 };
 
-} // namespace vrptw
-} // namespace vroom
+} // namespace vroom::vrptw
 
 #endif

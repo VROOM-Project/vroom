@@ -12,8 +12,7 @@ All rights reserved (see LICENSE).
 
 #include "problems/cvrp/operators/pd_shift.h"
 
-namespace vroom {
-namespace vrptw {
+namespace vroom::vrptw {
 
 class PDShift : public cvrp::PDShift {
 private:
@@ -40,7 +39,6 @@ public:
   virtual void apply() override;
 };
 
-} // namespace vrptw
-} // namespace vroom
+} // namespace vroom::vrptw
 
 #endif

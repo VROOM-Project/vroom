@@ -9,8 +9,7 @@ All rights reserved (see LICENSE).
 
 #include "problems/vrptw/operators/unassigned_exchange.h"
 
-namespace vroom {
-namespace vrptw {
+namespace vroom::vrptw {
 
 UnassignedExchange::UnassignedExchange(const Input& input,
                                        const utils::SolutionState& sol_state,
@@ -55,5 +54,4 @@ void UnassignedExchange::apply() {
   _unassigned.insert(_removed);
 }
 
-} // namespace vrptw
-} // namespace vroom
+} // namespace vroom::vrptw

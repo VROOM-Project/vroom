@@ -9,8 +9,7 @@ All rights reserved (see LICENSE).
 
 #include "problems/cvrp/operators/route_exchange.h"
 
-namespace vroom {
-namespace cvrp {
+namespace vroom::cvrp {
 
 RouteExchange::RouteExchange(const Input& input,
                              const utils::SolutionState& sol_state,
@@ -121,5 +120,4 @@ std::vector<Index> RouteExchange::update_candidates() const {
   return {s_vehicle, t_vehicle};
 }
 
-} // namespace cvrp
-} // namespace vroom
+} // namespace vroom::cvrp

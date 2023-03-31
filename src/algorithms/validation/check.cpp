@@ -20,8 +20,7 @@ All rights reserved (see LICENSE).
 #include "utils/exception.h"
 #include "utils/helpers.h"
 
-namespace vroom {
-namespace validation {
+namespace vroom::validation {
 
 Solution check_and_set_ETA(const Input& input, unsigned nb_thread) {
   // Keep track of assigned job ranks.
@@ -105,5 +104,4 @@ Solution check_and_set_ETA(const Input& input, unsigned nb_thread) {
                   std::move(unassigned_jobs));
 }
 
-} // namespace validation
-} // namespace vroom
+} // namespace vroom::validation

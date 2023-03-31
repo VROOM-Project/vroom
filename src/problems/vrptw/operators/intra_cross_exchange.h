@@ -12,8 +12,7 @@ All rights reserved (see LICENSE).
 
 #include "problems/cvrp/operators/intra_cross_exchange.h"
 
-namespace vroom {
-namespace vrptw {
+namespace vroom::vrptw {
 
 class IntraCrossExchange : public cvrp::IntraCrossExchange {
 private:
@@ -36,7 +35,6 @@ public:
   virtual std::vector<Index> addition_candidates() const override;
 };
 
-} // namespace vrptw
-} // namespace vroom
+} // namespace vroom::vrptw
 
 #endif

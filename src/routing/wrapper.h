@@ -17,8 +17,7 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/solution/route.h"
 #include "utils/exception.h"
 
-namespace vroom {
-namespace routing {
+namespace vroom::routing {
 
 class Wrapper {
 
@@ -73,7 +72,6 @@ protected:
   }
 };
 
-} // namespace routing
-} // namespace vroom
+} // namespace vroom::routing
 
 #endif

@@ -14,8 +14,7 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/input/input.h"
 #include "structures/vroom/solution_state.h"
 
-namespace vroom {
-namespace ls {
+namespace vroom::ls {
 
 class Operator {
 protected:
@@ -92,11 +91,9 @@ public:
   // change in another route.
   virtual bool invalidated_by(Index rank) const;
 
-  virtual ~Operator() {
-  }
+  virtual ~Operator() = default;
 };
 
-} // namespace ls
-} // namespace vroom
+} // namespace vroom::ls
 
 #endif

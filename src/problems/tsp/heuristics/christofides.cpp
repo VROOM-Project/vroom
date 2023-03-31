@@ -14,8 +14,7 @@ All rights reserved (see LICENSE).
 #include "algorithms/munkres.h"
 #include "problems/tsp/heuristics/christofides.h"
 
-namespace vroom {
-namespace tsp {
+namespace vroom::tsp {
 
 std::list<Index> christofides(const Matrix<UserCost>& sym_matrix) {
   // The eulerian sub-graph further used is made of a minimum spanning
@@ -168,5 +167,4 @@ std::list<Index> christofides(const Matrix<UserCost>& sym_matrix) {
   return tour;
 }
 
-} // namespace tsp
-} // namespace vroom
+} // namespace vroom::tsp

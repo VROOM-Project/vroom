@@ -12,8 +12,7 @@ All rights reserved (see LICENSE).
 
 #include "algorithms/local_search/operator.h"
 
-namespace vroom {
-namespace cvrp {
+namespace vroom::cvrp {
 
 class PDShift : public ls::Operator {
 protected:
@@ -48,7 +47,6 @@ public:
   virtual std::vector<Index> update_candidates() const override;
 };
 
-} // namespace cvrp
-} // namespace vroom
+} // namespace vroom::cvrp
 
 #endif

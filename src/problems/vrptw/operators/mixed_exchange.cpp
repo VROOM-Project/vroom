@@ -9,8 +9,7 @@ All rights reserved (see LICENSE).
 
 #include "problems/vrptw/operators/mixed_exchange.h"
 
-namespace vroom {
-namespace vrptw {
+namespace vroom::vrptw {
 
 MixedExchange::MixedExchange(const Input& input,
                              const utils::SolutionState& sol_state,
@@ -106,5 +105,4 @@ void MixedExchange::apply() {
                       t_rank + 2);
 }
 
-} // namespace vrptw
-} // namespace vroom
+} // namespace vroom::vrptw

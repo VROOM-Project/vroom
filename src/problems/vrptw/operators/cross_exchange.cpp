@@ -9,8 +9,7 @@ All rights reserved (see LICENSE).
 
 #include "problems/vrptw/operators/cross_exchange.h"
 
-namespace vroom {
-namespace vrptw {
+namespace vroom::vrptw {
 
 CrossExchange::CrossExchange(const Input& input,
                              const utils::SolutionState& sol_state,
@@ -140,5 +139,4 @@ void CrossExchange::apply() {
                       s_rank + 2);
 }
 
-} // namespace vrptw
-} // namespace vroom
+} // namespace vroom::vrptw

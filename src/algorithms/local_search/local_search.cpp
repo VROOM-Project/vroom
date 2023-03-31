@@ -28,8 +28,7 @@ All rights reserved (see LICENSE).
 #include "problems/vrptw/operators/unassigned_exchange.h"
 #include "utils/helpers.h"
 
-namespace vroom {
-namespace ls {
+namespace vroom::ls {
 
 template <class Route,
           class UnassignedExchange,
@@ -2378,5 +2377,4 @@ template class LocalSearch<RawRoute,
                            cvrp::SwapStar,
                            cvrp::RouteSplit>;
 
-} // namespace ls
-} // namespace vroom
+} // namespace vroom::ls

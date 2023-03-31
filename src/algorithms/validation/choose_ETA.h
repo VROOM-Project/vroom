@@ -13,14 +13,12 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/input/input.h"
 #include "structures/vroom/solution/solution.h"
 
-namespace vroom {
-namespace validation {
+namespace vroom::validation {
 
 Route choose_ETA(const Input& input,
                  unsigned vehicle_rank,
                  const std::vector<VehicleStep>& steps);
 
-} // namespace validation
-} // namespace vroom
+} // namespace vroom::validation
 
 #endif

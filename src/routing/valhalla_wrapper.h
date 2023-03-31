@@ -12,8 +12,7 @@ All rights reserved (see LICENSE).
 
 #include "routing/http_wrapper.h"
 
-namespace vroom {
-namespace routing {
+namespace vroom::routing {
 
 class ValhallaWrapper : public HttpWrapper {
 private:
@@ -50,7 +49,6 @@ public:
   ValhallaWrapper(const std::string& profile, const Server& server);
 };
 
-} // namespace routing
-} // namespace vroom
+} // namespace vroom::routing
 
 #endif

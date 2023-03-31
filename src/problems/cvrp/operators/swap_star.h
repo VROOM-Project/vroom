@@ -13,8 +13,7 @@ All rights reserved (see LICENSE).
 #include "algorithms/local_search/operator.h"
 #include "algorithms/local_search/swap_star_utils.h"
 
-namespace vroom {
-namespace cvrp {
+namespace vroom::cvrp {
 
 class SwapStar : public ls::Operator {
 protected:
@@ -41,7 +40,6 @@ public:
   virtual std::vector<Index> update_candidates() const override;
 };
 
-} // namespace cvrp
-} // namespace vroom
+} // namespace vroom::cvrp
 
 #endif
