@@ -3,7 +3,8 @@ Checks: >
     -clang-analyzer-*,
     modernize-concat-nested-namespaces,
     modernize-raw-string-literal,
-    modernize-use-equals-default
+    modernize-use-equals-default,
+    modernize-use-auto
 
 WarningsAsErrors: '*'
 HeaderFilterRegex: '.*'
