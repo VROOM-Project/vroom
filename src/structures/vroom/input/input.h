@@ -66,6 +66,7 @@ private:
 
   const io::Servers _servers;
   const ROUTER _router;
+  const std::string& _extra_args;
 
   std::unique_ptr<VRP> get_problem() const;
 
@@ -92,7 +93,7 @@ public:
   std::unordered_map<Id, Index> pickup_id_to_rank;
   std::unordered_map<Id, Index> delivery_id_to_rank;
 
-  Input(const io::Servers& servers = {}, ROUTER router = ROUTER::OSRM);
+  Input(const io::Servers& servers = {}, ROUTER router = ROUTER::OSRM, const std::string& extra_args = "");
 
   void set_amount_size(unsigned amount_size);
 

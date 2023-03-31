@@ -28,7 +28,7 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
-Input::Input(const io::Servers& servers, ROUTER router)
+Input::Input(const io::Servers& servers, ROUTER router, const std::string& extra_args)
   : _start_loading(std::chrono::high_resolution_clock::now()),
     _no_addition_yet(true),
     _has_skills(false),
@@ -47,6 +47,7 @@ Input::Input(const io::Servers& servers, ROUTER router)
     _amount_size(0),
     _zero(0),
     _servers(servers),
+    _extra_args(extra_args),
     _router(router) {
 }
 
@@ -114,7 +115,7 @@ void Input::add_routing_wrapper(const std::string& profile) {
       throw InputException("Invalid profile: " + profile + ".");
     }
     routing_wrapper =
-      std::make_unique<routing::ValhallaWrapper>(profile, search->second);
+      std::make_unique<routing::ValhallaWrapper>(profile, search->second, _extra_args);
   } break;
   }
 }
