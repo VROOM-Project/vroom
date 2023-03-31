@@ -212,8 +212,14 @@ void HttpWrapper::add_route_info(Route& route) const {
 
   std::string query =
     build_query(non_break_locations, _route_service, _extra_args);
+  
+    // printf("query: %s\n\n\n", query.c_str());
+
 
   std::string json_string = this->run_query(query);
+
+    // printf("resultado: %s\n\n\n\n", json_string.c_str());
+
 
   rapidjson::Document json_result;
   parse_response(json_result, json_string);
@@ -259,20 +265,22 @@ void HttpWrapper::add_route_info(Route& route) const {
     gepaf::PolylineEncoder<> encoder;
     auto nb_steps = get_steps_number(json_result, i);
 
-    for (rapidjson::SizeType s = 0; s < nb_steps; ++s) {
-      auto polylines = gepaf::PolylineEncoder<>::decode(get_geometry_for_leg(json_result,i, s));
+    // for (rapidjson::SizeType s = 0; s < nb_steps; ++s) {
+    //   auto polylines = gepaf::PolylineEncoder<>::decode(get_geometry_for_leg(json_result,i, s));
       
-      for (const auto& p : polylines) {
-        encoder.addPoint(p.latitude(), p.longitude());
-      }
-    }
+    //   for (const auto& p : polylines) {
+    //     encoder.addPoint(p.latitude(), p.longitude());
+    //   }
+    // }
 
     sum_distance += next_distance;
     next_step.distance = round_cost(sum_distance);
-    next_step.geometry = encoder.encode();
+    // next_step.geometry = encoder.encode();
+    next_step.geometry = get_geometry_for_leg(json_result,i, 0);
 
     steps_rank += number_breaks_after[i] + 1;
   }
+      // printf("top\n\n\n\n");
 }
 
 } // namespace routing

@@ -15,13 +15,14 @@ namespace vroom {
 namespace routing {
 
 ValhallaWrapper::ValhallaWrapper(const std::string& profile,
-                                 const Server& server)
+                                 const Server& server, const std::string& extra_args)
   : HttpWrapper(profile,
                 server,
                 "sources_to_targets",
                 "sources_to_targets",
                 "route",
-                "\"directions_type\":\"none\"") {
+                extra_args
+                ) {
 }
 
 std::string ValhallaWrapper::get_matrix_query(
@@ -62,7 +63,7 @@ ValhallaWrapper::get_route_query(const std::vector<Location>& locations,
   }
   query.pop_back(); // Remove trailing ','.
 
-  query += "],\"costing\":\"" + profile + "\"";
+  query += "],\"costing\":\"" + profile + "\",\"directions_type\":\"none\"";
   if (!extra_args.empty()) {
     query += "," + extra_args;
   }
@@ -151,7 +152,7 @@ double ValhallaWrapper::get_distance_for_leg(const rapidjson::Value& result,
 
 std::string ValhallaWrapper::get_geometry_for_leg(const rapidjson::Value& result,
                                              rapidjson::SizeType i, rapidjson::SizeType s) const {
-  return result["routes"][0]["legs"][i]["steps"][s]["geometry"].GetString();
+  return result["trip"]["legs"][i]["shape"].GetString();
 }
 
 std::string ValhallaWrapper::get_geometry(rapidjson::Value& result) const {

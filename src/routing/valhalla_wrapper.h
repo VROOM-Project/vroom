@@ -54,7 +54,7 @@ private:
   virtual std::string get_geometry(rapidjson::Value& result) const override;
 
 public:
-  ValhallaWrapper(const std::string& profile, const Server& server);
+  ValhallaWrapper(const std::string& profile, const Server& server, const std::string& extra_args);
 };
 
 } // namespace routing

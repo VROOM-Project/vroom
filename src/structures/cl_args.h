@@ -32,6 +32,7 @@ struct CLArgs {
   std::string output_file;                   // -o
   ROUTER router;                             // -r
   std::string input;                         // cl arg
+  std::string extra_args;                    // -E
   unsigned nb_threads;                       // -t
   unsigned exploration_level;                // -x
 

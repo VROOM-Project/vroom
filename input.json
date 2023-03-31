@@ -1,0 +1,54 @@
+{
+  "options": {
+    "g": true,
+    "c": false
+  },
+  "jobs": [
+    {
+      "id": 0,
+      "description": "636d04c8470642cb5a9555cc",
+      "location": [
+        -48.87455813874452,
+        -26.28461496470875
+      ],
+      "service": 60
+    },
+    {
+      "id": 1,
+      "description": "aaaaaaaa",
+      "location": [
+        -48.87750123470842,
+        -26.27487378830072
+      ],
+      "service": 60
+    }
+  ],
+  "vehicles": [
+    {
+      "profile": "auto",
+      "id": 1060,
+      "description": "Adesao 1060",
+      "start": [
+        -48.87589286745765,
+        -26.27276577714968
+      ],
+      "time_window": [
+        1668078000,
+        1668119100
+      ],
+      "time_window_with_break": [
+        [
+          1668078000,
+          1668092400
+        ],
+        [
+          1668096300,
+          1668114000
+        ]
+      ],
+      "breaks": [],
+      "steps": [],
+      "speed_factor": 0.9
+    }
+  ]
+}

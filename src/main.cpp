@@ -30,6 +30,7 @@ int main(int argc, char** argv) {
   std::vector<std::string> host_args;
   std::vector<std::string> port_args;
   std::string router_arg;
+  std::string extra_args;
   std::string limit_arg;
   std::vector<std::string> heuristic_params_arg;
 
@@ -71,6 +72,9 @@ int main(int argc, char** argv) {
     ("r,router",
      "osrm, libosrm, ors or valhalla",
      cxxopts::value<std::string>(router_arg)->default_value("osrm"))
+    ("E,extra_args",
+     "extra args",
+      cxxopts::value<std::string>(cl_args.extra_args))
     ("t,threads",
      "number of available threads",
      cxxopts::value<unsigned>(cl_args.nb_threads)->default_value(std::to_string(vroom::DEFAULT_THREADS_NUMBER)))
@@ -183,7 +187,7 @@ int main(int argc, char** argv) {
 
   try {
     // Build problem.
-    vroom::Input problem_instance(cl_args.servers, cl_args.router);
+    vroom::Input problem_instance(cl_args.servers, cl_args.router, cl_args.extra_args);
     vroom::io::parse(problem_instance, cl_args.input, cl_args.geometry);
 
     vroom::Solution sol = (cl_args.check)
