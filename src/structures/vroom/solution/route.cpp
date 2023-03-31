@@ -11,8 +11,7 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
-Route::Route() {
-}
+Route::Route() = default;
 
 Route::Route(Id vehicle,
              std::vector<Step>&& steps,

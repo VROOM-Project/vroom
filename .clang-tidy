@@ -2,4 +2,8 @@
 Checks: >
     -clang-analyzer-*,
     modernize-concat-nested-namespaces,
-    modernize-raw-string-literal
+    modernize-raw-string-literal,
+    modernize-use-equals-default
+
+WarningsAsErrors: '*'
+HeaderFilterRegex: '.*'

@@ -29,8 +29,7 @@ public:
 
   virtual void add_route_info(Route& route) const = 0;
 
-  virtual ~Wrapper() {
-  }
+  virtual ~Wrapper() = default;
 
 protected:
   Wrapper(const std::string& profile) : profile(profile) {

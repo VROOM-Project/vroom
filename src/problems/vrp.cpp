@@ -16,7 +16,6 @@ VRP::VRP(const Input& input) : _input(input) {
   assert(_input.vehicles.size() > 0);
 }
 
-VRP::~VRP() {
-}
+VRP::~VRP() = default;
 
 } // namespace vroom

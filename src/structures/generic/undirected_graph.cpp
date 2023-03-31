@@ -13,8 +13,7 @@ All rights reserved (see LICENSE).
 
 namespace vroom::utils {
 
-template <class T> UndirectedGraph<T>::UndirectedGraph() {
-}
+template <class T> UndirectedGraph<T>::UndirectedGraph() = default;
 
 template <class T>
 UndirectedGraph<T>::UndirectedGraph(const Matrix<T>& m) : _size(m.size()) {
