@@ -4,7 +4,8 @@ Checks: >
     modernize-concat-nested-namespaces,
     modernize-raw-string-literal,
     modernize-use-equals-default,
-    modernize-use-auto
+    modernize-use-auto,
+    modernize-use-emplace
 
 WarningsAsErrors: '*'
 HeaderFilterRegex: '.*'

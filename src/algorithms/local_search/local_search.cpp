@@ -158,9 +158,8 @@ void LocalSearch<Route,
   std::vector<std::vector<RouteInsertion>> route_job_insertions;
 
   for (std::size_t i = 0; i < routes.size(); ++i) {
-    route_job_insertions.push_back(
-      std::vector<RouteInsertion>(_input.jobs.size(),
-                                  RouteInsertion(_input.get_amount_size())));
+    route_job_insertions.emplace_back(_input.jobs.size(),
+                                      RouteInsertion(_input.get_amount_size()));
 
     const auto v = routes[i];
     const auto fixed_cost =
@@ -2258,7 +2257,7 @@ void LocalSearch<Route,
     }
 
     if (best_gain != NO_GAIN) {
-      routes_and_ranks.push_back(std::make_pair(v, best_rank));
+      routes_and_ranks.emplace_back(v, best_rank);
     }
   }
 
