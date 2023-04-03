@@ -28,7 +28,7 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
-Input::Input(const io::Servers& servers, ROUTER router)
+Input::Input(io::Servers servers, ROUTER router)
   : _start_loading(std::chrono::high_resolution_clock::now()),
     _no_addition_yet(true),
     _has_skills(false),
@@ -46,7 +46,7 @@ Input::Input(const io::Servers& servers, ROUTER router)
     _all_locations_have_coords(true),
     _amount_size(0),
     _zero(0),
-    _servers(servers),
+    _servers(std::move(servers)),
     _router(router) {
 }
 

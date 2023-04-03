@@ -27,14 +27,13 @@ protected:
   virtual void compute_gain() override;
 
 public:
-  RouteSplit(
-    const Input& input,
-    const utils::SolutionState& sol_state,
-    RawRoute& s_route,
-    Index s_vehicle,
-    const std::vector<Index>& empty_route_ranks,
-    const std::vector<std::reference_wrapper<RawRoute>>& empty_route_refs,
-    const Eval& best_known_gain);
+  RouteSplit(const Input& input,
+             const utils::SolutionState& sol_state,
+             RawRoute& s_route,
+             Index s_vehicle,
+             std::vector<Index> empty_route_ranks,
+             std::vector<std::reference_wrapper<RawRoute>> empty_route_refs,
+             const Eval& best_known_gain);
 
   virtual bool is_valid() override;
 

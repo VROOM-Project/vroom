@@ -87,8 +87,8 @@ struct Server {
   Server() : host("0.0.0.0"), port("5000") {
   }
 
-  Server(const std::string& host, const std::string& port)
-    : host(host), port(port) {
+  Server(std::string host, std::string port)
+    : host(std::move(host)), port(std::move(port)) {
   }
 };
 

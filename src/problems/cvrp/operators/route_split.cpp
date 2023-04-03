@@ -18,8 +18,8 @@ RouteSplit::RouteSplit(
   const utils::SolutionState& sol_state,
   RawRoute& s_route,
   Index s_vehicle,
-  const std::vector<Index>& empty_route_ranks,
-  const std::vector<std::reference_wrapper<RawRoute>>& empty_route_refs,
+  std::vector<Index> empty_route_ranks,
+  std::vector<std::reference_wrapper<RawRoute>> empty_route_refs,
   const Eval& best_known_gain)
   // Use dummy 0 values for unused ranks.
   : Operator(OperatorName::RouteSplit,
@@ -32,8 +32,8 @@ RouteSplit::RouteSplit(
              s_vehicle,
              0),
     _best_known_gain(best_known_gain),
-    _empty_route_ranks(empty_route_ranks),
-    _empty_route_refs(empty_route_refs),
+    _empty_route_ranks(std::move(empty_route_ranks)),
+    _empty_route_refs(std::move(empty_route_refs)),
     choice(ls::empty_route_split_choice) {
   assert(s_route.size() >= 2);
   assert(_empty_route_ranks.size() >= 2);

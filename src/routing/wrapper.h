@@ -32,7 +32,7 @@ public:
   virtual ~Wrapper() = default;
 
 protected:
-  Wrapper(const std::string& profile) : profile(profile) {
+  Wrapper(std::string profile) : profile(std::move(profile)) {
   }
 
   static UserCost round_cost(double value) {

@@ -19,17 +19,17 @@ namespace vroom::routing {
 const std::string HttpWrapper::HTTPS_PORT = "443";
 
 HttpWrapper::HttpWrapper(const std::string& profile,
-                         const Server& server,
-                         const std::string& matrix_service,
-                         const std::string& matrix_durations_key,
-                         const std::string& route_service,
-                         const std::string& extra_args)
+                         Server server,
+                         std::string matrix_service,
+                         std::string matrix_durations_key,
+                         std::string route_service,
+                         std::string extra_args)
   : Wrapper(profile),
-    _server(server),
-    _matrix_service(matrix_service),
-    _matrix_durations_key(matrix_durations_key),
-    _route_service(route_service),
-    _extra_args(extra_args) {
+    _server(std::move(server)),
+    _matrix_service(std::move(matrix_service)),
+    _matrix_durations_key(std::move(matrix_durations_key)),
+    _route_service(std::move(route_service)),
+    _extra_args(std::move(extra_args)) {
 }
 
 std::string HttpWrapper::send_then_receive(const std::string& query) const {

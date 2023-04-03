@@ -92,7 +92,7 @@ public:
   std::unordered_map<Id, Index> pickup_id_to_rank;
   std::unordered_map<Id, Index> delivery_id_to_rank;
 
-  Input(const io::Servers& servers = {}, ROUTER router = ROUTER::OSRM);
+  Input(io::Servers servers = {}, ROUTER router = ROUTER::OSRM);
 
   void set_amount_size(unsigned amount_size);
 

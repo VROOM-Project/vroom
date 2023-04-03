@@ -32,11 +32,11 @@ protected:
   const std::string _extra_args;
 
   HttpWrapper(const std::string& profile,
-              const Server& server,
-              const std::string& matrix_service,
-              const std::string& matrix_durations_key,
-              const std::string& route_service,
-              const std::string& extra_args);
+              Server server,
+              std::string matrix_service,
+              std::string matrix_durations_key,
+              std::string route_service,
+              std::string extra_args);
 
   std::string run_query(const std::string& query) const;
 

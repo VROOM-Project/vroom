@@ -29,8 +29,8 @@ struct Break {
         const std::vector<TimeWindow>& tws =
           std::vector<TimeWindow>(1, TimeWindow()),
         UserDuration service = 0,
-        const std::string& description = "",
-        const std::optional<Amount>& max_load = std::optional<Amount>());
+        std::string description = "",
+        std::optional<Amount> max_load = std::optional<Amount>());
 
   bool is_valid_start(Duration time) const;
 

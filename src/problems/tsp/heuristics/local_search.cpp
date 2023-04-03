@@ -23,7 +23,7 @@ LocalSearch::LocalSearch(const Matrix<UserCost>& matrix,
                          const std::list<Index>& tour,
                          unsigned nb_threads)
   : _matrix(matrix),
-    _avoid_start_relocate(avoid_start_relocate),
+    _avoid_start_relocate(std::move(avoid_start_relocate)),
     _edges(_matrix.size()),
     _nb_threads(std::min(nb_threads, static_cast<unsigned>(tour.size()))),
     _rank_limits(_nb_threads) {
