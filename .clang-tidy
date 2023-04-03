@@ -1,16 +1,10 @@
 ---
 Checks: >
     -clang-analyzer-*,
-    modernize-concat-nested-namespaces,
-    modernize-raw-string-literal,
-    modernize-use-equals-default,
-    modernize-use-auto,
-    modernize-use-emplace,
-    modernize-loop-convert,
-    modernize-pass-by-value,
-    modernize-use-default-member-init,
-    modernize-use-override,
-    modernize-avoid-c-arrays
+    modernize-*,
+    -modernize-return-braced-init-list,
+    -modernize-use-trailing-return-type,
+    -modernize-use-nodiscard
 
 WarningsAsErrors: '*'
 HeaderFilterRegex: '.*'
