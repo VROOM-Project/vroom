@@ -30,21 +30,6 @@ namespace vroom {
 
 Input::Input(io::Servers servers, ROUTER router)
   : _start_loading(std::chrono::high_resolution_clock::now()),
-    _no_addition_yet(true),
-    _has_skills(false),
-    _has_TW(false),
-    _has_all_coordinates(true),
-    _has_initial_routes(false),
-    _homogeneous_locations(true),
-    _homogeneous_profiles(true),
-    _homogeneous_costs(true),
-    _geometry(false),
-    _has_jobs(false),
-    _has_shipments(false),
-    _cost_upper_bound(0),
-    _max_matrices_used_index(0),
-    _all_locations_have_coords(true),
-    _amount_size(0),
     _zero(0),
     _servers(std::move(servers)),
     _router(router) {

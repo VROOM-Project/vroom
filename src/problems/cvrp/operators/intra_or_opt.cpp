@@ -27,13 +27,9 @@ IntraOrOpt::IntraOrOpt(const Input& input,
              s_raw_route,
              s_vehicle,
              t_rank),
-    _gain_upper_bound_computed(false),
     // Required for consistency in compute_gain if check_reverse is
     // false.
     _reversed_t_gain(NO_GAIN),
-    reverse_s_edge(false),
-    is_normal_valid(false),
-    is_reverse_valid(false),
     check_reverse(check_reverse),
     _moved_jobs((s_rank < t_rank) ? t_rank - s_rank + 2 : s_rank - t_rank + 2),
     _first_rank(std::min(s_rank, t_rank)),

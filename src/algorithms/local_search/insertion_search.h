@@ -8,18 +8,13 @@
 namespace vroom::ls {
 
 struct RouteInsertion {
-  Eval eval;
+  Eval eval{NO_EVAL};
   Amount delivery;
-  Index single_rank;
-  Index pickup_rank;
-  Index delivery_rank;
+  Index single_rank{0};
+  Index pickup_rank{0};
+  Index delivery_rank{0};
 
-  RouteInsertion(unsigned amount_size)
-    : eval(NO_EVAL),
-      delivery(Amount(amount_size)),
-      single_rank(0),
-      pickup_rank(0),
-      delivery_rank(0) {
+  RouteInsertion(unsigned amount_size) : delivery(Amount(amount_size)) {
   }
 };
 

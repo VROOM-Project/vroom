@@ -25,7 +25,7 @@ private:
   Index _vehicle_rank;
   // Holds the matching from index in _matrix to rank in input::_jobs.
   std::vector<Index> _job_ranks;
-  bool _is_symmetric;
+  bool _is_symmetric{true};
   bool _has_start;
   Index _start;
   bool _has_end;

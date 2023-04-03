@@ -20,7 +20,7 @@ protected:
   const Index _s_d_rank;
   Index _best_t_p_rank;
   Index _best_t_d_rank;
-  bool _valid;
+  bool _valid{false};
 
   virtual void compute_gain() override;
 

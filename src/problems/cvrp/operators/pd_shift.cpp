@@ -33,8 +33,7 @@ PDShift::PDShift(const Input& input,
              t_vehicle,
              0),
     _s_p_rank(s_p_rank),
-    _s_d_rank(s_d_rank),
-    _valid(false) {
+    _s_d_rank(s_d_rank) {
   assert(s_vehicle != t_vehicle);
   assert(s_route.size() >= 2);
   assert(s_p_rank < s_d_rank);

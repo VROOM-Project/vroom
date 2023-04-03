@@ -16,15 +16,15 @@ namespace vroom::cvrp {
 
 class IntraOrOpt : public ls::Operator {
 private:
-  bool _gain_upper_bound_computed;
+  bool _gain_upper_bound_computed{false};
   Eval _normal_t_gain;
   Eval _reversed_t_gain;
 
 protected:
-  bool reverse_s_edge;
+  bool reverse_s_edge{false};
 
-  bool is_normal_valid;
-  bool is_reverse_valid;
+  bool is_normal_valid{false};
+  bool is_reverse_valid{false};
   const bool check_reverse;
 
   std::vector<Index> _moved_jobs;

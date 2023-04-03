@@ -509,8 +509,6 @@ OrderChoice::OrderChoice(const Input& input,
                          const Break& b,
                          const PreviousInfo& previous)
   : input(input),
-    add_job_first(false),
-    add_break_first(false),
     j_tw(std::find_if(input.jobs[job_rank].tws.begin(),
                       input.jobs[job_rank].tws.end(),
                       [&](const auto& tw) {

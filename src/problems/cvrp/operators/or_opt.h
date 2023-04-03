@@ -16,14 +16,14 @@ namespace vroom::cvrp {
 
 class OrOpt : public ls::Operator {
 private:
-  bool _gain_upper_bound_computed;
+  bool _gain_upper_bound_computed{false};
   Eval _normal_t_gain;
   Eval _reversed_t_gain;
 
 protected:
-  bool reverse_s_edge;
-  bool is_normal_valid;
-  bool is_reverse_valid;
+  bool reverse_s_edge{false};
+  bool is_normal_valid{false};
+  bool is_reverse_valid{false};
   const Amount edge_delivery;
 
   virtual void compute_gain() override;

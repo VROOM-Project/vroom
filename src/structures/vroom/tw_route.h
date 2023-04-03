@@ -47,8 +47,8 @@ struct NextInfo {
 
 struct OrderChoice {
   const Input& input;
-  bool add_job_first;
-  bool add_break_first;
+  bool add_job_first{false};
+  bool add_break_first{false};
   const std::vector<TimeWindow>::const_iterator j_tw;
   const std::vector<TimeWindow>::const_iterator b_tw;
 

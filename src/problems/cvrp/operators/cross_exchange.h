@@ -16,22 +16,22 @@ namespace vroom::cvrp {
 
 class CrossExchange : public ls::Operator {
 private:
-  bool _gain_upper_bound_computed;
+  bool _gain_upper_bound_computed{false};
   Eval _normal_s_gain;
   Eval _reversed_s_gain;
   Eval _normal_t_gain;
   Eval _reversed_t_gain;
 
 protected:
-  bool reverse_s_edge;
-  bool reverse_t_edge;
+  bool reverse_s_edge{false};
+  bool reverse_t_edge{false};
   const bool check_s_reverse;
   const bool check_t_reverse;
 
-  bool s_is_normal_valid;
-  bool s_is_reverse_valid;
-  bool t_is_normal_valid;
-  bool t_is_reverse_valid;
+  bool s_is_normal_valid{false};
+  bool s_is_reverse_valid{false};
+  bool t_is_normal_valid{false};
+  bool t_is_reverse_valid{false};
 
   const Amount source_delivery;
   const Amount target_delivery;

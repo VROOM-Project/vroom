@@ -28,10 +28,6 @@ OrOpt::OrOpt(const Input& input,
              t_route,
              t_vehicle,
              t_rank),
-    _gain_upper_bound_computed(false),
-    reverse_s_edge(false),
-    is_normal_valid(false),
-    is_reverse_valid(false),
     edge_delivery(_input.jobs[this->s_route[s_rank]].delivery +
                   _input.jobs[this->s_route[s_rank + 1]].delivery) {
   assert(s_vehicle != t_vehicle);

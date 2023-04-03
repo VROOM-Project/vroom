@@ -16,22 +16,22 @@ namespace vroom::cvrp {
 
 class IntraCrossExchange : public ls::Operator {
 private:
-  bool _gain_upper_bound_computed;
+  bool _gain_upper_bound_computed{false};
   Eval _normal_s_gain;
   Eval _reversed_s_gain;
   Eval _normal_t_gain;
   Eval _reversed_t_gain;
 
 protected:
-  bool reverse_s_edge;
-  bool reverse_t_edge;
+  bool reverse_s_edge{false};
+  bool reverse_t_edge{false};
   const bool check_s_reverse;
   const bool check_t_reverse;
 
-  bool s_normal_t_normal_is_valid;
-  bool s_normal_t_reverse_is_valid;
-  bool s_reverse_t_reverse_is_valid;
-  bool s_reverse_t_normal_is_valid;
+  bool s_normal_t_normal_is_valid{false};
+  bool s_normal_t_reverse_is_valid{false};
+  bool s_reverse_t_reverse_is_valid{false};
+  bool s_reverse_t_normal_is_valid{false};
 
   std::vector<Index> _moved_jobs;
   const Index _first_rank;

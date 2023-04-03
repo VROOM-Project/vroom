@@ -33,7 +33,7 @@ protected:
   const Index t_vehicle;
   const Index t_rank;
 
-  bool gain_computed;
+  bool gain_computed{false};
   Eval s_gain;
   Eval t_gain;
   Eval stored_gain;
@@ -67,8 +67,7 @@ public:
       target(t_raw_route),
       t_route(t_raw_route.route),
       t_vehicle(t_vehicle),
-      t_rank(t_rank),
-      gain_computed(false) {
+      t_rank(t_rank) {
   }
 
   OperatorName get_name() const;
