@@ -9,7 +9,8 @@ Checks: >
     modernize-loop-convert,
     modernize-pass-by-value,
     modernize-use-default-member-init,
-    modernize-use-override
+    modernize-use-override,
+    modernize-avoid-c-arrays
 
 WarningsAsErrors: '*'
 HeaderFilterRegex: '.*'

@@ -47,7 +47,7 @@ std::string HttpWrapper::send_then_receive(const std::string& query) const {
 
     asio::write(s, asio::buffer(query));
 
-    char buf[512];
+    char buf[512]; // NOLINT
     std::error_code error;
     for (;;) {
       std::size_t len = s.read_some(asio::buffer(buf), error);
@@ -99,7 +99,7 @@ std::string HttpWrapper::ssl_send_then_receive(const std::string& query) const {
 
     asio::write(ssock, asio::buffer(query));
 
-    char buf[512];
+    char buf[512]; // NOLINT
     std::error_code error;
     for (;;) {
       std::size_t len = ssock.read_some(asio::buffer(buf), error);
