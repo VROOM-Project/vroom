@@ -21,7 +21,7 @@ private:
   TWRoute& _tw_t_route;
   Amount _best_t_delivery;
 
-  virtual void compute_gain() override;
+  void compute_gain() override;
 
 public:
   PDShift(const Input& input,
@@ -36,7 +36,7 @@ public:
 
   void log_route(const std::vector<Index>& route) const;
 
-  virtual void apply() override;
+  void apply() override;
 };
 
 } // namespace vroom::vrptw

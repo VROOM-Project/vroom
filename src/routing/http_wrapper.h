@@ -50,8 +50,7 @@ protected:
   virtual void check_response(const rapidjson::Document& json_result,
                               const std::string& service) const = 0;
 
-  virtual Matrix<UserCost>
-  get_matrix(const std::vector<Location>& locs) const override;
+  Matrix<UserCost> get_matrix(const std::vector<Location>& locs) const override;
 
   virtual bool
   duration_value_is_null(const rapidjson::Value& matrix_entry) const = 0;
@@ -68,7 +67,7 @@ protected:
 
   virtual std::string get_geometry(rapidjson::Value& result) const = 0;
 
-  virtual void add_route_info(Route& route) const override;
+  void add_route_info(Route& route) const override;
 };
 
 } // namespace vroom::routing

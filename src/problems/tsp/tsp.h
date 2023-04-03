@@ -44,11 +44,10 @@ public:
   std::vector<Index> raw_solve(unsigned nb_threads,
                                const Timeout& timeout) const;
 
-  virtual Solution
-  solve(unsigned,
-        unsigned nb_threads,
-        const Timeout& timeout,
-        const std::vector<HeuristicParameters>&) const override;
+  Solution solve(unsigned,
+                 unsigned nb_threads,
+                 const Timeout& timeout,
+                 const std::vector<HeuristicParameters>&) const override;
 };
 
 } // namespace vroom

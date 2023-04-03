@@ -21,7 +21,7 @@ protected:
   const Index _last_rank;
   const Amount _delivery;
 
-  virtual void compute_gain() override;
+  void compute_gain() override;
 
 public:
   IntraExchange(const Input& input,
@@ -31,13 +31,13 @@ public:
                 Index s_rank,
                 Index t_rank);
 
-  virtual bool is_valid() override;
+  bool is_valid() override;
 
-  virtual void apply() override;
+  void apply() override;
 
-  virtual std::vector<Index> addition_candidates() const override;
+  std::vector<Index> addition_candidates() const override;
 
-  virtual std::vector<Index> update_candidates() const override;
+  std::vector<Index> update_candidates() const override;
 };
 
 } // namespace vroom::cvrp

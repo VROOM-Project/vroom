@@ -24,7 +24,7 @@ protected:
   const Index _removed;
   Amount _delivery;
 
-  virtual void compute_gain() override;
+  void compute_gain() override;
 
 public:
   UnassignedExchange(const Input& input,
@@ -36,15 +36,15 @@ public:
                      Index t_rank,
                      Index u);
 
-  virtual bool is_valid() override;
+  bool is_valid() override;
 
-  virtual void apply() override;
+  void apply() override;
 
-  virtual std::vector<Index> addition_candidates() const override;
+  std::vector<Index> addition_candidates() const override;
 
-  virtual std::vector<Index> update_candidates() const override;
+  std::vector<Index> update_candidates() const override;
 
-  virtual std::vector<Index> required_unassigned() const override;
+  std::vector<Index> required_unassigned() const override;
 };
 
 } // namespace vroom::cvrp

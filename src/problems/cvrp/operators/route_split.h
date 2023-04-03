@@ -24,7 +24,7 @@ protected:
 
   static std::vector<std::reference_wrapper<RawRoute>> dummy_route_refs;
 
-  virtual void compute_gain() override;
+  void compute_gain() override;
 
 public:
   RouteSplit(const Input& input,
@@ -35,15 +35,15 @@ public:
              std::vector<std::reference_wrapper<RawRoute>> empty_route_refs,
              const Eval& best_known_gain);
 
-  virtual bool is_valid() override;
+  bool is_valid() override;
 
-  virtual void apply() override;
+  void apply() override;
 
-  virtual std::vector<Index> addition_candidates() const override;
+  std::vector<Index> addition_candidates() const override;
 
-  virtual std::vector<Index> update_candidates() const override;
+  std::vector<Index> update_candidates() const override;
 
-  virtual bool invalidated_by(Index rank) const override;
+  bool invalidated_by(Index rank) const override;
 };
 
 } // namespace vroom::cvrp

@@ -31,9 +31,9 @@ public:
                 bool check_s_reverse,
                 bool check_t_reverse);
 
-  virtual bool is_valid() override;
+  bool is_valid() override;
 
-  virtual void apply() override;
+  void apply() override;
 };
 
 } // namespace vroom::vrptw

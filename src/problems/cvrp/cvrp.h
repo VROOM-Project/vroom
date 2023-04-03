@@ -24,7 +24,7 @@ private:
 public:
   CVRP(const Input& input);
 
-  virtual Solution
+  Solution
   solve(unsigned exploration_level,
         unsigned nb_threads,
         const Timeout& timeout,

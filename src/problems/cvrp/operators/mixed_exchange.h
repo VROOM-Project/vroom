@@ -29,7 +29,7 @@ protected:
   const Amount source_delivery;
   const Amount target_delivery;
 
-  virtual void compute_gain() override;
+  void compute_gain() override;
 
 public:
   MixedExchange(const Input& input,
@@ -47,13 +47,13 @@ public:
   // precise gain requires validity information.
   Eval gain_upper_bound();
 
-  virtual bool is_valid() override;
+  bool is_valid() override;
 
-  virtual void apply() override;
+  void apply() override;
 
-  virtual std::vector<Index> addition_candidates() const override;
+  std::vector<Index> addition_candidates() const override;
 
-  virtual std::vector<Index> update_candidates() const override;
+  std::vector<Index> update_candidates() const override;
 };
 
 } // namespace vroom::cvrp

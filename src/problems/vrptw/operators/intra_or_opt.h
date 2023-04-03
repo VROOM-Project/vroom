@@ -27,11 +27,11 @@ public:
              Index t_rank, // rank *after* removal.
              bool check_reverse);
 
-  virtual bool is_valid() override;
+  bool is_valid() override;
 
-  virtual void apply() override;
+  void apply() override;
 
-  virtual std::vector<Index> addition_candidates() const override;
+  std::vector<Index> addition_candidates() const override;
 };
 
 } // namespace vroom::vrptw

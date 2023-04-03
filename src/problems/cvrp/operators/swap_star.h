@@ -20,7 +20,7 @@ protected:
   const Eval _best_known_gain;
   ls::SwapChoice choice;
 
-  virtual void compute_gain() override;
+  void compute_gain() override;
 
 public:
   SwapStar(const Input& input,
@@ -31,13 +31,13 @@ public:
            Index t_vehicle,
            const Eval& best_known_gain);
 
-  virtual bool is_valid() override;
+  bool is_valid() override;
 
-  virtual void apply() override;
+  void apply() override;
 
-  virtual std::vector<Index> addition_candidates() const override;
+  std::vector<Index> addition_candidates() const override;
 
-  virtual std::vector<Index> update_candidates() const override;
+  std::vector<Index> update_candidates() const override;
 };
 
 } // namespace vroom::cvrp

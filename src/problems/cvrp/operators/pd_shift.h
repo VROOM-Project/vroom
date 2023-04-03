@@ -22,7 +22,7 @@ protected:
   Index _best_t_d_rank;
   bool _valid{false};
 
-  virtual void compute_gain() override;
+  void compute_gain() override;
 
 public:
   // The gain_threshold parameter serves as a filter to NOT even test
@@ -38,13 +38,13 @@ public:
           Index t_vehicle,
           const Eval& gain_threshold);
 
-  virtual bool is_valid() override;
+  bool is_valid() override;
 
-  virtual void apply() override;
+  void apply() override;
 
-  virtual std::vector<Index> addition_candidates() const override;
+  std::vector<Index> addition_candidates() const override;
 
-  virtual std::vector<Index> update_candidates() const override;
+  std::vector<Index> update_candidates() const override;
 };
 
 } // namespace vroom::cvrp

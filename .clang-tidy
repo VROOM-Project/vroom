@@ -8,7 +8,8 @@ Checks: >
     modernize-use-emplace,
     modernize-loop-convert,
     modernize-pass-by-value,
-    modernize-use-default-member-init
+    modernize-use-default-member-init,
+    modernize-use-override
 
 WarningsAsErrors: '*'
 HeaderFilterRegex: '.*'

@@ -26,9 +26,9 @@ public:
               Index s_rank,
               Index t_rank);
 
-  virtual bool is_valid() override;
+  bool is_valid() override;
 
-  virtual void apply() override;
+  void apply() override;
 };
 
 } // namespace vroom::vrptw
