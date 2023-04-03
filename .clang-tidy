@@ -5,7 +5,8 @@ Checks: >
     modernize-raw-string-literal,
     modernize-use-equals-default,
     modernize-use-auto,
-    modernize-use-emplace
+    modernize-use-emplace,
+    modernize-loop-convert
 
 WarningsAsErrors: '*'
 HeaderFilterRegex: '.*'

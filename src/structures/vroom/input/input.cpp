@@ -578,9 +578,7 @@ void Input::set_vehicles_compatibility() {
 }
 
 void Input::set_vehicles_costs() {
-  for (std::size_t v = 0; v < vehicles.size(); ++v) {
-    auto& vehicle = vehicles[v];
-
+  for (auto& vehicle : vehicles) {
     auto d_m = _durations_matrices.find(vehicle.profile);
     assert(d_m != _durations_matrices.end());
     vehicle.cost_wrapper.set_durations_matrix(&(d_m->second));
@@ -725,9 +723,7 @@ void Input::set_vehicle_steps_ranks() {
   std::unordered_set<Id> planned_pickup_ids;
   std::unordered_set<Id> planned_delivery_ids;
 
-  for (Index v = 0; v < vehicles.size(); ++v) {
-    auto& current_vehicle = vehicles[v];
-
+  for (auto& current_vehicle : vehicles) {
     for (auto& step : current_vehicle.steps) {
       if (step.type == STEP_TYPE::BREAK) {
         auto search = current_vehicle.break_id_to_rank.find(step.id);
