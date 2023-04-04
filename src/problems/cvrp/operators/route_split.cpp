@@ -11,7 +11,8 @@ All rights reserved (see LICENSE).
 
 namespace vroom::cvrp {
 
-std::vector<std::reference_wrapper<RawRoute>> RouteSplit::dummy_route_refs;
+const std::vector<std::reference_wrapper<RawRoute>>
+  RouteSplit::dummy_route_refs;
 
 RouteSplit::RouteSplit(
   const Input& input,

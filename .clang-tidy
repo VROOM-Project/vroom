@@ -5,7 +5,9 @@ Checks: >
     -modernize-return-braced-init-list,
     -modernize-use-trailing-return-type,
     -modernize-use-nodiscard
-    cppcoreguidelines-avoid-magic-numbers
+    cppcoreguidelines-avoid-magic-numbers,
+    cppcoreguidelines-avoid-non-const-global-variables,
+    cppcoreguidelines-pro-bounds-array-to-pointer-decay
 
 WarningsAsErrors: '*'
 HeaderFilterRegex: '.*'

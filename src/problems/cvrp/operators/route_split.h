@@ -22,7 +22,7 @@ protected:
   const std::vector<std::reference_wrapper<RawRoute>> _empty_route_refs;
   ls::SplitChoice choice;
 
-  static std::vector<std::reference_wrapper<RawRoute>> dummy_route_refs;
+  static const std::vector<std::reference_wrapper<RawRoute>> dummy_route_refs;
 
   void compute_gain() override;
 
