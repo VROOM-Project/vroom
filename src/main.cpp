@@ -135,7 +135,7 @@ int main(int argc, char** argv) {
     vroom::io::update_port(cl_args.servers, port);
   }
   cl_args.exploration_level =
-    std::min(cl_args.exploration_level, cl_args.max_exploration_level);
+    std::min(cl_args.exploration_level, vroom::MAX_EXPLORATION_LEVEL);
 
   // Determine routing engine (defaults to ROUTER::OSRM).
   if (router_arg == "libosrm") {

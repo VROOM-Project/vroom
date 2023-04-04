@@ -33,8 +33,6 @@ struct CLArgs {
   std::string input;                         // cl arg
   unsigned nb_threads;                       // -t
   unsigned exploration_level;                // -x
-
-  static const unsigned max_exploration_level;
 };
 
 void update_host(Servers& servers, const std::string& value);

@@ -49,7 +49,7 @@ protected:
       if (exploration_level >= 4) {
         nb_init_solutions += 4;
       }
-      if (exploration_level >= 5) {
+      if (exploration_level == MAX_EXPLORATION_LEVEL) {
         nb_init_solutions += 4;
       }
     }
