@@ -40,6 +40,7 @@ compute_best_route_split_choice(const Input& input,
   // Create actual empty routes for idle vehicles to use below in
   // validity checks.
   std::vector<Route> empty_routes;
+  empty_routes.reserve(empty_route_ranks.size());
   for (auto v : empty_route_ranks) {
     empty_routes.emplace_back(input, v, input.zero_amount().size());
   }
