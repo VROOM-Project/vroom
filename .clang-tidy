@@ -16,6 +16,8 @@ Checks: >
     - cppcoreguidelines-special-member-functions,
     llvm-*,
     -llvm-header-guard,
+    misc-*,
+    -misc-non-private-member-variables-in-classes,
     modernize-*,
     -modernize-return-braced-init-list,
     -modernize-use-trailing-return-type,
