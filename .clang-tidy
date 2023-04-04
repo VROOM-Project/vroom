@@ -12,7 +12,9 @@ Checks: >
     modernize-*,
     -modernize-return-braced-init-list,
     -modernize-use-trailing-return-type,
-    -modernize-use-nodiscard
+    -modernize-use-nodiscard,
+    performance-*,
+    - performance-move-const-arg
 
 WarningsAsErrors: '*'
 HeaderFilterRegex: '.*'
