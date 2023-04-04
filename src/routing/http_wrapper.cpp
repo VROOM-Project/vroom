@@ -67,11 +67,11 @@ std::string HttpWrapper::send_then_receive(const std::string& query) const {
   }
 
   // Removing headers.
-  auto start = response.find("{");
+  auto start = response.find('{');
   if (start == std::string::npos) {
     throw RoutingException("Invalid routing response: " + response);
   }
-  auto end = response.rfind("}");
+  auto end = response.rfind('}');
   if (end == std::string::npos) {
     throw RoutingException("Invalid routing response: " + response);
   }
@@ -119,11 +119,11 @@ std::string HttpWrapper::ssl_send_then_receive(const std::string& query) const {
   }
 
   // Removing headers.
-  auto start = response.find("{");
+  auto start = response.find('{');
   if (start == std::string::npos) {
     throw RoutingException("Invalid routing response: " + response);
   }
-  auto end = response.rfind("}");
+  auto end = response.rfind('}');
   if (end == std::string::npos) {
     throw RoutingException("Invalid routing response: " + response);
   }
