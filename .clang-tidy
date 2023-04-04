@@ -5,6 +5,7 @@ Checks: >
     -modernize-return-braced-init-list,
     -modernize-use-trailing-return-type,
     -modernize-use-nodiscard
+    cppcoreguidelines-avoid-magic-numbers
 
 WarningsAsErrors: '*'
 HeaderFilterRegex: '.*'

@@ -36,7 +36,8 @@ protected:
   }
 
   static UserCost round_cost(double value) {
-    return static_cast<UserCost>(value + 0.5);
+    constexpr double round_increment = 0.5;
+    return static_cast<UserCost>(value + round_increment);
   }
 
   inline void

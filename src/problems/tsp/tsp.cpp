@@ -171,6 +171,7 @@ std::vector<Index> TSP::raw_solve(unsigned nb_threads,
     // Rule of thumb if problem is asymmetric: dedicate 70% of the
     // remaining available solving time to the symmetric local search,
     // then the rest to the asymmetric version.
+    constexpr double sym_ls_ratio = 0.7;
     const auto after_heuristic = utils::now();
     const auto remaining_ms =
       (after_heuristic < deadline.value())
@@ -179,8 +180,8 @@ std::vector<Index> TSP::raw_solve(unsigned nb_threads,
             .count()
         : 0;
     sym_deadline =
-      after_heuristic +
-      std::chrono::milliseconds(static_cast<unsigned>(0.7 * remaining_ms));
+      after_heuristic + std::chrono::milliseconds(
+                          static_cast<unsigned>(sym_ls_ratio * remaining_ms));
   }
 
   // Local search on symmetric problem.

@@ -1152,9 +1152,10 @@ void LocalSearch<Route,
     }
 
     // IntraCrossExchange stuff
+    constexpr unsigned min_intra_cross_exchange_size = 5;
     for (const auto& s_t : s_t_pairs) {
       if (s_t.first != s_t.second or best_priorities[s_t.first] > 0 or
-          _sol[s_t.first].size() < 5) {
+          _sol[s_t.first].size() < min_intra_cross_exchange_size) {
         continue;
       }
 
@@ -1898,7 +1899,8 @@ void LocalSearch<Route,
       }
 
       // Refill jobs.
-      try_job_additions(_all_routes, 1.5);
+      constexpr double refill_regret = 1.5;
+      try_job_additions(_all_routes, refill_regret);
 
       // Update everything except what has already been updated in
       // try_job_additions.

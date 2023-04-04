@@ -13,6 +13,10 @@ All rights reserved (see LICENSE).
 
 namespace vroom::routing {
 
+constexpr unsigned km_to_m = 1000;
+constexpr unsigned polyline_precision = 5;
+constexpr unsigned valhalla_polyline_precision = 6;
+
 ValhallaWrapper::ValhallaWrapper(const std::string& profile,
                                  const Server& server)
   : HttpWrapper(profile,
@@ -88,9 +92,10 @@ void ValhallaWrapper::check_response(const rapidjson::Document& json_result,
                                      const std::string& service) const {
   assert(service == _matrix_service or service == _route_service);
 
+  constexpr unsigned HTTP_OK = 200;
   if (json_result.HasMember("status_code") and
       json_result["status_code"].IsUint() and
-      json_result["status_code"].GetUint() != 200) {
+      json_result["status_code"].GetUint() != HTTP_OK) {
     // Valhalla responses seem to only have a status_code key when a
     // problem is encountered. In that case it's not really clear what
     // keys can be expected so we're playing guesses. This happens
@@ -130,7 +135,7 @@ UserDuration ValhallaWrapper::get_duration_value(
 
 double
 ValhallaWrapper::get_total_distance(const rapidjson::Value& result) const {
-  return 1000 * result["trip"]["summary"]["length"].GetDouble();
+  return km_to_m * result["trip"]["summary"]["length"].GetDouble();
 }
 
 unsigned
@@ -140,7 +145,7 @@ ValhallaWrapper::get_legs_number(const rapidjson::Value& result) const {
 
 double ValhallaWrapper::get_distance_for_leg(const rapidjson::Value& result,
                                              rapidjson::SizeType i) const {
-  return 1000 * result["trip"]["legs"][i]["summary"]["length"].GetDouble();
+  return km_to_m * result["trip"]["legs"][i]["summary"]["length"].GetDouble();
 }
 
 std::string ValhallaWrapper::get_geometry(rapidjson::Value& result) const {
@@ -153,12 +158,14 @@ std::string ValhallaWrapper::get_geometry(rapidjson::Value& result) const {
   // values, then we have to force allowing u-turns in order to get
   // consistent time/distance values between matrix and route request.
 
-  auto full_polyline = gepaf::PolylineEncoder<6>::decode(
-    result["trip"]["legs"][0]["shape"].GetString());
+  auto full_polyline =
+    gepaf::PolylineEncoder<valhalla_polyline_precision>::decode(
+      result["trip"]["legs"][0]["shape"].GetString());
 
   for (rapidjson::SizeType i = 1; i < result["trip"]["legs"].Size(); ++i) {
-    auto decoded_pts = gepaf::PolylineEncoder<6>::decode(
-      result["trip"]["legs"][i]["shape"].GetString());
+    auto decoded_pts =
+      gepaf::PolylineEncoder<valhalla_polyline_precision>::decode(
+        result["trip"]["legs"][i]["shape"].GetString());
 
     if (!full_polyline.empty()) {
       full_polyline.pop_back();
@@ -168,7 +175,7 @@ std::string ValhallaWrapper::get_geometry(rapidjson::Value& result) const {
                          std::make_move_iterator(decoded_pts.end()));
   }
 
-  gepaf::PolylineEncoder<5> encoder;
+  gepaf::PolylineEncoder<polyline_precision> encoder;
   for (const auto& p : full_polyline) {
     encoder.addPoint(p.latitude(), p.longitude());
   }
