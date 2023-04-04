@@ -55,27 +55,30 @@ inline UserCost add_without_overflow(UserCost a, UserCost b) {
 inline INIT get_init(const std::string& s) {
   if (s == "NONE") {
     return INIT::NONE;
-  } else if (s == "HIGHER_AMOUNT") {
-    return INIT::HIGHER_AMOUNT;
-  } else if (s == "NEAREST") {
-    return INIT::NEAREST;
-  } else if (s == "FURTHEST") {
-    return INIT::FURTHEST;
-  } else if (s == "EARLIEST_DEADLINE") {
-    return INIT::EARLIEST_DEADLINE;
-  } else {
-    throw InputException("Invalid heuristic parameter in command-line.");
   }
+  if (s == "HIGHER_AMOUNT") {
+    return INIT::HIGHER_AMOUNT;
+  }
+  if (s == "NEAREST") {
+    return INIT::NEAREST;
+  }
+  if (s == "FURTHEST") {
+    return INIT::FURTHEST;
+  }
+  if (s == "EARLIEST_DEADLINE") {
+    return INIT::EARLIEST_DEADLINE;
+  }
+  throw InputException("Invalid heuristic parameter in command-line.");
 }
 
 inline SORT get_sort(const std::string& s) {
   if (s == "CAPACITY") {
     return SORT::CAPACITY;
-  } else if (s == "COST") {
-    return SORT::COST;
-  } else {
-    throw InputException("Invalid heuristic parameter in command-line.");
   }
+  if (s == "COST") {
+    return SORT::COST;
+  }
+  throw InputException("Invalid heuristic parameter in command-line.");
 }
 
 #ifdef LOG_LS_OPERATORS

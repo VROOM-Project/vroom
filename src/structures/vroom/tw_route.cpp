@@ -619,15 +619,14 @@ OrderChoice TWRoute::order_choice(const Input& input,
     // option is to choose job first.
     oc.add_job_first = true;
     return oc;
-  } else {
-    break_then_job_end =
-      std::max(earliest_job_start, new_j_tw->start) + job_action_time;
+  }
+  break_then_job_end =
+    std::max(earliest_job_start, new_j_tw->start) + job_action_time;
 
-    if (break_then_job_end + next.travel > next.latest) {
-      // Arrival at the job is valid but next step is not.
-      oc.add_job_first = true;
-      return oc;
-    }
+  if (break_then_job_end + next.travel > next.latest) {
+    // Arrival at the job is valid but next step is not.
+    oc.add_job_first = true;
+    return oc;
   }
 
   // Now both ordering options are doable based on timing constraints.

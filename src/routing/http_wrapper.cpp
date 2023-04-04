@@ -55,10 +55,9 @@ std::string HttpWrapper::send_then_receive(const std::string& query) const {
       if (error == asio::error::eof) {
         // Connection closed cleanly.
         break;
-      } else {
-        if (error) {
-          throw std::system_error(error);
-        }
+      }
+      if (error) {
+        throw std::system_error(error);
       }
     }
   } catch (std::system_error& e) {
@@ -107,10 +106,9 @@ std::string HttpWrapper::ssl_send_then_receive(const std::string& query) const {
       if (error == asio::error::eof) {
         // Connection closed cleanly.
         break;
-      } else {
-        if (error) {
-          throw std::system_error(error);
-        }
+      }
+      if (error) {
+        throw std::system_error(error);
       }
     }
   } catch (std::system_error& e) {

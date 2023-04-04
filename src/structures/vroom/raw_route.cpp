@@ -267,9 +267,8 @@ Amount RawRoute::pickup_in_range(Index i, Index j) const {
   }
   if (i == 0) {
     return _fwd_pickups[j - 1];
-  } else {
-    return _fwd_pickups[j - 1] - _fwd_pickups[i - 1];
   }
+  return _fwd_pickups[j - 1] - _fwd_pickups[i - 1];
 }
 
 Amount RawRoute::delivery_in_range(Index i, Index j) const {

@@ -189,13 +189,12 @@ compute_best_route_split_choice(const Input& input,
           // No split possible as there is only one valid vehicle for
           // begin and end route.
           continue;
-        } else {
-          current_split_choice = {init_eval - first_best_begin_eval -
-                                    second_best_end_eval,
-                                  r,
-                                  first_v_begin,
-                                  second_v_end};
         }
+        current_split_choice = {init_eval - first_best_begin_eval -
+                                  second_best_end_eval,
+                                r,
+                                first_v_begin,
+                                second_v_end};
       } else {
         if (second_best_end_eval == NO_EVAL) {
           current_split_choice = {init_eval - second_best_begin_eval -

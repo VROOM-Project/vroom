@@ -441,13 +441,11 @@ inline Location get_task_location(const rapidjson::Value& v,
     Index location_index = v["location_index"].GetUint();
     if (has_location_coords) {
       return Location({location_index, parse_coordinates(v, "location")});
-    } else {
-      return Location(location_index);
     }
-  } else {
-    check_location(v, type);
-    return parse_coordinates(v, "location");
+    return Location(location_index);
   }
+  check_location(v, type);
+  return parse_coordinates(v, "location");
 }
 
 inline Job get_job(const rapidjson::Value& json_job, unsigned amount_size) {

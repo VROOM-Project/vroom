@@ -922,9 +922,9 @@ void Input::set_matrices(unsigned nb_thread) {
 std::unique_ptr<VRP> Input::get_problem() const {
   if (_has_TW) {
     return std::make_unique<VRPTW>(*this);
-  } else {
-    return std::make_unique<CVRP>(*this);
   }
+
+  return std::make_unique<CVRP>(*this);
 }
 
 Solution Input::solve(unsigned exploration_level,

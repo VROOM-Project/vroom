@@ -61,10 +61,9 @@ template <> struct hash<vroom::Location> {
       return ((hash<vroom::Coordinate>()(l.lon()) ^
                (hash<vroom::Coordinate>()(l.lat()) << 1)) >>
               1);
-    } else {
-      assert(l.user_index());
-      return hash<vroom::Index>()(l.index());
     }
+    assert(l.user_index());
+    return hash<vroom::Index>()(l.index());
   }
 };
 } // namespace std
