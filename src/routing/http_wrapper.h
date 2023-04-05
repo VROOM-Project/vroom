@@ -40,8 +40,8 @@ protected:
 
   std::string run_query(const std::string& query) const;
 
-  void parse_response(rapidjson::Document& json_result,
-                      const std::string& json_content) const;
+  static void parse_response(rapidjson::Document& json_result,
+                             const std::string& json_content);
 
   virtual std::string build_query(const std::vector<Location>& locations,
                                   const std::string& service,

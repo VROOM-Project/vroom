@@ -40,10 +40,10 @@ protected:
     return static_cast<UserCost>(value + round_increment);
   }
 
-  inline void
+  static inline void
   check_unfound(const std::vector<Location>& locs,
                 const std::vector<unsigned>& nb_unfound_from_loc,
-                const std::vector<unsigned>& nb_unfound_to_loc) const {
+                const std::vector<unsigned>& nb_unfound_to_loc) {
     assert(nb_unfound_from_loc.size() == nb_unfound_to_loc.size());
     unsigned max_unfound_routes_for_a_loc = 0;
     unsigned error_loc = 0; // Initial value never actually used.

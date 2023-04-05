@@ -136,7 +136,7 @@ std::string HttpWrapper::run_query(const std::string& query) const {
 }
 
 void HttpWrapper::parse_response(rapidjson::Document& json_result,
-                                 const std::string& json_content) const {
+                                 const std::string& json_content) {
 #ifdef NDEBUG
   json_result.Parse(json_content.c_str());
 #else
