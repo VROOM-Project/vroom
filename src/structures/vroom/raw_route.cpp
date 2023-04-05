@@ -180,7 +180,7 @@ bool RawRoute::is_valid_addition_for_load(const Input&,
                                           const Index rank) const {
   assert(rank <= route.size());
 
-  auto& load = route.empty() ? _zero : _current_loads[rank];
+  const auto& load = route.empty() ? _zero : _current_loads[rank];
   return load + pickup <= capacity;
 }
 
@@ -193,10 +193,10 @@ bool RawRoute::is_valid_addition_for_capacity_margins(
   assert(1 <= last_rank);
   assert(last_rank <= route.size() + 1);
 
-  auto& first_deliveries =
+  const auto& first_deliveries =
     (first_rank == 0) ? _current_loads[0] : _bwd_deliveries[first_rank - 1];
 
-  auto& first_pickups =
+  const auto& first_pickups =
     (first_rank == 0) ? _zero : _fwd_pickups[first_rank - 1];
 
   auto replaced_deliveries = first_deliveries - _bwd_deliveries[last_rank - 1];
@@ -218,12 +218,12 @@ bool RawRoute::is_valid_addition_for_capacity_inclusion(
   assert(first_rank <= last_rank);
   assert(last_rank <= route.size() + 1);
 
-  auto& init_load = (route.empty()) ? _zero : _current_loads[0];
+  const auto& init_load = (route.empty()) ? _zero : _current_loads[0];
 
-  auto& first_deliveries =
+  const auto& first_deliveries =
     (first_rank == 0) ? init_load : _bwd_deliveries[first_rank - 1];
 
-  auto& last_deliveries =
+  const auto& last_deliveries =
     (last_rank == 0) ? init_load : _bwd_deliveries[last_rank - 1];
 
   auto replaced_deliveries = first_deliveries - last_deliveries;
@@ -276,7 +276,7 @@ Amount RawRoute::delivery_in_range(Index i, Index j) const {
   if (i == j or route.empty()) {
     return _zero;
   }
-  auto& before_deliveries =
+  const auto& before_deliveries =
     (i == 0) ? _current_loads[0] : _bwd_deliveries[i - 1];
   return before_deliveries - _bwd_deliveries[j - 1];
 }

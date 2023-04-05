@@ -70,7 +70,7 @@ protected:
     auto run_heuristics = [&](const std::vector<std::size_t>& param_ranks) {
       try {
         for (auto rank : param_ranks) {
-          auto& p = parameters[rank];
+          const auto& p = parameters[rank];
 
           switch (p.heuristic) {
           case HEURISTIC::INIT_ROUTES:

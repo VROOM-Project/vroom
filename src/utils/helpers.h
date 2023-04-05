@@ -494,7 +494,7 @@ inline Solution format_solution(const Input& input,
       ETA += next_leg.duration;
       eval_sum += next_leg;
 
-      auto& current_job = input.jobs[route[r + 1]];
+      const auto& current_job = input.jobs[route[r + 1]];
 
       const auto current_setup =
         (current_job.index() == previous_location) ? 0 : current_job.setup;
@@ -821,9 +821,8 @@ inline Route format_route(const Input& input,
       user_previous_end = current_break.arrival + current_break.waiting_time +
                           current_break.service;
 
-      auto& current_service = b.service;
-      service += current_service;
-      step_start += current_service;
+      service += b.service;
+      step_start += b.service;
     }
 
     // Back to current job.
@@ -970,9 +969,8 @@ inline Route format_route(const Input& input,
     user_previous_end = current_break.arrival + current_break.waiting_time +
                         current_break.service;
 
-    auto& current_service = b.service;
-    service += current_service;
-    step_start += current_service;
+    service += b.service;
+    step_start += b.service;
   }
 
   steps.emplace_back(STEP_TYPE::END, last_location.value(), current_load);
