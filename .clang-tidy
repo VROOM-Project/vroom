@@ -29,7 +29,15 @@ Checks: >
     -modernize-use-trailing-return-type,
     -modernize-use-nodiscard,
     performance-*,
-    - performance-move-const-arg
+    - performance-move-const-arg,
+    readability-*,
+    -readability-function-size,
+    -readability-identifier-length,
+    -readability-function-cognitive-complexity,
+    -readability-named-parameter,
+    -readability-convert-member-functions-to-static,
+    -readability-implicit-bool-conversion,
+    -readability-avoid-const-params-in-decls
 
 WarningsAsErrors: '*'
 HeaderFilterRegex: '.*'
