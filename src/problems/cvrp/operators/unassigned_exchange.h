@@ -30,7 +30,7 @@ public:
   UnassignedExchange(const Input& input,
                      const utils::SolutionState& sol_state,
                      std::unordered_set<Index>& unassigned,
-                     RawRoute& s_route,
+                     RawRoute& s_raw_route,
                      Index s_vehicle,
                      Index s_rank,
                      Index t_rank,

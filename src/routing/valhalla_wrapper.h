@@ -25,7 +25,7 @@ private:
                           const std::string& service,
                           const std::string& extra_args) const override;
 
-  void check_response(const rapidjson::Document& input,
+  void check_response(const rapidjson::Document& json_result,
                       const std::string& service) const override;
 
   bool

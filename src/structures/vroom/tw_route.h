@@ -130,7 +130,7 @@ public:
   std::vector<Amount> fwd_smallest_breaks_load_margin;
   std::vector<Amount> bwd_smallest_breaks_load_margin;
 
-  TWRoute(const Input& input, Index i, unsigned amount_size);
+  TWRoute(const Input& input, Index v, unsigned amount_size);
 
   bool empty() const {
     return route.empty();

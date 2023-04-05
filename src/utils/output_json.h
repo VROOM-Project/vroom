@@ -21,7 +21,7 @@ rapidjson::Value to_json(const Summary& summary,
                          bool geometry,
                          rapidjson::Document::AllocatorType& allocator);
 
-rapidjson::Value to_json(const ComputingTimes& computing_times,
+rapidjson::Value to_json(const ComputingTimes& ct,
                          bool geometry,
                          rapidjson::Document::AllocatorType& allocator);
 

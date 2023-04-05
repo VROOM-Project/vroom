@@ -26,7 +26,7 @@ protected:
 public:
   IntraRelocate(const Input& input,
                 const utils::SolutionState& sol_state,
-                RawRoute& s_route,
+                RawRoute& s_raw_route,
                 Index s_vehicle,
                 Index s_rank,
                 Index t_rank); // relocate rank *after* removal.
