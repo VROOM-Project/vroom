@@ -59,3 +59,19 @@ automate code formatting is to use a commit hook. Create the file
 ```
 
 then make sure it's executable: `chmod +x .git/hooks/pre-commit`.
+
+### Using clang-tidy
+
+Running `make tidy` from the `src` folder will run all checks from
+`.clang-tidy`, applying automatic fixes if available.
+
+Unfortunately, the script will also mess with third-party code we have
+in the `include` folder: the changes there should not be added for
+commit.
+
+A basic way to filter out errors from third-party code is:
+
+```
+make tidy | tee tidy.log
+grep "warnings-as-errors" tidy.log | grep -v include
+```
