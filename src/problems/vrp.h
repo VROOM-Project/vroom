@@ -113,7 +113,8 @@ protected:
               break;
             }
 
-            Eval eval, other_eval;
+            Eval eval;
+            Eval other_eval;
             for (Index v = 0; v < _input.vehicles.size(); ++v) {
               eval += utils::route_eval_for_vehicle(_input,
                                                     v,
