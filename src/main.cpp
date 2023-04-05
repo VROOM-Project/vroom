@@ -108,12 +108,12 @@ int main(int argc, char** argv) {
                                      "' failed to parse");
     }
 
-    if (parsed_args.count("help")) {
+    if (parsed_args.count("help") != 0) {
       std::cout << options.help({"Solving"}) << "\n";
       exit(0);
     }
 
-    if (parsed_args.count("version")) {
+    if (parsed_args.count("version") != 0) {
       std::cout << "vroom " << vroom::get_version() << "\n";
       exit(0);
     }
