@@ -13,12 +13,6 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
-ForcedService::ForcedService()
-  : at(std::optional<Duration>()),
-    after(std::optional<Duration>()),
-    before(std::optional<Duration>()) {
-}
-
 ForcedService::ForcedService(const std::optional<UserDuration>& at,
                              const std::optional<UserDuration>& after,
                              const std::optional<UserDuration>& before) {
