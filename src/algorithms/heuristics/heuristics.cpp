@@ -362,7 +362,7 @@ T basic(const Input& input, INIT init, double lambda, SORT sort) {
                 }
               }
 
-              if (!(bool)valid_delivery_insertions[delivery_r]) {
+              if (!static_cast<bool>(valid_delivery_insertions[delivery_r])) {
                 continue;
               }
 
@@ -793,7 +793,7 @@ T dynamic_vehicle_choice(const Input& input,
                 }
               }
 
-              if (!(bool)valid_delivery_insertions[delivery_r]) {
+              if (!static_cast<bool>(valid_delivery_insertions[delivery_r])) {
                 continue;
               }
 

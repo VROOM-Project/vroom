@@ -153,7 +153,7 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
         }
       }
 
-      if (!(bool)valid_delivery_insertions[delivery_r]) {
+      if (!static_cast<bool>(valid_delivery_insertions[delivery_r])) {
         continue;
       }
 
