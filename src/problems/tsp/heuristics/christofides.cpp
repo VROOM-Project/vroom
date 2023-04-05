@@ -120,7 +120,7 @@ std::list<Index> christofides(const Matrix<UserCost>& sym_matrix) {
     // adjacent edge (if any).
     for (auto vertex = eulerian_path.begin(); vertex != eulerian_path.end();
          ++vertex) {
-      if (eulerian_adjacency_list[*vertex].size() > 0) {
+      if (!eulerian_adjacency_list[*vertex].empty()) {
         new_tour_start = vertex;
         complete_tour = false;
         break;

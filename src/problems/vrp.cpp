@@ -13,7 +13,7 @@ All rights reserved (see LICENSE).
 namespace vroom {
 
 VRP::VRP(const Input& input) : _input(input) {
-  assert(_input.vehicles.size() > 0);
+  assert(!_input.vehicles.empty());
 }
 
 VRP::~VRP() = default;

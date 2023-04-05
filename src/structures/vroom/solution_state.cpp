@@ -123,7 +123,7 @@ void SolutionState::set_node_gains(const std::vector<Index>& route, Index v) {
   node_gains[v] = std::vector<Eval>(route.size());
   edge_evals_around_node[v] = std::vector<Eval>(route.size());
 
-  if (route.size() == 0) {
+  if (route.empty()) {
     return;
   }
 

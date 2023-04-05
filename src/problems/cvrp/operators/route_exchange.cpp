@@ -38,7 +38,7 @@ void RouteExchange::compute_gain() {
   const auto& s_v = _input.vehicles[s_vehicle];
   const auto& t_v = _input.vehicles[t_vehicle];
 
-  if (s_route.size() > 0) {
+  if (!s_route.empty()) {
     // Handle changes at route start.
     auto first_s_index = _input.jobs[s_route.front()].index();
     if (s_v.has_start()) {
@@ -65,7 +65,7 @@ void RouteExchange::compute_gain() {
     t_gain.cost += t_v.fixed_cost();
   }
 
-  if (t_route.size() > 0) {
+  if (!t_route.empty()) {
     // Handle changes at route start.
     auto first_t_index = _input.jobs[t_route.front()].index();
     if (t_v.has_start()) {

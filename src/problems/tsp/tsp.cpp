@@ -20,7 +20,7 @@ UserCost compute_cost(const std::list<Index>& tour,
   Index init_step = 0; // Initialization actually never used.
 
   auto step = tour.cbegin();
-  if (tour.size() > 0) {
+  if (!tour.empty()) {
     init_step = *step;
   }
 
@@ -30,7 +30,7 @@ UserCost compute_cost(const std::list<Index>& tour,
     cost += matrix[previous_step][*step];
     previous_step = *step;
   }
-  if (tour.size() > 0) {
+  if (!tour.empty()) {
     cost += matrix[previous_step][init_step];
   }
   return cost;

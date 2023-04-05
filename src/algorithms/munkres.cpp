@@ -197,7 +197,7 @@ greedy_symmetric_approx_mwpm(const Matrix<T>& m) {
     remaining_indices.insert(i);
   }
 
-  while (remaining_indices.size() > 0) {
+  while (!remaining_indices.empty()) {
     T min_weight = std::numeric_limits<T>::max();
     std::set<Index>::iterator chosen_i;
     std::set<Index>::iterator chosen_j;

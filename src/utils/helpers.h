@@ -185,8 +185,7 @@ inline Eval addition_cost(const Input& input,
   Eval old_edge_eval;
 
   if (rank == route.size()) {
-    if (route.size() == 0) {
-      // Adding job to an empty route.
+    if (route.empty()) {
       if (v.has_start()) {
         previous_eval = v.eval(v.start.value().index(), job_index);
       }
@@ -385,7 +384,7 @@ inline void check_precedence(const Input& input,
 inline void check_tws(const std::vector<TimeWindow>& tws,
                       const Id id,
                       const std::string& type) {
-  if (tws.size() == 0) {
+  if (tws.empty()) {
     throw InputException("Empty time-windows for " + type + " " +
                          std::to_string(id) + ".");
   }

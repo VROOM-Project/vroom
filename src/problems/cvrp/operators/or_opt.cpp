@@ -60,8 +60,7 @@ Eval OrOpt::gain_upper_bound() {
   Eval old_edge_cost;
 
   if (t_rank == t_route.size()) {
-    if (t_route.size() == 0) {
-      // Adding edge to an empty route.
+    if (t_route.empty()) {
       if (t_v.has_start()) {
         previous_cost = t_v.eval(t_v.start.value().index(), s_index);
         reverse_previous_cost =
