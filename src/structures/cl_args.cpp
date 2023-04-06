@@ -11,10 +11,7 @@ All rights reserved (see LICENSE).
 
 #include "structures/cl_args.h"
 
-namespace vroom {
-namespace io {
-
-const unsigned CLArgs::max_exploration_level = 5;
+namespace vroom::io {
 
 void update_host(Servers& servers, const std::string& value) {
   // Determine profile and host from a "car:0.0.0.0"-like value.
@@ -62,5 +59,4 @@ void update_port(Servers& servers, const std::string& value) {
   }
 }
 
-} // namespace io
-} // namespace vroom
+} // namespace vroom::io

@@ -13,12 +13,10 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/input/input.h"
 #include "structures/vroom/input/vehicle_step.h"
 
-namespace vroom {
-namespace io {
+namespace vroom::io {
 
 void parse(Input& input, const std::string& input_str, bool geometry);
 
-} // namespace io
-} // namespace vroom
+} // namespace vroom::io
 
 #endif

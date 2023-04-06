@@ -14,23 +14,22 @@ All rights reserved (see LICENSE).
 
 using asio::ip::tcp;
 
-namespace vroom {
-namespace routing {
+namespace vroom::routing {
 
 const std::string HttpWrapper::HTTPS_PORT = "443";
 
 HttpWrapper::HttpWrapper(const std::string& profile,
-                         const Server& server,
-                         const std::string& matrix_service,
-                         const std::string& matrix_durations_key,
-                         const std::string& route_service,
-                         const std::string& extra_args)
+                         Server server,
+                         std::string matrix_service,
+                         std::string matrix_durations_key,
+                         std::string route_service,
+                         std::string extra_args)
   : Wrapper(profile),
-    _server(server),
-    _matrix_service(matrix_service),
-    _matrix_durations_key(matrix_durations_key),
-    _route_service(route_service),
-    _extra_args(extra_args) {
+    _server(std::move(server)),
+    _matrix_service(std::move(matrix_service)),
+    _matrix_durations_key(std::move(matrix_durations_key)),
+    _route_service(std::move(route_service)),
+    _extra_args(std::move(extra_args)) {
 }
 
 std::string HttpWrapper::send_then_receive(const std::string& query) const {
@@ -48,18 +47,17 @@ std::string HttpWrapper::send_then_receive(const std::string& query) const {
 
     asio::write(s, asio::buffer(query));
 
-    char buf[512];
+    char buf[512]; // NOLINT
     std::error_code error;
     for (;;) {
       std::size_t len = s.read_some(asio::buffer(buf), error);
-      response.append(buf, len);
+      response.append(buf, len); // NOLINT
       if (error == asio::error::eof) {
         // Connection closed cleanly.
         break;
-      } else {
-        if (error) {
-          throw std::system_error(error);
-        }
+      }
+      if (error) {
+        throw std::system_error(error);
       }
     }
   } catch (std::system_error& e) {
@@ -68,11 +66,11 @@ std::string HttpWrapper::send_then_receive(const std::string& query) const {
   }
 
   // Removing headers.
-  auto start = response.find("{");
+  auto start = response.find('{');
   if (start == std::string::npos) {
     throw RoutingException("Invalid routing response: " + response);
   }
-  auto end = response.rfind("}");
+  auto end = response.rfind('}');
   if (end == std::string::npos) {
     throw RoutingException("Invalid routing response: " + response);
   }
@@ -100,18 +98,17 @@ std::string HttpWrapper::ssl_send_then_receive(const std::string& query) const {
 
     asio::write(ssock, asio::buffer(query));
 
-    char buf[512];
+    char buf[512]; // NOLINT
     std::error_code error;
     for (;;) {
       std::size_t len = ssock.read_some(asio::buffer(buf), error);
-      response.append(buf, len);
+      response.append(buf, len); // NOLINT
       if (error == asio::error::eof) {
         // Connection closed cleanly.
         break;
-      } else {
-        if (error) {
-          throw std::system_error(error);
-        }
+      }
+      if (error) {
+        throw std::system_error(error);
       }
     }
   } catch (std::system_error& e) {
@@ -120,11 +117,11 @@ std::string HttpWrapper::ssl_send_then_receive(const std::string& query) const {
   }
 
   // Removing headers.
-  auto start = response.find("{");
+  auto start = response.find('{');
   if (start == std::string::npos) {
     throw RoutingException("Invalid routing response: " + response);
   }
-  auto end = response.rfind("}");
+  auto end = response.rfind('}');
   if (end == std::string::npos) {
     throw RoutingException("Invalid routing response: " + response);
   }
@@ -139,7 +136,7 @@ std::string HttpWrapper::run_query(const std::string& query) const {
 }
 
 void HttpWrapper::parse_response(rapidjson::Document& json_result,
-                                 const std::string& json_content) const {
+                                 const std::string& json_content) {
 #ifdef NDEBUG
   json_result.Parse(json_content.c_str());
 #else
@@ -263,5 +260,4 @@ void HttpWrapper::add_route_info(Route& route) const {
   }
 }
 
-} // namespace routing
-} // namespace vroom
+} // namespace vroom::routing

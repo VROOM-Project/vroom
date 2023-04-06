@@ -13,8 +13,7 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/solution_indicators.h"
 #include "structures/vroom/solution_state.h"
 
-namespace vroom {
-namespace ls {
+namespace vroom::ls {
 
 template <class Route,
           class UnassignedExchange,
@@ -89,7 +88,6 @@ public:
 #endif
 };
 
-} // namespace ls
-} // namespace vroom
+} // namespace vroom::ls
 
 #endif

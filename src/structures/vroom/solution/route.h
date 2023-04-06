@@ -45,10 +45,10 @@ struct Route {
         UserDuration service,
         UserDuration waiting_time,
         Priority priority,
-        const Amount& delivery,
-        const Amount& pickup,
-        const std::string& profile,
-        const std::string& description,
+        Amount delivery,
+        Amount pickup,
+        std::string profile,
+        std::string description,
         const Violations&& violations = Violations(0, 0));
 
   void check_timing_consistency() const;

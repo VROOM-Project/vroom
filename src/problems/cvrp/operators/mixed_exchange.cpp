@@ -9,8 +9,7 @@ All rights reserved (see LICENSE).
 
 #include "problems/cvrp/operators/mixed_exchange.h"
 
-namespace vroom {
-namespace cvrp {
+namespace vroom::cvrp {
 
 MixedExchange::MixedExchange(const Input& input,
                              const utils::SolutionState& sol_state,
@@ -30,14 +29,10 @@ MixedExchange::MixedExchange(const Input& input,
              t_route,
              t_vehicle,
              t_rank),
-    _gain_upper_bound_computed(false),
     // Required for consistency in compute_gain if check_t_reverse is
     // false.
     _reversed_s_gain(NO_GAIN),
-    reverse_t_edge(false),
     check_t_reverse(check_t_reverse),
-    s_is_normal_valid(false),
-    s_is_reverse_valid(false),
     source_delivery(_input.jobs[this->s_route[s_rank]].delivery),
     target_delivery(_input.jobs[this->t_route[t_rank]].delivery +
                     _input.jobs[this->t_route[t_rank + 1]].delivery) {
@@ -260,5 +255,4 @@ std::vector<Index> MixedExchange::update_candidates() const {
   return {s_vehicle, t_vehicle};
 }
 
-} // namespace cvrp
-} // namespace vroom
+} // namespace vroom::cvrp

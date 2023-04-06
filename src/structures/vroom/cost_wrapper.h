@@ -27,7 +27,7 @@ private:
 
   const double _speed_factor;
   Cost _per_hour;
-  bool _cost_based_on_duration;
+  bool _cost_based_on_duration{true};
 
 public:
   CostWrapper(double speed_factor, Cost per_hour);

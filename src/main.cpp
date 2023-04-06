@@ -42,8 +42,9 @@ int main(int argc, char** argv) {
                              "routing problems.\n");
 
   // clang-format off
+  constexpr unsigned cxxopts_width = 80;
   options
-    .set_width(80)
+    .set_width(cxxopts_width)
     .set_tab_expansion()
     .add_options("Solving")
     ("a,host",
@@ -97,21 +98,22 @@ int main(int argc, char** argv) {
     try {
       if (!limit_arg.empty()) {
         // Internally timeout is in milliseconds.
+        constexpr unsigned s_to_ms = 1000;
         cl_args.timeout =
           std::chrono::milliseconds(static_cast<std::chrono::milliseconds::rep>(
-            1000 * std::stof(limit_arg)));
+            s_to_ms * std::stof(limit_arg)));
       }
     } catch (const std::exception& e) {
       throw cxxopts::OptionException("Argument '" + limit_arg +
                                      "' failed to parse");
     }
 
-    if (parsed_args.count("help")) {
+    if (parsed_args.count("help") != 0) {
       std::cout << options.help({"Solving"}) << "\n";
       exit(0);
     }
 
-    if (parsed_args.count("version")) {
+    if (parsed_args.count("version") != 0) {
       std::cout << "vroom " << vroom::get_version() << "\n";
       exit(0);
     }
@@ -133,7 +135,7 @@ int main(int argc, char** argv) {
     vroom::io::update_port(cl_args.servers, port);
   }
   cl_args.exploration_level =
-    std::min(cl_args.exploration_level, cl_args.max_exploration_level);
+    std::min(cl_args.exploration_level, vroom::MAX_EXPLORATION_LEVEL);
 
   // Determine routing engine (defaults to ROUTER::OSRM).
   if (router_arg == "libosrm") {

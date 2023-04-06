@@ -15,8 +15,7 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/solution_state.h"
 #include "utils/helpers.h"
 
-namespace vroom {
-namespace ls {
+namespace vroom::ls {
 
 struct SplitChoice {
   Eval gain;
@@ -41,6 +40,7 @@ compute_best_route_split_choice(const Input& input,
   // Create actual empty routes for idle vehicles to use below in
   // validity checks.
   std::vector<Route> empty_routes;
+  empty_routes.reserve(empty_route_ranks.size());
   for (auto v : empty_route_ranks) {
     empty_routes.emplace_back(input, v, input.zero_amount().size());
   }
@@ -189,13 +189,12 @@ compute_best_route_split_choice(const Input& input,
           // No split possible as there is only one valid vehicle for
           // begin and end route.
           continue;
-        } else {
-          current_split_choice = {init_eval - first_best_begin_eval -
-                                    second_best_end_eval,
-                                  r,
-                                  first_v_begin,
-                                  second_v_end};
         }
+        current_split_choice = {init_eval - first_best_begin_eval -
+                                  second_best_end_eval,
+                                r,
+                                first_v_begin,
+                                second_v_end};
       } else {
         if (second_best_end_eval == NO_EVAL) {
           current_split_choice = {init_eval - second_best_begin_eval -
@@ -232,7 +231,6 @@ compute_best_route_split_choice(const Input& input,
   return best_choice;
 }
 
-} // namespace ls
-} // namespace vroom
+} // namespace vroom::ls
 
 #endif

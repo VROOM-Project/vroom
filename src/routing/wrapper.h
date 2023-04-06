@@ -17,8 +17,7 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/solution/route.h"
 #include "utils/exception.h"
 
-namespace vroom {
-namespace routing {
+namespace vroom::routing {
 
 class Wrapper {
 
@@ -30,21 +29,21 @@ public:
 
   virtual void add_route_info(Route& route) const = 0;
 
-  virtual ~Wrapper() {
-  }
+  virtual ~Wrapper() = default;
 
 protected:
-  Wrapper(const std::string& profile) : profile(profile) {
+  Wrapper(std::string profile) : profile(std::move(profile)) {
   }
 
   static UserCost round_cost(double value) {
-    return static_cast<UserCost>(value + 0.5);
+    constexpr double round_increment = 0.5;
+    return static_cast<UserCost>(value + round_increment);
   }
 
-  inline void
+  static inline void
   check_unfound(const std::vector<Location>& locs,
                 const std::vector<unsigned>& nb_unfound_from_loc,
-                const std::vector<unsigned>& nb_unfound_to_loc) const {
+                const std::vector<unsigned>& nb_unfound_to_loc) {
     assert(nb_unfound_from_loc.size() == nb_unfound_to_loc.size());
     unsigned max_unfound_routes_for_a_loc = 0;
     unsigned error_loc = 0; // Initial value never actually used.
@@ -73,7 +72,6 @@ protected:
   }
 };
 
-} // namespace routing
-} // namespace vroom
+} // namespace vroom::routing
 
 #endif

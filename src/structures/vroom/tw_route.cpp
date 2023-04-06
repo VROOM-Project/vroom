@@ -509,8 +509,6 @@ OrderChoice::OrderChoice(const Input& input,
                          const Break& b,
                          const PreviousInfo& previous)
   : input(input),
-    add_job_first(false),
-    add_break_first(false),
     j_tw(std::find_if(input.jobs[job_rank].tws.begin(),
                       input.jobs[job_rank].tws.end(),
                       [&](const auto& tw) {
@@ -557,34 +555,34 @@ OrderChoice TWRoute::order_choice(const Input& input,
     // option is to choose break first, if valid for max_load.
     oc.add_break_first = !check_max_load or b.is_valid_for_load(current_load);
     return oc;
-  } else {
-    Duration travel_after_break = next.travel;
-    if (earliest_job_end < new_b_tw->start) {
-      job_then_break_margin = new_b_tw->start - earliest_job_end;
-      if (job_then_break_margin < travel_after_break) {
-        travel_after_break -= job_then_break_margin;
-      } else {
-        travel_after_break = 0;
-      }
+  }
 
-      job_then_break_end = oc.b_tw->start + b.service;
+  Duration travel_after_break = next.travel;
+  if (earliest_job_end < new_b_tw->start) {
+    job_then_break_margin = new_b_tw->start - earliest_job_end;
+    if (job_then_break_margin < travel_after_break) {
+      travel_after_break -= job_then_break_margin;
     } else {
-      job_then_break_end = earliest_job_end + b.service;
+      travel_after_break = 0;
     }
 
-    if (job_then_break_end + travel_after_break > next.latest) {
-      // Starting the break is possible but then next step is not.
-      oc.add_break_first = true;
-      return oc;
-    }
+    job_then_break_end = oc.b_tw->start + b.service;
+  } else {
+    job_then_break_end = earliest_job_end + b.service;
+  }
 
-    if (check_max_load and j.type == JOB_TYPE::SINGLE and
-        (!b.is_valid_for_load(current_load + j.pickup - j.delivery) or
-         !(j.pickup <= bwd_smallest_breaks_load_margin[v.break_rank(b.id)]))) {
-      // Break won't fit right after job for load reason.
-      oc.add_break_first = b.is_valid_for_load(current_load);
-      return oc;
-    }
+  if (job_then_break_end + travel_after_break > next.latest) {
+    // Starting the break is possible but then next step is not.
+    oc.add_break_first = true;
+    return oc;
+  }
+
+  if (check_max_load and j.type == JOB_TYPE::SINGLE and
+      (!b.is_valid_for_load(current_load + j.pickup - j.delivery) or
+       !(j.pickup <= bwd_smallest_breaks_load_margin[v.break_rank(b.id)]))) {
+    // Break won't fit right after job for load reason.
+    oc.add_break_first = b.is_valid_for_load(current_load);
+    return oc;
   }
 
   // Try putting break first then job.
@@ -595,7 +593,7 @@ OrderChoice TWRoute::order_choice(const Input& input,
     return oc;
   }
 
-  Duration travel_after_break = previous.travel;
+  travel_after_break = previous.travel;
   Duration earliest_job_start = previous.earliest;
 
   if (previous.earliest < oc.b_tw->start) {
@@ -621,15 +619,14 @@ OrderChoice TWRoute::order_choice(const Input& input,
     // option is to choose job first.
     oc.add_job_first = true;
     return oc;
-  } else {
-    break_then_job_end =
-      std::max(earliest_job_start, new_j_tw->start) + job_action_time;
+  }
+  break_then_job_end =
+    std::max(earliest_job_start, new_j_tw->start) + job_action_time;
 
-    if (break_then_job_end + next.travel > next.latest) {
-      // Arrival at the job is valid but next step is not.
-      oc.add_job_first = true;
-      return oc;
-    }
+  if (break_then_job_end + next.travel > next.latest) {
+    // Arrival at the job is valid but next step is not.
+    oc.add_job_first = true;
+    return oc;
   }
 
   // Now both ordering options are doable based on timing constraints.

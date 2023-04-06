@@ -21,7 +21,7 @@ public:
   const std::string message;
   unsigned int error_code;
 
-  Exception(const std::string& message, unsigned int error_code);
+  Exception(std::string message, unsigned int error_code);
 
   const char* what() const noexcept override {
     return message.c_str();

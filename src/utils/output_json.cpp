@@ -15,8 +15,7 @@ All rights reserved (see LICENSE).
 
 #include "utils/output_json.h"
 
-namespace vroom {
-namespace io {
+namespace vroom::io {
 
 inline rapidjson::Value
 get_violations(const Violations& violations,
@@ -383,5 +382,4 @@ void write_to_json(const Solution& sol,
   }
 }
 
-} // namespace io
-} // namespace vroom
+} // namespace vroom::io

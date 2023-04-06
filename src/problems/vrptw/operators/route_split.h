@@ -12,15 +12,14 @@ All rights reserved (see LICENSE).
 
 #include "problems/cvrp/operators/route_split.h"
 
-namespace vroom {
-namespace vrptw {
+namespace vroom::vrptw {
 
 class RouteSplit : public cvrp::RouteSplit {
 private:
   TWRoute& _tw_s_route;
   const std::vector<std::reference_wrapper<TWRoute>> _empty_tw_route_refs;
 
-  virtual void compute_gain() override;
+  void compute_gain() override;
 
 public:
   RouteSplit(const Input& input,
@@ -31,10 +30,9 @@ public:
              std::vector<std::reference_wrapper<TWRoute>>& empty_route_refs,
              const Eval& best_known_gain);
 
-  virtual void apply() override;
+  void apply() override;
 };
 
-} // namespace vrptw
-} // namespace vroom
+} // namespace vroom::vrptw
 
 #endif

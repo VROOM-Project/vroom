@@ -11,7 +11,6 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
-ComputingTimes::ComputingTimes() : loading(0), solving(0), routing(0) {
-}
+ComputingTimes::ComputingTimes() = default;
 
 } // namespace vroom

@@ -9,8 +9,7 @@ All rights reserved (see LICENSE).
 
 #include "problems/cvrp/operators/intra_cross_exchange.h"
 
-namespace vroom {
-namespace cvrp {
+namespace vroom::cvrp {
 
 IntraCrossExchange::IntraCrossExchange(const Input& input,
                                        const utils::SolutionState& sol_state,
@@ -29,19 +28,12 @@ IntraCrossExchange::IntraCrossExchange(const Input& input,
              s_raw_route,
              s_vehicle,
              t_rank),
-    _gain_upper_bound_computed(false),
     // Required for consistency in compute_gain if check_s_reverse or
     // check_t_reverse are false.
     _reversed_s_gain(NO_GAIN),
     _reversed_t_gain(NO_GAIN),
-    reverse_s_edge(false),
-    reverse_t_edge(false),
     check_s_reverse(check_s_reverse),
     check_t_reverse(check_t_reverse),
-    s_normal_t_normal_is_valid(false),
-    s_normal_t_reverse_is_valid(false),
-    s_reverse_t_reverse_is_valid(false),
-    s_reverse_t_normal_is_valid(false),
     _moved_jobs(t_rank - s_rank + 2),
     _first_rank(s_rank),
     _last_rank(t_rank + 2),
@@ -318,5 +310,4 @@ std::vector<Index> IntraCrossExchange::update_candidates() const {
   return {s_vehicle};
 }
 
-} // namespace cvrp
-} // namespace vroom
+} // namespace vroom::cvrp

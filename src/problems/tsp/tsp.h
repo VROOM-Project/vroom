@@ -25,7 +25,7 @@ private:
   Index _vehicle_rank;
   // Holds the matching from index in _matrix to rank in input::_jobs.
   std::vector<Index> _job_ranks;
-  bool _is_symmetric;
+  bool _is_symmetric{true};
   bool _has_start;
   Index _start;
   bool _has_end;
@@ -44,11 +44,10 @@ public:
   std::vector<Index> raw_solve(unsigned nb_threads,
                                const Timeout& timeout) const;
 
-  virtual Solution
-  solve(unsigned,
-        unsigned nb_threads,
-        const Timeout& timeout,
-        const std::vector<HeuristicParameters>&) const override;
+  Solution solve(unsigned,
+                 unsigned nb_threads,
+                 const Timeout& timeout,
+                 const std::vector<HeuristicParameters>&) const override;
 };
 
 } // namespace vroom

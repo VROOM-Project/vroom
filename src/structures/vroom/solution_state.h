@@ -14,8 +14,7 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/input/input.h"
 #include "structures/vroom/tw_route.h"
 
-namespace vroom {
-namespace utils {
+namespace vroom::utils {
 
 class SolutionState {
 private:
@@ -143,7 +142,6 @@ public:
   void update_route_eval(const std::vector<Index>& route, Index v);
 };
 
-} // namespace utils
-} // namespace vroom
+} // namespace vroom::utils
 
 #endif

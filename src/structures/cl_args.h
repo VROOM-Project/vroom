@@ -15,8 +15,7 @@ All rights reserved (see LICENSE).
 
 #include "structures/typedefs.h"
 
-namespace vroom {
-namespace io {
+namespace vroom::io {
 
 // Profile name used as key.
 using Servers = std::unordered_map<std::string, Server>;
@@ -34,15 +33,12 @@ struct CLArgs {
   std::string input;                         // cl arg
   unsigned nb_threads;                       // -t
   unsigned exploration_level;                // -x
-
-  static const unsigned max_exploration_level;
 };
 
 void update_host(Servers& servers, const std::string& value);
 
 void update_port(Servers& servers, const std::string& value);
 
-} // namespace io
-} // namespace vroom
+} // namespace vroom::io
 
 #endif

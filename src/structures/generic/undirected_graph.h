@@ -15,8 +15,7 @@ All rights reserved (see LICENSE).
 #include "structures/generic/edge.h"
 #include "structures/generic/matrix.h"
 
-namespace vroom {
-namespace utils {
+namespace vroom::utils {
 
 template <class T> class UndirectedGraph {
 
@@ -41,7 +40,6 @@ public:
   std::unordered_map<Index, std::list<Index>> get_adjacency_list() const;
 };
 
-} // namespace utils
-} // namespace vroom
+} // namespace vroom::utils
 
 #endif

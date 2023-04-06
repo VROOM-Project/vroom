@@ -47,8 +47,8 @@ struct NextInfo {
 
 struct OrderChoice {
   const Input& input;
-  bool add_job_first;
-  bool add_break_first;
+  bool add_job_first{false};
+  bool add_break_first{false};
   const std::vector<TimeWindow>::const_iterator j_tw;
   const std::vector<TimeWindow>::const_iterator b_tw;
 
@@ -130,7 +130,7 @@ public:
   std::vector<Amount> fwd_smallest_breaks_load_margin;
   std::vector<Amount> bwd_smallest_breaks_load_margin;
 
-  TWRoute(const Input& input, Index i, unsigned amount_size);
+  TWRoute(const Input& input, Index v, unsigned amount_size);
 
   bool empty() const {
     return route.empty();

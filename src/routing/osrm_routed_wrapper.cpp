@@ -9,8 +9,7 @@ All rights reserved (see LICENSE).
 
 #include "routing/osrm_routed_wrapper.h"
 
-namespace vroom {
-namespace routing {
+namespace vroom::routing {
 
 OsrmRoutedWrapper::OsrmRoutedWrapper(const std::string& profile,
                                      const Server& server)
@@ -88,5 +87,4 @@ std::string OsrmRoutedWrapper::get_geometry(rapidjson::Value& result) const {
   return result["routes"][0]["geometry"].GetString();
 }
 
-} // namespace routing
-} // namespace vroom
+} // namespace vroom::routing

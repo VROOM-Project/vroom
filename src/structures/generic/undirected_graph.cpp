@@ -11,11 +11,9 @@ All rights reserved (see LICENSE).
 
 #include "structures/generic/undirected_graph.h"
 
-namespace vroom {
-namespace utils {
+namespace vroom::utils {
 
-template <class T> UndirectedGraph<T>::UndirectedGraph() {
-}
+template <class T> UndirectedGraph<T>::UndirectedGraph() = default;
 
 template <class T>
 UndirectedGraph<T>::UndirectedGraph(const Matrix<T>& m) : _size(m.size()) {
@@ -78,5 +76,4 @@ UndirectedGraph<T>::get_adjacency_list() const {
 
 template class UndirectedGraph<UserCost>;
 
-} // namespace utils
-} // namespace vroom
+} // namespace vroom::utils

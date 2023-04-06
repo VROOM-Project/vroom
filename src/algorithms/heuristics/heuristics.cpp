@@ -12,8 +12,7 @@ All rights reserved (see LICENSE).
 #include "algorithms/heuristics/heuristics.h"
 #include "utils/helpers.h"
 
-namespace vroom {
-namespace heuristics {
+namespace vroom::heuristics {
 
 std::vector<std::vector<Eval>> get_jobs_vehicles_evals(const Input& input) {
   // For a single job j, evals[j][v] evaluates fetching job j in an
@@ -363,7 +362,7 @@ T basic(const Input& input, INIT init, double lambda, SORT sort) {
                 }
               }
 
-              if (!(bool)valid_delivery_insertions[delivery_r]) {
+              if (!static_cast<bool>(valid_delivery_insertions[delivery_r])) {
                 continue;
               }
 
@@ -794,7 +793,7 @@ T dynamic_vehicle_choice(const Input& input,
                 }
               }
 
-              if (!(bool)valid_delivery_insertions[delivery_r]) {
+              if (!static_cast<bool>(valid_delivery_insertions[delivery_r])) {
                 continue;
               }
 
@@ -1010,5 +1009,4 @@ dynamic_vehicle_choice(const Input& input, INIT init, double lambda, SORT sort);
 
 template TWSolution initial_routes(const Input& input);
 
-} // namespace heuristics
-} // namespace vroom
+} // namespace vroom::heuristics

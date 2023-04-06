@@ -10,11 +10,11 @@ All rights reserved (see LICENSE).
 
 */
 
-#define MAJOR 1
-#define MINOR 14
-#define PATCH 0
-#define DEV 1
-#define RC 0
+constexpr unsigned MAJOR = 1;
+constexpr unsigned MINOR = 14;
+constexpr unsigned PATCH = 0;
+constexpr bool DEV = true;
+constexpr unsigned RC = 0;
 
 #include <string>
 

@@ -12,8 +12,7 @@ All rights reserved (see LICENSE).
 
 #include "algorithms/kruskal.h"
 
-namespace vroom {
-namespace utils {
+namespace vroom::utils {
 
 template <class T>
 UndirectedGraph<T> minimum_spanning_tree(const UndirectedGraph<T>& graph) {
@@ -63,5 +62,4 @@ UndirectedGraph<T> minimum_spanning_tree(const UndirectedGraph<T>& graph) {
 template UndirectedGraph<UserCost>
 minimum_spanning_tree(const UndirectedGraph<UserCost>& graph);
 
-} // namespace utils
-} // namespace vroom
+} // namespace vroom::utils

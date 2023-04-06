@@ -12,20 +12,19 @@ All rights reserved (see LICENSE).
 
 #include "algorithms/local_search/operator.h"
 
-namespace vroom {
-namespace cvrp {
+namespace vroom::cvrp {
 
 class IntraOrOpt : public ls::Operator {
 private:
-  bool _gain_upper_bound_computed;
+  bool _gain_upper_bound_computed{false};
   Eval _normal_t_gain;
   Eval _reversed_t_gain;
 
 protected:
-  bool reverse_s_edge;
+  bool reverse_s_edge{false};
 
-  bool is_normal_valid;
-  bool is_reverse_valid;
+  bool is_normal_valid{false};
+  bool is_reverse_valid{false};
   const bool check_reverse;
 
   std::vector<Index> _moved_jobs;
@@ -35,12 +34,12 @@ protected:
   Index _s_edge_first;
   Index _s_edge_last;
 
-  virtual void compute_gain() override;
+  void compute_gain() override;
 
 public:
   IntraOrOpt(const Input& input,
              const utils::SolutionState& sol_state,
-             RawRoute& s_route,
+             RawRoute& s_raw_route,
              Index s_vehicle,
              Index s_rank,
              Index t_rank, // rank *after* removal.
@@ -51,16 +50,15 @@ public:
   // precise gain requires validity information.
   Eval gain_upper_bound();
 
-  virtual bool is_valid() override;
+  bool is_valid() override;
 
-  virtual void apply() override;
+  void apply() override;
 
-  virtual std::vector<Index> addition_candidates() const override;
+  std::vector<Index> addition_candidates() const override;
 
-  virtual std::vector<Index> update_candidates() const override;
+  std::vector<Index> update_candidates() const override;
 };
 
-} // namespace cvrp
-} // namespace vroom
+} // namespace vroom::cvrp
 
 #endif

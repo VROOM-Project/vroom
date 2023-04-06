@@ -169,7 +169,7 @@ public:
 
   template <class InputIterator>
   bool is_valid_addition_for_tw(const Input&,
-                                const Amount,
+                                const Amount&,
                                 const InputIterator,
                                 const InputIterator,
                                 const Index,

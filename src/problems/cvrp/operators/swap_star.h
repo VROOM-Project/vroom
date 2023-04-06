@@ -13,15 +13,14 @@ All rights reserved (see LICENSE).
 #include "algorithms/local_search/operator.h"
 #include "algorithms/local_search/swap_star_utils.h"
 
-namespace vroom {
-namespace cvrp {
+namespace vroom::cvrp {
 
 class SwapStar : public ls::Operator {
 protected:
   const Eval _best_known_gain;
   ls::SwapChoice choice;
 
-  virtual void compute_gain() override;
+  void compute_gain() override;
 
 public:
   SwapStar(const Input& input,
@@ -32,16 +31,15 @@ public:
            Index t_vehicle,
            const Eval& best_known_gain);
 
-  virtual bool is_valid() override;
+  bool is_valid() override;
 
-  virtual void apply() override;
+  void apply() override;
 
-  virtual std::vector<Index> addition_candidates() const override;
+  std::vector<Index> addition_candidates() const override;
 
-  virtual std::vector<Index> update_candidates() const override;
+  std::vector<Index> update_candidates() const override;
 };
 
-} // namespace cvrp
-} // namespace vroom
+} // namespace vroom::cvrp
 
 #endif

@@ -15,8 +15,7 @@ All rights reserved (see LICENSE).
 
 #include "algorithms/validation/choose_ETA.h"
 
-namespace vroom {
-namespace validation {
+namespace vroom::validation {
 
 inline Duration get_duration(double d) {
   return static_cast<Duration>(std::round(d));
@@ -693,12 +692,12 @@ Route choose_ETA(const Input& input,
 
     if (LB == UB) {
       // Fixed t_i value.
-      double service_at = static_cast<double>(LB - horizon_start);
+      auto service_at = static_cast<double>(LB - horizon_start);
       glp_set_col_bnds(lp, current_col, GLP_FX, service_at, service_at);
     } else {
       // t_i value has a lower bound, either 0 or user-defined.
-      double service_after = static_cast<double>(LB - horizon_start);
-      double service_before = static_cast<double>(UB - horizon_start);
+      auto service_after = static_cast<double>(LB - horizon_start);
+      auto service_before = static_cast<double>(UB - horizon_start);
       glp_set_col_bnds(lp, current_col, GLP_DB, service_after, service_before);
     }
     ++current_col;
@@ -743,7 +742,7 @@ Route choose_ETA(const Input& input,
   // Define non-zero elements in matrix.
   int* ia = new int[1 + nb_non_zero];
   int* ja = new int[1 + nb_non_zero];
-  double* ar = new double[1 + nb_non_zero];
+  auto* ar = new double[1 + nb_non_zero];
 
   unsigned r = 1;
   // Coefficients for precedence constraints.
@@ -1429,5 +1428,4 @@ Route choose_ETA(const Input& input,
                  Violations(user_lead_time, user_delay, std::move(v_types))));
 }
 
-} // namespace validation
-} // namespace vroom
+} // namespace vroom::validation

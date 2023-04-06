@@ -12,15 +12,14 @@ All rights reserved (see LICENSE).
 
 #include "problems/cvrp/operators/swap_star.h"
 
-namespace vroom {
-namespace vrptw {
+namespace vroom::vrptw {
 
 class SwapStar : public cvrp::SwapStar {
 private:
   TWRoute& _tw_s_route;
   TWRoute& _tw_t_route;
 
-  virtual void compute_gain() override;
+  void compute_gain() override;
 
 public:
   SwapStar(const Input& input,
@@ -31,10 +30,9 @@ public:
            Index t_vehicle,
            const Eval& best_known_gain);
 
-  virtual void apply() override;
+  void apply() override;
 };
 
-} // namespace vrptw
-} // namespace vroom
+} // namespace vroom::vrptw
 
 #endif
