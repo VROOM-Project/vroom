@@ -9,8 +9,7 @@ All rights reserved (see LICENSE).
 
 #include "problems/vrptw/operators/swap_star.h"
 
-namespace vroom {
-namespace vrptw {
+namespace vroom::vrptw {
 
 SwapStar::SwapStar(const Input& input,
                    const utils::SolutionState& sol_state,
@@ -72,5 +71,4 @@ void SwapStar::apply() {
                       t_insert.last_rank);
 }
 
-} // namespace vrptw
-} // namespace vroom
+} // namespace vroom::vrptw

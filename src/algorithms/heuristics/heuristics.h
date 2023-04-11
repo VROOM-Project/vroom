@@ -12,8 +12,7 @@ All rights reserved (see LICENSE).
 
 #include "structures/vroom/input/input.h"
 
-namespace vroom {
-namespace heuristics {
+namespace vroom::heuristics {
 
 // Implementation of a variant of the Solomon I1 heuristic.
 template <class T>
@@ -29,7 +28,6 @@ T dynamic_vehicle_choice(const Input& input,
 // Populate routes with user-defined vehicle steps.
 template <class T> T initial_routes(const Input& input);
 
-} // namespace heuristics
-} // namespace vroom
+} // namespace vroom::heuristics
 
 #endif

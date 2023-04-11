@@ -19,8 +19,7 @@ All rights reserved (see LICENSE).
 // described in https://arxiv.org/abs/2012.10384, extended to support
 // additional constraint checks (back-hauls and time windows).
 
-namespace vroom {
-namespace ls {
+namespace vroom::ls {
 
 struct InsertionOption {
   Eval cost;
@@ -66,22 +65,14 @@ ThreeInsertions find_top_3_insertions(const Input& input,
 
 struct SwapChoice {
   Eval gain;
-  Index s_rank;
-  Index t_rank;
-  Index insertion_in_source;
-  Index insertion_in_target;
-  Amount source_range_delivery;
-  Amount target_range_delivery;
+  Index s_rank{0};
+  Index t_rank{0};
+  Index insertion_in_source{0};
+  Index insertion_in_target{0};
+  Amount source_range_delivery{0};
+  Amount target_range_delivery{0};
 
-  SwapChoice()
-    : gain(),
-      s_rank(0),
-      t_rank(0),
-      insertion_in_source(0),
-      insertion_in_target(0),
-      source_range_delivery(0),
-      target_range_delivery(0) {
-  }
+  SwapChoice() = default;
 
   SwapChoice(Eval gain,
              Index s_rank,
@@ -525,7 +516,6 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
   return best_choice;
 }
 
-} // namespace ls
-} // namespace vroom
+} // namespace vroom::ls
 
 #endif

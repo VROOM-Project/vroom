@@ -12,8 +12,7 @@ All rights reserved (see LICENSE).
 
 #include "problems/cvrp/operators/pd_shift.h"
 
-namespace vroom {
-namespace vrptw {
+namespace vroom::vrptw {
 
 class PDShift : public cvrp::PDShift {
 private:
@@ -22,7 +21,7 @@ private:
   TWRoute& _tw_t_route;
   Amount _best_t_delivery;
 
-  virtual void compute_gain() override;
+  void compute_gain() override;
 
 public:
   PDShift(const Input& input,
@@ -37,10 +36,9 @@ public:
 
   void log_route(const std::vector<Index>& route) const;
 
-  virtual void apply() override;
+  void apply() override;
 };
 
-} // namespace vrptw
-} // namespace vroom
+} // namespace vroom::vrptw
 
 #endif

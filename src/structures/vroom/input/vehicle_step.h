@@ -19,7 +19,7 @@ struct ForcedService {
   std::optional<Duration> after;
   std::optional<Duration> before;
 
-  ForcedService();
+  ForcedService() = default;
 
   ForcedService(const std::optional<UserDuration>& at,
                 const std::optional<UserDuration>& after,

@@ -5,22 +5,16 @@
 #include "structures/vroom/solution_state.h"
 #include "utils/helpers.h"
 
-namespace vroom {
-namespace ls {
+namespace vroom::ls {
 
 struct RouteInsertion {
-  Eval eval;
+  Eval eval{NO_EVAL};
   Amount delivery;
-  Index single_rank;
-  Index pickup_rank;
-  Index delivery_rank;
+  Index single_rank{0};
+  Index pickup_rank{0};
+  Index delivery_rank{0};
 
-  RouteInsertion(unsigned amount_size)
-    : eval(NO_EVAL),
-      delivery(Amount(amount_size)),
-      single_rank(0),
-      pickup_rank(0),
-      delivery_rank(0) {
+  RouteInsertion(unsigned amount_size) : delivery(Amount(amount_size)) {
   }
 };
 
@@ -159,7 +153,7 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
         }
       }
 
-      if (!(bool)valid_delivery_insertions[delivery_r]) {
+      if (!static_cast<bool>(valid_delivery_insertions[delivery_r])) {
         continue;
       }
 
@@ -214,6 +208,5 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
   return result;
 }
 
-} // namespace ls
-} // namespace vroom
+} // namespace vroom::ls
 #endif

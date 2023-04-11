@@ -12,8 +12,7 @@ All rights reserved (see LICENSE).
 
 #include "problems/cvrp/operators/intra_relocate.h"
 
-namespace vroom {
-namespace vrptw {
+namespace vroom::vrptw {
 
 class IntraRelocate : public cvrp::IntraRelocate {
 private:
@@ -27,14 +26,13 @@ public:
                 Index s_rank,
                 Index t_rank); // relocate rank *after* removal.
 
-  virtual bool is_valid() override;
+  bool is_valid() override;
 
-  virtual void apply() override;
+  void apply() override;
 
-  virtual std::vector<Index> addition_candidates() const override;
+  std::vector<Index> addition_candidates() const override;
 };
 
-} // namespace vrptw
-} // namespace vroom
+} // namespace vroom::vrptw
 
 #endif

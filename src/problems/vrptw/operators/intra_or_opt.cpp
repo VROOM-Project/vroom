@@ -9,8 +9,7 @@ All rights reserved (see LICENSE).
 
 #include "problems/vrptw/operators/intra_or_opt.h"
 
-namespace vroom {
-namespace vrptw {
+namespace vroom::vrptw {
 
 IntraOrOpt::IntraOrOpt(const Input& input,
                        const utils::SolutionState& sol_state,
@@ -84,5 +83,4 @@ std::vector<Index> IntraOrOpt::addition_candidates() const {
   return {s_vehicle};
 }
 
-} // namespace vrptw
-} // namespace vroom
+} // namespace vroom::vrptw

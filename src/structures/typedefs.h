@@ -72,6 +72,7 @@ constexpr UserCost DEFAULT_COST_PER_HOUR = 3600;
 
 constexpr Priority MAX_PRIORITY = 100;
 constexpr double MAX_SPEED_FACTOR = 5.0;
+constexpr unsigned MAX_EXPLORATION_LEVEL = 5;
 
 constexpr unsigned DEFAULT_EXPLORATION_LEVEL = 5;
 constexpr unsigned DEFAULT_THREADS_NUMBER = 4;
@@ -87,8 +88,8 @@ struct Server {
   Server() : host("0.0.0.0"), port("5000") {
   }
 
-  Server(const std::string& host, const std::string& port)
-    : host(host), port(port) {
+  Server(std::string host, std::string port)
+    : host(std::move(host)), port(std::move(port)) {
   }
 };
 

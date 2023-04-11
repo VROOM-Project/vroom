@@ -9,8 +9,7 @@ All rights reserved (see LICENSE).
 
 #include "problems/cvrp/operators/or_opt.h"
 
-namespace vroom {
-namespace cvrp {
+namespace vroom::cvrp {
 
 OrOpt::OrOpt(const Input& input,
              const utils::SolutionState& sol_state,
@@ -29,10 +28,6 @@ OrOpt::OrOpt(const Input& input,
              t_route,
              t_vehicle,
              t_rank),
-    _gain_upper_bound_computed(false),
-    reverse_s_edge(false),
-    is_normal_valid(false),
-    is_reverse_valid(false),
     edge_delivery(_input.jobs[this->s_route[s_rank]].delivery +
                   _input.jobs[this->s_route[s_rank + 1]].delivery) {
   assert(s_vehicle != t_vehicle);
@@ -65,8 +60,7 @@ Eval OrOpt::gain_upper_bound() {
   Eval old_edge_cost;
 
   if (t_rank == t_route.size()) {
-    if (t_route.size() == 0) {
-      // Adding edge to an empty route.
+    if (t_route.empty()) {
       if (t_v.has_start()) {
         previous_cost = t_v.eval(t_v.start.value().index(), s_index);
         reverse_previous_cost =
@@ -228,5 +222,4 @@ std::vector<Index> OrOpt::update_candidates() const {
   return {s_vehicle, t_vehicle};
 }
 
-} // namespace cvrp
-} // namespace vroom
+} // namespace vroom::cvrp

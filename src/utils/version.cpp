@@ -17,7 +17,7 @@ std::string get_version() {
   if (DEV) {
     version += "-dev";
   } else {
-    if (RC) {
+    if (RC > 0) {
       version += "-rc." + std::to_string(RC);
     }
   }

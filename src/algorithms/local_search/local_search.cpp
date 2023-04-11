@@ -28,8 +28,7 @@ All rights reserved (see LICENSE).
 #include "problems/vrptw/operators/unassigned_exchange.h"
 #include "utils/helpers.h"
 
-namespace vroom {
-namespace ls {
+namespace vroom::ls {
 
 template <class Route,
           class UnassignedExchange,
@@ -104,16 +103,15 @@ RouteInsertion compute_best_insertion(const Input& input,
 
   if (current_job.type == JOB_TYPE::SINGLE) {
     return compute_best_insertion_single(input, sol_state, j, v, route);
-  } else {
-    auto insert =
-      compute_best_insertion_pd(input, sol_state, j, v, route, NO_EVAL);
-    if (insert.eval != NO_EVAL) {
-      // Normalize cost per job for consistency with single jobs.
-      insert.eval.cost =
-        static_cast<Cost>(static_cast<double>(insert.eval.cost) / 2);
-    }
-    return insert;
   }
+  auto insert =
+    compute_best_insertion_pd(input, sol_state, j, v, route, NO_EVAL);
+  if (insert.eval != NO_EVAL) {
+    // Normalize cost per job for consistency with single jobs.
+    insert.eval.cost =
+      static_cast<Cost>(static_cast<double>(insert.eval.cost) / 2);
+  }
+  return insert;
 }
 
 template <class Route,
@@ -159,9 +157,8 @@ void LocalSearch<Route,
   std::vector<std::vector<RouteInsertion>> route_job_insertions;
 
   for (std::size_t i = 0; i < routes.size(); ++i) {
-    route_job_insertions.push_back(
-      std::vector<RouteInsertion>(_input.jobs.size(),
-                                  RouteInsertion(_input.get_amount_size())));
+    route_job_insertions.emplace_back(_input.jobs.size(),
+                                      RouteInsertion(_input.get_amount_size()));
 
     const auto v = routes[i];
     const auto fixed_cost =
@@ -1154,9 +1151,10 @@ void LocalSearch<Route,
     }
 
     // IntraCrossExchange stuff
+    constexpr unsigned min_intra_cross_exchange_size = 5;
     for (const auto& s_t : s_t_pairs) {
       if (s_t.first != s_t.second or best_priorities[s_t.first] > 0 or
-          _sol[s_t.first].size() < 5) {
+          _sol[s_t.first].size() < min_intra_cross_exchange_size) {
         continue;
       }
 
@@ -1900,7 +1898,8 @@ void LocalSearch<Route,
       }
 
       // Refill jobs.
-      try_job_additions(_all_routes, 1.5);
+      constexpr double refill_regret = 1.5;
+      try_job_additions(_all_routes, refill_regret);
 
       // Update everything except what has already been updated in
       // try_job_additions.
@@ -2259,7 +2258,7 @@ void LocalSearch<Route,
     }
 
     if (best_gain != NO_GAIN) {
-      routes_and_ranks.push_back(std::make_pair(v, best_rank));
+      routes_and_ranks.emplace_back(v, best_rank);
     }
   }
 
@@ -2378,5 +2377,4 @@ template class LocalSearch<RawRoute,
                            cvrp::SwapStar,
                            cvrp::RouteSplit>;
 
-} // namespace ls
-} // namespace vroom
+} // namespace vroom::ls

@@ -14,18 +14,15 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/input/input.h"
 #include "utils/helpers.h"
 
-namespace vroom {
-namespace utils {
+namespace vroom::utils {
 
 template <class Route> struct SolutionIndicators {
-  Priority priority_sum;
-  unsigned assigned;
+  Priority priority_sum{0};
+  unsigned assigned{0};
   Eval eval;
-  unsigned used_vehicles;
+  unsigned used_vehicles{0};
 
-  SolutionIndicators()
-    : priority_sum(0), assigned(0), eval(), used_vehicles(0) {
-  }
+  SolutionIndicators() = default;
 
   SolutionIndicators(const Input& input, const std::vector<Route>& sol)
     : SolutionIndicators() {
@@ -72,7 +69,6 @@ template <class Route> struct SolutionIndicators {
   }
 };
 
-} // namespace utils
-} // namespace vroom
+} // namespace vroom::utils
 
 #endif

@@ -28,25 +28,10 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
-Input::Input(const io::Servers& servers, ROUTER router)
+Input::Input(io::Servers servers, ROUTER router)
   : _start_loading(std::chrono::high_resolution_clock::now()),
-    _no_addition_yet(true),
-    _has_skills(false),
-    _has_TW(false),
-    _has_all_coordinates(true),
-    _has_initial_routes(false),
-    _homogeneous_locations(true),
-    _homogeneous_profiles(true),
-    _homogeneous_costs(true),
-    _geometry(false),
-    _has_jobs(false),
-    _has_shipments(false),
-    _cost_upper_bound(0),
-    _max_matrices_used_index(0),
-    _all_locations_have_coords(true),
-    _amount_size(0),
     _zero(0),
-    _servers(servers),
+    _servers(std::move(servers)),
     _router(router) {
 }
 
@@ -578,9 +563,7 @@ void Input::set_vehicles_compatibility() {
 }
 
 void Input::set_vehicles_costs() {
-  for (std::size_t v = 0; v < vehicles.size(); ++v) {
-    auto& vehicle = vehicles[v];
-
+  for (auto& vehicle : vehicles) {
     auto d_m = _durations_matrices.find(vehicle.profile);
     assert(d_m != _durations_matrices.end());
     vehicle.cost_wrapper.set_durations_matrix(&(d_m->second));
@@ -725,9 +708,7 @@ void Input::set_vehicle_steps_ranks() {
   std::unordered_set<Id> planned_pickup_ids;
   std::unordered_set<Id> planned_delivery_ids;
 
-  for (Index v = 0; v < vehicles.size(); ++v) {
-    auto& current_vehicle = vehicles[v];
-
+  for (auto& current_vehicle : vehicles) {
     for (auto& step : current_vehicle.steps) {
       if (step.type == STEP_TYPE::BREAK) {
         auto search = current_vehicle.break_id_to_rank.find(step.id);
@@ -924,6 +905,7 @@ void Input::set_matrices(unsigned nb_thread) {
 
   std::vector<std::thread> matrix_threads;
 
+  matrix_threads.reserve(thread_profiles.size());
   for (const auto& profiles : thread_profiles) {
     matrix_threads.emplace_back(run_on_profiles, profiles);
   }
@@ -940,9 +922,9 @@ void Input::set_matrices(unsigned nb_thread) {
 std::unique_ptr<VRP> Input::get_problem() const {
   if (_has_TW) {
     return std::make_unique<VRPTW>(*this);
-  } else {
-    return std::make_unique<CVRP>(*this);
   }
+
+  return std::make_unique<CVRP>(*this);
 }
 
 Solution Input::solve(unsigned exploration_level,

@@ -13,8 +13,7 @@ All rights reserved (see LICENSE).
 #include "structures/generic/matrix.h"
 #include "structures/typedefs.h"
 
-namespace vroom {
-namespace tsp {
+namespace vroom::tsp {
 
 class LocalSearch {
 private:
@@ -54,7 +53,6 @@ public:
   std::list<Index> get_tour(Index first_index) const;
 };
 
-} // namespace tsp
-} // namespace vroom
+} // namespace vroom::tsp
 
 #endif

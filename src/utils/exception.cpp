@@ -11,8 +11,8 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
-Exception::Exception(const std::string& message, unsigned int error_code)
-  : message(message), error_code(error_code) {
+Exception::Exception(std::string message, unsigned int error_code)
+  : message(std::move(message)), error_code(error_code) {
 }
 
 InternalException::InternalException(const std::string& message)

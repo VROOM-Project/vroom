@@ -14,8 +14,7 @@ All rights reserved (see LICENSE).
 
 #include "utils/input_parser.h"
 
-namespace vroom {
-namespace io {
+namespace vroom::io {
 
 // Helper to get optional array of coordinates.
 inline Coordinates parse_coordinates(const rapidjson::Value& object,
@@ -442,13 +441,11 @@ inline Location get_task_location(const rapidjson::Value& v,
     Index location_index = v["location_index"].GetUint();
     if (has_location_coords) {
       return Location({location_index, parse_coordinates(v, "location")});
-    } else {
-      return Location(location_index);
     }
-  } else {
-    check_location(v, type);
-    return parse_coordinates(v, "location");
+    return Location(location_index);
   }
+  check_location(v, type);
+  return parse_coordinates(v, "location");
 }
 
 inline Job get_job(const rapidjson::Value& json_job, unsigned amount_size) {
@@ -624,5 +621,4 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
   }
 }
 
-} // namespace io
-} // namespace vroom
+} // namespace vroom::io

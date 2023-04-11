@@ -12,25 +12,24 @@ All rights reserved (see LICENSE).
 
 #include "algorithms/local_search/operator.h"
 
-namespace vroom {
-namespace cvrp {
+namespace vroom::cvrp {
 
 class MixedExchange : public ls::Operator {
 private:
-  bool _gain_upper_bound_computed;
+  bool _gain_upper_bound_computed{false};
   Eval _normal_s_gain;
   Eval _reversed_s_gain;
 
 protected:
-  bool reverse_t_edge;
+  bool reverse_t_edge{false};
   const bool check_t_reverse;
 
-  bool s_is_normal_valid;
-  bool s_is_reverse_valid;
+  bool s_is_normal_valid{false};
+  bool s_is_reverse_valid{false};
   const Amount source_delivery;
   const Amount target_delivery;
 
-  virtual void compute_gain() override;
+  void compute_gain() override;
 
 public:
   MixedExchange(const Input& input,
@@ -48,16 +47,15 @@ public:
   // precise gain requires validity information.
   Eval gain_upper_bound();
 
-  virtual bool is_valid() override;
+  bool is_valid() override;
 
-  virtual void apply() override;
+  void apply() override;
 
-  virtual std::vector<Index> addition_candidates() const override;
+  std::vector<Index> addition_candidates() const override;
 
-  virtual std::vector<Index> update_candidates() const override;
+  std::vector<Index> update_candidates() const override;
 };
 
-} // namespace cvrp
-} // namespace vroom
+} // namespace vroom::cvrp
 
 #endif

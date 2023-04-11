@@ -12,12 +12,11 @@ All rights reserved (see LICENSE).
 
 #include "algorithms/local_search/operator.h"
 
-namespace vroom {
-namespace cvrp {
+namespace vroom::cvrp {
 
 class IntraTwoOpt : public ls::Operator {
 protected:
-  virtual void compute_gain() override;
+  void compute_gain() override;
 
   const Amount delivery;
 
@@ -31,16 +30,15 @@ public:
 
   bool reversal_ok_for_shipments() const;
 
-  virtual bool is_valid() override;
+  bool is_valid() override;
 
-  virtual void apply() override;
+  void apply() override;
 
-  virtual std::vector<Index> addition_candidates() const override;
+  std::vector<Index> addition_candidates() const override;
 
-  virtual std::vector<Index> update_candidates() const override;
+  std::vector<Index> update_candidates() const override;
 };
 
-} // namespace cvrp
-} // namespace vroom
+} // namespace vroom::cvrp
 
 #endif

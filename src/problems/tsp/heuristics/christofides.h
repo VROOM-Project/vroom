@@ -14,13 +14,11 @@ All rights reserved (see LICENSE).
 
 #include "utils/helpers.h"
 
-namespace vroom {
-namespace tsp {
+namespace vroom::tsp {
 
 // Implementing a variant of the Christofides heuristic.
 std::list<Index> christofides(const Matrix<UserCost>& sym_matrix);
 
-} // namespace tsp
-} // namespace vroom
+} // namespace vroom::tsp
 
 #endif

@@ -9,8 +9,7 @@ All rights reserved (see LICENSE).
 
 #include "problems/cvrp/operators/reverse_two_opt.h"
 
-namespace vroom {
-namespace cvrp {
+namespace vroom::cvrp {
 
 ReverseTwoOpt::ReverseTwoOpt(const Input& input,
                              const utils::SolutionState& sol_state,
@@ -206,5 +205,4 @@ std::vector<Index> ReverseTwoOpt::update_candidates() const {
   return {s_vehicle, t_vehicle};
 }
 
-} // namespace cvrp
-} // namespace vroom
+} // namespace vroom::cvrp

@@ -36,11 +36,11 @@ struct Step {
 
   Violations violations;
 
-  Step(STEP_TYPE type, Location location, const Amount& load);
+  Step(STEP_TYPE type, Location location, Amount load);
 
-  Step(const Job& job, const UserDuration setup, const Amount& load);
+  Step(const Job& job, const UserDuration setup, Amount load);
 
-  Step(const Break& b, const Amount& load);
+  Step(const Break& b, Amount load);
 
   UserDuration departure() const;
 };

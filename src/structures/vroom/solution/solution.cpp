@@ -12,7 +12,7 @@ All rights reserved (see LICENSE).
 namespace vroom {
 
 Solution::Solution(unsigned code, std::string error)
-  : code(code), error(error) {
+  : code(code), error(std::move(error)) {
 }
 
 Solution::Solution(unsigned code,

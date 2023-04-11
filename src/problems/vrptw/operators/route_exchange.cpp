@@ -9,8 +9,7 @@ All rights reserved (see LICENSE).
 
 #include "problems/vrptw/operators/route_exchange.h"
 
-namespace vroom {
-namespace vrptw {
+namespace vroom::vrptw {
 
 RouteExchange::RouteExchange(const Input& input,
                              const utils::SolutionState& sol_state,
@@ -75,5 +74,4 @@ void RouteExchange::apply() {
   }
 }
 
-} // namespace vrptw
-} // namespace vroom
+} // namespace vroom::vrptw

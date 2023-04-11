@@ -11,8 +11,7 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
-Route::Route() {
-}
+Route::Route() = default;
 
 Route::Route(Id vehicle,
              std::vector<Step>&& steps,
@@ -22,10 +21,10 @@ Route::Route(Id vehicle,
              UserDuration service,
              UserDuration waiting_time,
              Priority priority,
-             const Amount& delivery,
-             const Amount& pickup,
-             const std::string& profile,
-             const std::string& description,
+             Amount delivery,
+             Amount pickup,
+             std::string profile,
+             std::string description,
              const Violations&& violations)
   : vehicle(vehicle),
     steps(std::move(steps)),
@@ -35,10 +34,10 @@ Route::Route(Id vehicle,
     service(service),
     waiting_time(waiting_time),
     priority(priority),
-    delivery(delivery),
-    pickup(pickup),
-    profile(profile),
-    description(description),
+    delivery(std::move(delivery)),
+    pickup(std::move(pickup)),
+    profile(std::move(profile)),
+    description(std::move(description)),
     violations(std::move(violations)),
     distance(0) {
 #ifndef NDEBUG

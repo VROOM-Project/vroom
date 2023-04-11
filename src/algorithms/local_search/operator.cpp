@@ -9,8 +9,7 @@ All rights reserved (see LICENSE).
 
 #include "algorithms/local_search/operator.h"
 
-namespace vroom {
-namespace ls {
+namespace vroom::ls {
 
 OperatorName Operator::get_name() const {
   return _name;
@@ -52,5 +51,4 @@ bool Operator::invalidated_by(Index) const {
   return false;
 }
 
-} // namespace ls
-} // namespace vroom
+} // namespace vroom::ls

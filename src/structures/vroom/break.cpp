@@ -15,13 +15,13 @@ namespace vroom {
 Break::Break(Id id,
              const std::vector<TimeWindow>& tws,
              UserDuration service,
-             const std::string& description,
-             const std::optional<Amount>& max_load)
+             std::string description,
+             std::optional<Amount> max_load)
   : id(id),
     tws(tws),
     service(utils::scale_from_user_duration(service)),
-    description(description),
-    max_load(max_load) {
+    description(std::move(description)),
+    max_load(std::move(max_load)) {
   utils::check_tws(tws, id, "break");
 }
 

@@ -12,8 +12,7 @@ All rights reserved (see LICENSE).
 
 #include "problems/cvrp/operators/unassigned_exchange.h"
 
-namespace vroom {
-namespace vrptw {
+namespace vroom::vrptw {
 
 class UnassignedExchange : public cvrp::UnassignedExchange {
 private:
@@ -29,12 +28,11 @@ public:
                      Index t_rank,
                      Index u);
 
-  virtual bool is_valid() override;
+  bool is_valid() override;
 
-  virtual void apply() override;
+  void apply() override;
 };
 
-} // namespace vrptw
-} // namespace vroom
+} // namespace vroom::vrptw
 
 #endif

@@ -9,8 +9,7 @@ All rights reserved (see LICENSE).
 
 #include "problems/vrptw/operators/or_opt.h"
 
-namespace vroom {
-namespace vrptw {
+namespace vroom::vrptw {
 
 OrOpt::OrOpt(const Input& input,
              const utils::SolutionState& sol_state,
@@ -80,5 +79,4 @@ void OrOpt::apply() {
   }
 }
 
-} // namespace vrptw
-} // namespace vroom
+} // namespace vroom::vrptw

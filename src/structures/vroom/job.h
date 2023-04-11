@@ -38,13 +38,13 @@ struct Job {
       const Location& location,
       UserDuration setup = 0,
       UserDuration service = 0,
-      const Amount& delivery = Amount(0),
-      const Amount& pickup = Amount(0),
-      const Skills& skills = Skills(),
+      Amount delivery = Amount(0),
+      Amount pickup = Amount(0),
+      Skills skills = Skills(),
       Priority priority = 0,
       const std::vector<TimeWindow>& tws =
         std::vector<TimeWindow>(1, TimeWindow()),
-      const std::string& description = "");
+      std::string description = "");
 
   // Constructor for pickup and delivery jobs (JOB_TYPE::PICKUP or
   // JOB_TYPE::DELIVERY).
@@ -54,11 +54,11 @@ struct Job {
       UserDuration setup = 0,
       UserDuration service = 0,
       const Amount& amount = Amount(0),
-      const Skills& skills = Skills(),
+      Skills skills = Skills(),
       Priority priority = 0,
       const std::vector<TimeWindow>& tws =
         std::vector<TimeWindow>(1, TimeWindow()),
-      const std::string& description = "");
+      std::string description = "");
 
   Index index() const {
     return location.index();

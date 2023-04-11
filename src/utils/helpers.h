@@ -27,8 +27,7 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/tw_route.h"
 #include "utils/exception.h"
 
-namespace vroom {
-namespace utils {
+namespace vroom::utils {
 
 using RawSolution = std::vector<RawRoute>;
 using TWSolution = std::vector<TWRoute>;
@@ -56,27 +55,30 @@ inline UserCost add_without_overflow(UserCost a, UserCost b) {
 inline INIT get_init(const std::string& s) {
   if (s == "NONE") {
     return INIT::NONE;
-  } else if (s == "HIGHER_AMOUNT") {
-    return INIT::HIGHER_AMOUNT;
-  } else if (s == "NEAREST") {
-    return INIT::NEAREST;
-  } else if (s == "FURTHEST") {
-    return INIT::FURTHEST;
-  } else if (s == "EARLIEST_DEADLINE") {
-    return INIT::EARLIEST_DEADLINE;
-  } else {
-    throw InputException("Invalid heuristic parameter in command-line.");
   }
+  if (s == "HIGHER_AMOUNT") {
+    return INIT::HIGHER_AMOUNT;
+  }
+  if (s == "NEAREST") {
+    return INIT::NEAREST;
+  }
+  if (s == "FURTHEST") {
+    return INIT::FURTHEST;
+  }
+  if (s == "EARLIEST_DEADLINE") {
+    return INIT::EARLIEST_DEADLINE;
+  }
+  throw InputException("Invalid heuristic parameter in command-line.");
 }
 
 inline SORT get_sort(const std::string& s) {
   if (s == "CAPACITY") {
     return SORT::CAPACITY;
-  } else if (s == "COST") {
-    return SORT::COST;
-  } else {
-    throw InputException("Invalid heuristic parameter in command-line.");
   }
+  if (s == "COST") {
+    return SORT::COST;
+  }
+  throw InputException("Invalid heuristic parameter in command-line.");
 }
 
 #ifdef LOG_LS_OPERATORS
@@ -183,8 +185,7 @@ inline Eval addition_cost(const Input& input,
   Eval old_edge_eval;
 
   if (rank == route.size()) {
-    if (route.size() == 0) {
-      // Adding job to an empty route.
+    if (route.empty()) {
       if (v.has_start()) {
         previous_eval = v.eval(v.start.value().index(), job_index);
       }
@@ -383,7 +384,7 @@ inline void check_precedence(const Input& input,
 inline void check_tws(const std::vector<TimeWindow>& tws,
                       const Id id,
                       const std::string& type) {
-  if (tws.size() == 0) {
+  if (tws.empty()) {
     throw InputException("Empty time-windows for " + type + " " +
                          std::to_string(id) + ".");
   }
@@ -493,7 +494,7 @@ inline Solution format_solution(const Input& input,
       ETA += next_leg.duration;
       eval_sum += next_leg;
 
-      auto& current_job = input.jobs[route[r + 1]];
+      const auto& current_job = input.jobs[route[r + 1]];
 
       const auto current_setup =
         (current_job.index() == previous_location) ? 0 : current_job.setup;
@@ -820,9 +821,8 @@ inline Route format_route(const Input& input,
       user_previous_end = current_break.arrival + current_break.waiting_time +
                           current_break.service;
 
-      auto& current_service = b.service;
-      service += current_service;
-      step_start += current_service;
+      service += b.service;
+      step_start += b.service;
     }
 
     // Back to current job.
@@ -969,9 +969,8 @@ inline Route format_route(const Input& input,
     user_previous_end = current_break.arrival + current_break.waiting_time +
                         current_break.service;
 
-    auto& current_service = b.service;
-    service += current_service;
-    step_start += current_service;
+    service += b.service;
+    step_start += b.service;
   }
 
   steps.emplace_back(STEP_TYPE::END, last_location.value(), current_load);
@@ -1052,7 +1051,6 @@ inline Solution format_solution(const Input& input,
                   std::move(unassigned_jobs));
 }
 
-} // namespace utils
-} // namespace vroom
+} // namespace vroom::utils
 
 #endif

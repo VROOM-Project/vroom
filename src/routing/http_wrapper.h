@@ -14,8 +14,7 @@ All rights reserved (see LICENSE).
 #include "routing/wrapper.h"
 #include "structures/typedefs.h"
 
-namespace vroom {
-namespace routing {
+namespace vroom::routing {
 
 class HttpWrapper : public Wrapper {
 private:
@@ -33,16 +32,16 @@ protected:
   const std::string _extra_args;
 
   HttpWrapper(const std::string& profile,
-              const Server& server,
-              const std::string& matrix_service,
-              const std::string& matrix_durations_key,
-              const std::string& route_service,
-              const std::string& extra_args);
+              Server server,
+              std::string matrix_service,
+              std::string matrix_durations_key,
+              std::string route_service,
+              std::string extra_args);
 
   std::string run_query(const std::string& query) const;
 
-  void parse_response(rapidjson::Document& json_result,
-                      const std::string& json_content) const;
+  static void parse_response(rapidjson::Document& json_result,
+                             const std::string& json_content);
 
   virtual std::string build_query(const std::vector<Location>& locations,
                                   const std::string& service,
@@ -51,8 +50,7 @@ protected:
   virtual void check_response(const rapidjson::Document& json_result,
                               const std::string& service) const = 0;
 
-  virtual Matrix<UserCost>
-  get_matrix(const std::vector<Location>& locs) const override;
+  Matrix<UserCost> get_matrix(const std::vector<Location>& locs) const override;
 
   virtual bool
   duration_value_is_null(const rapidjson::Value& matrix_entry) const = 0;
@@ -69,10 +67,9 @@ protected:
 
   virtual std::string get_geometry(rapidjson::Value& result) const = 0;
 
-  virtual void add_route_info(Route& route) const override;
+  void add_route_info(Route& route) const override;
 };
 
-} // namespace routing
-} // namespace vroom
+} // namespace vroom::routing
 
 #endif

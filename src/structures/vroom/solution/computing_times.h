@@ -16,9 +16,9 @@ namespace vroom {
 
 struct ComputingTimes {
   // Computing times in milliseconds.
-  UserDuration loading;
-  UserDuration solving;
-  UserDuration routing;
+  UserDuration loading{0};
+  UserDuration solving{0};
+  UserDuration routing{0};
 
   ComputingTimes();
 };

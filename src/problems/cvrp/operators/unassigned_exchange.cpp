@@ -10,8 +10,7 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/operators/unassigned_exchange.h"
 #include "utils/helpers.h"
 
-namespace vroom {
-namespace cvrp {
+namespace vroom::cvrp {
 
 UnassignedExchange::UnassignedExchange(const Input& input,
                                        const utils::SolutionState& sol_state,
@@ -156,5 +155,4 @@ std::vector<Index> UnassignedExchange::required_unassigned() const {
   return {_u};
 }
 
-} // namespace cvrp
-} // namespace vroom
+} // namespace vroom::cvrp
