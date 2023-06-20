@@ -10,6 +10,7 @@
 - Add running `apt-get update` in CI jobs (#863)
 - Update formatting script to use `clang-format` 14 (#894)
 - Setup a `clang-tidy` workflow (#789)
+- Submodule and update Rapidjson (#929)
 
 ### Fixed
 

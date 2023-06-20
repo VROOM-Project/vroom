@@ -9,8 +9,8 @@ All rights reserved (see LICENSE).
 
 #include <algorithm>
 
-#include "../include/rapidjson/document.h"
-#include "../include/rapidjson/error/en.h"
+#include "../include/rapidjson/include/rapidjson/document.h"
+#include "../include/rapidjson/include/rapidjson/error/en.h"
 
 #include "utils/input_parser.h"
 

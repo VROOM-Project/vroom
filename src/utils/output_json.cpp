@@ -10,8 +10,8 @@ All rights reserved (see LICENSE).
 #include <fstream>
 #include <iostream>
 
-#include "../include/rapidjson/stringbuffer.h"
-#include "../include/rapidjson/writer.h"
+#include "../include/rapidjson/include/rapidjson/stringbuffer.h"
+#include "../include/rapidjson/include/rapidjson/writer.h"
 
 #include "utils/output_json.h"
 
