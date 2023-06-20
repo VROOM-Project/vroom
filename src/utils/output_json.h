@@ -10,7 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "../include/rapidjson/document.h"
+#include "../include/rapidjson/include/rapidjson/document.h"
 #include "structures/vroom/solution/solution.h"
 
 namespace vroom::io {
