@@ -11,6 +11,10 @@
 - Update formatting script to use `clang-format` 14 (#894)
 - Setup a `clang-tidy` workflow (#789)
 
+### Fixed
+
+- Internal matrix problem with inconsistent `location_index` and `location` values (#909)
+
 ## [v1.13.0] - 2023-01-31
 
 ### Added
