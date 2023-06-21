@@ -189,6 +189,13 @@ int main(int argc, char** argv) {
   // then stdin.
   if (!cl_args.input_file.empty()) {
     std::ifstream ifs(cl_args.input_file);
+    if (!ifs) {
+      const auto exc = vroom::InputException("Dummy message");
+      const auto msg = "Can't read file: " + cl_args.input_file;
+      std::cerr << "[Error] " << msg << std::endl;
+      vroom::io::write_to_json({exc.error_code, msg}, cl_args.output_file);
+      exit(exc.error_code);
+    }
 
     std::stringstream buffer;
     buffer << ifs.rdbuf();

@@ -11,6 +11,7 @@
 - Update formatting script to use `clang-format` 14 (#894)
 - Setup a `clang-tidy` workflow (#789)
 - Submodule and update Rapidjson (#929)
+- Improved error messages for file-related IO errors (#553)
 
 ### Fixed
 
