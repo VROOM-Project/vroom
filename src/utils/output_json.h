@@ -37,8 +37,8 @@ rapidjson::Value to_json(const Location& loc,
                          rapidjson::Document::AllocatorType& allocator);
 
 void write_to_json(const Solution& sol,
-                   bool geometry,
-                   const std::string& output_file);
+                   const std::string& output_file = "",
+                   bool geometry = false);
 
 } // namespace vroom::io
 
