@@ -15,6 +15,7 @@
 ### Fixed
 
 - Internal matrix problem with inconsistent `location_index` and `location` values (#909)
+- Silent fail on invalid output file (#553)
 
 ## [v1.13.0] - 2023-01-31
 

@@ -31,6 +31,7 @@ int main(int argc, char** argv) {
   std::vector<std::string> port_args;
   std::string router_arg;
   std::string limit_arg;
+  std::string output_file;
   std::vector<std::string> heuristic_params_arg;
 
   cxxopts::Options options("vroom",
@@ -65,7 +66,7 @@ int main(int argc, char** argv) {
      cxxopts::value<std::string>(limit_arg))
     ("o,output",
      "write output to a file rather than stdout",
-     cxxopts::value<std::string>(cl_args.output_file))
+     cxxopts::value<std::string>(output_file))
     ("p,port",
      "host port for the routing profile",
      cxxopts::value<std::vector<std::string>>(port_args)->default_value({vroom::DEFAULT_PROFILE + ":5000"}))
@@ -94,6 +95,21 @@ int main(int argc, char** argv) {
     options.parse_positional({"stdin"});
     options.positional_help("OPTIONAL INLINE JSON");
     auto parsed_args = options.parse(argc, argv);
+
+    if (!output_file.empty()) {
+      // Check we're able to write to the output file.
+      std::ofstream out_stream(output_file);
+      if (!out_stream) {
+        const auto exc = vroom::InputException("Dummy message");
+        const auto msg = "Can't write to file: " + output_file;
+        std::cerr << "[Error] " << msg << std::endl;
+        vroom::io::write_to_json({exc.error_code, msg}, false, "");
+        exit(exc.error_code);
+      }
+      out_stream.close();
+
+      cl_args.output_file = output_file;
+    }
 
     try {
       if (!limit_arg.empty()) {
