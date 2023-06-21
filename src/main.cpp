@@ -185,15 +185,19 @@ int main(int argc, char** argv) {
     exit(e.error_code);
   }
 
-  // Read input problem
-  if (cl_args.input.empty()) {
+  // Get input problem from first input file, then positional arg,
+  // then stdin.
+  if (!cl_args.input_file.empty()) {
+    std::ifstream ifs(cl_args.input_file);
+
     std::stringstream buffer;
-    if (!cl_args.input_file.empty()) {
-      std::ifstream ifs(cl_args.input_file);
-      buffer << ifs.rdbuf();
-    } else {
-      buffer << std::cin.rdbuf();
-    }
+    buffer << ifs.rdbuf();
+
+    cl_args.input = buffer.str();
+  } else if (cl_args.input.empty()) {
+    // No input file provided and no positional arg, check stdin.
+    std::stringstream buffer;
+    buffer << std::cin.rdbuf();
     cl_args.input = buffer.str();
   }
 
