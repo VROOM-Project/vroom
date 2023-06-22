@@ -13,10 +13,12 @@
 - Submodule and update Rapidjson (#929)
 - Update polylineencoder to v2.0.1 (#931)
 - Switch to C++20 (#851)
+- Improved error messages for file-related IO errors (#553)
 
 ### Fixed
 
 - Internal matrix problem with inconsistent `location_index` and `location` values (#909)
+- Silent fail on invalid output file (#553)
 
 ## [v1.13.0] - 2023-01-31
 

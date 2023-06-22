@@ -31,6 +31,7 @@ int main(int argc, char** argv) {
   std::vector<std::string> port_args;
   std::string router_arg;
   std::string limit_arg;
+  std::string output_file;
   std::vector<std::string> heuristic_params_arg;
 
   cxxopts::Options options("vroom",
@@ -65,7 +66,7 @@ int main(int argc, char** argv) {
      cxxopts::value<std::string>(limit_arg))
     ("o,output",
      "write output to a file rather than stdout",
-     cxxopts::value<std::string>(cl_args.output_file))
+     cxxopts::value<std::string>(output_file))
     ("p,port",
      "host port for the routing profile",
      cxxopts::value<std::vector<std::string>>(port_args)->default_value({vroom::DEFAULT_PROFILE + ":5000"}))
@@ -95,6 +96,21 @@ int main(int argc, char** argv) {
     options.positional_help("OPTIONAL INLINE JSON");
     auto parsed_args = options.parse(argc, argv);
 
+    if (!output_file.empty()) {
+      // Check we're able to write to the output file.
+      std::ofstream out_stream(output_file);
+      if (!out_stream) {
+        const auto exc =
+          vroom::InputException("Can't write to file: " + output_file);
+        std::cerr << "[Error] " << exc.message << std::endl;
+        vroom::io::write_to_json({exc.error_code, exc.message});
+        exit(exc.error_code);
+      }
+      out_stream.close();
+
+      cl_args.output_file = output_file;
+    }
+
     try {
       if (!limit_arg.empty()) {
         // Internally timeout is in milliseconds.
@@ -123,7 +139,7 @@ int main(int argc, char** argv) {
     const auto exc = vroom::InputException(": invalid numerical value.");
     const auto msg = e.what() + exc.message;
     std::cerr << "[Error] " << msg << std::endl;
-    vroom::io::write_to_json({exc.error_code, msg}, false, cl_args.output_file);
+    vroom::io::write_to_json({exc.error_code, msg}, cl_args.output_file);
     exit(exc.error_code);
   }
 
@@ -148,7 +164,7 @@ int main(int argc, char** argv) {
     auto error_code = vroom::InputException("").error_code;
     std::string message = "Invalid routing engine: " + router_arg + ".";
     std::cerr << "[Error] " << message << std::endl;
-    vroom::io::write_to_json({error_code, message}, false, cl_args.output_file);
+    vroom::io::write_to_json({error_code, message}, cl_args.output_file);
     exit(error_code);
   } else {
     cl_args.router = vroom::ROUTER::OSRM;
@@ -165,21 +181,31 @@ int main(int argc, char** argv) {
                    });
   } catch (const vroom::Exception& e) {
     std::cerr << "[Error] " << e.message << std::endl;
-    vroom::io::write_to_json({e.error_code, e.message},
-                             false,
-                             cl_args.output_file);
+    vroom::io::write_to_json({e.error_code, e.message}, cl_args.output_file);
     exit(e.error_code);
   }
 
-  // Read input problem
-  if (cl_args.input.empty()) {
-    std::stringstream buffer;
-    if (!cl_args.input_file.empty()) {
-      std::ifstream ifs(cl_args.input_file);
-      buffer << ifs.rdbuf();
-    } else {
-      buffer << std::cin.rdbuf();
+  // Get input problem from first input file, then positional arg,
+  // then stdin.
+  if (!cl_args.input_file.empty()) {
+    std::ifstream ifs(cl_args.input_file);
+    if (!ifs) {
+      const auto exc =
+        vroom::InputException("Can't read file: " + cl_args.input_file);
+      std::cerr << "[Error] " << exc.message << std::endl;
+      vroom::io::write_to_json({exc.error_code, exc.message},
+                               cl_args.output_file);
+      exit(exc.error_code);
     }
+
+    std::stringstream buffer;
+    buffer << ifs.rdbuf();
+
+    cl_args.input = buffer.str();
+  } else if (cl_args.input.empty()) {
+    // No input file provided and no positional arg, check stdin.
+    std::stringstream buffer;
+    buffer << std::cin.rdbuf();
     cl_args.input = buffer.str();
   }
 
@@ -196,12 +222,10 @@ int main(int argc, char** argv) {
                                                      cl_args.h_params);
 
     // Write solution.
-    vroom::io::write_to_json(sol, cl_args.geometry, cl_args.output_file);
+    vroom::io::write_to_json(sol, cl_args.output_file, cl_args.geometry);
   } catch (const vroom::Exception& e) {
     std::cerr << "[Error] " << e.message << std::endl;
-    vroom::io::write_to_json({e.error_code, e.message},
-                             false,
-                             cl_args.output_file);
+    vroom::io::write_to_json({e.error_code, e.message}, cl_args.output_file);
     exit(e.error_code);
   }
 #if USE_LIBOSRM
@@ -210,7 +234,7 @@ int main(int argc, char** argv) {
     auto error_code = vroom::RoutingException("").error_code;
     auto message = "Routing problem: " + std::string(e.what());
     std::cerr << "[Error] " << message << std::endl;
-    vroom::io::write_to_json({error_code, message}, false, cl_args.output_file);
+    vroom::io::write_to_json({error_code, message}, cl_args.output_file);
     exit(error_code);
   }
 #endif
@@ -218,9 +242,7 @@ int main(int argc, char** argv) {
     // In case of an unhandled internal error.
     auto error_code = vroom::InternalException("").error_code;
     std::cerr << "[Error] " << e.what() << std::endl;
-    vroom::io::write_to_json({error_code, e.what()},
-                             false,
-                             cl_args.output_file);
+    vroom::io::write_to_json({error_code, e.what()}, cl_args.output_file);
     exit(error_code);
   }
 

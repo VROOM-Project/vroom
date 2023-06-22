@@ -361,8 +361,8 @@ rapidjson::Value to_json(const Location& loc,
 }
 
 void write_to_json(const Solution& sol,
-                   bool geometry,
-                   const std::string& output_file) {
+                   const std::string& output_file,
+                   bool geometry) {
   auto json_output = to_json(sol, geometry);
 
   // Rapidjson writing process.
