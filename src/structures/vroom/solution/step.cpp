@@ -41,7 +41,6 @@ Step::Step(const Job& job, const UserDuration setup, Amount load)
 Step::Step(const Break& b, Amount load)
   : step_type(STEP_TYPE::BREAK),
     job_type(JOB_TYPE::SINGLE), // Dummy value.
-    location(0),                // Dummy value.
     id(b.id),
     setup(0),
     service(utils::scale_to_user_duration(b.service)),

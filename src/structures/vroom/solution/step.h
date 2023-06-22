@@ -22,7 +22,7 @@ namespace vroom {
 struct Step {
   const STEP_TYPE step_type;
   const JOB_TYPE job_type;
-  const Location location;
+  const std::optional<Location> location;
   const Id id;
   UserDuration setup;
   UserDuration service;
