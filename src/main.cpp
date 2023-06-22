@@ -100,10 +100,10 @@ int main(int argc, char** argv) {
       // Check we're able to write to the output file.
       std::ofstream out_stream(output_file);
       if (!out_stream) {
-        const auto exc = vroom::InputException("Dummy message");
-        const auto msg = "Can't write to file: " + output_file;
-        std::cerr << "[Error] " << msg << std::endl;
-        vroom::io::write_to_json({exc.error_code, msg});
+        const auto exc =
+          vroom::InputException("Can't write to file: " + output_file);
+        std::cerr << "[Error] " << exc.message << std::endl;
+        vroom::io::write_to_json({exc.error_code, exc.message});
         exit(exc.error_code);
       }
       out_stream.close();
@@ -190,10 +190,11 @@ int main(int argc, char** argv) {
   if (!cl_args.input_file.empty()) {
     std::ifstream ifs(cl_args.input_file);
     if (!ifs) {
-      const auto exc = vroom::InputException("Dummy message");
-      const auto msg = "Can't read file: " + cl_args.input_file;
-      std::cerr << "[Error] " << msg << std::endl;
-      vroom::io::write_to_json({exc.error_code, msg}, cl_args.output_file);
+      const auto exc =
+        vroom::InputException("Can't read file: " + cl_args.input_file);
+      std::cerr << "[Error] " << exc.message << std::endl;
+      vroom::io::write_to_json({exc.error_code, exc.message},
+                               cl_args.output_file);
       exit(exc.error_code);
     }
 
