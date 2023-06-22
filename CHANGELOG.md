@@ -19,6 +19,7 @@
 
 - Internal matrix problem with inconsistent `location_index` and `location` values (#909)
 - Silent fail on invalid output file (#553)
+- Meaningless `location_index` provided in output for break steps (#877)
 
 ## [v1.13.0] - 2023-01-31
 

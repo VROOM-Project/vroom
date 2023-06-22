@@ -307,12 +307,15 @@ rapidjson::Value to_json(const Step& s,
                                        allocator);
   }
 
-  if (s.location.has_coordinates()) {
-    json_step.AddMember("location", to_json(s.location, allocator), allocator);
-  }
+  if (s.location.has_value()) {
+    const auto& loc = s.location.value();
+    if (loc.has_coordinates()) {
+      json_step.AddMember("location", to_json(loc, allocator), allocator);
+    }
 
-  if (s.location.user_index()) {
-    json_step.AddMember("location_index", s.location.index(), allocator);
+    if (loc.user_index()) {
+      json_step.AddMember("location_index", loc.index(), allocator);
+    }
   }
 
   if (s.step_type == STEP_TYPE::JOB or s.step_type == STEP_TYPE::BREAK) {
