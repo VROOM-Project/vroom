@@ -110,6 +110,10 @@ struct Vehicle {
     return d <= max_travel_time;
   }
 
+  bool has_max_travel_time() const {
+    return max_travel_time != std::numeric_limits<Duration>::max();
+  }
+
   Index break_rank(Id id) const;
 };
 
