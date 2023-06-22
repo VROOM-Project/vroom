@@ -721,7 +721,8 @@ void Input::set_vehicle_steps_ranks() {
       }
 
       if (step.type == STEP_TYPE::JOB) {
-        switch (step.job_type) {
+        assert(step.job_type.has_value());
+        switch (step.job_type.value()) {
         case JOB_TYPE::SINGLE: {
           auto search = job_id_to_rank.find(step.id);
           if (search == job_id_to_rank.end()) {

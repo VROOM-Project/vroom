@@ -1108,8 +1108,12 @@ Route choose_ETA(const Input& input,
   // Startup load is the sum of deliveries for (single) jobs.
   Amount current_load(input.zero_amount());
   for (const auto& step : steps) {
-    if (step.type == STEP_TYPE::JOB and step.job_type == JOB_TYPE::SINGLE) {
-      current_load += input.jobs[step.rank].delivery;
+    if (step.type == STEP_TYPE::JOB) {
+      assert(step.job_type.has_value());
+
+      if (step.job_type.value() == JOB_TYPE::SINGLE) {
+        current_load += input.jobs[step.rank].delivery;
+      }
     }
   }
 

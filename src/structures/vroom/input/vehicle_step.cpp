@@ -28,18 +28,12 @@ ForcedService::ForcedService(const std::optional<UserDuration>& at,
 }
 
 VehicleStep::VehicleStep(STEP_TYPE type, ForcedService&& forced_service)
-  : id(0),
-    type(type),
-    job_type(JOB_TYPE::SINGLE),
-    forced_service(std::move(forced_service)) {
+  : id(0), type(type), forced_service(std::move(forced_service)) {
   assert(type == STEP_TYPE::START or type == STEP_TYPE::END);
 }
 
 VehicleStep::VehicleStep(STEP_TYPE type, Id id, ForcedService&& forced_service)
-  : id(id),
-    type(type),
-    job_type(JOB_TYPE::SINGLE),
-    forced_service(std::move(forced_service)) {
+  : id(id), type(type), forced_service(std::move(forced_service)) {
   assert(type == STEP_TYPE::BREAK);
 }
 
