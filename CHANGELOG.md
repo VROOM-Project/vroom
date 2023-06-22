@@ -19,6 +19,7 @@
 
 - Internal matrix problem with inconsistent `location_index` and `location` values (#909)
 - Silent fail on invalid output file (#553)
+- `max_travel_time` parameter not taken into account in edge case (#884)
 
 ## [v1.13.0] - 2023-01-31
 
