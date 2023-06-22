@@ -284,8 +284,9 @@ rapidjson::Value to_json(const Step& s,
   case STEP_TYPE::BREAK:
     str_type = "break";
     break;
-  case STEP_TYPE::JOB:
-    switch (s.job_type) {
+  case STEP_TYPE::JOB: {
+    assert(s.job_type.has_value());
+    switch (s.job_type.value()) {
     case JOB_TYPE::SINGLE:
       str_type = "job";
       break;
@@ -297,6 +298,7 @@ rapidjson::Value to_json(const Step& s,
       break;
     }
     break;
+  }
   }
   json_step["type"].SetString(str_type.c_str(), str_type.size(), allocator);
 
