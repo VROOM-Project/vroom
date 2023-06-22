@@ -11,6 +11,7 @@ All rights reserved (see LICENSE).
 */
 
 #include <mutex>
+#include <ranges>
 #include <set>
 #include <thread>
 
@@ -161,9 +162,8 @@ protected:
       }
     }
 
-    for (auto remove_rank = to_remove.rbegin(); remove_rank != to_remove.rend();
-         remove_rank++) {
-      solutions.erase(solutions.begin() + *remove_rank);
+    for (unsigned int & remove_rank : std::ranges::reverse_view(to_remove)) {
+      solutions.erase(solutions.begin() + remove_rank);
     }
 
     // Split local searches across threads.

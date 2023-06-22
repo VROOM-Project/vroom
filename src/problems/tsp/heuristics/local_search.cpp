@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 #include <algorithm>
 #include <iterator>
 #include <numeric>
+#include <ranges>
 #include <thread>
 #include <unordered_map>
 
@@ -483,9 +484,9 @@ UserCost LocalSearch::two_opt_step() {
     // Performing exchange.
     Index current = best_edge_2_start;
     _edges[best_edge_1_start] = current;
-    for (auto next = to_reverse.rbegin(); next != to_reverse.rend(); ++next) {
-      _edges[current] = *next;
-      current = *next;
+    for (unsigned short & next : std::ranges::reverse_view(to_reverse)) {
+      _edges[current] = next;
+      current = next;
     }
     _edges[current] = best_edge_2_end;
   }
@@ -623,9 +624,9 @@ UserCost LocalSearch::asym_two_opt_step() {
     // Performing exchange.
     Index current = best_edge_2_start;
     _edges[best_edge_1_start] = current;
-    for (auto next = to_reverse.rbegin(); next != to_reverse.rend(); ++next) {
-      _edges[current] = *next;
-      current = *next;
+    for (unsigned short & next : std::ranges::reverse_view(to_reverse)) {
+      _edges[current] = next;
+      current = next;
     }
     _edges[current] = best_edge_2_end;
   }
