@@ -11,6 +11,8 @@
 - Update formatting script to use `clang-format` 14 (#894)
 - Setup a `clang-tidy` workflow (#789)
 - Submodule and update Rapidjson (#929)
+- Update polylineencoder to v2.0.1 (#931)
+- Switch to C++20 (#851)
 
 ### Fixed
 
