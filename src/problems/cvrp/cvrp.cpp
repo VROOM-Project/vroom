@@ -146,7 +146,8 @@ Solution CVRP::solve(unsigned exploration_level,
   if (_input.vehicles.size() == 1 and !_input.has_skills() and
       _input.zero_amount().size() == 0 and !_input.has_shipments() and
       (_input.jobs.size() <= _input.vehicles[0].max_tasks) and
-      _input.vehicles[0].steps.empty()) {
+      _input.vehicles[0].steps.empty() and
+      !_input.vehicles[0].has_max_travel_time()) {
     // This is a plain TSP, no need to go through the trouble below.
     std::vector<Index> job_ranks(_input.jobs.size());
     std::iota(job_ranks.begin(), job_ranks.end(), 0);
