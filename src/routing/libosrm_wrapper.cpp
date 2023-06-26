@@ -107,9 +107,11 @@ void LibosrmWrapper::add_route_info(Route& route) const {
         ++(number_breaks_after.back());
       }
     } else {
-      params.coordinates
-        .emplace_back(osrm::util::FloatLongitude({step.location.lon()}),
-                      osrm::util::FloatLatitude({step.location.lat()}));
+      assert(step.location.has_value());
+      const auto& loc = step.location.value();
+      assert(loc.has_coordinates());
+      params.coordinates.emplace_back(osrm::util::FloatLongitude({loc.lon()}),
+                                      osrm::util::FloatLatitude({loc.lat()}));
       number_breaks_after.push_back(0);
     }
   }
