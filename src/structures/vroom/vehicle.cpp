@@ -43,7 +43,7 @@ Vehicle::Vehicle(Id id,
     max_tasks(max_tasks),
     max_travel_time(max_travel_time.has_value()
                       ? utils::scale_from_user_duration(max_travel_time.value())
-                      : std::numeric_limits<Duration>::max()),
+                      : DEFAULT_MAX_TRAVEL_TIME),
     has_break_max_load(
       std::any_of(breaks.cbegin(), breaks.cend(), [](const auto& b) {
         return b.max_load.has_value();
