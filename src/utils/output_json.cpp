@@ -284,8 +284,9 @@ rapidjson::Value to_json(const Step& s,
   case STEP_TYPE::BREAK:
     str_type = "break";
     break;
-  case STEP_TYPE::JOB:
-    switch (s.job_type) {
+  case STEP_TYPE::JOB: {
+    assert(s.job_type.has_value());
+    switch (s.job_type.value()) {
     case JOB_TYPE::SINGLE:
       str_type = "job";
       break;
@@ -298,6 +299,7 @@ rapidjson::Value to_json(const Step& s,
     }
     break;
   }
+  }
   json_step["type"].SetString(str_type.c_str(), str_type.size(), allocator);
 
   if (!s.description.empty()) {
@@ -307,12 +309,15 @@ rapidjson::Value to_json(const Step& s,
                                        allocator);
   }
 
-  if (s.location.has_coordinates()) {
-    json_step.AddMember("location", to_json(s.location, allocator), allocator);
-  }
+  if (s.location.has_value()) {
+    const auto& loc = s.location.value();
+    if (loc.has_coordinates()) {
+      json_step.AddMember("location", to_json(loc, allocator), allocator);
+    }
 
-  if (s.location.user_index()) {
-    json_step.AddMember("location_index", s.location.index(), allocator);
+    if (loc.user_index()) {
+      json_step.AddMember("location_index", loc.index(), allocator);
+    }
   }
 
   if (s.step_type == STEP_TYPE::JOB or s.step_type == STEP_TYPE::BREAK) {

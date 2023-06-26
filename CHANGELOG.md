@@ -21,6 +21,7 @@
 - Silent fail on invalid output file (#553)
 - Comparison of index-based and coordinates-based locations (#935)
 - `max_travel_time` parameter not taken into account in edge case (#884)
+- Meaningless `location_index` provided in output for break steps (#877)
 
 ## [v1.13.0] - 2023-01-31
 

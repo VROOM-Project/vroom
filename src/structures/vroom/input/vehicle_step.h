@@ -29,7 +29,7 @@ struct ForcedService {
 struct VehicleStep {
   const Id id;
   const STEP_TYPE type;
-  const JOB_TYPE job_type;
+  const std::optional<JOB_TYPE> job_type;
   const ForcedService forced_service;
 
   // Stores rank of current step (in input.jobs vector for a

@@ -895,8 +895,12 @@ template <class T> T initial_routes(const Input& input) {
     // Startup load is the sum of deliveries for (single) jobs.
     Amount single_jobs_deliveries(input.zero_amount());
     for (const auto& step : vehicle.steps) {
-      if (step.type == STEP_TYPE::JOB and step.job_type == JOB_TYPE::SINGLE) {
-        single_jobs_deliveries += input.jobs[step.rank].delivery;
+      if (step.type == STEP_TYPE::JOB) {
+        assert(step.job_type.has_value());
+
+        if (step.job_type.value() == JOB_TYPE::SINGLE) {
+          single_jobs_deliveries += input.jobs[step.rank].delivery;
+        }
       }
     }
     if (!(single_jobs_deliveries <= vehicle.capacity)) {
@@ -923,7 +927,8 @@ template <class T> T initial_routes(const Input& input) {
                              std::to_string(vehicle.id) + ".");
       }
 
-      switch (step.job_type) {
+      assert(step.job_type.has_value());
+      switch (step.job_type.value()) {
       case JOB_TYPE::SINGLE: {
         current_load += job.pickup;
         current_load -= job.delivery;

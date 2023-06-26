@@ -201,7 +201,8 @@ void HttpWrapper::add_route_info(Route& route) const {
         ++(number_breaks_after.back());
       }
     } else {
-      non_break_locations.push_back(step.location);
+      assert(step.location.has_value());
+      non_break_locations.push_back(step.location.value());
       number_breaks_after.push_back(0);
     }
   }
