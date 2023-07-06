@@ -128,3 +128,18 @@ Academic and custom benchmarks are heavily used during development for
 each new core feature. Every new release is checked against all
 benchmarks classes to spot potential regressions with regard to both
 solution quality and computing times.
+
+## Reference in publications
+
+To cite VROOM in publications, please use:
+
+```bibtex
+@manual{vroom_v1.13,
+   title = {{VROOM v1.13, Vehicle Routing Open-source Optimization Machine}},
+   author = {Coupey, Julien and Nicod, Jean-Marc and Varnier, Christophe},
+   year = 2023,
+   organization = {Verso (\url{https://verso-optim.com/})},
+   address = {Besançon, France},
+   note = {\url{http://vroom-project.org/}}
+ }
+ ```
