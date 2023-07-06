@@ -12,8 +12,8 @@
 
 ## Final release
 
-- Bump version number in `src/utils/version.h` and in `CHANGELOG.md`
-  and commit changes
+- Bump version number in `src/utils/version.h`, `CHANGELOG.md` and
+  `README.md` and commit changes
 - Tag : `git tag vX.Y.0`
 - Push release branch and tag: `git push origin release/X.Y`, `git push origin vX.Y.0`
 - Draft a new release on github
