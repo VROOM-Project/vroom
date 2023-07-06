@@ -6,7 +6,7 @@ _Good solutions, fast._
 
 ## About
 
-VROOM is an open-source optimization engine written in C++17 that aim
+VROOM is an open-source optimization engine written in C++20 that aim
 at providing good solutions to various real-life [vehicle routing
 problems](https://en.wikipedia.org/wiki/Vehicle_routing_problem) (VRP)
 within a small computing time.
