@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Recommendation on how to cite in publications (#943)
+
 ### Changed
 
 - Exposed internal variables to get feature parity for pyvroom (#901)
