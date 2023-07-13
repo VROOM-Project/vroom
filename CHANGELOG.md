@@ -18,6 +18,7 @@
 - Update polylineencoder to v2.0.1 (#931)
 - Switch to C++20 (#851)
 - Improved error messages for file-related IO errors (#553)
+- Improved error message for "Missing skill or step out of reach" case by adding job.id (#946)
 
 ### Fixed
 
