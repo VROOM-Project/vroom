@@ -923,8 +923,8 @@ template <class T> T initial_routes(const Input& input) {
       job_ranks.push_back(job_rank);
 
       if (!input.vehicle_ok_with_job(v, job_rank)) {
-        throw InputException("Missing skill or step out of reach for vehicle=" +
-                             std::to_string(vehicle.id) + ", job=" +
+        throw InputException("Missing skill or step out of reach for vehicle " +
+                             std::to_string(vehicle.id) + " and job " +
                              std::to_string(job.id) + ".");
       }
 
