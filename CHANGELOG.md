@@ -18,6 +18,7 @@
 - Update polylineencoder to v2.0.1 (#931)
 - Switch to C++20 (#851)
 - Improved error messages for file-related IO errors (#553)
+- Add job id to error message for unreachable step (#946)
 
 ### Fixed
 

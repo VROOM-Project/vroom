@@ -924,7 +924,8 @@ template <class T> T initial_routes(const Input& input) {
 
       if (!input.vehicle_ok_with_job(v, job_rank)) {
         throw InputException("Missing skill or step out of reach for vehicle " +
-                             std::to_string(vehicle.id) + ".");
+                             std::to_string(vehicle.id) + " and job " +
+                             std::to_string(job.id) + ".");
       }
 
       assert(step.job_type.has_value());
