@@ -22,12 +22,14 @@ HttpWrapper::HttpWrapper(const std::string& profile,
                          Server server,
                          std::string matrix_service,
                          std::string matrix_durations_key,
+                         std::string matrix_distances_key,
                          std::string route_service,
                          std::string routing_args)
   : Wrapper(profile),
     _server(std::move(server)),
     _matrix_service(std::move(matrix_service)),
     _matrix_durations_key(std::move(matrix_durations_key)),
+    _matrix_distances_key(std::move(matrix_distances_key)),
     _route_service(std::move(route_service)),
     _routing_args(std::move(routing_args)) {
 }
@@ -159,6 +161,11 @@ Matrices HttpWrapper::get_matrices(const std::vector<Location>& locs) const {
     throw RoutingException("Missing " + _matrix_durations_key + ".");
   }
   assert(json_result[_matrix_durations_key.c_str()].Size() == m_size);
+
+  if (!json_result.HasMember(_matrix_distances_key.c_str())) {
+    throw RoutingException("Missing " + _matrix_distances_key + ".");
+  }
+  assert(json_result[_matrix_distances_key.c_str()].Size() == m_size);
 
   // Build matrix while checking for unfound routes ('null' values) to
   // avoid unexpected behavior.

@@ -23,6 +23,7 @@ ValhallaWrapper::ValhallaWrapper(const std::string& profile,
                 server,
                 "sources_to_targets",
                 "sources_to_targets",
+                "sources_to_targets",
                 "route",
                 R"("directions_type":"none")") {
 }

@@ -17,6 +17,7 @@ OsrmRoutedWrapper::OsrmRoutedWrapper(const std::string& profile,
                 server,
                 "table",
                 "durations",
+                "distances",
                 "route",
                 "alternatives=false&steps=false&overview=full&continue_"
                 "straight=false") {

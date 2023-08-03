@@ -16,6 +16,7 @@ OrsWrapper::OrsWrapper(const std::string& profile, const Server& server)
                 server,
                 "matrix",
                 "durations",
+                "distances",
                 "directions",
                 "\"geometry_simplify\":\"false\",\"continue_straight\":"
                 "\"false\"") {
