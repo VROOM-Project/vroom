@@ -42,6 +42,7 @@ std::string OrsWrapper::build_query(const std::vector<Location>& locations,
     body += "," + _routing_args;
   } else {
     assert(service == _matrix_service);
+    body += ",\"metrics\":[\"duration\",\"distance\"]";
   }
   body += "}";
 
@@ -72,9 +73,19 @@ bool OrsWrapper::duration_value_is_null(
   return matrix_entry.IsNull();
 }
 
+bool OrsWrapper::distance_value_is_null(
+  const rapidjson::Value& matrix_entry) const {
+  return matrix_entry.IsNull();
+}
+
 UserDuration
 OrsWrapper::get_duration_value(const rapidjson::Value& matrix_entry) const {
   return round_cost<UserDuration>(matrix_entry.GetDouble());
+}
+
+UserDistance
+OrsWrapper::get_distance_value(const rapidjson::Value& matrix_entry) const {
+  return round_cost<UserDistance>(matrix_entry.GetDouble());
 }
 
 double OrsWrapper::get_total_distance(const rapidjson::Value& result) const {
