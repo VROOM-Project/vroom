@@ -29,8 +29,14 @@ private:
   bool
   duration_value_is_null(const rapidjson::Value& matrix_entry) const override;
 
+  bool
+  distance_value_is_null(const rapidjson::Value& matrix_entry) const override;
+
   UserDuration
   get_duration_value(const rapidjson::Value& matrix_entry) const override;
+
+  UserDistance
+  get_distance_value(const rapidjson::Value& matrix_entry) const override;
 
   double get_total_distance(const rapidjson::Value& result) const override;
 

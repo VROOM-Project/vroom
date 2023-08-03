@@ -124,10 +124,23 @@ bool ValhallaWrapper::duration_value_is_null(
   return matrix_entry["time"].IsNull();
 }
 
+bool ValhallaWrapper::distance_value_is_null(
+  const rapidjson::Value& matrix_entry) const {
+  assert(matrix_entry.HasMember("distance"));
+  return matrix_entry["distance"].IsNull();
+}
+
 UserDuration ValhallaWrapper::get_duration_value(
   const rapidjson::Value& matrix_entry) const {
   assert(matrix_entry["time"].IsUint());
   return matrix_entry["time"].GetUint();
+}
+
+UserDistance ValhallaWrapper::get_distance_value(
+  const rapidjson::Value& matrix_entry) const {
+  assert(matrix_entry["distance"].IsDouble());
+  return round_cost<UserDistance>(km_to_m *
+                                  matrix_entry["distance"].GetDouble());
 }
 
 double
