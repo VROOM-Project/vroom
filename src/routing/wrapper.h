@@ -19,6 +19,14 @@ All rights reserved (see LICENSE).
 
 namespace vroom::routing {
 
+struct Matrices {
+  Matrix<UserDuration> durations;
+  Matrix<UserDistance> distances;
+
+  Matrices(std::size_t n) : durations(n), distances(n) {
+  };
+};
+
 class Wrapper {
 
 public:
