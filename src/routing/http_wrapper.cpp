@@ -175,17 +175,21 @@ Matrices HttpWrapper::get_matrices(const std::vector<Location>& locs) const {
   std::vector<unsigned> nb_unfound_to_loc(m_size, 0);
 
   for (rapidjson::SizeType i = 0; i < m_size; ++i) {
-    const auto& line = json_result[_matrix_durations_key.c_str()][i];
-    assert(line.Size() == m_size);
-    for (rapidjson::SizeType j = 0; j < line.Size(); ++j) {
-      if (duration_value_is_null(line[j])) {
+    const auto& duration_line = json_result[_matrix_durations_key.c_str()][i];
+    const auto& distance_line = json_result[_matrix_distances_key.c_str()][i];
+    assert(duration_line.Size() == m_size);
+    assert(distance_line.Size() == m_size);
+    for (rapidjson::SizeType j = 0; j < m_size; ++j) {
+      if (duration_value_is_null(duration_line[j]) or
+          distance_value_is_null(distance_line[j])) {
         // No route found between i and j. Just storing info as we
         // don't know yet which location is responsible between i
         // and j.
         ++nb_unfound_from_loc[i];
         ++nb_unfound_to_loc[j];
       } else {
-        m.durations[i][j] = get_duration_value(line[j]);
+        m.durations[i][j] = get_duration_value(duration_line[j]);
+        m.distances[i][j] = get_distance_value(distance_line[j]);
       }
     }
   }
