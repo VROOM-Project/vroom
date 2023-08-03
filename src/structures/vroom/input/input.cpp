@@ -386,6 +386,14 @@ void Input::set_durations_matrix(const std::string& profile,
   _durations_matrices.insert_or_assign(profile, m);
 }
 
+void Input::set_distances_matrix(const std::string& profile,
+                                 Matrix<UserDistance>&& m) {
+  if (m.size() == 0) {
+    throw InputException("Empty distances matrix for " + profile + " profile.");
+  }
+  _distances_matrices.insert_or_assign(profile, m);
+}
+
 void Input::set_costs_matrix(const std::string& profile, Matrix<UserCost>&& m) {
   if (m.size() == 0) {
     throw InputException("Empty costs matrix for " + profile + " profile.");

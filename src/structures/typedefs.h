@@ -35,6 +35,7 @@ using Cost = int64_t;
 using Distance = uint32_t;
 using UserDuration = uint32_t;
 using Duration = int64_t;
+using UserDistance = uint32_t;
 using Coordinate = double;
 using Capacity = int64_t;
 using Skill = uint32_t;
