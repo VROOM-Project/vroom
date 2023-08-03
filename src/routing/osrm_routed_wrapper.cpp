@@ -65,7 +65,7 @@ bool OsrmRoutedWrapper::duration_value_is_null(
 
 UserDuration OsrmRoutedWrapper::get_duration_value(
   const rapidjson::Value& matrix_entry) const {
-  return round_cost(matrix_entry.GetDouble());
+  return round_cost<UserDuration>(matrix_entry.GetDouble());
 }
 
 double

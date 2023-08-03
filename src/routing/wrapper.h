@@ -41,9 +41,9 @@ protected:
   Wrapper(std::string profile) : profile(std::move(profile)) {
   }
 
-  static UserCost round_cost(double value) {
+  template <typename T> static T round_cost(double value) {
     constexpr double round_increment = 0.5;
-    return static_cast<UserCost>(value + round_increment);
+    return static_cast<T>(value + round_increment);
   }
 
   static inline void

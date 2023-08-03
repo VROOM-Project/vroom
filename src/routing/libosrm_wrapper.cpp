@@ -76,7 +76,8 @@ Matrices LibosrmWrapper::get_matrices(const std::vector<Location>& locs) const {
         ++nb_unfound_from_loc[i];
         ++nb_unfound_to_loc[j];
       } else {
-        auto cost = round_cost(el.get<osrm::json::Number>().value);
+        auto cost =
+          round_cost<UserDuration>(duration_el.get<osrm::json::Number>().value);
         m.durations[i][j] = cost;
       }
     }
@@ -129,8 +130,8 @@ void LibosrmWrapper::add_route_info(Route& route) const {
   auto& json_route = result_routes.values.at(0).get<osrm::json::Object>();
 
   // Total distance and route geometry.
-  route.distance =
-    round_cost(json_route.values["distance"].get<osrm::json::Number>().value);
+  route.distance = round_cost<UserDistance>(
+    json_route.values["distance"].get<osrm::json::Number>().value);
   route.geometry =
     std::move(json_route.values["geometry"].get<osrm::json::String>().value);
 
@@ -169,13 +170,13 @@ void LibosrmWrapper::add_route_info(Route& route) const {
     // non-breaks steps.
     for (unsigned b = 1; b <= number_breaks_after[i]; ++b) {
       auto& break_step = route.steps[steps_rank + b];
-      break_step.distance = round_cost(
+      break_step.distance = round_cost<UserDistance>(
         sum_distance + ((break_step.duration - step.duration) * next_distance) /
                          next_duration);
     }
 
     sum_distance += next_distance;
-    next_step.distance = round_cost(sum_distance);
+    next_step.distance = round_cost<UserDistance>(sum_distance);
 
     steps_rank += number_breaks_after[i] + 1;
   }

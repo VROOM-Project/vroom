@@ -72,7 +72,7 @@ bool OrsWrapper::duration_value_is_null(
 
 UserDuration
 OrsWrapper::get_duration_value(const rapidjson::Value& matrix_entry) const {
-  return round_cost(matrix_entry.GetDouble());
+  return round_cost<UserDuration>(matrix_entry.GetDouble());
 }
 
 double OrsWrapper::get_total_distance(const rapidjson::Value& result) const {

@@ -217,7 +217,7 @@ void HttpWrapper::add_route_info(Route& route) const {
   this->check_response(json_result, _route_service);
 
   // Total distance and route geometry.
-  route.distance = round_cost(get_total_distance(json_result));
+  route.distance = round_cost<UserDistance>(get_total_distance(json_result));
   route.geometry = get_geometry(json_result);
 
   auto nb_legs = get_legs_number(json_result);
@@ -244,17 +244,17 @@ void HttpWrapper::add_route_info(Route& route) const {
     for (unsigned b = 1; b <= number_breaks_after[i]; ++b) {
       auto& break_step = route.steps[steps_rank + b];
       if (next_duration == 0) {
-        break_step.distance = round_cost(sum_distance);
+        break_step.distance = round_cost<UserDistance>(sum_distance);
       } else {
-        break_step.distance =
-          round_cost(sum_distance +
-                     ((break_step.duration - step.duration) * next_distance) /
-                       next_duration);
+        break_step.distance = round_cost<UserDistance>(
+          sum_distance +
+          ((break_step.duration - step.duration) * next_distance) /
+            next_duration);
       }
     }
 
     sum_distance += next_distance;
-    next_step.distance = round_cost(sum_distance);
+    next_step.distance = round_cost<UserDistance>(sum_distance);
 
     steps_rank += number_breaks_after[i] + 1;
   }
