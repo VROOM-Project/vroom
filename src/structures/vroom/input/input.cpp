@@ -7,6 +7,8 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <iostream>
+
 #include <mutex>
 #include <thread>
 
@@ -951,6 +953,47 @@ Solution Input::solve(unsigned exploration_level,
 
   set_matrices(nb_thread);
   set_vehicles_costs();
+
+  for (const auto& profile : _profiles) {
+    std::cout << "* Durations matrix for profile " << profile << std::endl;
+    assert(_durations_matrices.find(profile) != _durations_matrices.end());
+    const auto& duration_m = _durations_matrices.find(profile)->second;
+
+    for (std::size_t i = 0; i < duration_m.size(); ++i) {
+      for (std::size_t j = 0; j < duration_m.size(); ++j) {
+        std::cout << duration_m[i][j] << "\t";
+      }
+      std::cout << std::endl;
+    }
+
+    if (_distances_matrices.find(profile) != _distances_matrices.end()) {
+      std::cout << "* Distances matrix for profile " << profile << std::endl;
+
+      const auto& distance_m = _distances_matrices.find(profile)->second;
+
+      for (std::size_t i = 0; i < distance_m.size(); ++i) {
+        for (std::size_t j = 0; j < distance_m.size(); ++j) {
+          std::cout << distance_m[i][j] << "\t";
+        }
+        std::cout << std::endl;
+      }
+    }
+
+    if (_costs_matrices.find(profile) != _costs_matrices.end()) {
+      std::cout << "* Costs matrix for profile " << profile << std::endl;
+
+      const auto& distance_m = _costs_matrices.find(profile)->second;
+
+      for (std::size_t i = 0; i < distance_m.size(); ++i) {
+        for (std::size_t j = 0; j < distance_m.size(); ++j) {
+          std::cout << distance_m[i][j] << "\t";
+        }
+        std::cout << std::endl;
+      }
+    }
+  }
+
+  exit(0);
 
   // Fill vehicle/job compatibility matrices.
   set_skills_compatibility();
