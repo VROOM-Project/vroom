@@ -42,6 +42,7 @@ OsrmRoutedWrapper::build_query(const std::vector<Location>& locations,
     query += "?" + _routing_args;
   } else {
     assert(service == _matrix_service);
+    query += "?annotations=duration,distance";
   }
 
   query += " HTTP/1.1\r\n";
@@ -65,9 +66,19 @@ bool OsrmRoutedWrapper::duration_value_is_null(
   return matrix_entry.IsNull();
 }
 
+bool OsrmRoutedWrapper::distance_value_is_null(
+  const rapidjson::Value& matrix_entry) const {
+  return matrix_entry.IsNull();
+}
+
 UserDuration OsrmRoutedWrapper::get_duration_value(
   const rapidjson::Value& matrix_entry) const {
   return round_cost<UserDuration>(matrix_entry.GetDouble());
+}
+
+UserDistance OsrmRoutedWrapper::get_distance_value(
+  const rapidjson::Value& matrix_entry) const {
+  return round_cost<UserDistance>(matrix_entry.GetDouble());
 }
 
 double
