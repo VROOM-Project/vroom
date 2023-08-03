@@ -818,18 +818,26 @@ void Input::set_matrices(unsigned nb_thread) {
   for (const auto& profile : _profiles) {
     thread_profiles[t_rank % nb_buckets].push_back(profile);
     ++t_rank;
+
+    // Even with custom matrices, we still need routing after
+    // optimization if geometry is requested.
+    bool create_routing_wrapper = _geometry;
+
     if (_durations_matrices.find(profile) == _durations_matrices.end()) {
-      // Durations matrix has not been manually set, create routing
-      // wrapper and empty matrix to allow for concurrent modification
-      // later on.
-      add_routing_wrapper(profile);
+      // Durations matrix has not been manually set, create empty
+      // matrix to allow for concurrent modification later on.
+      create_routing_wrapper = true;
       _durations_matrices.emplace(profile, Matrix<UserDuration>());
-    } else {
-      if (_geometry) {
-        // Even with a custom matrix, we still want routing after
-        // optimization.
-        add_routing_wrapper(profile);
-      }
+    }
+    if (_distances_matrices.find(profile) == _distances_matrices.end()) {
+      // Distances matrix has not been manually set, create empty
+      // matrix to allow for concurrent modification later on.
+      create_routing_wrapper = true;
+      _distances_matrices.emplace(profile, Matrix<UserDistance>());
+    }
+
+    if (create_routing_wrapper) {
+      add_routing_wrapper(profile);
     }
   }
 
@@ -840,14 +848,14 @@ void Input::set_matrices(unsigned nb_thread) {
   auto run_on_profiles = [&](const std::vector<std::string>& profiles) {
     try {
       for (const auto& profile : profiles) {
-        auto d_m = _durations_matrices.find(profile);
-        assert(d_m != _durations_matrices.end());
+        auto durations_m = _durations_matrices.find(profile);
+        assert(durations_m != _durations_matrices.end());
 
-        if (d_m->second.size() == 0) {
+        if (durations_m->second.size() == 0) {
           // Durations matrix not manually set so defined as empty
           // above.
           if (_locations.size() == 1) {
-            d_m->second = Matrix<UserCost>(1);
+            durations_m->second = Matrix<UserDuration>(1);
           } else {
             auto rw = std::find_if(_routing_wrappers.begin(),
                                    _routing_wrappers.end(),
@@ -858,7 +866,7 @@ void Input::set_matrices(unsigned nb_thread) {
 
             if (!_has_custom_location_index) {
               // Location indices are set based on order in _locations.
-              d_m->second = (*rw)->get_matrix(_locations);
+              durations_m->second = (*rw)->get_matrix(_locations);
             } else {
               // Location indices are provided in input so we need an
               // indirection based on order in _locations.
@@ -872,12 +880,12 @@ void Input::set_matrices(unsigned nb_thread) {
                 }
               }
 
-              d_m->second = std::move(full_m);
+              durations_m->second = std::move(full_m);
             }
           }
         }
 
-        if (d_m->second.size() <= _max_matrices_used_index) {
+        if (durations_m->second.size() <= _max_matrices_used_index) {
           throw InputException("location_index exceeding matrix size for " +
                                profile + " profile.");
         }
@@ -899,7 +907,7 @@ void Input::set_matrices(unsigned nb_thread) {
           cost_bound_m.unlock();
         } else {
           // Durations matrix will be used for costs.
-          const UserCost current_bound = check_cost_bound(d_m->second);
+          const UserCost current_bound = check_cost_bound(durations_m->second);
           cost_bound_m.lock();
           _cost_upper_bound =
             std::max(_cost_upper_bound,
