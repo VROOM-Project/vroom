@@ -50,7 +50,7 @@ protected:
   virtual void check_response(const rapidjson::Document& json_result,
                               const std::string& service) const = 0;
 
-  Matrix<UserCost> get_matrix(const std::vector<Location>& locs) const override;
+  Matrices get_matrices(const std::vector<Location>& locs) const override;
 
   virtual bool
   duration_value_is_null(const rapidjson::Value& matrix_entry) const = 0;

@@ -23,8 +23,7 @@ struct Matrices {
   Matrix<UserDuration> durations;
   Matrix<UserDistance> distances;
 
-  Matrices(std::size_t n) : durations(n), distances(n) {
-  };
+  Matrices(std::size_t n) : durations(n), distances(n){};
 };
 
 class Wrapper {
@@ -32,8 +31,7 @@ class Wrapper {
 public:
   std::string profile;
 
-  virtual Matrix<UserCost>
-  get_matrix(const std::vector<Location>& locs) const = 0;
+  virtual Matrices get_matrices(const std::vector<Location>& locs) const = 0;
 
   virtual void add_route_info(Route& route) const = 0;
 

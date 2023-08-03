@@ -32,8 +32,7 @@ LibosrmWrapper::LibosrmWrapper(const std::string& profile)
   : Wrapper(profile), _config(get_config(profile)), _osrm(_config) {
 }
 
-Matrix<UserCost>
-LibosrmWrapper::get_matrix(const std::vector<Location>& locs) const {
+Matrices LibosrmWrapper::get_matrices(const std::vector<Location>& locs) const {
   osrm::TableParameters params;
   for (auto const& location : locs) {
     assert(location.has_coordinates());
@@ -59,7 +58,7 @@ LibosrmWrapper::get_matrix(const std::vector<Location>& locs) const {
 
   // Build matrix while checking for unfound routes to avoid
   // unexpected behavior (OSRM raises 'null').
-  Matrix<UserCost> m(m_size);
+  Matrices m(m_size);
 
   std::vector<unsigned> nb_unfound_from_loc(m_size, 0);
   std::vector<unsigned> nb_unfound_to_loc(m_size, 0);
@@ -78,7 +77,7 @@ LibosrmWrapper::get_matrix(const std::vector<Location>& locs) const {
         ++nb_unfound_to_loc[j];
       } else {
         auto cost = round_cost(el.get<osrm::json::Number>().value);
-        m[i][j] = cost;
+        m.durations[i][j] = cost;
       }
     }
   }

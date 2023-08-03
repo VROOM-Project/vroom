@@ -144,8 +144,7 @@ void HttpWrapper::parse_response(rapidjson::Document& json_result,
 #endif
 }
 
-Matrix<UserCost>
-HttpWrapper::get_matrix(const std::vector<Location>& locs) const {
+Matrices HttpWrapper::get_matrices(const std::vector<Location>& locs) const {
   std::string query = this->build_query(locs, _matrix_service);
   std::string json_string = this->run_query(query);
 
@@ -163,7 +162,7 @@ HttpWrapper::get_matrix(const std::vector<Location>& locs) const {
 
   // Build matrix while checking for unfound routes ('null' values) to
   // avoid unexpected behavior.
-  Matrix<UserCost> m(m_size);
+  Matrices m(m_size);
 
   std::vector<unsigned> nb_unfound_from_loc(m_size, 0);
   std::vector<unsigned> nb_unfound_to_loc(m_size, 0);
@@ -179,7 +178,7 @@ HttpWrapper::get_matrix(const std::vector<Location>& locs) const {
         ++nb_unfound_from_loc[i];
         ++nb_unfound_to_loc[j];
       } else {
-        m[i][j] = get_duration_value(line[j]);
+        m.durations[i][j] = get_duration_value(line[j]);
       }
     }
   }
