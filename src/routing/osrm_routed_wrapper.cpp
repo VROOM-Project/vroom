@@ -24,8 +24,7 @@ OsrmRoutedWrapper::OsrmRoutedWrapper(const std::string& profile,
 
 std::string
 OsrmRoutedWrapper::build_query(const std::vector<Location>& locations,
-                               const std::string& service,
-                               const std::string& extra_args) const {
+                               const std::string& service) const {
   // Building query for osrm-routed
   std::string query = "GET /" + service;
 
@@ -38,8 +37,10 @@ OsrmRoutedWrapper::build_query(const std::vector<Location>& locations,
   }
   query.pop_back(); // Remove trailing ';'.
 
-  if (!extra_args.empty()) {
-    query += "?" + extra_args;
+  if (service == _route_service) {
+    query += "?" + _routing_args;
+  } else {
+    assert(service == _matrix_service);
   }
 
   query += " HTTP/1.1\r\n";

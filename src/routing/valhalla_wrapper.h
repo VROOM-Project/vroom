@@ -18,12 +18,10 @@ class ValhallaWrapper : public HttpWrapper {
 private:
   std::string get_matrix_query(const std::vector<Location>& locations) const;
 
-  std::string get_route_query(const std::vector<Location>& locations,
-                              const std::string& extra_args = "") const;
+  std::string get_route_query(const std::vector<Location>& locations) const;
 
   std::string build_query(const std::vector<Location>& locations,
-                          const std::string& service,
-                          const std::string& extra_args) const override;
+                          const std::string& service) const override;
 
   void check_response(const rapidjson::Document& json_result,
                       const std::string& service) const override;

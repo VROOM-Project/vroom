@@ -17,8 +17,7 @@ namespace vroom::routing {
 class OsrmRoutedWrapper : public HttpWrapper {
 private:
   std::string build_query(const std::vector<Location>& locations,
-                          const std::string& service,
-                          const std::string& extra_args) const override;
+                          const std::string& service) const override;
 
   void check_response(const rapidjson::Document& json_result,
                       const std::string& service) const override;

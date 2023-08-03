@@ -53,8 +53,7 @@ std::string ValhallaWrapper::get_matrix_query(
 }
 
 std::string
-ValhallaWrapper::get_route_query(const std::vector<Location>& locations,
-                                 const std::string& extra_args) const {
+ValhallaWrapper::get_route_query(const std::vector<Location>& locations) const {
   // Building matrix query for Valhalla.
   std::string query = "GET /" + _route_service + "?json={\"locations\":[";
 
@@ -66,9 +65,7 @@ ValhallaWrapper::get_route_query(const std::vector<Location>& locations,
   query.pop_back(); // Remove trailing ','.
 
   query += R"(],"costing":")" + profile + "\"";
-  if (!extra_args.empty()) {
-    query += "," + extra_args;
-  }
+  query += "," + _routing_args;
   query += "}";
 
   query += " HTTP/1.1\r\n";
@@ -80,12 +77,11 @@ ValhallaWrapper::get_route_query(const std::vector<Location>& locations,
 }
 
 std::string ValhallaWrapper::build_query(const std::vector<Location>& locations,
-                                         const std::string& service,
-                                         const std::string& extra_args) const {
+                                         const std::string& service) const {
   assert(service == _matrix_service or service == _route_service);
 
   return (service == _matrix_service) ? get_matrix_query(locations)
-                                      : get_route_query(locations, extra_args);
+                                      : get_route_query(locations);
 }
 
 void ValhallaWrapper::check_response(const rapidjson::Document& json_result,

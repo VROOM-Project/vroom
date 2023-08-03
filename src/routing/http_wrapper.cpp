@@ -23,13 +23,13 @@ HttpWrapper::HttpWrapper(const std::string& profile,
                          std::string matrix_service,
                          std::string matrix_durations_key,
                          std::string route_service,
-                         std::string extra_args)
+                         std::string routing_args)
   : Wrapper(profile),
     _server(std::move(server)),
     _matrix_service(std::move(matrix_service)),
     _matrix_durations_key(std::move(matrix_durations_key)),
     _route_service(std::move(route_service)),
-    _extra_args(std::move(extra_args)) {
+    _routing_args(std::move(routing_args)) {
 }
 
 std::string HttpWrapper::send_then_receive(const std::string& query) const {
@@ -207,8 +207,7 @@ void HttpWrapper::add_route_info(Route& route) const {
   }
   assert(!non_break_locations.empty());
 
-  std::string query =
-    build_query(non_break_locations, _route_service, _extra_args);
+  std::string query = build_query(non_break_locations, _route_service);
 
   std::string json_string = this->run_query(query);
 

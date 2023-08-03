@@ -22,8 +22,7 @@ OrsWrapper::OrsWrapper(const std::string& profile, const Server& server)
 }
 
 std::string OrsWrapper::build_query(const std::vector<Location>& locations,
-                                    const std::string& service,
-                                    const std::string& extra_args) const {
+                                    const std::string& service) const {
   // Adding locations.
   std::string body = "{\"";
   if (service == "directions") {
@@ -38,8 +37,10 @@ std::string OrsWrapper::build_query(const std::vector<Location>& locations,
   }
   body.pop_back(); // Remove trailing ','.
   body += "]";
-  if (!extra_args.empty()) {
-    body += "," + extra_args;
+  if (service == _route_service) {
+    body += "," + _routing_args;
+  } else {
+    assert(service == _matrix_service);
   }
   body += "}";
 
