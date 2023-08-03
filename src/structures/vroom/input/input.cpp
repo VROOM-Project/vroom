@@ -828,12 +828,12 @@ void Input::set_matrices(unsigned nb_thread) {
       // matrix to allow for concurrent modification later on.
       create_routing_wrapper = true;
       _durations_matrices.emplace(profile, Matrix<UserDuration>());
-    }
-    if (_distances_matrices.find(profile) == _distances_matrices.end()) {
-      // Distances matrix has not been manually set, create empty
-      // matrix to allow for concurrent modification later on.
-      create_routing_wrapper = true;
-      _distances_matrices.emplace(profile, Matrix<UserDistance>());
+
+      if (_distances_matrices.find(profile) == _distances_matrices.end()) {
+        // Distances matrix has not been manually set, create empty
+        // matrix to allow for concurrent modification later on.
+        _distances_matrices.emplace(profile, Matrix<UserDistance>());
+      }
     }
 
     if (create_routing_wrapper) {
@@ -849,13 +849,18 @@ void Input::set_matrices(unsigned nb_thread) {
     try {
       for (const auto& profile : profiles) {
         auto durations_m = _durations_matrices.find(profile);
-        assert(durations_m != _durations_matrices.end());
+        auto distances_m = _distances_matrices.find(profile);
 
-        if (durations_m->second.size() == 0) {
-          // Durations matrix not manually set so defined as empty
-          // above.
+        // Required matrices not manually set have been defined as
+        // empty above.
+        assert(durations_m != _durations_matrices.end());
+        bool define_durations = (durations_m->second.size() == 0);
+        bool define_distances = (distances_m != _distances_matrices.end()) and
+                                (distances_m->second.size() == 0);
+        if (define_durations or define_distances) {
           if (_locations.size() == 1) {
             durations_m->second = Matrix<UserDuration>(1);
+            distances_m->second = Matrix<UserDistance>(1);
           } else {
             auto rw = std::find_if(_routing_wrappers.begin(),
                                    _routing_wrappers.end(),
@@ -866,21 +871,42 @@ void Input::set_matrices(unsigned nb_thread) {
 
             if (!_has_custom_location_index) {
               // Location indices are set based on order in _locations.
-              durations_m->second = (*rw)->get_matrix(_locations);
+              auto matrices = (*rw)->get_matrices(_locations);
+              if (define_durations) {
+                durations_m->second = std::move(matrices.durations);
+              }
+              if (define_distances) {
+                distances_m->second = std::move(matrices.distances);
+              }
             } else {
               // Location indices are provided in input so we need an
               // indirection based on order in _locations.
-              auto m = (*rw)->get_matrix(_locations);
+              auto matrices = (*rw)->get_matrices(_locations);
 
-              Matrix<UserDuration> full_m(_max_matrices_used_index + 1);
-              for (Index i = 0; i < _locations.size(); ++i) {
-                const auto& loc_i = _locations[i];
-                for (Index j = 0; j < _locations.size(); ++j) {
-                  full_m[loc_i.index()][_locations[j].index()] = m[i][j];
+              if (define_durations) {
+                Matrix<UserDuration> full_m(_max_matrices_used_index + 1);
+                for (Index i = 0; i < _locations.size(); ++i) {
+                  const auto& loc_i = _locations[i];
+                  for (Index j = 0; j < _locations.size(); ++j) {
+                    full_m[loc_i.index()][_locations[j].index()] =
+                      matrices.durations[i][j];
+                  }
                 }
-              }
 
-              durations_m->second = std::move(full_m);
+                durations_m->second = std::move(full_m);
+              }
+              if (define_distances) {
+                Matrix<UserDistance> full_m(_max_matrices_used_index + 1);
+                for (Index i = 0; i < _locations.size(); ++i) {
+                  const auto& loc_i = _locations[i];
+                  for (Index j = 0; j < _locations.size(); ++j) {
+                    full_m[loc_i.index()][_locations[j].index()] =
+                      matrices.distances[i][j];
+                  }
+                }
+
+                distances_m->second = std::move(full_m);
+              }
             }
           }
         }
