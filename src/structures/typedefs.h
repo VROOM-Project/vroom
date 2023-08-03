@@ -32,7 +32,6 @@ using Id = uint64_t;
 using Index = uint16_t;
 using UserCost = uint32_t;
 using Cost = int64_t;
-using Distance = uint32_t;
 using UserDuration = uint32_t;
 using Duration = int64_t;
 using UserDistance = uint32_t;
