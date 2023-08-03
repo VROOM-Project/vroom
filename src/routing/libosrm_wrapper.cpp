@@ -34,6 +34,8 @@ LibosrmWrapper::LibosrmWrapper(const std::string& profile)
 
 Matrices LibosrmWrapper::get_matrices(const std::vector<Location>& locs) const {
   osrm::TableParameters params;
+  params.annotations = osrm::engine::api::TableParameters::AnnotationsType::All;
+
   for (auto const& location : locs) {
     assert(location.has_coordinates());
     params.coordinates
@@ -50,11 +52,13 @@ Matrices LibosrmWrapper::get_matrices(const std::vector<Location>& locs) const {
       ": " + result.values["message"].get<osrm::json::String>().value);
   }
 
-  auto& table = result.values["durations"].get<osrm::json::Array>();
+  const auto& durations = result.values["durations"].get<osrm::json::Array>();
+  const auto& distances = result.values["distances"].get<osrm::json::Array>();
 
   // Expected matrix size.
   std::size_t m_size = locs.size();
-  assert(table.values.size() == m_size);
+  assert(durations.values.size() == m_size);
+  assert(distances.values.size() == m_size);
 
   // Build matrix while checking for unfound routes to avoid
   // unexpected behavior (OSRM raises 'null').
@@ -65,20 +69,26 @@ Matrices LibosrmWrapper::get_matrices(const std::vector<Location>& locs) const {
 
   std::string reason;
   for (std::size_t i = 0; i < m_size; ++i) {
-    const auto& line = table.values.at(i).get<osrm::json::Array>();
-    assert(line.values.size() == m_size);
+    const auto& duration_line = durations.values.at(i).get<osrm::json::Array>();
+    const auto& distance_line = distances.values.at(i).get<osrm::json::Array>();
+    assert(duration_line.values.size() == m_size);
+    assert(distance_line.values.size() == m_size);
+
     for (std::size_t j = 0; j < m_size; ++j) {
-      const auto& el = line.values.at(j);
-      if (el.is<osrm::json::Null>()) {
+      const auto& duration_el = duration_line.values.at(j);
+      const auto& distance_el = distance_line.values.at(j);
+      if (duration_el.is<osrm::json::Null>() or
+          distance_el.is<osrm::json::Null>()) {
         // No route found between i and j. Just storing info as we
         // don't know yet which location is responsible between i
         // and j.
         ++nb_unfound_from_loc[i];
         ++nb_unfound_to_loc[j];
       } else {
-        auto cost =
+        m.durations[i][j] =
           round_cost<UserDuration>(duration_el.get<osrm::json::Number>().value);
-        m.durations[i][j] = cost;
+        m.distances[i][j] =
+          round_cost<UserDistance>(distance_el.get<osrm::json::Number>().value);
       }
     }
   }
