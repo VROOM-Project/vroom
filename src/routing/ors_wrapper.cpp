@@ -61,6 +61,7 @@ std::string OrsWrapper::build_query(const std::vector<Location>& locations,
 }
 
 void OrsWrapper::check_response(const rapidjson::Document& json_result,
+                                const std::vector<Location>&,
                                 const std::string&) const {
   if (json_result.HasMember("error")) {
     throw RoutingException(

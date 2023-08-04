@@ -49,6 +49,7 @@ protected:
                                   const std::string& service) const = 0;
 
   virtual void check_response(const rapidjson::Document& json_result,
+                              const std::vector<Location>& locs,
                               const std::string& service) const = 0;
 
   Matrices get_matrices(const std::vector<Location>& locs) const override;

@@ -62,6 +62,7 @@ OsrmRoutedWrapper::build_query(const std::vector<Location>& locations,
 }
 
 void OsrmRoutedWrapper::check_response(const rapidjson::Document& json_result,
+                                       const std::vector<Location>& locs,
                                        const std::string&) const {
   assert(json_result.HasMember("code"));
   std::string code = json_result["code"].GetString();
@@ -71,9 +72,11 @@ void OsrmRoutedWrapper::check_response(const rapidjson::Document& json_result,
       "Could not find a matching segment for coordinate ";
     if (code == "NoSegment" and message.starts_with(snapping_error_base)) {
       auto error_loc =
-        message.substr(snapping_error_base.size(),
-                       message.size() - snapping_error_base.size());
-      throw RoutingException("Snapping error with location " + error_loc);
+        std::stoul(message.substr(snapping_error_base.size(),
+                                  message.size() - snapping_error_base.size()));
+      auto coordinates = "[" + std::to_string(locs[error_loc].lon()) + "," +
+                         std::to_string(locs[error_loc].lat()) + "]";
+      throw RoutingException("Snapping error with location " + coordinates);
     }
 
     throw RoutingException(message);
