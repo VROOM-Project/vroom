@@ -36,11 +36,14 @@ Matrices LibosrmWrapper::get_matrices(const std::vector<Location>& locs) const {
   osrm::TableParameters params;
   params.annotations = osrm::engine::api::TableParameters::AnnotationsType::All;
 
+  params.coordinates.reserve(locs.size());
+  params.radiuses.reserve(locs.size());
   for (auto const& location : locs) {
     assert(location.has_coordinates());
     params.coordinates
       .emplace_back(osrm::util::FloatLongitude({location.lon()}),
                     osrm::util::FloatLatitude({location.lat()}));
+    params.radiuses.emplace_back(DEFAULT_LIBOSRM_SNAPPING_RADIUS);
   }
 
   osrm::json::Object result;

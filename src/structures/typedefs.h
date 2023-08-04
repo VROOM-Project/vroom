@@ -58,6 +58,7 @@ constexpr UserCost INFINITE_USER_COST =
 
 const std::string DEFAULT_PROFILE = "car";
 const std::string DEFAULT_OSRM_SNAPPING_RADIUS = "35000";
+constexpr double DEFAULT_LIBOSRM_SNAPPING_RADIUS = 35000;
 
 // Our internal time measure is the hundredth of a second.
 constexpr Duration DURATION_FACTOR = 100;
