@@ -50,9 +50,25 @@ Matrices LibosrmWrapper::get_matrices(const std::vector<Location>& locs) const {
   osrm::Status status = _osrm.Table(params, result);
 
   if (status == osrm::Status::Error) {
-    throw RoutingException(
-      "libOSRM: " + result.values["code"].get<osrm::json::String>().value +
-      ": " + result.values["message"].get<osrm::json::String>().value);
+    const std::string code =
+      result.values["code"].get<osrm::json::String>().value;
+    const std::string message =
+      result.values["message"].get<osrm::json::String>().value;
+
+    const std::string snapping_error_base =
+      "Could not find a matching segment for coordinate ";
+    if (code == "NoSegment" and message.starts_with(snapping_error_base)) {
+      auto error_loc =
+        std::stoul(message.substr(snapping_error_base.size(),
+                                  message.size() - snapping_error_base.size()));
+      auto coordinates = "[" + std::to_string(locs[error_loc].lon()) + "," +
+                         std::to_string(locs[error_loc].lat()) + "]";
+      throw RoutingException("Could not find route near location " +
+                             coordinates);
+    }
+
+    // Other error in response.
+    throw RoutingException("libOSRM: " + code + ": " + message);
   }
 
   const auto& durations = result.values["durations"].get<osrm::json::Array>();
