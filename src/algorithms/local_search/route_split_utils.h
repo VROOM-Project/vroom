@@ -72,11 +72,17 @@ compute_best_route_split_choice(const Input& input,
         continue;
       }
 
-      Eval current_end_eval =
-        utils::route_eval_for_vehicle(input,
-                                      v,
-                                      source.route.begin() + r,
-                                      source.route.end());
+      Eval current_end_eval(end_v.fixed_cost(), 0);
+      current_end_eval += sol_state.fwd_costs[s_vehicle][v].back() -
+                          sol_state.fwd_costs[s_vehicle][v][r];
+      if (end_v.has_start()) {
+        current_end_eval += end_v.eval(end_v.start.value().index(),
+                                       input.jobs[source.route[r]].index());
+      }
+      if (end_v.has_end()) {
+        current_end_eval += end_v.eval(input.jobs[source.route.back()].index(),
+                                       end_v.end.value().index());
+      }
 
       if (!end_v.ok_for_travel_time(current_end_eval.duration)) {
         continue;
@@ -137,11 +143,18 @@ compute_best_route_split_choice(const Input& input,
         continue;
       }
 
-      Eval current_begin_eval =
-        utils::route_eval_for_vehicle(input,
-                                      v,
-                                      source.route.begin(),
-                                      source.route.begin() + r);
+      Eval current_begin_eval(begin_v.fixed_cost(), 0);
+      current_begin_eval += sol_state.fwd_costs[s_vehicle][v][r - 1];
+      if (begin_v.has_start()) {
+        current_begin_eval +=
+          begin_v.eval(begin_v.start.value().index(),
+                       input.jobs[source.route.front()].index());
+      }
+      if (begin_v.has_end()) {
+        current_begin_eval +=
+          begin_v.eval(input.jobs[source.route[r - 1]].index(),
+                       begin_v.end.value().index());
+      }
 
       if (!begin_v.ok_for_travel_time(current_begin_eval.duration)) {
         continue;
