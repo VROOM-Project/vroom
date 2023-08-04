@@ -886,6 +886,7 @@ T dynamic_vehicle_choice(const Input& input,
 
 template <class T> T initial_routes(const Input& input) {
   T routes;
+  routes.reserve(input.vehicles.size());
   for (Index v = 0; v < input.vehicles.size(); ++v) {
     routes.emplace_back(input, v, input.zero_amount().size());
 
@@ -912,6 +913,7 @@ template <class T> T initial_routes(const Input& input) {
     Amount current_load = single_jobs_deliveries;
 
     std::vector<Index> job_ranks;
+    job_ranks.reserve(vehicle.steps.size());
     std::unordered_set<Index> expected_delivery_ranks;
     for (const auto& step : vehicle.steps) {
       if (step.type != STEP_TYPE::JOB) {
