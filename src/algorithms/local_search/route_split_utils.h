@@ -78,6 +78,10 @@ compute_best_route_split_choice(const Input& input,
                                       source.route.begin() + r,
                                       source.route.end());
 
+      if (!end_v.ok_for_travel_time(current_end_eval.duration)) {
+        continue;
+      }
+
       if (current_end_eval < second_best_end_eval) {
         // Worth checking end route full validity.
 
@@ -138,6 +142,10 @@ compute_best_route_split_choice(const Input& input,
                                       v,
                                       source.route.begin(),
                                       source.route.begin() + r);
+
+      if (!begin_v.ok_for_travel_time(current_begin_eval.duration)) {
+        continue;
+      }
 
       if (current_begin_eval < second_best_begin_eval) {
         // Worth checking begin route full validity.

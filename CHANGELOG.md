@@ -28,6 +28,7 @@
 - `max_travel_time` parameter not taken into account in edge case (#884)
 - Meaningless `location_index` provided in output for break steps (#877)
 - `max_travel_time` not accounted for with vehicle steps in solving mode (#954)
+- `max_travel_time` not accounted for in `RouteSplit` (#941)
 
 ## [v1.13.0] - 2023-01-31
 
