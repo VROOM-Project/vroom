@@ -27,7 +27,7 @@ OsrmRoutedWrapper::build_query(const std::vector<Location>& locations,
                                const std::string& service,
                                const std::string& extra_args) const {
   // Building query for osrm-routed
-  std::string query = "GET /" + service;
+  std::string query = "GET /" + _server.path + service;
 
   query += "/v1/" + profile + "/";
 

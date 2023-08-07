@@ -49,7 +49,7 @@ int main(int argc, char** argv) {
     .set_tab_expansion()
     .add_options("Solving")
     ("a,host",
-     "host for the routing profile",
+     "host for the routing profile, optionally with a URL path, e.g 'routing.openstreetmap.de/routed-car'",
      cxxopts::value<std::vector<std::string>>(host_args)->default_value({vroom::DEFAULT_PROFILE + ":0.0.0.0"}))
     ("c,choose-eta",
      "choose ETA for custom routes and report violations",

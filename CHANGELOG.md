@@ -5,6 +5,7 @@
 ### Added
 
 - Recommendation on how to cite in publications (#943)
+- Support for URL path in host (#966)
 
 ### Changed
 

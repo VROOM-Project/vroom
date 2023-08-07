@@ -86,12 +86,13 @@ enum class ROUTER { OSRM, LIBOSRM, ORS, VALHALLA };
 struct Server {
   std::string host;
   std::string port;
+  std::string path;
 
-  Server() : host("0.0.0.0"), port("5000") {
+  Server() : host("0.0.0.0"), port("5000"), path("") {
   }
 
   Server(std::string host, std::string port)
-    : host(std::move(host)), port(std::move(port)) {
+    : host(std::move(host)), port(std::move(port)), path("") {
   }
 };
 

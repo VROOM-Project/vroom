@@ -44,7 +44,7 @@ std::string OrsWrapper::build_query(const std::vector<Location>& locations,
   body += "}";
 
   // Building query for ORS
-  std::string query = "POST /ors/v2/" + service + "/" + profile;
+  std::string query = "POST /" + _server.path + "ors/v2/" + service + "/" + profile;
 
   query += " HTTP/1.0\r\n";
   query += "Accept: */*\r\n";
