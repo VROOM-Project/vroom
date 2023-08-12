@@ -7,6 +7,7 @@
 - Recommendation on how to cite in publications (#943)
 - Store distance matrices (#956)
 - Default radius of 35km for OSRM snapping (#922)
+- Support for URL path in host (#966)
 
 ### Changed
 
