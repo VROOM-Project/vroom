@@ -852,9 +852,11 @@ void Input::set_matrices(unsigned nb_thread) {
         // Required matrices not manually set have been defined as
         // empty above.
         assert(durations_m != _durations_matrices.end());
-        bool define_durations = (durations_m->second.size() == 0);
-        bool define_distances = (distances_m != _distances_matrices.end()) and
-                                (distances_m->second.size() == 0);
+        const bool define_durations = (durations_m->second.size() == 0);
+        const bool has_distance_matrix =
+          (distances_m != _distances_matrices.end());
+        const bool define_distances =
+          has_distance_matrix and (distances_m->second.size() == 0);
         if (define_durations or define_distances) {
           if (_locations.size() == 1) {
             durations_m->second = Matrix<UserDuration>(1);
@@ -910,16 +912,25 @@ void Input::set_matrices(unsigned nb_thread) {
         }
 
         if (durations_m->second.size() <= _max_matrices_used_index) {
-          throw InputException("location_index exceeding matrix size for " +
-                               profile + " profile.");
+          throw InputException(
+            "location_index exceeding durations matrix size for " + profile +
+            " profile.");
+        }
+
+        if (has_distance_matrix and
+            distances_m->second.size() <= _max_matrices_used_index) {
+          throw InputException(
+            "location_index exceeding distances matrix size for " + profile +
+            " profile.");
         }
 
         const auto c_m = _costs_matrices.find(profile);
 
         if (c_m != _costs_matrices.end()) {
           if (c_m->second.size() <= _max_matrices_used_index) {
-            throw InputException("location_index exceeding matrix size for " +
-                                 profile + " profile.");
+            throw InputException(
+              "location_index exceeding costs matrix size for " + profile +
+              " profile.");
           }
 
           // Check for potential overflow in solution cost.
