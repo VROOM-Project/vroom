@@ -27,16 +27,18 @@ void update_host(Servers& servers, const std::string& value) {
     host = value.substr(index + 1);
   }
 
-  // remove any trailing slash
-  if (host.find('/') == host.length() - 1) {
-    host.pop_back();
-  }
+  if (!host.empty()) {
+    // remove any trailing slash
+    if (host.back() == '/') {
+      host.pop_back();
+    }
 
-  // pull out a path if any and append a trailing slash for query building
-  index = host.find('/');
-  if (index != std::string::npos) {
-    path = host.substr(index + 1) + "/";
-    host = host.substr(0, index);
+    // pull out a path if any and append a trailing slash for query building
+    index = host.find('/');
+    if (index != std::string::npos) {
+      path = host.substr(index + 1) + "/";
+      host = host.substr(0, index);
+    }
   }
 
   auto existing_profile = servers.find(profile);
