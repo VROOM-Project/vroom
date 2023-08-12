@@ -20,6 +20,7 @@
 - Improved error messages for file-related IO errors (#553)
 - Add job id to error message for unreachable step (#946)
 - Reduce `compute_best_route_split_choice` complexity (#962)
+- `Eval::operator<` sorts on cost, then duration (#914)
 
 ### Fixed
 
