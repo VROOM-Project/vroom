@@ -167,8 +167,8 @@ Matrices HttpWrapper::get_matrices(const std::vector<Location>& locs) const {
   }
   assert(json_result[_matrix_distances_key.c_str()].Size() == m_size);
 
-  // Build matrix while checking for unfound routes ('null' values) to
-  // avoid unexpected behavior.
+  // Build matrices while checking for unfound routes ('null' values)
+  // to avoid unexpected behavior.
   Matrices m(m_size);
 
   std::vector<unsigned> nb_unfound_from_loc(m_size, 0);
