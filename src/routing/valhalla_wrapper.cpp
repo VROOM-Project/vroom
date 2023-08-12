@@ -56,7 +56,8 @@ std::string ValhallaWrapper::get_matrix_query(
 std::string
 ValhallaWrapper::get_route_query(const std::vector<Location>& locations) const {
   // Building matrix query for Valhalla.
-  std::string query = "GET /" + _server.path + _route_service + "?json={\"locations\":[";
+  std::string query =
+    "GET /" + _server.path + _route_service + "?json={\"locations\":[";
 
   for (auto const& location : locations) {
     query += "{\"lon\":" + std::to_string(location.lon()) + "," +
