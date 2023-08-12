@@ -5,6 +5,7 @@
 ### Added
 
 - Recommendation on how to cite in publications (#943)
+- Store distance matrices (#956)
 
 ### Changed
 

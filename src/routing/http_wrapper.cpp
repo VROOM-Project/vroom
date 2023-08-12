@@ -22,14 +22,16 @@ HttpWrapper::HttpWrapper(const std::string& profile,
                          Server server,
                          std::string matrix_service,
                          std::string matrix_durations_key,
+                         std::string matrix_distances_key,
                          std::string route_service,
-                         std::string extra_args)
+                         std::string routing_args)
   : Wrapper(profile),
     _server(std::move(server)),
     _matrix_service(std::move(matrix_service)),
     _matrix_durations_key(std::move(matrix_durations_key)),
+    _matrix_distances_key(std::move(matrix_distances_key)),
     _route_service(std::move(route_service)),
-    _extra_args(std::move(extra_args)) {
+    _routing_args(std::move(routing_args)) {
 }
 
 std::string HttpWrapper::send_then_receive(const std::string& query) const {
@@ -144,8 +146,7 @@ void HttpWrapper::parse_response(rapidjson::Document& json_result,
 #endif
 }
 
-Matrix<UserCost>
-HttpWrapper::get_matrix(const std::vector<Location>& locs) const {
+Matrices HttpWrapper::get_matrices(const std::vector<Location>& locs) const {
   std::string query = this->build_query(locs, _matrix_service);
   std::string json_string = this->run_query(query);
 
@@ -161,25 +162,34 @@ HttpWrapper::get_matrix(const std::vector<Location>& locs) const {
   }
   assert(json_result[_matrix_durations_key.c_str()].Size() == m_size);
 
-  // Build matrix while checking for unfound routes ('null' values) to
-  // avoid unexpected behavior.
-  Matrix<UserCost> m(m_size);
+  if (!json_result.HasMember(_matrix_distances_key.c_str())) {
+    throw RoutingException("Missing " + _matrix_distances_key + ".");
+  }
+  assert(json_result[_matrix_distances_key.c_str()].Size() == m_size);
+
+  // Build matrices while checking for unfound routes ('null' values)
+  // to avoid unexpected behavior.
+  Matrices m(m_size);
 
   std::vector<unsigned> nb_unfound_from_loc(m_size, 0);
   std::vector<unsigned> nb_unfound_to_loc(m_size, 0);
 
   for (rapidjson::SizeType i = 0; i < m_size; ++i) {
-    const auto& line = json_result[_matrix_durations_key.c_str()][i];
-    assert(line.Size() == m_size);
-    for (rapidjson::SizeType j = 0; j < line.Size(); ++j) {
-      if (duration_value_is_null(line[j])) {
+    const auto& duration_line = json_result[_matrix_durations_key.c_str()][i];
+    const auto& distance_line = json_result[_matrix_distances_key.c_str()][i];
+    assert(duration_line.Size() == m_size);
+    assert(distance_line.Size() == m_size);
+    for (rapidjson::SizeType j = 0; j < m_size; ++j) {
+      if (duration_value_is_null(duration_line[j]) or
+          distance_value_is_null(distance_line[j])) {
         // No route found between i and j. Just storing info as we
         // don't know yet which location is responsible between i
         // and j.
         ++nb_unfound_from_loc[i];
         ++nb_unfound_to_loc[j];
       } else {
-        m[i][j] = get_duration_value(line[j]);
+        m.durations[i][j] = get_duration_value(duration_line[j]);
+        m.distances[i][j] = get_distance_value(distance_line[j]);
       }
     }
   }
@@ -208,8 +218,7 @@ void HttpWrapper::add_route_info(Route& route) const {
   }
   assert(!non_break_locations.empty());
 
-  std::string query =
-    build_query(non_break_locations, _route_service, _extra_args);
+  std::string query = build_query(non_break_locations, _route_service);
 
   std::string json_string = this->run_query(query);
 
@@ -218,7 +227,7 @@ void HttpWrapper::add_route_info(Route& route) const {
   this->check_response(json_result, _route_service);
 
   // Total distance and route geometry.
-  route.distance = round_cost(get_total_distance(json_result));
+  route.distance = round_cost<UserDistance>(get_total_distance(json_result));
   route.geometry = get_geometry(json_result);
 
   auto nb_legs = get_legs_number(json_result);
@@ -245,17 +254,17 @@ void HttpWrapper::add_route_info(Route& route) const {
     for (unsigned b = 1; b <= number_breaks_after[i]; ++b) {
       auto& break_step = route.steps[steps_rank + b];
       if (next_duration == 0) {
-        break_step.distance = round_cost(sum_distance);
+        break_step.distance = round_cost<UserDistance>(sum_distance);
       } else {
-        break_step.distance =
-          round_cost(sum_distance +
-                     ((break_step.duration - step.duration) * next_distance) /
-                       next_duration);
+        break_step.distance = round_cost<UserDistance>(
+          sum_distance +
+          ((break_step.duration - step.duration) * next_distance) /
+            next_duration);
       }
     }
 
     sum_distance += next_distance;
-    next_step.distance = round_cost(sum_distance);
+    next_step.distance = round_cost<UserDistance>(sum_distance);
 
     steps_rank += number_breaks_after[i] + 1;
   }

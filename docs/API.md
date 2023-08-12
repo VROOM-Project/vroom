@@ -281,11 +281,12 @@ integers filed under the `profile` key, then under:
 
 - `durations` for a custom travel-time matrix that will be used for
   all checks against timing constraints;
+- `distances` for a custom distance matrix;
 - `costs` for a custom cost matrix that will be used within all route
   cost evaluations.
 
-If only the `durations` value is provided, it's implied that it should
-also be used for costs evaluations.
+If only the `durations` matrix is provided, internal costs are derived from
+durations based on vehicles `costs` properties.
 
 Example of describing different matrices for different vehicle
 profiles:

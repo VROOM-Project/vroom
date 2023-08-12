@@ -603,6 +603,11 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
                                      get_matrix<UserDuration>(
                                        profile_entry.value["durations"]));
         }
+        if (profile_entry.value.HasMember("distances")) {
+          input.set_distances_matrix(profile_entry.name.GetString(),
+                                     get_matrix<UserDistance>(
+                                       profile_entry.value["distances"]));
+        }
         if (profile_entry.value.HasMember("costs")) {
           input.set_costs_matrix(profile_entry.name.GetString(),
                                  get_matrix<UserCost>(

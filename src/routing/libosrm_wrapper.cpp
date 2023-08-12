@@ -32,9 +32,10 @@ LibosrmWrapper::LibosrmWrapper(const std::string& profile)
   : Wrapper(profile), _config(get_config(profile)), _osrm(_config) {
 }
 
-Matrix<UserCost>
-LibosrmWrapper::get_matrix(const std::vector<Location>& locs) const {
+Matrices LibosrmWrapper::get_matrices(const std::vector<Location>& locs) const {
   osrm::TableParameters params;
+  params.annotations = osrm::engine::api::TableParameters::AnnotationsType::All;
+
   for (auto const& location : locs) {
     assert(location.has_coordinates());
     params.coordinates
@@ -51,34 +52,43 @@ LibosrmWrapper::get_matrix(const std::vector<Location>& locs) const {
       ": " + result.values["message"].get<osrm::json::String>().value);
   }
 
-  auto& table = result.values["durations"].get<osrm::json::Array>();
+  const auto& durations = result.values["durations"].get<osrm::json::Array>();
+  const auto& distances = result.values["distances"].get<osrm::json::Array>();
 
   // Expected matrix size.
   std::size_t m_size = locs.size();
-  assert(table.values.size() == m_size);
+  assert(durations.values.size() == m_size);
+  assert(distances.values.size() == m_size);
 
   // Build matrix while checking for unfound routes to avoid
   // unexpected behavior (OSRM raises 'null').
-  Matrix<UserCost> m(m_size);
+  Matrices m(m_size);
 
   std::vector<unsigned> nb_unfound_from_loc(m_size, 0);
   std::vector<unsigned> nb_unfound_to_loc(m_size, 0);
 
   std::string reason;
   for (std::size_t i = 0; i < m_size; ++i) {
-    const auto& line = table.values.at(i).get<osrm::json::Array>();
-    assert(line.values.size() == m_size);
+    const auto& duration_line = durations.values.at(i).get<osrm::json::Array>();
+    const auto& distance_line = distances.values.at(i).get<osrm::json::Array>();
+    assert(duration_line.values.size() == m_size);
+    assert(distance_line.values.size() == m_size);
+
     for (std::size_t j = 0; j < m_size; ++j) {
-      const auto& el = line.values.at(j);
-      if (el.is<osrm::json::Null>()) {
+      const auto& duration_el = duration_line.values.at(j);
+      const auto& distance_el = distance_line.values.at(j);
+      if (duration_el.is<osrm::json::Null>() or
+          distance_el.is<osrm::json::Null>()) {
         // No route found between i and j. Just storing info as we
         // don't know yet which location is responsible between i
         // and j.
         ++nb_unfound_from_loc[i];
         ++nb_unfound_to_loc[j];
       } else {
-        auto cost = round_cost(el.get<osrm::json::Number>().value);
-        m[i][j] = cost;
+        m.durations[i][j] =
+          round_cost<UserDuration>(duration_el.get<osrm::json::Number>().value);
+        m.distances[i][j] =
+          round_cost<UserDistance>(distance_el.get<osrm::json::Number>().value);
       }
     }
   }
@@ -130,8 +140,8 @@ void LibosrmWrapper::add_route_info(Route& route) const {
   auto& json_route = result_routes.values.at(0).get<osrm::json::Object>();
 
   // Total distance and route geometry.
-  route.distance =
-    round_cost(json_route.values["distance"].get<osrm::json::Number>().value);
+  route.distance = round_cost<UserDistance>(
+    json_route.values["distance"].get<osrm::json::Number>().value);
   route.geometry =
     std::move(json_route.values["geometry"].get<osrm::json::String>().value);
 
@@ -170,13 +180,13 @@ void LibosrmWrapper::add_route_info(Route& route) const {
     // non-breaks steps.
     for (unsigned b = 1; b <= number_breaks_after[i]; ++b) {
       auto& break_step = route.steps[steps_rank + b];
-      break_step.distance = round_cost(
+      break_step.distance = round_cost<UserDistance>(
         sum_distance + ((break_step.duration - step.duration) * next_distance) /
                          next_duration);
     }
 
     sum_distance += next_distance;
-    next_step.distance = round_cost(sum_distance);
+    next_step.distance = round_cost<UserDistance>(sum_distance);
 
     steps_rank += number_breaks_after[i] + 1;
   }

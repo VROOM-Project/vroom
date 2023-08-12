@@ -33,7 +33,7 @@ struct Route {
   Violations violations;
 
   std::string geometry;
-  Distance distance;
+  UserDistance distance;
 
   Route();
 

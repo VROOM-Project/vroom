@@ -50,6 +50,7 @@ private:
   bool _has_jobs{false};
   bool _has_shipments{false};
   std::unordered_map<std::string, Matrix<UserDuration>> _durations_matrices;
+  std::unordered_map<std::string, Matrix<UserDistance>> _distances_matrices;
   std::unordered_map<std::string, Matrix<UserCost>> _costs_matrices;
   Cost _cost_upper_bound{0};
   std::vector<Location> _locations;
@@ -110,6 +111,10 @@ public:
 
   void set_durations_matrix(const std::string& profile,
                             Matrix<UserDuration>&& m);
+
+  void set_distances_matrix(const std::string& profile,
+                            Matrix<UserDistance>&& m);
+
   void set_costs_matrix(const std::string& profile, Matrix<UserCost>&& m);
 
   const Amount& zero_amount() const {
