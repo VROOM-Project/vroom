@@ -203,7 +203,9 @@ void HttpWrapper::add_route_info(Route& route) const {
   // Ordering locations for the given steps, excluding
   // breaks.
   std::vector<Location> non_break_locations;
+  non_break_locations.reserve(route.steps.size());
   std::vector<unsigned> number_breaks_after;
+  number_breaks_after.reserve(route.steps.size());
 
   for (const auto& step : route.steps) {
     if (step.step_type == STEP_TYPE::BREAK) {

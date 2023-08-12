@@ -281,6 +281,8 @@ inline std::vector<VehicleStep> get_vehicle_steps(const rapidjson::Value& v) {
                            std::to_string(v["id"].GetUint64()) + ".");
     }
 
+    steps.reserve(v["steps"].Size());
+
     for (rapidjson::SizeType i = 0; i < v["steps"].Size(); ++i) {
       const auto& json_step = v["steps"][i];
 

@@ -126,10 +126,13 @@ void LibosrmWrapper::add_route_info(Route& route) const {
                                osrm::RouteParameters::OverviewType::Full,
                                false // continue_straight
   );
+  params.coordinates.reserve(route.steps.size());
 
   // Ordering locations for the given steps, excluding
   // breaks.
   std::vector<unsigned> number_breaks_after;
+  number_breaks_after.reserve(route.steps.size());
+
   for (auto& step : route.steps) {
     if (step.step_type == STEP_TYPE::BREAK) {
       if (!number_breaks_after.empty()) {

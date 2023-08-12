@@ -136,6 +136,7 @@ inline HeuristicParameters str_to_heuristic_param(const std::string& s) {
   // Split command-line string describing parameters.
   constexpr char delimiter = ';';
   std::vector<std::string> tokens;
+  tokens.reserve(4);
   std::string token;
   std::istringstream tokenStream(s);
   while (std::getline(tokenStream, token, delimiter)) {
@@ -411,6 +412,7 @@ inline void check_priority(const Priority priority,
 inline Solution format_solution(const Input& input,
                                 const RawSolution& raw_routes) {
   std::vector<Route> routes;
+  routes.reserve(raw_routes.size());
 
   // All job ranks start with unassigned status.
   std::unordered_set<Index> unassigned_ranks;
@@ -444,6 +446,7 @@ inline Solution format_solution(const Input& input,
 
     // Steps for current route.
     std::vector<Step> steps;
+    steps.reserve(route.size() + 2);
 
     Duration ETA = 0;
     const auto& first_job = input.jobs[route.front()];
@@ -668,6 +671,7 @@ inline Route format_route(const Input& input,
 
   // Steps for current route.
   std::vector<Step> steps;
+  steps.reserve(tw_r.size() + 2 + v.breaks.size());
 
   // Now pack everything ASAP based on first job start date.
   Duration remaining_travel_time =
@@ -1025,6 +1029,7 @@ inline Route format_route(const Input& input,
 inline Solution format_solution(const Input& input,
                                 const TWSolution& tw_routes) {
   std::vector<Route> routes;
+  routes.reserve(tw_routes.size());
 
   // All job ranks start with unassigned status.
   std::unordered_set<Index> unassigned_ranks;
