@@ -17,6 +17,7 @@ OsrmRoutedWrapper::OsrmRoutedWrapper(const std::string& profile,
                 server,
                 "table",
                 "durations",
+                "distances",
                 "route",
                 "alternatives=false&steps=false&overview=full&continue_"
                 "straight=false") {
@@ -24,23 +25,34 @@ OsrmRoutedWrapper::OsrmRoutedWrapper(const std::string& profile,
 
 std::string
 OsrmRoutedWrapper::build_query(const std::vector<Location>& locations,
-                               const std::string& service,
-                               const std::string& extra_args) const {
+                               const std::string& service) const {
   // Building query for osrm-routed
   std::string query = "GET /" + _server.path + service;
 
   query += "/v1/" + profile + "/";
 
-  // Adding locations.
+  // Build query part for snapping restriction.
+  std::string radiuses = "radiuses=";
+  radiuses.reserve(9 + locations.size() *
+                         (DEFAULT_OSRM_SNAPPING_RADIUS.size() + 1));
+
+  // Adding locations and radiuses values.
   for (auto const& location : locations) {
     query += std::to_string(location.lon()) + "," +
              std::to_string(location.lat()) + ";";
+    radiuses += DEFAULT_OSRM_SNAPPING_RADIUS + ";";
   }
-  query.pop_back(); // Remove trailing ';'.
+  // Remove trailing ';'.
+  query.pop_back();
+  radiuses.pop_back();
 
-  if (!extra_args.empty()) {
-    query += "?" + extra_args;
+  if (service == _route_service) {
+    query += "?" + _routing_args;
+  } else {
+    assert(service == _matrix_service);
+    query += "?annotations=duration,distance";
   }
+  query += "&" + radiuses;
 
   query += " HTTP/1.1\r\n";
   query += "Host: " + _server.host + "\r\n";
@@ -51,10 +63,27 @@ OsrmRoutedWrapper::build_query(const std::vector<Location>& locations,
 }
 
 void OsrmRoutedWrapper::check_response(const rapidjson::Document& json_result,
+                                       const std::vector<Location>& locs,
                                        const std::string&) const {
   assert(json_result.HasMember("code"));
-  if (json_result["code"] != "Ok") {
-    throw RoutingException(std::string(json_result["message"].GetString()));
+  const std::string code = json_result["code"].GetString();
+  if (code != "Ok") {
+    const std::string message = json_result["message"].GetString();
+    const std::string snapping_error_base =
+      "Could not find a matching segment for coordinate ";
+    if (code == "NoSegment" and message.starts_with(snapping_error_base)) {
+      const auto error_loc =
+        std::stoul(message.substr(snapping_error_base.size(),
+                                  message.size() - snapping_error_base.size()));
+      const auto coordinates = "[" + std::to_string(locs[error_loc].lon()) +
+                               "," + std::to_string(locs[error_loc].lat()) +
+                               "]";
+      throw RoutingException("Could not find route near location " +
+                             coordinates);
+    }
+
+    // Other error in response.
+    throw RoutingException(message);
   }
 }
 
@@ -63,9 +92,19 @@ bool OsrmRoutedWrapper::duration_value_is_null(
   return matrix_entry.IsNull();
 }
 
+bool OsrmRoutedWrapper::distance_value_is_null(
+  const rapidjson::Value& matrix_entry) const {
+  return matrix_entry.IsNull();
+}
+
 UserDuration OsrmRoutedWrapper::get_duration_value(
   const rapidjson::Value& matrix_entry) const {
-  return round_cost(matrix_entry.GetDouble());
+  return round_cost<UserDuration>(matrix_entry.GetDouble());
+}
+
+UserDistance OsrmRoutedWrapper::get_distance_value(
+  const rapidjson::Value& matrix_entry) const {
+  return round_cost<UserDistance>(matrix_entry.GetDouble());
 }
 
 double

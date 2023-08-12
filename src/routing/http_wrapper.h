@@ -28,15 +28,17 @@ protected:
   const Server _server;
   const std::string _matrix_service;
   const std::string _matrix_durations_key;
+  const std::string _matrix_distances_key;
   const std::string _route_service;
-  const std::string _extra_args;
+  const std::string _routing_args;
 
   HttpWrapper(const std::string& profile,
               Server server,
               std::string matrix_service,
               std::string matrix_durations_key,
+              std::string matrix_distances_key,
               std::string route_service,
-              std::string extra_args);
+              std::string routing_args);
 
   std::string run_query(const std::string& query) const;
 
@@ -44,19 +46,25 @@ protected:
                              const std::string& json_content);
 
   virtual std::string build_query(const std::vector<Location>& locations,
-                                  const std::string& service,
-                                  const std::string& extra_args = "") const = 0;
+                                  const std::string& service) const = 0;
 
   virtual void check_response(const rapidjson::Document& json_result,
+                              const std::vector<Location>& locs,
                               const std::string& service) const = 0;
 
-  Matrix<UserCost> get_matrix(const std::vector<Location>& locs) const override;
+  Matrices get_matrices(const std::vector<Location>& locs) const override;
 
   virtual bool
   duration_value_is_null(const rapidjson::Value& matrix_entry) const = 0;
 
+  virtual bool
+  distance_value_is_null(const rapidjson::Value& matrix_entry) const = 0;
+
   virtual UserDuration
   get_duration_value(const rapidjson::Value& matrix_entry) const = 0;
+
+  virtual UserDistance
+  get_distance_value(const rapidjson::Value& matrix_entry) const = 0;
 
   virtual double get_total_distance(const rapidjson::Value& result) const = 0;
 

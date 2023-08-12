@@ -32,9 +32,9 @@ using Id = uint64_t;
 using Index = uint16_t;
 using UserCost = uint32_t;
 using Cost = int64_t;
-using Distance = uint32_t;
 using UserDuration = uint32_t;
 using Duration = int64_t;
+using UserDistance = uint32_t;
 using Coordinate = double;
 using Capacity = int64_t;
 using Skill = uint32_t;
@@ -57,6 +57,8 @@ constexpr UserCost INFINITE_USER_COST =
   3 * (std::numeric_limits<UserCost>::max() / 4);
 
 const std::string DEFAULT_PROFILE = "car";
+const std::string DEFAULT_OSRM_SNAPPING_RADIUS = "35000";
+constexpr double DEFAULT_LIBOSRM_SNAPPING_RADIUS = 35000;
 
 // Our internal time measure is the hundredth of a second.
 constexpr Duration DURATION_FACTOR = 100;

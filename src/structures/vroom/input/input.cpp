@@ -386,6 +386,14 @@ void Input::set_durations_matrix(const std::string& profile,
   _durations_matrices.insert_or_assign(profile, m);
 }
 
+void Input::set_distances_matrix(const std::string& profile,
+                                 Matrix<UserDistance>&& m) {
+  if (m.size() == 0) {
+    throw InputException("Empty distances matrix for " + profile + " profile.");
+  }
+  _distances_matrices.insert_or_assign(profile, m);
+}
+
 void Input::set_costs_matrix(const std::string& profile, Matrix<UserCost>&& m) {
   if (m.size() == 0) {
     throw InputException("Empty costs matrix for " + profile + " profile.");
@@ -808,18 +816,26 @@ void Input::set_matrices(unsigned nb_thread) {
   for (const auto& profile : _profiles) {
     thread_profiles[t_rank % nb_buckets].push_back(profile);
     ++t_rank;
+
+    // Even with custom matrices, we still need routing after
+    // optimization if geometry is requested.
+    bool create_routing_wrapper = _geometry;
+
     if (_durations_matrices.find(profile) == _durations_matrices.end()) {
-      // Durations matrix has not been manually set, create routing
-      // wrapper and empty matrix to allow for concurrent modification
-      // later on.
-      add_routing_wrapper(profile);
+      // Durations matrix has not been manually set, create empty
+      // matrix to allow for concurrent modification later on.
+      create_routing_wrapper = true;
       _durations_matrices.emplace(profile, Matrix<UserDuration>());
-    } else {
-      if (_geometry) {
-        // Even with a custom matrix, we still want routing after
-        // optimization.
-        add_routing_wrapper(profile);
+
+      if (_distances_matrices.find(profile) == _distances_matrices.end()) {
+        // Distances matrix has not been manually set, create empty
+        // matrix to allow for concurrent modification later on.
+        _distances_matrices.emplace(profile, Matrix<UserDistance>());
       }
+    }
+
+    if (create_routing_wrapper) {
+      add_routing_wrapper(profile);
     }
   }
 
@@ -830,14 +846,21 @@ void Input::set_matrices(unsigned nb_thread) {
   auto run_on_profiles = [&](const std::vector<std::string>& profiles) {
     try {
       for (const auto& profile : profiles) {
-        auto d_m = _durations_matrices.find(profile);
-        assert(d_m != _durations_matrices.end());
+        auto durations_m = _durations_matrices.find(profile);
+        auto distances_m = _distances_matrices.find(profile);
 
-        if (d_m->second.size() == 0) {
-          // Durations matrix not manually set so defined as empty
-          // above.
+        // Required matrices not manually set have been defined as
+        // empty above.
+        assert(durations_m != _durations_matrices.end());
+        const bool define_durations = (durations_m->second.size() == 0);
+        const bool has_distance_matrix =
+          (distances_m != _distances_matrices.end());
+        const bool define_distances =
+          has_distance_matrix and (distances_m->second.size() == 0);
+        if (define_durations or define_distances) {
           if (_locations.size() == 1) {
-            d_m->second = Matrix<UserCost>(1);
+            durations_m->second = Matrix<UserDuration>(1);
+            distances_m->second = Matrix<UserDistance>(1);
           } else {
             auto rw = std::find_if(_routing_wrappers.begin(),
                                    _routing_wrappers.end(),
@@ -848,36 +871,66 @@ void Input::set_matrices(unsigned nb_thread) {
 
             if (!_has_custom_location_index) {
               // Location indices are set based on order in _locations.
-              d_m->second = (*rw)->get_matrix(_locations);
+              auto matrices = (*rw)->get_matrices(_locations);
+              if (define_durations) {
+                durations_m->second = std::move(matrices.durations);
+              }
+              if (define_distances) {
+                distances_m->second = std::move(matrices.distances);
+              }
             } else {
               // Location indices are provided in input so we need an
               // indirection based on order in _locations.
-              auto m = (*rw)->get_matrix(_locations);
+              auto matrices = (*rw)->get_matrices(_locations);
 
-              Matrix<UserDuration> full_m(_max_matrices_used_index + 1);
-              for (Index i = 0; i < _locations.size(); ++i) {
-                const auto& loc_i = _locations[i];
-                for (Index j = 0; j < _locations.size(); ++j) {
-                  full_m[loc_i.index()][_locations[j].index()] = m[i][j];
+              if (define_durations) {
+                Matrix<UserDuration> full_m(_max_matrices_used_index + 1);
+                for (Index i = 0; i < _locations.size(); ++i) {
+                  const auto& loc_i = _locations[i];
+                  for (Index j = 0; j < _locations.size(); ++j) {
+                    full_m[loc_i.index()][_locations[j].index()] =
+                      matrices.durations[i][j];
+                  }
                 }
-              }
 
-              d_m->second = std::move(full_m);
+                durations_m->second = std::move(full_m);
+              }
+              if (define_distances) {
+                Matrix<UserDistance> full_m(_max_matrices_used_index + 1);
+                for (Index i = 0; i < _locations.size(); ++i) {
+                  const auto& loc_i = _locations[i];
+                  for (Index j = 0; j < _locations.size(); ++j) {
+                    full_m[loc_i.index()][_locations[j].index()] =
+                      matrices.distances[i][j];
+                  }
+                }
+
+                distances_m->second = std::move(full_m);
+              }
             }
           }
         }
 
-        if (d_m->second.size() <= _max_matrices_used_index) {
-          throw InputException("location_index exceeding matrix size for " +
-                               profile + " profile.");
+        if (durations_m->second.size() <= _max_matrices_used_index) {
+          throw InputException(
+            "location_index exceeding durations matrix size for " + profile +
+            " profile.");
+        }
+
+        if (has_distance_matrix and
+            distances_m->second.size() <= _max_matrices_used_index) {
+          throw InputException(
+            "location_index exceeding distances matrix size for " + profile +
+            " profile.");
         }
 
         const auto c_m = _costs_matrices.find(profile);
 
         if (c_m != _costs_matrices.end()) {
           if (c_m->second.size() <= _max_matrices_used_index) {
-            throw InputException("location_index exceeding matrix size for " +
-                                 profile + " profile.");
+            throw InputException(
+              "location_index exceeding costs matrix size for " + profile +
+              " profile.");
           }
 
           // Check for potential overflow in solution cost.
@@ -889,7 +942,7 @@ void Input::set_matrices(unsigned nb_thread) {
           cost_bound_m.unlock();
         } else {
           // Durations matrix will be used for costs.
-          const UserCost current_bound = check_cost_bound(d_m->second);
+          const UserCost current_bound = check_cost_bound(durations_m->second);
           cost_bound_m.lock();
           _cost_upper_bound =
             std::max(_cost_upper_bound,

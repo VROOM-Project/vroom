@@ -5,6 +5,8 @@
 ### Added
 
 - Recommendation on how to cite in publications (#943)
+- Store distance matrices (#956)
+- Default radius of 35km for OSRM snapping (#922)
 - Support for URL path in host (#966)
 
 ### Changed
@@ -19,6 +21,9 @@
 - Update polylineencoder to v2.0.1 (#931)
 - Switch to C++20 (#851)
 - Improved error messages for file-related IO errors (#553)
+- Add job id to error message for unreachable step (#946)
+- Reduce `compute_best_route_split_choice` complexity (#962)
+- `Eval::operator<` sorts on cost, then duration (#914)
 
 ### Fixed
 
@@ -27,6 +32,8 @@
 - Comparison of index-based and coordinates-based locations (#935)
 - `max_travel_time` parameter not taken into account in edge case (#884)
 - Meaningless `location_index` provided in output for break steps (#877)
+- `max_travel_time` not accounted for with vehicle steps in solving mode (#954)
+- `max_travel_time` not accounted for in `RouteSplit` (#941)
 
 ## [v1.13.0] - 2023-01-31
 

@@ -19,13 +19,19 @@ All rights reserved (see LICENSE).
 
 namespace vroom::routing {
 
+struct Matrices {
+  Matrix<UserDuration> durations;
+  Matrix<UserDistance> distances;
+
+  Matrices(std::size_t n) : durations(n), distances(n){};
+};
+
 class Wrapper {
 
 public:
   std::string profile;
 
-  virtual Matrix<UserCost>
-  get_matrix(const std::vector<Location>& locs) const = 0;
+  virtual Matrices get_matrices(const std::vector<Location>& locs) const = 0;
 
   virtual void add_route_info(Route& route) const = 0;
 
@@ -35,9 +41,9 @@ protected:
   Wrapper(std::string profile) : profile(std::move(profile)) {
   }
 
-  static UserCost round_cost(double value) {
+  template <typename T> static T round_cost(double value) {
     constexpr double round_increment = 0.5;
-    return static_cast<UserCost>(value + round_increment);
+    return static_cast<T>(value + round_increment);
   }
 
   static inline void
@@ -64,7 +70,7 @@ protected:
     if (max_unfound_routes_for_a_loc > 0) {
       std::string error_msg = "Unfound route(s) ";
       error_msg += error_direction;
-      error_msg += "location [" + std::to_string(locs[error_loc].lon()) + ";" +
+      error_msg += "location [" + std::to_string(locs[error_loc].lon()) + "," +
                    std::to_string(locs[error_loc].lat()) + "]";
 
       throw RoutingException(error_msg);

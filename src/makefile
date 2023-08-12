@@ -36,7 +36,7 @@ else
 	ifeq ($(shell pkg-config --exists libosrm && echo 1),1)
 		LDLIBS += $(shell pkg-config --libs libosrm) -lboost_system -lboost_filesystem -lboost_iostreams -lboost_thread -lrt -ltbb
 		LIBOSRMFLAGS = $(shell pkg-config --cflags libosrm)
-		CXXFLAGS += $(filter-out -std=c++14, $(LIBOSRMFLAGS)) -D USE_LIBOSRM=true
+		CXXFLAGS += $(filter-out -std=c++17, $(LIBOSRMFLAGS)) -D USE_LIBOSRM=true
 	else
 		SRC := $(filter-out ./routing/libosrm_wrapper.cpp, $(SRC))
 	endif

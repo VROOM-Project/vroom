@@ -29,7 +29,7 @@ struct Summary {
 
   UserDuration duration;
   UserDuration waiting_time;
-  Distance distance;
+  UserDistance distance;
   ComputingTimes computing_times;
 
   Violations violations;
