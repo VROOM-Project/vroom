@@ -37,7 +37,7 @@ void update_host(Servers& servers, const std::string& value) {
     index = host.find('/');
     if (index != std::string::npos) {
       path = host.substr(index + 1) + "/";
-      host = host.substr(0, index);
+      host = host.erase(index);
     }
   }
 
