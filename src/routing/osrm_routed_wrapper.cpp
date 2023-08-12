@@ -28,15 +28,22 @@ OsrmRoutedWrapper::build_query(const std::vector<Location>& locations,
                                const std::string& service) const {
   // Building query for osrm-routed
   std::string query = "GET /" + service;
-
   query += "/v1/" + profile + "/";
 
-  // Adding locations.
+  // Build query part for snapping restriction.
+  std::string radiuses = "radiuses=";
+  radiuses.reserve(9 + locations.size() *
+                         (DEFAULT_OSRM_SNAPPING_RADIUS.size() + 1));
+
+  // Adding locations and radiuses values.
   for (auto const& location : locations) {
     query += std::to_string(location.lon()) + "," +
              std::to_string(location.lat()) + ";";
+    radiuses += DEFAULT_OSRM_SNAPPING_RADIUS + ";";
   }
-  query.pop_back(); // Remove trailing ';'.
+  // Remove trailing ';'.
+  query.pop_back();
+  radiuses.pop_back();
 
   if (service == _route_service) {
     query += "?" + _routing_args;
@@ -44,6 +51,7 @@ OsrmRoutedWrapper::build_query(const std::vector<Location>& locations,
     assert(service == _matrix_service);
     query += "?annotations=duration,distance";
   }
+  query += "&" + radiuses;
 
   query += " HTTP/1.1\r\n";
   query += "Host: " + _server.host + "\r\n";
@@ -54,10 +62,27 @@ OsrmRoutedWrapper::build_query(const std::vector<Location>& locations,
 }
 
 void OsrmRoutedWrapper::check_response(const rapidjson::Document& json_result,
+                                       const std::vector<Location>& locs,
                                        const std::string&) const {
   assert(json_result.HasMember("code"));
-  if (json_result["code"] != "Ok") {
-    throw RoutingException(std::string(json_result["message"].GetString()));
+  const std::string code = json_result["code"].GetString();
+  if (code != "Ok") {
+    const std::string message = json_result["message"].GetString();
+    const std::string snapping_error_base =
+      "Could not find a matching segment for coordinate ";
+    if (code == "NoSegment" and message.starts_with(snapping_error_base)) {
+      const auto error_loc =
+        std::stoul(message.substr(snapping_error_base.size(),
+                                  message.size() - snapping_error_base.size()));
+      const auto coordinates = "[" + std::to_string(locs[error_loc].lon()) +
+                               "," + std::to_string(locs[error_loc].lat()) +
+                               "]";
+      throw RoutingException("Could not find route near location " +
+                             coordinates);
+    }
+
+    // Other error in response.
+    throw RoutingException(message);
   }
 }
 

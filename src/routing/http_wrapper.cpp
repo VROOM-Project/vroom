@@ -155,7 +155,7 @@ Matrices HttpWrapper::get_matrices(const std::vector<Location>& locs) const {
 
   rapidjson::Document json_result;
   this->parse_response(json_result, json_string);
-  this->check_response(json_result, _matrix_service);
+  this->check_response(json_result, locs, _matrix_service);
 
   if (!json_result.HasMember(_matrix_durations_key.c_str())) {
     throw RoutingException("Missing " + _matrix_durations_key + ".");
@@ -224,7 +224,9 @@ void HttpWrapper::add_route_info(Route& route) const {
 
   rapidjson::Document json_result;
   parse_response(json_result, json_string);
-  this->check_response(json_result, _route_service);
+  this->check_response(json_result,
+                       non_break_locations, // not supposed to be used
+                       _route_service);
 
   // Total distance and route geometry.
   route.distance = round_cost<UserDistance>(get_total_distance(json_result));

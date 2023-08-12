@@ -20,6 +20,7 @@ private:
                           const std::string& service) const override;
 
   void check_response(const rapidjson::Document& json_result,
+                      const std::vector<Location>& locs,
                       const std::string& service) const override;
 
   bool

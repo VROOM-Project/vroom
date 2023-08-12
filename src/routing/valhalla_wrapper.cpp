@@ -86,6 +86,7 @@ std::string ValhallaWrapper::build_query(const std::vector<Location>& locations,
 }
 
 void ValhallaWrapper::check_response(const rapidjson::Document& json_result,
+                                     const std::vector<Location>&,
                                      const std::string& service) const {
   assert(service == _matrix_service or service == _route_service);
 
