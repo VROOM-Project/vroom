@@ -19,6 +19,7 @@
 - Switch to C++20 (#851)
 - Improved error messages for file-related IO errors (#553)
 - Add job id to error message for unreachable step (#946)
+- Reduce `compute_best_route_split_choice` complexity (#962)
 
 ### Fixed
 
@@ -27,6 +28,8 @@
 - Comparison of index-based and coordinates-based locations (#935)
 - `max_travel_time` parameter not taken into account in edge case (#884)
 - Meaningless `location_index` provided in output for break steps (#877)
+- `max_travel_time` not accounted for with vehicle steps in solving mode (#954)
+- `max_travel_time` not accounted for in `RouteSplit` (#941)
 
 ## [v1.13.0] - 2023-01-31
 

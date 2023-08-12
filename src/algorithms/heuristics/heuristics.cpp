@@ -886,6 +886,7 @@ T dynamic_vehicle_choice(const Input& input,
 
 template <class T> T initial_routes(const Input& input) {
   T routes;
+  routes.reserve(input.vehicles.size());
   for (Index v = 0; v < input.vehicles.size(); ++v) {
     routes.emplace_back(input, v, input.zero_amount().size());
 
@@ -908,10 +909,16 @@ template <class T> T initial_routes(const Input& input) {
                            std::to_string(vehicle.id) + ".");
     }
 
-    // Startup load is the sum of deliveries for (single) jobs.
+    // Track load and travel time during the route for validity.
     Amount current_load = single_jobs_deliveries;
+    Eval eval_sum;
+    std::optional<Index> previous_index;
+    if (vehicle.has_start()) {
+      previous_index = vehicle.start.value().index();
+    }
 
     std::vector<Index> job_ranks;
+    job_ranks.reserve(vehicle.steps.size());
     std::unordered_set<Index> expected_delivery_ranks;
     for (const auto& step : vehicle.steps) {
       if (step.type != STEP_TYPE::JOB) {
@@ -928,6 +935,13 @@ template <class T> T initial_routes(const Input& input) {
                              std::to_string(job.id) + ".");
       }
 
+      // Update current travel time.
+      if (previous_index.has_value()) {
+        eval_sum += vehicle.eval(previous_index.value(), job.index());
+      }
+      previous_index = job.index();
+
+      // Handle load.
       assert(step.job_type.has_value());
       switch (step.job_type.value()) {
       case JOB_TYPE::SINGLE: {
@@ -961,6 +975,17 @@ template <class T> T initial_routes(const Input& input) {
       }
     }
 
+    if (vehicle.has_end() and !job_ranks.empty()) {
+      // Update with last route leg.
+      assert(previous_index.has_value());
+      eval_sum +=
+        vehicle.eval(previous_index.value(), vehicle.end.value().index());
+    }
+    if (!vehicle.ok_for_travel_time(eval_sum.duration)) {
+      throw InputException("Route over max_travel_time for vehicle " +
+                           std::to_string(vehicle.id) + ".");
+    }
+
     if (vehicle.max_tasks < job_ranks.size()) {
       throw InputException("Too many tasks for vehicle " +
                            std::to_string(vehicle.id) + ".");
@@ -971,8 +996,8 @@ template <class T> T initial_routes(const Input& input) {
                            std::to_string(vehicle.id) + ".");
     }
 
-    // Now route is OK with regard to capacity, precedence and skills
-    // constraints.
+    // Now route is OK with regard to capacity, max_travel_time,
+    // max_tasks, precedence and skills constraints.
     if (!job_ranks.empty()) {
       if (!current_r.is_valid_addition_for_tw(input,
                                               single_jobs_deliveries,
