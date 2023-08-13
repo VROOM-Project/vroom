@@ -2282,15 +2282,8 @@ void LocalSearch<Route,
         std::vector<Index> between_pd(_sol[v].route.begin() + r + 1,
                                       _sol[v].route.begin() + delivery_r);
 
-        Amount delivery = _input.zero_amount();
-        for (unsigned i = r + 1; i < delivery_r; ++i) {
-          const auto& job = _input.jobs[_sol[v].route[i]];
-          if (job.type == JOB_TYPE::SINGLE) {
-            delivery += job.delivery;
-          }
-        }
         _sol[v].replace(_input,
-                        delivery,
+                        _sol[v].delivery_in_range(r + 1, delivery_r),
                         between_pd.begin(),
                         between_pd.end(),
                         r,
