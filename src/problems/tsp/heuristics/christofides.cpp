@@ -22,10 +22,10 @@ std::list<Index> christofides(const Matrix<UserCost>& sym_matrix) {
   // vertices.
 
   // Compute symmetric graph from the matrix.
-  auto sym_graph = utils::UndirectedGraph<UserCost>(sym_matrix);
+  const auto sym_graph = utils::UndirectedGraph<UserCost>(sym_matrix);
 
   // Work on a minimum spanning tree seen as a graph.
-  auto mst_graph = utils::minimum_spanning_tree(sym_graph);
+  const auto mst_graph = utils::minimum_spanning_tree(sym_graph);
 
   // Getting minimum spanning tree of associated graph under the form
   // of an adjacency list.
