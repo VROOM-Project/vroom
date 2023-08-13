@@ -77,8 +77,8 @@ Solution check_and_set_ETA(const Input& input, unsigned nb_thread) {
   };
 
   std::vector<std::thread> solving_threads;
-
   solving_threads.reserve(thread_ranks.size());
+
   for (const auto& v_ranks : thread_ranks) {
     solving_threads.emplace_back(run_check, v_ranks);
   }
@@ -93,6 +93,8 @@ Solution check_and_set_ETA(const Input& input, unsigned nb_thread) {
 
   // Handle unassigned jobs.
   std::vector<Job> unassigned_jobs;
+  unassigned_jobs.reserve(input.jobs.size() - assigned_ranks.size());
+
   for (Index j = 0; j < input.jobs.size(); ++j) {
     if (assigned_ranks.find(j) == assigned_ranks.end()) {
       unassigned_jobs.push_back(input.jobs[j]);

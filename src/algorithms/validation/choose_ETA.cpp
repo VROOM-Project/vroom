@@ -70,6 +70,11 @@ Route choose_ETA(const Input& input,
   std::vector<unsigned> B;
   std::vector<Duration> durations;
   std::vector<Duration> action_times;
+  J.reserve(n + 1);
+  B.reserve(n + 1);
+  durations.reserve(n + 1);
+  action_times.reserve(n + 1);
+
   // Lower bound for timestamps in input in order to scale the MIP
   // matrix values.
   Duration horizon_start = std::numeric_limits<Duration>::max();
@@ -87,6 +92,8 @@ Route choose_ETA(const Input& input,
   unsigned default_job_tw = 0;
   Duration relative_arrival = 0;
   std::vector<Duration> relative_ETA;
+  relative_ETA.reserve(steps.size());
+
   std::optional<Index> previous_index;
   std::optional<Location> first_location;
   std::optional<Location> last_location;
@@ -394,6 +401,10 @@ Route choose_ETA(const Input& input,
   Duration previous_travel = durations.front();
   std::vector<unsigned> first_relevant_tw_rank;
   Index rank_in_J = 0;
+
+  t_i_LB.reserve(steps.size());
+  t_i_UB.reserve(steps.size());
+  first_relevant_tw_rank.reserve(n);
 
   for (const auto& step : steps) {
     // Derive basic bounds from user input.
@@ -1043,6 +1054,9 @@ Route choose_ETA(const Input& input,
 
   std::vector<Duration> task_ETA;
   std::vector<Duration> task_travels;
+  task_ETA.reserve(n);
+  task_travels.reserve(n);
+
   for (unsigned i = 0; i < n; ++i) {
     task_ETA.push_back(horizon_start +
                        get_duration(glp_mip_col_val(lp, i + 2)));
@@ -1053,6 +1067,7 @@ Route choose_ETA(const Input& input,
   // Populate vector storing picked time window ranks.
   current_X_rank = start_X_col;
   std::vector<Index> task_tw_ranks;
+  task_tw_ranks.reserve(n);
 
   for (const auto& step : steps) {
     switch (step.type) {
@@ -1130,6 +1145,7 @@ Route choose_ETA(const Input& input,
                  [](const auto& b) { return b.id; });
 
   std::vector<Step> sol_steps;
+  sol_steps.reserve(steps.size());
 
   assert(v.has_start() or start_travel == 0);
 
