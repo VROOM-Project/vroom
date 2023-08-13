@@ -8,7 +8,7 @@ All rights reserved (see LICENSE).
 */
 
 #include <cassert>
-#include <set>
+#include <unordered_set>
 
 #include "algorithms/kruskal.h"
 #include "algorithms/munkres.h"
@@ -86,7 +86,7 @@ std::list<Index> christofides(const Matrix<UserCost>& sym_matrix) {
   // Adding edges from minimum weight perfect matching (with the
   // original vertices index). Edges appear twice in matching so we
   // need to remember the one already added.
-  std::set<Index> already_added;
+  std::unordered_set<Index> already_added;
   for (const auto& edge : mwpm_final) {
     Index first_index = mst_odd_vertices[edge.first];
     Index second_index = mst_odd_vertices[edge.second];
@@ -156,7 +156,7 @@ std::list<Index> christofides(const Matrix<UserCost>& sym_matrix) {
     }
   } while (!complete_tour);
 
-  std::set<Index> already_visited;
+  std::unordered_set<Index> already_visited;
   std::list<Index> tour;
   for (const auto& vertex : eulerian_path) {
     auto ret = already_visited.insert(vertex);
