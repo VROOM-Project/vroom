@@ -189,6 +189,7 @@ inline InsertionRange get_insert_range(const std::vector<Index>& s_route,
     insert.last_rank = s_rank + 1;
   } else {
     if (s_rank < insertion_rank) {
+      insert.range.reserve(insertion_rank - s_rank);
       std::copy(s_route.begin() + s_rank + 1,
                 s_route.begin() + insertion_rank,
                 std::back_inserter(insert.range));
@@ -196,6 +197,7 @@ inline InsertionRange get_insert_range(const std::vector<Index>& s_route,
       insert.first_rank = s_rank;
       insert.last_rank = insertion_rank;
     } else {
+      insert.range.reserve(s_rank - insertion_rank + 1);
       insert.range.push_back(job_rank);
       std::copy(s_route.begin() + insertion_rank,
                 s_route.begin() + s_rank,
@@ -295,6 +297,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
                                    s_rank);
 
       std::vector<SwapChoice> swap_choice_options;
+      swap_choice_options.reserve(16);
 
       // Options for in-place insertion in source route include
       // in-place insertion in target route and other relevant
