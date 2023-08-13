@@ -31,7 +31,7 @@ public:
 
   UndirectedGraph(const Matrix<T>& m);
 
-  UndirectedGraph(std::vector<Edge<T>> edges);
+  UndirectedGraph(std::vector<Edge<T>>&& edges);
 
   std::size_t size() const;
 

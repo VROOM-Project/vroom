@@ -99,7 +99,8 @@ std::list<Index> christofides(const Matrix<UserCost>& sym_matrix) {
   }
 
   // Building Eulerian graph from the edges.
-  utils::UndirectedGraph<UserCost> eulerian_graph(eulerian_graph_edges);
+  utils::UndirectedGraph<UserCost> eulerian_graph(
+    std::move(eulerian_graph_edges));
   assert(eulerian_graph.size() >= 2);
 
   // Hierholzer's algorithm: building and joining closed tours with

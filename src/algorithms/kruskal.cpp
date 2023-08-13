@@ -56,7 +56,7 @@ UndirectedGraph<T> minimum_spanning_tree(const UndirectedGraph<T>& graph) {
     }
   }
 
-  return UndirectedGraph<T>(mst);
+  return UndirectedGraph<T>(std::move(mst));
 }
 
 template UndirectedGraph<UserCost>
