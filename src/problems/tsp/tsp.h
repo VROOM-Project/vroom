@@ -22,13 +22,13 @@ using RawSolution = std::vector<RawRoute>;
 
 class TSP : public VRP {
 private:
-  Index _vehicle_rank;
+  const Index _vehicle_rank;
   // Holds the matching from index in _matrix to rank in input::_jobs.
-  std::vector<Index> _job_ranks;
+  const std::vector<Index> _job_ranks;
   bool _is_symmetric{true};
-  bool _has_start;
+  const bool _has_start;
   Index _start;
-  bool _has_end;
+  const bool _has_end;
   Index _end;
   Matrix<UserCost> _matrix;
   Matrix<UserCost> _symmetrized_matrix;
@@ -39,7 +39,7 @@ private:
   UserCost symmetrized_cost(const std::list<Index>& tour) const;
 
 public:
-  TSP(const Input& input, std::vector<Index> job_ranks, Index vehicle_rank);
+  TSP(const Input& input, std::vector<Index>&& job_ranks, Index vehicle_rank);
 
   std::vector<Index> raw_solve(unsigned nb_threads,
                                const Timeout& timeout) const;
