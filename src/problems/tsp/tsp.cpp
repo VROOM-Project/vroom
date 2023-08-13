@@ -47,6 +47,8 @@ TSP::TSP(const Input& input, std::vector<Index>&& job_ranks, Index vehicle_rank)
 
   // Pick ranks to select from input matrix.
   std::vector<Index> matrix_ranks;
+  matrix_ranks.reserve(_job_ranks.size() + 2);
+
   std::transform(_job_ranks.cbegin(),
                  _job_ranks.cend(),
                  std::back_inserter(matrix_ranks),
