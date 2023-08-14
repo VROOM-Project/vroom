@@ -16,7 +16,6 @@ namespace vroom::vrptw {
 
 class PDShift : public cvrp::PDShift {
 private:
-  std::vector<Index> _source_without_pd;
   TWRoute& _tw_s_route;
   TWRoute& _tw_t_route;
   Amount _best_t_delivery;
