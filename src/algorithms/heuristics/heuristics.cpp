@@ -349,7 +349,7 @@ T basic(const Input& input, INIT init, double lambda, SORT sort) {
 
             // Build replacement sequence for current insertion.
             std::vector<Index> modified_with_pd;
-            modified_with_pd.reserve(current_r.size() - pickup_r + 3);
+            modified_with_pd.reserve(current_r.size() - pickup_r + 2);
             modified_with_pd.push_back(job_rank);
 
             Amount modified_delivery = input.zero_amount();
@@ -788,7 +788,7 @@ T dynamic_vehicle_choice(const Input& input,
 
             // Build replacement sequence for current insertion.
             std::vector<Index> modified_with_pd;
-            modified_with_pd.reserve(current_r.size() - pickup_r + 3);
+            modified_with_pd.reserve(current_r.size() - pickup_r + 2);
             modified_with_pd.push_back(job_rank);
 
             Amount modified_delivery = input.zero_amount();
@@ -872,7 +872,7 @@ T dynamic_vehicle_choice(const Input& input,
           keep_going = true;
         }
         if (input.jobs[best_job_rank].type == JOB_TYPE::PICKUP) {
-          std::vector<Index> modified_with_pd({best_job_rank});
+          std::vector<Index> modified_with_pd;
           modified_with_pd.reserve(best_delivery_r - best_pickup_r + 2);
           modified_with_pd.push_back(best_job_rank);
 

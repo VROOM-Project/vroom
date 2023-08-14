@@ -138,7 +138,7 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
 
     // Build replacement sequence for current insertion.
     std::vector<Index> modified_with_pd;
-    if (pickup_r < end_d_rank) {
+    if (pickup_r <= end_d_rank) {
       modified_with_pd.reserve(end_d_rank - pickup_r + 2);
     }
     modified_with_pd.push_back(j);
