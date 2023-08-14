@@ -8,7 +8,7 @@ All rights reserved (see LICENSE).
 */
 
 #include <cassert>
-#include <set>
+#include <unordered_set>
 
 #include "algorithms/kruskal.h"
 #include "algorithms/munkres.h"
@@ -22,10 +22,10 @@ std::list<Index> christofides(const Matrix<UserCost>& sym_matrix) {
   // vertices.
 
   // Compute symmetric graph from the matrix.
-  auto sym_graph = utils::UndirectedGraph<UserCost>(sym_matrix);
+  const auto sym_graph = utils::UndirectedGraph<UserCost>(sym_matrix);
 
   // Work on a minimum spanning tree seen as a graph.
-  auto mst_graph = utils::minimum_spanning_tree(sym_graph);
+  const auto mst_graph = utils::minimum_spanning_tree(sym_graph);
 
   // Getting minimum spanning tree of associated graph under the form
   // of an adjacency list.
@@ -86,7 +86,7 @@ std::list<Index> christofides(const Matrix<UserCost>& sym_matrix) {
   // Adding edges from minimum weight perfect matching (with the
   // original vertices index). Edges appear twice in matching so we
   // need to remember the one already added.
-  std::set<Index> already_added;
+  std::unordered_set<Index> already_added;
   for (const auto& edge : mwpm_final) {
     Index first_index = mst_odd_vertices[edge.first];
     Index second_index = mst_odd_vertices[edge.second];
@@ -99,7 +99,8 @@ std::list<Index> christofides(const Matrix<UserCost>& sym_matrix) {
   }
 
   // Building Eulerian graph from the edges.
-  utils::UndirectedGraph<UserCost> eulerian_graph(eulerian_graph_edges);
+  utils::UndirectedGraph<UserCost> eulerian_graph(
+    std::move(eulerian_graph_edges));
   assert(eulerian_graph.size() >= 2);
 
   // Hierholzer's algorithm: building and joining closed tours with
@@ -155,7 +156,7 @@ std::list<Index> christofides(const Matrix<UserCost>& sym_matrix) {
     }
   } while (!complete_tour);
 
-  std::set<Index> already_visited;
+  std::unordered_set<Index> already_visited;
   std::list<Index> tour;
   for (const auto& vertex : eulerian_path) {
     auto ret = already_visited.insert(vertex);

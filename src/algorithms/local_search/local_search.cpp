@@ -155,6 +155,7 @@ void LocalSearch<Route,
   bool job_added;
 
   std::vector<std::vector<RouteInsertion>> route_job_insertions;
+  route_job_insertions.reserve(routes.size());
 
   for (std::size_t i = 0; i < routes.size(); ++i) {
     route_job_insertions.emplace_back(_input.jobs.size(),
@@ -258,7 +259,11 @@ void LocalSearch<Route,
       } else {
         assert(best_job.type == JOB_TYPE::PICKUP);
 
-        std::vector<Index> modified_with_pd({best_job_rank});
+        std::vector<Index> modified_with_pd;
+        modified_with_pd.reserve(best_insertion.delivery_rank -
+                                 best_insertion.pickup_rank + 2);
+        modified_with_pd.push_back(best_job_rank);
+
         std::copy(_sol[best_route].route.begin() + best_insertion.pickup_rank,
                   _sol[best_route].route.begin() + best_insertion.delivery_rank,
                   std::back_inserter(modified_with_pd));
@@ -348,6 +353,8 @@ void LocalSearch<Route,
   // List of source/target pairs we need to test (all related vehicles
   // at first).
   std::vector<std::pair<Index, Index>> s_t_pairs;
+  s_t_pairs.reserve(_nb_vehicles * _nb_vehicles);
+
   for (unsigned s_v = 0; s_v < _nb_vehicles; ++s_v) {
     for (unsigned t_v = 0; t_v < _nb_vehicles; ++t_v) {
       if (_input.vehicle_ok_with_vehicle(s_v, t_v)) {
@@ -1630,7 +1637,10 @@ void LocalSearch<Route,
         !_input.has_homogeneous_profiles() or !_input.has_homogeneous_costs()) {
       // RouteSplit stuff
       std::vector<Index> empty_route_ranks;
+      empty_route_ranks.reserve(_input.vehicles.size());
       std::vector<std::reference_wrapper<Route>> empty_route_refs;
+      empty_route_refs.reserve(_input.vehicles.size());
+
       for (Index v = 0; v < _input.vehicles.size(); ++v) {
         if (_sol[v].empty()) {
           empty_route_ranks.push_back(v);
@@ -2191,6 +2201,7 @@ void LocalSearch<Route,
 
   // Remove best node candidate from all routes.
   std::vector<std::pair<Index, Index>> routes_and_ranks;
+  routes_and_ranks.reserve(_sol.size());
 
   for (std::size_t v = 0; v < _sol.size(); ++v) {
     if (_sol[v].empty()) {

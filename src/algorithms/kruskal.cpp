@@ -26,6 +26,7 @@ UndirectedGraph<T> minimum_spanning_tree(const UndirectedGraph<T>& graph) {
 
   // Storing the edges of the minimum spanning tree.
   std::vector<Edge<T>> mst;
+  mst.reserve(graph.size() - 1);
 
   // During Kruskal algorithm, the number of connected components will
   // decrease until we obtain a single component (the final tree). We
@@ -55,8 +56,9 @@ UndirectedGraph<T> minimum_spanning_tree(const UndirectedGraph<T>& graph) {
       }
     }
   }
+  assert(mst.size() == graph.size() - 1);
 
-  return UndirectedGraph<T>(mst);
+  return UndirectedGraph<T>(std::move(mst));
 }
 
 template UndirectedGraph<UserCost>

@@ -135,6 +135,7 @@ protected:
     };
 
     std::vector<std::thread> heuristics_threads;
+    heuristics_threads.reserve(nb_threads);
 
     for (const auto& param_ranks : thread_ranks) {
       if (!param_ranks.empty()) {
@@ -153,6 +154,8 @@ protected:
     // Filter out duplicate heuristics solutions.
     std::set<utils::SolutionIndicators<Route>> unique_indicators;
     std::vector<unsigned> to_remove;
+    to_remove.reserve(solutions.size());
+
     for (unsigned i = 0; i < solutions.size(); ++i) {
       const auto result = unique_indicators.emplace(_input, solutions[i]);
       if (!result.second) {
@@ -211,6 +214,7 @@ protected:
     };
 
     std::vector<std::thread> ls_threads;
+    ls_threads.reserve(nb_threads);
 
     for (const auto& sol_ranks : thread_ranks) {
       if (!sol_ranks.empty()) {

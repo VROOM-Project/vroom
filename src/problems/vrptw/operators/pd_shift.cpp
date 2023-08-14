@@ -67,7 +67,10 @@ void PDShift::compute_gain() {
 }
 
 void PDShift::apply() {
-  std::vector<Index> target_with_pd({s_route[_s_p_rank]});
+  std::vector<Index> target_with_pd;
+  target_with_pd.reserve(_best_t_d_rank - _best_t_p_rank + 2);
+  target_with_pd.push_back(s_route[_s_p_rank]);
+
   std::copy(t_route.begin() + _best_t_p_rank,
             t_route.begin() + _best_t_d_rank,
             std::back_inserter(target_with_pd));

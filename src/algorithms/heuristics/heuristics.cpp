@@ -64,6 +64,8 @@ template <class T>
 T basic(const Input& input, INIT init, double lambda, SORT sort) {
   const auto nb_vehicles = input.vehicles.size();
   T routes;
+  routes.reserve(nb_vehicles);
+
   for (Index v = 0; v < nb_vehicles; ++v) {
     routes.emplace_back(input, v, input.zero_amount().size());
   }
@@ -346,7 +348,10 @@ T basic(const Input& input, INIT init, double lambda, SORT sort) {
             }
 
             // Build replacement sequence for current insertion.
-            std::vector<Index> modified_with_pd({job_rank});
+            std::vector<Index> modified_with_pd;
+            modified_with_pd.reserve(current_r.size() - pickup_r + 2);
+            modified_with_pd.push_back(job_rank);
+
             Amount modified_delivery = input.zero_amount();
 
             for (Index delivery_r = pickup_r; delivery_r <= current_r.size();
@@ -431,7 +436,10 @@ T basic(const Input& input, INIT init, double lambda, SORT sort) {
           keep_going = true;
         }
         if (input.jobs[best_job_rank].type == JOB_TYPE::PICKUP) {
-          std::vector<Index> modified_with_pd({best_job_rank});
+          std::vector<Index> modified_with_pd;
+          modified_with_pd.reserve(best_delivery_r - best_pickup_r + 2);
+          modified_with_pd.push_back(best_job_rank);
+
           std::copy(current_r.route.begin() + best_pickup_r,
                     current_r.route.begin() + best_delivery_r,
                     std::back_inserter(modified_with_pd));
@@ -463,6 +471,8 @@ T dynamic_vehicle_choice(const Input& input,
                          SORT sort) {
   const auto nb_vehicles = input.vehicles.size();
   T routes;
+  routes.reserve(nb_vehicles);
+
   for (Index v = 0; v < nb_vehicles; ++v) {
     routes.emplace_back(input, v, input.zero_amount().size());
   }
@@ -777,7 +787,10 @@ T dynamic_vehicle_choice(const Input& input,
             }
 
             // Build replacement sequence for current insertion.
-            std::vector<Index> modified_with_pd({job_rank});
+            std::vector<Index> modified_with_pd;
+            modified_with_pd.reserve(current_r.size() - pickup_r + 2);
+            modified_with_pd.push_back(job_rank);
+
             Amount modified_delivery = input.zero_amount();
 
             for (Index delivery_r = pickup_r; delivery_r <= current_r.size();
@@ -859,7 +872,10 @@ T dynamic_vehicle_choice(const Input& input,
           keep_going = true;
         }
         if (input.jobs[best_job_rank].type == JOB_TYPE::PICKUP) {
-          std::vector<Index> modified_with_pd({best_job_rank});
+          std::vector<Index> modified_with_pd;
+          modified_with_pd.reserve(best_delivery_r - best_pickup_r + 2);
+          modified_with_pd.push_back(best_job_rank);
+
           std::copy(current_r.route.begin() + best_pickup_r,
                     current_r.route.begin() + best_delivery_r,
                     std::back_inserter(modified_with_pd));

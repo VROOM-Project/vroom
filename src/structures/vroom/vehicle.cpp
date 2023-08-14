@@ -71,6 +71,8 @@ Vehicle::Vehicle(Id id,
   if (!input_steps.empty()) {
     // Populating steps. We rely on always having start and end steps
     // in input, so just add them if they're missing.
+    steps.reserve(input_steps.size() + 2);
+
     unsigned rank_after_start = 0;
     if (input_steps.front().type == STEP_TYPE::START) {
       steps.push_back(input_steps.front());

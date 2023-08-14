@@ -25,6 +25,7 @@
 - Reduce `compute_best_route_split_choice` complexity (#962)
 - `Eval::operator<` sorts on cost, then duration (#914)
 - Improved `vrptw::PDShift` implementation (#852)
+- Reserve `vector` capacity whenever possible (#915)
 
 ### Fixed
 
