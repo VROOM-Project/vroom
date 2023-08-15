@@ -62,7 +62,7 @@ std::vector<std::vector<Eval>> get_jobs_vehicles_evals(const Input& input) {
 }
 
 template <class Route>
-void basic(const Input& input,
+Eval basic(const Input& input,
            std::vector<Route>& routes,
            INIT init,
            double lambda,
@@ -70,6 +70,8 @@ void basic(const Input& input,
   assert(std::all_of(routes.cbegin(), routes.cend(), [](const auto& r) {
     return r.empty();
   }));
+
+  Eval sol_eval;
 
   const auto nb_vehicles = input.vehicles.size();
 
@@ -146,7 +148,7 @@ void basic(const Input& input,
 
     const auto& vehicle = input.vehicles[v_rank];
 
-    Duration current_route_duration = 0;
+    Eval current_route_eval;
 
     if (init != INIT::NONE) {
       // Initialize current route with the "best" valid job.
@@ -258,7 +260,7 @@ void basic(const Input& input,
           unassigned.erase(best_job_rank);
           unassigned.erase(best_job_rank + 1);
         }
-        current_route_duration += evals[best_job_rank][v_rank].duration;
+        current_route_eval += evals[best_job_rank][v_rank];
       }
     }
 
@@ -271,7 +273,7 @@ void basic(const Input& input,
       Index best_pickup_r = 0;
       Index best_delivery_r = 0;
       Amount best_modified_delivery = input.zero_amount();
-      Duration best_duration_addition = 0;
+      Eval best_eval;
 
       for (const auto job_rank : unassigned) {
         if (!input.vehicle_ok_with_job(v_rank, job_rank)) {
@@ -285,19 +287,19 @@ void basic(const Input& input,
         if (input.jobs[job_rank].type == JOB_TYPE::SINGLE and
             current_r.size() + 1 <= vehicle.max_tasks) {
           for (Index r = 0; r <= current_r.size(); ++r) {
-            const auto current_add = utils::addition_cost(input,
-                                                          job_rank,
-                                                          vehicle,
-                                                          current_r.route,
-                                                          r);
+            const auto current_eval = utils::addition_cost(input,
+                                                           job_rank,
+                                                           vehicle,
+                                                           current_r.route,
+                                                           r);
 
             double current_cost =
-              static_cast<double>(current_add.cost) -
+              static_cast<double>(current_eval.cost) -
               lambda * static_cast<double>(regrets[v][job_rank]);
 
             if (current_cost < best_cost and
-                (vehicle.ok_for_travel_time(current_route_duration +
-                                            current_add.duration)) and
+                (vehicle.ok_for_travel_time(current_route_eval.duration +
+                                            current_eval.duration)) and
                 current_r
                   .is_valid_addition_for_capacity(input,
                                                   input.jobs[job_rank].pickup,
@@ -307,7 +309,7 @@ void basic(const Input& input,
               best_cost = current_cost;
               best_job_rank = job_rank;
               best_r = r;
-              best_duration_addition = current_add.duration;
+              best_eval = current_eval;
             }
           }
         }
@@ -374,20 +376,20 @@ void basic(const Input& input,
                 continue;
               }
 
-              Eval current_add;
+              Eval current_eval;
               if (pickup_r == delivery_r) {
-                current_add = utils::addition_cost(input,
-                                                   job_rank,
-                                                   vehicle,
-                                                   current_r.route,
-                                                   pickup_r,
-                                                   pickup_r + 1);
+                current_eval = utils::addition_cost(input,
+                                                    job_rank,
+                                                    vehicle,
+                                                    current_r.route,
+                                                    pickup_r,
+                                                    pickup_r + 1);
               } else {
-                current_add = p_add + d_adds[delivery_r];
+                current_eval = p_add + d_adds[delivery_r];
               }
 
               double current_cost =
-                current_add.cost -
+                current_eval.cost -
                 lambda * static_cast<double>(regrets[v][job_rank]);
 
               if (current_cost < best_cost) {
@@ -395,8 +397,8 @@ void basic(const Input& input,
 
                 // Update best cost depending on validity.
                 bool valid =
-                  (vehicle.ok_for_travel_time(current_route_duration +
-                                              current_add.duration)) &&
+                  (vehicle.ok_for_travel_time(current_route_eval.duration +
+                                              current_eval.duration)) &&
                   current_r
                     .is_valid_addition_for_capacity_inclusion(input,
                                                               modified_delivery,
@@ -424,7 +426,7 @@ void basic(const Input& input,
                   best_pickup_r = pickup_r;
                   best_delivery_r = delivery_r;
                   best_modified_delivery = modified_delivery;
-                  best_duration_addition = current_add.duration;
+                  best_eval = current_eval;
                 }
               }
             }
@@ -459,14 +461,21 @@ void basic(const Input& input,
           keep_going = true;
         }
 
-        current_route_duration += best_duration_addition;
+        current_route_eval += best_eval;
       }
     }
+
+    if (!current_r.empty()) {
+      sol_eval += current_route_eval;
+      sol_eval += Eval(vehicle.fixed_cost(), 0);
+    }
   }
+
+  return sol_eval;
 }
 
 template <class Route>
-void dynamic_vehicle_choice(const Input& input,
+Eval dynamic_vehicle_choice(const Input& input,
                             std::vector<Route>& routes,
                             INIT init,
                             double lambda,
@@ -474,6 +483,8 @@ void dynamic_vehicle_choice(const Input& input,
   assert(std::all_of(routes.cbegin(), routes.cend(), [](const auto& r) {
     return r.empty();
   }));
+
+  Eval sol_eval;
 
   const auto nb_vehicles = input.vehicles.size();
 
@@ -577,7 +588,7 @@ void dynamic_vehicle_choice(const Input& input,
     const auto& vehicle = input.vehicles[v_rank];
     auto& current_r = routes[v_rank];
 
-    Duration current_route_duration = 0;
+    Eval current_route_eval;
 
     if (init != INIT::NONE) {
       // Initialize current route with the "best" valid job that is
@@ -694,7 +705,7 @@ void dynamic_vehicle_choice(const Input& input,
           unassigned.erase(best_job_rank);
           unassigned.erase(best_job_rank + 1);
         }
-        current_route_duration += evals[best_job_rank][v_rank].duration;
+        current_route_eval += evals[best_job_rank][v_rank];
       }
     }
 
@@ -707,7 +718,7 @@ void dynamic_vehicle_choice(const Input& input,
       Index best_pickup_r = 0;
       Index best_delivery_r = 0;
       Amount best_modified_delivery = input.zero_amount();
-      Duration best_duration_addition = 0;
+      Eval best_eval;
 
       for (const auto job_rank : unassigned) {
         if (!input.vehicle_ok_with_job(v_rank, job_rank)) {
@@ -721,19 +732,19 @@ void dynamic_vehicle_choice(const Input& input,
         if (input.jobs[job_rank].type == JOB_TYPE::SINGLE and
             current_r.size() + 1 <= vehicle.max_tasks) {
           for (Index r = 0; r <= current_r.size(); ++r) {
-            const auto current_add = utils::addition_cost(input,
-                                                          job_rank,
-                                                          vehicle,
-                                                          current_r.route,
-                                                          r);
+            const auto current_eval = utils::addition_cost(input,
+                                                           job_rank,
+                                                           vehicle,
+                                                           current_r.route,
+                                                           r);
 
             double current_cost =
-              static_cast<double>(current_add.cost) -
+              static_cast<double>(current_eval.cost) -
               lambda * static_cast<double>(regrets[job_rank]);
 
             if (current_cost < best_cost and
-                (vehicle.ok_for_travel_time(current_route_duration +
-                                            current_add.duration)) and
+                (vehicle.ok_for_travel_time(current_route_eval.duration +
+                                            current_eval.duration)) and
                 current_r
                   .is_valid_addition_for_capacity(input,
                                                   input.jobs[job_rank].pickup,
@@ -743,7 +754,7 @@ void dynamic_vehicle_choice(const Input& input,
               best_cost = current_cost;
               best_job_rank = job_rank;
               best_r = r;
-              best_duration_addition = current_add.duration;
+              best_eval = current_eval;
             }
           }
         }
@@ -810,20 +821,20 @@ void dynamic_vehicle_choice(const Input& input,
                 continue;
               }
 
-              Eval current_add;
+              Eval current_eval;
               if (pickup_r == delivery_r) {
-                current_add = utils::addition_cost(input,
-                                                   job_rank,
-                                                   vehicle,
-                                                   current_r.route,
-                                                   pickup_r,
-                                                   pickup_r + 1);
+                current_eval = utils::addition_cost(input,
+                                                    job_rank,
+                                                    vehicle,
+                                                    current_r.route,
+                                                    pickup_r,
+                                                    pickup_r + 1);
               } else {
-                current_add = p_add + d_adds[delivery_r];
+                current_eval = p_add + d_adds[delivery_r];
               }
 
               double current_cost =
-                current_add.cost -
+                current_eval.cost -
                 lambda * static_cast<double>(regrets[job_rank]);
 
               if (current_cost < best_cost) {
@@ -831,8 +842,8 @@ void dynamic_vehicle_choice(const Input& input,
 
                 // Update best cost depending on validity.
                 bool valid =
-                  (vehicle.ok_for_travel_time(current_route_duration +
-                                              current_add.duration)) &&
+                  (vehicle.ok_for_travel_time(current_route_eval.duration +
+                                              current_eval.duration)) &&
                   current_r
                     .is_valid_addition_for_capacity_inclusion(input,
                                                               modified_delivery,
@@ -857,7 +868,7 @@ void dynamic_vehicle_choice(const Input& input,
                   best_pickup_r = pickup_r;
                   best_delivery_r = delivery_r;
                   best_modified_delivery = modified_delivery;
-                  best_duration_addition = current_add.duration;
+                  best_eval = current_eval;
                 }
               }
             }
@@ -892,10 +903,17 @@ void dynamic_vehicle_choice(const Input& input,
           keep_going = true;
         }
 
-        current_route_duration += best_duration_addition;
+        current_route_eval += best_eval;
       }
     }
+
+    if (!current_r.empty()) {
+      sol_eval += current_route_eval;
+      sol_eval += Eval(vehicle.fixed_cost(), 0);
+    }
   }
+
+  return sol_eval;
 }
 
 template <class Route>
@@ -1037,13 +1055,13 @@ void initial_routes(const Input& input, std::vector<Route>& routes) {
 using RawSolution = std::vector<RawRoute>;
 using TWSolution = std::vector<TWRoute>;
 
-template void basic(const Input& input,
+template Eval basic(const Input& input,
                     RawSolution& routes,
                     INIT init,
                     double lambda,
                     SORT sort);
 
-template void dynamic_vehicle_choice(const Input& input,
+template Eval dynamic_vehicle_choice(const Input& input,
                                      RawSolution& routes,
                                      INIT init,
                                      double lambda,
@@ -1051,13 +1069,13 @@ template void dynamic_vehicle_choice(const Input& input,
 
 template void initial_routes(const Input& input, RawSolution& routes);
 
-template void basic(const Input& input,
+template Eval basic(const Input& input,
                     TWSolution& routes,
                     INIT init,
                     double lambda,
                     SORT sort);
 
-template void dynamic_vehicle_choice(const Input& input,
+template Eval dynamic_vehicle_choice(const Input& input,
                                      TWSolution& routes,
                                      INIT init,
                                      double lambda,

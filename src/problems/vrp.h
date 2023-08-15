@@ -16,6 +16,7 @@ All rights reserved (see LICENSE).
 
 #include "algorithms/heuristics/heuristics.h"
 #include "algorithms/local_search/local_search.h"
+#include "structures/vroom/eval.h"
 #include "structures/vroom/input/input.h"
 #include "structures/vroom/solution/solution.h"
 
@@ -79,23 +80,24 @@ protected:
         for (auto rank : param_ranks) {
           const auto& p = parameters[rank];
 
+          Eval h_eval;
           switch (p.heuristic) {
           case HEURISTIC::INIT_ROUTES:
             heuristics::initial_routes<Route>(_input, solutions[rank]);
             break;
           case HEURISTIC::BASIC:
-            heuristics::basic<Route>(_input,
-                                     solutions[rank],
-                                     p.init,
-                                     p.regret_coeff,
-                                     p.sort);
+            h_eval = heuristics::basic<Route>(_input,
+                                              solutions[rank],
+                                              p.init,
+                                              p.regret_coeff,
+                                              p.sort);
             break;
           case HEURISTIC::DYNAMIC:
-            heuristics::dynamic_vehicle_choice<Route>(_input,
-                                                      solutions[rank],
-                                                      p.init,
-                                                      p.regret_coeff,
-                                                      p.sort);
+            h_eval = heuristics::dynamic_vehicle_choice<Route>(_input,
+                                                               solutions[rank],
+                                                               p.init,
+                                                               p.regret_coeff,
+                                                               p.sort);
             break;
           }
 
