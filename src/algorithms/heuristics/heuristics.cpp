@@ -7,6 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <algorithm>
 #include <set>
 
 #include "algorithms/heuristics/heuristics.h"
@@ -66,6 +67,10 @@ void basic(const Input& input,
            INIT init,
            double lambda,
            SORT sort) {
+  assert(std::all_of(routes.cbegin(), routes.cend(), [](const auto& r) {
+    return r.empty();
+  }));
+
   const auto nb_vehicles = input.vehicles.size();
 
   std::set<Index> unassigned;
@@ -466,6 +471,10 @@ void dynamic_vehicle_choice(const Input& input,
                             INIT init,
                             double lambda,
                             SORT sort) {
+  assert(std::all_of(routes.cbegin(), routes.cend(), [](const auto& r) {
+    return r.empty();
+  }));
+
   const auto nb_vehicles = input.vehicles.size();
 
   std::set<Index> unassigned;
@@ -891,6 +900,10 @@ void dynamic_vehicle_choice(const Input& input,
 
 template <class Route>
 void initial_routes(const Input& input, std::vector<Route>& routes) {
+  assert(std::all_of(routes.cbegin(), routes.cend(), [](const auto& r) {
+    return r.empty();
+  }));
+
   for (Index v = 0; v < input.vehicles.size(); ++v) {
     const auto& vehicle = input.vehicles[v];
     auto& current_r = routes[v];
