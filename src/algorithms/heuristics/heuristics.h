@@ -15,18 +15,24 @@ All rights reserved (see LICENSE).
 namespace vroom::heuristics {
 
 // Implementation of a variant of the Solomon I1 heuristic.
-template <class T>
-T basic(const Input& input, INIT init, double lambda, SORT sort);
+template <class Route>
+void basic(const Input& input,
+           std::vector<Route>& routes,
+           INIT init,
+           double lambda,
+           SORT sort);
 
 // Adjusting the above for situation with heterogeneous fleet.
-template <class T>
-T dynamic_vehicle_choice(const Input& input,
-                         INIT init,
-                         double lambda,
-                         SORT sort);
+template <class Route>
+void dynamic_vehicle_choice(const Input& input,
+                            std::vector<Route>& routes,
+                            INIT init,
+                            double lambda,
+                            SORT sort);
 
 // Populate routes with user-defined vehicle steps.
-template <class T> T initial_routes(const Input& input);
+template <class Route>
+void initial_routes(const Input& input, std::vector<Route>& routes);
 
 } // namespace vroom::heuristics
 

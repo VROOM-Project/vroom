@@ -60,15 +60,13 @@ std::vector<std::vector<Eval>> get_jobs_vehicles_evals(const Input& input) {
   return evals;
 }
 
-template <class T>
-T basic(const Input& input, INIT init, double lambda, SORT sort) {
+template <class Route>
+void basic(const Input& input,
+           std::vector<Route>& routes,
+           INIT init,
+           double lambda,
+           SORT sort) {
   const auto nb_vehicles = input.vehicles.size();
-  T routes;
-  routes.reserve(nb_vehicles);
-
-  for (Index v = 0; v < nb_vehicles; ++v) {
-    routes.emplace_back(input, v, input.zero_amount().size());
-  }
 
   std::set<Index> unassigned;
   for (Index j = 0; j < input.jobs.size(); ++j) {
@@ -460,22 +458,15 @@ T basic(const Input& input, INIT init, double lambda, SORT sort) {
       }
     }
   }
-
-  return routes;
 }
 
-template <class T>
-T dynamic_vehicle_choice(const Input& input,
-                         INIT init,
-                         double lambda,
-                         SORT sort) {
+template <class Route>
+void dynamic_vehicle_choice(const Input& input,
+                            std::vector<Route>& routes,
+                            INIT init,
+                            double lambda,
+                            SORT sort) {
   const auto nb_vehicles = input.vehicles.size();
-  T routes;
-  routes.reserve(nb_vehicles);
-
-  for (Index v = 0; v < nb_vehicles; ++v) {
-    routes.emplace_back(input, v, input.zero_amount().size());
-  }
 
   std::set<Index> unassigned;
   for (Index j = 0; j < input.jobs.size(); ++j) {
@@ -896,18 +887,13 @@ T dynamic_vehicle_choice(const Input& input,
       }
     }
   }
-
-  return routes;
 }
 
-template <class T> T initial_routes(const Input& input) {
-  T routes;
-  routes.reserve(input.vehicles.size());
+template <class Route>
+void initial_routes(const Input& input, std::vector<Route>& routes) {
   for (Index v = 0; v < input.vehicles.size(); ++v) {
-    routes.emplace_back(input, v, input.zero_amount().size());
-
     const auto& vehicle = input.vehicles[v];
-    auto& current_r = routes.back();
+    auto& current_r = routes[v];
 
     // Startup load is the sum of deliveries for (single) jobs.
     Amount single_jobs_deliveries(input.zero_amount());
@@ -1033,27 +1019,37 @@ template <class T> T initial_routes(const Input& input) {
                         0);
     }
   }
-
-  return routes;
 }
 
 using RawSolution = std::vector<RawRoute>;
 using TWSolution = std::vector<TWRoute>;
 
-template RawSolution
-basic(const Input& input, INIT init, double lambda, SORT sort);
+template void basic(const Input& input,
+                    RawSolution& routes,
+                    INIT init,
+                    double lambda,
+                    SORT sort);
 
-template RawSolution
-dynamic_vehicle_choice(const Input& input, INIT init, double lambda, SORT sort);
+template void dynamic_vehicle_choice(const Input& input,
+                                     RawSolution& routes,
+                                     INIT init,
+                                     double lambda,
+                                     SORT sort);
 
-template RawSolution initial_routes(const Input& input);
+template void initial_routes(const Input& input, RawSolution& routes);
 
-template TWSolution
-basic(const Input& input, INIT init, double lambda, SORT sort);
+template void basic(const Input& input,
+                    TWSolution& routes,
+                    INIT init,
+                    double lambda,
+                    SORT sort);
 
-template TWSolution
-dynamic_vehicle_choice(const Input& input, INIT init, double lambda, SORT sort);
+template void dynamic_vehicle_choice(const Input& input,
+                                     TWSolution& routes,
+                                     INIT init,
+                                     double lambda,
+                                     SORT sort);
 
-template TWSolution initial_routes(const Input& input);
+template void initial_routes(const Input& input, TWSolution& routes);
 
 } // namespace vroom::heuristics
