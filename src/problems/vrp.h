@@ -55,7 +55,14 @@ protected:
     }
     assert(nb_init_solutions <= parameters.size());
 
-    std::vector<std::vector<Route>> solutions(nb_init_solutions);
+    std::vector<Route> empty_sol;
+    empty_sol.reserve(_input.vehicles.size());
+
+    for (Index v = 0; v < _input.vehicles.size(); ++v) {
+      empty_sol.emplace_back(_input, v, _input.zero_amount().size());
+    }
+
+    std::vector<std::vector<Route>> solutions(nb_init_solutions, empty_sol);
 
     // Split the heuristic parameters among threads.
     std::vector<std::vector<std::size_t>>
@@ -74,19 +81,21 @@ protected:
 
           switch (p.heuristic) {
           case HEURISTIC::INIT_ROUTES:
-            solutions[rank] =
-              heuristics::initial_routes<std::vector<Route>>(_input);
+            heuristics::initial_routes<Route>(_input, solutions[rank]);
             break;
           case HEURISTIC::BASIC:
-            solutions[rank] =
-              heuristics::basic<std::vector<Route>>(_input,
-                                                    p.init,
-                                                    p.regret_coeff,
-                                                    p.sort);
+            heuristics::basic<Route>(_input,
+                                     solutions[rank],
+                                     p.init,
+                                     p.regret_coeff,
+                                     p.sort);
             break;
           case HEURISTIC::DYNAMIC:
-            solutions[rank] = heuristics::dynamic_vehicle_choice<
-              std::vector<Route>>(_input, p.init, p.regret_coeff, p.sort);
+            heuristics::dynamic_vehicle_choice<Route>(_input,
+                                                      solutions[rank],
+                                                      p.init,
+                                                      p.regret_coeff,
+                                                      p.sort);
             break;
           }
 
