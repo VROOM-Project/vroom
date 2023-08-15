@@ -90,42 +90,43 @@ protected:
             break;
           }
 
-          if (!_input.has_homogeneous_costs() and
-              p.heuristic != HEURISTIC::INIT_ROUTES and h_param.empty() and
-              p.sort == SORT::CAPACITY) {
-            // Worth trying another vehicle ordering scheme in
-            // heuristic.
-            std::vector<Route> other_sol;
+          // if (!_input.has_homogeneous_costs() and
+          //     p.heuristic != HEURISTIC::INIT_ROUTES and h_param.empty() and
+          //     p.sort == SORT::CAPACITY) {
+          //   // Worth trying another vehicle ordering scheme in
+          //   // heuristic.
+          //   std::vector<Route> other_sol;
 
-            switch (p.heuristic) {
-            case HEURISTIC::INIT_ROUTES:
-              assert(false);
-              break;
-            case HEURISTIC::BASIC:
-              other_sol = heuristics::basic<std::vector<Route>>(_input,
-                                                                p.init,
-                                                                p.regret_coeff,
-                                                                SORT::COST);
-              break;
-            case HEURISTIC::DYNAMIC:
-              other_sol = heuristics::dynamic_vehicle_choice<
-                std::vector<Route>>(_input, p.init, p.regret_coeff, SORT::COST);
-              break;
-            }
+          //   switch (p.heuristic) {
+          //   case HEURISTIC::INIT_ROUTES:
+          //     assert(false);
+          //     break;
+          //   case HEURISTIC::BASIC:
+          //     other_sol = heuristics::basic<std::vector<Route>>(_input,
+          //                                                       p.init,
+          //                                                       p.regret_coeff,
+          //                                                       SORT::COST);
+          //     break;
+          //   case HEURISTIC::DYNAMIC:
+          //     other_sol = heuristics::dynamic_vehicle_choice<
+          //       std::vector<Route>>(_input, p.init, p.regret_coeff,
+          //       SORT::COST);
+          //     break;
+          //   }
 
-            Eval eval;
-            Eval other_eval;
-            for (Index v = 0; v < _input.vehicles.size(); ++v) {
-              eval += utils::route_eval_for_vehicle(_input,
-                                                    v,
-                                                    solutions[rank][v].route);
-              other_eval +=
-                utils::route_eval_for_vehicle(_input, v, other_sol[v].route);
-            }
-            if (other_eval < eval) {
-              solutions[rank] = std::move(other_sol);
-            }
-          }
+          //   Eval eval;
+          //   Eval other_eval;
+          //   for (Index v = 0; v < _input.vehicles.size(); ++v) {
+          //     eval += utils::route_eval_for_vehicle(_input,
+          //                                           v,
+          //                                           solutions[rank][v].route);
+          //     other_eval +=
+          //       utils::route_eval_for_vehicle(_input, v, other_sol[v].route);
+          //   }
+          //   if (other_eval < eval) {
+          //     solutions[rank] = std::move(other_sol);
+          //   }
+          // }
         }
       } catch (...) {
         ep_m.lock();
