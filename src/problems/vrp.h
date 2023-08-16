@@ -56,6 +56,7 @@ protected:
     }
     assert(nb_init_solutions <= parameters.size());
 
+    // Build empty solutions to be filled by heuristics.
     std::vector<Route> empty_sol;
     empty_sol.reserve(_input.vehicles.size());
 
@@ -64,6 +65,10 @@ protected:
     }
 
     std::vector<std::vector<Route>> solutions(nb_init_solutions, empty_sol);
+
+    // Heuristics operate on all vehicles.
+    std::vector<Index> vehicles_ranks(_input.vehicles.size());
+    std::iota(vehicles_ranks.begin(), vehicles_ranks.end(), 0);
 
     // Split the heuristic parameters among threads.
     std::vector<std::vector<std::size_t>>
@@ -88,16 +93,21 @@ protected:
           case HEURISTIC::BASIC:
             h_eval = heuristics::basic<Route>(_input,
                                               solutions[rank],
+                                              vehicles_ranks.cbegin(),
+                                              vehicles_ranks.cend(),
                                               p.init,
                                               p.regret_coeff,
                                               p.sort);
             break;
           case HEURISTIC::DYNAMIC:
-            h_eval = heuristics::dynamic_vehicle_choice<Route>(_input,
-                                                               solutions[rank],
-                                                               p.init,
-                                                               p.regret_coeff,
-                                                               p.sort);
+            h_eval =
+              heuristics::dynamic_vehicle_choice<Route>(_input,
+                                                        solutions[rank],
+                                                        vehicles_ranks.cbegin(),
+                                                        vehicles_ranks.cend(),
+                                                        p.init,
+                                                        p.regret_coeff,
+                                                        p.sort);
             break;
           }
 
@@ -116,6 +126,8 @@ protected:
             case HEURISTIC::BASIC:
               h_other_eval = heuristics::basic<Route>(_input,
                                                       other_sol,
+                                                      vehicles_ranks.cbegin(),
+                                                      vehicles_ranks.cend(),
                                                       p.init,
                                                       p.regret_coeff,
                                                       SORT::COST);
@@ -124,6 +136,9 @@ protected:
               h_other_eval =
                 heuristics::dynamic_vehicle_choice<Route>(_input,
                                                           other_sol,
+                                                          vehicles_ranks
+                                                            .cbegin(),
+                                                          vehicles_ranks.cend(),
                                                           p.init,
                                                           p.regret_coeff,
                                                           SORT::COST);

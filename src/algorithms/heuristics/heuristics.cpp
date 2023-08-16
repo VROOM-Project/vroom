@@ -15,9 +15,11 @@ All rights reserved (see LICENSE).
 
 namespace vroom::heuristics {
 
-template <class Route>
+template <class Route, class InputIterator>
 Eval basic(const Input& input,
            std::vector<Route>& routes,
+           const InputIterator vehicles_begin,
+           const InputIterator vehicles_end,
            INIT init,
            double lambda,
            SORT sort) {
@@ -27,17 +29,16 @@ Eval basic(const Input& input,
 
   Eval sol_eval;
 
-  const auto nb_vehicles = input.vehicles.size();
+  const auto nb_vehicles = std::distance(vehicles_begin, vehicles_end);
 
   std::set<Index> unassigned;
   for (Index j = 0; j < input.jobs.size(); ++j) {
     unassigned.insert(j);
   }
 
-  // One level of indirection to allow easy ordering of the vehicles
-  // within the heuristic.
+  // Perform heuristic ordering of the vehicles on a copy.
   std::vector<Index> vehicles_ranks(nb_vehicles);
-  std::iota(vehicles_ranks.begin(), vehicles_ranks.end(), 0);
+  std::copy(vehicles_begin, vehicles_end, std::back_inserter(vehicles_ranks));
 
   switch (sort) {
   case SORT::CAPACITY:
@@ -428,9 +429,11 @@ Eval basic(const Input& input,
   return sol_eval;
 }
 
-template <class Route>
+template <class Route, class InputIterator>
 Eval dynamic_vehicle_choice(const Input& input,
                             std::vector<Route>& routes,
+                            const InputIterator vehicles_begin,
+                            const InputIterator vehicles_end,
                             INIT init,
                             double lambda,
                             SORT sort) {
@@ -440,15 +443,17 @@ Eval dynamic_vehicle_choice(const Input& input,
 
   Eval sol_eval;
 
-  const auto nb_vehicles = input.vehicles.size();
+  const auto nb_vehicles = std::distance(vehicles_begin, vehicles_end);
 
   std::set<Index> unassigned;
   for (Index j = 0; j < input.jobs.size(); ++j) {
     unassigned.insert(j);
   }
 
+  // Work on a copy of the vehicles ranks from which we erase values
+  // each time a route is completed.
   std::vector<Index> vehicles_ranks(nb_vehicles);
-  std::iota(vehicles_ranks.begin(), vehicles_ranks.end(), 0);
+  std::copy(vehicles_begin, vehicles_end, std::back_inserter(vehicles_ranks));
 
   const auto& evals = input.jobs_vehicles_evals();
 
@@ -1011,29 +1016,39 @@ using TWSolution = std::vector<TWRoute>;
 
 template Eval basic(const Input& input,
                     RawSolution& routes,
+                    const std::vector<Index>::const_iterator vehicles_begin,
+                    const std::vector<Index>::const_iterator vehicles_end,
                     INIT init,
                     double lambda,
                     SORT sort);
 
-template Eval dynamic_vehicle_choice(const Input& input,
-                                     RawSolution& routes,
-                                     INIT init,
-                                     double lambda,
-                                     SORT sort);
+template Eval
+dynamic_vehicle_choice(const Input& input,
+                       RawSolution& routes,
+                       const std::vector<Index>::const_iterator vehicles_begin,
+                       const std::vector<Index>::const_iterator vehicles_end,
+                       INIT init,
+                       double lambda,
+                       SORT sort);
 
 template void initial_routes(const Input& input, RawSolution& routes);
 
 template Eval basic(const Input& input,
                     TWSolution& routes,
+                    const std::vector<Index>::const_iterator vehicles_begin,
+                    const std::vector<Index>::const_iterator vehicles_end,
                     INIT init,
                     double lambda,
                     SORT sort);
 
-template Eval dynamic_vehicle_choice(const Input& input,
-                                     TWSolution& routes,
-                                     INIT init,
-                                     double lambda,
-                                     SORT sort);
+template Eval
+dynamic_vehicle_choice(const Input& input,
+                       TWSolution& routes,
+                       const std::vector<Index>::const_iterator vehicles_begin,
+                       const std::vector<Index>::const_iterator vehicles_end,
+                       INIT init,
+                       double lambda,
+                       SORT sort);
 
 template void initial_routes(const Input& input, TWSolution& routes);
 
