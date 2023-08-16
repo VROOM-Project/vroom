@@ -130,19 +130,6 @@ protected:
               break;
             }
 
-            // TODO remove unnecessary check.
-            Eval eval;
-            Eval other_eval;
-            for (Index v = 0; v < _input.vehicles.size(); ++v) {
-              eval += utils::route_eval_for_vehicle(_input,
-                                                    v,
-                                                    solutions[rank][v].route);
-              other_eval +=
-                utils::route_eval_for_vehicle(_input, v, other_sol[v].route);
-            }
-            assert(eval == h_eval);
-            assert(other_eval == h_other_eval);
-
             if (h_other_eval < h_eval) {
               solutions[rank] = std::move(other_sol);
             }
