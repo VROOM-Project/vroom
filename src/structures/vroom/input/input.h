@@ -61,6 +61,7 @@ private:
   std::unordered_set<Index> _matrices_used_index;
   Index _max_matrices_used_index{0};
   bool _all_locations_have_coords{true};
+  std::vector<std::vector<Eval>> _jobs_vehicles_evals;
 
   unsigned _amount_size{0};
   Amount _zero;
@@ -79,6 +80,7 @@ private:
   void set_vehicles_compatibility();
   void set_vehicles_costs();
   void set_vehicles_max_tasks();
+  void set_jobs_vehicles_evals();
   void set_vehicle_steps_ranks();
   void set_matrices(unsigned nb_thread);
 
@@ -131,6 +133,10 @@ public:
 
   Cost get_cost_upper_bound() const {
     return _cost_upper_bound;
+  }
+
+  const std::vector<std::vector<Eval>>& jobs_vehicles_evals() const {
+    return _jobs_vehicles_evals;
   }
 
   bool has_homogeneous_locations() const;

@@ -15,52 +15,6 @@ All rights reserved (see LICENSE).
 
 namespace vroom::heuristics {
 
-std::vector<std::vector<Eval>> get_jobs_vehicles_evals(const Input& input) {
-  // For a single job j, evals[j][v] evaluates fetching job j in an
-  // empty route from vehicle at rank v. For a pickup job j,
-  // evals[j][v] evaluates fetching job j **and** associated delivery
-  // in an empty route from vehicle at rank v.
-  std::vector<std::vector<Eval>> evals(input.jobs.size(),
-                                       std::vector<Eval>(
-                                         input.vehicles.size()));
-  for (std::size_t j = 0; j < input.jobs.size(); ++j) {
-    Index j_index = input.jobs[j].index();
-    bool is_pickup = (input.jobs[j].type == JOB_TYPE::PICKUP);
-
-    Index last_job_index = j_index;
-    if (is_pickup) {
-      assert((j + 1 < input.jobs.size()) and
-             (input.jobs[j + 1].type == JOB_TYPE::DELIVERY));
-      last_job_index = input.jobs[j + 1].index();
-    }
-
-    for (std::size_t v = 0; v < input.vehicles.size(); ++v) {
-      const auto& vehicle = input.vehicles[v];
-      Eval current_eval =
-        is_pickup ? vehicle.eval(j_index, last_job_index) : Eval();
-      if (vehicle.has_start()) {
-        current_eval += vehicle.eval(vehicle.start.value().index(), j_index);
-      }
-      if (vehicle.has_end()) {
-        current_eval +=
-          vehicle.eval(last_job_index, vehicle.end.value().index());
-      }
-      evals[j][v] = current_eval;
-      if (is_pickup) {
-        // Assign same eval to delivery.
-        evals[j + 1][v] = current_eval;
-      }
-    }
-
-    if (is_pickup) {
-      // Skip delivery.
-      ++j;
-    }
-  }
-
-  return evals;
-}
-
 template <class Route>
 Eval basic(const Input& input,
            std::vector<Route>& routes,
@@ -119,7 +73,7 @@ Eval basic(const Input& input,
     break;
   }
 
-  auto evals = get_jobs_vehicles_evals(input);
+  const auto& evals = input.jobs_vehicles_evals();
 
   // regrets[v][j] holds the min cost for reaching job j in an empty
   // route across all remaining vehicles **after** vehicle at rank v
@@ -496,7 +450,7 @@ Eval dynamic_vehicle_choice(const Input& input,
   std::vector<Index> vehicles_ranks(nb_vehicles);
   std::iota(vehicles_ranks.begin(), vehicles_ranks.end(), 0);
 
-  auto evals = get_jobs_vehicles_evals(input);
+  const auto& evals = input.jobs_vehicles_evals();
 
   while (!vehicles_ranks.empty() and !unassigned.empty()) {
     // For any unassigned job at j, jobs_min_costs[j]

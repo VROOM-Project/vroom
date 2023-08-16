@@ -711,6 +711,52 @@ void Input::set_vehicles_max_tasks() {
   }
 }
 
+void Input::set_jobs_vehicles_evals() {
+  // For a single job j, evals[j][v] evaluates fetching job j in an
+  // empty route from vehicle at rank v. For a pickup job j,
+  // evals[j][v] evaluates fetching job j **and** associated delivery
+  // in an empty route from vehicle at rank v.
+  _jobs_vehicles_evals =
+    std::vector<std::vector<Eval>>(jobs.size(),
+                                   std::vector<Eval>(vehicles.size()));
+
+  for (std::size_t j = 0; j < jobs.size(); ++j) {
+    Index j_index = jobs[j].index();
+    bool is_pickup = (jobs[j].type == JOB_TYPE::PICKUP);
+
+    Index last_job_index = j_index;
+    if (is_pickup) {
+      assert((j + 1 < jobs.size()) and
+             (jobs[j + 1].type == JOB_TYPE::DELIVERY));
+      last_job_index = jobs[j + 1].index();
+    }
+
+    for (std::size_t v = 0; v < vehicles.size(); ++v) {
+      const auto& vehicle = vehicles[v];
+      auto& current_eval = _jobs_vehicles_evals[j][v];
+
+      current_eval = is_pickup ? vehicle.eval(j_index, last_job_index) : Eval();
+      if (vehicle.has_start()) {
+        current_eval += vehicle.eval(vehicle.start.value().index(), j_index);
+      }
+      if (vehicle.has_end()) {
+        current_eval +=
+          vehicle.eval(last_job_index, vehicle.end.value().index());
+      }
+
+      if (is_pickup) {
+        // Assign same eval to delivery.
+        _jobs_vehicles_evals[j + 1][v] = current_eval;
+      }
+    }
+
+    if (is_pickup) {
+      // Skip delivery.
+      ++j;
+    }
+  }
+}
+
 void Input::set_vehicle_steps_ranks() {
   std::unordered_set<Id> planned_job_ids;
   std::unordered_set<Id> planned_pickup_ids;
@@ -1001,6 +1047,8 @@ Solution Input::solve(unsigned exploration_level,
   set_skills_compatibility();
   set_extra_compatibility();
   set_vehicles_compatibility();
+
+  set_jobs_vehicles_evals();
 
   // Add implicit max_tasks constraints derived from capacity and
   // TW. Note: rely on set_extra_compatibility being run previously to
