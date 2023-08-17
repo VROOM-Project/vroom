@@ -39,7 +39,8 @@ Eval basic(const Input& input,
 
   // Perform heuristic ordering of the vehicles on a copy.
   const auto nb_vehicles = std::distance(vehicles_begin, vehicles_end);
-  std::vector<Index> vehicles_ranks(nb_vehicles);
+  std::vector<Index> vehicles_ranks;
+  vehicles_ranks.reserve(nb_vehicles);
   std::copy(vehicles_begin, vehicles_end, std::back_inserter(vehicles_ranks));
 
   switch (sort) {
@@ -457,7 +458,8 @@ Eval dynamic_vehicle_choice(const Input& input,
   // Work on a copy of the vehicles ranks from which we erase values
   // each time a route is completed.
   const auto nb_vehicles = std::distance(vehicles_begin, vehicles_end);
-  std::vector<Index> vehicles_ranks(nb_vehicles);
+  std::vector<Index> vehicles_ranks;
+  vehicles_ranks.reserve(nb_vehicles);
   std::copy(vehicles_begin, vehicles_end, std::back_inserter(vehicles_ranks));
 
   const auto& evals = input.jobs_vehicles_evals();
