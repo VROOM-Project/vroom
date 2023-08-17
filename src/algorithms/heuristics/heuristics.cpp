@@ -18,6 +18,8 @@ namespace vroom::heuristics {
 template <class Route, class InputIterator>
 Eval basic(const Input& input,
            std::vector<Route>& routes,
+           const InputIterator jobs_begin,
+           const InputIterator jobs_end,
            const InputIterator vehicles_begin,
            const InputIterator vehicles_end,
            INIT init,
@@ -29,14 +31,14 @@ Eval basic(const Input& input,
 
   Eval sol_eval;
 
-  const auto nb_vehicles = std::distance(vehicles_begin, vehicles_end);
-
+  // Consider all jobs as unassigned at first.
   std::set<Index> unassigned;
-  for (Index j = 0; j < input.jobs.size(); ++j) {
-    unassigned.insert(j);
-  }
+  std::copy(jobs_begin,
+            jobs_end,
+            std::inserter(unassigned, unassigned.begin()));
 
   // Perform heuristic ordering of the vehicles on a copy.
+  const auto nb_vehicles = std::distance(vehicles_begin, vehicles_end);
   std::vector<Index> vehicles_ranks(nb_vehicles);
   std::copy(vehicles_begin, vehicles_end, std::back_inserter(vehicles_ranks));
 
@@ -84,14 +86,14 @@ Eval basic(const Input& input,
 
   // Use own cost for last vehicle regret values.
   auto& last_regrets = regrets.back();
-  for (Index j = 0; j < input.jobs.size(); ++j) {
+  for (const auto j : unassigned) {
     last_regrets[j] = evals[j][vehicles_ranks.back()].cost;
   }
 
   for (Index rev_v = 0; rev_v < nb_vehicles - 1; ++rev_v) {
     // Going trough vehicles backward from second to last.
     const auto v = nb_vehicles - 2 - rev_v;
-    for (Index j = 0; j < input.jobs.size(); ++j) {
+    for (const auto j : unassigned) {
       regrets[v][j] =
         std::min(regrets[v + 1][j], (evals[j][vehicles_ranks[v + 1]]).cost);
     }
@@ -115,12 +117,14 @@ Eval basic(const Input& input,
       Duration earliest_deadline = std::numeric_limits<Duration>::max();
       Index best_job_rank = 0;
       for (const auto job_rank : unassigned) {
+        const auto& current_job = input.jobs[job_rank];
+
         if (!input.vehicle_ok_with_job(v_rank, job_rank) or
-            input.jobs[job_rank].type == JOB_TYPE::DELIVERY) {
+            current_job.type == JOB_TYPE::DELIVERY) {
           continue;
         }
 
-        bool is_pickup = (input.jobs[job_rank].type == JOB_TYPE::PICKUP);
+        bool is_pickup = (current_job.type == JOB_TYPE::PICKUP);
 
         if (current_r.size() + (is_pickup ? 2 : 1) > vehicle.max_tasks) {
           continue;
@@ -129,13 +133,13 @@ Eval basic(const Input& input,
         bool try_validity = false;
 
         if (init == INIT::HIGHER_AMOUNT) {
-          try_validity |= (higher_amount << input.jobs[job_rank].pickup or
-                           higher_amount << input.jobs[job_rank].delivery);
+          try_validity |= (higher_amount << current_job.pickup or
+                           higher_amount << current_job.delivery);
         }
         if (init == INIT::EARLIEST_DEADLINE) {
           Duration current_deadline =
             (is_pickup) ? input.jobs[job_rank + 1].tws.back().end
-                        : input.jobs[job_rank].tws.back().end;
+                        : current_job.tws.back().end;
           try_validity |= (current_deadline < earliest_deadline);
         }
         if (init == INIT::FURTHEST) {
@@ -151,11 +155,10 @@ Eval basic(const Input& input,
 
         bool is_valid =
           (vehicle.ok_for_travel_time(evals[job_rank][v_rank].duration)) &&
-          current_r
-            .is_valid_addition_for_capacity(input,
-                                            input.jobs[job_rank].pickup,
-                                            input.jobs[job_rank].delivery,
-                                            0);
+          current_r.is_valid_addition_for_capacity(input,
+                                                   current_job.pickup,
+                                                   current_job.delivery,
+                                                   0);
         if (is_pickup) {
           std::vector<Index> p_d({job_rank, static_cast<Index>(job_rank + 1)});
           is_valid =
@@ -166,7 +169,7 @@ Eval basic(const Input& input,
                                                            0,
                                                            0);
         } else {
-          assert(input.jobs[job_rank].type == JOB_TYPE::SINGLE);
+          assert(current_job.type == JOB_TYPE::SINGLE);
           is_valid =
             is_valid && current_r.is_valid_addition_for_tw(input, job_rank, 0);
         }
@@ -180,17 +183,17 @@ Eval basic(const Input& input,
             assert(false);
             break;
           case INIT::HIGHER_AMOUNT:
-            if (higher_amount << input.jobs[job_rank].pickup) {
-              higher_amount = input.jobs[job_rank].pickup;
+            if (higher_amount << current_job.pickup) {
+              higher_amount = current_job.pickup;
             }
-            if (higher_amount << input.jobs[job_rank].delivery) {
-              higher_amount = input.jobs[job_rank].delivery;
+            if (higher_amount << current_job.delivery) {
+              higher_amount = current_job.delivery;
             }
             break;
           case INIT::EARLIEST_DEADLINE:
             earliest_deadline = (is_pickup)
                                   ? input.jobs[job_rank + 1].tws.back().end
-                                  : input.jobs[job_rank].tws.back().end;
+                                  : current_job.tws.back().end;
             break;
           case INIT::FURTHEST:
             furthest_cost = evals[job_rank][v_rank].cost;
@@ -235,11 +238,13 @@ Eval basic(const Input& input,
           continue;
         }
 
-        if (input.jobs[job_rank].type == JOB_TYPE::DELIVERY) {
+        const auto& current_job = input.jobs[job_rank];
+
+        if (current_job.type == JOB_TYPE::DELIVERY) {
           continue;
         }
 
-        if (input.jobs[job_rank].type == JOB_TYPE::SINGLE and
+        if (current_job.type == JOB_TYPE::SINGLE and
             current_r.size() + 1 <= vehicle.max_tasks) {
           for (Index r = 0; r <= current_r.size(); ++r) {
             const auto current_eval = utils::addition_cost(input,
@@ -255,11 +260,10 @@ Eval basic(const Input& input,
             if (current_cost < best_cost and
                 (vehicle.ok_for_travel_time(current_route_eval.duration +
                                             current_eval.duration)) and
-                current_r
-                  .is_valid_addition_for_capacity(input,
-                                                  input.jobs[job_rank].pickup,
-                                                  input.jobs[job_rank].delivery,
-                                                  r) and
+                current_r.is_valid_addition_for_capacity(input,
+                                                         current_job.pickup,
+                                                         current_job.delivery,
+                                                         r) and
                 current_r.is_valid_addition_for_tw(input, job_rank, r)) {
               best_cost = current_cost;
               best_job_rank = job_rank;
@@ -269,7 +273,7 @@ Eval basic(const Input& input,
           }
         }
 
-        if (input.jobs[job_rank].type == JOB_TYPE::PICKUP and
+        if (current_job.type == JOB_TYPE::PICKUP and
             current_r.size() + 2 <= vehicle.max_tasks) {
           // Pre-compute cost of addition for matching delivery.
           std::vector<Eval> d_adds(current_r.route.size() + 1);
@@ -296,10 +300,9 @@ Eval basic(const Input& input,
                                                     current_r.route,
                                                     pickup_r);
 
-            if (!current_r
-                   .is_valid_addition_for_load(input,
-                                               input.jobs[job_rank].pickup,
-                                               pickup_r) or
+            if (!current_r.is_valid_addition_for_load(input,
+                                                      current_job.pickup,
+                                                      pickup_r) or
                 !current_r
                    .is_valid_addition_for_tw_without_max_load(input,
                                                               job_rank,
@@ -432,6 +435,8 @@ Eval basic(const Input& input,
 template <class Route, class InputIterator>
 Eval dynamic_vehicle_choice(const Input& input,
                             std::vector<Route>& routes,
+                            const InputIterator jobs_begin,
+                            const InputIterator jobs_end,
                             const InputIterator vehicles_begin,
                             const InputIterator vehicles_end,
                             INIT init,
@@ -443,15 +448,15 @@ Eval dynamic_vehicle_choice(const Input& input,
 
   Eval sol_eval;
 
-  const auto nb_vehicles = std::distance(vehicles_begin, vehicles_end);
-
+  // Consider all jobs as unassigned at first.
   std::set<Index> unassigned;
-  for (Index j = 0; j < input.jobs.size(); ++j) {
-    unassigned.insert(j);
-  }
+  std::copy(jobs_begin,
+            jobs_end,
+            std::inserter(unassigned, unassigned.begin()));
 
   // Work on a copy of the vehicles ranks from which we erase values
   // each time a route is completed.
+  const auto nb_vehicles = std::distance(vehicles_begin, vehicles_end);
   std::vector<Index> vehicles_ranks(nb_vehicles);
   std::copy(vehicles_begin, vehicles_end, std::back_inserter(vehicles_ranks));
 
@@ -561,14 +566,16 @@ Eval dynamic_vehicle_choice(const Input& input,
       Duration earliest_deadline = std::numeric_limits<Duration>::max();
       Index best_job_rank = 0;
       for (const auto job_rank : unassigned) {
+        const auto& current_job = input.jobs[job_rank];
+
         if (jobs_min_costs[job_rank] < evals[job_rank][v_rank].cost or
             // One of the remaining vehicles is closest to that job.
             !input.vehicle_ok_with_job(v_rank, job_rank) or
-            input.jobs[job_rank].type == JOB_TYPE::DELIVERY) {
+            current_job.type == JOB_TYPE::DELIVERY) {
           continue;
         }
 
-        bool is_pickup = (input.jobs[job_rank].type == JOB_TYPE::PICKUP);
+        bool is_pickup = (current_job.type == JOB_TYPE::PICKUP);
 
         if (current_r.size() + (is_pickup ? 2 : 1) > vehicle.max_tasks) {
           continue;
@@ -577,13 +584,13 @@ Eval dynamic_vehicle_choice(const Input& input,
         bool try_validity = false;
 
         if (init == INIT::HIGHER_AMOUNT) {
-          try_validity |= (higher_amount << input.jobs[job_rank].pickup or
-                           higher_amount << input.jobs[job_rank].delivery);
+          try_validity |= (higher_amount << current_job.pickup or
+                           higher_amount << current_job.delivery);
         }
         if (init == INIT::EARLIEST_DEADLINE) {
           Duration current_deadline =
             (is_pickup) ? input.jobs[job_rank + 1].tws.back().end
-                        : input.jobs[job_rank].tws.back().end;
+                        : current_job.tws.back().end;
           try_validity |= (current_deadline < earliest_deadline);
         }
         if (init == INIT::FURTHEST) {
@@ -599,11 +606,10 @@ Eval dynamic_vehicle_choice(const Input& input,
 
         bool is_valid =
           (vehicle.ok_for_travel_time(evals[job_rank][v_rank].duration)) &&
-          current_r
-            .is_valid_addition_for_capacity(input,
-                                            input.jobs[job_rank].pickup,
-                                            input.jobs[job_rank].delivery,
-                                            0);
+          current_r.is_valid_addition_for_capacity(input,
+                                                   current_job.pickup,
+                                                   current_job.delivery,
+                                                   0);
 
         if (is_pickup) {
           std::vector<Index> p_d({job_rank, static_cast<Index>(job_rank + 1)});
@@ -615,7 +621,7 @@ Eval dynamic_vehicle_choice(const Input& input,
                                                            0,
                                                            0);
         } else {
-          assert(input.jobs[job_rank].type == JOB_TYPE::SINGLE);
+          assert(current_job.type == JOB_TYPE::SINGLE);
           is_valid =
             is_valid && current_r.is_valid_addition_for_tw(input, job_rank, 0);
         }
@@ -629,17 +635,17 @@ Eval dynamic_vehicle_choice(const Input& input,
             assert(false);
             break;
           case INIT::HIGHER_AMOUNT:
-            if (higher_amount << input.jobs[job_rank].pickup) {
-              higher_amount = input.jobs[job_rank].pickup;
+            if (higher_amount << current_job.pickup) {
+              higher_amount = current_job.pickup;
             }
-            if (higher_amount << input.jobs[job_rank].delivery) {
-              higher_amount = input.jobs[job_rank].delivery;
+            if (higher_amount << current_job.delivery) {
+              higher_amount = current_job.delivery;
             }
             break;
           case INIT::EARLIEST_DEADLINE:
             earliest_deadline = (is_pickup)
                                   ? input.jobs[job_rank + 1].tws.back().end
-                                  : input.jobs[job_rank].tws.back().end;
+                                  : current_job.tws.back().end;
             break;
           case INIT::FURTHEST:
             furthest_cost = evals[job_rank][v_rank].cost;
@@ -684,11 +690,13 @@ Eval dynamic_vehicle_choice(const Input& input,
           continue;
         }
 
-        if (input.jobs[job_rank].type == JOB_TYPE::DELIVERY) {
+        const auto& current_job = input.jobs[job_rank];
+
+        if (current_job.type == JOB_TYPE::DELIVERY) {
           continue;
         }
 
-        if (input.jobs[job_rank].type == JOB_TYPE::SINGLE and
+        if (current_job.type == JOB_TYPE::SINGLE and
             current_r.size() + 1 <= vehicle.max_tasks) {
           for (Index r = 0; r <= current_r.size(); ++r) {
             const auto current_eval = utils::addition_cost(input,
@@ -704,11 +712,10 @@ Eval dynamic_vehicle_choice(const Input& input,
             if (current_cost < best_cost and
                 (vehicle.ok_for_travel_time(current_route_eval.duration +
                                             current_eval.duration)) and
-                current_r
-                  .is_valid_addition_for_capacity(input,
-                                                  input.jobs[job_rank].pickup,
-                                                  input.jobs[job_rank].delivery,
-                                                  r) and
+                current_r.is_valid_addition_for_capacity(input,
+                                                         current_job.pickup,
+                                                         current_job.delivery,
+                                                         r) and
                 current_r.is_valid_addition_for_tw(input, job_rank, r)) {
               best_cost = current_cost;
               best_job_rank = job_rank;
@@ -718,7 +725,7 @@ Eval dynamic_vehicle_choice(const Input& input,
           }
         }
 
-        if (input.jobs[job_rank].type == JOB_TYPE::PICKUP and
+        if (current_job.type == JOB_TYPE::PICKUP and
             current_r.size() + 2 <= vehicle.max_tasks) {
           // Pre-compute cost of addition for matching delivery.
           std::vector<Eval> d_adds(current_r.route.size() + 1);
@@ -745,10 +752,9 @@ Eval dynamic_vehicle_choice(const Input& input,
                                                     current_r.route,
                                                     pickup_r);
 
-            if (!current_r
-                   .is_valid_addition_for_load(input,
-                                               input.jobs[job_rank].pickup,
-                                               pickup_r) or
+            if (!current_r.is_valid_addition_for_load(input,
+                                                      current_job.pickup,
+                                                      pickup_r) or
                 !current_r
                    .is_valid_addition_for_tw_without_max_load(input,
                                                               job_rank,
@@ -1016,6 +1022,8 @@ using TWSolution = std::vector<TWRoute>;
 
 template Eval basic(const Input& input,
                     RawSolution& routes,
+                    const std::vector<Index>::const_iterator jobs_begin,
+                    const std::vector<Index>::const_iterator jobs_end,
                     const std::vector<Index>::const_iterator vehicles_begin,
                     const std::vector<Index>::const_iterator vehicles_end,
                     INIT init,
@@ -1025,6 +1033,8 @@ template Eval basic(const Input& input,
 template Eval
 dynamic_vehicle_choice(const Input& input,
                        RawSolution& routes,
+                       const std::vector<Index>::const_iterator jobs_begin,
+                       const std::vector<Index>::const_iterator jobs_end,
                        const std::vector<Index>::const_iterator vehicles_begin,
                        const std::vector<Index>::const_iterator vehicles_end,
                        INIT init,
@@ -1035,6 +1045,8 @@ template void initial_routes(const Input& input, RawSolution& routes);
 
 template Eval basic(const Input& input,
                     TWSolution& routes,
+                    const std::vector<Index>::const_iterator jobs_begin,
+                    const std::vector<Index>::const_iterator jobs_end,
                     const std::vector<Index>::const_iterator vehicles_begin,
                     const std::vector<Index>::const_iterator vehicles_end,
                     INIT init,
@@ -1044,6 +1056,8 @@ template Eval basic(const Input& input,
 template Eval
 dynamic_vehicle_choice(const Input& input,
                        TWSolution& routes,
+                       const std::vector<Index>::const_iterator jobs_begin,
+                       const std::vector<Index>::const_iterator jobs_end,
                        const std::vector<Index>::const_iterator vehicles_begin,
                        const std::vector<Index>::const_iterator vehicles_end,
                        INIT init,

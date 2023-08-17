@@ -19,6 +19,8 @@ namespace vroom::heuristics {
 template <class Route, class InputIterator>
 Eval basic(const Input& input,
            std::vector<Route>& routes,
+           const InputIterator jobs_begin,
+           const InputIterator jobs_end,
            const InputIterator vehicles_begin,
            const InputIterator vehicles_end,
            INIT init,
@@ -29,6 +31,8 @@ Eval basic(const Input& input,
 template <class Route, class InputIterator>
 Eval dynamic_vehicle_choice(const Input& input,
                             std::vector<Route>& routes,
+                            const InputIterator jobs_begin,
+                            const InputIterator jobs_end,
                             const InputIterator vehicles_begin,
                             const InputIterator vehicles_end,
                             INIT init,

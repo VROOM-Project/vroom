@@ -66,6 +66,10 @@ protected:
 
     std::vector<std::vector<Route>> solutions(nb_init_solutions, empty_sol);
 
+    // Heuristics operate on all jobs.
+    std::vector<Index> jobs_ranks(_input.jobs.size());
+    std::iota(jobs_ranks.begin(), jobs_ranks.end(), 0);
+
     // Heuristics operate on all vehicles.
     std::vector<Index> vehicles_ranks(_input.vehicles.size());
     std::iota(vehicles_ranks.begin(), vehicles_ranks.end(), 0);
@@ -93,6 +97,8 @@ protected:
           case HEURISTIC::BASIC:
             h_eval = heuristics::basic<Route>(_input,
                                               solutions[rank],
+                                              jobs_ranks.cbegin(),
+                                              jobs_ranks.cend(),
                                               vehicles_ranks.cbegin(),
                                               vehicles_ranks.cend(),
                                               p.init,
@@ -103,6 +109,8 @@ protected:
             h_eval =
               heuristics::dynamic_vehicle_choice<Route>(_input,
                                                         solutions[rank],
+                                                        jobs_ranks.cbegin(),
+                                                        jobs_ranks.cend(),
                                                         vehicles_ranks.cbegin(),
                                                         vehicles_ranks.cend(),
                                                         p.init,
@@ -126,6 +134,8 @@ protected:
             case HEURISTIC::BASIC:
               h_other_eval = heuristics::basic<Route>(_input,
                                                       other_sol,
+                                                      jobs_ranks.cbegin(),
+                                                      jobs_ranks.cend(),
                                                       vehicles_ranks.cbegin(),
                                                       vehicles_ranks.cend(),
                                                       p.init,
@@ -136,6 +146,8 @@ protected:
               h_other_eval =
                 heuristics::dynamic_vehicle_choice<Route>(_input,
                                                           other_sol,
+                                                          jobs_ranks.cbegin(),
+                                                          jobs_ranks.cend(),
                                                           vehicles_ranks
                                                             .cbegin(),
                                                           vehicles_ranks.cend(),
