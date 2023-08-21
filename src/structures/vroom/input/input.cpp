@@ -44,6 +44,10 @@ void Input::set_geometry(bool geometry) {
   _geometry = geometry;
 }
 
+bool Input::get_geometry() {
+  return _geometry;
+}
+
 void Input::add_routing_wrapper(const std::string& profile) {
 #if !USE_ROUTING
   throw RoutingException("VROOM compiled without routing support.");

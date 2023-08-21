@@ -103,6 +103,8 @@ public:
 
   void set_geometry(bool geometry);
 
+  bool get_geometry();
+
   void add_job(const Job& job);
 
   void add_shipment(const Job& pickup, const Job& delivery);
