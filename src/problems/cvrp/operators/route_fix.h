@@ -1,5 +1,5 @@
-#ifndef CVRP_TSP_FIX_H
-#define CVRP_TSP_FIX_H
+#ifndef CVRP_ROUTE_FIX_H
+#define CVRP_ROUTE_FIX_H
 
 /*
 
@@ -14,17 +14,17 @@ All rights reserved (see LICENSE).
 
 namespace vroom::cvrp {
 
-class TSPFix : public ls::Operator {
+class RouteFix : public ls::Operator {
 protected:
   std::vector<Index> tsp_route;
 
   void compute_gain() override;
 
 public:
-  TSPFix(const Input& input,
-         const utils::SolutionState& sol_state,
-         RawRoute& s_route,
-         Index s_vehicle);
+  RouteFix(const Input& input,
+           const utils::SolutionState& sol_state,
+           RawRoute& s_route,
+           Index s_vehicle);
 
   bool is_valid() override;
 

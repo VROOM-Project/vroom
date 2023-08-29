@@ -22,9 +22,9 @@ All rights reserved (see LICENSE).
 #include "problems/vrptw/operators/relocate.h"
 #include "problems/vrptw/operators/reverse_two_opt.h"
 #include "problems/vrptw/operators/route_exchange.h"
+#include "problems/vrptw/operators/route_fix.h"
 #include "problems/vrptw/operators/route_split.h"
 #include "problems/vrptw/operators/swap_star.h"
-#include "problems/vrptw/operators/tsp_fix.h"
 #include "problems/vrptw/operators/two_opt.h"
 #include "problems/vrptw/operators/unassigned_exchange.h"
 #include "utils/helpers.h"
@@ -49,7 +49,7 @@ template <class Route,
           class RouteExchange,
           class SwapStar,
           class RouteSplit,
-          class TSPFix>
+          class RouteFix>
 LocalSearch<Route,
             UnassignedExchange,
             CrossExchange,
@@ -68,10 +68,10 @@ LocalSearch<Route,
             RouteExchange,
             SwapStar,
             RouteSplit,
-            TSPFix>::LocalSearch(const Input& input,
-                                 std::vector<Route>& sol,
-                                 unsigned max_nb_jobs_removal,
-                                 const Timeout& timeout)
+            RouteFix>::LocalSearch(const Input& input,
+                                   std::vector<Route>& sol,
+                                   unsigned max_nb_jobs_removal,
+                                   const Timeout& timeout)
   : _input(input),
     _nb_vehicles(_input.vehicles.size()),
     _max_nb_jobs_removal(max_nb_jobs_removal),
@@ -135,7 +135,7 @@ template <class Route,
           class RouteExchange,
           class SwapStar,
           class RouteSplit,
-          class TSPFix>
+          class RouteFix>
 void LocalSearch<Route,
                  UnassignedExchange,
                  CrossExchange,
@@ -154,8 +154,8 @@ void LocalSearch<Route,
                  RouteExchange,
                  SwapStar,
                  RouteSplit,
-                 TSPFix>::try_job_additions(const std::vector<Index>& routes,
-                                            double regret_coeff) {
+                 RouteFix>::try_job_additions(const std::vector<Index>& routes,
+                                              double regret_coeff) {
   bool job_added;
 
   std::vector<std::vector<RouteInsertion>> route_job_insertions;
@@ -330,7 +330,7 @@ template <class Route,
           class RouteExchange,
           class SwapStar,
           class RouteSplit,
-          class TSPFix>
+          class RouteFix>
 void LocalSearch<Route,
                  UnassignedExchange,
                  CrossExchange,
@@ -349,7 +349,7 @@ void LocalSearch<Route,
                  RouteExchange,
                  SwapStar,
                  RouteSplit,
-                 TSPFix>::run_ls_step() {
+                 RouteFix>::run_ls_step() {
   // Store best move involving a pair of routes.
   std::vector<std::vector<std::unique_ptr<Operator>>> best_ops(_nb_vehicles);
   for (std::size_t v = 0; v < _nb_vehicles; ++v) {
@@ -1110,7 +1110,7 @@ void LocalSearch<Route,
       }
     }
 
-    // TSPFix stuff
+    // RouteFix stuff
     if (!_input.has_shipments()) {
       // TODO no shipments for current route only.
 
@@ -1122,13 +1122,13 @@ void LocalSearch<Route,
         }
 
 #ifdef LOG_LS_OPERATORS
-        ++tried_moves[OperatorName::TSPFix];
+        ++tried_moves[OperatorName::RouteFix];
 #endif
-        TSPFix op(_input, _sol_state, _sol[s_t.first], s_t.first);
+        RouteFix op(_input, _sol_state, _sol[s_t.first], s_t.first);
 
         if (op.gain() > best_gains[s_t.first][s_t.second]) {
           best_gains[s_t.first][s_t.second] = op.gain();
-          best_ops[s_t.first][s_t.second] = std::make_unique<TSPFix>(op);
+          best_ops[s_t.first][s_t.second] = std::make_unique<RouteFix>(op);
         }
       }
     }
@@ -1868,7 +1868,7 @@ template <class Route,
           class RouteExchange,
           class SwapStar,
           class RouteSplit,
-          class TSPFix>
+          class RouteFix>
 void LocalSearch<Route,
                  UnassignedExchange,
                  CrossExchange,
@@ -1887,7 +1887,7 @@ void LocalSearch<Route,
                  RouteExchange,
                  SwapStar,
                  RouteSplit,
-                 TSPFix>::run() {
+                 RouteFix>::run() {
   bool try_ls_step = true;
   bool first_step = true;
 
@@ -1977,7 +1977,7 @@ template <class Route,
           class RouteExchange,
           class SwapStar,
           class RouteSplit,
-          class TSPFix>
+          class RouteFix>
 std::array<OperatorStats, OperatorName::MAX>
 LocalSearch<Route,
             UnassignedExchange,
@@ -1997,7 +1997,7 @@ LocalSearch<Route,
             RouteExchange,
             SwapStar,
             RouteSplit,
-            TSPFix>::get_stats() const {
+            RouteFix>::get_stats() const {
   std::array<OperatorStats, OperatorName::MAX> stats;
   for (auto op = 0; op < OperatorName::MAX; ++op) {
     stats[op] = OperatorStats(tried_moves.at(op), applied_moves.at(op));
@@ -2025,7 +2025,7 @@ template <class Route,
           class RouteExchange,
           class SwapStar,
           class RouteSplit,
-          class TSPFix>
+          class RouteFix>
 Eval LocalSearch<Route,
                  UnassignedExchange,
                  CrossExchange,
@@ -2044,7 +2044,7 @@ Eval LocalSearch<Route,
                  RouteExchange,
                  SwapStar,
                  RouteSplit,
-                 TSPFix>::job_route_cost(Index v_target, Index v, Index r) {
+                 RouteFix>::job_route_cost(Index v_target, Index v, Index r) {
   assert(v != v_target);
 
   Eval eval = NO_EVAL;
@@ -2098,7 +2098,7 @@ template <class Route,
           class RouteExchange,
           class SwapStar,
           class RouteSplit,
-          class TSPFix>
+          class RouteFix>
 Eval LocalSearch<Route,
                  UnassignedExchange,
                  CrossExchange,
@@ -2117,7 +2117,7 @@ Eval LocalSearch<Route,
                  RouteExchange,
                  SwapStar,
                  RouteSplit,
-                 TSPFix>::relocate_cost_lower_bound(Index v, Index r) {
+                 RouteFix>::relocate_cost_lower_bound(Index v, Index r) {
   Eval best_bound = NO_EVAL;
 
   for (std::size_t other_v = 0; other_v < _sol.size(); ++other_v) {
@@ -2150,7 +2150,7 @@ template <class Route,
           class RouteExchange,
           class SwapStar,
           class RouteSplit,
-          class TSPFix>
+          class RouteFix>
 Eval LocalSearch<Route,
                  UnassignedExchange,
                  CrossExchange,
@@ -2169,9 +2169,9 @@ Eval LocalSearch<Route,
                  RouteExchange,
                  SwapStar,
                  RouteSplit,
-                 TSPFix>::relocate_cost_lower_bound(Index v,
-                                                    Index r1,
-                                                    Index r2) {
+                 RouteFix>::relocate_cost_lower_bound(Index v,
+                                                      Index r1,
+                                                      Index r2) {
   Eval best_bound = NO_EVAL;
 
   for (std::size_t other_v = 0; other_v < _sol.size(); ++other_v) {
@@ -2206,7 +2206,7 @@ template <class Route,
           class RouteExchange,
           class SwapStar,
           class RouteSplit,
-          class TSPFix>
+          class RouteFix>
 void LocalSearch<Route,
                  UnassignedExchange,
                  CrossExchange,
@@ -2225,7 +2225,7 @@ void LocalSearch<Route,
                  RouteExchange,
                  SwapStar,
                  RouteSplit,
-                 TSPFix>::remove_from_routes() {
+                 RouteFix>::remove_from_routes() {
   // Store nearest job from and to any job in any route for constant
   // time access down the line.
   for (std::size_t v1 = 0; v1 < _nb_vehicles; ++v1) {
@@ -2363,7 +2363,7 @@ template <class Route,
           class RouteExchange,
           class SwapStar,
           class RouteSplit,
-          class TSPFix>
+          class RouteFix>
 utils::SolutionIndicators<Route> LocalSearch<Route,
                                              UnassignedExchange,
                                              CrossExchange,
@@ -2382,7 +2382,7 @@ utils::SolutionIndicators<Route> LocalSearch<Route,
                                              RouteExchange,
                                              SwapStar,
                                              RouteSplit,
-                                             TSPFix>::indicators() const {
+                                             RouteFix>::indicators() const {
   return _best_sol_indicators;
 }
 
@@ -2404,7 +2404,7 @@ template class LocalSearch<TWRoute,
                            vrptw::RouteExchange,
                            vrptw::SwapStar,
                            vrptw::RouteSplit,
-                           vrptw::TSPFix>;
+                           vrptw::RouteFix>;
 
 template class LocalSearch<RawRoute,
                            cvrp::UnassignedExchange,
@@ -2424,6 +2424,6 @@ template class LocalSearch<RawRoute,
                            cvrp::RouteExchange,
                            cvrp::SwapStar,
                            cvrp::RouteSplit,
-                           cvrp::TSPFix>;
+                           cvrp::RouteFix>;
 
 } // namespace vroom::ls

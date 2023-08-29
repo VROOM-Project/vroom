@@ -7,27 +7,27 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/vrptw/operators/tsp_fix.h"
+#include "problems/vrptw/operators/route_fix.h"
 
 namespace vroom::vrptw {
 
-TSPFix::TSPFix(const Input& input,
-               const utils::SolutionState& sol_state,
-               TWRoute& tw_s_route,
-               Index s_vehicle)
-  : cvrp::TSPFix(input,
-                 sol_state,
-                 static_cast<RawRoute&>(tw_s_route),
-                 s_vehicle),
+RouteFix::RouteFix(const Input& input,
+                   const utils::SolutionState& sol_state,
+                   TWRoute& tw_s_route,
+                   Index s_vehicle)
+  : cvrp::RouteFix(input,
+                   sol_state,
+                   static_cast<RawRoute&>(tw_s_route),
+                   s_vehicle),
     _tw_s_route(tw_s_route) {
 }
 
-bool TSPFix::is_valid() {
+bool RouteFix::is_valid() {
   // TODO check!
   return true;
 }
 
-void TSPFix::apply() {
+void RouteFix::apply() {
   _tw_s_route.replace(_input,
                       source.job_deliveries_sum(),
                       tsp_route.begin(),
