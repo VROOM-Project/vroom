@@ -26,6 +26,7 @@
 - `Eval::operator<` sorts on cost, then duration (#914)
 - Improved `vrptw::PDShift` implementation (#852)
 - Reserve `vector` capacity whenever possible (#915)
+- Refactor heuristics to be able to operate on a subset of jobs and vehicles (#837)
 
 ### Fixed
 

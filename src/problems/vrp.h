@@ -16,6 +16,7 @@ All rights reserved (see LICENSE).
 
 #include "algorithms/heuristics/heuristics.h"
 #include "algorithms/local_search/local_search.h"
+#include "structures/vroom/eval.h"
 #include "structures/vroom/input/input.h"
 #include "structures/vroom/solution/solution.h"
 
@@ -55,7 +56,23 @@ protected:
     }
     assert(nb_init_solutions <= parameters.size());
 
-    std::vector<std::vector<Route>> solutions(nb_init_solutions);
+    // Build empty solutions to be filled by heuristics.
+    std::vector<Route> empty_sol;
+    empty_sol.reserve(_input.vehicles.size());
+
+    for (Index v = 0; v < _input.vehicles.size(); ++v) {
+      empty_sol.emplace_back(_input, v, _input.zero_amount().size());
+    }
+
+    std::vector<std::vector<Route>> solutions(nb_init_solutions, empty_sol);
+
+    // Heuristics operate on all jobs.
+    std::vector<Index> jobs_ranks(_input.jobs.size());
+    std::iota(jobs_ranks.begin(), jobs_ranks.end(), 0);
+
+    // Heuristics operate on all vehicles.
+    std::vector<Index> vehicles_ranks(_input.vehicles.size());
+    std::iota(vehicles_ranks.begin(), vehicles_ranks.end(), 0);
 
     // Split the heuristic parameters among threads.
     std::vector<std::vector<std::size_t>>
@@ -72,21 +89,33 @@ protected:
         for (auto rank : param_ranks) {
           const auto& p = parameters[rank];
 
+          Eval h_eval;
           switch (p.heuristic) {
           case HEURISTIC::INIT_ROUTES:
-            solutions[rank] =
-              heuristics::initial_routes<std::vector<Route>>(_input);
+            heuristics::initial_routes<Route>(_input, solutions[rank]);
             break;
           case HEURISTIC::BASIC:
-            solutions[rank] =
-              heuristics::basic<std::vector<Route>>(_input,
-                                                    p.init,
-                                                    p.regret_coeff,
-                                                    p.sort);
+            h_eval = heuristics::basic<Route>(_input,
+                                              solutions[rank],
+                                              jobs_ranks.cbegin(),
+                                              jobs_ranks.cend(),
+                                              vehicles_ranks.cbegin(),
+                                              vehicles_ranks.cend(),
+                                              p.init,
+                                              p.regret_coeff,
+                                              p.sort);
             break;
           case HEURISTIC::DYNAMIC:
-            solutions[rank] = heuristics::dynamic_vehicle_choice<
-              std::vector<Route>>(_input, p.init, p.regret_coeff, p.sort);
+            h_eval =
+              heuristics::dynamic_vehicle_choice<Route>(_input,
+                                                        solutions[rank],
+                                                        jobs_ranks.cbegin(),
+                                                        jobs_ranks.cend(),
+                                                        vehicles_ranks.cbegin(),
+                                                        vehicles_ranks.cend(),
+                                                        p.init,
+                                                        p.regret_coeff,
+                                                        p.sort);
             break;
           }
 
@@ -95,34 +124,40 @@ protected:
               p.sort == SORT::CAPACITY) {
             // Worth trying another vehicle ordering scheme in
             // heuristic.
-            std::vector<Route> other_sol;
+            std::vector<Route> other_sol = empty_sol;
 
+            Eval h_other_eval;
             switch (p.heuristic) {
             case HEURISTIC::INIT_ROUTES:
               assert(false);
               break;
             case HEURISTIC::BASIC:
-              other_sol = heuristics::basic<std::vector<Route>>(_input,
-                                                                p.init,
-                                                                p.regret_coeff,
-                                                                SORT::COST);
+              h_other_eval = heuristics::basic<Route>(_input,
+                                                      other_sol,
+                                                      jobs_ranks.cbegin(),
+                                                      jobs_ranks.cend(),
+                                                      vehicles_ranks.cbegin(),
+                                                      vehicles_ranks.cend(),
+                                                      p.init,
+                                                      p.regret_coeff,
+                                                      SORT::COST);
               break;
             case HEURISTIC::DYNAMIC:
-              other_sol = heuristics::dynamic_vehicle_choice<
-                std::vector<Route>>(_input, p.init, p.regret_coeff, SORT::COST);
+              h_other_eval =
+                heuristics::dynamic_vehicle_choice<Route>(_input,
+                                                          other_sol,
+                                                          jobs_ranks.cbegin(),
+                                                          jobs_ranks.cend(),
+                                                          vehicles_ranks
+                                                            .cbegin(),
+                                                          vehicles_ranks.cend(),
+                                                          p.init,
+                                                          p.regret_coeff,
+                                                          SORT::COST);
               break;
             }
 
-            Eval eval;
-            Eval other_eval;
-            for (Index v = 0; v < _input.vehicles.size(); ++v) {
-              eval += utils::route_eval_for_vehicle(_input,
-                                                    v,
-                                                    solutions[rank][v].route);
-              other_eval +=
-                utils::route_eval_for_vehicle(_input, v, other_sol[v].route);
-            }
-            if (other_eval < eval) {
+            if (h_other_eval < h_eval) {
               solutions[rank] = std::move(other_sol);
             }
           }
