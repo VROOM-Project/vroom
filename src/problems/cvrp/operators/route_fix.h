@@ -15,10 +15,11 @@ All rights reserved (see LICENSE).
 namespace vroom::cvrp {
 
 class RouteFix : public ls::Operator {
-protected:
-  std::vector<Index> tsp_route;
-
+private:
   void compute_gain() override;
+
+protected:
+  std::vector<Index> heuristic_route;
 
 public:
   RouteFix(const Input& input,

@@ -8,7 +8,7 @@ All rights reserved (see LICENSE).
 */
 
 #include "problems/cvrp/operators/route_fix.h"
-#include "problems/tsp/tsp.h"
+#include "algorithms/heuristics/heuristics.h"
 
 namespace vroom::cvrp {
 
@@ -30,24 +30,40 @@ RouteFix::RouteFix(const Input& input,
 }
 
 void RouteFix::compute_gain() {
-  std::vector<Index> jobs = s_route;
-  TSP tsp(_input, std::move(jobs), s_vehicle);
-  tsp_route = tsp.raw_solve(1, Timeout());
+  std::vector<RawRoute> fix_sol;
+  fix_sol.reserve(_input.vehicles.size());
 
-  const auto tsp_eval =
-    utils::route_eval_for_vehicle(_input, s_vehicle, tsp_route);
+  for (Index v = 0; v < _input.vehicles.size(); ++v) {
+    fix_sol.emplace_back(_input, v, _input.zero_amount().size());
+  }
 
-  stored_gain = _sol_state.route_evals[s_vehicle] - tsp_eval;
+  std::vector<Index> vehicles_ranks({s_vehicle});
+
+  const auto fix_eval = heuristics::basic<RawRoute>(_input,
+                                                    fix_sol,
+                                                    s_route.cbegin(),
+                                                    s_route.cend(),
+                                                    vehicles_ranks.cbegin(),
+                                                    vehicles_ranks.cend(),
+                                                    INIT::NONE);
+
+  const auto assigned_jobs = fix_sol[s_vehicle].size();
+
+  stored_gain = (assigned_jobs < s_route.size())
+                  ? NO_GAIN
+                  : _sol_state.route_evals[s_vehicle] - fix_eval;
+  heuristic_route = std::move(fix_sol[s_vehicle].route);
   gain_computed = true;
 }
 
 bool RouteFix::is_valid() {
-  // TODO check!
+  // Not supposed to be used.
+  assert(false);
   return true;
 }
 
 void RouteFix::apply() {
-  s_route = std::move(tsp_route);
+  s_route = std::move(heuristic_route);
 
   source.update_amounts(_input);
 }

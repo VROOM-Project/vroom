@@ -18,6 +18,8 @@ class RouteFix : public cvrp::RouteFix {
 private:
   TWRoute& _tw_s_route;
 
+  void compute_gain() override;
+
 public:
   RouteFix(const Input& input,
            const utils::SolutionState& sol_state,
