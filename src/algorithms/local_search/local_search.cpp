@@ -1111,25 +1111,20 @@ void LocalSearch<Route,
     }
 
     // RouteFix stuff
-    if (!_input.has_shipments()) {
-      // TODO no shipments for current route only.
-
-      for (const auto& s_t : s_t_pairs) {
-        if (s_t.second != s_t.first or best_priorities[s_t.first] > 0 or
-            _sol[s_t.first].size() < 2) {
-          // TODO do not try with binding constraints.
-          continue;
-        }
+    for (const auto& s_t : s_t_pairs) {
+      if (s_t.second != s_t.first or best_priorities[s_t.first] > 0 or
+          _sol[s_t.first].size() < 2) {
+        continue;
+      }
 
 #ifdef LOG_LS_OPERATORS
-        ++tried_moves[OperatorName::RouteFix];
+      ++tried_moves[OperatorName::RouteFix];
 #endif
-        RouteFix op(_input, _sol_state, _sol[s_t.first], s_t.first);
+      RouteFix op(_input, _sol_state, _sol[s_t.first], s_t.first);
 
-        if (op.gain() > best_gains[s_t.first][s_t.second]) {
-          best_gains[s_t.first][s_t.second] = op.gain();
-          best_ops[s_t.first][s_t.second] = std::make_unique<RouteFix>(op);
-        }
+      if (op.gain() > best_gains[s_t.first][s_t.second]) {
+        best_gains[s_t.first][s_t.second] = op.gain();
+        best_ops[s_t.first][s_t.second] = std::make_unique<RouteFix>(op);
       }
     }
 
