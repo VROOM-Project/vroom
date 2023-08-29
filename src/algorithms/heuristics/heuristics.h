@@ -24,8 +24,8 @@ Eval basic(const Input& input,
            const InputIterator vehicles_begin,
            const InputIterator vehicles_end,
            INIT init,
-           double lambda,
-           SORT sort);
+           double lambda = 0,
+           SORT sort = SORT::CAPACITY);
 
 // Adjusting the above for situations with heterogeneous fleet.
 template <class Route, class InputIterator>
