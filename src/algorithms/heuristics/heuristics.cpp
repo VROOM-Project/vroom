@@ -562,13 +562,21 @@ Eval dynamic_vehicle_choice(const Input& input,
       // vehicle.
       bool init_ok = false;
 
-      Amount higher_amount(input.zero_amount());
+      Priority best_priority = 0;
+      Amount highest_amount(input.zero_amount());
       Cost furthest_cost = 0;
       Cost nearest_cost = std::numeric_limits<Cost>::max();
       Duration earliest_deadline = std::numeric_limits<Duration>::max();
       Index best_job_rank = 0;
+
       for (const auto job_rank : unassigned) {
         const auto& current_job = input.jobs[job_rank];
+
+        if (current_job.priority < best_priority) {
+          continue;
+        }
+
+        bool higher_priority = (current_job.priority > best_priority);
 
         if (jobs_min_costs[job_rank] < evals[job_rank][v_rank].cost or
             // One of the remaining vehicles is closest to that job.
@@ -583,26 +591,28 @@ Eval dynamic_vehicle_choice(const Input& input,
           continue;
         }
 
-        bool try_validity = false;
+        // Always pick a job with higher priority than the current
+        // best, else priorities are equal, so check second criteria.
+        bool is_better_candidate = higher_priority;
 
         if (init == INIT::HIGHER_AMOUNT) {
-          try_validity |= (higher_amount << current_job.pickup or
-                           higher_amount << current_job.delivery);
+          is_better_candidate |= (highest_amount << current_job.pickup or
+                                  highest_amount << current_job.delivery);
         }
         if (init == INIT::EARLIEST_DEADLINE) {
           Duration current_deadline =
             (is_pickup) ? input.jobs[job_rank + 1].tws.back().end
                         : current_job.tws.back().end;
-          try_validity |= (current_deadline < earliest_deadline);
+          is_better_candidate |= (current_deadline < earliest_deadline);
         }
         if (init == INIT::FURTHEST) {
-          try_validity |= (furthest_cost < evals[job_rank][v_rank].cost);
+          is_better_candidate |= (furthest_cost < evals[job_rank][v_rank].cost);
         }
         if (init == INIT::NEAREST) {
-          try_validity |= (evals[job_rank][v_rank].cost < nearest_cost);
+          is_better_candidate |= (evals[job_rank][v_rank].cost < nearest_cost);
         }
 
-        if (!try_validity) {
+        if (!is_better_candidate) {
           continue;
         }
 
@@ -631,17 +641,16 @@ Eval dynamic_vehicle_choice(const Input& input,
         if (is_valid) {
           init_ok = true;
           best_job_rank = job_rank;
+          best_priority = current_job.priority;
 
           switch (init) {
           case INIT::NONE:
             assert(false);
             break;
           case INIT::HIGHER_AMOUNT:
-            if (higher_amount << current_job.pickup) {
-              higher_amount = current_job.pickup;
-            }
-            if (higher_amount << current_job.delivery) {
-              higher_amount = current_job.delivery;
+            highest_amount = current_job.delivery;
+            if (highest_amount << current_job.pickup) {
+              highest_amount = current_job.pickup;
             }
             break;
           case INIT::EARLIEST_DEADLINE:
