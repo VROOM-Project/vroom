@@ -718,7 +718,8 @@ void Input::set_jobs_vehicles_evals() {
   // in an empty route from vehicle at rank v.
   _jobs_vehicles_evals =
     std::vector<std::vector<Eval>>(jobs.size(),
-                                   std::vector<Eval>(vehicles.size()));
+                                   std::vector<Eval>(vehicles.size(),
+                                                     MAX_EVAL));
 
   for (std::size_t j = 0; j < jobs.size(); ++j) {
     Index j_index = jobs[j].index();
@@ -733,6 +734,11 @@ void Input::set_jobs_vehicles_evals() {
 
     for (std::size_t v = 0; v < vehicles.size(); ++v) {
       const auto& vehicle = vehicles[v];
+
+      if (!vehicle_ok_with_job(v, j)) {
+        continue;
+      }
+
       auto& current_eval = _jobs_vehicles_evals[j][v];
 
       current_eval = is_pickup ? vehicle.eval(j_index, last_job_index) : Eval();
