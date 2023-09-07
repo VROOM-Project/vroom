@@ -562,7 +562,7 @@ Eval dynamic_vehicle_choice(const Input& input,
       // vehicle.
       bool init_ok = false;
 
-      Priority best_priority = 0;
+      Priority highest_priority = 0;
       Amount highest_amount(input.zero_amount());
       Cost furthest_cost = 0;
       Cost nearest_cost = std::numeric_limits<Cost>::max();
@@ -572,11 +572,11 @@ Eval dynamic_vehicle_choice(const Input& input,
       for (const auto job_rank : unassigned) {
         const auto& current_job = input.jobs[job_rank];
 
-        if (current_job.priority < best_priority) {
+        if (current_job.priority < highest_priority) {
           continue;
         }
 
-        bool higher_priority = (current_job.priority > best_priority);
+        bool higher_priority = (current_job.priority > highest_priority);
 
         if (jobs_min_costs[job_rank] < evals[job_rank][v_rank].cost or
             // One of the remaining vehicles is closest to that job.
@@ -641,7 +641,7 @@ Eval dynamic_vehicle_choice(const Input& input,
         if (is_valid) {
           init_ok = true;
           best_job_rank = job_rank;
-          best_priority = current_job.priority;
+          highest_priority = current_job.priority;
 
           switch (init) {
           case INIT::NONE:
