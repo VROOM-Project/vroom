@@ -56,8 +56,8 @@ inline INIT get_init(const std::string& s) {
   if (s == "NONE") {
     return INIT::NONE;
   }
-  if (s == "HIGHER_AMOUNT") {
-    return INIT::HIGHER_AMOUNT;
+  if (s == "HIGHEST_AMOUNT") {
+    return INIT::HIGHEST_AMOUNT;
   }
   if (s == "NEAREST") {
     return INIT::NEAREST;

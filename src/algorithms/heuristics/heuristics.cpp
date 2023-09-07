@@ -112,7 +112,7 @@ Eval basic(const Input& input,
       // Initialize current route with the "best" valid job.
       bool init_ok = false;
 
-      Amount higher_amount(input.zero_amount());
+      Amount highest_amount(input.zero_amount());
       Cost furthest_cost = 0;
       Cost nearest_cost = std::numeric_limits<Cost>::max();
       Duration earliest_deadline = std::numeric_limits<Duration>::max();
@@ -133,9 +133,9 @@ Eval basic(const Input& input,
 
         bool try_validity = false;
 
-        if (init == INIT::HIGHER_AMOUNT) {
-          try_validity |= (higher_amount << current_job.pickup or
-                           higher_amount << current_job.delivery);
+        if (init == INIT::HIGHEST_AMOUNT) {
+          try_validity |= (highest_amount << current_job.pickup or
+                           highest_amount << current_job.delivery);
         }
         if (init == INIT::EARLIEST_DEADLINE) {
           Duration current_deadline =
@@ -183,12 +183,12 @@ Eval basic(const Input& input,
           case INIT::NONE:
             assert(false);
             break;
-          case INIT::HIGHER_AMOUNT:
-            if (higher_amount << current_job.pickup) {
-              higher_amount = current_job.pickup;
+          case INIT::HIGHEST_AMOUNT:
+            if (highest_amount << current_job.pickup) {
+              highest_amount = current_job.pickup;
             }
-            if (higher_amount << current_job.delivery) {
-              higher_amount = current_job.delivery;
+            if (highest_amount << current_job.delivery) {
+              highest_amount = current_job.delivery;
             }
             break;
           case INIT::EARLIEST_DEADLINE:
@@ -595,7 +595,7 @@ Eval dynamic_vehicle_choice(const Input& input,
         // best, else priorities are equal, so check second criteria.
         bool is_better_candidate = higher_priority;
 
-        if (init == INIT::HIGHER_AMOUNT) {
+        if (init == INIT::HIGHEST_AMOUNT) {
           is_better_candidate |= (highest_amount << current_job.pickup or
                                   highest_amount << current_job.delivery);
         }
@@ -647,7 +647,7 @@ Eval dynamic_vehicle_choice(const Input& input,
           case INIT::NONE:
             assert(false);
             break;
-          case INIT::HIGHER_AMOUNT:
+          case INIT::HIGHEST_AMOUNT:
             highest_amount = current_job.delivery;
             if (highest_amount << current_job.pickup) {
               highest_amount = current_job.pickup;

@@ -107,7 +107,7 @@ enum class STEP_TYPE { START, JOB, BREAK, END };
 
 // Heuristic options.
 enum class HEURISTIC { BASIC, DYNAMIC, INIT_ROUTES };
-enum class INIT { NONE, HIGHER_AMOUNT, NEAREST, FURTHEST, EARLIEST_DEADLINE };
+enum class INIT { NONE, HIGHEST_AMOUNT, NEAREST, FURTHEST, EARLIEST_DEADLINE };
 enum class SORT { CAPACITY, COST };
 
 struct HeuristicParameters {

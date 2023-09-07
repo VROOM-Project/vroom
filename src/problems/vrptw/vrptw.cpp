@@ -54,24 +54,24 @@ using LocalSearch = ls::LocalSearch<TWRoute,
 } // namespace vrptw
 
 const std::vector<HeuristicParameters> VRPTW::homogeneous_parameters =
-  {HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHER_AMOUNT, 0.3),
-   HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHER_AMOUNT, 0.4),
+  {HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHEST_AMOUNT, 0.3),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHEST_AMOUNT, 0.4),
    HeuristicParameters(HEURISTIC::BASIC, INIT::EARLIEST_DEADLINE, 0.2),
    HeuristicParameters(HEURISTIC::BASIC, INIT::FURTHEST, 0.3),
 
    HeuristicParameters(HEURISTIC::BASIC, INIT::NONE, 0.4),
-   HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHER_AMOUNT, 0.5),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHEST_AMOUNT, 0.5),
    HeuristicParameters(HEURISTIC::BASIC, INIT::FURTHEST, 0.4),
    HeuristicParameters(HEURISTIC::BASIC, INIT::FURTHEST, 0.5),
 
-   HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHER_AMOUNT, 0.1),
-   HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHER_AMOUNT, 0.6),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHEST_AMOUNT, 0.1),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHEST_AMOUNT, 0.6),
    HeuristicParameters(HEURISTIC::BASIC, INIT::FURTHEST, 0.2),
    HeuristicParameters(HEURISTIC::BASIC, INIT::FURTHEST, 0.7),
 
-   HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHER_AMOUNT, 0.2),
-   HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHER_AMOUNT, 0.7),
-   HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHER_AMOUNT, 1.4),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHEST_AMOUNT, 0.2),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHEST_AMOUNT, 0.7),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHEST_AMOUNT, 1.4),
    HeuristicParameters(HEURISTIC::BASIC, INIT::FURTHEST, 0.1),
 
    HeuristicParameters(HEURISTIC::BASIC, INIT::NONE, 0),
@@ -85,7 +85,7 @@ const std::vector<HeuristicParameters> VRPTW::homogeneous_parameters =
    HeuristicParameters(HEURISTIC::BASIC, INIT::FURTHEST, 1.2),
 
    HeuristicParameters(HEURISTIC::BASIC, INIT::NONE, 1),
-   HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHER_AMOUNT, 1.3),
+   HeuristicParameters(HEURISTIC::BASIC, INIT::HIGHEST_AMOUNT, 1.3),
    HeuristicParameters(HEURISTIC::BASIC, INIT::EARLIEST_DEADLINE, 0),
    HeuristicParameters(HEURISTIC::BASIC, INIT::EARLIEST_DEADLINE, 0.3),
 
@@ -95,29 +95,29 @@ const std::vector<HeuristicParameters> VRPTW::homogeneous_parameters =
    HeuristicParameters(HEURISTIC::BASIC, INIT::FURTHEST, 1)};
 
 const std::vector<HeuristicParameters> VRPTW::heterogeneous_parameters =
-  {HeuristicParameters(HEURISTIC::DYNAMIC, INIT::HIGHER_AMOUNT, 0.5),
-   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::HIGHER_AMOUNT, 0.9),
+  {HeuristicParameters(HEURISTIC::DYNAMIC, INIT::HIGHEST_AMOUNT, 0.5),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::HIGHEST_AMOUNT, 0.9),
    HeuristicParameters(HEURISTIC::DYNAMIC, INIT::EARLIEST_DEADLINE, 0.4),
    HeuristicParameters(HEURISTIC::DYNAMIC, INIT::FURTHEST, 0.4),
 
-   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::HIGHER_AMOUNT, 0.8),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::HIGHEST_AMOUNT, 0.8),
    HeuristicParameters(HEURISTIC::DYNAMIC, INIT::EARLIEST_DEADLINE, 0.6),
    HeuristicParameters(HEURISTIC::DYNAMIC, INIT::EARLIEST_DEADLINE, 0.9),
    HeuristicParameters(HEURISTIC::DYNAMIC, INIT::FURTHEST, 0.6),
 
-   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::HIGHER_AMOUNT, 1.8),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::HIGHEST_AMOUNT, 1.8),
    HeuristicParameters(HEURISTIC::DYNAMIC, INIT::EARLIEST_DEADLINE, 1.1),
    HeuristicParameters(HEURISTIC::DYNAMIC, INIT::EARLIEST_DEADLINE, 1.4),
    HeuristicParameters(HEURISTIC::DYNAMIC, INIT::FURTHEST, 0.7),
 
    HeuristicParameters(HEURISTIC::DYNAMIC, INIT::NONE, 1.3),
-   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::HIGHER_AMOUNT, 2.4),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::HIGHEST_AMOUNT, 2.4),
    HeuristicParameters(HEURISTIC::DYNAMIC, INIT::EARLIEST_DEADLINE, 0.3),
    HeuristicParameters(HEURISTIC::DYNAMIC, INIT::FURTHEST, 1.2),
 
    HeuristicParameters(HEURISTIC::DYNAMIC, INIT::NONE, 1.2),
-   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::HIGHER_AMOUNT, 0.6),
-   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::HIGHER_AMOUNT, 1.6),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::HIGHEST_AMOUNT, 0.6),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::HIGHEST_AMOUNT, 1.6),
    HeuristicParameters(HEURISTIC::DYNAMIC, INIT::EARLIEST_DEADLINE, 0.2),
 
    HeuristicParameters(HEURISTIC::DYNAMIC, INIT::EARLIEST_DEADLINE, 1.7),
@@ -127,7 +127,7 @@ const std::vector<HeuristicParameters> VRPTW::heterogeneous_parameters =
 
    HeuristicParameters(HEURISTIC::DYNAMIC, INIT::NONE, 1.5),
    HeuristicParameters(HEURISTIC::DYNAMIC, INIT::NONE, 2.2),
-   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::HIGHER_AMOUNT, 2.1),
+   HeuristicParameters(HEURISTIC::DYNAMIC, INIT::HIGHEST_AMOUNT, 2.1),
    HeuristicParameters(HEURISTIC::DYNAMIC, INIT::EARLIEST_DEADLINE, 0.5),
 
    HeuristicParameters(HEURISTIC::DYNAMIC, INIT::EARLIEST_DEADLINE, 1.2),
