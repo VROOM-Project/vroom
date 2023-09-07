@@ -1002,11 +1002,15 @@ void Input::set_matrices(unsigned nb_thread) {
         } else {
           // Durations matrix will be used for costs.
           const UserCost current_bound = check_cost_bound(durations_m->second);
+
+          auto search = _max_cost_per_hour.find(profile);
+          assert(search != _max_cost_per_hour.end());
+          const auto max_cost_per_hour_for_profile = search->second;
+
           cost_bound_m.lock();
           _cost_upper_bound =
             std::max(_cost_upper_bound,
-                     // TODO scale based on max factor for this profile.
-                     DEFAULT_COST_PER_HOUR *
+                     max_cost_per_hour_for_profile *
                        utils::scale_from_user_duration(current_bound));
           cost_bound_m.unlock();
         }
