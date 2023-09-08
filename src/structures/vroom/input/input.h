@@ -52,6 +52,7 @@ private:
   std::unordered_map<std::string, Matrix<UserDuration>> _durations_matrices;
   std::unordered_map<std::string, Matrix<UserDistance>> _distances_matrices;
   std::unordered_map<std::string, Matrix<UserCost>> _costs_matrices;
+  std::unordered_map<std::string, Cost> _max_cost_per_hour;
   Cost _cost_upper_bound{0};
   std::vector<Location> _locations;
   std::unordered_map<Location, Index> _locations_to_index;

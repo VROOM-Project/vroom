@@ -470,9 +470,9 @@ Eval dynamic_vehicle_choice(const Input& input,
     // (resp. second min cost) of picking the job in an empty route
     // for any remaining vehicle.
     std::vector<Cost> jobs_min_costs(input.jobs.size(),
-                                     std::numeric_limits<Cost>::max());
+                                     input.get_cost_upper_bound());
     std::vector<Cost> jobs_second_min_costs(input.jobs.size(),
-                                            std::numeric_limits<Cost>::max());
+                                            input.get_cost_upper_bound());
     for (const auto job_rank : unassigned) {
       for (const auto v_rank : vehicles_ranks) {
         if (evals[job_rank][v_rank].cost <= jobs_min_costs[job_rank]) {

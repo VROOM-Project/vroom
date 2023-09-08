@@ -376,6 +376,13 @@ void Input::add_vehicle(const Vehicle& vehicle) {
   }
 
   _profiles.insert(current_v.profile);
+
+  auto search = _max_cost_per_hour.find(current_v.profile);
+  if (search == _max_cost_per_hour.end()) {
+    _max_cost_per_hour.insert({current_v.profile, current_v.costs.per_hour});
+  } else {
+    search->second = std::max(search->second, current_v.costs.per_hour);
+  }
 }
 
 void Input::set_durations_matrix(const std::string& profile,
@@ -718,7 +725,8 @@ void Input::set_jobs_vehicles_evals() {
   // in an empty route from vehicle at rank v.
   _jobs_vehicles_evals =
     std::vector<std::vector<Eval>>(jobs.size(),
-                                   std::vector<Eval>(vehicles.size()));
+                                   std::vector<Eval>(vehicles.size(),
+                                                     MAX_EVAL));
 
   for (std::size_t j = 0; j < jobs.size(); ++j) {
     Index j_index = jobs[j].index();
@@ -733,6 +741,11 @@ void Input::set_jobs_vehicles_evals() {
 
     for (std::size_t v = 0; v < vehicles.size(); ++v) {
       const auto& vehicle = vehicles[v];
+
+      if (!vehicle_ok_with_job(v, j)) {
+        continue;
+      }
+
       auto& current_eval = _jobs_vehicles_evals[j][v];
 
       current_eval = is_pickup ? vehicle.eval(j_index, last_job_index) : Eval();
@@ -984,15 +997,21 @@ void Input::set_matrices(unsigned nb_thread) {
           cost_bound_m.lock();
           _cost_upper_bound =
             std::max(_cost_upper_bound,
-                     utils::scale_from_user_duration(current_bound));
+                     utils::scale_from_user_cost(current_bound));
           cost_bound_m.unlock();
         } else {
           // Durations matrix will be used for costs.
           const UserCost current_bound = check_cost_bound(durations_m->second);
+
+          auto search = _max_cost_per_hour.find(profile);
+          assert(search != _max_cost_per_hour.end());
+          const auto max_cost_per_hour_for_profile = search->second;
+
           cost_bound_m.lock();
           _cost_upper_bound =
             std::max(_cost_upper_bound,
-                     utils::scale_from_user_duration(current_bound));
+                     max_cost_per_hour_for_profile *
+                       utils::scale_from_user_duration(current_bound));
           cost_bound_m.unlock();
         }
       }

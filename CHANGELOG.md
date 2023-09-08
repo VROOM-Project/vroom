@@ -27,6 +27,7 @@
 - Improved `vrptw::PDShift` implementation (#852)
 - Reserve `vector` capacity whenever possible (#915)
 - Refactor heuristics to be able to operate on a subset of jobs and vehicles (#837)
+- Account for vehicle/job compatibility in heuristic regrets values (#982)
 
 ### Fixed
 
