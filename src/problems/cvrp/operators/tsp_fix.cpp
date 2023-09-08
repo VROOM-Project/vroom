@@ -25,7 +25,8 @@ TSPFix::TSPFix(const Input& input,
              0,
              s_route,
              s_vehicle,
-             0) {
+             0),
+    _s_delivery(source.load_at_step(0)) {
   assert(s_route.size() >= 2);
 }
 
@@ -34,16 +35,28 @@ void TSPFix::compute_gain() {
   TSP tsp(_input, std::move(jobs), s_vehicle);
   tsp_route = tsp.raw_solve(1, Timeout());
 
-  const auto tsp_eval =
-    utils::route_eval_for_vehicle(_input, s_vehicle, tsp_route);
+  tsp_eval = utils::route_eval_for_vehicle(_input, s_vehicle, tsp_route);
 
-  stored_gain = _sol_state.route_evals[s_vehicle] - tsp_eval;
+  s_gain = _sol_state.route_evals[s_vehicle] - tsp_eval;
+  stored_gain = s_gain;
   gain_computed = true;
 }
 
 bool TSPFix::is_valid() {
-  // TODO check!
-  return true;
+  bool valid = is_valid_for_source_max_travel_time();
+
+  if (valid) {
+    RawRoute route(_input, s_vehicle, _input.zero_amount().size());
+
+    valid = route.is_valid_addition_for_capacity_inclusion(_input,
+                                                           _s_delivery,
+                                                           tsp_route.begin(),
+                                                           tsp_route.end(),
+                                                           0,
+                                                           0);
+  }
+
+  return valid;
 }
 
 void TSPFix::apply() {

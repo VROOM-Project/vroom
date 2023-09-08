@@ -1126,7 +1126,7 @@ void LocalSearch<Route,
 #endif
         TSPFix op(_input, _sol_state, _sol[s_t.first], s_t.first);
 
-        if (op.gain() > best_gains[s_t.first][s_t.second]) {
+        if (op.gain() > best_gains[s_t.first][s_t.second] and op.is_valid()) {
           best_gains[s_t.first][s_t.second] = op.gain();
           best_ops[s_t.first][s_t.second] = std::make_unique<TSPFix>(op);
         }

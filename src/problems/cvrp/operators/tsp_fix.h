@@ -17,8 +17,11 @@ namespace vroom::cvrp {
 class TSPFix : public ls::Operator {
 protected:
   std::vector<Index> tsp_route;
+  Eval tsp_eval;
 
   void compute_gain() override;
+
+  const Amount _s_delivery;
 
 public:
   TSPFix(const Input& input,
