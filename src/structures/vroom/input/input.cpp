@@ -47,7 +47,7 @@ void Input::set_geometry(bool geometry) {
 void Input::add_routing_wrapper(const std::string& profile) {
 #if !USE_ROUTING
   throw RoutingException("VROOM compiled without routing support.");
-#endif
+#else
 
   if (!_has_all_coordinates) {
     throw InputException("Missing coordinates for routing engine.");
@@ -78,11 +78,11 @@ void Input::add_routing_wrapper(const std::string& profile) {
     } catch (const osrm::exception& e) {
       throw InputException("Invalid profile: " + profile);
     }
+    break;
 #else
     // Attempt to use libosrm while compiling without it.
     throw RoutingException("VROOM compiled without libosrm installed.");
 #endif
-    break;
   case ROUTER::ORS: {
     // Use ORS http wrapper.
     auto search = _servers.find(profile);
@@ -102,6 +102,7 @@ void Input::add_routing_wrapper(const std::string& profile) {
       std::make_unique<routing::ValhallaWrapper>(profile, search->second);
   } break;
   }
+#endif
 }
 
 void Input::check_job(Job& job) {
