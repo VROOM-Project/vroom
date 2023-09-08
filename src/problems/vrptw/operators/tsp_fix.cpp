@@ -23,8 +23,13 @@ TSPFix::TSPFix(const Input& input,
 }
 
 bool TSPFix::is_valid() {
-  // TODO check!
-  return true;
+  return cvrp::TSPFix::is_valid() and
+         _tw_s_route.is_valid_addition_for_tw(_input,
+                                              _s_delivery,
+                                              tsp_route.begin(),
+                                              tsp_route.end(),
+                                              0,
+                                              s_route.size());
 }
 
 void TSPFix::apply() {
