@@ -117,11 +117,9 @@ minimum_weight_perfect_matching(const Matrix<T>& m) {
 
       // First y in equality neighbors not in T_set.
       const auto it =
-        std::find_if(alternating_tree.begin(),
-                     alternating_tree.end(),
-                     [&](const auto& edge) {
-                       return T_set.find(edge.first) == T_set.end();
-                     });
+        std::ranges::find_if(alternating_tree, [&](const auto& edge) {
+          return T_set.find(edge.first) == T_set.end();
+        });
       assert(it != alternating_tree.end());
       auto chosen_y = it->first;
 
