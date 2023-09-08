@@ -7,6 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <algorithm>
 #include <cassert>
 #include <limits>
 #include <set>
@@ -115,15 +116,14 @@ minimum_weight_perfect_matching(const Matrix<T>& m) {
       // Step 3.
 
       // First y in equality neighbors not in T_set.
-      Index chosen_y;
-      for (auto const& edge : alternating_tree) {
-        if (T_set.find(edge.first) == T_set.end()) {
-          // MUST happen before endge reaches the end of
-          // alternating_tree.
-          chosen_y = edge.first;
-          break;
-        }
-      }
+      const auto it =
+        std::find_if(alternating_tree.begin(),
+                     alternating_tree.end(),
+                     [&](const auto& edge) {
+                       return T_set.find(edge.first) == T_set.end();
+                     });
+      assert(it != alternating_tree.end());
+      auto chosen_y = it->first;
 
       auto matching_y = matching_yx.find(chosen_y);
       if (matching_y != matching_yx.end()) {
