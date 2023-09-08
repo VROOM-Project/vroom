@@ -33,7 +33,7 @@ template <class Route,
           class RouteExchange,
           class SwapStar,
           class RouteSplit,
-          class RouteFix>
+          class TSPFix>
 class LocalSearch {
 private:
   const Input& _input;

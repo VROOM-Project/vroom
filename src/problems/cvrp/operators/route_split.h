@@ -16,9 +16,6 @@ All rights reserved (see LICENSE).
 namespace vroom::cvrp {
 
 class RouteSplit : public ls::Operator {
-private:
-  void compute_gain() override;
-
 protected:
   const Eval _best_known_gain;
   const std::vector<Index> _empty_route_ranks;
@@ -26,6 +23,8 @@ protected:
   ls::SplitChoice choice;
 
   static const std::vector<std::reference_wrapper<RawRoute>> dummy_route_refs;
+
+  void compute_gain() override;
 
 public:
   RouteSplit(const Input& input,

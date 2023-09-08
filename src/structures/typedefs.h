@@ -164,7 +164,7 @@ enum OperatorName {
   RouteExchange,
   SwapStar,
   RouteSplit,
-  RouteFix,
+  TSPFix,
   MAX
 };
 
