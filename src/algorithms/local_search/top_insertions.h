@@ -23,21 +23,21 @@ struct InsertionOption {
 
 using ThreeInsertions = std::array<InsertionOption, 3>;
 
-constexpr InsertionOption no_insert = {NO_EVAL, 0};
+constexpr InsertionOption NO_INSERT = {NO_EVAL, 0};
 constexpr ThreeInsertions
-  empty_three_insertions({no_insert, no_insert, no_insert});
+  EMPTY_THREE_INSERTIONS({NO_INSERT, NO_INSERT, NO_INSERT});
 
-template <class Route>
 inline ThreeInsertions find_top_3_insertions(const Input& input,
                                              Index j,
-                                             const Route& r) {
-  const auto& v = input.vehicles[r.vehicle_rank];
+                                             Index v,
+                                             const std::vector<Index>& route) {
+  const auto& vehicle = input.vehicles[v];
 
-  auto best_insertions = empty_three_insertions;
+  auto best_insertions = EMPTY_THREE_INSERTIONS;
 
-  for (Index rank = 0; rank <= r.route.size(); ++rank) {
+  for (Index rank = 0; rank <= route.size(); ++rank) {
     const InsertionOption current_insert =
-      {utils::addition_cost(input, j, v, r.route, rank), rank};
+      {utils::addition_cost(input, j, vehicle, route, rank), rank};
 
     if (current_insert.cost < best_insertions[2].cost) {
       if (current_insert.cost < best_insertions[1].cost) {
