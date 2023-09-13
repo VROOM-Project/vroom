@@ -688,6 +688,7 @@ Eval dynamic_vehicle_choice(const Input& input,
     bool keep_going = true;
     while (keep_going) {
       keep_going = false;
+      Priority best_priority = 0;
       double best_cost = std::numeric_limits<double>::max();
       Index best_job_rank = 0;
       Index best_r = 0;
@@ -703,7 +704,8 @@ Eval dynamic_vehicle_choice(const Input& input,
 
         const auto& current_job = input.jobs[job_rank];
 
-        if (current_job.type == JOB_TYPE::DELIVERY) {
+        if (current_job.type == JOB_TYPE::DELIVERY or
+            current_job.priority < best_priority) {
           continue;
         }
 
@@ -720,7 +722,8 @@ Eval dynamic_vehicle_choice(const Input& input,
               static_cast<double>(current_eval.cost) -
               lambda * static_cast<double>(regrets[job_rank]);
 
-            if (current_cost < best_cost and
+            if ((best_priority < current_job.priority or
+                 current_cost < best_cost) and
                 (vehicle.ok_for_travel_time(current_route_eval.duration +
                                             current_eval.duration)) and
                 current_r.is_valid_addition_for_capacity(input,
@@ -728,6 +731,7 @@ Eval dynamic_vehicle_choice(const Input& input,
                                                          current_job.delivery,
                                                          r) and
                 current_r.is_valid_addition_for_tw(input, job_rank, r)) {
+              best_priority = current_job.priority;
               best_cost = current_cost;
               best_job_rank = job_rank;
               best_r = r;
@@ -813,7 +817,8 @@ Eval dynamic_vehicle_choice(const Input& input,
                 current_eval.cost -
                 lambda * static_cast<double>(regrets[job_rank]);
 
-              if (current_cost < best_cost) {
+              if (best_priority < current_job.priority or
+                  current_cost < best_cost) {
                 modified_with_pd.push_back(job_rank + 1);
 
                 // Update best cost depending on validity.
@@ -839,6 +844,7 @@ Eval dynamic_vehicle_choice(const Input& input,
                 modified_with_pd.pop_back();
 
                 if (valid) {
+                  best_priority = current_job.priority;
                   best_cost = current_cost;
                   best_job_rank = job_rank;
                   best_pickup_r = pickup_r;
