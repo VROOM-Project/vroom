@@ -219,6 +219,10 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
       const auto target_delta =
         sol_state.node_gains[t_vehicle][t_rank] - target_start_end_cost;
 
+      if (source_delta + target_delta <= best_gain) {
+        continue;
+      }
+
       const auto target_in_place_delta =
         utils::in_place_delta_cost(input,
                                    source.route[s_rank],
