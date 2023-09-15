@@ -1112,12 +1112,10 @@ void LocalSearch<Route,
 
     // TSPFix stuff
     if (!_input.has_shipments()) {
-      // TODO no shipments for current route only.
-
       for (const auto& s_t : s_t_pairs) {
         if (s_t.second != s_t.first or best_priorities[s_t.first] > 0 or
+            !_input.is_good_TSP_candidate(s_t.first) or
             _sol[s_t.first].size() < 2) {
-          // TODO do not try with binding constraints.
           continue;
         }
 
