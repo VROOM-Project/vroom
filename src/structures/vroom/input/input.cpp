@@ -8,6 +8,7 @@ All rights reserved (see LICENSE).
 */
 
 #include <mutex>
+#include <ranges>
 #include <thread>
 
 #if USE_LIBOSRM
@@ -570,6 +571,30 @@ void Input::set_vehicles_compatibility() {
   }
 }
 
+void Input::set_vehicles_TSP_flag() {
+  _good_TSP_candidate = std::vector<bool>(vehicles.size());
+
+  for (std::size_t v_rank = 0; v_rank < vehicles.size(); ++v_rank) {
+    const auto& v = vehicles[v_rank];
+
+    // Check if vehicle TW is in the intersection of its compatible
+    // jobs TW, i.e. all its compatible jobs have one TW containing
+    // it.
+    _good_TSP_candidate[v_rank] =
+      std::ranges::all_of(std::views::iota(0) | std::views::take(jobs.size()),
+                          [&](Index j) {
+                            return !vehicle_ok_with_job(v_rank, j) or
+                                   std::any_of(jobs[j].tws.cbegin(),
+                                               jobs[j].tws.cend(),
+                                               [&](const auto& tw) {
+                                                 return tw.start <=
+                                                          v.tw.start and
+                                                        v.tw.end <= tw.end;
+                                               });
+                          });
+  }
+}
+
 void Input::set_vehicles_costs() {
   for (auto& vehicle : vehicles) {
     auto d_m = _durations_matrices.find(vehicle.profile);
@@ -1047,6 +1072,7 @@ Solution Input::solve(unsigned exploration_level,
   set_skills_compatibility();
   set_extra_compatibility();
   set_vehicles_compatibility();
+  set_vehicles_TSP_flag();
 
   set_jobs_vehicles_evals();
 
