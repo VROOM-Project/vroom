@@ -28,6 +28,7 @@
 - Improved `vrptw::PDShift` implementation (#852)
 - Reserve `vector` capacity whenever possible (#915)
 - Refactor heuristics to be able to operate on a subset of jobs and vehicles (#837)
+- Account for vehicle/job compatibility in heuristic regrets values (#982)
 
 ### Fixed
 
@@ -38,6 +39,7 @@
 - Meaningless `location_index` provided in output for break steps (#877)
 - `max_travel_time` not accounted for with vehicle steps in solving mode (#954)
 - `max_travel_time` not accounted for in `RouteSplit` (#941)
+- Address sonarcloud "bugs" reports (#984)
 
 ## [v1.13.0] - 2023-01-31
 
