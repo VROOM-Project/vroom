@@ -28,6 +28,7 @@
 - Reserve `vector` capacity whenever possible (#915)
 - Refactor heuristics to be able to operate on a subset of jobs and vehicles (#837)
 - Account for vehicle/job compatibility in heuristic regrets values (#982)
+- Slightly reduce computing times for SWAP* operator (#987)
 
 ### Fixed
 
