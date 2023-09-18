@@ -244,7 +244,7 @@ compute_best_route_split_choice(const Input& input,
       }
     }
 
-    if (current_split_choice.gain > best_choice.gain) {
+    if (best_choice.gain < current_split_choice.gain) {
       best_choice = current_split_choice;
     }
   }

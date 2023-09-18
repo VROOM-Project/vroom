@@ -90,7 +90,7 @@ struct SwapChoice {
 };
 
 const auto SwapChoiceCmp = [](const SwapChoice& lhs, const SwapChoice& rhs) {
-  return lhs.gain > rhs.gain;
+  return rhs.gain < lhs.gain;
 };
 
 const SwapChoice empty_swap_choice = {Eval(), 0, 0, 0, 0};
@@ -310,7 +310,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
       if (s_v.ok_for_travel_time(s_travel_time - in_place_s_gain.duration)) {
         // Only bother further checking in-place insertion in source
         // route if max travel time constraint is OK.
-        if (current_gain > best_gain and
+        if (best_gain < current_gain and
             t_v.ok_for_travel_time(t_travel_time - in_place_t_gain.duration)) {
           SwapChoice sc(current_gain, s_rank, t_rank, s_rank, t_rank);
           if (valid_choice_for_insertion_ranks(sol_state,
@@ -328,7 +328,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
               (ti.cost != NO_EVAL)) {
             const Eval t_gain = target_delta - ti.cost;
             current_gain = in_place_s_gain + t_gain;
-            if (current_gain > best_gain and
+            if (best_gain < current_gain and
                 t_v.ok_for_travel_time(t_travel_time - t_gain.duration)) {
               SwapChoice sc(current_gain, s_rank, t_rank, s_rank, ti.rank);
               if (valid_choice_for_insertion_ranks(sol_state,
@@ -360,7 +360,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
           }
 
           current_gain = s_gain + in_place_t_gain;
-          if (current_gain > best_gain and
+          if (best_gain < current_gain and
               t_v.ok_for_travel_time(t_travel_time -
                                      in_place_t_gain.duration)) {
             SwapChoice sc(current_gain, s_rank, t_rank, si.rank, t_rank);
@@ -379,7 +379,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
                 (ti.cost != NO_EVAL)) {
               const Eval t_gain = target_delta - ti.cost;
               current_gain = s_gain + t_gain;
-              if (current_gain > best_gain and
+              if (best_gain < current_gain and
                   t_v.ok_for_travel_time(t_travel_time - t_gain.duration)) {
                 SwapChoice sc(current_gain, s_rank, t_rank, si.rank, ti.rank);
                 if (valid_choice_for_insertion_ranks(sol_state,

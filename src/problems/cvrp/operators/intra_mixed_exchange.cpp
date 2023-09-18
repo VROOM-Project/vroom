@@ -170,7 +170,7 @@ Eval IntraMixedExchange::gain_upper_bound() {
 void IntraMixedExchange::compute_gain() {
   assert(_gain_upper_bound_computed);
   assert(s_is_normal_valid or s_is_reverse_valid);
-  if (_reversed_s_gain > _normal_s_gain) {
+  if (_normal_s_gain < _reversed_s_gain) {
     // Biggest potential gain is obtained when reversing edge.
     if (s_is_reverse_valid) {
       stored_gain += _reversed_s_gain;

@@ -484,7 +484,7 @@ void LocalSearch<Route,
                 bool better_if_valid =
                   (best_priorities[s_t.first] < priority_gain) or
                   (best_priorities[s_t.first] == priority_gain and
-                   r.gain() > best_gains[s_t.first][s_t.first]);
+                   best_gains[s_t.first][s_t.first] < r.gain());
 
                 if (better_if_valid and r.is_valid()) {
                   best_priorities[s_t.first] = priority_gain;
@@ -628,8 +628,8 @@ void LocalSearch<Route,
                           !is_t_pickup);
 
           auto& current_best = best_gains[s_t.first][s_t.second];
-          if (r.gain_upper_bound() > current_best and r.is_valid() and
-              r.gain() > current_best) {
+          if (current_best < r.gain_upper_bound() and r.is_valid() and
+              current_best < r.gain()) {
             current_best = r.gain();
             best_ops[s_t.first][s_t.second] =
               std::make_unique<CrossExchange>(r);
@@ -743,8 +743,8 @@ void LocalSearch<Route,
                             !is_t_pickup);
 
             auto& current_best = best_gains[s_t.first][s_t.second];
-            if (r.gain_upper_bound() > current_best and r.is_valid() and
-                r.gain() > current_best) {
+            if (current_best < r.gain_upper_bound() and r.is_valid() and
+                current_best < r.gain()) {
               current_best = r.gain();
               best_ops[s_t.first][s_t.second] =
                 std::make_unique<MixedExchange>(r);
@@ -853,7 +853,7 @@ void LocalSearch<Route,
                    s_t.second,
                    t_rank);
 
-          if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid()) {
+          if (best_gains[s_t.first][s_t.second] < r.gain() and r.is_valid()) {
             best_gains[s_t.first][s_t.second] = r.gain();
             best_ops[s_t.first][s_t.second] = std::make_unique<TwoOpt>(r);
           }
@@ -952,7 +952,7 @@ void LocalSearch<Route,
                           s_t.second,
                           t_rank);
 
-          if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid()) {
+          if (best_gains[s_t.first][s_t.second] < r.gain() and r.is_valid()) {
             best_gains[s_t.first][s_t.second] = r.gain();
             best_ops[s_t.first][s_t.second] =
               std::make_unique<ReverseTwoOpt>(r);
@@ -1019,7 +1019,7 @@ void LocalSearch<Route,
                        s_t.second,
                        t_rank);
 
-            if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid()) {
+            if (best_gains[s_t.first][s_t.second] < r.gain() and r.is_valid()) {
               best_gains[s_t.first][s_t.second] = r.gain();
               best_ops[s_t.first][s_t.second] = std::make_unique<Relocate>(r);
             }
@@ -1100,8 +1100,8 @@ void LocalSearch<Route,
                     t_rank);
 
             auto& current_best = best_gains[s_t.first][s_t.second];
-            if (r.gain_upper_bound() > current_best and r.is_valid() and
-                r.gain() > current_best) {
+            if (current_best < r.gain_upper_bound() and r.is_valid() and
+                current_best < r.gain()) {
               current_best = r.gain();
               best_ops[s_t.first][s_t.second] = std::make_unique<OrOpt>(r);
             }
@@ -1124,7 +1124,7 @@ void LocalSearch<Route,
 #endif
         TSPFix op(_input, _sol_state, _sol[s_t.first], s_t.first);
 
-        if (op.gain() > best_gains[s_t.first][s_t.second] and op.is_valid()) {
+        if (best_gains[s_t.first][s_t.second] < op.gain() and op.is_valid()) {
           best_gains[s_t.first][s_t.second] = op.gain();
           best_ops[s_t.first][s_t.second] = std::make_unique<TSPFix>(op);
         }
@@ -1176,7 +1176,7 @@ void LocalSearch<Route,
                           s_rank,
                           t_rank);
 
-          if (r.gain() > best_gains[s_t.first][s_t.first] and r.is_valid()) {
+          if (best_gains[s_t.first][s_t.first] < r.gain() and r.is_valid()) {
             best_gains[s_t.first][s_t.first] = r.gain();
             best_ops[s_t.first][s_t.first] = std::make_unique<IntraExchange>(r);
           }
@@ -1252,8 +1252,8 @@ void LocalSearch<Route,
                                !is_t_pickup);
 
           auto& current_best = best_gains[s_t.first][s_t.second];
-          if (r.gain_upper_bound() > current_best and r.is_valid() and
-              r.gain() > current_best) {
+          if (current_best < r.gain_upper_bound() and r.is_valid() and
+              current_best < r.gain()) {
             current_best = r.gain();
             best_ops[s_t.first][s_t.first] =
               std::make_unique<IntraCrossExchange>(r);
@@ -1325,8 +1325,8 @@ void LocalSearch<Route,
                                t_rank,
                                !is_t_pickup);
           auto& current_best = best_gains[s_t.first][s_t.second];
-          if (r.gain_upper_bound() > current_best and r.is_valid() and
-              r.gain() > current_best) {
+          if (current_best < r.gain_upper_bound() and r.is_valid() and
+              current_best < r.gain()) {
             current_best = r.gain();
             best_ops[s_t.first][s_t.first] =
               std::make_unique<IntraMixedExchange>(r);
@@ -1388,7 +1388,7 @@ void LocalSearch<Route,
                           s_rank,
                           t_rank);
 
-          if (r.gain() > best_gains[s_t.first][s_t.first] and r.is_valid()) {
+          if (best_gains[s_t.first][s_t.first] < r.gain() and r.is_valid()) {
             best_gains[s_t.first][s_t.first] = r.gain();
             best_ops[s_t.first][s_t.first] = std::make_unique<IntraRelocate>(r);
           }
@@ -1465,8 +1465,8 @@ void LocalSearch<Route,
                        t_rank,
                        !is_pickup);
           auto& current_best = best_gains[s_t.first][s_t.second];
-          if (r.gain_upper_bound() > current_best and r.is_valid() and
-              r.gain() > current_best) {
+          if (current_best < r.gain_upper_bound() and r.is_valid() and
+              current_best < r.gain()) {
             current_best = r.gain();
             best_ops[s_t.first][s_t.first] = std::make_unique<IntraOrOpt>(r);
           }
@@ -1499,7 +1499,7 @@ void LocalSearch<Route,
                         s_rank,
                         t_rank);
           auto& current_best = best_gains[s_t.first][s_t.second];
-          if (r.gain() > current_best and r.is_valid()) {
+          if (current_best < r.gain() and r.is_valid()) {
             current_best = r.gain();
             best_ops[s_t.first][s_t.first] = std::make_unique<IntraTwoOpt>(r);
           }
@@ -1572,7 +1572,7 @@ void LocalSearch<Route,
                       s_t.second,
                       best_gains[s_t.first][s_t.second]);
 
-          if (pdr.gain() > best_gains[s_t.first][s_t.second] and
+          if (best_gains[s_t.first][s_t.second] < pdr.gain() and
               pdr.is_valid()) {
             best_gains[s_t.first][s_t.second] = pdr.gain();
             best_ops[s_t.first][s_t.second] = std::make_unique<PDShift>(pdr);
@@ -1625,7 +1625,7 @@ void LocalSearch<Route,
                          _sol[s_t.second],
                          s_t.second);
 
-        if (re.gain() > best_gains[s_t.first][s_t.second] and re.is_valid()) {
+        if (best_gains[s_t.first][s_t.second] < re.gain() and re.is_valid()) {
           best_gains[s_t.first][s_t.second] = re.gain();
           best_ops[s_t.first][s_t.second] = std::make_unique<RouteExchange>(re);
         }
@@ -1653,7 +1653,7 @@ void LocalSearch<Route,
                    s_t.second,
                    best_gains[s_t.first][s_t.second]);
 
-        if (r.gain() > best_gains[s_t.first][s_t.second]) {
+        if (best_gains[s_t.first][s_t.second] < r.gain()) {
           best_gains[s_t.first][s_t.second] = r.gain();
           best_ops[s_t.first][s_t.second] = std::make_unique<SwapStar>(r);
         }
@@ -1693,7 +1693,7 @@ void LocalSearch<Route,
                        empty_route_refs,
                        best_gains[s_t.first][s_t.second]);
 
-          if (r.gain() > best_gains[s_t.first][s_t.second]) {
+          if (best_gains[s_t.first][s_t.second] < r.gain()) {
             best_gains[s_t.first][s_t.second] = r.gain();
             best_ops[s_t.first][s_t.second] = std::make_unique<RouteSplit>(r);
           }
@@ -1720,7 +1720,7 @@ void LocalSearch<Route,
     if (best_priority == 0) {
       for (unsigned s_v = 0; s_v < _nb_vehicles; ++s_v) {
         for (unsigned t_v = 0; t_v < _nb_vehicles; ++t_v) {
-          if (best_gains[s_v][t_v] > best_gain) {
+          if (best_gain < best_gains[s_v][t_v]) {
             best_gain = best_gains[s_v][t_v];
             best_source = s_v;
             best_target = t_v;
@@ -2267,7 +2267,7 @@ void LocalSearch<Route,
         const auto& removal_gain = _sol_state.node_gains[v][r];
         current_gain = removal_gain - relocate_cost_lower_bound(v, r);
 
-        if (current_gain > best_gain) {
+        if (best_gain < current_gain) {
           // Only check validity if required.
           valid_removal = _input.vehicles[v].ok_for_travel_time(
                             current_travel_time - removal_gain.duration) &&
@@ -2280,7 +2280,7 @@ void LocalSearch<Route,
         current_gain =
           removal_gain - relocate_cost_lower_bound(v, r, delivery_r);
 
-        if (current_gain > best_gain &&
+        if (best_gain < current_gain &&
             _input.vehicles[v].ok_for_travel_time(current_travel_time -
                                                   removal_gain.duration)) {
           // Only check validity if required.
@@ -2301,7 +2301,7 @@ void LocalSearch<Route,
         }
       }
 
-      if (current_gain > best_gain and valid_removal) {
+      if (best_gain < current_gain and valid_removal) {
         best_gain = current_gain;
         best_rank = r;
       }

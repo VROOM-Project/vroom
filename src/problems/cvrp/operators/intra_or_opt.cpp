@@ -150,7 +150,7 @@ void IntraOrOpt::compute_gain() {
 
   stored_gain = s_gain;
 
-  if (_reversed_t_gain > _normal_t_gain) {
+  if (_normal_t_gain < _reversed_t_gain) {
     // Biggest potential gain is obtained when reversing edge.
     if (is_reverse_valid) {
       reverse_s_edge = true;

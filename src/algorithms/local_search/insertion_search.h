@@ -105,7 +105,7 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
   for (unsigned d_rank = begin_d_rank; d_rank < end_d_rank; ++d_rank) {
     d_adds[d_rank] =
       utils::addition_cost(input, j + 1, v_target, route.route, d_rank);
-    if (d_adds[d_rank] > result.eval) {
+    if (result.eval < d_adds[d_rank]) {
       valid_delivery_insertions[d_rank] = false;
     } else {
       valid_delivery_insertions[d_rank] =
@@ -124,7 +124,7 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
        ++pickup_r) {
     Eval p_add =
       utils::addition_cost(input, j, v_target, route.route, pickup_r);
-    if (p_add > result.eval) {
+    if (result.eval < p_add) {
       // Even without delivery insertion more expensive than current best.
       continue;
     }

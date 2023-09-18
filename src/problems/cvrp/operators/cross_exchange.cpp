@@ -183,7 +183,7 @@ Eval CrossExchange::gain_upper_bound() {
 void CrossExchange::compute_gain() {
   assert(_gain_upper_bound_computed);
   assert(s_is_normal_valid or s_is_reverse_valid);
-  if (_reversed_s_gain > _normal_s_gain) {
+  if (_normal_s_gain < _reversed_s_gain) {
     // Biggest potential gain is obtained when reversing edge.
     if (s_is_reverse_valid) {
       stored_gain += _reversed_s_gain;
@@ -202,7 +202,7 @@ void CrossExchange::compute_gain() {
   }
 
   assert(t_is_normal_valid or t_is_reverse_valid);
-  if (_reversed_t_gain > _normal_t_gain) {
+  if (_normal_t_gain < _reversed_t_gain) {
     // Biggest potential gain is obtained when reversing edge.
     if (t_is_reverse_valid) {
       stored_gain += _reversed_t_gain;

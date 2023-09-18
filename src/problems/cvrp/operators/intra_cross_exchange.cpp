@@ -170,7 +170,7 @@ void IntraCrossExchange::compute_gain() {
 
   if (s_normal_t_normal_is_valid) {
     const auto current_gain = _normal_s_gain + _normal_t_gain;
-    if (current_gain > stored_gain) {
+    if (stored_gain < current_gain) {
       stored_gain = current_gain;
       reverse_s_edge = false;
       reverse_t_edge = false;
@@ -179,7 +179,7 @@ void IntraCrossExchange::compute_gain() {
 
   if (s_normal_t_reverse_is_valid) {
     const auto current_gain = _reversed_s_gain + _normal_t_gain;
-    if (current_gain > stored_gain) {
+    if (stored_gain < current_gain) {
       stored_gain = current_gain;
       reverse_s_edge = false;
       reverse_t_edge = true;
@@ -188,7 +188,7 @@ void IntraCrossExchange::compute_gain() {
 
   if (s_reverse_t_reverse_is_valid) {
     const auto current_gain = _reversed_s_gain + _reversed_t_gain;
-    if (current_gain > stored_gain) {
+    if (stored_gain < current_gain) {
       stored_gain = current_gain;
       reverse_s_edge = true;
       reverse_t_edge = true;
@@ -197,7 +197,7 @@ void IntraCrossExchange::compute_gain() {
 
   if (s_reverse_t_normal_is_valid) {
     const auto current_gain = _normal_s_gain + _reversed_t_gain;
-    if (current_gain > stored_gain) {
+    if (stored_gain < current_gain) {
       stored_gain = current_gain;
       reverse_s_edge = true;
       reverse_t_edge = false;
