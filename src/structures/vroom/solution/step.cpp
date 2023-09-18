@@ -22,7 +22,7 @@ Step::Step(STEP_TYPE type, Location location, Amount load)
     arrival(0),
     duration(0),
     waiting_time(0) {
-  assert(step_type == STEP_TYPE::START or step_type == STEP_TYPE::END);
+  assert(step_type == STEP_TYPE::START || step_type == STEP_TYPE::END);
 }
 
 Step::Step(const Job& job, const UserDuration setup, Amount load)

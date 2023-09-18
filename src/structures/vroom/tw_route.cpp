@@ -202,7 +202,7 @@ void TWRoute::fwd_update_earliest_from(const Input& input, Index rank) {
     // Check consistency except for situation where latest date has
     // been reset to 0 to force backward propagation after this call
     // to fwd_update_earliest_from.
-    assert(current_earliest <= latest[i] or (i == rank + 1 and latest[i] == 0));
+    assert(current_earliest <= latest[i] || (i == rank + 1 && latest[i] == 0));
     if (current_earliest == earliest[i]) {
       // There won't be any further update so stop earliest date
       // propagation.
@@ -531,7 +531,7 @@ OrderChoice TWRoute::order_choice(const Input& input,
   const auto& v = input.vehicles[vehicle_rank];
   const auto& j = input.jobs[job_rank];
 
-  if (oc.j_tw == j.tws.end() or oc.b_tw == b.tws.end()) {
+  if (oc.j_tw == j.tws.end() || oc.b_tw == b.tws.end()) {
     // If either job or break can't fit first, then none of the
     // orderings are valid.
     return oc;
@@ -553,7 +553,7 @@ OrderChoice TWRoute::order_choice(const Input& input,
   if (new_b_tw == b.tws.end()) {
     // Break does not fit after job due to its time windows. Only
     // option is to choose break first, if valid for max_load.
-    oc.add_break_first = !check_max_load or b.is_valid_for_load(current_load);
+    oc.add_break_first = !check_max_load || b.is_valid_for_load(current_load);
     return oc;
   }
 
@@ -577,8 +577,8 @@ OrderChoice TWRoute::order_choice(const Input& input,
     return oc;
   }
 
-  if (check_max_load and j.type == JOB_TYPE::SINGLE and
-      (!b.is_valid_for_load(current_load + j.pickup - j.delivery) or
+  if (check_max_load && j.type == JOB_TYPE::SINGLE &&
+      (!b.is_valid_for_load(current_load + j.pickup - j.delivery) ||
        !(j.pickup <= bwd_smallest_breaks_load_margin[v.break_rank(b.id)]))) {
     // Break won't fit right after job for load reason.
     oc.add_break_first = b.is_valid_for_load(current_load);
@@ -586,7 +586,7 @@ OrderChoice TWRoute::order_choice(const Input& input,
   }
 
   // Try putting break first then job.
-  if (check_max_load and !b.is_valid_for_load(current_load)) {
+  if (check_max_load && !b.is_valid_for_load(current_load)) {
     // Not doable based on max_load, only option is to choose job
     // first.
     oc.add_job_first = true;
@@ -652,8 +652,8 @@ OrderChoice TWRoute::order_choice(const Input& input,
       std::find_if(matching_d.tws.begin(),
                    matching_d.tws.end(),
                    [&](const auto& tw) { return pb_d_candidate <= tw.end; });
-    if (pb_d_tw != matching_d.tws.end() and
-        (!check_max_load or b.is_valid_for_load(current_load + j.pickup))) {
+    if (pb_d_tw != matching_d.tws.end() &&
+        (!check_max_load || b.is_valid_for_load(current_load + j.pickup))) {
       // pickup -> break -> delivery is doable, choose pickup first.
       oc.add_job_first = true;
       return oc;
@@ -683,7 +683,7 @@ OrderChoice TWRoute::order_choice(const Input& input,
         });
       if (after_d_b_tw != b.tws.end()) {
         // pickup -> delivery -> break is doable, choose pickup first.
-        assert(!check_max_load or b.is_valid_for_load(current_load));
+        assert(!check_max_load || b.is_valid_for_load(current_load));
         oc.add_job_first = true;
         return oc;
       }
@@ -704,7 +704,7 @@ OrderChoice TWRoute::order_choice(const Input& input,
     // on earliest deadline, except for deliveries. If a delivery
     // without TW constraint is postponed, it can introduce arbitrary
     // waiting time between zero max_load breaks.
-    if (j.type == JOB_TYPE::DELIVERY or oc.j_tw->end <= oc.b_tw->end) {
+    if (j.type == JOB_TYPE::DELIVERY || oc.j_tw->end <= oc.b_tw->end) {
       oc.add_job_first = true;
     } else {
       oc.add_break_first = true;
@@ -731,7 +731,7 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
 
   // Override this value if vehicle does not need this check anyway to
   // spare some work.
-  check_max_load = v.has_break_max_load and check_max_load;
+  check_max_load = v.has_break_max_load && check_max_load;
 
   PreviousInfo current(0, 0);
   NextInfo next(0, 0);
@@ -789,7 +789,7 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
     assert(delivery_in_range(first_rank, last_rank) <= previous_init_load);
     Amount delta_delivery = delivery - delivery_in_range(first_rank, last_rank);
 
-    if (current_break != 0 and
+    if (current_break != 0 &&
         !(delta_delivery <=
           fwd_smallest_breaks_load_margin[current_break - 1])) {
       return false;
@@ -801,7 +801,7 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
   // Propagate earliest dates for all jobs and breaks in their
   // respective addition ranges.
   auto current_job = first_job;
-  while (current_job != last_job or current_break != last_break) {
+  while (current_job != last_job || current_break != last_break) {
     if (current_job == last_job) {
       // Compute earliest end date for break after last inserted jobs.
       const auto& b = v.breaks[current_break];
@@ -816,7 +816,7 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
         return false;
       }
 
-      if (check_max_load and !b.is_valid_for_load(current_load)) {
+      if (check_max_load && !b.is_valid_for_load(current_load)) {
         // Break does not fit due to current load.
         return false;
       }
@@ -887,7 +887,7 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
                            current_load,
                            check_max_load);
 
-    if (!oc.add_job_first and !oc.add_break_first) {
+    if (!oc.add_job_first && !oc.add_break_first) {
       // Infeasible insertion.
       return false;
     }
@@ -896,7 +896,7 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
     // time with given insertion choice.
     assert(oc.add_job_first xor oc.add_break_first);
     if (oc.add_break_first) {
-      if (check_max_load and !b.is_valid_for_load(current_load)) {
+      if (check_max_load && !b.is_valid_for_load(current_load)) {
         return false;
       }
 
@@ -936,7 +936,7 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
     }
   }
 
-  if (check_max_load and last_break < v.breaks.size()) {
+  if (check_max_load && last_break < v.breaks.size()) {
     const auto previous_final_load =
       (route.empty()) ? input.zero_amount() : load_at_step(last_rank);
 
@@ -947,7 +947,7 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
     }
   }
 
-  if (last_rank < route.size() and
+  if (last_rank < route.size() &&
       input.jobs[route[last_rank]].index() != current.location_index) {
     // There is a task right after replace range and setup time does
     // apply to it.
@@ -1081,7 +1081,7 @@ void TWRoute::replace(const Input& input,
   Amount current_load = previous_init_load + delta_delivery;
 
   // Update all break load margins prior to modified range.
-  assert(current_break == 0 or
+  assert(current_break == 0 ||
          delta_delivery <= fwd_smallest_breaks_load_margin[current_break - 1]);
   for (std::size_t i = 0; i < current_break; ++i) {
     assert(delta_delivery <= fwd_smallest_breaks_load_margin[i]);
@@ -1157,7 +1157,7 @@ void TWRoute::replace(const Input& input,
   // Propagate earliest dates (and action times) for all jobs and
   // breaks in their respective addition ranges.
   auto current_job = first_job;
-  while (current_job != last_job or current_break != last_break) {
+  while (current_job != last_job || current_break != last_break) {
     if (current_job == last_job) {
       // Compute earliest end date for break after last inserted jobs.
       const auto& b = v.breaks[current_break];
@@ -1377,7 +1377,7 @@ void TWRoute::replace(const Input& input,
 
       const auto new_action_time =
         (j.index() == current.location_index) ? j.service : j.setup + j.service;
-      assert(action_time[current_job_rank] == j.service or
+      assert(action_time[current_job_rank] == j.service ||
              action_time[current_job_rank] == j.service + j.setup);
 
       const bool current_action_time_changed =
@@ -1410,8 +1410,8 @@ void TWRoute::replace(const Input& input,
         assert(j_tw != j.tws.end());
 
         earliest[0] = std::max(current.earliest, j_tw->start);
-        assert(earliest[0] <= latest[0] or
-               (current_action_time_changed and latest[current_job_rank] == 0));
+        assert(earliest[0] <= latest[0] ||
+               (current_action_time_changed && latest[current_job_rank] == 0));
 
         action_time[0] = new_action_time;
       } else {

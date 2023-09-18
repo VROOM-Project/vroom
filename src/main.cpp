@@ -160,7 +160,7 @@ int main(int argc, char** argv) {
     cl_args.router = vroom::ROUTER::ORS;
   } else if (router_arg == "valhalla") {
     cl_args.router = vroom::ROUTER::VALHALLA;
-  } else if (!router_arg.empty() and router_arg != "osrm") {
+  } else if (!router_arg.empty() && router_arg != "osrm") {
     auto error_code = vroom::InputException("").error_code;
     std::string message = "Invalid routing engine: " + router_arg + ".";
     std::cerr << "[Error] " << message << std::endl;

@@ -62,8 +62,8 @@ TSP::TSP(const Input& input, std::vector<Index>&& job_ranks, Index vehicle_rank)
   }
   if (_has_end) {
     // Add end and remember rank in _matrix.
-    if (_has_start and (_input.vehicles[_vehicle_rank].start.value().index() ==
-                        _input.vehicles[_vehicle_rank].end.value().index())) {
+    if (_has_start && (_input.vehicles[_vehicle_rank].start.value().index() ==
+                       _input.vehicles[_vehicle_rank].end.value().index())) {
       // Avoiding duplicate for identical ranks.
       _end = _start;
     } else {
@@ -94,12 +94,12 @@ TSP::TSP(const Input& input, std::vector<Index>&& job_ranks, Index vehicle_rank)
     _matrix[i][i] = INFINITE_USER_COST;
   }
 
-  _round_trip = _has_start and _has_end and (_start == _end);
+  _round_trip = _has_start && _has_end && (_start == _end);
 
   if (!_round_trip) {
     // Dealing with open tour cases. Exactly one of the following
     // happens.
-    if (_has_start and !_has_end) {
+    if (_has_start && !_has_end) {
       // Forcing first location as start, end location decided during
       // optimization.
       for (Index i = 0; i < _matrix.size(); ++i) {
@@ -108,7 +108,7 @@ TSP::TSP(const Input& input, std::vector<Index>&& job_ranks, Index vehicle_rank)
         }
       }
     }
-    if (!_has_start and _has_end) {
+    if (!_has_start && _has_end) {
       // Forcing last location as end, start location decided during
       // optimization.
       for (Index j = 0; j < _matrix.size(); ++j) {
@@ -117,13 +117,13 @@ TSP::TSP(const Input& input, std::vector<Index>&& job_ranks, Index vehicle_rank)
         }
       }
     }
-    if (_has_start and _has_end) {
+    if (_has_start && _has_end) {
       // Forcing first location as start, last location as end to
       // produce an open tour.
       assert(_start != _end);
       _matrix[_end][_start] = 0;
       for (Index j = 0; j < _matrix.size(); ++j) {
-        if ((j != _start) and (j != _end)) {
+        if ((j != _start) && (j != _end)) {
           _matrix[_end][j] = INFINITE_USER_COST;
         }
       }
@@ -135,7 +135,7 @@ TSP::TSP(const Input& input, std::vector<Index>&& job_ranks, Index vehicle_rank)
 
   const UserCost& (*sym_f)(const UserCost&, const UserCost&) =
     std::min<UserCost>;
-  if ((_has_start and !_has_end) or (!_has_start and _has_end)) {
+  if ((_has_start && !_has_end) || (!_has_start && _has_end)) {
     // Using symmetrization with max as when only start or only end is
     // forced, the matrix has a line or a column filled with zeros.
     sym_f = std::max<UserCost>;
@@ -169,7 +169,7 @@ std::vector<Index> TSP::raw_solve(unsigned nb_threads,
   std::list<Index> christo_sol = tsp::christofides(_symmetrized_matrix);
 
   Deadline sym_deadline = deadline;
-  if (deadline.has_value() and !_is_symmetric) {
+  if (deadline.has_value() && !_is_symmetric) {
     // Rule of thumb if problem is asymmetric: dedicate 70% of the
     // remaining available solving time to the symmetric local search,
     // then the rest to the asymmetric version.
@@ -192,8 +192,7 @@ std::vector<Index> TSP::raw_solve(unsigned nb_threads,
   // different neighbourhoods are performed, stopping when reaching a
   // local minima.
   tsp::LocalSearch sym_ls(_symmetrized_matrix,
-                          std::make_pair(!_round_trip and _has_start and
-                                           _has_end,
+                          std::make_pair(!_round_trip && _has_start && _has_end,
                                          _start),
                           christo_sol,
                           nb_threads);
@@ -211,7 +210,7 @@ std::vector<Index> TSP::raw_solve(unsigned nb_threads,
 
     // All or-opt moves.
     sym_or_opt_gain = sym_ls.perform_all_or_opt_steps(sym_deadline);
-  } while ((sym_two_opt_gain > 0) or (sym_relocate_gain > 0) or
+  } while ((sym_two_opt_gain > 0) || (sym_relocate_gain > 0) ||
            (sym_or_opt_gain > 0));
 
   Index first_loc_index;
@@ -237,7 +236,7 @@ std::vector<Index> TSP::raw_solve(unsigned nb_threads,
     // Local search on asymmetric problem.
     tsp::LocalSearch
       asym_ls(_matrix,
-              std::make_pair(!_round_trip and _has_start and _has_end, _start),
+              std::make_pair(!_round_trip && _has_start && _has_end, _start),
               (direct_cost <= reverse_cost) ? current_sol : reverse_current_sol,
               nb_threads);
 
@@ -258,14 +257,14 @@ std::vector<Index> TSP::raw_solve(unsigned nb_threads,
 
       // All or-opt moves.
       asym_or_opt_gain = asym_ls.perform_all_or_opt_steps(deadline);
-    } while ((asym_two_opt_gain > 0) or (asym_relocate_gain > 0) or
-             (asym_or_opt_gain > 0) or (asym_avoid_loops_gain > 0));
+    } while ((asym_two_opt_gain > 0) || (asym_relocate_gain > 0) ||
+             (asym_or_opt_gain > 0) || (asym_avoid_loops_gain > 0));
 
     current_sol = asym_ls.get_tour(first_loc_index);
   }
 
   // Deal with open tour cases requiring adaptation.
-  if (!_has_start and _has_end) {
+  if (!_has_start && _has_end) {
     // The tour has been listed starting with the "forced" end. This
     // index has to be popped and put back, the next element being the
     // chosen start resulting from the optimization.
@@ -279,7 +278,7 @@ std::vector<Index> TSP::raw_solve(unsigned nb_threads,
     // Jobs start further away in the list.
     current_sol.pop_front();
   }
-  if (!_round_trip and _has_end) {
+  if (!_round_trip && _has_end) {
     current_sol.pop_back();
   }
 

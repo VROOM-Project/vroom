@@ -48,7 +48,7 @@ Vehicle::Vehicle(Id id,
       std::any_of(breaks.cbegin(), breaks.cend(), [](const auto& b) {
         return b.max_load.has_value();
       })) {
-  if (!static_cast<bool>(start) and !static_cast<bool>(end)) {
+  if (!static_cast<bool>(start) && !static_cast<bool>(end)) {
     throw InputException("No start or end specified for vehicle " +
                          std::to_string(id) + '.');
   }
@@ -61,7 +61,7 @@ Vehicle::Vehicle(Id id,
     }
     break_id_to_rank[b.id] = i;
 
-    if (b.max_load.has_value() and
+    if (b.max_load.has_value() &&
         b.max_load.value().size() != capacity.size()) {
       throw InputException("Inconsistent break max_load size for break: " +
                            std::to_string(b.id) + ".");
@@ -86,7 +86,7 @@ Vehicle::Vehicle(Id id,
         throw InputException("Unexpected start in input steps for vehicle " +
                              std::to_string(id) + ".");
       }
-      if (input_steps[i].type == STEP_TYPE::END and
+      if (input_steps[i].type == STEP_TYPE::END &&
           (i != input_steps.size() - 1)) {
         throw InputException("Unexpected end in input steps for vehicle " +
                              std::to_string(id) + ".");
@@ -110,14 +110,14 @@ bool Vehicle::has_end() const {
 }
 
 bool Vehicle::has_same_locations(const Vehicle& other) const {
-  bool same = (this->has_start() == other.has_start()) and
+  bool same = (this->has_start() == other.has_start()) &&
               (this->has_end() == other.has_end());
 
-  if (same and this->has_start()) {
+  if (same && this->has_start()) {
     same = this->start.value() == other.start.value();
   }
 
-  if (same and this->has_end()) {
+  if (same && this->has_end()) {
     same = this->end.value() == other.end.value();
   }
 
@@ -125,7 +125,7 @@ bool Vehicle::has_same_locations(const Vehicle& other) const {
 }
 
 bool Vehicle::has_same_profile(const Vehicle& other) const {
-  return (this->profile == other.profile) and
+  return (this->profile == other.profile) &&
          (this->cost_wrapper.get_discrete_duration_factor() ==
           other.cost_wrapper.get_discrete_duration_factor());
 }

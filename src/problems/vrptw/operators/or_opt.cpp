@@ -33,7 +33,7 @@ OrOpt::OrOpt(const Input& input,
 
 bool OrOpt::is_valid() {
   bool valid =
-    cvrp::OrOpt::is_valid() and _tw_s_route.is_valid_removal(_input, s_rank, 2);
+    cvrp::OrOpt::is_valid() && _tw_s_route.is_valid_removal(_input, s_rank, 2);
 
   if (valid) {
     // Keep edge direction.
@@ -55,7 +55,7 @@ bool OrOpt::is_valid() {
                                                             t_rank,
                                                             t_rank);
 
-    valid = is_normal_valid or is_reverse_valid;
+    valid = is_normal_valid || is_reverse_valid;
   }
 
   return valid;

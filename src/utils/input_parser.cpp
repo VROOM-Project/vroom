@@ -19,8 +19,8 @@ namespace vroom::io {
 // Helper to get optional array of coordinates.
 inline Coordinates parse_coordinates(const rapidjson::Value& object,
                                      const char* key) {
-  if (!object[key].IsArray() or (object[key].Size() < 2) or
-      !object[key][0].IsNumber() or !object[key][1].IsNumber()) {
+  if (!object[key].IsArray() || (object[key].Size() < 2) ||
+      !object[key][0].IsNumber() || !object[key][1].IsNumber()) {
     throw InputException("Invalid " + std::string(key) + " array.");
   }
   return {object[key][0].GetDouble(), object[key][1].GetDouble()};
@@ -143,7 +143,7 @@ inline void check_id(const rapidjson::Value& v, const std::string& type) {
   if (!v.IsObject()) {
     throw InputException("Invalid " + type + ".");
   }
-  if (!v.HasMember("id") or !v["id"].IsUint64()) {
+  if (!v.HasMember("id") || !v["id"].IsUint64()) {
     throw InputException("Invalid or missing id for " + type + ".");
   }
 }
@@ -152,23 +152,23 @@ inline void check_shipment(const rapidjson::Value& v) {
   if (!v.IsObject()) {
     throw InputException("Invalid shipment.");
   }
-  if (!v.HasMember("pickup") or !v["pickup"].IsObject()) {
+  if (!v.HasMember("pickup") || !v["pickup"].IsObject()) {
     throw InputException("Missing pickup for shipment.");
   }
-  if (!v.HasMember("delivery") or !v["delivery"].IsObject()) {
+  if (!v.HasMember("delivery") || !v["delivery"].IsObject()) {
     throw InputException("Missing delivery for shipment.");
   }
 }
 
 inline void check_location(const rapidjson::Value& v, const std::string& type) {
-  if (!v.HasMember("location") or !v["location"].IsArray()) {
+  if (!v.HasMember("location") || !v["location"].IsArray()) {
     throw InputException("Invalid location for " + type + " " +
                          std::to_string(v["id"].GetUint64()) + ".");
   }
 }
 
 inline TimeWindow get_time_window(const rapidjson::Value& tw) {
-  if (!tw.IsArray() or tw.Size() < 2 or !tw[0].IsUint() or !tw[1].IsUint()) {
+  if (!tw.IsArray() || tw.Size() < 2 || !tw[0].IsUint() || !tw[1].IsUint()) {
     throw InputException("Invalid time-window.");
   }
   return TimeWindow(tw[0].GetUint(), tw[1].GetUint());
@@ -185,7 +185,7 @@ inline TimeWindow get_vehicle_time_window(const rapidjson::Value& v) {
 inline std::vector<TimeWindow> get_time_windows(const rapidjson::Value& o) {
   std::vector<TimeWindow> tws;
   if (o.HasMember("time_windows")) {
-    if (!o["time_windows"].IsArray() or o["time_windows"].Empty()) {
+    if (!o["time_windows"].IsArray() || o["time_windows"].Empty()) {
       throw InputException("Invalid time_windows array for object " +
                            std::to_string(o["id"].GetUint64()) + ".");
     }
@@ -233,8 +233,8 @@ inline std::vector<Break> get_vehicle_breaks(const rapidjson::Value& v,
   }
 
   std::sort(breaks.begin(), breaks.end(), [](const auto& a, const auto& b) {
-    return a.tws[0].start < b.tws[0].start or
-           (a.tws[0].start == b.tws[0].start and a.tws[0].end < b.tws[0].end);
+    return a.tws[0].start < b.tws[0].start ||
+           (a.tws[0].start == b.tws[0].start && a.tws[0].end < b.tws[0].end);
   });
 
   return breaks;
@@ -323,7 +323,7 @@ inline std::vector<VehicleStep> get_vehicle_steps(const rapidjson::Value& v) {
         continue;
       }
 
-      if (!json_step.HasMember("id") or !json_step["id"].IsUint64()) {
+      if (!json_step.HasMember("id") || !json_step["id"].IsUint64()) {
         throw InputException("Invalid id in steps for vehicle " +
                              std::to_string(v["id"].GetUint64()) + ".");
       }
@@ -363,7 +363,7 @@ inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
   // optional start location.
   bool has_start_coords = json_vehicle.HasMember("start");
   bool has_start_index = json_vehicle.HasMember("start_index");
-  if (has_start_index and !json_vehicle["start_index"].IsUint()) {
+  if (has_start_index && !json_vehicle["start_index"].IsUint()) {
     throw InputException("Invalid start_index for vehicle " +
                          std::to_string(v_id) + ".");
   }
@@ -387,7 +387,7 @@ inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
   // optional end location.
   bool has_end_coords = json_vehicle.HasMember("end");
   bool has_end_index = json_vehicle.HasMember("end_index");
-  if (has_end_index and !json_vehicle["end_index"].IsUint()) {
+  if (has_end_index && !json_vehicle["end_index"].IsUint()) {
     throw InputException("Invalid end_index for vehicle" +
                          std::to_string(v_id) + ".");
   }
@@ -433,7 +433,7 @@ inline Location get_task_location(const rapidjson::Value& v,
   // Check what info are available to build task location.
   bool has_location_coords = v.HasMember("location");
   bool has_location_index = v.HasMember("location_index");
-  if (has_location_index and !v["location_index"].IsUint()) {
+  if (has_location_index && !v["location_index"].IsUint()) {
     throw InputException("Invalid location_index for " + type + " " +
                          std::to_string(v["id"].GetUint64()) + ".");
   }
@@ -456,8 +456,8 @@ inline Job get_job(const rapidjson::Value& json_job, unsigned amount_size) {
   // Only for retro-compatibility: when no pickup and delivery keys
   // are defined and (deprecated) amount key is present, it should be
   // interpreted as a delivery.
-  bool need_amount_compat = json_job.HasMember("amount") and
-                            !json_job.HasMember("delivery") and
+  bool need_amount_compat = json_job.HasMember("amount") &&
+                            !json_job.HasMember("delivery") &&
                             !json_job.HasMember("pickup");
 
   return Job(json_job["id"].GetUint64(),
@@ -482,7 +482,7 @@ template <class T> inline Matrix<T> get_matrix(rapidjson::Value& m) {
 
   Matrix<T> matrix(matrix_size);
   for (rapidjson::SizeType i = 0; i < matrix_size; ++i) {
-    if (!m[i].IsArray() or m[i].Size() != matrix_size) {
+    if (!m[i].IsArray() || m[i].Size() != matrix_size) {
       throw InputException("Unexpected matrix line length.");
     }
     rapidjson::Document::Array mi = m[i].GetArray();
@@ -510,23 +510,23 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
   }
 
   // Main checks for valid json input.
-  bool has_jobs = json_input.HasMember("jobs") and
-                  json_input["jobs"].IsArray() and !json_input["jobs"].Empty();
-  bool has_shipments = json_input.HasMember("shipments") and
-                       json_input["shipments"].IsArray() and
+  bool has_jobs = json_input.HasMember("jobs") &&
+                  json_input["jobs"].IsArray() && !json_input["jobs"].Empty();
+  bool has_shipments = json_input.HasMember("shipments") &&
+                       json_input["shipments"].IsArray() &&
                        !json_input["shipments"].Empty();
-  if (!has_jobs and !has_shipments) {
+  if (!has_jobs && !has_shipments) {
     throw InputException("Invalid jobs or shipments.");
   }
 
-  if (!json_input.HasMember("vehicles") or !json_input["vehicles"].IsArray() or
+  if (!json_input.HasMember("vehicles") || !json_input["vehicles"].IsArray() ||
       json_input["vehicles"].Empty()) {
     throw InputException("Invalid vehicles.");
   }
   const auto& first_vehicle = json_input["vehicles"][0];
   check_id(first_vehicle, "vehicle");
-  bool first_vehicle_has_capacity = (first_vehicle.HasMember("capacity") and
-                                     first_vehicle["capacity"].IsArray() and
+  bool first_vehicle_has_capacity = (first_vehicle.HasMember("capacity") &&
+                                     first_vehicle["capacity"].IsArray() &&
                                      first_vehicle["capacity"].Size() > 0);
   const unsigned amount_size =
     first_vehicle_has_capacity ? first_vehicle["capacity"].Size() : 0;

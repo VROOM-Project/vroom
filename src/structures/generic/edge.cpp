@@ -19,13 +19,13 @@ Edge<T>::Edge(Index first_vertex, Index second_vertex, T weight)
 }
 
 template <class T> bool Edge<T>::operator<(const Edge& rhs) const {
-  return (this->_first_vertex < rhs._first_vertex) or
-         ((this->_first_vertex == rhs._first_vertex) and
+  return (this->_first_vertex < rhs._first_vertex) ||
+         ((this->_first_vertex == rhs._first_vertex) &&
           (this->_second_vertex < rhs._second_vertex));
 }
 
 template <class T> bool Edge<T>::operator==(const Edge& rhs) const {
-  return (this->_first_vertex == rhs._first_vertex) and
+  return (this->_first_vertex == rhs._first_vertex) &&
          (this->_second_vertex == rhs._second_vertex);
 }
 

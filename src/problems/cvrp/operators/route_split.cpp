@@ -101,7 +101,7 @@ std::vector<Index> RouteSplit::update_candidates() const {
 
 bool RouteSplit::invalidated_by(Index rank) const {
   assert(choice.gain != NO_GAIN);
-  return rank == _empty_route_ranks[choice.v_begin] or
+  return rank == _empty_route_ranks[choice.v_begin] ||
          rank == _empty_route_ranks[choice.v_end];
 }
 

@@ -137,7 +137,7 @@ void Input::check_job(Job& job) {
   _has_all_coordinates = _has_all_coordinates && job.location.has_coordinates();
 
   // Check for time-windows and skills.
-  _has_TW = _has_TW || (!(job.tws.size() == 1) or !job.tws[0].is_default());
+  _has_TW = _has_TW || (!(job.tws.size() == 1) || !job.tws[0].is_default());
   _has_skills = _has_skills || !job.skills.empty();
 
   if (!job.location.user_index()) {
@@ -303,8 +303,7 @@ void Input::add_vehicle(const Vehicle& vehicle) {
   if (current_v.has_end()) {
     auto& end_loc = current_v.end.value();
 
-    if (current_v.has_start() and
-        (has_location_index != end_loc.user_index())) {
+    if (current_v.has_start() && (has_location_index != end_loc.user_index())) {
       // Start and end provided in a non-consistent manner with regard
       // to location index definition.
       throw InputException("Missing start_index or end_index.");
@@ -363,7 +362,7 @@ void Input::add_vehicle(const Vehicle& vehicle) {
   // Check whether all locations have coordinates.
   _has_all_coordinates = _has_all_coordinates && has_all_coordinates;
 
-  _has_initial_routes = _has_initial_routes or !current_v.steps.empty();
+  _has_initial_routes = _has_initial_routes || !current_v.steps.empty();
 
   // Check for homogeneous locations among vehicles.
   if (vehicles.size() > 1) {
@@ -528,7 +527,7 @@ void Input::set_extra_compatibility() {
 
         bool is_shipment_pickup = (jobs[j].type == JOB_TYPE::PICKUP);
 
-        if (is_compatible and _has_TW) {
+        if (is_compatible && _has_TW) {
           if (jobs[j].type == JOB_TYPE::SINGLE) {
             is_compatible =
               is_compatible &&
@@ -567,7 +566,7 @@ void Input::set_vehicles_compatibility() {
     _vehicle_to_vehicle_compatibility[v1][v1] = true;
     for (std::size_t v2 = v1 + 1; v2 < vehicles.size(); ++v2) {
       for (std::size_t j = 0; j < jobs.size(); ++j) {
-        if (_vehicle_to_job_compatibility[v1][j] and
+        if (_vehicle_to_job_compatibility[v1][j] &&
             _vehicle_to_job_compatibility[v2][j]) {
           _vehicle_to_vehicle_compatibility[v1][v2] = true;
           _vehicle_to_vehicle_compatibility[v2][v1] = true;
@@ -587,13 +586,13 @@ void Input::set_vehicles_TSP_flag() {
     // Check if vehicle TW is in the intersection of its compatible
     // jobs TW, i.e. all its compatible jobs have at least one TW
     // containing it.
-    for (std::size_t j = 0; j < jobs.size() and _good_TSP_candidate[v]; ++j) {
+    for (std::size_t j = 0; j < jobs.size() && _good_TSP_candidate[v]; ++j) {
       _good_TSP_candidate[v] =
-        !vehicle_ok_with_job(v, j) or
+        !vehicle_ok_with_job(v, j) ||
         std::any_of(jobs[j].tws.cbegin(),
                     jobs[j].tws.cend(),
                     [&](const auto& tw) {
-                      return tw.start <= vehicle.tw.start and
+                      return tw.start <= vehicle.tw.start &&
                              vehicle.tw.end <= tw.end;
                     });
     }
@@ -628,7 +627,7 @@ void Input::set_vehicles_costs() {
 }
 
 void Input::set_vehicles_max_tasks() {
-  if (_has_jobs and !_has_shipments and _amount_size > 0) {
+  if (_has_jobs && !_has_shipments && _amount_size > 0) {
     // For job-only instances where capacity restrictions apply:
     // compute an upper bound of the number of jobs for each vehicle
     // based on pickups load and delivery loads. This requires sorting
@@ -672,13 +671,12 @@ void Input::set_vehicles_max_tasks() {
         std::size_t doable_deliveries = 0;
 
         for (std::size_t j = 0; j < jobs.size(); ++j) {
-          if (vehicle_ok_with_job(v, job_pickups_per_component[i][j].rank) and
+          if (vehicle_ok_with_job(v, job_pickups_per_component[i][j].rank) &&
               pickup_sum <= vehicles[v].capacity[i]) {
             pickup_sum += job_pickups_per_component[i][j].amount;
             ++doable_pickups;
           }
-          if (vehicle_ok_with_job(v,
-                                  job_deliveries_per_component[i][j].rank) and
+          if (vehicle_ok_with_job(v, job_deliveries_per_component[i][j].rank) &&
               delivery_sum <= vehicles[v].capacity[i]) {
             delivery_sum += job_deliveries_per_component[i][j].amount;
             ++doable_deliveries;
@@ -757,8 +755,7 @@ void Input::set_jobs_vehicles_evals() {
 
     Index last_job_index = j_index;
     if (is_pickup) {
-      assert((j + 1 < jobs.size()) and
-             (jobs[j + 1].type == JOB_TYPE::DELIVERY));
+      assert((j + 1 < jobs.size()) && (jobs[j + 1].type == JOB_TYPE::DELIVERY));
       last_job_index = jobs[j + 1].index();
     }
 
@@ -876,11 +873,11 @@ void Input::set_vehicle_steps_ranks() {
 }
 
 void Input::set_matrices(unsigned nb_thread) {
-  if ((!_durations_matrices.empty() or !_costs_matrices.empty()) and
+  if ((!_durations_matrices.empty() || !_costs_matrices.empty()) &&
       !_has_custom_location_index) {
     throw InputException("Missing location index.");
   }
-  if ((_durations_matrices.empty() and _costs_matrices.empty()) and
+  if ((_durations_matrices.empty() && _costs_matrices.empty()) &&
       _has_custom_location_index) {
     throw InputException(
       "Unexpected location index while no custom matrices provided.");
@@ -938,8 +935,8 @@ void Input::set_matrices(unsigned nb_thread) {
         const bool has_distance_matrix =
           (distances_m != _distances_matrices.end());
         const bool define_distances =
-          has_distance_matrix and (distances_m->second.size() == 0);
-        if (define_durations or define_distances) {
+          has_distance_matrix && (distances_m->second.size() == 0);
+        if (define_durations || define_distances) {
           if (_locations.size() == 1) {
             durations_m->second = Matrix<UserDuration>(1);
             distances_m->second = Matrix<UserDistance>(1);
@@ -999,7 +996,7 @@ void Input::set_matrices(unsigned nb_thread) {
             " profile.");
         }
 
-        if (has_distance_matrix and
+        if (has_distance_matrix &&
             distances_m->second.size() <= _max_matrices_used_index) {
           throw InputException(
             "location_index exceeding distances matrix size for " + profile +
@@ -1073,7 +1070,7 @@ Solution Input::solve(unsigned exploration_level,
                       unsigned nb_thread,
                       const Timeout& timeout,
                       const std::vector<HeuristicParameters>& h_param) {
-  if (_geometry and !_all_locations_have_coords) {
+  if (_geometry && !_all_locations_have_coords) {
     // Early abort when info is required with missing coordinates.
     throw InputException("Route geometry request with missing coordinates.");
   }
@@ -1159,7 +1156,7 @@ Solution Input::solve(unsigned exploration_level,
 
 Solution Input::check(unsigned nb_thread) {
 #if USE_LIBGLPK
-  if (_geometry and !_all_locations_have_coords) {
+  if (_geometry && !_all_locations_have_coords) {
     // Early abort when info is required with missing coordinates.
     throw InputException("Route geometry request with missing coordinates.");
   }

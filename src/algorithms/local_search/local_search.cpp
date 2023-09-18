@@ -240,8 +240,8 @@ void LocalSearch<Route,
           static_cast<double>(route_job_insertions[i][j].eval.cost) -
           regret_coeff * static_cast<double>(regret_cost);
 
-        if ((job_priority > best_priority) or
-            (job_priority == best_priority and current_cost < best_cost)) {
+        if ((job_priority > best_priority) ||
+            (job_priority == best_priority && current_cost < best_cost)) {
           best_priority = job_priority;
           best_job_rank = j;
           best_route = routes[i];
@@ -383,8 +383,8 @@ void LocalSearch<Route,
   Eval best_gain(static_cast<Cost>(1), static_cast<Cost>(0));
   Priority best_priority = 0;
 
-  while (best_gain.cost > 0 or best_priority > 0) {
-    if (_deadline.has_value() and _deadline.value() < utils::now()) {
+  while (best_gain.cost > 0 || best_priority > 0) {
+    if (_deadline.has_value() && _deadline.value() < utils::now()) {
       break;
     }
 
@@ -403,8 +403,8 @@ void LocalSearch<Route,
         const auto& u_delivery = _input.jobs[u].delivery;
 
         for (const auto& s_t : s_t_pairs) {
-          if (s_t.first != s_t.second or
-              !_input.vehicle_ok_with_job(s_t.first, u) or
+          if (s_t.first != s_t.second ||
+              !_input.vehicle_ok_with_job(s_t.first, u) ||
               _sol[s_t.first].empty()) {
             continue;
           }
@@ -424,7 +424,7 @@ void LocalSearch<Route,
           for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
             const auto& current_job =
               _input.jobs[_sol[s_t.first].route[s_rank]];
-            if (current_job.type != JOB_TYPE::SINGLE or
+            if (current_job.type != JOB_TYPE::SINGLE ||
                 u_priority < current_job.priority) {
               continue;
             }
@@ -432,7 +432,7 @@ void LocalSearch<Route,
             const Priority priority_gain = u_priority - current_job.priority;
 
             if (best_priorities[s_t.first] <= priority_gain) {
-              if (!(u_delivery <= delivery_margin + current_job.delivery) or
+              if (!(u_delivery <= delivery_margin + current_job.delivery) ||
                   !(u_pickup <= pickup_margin + current_job.pickup)) {
                 continue;
               }
@@ -482,11 +482,11 @@ void LocalSearch<Route,
                                      u);
 
                 bool better_if_valid =
-                  (best_priorities[s_t.first] < priority_gain) or
-                  (best_priorities[s_t.first] == priority_gain and
+                  (best_priorities[s_t.first] < priority_gain) ||
+                  (best_priorities[s_t.first] == priority_gain &&
                    r.gain() > best_gains[s_t.first][s_t.first]);
 
-                if (better_if_valid and r.is_valid()) {
+                if (better_if_valid && r.is_valid()) {
                   best_priorities[s_t.first] = priority_gain;
                   // This may potentially define a negative value as
                   // best gain in case priority_gain is non-zero.
@@ -503,9 +503,9 @@ void LocalSearch<Route,
 
     // CrossExchange stuff
     for (const auto& s_t : s_t_pairs) {
-      if (s_t.second <= s_t.first or // This operator is symmetric.
-          best_priorities[s_t.first] > 0 or best_priorities[s_t.second] > 0 or
-          _sol[s_t.first].size() < 2 or _sol[s_t.second].size() < 2) {
+      if (s_t.second <= s_t.first || // This operator is symmetric.
+          best_priorities[s_t.first] > 0 || best_priorities[s_t.second] > 0 ||
+          _sol[s_t.first].size() < 2 || _sol[s_t.second].size() < 2) {
         continue;
       }
 
@@ -518,7 +518,7 @@ void LocalSearch<Route,
         const auto s_job_rank = _sol[s_t.first].route[s_rank];
         const auto s_next_job_rank = _sol[s_t.first].route[s_rank + 1];
 
-        if (!_input.vehicle_ok_with_job(s_t.second, s_job_rank) or
+        if (!_input.vehicle_ok_with_job(s_t.second, s_job_rank) ||
             !_input.vehicle_ok_with_job(s_t.second, s_next_job_rank)) {
           continue;
         }
@@ -526,14 +526,14 @@ void LocalSearch<Route,
         const auto& job_s_type = _input.jobs[s_job_rank].type;
 
         bool both_s_single =
-          (job_s_type == JOB_TYPE::SINGLE) and
+          (job_s_type == JOB_TYPE::SINGLE) &&
           (_input.jobs[s_next_job_rank].type == JOB_TYPE::SINGLE);
 
         bool is_s_pickup =
-          (job_s_type == JOB_TYPE::PICKUP) and
+          (job_s_type == JOB_TYPE::PICKUP) &&
           (_sol_state.matching_delivery_rank[s_t.first][s_rank] == s_rank + 1);
 
-        if (!both_s_single and !is_s_pickup) {
+        if (!both_s_single && !is_s_pickup) {
           continue;
         }
 
@@ -563,7 +563,7 @@ void LocalSearch<Route,
           const auto t_job_rank = _sol[s_t.second].route[t_rank];
           const auto t_next_job_rank = _sol[s_t.second].route[t_rank + 1];
 
-          if (!_input.vehicle_ok_with_job(s_t.first, t_job_rank) or
+          if (!_input.vehicle_ok_with_job(s_t.first, t_job_rank) ||
               !_input.vehicle_ok_with_job(s_t.first, t_next_job_rank)) {
             continue;
           }
@@ -571,15 +571,15 @@ void LocalSearch<Route,
           const auto& job_t_type = _input.jobs[t_job_rank].type;
 
           bool both_t_single =
-            (job_t_type == JOB_TYPE::SINGLE) and
+            (job_t_type == JOB_TYPE::SINGLE) &&
             (_input.jobs[t_next_job_rank].type == JOB_TYPE::SINGLE);
 
           bool is_t_pickup =
-            (job_t_type == JOB_TYPE::PICKUP) and
+            (job_t_type == JOB_TYPE::PICKUP) &&
             (_sol_state.matching_delivery_rank[s_t.second][t_rank] ==
              t_rank + 1);
 
-          if (!both_t_single and !is_t_pickup) {
+          if (!both_t_single && !is_t_pickup) {
             continue;
           }
 
@@ -606,9 +606,9 @@ void LocalSearch<Route,
                                   _input.jobs[t_next_job_rank].delivery;
           const auto t_pickup = _input.jobs[t_job_rank].pickup +
                                 _input.jobs[t_next_job_rank].pickup;
-          if (!(t_delivery <= s_delivery_margin + s_delivery) or
-              !(t_pickup <= s_pickup_margin + s_pickup) or
-              !(s_delivery <= t_delivery_margin + t_delivery) or
+          if (!(t_delivery <= s_delivery_margin + s_delivery) ||
+              !(t_pickup <= s_pickup_margin + s_pickup) ||
+              !(s_delivery <= t_delivery_margin + t_delivery) ||
               !(s_pickup <= t_pickup_margin + t_pickup)) {
             continue;
           }
@@ -628,7 +628,7 @@ void LocalSearch<Route,
                           !is_t_pickup);
 
           auto& current_best = best_gains[s_t.first][s_t.second];
-          if (r.gain_upper_bound() > current_best and r.is_valid() and
+          if (r.gain_upper_bound() > current_best && r.is_valid() &&
               r.gain() > current_best) {
             current_best = r.gain();
             best_ops[s_t.first][s_t.second] =
@@ -641,8 +641,8 @@ void LocalSearch<Route,
     if (_input.has_jobs()) {
       // MixedExchange stuff
       for (const auto& s_t : s_t_pairs) {
-        if (s_t.first == s_t.second or best_priorities[s_t.first] > 0 or
-            best_priorities[s_t.second] > 0 or _sol[s_t.first].size() == 0 or
+        if (s_t.first == s_t.second || best_priorities[s_t.first] > 0 ||
+            best_priorities[s_t.second] > 0 || _sol[s_t.first].size() == 0 ||
             _sol[s_t.second].size() < 2) {
           continue;
         }
@@ -659,7 +659,7 @@ void LocalSearch<Route,
 
         for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
           const auto s_job_rank = _sol[s_t.first].route[s_rank];
-          if (_input.jobs[s_job_rank].type != JOB_TYPE::SINGLE or
+          if (_input.jobs[s_job_rank].type != JOB_TYPE::SINGLE ||
               !_input.vehicle_ok_with_job(s_t.second, s_job_rank)) {
             // Don't try moving part of a shipment or an incompatible
             // job.
@@ -679,7 +679,7 @@ void LocalSearch<Route,
 
           for (unsigned t_rank = begin_t_rank; t_rank < end_t_rank; ++t_rank) {
             if (!_input.vehicle_ok_with_job(s_t.first,
-                                            _sol[s_t.second].route[t_rank]) or
+                                            _sol[s_t.second].route[t_rank]) ||
                 !_input
                    .vehicle_ok_with_job(s_t.first,
                                         _sol[s_t.second].route[t_rank + 1])) {
@@ -691,15 +691,15 @@ void LocalSearch<Route,
             const auto& job_t_type = _input.jobs[t_job_rank].type;
 
             bool both_t_single =
-              (job_t_type == JOB_TYPE::SINGLE) and
+              (job_t_type == JOB_TYPE::SINGLE) &&
               (_input.jobs[t_next_job_rank].type == JOB_TYPE::SINGLE);
 
             bool is_t_pickup =
-              (job_t_type == JOB_TYPE::PICKUP) and
+              (job_t_type == JOB_TYPE::PICKUP) &&
               (_sol_state.matching_delivery_rank[s_t.second][t_rank] ==
                t_rank + 1);
 
-            if (!both_t_single and !is_t_pickup) {
+            if (!both_t_single && !is_t_pickup) {
               continue;
             }
 
@@ -722,9 +722,9 @@ void LocalSearch<Route,
                                     _input.jobs[t_next_job_rank].delivery;
             const auto t_pickup = _input.jobs[t_job_rank].pickup +
                                   _input.jobs[t_next_job_rank].pickup;
-            if (!(t_delivery <= s_delivery_margin + s_delivery) or
-                !(t_pickup <= s_pickup_margin + s_pickup) or
-                !(s_delivery <= t_delivery_margin + t_delivery) or
+            if (!(t_delivery <= s_delivery_margin + s_delivery) ||
+                !(t_pickup <= s_pickup_margin + s_pickup) ||
+                !(s_delivery <= t_delivery_margin + t_delivery) ||
                 !(s_pickup <= t_pickup_margin + t_pickup)) {
               continue;
             }
@@ -743,7 +743,7 @@ void LocalSearch<Route,
                             !is_t_pickup);
 
             auto& current_best = best_gains[s_t.first][s_t.second];
-            if (r.gain_upper_bound() > current_best and r.is_valid() and
+            if (r.gain_upper_bound() > current_best && r.is_valid() &&
                 r.gain() > current_best) {
               current_best = r.gain();
               best_ops[s_t.first][s_t.second] =
@@ -756,8 +756,8 @@ void LocalSearch<Route,
 
     // TwoOpt stuff
     for (const auto& s_t : s_t_pairs) {
-      if (s_t.second <= s_t.first or // This operator is symmetric.
-          best_priorities[s_t.first] > 0 or best_priorities[s_t.second] > 0) {
+      if (s_t.second <= s_t.first || // This operator is symmetric.
+          best_priorities[s_t.first] > 0 || best_priorities[s_t.second] > 0) {
         continue;
       }
 
@@ -818,7 +818,7 @@ void LocalSearch<Route,
             }
           }
 
-          if (s_rank + _sol[s_t.second].size() - t_rank > s_v.max_tasks or
+          if (s_rank + _sol[s_t.second].size() - t_rank > s_v.max_tasks ||
               t_rank + _sol[s_t.first].size() - s_rank > t_v.max_tasks) {
             continue;
           }
@@ -826,7 +826,7 @@ void LocalSearch<Route,
           const auto& t_bwd_delivery = _sol[s_t.second].bwd_deliveries(t_rank);
           const auto& t_bwd_pickup = _sol[s_t.second].bwd_pickups(t_rank);
 
-          if (!(s_fwd_delivery + t_bwd_delivery <= s_v.capacity) or
+          if (!(s_fwd_delivery + t_bwd_delivery <= s_v.capacity) ||
               !(s_fwd_pickup + t_bwd_pickup <= s_v.capacity)) {
             // Stop current loop since we're going backward with
             // t_rank.
@@ -836,7 +836,7 @@ void LocalSearch<Route,
           const auto& t_fwd_delivery = _sol[s_t.second].fwd_deliveries(t_rank);
           const auto& t_fwd_pickup = _sol[s_t.second].fwd_pickups(t_rank);
 
-          if (!(t_fwd_delivery + s_bwd_delivery <= t_v.capacity) or
+          if (!(t_fwd_delivery + s_bwd_delivery <= t_v.capacity) ||
               !(t_fwd_pickup + s_bwd_pickup <= t_v.capacity)) {
             continue;
           }
@@ -853,7 +853,7 @@ void LocalSearch<Route,
                    s_t.second,
                    t_rank);
 
-          if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid()) {
+          if (r.gain() > best_gains[s_t.first][s_t.second] && r.is_valid()) {
             best_gains[s_t.first][s_t.second] = r.gain();
             best_ops[s_t.first][s_t.second] = std::make_unique<TwoOpt>(r);
           }
@@ -863,7 +863,7 @@ void LocalSearch<Route,
 
     // ReverseTwoOpt stuff
     for (const auto& s_t : s_t_pairs) {
-      if (s_t.first == s_t.second or best_priorities[s_t.first] > 0 or
+      if (s_t.first == s_t.second || best_priorities[s_t.first] > 0 ||
           best_priorities[s_t.second] > 0) {
         continue;
       }
@@ -917,7 +917,7 @@ void LocalSearch<Route,
             continue;
           }
 
-          if (s_rank + t_rank + 2 > s_v.max_tasks or
+          if (s_rank + t_rank + 2 > s_v.max_tasks ||
               (_sol[s_t.first].size() - s_rank - 1) +
                   (_sol[s_t.second].size() - t_rank - 1) >
                 t_v.max_tasks) {
@@ -927,7 +927,7 @@ void LocalSearch<Route,
           const auto& t_fwd_delivery = _sol[s_t.second].fwd_deliveries(t_rank);
           const auto& t_fwd_pickup = _sol[s_t.second].fwd_pickups(t_rank);
 
-          if (!(s_fwd_delivery + t_fwd_delivery <= s_v.capacity) or
+          if (!(s_fwd_delivery + t_fwd_delivery <= s_v.capacity) ||
               !(s_fwd_pickup + t_fwd_pickup <= s_v.capacity)) {
             break;
           }
@@ -935,7 +935,7 @@ void LocalSearch<Route,
           const auto& t_bwd_delivery = _sol[s_t.second].bwd_deliveries(t_rank);
           const auto& t_bwd_pickup = _sol[s_t.second].bwd_pickups(t_rank);
 
-          if (!(t_bwd_delivery + s_bwd_delivery <= t_v.capacity) or
+          if (!(t_bwd_delivery + s_bwd_delivery <= t_v.capacity) ||
               !(t_bwd_pickup + s_bwd_pickup <= t_v.capacity)) {
             continue;
           }
@@ -952,7 +952,7 @@ void LocalSearch<Route,
                           s_t.second,
                           t_rank);
 
-          if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid()) {
+          if (r.gain() > best_gains[s_t.first][s_t.second] && r.is_valid()) {
             best_gains[s_t.first][s_t.second] = r.gain();
             best_ops[s_t.first][s_t.second] =
               std::make_unique<ReverseTwoOpt>(r);
@@ -966,8 +966,8 @@ void LocalSearch<Route,
 
       // Relocate stuff
       for (const auto& s_t : s_t_pairs) {
-        if (s_t.first == s_t.second or best_priorities[s_t.first] > 0 or
-            best_priorities[s_t.second] > 0 or _sol[s_t.first].size() == 0) {
+        if (s_t.first == s_t.second || best_priorities[s_t.first] > 0 ||
+            best_priorities[s_t.second] > 0 || _sol[s_t.first].size() == 0) {
           continue;
         }
 
@@ -988,7 +988,7 @@ void LocalSearch<Route,
           }
 
           const auto s_job_rank = _sol[s_t.first].route[s_rank];
-          if (_input.jobs[s_job_rank].type != JOB_TYPE::SINGLE or
+          if (_input.jobs[s_job_rank].type != JOB_TYPE::SINGLE ||
               !_input.vehicle_ok_with_job(s_t.second, s_job_rank)) {
             // Don't try moving (part of) a shipment or an
             // incompatible job.
@@ -998,7 +998,7 @@ void LocalSearch<Route,
           const auto& s_pickup = _input.jobs[s_job_rank].pickup;
           const auto& s_delivery = _input.jobs[s_job_rank].delivery;
 
-          if (!(s_delivery <= t_delivery_margin) or
+          if (!(s_delivery <= t_delivery_margin) ||
               !(s_pickup <= t_pickup_margin)) {
             continue;
           }
@@ -1019,7 +1019,7 @@ void LocalSearch<Route,
                        s_t.second,
                        t_rank);
 
-            if (r.gain() > best_gains[s_t.first][s_t.second] and r.is_valid()) {
+            if (r.gain() > best_gains[s_t.first][s_t.second] && r.is_valid()) {
               best_gains[s_t.first][s_t.second] = r.gain();
               best_ops[s_t.first][s_t.second] = std::make_unique<Relocate>(r);
             }
@@ -1029,8 +1029,8 @@ void LocalSearch<Route,
 
       // OrOpt stuff
       for (const auto& s_t : s_t_pairs) {
-        if (s_t.first == s_t.second or best_priorities[s_t.first] > 0 or
-            best_priorities[s_t.second] > 0 or _sol[s_t.first].size() < 2) {
+        if (s_t.first == s_t.second || best_priorities[s_t.first] > 0 ||
+            best_priorities[s_t.second] > 0 || _sol[s_t.first].size() < 2) {
           continue;
         }
 
@@ -1054,12 +1054,12 @@ void LocalSearch<Route,
           const auto s_job_rank = _sol[s_t.first].route[s_rank];
           const auto s_next_job_rank = _sol[s_t.first].route[s_rank + 1];
 
-          if (!_input.vehicle_ok_with_job(s_t.second, s_job_rank) or
+          if (!_input.vehicle_ok_with_job(s_t.second, s_job_rank) ||
               !_input.vehicle_ok_with_job(s_t.second, s_next_job_rank)) {
             continue;
           }
 
-          if (_input.jobs[s_job_rank].type != JOB_TYPE::SINGLE or
+          if (_input.jobs[s_job_rank].type != JOB_TYPE::SINGLE ||
               _input.jobs[s_next_job_rank].type != JOB_TYPE::SINGLE) {
             // Don't try moving part of a shipment. Moving a full
             // shipment as an edge is not tested because it's a
@@ -1072,7 +1072,7 @@ void LocalSearch<Route,
           const auto s_delivery = _input.jobs[s_job_rank].delivery +
                                   _input.jobs[s_next_job_rank].delivery;
 
-          if (!(s_delivery <= t_delivery_margin) or
+          if (!(s_delivery <= t_delivery_margin) ||
               !(s_pickup <= t_pickup_margin)) {
             continue;
           }
@@ -1100,7 +1100,7 @@ void LocalSearch<Route,
                     t_rank);
 
             auto& current_best = best_gains[s_t.first][s_t.second];
-            if (r.gain_upper_bound() > current_best and r.is_valid() and
+            if (r.gain_upper_bound() > current_best && r.is_valid() &&
                 r.gain() > current_best) {
               current_best = r.gain();
               best_ops[s_t.first][s_t.second] = std::make_unique<OrOpt>(r);
@@ -1113,8 +1113,8 @@ void LocalSearch<Route,
     // TSPFix stuff
     if (!_input.has_shipments()) {
       for (const auto& s_t : s_t_pairs) {
-        if (s_t.second != s_t.first or best_priorities[s_t.first] > 0 or
-            !_input.is_good_TSP_candidate(s_t.first) or
+        if (s_t.second != s_t.first || best_priorities[s_t.first] > 0 ||
+            !_input.is_good_TSP_candidate(s_t.first) ||
             _sol[s_t.first].size() < 2) {
           continue;
         }
@@ -1124,7 +1124,7 @@ void LocalSearch<Route,
 #endif
         TSPFix op(_input, _sol_state, _sol[s_t.first], s_t.first);
 
-        if (op.gain() > best_gains[s_t.first][s_t.second] and op.is_valid()) {
+        if (op.gain() > best_gains[s_t.first][s_t.second] && op.is_valid()) {
           best_gains[s_t.first][s_t.second] = op.gain();
           best_ops[s_t.first][s_t.second] = std::make_unique<TSPFix>(op);
         }
@@ -1133,7 +1133,7 @@ void LocalSearch<Route,
 
     // IntraExchange stuff
     for (const auto& s_t : s_t_pairs) {
-      if (s_t.first != s_t.second or best_priorities[s_t.first] > 0 or
+      if (s_t.first != s_t.second || best_priorities[s_t.first] > 0 ||
           _sol[s_t.first].size() < 3) {
         continue;
       }
@@ -1154,7 +1154,7 @@ void LocalSearch<Route,
 
         for (Index t_rank = s_rank + 2; t_rank < end_t_rank; ++t_rank) {
           if (_input.jobs[_sol[s_t.first].route[t_rank]].type ==
-                JOB_TYPE::DELIVERY and
+                JOB_TYPE::DELIVERY &&
               s_rank <= _sol_state.matching_pickup_rank[s_t.first][t_rank]) {
             // Don't move a delivery before its matching pickup.
             continue;
@@ -1176,7 +1176,7 @@ void LocalSearch<Route,
                           s_rank,
                           t_rank);
 
-          if (r.gain() > best_gains[s_t.first][s_t.first] and r.is_valid()) {
+          if (r.gain() > best_gains[s_t.first][s_t.first] && r.is_valid()) {
             best_gains[s_t.first][s_t.first] = r.gain();
             best_ops[s_t.first][s_t.first] = std::make_unique<IntraExchange>(r);
           }
@@ -1187,7 +1187,7 @@ void LocalSearch<Route,
     // IntraCrossExchange stuff
     constexpr unsigned min_intra_cross_exchange_size = 5;
     for (const auto& s_t : s_t_pairs) {
-      if (s_t.first != s_t.second or best_priorities[s_t.first] > 0 or
+      if (s_t.first != s_t.second || best_priorities[s_t.first] > 0 ||
           _sol[s_t.first].size() < min_intra_cross_exchange_size) {
         continue;
       }
@@ -1198,14 +1198,14 @@ void LocalSearch<Route,
         const auto s_next_job_rank = _sol[s_t.first].route[s_rank + 1];
 
         bool both_s_single =
-          (job_s_type == JOB_TYPE::SINGLE) and
+          (job_s_type == JOB_TYPE::SINGLE) &&
           (_input.jobs[s_next_job_rank].type == JOB_TYPE::SINGLE);
 
         bool is_s_pickup =
-          (job_s_type == JOB_TYPE::PICKUP) and
+          (job_s_type == JOB_TYPE::PICKUP) &&
           (_sol_state.matching_delivery_rank[s_t.first][s_rank] == s_rank + 1);
 
-        if (!both_s_single and !is_s_pickup) {
+        if (!both_s_single && !is_s_pickup) {
           continue;
         }
 
@@ -1220,16 +1220,16 @@ void LocalSearch<Route,
             _input.jobs[_sol[s_t.second].route[t_rank]].type;
 
           bool both_t_single =
-            (job_t_type == JOB_TYPE::SINGLE) and
+            (job_t_type == JOB_TYPE::SINGLE) &&
             (_input.jobs[_sol[s_t.second].route[t_rank + 1]].type ==
              JOB_TYPE::SINGLE);
 
           bool is_t_pickup =
-            (job_t_type == JOB_TYPE::PICKUP) and
+            (job_t_type == JOB_TYPE::PICKUP) &&
             (_sol_state.matching_delivery_rank[s_t.second][t_rank] ==
              t_rank + 1);
 
-          if (!both_t_single and !is_t_pickup) {
+          if (!both_t_single && !is_t_pickup) {
             continue;
           }
 
@@ -1252,7 +1252,7 @@ void LocalSearch<Route,
                                !is_t_pickup);
 
           auto& current_best = best_gains[s_t.first][s_t.second];
-          if (r.gain_upper_bound() > current_best and r.is_valid() and
+          if (r.gain_upper_bound() > current_best && r.is_valid() &&
               r.gain() > current_best) {
             current_best = r.gain();
             best_ops[s_t.first][s_t.first] =
@@ -1264,7 +1264,7 @@ void LocalSearch<Route,
 
     // IntraMixedExchange stuff
     for (const auto& s_t : s_t_pairs) {
-      if (s_t.first != s_t.second or best_priorities[s_t.first] > 0 or
+      if (s_t.first != s_t.second || best_priorities[s_t.first] > 0 ||
           _sol[s_t.first].size() < 4) {
         continue;
       }
@@ -1287,7 +1287,7 @@ void LocalSearch<Route,
         }
 
         for (unsigned t_rank = 0; t_rank < end_t_rank; ++t_rank) {
-          if (t_rank <= s_rank + 1 and s_rank <= t_rank + 2) {
+          if (t_rank <= s_rank + 1 && s_rank <= t_rank + 2) {
             continue;
           }
 
@@ -1295,16 +1295,16 @@ void LocalSearch<Route,
             _input.jobs[_sol[s_t.second].route[t_rank]].type;
 
           bool both_t_single =
-            (job_t_type == JOB_TYPE::SINGLE) and
+            (job_t_type == JOB_TYPE::SINGLE) &&
             (_input.jobs[_sol[s_t.first].route[t_rank + 1]].type ==
              JOB_TYPE::SINGLE);
 
           bool is_t_pickup =
-            (job_t_type == JOB_TYPE::PICKUP) and
+            (job_t_type == JOB_TYPE::PICKUP) &&
             (_sol_state.matching_delivery_rank[s_t.second][t_rank] ==
              t_rank + 1);
 
-          if (!both_t_single and !is_t_pickup) {
+          if (!both_t_single && !is_t_pickup) {
             continue;
           }
 
@@ -1325,7 +1325,7 @@ void LocalSearch<Route,
                                t_rank,
                                !is_t_pickup);
           auto& current_best = best_gains[s_t.first][s_t.second];
-          if (r.gain_upper_bound() > current_best and r.is_valid() and
+          if (r.gain_upper_bound() > current_best && r.is_valid() &&
               r.gain() > current_best) {
             current_best = r.gain();
             best_ops[s_t.first][s_t.first] =
@@ -1337,7 +1337,7 @@ void LocalSearch<Route,
 
     // IntraRelocate stuff
     for (const auto& s_t : s_t_pairs) {
-      if (s_t.first != s_t.second or best_priorities[s_t.first] > 0 or
+      if (s_t.first != s_t.second || best_priorities[s_t.first] > 0 ||
           _sol[s_t.first].size() < 2) {
         continue;
       }
@@ -1370,7 +1370,7 @@ void LocalSearch<Route,
           if (t_rank == s_rank) {
             continue;
           }
-          if (t_rank > s_rank and
+          if (t_rank > s_rank &&
               _sol_state.weak_insertion_ranks_end[s_t.first][s_job_rank] <=
                 t_rank + 1) {
             // Relocating past t_rank (new rank *after* removal) won't
@@ -1388,7 +1388,7 @@ void LocalSearch<Route,
                           s_rank,
                           t_rank);
 
-          if (r.gain() > best_gains[s_t.first][s_t.first] and r.is_valid()) {
+          if (r.gain() > best_gains[s_t.first][s_t.first] && r.is_valid()) {
             best_gains[s_t.first][s_t.first] = r.gain();
             best_ops[s_t.first][s_t.first] = std::make_unique<IntraRelocate>(r);
           }
@@ -1398,7 +1398,7 @@ void LocalSearch<Route,
 
     // IntraOrOpt stuff
     for (const auto& s_t : s_t_pairs) {
-      if (s_t.first != s_t.second or best_priorities[s_t.first] > 0 or
+      if (s_t.first != s_t.second || best_priorities[s_t.first] > 0 ||
           _sol[s_t.first].size() < 4) {
         continue;
       }
@@ -1406,15 +1406,15 @@ void LocalSearch<Route,
         const auto& job_type = _input.jobs[_sol[s_t.first].route[s_rank]].type;
 
         bool both_single =
-          (job_type == JOB_TYPE::SINGLE) and
+          (job_type == JOB_TYPE::SINGLE) &&
           (_input.jobs[_sol[s_t.first].route[s_rank + 1]].type ==
            JOB_TYPE::SINGLE);
 
         bool is_pickup =
-          (job_type == JOB_TYPE::PICKUP) and
+          (job_type == JOB_TYPE::PICKUP) &&
           (_sol_state.matching_delivery_rank[s_t.first][s_rank] == s_rank + 1);
 
-        if (!both_single and !is_pickup) {
+        if (!both_single && !is_pickup) {
           continue;
         }
 
@@ -1446,7 +1446,7 @@ void LocalSearch<Route,
           if (t_rank == s_rank) {
             continue;
           }
-          if (t_rank > s_rank and
+          if (t_rank > s_rank &&
               _sol_state.weak_insertion_ranks_end[s_t.first][s_next_job_rank] <=
                 t_rank + 2) {
             // Relocating past t_rank (new rank *after* removal) won't
@@ -1465,7 +1465,7 @@ void LocalSearch<Route,
                        t_rank,
                        !is_pickup);
           auto& current_best = best_gains[s_t.first][s_t.second];
-          if (r.gain_upper_bound() > current_best and r.is_valid() and
+          if (r.gain_upper_bound() > current_best && r.is_valid() &&
               r.gain() > current_best) {
             current_best = r.gain();
             best_ops[s_t.first][s_t.first] = std::make_unique<IntraOrOpt>(r);
@@ -1476,7 +1476,7 @@ void LocalSearch<Route,
 
     // IntraTwoOpt stuff
     for (const auto& s_t : s_t_pairs) {
-      if (s_t.first != s_t.second or best_priorities[s_t.first] > 0 or
+      if (s_t.first != s_t.second || best_priorities[s_t.first] > 0 ||
           _sol[s_t.first].size() < 4) {
         continue;
       }
@@ -1499,7 +1499,7 @@ void LocalSearch<Route,
                         s_rank,
                         t_rank);
           auto& current_best = best_gains[s_t.first][s_t.second];
-          if (r.gain() > current_best and r.is_valid()) {
+          if (r.gain() > current_best && r.is_valid()) {
             current_best = r.gain();
             best_ops[s_t.first][s_t.first] = std::make_unique<IntraTwoOpt>(r);
           }
@@ -1512,8 +1512,8 @@ void LocalSearch<Route,
 
       // PDShift stuff
       for (const auto& s_t : s_t_pairs) {
-        if (s_t.first == s_t.second or best_priorities[s_t.first] > 0 or
-            best_priorities[s_t.second] > 0 or _sol[s_t.first].size() == 0) {
+        if (s_t.first == s_t.second || best_priorities[s_t.first] > 0 ||
+            best_priorities[s_t.second] > 0 || _sol[s_t.first].size() == 0) {
           // Don't try to put things from an empty vehicle.
           continue;
         }
@@ -1535,7 +1535,7 @@ void LocalSearch<Route,
             _sol_state.matching_delivery_rank[s_t.first][s_p_rank];
 
           if (!_input.vehicle_ok_with_job(s_t.second,
-                                          _sol[s_t.first].route[s_p_rank]) or
+                                          _sol[s_t.first].route[s_p_rank]) ||
               !_input.vehicle_ok_with_job(s_t.second,
                                           _sol[s_t.first].route[s_d_rank])) {
             continue;
@@ -1572,7 +1572,7 @@ void LocalSearch<Route,
                       s_t.second,
                       best_gains[s_t.first][s_t.second]);
 
-          if (pdr.gain() > best_gains[s_t.first][s_t.second] and
+          if (pdr.gain() > best_gains[s_t.first][s_t.second] &&
               pdr.is_valid()) {
             best_gains[s_t.first][s_t.second] = pdr.gain();
             best_ops[s_t.first][s_t.second] = std::make_unique<PDShift>(pdr);
@@ -1581,14 +1581,14 @@ void LocalSearch<Route,
       }
     }
 
-    if (!_input.has_homogeneous_locations() or
-        !_input.has_homogeneous_profiles() or !_input.has_homogeneous_costs()) {
+    if (!_input.has_homogeneous_locations() ||
+        !_input.has_homogeneous_profiles() || !_input.has_homogeneous_costs()) {
       // RouteExchange stuff
       for (const auto& s_t : s_t_pairs) {
-        if (s_t.second <= s_t.first or best_priorities[s_t.first] > 0 or
-            best_priorities[s_t.second] > 0 or
-            (_sol[s_t.first].size() == 0 and _sol[s_t.second].size() == 0) or
-            _sol_state.bwd_skill_rank[s_t.first][s_t.second] > 0 or
+        if (s_t.second <= s_t.first || best_priorities[s_t.first] > 0 ||
+            best_priorities[s_t.second] > 0 ||
+            (_sol[s_t.first].size() == 0 && _sol[s_t.second].size() == 0) ||
+            _sol_state.bwd_skill_rank[s_t.first][s_t.second] > 0 ||
             _sol_state.bwd_skill_rank[s_t.second][s_t.first] > 0) {
           // Different routes (and operator is symmetric), at least
           // one non-empty and valid wrt vehicle/job compatibility.
@@ -1598,7 +1598,7 @@ void LocalSearch<Route,
         const auto& s_v = _input.vehicles[s_t.first];
         const auto& t_v = _input.vehicles[s_t.second];
 
-        if (_sol[s_t.first].size() > t_v.max_tasks or
+        if (_sol[s_t.first].size() > t_v.max_tasks ||
             _sol[s_t.second].size() > s_v.max_tasks) {
           continue;
         }
@@ -1608,9 +1608,9 @@ void LocalSearch<Route,
         const auto& t_deliveries_sum = _sol[s_t.second].job_deliveries_sum();
         const auto& t_pickups_sum = _sol[s_t.second].job_pickups_sum();
 
-        if (!(t_deliveries_sum <= s_v.capacity) or
-            !(t_pickups_sum <= s_v.capacity) or
-            !(s_deliveries_sum <= t_v.capacity) or
+        if (!(t_deliveries_sum <= s_v.capacity) ||
+            !(t_pickups_sum <= s_v.capacity) ||
+            !(s_deliveries_sum <= t_v.capacity) ||
             !(s_pickups_sum <= t_v.capacity)) {
           continue;
         }
@@ -1625,7 +1625,7 @@ void LocalSearch<Route,
                          _sol[s_t.second],
                          s_t.second);
 
-        if (re.gain() > best_gains[s_t.first][s_t.second] and re.is_valid()) {
+        if (re.gain() > best_gains[s_t.first][s_t.second] && re.is_valid()) {
           best_gains[s_t.first][s_t.second] = re.gain();
           best_ops[s_t.first][s_t.second] = std::make_unique<RouteExchange>(re);
         }
@@ -1635,9 +1635,9 @@ void LocalSearch<Route,
     if (_input.has_jobs()) {
       // SwapStar stuff
       for (const auto& s_t : s_t_pairs) {
-        if (s_t.second <= s_t.first or // This operator is symmetric.
-            best_priorities[s_t.first] > 0 or best_priorities[s_t.second] > 0 or
-            _sol[s_t.first].size() == 0 or _sol[s_t.second].size() == 0 or
+        if (s_t.second <= s_t.first || // This operator is symmetric.
+            best_priorities[s_t.first] > 0 || best_priorities[s_t.second] > 0 ||
+            _sol[s_t.first].size() == 0 || _sol[s_t.second].size() == 0 ||
             !_input.vehicle_ok_with_vehicle(s_t.first, s_t.second)) {
           continue;
         }
@@ -1660,8 +1660,8 @@ void LocalSearch<Route,
       }
     }
 
-    if (!_input.has_homogeneous_locations() or
-        !_input.has_homogeneous_profiles() or !_input.has_homogeneous_costs()) {
+    if (!_input.has_homogeneous_locations() ||
+        !_input.has_homogeneous_profiles() || !_input.has_homogeneous_costs()) {
       // RouteSplit stuff
       std::vector<Index> empty_route_ranks;
       empty_route_ranks.reserve(_input.vehicles.size());
@@ -1677,7 +1677,7 @@ void LocalSearch<Route,
 
       if (empty_route_ranks.size() >= 2) {
         for (const auto& s_t : s_t_pairs) {
-          if (s_t.second != s_t.first or best_priorities[s_t.first] > 0 or
+          if (s_t.second != s_t.first || best_priorities[s_t.first] > 0 ||
               _sol[s_t.first].size() < 2) {
             continue;
           }
@@ -1730,7 +1730,7 @@ void LocalSearch<Route,
     }
 
     // Apply matching operator.
-    if (best_priority > 0 or best_gain.cost > 0) {
+    if (best_priority > 0 || best_gain.cost > 0) {
       assert(best_ops[best_source][best_target] != nullptr);
 
       best_ops[best_source][best_target]->apply();
@@ -1834,7 +1834,7 @@ void LocalSearch<Route,
 
         for (auto v_rank : update_candidates) {
           invalidate_move =
-            invalidate_move or best_ops[v][v]->invalidated_by(v_rank);
+            invalidate_move || best_ops[v][v]->invalidated_by(v_rank);
         }
 
         if (invalidate_move) {
@@ -1914,8 +1914,8 @@ void LocalSearch<Route,
 
     // Try again on each improvement until we reach last job removal
     // level or deadline is met.
-    try_ls_step = (current_nb_removal <= _max_nb_jobs_removal) and
-                  (!_deadline.has_value() or utils::now() < _deadline.value());
+    try_ls_step = (current_nb_removal <= _max_nb_jobs_removal) &&
+                  (!_deadline.has_value() || utils::now() < _deadline.value());
 
     if (try_ls_step) {
       // Get a looser situation by removing jobs.
@@ -2119,7 +2119,7 @@ Eval LocalSearch<Route,
   Eval best_bound = NO_EVAL;
 
   for (std::size_t other_v = 0; other_v < _sol.size(); ++other_v) {
-    if (other_v == v or
+    if (other_v == v ||
         !_input.vehicle_ok_with_job(other_v, _sol[v].route[r])) {
       continue;
     }
@@ -2173,7 +2173,7 @@ Eval LocalSearch<Route,
   Eval best_bound = NO_EVAL;
 
   for (std::size_t other_v = 0; other_v < _sol.size(); ++other_v) {
-    if (other_v == v or
+    if (other_v == v ||
         !_input.vehicle_ok_with_job(other_v, _sol[v].route[r1])) {
       continue;
     }
@@ -2301,7 +2301,7 @@ void LocalSearch<Route,
         }
       }
 
-      if (current_gain > best_gain and valid_removal) {
+      if (current_gain > best_gain && valid_removal) {
         best_gain = current_gain;
         best_rank = r;
       }

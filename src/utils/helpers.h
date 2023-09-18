@@ -144,7 +144,7 @@ inline HeuristicParameters str_to_heuristic_param(const std::string& s) {
     tokens.push_back(token);
   }
 
-  if ((tokens.size() != 3 and tokens.size() != 4) or tokens[0].size() != 1) {
+  if ((tokens.size() != 3 && tokens.size() != 4) || tokens[0].size() != 1) {
     throw InputException("Invalid heuristic parameter in command-line.");
   }
 
@@ -154,7 +154,7 @@ inline HeuristicParameters str_to_heuristic_param(const std::string& s) {
   try {
     auto h = std::stoul(tokens[0]);
 
-    if (h != 0 and h != 1) {
+    if (h != 0 && h != 1) {
       throw InputException("Invalid heuristic parameter in command-line.");
     }
 
@@ -235,7 +235,7 @@ inline Eval addition_cost(const Input& input,
                           const std::vector<Index>& route,
                           Index pickup_rank,
                           Index delivery_rank) {
-  assert(pickup_rank < delivery_rank and delivery_rank <= route.size() + 1);
+  assert(pickup_rank < delivery_rank && delivery_rank <= route.size() + 1);
 
   // Start with pickup eval.
   auto eval = addition_cost(input, job_rank, v, route, pickup_rank);
@@ -310,7 +310,7 @@ inline Eval in_place_delta_cost(const Input& input,
   }
 
   Eval old_virtual_eval;
-  if (p_index and n_index) {
+  if (p_index && n_index) {
     old_virtual_eval = v.eval(p_index.value(), n_index.value());
   }
 
@@ -638,9 +638,9 @@ inline Route format_route(const Input& input,
       }
     }
 
-    bool same_location = (r > 1 and input.jobs[tw_r.route[r - 2]].index() ==
-                                      previous_job.index()) or
-                         (r == 1 and v.has_start() and
+    bool same_location = (r > 1 && input.jobs[tw_r.route[r - 2]].index() ==
+                                     previous_job.index()) ||
+                         (r == 1 && v.has_start() &&
                           v.start.value().index() == previous_job.index());
     const auto current_setup = (same_location) ? 0 : previous_job.setup;
 
@@ -714,7 +714,7 @@ inline Route format_route(const Input& input,
     step_start -= remaining_travel_time;
   }
 
-  assert(first_location.has_value() and last_location.has_value());
+  assert(first_location.has_value() && last_location.has_value());
   steps.emplace_back(STEP_TYPE::START, first_location.value(), current_load);
   assert(v.tw.contains(step_start));
   steps.back().arrival = scale_to_user_duration(step_start);
@@ -810,10 +810,10 @@ inline Route format_route(const Input& input,
         current_break.arrival = scale_to_user_duration(step_start);
       }
 
-      assert(b_tw->start % DURATION_FACTOR == 0 and
+      assert(b_tw->start % DURATION_FACTOR == 0 &&
              scale_to_user_duration(b_tw->start) <=
-               current_break.arrival + current_break.waiting_time and
-             (current_break.waiting_time == 0 or
+               current_break.arrival + current_break.waiting_time &&
+             (current_break.waiting_time == 0 ||
               scale_to_user_duration(b_tw->start) ==
                 current_break.arrival + current_break.waiting_time));
 
@@ -890,10 +890,10 @@ inline Route format_route(const Input& input,
       current.arrival + current.waiting_time + current.setup + current.service;
 
     assert(
-      j_tw->start % DURATION_FACTOR == 0 and
+      j_tw->start % DURATION_FACTOR == 0 &&
       scale_to_user_duration(j_tw->start) <=
-        current.arrival + current.waiting_time and
-      (current.waiting_time == 0 or scale_to_user_duration(j_tw->start) ==
+        current.arrival + current.waiting_time &&
+      (current.waiting_time == 0 || scale_to_user_duration(j_tw->start) ==
                                       current.arrival + current.waiting_time));
 
     step_start += (current_setup + current_job.service);
@@ -958,10 +958,10 @@ inline Route format_route(const Input& input,
       current_break.arrival = scale_to_user_duration(step_start);
     }
 
-    assert(b_tw->start % DURATION_FACTOR == 0 and
+    assert(b_tw->start % DURATION_FACTOR == 0 &&
            scale_to_user_duration(b_tw->start) <=
-             current_break.arrival + current_break.waiting_time and
-           (current_break.waiting_time == 0 or
+             current_break.arrival + current_break.waiting_time &&
+           (current_break.waiting_time == 0 ||
             scale_to_user_duration(b_tw->start) ==
               current_break.arrival + current_break.waiting_time));
 

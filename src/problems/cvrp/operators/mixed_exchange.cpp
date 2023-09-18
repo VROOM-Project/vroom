@@ -47,12 +47,12 @@ MixedExchange::MixedExchange(const Input& input,
   assert(_input.vehicle_ok_with_job(s_vehicle, this->t_route[t_rank + 1]));
 
   // Either moving edge with single jobs or a whole shipment.
-  assert((_input.jobs[this->t_route[t_rank]].type == JOB_TYPE::SINGLE and
-          _input.jobs[this->t_route[t_rank + 1]].type == JOB_TYPE::SINGLE and
-          check_t_reverse) or
-         (_input.jobs[this->t_route[t_rank]].type == JOB_TYPE::PICKUP and
-          _input.jobs[this->t_route[t_rank + 1]].type == JOB_TYPE::DELIVERY and
-          !check_t_reverse and
+  assert((_input.jobs[this->t_route[t_rank]].type == JOB_TYPE::SINGLE &&
+          _input.jobs[this->t_route[t_rank + 1]].type == JOB_TYPE::SINGLE &&
+          check_t_reverse) ||
+         (_input.jobs[this->t_route[t_rank]].type == JOB_TYPE::PICKUP &&
+          _input.jobs[this->t_route[t_rank + 1]].type == JOB_TYPE::DELIVERY &&
+          !check_t_reverse &&
           _sol_state.matching_delivery_rank[t_vehicle][t_rank] == t_rank + 1));
 }
 
@@ -149,7 +149,7 @@ Eval MixedExchange::gain_upper_bound() {
 
 void MixedExchange::compute_gain() {
   assert(_gain_upper_bound_computed);
-  assert(s_is_normal_valid or s_is_reverse_valid);
+  assert(s_is_normal_valid || s_is_reverse_valid);
   if (_reversed_s_gain > _normal_s_gain) {
     // Biggest potential gain is obtained when reversing edge.
     if (s_is_reverse_valid) {
@@ -202,7 +202,7 @@ bool MixedExchange::is_valid() {
     const auto s_travel_time = _sol_state.route_evals[s_vehicle].duration;
 
     s_is_normal_valid =
-      s_v.ok_for_travel_time(s_travel_time - _normal_s_gain.duration) and
+      s_v.ok_for_travel_time(s_travel_time - _normal_s_gain.duration) &&
       source.is_valid_addition_for_capacity_inclusion(_input,
                                                       target_delivery,
                                                       t_start,
@@ -213,7 +213,7 @@ bool MixedExchange::is_valid() {
       // Reverse target edge direction when inserting in source route.
       auto t_reverse_start = t_route.rbegin() + t_route.size() - 2 - t_rank;
       s_is_reverse_valid =
-        s_v.ok_for_travel_time(s_travel_time - _reversed_s_gain.duration) and
+        s_v.ok_for_travel_time(s_travel_time - _reversed_s_gain.duration) &&
         source.is_valid_addition_for_capacity_inclusion(_input,
                                                         target_delivery,
                                                         t_reverse_start,
@@ -222,15 +222,15 @@ bool MixedExchange::is_valid() {
                                                         s_rank + 1);
     }
 
-    valid = s_is_normal_valid or s_is_reverse_valid;
+    valid = s_is_normal_valid || s_is_reverse_valid;
   }
 
   return valid;
 }
 
 void MixedExchange::apply() {
-  assert(!reverse_t_edge or
-         (_input.jobs[t_route[t_rank]].type == JOB_TYPE::SINGLE and
+  assert(!reverse_t_edge ||
+         (_input.jobs[t_route[t_rank]].type == JOB_TYPE::SINGLE &&
           _input.jobs[t_route[t_rank + 1]].type == JOB_TYPE::SINGLE));
 
   std::swap(s_route[s_rank], t_route[t_rank]);

@@ -51,7 +51,7 @@ void Route::check_timing_consistency() const {
     return;
   }
 
-  assert((steps.front().step_type == STEP_TYPE::START and
+  assert((steps.front().step_type == STEP_TYPE::START &&
           steps.back().step_type == STEP_TYPE::END));
 
   assert(steps.back().arrival ==

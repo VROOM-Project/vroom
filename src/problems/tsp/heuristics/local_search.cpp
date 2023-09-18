@@ -211,7 +211,7 @@ UserCost LocalSearch::perform_all_relocate_steps(const Deadline& deadline) {
   unsigned relocate_iter = 0;
   UserCost gain = 0;
   do {
-    if (deadline.has_value() and deadline.value() < utils::now()) {
+    if (deadline.has_value() && deadline.value() < utils::now()) {
       break;
     }
 
@@ -262,13 +262,13 @@ UserCost LocalSearch::avoid_loop_step() {
     Index current = _edges[candidate];
 
     bool candidate_relocatable = false;
-    if (!_avoid_start_relocate.first or
+    if (!_avoid_start_relocate.first ||
         candidate != _avoid_start_relocate.second) {
-      while ((current != previous_candidate) and !candidate_relocatable) {
+      while ((current != previous_candidate) && !candidate_relocatable) {
         Index next = _edges[current];
         if ((_matrix[current][candidate] + _matrix[candidate][next] <=
-             _matrix[current][next]) and
-            (_matrix[current][candidate] > 0) and
+             _matrix[current][next]) &&
+            (_matrix[current][candidate] > 0) &&
             (_matrix[candidate][next] > 0)) {
           // Relocation at no cost, set aside the case of identical
           // locations.
@@ -365,7 +365,7 @@ UserCost LocalSearch::perform_all_avoid_loop_steps(const Deadline& deadline) {
   unsigned relocate_iter = 0;
   UserCost gain = 0;
   do {
-    if (deadline.has_value() and deadline.value() < utils::now()) {
+    if (deadline.has_value() && deadline.value() < utils::now()) {
       break;
     }
 
@@ -409,7 +409,7 @@ UserCost LocalSearch::two_opt_step() {
         // edge_2_start avoids testing pairs in both orders.
 
         Index edge_2_end = _edges[edge_2_start];
-        if ((edge_2_start == edge_1_end) or (edge_2_end == edge_1_start)) {
+        if ((edge_2_start == edge_1_end) || (edge_2_end == edge_1_start)) {
           // Operator doesn't make sense.
           continue;
         }
@@ -625,7 +625,7 @@ UserCost LocalSearch::perform_all_two_opt_steps(const Deadline& deadline) {
   unsigned two_opt_iter = 0;
   UserCost gain = 0;
   do {
-    if (deadline.has_value() and deadline.value() < utils::now()) {
+    if (deadline.has_value() && deadline.value() < utils::now()) {
       break;
     }
 
@@ -645,7 +645,7 @@ UserCost LocalSearch::perform_all_asym_two_opt_steps(const Deadline& deadline) {
   unsigned two_opt_iter = 0;
   UserCost gain = 0;
   do {
-    if (deadline.has_value() and deadline.value() < utils::now()) {
+    if (deadline.has_value() && deadline.value() < utils::now()) {
       break;
     }
 
@@ -758,7 +758,7 @@ UserCost LocalSearch::perform_all_or_opt_steps(const Deadline& deadline) {
   unsigned or_opt_iter = 0;
   UserCost gain = 0;
   do {
-    if (deadline.has_value() and deadline.value() < utils::now()) {
+    if (deadline.has_value() && deadline.value() < utils::now()) {
       break;
     }
 

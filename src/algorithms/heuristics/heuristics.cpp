@@ -52,10 +52,10 @@ Eval basic(const Input& input,
                      [&](const auto lhs, const auto rhs) {
                        auto& v_lhs = input.vehicles[lhs];
                        auto& v_rhs = input.vehicles[rhs];
-                       return v_lhs.max_tasks > v_rhs.max_tasks or
-                              (v_lhs.max_tasks == v_rhs.max_tasks and
-                               (v_rhs.capacity << v_lhs.capacity or
-                                (v_lhs.capacity == v_rhs.capacity and
+                       return v_lhs.max_tasks > v_rhs.max_tasks ||
+                              (v_lhs.max_tasks == v_rhs.max_tasks &&
+                               (v_rhs.capacity << v_lhs.capacity ||
+                                (v_lhs.capacity == v_rhs.capacity &&
                                  v_lhs.tw.length > v_rhs.tw.length)));
                      });
     break;
@@ -66,12 +66,12 @@ Eval basic(const Input& input,
                      [&](const auto lhs, const auto rhs) {
                        auto& v_lhs = input.vehicles[lhs];
                        auto& v_rhs = input.vehicles[rhs];
-                       return v_lhs.costs < v_rhs.costs or
-                              (v_lhs.costs == v_rhs.costs and
-                               (v_lhs.max_tasks > v_rhs.max_tasks or
-                                (v_lhs.max_tasks == v_rhs.max_tasks and
-                                 (v_rhs.capacity << v_lhs.capacity or
-                                  (v_lhs.capacity == v_rhs.capacity and
+                       return v_lhs.costs < v_rhs.costs ||
+                              (v_lhs.costs == v_rhs.costs &&
+                               (v_lhs.max_tasks > v_rhs.max_tasks ||
+                                (v_lhs.max_tasks == v_rhs.max_tasks &&
+                                 (v_rhs.capacity << v_lhs.capacity ||
+                                  (v_lhs.capacity == v_rhs.capacity &&
                                    v_lhs.tw.length > v_rhs.tw.length)))));
                      });
     break;
@@ -120,7 +120,7 @@ Eval basic(const Input& input,
       for (const auto job_rank : unassigned) {
         const auto& current_job = input.jobs[job_rank];
 
-        if (!input.vehicle_ok_with_job(v_rank, job_rank) or
+        if (!input.vehicle_ok_with_job(v_rank, job_rank) ||
             current_job.type == JOB_TYPE::DELIVERY) {
           continue;
         }
@@ -134,7 +134,7 @@ Eval basic(const Input& input,
         bool try_validity = false;
 
         if (init == INIT::HIGHER_AMOUNT) {
-          try_validity |= (higher_amount << current_job.pickup or
+          try_validity |= (higher_amount << current_job.pickup ||
                            higher_amount << current_job.delivery);
         }
         if (init == INIT::EARLIEST_DEADLINE) {
@@ -245,7 +245,7 @@ Eval basic(const Input& input,
           continue;
         }
 
-        if (current_job.type == JOB_TYPE::SINGLE and
+        if (current_job.type == JOB_TYPE::SINGLE &&
             current_r.size() + 1 <= vehicle.max_tasks) {
           for (Index r = 0; r <= current_r.size(); ++r) {
             const auto current_eval = utils::addition_cost(input,
@@ -258,13 +258,13 @@ Eval basic(const Input& input,
               static_cast<double>(current_eval.cost) -
               lambda * static_cast<double>(regrets[v][job_rank]);
 
-            if (current_cost < best_cost and
+            if (current_cost < best_cost &&
                 (vehicle.ok_for_travel_time(current_route_eval.duration +
-                                            current_eval.duration)) and
+                                            current_eval.duration)) &&
                 current_r.is_valid_addition_for_capacity(input,
                                                          current_job.pickup,
                                                          current_job.delivery,
-                                                         r) and
+                                                         r) &&
                 current_r.is_valid_addition_for_tw(input, job_rank, r)) {
               best_cost = current_cost;
               best_job_rank = job_rank;
@@ -274,7 +274,7 @@ Eval basic(const Input& input,
           }
         }
 
-        if (current_job.type == JOB_TYPE::PICKUP and
+        if (current_job.type == JOB_TYPE::PICKUP &&
             current_r.size() + 2 <= vehicle.max_tasks) {
           // Pre-compute cost of addition for matching delivery.
           std::vector<Eval> d_adds(current_r.route.size() + 1);
@@ -303,7 +303,7 @@ Eval basic(const Input& input,
 
             if (!current_r.is_valid_addition_for_load(input,
                                                       current_job.pickup,
-                                                      pickup_r) or
+                                                      pickup_r) ||
                 !current_r
                    .is_valid_addition_for_tw_without_max_load(input,
                                                               job_rank,
@@ -464,7 +464,7 @@ Eval dynamic_vehicle_choice(const Input& input,
 
   const auto& evals = input.jobs_vehicles_evals();
 
-  while (!vehicles_ranks.empty() and !unassigned.empty()) {
+  while (!vehicles_ranks.empty() && !unassigned.empty()) {
     // For any unassigned job at j, jobs_min_costs[j]
     // (resp. jobs_second_min_costs[j]) holds the min cost
     // (resp. second min cost) of picking the job in an empty route
@@ -507,11 +507,11 @@ Eval dynamic_vehicle_choice(const Input& input,
                            auto& v_lhs = input.vehicles[lhs];
                            auto& v_rhs = input.vehicles[rhs];
                            return closest_jobs_count[lhs] >
-                                    closest_jobs_count[rhs] or
+                                    closest_jobs_count[rhs] ||
                                   (closest_jobs_count[lhs] ==
-                                     closest_jobs_count[rhs] and
-                                   (v_rhs.capacity << v_lhs.capacity or
-                                    (v_lhs.capacity == v_rhs.capacity and
+                                     closest_jobs_count[rhs] &&
+                                   (v_rhs.capacity << v_lhs.capacity ||
+                                    (v_lhs.capacity == v_rhs.capacity &&
                                      v_lhs.tw.length > v_rhs.tw.length)));
                          });
       v_rank = *chosen_vehicle;
@@ -526,13 +526,13 @@ Eval dynamic_vehicle_choice(const Input& input,
                            auto& v_lhs = input.vehicles[lhs];
                            auto& v_rhs = input.vehicles[rhs];
                            return closest_jobs_count[lhs] >
-                                    closest_jobs_count[rhs] or
+                                    closest_jobs_count[rhs] ||
                                   (closest_jobs_count[lhs] ==
-                                     closest_jobs_count[rhs] and
-                                   (v_lhs.costs < v_rhs.costs or
-                                    (v_lhs.costs == v_rhs.costs and
-                                     (v_rhs.capacity << v_lhs.capacity or
-                                      (v_lhs.capacity == v_rhs.capacity and
+                                     closest_jobs_count[rhs] &&
+                                   (v_lhs.costs < v_rhs.costs ||
+                                    (v_lhs.costs == v_rhs.costs &&
+                                     (v_rhs.capacity << v_lhs.capacity ||
+                                      (v_lhs.capacity == v_rhs.capacity &&
                                        v_lhs.tw.length > v_rhs.tw.length)))));
                          });
       v_rank = *chosen_vehicle;
@@ -570,9 +570,9 @@ Eval dynamic_vehicle_choice(const Input& input,
       for (const auto job_rank : unassigned) {
         const auto& current_job = input.jobs[job_rank];
 
-        if (jobs_min_costs[job_rank] < evals[job_rank][v_rank].cost or
+        if (jobs_min_costs[job_rank] < evals[job_rank][v_rank].cost ||
             // One of the remaining vehicles is closest to that job.
-            !input.vehicle_ok_with_job(v_rank, job_rank) or
+            !input.vehicle_ok_with_job(v_rank, job_rank) ||
             current_job.type == JOB_TYPE::DELIVERY) {
           continue;
         }
@@ -586,7 +586,7 @@ Eval dynamic_vehicle_choice(const Input& input,
         bool try_validity = false;
 
         if (init == INIT::HIGHER_AMOUNT) {
-          try_validity |= (higher_amount << current_job.pickup or
+          try_validity |= (higher_amount << current_job.pickup ||
                            higher_amount << current_job.delivery);
         }
         if (init == INIT::EARLIEST_DEADLINE) {
@@ -698,7 +698,7 @@ Eval dynamic_vehicle_choice(const Input& input,
           continue;
         }
 
-        if (current_job.type == JOB_TYPE::SINGLE and
+        if (current_job.type == JOB_TYPE::SINGLE &&
             current_r.size() + 1 <= vehicle.max_tasks) {
           for (Index r = 0; r <= current_r.size(); ++r) {
             const auto current_eval = utils::addition_cost(input,
@@ -711,13 +711,13 @@ Eval dynamic_vehicle_choice(const Input& input,
               static_cast<double>(current_eval.cost) -
               lambda * static_cast<double>(regrets[job_rank]);
 
-            if (current_cost < best_cost and
+            if (current_cost < best_cost &&
                 (vehicle.ok_for_travel_time(current_route_eval.duration +
-                                            current_eval.duration)) and
+                                            current_eval.duration)) &&
                 current_r.is_valid_addition_for_capacity(input,
                                                          current_job.pickup,
                                                          current_job.delivery,
-                                                         r) and
+                                                         r) &&
                 current_r.is_valid_addition_for_tw(input, job_rank, r)) {
               best_cost = current_cost;
               best_job_rank = job_rank;
@@ -727,7 +727,7 @@ Eval dynamic_vehicle_choice(const Input& input,
           }
         }
 
-        if (current_job.type == JOB_TYPE::PICKUP and
+        if (current_job.type == JOB_TYPE::PICKUP &&
             current_r.size() + 2 <= vehicle.max_tasks) {
           // Pre-compute cost of addition for matching delivery.
           std::vector<Eval> d_adds(current_r.route.size() + 1);
@@ -756,7 +756,7 @@ Eval dynamic_vehicle_choice(const Input& input,
 
             if (!current_r.is_valid_addition_for_load(input,
                                                       current_job.pickup,
-                                                      pickup_r) or
+                                                      pickup_r) ||
                 !current_r
                    .is_valid_addition_for_tw_without_max_load(input,
                                                               job_rank,
@@ -975,7 +975,7 @@ void initial_routes(const Input& input, std::vector<Route>& routes) {
       }
     }
 
-    if (vehicle.has_end() and !job_ranks.empty()) {
+    if (vehicle.has_end() && !job_ranks.empty()) {
       // Update with last route leg.
       assert(previous_index.has_value());
       eval_sum +=

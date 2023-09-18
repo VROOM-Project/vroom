@@ -57,15 +57,15 @@ bool IntraMixedExchange::is_valid() {
       std::swap(_moved_jobs[_t_edge_first], _moved_jobs[_t_edge_last]);
     }
 
-    valid = s_is_normal_valid or s_is_reverse_valid;
+    valid = s_is_normal_valid || s_is_reverse_valid;
   }
 
   return valid;
 }
 
 void IntraMixedExchange::apply() {
-  assert(!reverse_t_edge or
-         (_input.jobs[t_route[t_rank]].type == JOB_TYPE::SINGLE and
+  assert(!reverse_t_edge ||
+         (_input.jobs[t_route[t_rank]].type == JOB_TYPE::SINGLE &&
           _input.jobs[t_route[t_rank + 1]].type == JOB_TYPE::SINGLE));
 
   if (reverse_t_edge) {

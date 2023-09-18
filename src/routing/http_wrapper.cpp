@@ -180,7 +180,7 @@ Matrices HttpWrapper::get_matrices(const std::vector<Location>& locs) const {
     assert(duration_line.Size() == m_size);
     assert(distance_line.Size() == m_size);
     for (rapidjson::SizeType j = 0; j < m_size; ++j) {
-      if (duration_value_is_null(duration_line[j]) or
+      if (duration_value_is_null(duration_line[j]) ||
           distance_value_is_null(distance_line[j])) {
         // No route found between i and j. Just storing info as we
         // don't know yet which location is responsible between i

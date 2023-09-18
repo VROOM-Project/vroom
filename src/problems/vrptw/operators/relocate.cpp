@@ -32,10 +32,10 @@ Relocate::Relocate(const Input& input,
 }
 
 bool Relocate::is_valid() {
-  return cvrp::Relocate::is_valid() and
+  return cvrp::Relocate::is_valid() &&
          _tw_t_route.is_valid_addition_for_tw(_input,
                                               s_route[s_rank],
-                                              t_rank) and
+                                              t_rank) &&
          _tw_s_route.is_valid_removal(_input, s_rank, 1);
 }
 

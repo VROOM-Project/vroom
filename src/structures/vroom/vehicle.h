@@ -33,12 +33,12 @@ struct VehicleCosts {
       per_hour(static_cast<Cost>(per_hour)){};
 
   friend bool operator==(const VehicleCosts& lhs, const VehicleCosts& rhs) {
-    return lhs.fixed == rhs.fixed and lhs.per_hour == rhs.per_hour;
+    return lhs.fixed == rhs.fixed && lhs.per_hour == rhs.per_hour;
   }
 
   friend bool operator<(const VehicleCosts& lhs, const VehicleCosts& rhs) {
-    return lhs.fixed < rhs.fixed or
-           (lhs.fixed == rhs.fixed and lhs.per_hour < rhs.per_hour);
+    return lhs.fixed < rhs.fixed ||
+           (lhs.fixed == rhs.fixed && lhs.per_hour < rhs.per_hour);
   }
 };
 

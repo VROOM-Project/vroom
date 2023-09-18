@@ -418,7 +418,7 @@ void SolutionState::set_pd_gains(const std::vector<Index>& route, Index v) {
         }
       }
 
-      if (has_previous_step and has_next_step and (route.size() > 2)) {
+      if (has_previous_step && has_next_step && (route.size() > 2)) {
         // No new edge with an open trip or if removing P&D creates an
         // empty route.
         new_edge_eval = vehicle.eval(p_index, n_index);

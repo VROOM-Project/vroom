@@ -27,7 +27,7 @@ IntraExchange::IntraExchange(const Input& input,
 }
 
 bool IntraExchange::is_valid() {
-  return cvrp::IntraExchange::is_valid() and
+  return cvrp::IntraExchange::is_valid() &&
          _tw_s_route.is_valid_addition_for_tw(_input,
                                               _delivery,
                                               _moved_jobs.begin(),

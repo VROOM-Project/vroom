@@ -82,9 +82,9 @@ bool IntraTwoOpt::reversal_ok_for_shipments() const {
   bool valid = true;
   Index current = s_rank;
 
-  while (valid and current < t_rank) {
+  while (valid && current < t_rank) {
     const auto& job = _input.jobs[s_route[current]];
-    valid = (job.type != JOB_TYPE::PICKUP) or
+    valid = (job.type != JOB_TYPE::PICKUP) ||
             (_sol_state.matching_delivery_rank[s_vehicle][current] > t_rank);
 
     ++current;
@@ -94,7 +94,7 @@ bool IntraTwoOpt::reversal_ok_for_shipments() const {
 }
 
 bool IntraTwoOpt::is_valid() {
-  bool valid = (!_input.has_shipments() or reversal_ok_for_shipments()) &&
+  bool valid = (!_input.has_shipments() || reversal_ok_for_shipments()) &&
                is_valid_for_max_travel_time();
 
   if (valid) {

@@ -59,7 +59,7 @@ bool IntraCrossExchange::is_valid() {
     std::swap(_moved_jobs[_moved_jobs.size() - 2],
               _moved_jobs[_moved_jobs.size() - 1]);
 
-    if (check_s_reverse and check_t_reverse) {
+    if (check_s_reverse && check_t_reverse) {
       s_reverse_t_reverse_is_valid =
         s_reverse_t_reverse_is_valid &&
         _tw_s_route.is_valid_addition_for_tw(_input,
@@ -87,19 +87,19 @@ bool IntraCrossExchange::is_valid() {
     std::swap(_moved_jobs[_moved_jobs.size() - 2],
               _moved_jobs[_moved_jobs.size() - 1]);
 
-    valid = s_normal_t_normal_is_valid or s_normal_t_reverse_is_valid or
-            s_reverse_t_reverse_is_valid or s_reverse_t_normal_is_valid;
+    valid = s_normal_t_normal_is_valid || s_normal_t_reverse_is_valid ||
+            s_reverse_t_reverse_is_valid || s_reverse_t_normal_is_valid;
   }
 
   return valid;
 }
 
 void IntraCrossExchange::apply() {
-  assert(!reverse_s_edge or
-         (_input.jobs[s_route[s_rank]].type == JOB_TYPE::SINGLE and
+  assert(!reverse_s_edge ||
+         (_input.jobs[s_route[s_rank]].type == JOB_TYPE::SINGLE &&
           _input.jobs[s_route[s_rank + 1]].type == JOB_TYPE::SINGLE));
-  assert(!reverse_t_edge or
-         (_input.jobs[t_route[t_rank]].type == JOB_TYPE::SINGLE and
+  assert(!reverse_t_edge ||
+         (_input.jobs[t_route[t_rank]].type == JOB_TYPE::SINGLE &&
           _input.jobs[t_route[t_rank + 1]].type == JOB_TYPE::SINGLE));
 
   if (reverse_t_edge) {

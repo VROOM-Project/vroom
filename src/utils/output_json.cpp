@@ -320,7 +320,7 @@ rapidjson::Value to_json(const Step& s,
     }
   }
 
-  if (s.step_type == STEP_TYPE::JOB or s.step_type == STEP_TYPE::BREAK) {
+  if (s.step_type == STEP_TYPE::JOB || s.step_type == STEP_TYPE::BREAK) {
     json_step.AddMember("id", s.id, allocator);
   }
 
