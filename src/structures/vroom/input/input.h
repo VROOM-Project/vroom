@@ -63,6 +63,7 @@ private:
   Index _max_matrices_used_index{0};
   bool _all_locations_have_coords{true};
   std::vector<std::vector<Eval>> _jobs_vehicles_evals;
+  std::vector<bool> _good_TSP_candidate;
 
   unsigned _amount_size{0};
   Amount _zero;
@@ -82,6 +83,7 @@ private:
   void set_vehicles_costs();
   void set_vehicles_max_tasks();
   void set_jobs_vehicles_evals();
+  void set_vehicles_TSP_flag();
   void set_vehicle_steps_ranks();
   void set_matrices(unsigned nb_thread);
 
@@ -125,6 +127,10 @@ public:
   }
 
   bool is_used_several_times(const Location& location) const;
+
+  bool is_good_TSP_candidate(const Index v) const {
+    return _good_TSP_candidate[v];
+  }
 
   bool has_skills() const;
 

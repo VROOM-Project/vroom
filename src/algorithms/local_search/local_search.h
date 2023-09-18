@@ -32,7 +32,8 @@ template <class Route,
           class PDShift,
           class RouteExchange,
           class SwapStar,
-          class RouteSplit>
+          class RouteSplit,
+          class TSPFix>
 class LocalSearch {
 private:
   const Input& _input;
