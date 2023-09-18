@@ -30,6 +30,11 @@ void CostWrapper::set_durations_matrix(const Matrix<UserDuration>* matrix) {
   duration_data = (*matrix)[0];
 }
 
+void CostWrapper::set_distances_matrix(const Matrix<UserDistance>* matrix) {
+  distance_matrix_size = matrix->size();
+  distance_data = (*matrix)[0];
+}
+
 void CostWrapper::set_costs_matrix(const Matrix<UserCost>* matrix,
                                    bool reset_cost_factor) {
   cost_matrix_size = matrix->size();

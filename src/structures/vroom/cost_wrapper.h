@@ -21,6 +21,9 @@ private:
   std::size_t duration_matrix_size;
   const UserDuration* duration_data;
 
+  std::size_t distance_matrix_size;
+  const UserDistance* distance_data;
+
   Cost discrete_cost_factor;
   std::size_t cost_matrix_size;
   const UserCost* cost_data;
@@ -33,6 +36,8 @@ public:
   CostWrapper(double speed_factor, Cost per_hour);
 
   void set_durations_matrix(const Matrix<UserDuration>* matrix);
+
+  void set_distances_matrix(const Matrix<UserDistance>* matrix);
 
   void set_costs_matrix(const Matrix<UserCost>* matrix,
                         bool reset_cost_factor = false);
