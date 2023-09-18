@@ -380,7 +380,7 @@ void LocalSearch<Route,
   std::vector<Priority> best_priorities(_nb_vehicles, 0);
 
   // Dummy init to enter first loop.
-  Eval best_gain(static_cast<Cost>(1), static_cast<Cost>(0));
+  Eval best_gain(static_cast<Cost>(1));
   Priority best_priority = 0;
 
   while (best_gain.cost > 0 or best_priority > 0) {

@@ -72,7 +72,7 @@ compute_best_route_split_choice(const Input& input,
         continue;
       }
 
-      Eval current_end_eval(end_v.fixed_cost(), 0);
+      Eval current_end_eval(end_v.fixed_cost());
       current_end_eval += sol_state.fwd_costs[s_vehicle][v].back() -
                           sol_state.fwd_costs[s_vehicle][v][r];
       if (end_v.has_start()) {
@@ -143,7 +143,7 @@ compute_best_route_split_choice(const Input& input,
         continue;
       }
 
-      Eval current_begin_eval(begin_v.fixed_cost(), 0);
+      Eval current_begin_eval(begin_v.fixed_cost());
       current_begin_eval += sol_state.fwd_costs[s_vehicle][v][r - 1];
       if (begin_v.has_start()) {
         current_begin_eval +=

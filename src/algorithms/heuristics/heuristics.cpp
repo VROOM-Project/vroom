@@ -426,7 +426,7 @@ Eval basic(const Input& input,
 
     if (!current_r.empty()) {
       sol_eval += current_route_eval;
-      sol_eval += Eval(vehicle.fixed_cost(), 0);
+      sol_eval += Eval(vehicle.fixed_cost());
     }
   }
 
@@ -876,7 +876,7 @@ Eval dynamic_vehicle_choice(const Input& input,
 
     if (!current_r.empty()) {
       sol_eval += current_route_eval;
-      sol_eval += Eval(vehicle.fixed_cost(), 0);
+      sol_eval += Eval(vehicle.fixed_cost());
     }
   }
 
