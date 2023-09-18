@@ -8,7 +8,6 @@ All rights reserved (see LICENSE).
 */
 
 #include <mutex>
-#include <ranges>
 #include <thread>
 
 #if USE_LIBOSRM
