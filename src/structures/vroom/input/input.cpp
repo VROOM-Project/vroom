@@ -606,8 +606,6 @@ void Input::set_vehicles_costs() {
     assert(duration_m != _durations_matrices.end());
     vehicle.cost_wrapper.set_durations_matrix(&(duration_m->second));
 
-    // TODO this will probably break with user-provided durations but
-    // not distances.
     auto distance_m = _distances_matrices.find(vehicle.profile);
     assert(distance_m != _distances_matrices.end());
     vehicle.cost_wrapper.set_distances_matrix(&(distance_m->second));
@@ -909,16 +907,39 @@ void Input::set_matrices(unsigned nb_thread) {
     // optimization if geometry is requested.
     bool create_routing_wrapper = _geometry;
 
-    if (_durations_matrices.find(profile) == _durations_matrices.end()) {
-      // Durations matrix has not been manually set, create empty
-      // matrix to allow for concurrent modification later on.
+    const auto durations_m = _durations_matrices.find(profile);
+    if (durations_m == _durations_matrices.end()) {
+      // No custom durations matrix.
+
+      if (_distances_matrices.find(profile) != _distances_matrices.end()) {
+        // We don't accept distances matrices without durations
+        // matrices.
+        throw InputException(
+          "Custom matrix provided for distances but not for durations for " +
+          profile + " profile.");
+      }
+
+      // No durations/distances matrices have been manually set,
+      // create empty ones to allow for concurrent modification later
+      // on.
       create_routing_wrapper = true;
       _durations_matrices.emplace(profile, Matrix<UserDuration>());
-
+      _distances_matrices.emplace(profile, Matrix<UserDistance>());
+    } else {
+      // Custom durations matrix defined.
       if (_distances_matrices.find(profile) == _distances_matrices.end()) {
-        // Distances matrix has not been manually set, create empty
-        // matrix to allow for concurrent modification later on.
-        _distances_matrices.emplace(profile, Matrix<UserDistance>());
+        // No custom distances.
+        if (_geometry) {
+          // Get distances from routing engine later on since routing
+          // is explicitly requested.
+          _distances_matrices.emplace(profile, Matrix<UserDistance>());
+        } else {
+          // Routing-less optimization with no distances involved,
+          // fill internal distances matrix with zeros.
+          _distances_matrices
+            .emplace(profile,
+                     Matrix<UserDistance>(durations_m->second.size(), 0));
+        }
       }
     }
 
@@ -940,11 +961,11 @@ void Input::set_matrices(unsigned nb_thread) {
         // Required matrices not manually set have been defined as
         // empty above.
         assert(durations_m != _durations_matrices.end());
+        assert(distances_m != _distances_matrices.end());
         const bool define_durations = (durations_m->second.size() == 0);
-        const bool has_distance_matrix =
-          (distances_m != _distances_matrices.end());
-        const bool define_distances =
-          has_distance_matrix and (distances_m->second.size() == 0);
+        const bool define_distances = (distances_m->second.size() == 0);
+        assert(!define_durations or define_distances);
+
         if (define_durations or define_distances) {
           if (_locations.size() == 1) {
             durations_m->second = Matrix<UserDuration>(1);
@@ -1005,8 +1026,7 @@ void Input::set_matrices(unsigned nb_thread) {
             " profile.");
         }
 
-        if (has_distance_matrix and
-            distances_m->second.size() <= _max_matrices_used_index) {
+        if (distances_m->second.size() <= _max_matrices_used_index) {
           throw InputException(
             "location_index exceeding distances matrix size for " + profile +
             " profile.");
