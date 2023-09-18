@@ -396,9 +396,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
         }
       }
 
-      std::sort(swap_choice_options.begin(),
-                swap_choice_options.end(),
-                SwapChoiceCmp);
+      std::ranges::sort(swap_choice_options, SwapChoiceCmp);
 
       assert(swap_choice_options.size() <= 16);
 

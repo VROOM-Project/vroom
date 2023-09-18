@@ -39,10 +39,9 @@ TWRoute::TWRoute(const Input& input, Index v, unsigned amount_size)
 
   for (Index i = 0; i < breaks.size(); ++i) {
     const auto& b = breaks[i];
-    const auto b_tw =
-      std::find_if(b.tws.begin(), b.tws.end(), [&](const auto& tw) {
-        return previous_earliest <= tw.end;
-      });
+    const auto b_tw = std::ranges::find_if(b.tws, [&](const auto& tw) {
+      return previous_earliest <= tw.end;
+    });
     if (b_tw == b.tws.end()) {
       throw InputException(break_error);
     }
@@ -164,10 +163,9 @@ void TWRoute::fwd_update_earliest_from(const Input& input, Index rank) {
 
       current_earliest += previous_action_time;
 
-      const auto b_tw =
-        std::find_if(b.tws.begin(), b.tws.end(), [&](const auto& tw) {
-          return current_earliest <= tw.end;
-        });
+      const auto b_tw = std::ranges::find_if(b.tws, [&](const auto& tw) {
+        return current_earliest <= tw.end;
+      });
       assert(b_tw != b.tws.end());
 
       if (current_earliest < b_tw->start) {
@@ -191,10 +189,9 @@ void TWRoute::fwd_update_earliest_from(const Input& input, Index rank) {
     // Back to the job after breaks.
     current_earliest += previous_action_time + remaining_travel_time;
 
-    const auto j_tw =
-      std::find_if(next_j.tws.begin(), next_j.tws.end(), [&](const auto& tw) {
-        return current_earliest <= tw.end;
-      });
+    const auto j_tw = std::ranges::find_if(next_j.tws, [&](const auto& tw) {
+      return current_earliest <= tw.end;
+    });
     assert(j_tw != next_j.tws.end());
 
     current_earliest = std::max(current_earliest, j_tw->start);
@@ -231,10 +228,9 @@ void TWRoute::fwd_update_earliest_from(const Input& input, Index rank) {
       const auto& b = v.breaks[break_rank];
       current_earliest += previous_action_time;
 
-      const auto b_tw =
-        std::find_if(b.tws.begin(), b.tws.end(), [&](const auto& tw) {
-          return current_earliest <= tw.end;
-        });
+      const auto b_tw = std::ranges::find_if(b.tws, [&](const auto& tw) {
+        return current_earliest <= tw.end;
+      });
       assert(b_tw != b.tws.end());
 
       if (current_earliest < b_tw->start) {
@@ -509,12 +505,12 @@ OrderChoice::OrderChoice(const Input& input,
                          const Break& b,
                          const PreviousInfo& previous)
   : input(input),
-    j_tw(std::find_if(input.jobs[job_rank].tws.begin(),
-                      input.jobs[job_rank].tws.end(),
-                      [&](const auto& tw) {
-                        return previous.earliest + previous.travel <= tw.end;
-                      })),
-    b_tw(std::find_if(b.tws.begin(), b.tws.end(), [&](const auto& tw) {
+    j_tw(std::ranges::find_if(input.jobs[job_rank].tws,
+                              [&](const auto& tw) {
+                                return previous.earliest + previous.travel <=
+                                       tw.end;
+                              })),
+    b_tw(std::ranges::find_if(b.tws, [&](const auto& tw) {
       return previous.earliest <= tw.end;
     })) {
 }
@@ -546,10 +542,9 @@ OrderChoice TWRoute::order_choice(const Input& input,
     job_action_time;
   Duration job_then_break_margin = 0;
 
-  const auto new_b_tw =
-    std::find_if(b.tws.begin(), b.tws.end(), [&](const auto& tw) {
-      return earliest_job_end <= tw.end;
-    });
+  const auto new_b_tw = std::ranges::find_if(b.tws, [&](const auto& tw) {
+    return earliest_job_end <= tw.end;
+  });
   if (new_b_tw == b.tws.end()) {
     // Break does not fit after job due to its time windows. Only
     // option is to choose break first, if valid for max_load.
@@ -609,10 +604,9 @@ OrderChoice TWRoute::order_choice(const Input& input,
 
   earliest_job_start += b.service + travel_after_break;
 
-  const auto new_j_tw =
-    std::find_if(j.tws.begin(), j.tws.end(), [&](const auto& tw) {
-      return earliest_job_start <= tw.end;
-    });
+  const auto new_j_tw = std::ranges::find_if(j.tws, [&](const auto& tw) {
+    return earliest_job_start <= tw.end;
+  });
 
   if (new_j_tw == j.tws.end()) {
     // Job does not fit after break due to its time windows. Only
@@ -649,9 +643,9 @@ OrderChoice TWRoute::order_choice(const Input& input,
     }
     const Duration pb_d_candidate = job_then_break_end + delivery_travel;
     const auto pb_d_tw =
-      std::find_if(matching_d.tws.begin(),
-                   matching_d.tws.end(),
-                   [&](const auto& tw) { return pb_d_candidate <= tw.end; });
+      std::ranges::find_if(matching_d.tws, [&](const auto& tw) {
+        return pb_d_candidate <= tw.end;
+      });
     if (pb_d_tw != matching_d.tws.end() &&
         (!check_max_load || b.is_valid_for_load(current_load + j.pickup))) {
       // pickup -> break -> delivery is doable, choose pickup first.
@@ -662,11 +656,9 @@ OrderChoice TWRoute::order_choice(const Input& input,
     // Previous order not doable, so try pickup -> delivery -> break.
     const Duration delivery_candidate =
       earliest_job_end + v.duration(j.index(), matching_d.index());
-    const auto d_tw = std::find_if(matching_d.tws.begin(),
-                                   matching_d.tws.end(),
-                                   [&](const auto& tw) {
-                                     return delivery_candidate <= tw.end;
-                                   });
+    const auto d_tw = std::ranges::find_if(matching_d.tws, [&](const auto& tw) {
+      return delivery_candidate <= tw.end;
+    });
 
     if (d_tw != matching_d.tws.end()) {
       const auto matching_d_action_time =
@@ -678,7 +670,7 @@ OrderChoice TWRoute::order_choice(const Input& input,
         std::max(delivery_candidate, d_tw->start) + matching_d_action_time;
 
       const auto after_d_b_tw =
-        std::find_if(b.tws.begin(), b.tws.end(), [&](const auto& tw) {
+        std::ranges::find_if(b.tws, [&](const auto& tw) {
           return break_candidate <= tw.end;
         });
       if (after_d_b_tw != b.tws.end()) {
@@ -806,10 +798,9 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
       // Compute earliest end date for break after last inserted jobs.
       const auto& b = v.breaks[current_break];
 
-      const auto b_tw =
-        std::find_if(b.tws.begin(), b.tws.end(), [&](const auto& tw) {
-          return current.earliest <= tw.end;
-        });
+      const auto b_tw = std::ranges::find_if(b.tws, [&](const auto& tw) {
+        return current.earliest <= tw.end;
+      });
 
       if (b_tw == b.tws.end()) {
         // Break does not fit due to its time windows.
@@ -845,10 +836,9 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
       // Compute earliest end date for job after last inserted breaks.
       current.earliest += current.travel;
 
-      const auto j_tw =
-        std::find_if(j.tws.begin(), j.tws.end(), [&](const auto& tw) {
-          return current.earliest <= tw.end;
-        });
+      const auto j_tw = std::ranges::find_if(j.tws, [&](const auto& tw) {
+        return current.earliest <= tw.end;
+      });
       if (j_tw == j.tws.end()) {
         return false;
       }
@@ -961,9 +951,9 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
       // not doable anymore.
       auto earliest_after = current.earliest + next.travel;
       const auto j_after_tw =
-        std::find_if(j_after.tws.begin(),
-                     j_after.tws.end(),
-                     [&](const auto& tw) { return earliest_after <= tw.end; });
+        std::ranges::find_if(j_after.tws, [&](const auto& tw) {
+          return earliest_after <= tw.end;
+        });
       if (j_after_tw == j_after.tws.end()) {
         return false;
       }
@@ -980,10 +970,9 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
 
         earliest_after += new_action_time;
 
-        const auto b_tw =
-          std::find_if(b.tws.begin(), b.tws.end(), [&](const auto& tw) {
-            return earliest_after <= tw.end;
-          });
+        const auto b_tw = std::ranges::find_if(b.tws, [&](const auto& tw) {
+          return earliest_after <= tw.end;
+        });
         if (b_tw == b.tws.end()) {
           // Break does not fit due to its time windows.
           return false;
@@ -1163,10 +1152,9 @@ void TWRoute::replace(const Input& input,
       const auto& b = v.breaks[current_break];
       assert(b.is_valid_for_load(current_load));
 
-      const auto b_tw =
-        std::find_if(b.tws.begin(), b.tws.end(), [&](const auto& tw) {
-          return current.earliest <= tw.end;
-        });
+      const auto b_tw = std::ranges::find_if(b.tws, [&](const auto& tw) {
+        return current.earliest <= tw.end;
+      });
       assert(b_tw != b.tws.end());
 
       if (current.earliest < b_tw->start) {
@@ -1215,10 +1203,9 @@ void TWRoute::replace(const Input& input,
       // Compute earliest end date for job after last inserted breaks.
       current.earliest += current.travel;
 
-      const auto j_tw =
-        std::find_if(j.tws.begin(), j.tws.end(), [&](const auto& tw) {
-          return current.earliest <= tw.end;
-        });
+      const auto j_tw = std::ranges::find_if(j.tws, [&](const auto& tw) {
+        return current.earliest <= tw.end;
+      });
       assert(j_tw != j.tws.end());
 
       current.earliest = std::max(current.earliest, j_tw->start);
@@ -1403,10 +1390,9 @@ void TWRoute::replace(const Input& input,
         // First jobs in route have been erased and not replaced, so
         // update new first job earliest date and action time.
         current.earliest += next.travel;
-        const auto j_tw =
-          std::find_if(j.tws.begin(), j.tws.end(), [&](const auto& tw) {
-            return current.earliest <= tw.end;
-          });
+        const auto j_tw = std::ranges::find_if(j.tws, [&](const auto& tw) {
+          return current.earliest <= tw.end;
+        });
         assert(j_tw != j.tws.end());
 
         earliest[0] = std::max(current.earliest, j_tw->start);

@@ -7,6 +7,8 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <ranges>
+
 #include "structures/vroom/solution_state.h"
 #include "utils/helpers.h"
 
@@ -107,7 +109,7 @@ void SolutionState::update_skills(const std::vector<Index>& route, Index v1) {
       continue;
     }
 
-    auto fwd = std::find_if_not(route.begin(), route.end(), [&](auto j_rank) {
+    auto fwd = std::ranges::find_if_not(route, [&](auto j_rank) {
       return _input.vehicle_ok_with_job(v2, j_rank);
     });
     fwd_skill_rank[v1][v2] = std::distance(route.begin(), fwd);

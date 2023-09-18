@@ -44,10 +44,9 @@ Vehicle::Vehicle(Id id,
     max_travel_time(max_travel_time.has_value()
                       ? utils::scale_from_user_duration(max_travel_time.value())
                       : DEFAULT_MAX_TRAVEL_TIME),
-    has_break_max_load(
-      std::any_of(breaks.cbegin(), breaks.cend(), [](const auto& b) {
-        return b.max_load.has_value();
-      })) {
+    has_break_max_load(std::ranges::any_of(breaks, [](const auto& b) {
+      return b.max_load.has_value();
+    })) {
   if (!static_cast<bool>(start) && !static_cast<bool>(end)) {
     throw InputException("No start or end specified for vehicle " +
                          std::to_string(id) + '.');

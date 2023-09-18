@@ -28,9 +28,8 @@ Solution check_and_set_ETA(const Input& input, unsigned nb_thread) {
 
   // Split the work among threads.
   const unsigned nb_vehicles_with_input =
-    std::count_if(input.vehicles.begin(),
-                  input.vehicles.end(),
-                  [](const auto& v) { return !v.steps.empty(); });
+    std::ranges::count_if(input.vehicles,
+                          [](const auto& v) { return !v.steps.empty(); });
   const auto nb_buckets = std::min(nb_thread, nb_vehicles_with_input);
 
   std::vector<std::vector<Index>> thread_ranks(nb_buckets,

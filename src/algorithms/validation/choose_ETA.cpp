@@ -24,7 +24,7 @@ inline Duration get_duration(double d) {
 inline Duration get_violation(const std::vector<TimeWindow>& tws,
                               Duration arrival) {
   Duration violation = 0;
-  const auto tw = std::find_if(tws.begin(), tws.end(), [&](const auto& tw) {
+  const auto tw = std::ranges::find_if(tws, [&](const auto& tw) {
     return arrival <= tw.end;
   });
   if (tw == tws.end()) {
@@ -1139,10 +1139,9 @@ Route choose_ETA(const Input& input,
 
   // Used to spot missing breaks.
   std::unordered_set<Id> break_ids;
-  std::transform(v.breaks.begin(),
-                 v.breaks.end(),
-                 std::inserter(break_ids, break_ids.end()),
-                 [](const auto& b) { return b.id; });
+  std::ranges::transform(v.breaks,
+                         std::inserter(break_ids, break_ids.end()),
+                         [](const auto& b) { return b.id; });
 
   std::vector<Step> sol_steps;
   sol_steps.reserve(steps.size());

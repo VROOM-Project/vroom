@@ -131,9 +131,7 @@ bool UnassignedExchange::is_valid() {
 }
 
 void UnassignedExchange::apply() {
-  std::copy(_moved_jobs.begin(),
-            _moved_jobs.end(),
-            s_route.begin() + _first_rank);
+  std::ranges::copy(_moved_jobs, s_route.begin() + _first_rank);
 
   assert(_unassigned.find(_u) != _unassigned.end());
   _unassigned.erase(_u);

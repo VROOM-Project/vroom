@@ -173,12 +173,12 @@ int main(int argc, char** argv) {
   try {
     // Force heuristic parameters from the command-line, useful for
     // debugging.
-    std::transform(heuristic_params_arg.begin(),
-                   heuristic_params_arg.end(),
-                   std::back_inserter(cl_args.h_params),
-                   [](const auto& str_param) {
-                     return vroom::utils::str_to_heuristic_param(str_param);
-                   });
+    std::ranges::transform(heuristic_params_arg,
+                           std::back_inserter(cl_args.h_params),
+                           [](const auto& str_param) {
+                             return vroom::utils::str_to_heuristic_param(
+                               str_param);
+                           });
   } catch (const vroom::Exception& e) {
     std::cerr << "[Error] " << e.message << std::endl;
     vroom::io::write_to_json({e.error_code, e.message}, cl_args.output_file);

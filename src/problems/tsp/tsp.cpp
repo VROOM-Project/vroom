@@ -49,10 +49,9 @@ TSP::TSP(const Input& input, std::vector<Index>&& job_ranks, Index vehicle_rank)
   std::vector<Index> matrix_ranks;
   matrix_ranks.reserve(_job_ranks.size() + 2);
 
-  std::transform(_job_ranks.cbegin(),
-                 _job_ranks.cend(),
-                 std::back_inserter(matrix_ranks),
-                 [&](const auto& r) { return _input.jobs[r].index(); });
+  std::ranges::transform(_job_ranks,
+                         std::back_inserter(matrix_ranks),
+                         [&](const auto& r) { return _input.jobs[r].index(); });
 
   if (_has_start) {
     // Add start and remember rank in _matrix.
@@ -284,10 +283,9 @@ std::vector<Index> TSP::raw_solve(unsigned nb_threads,
 
   // Back to ranks in input::_jobs.
   std::vector<Index> init_ranks_sol;
-  std::transform(current_sol.cbegin(),
-                 current_sol.cend(),
-                 std::back_inserter(init_ranks_sol),
-                 [&](const auto& i) { return _job_ranks[i]; });
+  std::ranges::transform(current_sol,
+                         std::back_inserter(init_ranks_sol),
+                         [&](const auto& i) { return _job_ranks[i]; });
 
   return init_ranks_sol;
 }

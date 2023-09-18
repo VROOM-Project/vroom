@@ -562,10 +562,9 @@ inline Solution format_solution(const Input& input,
 
   // Handle unassigned jobs.
   std::vector<Job> unassigned_jobs;
-  std::transform(unassigned_ranks.begin(),
-                 unassigned_ranks.end(),
-                 std::back_inserter(unassigned_jobs),
-                 [&](auto j) { return input.jobs[j]; });
+  std::ranges::transform(unassigned_ranks,
+                         std::back_inserter(unassigned_jobs),
+                         [&](auto j) { return input.jobs[j]; });
 
   return Solution(0,
                   input.zero_amount(),
@@ -771,10 +770,9 @@ inline Route format_route(const Input& input,
       steps.emplace_back(b, current_load);
       auto& current_break = steps.back();
 
-      const auto b_tw =
-        std::find_if(b.tws.begin(), b.tws.end(), [&](const auto& tw) {
-          return step_start <= tw.end;
-        });
+      const auto b_tw = std::ranges::find_if(b.tws, [&](const auto& tw) {
+        return step_start <= tw.end;
+      });
       assert(b_tw != b.tws.end());
 
       if (step_start < b_tw->start) {
@@ -862,9 +860,9 @@ inline Route format_route(const Input& input,
     current.arrival = scale_to_user_duration(step_start);
 
     const auto j_tw =
-      std::find_if(current_job.tws.begin(),
-                   current_job.tws.end(),
-                   [&](const auto& tw) { return step_start <= tw.end; });
+      std::ranges::find_if(current_job.tws, [&](const auto& tw) {
+        return step_start <= tw.end;
+      });
     assert(j_tw != current_job.tws.end());
 
     if (step_start < j_tw->start) {
@@ -919,10 +917,9 @@ inline Route format_route(const Input& input,
     steps.emplace_back(b, current_load);
     auto& current_break = steps.back();
 
-    const auto b_tw =
-      std::find_if(b.tws.begin(), b.tws.end(), [&](const auto& tw) {
-        return step_start <= tw.end;
-      });
+    const auto b_tw = std::ranges::find_if(b.tws, [&](const auto& tw) {
+      return step_start <= tw.end;
+    });
     assert(b_tw != b.tws.end());
 
     if (step_start < b_tw->start) {
@@ -1046,10 +1043,9 @@ inline Solution format_solution(const Input& input,
 
   // Handle unassigned jobs.
   std::vector<Job> unassigned_jobs;
-  std::transform(unassigned_ranks.begin(),
-                 unassigned_ranks.end(),
-                 std::back_inserter(unassigned_jobs),
-                 [&](auto j) { return input.jobs[j]; });
+  std::ranges::transform(unassigned_ranks,
+                         std::back_inserter(unassigned_jobs),
+                         [&](auto j) { return input.jobs[j]; });
 
   return Solution(0,
                   input.zero_amount(),

@@ -47,33 +47,32 @@ Eval basic(const Input& input,
   case SORT::CAPACITY:
     // Sort vehicles by decreasing max number of tasks allowed, then
     // capacity (not a total order), then working hours length.
-    std::stable_sort(vehicles_ranks.begin(),
-                     vehicles_ranks.end(),
-                     [&](const auto lhs, const auto rhs) {
-                       auto& v_lhs = input.vehicles[lhs];
-                       auto& v_rhs = input.vehicles[rhs];
-                       return v_lhs.max_tasks > v_rhs.max_tasks ||
-                              (v_lhs.max_tasks == v_rhs.max_tasks &&
-                               (v_rhs.capacity << v_lhs.capacity ||
-                                (v_lhs.capacity == v_rhs.capacity &&
-                                 v_lhs.tw.length > v_rhs.tw.length)));
-                     });
+    std::ranges::stable_sort(vehicles_ranks,
+                             [&](const auto lhs, const auto rhs) {
+                               auto& v_lhs = input.vehicles[lhs];
+                               auto& v_rhs = input.vehicles[rhs];
+                               return v_lhs.max_tasks > v_rhs.max_tasks ||
+                                      (v_lhs.max_tasks == v_rhs.max_tasks &&
+                                       (v_rhs.capacity << v_lhs.capacity ||
+                                        (v_lhs.capacity == v_rhs.capacity &&
+                                         v_lhs.tw.length > v_rhs.tw.length)));
+                             });
     break;
   case SORT::COST:
     // Sort vehicles by increasing fixed cost, then same as above.
-    std::stable_sort(vehicles_ranks.begin(),
-                     vehicles_ranks.end(),
-                     [&](const auto lhs, const auto rhs) {
-                       auto& v_lhs = input.vehicles[lhs];
-                       auto& v_rhs = input.vehicles[rhs];
-                       return v_lhs.costs < v_rhs.costs ||
-                              (v_lhs.costs == v_rhs.costs &&
-                               (v_lhs.max_tasks > v_rhs.max_tasks ||
-                                (v_lhs.max_tasks == v_rhs.max_tasks &&
-                                 (v_rhs.capacity << v_lhs.capacity ||
-                                  (v_lhs.capacity == v_rhs.capacity &&
-                                   v_lhs.tw.length > v_rhs.tw.length)))));
-                     });
+    std::ranges::stable_sort(vehicles_ranks,
+                             [&](const auto lhs, const auto rhs) {
+                               auto& v_lhs = input.vehicles[lhs];
+                               auto& v_rhs = input.vehicles[rhs];
+                               return v_lhs.costs < v_rhs.costs ||
+                                      (v_lhs.costs == v_rhs.costs &&
+                                       (v_lhs.max_tasks > v_rhs.max_tasks ||
+                                        (v_lhs.max_tasks == v_rhs.max_tasks &&
+                                         (v_rhs.capacity << v_lhs.capacity ||
+                                          (v_lhs.capacity == v_rhs.capacity &&
+                                           v_lhs.tw.length >
+                                             v_rhs.tw.length)))));
+                             });
     break;
   }
 
@@ -501,40 +500,36 @@ Eval dynamic_vehicle_choice(const Input& input,
 
     if (sort == SORT::CAPACITY) {
       const auto chosen_vehicle =
-        std::min_element(vehicles_ranks.begin(),
-                         vehicles_ranks.end(),
-                         [&](const auto lhs, const auto rhs) {
-                           auto& v_lhs = input.vehicles[lhs];
-                           auto& v_rhs = input.vehicles[rhs];
-                           return closest_jobs_count[lhs] >
-                                    closest_jobs_count[rhs] ||
-                                  (closest_jobs_count[lhs] ==
-                                     closest_jobs_count[rhs] &&
-                                   (v_rhs.capacity << v_lhs.capacity ||
-                                    (v_lhs.capacity == v_rhs.capacity &&
-                                     v_lhs.tw.length > v_rhs.tw.length)));
-                         });
+        std::ranges::min_element(vehicles_ranks,
+                                 [&](const auto lhs, const auto rhs) {
+                                   auto& v_lhs = input.vehicles[lhs];
+                                   auto& v_rhs = input.vehicles[rhs];
+                                   return closest_jobs_count[lhs] >
+                                            closest_jobs_count[rhs] ||
+                                          (closest_jobs_count[lhs] ==
+                                             closest_jobs_count[rhs] &&
+                                           (v_rhs.capacity << v_lhs.capacity ||
+                                            (v_lhs.capacity == v_rhs.capacity &&
+                                             v_lhs.tw.length >
+                                               v_rhs.tw.length)));
+                                 });
       v_rank = *chosen_vehicle;
       vehicles_ranks.erase(chosen_vehicle);
     } else {
       assert(sort == SORT::COST);
 
-      const auto chosen_vehicle =
-        std::min_element(vehicles_ranks.begin(),
-                         vehicles_ranks.end(),
-                         [&](const auto lhs, const auto rhs) {
-                           auto& v_lhs = input.vehicles[lhs];
-                           auto& v_rhs = input.vehicles[rhs];
-                           return closest_jobs_count[lhs] >
-                                    closest_jobs_count[rhs] ||
-                                  (closest_jobs_count[lhs] ==
-                                     closest_jobs_count[rhs] &&
-                                   (v_lhs.costs < v_rhs.costs ||
-                                    (v_lhs.costs == v_rhs.costs &&
-                                     (v_rhs.capacity << v_lhs.capacity ||
-                                      (v_lhs.capacity == v_rhs.capacity &&
-                                       v_lhs.tw.length > v_rhs.tw.length)))));
-                         });
+      const auto chosen_vehicle = std::ranges::
+        min_element(vehicles_ranks, [&](const auto lhs, const auto rhs) {
+          auto& v_lhs = input.vehicles[lhs];
+          auto& v_rhs = input.vehicles[rhs];
+          return closest_jobs_count[lhs] > closest_jobs_count[rhs] ||
+                 (closest_jobs_count[lhs] == closest_jobs_count[rhs] &&
+                  (v_lhs.costs < v_rhs.costs ||
+                   (v_lhs.costs == v_rhs.costs &&
+                    (v_rhs.capacity << v_lhs.capacity ||
+                     (v_lhs.capacity == v_rhs.capacity &&
+                      v_lhs.tw.length > v_rhs.tw.length)))));
+        });
       v_rank = *chosen_vehicle;
       vehicles_ranks.erase(chosen_vehicle);
     }

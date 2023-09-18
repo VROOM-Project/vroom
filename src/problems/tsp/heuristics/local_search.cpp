@@ -187,8 +187,7 @@ UserCost LocalSearch::relocate_step() {
 
   // Spot best gain found among all threads.
   auto best_rank =
-    std::distance(best_gains.begin(),
-                  std::max_element(best_gains.begin(), best_gains.end()));
+    std::distance(best_gains.begin(), std::ranges::max_element(best_gains));
   auto best_gain = best_gains[best_rank];
   Index best_edge_1_start = best_edge_1_starts[best_rank];
   Index best_edge_2_start = best_edge_2_starts[best_rank];
@@ -293,11 +292,11 @@ UserCost LocalSearch::avoid_loop_step() {
   } while (candidate != 0);
 
   // Reorder to try the longest chains first.
-  std::sort(relocatable_chains.begin(),
-            relocatable_chains.end(),
-            [](const std::list<Index>& lhs, const std::list<Index>& rhs) {
-              return lhs.size() > rhs.size();
-            });
+  std::ranges::sort(relocatable_chains,
+                    [](const std::list<Index>& lhs,
+                       const std::list<Index>& rhs) {
+                      return lhs.size() > rhs.size();
+                    });
 
   bool amelioration_found = false;
   for (auto const& chain : relocatable_chains) {
@@ -456,8 +455,7 @@ UserCost LocalSearch::two_opt_step() {
 
   // Spot best gain found among all threads.
   auto best_rank =
-    std::distance(best_gains.begin(),
-                  std::max_element(best_gains.begin(), best_gains.end()));
+    std::distance(best_gains.begin(), std::ranges::max_element(best_gains));
   auto best_gain = best_gains[best_rank];
   Index best_edge_1_start = best_edge_1_starts[best_rank];
   Index best_edge_2_start = best_edge_2_starts[best_rank];
@@ -592,8 +590,7 @@ UserCost LocalSearch::asym_two_opt_step() {
 
   // Spot best gain found among all threads.
   auto best_rank =
-    std::distance(best_gains.begin(),
-                  std::max_element(best_gains.begin(), best_gains.end()));
+    std::distance(best_gains.begin(), std::ranges::max_element(best_gains));
   auto best_gain = best_gains[best_rank];
   Index best_edge_1_start = best_edge_1_starts[best_rank];
   Index best_edge_2_start = best_edge_2_starts[best_rank];
@@ -735,8 +732,7 @@ UserCost LocalSearch::or_opt_step() {
 
   // Spot best gain found among all threads.
   auto best_rank =
-    std::distance(best_gains.begin(),
-                  std::max_element(best_gains.begin(), best_gains.end()));
+    std::distance(best_gains.begin(), std::ranges::max_element(best_gains));
   auto best_gain = best_gains[best_rank];
   Index best_edge_1_start = best_edge_1_starts[best_rank];
   Index best_edge_2_start = best_edge_2_starts[best_rank];

@@ -589,12 +589,9 @@ void Input::set_vehicles_TSP_flag() {
     for (std::size_t j = 0; j < jobs.size() && _good_TSP_candidate[v]; ++j) {
       _good_TSP_candidate[v] =
         !vehicle_ok_with_job(v, j) ||
-        std::any_of(jobs[j].tws.cbegin(),
-                    jobs[j].tws.cend(),
-                    [&](const auto& tw) {
-                      return tw.start <= vehicle.tw.start &&
-                             vehicle.tw.end <= tw.end;
-                    });
+        std::ranges::any_of(jobs[j].tws, [&](const auto& tw) {
+          return tw.start <= vehicle.tw.start && vehicle.tw.end <= tw.end;
+        });
     }
   }
 }
@@ -941,11 +938,10 @@ void Input::set_matrices(unsigned nb_thread) {
             durations_m->second = Matrix<UserDuration>(1);
             distances_m->second = Matrix<UserDistance>(1);
           } else {
-            auto rw = std::find_if(_routing_wrappers.begin(),
-                                   _routing_wrappers.end(),
-                                   [&](const auto& wr) {
-                                     return wr->profile == profile;
-                                   });
+            auto rw =
+              std::ranges::find_if(_routing_wrappers, [&](const auto& wr) {
+                return wr->profile == profile;
+              });
             assert(rw != _routing_wrappers.end());
 
             if (!_has_custom_location_index) {
@@ -1130,10 +1126,9 @@ Solution Input::solve(unsigned exploration_level,
   if (_geometry) {
     for (auto& route : sol.routes) {
       const auto& profile = route.profile;
-      auto rw =
-        std::find_if(_routing_wrappers.begin(),
-                     _routing_wrappers.end(),
-                     [&](const auto& wr) { return wr->profile == profile; });
+      auto rw = std::ranges::find_if(_routing_wrappers, [&](const auto& wr) {
+        return wr->profile == profile;
+      });
       if (rw == _routing_wrappers.end()) {
         throw InputException(
           "Route geometry request with non-routable profile " + profile + ".");
@@ -1191,10 +1186,9 @@ Solution Input::check(unsigned nb_thread) {
   if (_geometry) {
     for (auto& route : sol.routes) {
       const auto& profile = route.profile;
-      auto rw =
-        std::find_if(_routing_wrappers.begin(),
-                     _routing_wrappers.end(),
-                     [&](const auto& wr) { return wr->profile == profile; });
+      auto rw = std::ranges::find_if(_routing_wrappers, [&](const auto& wr) {
+        return wr->profile == profile;
+      });
       if (rw == _routing_wrappers.end()) {
         throw InputException(
           "Route geometry request with non-routable profile " + profile + ".");

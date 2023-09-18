@@ -212,9 +212,7 @@ protected:
       nb_solutions);
 #endif
 
-    std::fill(thread_ranks.begin(),
-              thread_ranks.end(),
-              std::vector<std::size_t>());
+    std::ranges::fill(thread_ranks, std::vector<std::size_t>());
     for (std::size_t i = 0; i < nb_solutions; ++i) {
       thread_ranks[i % nb_threads].push_back(i);
     }
