@@ -55,6 +55,10 @@ public:
            static_cast<Duration>(duration_data[i * duration_matrix_size + j]);
   }
 
+  Distance distance(Index i, Index j) const {
+    return static_cast<Distance>(distance_data[i * distance_matrix_size + j]);
+  }
+
   Cost cost(Index i, Index j) const {
     return discrete_cost_factor *
            static_cast<Cost>(cost_data[i * cost_matrix_size + j]);
