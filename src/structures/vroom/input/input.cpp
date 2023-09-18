@@ -153,7 +153,7 @@ void Input::check_job(Job& job) {
       auto new_index = _locations.size();
       job.location.set_index(new_index);
       _locations.push_back(job.location);
-      _locations_to_index.insert(std::make_pair(job.location, new_index));
+      _locations_to_index.try_emplace(job.location, new_index);
     }
   } else {
     // All jobs have a location_index in input, we only store
@@ -162,8 +162,7 @@ void Input::check_job(Job& job) {
     auto search = _locations_to_index.find(job.location);
     if (search == _locations_to_index.end()) {
       _locations.push_back(job.location);
-      _locations_to_index.insert(
-        std::make_pair(job.location, _locations.size() - 1));
+      _locations_to_index.try_emplace(job.location, _locations.size() - 1);
     } else {
       _locations_used_several_times.insert(job.location);
     }
@@ -277,7 +276,7 @@ void Input::add_vehicle(const Vehicle& vehicle) {
         auto new_index = _locations.size();
         start_loc.set_index(new_index);
         _locations.push_back(start_loc);
-        _locations_to_index.insert(std::make_pair(start_loc, new_index));
+        _locations_to_index.try_emplace(start_loc, new_index);
       }
     } else {
       // All starts have a location_index in input, we only store
@@ -286,8 +285,7 @@ void Input::add_vehicle(const Vehicle& vehicle) {
       auto search = _locations_to_index.find(start_loc);
       if (search == _locations_to_index.end()) {
         _locations.push_back(start_loc);
-        _locations_to_index.insert(
-          std::make_pair(start_loc, _locations.size() - 1));
+        _locations_to_index.try_emplace(start_loc, _locations.size() - 1);
       } else {
         _locations_used_several_times.insert(start_loc);
       }
@@ -326,7 +324,7 @@ void Input::add_vehicle(const Vehicle& vehicle) {
         auto new_index = _locations.size();
         end_loc.set_index(new_index);
         _locations.push_back(end_loc);
-        _locations_to_index.insert(std::make_pair(end_loc, new_index));
+        _locations_to_index.try_emplace(end_loc, new_index);
       }
     } else {
       // All ends have a location_index in input, we only store
@@ -335,8 +333,7 @@ void Input::add_vehicle(const Vehicle& vehicle) {
       auto search = _locations_to_index.find(end_loc);
       if (search == _locations_to_index.end()) {
         _locations.push_back(end_loc);
-        _locations_to_index.insert(
-          std::make_pair(end_loc, _locations.size() - 1));
+        _locations_to_index.try_emplace(end_loc, _locations.size() - 1);
       } else {
         _locations_used_several_times.insert(end_loc);
       }
@@ -379,7 +376,7 @@ void Input::add_vehicle(const Vehicle& vehicle) {
 
   auto search = _max_cost_per_hour.find(current_v.profile);
   if (search == _max_cost_per_hour.end()) {
-    _max_cost_per_hour.insert({current_v.profile, current_v.costs.per_hour});
+    _max_cost_per_hour.try_emplace(current_v.profile, current_v.costs.per_hour);
   } else {
     search->second = std::max(search->second, current_v.costs.per_hour);
   }
@@ -901,12 +898,12 @@ void Input::set_matrices(unsigned nb_thread) {
       // Durations matrix has not been manually set, create empty
       // matrix to allow for concurrent modification later on.
       create_routing_wrapper = true;
-      _durations_matrices.emplace(profile, Matrix<UserDuration>());
+      _durations_matrices.try_emplace(profile, Matrix<UserDuration>());
 
       if (_distances_matrices.find(profile) == _distances_matrices.end()) {
         // Distances matrix has not been manually set, create empty
         // matrix to allow for concurrent modification later on.
-        _distances_matrices.emplace(profile, Matrix<UserDistance>());
+        _distances_matrices.try_emplace(profile, Matrix<UserDistance>());
       }
     }
 
