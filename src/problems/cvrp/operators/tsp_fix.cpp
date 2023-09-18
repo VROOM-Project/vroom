@@ -35,9 +35,8 @@ void TSPFix::compute_gain() {
   TSP tsp(_input, std::move(jobs), s_vehicle);
   tsp_route = tsp.raw_solve(1, Timeout());
 
-  tsp_eval = utils::route_eval_for_vehicle(_input, s_vehicle, tsp_route);
-
-  s_gain = _sol_state.route_evals[s_vehicle] - tsp_eval;
+  s_gain = _sol_state.route_evals[s_vehicle] -
+           utils::route_eval_for_vehicle(_input, s_vehicle, tsp_route);
   stored_gain = s_gain;
   gain_computed = true;
 }
