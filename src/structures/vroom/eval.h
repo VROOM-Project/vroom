@@ -10,6 +10,8 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <tuple>
+
 #include "structures/typedefs.h"
 
 namespace vroom {
@@ -17,15 +19,17 @@ namespace vroom {
 struct Eval {
   Cost cost;
   Duration duration;
+  Distance distance;
 
-  constexpr Eval() : cost(0), duration(0){};
+  constexpr Eval() : cost(0), duration(0), distance(0){};
 
-  constexpr Eval(Cost cost, Duration duration)
-    : cost(cost), duration(duration){};
+  constexpr Eval(Cost cost, Duration duration = 0, Distance distance = 0)
+    : cost(cost), duration(duration), distance(distance){};
 
   Eval& operator+=(const Eval& rhs) {
     cost += rhs.cost;
     duration += rhs.duration;
+    distance += rhs.distance;
 
     return *this;
   }
@@ -33,12 +37,13 @@ struct Eval {
   Eval& operator-=(const Eval& rhs) {
     cost -= rhs.cost;
     duration -= rhs.duration;
+    distance -= rhs.distance;
 
     return *this;
   }
 
   Eval operator-() const {
-    return {-cost, -duration};
+    return {-cost, -duration, -distance};
   }
 
   friend Eval operator+(Eval lhs, const Eval& rhs) {
@@ -52,8 +57,8 @@ struct Eval {
   }
 
   friend bool operator<(const Eval& lhs, const Eval& rhs) {
-    return lhs.cost < rhs.cost or
-           (lhs.cost == rhs.cost and lhs.duration < rhs.duration);
+    return std::tie(lhs.cost, lhs.duration, lhs.distance) <
+           std::tie(rhs.cost, rhs.duration, rhs.distance);
   }
 
   friend bool operator<=(const Eval& lhs, const Eval& rhs) {
@@ -61,18 +66,21 @@ struct Eval {
   }
 
   friend bool operator==(const Eval& lhs, const Eval& rhs) {
-    return lhs.cost == rhs.cost and lhs.duration == rhs.duration;
+    return lhs.cost == rhs.cost and lhs.duration == rhs.duration and
+           lhs.distance == rhs.distance;
   }
 
   friend bool operator!=(const Eval& lhs, const Eval& rhs) {
-    return lhs.cost != rhs.cost or lhs.duration != rhs.duration;
+    return lhs.cost != rhs.cost or lhs.duration != rhs.duration or
+           lhs.distance != rhs.distance;
   }
 };
 
 constexpr Eval MAX_EVAL = {std::numeric_limits<Cost>::max(),
-                           std::numeric_limits<Duration>::max()};
-constexpr Eval NO_EVAL = {std::numeric_limits<Cost>::max(), 0};
-constexpr Eval NO_GAIN = {std::numeric_limits<Cost>::min(), 0};
+                           std::numeric_limits<Duration>::max(),
+                           std::numeric_limits<Distance>::max()};
+constexpr Eval NO_EVAL = {std::numeric_limits<Cost>::max(), 0, 0};
+constexpr Eval NO_GAIN = {std::numeric_limits<Cost>::min(), 0, 0};
 
 } // namespace vroom
 

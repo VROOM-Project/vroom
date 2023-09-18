@@ -102,7 +102,9 @@ struct Vehicle {
   }
 
   Eval eval(Index i, Index j) const {
-    return Eval(cost_wrapper.cost(i, j), cost_wrapper.duration(i, j));
+    return Eval(cost_wrapper.cost(i, j),
+                cost_wrapper.duration(i, j),
+                cost_wrapper.distance(i, j));
   }
 
   bool ok_for_travel_time(Duration d) const {
