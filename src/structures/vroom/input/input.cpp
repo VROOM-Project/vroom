@@ -602,9 +602,15 @@ void Input::set_vehicles_TSP_flag() {
 
 void Input::set_vehicles_costs() {
   for (auto& vehicle : vehicles) {
-    auto d_m = _durations_matrices.find(vehicle.profile);
-    assert(d_m != _durations_matrices.end());
-    vehicle.cost_wrapper.set_durations_matrix(&(d_m->second));
+    auto duration_m = _durations_matrices.find(vehicle.profile);
+    assert(duration_m != _durations_matrices.end());
+    vehicle.cost_wrapper.set_durations_matrix(&(duration_m->second));
+
+    // TODO this will probably break with user-provided durations but
+    // not distances.
+    auto distance_m = _distances_matrices.find(vehicle.profile);
+    assert(distance_m != _distances_matrices.end());
+    vehicle.cost_wrapper.set_distances_matrix(&(distance_m->second));
 
     auto c_m = _costs_matrices.find(vehicle.profile);
     if (c_m != _costs_matrices.end()) {
@@ -622,7 +628,7 @@ void Input::set_vehicles_costs() {
       constexpr bool reset_cost_factor = true;
       vehicle.cost_wrapper.set_costs_matrix(&(c_m->second), reset_cost_factor);
     } else {
-      vehicle.cost_wrapper.set_costs_matrix(&(d_m->second));
+      vehicle.cost_wrapper.set_costs_matrix(&(duration_m->second));
     }
   }
 }
