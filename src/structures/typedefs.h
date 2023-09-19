@@ -81,6 +81,7 @@ constexpr unsigned DEFAULT_EXPLORATION_LEVEL = 5;
 constexpr unsigned DEFAULT_THREADS_NUMBER = 4;
 constexpr Duration DEFAULT_MAX_TRAVEL_TIME =
   std::numeric_limits<Duration>::max();
+constexpr Duration DEFAULT_MAX_DISTANCE = std::numeric_limits<Distance>::max();
 
 // Available routing engines.
 enum class ROUTER { OSRM, LIBOSRM, ORS, VALHALLA };
