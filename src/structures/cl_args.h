@@ -35,9 +35,9 @@ struct CLArgs {
   unsigned exploration_level;                // -x
 };
 
-void update_host(Servers& servers, const std::string& value);
+void update_host(Servers& servers, std::string_view value);
 
-void update_port(Servers& servers, const std::string& value);
+void update_port(Servers& servers, std::string_view value);
 
 } // namespace vroom::io
 

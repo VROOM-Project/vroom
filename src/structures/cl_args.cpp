@@ -13,7 +13,7 @@ All rights reserved (see LICENSE).
 
 namespace vroom::io {
 
-void update_host(Servers& servers, const std::string& value) {
+void update_host(Servers& servers, std::string_view value) {
   // Determine profile and host from a "car:0.0.0.0"-like value.
   std::string profile = DEFAULT_PROFILE;
   std::string host;
@@ -53,7 +53,7 @@ void update_host(Servers& servers, const std::string& value) {
   }
 }
 
-void update_port(Servers& servers, const std::string& value) {
+void update_port(Servers& servers, std::string_view value) {
   // Determine profile and port from a "car:0.0.0.0"-like value.
   std::string profile = DEFAULT_PROFILE;
   std::string port;

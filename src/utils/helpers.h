@@ -52,7 +52,7 @@ inline UserCost add_without_overflow(UserCost a, UserCost b) {
   return a + b;
 }
 
-inline INIT get_init(const std::string& s) {
+inline INIT get_init(std::string_view s) {
   using enum INIT;
   if (s == "NONE") {
     return NONE;
@@ -72,7 +72,7 @@ inline INIT get_init(const std::string& s) {
   throw InputException("Invalid heuristic parameter in command-line.");
 }
 
-inline SORT get_sort(const std::string& s) {
+inline SORT get_sort(std::string_view s) {
   if (s == "CAPACITY") {
     return SORT::CAPACITY;
   }
