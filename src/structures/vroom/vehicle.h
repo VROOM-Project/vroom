@@ -73,7 +73,7 @@ struct Vehicle {
     std::string description = "",
     const VehicleCosts& costs = VehicleCosts(),
     double speed_factor = 1.,
-    const size_t max_tasks = std::numeric_limits<size_t>::max(),
+    const std::optional<size_t>& max_tasks = std::optional<size_t>(),
     const std::optional<UserDuration>& max_travel_time =
       std::optional<UserDuration>(),
     const std::optional<UserDistance>& max_distance =
