@@ -24,7 +24,8 @@ namespace vroom {
 
 namespace io {
 // Profile name used as key.
-using Servers = std::unordered_map<std::string, Server>;
+using Servers =
+  std::unordered_map<std::string, Server, StringHash, std::equal_to<>>;
 } // namespace io
 
 class VRP;
@@ -49,10 +50,20 @@ private:
   bool _geometry{false};
   bool _has_jobs{false};
   bool _has_shipments{false};
-  std::unordered_map<std::string, Matrix<UserDuration>> _durations_matrices;
-  std::unordered_map<std::string, Matrix<UserDistance>> _distances_matrices;
-  std::unordered_map<std::string, Matrix<UserCost>> _costs_matrices;
-  std::unordered_map<std::string, Cost> _max_cost_per_hour;
+  std::unordered_map<std::string,
+                     Matrix<UserDuration>,
+                     StringHash,
+                     std::equal_to<>>
+    _durations_matrices;
+  std::unordered_map<std::string,
+                     Matrix<UserDistance>,
+                     StringHash,
+                     std::equal_to<>>
+    _distances_matrices;
+  std::unordered_map<std::string, Matrix<UserCost>, StringHash, std::equal_to<>>
+    _costs_matrices;
+  std::unordered_map<std::string, Cost, StringHash, std::equal_to<>>
+    _max_cost_per_hour;
   Cost _cost_upper_bound{0};
   std::vector<Location> _locations;
   std::unordered_map<Location, Index> _locations_to_index;
