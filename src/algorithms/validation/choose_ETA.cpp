@@ -432,11 +432,12 @@ Route choose_ETA(const Input& input,
 
     // Now propagate some timing constraints for tighter lower bounds.
     switch (step.type) {
-    case STEP_TYPE::START:
+      using enum STEP_TYPE;
+    case START:
       previous_LB = LB;
       ++rank_in_J;
       break;
-    case STEP_TYPE::JOB: {
+    case JOB: {
       LB = std::max(LB, previous_LB + previous_action + previous_travel);
       previous_LB = LB;
       previous_action = action_times[rank_in_J];
@@ -444,13 +445,13 @@ Route choose_ETA(const Input& input,
       ++rank_in_J;
       break;
     }
-    case STEP_TYPE::BREAK: {
+    case BREAK: {
       LB = std::max(LB, previous_LB + previous_action);
       previous_LB = LB;
       previous_action = v.breaks[step.rank].service;
       break;
     }
-    case STEP_TYPE::END:
+    case END:
       LB = std::max(LB, previous_LB + previous_action + previous_travel);
       break;
     }

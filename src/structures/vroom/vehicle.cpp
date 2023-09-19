@@ -70,23 +70,24 @@ Vehicle::Vehicle(Id id,
   if (!input_steps.empty()) {
     // Populating steps. We rely on always having start and end steps
     // in input, so just add them if they're missing.
+    using enum STEP_TYPE;
+
     steps.reserve(input_steps.size() + 2);
 
     unsigned rank_after_start = 0;
-    if (input_steps.front().type == STEP_TYPE::START) {
+    if (input_steps.front().type == START) {
       steps.push_back(input_steps.front());
       rank_after_start = 1;
     } else {
-      steps.emplace_back(STEP_TYPE::START);
+      steps.emplace_back(START);
     }
 
     for (unsigned i = rank_after_start; i < input_steps.size(); ++i) {
-      if (input_steps[i].type == STEP_TYPE::START) {
+      if (input_steps[i].type == START) {
         throw InputException("Unexpected start in input steps for vehicle " +
                              std::to_string(id) + ".");
       }
-      if (input_steps[i].type == STEP_TYPE::END &&
-          (i != input_steps.size() - 1)) {
+      if (input_steps[i].type == END && (i != input_steps.size() - 1)) {
         throw InputException("Unexpected end in input steps for vehicle " +
                              std::to_string(id) + ".");
       }
@@ -94,8 +95,8 @@ Vehicle::Vehicle(Id id,
       steps.push_back(input_steps[i]);
     }
 
-    if (steps.back().type != STEP_TYPE::END) {
-      steps.emplace_back(STEP_TYPE::END);
+    if (steps.back().type != END) {
+      steps.emplace_back(END);
     }
   }
 }

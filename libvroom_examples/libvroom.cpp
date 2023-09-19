@@ -33,26 +33,28 @@ void log_solution(const vroom::Solution& sol, bool geometry) {
     for (const auto& step : route.steps) {
       std::string type;
       switch (step.step_type) {
-      case vroom::STEP_TYPE::START:
+        using enum vroom::STEP_TYPE;
+      case START:
         type = "Start";
         break;
-      case vroom::STEP_TYPE::END:
+      case END:
         type = "End";
         break;
-      case vroom::STEP_TYPE::BREAK:
+      case BREAK:
         type = "Break";
         break;
-      case vroom::STEP_TYPE::JOB: {
+      case JOB: {
         assert(step.job_type.has_value());
 
         switch (step.job_type.value()) {
-        case vroom::JOB_TYPE::SINGLE:
+          using enum vroom::JOB_TYPE;
+        case SINGLE:
           type = "Job";
           break;
-        case vroom::JOB_TYPE::PICKUP:
+        case PICKUP:
           type = "Pickup";
           break;
-        case vroom::JOB_TYPE::DELIVERY:
+        case DELIVERY:
           type = "Delivery";
           break;
         }

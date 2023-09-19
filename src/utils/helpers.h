@@ -53,20 +53,21 @@ inline UserCost add_without_overflow(UserCost a, UserCost b) {
 }
 
 inline INIT get_init(const std::string& s) {
+  using enum INIT;
   if (s == "NONE") {
-    return INIT::NONE;
+    return NONE;
   }
   if (s == "HIGHER_AMOUNT") {
-    return INIT::HIGHER_AMOUNT;
+    return HIGHER_AMOUNT;
   }
   if (s == "NEAREST") {
-    return INIT::NEAREST;
+    return NEAREST;
   }
   if (s == "FURTHEST") {
-    return INIT::FURTHEST;
+    return FURTHEST;
   }
   if (s == "EARLIEST_DEADLINE") {
-    return INIT::EARLIEST_DEADLINE;
+    return EARLIEST_DEADLINE;
   }
   throw InputException("Invalid heuristic parameter in command-line.");
 }
@@ -369,12 +370,13 @@ inline void check_precedence(const Input& input,
                              std::unordered_set<Index>& expected_delivery_ranks,
                              Index job_rank) {
   switch (input.jobs[job_rank].type) {
-  case JOB_TYPE::SINGLE:
+    using enum JOB_TYPE;
+  case SINGLE:
     break;
-  case JOB_TYPE::PICKUP:
+  case PICKUP:
     expected_delivery_ranks.insert(job_rank + 1);
     break;
-  case JOB_TYPE::DELIVERY:
+  case DELIVERY:
     // Associated pickup has been done before.
     auto search = expected_delivery_ranks.find(job_rank);
     assert(search != expected_delivery_ranks.end());

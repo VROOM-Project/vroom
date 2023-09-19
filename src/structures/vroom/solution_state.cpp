@@ -447,12 +447,13 @@ void SolutionState::set_pd_matching_ranks(const std::vector<Index>& route,
 
   for (std::size_t i = 0; i < route.size(); ++i) {
     switch (_input.jobs[route[i]].type) {
-    case JOB_TYPE::SINGLE:
+      using enum JOB_TYPE;
+    case SINGLE:
       break;
-    case JOB_TYPE::PICKUP:
+    case PICKUP:
       pickup_route_rank_to_input_rank.insert({i, route[i]});
       break;
-    case JOB_TYPE::DELIVERY:
+    case DELIVERY:
       delivery_input_rank_to_route_rank.insert({route[i], i});
       break;
     }

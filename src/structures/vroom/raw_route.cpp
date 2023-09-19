@@ -70,15 +70,16 @@ void RawRoute::update_amounts(const Input& input) {
   for (std::size_t i = 0; i < route.size(); ++i) {
     const auto& job = input.jobs[route[i]];
     switch (job.type) {
-    case JOB_TYPE::SINGLE:
+      using enum JOB_TYPE;
+    case SINGLE:
       current_pickups += job.pickup;
       current_deliveries += job.delivery;
       break;
-    case JOB_TYPE::PICKUP:
+    case PICKUP:
       current_pd_load += job.pickup;
       current_nb_pickups += 1;
       break;
-    case JOB_TYPE::DELIVERY:
+    case DELIVERY:
       assert(job.delivery <= current_pd_load);
       current_pd_load -= job.delivery;
       current_nb_deliveries += 1;
