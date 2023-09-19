@@ -1689,8 +1689,8 @@ void LocalSearch<Route,
                        _sol_state,
                        _sol[s_t.first],
                        s_t.first,
-                       empty_route_ranks,
-                       empty_route_refs,
+                       std::move(empty_route_ranks),
+                       std::move(empty_route_refs),
                        best_gains[s_t.first][s_t.second]);
 
           if (r.gain() > best_gains[s_t.first][s_t.second]) {
