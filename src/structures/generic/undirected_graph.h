@@ -29,9 +29,9 @@ private:
 public:
   UndirectedGraph();
 
-  UndirectedGraph(const Matrix<T>& m);
+  explicit UndirectedGraph(const Matrix<T>& m);
 
-  UndirectedGraph(std::vector<Edge<T>>&& edges);
+  explicit UndirectedGraph(std::vector<Edge<T>>&& edges);
 
   std::size_t size() const;
 

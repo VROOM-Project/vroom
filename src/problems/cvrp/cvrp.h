@@ -22,7 +22,7 @@ private:
   static const std::vector<HeuristicParameters> heterogeneous_parameters;
 
 public:
-  CVRP(const Input& input);
+  explicit CVRP(const Input& input);
 
   Solution
   solve(unsigned exploration_level,

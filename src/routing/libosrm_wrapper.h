@@ -27,7 +27,7 @@ private:
   static osrm::EngineConfig get_config(const std::string& profile);
 
 public:
-  LibosrmWrapper(const std::string& profile);
+  explicit LibosrmWrapper(const std::string& profile);
 
   Matrices get_matrices(const std::vector<Location>& locs) const override;
 

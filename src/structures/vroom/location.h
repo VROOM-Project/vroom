@@ -25,11 +25,11 @@ private:
   bool _user_index;
 
 public:
-  Location(Index index);
+  explicit Location(Index index);
 
   Location(Index index, const Coordinates& coords);
 
-  Location(const Coordinates& coords);
+  explicit Location(const Coordinates& coords);
 
   void set_index(Index index);
 

@@ -118,7 +118,7 @@ public:
   // rank j in route for vehicle v.
   std::vector<std::vector<vroom::ls::ThreeInsertions>> top_3_insertions;
 
-  SolutionState(const Input& input);
+  explicit SolutionState(const Input& input);
 
   template <class Route> void setup(const Route& r, Index v);
 

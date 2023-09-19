@@ -14,7 +14,8 @@ struct RouteInsertion {
   Index pickup_rank{0};
   Index delivery_rank{0};
 
-  RouteInsertion(unsigned amount_size) : delivery(Amount(amount_size)) {
+  explicit RouteInsertion(unsigned amount_size)
+    : delivery(Amount(amount_size)) {
   }
 };
 

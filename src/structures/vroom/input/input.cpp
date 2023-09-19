@@ -34,7 +34,7 @@ Input::Input(io::Servers servers, ROUTER router)
 
 void Input::set_amount_size(unsigned amount_size) {
   _amount_size = amount_size;
-  _zero = amount_size;
+  _zero = Amount(amount_size);
 }
 
 void Input::set_geometry(bool geometry) {

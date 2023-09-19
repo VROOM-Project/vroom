@@ -375,11 +375,11 @@ inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
     if (has_start_coords) {
       start = Location({start_index, parse_coordinates(json_vehicle, "start")});
     } else {
-      start = start_index;
+      start = Location(start_index);
     }
   } else {
     if (has_start_coords) {
-      start = parse_coordinates(json_vehicle, "start");
+      start = Location(parse_coordinates(json_vehicle, "start"));
     }
   }
 
@@ -399,11 +399,11 @@ inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
     if (has_end_coords) {
       end = Location({end_index, parse_coordinates(json_vehicle, "end")});
     } else {
-      end = end_index;
+      end = Location(end_index);
     }
   } else {
     if (has_end_coords) {
-      end = parse_coordinates(json_vehicle, "end");
+      end = Location(parse_coordinates(json_vehicle, "end"));
     }
   }
 
@@ -447,7 +447,7 @@ inline Location get_task_location(const rapidjson::Value& v,
     return Location(location_index);
   }
   check_location(v, type);
-  return parse_coordinates(v, "location");
+  return Location(parse_coordinates(v, "location"));
 }
 
 inline Job get_job(const rapidjson::Value& json_job, unsigned amount_size) {

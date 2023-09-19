@@ -275,7 +275,7 @@ protected:
   }
 
 public:
-  VRP(const Input& input);
+  explicit VRP(const Input& input);
 
   virtual ~VRP();
 
