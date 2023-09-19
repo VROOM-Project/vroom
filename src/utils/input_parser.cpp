@@ -139,6 +139,18 @@ get_max_travel_time(const rapidjson::Value& object) {
   return max_travel_time;
 }
 
+inline std::optional<UserDistance>
+get_max_distance(const rapidjson::Value& object) {
+  std::optional<UserDistance> max_distance;
+  if (object.HasMember("max_distance")) {
+    if (!object["max_distance"].IsUint()) {
+      throw InputException("Invalid max_distance value.");
+    }
+    max_distance = object["max_distance"].GetUint();
+  }
+  return max_distance;
+}
+
 inline void check_id(const rapidjson::Value& v, const std::string& type) {
   if (!v.IsObject()) {
     throw InputException("Invalid " + type + ".");
@@ -425,6 +437,7 @@ inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
                  get_double(json_vehicle, "speed_factor"),
                  get_max_tasks(json_vehicle),
                  get_max_travel_time(json_vehicle),
+                 get_max_distance(json_vehicle),
                  get_vehicle_steps(json_vehicle));
 }
 
