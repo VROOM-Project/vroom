@@ -643,7 +643,7 @@ inline Route format_route(const Input& input,
                                      previous_job.index()) ||
                          (r == 1 && v.has_start() &&
                           v.start.value().index() == previous_job.index());
-    const auto current_setup = (same_location) ? 0 : previous_job.setup;
+    const auto current_setup = same_location ? 0 : previous_job.setup;
 
     Duration diff =
       current_setup + previous_job.service + remaining_travel_time;

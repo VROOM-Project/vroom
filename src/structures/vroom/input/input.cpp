@@ -1105,7 +1105,7 @@ Solution Input::solve(unsigned exploration_level,
   auto sol = instance->solve(exploration_level,
                              nb_thread,
                              solve_time,
-                             (_has_initial_routes) ? h_init_routes : h_param);
+                             _has_initial_routes ? h_init_routes : h_param);
 
   // Update timing info.
   sol.summary.computing_times.loading = loading.count();
