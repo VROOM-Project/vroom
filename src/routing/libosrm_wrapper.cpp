@@ -57,7 +57,7 @@ Matrices LibosrmWrapper::get_matrices(const std::vector<Location>& locs) const {
 
     const std::string snapping_error_base =
       "Could not find a matching segment for coordinate ";
-    if (code == "NoSegment" and message.starts_with(snapping_error_base)) {
+    if (code == "NoSegment" && message.starts_with(snapping_error_base)) {
       auto error_loc =
         std::stoul(message.substr(snapping_error_base.size(),
                                   message.size() - snapping_error_base.size()));
@@ -96,7 +96,7 @@ Matrices LibosrmWrapper::get_matrices(const std::vector<Location>& locs) const {
     for (std::size_t j = 0; j < m_size; ++j) {
       const auto& duration_el = duration_line.values.at(j);
       const auto& distance_el = distance_line.values.at(j);
-      if (duration_el.is<osrm::json::Null>() or
+      if (duration_el.is<osrm::json::Null>() ||
           distance_el.is<osrm::json::Null>()) {
         // No route found between i and j. Just storing info as we
         // don't know yet which location is responsible between i

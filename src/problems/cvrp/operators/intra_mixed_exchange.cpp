@@ -29,7 +29,6 @@ IntraMixedExchange::IntraMixedExchange(const Input& input,
              t_rank),
     // Required for consistency in compute_gain if check_t_reverse is
     // false.
-    _reversed_s_gain(NO_GAIN),
     check_t_reverse(check_t_reverse),
     _moved_jobs((s_rank < t_rank) ? t_rank - s_rank + 2 : s_rank - t_rank + 1),
     _first_rank(std::min(s_rank, t_rank)),
@@ -37,18 +36,18 @@ IntraMixedExchange::IntraMixedExchange(const Input& input,
     _delivery(source.delivery_in_range(_first_rank, _last_rank)) {
   // If node at s_rank is right before/after edge at t_rank, then the
   // move is a relocate.
-  assert(s_rank + 1 < t_rank or t_rank + 2 < s_rank);
+  assert(s_rank + 1 < t_rank || t_rank + 2 < s_rank);
   assert(s_route.size() >= 4);
   assert(s_rank < s_route.size());
   assert(t_rank < s_route.size() - 1);
 
   // Either moving edge with single jobs or a whole shipment.
-  assert((_input.jobs[this->t_route[t_rank]].type == JOB_TYPE::SINGLE and
-          _input.jobs[this->t_route[t_rank + 1]].type == JOB_TYPE::SINGLE and
-          check_t_reverse) or
-         (_input.jobs[this->t_route[t_rank]].type == JOB_TYPE::PICKUP and
-          _input.jobs[this->t_route[t_rank + 1]].type == JOB_TYPE::DELIVERY and
-          !check_t_reverse and
+  assert((_input.jobs[this->t_route[t_rank]].type == JOB_TYPE::SINGLE &&
+          _input.jobs[this->t_route[t_rank + 1]].type == JOB_TYPE::SINGLE &&
+          check_t_reverse) ||
+         (_input.jobs[this->t_route[t_rank]].type == JOB_TYPE::PICKUP &&
+          _input.jobs[this->t_route[t_rank + 1]].type == JOB_TYPE::DELIVERY &&
+          !check_t_reverse &&
           _sol_state.matching_delivery_rank[t_vehicle][t_rank] == t_rank + 1));
 
   Index s_node;
@@ -169,7 +168,7 @@ Eval IntraMixedExchange::gain_upper_bound() {
 
 void IntraMixedExchange::compute_gain() {
   assert(_gain_upper_bound_computed);
-  assert(s_is_normal_valid or s_is_reverse_valid);
+  assert(s_is_normal_valid || s_is_reverse_valid);
   if (_reversed_s_gain > _normal_s_gain) {
     // Biggest potential gain is obtained when reversing edge.
     if (s_is_reverse_valid) {
@@ -201,7 +200,7 @@ bool IntraMixedExchange::is_valid() {
   const auto normal_duration = _normal_s_gain.duration + t_gain.duration;
 
   s_is_normal_valid =
-    s_v.ok_for_travel_time(s_travel_time - normal_duration) and
+    s_v.ok_for_travel_time(s_travel_time - normal_duration) &&
     source.is_valid_addition_for_capacity_inclusion(_input,
                                                     _delivery,
                                                     _moved_jobs.begin(),
@@ -229,12 +228,12 @@ bool IntraMixedExchange::is_valid() {
     }
   }
 
-  return s_is_normal_valid or s_is_reverse_valid;
+  return s_is_normal_valid || s_is_reverse_valid;
 }
 
 void IntraMixedExchange::apply() {
-  assert(!reverse_t_edge or
-         (_input.jobs[t_route[t_rank]].type == JOB_TYPE::SINGLE and
+  assert(!reverse_t_edge ||
+         (_input.jobs[t_route[t_rank]].type == JOB_TYPE::SINGLE &&
           _input.jobs[t_route[t_rank + 1]].type == JOB_TYPE::SINGLE));
 
   if (reverse_t_edge) {

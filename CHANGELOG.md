@@ -41,6 +41,7 @@
 - `max_travel_time` not accounted for with vehicle steps in solving mode (#954)
 - `max_travel_time` not accounted for in `RouteSplit` (#941)
 - Address sonarcloud "bugs" reports (#984)
+- Address some sonarcloud "code smell" reports (#986)
 
 ## [v1.13.0] - 2023-01-31
 

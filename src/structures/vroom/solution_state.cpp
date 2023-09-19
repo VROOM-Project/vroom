@@ -7,6 +7,8 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <ranges>
+
 #include "structures/vroom/solution_state.h"
 #include "utils/helpers.h"
 
@@ -113,7 +115,7 @@ void SolutionState::update_skills(const std::vector<Index>& route, Index v1) {
       continue;
     }
 
-    auto fwd = std::find_if_not(route.begin(), route.end(), [&](auto j_rank) {
+    auto fwd = std::ranges::find_if_not(route, [&](auto j_rank) {
       return _input.vehicle_ok_with_job(v2, j_rank);
     });
     fwd_skill_rank[v1][v2] = std::distance(route.begin(), fwd);
@@ -424,7 +426,7 @@ void SolutionState::set_pd_gains(const std::vector<Index>& route, Index v) {
         }
       }
 
-      if (has_previous_step and has_next_step and (route.size() > 2)) {
+      if (has_previous_step && has_next_step && (route.size() > 2)) {
         // No new edge with an open trip or if removing P&D creates an
         // empty route.
         new_edge_eval = vehicle.eval(p_index, n_index);
@@ -451,12 +453,13 @@ void SolutionState::set_pd_matching_ranks(const std::vector<Index>& route,
 
   for (std::size_t i = 0; i < route.size(); ++i) {
     switch (_input.jobs[route[i]].type) {
-    case JOB_TYPE::SINGLE:
+      using enum JOB_TYPE;
+    case SINGLE:
       break;
-    case JOB_TYPE::PICKUP:
+    case PICKUP:
       pickup_route_rank_to_input_rank.insert({i, route[i]});
       break;
-    case JOB_TYPE::DELIVERY:
+    case DELIVERY:
       delivery_input_rank_to_route_rank.insert({route[i], i});
       break;
     }

@@ -134,7 +134,7 @@ void ReverseTwoOpt::compute_gain() {
     }
   }
 
-  if (last_in_source and last_in_target) {
+  if (last_in_source && last_in_target) {
     // Emptying target route.
     t_gain.cost += t_v.fixed_cost();
   }

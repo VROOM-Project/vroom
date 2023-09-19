@@ -90,7 +90,7 @@ std::list<Index> christofides(const Matrix<UserCost>& sym_matrix) {
   for (const auto& edge : mwpm_final) {
     Index first_index = mst_odd_vertices[edge.first];
     Index second_index = mst_odd_vertices[edge.second];
-    if (already_added.find(first_index) == already_added.end()) {
+    if (!already_added.contains(first_index)) {
       eulerian_graph_edges.emplace_back(first_index,
                                         second_index,
                                         sym_matrix[first_index][second_index]);

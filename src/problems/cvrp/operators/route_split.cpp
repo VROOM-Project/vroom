@@ -11,16 +11,13 @@ All rights reserved (see LICENSE).
 
 namespace vroom::cvrp {
 
-const std::vector<std::reference_wrapper<RawRoute>>
-  RouteSplit::dummy_route_refs;
-
 RouteSplit::RouteSplit(
   const Input& input,
   const utils::SolutionState& sol_state,
   RawRoute& s_route,
   Index s_vehicle,
-  std::vector<Index> empty_route_ranks,
-  std::vector<std::reference_wrapper<RawRoute>> empty_route_refs,
+  std::vector<Index>&& empty_route_ranks,
+  std::vector<std::reference_wrapper<RawRoute>>&& empty_route_refs,
   const Eval& best_known_gain)
   // Use dummy 0 values for unused ranks.
   : Operator(OperatorName::RouteSplit,
@@ -34,8 +31,7 @@ RouteSplit::RouteSplit(
              0),
     _best_known_gain(best_known_gain),
     _empty_route_ranks(std::move(empty_route_ranks)),
-    _empty_route_refs(std::move(empty_route_refs)),
-    choice(ls::empty_route_split_choice) {
+    _empty_route_refs(std::move(empty_route_refs)) {
   assert(s_route.size() >= 2);
   assert(_empty_route_ranks.size() >= 2);
 }
@@ -101,7 +97,7 @@ std::vector<Index> RouteSplit::update_candidates() const {
 
 bool RouteSplit::invalidated_by(Index rank) const {
   assert(choice.gain != NO_GAIN);
-  return rank == _empty_route_ranks[choice.v_begin] or
+  return rank == _empty_route_ranks[choice.v_begin] ||
          rank == _empty_route_ranks[choice.v_end];
 }
 

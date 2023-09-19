@@ -119,8 +119,8 @@ protected:
             break;
           }
 
-          if (!_input.has_homogeneous_costs() and
-              p.heuristic != HEURISTIC::INIT_ROUTES and h_param.empty() and
+          if (!_input.has_homogeneous_costs() &&
+              p.heuristic != HEURISTIC::INIT_ROUTES && h_param.empty() &&
               p.sort == SORT::CAPACITY) {
             // Worth trying another vehicle ordering scheme in
             // heuristic.
@@ -212,9 +212,7 @@ protected:
       nb_solutions);
 #endif
 
-    std::fill(thread_ranks.begin(),
-              thread_ranks.end(),
-              std::vector<std::size_t>());
+    std::ranges::fill(thread_ranks, std::vector<std::size_t>());
     for (std::size_t i = 0; i < nb_solutions; ++i) {
       thread_ranks[i % nb_threads].push_back(i);
     }

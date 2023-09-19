@@ -6,6 +6,8 @@ Copyright (c) 2015-2022, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
+
+#include <algorithm>
 #include <cassert>
 #include <iterator>
 
@@ -67,9 +69,7 @@ std::unordered_map<Index, std::list<Index>>
 UndirectedGraph<T>::get_adjacency_list() const {
   std::unordered_map<Index, std::list<Index>> result;
   for (const auto& pair : _adjacency_list) {
-    std::copy(pair.second.begin(),
-              pair.second.end(),
-              std::back_inserter(result[pair.first]));
+    std::ranges::copy(pair.second, std::back_inserter(result[pair.first]));
   }
   return result;
 }

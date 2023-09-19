@@ -57,7 +57,7 @@ template <class Route> struct SolutionIndicators {
           if (lhs.eval.duration < rhs.eval.duration) {
             return true;
           }
-          if (lhs.eval.duration == rhs.eval.duration and
+          if (lhs.eval.duration == rhs.eval.duration &&
               lhs.used_vehicles < rhs.used_vehicles) {
             return true;
           }

@@ -38,8 +38,7 @@ Route::Route(Id vehicle,
     pickup(std::move(pickup)),
     profile(std::move(profile)),
     description(std::move(description)),
-    violations(std::move(violations)),
-    distance(0) {
+    violations(std::move(violations)) {
 #ifndef NDEBUG
   check_timing_consistency();
 #endif
@@ -51,7 +50,7 @@ void Route::check_timing_consistency() const {
     return;
   }
 
-  assert((steps.front().step_type == STEP_TYPE::START and
+  assert((steps.front().step_type == STEP_TYPE::START &&
           steps.back().step_type == STEP_TYPE::END));
 
   assert(steps.back().arrival ==

@@ -29,7 +29,6 @@ IntraOrOpt::IntraOrOpt(const Input& input,
              t_rank),
     // Required for consistency in compute_gain if check_reverse is
     // false.
-    _reversed_t_gain(NO_GAIN),
     check_reverse(check_reverse),
     _moved_jobs((s_rank < t_rank) ? t_rank - s_rank + 2 : s_rank - t_rank + 2),
     _first_rank(std::min(s_rank, t_rank)),
@@ -40,12 +39,12 @@ IntraOrOpt::IntraOrOpt(const Input& input,
   assert(t_rank <= s_route.size() - 2);
   assert(s_rank != t_rank);
   // Either moving an edge of single jobs or a whole shipment.
-  assert((_input.jobs[s_route[s_rank]].type == JOB_TYPE::SINGLE and
-          _input.jobs[s_route[s_rank + 1]].type == JOB_TYPE::SINGLE and
-          check_reverse) or
-         (_input.jobs[s_route[s_rank]].type == JOB_TYPE::PICKUP and
-          _input.jobs[s_route[s_rank + 1]].type == JOB_TYPE::DELIVERY and
-          !check_reverse and
+  assert((_input.jobs[s_route[s_rank]].type == JOB_TYPE::SINGLE &&
+          _input.jobs[s_route[s_rank + 1]].type == JOB_TYPE::SINGLE &&
+          check_reverse) ||
+         (_input.jobs[s_route[s_rank]].type == JOB_TYPE::PICKUP &&
+          _input.jobs[s_route[s_rank + 1]].type == JOB_TYPE::DELIVERY &&
+          !check_reverse &&
           _sol_state.matching_delivery_rank[s_vehicle][s_rank] == s_rank + 1));
 
   if (t_rank < s_rank) {
@@ -146,7 +145,7 @@ Eval IntraOrOpt::gain_upper_bound() {
 
 void IntraOrOpt::compute_gain() {
   assert(_gain_upper_bound_computed);
-  assert(is_normal_valid or is_reverse_valid);
+  assert(is_normal_valid || is_reverse_valid);
 
   stored_gain = s_gain;
 
@@ -179,7 +178,7 @@ bool IntraOrOpt::is_valid() {
   const auto normal_duration = s_gain.duration + _normal_t_gain.duration;
 
   is_normal_valid =
-    s_v.ok_for_travel_time(s_travel_time - normal_duration) and
+    s_v.ok_for_travel_time(s_travel_time - normal_duration) &&
     source.is_valid_addition_for_capacity_inclusion(_input,
                                                     _delivery,
                                                     _moved_jobs.begin(),
@@ -207,12 +206,12 @@ bool IntraOrOpt::is_valid() {
     }
   }
 
-  return is_normal_valid or is_reverse_valid;
+  return is_normal_valid || is_reverse_valid;
 }
 
 void IntraOrOpt::apply() {
-  assert(!reverse_s_edge or
-         (_input.jobs[s_route[s_rank]].type == JOB_TYPE::SINGLE and
+  assert(!reverse_s_edge ||
+         (_input.jobs[s_route[s_rank]].type == JOB_TYPE::SINGLE &&
           _input.jobs[s_route[s_rank + 1]].type == JOB_TYPE::SINGLE));
 
   auto first_job_rank = s_route[s_rank];

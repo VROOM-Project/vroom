@@ -32,8 +32,6 @@ CrossExchange::CrossExchange(const Input& input,
              t_rank),
     // Required for consistency in compute_gain if check_s_reverse or
     // check_t_reverse are false.
-    _reversed_s_gain(NO_GAIN),
-    _reversed_t_gain(NO_GAIN),
     check_s_reverse(check_s_reverse),
     check_t_reverse(check_t_reverse),
     source_delivery(_input.jobs[this->s_route[s_rank]].delivery +
@@ -52,19 +50,19 @@ CrossExchange::CrossExchange(const Input& input,
   assert(_input.vehicle_ok_with_job(s_vehicle, this->t_route[t_rank + 1]));
 
   // Either moving edges of single jobs or whole shipments.
-  assert((_input.jobs[this->s_route[s_rank]].type == JOB_TYPE::SINGLE and
-          _input.jobs[this->s_route[s_rank + 1]].type == JOB_TYPE::SINGLE and
-          check_s_reverse) or
-         (_input.jobs[this->s_route[s_rank]].type == JOB_TYPE::PICKUP and
-          _input.jobs[this->s_route[s_rank + 1]].type == JOB_TYPE::DELIVERY and
-          !check_s_reverse and
+  assert((_input.jobs[this->s_route[s_rank]].type == JOB_TYPE::SINGLE &&
+          _input.jobs[this->s_route[s_rank + 1]].type == JOB_TYPE::SINGLE &&
+          check_s_reverse) ||
+         (_input.jobs[this->s_route[s_rank]].type == JOB_TYPE::PICKUP &&
+          _input.jobs[this->s_route[s_rank + 1]].type == JOB_TYPE::DELIVERY &&
+          !check_s_reverse &&
           _sol_state.matching_delivery_rank[s_vehicle][s_rank] == s_rank + 1));
-  assert((_input.jobs[this->t_route[t_rank]].type == JOB_TYPE::SINGLE and
-          _input.jobs[this->t_route[t_rank + 1]].type == JOB_TYPE::SINGLE and
-          check_t_reverse) or
-         (_input.jobs[this->t_route[t_rank]].type == JOB_TYPE::PICKUP and
-          _input.jobs[this->t_route[t_rank + 1]].type == JOB_TYPE::DELIVERY and
-          !check_t_reverse and
+  assert((_input.jobs[this->t_route[t_rank]].type == JOB_TYPE::SINGLE &&
+          _input.jobs[this->t_route[t_rank + 1]].type == JOB_TYPE::SINGLE &&
+          check_t_reverse) ||
+         (_input.jobs[this->t_route[t_rank]].type == JOB_TYPE::PICKUP &&
+          _input.jobs[this->t_route[t_rank + 1]].type == JOB_TYPE::DELIVERY &&
+          !check_t_reverse &&
           _sol_state.matching_delivery_rank[t_vehicle][t_rank] == t_rank + 1));
 }
 
@@ -182,7 +180,7 @@ Eval CrossExchange::gain_upper_bound() {
 
 void CrossExchange::compute_gain() {
   assert(_gain_upper_bound_computed);
-  assert(s_is_normal_valid or s_is_reverse_valid);
+  assert(s_is_normal_valid || s_is_reverse_valid);
   if (_reversed_s_gain > _normal_s_gain) {
     // Biggest potential gain is obtained when reversing edge.
     if (s_is_reverse_valid) {
@@ -201,7 +199,7 @@ void CrossExchange::compute_gain() {
     }
   }
 
-  assert(t_is_normal_valid or t_is_reverse_valid);
+  assert(t_is_normal_valid || t_is_reverse_valid);
   if (_reversed_t_gain > _normal_t_gain) {
     // Biggest potential gain is obtained when reversing edge.
     if (t_is_reverse_valid) {
@@ -242,7 +240,7 @@ bool CrossExchange::is_valid() {
     // Keep target edge direction when inserting in source route.
     auto t_start = t_route.begin() + t_rank;
     s_is_normal_valid =
-      s_v.ok_for_travel_time(s_travel_time - _normal_s_gain.duration) and
+      s_v.ok_for_travel_time(s_travel_time - _normal_s_gain.duration) &&
       source.is_valid_addition_for_capacity_inclusion(_input,
                                                       target_delivery,
                                                       t_start,
@@ -254,7 +252,7 @@ bool CrossExchange::is_valid() {
       // Reverse target edge direction when inserting in source route.
       auto t_reverse_start = t_route.rbegin() + t_route.size() - 2 - t_rank;
       s_is_reverse_valid =
-        s_v.ok_for_travel_time(s_travel_time - _reversed_s_gain.duration) and
+        s_v.ok_for_travel_time(s_travel_time - _reversed_s_gain.duration) &&
         source.is_valid_addition_for_capacity_inclusion(_input,
                                                         target_delivery,
                                                         t_reverse_start,
@@ -263,7 +261,7 @@ bool CrossExchange::is_valid() {
                                                         s_rank + 2);
     }
 
-    valid = s_is_normal_valid or s_is_reverse_valid;
+    valid = s_is_normal_valid || s_is_reverse_valid;
   }
 
   auto source_pickup = _input.jobs[s_route[s_rank]].pickup +
@@ -283,7 +281,7 @@ bool CrossExchange::is_valid() {
     // Keep source edge direction when inserting in target route.
     auto s_start = s_route.begin() + s_rank;
     t_is_normal_valid =
-      t_v.ok_for_travel_time(t_travel_time - _normal_t_gain.duration) and
+      t_v.ok_for_travel_time(t_travel_time - _normal_t_gain.duration) &&
       target.is_valid_addition_for_capacity_inclusion(_input,
                                                       source_delivery,
                                                       s_start,
@@ -295,7 +293,7 @@ bool CrossExchange::is_valid() {
       // Reverse source edge direction when inserting in target route.
       auto s_reverse_start = s_route.rbegin() + s_route.size() - 2 - s_rank;
       t_is_reverse_valid =
-        t_v.ok_for_travel_time(t_travel_time - _reversed_t_gain.duration) and
+        t_v.ok_for_travel_time(t_travel_time - _reversed_t_gain.duration) &&
         target.is_valid_addition_for_capacity_inclusion(_input,
                                                         source_delivery,
                                                         s_reverse_start,
@@ -304,18 +302,18 @@ bool CrossExchange::is_valid() {
                                                         t_rank + 2);
     }
 
-    valid = t_is_normal_valid or t_is_reverse_valid;
+    valid = t_is_normal_valid || t_is_reverse_valid;
   }
 
   return valid;
 }
 
 void CrossExchange::apply() {
-  assert(!reverse_s_edge or
-         (_input.jobs[s_route[s_rank]].type == JOB_TYPE::SINGLE and
+  assert(!reverse_s_edge ||
+         (_input.jobs[s_route[s_rank]].type == JOB_TYPE::SINGLE &&
           _input.jobs[s_route[s_rank + 1]].type == JOB_TYPE::SINGLE));
-  assert(!reverse_t_edge or
-         (_input.jobs[t_route[t_rank]].type == JOB_TYPE::SINGLE and
+  assert(!reverse_t_edge ||
+         (_input.jobs[t_route[t_rank]].type == JOB_TYPE::SINGLE &&
           _input.jobs[t_route[t_rank + 1]].type == JOB_TYPE::SINGLE));
 
   std::swap(s_route[s_rank], t_route[t_rank]);

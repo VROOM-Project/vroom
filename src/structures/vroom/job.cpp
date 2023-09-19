@@ -69,7 +69,7 @@ Job::Job(Id id,
     tws(tws),
     description(std::move(description)),
     tw_length(get_tw_length(tws)) {
-  assert(type == JOB_TYPE::PICKUP or type == JOB_TYPE::DELIVERY);
+  assert(type == JOB_TYPE::PICKUP || type == JOB_TYPE::DELIVERY);
   utils::check_tws(tws, id, "job");
   utils::check_priority(priority, id, "job");
 }

@@ -17,18 +17,10 @@ Summary::Summary() : cost(0), routes(0), unassigned(0), setup(0), service(0) {
 Summary::Summary(unsigned routes,
                  unsigned unassigned,
                  const Amount& zero_amount)
-  : cost(0),
-    routes(routes),
+  : routes(routes),
     unassigned(unassigned),
     delivery(zero_amount),
-    pickup(zero_amount),
-    setup(0),
-    service(0),
-    priority(0),
-    duration(0),
-    waiting_time(0),
-    distance(0),
-    violations(0, 0) {
+    pickup(zero_amount) {
 }
 
 } // namespace vroom

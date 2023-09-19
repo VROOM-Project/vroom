@@ -131,7 +131,7 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
 
     if (!route.is_valid_addition_for_load(input,
                                           current_job.pickup,
-                                          pickup_r) or
+                                          pickup_r) ||
         !route.is_valid_addition_for_tw_without_max_load(input, j, pickup_r)) {
       continue;
     }

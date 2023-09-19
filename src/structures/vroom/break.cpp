@@ -39,7 +39,7 @@ bool Break::is_valid_start(Duration time) const {
 }
 
 bool Break::is_valid_for_load(const Amount& load) const {
-  return !max_load.has_value() or load <= max_load.value();
+  return !max_load.has_value() || load <= max_load.value();
 }
 
 } // namespace vroom

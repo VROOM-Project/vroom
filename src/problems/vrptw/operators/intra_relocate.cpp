@@ -27,7 +27,7 @@ IntraRelocate::IntraRelocate(const Input& input,
 }
 
 bool IntraRelocate::is_valid() {
-  return cvrp::IntraRelocate::is_valid() and
+  return cvrp::IntraRelocate::is_valid() &&
          _tw_s_route.is_valid_addition_for_tw(_input,
                                               _delivery,
                                               _moved_jobs.begin(),

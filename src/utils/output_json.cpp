@@ -26,33 +26,34 @@ get_violations(const Violations& violations,
     rapidjson::Value json_violation(rapidjson::kObjectType);
     std::string cause;
     switch (type) {
-    case VIOLATION::LEAD_TIME:
+      using enum VIOLATION;
+    case LEAD_TIME:
       cause = "lead_time";
       json_violation.AddMember("duration", violations.lead_time, allocator);
       break;
-    case VIOLATION::DELAY:
+    case DELAY:
       cause = "delay";
       json_violation.AddMember("duration", violations.delay, allocator);
       break;
-    case VIOLATION::LOAD:
+    case LOAD:
       cause = "load";
       break;
-    case VIOLATION::MAX_TASKS:
+    case MAX_TASKS:
       cause = "max_tasks";
       break;
-    case VIOLATION::SKILLS:
+    case SKILLS:
       cause = "skills";
       break;
-    case VIOLATION::PRECEDENCE:
+    case PRECEDENCE:
       cause = "precedence";
       break;
-    case VIOLATION::MISSING_BREAK:
+    case MISSING_BREAK:
       cause = "missing_break";
       break;
-    case VIOLATION::MAX_TRAVEL_TIME:
+    case MAX_TRAVEL_TIME:
       cause = "max_travel_time";
       break;
-    case VIOLATION::MAX_LOAD:
+    case MAX_LOAD:
       cause = "max_load";
       break;
     }
@@ -95,13 +96,14 @@ rapidjson::Document to_json(const Solution& sol, bool geometry) {
       json_job.AddMember("type", rapidjson::Value(), allocator);
       std::string str_type;
       switch (job.type) {
-      case JOB_TYPE::SINGLE:
+        using enum JOB_TYPE;
+      case SINGLE:
         str_type = "job";
         break;
-      case JOB_TYPE::PICKUP:
+      case PICKUP:
         str_type = "pickup";
         break;
-      case JOB_TYPE::DELIVERY:
+      case DELIVERY:
         str_type = "delivery";
         break;
       }
@@ -275,25 +277,27 @@ rapidjson::Value to_json(const Step& s,
   json_step.AddMember("type", rapidjson::Value(), allocator);
   std::string str_type;
   switch (s.step_type) {
-  case STEP_TYPE::START:
+    using enum STEP_TYPE;
+  case START:
     str_type = "start";
     break;
-  case STEP_TYPE::END:
+  case END:
     str_type = "end";
     break;
-  case STEP_TYPE::BREAK:
+  case BREAK:
     str_type = "break";
     break;
-  case STEP_TYPE::JOB: {
+  case JOB: {
     assert(s.job_type.has_value());
     switch (s.job_type.value()) {
-    case JOB_TYPE::SINGLE:
+      using enum JOB_TYPE;
+    case SINGLE:
       str_type = "job";
       break;
-    case JOB_TYPE::PICKUP:
+    case PICKUP:
       str_type = "pickup";
       break;
-    case JOB_TYPE::DELIVERY:
+    case DELIVERY:
       str_type = "delivery";
       break;
     }
@@ -320,7 +324,7 @@ rapidjson::Value to_json(const Step& s,
     }
   }
 
-  if (s.step_type == STEP_TYPE::JOB or s.step_type == STEP_TYPE::BREAK) {
+  if (s.step_type == STEP_TYPE::JOB || s.step_type == STEP_TYPE::BREAK) {
     json_step.AddMember("id", s.id, allocator);
   }
 

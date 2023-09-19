@@ -24,7 +24,7 @@ inline Duration get_duration(double d) {
 inline Duration get_violation(const std::vector<TimeWindow>& tws,
                               Duration arrival) {
   Duration violation = 0;
-  const auto tw = std::find_if(tws.begin(), tws.end(), [&](const auto& tw) {
+  const auto tw = std::ranges::find_if(tws, [&](const auto& tw) {
     return arrival <= tw.end;
   });
   if (tw == tws.end()) {
@@ -129,8 +129,8 @@ Route choose_ETA(const Input& input,
 
       // Only case where previous_index is not set is for first
       // duration in case vehicle has no start.
-      assert(previous_index.has_value() or
-             (durations.empty() and !v.has_start()));
+      assert(previous_index.has_value() ||
+             (durations.empty() && !v.has_start()));
 
       const auto current_eval = (previous_index.has_value())
                                   ? v.eval(previous_index.value(), job.index())
@@ -143,7 +143,7 @@ Route choose_ETA(const Input& input,
       relative_ETA.push_back(relative_arrival);
 
       const bool has_setup_time =
-        !previous_index.has_value() or (previous_index.value() != job.index());
+        !previous_index.has_value() || (previous_index.value() != job.index());
       const auto current_action =
         has_setup_time ? job.setup + job.service : job.service;
       action_times.push_back(current_action);
@@ -197,7 +197,7 @@ Route choose_ETA(const Input& input,
       break;
     }
   }
-  assert(first_location.has_value() and last_location.has_value());
+  assert(first_location.has_value() && last_location.has_value());
   assert(i == n + 1);
   assert(relative_ETA.size() == steps.size());
 
@@ -282,7 +282,7 @@ Route choose_ETA(const Input& input,
         get_violation(input.jobs[step.rank].tws, earliest_date);
 
       const auto& tws = input.jobs[step.rank].tws;
-      if ((tws.size() != 1) or !tws.front().is_default()) {
+      if ((tws.size() != 1) || !tws.front().is_default()) {
         step_has_TW[s] = true;
 
         horizon_start_lead_times[s] = tws.front().start - horizon_start;
@@ -432,11 +432,12 @@ Route choose_ETA(const Input& input,
 
     // Now propagate some timing constraints for tighter lower bounds.
     switch (step.type) {
-    case STEP_TYPE::START:
+      using enum STEP_TYPE;
+    case START:
       previous_LB = LB;
       ++rank_in_J;
       break;
-    case STEP_TYPE::JOB: {
+    case JOB: {
       LB = std::max(LB, previous_LB + previous_action + previous_travel);
       previous_LB = LB;
       previous_action = action_times[rank_in_J];
@@ -444,20 +445,20 @@ Route choose_ETA(const Input& input,
       ++rank_in_J;
       break;
     }
-    case STEP_TYPE::BREAK: {
+    case BREAK: {
       LB = std::max(LB, previous_LB + previous_action);
       previous_LB = LB;
       previous_action = v.breaks[step.rank].service;
       break;
     }
-    case STEP_TYPE::END:
+    case END:
       LB = std::max(LB, previous_LB + previous_action + previous_travel);
       break;
     }
     t_i_LB.push_back(LB);
     t_i_UB.push_back(UB);
 
-    if (step.type == STEP_TYPE::JOB or step.type == STEP_TYPE::BREAK) {
+    if (step.type == STEP_TYPE::JOB || step.type == STEP_TYPE::BREAK) {
       // Determine rank of the first relevant TW.
       const auto& tws = (step.type == STEP_TYPE::JOB)
                           ? input.jobs[step.rank].tws
@@ -470,7 +471,7 @@ Route choose_ETA(const Input& input,
       if (tw != tws.rend()) {
         tw_rank = std::distance(tw, tws.rend()) - 1;
 
-        if (tw->end < LB and tw != tws.rbegin()) {
+        if (tw->end < LB && tw != tws.rbegin()) {
           // Lower bound is between two time windows.
           const auto next_tw = std::prev(tw, 1);
           if ((next_tw->start - LB) < (LB - tw->end)) {
@@ -535,7 +536,7 @@ Route choose_ETA(const Input& input,
       break;
     }
 
-    if (step.type == STEP_TYPE::JOB or step.type == STEP_TYPE::BREAK) {
+    if (step.type == STEP_TYPE::JOB || step.type == STEP_TYPE::BREAK) {
       // Determine rank of the last relevant TW.
       const auto UB = t_i_UB[step_rank];
       const auto& tws = (step.type == STEP_TYPE::JOB)
@@ -548,7 +549,7 @@ Route choose_ETA(const Input& input,
       if (tw != tws.end()) {
         tw_rank -= (std::distance(tw, tws.end()) - 1);
 
-        if (UB < tw->start and tw != tws.begin()) {
+        if (UB < tw->start && tw != tws.begin()) {
           // Lower bound is between two time windows.
           auto prev_tw = std::prev(tw, 1);
           if ((UB - prev_tw->end) < (tw->start - UB)) {
@@ -733,7 +734,7 @@ Route choose_ETA(const Input& input,
       auto name = "X" + std::to_string(i + 1) + "_" + std::to_string(k);
       glp_set_col_name(lp, current_col, name.c_str());
       glp_set_col_kind(lp, current_col, GLP_BV);
-      if (k < first_relevant_tw_rank[i] or k > last_relevant_tw_rank[i]) {
+      if (k < first_relevant_tw_rank[i] || k > last_relevant_tw_rank[i]) {
         glp_set_col_bnds(lp, current_col, GLP_FX, 0, 0);
       }
       ++current_col;
@@ -813,7 +814,7 @@ Route choose_ETA(const Input& input,
     const auto& step = steps[1 + i];
     const auto& tws = (step.type == STEP_TYPE::JOB) ? input.jobs[step.rank].tws
                                                     : v.breaks[step.rank].tws;
-    if (step.type == STEP_TYPE::JOB and tws.front().is_default()) {
+    if (step.type == STEP_TYPE::JOB && tws.front().is_default()) {
       // Not setting a value in this case means the constraint will
       // always be met with matching Y set to 0.
       ++current_X_rank;
@@ -854,7 +855,7 @@ Route choose_ETA(const Input& input,
     const auto& step = steps[1 + i];
     const auto& tws = (step.type == STEP_TYPE::JOB) ? input.jobs[step.rank].tws
                                                     : v.breaks[step.rank].tws;
-    if (step.type == STEP_TYPE::JOB and tws.front().is_default()) {
+    if (step.type == STEP_TYPE::JOB && tws.front().is_default()) {
       // Set a value that makes sure this constraint is automatically
       // met with matching Y value set to 0.
       ia[r] = constraint_rank;
@@ -904,7 +905,7 @@ Route choose_ETA(const Input& input,
     const auto& tws = (step.type == STEP_TYPE::JOB) ? input.jobs[step.rank].tws
                                                     : v.breaks[step.rank].tws;
 
-    for (unsigned k = 0; k < tws.size(); ++k) {
+    std::ranges::for_each(tws, [&](const auto&) {
       // a[constraint_rank, current_X_rank] = 1
       ia[r] = constraint_rank;
       ja[r] = current_X_rank;
@@ -912,7 +913,8 @@ Route choose_ETA(const Input& input,
       ++r;
 
       ++current_X_rank;
-    }
+    });
+
     ++constraint_rank;
   }
   assert(current_X_rank == start_delta_col);
@@ -979,7 +981,7 @@ Route choose_ETA(const Input& input,
   glp_intopt(lp, &parm);
 
   auto status = glp_mip_status(lp);
-  if (status == GLP_UNDEF or status == GLP_NOFEAS) {
+  if (status == GLP_UNDEF || status == GLP_NOFEAS) {
     throw InputException("Infeasible route for vehicle " +
                          std::to_string(v.id) + ".");
   }
@@ -1036,7 +1038,7 @@ Route choose_ETA(const Input& input,
   // glp_print_mip(lp, ("mip_2_v_" + v_str + ".sol").c_str());
 
   status = glp_mip_status(lp);
-  if (status == GLP_UNDEF or status == GLP_NOFEAS) {
+  if (status == GLP_UNDEF || status == GLP_NOFEAS) {
     throw InputException("Infeasible route for vehicle " +
                          std::to_string(v.id) + ".");
   }
@@ -1078,7 +1080,7 @@ Route choose_ETA(const Input& input,
       for (unsigned k = 0; k < job.tws.size(); ++k) {
         auto val = static_cast<uint32_t>(
           std::round(glp_mip_col_val(lp, current_X_rank)));
-        assert(val == 0 or val == 1);
+        assert(val == 0 || val == 1);
         if (val == 1) {
           task_tw_ranks.push_back(k);
         }
@@ -1092,7 +1094,7 @@ Route choose_ETA(const Input& input,
       for (unsigned k = 0; k < b.tws.size(); ++k) {
         auto val = static_cast<uint32_t>(
           std::round(glp_mip_col_val(lp, current_X_rank)));
-        assert(val == 0 or val == 1);
+        assert(val == 0 || val == 1);
         if (val == 1) {
           task_tw_ranks.push_back(k);
         }
@@ -1139,15 +1141,14 @@ Route choose_ETA(const Input& input,
 
   // Used to spot missing breaks.
   std::unordered_set<Id> break_ids;
-  std::transform(v.breaks.begin(),
-                 v.breaks.end(),
-                 std::inserter(break_ids, break_ids.end()),
-                 [](const auto& b) { return b.id; });
+  std::ranges::transform(v.breaks,
+                         std::inserter(break_ids, break_ids.end()),
+                         [](const auto& b) { return b.id; });
 
   std::vector<Step> sol_steps;
   sol_steps.reserve(steps.size());
 
-  assert(v.has_start() or start_travel == 0);
+  assert(v.has_start() || start_travel == 0);
 
   sol_steps.emplace_back(STEP_TYPE::START,
                          first_location.value(),
@@ -1236,7 +1237,7 @@ Route choose_ETA(const Input& input,
         current.violations.lead_time = user_tw_start - user_service_start;
         user_lead_time += current.violations.lead_time;
       }
-      assert(job.tws[tw_rank].end % DURATION_FACTOR == 0 or
+      assert(job.tws[tw_rank].end % DURATION_FACTOR == 0 ||
              job.tws[tw_rank].is_default());
       auto user_tw_end = utils::scale_to_user_duration(job.tws[tw_rank].end);
       if (user_tw_end < user_service_start) {
@@ -1268,8 +1269,7 @@ Route choose_ETA(const Input& input,
       case JOB_TYPE::SINGLE:
         break;
       case JOB_TYPE::PICKUP:
-        if (delivery_first_ranks.find(job_rank + 1) !=
-            delivery_first_ranks.end()) {
+        if (delivery_first_ranks.contains(job_rank + 1)) {
           current.violations.types.insert(VIOLATION::PRECEDENCE);
           v_types.insert(VIOLATION::PRECEDENCE);
         } else {
@@ -1336,7 +1336,7 @@ Route choose_ETA(const Input& input,
         current.violations.lead_time = user_tw_start - user_service_start;
         user_lead_time += current.violations.lead_time;
       }
-      assert(b.tws[tw_rank].end % DURATION_FACTOR == 0 or
+      assert(b.tws[tw_rank].end % DURATION_FACTOR == 0 ||
              b.tws[tw_rank].is_default());
       auto user_tw_end = utils::scale_to_user_duration(b.tws[tw_rank].end);
       if (user_tw_end < user_service_start) {
@@ -1382,7 +1382,7 @@ Route choose_ETA(const Input& input,
       user_duration += user_travel_time;
       end_step.duration = user_duration;
 
-      assert(v.tw.end % DURATION_FACTOR == 0 or v.tw.is_default());
+      assert(v.tw.end % DURATION_FACTOR == 0 || v.tw.is_default());
       auto user_v_tw_end = utils::scale_to_user_duration(v.tw.end);
 
       if (user_v_tw_end < end_step.arrival) {

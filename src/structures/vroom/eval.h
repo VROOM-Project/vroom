@@ -52,8 +52,8 @@ struct Eval {
   }
 
   friend bool operator<(const Eval& lhs, const Eval& rhs) {
-    return lhs.cost < rhs.cost or
-           (lhs.cost == rhs.cost and lhs.duration < rhs.duration);
+    return lhs.cost < rhs.cost ||
+           (lhs.cost == rhs.cost && lhs.duration < rhs.duration);
   }
 
   friend bool operator>(const Eval& lhs, const Eval& rhs) {
@@ -65,11 +65,11 @@ struct Eval {
   }
 
   friend bool operator==(const Eval& lhs, const Eval& rhs) {
-    return lhs.cost == rhs.cost and lhs.duration == rhs.duration;
+    return lhs.cost == rhs.cost && lhs.duration == rhs.duration;
   }
 
   friend bool operator!=(const Eval& lhs, const Eval& rhs) {
-    return lhs.cost != rhs.cost or lhs.duration != rhs.duration;
+    return lhs.cost != rhs.cost || lhs.duration != rhs.duration;
   }
 };
 
