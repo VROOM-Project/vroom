@@ -163,9 +163,8 @@ protected:
           }
         }
       } catch (...) {
-        ep_m.lock();
+        std::scoped_lock<std::mutex> lock(ep_m);
         ep = std::current_exception();
-        ep_m.unlock();
       }
     };
 
@@ -240,9 +239,8 @@ protected:
 #endif
         }
       } catch (...) {
-        ep_m.lock();
+        std::scoped_lock<std::mutex> lock(ep_m);
         ep = std::current_exception();
-        ep_m.unlock();
       }
     };
 

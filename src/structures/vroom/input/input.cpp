@@ -1003,11 +1003,10 @@ void Input::set_matrices(unsigned nb_thread) {
 
           // Check for potential overflow in solution cost.
           const UserCost current_bound = check_cost_bound(c_m->second);
-          cost_bound_m.lock();
+          std::scoped_lock<std::mutex> lock(cost_bound_m);
           _cost_upper_bound =
             std::max(_cost_upper_bound,
                      utils::scale_from_user_cost(current_bound));
-          cost_bound_m.unlock();
         } else {
           // Durations matrix will be used for costs.
           const UserCost current_bound = check_cost_bound(durations_m->second);
@@ -1016,18 +1015,16 @@ void Input::set_matrices(unsigned nb_thread) {
           assert(search != _max_cost_per_hour.end());
           const auto max_cost_per_hour_for_profile = search->second;
 
-          cost_bound_m.lock();
+          std::scoped_lock<std::mutex> lock(cost_bound_m);
           _cost_upper_bound =
             std::max(_cost_upper_bound,
                      max_cost_per_hour_for_profile *
                        utils::scale_from_user_duration(current_bound));
-          cost_bound_m.unlock();
         }
       }
     } catch (...) {
-      ep_m.lock();
+      std::scoped_lock<std::mutex> lock(ep_m);
       ep = std::current_exception();
-      ep_m.unlock();
     }
   };
 
