@@ -30,8 +30,8 @@ RouteSplit::RouteSplit(
              s_vehicle,
              0),
     _best_known_gain(best_known_gain),
-    _empty_route_ranks(empty_route_ranks),
-    _empty_route_refs(empty_route_refs) {
+    _empty_route_ranks(std::move(empty_route_ranks)),
+    _empty_route_refs(std::move(empty_route_refs)) {
   assert(s_route.size() >= 2);
   assert(_empty_route_ranks.size() >= 2);
 }

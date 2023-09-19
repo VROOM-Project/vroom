@@ -27,7 +27,7 @@ RouteSplit::RouteSplit(
                      std::vector<std::reference_wrapper<RawRoute>>(),
                      best_known_gain),
     _tw_s_route(tw_s_route),
-    _empty_tw_route_refs(empty_route_refs) {
+    _empty_tw_route_refs(std::move(empty_route_refs)) {
 }
 
 void RouteSplit::compute_gain() {
