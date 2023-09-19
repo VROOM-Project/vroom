@@ -626,7 +626,7 @@ void SolutionState::update_top_3_insertions(const std::vector<Index>& route,
                                             Index v) {
   if (_input.has_jobs()) {
     for (std::size_t j = 0; j < _input.jobs.size(); ++j) {
-      if (_input.jobs[j].type == JOB_TYPE::SINGLE and
+      if (_input.jobs[j].type == JOB_TYPE::SINGLE &&
           _input.vehicle_ok_with_job(v, j)) {
         top_3_insertions[v][j] =
           vroom::ls::find_top_3_insertions(_input, j, v, route);
