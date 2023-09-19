@@ -38,7 +38,12 @@ SolutionState::SolutionState(const Input& input)
     insertion_ranks_end(_nb_vehicles),
     weak_insertion_ranks_begin(_nb_vehicles),
     weak_insertion_ranks_end(_nb_vehicles),
-    route_evals(_nb_vehicles) {
+    route_evals(_nb_vehicles),
+    top_3_insertions(_nb_vehicles,
+                     std::vector<
+                       vroom::ls::ThreeInsertions>(_input.jobs.size(),
+                                                   vroom::ls::
+                                                     EMPTY_THREE_INSERTIONS)) {
 }
 
 template <class Route> void SolutionState::setup(const Route& r, Index v) {
@@ -50,6 +55,7 @@ template <class Route> void SolutionState::setup(const Route& r, Index v) {
   set_pd_gains(r.route, v);
   set_insertion_ranks(r, v);
   update_route_eval(r.route, v);
+  update_top_3_insertions(r.route, v);
 }
 
 template <class Solution> void SolutionState::setup(const Solution& sol) {
@@ -611,6 +617,19 @@ void SolutionState::update_cheapest_job_rank_in_routes(
 void SolutionState::update_route_eval(const std::vector<Index>& route,
                                       Index v) {
   route_evals[v] = route_eval_for_vehicle(_input, v, route);
+}
+
+void SolutionState::update_top_3_insertions(const std::vector<Index>& route,
+                                            Index v) {
+  if (_input.has_jobs()) {
+    for (std::size_t j = 0; j < _input.jobs.size(); ++j) {
+      if (_input.jobs[j].type == JOB_TYPE::SINGLE and
+          _input.vehicle_ok_with_job(v, j)) {
+        top_3_insertions[v][j] =
+          vroom::ls::find_top_3_insertions(_input, j, v, route);
+      }
+    }
+  }
 }
 
 template void SolutionState::setup(const std::vector<RawRoute>&);
