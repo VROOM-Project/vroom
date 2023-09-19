@@ -175,7 +175,7 @@ inline TimeWindow get_time_window(const rapidjson::Value& tw) {
 }
 
 inline TimeWindow get_vehicle_time_window(const rapidjson::Value& v) {
-  TimeWindow v_tw = TimeWindow();
+  TimeWindow v_tw;
   if (v.HasMember("time_window")) {
     v_tw = get_time_window(v["time_window"]);
   }

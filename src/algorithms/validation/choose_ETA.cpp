@@ -752,8 +752,8 @@ Route choose_ETA(const Input& input,
   assert(current_col == nb_var + 1);
 
   // Define non-zero elements in matrix.
-  int* ia = new int[1 + nb_non_zero];
-  int* ja = new int[1 + nb_non_zero];
+  auto* ia = new int[1 + nb_non_zero];
+  auto* ja = new int[1 + nb_non_zero];
   auto* ar = new double[1 + nb_non_zero];
 
   unsigned r = 1;
