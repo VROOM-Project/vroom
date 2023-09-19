@@ -565,7 +565,8 @@ UserCost LocalSearch::asym_two_opt_step() {
   Index node = init;
   for (std::size_t i = 0; i < _nb_threads - 1; ++i) {
     // Finding nodes that separate current tour in _nb_threads ranges.
-    for (std::size_t j = 0; j < thread_range; ++j, node = _edges[node]) {
+    for (std::size_t j = 0; j < thread_range; ++j) {
+      node = _edges[node];
     }
     limit_nodes.push_back(node);
   }
