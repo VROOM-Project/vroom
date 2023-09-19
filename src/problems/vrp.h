@@ -168,7 +168,7 @@ protected:
       }
     };
 
-    std::vector<std::thread> heuristics_threads;
+    std::vector<std::jthread> heuristics_threads;
     heuristics_threads.reserve(nb_threads);
 
     for (const auto& param_ranks : thread_ranks) {
@@ -244,7 +244,7 @@ protected:
       }
     };
 
-    std::vector<std::thread> ls_threads;
+    std::vector<std::jthread> ls_threads;
     ls_threads.reserve(nb_threads);
 
     for (const auto& sol_ranks : thread_ranks) {

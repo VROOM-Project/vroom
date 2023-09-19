@@ -168,7 +168,7 @@ UserCost LocalSearch::relocate_step() {
   std::vector<Index> best_edge_1_starts(_nb_threads);
   std::vector<Index> best_edge_2_starts(_nb_threads);
 
-  std::vector<std::thread> threads;
+  std::vector<std::jthread> threads;
   threads.reserve(_nb_threads);
 
   for (std::size_t i = 0; i < _nb_threads; ++i) {
@@ -436,7 +436,7 @@ UserCost LocalSearch::two_opt_step() {
 
   // Start other threads, keeping a piece of the range for the main
   // thread.
-  std::vector<std::thread> threads;
+  std::vector<std::jthread> threads;
   threads.reserve(_nb_threads);
 
   for (std::size_t i = 0; i < _nb_threads; ++i) {
@@ -572,7 +572,7 @@ UserCost LocalSearch::asym_two_opt_step() {
   }
   limit_nodes.push_back(init);
 
-  std::vector<std::thread> threads;
+  std::vector<std::jthread> threads;
   threads.reserve(_nb_threads);
 
   for (std::size_t i = 0; i < _nb_threads; ++i) {
@@ -714,7 +714,7 @@ UserCost LocalSearch::or_opt_step() {
   std::vector<Index> best_edge_1_starts(_nb_threads);
   std::vector<Index> best_edge_2_starts(_nb_threads);
 
-  std::vector<std::thread> threads;
+  std::vector<std::jthread> threads;
   threads.reserve(_nb_threads);
 
   for (std::size_t i = 0; i < _nb_threads; ++i) {
