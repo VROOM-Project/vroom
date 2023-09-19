@@ -10,13 +10,13 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <string>
+
 constexpr unsigned MAJOR = 1;
 constexpr unsigned MINOR = 14;
 constexpr unsigned PATCH = 0;
 constexpr bool DEV = true;
 constexpr unsigned RC = 0;
-
-#include <string>
 
 namespace vroom {
 
