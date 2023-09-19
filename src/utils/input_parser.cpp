@@ -116,39 +116,17 @@ inline Priority get_priority(const rapidjson::Value& object) {
   return priority;
 }
 
-inline std::optional<size_t> get_max_tasks(const rapidjson::Value& object) {
-  std::optional<size_t> max_tasks;
-  if (object.HasMember("max_tasks")) {
-    if (!object["max_tasks"].IsUint()) {
-      throw InputException("Invalid max_tasks value.");
+template <typename T>
+inline std::optional<T> get_value_for(const rapidjson::Value& object,
+                                      const char* key) {
+  std::optional<UserDuration> value;
+  if (object.HasMember(key)) {
+    if (!object[key].IsUint()) {
+      throw InputException("Invalid " + std::string(key) + " value.");
     }
-    max_tasks = object["max_tasks"].GetUint();
+    value = object[key].GetUint();
   }
-  return max_tasks;
-}
-
-inline std::optional<UserDuration>
-get_max_travel_time(const rapidjson::Value& object) {
-  std::optional<UserDuration> max_travel_time;
-  if (object.HasMember("max_travel_time")) {
-    if (!object["max_travel_time"].IsUint()) {
-      throw InputException("Invalid max_travel_time value.");
-    }
-    max_travel_time = object["max_travel_time"].GetUint();
-  }
-  return max_travel_time;
-}
-
-inline std::optional<UserDistance>
-get_max_distance(const rapidjson::Value& object) {
-  std::optional<UserDistance> max_distance;
-  if (object.HasMember("max_distance")) {
-    if (!object["max_distance"].IsUint()) {
-      throw InputException("Invalid max_distance value.");
-    }
-    max_distance = object["max_distance"].GetUint();
-  }
-  return max_distance;
+  return value;
 }
 
 inline void check_id(const rapidjson::Value& v, const std::string& type) {
@@ -435,9 +413,9 @@ inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
                  get_string(json_vehicle, "description"),
                  get_vehicle_costs(json_vehicle),
                  get_double(json_vehicle, "speed_factor"),
-                 get_max_tasks(json_vehicle),
-                 get_max_travel_time(json_vehicle),
-                 get_max_distance(json_vehicle),
+                 get_value_for<size_t>(json_vehicle, "max_tasks"),
+                 get_value_for<UserDuration>(json_vehicle, "max_travel_time"),
+                 get_value_for<UserDistance>(json_vehicle, "max_distance"),
                  get_vehicle_steps(json_vehicle));
 }
 
