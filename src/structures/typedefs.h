@@ -146,7 +146,7 @@ enum class VIOLATION {
   MAX_LOAD
 };
 
-enum OperatorName {
+enum class OperatorName {
   UnassignedExchange,
   CrossExchange,
   MixedExchange,
