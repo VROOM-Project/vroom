@@ -46,7 +46,7 @@ void update_host(Servers& servers, const std::string& value) {
     existing_profile->second.host = host;
     existing_profile->second.path = path;
   } else {
-    auto add_result = servers.try_emplace(profile, Server());
+    auto add_result = servers.try_emplace(profile);
     assert(add_result.second);
     add_result.first->second.host = host;
     add_result.first->second.path = path;
@@ -70,7 +70,7 @@ void update_port(Servers& servers, const std::string& value) {
   if (existing_profile != servers.end()) {
     existing_profile->second.port = port;
   } else {
-    auto add_result = servers.try_emplace(profile, Server());
+    auto add_result = servers.try_emplace(profile);
     assert(add_result.second);
     add_result.first->second.port = port;
   }

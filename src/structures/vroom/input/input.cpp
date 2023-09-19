@@ -894,12 +894,12 @@ void Input::set_matrices(unsigned nb_thread) {
       // Durations matrix has not been manually set, create empty
       // matrix to allow for concurrent modification later on.
       create_routing_wrapper = true;
-      _durations_matrices.try_emplace(profile, Matrix<UserDuration>());
+      _durations_matrices.try_emplace(profile);
 
       if (!_distances_matrices.contains(profile)) {
         // Distances matrix has not been manually set, create empty
         // matrix to allow for concurrent modification later on.
-        _distances_matrices.try_emplace(profile, Matrix<UserDistance>());
+        _distances_matrices.try_emplace(profile);
       }
     }
 
