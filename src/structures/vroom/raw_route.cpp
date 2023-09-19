@@ -234,7 +234,11 @@ bool RawRoute::is_valid_addition_for_capacity_inclusion(
 
   bool valid = (delivery <= capacity);
 
-  for (auto job_iter = first_job; valid && job_iter != last_job; ++job_iter) {
+  for (auto job_iter = first_job; job_iter != last_job; ++job_iter) {
+    if (!valid) {
+      break;
+    }
+
     auto& job = input.jobs[*job_iter];
     delivery += job.pickup;
     delivery -= job.delivery;
