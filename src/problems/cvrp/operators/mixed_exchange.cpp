@@ -31,7 +31,6 @@ MixedExchange::MixedExchange(const Input& input,
              t_rank),
     // Required for consistency in compute_gain if check_t_reverse is
     // false.
-    _reversed_s_gain(NO_GAIN),
     check_t_reverse(check_t_reverse),
     source_delivery(_input.jobs[this->s_route[s_rank]].delivery),
     target_delivery(_input.jobs[this->t_route[t_rank]].delivery +

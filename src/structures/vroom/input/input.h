@@ -31,7 +31,7 @@ class VRP;
 
 class Input {
 private:
-  TimePoint _start_loading;
+  TimePoint _start_loading{std::chrono::high_resolution_clock::now()};
   TimePoint _end_loading;
   TimePoint _end_solving;
   TimePoint _end_routing;
@@ -66,7 +66,7 @@ private:
   std::vector<bool> _good_TSP_candidate;
 
   unsigned _amount_size{0};
-  Amount _zero;
+  Amount _zero{0};
 
   const io::Servers _servers;
   const ROUTER _router;

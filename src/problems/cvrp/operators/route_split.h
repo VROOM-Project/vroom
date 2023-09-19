@@ -20,7 +20,7 @@ protected:
   const Eval _best_known_gain;
   const std::vector<Index> _empty_route_ranks;
   const std::vector<std::reference_wrapper<RawRoute>> _empty_route_refs;
-  ls::SplitChoice choice;
+  ls::SplitChoice choice{ls::empty_route_split_choice};
 
   static const std::vector<std::reference_wrapper<RawRoute>> dummy_route_refs;
 

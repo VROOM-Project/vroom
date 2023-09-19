@@ -83,9 +83,7 @@ struct SwapChoice {
       s_rank(s_rank),
       t_rank(t_rank),
       insertion_in_source(insertion_in_source),
-      insertion_in_target(insertion_in_target),
-      source_range_delivery(0),
-      target_range_delivery(0) {
+      insertion_in_target(insertion_in_target) {
   }
 };
 

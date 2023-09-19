@@ -26,12 +26,10 @@ struct PreviousInfo {
   Duration travel;
   // Location for previous step. A value of
   // std::numeric_limits<Index>::max() means no previous step.
-  Index location_index;
+  Index location_index{std::numeric_limits<Index>::max()};
 
   PreviousInfo(Duration earliest, Duration travel)
-    : earliest(earliest),
-      travel(travel),
-      location_index(std::numeric_limits<Index>::max()) {
+    : earliest(earliest), travel(travel) {
   }
 };
 

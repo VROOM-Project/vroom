@@ -38,8 +38,7 @@ Route::Route(Id vehicle,
     pickup(std::move(pickup)),
     profile(std::move(profile)),
     description(std::move(description)),
-    violations(std::move(violations)),
-    distance(0) {
+    violations(std::move(violations)) {
 #ifndef NDEBUG
   check_timing_consistency();
 #endif

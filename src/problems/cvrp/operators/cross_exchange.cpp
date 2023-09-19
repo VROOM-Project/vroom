@@ -32,8 +32,6 @@ CrossExchange::CrossExchange(const Input& input,
              t_rank),
     // Required for consistency in compute_gain if check_s_reverse or
     // check_t_reverse are false.
-    _reversed_s_gain(NO_GAIN),
-    _reversed_t_gain(NO_GAIN),
     check_s_reverse(check_s_reverse),
     check_t_reverse(check_t_reverse),
     source_delivery(_input.jobs[this->s_route[s_rank]].delivery +

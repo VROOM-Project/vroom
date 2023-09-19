@@ -29,7 +29,6 @@ IntraOrOpt::IntraOrOpt(const Input& input,
              t_rank),
     // Required for consistency in compute_gain if check_reverse is
     // false.
-    _reversed_t_gain(NO_GAIN),
     check_reverse(check_reverse),
     _moved_jobs((s_rank < t_rank) ? t_rank - s_rank + 2 : s_rank - t_rank + 2),
     _first_rank(std::min(s_rank, t_rank)),

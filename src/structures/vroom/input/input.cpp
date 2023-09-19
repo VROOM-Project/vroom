@@ -29,10 +29,7 @@ All rights reserved (see LICENSE).
 namespace vroom {
 
 Input::Input(io::Servers servers, ROUTER router)
-  : _start_loading(std::chrono::high_resolution_clock::now()),
-    _zero(0),
-    _servers(std::move(servers)),
-    _router(router) {
+  : _servers(std::move(servers)), _router(router) {
 }
 
 void Input::set_amount_size(unsigned amount_size) {

@@ -30,8 +30,6 @@ IntraCrossExchange::IntraCrossExchange(const Input& input,
              t_rank),
     // Required for consistency in compute_gain if check_s_reverse or
     // check_t_reverse are false.
-    _reversed_s_gain(NO_GAIN),
-    _reversed_t_gain(NO_GAIN),
     check_s_reverse(check_s_reverse),
     check_t_reverse(check_t_reverse),
     _moved_jobs(t_rank - s_rank + 2),
