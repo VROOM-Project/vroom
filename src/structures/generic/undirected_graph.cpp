@@ -45,7 +45,7 @@ UndirectedGraph<T>::UndirectedGraph(const Matrix<T>& m) : _size(m.size()) {
 
 template <class T>
 UndirectedGraph<T>::UndirectedGraph(std::vector<Edge<T>>&& edges)
-  : _edges(edges) {
+  : _edges(std::move(edges)) {
   for (auto const& edge : _edges) {
     Index first = edge.get_first_vertex();
     Index second = edge.get_second_vertex();

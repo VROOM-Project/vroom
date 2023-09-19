@@ -384,7 +384,7 @@ void Input::set_durations_matrix(const std::string& profile,
   if (m.size() == 0) {
     throw InputException("Empty durations matrix for " + profile + " profile.");
   }
-  _durations_matrices.insert_or_assign(profile, m);
+  _durations_matrices.insert_or_assign(profile, std::move(m));
 }
 
 void Input::set_distances_matrix(const std::string& profile,
@@ -392,14 +392,14 @@ void Input::set_distances_matrix(const std::string& profile,
   if (m.size() == 0) {
     throw InputException("Empty distances matrix for " + profile + " profile.");
   }
-  _distances_matrices.insert_or_assign(profile, m);
+  _distances_matrices.insert_or_assign(profile, std::move(m));
 }
 
 void Input::set_costs_matrix(const std::string& profile, Matrix<UserCost>&& m) {
   if (m.size() == 0) {
     throw InputException("Empty costs matrix for " + profile + " profile.");
   }
-  _costs_matrices.insert_or_assign(profile, m);
+  _costs_matrices.insert_or_assign(profile, std::move(m));
 }
 
 bool Input::is_used_several_times(const Location& location) const {
