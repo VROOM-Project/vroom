@@ -49,7 +49,7 @@ struct Route {
         Amount pickup,
         std::string profile,
         std::string description,
-        const Violations&& violations = Violations(0, 0));
+        Violations&& violations = Violations(0, 0));
 
   void check_timing_consistency() const;
 };
