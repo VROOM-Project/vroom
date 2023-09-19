@@ -65,9 +65,13 @@ public:
 
   void set_route(const Input& input, const std::vector<Index>& r);
 
-  bool empty() const;
+  bool empty() const {
+    return route.empty();
+  }
 
-  std::size_t size() const;
+  std::size_t size() const {
+    return route.size();
+  }
 
   void update_amounts(const Input& input);
 

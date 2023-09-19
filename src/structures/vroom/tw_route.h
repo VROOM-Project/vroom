@@ -130,14 +130,6 @@ public:
 
   TWRoute(const Input& input, Index v, unsigned amount_size);
 
-  bool empty() const {
-    return route.empty();
-  }
-
-  std::size_t size() const {
-    return route.size();
-  }
-
   // Check validity for addition of job at job_rank in current route
   // at rank.
   bool is_valid_addition_for_tw(const Input& input,

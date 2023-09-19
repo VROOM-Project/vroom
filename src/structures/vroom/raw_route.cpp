@@ -28,14 +28,6 @@ void RawRoute::set_route(const Input& input, const std::vector<Index>& r) {
   update_amounts(input);
 }
 
-bool RawRoute::empty() const {
-  return route.empty();
-}
-
-std::size_t RawRoute::size() const {
-  return route.size();
-}
-
 void RawRoute::update_amounts(const Input& input) {
   auto step_size = route.size() + 2;
   _fwd_pickups.resize(route.size());
