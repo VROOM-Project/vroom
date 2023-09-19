@@ -1822,8 +1822,7 @@ void LocalSearch<Route,
         bool invalidate_move = false;
 
         for (auto req_u : best_ops[v][v]->required_unassigned()) {
-          if (_sol_state.unassigned.find(req_u) ==
-              _sol_state.unassigned.end()) {
+          if (!_sol_state.unassigned.contains(req_u)) {
             // This move should be invalidated because a required
             // unassigned job has been added by try_job_additions in
             // the meantime.

@@ -95,7 +95,7 @@ Solution check_and_set_ETA(const Input& input, unsigned nb_thread) {
   unassigned_jobs.reserve(input.jobs.size() - assigned_ranks.size());
 
   for (Index j = 0; j < input.jobs.size(); ++j) {
-    if (assigned_ranks.find(j) == assigned_ranks.end()) {
+    if (!assigned_ranks.contains(j)) {
       unassigned_jobs.push_back(input.jobs[j]);
     }
   }

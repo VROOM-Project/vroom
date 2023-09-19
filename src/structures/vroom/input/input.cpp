@@ -175,7 +175,7 @@ void Input::add_job(const Job& job) {
   if (job.type != JOB_TYPE::SINGLE) {
     throw InputException("Wrong job type.");
   }
-  if (job_id_to_rank.find(job.id) != job_id_to_rank.end()) {
+  if (job_id_to_rank.contains(job.id)) {
     throw InputException("Duplicate job id: " + std::to_string(job.id) + ".");
   }
   job_id_to_rank[job.id] = jobs.size();
@@ -201,7 +201,7 @@ void Input::add_shipment(const Job& pickup, const Job& delivery) {
                          std::to_string(delivery.id) + ".");
   }
   for (const auto s : pickup.skills) {
-    if (delivery.skills.find(s) == delivery.skills.end()) {
+    if (!delivery.skills.contains(s)) {
       throw InputException("Inconsistent shipment skills for pickup " +
                            std::to_string(pickup.id) + " and " +
                            std::to_string(delivery.id) + ".");
@@ -212,7 +212,7 @@ void Input::add_shipment(const Job& pickup, const Job& delivery) {
     throw InputException("Wrong type for pickup " + std::to_string(pickup.id) +
                          ".");
   }
-  if (pickup_id_to_rank.find(pickup.id) != pickup_id_to_rank.end()) {
+  if (pickup_id_to_rank.contains(pickup.id)) {
     throw InputException("Duplicate pickup id: " + std::to_string(pickup.id) +
                          ".");
   }
@@ -224,7 +224,7 @@ void Input::add_shipment(const Job& pickup, const Job& delivery) {
     throw InputException("Wrong type for delivery " +
                          std::to_string(delivery.id) + ".");
   }
-  if (delivery_id_to_rank.find(delivery.id) != delivery_id_to_rank.end()) {
+  if (delivery_id_to_rank.contains(delivery.id)) {
     throw InputException(
       "Duplicate delivery id: " + std::to_string(delivery.id) + ".");
   }
@@ -403,8 +403,7 @@ void Input::set_costs_matrix(const std::string& profile, Matrix<UserCost>&& m) {
 }
 
 bool Input::is_used_several_times(const Location& location) const {
-  return _locations_used_several_times.find(location) !=
-         _locations_used_several_times.end();
+  return _locations_used_several_times.contains(location);
 }
 
 bool Input::has_skills() const {
@@ -493,7 +492,7 @@ void Input::set_skills_compatibility() {
       for (std::size_t j = 0; j < jobs.size(); ++j) {
         bool is_compatible = true;
         for (const auto& s : jobs[j].skills) {
-          if (v_skills.find(s) == v_skills.end()) {
+          if (!v_skills.contains(s)) {
             is_compatible = false;
             break;
           }
@@ -891,13 +890,13 @@ void Input::set_matrices(unsigned nb_thread) {
     // optimization if geometry is requested.
     bool create_routing_wrapper = _geometry;
 
-    if (_durations_matrices.find(profile) == _durations_matrices.end()) {
+    if (!_durations_matrices.contains(profile)) {
       // Durations matrix has not been manually set, create empty
       // matrix to allow for concurrent modification later on.
       create_routing_wrapper = true;
       _durations_matrices.try_emplace(profile, Matrix<UserDuration>());
 
-      if (_distances_matrices.find(profile) == _distances_matrices.end()) {
+      if (!_distances_matrices.contains(profile)) {
         // Distances matrix has not been manually set, create empty
         // matrix to allow for concurrent modification later on.
         _distances_matrices.try_emplace(profile, Matrix<UserDistance>());

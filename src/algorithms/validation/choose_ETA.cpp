@@ -1269,8 +1269,7 @@ Route choose_ETA(const Input& input,
       case JOB_TYPE::SINGLE:
         break;
       case JOB_TYPE::PICKUP:
-        if (delivery_first_ranks.find(job_rank + 1) !=
-            delivery_first_ranks.end()) {
+        if (delivery_first_ranks.contains(job_rank + 1)) {
           current.violations.types.insert(VIOLATION::PRECEDENCE);
           v_types.insert(VIOLATION::PRECEDENCE);
         } else {
