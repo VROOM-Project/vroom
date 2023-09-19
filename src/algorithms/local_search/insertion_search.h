@@ -52,7 +52,7 @@ compute_best_insertion_single(const Input& input,
   return result;
 }
 
-template <class Route, class Iter>
+template <class Route, std::forward_iterator Iter>
 bool valid_for_capacity(const Input& input,
                         const Route& r,
                         Iter start,

@@ -200,12 +200,12 @@ bool RawRoute::is_valid_addition_for_capacity_margins(
           capacity + _fwd_pickups[last_rank - 1] - first_pickups);
 }
 
-template <class InputIterator>
+template <std::forward_iterator Iter>
 bool RawRoute::is_valid_addition_for_capacity_inclusion(
   const Input& input,
   Amount delivery,
-  const InputIterator first_job,
-  const InputIterator last_job,
+  const Iter first_job,
+  const Iter last_job,
   const Index first_rank,
   const Index last_rank) const {
   assert(first_rank <= last_rank);
@@ -290,10 +290,10 @@ void RawRoute::remove(const Input& input,
   update_amounts(input);
 }
 
-template <class InputIterator>
+template <std::forward_iterator Iter>
 void RawRoute::replace(const Input& input,
-                       const InputIterator first_job,
-                       const InputIterator last_job,
+                       const Iter first_job,
+                       const Iter last_job,
                        const Index first_rank,
                        const Index last_rank) {
   assert(first_rank <= last_rank);

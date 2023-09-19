@@ -15,13 +15,13 @@ All rights reserved (see LICENSE).
 
 namespace vroom::heuristics {
 
-template <class Route, class InputIterator>
+template <class Route, std::forward_iterator Iter>
 Eval basic(const Input& input,
            std::vector<Route>& routes,
-           const InputIterator jobs_begin,
-           const InputIterator jobs_end,
-           const InputIterator vehicles_begin,
-           const InputIterator vehicles_end,
+           const Iter jobs_begin,
+           const Iter jobs_end,
+           const Iter vehicles_begin,
+           const Iter vehicles_end,
            INIT init,
            double lambda,
            SORT sort) {
@@ -432,13 +432,13 @@ Eval basic(const Input& input,
   return sol_eval;
 }
 
-template <class Route, class InputIterator>
+template <class Route, std::forward_iterator Iter>
 Eval dynamic_vehicle_choice(const Input& input,
                             std::vector<Route>& routes,
-                            const InputIterator jobs_begin,
-                            const InputIterator jobs_end,
-                            const InputIterator vehicles_begin,
-                            const InputIterator vehicles_end,
+                            const Iter jobs_begin,
+                            const Iter jobs_end,
+                            const Iter vehicles_begin,
+                            const Iter vehicles_end,
                             INIT init,
                             double lambda,
                             SORT sort) {

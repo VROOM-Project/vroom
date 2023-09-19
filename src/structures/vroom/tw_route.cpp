@@ -708,11 +708,11 @@ OrderChoice TWRoute::order_choice(const Input& input,
   return oc;
 }
 
-template <class InputIterator>
+template <std::forward_iterator Iter>
 bool TWRoute::is_valid_addition_for_tw(const Input& input,
                                        const Amount& delivery,
-                                       const InputIterator first_job,
-                                       const InputIterator last_job,
+                                       const Iter first_job,
+                                       const Iter last_job,
                                        const Index first_rank,
                                        const Index last_rank,
                                        bool check_max_load) const {
@@ -1002,11 +1002,11 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
   return current.earliest + next.travel <= next.latest;
 }
 
-template <class InputIterator>
+template <std::forward_iterator Iter>
 void TWRoute::replace(const Input& input,
                       const Amount& delivery,
-                      const InputIterator first_job,
-                      const InputIterator last_job,
+                      const Iter first_job,
+                      const Iter last_job,
                       const Index first_rank,
                       const Index last_rank) {
   assert(first_job <= last_job);
