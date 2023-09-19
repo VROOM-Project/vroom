@@ -286,7 +286,7 @@ void run_example_with_custom_matrix() {
 int main() {
   try {
     run_example_with_osrm();
-    // run_example_with_custom_matrix();
+    run_example_with_custom_matrix();
   } catch (const vroom::Exception& e) {
     std::cerr << "[Error] " << e.message << std::endl;
   }

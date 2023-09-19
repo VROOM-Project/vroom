@@ -988,10 +988,6 @@ Route choose_ETA(const Input& input,
   // We should not get GLP_FEAS.
   assert(status == GLP_OPT);
 
-  // const auto v_str = std::to_string(v.id);
-  // glp_write_lp(lp, NULL, ("mip_1_v_" + v_str + ".lp").c_str());
-  // glp_print_mip(lp, ("mip_1_v_" + v_str + ".sol").c_str());
-
   // 5. Solve for earliest start dates.
   // Adjust objective.
   Duration delta_sum_majorant = 0;
@@ -1033,9 +1029,6 @@ Route choose_ETA(const Input& input,
   glp_set_row_bnds(lp, nb_constraints, GLP_FX, sum_y_i, sum_y_i);
 
   glp_intopt(lp, &parm);
-
-  // glp_write_lp(lp, NULL, ("mip_2_v_" + v_str + ".lp").c_str());
-  // glp_print_mip(lp, ("mip_2_v_" + v_str + ".sol").c_str());
 
   status = glp_mip_status(lp);
   if (status == GLP_UNDEF || status == GLP_NOFEAS) {
