@@ -904,7 +904,7 @@ Route choose_ETA(const Input& input,
     const auto& tws = (step.type == STEP_TYPE::JOB) ? input.jobs[step.rank].tws
                                                     : v.breaks[step.rank].tws;
 
-    for (unsigned k = 0; k < tws.size(); ++k) {
+    std::ranges::for_each(tws, [&](const auto&) {
       // a[constraint_rank, current_X_rank] = 1
       ia[r] = constraint_rank;
       ja[r] = current_X_rank;
@@ -912,7 +912,8 @@ Route choose_ETA(const Input& input,
       ++r;
 
       ++current_X_rank;
-    }
+    });
+
     ++constraint_rank;
   }
   assert(current_X_rank == start_delta_col);
