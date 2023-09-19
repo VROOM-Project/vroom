@@ -30,11 +30,10 @@ LocalSearch::LocalSearch(const Matrix<UserCost>& matrix,
   // Build _edges vector representation.
   auto location = tour.cbegin();
   Index first_index = *location;
-  Index current_index = first_index;
   Index last_index = first_index;
   ++location;
   while (location != tour.cend()) {
-    current_index = *location;
+    Index current_index = *location;
     _edges[last_index] = current_index;
     last_index = current_index;
     ++location;
