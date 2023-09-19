@@ -168,7 +168,7 @@ inline HeuristicParameters str_to_heuristic_param(const std::string& s) {
                                init,
                                regret_coeff,
                                sort);
-  } catch (const std::exception& e) {
+  } catch (const std::exception&) {
     throw InputException("Invalid heuristic parameter in command-line.");
   }
 }

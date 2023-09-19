@@ -62,7 +62,7 @@ std::string HttpWrapper::send_then_receive(const std::string& query) const {
         throw std::system_error(error);
       }
     }
-  } catch (std::system_error& e) {
+  } catch (std::system_error&) {
     throw RoutingException("Failed to connect to " + _server.host + ":" +
                            _server.port);
   }
@@ -113,7 +113,7 @@ std::string HttpWrapper::ssl_send_then_receive(const std::string& query) const {
         throw std::system_error(error);
       }
     }
-  } catch (std::system_error& e) {
+  } catch (std::system_error&) {
     throw RoutingException("Failed to connect to " + _server.host + ":" +
                            _server.port);
   }

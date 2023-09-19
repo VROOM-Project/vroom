@@ -119,7 +119,7 @@ int main(int argc, char** argv) {
           std::chrono::milliseconds(static_cast<std::chrono::milliseconds::rep>(
             s_to_ms * std::stof(limit_arg)));
       }
-    } catch (const std::exception& e) {
+    } catch (const std::exception&) {
       throw cxxopts::OptionException("Argument '" + limit_arg +
                                      "' failed to parse");
     }
