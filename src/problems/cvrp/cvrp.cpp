@@ -146,7 +146,7 @@ Solution CVRP::solve(unsigned exploration_level,
                      const Timeout& timeout,
                      const std::vector<HeuristicParameters>& h_param) const {
   if (_input.vehicles.size() == 1 && !_input.has_skills() &&
-      _input.zero_amount().size() == 0 && !_input.has_shipments() &&
+      _input.zero_amount().empty() && !_input.has_shipments() &&
       (_input.jobs.size() <= _input.vehicles[0].max_tasks) &&
       _input.vehicles[0].steps.empty() &&
       !_input.vehicles[0].has_max_travel_time()) {

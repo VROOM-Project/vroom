@@ -500,7 +500,7 @@ void SolutionState::set_insertion_ranks(const TWRoute& tw_r, Index v) {
     std::vector<Index>(_input.jobs.size(), tw_r.route.size() + 1);
   weak_insertion_ranks_begin[v] = std::vector<Index>(_input.jobs.size(), 0);
 
-  if (tw_r.size() == 0) {
+  if (tw_r.empty()) {
     return;
   }
 

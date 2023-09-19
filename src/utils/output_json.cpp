@@ -141,7 +141,7 @@ rapidjson::Value to_json(const Summary& summary,
   json_summary.AddMember("routes", summary.routes, allocator);
   json_summary.AddMember("unassigned", summary.unassigned, allocator);
 
-  if (summary.delivery.size() > 0) {
+  if (!summary.delivery.empty()) {
     rapidjson::Value json_delivery(rapidjson::kArrayType);
     for (std::size_t i = 0; i < summary.delivery.size(); ++i) {
       json_delivery.PushBack(summary.delivery[i], allocator);
@@ -156,7 +156,7 @@ rapidjson::Value to_json(const Summary& summary,
     json_summary.AddMember("amount", json_amount, allocator);
   }
 
-  if (summary.pickup.size() > 0) {
+  if (!summary.pickup.empty()) {
     rapidjson::Value json_pickup(rapidjson::kArrayType);
     for (std::size_t i = 0; i < summary.pickup.size(); ++i) {
       json_pickup.PushBack(summary.pickup[i], allocator);
@@ -200,7 +200,7 @@ rapidjson::Value to_json(const Route& route,
                                         allocator);
   }
 
-  if (route.delivery.size() > 0) {
+  if (!route.delivery.empty()) {
     rapidjson::Value json_delivery(rapidjson::kArrayType);
     for (std::size_t i = 0; i < route.delivery.size(); ++i) {
       json_delivery.PushBack(route.delivery[i], allocator);
@@ -215,7 +215,7 @@ rapidjson::Value to_json(const Route& route,
     json_route.AddMember("amount", json_amount, allocator);
   }
 
-  if (route.pickup.size() > 0) {
+  if (!route.pickup.empty()) {
     rapidjson::Value json_pickup(rapidjson::kArrayType);
     for (std::size_t i = 0; i < route.pickup.size(); ++i) {
       json_pickup.PushBack(route.pickup[i], allocator);
@@ -337,7 +337,7 @@ rapidjson::Value to_json(const Step& s,
     json_step.AddMember("job", s.id, allocator);
   }
 
-  if (s.load.size() > 0) {
+  if (!s.load.empty()) {
     rapidjson::Value json_load(rapidjson::kArrayType);
     for (std::size_t i = 0; i < s.load.size(); ++i) {
       json_load.PushBack(s.load[i], allocator);
