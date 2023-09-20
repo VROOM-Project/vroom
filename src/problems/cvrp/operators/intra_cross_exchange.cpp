@@ -30,8 +30,6 @@ IntraCrossExchange::IntraCrossExchange(const Input& input,
              t_rank),
     // Required for consistency in compute_gain if check_s_reverse or
     // check_t_reverse are false.
-    _reversed_s_gain(NO_GAIN),
-    _reversed_t_gain(NO_GAIN),
     check_s_reverse(check_s_reverse),
     check_t_reverse(check_t_reverse),
     _moved_jobs(t_rank - s_rank + 2),
@@ -44,19 +42,19 @@ IntraCrossExchange::IntraCrossExchange(const Input& input,
   assert(t_rank < s_route.size() - 1);
 
   // Either moving edges of single jobs or whole shipments.
-  assert((_input.jobs[this->s_route[s_rank]].type == JOB_TYPE::SINGLE and
-          _input.jobs[this->s_route[s_rank + 1]].type == JOB_TYPE::SINGLE and
-          check_s_reverse) or
-         (_input.jobs[this->s_route[s_rank]].type == JOB_TYPE::PICKUP and
-          _input.jobs[this->s_route[s_rank + 1]].type == JOB_TYPE::DELIVERY and
-          !check_s_reverse and
+  assert((_input.jobs[this->s_route[s_rank]].type == JOB_TYPE::SINGLE &&
+          _input.jobs[this->s_route[s_rank + 1]].type == JOB_TYPE::SINGLE &&
+          check_s_reverse) ||
+         (_input.jobs[this->s_route[s_rank]].type == JOB_TYPE::PICKUP &&
+          _input.jobs[this->s_route[s_rank + 1]].type == JOB_TYPE::DELIVERY &&
+          !check_s_reverse &&
           _sol_state.matching_delivery_rank[s_vehicle][s_rank] == s_rank + 1));
-  assert((_input.jobs[this->t_route[t_rank]].type == JOB_TYPE::SINGLE and
-          _input.jobs[this->t_route[t_rank + 1]].type == JOB_TYPE::SINGLE and
-          check_t_reverse) or
-         (_input.jobs[this->t_route[t_rank]].type == JOB_TYPE::PICKUP and
-          _input.jobs[this->t_route[t_rank + 1]].type == JOB_TYPE::DELIVERY and
-          !check_t_reverse and
+  assert((_input.jobs[this->t_route[t_rank]].type == JOB_TYPE::SINGLE &&
+          _input.jobs[this->t_route[t_rank + 1]].type == JOB_TYPE::SINGLE &&
+          check_t_reverse) ||
+         (_input.jobs[this->t_route[t_rank]].type == JOB_TYPE::PICKUP &&
+          _input.jobs[this->t_route[t_rank + 1]].type == JOB_TYPE::DELIVERY &&
+          !check_t_reverse &&
           _sol_state.matching_delivery_rank[t_vehicle][t_rank] == t_rank + 1));
 
   _moved_jobs[0] = s_route[t_rank];
@@ -131,12 +129,12 @@ Eval IntraCrossExchange::gain_upper_bound() {
 
   if (t_rank == s_route.size() - 2) {
     if (v.has_end()) {
-      auto n_index = v.end.value().index();
+      n_index = v.end.value().index();
       next_cost = v.eval(s_after_index, n_index);
       reverse_next_cost = v.eval(s_index, n_index);
     }
   } else {
-    auto n_index = _input.jobs[s_route[t_rank + 2]].index();
+    n_index = _input.jobs[s_route[t_rank + 2]].index();
     next_cost = v.eval(s_after_index, n_index);
     reverse_next_cost = v.eval(s_index, n_index);
   }
@@ -163,8 +161,8 @@ Eval IntraCrossExchange::gain_upper_bound() {
 
 void IntraCrossExchange::compute_gain() {
   assert(_gain_upper_bound_computed);
-  assert(s_normal_t_normal_is_valid or s_normal_t_reverse_is_valid or
-         s_reverse_t_reverse_is_valid or s_reverse_t_normal_is_valid);
+  assert(s_normal_t_normal_is_valid || s_normal_t_reverse_is_valid ||
+         s_reverse_t_reverse_is_valid || s_reverse_t_normal_is_valid);
 
   stored_gain = NO_GAIN;
 
@@ -216,7 +214,7 @@ bool IntraCrossExchange::is_valid() {
     _normal_s_gain.duration + _normal_t_gain.duration;
 
   s_normal_t_normal_is_valid =
-    s_v.ok_for_travel_time(s_travel_time - s_normal_t_normal_duration) and
+    s_v.ok_for_travel_time(s_travel_time - s_normal_t_normal_duration) &&
     source.is_valid_addition_for_capacity_inclusion(_input,
                                                     _delivery,
                                                     _moved_jobs.begin(),
@@ -243,11 +241,11 @@ bool IntraCrossExchange::is_valid() {
   std::swap(_moved_jobs[_moved_jobs.size() - 2],
             _moved_jobs[_moved_jobs.size() - 1]);
 
-  if (check_s_reverse and check_t_reverse) {
+  if (check_s_reverse && check_t_reverse) {
     const auto s_reversed_t_reversed_duration =
       _reversed_s_gain.duration + _reversed_t_gain.duration;
     s_reverse_t_reverse_is_valid =
-      s_v.ok_for_travel_time(s_travel_time - s_reversed_t_reversed_duration) and
+      s_v.ok_for_travel_time(s_travel_time - s_reversed_t_reversed_duration) &&
       source.is_valid_addition_for_capacity_inclusion(_input,
                                                       _delivery,
                                                       _moved_jobs.begin(),
@@ -277,16 +275,16 @@ bool IntraCrossExchange::is_valid() {
   std::swap(_moved_jobs[_moved_jobs.size() - 2],
             _moved_jobs[_moved_jobs.size() - 1]);
 
-  return s_normal_t_normal_is_valid or s_normal_t_reverse_is_valid or
-         s_reverse_t_reverse_is_valid or s_reverse_t_normal_is_valid;
+  return s_normal_t_normal_is_valid || s_normal_t_reverse_is_valid ||
+         s_reverse_t_reverse_is_valid || s_reverse_t_normal_is_valid;
 }
 
 void IntraCrossExchange::apply() {
-  assert(!reverse_s_edge or
-         (_input.jobs[s_route[s_rank]].type == JOB_TYPE::SINGLE and
+  assert(!reverse_s_edge ||
+         (_input.jobs[s_route[s_rank]].type == JOB_TYPE::SINGLE &&
           _input.jobs[s_route[s_rank + 1]].type == JOB_TYPE::SINGLE));
-  assert(!reverse_t_edge or
-         (_input.jobs[t_route[t_rank]].type == JOB_TYPE::SINGLE and
+  assert(!reverse_t_edge ||
+         (_input.jobs[t_route[t_rank]].type == JOB_TYPE::SINGLE &&
           _input.jobs[t_route[t_rank + 1]].type == JOB_TYPE::SINGLE));
 
   std::swap(s_route[s_rank], s_route[t_rank]);

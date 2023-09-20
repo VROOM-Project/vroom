@@ -24,7 +24,7 @@ template <class T> class Matrix {
 public:
   Matrix();
 
-  Matrix(std::size_t n);
+  explicit Matrix(std::size_t n);
 
   Matrix(std::size_t n, T value);
 

@@ -28,9 +28,8 @@ Solution check_and_set_ETA(const Input& input, unsigned nb_thread) {
 
   // Split the work among threads.
   const unsigned nb_vehicles_with_input =
-    std::count_if(input.vehicles.begin(),
-                  input.vehicles.end(),
-                  [](const auto& v) { return !v.steps.empty(); });
+    std::ranges::count_if(input.vehicles,
+                          [](const auto& v) { return !v.steps.empty(); });
   const auto nb_buckets = std::min(nb_thread, nb_vehicles_with_input);
 
   std::vector<std::vector<Index>> thread_ranks(nb_buckets,
@@ -70,13 +69,12 @@ Solution check_and_set_ETA(const Input& input, unsigned nb_thread) {
         routes[route_rank] = choose_ETA(input, v, input.vehicles[v].steps);
       }
     } catch (...) {
-      ep_m.lock();
+      std::scoped_lock<std::mutex> lock(ep_m);
       ep = std::current_exception();
-      ep_m.unlock();
     }
   };
 
-  std::vector<std::thread> solving_threads;
+  std::vector<std::jthread> solving_threads;
   solving_threads.reserve(thread_ranks.size());
 
   for (const auto& v_ranks : thread_ranks) {
@@ -96,7 +94,7 @@ Solution check_and_set_ETA(const Input& input, unsigned nb_thread) {
   unassigned_jobs.reserve(input.jobs.size() - assigned_ranks.size());
 
   for (Index j = 0; j < input.jobs.size(); ++j) {
-    if (assigned_ranks.find(j) == assigned_ranks.end()) {
+    if (!assigned_ranks.contains(j)) {
       unassigned_jobs.push_back(input.jobs[j]);
     }
   }

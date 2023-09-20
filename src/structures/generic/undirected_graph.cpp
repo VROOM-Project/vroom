@@ -6,6 +6,8 @@ Copyright (c) 2015-2022, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
+
+#include <algorithm>
 #include <cassert>
 #include <iterator>
 
@@ -43,7 +45,7 @@ UndirectedGraph<T>::UndirectedGraph(const Matrix<T>& m) : _size(m.size()) {
 
 template <class T>
 UndirectedGraph<T>::UndirectedGraph(std::vector<Edge<T>>&& edges)
-  : _edges(edges) {
+  : _edges(std::move(edges)) {
   for (auto const& edge : _edges) {
     Index first = edge.get_first_vertex();
     Index second = edge.get_second_vertex();
@@ -66,10 +68,8 @@ template <class T>
 std::unordered_map<Index, std::list<Index>>
 UndirectedGraph<T>::get_adjacency_list() const {
   std::unordered_map<Index, std::list<Index>> result;
-  for (const auto& pair : _adjacency_list) {
-    std::copy(pair.second.begin(),
-              pair.second.end(),
-              std::back_inserter(result[pair.first]));
+  for (const auto& [index, vector] : _adjacency_list) {
+    std::ranges::copy(vector, std::back_inserter(result[index]));
   }
   return result;
 }

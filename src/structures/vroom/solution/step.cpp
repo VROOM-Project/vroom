@@ -16,13 +16,9 @@ Step::Step(STEP_TYPE type, Location location, Amount load)
   : step_type(type),
     location(location),
     id(0),
-    setup(0),
     service(0),
-    load(std::move(load)),
-    arrival(0),
-    duration(0),
-    waiting_time(0) {
-  assert(step_type == STEP_TYPE::START or step_type == STEP_TYPE::END);
+    load(std::move(load)) {
+  assert(step_type == STEP_TYPE::START || step_type == STEP_TYPE::END);
 }
 
 Step::Step(const Job& job, const UserDuration setup, Amount load)
@@ -33,18 +29,15 @@ Step::Step(const Job& job, const UserDuration setup, Amount load)
     setup(setup),
     service(utils::scale_to_user_duration(job.service)),
     load(std::move(load)),
-    description(job.description),
-    waiting_time(0) {
+    description(job.description) {
 }
 
 Step::Step(const Break& b, Amount load)
   : step_type(STEP_TYPE::BREAK),
     id(b.id),
-    setup(0),
     service(utils::scale_to_user_duration(b.service)),
     load(std::move(load)),
-    description(b.description),
-    waiting_time(0) {
+    description(b.description) {
 }
 
 UserDuration Step::departure() const {

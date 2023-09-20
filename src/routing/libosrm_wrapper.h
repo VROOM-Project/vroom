@@ -27,12 +27,11 @@ private:
   static osrm::EngineConfig get_config(const std::string& profile);
 
 public:
-  LibosrmWrapper(const std::string& profile);
+  explicit LibosrmWrapper(const std::string& profile);
 
-  virtual Matrices
-  get_matrices(const std::vector<Location>& locs) const override;
+  Matrices get_matrices(const std::vector<Location>& locs) const override;
 
-  virtual void add_route_info(Route& route) const override;
+  void add_route_info(Route& route) const override;
 };
 
 } // namespace routing

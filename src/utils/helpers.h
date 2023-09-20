@@ -52,26 +52,27 @@ inline UserCost add_without_overflow(UserCost a, UserCost b) {
   return a + b;
 }
 
-inline INIT get_init(const std::string& s) {
+inline INIT get_init(std::string_view s) {
+  using enum INIT;
   if (s == "NONE") {
-    return INIT::NONE;
+    return NONE;
   }
   if (s == "HIGHER_AMOUNT") {
-    return INIT::HIGHER_AMOUNT;
+    return HIGHER_AMOUNT;
   }
   if (s == "NEAREST") {
-    return INIT::NEAREST;
+    return NEAREST;
   }
   if (s == "FURTHEST") {
-    return INIT::FURTHEST;
+    return FURTHEST;
   }
   if (s == "EARLIEST_DEADLINE") {
-    return INIT::EARLIEST_DEADLINE;
+    return EARLIEST_DEADLINE;
   }
   throw InputException("Invalid heuristic parameter in command-line.");
 }
 
-inline SORT get_sort(const std::string& s) {
+inline SORT get_sort(std::string_view s) {
   if (s == "CAPACITY") {
     return SORT::CAPACITY;
   }
@@ -144,7 +145,7 @@ inline HeuristicParameters str_to_heuristic_param(const std::string& s) {
     tokens.push_back(token);
   }
 
-  if ((tokens.size() != 3 and tokens.size() != 4) or tokens[0].size() != 1) {
+  if ((tokens.size() != 3 && tokens.size() != 4) || tokens[0].size() != 1) {
     throw InputException("Invalid heuristic parameter in command-line.");
   }
 
@@ -154,7 +155,7 @@ inline HeuristicParameters str_to_heuristic_param(const std::string& s) {
   try {
     auto h = std::stoul(tokens[0]);
 
-    if (h != 0 and h != 1) {
+    if (h != 0 && h != 1) {
       throw InputException("Invalid heuristic parameter in command-line.");
     }
 
@@ -167,7 +168,7 @@ inline HeuristicParameters str_to_heuristic_param(const std::string& s) {
                                init,
                                regret_coeff,
                                sort);
-  } catch (const std::exception& e) {
+  } catch (const std::exception&) {
     throw InputException("Invalid heuristic parameter in command-line.");
   }
 }
@@ -235,7 +236,7 @@ inline Eval addition_cost(const Input& input,
                           const std::vector<Index>& route,
                           Index pickup_rank,
                           Index delivery_rank) {
-  assert(pickup_rank < delivery_rank and delivery_rank <= route.size() + 1);
+  assert(pickup_rank < delivery_rank && delivery_rank <= route.size() + 1);
 
   // Start with pickup eval.
   auto eval = addition_cost(input, job_rank, v, route, pickup_rank);
@@ -310,7 +311,7 @@ inline Eval in_place_delta_cost(const Input& input,
   }
 
   Eval old_virtual_eval;
-  if (p_index and n_index) {
+  if (p_index && n_index) {
     old_virtual_eval = v.eval(p_index.value(), n_index.value());
   }
 
@@ -369,12 +370,13 @@ inline void check_precedence(const Input& input,
                              std::unordered_set<Index>& expected_delivery_ranks,
                              Index job_rank) {
   switch (input.jobs[job_rank].type) {
-  case JOB_TYPE::SINGLE:
+    using enum JOB_TYPE;
+  case SINGLE:
     break;
-  case JOB_TYPE::PICKUP:
+  case PICKUP:
     expected_delivery_ranks.insert(job_rank + 1);
     break;
-  case JOB_TYPE::DELIVERY:
+  case DELIVERY:
     // Associated pickup has been done before.
     auto search = expected_delivery_ranks.find(job_rank);
     assert(search != expected_delivery_ranks.end());
@@ -562,10 +564,9 @@ inline Solution format_solution(const Input& input,
 
   // Handle unassigned jobs.
   std::vector<Job> unassigned_jobs;
-  std::transform(unassigned_ranks.begin(),
-                 unassigned_ranks.end(),
-                 std::back_inserter(unassigned_jobs),
-                 [&](auto j) { return input.jobs[j]; });
+  std::ranges::transform(unassigned_ranks,
+                         std::back_inserter(unassigned_jobs),
+                         [&](auto j) { return input.jobs[j]; });
 
   return Solution(0,
                   input.zero_amount(),
@@ -626,8 +627,8 @@ inline Route format_route(const Input& input,
       assert(b_tw != b.tws.rend());
 
       if (b_tw->end < step_start) {
-        auto margin = step_start - b_tw->end;
-        if (margin < remaining_travel_time) {
+        if (const auto margin = step_start - b_tw->end;
+            margin < remaining_travel_time) {
           remaining_travel_time -= margin;
         } else {
           backward_wt += (margin - remaining_travel_time);
@@ -638,11 +639,11 @@ inline Route format_route(const Input& input,
       }
     }
 
-    bool same_location = (r > 1 and input.jobs[tw_r.route[r - 2]].index() ==
-                                      previous_job.index()) or
-                         (r == 1 and v.has_start() and
+    bool same_location = (r > 1 && input.jobs[tw_r.route[r - 2]].index() ==
+                                     previous_job.index()) ||
+                         (r == 1 && v.has_start() &&
                           v.start.value().index() == previous_job.index());
-    const auto current_setup = (same_location) ? 0 : previous_job.setup;
+    const auto current_setup = same_location ? 0 : previous_job.setup;
 
     Duration diff =
       current_setup + previous_job.service + remaining_travel_time;
@@ -696,8 +697,8 @@ inline Route format_route(const Input& input,
     assert(b_tw != b.tws.rend());
 
     if (b_tw->end < step_start) {
-      auto margin = step_start - b_tw->end;
-      if (margin < remaining_travel_time) {
+      if (const auto margin = step_start - b_tw->end;
+          margin < remaining_travel_time) {
         remaining_travel_time -= margin;
       } else {
         backward_wt += (margin - remaining_travel_time);
@@ -714,7 +715,7 @@ inline Route format_route(const Input& input,
     step_start -= remaining_travel_time;
   }
 
-  assert(first_location.has_value() and last_location.has_value());
+  assert(first_location.has_value() && last_location.has_value());
   steps.emplace_back(STEP_TYPE::START, first_location.value(), current_load);
   assert(v.tw.contains(step_start));
   steps.back().arrival = scale_to_user_duration(step_start);
@@ -761,7 +762,7 @@ inline Route format_route(const Input& input,
 
     // Handles breaks before this job.
     assert(tw_r.breaks_at_rank[r] <= tw_r.breaks_counts[r]);
-    Index break_rank = tw_r.breaks_counts[r] - tw_r.breaks_at_rank[r];
+    break_rank = tw_r.breaks_counts[r] - tw_r.breaks_at_rank[r];
 
     for (Index i = 0; i < tw_r.breaks_at_rank[r]; ++i, ++break_rank) {
       const auto& b = v.breaks[break_rank];
@@ -771,15 +772,14 @@ inline Route format_route(const Input& input,
       steps.emplace_back(b, current_load);
       auto& current_break = steps.back();
 
-      const auto b_tw =
-        std::find_if(b.tws.begin(), b.tws.end(), [&](const auto& tw) {
-          return step_start <= tw.end;
-        });
+      const auto b_tw = std::ranges::find_if(b.tws, [&](const auto& tw) {
+        return step_start <= tw.end;
+      });
       assert(b_tw != b.tws.end());
 
       if (step_start < b_tw->start) {
-        auto margin = b_tw->start - step_start;
-        if (margin <= travel_time) {
+        if (const auto margin = b_tw->start - step_start;
+            margin <= travel_time) {
           // Part of the remaining travel time is spent before this
           // break, filling the whole margin.
           duration += margin;
@@ -810,10 +810,10 @@ inline Route format_route(const Input& input,
         current_break.arrival = scale_to_user_duration(step_start);
       }
 
-      assert(b_tw->start % DURATION_FACTOR == 0 and
+      assert(b_tw->start % DURATION_FACTOR == 0 &&
              scale_to_user_duration(b_tw->start) <=
-               current_break.arrival + current_break.waiting_time and
-             (current_break.waiting_time == 0 or
+               current_break.arrival + current_break.waiting_time &&
+             (current_break.waiting_time == 0 ||
               scale_to_user_duration(b_tw->start) ==
                 current_break.arrival + current_break.waiting_time));
 
@@ -862,9 +862,9 @@ inline Route format_route(const Input& input,
     current.arrival = scale_to_user_duration(step_start);
 
     const auto j_tw =
-      std::find_if(current_job.tws.begin(),
-                   current_job.tws.end(),
-                   [&](const auto& tw) { return step_start <= tw.end; });
+      std::ranges::find_if(current_job.tws, [&](const auto& tw) {
+        return step_start <= tw.end;
+      });
     assert(j_tw != current_job.tws.end());
 
     if (step_start < j_tw->start) {
@@ -890,10 +890,10 @@ inline Route format_route(const Input& input,
       current.arrival + current.waiting_time + current.setup + current.service;
 
     assert(
-      j_tw->start % DURATION_FACTOR == 0 and
+      j_tw->start % DURATION_FACTOR == 0 &&
       scale_to_user_duration(j_tw->start) <=
-        current.arrival + current.waiting_time and
-      (current.waiting_time == 0 or scale_to_user_duration(j_tw->start) ==
+        current.arrival + current.waiting_time &&
+      (current.waiting_time == 0 || scale_to_user_duration(j_tw->start) ==
                                       current.arrival + current.waiting_time));
 
     step_start += (current_setup + current_job.service);
@@ -919,15 +919,13 @@ inline Route format_route(const Input& input,
     steps.emplace_back(b, current_load);
     auto& current_break = steps.back();
 
-    const auto b_tw =
-      std::find_if(b.tws.begin(), b.tws.end(), [&](const auto& tw) {
-        return step_start <= tw.end;
-      });
+    const auto b_tw = std::ranges::find_if(b.tws, [&](const auto& tw) {
+      return step_start <= tw.end;
+    });
     assert(b_tw != b.tws.end());
 
     if (step_start < b_tw->start) {
-      auto margin = b_tw->start - step_start;
-      if (margin <= travel_time) {
+      if (const auto margin = b_tw->start - step_start; margin <= travel_time) {
         // Part of the remaining travel time is spent before this
         // break, filling the whole margin.
         duration += margin;
@@ -958,10 +956,10 @@ inline Route format_route(const Input& input,
       current_break.arrival = scale_to_user_duration(step_start);
     }
 
-    assert(b_tw->start % DURATION_FACTOR == 0 and
+    assert(b_tw->start % DURATION_FACTOR == 0 &&
            scale_to_user_duration(b_tw->start) <=
-             current_break.arrival + current_break.waiting_time and
-           (current_break.waiting_time == 0 or
+             current_break.arrival + current_break.waiting_time &&
+           (current_break.waiting_time == 0 ||
             scale_to_user_duration(b_tw->start) ==
               current_break.arrival + current_break.waiting_time));
 
@@ -1046,10 +1044,9 @@ inline Solution format_solution(const Input& input,
 
   // Handle unassigned jobs.
   std::vector<Job> unassigned_jobs;
-  std::transform(unassigned_ranks.begin(),
-                 unassigned_ranks.end(),
-                 std::back_inserter(unassigned_jobs),
-                 [&](auto j) { return input.jobs[j]; });
+  std::ranges::transform(unassigned_ranks,
+                         std::back_inserter(unassigned_jobs),
+                         [&](auto j) { return input.jobs[j]; });
 
   return Solution(0,
                   input.zero_amount(),

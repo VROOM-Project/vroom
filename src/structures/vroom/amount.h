@@ -88,7 +88,7 @@ class Amount : public AmountExpression<Amount> {
 public:
   Amount() = default;
 
-  Amount(std::size_t size) : elems(size, 0){};
+  explicit Amount(std::size_t size) : elems(size, 0){};
 
   template <typename E> Amount(const AmountExpression<E>& u) {
     elems.resize(u.size());

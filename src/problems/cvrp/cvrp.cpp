@@ -145,10 +145,10 @@ Solution CVRP::solve(unsigned exploration_level,
                      unsigned nb_threads,
                      const Timeout& timeout,
                      const std::vector<HeuristicParameters>& h_param) const {
-  if (_input.vehicles.size() == 1 and !_input.has_skills() and
-      _input.zero_amount().size() == 0 and !_input.has_shipments() and
-      (_input.jobs.size() <= _input.vehicles[0].max_tasks) and
-      _input.vehicles[0].steps.empty() and
+  if (_input.vehicles.size() == 1 && !_input.has_skills() &&
+      _input.zero_amount().empty() && !_input.has_shipments() &&
+      (_input.jobs.size() <= _input.vehicles[0].max_tasks) &&
+      _input.vehicles[0].steps.empty() &&
       !_input.vehicles[0].has_max_travel_time()) {
     // This is a plain TSP, no need to go through the trouble below.
     std::vector<Index> job_ranks(_input.jobs.size());

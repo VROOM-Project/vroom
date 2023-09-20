@@ -24,14 +24,14 @@ struct Step {
   const std::optional<JOB_TYPE> job_type;
   const std::optional<Location> location;
   const Id id;
-  UserDuration setup;
+  UserDuration setup{0};
   UserDuration service;
   const Amount load;
   const std::string description;
 
-  UserDuration arrival;
-  UserDuration duration;
-  UserDuration waiting_time;
+  UserDuration arrival{0};
+  UserDuration duration{0};
+  UserDuration waiting_time{0};
   UserDistance distance;
 
   Violations violations;

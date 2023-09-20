@@ -119,7 +119,7 @@ int main(int argc, char** argv) {
           std::chrono::milliseconds(static_cast<std::chrono::milliseconds::rep>(
             s_to_ms * std::stof(limit_arg)));
       }
-    } catch (const std::exception& e) {
+    } catch (const std::exception&) {
       throw cxxopts::OptionException("Argument '" + limit_arg +
                                      "' failed to parse");
     }
@@ -160,7 +160,7 @@ int main(int argc, char** argv) {
     cl_args.router = vroom::ROUTER::ORS;
   } else if (router_arg == "valhalla") {
     cl_args.router = vroom::ROUTER::VALHALLA;
-  } else if (!router_arg.empty() and router_arg != "osrm") {
+  } else if (!router_arg.empty() && router_arg != "osrm") {
     auto error_code = vroom::InputException("").error_code;
     std::string message = "Invalid routing engine: " + router_arg + ".";
     std::cerr << "[Error] " << message << std::endl;
@@ -173,12 +173,12 @@ int main(int argc, char** argv) {
   try {
     // Force heuristic parameters from the command-line, useful for
     // debugging.
-    std::transform(heuristic_params_arg.begin(),
-                   heuristic_params_arg.end(),
-                   std::back_inserter(cl_args.h_params),
-                   [](const auto& str_param) {
-                     return vroom::utils::str_to_heuristic_param(str_param);
-                   });
+    std::ranges::transform(heuristic_params_arg,
+                           std::back_inserter(cl_args.h_params),
+                           [](const auto& str_param) {
+                             return vroom::utils::str_to_heuristic_param(
+                               str_param);
+                           });
   } catch (const vroom::Exception& e) {
     std::cerr << "[Error] " << e.message << std::endl;
     vroom::io::write_to_json({e.error_code, e.message}, cl_args.output_file);

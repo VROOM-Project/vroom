@@ -16,18 +16,18 @@ RouteSplit::RouteSplit(
   const utils::SolutionState& sol_state,
   TWRoute& tw_s_route,
   Index s_vehicle,
-  const std::vector<Index>& empty_route_ranks,
-  std::vector<std::reference_wrapper<TWRoute>>& empty_route_refs,
+  std::vector<Index>&& empty_route_ranks,
+  std::vector<std::reference_wrapper<TWRoute>>&& empty_route_refs,
   const Eval& best_known_gain)
   : cvrp::RouteSplit(input,
                      sol_state,
                      static_cast<RawRoute&>(tw_s_route),
                      s_vehicle,
-                     empty_route_ranks,
-                     dummy_route_refs,
+                     std::move(empty_route_ranks),
+                     std::vector<std::reference_wrapper<RawRoute>>(),
                      best_known_gain),
     _tw_s_route(tw_s_route),
-    _empty_tw_route_refs(empty_route_refs) {
+    _empty_tw_route_refs(std::move(empty_route_refs)) {
 }
 
 void RouteSplit::compute_gain() {

@@ -80,7 +80,7 @@ ValhallaWrapper::get_route_query(const std::vector<Location>& locations) const {
 
 std::string ValhallaWrapper::build_query(const std::vector<Location>& locations,
                                          const std::string& service) const {
-  assert(service == _matrix_service or service == _route_service);
+  assert(service == _matrix_service || service == _route_service);
 
   return (service == _matrix_service) ? get_matrix_query(locations)
                                       : get_route_query(locations);
@@ -89,11 +89,11 @@ std::string ValhallaWrapper::build_query(const std::vector<Location>& locations,
 void ValhallaWrapper::check_response(const rapidjson::Document& json_result,
                                      const std::vector<Location>&,
                                      const std::string& service) const {
-  assert(service == _matrix_service or service == _route_service);
+  assert(service == _matrix_service || service == _route_service);
 
-  constexpr unsigned HTTP_OK = 200;
-  if (json_result.HasMember("status_code") and
-      json_result["status_code"].IsUint() and
+  if (constexpr unsigned HTTP_OK = 200;
+      json_result.HasMember("status_code") &&
+      json_result["status_code"].IsUint() &&
       json_result["status_code"].GetUint() != HTTP_OK) {
     // Valhalla responses seem to only have a status_code key when a
     // problem is encountered. In that case it's not really clear what
@@ -103,7 +103,7 @@ void ValhallaWrapper::check_response(const rapidjson::Document& json_result,
     std::string service_str = (service == _route_service) ? "route" : "matrix";
     std::string error = "Valhalla " + service_str + " error (";
 
-    if (json_result.HasMember("error") and json_result["error"].IsString()) {
+    if (json_result.HasMember("error") && json_result["error"].IsString()) {
       error += json_result["error"].GetString();
       error += ").";
     }
@@ -111,7 +111,7 @@ void ValhallaWrapper::check_response(const rapidjson::Document& json_result,
   }
 
   if (service == _route_service) {
-    assert(json_result.HasMember("trip") and
+    assert(json_result.HasMember("trip") &&
            json_result["trip"].HasMember("status"));
     if (json_result["trip"]["status"] != 0) {
       throw RoutingException(

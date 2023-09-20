@@ -18,21 +18,21 @@ All rights reserved (see LICENSE).
 namespace vroom {
 
 struct Summary {
-  UserCost cost;
+  UserCost cost{0};
   const unsigned routes;
   const unsigned unassigned;
   Amount delivery;
   Amount pickup;
-  UserDuration setup;
-  UserDuration service;
-  Priority priority;
+  UserDuration setup{0};
+  UserDuration service{0};
+  Priority priority{0};
 
-  UserDuration duration;
-  UserDuration waiting_time;
-  UserDistance distance;
+  UserDuration duration{0};
+  UserDuration waiting_time{0};
+  UserDistance distance{0};
   ComputingTimes computing_times;
 
-  Violations violations;
+  Violations violations{0, 0};
 
   Summary();
 

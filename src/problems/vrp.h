@@ -119,8 +119,8 @@ protected:
             break;
           }
 
-          if (!_input.has_homogeneous_costs() and
-              p.heuristic != HEURISTIC::INIT_ROUTES and h_param.empty() and
+          if (!_input.has_homogeneous_costs() &&
+              p.heuristic != HEURISTIC::INIT_ROUTES && h_param.empty() &&
               p.sort == SORT::CAPACITY) {
             // Worth trying another vehicle ordering scheme in
             // heuristic.
@@ -163,13 +163,12 @@ protected:
           }
         }
       } catch (...) {
-        ep_m.lock();
+        std::scoped_lock<std::mutex> lock(ep_m);
         ep = std::current_exception();
-        ep_m.unlock();
       }
     };
 
-    std::vector<std::thread> heuristics_threads;
+    std::vector<std::jthread> heuristics_threads;
     heuristics_threads.reserve(nb_threads);
 
     for (const auto& param_ranks : thread_ranks) {
@@ -212,9 +211,7 @@ protected:
       nb_solutions);
 #endif
 
-    std::fill(thread_ranks.begin(),
-              thread_ranks.end(),
-              std::vector<std::size_t>());
+    std::ranges::fill(thread_ranks, std::vector<std::size_t>());
     for (std::size_t i = 0; i < nb_solutions; ++i) {
       thread_ranks[i % nb_threads].push_back(i);
     }
@@ -242,13 +239,12 @@ protected:
 #endif
         }
       } catch (...) {
-        ep_m.lock();
+        std::scoped_lock<std::mutex> lock(ep_m);
         ep = std::current_exception();
-        ep_m.unlock();
       }
     };
 
-    std::vector<std::thread> ls_threads;
+    std::vector<std::jthread> ls_threads;
     ls_threads.reserve(nb_threads);
 
     for (const auto& sol_ranks : thread_ranks) {
@@ -279,7 +275,7 @@ protected:
   }
 
 public:
-  VRP(const Input& input);
+  explicit VRP(const Input& input);
 
   virtual ~VRP();
 

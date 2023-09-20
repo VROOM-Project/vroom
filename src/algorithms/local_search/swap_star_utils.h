@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include "algorithms/local_search/top_insertions.h"
 #include "structures/typedefs.h"
 #include "structures/vroom/input/input.h"
 #include "structures/vroom/solution_state.h"
@@ -20,48 +21,6 @@ All rights reserved (see LICENSE).
 // additional constraint checks (back-hauls and time windows).
 
 namespace vroom::ls {
-
-struct InsertionOption {
-  Eval cost;
-  Index rank;
-};
-
-using ThreeInsertions = std::array<InsertionOption, 3>;
-
-constexpr InsertionOption no_insert = {NO_EVAL, 0};
-constexpr ThreeInsertions
-  empty_three_insertions({no_insert, no_insert, no_insert});
-
-template <class Route>
-ThreeInsertions find_top_3_insertions(const Input& input,
-                                      Index j,
-                                      const Route& r) {
-  const auto& v = input.vehicles[r.vehicle_rank];
-
-  auto best_insertions = empty_three_insertions;
-
-  for (Index rank = 0; rank <= r.route.size(); ++rank) {
-    const InsertionOption current_insert =
-      {utils::addition_cost(input, j, v, r.route, rank), rank};
-
-    if (current_insert.cost < best_insertions[2].cost) {
-      if (current_insert.cost < best_insertions[1].cost) {
-        if (current_insert.cost < best_insertions[0].cost) {
-          best_insertions[2] = best_insertions[1];
-          best_insertions[1] = best_insertions[0];
-          best_insertions[0] = current_insert;
-        } else {
-          best_insertions[2] = best_insertions[1];
-          best_insertions[1] = current_insert;
-        }
-      } else {
-        best_insertions[2] = current_insert;
-      }
-    }
-  }
-
-  return best_insertions;
-}
 
 struct SwapChoice {
   Eval gain;
@@ -83,9 +42,7 @@ struct SwapChoice {
       s_rank(s_rank),
       t_rank(t_rank),
       insertion_in_source(insertion_in_source),
-      insertion_in_target(insertion_in_target),
-      source_range_delivery(0),
-      target_range_delivery(0) {
+      insertion_in_target(insertion_in_target) {
   }
 };
 
@@ -110,7 +67,7 @@ bool valid_choice_for_insertion_ranks(const utils::SolutionState& sol_state,
   // value.
   bool valid =
     sol_state.weak_insertion_ranks_begin[t_vehicle][source_job_rank] ==
-      sc.t_rank + 1 or
+      sc.t_rank + 1 ||
     sol_state.weak_insertion_ranks_begin[t_vehicle][source_job_rank] <=
       sc.insertion_in_target;
 
@@ -118,7 +75,7 @@ bool valid_choice_for_insertion_ranks(const utils::SolutionState& sol_state,
   // we remove precisely the job in target that triggered this value.
   valid =
     valid && (sol_state.weak_insertion_ranks_end[t_vehicle][source_job_rank] ==
-                sc.t_rank + 1 or
+                sc.t_rank + 1 ||
               sc.insertion_in_target <
                 sol_state.weak_insertion_ranks_end[t_vehicle][source_job_rank]);
 
@@ -127,7 +84,7 @@ bool valid_choice_for_insertion_ranks(const utils::SolutionState& sol_state,
   // value.
   valid = valid &&
           (sol_state.weak_insertion_ranks_begin[s_vehicle][target_job_rank] ==
-             sc.s_rank + 1 or
+             sc.s_rank + 1 ||
            sol_state.weak_insertion_ranks_begin[s_vehicle][target_job_rank] <=
              sc.insertion_in_source);
 
@@ -135,35 +92,35 @@ bool valid_choice_for_insertion_ranks(const utils::SolutionState& sol_state,
   // we remove precisely the job in source that triggered this value.
   valid =
     valid && (sol_state.weak_insertion_ranks_end[s_vehicle][target_job_rank] ==
-                sc.s_rank + 1 or
+                sc.s_rank + 1 ||
               sc.insertion_in_source <
                 sol_state.weak_insertion_ranks_end[s_vehicle][target_job_rank]);
 
   // If t_rank is greater or equal to insertion_in_target, then strong
   // insertion rank end is still valid when removing in target.
   valid =
-    valid && (sc.t_rank < sc.insertion_in_target or
+    valid && (sc.t_rank < sc.insertion_in_target ||
               sc.insertion_in_target <
                 sol_state.insertion_ranks_end[t_vehicle][source_job_rank]);
 
   // If s_rank is greater or equal to insertion_in_source, then strong
   // insertion rank end is still valid when removing in source.
   valid =
-    valid && (sc.s_rank < sc.insertion_in_source or
+    valid && (sc.s_rank < sc.insertion_in_source ||
               sc.insertion_in_source <
                 sol_state.insertion_ranks_end[s_vehicle][target_job_rank]);
 
   // If t_rank is strictly lower than insertion_in_target, then strong
   // insertion rank begin is still valid when removing in target.
   valid =
-    valid && (sc.t_rank >= sc.insertion_in_target or
+    valid && (sc.t_rank >= sc.insertion_in_target ||
               sol_state.insertion_ranks_begin[t_vehicle][source_job_rank] <=
                 sc.insertion_in_target);
 
   // If s_rank is strictly lower than insertion_in_source, then strong
   // insertion rank begin is still valid when removing in source.
   valid =
-    valid && (sc.s_rank >= sc.insertion_in_source or
+    valid && (sc.s_rank >= sc.insertion_in_source ||
               sol_state.insertion_ranks_begin[s_vehicle][target_job_rank] <=
                 sc.insertion_in_source);
 
@@ -218,30 +175,6 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
                                          const Index t_vehicle,
                                          const Route& target,
                                          const Eval& best_known_gain) {
-  // Preprocessing phase.
-  std::unordered_map<Index, ThreeInsertions> top_insertions_in_target;
-  for (unsigned s_rank = 0; s_rank < source.route.size(); ++s_rank) {
-    const auto source_job_rank = source.route[s_rank];
-
-    if (input.jobs[source_job_rank].type == JOB_TYPE::SINGLE and
-        input.vehicle_ok_with_job(t_vehicle, source_job_rank)) {
-      top_insertions_in_target[s_rank] =
-        find_top_3_insertions(input, source_job_rank, target);
-    }
-  }
-
-  std::unordered_map<Index, ThreeInsertions> top_insertions_in_source;
-  for (unsigned t_rank = 0; t_rank < target.route.size(); ++t_rank) {
-    const auto target_job_rank = target.route[t_rank];
-
-    if (input.jobs[target_job_rank].type == JOB_TYPE::SINGLE and
-        input.vehicle_ok_with_job(s_vehicle, target_job_rank)) {
-      top_insertions_in_source[t_rank] =
-        find_top_3_insertions(input, target_job_rank, source);
-    }
-  }
-
-  // Search phase.
   auto best_choice = empty_swap_choice;
   Eval best_gain = best_known_gain;
 
@@ -256,31 +189,37 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
   const auto& t_delivery_margin = target.delivery_margin();
   const auto& t_pickup_margin = target.pickup_margin();
 
-  for (const auto& s_element : top_insertions_in_target) {
-    const auto s_rank = s_element.first;
-    const auto& target_insertions = s_element.second;
+  for (unsigned s_rank = 0; s_rank < source.route.size(); ++s_rank) {
+    const auto source_job_rank = source.route[s_rank];
+    const auto& target_insertions =
+      sol_state.top_3_insertions[t_vehicle][source_job_rank];
 
     // sol_state.node_gains contains the Delta value we're looking for
     // except in the case of a single-step route with a start and end,
     // where the start->end cost is not accounted for.
     const auto source_start_end_cost =
-      (source.size() == 1 and s_v.has_start() and s_v.has_end())
+      (source.size() == 1 && s_v.has_start() && s_v.has_end())
         ? s_v.eval(s_v.start.value().index(), s_v.end.value().index())
         : Eval();
     const auto source_delta =
       sol_state.node_gains[s_vehicle][s_rank] - source_start_end_cost;
 
-    for (const auto& t_element : top_insertions_in_source) {
-      const auto t_rank = t_element.first;
-      const auto& source_insertions = t_element.second;
+    for (unsigned t_rank = 0; t_rank < target.route.size(); ++t_rank) {
+      const auto target_job_rank = target.route[t_rank];
+      const auto& source_insertions =
+        sol_state.top_3_insertions[s_vehicle][target_job_rank];
 
       // Same as above.
       const auto target_start_end_cost =
-        (target.size() == 1 and t_v.has_start() and t_v.has_end())
+        (target.size() == 1 && t_v.has_start() && t_v.has_end())
           ? t_v.eval(t_v.start.value().index(), t_v.end.value().index())
           : Eval();
       const auto target_delta =
         sol_state.node_gains[t_vehicle][t_rank] - target_start_end_cost;
+
+      if (source_delta + target_delta <= best_gain) {
+        continue;
+      }
 
       const auto target_in_place_delta =
         utils::in_place_delta_cost(input,
@@ -310,7 +249,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
       if (s_v.ok_for_travel_time(s_travel_time - in_place_s_gain.duration)) {
         // Only bother further checking in-place insertion in source
         // route if max travel time constraint is OK.
-        if (best_gain < current_gain and
+        if (best_gain < current_gain &&
             t_v.ok_for_travel_time(t_travel_time - in_place_t_gain.duration)) {
           SwapChoice sc(current_gain, s_rank, t_rank, s_rank, t_rank);
           if (valid_choice_for_insertion_ranks(sol_state,
@@ -324,11 +263,11 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
         }
 
         for (const auto& ti : target_insertions) {
-          if ((ti.rank != t_rank) and (ti.rank != t_rank + 1) and
+          if ((ti.rank != t_rank) && (ti.rank != t_rank + 1) &&
               (ti.cost != NO_EVAL)) {
             const Eval t_gain = target_delta - ti.cost;
             current_gain = in_place_s_gain + t_gain;
-            if (best_gain < current_gain and
+            if (best_gain < current_gain &&
                 t_v.ok_for_travel_time(t_travel_time - t_gain.duration)) {
               SwapChoice sc(current_gain, s_rank, t_rank, s_rank, ti.rank);
               if (valid_choice_for_insertion_ranks(sol_state,
@@ -349,7 +288,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
       // target route and other relevant positions from
       // target_insertions.
       for (const auto& si : source_insertions) {
-        if ((si.rank != s_rank) and (si.rank != s_rank + 1) and
+        if ((si.rank != s_rank) && (si.rank != s_rank + 1) &&
             (si.cost != NO_EVAL)) {
           const Eval s_gain = source_delta - si.cost;
 
@@ -360,7 +299,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
           }
 
           current_gain = s_gain + in_place_t_gain;
-          if (best_gain < current_gain and
+          if (best_gain < current_gain &&
               t_v.ok_for_travel_time(t_travel_time -
                                      in_place_t_gain.duration)) {
             SwapChoice sc(current_gain, s_rank, t_rank, si.rank, t_rank);
@@ -375,11 +314,11 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
           }
 
           for (const auto& ti : target_insertions) {
-            if ((ti.rank != t_rank) and (ti.rank != t_rank + 1) and
+            if ((ti.rank != t_rank) && (ti.rank != t_rank + 1) &&
                 (ti.cost != NO_EVAL)) {
               const Eval t_gain = target_delta - ti.cost;
               current_gain = s_gain + t_gain;
-              if (best_gain < current_gain and
+              if (best_gain < current_gain &&
                   t_v.ok_for_travel_time(t_travel_time - t_gain.duration)) {
                 SwapChoice sc(current_gain, s_rank, t_rank, si.rank, ti.rank);
                 if (valid_choice_for_insertion_ranks(sol_state,
@@ -396,9 +335,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
         }
       }
 
-      std::sort(swap_choice_options.begin(),
-                swap_choice_options.end(),
-                SwapChoiceCmp);
+      std::ranges::sort(swap_choice_options, SwapChoiceCmp);
 
       assert(swap_choice_options.size() <= 16);
 
@@ -412,11 +349,11 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
         const auto& s_pickup = input.jobs[s_index].pickup;
         const auto t_index = target.route[sc.t_rank];
         const auto& t_delivery = input.jobs[t_index].delivery;
-        const auto& t_pickup = input.jobs[t_index].pickup;
 
-        if (!(t_delivery <= s_delivery_margin + s_delivery) or
-            !(t_pickup <= s_pickup_margin + s_pickup) or
-            !(s_delivery <= t_delivery_margin + t_delivery) or
+        if (const auto& t_pickup = input.jobs[t_index].pickup;
+            !(t_delivery <= s_delivery_margin + s_delivery) ||
+            !(t_pickup <= s_pickup_margin + s_pickup) ||
+            !(s_delivery <= t_delivery_margin + t_delivery) ||
             !(s_pickup <= t_pickup_margin + t_pickup)) {
           continue;
         }

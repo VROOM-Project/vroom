@@ -65,9 +65,13 @@ public:
 
   void set_route(const Input& input, const std::vector<Index>& r);
 
-  bool empty() const;
+  bool empty() const {
+    return route.empty();
+  }
 
-  std::size_t size() const;
+  std::size_t size() const {
+    return route.size();
+  }
 
   void update_amounts(const Input& input);
 
@@ -116,11 +120,11 @@ public:
   // capacity for included jobs) of the range [first_job; last_job) in
   // the existing route at rank first_rank and before last_rank *in
   // place of* the current jobs that may be there.
-  template <class InputIterator>
+  template <std::forward_iterator Iter>
   bool is_valid_addition_for_capacity_inclusion(const Input& input,
                                                 Amount delivery,
-                                                const InputIterator first_job,
-                                                const InputIterator last_job,
+                                                const Iter first_job,
+                                                const Iter last_job,
                                                 const Index first_rank,
                                                 const Index last_rank) const;
 
@@ -167,11 +171,11 @@ public:
     return true;
   };
 
-  template <class InputIterator>
+  template <std::forward_iterator Iter>
   bool is_valid_addition_for_tw(const Input&,
                                 const Amount&,
-                                const InputIterator,
-                                const InputIterator,
+                                const Iter,
+                                const Iter,
                                 const Index,
                                 const Index) const {
     return true;
@@ -188,18 +192,18 @@ public:
   // Add the range [first_job; last_job) in the existing route at rank
   // first_rank and before last_rank *in place of* the current jobs
   // that may be there.
-  template <class InputIterator>
+  template <std::forward_iterator Iter>
   void replace(const Input& input,
-               const InputIterator first_job,
-               const InputIterator last_job,
+               const Iter first_job,
+               const Iter last_job,
                const Index first_rank,
                const Index last_rank);
 
-  template <class InputIterator>
+  template <std::forward_iterator Iter>
   void replace(const Input& input,
                const Amount&,
-               const InputIterator first_job,
-               const InputIterator last_job,
+               const Iter first_job,
+               const Iter last_job,
                const Index first_rank,
                const Index last_rank) {
     replace(input, first_job, last_job, first_rank, last_rank);

@@ -66,8 +66,8 @@ compute_best_route_split_choice(const Input& input,
       const auto v = empty_route_ranks[v_rank];
       const auto& end_v = input.vehicles[v];
 
-      if (r < sol_state.bwd_skill_rank[s_vehicle][v] or
-          !(end_load <= end_v.capacity) or
+      if (r < sol_state.bwd_skill_rank[s_vehicle][v] ||
+          !(end_load <= end_v.capacity) ||
           end_v.max_tasks < source.size() - r) {
         continue;
       }
@@ -138,8 +138,8 @@ compute_best_route_split_choice(const Input& input,
       const auto v = empty_route_ranks[v_rank];
       const auto& begin_v = input.vehicles[v];
 
-      if (sol_state.fwd_skill_rank[s_vehicle][v] < r or
-          !(begin_load <= begin_v.capacity) or begin_v.max_tasks < r) {
+      if (sol_state.fwd_skill_rank[s_vehicle][v] < r ||
+          !(begin_load <= begin_v.capacity) || begin_v.max_tasks < r) {
         continue;
       }
 

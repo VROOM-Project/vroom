@@ -7,6 +7,8 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <ranges>
+
 #include "structures/vroom/solution_state.h"
 #include "utils/helpers.h"
 
@@ -38,7 +40,12 @@ SolutionState::SolutionState(const Input& input)
     insertion_ranks_end(_nb_vehicles),
     weak_insertion_ranks_begin(_nb_vehicles),
     weak_insertion_ranks_end(_nb_vehicles),
-    route_evals(_nb_vehicles) {
+    route_evals(_nb_vehicles),
+    top_3_insertions(_nb_vehicles,
+                     std::vector<
+                       vroom::ls::ThreeInsertions>(_input.jobs.size(),
+                                                   vroom::ls::
+                                                     EMPTY_THREE_INSERTIONS)) {
 }
 
 template <class Route> void SolutionState::setup(const Route& r, Index v) {
@@ -50,6 +57,7 @@ template <class Route> void SolutionState::setup(const Route& r, Index v) {
   set_pd_gains(r.route, v);
   set_insertion_ranks(r, v);
   update_route_eval(r.route, v);
+  update_top_3_insertions(r.route, v);
 }
 
 template <class Solution> void SolutionState::setup(const Solution& sol) {
@@ -107,7 +115,7 @@ void SolutionState::update_skills(const std::vector<Index>& route, Index v1) {
       continue;
     }
 
-    auto fwd = std::find_if_not(route.begin(), route.end(), [&](auto j_rank) {
+    auto fwd = std::ranges::find_if_not(route, [&](auto j_rank) {
       return _input.vehicle_ok_with_job(v2, j_rank);
     });
     fwd_skill_rank[v1][v2] = std::distance(route.begin(), fwd);
@@ -418,7 +426,7 @@ void SolutionState::set_pd_gains(const std::vector<Index>& route, Index v) {
         }
       }
 
-      if (has_previous_step and has_next_step and (route.size() > 2)) {
+      if (has_previous_step && has_next_step && (route.size() > 2)) {
         // No new edge with an open trip or if removing P&D creates an
         // empty route.
         new_edge_eval = vehicle.eval(p_index, n_index);
@@ -445,12 +453,13 @@ void SolutionState::set_pd_matching_ranks(const std::vector<Index>& route,
 
   for (std::size_t i = 0; i < route.size(); ++i) {
     switch (_input.jobs[route[i]].type) {
-    case JOB_TYPE::SINGLE:
+      using enum JOB_TYPE;
+    case SINGLE:
       break;
-    case JOB_TYPE::PICKUP:
+    case PICKUP:
       pickup_route_rank_to_input_rank.insert({i, route[i]});
       break;
-    case JOB_TYPE::DELIVERY:
+    case DELIVERY:
       delivery_input_rank_to_route_rank.insert({route[i], i});
       break;
     }
@@ -458,11 +467,11 @@ void SolutionState::set_pd_matching_ranks(const std::vector<Index>& route,
 
   assert(pickup_route_rank_to_input_rank.size() ==
          delivery_input_rank_to_route_rank.size());
-  for (const auto& pair : pickup_route_rank_to_input_rank) {
+  for (const auto& [pickup_route_rank, pickup_input_rank] :
+       pickup_route_rank_to_input_rank) {
     // Relies of the fact that associated pickup and delivery are
     // stored sequentially in input jobs vector.
-    auto pickup_route_rank = pair.first;
-    auto delivery_input_rank = pair.second + 1;
+    auto delivery_input_rank = pickup_input_rank + 1;
     auto search = delivery_input_rank_to_route_rank.find(delivery_input_rank);
     assert(search != delivery_input_rank_to_route_rank.end());
     auto delivery_route_rank = search->second;
@@ -491,7 +500,7 @@ void SolutionState::set_insertion_ranks(const TWRoute& tw_r, Index v) {
     std::vector<Index>(_input.jobs.size(), tw_r.route.size() + 1);
   weak_insertion_ranks_begin[v] = std::vector<Index>(_input.jobs.size(), 0);
 
-  if (tw_r.size() == 0) {
+  if (tw_r.empty()) {
     return;
   }
 
@@ -591,8 +600,8 @@ void SolutionState::update_cheapest_job_rank_in_routes(
     const auto& vehicle = _input.vehicles[v2];
     for (std::size_t r2 = 0; r2 < route_2.size(); ++r2) {
       const Index index_r2 = _input.jobs[route_2[r2]].index();
-      const auto cost_from = vehicle.cost(index_r1, index_r2);
-      if (cost_from < min_from) {
+      if (const auto cost_from = vehicle.cost(index_r1, index_r2);
+          cost_from < min_from) {
         min_from = cost_from;
         best_from_rank = r2;
       }
@@ -611,6 +620,19 @@ void SolutionState::update_cheapest_job_rank_in_routes(
 void SolutionState::update_route_eval(const std::vector<Index>& route,
                                       Index v) {
   route_evals[v] = route_eval_for_vehicle(_input, v, route);
+}
+
+void SolutionState::update_top_3_insertions(const std::vector<Index>& route,
+                                            Index v) {
+  if (_input.has_jobs()) {
+    for (std::size_t j = 0; j < _input.jobs.size(); ++j) {
+      if (_input.jobs[j].type == JOB_TYPE::SINGLE &&
+          _input.vehicle_ok_with_job(v, j)) {
+        top_3_insertions[v][j] =
+          vroom::ls::find_top_3_insertions(_input, j, v, route);
+      }
+    }
+  }
 }
 
 template void SolutionState::setup(const std::vector<RawRoute>&);

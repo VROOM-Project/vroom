@@ -20,9 +20,7 @@ protected:
   const Eval _best_known_gain;
   const std::vector<Index> _empty_route_ranks;
   const std::vector<std::reference_wrapper<RawRoute>> _empty_route_refs;
-  ls::SplitChoice choice;
-
-  static const std::vector<std::reference_wrapper<RawRoute>> dummy_route_refs;
+  ls::SplitChoice choice{ls::empty_route_split_choice};
 
   void compute_gain() override;
 
@@ -31,8 +29,8 @@ public:
              const utils::SolutionState& sol_state,
              RawRoute& s_route,
              Index s_vehicle,
-             std::vector<Index> empty_route_ranks,
-             std::vector<std::reference_wrapper<RawRoute>> empty_route_refs,
+             std::vector<Index>&& empty_route_ranks,
+             std::vector<std::reference_wrapper<RawRoute>>&& empty_route_refs,
              const Eval& best_known_gain);
 
   bool is_valid() override;

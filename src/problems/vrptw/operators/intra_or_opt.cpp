@@ -56,15 +56,15 @@ bool IntraOrOpt::is_valid() {
       std::swap(_moved_jobs[_s_edge_first], _moved_jobs[_s_edge_last]);
     }
 
-    valid = (is_normal_valid or is_reverse_valid);
+    valid = (is_normal_valid || is_reverse_valid);
   }
 
   return valid;
 }
 
 void IntraOrOpt::apply() {
-  assert(!reverse_s_edge or
-         (_input.jobs[s_route[s_rank]].type == JOB_TYPE::SINGLE and
+  assert(!reverse_s_edge ||
+         (_input.jobs[s_route[s_rank]].type == JOB_TYPE::SINGLE &&
           _input.jobs[s_route[s_rank + 1]].type == JOB_TYPE::SINGLE));
 
   if (reverse_s_edge) {

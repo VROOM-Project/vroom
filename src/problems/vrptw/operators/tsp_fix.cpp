@@ -23,7 +23,7 @@ TSPFix::TSPFix(const Input& input,
 }
 
 bool TSPFix::is_valid() {
-  return cvrp::TSPFix::is_valid() and
+  return cvrp::TSPFix::is_valid() &&
          _tw_s_route.is_valid_addition_for_tw(_input,
                                               _s_delivery,
                                               tsp_route.begin(),

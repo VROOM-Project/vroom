@@ -32,14 +32,14 @@ ReverseTwoOpt::ReverseTwoOpt(const Input& input,
 }
 
 bool ReverseTwoOpt::is_valid() {
-  return cvrp::ReverseTwoOpt::is_valid() and
+  return cvrp::ReverseTwoOpt::is_valid() &&
          _tw_t_route.is_valid_addition_for_tw(_input,
                                               _s_delivery,
                                               s_route.rbegin(),
                                               s_route.rbegin() +
                                                 s_route.size() - 1 - s_rank,
                                               0,
-                                              t_rank + 1) and
+                                              t_rank + 1) &&
          _tw_s_route.is_valid_addition_for_tw(_input,
                                               _t_delivery,
                                               t_route.rbegin() +

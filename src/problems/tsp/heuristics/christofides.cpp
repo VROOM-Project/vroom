@@ -34,9 +34,9 @@ std::list<Index> christofides(const Matrix<UserCost>& sym_matrix) {
 
   // Getting odd degree vertices from the minimum spanning tree.
   std::vector<Index> mst_odd_vertices;
-  for (const auto& adjacency : adjacency_list) {
-    if (adjacency.second.size() % 2 == 1) {
-      mst_odd_vertices.push_back(adjacency.first);
+  for (const auto& [index, list] : adjacency_list) {
+    if (list.size() % 2 == 1) {
+      mst_odd_vertices.push_back(index);
     }
   }
 
@@ -54,13 +54,12 @@ std::list<Index> christofides(const Matrix<UserCost>& sym_matrix) {
   std::vector<Index> wrong_vertices;
 
   unsigned total_ok = 0;
-  for (const auto& edge : mwpm) {
-    if (mwpm.at(edge.second) == edge.first) {
-      mwpm_final.emplace(std::min(edge.first, edge.second),
-                         std::max(edge.first, edge.second));
+  for (const auto& [source, target] : mwpm) {
+    if (mwpm.at(target) == source) {
+      mwpm_final.emplace(std::min(source, target), std::max(source, target));
       ++total_ok;
     } else {
-      wrong_vertices.push_back(edge.first);
+      wrong_vertices.push_back(source);
     }
   }
 
@@ -71,11 +70,11 @@ std::list<Index> christofides(const Matrix<UserCost>& sym_matrix) {
 
     // Adding edges obtained with greedy algo for the missing vertices
     // in mwpm_final.
-    for (const auto& edge : remaining_greedy_mwpm) {
-      mwpm_final.emplace(std::min(wrong_vertices[edge.first],
-                                  wrong_vertices[edge.second]),
-                         std::max(wrong_vertices[edge.first],
-                                  wrong_vertices[edge.second]));
+    for (const auto& [source, target] : remaining_greedy_mwpm) {
+      mwpm_final.emplace(std::min(wrong_vertices[source],
+                                  wrong_vertices[target]),
+                         std::max(wrong_vertices[source],
+                                  wrong_vertices[target]));
     }
   }
 
@@ -87,10 +86,10 @@ std::list<Index> christofides(const Matrix<UserCost>& sym_matrix) {
   // original vertices index). Edges appear twice in matching so we
   // need to remember the one already added.
   std::unordered_set<Index> already_added;
-  for (const auto& edge : mwpm_final) {
-    Index first_index = mst_odd_vertices[edge.first];
-    Index second_index = mst_odd_vertices[edge.second];
-    if (already_added.find(first_index) == already_added.end()) {
+  for (const auto& [source, target] : mwpm_final) {
+    Index first_index = mst_odd_vertices[source];
+    Index second_index = mst_odd_vertices[target];
+    if (!already_added.contains(first_index)) {
       eulerian_graph_edges.emplace_back(first_index,
                                         second_index,
                                         sym_matrix[first_index][second_index]);
@@ -159,8 +158,8 @@ std::list<Index> christofides(const Matrix<UserCost>& sym_matrix) {
   std::unordered_set<Index> already_visited;
   std::list<Index> tour;
   for (const auto& vertex : eulerian_path) {
-    auto ret = already_visited.insert(vertex);
-    if (ret.second) {
+    const auto [iter, insert_ok] = already_visited.insert(vertex);
+    if (insert_ok) {
       // Vertex not already visited.
       tour.push_back(vertex);
     }

@@ -50,7 +50,7 @@ minimum_weight_perfect_matching(const Matrix<T>& m) {
 
     // Finding any unmatched x.
     Index unmatched_x = 0;
-    while (matching_xy.find(unmatched_x) != matching_xy.end()) {
+    while (matching_xy.contains(unmatched_x)) {
       ++unmatched_x;
     }
     S.insert(unmatched_x);
@@ -79,7 +79,7 @@ minimum_weight_perfect_matching(const Matrix<T>& m) {
         for (Index y = 0; y < m.size(); ++y) {
           // Computing alpha, the minimum of slack values over
           // complement of T_set.
-          if (T_set.find(y) == T_set.end()) {
+          if (!T_set.contains(y)) {
             T current_slack = slack[y];
             if (current_slack < alpha) {
               alpha = current_slack;
@@ -98,10 +98,10 @@ minimum_weight_perfect_matching(const Matrix<T>& m) {
         // Updating relevant neighbors in new equality graph and
         // updating slacks.
         for (Index y = 0; y < m.size(); ++y) {
-          if (T_set.find(y) == T_set.end()) {
+          if (!T_set.contains(y)) {
             slack[y] = slack[y] - alpha;
 
-            if (alternating_tree.find(y) == alternating_tree.end()) {
+            if (!alternating_tree.contains(y)) {
               for (auto const& x : S_list) {
                 if (labeling_x[x] + labeling_y[y] == m[x][y]) {
                   alternating_tree.emplace(y, x);
@@ -118,7 +118,7 @@ minimum_weight_perfect_matching(const Matrix<T>& m) {
       // First y in equality neighbors not in T_set.
       const auto it =
         std::ranges::find_if(alternating_tree, [&](const auto& edge) {
-          return T_set.find(edge.first) == T_set.end();
+          return !T_set.contains(edge.first);
         });
       assert(it != alternating_tree.end());
       auto chosen_y = it->first;
@@ -129,8 +129,7 @@ minimum_weight_perfect_matching(const Matrix<T>& m) {
         // proceed to step 2.
         Index matched_x = matching_y->second;
 
-        auto p = S.insert(matched_x);
-        if (p.second) {
+        if (const auto [iter, insert_ok] = S.insert(matched_x); insert_ok) {
           S_list.push_back(matched_x);
         }
         T_set.insert(chosen_y);

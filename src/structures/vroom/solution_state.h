@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include "algorithms/local_search/top_insertions.h"
 #include "structures/typedefs.h"
 #include "structures/vroom/input/input.h"
 #include "structures/vroom/tw_route.h"
@@ -113,7 +114,11 @@ public:
   // Store evaluation of all routes, including fixed and travel costs.
   std::vector<Eval> route_evals;
 
-  SolutionState(const Input& input);
+  // top_3_insertions[v][j] stores best insertion options for job at
+  // rank j in route for vehicle v.
+  std::vector<std::vector<vroom::ls::ThreeInsertions>> top_3_insertions;
+
+  explicit SolutionState(const Input& input);
 
   template <class Route> void setup(const Route& r, Index v);
 
@@ -140,6 +145,8 @@ public:
   void set_insertion_ranks(const TWRoute& r, Index v);
 
   void update_route_eval(const std::vector<Index>& route, Index v);
+
+  void update_top_3_insertions(const std::vector<Index>& route, Index v);
 };
 
 } // namespace vroom::utils

@@ -26,12 +26,10 @@ struct PreviousInfo {
   Duration travel;
   // Location for previous step. A value of
   // std::numeric_limits<Index>::max() means no previous step.
-  Index location_index;
+  Index location_index{std::numeric_limits<Index>::max()};
 
   PreviousInfo(Duration earliest, Duration travel)
-    : earliest(earliest),
-      travel(travel),
-      location_index(std::numeric_limits<Index>::max()) {
+    : earliest(earliest), travel(travel) {
   }
 };
 
@@ -132,14 +130,6 @@ public:
 
   TWRoute(const Input& input, Index v, unsigned amount_size);
 
-  bool empty() const {
-    return route.empty();
-  }
-
-  std::size_t size() const {
-    return route.size();
-  }
-
   // Check validity for addition of job at job_rank in current route
   // at rank.
   bool is_valid_addition_for_tw(const Input& input,
@@ -176,11 +166,11 @@ public:
   // in the existing route at rank first_rank and before last_rank *in
   // place of* the current jobs that may be there. "delivery" is the
   // amount delivered in single jobs for inclusion range.
-  template <class InputIterator>
+  template <std::forward_iterator Iter>
   bool is_valid_addition_for_tw(const Input& input,
                                 const Amount& delivery,
-                                const InputIterator first_job,
-                                const InputIterator last_job,
+                                const Iter first_job,
+                                const Iter last_job,
                                 const Index first_rank,
                                 const Index last_rank,
                                 bool check_max_load = true) const;
@@ -227,11 +217,11 @@ public:
   // first_rank and before last_rank *in place of* the current jobs
   // that may be there. "delivery" is the amount delivered in single
   // jobs for inclusion range.
-  template <class InputIterator>
+  template <std::forward_iterator Iter>
   void replace(const Input& input,
                const Amount& delivery,
-               const InputIterator first_job,
-               const InputIterator last_job,
+               const Iter first_job,
+               const Iter last_job,
                const Index first_rank,
                const Index last_rank);
 };

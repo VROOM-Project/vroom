@@ -66,12 +66,12 @@ struct Eval {
   }
 
   friend bool operator==(const Eval& lhs, const Eval& rhs) {
-    return lhs.cost == rhs.cost and lhs.duration == rhs.duration and
+    return lhs.cost == rhs.cost && lhs.duration == rhs.duration &&
            lhs.distance == rhs.distance;
   }
 
   friend bool operator!=(const Eval& lhs, const Eval& rhs) {
-    return lhs.cost != rhs.cost or lhs.duration != rhs.duration or
+    return lhs.cost != rhs.cost || lhs.duration != rhs.duration ||
            lhs.distance != rhs.distance;
   }
 };

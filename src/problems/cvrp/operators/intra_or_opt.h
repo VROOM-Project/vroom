@@ -18,7 +18,7 @@ class IntraOrOpt : public ls::Operator {
 private:
   bool _gain_upper_bound_computed{false};
   Eval _normal_t_gain;
-  Eval _reversed_t_gain;
+  Eval _reversed_t_gain{NO_GAIN};
 
 protected:
   bool reverse_s_edge{false};

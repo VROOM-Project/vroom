@@ -37,25 +37,23 @@ PDShift::PDShift(const Input& input,
 
 void PDShift::compute_gain() {
   // Check for valid removal wrt TW constraints.
-  bool is_valid_removal =
-    _tw_s_route.is_valid_addition_for_tw(_input,
-                                         _input.zero_amount(),
-                                         s_route.begin() + _s_p_rank + 1,
-                                         s_route.begin() + _s_d_rank,
-                                         _s_p_rank,
-                                         _s_d_rank + 1);
-  if (!is_valid_removal) {
+  if (!_tw_s_route.is_valid_addition_for_tw(_input,
+                                            _input.zero_amount(),
+                                            s_route.begin() + _s_p_rank + 1,
+                                            s_route.begin() + _s_d_rank,
+                                            _s_p_rank,
+                                            _s_d_rank + 1)) {
     return;
   }
 
-  ls::RouteInsertion rs = ls::compute_best_insertion_pd(_input,
-                                                        _sol_state,
-                                                        s_route[_s_p_rank],
-                                                        t_vehicle,
-                                                        _tw_t_route,
-                                                        s_gain - stored_gain);
-
-  if (rs.eval != NO_EVAL) {
+  if (const ls::RouteInsertion rs =
+        ls::compute_best_insertion_pd(_input,
+                                      _sol_state,
+                                      s_route[_s_p_rank],
+                                      t_vehicle,
+                                      _tw_t_route,
+                                      s_gain - stored_gain);
+      rs.eval != NO_EVAL) {
     _valid = true;
     t_gain -= rs.eval;
     stored_gain = s_gain + t_gain;

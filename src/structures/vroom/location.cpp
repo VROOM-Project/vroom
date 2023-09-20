@@ -47,10 +47,10 @@ bool Location::user_index() const {
 }
 
 bool Location::operator==(const Location& other) const {
-  return (this->user_index() and other.user_index() and
-          (this->index() == other.index())) or
-         (this->has_coordinates() and other.has_coordinates() and
-          (this->lon() == other.lon()) and (this->lat() == other.lat()));
+  return (this->user_index() && other.user_index() &&
+          (this->index() == other.index())) ||
+         (this->has_coordinates() && other.has_coordinates() &&
+          (this->lon() == other.lon()) && (this->lat() == other.lat()));
 }
 
 } // namespace vroom
