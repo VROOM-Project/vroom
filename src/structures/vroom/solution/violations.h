@@ -24,10 +24,10 @@ struct Violations {
   Violations();
 
   // Used for route/summary.
-  Violations(const UserDuration lead_time,
-             const UserDuration delay,
-             const std::unordered_set<VIOLATION>&& types =
-               std::unordered_set<VIOLATION>());
+  Violations(
+    const UserDuration lead_time,
+    const UserDuration delay,
+    std::unordered_set<VIOLATION>&& types = std::unordered_set<VIOLATION>());
 
   Violations& operator+=(const Violations& rhs);
 };

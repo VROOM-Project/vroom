@@ -467,11 +467,11 @@ void SolutionState::set_pd_matching_ranks(const std::vector<Index>& route,
 
   assert(pickup_route_rank_to_input_rank.size() ==
          delivery_input_rank_to_route_rank.size());
-  for (const auto& pair : pickup_route_rank_to_input_rank) {
+  for (const auto& [pickup_route_rank, pickup_input_rank] :
+       pickup_route_rank_to_input_rank) {
     // Relies of the fact that associated pickup and delivery are
     // stored sequentially in input jobs vector.
-    auto pickup_route_rank = pair.first;
-    auto delivery_input_rank = pair.second + 1;
+    auto delivery_input_rank = pickup_input_rank + 1;
     auto search = delivery_input_rank_to_route_rank.find(delivery_input_rank);
     assert(search != delivery_input_rank_to_route_rank.end());
     auto delivery_route_rank = search->second;
@@ -500,7 +500,7 @@ void SolutionState::set_insertion_ranks(const TWRoute& tw_r, Index v) {
     std::vector<Index>(_input.jobs.size(), tw_r.route.size() + 1);
   weak_insertion_ranks_begin[v] = std::vector<Index>(_input.jobs.size(), 0);
 
-  if (tw_r.size() == 0) {
+  if (tw_r.empty()) {
     return;
   }
 
@@ -600,8 +600,8 @@ void SolutionState::update_cheapest_job_rank_in_routes(
     const auto& vehicle = _input.vehicles[v2];
     for (std::size_t r2 = 0; r2 < route_2.size(); ++r2) {
       const Index index_r2 = _input.jobs[route_2[r2]].index();
-      const auto cost_from = vehicle.cost(index_r1, index_r2);
-      if (cost_from < min_from) {
+      if (const auto cost_from = vehicle.cost(index_r1, index_r2);
+          cost_from < min_from) {
         min_from = cost_from;
         best_from_rank = r2;
       }
@@ -626,7 +626,7 @@ void SolutionState::update_top_3_insertions(const std::vector<Index>& route,
                                             Index v) {
   if (_input.has_jobs()) {
     for (std::size_t j = 0; j < _input.jobs.size(); ++j) {
-      if (_input.jobs[j].type == JOB_TYPE::SINGLE and
+      if (_input.jobs[j].type == JOB_TYPE::SINGLE &&
           _input.vehicle_ok_with_job(v, j)) {
         top_3_insertions[v][j] =
           vroom::ls::find_top_3_insertions(_input, j, v, route);

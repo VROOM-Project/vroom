@@ -23,7 +23,7 @@ struct Matrices {
   Matrix<UserDuration> durations;
   Matrix<UserDistance> distances;
 
-  Matrices(std::size_t n) : durations(n), distances(n){};
+  explicit Matrices(std::size_t n) : durations(n), distances(n){};
 };
 
 class Wrapper {
@@ -38,7 +38,7 @@ public:
   virtual ~Wrapper() = default;
 
 protected:
-  Wrapper(std::string profile) : profile(std::move(profile)) {
+  explicit Wrapper(std::string profile) : profile(std::move(profile)) {
   }
 
   template <typename T> static T round_cost(double value) {

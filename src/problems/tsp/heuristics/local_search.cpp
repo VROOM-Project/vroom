@@ -30,11 +30,10 @@ LocalSearch::LocalSearch(const Matrix<UserCost>& matrix,
   // Build _edges vector representation.
   auto location = tour.cbegin();
   Index first_index = *location;
-  Index current_index = first_index;
   Index last_index = first_index;
   ++location;
   while (location != tour.cend()) {
-    current_index = *location;
+    Index current_index = *location;
     _edges[last_index] = current_index;
     last_index = current_index;
     ++location;
@@ -144,14 +143,14 @@ UserCost LocalSearch::relocate_step() {
       Index edge_2_start = next;
       while (edge_2_start != edge_1_start) {
         Index edge_2_end = _edges[edge_2_start];
-        auto before_cost = edge_1_weight + edge_1_end_next_weight +
-                           _matrix[edge_2_start][edge_2_end];
-        auto after_cost = first_potential_add +
-                          _matrix[edge_2_start][edge_1_end] +
-                          _matrix[edge_1_end][edge_2_end];
+        const auto before_cost = edge_1_weight + edge_1_end_next_weight +
+                                 _matrix[edge_2_start][edge_2_end];
 
-        if (before_cost > after_cost) {
-          auto gain = before_cost - after_cost;
+        if (const auto after_cost = first_potential_add +
+                                    _matrix[edge_2_start][edge_1_end] +
+                                    _matrix[edge_1_end][edge_2_end];
+            before_cost > after_cost) {
+          const auto gain = before_cost - after_cost;
           if (gain > best_gain) {
             best_edge_1_start = edge_1_start;
             best_edge_2_start = edge_2_start;
@@ -169,7 +168,7 @@ UserCost LocalSearch::relocate_step() {
   std::vector<Index> best_edge_1_starts(_nb_threads);
   std::vector<Index> best_edge_2_starts(_nb_threads);
 
-  std::vector<std::thread> threads;
+  std::vector<std::jthread> threads;
   threads.reserve(_nb_threads);
 
   for (std::size_t i = 0; i < _nb_threads; ++i) {
@@ -437,7 +436,7 @@ UserCost LocalSearch::two_opt_step() {
 
   // Start other threads, keeping a piece of the range for the main
   // thread.
-  std::vector<std::thread> threads;
+  std::vector<std::jthread> threads;
   threads.reserve(_nb_threads);
 
   for (std::size_t i = 0; i < _nb_threads; ++i) {
@@ -566,13 +565,14 @@ UserCost LocalSearch::asym_two_opt_step() {
   Index node = init;
   for (std::size_t i = 0; i < _nb_threads - 1; ++i) {
     // Finding nodes that separate current tour in _nb_threads ranges.
-    for (std::size_t j = 0; j < thread_range; ++j, node = _edges[node]) {
+    for (std::size_t j = 0; j < thread_range; ++j) {
+      node = _edges[node];
     }
     limit_nodes.push_back(node);
   }
   limit_nodes.push_back(init);
 
-  std::vector<std::thread> threads;
+  std::vector<std::jthread> threads;
   threads.reserve(_nb_threads);
 
   for (std::size_t i = 0; i < _nb_threads; ++i) {
@@ -690,13 +690,13 @@ UserCost LocalSearch::or_opt_step() {
 
       while (edge_2_start != edge_1_start) {
         Index edge_2_end = _edges[edge_2_start];
-        auto before_cost = edge_1_weight + next_next_2_weight +
-                           _matrix[edge_2_start][edge_2_end];
-        auto after_cost = first_potential_add +
-                          _matrix[edge_2_start][edge_1_end] +
-                          _matrix[next][edge_2_end];
-        if (before_cost > after_cost) {
-          auto gain = before_cost - after_cost;
+        const auto before_cost = edge_1_weight + next_next_2_weight +
+                                 _matrix[edge_2_start][edge_2_end];
+        if (const auto after_cost = first_potential_add +
+                                    _matrix[edge_2_start][edge_1_end] +
+                                    _matrix[next][edge_2_end];
+            before_cost > after_cost) {
+          const auto gain = before_cost - after_cost;
           if (gain > best_gain) {
             best_gain = gain;
             best_edge_1_start = edge_1_start;
@@ -714,7 +714,7 @@ UserCost LocalSearch::or_opt_step() {
   std::vector<Index> best_edge_1_starts(_nb_threads);
   std::vector<Index> best_edge_2_starts(_nb_threads);
 
-  std::vector<std::thread> threads;
+  std::vector<std::jthread> threads;
   threads.reserve(_nb_threads);
 
   for (std::size_t i = 0; i < _nb_threads; ++i) {

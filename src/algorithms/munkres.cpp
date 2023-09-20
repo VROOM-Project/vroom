@@ -79,7 +79,7 @@ minimum_weight_perfect_matching(const Matrix<T>& m) {
         for (Index y = 0; y < m.size(); ++y) {
           // Computing alpha, the minimum of slack values over
           // complement of T_set.
-          if (T_set.find(y) == T_set.end()) {
+          if (!T_set.contains(y)) {
             T current_slack = slack[y];
             if (current_slack < alpha) {
               alpha = current_slack;
@@ -129,8 +129,7 @@ minimum_weight_perfect_matching(const Matrix<T>& m) {
         // proceed to step 2.
         Index matched_x = matching_y->second;
 
-        auto p = S.insert(matched_x);
-        if (p.second) {
+        if (const auto [iter, insert_ok] = S.insert(matched_x); insert_ok) {
           S_list.push_back(matched_x);
         }
         T_set.insert(chosen_y);

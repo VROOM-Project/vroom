@@ -30,17 +30,17 @@ public:
 
 class InternalException : public Exception {
 public:
-  InternalException(const std::string& message);
+  explicit InternalException(const std::string& message);
 };
 
 class InputException : public Exception {
 public:
-  InputException(const std::string& message);
+  explicit InputException(const std::string& message);
 };
 
 class RoutingException : public Exception {
 public:
-  RoutingException(const std::string& message);
+  explicit RoutingException(const std::string& message);
 };
 
 } // namespace vroom

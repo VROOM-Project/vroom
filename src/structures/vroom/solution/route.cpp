@@ -25,7 +25,7 @@ Route::Route(Id vehicle,
              Amount pickup,
              std::string profile,
              std::string description,
-             const Violations&& violations)
+             Violations&& violations)
   : vehicle(vehicle),
     steps(std::move(steps)),
     cost(cost),

@@ -20,7 +20,7 @@ private:
   static const std::vector<HeuristicParameters> heterogeneous_parameters;
 
 public:
-  VRPTW(const Input& input);
+  explicit VRPTW(const Input& input);
 
   Solution
   solve(unsigned exploration_level,

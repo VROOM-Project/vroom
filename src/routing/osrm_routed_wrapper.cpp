@@ -69,9 +69,9 @@ void OsrmRoutedWrapper::check_response(const rapidjson::Document& json_result,
   const std::string code = json_result["code"].GetString();
   if (code != "Ok") {
     const std::string message = json_result["message"].GetString();
-    const std::string snapping_error_base =
-      "Could not find a matching segment for coordinate ";
-    if (code == "NoSegment" && message.starts_with(snapping_error_base)) {
+    if (const std::string snapping_error_base =
+          "Could not find a matching segment for coordinate ";
+        code == "NoSegment" && message.starts_with(snapping_error_base)) {
       const auto error_loc =
         std::stoul(message.substr(snapping_error_base.size(),
                                   message.size() - snapping_error_base.size()));

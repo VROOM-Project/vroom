@@ -91,8 +91,8 @@ void ValhallaWrapper::check_response(const rapidjson::Document& json_result,
                                      const std::string& service) const {
   assert(service == _matrix_service || service == _route_service);
 
-  constexpr unsigned HTTP_OK = 200;
-  if (json_result.HasMember("status_code") &&
+  if (constexpr unsigned HTTP_OK = 200;
+      json_result.HasMember("status_code") &&
       json_result["status_code"].IsUint() &&
       json_result["status_code"].GetUint() != HTTP_OK) {
     // Valhalla responses seem to only have a status_code key when a

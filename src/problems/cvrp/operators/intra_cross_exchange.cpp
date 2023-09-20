@@ -129,12 +129,12 @@ Eval IntraCrossExchange::gain_upper_bound() {
 
   if (t_rank == s_route.size() - 2) {
     if (v.has_end()) {
-      auto n_index = v.end.value().index();
+      n_index = v.end.value().index();
       next_cost = v.eval(s_after_index, n_index);
       reverse_next_cost = v.eval(s_index, n_index);
     }
   } else {
-    auto n_index = _input.jobs[s_route[t_rank + 2]].index();
+    n_index = _input.jobs[s_route[t_rank + 2]].index();
     next_cost = v.eval(s_after_index, n_index);
     reverse_next_cost = v.eval(s_index, n_index);
   }

@@ -34,7 +34,7 @@ Input::Input(io::Servers servers, ROUTER router)
 
 void Input::set_amount_size(unsigned amount_size) {
   _amount_size = amount_size;
-  _zero = amount_size;
+  _zero = Amount(amount_size);
 }
 
 void Input::set_geometry(bool geometry) {
@@ -104,16 +104,15 @@ void Input::add_routing_wrapper(const std::string& profile) {
 
 void Input::check_job(Job& job) {
   // Ensure delivery size consistency.
-  const auto& delivery_size = job.delivery.size();
-  if (delivery_size != _amount_size) {
+  if (const auto delivery_size = job.delivery.size();
+      delivery_size != _amount_size) {
     throw InputException(
       "Inconsistent delivery length: " + std::to_string(delivery_size) +
       " instead of " + std::to_string(_amount_size) + '.');
   }
 
   // Ensure pickup size consistency.
-  const auto& pickup_size = job.pickup.size();
-  if (pickup_size != _amount_size) {
+  if (const auto pickup_size = job.pickup.size(); pickup_size != _amount_size) {
     throw InputException(
       "Inconsistent pickup length: " + std::to_string(pickup_size) +
       " instead of " + std::to_string(_amount_size) + '.');
@@ -240,8 +239,8 @@ void Input::add_vehicle(const Vehicle& vehicle) {
   auto& current_v = vehicles.back();
 
   // Ensure amount size consistency.
-  const auto& vehicle_amount_size = current_v.capacity.size();
-  if (vehicle_amount_size != _amount_size) {
+  if (const auto vehicle_amount_size = current_v.capacity.size();
+      vehicle_amount_size != _amount_size) {
     throw InputException(
       "Inconsistent capacity length: " + std::to_string(vehicle_amount_size) +
       " instead of " + std::to_string(_amount_size) + '.');
@@ -384,7 +383,7 @@ void Input::set_durations_matrix(const std::string& profile,
   if (m.size() == 0) {
     throw InputException("Empty durations matrix for " + profile + " profile.");
   }
-  _durations_matrices.insert_or_assign(profile, m);
+  _durations_matrices.insert_or_assign(profile, std::move(m));
 }
 
 void Input::set_distances_matrix(const std::string& profile,
@@ -392,14 +391,14 @@ void Input::set_distances_matrix(const std::string& profile,
   if (m.size() == 0) {
     throw InputException("Empty distances matrix for " + profile + " profile.");
   }
-  _distances_matrices.insert_or_assign(profile, m);
+  _distances_matrices.insert_or_assign(profile, std::move(m));
 }
 
 void Input::set_costs_matrix(const std::string& profile, Matrix<UserCost>&& m) {
   if (m.size() == 0) {
     throw InputException("Empty costs matrix for " + profile + " profile.");
   }
-  _costs_matrices.insert_or_assign(profile, m);
+  _costs_matrices.insert_or_assign(profile, std::move(m));
 }
 
 bool Input::is_used_several_times(const Location& location) const {
@@ -809,8 +808,7 @@ void Input::set_vehicle_steps_ranks() {
           }
           step.rank = search->second;
 
-          auto planned_job = planned_job_ids.find(step.id);
-          if (planned_job != planned_job_ids.end()) {
+          if (planned_job_ids.contains(step.id)) {
             throw InputException("Duplicate job id " + std::to_string(step.id) +
                                  " in input steps for vehicle " +
                                  std::to_string(current_vehicle.id) + ".");
@@ -827,8 +825,7 @@ void Input::set_vehicle_steps_ranks() {
           }
           step.rank = search->second;
 
-          auto planned_pickup = planned_pickup_ids.find(step.id);
-          if (planned_pickup != planned_pickup_ids.end()) {
+          if (planned_pickup_ids.contains(step.id)) {
             throw InputException("Duplicate pickup id " +
                                  std::to_string(step.id) +
                                  " in input steps for vehicle " +
@@ -846,8 +843,7 @@ void Input::set_vehicle_steps_ranks() {
           }
           step.rank = search->second;
 
-          auto planned_delivery = planned_delivery_ids.find(step.id);
-          if (planned_delivery != planned_delivery_ids.end()) {
+          if (planned_delivery_ids.contains(step.id)) {
             throw InputException("Duplicate delivery id " +
                                  std::to_string(step.id) +
                                  " in input steps for vehicle " +
@@ -1003,11 +999,10 @@ void Input::set_matrices(unsigned nb_thread) {
 
           // Check for potential overflow in solution cost.
           const UserCost current_bound = check_cost_bound(c_m->second);
-          cost_bound_m.lock();
+          std::scoped_lock<std::mutex> lock(cost_bound_m);
           _cost_upper_bound =
             std::max(_cost_upper_bound,
                      utils::scale_from_user_cost(current_bound));
-          cost_bound_m.unlock();
         } else {
           // Durations matrix will be used for costs.
           const UserCost current_bound = check_cost_bound(durations_m->second);
@@ -1016,22 +1011,20 @@ void Input::set_matrices(unsigned nb_thread) {
           assert(search != _max_cost_per_hour.end());
           const auto max_cost_per_hour_for_profile = search->second;
 
-          cost_bound_m.lock();
+          std::scoped_lock<std::mutex> lock(cost_bound_m);
           _cost_upper_bound =
             std::max(_cost_upper_bound,
                      max_cost_per_hour_for_profile *
                        utils::scale_from_user_duration(current_bound));
-          cost_bound_m.unlock();
         }
       }
     } catch (...) {
-      ep_m.lock();
+      std::scoped_lock<std::mutex> lock(ep_m);
       ep = std::current_exception();
-      ep_m.unlock();
     }
   };
 
-  std::vector<std::thread> matrix_threads;
+  std::vector<std::jthread> matrix_threads;
   matrix_threads.reserve(thread_profiles.size());
 
   for (const auto& profiles : thread_profiles) {
@@ -1105,7 +1098,7 @@ Solution Input::solve(unsigned exploration_level,
   auto sol = instance->solve(exploration_level,
                              nb_thread,
                              solve_time,
-                             (_has_initial_routes) ? h_init_routes : h_param);
+                             _has_initial_routes ? h_init_routes : h_param);
 
   // Update timing info.
   sol.summary.computing_times.loading = loading.count();

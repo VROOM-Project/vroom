@@ -18,7 +18,7 @@ Violations::Violations() : lead_time(0), delay(0) {
 
 Violations::Violations(const UserDuration lead_time,
                        const UserDuration delay,
-                       const std::unordered_set<VIOLATION>&& types)
+                       std::unordered_set<VIOLATION>&& types)
   : lead_time(lead_time), delay(delay), types(std::move(types)) {
 }
 

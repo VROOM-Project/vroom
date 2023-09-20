@@ -592,8 +592,8 @@ OrderChoice TWRoute::order_choice(const Input& input,
   Duration earliest_job_start = previous.earliest;
 
   if (previous.earliest < oc.b_tw->start) {
-    auto margin = oc.b_tw->start - previous.earliest;
-    if (margin < travel_after_break) {
+    if (const auto margin = oc.b_tw->start - previous.earliest;
+        margin < travel_after_break) {
       travel_after_break -= margin;
     } else {
       travel_after_break = 0;
@@ -642,11 +642,12 @@ OrderChoice TWRoute::order_choice(const Input& input,
       delivery_travel = 0;
     }
     const Duration pb_d_candidate = job_then_break_end + delivery_travel;
-    const auto pb_d_tw =
-      std::ranges::find_if(matching_d.tws, [&](const auto& tw) {
-        return pb_d_candidate <= tw.end;
-      });
-    if (pb_d_tw != matching_d.tws.end() &&
+    if (const auto pb_d_tw = std::ranges::find_if(matching_d.tws,
+                                                  [&](const auto& tw) {
+                                                    return pb_d_candidate <=
+                                                           tw.end;
+                                                  });
+        pb_d_tw != matching_d.tws.end() &&
         (!check_max_load || b.is_valid_for_load(current_load + j.pickup))) {
       // pickup -> break -> delivery is doable, choose pickup first.
       oc.add_job_first = true;
@@ -656,11 +657,12 @@ OrderChoice TWRoute::order_choice(const Input& input,
     // Previous order not doable, so try pickup -> delivery -> break.
     const Duration delivery_candidate =
       earliest_job_end + v.duration(j.index(), matching_d.index());
-    const auto d_tw = std::ranges::find_if(matching_d.tws, [&](const auto& tw) {
-      return delivery_candidate <= tw.end;
-    });
-
-    if (d_tw != matching_d.tws.end()) {
+    if (const auto d_tw = std::ranges::find_if(matching_d.tws,
+                                               [&](const auto& tw) {
+                                                 return delivery_candidate <=
+                                                        tw.end;
+                                               });
+        d_tw != matching_d.tws.end()) {
       const auto matching_d_action_time =
         (matching_d.index() == j.index())
           ? matching_d.service
@@ -708,11 +710,11 @@ OrderChoice TWRoute::order_choice(const Input& input,
   return oc;
 }
 
-template <class InputIterator>
+template <std::forward_iterator Iter>
 bool TWRoute::is_valid_addition_for_tw(const Input& input,
                                        const Amount& delivery,
-                                       const InputIterator first_job,
-                                       const InputIterator last_job,
+                                       const Iter first_job,
+                                       const Iter last_job,
                                        const Index first_rank,
                                        const Index last_rank,
                                        bool check_max_load) const {
@@ -813,8 +815,8 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
       }
 
       if (current.earliest < b_tw->start) {
-        const auto margin = b_tw->start - current.earliest;
-        if (margin < next.travel) {
+        if (const auto margin = b_tw->start - current.earliest;
+            margin < next.travel) {
           next.travel -= margin;
         } else {
           next.travel = 0;
@@ -891,8 +893,8 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
       }
 
       if (current.earliest < oc.b_tw->start) {
-        auto margin = oc.b_tw->start - current.earliest;
-        if (margin < current.travel) {
+        if (const auto margin = oc.b_tw->start - current.earliest;
+            margin < current.travel) {
           current.travel -= margin;
         } else {
           current.travel = 0;
@@ -979,8 +981,8 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
         }
 
         if (earliest_after < b_tw->start) {
-          const auto margin = b_tw->start - earliest_after;
-          if (margin < next_after.travel) {
+          if (const auto margin = b_tw->start - earliest_after;
+              margin < next_after.travel) {
             next_after.travel -= margin;
           } else {
             next_after.travel = 0;
@@ -1002,11 +1004,11 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
   return current.earliest + next.travel <= next.latest;
 }
 
-template <class InputIterator>
+template <std::forward_iterator Iter>
 void TWRoute::replace(const Input& input,
                       const Amount& delivery,
-                      const InputIterator first_job,
-                      const InputIterator last_job,
+                      const Iter first_job,
+                      const Iter last_job,
                       const Index first_rank,
                       const Index last_rank) {
   assert(first_job <= last_job);

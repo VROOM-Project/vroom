@@ -52,7 +52,7 @@ inline UserCost add_without_overflow(UserCost a, UserCost b) {
   return a + b;
 }
 
-inline INIT get_init(const std::string& s) {
+inline INIT get_init(std::string_view s) {
   using enum INIT;
   if (s == "NONE") {
     return NONE;
@@ -72,7 +72,7 @@ inline INIT get_init(const std::string& s) {
   throw InputException("Invalid heuristic parameter in command-line.");
 }
 
-inline SORT get_sort(const std::string& s) {
+inline SORT get_sort(std::string_view s) {
   if (s == "CAPACITY") {
     return SORT::CAPACITY;
   }
@@ -168,7 +168,7 @@ inline HeuristicParameters str_to_heuristic_param(const std::string& s) {
                                init,
                                regret_coeff,
                                sort);
-  } catch (const std::exception& e) {
+  } catch (const std::exception&) {
     throw InputException("Invalid heuristic parameter in command-line.");
   }
 }
@@ -627,8 +627,8 @@ inline Route format_route(const Input& input,
       assert(b_tw != b.tws.rend());
 
       if (b_tw->end < step_start) {
-        auto margin = step_start - b_tw->end;
-        if (margin < remaining_travel_time) {
+        if (const auto margin = step_start - b_tw->end;
+            margin < remaining_travel_time) {
           remaining_travel_time -= margin;
         } else {
           backward_wt += (margin - remaining_travel_time);
@@ -643,7 +643,7 @@ inline Route format_route(const Input& input,
                                      previous_job.index()) ||
                          (r == 1 && v.has_start() &&
                           v.start.value().index() == previous_job.index());
-    const auto current_setup = (same_location) ? 0 : previous_job.setup;
+    const auto current_setup = same_location ? 0 : previous_job.setup;
 
     Duration diff =
       current_setup + previous_job.service + remaining_travel_time;
@@ -697,8 +697,8 @@ inline Route format_route(const Input& input,
     assert(b_tw != b.tws.rend());
 
     if (b_tw->end < step_start) {
-      auto margin = step_start - b_tw->end;
-      if (margin < remaining_travel_time) {
+      if (const auto margin = step_start - b_tw->end;
+          margin < remaining_travel_time) {
         remaining_travel_time -= margin;
       } else {
         backward_wt += (margin - remaining_travel_time);
@@ -762,7 +762,7 @@ inline Route format_route(const Input& input,
 
     // Handles breaks before this job.
     assert(tw_r.breaks_at_rank[r] <= tw_r.breaks_counts[r]);
-    Index break_rank = tw_r.breaks_counts[r] - tw_r.breaks_at_rank[r];
+    break_rank = tw_r.breaks_counts[r] - tw_r.breaks_at_rank[r];
 
     for (Index i = 0; i < tw_r.breaks_at_rank[r]; ++i, ++break_rank) {
       const auto& b = v.breaks[break_rank];
@@ -778,8 +778,8 @@ inline Route format_route(const Input& input,
       assert(b_tw != b.tws.end());
 
       if (step_start < b_tw->start) {
-        auto margin = b_tw->start - step_start;
-        if (margin <= travel_time) {
+        if (const auto margin = b_tw->start - step_start;
+            margin <= travel_time) {
           // Part of the remaining travel time is spent before this
           // break, filling the whole margin.
           duration += margin;
@@ -925,8 +925,7 @@ inline Route format_route(const Input& input,
     assert(b_tw != b.tws.end());
 
     if (step_start < b_tw->start) {
-      auto margin = b_tw->start - step_start;
-      if (margin <= travel_time) {
+      if (const auto margin = b_tw->start - step_start; margin <= travel_time) {
         // Part of the remaining travel time is spent before this
         // break, filling the whole margin.
         duration += margin;

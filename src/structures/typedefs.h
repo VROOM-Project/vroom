@@ -146,7 +146,7 @@ enum class VIOLATION {
   MAX_LOAD
 };
 
-enum OperatorName {
+enum class OperatorName {
   UnassignedExchange,
   CrossExchange,
   MixedExchange,
@@ -166,6 +166,17 @@ enum OperatorName {
   RouteSplit,
   TSPFix,
   MAX
+};
+
+// Defined based on
+// https://sonarcloud.io/organizations/vroom-project/rules?open=cpp%3AS6045&rule_key=cpp%3AS6045
+struct StringHash {
+  using is_transparent = void; // enables heterogenous lookup
+
+  std::size_t operator()(std::string_view sv) const {
+    std::hash<std::string_view> hasher;
+    return hasher(sv);
+  }
 };
 
 namespace utils {

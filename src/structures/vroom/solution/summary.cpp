@@ -11,7 +11,7 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
-Summary::Summary() : cost(0), routes(0), unassigned(0), setup(0), service(0) {
+Summary::Summary() : routes(0), unassigned(0) {
 }
 
 Summary::Summary(unsigned routes,

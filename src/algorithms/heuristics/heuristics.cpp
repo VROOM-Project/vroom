@@ -15,13 +15,13 @@ All rights reserved (see LICENSE).
 
 namespace vroom::heuristics {
 
-template <class Route, class InputIterator>
+template <class Route, std::forward_iterator Iter>
 Eval basic(const Input& input,
            std::vector<Route>& routes,
-           const InputIterator jobs_begin,
-           const InputIterator jobs_end,
-           const InputIterator vehicles_begin,
-           const InputIterator vehicles_end,
+           const Iter jobs_begin,
+           const Iter jobs_end,
+           const Iter vehicles_begin,
+           const Iter vehicles_end,
            INIT init,
            double lambda,
            SORT sort) {
@@ -138,8 +138,8 @@ Eval basic(const Input& input,
         }
         if (init == INIT::EARLIEST_DEADLINE) {
           Duration current_deadline =
-            (is_pickup) ? input.jobs[job_rank + 1].tws.back().end
-                        : current_job.tws.back().end;
+            is_pickup ? input.jobs[job_rank + 1].tws.back().end
+                      : current_job.tws.back().end;
           try_validity |= (current_deadline < earliest_deadline);
         }
         if (init == INIT::FURTHEST) {
@@ -191,7 +191,7 @@ Eval basic(const Input& input,
             }
             break;
           case INIT::EARLIEST_DEADLINE:
-            earliest_deadline = (is_pickup)
+            earliest_deadline = is_pickup
                                   ? input.jobs[job_rank + 1].tws.back().end
                                   : current_job.tws.back().end;
             break;
@@ -432,13 +432,13 @@ Eval basic(const Input& input,
   return sol_eval;
 }
 
-template <class Route, class InputIterator>
+template <class Route, std::forward_iterator Iter>
 Eval dynamic_vehicle_choice(const Input& input,
                             std::vector<Route>& routes,
-                            const InputIterator jobs_begin,
-                            const InputIterator jobs_end,
-                            const InputIterator vehicles_begin,
-                            const InputIterator vehicles_end,
+                            const Iter jobs_begin,
+                            const Iter jobs_end,
+                            const Iter vehicles_begin,
+                            const Iter vehicles_end,
                             INIT init,
                             double lambda,
                             SORT sort) {
@@ -586,8 +586,8 @@ Eval dynamic_vehicle_choice(const Input& input,
         }
         if (init == INIT::EARLIEST_DEADLINE) {
           Duration current_deadline =
-            (is_pickup) ? input.jobs[job_rank + 1].tws.back().end
-                        : current_job.tws.back().end;
+            is_pickup ? input.jobs[job_rank + 1].tws.back().end
+                      : current_job.tws.back().end;
           try_validity |= (current_deadline < earliest_deadline);
         }
         if (init == INIT::FURTHEST) {
@@ -640,7 +640,7 @@ Eval dynamic_vehicle_choice(const Input& input,
             }
             break;
           case INIT::EARLIEST_DEADLINE:
-            earliest_deadline = (is_pickup)
+            earliest_deadline = is_pickup
                                   ? input.jobs[job_rank + 1].tws.back().end
                                   : current_job.tws.back().end;
             break;

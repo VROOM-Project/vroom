@@ -24,7 +24,7 @@ template <class T> class Matrix {
 public:
   Matrix();
 
-  Matrix(std::size_t n);
+  explicit Matrix(std::size_t n);
 
   Matrix<T> get_sub_matrix(const std::vector<Index>& indices) const;
 

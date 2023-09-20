@@ -69,13 +69,12 @@ Solution check_and_set_ETA(const Input& input, unsigned nb_thread) {
         routes[route_rank] = choose_ETA(input, v, input.vehicles[v].steps);
       }
     } catch (...) {
-      ep_m.lock();
+      std::scoped_lock<std::mutex> lock(ep_m);
       ep = std::current_exception();
-      ep_m.unlock();
     }
   };
 
-  std::vector<std::thread> solving_threads;
+  std::vector<std::jthread> solving_threads;
   solving_threads.reserve(thread_ranks.size());
 
   for (const auto& v_ranks : thread_ranks) {
