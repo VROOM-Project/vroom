@@ -1437,8 +1437,7 @@ Route choose_ETA(const Input& input,
                sum_pickups,
                v.profile,
                v.description,
-               std::move(
-                 Violations(user_lead_time, user_delay, std::move(v_types))));
+               Violations(user_lead_time, user_delay, std::move(v_types)));
 }
 
 } // namespace vroom::validation
