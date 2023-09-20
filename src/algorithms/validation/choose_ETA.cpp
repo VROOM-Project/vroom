@@ -547,10 +547,9 @@ Route choose_ETA(const Input& input,
                           ? input.jobs[step.rank].tws
                           : v.breaks[step.rank].tws;
       unsigned tw_rank = tws.size() - 1;
-      const auto tw =
-        std::find_if(tws.begin(), tws.end(), [&](const auto& candidate_tw) {
-          return UB <= candidate_tw.end;
-        });
+      const auto tw = std::ranges::find_if(tws, [&](const auto& candidate_tw) {
+        return UB <= candidate_tw.end;
+      });
       if (tw != tws.end()) {
         tw_rank -= (std::distance(tw, tws.end()) - 1);
 
