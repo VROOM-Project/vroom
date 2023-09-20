@@ -157,7 +157,7 @@ void run_example_with_osrm() {
   // be omitted.
   std::vector<vroom::Job> jobs;
   jobs.emplace_back(1,
-                    vroom::Coordinates{1.98935, 48.701},
+                    vroom::Location(vroom::Coordinates{1.98935, 48.701}),
                     setup,
                     service,
                     job_delivery,
@@ -166,21 +166,21 @@ void run_example_with_osrm() {
                     0,                // default priority
                     job_1_tws);
   jobs.emplace_back(2,
-                    vroom::Coordinates{2.03655, 48.61128},
+                    vroom::Location(vroom::Coordinates{2.03655, 48.61128}),
                     setup,
                     service,
                     job_empty_delivery,
                     job_pickup,
                     vroom::Skills{1});
   jobs.emplace_back(5,
-                    vroom::Coordinates{2.28325, 48.5958},
+                    vroom::Location(vroom::Coordinates{2.28325, 48.5958}),
                     setup,
                     service,
                     job_delivery,
                     job_empty_pickup,
                     vroom::Skills{14});
   jobs.emplace_back(6,
-                    vroom::Coordinates{2.89357, 48.90736},
+                    vroom::Location(vroom::Coordinates{2.89357, 48.90736}),
                     setup,
                     service,
                     job_delivery,
@@ -198,7 +198,7 @@ void run_example_with_osrm() {
 
   vroom::Job pickup(4,
                     vroom::JOB_TYPE::PICKUP,
-                    vroom::Coordinates{2.41808, 49.22619},
+                    vroom::Location(vroom::Coordinates{2.41808, 49.22619}),
                     setup,
                     service,
                     pd_amount,
@@ -206,7 +206,7 @@ void run_example_with_osrm() {
 
   vroom::Job delivery(3,
                       vroom::JOB_TYPE::DELIVERY,
-                      vroom::Coordinates{2.39719, 49.07611},
+                      vroom::Location(vroom::Coordinates{2.39719, 49.07611}),
                       setup,
                       service,
                       pd_amount,
@@ -267,8 +267,8 @@ void run_example_with_custom_matrix() {
   // (coordinates are optional). Constraints that are not required can
   // be omitted.
   std::vector<vroom::Job> jobs;
-  jobs.emplace_back(1414, 1);
-  jobs.emplace_back(1515, 2);
+  jobs.emplace_back(1414, vroom::Location(1));
+  jobs.emplace_back(1515, vroom::Location(2));
 
   for (const auto& j : jobs) {
     problem_instance.add_job(j);
