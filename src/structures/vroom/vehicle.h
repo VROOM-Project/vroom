@@ -114,7 +114,7 @@ struct Vehicle {
     return max_travel_time != DEFAULT_MAX_TRAVEL_TIME;
   }
 
-  Index break_rank(Id id) const;
+  Index break_rank(Id break_id) const;
 };
 
 } // namespace vroom

@@ -83,11 +83,11 @@ void IntraExchange::compute_gain() {
 
   if (t_rank == t_route.size() - 1) {
     if (v.has_end()) {
-      auto n_index = v.end.value().index();
+      n_index = v.end.value().index();
       new_next_cost = v.eval(s_index, n_index);
     }
   } else {
-    auto n_index = _input.jobs[t_route[t_rank + 1]].index();
+    n_index = _input.jobs[t_route[t_rank + 1]].index();
     new_next_cost = v.eval(s_index, n_index);
   }
 

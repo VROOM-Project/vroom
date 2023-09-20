@@ -762,7 +762,7 @@ inline Route format_route(const Input& input,
 
     // Handles breaks before this job.
     assert(tw_r.breaks_at_rank[r] <= tw_r.breaks_counts[r]);
-    Index break_rank = tw_r.breaks_counts[r] - tw_r.breaks_at_rank[r];
+    break_rank = tw_r.breaks_counts[r] - tw_r.breaks_at_rank[r];
 
     for (Index i = 0; i < tw_r.breaks_at_rank[r]; ++i, ++break_rank) {
       const auto& b = v.breaks[break_rank];
