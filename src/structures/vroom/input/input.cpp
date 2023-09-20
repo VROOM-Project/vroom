@@ -862,6 +862,50 @@ void Input::set_vehicle_steps_ranks() {
   }
 }
 
+void Input::init_missing_matrices(const std::string& profile) {
+  // Even with custom matrices, we still need routing after
+  // optimization if geometry is requested.
+  bool create_routing_wrapper = _geometry;
+
+  if (const auto durations_m = _durations_matrices.find(profile);
+      durations_m == _durations_matrices.end()) {
+    // No custom durations matrix.
+
+    if (_distances_matrices.contains(profile)) {
+      // We don't accept distances matrices without durations
+      // matrices.
+      throw InputException(
+        "Custom matrix provided for distances but not for durations for " +
+        profile + " profile.");
+    }
+
+    // No durations/distances matrices have been manually set,
+    // create empty ones to allow for concurrent modification later
+    // on.
+    create_routing_wrapper = true;
+    _durations_matrices.try_emplace(profile);
+    _distances_matrices.try_emplace(profile);
+  } else {
+    // Custom durations matrix defined.
+    if (!_distances_matrices.contains(profile)) {
+      // No custom distances.
+      if (_geometry) {
+        // Get distances from routing engine later on since routing
+        // is explicitly requested.
+        _distances_matrices.try_emplace(profile);
+      } else {
+        // Routing-less optimization with no distances involved,
+        // fill internal distances matrix with zeros.
+        _distances_matrices.try_emplace(profile, durations_m->second.size(), 0);
+      }
+    }
+  }
+
+  if (create_routing_wrapper) {
+    add_routing_wrapper(profile);
+  }
+}
+
 void Input::set_matrices(unsigned nb_thread) {
   if ((!_durations_matrices.empty() || !_costs_matrices.empty()) &&
       !_has_custom_location_index) {
@@ -886,49 +930,7 @@ void Input::set_matrices(unsigned nb_thread) {
     thread_profiles[t_rank % nb_buckets].push_back(profile);
     ++t_rank;
 
-    // Even with custom matrices, we still need routing after
-    // optimization if geometry is requested.
-    bool create_routing_wrapper = _geometry;
-
-    const auto durations_m = _durations_matrices.find(profile);
-    if (durations_m == _durations_matrices.end()) {
-      // No custom durations matrix.
-
-      if (_distances_matrices.contains(profile)) {
-        // We don't accept distances matrices without durations
-        // matrices.
-        throw InputException(
-          "Custom matrix provided for distances but not for durations for " +
-          profile + " profile.");
-      }
-
-      // No durations/distances matrices have been manually set,
-      // create empty ones to allow for concurrent modification later
-      // on.
-      create_routing_wrapper = true;
-      _durations_matrices.try_emplace(profile);
-      _distances_matrices.try_emplace(profile);
-    } else {
-      // Custom durations matrix defined.
-      if (!_distances_matrices.contains(profile)) {
-        // No custom distances.
-        if (_geometry) {
-          // Get distances from routing engine later on since routing
-          // is explicitly requested.
-          _distances_matrices.try_emplace(profile);
-        } else {
-          // Routing-less optimization with no distances involved,
-          // fill internal distances matrix with zeros.
-          _distances_matrices
-            .try_emplace(profile,
-                         Matrix<UserDistance>(durations_m->second.size(), 0));
-        }
-      }
-    }
-
-    if (create_routing_wrapper) {
-      add_routing_wrapper(profile);
-    }
+    init_missing_matrices(profile);
   }
 
   std::exception_ptr ep = nullptr;
