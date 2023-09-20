@@ -409,28 +409,26 @@ void LocalSearch<Route,
         const auto& u_pickup = _input.jobs[u].pickup;
         const auto& u_delivery = _input.jobs[u].delivery;
 
-        for (const auto& s_t : s_t_pairs) {
-          if (s_t.first != s_t.second ||
-              !_input.vehicle_ok_with_job(s_t.first, u) ||
-              _sol[s_t.first].empty()) {
+        for (const auto& [source, target] : s_t_pairs) {
+          if (source != target || !_input.vehicle_ok_with_job(source, u) ||
+              _sol[source].empty()) {
             continue;
           }
 
-          const auto& delivery_margin = _sol[s_t.first].delivery_margin();
-          const auto& pickup_margin = _sol[s_t.first].pickup_margin();
+          const auto& delivery_margin = _sol[source].delivery_margin();
+          const auto& pickup_margin = _sol[source].pickup_margin();
 
           const auto begin_t_rank_candidate =
-            _sol_state.insertion_ranks_begin[s_t.first][u];
+            _sol_state.insertion_ranks_begin[source][u];
           const auto begin_t_rank_weak_candidate =
-            _sol_state.weak_insertion_ranks_begin[s_t.first][u];
+            _sol_state.weak_insertion_ranks_begin[source][u];
           const auto end_t_rank_candidate =
-            _sol_state.insertion_ranks_end[s_t.first][u];
+            _sol_state.insertion_ranks_end[source][u];
           const auto end_t_rank_weak_candidate =
-            _sol_state.weak_insertion_ranks_end[s_t.first][u];
+            _sol_state.weak_insertion_ranks_end[source][u];
 
-          for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
-            const auto& current_job =
-              _input.jobs[_sol[s_t.first].route[s_rank]];
+          for (unsigned s_rank = 0; s_rank < _sol[source].size(); ++s_rank) {
+            const auto& current_job = _input.jobs[_sol[source].route[s_rank]];
             if (current_job.type != JOB_TYPE::SINGLE ||
                 u_priority < current_job.priority) {
               continue;
@@ -438,7 +436,7 @@ void LocalSearch<Route,
 
             const Priority priority_gain = u_priority - current_job.priority;
 
-            if (best_priorities[s_t.first] <= priority_gain) {
+            if (best_priorities[source] <= priority_gain) {
               if (!(u_delivery <= delivery_margin + current_job.delivery) ||
                   !(u_pickup <= pickup_margin + current_job.pickup)) {
                 continue;
@@ -457,7 +455,7 @@ void LocalSearch<Route,
                 begin_t_rank = begin_t_rank_candidate;
               }
 
-              Index end_t_rank = _sol[s_t.first].size();
+              Index end_t_rank = _sol[source].size();
               if (s_rank + 1 != end_t_rank_weak_candidate) {
                 // Weak constraint is only invalidated when removing
                 // job right before.
@@ -482,23 +480,23 @@ void LocalSearch<Route,
                 UnassignedExchange r(_input,
                                      _sol_state,
                                      _sol_state.unassigned,
-                                     _sol[s_t.first],
-                                     s_t.first,
+                                     _sol[source],
+                                     source,
                                      s_rank,
                                      t_rank,
                                      u);
 
                 bool better_if_valid =
-                  (best_priorities[s_t.first] < priority_gain) ||
-                  (best_priorities[s_t.first] == priority_gain &&
-                   r.gain() > best_gains[s_t.first][s_t.first]);
+                  (best_priorities[source] < priority_gain) ||
+                  (best_priorities[source] == priority_gain &&
+                   r.gain() > best_gains[source][source]);
 
                 if (better_if_valid && r.is_valid()) {
-                  best_priorities[s_t.first] = priority_gain;
+                  best_priorities[source] = priority_gain;
                   // This may potentially define a negative value as
                   // best gain in case priority_gain is non-zero.
-                  best_gains[s_t.first][s_t.first] = r.gain();
-                  best_ops[s_t.first][s_t.first] =
+                  best_gains[source][source] = r.gain();
+                  best_ops[source][source] =
                     std::make_unique<UnassignedExchange>(r);
                 }
               }
@@ -509,24 +507,24 @@ void LocalSearch<Route,
     }
 
     // CrossExchange stuff
-    for (const auto& s_t : s_t_pairs) {
-      if (s_t.second <= s_t.first || // This operator is symmetric.
-          best_priorities[s_t.first] > 0 || best_priorities[s_t.second] > 0 ||
-          _sol[s_t.first].size() < 2 || _sol[s_t.second].size() < 2) {
+    for (const auto& [source, target] : s_t_pairs) {
+      if (target <= source || // This operator is symmetric.
+          best_priorities[source] > 0 || best_priorities[target] > 0 ||
+          _sol[source].size() < 2 || _sol[target].size() < 2) {
         continue;
       }
 
-      const auto& s_delivery_margin = _sol[s_t.first].delivery_margin();
-      const auto& s_pickup_margin = _sol[s_t.first].pickup_margin();
-      const auto& t_delivery_margin = _sol[s_t.second].delivery_margin();
-      const auto& t_pickup_margin = _sol[s_t.second].pickup_margin();
+      const auto& s_delivery_margin = _sol[source].delivery_margin();
+      const auto& s_pickup_margin = _sol[source].pickup_margin();
+      const auto& t_delivery_margin = _sol[target].delivery_margin();
+      const auto& t_pickup_margin = _sol[target].pickup_margin();
 
-      for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1; ++s_rank) {
-        const auto s_job_rank = _sol[s_t.first].route[s_rank];
-        const auto s_next_job_rank = _sol[s_t.first].route[s_rank + 1];
+      for (unsigned s_rank = 0; s_rank < _sol[source].size() - 1; ++s_rank) {
+        const auto s_job_rank = _sol[source].route[s_rank];
+        const auto s_next_job_rank = _sol[source].route[s_rank + 1];
 
-        if (!_input.vehicle_ok_with_job(s_t.second, s_job_rank) ||
-            !_input.vehicle_ok_with_job(s_t.second, s_next_job_rank)) {
+        if (!_input.vehicle_ok_with_job(target, s_job_rank) ||
+            !_input.vehicle_ok_with_job(target, s_next_job_rank)) {
           continue;
         }
 
@@ -538,7 +536,7 @@ void LocalSearch<Route,
 
         bool is_s_pickup =
           (job_s_type == JOB_TYPE::PICKUP) &&
-          (_sol_state.matching_delivery_rank[s_t.first][s_rank] == s_rank + 1);
+          (_sol_state.matching_delivery_rank[source][s_rank] == s_rank + 1);
 
         if (!both_s_single && !is_s_pickup) {
           continue;
@@ -549,29 +547,28 @@ void LocalSearch<Route,
         const auto s_pickup =
           _input.jobs[s_job_rank].pickup + _input.jobs[s_next_job_rank].pickup;
 
-        Index end_t_rank = _sol[s_t.second].size() - 1;
-        const auto end_s =
-          _sol_state.insertion_ranks_end[s_t.second][s_job_rank];
+        Index end_t_rank = _sol[target].size() - 1;
+        const auto end_s = _sol_state.insertion_ranks_end[target][s_job_rank];
         const auto end_s_next =
-          _sol_state.insertion_ranks_end[s_t.second][s_next_job_rank];
+          _sol_state.insertion_ranks_end[target][s_next_job_rank];
         end_t_rank = std::min(end_t_rank, end_s);
         end_t_rank = std::min(end_t_rank, end_s_next);
 
         Index begin_t_rank = 0;
         const auto begin_s =
-          _sol_state.insertion_ranks_begin[s_t.second][s_job_rank];
+          _sol_state.insertion_ranks_begin[target][s_job_rank];
         const auto begin_s_next =
-          _sol_state.insertion_ranks_begin[s_t.second][s_next_job_rank];
+          _sol_state.insertion_ranks_begin[target][s_next_job_rank];
         begin_t_rank = std::max(begin_t_rank, begin_s);
         begin_t_rank = std::max(begin_t_rank, begin_s_next);
         begin_t_rank = (begin_t_rank > 1) ? begin_t_rank - 2 : 0;
 
         for (unsigned t_rank = begin_t_rank; t_rank < end_t_rank; ++t_rank) {
-          const auto t_job_rank = _sol[s_t.second].route[t_rank];
-          const auto t_next_job_rank = _sol[s_t.second].route[t_rank + 1];
+          const auto t_job_rank = _sol[target].route[t_rank];
+          const auto t_next_job_rank = _sol[target].route[t_rank + 1];
 
-          if (!_input.vehicle_ok_with_job(s_t.first, t_job_rank) ||
-              !_input.vehicle_ok_with_job(s_t.first, t_next_job_rank)) {
+          if (!_input.vehicle_ok_with_job(source, t_job_rank) ||
+              !_input.vehicle_ok_with_job(source, t_next_job_rank)) {
             continue;
           }
 
@@ -583,25 +580,24 @@ void LocalSearch<Route,
 
           bool is_t_pickup =
             (job_t_type == JOB_TYPE::PICKUP) &&
-            (_sol_state.matching_delivery_rank[s_t.second][t_rank] ==
-             t_rank + 1);
+            (_sol_state.matching_delivery_rank[target][t_rank] == t_rank + 1);
 
           if (!both_t_single && !is_t_pickup) {
             continue;
           }
 
           if (s_rank >=
-              std::min(_sol_state.insertion_ranks_end[s_t.first][t_job_rank],
+              std::min(_sol_state.insertion_ranks_end[source][t_job_rank],
                        _sol_state
-                         .insertion_ranks_end[s_t.first][t_next_job_rank])) {
+                         .insertion_ranks_end[source][t_next_job_rank])) {
             continue;
           }
 
           Index begin_s_rank = 0;
           const auto begin_t =
-            _sol_state.insertion_ranks_begin[s_t.first][t_job_rank];
+            _sol_state.insertion_ranks_begin[source][t_job_rank];
           const auto begin_t_next =
-            _sol_state.insertion_ranks_begin[s_t.first][t_next_job_rank];
+            _sol_state.insertion_ranks_begin[source][t_next_job_rank];
           begin_s_rank = std::max(begin_s_rank, begin_t);
           begin_s_rank = std::max(begin_s_rank, begin_t_next);
           begin_s_rank = (begin_s_rank > 1) ? begin_s_rank - 2 : 0;
@@ -625,21 +621,20 @@ void LocalSearch<Route,
 #endif
           CrossExchange r(_input,
                           _sol_state,
-                          _sol[s_t.first],
-                          s_t.first,
+                          _sol[source],
+                          source,
                           s_rank,
-                          _sol[s_t.second],
-                          s_t.second,
+                          _sol[target],
+                          target,
                           t_rank,
                           !is_s_pickup,
                           !is_t_pickup);
 
-          auto& current_best = best_gains[s_t.first][s_t.second];
+          auto& current_best = best_gains[source][target];
           if (r.gain_upper_bound() > current_best && r.is_valid() &&
               r.gain() > current_best) {
             current_best = r.gain();
-            best_ops[s_t.first][s_t.second] =
-              std::make_unique<CrossExchange>(r);
+            best_ops[source][target] = std::make_unique<CrossExchange>(r);
           }
         }
       }
@@ -647,27 +642,27 @@ void LocalSearch<Route,
 
     if (_input.has_jobs()) {
       // MixedExchange stuff
-      for (const auto& s_t : s_t_pairs) {
-        if (s_t.first == s_t.second || best_priorities[s_t.first] > 0 ||
-            best_priorities[s_t.second] > 0 || _sol[s_t.first].size() == 0 ||
-            _sol[s_t.second].size() < 2) {
+      for (const auto& [source, target] : s_t_pairs) {
+        if (source == target || best_priorities[source] > 0 ||
+            best_priorities[target] > 0 || _sol[source].size() == 0 ||
+            _sol[target].size() < 2) {
           continue;
         }
 
-        const auto& s_v = _input.vehicles[s_t.first];
-        if (_sol[s_t.first].size() + 1 > s_v.max_tasks) {
+        const auto& s_v = _input.vehicles[source];
+        if (_sol[source].size() + 1 > s_v.max_tasks) {
           continue;
         }
 
-        const auto& s_delivery_margin = _sol[s_t.first].delivery_margin();
-        const auto& s_pickup_margin = _sol[s_t.first].pickup_margin();
-        const auto& t_delivery_margin = _sol[s_t.second].delivery_margin();
-        const auto& t_pickup_margin = _sol[s_t.second].pickup_margin();
+        const auto& s_delivery_margin = _sol[source].delivery_margin();
+        const auto& s_pickup_margin = _sol[source].pickup_margin();
+        const auto& t_delivery_margin = _sol[target].delivery_margin();
+        const auto& t_pickup_margin = _sol[target].pickup_margin();
 
-        for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
-          const auto s_job_rank = _sol[s_t.first].route[s_rank];
+        for (unsigned s_rank = 0; s_rank < _sol[source].size(); ++s_rank) {
+          const auto s_job_rank = _sol[source].route[s_rank];
           if (_input.jobs[s_job_rank].type != JOB_TYPE::SINGLE ||
-              !_input.vehicle_ok_with_job(s_t.second, s_job_rank)) {
+              !_input.vehicle_ok_with_job(target, s_job_rank)) {
             // Don't try moving part of a shipment or an incompatible
             // job.
             continue;
@@ -677,24 +672,23 @@ void LocalSearch<Route,
           const auto& s_pickup = _input.jobs[s_job_rank].pickup;
 
           auto end_t_rank =
-            std::min(static_cast<Index>(_sol[s_t.second].size() - 1),
-                     _sol_state.insertion_ranks_end[s_t.second][s_job_rank]);
+            std::min(static_cast<Index>(_sol[target].size() - 1),
+                     _sol_state.insertion_ranks_end[target][s_job_rank]);
 
           auto begin_t_rank =
-            _sol_state.insertion_ranks_begin[s_t.second][s_job_rank];
+            _sol_state.insertion_ranks_begin[target][s_job_rank];
           begin_t_rank = (begin_t_rank > 1) ? begin_t_rank - 2 : 0;
 
           for (unsigned t_rank = begin_t_rank; t_rank < end_t_rank; ++t_rank) {
-            if (!_input.vehicle_ok_with_job(s_t.first,
-                                            _sol[s_t.second].route[t_rank]) ||
-                !_input
-                   .vehicle_ok_with_job(s_t.first,
-                                        _sol[s_t.second].route[t_rank + 1])) {
+            if (!_input.vehicle_ok_with_job(source,
+                                            _sol[target].route[t_rank]) ||
+                !_input.vehicle_ok_with_job(source,
+                                            _sol[target].route[t_rank + 1])) {
               continue;
             }
 
-            const auto t_job_rank = _sol[s_t.second].route[t_rank];
-            const auto t_next_job_rank = _sol[s_t.second].route[t_rank + 1];
+            const auto t_job_rank = _sol[target].route[t_rank];
+            const auto t_next_job_rank = _sol[target].route[t_rank + 1];
             const auto& job_t_type = _input.jobs[t_job_rank].type;
 
             bool both_t_single =
@@ -703,24 +697,23 @@ void LocalSearch<Route,
 
             bool is_t_pickup =
               (job_t_type == JOB_TYPE::PICKUP) &&
-              (_sol_state.matching_delivery_rank[s_t.second][t_rank] ==
-               t_rank + 1);
+              (_sol_state.matching_delivery_rank[target][t_rank] == t_rank + 1);
 
             if (!both_t_single && !is_t_pickup) {
               continue;
             }
 
             if (s_rank >=
-                std::min(_sol_state.insertion_ranks_end[s_t.first][t_job_rank],
+                std::min(_sol_state.insertion_ranks_end[source][t_job_rank],
                          _sol_state
-                           .insertion_ranks_end[s_t.first][t_next_job_rank])) {
+                           .insertion_ranks_end[source][t_next_job_rank])) {
               continue;
             }
 
             const auto source_begin =
-              std::min(_sol_state.insertion_ranks_begin[s_t.first][t_job_rank],
+              std::min(_sol_state.insertion_ranks_begin[source][t_job_rank],
                        _sol_state
-                         .insertion_ranks_begin[s_t.first][t_next_job_rank]);
+                         .insertion_ranks_begin[source][t_next_job_rank]);
             if (source_begin > s_rank + 1) {
               continue;
             }
@@ -741,20 +734,19 @@ void LocalSearch<Route,
 #endif
             MixedExchange r(_input,
                             _sol_state,
-                            _sol[s_t.first],
-                            s_t.first,
+                            _sol[source],
+                            source,
                             s_rank,
-                            _sol[s_t.second],
-                            s_t.second,
+                            _sol[target],
+                            target,
                             t_rank,
                             !is_t_pickup);
 
-            auto& current_best = best_gains[s_t.first][s_t.second];
+            auto& current_best = best_gains[source][target];
             if (r.gain_upper_bound() > current_best && r.is_valid() &&
                 r.gain() > current_best) {
               current_best = r.gain();
-              best_ops[s_t.first][s_t.second] =
-                std::make_unique<MixedExchange>(r);
+              best_ops[source][target] = std::make_unique<MixedExchange>(r);
             }
           }
         }
@@ -762,62 +754,59 @@ void LocalSearch<Route,
     }
 
     // TwoOpt stuff
-    for (const auto& s_t : s_t_pairs) {
-      if (s_t.second <= s_t.first || // This operator is symmetric.
-          best_priorities[s_t.first] > 0 || best_priorities[s_t.second] > 0) {
+    for (const auto& [source, target] : s_t_pairs) {
+      if (target <= source || // This operator is symmetric.
+          best_priorities[source] > 0 || best_priorities[target] > 0) {
         continue;
       }
 
-      const auto& s_v = _input.vehicles[s_t.first];
-      const auto& t_v = _input.vehicles[s_t.second];
+      const auto& s_v = _input.vehicles[source];
+      const auto& t_v = _input.vehicles[target];
 
       // Determine first ranks for inner loops based on vehicles/jobs
       // compatibility along the routes.
       unsigned first_s_rank = 0;
-      const auto first_s_candidate =
-        _sol_state.bwd_skill_rank[s_t.first][s_t.second];
+      const auto first_s_candidate = _sol_state.bwd_skill_rank[source][target];
       if (first_s_candidate > 0) {
         first_s_rank = first_s_candidate - 1;
       }
 
       int first_t_rank = 0;
-      const auto first_t_candidate =
-        _sol_state.bwd_skill_rank[s_t.second][s_t.first];
+      const auto first_t_candidate = _sol_state.bwd_skill_rank[target][source];
       if (first_t_candidate > 0) {
         first_t_rank = first_t_candidate - 1;
       }
 
-      for (unsigned s_rank = first_s_rank; s_rank < _sol[s_t.first].size();
+      for (unsigned s_rank = first_s_rank; s_rank < _sol[source].size();
            ++s_rank) {
-        if (_sol[s_t.first].has_pending_delivery_after_rank(s_rank)) {
+        if (_sol[source].has_pending_delivery_after_rank(s_rank)) {
           continue;
         }
 
-        const auto& s_fwd_delivery = _sol[s_t.first].fwd_deliveries(s_rank);
-        const auto& s_fwd_pickup = _sol[s_t.first].fwd_pickups(s_rank);
-        const auto& s_bwd_delivery = _sol[s_t.first].bwd_deliveries(s_rank);
-        const auto& s_bwd_pickup = _sol[s_t.first].bwd_pickups(s_rank);
+        const auto& s_fwd_delivery = _sol[source].fwd_deliveries(s_rank);
+        const auto& s_fwd_pickup = _sol[source].fwd_pickups(s_rank);
+        const auto& s_bwd_delivery = _sol[source].bwd_deliveries(s_rank);
+        const auto& s_bwd_pickup = _sol[source].bwd_pickups(s_rank);
 
-        Index end_t_rank = _sol[s_t.second].size();
-        if (s_rank + 1 < _sol[s_t.first].size()) {
+        Index end_t_rank = _sol[target].size();
+        if (s_rank + 1 < _sol[source].size()) {
           // There is a route end after s_rank in source route.
-          const auto s_next_job_rank = _sol[s_t.first].route[s_rank + 1];
+          const auto s_next_job_rank = _sol[source].route[s_rank + 1];
           end_t_rank =
             std::min(end_t_rank,
                      _sol_state
-                       .weak_insertion_ranks_end[s_t.second][s_next_job_rank]);
+                       .weak_insertion_ranks_end[target][s_next_job_rank]);
         }
 
         for (int t_rank = end_t_rank - 1; t_rank >= first_t_rank; --t_rank) {
-          if (_sol[s_t.second].has_pending_delivery_after_rank(t_rank)) {
+          if (_sol[target].has_pending_delivery_after_rank(t_rank)) {
             continue;
           }
 
-          if (t_rank + 1 < static_cast<int>(_sol[s_t.second].size())) {
+          if (t_rank + 1 < static_cast<int>(_sol[target].size())) {
             // There is a route end after t_rank in target route.
-            const auto t_next_job_rank = _sol[s_t.second].route[t_rank + 1];
-            if (_sol_state
-                  .weak_insertion_ranks_end[s_t.first][t_next_job_rank] <=
+            const auto t_next_job_rank = _sol[target].route[t_rank + 1];
+            if (_sol_state.weak_insertion_ranks_end[source][t_next_job_rank] <=
                 s_rank) {
               // Job right after t_rank won't fit after job at s_rank
               // in source route.
@@ -825,13 +814,13 @@ void LocalSearch<Route,
             }
           }
 
-          if (s_rank + _sol[s_t.second].size() - t_rank > s_v.max_tasks ||
-              t_rank + _sol[s_t.first].size() - s_rank > t_v.max_tasks) {
+          if (s_rank + _sol[target].size() - t_rank > s_v.max_tasks ||
+              t_rank + _sol[source].size() - s_rank > t_v.max_tasks) {
             continue;
           }
 
-          const auto& t_bwd_delivery = _sol[s_t.second].bwd_deliveries(t_rank);
-          const auto& t_bwd_pickup = _sol[s_t.second].bwd_pickups(t_rank);
+          const auto& t_bwd_delivery = _sol[target].bwd_deliveries(t_rank);
+          const auto& t_bwd_pickup = _sol[target].bwd_pickups(t_rank);
 
           if (!(s_fwd_delivery + t_bwd_delivery <= s_v.capacity) ||
               !(s_fwd_pickup + t_bwd_pickup <= s_v.capacity)) {
@@ -840,8 +829,8 @@ void LocalSearch<Route,
             break;
           }
 
-          const auto& t_fwd_delivery = _sol[s_t.second].fwd_deliveries(t_rank);
-          const auto& t_fwd_pickup = _sol[s_t.second].fwd_pickups(t_rank);
+          const auto& t_fwd_delivery = _sol[target].fwd_deliveries(t_rank);
+          const auto& t_fwd_pickup = _sol[target].fwd_pickups(t_rank);
 
           if (!(t_fwd_delivery + s_bwd_delivery <= t_v.capacity) ||
               !(t_fwd_pickup + s_bwd_pickup <= t_v.capacity)) {
@@ -853,71 +842,70 @@ void LocalSearch<Route,
 #endif
           TwoOpt r(_input,
                    _sol_state,
-                   _sol[s_t.first],
-                   s_t.first,
+                   _sol[source],
+                   source,
                    s_rank,
-                   _sol[s_t.second],
-                   s_t.second,
+                   _sol[target],
+                   target,
                    t_rank);
 
-          if (r.gain() > best_gains[s_t.first][s_t.second] && r.is_valid()) {
-            best_gains[s_t.first][s_t.second] = r.gain();
-            best_ops[s_t.first][s_t.second] = std::make_unique<TwoOpt>(r);
+          if (r.gain() > best_gains[source][target] && r.is_valid()) {
+            best_gains[source][target] = r.gain();
+            best_ops[source][target] = std::make_unique<TwoOpt>(r);
           }
         }
       }
     }
 
     // ReverseTwoOpt stuff
-    for (const auto& s_t : s_t_pairs) {
-      if (s_t.first == s_t.second || best_priorities[s_t.first] > 0 ||
-          best_priorities[s_t.second] > 0) {
+    for (const auto& [source, target] : s_t_pairs) {
+      if (source == target || best_priorities[source] > 0 ||
+          best_priorities[target] > 0) {
         continue;
       }
 
-      const auto& s_v = _input.vehicles[s_t.first];
-      const auto& t_v = _input.vehicles[s_t.second];
+      const auto& s_v = _input.vehicles[source];
+      const auto& t_v = _input.vehicles[target];
 
       // Determine first rank for inner loop based on vehicles/jobs
       // compatibility along the routes.
       unsigned first_s_rank = 0;
-      const auto first_s_candidate =
-        _sol_state.bwd_skill_rank[s_t.first][s_t.second];
+      const auto first_s_candidate = _sol_state.bwd_skill_rank[source][target];
       if (first_s_candidate > 0) {
         first_s_rank = first_s_candidate - 1;
       }
 
-      for (unsigned s_rank = first_s_rank; s_rank < _sol[s_t.first].size();
+      for (unsigned s_rank = first_s_rank; s_rank < _sol[source].size();
            ++s_rank) {
-        if (_sol[s_t.first].has_delivery_after_rank(s_rank)) {
+        if (_sol[source].has_delivery_after_rank(s_rank)) {
           continue;
         }
 
-        const auto& s_fwd_delivery = _sol[s_t.first].fwd_deliveries(s_rank);
-        const auto& s_fwd_pickup = _sol[s_t.first].fwd_pickups(s_rank);
-        const auto& s_bwd_delivery = _sol[s_t.first].bwd_deliveries(s_rank);
-        const auto& s_bwd_pickup = _sol[s_t.first].bwd_pickups(s_rank);
+        const auto& s_fwd_delivery = _sol[source].fwd_deliveries(s_rank);
+        const auto& s_fwd_pickup = _sol[source].fwd_pickups(s_rank);
+        const auto& s_bwd_delivery = _sol[source].bwd_deliveries(s_rank);
+        const auto& s_bwd_pickup = _sol[source].bwd_pickups(s_rank);
 
         Index begin_t_rank = 0;
-        if (s_rank + 1 < _sol[s_t.first].size()) {
+        if (s_rank + 1 < _sol[source].size()) {
           // There is a route end after s_rank in source route.
-          const auto s_next_job_rank = _sol[s_t.first].route[s_rank + 1];
+          const auto s_next_job_rank = _sol[source].route[s_rank + 1];
           const auto unmodified_begin =
-            _sol_state.weak_insertion_ranks_begin[s_t.second][s_next_job_rank];
+            _sol_state.weak_insertion_ranks_begin[target][s_next_job_rank];
           if (unmodified_begin > 0) {
             begin_t_rank = unmodified_begin - 1;
           }
         }
 
         for (unsigned t_rank = begin_t_rank;
-             t_rank < _sol_state.fwd_skill_rank[s_t.second][s_t.first];
+             t_rank < _sol_state.fwd_skill_rank[target][source];
              ++t_rank) {
-          if (_sol[s_t.second].has_pickup_up_to_rank(t_rank)) {
+          if (_sol[target].has_pickup_up_to_rank(t_rank)) {
             continue;
           }
 
-          const auto t_job_rank = _sol[s_t.second].route[t_rank];
-          if (_sol_state.weak_insertion_ranks_end[s_t.first][t_job_rank] <=
+          const auto t_job_rank = _sol[target].route[t_rank];
+          if (_sol_state.weak_insertion_ranks_end[source][t_job_rank] <=
               s_rank) {
             // Job at t_rank won't fit after job at s_rank in source
             // route.
@@ -925,22 +913,22 @@ void LocalSearch<Route,
           }
 
           if (s_rank + t_rank + 2 > s_v.max_tasks ||
-              (_sol[s_t.first].size() - s_rank - 1) +
-                  (_sol[s_t.second].size() - t_rank - 1) >
+              (_sol[source].size() - s_rank - 1) +
+                  (_sol[target].size() - t_rank - 1) >
                 t_v.max_tasks) {
             continue;
           }
 
-          const auto& t_fwd_delivery = _sol[s_t.second].fwd_deliveries(t_rank);
-          const auto& t_fwd_pickup = _sol[s_t.second].fwd_pickups(t_rank);
+          const auto& t_fwd_delivery = _sol[target].fwd_deliveries(t_rank);
+          const auto& t_fwd_pickup = _sol[target].fwd_pickups(t_rank);
 
           if (!(s_fwd_delivery + t_fwd_delivery <= s_v.capacity) ||
               !(s_fwd_pickup + t_fwd_pickup <= s_v.capacity)) {
             break;
           }
 
-          const auto& t_bwd_delivery = _sol[s_t.second].bwd_deliveries(t_rank);
-          const auto& t_bwd_pickup = _sol[s_t.second].bwd_pickups(t_rank);
+          const auto& t_bwd_delivery = _sol[target].bwd_deliveries(t_rank);
+          const auto& t_bwd_pickup = _sol[target].bwd_pickups(t_rank);
 
           if (!(t_bwd_delivery + s_bwd_delivery <= t_v.capacity) ||
               !(t_bwd_pickup + s_bwd_pickup <= t_v.capacity)) {
@@ -952,17 +940,16 @@ void LocalSearch<Route,
 #endif
           ReverseTwoOpt r(_input,
                           _sol_state,
-                          _sol[s_t.first],
-                          s_t.first,
+                          _sol[source],
+                          source,
                           s_rank,
-                          _sol[s_t.second],
-                          s_t.second,
+                          _sol[target],
+                          target,
                           t_rank);
 
-          if (r.gain() > best_gains[s_t.first][s_t.second] && r.is_valid()) {
-            best_gains[s_t.first][s_t.second] = r.gain();
-            best_ops[s_t.first][s_t.second] =
-              std::make_unique<ReverseTwoOpt>(r);
+          if (r.gain() > best_gains[source][target] && r.is_valid()) {
+            best_gains[source][target] = r.gain();
+            best_ops[source][target] = std::make_unique<ReverseTwoOpt>(r);
           }
         }
       }
@@ -972,31 +959,32 @@ void LocalSearch<Route,
       // Move(s) that don't make sense for shipment-only instances.
 
       // Relocate stuff
-      for (const auto& s_t : s_t_pairs) {
-        if (s_t.first == s_t.second || best_priorities[s_t.first] > 0 ||
-            best_priorities[s_t.second] > 0 || _sol[s_t.first].size() == 0) {
+      for (const auto& [source, target] : s_t_pairs) {
+        if (source == target || best_priorities[source] > 0 ||
+            best_priorities[target] > 0 || _sol[source].size() == 0) {
           continue;
         }
 
-        const auto& v_t = _input.vehicles[s_t.second];
-        if (_sol[s_t.second].size() + 1 > v_t.max_tasks) {
+        const auto& v_t = _input.vehicles[target];
+        if (_sol[target].size() + 1 > v_t.max_tasks) {
           continue;
         }
 
-        const auto& t_delivery_margin = _sol[s_t.second].delivery_margin();
-        const auto& t_pickup_margin = _sol[s_t.second].pickup_margin();
+        const auto& t_delivery_margin = _sol[target].delivery_margin();
+        const auto& t_pickup_margin = _sol[target].pickup_margin();
 
-        for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
-          if (_sol_state.node_gains[s_t.first][s_rank] <=
-              best_gains[s_t.first][s_t.second]) {
-            // Except if addition cost in route s_t.second is negative
-            // (!!), overall gain can't exceed current known best gain.
+        for (unsigned s_rank = 0; s_rank < _sol[source].size(); ++s_rank) {
+          if (_sol_state.node_gains[source][s_rank] <=
+              best_gains[source][target]) {
+            // Except if addition cost in target route is negative
+            // (!!), overall gain can't exceed current known best
+            // gain.
             continue;
           }
 
-          const auto s_job_rank = _sol[s_t.first].route[s_rank];
+          const auto s_job_rank = _sol[source].route[s_rank];
           if (_input.jobs[s_job_rank].type != JOB_TYPE::SINGLE ||
-              !_input.vehicle_ok_with_job(s_t.second, s_job_rank)) {
+              !_input.vehicle_ok_with_job(target, s_job_rank)) {
             // Don't try moving (part of) a shipment or an
             // incompatible job.
             continue;
@@ -1011,58 +999,57 @@ void LocalSearch<Route,
           }
 
           for (unsigned t_rank =
-                 _sol_state.insertion_ranks_begin[s_t.second][s_job_rank];
-               t_rank < _sol_state.insertion_ranks_end[s_t.second][s_job_rank];
+                 _sol_state.insertion_ranks_begin[target][s_job_rank];
+               t_rank < _sol_state.insertion_ranks_end[target][s_job_rank];
                ++t_rank) {
 #ifdef LOG_LS_OPERATORS
             ++tried_moves[OperatorName::Relocate];
 #endif
             Relocate r(_input,
                        _sol_state,
-                       _sol[s_t.first],
-                       s_t.first,
+                       _sol[source],
+                       source,
                        s_rank,
-                       _sol[s_t.second],
-                       s_t.second,
+                       _sol[target],
+                       target,
                        t_rank);
 
-            if (r.gain() > best_gains[s_t.first][s_t.second] && r.is_valid()) {
-              best_gains[s_t.first][s_t.second] = r.gain();
-              best_ops[s_t.first][s_t.second] = std::make_unique<Relocate>(r);
+            if (r.gain() > best_gains[source][target] && r.is_valid()) {
+              best_gains[source][target] = r.gain();
+              best_ops[source][target] = std::make_unique<Relocate>(r);
             }
           }
         }
       }
 
       // OrOpt stuff
-      for (const auto& s_t : s_t_pairs) {
-        if (s_t.first == s_t.second || best_priorities[s_t.first] > 0 ||
-            best_priorities[s_t.second] > 0 || _sol[s_t.first].size() < 2) {
+      for (const auto& [source, target] : s_t_pairs) {
+        if (source == target || best_priorities[source] > 0 ||
+            best_priorities[target] > 0 || _sol[source].size() < 2) {
           continue;
         }
 
-        const auto& v_t = _input.vehicles[s_t.second];
-        if (_sol[s_t.second].size() + 2 > v_t.max_tasks) {
+        const auto& v_t = _input.vehicles[target];
+        if (_sol[target].size() + 2 > v_t.max_tasks) {
           continue;
         }
 
-        const auto& t_delivery_margin = _sol[s_t.second].delivery_margin();
-        const auto& t_pickup_margin = _sol[s_t.second].pickup_margin();
+        const auto& t_delivery_margin = _sol[target].delivery_margin();
+        const auto& t_pickup_margin = _sol[target].pickup_margin();
 
-        for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1;
-             ++s_rank) {
-          if (_sol_state.edge_gains[s_t.first][s_rank] <=
-              best_gains[s_t.first][s_t.second]) {
-            // Except if addition cost in route s_t.second is negative
+        for (unsigned s_rank = 0; s_rank < _sol[source].size() - 1; ++s_rank) {
+          if (_sol_state.edge_gains[source][s_rank] <=
+              best_gains[source][target]) {
+            // Except if addition cost in route target is negative
             // (!!), overall gain can't exceed current known best gain.
             continue;
           }
 
-          const auto s_job_rank = _sol[s_t.first].route[s_rank];
-          const auto s_next_job_rank = _sol[s_t.first].route[s_rank + 1];
+          const auto s_job_rank = _sol[source].route[s_rank];
+          const auto s_next_job_rank = _sol[source].route[s_rank + 1];
 
-          if (!_input.vehicle_ok_with_job(s_t.second, s_job_rank) ||
-              !_input.vehicle_ok_with_job(s_t.second, s_next_job_rank)) {
+          if (!_input.vehicle_ok_with_job(target, s_job_rank) ||
+              !_input.vehicle_ok_with_job(target, s_next_job_rank)) {
             continue;
           }
 
@@ -1085,13 +1072,11 @@ void LocalSearch<Route,
           }
 
           const auto insertion_start =
-            std::max(_sol_state.insertion_ranks_begin[s_t.second][s_job_rank],
-                     _sol_state
-                       .insertion_ranks_begin[s_t.second][s_next_job_rank]);
+            std::max(_sol_state.insertion_ranks_begin[target][s_job_rank],
+                     _sol_state.insertion_ranks_begin[target][s_next_job_rank]);
           const auto insertion_end =
-            std::min(_sol_state.insertion_ranks_end[s_t.second][s_job_rank],
-                     _sol_state
-                       .insertion_ranks_end[s_t.second][s_next_job_rank]);
+            std::min(_sol_state.insertion_ranks_end[target][s_job_rank],
+                     _sol_state.insertion_ranks_end[target][s_next_job_rank]);
           for (unsigned t_rank = insertion_start; t_rank < insertion_end;
                ++t_rank) {
 #ifdef LOG_LS_OPERATORS
@@ -1099,18 +1084,18 @@ void LocalSearch<Route,
 #endif
             OrOpt r(_input,
                     _sol_state,
-                    _sol[s_t.first],
-                    s_t.first,
+                    _sol[source],
+                    source,
                     s_rank,
-                    _sol[s_t.second],
-                    s_t.second,
+                    _sol[target],
+                    target,
                     t_rank);
 
-            auto& current_best = best_gains[s_t.first][s_t.second];
+            auto& current_best = best_gains[source][target];
             if (r.gain_upper_bound() > current_best && r.is_valid() &&
                 r.gain() > current_best) {
               current_best = r.gain();
-              best_ops[s_t.first][s_t.second] = std::make_unique<OrOpt>(r);
+              best_ops[source][target] = std::make_unique<OrOpt>(r);
             }
           }
         }
@@ -1119,56 +1104,55 @@ void LocalSearch<Route,
 
     // TSPFix stuff
     if (!_input.has_shipments()) {
-      for (const auto& s_t : s_t_pairs) {
-        if (s_t.second != s_t.first || best_priorities[s_t.first] > 0 ||
-            !_input.is_good_TSP_candidate(s_t.first) ||
-            _sol[s_t.first].size() < 2) {
+      for (const auto& [source, target] : s_t_pairs) {
+        if (target != source || best_priorities[source] > 0 ||
+            !_input.is_good_TSP_candidate(source) || _sol[source].size() < 2) {
           continue;
         }
 
 #ifdef LOG_LS_OPERATORS
         ++tried_moves[OperatorName::TSPFix];
 #endif
-        TSPFix op(_input, _sol_state, _sol[s_t.first], s_t.first);
+        TSPFix op(_input, _sol_state, _sol[source], source);
 
-        if (op.gain() > best_gains[s_t.first][s_t.second] && op.is_valid()) {
-          best_gains[s_t.first][s_t.second] = op.gain();
-          best_ops[s_t.first][s_t.second] = std::make_unique<TSPFix>(op);
+        if (op.gain() > best_gains[source][target] && op.is_valid()) {
+          best_gains[source][target] = op.gain();
+          best_ops[source][target] = std::make_unique<TSPFix>(op);
         }
       }
     }
 
     // IntraExchange stuff
-    for (const auto& s_t : s_t_pairs) {
-      if (s_t.first != s_t.second || best_priorities[s_t.first] > 0 ||
-          _sol[s_t.first].size() < 3) {
+    for (const auto& [source, target] : s_t_pairs) {
+      if (source != target || best_priorities[source] > 0 ||
+          _sol[source].size() < 3) {
         continue;
       }
 
-      for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 2; ++s_rank) {
-        const auto s_job_rank = _sol[s_t.first].route[s_rank];
+      for (unsigned s_rank = 0; s_rank < _sol[source].size() - 2; ++s_rank) {
+        const auto s_job_rank = _sol[source].route[s_rank];
 
-        Index end_t_rank = _sol[s_t.first].size();
+        Index end_t_rank = _sol[source].size();
         if (_input.jobs[s_job_rank].type == JOB_TYPE::PICKUP) {
           // Don't move a pickup past its matching delivery.
-          end_t_rank = _sol_state.matching_delivery_rank[s_t.first][s_rank];
+          end_t_rank = _sol_state.matching_delivery_rank[source][s_rank];
         }
 
         const auto end_s =
-          _sol_state.weak_insertion_ranks_end[s_t.first][s_job_rank];
+          _sol_state.weak_insertion_ranks_end[source][s_job_rank];
         assert(end_s != 0);
         end_t_rank = std::min(end_t_rank, static_cast<Index>(end_s - 1));
 
         for (Index t_rank = s_rank + 2; t_rank < end_t_rank; ++t_rank) {
-          if (_input.jobs[_sol[s_t.first].route[t_rank]].type ==
+          if (_input.jobs[_sol[source].route[t_rank]].type ==
                 JOB_TYPE::DELIVERY &&
-              s_rank <= _sol_state.matching_pickup_rank[s_t.first][t_rank]) {
+              s_rank <= _sol_state.matching_pickup_rank[source][t_rank]) {
             // Don't move a delivery before its matching pickup.
             continue;
           }
 
-          const auto t_job_rank = _sol[s_t.first].route[t_rank];
-          if (_sol_state.weak_insertion_ranks_begin[s_t.first][t_job_rank] >
+          const auto t_job_rank = _sol[source].route[t_rank];
+          if (_sol_state.weak_insertion_ranks_begin[source][t_job_rank] >
               s_rank + 1) {
             continue;
           }
@@ -1178,14 +1162,14 @@ void LocalSearch<Route,
 #endif
           IntraExchange r(_input,
                           _sol_state,
-                          _sol[s_t.first],
-                          s_t.first,
+                          _sol[source],
+                          source,
                           s_rank,
                           t_rank);
 
-          if (r.gain() > best_gains[s_t.first][s_t.first] && r.is_valid()) {
-            best_gains[s_t.first][s_t.first] = r.gain();
-            best_ops[s_t.first][s_t.first] = std::make_unique<IntraExchange>(r);
+          if (r.gain() > best_gains[source][source] && r.is_valid()) {
+            best_gains[source][source] = r.gain();
+            best_ops[source][source] = std::make_unique<IntraExchange>(r);
           }
         }
       }
@@ -1193,16 +1177,15 @@ void LocalSearch<Route,
 
     // IntraCrossExchange stuff
     constexpr unsigned min_intra_cross_exchange_size = 5;
-    for (const auto& s_t : s_t_pairs) {
-      if (s_t.first != s_t.second || best_priorities[s_t.first] > 0 ||
-          _sol[s_t.first].size() < min_intra_cross_exchange_size) {
+    for (const auto& [source, target] : s_t_pairs) {
+      if (source != target || best_priorities[source] > 0 ||
+          _sol[source].size() < min_intra_cross_exchange_size) {
         continue;
       }
 
-      for (unsigned s_rank = 0; s_rank <= _sol[s_t.first].size() - 4;
-           ++s_rank) {
-        const auto job_s_type = _input.jobs[_sol[s_t.first].route[s_rank]].type;
-        const auto s_next_job_rank = _sol[s_t.first].route[s_rank + 1];
+      for (unsigned s_rank = 0; s_rank <= _sol[source].size() - 4; ++s_rank) {
+        const auto job_s_type = _input.jobs[_sol[source].route[s_rank]].type;
+        const auto s_next_job_rank = _sol[source].route[s_rank + 1];
 
         bool both_s_single =
           (job_s_type == JOB_TYPE::SINGLE) &&
@@ -1210,38 +1193,36 @@ void LocalSearch<Route,
 
         bool is_s_pickup =
           (job_s_type == JOB_TYPE::PICKUP) &&
-          (_sol_state.matching_delivery_rank[s_t.first][s_rank] == s_rank + 1);
+          (_sol_state.matching_delivery_rank[source][s_rank] == s_rank + 1);
 
         if (!both_s_single && !is_s_pickup) {
           continue;
         }
 
-        Index end_t_rank = _sol[s_t.first].size() - 1;
+        Index end_t_rank = _sol[source].size() - 1;
         const auto end_s_next =
-          _sol_state.weak_insertion_ranks_end[s_t.first][s_next_job_rank];
+          _sol_state.weak_insertion_ranks_end[source][s_next_job_rank];
         assert(end_s_next > 1);
         end_t_rank = std::min(end_t_rank, static_cast<Index>(end_s_next - 2));
 
         for (unsigned t_rank = s_rank + 3; t_rank < end_t_rank; ++t_rank) {
-          const auto& job_t_type =
-            _input.jobs[_sol[s_t.second].route[t_rank]].type;
+          const auto& job_t_type = _input.jobs[_sol[target].route[t_rank]].type;
 
           bool both_t_single =
             (job_t_type == JOB_TYPE::SINGLE) &&
-            (_input.jobs[_sol[s_t.second].route[t_rank + 1]].type ==
+            (_input.jobs[_sol[target].route[t_rank + 1]].type ==
              JOB_TYPE::SINGLE);
 
           bool is_t_pickup =
             (job_t_type == JOB_TYPE::PICKUP) &&
-            (_sol_state.matching_delivery_rank[s_t.second][t_rank] ==
-             t_rank + 1);
+            (_sol_state.matching_delivery_rank[target][t_rank] == t_rank + 1);
 
           if (!both_t_single && !is_t_pickup) {
             continue;
           }
 
-          const auto t_job_rank = _sol[s_t.first].route[t_rank];
-          if (_sol_state.weak_insertion_ranks_begin[s_t.first][t_job_rank] >
+          const auto t_job_rank = _sol[source].route[t_rank];
+          if (_sol_state.weak_insertion_ranks_begin[source][t_job_rank] >
               s_rank + 2) {
             continue;
           }
@@ -1251,42 +1232,41 @@ void LocalSearch<Route,
 #endif
           IntraCrossExchange r(_input,
                                _sol_state,
-                               _sol[s_t.first],
-                               s_t.first,
+                               _sol[source],
+                               source,
                                s_rank,
                                t_rank,
                                !is_s_pickup,
                                !is_t_pickup);
 
-          auto& current_best = best_gains[s_t.first][s_t.second];
+          auto& current_best = best_gains[source][target];
           if (r.gain_upper_bound() > current_best && r.is_valid() &&
               r.gain() > current_best) {
             current_best = r.gain();
-            best_ops[s_t.first][s_t.first] =
-              std::make_unique<IntraCrossExchange>(r);
+            best_ops[source][source] = std::make_unique<IntraCrossExchange>(r);
           }
         }
       }
     }
 
     // IntraMixedExchange stuff
-    for (const auto& s_t : s_t_pairs) {
-      if (s_t.first != s_t.second || best_priorities[s_t.first] > 0 ||
-          _sol[s_t.first].size() < 4) {
+    for (const auto& [source, target] : s_t_pairs) {
+      if (source != target || best_priorities[source] > 0 ||
+          _sol[source].size() < 4) {
         continue;
       }
 
-      for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
-        const auto s_job_rank = _sol[s_t.first].route[s_rank];
+      for (unsigned s_rank = 0; s_rank < _sol[source].size(); ++s_rank) {
+        const auto s_job_rank = _sol[source].route[s_rank];
 
         if (_input.jobs[s_job_rank].type != JOB_TYPE::SINGLE) {
           // Don't try moving part of a shipment.
           continue;
         }
 
-        Index end_t_rank = _sol[s_t.first].size() - 1;
+        Index end_t_rank = _sol[source].size() - 1;
         const auto end_s =
-          _sol_state.weak_insertion_ranks_end[s_t.first][s_job_rank];
+          _sol_state.weak_insertion_ranks_end[source][s_job_rank];
         if (end_s > 1) {
           end_t_rank = std::min(end_t_rank, static_cast<Index>(end_s - 2));
         } else {
@@ -1298,25 +1278,23 @@ void LocalSearch<Route,
             continue;
           }
 
-          const auto& job_t_type =
-            _input.jobs[_sol[s_t.second].route[t_rank]].type;
+          const auto& job_t_type = _input.jobs[_sol[target].route[t_rank]].type;
 
           bool both_t_single =
             (job_t_type == JOB_TYPE::SINGLE) &&
-            (_input.jobs[_sol[s_t.first].route[t_rank + 1]].type ==
+            (_input.jobs[_sol[source].route[t_rank + 1]].type ==
              JOB_TYPE::SINGLE);
 
           bool is_t_pickup =
             (job_t_type == JOB_TYPE::PICKUP) &&
-            (_sol_state.matching_delivery_rank[s_t.second][t_rank] ==
-             t_rank + 1);
+            (_sol_state.matching_delivery_rank[target][t_rank] == t_rank + 1);
 
           if (!both_t_single && !is_t_pickup) {
             continue;
           }
 
-          const auto t_job_rank = _sol[s_t.first].route[t_rank];
-          if (_sol_state.weak_insertion_ranks_begin[s_t.first][t_job_rank] >
+          const auto t_job_rank = _sol[source].route[t_rank];
+          if (_sol_state.weak_insertion_ranks_begin[source][t_job_rank] >
               s_rank + 1) {
             continue;
           }
@@ -1326,51 +1304,50 @@ void LocalSearch<Route,
 #endif
           IntraMixedExchange r(_input,
                                _sol_state,
-                               _sol[s_t.first],
-                               s_t.first,
+                               _sol[source],
+                               source,
                                s_rank,
                                t_rank,
                                !is_t_pickup);
-          auto& current_best = best_gains[s_t.first][s_t.second];
+          auto& current_best = best_gains[source][target];
           if (r.gain_upper_bound() > current_best && r.is_valid() &&
               r.gain() > current_best) {
             current_best = r.gain();
-            best_ops[s_t.first][s_t.first] =
-              std::make_unique<IntraMixedExchange>(r);
+            best_ops[source][source] = std::make_unique<IntraMixedExchange>(r);
           }
         }
       }
     }
 
     // IntraRelocate stuff
-    for (const auto& s_t : s_t_pairs) {
-      if (s_t.first != s_t.second || best_priorities[s_t.first] > 0 ||
-          _sol[s_t.first].size() < 2) {
+    for (const auto& [source, target] : s_t_pairs) {
+      if (source != target || best_priorities[source] > 0 ||
+          _sol[source].size() < 2) {
         continue;
       }
 
-      for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size(); ++s_rank) {
-        if (_sol_state.node_gains[s_t.first][s_rank] <=
-            best_gains[s_t.first][s_t.first]) {
+      for (unsigned s_rank = 0; s_rank < _sol[source].size(); ++s_rank) {
+        if (_sol_state.node_gains[source][s_rank] <=
+            best_gains[source][source]) {
           // Except if addition cost in route is negative (!!),
           // overall gain can't exceed current known best gain.
           continue;
         }
 
-        const auto s_job_rank = _sol[s_t.first].route[s_rank];
+        const auto s_job_rank = _sol[source].route[s_rank];
         auto begin_t_rank =
-          _sol_state.weak_insertion_ranks_begin[s_t.first][s_job_rank];
+          _sol_state.weak_insertion_ranks_begin[source][s_job_rank];
         if (_input.jobs[s_job_rank].type == JOB_TYPE::DELIVERY) {
           // Don't move a delivery before its matching pickup.
           Index begin_candidate =
-            _sol_state.matching_pickup_rank[s_t.first][s_rank] + 1;
+            _sol_state.matching_pickup_rank[source][s_rank] + 1;
           begin_t_rank = std::max(begin_t_rank, begin_candidate);
         }
 
-        auto end_t_rank = _sol[s_t.first].size();
+        auto end_t_rank = _sol[source].size();
         if (_input.jobs[s_job_rank].type == JOB_TYPE::PICKUP) {
           // Don't move a pickup past its matching delivery.
-          end_t_rank = _sol_state.matching_delivery_rank[s_t.first][s_rank];
+          end_t_rank = _sol_state.matching_delivery_rank[source][s_rank];
         }
 
         for (unsigned t_rank = begin_t_rank; t_rank < end_t_rank; ++t_rank) {
@@ -1378,7 +1355,7 @@ void LocalSearch<Route,
             continue;
           }
           if (t_rank > s_rank &&
-              _sol_state.weak_insertion_ranks_end[s_t.first][s_job_rank] <=
+              _sol_state.weak_insertion_ranks_end[source][s_job_rank] <=
                 t_rank + 1) {
             // Relocating past t_rank (new rank *after* removal) won't
             // work.
@@ -1390,71 +1367,69 @@ void LocalSearch<Route,
 #endif
           IntraRelocate r(_input,
                           _sol_state,
-                          _sol[s_t.first],
-                          s_t.first,
+                          _sol[source],
+                          source,
                           s_rank,
                           t_rank);
 
-          if (r.gain() > best_gains[s_t.first][s_t.first] && r.is_valid()) {
-            best_gains[s_t.first][s_t.first] = r.gain();
-            best_ops[s_t.first][s_t.first] = std::make_unique<IntraRelocate>(r);
+          if (r.gain() > best_gains[source][source] && r.is_valid()) {
+            best_gains[source][source] = r.gain();
+            best_ops[source][source] = std::make_unique<IntraRelocate>(r);
           }
         }
       }
     }
 
     // IntraOrOpt stuff
-    for (const auto& s_t : s_t_pairs) {
-      if (s_t.first != s_t.second || best_priorities[s_t.first] > 0 ||
-          _sol[s_t.first].size() < 4) {
+    for (const auto& [source, target] : s_t_pairs) {
+      if (source != target || best_priorities[source] > 0 ||
+          _sol[source].size() < 4) {
         continue;
       }
-      for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 1; ++s_rank) {
-        const auto& job_type = _input.jobs[_sol[s_t.first].route[s_rank]].type;
+      for (unsigned s_rank = 0; s_rank < _sol[source].size() - 1; ++s_rank) {
+        const auto& job_type = _input.jobs[_sol[source].route[s_rank]].type;
 
-        bool both_single =
-          (job_type == JOB_TYPE::SINGLE) &&
-          (_input.jobs[_sol[s_t.first].route[s_rank + 1]].type ==
-           JOB_TYPE::SINGLE);
+        bool both_single = (job_type == JOB_TYPE::SINGLE) &&
+                           (_input.jobs[_sol[source].route[s_rank + 1]].type ==
+                            JOB_TYPE::SINGLE);
 
         bool is_pickup =
           (job_type == JOB_TYPE::PICKUP) &&
-          (_sol_state.matching_delivery_rank[s_t.first][s_rank] == s_rank + 1);
+          (_sol_state.matching_delivery_rank[source][s_rank] == s_rank + 1);
 
         if (!both_single && !is_pickup) {
           continue;
         }
 
         if (is_pickup) {
-          if (_sol_state.pd_gains[s_t.first][s_rank] <=
-              best_gains[s_t.first][s_t.first]) {
+          if (_sol_state.pd_gains[source][s_rank] <=
+              best_gains[source][source]) {
             // Except if addition cost in route is negative (!!),
             // overall gain can't exceed current known best gain.
             continue;
           }
         } else {
           // Regular single job.
-          if (_sol_state.edge_gains[s_t.first][s_rank] <=
-              best_gains[s_t.first][s_t.first]) {
+          if (_sol_state.edge_gains[source][s_rank] <=
+              best_gains[source][source]) {
             // Except if addition cost in route is negative (!!),
             // overall gain can't exceed current known best gain.
             continue;
           }
         }
 
-        const auto s_job_rank = _sol[s_t.first].route[s_rank];
-        const auto s_next_job_rank = _sol[s_t.first].route[s_rank + 1];
+        const auto s_job_rank = _sol[source].route[s_rank];
+        const auto s_next_job_rank = _sol[source].route[s_rank + 1];
         const auto begin_t_rank =
-          _sol_state.weak_insertion_ranks_begin[s_t.first][s_job_rank];
+          _sol_state.weak_insertion_ranks_begin[source][s_job_rank];
 
-        for (unsigned t_rank = begin_t_rank;
-             t_rank <= _sol[s_t.first].size() - 2;
+        for (unsigned t_rank = begin_t_rank; t_rank <= _sol[source].size() - 2;
              ++t_rank) {
           if (t_rank == s_rank) {
             continue;
           }
           if (t_rank > s_rank &&
-              _sol_state.weak_insertion_ranks_end[s_t.first][s_next_job_rank] <=
+              _sol_state.weak_insertion_ranks_end[source][s_next_job_rank] <=
                 t_rank + 2) {
             // Relocating past t_rank (new rank *after* removal) won't
             // work.
@@ -1466,33 +1441,33 @@ void LocalSearch<Route,
 #endif
           IntraOrOpt r(_input,
                        _sol_state,
-                       _sol[s_t.first],
-                       s_t.first,
+                       _sol[source],
+                       source,
                        s_rank,
                        t_rank,
                        !is_pickup);
-          auto& current_best = best_gains[s_t.first][s_t.second];
+          auto& current_best = best_gains[source][target];
           if (r.gain_upper_bound() > current_best && r.is_valid() &&
               r.gain() > current_best) {
             current_best = r.gain();
-            best_ops[s_t.first][s_t.first] = std::make_unique<IntraOrOpt>(r);
+            best_ops[source][source] = std::make_unique<IntraOrOpt>(r);
           }
         }
       }
     }
 
     // IntraTwoOpt stuff
-    for (const auto& s_t : s_t_pairs) {
-      if (s_t.first != s_t.second || best_priorities[s_t.first] > 0 ||
-          _sol[s_t.first].size() < 4) {
+    for (const auto& [source, target] : s_t_pairs) {
+      if (source != target || best_priorities[source] > 0 ||
+          _sol[source].size() < 4) {
         continue;
       }
-      for (unsigned s_rank = 0; s_rank < _sol[s_t.first].size() - 2; ++s_rank) {
-        const auto s_job_rank = _sol[s_t.first].route[s_rank];
+      for (unsigned s_rank = 0; s_rank < _sol[source].size() - 2; ++s_rank) {
+        const auto s_job_rank = _sol[source].route[s_rank];
         const auto end_s =
-          _sol_state.weak_insertion_ranks_end[s_t.first][s_job_rank];
+          _sol_state.weak_insertion_ranks_end[source][s_job_rank];
         assert(end_s != 0);
-        auto end_t_rank = std::min(static_cast<Index>(_sol[s_t.first].size()),
+        auto end_t_rank = std::min(static_cast<Index>(_sol[source].size()),
                                    static_cast<Index>(end_s - 1));
 
         for (unsigned t_rank = s_rank + 2; t_rank < end_t_rank; ++t_rank) {
@@ -1501,14 +1476,14 @@ void LocalSearch<Route,
 #endif
           IntraTwoOpt r(_input,
                         _sol_state,
-                        _sol[s_t.first],
-                        s_t.first,
+                        _sol[source],
+                        source,
                         s_rank,
                         t_rank);
-          auto& current_best = best_gains[s_t.first][s_t.second];
+          auto& current_best = best_gains[source][target];
           if (r.gain() > current_best && r.is_valid()) {
             current_best = r.gain();
-            best_ops[s_t.first][s_t.first] = std::make_unique<IntraTwoOpt>(r);
+            best_ops[source][source] = std::make_unique<IntraTwoOpt>(r);
           }
         }
       }
@@ -1518,47 +1493,48 @@ void LocalSearch<Route,
       // Move(s) that don't make sense for job-only instances.
 
       // PDShift stuff
-      for (const auto& s_t : s_t_pairs) {
-        if (s_t.first == s_t.second || best_priorities[s_t.first] > 0 ||
-            best_priorities[s_t.second] > 0 || _sol[s_t.first].size() == 0) {
+      for (const auto& [source, target] : s_t_pairs) {
+        if (source == target || best_priorities[source] > 0 ||
+            best_priorities[target] > 0 || _sol[source].size() == 0) {
           // Don't try to put things from an empty vehicle.
           continue;
         }
 
-        const auto& v_t = _input.vehicles[s_t.second];
-        if (_sol[s_t.second].size() + 2 > v_t.max_tasks) {
+        const auto& v_t = _input.vehicles[target];
+        if (_sol[target].size() + 2 > v_t.max_tasks) {
           continue;
         }
 
-        for (unsigned s_p_rank = 0; s_p_rank < _sol[s_t.first].size();
+        for (unsigned s_p_rank = 0; s_p_rank < _sol[source].size();
              ++s_p_rank) {
-          if (_input.jobs[_sol[s_t.first].route[s_p_rank]].type !=
+          if (_input.jobs[_sol[source].route[s_p_rank]].type !=
               JOB_TYPE::PICKUP) {
             continue;
           }
 
           // Matching delivery rank in source route.
           unsigned s_d_rank =
-            _sol_state.matching_delivery_rank[s_t.first][s_p_rank];
+            _sol_state.matching_delivery_rank[source][s_p_rank];
 
-          if (!_input.vehicle_ok_with_job(s_t.second,
-                                          _sol[s_t.first].route[s_p_rank]) ||
-              !_input.vehicle_ok_with_job(s_t.second,
-                                          _sol[s_t.first].route[s_d_rank])) {
+          if (!_input.vehicle_ok_with_job(target,
+                                          _sol[source].route[s_p_rank]) ||
+              !_input.vehicle_ok_with_job(target,
+                                          _sol[source].route[s_d_rank])) {
             continue;
           }
 
-          if (_sol_state.pd_gains[s_t.first][s_p_rank] <=
-              best_gains[s_t.first][s_t.second]) {
-            // Except if addition cost in route s_t.second is negative
-            // (!!), overall gain can't exceed current known best gain.
+          if (_sol_state.pd_gains[source][s_p_rank] <=
+              best_gains[source][target]) {
+            // Except if addition cost in target route is negative
+            // (!!), overall gain can't exceed current known best
+            // gain.
             continue;
           }
 
-          const auto& v_s = _input.vehicles[s_t.first];
-          const auto s_travel_time = _sol_state.route_evals[s_t.first].duration;
+          const auto& v_s = _input.vehicles[source];
+          const auto s_travel_time = _sol_state.route_evals[source].duration;
           const auto s_removal_duration_gain =
-            _sol_state.pd_gains[s_t.first][s_p_rank].duration;
+            _sol_state.pd_gains[source][s_p_rank].duration;
           if (!v_s.ok_for_travel_time(s_travel_time -
                                       s_removal_duration_gain)) {
             // Removing shipment from source route actually breaks
@@ -1571,18 +1547,17 @@ void LocalSearch<Route,
 #endif
           PDShift pdr(_input,
                       _sol_state,
-                      _sol[s_t.first],
-                      s_t.first,
+                      _sol[source],
+                      source,
                       s_p_rank,
                       s_d_rank,
-                      _sol[s_t.second],
-                      s_t.second,
-                      best_gains[s_t.first][s_t.second]);
+                      _sol[target],
+                      target,
+                      best_gains[source][target]);
 
-          if (pdr.gain() > best_gains[s_t.first][s_t.second] &&
-              pdr.is_valid()) {
-            best_gains[s_t.first][s_t.second] = pdr.gain();
-            best_ops[s_t.first][s_t.second] = std::make_unique<PDShift>(pdr);
+          if (pdr.gain() > best_gains[source][target] && pdr.is_valid()) {
+            best_gains[source][target] = pdr.gain();
+            best_ops[source][target] = std::make_unique<PDShift>(pdr);
           }
         }
       }
@@ -1591,29 +1566,29 @@ void LocalSearch<Route,
     if (!_input.has_homogeneous_locations() ||
         !_input.has_homogeneous_profiles() || !_input.has_homogeneous_costs()) {
       // RouteExchange stuff
-      for (const auto& s_t : s_t_pairs) {
-        if (s_t.second <= s_t.first || best_priorities[s_t.first] > 0 ||
-            best_priorities[s_t.second] > 0 ||
-            (_sol[s_t.first].size() == 0 && _sol[s_t.second].size() == 0) ||
-            _sol_state.bwd_skill_rank[s_t.first][s_t.second] > 0 ||
-            _sol_state.bwd_skill_rank[s_t.second][s_t.first] > 0) {
+      for (const auto& [source, target] : s_t_pairs) {
+        if (target <= source || best_priorities[source] > 0 ||
+            best_priorities[target] > 0 ||
+            (_sol[source].size() == 0 && _sol[target].size() == 0) ||
+            _sol_state.bwd_skill_rank[source][target] > 0 ||
+            _sol_state.bwd_skill_rank[target][source] > 0) {
           // Different routes (and operator is symmetric), at least
           // one non-empty and valid wrt vehicle/job compatibility.
           continue;
         }
 
-        const auto& s_v = _input.vehicles[s_t.first];
-        const auto& t_v = _input.vehicles[s_t.second];
+        const auto& s_v = _input.vehicles[source];
+        const auto& t_v = _input.vehicles[target];
 
-        if (_sol[s_t.first].size() > t_v.max_tasks ||
-            _sol[s_t.second].size() > s_v.max_tasks) {
+        if (_sol[source].size() > t_v.max_tasks ||
+            _sol[target].size() > s_v.max_tasks) {
           continue;
         }
 
-        const auto& s_deliveries_sum = _sol[s_t.first].job_deliveries_sum();
-        const auto& s_pickups_sum = _sol[s_t.first].job_pickups_sum();
-        const auto& t_deliveries_sum = _sol[s_t.second].job_deliveries_sum();
-        const auto& t_pickups_sum = _sol[s_t.second].job_pickups_sum();
+        const auto& s_deliveries_sum = _sol[source].job_deliveries_sum();
+        const auto& s_pickups_sum = _sol[source].job_pickups_sum();
+        const auto& t_deliveries_sum = _sol[target].job_deliveries_sum();
+        const auto& t_pickups_sum = _sol[target].job_pickups_sum();
 
         if (!(t_deliveries_sum <= s_v.capacity) ||
             !(t_pickups_sum <= s_v.capacity) ||
@@ -1627,25 +1602,25 @@ void LocalSearch<Route,
 #endif
         RouteExchange re(_input,
                          _sol_state,
-                         _sol[s_t.first],
-                         s_t.first,
-                         _sol[s_t.second],
-                         s_t.second);
+                         _sol[source],
+                         source,
+                         _sol[target],
+                         target);
 
-        if (re.gain() > best_gains[s_t.first][s_t.second] && re.is_valid()) {
-          best_gains[s_t.first][s_t.second] = re.gain();
-          best_ops[s_t.first][s_t.second] = std::make_unique<RouteExchange>(re);
+        if (re.gain() > best_gains[source][target] && re.is_valid()) {
+          best_gains[source][target] = re.gain();
+          best_ops[source][target] = std::make_unique<RouteExchange>(re);
         }
       }
     }
 
     if (_input.has_jobs()) {
       // SwapStar stuff
-      for (const auto& s_t : s_t_pairs) {
-        if (s_t.second <= s_t.first || // This operator is symmetric.
-            best_priorities[s_t.first] > 0 || best_priorities[s_t.second] > 0 ||
-            _sol[s_t.first].size() == 0 || _sol[s_t.second].size() == 0 ||
-            !_input.vehicle_ok_with_vehicle(s_t.first, s_t.second)) {
+      for (const auto& [source, target] : s_t_pairs) {
+        if (target <= source || // This operator is symmetric.
+            best_priorities[source] > 0 || best_priorities[target] > 0 ||
+            _sol[source].size() == 0 || _sol[target].size() == 0 ||
+            !_input.vehicle_ok_with_vehicle(source, target)) {
           continue;
         }
 
@@ -1654,15 +1629,15 @@ void LocalSearch<Route,
 #endif
         SwapStar r(_input,
                    _sol_state,
-                   _sol[s_t.first],
-                   s_t.first,
-                   _sol[s_t.second],
-                   s_t.second,
-                   best_gains[s_t.first][s_t.second]);
+                   _sol[source],
+                   source,
+                   _sol[target],
+                   target,
+                   best_gains[source][target]);
 
-        if (r.gain() > best_gains[s_t.first][s_t.second]) {
-          best_gains[s_t.first][s_t.second] = r.gain();
-          best_ops[s_t.first][s_t.second] = std::make_unique<SwapStar>(r);
+        if (r.gain() > best_gains[source][target]) {
+          best_gains[source][target] = r.gain();
+          best_ops[source][target] = std::make_unique<SwapStar>(r);
         }
       }
     }
@@ -1683,9 +1658,9 @@ void LocalSearch<Route,
       }
 
       if (empty_route_ranks.size() >= 2) {
-        for (const auto& s_t : s_t_pairs) {
-          if (s_t.second != s_t.first || best_priorities[s_t.first] > 0 ||
-              _sol[s_t.first].size() < 2) {
+        for (const auto& [source, target] : s_t_pairs) {
+          if (target != source || best_priorities[source] > 0 ||
+              _sol[source].size() < 2) {
             continue;
           }
 
@@ -1694,15 +1669,15 @@ void LocalSearch<Route,
 #endif
           RouteSplit r(_input,
                        _sol_state,
-                       _sol[s_t.first],
-                       s_t.first,
+                       _sol[source],
+                       source,
                        std::move(empty_route_ranks),
                        std::move(empty_route_refs),
-                       best_gains[s_t.first][s_t.second]);
+                       best_gains[source][target]);
 
-          if (r.gain() > best_gains[s_t.first][s_t.second]) {
-            best_gains[s_t.first][s_t.second] = r.gain();
-            best_ops[s_t.first][s_t.second] = std::make_unique<RouteSplit>(r);
+          if (r.gain() > best_gains[source][target]) {
+            best_gains[source][target] = r.gain();
+            best_ops[source][target] = std::make_unique<RouteSplit>(r);
           }
         }
       }
@@ -2320,10 +2295,7 @@ void LocalSearch<Route,
     }
   }
 
-  for (const auto& r_r : routes_and_ranks) {
-    const auto v = r_r.first;
-    const auto r = r_r.second;
-
+  for (const auto& [v, r] : routes_and_ranks) {
     _sol_state.unassigned.insert(_sol[v].route[r]);
 
     const auto& current_job = _input.jobs[_sol[v].route[r]];

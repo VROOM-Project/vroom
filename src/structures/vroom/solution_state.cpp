@@ -467,11 +467,11 @@ void SolutionState::set_pd_matching_ranks(const std::vector<Index>& route,
 
   assert(pickup_route_rank_to_input_rank.size() ==
          delivery_input_rank_to_route_rank.size());
-  for (const auto& pair : pickup_route_rank_to_input_rank) {
+  for (const auto& [pickup_route_rank, pickup_input_rank] :
+       pickup_route_rank_to_input_rank) {
     // Relies of the fact that associated pickup and delivery are
     // stored sequentially in input jobs vector.
-    auto pickup_route_rank = pair.first;
-    auto delivery_input_rank = pair.second + 1;
+    auto delivery_input_rank = pickup_input_rank + 1;
     auto search = delivery_input_rank_to_route_rank.find(delivery_input_rank);
     assert(search != delivery_input_rank_to_route_rank.end());
     auto delivery_route_rank = search->second;
