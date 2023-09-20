@@ -349,9 +349,9 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
         const auto& s_pickup = input.jobs[s_index].pickup;
         const auto t_index = target.route[sc.t_rank];
         const auto& t_delivery = input.jobs[t_index].delivery;
-        const auto& t_pickup = input.jobs[t_index].pickup;
 
-        if (!(t_delivery <= s_delivery_margin + s_delivery) ||
+        if (const auto& t_pickup = input.jobs[t_index].pickup;
+            !(t_delivery <= s_delivery_margin + s_delivery) ||
             !(t_pickup <= s_pickup_margin + s_pickup) ||
             !(s_delivery <= t_delivery_margin + t_delivery) ||
             !(s_pickup <= t_pickup_margin + t_pickup)) {

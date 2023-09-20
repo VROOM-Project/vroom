@@ -24,10 +24,11 @@ inline Duration get_duration(double d) {
 inline Duration get_violation(const std::vector<TimeWindow>& tws,
                               Duration arrival) {
   Duration violation = 0;
-  const auto tw = std::ranges::find_if(tws, [&](const auto& candidate_tw) {
-    return arrival <= candidate_tw.end;
-  });
-  if (tw == tws.end()) {
+  if (const auto tw = std::ranges::find_if(tws,
+                                           [&](const auto& candidate_tw) {
+                                             return arrival <= candidate_tw.end;
+                                           });
+      tw == tws.end()) {
     // Delay from last time window.
     violation = (arrival - tws.back().end);
   } else {

@@ -57,14 +57,14 @@ PDShift::PDShift(const Input& input,
 }
 
 void PDShift::compute_gain() {
-  ls::RouteInsertion rs = ls::compute_best_insertion_pd(_input,
-                                                        _sol_state,
-                                                        s_route[_s_p_rank],
-                                                        t_vehicle,
-                                                        target,
-                                                        s_gain - stored_gain);
-
-  if (rs.eval != NO_EVAL) {
+  if (const ls::RouteInsertion rs =
+        ls::compute_best_insertion_pd(_input,
+                                      _sol_state,
+                                      s_route[_s_p_rank],
+                                      t_vehicle,
+                                      target,
+                                      s_gain - stored_gain);
+      rs.eval != NO_EVAL) {
     _valid = true;
     t_gain -= rs.eval;
     stored_gain = s_gain + t_gain;

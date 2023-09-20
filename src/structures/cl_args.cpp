@@ -58,8 +58,7 @@ void update_port(Servers& servers, std::string_view value) {
   std::string profile = DEFAULT_PROFILE;
   std::string port;
 
-  auto index = value.find(':');
-  if (index == std::string::npos) {
+  if (auto index = value.find(':'); index == std::string::npos) {
     port = value;
   } else {
     profile = value.substr(0, index);

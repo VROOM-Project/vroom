@@ -143,14 +143,14 @@ UserCost LocalSearch::relocate_step() {
       Index edge_2_start = next;
       while (edge_2_start != edge_1_start) {
         Index edge_2_end = _edges[edge_2_start];
-        auto before_cost = edge_1_weight + edge_1_end_next_weight +
-                           _matrix[edge_2_start][edge_2_end];
-        auto after_cost = first_potential_add +
-                          _matrix[edge_2_start][edge_1_end] +
-                          _matrix[edge_1_end][edge_2_end];
+        const auto before_cost = edge_1_weight + edge_1_end_next_weight +
+                                 _matrix[edge_2_start][edge_2_end];
 
-        if (before_cost > after_cost) {
-          auto gain = before_cost - after_cost;
+        if (const auto after_cost = first_potential_add +
+                                    _matrix[edge_2_start][edge_1_end] +
+                                    _matrix[edge_1_end][edge_2_end];
+            before_cost > after_cost) {
+          const auto gain = before_cost - after_cost;
           if (gain > best_gain) {
             best_edge_1_start = edge_1_start;
             best_edge_2_start = edge_2_start;
@@ -690,13 +690,13 @@ UserCost LocalSearch::or_opt_step() {
 
       while (edge_2_start != edge_1_start) {
         Index edge_2_end = _edges[edge_2_start];
-        auto before_cost = edge_1_weight + next_next_2_weight +
-                           _matrix[edge_2_start][edge_2_end];
-        auto after_cost = first_potential_add +
-                          _matrix[edge_2_start][edge_1_end] +
-                          _matrix[next][edge_2_end];
-        if (before_cost > after_cost) {
-          auto gain = before_cost - after_cost;
+        const auto before_cost = edge_1_weight + next_next_2_weight +
+                                 _matrix[edge_2_start][edge_2_end];
+        if (const auto after_cost = first_potential_add +
+                                    _matrix[edge_2_start][edge_1_end] +
+                                    _matrix[next][edge_2_end];
+            before_cost > after_cost) {
+          const auto gain = before_cost - after_cost;
           if (gain > best_gain) {
             best_gain = gain;
             best_edge_1_start = edge_1_start;

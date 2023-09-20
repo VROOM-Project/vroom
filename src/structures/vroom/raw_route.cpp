@@ -60,8 +60,7 @@ void RawRoute::update_amounts(const Input& input) {
   unsigned current_nb_deliveries = 0;
 
   for (std::size_t i = 0; i < route.size(); ++i) {
-    const auto& job = input.jobs[route[i]];
-    switch (job.type) {
+    switch (const auto& job = input.jobs[route[i]]; job.type) {
       using enum JOB_TYPE;
     case SINGLE:
       current_pickups += job.pickup;

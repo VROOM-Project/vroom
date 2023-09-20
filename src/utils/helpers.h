@@ -627,8 +627,8 @@ inline Route format_route(const Input& input,
       assert(b_tw != b.tws.rend());
 
       if (b_tw->end < step_start) {
-        auto margin = step_start - b_tw->end;
-        if (margin < remaining_travel_time) {
+        if (const auto margin = step_start - b_tw->end;
+            margin < remaining_travel_time) {
           remaining_travel_time -= margin;
         } else {
           backward_wt += (margin - remaining_travel_time);
@@ -697,8 +697,8 @@ inline Route format_route(const Input& input,
     assert(b_tw != b.tws.rend());
 
     if (b_tw->end < step_start) {
-      auto margin = step_start - b_tw->end;
-      if (margin < remaining_travel_time) {
+      if (const auto margin = step_start - b_tw->end;
+          margin < remaining_travel_time) {
         remaining_travel_time -= margin;
       } else {
         backward_wt += (margin - remaining_travel_time);
@@ -778,8 +778,8 @@ inline Route format_route(const Input& input,
       assert(b_tw != b.tws.end());
 
       if (step_start < b_tw->start) {
-        auto margin = b_tw->start - step_start;
-        if (margin <= travel_time) {
+        if (const auto margin = b_tw->start - step_start;
+            margin <= travel_time) {
           // Part of the remaining travel time is spent before this
           // break, filling the whole margin.
           duration += margin;
@@ -925,8 +925,7 @@ inline Route format_route(const Input& input,
     assert(b_tw != b.tws.end());
 
     if (step_start < b_tw->start) {
-      auto margin = b_tw->start - step_start;
-      if (margin <= travel_time) {
+      if (const auto margin = b_tw->start - step_start; margin <= travel_time) {
         // Part of the remaining travel time is spent before this
         // break, filling the whole margin.
         duration += margin;

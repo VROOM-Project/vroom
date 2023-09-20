@@ -104,16 +104,15 @@ void Input::add_routing_wrapper(const std::string& profile) {
 
 void Input::check_job(Job& job) {
   // Ensure delivery size consistency.
-  const auto& delivery_size = job.delivery.size();
-  if (delivery_size != _amount_size) {
+  if (const auto delivery_size = job.delivery.size();
+      delivery_size != _amount_size) {
     throw InputException(
       "Inconsistent delivery length: " + std::to_string(delivery_size) +
       " instead of " + std::to_string(_amount_size) + '.');
   }
 
   // Ensure pickup size consistency.
-  const auto& pickup_size = job.pickup.size();
-  if (pickup_size != _amount_size) {
+  if (const auto pickup_size = job.pickup.size(); pickup_size != _amount_size) {
     throw InputException(
       "Inconsistent pickup length: " + std::to_string(pickup_size) +
       " instead of " + std::to_string(_amount_size) + '.');
@@ -240,8 +239,8 @@ void Input::add_vehicle(const Vehicle& vehicle) {
   auto& current_v = vehicles.back();
 
   // Ensure amount size consistency.
-  const auto& vehicle_amount_size = current_v.capacity.size();
-  if (vehicle_amount_size != _amount_size) {
+  if (const auto vehicle_amount_size = current_v.capacity.size();
+      vehicle_amount_size != _amount_size) {
     throw InputException(
       "Inconsistent capacity length: " + std::to_string(vehicle_amount_size) +
       " instead of " + std::to_string(_amount_size) + '.');
@@ -809,8 +808,7 @@ void Input::set_vehicle_steps_ranks() {
           }
           step.rank = search->second;
 
-          auto planned_job = planned_job_ids.find(step.id);
-          if (planned_job != planned_job_ids.end()) {
+          if (planned_job_ids.contains(step.id)) {
             throw InputException("Duplicate job id " + std::to_string(step.id) +
                                  " in input steps for vehicle " +
                                  std::to_string(current_vehicle.id) + ".");
@@ -827,8 +825,7 @@ void Input::set_vehicle_steps_ranks() {
           }
           step.rank = search->second;
 
-          auto planned_pickup = planned_pickup_ids.find(step.id);
-          if (planned_pickup != planned_pickup_ids.end()) {
+          if (planned_pickup_ids.contains(step.id)) {
             throw InputException("Duplicate pickup id " +
                                  std::to_string(step.id) +
                                  " in input steps for vehicle " +
@@ -846,8 +843,7 @@ void Input::set_vehicle_steps_ranks() {
           }
           step.rank = search->second;
 
-          auto planned_delivery = planned_delivery_ids.find(step.id);
-          if (planned_delivery != planned_delivery_ids.end()) {
+          if (planned_delivery_ids.contains(step.id)) {
             throw InputException("Duplicate delivery id " +
                                  std::to_string(step.id) +
                                  " in input steps for vehicle " +

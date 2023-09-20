@@ -129,8 +129,7 @@ minimum_weight_perfect_matching(const Matrix<T>& m) {
         // proceed to step 2.
         Index matched_x = matching_y->second;
 
-        const auto [iter, insert_ok] = S.insert(matched_x);
-        if (insert_ok) {
+        if (const auto [iter, insert_ok] = S.insert(matched_x); insert_ok) {
           S_list.push_back(matched_x);
         }
         T_set.insert(chosen_y);

@@ -600,8 +600,8 @@ void SolutionState::update_cheapest_job_rank_in_routes(
     const auto& vehicle = _input.vehicles[v2];
     for (std::size_t r2 = 0; r2 < route_2.size(); ++r2) {
       const Index index_r2 = _input.jobs[route_2[r2]].index();
-      const auto cost_from = vehicle.cost(index_r1, index_r2);
-      if (cost_from < min_from) {
+      if (const auto cost_from = vehicle.cost(index_r1, index_r2);
+          cost_from < min_from) {
         min_from = cost_from;
         best_from_rank = r2;
       }
