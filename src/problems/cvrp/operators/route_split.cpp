@@ -11,14 +11,15 @@ All rights reserved (see LICENSE).
 
 namespace vroom::cvrp {
 
-RouteSplit::RouteSplit(
-  const Input& input,
-  const utils::SolutionState& sol_state,
-  RawRoute& s_route,
-  Index s_vehicle,
-  std::vector<Index>&& empty_route_ranks,
-  std::vector<std::reference_wrapper<RawRoute>>&& empty_route_refs,
-  const Eval& best_known_gain)
+std::vector<RawRoute> RouteSplit::dummy_sol;
+
+RouteSplit::RouteSplit(const Input& input,
+                       const utils::SolutionState& sol_state,
+                       RawRoute& s_route,
+                       Index s_vehicle,
+                       const std::vector<Index>& empty_route_ranks,
+                       std::vector<RawRoute>& sol,
+                       const Eval& best_known_gain)
   // Use dummy 0 values for unused ranks.
   : Operator(OperatorName::RouteSplit,
              input,
@@ -30,8 +31,8 @@ RouteSplit::RouteSplit(
              s_vehicle,
              0),
     _best_known_gain(best_known_gain),
-    _empty_route_ranks(std::move(empty_route_ranks)),
-    _empty_route_refs(std::move(empty_route_refs)) {
+    _empty_route_ranks(empty_route_ranks),
+    _sol(sol) {
   assert(s_route.size() >= 2);
   assert(_empty_route_ranks.size() >= 2);
 }
@@ -45,6 +46,11 @@ void RouteSplit::compute_gain() {
                                                _best_known_gain);
   if (choice.gain.cost > 0) {
     stored_gain = choice.gain;
+
+    // Ranks in choice are relative to _empty_route_ranks so we go
+    // back to initial vehicle ranks in _sol.
+    _begin_route_rank = _empty_route_ranks[choice.v_begin];
+    _end_route_rank = _empty_route_ranks[choice.v_end];
   }
   gain_computed = true;
 }
@@ -59,18 +65,16 @@ void RouteSplit::apply() {
   assert(choice.gain != NO_GAIN);
 
   // Empty route holding the end of the split.
-  auto& end_route = _empty_route_refs[choice.v_end].get();
+  auto& end_route = _sol[_end_route_rank];
   assert(end_route.empty());
-  assert(end_route.vehicle_rank == _empty_route_ranks[choice.v_end]);
 
   std::move(s_route.begin() + choice.split_rank,
             s_route.end(),
             std::back_inserter(end_route.route));
 
   // Empty route holding the beginning of the split.
-  auto& begin_route = _empty_route_refs[choice.v_begin].get();
+  auto& begin_route = _sol[_begin_route_rank];
   assert(begin_route.empty());
-  assert(begin_route.vehicle_rank == _empty_route_ranks[choice.v_begin]);
 
   std::move(s_route.begin(),
             s_route.begin() + choice.split_rank,
@@ -84,21 +88,16 @@ void RouteSplit::apply() {
 }
 
 std::vector<Index> RouteSplit::addition_candidates() const {
-  return {s_vehicle,
-          _empty_route_ranks[choice.v_begin],
-          _empty_route_ranks[choice.v_end]};
+  return {s_vehicle, _begin_route_rank, _end_route_rank};
 }
 
 std::vector<Index> RouteSplit::update_candidates() const {
-  return {s_vehicle,
-          _empty_route_ranks[choice.v_begin],
-          _empty_route_ranks[choice.v_end]};
+  return {s_vehicle, _begin_route_rank, _end_route_rank};
 }
 
 bool RouteSplit::invalidated_by(Index rank) const {
   assert(choice.gain != NO_GAIN);
-  return rank == _empty_route_ranks[choice.v_begin] ||
-         rank == _empty_route_ranks[choice.v_end];
+  return rank == _begin_route_rank || rank == _end_route_rank;
 }
 
 } // namespace vroom::cvrp
