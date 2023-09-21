@@ -154,7 +154,7 @@ Eval basic(const Input& input,
         }
 
         bool is_valid =
-          (vehicle.ok_for_travel_time(evals[job_rank][v_rank].duration)) &&
+          (vehicle.ok_for_range_bounds(evals[job_rank][v_rank])) &&
           current_r.is_valid_addition_for_capacity(input,
                                                    current_job.pickup,
                                                    current_job.delivery,
@@ -258,8 +258,8 @@ Eval basic(const Input& input,
               lambda * static_cast<double>(regrets[v][job_rank]);
 
             if (current_cost < best_cost &&
-                (vehicle.ok_for_travel_time(current_route_eval.duration +
-                                            current_eval.duration)) &&
+                (vehicle.ok_for_range_bounds(current_route_eval +
+                                             current_eval)) &&
                 current_r.is_valid_addition_for_capacity(input,
                                                          current_job.pickup,
                                                          current_job.delivery,
@@ -355,8 +355,8 @@ Eval basic(const Input& input,
 
                 // Update best cost depending on validity.
                 bool valid =
-                  (vehicle.ok_for_travel_time(current_route_eval.duration +
-                                              current_eval.duration)) &&
+                  (vehicle.ok_for_range_bounds(current_route_eval +
+                                               current_eval)) &&
                   current_r
                     .is_valid_addition_for_capacity_inclusion(input,
                                                               modified_delivery,
@@ -602,7 +602,7 @@ Eval dynamic_vehicle_choice(const Input& input,
         }
 
         bool is_valid =
-          (vehicle.ok_for_travel_time(evals[job_rank][v_rank].duration)) &&
+          (vehicle.ok_for_range_bounds(evals[job_rank][v_rank])) &&
           current_r.is_valid_addition_for_capacity(input,
                                                    current_job.pickup,
                                                    current_job.delivery,
@@ -707,8 +707,8 @@ Eval dynamic_vehicle_choice(const Input& input,
               lambda * static_cast<double>(regrets[job_rank]);
 
             if (current_cost < best_cost &&
-                (vehicle.ok_for_travel_time(current_route_eval.duration +
-                                            current_eval.duration)) &&
+                (vehicle.ok_for_range_bounds(current_route_eval +
+                                             current_eval)) &&
                 current_r.is_valid_addition_for_capacity(input,
                                                          current_job.pickup,
                                                          current_job.delivery,
@@ -804,8 +804,8 @@ Eval dynamic_vehicle_choice(const Input& input,
 
                 // Update best cost depending on validity.
                 bool valid =
-                  (vehicle.ok_for_travel_time(current_route_eval.duration +
-                                              current_eval.duration)) &&
+                  (vehicle.ok_for_range_bounds(current_route_eval +
+                                               current_eval)) &&
                   current_r
                     .is_valid_addition_for_capacity_inclusion(input,
                                                               modified_delivery,

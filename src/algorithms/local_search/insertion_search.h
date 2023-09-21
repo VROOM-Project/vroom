@@ -37,8 +37,8 @@ compute_best_insertion_single(const Input& input,
       Eval current_eval =
         utils::addition_cost(input, j, v_target, route.route, rank);
       if (current_eval.cost < result.eval.cost &&
-          v_target.ok_for_travel_time(sol_state.route_evals[v].duration +
-                                      current_eval.duration) &&
+          v_target.ok_for_range_bounds(sol_state.route_evals[v] +
+                                       current_eval) &&
           route.is_valid_addition_for_capacity(input,
                                                current_job.pickup,
                                                current_job.delivery,
@@ -87,7 +87,6 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
   RouteInsertion result(input.get_amount_size());
   const auto& current_job = input.jobs[j];
   const auto& v_target = input.vehicles[v];
-  const auto target_travel_time = sol_state.route_evals[v].duration;
 
   if (!input.vehicle_ok_with_job(v, j)) {
     return result;
@@ -176,7 +175,7 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
       }
 
       if (pd_eval < result.eval &&
-          v_target.ok_for_travel_time(target_travel_time + pd_eval.duration)) {
+          v_target.ok_for_range_bounds(sol_state.route_evals[v] + pd_eval)) {
         modified_with_pd.push_back(j + 1);
 
         // Update best cost depending on validity.

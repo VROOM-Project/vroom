@@ -24,14 +24,12 @@ Eval Operator::gain() {
 
 bool Operator::is_valid_for_source_max_travel_time() const {
   const auto& s_v = _input.vehicles[s_vehicle];
-  return s_v.ok_for_travel_time(_sol_state.route_evals[s_vehicle].duration -
-                                s_gain.duration);
+  return s_v.ok_for_range_bounds(_sol_state.route_evals[s_vehicle] - s_gain);
 }
 
 bool Operator::is_valid_for_target_max_travel_time() const {
   const auto& t_v = _input.vehicles[t_vehicle];
-  return t_v.ok_for_travel_time(_sol_state.route_evals[t_vehicle].duration -
-                                t_gain.duration);
+  return t_v.ok_for_range_bounds(_sol_state.route_evals[t_vehicle] - t_gain);
 }
 
 bool Operator::is_valid_for_max_travel_time() const {
@@ -39,8 +37,8 @@ bool Operator::is_valid_for_max_travel_time() const {
   assert(gain_computed);
 
   const auto& s_v = _input.vehicles[s_vehicle];
-  return s_v.ok_for_travel_time(_sol_state.route_evals[s_vehicle].duration -
-                                stored_gain.duration);
+  return s_v.ok_for_range_bounds(_sol_state.route_evals[s_vehicle] -
+                                 stored_gain);
 }
 
 std::vector<Index> Operator::required_unassigned() const {

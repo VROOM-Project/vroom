@@ -1532,13 +1532,10 @@ void LocalSearch<Route,
           }
 
           const auto& v_s = _input.vehicles[source];
-          const auto s_travel_time = _sol_state.route_evals[source].duration;
-          if (const auto s_removal_duration_gain =
-                _sol_state.pd_gains[source][s_p_rank].duration;
-              !v_s.ok_for_travel_time(s_travel_time -
-                                      s_removal_duration_gain)) {
+          if (!v_s.ok_for_range_bounds(_sol_state.route_evals[source] -
+                                       _sol_state.pd_gains[source][s_p_rank])) {
             // Removing shipment from source route actually breaks
-            // max_travel_time constraint in source.
+            // vehicle range constraints in source.
             continue;
           }
 
@@ -1740,8 +1737,8 @@ void LocalSearch<Route,
         _sol_state.update_top_3_insertions(_sol[v_rank].route, v_rank);
 
         assert(_sol[v_rank].size() <= _input.vehicles[v_rank].max_tasks);
-        assert(_input.vehicles[v_rank].ok_for_travel_time(
-          _sol_state.route_evals[v_rank].duration));
+        assert(_input.vehicles[v_rank].ok_for_range_bounds(
+          _sol_state.route_evals[v_rank]));
       }
 
 #ifndef NDEBUG
@@ -2235,7 +2232,7 @@ void LocalSearch<Route,
     Index best_rank = 0;
     Eval best_gain = NO_GAIN;
 
-    const auto current_travel_time = _sol_state.route_evals[v].duration;
+    const auto& route_eval = _sol_state.route_evals[v];
 
     for (std::size_t r = 0; r < _sol[v].size(); ++r) {
       const auto& current_job = _input.jobs[_sol[v].route[r]];
@@ -2252,9 +2249,9 @@ void LocalSearch<Route,
 
         if (best_gain < current_gain) {
           // Only check validity if required.
-          valid_removal = _input.vehicles[v].ok_for_travel_time(
-                            current_travel_time - removal_gain.duration) &&
-                          _sol[v].is_valid_removal(_input, r, 1);
+          valid_removal =
+            _input.vehicles[v].ok_for_range_bounds(route_eval - removal_gain) &&
+            _sol[v].is_valid_removal(_input, r, 1);
         }
       } else {
         assert(current_job.type == JOB_TYPE::PICKUP);
@@ -2264,8 +2261,7 @@ void LocalSearch<Route,
           removal_gain - relocate_cost_lower_bound(v, r, delivery_r);
 
         if (best_gain < current_gain &&
-            _input.vehicles[v].ok_for_travel_time(current_travel_time -
-                                                  removal_gain.duration)) {
+            _input.vehicles[v].ok_for_range_bounds(route_eval - removal_gain)) {
           // Only check validity if required.
           if (delivery_r == r + 1) {
             valid_removal = _sol[v].is_valid_removal(_input, r, 2);

@@ -198,10 +198,10 @@ bool MixedExchange::is_valid() {
     auto t_start = t_route.begin() + t_rank;
 
     const auto& s_v = _input.vehicles[s_vehicle];
-    const auto s_travel_time = _sol_state.route_evals[s_vehicle].duration;
+    const auto s_eval = _sol_state.route_evals[s_vehicle];
 
     s_is_normal_valid =
-      s_v.ok_for_travel_time(s_travel_time - _normal_s_gain.duration) &&
+      s_v.ok_for_range_bounds(s_eval - _normal_s_gain) &&
       source.is_valid_addition_for_capacity_inclusion(_input,
                                                       target_delivery,
                                                       t_start,
@@ -212,7 +212,7 @@ bool MixedExchange::is_valid() {
       // Reverse target edge direction when inserting in source route.
       auto t_reverse_start = t_route.rbegin() + t_route.size() - 2 - t_rank;
       s_is_reverse_valid =
-        s_v.ok_for_travel_time(s_travel_time - _reversed_s_gain.duration) &&
+        s_v.ok_for_range_bounds(s_eval - _reversed_s_gain) &&
         source.is_valid_addition_for_capacity_inclusion(_input,
                                                         target_delivery,
                                                         t_reverse_start,

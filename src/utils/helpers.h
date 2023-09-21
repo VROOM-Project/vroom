@@ -543,7 +543,7 @@ inline Solution format_solution(const Input& input,
     steps.back().arrival = scale_to_user_duration(ETA);
 
     assert(expected_delivery_ranks.empty());
-    assert(v.ok_for_travel_time(eval_sum.duration));
+    assert(v.ok_for_range_bounds(eval_sum));
 
     assert(v.fixed_cost() % (DURATION_FACTOR * COST_FACTOR) == 0);
     const UserCost user_fixed_cost = scale_to_user_cost(v.fixed_cost());
@@ -1002,7 +1002,7 @@ inline Route format_route(const Input& input,
   assert(expected_delivery_ranks.empty());
 
   assert(eval_sum.duration == duration);
-  assert(v.ok_for_travel_time(eval_sum.duration));
+  assert(v.ok_for_range_bounds(eval_sum));
 
   assert(v.fixed_cost() % (DURATION_FACTOR * COST_FACTOR) == 0);
   const UserCost user_fixed_cost = utils::scale_to_user_cost(v.fixed_cost());

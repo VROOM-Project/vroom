@@ -84,7 +84,7 @@ compute_best_route_split_choice(const Input& input,
                                        end_v.end.value().index());
       }
 
-      if (!end_v.ok_for_travel_time(current_end_eval.duration)) {
+      if (!end_v.ok_for_range_bounds(current_end_eval)) {
         continue;
       }
 
@@ -156,7 +156,7 @@ compute_best_route_split_choice(const Input& input,
                        begin_v.end.value().index());
       }
 
-      if (!begin_v.ok_for_travel_time(current_begin_eval.duration)) {
+      if (!begin_v.ok_for_range_bounds(current_begin_eval)) {
         continue;
       }
 
