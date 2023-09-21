@@ -150,6 +150,11 @@ Duration Vehicle::available_duration() const {
   return available - breaks_duration;
 }
 
+bool Vehicle::has_range_bounds() const {
+  return max_travel_time != DEFAULT_MAX_TRAVEL_TIME ||
+         max_distance != DEFAULT_MAX_DISTANCE;
+}
+
 Index Vehicle::break_rank(Id break_id) const {
   auto search = break_id_to_rank.find(break_id);
   assert(search != break_id_to_rank.end());

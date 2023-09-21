@@ -115,9 +115,7 @@ struct Vehicle {
     return d <= max_travel_time;
   }
 
-  bool has_max_travel_time() const {
-    return max_travel_time != DEFAULT_MAX_TRAVEL_TIME;
-  }
+  bool has_range_bounds() const;
 
   Index break_rank(Id break_id) const;
 };
