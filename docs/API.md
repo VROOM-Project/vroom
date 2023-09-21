@@ -117,6 +117,7 @@ A `vehicle` object has the following properties:
 | [`speed_factor`] | a double value in the range `(0, 5]` used to scale **all** vehicle travel times (defaults to 1.), the respected precision is limited to two digits after the decimal point |
 | [`max_tasks`] | an integer defining the maximum number of tasks in a route for this vehicle |
 | [`max_travel_time`] | an integer defining the maximum travel time for this vehicle |
+| [`max_distance`] | an integer defining the maximum distance for this vehicle |
 | [`steps`] | an array of `vehicle_step` objects describing a custom route for this vehicle |
 
 A `cost` object has the following properties:
