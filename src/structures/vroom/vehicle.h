@@ -115,6 +115,11 @@ struct Vehicle {
     return d <= max_travel_time;
   }
 
+  bool ok_for_distance(Distance d) const {
+    assert(0 <= d);
+    return d <= max_distance;
+  }
+
   bool ok_for_range_bounds(const Eval& e) const {
     assert(0 <= e.duration && 0 <= e.distance);
     return e.duration <= max_travel_time && e.distance <= max_distance;

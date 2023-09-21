@@ -980,6 +980,10 @@ void initial_routes(const Input& input, std::vector<Route>& routes) {
       throw InputException("Route over max_travel_time for vehicle " +
                            std::to_string(vehicle.id) + ".");
     }
+    if (!vehicle.ok_for_distance(eval_sum.distance)) {
+      throw InputException("Route over max_distance for vehicle " +
+                           std::to_string(vehicle.id) + ".");
+    }
 
     if (vehicle.max_tasks < job_ranks.size()) {
       throw InputException("Too many tasks for vehicle " +
