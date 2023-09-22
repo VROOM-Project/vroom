@@ -667,12 +667,16 @@ void Input::set_vehicles_max_tasks() {
           if (vehicle_ok_with_job(v, job_pickups_per_component[i][j].rank) &&
               pickup_sum <= vehicles[v].capacity[i]) {
             pickup_sum += job_pickups_per_component[i][j].amount;
-            ++doable_pickups;
+            if (pickup_sum <= vehicles[v].capacity[i]) {
+              ++doable_pickups;
+            }
           }
           if (vehicle_ok_with_job(v, job_deliveries_per_component[i][j].rank) &&
               delivery_sum <= vehicles[v].capacity[i]) {
             delivery_sum += job_deliveries_per_component[i][j].amount;
-            ++doable_deliveries;
+            if (delivery_sum <= vehicles[v].capacity[i]) {
+              ++doable_deliveries;
+            }
           }
         }
 
