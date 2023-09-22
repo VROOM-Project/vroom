@@ -33,8 +33,8 @@ public:
 // Lexicographical comparison, useful for situations where a total
 // order is required.
 template <typename E1, typename E2>
-bool operator<<(const AmountExpression<E1>& lhs,
-                const AmountExpression<E2>& rhs) {
+bool operator<(const AmountExpression<E1>& lhs,
+               const AmountExpression<E2>& rhs) {
   assert(lhs.size() == rhs.size());
   if (lhs.empty()) {
     return false;
