@@ -11,6 +11,7 @@ All rights reserved (see LICENSE).
 */
 
 #include <string>
+#include <tuple>
 #include <unordered_map>
 
 #include "structures/typedefs.h"
@@ -128,6 +129,15 @@ struct Vehicle {
   bool has_range_bounds() const;
 
   Index break_rank(Id break_id) const;
+
+  friend bool operator<(const Vehicle& lhs, const Vehicle& rhs) {
+    // Sort by:
+    //   - decreasing max_tasks
+    //   - decreasing capacity
+    //   - decreasing TW length
+    return std::tie(rhs.max_tasks, rhs.capacity, rhs.tw.length) <
+           std::tie(lhs.max_tasks, lhs.capacity, lhs.tw.length);
+  }
 };
 
 } // namespace vroom
