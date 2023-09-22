@@ -94,13 +94,13 @@ public:
   }
 
   // Compute max load of sub-route spanning the [0; i[ range.
-  const Amount sub_route_max_load_before(Index i) const {
+  Amount sub_route_max_load_before(Index i) const {
     assert(0 < i && i < size());
     return _fwd_peaks[i] - _bwd_deliveries[i - 1];
   }
 
   // Compute max load of sub-route spanning the [i; size[ range.
-  const Amount sub_route_max_load_after(Index i) const {
+  Amount sub_route_max_load_after(Index i) const {
     assert(0 < i && i < size());
     return _bwd_peaks[i] - _fwd_pickups[i - 1];
   }
