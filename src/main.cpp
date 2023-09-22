@@ -120,7 +120,7 @@ int main(int argc, char** argv) {
             s_to_ms * std::stof(limit_arg)));
       }
     } catch (const std::exception&) {
-      throw cxxopts::exceptions::parsing("Argument '" + limit_arg +
+      throw cxxopts::exceptions::exception("Argument '" + limit_arg +
                                      "' failed to parse");
     }
 
