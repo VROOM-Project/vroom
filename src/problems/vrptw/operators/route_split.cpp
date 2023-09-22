@@ -65,6 +65,8 @@ void RouteSplit::apply() {
                     s_route.end(),
                     0,
                     0);
+  assert(end_route.max_load() ==
+         _tw_s_route.sub_route_max_load_after(choice.split_rank));
 
   // Empty route holding the beginning of the split.
   auto& begin_route = _tw_sol[_begin_route_rank];
@@ -79,6 +81,8 @@ void RouteSplit::apply() {
                       s_route.begin() + choice.split_rank,
                       0,
                       0);
+  assert(begin_route.max_load() ==
+         _tw_s_route.sub_route_max_load_before(choice.split_rank));
 
   _tw_s_route.remove(_input, 0, s_route.size());
 }

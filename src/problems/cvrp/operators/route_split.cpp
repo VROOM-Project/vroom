@@ -71,6 +71,9 @@ void RouteSplit::apply() {
   std::move(s_route.begin() + choice.split_rank,
             s_route.end(),
             std::back_inserter(end_route.route));
+  end_route.update_amounts(_input);
+  assert(end_route.max_load() ==
+         source.sub_route_max_load_after(choice.split_rank));
 
   // Empty route holding the beginning of the split.
   auto& begin_route = _sol[_begin_route_rank];
@@ -79,12 +82,12 @@ void RouteSplit::apply() {
   std::move(s_route.begin(),
             s_route.begin() + choice.split_rank,
             std::back_inserter(begin_route.route));
+  begin_route.update_amounts(_input);
+  assert(begin_route.max_load() ==
+         source.sub_route_max_load_before(choice.split_rank));
 
   s_route.clear();
-
   source.update_amounts(_input);
-  end_route.update_amounts(_input);
-  begin_route.update_amounts(_input);
 }
 
 std::vector<Index> RouteSplit::addition_candidates() const {
