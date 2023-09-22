@@ -44,20 +44,14 @@ Eval basic(const Input& input,
   std::copy(vehicles_begin, vehicles_end, std::back_inserter(vehicles_ranks));
 
   switch (sort) {
-  case SORT::CAPACITY:
-    // Sort vehicles by decreasing max number of tasks allowed, then
-    // capacity, then working hours length.
+  case SORT::CAPACITY: {
+    // Sort vehicles by decreasing "availability".
     std::ranges::stable_sort(vehicles_ranks,
                              [&](const auto lhs, const auto rhs) {
-                               auto& v_lhs = input.vehicles[lhs];
-                               auto& v_rhs = input.vehicles[rhs];
-                               return v_lhs.max_tasks > v_rhs.max_tasks ||
-                                      (v_lhs.max_tasks == v_rhs.max_tasks &&
-                                       (v_rhs.capacity < v_lhs.capacity ||
-                                        (v_lhs.capacity == v_rhs.capacity &&
-                                         v_lhs.tw.length > v_rhs.tw.length)));
+                               return input.vehicles[lhs] < input.vehicles[rhs];
                              });
     break;
+  }
   case SORT::COST:
     // Sort vehicles by increasing fixed cost, then same as above.
     std::ranges::stable_sort(vehicles_ranks,
@@ -66,12 +60,8 @@ Eval basic(const Input& input,
                                auto& v_rhs = input.vehicles[rhs];
                                return v_lhs.costs < v_rhs.costs ||
                                       (v_lhs.costs == v_rhs.costs &&
-                                       (v_lhs.max_tasks > v_rhs.max_tasks ||
-                                        (v_lhs.max_tasks == v_rhs.max_tasks &&
-                                         (v_rhs.capacity < v_lhs.capacity ||
-                                          (v_lhs.capacity == v_rhs.capacity &&
-                                           v_lhs.tw.length >
-                                             v_rhs.tw.length)))));
+                                       input.vehicles[lhs] <
+                                         input.vehicles[rhs]);
                              });
     break;
   }
@@ -80,7 +70,7 @@ Eval basic(const Input& input,
 
   // regrets[v][j] holds the min cost for reaching job j in an empty
   // route across all remaining vehicles **after** vehicle at rank v
-  // in vehicle_ranks.
+  // in vehicles_ranks.
   std::vector<std::vector<Cost>> regrets(nb_vehicles,
                                          std::vector<Cost>(input.jobs.size()));
 
