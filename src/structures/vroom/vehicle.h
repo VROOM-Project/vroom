@@ -135,8 +135,16 @@ struct Vehicle {
     //   - decreasing max_tasks
     //   - decreasing capacity
     //   - decreasing TW length
-    return std::tie(rhs.max_tasks, rhs.capacity, rhs.tw.length) <
-           std::tie(lhs.max_tasks, lhs.capacity, lhs.tw.length);
+    //   - decreasing range (max travel time and distance)
+    return std::tie(rhs.max_tasks,
+                    rhs.capacity,
+                    rhs.tw.length,
+                    rhs.max_travel_time,
+                    rhs.max_distance) < std::tie(lhs.max_tasks,
+                                                 lhs.capacity,
+                                                 lhs.tw.length,
+                                                 lhs.max_travel_time,
+                                                 lhs.max_distance);
   }
 };
 
