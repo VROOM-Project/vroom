@@ -911,7 +911,8 @@ void Input::init_missing_matrices(const std::string& profile) {
 }
 
 void Input::set_matrices(unsigned nb_thread) {
-  if ((!_durations_matrices.empty() || !_costs_matrices.empty()) &&
+  if ((!_durations_matrices.empty() || !_distances_matrices.empty() ||
+       !_costs_matrices.empty()) &&
       !_has_custom_location_index) {
     throw InputException("Missing location index.");
   }
