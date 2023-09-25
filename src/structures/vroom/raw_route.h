@@ -93,16 +93,16 @@ public:
     return _fwd_peaks.back();
   }
 
-  // Compute max load of sub-route spanning the [0; i[ range.
-  Amount sub_route_max_load_before(Index i) const {
-    assert(0 < i && i < size());
-    return _fwd_peaks[i] - _bwd_deliveries[i - 1];
+  // Compute max load of sub-route spanning the [0; rank[ range.
+  Amount sub_route_max_load_before(Index rank) const {
+    assert(0 < rank && rank < size());
+    return _fwd_peaks[rank] - _bwd_deliveries[rank - 1];
   }
 
-  // Compute max load of sub-route spanning the [i; size[ range.
-  Amount sub_route_max_load_after(Index i) const {
-    assert(0 < i && i < size());
-    return _bwd_peaks[i] - _fwd_pickups[i - 1];
+  // Compute max load of sub-route spanning the [rank; size[ range.
+  Amount sub_route_max_load_after(Index rank) const {
+    assert(0 < rank && rank < size());
+    return _bwd_peaks[rank] - _fwd_pickups[rank - 1];
   }
 
   // Check validity for addition of a given load in current route at
