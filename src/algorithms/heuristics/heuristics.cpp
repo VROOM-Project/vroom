@@ -492,16 +492,12 @@ Eval dynamic_vehicle_choice(const Input& input,
       const auto chosen_vehicle =
         std::ranges::min_element(vehicles_ranks,
                                  [&](const auto lhs, const auto rhs) {
-                                   auto& v_lhs = input.vehicles[lhs];
-                                   auto& v_rhs = input.vehicles[rhs];
                                    return closest_jobs_count[lhs] >
                                             closest_jobs_count[rhs] ||
                                           (closest_jobs_count[lhs] ==
                                              closest_jobs_count[rhs] &&
-                                           (v_rhs.capacity < v_lhs.capacity ||
-                                            (v_lhs.capacity == v_rhs.capacity &&
-                                             v_lhs.tw.length >
-                                               v_rhs.tw.length)));
+                                           input.vehicles[lhs] <
+                                             input.vehicles[rhs]);
                                  });
       v_rank = *chosen_vehicle;
       vehicles_ranks.erase(chosen_vehicle);
@@ -519,11 +515,8 @@ Eval dynamic_vehicle_choice(const Input& input,
                                              closest_jobs_count[rhs] &&
                                            (v_lhs.costs < v_rhs.costs ||
                                             (v_lhs.costs == v_rhs.costs &&
-                                             (v_rhs.capacity < v_lhs.capacity ||
-                                              (v_lhs.capacity ==
-                                                 v_rhs.capacity &&
-                                               v_lhs.tw.length >
-                                                 v_rhs.tw.length)))));
+                                             input.vehicles[lhs] <
+                                               input.vehicles[rhs])));
                                  });
       v_rank = *chosen_vehicle;
       vehicles_ranks.erase(chosen_vehicle);
