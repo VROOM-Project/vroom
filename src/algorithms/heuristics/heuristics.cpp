@@ -477,7 +477,7 @@ Eval dynamic_vehicle_choice(const Input& input,
 
     // Pick vehicle that has the biggest number of compatible jobs
     // closest to him than to any other different vehicle.
-    std::vector<unsigned> closest_jobs_count(nb_vehicles, 0);
+    std::vector<unsigned> closest_jobs_count(input.vehicles.size(), 0);
     for (const auto job_rank : unassigned) {
       for (const auto v_rank : vehicles_ranks) {
         if (evals[job_rank][v_rank].cost == jobs_min_costs[job_rank]) {
