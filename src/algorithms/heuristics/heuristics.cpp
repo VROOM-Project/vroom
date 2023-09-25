@@ -44,7 +44,7 @@ Eval basic(const Input& input,
   std::copy(vehicles_begin, vehicles_end, std::back_inserter(vehicles_ranks));
 
   switch (sort) {
-  case SORT::CAPACITY: {
+  case SORT::AVAILABILITY: {
     // Sort vehicles by decreasing "availability".
     std::ranges::stable_sort(vehicles_ranks,
                              [&](const auto lhs, const auto rhs) {
@@ -488,7 +488,7 @@ Eval dynamic_vehicle_choice(const Input& input,
 
     Index v_rank;
 
-    if (sort == SORT::CAPACITY) {
+    if (sort == SORT::AVAILABILITY) {
       const auto chosen_vehicle =
         std::ranges::min_element(vehicles_ranks,
                                  [&](const auto lhs, const auto rhs) {

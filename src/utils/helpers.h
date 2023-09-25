@@ -73,8 +73,8 @@ inline INIT get_init(std::string_view s) {
 }
 
 inline SORT get_sort(std::string_view s) {
-  if (s == "CAPACITY") {
-    return SORT::CAPACITY;
+  if (s == "AVAILABILITY") {
+    return SORT::AVAILABILITY;
   }
   if (s == "COST") {
     return SORT::COST;
@@ -150,7 +150,7 @@ inline HeuristicParameters str_to_heuristic_param(const std::string& s) {
   }
 
   auto init = get_init(tokens[1]);
-  auto sort = (tokens.size() == 3) ? SORT::CAPACITY : get_sort(tokens[3]);
+  auto sort = (tokens.size() == 3) ? SORT::AVAILABILITY : get_sort(tokens[3]);
 
   try {
     auto h = std::stoul(tokens[0]);
