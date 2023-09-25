@@ -121,7 +121,7 @@ int main(int argc, char** argv) {
       }
     } catch (const std::exception&) {
       throw cxxopts::exceptions::exception("Argument '" + limit_arg +
-                                     "' failed to parse");
+                                           "' failed to parse");
     }
 
     if (parsed_args.count("help") != 0) {
