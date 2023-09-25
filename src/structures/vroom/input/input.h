@@ -96,6 +96,7 @@ private:
   void set_jobs_vehicles_evals();
   void set_vehicles_TSP_flag();
   void set_vehicle_steps_ranks();
+  void init_missing_matrices(const std::string& profile);
   void set_matrices(unsigned nb_thread);
 
   void add_routing_wrapper(const std::string& profile);

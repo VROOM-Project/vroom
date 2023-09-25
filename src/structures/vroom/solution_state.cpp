@@ -200,7 +200,7 @@ void SolutionState::set_node_gains(const std::vector<Index>& route, Index v) {
     current_gain = edges_evals_around - vehicle.eval(p_index, n_index);
     node_gains[v][i] = current_gain;
 
-    if (current_gain > best_gain) {
+    if (best_gain < current_gain) {
       best_gain = current_gain;
       node_candidates[v] = i;
     }
@@ -242,7 +242,7 @@ void SolutionState::set_node_gains(const std::vector<Index>& route, Index v) {
   current_gain = edges_evals_around - new_edge_eval;
   node_gains[v][last_rank] = current_gain;
 
-  if (current_gain > best_gain) {
+  if (best_gain < current_gain) {
     node_candidates[v] = last_rank;
   }
 }
@@ -325,7 +325,7 @@ void SolutionState::set_edge_gains(const std::vector<Index>& route, Index v) {
     current_gain = edges_evals_around - vehicle.eval(p_index, n_index);
     edge_gains[v][i] = current_gain;
 
-    if (current_gain > best_gain) {
+    if (best_gain < current_gain) {
       best_gain = current_gain;
       edge_candidates[v] = i;
     }
@@ -368,7 +368,7 @@ void SolutionState::set_edge_gains(const std::vector<Index>& route, Index v) {
   current_gain = edges_evals_around - new_edge_eval;
   edge_gains[v][last_edge_rank] = current_gain;
 
-  if (current_gain > best_gain) {
+  if (best_gain < current_gain) {
     edge_candidates[v] = last_edge_rank;
   }
 }

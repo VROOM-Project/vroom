@@ -11,6 +11,7 @@ All rights reserved (see LICENSE).
 */
 
 #include <string>
+#include <tuple>
 #include <unordered_map>
 
 #include "structures/typedefs.h"
@@ -56,6 +57,7 @@ struct Vehicle {
   CostWrapper cost_wrapper;
   size_t max_tasks;
   const Duration max_travel_time;
+  const Distance max_distance;
   const bool has_break_max_load;
   std::vector<VehicleStep> steps;
   std::unordered_map<Id, Index> break_id_to_rank;
@@ -72,9 +74,11 @@ struct Vehicle {
     std::string description = "",
     const VehicleCosts& costs = VehicleCosts(),
     double speed_factor = 1.,
-    const size_t max_tasks = std::numeric_limits<size_t>::max(),
+    const std::optional<size_t>& max_tasks = std::optional<size_t>(),
     const std::optional<UserDuration>& max_travel_time =
       std::optional<UserDuration>(),
+    const std::optional<UserDistance>& max_distance =
+      std::optional<UserDistance>(),
     const std::vector<VehicleStep>& input_steps = std::vector<VehicleStep>());
 
   bool has_start() const;
@@ -102,7 +106,9 @@ struct Vehicle {
   }
 
   Eval eval(Index i, Index j) const {
-    return Eval(cost_wrapper.cost(i, j), cost_wrapper.duration(i, j));
+    return Eval(cost_wrapper.cost(i, j),
+                cost_wrapper.duration(i, j),
+                cost_wrapper.distance(i, j));
   }
 
   bool ok_for_travel_time(Duration d) const {
@@ -110,11 +116,36 @@ struct Vehicle {
     return d <= max_travel_time;
   }
 
-  bool has_max_travel_time() const {
-    return max_travel_time != DEFAULT_MAX_TRAVEL_TIME;
+  bool ok_for_distance(Distance d) const {
+    assert(0 <= d);
+    return d <= max_distance;
   }
 
+  bool ok_for_range_bounds(const Eval& e) const {
+    assert(0 <= e.duration && 0 <= e.distance);
+    return e.duration <= max_travel_time && e.distance <= max_distance;
+  }
+
+  bool has_range_bounds() const;
+
   Index break_rank(Id break_id) const;
+
+  friend bool operator<(const Vehicle& lhs, const Vehicle& rhs) {
+    // Sort by:
+    //   - decreasing max_tasks
+    //   - decreasing capacity
+    //   - decreasing TW length
+    //   - decreasing range (max travel time and distance)
+    return std::tie(rhs.max_tasks,
+                    rhs.capacity,
+                    rhs.tw.length,
+                    rhs.max_travel_time,
+                    rhs.max_distance) < std::tie(lhs.max_tasks,
+                                                 lhs.capacity,
+                                                 lhs.tw.length,
+                                                 lhs.max_travel_time,
+                                                 lhs.max_distance);
+  }
 };
 
 } // namespace vroom

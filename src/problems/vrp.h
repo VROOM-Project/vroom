@@ -121,7 +121,7 @@ protected:
 
           if (!_input.has_homogeneous_costs() &&
               p.heuristic != HEURISTIC::INIT_ROUTES && h_param.empty() &&
-              p.sort == SORT::CAPACITY) {
+              p.sort == SORT::AVAILABILITY) {
             // Worth trying another vehicle ordering scheme in
             // heuristic.
             std::vector<Route> other_sol = empty_sol;

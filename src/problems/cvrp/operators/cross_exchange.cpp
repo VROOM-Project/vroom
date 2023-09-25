@@ -181,7 +181,7 @@ Eval CrossExchange::gain_upper_bound() {
 void CrossExchange::compute_gain() {
   assert(_gain_upper_bound_computed);
   assert(s_is_normal_valid || s_is_reverse_valid);
-  if (_reversed_s_gain > _normal_s_gain) {
+  if (_normal_s_gain < _reversed_s_gain) {
     // Biggest potential gain is obtained when reversing edge.
     if (s_is_reverse_valid) {
       stored_gain += _reversed_s_gain;
@@ -200,7 +200,7 @@ void CrossExchange::compute_gain() {
   }
 
   assert(t_is_normal_valid || t_is_reverse_valid);
-  if (_reversed_t_gain > _normal_t_gain) {
+  if (_normal_t_gain < _reversed_t_gain) {
     // Biggest potential gain is obtained when reversing edge.
     if (t_is_reverse_valid) {
       stored_gain += _reversed_t_gain;
@@ -235,12 +235,12 @@ bool CrossExchange::is_valid() {
 
   if (valid) {
     const auto& s_v = _input.vehicles[s_vehicle];
-    const auto s_travel_time = _sol_state.route_evals[s_vehicle].duration;
+    const auto& s_eval = _sol_state.route_evals[s_vehicle];
 
     // Keep target edge direction when inserting in source route.
     auto t_start = t_route.begin() + t_rank;
     s_is_normal_valid =
-      s_v.ok_for_travel_time(s_travel_time - _normal_s_gain.duration) &&
+      s_v.ok_for_range_bounds(s_eval - _normal_s_gain) &&
       source.is_valid_addition_for_capacity_inclusion(_input,
                                                       target_delivery,
                                                       t_start,
@@ -252,7 +252,7 @@ bool CrossExchange::is_valid() {
       // Reverse target edge direction when inserting in source route.
       auto t_reverse_start = t_route.rbegin() + t_route.size() - 2 - t_rank;
       s_is_reverse_valid =
-        s_v.ok_for_travel_time(s_travel_time - _reversed_s_gain.duration) &&
+        s_v.ok_for_range_bounds(s_eval - _reversed_s_gain) &&
         source.is_valid_addition_for_capacity_inclusion(_input,
                                                         target_delivery,
                                                         t_reverse_start,
@@ -276,12 +276,12 @@ bool CrossExchange::is_valid() {
 
   if (valid) {
     const auto& t_v = _input.vehicles[t_vehicle];
-    const auto t_travel_time = _sol_state.route_evals[t_vehicle].duration;
+    const auto& t_eval = _sol_state.route_evals[t_vehicle];
 
     // Keep source edge direction when inserting in target route.
     auto s_start = s_route.begin() + s_rank;
     t_is_normal_valid =
-      t_v.ok_for_travel_time(t_travel_time - _normal_t_gain.duration) &&
+      t_v.ok_for_range_bounds(t_eval - _normal_t_gain) &&
       target.is_valid_addition_for_capacity_inclusion(_input,
                                                       source_delivery,
                                                       s_start,
@@ -293,7 +293,7 @@ bool CrossExchange::is_valid() {
       // Reverse source edge direction when inserting in target route.
       auto s_reverse_start = s_route.rbegin() + s_route.size() - 2 - s_rank;
       t_is_reverse_valid =
-        t_v.ok_for_travel_time(t_travel_time - _reversed_t_gain.duration) &&
+        t_v.ok_for_range_bounds(t_eval - _reversed_t_gain) &&
         target.is_valid_addition_for_capacity_inclusion(_input,
                                                         source_delivery,
                                                         s_reverse_start,

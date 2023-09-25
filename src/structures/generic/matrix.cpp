@@ -15,6 +15,10 @@ template <class T> Matrix<T>::Matrix(std::size_t n) : n(n) {
   data.resize(n * n);
 }
 
+template <class T>
+Matrix<T>::Matrix(std::size_t n, T value) : n(n), data(n * n, value) {
+}
+
 template <class T> Matrix<T>::Matrix() : Matrix(0) {
 }
 

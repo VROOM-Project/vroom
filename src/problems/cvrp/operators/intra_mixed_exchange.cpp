@@ -169,7 +169,7 @@ Eval IntraMixedExchange::gain_upper_bound() {
 void IntraMixedExchange::compute_gain() {
   assert(_gain_upper_bound_computed);
   assert(s_is_normal_valid || s_is_reverse_valid);
-  if (_reversed_s_gain > _normal_s_gain) {
+  if (_normal_s_gain < _reversed_s_gain) {
     // Biggest potential gain is obtained when reversing edge.
     if (s_is_reverse_valid) {
       stored_gain += _reversed_s_gain;
@@ -196,11 +196,11 @@ bool IntraMixedExchange::is_valid() {
   assert(_gain_upper_bound_computed);
 
   const auto& s_v = _input.vehicles[s_vehicle];
-  const auto s_travel_time = _sol_state.route_evals[s_vehicle].duration;
-  const auto normal_duration = _normal_s_gain.duration + t_gain.duration;
+  const auto& s_eval = _sol_state.route_evals[s_vehicle];
+  const auto normal_eval = _normal_s_gain + t_gain;
 
   s_is_normal_valid =
-    s_v.ok_for_travel_time(s_travel_time - normal_duration) &&
+    s_v.ok_for_range_bounds(s_eval - normal_eval) &&
     source.is_valid_addition_for_capacity_inclusion(_input,
                                                     _delivery,
                                                     _moved_jobs.begin(),
@@ -209,9 +209,9 @@ bool IntraMixedExchange::is_valid() {
                                                     _last_rank);
 
   if (check_t_reverse) {
-    const auto reversed_duration = _reversed_s_gain.duration + t_gain.duration;
+    const auto reversed_eval = _reversed_s_gain + t_gain;
 
-    if (s_v.ok_for_travel_time(s_travel_time - reversed_duration)) {
+    if (s_v.ok_for_range_bounds(s_eval - reversed_eval)) {
       std::swap(_moved_jobs[_t_edge_first], _moved_jobs[_t_edge_last]);
 
       s_is_reverse_valid =

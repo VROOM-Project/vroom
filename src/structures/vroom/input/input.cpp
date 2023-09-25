@@ -590,9 +590,13 @@ void Input::set_vehicles_TSP_flag() {
 
 void Input::set_vehicles_costs() {
   for (auto& vehicle : vehicles) {
-    auto d_m = _durations_matrices.find(vehicle.profile);
-    assert(d_m != _durations_matrices.end());
-    vehicle.cost_wrapper.set_durations_matrix(&(d_m->second));
+    auto duration_m = _durations_matrices.find(vehicle.profile);
+    assert(duration_m != _durations_matrices.end());
+    vehicle.cost_wrapper.set_durations_matrix(&(duration_m->second));
+
+    auto distance_m = _distances_matrices.find(vehicle.profile);
+    assert(distance_m != _distances_matrices.end());
+    vehicle.cost_wrapper.set_distances_matrix(&(distance_m->second));
 
     auto c_m = _costs_matrices.find(vehicle.profile);
     if (c_m != _costs_matrices.end()) {
@@ -610,7 +614,7 @@ void Input::set_vehicles_costs() {
       constexpr bool reset_cost_factor = true;
       vehicle.cost_wrapper.set_costs_matrix(&(c_m->second), reset_cost_factor);
     } else {
-      vehicle.cost_wrapper.set_costs_matrix(&(d_m->second));
+      vehicle.cost_wrapper.set_costs_matrix(&(duration_m->second));
     }
   }
 }
@@ -663,12 +667,16 @@ void Input::set_vehicles_max_tasks() {
           if (vehicle_ok_with_job(v, job_pickups_per_component[i][j].rank) &&
               pickup_sum <= vehicles[v].capacity[i]) {
             pickup_sum += job_pickups_per_component[i][j].amount;
-            ++doable_pickups;
+            if (pickup_sum <= vehicles[v].capacity[i]) {
+              ++doable_pickups;
+            }
           }
           if (vehicle_ok_with_job(v, job_deliveries_per_component[i][j].rank) &&
               delivery_sum <= vehicles[v].capacity[i]) {
             delivery_sum += job_deliveries_per_component[i][j].amount;
-            ++doable_deliveries;
+            if (delivery_sum <= vehicles[v].capacity[i]) {
+              ++doable_deliveries;
+            }
           }
         }
 
@@ -858,6 +866,50 @@ void Input::set_vehicle_steps_ranks() {
   }
 }
 
+void Input::init_missing_matrices(const std::string& profile) {
+  // Even with custom matrices, we still need routing after
+  // optimization if geometry is requested.
+  bool create_routing_wrapper = _geometry;
+
+  if (const auto durations_m = _durations_matrices.find(profile);
+      durations_m == _durations_matrices.end()) {
+    // No custom durations matrix.
+
+    if (_distances_matrices.contains(profile)) {
+      // We don't accept distances matrices without durations
+      // matrices.
+      throw InputException(
+        "Custom matrix provided for distances but not for durations for " +
+        profile + " profile.");
+    }
+
+    // No durations/distances matrices have been manually set,
+    // create empty ones to allow for concurrent modification later
+    // on.
+    create_routing_wrapper = true;
+    _durations_matrices.try_emplace(profile);
+    _distances_matrices.try_emplace(profile);
+  } else {
+    // Custom durations matrix defined.
+    if (!_distances_matrices.contains(profile)) {
+      // No custom distances.
+      if (_geometry) {
+        // Get distances from routing engine later on since routing
+        // is explicitly requested.
+        _distances_matrices.try_emplace(profile);
+      } else {
+        // Routing-less optimization with no distances involved,
+        // fill internal distances matrix with zeros.
+        _distances_matrices.try_emplace(profile, durations_m->second.size(), 0);
+      }
+    }
+  }
+
+  if (create_routing_wrapper) {
+    add_routing_wrapper(profile);
+  }
+}
+
 void Input::set_matrices(unsigned nb_thread) {
   if ((!_durations_matrices.empty() || !_costs_matrices.empty()) &&
       !_has_custom_location_index) {
@@ -882,26 +934,7 @@ void Input::set_matrices(unsigned nb_thread) {
     thread_profiles[t_rank % nb_buckets].push_back(profile);
     ++t_rank;
 
-    // Even with custom matrices, we still need routing after
-    // optimization if geometry is requested.
-    bool create_routing_wrapper = _geometry;
-
-    if (!_durations_matrices.contains(profile)) {
-      // Durations matrix has not been manually set, create empty
-      // matrix to allow for concurrent modification later on.
-      create_routing_wrapper = true;
-      _durations_matrices.try_emplace(profile);
-
-      if (!_distances_matrices.contains(profile)) {
-        // Distances matrix has not been manually set, create empty
-        // matrix to allow for concurrent modification later on.
-        _distances_matrices.try_emplace(profile);
-      }
-    }
-
-    if (create_routing_wrapper) {
-      add_routing_wrapper(profile);
-    }
+    init_missing_matrices(profile);
   }
 
   std::exception_ptr ep = nullptr;
@@ -917,11 +950,11 @@ void Input::set_matrices(unsigned nb_thread) {
         // Required matrices not manually set have been defined as
         // empty above.
         assert(durations_m != _durations_matrices.end());
+        assert(distances_m != _distances_matrices.end());
         const bool define_durations = (durations_m->second.size() == 0);
-        const bool has_distance_matrix =
-          (distances_m != _distances_matrices.end());
-        const bool define_distances =
-          has_distance_matrix && (distances_m->second.size() == 0);
+        const bool define_distances = (distances_m->second.size() == 0);
+        assert(!define_durations || define_distances);
+
         if (define_durations || define_distances) {
           if (_locations.size() == 1) {
             durations_m->second = Matrix<UserDuration>(1);
@@ -981,8 +1014,7 @@ void Input::set_matrices(unsigned nb_thread) {
             " profile.");
         }
 
-        if (has_distance_matrix &&
-            distances_m->second.size() <= _max_matrices_used_index) {
+        if (distances_m->second.size() <= _max_matrices_used_index) {
           throw InputException(
             "location_index exceeding distances matrix size for " + profile +
             " profile.");

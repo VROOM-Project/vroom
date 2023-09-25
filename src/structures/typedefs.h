@@ -35,6 +35,7 @@ using Cost = int64_t;
 using UserDuration = uint32_t;
 using Duration = int64_t;
 using UserDistance = uint32_t;
+using Distance = int64_t;
 using Coordinate = double;
 using Capacity = int64_t;
 using Skill = uint32_t;
@@ -78,8 +79,10 @@ constexpr unsigned MAX_EXPLORATION_LEVEL = 5;
 
 constexpr unsigned DEFAULT_EXPLORATION_LEVEL = 5;
 constexpr unsigned DEFAULT_THREADS_NUMBER = 4;
-constexpr Duration DEFAULT_MAX_TRAVEL_TIME =
-  std::numeric_limits<Duration>::max();
+
+constexpr auto DEFAULT_MAX_TASKS = std::numeric_limits<size_t>::max();
+constexpr auto DEFAULT_MAX_TRAVEL_TIME = std::numeric_limits<Duration>::max();
+constexpr auto DEFAULT_MAX_DISTANCE = std::numeric_limits<Distance>::max();
 
 // Available routing engines.
 enum class ROUTER { OSRM, LIBOSRM, ORS, VALHALLA };
@@ -108,7 +111,7 @@ enum class STEP_TYPE { START, JOB, BREAK, END };
 // Heuristic options.
 enum class HEURISTIC { BASIC, DYNAMIC, INIT_ROUTES };
 enum class INIT { NONE, HIGHER_AMOUNT, NEAREST, FURTHEST, EARLIEST_DEADLINE };
-enum class SORT { CAPACITY, COST };
+enum class SORT { AVAILABILITY, COST };
 
 struct HeuristicParameters {
   HEURISTIC heuristic;
@@ -119,7 +122,7 @@ struct HeuristicParameters {
   constexpr HeuristicParameters(HEURISTIC heuristic,
                                 INIT init,
                                 float regret_coeff,
-                                SORT sort = SORT::CAPACITY)
+                                SORT sort = SORT::AVAILABILITY)
     : heuristic(heuristic), init(init), regret_coeff(regret_coeff), sort(sort) {
   }
 
@@ -128,7 +131,7 @@ struct HeuristicParameters {
     : heuristic(heuristic),
       init(INIT::NONE),
       regret_coeff(0),
-      sort(SORT::CAPACITY) {
+      sort(SORT::AVAILABILITY) {
     assert(heuristic == HEURISTIC::INIT_ROUTES);
   }
 };

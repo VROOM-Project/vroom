@@ -26,6 +26,8 @@ public:
 
   explicit Matrix(std::size_t n);
 
+  Matrix(std::size_t n, T value);
+
   Matrix<T> get_sub_matrix(const std::vector<Index>& indices) const;
 
   T* operator[](std::size_t i) {

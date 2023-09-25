@@ -134,7 +134,7 @@ void OrOpt::compute_gain() {
 
   stored_gain = s_gain;
 
-  if (_reversed_t_gain > _normal_t_gain) {
+  if (_normal_t_gain < _reversed_t_gain) {
     // Biggest potential gain is obtained when reversing edge.
     if (is_reverse_valid) {
       reverse_s_edge = true;
@@ -172,10 +172,10 @@ bool OrOpt::is_valid() {
     auto s_start = s_route.begin() + s_rank;
 
     const auto& t_v = _input.vehicles[t_vehicle];
-    const auto t_travel_time = _sol_state.route_evals[t_vehicle].duration;
+    const auto t_eval = _sol_state.route_evals[t_vehicle];
 
     is_normal_valid =
-      t_v.ok_for_travel_time(t_travel_time - _normal_t_gain.duration) &&
+      t_v.ok_for_range_bounds(t_eval - _normal_t_gain) &&
       target.is_valid_addition_for_capacity_inclusion(_input,
                                                       edge_delivery,
                                                       s_start,
@@ -186,7 +186,7 @@ bool OrOpt::is_valid() {
     // Reverse edge direction.
     auto s_reverse_start = s_route.rbegin() + s_route.size() - 2 - s_rank;
     is_reverse_valid =
-      t_v.ok_for_travel_time(t_travel_time - _reversed_t_gain.duration) &&
+      t_v.ok_for_range_bounds(t_eval - _reversed_t_gain) &&
       target.is_valid_addition_for_capacity_inclusion(_input,
                                                       edge_delivery,
                                                       s_reverse_start,

@@ -72,7 +72,7 @@ compute_best_route_split_choice(const Input& input,
         continue;
       }
 
-      Eval current_end_eval(end_v.fixed_cost(), 0);
+      Eval current_end_eval(end_v.fixed_cost());
       current_end_eval += sol_state.fwd_costs[s_vehicle][v].back() -
                           sol_state.fwd_costs[s_vehicle][v][r];
       if (end_v.has_start()) {
@@ -84,7 +84,7 @@ compute_best_route_split_choice(const Input& input,
                                        end_v.end.value().index());
       }
 
-      if (!end_v.ok_for_travel_time(current_end_eval.duration)) {
+      if (!end_v.ok_for_range_bounds(current_end_eval)) {
         continue;
       }
 
@@ -143,7 +143,7 @@ compute_best_route_split_choice(const Input& input,
         continue;
       }
 
-      Eval current_begin_eval(begin_v.fixed_cost(), 0);
+      Eval current_begin_eval(begin_v.fixed_cost());
       current_begin_eval += sol_state.fwd_costs[s_vehicle][v][r - 1];
       if (begin_v.has_start()) {
         current_begin_eval +=
@@ -156,7 +156,7 @@ compute_best_route_split_choice(const Input& input,
                        begin_v.end.value().index());
       }
 
-      if (!begin_v.ok_for_travel_time(current_begin_eval.duration)) {
+      if (!begin_v.ok_for_range_bounds(current_begin_eval)) {
         continue;
       }
 
@@ -244,7 +244,7 @@ compute_best_route_split_choice(const Input& input,
       }
     }
 
-    if (current_split_choice.gain > best_choice.gain) {
+    if (best_choice.gain < current_split_choice.gain) {
       best_choice = current_split_choice;
     }
   }
