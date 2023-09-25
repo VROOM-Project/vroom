@@ -930,6 +930,16 @@ void Input::set_matrices(unsigned nb_thread) {
   // if distance matrices are manually provided.
   _report_distances = _geometry || !_distances_matrices.empty();
 
+  if (!_distances_matrices.empty()) {
+    // Distances matrices should be either always or never provided.
+    for (const auto& profile : _profiles) {
+      if (!_distances_matrices.contains(profile)) {
+        throw InputException("Missing distances matrix for " + profile +
+                             " profile.");
+      }
+    }
+  }
+
   // Split computing matrices across threads based on number of
   // profiles.
   const auto nb_buckets =
