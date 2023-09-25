@@ -18,9 +18,13 @@ namespace vroom::cvrp {
 class RouteSplit : public ls::Operator {
 protected:
   const Eval _best_known_gain;
-  const std::vector<Index> _empty_route_ranks;
-  const std::vector<std::reference_wrapper<RawRoute>> _empty_route_refs;
+  const std::vector<Index>& _empty_route_ranks;
+  std::vector<RawRoute>& _sol;
+  Index _begin_route_rank;
+  Index _end_route_rank;
   ls::SplitChoice choice{ls::empty_route_split_choice};
+
+  static std::vector<RawRoute> dummy_sol;
 
   void compute_gain() override;
 
@@ -29,8 +33,8 @@ public:
              const utils::SolutionState& sol_state,
              RawRoute& s_route,
              Index s_vehicle,
-             std::vector<Index>&& empty_route_ranks,
-             std::vector<std::reference_wrapper<RawRoute>>&& empty_route_refs,
+             const std::vector<Index>& empty_route_ranks,
+             std::vector<RawRoute>& sol,
              const Eval& best_known_gain);
 
   bool is_valid() override;
