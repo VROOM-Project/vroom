@@ -119,7 +119,7 @@ inline Priority get_priority(const rapidjson::Value& object) {
 template <typename T>
 inline std::optional<T> get_value_for(const rapidjson::Value& object,
                                       const char* key) {
-  std::optional<UserDuration> value;
+  std::optional<T> value;
   if (object.HasMember(key)) {
     if (!object[key].IsUint()) {
       throw InputException("Invalid " + std::string(key) + " value.");
