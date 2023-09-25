@@ -417,6 +417,10 @@ bool Input::has_shipments() const {
   return _has_shipments;
 }
 
+bool Input::report_distances() const {
+  return _report_distances;
+}
+
 bool Input::has_homogeneous_locations() const {
   return _homogeneous_locations;
 }
@@ -921,6 +925,10 @@ void Input::set_matrices(unsigned nb_thread) {
     throw InputException(
       "Unexpected location index while no custom matrices provided.");
   }
+
+  // Report distances either if geometry is explicitly requested, or
+  // if distance matrices are manually provided.
+  _report_distances = _geometry || !_distances_matrices.empty();
 
   // Split computing matrices across threads based on number of
   // profiles.

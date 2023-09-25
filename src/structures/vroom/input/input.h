@@ -48,6 +48,7 @@ private:
   bool _homogeneous_profiles{true};
   bool _homogeneous_costs{true};
   bool _geometry{false};
+  bool _report_distances;
   bool _has_jobs{false};
   bool _has_shipments{false};
   std::unordered_map<std::string,
@@ -149,6 +150,8 @@ public:
   bool has_jobs() const;
 
   bool has_shipments() const;
+
+  bool report_distances() const;
 
   Cost get_cost_upper_bound() const {
     return _cost_upper_bound;
