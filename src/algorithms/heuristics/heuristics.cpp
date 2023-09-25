@@ -56,8 +56,8 @@ Eval basic(const Input& input,
     // Sort vehicles by increasing fixed cost, then same as above.
     std::ranges::stable_sort(vehicles_ranks,
                              [&](const auto lhs, const auto rhs) {
-                               auto& v_lhs = input.vehicles[lhs];
-                               auto& v_rhs = input.vehicles[rhs];
+                               const auto& v_lhs = input.vehicles[lhs];
+                               const auto& v_rhs = input.vehicles[rhs];
                                return v_lhs.costs < v_rhs.costs ||
                                       (v_lhs.costs == v_rhs.costs &&
                                        input.vehicles[lhs] <
@@ -507,16 +507,15 @@ Eval dynamic_vehicle_choice(const Input& input,
       const auto chosen_vehicle =
         std::ranges::min_element(vehicles_ranks,
                                  [&](const auto lhs, const auto rhs) {
-                                   auto& v_lhs = input.vehicles[lhs];
-                                   auto& v_rhs = input.vehicles[rhs];
+                                   const auto& v_lhs = input.vehicles[lhs];
+                                   const auto& v_rhs = input.vehicles[rhs];
                                    return closest_jobs_count[lhs] >
                                             closest_jobs_count[rhs] ||
                                           (closest_jobs_count[lhs] ==
                                              closest_jobs_count[rhs] &&
                                            (v_lhs.costs < v_rhs.costs ||
                                             (v_lhs.costs == v_rhs.costs &&
-                                             input.vehicles[lhs] <
-                                               input.vehicles[rhs])));
+                                             v_lhs < v_rhs)));
                                  });
       v_rank = *chosen_vehicle;
       vehicles_ranks.erase(chosen_vehicle);
