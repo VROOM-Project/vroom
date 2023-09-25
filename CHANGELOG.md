@@ -30,6 +30,7 @@
 - Refactor heuristics to be able to operate on a subset of jobs and vehicles (#837)
 - Account for vehicle/job compatibility in heuristic regrets values (#982)
 - Slightly reduce computing times for SWAP* operator (#987)
+- Refactor `RouteSplit` operator (#996)
 
 ### Fixed
 
@@ -40,6 +41,7 @@
 - Meaningless `location_index` provided in output for break steps (#877)
 - `max_travel_time` not accounted for with vehicle steps in solving mode (#954)
 - `max_travel_time` not accounted for in `RouteSplit` (#941)
+- Wrong capacity checks in `RouteSplit` (#981)
 - Address sonarcloud "bugs" reports (#984)
 - Address some sonarcloud "code smell" reports (#986)
 

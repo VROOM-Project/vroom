@@ -17,7 +17,7 @@ namespace vroom::vrptw {
 class RouteSplit : public cvrp::RouteSplit {
 private:
   TWRoute& _tw_s_route;
-  const std::vector<std::reference_wrapper<TWRoute>> _empty_tw_route_refs;
+  std::vector<TWRoute>& _tw_sol;
 
   void compute_gain() override;
 
@@ -26,8 +26,8 @@ public:
              const utils::SolutionState& sol_state,
              TWRoute& tw_s_route,
              Index s_vehicle,
-             std::vector<Index>&& empty_route_ranks,
-             std::vector<std::reference_wrapper<TWRoute>>&& empty_route_refs,
+             const std::vector<Index>& empty_route_ranks,
+             std::vector<TWRoute>& sol,
              const Eval& best_known_gain);
 
   void apply() override;

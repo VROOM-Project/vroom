@@ -1647,13 +1647,10 @@ void LocalSearch<Route,
       // RouteSplit stuff
       std::vector<Index> empty_route_ranks;
       empty_route_ranks.reserve(_input.vehicles.size());
-      std::vector<std::reference_wrapper<Route>> empty_route_refs;
-      empty_route_refs.reserve(_input.vehicles.size());
 
       for (Index v = 0; v < _input.vehicles.size(); ++v) {
         if (_sol[v].empty()) {
           empty_route_ranks.push_back(v);
-          empty_route_refs.push_back(std::ref(_sol[v]));
         }
       }
 
@@ -1667,12 +1664,17 @@ void LocalSearch<Route,
 #ifdef LOG_LS_OPERATORS
           ++tried_moves[OperatorName::RouteSplit];
 #endif
+          // RouteSplit stores a const& to empty_route_ranks, which
+          // will be invalid in the unique_ptr created below after
+          // empty_route_ranks goes out of scope. This is fine because
+          // that ref is only stored to compute gain right below, not
+          // to apply the operator later on.
           RouteSplit r(_input,
                        _sol_state,
                        _sol[source],
                        source,
-                       std::move(empty_route_ranks),
-                       std::move(empty_route_refs),
+                       empty_route_ranks,
+                       _sol,
                        best_gains[source][target]);
 
           if (r.gain() > best_gains[source][target]) {

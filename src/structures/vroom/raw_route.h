@@ -81,16 +81,28 @@ public:
 
   bool has_pickup_up_to_rank(const Index rank) const;
 
-  const Amount& max_load() const {
-    return _fwd_peaks.back();
-  }
-
   const Amount& fwd_peak(Index rank) const {
     return _fwd_peaks[rank];
   }
 
   const Amount& bwd_peak(Index rank) const {
     return _bwd_peaks[rank];
+  }
+
+  const Amount& max_load() const {
+    return _fwd_peaks.back();
+  }
+
+  // Compute max load of sub-route spanning the [0; rank[ range.
+  Amount sub_route_max_load_before(Index rank) const {
+    assert(0 < rank && rank < size());
+    return _fwd_peaks[rank] - _bwd_deliveries[rank - 1];
+  }
+
+  // Compute max load of sub-route spanning the [rank; size[ range.
+  Amount sub_route_max_load_after(Index rank) const {
+    assert(0 < rank && rank < size());
+    return _bwd_peaks[rank] - _fwd_pickups[rank - 1];
   }
 
   // Check validity for addition of a given load in current route at
