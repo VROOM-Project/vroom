@@ -120,8 +120,8 @@ int main(int argc, char** argv) {
             s_to_ms * std::stof(limit_arg)));
       }
     } catch (const std::exception&) {
-      throw cxxopts::OptionException("Argument '" + limit_arg +
-                                     "' failed to parse");
+      throw cxxopts::exceptions::exception("Argument '" + limit_arg +
+                                           "' failed to parse");
     }
 
     if (parsed_args.count("help") != 0) {
@@ -133,7 +133,7 @@ int main(int argc, char** argv) {
       std::cout << "vroom " << vroom::get_version() << "\n";
       exit(0);
     }
-  } catch (const cxxopts::OptionException& e) {
+  } catch (const cxxopts::exceptions::exception& e) {
     // cxxopts outputs the failed parameter but no other details, so we add some
     // (likely) context
     const auto exc = vroom::InputException(": invalid numerical value.");
