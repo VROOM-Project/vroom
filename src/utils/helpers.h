@@ -489,6 +489,7 @@ inline Solution format_solution(const Input& input,
                        current_load);
     auto& first = steps.back();
     first.duration = scale_to_user_duration(ETA);
+    first.distance = eval_sum.distance;
     first.arrival = scale_to_user_duration(ETA);
     ETA += (first_job_setup + first_job.service);
     unassigned_ranks.erase(route.front());
@@ -525,6 +526,7 @@ inline Solution format_solution(const Input& input,
                          current_load);
       auto& current = steps.back();
       current.duration = scale_to_user_duration(eval_sum.duration);
+      current.distance = eval_sum.distance;
       current.arrival = scale_to_user_duration(ETA);
       ETA += (current_setup + current_job.service);
       unassigned_ranks.erase(route[r + 1]);
@@ -539,8 +541,10 @@ inline Solution format_solution(const Input& input,
       ETA += next_leg.duration;
       eval_sum += next_leg;
     }
-    steps.back().duration = scale_to_user_duration(eval_sum.duration);
-    steps.back().arrival = scale_to_user_duration(ETA);
+    auto& last = steps.back();
+    last.duration = scale_to_user_duration(eval_sum.duration);
+    last.distance = eval_sum.distance;
+    last.arrival = scale_to_user_duration(ETA);
 
     assert(expected_delivery_ranks.empty());
     assert(v.ok_for_range_bounds(eval_sum));
@@ -552,7 +556,7 @@ inline Solution format_solution(const Input& input,
                         std::move(steps),
                         user_fixed_cost + scale_to_user_cost(eval_sum.cost),
                         scale_to_user_duration(eval_sum.duration),
-                        0, // TODO handle distances
+                        eval_sum.distance,
                         scale_to_user_duration(setup),
                         scale_to_user_duration(service),
                         0,
