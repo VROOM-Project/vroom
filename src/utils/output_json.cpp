@@ -72,62 +72,68 @@ rapidjson::Document to_json(const Solution& sol, bool geometry) {
   json_output.SetObject();
   rapidjson::Document::AllocatorType& allocator = json_output.GetAllocator();
 
-  json_output.AddMember("code", sol.code, allocator);
-  if (sol.code != 0) {
-    json_output.AddMember("error", rapidjson::Value(), allocator);
-    json_output["error"].SetString(sol.error.c_str(), sol.error.size());
-  } else {
-    json_output.AddMember("summary",
-                          to_json(sol.summary, geometry, allocator),
-                          allocator);
+  json_output.AddMember("summary",
+                        to_json(sol.summary, geometry, allocator),
+                        allocator);
 
-    rapidjson::Value json_unassigned(rapidjson::kArrayType);
-    for (const auto& job : sol.unassigned) {
-      rapidjson::Value json_job(rapidjson::kObjectType);
-      json_job.AddMember("id", job.id, allocator);
-      if (job.location.has_coordinates()) {
-        json_job.AddMember("location",
-                           to_json(job.location, allocator),
-                           allocator);
-      }
-      if (job.location.user_index()) {
-        json_job.AddMember("location_index", job.location.index(), allocator);
-      }
-      json_job.AddMember("type", rapidjson::Value(), allocator);
-      std::string str_type;
-      switch (job.type) {
-        using enum JOB_TYPE;
-      case SINGLE:
-        str_type = "job";
-        break;
-      case PICKUP:
-        str_type = "pickup";
-        break;
-      case DELIVERY:
-        str_type = "delivery";
-        break;
-      }
-      json_job["type"].SetString(str_type.c_str(), str_type.size(), allocator);
+  rapidjson::Value json_unassigned(rapidjson::kArrayType);
+  for (const auto& job : sol.unassigned) {
+    rapidjson::Value json_job(rapidjson::kObjectType);
+    json_job.AddMember("id", job.id, allocator);
+    if (job.location.has_coordinates()) {
+      json_job.AddMember("location",
+                         to_json(job.location, allocator),
+                         allocator);
+    }
+    if (job.location.user_index()) {
+      json_job.AddMember("location_index", job.location.index(), allocator);
+    }
+    json_job.AddMember("type", rapidjson::Value(), allocator);
+    std::string str_type;
+    switch (job.type) {
+      using enum JOB_TYPE;
+    case SINGLE:
+      str_type = "job";
+      break;
+    case PICKUP:
+      str_type = "pickup";
+      break;
+    case DELIVERY:
+      str_type = "delivery";
+      break;
+    }
+    json_job["type"].SetString(str_type.c_str(), str_type.size(), allocator);
 
-      if (!job.description.empty()) {
-        json_job.AddMember("description", rapidjson::Value(), allocator);
-        json_job["description"].SetString(job.description.c_str(),
-                                          job.description.size(),
-                                          allocator);
-      }
-
-      json_unassigned.PushBack(json_job, allocator);
+    if (!job.description.empty()) {
+      json_job.AddMember("description", rapidjson::Value(), allocator);
+      json_job["description"].SetString(job.description.c_str(),
+                                        job.description.size(),
+                                        allocator);
     }
 
-    json_output.AddMember("unassigned", json_unassigned, allocator);
-
-    rapidjson::Value json_routes(rapidjson::kArrayType);
-    for (const auto& route : sol.routes) {
-      json_routes.PushBack(to_json(route, geometry, allocator), allocator);
-    }
-
-    json_output.AddMember("routes", json_routes, allocator);
+    json_unassigned.PushBack(json_job, allocator);
   }
+
+  json_output.AddMember("unassigned", json_unassigned, allocator);
+
+  rapidjson::Value json_routes(rapidjson::kArrayType);
+  for (const auto& route : sol.routes) {
+    json_routes.PushBack(to_json(route, geometry, allocator), allocator);
+  }
+
+  json_output.AddMember("routes", json_routes, allocator);
+
+  return json_output;
+}
+
+rapidjson::Document to_json(const vroom::Exception& e) {
+  rapidjson::Document json_output;
+  json_output.SetObject();
+  rapidjson::Document::AllocatorType& allocator = json_output.GetAllocator();
+
+  json_output.AddMember("code", e.error_code, allocator);
+  json_output.AddMember("error", rapidjson::Value(), allocator);
+  json_output["error"].SetString(e.message.c_str(), e.message.size());
 
   return json_output;
 }
@@ -369,11 +375,8 @@ rapidjson::Value to_json(const Location& loc,
   return json_coords;
 }
 
-void write_to_json(const Solution& sol,
-                   const std::string& output_file,
-                   bool geometry) {
-  auto json_output = to_json(sol, geometry);
-
+void write_to_output(const rapidjson::Document& json_output,
+                     const std::string& output_file) {
   // Rapidjson writing process.
   rapidjson::StringBuffer s;
   rapidjson::Writer<rapidjson::StringBuffer> r_writer(s);
@@ -389,6 +392,20 @@ void write_to_json(const Solution& sol,
     out_stream << s.GetString();
     out_stream.close();
   }
+}
+
+void write_to_json(const vroom::Exception& e, const std::string& output_file) {
+  const auto json_output = to_json(e);
+
+  write_to_output(json_output, output_file);
+}
+
+void write_to_json(const Solution& sol,
+                   const std::string& output_file,
+                   bool geometry) {
+  const auto json_output = to_json(sol, geometry);
+
+  write_to_output(json_output, output_file);
 }
 
 } // namespace vroom::io
