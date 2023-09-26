@@ -67,13 +67,13 @@ get_violations(const Violations& violations,
   return json_violations;
 }
 
-rapidjson::Document to_json(const Solution& sol, bool geometry) {
+rapidjson::Document to_json(const Solution& sol, bool report_distances) {
   rapidjson::Document json_output;
   json_output.SetObject();
   rapidjson::Document::AllocatorType& allocator = json_output.GetAllocator();
 
   json_output.AddMember("summary",
-                        to_json(sol.summary, geometry, allocator),
+                        to_json(sol.summary, report_distances, allocator),
                         allocator);
 
   rapidjson::Value json_unassigned(rapidjson::kArrayType);
@@ -118,7 +118,8 @@ rapidjson::Document to_json(const Solution& sol, bool geometry) {
 
   rapidjson::Value json_routes(rapidjson::kArrayType);
   for (const auto& route : sol.routes) {
-    json_routes.PushBack(to_json(route, geometry, allocator), allocator);
+    json_routes.PushBack(to_json(route, report_distances, allocator),
+                         allocator);
   }
 
   json_output.AddMember("routes", json_routes, allocator);
@@ -139,7 +140,7 @@ rapidjson::Document to_json(const vroom::Exception& e) {
 }
 
 rapidjson::Value to_json(const Summary& summary,
-                         bool geometry,
+                         bool report_distances,
                          rapidjson::Document::AllocatorType& allocator) {
   rapidjson::Value json_summary(rapidjson::kObjectType);
 
@@ -176,7 +177,7 @@ rapidjson::Value to_json(const Summary& summary,
   json_summary.AddMember("waiting_time", summary.waiting_time, allocator);
   json_summary.AddMember("priority", summary.priority, allocator);
 
-  if (geometry) {
+  if (report_distances) {
     json_summary.AddMember("distance", summary.distance, allocator);
   }
 
@@ -185,14 +186,14 @@ rapidjson::Value to_json(const Summary& summary,
                          allocator);
 
   json_summary.AddMember("computing_times",
-                         to_json(summary.computing_times, geometry, allocator),
+                         to_json(summary.computing_times, allocator),
                          allocator);
 
   return json_summary;
 }
 
 rapidjson::Value to_json(const Route& route,
-                         bool geometry,
+                         bool report_distances,
                          rapidjson::Document::AllocatorType& allocator) {
   rapidjson::Value json_route(rapidjson::kObjectType);
 
@@ -235,13 +236,13 @@ rapidjson::Value to_json(const Route& route,
   json_route.AddMember("waiting_time", route.waiting_time, allocator);
   json_route.AddMember("priority", route.priority, allocator);
 
-  if (geometry) {
+  if (report_distances) {
     json_route.AddMember("distance", route.distance, allocator);
   }
 
   rapidjson::Value json_steps(rapidjson::kArrayType);
   for (const auto& step : route.steps) {
-    json_steps.PushBack(to_json(step, geometry, allocator), allocator);
+    json_steps.PushBack(to_json(step, report_distances, allocator), allocator);
   }
 
   json_route.AddMember("steps", json_steps, allocator);
@@ -260,23 +261,18 @@ rapidjson::Value to_json(const Route& route,
 }
 
 rapidjson::Value to_json(const ComputingTimes& ct,
-                         bool geometry,
                          rapidjson::Document::AllocatorType& allocator) {
   rapidjson::Value json_ct(rapidjson::kObjectType);
 
   json_ct.AddMember("loading", ct.loading, allocator);
   json_ct.AddMember("solving", ct.solving, allocator);
-
-  if (geometry) {
-    // Log route information timing when using routing engine.
-    json_ct.AddMember("routing", ct.routing, allocator);
-  }
+  json_ct.AddMember("routing", ct.routing, allocator);
 
   return json_ct;
 }
 
 rapidjson::Value to_json(const Step& s,
-                         bool geometry,
+                         bool report_distances,
                          rapidjson::Document::AllocatorType& allocator) {
   rapidjson::Value json_step(rapidjson::kObjectType);
 
@@ -358,7 +354,7 @@ rapidjson::Value to_json(const Step& s,
                       get_violations(s.violations, allocator),
                       allocator);
 
-  if (geometry) {
+  if (report_distances) {
     json_step.AddMember("distance", s.distance, allocator);
   }
 
@@ -402,8 +398,8 @@ void write_to_json(const vroom::Exception& e, const std::string& output_file) {
 
 void write_to_json(const Solution& sol,
                    const std::string& output_file,
-                   bool geometry) {
-  const auto json_output = to_json(sol, geometry);
+                   bool report_distances) {
+  const auto json_output = to_json(sol, report_distances);
 
   write_to_output(json_output, output_file);
 }

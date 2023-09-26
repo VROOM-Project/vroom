@@ -221,7 +221,9 @@ int main(int argc, char** argv) {
                                                      cl_args.h_params);
 
     // Write solution.
-    vroom::io::write_to_json(sol, cl_args.output_file, cl_args.geometry);
+    vroom::io::write_to_json(sol,
+                             cl_args.output_file,
+                             problem_instance.report_distances());
   } catch (const vroom::Exception& e) {
     std::cerr << "[Error] " << e.message << std::endl;
     vroom::io::write_to_json(e, cl_args.output_file);

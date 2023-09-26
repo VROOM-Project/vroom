@@ -16,24 +16,23 @@ All rights reserved (see LICENSE).
 
 namespace vroom::io {
 
-rapidjson::Document to_json(const Solution& sol, bool geometry);
+rapidjson::Document to_json(const Solution& sol, bool report_distances);
 
 rapidjson::Document to_json(const vroom::Exception& e);
 
 rapidjson::Value to_json(const Summary& summary,
-                         bool geometry,
+                         bool report_distances,
                          rapidjson::Document::AllocatorType& allocator);
 
 rapidjson::Value to_json(const ComputingTimes& ct,
-                         bool geometry,
                          rapidjson::Document::AllocatorType& allocator);
 
 rapidjson::Value to_json(const Route& route,
-                         bool geometry,
+                         bool report_distances,
                          rapidjson::Document::AllocatorType& allocator);
 
 rapidjson::Value to_json(const Step& s,
-                         bool geometry,
+                         bool report_distances,
                          rapidjson::Document::AllocatorType& allocator);
 
 rapidjson::Value to_json(const Location& loc,
@@ -44,7 +43,7 @@ void write_to_json(const vroom::Exception& e,
 
 void write_to_json(const Solution& sol,
                    const std::string& output_file = "",
-                   bool geometry = false);
+                   bool report_distances = false);
 
 } // namespace vroom::io
 
