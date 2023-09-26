@@ -32,7 +32,7 @@ struct Step {
   UserDuration arrival{0};
   UserDuration duration{0};
   UserDuration waiting_time{0};
-  UserDistance distance;
+  UserDistance distance{0};
 
   Violations violations;
 

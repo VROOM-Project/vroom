@@ -1438,6 +1438,7 @@ Route choose_ETA(const Input& input,
                std::move(sol_steps),
                user_fixed_cost + user_cost,
                user_duration,
+               0, // TODO handle distances
                utils::scale_to_user_duration(setup),
                utils::scale_to_user_duration(service),
                user_waiting_time,

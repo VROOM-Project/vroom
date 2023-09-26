@@ -26,6 +26,7 @@ Solution::Solution(const Amount& zero_amount,
     summary.service += route.service;
     summary.priority += route.priority;
     summary.duration += route.duration;
+    summary.distance += route.distance;
     summary.waiting_time += route.waiting_time;
     summary.violations += route.violations;
   }
