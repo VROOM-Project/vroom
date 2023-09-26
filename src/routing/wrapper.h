@@ -33,7 +33,7 @@ public:
 
   virtual Matrices get_matrices(const std::vector<Location>& locs) const = 0;
 
-  virtual void add_route_info(Route& route) const = 0;
+  virtual void add_geometry(Route& route) const = 0;
 
   virtual ~Wrapper() = default;
 

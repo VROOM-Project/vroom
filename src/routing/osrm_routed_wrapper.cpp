@@ -107,19 +107,9 @@ UserDistance OsrmRoutedWrapper::get_distance_value(
   return round_cost<UserDistance>(matrix_entry.GetDouble());
 }
 
-double
-OsrmRoutedWrapper::get_total_distance(const rapidjson::Value& result) const {
-  return result["routes"][0]["distance"].GetDouble();
-}
-
 unsigned
 OsrmRoutedWrapper::get_legs_number(const rapidjson::Value& result) const {
   return result["routes"][0]["legs"].Size();
-}
-
-double OsrmRoutedWrapper::get_distance_for_leg(const rapidjson::Value& result,
-                                               rapidjson::SizeType i) const {
-  return result["routes"][0]["legs"][i]["distance"].GetDouble();
 }
 
 std::string OsrmRoutedWrapper::get_geometry(rapidjson::Value& result) const {

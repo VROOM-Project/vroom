@@ -1170,9 +1170,7 @@ Solution Input::solve(unsigned exploration_level,
         throw InputException(
           "Route geometry request with non-routable profile " + profile + ".");
       }
-      (*rw)->add_route_info(route);
-
-      sol.summary.distance += route.distance;
+      (*rw)->add_geometry(route);
     }
 
     _end_routing = std::chrono::high_resolution_clock::now();
@@ -1230,9 +1228,7 @@ Solution Input::check(unsigned nb_thread) {
         throw InputException(
           "Route geometry request with non-routable profile " + profile + ".");
       }
-      (*rw)->add_route_info(route);
-
-      sol.summary.distance += route.distance;
+      (*rw)->add_geometry(route);
     }
 
     _end_routing = std::chrono::high_resolution_clock::now();
