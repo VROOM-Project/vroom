@@ -11,16 +11,10 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
-Solution::Solution(unsigned code, std::string error)
-  : code(code), error(std::move(error)) {
-}
-
-Solution::Solution(unsigned code,
-                   const Amount& zero_amount,
+Solution::Solution(const Amount& zero_amount,
                    std::vector<Route>&& routes,
                    std::vector<Job>&& unassigned)
-  : code(code),
-    summary(routes.size(), unassigned.size(), zero_amount),
+  : summary(routes.size(), unassigned.size(), zero_amount),
     routes(std::move(routes)),
     unassigned(std::move(unassigned)) {
 

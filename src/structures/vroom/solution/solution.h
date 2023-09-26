@@ -20,16 +20,11 @@ All rights reserved (see LICENSE).
 namespace vroom {
 
 struct Solution {
-  unsigned code;
-  std::string error;
   Summary summary;
   std::vector<Route> routes;
   std::vector<Job> unassigned;
 
-  Solution(unsigned code, std::string error);
-
-  Solution(unsigned code,
-           const Amount& zero_amount,
+  Solution(const Amount& zero_amount,
            std::vector<Route>&& routes,
            std::vector<Job>&& unassigned);
 };
