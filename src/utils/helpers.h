@@ -761,6 +761,7 @@ inline Route format_route(const Input& input,
   for (std::size_t r = 0; r < tw_r.route.size(); ++r) {
     assert(input.vehicle_ok_with_job(tw_r.vehicle_rank, tw_r.route[r]));
     const auto& current_job = input.jobs[tw_r.route[r]];
+    auto user_distance = eval_sum.distance;
 
     if (r > 0) {
       // For r == 0, travel_time already holds the relevant value
@@ -833,6 +834,15 @@ inline Route format_route(const Input& input,
       auto user_travel_time = current_break.arrival - user_previous_end;
       user_duration += user_travel_time;
       current_break.duration = user_duration;
+
+      // Pro rata temporis distance increase.
+      if (current_eval.duration != 0) {
+        user_distance += round<UserDistance>(
+          static_cast<double>(user_travel_time * current_eval.distance) /
+          scale_to_user_duration(current_eval.duration));
+      }
+      current_break.distance = user_distance;
+
       user_previous_end = current_break.arrival + current_break.waiting_time +
                           current_break.service;
 
@@ -870,6 +880,7 @@ inline Route format_route(const Input& input,
     assert(step_start <= tw_r.latest[r]);
 
     current.arrival = scale_to_user_duration(step_start);
+    current.distance = eval_sum.distance;
 
     const auto j_tw =
       std::ranges::find_if(current_job.tws, [&](const auto& tw) {
@@ -916,6 +927,7 @@ inline Route format_route(const Input& input,
                                         v.end.value().index())
                                : Eval();
   travel_time = current_eval.duration;
+  auto user_distance = eval_sum.distance;
 
   auto r = tw_r.route.size();
   assert(tw_r.breaks_at_rank[r] <= tw_r.breaks_counts[r]);
@@ -979,6 +991,15 @@ inline Route format_route(const Input& input,
     auto user_travel_time = current_break.arrival - user_previous_end;
     user_duration += user_travel_time;
     current_break.duration = user_duration;
+
+    // Pro rata temporis distance increase.
+    if (current_eval.duration != 0) {
+      user_distance += round<UserDistance>(
+        static_cast<double>(user_travel_time * current_eval.distance) /
+        scale_to_user_duration(current_eval.duration));
+    }
+    current_break.distance = user_distance;
+
     user_previous_end = current_break.arrival + current_break.waiting_time +
                         current_break.service;
 
@@ -995,6 +1016,7 @@ inline Route format_route(const Input& input,
   }
   assert(v.tw.contains(step_start));
   end_step.arrival = scale_to_user_duration(step_start);
+  end_step.distance = eval_sum.distance;
 
   // Recompute cumulated durations in a consistent way as seen from
   // UserDuration.
@@ -1025,7 +1047,7 @@ inline Route format_route(const Input& input,
                std::move(steps),
                user_fixed_cost + user_cost,
                user_duration,
-               0, // TODO handle distances
+               eval_sum.distance,
                scale_to_user_duration(setup),
                scale_to_user_duration(service),
                user_waiting_time,
