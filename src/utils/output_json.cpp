@@ -72,6 +72,7 @@ rapidjson::Document to_json(const Solution& sol, bool report_distances) {
   json_output.SetObject();
   rapidjson::Document::AllocatorType& allocator = json_output.GetAllocator();
 
+  json_output.AddMember("code", 0, allocator);
   json_output.AddMember("summary",
                         to_json(sol.summary, report_distances, allocator),
                         allocator);
