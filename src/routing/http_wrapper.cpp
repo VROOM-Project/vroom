@@ -225,7 +225,7 @@ void HttpWrapper::add_geometry(Route& route) const {
 
   assert(get_legs_number(json_result) == non_break_locations.size() - 1);
 
-  route.geometry = std::move(get_geometry(json_result));
+  route.geometry = get_geometry(json_result);
 }
 
 } // namespace vroom::routing
