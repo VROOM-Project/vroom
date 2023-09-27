@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 #include "../../include/polylineencoder/src/polylineencoder.h"
 
 #include "routing/valhalla_wrapper.h"
+#include "utils/helpers.h"
 
 namespace vroom::routing {
 
@@ -141,8 +142,8 @@ UserDuration ValhallaWrapper::get_duration_value(
 UserDistance ValhallaWrapper::get_distance_value(
   const rapidjson::Value& matrix_entry) const {
   assert(matrix_entry["distance"].IsDouble());
-  return round_cost<UserDistance>(km_to_m *
-                                  matrix_entry["distance"].GetDouble());
+  return utils::round<UserDistance>(km_to_m *
+                                    matrix_entry["distance"].GetDouble());
 }
 
 unsigned

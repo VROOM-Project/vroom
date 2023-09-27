@@ -41,11 +41,6 @@ protected:
   explicit Wrapper(std::string profile) : profile(std::move(profile)) {
   }
 
-  template <typename T> static T round_cost(double value) {
-    constexpr double round_increment = 0.5;
-    return static_cast<T>(value + round_increment);
-  }
-
   static inline void
   check_unfound(const std::vector<Location>& locs,
                 const std::vector<unsigned>& nb_unfound_from_loc,

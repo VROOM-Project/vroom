@@ -29,6 +29,11 @@ All rights reserved (see LICENSE).
 
 namespace vroom::utils {
 
+template <typename T> T round(double value) {
+  constexpr double round_increment = 0.5;
+  return static_cast<T>(value + round_increment);
+}
+
 using RawSolution = std::vector<RawRoute>;
 using TWSolution = std::vector<TWRoute>;
 
