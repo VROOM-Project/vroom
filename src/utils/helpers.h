@@ -669,16 +669,6 @@ inline Route format_route(const Input& input,
     assert(previous_job.is_valid_start(step_start));
   }
 
-#ifndef NDEBUG
-  std::unordered_set<Index> expected_delivery_ranks;
-#endif
-  Amount current_load = tw_r.job_deliveries_sum();
-  assert(current_load <= v.capacity);
-
-  // Steps for current route.
-  std::vector<Step> steps;
-  steps.reserve(tw_r.size() + 2 + v.breaks.size());
-
   // Now pack everything ASAP based on first job start date.
   Duration remaining_travel_time =
     (v.has_start())
@@ -720,6 +710,17 @@ inline Route format_route(const Input& input,
   }
 
   assert(first_location.has_value() && last_location.has_value());
+
+#ifndef NDEBUG
+  std::unordered_set<Index> expected_delivery_ranks;
+#endif
+  Amount current_load = tw_r.job_deliveries_sum();
+  assert(current_load <= v.capacity);
+
+  // Steps for current route.
+  std::vector<Step> steps;
+  steps.reserve(tw_r.size() + 2 + v.breaks.size());
+
   steps.emplace_back(STEP_TYPE::START, first_location.value(), current_load);
   assert(v.tw.contains(step_start));
   steps.back().arrival = scale_to_user_duration(step_start);
