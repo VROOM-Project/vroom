@@ -7,6 +7,8 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <utility>
+
 #include <asio.hpp>
 #include <asio/ssl.hpp>
 
