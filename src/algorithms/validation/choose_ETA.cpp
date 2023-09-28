@@ -14,6 +14,7 @@ All rights reserved (see LICENSE).
 #include <glpk.h>
 
 #include "algorithms/validation/choose_ETA.h"
+#include "utils/helpers.h"
 
 namespace vroom::validation {
 
@@ -1157,7 +1158,6 @@ Route choose_ETA(const Input& input,
                          first_location.value(),
                          current_load);
   auto& start_step = sol_steps.back();
-  start_step.duration = 0;
   start_step.arrival = utils::scale_to_user_duration(v_start);
   UserDuration user_previous_end = start_step.arrival;
 
@@ -1183,6 +1183,10 @@ Route choose_ETA(const Input& input,
   unsigned task_rank = 0;
   auto previous_location = (v.has_start()) ? v.start.value().index()
                                            : std::numeric_limits<Index>::max();
+
+  Index previous_rank_in_J = 0;
+  UserDistance distances_sum = 0;
+  UserDistance breaks_distances_sum = 0;
 
   for (const auto& step : steps) {
     switch (step.type) {
@@ -1230,6 +1234,10 @@ Route choose_ETA(const Input& input,
       current.duration = user_duration;
       user_previous_end = current.arrival + current.waiting_time +
                           current.setup + current.service;
+
+      distances_sum += evals[previous_rank_in_J].distance;
+      current.distance = distances_sum;
+      breaks_distances_sum = distances_sum;
 
       // Handle violations.
       const auto tw_rank = task_tw_ranks[task_rank];
@@ -1300,6 +1308,7 @@ Route choose_ETA(const Input& input,
       previous_action = current_setup + job.service;
       previous_travel = task_travels[task_rank];
       ++task_rank;
+      ++previous_rank_in_J;
       break;
     }
     case BREAK: {
@@ -1332,6 +1341,15 @@ Route choose_ETA(const Input& input,
       current.duration = user_duration;
       user_previous_end =
         current.arrival + current.waiting_time + current.service;
+
+      // Pro rata temporis distance increase.
+      if (evals[previous_rank_in_J].duration != 0) {
+        breaks_distances_sum += utils::round<UserDistance>(
+          static_cast<double>(user_travel_time *
+                              evals[previous_rank_in_J].distance) /
+          utils::scale_to_user_duration(evals[previous_rank_in_J].duration));
+      }
+      current.distance = breaks_distances_sum;
 
       // Handle violations.
       const auto tw_rank = task_tw_ranks[task_rank];
@@ -1389,6 +1407,10 @@ Route choose_ETA(const Input& input,
       user_duration += user_travel_time;
       end_step.duration = user_duration;
 
+      assert(distances_sum + evals[previous_rank_in_J].distance ==
+             eval_sum.distance);
+      end_step.distance = eval_sum.distance;
+
       assert(v.tw.end % DURATION_FACTOR == 0 || v.tw.is_default());
       auto user_v_tw_end = utils::scale_to_user_duration(v.tw.end);
 
@@ -1443,7 +1465,7 @@ Route choose_ETA(const Input& input,
                std::move(sol_steps),
                user_fixed_cost + user_cost,
                user_duration,
-               0, // TODO handle distances
+               eval_sum.distance,
                utils::scale_to_user_duration(setup),
                utils::scale_to_user_duration(service),
                user_waiting_time,

@@ -33,6 +33,7 @@
 - Slightly reduce computing times for SWAP* operator (#987)
 - Refactor `RouteSplit` operator (#996)
 - Update cxxopts to 3.1.1 (#997)
+- Distances in output are from internal matrices, not routing requests (#957)
 
 ### Fixed
 
