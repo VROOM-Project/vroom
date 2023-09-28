@@ -103,7 +103,7 @@ int main(int argc, char** argv) {
         const auto exc =
           vroom::InputException("Can't write to file: " + output_file);
         std::cerr << "[Error] " << exc.message << std::endl;
-        vroom::io::write_to_json({exc.error_code, exc.message});
+        vroom::io::write_to_json(exc);
         exit(exc.error_code);
       }
       out_stream.close();
@@ -139,7 +139,7 @@ int main(int argc, char** argv) {
     const auto exc = vroom::InputException(": invalid numerical value.");
     const auto msg = e.what() + exc.message;
     std::cerr << "[Error] " << msg << std::endl;
-    vroom::io::write_to_json({exc.error_code, msg}, cl_args.output_file);
+    vroom::io::write_to_json(exc, cl_args.output_file);
     exit(exc.error_code);
   }
 
@@ -161,11 +161,11 @@ int main(int argc, char** argv) {
   } else if (router_arg == "valhalla") {
     cl_args.router = vroom::ROUTER::VALHALLA;
   } else if (!router_arg.empty() && router_arg != "osrm") {
-    auto error_code = vroom::InputException("").error_code;
-    std::string message = "Invalid routing engine: " + router_arg + ".";
-    std::cerr << "[Error] " << message << std::endl;
-    vroom::io::write_to_json({error_code, message}, cl_args.output_file);
-    exit(error_code);
+    const auto e =
+      vroom::InputException("Invalid routing engine: " + router_arg + ".");
+    std::cerr << "[Error] " << e.message << std::endl;
+    vroom::io::write_to_json(e, cl_args.output_file);
+    exit(e.error_code);
   } else {
     cl_args.router = vroom::ROUTER::OSRM;
   }
@@ -181,7 +181,7 @@ int main(int argc, char** argv) {
                            });
   } catch (const vroom::Exception& e) {
     std::cerr << "[Error] " << e.message << std::endl;
-    vroom::io::write_to_json({e.error_code, e.message}, cl_args.output_file);
+    vroom::io::write_to_json(e, cl_args.output_file);
     exit(e.error_code);
   }
 
@@ -193,8 +193,7 @@ int main(int argc, char** argv) {
       const auto exc =
         vroom::InputException("Can't read file: " + cl_args.input_file);
       std::cerr << "[Error] " << exc.message << std::endl;
-      vroom::io::write_to_json({exc.error_code, exc.message},
-                               cl_args.output_file);
+      vroom::io::write_to_json(exc, cl_args.output_file);
       exit(exc.error_code);
     }
 
@@ -222,28 +221,30 @@ int main(int argc, char** argv) {
                                                      cl_args.h_params);
 
     // Write solution.
-    vroom::io::write_to_json(sol, cl_args.output_file, cl_args.geometry);
+    vroom::io::write_to_json(sol,
+                             cl_args.output_file,
+                             problem_instance.report_distances());
   } catch (const vroom::Exception& e) {
     std::cerr << "[Error] " << e.message << std::endl;
-    vroom::io::write_to_json({e.error_code, e.message}, cl_args.output_file);
+    vroom::io::write_to_json(e, cl_args.output_file);
     exit(e.error_code);
   }
 #if USE_LIBOSRM
   catch (const osrm::exception& e) {
     // In case of an unhandled routing error.
-    auto error_code = vroom::RoutingException("").error_code;
-    auto message = "Routing problem: " + std::string(e.what());
-    std::cerr << "[Error] " << message << std::endl;
-    vroom::io::write_to_json({error_code, message}, cl_args.output_file);
-    exit(error_code);
+    const auto exc =
+      vroom::RoutingException("Routing problem: " + std::string(e.what()));
+    std::cerr << "[Error] " << exc.message << std::endl;
+    vroom::io::write_to_json(exc, cl_args.output_file);
+    exit(exc.error_code);
   }
 #endif
   catch (const std::exception& e) {
     // In case of an unhandled internal error.
-    auto error_code = vroom::InternalException("").error_code;
-    std::cerr << "[Error] " << e.what() << std::endl;
-    vroom::io::write_to_json({error_code, e.what()}, cl_args.output_file);
-    exit(error_code);
+    const auto exc = vroom::InternalException(e.what());
+    std::cerr << "[Error] " << exc.message << std::endl;
+    vroom::io::write_to_json(exc, cl_args.output_file);
+    exit(exc.error_code);
   }
 
   return 0;

@@ -201,23 +201,16 @@ Matrices HttpWrapper::get_matrices(const std::vector<Location>& locs) const {
   return m;
 }
 
-void HttpWrapper::add_route_info(Route& route) const {
+void HttpWrapper::add_geometry(Route& route) const {
   // Ordering locations for the given steps, excluding
   // breaks.
   std::vector<Location> non_break_locations;
   non_break_locations.reserve(route.steps.size());
-  std::vector<unsigned> number_breaks_after;
-  number_breaks_after.reserve(route.steps.size());
 
   for (const auto& step : route.steps) {
-    if (step.step_type == STEP_TYPE::BREAK) {
-      if (!number_breaks_after.empty()) {
-        ++(number_breaks_after.back());
-      }
-    } else {
+    if (step.step_type != STEP_TYPE::BREAK) {
       assert(step.location.has_value());
       non_break_locations.push_back(step.location.value());
-      number_breaks_after.push_back(0);
     }
   }
   assert(!non_break_locations.empty());
@@ -232,48 +225,9 @@ void HttpWrapper::add_route_info(Route& route) const {
                        non_break_locations, // not supposed to be used
                        _route_service);
 
-  // Total distance and route geometry.
-  route.distance = round_cost<UserDistance>(get_total_distance(json_result));
+  assert(get_legs_number(json_result) == non_break_locations.size() - 1);
+
   route.geometry = get_geometry(json_result);
-
-  auto nb_legs = get_legs_number(json_result);
-  assert(nb_legs == non_break_locations.size() - 1);
-
-  double sum_distance = 0;
-
-  // Start step has zero distance.
-  unsigned steps_rank = 0;
-  route.steps[0].distance = 0;
-
-  for (rapidjson::SizeType i = 0; i < nb_legs; ++i) {
-    const auto& step = route.steps[steps_rank];
-
-    // Next element in steps that is not a break and associated
-    // distance after current route leg.
-    auto& next_step = route.steps[steps_rank + number_breaks_after[i] + 1];
-    assert(step.duration <= next_step.duration);
-    auto next_duration = next_step.duration - step.duration;
-    double next_distance = get_distance_for_leg(json_result, i);
-
-    // Pro rata temporis distance update for breaks between current
-    // non-breaks steps.
-    for (unsigned b = 1; b <= number_breaks_after[i]; ++b) {
-      auto& break_step = route.steps[steps_rank + b];
-      if (next_duration == 0) {
-        break_step.distance = round_cost<UserDistance>(sum_distance);
-      } else {
-        break_step.distance = round_cost<UserDistance>(
-          sum_distance +
-          ((break_step.duration - step.duration) * next_distance) /
-            next_duration);
-      }
-    }
-
-    sum_distance += next_distance;
-    next_step.distance = round_cost<UserDistance>(sum_distance);
-
-    steps_rank += number_breaks_after[i] + 1;
-  }
 }
 
 } // namespace vroom::routing

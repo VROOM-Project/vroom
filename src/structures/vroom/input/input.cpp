@@ -417,6 +417,10 @@ bool Input::has_shipments() const {
   return _has_shipments;
 }
 
+bool Input::report_distances() const {
+  return _report_distances;
+}
+
 bool Input::has_homogeneous_locations() const {
   return _homogeneous_locations;
 }
@@ -911,7 +915,8 @@ void Input::init_missing_matrices(const std::string& profile) {
 }
 
 void Input::set_matrices(unsigned nb_thread) {
-  if ((!_durations_matrices.empty() || !_costs_matrices.empty()) &&
+  if ((!_durations_matrices.empty() || !_distances_matrices.empty() ||
+       !_costs_matrices.empty()) &&
       !_has_custom_location_index) {
     throw InputException("Missing location index.");
   }
@@ -919,6 +924,20 @@ void Input::set_matrices(unsigned nb_thread) {
       _has_custom_location_index) {
     throw InputException(
       "Unexpected location index while no custom matrices provided.");
+  }
+
+  // Report distances either if geometry is explicitly requested, or
+  // if distance matrices are manually provided.
+  _report_distances = _geometry || !_distances_matrices.empty();
+
+  if (!_distances_matrices.empty()) {
+    // Distances matrices should be either always or never provided.
+    for (const auto& profile : _profiles) {
+      if (!_distances_matrices.contains(profile)) {
+        throw InputException("Missing distances matrix for " + profile +
+                             " profile.");
+      }
+    }
   }
 
   // Split computing matrices across threads based on number of
@@ -1151,9 +1170,7 @@ Solution Input::solve(unsigned exploration_level,
         throw InputException(
           "Route geometry request with non-routable profile " + profile + ".");
       }
-      (*rw)->add_route_info(route);
-
-      sol.summary.distance += route.distance;
+      (*rw)->add_geometry(route);
     }
 
     _end_routing = std::chrono::high_resolution_clock::now();
@@ -1211,9 +1228,7 @@ Solution Input::check(unsigned nb_thread) {
         throw InputException(
           "Route geometry request with non-routable profile " + profile + ".");
       }
-      (*rw)->add_route_info(route);
-
-      sol.summary.distance += route.distance;
+      (*rw)->add_geometry(route);
     }
 
     _end_routing = std::chrono::high_resolution_clock::now();

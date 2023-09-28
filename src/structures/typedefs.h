@@ -146,7 +146,8 @@ enum class VIOLATION {
   PRECEDENCE,
   MISSING_BREAK,
   MAX_TRAVEL_TIME,
-  MAX_LOAD
+  MAX_LOAD,
+  MAX_DISTANCE
 };
 
 enum class OperatorName {

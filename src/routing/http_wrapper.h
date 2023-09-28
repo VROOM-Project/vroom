@@ -66,16 +66,11 @@ protected:
   virtual UserDistance
   get_distance_value(const rapidjson::Value& matrix_entry) const = 0;
 
-  virtual double get_total_distance(const rapidjson::Value& result) const = 0;
-
   virtual unsigned get_legs_number(const rapidjson::Value& result) const = 0;
-
-  virtual double get_distance_for_leg(const rapidjson::Value& result,
-                                      rapidjson::SizeType i) const = 0;
 
   virtual std::string get_geometry(rapidjson::Value& result) const = 0;
 
-  void add_route_info(Route& route) const override;
+  void add_geometry(Route& route) const override;
 };
 
 } // namespace vroom::routing

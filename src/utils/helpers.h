@@ -29,6 +29,11 @@ All rights reserved (see LICENSE).
 
 namespace vroom::utils {
 
+template <typename T> T round(double value) {
+  constexpr double round_increment = 0.5;
+  return static_cast<T>(value + round_increment);
+}
+
 using RawSolution = std::vector<RawRoute>;
 using TWSolution = std::vector<TWRoute>;
 
@@ -489,6 +494,7 @@ inline Solution format_solution(const Input& input,
                        current_load);
     auto& first = steps.back();
     first.duration = scale_to_user_duration(ETA);
+    first.distance = eval_sum.distance;
     first.arrival = scale_to_user_duration(ETA);
     ETA += (first_job_setup + first_job.service);
     unassigned_ranks.erase(route.front());
@@ -525,6 +531,7 @@ inline Solution format_solution(const Input& input,
                          current_load);
       auto& current = steps.back();
       current.duration = scale_to_user_duration(eval_sum.duration);
+      current.distance = eval_sum.distance;
       current.arrival = scale_to_user_duration(ETA);
       ETA += (current_setup + current_job.service);
       unassigned_ranks.erase(route[r + 1]);
@@ -539,8 +546,10 @@ inline Solution format_solution(const Input& input,
       ETA += next_leg.duration;
       eval_sum += next_leg;
     }
-    steps.back().duration = scale_to_user_duration(eval_sum.duration);
-    steps.back().arrival = scale_to_user_duration(ETA);
+    auto& last = steps.back();
+    last.duration = scale_to_user_duration(eval_sum.duration);
+    last.distance = eval_sum.distance;
+    last.arrival = scale_to_user_duration(ETA);
 
     assert(expected_delivery_ranks.empty());
     assert(v.ok_for_range_bounds(eval_sum));
@@ -552,6 +561,7 @@ inline Solution format_solution(const Input& input,
                         std::move(steps),
                         user_fixed_cost + scale_to_user_cost(eval_sum.cost),
                         scale_to_user_duration(eval_sum.duration),
+                        eval_sum.distance,
                         scale_to_user_duration(setup),
                         scale_to_user_duration(service),
                         0,
@@ -568,8 +578,7 @@ inline Solution format_solution(const Input& input,
                          std::back_inserter(unassigned_jobs),
                          [&](auto j) { return input.jobs[j]; });
 
-  return Solution(0,
-                  input.zero_amount(),
+  return Solution(input.zero_amount(),
                   std::move(routes),
                   std::move(unassigned_jobs));
 }
@@ -665,16 +674,6 @@ inline Route format_route(const Input& input,
     assert(previous_job.is_valid_start(step_start));
   }
 
-#ifndef NDEBUG
-  std::unordered_set<Index> expected_delivery_ranks;
-#endif
-  Amount current_load = tw_r.job_deliveries_sum();
-  assert(current_load <= v.capacity);
-
-  // Steps for current route.
-  std::vector<Step> steps;
-  steps.reserve(tw_r.size() + 2 + v.breaks.size());
-
   // Now pack everything ASAP based on first job start date.
   Duration remaining_travel_time =
     (v.has_start())
@@ -716,6 +715,17 @@ inline Route format_route(const Input& input,
   }
 
   assert(first_location.has_value() && last_location.has_value());
+
+#ifndef NDEBUG
+  std::unordered_set<Index> expected_delivery_ranks;
+#endif
+  Amount current_load = tw_r.job_deliveries_sum();
+  assert(current_load <= v.capacity);
+
+  // Steps for current route.
+  std::vector<Step> steps;
+  steps.reserve(tw_r.size() + 2 + v.breaks.size());
+
   steps.emplace_back(STEP_TYPE::START, first_location.value(), current_load);
   assert(v.tw.contains(step_start));
   steps.back().arrival = scale_to_user_duration(step_start);
@@ -751,6 +761,7 @@ inline Route format_route(const Input& input,
   for (std::size_t r = 0; r < tw_r.route.size(); ++r) {
     assert(input.vehicle_ok_with_job(tw_r.vehicle_rank, tw_r.route[r]));
     const auto& current_job = input.jobs[tw_r.route[r]];
+    auto user_distance = eval_sum.distance;
 
     if (r > 0) {
       // For r == 0, travel_time already holds the relevant value
@@ -823,6 +834,15 @@ inline Route format_route(const Input& input,
       auto user_travel_time = current_break.arrival - user_previous_end;
       user_duration += user_travel_time;
       current_break.duration = user_duration;
+
+      // Pro rata temporis distance increase.
+      if (current_eval.duration != 0) {
+        user_distance += round<UserDistance>(
+          static_cast<double>(user_travel_time * current_eval.distance) /
+          scale_to_user_duration(current_eval.duration));
+      }
+      current_break.distance = user_distance;
+
       user_previous_end = current_break.arrival + current_break.waiting_time +
                           current_break.service;
 
@@ -860,6 +880,7 @@ inline Route format_route(const Input& input,
     assert(step_start <= tw_r.latest[r]);
 
     current.arrival = scale_to_user_duration(step_start);
+    current.distance = eval_sum.distance;
 
     const auto j_tw =
       std::ranges::find_if(current_job.tws, [&](const auto& tw) {
@@ -906,6 +927,7 @@ inline Route format_route(const Input& input,
                                         v.end.value().index())
                                : Eval();
   travel_time = current_eval.duration;
+  auto user_distance = eval_sum.distance;
 
   auto r = tw_r.route.size();
   assert(tw_r.breaks_at_rank[r] <= tw_r.breaks_counts[r]);
@@ -969,6 +991,15 @@ inline Route format_route(const Input& input,
     auto user_travel_time = current_break.arrival - user_previous_end;
     user_duration += user_travel_time;
     current_break.duration = user_duration;
+
+    // Pro rata temporis distance increase.
+    if (current_eval.duration != 0) {
+      user_distance += round<UserDistance>(
+        static_cast<double>(user_travel_time * current_eval.distance) /
+        scale_to_user_duration(current_eval.duration));
+    }
+    current_break.distance = user_distance;
+
     user_previous_end = current_break.arrival + current_break.waiting_time +
                         current_break.service;
 
@@ -985,6 +1016,7 @@ inline Route format_route(const Input& input,
   }
   assert(v.tw.contains(step_start));
   end_step.arrival = scale_to_user_duration(step_start);
+  end_step.distance = eval_sum.distance;
 
   // Recompute cumulated durations in a consistent way as seen from
   // UserDuration.
@@ -1015,6 +1047,7 @@ inline Route format_route(const Input& input,
                std::move(steps),
                user_fixed_cost + user_cost,
                user_duration,
+               eval_sum.distance,
                scale_to_user_duration(setup),
                scale_to_user_duration(service),
                user_waiting_time,
@@ -1048,8 +1081,7 @@ inline Solution format_solution(const Input& input,
                          std::back_inserter(unassigned_jobs),
                          [&](auto j) { return input.jobs[j]; });
 
-  return Solution(0,
-                  input.zero_amount(),
+  return Solution(input.zero_amount(),
                   std::move(routes),
                   std::move(unassigned_jobs));
 }

@@ -31,7 +31,7 @@ public:
 
   Matrices get_matrices(const std::vector<Location>& locs) const override;
 
-  void add_route_info(Route& route) const override;
+  void add_geometry(Route& route) const override;
 };
 
 } // namespace routing

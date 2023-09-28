@@ -14,6 +14,7 @@ All rights reserved (see LICENSE).
 #include "osrm/table_parameters.hpp"
 
 #include "routing/libosrm_wrapper.h"
+#include "utils/helpers.h"
 
 namespace vroom {
 namespace routing {
@@ -104,10 +105,10 @@ Matrices LibosrmWrapper::get_matrices(const std::vector<Location>& locs) const {
         ++nb_unfound_from_loc[i];
         ++nb_unfound_to_loc[j];
       } else {
-        m.durations[i][j] =
-          round_cost<UserDuration>(duration_el.get<osrm::json::Number>().value);
-        m.distances[i][j] =
-          round_cost<UserDistance>(distance_el.get<osrm::json::Number>().value);
+        m.durations[i][j] = utils::round<UserDuration>(
+          duration_el.get<osrm::json::Number>().value);
+        m.distances[i][j] = utils::round<UserDistance>(
+          distance_el.get<osrm::json::Number>().value);
       }
     }
   }
@@ -117,7 +118,7 @@ Matrices LibosrmWrapper::get_matrices(const std::vector<Location>& locs) const {
   return m;
 }
 
-void LibosrmWrapper::add_route_info(Route& route) const {
+void LibosrmWrapper::add_geometry(Route& route) const {
   // Default options for routing.
   osrm::RouteParameters params(false, // steps
                                false, // alternatives
@@ -130,24 +131,15 @@ void LibosrmWrapper::add_route_info(Route& route) const {
 
   // Ordering locations for the given steps, excluding
   // breaks.
-  std::vector<unsigned> number_breaks_after;
-  number_breaks_after.reserve(route.steps.size());
-
   for (auto& step : route.steps) {
-    if (step.step_type == STEP_TYPE::BREAK) {
-      if (!number_breaks_after.empty()) {
-        ++(number_breaks_after.back());
-      }
-    } else {
+    if (step.step_type != STEP_TYPE::BREAK) {
       assert(step.location.has_value());
       const auto& loc = step.location.value();
       assert(loc.has_coordinates());
       params.coordinates.emplace_back(osrm::util::FloatLongitude({loc.lon()}),
                                       osrm::util::FloatLatitude({loc.lat()}));
-      number_breaks_after.push_back(0);
     }
   }
-  assert(!number_breaks_after.empty());
 
   osrm::json::Object result;
   osrm::Status status = _osrm.Route(params, result);
@@ -162,61 +154,8 @@ void LibosrmWrapper::add_route_info(Route& route) const {
   auto& json_route = result_routes.values.at(0).get<osrm::json::Object>();
 
   // Total distance and route geometry.
-  route.distance = round_cost<UserDistance>(
-    json_route.values["distance"].get<osrm::json::Number>().value);
   route.geometry =
     std::move(json_route.values["geometry"].get<osrm::json::String>().value);
-
-  auto& legs = json_route.values["legs"].get<osrm::json::Array>();
-  auto nb_legs = legs.values.size();
-  assert(nb_legs == number_breaks_after.size() - 1);
-
-  double sum_distance = 0;
-
-  // Locate first non-break stop.
-  const auto first_non_break =
-    std::find_if(route.steps.begin(), route.steps.end(), [&](const auto& s) {
-      return s.step_type != STEP_TYPE::BREAK;
-    });
-  unsigned steps_rank = std::distance(route.steps.begin(), first_non_break);
-
-  // Zero distance up to first non-break step.
-  for (unsigned i = 0; i <= steps_rank; ++i) {
-    route.steps[i].distance = 0;
-  }
-
-  for (unsigned i = 0; i < nb_legs; ++i) {
-    const auto& step = route.steps[steps_rank];
-
-    // Next element in steps that is not a break and associated
-    // distance after current route leg.
-    auto& next_step = route.steps[steps_rank + number_breaks_after[i] + 1];
-    assert(step.duration <= next_step.duration);
-    auto next_duration = next_step.duration - step.duration;
-
-    auto& leg = legs.values.at(i).get<osrm::json::Object>();
-    double next_distance =
-      leg.values["distance"].get<osrm::json::Number>().value;
-
-    // Pro rata temporis distance update for breaks between current
-    // non-breaks steps.
-    for (unsigned b = 1; b <= number_breaks_after[i]; ++b) {
-      auto& break_step = route.steps[steps_rank + b];
-      break_step.distance = round_cost<UserDistance>(
-        sum_distance + ((break_step.duration - step.duration) * next_distance) /
-                         next_duration);
-    }
-
-    sum_distance += next_distance;
-    next_step.distance = round_cost<UserDistance>(sum_distance);
-
-    steps_rank += number_breaks_after[i] + 1;
-  }
-
-  // Unchanged distance after last non-break step.
-  for (auto i = steps_rank; i < route.steps.size(); ++i) {
-    route.steps[i].distance = sum_distance;
-  }
 }
 
 } // namespace routing

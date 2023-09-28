@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 #include "../../include/polylineencoder/src/polylineencoder.h"
 
 #include "routing/valhalla_wrapper.h"
+#include "utils/helpers.h"
 
 namespace vroom::routing {
 
@@ -141,13 +142,8 @@ UserDuration ValhallaWrapper::get_duration_value(
 UserDistance ValhallaWrapper::get_distance_value(
   const rapidjson::Value& matrix_entry) const {
   assert(matrix_entry["distance"].IsDouble());
-  return round_cost<UserDistance>(km_to_m *
-                                  matrix_entry["distance"].GetDouble());
-}
-
-double
-ValhallaWrapper::get_total_distance(const rapidjson::Value& result) const {
-  return km_to_m * result["trip"]["summary"]["length"].GetDouble();
+  return utils::round<UserDistance>(km_to_m *
+                                    matrix_entry["distance"].GetDouble());
 }
 
 unsigned
@@ -155,20 +151,15 @@ ValhallaWrapper::get_legs_number(const rapidjson::Value& result) const {
   return result["trip"]["legs"].Size();
 }
 
-double ValhallaWrapper::get_distance_for_leg(const rapidjson::Value& result,
-                                             rapidjson::SizeType i) const {
-  return km_to_m * result["trip"]["legs"][i]["summary"]["length"].GetDouble();
-}
-
 std::string ValhallaWrapper::get_geometry(rapidjson::Value& result) const {
   // Valhalla returns one polyline per route leg so we need to merge
   // them. Also taking the opportunity to adjust the encoding
   // precision as Valhalla uses 6 and we use 5 based on other routing
   // engine output. Note: getting directly a single polyline (e.g. by
-  // not sending type=break for the route request) is not an option:
-  // first we need all the legs for intermediate time and distance
-  // values, then we have to force allowing u-turns in order to get
-  // consistent time/distance values between matrix and route request.
+  // not sending type=break for the route request) is not an option
+  // since we have to force allowing u-turns in order to get a
+  // geometry that is consistent with the time/distance values in
+  // matrices.
 
   auto full_polyline =
     gepaf::PolylineEncoder<valhalla_polyline_precision>::decode(

@@ -35,12 +35,7 @@ private:
   UserDistance
   get_distance_value(const rapidjson::Value& matrix_entry) const override;
 
-  double get_total_distance(const rapidjson::Value& result) const override;
-
   unsigned get_legs_number(const rapidjson::Value& result) const override;
-
-  double get_distance_for_leg(const rapidjson::Value& result,
-                              rapidjson::SizeType i) const override;
 
   std::string get_geometry(rapidjson::Value& result) const override;
 

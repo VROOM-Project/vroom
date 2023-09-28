@@ -8,6 +8,7 @@ All rights reserved (see LICENSE).
 */
 
 #include "routing/osrm_routed_wrapper.h"
+#include "utils/helpers.h"
 
 namespace vroom::routing {
 
@@ -99,27 +100,17 @@ bool OsrmRoutedWrapper::distance_value_is_null(
 
 UserDuration OsrmRoutedWrapper::get_duration_value(
   const rapidjson::Value& matrix_entry) const {
-  return round_cost<UserDuration>(matrix_entry.GetDouble());
+  return utils::round<UserDuration>(matrix_entry.GetDouble());
 }
 
 UserDistance OsrmRoutedWrapper::get_distance_value(
   const rapidjson::Value& matrix_entry) const {
-  return round_cost<UserDistance>(matrix_entry.GetDouble());
-}
-
-double
-OsrmRoutedWrapper::get_total_distance(const rapidjson::Value& result) const {
-  return result["routes"][0]["distance"].GetDouble();
+  return utils::round<UserDistance>(matrix_entry.GetDouble());
 }
 
 unsigned
 OsrmRoutedWrapper::get_legs_number(const rapidjson::Value& result) const {
   return result["routes"][0]["legs"].Size();
-}
-
-double OsrmRoutedWrapper::get_distance_for_leg(const rapidjson::Value& result,
-                                               rapidjson::SizeType i) const {
-  return result["routes"][0]["legs"][i]["distance"].GetDouble();
 }
 
 std::string OsrmRoutedWrapper::get_geometry(rapidjson::Value& result) const {

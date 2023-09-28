@@ -22,6 +22,7 @@ struct Route {
   std::vector<Step> steps;
   UserCost cost;
   UserDuration duration;
+  UserDistance distance;
   UserDuration setup;
   UserDuration service;
   UserDuration waiting_time;
@@ -33,7 +34,6 @@ struct Route {
   Violations violations;
 
   std::string geometry;
-  UserDistance distance{0};
 
   Route();
 
@@ -41,6 +41,7 @@ struct Route {
         std::vector<Step>&& steps,
         UserCost cost,
         UserDuration duration,
+        UserDistance distance,
         UserDuration setup,
         UserDuration service,
         UserDuration waiting_time,

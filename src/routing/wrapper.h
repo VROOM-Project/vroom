@@ -33,17 +33,12 @@ public:
 
   virtual Matrices get_matrices(const std::vector<Location>& locs) const = 0;
 
-  virtual void add_route_info(Route& route) const = 0;
+  virtual void add_geometry(Route& route) const = 0;
 
   virtual ~Wrapper() = default;
 
 protected:
   explicit Wrapper(std::string profile) : profile(std::move(profile)) {
-  }
-
-  template <typename T> static T round_cost(double value) {
-    constexpr double round_increment = 0.5;
-    return static_cast<T>(value + round_increment);
   }
 
   static inline void
