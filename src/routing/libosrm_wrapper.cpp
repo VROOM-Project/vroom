@@ -14,6 +14,7 @@ All rights reserved (see LICENSE).
 #include "osrm/table_parameters.hpp"
 
 #include "routing/libosrm_wrapper.h"
+#include "utils/helpers.h"
 
 namespace vroom {
 namespace routing {
@@ -104,10 +105,10 @@ Matrices LibosrmWrapper::get_matrices(const std::vector<Location>& locs) const {
         ++nb_unfound_from_loc[i];
         ++nb_unfound_to_loc[j];
       } else {
-        m.durations[i][j] =
-          round_cost<UserDuration>(duration_el.get<osrm::json::Number>().value);
-        m.distances[i][j] =
-          round_cost<UserDistance>(distance_el.get<osrm::json::Number>().value);
+        m.durations[i][j] = utils::round<UserDuration>(
+          duration_el.get<osrm::json::Number>().value);
+        m.distances[i][j] = utils::round<UserDistance>(
+          distance_el.get<osrm::json::Number>().value);
       }
     }
   }
