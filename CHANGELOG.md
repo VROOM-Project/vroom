@@ -33,6 +33,7 @@
 - Slightly reduce computing times for SWAP* operator (#987)
 - Refactor `RouteSplit` operator (#996)
 - Update cxxopts to 3.1.1 (#997)
+- Update gcc to version 12 in CI (#1002)
 
 ### Fixed
 
