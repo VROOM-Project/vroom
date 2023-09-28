@@ -63,17 +63,17 @@ Route choose_ETA(const Input& input,
 
   // For 0 <= i <= n, if i is in J at rank r (i.e. T_i is a non-break
   // task), then B[r] is the number of tasks following T_i that are
-  // breaks, durations[r] is the travel duration from task T_i to the
-  // next non-break task and action_time[r] is the action time
-  // (service or setup + service) for job i. Note: when vehicle has no
-  // start, T_0 is a "ghost" step.
+  // breaks, evals[r] is the travel eval from task T_i to the next
+  // non-break task and action_time[r] is the action time (service or
+  // setup + service) for job i. Note: when vehicle has no start, T_0
+  // is a "ghost" step.
   std::vector<unsigned> J;
   std::vector<unsigned> B;
-  std::vector<Duration> durations;
+  std::vector<Eval> evals;
   std::vector<Duration> action_times;
   J.reserve(n + 1);
   B.reserve(n + 1);
-  durations.reserve(n + 1);
+  evals.reserve(n + 1);
   action_times.reserve(n + 1);
 
   // Lower bound for timestamps in input in order to scale the MIP
@@ -131,13 +131,12 @@ Route choose_ETA(const Input& input,
 
       // Only case where previous_index is not set is for first
       // duration in case vehicle has no start.
-      assert(previous_index.has_value() ||
-             (durations.empty() && !v.has_start()));
+      assert(previous_index.has_value() || (evals.empty() && !v.has_start()));
 
       const auto current_eval = (previous_index.has_value())
                                   ? v.eval(previous_index.value(), job.index())
                                   : Eval();
-      durations.push_back(current_eval.duration);
+      evals.push_back(current_eval);
 
       eval_sum += current_eval;
 
@@ -182,7 +181,7 @@ Route choose_ETA(const Input& input,
         assert(previous_index.has_value());
         const auto current_eval =
           v.eval(previous_index.value(), v.end.value().index());
-        durations.push_back(current_eval.duration);
+        evals.push_back(current_eval);
         relative_arrival += current_eval.duration;
 
         eval_sum += current_eval;
@@ -192,7 +191,7 @@ Route choose_ETA(const Input& input,
         }
         last_location = v.end.value();
       } else {
-        durations.push_back(0);
+        evals.emplace_back();
       }
 
       relative_ETA.push_back(relative_arrival);
@@ -401,7 +400,7 @@ Route choose_ETA(const Input& input,
   std::vector<Duration> t_i_UB;
   Duration previous_LB = horizon_start;
   Duration previous_action = 0;
-  Duration previous_travel = durations.front();
+  Duration previous_travel = evals.front().duration;
   std::vector<unsigned> first_relevant_tw_rank;
   Index rank_in_J = 0;
 
@@ -444,7 +443,7 @@ Route choose_ETA(const Input& input,
       LB = std::max(LB, previous_LB + previous_action + previous_travel);
       previous_LB = LB;
       previous_action = action_times[rank_in_J];
-      previous_travel = durations[rank_in_J];
+      previous_travel = evals[rank_in_J].duration;
       ++rank_in_J;
       break;
     }
@@ -507,14 +506,16 @@ Route choose_ETA(const Input& input,
       using enum STEP_TYPE;
     case START:
       assert(rank_in_J == 1);
-      t_i_UB[step_rank] = std::min(t_i_UB[step_rank], next_UB - durations[0]);
+      t_i_UB[step_rank] =
+        std::min(t_i_UB[step_rank], next_UB - evals[0].duration);
       break;
     case JOB: {
       --rank_in_J;
       const auto action = action_times[rank_in_J];
-      const auto next_travel = (break_travel_margin < durations[rank_in_J])
-                                 ? durations[rank_in_J] - break_travel_margin
-                                 : 0;
+      const auto next_travel =
+        (break_travel_margin < evals[rank_in_J].duration)
+          ? evals[rank_in_J].duration - break_travel_margin
+          : 0;
       assert(action + next_travel <= next_UB);
       t_i_UB[step_rank] =
         std::min(t_i_UB[step_rank], next_UB - next_travel - action);
@@ -570,7 +571,7 @@ Route choose_ETA(const Input& input,
 
   const unsigned nb_delta_constraints = J.size();
   assert(B.size() == nb_delta_constraints);
-  assert(durations.size() == nb_delta_constraints);
+  assert(evals.size() == nb_delta_constraints);
 
   // 1. create problem.
   glp_prob* lp;
@@ -670,7 +671,11 @@ Route choose_ETA(const Input& input,
   for (unsigned r = 0; r < J.size(); ++r) {
     auto delta_name = "Delta" + std::to_string(J[r]);
     glp_set_row_name(lp, current_row, delta_name.c_str());
-    glp_set_row_bnds(lp, current_row, GLP_FX, durations[r], durations[r]);
+    glp_set_row_bnds(lp,
+                     current_row,
+                     GLP_FX,
+                     evals[r].duration,
+                     evals[r].duration);
     ++current_row;
   }
 
@@ -1002,7 +1007,7 @@ Route choose_ETA(const Input& input,
       glp_set_obj_coef(lp, k, k - current_delta_rank);
     }
     current_delta_rank += (1 + B[i]);
-    delta_sum_majorant += (B[i] * durations[i]);
+    delta_sum_majorant += (B[i] * evals[i].duration);
   }
   assert(current_delta_rank == nb_var + 1);
 
