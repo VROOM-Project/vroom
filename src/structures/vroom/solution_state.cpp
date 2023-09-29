@@ -42,6 +42,7 @@ SolutionState::SolutionState(const Input& input)
     weak_insertion_ranks_begin(_nb_vehicles),
     weak_insertion_ranks_end(_nb_vehicles),
     route_evals(_nb_vehicles),
+    route_bbox(_nb_vehicles, BBox()),
     top_3_insertions(_nb_vehicles,
                      std::vector<
                        vroom::ls::ThreeInsertions>(_input.jobs.size(),
@@ -58,6 +59,7 @@ template <class Route> void SolutionState::setup(const Route& r, Index v) {
   set_pd_gains(r.route, v);
   set_insertion_ranks(r, v);
   update_route_eval(r.route, v);
+  update_route_bbox(r.route, v);
   update_top_3_insertions(r.route, v);
 }
 
@@ -621,6 +623,20 @@ void SolutionState::update_cheapest_job_rank_in_routes(
 void SolutionState::update_route_eval(const std::vector<Index>& route,
                                       Index v) {
   route_evals[v] = route_eval_for_vehicle(_input, v, route);
+}
+
+void SolutionState::update_route_bbox(const std::vector<Index>& route,
+                                      Index v) {
+  if (_input.all_locations_have_coords()) {
+    auto& bbox = route_bbox[v];
+    bbox = BBox();
+
+    std::ranges::for_each(route, [this, &bbox](const auto i) {
+      const auto& loc = _input.jobs[i].location;
+      assert(loc.has_coordinates());
+      bbox.extend(loc.coordinates());
+    });
+  }
 }
 
 void SolutionState::update_top_3_insertions(const std::vector<Index>& route,

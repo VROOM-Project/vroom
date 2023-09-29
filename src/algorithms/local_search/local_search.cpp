@@ -318,6 +318,7 @@ void LocalSearch<Route,
 
   for (const auto v : modified_vehicles) {
     _sol_state.update_top_3_insertions(_sol[v].route, v);
+    _sol_state.update_route_bbox(_sol[v].route, v);
   }
 }
 
@@ -1738,6 +1739,7 @@ void LocalSearch<Route,
 
       for (auto v_rank : update_candidates) {
         _sol_state.update_route_eval(_sol[v_rank].route, v_rank);
+        _sol_state.update_route_bbox(_sol[v_rank].route, v_rank);
         _sol_state.update_top_3_insertions(_sol[v_rank].route, v_rank);
 
         assert(_sol[v_rank].size() <= _input.vehicles[v_rank].max_tasks);
@@ -1908,6 +1910,7 @@ void LocalSearch<Route,
           // Update what is required for consistency in
           // remove_from_route.
           _sol_state.update_route_eval(_sol[v].route, v);
+          _sol_state.update_route_bbox(_sol[v].route, v);
           _sol_state.update_top_3_insertions(_sol[v].route, v);
           _sol_state.set_node_gains(_sol[v].route, v);
           _sol_state.set_pd_matching_ranks(_sol[v].route, v);
