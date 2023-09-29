@@ -7,6 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <algorithm>
 #include <ranges>
 
 #include "structures/vroom/solution_state.h"
