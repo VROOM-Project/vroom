@@ -763,6 +763,11 @@ void LocalSearch<Route,
         continue;
       }
 
+      if (!_sol_state.route_bbox[source].intersects(
+            _sol_state.route_bbox[target])) {
+        continue;
+      }
+
       const auto& s_v = _input.vehicles[source];
       const auto& t_v = _input.vehicles[target];
 
@@ -866,6 +871,11 @@ void LocalSearch<Route,
     for (const auto& [source, target] : s_t_pairs) {
       if (source == target || best_priorities[source] > 0 ||
           best_priorities[target] > 0) {
+        continue;
+      }
+
+      if (!_sol_state.route_bbox[source].intersects(
+            _sol_state.route_bbox[target])) {
         continue;
       }
 
