@@ -1624,6 +1624,11 @@ void LocalSearch<Route,
           continue;
         }
 
+        if (!_sol_state.route_bbox[source].intersects(
+              _sol_state.route_bbox[target])) {
+          continue;
+        }
+
 #ifdef LOG_LS_OPERATORS
         ++tried_moves[OperatorName::SwapStar];
 #endif
