@@ -11,6 +11,7 @@ All rights reserved (see LICENSE).
 */
 
 #include <mutex>
+#include <numeric>
 #include <set>
 #include <thread>
 

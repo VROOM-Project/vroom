@@ -10,6 +10,8 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <algorithm>
+
 #include "algorithms/local_search/top_insertions.h"
 #include "structures/typedefs.h"
 #include "structures/vroom/input/input.h"

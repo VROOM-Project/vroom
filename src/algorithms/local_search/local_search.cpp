@@ -7,8 +7,10 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "algorithms/local_search/local_search.h"
+#include <numeric>
+
 #include "algorithms/local_search/insertion_search.h"
+#include "algorithms/local_search/local_search.h"
 #include "problems/vrptw/operators/cross_exchange.h"
 #include "problems/vrptw/operators/intra_cross_exchange.h"
 #include "problems/vrptw/operators/intra_exchange.h"
