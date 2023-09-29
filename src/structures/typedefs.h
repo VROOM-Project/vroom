@@ -150,7 +150,7 @@ enum class VIOLATION {
   MAX_DISTANCE
 };
 
-enum class OperatorName {
+enum OperatorName {
   UnassignedExchange,
   CrossExchange,
   MixedExchange,

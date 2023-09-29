@@ -7,8 +7,10 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "algorithms/local_search/local_search.h"
+#include <numeric>
+
 #include "algorithms/local_search/insertion_search.h"
+#include "algorithms/local_search/local_search.h"
 #include "problems/vrptw/operators/cross_exchange.h"
 #include "problems/vrptw/operators/intra_cross_exchange.h"
 #include "problems/vrptw/operators/intra_exchange.h"
@@ -822,9 +824,9 @@ void LocalSearch<Route,
           }
 
           const auto& t_bwd_delivery = _sol[target].bwd_deliveries(t_rank);
-          const auto& t_bwd_pickup = _sol[target].bwd_pickups(t_rank);
 
-          if (!(s_fwd_delivery + t_bwd_delivery <= s_v.capacity) ||
+          if (const auto& t_bwd_pickup = _sol[target].bwd_pickups(t_rank);
+              !(s_fwd_delivery + t_bwd_delivery <= s_v.capacity) ||
               !(s_fwd_pickup + t_bwd_pickup <= s_v.capacity)) {
             // Stop current loop since we're going backward with
             // t_rank.
@@ -907,8 +909,8 @@ void LocalSearch<Route,
             continue;
           }
 
-          const auto t_job_rank = _sol[target].route[t_rank];
-          if (_sol_state.weak_insertion_ranks_end[source][t_job_rank] <=
+          if (const auto t_job_rank = _sol[target].route[t_rank];
+              _sol_state.weak_insertion_ranks_end[source][t_job_rank] <=
               s_rank) {
             // Job at t_rank won't fit after job at s_rank in source
             // route.
@@ -923,17 +925,17 @@ void LocalSearch<Route,
           }
 
           const auto& t_fwd_delivery = _sol[target].fwd_deliveries(t_rank);
-          const auto& t_fwd_pickup = _sol[target].fwd_pickups(t_rank);
 
-          if (!(s_fwd_delivery + t_fwd_delivery <= s_v.capacity) ||
+          if (const auto& t_fwd_pickup = _sol[target].fwd_pickups(t_rank);
+              !(s_fwd_delivery + t_fwd_delivery <= s_v.capacity) ||
               !(s_fwd_pickup + t_fwd_pickup <= s_v.capacity)) {
             break;
           }
 
           const auto& t_bwd_delivery = _sol[target].bwd_deliveries(t_rank);
-          const auto& t_bwd_pickup = _sol[target].bwd_pickups(t_rank);
 
-          if (!(t_bwd_delivery + s_bwd_delivery <= t_v.capacity) ||
+          if (const auto& t_bwd_pickup = _sol[target].bwd_pickups(t_rank);
+              !(t_bwd_delivery + s_bwd_delivery <= t_v.capacity) ||
               !(t_bwd_pickup + s_bwd_pickup <= t_v.capacity)) {
             continue;
           }
@@ -1531,8 +1533,8 @@ void LocalSearch<Route,
             continue;
           }
 
-          const auto& v_s = _input.vehicles[source];
-          if (!v_s.ok_for_range_bounds(_sol_state.route_evals[source] -
+          if (const auto& v_s = _input.vehicles[source];
+              !v_s.ok_for_range_bounds(_sol_state.route_evals[source] -
                                        _sol_state.pd_gains[source][s_p_rank])) {
             // Removing shipment from source route actually breaks
             // vehicle range constraints in source.

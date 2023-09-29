@@ -10,7 +10,9 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <algorithm>
 #include <mutex>
+#include <numeric>
 #include <set>
 #include <thread>
 

@@ -7,9 +7,11 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "problems/tsp/tsp.h"
+#include <algorithm>
+
 #include "problems/tsp/heuristics/christofides.h"
 #include "problems/tsp/heuristics/local_search.h"
+#include "problems/tsp/tsp.h"
 #include "utils/helpers.h"
 
 namespace vroom {
