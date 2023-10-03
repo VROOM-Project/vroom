@@ -651,7 +651,9 @@ void LocalSearch<Route,
       for (const auto& [source, target] : s_t_pairs) {
         if (source == target || best_priorities[source] > 0 ||
             best_priorities[target] > 0 || _sol[source].size() == 0 ||
-            _sol[target].size() < 2) {
+            _sol[target].size() < 2 ||
+            !_sol_state.route_bbox[source].intersects(
+              _sol_state.route_bbox[target])) {
           continue;
         }
 
