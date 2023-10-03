@@ -759,11 +759,8 @@ void LocalSearch<Route,
     // TwoOpt stuff
     for (const auto& [source, target] : s_t_pairs) {
       if (target <= source || // This operator is symmetric.
-          best_priorities[source] > 0 || best_priorities[target] > 0) {
-        continue;
-      }
-
-      if (!_sol_state.route_bbox[source].intersects(
+          best_priorities[source] > 0 || best_priorities[target] > 0 ||
+          !_sol_state.route_bbox[source].intersects(
             _sol_state.route_bbox[target])) {
         continue;
       }
@@ -870,11 +867,8 @@ void LocalSearch<Route,
     // ReverseTwoOpt stuff
     for (const auto& [source, target] : s_t_pairs) {
       if (source == target || best_priorities[source] > 0 ||
-          best_priorities[target] > 0) {
-        continue;
-      }
-
-      if (!_sol_state.route_bbox[source].intersects(
+          best_priorities[target] > 0 ||
+          !_sol_state.route_bbox[source].intersects(
             _sol_state.route_bbox[target])) {
         continue;
       }
@@ -1630,11 +1624,8 @@ void LocalSearch<Route,
         if (target <= source || // This operator is symmetric.
             best_priorities[source] > 0 || best_priorities[target] > 0 ||
             _sol[source].size() == 0 || _sol[target].size() == 0 ||
-            !_input.vehicle_ok_with_vehicle(source, target)) {
-          continue;
-        }
-
-        if (!_sol_state.route_bbox[source].intersects(
+            !_input.vehicle_ok_with_vehicle(source, target) ||
+            !_sol_state.route_bbox[source].intersects(
               _sol_state.route_bbox[target])) {
           continue;
         }
