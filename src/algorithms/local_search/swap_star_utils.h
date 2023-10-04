@@ -219,7 +219,8 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
                                          const Route& target,
                                          const Eval& best_known_gain) {
   // Preprocessing phase.
-  std::unordered_map<Index, ThreeInsertions> top_insertions_in_target;
+  std::vector<ThreeInsertions> top_insertions_in_target(source.route.size(),
+                                                        empty_three_insertions);
   for (unsigned s_rank = 0; s_rank < source.route.size(); ++s_rank) {
     const auto source_job_rank = source.route[s_rank];
 
@@ -230,7 +231,8 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
     }
   }
 
-  std::unordered_map<Index, ThreeInsertions> top_insertions_in_source;
+  std::vector<ThreeInsertions> top_insertions_in_source(target.route.size(),
+                                                        empty_three_insertions);
   for (unsigned t_rank = 0; t_rank < target.route.size(); ++t_rank) {
     const auto target_job_rank = target.route[t_rank];
 
@@ -256,9 +258,11 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
   const auto& t_delivery_margin = target.delivery_margin();
   const auto& t_pickup_margin = target.pickup_margin();
 
-  for (const auto& s_element : top_insertions_in_target) {
-    const auto s_rank = s_element.first;
-    const auto& target_insertions = s_element.second;
+  for (unsigned s_rank = 0; s_rank < source.route.size(); ++s_rank) {
+    const auto& target_insertions = top_insertions_in_target[s_rank];
+    if (target_insertions[0].cost == NO_EVAL) {
+      continue;
+    }
 
     // sol_state.node_gains contains the Delta value we're looking for
     // except in the case of a single-step route with a start and end,
@@ -270,9 +274,11 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
     const auto source_delta =
       sol_state.node_gains[s_vehicle][s_rank] - source_start_end_cost;
 
-    for (const auto& t_element : top_insertions_in_source) {
-      const auto t_rank = t_element.first;
-      const auto& source_insertions = t_element.second;
+    for (unsigned t_rank = 0; t_rank < target.route.size(); ++t_rank) {
+      const auto& source_insertions = top_insertions_in_source[t_rank];
+      if (source_insertions[0].cost == NO_EVAL) {
+        continue;
+      }
 
       // Same as above.
       const auto target_start_end_cost =
