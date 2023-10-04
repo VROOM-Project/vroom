@@ -185,8 +185,6 @@ void LocalSearch<Route,
     }
   }
 
-  std::unordered_set<Index> modified_vehicles;
-
   do {
     Priority best_priority = 0;
     RouteInsertion best_insertion(_input.get_amount_size());
@@ -290,7 +288,6 @@ void LocalSearch<Route,
       }
 
       // Update best_route data required for consistency.
-      modified_vehicles.insert(best_route);
       _sol_state.update_route_eval(_sol[best_route].route, best_route);
       _sol_state.set_insertion_ranks(_sol[best_route], best_route);
 
@@ -315,11 +312,6 @@ void LocalSearch<Route,
       }
     }
   } while (job_added);
-
-  for (const auto v : modified_vehicles) {
-    _sol_state.update_top_3_insertions(_sol[v].route, v);
-    _sol_state.update_route_bbox(_sol[v].route, v);
-  }
 }
 
 template <class Route,
@@ -1750,7 +1742,6 @@ void LocalSearch<Route,
       for (auto v_rank : update_candidates) {
         _sol_state.update_route_eval(_sol[v_rank].route, v_rank);
         _sol_state.update_route_bbox(_sol[v_rank].route, v_rank);
-        _sol_state.update_top_3_insertions(_sol[v_rank].route, v_rank);
 
         assert(_sol[v_rank].size() <= _input.vehicles[v_rank].max_tasks);
         assert(_input.vehicles[v_rank].ok_for_range_bounds(
@@ -1921,7 +1912,6 @@ void LocalSearch<Route,
           // remove_from_route.
           _sol_state.update_route_eval(_sol[v].route, v);
           _sol_state.update_route_bbox(_sol[v].route, v);
-          _sol_state.update_top_3_insertions(_sol[v].route, v);
           _sol_state.set_node_gains(_sol[v].route, v);
           _sol_state.set_pd_matching_ranks(_sol[v].route, v);
           _sol_state.set_pd_gains(_sol[v].route, v);

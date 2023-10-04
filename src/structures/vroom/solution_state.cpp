@@ -42,12 +42,7 @@ SolutionState::SolutionState(const Input& input)
     weak_insertion_ranks_begin(_nb_vehicles),
     weak_insertion_ranks_end(_nb_vehicles),
     route_evals(_nb_vehicles),
-    route_bbox(_nb_vehicles, BBox()),
-    top_3_insertions(_nb_vehicles,
-                     std::vector<
-                       vroom::ls::ThreeInsertions>(_input.jobs.size(),
-                                                   vroom::ls::
-                                                     EMPTY_THREE_INSERTIONS)) {
+    route_bbox(_nb_vehicles, BBox()) {
 }
 
 template <class Route> void SolutionState::setup(const Route& r, Index v) {
@@ -60,7 +55,6 @@ template <class Route> void SolutionState::setup(const Route& r, Index v) {
   set_insertion_ranks(r, v);
   update_route_eval(r.route, v);
   update_route_bbox(r.route, v);
-  update_top_3_insertions(r.route, v);
 }
 
 template <class Solution> void SolutionState::setup(const Solution& sol) {
@@ -636,19 +630,6 @@ void SolutionState::update_route_bbox(const std::vector<Index>& route,
       assert(loc.has_coordinates());
       bbox.extend(loc.coordinates());
     });
-  }
-}
-
-void SolutionState::update_top_3_insertions(const std::vector<Index>& route,
-                                            Index v) {
-  if (_input.has_jobs()) {
-    for (std::size_t j = 0; j < _input.jobs.size(); ++j) {
-      if (_input.jobs[j].type == JOB_TYPE::SINGLE &&
-          _input.vehicle_ok_with_job(v, j)) {
-        top_3_insertions[v][j] =
-          vroom::ls::find_top_3_insertions(_input, j, v, route);
-      }
-    }
   }
 }
 
