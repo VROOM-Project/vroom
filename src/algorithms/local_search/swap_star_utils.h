@@ -224,7 +224,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
   for (unsigned s_rank = 0; s_rank < source.route.size(); ++s_rank) {
     const auto source_job_rank = source.route[s_rank];
 
-    if (input.jobs[source_job_rank].type == JOB_TYPE::SINGLE and
+    if (input.jobs[source_job_rank].type == JOB_TYPE::SINGLE &&
         input.vehicle_ok_with_job(t_vehicle, source_job_rank)) {
       top_insertions_in_target[s_rank] =
         find_top_3_insertions(input, source_job_rank, target);
@@ -236,7 +236,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
   for (unsigned t_rank = 0; t_rank < target.route.size(); ++t_rank) {
     const auto target_job_rank = target.route[t_rank];
 
-    if (input.jobs[target_job_rank].type == JOB_TYPE::SINGLE and
+    if (input.jobs[target_job_rank].type == JOB_TYPE::SINGLE &&
         input.vehicle_ok_with_job(s_vehicle, target_job_rank)) {
       top_insertions_in_source[t_rank] =
         find_top_3_insertions(input, target_job_rank, source);
