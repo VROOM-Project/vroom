@@ -19,13 +19,13 @@ void update_insertions(ThreeInsertions& insertions, InsertionOption&& option) {
       if (option.cost < insertions[0].cost) {
         insertions[2] = std::move(insertions[1]);
         insertions[1] = std::move(insertions[0]);
-        insertions[0] = option;
+        insertions[0] = std::move(option);
       } else {
         insertions[2] = std::move(insertions[1]);
-        insertions[1] = option;
+        insertions[1] = std::move(option);
       }
     } else {
-      insertions[2] = option;
+      insertions[2] = std::move(option);
     }
   }
 }
