@@ -132,8 +132,8 @@ bool Vehicle::has_same_profile(const Vehicle& other) const {
           other.cost_wrapper.get_discrete_duration_factor());
 }
 
-bool Vehicle::cost_based_on_duration() const {
-  return cost_wrapper.cost_based_on_duration();
+bool Vehicle::cost_based_on_metrics() const {
+  return cost_wrapper.cost_based_on_metrics();
 }
 
 Duration Vehicle::available_duration() const {

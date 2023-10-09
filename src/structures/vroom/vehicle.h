@@ -94,7 +94,7 @@ struct Vehicle {
 
   bool has_same_profile(const Vehicle& other) const;
 
-  bool cost_based_on_duration() const;
+  bool cost_based_on_metrics() const;
 
   Duration available_duration() const;
 

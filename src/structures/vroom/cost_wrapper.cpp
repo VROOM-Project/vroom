@@ -9,6 +9,7 @@ All rights reserved (see LICENSE).
 
 #include "structures/vroom/cost_wrapper.h"
 #include "utils/exception.h"
+#include "utils/helpers.h"
 #include <cmath>
 
 namespace vroom {
@@ -44,13 +45,15 @@ void CostWrapper::set_costs_matrix(const Matrix<UserCost>* matrix,
   if (reset_cost_factor) {
     discrete_duration_cost_factor = DURATION_FACTOR * COST_FACTOR;
     discrete_distance_cost_factor = 0;
-    _cost_based_on_duration = false;
+    _cost_based_on_metrics = false;
   }
 }
 
-UserCost CostWrapper::user_cost_from_user_duration(UserDuration d) const {
-  assert(_cost_based_on_duration);
-  return (d * _per_hour) / COST_FACTOR;
+UserCost CostWrapper::user_cost_from_user_metrics(UserDuration d,
+                                                  UserDistance m) const {
+  assert(_cost_based_on_metrics);
+  return utils::round<UserCost>(static_cast<double>(d * _per_hour) / 3600 +
+                                static_cast<double>(m * _per_km) / 1000);
 }
 
 } // namespace vroom
