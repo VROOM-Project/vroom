@@ -40,7 +40,7 @@ Vehicle::Vehicle(Id id,
     breaks(breaks),
     description(std::move(description)),
     costs(costs),
-    cost_wrapper(speed_factor, costs.per_hour),
+    cost_wrapper(speed_factor, costs.per_hour, costs.per_km),
     max_tasks(max_tasks.value_or(DEFAULT_MAX_TASKS)),
     max_travel_time(max_travel_time.has_value()
                       ? utils::scale_from_user_duration(max_travel_time.value())

@@ -17,23 +17,25 @@ namespace vroom {
 
 class CostWrapper {
 private:
+  const Cost _per_hour;
+  const Cost _per_km;
+
   const Duration discrete_duration_factor;
+  Cost discrete_cost_factor;
+
   std::size_t duration_matrix_size;
   const UserDuration* duration_data;
 
   std::size_t distance_matrix_size;
   const UserDistance* distance_data;
 
-  Cost discrete_cost_factor;
   std::size_t cost_matrix_size;
   const UserCost* cost_data;
 
-  const double _speed_factor;
-  Cost _per_hour;
   bool _cost_based_on_duration{true};
 
 public:
-  CostWrapper(double speed_factor, Cost per_hour);
+  CostWrapper(double speed_factor, Cost per_hour, Cost per_km);
 
   void set_durations_matrix(const Matrix<UserDuration>* matrix);
 

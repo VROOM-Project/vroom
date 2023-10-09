@@ -13,12 +13,12 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
-CostWrapper::CostWrapper(double speed_factor, Cost per_hour)
-  : discrete_duration_factor(std::round(1 / speed_factor * DURATION_FACTOR)),
+CostWrapper::CostWrapper(double speed_factor, Cost per_hour, Cost per_km)
+  : _per_hour(per_hour),
+    _per_km(per_km),
+    discrete_duration_factor(std::round(1 / speed_factor * DURATION_FACTOR)),
     discrete_cost_factor(
-      std::round(1 / speed_factor * DURATION_FACTOR * per_hour)),
-    _speed_factor(speed_factor),
-    _per_hour(per_hour) {
+      std::round(1 / speed_factor * DURATION_FACTOR * per_hour)) {
   if (speed_factor <= 0 || speed_factor > MAX_SPEED_FACTOR) {
     throw InputException("Invalid speed factor: " +
                          std::to_string(speed_factor));
