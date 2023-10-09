@@ -38,8 +38,8 @@ struct VehicleCosts {
   }
 
   friend bool operator<(const VehicleCosts& lhs, const VehicleCosts& rhs) {
-    return lhs.fixed < rhs.fixed ||
-           (lhs.fixed == rhs.fixed && lhs.per_hour < rhs.per_hour);
+    return std::tie(lhs.fixed, lhs.per_hour) <
+           std::tie(rhs.fixed, rhs.per_hour);
   }
 };
 
