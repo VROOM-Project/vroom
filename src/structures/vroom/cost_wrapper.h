@@ -20,8 +20,14 @@ private:
   const Cost _per_hour;
   const Cost _per_km;
 
+  // Used to scale durations internally in order to account for
+  // vehicle speed_factor.
   const Duration discrete_duration_factor;
-  Cost discrete_cost_factor;
+
+  // Used to consistently ponder durations and distances as cost
+  // values.
+  Cost discrete_duration_cost_factor;
+  Cost discrete_distance_cost_factor;
 
   std::size_t duration_matrix_size;
   const UserDuration* duration_data;
@@ -62,8 +68,14 @@ public:
   }
 
   Cost cost(Index i, Index j) const {
-    return discrete_cost_factor *
-           static_cast<Cost>(cost_data[i * cost_matrix_size + j]);
+    // If custom costs are provided, this boils down to scaling the
+    // actual costs. If costs are computed from travel times and
+    // distances, then cost_data holds the travel times so we ponder
+    // costs based on per_hour and per_km.
+    return discrete_duration_cost_factor *
+             static_cast<Cost>(cost_data[i * cost_matrix_size + j]) +
+           discrete_distance_cost_factor *
+             static_cast<Cost>(distance_data[i * distance_matrix_size + j]);
   }
 
   UserCost user_cost_from_user_duration(UserDuration d) const;

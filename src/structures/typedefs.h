@@ -64,6 +64,10 @@ constexpr double DEFAULT_LIBOSRM_SNAPPING_RADIUS = 35000;
 // Our internal time measure is the hundredth of a second.
 constexpr Duration DURATION_FACTOR = 100;
 
+// Used to scale distances internally in a consistent way when used
+// inside cost evaluations.
+constexpr Distance DISTANCE_FACTOR = 360;
+
 // Costs can be derived from travel times with a cost per hour for
 // vehicles. So we scale all costs in order to not use floating point
 // values while avoiding rounding issues internally.
