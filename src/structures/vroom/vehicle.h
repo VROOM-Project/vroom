@@ -28,18 +28,23 @@ namespace vroom {
 struct VehicleCosts {
   const Cost fixed;
   const Cost per_hour;
+  const Cost per_km;
 
-  VehicleCosts(UserCost fixed = 0, UserCost per_hour = DEFAULT_COST_PER_HOUR)
+  VehicleCosts(UserCost fixed = 0,
+               UserCost per_hour = DEFAULT_COST_PER_HOUR,
+               UserCost per_km = DEFAULT_COST_PER_KM)
     : fixed(utils::scale_from_user_cost(fixed)),
-      per_hour(static_cast<Cost>(per_hour)){};
+      per_hour(static_cast<Cost>(per_hour)),
+      per_km(static_cast<Cost>(per_km)){};
 
   friend bool operator==(const VehicleCosts& lhs, const VehicleCosts& rhs) {
-    return lhs.fixed == rhs.fixed && lhs.per_hour == rhs.per_hour;
+    return lhs.fixed == rhs.fixed && lhs.per_hour == rhs.per_hour &&
+           lhs.per_km == rhs.per_km;
   }
 
   friend bool operator<(const VehicleCosts& lhs, const VehicleCosts& rhs) {
-    return lhs.fixed < rhs.fixed ||
-           (lhs.fixed == rhs.fixed && lhs.per_hour < rhs.per_hour);
+    return std::tie(lhs.fixed, lhs.per_hour, lhs.per_km) <
+           std::tie(rhs.fixed, rhs.per_hour, rhs.per_km);
   }
 };
 
@@ -89,7 +94,7 @@ struct Vehicle {
 
   bool has_same_profile(const Vehicle& other) const;
 
-  bool cost_based_on_duration() const;
+  bool cost_based_on_metrics() const;
 
   Duration available_duration() const;
 

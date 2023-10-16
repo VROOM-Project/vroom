@@ -17,23 +17,31 @@ namespace vroom {
 
 class CostWrapper {
 private:
+  const Cost _per_hour;
+  const Cost _per_km;
+
+  // Used to scale durations internally in order to account for
+  // vehicle speed_factor.
   const Duration discrete_duration_factor;
+
+  // Used to consistently ponder durations and distances as cost
+  // values.
+  Cost discrete_duration_cost_factor;
+  Cost discrete_distance_cost_factor;
+
   std::size_t duration_matrix_size;
   const UserDuration* duration_data;
 
   std::size_t distance_matrix_size;
   const UserDistance* distance_data;
 
-  Cost discrete_cost_factor;
   std::size_t cost_matrix_size;
   const UserCost* cost_data;
 
-  const double _speed_factor;
-  Cost _per_hour;
-  bool _cost_based_on_duration{true};
+  bool _cost_based_on_metrics{true};
 
 public:
-  CostWrapper(double speed_factor, Cost per_hour);
+  CostWrapper(double speed_factor, Cost per_hour, Cost per_km);
 
   void set_durations_matrix(const Matrix<UserDuration>* matrix);
 
@@ -46,8 +54,8 @@ public:
     return discrete_duration_factor;
   }
 
-  bool cost_based_on_duration() const {
-    return _cost_based_on_duration;
+  bool cost_based_on_metrics() const {
+    return _cost_based_on_metrics;
   }
 
   Duration duration(Index i, Index j) const {
@@ -60,19 +68,17 @@ public:
   }
 
   Cost cost(Index i, Index j) const {
-    return discrete_cost_factor *
-           static_cast<Cost>(cost_data[i * cost_matrix_size + j]);
+    // If custom costs are provided, this boils down to scaling the
+    // actual costs. If costs are computed from travel times and
+    // distances, then cost_data holds the travel times so we ponder
+    // costs based on per_hour and per_km.
+    return discrete_duration_cost_factor *
+             static_cast<Cost>(cost_data[i * cost_matrix_size + j]) +
+           discrete_distance_cost_factor *
+             static_cast<Cost>(distance_data[i * distance_matrix_size + j]);
   }
 
-  double get_speed_factor() const {
-    return _speed_factor;
-  }
-
-  Cost get_per_hour() const {
-    return _per_hour;
-  }
-
-  UserCost user_cost_from_user_duration(UserDuration d) const;
+  UserCost user_cost_from_user_metrics(UserDuration d, UserDistance m) const;
 };
 
 } // namespace vroom

@@ -4,6 +4,7 @@
 
 ### Added
 
+- Support for cost per km for vehicles (#908)
 - Support for `max_distance` at vehicle level (#354)
 - `MAX_DISTANCE` violation cause in plan mode (#995)
 - Recommendation on how to cite in publications (#943)

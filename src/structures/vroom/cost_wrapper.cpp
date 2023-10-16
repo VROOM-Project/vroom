@@ -9,16 +9,18 @@ All rights reserved (see LICENSE).
 
 #include "structures/vroom/cost_wrapper.h"
 #include "utils/exception.h"
+#include "utils/helpers.h"
 #include <cmath>
 
 namespace vroom {
 
-CostWrapper::CostWrapper(double speed_factor, Cost per_hour)
-  : discrete_duration_factor(std::round(1 / speed_factor * DURATION_FACTOR)),
-    discrete_cost_factor(
+CostWrapper::CostWrapper(double speed_factor, Cost per_hour, Cost per_km)
+  : _per_hour(per_hour),
+    _per_km(per_km),
+    discrete_duration_factor(std::round(1 / speed_factor * DURATION_FACTOR)),
+    discrete_duration_cost_factor(
       std::round(1 / speed_factor * DURATION_FACTOR * per_hour)),
-    _speed_factor(speed_factor),
-    _per_hour(per_hour) {
+    discrete_distance_cost_factor(DISTANCE_FACTOR * per_km) {
   if (speed_factor <= 0 || speed_factor > MAX_SPEED_FACTOR) {
     throw InputException("Invalid speed factor: " +
                          std::to_string(speed_factor));
@@ -41,14 +43,17 @@ void CostWrapper::set_costs_matrix(const Matrix<UserCost>* matrix,
   cost_data = (*matrix)[0];
 
   if (reset_cost_factor) {
-    discrete_cost_factor = DURATION_FACTOR * COST_FACTOR;
-    _cost_based_on_duration = false;
+    discrete_duration_cost_factor = DURATION_FACTOR * COST_FACTOR;
+    discrete_distance_cost_factor = 0;
+    _cost_based_on_metrics = false;
   }
 }
 
-UserCost CostWrapper::user_cost_from_user_duration(UserDuration d) const {
-  assert(_cost_based_on_duration);
-  return (d * _per_hour) / COST_FACTOR;
+UserCost CostWrapper::user_cost_from_user_metrics(UserDuration d,
+                                                  UserDistance m) const {
+  assert(_cost_based_on_metrics);
+  return utils::round<UserCost>(static_cast<double>(d * _per_hour) / 3600 +
+                                static_cast<double>(m * _per_km) / 1000);
 }
 
 } // namespace vroom

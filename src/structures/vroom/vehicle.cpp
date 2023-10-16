@@ -40,7 +40,7 @@ Vehicle::Vehicle(Id id,
     breaks(breaks),
     description(std::move(description)),
     costs(costs),
-    cost_wrapper(speed_factor, costs.per_hour),
+    cost_wrapper(speed_factor, costs.per_hour, costs.per_km),
     max_tasks(max_tasks.value_or(DEFAULT_MAX_TASKS)),
     max_travel_time(max_travel_time.has_value()
                       ? utils::scale_from_user_duration(max_travel_time.value())
@@ -132,8 +132,8 @@ bool Vehicle::has_same_profile(const Vehicle& other) const {
           other.cost_wrapper.get_discrete_duration_factor());
 }
 
-bool Vehicle::cost_based_on_duration() const {
-  return cost_wrapper.cost_based_on_duration();
+bool Vehicle::cost_based_on_metrics() const {
+  return cost_wrapper.cost_based_on_metrics();
 }
 
 Duration Vehicle::available_duration() const {
