@@ -23,6 +23,7 @@
 - Setup a `clang-tidy` workflow (#789)
 - Submodule and update Rapidjson (#929)
 - Update polylineencoder to v2.0.1 (#931)
+- Update polylineencoder to v2.0.2 (#1006)
 - Switch to C++20 (#851)
 - Improved error messages for file-related IO errors (#553)
 - Add job id to error message for unreachable step (#946)
