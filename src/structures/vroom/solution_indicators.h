@@ -48,11 +48,13 @@ template <class Route> struct SolutionIndicators {
                     rhs.assigned,
                     lhs.eval.cost,
                     lhs.used_vehicles,
-                    lhs.eval.duration) < std::tie(lhs.priority_sum,
+                    lhs.eval.duration,
+                    lhs.eval.distance) < std::tie(lhs.priority_sum,
                                                   lhs.assigned,
                                                   rhs.eval.cost,
                                                   rhs.used_vehicles,
-                                                  rhs.eval.duration);
+                                                  rhs.eval.duration,
+                                                  rhs.eval.distance);
   }
 };
 
