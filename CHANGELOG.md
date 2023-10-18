@@ -36,6 +36,7 @@
 - Update cxxopts to 3.1.1 (#997)
 - Update gcc to version 12 in CI (#1002)
 - Distances in output are from internal matrices, not routing requests (#957)
+- Significant speedup by pruning local search moves (#509)
 
 ### Fixed
 
