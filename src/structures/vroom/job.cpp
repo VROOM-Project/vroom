@@ -7,19 +7,10 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <numeric>
-
 #include "structures/vroom/job.h"
 #include "utils/helpers.h"
 
 namespace vroom {
-
-inline Duration get_tw_length(const std::vector<TimeWindow>& tws) {
-  return std::accumulate(std::next(tws.begin()),
-                         tws.end(),
-                         tws[0].length,
-                         [](auto sum, auto tw) { return sum + tw.length; });
-}
 
 Job::Job(Id id,
          const Location& location,
