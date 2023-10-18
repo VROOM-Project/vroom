@@ -41,8 +41,7 @@ Job::Job(Id id,
     skills(std::move(skills)),
     priority(priority),
     tws(tws),
-    description(std::move(description)),
-    tw_length(get_tw_length(tws)) {
+    description(std::move(description)) {
   utils::check_tws(tws, id, "job");
   utils::check_priority(priority, id, "job");
 }
@@ -67,8 +66,7 @@ Job::Job(Id id,
     skills(std::move(skills)),
     priority(priority),
     tws(tws),
-    description(std::move(description)),
-    tw_length(get_tw_length(tws)) {
+    description(std::move(description)) {
   assert(type == JOB_TYPE::PICKUP || type == JOB_TYPE::DELIVERY);
   utils::check_tws(tws, id, "job");
   utils::check_priority(priority, id, "job");
