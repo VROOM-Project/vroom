@@ -31,7 +31,6 @@ struct Job {
   const Priority priority;
   const std::vector<TimeWindow> tws;
   const std::string description;
-  const Duration tw_length;
 
   // Constructor for regular one-stop job (JOB_TYPE::SINGLE).
   Job(Id id,

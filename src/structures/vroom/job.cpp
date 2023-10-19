@@ -7,19 +7,10 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <numeric>
-
 #include "structures/vroom/job.h"
 #include "utils/helpers.h"
 
 namespace vroom {
-
-inline Duration get_tw_length(const std::vector<TimeWindow>& tws) {
-  return std::accumulate(std::next(tws.begin()),
-                         tws.end(),
-                         tws[0].length,
-                         [](auto sum, auto tw) { return sum + tw.length; });
-}
 
 Job::Job(Id id,
          const Location& location,
@@ -41,8 +32,7 @@ Job::Job(Id id,
     skills(std::move(skills)),
     priority(priority),
     tws(tws),
-    description(std::move(description)),
-    tw_length(get_tw_length(tws)) {
+    description(std::move(description)) {
   utils::check_tws(tws, id, "job");
   utils::check_priority(priority, id, "job");
 }
@@ -67,8 +57,7 @@ Job::Job(Id id,
     skills(std::move(skills)),
     priority(priority),
     tws(tws),
-    description(std::move(description)),
-    tw_length(get_tw_length(tws)) {
+    description(std::move(description)) {
   assert(type == JOB_TYPE::PICKUP || type == JOB_TYPE::DELIVERY);
   utils::check_tws(tws, id, "job");
   utils::check_priority(priority, id, "job");
