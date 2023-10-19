@@ -64,6 +64,10 @@ constexpr double DEFAULT_LIBOSRM_SNAPPING_RADIUS = 35000;
 // Our internal time measure is the hundredth of a second.
 constexpr Duration DURATION_FACTOR = 100;
 
+// Used to scale distances internally in a consistent way when used
+// inside cost evaluations.
+constexpr Distance DISTANCE_FACTOR = 360;
+
 // Costs can be derived from travel times with a cost per hour for
 // vehicles. So we scale all costs in order to not use floating point
 // values while avoiding rounding issues internally.
@@ -72,6 +76,7 @@ constexpr Cost COST_FACTOR = 3600;
 // outputting exact same values for duration and cost if per_hour
 // values are not set.
 constexpr UserCost DEFAULT_COST_PER_HOUR = 3600;
+constexpr UserCost DEFAULT_COST_PER_KM = 0;
 
 constexpr Priority MAX_PRIORITY = 100;
 constexpr double MAX_SPEED_FACTOR = 5.0;

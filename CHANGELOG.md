@@ -4,6 +4,7 @@
 
 ### Added
 
+- Support for cost per km for vehicles (#908)
 - Support for `max_distance` at vehicle level (#354)
 - `MAX_DISTANCE` violation cause in plan mode (#995)
 - Recommendation on how to cite in publications (#943)
@@ -22,6 +23,7 @@
 - Setup a `clang-tidy` workflow (#789)
 - Submodule and update Rapidjson (#929)
 - Update polylineencoder to v2.0.1 (#931)
+- Update polylineencoder to v2.0.2 (#1006)
 - Switch to C++20 (#851)
 - Improved error messages for file-related IO errors (#553)
 - Add job id to error message for unreachable step (#946)
@@ -36,6 +38,8 @@
 - Update cxxopts to 3.1.1 (#997)
 - Update gcc to version 12 in CI (#1002)
 - Distances in output are from internal matrices, not routing requests (#957)
+- Remove unused `tw_length` member from `Job` and associated code
+- Scale `TimeWindow::length` from `UserDuration` to `Duration` (#1015)
 - Significant speedup by pruning local search moves (#509)
 
 ### Fixed
