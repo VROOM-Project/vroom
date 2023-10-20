@@ -38,6 +38,7 @@ private:
   TimePoint _end_routing;
   std::unordered_set<std::string> _profiles;
   std::vector<std::unique_ptr<routing::Wrapper>> _routing_wrappers;
+  bool _apply_TSPFix;
   bool _no_addition_yet{true};
   bool _has_skills{false};
   bool _has_TW{false};
@@ -111,7 +112,9 @@ public:
   std::unordered_map<Id, Index> pickup_id_to_rank;
   std::unordered_map<Id, Index> delivery_id_to_rank;
 
-  Input(io::Servers servers = {}, ROUTER router = ROUTER::OSRM);
+  Input(io::Servers servers = {},
+        ROUTER router = ROUTER::OSRM,
+        bool apply_TSPFix = false);
 
   void set_amount_size(unsigned amount_size);
 
@@ -137,6 +140,10 @@ public:
 
   const Amount& zero_amount() const {
     return _zero;
+  }
+
+  bool apply_TSPFix() const {
+    return _apply_TSPFix;
   }
 
   bool is_used_several_times(const Location& location) const;

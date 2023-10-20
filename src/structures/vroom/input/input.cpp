@@ -29,8 +29,8 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
-Input::Input(io::Servers servers, ROUTER router)
-  : _servers(std::move(servers)), _router(router) {
+Input::Input(io::Servers servers, ROUTER router, bool apply_TSPFix)
+  : _servers(std::move(servers)), _router(router), _apply_TSPFix(apply_TSPFix) {
 }
 
 void Input::set_amount_size(unsigned amount_size) {
