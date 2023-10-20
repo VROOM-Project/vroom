@@ -26,6 +26,7 @@ struct CLArgs {
   Servers servers;                           // -a and -p
   bool check;                                // -c
   std::vector<HeuristicParameters> h_params; // -e
+  bool apply_TSPFix;                         // -f
   bool geometry;                             // -g
   std::string input_file;                    // -i
   Timeout timeout;                           // -l

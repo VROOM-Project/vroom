@@ -89,6 +89,9 @@ int main(int argc, char** argv) {
     ("e,heuristic-param",
      "Heuristic parameter",
      cxxopts::value<std::vector<std::string>>(heuristic_params_arg))
+    ("f,apply-tsp-fix",
+     "apply experimental TSPFix local search operator",
+     cxxopts::value<bool>(cl_args.apply_TSPFix)->default_value("false"));
 
   // clang-format on
   try {
