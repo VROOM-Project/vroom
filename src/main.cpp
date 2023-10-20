@@ -136,9 +136,9 @@ int main(int argc, char** argv) {
   } catch (const cxxopts::exceptions::exception& e) {
     // cxxopts outputs the failed parameter but no other details, so we add some
     // (likely) context
-    const auto exc = vroom::InputException(": invalid numerical value.");
-    const auto msg = e.what() + exc.message;
-    std::cerr << "[Error] " << msg << std::endl;
+    const auto exc = vroom::InputException(std::string(e.what()) +
+                                           ": invalid numerical value.");
+    std::cerr << "[Error] " << exc.message << std::endl;
     vroom::io::write_to_json(exc, cl_args.output_file);
     exit(exc.error_code);
   }
