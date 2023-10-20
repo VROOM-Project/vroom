@@ -513,8 +513,9 @@ void LocalSearch<Route,
       if (target <= source || // This operator is symmetric.
           best_priorities[source] > 0 || best_priorities[target] > 0 ||
           _sol[source].size() < 2 || _sol[target].size() < 2 ||
-          !_sol_state.route_bbox[source].intersects(
-            _sol_state.route_bbox[target])) {
+          (_input.all_locations_have_coords() &&
+           !_sol_state.route_bbox[source].intersects(
+             _sol_state.route_bbox[target]))) {
         continue;
       }
 
@@ -651,8 +652,9 @@ void LocalSearch<Route,
         if (source == target || best_priorities[source] > 0 ||
             best_priorities[target] > 0 || _sol[source].size() == 0 ||
             _sol[target].size() < 2 ||
-            !_sol_state.route_bbox[source].intersects(
-              _sol_state.route_bbox[target])) {
+            (_input.all_locations_have_coords() &&
+             !_sol_state.route_bbox[source].intersects(
+               _sol_state.route_bbox[target]))) {
           continue;
         }
 
@@ -763,8 +765,9 @@ void LocalSearch<Route,
     for (const auto& [source, target] : s_t_pairs) {
       if (target <= source || // This operator is symmetric.
           best_priorities[source] > 0 || best_priorities[target] > 0 ||
-          !_sol_state.route_bbox[source].intersects(
-            _sol_state.route_bbox[target])) {
+          (_input.all_locations_have_coords() &&
+           !_sol_state.route_bbox[source].intersects(
+             _sol_state.route_bbox[target]))) {
         continue;
       }
 
@@ -871,8 +874,9 @@ void LocalSearch<Route,
     for (const auto& [source, target] : s_t_pairs) {
       if (source == target || best_priorities[source] > 0 ||
           best_priorities[target] > 0 ||
-          !_sol_state.route_bbox[source].intersects(
-            _sol_state.route_bbox[target])) {
+          (_input.all_locations_have_coords() &&
+           !_sol_state.route_bbox[source].intersects(
+             _sol_state.route_bbox[target]))) {
         continue;
       }
 
@@ -1628,8 +1632,9 @@ void LocalSearch<Route,
             best_priorities[source] > 0 || best_priorities[target] > 0 ||
             _sol[source].size() == 0 || _sol[target].size() == 0 ||
             !_input.vehicle_ok_with_vehicle(source, target) ||
-            !_sol_state.route_bbox[source].intersects(
-              _sol_state.route_bbox[target])) {
+            (_input.all_locations_have_coords() &&
+             !_sol_state.route_bbox[source].intersects(
+               _sol_state.route_bbox[target]))) {
           continue;
         }
 
