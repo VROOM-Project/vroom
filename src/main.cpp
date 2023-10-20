@@ -213,7 +213,9 @@ int main(int argc, char** argv) {
 
   try {
     // Build problem.
-    vroom::Input problem_instance(cl_args.servers, cl_args.router);
+    vroom::Input problem_instance(cl_args.servers,
+                                  cl_args.router,
+                                  cl_args.apply_TSPFix);
     vroom::io::parse(problem_instance, cl_args.input, cl_args.geometry);
 
     vroom::Solution sol = (cl_args.check)

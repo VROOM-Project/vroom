@@ -1106,7 +1106,7 @@ void LocalSearch<Route,
     }
 
     // TSPFix stuff
-    if (!_input.has_shipments()) {
+    if (_input.apply_TSPFix() && !_input.has_shipments()) {
       for (const auto& [source, target] : s_t_pairs) {
         if (target != source || best_priorities[source] > 0 ||
             _sol[source].size() < 2) {
