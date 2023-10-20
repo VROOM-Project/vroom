@@ -1109,7 +1109,7 @@ void LocalSearch<Route,
     if (!_input.has_shipments()) {
       for (const auto& [source, target] : s_t_pairs) {
         if (target != source || best_priorities[source] > 0 ||
-            !_input.is_good_TSP_candidate(source) || _sol[source].size() < 2) {
+            _sol[source].size() < 2) {
           continue;
         }
 

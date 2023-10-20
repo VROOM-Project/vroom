@@ -574,25 +574,6 @@ void Input::set_vehicles_compatibility() {
   }
 }
 
-void Input::set_vehicles_TSP_flag() {
-  _good_TSP_candidate = std::vector<bool>(vehicles.size(), true);
-
-  for (std::size_t v = 0; v < vehicles.size(); ++v) {
-    const auto& vehicle = vehicles[v];
-
-    // Check if vehicle TW is in the intersection of its compatible
-    // jobs TW, i.e. all its compatible jobs have at least one TW
-    // containing it.
-    for (std::size_t j = 0; j < jobs.size() && _good_TSP_candidate[v]; ++j) {
-      _good_TSP_candidate[v] =
-        !vehicle_ok_with_job(v, j) ||
-        std::ranges::any_of(jobs[j].tws, [&](const auto& tw) {
-          return tw.start <= vehicle.tw.start && vehicle.tw.end <= tw.end;
-        });
-    }
-  }
-}
-
 void Input::set_vehicles_costs() {
   for (auto& vehicle : vehicles) {
     auto duration_m = _durations_matrices.find(vehicle.profile);
@@ -1120,7 +1101,6 @@ Solution Input::solve(unsigned exploration_level,
   set_skills_compatibility();
   set_extra_compatibility();
   set_vehicles_compatibility();
-  set_vehicles_TSP_flag();
 
   set_jobs_vehicles_evals();
 
