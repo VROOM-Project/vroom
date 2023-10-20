@@ -84,14 +84,14 @@ int main(int argc, char** argv) {
      "optional input positional arg",
      cxxopts::value<std::string>(cl_args.input));
 
+  // we don't want to print debug args on --help
+  options.add_options("debug_group")
+    ("e,heuristic-param",
+     "Heuristic parameter",
+     cxxopts::value<std::vector<std::string>>(heuristic_params_arg))
+
   // clang-format on
   try {
-    // we don't want to print debug args on --help
-    options.add_options("debug_group")("e,heuristic-param",
-                                       "Heuristic parameter",
-                                       cxxopts::value<std::vector<std::string>>(
-                                         heuristic_params_arg));
-
     options.parse_positional({"stdin"});
     options.positional_help("OPTIONAL INLINE JSON");
     auto parsed_args = options.parse(argc, argv);
