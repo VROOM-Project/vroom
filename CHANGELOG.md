@@ -40,6 +40,7 @@
 - Distances in output are from internal matrices, not routing requests (#957)
 - Remove unused `tw_length` member from `Job` and associated code
 - Scale `TimeWindow::length` from `UserDuration` to `Duration` (#1015)
+- Significant speedup by pruning local search moves (#509)
 
 ### Fixed
 

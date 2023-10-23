@@ -29,7 +29,12 @@ void Location::set_index(Index index) {
 }
 
 bool Location::has_coordinates() const {
-  return _coords != std::nullopt;
+  return _coords.has_value();
+}
+
+Coordinates Location::coordinates() const {
+  assert(this->has_coordinates());
+  return _coords.value();
 }
 
 Coordinate Location::lon() const {

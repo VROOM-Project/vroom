@@ -157,6 +157,10 @@ public:
     return _cost_upper_bound;
   }
 
+  bool all_locations_have_coords() const {
+    return _all_locations_have_coords;
+  }
+
   const std::vector<std::vector<Eval>>& jobs_vehicles_evals() const {
     return _jobs_vehicles_evals;
   }

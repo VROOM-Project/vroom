@@ -10,6 +10,8 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <tuple>
+
 #include "structures/typedefs.h"
 #include "structures/vroom/input/input.h"
 #include "utils/helpers.h"
@@ -42,30 +44,17 @@ template <class Route> struct SolutionIndicators {
 
   friend bool operator<(const SolutionIndicators& lhs,
                         const SolutionIndicators& rhs) {
-    if (lhs.priority_sum > rhs.priority_sum) {
-      return true;
-    }
-    if (lhs.priority_sum == rhs.priority_sum) {
-      if (lhs.assigned > rhs.assigned) {
-        return true;
-      }
-      if (lhs.assigned == rhs.assigned) {
-        if (lhs.eval.cost < rhs.eval.cost) {
-          return true;
-        }
-        if (lhs.eval.cost == rhs.eval.cost) {
-          if (lhs.eval.duration < rhs.eval.duration) {
-            return true;
-          }
-          if (lhs.eval.duration == rhs.eval.duration &&
-              lhs.used_vehicles < rhs.used_vehicles) {
-            return true;
-          }
-        }
-      }
-    }
-
-    return false;
+    return std::tie(rhs.priority_sum,
+                    rhs.assigned,
+                    lhs.eval.cost,
+                    lhs.used_vehicles,
+                    lhs.eval.duration,
+                    lhs.eval.distance) < std::tie(lhs.priority_sum,
+                                                  lhs.assigned,
+                                                  rhs.eval.cost,
+                                                  rhs.used_vehicles,
+                                                  rhs.eval.duration,
+                                                  rhs.eval.distance);
   }
 };
 

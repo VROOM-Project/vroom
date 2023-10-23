@@ -317,7 +317,7 @@ void LocalSearch<Route,
   } while (job_added);
 
   for (const auto v : modified_vehicles) {
-    _sol_state.update_top_3_insertions(_sol[v].route, v);
+    _sol_state.update_route_bbox(_sol[v].route, v);
   }
 }
 
@@ -512,7 +512,11 @@ void LocalSearch<Route,
     for (const auto& [source, target] : s_t_pairs) {
       if (target <= source || // This operator is symmetric.
           best_priorities[source] > 0 || best_priorities[target] > 0 ||
-          _sol[source].size() < 2 || _sol[target].size() < 2) {
+          _sol[source].size() < 2 || _sol[target].size() < 2 ||
+          (_input.all_locations_have_coords() &&
+           _input.vehicles[source].has_same_profile(_input.vehicles[target]) &&
+           !_sol_state.route_bbox[source].intersects(
+             _sol_state.route_bbox[target]))) {
         continue;
       }
 
@@ -648,7 +652,12 @@ void LocalSearch<Route,
       for (const auto& [source, target] : s_t_pairs) {
         if (source == target || best_priorities[source] > 0 ||
             best_priorities[target] > 0 || _sol[source].size() == 0 ||
-            _sol[target].size() < 2) {
+            _sol[target].size() < 2 ||
+            (_input.all_locations_have_coords() &&
+             _input.vehicles[source].has_same_profile(
+               _input.vehicles[target]) &&
+             !_sol_state.route_bbox[source].intersects(
+               _sol_state.route_bbox[target]))) {
           continue;
         }
 
@@ -758,7 +767,11 @@ void LocalSearch<Route,
     // TwoOpt stuff
     for (const auto& [source, target] : s_t_pairs) {
       if (target <= source || // This operator is symmetric.
-          best_priorities[source] > 0 || best_priorities[target] > 0) {
+          best_priorities[source] > 0 || best_priorities[target] > 0 ||
+          (_input.all_locations_have_coords() &&
+           _input.vehicles[source].has_same_profile(_input.vehicles[target]) &&
+           !_sol_state.route_bbox[source].intersects(
+             _sol_state.route_bbox[target]))) {
         continue;
       }
 
@@ -864,7 +877,11 @@ void LocalSearch<Route,
     // ReverseTwoOpt stuff
     for (const auto& [source, target] : s_t_pairs) {
       if (source == target || best_priorities[source] > 0 ||
-          best_priorities[target] > 0) {
+          best_priorities[target] > 0 ||
+          (_input.all_locations_have_coords() &&
+           _input.vehicles[source].has_same_profile(_input.vehicles[target]) &&
+           !_sol_state.route_bbox[source].intersects(
+             _sol_state.route_bbox[target]))) {
         continue;
       }
 
@@ -1619,7 +1636,12 @@ void LocalSearch<Route,
         if (target <= source || // This operator is symmetric.
             best_priorities[source] > 0 || best_priorities[target] > 0 ||
             _sol[source].size() == 0 || _sol[target].size() == 0 ||
-            !_input.vehicle_ok_with_vehicle(source, target)) {
+            !_input.vehicle_ok_with_vehicle(source, target) ||
+            (_input.all_locations_have_coords() &&
+             _input.vehicles[source].has_same_profile(
+               _input.vehicles[target]) &&
+             !_sol_state.route_bbox[source].intersects(
+               _sol_state.route_bbox[target]))) {
           continue;
         }
 
@@ -1738,7 +1760,7 @@ void LocalSearch<Route,
 
       for (auto v_rank : update_candidates) {
         _sol_state.update_route_eval(_sol[v_rank].route, v_rank);
-        _sol_state.update_top_3_insertions(_sol[v_rank].route, v_rank);
+        _sol_state.update_route_bbox(_sol[v_rank].route, v_rank);
 
         assert(_sol[v_rank].size() <= _input.vehicles[v_rank].max_tasks);
         assert(_input.vehicles[v_rank].ok_for_range_bounds(
@@ -1908,7 +1930,7 @@ void LocalSearch<Route,
           // Update what is required for consistency in
           // remove_from_route.
           _sol_state.update_route_eval(_sol[v].route, v);
-          _sol_state.update_top_3_insertions(_sol[v].route, v);
+          _sol_state.update_route_bbox(_sol[v].route, v);
           _sol_state.set_node_gains(_sol[v].route, v);
           _sol_state.set_pd_matching_ranks(_sol[v].route, v);
           _sol_state.set_pd_gains(_sol[v].route, v);

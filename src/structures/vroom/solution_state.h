@@ -10,8 +10,8 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "algorithms/local_search/top_insertions.h"
 #include "structures/typedefs.h"
+#include "structures/vroom/bbox.h"
 #include "structures/vroom/input/input.h"
 #include "structures/vroom/tw_route.h"
 
@@ -114,9 +114,9 @@ public:
   // Store evaluation of all routes, including fixed and travel costs.
   std::vector<Eval> route_evals;
 
-  // top_3_insertions[v][j] stores best insertion options for job at
-  // rank j in route for vehicle v.
-  std::vector<std::vector<vroom::ls::ThreeInsertions>> top_3_insertions;
+  // Store bbox for all routes tasks (not including vehicle start and
+  // end).
+  std::vector<BBox> route_bbox;
 
   explicit SolutionState(const Input& input);
 
@@ -146,7 +146,7 @@ public:
 
   void update_route_eval(const std::vector<Index>& route, Index v);
 
-  void update_top_3_insertions(const std::vector<Index>& route, Index v);
+  void update_route_bbox(const std::vector<Index>& route, Index v);
 };
 
 } // namespace vroom::utils

@@ -39,6 +39,8 @@ public:
     return _index;
   }
 
+  Coordinates coordinates() const;
+
   Coordinate lon() const;
 
   Coordinate lat() const;

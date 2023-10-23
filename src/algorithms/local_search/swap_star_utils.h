@@ -177,6 +177,32 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
                                          const Index t_vehicle,
                                          const Route& target,
                                          const Eval& best_known_gain) {
+  // Preprocessing phase.
+  std::vector<ThreeInsertions> top_insertions_in_target(source.route.size(),
+                                                        empty_three_insertions);
+  for (unsigned s_rank = 0; s_rank < source.route.size(); ++s_rank) {
+    const auto source_job_rank = source.route[s_rank];
+
+    if (input.jobs[source_job_rank].type == JOB_TYPE::SINGLE &&
+        input.vehicle_ok_with_job(t_vehicle, source_job_rank)) {
+      top_insertions_in_target[s_rank] =
+        find_top_3_insertions(input, source_job_rank, target);
+    }
+  }
+
+  std::vector<ThreeInsertions> top_insertions_in_source(target.route.size(),
+                                                        empty_three_insertions);
+  for (unsigned t_rank = 0; t_rank < target.route.size(); ++t_rank) {
+    const auto target_job_rank = target.route[t_rank];
+
+    if (input.jobs[target_job_rank].type == JOB_TYPE::SINGLE &&
+        input.vehicle_ok_with_job(s_vehicle, target_job_rank)) {
+      top_insertions_in_source[t_rank] =
+        find_top_3_insertions(input, target_job_rank, source);
+    }
+  }
+
+  // Search phase.
   auto best_choice = empty_swap_choice;
   Eval best_gain = best_known_gain;
 
@@ -192,9 +218,10 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
   const auto& t_pickup_margin = target.pickup_margin();
 
   for (unsigned s_rank = 0; s_rank < source.route.size(); ++s_rank) {
-    const auto source_job_rank = source.route[s_rank];
-    const auto& target_insertions =
-      sol_state.top_3_insertions[t_vehicle][source_job_rank];
+    const auto& target_insertions = top_insertions_in_target[s_rank];
+    if (target_insertions[0].cost == NO_EVAL) {
+      continue;
+    }
 
     // sol_state.node_gains contains the Delta value we're looking for
     // except in the case of a single-step route with a start and end,
@@ -207,9 +234,10 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
       sol_state.node_gains[s_vehicle][s_rank] - source_start_end_cost;
 
     for (unsigned t_rank = 0; t_rank < target.route.size(); ++t_rank) {
-      const auto target_job_rank = target.route[t_rank];
-      const auto& source_insertions =
-        sol_state.top_3_insertions[s_vehicle][target_job_rank];
+      const auto& source_insertions = top_insertions_in_source[t_rank];
+      if (source_insertions[0].cost == NO_EVAL) {
+        continue;
+      }
 
       // Same as above.
       const auto target_start_end_cost =

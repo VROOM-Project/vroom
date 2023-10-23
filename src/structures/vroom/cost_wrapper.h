@@ -50,12 +50,15 @@ public:
   void set_costs_matrix(const Matrix<UserCost>* matrix,
                         bool reset_cost_factor = false);
 
-  Duration get_discrete_duration_factor() const {
-    return discrete_duration_factor;
-  }
-
   bool cost_based_on_metrics() const {
     return _cost_based_on_metrics;
+  }
+
+  bool has_same_variable_costs(const CostWrapper& other) const {
+    return (this->discrete_duration_cost_factor ==
+            other.discrete_duration_cost_factor) &&
+           (this->discrete_distance_cost_factor ==
+            other.discrete_distance_cost_factor);
   }
 
   Duration duration(Index i, Index j) const {
