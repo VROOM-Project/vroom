@@ -99,7 +99,7 @@ void IntraExchange::compute_gain() {
 }
 
 bool IntraExchange::is_valid() {
-  return is_valid_for_max_travel_time() &&
+  return is_valid_for_range_bounds() &&
          source.is_valid_addition_for_capacity_inclusion(_input,
                                                          _delivery,
                                                          _moved_jobs.begin(),

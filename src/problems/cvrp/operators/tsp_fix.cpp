@@ -42,7 +42,7 @@ void TSPFix::compute_gain() {
 }
 
 bool TSPFix::is_valid() {
-  bool valid = is_valid_for_source_max_travel_time();
+  bool valid = is_valid_for_source_range_bounds();
 
   if (valid) {
     RawRoute route(_input, s_vehicle, _input.zero_amount().size());

@@ -40,12 +40,12 @@ protected:
 
   virtual void compute_gain() = 0;
 
-  bool is_valid_for_source_max_travel_time() const;
+  bool is_valid_for_source_range_bounds() const;
 
-  bool is_valid_for_target_max_travel_time() const;
+  bool is_valid_for_target_range_bounds() const;
 
   // Used for internal operators only.
-  bool is_valid_for_max_travel_time() const;
+  bool is_valid_for_range_bounds() const;
 
 public:
   Operator(OperatorName name,

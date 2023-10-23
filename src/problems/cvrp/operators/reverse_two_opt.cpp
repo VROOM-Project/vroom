@@ -150,8 +150,8 @@ bool ReverseTwoOpt::is_valid() {
 
   const auto& s_pickup = source.bwd_pickups(s_rank);
 
-  return is_valid_for_source_max_travel_time() &&
-         is_valid_for_target_max_travel_time() &&
+  return is_valid_for_source_range_bounds() &&
+         is_valid_for_target_range_bounds() &&
          source.is_valid_addition_for_capacity_margins(_input,
                                                        t_pickup,
                                                        _t_delivery,

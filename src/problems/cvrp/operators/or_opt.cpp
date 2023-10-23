@@ -161,7 +161,7 @@ bool OrOpt::is_valid() {
   auto edge_pickup = _input.jobs[s_route[s_rank]].pickup +
                      _input.jobs[s_route[s_rank + 1]].pickup;
 
-  bool valid = is_valid_for_source_max_travel_time() &&
+  bool valid = is_valid_for_source_range_bounds() &&
                target.is_valid_addition_for_capacity(_input,
                                                      edge_pickup,
                                                      edge_delivery,

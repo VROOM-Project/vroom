@@ -124,7 +124,7 @@ bool UnassignedExchange::is_valid() {
       this->compute_gain();
     }
 
-    valid = is_valid_for_source_max_travel_time();
+    valid = is_valid_for_source_range_bounds();
   }
 
   return valid;
