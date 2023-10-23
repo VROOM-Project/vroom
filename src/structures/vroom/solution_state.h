@@ -44,6 +44,13 @@ public:
   std::vector<std::vector<Index>> fwd_skill_rank;
   std::vector<std::vector<Index>> bwd_skill_rank;
 
+  // fwd_priority[v][i] stores the sum of priorities from job at rank
+  // 0 to job at rank i (included) in the route for vehicle v.
+  // bwd_priority[v][i] stores the sum of priorities from job at rank
+  // i to last job in the route for vehicle v.
+  std::vector<std::vector<Priority>> fwd_priority;
+  std::vector<std::vector<Priority>> bwd_priority;
+
   // edge_evals_around_node[v][i] evaluates the sum of edges that
   // appear before and after job at rank i in route for vehicle v
   // (handling cases where those edges are absent or linked with
@@ -127,6 +134,8 @@ public:
   void update_costs(const std::vector<Index>& route, Index v);
 
   void update_skills(const std::vector<Index>& route, Index v1);
+
+  void update_priorities(const std::vector<Index>& route, Index v);
 
   void set_node_gains(const std::vector<Index>& route, Index v);
 

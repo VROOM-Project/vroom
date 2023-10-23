@@ -8,6 +8,7 @@ All rights reserved (see LICENSE).
 */
 
 #include <algorithm>
+#include <numeric>
 #include <ranges>
 
 #include "structures/vroom/solution_state.h"
@@ -22,6 +23,8 @@ SolutionState::SolutionState(const Input& input)
     bwd_costs(_nb_vehicles, std::vector<std::vector<Eval>>(_nb_vehicles)),
     fwd_skill_rank(_nb_vehicles, std::vector<Index>(_nb_vehicles)),
     bwd_skill_rank(_nb_vehicles, std::vector<Index>(_nb_vehicles)),
+    fwd_priority(_nb_vehicles),
+    bwd_priority(_nb_vehicles),
     edge_evals_around_node(_nb_vehicles),
     node_gains(_nb_vehicles),
     node_candidates(_nb_vehicles),
@@ -48,6 +51,7 @@ SolutionState::SolutionState(const Input& input)
 template <class Route> void SolutionState::setup(const Route& r, Index v) {
   update_costs(r.route, v);
   update_skills(r.route, v);
+  update_priorities(r.route, v);
   set_node_gains(r.route, v);
   set_edge_gains(r.route, v);
   set_pd_matching_ranks(r.route, v);
@@ -122,6 +126,25 @@ void SolutionState::update_skills(const std::vector<Index>& route, Index v1) {
     });
     bwd_skill_rank[v1][v2] = route.size() - std::distance(route.rbegin(), bwd);
   }
+}
+
+void SolutionState::update_priorities(const std::vector<Index>& route,
+                                      Index v) {
+  fwd_priority[v].resize(route.size());
+  std::inclusive_scan(
+    route.cbegin(),
+    route.cend(),
+    fwd_priority[v].begin(),
+    [this](const auto p, const auto j) { return p + _input.jobs[j].priority; },
+    0);
+
+  bwd_priority[v].resize(route.size());
+  std::inclusive_scan(
+    route.crbegin(),
+    route.crend(),
+    bwd_priority[v].rbegin(),
+    [this](const auto p, const auto j) { return p + _input.jobs[j].priority; },
+    0);
 }
 
 void SolutionState::set_node_gains(const std::vector<Index>& route, Index v) {

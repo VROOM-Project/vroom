@@ -1791,6 +1791,7 @@ void LocalSearch<Route,
       for (auto v_rank : update_candidates) {
         _sol_state.update_costs(_sol[v_rank].route, v_rank);
         _sol_state.update_skills(_sol[v_rank].route, v_rank);
+        _sol_state.update_priorities(_sol[v_rank].route, v_rank);
         _sol_state.set_node_gains(_sol[v_rank].route, v_rank);
         _sol_state.set_edge_gains(_sol[v_rank].route, v_rank);
         _sol_state.set_pd_matching_ranks(_sol[v_rank].route, v_rank);
@@ -1951,6 +1952,7 @@ void LocalSearch<Route,
       for (std::size_t v = 0; v < _sol.size(); ++v) {
         _sol_state.update_costs(_sol[v].route, v);
         _sol_state.update_skills(_sol[v].route, v);
+        _sol_state.update_priorities(_sol[v].route, v);
         _sol_state.set_node_gains(_sol[v].route, v);
         _sol_state.set_edge_gains(_sol[v].route, v);
         _sol_state.set_pd_matching_ranks(_sol[v].route, v);
