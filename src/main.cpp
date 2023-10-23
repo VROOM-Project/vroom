@@ -84,14 +84,17 @@ int main(int argc, char** argv) {
      "optional input positional arg",
      cxxopts::value<std::string>(cl_args.input));
 
+  // we don't want to print debug args on --help
+  options.add_options("debug_group")
+    ("e,heuristic-param",
+     "Heuristic parameter",
+     cxxopts::value<std::vector<std::string>>(heuristic_params_arg))
+    ("f,apply-tsp-fix",
+     "apply experimental TSPFix local search operator",
+     cxxopts::value<bool>(cl_args.apply_TSPFix)->default_value("false"));
+
   // clang-format on
   try {
-    // we don't want to print debug args on --help
-    options.add_options("debug_group")("e,heuristic-param",
-                                       "Heuristic parameter",
-                                       cxxopts::value<std::vector<std::string>>(
-                                         heuristic_params_arg));
-
     options.parse_positional({"stdin"});
     options.positional_help("OPTIONAL INLINE JSON");
     auto parsed_args = options.parse(argc, argv);
@@ -136,9 +139,9 @@ int main(int argc, char** argv) {
   } catch (const cxxopts::exceptions::exception& e) {
     // cxxopts outputs the failed parameter but no other details, so we add some
     // (likely) context
-    const auto exc = vroom::InputException(": invalid numerical value.");
-    const auto msg = e.what() + exc.message;
-    std::cerr << "[Error] " << msg << std::endl;
+    const auto exc = vroom::InputException(std::string(e.what()) +
+                                           ": invalid numerical value.");
+    std::cerr << "[Error] " << exc.message << std::endl;
     vroom::io::write_to_json(exc, cl_args.output_file);
     exit(exc.error_code);
   }
@@ -210,7 +213,9 @@ int main(int argc, char** argv) {
 
   try {
     // Build problem.
-    vroom::Input problem_instance(cl_args.servers, cl_args.router);
+    vroom::Input problem_instance(cl_args.servers,
+                                  cl_args.router,
+                                  cl_args.apply_TSPFix);
     vroom::io::parse(problem_instance, cl_args.input, cl_args.geometry);
 
     vroom::Solution sol = (cl_args.check)

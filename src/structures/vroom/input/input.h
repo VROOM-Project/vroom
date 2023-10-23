@@ -38,6 +38,7 @@ private:
   TimePoint _end_routing;
   std::unordered_set<std::string> _profiles;
   std::vector<std::unique_ptr<routing::Wrapper>> _routing_wrappers;
+  bool _apply_TSPFix;
   bool _no_addition_yet{true};
   bool _has_skills{false};
   bool _has_TW{false};
@@ -75,7 +76,6 @@ private:
   Index _max_matrices_used_index{0};
   bool _all_locations_have_coords{true};
   std::vector<std::vector<Eval>> _jobs_vehicles_evals;
-  std::vector<bool> _good_TSP_candidate;
 
   unsigned _amount_size{0};
   Amount _zero{0};
@@ -95,7 +95,6 @@ private:
   void set_vehicles_costs();
   void set_vehicles_max_tasks();
   void set_jobs_vehicles_evals();
-  void set_vehicles_TSP_flag();
   void set_vehicle_steps_ranks();
   void init_missing_matrices(const std::string& profile);
   void set_matrices(unsigned nb_thread);
@@ -111,7 +110,9 @@ public:
   std::unordered_map<Id, Index> pickup_id_to_rank;
   std::unordered_map<Id, Index> delivery_id_to_rank;
 
-  Input(io::Servers servers = {}, ROUTER router = ROUTER::OSRM);
+  Input(io::Servers servers = {},
+        ROUTER router = ROUTER::OSRM,
+        bool apply_TSPFix = false);
 
   void set_amount_size(unsigned amount_size);
 
@@ -139,11 +140,11 @@ public:
     return _zero;
   }
 
-  bool is_used_several_times(const Location& location) const;
-
-  bool is_good_TSP_candidate(const Index v) const {
-    return _good_TSP_candidate[v];
+  bool apply_TSPFix() const {
+    return _apply_TSPFix;
   }
+
+  bool is_used_several_times(const Location& location) const;
 
   bool has_skills() const;
 
