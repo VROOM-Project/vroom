@@ -408,6 +408,63 @@ void LocalSearch<Route,
     if (_input.has_jobs()) {
       // Move(s) that don't make sense for shipment-only instances.
 
+      // PriorityReplace stuff
+      for (const Index u : _sol_state.unassigned) {
+        if (_input.jobs[u].type != JOB_TYPE::SINGLE) {
+          continue;
+        }
+
+        Priority u_priority = _input.jobs[u].priority;
+
+        for (const auto& [source, target] : s_t_pairs) {
+          if (source != target || !_input.vehicle_ok_with_job(source, u) ||
+              _sol[source].empty() ||
+              // We only search for net priority gains here.
+              (u_priority <= _sol_state.fwd_priority[source].front() &&
+               u_priority <= _sol_state.bwd_priority[source].back())) {
+            continue;
+          }
+
+          // Find where to stop when replacing beginning of route.
+          auto over = std::ranges::find_if(_sol_state.fwd_priority[source],
+                                           [u_priority](const auto p) {
+                                             return u_priority < p;
+                                           });
+          const Index over_rank =
+            std::distance(_sol_state.fwd_priority[source].begin(), over);
+          assert(over_rank > 0);
+          const Index last_rank = over_rank - 1;
+          const Priority priority_gain =
+            u_priority - _sol_state.fwd_priority[source][last_rank];
+
+          if (best_priorities[source] <= priority_gain) {
+#ifdef LOG_LS_OPERATORS
+            ++tried_moves[OperatorName::PriorityReplace];
+#endif
+            PriorityReplace r(_input,
+                              _sol_state,
+                              _sol_state.unassigned,
+                              _sol[source],
+                              source,
+                              last_rank,
+                              u);
+
+            bool better_if_valid =
+              (best_priorities[source] < priority_gain) ||
+              (priority_gain > 0 && best_priorities[source] == priority_gain &&
+               best_gains[source][source] < r.gain());
+
+            if (better_if_valid && r.is_valid()) {
+              best_priorities[source] = priority_gain;
+              // This may potentially define a negative value as best
+              // gain.
+              best_gains[source][source] = r.gain();
+              best_ops[source][source] = std::make_unique<PriorityReplace>(r);
+            }
+          }
+        }
+      }
+
       // UnassignedExchange stuff
       for (const Index u : _sol_state.unassigned) {
         if (_input.jobs[u].type != JOB_TYPE::SINGLE) {
