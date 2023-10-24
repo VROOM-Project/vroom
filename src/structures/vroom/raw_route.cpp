@@ -329,5 +329,9 @@ template void RawRoute::replace(const Input& input,
                                 std::vector<Index>::iterator last_job,
                                 const Index first_rank,
                                 const Index last_rank);
-
+template void RawRoute::replace(const Input& input,
+                                std::vector<Index>::const_iterator first_job,
+                                std::vector<Index>::const_iterator last_job,
+                                const Index first_rank,
+                                const Index last_rank);
 } // namespace vroom
