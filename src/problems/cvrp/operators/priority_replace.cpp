@@ -7,6 +7,8 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <algorithm>
+
 #include "problems/cvrp/operators/priority_replace.h"
 #include "utils/helpers.h"
 

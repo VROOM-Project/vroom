@@ -7,6 +7,8 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <algorithm>
+
 #include "problems/vrptw/operators/priority_replace.h"
 
 namespace vroom::vrptw {
