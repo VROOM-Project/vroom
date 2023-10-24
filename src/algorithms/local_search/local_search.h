@@ -33,6 +33,7 @@ template <class Route,
           class RouteExchange,
           class SwapStar,
           class RouteSplit,
+          class PriorityReplace,
           class TSPFix>
 class LocalSearch {
 private:

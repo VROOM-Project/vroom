@@ -81,6 +81,7 @@ const std::array<std::string, OperatorName::MAX>
                   "RouteExchange",
                   "SwapStar",
                   "RouteSplit",
+                  "PriorityReplace",
                   "TSPFix"});
 
 void log_LS_operators(

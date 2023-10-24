@@ -20,6 +20,7 @@ All rights reserved (see LICENSE).
 #include "problems/vrptw/operators/mixed_exchange.h"
 #include "problems/vrptw/operators/or_opt.h"
 #include "problems/vrptw/operators/pd_shift.h"
+#include "problems/vrptw/operators/priority_replace.h"
 #include "problems/vrptw/operators/relocate.h"
 #include "problems/vrptw/operators/reverse_two_opt.h"
 #include "problems/vrptw/operators/route_exchange.h"
@@ -52,6 +53,7 @@ using LocalSearch = ls::LocalSearch<TWRoute,
                                     vrptw::RouteExchange,
                                     vrptw::SwapStar,
                                     vrptw::RouteSplit,
+                                    vrptw::PriorityReplace,
                                     vrptw::TSPFix>;
 } // namespace vrptw
 
