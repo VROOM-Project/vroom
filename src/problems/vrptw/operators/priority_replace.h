@@ -25,6 +25,7 @@ public:
                   TWRoute& tw_s_route,
                   Index s_vehicle,
                   Index s_rank,
+                  Index t_rank,
                   Index u,
                   Priority best_known_priority_gain);
 

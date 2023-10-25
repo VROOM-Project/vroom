@@ -19,6 +19,7 @@ PriorityReplace::PriorityReplace(const Input& input,
                                  TWRoute& tw_s_route,
                                  Index s_vehicle,
                                  Index s_rank,
+                                 Index t_rank,
                                  Index u,
                                  Priority best_known_priority_gain)
   : cvrp::PriorityReplace(input,
@@ -27,6 +28,7 @@ PriorityReplace::PriorityReplace(const Input& input,
                           static_cast<RawRoute&>(tw_s_route),
                           s_vehicle,
                           s_rank,
+                          t_rank,
                           u,
                           best_known_priority_gain),
     _tw_s_route(tw_s_route) {
@@ -37,12 +39,25 @@ bool PriorityReplace::is_valid() {
 
   if (valid) {
     std::vector<Index> job_ranks({_u});
-    valid = _tw_s_route.is_valid_addition_for_tw(_input,
-                                                 _input.jobs[_u].delivery,
-                                                 job_ranks.begin(),
-                                                 job_ranks.end(),
-                                                 0,
-                                                 s_rank + 1);
+    replace_start_valid =
+      replace_start_valid &&
+      _tw_s_route.is_valid_addition_for_tw(_input,
+                                           _input.jobs[_u].delivery,
+                                           job_ranks.begin(),
+                                           job_ranks.end(),
+                                           0,
+                                           s_rank + 1);
+
+    replace_end_valid =
+      replace_end_valid &&
+      _tw_s_route.is_valid_addition_for_tw(_input,
+                                           _input.jobs[_u].delivery,
+                                           job_ranks.begin(),
+                                           job_ranks.end(),
+                                           t_rank,
+                                           s_route.size());
+
+    valid = replace_start_valid || replace_end_valid;
   }
 
   return valid;
@@ -59,12 +74,24 @@ void PriorityReplace::apply() {
   _unassigned.insert(s_route.cbegin(), s_route.cbegin() + s_rank + 1);
 
   const std::vector<Index> addition({_u});
-  _tw_s_route.replace(_input,
-                      _input.jobs[_u].delivery,
-                      addition.begin(),
-                      addition.end(),
-                      0,
-                      s_rank + 1);
+
+  assert(replace_start_valid xor replace_end_valid);
+
+  if (replace_start_valid) {
+    _tw_s_route.replace(_input,
+                        _input.jobs[_u].delivery,
+                        addition.begin(),
+                        addition.end(),
+                        0,
+                        s_rank + 1);
+  } else {
+    _tw_s_route.replace(_input,
+                        _input.jobs[_u].delivery,
+                        addition.begin(),
+                        addition.end(),
+                        t_rank,
+                        s_route.size());
+  }
 }
 
 } // namespace vroom::vrptw

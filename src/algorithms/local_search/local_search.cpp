@@ -433,12 +433,28 @@ void LocalSearch<Route,
                                  });
           const Index fwd_over_rank =
             std::distance(_sol_state.fwd_priority[source].begin(), fwd_over);
-          assert(fwd_over_rank > 0);
-          const Index fwd_last_rank = fwd_over_rank - 1;
+          // A fwd_last_rank of zero will discard replacing the start
+          // of the route.
+          const Index fwd_last_rank =
+            (fwd_over_rank > 0) ? fwd_over_rank - 1 : 0;
           const Priority begin_priority_gain =
             u_priority - _sol_state.fwd_priority[source][fwd_last_rank];
 
-          if (best_priorities[source] <= begin_priority_gain) {
+          // Find where to stop when replacing end of route.
+          const auto bwd_over =
+            std::find_if(_sol_state.bwd_priority[source].crbegin(),
+                         _sol_state.bwd_priority[source].crend(),
+                         [u_priority](const auto p) { return u_priority < p; });
+          const Index bwd_over_rank =
+            std::distance(_sol_state.bwd_priority[source].crbegin(), bwd_over);
+          const Index bwd_first_rank = _sol[source].size() - bwd_over_rank;
+          const Priority end_priority_gain =
+            u_priority - _sol_state.bwd_priority[source][bwd_first_rank];
+
+          assert(fwd_over_rank > 0 || bwd_over_rank > 0);
+
+          if (best_priorities[source] <=
+              std::max(begin_priority_gain, end_priority_gain)) {
 #ifdef LOG_LS_OPERATORS
             ++tried_moves[OperatorName::PriorityReplace];
 #endif
@@ -448,6 +464,7 @@ void LocalSearch<Route,
                               _sol[source],
                               source,
                               fwd_last_rank,
+                              bwd_first_rank,
                               u,
                               best_priorities[source]);
 

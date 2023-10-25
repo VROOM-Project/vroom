@@ -15,13 +15,27 @@ All rights reserved (see LICENSE).
 namespace vroom::cvrp {
 
 class PriorityReplace : public ls::Operator {
+private:
+  bool _start_gain_computed{false};
+  bool _end_gain_computed{false};
+  Priority _start_priority_gain;
+  Priority _end_priority_gain;
+
 protected:
   const Index _u; // Unassigned job to insert.
-  Priority _begin_priority_gain;
   Priority _best_known_priority_gain;
   std::unordered_set<Index>& _unassigned;
 
+  bool replace_start_valid{false};
+  bool replace_end_valid{false};
+
   void compute_gain() override;
+
+  // Compute possible gains depending on whether we replace start or
+  // end of route.
+  void compute_start_gain();
+
+  void compute_end_gain();
 
 public:
   PriorityReplace(const Input& input,
@@ -29,7 +43,9 @@ public:
                   std::unordered_set<Index>& unassigned,
                   RawRoute& s_raw_route,
                   Index s_vehicle,
-                  Index s_rank,
+                  Index s_rank, // last rank (included) when replacing
+                                // route start
+                  Index t_rank, // first rank when replacing route end
                   Index u,
                   Priority best_known_priority_gain);
 
@@ -37,7 +53,7 @@ public:
 
   void apply() override;
 
-  Priority priority_gain() const;
+  Priority priority_gain();
 
   std::vector<Index> addition_candidates() const override;
 
