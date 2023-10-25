@@ -426,18 +426,19 @@ void LocalSearch<Route,
           }
 
           // Find where to stop when replacing beginning of route.
-          auto over = std::ranges::find_if(_sol_state.fwd_priority[source],
-                                           [u_priority](const auto p) {
-                                             return u_priority < p;
-                                           });
-          const Index over_rank =
-            std::distance(_sol_state.fwd_priority[source].begin(), over);
-          assert(over_rank > 0);
-          const Index last_rank = over_rank - 1;
-          const Priority priority_gain =
-            u_priority - _sol_state.fwd_priority[source][last_rank];
+          const auto fwd_over =
+            std::ranges::find_if(_sol_state.fwd_priority[source],
+                                 [u_priority](const auto p) {
+                                   return u_priority < p;
+                                 });
+          const Index fwd_over_rank =
+            std::distance(_sol_state.fwd_priority[source].begin(), fwd_over);
+          assert(fwd_over_rank > 0);
+          const Index fwd_last_rank = fwd_over_rank - 1;
+          const Priority begin_priority_gain =
+            u_priority - _sol_state.fwd_priority[source][fwd_last_rank];
 
-          if (best_priorities[source] <= priority_gain) {
+          if (best_priorities[source] <= begin_priority_gain) {
 #ifdef LOG_LS_OPERATORS
             ++tried_moves[OperatorName::PriorityReplace];
 #endif
@@ -446,16 +447,18 @@ void LocalSearch<Route,
                               _sol_state.unassigned,
                               _sol[source],
                               source,
-                              last_rank,
-                              u);
+                              fwd_last_rank,
+                              u,
+                              best_priorities[source]);
 
-            bool better_if_valid =
-              (best_priorities[source] < priority_gain) ||
-              (priority_gain > 0 && best_priorities[source] == priority_gain &&
-               best_gains[source][source] < r.gain());
-
-            if (better_if_valid && r.is_valid()) {
-              best_priorities[source] = priority_gain;
+            if (r.is_valid() &&
+                (best_priorities[source] < r.priority_gain() ||
+                 (best_priorities[source] == r.priority_gain() &&
+                  // Avoid cycling between replacements with gain
+                  // improvement but zero net priority gain.
+                  r.priority_gain() > 0 &&
+                  best_gains[source][source] < r.gain()))) {
+              best_priorities[source] = r.priority_gain();
               // This may potentially define a negative value as best
               // gain.
               best_gains[source][source] = r.gain();

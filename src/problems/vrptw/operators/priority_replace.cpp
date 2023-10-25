@@ -19,14 +19,16 @@ PriorityReplace::PriorityReplace(const Input& input,
                                  TWRoute& tw_s_route,
                                  Index s_vehicle,
                                  Index s_rank,
-                                 Index u)
+                                 Index u,
+                                 Priority best_known_priority_gain)
   : cvrp::PriorityReplace(input,
                           sol_state,
                           unassigned,
                           static_cast<RawRoute&>(tw_s_route),
                           s_vehicle,
                           s_rank,
-                          u),
+                          u,
+                          best_known_priority_gain),
     _tw_s_route(tw_s_route) {
 }
 

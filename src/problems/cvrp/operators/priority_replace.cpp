@@ -20,7 +20,8 @@ PriorityReplace::PriorityReplace(const Input& input,
                                  RawRoute& s_raw_route,
                                  Index s_vehicle,
                                  Index s_rank,
-                                 Index u)
+                                 Index u,
+                                 Priority best_known_priority_gain)
   : Operator(OperatorName::PriorityReplace,
              input,
              sol_state,
@@ -31,6 +32,9 @@ PriorityReplace::PriorityReplace(const Input& input,
              s_vehicle,
              0),
     _u(u),
+    _begin_priority_gain(_input.jobs[u].priority -
+                         _sol_state.fwd_priority[s_vehicle][s_rank]),
+    _best_known_priority_gain(best_known_priority_gain),
     _unassigned(unassigned) {
   assert(!s_route.empty());
 }
@@ -68,7 +72,9 @@ void PriorityReplace::compute_gain() {
 bool PriorityReplace::is_valid() {
   const auto& j = _input.jobs[_u];
 
-  bool valid = source.is_valid_addition_for_capacity_margins(_input,
+  // Early abort if priority gain is not interesting anyway.
+  bool valid = (_best_known_priority_gain <= _begin_priority_gain) &&
+               source.is_valid_addition_for_capacity_margins(_input,
                                                              j.pickup,
                                                              j.delivery,
                                                              0,
@@ -101,6 +107,10 @@ void PriorityReplace::apply() {
 
   const std::vector<Index> addition({_u});
   source.replace(_input, addition.begin(), addition.end(), 0, s_rank + 1);
+}
+
+Priority PriorityReplace::priority_gain() const {
+  return _begin_priority_gain;
 }
 
 std::vector<Index> PriorityReplace::addition_candidates() const {

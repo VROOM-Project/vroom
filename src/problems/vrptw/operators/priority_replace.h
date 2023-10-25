@@ -25,7 +25,8 @@ public:
                   TWRoute& tw_s_route,
                   Index s_vehicle,
                   Index s_rank,
-                  Index u);
+                  Index u,
+                  Priority best_known_priority_gain);
 
   bool is_valid() override;
 

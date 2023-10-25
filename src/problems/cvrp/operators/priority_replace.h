@@ -17,6 +17,8 @@ namespace vroom::cvrp {
 class PriorityReplace : public ls::Operator {
 protected:
   const Index _u; // Unassigned job to insert.
+  Priority _begin_priority_gain;
+  Priority _best_known_priority_gain;
   std::unordered_set<Index>& _unassigned;
 
   void compute_gain() override;
@@ -28,11 +30,14 @@ public:
                   RawRoute& s_raw_route,
                   Index s_vehicle,
                   Index s_rank,
-                  Index u);
+                  Index u,
+                  Priority best_known_priority_gain);
 
   bool is_valid() override;
 
   void apply() override;
+
+  Priority priority_gain() const;
 
   std::vector<Index> addition_candidates() const override;
 
