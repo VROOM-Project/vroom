@@ -53,11 +53,9 @@ std::list<Index> christofides(const Matrix<UserCost>& sym_matrix) {
   std::unordered_map<Index, Index> mwpm_final;
   std::vector<Index> wrong_vertices;
 
-  unsigned total_ok = 0;
   for (const auto& [source, target] : mwpm) {
     if (mwpm.at(target) == source) {
       mwpm_final.emplace(std::min(source, target), std::max(source, target));
-      ++total_ok;
     } else {
       wrong_vertices.push_back(source);
     }
