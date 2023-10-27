@@ -7,6 +7,8 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <cstdint>
+
 #include "osrm/coordinate.hpp"
 #include "osrm/json_container.hpp"
 #include "osrm/route_parameters.hpp"

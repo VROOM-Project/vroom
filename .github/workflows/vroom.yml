@@ -16,7 +16,7 @@ jobs:
   vroom:
     strategy:
       matrix:
-        cxx: ['g++-12', 'clang++-14']
+        cxx: ['g++-12', 'clang++-15']
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout repository

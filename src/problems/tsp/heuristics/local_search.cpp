@@ -206,7 +206,6 @@ UserCost LocalSearch::relocate_step() {
 
 UserCost LocalSearch::perform_all_relocate_steps(const Deadline& deadline) {
   UserCost total_gain = 0;
-  unsigned relocate_iter = 0;
   UserCost gain = 0;
   do {
     if (deadline.has_value() && deadline.value() < utils::now()) {
@@ -217,7 +216,6 @@ UserCost LocalSearch::perform_all_relocate_steps(const Deadline& deadline) {
 
     if (gain > 0) {
       total_gain += gain;
-      ++relocate_iter;
     }
   } while (gain > 0);
 
@@ -360,7 +358,6 @@ UserCost LocalSearch::avoid_loop_step() {
 
 UserCost LocalSearch::perform_all_avoid_loop_steps(const Deadline& deadline) {
   UserCost total_gain = 0;
-  unsigned relocate_iter = 0;
   UserCost gain = 0;
   do {
     if (deadline.has_value() && deadline.value() < utils::now()) {
@@ -371,7 +368,6 @@ UserCost LocalSearch::perform_all_avoid_loop_steps(const Deadline& deadline) {
 
     if (gain > 0) {
       total_gain += gain;
-      ++relocate_iter;
     }
   } while (gain > 0);
 
@@ -619,7 +615,6 @@ UserCost LocalSearch::asym_two_opt_step() {
 
 UserCost LocalSearch::perform_all_two_opt_steps(const Deadline& deadline) {
   UserCost total_gain = 0;
-  unsigned two_opt_iter = 0;
   UserCost gain = 0;
   do {
     if (deadline.has_value() && deadline.value() < utils::now()) {
@@ -630,7 +625,6 @@ UserCost LocalSearch::perform_all_two_opt_steps(const Deadline& deadline) {
 
     if (gain > 0) {
       total_gain += gain;
-      ++two_opt_iter;
     }
   } while (gain > 0);
 
@@ -639,7 +633,6 @@ UserCost LocalSearch::perform_all_two_opt_steps(const Deadline& deadline) {
 
 UserCost LocalSearch::perform_all_asym_two_opt_steps(const Deadline& deadline) {
   UserCost total_gain = 0;
-  unsigned two_opt_iter = 0;
   UserCost gain = 0;
   do {
     if (deadline.has_value() && deadline.value() < utils::now()) {
@@ -650,7 +643,6 @@ UserCost LocalSearch::perform_all_asym_two_opt_steps(const Deadline& deadline) {
 
     if (gain > 0) {
       total_gain += gain;
-      ++two_opt_iter;
     }
   } while (gain > 0);
 
@@ -751,7 +743,6 @@ UserCost LocalSearch::or_opt_step() {
 
 UserCost LocalSearch::perform_all_or_opt_steps(const Deadline& deadline) {
   UserCost total_gain = 0;
-  unsigned or_opt_iter = 0;
   UserCost gain = 0;
   do {
     if (deadline.has_value() && deadline.value() < utils::now()) {
@@ -761,7 +752,6 @@ UserCost LocalSearch::perform_all_or_opt_steps(const Deadline& deadline) {
     gain = this->or_opt_step();
     if (gain > 0) {
       total_gain += gain;
-      ++or_opt_iter;
     }
   } while (gain > 0);
 

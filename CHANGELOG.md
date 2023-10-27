@@ -37,6 +37,7 @@
 - Refactor `RouteSplit` operator (#996)
 - Update cxxopts to 3.1.1 (#997)
 - Update gcc to version 12 in CI (#1002)
+- Update clang to version 15 in CI (#1022)
 - Distances in output are from internal matrices, not routing requests (#957)
 - Remove unused `tw_length` member from `Job` and associated code
 - Scale `TimeWindow::length` from `UserDuration` to `Duration` (#1015)
