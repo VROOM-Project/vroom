@@ -1191,10 +1191,10 @@ Route choose_ETA(const Input& input,
   for (const auto& step : steps) {
     switch (step.type) {
       using enum STEP_TYPE;
-    case START:
+    case STEP_TYPE::START:
       continue;
       break;
-    case JOB: {
+    case STEP_TYPE::JOB: {
       auto job_rank = step.rank;
       const auto& job = input.jobs[job_rank];
 
@@ -1315,7 +1315,7 @@ Route choose_ETA(const Input& input,
       ++previous_rank_in_J;
       break;
     }
-    case BREAK: {
+    case STEP_TYPE::BREAK: {
       auto break_rank = step.rank;
       const auto& b = v.breaks[break_rank];
 
@@ -1400,7 +1400,7 @@ Route choose_ETA(const Input& input,
       ++task_rank;
       break;
     }
-    case END: {
+    case STEP_TYPE::END: {
       const auto arrival = previous_start + previous_action + previous_travel;
       assert(arrival == v_end);
 
