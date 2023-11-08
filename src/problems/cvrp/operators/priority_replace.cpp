@@ -176,19 +176,25 @@ void PriorityReplace::apply() {
   assert(_unassigned.contains(_u));
   _unassigned.erase(_u);
 
-  assert(
-    std::all_of(s_route.cbegin(),
-                s_route.cbegin() + s_rank + 1,
-                [this](const auto j) { return !_unassigned.contains(j); }));
-  _unassigned.insert(s_route.cbegin(), s_route.cbegin() + s_rank + 1);
-
   const std::vector<Index> addition({_u});
 
   assert(replace_start_valid xor replace_end_valid);
 
   if (replace_start_valid) {
+    assert(
+      std::all_of(s_route.cbegin(),
+                  s_route.cbegin() + s_rank + 1,
+                  [this](const auto j) { return !_unassigned.contains(j); }));
+    _unassigned.insert(s_route.cbegin(), s_route.cbegin() + s_rank + 1);
+
     source.replace(_input, addition.begin(), addition.end(), 0, s_rank + 1);
   } else {
+    assert(
+      std::all_of(s_route.cbegin() + t_rank,
+                  s_route.cend(),
+                  [this](const auto j) { return !_unassigned.contains(j); }));
+    _unassigned.insert(s_route.cbegin() + t_rank, s_route.cend());
+
     source.replace(_input,
                    addition.begin(),
                    addition.end(),
