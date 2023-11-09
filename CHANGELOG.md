@@ -12,6 +12,7 @@
 - Default radius of 35km for OSRM snapping (#922)
 - Support for URL path in host (#966)
 - Experimental `TSPFix` local search operator (#737)
+- `PriorityReplace` local search operator (#988)
 
 ### Changed
 
