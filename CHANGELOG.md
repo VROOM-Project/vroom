@@ -4,56 +4,83 @@
 
 ### Added
 
+#### Features
+
 - Support for cost per km for vehicles (#908)
 - Support for `max_distance` at vehicle level (#354)
 - `MAX_DISTANCE` violation cause in plan mode (#995)
 - Recommendation on how to cite in publications (#943)
+
+#### Core solving
+
+- `PriorityReplace` local search operator (#988)
+- Experimental `TSPFix` local search operator (#737)
+
+#### Internals
+
 - Store distance matrices (#956)
 - Default radius of 35km for OSRM snapping (#922)
 - Support for URL path in host (#966)
-- Experimental `TSPFix` local search operator (#737)
-- `PriorityReplace` local search operator (#988)
 
 ### Changed
 
-- Exposed internal variables to get feature parity for pyvroom (#901)
-- Update GitHub Actions (#857)
-- Improve error messages (#848)
-- Add running `apt-get update` in CI jobs (#863)
-- Update formatting script to use `clang-format` 14 (#894)
-- Setup a `clang-tidy` workflow (#789)
-- Submodule and update Rapidjson (#929)
-- Update polylineencoder to v2.0.1 (#931)
-- Update polylineencoder to v2.0.2 (#1006)
-- Switch to C++20 (#851)
-- Improved error messages for file-related IO errors (#553)
-- Add job id to error message for unreachable step (#946)
+#### Core solving
+
+- Significant speedup by pruning local search moves (#509)
 - Reduce `compute_best_route_split_choice` complexity (#962)
 - `Eval::operator<` sorts on cost, then duration (#914)
 - Improved `vrptw::PDShift` implementation (#852)
-- Reserve `vector` capacity whenever possible (#915)
 - Refactor heuristics to be able to operate on a subset of jobs and vehicles (#837)
 - Account for vehicle/job compatibility in heuristic regrets values (#982)
 - Slightly reduce computing times for SWAP* operator (#987)
 - Refactor `RouteSplit` operator (#996)
-- Update cxxopts to 3.1.1 (#997)
-- Update gcc to version 12 in CI (#1002)
-- Update clang to version 15 in CI (#1022)
+
+#### Internals
+
+- Switch to C++20 (#851)
+- Exposed internal variables to get feature parity for pyvroom (#901)
+- Improve some error messages (#848)
+- Improved error messages for file-related IO errors (#553)
+- Add job id to error message for unreachable step (#946)
+- Reserve `vector` capacity whenever possible (#915)
 - Distances in output are from internal matrices, not routing requests (#957)
 - Remove unused `tw_length` member from `Job` and associated code
 - Scale `TimeWindow::length` from `UserDuration` to `Duration` (#1015)
-- Significant speedup by pruning local search moves (#509)
+
+#### Dependencies
+
+- Submodule and update Rapidjson (#929)
+- Update polylineencoder to v2.0.1 (#931)
+- Update polylineencoder to v2.0.2 (#1006)
+- Update cxxopts to 3.1.1 (#997)
+
+#### CI
+
+- Update GitHub Actions (#857)
+- Setup a `clang-tidy` workflow (#789)
+- Add running `apt-get update` in CI jobs (#863)
+- Update formatting script to use `clang-format` 14 (#894)
+- Update gcc to version 12 in CI (#1002)
+- Update clang to version 15 in CI (#1022)
 
 ### Fixed
+
+#### Core solving
+
+- `max_travel_time` parameter not taken into account in edge case (#884)
+- `max_travel_time` not accounted for with vehicle steps in solving mode (#954)
+- `max_travel_time` not accounted for in `RouteSplit` (#941)
+- Wrong capacity checks in `RouteSplit` (#981)
+
+#### Internals
 
 - Internal matrix problem with inconsistent `location_index` and `location` values (#909)
 - Silent fail on invalid output file (#553)
 - Comparison of index-based and coordinates-based locations (#935)
-- `max_travel_time` parameter not taken into account in edge case (#884)
 - Meaningless `location_index` provided in output for break steps (#877)
-- `max_travel_time` not accounted for with vehicle steps in solving mode (#954)
-- `max_travel_time` not accounted for in `RouteSplit` (#941)
-- Wrong capacity checks in `RouteSplit` (#981)
+
+#### CI
+
 - Address sonarcloud "bugs" reports (#984)
 - Address some sonarcloud "code smell" reports (#986)
 
