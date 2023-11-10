@@ -18,12 +18,12 @@ class PriorityReplace : public ls::Operator {
 private:
   bool _start_gain_computed{false};
   bool _end_gain_computed{false};
-  Priority _start_priority_gain;
-  Priority _end_priority_gain;
+  const Priority _start_priority_gain;
+  const Priority _end_priority_gain;
 
 protected:
   const Index _u; // Unassigned job to insert.
-  Priority _best_known_priority_gain;
+  const Priority _best_known_priority_gain;
   std::unordered_set<Index>& _unassigned;
 
   bool replace_start_valid{false};
