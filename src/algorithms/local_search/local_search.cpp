@@ -404,7 +404,6 @@ void LocalSearch<Route,
       break;
     }
 
-    // Operators applied to a pair of (different) routes.
     if (_input.has_jobs()) {
       // Move(s) that don't make sense for shipment-only instances.
 
