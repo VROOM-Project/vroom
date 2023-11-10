@@ -176,7 +176,7 @@ bool MixedExchange::is_valid() {
   assert(_gain_upper_bound_computed);
 
   bool valid =
-    is_valid_for_target_max_travel_time() &&
+    is_valid_for_target_range_bounds() &&
     target.is_valid_addition_for_capacity_margins(_input,
                                                   _input.jobs[s_route[s_rank]]
                                                     .pickup,

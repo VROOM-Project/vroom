@@ -116,15 +116,15 @@ bool UnassignedExchange::is_valid() {
                                                           _last_rank);
 
   if (valid) {
-    // Check validity with regard to max_travel_time, requires valid
-    // gain value.
+    // Check validity with regard to vehicle range bounds, requires
+    // valid gain value.
     if (!gain_computed) {
-      // May happen that we don't check gain before validity if priority
-      // is improved.
+      // We don't check gain before validity if priority is strictly
+      // improved.
       this->compute_gain();
     }
 
-    valid = is_valid_for_source_max_travel_time();
+    valid = is_valid_for_source_range_bounds();
   }
 
   return valid;
@@ -133,9 +133,9 @@ bool UnassignedExchange::is_valid() {
 void UnassignedExchange::apply() {
   std::ranges::copy(_moved_jobs, s_route.begin() + _first_rank);
 
-  assert(_unassigned.find(_u) != _unassigned.end());
+  assert(_unassigned.contains(_u));
   _unassigned.erase(_u);
-  assert(_unassigned.find(_removed) == _unassigned.end());
+  assert(!_unassigned.contains(_removed));
   _unassigned.insert(_removed);
 
   source.update_amounts(_input);

@@ -61,8 +61,8 @@ void Relocate::compute_gain() {
 
 bool Relocate::is_valid() {
   assert(gain_computed);
-  return is_valid_for_source_max_travel_time() &&
-         is_valid_for_target_max_travel_time() &&
+  return is_valid_for_source_range_bounds() &&
+         is_valid_for_target_range_bounds() &&
          target
            .is_valid_addition_for_capacity(_input,
                                            _input.jobs[s_route[s_rank]].pickup,

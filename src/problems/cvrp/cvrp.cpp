@@ -20,6 +20,7 @@ All rights reserved (see LICENSE).
 #include "problems/cvrp/operators/mixed_exchange.h"
 #include "problems/cvrp/operators/or_opt.h"
 #include "problems/cvrp/operators/pd_shift.h"
+#include "problems/cvrp/operators/priority_replace.h"
 #include "problems/cvrp/operators/relocate.h"
 #include "problems/cvrp/operators/reverse_two_opt.h"
 #include "problems/cvrp/operators/route_exchange.h"
@@ -53,6 +54,7 @@ using LocalSearch = ls::LocalSearch<RawRoute,
                                     cvrp::RouteExchange,
                                     cvrp::SwapStar,
                                     cvrp::RouteSplit,
+                                    cvrp::PriorityReplace,
                                     cvrp::TSPFix>;
 } // namespace cvrp
 

@@ -22,17 +22,17 @@ Eval Operator::gain() {
   return stored_gain;
 }
 
-bool Operator::is_valid_for_source_max_travel_time() const {
+bool Operator::is_valid_for_source_range_bounds() const {
   const auto& s_v = _input.vehicles[s_vehicle];
   return s_v.ok_for_range_bounds(_sol_state.route_evals[s_vehicle] - s_gain);
 }
 
-bool Operator::is_valid_for_target_max_travel_time() const {
+bool Operator::is_valid_for_target_range_bounds() const {
   const auto& t_v = _input.vehicles[t_vehicle];
   return t_v.ok_for_range_bounds(_sol_state.route_evals[t_vehicle] - t_gain);
 }
 
-bool Operator::is_valid_for_max_travel_time() const {
+bool Operator::is_valid_for_range_bounds() const {
   assert(s_vehicle == t_vehicle);
   assert(gain_computed);
 

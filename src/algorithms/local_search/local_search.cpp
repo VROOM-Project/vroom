@@ -21,6 +21,7 @@ All rights reserved (see LICENSE).
 #include "problems/vrptw/operators/mixed_exchange.h"
 #include "problems/vrptw/operators/or_opt.h"
 #include "problems/vrptw/operators/pd_shift.h"
+#include "problems/vrptw/operators/priority_replace.h"
 #include "problems/vrptw/operators/relocate.h"
 #include "problems/vrptw/operators/reverse_two_opt.h"
 #include "problems/vrptw/operators/route_exchange.h"
@@ -51,6 +52,7 @@ template <class Route,
           class RouteExchange,
           class SwapStar,
           class RouteSplit,
+          class PriorityReplace,
           class TSPFix>
 LocalSearch<Route,
             UnassignedExchange,
@@ -70,6 +72,7 @@ LocalSearch<Route,
             RouteExchange,
             SwapStar,
             RouteSplit,
+            PriorityReplace,
             TSPFix>::LocalSearch(const Input& input,
                                  std::vector<Route>& sol,
                                  unsigned max_nb_jobs_removal,
@@ -137,6 +140,7 @@ template <class Route,
           class RouteExchange,
           class SwapStar,
           class RouteSplit,
+          class PriorityReplace,
           class TSPFix>
 void LocalSearch<Route,
                  UnassignedExchange,
@@ -156,6 +160,7 @@ void LocalSearch<Route,
                  RouteExchange,
                  SwapStar,
                  RouteSplit,
+                 PriorityReplace,
                  TSPFix>::try_job_additions(const std::vector<Index>& routes,
                                             double regret_coeff) {
   bool job_added;
@@ -339,6 +344,7 @@ template <class Route,
           class RouteExchange,
           class SwapStar,
           class RouteSplit,
+          class PriorityReplace,
           class TSPFix>
 void LocalSearch<Route,
                  UnassignedExchange,
@@ -358,6 +364,7 @@ void LocalSearch<Route,
                  RouteExchange,
                  SwapStar,
                  RouteSplit,
+                 PriorityReplace,
                  TSPFix>::run_ls_step() {
   // Store best move involving a pair of routes.
   std::vector<std::vector<std::unique_ptr<Operator>>> best_ops(_nb_vehicles);
@@ -397,9 +404,85 @@ void LocalSearch<Route,
       break;
     }
 
-    // Operators applied to a pair of (different) routes.
     if (_input.has_jobs()) {
       // Move(s) that don't make sense for shipment-only instances.
+
+      // PriorityReplace stuff
+      for (const Index u : _sol_state.unassigned) {
+        if (_input.jobs[u].type != JOB_TYPE::SINGLE) {
+          continue;
+        }
+
+        Priority u_priority = _input.jobs[u].priority;
+
+        for (const auto& [source, target] : s_t_pairs) {
+          if (source != target || !_input.vehicle_ok_with_job(source, u) ||
+              _sol[source].empty() ||
+              // We only search for net priority gains here.
+              (u_priority <= _sol_state.fwd_priority[source].front() &&
+               u_priority <= _sol_state.bwd_priority[source].back())) {
+            continue;
+          }
+
+          // Find where to stop when replacing beginning of route.
+          const auto fwd_over =
+            std::ranges::find_if(_sol_state.fwd_priority[source],
+                                 [u_priority](const auto p) {
+                                   return u_priority < p;
+                                 });
+          const Index fwd_over_rank =
+            std::distance(_sol_state.fwd_priority[source].begin(), fwd_over);
+          // A fwd_last_rank of zero will discard replacing the start
+          // of the route.
+          const Index fwd_last_rank =
+            (fwd_over_rank > 0) ? fwd_over_rank - 1 : 0;
+          const Priority begin_priority_gain =
+            u_priority - _sol_state.fwd_priority[source][fwd_last_rank];
+
+          // Find where to stop when replacing end of route.
+          const auto bwd_over =
+            std::find_if(_sol_state.bwd_priority[source].crbegin(),
+                         _sol_state.bwd_priority[source].crend(),
+                         [u_priority](const auto p) { return u_priority < p; });
+          const Index bwd_over_rank =
+            std::distance(_sol_state.bwd_priority[source].crbegin(), bwd_over);
+          const Index bwd_first_rank = _sol[source].size() - bwd_over_rank;
+          const Priority end_priority_gain =
+            u_priority - _sol_state.bwd_priority[source][bwd_first_rank];
+
+          assert(fwd_over_rank > 0 || bwd_over_rank > 0);
+
+          const auto best_current_priority =
+            std::max(begin_priority_gain, end_priority_gain);
+
+          if (best_current_priority > 0 &&
+              best_priorities[source] <= best_current_priority) {
+#ifdef LOG_LS_OPERATORS
+            ++tried_moves[OperatorName::PriorityReplace];
+#endif
+            PriorityReplace r(_input,
+                              _sol_state,
+                              _sol_state.unassigned,
+                              _sol[source],
+                              source,
+                              fwd_last_rank,
+                              bwd_first_rank,
+                              u,
+                              best_priorities[source]);
+
+            if (r.is_valid() &&
+                (best_priorities[source] < r.priority_gain() ||
+                 (best_priorities[source] == r.priority_gain() &&
+                  best_gains[source][source] < r.gain()))) {
+              best_priorities[source] = r.priority_gain();
+              // This may potentially define a negative value as best
+              // gain.
+              best_gains[source][source] = r.gain();
+              best_ops[source][source] = std::make_unique<PriorityReplace>(r);
+            }
+          }
+        }
+      }
 
       // UnassignedExchange stuff
       for (const Index u : _sol_state.unassigned) {
@@ -1791,6 +1874,7 @@ void LocalSearch<Route,
       for (auto v_rank : update_candidates) {
         _sol_state.update_costs(_sol[v_rank].route, v_rank);
         _sol_state.update_skills(_sol[v_rank].route, v_rank);
+        _sol_state.update_priorities(_sol[v_rank].route, v_rank);
         _sol_state.set_node_gains(_sol[v_rank].route, v_rank);
         _sol_state.set_edge_gains(_sol[v_rank].route, v_rank);
         _sol_state.set_pd_matching_ranks(_sol[v_rank].route, v_rank);
@@ -1871,6 +1955,7 @@ template <class Route,
           class RouteExchange,
           class SwapStar,
           class RouteSplit,
+          class PriorityReplace,
           class TSPFix>
 void LocalSearch<Route,
                  UnassignedExchange,
@@ -1890,6 +1975,7 @@ void LocalSearch<Route,
                  RouteExchange,
                  SwapStar,
                  RouteSplit,
+                 PriorityReplace,
                  TSPFix>::run() {
   bool try_ls_step = true;
   bool first_step = true;
@@ -1951,6 +2037,7 @@ void LocalSearch<Route,
       for (std::size_t v = 0; v < _sol.size(); ++v) {
         _sol_state.update_costs(_sol[v].route, v);
         _sol_state.update_skills(_sol[v].route, v);
+        _sol_state.update_priorities(_sol[v].route, v);
         _sol_state.set_node_gains(_sol[v].route, v);
         _sol_state.set_edge_gains(_sol[v].route, v);
         _sol_state.set_pd_matching_ranks(_sol[v].route, v);
@@ -1981,6 +2068,7 @@ template <class Route,
           class RouteExchange,
           class SwapStar,
           class RouteSplit,
+          class PriorityReplace,
           class TSPFix>
 std::array<OperatorStats, OperatorName::MAX>
 LocalSearch<Route,
@@ -2001,6 +2089,7 @@ LocalSearch<Route,
             RouteExchange,
             SwapStar,
             RouteSplit,
+            PriorityReplace,
             TSPFix>::get_stats() const {
   std::array<OperatorStats, OperatorName::MAX> stats;
   for (auto op = 0; op < OperatorName::MAX; ++op) {
@@ -2029,6 +2118,7 @@ template <class Route,
           class RouteExchange,
           class SwapStar,
           class RouteSplit,
+          class PriorityReplace,
           class TSPFix>
 Eval LocalSearch<Route,
                  UnassignedExchange,
@@ -2048,6 +2138,7 @@ Eval LocalSearch<Route,
                  RouteExchange,
                  SwapStar,
                  RouteSplit,
+                 PriorityReplace,
                  TSPFix>::job_route_cost(Index v_target, Index v, Index r) {
   assert(v != v_target);
 
@@ -2102,6 +2193,7 @@ template <class Route,
           class RouteExchange,
           class SwapStar,
           class RouteSplit,
+          class PriorityReplace,
           class TSPFix>
 Eval LocalSearch<Route,
                  UnassignedExchange,
@@ -2121,6 +2213,7 @@ Eval LocalSearch<Route,
                  RouteExchange,
                  SwapStar,
                  RouteSplit,
+                 PriorityReplace,
                  TSPFix>::relocate_cost_lower_bound(Index v, Index r) {
   Eval best_bound = NO_EVAL;
 
@@ -2154,6 +2247,7 @@ template <class Route,
           class RouteExchange,
           class SwapStar,
           class RouteSplit,
+          class PriorityReplace,
           class TSPFix>
 Eval LocalSearch<Route,
                  UnassignedExchange,
@@ -2173,6 +2267,7 @@ Eval LocalSearch<Route,
                  RouteExchange,
                  SwapStar,
                  RouteSplit,
+                 PriorityReplace,
                  TSPFix>::relocate_cost_lower_bound(Index v,
                                                     Index r1,
                                                     Index r2) {
@@ -2210,6 +2305,7 @@ template <class Route,
           class RouteExchange,
           class SwapStar,
           class RouteSplit,
+          class PriorityReplace,
           class TSPFix>
 void LocalSearch<Route,
                  UnassignedExchange,
@@ -2229,6 +2325,7 @@ void LocalSearch<Route,
                  RouteExchange,
                  SwapStar,
                  RouteSplit,
+                 PriorityReplace,
                  TSPFix>::remove_from_routes() {
   // Store nearest job from and to any job in any route for constant
   // time access down the line.
@@ -2363,6 +2460,7 @@ template <class Route,
           class RouteExchange,
           class SwapStar,
           class RouteSplit,
+          class PriorityReplace,
           class TSPFix>
 utils::SolutionIndicators<Route> LocalSearch<Route,
                                              UnassignedExchange,
@@ -2382,6 +2480,7 @@ utils::SolutionIndicators<Route> LocalSearch<Route,
                                              RouteExchange,
                                              SwapStar,
                                              RouteSplit,
+                                             PriorityReplace,
                                              TSPFix>::indicators() const {
   return _best_sol_indicators;
 }
@@ -2404,6 +2503,7 @@ template class LocalSearch<TWRoute,
                            vrptw::RouteExchange,
                            vrptw::SwapStar,
                            vrptw::RouteSplit,
+                           vrptw::PriorityReplace,
                            vrptw::TSPFix>;
 
 template class LocalSearch<RawRoute,
@@ -2424,6 +2524,7 @@ template class LocalSearch<RawRoute,
                            cvrp::RouteExchange,
                            cvrp::SwapStar,
                            cvrp::RouteSplit,
+                           cvrp::PriorityReplace,
                            cvrp::TSPFix>;
 
 } // namespace vroom::ls
