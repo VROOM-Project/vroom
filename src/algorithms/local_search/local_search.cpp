@@ -452,8 +452,11 @@ void LocalSearch<Route,
 
           assert(fwd_over_rank > 0 || bwd_over_rank > 0);
 
-          if (best_priorities[source] <=
-              std::max(begin_priority_gain, end_priority_gain)) {
+          const auto best_current_priority =
+            std::max(begin_priority_gain, end_priority_gain);
+
+          if (best_current_priority > 0 &&
+              best_priorities[source] <= best_current_priority) {
 #ifdef LOG_LS_OPERATORS
             ++tried_moves[OperatorName::PriorityReplace];
 #endif
@@ -470,9 +473,6 @@ void LocalSearch<Route,
             if (r.is_valid() &&
                 (best_priorities[source] < r.priority_gain() ||
                  (best_priorities[source] == r.priority_gain() &&
-                  // Avoid cycling between replacements with gain
-                  // improvement but zero net priority gain.
-                  r.priority_gain() > 0 &&
                   best_gains[source][source] < r.gain()))) {
               best_priorities[source] = r.priority_gain();
               // This may potentially define a negative value as best
