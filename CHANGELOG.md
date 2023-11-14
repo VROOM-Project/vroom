@@ -64,6 +64,10 @@
 - Update gcc to version 12 in CI (#1002)
 - Update clang to version 15 in CI (#1022)
 
+### Removed
+
+- **Breaking:** hard-coded ors base path of '/ors/v2'. Can be added as path in passed host ([#1036](https://github.com/VROOM-Project/vroom/issues/1036))
+
 ### Fixed
 
 #### Core solving
