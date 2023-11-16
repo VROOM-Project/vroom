@@ -48,6 +48,10 @@
 - Remove unused `tw_length` member from `Job` and associated code
 - Scale `TimeWindow::length` from `UserDuration` to `Duration` (#1015)
 
+#### Routing
+
+- ORS: (previously) hard-coded `/ors/v2` slug now has to be added to the path using `-a` (#1036)
+
 #### Dependencies
 
 - Submodule and update Rapidjson (#929)
@@ -63,10 +67,6 @@
 - Update formatting script to use `clang-format` 14 (#894)
 - Update gcc to version 12 in CI (#1002)
 - Update clang to version 15 in CI (#1022)
-
-### Removed
-
-- **Breaking:** hard-coded ors base path of '/ors/v2'. Can be added as path in passed host ([#1036](https://github.com/VROOM-Project/vroom/issues/1036))
 
 ### Fixed
 
