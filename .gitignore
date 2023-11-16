@@ -4,3 +4,4 @@ bin/
 lib/
 build/
 .vscode
+.idea
