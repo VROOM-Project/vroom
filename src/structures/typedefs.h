@@ -205,6 +205,7 @@ constexpr inline Cost scale_from_user_cost(UserCost c) {
 }
 
 constexpr inline UserCost scale_to_user_cost(Cost c) {
+  assert(c <= scale_from_user_cost(std::numeric_limits<UserCost>::max()));
   return static_cast<UserCost>(c / (DURATION_FACTOR * COST_FACTOR));
 }
 } // namespace utils
