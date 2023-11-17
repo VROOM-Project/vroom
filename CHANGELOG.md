@@ -76,6 +76,7 @@
 - `max_travel_time` not accounted for with vehicle steps in solving mode (#954)
 - `max_travel_time` not accounted for in `RouteSplit` (#941)
 - Wrong capacity checks in `RouteSplit` (#981)
+- Overflow related to scaling default time windows (#1020)
 
 #### Internals
 
