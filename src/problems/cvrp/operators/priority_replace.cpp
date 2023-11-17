@@ -138,7 +138,8 @@ bool PriorityReplace::is_valid() {
   // portion is empty or with a single job (that would be an
   // UnassignedExchange move).
   replace_start_valid =
-    (s_rank > 0) && (_best_known_priority_gain <= _start_priority_gain) &&
+    (0 < _start_priority_gain) &&
+    (_best_known_priority_gain <= _start_priority_gain) && (s_rank > 0) &&
     source.is_valid_addition_for_capacity_margins(_input,
                                                   j.pickup,
                                                   j.delivery,
@@ -148,8 +149,9 @@ bool PriorityReplace::is_valid() {
   // Don't bother if the candidate end portion is empty or with a
   // single job (that would be an UnassignedExchange move).
   replace_end_valid =
-    (t_rank < s_route.size() - 1) &&
+    (0 < _end_priority_gain) &&
     (_best_known_priority_gain <= _end_priority_gain) &&
+    (t_rank < s_route.size() - 1) &&
     source.is_valid_addition_for_capacity_margins(_input,
                                                   j.pickup,
                                                   j.delivery,
