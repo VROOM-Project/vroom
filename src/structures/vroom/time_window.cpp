@@ -13,10 +13,13 @@ All rights reserved (see LICENSE).
 namespace vroom {
 
 constexpr Duration TimeWindow::default_length =
-  std::numeric_limits<Duration>::max();
+  utils::scale_from_user_duration(std::numeric_limits<UserDuration>::max());
 
 TimeWindow::TimeWindow()
-  : start(0), end(std::numeric_limits<Duration>::max()), length(end - start) {
+  : start(0),
+    end(utils::scale_from_user_duration(
+      std::numeric_limits<UserDuration>::max())),
+    length(end - start) {
 }
 
 TimeWindow::TimeWindow(UserDuration start, UserDuration end)
