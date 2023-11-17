@@ -195,7 +195,8 @@ constexpr inline Duration scale_from_user_duration(UserDuration d) {
 }
 
 constexpr inline UserDuration scale_to_user_duration(Duration d) {
-  assert(d <= scale_from_user_duration(std::numeric_limits<UserDuration>::max()));
+  assert(d <=
+         scale_from_user_duration(std::numeric_limits<UserDuration>::max()));
   return static_cast<UserDuration>(d / DURATION_FACTOR);
 }
 
