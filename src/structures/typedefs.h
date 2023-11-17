@@ -200,11 +200,11 @@ constexpr inline UserDuration scale_to_user_duration(Duration d) {
   return static_cast<UserDuration>(d / DURATION_FACTOR);
 }
 
-inline Cost scale_from_user_cost(UserCost c) {
+constexpr inline Cost scale_from_user_cost(UserCost c) {
   return DURATION_FACTOR * COST_FACTOR * static_cast<Cost>(c);
 }
 
-inline UserCost scale_to_user_cost(Cost c) {
+constexpr inline UserCost scale_to_user_cost(Cost c) {
   return static_cast<UserCost>(c / (DURATION_FACTOR * COST_FACTOR));
 }
 } // namespace utils
