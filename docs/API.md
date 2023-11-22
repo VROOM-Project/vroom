@@ -282,8 +282,8 @@ each vehicle profile. Each matrix is an array of arrays of unsigned
 integers filed under the `profile` key, then under:
 
 - `durations` for a custom travel-time matrix that will be used for
-  all checks against timing constraints;
-- `distances` for a custom distance matrix;
+  all checks against timing constraints (integers, in seconds);
+- `distances` for a custom distance matrix (integers, in meters);
 - `costs` for a custom cost matrix that will be used within all route
   cost evaluations.
 
