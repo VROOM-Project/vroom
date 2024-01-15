@@ -17,7 +17,7 @@ Contents:
 - all distances are in meters
 - a `time_window` object is a pair of timestamps in the form `[start, end]`
 - deprecated keys are crossed out
-- `cost` values in output are the one used in the optimization objective (currently equal to `duration`)
+- `cost` values in output are the one used internally in the optimization objective
 - a "task" is either a job, a pickup or a delivery
 
 # Solving mode
