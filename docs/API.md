@@ -420,6 +420,7 @@ Possible violation causes are:
 - "precedence" if a `shipment` precedence constraint is not met (`pickup` without matching `delivery`, `delivery` before/without matching `pickup`)
 - "missing_break" if a vehicle break has been omitted in its custom route
 - "max_travel_time" if the vehicle has more travel time than its `max_travel_time` value
+- "max_distance" if the vehicle has a longer travel distance than its `max_distance` value
 - "max_load" if the load during a break exceed its `max_load` value
 
 Note on violations: reporting only really makes sense when using `-c`
