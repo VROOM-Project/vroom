@@ -2,7 +2,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2022, Julien Coupey.
+Copyright (c) 2015-2024, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -35,7 +35,7 @@ int main(int argc, char** argv) {
   std::vector<std::string> heuristic_params_arg;
 
   cxxopts::Options options("vroom",
-                           "VROOM Copyright (C) 2015-2022, Julien Coupey\n"
+                           "VROOM Copyright (C) 2015-2024, Julien Coupey\n"
                            "Version: " +
                              vroom::get_version() +
                              "\n\n"
