@@ -74,7 +74,7 @@ Solution check_and_set_ETA(const Input& input, unsigned nb_thread) {
     }
   };
 
-  std::vector<std::jthread> solving_threads;
+  std::vector<std::thread> solving_threads;
   solving_threads.reserve(thread_ranks.size());
 
   for (const auto& v_ranks : thread_ranks) {
