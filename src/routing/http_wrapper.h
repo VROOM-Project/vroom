@@ -9,7 +9,7 @@ Copyright (c) 2015-2024, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
-#include "../include/rapidjson/include/rapidjson/document.h"
+#include "<rapidjson/document.h>"
 
 #include "routing/wrapper.h"
 #include "structures/typedefs.h"
