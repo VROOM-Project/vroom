@@ -1057,7 +1057,7 @@ void Input::set_matrices(unsigned nb_thread) {
     }
   };
 
-  std::vector<std::jthread> matrix_threads;
+  std::vector<std::thread> matrix_threads;
   matrix_threads.reserve(thread_profiles.size());
 
   for (const auto& profiles : thread_profiles) {
