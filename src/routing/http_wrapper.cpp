@@ -141,11 +141,10 @@ std::string HttpWrapper::run_query(const std::string& query) const {
 
 void HttpWrapper::parse_response(rapidjson::Document& json_result,
                                  const std::string& json_content) {
-#ifdef NDEBUG
   json_result.Parse(json_content.c_str());
-#else
-  assert(!json_result.Parse(json_content.c_str()).HasParseError());
-#endif
+  if (json_result.HasParseError()) {
+    throw RoutingException("Failed to parse routing response body: " + json_content);
+  }
 }
 
 Matrices HttpWrapper::get_matrices(const std::vector<Location>& locs) const {
