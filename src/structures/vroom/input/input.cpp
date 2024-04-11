@@ -107,16 +107,18 @@ void Input::check_job(Job& job) {
   // Ensure delivery size consistency.
   if (const auto delivery_size = job.delivery.size();
       delivery_size != _amount_size) {
-    throw InputException(std::format(
-      "Inconsistent delivery length: {} instead of {}.",
-      delivery_size, _amount_size));
+    throw InputException(
+      std::format("Inconsistent delivery length: {} instead of {}.",
+                  delivery_size,
+                  _amount_size));
   }
 
   // Ensure pickup size consistency.
   if (const auto pickup_size = job.pickup.size(); pickup_size != _amount_size) {
-    throw InputException(std::format(
-      "Inconsistent pickup length: {} instead of {}.",
-      pickup_size, _amount_size));
+    throw InputException(
+      std::format("Inconsistent pickup length: {} instead of {}.",
+                  pickup_size,
+                  _amount_size));
   }
 
   // Ensure that location index are either always or never provided.
@@ -186,21 +188,31 @@ void Input::add_job(const Job& job) {
 
 void Input::add_shipment(const Job& pickup, const Job& delivery) {
   if (pickup.priority != delivery.priority) {
-    throw InputException(std::format("Inconsistent shipment priority for pickup {} and delivery {}.",
-                                     pickup.id, delivery.id));
+    throw InputException(
+      std::
+        format("Inconsistent shipment priority for pickup {} and delivery {}.",
+               pickup.id,
+               delivery.id));
   }
   if (!(pickup.pickup == delivery.delivery)) {
-    throw InputException(std::format("Inconsistent shipment amount for pickup {} and delivery {}.",
-                                     pickup.id, delivery.id));
+    throw InputException(
+      std::format("Inconsistent shipment amount for pickup {} and delivery {}.",
+                  pickup.id,
+                  delivery.id));
   }
   if (pickup.skills.size() != delivery.skills.size()) {
-    throw InputException(std::format("Inconsistent shipment skills for for pickup {} and delivery {}.",
-                                     pickup.id, delivery.id));
+    throw InputException(
+      std::format("Inconsistent shipment skills for for pickup {} and delivery "
+                  "{}.",
+                  pickup.id,
+                  delivery.id));
   }
   for (const auto s : pickup.skills) {
     if (!delivery.skills.contains(s)) {
-      throw InputException(std::format("Inconsistent shipment skills for pickup {} and {}.",
-                                       pickup.id, delivery.id));
+      throw InputException(
+        std::format("Inconsistent shipment skills for pickup {} and {}.",
+                    pickup.id,
+                    delivery.id));
     }
   }
 
@@ -215,10 +227,12 @@ void Input::add_shipment(const Job& pickup, const Job& delivery) {
   check_job(jobs.back());
 
   if (delivery.type != JOB_TYPE::DELIVERY) {
-    throw InputException(std::format("Wrong type for delivery {}.", delivery.id));
+    throw InputException(
+      std::format("Wrong type for delivery {}.", delivery.id));
   }
   if (delivery_id_to_rank.contains(delivery.id)) {
-    throw InputException(std::format("Duplicate delivery id: {}.", delivery.id));
+    throw InputException(
+      std::format("Duplicate delivery id: {}.", delivery.id));
   }
   delivery_id_to_rank[delivery.id] = jobs.size();
   jobs.push_back(delivery);
@@ -234,9 +248,10 @@ void Input::add_vehicle(const Vehicle& vehicle) {
   // Ensure amount size consistency.
   if (const auto vehicle_amount_size = current_v.capacity.size();
       vehicle_amount_size != _amount_size) {
-    throw InputException(std::format(
-      "Inconsistent capacity length: {}  instead of {}.",
-      vehicle_amount_size, _amount_size));
+    throw InputException(
+      std::format("Inconsistent capacity length: {} instead of {}.",
+                  vehicle_amount_size,
+                  _amount_size));
   }
 
   // Check for time-windows and skills.
@@ -775,8 +790,10 @@ void Input::set_vehicle_steps_ranks() {
       if (step.type == STEP_TYPE::BREAK) {
         auto search = current_vehicle.break_id_to_rank.find(step.id);
         if (search == current_vehicle.break_id_to_rank.end()) {
-          throw InputException(std::format("Invalid break id {} for vehicle {}.",
-                                           step.id, current_vehicle.id));
+          throw InputException(
+            std::format("Invalid break id {} for vehicle {}.",
+                        step.id,
+                        current_vehicle.id));
         }
         step.rank = search->second;
       }
@@ -787,14 +804,18 @@ void Input::set_vehicle_steps_ranks() {
         case JOB_TYPE::SINGLE: {
           auto search = job_id_to_rank.find(step.id);
           if (search == job_id_to_rank.end()) {
-            throw InputException(std::format("Invalid job id {} for vehicle {}.",
-                                             step.id, current_vehicle.id));
+            throw InputException(
+              std::format("Invalid job id {} for vehicle {}.",
+                          step.id,
+                          current_vehicle.id));
           }
           step.rank = search->second;
 
           if (planned_job_ids.contains(step.id)) {
-            throw InputException(std::format("Duplicate job id {} in input steps for vehicle {}.",
-                                             step.id, current_vehicle.id));
+            throw InputException(
+              std::format("Duplicate job id {} in input steps for vehicle {}.",
+                          step.id,
+                          current_vehicle.id));
           }
           planned_job_ids.insert(step.id);
           break;
@@ -802,14 +823,19 @@ void Input::set_vehicle_steps_ranks() {
         case JOB_TYPE::PICKUP: {
           auto search = pickup_id_to_rank.find(step.id);
           if (search == pickup_id_to_rank.end()) {
-            throw InputException(std::format("Invalid pickup id {} for vehicle {}.",
-                                             step.id, current_vehicle.id));
+            throw InputException(
+              std::format("Invalid pickup id {} for vehicle {}.",
+                          step.id,
+                          current_vehicle.id));
           }
           step.rank = search->second;
 
           if (planned_pickup_ids.contains(step.id)) {
-            throw InputException(std::format("Duplicate pickup id {} in input steps for vehicle {}.",
-                                             step.id, current_vehicle.id));
+            throw InputException(
+              std::
+                format("Duplicate pickup id {} in input steps for vehicle {}.",
+                       step.id,
+                       current_vehicle.id));
           }
           planned_pickup_ids.insert(step.id);
           break;
@@ -817,14 +843,19 @@ void Input::set_vehicle_steps_ranks() {
         case JOB_TYPE::DELIVERY: {
           auto search = delivery_id_to_rank.find(step.id);
           if (search == delivery_id_to_rank.end()) {
-            throw InputException(std::format("Invalid delivery id {} for vehicle {}.",
-                                             step.id, current_vehicle.id));
+            throw InputException(
+              std::format("Invalid delivery id {} for vehicle {}.",
+                          step.id,
+                          current_vehicle.id));
           }
           step.rank = search->second;
 
           if (planned_delivery_ids.contains(step.id)) {
-            throw InputException(std::format("Duplicate delivery id {} in input steps for vehicle {}.",
-                                             step.id, current_vehicle.id));
+            throw InputException(
+              std::format("Duplicate delivery id {} in input steps for vehicle "
+                          "{}.",
+                          step.id,
+                          current_vehicle.id));
           }
           planned_delivery_ids.insert(step.id);
           break;

@@ -27,7 +27,8 @@ TimeWindow::TimeWindow(UserDuration start, UserDuration end)
     end(utils::scale_from_user_duration(end)),
     length(utils::scale_from_user_duration(end - start)) {
   if (start > end) {
-    throw InputException(std::format("Invalid time window: [{}, {}]", start, end));
+    throw InputException(
+      std::format("Invalid time window: [{}, {}]", start, end));
   }
 }
 

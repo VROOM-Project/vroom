@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <format>
 #include <string>
 
 constexpr unsigned MAJOR = 1;

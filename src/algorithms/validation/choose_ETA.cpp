@@ -221,7 +221,8 @@ Route choose_ETA(const Input& input,
     if (latest_date != std::numeric_limits<Duration>::max()) {
       const auto reach_time = relative_ETA[s];
       if (latest_date < reach_time) {
-        throw InputException(std::format("Infeasible route for vehicle {}.", v.id));
+        throw InputException(
+          std::format("Infeasible route for vehicle {}.", v.id));
       }
       start_candidate = std::min(start_candidate, latest_date - reach_time);
     }
@@ -263,7 +264,8 @@ Route choose_ETA(const Input& input,
         std::max(earliest_date, step.forced_service.after.value());
     }
     if (earliest_date > latest_dates[s]) {
-      throw InputException(std::format("Infeasible route for vehicle {}.", v.id));
+      throw InputException(
+        std::format("Infeasible route for vehicle {}.", v.id));
     }
 
     switch (step.type) {
@@ -706,7 +708,8 @@ Route choose_ETA(const Input& input,
     const Duration UB = t_i_UB[i];
 
     if (UB < LB) {
-      throw InputException(std::format("Infeasible route for vehicle {}.", v.id));
+      throw InputException(
+        std::format("Infeasible route for vehicle {}.", v.id));
     }
 
     if (LB == UB) {

@@ -61,9 +61,9 @@ inline Amount get_amount(const rapidjson::Value& object,
 
     if (object[key].Size() != amount_size) {
       throw InputException(std::format("Inconsistent {} length: {} and {}.",
-                           key,
-                           object[key].Size(),
-                           amount_size));
+                                       key,
+                                       object[key].Size(),
+                                       amount_size));
     }
 
     for (rapidjson::SizeType i = 0; i < object[key].Size(); ++i) {
@@ -153,7 +153,8 @@ inline void check_shipment(const rapidjson::Value& v) {
 
 inline void check_location(const rapidjson::Value& v, const std::string& type) {
   if (!v.HasMember("location") || !v["location"].IsArray()) {
-    throw InputException(std::format("Invalid location for {} {}.", type, v["id"].GetUint64()));
+    throw InputException(
+      std::format("Invalid location for {} {}.", type, v["id"].GetUint64()));
   }
 }
 
@@ -176,7 +177,9 @@ inline std::vector<TimeWindow> get_time_windows(const rapidjson::Value& o) {
   std::vector<TimeWindow> tws;
   if (o.HasMember("time_windows")) {
     if (!o["time_windows"].IsArray() || o["time_windows"].Empty()) {
-      throw InputException(std::format("Invalid time_windows array for object {}.", o["id"].GetUint64()));
+      throw InputException(
+        std::format("Invalid time_windows array for object {}.",
+                    o["id"].GetUint64()));
     }
 
     std::transform(o["time_windows"].Begin(),
@@ -211,7 +214,8 @@ inline std::vector<Break> get_vehicle_breaks(const rapidjson::Value& v,
   std::vector<Break> breaks;
   if (v.HasMember("breaks")) {
     if (!v["breaks"].IsArray()) {
-      throw InputException(std::format("Invalid breaks for vehicle {}.", v["id"].GetUint64()));
+      throw InputException(
+        std::format("Invalid breaks for vehicle {}.", v["id"].GetUint64()));
     }
 
     std::transform(v["breaks"].Begin(),
@@ -235,12 +239,14 @@ inline VehicleCosts get_vehicle_costs(const rapidjson::Value& v) {
 
   if (v.HasMember("costs")) {
     if (!v["costs"].IsObject()) {
-      throw InputException(std::format("Invalid costs for vehicle {}.", v["id"].GetUint64()));
+      throw InputException(
+        std::format("Invalid costs for vehicle {}.", v["id"].GetUint64()));
     }
 
     if (v["costs"].HasMember("fixed")) {
       if (!v["costs"]["fixed"].IsUint()) {
-        throw InputException(std::format("Invalid fixed cost for vehicle {}.", v["id"].GetUint64()));
+        throw InputException(std::format("Invalid fixed cost for vehicle {}.",
+                                         v["id"].GetUint64()));
       }
 
       fixed = v["costs"]["fixed"].GetUint();
@@ -248,7 +254,9 @@ inline VehicleCosts get_vehicle_costs(const rapidjson::Value& v) {
 
     if (v["costs"].HasMember("per_hour")) {
       if (!v["costs"]["per_hour"].IsUint()) {
-        throw InputException(std::format("Invalid per_hour cost for vehicle {}.", v["id"].GetUint64()));
+        throw InputException(
+          std::format("Invalid per_hour cost for vehicle {}.",
+                      v["id"].GetUint64()));
       }
 
       per_hour = v["costs"]["per_hour"].GetUint();
@@ -256,7 +264,8 @@ inline VehicleCosts get_vehicle_costs(const rapidjson::Value& v) {
 
     if (v["costs"].HasMember("per_km")) {
       if (!v["costs"]["per_km"].IsUint()) {
-        throw InputException(std::format("Invalid per_km cost for vehicle {}.", v["id"].GetUint64()));
+        throw InputException(std::format("Invalid per_km cost for vehicle {}.",
+                                         v["id"].GetUint64()));
       }
 
       per_km = v["costs"]["per_km"].GetUint();
@@ -271,7 +280,8 @@ inline std::vector<VehicleStep> get_vehicle_steps(const rapidjson::Value& v) {
 
   if (v.HasMember("steps")) {
     if (!v["steps"].IsArray()) {
-      throw InputException(std::format("Invalid steps for vehicle {}.", v["id"].GetUint64()));
+      throw InputException(
+        std::format("Invalid steps for vehicle {}.", v["id"].GetUint64()));
     }
 
     steps.reserve(v["steps"].Size());
@@ -317,7 +327,8 @@ inline std::vector<VehicleStep> get_vehicle_steps(const rapidjson::Value& v) {
       }
 
       if (!json_step.HasMember("id") || !json_step["id"].IsUint64()) {
-        throw InputException(std::format("Invalid id in steps for vehicle {}.", v["id"].GetUint64()));
+        throw InputException(std::format("Invalid id in steps for vehicle {}.",
+                                         v["id"].GetUint64()));
       }
 
       if (type_str == "job") {
@@ -337,7 +348,9 @@ inline std::vector<VehicleStep> get_vehicle_steps(const rapidjson::Value& v) {
                            json_step["id"].GetUint64(),
                            std::move(forced_service));
       } else {
-        throw InputException(std::format("Invalid type in steps for vehicle {}.", v["id"].GetUint64()));
+        throw InputException(
+          std::format("Invalid type in steps for vehicle {}.",
+                      v["id"].GetUint64()));
       }
     }
   }
@@ -355,7 +368,8 @@ inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
   bool has_start_coords = json_vehicle.HasMember("start");
   bool has_start_index = json_vehicle.HasMember("start_index");
   if (has_start_index && !json_vehicle["start_index"].IsUint()) {
-    throw InputException(std::format("Invalid start_index for vehicle {}.", v_id));
+    throw InputException(
+      std::format("Invalid start_index for vehicle {}.", v_id));
   }
 
   std::optional<Location> start;
@@ -378,7 +392,8 @@ inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
   bool has_end_coords = json_vehicle.HasMember("end");
   bool has_end_index = json_vehicle.HasMember("end_index");
   if (has_end_index && !json_vehicle["end_index"].IsUint()) {
-    throw InputException(std::format("Invalid end_index for vehicle {}.", v_id));
+    throw InputException(
+      std::format("Invalid end_index for vehicle {}.", v_id));
   }
 
   std::optional<Location> end;
@@ -424,7 +439,9 @@ inline Location get_task_location(const rapidjson::Value& v,
   bool has_location_coords = v.HasMember("location");
   bool has_location_index = v.HasMember("location_index");
   if (has_location_index && !v["location_index"].IsUint()) {
-    throw InputException(std::format("Invalid location_index for {} {}.", type, v["id"].GetUint64()));
+    throw InputException(std::format("Invalid location_index for {} {}.",
+                                     type,
+                                     v["id"].GetUint64()));
   }
 
   if (has_location_index) {
@@ -492,9 +509,10 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
 
   // Parsing input string to populate the input object.
   if (json_input.Parse(input_str.c_str()).HasParseError()) {
-    std::string error_msg = std::format("{} (offset: {})",
-      rapidjson::GetParseError_En(json_input.GetParseError()), 
-      json_input.GetErrorOffset());
+    std::string error_msg =
+      std::format("{} (offset: {})",
+                  rapidjson::GetParseError_En(json_input.GetParseError()),
+                  json_input.GetErrorOffset());
     throw InputException(error_msg);
   }
 

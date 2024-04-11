@@ -51,7 +51,8 @@ Vehicle::Vehicle(Id id,
       return b.max_load.has_value();
     })) {
   if (!static_cast<bool>(start) && !static_cast<bool>(end)) {
-    throw InputException(std::format("No start or end specified for vehicle {}.", id));
+    throw InputException(
+      std::format("No start or end specified for vehicle {}.", id));
   }
 
   for (unsigned i = 0; i < breaks.size(); ++i) {
@@ -64,7 +65,8 @@ Vehicle::Vehicle(Id id,
 
     if (b.max_load.has_value() &&
         b.max_load.value().size() != capacity.size()) {
-      throw InputException(std::format("Inconsistent break max_load size for break: {}.", b.id));
+      throw InputException(
+        std::format("Inconsistent break max_load size for break: {}.", b.id));
     }
   }
 
@@ -85,10 +87,12 @@ Vehicle::Vehicle(Id id,
 
     for (unsigned i = rank_after_start; i < input_steps.size(); ++i) {
       if (input_steps[i].type == START) {
-        throw InputException(std::format("Unexpected start in input steps for vehicle {}.", id));
+        throw InputException(
+          std::format("Unexpected start in input steps for vehicle {}.", id));
       }
       if (input_steps[i].type == END && (i != input_steps.size() - 1)) {
-        throw InputException(std::format("Unexpected end in input steps for vehicle {}.", id));
+        throw InputException(
+          std::format("Unexpected end in input steps for vehicle {}.", id));
       }
 
       steps.push_back(input_steps[i]);
