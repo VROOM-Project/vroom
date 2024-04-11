@@ -202,8 +202,7 @@ void Input::add_shipment(const Job& pickup, const Job& delivery) {
   }
   if (pickup.skills.size() != delivery.skills.size()) {
     throw InputException(
-      std::format("Inconsistent shipment skills for for pickup {} and delivery "
-                  "{}.",
+      std::format("Inconsistent shipment skills for pickup {} and delivery {}.",
                   pickup.id,
                   delivery.id));
   }
