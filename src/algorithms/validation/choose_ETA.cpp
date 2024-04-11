@@ -221,8 +221,7 @@ Route choose_ETA(const Input& input,
     if (latest_date != std::numeric_limits<Duration>::max()) {
       const auto reach_time = relative_ETA[s];
       if (latest_date < reach_time) {
-        throw InputException("Infeasible route for vehicle " +
-                             std::to_string(v.id) + ".");
+        throw InputException(std::format("Infeasible route for vehicle {}.", v.id));
       }
       start_candidate = std::min(start_candidate, latest_date - reach_time);
     }
@@ -264,8 +263,7 @@ Route choose_ETA(const Input& input,
         std::max(earliest_date, step.forced_service.after.value());
     }
     if (earliest_date > latest_dates[s]) {
-      throw InputException("Infeasible route for vehicle " +
-                           std::to_string(v.id) + ".");
+      throw InputException(std::format("Infeasible route for vehicle {}.", v.id));
     }
 
     switch (step.type) {
@@ -610,7 +608,7 @@ Route choose_ETA(const Input& input,
 
   rank_in_J = 1;
   for (unsigned i = 0; i < n; ++i) {
-    auto p_name = "P" + std::to_string(i + 1);
+    auto p_name = std::format("P{}", i + 1);
     glp_set_row_name(lp, current_row, p_name.c_str());
     double action;
     const auto& step = steps[1 + i];
@@ -635,7 +633,7 @@ Route choose_ETA(const Input& input,
 
   // Lead time ("earliest violation") constraints.
   for (unsigned i = 0; i < n; ++i) {
-    auto l_name = "L" + std::to_string(i + 1);
+    auto l_name = std::format("L{}", i + 1);
     glp_set_row_name(lp, current_row, l_name.c_str());
     glp_set_row_bnds(lp, current_row, GLP_LO, 0.0, 0.0);
     ++current_row;
@@ -644,14 +642,14 @@ Route choose_ETA(const Input& input,
 
   // Delay ("latest violation") constraints.
   for (unsigned i = 0; i < n; ++i) {
-    auto d_name = "D" + std::to_string(i + 1);
+    auto d_name = std::format("D{}", i + 1);
     glp_set_row_name(lp, current_row, d_name.c_str());
     glp_set_row_bnds(lp, current_row, GLP_UP, 0.0, 0.0);
     ++current_row;
   }
 
   // Vehicle TW end violation constraint.
-  auto d_name = "D" + std::to_string(n + 1);
+  auto d_name = std::format("D{}", n + 1);
   glp_set_row_name(lp, current_row, d_name.c_str());
   // Using v.tw.end is fine too for a default time window.
   glp_set_row_bnds(lp, current_row, GLP_UP, 0.0, v.tw.end - horizon_start);
@@ -661,7 +659,7 @@ Route choose_ETA(const Input& input,
 
   // Binary variable decision constraints.
   for (unsigned i = 1; i <= n; ++i) {
-    auto s_name = "S" + std::to_string(i);
+    auto s_name = std::format("S{}", i);
     glp_set_row_name(lp, current_row, s_name.c_str());
     glp_set_row_bnds(lp, current_row, GLP_FX, 1.0, 1.0);
     ++current_row;
@@ -670,7 +668,7 @@ Route choose_ETA(const Input& input,
 
   // Delta constraints.
   for (unsigned r = 0; r < J.size(); ++r) {
-    auto delta_name = "Delta" + std::to_string(J[r]);
+    auto delta_name = std::format("Delta{}", J[r]);
     glp_set_row_name(lp, current_row, delta_name.c_str());
     glp_set_row_bnds(lp,
                      current_row,
@@ -701,15 +699,14 @@ Route choose_ETA(const Input& input,
   unsigned current_col = 1;
   // Variables for time of services (t_i values).
   for (unsigned i = 0; i <= n + 1; ++i) {
-    auto t_name = "t" + std::to_string(i);
+    auto t_name = std::format("t{}", i);
     glp_set_col_name(lp, current_col, t_name.c_str());
 
     const Duration LB = t_i_LB[i];
     const Duration UB = t_i_UB[i];
 
     if (UB < LB) {
-      throw InputException("Infeasible route for vehicle " +
-                           std::to_string(v.id) + ".");
+      throw InputException(std::format("Infeasible route for vehicle {}.", v.id));
     }
 
     if (LB == UB) {
@@ -728,7 +725,7 @@ Route choose_ETA(const Input& input,
 
   // Define variables for measure of TW violation.
   for (unsigned i = 0; i <= n + 1; ++i) {
-    auto y_name = "Y" + std::to_string(i);
+    auto y_name = std::format("Y{}", i);
     glp_set_col_name(lp, current_col, y_name.c_str());
     glp_set_col_bnds(lp, current_col, GLP_LO, 0.0, 0.0);
     ++current_col;
@@ -741,7 +738,7 @@ Route choose_ETA(const Input& input,
     const auto& tws = (step.type == STEP_TYPE::JOB) ? input.jobs[step.rank].tws
                                                     : v.breaks[step.rank].tws;
     for (unsigned k = 0; k < tws.size(); ++k) {
-      auto x_name = "X" + std::to_string(i + 1) + "_" + std::to_string(k);
+      auto x_name = std::format("X{}_{}", i + 1, k);
       glp_set_col_name(lp, current_col, x_name.c_str());
       glp_set_col_kind(lp, current_col, GLP_BV);
       if (k < first_relevant_tw_rank[i] || k > last_relevant_tw_rank[i]) {
@@ -754,7 +751,7 @@ Route choose_ETA(const Input& input,
 
   // Delta variables.
   for (unsigned i = 0; i <= n; ++i) {
-    auto delta_name = "delta" + std::to_string(i);
+    auto delta_name = std::format("delta{}", i);
     glp_set_col_name(lp, current_col, delta_name.c_str());
     glp_set_col_bnds(lp, current_col, GLP_LO, 0.0, 0.0);
     ++current_col;
