@@ -143,7 +143,8 @@ void HttpWrapper::parse_response(rapidjson::Document& json_result,
                                  const std::string& json_content) {
   json_result.Parse(json_content.c_str());
   if (json_result.HasParseError()) {
-    throw RoutingException("Failed to parse routing response body: " + json_content);
+    throw RoutingException("Failed to parse routing response body: " +
+                           json_content);
   }
 }
 
