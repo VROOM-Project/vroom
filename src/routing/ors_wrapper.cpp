@@ -65,8 +65,19 @@ void OrsWrapper::check_response(const rapidjson::Document& json_result,
                                 const std::vector<Location>&,
                                 const std::string&) const {
   if (json_result.HasMember("error")) {
-    throw RoutingException(
-      std::string(json_result["error"]["message"].GetString()));
+    if (json_result["error"].IsString()) {
+      if (json_result.HasMember("path") && json_result["path"].IsString()) {
+        throw RoutingException(std::string(json_result["error"].GetString()) +
+                               " " +
+                               std::string(json_result["path"].GetString()));
+      }
+      throw RoutingException(std::string(json_result["error"].GetString()));
+    }
+    if (json_result["error"].HasMember("message") &&
+        json_result["error"]["message"].IsString()) {
+      throw RoutingException(
+        std::string(json_result["error"]["message"].GetString()));
+    }
   }
 }
 
