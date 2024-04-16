@@ -33,7 +33,10 @@ public:
     data.resize(n * n);
   }
 
-  Matrix(std::size_t n, T value);
+  Matrix(std::size_t n, T value)
+    : n(n), data(n * n, value)
+  {
+  }
 
   Matrix<T> get_sub_matrix(const std::vector<Index>& indices) const;
 

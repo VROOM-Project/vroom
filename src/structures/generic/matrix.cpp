@@ -12,10 +12,6 @@ All rights reserved (see LICENSE).
 namespace vroom {
 
 template <class T>
-Matrix<T>::Matrix(std::size_t n, T value) : n(n), data(n * n, value) {
-}
-
-template <class T>
 Matrix<T> Matrix<T>::get_sub_matrix(const std::vector<Index>& indices) const {
   Matrix<T> sub_matrix(indices.size());
   for (std::size_t i = 0; i < indices.size(); ++i) {
