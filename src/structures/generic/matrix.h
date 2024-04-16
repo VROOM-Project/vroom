@@ -28,9 +28,8 @@ public:
   }
 
   explicit Matrix(std::size_t n)
-    : n(n)
+    : Matrix(n, 0)
   {
-    data.resize(n * n);
   }
 
   Matrix(std::size_t n, T value)
