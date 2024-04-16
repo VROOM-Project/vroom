@@ -62,7 +62,7 @@ public:
 #if USE_PYTHON_BINDINGS
   T* get_data() {
     return data.data();
-  };
+  }
 #endif
 };
 
