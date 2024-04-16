@@ -11,6 +11,4 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
-template class Matrix<UserCost>;
-
 } // namespace vroom
