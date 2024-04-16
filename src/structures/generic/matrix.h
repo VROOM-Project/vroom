@@ -22,19 +22,13 @@ template <class T> class Matrix {
   std::vector<T> data;
 
 public:
-  Matrix()
-    : Matrix(0)
-  {
+  Matrix() : Matrix(0) {
   }
 
-  explicit Matrix(std::size_t n)
-    : Matrix(n, 0)
-  {
+  explicit Matrix(std::size_t n) : Matrix(n, 0) {
   }
 
-  Matrix(std::size_t n, T value)
-    : n(n), data(n * n, value)
-  {
+  Matrix(std::size_t n, T value) : n(n), data(n * n, value) {
   }
 
   Matrix<T> get_sub_matrix(const std::vector<Index>& indices) const {
