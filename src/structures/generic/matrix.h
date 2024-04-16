@@ -10,7 +10,6 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <initializer_list>
 #include <vector>
 
 #include "structures/typedefs.h"
