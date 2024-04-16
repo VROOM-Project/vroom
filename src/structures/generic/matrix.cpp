@@ -19,9 +19,6 @@ template <class T>
 Matrix<T>::Matrix(std::size_t n, T value) : n(n), data(n * n, value) {
 }
 
-template <class T> Matrix<T>::Matrix() : Matrix(0) {
-}
-
 template <class T>
 Matrix<T> Matrix<T>::get_sub_matrix(const std::vector<Index>& indices) const {
   Matrix<T> sub_matrix(indices.size());

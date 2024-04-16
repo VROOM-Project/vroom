@@ -22,7 +22,10 @@ template <class T> class Matrix {
   std::vector<T> data;
 
 public:
-  Matrix();
+  Matrix()
+    : Matrix(0)
+  {
+  }
 
   explicit Matrix(std::size_t n);
 
