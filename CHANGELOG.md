@@ -6,6 +6,10 @@
 
 ### Changed
 
+#### CI
+
+- Speed up OSRM build (#1096)
+
 ### Fixed
 
 ## [v1.14.0] - 2024-01-16
