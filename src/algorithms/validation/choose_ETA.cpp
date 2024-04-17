@@ -741,7 +741,14 @@ Route choose_ETA(const Input& input,
     const auto& tws = (step.type == STEP_TYPE::JOB) ? input.jobs[step.rank].tws
                                                     : v.breaks[step.rank].tws;
     for (unsigned k = 0; k < tws.size(); ++k) {
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wrestrict"
+#endif
       auto x_name = "X" + std::to_string(i + 1) + "_" + std::to_string(k);
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
       glp_set_col_name(lp, current_col, x_name.c_str());
       glp_set_col_kind(lp, current_col, GLP_BV);
       if (k < first_relevant_tw_rank[i] || k > last_relevant_tw_rank[i]) {

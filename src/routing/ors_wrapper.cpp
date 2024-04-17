@@ -34,8 +34,15 @@ std::string OrsWrapper::build_query(const std::vector<Location>& locations,
   }
   body += "\":[";
   for (auto const& location : locations) {
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wrestrict"
+#endif
     body += "[" + std::to_string(location.lon()) + "," +
             std::to_string(location.lat()) + "],";
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
   }
   body.pop_back(); // Remove trailing ','.
   body += "]";
