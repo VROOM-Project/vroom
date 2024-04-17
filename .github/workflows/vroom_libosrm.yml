@@ -19,7 +19,11 @@ jobs:
   libosrm:
     strategy:
       matrix:
-        cxx: ['g++-12', 'clang++-15']
+        cxx:
+          - g++-12
+            cc: gcc-12
+          - clang++-15
+            cc: clang-15
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout repository
@@ -51,7 +55,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=${{ matrix.cxx }}
+          cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} -DCMAKE_C_COMPILER=${{ matrix.cc }}
           cmake --build .
         working-directory: osrm-backend
       - name: Install OSRM
