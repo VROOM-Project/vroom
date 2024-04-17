@@ -6,6 +6,10 @@
 
 ### Changed
 
+#### CI
+
+- Update GitHub Actions (#1094)
+
 ### Fixed
 
 ## [v1.14.0] - 2024-01-16
