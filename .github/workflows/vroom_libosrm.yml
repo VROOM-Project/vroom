@@ -17,12 +17,14 @@ env:
   osrm-tag: v5.27.1
 jobs:
   libosrm:
-    matrix:
-      cxx:
-        - g++-12
-          cc: gcc-12
-        - clang++-15
-          cc: clang-15
+    strategy:
+      matrix:
+        cxx: [g++-12, clang++-15]
+        include:
+          - cxx: g++-12
+            cc: gcc-12
+          - cxx: clang++-15
+            cc: clang-15
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout repository
