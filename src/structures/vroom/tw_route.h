@@ -217,7 +217,7 @@ public:
   // first_rank and before last_rank *in place of* the current jobs
   // that may be there. "delivery" is the amount delivered in single
   // jobs for inclusion range.
-  template <std::forward_iterator Iter>
+  template <std::random_access_iterator Iter>
   void replace(const Input& input,
                const Amount& delivery,
                const Iter first_job,
