@@ -1,6 +1,7 @@
 #ifndef PREPOSTVIEW_H
 #define PREPOSTVIEW_H
 
+#include <iterator>
 #include <vector>
 
 
@@ -74,9 +75,26 @@ class prepostview
         {
             public:
                 iterator(prepostview const & ppv, std::size_t index)
-                  : m_ppv(ppv)
+                  : m_ppv(&ppv)
                   , m_index(index)
                 {
+                }
+
+                iterator(iterator const & other)
+                  : m_ppv(other.m_ppv)
+                  , m_index(other.m_index)
+                {
+                }
+
+                iterator()
+                  : m_ppv(nullptr)
+                  , m_index(-2)
+                {
+                }
+
+                auto operator==(iterator const & other) const -> bool
+                {
+                    return m_index == other.m_index;
                 }
 
                 auto operator!=(iterator const & other) const -> bool
@@ -84,9 +102,34 @@ class prepostview
                     return m_index != other.m_index;
                 }
 
+                auto operator<(iterator const & other) const -> bool
+                {
+                    if (m_index == other.m_index)
+                    {
+                        return false;
+                    }
+
+                    if (m_index == -1)
+                    {
+                        return true;
+                    }
+
+                    return m_index < other.m_index;
+                }
+
+                auto operator<=(iterator const & other) const -> bool
+                {
+                    return !(other < *this);
+                }
+
                 auto operator*() const -> T
                 {
-                    return m_ppv[m_index];
+                    return (*m_ppv)[m_index];
+                }
+
+                auto operator->() -> T &
+                {
+                    return &((*m_ppv)[m_index]);
                 }
 
                 auto operator++() -> iterator &
@@ -95,10 +138,26 @@ class prepostview
                     return *this;
                 }
 
-                using iterator_category = std::forward_iterator_tag;
+                auto operator++(int) -> iterator
+                {
+                    auto tmp = *this;
+                    ++(*this);
+                    return tmp;
+                }
+
+                auto operator-(int i) const -> iterator
+                {
+                    return iterator(*m_ppv, m_index - i);
+                }
+
+                // using iterator_category = std::forward_iterator_tag;
+                using difference_type = std::ptrdiff_t;
+                using element_type = T;
+                // using pointer = T *;
+                // using reference = T &;
 
             private:
-                prepostview const & m_ppv;
+                prepostview const * m_ppv;
                 std::size_t m_index;
         };
 

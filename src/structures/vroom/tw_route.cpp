@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 #include <algorithm>
 
 #include "structures/vroom/tw_route.h"
+#include "structures/prepostview.h"
 #include "utils/helpers.h"
 
 namespace vroom {
@@ -1474,6 +1475,15 @@ template bool TWRoute::is_valid_addition_for_tw(
   const Index last_rank,
   bool check_max_load) const;
 
+template bool TWRoute::is_valid_addition_for_tw(
+  const Input& input,
+  const Amount& delivery,
+  const prepostview<Index>::iterator first_job,
+  const prepostview<Index>::iterator last_job,
+  const Index first_rank,
+  const Index last_rank,
+  bool check_max_load) const;
+
 template void TWRoute::replace(const Input& input,
                                const Amount& delivery,
                                const std::vector<Index>::iterator first_job,
@@ -1500,6 +1510,13 @@ TWRoute::replace(const Input& input,
                  const Amount& delivery,
                  const std::array<Index, 1>::const_iterator first_job,
                  const std::array<Index, 1>::const_iterator last_job,
+                 const Index first_rank,
+                 const Index last_rank);
+template void
+TWRoute::replace(const Input& input,
+                 const Amount& delivery,
+                 const prepostview<Index>::iterator first_job,
+                 const prepostview<Index>::iterator last_job,
                  const Index first_rank,
                  const Index last_rank);
 

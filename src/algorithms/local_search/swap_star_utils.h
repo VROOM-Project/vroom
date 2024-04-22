@@ -14,6 +14,7 @@ All rights reserved (see LICENSE).
 
 #include "algorithms/local_search/top_insertions.h"
 #include "structures/typedefs.h"
+#include "structures/prepostview.h"
 #include "structures/vroom/input/input.h"
 #include "structures/vroom/solution_state.h"
 #include "utils/helpers.h"
@@ -130,7 +131,7 @@ bool valid_choice_for_insertion_ranks(const utils::SolutionState& sol_state,
 }
 
 struct InsertionRange {
-  std::vector<Index> range;
+  prepostview<Index> range;
   Index first_rank;
   Index last_rank;
 };
@@ -143,24 +144,16 @@ inline InsertionRange get_insert_range(const std::vector<Index>& s_route,
                                        Index insertion_rank) {
   InsertionRange insert;
   if (s_rank == insertion_rank) {
-    insert.range.push_back(job_rank);
+    insert.range = prepostview(job_rank, {});
     insert.first_rank = s_rank;
     insert.last_rank = s_rank + 1;
   } else {
     if (s_rank < insertion_rank) {
-      insert.range.reserve(insertion_rank - s_rank);
-      std::copy(s_route.begin() + s_rank + 1,
-                s_route.begin() + insertion_rank,
-                std::back_inserter(insert.range));
-      insert.range.push_back(job_rank);
+      insert.range = prepostview(s_route, job_rank, s_rank + 1, insertion_rank);
       insert.first_rank = s_rank;
       insert.last_rank = insertion_rank;
     } else {
-      insert.range.reserve(s_rank - insertion_rank + 1);
-      insert.range.push_back(job_rank);
-      std::copy(s_route.begin() + insertion_rank,
-                s_route.begin() + s_rank,
-                std::back_inserter(insert.range));
+      insert.range = prepostview(job_rank, s_route, insertion_rank, s_rank);
       insert.first_rank = insertion_rank;
       insert.last_rank = s_rank + 1;
     }
