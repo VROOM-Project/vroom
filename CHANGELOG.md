@@ -8,6 +8,10 @@
 
 ### Fixed
 
+#### Internals
+
+- Iterator type required by `TWRoute::replace` function (#1103)
+
 ## [v1.14.0] - 2024-01-16
 
 ### Added
