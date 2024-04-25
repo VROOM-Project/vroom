@@ -9,6 +9,7 @@
 #### CI
 
 - Update GitHub Actions (#1094)
+- Speed up OSRM build (#1096)
 
 ### Fixed
 
