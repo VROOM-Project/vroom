@@ -6,6 +6,10 @@
 
 ### Changed
 
+#### Internals
+
+- Refactor `Matrix` template class (#1089)
+
 #### CI
 
 - Update GitHub Actions (#1094)
