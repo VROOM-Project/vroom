@@ -16,6 +16,7 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/amount.h"
 #include "structures/vroom/location.h"
 #include "structures/vroom/time_window.h"
+#include <__numeric/accumulate.h>
 
 namespace vroom {
 
@@ -24,7 +25,7 @@ struct Job {
   const Id id;
   const JOB_TYPE type;
   const Duration setup;
-  const Duration service;
+  const DurationList service;
   const Amount delivery;
   const Amount pickup;
   const Skills skills;
@@ -36,7 +37,7 @@ struct Job {
   Job(Id id,
       const Location& location,
       UserDuration setup = 0,
-      UserDuration service = 0,
+      UserDurationList service = {0},
       Amount delivery = Amount(0),
       Amount pickup = Amount(0),
       Skills skills = Skills(),
@@ -51,7 +52,7 @@ struct Job {
       JOB_TYPE type,
       const Location& location,
       UserDuration setup = 0,
-      UserDuration service = 0,
+      UserDurationList service = {0},
       const Amount& amount = Amount(0),
       Skills skills = Skills(),
       Priority priority = 0,
@@ -61,6 +62,15 @@ struct Job {
 
   Index index() const {
     return location.index();
+  }
+
+  Duration service_for_vehicle(Index vehicle_rank) const {
+    return service[vehicle_rank % service.size()];
+  }
+
+  Duration average_service() const {
+    return std::accumulate(service.begin(), service.end(), 0) /
+           static_cast<Duration>(service.size());
   }
 
   bool is_valid_start(Duration time) const;

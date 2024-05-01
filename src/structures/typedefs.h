@@ -33,7 +33,9 @@ using Index = uint16_t;
 using UserCost = uint32_t;
 using Cost = int64_t;
 using UserDuration = uint32_t;
+using UserDurationList = std::vector<UserDuration>;
 using Duration = int64_t;
+using DurationList = std::vector<Duration>;
 using UserDistance = uint32_t;
 using Distance = int64_t;
 using Coordinate = double;
@@ -192,6 +194,17 @@ struct StringHash {
 namespace utils {
 constexpr inline Duration scale_from_user_duration(UserDuration d) {
   return DURATION_FACTOR * static_cast<Duration>(d);
+}
+
+inline DurationList scale_from_user_duration_list(UserDurationList d) {
+  DurationList scaled;
+  scaled.reserve(d.size());
+
+  for (auto duration : d) {
+    scaled.push_back(DURATION_FACTOR * static_cast<Duration>(duration));
+  }
+
+  return scaled;
 }
 
 constexpr inline UserDuration scale_to_user_duration(Duration d) {

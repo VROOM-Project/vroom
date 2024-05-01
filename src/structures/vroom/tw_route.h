@@ -92,13 +92,13 @@ public:
   // Margin for job at rank i in route: earliest[i] and latest[i]
   // store earliest and latest date. Those are potentially derived
   // from different time windows in multiple TW situations.
-  std::vector<Duration> earliest;
-  std::vector<Duration> latest;
+  DurationList earliest;
+  DurationList latest;
 
   // action_time[i] stores the total time spent for job at rank i in
   // route. Based on previous location, can be either (setup +
   // service) or only service for the job.
-  std::vector<Duration> action_time;
+  DurationList action_time;
 
   // Store earliest date for route end.
   Duration earliest_end;
@@ -113,14 +113,14 @@ public:
 
   // break_earliest[i] and break_latest[i] store earliest and latest
   // date for break at rank i in vehicle breaks.
-  std::vector<Duration> break_earliest;
-  std::vector<Duration> break_latest;
+  DurationList break_earliest;
+  DurationList break_latest;
 
   // When a break's earliest date is delayed (resp. latest date is
   // advanced) because of it's time window start (resp. end), then
   // some amount of time before (resp. after) can be used for travel.
-  std::vector<Duration> breaks_travel_margin_before;
-  std::vector<Duration> breaks_travel_margin_after;
+  DurationList breaks_travel_margin_before;
+  DurationList breaks_travel_margin_after;
 
   // fwd_smallest_breaks_load_margin[i] (resp. bwd_...) store minimal
   // margin between current load and max load for all breaks up to

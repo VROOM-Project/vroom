@@ -71,7 +71,7 @@ Route choose_ETA(const Input& input,
   std::vector<unsigned> J;
   std::vector<unsigned> B;
   std::vector<Eval> evals;
-  std::vector<Duration> action_times;
+  DurationList action_times;
   J.reserve(n + 1);
   B.reserve(n + 1);
   evals.reserve(n + 1);
@@ -93,7 +93,7 @@ Route choose_ETA(const Input& input,
   Eval eval_sum;
   unsigned default_job_tw = 0;
   Duration relative_arrival = 0;
-  std::vector<Duration> relative_ETA;
+  DurationList relative_ETA;
   relative_ETA.reserve(steps.size());
 
   std::optional<Index> previous_index;
@@ -147,7 +147,8 @@ Route choose_ETA(const Input& input,
       const bool has_setup_time =
         !previous_index.has_value() || (previous_index.value() != job.index());
       const auto current_action =
-        has_setup_time ? job.setup + job.service : job.service;
+        has_setup_time ? job.setup + job.service_for_vehicle(vehicle_rank)
+                       : job.service_for_vehicle(vehicle_rank);
       action_times.push_back(current_action);
       action_sum += current_action;
       relative_arrival += current_action;
@@ -205,8 +206,7 @@ Route choose_ETA(const Input& input,
 
   // Determine earliest possible start based on "service_at" and
   // "service_before" constraints.
-  std::vector<Duration> latest_dates(steps.size(),
-                                     std::numeric_limits<Duration>::max());
+  DurationList latest_dates(steps.size(), std::numeric_limits<Duration>::max());
   auto start_candidate = std::numeric_limits<Duration>::max();
   for (unsigned s = 0; s < steps.size(); ++s) {
     const auto& step = steps[s];
@@ -247,8 +247,8 @@ Route choose_ETA(const Input& input,
   // availability date (resp. deadline). step_has_TW will help down
   // the line to decide whether going past current horizon actually
   // incurs a violation or not.
-  std::vector<Duration> horizon_start_lead_times(steps.size(), 0);
-  std::vector<Duration> horizon_end_delays(steps.size(), 0);
+  DurationList horizon_start_lead_times(steps.size(), 0);
+  DurationList horizon_end_delays(steps.size(), 0);
   std::vector<bool> step_has_TW(steps.size(), false);
   auto earliest_date = start_candidate;
   for (unsigned s = 0; s < steps.size(); ++s) {
@@ -397,8 +397,8 @@ Route choose_ETA(const Input& input,
   // travel/action constraints. Along the way, we store the rank of
   // the first relevant TW (used below to force some binary variables
   // to zero).
-  std::vector<Duration> t_i_LB;
-  std::vector<Duration> t_i_UB;
+  DurationList t_i_LB;
+  DurationList t_i_UB;
   Duration previous_LB = horizon_start;
   Duration previous_action = 0;
   Duration previous_travel = evals.front().duration;
@@ -1057,8 +1057,8 @@ Route choose_ETA(const Input& input,
   const Duration start_travel =
     get_duration(glp_mip_col_val(lp, start_delta_col));
 
-  std::vector<Duration> task_ETA;
-  std::vector<Duration> task_travels;
+  DurationList task_ETA;
+  DurationList task_travels;
   task_ETA.reserve(n);
   task_travels.reserve(n);
 
@@ -1203,7 +1203,7 @@ Route choose_ETA(const Input& input,
       previous_location = job.index();
 
       setup += current_setup;
-      service += job.service;
+      service += job.service_for_vehicle(vehicle_rank);
       priority += job.priority;
 
       current_load += job.pickup;
@@ -1309,7 +1309,7 @@ Route choose_ETA(const Input& input,
       }
 
       previous_start = service_start;
-      previous_action = current_setup + job.service;
+      previous_action = current_setup + job.service_for_vehicle(vehicle_rank);
       previous_travel = task_travels[task_rank];
       ++task_rank;
       ++previous_rank_in_J;
