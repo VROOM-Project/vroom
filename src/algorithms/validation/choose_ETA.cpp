@@ -1213,7 +1213,8 @@ Route choose_ETA(const Input& input,
 
       sol_steps.emplace_back(job,
                              utils::scale_to_user_duration(current_setup),
-                             current_load);
+                             current_load,
+                             vehicle_rank);
       auto& current = sol_steps.back();
 
       const auto arrival = previous_start + previous_action + previous_travel;

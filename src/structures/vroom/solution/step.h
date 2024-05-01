@@ -38,7 +38,10 @@ struct Step {
 
   Step(STEP_TYPE type, Location location, Amount load);
 
-  Step(const Job& job, const UserDuration setup, Amount load);
+  Step(const Job& job,
+       const UserDuration setup,
+       Amount load,
+       Index vehicle_rank);
 
   Step(const Break& b, Amount load);
 

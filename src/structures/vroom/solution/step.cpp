@@ -21,13 +21,17 @@ Step::Step(STEP_TYPE type, Location location, Amount load)
   assert(step_type == STEP_TYPE::START || step_type == STEP_TYPE::END);
 }
 
-Step::Step(const Job& job, const UserDuration setup, Amount load)
+Step::Step(const Job& job,
+           const UserDuration setup,
+           Amount load,
+           Index vehicle_rank)
   : step_type(STEP_TYPE::JOB),
     job_type(job.type),
     location(job.location),
     id(job.id),
     setup(setup),
-    service(utils::scale_to_user_duration(job.service)),
+    service(
+      utils::scale_to_user_duration(job.service_for_vehicle(vehicle_rank))),
     load(std::move(load)),
     description(job.description) {
 }
