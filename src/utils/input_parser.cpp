@@ -108,27 +108,36 @@ inline UserDuration get_duration(const rapidjson::Value& object,
 inline UserDurationList get_duration_list(const rapidjson::Value& object,
                                           const char* key) {
   UserDurationList durations;
-  if (object.HasMember(key)) {
-    if (!object[key].IsArray()) {
-      // convert to list if single value provided
-      if (object[key].IsUint()) {
-        durations.reserve(1);
-        durations.push_back(object[key].GetUint());
-        return durations;
-      }
 
+  if (!object.HasMember(key)) {
+    durations.reserve(1);
+    durations.push_back(0);
+
+    return durations;
+  }
+
+  if (object[key].IsUint()) {
+    durations.reserve(1);
+    durations.push_back(object[key].GetUint());
+    return durations;
+  }
+
+  if (!object[key].IsArray()) {
+    throw InputException("Invalid " + std::string(key) + " duration.");
+  }
+
+  if (object[key].Empty()) {
+    throw InputException("Empty " + std::string(key) + " duration.");
+  }
+
+  durations.reserve(object[key].Size());
+
+  for (rapidjson::SizeType i = 0; i < object[key].Size(); ++i) {
+    if (!object[key][i].IsUint()) {
       throw InputException("Invalid " + std::string(key) + " duration.");
     }
 
-    durations.reserve(object[key].Size());
-
-    for (rapidjson::SizeType i = 0; i < object[key].Size(); ++i) {
-      if (!object[key][i].IsUint()) {
-        throw InputException("Invalid " + std::string(key) + " duration.");
-      }
-
-      durations.push_back(object[key][i].GetUint());
-    }
+    durations.push_back(object[key][i].GetUint());
   }
 
   return durations;
