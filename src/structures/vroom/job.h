@@ -10,13 +10,13 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <numeric>
 #include <string>
 
 #include "structures/typedefs.h"
 #include "structures/vroom/amount.h"
 #include "structures/vroom/location.h"
 #include "structures/vroom/time_window.h"
-#include <__numeric/accumulate.h>
 
 namespace vroom {
 
