@@ -61,6 +61,14 @@ public:
             other.discrete_distance_cost_factor);
   }
 
+  Cost get_discrete_duration_cost_factor() const {
+    return discrete_duration_cost_factor;
+  }
+
+  Cost get_discrete_distance_cost_factor() const {
+    return discrete_distance_cost_factor;
+  }
+
   Duration duration(Index i, Index j) const {
     return discrete_duration_factor *
            static_cast<Duration>(duration_data[i * duration_matrix_size + j]);
