@@ -782,8 +782,6 @@ void Input::set_jobs_vehicles_evals() {
           vehicle.eval(last_job_index, vehicle.end.value().index());
       }
 
-      current_eval += Eval(0, jobs[j].service_for_vehicle(v));
-
       if (is_pickup) {
         // Assign same eval to delivery.
         _jobs_vehicles_evals[j + 1][v] = current_eval;
