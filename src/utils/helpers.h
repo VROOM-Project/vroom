@@ -54,12 +54,13 @@ HeuristicParameters str_to_heuristic_param(const std::string& s);
 // for vehicle v.
 inline Eval addition_cost(const Input& input,
                           Index job_rank,
-                          const Vehicle& v,
+                          Index vehicle_rank,
                           const std::vector<Index>& route,
                           Index rank) {
   assert(rank <= route.size());
 
   Index job_index = input.jobs[job_rank].index();
+  const Vehicle& v = input.vehicles[vehicle_rank];
   Eval previous_eval;
   Eval next_eval;
   Eval old_edge_eval;
@@ -100,7 +101,10 @@ inline Eval addition_cost(const Input& input,
     }
   }
 
-  return previous_eval + next_eval - old_edge_eval;
+  Eval total_eval = previous_eval + next_eval - old_edge_eval;
+  total_eval.duration += input.jobs[job_rank].service_for_vehicle(v.id);
+
+  return total_eval;
 }
 
 // Evaluate adding pickup with rank job_rank and associated delivery
@@ -109,14 +113,15 @@ inline Eval addition_cost(const Input& input,
 // delivery_rank in route **with pickup**.
 inline Eval addition_cost(const Input& input,
                           Index job_rank,
-                          const Vehicle& v,
+                          Index vehicle_rank,
                           const std::vector<Index>& route,
                           Index pickup_rank,
                           Index delivery_rank) {
   assert(pickup_rank < delivery_rank && delivery_rank <= route.size() + 1);
 
   // Start with pickup eval.
-  auto eval = addition_cost(input, job_rank, v, route, pickup_rank);
+  const Vehicle& v = input.vehicles[vehicle_rank];
+  auto eval = addition_cost(input, job_rank, vehicle_rank, route, pickup_rank);
 
   if (delivery_rank == pickup_rank + 1) {
     // Delivery is inserted just after pickup.
@@ -145,7 +150,11 @@ inline Eval addition_cost(const Input& input,
   } else {
     // Delivery is further away so edges sets for pickup and delivery
     // addition are disjoint.
-    eval += addition_cost(input, job_rank + 1, v, route, delivery_rank - 1);
+    eval += addition_cost(input,
+                          job_rank + 1,
+                          vehicle_rank,
+                          route,
+                          delivery_rank - 1);
   }
 
   return eval;
