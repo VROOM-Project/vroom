@@ -34,8 +34,6 @@ template <class Route>
 ThreeInsertions find_top_3_insertions(const Input& input,
                                       Index j,
                                       const Route& r) {
-  const auto& v = input.vehicles[r.vehicle_rank];
-
   auto best_insertions = empty_three_insertions;
 
   for (Index rank = 0; rank <= r.route.size(); ++rank) {
