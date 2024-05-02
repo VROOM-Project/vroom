@@ -40,7 +40,7 @@ ThreeInsertions find_top_3_insertions(const Input& input,
 
   for (Index rank = 0; rank <= r.route.size(); ++rank) {
     InsertionOption current_insert =
-      {utils::addition_cost(input, j, v, r.route, rank), rank};
+      {utils::addition_cost(input, j, r.vehicle_rank, r.route, rank), rank};
 
     update_insertions(best_insertions, std::move(current_insert));
   }
