@@ -686,16 +686,38 @@ void Input::set_vehicles_max_tasks() {
       }
     };
 
-    std::vector<JobTime> job_times(jobs.size());
+    struct JobTimeList {
+      Index rank;
+      DurationList actions;
+    };
+
+    std::vector<JobTimeList> job_time_lists(jobs.size());
     for (Index j = 0; j < jobs.size(); ++j) {
-      const auto action =
-        jobs[j].service +
+      const Duration setup =
         (is_used_several_times(jobs[j].location) ? 0 : jobs[j].setup);
-      job_times[j] = {j, action};
+
+      DurationList actions;
+      actions.reserve(jobs[j].service.size()); // Optimize memory allocation
+
+      for (Duration duration : jobs[j].service) {
+        actions.push_back(setup + duration);
+      }
+
+      job_time_lists[j] = {j, actions};
     }
-    std::sort(job_times.begin(), job_times.end());
 
     for (Index v = 0; v < vehicles.size(); ++v) {
+
+      std::vector<JobTime> job_times;
+      job_times.reserve(job_time_lists.size());
+
+      for (const JobTimeList& job_time_list : job_time_lists) {
+        Duration action = job_time_list.actions[v];
+        job_times.push_back({job_time_list.rank, action});
+      }
+
+      std::sort(job_times.begin(), job_times.end());
+
       auto& vehicle = vehicles[v];
 
       if (vehicle.tw.is_default()) {

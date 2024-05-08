@@ -105,6 +105,44 @@ inline UserDuration get_duration(const rapidjson::Value& object,
   return duration;
 }
 
+inline UserDurationList get_duration_list(const rapidjson::Value& object,
+                                          const char* key) {
+  UserDurationList durations;
+
+  if (!object.HasMember(key)) {
+    durations.reserve(1);
+    durations.push_back(0);
+
+    return durations;
+  }
+
+  if (object[key].IsUint()) {
+    durations.reserve(1);
+    durations.push_back(object[key].GetUint());
+    return durations;
+  }
+
+  if (!object[key].IsArray()) {
+    throw InputException("Invalid " + std::string(key) + " duration.");
+  }
+
+  if (object[key].Empty()) {
+    throw InputException("Empty " + std::string(key) + " duration.");
+  }
+
+  durations.reserve(object[key].Size());
+
+  for (rapidjson::SizeType i = 0; i < object[key].Size(); ++i) {
+    if (!object[key][i].IsUint()) {
+      throw InputException("Invalid " + std::string(key) + " duration.");
+    }
+
+    durations.push_back(object[key][i].GetUint());
+  }
+
+  return durations;
+}
+
 inline Priority get_priority(const rapidjson::Value& object) {
   Priority priority = 0;
   if (object.HasMember("priority")) {
@@ -464,7 +502,7 @@ inline Job get_job(const rapidjson::Value& json_job, unsigned amount_size) {
   return Job(json_job["id"].GetUint64(),
              get_task_location(json_job, "job"),
              get_duration(json_job, "setup"),
-             get_duration(json_job, "service"),
+             get_duration_list(json_job, "service"),
              need_amount_compat ? get_amount(json_job, "amount", amount_size)
                                 : get_amount(json_job, "delivery", amount_size),
              get_amount(json_job, "pickup", amount_size),
@@ -569,7 +607,7 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
                  JOB_TYPE::PICKUP,
                  get_task_location(json_pickup, "pickup"),
                  get_duration(json_pickup, "setup"),
-                 get_duration(json_pickup, "service"),
+                 get_duration_list(json_pickup, "service"),
                  amount,
                  skills,
                  priority,
@@ -584,7 +622,7 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
                    JOB_TYPE::DELIVERY,
                    get_task_location(json_delivery, "delivery"),
                    get_duration(json_delivery, "setup"),
-                   get_duration(json_delivery, "service"),
+                   get_duration_list(json_delivery, "service"),
                    amount,
                    skills,
                    priority,

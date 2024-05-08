@@ -119,7 +119,7 @@ void run_example_with_osrm() {
   job_pickup[0] = 1;
 
   vroom::UserDuration setup = 0;
-  vroom::UserDuration service = 5 * 60; // 5 minutes
+  vroom::UserDurationList service = {5 * 60}; // 5 minutes
   vehicle_capacity[0] = 4;
 
   // Define vehicle breaks.
