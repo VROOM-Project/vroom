@@ -12,6 +12,7 @@ All rights reserved (see LICENSE).
 #include "../include/rapidjson/include/rapidjson/document.h"
 #include "../include/rapidjson/include/rapidjson/error/en.h"
 
+#include "utils/helpers.h"
 #include "utils/input_parser.h"
 
 namespace vroom::io {
@@ -393,7 +394,8 @@ inline std::vector<VehicleStep> get_vehicle_steps(const rapidjson::Value& v) {
 }
 
 inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
-                           unsigned amount_size) {
+                           unsigned amount_size,
+                           const TimeWindow& tw = TimeWindow()) {
   check_id(json_vehicle, "vehicle");
   auto v_id = json_vehicle["id"].GetUint64();
 
@@ -456,7 +458,7 @@ inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
                  profile,
                  get_amount(json_vehicle, "capacity", amount_size),
                  get_skills(json_vehicle),
-                 get_vehicle_time_window(json_vehicle),
+                 tw,
                  get_vehicle_breaks(json_vehicle, amount_size),
                  get_string(json_vehicle, "description"),
                  get_vehicle_costs(json_vehicle),
@@ -578,7 +580,23 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
   for (rapidjson::SizeType i = 0; i < json_input["vehicles"].Size(); ++i) {
     auto& json_vehicle = json_input["vehicles"][i];
 
-    input.add_vehicle(get_vehicle(json_vehicle, amount_size));
+    if (!json_vehicle.HasMember("time_windows")) {
+      input.add_vehicle(get_vehicle(json_vehicle,
+                                    amount_size,
+                                    get_vehicle_time_window(json_vehicle)));
+      continue;
+    }
+
+    std::vector<TimeWindow> timeWindows = get_time_windows(json_vehicle);
+
+    check_id(json_vehicle, "vehicle");
+    auto v_id = json_vehicle["id"].GetUint64();
+    utils::check_tws(timeWindows, v_id, "vehicle");
+
+    for (const TimeWindow& tw : timeWindows) {
+      Vehicle vehicle = get_vehicle(json_vehicle, amount_size, tw);
+      input.add_vehicle(vehicle);
+    }
   }
 
   // Add all tasks.
