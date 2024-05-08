@@ -307,7 +307,7 @@ Solution format_solution(const Input& input, const RawSolution& raw_routes) {
     setup += first_job_setup;
     previous_location = first_job.index();
 
-    service += first_job.service_for_vehicle(i);
+    service += first_job.service_for_vehicle(v);
     priority += first_job.priority;
 
     current_load += first_job.pickup;
@@ -321,14 +321,14 @@ Solution format_solution(const Input& input, const RawSolution& raw_routes) {
 #endif
 
     steps.emplace_back(first_job,
+                       v,
                        scale_to_user_duration(first_job_setup),
-                       current_load,
-                       i);
+                       current_load);
     auto& first = steps.back();
     first.duration = scale_to_user_duration(ETA);
     first.distance = eval_sum.distance;
     first.arrival = scale_to_user_duration(ETA);
-    ETA += (first_job_setup + first_job.service_for_vehicle(i));
+    ETA += (first_job_setup + first_job.service_for_vehicle(v));
     unassigned_ranks.erase(route.front());
 
     for (std::size_t r = 0; r < route.size() - 1; ++r) {
@@ -345,7 +345,7 @@ Solution format_solution(const Input& input, const RawSolution& raw_routes) {
       setup += current_setup;
       previous_location = current_job.index();
 
-      service += current_job.service_for_vehicle(i);
+      service += current_job.service_for_vehicle(v);
       priority += current_job.priority;
 
       current_load += current_job.pickup;
@@ -359,14 +359,14 @@ Solution format_solution(const Input& input, const RawSolution& raw_routes) {
 #endif
 
       steps.emplace_back(current_job,
+                         v,
                          scale_to_user_duration(current_setup),
-                         current_load,
-                         i);
+                         current_load);
       auto& current = steps.back();
       current.duration = scale_to_user_duration(eval_sum.duration);
       current.distance = eval_sum.distance;
       current.arrival = scale_to_user_duration(ETA);
-      ETA += (current_setup + current_job.service_for_vehicle(i));
+      ETA += (current_setup + current_job.service_for_vehicle(v));
       unassigned_ranks.erase(route[r + 1]);
     }
 
@@ -491,8 +491,7 @@ Route format_route(const Input& input,
                           v.start.value().index() == previous_job.index());
     const auto current_setup = same_location ? 0 : previous_job.setup;
 
-    Duration diff = current_setup +
-                    previous_job.service_for_vehicle(tw_r.vehicle_rank) +
+    Duration diff = current_setup + previous_job.service_for_vehicle(v) +
                     remaining_travel_time;
 
     assert(diff <= step_start);
@@ -691,7 +690,7 @@ Route format_route(const Input& input,
     // Back to current job.
     duration += travel_time;
     eval_sum += current_eval;
-    service += current_job.service_for_vehicle(tw_r.vehicle_rank);
+    service += current_job.service_for_vehicle(v);
     priority += current_job.priority;
 
     const auto current_setup =
@@ -710,9 +709,9 @@ Route format_route(const Input& input,
 #endif
 
     steps.emplace_back(current_job,
+                       v,
                        scale_to_user_duration(current_setup),
-                       current_load,
-                       tw_r.vehicle_rank);
+                       current_load);
     auto& current = steps.back();
 
     step_start += travel_time;
@@ -756,8 +755,7 @@ Route format_route(const Input& input,
       (current.waiting_time == 0 || scale_to_user_duration(j_tw->start) ==
                                       current.arrival + current.waiting_time));
 
-    step_start +=
-      (current_setup + current_job.service_for_vehicle(tw_r.vehicle_rank));
+    step_start += (current_setup + current_job.service_for_vehicle(v));
 
     unassigned_ranks.erase(tw_r.route[r]);
   }

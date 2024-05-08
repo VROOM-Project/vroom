@@ -60,6 +60,7 @@ struct Vehicle {
   const std::string description;
   const VehicleCosts costs;
   CostWrapper cost_wrapper;
+  const Index service_index;
   size_t max_tasks;
   const Duration max_travel_time;
   const Distance max_distance;
@@ -79,6 +80,7 @@ struct Vehicle {
     std::string description = "",
     const VehicleCosts& costs = VehicleCosts(),
     double speed_factor = 1.,
+    const std::optional<Index>& service_index = std::optional<Index>(),
     const std::optional<size_t>& max_tasks = std::optional<size_t>(),
     const std::optional<UserDuration>& max_travel_time =
       std::optional<UserDuration>(),

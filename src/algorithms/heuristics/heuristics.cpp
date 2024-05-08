@@ -237,8 +237,11 @@ Eval basic(const Input& input,
         if (current_job.type == JOB_TYPE::SINGLE &&
             current_r.size() + 1 <= vehicle.max_tasks) {
           for (Index r = 0; r <= current_r.size(); ++r) {
-            const auto current_eval =
-              utils::addition_cost(input, job_rank, v_rank, current_r.route, r);
+            const auto current_eval = utils::addition_cost(input,
+                                                           job_rank,
+                                                           vehicle,
+                                                           current_r.route,
+                                                           r);
 
             double current_cost =
               static_cast<double>(current_eval.cost) -
@@ -271,7 +274,7 @@ Eval basic(const Input& input,
                ++d_rank) {
             d_adds[d_rank] = utils::addition_cost(input,
                                                   job_rank + 1,
-                                                  v_rank,
+                                                  vehicle,
                                                   current_r.route,
                                                   d_rank);
             valid_delivery_insertions[d_rank] =
@@ -283,7 +286,7 @@ Eval basic(const Input& input,
           for (Index pickup_r = 0; pickup_r <= current_r.size(); ++pickup_r) {
             const auto p_add = utils::addition_cost(input,
                                                     job_rank,
-                                                    v_rank,
+                                                    vehicle,
                                                     current_r.route,
                                                     pickup_r);
 
@@ -325,7 +328,7 @@ Eval basic(const Input& input,
               if (pickup_r == delivery_r) {
                 current_eval = utils::addition_cost(input,
                                                     job_rank,
-                                                    v_rank,
+                                                    vehicle,
                                                     current_r.route,
                                                     pickup_r,
                                                     pickup_r + 1);
@@ -680,8 +683,11 @@ Eval dynamic_vehicle_choice(const Input& input,
         if (current_job.type == JOB_TYPE::SINGLE &&
             current_r.size() + 1 <= vehicle.max_tasks) {
           for (Index r = 0; r <= current_r.size(); ++r) {
-            const auto current_eval =
-              utils::addition_cost(input, job_rank, v_rank, current_r.route, r);
+            const auto current_eval = utils::addition_cost(input,
+                                                           job_rank,
+                                                           vehicle,
+                                                           current_r.route,
+                                                           r);
 
             double current_cost =
               static_cast<double>(current_eval.cost) -
@@ -714,7 +720,7 @@ Eval dynamic_vehicle_choice(const Input& input,
                ++d_rank) {
             d_adds[d_rank] = utils::addition_cost(input,
                                                   job_rank + 1,
-                                                  v_rank,
+                                                  vehicle,
                                                   current_r.route,
                                                   d_rank);
             valid_delivery_insertions[d_rank] =
@@ -726,7 +732,7 @@ Eval dynamic_vehicle_choice(const Input& input,
           for (Index pickup_r = 0; pickup_r <= current_r.size(); ++pickup_r) {
             const auto p_add = utils::addition_cost(input,
                                                     job_rank,
-                                                    v_rank,
+                                                    vehicle,
                                                     current_r.route,
                                                     pickup_r);
 
@@ -768,7 +774,7 @@ Eval dynamic_vehicle_choice(const Input& input,
               if (pickup_r == delivery_r) {
                 current_eval = utils::addition_cost(input,
                                                     job_rank,
-                                                    v_rank,
+                                                    vehicle,
                                                     current_r.route,
                                                     pickup_r,
                                                     pickup_r + 1);

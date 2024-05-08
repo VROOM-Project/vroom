@@ -461,6 +461,7 @@ inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
                  get_string(json_vehicle, "description"),
                  get_vehicle_costs(json_vehicle),
                  get_double(json_vehicle, "speed_factor"),
+                 get_value_for<Index>(json_vehicle, "service_index"),
                  get_value_for<size_t>(json_vehicle, "max_tasks"),
                  get_value_for<UserDuration>(json_vehicle, "max_travel_time"),
                  get_value_for<UserDistance>(json_vehicle, "max_distance"),
@@ -630,6 +631,30 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
                    get_string(json_delivery, "description"));
 
       input.add_shipment(pickup, delivery);
+    }
+  }
+
+  if (!input.jobs.empty()) {
+    const Index max_service_index =
+      std::accumulate(input.vehicles.begin(),
+                      input.vehicles.end(),
+                      0,
+                      [](Index max, const Vehicle& vehicle) {
+                        return std::max(max, vehicle.service_index);
+                      });
+
+    const size_t min_job_service_size =
+      std::accumulate(input.jobs.begin(),
+                      input.jobs.end(),
+                      0,
+                      [](size_t min, const Job& job) {
+                        return std::min(min, job.service.size());
+                      });
+
+    if (max_service_index >= min_job_service_size) {
+      throw InputException(
+        "The service_index of a vehicle is higher than the number of service "
+        "times for a job.");
     }
   }
 

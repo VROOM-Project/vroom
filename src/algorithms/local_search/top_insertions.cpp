@@ -34,11 +34,13 @@ template <class Route>
 ThreeInsertions find_top_3_insertions(const Input& input,
                                       Index j,
                                       const Route& r) {
+  const auto& v = input.vehicles[r.vehicle_rank];
+
   auto best_insertions = empty_three_insertions;
 
   for (Index rank = 0; rank <= r.route.size(); ++rank) {
     InsertionOption current_insert =
-      {utils::addition_cost(input, j, r.vehicle_rank, r.route, rank), rank};
+      {utils::addition_cost(input, j, v, r.route, rank), rank};
 
     update_insertions(best_insertions, std::move(current_insert));
   }

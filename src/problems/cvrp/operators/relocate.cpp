@@ -49,8 +49,7 @@ void Relocate::compute_gain() {
   // For target vehicle, we consider the cost of adding source job at
   // rank t_rank.
   const auto& t_v = _input.vehicles[t_vehicle];
-  t_gain =
-    -utils::addition_cost(_input, s_route[s_rank], t_vehicle, t_route, t_rank);
+  t_gain = -utils::addition_cost(_input, s_route[s_rank], t_v, t_route, t_rank);
 
   if (t_route.empty()) {
     t_gain.cost -= t_v.fixed_cost();

@@ -16,6 +16,7 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/job.h"
 #include "structures/vroom/location.h"
 #include "structures/vroom/solution/violations.h"
+#include "structures/vroom/vehicle.h"
 
 namespace vroom {
 
@@ -39,9 +40,9 @@ struct Step {
   Step(STEP_TYPE type, Location location, Amount load);
 
   Step(const Job& job,
+       const Vehicle& vehicle,
        const UserDuration setup,
-       Amount load,
-       Index vehicle_rank);
+       Amount load);
 
   Step(const Break& b, Amount load);
 

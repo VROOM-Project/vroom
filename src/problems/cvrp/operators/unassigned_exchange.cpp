@@ -88,7 +88,7 @@ void UnassignedExchange::compute_gain() {
   } else {
     // No common edge so both gains can be computed independently.
     s_gain = _sol_state.node_gains[s_vehicle][s_rank] -
-             utils::addition_cost(_input, _u, s_vehicle, s_route, t_rank);
+             utils::addition_cost(_input, _u, v, s_route, t_rank);
   }
 
   stored_gain = s_gain;
