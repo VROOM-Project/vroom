@@ -16,11 +16,11 @@ jobs:
   vroom:
     strategy:
       matrix:
-        cxx: ['g++-12', 'clang++-15']
-    runs-on: ubuntu-22.04
+        cxx: [g++-14, clang++-18]
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: true
       - name: Install dependencies

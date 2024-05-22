@@ -1004,7 +1004,7 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
   return current.earliest + next.travel <= next.latest;
 }
 
-template <std::forward_iterator Iter>
+template <std::random_access_iterator Iter>
 void TWRoute::replace(const Input& input,
                       const Amount& delivery,
                       const Iter first_job,

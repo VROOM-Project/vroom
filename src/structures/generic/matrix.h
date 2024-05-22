@@ -10,7 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <initializer_list>
+#include <vector>
 
 #include "structures/typedefs.h"
 
@@ -22,13 +22,24 @@ template <class T> class Matrix {
   std::vector<T> data;
 
 public:
-  Matrix();
+  Matrix() : Matrix(0) {
+  }
 
-  explicit Matrix(std::size_t n);
+  explicit Matrix(std::size_t n) : Matrix(n, 0) {
+  }
 
-  Matrix(std::size_t n, T value);
+  Matrix(std::size_t n, T value) : n(n), data(n * n, value) {
+  }
 
-  Matrix<T> get_sub_matrix(const std::vector<Index>& indices) const;
+  Matrix<T> get_sub_matrix(const std::vector<Index>& indices) const {
+    Matrix<T> sub_matrix(indices.size());
+    for (std::size_t i = 0; i < indices.size(); ++i) {
+      for (std::size_t j = 0; j < indices.size(); ++j) {
+        sub_matrix[i][j] = (*this)[indices[i]][indices[j]];
+      }
+    }
+    return sub_matrix;
+  }
 
   T* operator[](std::size_t i) {
     return data.data() + (i * n);
@@ -44,7 +55,7 @@ public:
 #if USE_PYTHON_BINDINGS
   T* get_data() {
     return data.data();
-  };
+  }
 #endif
 };
 
