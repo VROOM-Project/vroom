@@ -19,12 +19,12 @@ jobs:
   libosrm:
     strategy:
       matrix:
-        cxx: [g++-13, clang++-18]
+        cxx: [g++-13, clang++-17]
         include:
           - cxx: g++-13
             cc: gcc-13
-          - cxx: clang++-18
-            cc: clang-18
+          - cxx: clang++-17
+            cc: clang-17
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
