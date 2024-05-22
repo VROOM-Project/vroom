@@ -14,12 +14,19 @@
 
 - Update GitHub Actions (#1094)
 - Speed up OSRM build (#1096)
+- Update Ubuntu image to 24.04 (#1080)
+- `vroom` workflow uses g++-14 and clang++-18 (#1080)
+- `vroom + libosrm` workflow uses g++-13 and clang++-17 (#1080)
 
 ### Fixed
 
 #### Internals
 
 - Iterator type required by `TWRoute::replace` function (#1103)
+
+#### CI
+
+- Wrong compiler used for clang-based OSRM builds (#1098)
 
 ## [v1.14.0] - 2024-01-16
 

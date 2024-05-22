@@ -14,13 +14,18 @@ on:
       - '.github/workflows/vroom_libosrm.yml'
       - '**libosrm_wrapper**'
 env:
-  osrm-tag: v5.27.1
+  osrm-ref: d259848456c8c84df0422f7389ef034e63e6462d
 jobs:
   libosrm:
     strategy:
       matrix:
-        cxx: ['g++-12', 'clang++-15']
-    runs-on: ubuntu-22.04
+        cxx: [g++-13, clang++-17]
+        include:
+          - cxx: g++-13
+            cc: gcc-13
+          - cxx: clang++-17
+            cc: clang-17
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -35,13 +40,13 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/osrm-backend
-          key: osrm-${{ env.osrm-tag }}-${{ matrix.cxx }}
+          key: osrm-${{ env.osrm-ref }}-${{ matrix.cxx }}
       - name: Checkout OSRM repository
         if: steps.cache.outputs.cache-hit != 'true'
         uses: actions/checkout@v4
         with:
           repository: Project-OSRM/osrm-backend
-          ref: ${{ env.osrm-tag }}
+          ref: ${{ env.osrm-ref }}
           path: osrm-backend
       - name: Install OSRM dependencies
         run: sudo apt-get install build-essential git cmake pkg-config libbz2-dev libstxxl-dev libstxxl1v5 libxml2-dev libzip-dev libboost-all-dev lua5.2 liblua5.2-dev libtbb-dev libluabind-dev libluabind0.9.1d1
@@ -51,7 +56,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake .. -DCMAKE_BUILD_TYPE=Release
+          cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-Wno-array-bounds" -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} -DCMAKE_C_COMPILER=${{ matrix.cc }}
           cmake --build . -j `nproc`
         working-directory: osrm-backend
       - name: Install OSRM
