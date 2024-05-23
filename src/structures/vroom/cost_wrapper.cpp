@@ -22,8 +22,7 @@ CostWrapper::CostWrapper(double speed_factor, Cost per_hour, Cost per_km)
       std::round(1 / speed_factor * DURATION_FACTOR * per_hour)),
     discrete_distance_cost_factor(DISTANCE_FACTOR * per_km) {
   if (speed_factor <= 0 || speed_factor > MAX_SPEED_FACTOR) {
-    throw InputException("Invalid speed factor: " +
-                         std::to_string(speed_factor));
+    throw InputException(std::format("Invalid speed factor: {}", speed_factor));
   }
 }
 

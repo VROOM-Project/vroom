@@ -9,6 +9,7 @@
 #### Internals
 
 - Refactor `Matrix` template class (#1089)
+- Refactor to use `std::format` whenever possible (#1081)
 
 #### CI
 

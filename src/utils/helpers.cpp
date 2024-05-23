@@ -226,15 +226,17 @@ void check_tws(const std::vector<TimeWindow>& tws,
                const Id id,
                const std::string& type) {
   if (tws.empty()) {
-    throw InputException("Empty time-windows for " + type + " " +
-                         std::to_string(id) + ".");
+    throw InputException(
+      std::format("Empty time-windows for {} {}.", type, id));
   }
 
   if (tws.size() > 1) {
     for (std::size_t i = 0; i < tws.size() - 1; ++i) {
       if (tws[i + 1].start <= tws[i].end) {
-        throw InputException("Unsorted or overlapping time-windows for " +
-                             type + " " + std::to_string(id) + ".");
+        throw InputException(
+          std::format("Unsorted or overlapping time-windows for {} {}.",
+                      type,
+                      id));
       }
     }
   }
@@ -244,8 +246,8 @@ void check_priority(const Priority priority,
                     const Id id,
                     const std::string& type) {
   if (priority > MAX_PRIORITY) {
-    throw InputException("Invalid priority value for " + type + " " +
-                         std::to_string(id) + ".");
+    throw InputException(
+      std::format("Invalid priority value for {} {}.", type, id));
   }
 }
 

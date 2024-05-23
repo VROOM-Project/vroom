@@ -12,13 +12,12 @@ All rights reserved (see LICENSE).
 namespace vroom {
 
 std::string get_version() {
-  std::string version = std::to_string(MAJOR) + "." + std::to_string(MINOR) +
-                        "." + std::to_string(PATCH);
+  std::string version = std::format("{}.{}.{}", MAJOR, MINOR, PATCH);
   if (DEV) {
     version += "-dev";
   } else {
     if (RC > 0) {
-      version += "-rc." + std::to_string(RC);
+      version += std::format("-rc.{}", RC);
     }
   }
   return version;
