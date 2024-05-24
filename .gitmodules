@@ -7,3 +7,6 @@
 [submodule "include/rapidjson"]
 	path = include/rapidjson
 	url = https://github.com/Tencent/rapidjson
+[submodule "include/json"]
+	path = include/json
+	url = https://github.com/boostorg/json
