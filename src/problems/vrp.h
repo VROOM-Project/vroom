@@ -31,7 +31,8 @@ protected:
 
   template <class Route, class LocalSearch>
   Solution solve(
-    unsigned exploration_level,
+    unsigned nb_searches,
+    unsigned depth,
     unsigned nb_threads,
     const Timeout& timeout,
     const std::vector<HeuristicParameters>& h_param,
@@ -43,19 +44,9 @@ protected:
                              : (_input.has_homogeneous_locations())
                                ? homogeneous_parameters
                                : heterogeneous_parameters;
-    unsigned nb_init_solutions = h_param.size();
-
-    if (nb_init_solutions == 0) {
-      // Local search parameter.
-      nb_init_solutions = 4 * (exploration_level + 1);
-      if (exploration_level >= 4) {
-        nb_init_solutions += 4;
-      }
-      if (exploration_level == MAX_EXPLORATION_LEVEL) {
-        nb_init_solutions += 4;
-      }
-    }
-    assert(nb_init_solutions <= parameters.size());
+    assert(nb_searches != 0);
+    nb_searches =
+      std::min(nb_searches, static_cast<unsigned>(parameters.size()));
 
     // Build empty solutions to be filled by heuristics.
     std::vector<Route> empty_sol;
@@ -65,7 +56,7 @@ protected:
       empty_sol.emplace_back(_input, v, _input.zero_amount().size());
     }
 
-    std::vector<std::vector<Route>> solutions(nb_init_solutions, empty_sol);
+    std::vector<std::vector<Route>> solutions(nb_searches, empty_sol);
 
     // Heuristics operate on all jobs.
     std::vector<Index> jobs_ranks(_input.jobs.size());
@@ -78,7 +69,7 @@ protected:
     // Split the heuristic parameters among threads.
     std::vector<std::vector<std::size_t>>
       thread_ranks(nb_threads, std::vector<std::size_t>());
-    for (std::size_t i = 0; i < nb_init_solutions; ++i) {
+    for (std::size_t i = 0; i < nb_searches; ++i) {
       thread_ranks[i % nb_threads].push_back(i);
     }
 
@@ -227,10 +218,7 @@ protected:
 
         for (auto rank : sol_ranks) {
           // Local search phase.
-          LocalSearch ls(_input,
-                         solutions[rank],
-                         exploration_level,
-                         search_time);
+          LocalSearch ls(_input, solutions[rank], depth, search_time);
           ls.run();
 
           // Store solution indicators.
@@ -281,7 +269,8 @@ public:
   virtual ~VRP();
 
   virtual Solution
-  solve(unsigned exploration_level,
+  solve(unsigned nb_searches,
+        unsigned depth,
         unsigned nb_threads,
         const Timeout& timeout,
         const std::vector<HeuristicParameters>& h_param) const = 0;

@@ -1081,7 +1081,8 @@ std::unique_ptr<VRP> Input::get_problem() const {
   return std::make_unique<CVRP>(*this);
 }
 
-Solution Input::solve(unsigned exploration_level,
+Solution Input::solve(unsigned nb_searches,
+                      unsigned depth,
                       unsigned nb_thread,
                       const Timeout& timeout,
                       const std::vector<HeuristicParameters>& h_param) {
@@ -1127,7 +1128,8 @@ Solution Input::solve(unsigned exploration_level,
   // Solve.
   const std::vector<HeuristicParameters> h_init_routes(1,
                                                        HEURISTIC::INIT_ROUTES);
-  auto sol = instance->solve(exploration_level,
+  auto sol = instance->solve(nb_searches,
+                             depth,
                              nb_thread,
                              solve_time,
                              _has_initial_routes ? h_init_routes : h_param);

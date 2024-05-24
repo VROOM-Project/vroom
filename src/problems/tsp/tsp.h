@@ -45,6 +45,7 @@ public:
                                const Timeout& timeout) const;
 
   Solution solve(unsigned,
+                 unsigned,
                  unsigned nb_threads,
                  const Timeout& timeout,
                  const std::vector<HeuristicParameters>&) const override;
