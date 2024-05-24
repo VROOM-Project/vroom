@@ -75,11 +75,11 @@ LocalSearch<Route,
             PriorityReplace,
             TSPFix>::LocalSearch(const Input& input,
                                  std::vector<Route>& sol,
-                                 unsigned max_nb_jobs_removal,
+                                 unsigned depth,
                                  const Timeout& timeout)
   : _input(input),
     _nb_vehicles(_input.vehicles.size()),
-    _max_nb_jobs_removal(max_nb_jobs_removal),
+    _depth(depth),
     _deadline(timeout.has_value() ? utils::now() + timeout.value()
                                   : Deadline()),
     _all_routes(_nb_vehicles),
@@ -2005,7 +2005,7 @@ void LocalSearch<Route,
 
     // Try again on each improvement until we reach last job removal
     // level or deadline is met.
-    try_ls_step = (current_nb_removal <= _max_nb_jobs_removal) &&
+    try_ls_step = (current_nb_removal <= _depth) &&
                   (!_deadline.has_value() || utils::now() < _deadline.value());
 
     if (try_ls_step) {

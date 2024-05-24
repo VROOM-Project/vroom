@@ -43,7 +43,6 @@ protected:
                              : (_input.has_homogeneous_locations())
                                ? homogeneous_parameters
                                : heterogeneous_parameters;
-    unsigned max_nb_jobs_removal = exploration_level;
     unsigned nb_init_solutions = h_param.size();
 
     if (nb_init_solutions == 0) {
@@ -230,7 +229,7 @@ protected:
           // Local search phase.
           LocalSearch ls(_input,
                          solutions[rank],
-                         max_nb_jobs_removal,
+                         exploration_level,
                          search_time);
           ls.run();
 
