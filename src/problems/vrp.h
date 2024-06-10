@@ -22,6 +22,10 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/input/input.h"
 #include "structures/vroom/solution/solution.h"
 
+#ifdef LOG_LS
+#include "algorithms/local_search/log_local_search.h"
+#endif
+
 namespace vroom {
 
 class VRP {
@@ -58,6 +62,11 @@ protected:
 
     std::vector<std::vector<Route>> solutions(nb_searches, empty_sol);
 
+#ifdef LOG_LS
+    std::vector<ls::log::Dump<Route>> ls_dumps;
+    ls_dumps.reserve(nb_searches);
+#endif
+
     // Heuristics operate on all jobs.
     std::vector<Index> jobs_ranks(_input.jobs.size());
     std::iota(jobs_ranks.begin(), jobs_ranks.end(), 0);
@@ -71,6 +80,10 @@ protected:
       thread_ranks(nb_threads, std::vector<std::size_t>());
     for (std::size_t i = 0; i < nb_searches; ++i) {
       thread_ranks[i % nb_threads].push_back(i);
+
+#ifdef LOG_LS
+      ls_dumps.push_back({parameters[i], {}});
+#endif
     }
 
     std::exception_ptr ep = nullptr;
@@ -151,6 +164,9 @@ protected:
 
             if (h_other_eval < h_eval) {
               solutions[rank] = std::move(other_sol);
+#ifdef LOG_LS
+              ls_dumps[rank].heuristic_parameters.sort = SORT::COST;
+#endif
             }
           }
         }
@@ -193,6 +209,9 @@ protected:
     for (auto remove_rank = to_remove.rbegin(); remove_rank != to_remove.rend();
          remove_rank++) {
       solutions.erase(solutions.begin() + *remove_rank);
+#ifdef LOG_LS
+      ls_dumps.erase(ls_dumps.begin() + *remove_rank);
+#endif
     }
 
     // Split local searches across threads.
