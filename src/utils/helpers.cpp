@@ -63,27 +63,6 @@ SORT get_sort(std::string_view s) {
 }
 
 #ifdef LOG_LS_OPERATORS
-const std::array<std::string, OperatorName::MAX>
-  operator_names({"UnassignedExchange",
-                  "CrossExchange",
-                  "MixedExchange",
-                  "TwoOpt",
-                  "ReverseTwoOpt",
-                  "Relocate",
-                  "OrOpt",
-                  "IntraExchange",
-                  "IntraCrossExchange",
-                  "IntraMixedExchange",
-                  "IntraRelocate",
-                  "IntraOrOpt",
-                  "IntraTwoOpt",
-                  "PDShift",
-                  "RouteExchange",
-                  "SwapStar",
-                  "RouteSplit",
-                  "PriorityReplace",
-                  "TSPFix"});
-
 void log_LS_operators(
   const std::vector<std::array<ls::OperatorStats, OperatorName::MAX>>&
     ls_stats) {
@@ -108,7 +87,7 @@ void log_LS_operators(
   }
 
   for (auto op = 0; op < OperatorName::MAX; ++op) {
-    std::cout << operator_names[op] << "," << tried_sums[op] << ","
+    std::cout << OPERATOR_NAMES[op] << "," << tried_sums[op] << ","
               << applied_sums[op] << std::endl;
   }
   std::cout << "Total," << total_tried << "," << total_applied << std::endl;

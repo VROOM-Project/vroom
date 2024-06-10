@@ -178,6 +178,29 @@ enum OperatorName {
   MAX
 };
 
+#if defined(LOG_LS_OPERATORS) || defined(LOG_LS_SEARCH)
+const std::array<std::string, OperatorName::MAX>
+  OPERATOR_NAMES({"UnassignedExchange",
+                  "CrossExchange",
+                  "MixedExchange",
+                  "TwoOpt",
+                  "ReverseTwoOpt",
+                  "Relocate",
+                  "OrOpt",
+                  "IntraExchange",
+                  "IntraCrossExchange",
+                  "IntraMixedExchange",
+                  "IntraRelocate",
+                  "IntraOrOpt",
+                  "IntraTwoOpt",
+                  "PDShift",
+                  "RouteExchange",
+                  "SwapStar",
+                  "RouteSplit",
+                  "PriorityReplace",
+                  "TSPFix"});
+#endif
+
 // Defined based on
 // https://sonarcloud.io/organizations/vroom-project/rules?open=cpp%3AS6045&rule_key=cpp%3AS6045
 struct StringHash {
