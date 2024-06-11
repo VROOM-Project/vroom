@@ -427,9 +427,20 @@ rapidjson::Value to_json(const std::vector<ls::log::Step<Route>>& steps,
       step.time_point - start_time);
     json_step.AddMember("time", delta.count(), allocator);
 
-    std::string start = "start";
+    std::string event;
+    switch (step.event) {
+      using enum ls::log::EVENT;
+    case START:
+      event = "Start";
+      break;
+    case OPERATOR:
+      event = OPERATOR_NAMES[step.operator_name];
+      break;
+    default:
+      assert(false);
+    }
     json_step.AddMember("event", rapidjson::Value(), allocator);
-    json_step["event"].SetString(start.c_str(), start.size(), allocator);
+    json_step["event"].SetString(event.c_str(), event.size(), allocator);
 
     rapidjson::Value json_score(rapidjson::kObjectType);
     json_score.AddMember("priority", step.indicators.priority_sum, allocator);

@@ -1830,6 +1830,13 @@ void LocalSearch<Route,
       ++applied_moves.at(best_ops[best_source][best_target]->get_name());
 #endif
 
+#ifdef LOG_LS
+      steps.push_back({utils::now(),
+                       log::EVENT::OPERATOR,
+                       best_ops[best_source][best_target]->get_name(),
+                       utils::SolutionIndicators<Route>(_input, _sol)});
+#endif
+
 #ifndef NDEBUG
       // Update route costs.
       const auto previous_eval =

@@ -178,7 +178,7 @@ enum OperatorName {
   MAX
 };
 
-#if defined(LOG_LS_OPERATORS) || defined(LOG_LS_SEARCH)
+#if defined(LOG_LS_OPERATORS) || defined(LOG_LS)
 const std::array<std::string, OperatorName::MAX>
   OPERATOR_NAMES({"UnassignedExchange",
                   "CrossExchange",
