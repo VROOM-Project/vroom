@@ -1982,6 +1982,11 @@ void LocalSearch<Route,
 
   unsigned current_nb_removal = 1;
 
+#ifdef LOG_LS
+  steps.push_back(
+    {utils::now(), log::EVENT::START, OperatorName::MAX, _best_sol_indicators});
+#endif
+
   while (try_ls_step) {
     // A round of local search.
     run_ls_step();

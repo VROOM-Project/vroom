@@ -246,6 +246,9 @@ protected:
 #ifdef LOG_LS_OPERATORS
           ls_stats[rank] = ls.get_stats();
 #endif
+#ifdef LOG_LS
+          ls_dumps[rank].steps = ls.get_steps();
+#endif
         }
       } catch (...) {
         std::scoped_lock<std::mutex> lock(ep_m);

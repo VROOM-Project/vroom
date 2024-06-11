@@ -13,6 +13,10 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/solution_indicators.h"
 #include "structures/vroom/solution_state.h"
 
+#ifdef LOG_LS
+#include "algorithms/local_search/log_local_search.h"
+#endif
+
 namespace vroom::ls {
 
 template <class Route,
@@ -58,6 +62,10 @@ private:
   std::array<unsigned, OperatorName::MAX> applied_moves;
 #endif
 
+#ifdef LOG_LS
+  std::vector<log::Step<Route>> steps;
+#endif
+
   void try_job_additions(const std::vector<Index>& routes, double regret_coeff);
 
   void run_ls_step();
@@ -87,6 +95,12 @@ public:
 
 #ifdef LOG_LS_OPERATORS
   std::array<OperatorStats, OperatorName::MAX> get_stats() const;
+#endif
+
+#ifdef LOG_LS
+  std::vector<log::Step<Route>> get_steps() {
+    return steps;
+  }
 #endif
 };
 

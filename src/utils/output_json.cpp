@@ -413,6 +413,40 @@ void write_to_json(const Solution& sol,
 
 #ifdef LOG_LS
 template <class Route>
+rapidjson::Value to_json(const std::vector<ls::log::Step<Route>>& steps,
+                         rapidjson::Document::AllocatorType& allocator) {
+  rapidjson::Value json_LS_steps(rapidjson::kArrayType);
+
+  assert(steps.front().event == ls::log::EVENT::START);
+  const auto start_time = steps.front().time_point;
+
+  for (const auto& step : steps) {
+    rapidjson::Value json_step(rapidjson::kObjectType);
+
+    const auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(
+      step.time_point - start_time);
+    json_step.AddMember("time", delta.count(), allocator);
+
+    std::string start = "start";
+    json_step.AddMember("event", rapidjson::Value(), allocator);
+    json_step["event"].SetString(start.c_str(), start.size(), allocator);
+
+    rapidjson::Value json_score(rapidjson::kObjectType);
+    json_score.AddMember("priority", step.indicators.priority_sum, allocator);
+    json_score.AddMember("assigned", step.indicators.assigned, allocator);
+    json_score.AddMember("cost",
+                         utils::scale_to_user_cost(step.indicators.eval.cost),
+                         allocator);
+
+    json_step.AddMember("score", json_score, allocator);
+
+    json_LS_steps.PushBack(json_step, allocator);
+  }
+
+  return json_LS_steps;
+}
+
+template <class Route>
 rapidjson::Value to_json(const ls::log::Dump<Route>& dump,
                          rapidjson::Document::AllocatorType& allocator) {
   rapidjson::Value json_parameters(rapidjson::kObjectType);
@@ -480,7 +514,7 @@ rapidjson::Value to_json(const ls::log::Dump<Route>& dump,
   json_parameters.AddMember("sort", rapidjson::Value(), allocator);
   json_parameters["sort"].SetString(sort.c_str(), sort.size(), allocator);
 
-  // json_parameters.AddMember("steps", to_json(), allocator);
+  json_parameters.AddMember("steps", to_json(dump.steps, allocator), allocator);
 
   return json_parameters;
 }
