@@ -10,6 +10,8 @@ All rights reserved (see LICENSE).
 
 */
 
+#include "structures/vroom/solution_indicators.h"
+
 namespace vroom::ls::log {
 
 enum class EVENT { Start };

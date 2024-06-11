@@ -13,6 +13,7 @@ All rights reserved (see LICENSE).
 #include "../include/rapidjson/include/rapidjson/stringbuffer.h"
 #include "../include/rapidjson/include/rapidjson/writer.h"
 
+#include "structures/typedefs.h"
 #include "utils/output_json.h"
 
 namespace vroom::io {
@@ -409,5 +410,100 @@ void write_to_json(const Solution& sol,
 
   write_to_output(json_output, output_file);
 }
+
+#ifdef LOG_LS
+template <class Route>
+rapidjson::Value to_json(const ls::log::Dump<Route>& dump,
+                         rapidjson::Document::AllocatorType& allocator) {
+  rapidjson::Value json_parameters(rapidjson::kObjectType);
+
+  std::string heuristic;
+  switch (dump.heuristic_parameters.heuristic) {
+    using enum HEURISTIC;
+  case BASIC:
+    heuristic = "BASIC";
+    break;
+  case DYNAMIC:
+    heuristic = "DYNAMIC";
+    break;
+  case INIT_ROUTES:
+    heuristic = "INIT_ROUTES";
+    break;
+  default:
+    assert(false);
+  }
+  json_parameters.AddMember("heuristic", rapidjson::Value(), allocator);
+  json_parameters["heuristic"].SetString(heuristic.c_str(),
+                                         heuristic.size(),
+                                         allocator);
+
+  std::string init;
+  switch (dump.heuristic_parameters.init) {
+    using enum INIT;
+  case NONE:
+    init = "NONE";
+    break;
+  case HIGHER_AMOUNT:
+    init = "HIGHER_AMOUNT";
+    break;
+  case NEAREST:
+    init = "NEAREST";
+    break;
+  case FURTHEST:
+    init = "FURTHEST";
+    break;
+  case EARLIEST_DEADLINE:
+    init = "EARLIEST_DEADLINE";
+    break;
+  default:
+    assert(false);
+  }
+  json_parameters.AddMember("init", rapidjson::Value(), allocator);
+  json_parameters["init"].SetString(init.c_str(), init.size(), allocator);
+
+  json_parameters.AddMember("regret",
+                            dump.heuristic_parameters.regret_coeff,
+                            allocator);
+
+  std::string sort;
+  switch (dump.heuristic_parameters.sort) {
+    using enum SORT;
+  case AVAILABILITY:
+    sort = "AVAILABILITY";
+    break;
+  case COST:
+    sort = "COST";
+    break;
+  default:
+    assert(false);
+  }
+  json_parameters.AddMember("sort", rapidjson::Value(), allocator);
+  json_parameters["sort"].SetString(sort.c_str(), sort.size(), allocator);
+
+  // json_parameters.AddMember("steps", to_json(), allocator);
+
+  return json_parameters;
+}
+
+template <class Route>
+void write_LS_logs_to_json(const std::vector<ls::log::Dump<Route>>& dumps) {
+  rapidjson::Document json_log;
+  json_log.SetArray();
+  rapidjson::Document::AllocatorType& allocator = json_log.GetAllocator();
+
+  for (const auto& dump : dumps) {
+    json_log.PushBack(to_json(dump, allocator), allocator);
+  }
+
+  write_to_output(json_log, "vroom_ls_log.json");
+}
+
+template void
+write_LS_logs_to_json(const std::vector<ls::log::Dump<RawRoute>>& dumps);
+
+template void
+write_LS_logs_to_json(const std::vector<ls::log::Dump<TWRoute>>& dumps);
+
+#endif
 
 } // namespace vroom::io

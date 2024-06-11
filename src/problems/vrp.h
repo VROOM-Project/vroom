@@ -24,6 +24,7 @@ All rights reserved (see LICENSE).
 
 #ifdef LOG_LS
 #include "algorithms/local_search/log_local_search.h"
+#include "utils/output_json.h"
 #endif
 
 namespace vroom {
@@ -271,6 +272,10 @@ protected:
 
 #ifdef LOG_LS_OPERATORS
     utils::log_LS_operators(ls_stats);
+#endif
+
+#ifdef LOG_LS
+    io::write_LS_logs_to_json(ls_dumps);
 #endif
 
     auto best_indic =
