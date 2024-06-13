@@ -10,6 +10,8 @@ All rights reserved (see LICENSE).
 #include "routing/ors_wrapper.h"
 #include "utils/helpers.h"
 
+#include <iostream>
+
 namespace vroom::routing {
 
 OrsWrapper::OrsWrapper(const std::string& profile, const Server& server)
@@ -65,7 +67,7 @@ void OrsWrapper::check_response(const boost::json::object& json_result,
                                 const std::string&) const {
   if (json_result.contains("error")) {
     throw RoutingException(
-      boost::json::value_to<std::string>(json_result.at("error").at("message").as_string()));
+      json_result.at("error").at("message").as_string().subview());
   }
 }
 
@@ -81,12 +83,16 @@ bool OrsWrapper::distance_value_is_null(
 
 UserDuration
 OrsWrapper::get_duration_value(const boost::json::value& matrix_entry) const {
-  return utils::round<UserDuration>(matrix_entry.as_double());
+  if (matrix_entry.is_uint64())
+    return utils::round<UserDuration>(matrix_entry.get_int64());
+  return utils::round<UserDuration>(matrix_entry.get_double());
 }
 
 UserDistance
 OrsWrapper::get_distance_value(const boost::json::value& matrix_entry) const {
-  return utils::round<UserDistance>(matrix_entry.as_double());
+  if (matrix_entry.is_uint64())
+    return utils::round<UserDuration>(matrix_entry.get_int64());
+  return utils::round<UserDuration>(matrix_entry.get_double());
 }
 
 unsigned OrsWrapper::get_legs_number(const boost::json::object& result) const {
@@ -94,7 +100,7 @@ unsigned OrsWrapper::get_legs_number(const boost::json::object& result) const {
 }
 
 std::string OrsWrapper::get_geometry(boost::json::object& result) const {
-  return boost::json::value_to<std::string>(result.at("routes").at(0).at("geometry").as_string());
+  return result.at("routes").at(0).at("geometry").as_string().subview();
 }
 
 } // namespace vroom::routing

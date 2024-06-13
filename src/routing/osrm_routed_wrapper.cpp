@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 #include "routing/osrm_routed_wrapper.h"
 #include "utils/helpers.h"
 
+
 namespace vroom::routing {
 
 OsrmRoutedWrapper::OsrmRoutedWrapper(const std::string& profile,
@@ -98,12 +99,16 @@ bool OsrmRoutedWrapper::distance_value_is_null(
 
 UserDuration OsrmRoutedWrapper::get_duration_value(
   const boost::json::value& matrix_entry) const {
-  return utils::round<UserDuration>(matrix_entry.as_double());
+  if (matrix_entry.is_uint64())
+    return utils::round<UserDuration>(matrix_entry.get_uint64());
+  return utils::round<UserDuration>(matrix_entry.get_double());
 }
 
 UserDistance OsrmRoutedWrapper::get_distance_value(
   const boost::json::value& matrix_entry) const {
-  return utils::round<UserDistance>(matrix_entry.as_double());
+  if (matrix_entry.is_int64())
+    return utils::round<UserDuration>(matrix_entry.get_int64());
+  return utils::round<UserDuration>(matrix_entry.get_double());
 }
 
 unsigned
@@ -112,7 +117,7 @@ OsrmRoutedWrapper::get_legs_number(const boost::json::object& result) const {
 }
 
 std::string OsrmRoutedWrapper::get_geometry(boost::json::object& result) const {
-  return boost::json::value_to<std::string>(result.at("routes").at(0).at("geometry").as_string());
+  return result.at("routes").at(0).at("geometry").as_string().subview();
 }
 
 } // namespace vroom::routing

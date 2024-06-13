@@ -143,12 +143,13 @@ std::string HttpWrapper::run_query(const std::string& query) const {
 void HttpWrapper::parse_response(boost::json::object& json_result,
                                  const std::string& json_content) {
 #ifdef NDEBUG
-  json_result = boost::json::parse(json_content.c_str()).as_object();
+  json_result = boost::json::parse(json_content).as_object();
 #else
   boost::json::error_code ec;
-  boost::json::object* ptr = boost::json::parse(json_content.c_str(), ec).if_object();
-  assert(!ec && !ptr);
-  json_result = *ptr;
+  auto content = boost::json::parse(json_content, ec);
+  boost::json::object* ptr = content.if_object();
+  assert(!ec && ptr);
+  json_result = content.as_object();
 #endif
 }
 
@@ -163,15 +164,15 @@ Matrices HttpWrapper::get_matrices(const std::vector<Location>& locs) const {
   this->parse_response(json_result, json_string);
   this->check_response(json_result, locs, _matrix_service);
 
-  if (!json_result.contains(_matrix_durations_key.c_str())) {
+  if (!json_result.contains(_matrix_durations_key)) {
     throw RoutingException("Missing " + _matrix_durations_key + ".");
   }
-  assert(json_result[_matrix_durations_key.c_str()].as_array().size() == m_size);
+  assert(json_result.at(_matrix_durations_key).as_array().size() == m_size);
 
-  if (!json_result.contains(_matrix_distances_key.c_str())) {
+  if (!json_result.contains(_matrix_distances_key)) {
     throw RoutingException("Missing " + _matrix_distances_key + ".");
   }
-  assert(json_result[_matrix_distances_key.c_str()].as_array().size() == m_size);
+  assert(json_result.at(_matrix_distances_key).as_array().size() == m_size);
 
   // Build matrices while checking for unfound routes ('null' values)
   // to avoid unexpected behavior.
@@ -181,8 +182,8 @@ Matrices HttpWrapper::get_matrices(const std::vector<Location>& locs) const {
   std::vector<unsigned> nb_unfound_to_loc(m_size, 0);
 
   for (size_t i = 0; i < m_size; ++i) {
-    const auto& duration_line = json_result[_matrix_durations_key.c_str()].at(i);
-    const auto& distance_line = json_result[_matrix_distances_key.c_str()].at(i);
+    const auto& duration_line = json_result.at(_matrix_durations_key).at(i);
+    const auto& distance_line = json_result.at(_matrix_distances_key).at(i);
     assert(duration_line.as_array().size() == m_size);
     assert(distance_line.as_array().size() == m_size);
     for (size_t j = 0; j < m_size; ++j) {
@@ -194,6 +195,7 @@ Matrices HttpWrapper::get_matrices(const std::vector<Location>& locs) const {
         ++nb_unfound_from_loc[i];
         ++nb_unfound_to_loc[j];
       } else {
+        auto tmp = duration_line.at(j);
         m.durations[i][j] = get_duration_value(duration_line.at(j));
         m.distances[i][j] = get_distance_value(distance_line.at(j));
       }
