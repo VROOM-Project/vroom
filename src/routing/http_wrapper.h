@@ -67,7 +67,7 @@ protected:
   virtual UserDistance
   get_distance_value(const boost::json::value& matrix_entry) const = 0;
 
-  virtual unsigned get_legs_number(const boost::json::value& result) const = 0;
+  virtual unsigned get_legs_number(const boost::json::object& result) const = 0;
 
   virtual std::string get_geometry(boost::json::object& result) const = 0;
 

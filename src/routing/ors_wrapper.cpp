@@ -60,41 +60,41 @@ std::string OrsWrapper::build_query(const std::vector<Location>& locations,
   return query;
 }
 
-void OrsWrapper::check_response(const rapidjson::Document& json_result,
+void OrsWrapper::check_response(const boost::json::object& json_result,
                                 const std::vector<Location>&,
                                 const std::string&) const {
-  if (json_result.HasMember("error")) {
+  if (json_result.contains("error")) {
     throw RoutingException(
-      std::string(json_result["error"]["message"].GetString()));
+      std::string(json_result.if_contains("error")->as_object().if_contains("message")->as_string()));
   }
 }
 
 bool OrsWrapper::duration_value_is_null(
-  const rapidjson::Value& matrix_entry) const {
-  return matrix_entry.IsNull();
+  const boost::json::value& matrix_entry) const {
+  return matrix_entry.is_null();
 }
 
 bool OrsWrapper::distance_value_is_null(
-  const rapidjson::Value& matrix_entry) const {
-  return matrix_entry.IsNull();
+  const boost::json::value& matrix_entry) const {
+  return matrix_entry.is_null();
 }
 
 UserDuration
-OrsWrapper::get_duration_value(const rapidjson::Value& matrix_entry) const {
-  return utils::round<UserDuration>(matrix_entry.GetDouble());
+OrsWrapper::get_duration_value(const boost::json::value& matrix_entry) const {
+  return utils::round<UserDuration>(matrix_entry.as_double());
 }
 
 UserDistance
-OrsWrapper::get_distance_value(const rapidjson::Value& matrix_entry) const {
-  return utils::round<UserDistance>(matrix_entry.GetDouble());
+OrsWrapper::get_distance_value(const boost::json::value& matrix_entry) const {
+  return utils::round<UserDistance>(matrix_entry.as_double());
 }
 
-unsigned OrsWrapper::get_legs_number(const rapidjson::Value& result) const {
-  return result["routes"][0]["segments"].Size();
+unsigned OrsWrapper::get_legs_number(const boost::json::object& result) const {
+  return result.if_contains("routes")->as_array().at(0).as_object().if_contains("segments")->as_array().size();
 }
 
-std::string OrsWrapper::get_geometry(rapidjson::Value& result) const {
-  return result["routes"][0]["geometry"].GetString();
+std::string OrsWrapper::get_geometry(boost::json::object& result) const {
+  return std::string(result.if_contains("routes")->as_array().at(0).as_object().if_contains("geometry")->as_string());
 }
 
 } // namespace vroom::routing
