@@ -353,7 +353,7 @@ The `summary` object has the following properties:
 | [`pickup`] | total pickup for all routes |
 | [`distance`]* | total distance for all routes |
 
-*: provided when using the `-g` flag.
+*: provided when using the `-g` flag or passing distance matrices in input.
 
 ## Routes
 
@@ -375,9 +375,10 @@ A `route` object has the following properties:
 | [`pickup`] | total pickup for tasks in this route |
 | [`description`] | vehicle description, if provided in input |
 | [`geometry`]* | polyline encoded route geometry |
-| [`distance`]* | total route distance |
+| [`distance`]** | total route distance |
 
 *: provided when using the `-g` flag.
+**: provided when using the `-g` flag or passing distance matrices in input.
 
 ### Steps
 
