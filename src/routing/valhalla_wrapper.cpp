@@ -87,15 +87,15 @@ std::string ValhallaWrapper::build_query(const std::vector<Location>& locations,
                                       : get_route_query(locations);
 }
 
-void ValhallaWrapper::check_response(const rapidjson::Document& json_result,
+void ValhallaWrapper::check_response(const boost::json::object& json_result,
                                      const std::vector<Location>&,
                                      const std::string& service) const {
   assert(service == _matrix_service || service == _route_service);
 
   if (constexpr unsigned HTTP_OK = 200;
-      json_result.HasMember("status_code") &&
-      json_result["status_code"].IsUint() &&
-      json_result["status_code"].GetUint() != HTTP_OK) {
+      json_result.contains("status_code") &&
+      json_result.at("status_code").is_uint64() &&
+      json_result.at("status_code").as_uint64() != HTTP_OK) {
     // Valhalla responses seem to only have a status_code key when a
     // problem is encountered. In that case it's not really clear what
     // keys can be expected so we're playing guesses. This happens
@@ -104,54 +104,54 @@ void ValhallaWrapper::check_response(const rapidjson::Document& json_result,
     std::string service_str = (service == _route_service) ? "route" : "matrix";
     std::string error = "Valhalla " + service_str + " error (";
 
-    if (json_result.HasMember("error") && json_result["error"].IsString()) {
-      error += json_result["error"].GetString();
+    if (json_result.contains("error") && json_result.at("error").is_string()) {
+      error += json_result.at("error").as_string();
       error += ").";
     }
-    throw RoutingException(error);
+    throw RoutingException(error.c_str());
   }
 
   if (service == _route_service) {
-    assert(json_result.HasMember("trip") &&
-           json_result["trip"].HasMember("status"));
-    if (json_result["trip"]["status"] != 0) {
+    assert(json_result.contains("trip") &&
+           json_result.at("trip").as_object().contains("status"));
+    if (json_result.at("trip").at("status") != 0) {
       throw RoutingException(
-        std::string(json_result["trip"]["status_message"].GetString()));
+        std::string(json_result.at("trip").at("status_message").as_string()));
     }
   }
 }
 
 bool ValhallaWrapper::duration_value_is_null(
-  const rapidjson::Value& matrix_entry) const {
-  assert(matrix_entry.HasMember("time"));
-  return matrix_entry["time"].IsNull();
+  const boost::json::value& matrix_entry) const {
+  assert(matrix_entry.as_object().contains("time"));
+  return matrix_entry.at("time").is_null();
 }
 
 bool ValhallaWrapper::distance_value_is_null(
-  const rapidjson::Value& matrix_entry) const {
-  assert(matrix_entry.HasMember("distance"));
-  return matrix_entry["distance"].IsNull();
+  const boost::json::value& matrix_entry) const {
+  assert(matrix_entry.as_object().contains("distance"));
+  return matrix_entry.at("distance").is_null();
 }
 
 UserDuration ValhallaWrapper::get_duration_value(
-  const rapidjson::Value& matrix_entry) const {
-  assert(matrix_entry["time"].IsUint());
-  return matrix_entry["time"].GetUint();
+  const boost::json::value& matrix_entry) const {
+  assert(matrix_entry.at("time").is_uint64());
+  return matrix_entry.at("time").get_uint64();
 }
 
 UserDistance ValhallaWrapper::get_distance_value(
-  const rapidjson::Value& matrix_entry) const {
-  assert(matrix_entry["distance"].IsDouble());
+  const boost::json::value& matrix_entry) const {
+  assert(matrix_entry.at("distance").is_double());
   return utils::round<UserDistance>(km_to_m *
-                                    matrix_entry["distance"].GetDouble());
+                                    matrix_entry.at("distance").as_double());
 }
 
 unsigned
-ValhallaWrapper::get_legs_number(const rapidjson::Value& result) const {
-  return result["trip"]["legs"].Size();
+ValhallaWrapper::get_legs_number(const boost::json::object& result) const {
+  return result.at("trip").at("legs").as_array().size();
 }
 
-std::string ValhallaWrapper::get_geometry(rapidjson::Value& result) const {
+std::string ValhallaWrapper::get_geometry(boost::json::object& result) const {
   // Valhalla returns one polyline per route leg so we need to merge
   // them. Also taking the opportunity to adjust the encoding
   // precision as Valhalla uses 6 and we use 5 based on other routing
@@ -163,12 +163,12 @@ std::string ValhallaWrapper::get_geometry(rapidjson::Value& result) const {
 
   auto full_polyline =
     gepaf::PolylineEncoder<valhalla_polyline_precision>::decode(
-      result["trip"]["legs"][0]["shape"].GetString());
+      result.at("trip").at("legs").at(0).at("shape").as_string().c_str());
 
-  for (rapidjson::SizeType i = 1; i < result["trip"]["legs"].Size(); ++i) {
+  for (rapidjson::SizeType i = 1; i < result.at("trip").at("legs").as_array().size(); ++i) {
     auto decoded_pts =
       gepaf::PolylineEncoder<valhalla_polyline_precision>::decode(
-        result["trip"]["legs"][i]["shape"].GetString());
+        result.at("trip").at("legs").at(i).at("shape").as_string().c_str());
 
     if (!full_polyline.empty()) {
       full_polyline.pop_back();
