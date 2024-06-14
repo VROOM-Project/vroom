@@ -22,23 +22,18 @@ boost::json::object to_json(const Solution& sol, bool report_distances);
 
 boost::json::object to_json(const vroom::Exception& e);
 
-boost::json::value to_json(const Summary& summary,
-                         bool report_distances,
-                         rapidjson::Document::AllocatorType& allocator);
+boost::json::object to_json(const Summary& summary,
+                         bool report_distances);
 
-boost::json::value to_json(const ComputingTimes& ct,
-                         rapidjson::Document::AllocatorType& allocator);
+boost::json::object to_json(const ComputingTimes& ct);
 
-boost::json::value to_json(const Route& route,
-                         bool report_distances,
-                         rapidjson::Document::AllocatorType& allocator);
+boost::json::object to_json(const Route& route,
+                         bool report_distances);
 
-boost::json::value to_json(const Step& s,
-                         bool report_distances,
-                         rapidjson::Document::AllocatorType& allocator);
+boost::json::object to_json(const Step& s,
+                         bool report_distances);
 
-boost::json::value to_json(const Location& loc,
-                         rapidjson::Document::AllocatorType& allocator);
+boost::json::array to_json(const Location& loc);
 
 void write_to_json(const vroom::Exception& e,
                    const std::string& output_file = "");

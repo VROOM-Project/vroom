@@ -84,7 +84,6 @@ boost::json::object to_json(const Solution& sol, bool report_distances) {
     if (job.location.user_index()) {
       json_job["location_index"] = job.location.index();
     }
-    json_job["type"] = rapidjson::Value();
     std::string str_type;
     switch (job.type) {
       using enum JOB_TYPE;
@@ -111,7 +110,7 @@ boost::json::object to_json(const Solution& sol, bool report_distances) {
 
   boost::json::array json_routes;
   for (const auto& route : sol.routes) {
-    json_routes.emplace_back(to_json(route, report_distances);
+    json_routes.emplace_back(to_json(route, report_distances));
   }
 
   json_output["routes"] = json_routes;
@@ -170,91 +169,80 @@ boost::json::object to_json(const Summary& summary,
   return json_summary;
 }
 
-rapidjson::Value to_json(const Route& route,
-                         bool report_distances,
-                         rapidjson::Document::AllocatorType& allocator) {
-  rapidjson::Value json_route(rapidjson::kObjectType);
+boost::json::object to_json(const Route& route,
+                         bool report_distances) {
+  boost::json::object json_route;
 
-  json_route.AddMember("vehicle", route.vehicle, allocator);
-  json_route.AddMember("cost", route.cost, allocator);
+  json_route["vehicle"] = route.vehicle;
+  json_route["cost"] = route.cost;
 
   if (!route.description.empty()) {
-    json_route.AddMember("description", rapidjson::Value(), allocator);
-    json_route["description"].SetString(route.description.c_str(),
-                                        route.description.size(),
-                                        allocator);
+    json_route["description"] = route.description;
   }
 
   if (!route.delivery.empty()) {
-    rapidjson::Value json_delivery(rapidjson::kArrayType);
+    boost::json::array json_delivery;
     for (std::size_t i = 0; i < route.delivery.size(); ++i) {
-      json_delivery.PushBack(route.delivery[i], allocator);
+      json_delivery.emplace_back(route.delivery[i]);
     }
-    json_route.AddMember("delivery", json_delivery, allocator);
+    json_route["delivery"] = json_delivery;
 
     // Support for deprecated "amount" key.
-    rapidjson::Value json_amount(rapidjson::kArrayType);
+    boost::json::array json_amount;
     for (std::size_t i = 0; i < route.delivery.size(); ++i) {
-      json_amount.PushBack(route.delivery[i], allocator);
+      json_amount.emplace_back(route.delivery[i]);
     }
-    json_route.AddMember("amount", json_amount, allocator);
+    json_route["amount"] = json_amount;
   }
 
   if (!route.pickup.empty()) {
-    rapidjson::Value json_pickup(rapidjson::kArrayType);
+    boost::json::array json_pickup;
     for (std::size_t i = 0; i < route.pickup.size(); ++i) {
-      json_pickup.PushBack(route.pickup[i], allocator);
+      json_pickup.emplace_back(route.pickup[i]);
     }
-    json_route.AddMember("pickup", json_pickup, allocator);
+    json_route["pickup"] = json_pickup;
   }
 
-  json_route.AddMember("setup", route.setup, allocator);
-  json_route.AddMember("service", route.service, allocator);
-  json_route.AddMember("duration", route.duration, allocator);
-  json_route.AddMember("waiting_time", route.waiting_time, allocator);
-  json_route.AddMember("priority", route.priority, allocator);
+  json_route["setup"] = route.setup;
+  json_route["service"] = route.service;
+  json_route["duration"] = route.duration;
+  json_route["waiting_time"] = route.waiting_time;
+  json_route["priority"] = route.priority;
 
   if (report_distances) {
-    json_route.AddMember("distance", route.distance, allocator);
+    json_route["distance"] = route.distance;
   }
 
-  rapidjson::Value json_steps(rapidjson::kArrayType);
+  boost::json::array json_steps;
   for (const auto& step : route.steps) {
-    json_steps.PushBack(to_json(step, report_distances, allocator), allocator);
+    json_steps.emplace_back(to_json(step, report_distances));
   }
 
-  json_route.AddMember("steps", json_steps, allocator);
+  json_route["steps"] = json_steps;
 
-  json_route.AddMember("violations",
-                       get_violations(route.violations, allocator),
-                       allocator);
+  json_route["violations"] = get_violations(route.violations);
 
   if (!route.geometry.empty()) {
-    json_route.AddMember("geometry", rapidjson::Value(), allocator);
-    json_route["geometry"].SetString(route.geometry.c_str(),
-                                     route.geometry.size());
+    json_route["geometry"] = route.geometry;
   }
 
   return json_route;
 }
 
-rapidjson::Value to_json(const ComputingTimes& ct,
-                         rapidjson::Document::AllocatorType& allocator) {
-  rapidjson::Value json_ct(rapidjson::kObjectType);
+boost::json::object to_json(const ComputingTimes& ct) {
+  boost::json::object json_ct;
 
-  json_ct.AddMember("loading", ct.loading, allocator);
-  json_ct.AddMember("solving", ct.solving, allocator);
-  json_ct.AddMember("routing", ct.routing, allocator);
+  json_ct["loading"] = ct.loading;
+  json_ct["solving"] = ct.solving;
+  json_ct["routing"] = ct.routing;
 
   return json_ct;
 }
 
-rapidjson::Value to_json(const Step& s,
-                         bool report_distances,
-                         rapidjson::Document::AllocatorType& allocator) {
-  rapidjson::Value json_step(rapidjson::kObjectType);
+boost::json::object to_json(const Step& s,
+                         bool report_distances) {
+  boost::json::object json_step;
 
-  json_step.AddMember("type", rapidjson::Value(), allocator);
   std::string str_type;
   switch (s.step_type) {
     using enum STEP_TYPE;
@@ -284,91 +272,81 @@ rapidjson::Value to_json(const Step& s,
     break;
   }
   }
-  json_step["type"].SetString(str_type.c_str(), str_type.size(), allocator);
+  json_step["type"] = str_type;
 
   if (!s.description.empty()) {
-    json_step.AddMember("description", rapidjson::Value(), allocator);
-    json_step["description"].SetString(s.description.c_str(),
-                                       s.description.size(),
-                                       allocator);
+    json_step["description"] = s.description;
   }
 
   if (s.location.has_value()) {
     const auto& loc = s.location.value();
     if (loc.has_coordinates()) {
-      json_step.AddMember("location", to_json(loc, allocator), allocator);
+      json_step["location"] = to_json(loc);
     }
 
     if (loc.user_index()) {
-      json_step.AddMember("location_index", loc.index(), allocator);
+      json_step["location_index"] = loc.index();
     }
   }
 
   if (s.step_type == STEP_TYPE::JOB || s.step_type == STEP_TYPE::BREAK) {
-    json_step.AddMember("id", s.id, allocator);
+    json_step["id"] = s.id;
   }
 
-  json_step.AddMember("setup", s.setup, allocator);
-  json_step.AddMember("service", s.service, allocator);
-  json_step.AddMember("waiting_time", s.waiting_time, allocator);
+  json_step["setup"] = s.setup;
+  json_step["service"] = s.service;
+  json_step["waiting_time"] = s.waiting_time;
 
   // Should be removed at some point as step.job is deprecated.
   if (s.step_type == STEP_TYPE::JOB) {
-    json_step.AddMember("job", s.id, allocator);
+    json_step["job"] = s.id;
   }
 
   if (!s.load.empty()) {
-    rapidjson::Value json_load(rapidjson::kArrayType);
+    boost::json::array json_load;
     for (std::size_t i = 0; i < s.load.size(); ++i) {
-      json_load.PushBack(s.load[i], allocator);
+      json_load.emplace_back(s.load[i]);
     }
-    json_step.AddMember("load", json_load, allocator);
+    json_step["load"] = json_load;
   }
 
-  json_step.AddMember("arrival", s.arrival, allocator);
-  json_step.AddMember("duration", s.duration, allocator);
-
-  json_step.AddMember("violations",
-                      get_violations(s.violations, allocator),
-                      allocator);
+  json_step["arrival"] = s.arrival;
+  json_step["duration"] = s.duration;
+  json_step["violations"] =  get_violations(s.violations);
 
   if (report_distances) {
-    json_step.AddMember("distance", s.distance, allocator);
+    json_step["distance"] = s.distance;
   }
 
   return json_step;
 }
 
-rapidjson::Value to_json(const Location& loc,
-                         rapidjson::Document::AllocatorType& allocator) {
-  rapidjson::Value json_coords(rapidjson::kArrayType);
+boost::json::array to_json(const Location& loc) {
+  boost::json::array json_coords;
 
-  json_coords.PushBack(loc.lon(), allocator);
-  json_coords.PushBack(loc.lat(), allocator);
+  json_coords.emplace_back(loc.lon());
+  json_coords.emplace_back(loc.lat());
 
   return json_coords;
 }
 
-void write_to_output(const rapidjson::Document& json_output,
+void write_to_output(const boost::json::value& json_output,
                      const std::string& output_file) {
-  // Rapidjson writing process.
-  rapidjson::StringBuffer s;
-  rapidjson::Writer<rapidjson::StringBuffer> r_writer(s);
-  json_output.Accept(r_writer);
 
   // Write to relevant output.
   if (output_file.empty()) {
     // Log to standard output.
-    std::cout << s.GetString() << std::endl;
+    std::cout <<  boost::json::serialize(json_output) << std::endl;
   } else {
     // Log to file.
     std::ofstream out_stream(output_file, std::ofstream::out);
-    out_stream << s.GetString();
+    out_stream << boost::json::serialize(json_output);
     out_stream.close();
   }
 }
 
-void write_to_json(const vroom::Exception& e, const std::string& output_file) {
+void write_to_json(const vroom::Exception& e,
+                   const std::string& output_file) {
   const auto json_output = to_json(e);
 
   write_to_output(json_output, output_file);
