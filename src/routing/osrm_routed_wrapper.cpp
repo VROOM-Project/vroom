@@ -99,16 +99,12 @@ bool OsrmRoutedWrapper::distance_value_is_null(
 
 UserDuration OsrmRoutedWrapper::get_duration_value(
   const boost::json::value& matrix_entry) const {
-  if (matrix_entry.is_uint64())
-    return utils::round<UserDuration>(matrix_entry.get_uint64());
-  return utils::round<UserDuration>(matrix_entry.get_double());
+  return utils::round<UserDuration>(matrix_entry.to_number<double>());
 }
 
 UserDistance OsrmRoutedWrapper::get_distance_value(
   const boost::json::value& matrix_entry) const {
-  if (matrix_entry.is_int64())
-    return utils::round<UserDuration>(matrix_entry.get_int64());
-  return utils::round<UserDuration>(matrix_entry.get_double());
+  return utils::round<UserDuration>(matrix_entry.to_number<double>());
 }
 
 unsigned

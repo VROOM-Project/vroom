@@ -83,16 +83,12 @@ bool OrsWrapper::distance_value_is_null(
 
 UserDuration
 OrsWrapper::get_duration_value(const boost::json::value& matrix_entry) const {
-  if (matrix_entry.is_uint64())
-    return utils::round<UserDuration>(matrix_entry.get_int64());
-  return utils::round<UserDuration>(matrix_entry.get_double());
+  return utils::round<UserDuration>(matrix_entry.to_number<double>());
 }
 
 UserDistance
 OrsWrapper::get_distance_value(const boost::json::value& matrix_entry) const {
-  if (matrix_entry.is_uint64())
-    return utils::round<UserDuration>(matrix_entry.get_int64());
-  return utils::round<UserDuration>(matrix_entry.get_double());
+  return utils::round<UserDuration>(matrix_entry.to_number<double>());
 }
 
 unsigned OrsWrapper::get_legs_number(const boost::json::object& result) const {
