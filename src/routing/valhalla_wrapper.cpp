@@ -94,8 +94,8 @@ void ValhallaWrapper::check_response(const boost::json::object& json_result,
 
   if (constexpr unsigned HTTP_OK = 200;
       json_result.contains("status_code") &&
-      json_result.at("status_code").is_uint64() &&
-      json_result.at("status_code").as_uint64() != HTTP_OK) {
+      json_result.at("status_code").is_number() &&
+      json_result.at("status_code").to_number<int>() != HTTP_OK) {
     // Valhalla responses seem to only have a status_code key when a
     // problem is encountered. In that case it's not really clear what
     // keys can be expected so we're playing guesses. This happens
