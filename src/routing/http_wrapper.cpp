@@ -12,8 +12,6 @@ All rights reserved (see LICENSE).
 #include <asio.hpp>
 #include <asio/ssl.hpp>
 
-#include <boost/json.hpp>
-
 #include "routing/http_wrapper.h"
 
 using asio::ip::tcp;

@@ -9,8 +9,7 @@ Copyright (c) 2015-2024, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
-#include "../include/json/include/boost/json/object.hpp"
-#include "../include/json/include/boost/json/value.hpp"
+#include <boost/json.hpp>
 
 #include "routing/wrapper.h"
 #include "structures/typedefs.h"
