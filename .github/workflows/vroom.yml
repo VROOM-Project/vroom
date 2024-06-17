@@ -26,7 +26,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install libasio-dev libglpk-dev jq
+          sudo apt-get install libasio-dev libglpk-dev libboost-json1.83-dev jq
       - name: Build vroom
         run: make -j
         env:

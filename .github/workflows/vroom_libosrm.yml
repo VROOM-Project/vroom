@@ -34,7 +34,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install libasio-dev libglpk-dev
+          sudo apt-get install libasio-dev libglpk-dev libboost-json1.83-dev
       - name: Cache OSRM
         id: cache
         uses: actions/cache@v4
