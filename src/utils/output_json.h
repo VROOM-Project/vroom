@@ -12,7 +12,6 @@ All rights reserved (see LICENSE).
 
 #include <boost/json.hpp>
 
-#include "../include/rapidjson/include/rapidjson/document.h"
 #include "structures/vroom/solution/solution.h"
 #include "utils/exception.h"
 
