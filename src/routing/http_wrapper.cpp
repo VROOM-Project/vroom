@@ -139,12 +139,16 @@ std::string HttpWrapper::run_query(const std::string& query) const {
                                       : send_then_receive(query);
 }
 
-void HttpWrapper::parse_response(rapidjson::Document& json_result,
+void HttpWrapper::parse_response(boost::json::object& json_result,
                                  const std::string& json_content) {
 #ifdef NDEBUG
-  json_result.Parse(json_content.c_str());
+  json_result = boost::json::parse(json_content).as_object();
 #else
-  assert(!json_result.Parse(json_content.c_str()).HasParseError());
+  boost::json::error_code ec;
+  auto content = boost::json::parse(json_content, ec);
+  boost::json::object* ptr = content.if_object();
+  assert(!ec && ptr);
+  json_result = content.get_object();
 #endif
 }
 
@@ -155,19 +159,19 @@ Matrices HttpWrapper::get_matrices(const std::vector<Location>& locs) const {
   // Expected matrix size.
   std::size_t m_size = locs.size();
 
-  rapidjson::Document json_result;
+  boost::json::object json_result;
   this->parse_response(json_result, json_string);
   this->check_response(json_result, locs, _matrix_service);
 
-  if (!json_result.HasMember(_matrix_durations_key.c_str())) {
+  if (!json_result.contains(_matrix_durations_key)) {
     throw RoutingException("Missing " + _matrix_durations_key + ".");
   }
-  assert(json_result[_matrix_durations_key.c_str()].Size() == m_size);
+  assert(json_result.at(_matrix_durations_key).get_array().size() == m_size);
 
-  if (!json_result.HasMember(_matrix_distances_key.c_str())) {
+  if (!json_result.contains(_matrix_distances_key)) {
     throw RoutingException("Missing " + _matrix_distances_key + ".");
   }
-  assert(json_result[_matrix_distances_key.c_str()].Size() == m_size);
+  assert(json_result.at(_matrix_distances_key).get_array().size() == m_size);
 
   // Build matrices while checking for unfound routes ('null' values)
   // to avoid unexpected behavior.
@@ -176,22 +180,22 @@ Matrices HttpWrapper::get_matrices(const std::vector<Location>& locs) const {
   std::vector<unsigned> nb_unfound_from_loc(m_size, 0);
   std::vector<unsigned> nb_unfound_to_loc(m_size, 0);
 
-  for (rapidjson::SizeType i = 0; i < m_size; ++i) {
-    const auto& duration_line = json_result[_matrix_durations_key.c_str()][i];
-    const auto& distance_line = json_result[_matrix_distances_key.c_str()][i];
-    assert(duration_line.Size() == m_size);
-    assert(distance_line.Size() == m_size);
-    for (rapidjson::SizeType j = 0; j < m_size; ++j) {
-      if (duration_value_is_null(duration_line[j]) ||
-          distance_value_is_null(distance_line[j])) {
+  for (size_t i = 0; i < m_size; ++i) {
+    const auto& duration_line = json_result.at(_matrix_durations_key).at(i);
+    const auto& distance_line = json_result.at(_matrix_distances_key).at(i);
+    assert(duration_line.get_array().size() == m_size);
+    assert(distance_line.get_array().size() == m_size);
+    for (size_t j = 0; j < m_size; ++j) {
+      if (duration_value_is_null(duration_line.at(j)) ||
+          distance_value_is_null(distance_line.at(j))) {
         // No route found between i and j. Just storing info as we
         // don't know yet which location is responsible between i
         // and j.
         ++nb_unfound_from_loc[i];
         ++nb_unfound_to_loc[j];
       } else {
-        m.durations[i][j] = get_duration_value(duration_line[j]);
-        m.distances[i][j] = get_distance_value(distance_line[j]);
+        m.durations[i][j] = get_duration_value(duration_line.at(j));
+        m.distances[i][j] = get_distance_value(distance_line.at(j));
       }
     }
   }
@@ -219,7 +223,7 @@ void HttpWrapper::add_geometry(Route& route) const {
 
   std::string json_string = this->run_query(query);
 
-  rapidjson::Document json_result;
+  boost::json::object json_result;
   parse_response(json_result, json_string);
   this->check_response(json_result,
                        non_break_locations, // not supposed to be used

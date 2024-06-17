@@ -62,13 +62,14 @@ OsrmRoutedWrapper::build_query(const std::vector<Location>& locations,
   return query;
 }
 
-void OsrmRoutedWrapper::check_response(const rapidjson::Document& json_result,
+void OsrmRoutedWrapper::check_response(const boost::json::object& json_result,
                                        const std::vector<Location>& locs,
                                        const std::string&) const {
-  assert(json_result.HasMember("code"));
-  const std::string code = json_result["code"].GetString();
+  assert(json_result.contains("code"));
+  const std::string code = json_result.at("code").get_string().subview();
   if (code != "Ok") {
-    const std::string message = json_result["message"].GetString();
+    const std::string message =
+      json_result.at("message").get_string().subview();
     if (const std::string snapping_error_base =
           "Could not find a matching segment for coordinate ";
         code == "NoSegment" && message.starts_with(snapping_error_base)) {
@@ -87,32 +88,32 @@ void OsrmRoutedWrapper::check_response(const rapidjson::Document& json_result,
 }
 
 bool OsrmRoutedWrapper::duration_value_is_null(
-  const rapidjson::Value& matrix_entry) const {
-  return matrix_entry.IsNull();
+  const boost::json::value& matrix_entry) const {
+  return matrix_entry.is_null();
 }
 
 bool OsrmRoutedWrapper::distance_value_is_null(
-  const rapidjson::Value& matrix_entry) const {
-  return matrix_entry.IsNull();
+  const boost::json::value& matrix_entry) const {
+  return matrix_entry.is_null();
 }
 
 UserDuration OsrmRoutedWrapper::get_duration_value(
-  const rapidjson::Value& matrix_entry) const {
-  return utils::round<UserDuration>(matrix_entry.GetDouble());
+  const boost::json::value& matrix_entry) const {
+  return utils::round<UserDuration>(matrix_entry.to_number<double>());
 }
 
 UserDistance OsrmRoutedWrapper::get_distance_value(
-  const rapidjson::Value& matrix_entry) const {
-  return utils::round<UserDistance>(matrix_entry.GetDouble());
+  const boost::json::value& matrix_entry) const {
+  return utils::round<UserDuration>(matrix_entry.to_number<double>());
 }
 
 unsigned
-OsrmRoutedWrapper::get_legs_number(const rapidjson::Value& result) const {
-  return result["routes"][0]["legs"].Size();
+OsrmRoutedWrapper::get_legs_number(const boost::json::object& result) const {
+  return result.at("routes").at(0).at("legs").get_array().size();
 }
 
-std::string OsrmRoutedWrapper::get_geometry(rapidjson::Value& result) const {
-  return result["routes"][0]["geometry"].GetString();
+std::string OsrmRoutedWrapper::get_geometry(boost::json::object& result) const {
+  return result.at("routes").at(0).at("geometry").get_string().subview();
 }
 
 } // namespace vroom::routing
