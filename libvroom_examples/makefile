@@ -1,6 +1,6 @@
 CXX ?= g++
-CXXFLAGS = -I../src -std=c++20 -Wextra -Wpedantic -Wall -O3
-LDLIBS = -L../lib/ -lvroom -lpthread -lssl -lcrypto
+CXXFLAGS = -I../src -std=c++20 -Wextra -Wpedantic -Wall -O3 -DBOOST_JSON_STANDALONE -DBOOST_JSON_NO_LIB
+LDLIBS = -L../lib/ -lvroom -lpthread -lssl -lcrypto -lboost_json
 
 # Checking for libglpk based on whether the header file is found as
 # glpk does not provide a pkg-config setup.
