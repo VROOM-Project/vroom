@@ -67,7 +67,7 @@ void OrsWrapper::check_response(const boost::json::object& json_result,
                                 const std::string&) const {
   if (json_result.contains("error")) {
     throw RoutingException(
-      json_result.at("error").at("message").as_string().subview());
+      json_result.at("error").at("message").get_string().subview());
   }
 }
 
@@ -92,11 +92,11 @@ OrsWrapper::get_distance_value(const boost::json::value& matrix_entry) const {
 }
 
 unsigned OrsWrapper::get_legs_number(const boost::json::object& result) const {
-  return result.at("routes").at(0).at("segments").as_array().size();
+  return result.at("routes").at(0).at("segments").get_array().size();
 }
 
 std::string OrsWrapper::get_geometry(boost::json::object& result) const {
-  return result.at("routes").at(0).at("geometry").as_string().subview();
+  return result.at("routes").at(0).at("geometry").get_string().subview();
 }
 
 } // namespace vroom::routing

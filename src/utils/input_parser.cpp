@@ -19,7 +19,7 @@ namespace vroom::io {
 inline Coordinates parse_coordinates(const boost::json::object& object,
                                      const char* key) {
   if (!object.at(key).is_array() || (object.at(key).get_array().size() < 2) ||
-      !object.at(key).at(0).is_number() || !object.at(key).at(0).is_number()) {
+      !object.at(key).at(0).is_number() || !object.at(key).at(1).is_number()) {
     throw InputException("Invalid " + std::string(key) + " array.");
   }
   return {object.at(key).at(0).to_number<double>(), object.at(key).at(1).to_number<double>()};
@@ -69,7 +69,7 @@ inline Amount get_amount(const boost::json::object& object,
       if (!object.at(key).at(i).is_number()) {
         throw InputException("Invalid " + std::string(key) + " value.");
       }
-      amount[i] = object.at(key).at(i).to_number<uint64_t>();
+      amount[i] = object.at(key).at(i).to_number<uint32_t>();
     }
   }
 
@@ -86,7 +86,7 @@ inline Skills get_skills(const boost::json::object& object) {
       if (!object.at("skills").at(i).is_number()) {
         throw InputException("Invalid skill value.");
       }
-      skills.insert(object.at("skills").at(i).to_number<uint64_t>());
+      skills.insert(object.at("skills").at(i).to_number<uint32_t>());
     }
   }
 
@@ -100,7 +100,7 @@ inline UserDuration get_duration(const boost::json::object& object,
     if (!object.at(key).is_number()) {
       throw InputException("Invalid " + std::string(key) + " duration.");
     }
-    duration = object.at(key).to_number<uint64_t>();
+    duration = object.at(key).to_number<uint32_t>();
   }
   return duration;
 }
@@ -111,7 +111,7 @@ inline Priority get_priority(const boost::json::object& object) {
     if (!object.at("priority").is_number()) {
       throw InputException("Invalid priority value.");
     }
-    priority = object.at("priority").to_number<uint64_t>();
+    priority = object.at("priority").to_number<uint32_t>();
   }
   return priority;
 }
@@ -124,7 +124,7 @@ inline std::optional<T> get_value_for(const boost::json::object& object,
     if (!object.at(key).is_number()) {
       throw InputException("Invalid " + std::string(key) + " value.");
     }
-    value = object.at(key).to_number<uint64_t>();
+    value = object.at(key).to_number<uint32_t>();
   }
   return value;
 }
@@ -161,7 +161,7 @@ inline TimeWindow get_time_window(const boost::json::value& tw) {
   if (!tw.is_array() || tw.get_array().size() < 2 || !tw.at(0).is_number() || !tw.at(1).is_number()) {
     throw InputException("Invalid time-window.");
   }
-  return TimeWindow(tw.at(0).to_number<uint64_t>(), tw.at(1).to_number<uint64_t>());
+  return TimeWindow(tw.at(0).to_number<uint32_t>(), tw.at(1).to_number<uint32_t>());
 }
 
 inline TimeWindow get_vehicle_time_window(const boost::json::object& v) {
@@ -248,7 +248,7 @@ inline VehicleCosts get_vehicle_costs(const boost::json::object& v) {
                                          v.at("id").to_number<uint64_t>()));
       }
 
-      fixed = v.at("costs").at("fixed").to_number<uint64_t>();
+      fixed = v.at("costs").at("fixed").to_number<uint32_t>();
     }
 
     if (v.at("costs").get_object().contains("per_hour")) {
@@ -258,7 +258,7 @@ inline VehicleCosts get_vehicle_costs(const boost::json::object& v) {
                       v.at("id").to_number<uint64_t>()));
       }
 
-      per_hour = v.at("costs").at("per_hour").to_number<uint64_t>();
+      per_hour = v.at("costs").at("per_hour").to_number<uint32_t>();
     }
 
     if (v.at("costs").get_object().contains("per_km")) {
@@ -267,7 +267,7 @@ inline VehicleCosts get_vehicle_costs(const boost::json::object& v) {
                                          v.at("id").to_number<uint64_t>()));
       }
 
-      per_km = v.at("costs").at("per_km").to_number<uint64_t>();
+      per_km = v.at("costs").at("per_km").to_number<uint32_t>();
     }
   }
 
@@ -286,7 +286,7 @@ inline std::vector<VehicleStep> get_vehicle_steps(const boost::json::object& v) 
     steps.reserve(v.at("steps").get_array().size());
 
     for (size_t i = 0; i < v.at("steps").get_array().size(); ++i) {
-      const auto& json_step = v.at("steps").at(i).as_object();
+      const auto& json_step = v.at("steps").at(i).get_object();
 
       std::optional<UserDuration> at;
       if (json_step.contains("service_at")) {
@@ -294,7 +294,7 @@ inline std::vector<VehicleStep> get_vehicle_steps(const boost::json::object& v) 
           throw InputException("Invalid service_at value.");
         }
 
-        at = json_step.at("service_at").to_number<uint64_t>();
+        at = json_step.at("service_at").to_number<uint32_t>();
       }
       std::optional<UserDuration> after;
       if (json_step.contains("service_after")) {
@@ -302,7 +302,7 @@ inline std::vector<VehicleStep> get_vehicle_steps(const boost::json::object& v) 
           throw InputException("Invalid service_after value.");
         }
 
-        after = json_step.at("service_after").to_number<uint64_t>();
+        after = json_step.at("service_after").to_number<uint32_t>();
       }
       std::optional<UserDuration> before;
       if (json_step.contains("service_before")) {
@@ -310,7 +310,7 @@ inline std::vector<VehicleStep> get_vehicle_steps(const boost::json::object& v) 
           throw InputException("Invalid service_before value.");
         }
 
-        before = json_step.at("service_before").to_number<uint64_t>();
+        before = json_step.at("service_before").to_number<uint32_t>();
       }
       ForcedService forced_service(at, after, before);
 
@@ -374,7 +374,7 @@ inline Vehicle get_vehicle(const boost::json::object& json_vehicle,
   std::optional<Location> start;
   if (has_start_index) {
     // Custom provided matrices and index.
-    Index start_index = json_vehicle.at("start_index").to_number<uint64_t>();
+    Index start_index = json_vehicle.at("start_index").to_number<uint32_t>();
     if (has_start_coords) {
       start = Location({start_index, parse_coordinates(json_vehicle, "start")});
     } else {
@@ -398,7 +398,7 @@ inline Vehicle get_vehicle(const boost::json::object& json_vehicle,
   std::optional<Location> end;
   if (has_end_index) {
     // Custom provided matrices and index.
-    Index end_index = json_vehicle.at("end_index").to_number<uint64_t>();
+    Index end_index = json_vehicle.at("end_index").to_number<uint32_t>();
     if (has_end_coords) {
       end = Location({end_index, parse_coordinates(json_vehicle, "end")});
     } else {
@@ -445,7 +445,7 @@ inline Location get_task_location(const boost::json::object& v,
 
   if (has_location_index) {
     // Custom provided matrices and index.
-    Index location_index = v.at("location_index").to_number<uint64_t>();
+    Index location_index = v.at("location_index").to_number<uint32_t>();
     if (has_location_coords) {
       return Location({location_index, parse_coordinates(v, "location")});
     }
@@ -495,7 +495,7 @@ template <class T> inline Matrix<T> get_matrix(boost::json::value& m) {
       if (!mi[j].is_number()) {
         throw InputException("Invalid matrix entry.");
       }
-      matrix[i][j] = mi[j].to_number<uint64_t>();
+      matrix[i][j] = mi[j].to_number<uint32_t>();
     }
   }
 
@@ -516,7 +516,7 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
   
   if (!content.is_object())
     throw InputException("Invalid input.");
-  boost::json::object json_input = content.as_object();
+  boost::json::object json_input = content.get_object();
 
   // Main checks for valid json input.
   bool has_jobs = json_input.contains("jobs") &&
@@ -532,7 +532,7 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
       json_input.at("vehicles").get_array().empty()) {
     throw InputException("Invalid vehicles.");
   }
-  const auto& first_vehicle = json_input.at("vehicles").at(0).as_object();
+  const auto& first_vehicle = json_input.at("vehicles").at(0).get_object();
   check_id(first_vehicle, "vehicle");
   bool first_vehicle_has_capacity = (first_vehicle.contains("capacity") &&
                                      first_vehicle.at("capacity").is_array() &&
@@ -545,7 +545,7 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
 
   // Add all vehicles.
   for (size_t i = 0; i < json_input.at("vehicles").get_array().size(); ++i) {
-    auto& json_vehicle = json_input.at("vehicles").at(i).as_object();
+    auto& json_vehicle = json_input.at("vehicles").at(i).get_object();
 
     input.add_vehicle(get_vehicle(json_vehicle, amount_size));
   }
@@ -554,14 +554,14 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
   if (has_jobs) {
     // Add the jobs.
     for (size_t i = 0; i < json_input.at("jobs").get_array().size(); ++i) {
-      input.add_job(get_job(json_input.at("jobs").at(i).as_object(), amount_size));
+      input.add_job(get_job(json_input.at("jobs").at(i).get_object(), amount_size));
     }
   }
 
   if (has_shipments) {
     // Add the shipments.
     for (size_t i = 0; i < json_input.at("shipments").get_array().size(); ++i) {
-      auto& json_shipment = json_input.at("shipments").at(i).as_object();
+      auto& json_shipment = json_input.at("shipments").at(i).get_object();
       check_shipment(json_shipment);
 
       // Retrieve common stuff for both pickup and delivery.
@@ -570,7 +570,7 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
       auto priority = get_priority(json_shipment);
 
       // Defining pickup job.
-      auto& json_pickup = json_shipment.at("pickup").as_object();
+      auto& json_pickup = json_shipment.at("pickup").get_object();
       check_id(json_pickup, "pickup");
 
       Job pickup(json_pickup.at("id").to_number<uint64_t>(),
@@ -585,7 +585,7 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
                  get_string(json_pickup, "description"));
 
       // Defining delivery job.
-      auto& json_delivery = json_shipment.at("delivery").as_object();
+      auto& json_delivery = json_shipment.at("delivery").get_object();
       check_id(json_delivery, "delivery");
 
       Job delivery(json_delivery.at("id").to_number<uint64_t>(),

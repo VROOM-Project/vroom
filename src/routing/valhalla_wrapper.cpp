@@ -105,7 +105,7 @@ void ValhallaWrapper::check_response(const boost::json::object& json_result,
     std::string error = "Valhalla " + service_str + " error (";
 
     if (json_result.contains("error") && json_result.at("error").is_string()) {
-      error += json_result.at("error").as_string().subview();
+      error += json_result.at("error").get_string().subview();
       error += ").";
     }
     throw RoutingException(error);
@@ -113,40 +113,42 @@ void ValhallaWrapper::check_response(const boost::json::object& json_result,
 
   if (service == _route_service) {
     assert(json_result.contains("trip") &&
-           json_result.at("trip").as_object().contains("status"));
+           json_result.at("trip").get_object().contains("status"));
     if (json_result.at("trip").at("status") != 0) {
       throw RoutingException(
-        json_result.at("trip").at("status_message").as_string().subview());
+        json_result.at("trip").at("status_message").get_string().subview());
     }
   }
 }
 
 bool ValhallaWrapper::duration_value_is_null(
   const boost::json::value& matrix_entry) const {
-  assert(matrix_entry.as_object().contains("time"));
+  assert(matrix_entry.get_object().contains("time"));
   return matrix_entry.at("time").is_null();
 }
 
 bool ValhallaWrapper::distance_value_is_null(
   const boost::json::value& matrix_entry) const {
-  assert(matrix_entry.as_object().contains("distance"));
+  assert(matrix_entry.get_object().contains("distance"));
   return matrix_entry.at("distance").is_null();
 }
 
 UserDuration ValhallaWrapper::get_duration_value(
   const boost::json::value& matrix_entry) const {
-  return utils::round<UserDuration>(matrix_entry.to_number<double>());
+  assert(matrix_entry.at("time").is_number());
+  return utils::round<UserDuration>(matrix_entry.to_number<uint32_t>());
 }
 
 UserDistance ValhallaWrapper::get_distance_value(
   const boost::json::value& matrix_entry) const {
+  assert(matrix_entry.at("distance").is_number());
   return utils::round<UserDuration>(km_to_m *
                                     matrix_entry.at("distance").to_number<double>());
 }
 
 unsigned
 ValhallaWrapper::get_legs_number(const boost::json::object& result) const {
-  return result.at("trip").at("legs").as_array().size();
+  return result.at("trip").at("legs").get_array().size();
 }
 
 std::string ValhallaWrapper::get_geometry(boost::json::object& result) const {
@@ -161,12 +163,12 @@ std::string ValhallaWrapper::get_geometry(boost::json::object& result) const {
 
   auto full_polyline =
     gepaf::PolylineEncoder<valhalla_polyline_precision>::decode(
-      result.at("trip").at("legs").at(0).at("shape").as_string().subview());
+      result.at("trip").at("legs").at(0).at("shape").get_string().subview());
 
-  for (size_t i = 1; i < result.at("trip").at("legs").as_array().size(); ++i) {
+  for (size_t i = 1; i < result.at("trip").at("legs").get_array().size(); ++i) {
     auto decoded_pts =
       gepaf::PolylineEncoder<valhalla_polyline_precision>::decode(
-        result.at("trip").at("legs").at(i).at("shape").as_string().subview());
+        result.at("trip").at("legs").at(i).at("shape").get_string().subview());
 
     if (!full_polyline.empty()) {
       full_polyline.pop_back();

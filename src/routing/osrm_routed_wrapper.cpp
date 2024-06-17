@@ -10,7 +10,6 @@ All rights reserved (see LICENSE).
 #include "routing/osrm_routed_wrapper.h"
 #include "utils/helpers.h"
 
-
 namespace vroom::routing {
 
 OsrmRoutedWrapper::OsrmRoutedWrapper(const std::string& profile,
@@ -67,14 +66,14 @@ void OsrmRoutedWrapper::check_response(const boost::json::object& json_result,
                                        const std::vector<Location>& locs,
                                        const std::string&) const {
   assert(json_result.contains("code"));
-  const boost::json::string code = json_result.at("code").as_string();
+  const std::string code = json_result.at("code").get_string().subview();
   if (code != "Ok") {
-    const boost::json::string message = json_result.at("message").as_string();
-    if (const boost::json::string snapping_error_base =
+    const std::string message = json_result.at("message").get_string().subview();
+    if (const std::string snapping_error_base =
           "Could not find a matching segment for coordinate ";
         code == "NoSegment" && message.starts_with(snapping_error_base)) {
       const auto error_loc =
-        std::stoul(message.subview().substr(snapping_error_base.size(),
+        std::stoul(message.substr(snapping_error_base.size(),
                                   message.size() - snapping_error_base.size()));
       const auto coordinates =
         std::format("[{},{}]", locs[error_loc].lon(), locs[error_loc].lat());
@@ -83,7 +82,7 @@ void OsrmRoutedWrapper::check_response(const boost::json::object& json_result,
     }
 
     // Other error in response.
-    throw RoutingException(message.c_str());
+    throw RoutingException(message);
   }
 }
 
@@ -109,11 +108,11 @@ UserDistance OsrmRoutedWrapper::get_distance_value(
 
 unsigned
 OsrmRoutedWrapper::get_legs_number(const boost::json::object& result) const {
-  return result.at("routes").at(0).at("legs").as_array().size();
+  return result.at("routes").at(0).at("legs").get_array().size();
 }
 
 std::string OsrmRoutedWrapper::get_geometry(boost::json::object& result) const {
-  return result.at("routes").at(0).at("geometry").as_string().subview();
+  return result.at("routes").at(0).at("geometry").get_string().subview();
 }
 
 } // namespace vroom::routing
