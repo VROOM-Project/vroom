@@ -148,7 +148,7 @@ void HttpWrapper::parse_response(boost::json::object& json_result,
   auto content = boost::json::parse(json_content, ec);
   boost::json::object* ptr = content.if_object();
   assert(!ec && ptr);
-  json_result = content.as_object();
+  json_result = content.get_object();
 #endif
 }
 
@@ -166,12 +166,12 @@ Matrices HttpWrapper::get_matrices(const std::vector<Location>& locs) const {
   if (!json_result.contains(_matrix_durations_key)) {
     throw RoutingException("Missing " + _matrix_durations_key + ".");
   }
-  assert(json_result.at(_matrix_durations_key).as_array().size() == m_size);
+  assert(json_result.at(_matrix_durations_key).get_array().size() == m_size);
 
   if (!json_result.contains(_matrix_distances_key)) {
     throw RoutingException("Missing " + _matrix_distances_key + ".");
   }
-  assert(json_result.at(_matrix_distances_key).as_array().size() == m_size);
+  assert(json_result.at(_matrix_distances_key).get_array().size() == m_size);
 
   // Build matrices while checking for unfound routes ('null' values)
   // to avoid unexpected behavior.
@@ -183,8 +183,8 @@ Matrices HttpWrapper::get_matrices(const std::vector<Location>& locs) const {
   for (size_t i = 0; i < m_size; ++i) {
     const auto& duration_line = json_result.at(_matrix_durations_key).at(i);
     const auto& distance_line = json_result.at(_matrix_distances_key).at(i);
-    assert(duration_line.as_array().size() == m_size);
-    assert(distance_line.as_array().size() == m_size);
+    assert(duration_line.get_array().size() == m_size);
+    assert(distance_line.get_array().size() == m_size);
     for (size_t j = 0; j < m_size; ++j) {
       if (duration_value_is_null(duration_line.at(j)) ||
           distance_value_is_null(distance_line.at(j))) {
@@ -194,7 +194,6 @@ Matrices HttpWrapper::get_matrices(const std::vector<Location>& locs) const {
         ++nb_unfound_from_loc[i];
         ++nb_unfound_to_loc[j];
       } else {
-        auto tmp = duration_line.at(j);
         m.durations[i][j] = get_duration_value(duration_line.at(j));
         m.distances[i][j] = get_distance_value(distance_line.at(j));
       }

@@ -70,7 +70,7 @@ inline boost::json::value get_violations(const Violations& violations) {
 
 boost::json::object to_json(const Solution& sol, bool report_distances) {
   boost::json::object json_output;
-  
+
   json_output["code"] = 0;
   json_output["summary"] = to_json(sol.summary, report_distances);
 
@@ -119,14 +119,13 @@ boost::json::object to_json(const Solution& sol, bool report_distances) {
 
 boost::json::object to_json(const vroom::Exception& e) {
   boost::json::object json_output;
-  
+
   json_output["code"] = e.error_code;
   json_output["error"] = e.message;
   return json_output;
 }
 
-boost::json::object to_json(const Summary& summary,
-                         bool report_distances) {
+boost::json::object to_json(const Summary& summary, bool report_distances) {
   boost::json::object json_summary;
 
   json_summary["cost"] = summary.cost;
@@ -141,7 +140,7 @@ boost::json::object to_json(const Summary& summary,
     json_summary["delivery"] = json_delivery;
 
     // Support for deprecated "amount" key.
-    json_summary["amount"] =  json_delivery;
+    json_summary["amount"] = json_delivery;
   }
 
   if (!summary.pickup.empty()) {
@@ -169,8 +168,7 @@ boost::json::object to_json(const Summary& summary,
   return json_summary;
 }
 
-boost::json::object to_json(const Route& route,
-                         bool report_distances) {
+boost::json::object to_json(const Route& route, bool report_distances) {
   boost::json::object json_route;
 
   json_route["vehicle"] = route.vehicle;
@@ -239,8 +237,7 @@ boost::json::object to_json(const ComputingTimes& ct) {
   return json_ct;
 }
 
-boost::json::object to_json(const Step& s,
-                         bool report_distances) {
+boost::json::object to_json(const Step& s, bool report_distances) {
   boost::json::object json_step;
 
   std::string str_type;
@@ -312,7 +309,7 @@ boost::json::object to_json(const Step& s,
 
   json_step["arrival"] = s.arrival;
   json_step["duration"] = s.duration;
-  json_step["violations"] =  get_violations(s.violations);
+  json_step["violations"] = get_violations(s.violations);
 
   if (report_distances) {
     json_step["distance"] = s.distance;
@@ -336,7 +333,7 @@ void write_to_output(const boost::json::value& json_output,
   // Write to relevant output.
   if (output_file.empty()) {
     // Log to standard output.
-    std::cout <<  boost::json::serialize(json_output) << std::endl;
+    std::cout << boost::json::serialize(json_output) << std::endl;
   } else {
     // Log to file.
     std::ofstream out_stream(output_file, std::ofstream::out);
@@ -345,8 +342,7 @@ void write_to_output(const boost::json::value& json_output,
   }
 }
 
-void write_to_json(const vroom::Exception& e,
-                   const std::string& output_file) {
+void write_to_json(const vroom::Exception& e, const std::string& output_file) {
   const auto json_output = to_json(e);
 
   write_to_output(json_output, output_file);

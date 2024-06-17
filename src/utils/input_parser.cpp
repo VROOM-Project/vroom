@@ -22,16 +22,19 @@ inline Coordinates parse_coordinates(const boost::json::object& object,
       !object.at(key).at(0).is_number() || !object.at(key).at(1).is_number()) {
     throw InputException("Invalid " + std::string(key) + " array.");
   }
-  return {object.at(key).at(0).to_number<double>(), object.at(key).at(1).to_number<double>()};
+  return {object.at(key).at(0).to_number<double>(),
+          object.at(key).at(1).to_number<double>()};
 }
 
-inline std::string get_string(const boost::json::object& object, const char* key) {
+inline std::string get_string(const boost::json::object& object,
+                              const char* key) {
   std::string value;
   if (object.contains(key)) {
     if (!object.at(key).is_string()) {
       throw InputException("Invalid " + std::string(key) + " value.");
     }
-    value = object.at(key).get_string().subview();;
+    value = object.at(key).get_string().subview();
+    ;
   }
   return value;
 }
@@ -150,18 +153,22 @@ inline void check_shipment(const boost::json::value& v) {
   }
 }
 
-inline void check_location(const boost::json::object& v, const std::string& type) {
+inline void check_location(const boost::json::object& v,
+                           const std::string& type) {
   if (!v.contains("location") || !v.at("location").is_array()) {
-    throw InputException(
-      std::format("Invalid location for {} {}.", type, v.at("id").to_number<uint64_t>()));
+    throw InputException(std::format("Invalid location for {} {}.",
+                                     type,
+                                     v.at("id").to_number<uint64_t>()));
   }
 }
 
 inline TimeWindow get_time_window(const boost::json::value& tw) {
-  if (!tw.is_array() || tw.get_array().size() < 2 || !tw.at(0).is_number() || !tw.at(1).is_number()) {
+  if (!tw.is_array() || tw.get_array().size() < 2 || !tw.at(0).is_number() ||
+      !tw.at(1).is_number()) {
     throw InputException("Invalid time-window.");
   }
-  return TimeWindow(tw.at(0).to_number<uint32_t>(), tw.at(1).to_number<uint32_t>());
+  return TimeWindow(tw.at(0).to_number<uint32_t>(),
+                    tw.at(1).to_number<uint32_t>());
 }
 
 inline TimeWindow get_vehicle_time_window(const boost::json::object& v) {
@@ -175,7 +182,8 @@ inline TimeWindow get_vehicle_time_window(const boost::json::object& v) {
 inline std::vector<TimeWindow> get_time_windows(const boost::json::object& o) {
   std::vector<TimeWindow> tws;
   if (o.contains("time_windows")) {
-    if (!o.at("time_windows").is_array() || o.at("time_windows").get_array().empty()) {
+    if (!o.at("time_windows").is_array() ||
+        o.at("time_windows").get_array().empty()) {
       throw InputException(
         std::format("Invalid time_windows array for object {}.",
                     o.at("id").to_number<uint64_t>()));
@@ -213,8 +221,8 @@ inline std::vector<Break> get_vehicle_breaks(const boost::json::object& v,
   std::vector<Break> breaks;
   if (v.contains("breaks")) {
     if (!v.at("breaks").is_array()) {
-      throw InputException(
-        std::format("Invalid breaks for vehicle {}.", v.at("id").to_number<uint64_t>()));
+      throw InputException(std::format("Invalid breaks for vehicle {}.",
+                                       v.at("id").to_number<uint64_t>()));
     }
 
     std::transform(v.at("breaks").get_array().begin(),
@@ -238,8 +246,8 @@ inline VehicleCosts get_vehicle_costs(const boost::json::object& v) {
 
   if (v.contains("costs")) {
     if (!v.at("costs").is_object()) {
-      throw InputException(
-        std::format("Invalid costs for vehicle {}.", v.at("id").to_number<uint64_t>()));
+      throw InputException(std::format("Invalid costs for vehicle {}.",
+                                       v.at("id").to_number<uint64_t>()));
     }
 
     if (v.at("costs").get_object().contains("fixed")) {
@@ -274,13 +282,14 @@ inline VehicleCosts get_vehicle_costs(const boost::json::object& v) {
   return VehicleCosts(fixed, per_hour, per_km);
 }
 
-inline std::vector<VehicleStep> get_vehicle_steps(const boost::json::object& v) {
+inline std::vector<VehicleStep>
+get_vehicle_steps(const boost::json::object& v) {
   std::vector<VehicleStep> steps;
 
   if (v.contains("steps")) {
     if (!v.at("steps").is_array()) {
-      throw InputException(
-        std::format("Invalid steps for vehicle {}.", v.at("id").to_number<uint64_t>()));
+      throw InputException(std::format("Invalid steps for vehicle {}.",
+                                       v.at("id").to_number<uint64_t>()));
     }
 
     steps.reserve(v.at("steps").get_array().size());
@@ -506,21 +515,21 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
   // Input json object.
   boost::json::error_code ec;
   auto content = boost::json::parse(input_str, ec);
-  
+
   if (ec) {
-    std::string error_msg = std::format("{} (offset: {})",
-                  ec.message(),
-                  ec.location().to_string());
+    std::string error_msg =
+      std::format("{} (offset: {})", ec.message(), ec.location().to_string());
     throw InputException(error_msg);
   }
-  
+
   if (!content.is_object())
     throw InputException("Invalid input.");
   boost::json::object json_input = content.get_object();
 
   // Main checks for valid json input.
   bool has_jobs = json_input.contains("jobs") &&
-                  json_input.at("jobs").is_array() && !json_input.at("jobs").get_array().empty();
+                  json_input.at("jobs").is_array() &&
+                  !json_input.at("jobs").get_array().empty();
   bool has_shipments = json_input.contains("shipments") &&
                        json_input.at("shipments").is_array() &&
                        !json_input.at("shipments").get_array().empty();
@@ -528,17 +537,20 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
     throw InputException("Invalid jobs or shipments.");
   }
 
-  if (!json_input.contains("vehicles") || !json_input.at("vehicles").is_array() ||
+  if (!json_input.contains("vehicles") ||
+      !json_input.at("vehicles").is_array() ||
       json_input.at("vehicles").get_array().empty()) {
     throw InputException("Invalid vehicles.");
   }
   const auto& first_vehicle = json_input.at("vehicles").at(0).get_object();
   check_id(first_vehicle, "vehicle");
-  bool first_vehicle_has_capacity = (first_vehicle.contains("capacity") &&
-                                     first_vehicle.at("capacity").is_array() &&
-                                     first_vehicle.at("capacity").get_array().size() > 0);
+  bool first_vehicle_has_capacity =
+    (first_vehicle.contains("capacity") &&
+     first_vehicle.at("capacity").is_array() &&
+     first_vehicle.at("capacity").get_array().size() > 0);
   const unsigned amount_size =
-    first_vehicle_has_capacity ? first_vehicle.at("capacity").get_array().size() : 0;
+    first_vehicle_has_capacity ? first_vehicle.at("capacity").get_array().size()
+                               : 0;
 
   input.set_amount_size(amount_size);
   input.set_geometry(geometry);
@@ -554,7 +566,8 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
   if (has_jobs) {
     // Add the jobs.
     for (size_t i = 0; i < json_input.at("jobs").get_array().size(); ++i) {
-      input.add_job(get_job(json_input.at("jobs").at(i).get_object(), amount_size));
+      input.add_job(
+        get_job(json_input.at("jobs").at(i).get_object(), amount_size));
     }
   }
 
@@ -631,7 +644,8 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
     // `matrices.DEFAULT_PROFILE.duration` for retro-compatibility.
     if (json_input.contains("matrix")) {
       input.set_durations_matrix(DEFAULT_PROFILE,
-                                 get_matrix<UserDuration>(json_input.at("matrix")));
+                                 get_matrix<UserDuration>(
+                                   json_input.at("matrix")));
     }
   }
 }

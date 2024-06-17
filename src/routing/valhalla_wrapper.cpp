@@ -136,14 +136,14 @@ bool ValhallaWrapper::distance_value_is_null(
 UserDuration ValhallaWrapper::get_duration_value(
   const boost::json::value& matrix_entry) const {
   assert(matrix_entry.at("time").is_number());
-  return utils::round<UserDuration>(matrix_entry.to_number<uint32_t>());
+  return matrix_entry.to_number<uint32_t>();
 }
 
 UserDistance ValhallaWrapper::get_distance_value(
   const boost::json::value& matrix_entry) const {
   assert(matrix_entry.at("distance").is_number());
-  return utils::round<UserDuration>(km_to_m *
-                                    matrix_entry.at("distance").to_number<double>());
+  return utils::round<UserDuration>(
+    km_to_m * matrix_entry.at("distance").to_number<double>());
 }
 
 unsigned

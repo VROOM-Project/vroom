@@ -68,7 +68,8 @@ void OsrmRoutedWrapper::check_response(const boost::json::object& json_result,
   assert(json_result.contains("code"));
   const std::string code = json_result.at("code").get_string().subview();
   if (code != "Ok") {
-    const std::string message = json_result.at("message").get_string().subview();
+    const std::string message =
+      json_result.at("message").get_string().subview();
     if (const std::string snapping_error_base =
           "Could not find a matching segment for coordinate ";
         code == "NoSegment" && message.starts_with(snapping_error_base)) {
