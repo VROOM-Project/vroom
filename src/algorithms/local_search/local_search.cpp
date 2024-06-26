@@ -2031,6 +2031,13 @@ void LocalSearch<Route,
         // Back to best known solution for further steps.
         _sol = _best_sol;
         _sol_state.setup(_sol);
+
+#ifdef LOG_LS
+        steps.push_back({utils::now(),
+                         log::EVENT::ROLLBACK,
+                         OperatorName::MAX,
+                         _best_sol_indicators});
+#endif
       }
     }
 
