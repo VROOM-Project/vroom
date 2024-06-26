@@ -14,7 +14,7 @@ All rights reserved (see LICENSE).
 
 namespace vroom::ls::log {
 
-enum class EVENT { START, OPERATOR };
+enum class EVENT { START, OPERATOR, JOB_ADDITION };
 
 template <class Route> struct Step {
   TimePoint time_point;

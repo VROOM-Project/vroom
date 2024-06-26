@@ -162,7 +162,12 @@ void LocalSearch<Route,
                  RouteSplit,
                  PriorityReplace,
                  TSPFix>::try_job_additions(const std::vector<Index>& routes,
-                                            double regret_coeff) {
+                                            double regret_coeff
+#ifdef LOG_LS
+                                            ,
+                                            bool log_addition_step
+#endif
+) {
   bool job_added;
 
   std::vector<std::vector<RouteInsertion>> route_job_insertions;
@@ -318,6 +323,15 @@ void LocalSearch<Route,
           route_job_insertions[best_route_idx][j].eval.cost += fixed_cost;
         }
       }
+
+#ifdef LOG_LS
+      if (log_addition_step) {
+        steps.push_back({utils::now(),
+                         log::EVENT::JOB_ADDITION,
+                         OperatorName::MAX,
+                         utils::SolutionIndicators<Route>(_input, _sol)});
+      }
+#endif
     }
   } while (job_added);
 
@@ -1876,7 +1890,12 @@ void LocalSearch<Route,
 
       try_job_additions(best_ops[best_source][best_target]
                           ->addition_candidates(),
-                        0);
+                        0
+#ifdef LOG_LS
+                        ,
+                        true
+#endif
+      );
 
       for (auto v_rank : update_candidates) {
         _sol_state.update_costs(_sol[v_rank].route, v_rank);
