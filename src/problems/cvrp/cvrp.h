@@ -25,7 +25,8 @@ public:
   explicit CVRP(const Input& input);
 
   Solution
-  solve(unsigned exploration_level,
+  solve(unsigned nb_searches,
+        unsigned depth,
         unsigned nb_threads,
         const Timeout& timeout,
         const std::vector<HeuristicParameters>& h_param) const override;
