@@ -2074,6 +2074,13 @@ void LocalSearch<Route,
         _sol_state.set_pd_matching_ranks(_sol[v].route, v);
         _sol_state.set_pd_gains(_sol[v].route, v);
       }
+
+#ifdef LOG_LS
+      steps.push_back({utils::now(),
+                       log::EVENT::RUIN,
+                       OperatorName::MAX,
+                       utils::SolutionIndicators<Route>(_input, _sol)});
+#endif
     }
 
     first_step = false;

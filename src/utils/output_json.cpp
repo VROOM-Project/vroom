@@ -439,6 +439,9 @@ rapidjson::Value to_json(const std::vector<ls::log::Step<Route>>& steps,
     case JOB_ADDITION:
       event = "JobAddition";
       break;
+    case RUIN:
+      event = "Ruin";
+      break;
     default:
       assert(false);
     }
