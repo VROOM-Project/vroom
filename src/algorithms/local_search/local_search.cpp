@@ -2031,14 +2031,16 @@ void LocalSearch<Route,
         // Back to best known solution for further steps.
         _sol = _best_sol;
         _sol_state.setup(_sol);
-
+      }
 #ifdef LOG_LS
+      if (_best_sol_indicators < current_sol_indicators or
+          _best_sol_indicators == current_sol_indicators) {
         steps.push_back({utils::now(),
                          log::EVENT::ROLLBACK,
                          OperatorName::MAX,
                          _best_sol_indicators});
-#endif
       }
+#endif
     }
 
     // Try again on each improvement until we reach last job removal
