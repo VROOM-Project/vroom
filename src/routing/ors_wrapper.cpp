@@ -65,18 +65,22 @@ void OrsWrapper::check_response(const rapidjson::Document& json_result,
                                 const std::vector<Location>&,
                                 const std::string&) const {
   if (json_result.HasMember("error")) {
-    if (json_result["error"].IsString()) {
-      if (json_result.HasMember("path") && json_result["path"].IsString()) {
-        throw RoutingException(std::string(json_result["error"].GetString()) +
-                               " " +
-                               std::string(json_result["path"].GetString()));
-      }
-      throw RoutingException(std::string(json_result["error"].GetString()));
-    }
-    if (json_result["error"].HasMember("message") &&
+    if (json_result["error"].IsObject() &&
+        json_result["error"].HasMember("message") &&
         json_result["error"]["message"].IsString()) {
+      // Normal ORS error syntax.
       throw RoutingException(
         std::string(json_result["error"]["message"].GetString()));
+    } else {
+      // Web framework error uses another convention, see #1083.
+      if (json_result["error"].IsString()) {
+        auto error = std::string(json_result["error"].GetString());
+
+        if (json_result.HasMember("path") && json_result["path"].IsString()) {
+          error += " " + std::string(json_result["path"].GetString());
+        }
+        throw RoutingException(error);
+      }
     }
   }
 }
