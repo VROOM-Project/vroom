@@ -29,6 +29,10 @@
 
 - Wrong compiler used for clang-based OSRM builds (#1098)
 
+#### Routing
+
+- ORS error handling (#1083)
+
 ## [v1.14.0] - 2024-01-16
 
 ### Added
