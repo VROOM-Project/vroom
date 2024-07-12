@@ -113,6 +113,29 @@ OsrmRoutedWrapper::get_legs_number(const rapidjson::Value& result) const {
   return result["routes"][0]["legs"].Size();
 }
 
+std::pair<std::vector<UserDuration>, std::vector<UserDistance>>
+OsrmRoutedWrapper::get_legs_info(const rapidjson::Value& result) const {
+  assert(result.HasMember("routes") and result["routes"].IsArray() and
+         !result["routes"].Empty() and result["routes"][0].HasMember("legs") and
+         result["routes"][0]["legs"].IsArray());
+  const auto& legs = result["routes"][0]["legs"];
+
+  std::vector<UserDuration> durations;
+  durations.reserve(legs.Size());
+  std::vector<UserDistance> distances;
+  distances.reserve(legs.Size());
+
+  for (rapidjson::SizeType i = 0; i < legs.Size(); ++i) {
+    assert(legs[i].HasMember("duration"));
+    durations.push_back(
+      utils::round<UserDuration>(legs[i]["duration"].GetDouble()));
+    distances.push_back(
+      utils::round<UserDistance>(legs[i]["distance"].GetDouble()));
+  }
+
+  return std::make_pair(std::move(durations), std::move(distances));
+}
+
 std::string OsrmRoutedWrapper::get_geometry(rapidjson::Value& result) const {
   return result["routes"][0]["geometry"].GetString();
 }
