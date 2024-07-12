@@ -68,6 +68,9 @@ protected:
 
   virtual unsigned get_legs_number(const rapidjson::Value& result) const = 0;
 
+  virtual std::pair<std::vector<UserDuration>, std::vector<UserDistance>>
+  get_legs_info(const rapidjson::Value& result) const = 0;
+
   virtual std::string get_geometry(rapidjson::Value& result) const = 0;
 
   void add_geometry(Route& route) const override;

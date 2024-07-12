@@ -37,6 +37,9 @@ private:
 
   unsigned get_legs_number(const rapidjson::Value& result) const override;
 
+  std::pair<std::vector<UserDuration>, std::vector<UserDistance>>
+  get_legs_info(const rapidjson::Value& result) const override;
+
   std::string get_geometry(rapidjson::Value& result) const override;
 
 public:
