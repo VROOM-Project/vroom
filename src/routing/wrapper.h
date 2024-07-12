@@ -14,17 +14,11 @@ All rights reserved (see LICENSE).
 
 #include "structures/generic/matrix.h"
 #include "structures/vroom/location.h"
+#include "structures/vroom/matrices.h"
 #include "structures/vroom/solution/route.h"
 #include "utils/exception.h"
 
 namespace vroom::routing {
-
-struct Matrices {
-  Matrix<UserDuration> durations;
-  Matrix<UserDistance> distances;
-
-  explicit Matrices(std::size_t n) : durations(n), distances(n){};
-};
 
 class Wrapper {
 
