@@ -201,6 +201,77 @@ Matrices HttpWrapper::get_matrices(const std::vector<Location>& locs) const {
   return m;
 }
 
+Matrices HttpWrapper::get_sparse_matrices(const std::string& profile,
+                                          const std::vector<Location>& locs,
+                                          const std::vector<Vehicle>& vehicles,
+                                          const std::vector<Job>& jobs) const {
+  std::size_t m_size = locs.size();
+  Matrices m(m_size);
+
+  for (const auto& v : vehicles) {
+    if (v.profile != profile) {
+      continue;
+    }
+
+    std::vector<Location> route_locs;
+    route_locs.reserve(v.steps.size());
+
+    bool has_job_steps = false;
+    for (const auto& step : v.steps) {
+      switch (step.type) {
+        using enum STEP_TYPE;
+      case START:
+        if (v.has_start()) {
+          route_locs.push_back(v.start.value());
+        }
+        break;
+      case END:
+        if (v.has_end()) {
+          route_locs.push_back(v.end.value());
+        }
+        break;
+      case BREAK:
+        break;
+      case JOB:
+        has_job_steps = true;
+        route_locs.push_back(jobs[step.rank].location);
+        break;
+      }
+    }
+
+    if (!has_job_steps) {
+      // No steps provided in input for vehicle, or only breaks in
+      // steps.
+      continue;
+    }
+    assert(route_locs.size() >= 2);
+
+    // TODO run route queries in parallel.
+    std::string query = build_query(route_locs, _route_service);
+
+    std::string json_string = this->run_query(query);
+
+    rapidjson::Document json_result;
+    parse_response(json_result, json_string);
+    this->check_response(json_result, route_locs, _route_service);
+
+    const auto [durations, distances] = get_legs_info(json_result);
+    assert(durations.size() == route_locs.size() - 1);
+    assert(durations.size() == distances.size());
+
+    for (std::size_t i = 0; i < durations.size(); ++i) {
+      m.durations[route_locs[i].index()][route_locs[i + 1].index()] =
+        durations[i];
+      m.distances[route_locs[i].index()][route_locs[i + 1].index()] =
+        distances[i];
+    }
+
+    // TODO get geometry and store it.
+  }
+
+  return m;
+}
+
 void HttpWrapper::add_geometry(Route& route) const {
   // Ordering locations for the given steps, excluding
   // breaks.

@@ -903,7 +903,10 @@ routing::Matrices Input::get_matrices_by_profile(const std::string& profile,
   });
   assert(rw != _routing_wrappers.end());
 
-  return sparse_filling ? (*rw)->get_matrices(_locations)
+  return sparse_filling ? (*rw)->get_sparse_matrices(profile,
+                                                     _locations,
+                                                     this->vehicles,
+                                                     this->jobs)
                         : (*rw)->get_matrices(_locations);
 }
 

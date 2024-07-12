@@ -16,6 +16,7 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/location.h"
 #include "structures/vroom/matrices.h"
 #include "structures/vroom/solution/route.h"
+#include "structures/vroom/vehicle.h"
 #include "utils/exception.h"
 
 namespace vroom::routing {
@@ -26,6 +27,11 @@ public:
   std::string profile;
 
   virtual Matrices get_matrices(const std::vector<Location>& locs) const = 0;
+
+  virtual Matrices get_sparse_matrices(const std::string& profile,
+                                       const std::vector<Location>& locs,
+                                       const std::vector<Vehicle>& vehicles,
+                                       const std::vector<Job>& jobs) const = 0;
 
   virtual void add_geometry(Route& route) const = 0;
 
