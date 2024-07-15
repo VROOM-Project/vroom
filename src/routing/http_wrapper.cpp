@@ -267,7 +267,7 @@ Matrices HttpWrapper::get_sparse_matrices(
         get_leg_distance(legs[i]);
     }
 
-    v_id_to_geom.insert(std::make_pair(v.id, get_geometry(json_result)));
+    v_id_to_geom.try_emplace(v.id, get_geometry(json_result));
   }
 
   return m;
