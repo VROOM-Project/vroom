@@ -255,15 +255,14 @@ Matrices HttpWrapper::get_sparse_matrices(const std::string& profile,
     parse_response(json_result, json_string);
     this->check_response(json_result, route_locs, _route_service);
 
-    const auto [durations, distances] = get_legs_info(json_result);
-    assert(durations.size() == route_locs.size() - 1);
-    assert(durations.size() == distances.size());
+    const auto& legs = get_legs(json_result);
+    assert(legs.Size() == route_locs.size() - 1);
 
-    for (std::size_t i = 0; i < durations.size(); ++i) {
+    for (rapidjson::SizeType i = 0; i < legs.Size(); ++i) {
       m.durations[route_locs[i].index()][route_locs[i + 1].index()] =
-        durations[i];
+        get_leg_duration(legs[i]);
       m.distances[route_locs[i].index()][route_locs[i + 1].index()] =
-        distances[i];
+        get_leg_distance(legs[i]);
     }
 
     // TODO get geometry and store it.
