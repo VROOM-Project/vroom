@@ -108,32 +108,25 @@ UserDistance OsrmRoutedWrapper::get_distance_value(
   return utils::round<UserDistance>(matrix_entry.GetDouble());
 }
 
-unsigned
-OsrmRoutedWrapper::get_legs_number(const rapidjson::Value& result) const {
-  return result["routes"][0]["legs"].Size();
+const rapidjson::Value&
+OsrmRoutedWrapper::get_legs(const rapidjson::Value& result) const {
+  assert(result.HasMember("routes") && result["routes"].IsArray() &&
+         !result["routes"].Empty() && result["routes"][0].HasMember("legs") &&
+         result["routes"][0]["legs"].IsArray());
+
+  return result["routes"][0]["legs"];
 }
 
-std::pair<std::vector<UserDuration>, std::vector<UserDistance>>
-OsrmRoutedWrapper::get_legs_info(const rapidjson::Value& result) const {
-  assert(result.HasMember("routes") and result["routes"].IsArray() and
-         !result["routes"].Empty() and result["routes"][0].HasMember("legs") and
-         result["routes"][0]["legs"].IsArray());
-  const auto& legs = result["routes"][0]["legs"];
+UserDuration
+OsrmRoutedWrapper::get_leg_duration(const rapidjson::Value& leg) const {
+  assert(leg.HasMember("duration"));
+  return utils::round<UserDuration>(leg["duration"].GetDouble());
+}
 
-  std::vector<UserDuration> durations;
-  durations.reserve(legs.Size());
-  std::vector<UserDistance> distances;
-  distances.reserve(legs.Size());
-
-  for (rapidjson::SizeType i = 0; i < legs.Size(); ++i) {
-    assert(legs[i].HasMember("duration"));
-    durations.push_back(
-      utils::round<UserDuration>(legs[i]["duration"].GetDouble()));
-    distances.push_back(
-      utils::round<UserDistance>(legs[i]["distance"].GetDouble()));
-  }
-
-  return std::make_pair(std::move(durations), std::move(distances));
+UserDistance
+OsrmRoutedWrapper::get_leg_distance(const rapidjson::Value& leg) const {
+  assert(leg.HasMember("distance"));
+  return utils::round<UserDistance>(leg["distance"].GetDouble());
 }
 
 std::string OsrmRoutedWrapper::get_geometry(rapidjson::Value& result) const {

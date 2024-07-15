@@ -90,8 +90,24 @@ OrsWrapper::get_distance_value(const rapidjson::Value& matrix_entry) const {
   return utils::round<UserDistance>(matrix_entry.GetDouble());
 }
 
-unsigned OrsWrapper::get_legs_number(const rapidjson::Value& result) const {
-  return result["routes"][0]["segments"].Size();
+const rapidjson::Value&
+OrsWrapper::get_legs(const rapidjson::Value& result) const {
+  assert(result.HasMember("routes") && result["routes"].IsArray() &&
+         !result["routes"].Empty() &&
+         result["routes"][0].HasMember("segments") &&
+         result["routes"][0]["segments"].IsArray());
+
+  return result["routes"][0]["segments"];
+}
+
+UserDuration OrsWrapper::get_leg_duration(const rapidjson::Value& leg) const {
+  assert(leg.HasMember("duration"));
+  return utils::round<UserDuration>(leg["duration"].GetDouble());
+}
+
+UserDistance OrsWrapper::get_leg_distance(const rapidjson::Value& leg) const {
+  assert(leg.HasMember("distance"));
+  return utils::round<UserDistance>(leg["distance"].GetDouble());
 }
 
 std::string OrsWrapper::get_geometry(rapidjson::Value& result) const {

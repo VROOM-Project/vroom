@@ -296,7 +296,7 @@ void HttpWrapper::add_geometry(Route& route) const {
                        non_break_locations, // not supposed to be used
                        _route_service);
 
-  assert(get_legs_number(json_result) == non_break_locations.size() - 1);
+  assert(get_legs(json_result).Size() == non_break_locations.size() - 1);
 
   route.geometry = get_geometry(json_result);
 }

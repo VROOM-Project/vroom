@@ -71,10 +71,12 @@ protected:
   virtual UserDistance
   get_distance_value(const rapidjson::Value& matrix_entry) const = 0;
 
-  virtual unsigned get_legs_number(const rapidjson::Value& result) const = 0;
+  virtual const rapidjson::Value&
+  get_legs(const rapidjson::Value& result) const = 0;
 
-  virtual std::pair<std::vector<UserDuration>, std::vector<UserDistance>>
-  get_legs_info(const rapidjson::Value& result) const = 0;
+  virtual UserDuration get_leg_duration(const rapidjson::Value& leg) const = 0;
+
+  virtual UserDistance get_leg_distance(const rapidjson::Value& leg) const = 0;
 
   virtual std::string get_geometry(rapidjson::Value& result) const = 0;
 
