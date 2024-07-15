@@ -956,8 +956,7 @@ void Input::set_matrices(unsigned nb_thread, bool sparse_filling) {
   std::mutex ep_m;
   std::mutex cost_bound_m;
 
-  auto run_on_profiles = [&](const std::vector<std::string>& profiles,
-                             bool sparse_filling) {
+  auto run_on_profiles = [&](const std::vector<std::string>& profiles) {
     try {
       for (const auto& profile : profiles) {
         auto durations_m = _durations_matrices.find(profile);
@@ -1069,7 +1068,7 @@ void Input::set_matrices(unsigned nb_thread, bool sparse_filling) {
   matrix_threads.reserve(thread_profiles.size());
 
   for (const auto& profiles : thread_profiles) {
-    matrix_threads.emplace_back(run_on_profiles, profiles, sparse_filling);
+    matrix_threads.emplace_back(run_on_profiles, profiles);
   }
 
   for (auto& t : matrix_threads) {
