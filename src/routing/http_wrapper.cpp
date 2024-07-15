@@ -201,10 +201,12 @@ Matrices HttpWrapper::get_matrices(const std::vector<Location>& locs) const {
   return m;
 }
 
-Matrices HttpWrapper::get_sparse_matrices(const std::string& profile,
-                                          const std::vector<Location>& locs,
-                                          const std::vector<Vehicle>& vehicles,
-                                          const std::vector<Job>& jobs) const {
+Matrices HttpWrapper::get_sparse_matrices(
+  const std::string& profile,
+  const std::vector<Location>& locs,
+  const std::vector<Vehicle>& vehicles,
+  const std::vector<Job>& jobs,
+  std::unordered_map<Id, std::string>& v_id_to_geom) const {
   std::size_t m_size = locs.size();
   Matrices m(m_size);
 
@@ -265,7 +267,7 @@ Matrices HttpWrapper::get_sparse_matrices(const std::string& profile,
         get_leg_distance(legs[i]);
     }
 
-    // TODO get geometry and store it.
+    v_id_to_geom.insert(std::make_pair(v.id, get_geometry(json_result)));
   }
 
   return m;

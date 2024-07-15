@@ -906,7 +906,8 @@ routing::Matrices Input::get_matrices_by_profile(const std::string& profile,
   return sparse_filling ? (*rw)->get_sparse_matrices(profile,
                                                      _locations,
                                                      this->vehicles,
-                                                     this->jobs)
+                                                     this->jobs,
+                                                     _vehicle_id_to_geometry)
                         : (*rw)->get_matrices(_locations);
 }
 
@@ -1208,15 +1209,8 @@ Solution Input::check(unsigned nb_thread) {
 
   if (_geometry) {
     for (auto& route : sol.routes) {
-      const auto& profile = route.profile;
-      auto rw = std::ranges::find_if(_routing_wrappers, [&](const auto& wr) {
-        return wr->profile == profile;
-      });
-      if (rw == _routing_wrappers.end()) {
-        throw InputException(
-          "Route geometry request with non-routable profile " + profile + ".");
-      }
-      (*rw)->add_geometry(route);
+      assert(_vehicle_id_to_geometry.contains(route.vehicle));
+      route.geometry = std::move(_vehicle_id_to_geometry.at(route.vehicle));
     }
 
     _end_routing = std::chrono::high_resolution_clock::now();

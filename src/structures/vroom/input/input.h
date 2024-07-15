@@ -78,6 +78,10 @@ private:
   bool _all_locations_have_coords{true};
   std::vector<std::vector<Eval>> _jobs_vehicles_evals;
 
+  // Used in plan mode since we store route geometries while
+  // generating sparse matrices.
+  std::unordered_map<Id, std::string> _vehicle_id_to_geometry;
+
   unsigned _amount_size{0};
   Amount _zero{0};
 

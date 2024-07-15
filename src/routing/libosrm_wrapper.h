@@ -31,10 +31,12 @@ public:
 
   Matrices get_matrices(const std::vector<Location>& locs) const override;
 
-  Matrices get_sparse_matrices(const std::string& profile,
-                               const std::vector<Location>& locs,
-                               const std::vector<Vehicle>& vehicles,
-                               const std::vector<Job>& jobs) const override;
+  Matrices get_sparse_matrices(
+    const std::string& profile,
+    const std::vector<Location>& locs,
+    const std::vector<Vehicle>& vehicles,
+    const std::vector<Job>& jobs,
+    std::unordered_map<Id, std::string>& v_id_to_geom) const override;
 
   void add_geometry(Route& route) const override;
 };
