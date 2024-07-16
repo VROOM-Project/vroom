@@ -36,9 +36,7 @@ public:
                             Matrices& m,
                             std::mutex& matrix_m,
                             std::unordered_map<Id, std::string>& v_id_to_geom,
-                            std::mutex& id_to_geom_m) const override {
-    // TODO implement
-  }
+                            std::mutex& id_to_geom_m) const override;
 
   void add_geometry(Route& route) const override;
 };
