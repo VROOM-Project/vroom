@@ -120,20 +120,6 @@ Matrices LibosrmWrapper::get_matrices(const std::vector<Location>& locs) const {
   return m;
 }
 
-Matrices LibosrmWrapper::get_sparse_matrices(
-  const std::string& profile,
-  const std::vector<Location>& locs,
-  const std::vector<Vehicle>& vehicles,
-  const std::vector<Job>& jobs,
-  std::unordered_map<Id, std::string>& v_id_to_geom) const {
-  std::size_t m_size = locs.size();
-  Matrices m(m_size);
-
-  // TODO implement
-
-  return m;
-}
-
 void LibosrmWrapper::add_geometry(Route& route) const {
   // Default options for routing.
   osrm::RouteParameters params(false, // steps
