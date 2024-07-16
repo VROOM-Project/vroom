@@ -8,7 +8,6 @@ All rights reserved (see LICENSE).
 */
 
 #include <algorithm>
-
 #include <boost/json.hpp>
 
 #include "utils/input_parser.h"
@@ -18,12 +17,12 @@ namespace vroom::io {
 // Helper to get optional array of coordinates.
 inline Coordinates parse_coordinates(const boost::json::object& object,
                                      const char* key) {
-  if (!object.at(key).is_array() || (object.at(key).get_array().size() < 2) ||
-      !object.at(key).at(0).is_number() || !object.at(key).at(1).is_number()) {
+  boost::json::array const array = object.at(key).get_array();
+  if ((array.size() < 2) || !array[0].is_number() || !array[1].is_number()) {
     throw InputException("Invalid " + std::string(key) + " array.");
   }
-  return {object.at(key).at(0).to_number<double>(),
-          object.at(key).at(1).to_number<double>()};
+  return {array[0].to_number<double>(),
+          array[1].to_number<double>()};
 }
 
 inline std::string get_string(const boost::json::object& object,
@@ -34,7 +33,6 @@ inline std::string get_string(const boost::json::object& object,
       throw InputException("Invalid " + std::string(key) + " value.");
     }
     value = object.at(key).get_string().subview();
-    ;
   }
   return value;
 }
@@ -61,18 +59,20 @@ inline Amount get_amount(const boost::json::object& object,
       throw InputException("Invalid " + std::string(key) + " array.");
     }
 
-    if (object.at(key).get_array().size() != amount_size) {
+    boost::json::array const array = object.at(key).get_array();
+
+    if (array.size() != amount_size) {
       throw InputException(std::format("Inconsistent {} length: {} and {}.",
                                        key,
-                                       object.at(key).get_array().size(),
+                                       array.size(),
                                        amount_size));
     }
 
-    for (size_t i = 0; i < object.at(key).get_array().size(); ++i) {
-      if (!object.at(key).at(i).is_number()) {
+    for (size_t i = 0; i < array.size(); ++i) {
+      if (!array[i].is_number()) {
         throw InputException("Invalid " + std::string(key) + " value.");
       }
-      amount[i] = object.at(key).at(i).to_number<uint32_t>();
+      amount[i] = array[i].to_number<uint32_t>();
     }
   }
 
@@ -85,11 +85,14 @@ inline Skills get_skills(const boost::json::object& object) {
     if (!object.at("skills").is_array()) {
       throw InputException("Invalid skills object.");
     }
-    for (size_t i = 0; i < object.at("skills").get_array().size(); ++i) {
-      if (!object.at("skills").at(i).is_number()) {
+
+    boost::json::array const array = object.at("skills").get_array();
+
+    for (size_t i = 0; i < array.size(); ++i) {
+      if (!array[i].is_number()) {
         throw InputException("Invalid skill value.");
       }
-      skills.insert(object.at("skills").at(i).to_number<uint32_t>());
+      skills.insert(array[i].to_number<uint32_t>());
     }
   }
 
@@ -514,7 +517,12 @@ template <class T> inline Matrix<T> get_matrix(boost::json::value& m) {
 void parse(Input& input, const std::string& input_str, bool geometry) {
   // Input json object.
   boost::json::error_code ec;
-  auto content = boost::json::parse(input_str, ec);
+  boost::json::monotonic_resource mr;
+  boost::json::parse_options opt;
+  opt.numbers = boost::json::number_precision::precise;
+  opt.allow_comments = true;
+  opt.allow_trailing_commas = true;
+  auto const content = boost::json::parse(input_str, ec, &mr, opt);
 
   if (ec) {
     std::string error_msg =
