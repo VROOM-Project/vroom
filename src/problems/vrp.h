@@ -22,6 +22,11 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/input/input.h"
 #include "structures/vroom/solution/solution.h"
 
+#ifdef LOG_LS
+#include "algorithms/local_search/log_local_search.h"
+#include "utils/output_json.h"
+#endif
+
 namespace vroom {
 
 class VRP {
@@ -31,7 +36,8 @@ protected:
 
   template <class Route, class LocalSearch>
   Solution solve(
-    unsigned exploration_level,
+    unsigned nb_searches,
+    unsigned depth,
     unsigned nb_threads,
     const Timeout& timeout,
     const std::vector<HeuristicParameters>& h_param,
@@ -43,20 +49,9 @@ protected:
                              : (_input.has_homogeneous_locations())
                                ? homogeneous_parameters
                                : heterogeneous_parameters;
-    unsigned max_nb_jobs_removal = exploration_level;
-    unsigned nb_init_solutions = h_param.size();
-
-    if (nb_init_solutions == 0) {
-      // Local search parameter.
-      nb_init_solutions = 4 * (exploration_level + 1);
-      if (exploration_level >= 4) {
-        nb_init_solutions += 4;
-      }
-      if (exploration_level == MAX_EXPLORATION_LEVEL) {
-        nb_init_solutions += 4;
-      }
-    }
-    assert(nb_init_solutions <= parameters.size());
+    assert(nb_searches != 0);
+    nb_searches =
+      std::min(nb_searches, static_cast<unsigned>(parameters.size()));
 
     // Build empty solutions to be filled by heuristics.
     std::vector<Route> empty_sol;
@@ -66,7 +61,12 @@ protected:
       empty_sol.emplace_back(_input, v, _input.zero_amount().size());
     }
 
-    std::vector<std::vector<Route>> solutions(nb_init_solutions, empty_sol);
+    std::vector<std::vector<Route>> solutions(nb_searches, empty_sol);
+
+#ifdef LOG_LS
+    std::vector<ls::log::Dump<Route>> ls_dumps;
+    ls_dumps.reserve(nb_searches);
+#endif
 
     // Heuristics operate on all jobs.
     std::vector<Index> jobs_ranks(_input.jobs.size());
@@ -79,8 +79,12 @@ protected:
     // Split the heuristic parameters among threads.
     std::vector<std::vector<std::size_t>>
       thread_ranks(nb_threads, std::vector<std::size_t>());
-    for (std::size_t i = 0; i < nb_init_solutions; ++i) {
+    for (std::size_t i = 0; i < nb_searches; ++i) {
       thread_ranks[i % nb_threads].push_back(i);
+
+#ifdef LOG_LS
+      ls_dumps.push_back({parameters[i], {}});
+#endif
     }
 
     std::exception_ptr ep = nullptr;
@@ -161,6 +165,9 @@ protected:
 
             if (h_other_eval < h_eval) {
               solutions[rank] = std::move(other_sol);
+#ifdef LOG_LS
+              ls_dumps[rank].heuristic_parameters.sort = SORT::COST;
+#endif
             }
           }
         }
@@ -203,6 +210,9 @@ protected:
     for (auto remove_rank = to_remove.rbegin(); remove_rank != to_remove.rend();
          remove_rank++) {
       solutions.erase(solutions.begin() + *remove_rank);
+#ifdef LOG_LS
+      ls_dumps.erase(ls_dumps.begin() + *remove_rank);
+#endif
     }
 
     // Split local searches across threads.
@@ -228,16 +238,16 @@ protected:
 
         for (auto rank : sol_ranks) {
           // Local search phase.
-          LocalSearch ls(_input,
-                         solutions[rank],
-                         max_nb_jobs_removal,
-                         search_time);
+          LocalSearch ls(_input, solutions[rank], depth, search_time);
           ls.run();
 
           // Store solution indicators.
           sol_indicators[rank] = ls.indicators();
 #ifdef LOG_LS_OPERATORS
           ls_stats[rank] = ls.get_stats();
+#endif
+#ifdef LOG_LS
+          ls_dumps[rank].steps = ls.get_steps();
 #endif
         }
       } catch (...) {
@@ -267,6 +277,10 @@ protected:
     utils::log_LS_operators(ls_stats);
 #endif
 
+#ifdef LOG_LS
+    io::write_LS_logs_to_json(ls_dumps);
+#endif
+
     auto best_indic =
       std::min_element(sol_indicators.cbegin(), sol_indicators.cend());
 
@@ -282,7 +296,8 @@ public:
   virtual ~VRP();
 
   virtual Solution
-  solve(unsigned exploration_level,
+  solve(unsigned nb_searches,
+        unsigned depth,
         unsigned nb_threads,
         const Timeout& timeout,
         const std::vector<HeuristicParameters>& h_param) const = 0;

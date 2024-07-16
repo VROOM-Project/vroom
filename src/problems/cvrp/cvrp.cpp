@@ -143,7 +143,8 @@ const std::vector<HeuristicParameters> CVRP::heterogeneous_parameters =
 CVRP::CVRP(const Input& input) : VRP(input) {
 }
 
-Solution CVRP::solve(unsigned exploration_level,
+Solution CVRP::solve(unsigned nb_searches,
+                     unsigned depth,
                      unsigned nb_threads,
                      const Timeout& timeout,
                      const std::vector<HeuristicParameters>& h_param) const {
@@ -164,7 +165,8 @@ Solution CVRP::solve(unsigned exploration_level,
     return utils::format_solution(_input, {r});
   }
 
-  return VRP::solve<RawRoute, cvrp::LocalSearch>(exploration_level,
+  return VRP::solve<RawRoute, cvrp::LocalSearch>(nb_searches,
+                                                 depth,
                                                  nb_threads,
                                                  timeout,
                                                  h_param,

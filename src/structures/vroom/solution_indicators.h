@@ -56,6 +56,23 @@ template <class Route> struct SolutionIndicators {
                                                   rhs.eval.duration,
                                                   rhs.eval.distance);
   }
+
+#ifdef LOG_LS
+  friend bool operator==(const SolutionIndicators& lhs,
+                         const SolutionIndicators& rhs) {
+    return std::tie(rhs.priority_sum,
+                    rhs.assigned,
+                    lhs.eval.cost,
+                    lhs.used_vehicles,
+                    lhs.eval.duration,
+                    lhs.eval.distance) == std::tie(lhs.priority_sum,
+                                                   lhs.assigned,
+                                                   rhs.eval.cost,
+                                                   rhs.used_vehicles,
+                                                   rhs.eval.duration,
+                                                   rhs.eval.distance);
+  }
+#endif
 };
 
 } // namespace vroom::utils
