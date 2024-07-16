@@ -7,6 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <thread>
 #include <utility>
 
 #include <asio.hpp>
@@ -210,64 +211,88 @@ Matrices HttpWrapper::get_sparse_matrices(
   std::size_t m_size = locs.size();
   Matrices m(m_size);
 
-  for (const auto& v : vehicles) {
-    if (v.profile != profile) {
-      continue;
-    }
+  std::exception_ptr ep = nullptr;
+  std::mutex ep_m;
+  std::mutex id_to_geom_m;
+  std::mutex matrix_m;
 
-    std::vector<Location> route_locs;
-    route_locs.reserve(v.steps.size());
+  auto run_on_vehicle = [&](const Vehicle& v) {
+    try {
+      std::vector<Location> route_locs;
+      route_locs.reserve(v.steps.size());
 
-    bool has_job_steps = false;
-    for (const auto& step : v.steps) {
-      switch (step.type) {
-        using enum STEP_TYPE;
-      case START:
-        if (v.has_start()) {
-          route_locs.push_back(v.start.value());
+      bool has_job_steps = false;
+      for (const auto& step : v.steps) {
+        switch (step.type) {
+          using enum STEP_TYPE;
+        case START:
+          if (v.has_start()) {
+            route_locs.push_back(v.start.value());
+          }
+          break;
+        case END:
+          if (v.has_end()) {
+            route_locs.push_back(v.end.value());
+          }
+          break;
+        case BREAK:
+          break;
+        case JOB:
+          has_job_steps = true;
+          route_locs.push_back(jobs[step.rank].location);
+          break;
         }
-        break;
-      case END:
-        if (v.has_end()) {
-          route_locs.push_back(v.end.value());
-        }
-        break;
-      case BREAK:
-        break;
-      case JOB:
-        has_job_steps = true;
-        route_locs.push_back(jobs[step.rank].location);
-        break;
       }
+
+      if (!has_job_steps) {
+        // No steps provided in input for vehicle, or only breaks in
+        // steps.
+        return;
+      }
+      assert(route_locs.size() >= 2);
+
+      std::string query = build_query(route_locs, _route_service);
+
+      std::string json_string = this->run_query(query);
+
+      rapidjson::Document json_result;
+      parse_response(json_result, json_string);
+      this->check_response(json_result, route_locs, _route_service);
+
+      const auto& legs = get_legs(json_result);
+      assert(legs.Size() == route_locs.size() - 1);
+
+      for (rapidjson::SizeType i = 0; i < legs.Size(); ++i) {
+        std::scoped_lock<std::mutex> lock(matrix_m);
+        m.durations[route_locs[i].index()][route_locs[i + 1].index()] =
+          get_leg_duration(legs[i]);
+        m.distances[route_locs[i].index()][route_locs[i + 1].index()] =
+          get_leg_distance(legs[i]);
+      }
+
+      std::scoped_lock<std::mutex> lock(id_to_geom_m);
+      v_id_to_geom.try_emplace(v.id, get_geometry(json_result));
+    } catch (...) {
+      std::scoped_lock<std::mutex> lock(ep_m);
+      ep = std::current_exception();
     }
+  };
 
-    if (!has_job_steps) {
-      // No steps provided in input for vehicle, or only breaks in
-      // steps.
-      continue;
+  std::vector<std::jthread> vehicles_threads;
+  vehicles_threads.reserve(vehicles.size());
+
+  for (const auto& v : vehicles) {
+    if (v.profile == profile) {
+      vehicles_threads.emplace_back(run_on_vehicle, v);
     }
-    assert(route_locs.size() >= 2);
+  }
 
-    // TODO run route queries in parallel.
-    std::string query = build_query(route_locs, _route_service);
+  for (auto& t : vehicles_threads) {
+    t.join();
+  }
 
-    std::string json_string = this->run_query(query);
-
-    rapidjson::Document json_result;
-    parse_response(json_result, json_string);
-    this->check_response(json_result, route_locs, _route_service);
-
-    const auto& legs = get_legs(json_result);
-    assert(legs.Size() == route_locs.size() - 1);
-
-    for (rapidjson::SizeType i = 0; i < legs.Size(); ++i) {
-      m.durations[route_locs[i].index()][route_locs[i + 1].index()] =
-        get_leg_duration(legs[i]);
-      m.distances[route_locs[i].index()][route_locs[i + 1].index()] =
-        get_leg_distance(legs[i]);
-    }
-
-    v_id_to_geom.try_emplace(v.id, get_geometry(json_result));
+  if (ep != nullptr) {
+    std::rethrow_exception(ep);
   }
 
   return m;
