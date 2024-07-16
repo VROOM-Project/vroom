@@ -8,6 +8,7 @@
 
 #### Internals
 
+- Bypass matrix request in `plan` mode (#444)
 - Refactor `Matrix` template class (#1089)
 
 #### CI
