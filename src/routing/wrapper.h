@@ -31,8 +31,7 @@ public:
   virtual Matrices get_matrices(const std::vector<Location>& locs) const = 0;
 
   Matrices
-  get_sparse_matrices(const std::string& profile,
-                      const std::vector<Location>& locs,
+  get_sparse_matrices(const std::vector<Location>& locs,
                       const std::vector<Vehicle>& vehicles,
                       const std::vector<Job>& jobs,
                       std::unordered_map<Id, std::string>& v_id_to_geom) const {
@@ -97,7 +96,7 @@ public:
     vehicles_threads.reserve(vehicles.size());
 
     for (const auto& v : vehicles) {
-      if (v.profile == profile) {
+      if (v.profile == this->profile) {
         vehicles_threads.emplace_back(run_on_vehicle, v);
       }
     }
