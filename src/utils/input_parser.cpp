@@ -520,8 +520,6 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
   boost::json::monotonic_resource mr;
   boost::json::parse_options opt;
   opt.numbers = boost::json::number_precision::precise;
-  opt.allow_comments = true;
-  opt.allow_trailing_commas = true;
   auto const content = boost::json::parse(input_str, ec, &mr, opt);
 
   if (ec) {
