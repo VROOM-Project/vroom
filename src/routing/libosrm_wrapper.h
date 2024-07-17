@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include "osrm/coordinate.hpp"
 #include "osrm/engine_config.hpp"
 #include "osrm/osrm.hpp"
 
@@ -23,6 +24,9 @@ class LibosrmWrapper : public Wrapper {
 private:
   osrm::EngineConfig _config;
   const osrm::OSRM _osrm;
+
+  osrm::json::Object get_route_with_coordinates(
+    std::vector<osrm::util::Coordinate>&& coords) const;
 
   static osrm::EngineConfig get_config(const std::string& profile);
 

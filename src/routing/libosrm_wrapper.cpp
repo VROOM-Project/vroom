@@ -9,7 +9,6 @@ All rights reserved (see LICENSE).
 
 #include <cstdint>
 
-#include "osrm/coordinate.hpp"
 #include "osrm/json_container.hpp"
 #include "osrm/route_parameters.hpp"
 #include "osrm/status.hpp"
@@ -120,13 +119,8 @@ Matrices LibosrmWrapper::get_matrices(const std::vector<Location>& locs) const {
   return m;
 }
 
-void LibosrmWrapper::update_sparse_matrix(
-  const Id v_id,
-  const std::vector<Location>& route_locs,
-  Matrices& m,
-  std::mutex& matrix_m,
-  std::unordered_map<Id, std::string>& v_id_to_geom,
-  std::mutex& id_to_geom_m) const {
+osrm::json::Object LibosrmWrapper::get_route_with_coordinates(
+  std::vector<osrm::util::Coordinate>&& coords) const {
   // Default options for routing.
   osrm::RouteParameters params(false, // steps
                                false, // alternatives
@@ -135,13 +129,8 @@ void LibosrmWrapper::update_sparse_matrix(
                                osrm::RouteParameters::OverviewType::Full,
                                false // continue_straight
   );
-  params.coordinates.reserve(route_locs.size());
 
-  for (const auto& loc : route_locs) {
-    assert(loc.has_coordinates());
-    params.coordinates.emplace_back(osrm::util::FloatLongitude({loc.lon()}),
-                                    osrm::util::FloatLatitude({loc.lat()}));
-  }
+  params.coordinates = std::move(coords);
 
   osrm::json::Object result;
   osrm::Status status = _osrm.Route(params, result);
@@ -153,7 +142,27 @@ void LibosrmWrapper::update_sparse_matrix(
   }
 
   auto& result_routes = result.values["routes"].get<osrm::json::Array>();
-  auto& json_route = result_routes.values.at(0).get<osrm::json::Object>();
+  return std::move(result_routes.values.at(0).get<osrm::json::Object>());
+}
+
+void LibosrmWrapper::update_sparse_matrix(
+  const Id v_id,
+  const std::vector<Location>& route_locs,
+  Matrices& m,
+  std::mutex& matrix_m,
+  std::unordered_map<Id, std::string>& v_id_to_geom,
+  std::mutex& id_to_geom_m) const {
+  std::vector<osrm::util::Coordinate> coords;
+  coords.reserve(route_locs.size());
+
+  for (const auto& loc : route_locs) {
+    assert(loc.has_coordinates());
+    coords.emplace_back(osrm::util::FloatLongitude({loc.lon()}),
+                        osrm::util::FloatLatitude({loc.lat()}));
+  }
+
+  auto json_route = get_route_with_coordinates(std::move(coords));
+
   auto& legs = json_route.values["legs"].get<osrm::json::Array>();
   assert(legs.values.size() == route_locs.size() - 1);
 
@@ -177,15 +186,8 @@ void LibosrmWrapper::update_sparse_matrix(
 };
 
 void LibosrmWrapper::add_geometry(Route& route) const {
-  // Default options for routing.
-  osrm::RouteParameters params(false, // steps
-                               false, // alternatives
-                               false, // annotations
-                               osrm::RouteParameters::GeometriesType::Polyline,
-                               osrm::RouteParameters::OverviewType::Full,
-                               false // continue_straight
-  );
-  params.coordinates.reserve(route.steps.size());
+  std::vector<osrm::util::Coordinate> coords;
+  coords.reserve(route.steps.size());
 
   // Ordering locations for the given steps, excluding
   // breaks.
@@ -194,22 +196,12 @@ void LibosrmWrapper::add_geometry(Route& route) const {
       assert(step.location.has_value());
       const auto& loc = step.location.value();
       assert(loc.has_coordinates());
-      params.coordinates.emplace_back(osrm::util::FloatLongitude({loc.lon()}),
-                                      osrm::util::FloatLatitude({loc.lat()}));
+      coords.emplace_back(osrm::util::FloatLongitude({loc.lon()}),
+                          osrm::util::FloatLatitude({loc.lat()}));
     }
   }
 
-  osrm::json::Object result;
-  osrm::Status status = _osrm.Route(params, result);
-
-  if (status == osrm::Status::Error) {
-    throw RoutingException(
-      result.values["code"].get<osrm::json::String>().value + ": " +
-      result.values["message"].get<osrm::json::String>().value);
-  }
-
-  auto& result_routes = result.values["routes"].get<osrm::json::Array>();
-  auto& json_route = result_routes.values.at(0).get<osrm::json::Object>();
+  auto json_route = get_route_with_coordinates(std::move(coords));
 
   // Total distance and route geometry.
   route.geometry =
