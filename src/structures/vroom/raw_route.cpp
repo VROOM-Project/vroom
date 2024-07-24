@@ -8,6 +8,7 @@ All rights reserved (see LICENSE).
 */
 
 #include "structures/vroom/raw_route.h"
+#include "structures/prepostview.h"
 
 namespace vroom {
 
@@ -322,6 +323,13 @@ template bool RawRoute::is_valid_addition_for_capacity_inclusion(
   Amount delivery,
   const std::vector<Index>::reverse_iterator first_job,
   const std::vector<Index>::reverse_iterator last_job,
+  const Index first_rank,
+  const Index last_rank) const;
+template bool RawRoute::is_valid_addition_for_capacity_inclusion(
+  const Input& input,
+  Amount delivery,
+  const prepostview<Index>::iterator first_job,
+  const prepostview<Index>::iterator last_job,
   const Index first_rank,
   const Index last_rank) const;
 template void RawRoute::replace(const Input& input,
