@@ -423,7 +423,7 @@ rapidjson::Value to_json(const std::vector<ls::log::Step<Route>>& steps,
   for (const auto& step : steps) {
     rapidjson::Value json_step(rapidjson::kObjectType);
 
-    const auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(
+    const auto delta = std::chrono::duration_cast<std::chrono::microseconds>(
       step.time_point - start_time);
     json_step.AddMember("time", delta.count(), allocator);
 
