@@ -34,6 +34,7 @@ struct Route {
   Violations violations;
 
   std::string geometry;
+  std::string rawroute;
 
   Route();
 

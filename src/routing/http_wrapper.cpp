@@ -11,7 +11,9 @@ All rights reserved (see LICENSE).
 
 #include <asio.hpp>
 #include <asio/ssl.hpp>
-
+#include <fstream>
+#include <iostream>
+#include <sstream>
 #include "routing/http_wrapper.h"
 
 using asio::ip::tcp;
@@ -227,6 +229,8 @@ void HttpWrapper::add_geometry(Route& route) const {
 
   assert(get_legs_number(json_result) == non_break_locations.size() - 1);
 
+    
+  route.rawroute = json_string;
   route.geometry = get_geometry(json_result);
 }
 

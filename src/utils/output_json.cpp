@@ -263,6 +263,9 @@ rapidjson::Value to_json(const Route& route,
                                      route.geometry.size());
   }
 
+  json_route.AddMember("rawroute", rapidjson::Value(), allocator);
+  json_route["rawroute"].SetString(route.rawroute.c_str(),route.rawroute.size());
+
   return json_route;
 }
 
