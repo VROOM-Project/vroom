@@ -436,6 +436,9 @@ rapidjson::Value to_json(const std::vector<ls::log::Step<Route>>& steps,
     case OPERATOR:
       event = OPERATOR_NAMES[step.operator_name];
       break;
+    case LOCAL_MINIMA:
+      event = "LocalMinima";
+      break;
     case JOB_ADDITION:
       event = "JobAddition";
       break;

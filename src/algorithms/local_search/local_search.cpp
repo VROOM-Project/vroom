@@ -2023,6 +2023,13 @@ void LocalSearch<Route,
         current_sol_indicators < _best_sol_indicators) {
       _best_sol_indicators = current_sol_indicators;
       _best_sol = _sol;
+
+#ifdef LOG_LS
+      steps.push_back({utils::now(),
+                       log::EVENT::LOCAL_MINIMA,
+                       OperatorName::MAX,
+                       _best_sol_indicators});
+#endif
     } else {
       if (!first_step) {
         ++current_nb_removal;
