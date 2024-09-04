@@ -18,6 +18,7 @@
 - Update Ubuntu image to 24.04 (#1080)
 - `vroom` workflow uses g++-14 and clang++-18 (#1080)
 - `vroom + libosrm` workflow uses g++-13 and clang++-17 (#1080)
+- Update clang-format to 18 (#1148)
 
 ### Fixed
 
