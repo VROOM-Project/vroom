@@ -230,6 +230,17 @@ void check_priority(const Priority priority,
   }
 }
 
+std::vector<Job> get_unassigned_jobs_from_ranks(
+  const Input& input,
+  const std::unordered_set<Index>& unassigned_ranks) {
+  std::vector<Job> unassigned_jobs;
+  std::ranges::transform(unassigned_ranks,
+                         std::back_inserter(unassigned_jobs),
+                         [&](auto j) { return input.jobs[j]; });
+
+  return unassigned_jobs;
+}
+
 Solution format_solution(const Input& input, const RawSolution& raw_routes) {
   std::vector<Route> routes;
   routes.reserve(raw_routes.size());
@@ -384,15 +395,10 @@ Solution format_solution(const Input& input, const RawSolution& raw_routes) {
                         v.description);
   }
 
-  // Handle unassigned jobs.
-  std::vector<Job> unassigned_jobs;
-  std::ranges::transform(unassigned_ranks,
-                         std::back_inserter(unassigned_jobs),
-                         [&](auto j) { return input.jobs[j]; });
-
   return Solution(input.zero_amount(),
                   std::move(routes),
-                  std::move(unassigned_jobs));
+                  std::move(
+                    get_unassigned_jobs_from_ranks(input, unassigned_ranks)));
 }
 
 Route format_route(const Input& input,
@@ -891,15 +897,10 @@ Solution format_solution(const Input& input, const TWSolution& tw_routes) {
     }
   }
 
-  // Handle unassigned jobs.
-  std::vector<Job> unassigned_jobs;
-  std::ranges::transform(unassigned_ranks,
-                         std::back_inserter(unassigned_jobs),
-                         [&](auto j) { return input.jobs[j]; });
-
   return Solution(input.zero_amount(),
                   std::move(routes),
-                  std::move(unassigned_jobs));
+                  std::move(
+                    get_unassigned_jobs_from_ranks(input, unassigned_ranks)));
 }
 
 } // namespace vroom::utils
