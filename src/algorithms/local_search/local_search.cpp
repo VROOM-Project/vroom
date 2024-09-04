@@ -2070,6 +2070,13 @@ void LocalSearch<Route,
         }
       }
 
+#ifdef LOG_LS
+      steps.push_back({utils::now(),
+                       log::EVENT::RUIN,
+                       OperatorName::MAX,
+                       utils::SolutionIndicators<Route>(_input, _sol)});
+#endif
+
       // Update insertion ranks ranges.
       for (std::size_t v = 0; v < _sol.size(); ++v) {
         _sol_state.set_insertion_ranks(_sol[v], v);
@@ -2093,7 +2100,7 @@ void LocalSearch<Route,
 
 #ifdef LOG_LS
       steps.push_back({utils::now(),
-                       log::EVENT::RUIN,
+                       log::EVENT::RECREATE,
                        OperatorName::MAX,
                        utils::SolutionIndicators<Route>(_input, _sol)});
 #endif

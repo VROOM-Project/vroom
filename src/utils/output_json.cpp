@@ -445,6 +445,9 @@ rapidjson::Value to_json(const std::vector<ls::log::Step<Route>>& steps,
     case RUIN:
       event = "Ruin";
       break;
+    case RECREATE:
+      event = "Recreate";
+      break;
     case ROLLBACK:
       event = "Rollback";
       break;

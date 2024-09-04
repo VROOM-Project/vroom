@@ -20,6 +20,7 @@ enum class EVENT {
   LOCAL_MINIMA,
   JOB_ADDITION,
   RUIN,
+  RECREATE,
   ROLLBACK
 };
 
