@@ -9,6 +9,7 @@
 #### Internals
 
 - Refactor `Matrix` template class (#1089)
+- Refactor to use `std::format` whenever possible (#1081)
 
 #### CI
 
@@ -17,6 +18,7 @@
 - Update Ubuntu image to 24.04 (#1080)
 - `vroom` workflow uses g++-14 and clang++-18 (#1080)
 - `vroom + libosrm` workflow uses g++-13 and clang++-17 (#1080)
+- Update clang-format to 18 (#1148)
 
 ### Fixed
 
@@ -27,6 +29,10 @@
 #### CI
 
 - Wrong compiler used for clang-based OSRM builds (#1098)
+
+#### Routing
+
+- ORS error handling (#1083)
 
 ## [v1.14.0] - 2024-01-16
 
