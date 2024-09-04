@@ -20,7 +20,7 @@ OsrmRoutedWrapper::OsrmRoutedWrapper(const std::string& profile,
                 "durations",
                 "distances",
                 "route",
-                "alternatives=false&steps=false&overview=full&continue_"
+                "alternatives=false&steps=true&overview=full&continue_"
                 "straight=false") {
 }
 
@@ -116,5 +116,12 @@ OsrmRoutedWrapper::get_legs_number(const rapidjson::Value& result) const {
 std::string OsrmRoutedWrapper::get_geometry(rapidjson::Value& result) const {
   return result["routes"][0]["geometry"].GetString();
 }
+ 
+rapidjson::Value OsrmRoutedWrapper::get_legs(rapidjson::Value& result, rapidjson::Document::AllocatorType& allocator) const {
+  rapidjson::Value legs(rapidjson::kArrayType);
+  legs.CopyFrom(result["routes"][0]["legs"], allocator);
+  return legs;
+}
+ 
 
 } // namespace vroom::routing

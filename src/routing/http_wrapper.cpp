@@ -232,6 +232,11 @@ void HttpWrapper::add_geometry(Route& route) const {
     
   route.rawroute = json_string;
   route.geometry = get_geometry(json_result);
+ 
+  rapidjson::Document::AllocatorType& allocator = json_result.GetAllocator();
+  route.legs = get_legs(json_result, allocator);
+ 
 }
+ 
 
 } // namespace vroom::routing
