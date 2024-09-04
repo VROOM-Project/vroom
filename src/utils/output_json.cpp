@@ -466,6 +466,14 @@ rapidjson::Value to_json(const std::vector<ls::log::Step<Route>>& steps,
 
     json_step.AddMember("score", json_score, allocator);
 
+    if (step.solution.has_value()) {
+      rapidjson::Value step_solution(rapidjson::kObjectType);
+      auto json_solution = to_json(step.solution.value(), false);
+      step_solution.CopyFrom(json_solution, allocator);
+
+      json_step.AddMember("solution", step_solution, allocator);
+    }
+
     json_LS_steps.PushBack(json_step, allocator);
   }
 
