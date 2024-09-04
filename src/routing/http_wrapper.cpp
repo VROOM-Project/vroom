@@ -229,8 +229,6 @@ void HttpWrapper::add_geometry(Route& route) const {
 
   assert(get_legs_number(json_result) == non_break_locations.size() - 1);
 
-    
-  route.rawroute = json_string;
   route.geometry = get_geometry(json_result);
  
   rapidjson::Document::AllocatorType& allocator = json_result.GetAllocator();
