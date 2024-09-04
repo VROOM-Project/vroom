@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include "structures/vroom/solution/solution.h"
 #include "structures/vroom/solution_indicators.h"
 
 namespace vroom::ls::log {
@@ -29,6 +30,7 @@ template <class Route> struct Step {
   EVENT event;
   OperatorName operator_name;
   vroom::utils::SolutionIndicators<Route> indicators;
+  std::optional<Solution> solution;
 };
 
 template <class Route> struct Dump {

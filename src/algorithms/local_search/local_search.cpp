@@ -329,7 +329,8 @@ void LocalSearch<Route,
         steps.push_back({utils::now(),
                          log::EVENT::JOB_ADDITION,
                          OperatorName::MAX,
-                         utils::SolutionIndicators<Route>(_input, _sol)});
+                         utils::SolutionIndicators<Route>(_input, _sol),
+                         std::nullopt});
       }
 #endif
     }
@@ -1848,7 +1849,8 @@ void LocalSearch<Route,
       steps.push_back({utils::now(),
                        log::EVENT::OPERATOR,
                        best_ops[best_source][best_target]->get_name(),
-                       utils::SolutionIndicators<Route>(_input, _sol)});
+                       utils::SolutionIndicators<Route>(_input, _sol),
+                       std::nullopt});
 #endif
 
 #ifndef NDEBUG
@@ -2009,8 +2011,11 @@ void LocalSearch<Route,
   unsigned current_nb_removal = 1;
 
 #ifdef LOG_LS
-  steps.push_back(
-    {utils::now(), log::EVENT::START, OperatorName::MAX, _best_sol_indicators});
+  steps.push_back({utils::now(),
+                   log::EVENT::START,
+                   OperatorName::MAX,
+                   _best_sol_indicators,
+                   utils::format_solution(_input, _best_sol)});
 #endif
 
   while (try_ls_step) {
@@ -2028,7 +2033,8 @@ void LocalSearch<Route,
       steps.push_back({utils::now(),
                        log::EVENT::LOCAL_MINIMA,
                        OperatorName::MAX,
-                       _best_sol_indicators});
+                       _best_sol_indicators,
+                       utils::format_solution(_input, _best_sol)});
 #endif
     } else {
       if (!first_step) {
@@ -2045,7 +2051,8 @@ void LocalSearch<Route,
         steps.push_back({utils::now(),
                          log::EVENT::ROLLBACK,
                          OperatorName::MAX,
-                         _best_sol_indicators});
+                         _best_sol_indicators,
+                         std::nullopt});
       }
 #endif
     }
@@ -2074,7 +2081,8 @@ void LocalSearch<Route,
       steps.push_back({utils::now(),
                        log::EVENT::RUIN,
                        OperatorName::MAX,
-                       utils::SolutionIndicators<Route>(_input, _sol)});
+                       utils::SolutionIndicators<Route>(_input, _sol),
+                       utils::format_solution(_input, _sol)});
 #endif
 
       // Update insertion ranks ranges.
@@ -2102,7 +2110,8 @@ void LocalSearch<Route,
       steps.push_back({utils::now(),
                        log::EVENT::RECREATE,
                        OperatorName::MAX,
-                       utils::SolutionIndicators<Route>(_input, _sol)});
+                       utils::SolutionIndicators<Route>(_input, _sol),
+                       utils::format_solution(_input, _sol)});
 #endif
     }
 
