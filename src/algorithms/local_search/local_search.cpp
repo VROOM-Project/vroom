@@ -75,11 +75,11 @@ LocalSearch<Route,
             PriorityReplace,
             TSPFix>::LocalSearch(const Input& input,
                                  std::vector<Route>& sol,
-                                 unsigned max_nb_jobs_removal,
+                                 unsigned depth,
                                  const Timeout& timeout)
   : _input(input),
     _nb_vehicles(_input.vehicles.size()),
-    _max_nb_jobs_removal(max_nb_jobs_removal),
+    _depth(depth),
     _deadline(timeout.has_value() ? utils::now() + timeout.value()
                                   : Deadline()),
     _all_routes(_nb_vehicles),
@@ -162,7 +162,12 @@ void LocalSearch<Route,
                  RouteSplit,
                  PriorityReplace,
                  TSPFix>::try_job_additions(const std::vector<Index>& routes,
-                                            double regret_coeff) {
+                                            double regret_coeff
+#ifdef LOG_LS
+                                            ,
+                                            bool log_addition_step
+#endif
+) {
   bool job_added;
 
   std::vector<std::vector<RouteInsertion>> route_job_insertions;
@@ -318,6 +323,16 @@ void LocalSearch<Route,
           route_job_insertions[best_route_idx][j].eval.cost += fixed_cost;
         }
       }
+
+#ifdef LOG_LS
+      if (log_addition_step) {
+        steps.push_back({utils::now(),
+                         log::EVENT::JOB_ADDITION,
+                         OperatorName::MAX,
+                         utils::SolutionIndicators<Route>(_input, _sol),
+                         std::nullopt});
+      }
+#endif
     }
   } while (job_added);
 
@@ -1830,6 +1845,14 @@ void LocalSearch<Route,
       ++applied_moves.at(best_ops[best_source][best_target]->get_name());
 #endif
 
+#ifdef LOG_LS
+      steps.push_back({utils::now(),
+                       log::EVENT::OPERATOR,
+                       best_ops[best_source][best_target]->get_name(),
+                       utils::SolutionIndicators<Route>(_input, _sol),
+                       std::nullopt});
+#endif
+
 #ifndef NDEBUG
       // Update route costs.
       const auto previous_eval =
@@ -1869,7 +1892,12 @@ void LocalSearch<Route,
 
       try_job_additions(best_ops[best_source][best_target]
                           ->addition_candidates(),
-                        0);
+                        0
+#ifdef LOG_LS
+                        ,
+                        true
+#endif
+      );
 
       for (auto v_rank : update_candidates) {
         _sol_state.update_costs(_sol[v_rank].route, v_rank);
@@ -1982,6 +2010,14 @@ void LocalSearch<Route,
 
   unsigned current_nb_removal = 1;
 
+#ifdef LOG_LS
+  steps.push_back({utils::now(),
+                   log::EVENT::START,
+                   OperatorName::MAX,
+                   _best_sol_indicators,
+                   utils::format_solution(_input, _best_sol)});
+#endif
+
   while (try_ls_step) {
     // A round of local search.
     run_ls_step();
@@ -1992,6 +2028,14 @@ void LocalSearch<Route,
         current_sol_indicators < _best_sol_indicators) {
       _best_sol_indicators = current_sol_indicators;
       _best_sol = _sol;
+
+#ifdef LOG_LS
+      steps.push_back({utils::now(),
+                       log::EVENT::LOCAL_MINIMA,
+                       OperatorName::MAX,
+                       _best_sol_indicators,
+                       utils::format_solution(_input, _best_sol)});
+#endif
     } else {
       if (!first_step) {
         ++current_nb_removal;
@@ -2001,11 +2045,21 @@ void LocalSearch<Route,
         _sol = _best_sol;
         _sol_state.setup(_sol);
       }
+#ifdef LOG_LS
+      if (_best_sol_indicators < current_sol_indicators or
+          _best_sol_indicators == current_sol_indicators) {
+        steps.push_back({utils::now(),
+                         log::EVENT::ROLLBACK,
+                         OperatorName::MAX,
+                         _best_sol_indicators,
+                         std::nullopt});
+      }
+#endif
     }
 
     // Try again on each improvement until we reach last job removal
     // level or deadline is met.
-    try_ls_step = (current_nb_removal <= _max_nb_jobs_removal) &&
+    try_ls_step = (current_nb_removal <= _depth) &&
                   (!_deadline.has_value() || utils::now() < _deadline.value());
 
     if (try_ls_step) {
@@ -2022,6 +2076,14 @@ void LocalSearch<Route,
           _sol_state.set_pd_gains(_sol[v].route, v);
         }
       }
+
+#ifdef LOG_LS
+      steps.push_back({utils::now(),
+                       log::EVENT::RUIN,
+                       OperatorName::MAX,
+                       utils::SolutionIndicators<Route>(_input, _sol),
+                       utils::format_solution(_input, _sol)});
+#endif
 
       // Update insertion ranks ranges.
       for (std::size_t v = 0; v < _sol.size(); ++v) {
@@ -2043,6 +2105,14 @@ void LocalSearch<Route,
         _sol_state.set_pd_matching_ranks(_sol[v].route, v);
         _sol_state.set_pd_gains(_sol[v].route, v);
       }
+
+#ifdef LOG_LS
+      steps.push_back({utils::now(),
+                       log::EVENT::RECREATE,
+                       OperatorName::MAX,
+                       utils::SolutionIndicators<Route>(_input, _sol),
+                       utils::format_solution(_input, _sol)});
+#endif
     }
 
     first_step = false;

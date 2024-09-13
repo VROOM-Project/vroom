@@ -293,6 +293,7 @@ std::vector<Index> TSP::raw_solve(unsigned nb_threads,
 }
 
 Solution TSP::solve(unsigned,
+                    unsigned,
                     unsigned nb_threads,
                     const Timeout& timeout,
                     const std::vector<HeuristicParameters>&) const {

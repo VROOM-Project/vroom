@@ -33,6 +33,7 @@ int main(int argc, char** argv) {
   std::string limit_arg;
   std::string output_file;
   std::vector<std::string> heuristic_params_arg;
+  unsigned exploration_level;
 
   cxxopts::Options options("vroom",
                            "VROOM Copyright (C) 2015-2024, Julien Coupey\n"
@@ -79,19 +80,28 @@ int main(int argc, char** argv) {
     ("v,version", "output version information and exit")
     ("x,explore",
      "exploration level to use (0..5)",
-     cxxopts::value<unsigned>(cl_args.exploration_level)->default_value(std::to_string(vroom::DEFAULT_EXPLORATION_LEVEL)))
+     cxxopts::value<unsigned>(exploration_level)->default_value(std::to_string(vroom::DEFAULT_EXPLORATION_LEVEL)))
     ("stdin",
      "optional input positional arg",
      cxxopts::value<std::string>(cl_args.input));
 
   // we don't want to print debug args on --help
+  std::optional<unsigned> debug_depth;
+  std::optional<unsigned> debug_nb_searches;
+
   options.add_options("debug_group")
     ("e,heuristic-param",
      "Heuristic parameter",
      cxxopts::value<std::vector<std::string>>(heuristic_params_arg))
     ("f,apply-tsp-fix",
      "apply experimental TSPFix local search operator",
-     cxxopts::value<bool>(cl_args.apply_TSPFix)->default_value("false"));
+     cxxopts::value<bool>(cl_args.apply_TSPFix)->default_value("false"))
+    ("d,depth",
+     "search depth",
+     cxxopts::value<std::optional<unsigned>>(debug_depth))
+    ("s,nb-searches",
+     "number of searches to perform in parallel",
+     cxxopts::value<std::optional<unsigned>>(debug_nb_searches));
 
   // clang-format on
   try {
@@ -153,8 +163,14 @@ int main(int argc, char** argv) {
   for (const auto& port : port_args) {
     vroom::io::update_port(cl_args.servers, port);
   }
-  cl_args.exploration_level =
-    std::min(cl_args.exploration_level, vroom::MAX_EXPLORATION_LEVEL);
+  exploration_level = std::min(exploration_level, vroom::MAX_EXPLORATION_LEVEL);
+  vroom::io::set_exploration_level(cl_args, exploration_level);
+  if (debug_depth) {
+    cl_args.depth = debug_depth.value();
+  }
+  if (debug_nb_searches) {
+    cl_args.nb_searches = debug_nb_searches.value();
+  }
 
   // Determine routing engine (defaults to ROUTER::OSRM).
   if (router_arg == "libosrm") {
@@ -220,7 +236,8 @@ int main(int argc, char** argv) {
 
     vroom::Solution sol = (cl_args.check)
                             ? problem_instance.check(cl_args.nb_threads)
-                            : problem_instance.solve(cl_args.exploration_level,
+                            : problem_instance.solve(cl_args.nb_searches,
+                                                     cl_args.depth,
                                                      cl_args.nb_threads,
                                                      cl_args.timeout,
                                                      cl_args.h_params);
