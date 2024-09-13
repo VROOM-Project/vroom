@@ -64,6 +64,12 @@ struct Job {
   }
 
   bool is_valid_start(Duration time) const;
+
+  friend bool operator<(const Job& lhs, const Job& rhs) {
+    // Sort by:
+    //   - decreasing priority
+    return std::tie(rhs.priority) < std::tie(lhs.priority);
+  }
 };
 
 } // namespace vroom
