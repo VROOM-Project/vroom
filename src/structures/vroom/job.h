@@ -69,7 +69,9 @@ struct Job {
   friend bool operator<(const Job& lhs, const Job& rhs) {
     // Sort by:
     //   - decreasing priority
-    return std::tie(rhs.priority) < std::tie(lhs.priority);
+    //   - increasing TW length
+    return std::tie(rhs.priority, lhs.tw_length) <
+           std::tie(lhs.priority, rhs.tw_length);
   }
 };
 
