@@ -184,9 +184,7 @@ void LocalSearch<Route,
     RouteInsertion best_insertion(_input.get_amount_size());
     Index best_v = 0;
 
-    for (Index i = 0; i < routes.size(); ++i) {
-      // Back to rank in _input.vehicles with routes indirection.
-      const auto v = routes[i];
+    for (const auto v : routes) {
       if (bool is_pickup = (current_job.type == JOB_TYPE::PICKUP);
           _sol[v].size() + (is_pickup ? 2 : 1) > _input.vehicles[v].max_tasks) {
         continue;
@@ -1962,7 +1960,7 @@ void LocalSearch<Route,
         _sol_state.setup(_sol);
       }
 #ifdef LOG_LS
-      if (_best_sol_indicators < current_sol_indicators or
+      if (_best_sol_indicators < current_sol_indicators ||
           _best_sol_indicators == current_sol_indicators) {
         steps.push_back({utils::now(),
                          log::EVENT::ROLLBACK,
