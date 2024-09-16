@@ -161,10 +161,10 @@ void LocalSearch<Route,
                  SwapStar,
                  RouteSplit,
                  PriorityReplace,
-                 TSPFix>::try_job_additions(const std::vector<Index>& routes
+                 TSPFix>::recreate(const std::vector<Index>& routes
 #ifdef LOG_LS
-                                            ,
-                                            bool log_addition_step
+                                   ,
+                                   bool log_addition_step
 #endif
 ) {
   std::vector<Index> ordered_jobs(_sol_state.unassigned.begin(),
@@ -1804,15 +1804,14 @@ void LocalSearch<Route,
 
       for (auto v_rank : update_candidates) {
         // Only this update (and update_route_eval done above) are
-        // actually required for consistency inside try_job_additions.
+        // actually required for consistency inside recreate step.
         _sol_state.set_insertion_ranks(_sol[v_rank], v_rank);
       }
 
-      try_job_additions(best_ops[best_source][best_target]
-                          ->addition_candidates()
+      recreate(best_ops[best_source][best_target]->addition_candidates()
 #ifdef LOG_LS
-                          ,
-                        true
+                 ,
+               true
 #endif
       );
 
@@ -1859,8 +1858,8 @@ void LocalSearch<Route,
         for (auto req_u : best_ops[v][v]->required_unassigned()) {
           if (!_sol_state.unassigned.contains(req_u)) {
             // This move should be invalidated because a required
-            // unassigned job has been added by try_job_additions in
-            // the meantime.
+            // unassigned job has been added by recreate step in the
+            // meantime.
             invalidate_move = true;
             break;
           }
@@ -2008,10 +2007,10 @@ void LocalSearch<Route,
       }
 
       // Recreate solution
-      try_job_additions(_all_routes);
+      recreate(_all_routes);
 
       // Update everything except what has already been updated in
-      // try_job_additions.
+      // recreate step.
       for (std::size_t v = 0; v < _sol.size(); ++v) {
         _sol_state.update_costs(_sol[v].route, v);
         _sol_state.update_skills(_sol[v].route, v);
