@@ -70,8 +70,10 @@ struct Job {
     // Sort by:
     //   - decreasing priority
     //   - increasing TW length
-    return std::tie(rhs.priority, lhs.tw_length) <
-           std::tie(lhs.priority, rhs.tw_length);
+    //   - decreasing delivery amount
+    //   - decreasing pickup amount
+    return std::tie(rhs.priority, lhs.tw_length, rhs.delivery, rhs.pickup) <
+           std::tie(lhs.priority, rhs.tw_length, lhs.delivery, lhs.pickup);
   }
 };
 
