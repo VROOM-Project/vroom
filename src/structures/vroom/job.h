@@ -30,6 +30,7 @@ struct Job {
   const Skills skills;
   const Priority priority;
   const std::vector<TimeWindow> tws;
+  const Duration tw_length;
   const std::string description;
 
   // Constructor for regular one-stop job (JOB_TYPE::SINGLE).
