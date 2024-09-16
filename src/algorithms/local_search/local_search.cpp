@@ -185,18 +185,17 @@ void LocalSearch<Route,
     Index best_v = 0;
 
     for (const auto v : routes) {
-      if (bool is_pickup = (current_job.type == JOB_TYPE::PICKUP);
-          _sol[v].size() + (is_pickup ? 2 : 1) > _input.vehicles[v].max_tasks) {
+      if (const unsigned added_tasks =
+            (current_job.type == JOB_TYPE::PICKUP) ? 2 : 1;
+          _sol[v].size() + added_tasks > _input.vehicles[v].max_tasks) {
         continue;
       }
 
       auto current_best_insertion =
         compute_best_insertion(_input, _sol_state, j, v, _sol[v]);
 
-      const auto fixed_cost =
-        _sol[v].empty() ? _input.vehicles[v].fixed_cost() : 0;
-      if (current_best_insertion.eval != NO_EVAL) {
-        current_best_insertion.eval.cost += fixed_cost;
+      if (current_best_insertion.eval != NO_EVAL && _sol[v].empty()) {
+        current_best_insertion.eval.cost += _input.vehicles[v].fixed_cost();
       }
 
       if (current_best_insertion.eval < best_insertion.eval) {
@@ -205,51 +204,54 @@ void LocalSearch<Route,
       }
     }
 
-    if (best_insertion.eval != NO_EVAL) {
-      _sol_state.unassigned.erase(j);
+    if (best_insertion.eval == NO_EVAL) {
+      // Current job cannot be inserted.
+      continue;
+    }
 
-      if (current_job.type == JOB_TYPE::SINGLE) {
-        _sol[best_v].add(_input, j, best_insertion.single_rank);
-      } else {
-        assert(current_job.type == JOB_TYPE::PICKUP);
+    // Found a valid insertion spot for current job.
+    _sol_state.unassigned.erase(j);
 
-        std::vector<Index> modified_with_pd;
-        modified_with_pd.reserve(best_insertion.delivery_rank -
-                                 best_insertion.pickup_rank + 2);
-        modified_with_pd.push_back(j);
+    if (current_job.type == JOB_TYPE::SINGLE) {
+      _sol[best_v].add(_input, j, best_insertion.single_rank);
+    } else {
+      assert(current_job.type == JOB_TYPE::PICKUP);
 
-        std::copy(_sol[best_v].route.begin() + best_insertion.pickup_rank,
-                  _sol[best_v].route.begin() + best_insertion.delivery_rank,
-                  std::back_inserter(modified_with_pd));
-        modified_with_pd.push_back(j + 1);
+      std::vector<Index> modified_with_pd;
+      modified_with_pd.reserve(best_insertion.delivery_rank -
+                               best_insertion.pickup_rank + 2);
+      modified_with_pd.push_back(j);
 
-        _sol[best_v].replace(_input,
-                             best_insertion.delivery,
-                             modified_with_pd.begin(),
-                             modified_with_pd.end(),
-                             best_insertion.pickup_rank,
-                             best_insertion.delivery_rank);
+      std::copy(_sol[best_v].route.begin() + best_insertion.pickup_rank,
+                _sol[best_v].route.begin() + best_insertion.delivery_rank,
+                std::back_inserter(modified_with_pd));
+      modified_with_pd.push_back(j + 1);
 
-        assert(_sol_state.unassigned.find(j + 1) !=
-               _sol_state.unassigned.end());
-        _sol_state.unassigned.erase(j + 1);
-      }
+      _sol[best_v].replace(_input,
+                           best_insertion.delivery,
+                           modified_with_pd.begin(),
+                           modified_with_pd.end(),
+                           best_insertion.pickup_rank,
+                           best_insertion.delivery_rank);
 
-      // Update best route data, required for consistency.
-      modified_vehicles.insert(best_v);
-      _sol_state.update_route_eval(_sol[best_v].route, best_v);
-      _sol_state.set_insertion_ranks(_sol[best_v], best_v);
+      assert(_sol_state.unassigned.find(j + 1) != _sol_state.unassigned.end());
+      _sol_state.unassigned.erase(j + 1);
+    }
+
+    // Update best route data, required for consistency.
+    modified_vehicles.insert(best_v);
+    _sol_state.update_route_eval(_sol[best_v].route, best_v);
+    _sol_state.set_insertion_ranks(_sol[best_v], best_v);
 
 #ifdef LOG_LS
-      if (log_addition_step) {
-        steps.push_back({utils::now(),
-                         log::EVENT::JOB_ADDITION,
-                         OperatorName::MAX,
-                         utils::SolutionIndicators<Route>(_input, _sol),
-                         std::nullopt});
-      }
-#endif
+    if (log_addition_step) {
+      steps.push_back({utils::now(),
+                       log::EVENT::JOB_ADDITION,
+                       OperatorName::MAX,
+                       utils::SolutionIndicators<Route>(_input, _sol),
+                       std::nullopt});
     }
+#endif
   }
 
   for (const auto v : modified_vehicles) {
