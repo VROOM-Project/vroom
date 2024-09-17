@@ -66,11 +66,10 @@ private:
   std::vector<log::Step<Route>> steps;
 #endif
 
-  void try_job_additions(const std::vector<Index>& routes,
-                         double regret_coeff
+  void recreate(const std::vector<Index>& routes
 #ifdef LOG_LS
-                         ,
-                         bool log_addition_step = false
+                ,
+                bool log_addition_step = false
 #endif
   );
 

@@ -30,6 +30,7 @@ struct Job {
   const Skills skills;
   const Priority priority;
   const std::vector<TimeWindow> tws;
+  const Duration tw_length;
   const std::string description;
 
   // Constructor for regular one-stop job (JOB_TYPE::SINGLE).
@@ -64,6 +65,16 @@ struct Job {
   }
 
   bool is_valid_start(Duration time) const;
+
+  friend bool operator<(const Job& lhs, const Job& rhs) {
+    // Sort by:
+    //   - decreasing priority
+    //   - increasing TW length
+    //   - decreasing delivery amount
+    //   - decreasing pickup amount
+    return std::tie(rhs.priority, lhs.tw_length, rhs.delivery, rhs.pickup) <
+           std::tie(lhs.priority, rhs.tw_length, lhs.delivery, lhs.pickup);
+  }
 };
 
 } // namespace vroom

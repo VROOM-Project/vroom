@@ -14,6 +14,7 @@
 
 - Refactor `Matrix` template class (#1089)
 - Refactor to use `std::format` whenever possible (#1081)
+- Reduce complexity for recreation process (#1155)
 
 #### CI
 
