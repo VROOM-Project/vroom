@@ -200,6 +200,36 @@ Matrices HttpWrapper::get_matrices(const std::vector<Location>& locs) const {
   return m;
 }
 
+void HttpWrapper::update_sparse_matrix(
+  const Id v_id,
+  const std::vector<Location>& route_locs,
+  Matrices& m,
+  std::mutex& matrix_m,
+  std::unordered_map<Id, std::string>& v_id_to_geom,
+  std::mutex& id_to_geom_m) const {
+  std::string query = this->build_query(route_locs, _route_service);
+
+  std::string json_string = this->run_query(query);
+
+  rapidjson::Document json_result;
+  parse_response(json_result, json_string);
+  this->check_response(json_result, route_locs, _route_service);
+
+  const auto& legs = get_legs(json_result);
+  assert(legs.Size() == route_locs.size() - 1);
+
+  for (rapidjson::SizeType i = 0; i < legs.Size(); ++i) {
+    std::scoped_lock<std::mutex> lock(matrix_m);
+    m.durations[route_locs[i].index()][route_locs[i + 1].index()] =
+      get_leg_duration(legs[i]);
+    m.distances[route_locs[i].index()][route_locs[i + 1].index()] =
+      get_leg_distance(legs[i]);
+  }
+
+  std::scoped_lock<std::mutex> lock(id_to_geom_m);
+  v_id_to_geom.try_emplace(v_id, get_geometry(json_result));
+};
+
 void HttpWrapper::add_geometry(Route& route) const {
   // Ordering locations for the given steps, excluding
   // breaks.
@@ -224,7 +254,7 @@ void HttpWrapper::add_geometry(Route& route) const {
                        non_break_locations, // not supposed to be used
                        _route_service);
 
-  assert(get_legs_number(json_result) == non_break_locations.size() - 1);
+  assert(get_legs(json_result).Size() == non_break_locations.size() - 1);
 
   route.geometry = get_geometry(json_result);
 }
