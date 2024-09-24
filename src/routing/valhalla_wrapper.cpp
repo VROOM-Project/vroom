@@ -185,5 +185,12 @@ std::string ValhallaWrapper::get_geometry(rapidjson::Value& result) const {
 
   return encoder.encode();
 }
+ 
+rapidjson::Value ValhallaWrapper::get_legs(rapidjson::Value& result, rapidjson::Document::AllocatorType& allocator) const {
+  rapidjson::Value legs(rapidjson::kArrayType);
+  legs.CopyFrom(result["trip"]["legs"], allocator);
+  return legs;
+}
+ 
 
 } // namespace vroom::routing

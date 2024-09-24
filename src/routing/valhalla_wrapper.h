@@ -43,6 +43,8 @@ private:
 
   std::string get_geometry(rapidjson::Value& result) const override;
 
+  rapidjson::Value get_legs(rapidjson::Value& result, rapidjson::Document::AllocatorType& allocator) const override;
+
 public:
   ValhallaWrapper(const std::string& profile, const Server& server);
 };

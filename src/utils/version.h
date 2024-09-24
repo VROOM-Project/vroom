@@ -16,7 +16,7 @@ All rights reserved (see LICENSE).
 constexpr unsigned MAJOR = 1;
 constexpr unsigned MINOR = 15;
 constexpr unsigned PATCH = 0;
-constexpr bool DEV = true;
+constexpr bool DEV = false;
 constexpr unsigned RC = 0;
 
 namespace vroom {
