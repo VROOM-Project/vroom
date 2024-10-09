@@ -47,6 +47,7 @@ private:
   const unsigned _depth;
   const Deadline _deadline;
 
+  std::optional<unsigned> _completed_depth;
   std::vector<Index> _all_routes;
 
   utils::SolutionState _sol_state;
