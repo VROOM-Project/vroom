@@ -1922,9 +1922,6 @@ void LocalSearch<Route,
                  PriorityReplace,
                  TSPFix>::run() {
   bool try_ls_step = true;
-  bool first_step = true;
-
-  unsigned current_nb_removal = 1;
 
 #ifdef LOG_LS
   steps.push_back({utils::now(),
@@ -1953,34 +1950,42 @@ void LocalSearch<Route,
                        utils::format_solution(_input, _best_sol)});
 #endif
     } else {
-      if (!first_step) {
-        ++current_nb_removal;
-      }
+      // No improvement so back to previous best known for further
+      // steps.
       if (_best_sol_indicators < current_sol_indicators) {
-        // Back to best known solution for further steps.
         _sol = _best_sol;
         _sol_state.setup(_sol);
       }
 #ifdef LOG_LS
-      if (_best_sol_indicators < current_sol_indicators ||
-          _best_sol_indicators == current_sol_indicators) {
-        steps.push_back({utils::now(),
-                         log::EVENT::ROLLBACK,
-                         OperatorName::MAX,
-                         _best_sol_indicators,
-                         std::nullopt});
-      }
+      steps.push_back({utils::now(),
+                       log::EVENT::ROLLBACK,
+                       OperatorName::MAX,
+                       _best_sol_indicators,
+                       std::nullopt});
 #endif
+
+      if (_completed_depth.has_value()) {
+        // Rule out situation with first descent not yielding a better
+        // solution.
+        ++_completed_depth.value();
+      }
+    }
+
+    if (!_completed_depth.has_value()) {
+      // End of first descent.
+      _completed_depth = 0;
     }
 
     // Try again on each improvement until we reach last job removal
     // level or deadline is met.
-    try_ls_step = (current_nb_removal <= _depth) &&
+    assert(_completed_depth.has_value());
+    auto nb_removal = _completed_depth.value() + 1;
+    try_ls_step = (nb_removal <= _depth) &&
                   (!_deadline.has_value() || utils::now() < _deadline.value());
 
     if (try_ls_step) {
       // Get a looser situation by removing jobs.
-      for (unsigned i = 0; i < current_nb_removal; ++i) {
+      for (unsigned i = 0; i < nb_removal; ++i) {
         remove_from_routes();
         for (std::size_t v = 0; v < _sol.size(); ++v) {
           // Update what is required for consistency in
@@ -2029,8 +2034,6 @@ void LocalSearch<Route,
                        utils::format_solution(_input, _sol)});
 #endif
     }
-
-    first_step = false;
   }
 }
 
