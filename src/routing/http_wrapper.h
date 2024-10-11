@@ -54,6 +54,13 @@ protected:
 
   Matrices get_matrices(const std::vector<Location>& locs) const override;
 
+  void update_sparse_matrix(const Id v_id,
+                            const std::vector<Location>& route_locs,
+                            Matrices& m,
+                            std::mutex& matrix_m,
+                            std::unordered_map<Id, std::string>& v_id_to_geom,
+                            std::mutex& id_to_geom_m) const override;
+
   virtual bool
   duration_value_is_null(const rapidjson::Value& matrix_entry) const = 0;
 
@@ -66,7 +73,12 @@ protected:
   virtual UserDistance
   get_distance_value(const rapidjson::Value& matrix_entry) const = 0;
 
-  virtual unsigned get_legs_number(const rapidjson::Value& result) const = 0;
+  virtual const rapidjson::Value&
+  get_legs(const rapidjson::Value& result) const = 0;
+
+  virtual UserDuration get_leg_duration(const rapidjson::Value& leg) const = 0;
+
+  virtual UserDistance get_leg_distance(const rapidjson::Value& leg) const = 0;
 
   virtual std::string get_geometry(rapidjson::Value& result) const = 0;
 

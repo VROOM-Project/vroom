@@ -146,9 +146,25 @@ UserDistance ValhallaWrapper::get_distance_value(
                                     matrix_entry["distance"].GetDouble());
 }
 
-unsigned
-ValhallaWrapper::get_legs_number(const rapidjson::Value& result) const {
-  return result["trip"]["legs"].Size();
+const rapidjson::Value&
+ValhallaWrapper::get_legs(const rapidjson::Value& result) const {
+  assert(result.HasMember("trip") && result["trip"].HasMember("legs") and
+         result["trip"]["legs"].IsArray());
+
+  return result["trip"]["legs"];
+}
+
+UserDuration
+ValhallaWrapper::get_leg_duration(const rapidjson::Value& leg) const {
+  assert(leg.HasMember("summary") && leg["summary"].HasMember("time"));
+  return utils::round<UserDuration>(leg["summary"]["time"].GetDouble());
+}
+
+UserDistance
+ValhallaWrapper::get_leg_distance(const rapidjson::Value& leg) const {
+  assert(leg.HasMember("summary") && leg["summary"].HasMember("length"));
+  return utils::round<UserDistance>(km_to_m *
+                                    leg["summary"]["length"].GetDouble());
 }
 
 std::string ValhallaWrapper::get_geometry(rapidjson::Value& result) const {
