@@ -11,7 +11,9 @@ All rights reserved (see LICENSE).
 
 #include <asio.hpp>
 #include <asio/ssl.hpp>
-
+#include <fstream>
+#include <iostream>
+#include <sstream>
 #include "routing/http_wrapper.h"
 
 using asio::ip::tcp;
@@ -227,6 +229,11 @@ void HttpWrapper::add_geometry(Route& route) const {
   assert(get_legs_number(json_result) == non_break_locations.size() - 1);
 
   route.geometry = get_geometry(json_result);
+ 
+  rapidjson::Document::AllocatorType& allocator = json_result.GetAllocator();
+  route.legs = get_legs(json_result, allocator);
+ 
 }
+ 
 
 } // namespace vroom::routing

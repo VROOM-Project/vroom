@@ -14,7 +14,7 @@ All rights reserved (see LICENSE).
 
 #include "structures/vroom/solution/step.h"
 #include "structures/vroom/solution/violations.h"
-
+#include "../include/rapidjson/include/rapidjson/document.h"
 namespace vroom {
 
 struct Route {
@@ -34,6 +34,7 @@ struct Route {
   Violations violations;
 
   std::string geometry;
+  rapidjson::Value legs;
 
   Route();
 

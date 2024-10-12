@@ -264,6 +264,13 @@ rapidjson::Value to_json(const Route& route,
                                      route.geometry.size());
   }
 
+  
+ if (!route.legs.Empty()) {
+  rapidjson::Value legs(rapidjson::kArrayType);
+  legs.CopyFrom(route.legs, allocator);
+  json_route.AddMember("legs", legs, allocator);
+}
+
   return json_route;
 }
 

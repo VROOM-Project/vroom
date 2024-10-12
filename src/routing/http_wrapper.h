@@ -70,6 +70,8 @@ protected:
 
   virtual std::string get_geometry(rapidjson::Value& result) const = 0;
 
+  virtual rapidjson::Value get_legs(rapidjson::Value& result, rapidjson::Document::AllocatorType& allocator) const = 0;
+
   void add_geometry(Route& route) const override;
 };
 

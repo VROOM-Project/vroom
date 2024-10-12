@@ -38,8 +38,12 @@ private:
   unsigned get_legs_number(const rapidjson::Value& result) const override;
 
   std::string get_geometry(rapidjson::Value& result) const override;
+  
+  rapidjson::Value get_legs(rapidjson::Value& result, rapidjson::Document::AllocatorType& allocator) const override;
+ 
 
 public:
+
   OsrmRoutedWrapper(const std::string& profile, const Server& server);
 };
 
