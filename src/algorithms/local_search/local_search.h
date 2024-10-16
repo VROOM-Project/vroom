@@ -104,7 +104,7 @@ public:
 #endif
 
 #ifdef LOG_LS
-  std::vector<log::Step> get_steps() {
+  std::vector<log::Step> get_steps() const {
     return steps;
   }
 #endif
