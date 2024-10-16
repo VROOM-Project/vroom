@@ -25,17 +25,17 @@ enum class EVENT {
   ROLLBACK
 };
 
-template <class Route> struct Step {
+struct Step {
   TimePoint time_point;
   EVENT event;
   OperatorName operator_name;
-  vroom::utils::SolutionIndicators<Route> indicators;
+  vroom::utils::SolutionIndicators indicators;
   std::optional<Solution> solution;
 };
 
-template <class Route> struct Dump {
+struct Dump {
   HeuristicParameters heuristic_parameters;
-  std::vector<Step<Route>> steps;
+  std::vector<Step> steps;
 };
 } // namespace vroom::ls::log
 

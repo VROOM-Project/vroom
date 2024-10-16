@@ -64,7 +64,7 @@ protected:
     std::vector<std::vector<Route>> solutions(nb_searches, empty_sol);
 
 #ifdef LOG_LS
-    std::vector<ls::log::Dump<Route>> ls_dumps;
+    std::vector<ls::log::Dump> ls_dumps;
     ls_dumps.reserve(nb_searches);
 #endif
 
@@ -195,7 +195,7 @@ protected:
     }
 
     // Filter out duplicate heuristics solutions.
-    std::set<utils::SolutionIndicators<Route>> unique_indicators;
+    std::set<utils::SolutionIndicators> unique_indicators;
     std::vector<unsigned> to_remove;
     to_remove.reserve(solutions.size());
 
@@ -217,7 +217,7 @@ protected:
 
     // Split local searches across threads.
     unsigned nb_solutions = solutions.size();
-    std::vector<utils::SolutionIndicators<Route>> sol_indicators(nb_solutions);
+    std::vector<utils::SolutionIndicators> sol_indicators(nb_solutions);
 #ifdef LOG_LS_OPERATORS
     std::vector<std::array<ls::OperatorStats, OperatorName::MAX>> ls_stats(
       nb_solutions);

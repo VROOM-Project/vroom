@@ -55,7 +55,7 @@ private:
   std::vector<Route> _sol;
 
   std::vector<Route>& _best_sol;
-  utils::SolutionIndicators<Route> _best_sol_indicators;
+  utils::SolutionIndicators _best_sol_indicators;
 
 #ifdef LOG_LS_OPERATORS
   // Store operator usage stats.
@@ -64,7 +64,7 @@ private:
 #endif
 
 #ifdef LOG_LS
-  std::vector<log::Step<Route>> steps;
+  std::vector<log::Step> steps;
 #endif
 
   void recreate(const std::vector<Index>& routes
@@ -95,7 +95,7 @@ public:
               unsigned depth,
               const Timeout& timeout);
 
-  utils::SolutionIndicators<Route> indicators() const;
+  utils::SolutionIndicators indicators() const;
 
   void run();
 
@@ -104,7 +104,7 @@ public:
 #endif
 
 #ifdef LOG_LS
-  std::vector<log::Step<Route>> get_steps() {
+  std::vector<log::Step> get_steps() const {
     return steps;
   }
 #endif

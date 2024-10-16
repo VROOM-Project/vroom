@@ -50,8 +50,7 @@ void write_to_json(const Solution& sol,
                    bool report_distances = false);
 
 #ifdef LOG_LS
-template <class Route>
-void write_LS_logs_to_json(const std::vector<ls::log::Dump<Route>>& dumps);
+void write_LS_logs_to_json(const std::vector<ls::log::Dump>& dumps);
 #endif
 } // namespace vroom::io
 
