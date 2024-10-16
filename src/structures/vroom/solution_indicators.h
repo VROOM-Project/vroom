@@ -18,7 +18,7 @@ All rights reserved (see LICENSE).
 
 namespace vroom::utils {
 
-template <class Route> struct SolutionIndicators {
+struct SolutionIndicators {
   Priority priority_sum{0};
   unsigned assigned{0};
   Eval eval;
@@ -26,6 +26,7 @@ template <class Route> struct SolutionIndicators {
 
   SolutionIndicators() = default;
 
+  template <class Route>
   SolutionIndicators(const Input& input, const std::vector<Route>& sol)
     : SolutionIndicators() {
     Index v_rank = 0;

@@ -412,8 +412,7 @@ void write_to_json(const Solution& sol,
 }
 
 #ifdef LOG_LS
-template <class Route>
-rapidjson::Value to_json(const std::vector<ls::log::Step<Route>>& steps,
+rapidjson::Value to_json(const std::vector<ls::log::Step>& steps,
                          rapidjson::Document::AllocatorType& allocator) {
   rapidjson::Value json_LS_steps(rapidjson::kArrayType);
 
@@ -480,8 +479,7 @@ rapidjson::Value to_json(const std::vector<ls::log::Step<Route>>& steps,
   return json_LS_steps;
 }
 
-template <class Route>
-rapidjson::Value to_json(const ls::log::Dump<Route>& dump,
+rapidjson::Value to_json(const ls::log::Dump& dump,
                          rapidjson::Document::AllocatorType& allocator) {
   rapidjson::Value json_parameters(rapidjson::kObjectType);
 
@@ -553,8 +551,7 @@ rapidjson::Value to_json(const ls::log::Dump<Route>& dump,
   return json_parameters;
 }
 
-template <class Route>
-void write_LS_logs_to_json(const std::vector<ls::log::Dump<Route>>& dumps) {
+void write_LS_logs_to_json(const std::vector<ls::log::Dump>& dumps) {
   rapidjson::Document json_log;
   json_log.SetArray();
   rapidjson::Document::AllocatorType& allocator = json_log.GetAllocator();
@@ -565,12 +562,6 @@ void write_LS_logs_to_json(const std::vector<ls::log::Dump<Route>>& dumps) {
 
   write_to_output(json_log, "vroom_ls_log.json");
 }
-
-template void
-write_LS_logs_to_json(const std::vector<ls::log::Dump<RawRoute>>& dumps);
-
-template void
-write_LS_logs_to_json(const std::vector<ls::log::Dump<TWRoute>>& dumps);
 
 #endif
 

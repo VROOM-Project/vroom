@@ -248,7 +248,7 @@ void LocalSearch<Route,
       steps.push_back({utils::now(),
                        log::EVENT::JOB_ADDITION,
                        OperatorName::MAX,
-                       utils::SolutionIndicators<Route>(_input, _sol),
+                       utils::SolutionIndicators(_input, _sol),
                        std::nullopt});
     }
 #endif
@@ -1767,7 +1767,7 @@ void LocalSearch<Route,
       steps.push_back({utils::now(),
                        log::EVENT::OPERATOR,
                        best_ops[best_source][best_target]->get_name(),
-                       utils::SolutionIndicators<Route>(_input, _sol),
+                       utils::SolutionIndicators(_input, _sol),
                        std::nullopt});
 #endif
 
@@ -1936,8 +1936,7 @@ void LocalSearch<Route,
     run_ls_step();
 
     // Comparison with indicators for current solution.
-    if (const utils::SolutionIndicators<Route> current_sol_indicators(_input,
-                                                                      _sol);
+    if (const utils::SolutionIndicators current_sol_indicators(_input, _sol);
         current_sol_indicators < _best_sol_indicators) {
       _best_sol_indicators = current_sol_indicators;
       _best_sol = _sol;
@@ -2002,7 +2001,7 @@ void LocalSearch<Route,
       steps.push_back({utils::now(),
                        log::EVENT::RUIN,
                        OperatorName::MAX,
-                       utils::SolutionIndicators<Route>(_input, _sol),
+                       utils::SolutionIndicators(_input, _sol),
                        utils::format_solution(_input, _sol)});
 #endif
 
@@ -2030,7 +2029,7 @@ void LocalSearch<Route,
       steps.push_back({utils::now(),
                        log::EVENT::RECREATE,
                        OperatorName::MAX,
-                       utils::SolutionIndicators<Route>(_input, _sol),
+                       utils::SolutionIndicators(_input, _sol),
                        utils::format_solution(_input, _sol)});
 #endif
     }
@@ -2450,26 +2449,26 @@ template <class Route,
           class RouteSplit,
           class PriorityReplace,
           class TSPFix>
-utils::SolutionIndicators<Route> LocalSearch<Route,
-                                             UnassignedExchange,
-                                             CrossExchange,
-                                             MixedExchange,
-                                             TwoOpt,
-                                             ReverseTwoOpt,
-                                             Relocate,
-                                             OrOpt,
-                                             IntraExchange,
-                                             IntraCrossExchange,
-                                             IntraMixedExchange,
-                                             IntraRelocate,
-                                             IntraOrOpt,
-                                             IntraTwoOpt,
-                                             PDShift,
-                                             RouteExchange,
-                                             SwapStar,
-                                             RouteSplit,
-                                             PriorityReplace,
-                                             TSPFix>::indicators() const {
+utils::SolutionIndicators LocalSearch<Route,
+                                      UnassignedExchange,
+                                      CrossExchange,
+                                      MixedExchange,
+                                      TwoOpt,
+                                      ReverseTwoOpt,
+                                      Relocate,
+                                      OrOpt,
+                                      IntraExchange,
+                                      IntraCrossExchange,
+                                      IntraMixedExchange,
+                                      IntraRelocate,
+                                      IntraOrOpt,
+                                      IntraTwoOpt,
+                                      PDShift,
+                                      RouteExchange,
+                                      SwapStar,
+                                      RouteSplit,
+                                      PriorityReplace,
+                                      TSPFix>::indicators() const {
   return _best_sol_indicators;
 }
 
