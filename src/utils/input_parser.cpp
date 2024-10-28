@@ -538,7 +538,6 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
   const unsigned amount_size =
     first_vehicle_has_capacity ? first_vehicle["capacity"].Size() : 0;
 
-  input.set_amount_size(amount_size);
   input.set_geometry(geometry);
 
   // Add all vehicles.

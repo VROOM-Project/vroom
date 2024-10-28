@@ -33,11 +33,6 @@ Input::Input(io::Servers servers, ROUTER router, bool apply_TSPFix)
   : _apply_TSPFix(apply_TSPFix), _servers(std::move(servers)), _router(router) {
 }
 
-void Input::set_amount_size(unsigned amount_size) {
-  _amount_size = amount_size;
-  _zero = Amount(amount_size);
-}
-
 void Input::set_geometry(bool geometry) {
   _geometry = geometry;
 }
@@ -103,23 +98,26 @@ void Input::add_routing_wrapper(const std::string& profile) {
 #endif
 }
 
-void Input::check_job(Job& job) {
-  // Ensure delivery size consistency.
-  if (const auto delivery_size = job.delivery.size();
-      delivery_size != _amount_size) {
-    throw InputException(
-      std::format("Inconsistent delivery length: {} instead of {}.",
-                  delivery_size,
-                  _amount_size));
+void Input::check_amount_size(const Amount& amount) {
+  if (!_amount_size_set) {
+    // Only setup once on first call.
+    _amount_size_set = true;
+    _amount_size = amount.size();
+    _zero = Amount(_amount_size);
+  } else {
+    if (amount.size() != _amount_size) {
+      throw InputException(
+        std::format("Inconsistent delivery length: {} instead of {}.",
+                    amount.size(),
+                    _amount_size));
+    }
   }
+}
 
-  // Ensure pickup size consistency.
-  if (const auto pickup_size = job.pickup.size(); pickup_size != _amount_size) {
-    throw InputException(
-      std::format("Inconsistent pickup length: {} instead of {}.",
-                  pickup_size,
-                  _amount_size));
-  }
+void Input::check_job(Job& job) {
+  // Ensure delivery and pickup size consistency.
+  check_amount_size(job.delivery);
+  check_amount_size(job.pickup);
 
   // Ensure that location index are either always or never provided.
   bool has_location_index = job.location.user_index();
@@ -245,13 +243,7 @@ void Input::add_vehicle(const Vehicle& vehicle) {
   auto& current_v = vehicles.back();
 
   // Ensure amount size consistency.
-  if (const auto vehicle_amount_size = current_v.capacity.size();
-      vehicle_amount_size != _amount_size) {
-    throw InputException(
-      std::format("Inconsistent capacity length: {} instead of {}.",
-                  vehicle_amount_size,
-                  _amount_size));
-  }
+  check_amount_size(current_v.capacity);
 
   // Check for time-windows and skills.
   _has_TW = _has_TW || !vehicle.tw.is_default() || !vehicle.breaks.empty();

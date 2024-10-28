@@ -105,8 +105,8 @@ void run_example_with_osrm() {
 
   // Create one-dimension capacity restrictions to model the situation
   // where one vehicle can handle 4 jobs with deliveries.
-  problem_instance.set_amount_size(amount_dimension);
   vroom::Amount vehicle_capacity(amount_dimension);
+  vehicle_capacity[0] = 4;
 
   vroom::TimeWindow vehicle_tw(28800, 43200); // Working hours.
   // Default "zero" amount data structures with relevant dimension.
@@ -120,7 +120,6 @@ void run_example_with_osrm() {
 
   vroom::UserDuration setup = 0;
   vroom::UserDuration service = 5 * 60; // 5 minutes
-  vehicle_capacity[0] = 4;
 
   // Define vehicle breaks.
   vroom::Break break_1(1, {vroom::TimeWindow(32400, 34200)}, 300);
