@@ -517,6 +517,10 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
   }
 
   // Main checks for valid json input.
+  if (!json_input.IsObject()) {
+    throw InputException("Input root is not an object.");
+  }
+
   bool has_jobs = json_input.HasMember("jobs") &&
                   json_input["jobs"].IsArray() && !json_input["jobs"].Empty();
   bool has_shipments = json_input.HasMember("shipments") &&

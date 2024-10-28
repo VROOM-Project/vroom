@@ -28,6 +28,10 @@
 
 ### Fixed
 
+#### Core solving
+
+- Crash when input is valid JSON but not an object (#1172)
+
 #### Internals
 
 - Iterator type required by `TWRoute::replace` function (#1103)
