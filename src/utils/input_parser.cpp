@@ -51,7 +51,7 @@ inline double get_double(const rapidjson::Value& object, const char* key) {
 inline Amount get_capacity(const rapidjson::Value& vehicle) {
   unsigned amount_size = 0;
 
-  bool vehicle_has_capacity = vehicle.HasMember("capacity");
+  const bool vehicle_has_capacity = vehicle.HasMember("capacity");
 
   if (vehicle_has_capacity) {
     if (!vehicle["capacity"].IsArray()) {
@@ -76,21 +76,21 @@ inline Amount get_capacity(const rapidjson::Value& vehicle) {
 inline Amount get_amount(const rapidjson::Value& object,
                          const char* key,
                          unsigned amount_size) {
-  // Default to zero amount with provided size.
-  Amount amount(amount_size);
+  const bool has_amount_key = object.HasMember(key);
 
-  if (object.HasMember(key)) {
+  if (has_amount_key) {
     if (!object[key].IsArray()) {
       throw InputException("Invalid " + std::string(key) + " array.");
     }
 
-    if (object[key].Size() != amount_size) {
-      throw InputException(std::format("Inconsistent {} length: {} and {}.",
-                                       key,
-                                       object[key].Size(),
-                                       amount_size));
-    }
+    amount_size = object[key].Size();
+  }
 
+  // This will default to zero amount with provided size if expected
+  // key is omitted.
+  Amount amount(amount_size);
+
+  if (has_amount_key) {
     for (rapidjson::SizeType i = 0; i < object[key].Size(); ++i) {
       if (!object[key][i].IsUint()) {
         throw InputException("Invalid " + std::string(key) + " value.");
