@@ -48,6 +48,31 @@ inline double get_double(const rapidjson::Value& object, const char* key) {
   return value;
 }
 
+inline Amount get_capacity(const rapidjson::Value& vehicle) {
+  unsigned amount_size = 0;
+
+  bool vehicle_has_capacity = vehicle.HasMember("capacity");
+
+  if (vehicle_has_capacity) {
+    if (!vehicle["capacity"].IsArray()) {
+      throw InputException("Invalid capacity array.");
+    }
+
+    amount_size = vehicle["capacity"].Size();
+  }
+
+  Amount capacity(amount_size);
+
+  for (rapidjson::SizeType i = 0; i < amount_size; ++i) {
+    if (!vehicle["capacity"][i].IsUint()) {
+      throw InputException("Invalid capacity value.");
+    }
+    capacity[i] = vehicle["capacity"][i].GetUint();
+  }
+
+  return capacity;
+}
+
 inline Amount get_amount(const rapidjson::Value& object,
                          const char* key,
                          unsigned amount_size) {
@@ -420,7 +445,7 @@ inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
                  start,
                  end,
                  profile,
-                 get_amount(json_vehicle, "capacity", amount_size),
+                 get_capacity(json_vehicle),
                  get_skills(json_vehicle),
                  get_vehicle_time_window(json_vehicle),
                  get_vehicle_breaks(json_vehicle, amount_size),
