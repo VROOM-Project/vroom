@@ -66,7 +66,7 @@ Vehicle::Vehicle(Id id,
     if (b.max_load.has_value() &&
         b.max_load.value().size() != capacity.size()) {
       throw InputException(
-        std::format("Inconsistent break max_load size for break: {}.", b.id));
+        std::format("Inconsistent break max_load size for break {}.", b.id));
     }
   }
 

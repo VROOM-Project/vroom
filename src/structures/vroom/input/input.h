@@ -12,6 +12,7 @@ All rights reserved (see LICENSE).
 
 #include <chrono>
 #include <memory>
+#include <optional>
 #include <unordered_map>
 
 #include "routing/wrapper.h"
@@ -77,14 +78,15 @@ private:
   bool _all_locations_have_coords{true};
   std::vector<std::vector<Eval>> _jobs_vehicles_evals;
 
-  unsigned _amount_size{0};
-  Amount _zero{0};
+  std::optional<unsigned> _amount_size;
+  Amount _zero;
 
   const io::Servers _servers;
   const ROUTER _router;
 
   std::unique_ptr<VRP> get_problem() const;
 
+  void check_amount_size(const Amount& amount);
   void check_job(Job& job);
 
   UserCost check_cost_bound(const Matrix<UserCost>& matrix) const;
@@ -114,10 +116,9 @@ public:
         ROUTER router = ROUTER::OSRM,
         bool apply_TSPFix = false);
 
-  void set_amount_size(unsigned amount_size);
-
   unsigned get_amount_size() const {
-    return _amount_size;
+    assert(_amount_size.has_value());
+    return _amount_size.value();
   }
 
   void set_geometry(bool geometry);

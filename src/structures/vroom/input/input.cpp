@@ -33,11 +33,6 @@ Input::Input(io::Servers servers, ROUTER router, bool apply_TSPFix)
   : _apply_TSPFix(apply_TSPFix), _servers(std::move(servers)), _router(router) {
 }
 
-void Input::set_amount_size(unsigned amount_size) {
-  _amount_size = amount_size;
-  _zero = Amount(amount_size);
-}
-
 void Input::set_geometry(bool geometry) {
   _geometry = geometry;
 }
@@ -103,23 +98,27 @@ void Input::add_routing_wrapper(const std::string& profile) {
 #endif
 }
 
-void Input::check_job(Job& job) {
-  // Ensure delivery size consistency.
-  if (const auto delivery_size = job.delivery.size();
-      delivery_size != _amount_size) {
-    throw InputException(
-      std::format("Inconsistent delivery length: {} instead of {}.",
-                  delivery_size,
-                  _amount_size));
-  }
+void Input::check_amount_size(const Amount& amount) {
+  const auto size = amount.size();
 
-  // Ensure pickup size consistency.
-  if (const auto pickup_size = job.pickup.size(); pickup_size != _amount_size) {
-    throw InputException(
-      std::format("Inconsistent pickup length: {} instead of {}.",
-                  pickup_size,
-                  _amount_size));
+  if (!_amount_size.has_value()) {
+    // Only setup once on first call.
+    _amount_size = size;
+    _zero = Amount(size);
+  } else {
+    if (size != _amount_size.value()) {
+      throw InputException(
+        std::format("Inconsistent delivery length: {} instead of {}.",
+                    size,
+                    _amount_size.value()));
+    }
   }
+}
+
+void Input::check_job(Job& job) {
+  // Ensure delivery and pickup size consistency.
+  check_amount_size(job.delivery);
+  check_amount_size(job.pickup);
 
   // Ensure that location index are either always or never provided.
   bool has_location_index = job.location.user_index();
@@ -245,13 +244,7 @@ void Input::add_vehicle(const Vehicle& vehicle) {
   auto& current_v = vehicles.back();
 
   // Ensure amount size consistency.
-  if (const auto vehicle_amount_size = current_v.capacity.size();
-      vehicle_amount_size != _amount_size) {
-    throw InputException(
-      std::format("Inconsistent capacity length: {} instead of {}.",
-                  vehicle_amount_size,
-                  _amount_size));
-  }
+  check_amount_size(current_v.capacity);
 
   // Check for time-windows and skills.
   _has_TW = _has_TW || !vehicle.tw.is_default() || !vehicle.breaks.empty();
@@ -612,7 +605,8 @@ void Input::set_vehicles_costs() {
 }
 
 void Input::set_vehicles_max_tasks() {
-  if (_has_jobs && !_has_shipments && _amount_size > 0) {
+  if (const auto amount_size = get_amount_size();
+      _has_jobs && !_has_shipments && amount_size > 0) {
     // For job-only instances where capacity restrictions apply:
     // compute an upper bound of the number of jobs for each vehicle
     // based on pickups load and delivery loads. This requires sorting
@@ -627,12 +621,12 @@ void Input::set_vehicles_max_tasks() {
     };
 
     std::vector<std::vector<JobAmount>>
-      job_pickups_per_component(_amount_size,
+      job_pickups_per_component(amount_size,
                                 std::vector<JobAmount>(jobs.size()));
     std::vector<std::vector<JobAmount>>
-      job_deliveries_per_component(_amount_size,
+      job_deliveries_per_component(amount_size,
                                    std::vector<JobAmount>(jobs.size()));
-    for (std::size_t i = 0; i < _amount_size; ++i) {
+    for (std::size_t i = 0; i < amount_size; ++i) {
       for (Index j = 0; j < jobs.size(); ++j) {
         job_pickups_per_component[i][j] = JobAmount({j, jobs[j].pickup[i]});
         job_deliveries_per_component[i][j] =
@@ -649,7 +643,7 @@ void Input::set_vehicles_max_tasks() {
     for (Index v = 0; v < vehicles.size(); ++v) {
       std::size_t max_tasks = jobs.size();
 
-      for (std::size_t i = 0; i < _amount_size; ++i) {
+      for (std::size_t i = 0; i < amount_size; ++i) {
         Capacity pickup_sum = 0;
         Capacity delivery_sum = 0;
         std::size_t doable_pickups = 0;

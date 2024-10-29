@@ -16,6 +16,7 @@
 - Refactor to use `std::format` whenever possible (#1081)
 - Reduce complexity for recreation process (#1155)
 - Refactor `SolutionIndicators` (#1169)
+- Remove amount consistency checks in `parse` in favor of upstream checks in `Input` (#1086)
 
 #### CI
 
@@ -31,6 +32,7 @@
 #### Core solving
 
 - Crash when input is valid JSON but not an object (#1172)
+- Capacity array check consistency (#1086)
 
 #### Internals
 
