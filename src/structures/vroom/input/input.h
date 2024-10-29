@@ -12,6 +12,7 @@ All rights reserved (see LICENSE).
 
 #include <chrono>
 #include <memory>
+#include <optional>
 #include <unordered_map>
 
 #include "routing/wrapper.h"
@@ -77,8 +78,7 @@ private:
   bool _all_locations_have_coords{true};
   std::vector<std::vector<Eval>> _jobs_vehicles_evals;
 
-  bool _amount_size_set{false};
-  unsigned _amount_size;
+  std::optional<unsigned> _amount_size;
   Amount _zero;
 
   const io::Servers _servers;
@@ -117,7 +117,8 @@ public:
         bool apply_TSPFix = false);
 
   unsigned get_amount_size() const {
-    return _amount_size;
+    assert(_amount_size.has_value());
+    return _amount_size.value();
   }
 
   void set_geometry(bool geometry);

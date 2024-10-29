@@ -99,17 +99,18 @@ void Input::add_routing_wrapper(const std::string& profile) {
 }
 
 void Input::check_amount_size(const Amount& amount) {
-  if (!_amount_size_set) {
+  const auto size = amount.size();
+
+  if (!_amount_size.has_value()) {
     // Only setup once on first call.
-    _amount_size_set = true;
-    _amount_size = amount.size();
-    _zero = Amount(_amount_size);
+    _amount_size = size;
+    _zero = Amount(size);
   } else {
-    if (amount.size() != _amount_size) {
+    if (size != _amount_size.value()) {
       throw InputException(
         std::format("Inconsistent delivery length: {} instead of {}.",
-                    amount.size(),
-                    _amount_size));
+                    size,
+                    _amount_size.value()));
     }
   }
 }
@@ -604,7 +605,9 @@ void Input::set_vehicles_costs() {
 }
 
 void Input::set_vehicles_max_tasks() {
-  if (_has_jobs && !_has_shipments && _amount_size > 0) {
+  const auto amount_size = get_amount_size();
+
+  if (_has_jobs && !_has_shipments && amount_size > 0) {
     // For job-only instances where capacity restrictions apply:
     // compute an upper bound of the number of jobs for each vehicle
     // based on pickups load and delivery loads. This requires sorting
@@ -619,12 +622,12 @@ void Input::set_vehicles_max_tasks() {
     };
 
     std::vector<std::vector<JobAmount>>
-      job_pickups_per_component(_amount_size,
+      job_pickups_per_component(amount_size,
                                 std::vector<JobAmount>(jobs.size()));
     std::vector<std::vector<JobAmount>>
-      job_deliveries_per_component(_amount_size,
+      job_deliveries_per_component(amount_size,
                                    std::vector<JobAmount>(jobs.size()));
-    for (std::size_t i = 0; i < _amount_size; ++i) {
+    for (std::size_t i = 0; i < amount_size; ++i) {
       for (Index j = 0; j < jobs.size(); ++j) {
         job_pickups_per_component[i][j] = JobAmount({j, jobs[j].pickup[i]});
         job_deliveries_per_component[i][j] =
@@ -641,7 +644,7 @@ void Input::set_vehicles_max_tasks() {
     for (Index v = 0; v < vehicles.size(); ++v) {
       std::size_t max_tasks = jobs.size();
 
-      for (std::size_t i = 0; i < _amount_size; ++i) {
+      for (std::size_t i = 0; i < amount_size; ++i) {
         Capacity pickup_sum = 0;
         Capacity delivery_sum = 0;
         std::size_t doable_pickups = 0;
