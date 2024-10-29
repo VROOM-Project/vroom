@@ -433,6 +433,10 @@ bool Input::has_homogeneous_costs() const {
   return _homogeneous_costs;
 }
 
+bool Input::has_initial_routes() const {
+  return _has_initial_routes;
+}
+
 bool Input::vehicle_ok_with_vehicle(Index v1_index, Index v2_index) const {
   return _vehicle_to_vehicle_compatibility[v1_index][v2_index];
 }
