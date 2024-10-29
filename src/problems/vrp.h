@@ -53,15 +53,20 @@ protected:
     nb_searches =
       std::min(nb_searches, static_cast<unsigned>(parameters.size()));
 
-    // Build empty solutions to be filled by heuristics.
-    std::vector<Route> empty_sol;
-    empty_sol.reserve(_input.vehicles.size());
+    // Build initial solution to be filled by heuristics. Solution is
+    // empty at first but populated with input data if provided.
+    std::vector<Route> init_sol;
+    init_sol.reserve(_input.vehicles.size());
 
     for (Index v = 0; v < _input.vehicles.size(); ++v) {
-      empty_sol.emplace_back(_input, v, _input.zero_amount().size());
+      init_sol.emplace_back(_input, v, _input.zero_amount().size());
     }
 
-    std::vector<std::vector<Route>> solutions(nb_searches, empty_sol);
+    if (_input.has_initial_routes()) {
+      heuristics::set_initial_routes<Route>(_input, init_sol);
+    }
+
+    std::vector<std::vector<Route>> solutions(nb_searches, init_sol);
 
 #ifdef LOG_LS
     std::vector<ls::log::Dump> ls_dumps;
@@ -97,9 +102,6 @@ protected:
 
           Eval h_eval;
           switch (p.heuristic) {
-          case HEURISTIC::INIT_ROUTES:
-            heuristics::initial_routes<Route>(_input, solutions[rank]);
-            break;
           case HEURISTIC::BASIC:
             h_eval = heuristics::basic<Route>(_input,
                                               solutions[rank],
@@ -125,18 +127,14 @@ protected:
             break;
           }
 
-          if (!_input.has_homogeneous_costs() &&
-              p.heuristic != HEURISTIC::INIT_ROUTES && h_param.empty() &&
+          if (!_input.has_homogeneous_costs() && h_param.empty() &&
               p.sort == SORT::AVAILABILITY) {
             // Worth trying another vehicle ordering scheme in
             // heuristic.
-            std::vector<Route> other_sol = empty_sol;
+            std::vector<Route> other_sol = init_sol;
 
             Eval h_other_eval;
             switch (p.heuristic) {
-            case HEURISTIC::INIT_ROUTES:
-              assert(false);
-              break;
             case HEURISTIC::BASIC:
               h_other_eval = heuristics::basic<Route>(_input,
                                                       other_sol,

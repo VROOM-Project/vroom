@@ -41,7 +41,7 @@ Eval dynamic_vehicle_choice(const Input& input,
 
 // Populate routes with user-defined vehicle steps.
 template <class Route>
-void initial_routes(const Input& input, std::vector<Route>& routes);
+void set_initial_routes(const Input& input, std::vector<Route>& routes);
 
 } // namespace vroom::heuristics
 

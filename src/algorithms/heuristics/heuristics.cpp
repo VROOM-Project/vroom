@@ -866,7 +866,7 @@ Eval dynamic_vehicle_choice(const Input& input,
 }
 
 template <class Route>
-void initial_routes(const Input& input, std::vector<Route>& routes) {
+void set_initial_routes(const Input& input, std::vector<Route>& routes) {
   assert(std::all_of(routes.cbegin(), routes.cend(), [](const auto& r) {
     return r.empty();
   }));
@@ -1032,7 +1032,7 @@ dynamic_vehicle_choice(const Input& input,
                        double lambda,
                        SORT sort);
 
-template void initial_routes(const Input& input, RawSolution& routes);
+template void set_initial_routes(const Input& input, RawSolution& routes);
 
 template Eval basic(const Input& input,
                     TWSolution& routes,
@@ -1055,6 +1055,6 @@ dynamic_vehicle_choice(const Input& input,
                        double lambda,
                        SORT sort);
 
-template void initial_routes(const Input& input, TWSolution& routes);
+template void set_initial_routes(const Input& input, TWSolution& routes);
 
 } // namespace vroom::heuristics

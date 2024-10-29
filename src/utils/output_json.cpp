@@ -492,9 +492,6 @@ rapidjson::Value to_json(const ls::log::Dump& dump,
   case DYNAMIC:
     heuristic = "DYNAMIC";
     break;
-  case INIT_ROUTES:
-    heuristic = "INIT_ROUTES";
-    break;
   default:
     assert(false);
   }
