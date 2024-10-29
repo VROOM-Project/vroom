@@ -9,6 +9,7 @@ All rights reserved (see LICENSE).
 
 #include <algorithm>
 #include <set>
+#include <unordered_set>
 
 #include "algorithms/heuristics/heuristics.h"
 #include "utils/helpers.h"
@@ -25,17 +26,16 @@ Eval basic(const Input& input,
            INIT init,
            double lambda,
            SORT sort) {
-  assert(std::all_of(routes.cbegin(), routes.cend(), [](const auto& r) {
-    return r.empty();
-  }));
-
-  Eval sol_eval;
-
-  // Consider all jobs as unassigned at first.
+  // Find out unassigned jobs.
+  std::unordered_set<Index> assigned;
+  std::ranges::for_each(routes, [&](const auto& r) {
+    std::ranges::copy(r.route, std::inserter(assigned, assigned.end()));
+  });
   std::set<Index> unassigned;
-  std::copy(jobs_begin,
-            jobs_end,
-            std::inserter(unassigned, unassigned.begin()));
+  std::copy_if(jobs_begin,
+               jobs_end,
+               std::inserter(unassigned, unassigned.begin()),
+               [&](const auto j) { return !assigned.contains(j); });
 
   // Perform heuristic ordering of the vehicles on a copy.
   const auto nb_vehicles = std::distance(vehicles_begin, vehicles_end);
@@ -88,6 +88,8 @@ Eval basic(const Input& input,
         std::min(regrets[v + 1][j], (evals[j][vehicles_ranks[v + 1]]).cost);
     }
   }
+
+  Eval sol_eval;
 
   for (Index v = 0; v < nb_vehicles; ++v) {
     auto v_rank = vehicles_ranks[v];
