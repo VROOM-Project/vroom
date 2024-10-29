@@ -605,9 +605,8 @@ void Input::set_vehicles_costs() {
 }
 
 void Input::set_vehicles_max_tasks() {
-  const auto amount_size = get_amount_size();
-
-  if (_has_jobs && !_has_shipments && amount_size > 0) {
+  if (const auto amount_size = get_amount_size();
+      _has_jobs && !_has_shipments && amount_size > 0) {
     // For job-only instances where capacity restrictions apply:
     // compute an upper bound of the number of jobs for each vehicle
     // based on pickups load and delivery loads. This requires sorting
