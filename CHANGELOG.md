@@ -17,6 +17,7 @@
 - Reduce complexity for recreation process (#1155)
 - Refactor `SolutionIndicators` (#1169)
 - Remove amount consistency checks in `parse` in favor of upstream checks in `Input` (#1086)
+- Add pending delivery constraint checks in `cvrp::PriorityReplace::is_valid`
 
 #### CI
 
@@ -33,6 +34,7 @@
 
 - Crash when input is valid JSON but not an object (#1172)
 - Capacity array check consistency (#1086)
+- Invalid route reached with PriorityReplace (#1162)
 
 #### Internals
 
