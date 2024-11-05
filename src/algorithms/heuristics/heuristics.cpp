@@ -144,20 +144,20 @@ Eval basic(const Input& input,
         bool try_validity = false;
 
         if (init == INIT::HIGHER_AMOUNT) {
-          try_validity |= (higher_amount < current_job.pickup ||
-                           higher_amount < current_job.delivery);
+          try_validity = (higher_amount < current_job.pickup ||
+                          higher_amount < current_job.delivery);
         }
         if (init == INIT::EARLIEST_DEADLINE) {
           Duration current_deadline =
             is_pickup ? input.jobs[job_rank + 1].tws.back().end
                       : current_job.tws.back().end;
-          try_validity |= (current_deadline < earliest_deadline);
+          try_validity = (current_deadline < earliest_deadline);
         }
         if (init == INIT::FURTHEST) {
-          try_validity |= (furthest_cost < evals[job_rank][v_rank].cost);
+          try_validity = (furthest_cost < evals[job_rank][v_rank].cost);
         }
         if (init == INIT::NEAREST) {
-          try_validity |= (evals[job_rank][v_rank].cost < nearest_cost);
+          try_validity = (evals[job_rank][v_rank].cost < nearest_cost);
         }
 
         if (!try_validity) {
@@ -593,20 +593,20 @@ Eval dynamic_vehicle_choice(const Input& input,
         bool try_validity = false;
 
         if (init == INIT::HIGHER_AMOUNT) {
-          try_validity |= (higher_amount < current_job.pickup ||
-                           higher_amount < current_job.delivery);
+          try_validity = (higher_amount < current_job.pickup ||
+                          higher_amount < current_job.delivery);
         }
         if (init == INIT::EARLIEST_DEADLINE) {
           Duration current_deadline =
             is_pickup ? input.jobs[job_rank + 1].tws.back().end
                       : current_job.tws.back().end;
-          try_validity |= (current_deadline < earliest_deadline);
+          try_validity = (current_deadline < earliest_deadline);
         }
         if (init == INIT::FURTHEST) {
-          try_validity |= (furthest_cost < evals[job_rank][v_rank].cost);
+          try_validity = (furthest_cost < evals[job_rank][v_rank].cost);
         }
         if (init == INIT::NEAREST) {
-          try_validity |= (evals[job_rank][v_rank].cost < nearest_cost);
+          try_validity = (evals[job_rank][v_rank].cost < nearest_cost);
         }
 
         if (!try_validity) {
