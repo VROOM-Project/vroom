@@ -45,7 +45,9 @@ Eval basic(const Input& input,
            SORT sort) {
   auto unassigned = get_unassigned(routes, jobs_begin, jobs_end);
 
-  // Perform heuristic ordering of the vehicles on a copy.
+  // Perform heuristic ordering of the vehicles on a copy. Ordering is
+  // based on vehicles description only so do not account for initial
+  // routes if any.
   const auto nb_vehicles = std::distance(vehicles_begin, vehicles_end);
   std::vector<Index> vehicles_ranks;
   vehicles_ranks.reserve(nb_vehicles);
@@ -78,7 +80,9 @@ Eval basic(const Input& input,
 
   // regrets[v][j] holds the min cost for reaching job j in an empty
   // route across all remaining vehicles **after** vehicle at rank v
-  // in vehicles_ranks.
+  // in vehicles_ranks. Regrets are only computed for available
+  // vehicles and unassigned jobs, but are based on empty routes
+  // evaluations so do not account for initial routes if any.
   std::vector<std::vector<Cost>> regrets(nb_vehicles,
                                          std::vector<Cost>(input.jobs.size()));
 
@@ -466,7 +470,8 @@ Eval dynamic_vehicle_choice(const Input& input,
     // For any unassigned job at j, jobs_min_costs[j]
     // (resp. jobs_second_min_costs[j]) holds the min cost
     // (resp. second min cost) of picking the job in an empty route
-    // for any remaining vehicle.
+    // for any remaining vehicle. Evaluation are based on empty routes
+    // so do not account for initial routes if any.
     std::vector<Cost> jobs_min_costs(input.jobs.size(),
                                      input.get_cost_upper_bound());
     std::vector<Cost> jobs_second_min_costs(input.jobs.size(),
@@ -484,8 +489,9 @@ Eval dynamic_vehicle_choice(const Input& input,
       }
     }
 
-    // Pick vehicle that has the biggest number of compatible jobs
-    // closest to him than to any other different vehicle.
+    // Pick vehicle that has the biggest number of compatible
+    // unassigned jobs closest to him than to any other different
+    // vehicle still available.
     std::vector<unsigned> closest_jobs_count(input.vehicles.size(), 0);
     for (const auto job_rank : unassigned) {
       for (const auto v_rank : vehicles_ranks) {
@@ -530,9 +536,12 @@ Eval dynamic_vehicle_choice(const Input& input,
       vehicles_ranks.erase(chosen_vehicle);
     }
 
-    // Once current vehicle is decided, regrets[j] holds the min cost
-    // of picking the job in an empty route for other remaining
-    // vehicles.
+    // Once current vehicle is decided, then for any unassigned job at
+    // j, regrets[j] holds the min cost of picking the job in an empty
+    // route for other remaining vehicles. Regrets are only computed
+    // for available vehicles and unassigned jobs, but are based on
+    // empty routes evaluations so do not account for initial routes
+    // if any.
     std::vector<Cost> regrets(input.jobs.size(), input.get_cost_upper_bound());
     for (const auto job_rank : unassigned) {
       if (jobs_min_costs[job_rank] < evals[job_rank][v_rank].cost) {
