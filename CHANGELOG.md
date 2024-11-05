@@ -6,6 +6,7 @@
 
 #### Internals
 
+- Apply heuristics to partial solutions provided in input (#977)
 - LOG_LS flag to generate debug info on the internal solving process (#1124)
 
 ### Changed
