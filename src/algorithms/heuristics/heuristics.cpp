@@ -890,147 +890,144 @@ Eval dynamic_vehicle_choice(const Input& input,
   return sol_eval;
 }
 
-template <class Route>
-void set_initial_routes(const Input& input, std::vector<Route>& routes) {
-  assert(std::all_of(routes.cbegin(), routes.cend(), [](const auto& r) {
-    return r.empty();
-  }));
+template <class Route> void set_route(const Input& input, Route& route) {
+  assert(route.empty());
+  const auto& vehicle = input.vehicles[route.vehicle_rank];
 
-  for (Index v = 0; v < input.vehicles.size(); ++v) {
-    const auto& vehicle = input.vehicles[v];
-    auto& current_r = routes[v];
+  // Startup load is the sum of deliveries for (single) jobs.
+  Amount single_jobs_deliveries(input.zero_amount());
+  for (const auto& step : vehicle.steps) {
+    if (step.type == STEP_TYPE::JOB) {
+      assert(step.job_type.has_value());
 
-    // Startup load is the sum of deliveries for (single) jobs.
-    Amount single_jobs_deliveries(input.zero_amount());
-    for (const auto& step : vehicle.steps) {
-      if (step.type == STEP_TYPE::JOB) {
-        assert(step.job_type.has_value());
-
-        if (step.job_type.value() == JOB_TYPE::SINGLE) {
-          single_jobs_deliveries += input.jobs[step.rank].delivery;
-        }
+      if (step.job_type.value() == JOB_TYPE::SINGLE) {
+        single_jobs_deliveries += input.jobs[step.rank].delivery;
       }
     }
-    if (!(single_jobs_deliveries <= vehicle.capacity)) {
+  }
+  if (!(single_jobs_deliveries <= vehicle.capacity)) {
+    throw InputException(
+      std::format("Route over capacity for vehicle {}.", vehicle.id));
+  }
+
+  // Track load and travel time during the route for validity.
+  Amount current_load = single_jobs_deliveries;
+  Eval eval_sum;
+  std::optional<Index> previous_index;
+  if (vehicle.has_start()) {
+    previous_index = vehicle.start.value().index();
+  }
+
+  std::vector<Index> job_ranks;
+  job_ranks.reserve(vehicle.steps.size());
+  std::unordered_set<Index> expected_delivery_ranks;
+  for (const auto& step : vehicle.steps) {
+    if (step.type != STEP_TYPE::JOB) {
+      continue;
+    }
+
+    const auto job_rank = step.rank;
+    const auto& job = input.jobs[job_rank];
+    job_ranks.push_back(job_rank);
+
+    if (!input.vehicle_ok_with_job(route.vehicle_rank, job_rank)) {
+      throw InputException(
+        std::format("Missing skill or step out of reach for vehicle {} and "
+                    "job {}.",
+                    vehicle.id,
+                    job.id));
+    }
+
+    // Update current travel time.
+    if (previous_index.has_value()) {
+      eval_sum += vehicle.eval(previous_index.value(), job.index());
+    }
+    previous_index = job.index();
+
+    // Handle load.
+    assert(step.job_type.has_value());
+    switch (step.job_type.value()) {
+    case JOB_TYPE::SINGLE: {
+      current_load += job.pickup;
+      current_load -= job.delivery;
+      break;
+    }
+    case JOB_TYPE::PICKUP: {
+      expected_delivery_ranks.insert(job_rank + 1);
+
+      current_load += job.pickup;
+      break;
+    }
+    case JOB_TYPE::DELIVERY: {
+      auto search = expected_delivery_ranks.find(job_rank);
+      if (search == expected_delivery_ranks.end()) {
+        throw InputException(
+          std::format("Invalid shipment in route for vehicle {}.", vehicle.id));
+      }
+      expected_delivery_ranks.erase(search);
+
+      current_load -= job.delivery;
+      break;
+    }
+    }
+
+    // Check validity after this step wrt capacity.
+    if (!(current_load <= vehicle.capacity)) {
       throw InputException(
         std::format("Route over capacity for vehicle {}.", vehicle.id));
     }
-
-    // Track load and travel time during the route for validity.
-    Amount current_load = single_jobs_deliveries;
-    Eval eval_sum;
-    std::optional<Index> previous_index;
-    if (vehicle.has_start()) {
-      previous_index = vehicle.start.value().index();
-    }
-
-    std::vector<Index> job_ranks;
-    job_ranks.reserve(vehicle.steps.size());
-    std::unordered_set<Index> expected_delivery_ranks;
-    for (const auto& step : vehicle.steps) {
-      if (step.type != STEP_TYPE::JOB) {
-        continue;
-      }
-
-      const auto job_rank = step.rank;
-      const auto& job = input.jobs[job_rank];
-      job_ranks.push_back(job_rank);
-
-      if (!input.vehicle_ok_with_job(v, job_rank)) {
-        throw InputException(
-          std::format("Missing skill or step out of reach for vehicle {} and "
-                      "job {}.",
-                      vehicle.id,
-                      job.id));
-      }
-
-      // Update current travel time.
-      if (previous_index.has_value()) {
-        eval_sum += vehicle.eval(previous_index.value(), job.index());
-      }
-      previous_index = job.index();
-
-      // Handle load.
-      assert(step.job_type.has_value());
-      switch (step.job_type.value()) {
-      case JOB_TYPE::SINGLE: {
-        current_load += job.pickup;
-        current_load -= job.delivery;
-        break;
-      }
-      case JOB_TYPE::PICKUP: {
-        expected_delivery_ranks.insert(job_rank + 1);
-
-        current_load += job.pickup;
-        break;
-      }
-      case JOB_TYPE::DELIVERY: {
-        auto search = expected_delivery_ranks.find(job_rank);
-        if (search == expected_delivery_ranks.end()) {
-          throw InputException(
-            std::format("Invalid shipment in route for vehicle {}.",
-                        vehicle.id));
-        }
-        expected_delivery_ranks.erase(search);
-
-        current_load -= job.delivery;
-        break;
-      }
-      }
-
-      // Check validity after this step wrt capacity.
-      if (!(current_load <= vehicle.capacity)) {
-        throw InputException(
-          std::format("Route over capacity for vehicle {}.", vehicle.id));
-      }
-    }
-
-    if (vehicle.has_end() && !job_ranks.empty()) {
-      // Update with last route leg.
-      assert(previous_index.has_value());
-      eval_sum +=
-        vehicle.eval(previous_index.value(), vehicle.end.value().index());
-    }
-    if (!vehicle.ok_for_travel_time(eval_sum.duration)) {
-      throw InputException(
-        std::format("Route over max_travel_time for vehicle {}.", vehicle.id));
-    }
-    if (!vehicle.ok_for_distance(eval_sum.distance)) {
-      throw InputException(
-        std::format("Route over max_distance for vehicle {}.", vehicle.id));
-    }
-
-    if (vehicle.max_tasks < job_ranks.size()) {
-      throw InputException(
-        std::format("Too many tasks for vehicle {}.", vehicle.id));
-    }
-
-    if (!expected_delivery_ranks.empty()) {
-      throw InputException(
-        std::format("Invalid shipment in route for vehicle {}.", vehicle.id));
-    }
-
-    // Now route is OK with regard to capacity, max_travel_time,
-    // max_tasks, precedence and skills constraints.
-    if (!job_ranks.empty()) {
-      if (!current_r.is_valid_addition_for_tw(input,
-                                              single_jobs_deliveries,
-                                              job_ranks.begin(),
-                                              job_ranks.end(),
-                                              0,
-                                              0)) {
-        throw InputException(
-          std::format("Infeasible route for vehicle {}.", vehicle.id));
-      }
-
-      current_r.replace(input,
-                        single_jobs_deliveries,
-                        job_ranks.begin(),
-                        job_ranks.end(),
-                        0,
-                        0);
-    }
   }
+
+  if (vehicle.has_end() && !job_ranks.empty()) {
+    // Update with last route leg.
+    assert(previous_index.has_value());
+    eval_sum +=
+      vehicle.eval(previous_index.value(), vehicle.end.value().index());
+  }
+  if (!vehicle.ok_for_travel_time(eval_sum.duration)) {
+    throw InputException(
+      std::format("Route over max_travel_time for vehicle {}.", vehicle.id));
+  }
+  if (!vehicle.ok_for_distance(eval_sum.distance)) {
+    throw InputException(
+      std::format("Route over max_distance for vehicle {}.", vehicle.id));
+  }
+
+  if (vehicle.max_tasks < job_ranks.size()) {
+    throw InputException(
+      std::format("Too many tasks for vehicle {}.", vehicle.id));
+  }
+
+  if (!expected_delivery_ranks.empty()) {
+    throw InputException(
+      std::format("Invalid shipment in route for vehicle {}.", vehicle.id));
+  }
+
+  // Now route is OK with regard to capacity, max_travel_time,
+  // max_tasks, precedence and skills constraints.
+  if (!job_ranks.empty()) {
+    if (!route.is_valid_addition_for_tw(input,
+                                        single_jobs_deliveries,
+                                        job_ranks.begin(),
+                                        job_ranks.end(),
+                                        0,
+                                        0)) {
+      throw InputException(
+        std::format("Infeasible route for vehicle {}.", vehicle.id));
+    }
+
+    route.replace(input,
+                  single_jobs_deliveries,
+                  job_ranks.begin(),
+                  job_ranks.end(),
+                  0,
+                  0);
+  }
+}
+
+template <class Route>
+void set_initial_routes(const Input& input, std::vector<Route>& routes) {
+  std::ranges::for_each(routes, [&](auto& r) { set_route(input, r); });
 }
 
 using RawSolution = std::vector<RawRoute>;
