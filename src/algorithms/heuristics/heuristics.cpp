@@ -87,9 +87,8 @@ Eval basic(const Input& input,
                                          std::vector<Cost>(input.jobs.size()));
 
   // Use own cost for last vehicle regret values.
-  auto& last_regrets = regrets.back();
   for (const auto j : unassigned) {
-    last_regrets[j] = evals[j][vehicles_ranks.back()].cost;
+    regrets.back()[j] = evals[j][vehicles_ranks.back()].cost;
   }
 
   for (Index rev_v = 0; rev_v < nb_vehicles - 1; ++rev_v) {
@@ -969,6 +968,8 @@ template <class Route> void set_route(const Input& input, Route& route) {
       current_load -= job.delivery;
       break;
     }
+    default:
+      assert(false);
     }
 
     // Check validity after this step wrt capacity.
