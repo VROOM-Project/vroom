@@ -449,17 +449,7 @@ Eval dynamic_vehicle_choice(const Input& input,
                             INIT init,
                             double lambda,
                             SORT sort) {
-  assert(std::all_of(routes.cbegin(), routes.cend(), [](const auto& r) {
-    return r.empty();
-  }));
-
-  Eval sol_eval;
-
-  // Consider all jobs as unassigned at first.
-  std::set<Index> unassigned;
-  std::copy(jobs_begin,
-            jobs_end,
-            std::inserter(unassigned, unassigned.begin()));
+  auto unassigned = get_unassigned(routes, jobs_begin, jobs_end);
 
   // Work on a copy of the vehicles ranks from which we erase values
   // each time a route is completed.
@@ -469,6 +459,8 @@ Eval dynamic_vehicle_choice(const Input& input,
   std::copy(vehicles_begin, vehicles_end, std::back_inserter(vehicles_ranks));
 
   const auto& evals = input.jobs_vehicles_evals();
+
+  Eval sol_eval;
 
   while (!vehicles_ranks.empty() && !unassigned.empty()) {
     // For any unassigned job at j, jobs_min_costs[j]
