@@ -17,16 +17,9 @@ All rights reserved (see LICENSE).
 namespace vroom::heuristics {
 
 template <class Route, std::forward_iterator Iter>
-Eval basic(const Input& input,
-           std::vector<Route>& routes,
-           const Iter jobs_begin,
-           const Iter jobs_end,
-           const Iter vehicles_begin,
-           const Iter vehicles_end,
-           INIT init,
-           double lambda,
-           SORT sort) {
-  // Find out unassigned jobs.
+std::set<Index> get_unassigned(const std::vector<Route>& routes,
+                               const Iter jobs_begin,
+                               const Iter jobs_end) {
   std::unordered_set<Index> assigned;
   std::ranges::for_each(routes, [&](const auto& r) {
     std::ranges::copy(r.route, std::inserter(assigned, assigned.end()));
@@ -36,6 +29,21 @@ Eval basic(const Input& input,
                jobs_end,
                std::inserter(unassigned, unassigned.begin()),
                [&](const auto j) { return !assigned.contains(j); });
+
+  return unassigned;
+}
+
+template <class Route, std::forward_iterator Iter>
+Eval basic(const Input& input,
+           std::vector<Route>& routes,
+           const Iter jobs_begin,
+           const Iter jobs_end,
+           const Iter vehicles_begin,
+           const Iter vehicles_end,
+           INIT init,
+           double lambda,
+           SORT sort) {
+  auto unassigned = get_unassigned(routes, jobs_begin, jobs_end);
 
   // Perform heuristic ordering of the vehicles on a copy.
   const auto nb_vehicles = std::distance(vehicles_begin, vehicles_end);
