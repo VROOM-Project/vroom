@@ -545,9 +545,16 @@ Eval dynamic_vehicle_choice(const Input& input,
     const auto& vehicle = input.vehicles[v_rank];
     auto& current_r = routes[v_rank];
 
+    // Route eval without fixed cost.
     Eval current_route_eval;
+    if (!current_r.empty()) {
+      current_route_eval =
+        utils::route_eval_for_vehicle(input, v_rank, current_r.route);
+      assert(vehicle.fixed_cost() <= current_route_eval.cost);
+      current_route_eval.cost -= vehicle.fixed_cost();
+    }
 
-    if (init != INIT::NONE) {
+    if (current_r.empty() && init != INIT::NONE) {
       // Initialize current route with the "best" valid job that is
       // closest for current vehicle than to any other remaining
       // vehicle.
