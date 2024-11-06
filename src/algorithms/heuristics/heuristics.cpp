@@ -39,10 +39,14 @@ template <class Route>
 inline Eval seed_route(const Input& input,
                        Route& current_r,
                        INIT init,
+                       const std::vector<std::vector<Eval>>& evals,
                        std::set<Index>& unassigned,
-                       const std::vector<std::vector<Eval>>& evals) {
+                       auto job_not_ok) {
   const auto v_rank = current_r.vehicle_rank;
   const auto& vehicle = input.vehicles[v_rank];
+
+  // Compare with dynamic init using diff <(sed -n '51,173p' heuristics.cpp)
+  // <(sed -n '583,710p' heuristics.cpp)
 
   // Route eval without fixed cost.
   Eval current_route_eval;
@@ -66,8 +70,7 @@ inline Eval seed_route(const Input& input,
       for (const auto job_rank : unassigned) {
         const auto& current_job = input.jobs[job_rank];
 
-        if (!input.vehicle_ok_with_job(v_rank, job_rank) ||
-            current_job.type == JOB_TYPE::DELIVERY) {
+        if (job_not_ok(job_rank)) {
           continue;
         }
 
@@ -248,8 +251,13 @@ Eval basic(const Input& input,
 
     const auto& vehicle = input.vehicles[v_rank];
 
+    auto job_not_ok = [&](const Index job_rank) {
+      return !input.vehicle_ok_with_job(v_rank, job_rank) ||
+             input.jobs[job_rank].type == JOB_TYPE::DELIVERY;
+    };
+
     Eval current_route_eval =
-      seed_route(input, current_r, init, unassigned, evals);
+      seed_route(input, current_r, init, evals, unassigned, job_not_ok);
 
     bool keep_going = true;
     while (keep_going) {
