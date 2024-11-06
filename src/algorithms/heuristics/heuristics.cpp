@@ -17,9 +17,9 @@ All rights reserved (see LICENSE).
 namespace vroom::heuristics {
 
 template <class Route, std::forward_iterator Iter>
-std::set<Index> get_unassigned(const std::vector<Route>& routes,
-                               const Iter jobs_begin,
-                               const Iter jobs_end) {
+inline std::set<Index> get_unassigned(const std::vector<Route>& routes,
+                                      const Iter jobs_begin,
+                                      const Iter jobs_end) {
   std::unordered_set<Index> assigned;
   std::ranges::for_each(routes, [&](const auto& r) {
     std::ranges::copy(r.route, std::inserter(assigned, assigned.end()));
@@ -36,11 +36,11 @@ std::set<Index> get_unassigned(const std::vector<Route>& routes,
 // Add seed job to route if required and return current cost of route
 // without vehicle fixed cost.
 template <class Route>
-Eval seed_route(const Input& input,
-                Route& current_r,
-                INIT init,
-                std::set<Index>& unassigned,
-                const std::vector<std::vector<Eval>>& evals) {
+inline Eval seed_route(const Input& input,
+                       Route& current_r,
+                       INIT init,
+                       std::set<Index>& unassigned,
+                       const std::vector<std::vector<Eval>>& evals) {
   const auto v_rank = current_r.vehicle_rank;
   const auto& vehicle = input.vehicles[v_rank];
 
