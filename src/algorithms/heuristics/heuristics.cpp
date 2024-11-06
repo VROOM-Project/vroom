@@ -115,10 +115,11 @@ inline void seed_route(const Input& input,
         best_job_rank = job_rank;
 
         switch (init) {
-        case INIT::NONE:
+          using enum INIT;
+        case NONE:
           assert(false);
           break;
-        case INIT::HIGHER_AMOUNT:
+        case HIGHER_AMOUNT:
           if (higher_amount < current_job.pickup) {
             higher_amount = current_job.pickup;
           }
@@ -126,15 +127,15 @@ inline void seed_route(const Input& input,
             higher_amount = current_job.delivery;
           }
           break;
-        case INIT::EARLIEST_DEADLINE:
+        case EARLIEST_DEADLINE:
           earliest_deadline = is_pickup
                                 ? input.jobs[job_rank + 1].tws.back().end
                                 : current_job.tws.back().end;
           break;
-        case INIT::FURTHEST:
+        case FURTHEST:
           furthest_cost = evals[job_rank][v_rank].cost;
           break;
-        case INIT::NEAREST:
+        case NEAREST:
           nearest_cost = evals[job_rank][v_rank].cost;
           break;
         }
