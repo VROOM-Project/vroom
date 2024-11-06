@@ -159,15 +159,14 @@ inline void seed_route(const Input& input,
 
 template <class Route>
 inline Eval fill_route(const Input& input,
-                       Route& current_r,
+                       Route& route,
                        std::set<Index>& unassigned,
                        const std::vector<Cost>& regrets,
                        double lambda) {
-  const auto v_rank = current_r.vehicle_rank;
+  const auto v_rank = route.vehicle_rank;
   const auto& vehicle = input.vehicles[v_rank];
 
-  Eval current_route_eval =
-    utils::route_eval_for_vehicle(input, v_rank, current_r.route);
+  Eval route_eval = utils::route_eval_for_vehicle(input, v_rank, route.route);
   {
     bool keep_going = true;
     while (keep_going) {
@@ -192,26 +191,22 @@ inline Eval fill_route(const Input& input,
         }
 
         if (current_job.type == JOB_TYPE::SINGLE &&
-            current_r.size() + 1 <= vehicle.max_tasks) {
-          for (Index r = 0; r <= current_r.size(); ++r) {
-            const auto current_eval = utils::addition_cost(input,
-                                                           job_rank,
-                                                           vehicle,
-                                                           current_r.route,
-                                                           r);
+            route.size() + 1 <= vehicle.max_tasks) {
+          for (Index r = 0; r <= route.size(); ++r) {
+            const auto current_eval =
+              utils::addition_cost(input, job_rank, vehicle, route.route, r);
 
             double current_cost =
               static_cast<double>(current_eval.cost) -
               lambda * static_cast<double>(regrets[job_rank]);
 
             if (current_cost < best_cost &&
-                (vehicle.ok_for_range_bounds(current_route_eval +
-                                             current_eval)) &&
-                current_r.is_valid_addition_for_capacity(input,
-                                                         current_job.pickup,
-                                                         current_job.delivery,
-                                                         r) &&
-                current_r.is_valid_addition_for_tw(input, job_rank, r)) {
+                (vehicle.ok_for_range_bounds(route_eval + current_eval)) &&
+                route.is_valid_addition_for_capacity(input,
+                                                     current_job.pickup,
+                                                     current_job.delivery,
+                                                     r) &&
+                route.is_valid_addition_for_tw(input, job_rank, r)) {
               best_cost = current_cost;
               best_job_rank = job_rank;
               best_r = r;
@@ -221,57 +216,55 @@ inline Eval fill_route(const Input& input,
         }
 
         if (current_job.type == JOB_TYPE::PICKUP &&
-            current_r.size() + 2 <= vehicle.max_tasks) {
+            route.size() + 2 <= vehicle.max_tasks) {
           // Pre-compute cost of addition for matching delivery.
-          std::vector<Eval> d_adds(current_r.route.size() + 1);
+          std::vector<Eval> d_adds(route.route.size() + 1);
           std::vector<unsigned char> valid_delivery_insertions(
-            current_r.route.size() + 1);
+            route.route.size() + 1);
 
-          for (unsigned d_rank = 0; d_rank <= current_r.route.size();
-               ++d_rank) {
+          for (unsigned d_rank = 0; d_rank <= route.route.size(); ++d_rank) {
             d_adds[d_rank] = utils::addition_cost(input,
                                                   job_rank + 1,
                                                   vehicle,
-                                                  current_r.route,
+                                                  route.route,
                                                   d_rank);
             valid_delivery_insertions[d_rank] =
-              current_r.is_valid_addition_for_tw_without_max_load(input,
-                                                                  job_rank + 1,
-                                                                  d_rank);
+              route.is_valid_addition_for_tw_without_max_load(input,
+                                                              job_rank + 1,
+                                                              d_rank);
           }
 
-          for (Index pickup_r = 0; pickup_r <= current_r.size(); ++pickup_r) {
+          for (Index pickup_r = 0; pickup_r <= route.size(); ++pickup_r) {
             const auto p_add = utils::addition_cost(input,
                                                     job_rank,
                                                     vehicle,
-                                                    current_r.route,
+                                                    route.route,
                                                     pickup_r);
 
-            if (!current_r.is_valid_addition_for_load(input,
-                                                      current_job.pickup,
-                                                      pickup_r) ||
-                !current_r
-                   .is_valid_addition_for_tw_without_max_load(input,
-                                                              job_rank,
-                                                              pickup_r)) {
+            if (!route.is_valid_addition_for_load(input,
+                                                  current_job.pickup,
+                                                  pickup_r) ||
+                !route.is_valid_addition_for_tw_without_max_load(input,
+                                                                 job_rank,
+                                                                 pickup_r)) {
               continue;
             }
 
             // Build replacement sequence for current insertion.
             std::vector<Index> modified_with_pd;
-            modified_with_pd.reserve(current_r.size() - pickup_r + 2);
+            modified_with_pd.reserve(route.size() - pickup_r + 2);
             modified_with_pd.push_back(job_rank);
 
             Amount modified_delivery = input.zero_amount();
 
-            for (Index delivery_r = pickup_r; delivery_r <= current_r.size();
+            for (Index delivery_r = pickup_r; delivery_r <= route.size();
                  ++delivery_r) {
               // Update state variables along the way before potential
               // early abort.
               if (pickup_r < delivery_r) {
-                modified_with_pd.push_back(current_r.route[delivery_r - 1]);
+                modified_with_pd.push_back(route.route[delivery_r - 1]);
                 const auto& new_modified_job =
-                  input.jobs[current_r.route[delivery_r - 1]];
+                  input.jobs[route.route[delivery_r - 1]];
                 if (new_modified_job.type == JOB_TYPE::SINGLE) {
                   modified_delivery += new_modified_job.delivery;
                 }
@@ -286,7 +279,7 @@ inline Eval fill_route(const Input& input,
                 current_eval = utils::addition_cost(input,
                                                     job_rank,
                                                     vehicle,
-                                                    current_r.route,
+                                                    route.route,
                                                     pickup_r,
                                                     pickup_r + 1);
               } else {
@@ -302,9 +295,8 @@ inline Eval fill_route(const Input& input,
 
                 // Update best cost depending on validity.
                 bool valid =
-                  (vehicle.ok_for_range_bounds(current_route_eval +
-                                               current_eval)) &&
-                  current_r
+                  (vehicle.ok_for_range_bounds(route_eval + current_eval)) &&
+                  route
                     .is_valid_addition_for_capacity_inclusion(input,
                                                               modified_delivery,
                                                               modified_with_pd
@@ -313,12 +305,12 @@ inline Eval fill_route(const Input& input,
                                                                 .end(),
                                                               pickup_r,
                                                               delivery_r) &&
-                  current_r.is_valid_addition_for_tw(input,
-                                                     modified_delivery,
-                                                     modified_with_pd.begin(),
-                                                     modified_with_pd.end(),
-                                                     pickup_r,
-                                                     delivery_r);
+                  route.is_valid_addition_for_tw(input,
+                                                 modified_delivery,
+                                                 modified_with_pd.begin(),
+                                                 modified_with_pd.end(),
+                                                 pickup_r,
+                                                 delivery_r);
 
                 modified_with_pd.pop_back();
 
@@ -338,7 +330,7 @@ inline Eval fill_route(const Input& input,
 
       if (best_cost < std::numeric_limits<double>::max()) {
         if (input.jobs[best_job_rank].type == JOB_TYPE::SINGLE) {
-          current_r.add(input, best_job_rank, best_r);
+          route.add(input, best_job_rank, best_r);
           unassigned.erase(best_job_rank);
           keep_going = true;
         }
@@ -347,28 +339,28 @@ inline Eval fill_route(const Input& input,
           modified_with_pd.reserve(best_delivery_r - best_pickup_r + 2);
           modified_with_pd.push_back(best_job_rank);
 
-          std::copy(current_r.route.begin() + best_pickup_r,
-                    current_r.route.begin() + best_delivery_r,
+          std::copy(route.route.begin() + best_pickup_r,
+                    route.route.begin() + best_delivery_r,
                     std::back_inserter(modified_with_pd));
           modified_with_pd.push_back(best_job_rank + 1);
 
-          current_r.replace(input,
-                            best_modified_delivery,
-                            modified_with_pd.begin(),
-                            modified_with_pd.end(),
-                            best_pickup_r,
-                            best_delivery_r);
+          route.replace(input,
+                        best_modified_delivery,
+                        modified_with_pd.begin(),
+                        modified_with_pd.end(),
+                        best_pickup_r,
+                        best_delivery_r);
           unassigned.erase(best_job_rank);
           unassigned.erase(best_job_rank + 1);
           keep_going = true;
         }
 
-        current_route_eval += best_eval;
+        route_eval += best_eval;
       }
     }
   }
 
-  return current_route_eval;
+  return route_eval;
 }
 
 template <class Route, std::forward_iterator Iter>
@@ -442,13 +434,13 @@ Eval basic(const Input& input,
 
   for (Index v = 0; v < nb_vehicles; ++v) {
     auto v_rank = vehicles_ranks[v];
-    auto& current_r = routes[v_rank];
 
     auto job_not_ok = [&](const Index job_rank) {
       return !input.vehicle_ok_with_job(v_rank, job_rank) ||
              input.jobs[job_rank].type == JOB_TYPE::DELIVERY;
     };
 
+    auto& current_r = routes[v_rank];
     seed_route(input, current_r, init, evals, unassigned, job_not_ok);
 
     const auto current_eval =
@@ -569,8 +561,6 @@ Eval dynamic_vehicle_choice(const Input& input,
       }
     }
 
-    auto& current_r = routes[v_rank];
-
     auto job_not_ok = [&](const Index job_rank) {
       return !input.vehicle_ok_with_job(v_rank, job_rank) ||
              input.jobs[job_rank].type == JOB_TYPE::DELIVERY ||
@@ -578,6 +568,7 @@ Eval dynamic_vehicle_choice(const Input& input,
              jobs_min_costs[job_rank] < evals[job_rank][v_rank].cost;
     };
 
+    auto& current_r = routes[v_rank];
     seed_route(input, current_r, init, evals, unassigned, job_not_ok);
 
     const auto current_eval =
