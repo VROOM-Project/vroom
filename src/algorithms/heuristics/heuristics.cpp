@@ -36,7 +36,7 @@ inline std::set<Index> get_unassigned(const std::vector<Route>& routes,
 // Add seed job to route if required and return current cost of route
 // without vehicle fixed cost.
 template <class Route>
-inline Eval seed_route(const Input& input,
+inline void seed_route(const Input& input,
                        Route& route,
                        INIT init,
                        const std::vector<std::vector<Eval>>& evals,
@@ -44,14 +44,6 @@ inline Eval seed_route(const Input& input,
                        auto job_not_ok) {
   const auto v_rank = route.vehicle_rank;
   const auto& vehicle = input.vehicles[v_rank];
-
-  // Route eval without fixed cost.
-  Eval route_eval;
-  if (!route.empty()) {
-    route_eval = utils::route_eval_for_vehicle(input, v_rank, route.route);
-    assert(vehicle.fixed_cost() <= route_eval.cost);
-    route_eval.cost -= vehicle.fixed_cost();
-  }
 
   if (route.empty() && init != INIT::NONE) {
     // Initialize current route with the "best" valid job.
@@ -161,96 +153,22 @@ inline Eval seed_route(const Input& input,
         unassigned.erase(best_job_rank);
         unassigned.erase(best_job_rank + 1);
       }
-      route_eval += evals[best_job_rank][v_rank];
     }
   }
-
-  return route_eval;
 }
 
-template <class Route, std::forward_iterator Iter>
-Eval basic(const Input& input,
-           std::vector<Route>& routes,
-           const Iter jobs_begin,
-           const Iter jobs_end,
-           const Iter vehicles_begin,
-           const Iter vehicles_end,
-           INIT init,
-           double lambda,
-           SORT sort) {
-  auto unassigned = get_unassigned(routes, jobs_begin, jobs_end);
+template <class Route>
+inline Eval fill_route(const Input& input,
+                       Route& current_r,
+                       std::set<Index>& unassigned,
+                       const std::vector<Cost>& regrets,
+                       double lambda) {
+  const auto v_rank = current_r.vehicle_rank;
+  const auto& vehicle = input.vehicles[v_rank];
 
-  // Perform heuristic ordering of the vehicles on a copy. Ordering is
-  // based on vehicles description only so do not account for initial
-  // routes if any.
-  const auto nb_vehicles = std::distance(vehicles_begin, vehicles_end);
-  std::vector<Index> vehicles_ranks;
-  vehicles_ranks.reserve(nb_vehicles);
-  std::copy(vehicles_begin, vehicles_end, std::back_inserter(vehicles_ranks));
-
-  switch (sort) {
-  case SORT::AVAILABILITY: {
-    // Sort vehicles by decreasing "availability".
-    std::ranges::stable_sort(vehicles_ranks,
-                             [&](const auto lhs, const auto rhs) {
-                               return input.vehicles[lhs] < input.vehicles[rhs];
-                             });
-    break;
-  }
-  case SORT::COST:
-    // Sort vehicles by increasing fixed cost, then same as above.
-    std::ranges::stable_sort(vehicles_ranks,
-                             [&](const auto lhs, const auto rhs) {
-                               const auto& v_lhs = input.vehicles[lhs];
-                               const auto& v_rhs = input.vehicles[rhs];
-                               return v_lhs.costs < v_rhs.costs ||
-                                      (v_lhs.costs == v_rhs.costs &&
-                                       input.vehicles[lhs] <
-                                         input.vehicles[rhs]);
-                             });
-    break;
-  }
-
-  const auto& evals = input.jobs_vehicles_evals();
-
-  // regrets[v][j] holds the min cost for reaching job j in an empty
-  // route across all remaining vehicles **after** vehicle at rank v
-  // in vehicles_ranks. Regrets are only computed for available
-  // vehicles and unassigned jobs, but are based on empty routes
-  // evaluations so do not account for initial routes if any.
-  std::vector<std::vector<Cost>> regrets(nb_vehicles,
-                                         std::vector<Cost>(input.jobs.size()));
-
-  // Use own cost for last vehicle regret values.
-  for (const auto j : unassigned) {
-    regrets.back()[j] = evals[j][vehicles_ranks.back()].cost;
-  }
-
-  for (Index rev_v = 0; rev_v < nb_vehicles - 1; ++rev_v) {
-    // Going trough vehicles backward from second to last.
-    const auto v = nb_vehicles - 2 - rev_v;
-    for (const auto j : unassigned) {
-      regrets[v][j] =
-        std::min(regrets[v + 1][j], (evals[j][vehicles_ranks[v + 1]]).cost);
-    }
-  }
-
-  Eval sol_eval;
-
-  for (Index v = 0; v < nb_vehicles; ++v) {
-    auto v_rank = vehicles_ranks[v];
-    auto& current_r = routes[v_rank];
-
-    const auto& vehicle = input.vehicles[v_rank];
-
-    auto job_not_ok = [&](const Index job_rank) {
-      return !input.vehicle_ok_with_job(v_rank, job_rank) ||
-             input.jobs[job_rank].type == JOB_TYPE::DELIVERY;
-    };
-
-    Eval current_route_eval =
-      seed_route(input, current_r, init, evals, unassigned, job_not_ok);
-
+  Eval current_route_eval =
+    utils::route_eval_for_vehicle(input, v_rank, current_r.route);
+  {
     bool keep_going = true;
     while (keep_going) {
       keep_going = false;
@@ -284,7 +202,7 @@ Eval basic(const Input& input,
 
             double current_cost =
               static_cast<double>(current_eval.cost) -
-              lambda * static_cast<double>(regrets[v][job_rank]);
+              lambda * static_cast<double>(regrets[job_rank]);
 
             if (current_cost < best_cost &&
                 (vehicle.ok_for_range_bounds(current_route_eval +
@@ -377,7 +295,7 @@ Eval basic(const Input& input,
 
               double current_cost =
                 current_eval.cost -
-                lambda * static_cast<double>(regrets[v][job_rank]);
+                lambda * static_cast<double>(regrets[job_rank]);
 
               if (current_cost < best_cost) {
                 modified_with_pd.push_back(job_rank + 1);
@@ -394,10 +312,7 @@ Eval basic(const Input& input,
                                                               modified_with_pd
                                                                 .end(),
                                                               pickup_r,
-                                                              delivery_r);
-
-                valid =
-                  valid &&
+                                                              delivery_r) &&
                   current_r.is_valid_addition_for_tw(input,
                                                      modified_delivery,
                                                      modified_with_pd.begin(),
@@ -451,10 +366,95 @@ Eval basic(const Input& input,
         current_route_eval += best_eval;
       }
     }
+  }
 
+  return current_route_eval;
+}
+
+template <class Route, std::forward_iterator Iter>
+Eval basic(const Input& input,
+           std::vector<Route>& routes,
+           const Iter jobs_begin,
+           const Iter jobs_end,
+           const Iter vehicles_begin,
+           const Iter vehicles_end,
+           INIT init,
+           double lambda,
+           SORT sort) {
+  auto unassigned = get_unassigned(routes, jobs_begin, jobs_end);
+
+  // Perform heuristic ordering of the vehicles on a copy. Ordering is
+  // based on vehicles description only so do not account for initial
+  // routes if any.
+  const auto nb_vehicles = std::distance(vehicles_begin, vehicles_end);
+  std::vector<Index> vehicles_ranks;
+  vehicles_ranks.reserve(nb_vehicles);
+  std::copy(vehicles_begin, vehicles_end, std::back_inserter(vehicles_ranks));
+
+  switch (sort) {
+  case SORT::AVAILABILITY: {
+    // Sort vehicles by decreasing "availability".
+    std::ranges::stable_sort(vehicles_ranks,
+                             [&](const auto lhs, const auto rhs) {
+                               return input.vehicles[lhs] < input.vehicles[rhs];
+                             });
+    break;
+  }
+  case SORT::COST:
+    // Sort vehicles by increasing fixed cost, then same as above.
+    std::ranges::stable_sort(vehicles_ranks,
+                             [&](const auto lhs, const auto rhs) {
+                               const auto& v_lhs = input.vehicles[lhs];
+                               const auto& v_rhs = input.vehicles[rhs];
+                               return v_lhs.costs < v_rhs.costs ||
+                                      (v_lhs.costs == v_rhs.costs &&
+                                       input.vehicles[lhs] <
+                                         input.vehicles[rhs]);
+                             });
+    break;
+  }
+
+  const auto& evals = input.jobs_vehicles_evals();
+
+  // regrets[v][j] holds the min cost for reaching job j in an empty
+  // route across all remaining vehicles **after** vehicle at rank v
+  // in vehicles_ranks. Regrets are only computed for available
+  // vehicles and unassigned jobs, but are based on empty routes
+  // evaluations so do not account for initial routes if any.
+  std::vector<std::vector<Cost>> regrets(nb_vehicles,
+                                         std::vector<Cost>(input.jobs.size()));
+
+  // Use own cost for last vehicle regret values.
+  for (const auto j : unassigned) {
+    regrets.back()[j] = evals[j][vehicles_ranks.back()].cost;
+  }
+
+  for (Index rev_v = 0; rev_v < nb_vehicles - 1; ++rev_v) {
+    // Going trough vehicles backward from second to last.
+    const auto v = nb_vehicles - 2 - rev_v;
+    for (const auto j : unassigned) {
+      regrets[v][j] =
+        std::min(regrets[v + 1][j], (evals[j][vehicles_ranks[v + 1]]).cost);
+    }
+  }
+
+  Eval sol_eval;
+
+  for (Index v = 0; v < nb_vehicles; ++v) {
+    auto v_rank = vehicles_ranks[v];
+    auto& current_r = routes[v_rank];
+
+    auto job_not_ok = [&](const Index job_rank) {
+      return !input.vehicle_ok_with_job(v_rank, job_rank) ||
+             input.jobs[job_rank].type == JOB_TYPE::DELIVERY;
+    };
+
+    seed_route(input, current_r, init, evals, unassigned, job_not_ok);
+
+    const auto current_eval =
+      fill_route(input, current_r, unassigned, regrets[v], lambda);
     if (!current_r.empty()) {
-      sol_eval += current_route_eval;
-      sol_eval += Eval(vehicle.fixed_cost());
+      sol_eval += current_eval;
     }
   }
 
