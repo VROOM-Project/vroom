@@ -37,24 +37,23 @@ inline std::set<Index> get_unassigned(const std::vector<Route>& routes,
 // without vehicle fixed cost.
 template <class Route>
 inline Eval seed_route(const Input& input,
-                       Route& current_r,
+                       Route& route,
                        INIT init,
                        const std::vector<std::vector<Eval>>& evals,
                        std::set<Index>& unassigned,
                        auto job_not_ok) {
-  const auto v_rank = current_r.vehicle_rank;
+  const auto v_rank = route.vehicle_rank;
   const auto& vehicle = input.vehicles[v_rank];
 
   // Route eval without fixed cost.
-  Eval current_route_eval;
-  if (!current_r.empty()) {
-    current_route_eval =
-      utils::route_eval_for_vehicle(input, v_rank, current_r.route);
-    assert(vehicle.fixed_cost() <= current_route_eval.cost);
-    current_route_eval.cost -= vehicle.fixed_cost();
+  Eval route_eval;
+  if (!route.empty()) {
+    route_eval = utils::route_eval_for_vehicle(input, v_rank, route.route);
+    assert(vehicle.fixed_cost() <= route_eval.cost);
+    route_eval.cost -= vehicle.fixed_cost();
   }
 
-  if (current_r.empty() && init != INIT::NONE) {
+  if (route.empty() && init != INIT::NONE) {
     // Initialize current route with the "best" valid job.
     bool init_ok = false;
 
@@ -72,7 +71,7 @@ inline Eval seed_route(const Input& input,
 
       bool is_pickup = (current_job.type == JOB_TYPE::PICKUP);
 
-      if (current_r.size() + (is_pickup ? 2 : 1) > vehicle.max_tasks) {
+      if (route.size() + (is_pickup ? 2 : 1) > vehicle.max_tasks) {
         continue;
       }
 
@@ -99,25 +98,24 @@ inline Eval seed_route(const Input& input,
         continue;
       }
 
-      bool is_valid =
-        (vehicle.ok_for_range_bounds(evals[job_rank][v_rank])) &&
-        current_r.is_valid_addition_for_capacity(input,
-                                                 current_job.pickup,
-                                                 current_job.delivery,
-                                                 0);
+      bool is_valid = (vehicle.ok_for_range_bounds(evals[job_rank][v_rank])) &&
+                      route.is_valid_addition_for_capacity(input,
+                                                           current_job.pickup,
+                                                           current_job.delivery,
+                                                           0);
       if (is_pickup) {
         std::vector<Index> p_d({job_rank, static_cast<Index>(job_rank + 1)});
         is_valid =
-          is_valid && current_r.is_valid_addition_for_tw(input,
-                                                         input.zero_amount(),
-                                                         p_d.begin(),
-                                                         p_d.end(),
-                                                         0,
-                                                         0);
+          is_valid && route.is_valid_addition_for_tw(input,
+                                                     input.zero_amount(),
+                                                     p_d.begin(),
+                                                     p_d.end(),
+                                                     0,
+                                                     0);
       } else {
         assert(current_job.type == JOB_TYPE::SINGLE);
         is_valid =
-          is_valid && current_r.is_valid_addition_for_tw(input, job_rank, 0);
+          is_valid && route.is_valid_addition_for_tw(input, job_rank, 0);
       }
 
       if (is_valid) {
@@ -153,22 +151,21 @@ inline Eval seed_route(const Input& input,
 
     if (init_ok) {
       if (input.jobs[best_job_rank].type == JOB_TYPE::SINGLE) {
-        current_r.add(input, best_job_rank, 0);
+        route.add(input, best_job_rank, 0);
         unassigned.erase(best_job_rank);
       }
       if (input.jobs[best_job_rank].type == JOB_TYPE::PICKUP) {
         std::vector<Index> p_d(
           {best_job_rank, static_cast<Index>(best_job_rank + 1)});
-        current_r
-          .replace(input, input.zero_amount(), p_d.begin(), p_d.end(), 0, 0);
+        route.replace(input, input.zero_amount(), p_d.begin(), p_d.end(), 0, 0);
         unassigned.erase(best_job_rank);
         unassigned.erase(best_job_rank + 1);
       }
-      current_route_eval += evals[best_job_rank][v_rank];
+      route_eval += evals[best_job_rank][v_rank];
     }
   }
 
-  return current_route_eval;
+  return route_eval;
 }
 
 template <class Route, std::forward_iterator Iter>
