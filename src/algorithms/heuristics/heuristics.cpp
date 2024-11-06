@@ -434,16 +434,13 @@ Eval basic(const Input& input,
   for (Index v = 0; v < nb_vehicles; ++v) {
     auto v_rank = vehicles_ranks[v];
 
+    auto job_not_ok = [&input, v_rank](const Index job_rank) {
+      return !input.vehicle_ok_with_job(v_rank, job_rank) ||
+             input.jobs[job_rank].type == JOB_TYPE::DELIVERY;
+    };
+
     auto& current_r = routes[v_rank];
-    seed_route(input,
-               current_r,
-               init,
-               evals,
-               unassigned,
-               [&](const Index job_rank) {
-                 return !input.vehicle_ok_with_job(v_rank, job_rank) ||
-                        input.jobs[job_rank].type == JOB_TYPE::DELIVERY;
-               });
+    seed_route(input, current_r, init, evals, unassigned, job_not_ok);
 
     const auto current_eval =
       fill_route(input, current_r, unassigned, regrets[v], lambda);
@@ -563,18 +560,16 @@ Eval dynamic_vehicle_choice(const Input& input,
       }
     }
 
+    auto job_not_ok =
+      [&input, &jobs_min_costs, &evals, v_rank](const Index job_rank) {
+        return !input.vehicle_ok_with_job(v_rank, job_rank) ||
+               input.jobs[job_rank].type == JOB_TYPE::DELIVERY ||
+               // One of the remaining vehicles is closest to that job.
+               jobs_min_costs[job_rank] < evals[job_rank][v_rank].cost;
+      };
+
     auto& current_r = routes[v_rank];
-    seed_route(input,
-               current_r,
-               init,
-               evals,
-               unassigned,
-               [&](const Index job_rank) {
-                 return !input.vehicle_ok_with_job(v_rank, job_rank) ||
-                        input.jobs[job_rank].type == JOB_TYPE::DELIVERY ||
-                        // One of the remaining vehicles is closest to that job.
-                        jobs_min_costs[job_rank] < evals[job_rank][v_rank].cost;
-               });
+    seed_route(input, current_r, init, evals, unassigned, job_not_ok);
 
     const auto current_eval =
       fill_route(input, current_r, unassigned, regrets, lambda);
