@@ -46,7 +46,7 @@ inline Eval seed_route(const Input& input,
   const auto& vehicle = input.vehicles[v_rank];
 
   // Compare with dynamic init using diff <(sed -n '51,173p' heuristics.cpp)
-  // <(sed -n '583,710p' heuristics.cpp)
+  // <(sed -n '590,714p' heuristics.cpp)
 
   // Route eval without fixed cost.
   Eval current_route_eval;
@@ -580,6 +580,13 @@ Eval dynamic_vehicle_choice(const Input& input,
     const auto& vehicle = input.vehicles[v_rank];
     auto& current_r = routes[v_rank];
 
+    auto job_not_ok = [&](const Index job_rank) {
+      return !input.vehicle_ok_with_job(v_rank, job_rank) ||
+             input.jobs[job_rank].type == JOB_TYPE::DELIVERY ||
+             // One of the remaining vehicles is closest to that job.
+             jobs_min_costs[job_rank] < evals[job_rank][v_rank].cost;
+    };
+
     // Route eval without fixed cost.
     Eval current_route_eval;
     if (!current_r.empty()) {
@@ -603,10 +610,7 @@ Eval dynamic_vehicle_choice(const Input& input,
       for (const auto job_rank : unassigned) {
         const auto& current_job = input.jobs[job_rank];
 
-        if (jobs_min_costs[job_rank] < evals[job_rank][v_rank].cost ||
-            // One of the remaining vehicles is closest to that job.
-            !input.vehicle_ok_with_job(v_rank, job_rank) ||
-            current_job.type == JOB_TYPE::DELIVERY) {
+        if (job_not_ok(job_rank)) {
           continue;
         }
 
