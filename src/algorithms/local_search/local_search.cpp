@@ -75,11 +75,11 @@ LocalSearch<Route,
             PriorityReplace,
             TSPFix>::LocalSearch(const Input& input,
                                  std::vector<Route>& sol,
-                                 unsigned max_nb_jobs_removal,
+                                 unsigned depth,
                                  const Timeout& timeout)
   : _input(input),
     _nb_vehicles(_input.vehicles.size()),
-    _max_nb_jobs_removal(max_nb_jobs_removal),
+    _depth(depth),
     _deadline(timeout.has_value() ? utils::now() + timeout.value()
                                   : Deadline()),
     _all_routes(_nb_vehicles),
@@ -161,165 +161,98 @@ void LocalSearch<Route,
                  SwapStar,
                  RouteSplit,
                  PriorityReplace,
-                 TSPFix>::try_job_additions(const std::vector<Index>& routes,
-                                            double regret_coeff) {
-  bool job_added;
-
-  std::vector<std::vector<RouteInsertion>> route_job_insertions;
-  route_job_insertions.reserve(routes.size());
-
-  for (std::size_t i = 0; i < routes.size(); ++i) {
-    route_job_insertions.emplace_back(_input.jobs.size(),
-                                      RouteInsertion(_input.get_amount_size()));
-
-    const auto v = routes[i];
-    const auto fixed_cost =
-      _sol[v].empty() ? _input.vehicles[v].fixed_cost() : 0;
-
-    for (const auto j : _sol_state.unassigned) {
-      if (const auto& current_job = _input.jobs[j];
-          current_job.type == JOB_TYPE::DELIVERY) {
-        continue;
-      }
-      route_job_insertions[i][j] =
-        compute_best_insertion(_input, _sol_state, j, v, _sol[v]);
-
-      if (route_job_insertions[i][j].eval != NO_EVAL) {
-        route_job_insertions[i][j].eval.cost += fixed_cost;
-      }
-    }
-  }
+                 TSPFix>::recreate(const std::vector<Index>& routes
+#ifdef LOG_LS
+                                   ,
+                                   bool log_addition_step
+#endif
+) {
+  std::vector<Index> ordered_jobs(_sol_state.unassigned.begin(),
+                                  _sol_state.unassigned.end());
+  std::ranges::sort(ordered_jobs, [this](const Index lhs, const Index rhs) {
+    return _input.jobs[lhs] < _input.jobs[rhs];
+  });
 
   std::unordered_set<Index> modified_vehicles;
 
-  do {
-    Priority best_priority = 0;
+  for (const auto j : ordered_jobs) {
+    const auto& current_job = _input.jobs[j];
+    if (current_job.type == JOB_TYPE::DELIVERY) {
+      continue;
+    }
+
     RouteInsertion best_insertion(_input.get_amount_size());
-    double best_cost = std::numeric_limits<double>::max();
-    Index best_job_rank = 0;
-    Index best_route = 0;
-    std::size_t best_route_idx = 0;
+    Index best_v = 0;
 
-    for (const auto j : _sol_state.unassigned) {
-      const auto& current_job = _input.jobs[j];
-      if (current_job.type == JOB_TYPE::DELIVERY) {
+    for (const auto v : routes) {
+      if (const unsigned added_tasks =
+            (current_job.type == JOB_TYPE::PICKUP) ? 2 : 1;
+          _sol[v].size() + added_tasks > _input.vehicles[v].max_tasks) {
         continue;
       }
 
-      const auto job_priority = current_job.priority;
+      auto current_best_insertion =
+        compute_best_insertion(_input, _sol_state, j, v, _sol[v]);
 
-      if (job_priority < best_priority) {
-        // Insert higher priority jobs first.
-        continue;
+      if (current_best_insertion.eval != NO_EVAL && _sol[v].empty()) {
+        current_best_insertion.eval.cost += _input.vehicles[v].fixed_cost();
       }
 
-      auto smallest = _input.get_cost_upper_bound();
-      auto second_smallest = _input.get_cost_upper_bound();
-      std::size_t smallest_idx = std::numeric_limits<std::size_t>::max();
-
-      for (std::size_t i = 0; i < routes.size(); ++i) {
-        if (route_job_insertions[i][j].eval.cost < smallest) {
-          smallest_idx = i;
-          second_smallest = smallest;
-          smallest = route_job_insertions[i][j].eval.cost;
-        } else if (route_job_insertions[i][j].eval.cost < second_smallest) {
-          second_smallest = route_job_insertions[i][j].eval.cost;
-        }
-      }
-
-      // Find best route for current job based on cost of addition and
-      // regret cost of not adding.
-      for (std::size_t i = 0; i < routes.size(); ++i) {
-        if (route_job_insertions[i][j].eval == NO_EVAL) {
-          continue;
-        }
-
-        const auto& current_r = _sol[routes[i]];
-        const auto& vehicle = _input.vehicles[routes[i]];
-
-        if (bool is_pickup = (_input.jobs[j].type == JOB_TYPE::PICKUP);
-            current_r.size() + (is_pickup ? 2 : 1) > vehicle.max_tasks) {
-          continue;
-        }
-
-        const auto regret_cost =
-          (i == smallest_idx) ? second_smallest : smallest;
-
-        const double current_cost =
-          static_cast<double>(route_job_insertions[i][j].eval.cost) -
-          regret_coeff * static_cast<double>(regret_cost);
-
-        if ((job_priority > best_priority) ||
-            (job_priority == best_priority && current_cost < best_cost)) {
-          best_priority = job_priority;
-          best_job_rank = j;
-          best_route = routes[i];
-          best_insertion = route_job_insertions[i][j];
-          best_cost = current_cost;
-          best_route_idx = i;
-        }
+      if (current_best_insertion.eval < best_insertion.eval) {
+        best_insertion = current_best_insertion;
+        best_v = v;
       }
     }
 
-    job_added = (best_cost < std::numeric_limits<double>::max());
-
-    if (job_added) {
-      _sol_state.unassigned.erase(best_job_rank);
-
-      if (const auto& best_job = _input.jobs[best_job_rank];
-          best_job.type == JOB_TYPE::SINGLE) {
-        _sol[best_route].add(_input, best_job_rank, best_insertion.single_rank);
-      } else {
-        assert(best_job.type == JOB_TYPE::PICKUP);
-
-        std::vector<Index> modified_with_pd;
-        modified_with_pd.reserve(best_insertion.delivery_rank -
-                                 best_insertion.pickup_rank + 2);
-        modified_with_pd.push_back(best_job_rank);
-
-        std::copy(_sol[best_route].route.begin() + best_insertion.pickup_rank,
-                  _sol[best_route].route.begin() + best_insertion.delivery_rank,
-                  std::back_inserter(modified_with_pd));
-        modified_with_pd.push_back(best_job_rank + 1);
-
-        _sol[best_route].replace(_input,
-                                 best_insertion.delivery,
-                                 modified_with_pd.begin(),
-                                 modified_with_pd.end(),
-                                 best_insertion.pickup_rank,
-                                 best_insertion.delivery_rank);
-
-        assert(_sol_state.unassigned.find(best_job_rank + 1) !=
-               _sol_state.unassigned.end());
-        _sol_state.unassigned.erase(best_job_rank + 1);
-      }
-
-      // Update best_route data required for consistency.
-      modified_vehicles.insert(best_route);
-      _sol_state.update_route_eval(_sol[best_route].route, best_route);
-      _sol_state.set_insertion_ranks(_sol[best_route], best_route);
-
-      const auto fixed_cost =
-        _sol[best_route].empty() ? _input.vehicles[best_route].fixed_cost() : 0;
-
-      for (const auto j : _sol_state.unassigned) {
-        if (const auto& current_job = _input.jobs[j];
-            current_job.type == JOB_TYPE::DELIVERY) {
-          continue;
-        }
-        route_job_insertions[best_route_idx][j] =
-          compute_best_insertion(_input,
-                                 _sol_state,
-                                 j,
-                                 best_route,
-                                 _sol[best_route]);
-
-        if (route_job_insertions[best_route_idx][j].eval != NO_EVAL) {
-          route_job_insertions[best_route_idx][j].eval.cost += fixed_cost;
-        }
-      }
+    if (best_insertion.eval == NO_EVAL) {
+      // Current job cannot be inserted.
+      continue;
     }
-  } while (job_added);
+
+    // Found a valid insertion spot for current job.
+    _sol_state.unassigned.erase(j);
+
+    if (current_job.type == JOB_TYPE::SINGLE) {
+      _sol[best_v].add(_input, j, best_insertion.single_rank);
+    } else {
+      assert(current_job.type == JOB_TYPE::PICKUP);
+
+      std::vector<Index> modified_with_pd;
+      modified_with_pd.reserve(best_insertion.delivery_rank -
+                               best_insertion.pickup_rank + 2);
+      modified_with_pd.push_back(j);
+
+      std::copy(_sol[best_v].route.begin() + best_insertion.pickup_rank,
+                _sol[best_v].route.begin() + best_insertion.delivery_rank,
+                std::back_inserter(modified_with_pd));
+      modified_with_pd.push_back(j + 1);
+
+      _sol[best_v].replace(_input,
+                           best_insertion.delivery,
+                           modified_with_pd.begin(),
+                           modified_with_pd.end(),
+                           best_insertion.pickup_rank,
+                           best_insertion.delivery_rank);
+
+      assert(_sol_state.unassigned.find(j + 1) != _sol_state.unassigned.end());
+      _sol_state.unassigned.erase(j + 1);
+    }
+
+    // Update best route data, required for consistency.
+    modified_vehicles.insert(best_v);
+    _sol_state.update_route_eval(_sol[best_v].route, best_v);
+    _sol_state.set_insertion_ranks(_sol[best_v], best_v);
+
+#ifdef LOG_LS
+    if (log_addition_step) {
+      steps.emplace_back(utils::now(),
+                         log::EVENT::JOB_ADDITION,
+                         OperatorName::MAX,
+                         utils::SolutionIndicators(_input, _sol),
+                         std::nullopt);
+    }
+#endif
+  }
 
   for (const auto v : modified_vehicles) {
     _sol_state.update_route_bbox(_sol[v].route, v);
@@ -1830,6 +1763,14 @@ void LocalSearch<Route,
       ++applied_moves.at(best_ops[best_source][best_target]->get_name());
 #endif
 
+#ifdef LOG_LS
+      steps.emplace_back(utils::now(),
+                         log::EVENT::OPERATOR,
+                         best_ops[best_source][best_target]->get_name(),
+                         utils::SolutionIndicators(_input, _sol),
+                         std::nullopt);
+#endif
+
 #ifndef NDEBUG
       // Update route costs.
       const auto previous_eval =
@@ -1863,13 +1804,16 @@ void LocalSearch<Route,
 
       for (auto v_rank : update_candidates) {
         // Only this update (and update_route_eval done above) are
-        // actually required for consistency inside try_job_additions.
+        // actually required for consistency inside recreate step.
         _sol_state.set_insertion_ranks(_sol[v_rank], v_rank);
       }
 
-      try_job_additions(best_ops[best_source][best_target]
-                          ->addition_candidates(),
-                        0);
+      recreate(best_ops[best_source][best_target]->addition_candidates()
+#ifdef LOG_LS
+                 ,
+               true
+#endif
+      );
 
       for (auto v_rank : update_candidates) {
         _sol_state.update_costs(_sol[v_rank].route, v_rank);
@@ -1914,8 +1858,8 @@ void LocalSearch<Route,
         for (auto req_u : best_ops[v][v]->required_unassigned()) {
           if (!_sol_state.unassigned.contains(req_u)) {
             // This move should be invalidated because a required
-            // unassigned job has been added by try_job_additions in
-            // the meantime.
+            // unassigned job has been added by recreate step in the
+            // meantime.
             invalidate_move = true;
             break;
           }
@@ -1978,39 +1922,69 @@ void LocalSearch<Route,
                  PriorityReplace,
                  TSPFix>::run() {
   bool try_ls_step = true;
-  bool first_step = true;
 
-  unsigned current_nb_removal = 1;
+#ifdef LOG_LS
+  steps.emplace_back(utils::now(),
+                     log::EVENT::START,
+                     OperatorName::MAX,
+                     _best_sol_indicators,
+                     utils::format_solution(_input, _best_sol));
+#endif
 
   while (try_ls_step) {
     // A round of local search.
     run_ls_step();
 
     // Comparison with indicators for current solution.
-    if (const utils::SolutionIndicators<Route> current_sol_indicators(_input,
-                                                                      _sol);
+    if (const utils::SolutionIndicators current_sol_indicators(_input, _sol);
         current_sol_indicators < _best_sol_indicators) {
       _best_sol_indicators = current_sol_indicators;
       _best_sol = _sol;
+
+#ifdef LOG_LS
+      steps.emplace_back(utils::now(),
+                         log::EVENT::LOCAL_MINIMA,
+                         OperatorName::MAX,
+                         _best_sol_indicators,
+                         utils::format_solution(_input, _best_sol));
+#endif
     } else {
-      if (!first_step) {
-        ++current_nb_removal;
-      }
+      // No improvement so back to previous best known for further
+      // steps.
       if (_best_sol_indicators < current_sol_indicators) {
-        // Back to best known solution for further steps.
         _sol = _best_sol;
         _sol_state.setup(_sol);
       }
+#ifdef LOG_LS
+      steps.emplace_back(utils::now(),
+                         log::EVENT::ROLLBACK,
+                         OperatorName::MAX,
+                         _best_sol_indicators,
+                         std::nullopt);
+#endif
+
+      if (_completed_depth.has_value()) {
+        // Rule out situation with first descent not yielding a better
+        // solution.
+        ++_completed_depth.value();
+      }
+    }
+
+    if (!_completed_depth.has_value()) {
+      // End of first descent.
+      _completed_depth = 0;
     }
 
     // Try again on each improvement until we reach last job removal
     // level or deadline is met.
-    try_ls_step = (current_nb_removal <= _max_nb_jobs_removal) &&
+    assert(_completed_depth.has_value());
+    auto nb_removal = _completed_depth.value() + 1;
+    try_ls_step = (nb_removal <= _depth) &&
                   (!_deadline.has_value() || utils::now() < _deadline.value());
 
     if (try_ls_step) {
       // Get a looser situation by removing jobs.
-      for (unsigned i = 0; i < current_nb_removal; ++i) {
+      for (unsigned i = 0; i < nb_removal; ++i) {
         remove_from_routes();
         for (std::size_t v = 0; v < _sol.size(); ++v) {
           // Update what is required for consistency in
@@ -2023,17 +1997,24 @@ void LocalSearch<Route,
         }
       }
 
+#ifdef LOG_LS
+      steps.emplace_back(utils::now(),
+                         log::EVENT::RUIN,
+                         OperatorName::MAX,
+                         utils::SolutionIndicators(_input, _sol),
+                         utils::format_solution(_input, _sol));
+#endif
+
       // Update insertion ranks ranges.
       for (std::size_t v = 0; v < _sol.size(); ++v) {
         _sol_state.set_insertion_ranks(_sol[v], v);
       }
 
-      // Refill jobs.
-      constexpr double refill_regret = 1.5;
-      try_job_additions(_all_routes, refill_regret);
+      // Recreate solution
+      recreate(_all_routes);
 
       // Update everything except what has already been updated in
-      // try_job_additions.
+      // recreate step.
       for (std::size_t v = 0; v < _sol.size(); ++v) {
         _sol_state.update_costs(_sol[v].route, v);
         _sol_state.update_skills(_sol[v].route, v);
@@ -2043,9 +2024,15 @@ void LocalSearch<Route,
         _sol_state.set_pd_matching_ranks(_sol[v].route, v);
         _sol_state.set_pd_gains(_sol[v].route, v);
       }
-    }
 
-    first_step = false;
+#ifdef LOG_LS
+      steps.emplace_back(utils::now(),
+                         log::EVENT::RECREATE,
+                         OperatorName::MAX,
+                         utils::SolutionIndicators(_input, _sol),
+                         utils::format_solution(_input, _sol));
+#endif
+    }
   }
 }
 
@@ -2462,26 +2449,26 @@ template <class Route,
           class RouteSplit,
           class PriorityReplace,
           class TSPFix>
-utils::SolutionIndicators<Route> LocalSearch<Route,
-                                             UnassignedExchange,
-                                             CrossExchange,
-                                             MixedExchange,
-                                             TwoOpt,
-                                             ReverseTwoOpt,
-                                             Relocate,
-                                             OrOpt,
-                                             IntraExchange,
-                                             IntraCrossExchange,
-                                             IntraMixedExchange,
-                                             IntraRelocate,
-                                             IntraOrOpt,
-                                             IntraTwoOpt,
-                                             PDShift,
-                                             RouteExchange,
-                                             SwapStar,
-                                             RouteSplit,
-                                             PriorityReplace,
-                                             TSPFix>::indicators() const {
+utils::SolutionIndicators LocalSearch<Route,
+                                      UnassignedExchange,
+                                      CrossExchange,
+                                      MixedExchange,
+                                      TwoOpt,
+                                      ReverseTwoOpt,
+                                      Relocate,
+                                      OrOpt,
+                                      IntraExchange,
+                                      IntraCrossExchange,
+                                      IntraMixedExchange,
+                                      IntraRelocate,
+                                      IntraOrOpt,
+                                      IntraTwoOpt,
+                                      PDShift,
+                                      RouteExchange,
+                                      SwapStar,
+                                      RouteSplit,
+                                      PriorityReplace,
+                                      TSPFix>::indicators() const {
   return _best_sol_indicators;
 }
 

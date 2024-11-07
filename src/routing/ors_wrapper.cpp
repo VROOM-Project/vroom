@@ -34,8 +34,7 @@ std::string OrsWrapper::build_query(const std::vector<Location>& locations,
   }
   body += "\":[";
   for (auto const& location : locations) {
-    body += "[" + std::to_string(location.lon()) + "," +
-            std::to_string(location.lat()) + "],";
+    body += std::format("[{},{}],", location.lon(), location.lat());
   }
   body.pop_back(); // Remove trailing ','.
   body += "]";
@@ -53,7 +52,7 @@ std::string OrsWrapper::build_query(const std::vector<Location>& locations,
   query += " HTTP/1.0\r\n";
   query += "Accept: */*\r\n";
   query += "Content-Type: application/json\r\n";
-  query += "Content-Length: " + std::to_string(body.size()) + "\r\n";
+  query += std::format("Content-Length: {}\r\n", body.size());
   query += "Host: " + _server.host + ":" + _server.port + "\r\n";
   query += "Connection: close\r\n";
   query += "\r\n" + body;
@@ -65,8 +64,23 @@ void OrsWrapper::check_response(const rapidjson::Document& json_result,
                                 const std::vector<Location>&,
                                 const std::string&) const {
   if (json_result.HasMember("error")) {
-    throw RoutingException(
-      std::string(json_result["error"]["message"].GetString()));
+    if (json_result["error"].IsObject() &&
+        json_result["error"].HasMember("message") &&
+        json_result["error"]["message"].IsString()) {
+      // Normal ORS error syntax.
+      throw RoutingException(
+        std::string(json_result["error"]["message"].GetString()));
+    }
+
+    if (json_result["error"].IsString()) {
+      // Web framework error uses another convention, see #1083.
+      auto error = std::string(json_result["error"].GetString());
+
+      if (json_result.HasMember("path") && json_result["path"].IsString()) {
+        error += " " + std::string(json_result["path"].GetString());
+      }
+      throw RoutingException(error);
+    }
   }
 }
 

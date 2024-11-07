@@ -142,11 +142,13 @@ const std::vector<HeuristicParameters> VRPTW::heterogeneous_parameters =
 VRPTW::VRPTW(const Input& input) : VRP(input) {
 }
 
-Solution VRPTW::solve(unsigned exploration_level,
+Solution VRPTW::solve(unsigned nb_searches,
+                      unsigned depth,
                       unsigned nb_threads,
                       const Timeout& timeout,
                       const std::vector<HeuristicParameters>& h_param) const {
-  return VRP::solve<TWRoute, vrptw::LocalSearch>(exploration_level,
+  return VRP::solve<TWRoute, vrptw::LocalSearch>(nb_searches,
+                                                 depth,
                                                  nb_threads,
                                                  timeout,
                                                  h_param,

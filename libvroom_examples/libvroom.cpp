@@ -105,8 +105,8 @@ void run_example_with_osrm() {
 
   // Create one-dimension capacity restrictions to model the situation
   // where one vehicle can handle 4 jobs with deliveries.
-  problem_instance.set_amount_size(amount_dimension);
   vroom::Amount vehicle_capacity(amount_dimension);
+  vehicle_capacity[0] = 4;
 
   vroom::TimeWindow vehicle_tw(28800, 43200); // Working hours.
   // Default "zero" amount data structures with relevant dimension.
@@ -120,7 +120,6 @@ void run_example_with_osrm() {
 
   vroom::UserDuration setup = 0;
   vroom::UserDuration service = 5 * 60; // 5 minutes
-  vehicle_capacity[0] = 4;
 
   // Define vehicle breaks.
   vroom::Break break_1(1, {vroom::TimeWindow(32400, 34200)}, 300);
@@ -218,11 +217,11 @@ void run_example_with_osrm() {
   // - jobs 3 and 4 can only be served by vehicle 2
   // - jobs 5 and 6 can be served by either one of the vehicles
 
-  // Solve!
+  // Solve using exploration level as depth and number of searches.
   auto sol =
-    problem_instance.solve(vroom::DEFAULT_EXPLORATION_LEVEL, // Exploration
-                                                             // level.
-                           vroom::DEFAULT_THREADS_NUMBER);   // Use 4 threads.
+    problem_instance.solve(vroom::DEFAULT_EXPLORATION_LEVEL,
+                           vroom::DEFAULT_EXPLORATION_LEVEL,
+                           vroom::DEFAULT_THREADS_NUMBER); // Use 4 threads.
 
   log_solution(sol, GEOMETRY);
 }
@@ -274,11 +273,11 @@ void run_example_with_custom_matrix() {
     problem_instance.add_job(j);
   }
 
-  // Solve!
+  // Solve using exploration level as depth and number of searches.
   auto sol =
-    problem_instance.solve(vroom::DEFAULT_EXPLORATION_LEVEL, // Exploration
-                                                             // level.
-                           vroom::DEFAULT_THREADS_NUMBER);   // Use 4 threads.
+    problem_instance.solve(vroom::DEFAULT_EXPLORATION_LEVEL,
+                           vroom::DEFAULT_EXPLORATION_LEVEL,
+                           vroom::DEFAULT_THREADS_NUMBER); // Use 4 threads.
 
   log_solution(sol, GEOMETRY);
 }

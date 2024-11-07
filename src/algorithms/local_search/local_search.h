@@ -13,6 +13,10 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/solution_indicators.h"
 #include "structures/vroom/solution_state.h"
 
+#ifdef LOG_LS
+#include "algorithms/local_search/log_local_search.h"
+#endif
+
 namespace vroom::ls {
 
 template <class Route,
@@ -40,9 +44,10 @@ private:
   const Input& _input;
   const std::size_t _nb_vehicles;
 
-  const unsigned _max_nb_jobs_removal;
+  const unsigned _depth;
   const Deadline _deadline;
 
+  std::optional<unsigned> _completed_depth;
   std::vector<Index> _all_routes;
 
   utils::SolutionState _sol_state;
@@ -50,7 +55,7 @@ private:
   std::vector<Route> _sol;
 
   std::vector<Route>& _best_sol;
-  utils::SolutionIndicators<Route> _best_sol_indicators;
+  utils::SolutionIndicators _best_sol_indicators;
 
 #ifdef LOG_LS_OPERATORS
   // Store operator usage stats.
@@ -58,7 +63,16 @@ private:
   std::array<unsigned, OperatorName::MAX> applied_moves;
 #endif
 
-  void try_job_additions(const std::vector<Index>& routes, double regret_coeff);
+#ifdef LOG_LS
+  std::vector<log::Step> steps;
+#endif
+
+  void recreate(const std::vector<Index>& routes
+#ifdef LOG_LS
+                ,
+                bool log_addition_step = false
+#endif
+  );
 
   void run_ls_step();
 
@@ -78,15 +92,21 @@ private:
 public:
   LocalSearch(const Input& input,
               std::vector<Route>& tw_sol,
-              unsigned max_nb_jobs_removal,
+              unsigned depth,
               const Timeout& timeout);
 
-  utils::SolutionIndicators<Route> indicators() const;
+  utils::SolutionIndicators indicators() const;
 
   void run();
 
 #ifdef LOG_LS_OPERATORS
   std::array<OperatorStats, OperatorName::MAX> get_stats() const;
+#endif
+
+#ifdef LOG_LS
+  std::vector<log::Step> get_steps() const {
+    return steps;
+  }
 #endif
 };
 
