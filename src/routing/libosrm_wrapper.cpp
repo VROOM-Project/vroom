@@ -34,6 +34,35 @@ LibosrmWrapper::LibosrmWrapper(const std::string& profile)
   : Wrapper(profile), _config(get_config(profile)), _osrm(_config) {
 }
 
+void throw_error(osrm::json::Object& result,
+                 const std::vector<osrm::util::Coordinate>& coordinates) {
+  const std::string code =
+    result.values["code"].get<osrm::json::String>().value;
+  const std::string message =
+    result.values["message"].get<osrm::json::String>().value;
+
+  const std::string snapping_error_base =
+    "Could not find a matching segment for coordinate ";
+  if (code == "NoSegment" && message.starts_with(snapping_error_base)) {
+    auto error_loc =
+      std::stoul(message.substr(snapping_error_base.size(),
+                                message.size() - snapping_error_base.size()));
+    auto coordinates_str =
+      "[" +
+      std::to_string(
+        static_cast<double>(toFloating(coordinates[error_loc].lon))) +
+      "," +
+      std::to_string(
+        static_cast<double>(toFloating(coordinates[error_loc].lat))) +
+      "]";
+    throw RoutingException("Could not find route near location " +
+                           coordinates_str);
+  }
+
+  // Other error in response.
+  throw RoutingException("libOSRM: " + code + ": " + message);
+}
+
 Matrices LibosrmWrapper::get_matrices(const std::vector<Location>& locs) const {
   osrm::TableParameters params;
   params.annotations = osrm::engine::api::TableParameters::AnnotationsType::All;
@@ -41,7 +70,6 @@ Matrices LibosrmWrapper::get_matrices(const std::vector<Location>& locs) const {
   params.coordinates.reserve(locs.size());
   params.radiuses.reserve(locs.size());
   for (auto const& location : locs) {
-    assert(location.has_coordinates());
     params.coordinates
       .emplace_back(osrm::util::FloatLongitude({location.lon()}),
                     osrm::util::FloatLatitude({location.lat()}));
@@ -52,25 +80,7 @@ Matrices LibosrmWrapper::get_matrices(const std::vector<Location>& locs) const {
   osrm::Status status = _osrm.Table(params, result);
 
   if (status == osrm::Status::Error) {
-    const std::string code =
-      result.values["code"].get<osrm::json::String>().value;
-    const std::string message =
-      result.values["message"].get<osrm::json::String>().value;
-
-    const std::string snapping_error_base =
-      "Could not find a matching segment for coordinate ";
-    if (code == "NoSegment" && message.starts_with(snapping_error_base)) {
-      auto error_loc =
-        std::stoul(message.substr(snapping_error_base.size(),
-                                  message.size() - snapping_error_base.size()));
-      auto coordinates = "[" + std::to_string(locs[error_loc].lon()) + "," +
-                         std::to_string(locs[error_loc].lat()) + "]";
-      throw RoutingException("Could not find route near location " +
-                             coordinates);
-    }
-
-    // Other error in response.
-    throw RoutingException("libOSRM: " + code + ": " + message);
+    throw_error(result, params.coordinates);
   }
 
   const auto& durations = result.values["durations"].get<osrm::json::Array>();
@@ -138,9 +148,7 @@ osrm::json::Object LibosrmWrapper::get_route_with_coordinates(
   osrm::Status status = _osrm.Route(params, result);
 
   if (status == osrm::Status::Error) {
-    throw RoutingException(
-      result.values["code"].get<osrm::json::String>().value + ": " +
-      result.values["message"].get<osrm::json::String>().value);
+    throw_error(result, params.coordinates);
   }
 
   auto& result_routes = result.values["routes"].get<osrm::json::Array>();
