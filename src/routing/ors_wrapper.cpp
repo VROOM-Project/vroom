@@ -87,8 +87,4 @@ unsigned OrsWrapper::get_legs_number(const rapidjson::Value& result) const {
   return result["routes"][0]["segments"].Size();
 }
 
-std::string OrsWrapper::get_geometry(rapidjson::Value& result) const {
-  return result["routes"][0]["geometry"].GetString();
-}
-
 } // namespace vroom::routing

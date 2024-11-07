@@ -81,7 +81,10 @@ protected:
 
   virtual unsigned get_legs_number(const rapidjson::Value& result) const = 0;
 
-  virtual std::string get_geometry(rapidjson::Value& result) const = 0;
+  virtual std::string get_geometry(rapidjson::Value& result) const {
+    // Same implementation for both OSRM and ORS.
+    return result["routes"][0]["geometry"].GetString();
+  }
 
   void add_geometry(Route& route) const override;
 };
