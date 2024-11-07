@@ -8,7 +8,6 @@ All rights reserved (see LICENSE).
 */
 
 #include "routing/osrm_routed_wrapper.h"
-#include "utils/helpers.h"
 
 namespace vroom::routing {
 
@@ -84,26 +83,6 @@ void OsrmRoutedWrapper::check_response(const rapidjson::Document& json_result,
     // Other error in response.
     throw RoutingException(message);
   }
-}
-
-bool OsrmRoutedWrapper::duration_value_is_null(
-  const rapidjson::Value& matrix_entry) const {
-  return matrix_entry.IsNull();
-}
-
-bool OsrmRoutedWrapper::distance_value_is_null(
-  const rapidjson::Value& matrix_entry) const {
-  return matrix_entry.IsNull();
-}
-
-UserDuration OsrmRoutedWrapper::get_duration_value(
-  const rapidjson::Value& matrix_entry) const {
-  return utils::round<UserDuration>(matrix_entry.GetDouble());
-}
-
-UserDistance OsrmRoutedWrapper::get_distance_value(
-  const rapidjson::Value& matrix_entry) const {
-  return utils::round<UserDistance>(matrix_entry.GetDouble());
 }
 
 unsigned
