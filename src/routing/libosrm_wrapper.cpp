@@ -122,15 +122,17 @@ Matrices LibosrmWrapper::get_matrices(const std::vector<Location>& locs) const {
 osrm::json::Object LibosrmWrapper::get_route_with_coordinates(
   std::vector<osrm::util::Coordinate>&& coords) const {
   // Default options for routing.
-  osrm::RouteParameters params(false, // steps
-                               false, // alternatives
-                               false, // annotations
-                               osrm::RouteParameters::GeometriesType::Polyline,
-                               osrm::RouteParameters::OverviewType::Full,
-                               false // continue_straight
-  );
-
-  params.coordinates = std::move(coords);
+  osrm::RouteParameters
+    params(false, // steps
+           false, // alternatives
+           osrm::RouteParameters::GeometriesType::Polyline,
+           osrm::RouteParameters::OverviewType::Full,
+           false, // continue_straight,
+           std::move(coords),
+           std::vector<boost::optional<osrm::engine::Hint>>(),
+           std::vector<
+             boost::optional<double>>(coords.size(),
+                                      DEFAULT_LIBOSRM_SNAPPING_RADIUS));
 
   osrm::json::Object result;
   osrm::Status status = _osrm.Route(params, result);
