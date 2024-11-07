@@ -26,10 +26,6 @@ private:
   const rapidjson::Value&
   get_legs(const rapidjson::Value& result) const override;
 
-  UserDuration get_leg_duration(const rapidjson::Value& leg) const override;
-
-  UserDistance get_leg_distance(const rapidjson::Value& leg) const override;
-
 public:
   OrsWrapper(const std::string& profile, const Server& server);
 };

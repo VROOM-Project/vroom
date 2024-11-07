@@ -89,9 +89,17 @@ protected:
   virtual const rapidjson::Value&
   get_legs(const rapidjson::Value& result) const = 0;
 
-  virtual UserDuration get_leg_duration(const rapidjson::Value& leg) const = 0;
+  virtual UserDuration get_leg_duration(const rapidjson::Value& leg) const {
+    // Same implementation for both OSRM and ORS.
+    assert(leg.HasMember("duration"));
+    return utils::round<UserDuration>(leg["duration"].GetDouble());
+  }
 
-  virtual UserDistance get_leg_distance(const rapidjson::Value& leg) const = 0;
+  virtual UserDistance get_leg_distance(const rapidjson::Value& leg) const {
+    // Same implementation for both OSRM and ORS.
+    assert(leg.HasMember("distance"));
+    return utils::round<UserDistance>(leg["distance"].GetDouble());
+  }
 
   virtual std::string get_geometry(rapidjson::Value& result) const {
     // Same implementation for both OSRM and ORS.

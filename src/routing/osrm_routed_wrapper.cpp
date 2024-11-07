@@ -94,16 +94,4 @@ OsrmRoutedWrapper::get_legs(const rapidjson::Value& result) const {
   return result["routes"][0]["legs"];
 }
 
-UserDuration
-OsrmRoutedWrapper::get_leg_duration(const rapidjson::Value& leg) const {
-  assert(leg.HasMember("duration"));
-  return utils::round<UserDuration>(leg["duration"].GetDouble());
-}
-
-UserDistance
-OsrmRoutedWrapper::get_leg_distance(const rapidjson::Value& leg) const {
-  assert(leg.HasMember("distance"));
-  return utils::round<UserDistance>(leg["distance"].GetDouble());
-}
-
 } // namespace vroom::routing
