@@ -17,6 +17,7 @@
 - Reduce complexity for recreation process (#1155)
 - Refactor `SolutionIndicators` (#1169)
 - Remove amount consistency checks in `parse` in favor of upstream checks in `Input` (#1086)
+- Reduce code duplication in routing wrappers (#1184)
 
 #### CI
 
