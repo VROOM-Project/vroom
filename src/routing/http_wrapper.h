@@ -13,6 +13,7 @@ All rights reserved (see LICENSE).
 
 #include "routing/wrapper.h"
 #include "structures/typedefs.h"
+#include "utils/helpers.h"
 
 namespace vroom::routing {
 
@@ -55,20 +56,35 @@ protected:
   Matrices get_matrices(const std::vector<Location>& locs) const override;
 
   virtual bool
-  duration_value_is_null(const rapidjson::Value& matrix_entry) const = 0;
+  duration_value_is_null(const rapidjson::Value& matrix_entry) const {
+    // Same implementation for both OSRM and ORS.
+    return matrix_entry.IsNull();
+  }
 
   virtual bool
-  distance_value_is_null(const rapidjson::Value& matrix_entry) const = 0;
+  distance_value_is_null(const rapidjson::Value& matrix_entry) const {
+    // Same implementation for both OSRM and ORS.
+    return matrix_entry.IsNull();
+  }
 
   virtual UserDuration
-  get_duration_value(const rapidjson::Value& matrix_entry) const = 0;
+  get_duration_value(const rapidjson::Value& matrix_entry) const {
+    // Same implementation for both OSRM and ORS.
+    return utils::round<UserDuration>(matrix_entry.GetDouble());
+  }
 
   virtual UserDistance
-  get_distance_value(const rapidjson::Value& matrix_entry) const = 0;
+  get_distance_value(const rapidjson::Value& matrix_entry) const {
+    // Same implementation for both OSRM and ORS.
+    return utils::round<UserDistance>(matrix_entry.GetDouble());
+  }
 
   virtual unsigned get_legs_number(const rapidjson::Value& result) const = 0;
 
-  virtual std::string get_geometry(rapidjson::Value& result) const = 0;
+  virtual std::string get_geometry(rapidjson::Value& result) const {
+    // Same implementation for both OSRM and ORS.
+    return result["routes"][0]["geometry"].GetString();
+  }
 
   void add_geometry(Route& route) const override;
 };
