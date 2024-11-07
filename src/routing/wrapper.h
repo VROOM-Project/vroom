@@ -112,7 +112,7 @@ public:
     return m;
   };
 
-  // Updates matrix with data from a single route request and returns
+  // Updates matrices with data from a single route request and stores
   // corresponding route geometry.
   virtual void
   update_sparse_matrix(const Id v_id,
