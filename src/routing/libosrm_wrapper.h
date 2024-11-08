@@ -10,7 +10,6 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "osrm/coordinate.hpp"
 #include "osrm/engine_config.hpp"
 #include "osrm/osrm.hpp"
 
