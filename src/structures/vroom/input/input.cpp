@@ -69,7 +69,7 @@ void Input::add_routing_wrapper(const std::string& profile) {
     try {
       routing_wrapper = std::make_unique<routing::LibosrmWrapper>(profile);
     } catch (const osrm::exception& e) {
-      throw InputException("Invalid profile: " + profile);
+      throw InputException("Invalid profile: " + profile + ".");
     }
     break;
 #else
