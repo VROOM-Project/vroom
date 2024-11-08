@@ -23,7 +23,8 @@ private:
                       const std::vector<Location>& locs,
                       const std::string& service) const override;
 
-  unsigned get_legs_number(const rapidjson::Value& result) const override;
+  const rapidjson::Value&
+  get_legs(const rapidjson::Value& result) const override;
 
 public:
   OrsWrapper(const std::string& profile, const Server& server);

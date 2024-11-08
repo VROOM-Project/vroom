@@ -83,8 +83,14 @@ void OrsWrapper::check_response(const rapidjson::Document& json_result,
   }
 }
 
-unsigned OrsWrapper::get_legs_number(const rapidjson::Value& result) const {
-  return result["routes"][0]["segments"].Size();
+const rapidjson::Value&
+OrsWrapper::get_legs(const rapidjson::Value& result) const {
+  assert(result.HasMember("routes") && result["routes"].IsArray() &&
+         !result["routes"].Empty() &&
+         result["routes"][0].HasMember("segments") &&
+         result["routes"][0]["segments"].IsArray());
+
+  return result["routes"][0]["segments"];
 }
 
 } // namespace vroom::routing

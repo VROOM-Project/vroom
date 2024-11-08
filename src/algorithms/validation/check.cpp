@@ -10,7 +10,6 @@ All rights reserved (see LICENSE).
 #include <algorithm>
 #include <mutex>
 #include <thread>
-#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -22,7 +21,10 @@ All rights reserved (see LICENSE).
 
 namespace vroom::validation {
 
-Solution check_and_set_ETA(const Input& input, unsigned nb_thread) {
+Solution
+check_and_set_ETA(const Input& input,
+                  unsigned nb_thread,
+                  std::unordered_map<Index, Index>& route_rank_to_v_rank) {
   // Keep track of assigned job ranks.
   std::unordered_set<Index> assigned_ranks;
 
@@ -51,6 +53,7 @@ Solution check_and_set_ETA(const Input& input, unsigned nb_thread) {
 
     thread_ranks[actual_route_rank % nb_buckets].push_back(v);
     v_rank_to_actual_route_rank.insert({v, actual_route_rank});
+    route_rank_to_v_rank.insert({actual_route_rank, v});
     ++actual_route_rank;
   }
 

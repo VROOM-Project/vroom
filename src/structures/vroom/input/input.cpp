@@ -69,7 +69,7 @@ void Input::add_routing_wrapper(const std::string& profile) {
     try {
       routing_wrapper = std::make_unique<routing::LibosrmWrapper>(profile);
     } catch (const osrm::exception& e) {
-      throw InputException("Invalid profile: " + profile);
+      throw InputException("Invalid profile: " + profile + ".");
     }
     break;
 #else
@@ -903,7 +903,27 @@ void Input::init_missing_matrices(const std::string& profile) {
   }
 }
 
-void Input::set_matrices(unsigned nb_thread) {
+routing::Matrices Input::get_matrices_by_profile(const std::string& profile,
+                                                 bool sparse_filling) {
+  auto rw = std::ranges::find_if(_routing_wrappers, [&](const auto& wr) {
+    return wr->profile == profile;
+  });
+  assert(rw != _routing_wrappers.end());
+
+  if (sparse_filling) {
+    _vehicles_geometry.resize(vehicles.size());
+  }
+
+  // Note: get_sparse_matrices relies on getting in input *all*
+  // vehicles as it refers to vehicle ranks to store geometries.
+  return sparse_filling ? (*rw)->get_sparse_matrices(_locations,
+                                                     this->vehicles,
+                                                     this->jobs,
+                                                     _vehicles_geometry)
+                        : (*rw)->get_matrices(_locations);
+}
+
+void Input::set_matrices(unsigned nb_thread, bool sparse_filling) {
   if ((!_durations_matrices.empty() || !_distances_matrices.empty() ||
        !_costs_matrices.empty()) &&
       !_has_custom_location_index) {
@@ -956,7 +976,7 @@ void Input::set_matrices(unsigned nb_thread) {
         auto distances_m = _distances_matrices.find(profile);
 
         // Required matrices not manually set have been defined as
-        // empty above.
+        // empty above in init_missing_matrices.
         assert(durations_m != _durations_matrices.end());
         assert(distances_m != _distances_matrices.end());
         const bool define_durations = (durations_m->second.size() == 0);
@@ -968,15 +988,10 @@ void Input::set_matrices(unsigned nb_thread) {
             durations_m->second = Matrix<UserDuration>(1);
             distances_m->second = Matrix<UserDistance>(1);
           } else {
-            auto rw =
-              std::ranges::find_if(_routing_wrappers, [&](const auto& wr) {
-                return wr->profile == profile;
-              });
-            assert(rw != _routing_wrappers.end());
+            auto matrices = get_matrices_by_profile(profile, sparse_filling);
 
             if (!_has_custom_location_index) {
               // Location indices are set based on order in _locations.
-              auto matrices = (*rw)->get_matrices(_locations);
               if (define_durations) {
                 durations_m->second = std::move(matrices.durations);
               }
@@ -986,8 +1001,6 @@ void Input::set_matrices(unsigned nb_thread) {
             } else {
               // Location indices are provided in input so we need an
               // indirection based on order in _locations.
-              auto matrices = (*rw)->get_matrices(_locations);
-
               if (define_durations) {
                 Matrix<UserDuration> full_m(_max_matrices_used_index + 1);
                 for (Index i = 0; i < _locations.size(); ++i) {
@@ -1183,8 +1196,8 @@ Solution Input::check(unsigned nb_thread) {
 
   set_vehicle_steps_ranks();
 
-  // TODO we don't need the whole matrix here.
-  set_matrices(nb_thread);
+  constexpr bool sparse_filling = true;
+  set_matrices(nb_thread, sparse_filling);
   set_vehicles_costs();
 
   // Fill basic skills compatibility matrix.
@@ -1197,7 +1210,9 @@ Solution Input::check(unsigned nb_thread) {
                    .count();
 
   // Check.
-  auto sol = validation::check_and_set_ETA(*this, nb_thread);
+  std::unordered_map<Index, Index> route_rank_to_v_rank;
+  auto sol =
+    validation::check_and_set_ETA(*this, nb_thread, route_rank_to_v_rank);
 
   // Update timing info.
   sol.summary.computing_times.loading = loading;
@@ -1209,16 +1224,13 @@ Solution Input::check(unsigned nb_thread) {
       .count();
 
   if (_geometry) {
-    for (auto& route : sol.routes) {
-      const auto& profile = route.profile;
-      auto rw = std::ranges::find_if(_routing_wrappers, [&](const auto& wr) {
-        return wr->profile == profile;
-      });
-      if (rw == _routing_wrappers.end()) {
-        throw InputException(
-          "Route geometry request with non-routable profile " + profile + ".");
-      }
-      (*rw)->add_geometry(route);
+    for (std::size_t i = 0; i < sol.routes.size(); ++i) {
+      auto& route = sol.routes[i];
+
+      auto search = route_rank_to_v_rank.find(i);
+      assert(search != route_rank_to_v_rank.end());
+      const auto v_rank = search->second;
+      route.geometry = std::move(_vehicles_geometry[v_rank]);
     }
 
     _end_routing = std::chrono::high_resolution_clock::now();
