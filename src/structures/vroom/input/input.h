@@ -81,7 +81,7 @@ private:
 
   // Used in plan mode since we store route geometries while
   // generating sparse matrices.
-  std::unordered_map<Id, std::string> _vehicle_id_to_geometry;
+  std::vector<std::string> _vehicles_geometry;
 
   std::optional<unsigned> _amount_size;
   Amount _zero;

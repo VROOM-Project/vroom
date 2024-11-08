@@ -910,10 +910,12 @@ routing::Matrices Input::get_matrices_by_profile(const std::string& profile,
   });
   assert(rw != _routing_wrappers.end());
 
+  // Note: get_sparse_matrices relies on getting in input *all*
+  // vehicles as it refers to vehicle ranks to store geometries.
   return sparse_filling ? (*rw)->get_sparse_matrices(_locations,
                                                      this->vehicles,
                                                      this->jobs,
-                                                     _vehicle_id_to_geometry)
+                                                     _vehicles_geometry)
                         : (*rw)->get_matrices(_locations);
 }
 
@@ -1223,9 +1225,8 @@ Solution Input::check(unsigned nb_thread) {
 
       auto search = route_rank_to_v_rank.find(i);
       assert(search != route_rank_to_v_rank.end());
-
-      assert(_vehicle_id_to_geometry.contains(route.vehicle));
-      route.geometry = std::move(_vehicle_id_to_geometry.at(route.vehicle));
+      const auto v_rank = search->second;
+      route.geometry = std::move(_vehicles_geometry[v_rank]);
     }
 
     _end_routing = std::chrono::high_resolution_clock::now();
