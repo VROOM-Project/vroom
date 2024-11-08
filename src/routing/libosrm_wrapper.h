@@ -25,8 +25,8 @@ private:
   osrm::EngineConfig _config;
   const osrm::OSRM _osrm;
 
-  osrm::json::Object get_route_with_coordinates(
-    std::vector<osrm::util::Coordinate>&& coords) const;
+  osrm::json::Object
+  get_route_with_coordinates(const std::vector<Location>& locs) const;
 
   static osrm::EngineConfig get_config(const std::string& profile);
 

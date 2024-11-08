@@ -35,7 +35,7 @@ LibosrmWrapper::LibosrmWrapper(const std::string& profile)
 }
 
 void throw_error(osrm::json::Object& result,
-                 const std::vector<osrm::util::Coordinate>& coordinates) {
+                 const std::vector<Location>& locs) {
   const std::string code =
     result.values["code"].get<osrm::json::String>().value;
   const std::string message =
@@ -47,16 +47,9 @@ void throw_error(osrm::json::Object& result,
     auto error_loc =
       std::stoul(message.substr(snapping_error_base.size(),
                                 message.size() - snapping_error_base.size()));
-    auto coordinates_str =
-      "[" +
-      std::to_string(
-        static_cast<double>(toFloating(coordinates[error_loc].lon))) +
-      "," +
-      std::to_string(
-        static_cast<double>(toFloating(coordinates[error_loc].lat))) +
-      "]";
-    throw RoutingException("Could not find route near location " +
-                           coordinates_str);
+    auto coordinates =
+      std::format("[{},{}]", locs[error_loc].lon(), locs[error_loc].lat());
+    throw RoutingException("Could not find route near location " + coordinates);
   }
 
   // Other error in response.
@@ -80,7 +73,7 @@ Matrices LibosrmWrapper::get_matrices(const std::vector<Location>& locs) const {
   osrm::Status status = _osrm.Table(params, result);
 
   if (status == osrm::Status::Error) {
-    throw_error(result, params.coordinates);
+    throw_error(result, locs);
   }
 
   const auto& durations = result.values["durations"].get<osrm::json::Array>();
@@ -130,7 +123,15 @@ Matrices LibosrmWrapper::get_matrices(const std::vector<Location>& locs) const {
 }
 
 osrm::json::Object LibosrmWrapper::get_route_with_coordinates(
-  std::vector<osrm::util::Coordinate>&& coords) const {
+  const std::vector<Location>& locs) const {
+  std::vector<osrm::util::Coordinate> coords;
+  coords.reserve(locs.size());
+
+  for (const auto& loc : locs) {
+    coords.emplace_back(osrm::util::FloatLongitude({loc.lon()}),
+                        osrm::util::FloatLatitude({loc.lat()}));
+  }
+
   // Default options for routing.
   osrm::RouteParameters
     params(false, // steps
@@ -148,7 +149,7 @@ osrm::json::Object LibosrmWrapper::get_route_with_coordinates(
   osrm::Status status = _osrm.Route(params, result);
 
   if (status == osrm::Status::Error) {
-    throw_error(result, params.coordinates);
+    throw_error(result, locs);
   }
 
   auto& result_routes = result.values["routes"].get<osrm::json::Array>();
@@ -162,16 +163,7 @@ void LibosrmWrapper::update_sparse_matrix(
   std::mutex& matrix_m,
   std::unordered_map<Id, std::string>& v_id_to_geom,
   std::mutex& id_to_geom_m) const {
-  std::vector<osrm::util::Coordinate> coords;
-  coords.reserve(route_locs.size());
-
-  for (const auto& loc : route_locs) {
-    assert(loc.has_coordinates());
-    coords.emplace_back(osrm::util::FloatLongitude({loc.lon()}),
-                        osrm::util::FloatLatitude({loc.lat()}));
-  }
-
-  auto json_route = get_route_with_coordinates(std::move(coords));
+  auto json_route = get_route_with_coordinates(route_locs);
 
   auto& legs = json_route.values["legs"].get<osrm::json::Array>();
   assert(legs.values.size() == route_locs.size() - 1);
@@ -196,22 +188,19 @@ void LibosrmWrapper::update_sparse_matrix(
 };
 
 void LibosrmWrapper::add_geometry(Route& route) const {
-  std::vector<osrm::util::Coordinate> coords;
-  coords.reserve(route.steps.size());
+  std::vector<Location> locs;
+  locs.reserve(route.steps.size());
 
   // Ordering locations for the given steps, excluding
   // breaks.
   for (const auto& step : route.steps) {
     if (step.step_type != STEP_TYPE::BREAK) {
       assert(step.location.has_value());
-      const auto& loc = step.location.value();
-      assert(loc.has_coordinates());
-      coords.emplace_back(osrm::util::FloatLongitude({loc.lon()}),
-                          osrm::util::FloatLatitude({loc.lat()}));
+      locs.emplace_back(step.location.value());
     }
   }
 
-  auto json_route = get_route_with_coordinates(std::move(coords));
+  auto json_route = get_route_with_coordinates(locs);
 
   // Total distance and route geometry.
   route.geometry =
