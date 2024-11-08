@@ -34,12 +34,10 @@ public:
 
   Matrices get_matrices(const std::vector<Location>& locs) const override;
 
-  void update_sparse_matrix(const Id v_id,
-                            const std::vector<Location>& route_locs,
+  void update_sparse_matrix(const std::vector<Location>& route_locs,
                             Matrices& m,
                             std::mutex& matrix_m,
-                            std::unordered_map<Id, std::string>& v_id_to_geom,
-                            std::mutex& id_to_geom_m) const override;
+                            std::string& vehicle_geometry) const override;
 
   void add_geometry(Route& route) const override;
 };

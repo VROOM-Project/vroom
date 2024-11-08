@@ -158,12 +158,10 @@ osrm::json::Object LibosrmWrapper::get_route_with_coordinates(
 }
 
 void LibosrmWrapper::update_sparse_matrix(
-  const Id v_id,
   const std::vector<Location>& route_locs,
   Matrices& m,
   std::mutex& matrix_m,
-  std::unordered_map<Id, std::string>& v_id_to_geom,
-  std::mutex& id_to_geom_m) const {
+  std::string& vehicle_geometry) const {
   auto json_route = get_route_with_coordinates(route_locs);
 
   auto& legs = json_route.values["legs"].get<osrm::json::Array>();
@@ -181,11 +179,8 @@ void LibosrmWrapper::update_sparse_matrix(
         leg.values["distance"].get<osrm::json::Number>().value);
   }
 
-  std::scoped_lock<std::mutex> lock(id_to_geom_m);
-  v_id_to_geom.try_emplace(v_id,
-                           std::move(json_route.values["geometry"]
-                                       .get<osrm::json::String>()
-                                       .value));
+  vehicle_geometry =
+    std::move(json_route.values["geometry"].get<osrm::json::String>().value);
 };
 
 void LibosrmWrapper::add_geometry(Route& route) const {

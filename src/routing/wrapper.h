@@ -114,13 +114,10 @@ public:
 
   // Updates matrices with data from a single route request and stores
   // corresponding route geometry.
-  virtual void
-  update_sparse_matrix(const Id v_id,
-                       const std::vector<Location>& route_locs,
-                       Matrices& m,
-                       std::mutex& matrix_m,
-                       std::unordered_map<Id, std::string>& v_id_to_geom,
-                       std::mutex& id_to_geom_m) const = 0;
+  virtual void update_sparse_matrix(const std::vector<Location>& route_locs,
+                                    Matrices& m,
+                                    std::mutex& matrix_m,
+                                    std::string& vehicle_geometry) const = 0;
 
   virtual void add_geometry(Route& route) const = 0;
 

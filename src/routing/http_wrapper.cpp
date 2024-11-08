@@ -200,13 +200,10 @@ Matrices HttpWrapper::get_matrices(const std::vector<Location>& locs) const {
   return m;
 }
 
-void HttpWrapper::update_sparse_matrix(
-  const Id v_id,
-  const std::vector<Location>& route_locs,
-  Matrices& m,
-  std::mutex& matrix_m,
-  std::unordered_map<Id, std::string>& v_id_to_geom,
-  std::mutex& id_to_geom_m) const {
+void HttpWrapper::update_sparse_matrix(const std::vector<Location>& route_locs,
+                                       Matrices& m,
+                                       std::mutex& matrix_m,
+                                       std::string& vehicle_geometry) const {
   const std::string query = this->build_query(route_locs, _route_service);
 
   const std::string json_string = this->run_query(query);
@@ -226,8 +223,7 @@ void HttpWrapper::update_sparse_matrix(
       get_leg_distance(legs[i]);
   }
 
-  std::scoped_lock<std::mutex> lock(id_to_geom_m);
-  v_id_to_geom.try_emplace(v_id, get_geometry(json_result));
+  vehicle_geometry = get_geometry(json_result);
 };
 
 void HttpWrapper::add_geometry(Route& route) const {
