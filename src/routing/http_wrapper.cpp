@@ -148,11 +148,11 @@ void HttpWrapper::parse_response(rapidjson::Document& json_result,
 }
 
 Matrices HttpWrapper::get_matrices(const std::vector<Location>& locs) const {
-  std::string query = this->build_query(locs, _matrix_service);
-  std::string json_string = this->run_query(query);
+  const std::string query = this->build_query(locs, _matrix_service);
+  const std::string json_string = this->run_query(query);
 
   // Expected matrix size.
-  std::size_t m_size = locs.size();
+  const std::size_t m_size = locs.size();
 
   rapidjson::Document json_result;
   this->parse_response(json_result, json_string);
@@ -207,9 +207,9 @@ void HttpWrapper::update_sparse_matrix(
   std::mutex& matrix_m,
   std::unordered_map<Id, std::string>& v_id_to_geom,
   std::mutex& id_to_geom_m) const {
-  std::string query = this->build_query(route_locs, _route_service);
+  const std::string query = this->build_query(route_locs, _route_service);
 
-  std::string json_string = this->run_query(query);
+  const std::string json_string = this->run_query(query);
 
   rapidjson::Document json_result;
   parse_response(json_result, json_string);
@@ -244,9 +244,9 @@ void HttpWrapper::add_geometry(Route& route) const {
   }
   assert(!non_break_locations.empty());
 
-  std::string query = build_query(non_break_locations, _route_service);
+  const std::string query = build_query(non_break_locations, _route_service);
 
-  std::string json_string = this->run_query(query);
+  const std::string json_string = this->run_query(query);
 
   rapidjson::Document json_result;
   parse_response(json_result, json_string);
