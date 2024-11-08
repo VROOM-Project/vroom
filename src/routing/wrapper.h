@@ -34,19 +34,20 @@ public:
   get_sparse_matrices(const std::vector<Location>& locs,
                       const std::vector<Vehicle>& vehicles,
                       const std::vector<Job>& jobs,
-                      std::unordered_map<Id, std::string>& v_id_to_geom) const {
+                      std::vector<std::string>& vehicles_geometry) const {
     std::size_t m_size = locs.size();
     Matrices m(m_size);
 
     std::exception_ptr ep = nullptr;
     std::mutex ep_m;
-    std::mutex id_to_geom_m;
     std::mutex matrix_m;
 
-    auto run_on_vehicle =
-      [this, &jobs, &matrix_m, &m, &id_to_geom_m, &v_id_to_geom, &ep_m, &ep](
-        const Vehicle& v) {
+    auto run_on_vehicle_at_rank =
+      [this, &vehicles, &jobs, &matrix_m, &m, &vehicles_geometry, &ep_m, &ep](
+        Index v_rank) {
         try {
+          const Vehicle& v = vehicles[v_rank];
+
           std::vector<Location> route_locs;
           route_locs.reserve(v.steps.size());
 
@@ -73,19 +74,14 @@ public:
             }
           }
 
-          if (!has_job_steps) {
-            // No steps provided in input for vehicle, or only breaks in
-            // steps.
-            return;
-          }
-          assert(route_locs.size() >= 2);
+          if (has_job_steps) {
+            assert(route_locs.size() >= 2);
 
-          this->update_sparse_matrix(v.id,
-                                     route_locs,
-                                     m,
-                                     matrix_m,
-                                     v_id_to_geom,
-                                     id_to_geom_m);
+            this->update_sparse_matrix(route_locs,
+                                       m,
+                                       matrix_m,
+                                       vehicles_geometry[v_rank]);
+          }
         } catch (...) {
           std::scoped_lock<std::mutex> lock(ep_m);
           ep = std::current_exception();
@@ -95,9 +91,9 @@ public:
     std::vector<std::jthread> vehicles_threads;
     vehicles_threads.reserve(vehicles.size());
 
-    for (const auto& v : vehicles) {
-      if (v.profile == this->profile) {
-        vehicles_threads.emplace_back(run_on_vehicle, v);
+    for (Index v_rank = 0; v_rank < vehicles.size(); ++v_rank) {
+      if (vehicles[v_rank].profile == this->profile) {
+        vehicles_threads.emplace_back(run_on_vehicle_at_rank, v_rank);
       }
     }
 

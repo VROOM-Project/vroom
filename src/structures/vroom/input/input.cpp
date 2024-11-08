@@ -910,6 +910,10 @@ routing::Matrices Input::get_matrices_by_profile(const std::string& profile,
   });
   assert(rw != _routing_wrappers.end());
 
+  if (sparse_filling) {
+    _vehicles_geometry.resize(vehicles.size());
+  }
+
   // Note: get_sparse_matrices relies on getting in input *all*
   // vehicles as it refers to vehicle ranks to store geometries.
   return sparse_filling ? (*rw)->get_sparse_matrices(_locations,
