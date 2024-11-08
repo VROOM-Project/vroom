@@ -1204,7 +1204,9 @@ Solution Input::check(unsigned nb_thread) {
                    .count();
 
   // Check.
-  auto sol = validation::check_and_set_ETA(*this, nb_thread);
+  std::unordered_map<Index, Index> route_rank_to_v_rank;
+  auto sol =
+    validation::check_and_set_ETA(*this, nb_thread, route_rank_to_v_rank);
 
   // Update timing info.
   sol.summary.computing_times.loading = loading;
@@ -1216,7 +1218,12 @@ Solution Input::check(unsigned nb_thread) {
       .count();
 
   if (_geometry) {
-    for (auto& route : sol.routes) {
+    for (std::size_t i = 0; i < sol.routes.size(); ++i) {
+      auto& route = sol.routes[i];
+
+      auto search = route_rank_to_v_rank.find(i);
+      assert(search != route_rank_to_v_rank.end());
+
       assert(_vehicle_id_to_geometry.contains(route.vehicle));
       route.geometry = std::move(_vehicle_id_to_geometry.at(route.vehicle));
     }
