@@ -8,7 +8,6 @@ All rights reserved (see LICENSE).
 */
 
 #include "routing/osrm_routed_wrapper.h"
-#include "utils/helpers.h"
 
 namespace vroom::routing {
 
@@ -86,33 +85,13 @@ void OsrmRoutedWrapper::check_response(const rapidjson::Document& json_result,
   }
 }
 
-bool OsrmRoutedWrapper::duration_value_is_null(
-  const rapidjson::Value& matrix_entry) const {
-  return matrix_entry.IsNull();
-}
+const rapidjson::Value&
+OsrmRoutedWrapper::get_legs(const rapidjson::Value& result) const {
+  assert(result.HasMember("routes") && result["routes"].IsArray() &&
+         !result["routes"].Empty() && result["routes"][0].HasMember("legs") &&
+         result["routes"][0]["legs"].IsArray());
 
-bool OsrmRoutedWrapper::distance_value_is_null(
-  const rapidjson::Value& matrix_entry) const {
-  return matrix_entry.IsNull();
-}
-
-UserDuration OsrmRoutedWrapper::get_duration_value(
-  const rapidjson::Value& matrix_entry) const {
-  return utils::round<UserDuration>(matrix_entry.GetDouble());
-}
-
-UserDistance OsrmRoutedWrapper::get_distance_value(
-  const rapidjson::Value& matrix_entry) const {
-  return utils::round<UserDistance>(matrix_entry.GetDouble());
-}
-
-unsigned
-OsrmRoutedWrapper::get_legs_number(const rapidjson::Value& result) const {
-  return result["routes"][0]["legs"].Size();
-}
-
-std::string OsrmRoutedWrapper::get_geometry(rapidjson::Value& result) const {
-  return result["routes"][0]["geometry"].GetString();
+  return result["routes"][0]["legs"];
 }
 
 } // namespace vroom::routing

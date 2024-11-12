@@ -18,6 +18,7 @@ All rights reserved (see LICENSE).
 #include "routing/wrapper.h"
 #include "structures/generic/matrix.h"
 #include "structures/typedefs.h"
+#include "structures/vroom/matrices.h"
 #include "structures/vroom/solution/solution.h"
 #include "structures/vroom/vehicle.h"
 
@@ -78,6 +79,10 @@ private:
   bool _all_locations_have_coords{true};
   std::vector<std::vector<Eval>> _jobs_vehicles_evals;
 
+  // Used in plan mode since we store route geometries while
+  // generating sparse matrices.
+  std::vector<std::string> _vehicles_geometry;
+
   std::optional<unsigned> _amount_size;
   Amount _zero;
 
@@ -99,7 +104,11 @@ private:
   void set_jobs_vehicles_evals();
   void set_vehicle_steps_ranks();
   void init_missing_matrices(const std::string& profile);
-  void set_matrices(unsigned nb_thread);
+
+  routing::Matrices get_matrices_by_profile(const std::string& profile,
+                                            bool sparse_filling);
+
+  void set_matrices(unsigned nb_thread, bool sparse_filling = false);
 
   void add_routing_wrapper(const std::string& profile);
 

@@ -13,12 +13,14 @@
 
 #### Internals
 
+- Bypass matrix request in `plan` mode (#444)
 - Refactor heuristics to reduce code duplication (#1181)
 - Refactor `Matrix` template class (#1089)
 - Refactor to use `std::format` whenever possible (#1081)
 - Reduce complexity for recreation process (#1155)
 - Refactor `SolutionIndicators` (#1169)
 - Remove amount consistency checks in `parse` in favor of upstream checks in `Input` (#1086)
+- Reduce code duplication in routing wrappers (#1184)
 
 #### CI
 

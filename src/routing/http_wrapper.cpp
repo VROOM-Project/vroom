@@ -148,11 +148,11 @@ void HttpWrapper::parse_response(rapidjson::Document& json_result,
 }
 
 Matrices HttpWrapper::get_matrices(const std::vector<Location>& locs) const {
-  std::string query = this->build_query(locs, _matrix_service);
-  std::string json_string = this->run_query(query);
+  const std::string query = this->build_query(locs, _matrix_service);
+  const std::string json_string = this->run_query(query);
 
   // Expected matrix size.
-  std::size_t m_size = locs.size();
+  const std::size_t m_size = locs.size();
 
   rapidjson::Document json_result;
   this->parse_response(json_result, json_string);
@@ -200,6 +200,32 @@ Matrices HttpWrapper::get_matrices(const std::vector<Location>& locs) const {
   return m;
 }
 
+void HttpWrapper::update_sparse_matrix(const std::vector<Location>& route_locs,
+                                       Matrices& m,
+                                       std::mutex& matrix_m,
+                                       std::string& vehicle_geometry) const {
+  const std::string query = this->build_query(route_locs, _route_service);
+
+  const std::string json_string = this->run_query(query);
+
+  rapidjson::Document json_result;
+  parse_response(json_result, json_string);
+  this->check_response(json_result, route_locs, _route_service);
+
+  const auto& legs = get_legs(json_result);
+  assert(legs.Size() == route_locs.size() - 1);
+
+  for (rapidjson::SizeType i = 0; i < legs.Size(); ++i) {
+    std::scoped_lock<std::mutex> lock(matrix_m);
+    m.durations[route_locs[i].index()][route_locs[i + 1].index()] =
+      get_leg_duration(legs[i]);
+    m.distances[route_locs[i].index()][route_locs[i + 1].index()] =
+      get_leg_distance(legs[i]);
+  }
+
+  vehicle_geometry = get_geometry(json_result);
+};
+
 void HttpWrapper::add_geometry(Route& route) const {
   // Ordering locations for the given steps, excluding
   // breaks.
@@ -214,9 +240,9 @@ void HttpWrapper::add_geometry(Route& route) const {
   }
   assert(!non_break_locations.empty());
 
-  std::string query = build_query(non_break_locations, _route_service);
+  const std::string query = build_query(non_break_locations, _route_service);
 
-  std::string json_string = this->run_query(query);
+  const std::string json_string = this->run_query(query);
 
   rapidjson::Document json_result;
   parse_response(json_result, json_string);
@@ -224,7 +250,7 @@ void HttpWrapper::add_geometry(Route& route) const {
                        non_break_locations, // not supposed to be used
                        _route_service);
 
-  assert(get_legs_number(json_result) == non_break_locations.size() - 1);
+  assert(get_legs(json_result).Size() == non_break_locations.size() - 1);
 
   route.geometry = get_geometry(json_result);
 }

@@ -11,7 +11,7 @@ All rights reserved (see LICENSE).
 */
 
 #include "structures/vroom/input/input.h"
-#include "structures/vroom/solution/solution.h"
+#include "structures/vroom/solution/route.h"
 
 namespace vroom::validation {
 

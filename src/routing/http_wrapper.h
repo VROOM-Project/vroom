@@ -13,6 +13,7 @@ All rights reserved (see LICENSE).
 
 #include "routing/wrapper.h"
 #include "structures/typedefs.h"
+#include "utils/helpers.h"
 
 namespace vroom::routing {
 
@@ -54,21 +55,54 @@ protected:
 
   Matrices get_matrices(const std::vector<Location>& locs) const override;
 
-  virtual bool
-  duration_value_is_null(const rapidjson::Value& matrix_entry) const = 0;
+  void update_sparse_matrix(const std::vector<Location>& route_locs,
+                            Matrices& m,
+                            std::mutex& matrix_m,
+                            std::string& vehicles_geometry) const override;
 
   virtual bool
-  distance_value_is_null(const rapidjson::Value& matrix_entry) const = 0;
+  duration_value_is_null(const rapidjson::Value& matrix_entry) const {
+    // Same implementation for both OSRM and ORS.
+    return matrix_entry.IsNull();
+  }
+
+  virtual bool
+  distance_value_is_null(const rapidjson::Value& matrix_entry) const {
+    // Same implementation for both OSRM and ORS.
+    return matrix_entry.IsNull();
+  }
 
   virtual UserDuration
-  get_duration_value(const rapidjson::Value& matrix_entry) const = 0;
+  get_duration_value(const rapidjson::Value& matrix_entry) const {
+    // Same implementation for both OSRM and ORS.
+    return utils::round<UserDuration>(matrix_entry.GetDouble());
+  }
 
   virtual UserDistance
-  get_distance_value(const rapidjson::Value& matrix_entry) const = 0;
+  get_distance_value(const rapidjson::Value& matrix_entry) const {
+    // Same implementation for both OSRM and ORS.
+    return utils::round<UserDistance>(matrix_entry.GetDouble());
+  }
 
-  virtual unsigned get_legs_number(const rapidjson::Value& result) const = 0;
+  virtual const rapidjson::Value&
+  get_legs(const rapidjson::Value& result) const = 0;
 
-  virtual std::string get_geometry(rapidjson::Value& result) const = 0;
+  virtual UserDuration get_leg_duration(const rapidjson::Value& leg) const {
+    // Same implementation for both OSRM and ORS.
+    assert(leg.HasMember("duration"));
+    return utils::round<UserDuration>(leg["duration"].GetDouble());
+  }
+
+  virtual UserDistance get_leg_distance(const rapidjson::Value& leg) const {
+    // Same implementation for both OSRM and ORS.
+    assert(leg.HasMember("distance"));
+    return utils::round<UserDistance>(leg["distance"].GetDouble());
+  }
+
+  virtual std::string get_geometry(rapidjson::Value& result) const {
+    // Same implementation for both OSRM and ORS.
+    return result["routes"][0]["geometry"].GetString();
+  }
 
   void add_geometry(Route& route) const override;
 };
