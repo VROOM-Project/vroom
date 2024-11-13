@@ -167,6 +167,7 @@ inline Eval fill_route(const Input& input,
   const auto v_rank = route.vehicle_rank;
   const auto& vehicle = input.vehicles[v_rank];
 
+  const bool init_route_is_empty = route.empty();
   Eval route_eval = utils::route_eval_for_vehicle(input, v_rank, route.route);
 
   bool keep_going = true;
@@ -359,6 +360,11 @@ inline Eval fill_route(const Input& input,
     }
   }
 
+  if (init_route_is_empty && !route.empty()) {
+    // Account for fixed cost if we actually filled an empty route.
+    route_eval.cost += vehicle.fixed_cost();
+  }
+
   return route_eval;
 }
 
@@ -431,7 +437,7 @@ Eval basic(const Input& input,
 
   Eval sol_eval;
 
-  for (Index v = 0; v < nb_vehicles; ++v) {
+  for (Index v = 0; v < nb_vehicles && !unassigned.empty(); ++v) {
     auto v_rank = vehicles_ranks[v];
 
     auto job_not_ok = [&input, v_rank](const Index job_rank) {
@@ -444,9 +450,7 @@ Eval basic(const Input& input,
 
     const auto current_eval =
       fill_route(input, current_r, unassigned, regrets[v], lambda);
-    if (!current_r.empty()) {
-      sol_eval += current_eval;
-    }
+    sol_eval += current_eval;
   }
 
   return sol_eval;
@@ -573,9 +577,7 @@ Eval dynamic_vehicle_choice(const Input& input,
 
     const auto current_eval =
       fill_route(input, current_r, unassigned, regrets, lambda);
-    if (!current_r.empty()) {
-      sol_eval += current_eval;
-    }
+    sol_eval += current_eval;
   }
 
   return sol_eval;
