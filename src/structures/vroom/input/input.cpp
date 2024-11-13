@@ -1119,10 +1119,7 @@ Solution Input::solve(unsigned nb_searches,
                       unsigned nb_thread,
                       const Timeout& timeout,
                       const std::vector<HeuristicParameters>& h_param) {
-  if (_geometry && !_all_locations_have_coords) {
-    // Early abort when info is required with missing coordinates.
-    throw InputException("Route geometry request with missing coordinates.");
-  }
+  run_basic_checks();
 
   if (_has_initial_routes) {
     set_vehicle_steps_ranks();
@@ -1202,10 +1199,7 @@ Solution Input::solve(unsigned nb_searches,
 
 Solution Input::check(unsigned nb_thread) {
 #if USE_LIBGLPK
-  if (_geometry && !_all_locations_have_coords) {
-    // Early abort when info is required with missing coordinates.
-    throw InputException("Route geometry request with missing coordinates.");
-  }
+  run_basic_checks();
 
   set_vehicle_steps_ranks();
 
