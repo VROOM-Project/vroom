@@ -172,6 +172,19 @@ void Input::check_job(Job& job) {
     _all_locations_have_coords && job.location.has_coordinates();
 }
 
+void Input::run_basic_checks() const {
+  if (vehicles.empty()) {
+    throw InputException("No vehicle defined.");
+  }
+  if (jobs.empty()) {
+    throw InputException("No task defined.");
+  }
+  if (_geometry && !_all_locations_have_coords) {
+    // Early abort when info is required with missing coordinates.
+    throw InputException("Route geometry request with missing coordinates.");
+  }
+}
+
 void Input::add_job(const Job& job) {
   if (job.type != JOB_TYPE::SINGLE) {
     throw InputException("Wrong job type.");
