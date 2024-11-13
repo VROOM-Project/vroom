@@ -530,10 +530,15 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
     throw InputException("Invalid jobs or shipments.");
   }
 
-  if (!json_input.HasMember("vehicles") || !json_input["vehicles"].IsArray() ||
-      json_input["vehicles"].Empty()) {
+  if (!json_input.HasMember("vehicles") || !json_input["vehicles"].IsArray()) {
     throw InputException("Invalid vehicles.");
   }
+  if (json_input["vehicles"].Empty()) {
+    // This is tested upstream upon solving but we still need to do it
+    // here to access first vehicle and retrieve amount_size.
+    throw InputException("No vehicle defined.");
+  }
+
   const auto& first_vehicle = json_input["vehicles"][0];
   check_id(first_vehicle, "vehicle");
   bool first_vehicle_has_capacity = (first_vehicle.HasMember("capacity") &&
