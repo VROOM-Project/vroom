@@ -349,22 +349,17 @@ inline Eval fill_route(const Input& input,
   return route_eval;
 }
 
-template <class Route, std::forward_iterator Iter>
+template <class Route>
 Eval basic(const Input& input,
            std::vector<Route>& routes,
            std::set<Index> unassigned,
-           const Iter vehicles_begin,
-           const Iter vehicles_end,
+           std::vector<Index> vehicles_ranks,
            INIT init,
            double lambda,
            SORT sort) {
-  // Perform heuristic ordering of the vehicles on a copy. Ordering is
-  // based on vehicles description only so do not account for initial
-  // routes if any.
-  const auto nb_vehicles = std::distance(vehicles_begin, vehicles_end);
-  std::vector<Index> vehicles_ranks;
-  vehicles_ranks.reserve(nb_vehicles);
-  std::copy(vehicles_begin, vehicles_end, std::back_inserter(vehicles_ranks));
+  // Ordering is based on vehicles description only so do not account
+  // for initial routes if any.
+  const auto nb_vehicles = vehicles_ranks.size();
 
   switch (sort) {
   case SORT::AVAILABILITY: {
@@ -434,22 +429,14 @@ Eval basic(const Input& input,
   return sol_eval;
 }
 
-template <class Route, std::forward_iterator Iter>
+template <class Route>
 Eval dynamic_vehicle_choice(const Input& input,
                             std::vector<Route>& routes,
                             std::set<Index> unassigned,
-                            const Iter vehicles_begin,
-                            const Iter vehicles_end,
+                            std::vector<Index> vehicles_ranks,
                             INIT init,
                             double lambda,
                             SORT sort) {
-  // Work on a copy of the vehicles ranks from which we erase values
-  // each time a route is completed.
-  const auto nb_vehicles = std::distance(vehicles_begin, vehicles_end);
-  std::vector<Index> vehicles_ranks;
-  vehicles_ranks.reserve(nb_vehicles);
-  std::copy(vehicles_begin, vehicles_end, std::back_inserter(vehicles_ranks));
-
   const auto& evals = input.jobs_vehicles_evals();
 
   Eval sol_eval;
@@ -718,21 +705,18 @@ using TWSolution = std::vector<TWRoute>;
 template Eval basic(const Input& input,
                     RawSolution& routes,
                     std::set<Index> unassigned,
-                    const std::vector<Index>::const_iterator vehicles_begin,
-                    const std::vector<Index>::const_iterator vehicles_end,
+                    std::vector<Index> vehicles_ranks,
                     INIT init,
                     double lambda,
                     SORT sort);
 
-template Eval
-dynamic_vehicle_choice(const Input& input,
-                       RawSolution& routes,
-                       std::set<Index> unassigned,
-                       const std::vector<Index>::const_iterator vehicles_begin,
-                       const std::vector<Index>::const_iterator vehicles_end,
-                       INIT init,
-                       double lambda,
-                       SORT sort);
+template Eval dynamic_vehicle_choice(const Input& input,
+                                     RawSolution& routes,
+                                     std::set<Index> unassigned,
+                                     std::vector<Index> vehicles_ranks,
+                                     INIT init,
+                                     double lambda,
+                                     SORT sort);
 
 template std::unordered_set<Index> set_initial_routes(const Input& input,
                                                       RawSolution& routes);
@@ -740,21 +724,18 @@ template std::unordered_set<Index> set_initial_routes(const Input& input,
 template Eval basic(const Input& input,
                     TWSolution& routes,
                     std::set<Index> unassigned,
-                    const std::vector<Index>::const_iterator vehicles_begin,
-                    const std::vector<Index>::const_iterator vehicles_end,
+                    std::vector<Index> vehicles_ranks,
                     INIT init,
                     double lambda,
                     SORT sort);
 
-template Eval
-dynamic_vehicle_choice(const Input& input,
-                       TWSolution& routes,
-                       std::set<Index> unassigned,
-                       const std::vector<Index>::const_iterator vehicles_begin,
-                       const std::vector<Index>::const_iterator vehicles_end,
-                       INIT init,
-                       double lambda,
-                       SORT sort);
+template Eval dynamic_vehicle_choice(const Input& input,
+                                     TWSolution& routes,
+                                     std::set<Index> unassigned,
+                                     std::vector<Index> vehicles_ranks,
+                                     INIT init,
+                                     double lambda,
+                                     SORT sort);
 
 template std::unordered_set<Index> set_initial_routes(const Input& input,
                                                       TWSolution& routes);

@@ -112,22 +112,19 @@ protected:
             h_eval = heuristics::basic<Route>(_input,
                                               solutions[rank],
                                               unassigned,
-                                              vehicles_ranks.cbegin(),
-                                              vehicles_ranks.cend(),
+                                              vehicles_ranks,
                                               p.init,
                                               p.regret_coeff,
                                               p.sort);
             break;
           case HEURISTIC::DYNAMIC:
-            h_eval =
-              heuristics::dynamic_vehicle_choice<Route>(_input,
-                                                        solutions[rank],
-                                                        unassigned,
-                                                        vehicles_ranks.cbegin(),
-                                                        vehicles_ranks.cend(),
-                                                        p.init,
-                                                        p.regret_coeff,
-                                                        p.sort);
+            h_eval = heuristics::dynamic_vehicle_choice<Route>(_input,
+                                                               solutions[rank],
+                                                               unassigned,
+                                                               vehicles_ranks,
+                                                               p.init,
+                                                               p.regret_coeff,
+                                                               p.sort);
             break;
           }
 
@@ -143,8 +140,7 @@ protected:
               h_other_eval = heuristics::basic<Route>(_input,
                                                       other_sol,
                                                       unassigned,
-                                                      vehicles_ranks.cbegin(),
-                                                      vehicles_ranks.cend(),
+                                                      vehicles_ranks,
                                                       p.init,
                                                       p.regret_coeff,
                                                       SORT::COST);
@@ -154,9 +150,7 @@ protected:
                 heuristics::dynamic_vehicle_choice<Route>(_input,
                                                           other_sol,
                                                           unassigned,
-                                                          vehicles_ranks
-                                                            .cbegin(),
-                                                          vehicles_ranks.cend(),
+                                                          vehicles_ranks,
                                                           p.init,
                                                           p.regret_coeff,
                                                           SORT::COST);
