@@ -8,29 +8,11 @@ All rights reserved (see LICENSE).
 */
 
 #include <algorithm>
-#include <set>
 
 #include "algorithms/heuristics/heuristics.h"
 #include "utils/helpers.h"
 
 namespace vroom::heuristics {
-
-template <class Route, std::forward_iterator Iter>
-inline std::set<Index> get_unassigned(const std::vector<Route>& routes,
-                                      const Iter jobs_begin,
-                                      const Iter jobs_end) {
-  std::unordered_set<Index> assigned;
-  std::ranges::for_each(routes, [&](const auto& r) {
-    std::ranges::copy(r.route, std::inserter(assigned, assigned.end()));
-  });
-  std::set<Index> unassigned;
-  std::copy_if(jobs_begin,
-               jobs_end,
-               std::inserter(unassigned, unassigned.begin()),
-               [&](const auto j) { return !assigned.contains(j); });
-
-  return unassigned;
-}
 
 // Add seed job to route if required and return current cost of route
 // without vehicle fixed cost.
@@ -370,15 +352,12 @@ inline Eval fill_route(const Input& input,
 template <class Route, std::forward_iterator Iter>
 Eval basic(const Input& input,
            std::vector<Route>& routes,
-           const Iter jobs_begin,
-           const Iter jobs_end,
+           std::set<Index> unassigned,
            const Iter vehicles_begin,
            const Iter vehicles_end,
            INIT init,
            double lambda,
            SORT sort) {
-  auto unassigned = get_unassigned(routes, jobs_begin, jobs_end);
-
   // Perform heuristic ordering of the vehicles on a copy. Ordering is
   // based on vehicles description only so do not account for initial
   // routes if any.
@@ -458,15 +437,12 @@ Eval basic(const Input& input,
 template <class Route, std::forward_iterator Iter>
 Eval dynamic_vehicle_choice(const Input& input,
                             std::vector<Route>& routes,
-                            const Iter jobs_begin,
-                            const Iter jobs_end,
+                            std::set<Index> unassigned,
                             const Iter vehicles_begin,
                             const Iter vehicles_end,
                             INIT init,
                             double lambda,
                             SORT sort) {
-  auto unassigned = get_unassigned(routes, jobs_begin, jobs_end);
-
   // Work on a copy of the vehicles ranks from which we erase values
   // each time a route is completed.
   const auto nb_vehicles = std::distance(vehicles_begin, vehicles_end);
@@ -741,8 +717,7 @@ using TWSolution = std::vector<TWRoute>;
 
 template Eval basic(const Input& input,
                     RawSolution& routes,
-                    const std::vector<Index>::const_iterator jobs_begin,
-                    const std::vector<Index>::const_iterator jobs_end,
+                    std::set<Index> unassigned,
                     const std::vector<Index>::const_iterator vehicles_begin,
                     const std::vector<Index>::const_iterator vehicles_end,
                     INIT init,
@@ -752,8 +727,7 @@ template Eval basic(const Input& input,
 template Eval
 dynamic_vehicle_choice(const Input& input,
                        RawSolution& routes,
-                       const std::vector<Index>::const_iterator jobs_begin,
-                       const std::vector<Index>::const_iterator jobs_end,
+                       std::set<Index> unassigned,
                        const std::vector<Index>::const_iterator vehicles_begin,
                        const std::vector<Index>::const_iterator vehicles_end,
                        INIT init,
@@ -765,8 +739,7 @@ template std::unordered_set<Index> set_initial_routes(const Input& input,
 
 template Eval basic(const Input& input,
                     TWSolution& routes,
-                    const std::vector<Index>::const_iterator jobs_begin,
-                    const std::vector<Index>::const_iterator jobs_end,
+                    std::set<Index> unassigned,
                     const std::vector<Index>::const_iterator vehicles_begin,
                     const std::vector<Index>::const_iterator vehicles_end,
                     INIT init,
@@ -776,8 +749,7 @@ template Eval basic(const Input& input,
 template Eval
 dynamic_vehicle_choice(const Input& input,
                        TWSolution& routes,
-                       const std::vector<Index>::const_iterator jobs_begin,
-                       const std::vector<Index>::const_iterator jobs_end,
+                       std::set<Index> unassigned,
                        const std::vector<Index>::const_iterator vehicles_begin,
                        const std::vector<Index>::const_iterator vehicles_end,
                        INIT init,

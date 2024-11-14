@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <set>
 #include <unordered_set>
 
 #include "structures/vroom/eval.h"
@@ -21,8 +22,7 @@ namespace vroom::heuristics {
 template <class Route, std::forward_iterator Iter>
 Eval basic(const Input& input,
            std::vector<Route>& routes,
-           const Iter jobs_begin,
-           const Iter jobs_end,
+           std::set<Index> unassigned,
            const Iter vehicles_begin,
            const Iter vehicles_end,
            INIT init,
@@ -33,8 +33,7 @@ Eval basic(const Input& input,
 template <class Route, std::forward_iterator Iter>
 Eval dynamic_vehicle_choice(const Input& input,
                             std::vector<Route>& routes,
-                            const Iter jobs_begin,
-                            const Iter jobs_end,
+                            std::set<Index> unassigned,
                             const Iter vehicles_begin,
                             const Iter vehicles_end,
                             INIT init,
