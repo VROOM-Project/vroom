@@ -62,8 +62,9 @@ protected:
       init_sol.emplace_back(_input, v, _input.zero_amount().size());
     }
 
+    std::unordered_set<Index> init_assigned;
     if (_input.has_initial_routes()) {
-      heuristics::set_initial_routes<Route>(_input, init_sol);
+      init_assigned = heuristics::set_initial_routes<Route>(_input, init_sol);
     }
 
     std::vector<std::vector<Route>> solutions(nb_searches, init_sol);

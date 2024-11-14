@@ -10,6 +10,8 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <unordered_set>
+
 #include "structures/vroom/eval.h"
 #include "structures/vroom/input/input.h"
 
@@ -41,7 +43,8 @@ Eval dynamic_vehicle_choice(const Input& input,
 
 // Populate routes with user-defined vehicle steps.
 template <class Route>
-void set_initial_routes(const Input& input, std::vector<Route>& routes);
+std::unordered_set<Index> set_initial_routes(const Input& input,
+                                             std::vector<Route>& routes);
 
 } // namespace vroom::heuristics
 

@@ -9,7 +9,6 @@ All rights reserved (see LICENSE).
 
 #include <algorithm>
 #include <set>
-#include <unordered_set>
 
 #include "algorithms/heuristics/heuristics.h"
 #include "utils/helpers.h"
@@ -583,7 +582,10 @@ Eval dynamic_vehicle_choice(const Input& input,
   return sol_eval;
 }
 
-template <class Route> void set_route(const Input& input, Route& route) {
+template <class Route>
+void set_route(const Input& input,
+               Route& route,
+               std::unordered_set<Index>& assigned) {
   assert(route.empty());
   const auto& vehicle = input.vehicles[route.vehicle_rank];
 
@@ -622,6 +624,9 @@ template <class Route> void set_route(const Input& input, Route& route) {
     const auto job_rank = step.rank;
     const auto& job = input.jobs[job_rank];
     job_ranks.push_back(job_rank);
+
+    assert(!assigned.contains(job_rank));
+    assigned.insert(job_rank);
 
     if (!input.vehicle_ok_with_job(route.vehicle_rank, job_rank)) {
       throw InputException(
@@ -721,8 +726,14 @@ template <class Route> void set_route(const Input& input, Route& route) {
 }
 
 template <class Route>
-void set_initial_routes(const Input& input, std::vector<Route>& routes) {
-  std::ranges::for_each(routes, [&](auto& r) { set_route(input, r); });
+std::unordered_set<Index> set_initial_routes(const Input& input,
+                                             std::vector<Route>& routes) {
+  std::unordered_set<Index> assigned;
+
+  std::ranges::for_each(routes,
+                        [&](auto& r) { set_route(input, r, assigned); });
+
+  return assigned;
 }
 
 using RawSolution = std::vector<RawRoute>;
@@ -749,7 +760,8 @@ dynamic_vehicle_choice(const Input& input,
                        double lambda,
                        SORT sort);
 
-template void set_initial_routes(const Input& input, RawSolution& routes);
+template std::unordered_set<Index> set_initial_routes(const Input& input,
+                                                      RawSolution& routes);
 
 template Eval basic(const Input& input,
                     TWSolution& routes,
@@ -772,6 +784,7 @@ dynamic_vehicle_choice(const Input& input,
                        double lambda,
                        SORT sort);
 
-template void set_initial_routes(const Input& input, TWSolution& routes);
+template std::unordered_set<Index> set_initial_routes(const Input& input,
+                                                      TWSolution& routes);
 
 } // namespace vroom::heuristics
