@@ -33,7 +33,7 @@ std::string OrsWrapper::build_query(const std::vector<Location>& locations,
   }
   body += "\":[";
   for (auto const& location : locations) {
-    body += std::format("[{},{}],", location.lon(), location.lat());
+    body += std::format("[{:.6f},{:.6f}],", location.lon(), location.lat());
   }
   body.pop_back(); // Remove trailing ','.
   body += "]";

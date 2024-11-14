@@ -147,7 +147,7 @@ protected:
     if (max_unfound_routes_for_a_loc > 0) {
       std::string error_msg = "Unfound route(s) ";
       error_msg += error_direction;
-      error_msg += std::format("location [{},{}]",
+      error_msg += std::format("location [{:.6f},{:.6f}]",
                                locs[error_loc].lon(),
                                locs[error_loc].lat());
 
