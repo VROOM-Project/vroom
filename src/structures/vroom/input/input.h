@@ -94,6 +94,8 @@ private:
   void check_amount_size(const Amount& amount);
   void check_job(Job& job);
 
+  void run_basic_checks() const;
+
   UserCost check_cost_bound(const Matrix<UserCost>& matrix) const;
 
   void set_skills_compatibility();

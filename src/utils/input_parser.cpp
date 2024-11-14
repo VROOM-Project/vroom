@@ -521,19 +521,15 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
     throw InputException("Input root is not an object.");
   }
 
-  bool has_jobs = json_input.HasMember("jobs") &&
-                  json_input["jobs"].IsArray() && !json_input["jobs"].Empty();
-  bool has_shipments = json_input.HasMember("shipments") &&
-                       json_input["shipments"].IsArray() &&
-                       !json_input["shipments"].Empty();
-  if (!has_jobs && !has_shipments) {
-    throw InputException("Invalid jobs or shipments.");
-  }
-
-  if (!json_input.HasMember("vehicles") || !json_input["vehicles"].IsArray() ||
-      json_input["vehicles"].Empty()) {
+  if (!json_input.HasMember("vehicles") || !json_input["vehicles"].IsArray()) {
     throw InputException("Invalid vehicles.");
   }
+  if (json_input["vehicles"].Empty()) {
+    // This is tested upstream upon solving but we still need to do it
+    // here to access first vehicle and retrieve amount_size.
+    throw InputException("No vehicle defined.");
+  }
+
   const auto& first_vehicle = json_input["vehicles"][0];
   check_id(first_vehicle, "vehicle");
   bool first_vehicle_has_capacity = (first_vehicle.HasMember("capacity") &&
@@ -551,16 +547,21 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
     input.add_vehicle(get_vehicle(json_vehicle, amount_size));
   }
 
-  // Add all tasks.
-  if (has_jobs) {
-    // Add the jobs.
+  if (json_input.HasMember("jobs")) {
+    if (!json_input["jobs"].IsArray()) {
+      throw InputException("Invalid jobs.");
+    }
+
     for (rapidjson::SizeType i = 0; i < json_input["jobs"].Size(); ++i) {
       input.add_job(get_job(json_input["jobs"][i], amount_size));
     }
   }
 
-  if (has_shipments) {
-    // Add the shipments.
+  if (json_input.HasMember("shipments")) {
+    if (!json_input["shipments"].IsArray()) {
+      throw InputException("Invalid shipments.");
+    }
+
     for (rapidjson::SizeType i = 0; i < json_input["shipments"].Size(); ++i) {
       auto& json_shipment = json_input["shipments"][i];
       check_shipment(json_shipment);
