@@ -6,6 +6,7 @@
 
 #### Internals
 
+- Apply heuristics to partial solutions provided in input (#977)
 - LOG_LS flag to generate debug info on the internal solving process (#1124)
 
 ### Changed
@@ -13,6 +14,7 @@
 #### Internals
 
 - Bypass matrix request in `plan` mode (#444)
+- Refactor heuristics to reduce code duplication (#1181)
 - Refactor `Matrix` template class (#1089)
 - Refactor to use `std::format` whenever possible (#1081)
 - Reduce complexity for recreation process (#1155)

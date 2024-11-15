@@ -13,6 +13,7 @@ All rights reserved (see LICENSE).
 #include <algorithm>
 #include <mutex>
 #include <numeric>
+#include <ranges>
 #include <set>
 #include <thread>
 
@@ -53,24 +54,34 @@ protected:
     nb_searches =
       std::min(nb_searches, static_cast<unsigned>(parameters.size()));
 
-    // Build empty solutions to be filled by heuristics.
-    std::vector<Route> empty_sol;
-    empty_sol.reserve(_input.vehicles.size());
+    // Build initial solution to be filled by heuristics. Solution is
+    // empty at first but populated with input data if provided.
+    std::vector<Route> init_sol;
+    init_sol.reserve(_input.vehicles.size());
 
     for (Index v = 0; v < _input.vehicles.size(); ++v) {
-      empty_sol.emplace_back(_input, v, _input.zero_amount().size());
+      init_sol.emplace_back(_input, v, _input.zero_amount().size());
     }
 
-    std::vector<std::vector<Route>> solutions(nb_searches, empty_sol);
+    std::unordered_set<Index> init_assigned;
+    if (_input.has_initial_routes()) {
+      init_assigned = heuristics::set_initial_routes<Route>(_input, init_sol);
+    }
+
+    std::vector<std::vector<Route>> solutions(nb_searches, init_sol);
 
 #ifdef LOG_LS
     std::vector<ls::log::Dump> ls_dumps;
     ls_dumps.reserve(nb_searches);
 #endif
 
-    // Heuristics operate on all jobs.
-    std::vector<Index> jobs_ranks(_input.jobs.size());
-    std::iota(jobs_ranks.begin(), jobs_ranks.end(), 0);
+    // Heuristics operate on all assigned jobs.
+    std::set<Index> unassigned;
+    std::ranges::copy_if(std::views::iota(0u, _input.jobs.size()),
+                         std::inserter(unassigned, unassigned.begin()),
+                         [&init_assigned](const Index j) {
+                           return !init_assigned.contains(j);
+                         });
 
     // Heuristics operate on all vehicles.
     std::vector<Index> vehicles_ranks(_input.vehicles.size());
@@ -97,53 +108,39 @@ protected:
 
           Eval h_eval;
           switch (p.heuristic) {
-          case HEURISTIC::INIT_ROUTES:
-            heuristics::initial_routes<Route>(_input, solutions[rank]);
-            break;
           case HEURISTIC::BASIC:
             h_eval = heuristics::basic<Route>(_input,
                                               solutions[rank],
-                                              jobs_ranks.cbegin(),
-                                              jobs_ranks.cend(),
-                                              vehicles_ranks.cbegin(),
-                                              vehicles_ranks.cend(),
+                                              unassigned,
+                                              vehicles_ranks,
                                               p.init,
                                               p.regret_coeff,
                                               p.sort);
             break;
           case HEURISTIC::DYNAMIC:
-            h_eval =
-              heuristics::dynamic_vehicle_choice<Route>(_input,
-                                                        solutions[rank],
-                                                        jobs_ranks.cbegin(),
-                                                        jobs_ranks.cend(),
-                                                        vehicles_ranks.cbegin(),
-                                                        vehicles_ranks.cend(),
-                                                        p.init,
-                                                        p.regret_coeff,
-                                                        p.sort);
+            h_eval = heuristics::dynamic_vehicle_choice<Route>(_input,
+                                                               solutions[rank],
+                                                               unassigned,
+                                                               vehicles_ranks,
+                                                               p.init,
+                                                               p.regret_coeff,
+                                                               p.sort);
             break;
           }
 
-          if (!_input.has_homogeneous_costs() &&
-              p.heuristic != HEURISTIC::INIT_ROUTES && h_param.empty() &&
+          if (!_input.has_homogeneous_costs() && h_param.empty() &&
               p.sort == SORT::AVAILABILITY) {
             // Worth trying another vehicle ordering scheme in
             // heuristic.
-            std::vector<Route> other_sol = empty_sol;
+            std::vector<Route> other_sol = init_sol;
 
             Eval h_other_eval;
             switch (p.heuristic) {
-            case HEURISTIC::INIT_ROUTES:
-              assert(false);
-              break;
             case HEURISTIC::BASIC:
               h_other_eval = heuristics::basic<Route>(_input,
                                                       other_sol,
-                                                      jobs_ranks.cbegin(),
-                                                      jobs_ranks.cend(),
-                                                      vehicles_ranks.cbegin(),
-                                                      vehicles_ranks.cend(),
+                                                      unassigned,
+                                                      vehicles_ranks,
                                                       p.init,
                                                       p.regret_coeff,
                                                       SORT::COST);
@@ -152,11 +149,8 @@ protected:
               h_other_eval =
                 heuristics::dynamic_vehicle_choice<Route>(_input,
                                                           other_sol,
-                                                          jobs_ranks.cbegin(),
-                                                          jobs_ranks.cend(),
-                                                          vehicles_ranks
-                                                            .cbegin(),
-                                                          vehicles_ranks.cend(),
+                                                          unassigned,
+                                                          vehicles_ranks,
                                                           p.init,
                                                           p.regret_coeff,
                                                           SORT::COST);

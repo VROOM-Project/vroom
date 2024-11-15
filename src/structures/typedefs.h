@@ -114,7 +114,7 @@ enum class JOB_TYPE { SINGLE, PICKUP, DELIVERY };
 enum class STEP_TYPE { START, JOB, BREAK, END };
 
 // Heuristic options.
-enum class HEURISTIC { BASIC, DYNAMIC, INIT_ROUTES };
+enum class HEURISTIC { BASIC, DYNAMIC };
 enum class INIT { NONE, HIGHER_AMOUNT, NEAREST, FURTHEST, EARLIEST_DEADLINE };
 enum class SORT { AVAILABILITY, COST };
 
@@ -129,15 +129,6 @@ struct HeuristicParameters {
                                 float regret_coeff,
                                 SORT sort = SORT::AVAILABILITY)
     : heuristic(heuristic), init(init), regret_coeff(regret_coeff), sort(sort) {
-  }
-
-  // Only makes sense for user-defined initial routes.
-  constexpr HeuristicParameters(HEURISTIC heuristic)
-    : heuristic(heuristic),
-      init(INIT::NONE),
-      regret_coeff(0),
-      sort(SORT::AVAILABILITY) {
-    assert(heuristic == HEURISTIC::INIT_ROUTES);
   }
 };
 
