@@ -37,8 +37,10 @@ PDShift::PDShift(const Input& input,
 
 void PDShift::compute_gain() {
   // Check for valid removal wrt TW constraints.
-  if (!_tw_s_route.is_valid_addition_for_tw(_input,
-                                            _input.zero_amount(),
+  if (const auto delivery_between_pd =
+        _tw_s_route.delivery_in_range(_s_p_rank + 1, _s_d_rank);
+      !_tw_s_route.is_valid_addition_for_tw(_input,
+                                            delivery_between_pd,
                                             s_route.begin() + _s_p_rank + 1,
                                             s_route.begin() + _s_d_rank,
                                             _s_p_rank,

@@ -2379,9 +2379,12 @@ void LocalSearch<Route,
             std::vector<Index> between_pd(_sol[v].route.begin() + r + 1,
                                           _sol[v].route.begin() + delivery_r);
 
+            const auto delivery_between_pd =
+              _sol[v].delivery_in_range(r + 1, delivery_r);
+
             valid_removal =
               _sol[v].is_valid_addition_for_tw(_input,
-                                               _input.zero_amount(),
+                                               delivery_between_pd,
                                                between_pd.begin(),
                                                between_pd.end(),
                                                r,
