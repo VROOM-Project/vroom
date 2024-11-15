@@ -39,7 +39,7 @@ inline void seed_route(const Input& input,
   for (const auto job_rank : unassigned) {
     const auto& current_job = input.jobs[job_rank];
 
-    if (job_not_ok(job_rank)) {
+    if (job_not_ok(job_rank) || current_job.type == JOB_TYPE::DELIVERY) {
       continue;
     }
 
@@ -413,8 +413,7 @@ Eval basic(const Input& input,
 
     if (current_r.empty() && init != INIT::NONE) {
       auto job_not_ok = [&input, v_rank](const Index job_rank) {
-        return !input.vehicle_ok_with_job(v_rank, job_rank) ||
-               input.jobs[job_rank].type == JOB_TYPE::DELIVERY;
+        return !input.vehicle_ok_with_job(v_rank, job_rank);
       };
 
       seed_route(input, current_r, init, evals, unassigned, job_not_ok);
@@ -531,7 +530,6 @@ Eval dynamic_vehicle_choice(const Input& input,
       auto job_not_ok =
         [&input, &jobs_min_costs, &evals, v_rank](const Index job_rank) {
           return !input.vehicle_ok_with_job(v_rank, job_rank) ||
-                 input.jobs[job_rank].type == JOB_TYPE::DELIVERY ||
                  // One of the remaining vehicles is closest to that job.
                  jobs_min_costs[job_rank] < evals[job_rank][v_rank].cost;
         };
