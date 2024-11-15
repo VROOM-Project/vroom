@@ -21,6 +21,7 @@
 - Refactor `SolutionIndicators` (#1169)
 - Remove amount consistency checks in `parse` in favor of upstream checks in `Input` (#1086)
 - Reduce code duplication in routing wrappers (#1184)
+- Allow passing `path` in `Server` ctor (#1192)
 
 #### CI
 

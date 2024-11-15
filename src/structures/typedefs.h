@@ -104,6 +104,10 @@ struct Server {
   Server(std::string host, std::string port)
     : host(std::move(host)), port(std::move(port)) {
   }
+
+  Server(std::string host, std::string port, std::string path)
+    : host(std::move(host)), port(std::move(port)), path(std::move(path)) {
+  }
 };
 
 // 'Single' job is a regular one-stop job without precedence
