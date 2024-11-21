@@ -76,9 +76,6 @@ struct Eval {
   }
 };
 
-constexpr Eval MAX_EVAL = {std::numeric_limits<Cost>::max(),
-                           std::numeric_limits<Duration>::max(),
-                           std::numeric_limits<Distance>::max()};
 constexpr Eval NO_EVAL = {std::numeric_limits<Cost>::max(), 0, 0};
 constexpr Eval NO_GAIN = {std::numeric_limits<Cost>::min(), 0, 0};
 
