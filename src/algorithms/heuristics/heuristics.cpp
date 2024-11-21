@@ -400,9 +400,26 @@ Eval basic(const Input& input,
   for (Index rev_v = 0; rev_v < nb_vehicles - 1; ++rev_v) {
     // Going trough vehicles backward from second to last.
     const auto v = nb_vehicles - 2 - rev_v;
+
+    bool all_compatible_jobs_later_undoable = true;
     for (const auto j : unassigned) {
       regrets[v][j] =
         std::min(regrets[v + 1][j], (evals[j][vehicles_ranks[v + 1]]).cost);
+      if (input.vehicle_ok_with_job(vehicles_ranks[v], j) &&
+          regrets[v][j] < input.get_cost_upper_bound()) {
+        all_compatible_jobs_later_undoable = false;
+      }
+    }
+
+    if (all_compatible_jobs_later_undoable) {
+      // We don't want to use all regrets equal to the cost upper
+      // bound in this situation: it would defeat the purpose of using
+      // regrets in the first place as all lambda values would yield
+      // the same choices. Using the same approach as with last
+      // vehicle.
+      for (const auto j : unassigned) {
+        regrets[v][j] = evals[j][vehicles_ranks[v]].cost;
+      }
     }
   }
 
