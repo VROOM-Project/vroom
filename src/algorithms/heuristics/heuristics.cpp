@@ -466,14 +466,14 @@ Eval dynamic_vehicle_choice(const Input& input,
                                      input.get_cost_upper_bound());
     std::vector<Cost> jobs_second_min_costs(input.jobs.size(),
                                             input.get_cost_upper_bound());
-    for (const auto job_rank : unassigned) {
-      for (const auto v_rank : vehicles_ranks) {
-        if (evals[job_rank][v_rank].cost <= jobs_min_costs[job_rank]) {
-          jobs_second_min_costs[job_rank] = jobs_min_costs[job_rank];
-          jobs_min_costs[job_rank] = evals[job_rank][v_rank].cost;
+    for (const auto j : unassigned) {
+      for (const auto v : vehicles_ranks) {
+        if (evals[j][v].cost <= jobs_min_costs[j]) {
+          jobs_second_min_costs[j] = jobs_min_costs[j];
+          jobs_min_costs[j] = evals[j][v].cost;
         } else {
-          if (evals[job_rank][v_rank].cost < jobs_second_min_costs[job_rank]) {
-            jobs_second_min_costs[job_rank] = evals[job_rank][v_rank].cost;
+          if (evals[j][v].cost < jobs_second_min_costs[j]) {
+            jobs_second_min_costs[j] = evals[j][v].cost;
           }
         }
       }
@@ -483,10 +483,10 @@ Eval dynamic_vehicle_choice(const Input& input,
     // unassigned jobs closest to him than to any other different
     // vehicle still available.
     std::vector<unsigned> closest_jobs_count(input.vehicles.size(), 0);
-    for (const auto job_rank : unassigned) {
-      for (const auto v_rank : vehicles_ranks) {
-        if (evals[job_rank][v_rank].cost == jobs_min_costs[job_rank]) {
-          ++closest_jobs_count[v_rank];
+    for (const auto j : unassigned) {
+      for (const auto v : vehicles_ranks) {
+        if (evals[j][v].cost == jobs_min_costs[j]) {
+          ++closest_jobs_count[v];
         }
       }
     }
@@ -533,11 +533,12 @@ Eval dynamic_vehicle_choice(const Input& input,
     // empty routes evaluations so do not account for initial routes
     // if any.
     std::vector<Cost> regrets(input.jobs.size(), input.get_cost_upper_bound());
-    for (const auto job_rank : unassigned) {
-      if (jobs_min_costs[job_rank] < evals[job_rank][v_rank].cost) {
-        regrets[job_rank] = jobs_min_costs[job_rank];
+
+    for (const auto j : unassigned) {
+      if (jobs_min_costs[j] < evals[j][v_rank].cost) {
+        regrets[j] = jobs_min_costs[j];
       } else {
-        regrets[job_rank] = jobs_second_min_costs[job_rank];
+        regrets[j] = jobs_second_min_costs[j];
       }
     }
 
