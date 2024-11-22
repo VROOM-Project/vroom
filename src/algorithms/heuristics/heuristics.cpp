@@ -534,11 +534,24 @@ Eval dynamic_vehicle_choice(const Input& input,
     // if any.
     std::vector<Cost> regrets(input.jobs.size(), input.get_cost_upper_bound());
 
+    bool all_compatible_jobs_later_undoable = true;
     for (const auto j : unassigned) {
       if (jobs_min_costs[j] < evals[j][v_rank].cost) {
         regrets[j] = jobs_min_costs[j];
       } else {
         regrets[j] = jobs_second_min_costs[j];
+      }
+
+      if (input.vehicle_ok_with_job(v_rank, j) &&
+          regrets[j] < input.get_cost_upper_bound()) {
+        all_compatible_jobs_later_undoable = false;
+      }
+    }
+
+    if (all_compatible_jobs_later_undoable) {
+      // Same approach as for basic heuristic.
+      for (const auto j : unassigned) {
+        regrets[j] = evals[j][v_rank].cost;
       }
     }
 
