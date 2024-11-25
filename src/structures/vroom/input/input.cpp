@@ -747,7 +747,7 @@ void Input::set_jobs_vehicles_evals() {
   _jobs_vehicles_evals =
     std::vector<std::vector<Eval>>(jobs.size(),
                                    std::vector<Eval>(vehicles.size(),
-                                                     MAX_EVAL));
+                                                     Eval(_cost_upper_bound)));
 
   for (std::size_t j = 0; j < jobs.size(); ++j) {
     Index j_index = jobs[j].index();

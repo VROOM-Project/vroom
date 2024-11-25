@@ -400,9 +400,26 @@ Eval basic(const Input& input,
   for (Index rev_v = 0; rev_v < nb_vehicles - 1; ++rev_v) {
     // Going trough vehicles backward from second to last.
     const auto v = nb_vehicles - 2 - rev_v;
+
+    bool all_compatible_jobs_later_undoable = true;
     for (const auto j : unassigned) {
       regrets[v][j] =
         std::min(regrets[v + 1][j], (evals[j][vehicles_ranks[v + 1]]).cost);
+      if (input.vehicle_ok_with_job(vehicles_ranks[v], j) &&
+          regrets[v][j] < input.get_cost_upper_bound()) {
+        all_compatible_jobs_later_undoable = false;
+      }
+    }
+
+    if (all_compatible_jobs_later_undoable) {
+      // We don't want to use all regrets equal to the cost upper
+      // bound in this situation: it would defeat the purpose of using
+      // regrets in the first place as all lambda values would yield
+      // the same choices. Using the same approach as with last
+      // vehicle.
+      for (const auto j : unassigned) {
+        regrets[v][j] = evals[j][vehicles_ranks[v]].cost;
+      }
     }
   }
 
@@ -449,14 +466,14 @@ Eval dynamic_vehicle_choice(const Input& input,
                                      input.get_cost_upper_bound());
     std::vector<Cost> jobs_second_min_costs(input.jobs.size(),
                                             input.get_cost_upper_bound());
-    for (const auto job_rank : unassigned) {
-      for (const auto v_rank : vehicles_ranks) {
-        if (evals[job_rank][v_rank].cost <= jobs_min_costs[job_rank]) {
-          jobs_second_min_costs[job_rank] = jobs_min_costs[job_rank];
-          jobs_min_costs[job_rank] = evals[job_rank][v_rank].cost;
+    for (const auto j : unassigned) {
+      for (const auto v : vehicles_ranks) {
+        if (evals[j][v].cost <= jobs_min_costs[j]) {
+          jobs_second_min_costs[j] = jobs_min_costs[j];
+          jobs_min_costs[j] = evals[j][v].cost;
         } else {
-          if (evals[job_rank][v_rank].cost < jobs_second_min_costs[job_rank]) {
-            jobs_second_min_costs[job_rank] = evals[job_rank][v_rank].cost;
+          if (evals[j][v].cost < jobs_second_min_costs[j]) {
+            jobs_second_min_costs[j] = evals[j][v].cost;
           }
         }
       }
@@ -466,10 +483,10 @@ Eval dynamic_vehicle_choice(const Input& input,
     // unassigned jobs closest to him than to any other different
     // vehicle still available.
     std::vector<unsigned> closest_jobs_count(input.vehicles.size(), 0);
-    for (const auto job_rank : unassigned) {
-      for (const auto v_rank : vehicles_ranks) {
-        if (evals[job_rank][v_rank].cost == jobs_min_costs[job_rank]) {
-          ++closest_jobs_count[v_rank];
+    for (const auto j : unassigned) {
+      for (const auto v : vehicles_ranks) {
+        if (evals[j][v].cost == jobs_min_costs[j]) {
+          ++closest_jobs_count[v];
         }
       }
     }
@@ -516,11 +533,25 @@ Eval dynamic_vehicle_choice(const Input& input,
     // empty routes evaluations so do not account for initial routes
     // if any.
     std::vector<Cost> regrets(input.jobs.size(), input.get_cost_upper_bound());
-    for (const auto job_rank : unassigned) {
-      if (jobs_min_costs[job_rank] < evals[job_rank][v_rank].cost) {
-        regrets[job_rank] = jobs_min_costs[job_rank];
+
+    bool all_compatible_jobs_later_undoable = true;
+    for (const auto j : unassigned) {
+      if (jobs_min_costs[j] < evals[j][v_rank].cost) {
+        regrets[j] = jobs_min_costs[j];
       } else {
-        regrets[job_rank] = jobs_second_min_costs[job_rank];
+        regrets[j] = jobs_second_min_costs[j];
+      }
+
+      if (input.vehicle_ok_with_job(v_rank, j) &&
+          regrets[j] < input.get_cost_upper_bound()) {
+        all_compatible_jobs_later_undoable = false;
+      }
+    }
+
+    if (all_compatible_jobs_later_undoable) {
+      // Same approach as for basic heuristic.
+      for (const auto j : unassigned) {
+        regrets[j] = evals[j][v_rank].cost;
       }
     }
 
