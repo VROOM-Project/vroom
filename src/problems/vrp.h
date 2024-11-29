@@ -68,8 +68,6 @@ protected:
       init_assigned = heuristics::set_initial_routes<Route>(_input, init_sol);
     }
 
-    std::vector<std::vector<Route>> solutions(nb_searches, init_sol);
-
     // Heuristics operate on all unassigned jobs.
     std::set<Index> unassigned;
     std::ranges::copy_if(std::views::iota(0u, _input.jobs.size()),
@@ -83,7 +81,11 @@ protected:
     std::iota(vehicles_ranks.begin(), vehicles_ranks.end(), 0);
 
     // Initialize solution storage.
+    std::vector<std::vector<Route>> solutions(nb_searches, init_sol);
     std::vector<utils::SolutionIndicators> sol_indicators(nb_searches);
+    std::set<utils::SolutionIndicators> unique_indicators;
+    std::mutex unique_indicators_m;
+
 #ifdef LOG_LS_OPERATORS
     std::vector<std::array<ls::OperatorStats, OperatorName::MAX>> ls_stats(
       nb_searches);
@@ -178,18 +180,28 @@ protected:
             }
           }
 
-          // Local search phase.
-          LocalSearch ls(_input, solutions[rank], depth, search_time);
-          ls.run();
+          // Check if heuristic solution has been encountered before.
+          sol_indicators[rank] =
+            utils::SolutionIndicators(_input, solutions[rank]);
 
-          // Store solution indicators.
-          sol_indicators[rank] = ls.indicators();
+          unique_indicators_m.lock();
+          const auto result = unique_indicators.insert(sol_indicators[rank]);
+          unique_indicators_m.unlock();
+
+          if (result.second) {
+            // Local search phase.
+            LocalSearch ls(_input, solutions[rank], depth, search_time);
+            ls.run();
+
+            // Store solution indicators.
+            sol_indicators[rank] = ls.indicators();
 #ifdef LOG_LS_OPERATORS
-          ls_stats[rank] = ls.get_stats();
+            ls_stats[rank] = ls.get_stats();
 #endif
 #ifdef LOG_LS
-          ls_dumps[rank].steps = ls.get_steps();
+            ls_dumps[rank].steps = ls.get_steps();
 #endif
+          }
         }
       } catch (...) {
         std::scoped_lock<std::mutex> lock(ep_m);
