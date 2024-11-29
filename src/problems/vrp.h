@@ -70,12 +70,7 @@ protected:
 
     std::vector<std::vector<Route>> solutions(nb_searches, init_sol);
 
-#ifdef LOG_LS
-    std::vector<ls::log::Dump> ls_dumps;
-    ls_dumps.reserve(nb_searches);
-#endif
-
-    // Heuristics operate on all assigned jobs.
+    // Heuristics operate on all unassigned jobs.
     std::set<Index> unassigned;
     std::ranges::copy_if(std::views::iota(0u, _input.jobs.size()),
                          std::inserter(unassigned, unassigned.begin()),
@@ -86,6 +81,18 @@ protected:
     // Heuristics operate on all vehicles.
     std::vector<Index> vehicles_ranks(_input.vehicles.size());
     std::iota(vehicles_ranks.begin(), vehicles_ranks.end(), 0);
+
+    // Initialize solution storage.
+    std::vector<utils::SolutionIndicators> sol_indicators(nb_searches);
+#ifdef LOG_LS_OPERATORS
+    std::vector<std::array<ls::OperatorStats, OperatorName::MAX>> ls_stats(
+      nb_searches);
+#endif
+
+#ifdef LOG_LS
+    std::vector<ls::log::Dump> ls_dumps;
+    ls_dumps.reserve(nb_searches);
+#endif
 
     // Split the heuristic parameters among threads.
     std::vector<std::vector<std::size_t>>
@@ -101,8 +108,14 @@ protected:
     std::exception_ptr ep = nullptr;
     std::mutex ep_m;
 
-    auto run_heuristics = [&](const std::vector<std::size_t>& param_ranks) {
+    auto run_solving = [&](const std::vector<std::size_t>& param_ranks) {
       try {
+        // Decide time allocated for each search.
+        Timeout search_time;
+        if (timeout.has_value()) {
+          search_time = timeout.value() / param_ranks.size();
+        }
+
         for (auto rank : param_ranks) {
           const auto& p = parameters[rank];
 
@@ -164,73 +177,7 @@ protected:
 #endif
             }
           }
-        }
-      } catch (...) {
-        std::scoped_lock<std::mutex> lock(ep_m);
-        ep = std::current_exception();
-      }
-    };
 
-    std::vector<std::jthread> heuristics_threads;
-    heuristics_threads.reserve(nb_threads);
-
-    for (const auto& param_ranks : thread_ranks) {
-      if (!param_ranks.empty()) {
-        heuristics_threads.emplace_back(run_heuristics, param_ranks);
-      }
-    }
-
-    for (auto& t : heuristics_threads) {
-      t.join();
-    }
-
-    if (ep != nullptr) {
-      std::rethrow_exception(ep);
-    }
-
-    // Filter out duplicate heuristics solutions.
-    std::set<utils::SolutionIndicators> unique_indicators;
-    std::vector<unsigned> to_remove;
-    to_remove.reserve(solutions.size());
-
-    for (unsigned i = 0; i < solutions.size(); ++i) {
-      const auto result = unique_indicators.emplace(_input, solutions[i]);
-      if (!result.second) {
-        // No insertion means an equivalent solution already exists.
-        to_remove.push_back(i);
-      }
-    }
-
-    for (auto remove_rank = to_remove.rbegin(); remove_rank != to_remove.rend();
-         remove_rank++) {
-      solutions.erase(solutions.begin() + *remove_rank);
-#ifdef LOG_LS
-      ls_dumps.erase(ls_dumps.begin() + *remove_rank);
-#endif
-    }
-
-    // Split local searches across threads.
-    unsigned nb_solutions = solutions.size();
-    std::vector<utils::SolutionIndicators> sol_indicators(nb_solutions);
-#ifdef LOG_LS_OPERATORS
-    std::vector<std::array<ls::OperatorStats, OperatorName::MAX>> ls_stats(
-      nb_solutions);
-#endif
-
-    std::ranges::fill(thread_ranks, std::vector<std::size_t>());
-    for (std::size_t i = 0; i < nb_solutions; ++i) {
-      thread_ranks[i % nb_threads].push_back(i);
-    }
-
-    auto run_ls = [&](const std::vector<std::size_t>& sol_ranks) {
-      try {
-        // Decide time allocated for each search.
-        Timeout search_time;
-        if (timeout.has_value()) {
-          search_time = timeout.value() / sol_ranks.size();
-        }
-
-        for (auto rank : sol_ranks) {
           // Local search phase.
           LocalSearch ls(_input, solutions[rank], depth, search_time);
           ls.run();
@@ -250,16 +197,16 @@ protected:
       }
     };
 
-    std::vector<std::jthread> ls_threads;
-    ls_threads.reserve(nb_threads);
+    std::vector<std::jthread> solving_threads;
+    solving_threads.reserve(nb_threads);
 
-    for (const auto& sol_ranks : thread_ranks) {
-      if (!sol_ranks.empty()) {
-        ls_threads.emplace_back(run_ls, sol_ranks);
+    for (const auto& param_ranks : thread_ranks) {
+      if (!param_ranks.empty()) {
+        solving_threads.emplace_back(run_solving, param_ranks);
       }
     }
 
-    for (auto& t : ls_threads) {
+    for (auto& t : solving_threads) {
       t.join();
     }
 
