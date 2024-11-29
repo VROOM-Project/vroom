@@ -119,6 +119,12 @@ protected:
         }
 
         for (auto rank : param_ranks) {
+#ifdef LOG_LS
+          ls_dumps[rank].steps.emplace_back(utils::now(),
+                                            ls::log::EVENT::START,
+                                            OperatorName::MAX);
+#endif
+
           const auto& p = parameters[rank];
 
           Eval h_eval;
@@ -184,6 +190,16 @@ protected:
           sol_indicators[rank] =
             utils::SolutionIndicators(_input, solutions[rank]);
 
+#ifdef LOG_LS
+          ls_dumps[rank]
+            .steps.emplace_back(utils::now(),
+                                ls::log::EVENT::HEURISTIC,
+                                OperatorName::MAX,
+                                sol_indicators[rank],
+                                utils::format_solution(_input,
+                                                       solutions[rank]));
+#endif
+
           unique_indicators_m.lock();
           const auto result = unique_indicators.insert(sol_indicators[rank]);
           unique_indicators_m.unlock();
@@ -199,7 +215,13 @@ protected:
             ls_stats[rank] = ls.get_stats();
 #endif
 #ifdef LOG_LS
-            ls_dumps[rank].steps = ls.get_steps();
+            auto ls_steps = ls.get_steps();
+
+            assert(ls_dumps[rank].steps.size() == 2);
+            ls_dumps[rank].steps.reserve(2 + ls_steps.size());
+
+            std::ranges::move(ls_steps,
+                              std::back_inserter(ls_dumps[rank].steps));
 #endif
           }
         }

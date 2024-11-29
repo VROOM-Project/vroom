@@ -416,47 +416,50 @@ rapidjson::Value to_json(const std::vector<ls::log::Step>& steps,
                          rapidjson::Document::AllocatorType& allocator) {
   rapidjson::Value json_LS_steps(rapidjson::kArrayType);
 
-  if (!steps.empty()) {
-    assert(steps.front().event == ls::log::EVENT::START);
-    const auto start_time = steps.front().time_point;
+  assert(steps.front().event == ls::log::EVENT::START);
+  const auto start_time = steps.front().time_point;
 
-    for (const auto& step : steps) {
-      rapidjson::Value json_step(rapidjson::kObjectType);
+  for (const auto& step : steps) {
+    rapidjson::Value json_step(rapidjson::kObjectType);
 
-      const auto delta = std::chrono::duration_cast<std::chrono::microseconds>(
-        step.time_point - start_time);
-      json_step.AddMember("time", delta.count(), allocator);
+    const auto delta = std::chrono::duration_cast<std::chrono::microseconds>(
+      step.time_point - start_time);
+    json_step.AddMember("time", delta.count(), allocator);
 
-      std::string event;
-      switch (step.event) {
-        using enum ls::log::EVENT;
-      case START:
-        event = "Start";
-        break;
-      case OPERATOR:
-        event = OPERATOR_NAMES[step.operator_name];
-        break;
-      case LOCAL_MINIMA:
-        event = "LocalMinima";
-        break;
-      case JOB_ADDITION:
-        event = "JobAddition";
-        break;
-      case RUIN:
-        event = "Ruin";
-        break;
-      case RECREATE:
-        event = "Recreate";
-        break;
-      case ROLLBACK:
-        event = "Rollback";
-        break;
-      default:
-        assert(false);
-      }
-      json_step.AddMember("event", rapidjson::Value(), allocator);
-      json_step["event"].SetString(event.c_str(), event.size(), allocator);
+    std::string event;
+    switch (step.event) {
+      using enum ls::log::EVENT;
+    case START:
+      event = "Start";
+      break;
+    case HEURISTIC:
+      event = "Heuristic";
+      break;
+    case OPERATOR:
+      event = OPERATOR_NAMES[step.operator_name];
+      break;
+    case LOCAL_MINIMA:
+      event = "LocalMinima";
+      break;
+    case JOB_ADDITION:
+      event = "JobAddition";
+      break;
+    case RUIN:
+      event = "Ruin";
+      break;
+    case RECREATE:
+      event = "Recreate";
+      break;
+    case ROLLBACK:
+      event = "Rollback";
+      break;
+    default:
+      assert(false);
+    }
+    json_step.AddMember("event", rapidjson::Value(), allocator);
+    json_step["event"].SetString(event.c_str(), event.size(), allocator);
 
+    if (step.event != ls::log::EVENT::START) {
       rapidjson::Value json_score(rapidjson::kObjectType);
       json_score.AddMember("priority", step.indicators.priority_sum, allocator);
       json_score.AddMember("assigned", step.indicators.assigned, allocator);
@@ -465,17 +468,17 @@ rapidjson::Value to_json(const std::vector<ls::log::Step>& steps,
                            allocator);
 
       json_step.AddMember("score", json_score, allocator);
-
-      // if (step.solution.has_value()) {
-      //   rapidjson::Value step_solution(rapidjson::kObjectType);
-      //   auto json_solution = to_json(step.solution.value(), false);
-      //   step_solution.CopyFrom(json_solution, allocator);
-
-      //   json_step.AddMember("solution", step_solution, allocator);
-      // }
-
-      json_LS_steps.PushBack(json_step, allocator);
     }
+
+    if (step.solution.has_value()) {
+      rapidjson::Value step_solution(rapidjson::kObjectType);
+      auto json_solution = to_json(step.solution.value(), false);
+      step_solution.CopyFrom(json_solution, allocator);
+
+      json_step.AddMember("solution", step_solution, allocator);
+    }
+
+    json_LS_steps.PushBack(json_step, allocator);
   }
 
   return json_LS_steps;
