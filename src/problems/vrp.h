@@ -200,30 +200,35 @@ protected:
                                                        solutions[rank]));
 #endif
 
-          unique_indicators_m.lock();
-          const auto result = unique_indicators.insert(sol_indicators[rank]);
-          unique_indicators_m.unlock();
+          {
+            // Additional scope for RAII mutex lock.
+            std::scoped_lock<std::mutex> lock(unique_indicators_m);
+            const auto [dummy, insertion_ok] =
+              unique_indicators.insert(sol_indicators[rank]);
 
-          if (result.second) {
-            // Local search phase.
-            LocalSearch ls(_input, solutions[rank], depth, search_time);
-            ls.run();
+            if (!insertion_ok) {
+              // Duplicate heuristic solution, so skip local search.
+              continue;
+            }
+          }
 
-            // Store solution indicators.
-            sol_indicators[rank] = ls.indicators();
+          // Local search phase.
+          LocalSearch ls(_input, solutions[rank], depth, search_time);
+          ls.run();
+
+          // Store solution indicators.
+          sol_indicators[rank] = ls.indicators();
 #ifdef LOG_LS_OPERATORS
-            ls_stats[rank] = ls.get_stats();
+          ls_stats[rank] = ls.get_stats();
 #endif
 #ifdef LOG_LS
-            auto ls_steps = ls.get_steps();
+          auto ls_steps = ls.get_steps();
 
-            assert(ls_dumps[rank].steps.size() == 2);
-            ls_dumps[rank].steps.reserve(2 + ls_steps.size());
+          assert(ls_dumps[rank].steps.size() == 2);
+          ls_dumps[rank].steps.reserve(2 + ls_steps.size());
 
-            std::ranges::move(ls_steps,
-                              std::back_inserter(ls_dumps[rank].steps));
+          std::ranges::move(ls_steps, std::back_inserter(ls_dumps[rank].steps));
 #endif
-          }
         }
       } catch (...) {
         std::scoped_lock<std::mutex> lock(ep_m);
