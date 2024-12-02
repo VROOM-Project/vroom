@@ -38,6 +38,24 @@ inline UserCost add_without_overflow(UserCost a, UserCost b) {
   return a + b;
 }
 
+inline unsigned get_depth(unsigned exploration_level) {
+  return exploration_level;
+}
+
+inline unsigned get_nb_searches(unsigned exploration_level) {
+  assert(exploration_level <= MAX_EXPLORATION_LEVEL);
+
+  unsigned nb_searches = 4 * (exploration_level + 1);
+  if (exploration_level >= 4) {
+    nb_searches += 4;
+  }
+  if (exploration_level == MAX_EXPLORATION_LEVEL) {
+    nb_searches += 4;
+  }
+
+  return nb_searches;
+}
+
 INIT get_init(std::string_view s);
 
 SORT get_sort(std::string_view s);

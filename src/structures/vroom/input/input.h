@@ -200,6 +200,14 @@ public:
                  const std::vector<HeuristicParameters>& h_param =
                    std::vector<HeuristicParameters>());
 
+  // Overload designed to expose the same interface as the `-x`
+  // command-line flag for out-of-the-box setup of exploration level.
+  Solution solve(unsigned exploration_level,
+                 unsigned nb_thread,
+                 const Timeout& timeout = Timeout(),
+                 const std::vector<HeuristicParameters>& h_param =
+                   std::vector<HeuristicParameters>());
+
   Solution check(unsigned nb_thread);
 };
 

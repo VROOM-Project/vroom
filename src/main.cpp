@@ -164,7 +164,7 @@ int main(int argc, char** argv) {
     vroom::io::update_port(cl_args.servers, port);
   }
   exploration_level = std::min(exploration_level, vroom::MAX_EXPLORATION_LEVEL);
-  vroom::io::set_exploration_level(cl_args, exploration_level);
+  cl_args.set_exploration_level(exploration_level);
   if (debug_depth) {
     cl_args.depth = debug_depth.value();
   }

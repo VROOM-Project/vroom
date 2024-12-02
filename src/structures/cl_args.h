@@ -36,13 +36,13 @@ struct CLArgs {
   unsigned nb_threads;                       // -t
   unsigned nb_searches;                      // derived from -x
   unsigned depth;                            // derived from -x
+
+  void set_exploration_level(unsigned exploration_level);
 };
 
 void update_host(Servers& servers, std::string_view value);
 
 void update_port(Servers& servers, std::string_view value);
-
-void set_exploration_level(CLArgs& cl_args, unsigned exploration_level);
 
 } // namespace vroom::io
 
