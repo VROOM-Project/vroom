@@ -37,10 +37,6 @@ struct CLArgs {
   unsigned nb_searches;                      // derived from -x
   unsigned depth;                            // derived from -x
 
-  static unsigned get_depth(unsigned exploration_level);
-
-  static unsigned get_nb_searches(unsigned exploration_level);
-
   void set_exploration_level(unsigned exploration_level);
 };
 
