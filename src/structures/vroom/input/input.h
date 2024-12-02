@@ -16,6 +16,7 @@ All rights reserved (see LICENSE).
 #include <unordered_map>
 
 #include "routing/wrapper.h"
+#include "structures/cl_args.h"
 #include "structures/generic/matrix.h"
 #include "structures/typedefs.h"
 #include "structures/vroom/matrices.h"
@@ -192,6 +193,21 @@ public:
 
   // Returns true iff both vehicles have common job candidates.
   bool vehicle_ok_with_vehicle(Index v1_index, Index v2_index) const;
+
+  Solution solve(unsigned exploration_level,
+                 unsigned nb_thread,
+                 const Timeout& timeout = Timeout(),
+                 const std::vector<HeuristicParameters>& h_param =
+                   std::vector<HeuristicParameters>()) {
+    // Overload designed to expose the same interface as the `-x`
+    // command-line flag for out-of-the-box setup of exploration
+    // level.
+    return solve(io::CLArgs::get_nb_searches(exploration_level),
+                 io::CLArgs::get_depth(exploration_level),
+                 nb_thread,
+                 timeout,
+                 h_param);
+  }
 
   Solution solve(unsigned nb_searches,
                  unsigned depth,
