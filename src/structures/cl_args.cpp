@@ -75,18 +75,28 @@ void update_port(Servers& servers, std::string_view value) {
   }
 }
 
-void CLArgs::set_exploration_level(unsigned exploration_level) {
-  depth = exploration_level;
+unsigned CLArgs::get_depth(unsigned exploration_level) {
+  return exploration_level;
+}
 
+unsigned CLArgs::get_nb_searches(unsigned exploration_level) {
   assert(exploration_level <= MAX_EXPLORATION_LEVEL);
 
-  nb_searches = 4 * (exploration_level + 1);
+  unsigned nb_searches = 4 * (exploration_level + 1);
   if (exploration_level >= 4) {
     nb_searches += 4;
   }
   if (exploration_level == MAX_EXPLORATION_LEVEL) {
     nb_searches += 4;
   }
+
+  return nb_searches;
+}
+
+void CLArgs::set_exploration_level(unsigned exploration_level) {
+  depth = get_depth(exploration_level);
+
+  nb_searches = get_nb_searches(exploration_level);
 }
 
 } // namespace vroom::io
