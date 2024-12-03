@@ -1118,9 +1118,9 @@ std::unique_ptr<VRP> Input::get_problem() const {
   return std::make_unique<CVRP>(*this);
 }
 
-Solution Input::solve(unsigned nb_searches,
-                      unsigned depth,
-                      unsigned nb_thread,
+Solution Input::solve(const unsigned nb_searches,
+                      const unsigned depth,
+                      const unsigned nb_thread,
                       const Timeout& timeout,
                       const std::vector<HeuristicParameters>& h_param) {
   run_basic_checks();

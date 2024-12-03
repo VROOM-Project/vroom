@@ -193,9 +193,9 @@ public:
   // Returns true iff both vehicles have common job candidates.
   bool vehicle_ok_with_vehicle(Index v1_index, Index v2_index) const;
 
-  Solution solve(unsigned nb_searches,
-                 unsigned depth,
-                 unsigned nb_thread,
+  Solution solve(const unsigned nb_searches,
+                 const unsigned depth,
+                 const unsigned nb_thread,
                  const Timeout& timeout = Timeout(),
                  const std::vector<HeuristicParameters>& h_param =
                    std::vector<HeuristicParameters>());

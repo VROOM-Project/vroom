@@ -101,8 +101,8 @@ template <class Route> struct SolvingContext {
 template <class Route, class LocalSearch>
 void run_single_search(const Input& input,
                        const HeuristicParameters& p,
-                       unsigned rank,
-                       unsigned depth,
+                       const unsigned rank,
+                       const unsigned depth,
                        const Timeout& search_time,
                        SolvingContext<Route>& context) {
 #ifdef LOG_LS
@@ -214,8 +214,8 @@ protected:
   template <class Route, class LocalSearch>
   Solution solve(
     unsigned nb_searches,
-    unsigned depth,
-    unsigned nb_threads,
+    const unsigned depth,
+    const unsigned nb_threads,
     const Timeout& timeout,
     const std::vector<HeuristicParameters>& h_param,
     const std::vector<HeuristicParameters>& homogeneous_parameters,
@@ -309,9 +309,9 @@ public:
   virtual ~VRP();
 
   virtual Solution
-  solve(unsigned nb_searches,
-        unsigned depth,
-        unsigned nb_threads,
+  solve(const unsigned nb_searches,
+        const unsigned depth,
+        const unsigned nb_threads,
         const Timeout& timeout,
         const std::vector<HeuristicParameters>& h_param) const = 0;
 };
