@@ -98,6 +98,114 @@ template <class Route> struct SolvingContext {
   }
 };
 
+template <class Route, class LocalSearch>
+void run_single_search(const Input& input,
+                       const HeuristicParameters& p,
+                       unsigned rank,
+                       unsigned depth,
+                       const Timeout& search_time,
+                       SolvingContext<Route>& context) {
+#ifdef LOG_LS
+  context.ls_dumps[rank].steps.emplace_back(utils::now(),
+                                            ls::log::EVENT::START,
+                                            OperatorName::MAX);
+#endif
+
+  Eval h_eval;
+  switch (p.heuristic) {
+  case HEURISTIC::BASIC:
+    h_eval = heuristics::basic<Route>(input,
+                                      context.solutions[rank],
+                                      context.unassigned,
+                                      context.vehicles_ranks,
+                                      p.init,
+                                      p.regret_coeff,
+                                      p.sort);
+    break;
+  case HEURISTIC::DYNAMIC:
+    h_eval = heuristics::dynamic_vehicle_choice<Route>(input,
+                                                       context.solutions[rank],
+                                                       context.unassigned,
+                                                       context.vehicles_ranks,
+                                                       p.init,
+                                                       p.regret_coeff,
+                                                       p.sort);
+    break;
+  }
+
+  if (!input.has_homogeneous_costs() && p.sort == SORT::AVAILABILITY) {
+    // Worth trying another vehicle ordering scheme in
+    // heuristic.
+    std::vector<Route> other_sol = context.init_sol;
+
+    Eval h_other_eval;
+    switch (p.heuristic) {
+    case HEURISTIC::BASIC:
+      h_other_eval = heuristics::basic<Route>(input,
+                                              other_sol,
+                                              context.unassigned,
+                                              context.vehicles_ranks,
+                                              p.init,
+                                              p.regret_coeff,
+                                              SORT::COST);
+      break;
+    case HEURISTIC::DYNAMIC:
+      h_other_eval =
+        heuristics::dynamic_vehicle_choice<Route>(input,
+                                                  other_sol,
+                                                  context.unassigned,
+                                                  context.vehicles_ranks,
+                                                  p.init,
+                                                  p.regret_coeff,
+                                                  SORT::COST);
+      break;
+    }
+
+    if (h_other_eval < h_eval) {
+      context.solutions[rank] = std::move(other_sol);
+#ifdef LOG_LS
+      context.ls_dumps[rank].heuristic_parameters.sort = SORT::COST;
+#endif
+    }
+  }
+
+  // Check if heuristic solution has been encountered before.
+  context.sol_indicators[rank] =
+    utils::SolutionIndicators(input, context.solutions[rank]);
+
+#ifdef LOG_LS
+  context.ls_dumps[rank]
+    .steps.emplace_back(utils::now(),
+                        ls::log::EVENT::HEURISTIC,
+                        OperatorName::MAX,
+                        context.sol_indicators[rank],
+                        utils::format_solution(input, context.solutions[rank]));
+#endif
+
+  if (context.heuristic_solution_already_found(rank)) {
+    // Duplicate heuristic solution, so skip local search.
+    return;
+  }
+
+  // Local search phase.
+  LocalSearch ls(input, context.solutions[rank], depth, search_time);
+  ls.run();
+
+  // Store solution indicators.
+  context.sol_indicators[rank] = ls.indicators();
+#ifdef LOG_LS_OPERATORS
+  ls_stats[rank] = ls.get_stats();
+#endif
+#ifdef LOG_LS
+  auto ls_steps = ls.get_steps();
+
+  assert(context.ls_dumps[rank].steps.size() == 2);
+  context.ls_dumps[rank].steps.reserve(2 + ls_steps.size());
+
+  std::ranges::move(ls_steps, std::back_inserter(context.ls_dumps[rank].steps));
+#endif
+}
+
 class VRP {
   // Abstract class describing a VRP (vehicle routing problem).
 protected:
@@ -147,113 +255,12 @@ protected:
         }
 
         for (auto rank : param_ranks) {
-#ifdef LOG_LS
-          context.ls_dumps[rank].steps.emplace_back(utils::now(),
-                                                    ls::log::EVENT::START,
-                                                    OperatorName::MAX);
-#endif
-
-          const auto& p = parameters[rank];
-
-          Eval h_eval;
-          switch (p.heuristic) {
-          case HEURISTIC::BASIC:
-            h_eval = heuristics::basic<Route>(_input,
-                                              context.solutions[rank],
-                                              context.unassigned,
-                                              context.vehicles_ranks,
-                                              p.init,
-                                              p.regret_coeff,
-                                              p.sort);
-            break;
-          case HEURISTIC::DYNAMIC:
-            h_eval =
-              heuristics::dynamic_vehicle_choice<Route>(_input,
-                                                        context.solutions[rank],
-                                                        context.unassigned,
-                                                        context.vehicles_ranks,
-                                                        p.init,
-                                                        p.regret_coeff,
-                                                        p.sort);
-            break;
-          }
-
-          if (!_input.has_homogeneous_costs() && h_param.empty() &&
-              p.sort == SORT::AVAILABILITY) {
-            // Worth trying another vehicle ordering scheme in
-            // heuristic.
-            std::vector<Route> other_sol = context.init_sol;
-
-            Eval h_other_eval;
-            switch (p.heuristic) {
-            case HEURISTIC::BASIC:
-              h_other_eval = heuristics::basic<Route>(_input,
-                                                      other_sol,
-                                                      context.unassigned,
-                                                      context.vehicles_ranks,
-                                                      p.init,
-                                                      p.regret_coeff,
-                                                      SORT::COST);
-              break;
-            case HEURISTIC::DYNAMIC:
-              h_other_eval =
-                heuristics::dynamic_vehicle_choice<Route>(_input,
-                                                          other_sol,
-                                                          context.unassigned,
-                                                          context
-                                                            .vehicles_ranks,
-                                                          p.init,
-                                                          p.regret_coeff,
-                                                          SORT::COST);
-              break;
-            }
-
-            if (h_other_eval < h_eval) {
-              context.solutions[rank] = std::move(other_sol);
-#ifdef LOG_LS
-              context.ls_dumps[rank].heuristic_parameters.sort = SORT::COST;
-#endif
-            }
-          }
-
-          // Check if heuristic solution has been encountered before.
-          context.sol_indicators[rank] =
-            utils::SolutionIndicators(_input, context.solutions[rank]);
-
-#ifdef LOG_LS
-          context.ls_dumps[rank]
-            .steps
-            .emplace_back(utils::now(),
-                          ls::log::EVENT::HEURISTIC,
-                          OperatorName::MAX,
-                          context.sol_indicators[rank],
-                          utils::format_solution(_input,
-                                                 context.solutions[rank]));
-#endif
-
-          if (context.heuristic_solution_already_found(rank)) {
-            // Duplicate heuristic solution, so skip local search.
-            continue;
-          }
-
-          // Local search phase.
-          LocalSearch ls(_input, context.solutions[rank], depth, search_time);
-          ls.run();
-
-          // Store solution indicators.
-          context.sol_indicators[rank] = ls.indicators();
-#ifdef LOG_LS_OPERATORS
-          ls_stats[rank] = ls.get_stats();
-#endif
-#ifdef LOG_LS
-          auto ls_steps = ls.get_steps();
-
-          assert(context.ls_dumps[rank].steps.size() == 2);
-          context.ls_dumps[rank].steps.reserve(2 + ls_steps.size());
-
-          std::ranges::move(ls_steps,
-                            std::back_inserter(context.ls_dumps[rank].steps));
-#endif
+          run_single_search<Route, LocalSearch>(_input,
+                                                parameters[rank],
+                                                rank,
+                                                depth,
+                                                search_time,
+                                                context);
         }
       } catch (...) {
         std::scoped_lock<std::mutex> lock(ep_m);
