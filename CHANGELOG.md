@@ -22,6 +22,8 @@
 - Remove amount consistency checks in `parse` in favor of upstream checks in `Input` (#1086)
 - Reduce code duplication in routing wrappers (#1184)
 - Allow passing `path` in `Server` ctor (#1192)
+- Refactor to simplify `VRP::solve` (#1196)
+- Remove heuristic synchronisation (#1188)
 
 #### CI
 
