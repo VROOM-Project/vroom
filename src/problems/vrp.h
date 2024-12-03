@@ -30,6 +30,23 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
+template <class Route>
+std::vector<Route> set_init_sol(const Input& input,
+                                std::unordered_set<Index>& init_assigned) {
+  std::vector<Route> init_sol;
+  init_sol.reserve(input.vehicles.size());
+
+  for (Index v = 0; v < input.vehicles.size(); ++v) {
+    init_sol.emplace_back(input, v, input.zero_amount().size());
+  }
+
+  if (input.has_initial_routes()) {
+    heuristics::set_initial_routes<Route>(input, init_sol, init_assigned);
+  }
+
+  return init_sol;
+}
+
 class VRP {
   // Abstract class describing a VRP (vehicle routing problem).
 protected:
@@ -56,17 +73,8 @@ protected:
 
     // Build initial solution to be filled by heuristics. Solution is
     // empty at first but populated with input data if provided.
-    std::vector<Route> init_sol;
-    init_sol.reserve(_input.vehicles.size());
-
-    for (Index v = 0; v < _input.vehicles.size(); ++v) {
-      init_sol.emplace_back(_input, v, _input.zero_amount().size());
-    }
-
     std::unordered_set<Index> init_assigned;
-    if (_input.has_initial_routes()) {
-      init_assigned = heuristics::set_initial_routes<Route>(_input, init_sol);
-    }
+    std::vector<Route> init_sol = set_init_sol<Route>(_input, init_assigned);
 
     // Heuristics operate on all unassigned jobs.
     std::set<Index> unassigned;
