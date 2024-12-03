@@ -47,6 +47,48 @@ std::vector<Route> set_init_sol(const Input& input,
   return init_sol;
 }
 
+template <class Route> struct SolvingContext {
+  std::unordered_set<Index> init_assigned;
+  const std::vector<Route> init_sol;
+  std::set<Index> unassigned;
+  std::vector<Index> vehicles_ranks;
+  std::vector<std::vector<Route>> solutions;
+  std::vector<utils::SolutionIndicators> sol_indicators;
+
+  std::set<utils::SolutionIndicators> unique_indicators;
+  std::mutex unique_indicators_m;
+
+#ifdef LOG_LS_OPERATORS
+  std::vector<std::array<ls::OperatorStats, OperatorName::MAX>> ls_stats;
+#endif
+
+#ifdef LOG_LS
+  std::vector<ls::log::Dump> ls_dumps;
+#endif
+
+  SolvingContext(const Input& input, unsigned nb_searches)
+    : init_sol(set_init_sol<Route>(input, init_assigned)),
+      vehicles_ranks(input.vehicles.size()),
+      solutions(nb_searches, init_sol),
+      sol_indicators(nb_searches)
+#ifdef LOG_LS_OPERATORS
+      ,
+      ls_stats(nb_searches)
+#endif
+  {
+
+    // Deduce unassigned jobs from initial solution.
+    std::ranges::copy_if(std::views::iota(0u, input.jobs.size()),
+                         std::inserter(unassigned, unassigned.begin()),
+                         [this](const Index j) {
+                           return !init_assigned.contains(j);
+                         });
+
+    // Heuristics will operate on all vehicles.
+    std::iota(vehicles_ranks.begin(), vehicles_ranks.end(), 0);
+  }
+};
+
 class VRP {
   // Abstract class describing a VRP (vehicle routing problem).
 protected:
@@ -71,38 +113,7 @@ protected:
     nb_searches =
       std::min(nb_searches, static_cast<unsigned>(parameters.size()));
 
-    // Build initial solution to be filled by heuristics. Solution is
-    // empty at first but populated with input data if provided.
-    std::unordered_set<Index> init_assigned;
-    std::vector<Route> init_sol = set_init_sol<Route>(_input, init_assigned);
-
-    // Heuristics operate on all unassigned jobs.
-    std::set<Index> unassigned;
-    std::ranges::copy_if(std::views::iota(0u, _input.jobs.size()),
-                         std::inserter(unassigned, unassigned.begin()),
-                         [&init_assigned](const Index j) {
-                           return !init_assigned.contains(j);
-                         });
-
-    // Heuristics operate on all vehicles.
-    std::vector<Index> vehicles_ranks(_input.vehicles.size());
-    std::iota(vehicles_ranks.begin(), vehicles_ranks.end(), 0);
-
-    // Initialize solution storage.
-    std::vector<std::vector<Route>> solutions(nb_searches, init_sol);
-    std::vector<utils::SolutionIndicators> sol_indicators(nb_searches);
-    std::set<utils::SolutionIndicators> unique_indicators;
-    std::mutex unique_indicators_m;
-
-#ifdef LOG_LS_OPERATORS
-    std::vector<std::array<ls::OperatorStats, OperatorName::MAX>> ls_stats(
-      nb_searches);
-#endif
-
-#ifdef LOG_LS
-    std::vector<ls::log::Dump> ls_dumps;
-    ls_dumps.reserve(nb_searches);
-#endif
+    SolvingContext<Route> context(_input, nb_searches);
 
     // Split the heuristic parameters among threads.
     std::vector<std::vector<std::size_t>>
@@ -111,7 +122,7 @@ protected:
       thread_ranks[i % nb_threads].push_back(i);
 
 #ifdef LOG_LS
-      ls_dumps.push_back({parameters[i], {}});
+      context.ls_dumps.push_back({parameters[i], {}});
 #endif
     }
 
@@ -128,9 +139,9 @@ protected:
 
         for (auto rank : param_ranks) {
 #ifdef LOG_LS
-          ls_dumps[rank].steps.emplace_back(utils::now(),
-                                            ls::log::EVENT::START,
-                                            OperatorName::MAX);
+          context.ls_dumps[rank].steps.emplace_back(utils::now(),
+                                                    ls::log::EVENT::START,
+                                                    OperatorName::MAX);
 #endif
 
           const auto& p = parameters[rank];
@@ -139,21 +150,22 @@ protected:
           switch (p.heuristic) {
           case HEURISTIC::BASIC:
             h_eval = heuristics::basic<Route>(_input,
-                                              solutions[rank],
-                                              unassigned,
-                                              vehicles_ranks,
+                                              context.solutions[rank],
+                                              context.unassigned,
+                                              context.vehicles_ranks,
                                               p.init,
                                               p.regret_coeff,
                                               p.sort);
             break;
           case HEURISTIC::DYNAMIC:
-            h_eval = heuristics::dynamic_vehicle_choice<Route>(_input,
-                                                               solutions[rank],
-                                                               unassigned,
-                                                               vehicles_ranks,
-                                                               p.init,
-                                                               p.regret_coeff,
-                                                               p.sort);
+            h_eval =
+              heuristics::dynamic_vehicle_choice<Route>(_input,
+                                                        context.solutions[rank],
+                                                        context.unassigned,
+                                                        context.vehicles_ranks,
+                                                        p.init,
+                                                        p.regret_coeff,
+                                                        p.sort);
             break;
           }
 
@@ -161,15 +173,15 @@ protected:
               p.sort == SORT::AVAILABILITY) {
             // Worth trying another vehicle ordering scheme in
             // heuristic.
-            std::vector<Route> other_sol = init_sol;
+            std::vector<Route> other_sol = context.init_sol;
 
             Eval h_other_eval;
             switch (p.heuristic) {
             case HEURISTIC::BASIC:
               h_other_eval = heuristics::basic<Route>(_input,
                                                       other_sol,
-                                                      unassigned,
-                                                      vehicles_ranks,
+                                                      context.unassigned,
+                                                      context.vehicles_ranks,
                                                       p.init,
                                                       p.regret_coeff,
                                                       SORT::COST);
@@ -178,8 +190,9 @@ protected:
               h_other_eval =
                 heuristics::dynamic_vehicle_choice<Route>(_input,
                                                           other_sol,
-                                                          unassigned,
-                                                          vehicles_ranks,
+                                                          context.unassigned,
+                                                          context
+                                                            .vehicles_ranks,
                                                           p.init,
                                                           p.regret_coeff,
                                                           SORT::COST);
@@ -187,32 +200,33 @@ protected:
             }
 
             if (h_other_eval < h_eval) {
-              solutions[rank] = std::move(other_sol);
+              context.solutions[rank] = std::move(other_sol);
 #ifdef LOG_LS
-              ls_dumps[rank].heuristic_parameters.sort = SORT::COST;
+              context.ls_dumps[rank].heuristic_parameters.sort = SORT::COST;
 #endif
             }
           }
 
           // Check if heuristic solution has been encountered before.
-          sol_indicators[rank] =
-            utils::SolutionIndicators(_input, solutions[rank]);
+          context.sol_indicators[rank] =
+            utils::SolutionIndicators(_input, context.solutions[rank]);
 
 #ifdef LOG_LS
-          ls_dumps[rank]
-            .steps.emplace_back(utils::now(),
-                                ls::log::EVENT::HEURISTIC,
-                                OperatorName::MAX,
-                                sol_indicators[rank],
-                                utils::format_solution(_input,
-                                                       solutions[rank]));
+          context.ls_dumps[rank]
+            .steps
+            .emplace_back(utils::now(),
+                          ls::log::EVENT::HEURISTIC,
+                          OperatorName::MAX,
+                          context.sol_indicators[rank],
+                          utils::format_solution(_input,
+                                                 context.solutions[rank]));
 #endif
 
           {
             // Additional scope for RAII mutex lock.
-            std::scoped_lock<std::mutex> lock(unique_indicators_m);
+            std::scoped_lock<std::mutex> lock(context.unique_indicators_m);
             const auto [dummy, insertion_ok] =
-              unique_indicators.insert(sol_indicators[rank]);
+              context.unique_indicators.insert(context.sol_indicators[rank]);
 
             if (!insertion_ok) {
               // Duplicate heuristic solution, so skip local search.
@@ -221,21 +235,22 @@ protected:
           }
 
           // Local search phase.
-          LocalSearch ls(_input, solutions[rank], depth, search_time);
+          LocalSearch ls(_input, context.solutions[rank], depth, search_time);
           ls.run();
 
           // Store solution indicators.
-          sol_indicators[rank] = ls.indicators();
+          context.sol_indicators[rank] = ls.indicators();
 #ifdef LOG_LS_OPERATORS
           ls_stats[rank] = ls.get_stats();
 #endif
 #ifdef LOG_LS
           auto ls_steps = ls.get_steps();
 
-          assert(ls_dumps[rank].steps.size() == 2);
-          ls_dumps[rank].steps.reserve(2 + ls_steps.size());
+          assert(context.ls_dumps[rank].steps.size() == 2);
+          context.ls_dumps[rank].steps.reserve(2 + ls_steps.size());
 
-          std::ranges::move(ls_steps, std::back_inserter(ls_dumps[rank].steps));
+          std::ranges::move(ls_steps,
+                            std::back_inserter(context.ls_dumps[rank].steps));
 #endif
         }
       } catch (...) {
@@ -266,16 +281,17 @@ protected:
 #endif
 
 #ifdef LOG_LS
-    io::write_LS_logs_to_json(ls_dumps);
+    io::write_LS_logs_to_json(context.ls_dumps);
 #endif
 
-    auto best_indic =
-      std::min_element(sol_indicators.cbegin(), sol_indicators.cend());
+    auto best_indic = std::min_element(context.sol_indicators.cbegin(),
+                                       context.sol_indicators.cend());
 
-    return utils::format_solution(_input,
-                                  solutions[std::distance(sol_indicators
-                                                            .cbegin(),
-                                                          best_indic)]);
+    return utils::
+      format_solution(_input,
+                      context.solutions[std::distance(context.sol_indicators
+                                                        .cbegin(),
+                                                      best_indic)]);
   }
 
 public:
