@@ -55,8 +55,8 @@ template <class Route> struct SolvingContext {
   std::vector<std::vector<Route>> solutions;
   std::vector<utils::SolutionIndicators> sol_indicators;
 
-  std::set<utils::SolutionIndicators> unique_indicators;
-  std::mutex unique_indicators_m;
+  std::set<utils::SolutionIndicators> heuristic_indicators;
+  std::mutex heuristic_indicators_m;
 
 #ifdef LOG_LS_OPERATORS
   std::vector<std::array<ls::OperatorStats, OperatorName::MAX>> ls_stats;
@@ -86,6 +86,15 @@ template <class Route> struct SolvingContext {
 
     // Heuristics will operate on all vehicles.
     std::iota(vehicles_ranks.begin(), vehicles_ranks.end(), 0);
+  }
+
+  bool heuristic_solution_already_found(unsigned rank) {
+    assert(rank < sol_indicators.size());
+    std::scoped_lock<std::mutex> lock(heuristic_indicators_m);
+    const auto [dummy, insertion_ok] =
+      heuristic_indicators.insert(sol_indicators[rank]);
+
+    return !insertion_ok;
   }
 };
 
@@ -222,16 +231,9 @@ protected:
                                                  context.solutions[rank]));
 #endif
 
-          {
-            // Additional scope for RAII mutex lock.
-            std::scoped_lock<std::mutex> lock(context.unique_indicators_m);
-            const auto [dummy, insertion_ok] =
-              context.unique_indicators.insert(context.sol_indicators[rank]);
-
-            if (!insertion_ok) {
-              // Duplicate heuristic solution, so skip local search.
-              continue;
-            }
+          if (context.heuristic_solution_already_found(rank)) {
+            // Duplicate heuristic solution, so skip local search.
+            continue;
           }
 
           // Local search phase.
