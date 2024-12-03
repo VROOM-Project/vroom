@@ -1118,6 +1118,17 @@ std::unique_ptr<VRP> Input::get_problem() const {
   return std::make_unique<CVRP>(*this);
 }
 
+Solution Input::solve(const unsigned exploration_level,
+                      const unsigned nb_thread,
+                      const Timeout& timeout,
+                      const std::vector<HeuristicParameters>& h_param) {
+  return solve(utils::get_nb_searches(exploration_level),
+               utils::get_depth(exploration_level),
+               nb_thread,
+               timeout,
+               h_param);
+}
+
 Solution Input::solve(const unsigned nb_searches,
                       const unsigned depth,
                       const unsigned nb_thread,
