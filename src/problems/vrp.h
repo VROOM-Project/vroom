@@ -194,7 +194,7 @@ void run_single_search(const Input& input,
   // Store solution indicators.
   context.sol_indicators[rank] = ls.indicators();
 #ifdef LOG_LS_OPERATORS
-  ls_stats[rank] = ls.get_stats();
+  context.ls_stats[rank] = ls.get_stats();
 #endif
 #ifdef LOG_LS
   auto ls_steps = ls.get_steps();
@@ -288,7 +288,7 @@ protected:
     }
 
 #ifdef LOG_LS_OPERATORS
-    utils::log_LS_operators(ls_stats);
+    utils::log_LS_operators(context.ls_stats);
 #endif
 
 #ifdef LOG_LS
