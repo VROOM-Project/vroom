@@ -143,9 +143,9 @@ const std::vector<HeuristicParameters> CVRP::heterogeneous_parameters =
 CVRP::CVRP(const Input& input) : VRP(input) {
 }
 
-Solution CVRP::solve(unsigned nb_searches,
-                     unsigned depth,
-                     unsigned nb_threads,
+Solution CVRP::solve(const unsigned nb_searches,
+                     const unsigned depth,
+                     const unsigned nb_threads,
                      const Timeout& timeout,
                      const std::vector<HeuristicParameters>& h_param) const {
   if (_input.vehicles.size() == 1 && !_input.has_skills() &&

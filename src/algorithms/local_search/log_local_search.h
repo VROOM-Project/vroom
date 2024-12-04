@@ -17,6 +17,7 @@ namespace vroom::ls::log {
 
 enum class EVENT {
   START,
+  HEURISTIC,
   OPERATOR,
   LOCAL_MINIMA,
   JOB_ADDITION,

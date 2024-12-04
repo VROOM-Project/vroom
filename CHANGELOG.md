@@ -14,6 +14,7 @@
 #### Internals
 
 - Bypass matrix request in `plan` mode (#444)
+- Account for heuristic time in timeout (#1196)
 - Refactor heuristics to reduce code duplication (#1181)
 - Refactor `Matrix` template class (#1089)
 - Refactor to use `std::format` whenever possible (#1081)
@@ -22,6 +23,8 @@
 - Remove amount consistency checks in `parse` in favor of upstream checks in `Input` (#1086)
 - Reduce code duplication in routing wrappers (#1184)
 - Allow passing `path` in `Server` ctor (#1192)
+- Refactor to simplify `VRP::solve` (#1196)
+- Remove heuristic synchronisation (#1188)
 
 #### CI
 
