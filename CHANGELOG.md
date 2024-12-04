@@ -14,6 +14,7 @@
 #### Internals
 
 - Bypass matrix request in `plan` mode (#444)
+- Account for heuristic time in timeout (#1196)
 - Refactor heuristics to reduce code duplication (#1181)
 - Refactor `Matrix` template class (#1089)
 - Refactor to use `std::format` whenever possible (#1081)

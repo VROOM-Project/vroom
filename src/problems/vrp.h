@@ -105,8 +105,10 @@ void run_single_search(const Input& input,
                        const unsigned depth,
                        const Timeout& search_time,
                        SolvingContext<Route>& context) {
+  const auto heuristic_start = utils::now();
+
 #ifdef LOG_LS
-  context.ls_dumps[rank].steps.emplace_back(utils::now(),
+  context.ls_dumps[rank].steps.emplace_back(heuristic_start,
                                             ls::log::EVENT::START,
                                             OperatorName::MAX);
 #endif
@@ -173,9 +175,11 @@ void run_single_search(const Input& input,
   context.sol_indicators[rank] =
     utils::SolutionIndicators(input, context.solutions[rank]);
 
+  const auto heuristic_end = utils::now();
+
 #ifdef LOG_LS
   context.ls_dumps[rank]
-    .steps.emplace_back(utils::now(),
+    .steps.emplace_back(heuristic_end,
                         ls::log::EVENT::HEURISTIC,
                         OperatorName::MAX,
                         context.sol_indicators[rank],
@@ -187,8 +191,22 @@ void run_single_search(const Input& input,
     return;
   }
 
+  Timeout ls_search_time;
+  if (search_time.has_value()) {
+    const auto heuristic_time =
+      std::chrono::duration_cast<std::chrono::milliseconds>(heuristic_end -
+                                                            heuristic_start);
+
+    if (search_time.value() <= heuristic_time) {
+      // No time left for local search!
+      return;
+    }
+
+    ls_search_time = search_time.value() - heuristic_time;
+  }
+
   // Local search phase.
-  LocalSearch ls(input, context.solutions[rank], depth, search_time);
+  LocalSearch ls(input, context.solutions[rank], depth, ls_search_time);
   ls.run();
 
   // Store solution indicators.
