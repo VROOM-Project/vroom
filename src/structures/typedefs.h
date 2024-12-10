@@ -85,7 +85,7 @@ constexpr auto DEFAULT_MAX_TRAVEL_TIME = std::numeric_limits<Duration>::max();
 constexpr auto DEFAULT_MAX_DISTANCE = std::numeric_limits<Distance>::max();
 
 // Available routing engines.
-enum class ROUTER { OSRM, LIBOSRM, ORS, VALHALLA };
+enum class ROUTER : std::uint8_t { OSRM, LIBOSRM, ORS, VALHALLA };
 
 // Used to describe a routing server.
 struct Server {
@@ -107,15 +107,21 @@ struct Server {
 
 // 'Single' job is a regular one-stop job without precedence
 // constraints.
-enum class JOB_TYPE { SINGLE, PICKUP, DELIVERY };
+enum class JOB_TYPE : std::uint8_t { SINGLE, PICKUP, DELIVERY };
 
 // Available location status.
-enum class STEP_TYPE { START, JOB, BREAK, END };
+enum class STEP_TYPE : std::uint8_t { START, JOB, BREAK, END };
 
 // Heuristic options.
-enum class HEURISTIC { BASIC, DYNAMIC };
-enum class INIT { NONE, HIGHER_AMOUNT, NEAREST, FURTHEST, EARLIEST_DEADLINE };
-enum class SORT { AVAILABILITY, COST };
+enum class HEURISTIC : std::uint8_t { BASIC, DYNAMIC };
+enum class INIT : std::uint8_t {
+  NONE,
+  HIGHER_AMOUNT,
+  NEAREST,
+  FURTHEST,
+  EARLIEST_DEADLINE
+};
+enum class SORT : std::uint8_t { AVAILABILITY, COST };
 
 struct HeuristicParameters {
   HEURISTIC heuristic;
@@ -132,7 +138,7 @@ struct HeuristicParameters {
 };
 
 // Possible violations.
-enum class VIOLATION {
+enum class VIOLATION : std::uint8_t {
   LEAD_TIME,
   DELAY,
   LOAD,
@@ -145,7 +151,7 @@ enum class VIOLATION {
   MAX_DISTANCE
 };
 
-enum OperatorName {
+enum OperatorName : std::uint8_t {
   UnassignedExchange,
   CrossExchange,
   MixedExchange,
