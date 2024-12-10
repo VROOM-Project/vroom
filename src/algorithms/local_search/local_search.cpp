@@ -1923,14 +1923,6 @@ void LocalSearch<Route,
                  TSPFix>::run() {
   bool try_ls_step = true;
 
-#ifdef LOG_LS
-  steps.emplace_back(utils::now(),
-                     log::EVENT::START,
-                     OperatorName::MAX,
-                     _best_sol_indicators,
-                     utils::format_solution(_input, _best_sol));
-#endif
-
   while (try_ls_step) {
     // A round of local search.
     run_ls_step();

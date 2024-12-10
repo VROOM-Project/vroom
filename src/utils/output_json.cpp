@@ -432,6 +432,9 @@ rapidjson::Value to_json(const std::vector<ls::log::Step>& steps,
     case START:
       event = "Start";
       break;
+    case HEURISTIC:
+      event = "Heuristic";
+      break;
     case OPERATOR:
       event = OPERATOR_NAMES[step.operator_name];
       break;
@@ -456,14 +459,16 @@ rapidjson::Value to_json(const std::vector<ls::log::Step>& steps,
     json_step.AddMember("event", rapidjson::Value(), allocator);
     json_step["event"].SetString(event.c_str(), event.size(), allocator);
 
-    rapidjson::Value json_score(rapidjson::kObjectType);
-    json_score.AddMember("priority", step.indicators.priority_sum, allocator);
-    json_score.AddMember("assigned", step.indicators.assigned, allocator);
-    json_score.AddMember("cost",
-                         utils::scale_to_user_cost(step.indicators.eval.cost),
-                         allocator);
+    if (step.event != ls::log::EVENT::START) {
+      rapidjson::Value json_score(rapidjson::kObjectType);
+      json_score.AddMember("priority", step.indicators.priority_sum, allocator);
+      json_score.AddMember("assigned", step.indicators.assigned, allocator);
+      json_score.AddMember("cost",
+                           utils::scale_to_user_cost(step.indicators.eval.cost),
+                           allocator);
 
-    json_step.AddMember("score", json_score, allocator);
+      json_step.AddMember("score", json_score, allocator);
+    }
 
     if (step.solution.has_value()) {
       rapidjson::Value step_solution(rapidjson::kObjectType);
