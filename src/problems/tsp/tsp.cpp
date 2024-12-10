@@ -134,13 +134,15 @@ TSP::TSP(const Input& input, std::vector<Index>&& job_ranks, Index vehicle_rank)
   // Compute symmetrized matrix and update _is_symmetric flag.
   _symmetrized_matrix = Matrix<UserCost>(_matrix.size());
 
-  const UserCost& (*sym_f)(const UserCost&, const UserCost&) =
-    std::min<UserCost>;
-  if ((_has_start && !_has_end) || (!_has_start && _has_end)) {
-    // Using symmetrization with max as when only start or only end is
-    // forced, the matrix has a line or a column filled with zeros.
-    sym_f = std::max<UserCost>;
-  }
+  // Using symmetrization with max when only start or only end is
+  // forced, as the matrix has a line or a column filled with zeros.
+  const bool sym_with_max =
+    ((_has_start && !_has_end) || (!_has_start && _has_end));
+
+  const auto sym_f =
+    sym_with_max
+      ? [](const UserCost& c1, const UserCost& c2) { return std::max(c1, c2); }
+      : [](const UserCost& c1, const UserCost& c2) { return std::min(c1, c2); };
   for (Index i = 0; i < _matrix.size(); ++i) {
     _symmetrized_matrix[i][i] = _matrix[i][i];
     for (Index j = i + 1; j < _matrix.size(); ++j) {
