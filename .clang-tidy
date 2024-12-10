@@ -38,6 +38,7 @@ Checks: >
     -readability-convert-member-functions-to-static,
     -readability-implicit-bool-conversion,
     -readability-avoid-const-params-in-decls
+    -readability-uppercase-literal-suffix
 
 WarningsAsErrors: '*'
 HeaderFilterRegex: '.*'

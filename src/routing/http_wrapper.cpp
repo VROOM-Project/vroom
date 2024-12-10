@@ -138,7 +138,7 @@ Matrices HttpWrapper::get_matrices(const std::vector<Location>& locs) const {
   const std::size_t m_size = locs.size();
 
   rapidjson::Document json_result;
-  this->parse_response(json_result, json_string);
+  HttpWrapper::parse_response(json_result, json_string);
   this->check_response(json_result, locs, _matrix_service);
 
   if (!json_result.HasMember(_matrix_durations_key.c_str())) {
