@@ -532,9 +532,9 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
 
   const auto& first_vehicle = json_input["vehicles"][0];
   check_id(first_vehicle, "vehicle");
-  bool first_vehicle_has_capacity = (first_vehicle.HasMember("capacity") &&
-                                     first_vehicle["capacity"].IsArray() &&
-                                     first_vehicle["capacity"].Size() > 0);
+  bool first_vehicle_has_capacity =
+    (first_vehicle.HasMember("capacity") &&
+     first_vehicle["capacity"].IsArray() && !first_vehicle["capacity"].Empty());
   const unsigned amount_size =
     first_vehicle_has_capacity ? first_vehicle["capacity"].Size() : 0;
 

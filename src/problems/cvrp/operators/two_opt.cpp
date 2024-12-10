@@ -31,8 +31,8 @@ TwoOpt::TwoOpt(const Input& input,
     _s_delivery(source.bwd_deliveries(s_rank)),
     _t_delivery(target.bwd_deliveries(t_rank)) {
   assert(s_vehicle != t_vehicle);
-  assert(s_route.size() >= 1);
-  assert(t_route.size() >= 1);
+  assert(!s_route.empty());
+  assert(!t_route.empty());
   assert(s_rank < s_route.size());
   assert(t_rank < t_route.size());
 

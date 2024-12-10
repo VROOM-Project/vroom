@@ -36,7 +36,7 @@ MixedExchange::MixedExchange(const Input& input,
     target_delivery(_input.jobs[this->t_route[t_rank]].delivery +
                     _input.jobs[this->t_route[t_rank + 1]].delivery) {
   assert(s_vehicle != t_vehicle);
-  assert(s_route.size() >= 1);
+  assert(!s_route.empty());
   assert(t_route.size() >= 2);
   assert(s_rank < s_route.size());
   assert(t_rank < t_route.size() - 1);
