@@ -120,7 +120,7 @@ RouteInsertion compute_best_insertion_pd(const Input& input,
       valid_delivery_insertions[d_rank] =
         route.is_valid_addition_for_tw_without_max_load(input, j + 1, d_rank);
     }
-    found_valid |= valid_delivery_insertions[d_rank];
+    found_valid |= static_cast<bool>(valid_delivery_insertions[d_rank]);
   }
 
   if (!found_valid) {
