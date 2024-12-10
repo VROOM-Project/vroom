@@ -88,28 +88,26 @@ compute_best_route_split_choice(const Input& input,
         continue;
       }
 
-      if (current_end_eval < second_best_end_eval) {
-        // Worth checking end route full validity.
+      if (current_end_eval < second_best_end_eval &&
+          // Worth checking end route full validity.
+          empty_routes[v_rank].is_valid_addition_for_tw(input,
+                                                        end_delivery,
+                                                        source.route.begin() +
+                                                          r,
+                                                        source.route.end(),
+                                                        0,
+                                                        0)) {
+        if (current_end_eval < first_best_end_eval) {
+          // We have a new first choice.
+          second_v_end = first_v_end;
+          second_best_end_eval = first_best_end_eval;
 
-        if (empty_routes[v_rank].is_valid_addition_for_tw(input,
-                                                          end_delivery,
-                                                          source.route.begin() +
-                                                            r,
-                                                          source.route.end(),
-                                                          0,
-                                                          0)) {
-          if (current_end_eval < first_best_end_eval) {
-            // We have a new first choice.
-            second_v_end = first_v_end;
-            second_best_end_eval = first_best_end_eval;
-
-            first_v_end = v_rank;
-            first_best_end_eval = current_end_eval;
-          } else {
-            // We have a new second choice.
-            second_v_end = v_rank;
-            second_best_end_eval = current_end_eval;
-          }
+          first_v_end = v_rank;
+          first_best_end_eval = current_end_eval;
+        } else {
+          // We have a new second choice.
+          second_v_end = v_rank;
+          second_best_end_eval = current_end_eval;
         }
       }
     }
@@ -160,28 +158,26 @@ compute_best_route_split_choice(const Input& input,
         continue;
       }
 
-      if (current_begin_eval < second_best_begin_eval) {
-        // Worth checking begin route full validity.
+      if (current_begin_eval < second_best_begin_eval &&
+          // Worth checking begin route full validity.
+          empty_routes[v_rank].is_valid_addition_for_tw(input,
+                                                        begin_delivery,
+                                                        source.route.begin(),
+                                                        source.route.begin() +
+                                                          r,
+                                                        0,
+                                                        0)) {
+        if (current_begin_eval < first_best_begin_eval) {
+          // We have a new first choice.
+          second_v_begin = first_v_begin;
+          second_best_begin_eval = first_best_begin_eval;
 
-        if (empty_routes[v_rank].is_valid_addition_for_tw(input,
-                                                          begin_delivery,
-                                                          source.route.begin(),
-                                                          source.route.begin() +
-                                                            r,
-                                                          0,
-                                                          0)) {
-          if (current_begin_eval < first_best_begin_eval) {
-            // We have a new first choice.
-            second_v_begin = first_v_begin;
-            second_best_begin_eval = first_best_begin_eval;
-
-            first_v_begin = v_rank;
-            first_best_begin_eval = current_begin_eval;
-          } else {
-            // We have a new second choice.
-            second_v_begin = v_rank;
-            second_best_begin_eval = current_begin_eval;
-          }
+          first_v_begin = v_rank;
+          first_best_begin_eval = current_begin_eval;
+        } else {
+          // We have a new second choice.
+          second_v_begin = v_rank;
+          second_best_begin_eval = current_begin_eval;
         }
       }
     }
