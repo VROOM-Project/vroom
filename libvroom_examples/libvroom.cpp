@@ -64,7 +64,7 @@ void log_solution(const vroom::Solution& sol, bool geometry) {
       std::cout << type;
 
       // Add job/pickup/delivery/break ids.
-      if (step.step_type != vroom::STEP_TYPE::START and
+      if (step.step_type != vroom::STEP_TYPE::START &&
           step.step_type != vroom::STEP_TYPE::END) {
         std::cout << " " << step.id;
       }

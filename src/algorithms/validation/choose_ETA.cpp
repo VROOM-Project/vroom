@@ -298,7 +298,7 @@ Route choose_ETA(const Input& input,
         get_violation(v.breaks[step.rank].tws, earliest_date);
 
       const auto& tws = v.breaks[step.rank].tws;
-      if ((tws.size() != 1) or !tws.front().is_default()) {
+      if ((tws.size() != 1) || !tws.front().is_default()) {
         step_has_TW[s] = true;
 
         horizon_start_lead_times[s] = tws.front().start - horizon_start;

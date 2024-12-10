@@ -20,11 +20,6 @@ All rights reserved (see LICENSE).
 #include <unordered_set>
 #include <vector>
 
-#ifdef _MSC_VER
-// include support for "and"/"or"
-#include <iso646.h>
-#endif
-
 namespace vroom {
 
 // To easily differentiate variable types.
