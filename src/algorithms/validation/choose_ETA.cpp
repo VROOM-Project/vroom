@@ -682,7 +682,7 @@ Route choose_ETA(const Input& input,
 
   // Makespan and \sum Y_i dummy constraints (used for second solving
   // phase).
-  auto name = "Makespan";
+  const auto* name = "Makespan";
   glp_set_row_name(lp, current_row, name);
   glp_set_row_bnds(lp, current_row, GLP_LO, 0, 0);
 
