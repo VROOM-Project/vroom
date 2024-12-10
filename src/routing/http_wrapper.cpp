@@ -108,36 +108,13 @@ std::string HttpWrapper::ssl_send_then_receive(const std::string& query) const {
 
     asio::write(ssock, asio::buffer(query));
 
-    char buf[512]; // NOLINT
-    std::error_code error;
-    for (;;) {
-      std::size_t len = ssock.read_some(asio::buffer(buf), error);
-      response.append(buf, len); // NOLINT
-      if (error == asio::error::eof) {
-        // Connection closed cleanly.
-        break;
-      }
-      if (error) {
-        throw std::system_error(error);
-      }
-    }
+    set_response(ssock, response);
   } catch (std::system_error&) {
     throw RoutingException("Failed to connect to " + _server.host + ":" +
                            _server.port);
   }
 
-  // Removing headers.
-  auto start = response.find('{');
-  if (start == std::string::npos) {
-    throw RoutingException("Invalid routing response: " + response);
-  }
-  auto end = response.rfind('}');
-  if (end == std::string::npos) {
-    throw RoutingException("Invalid routing response: " + response);
-  }
-  std::string json_string = response.substr(start, end - start + 1);
-
-  return json_string;
+  return get_json(response);
 }
 
 std::string HttpWrapper::run_query(const std::string& query) const {
