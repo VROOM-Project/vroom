@@ -17,7 +17,6 @@ All rights reserved (see LICENSE).
 
 #include "../include/cxxopts/include/cxxopts.hpp"
 
-#include "problems/vrp.h"
 #include "structures/cl_args.h"
 #include "utils/exception.h"
 #include "utils/helpers.h"

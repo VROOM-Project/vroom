@@ -8,7 +8,6 @@ All rights reserved (see LICENSE).
 */
 
 #include "algorithms/local_search/top_insertions.h"
-#include "structures/vroom/tw_route.h"
 #include "utils/helpers.h"
 
 namespace vroom::ls {

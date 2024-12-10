@@ -9,7 +9,6 @@ All rights reserved (see LICENSE).
 
 #include "problems/vrptw/operators/pd_shift.h"
 #include "algorithms/local_search/insertion_search.h"
-#include "utils/helpers.h"
 
 namespace vroom::vrptw {
 

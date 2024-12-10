@@ -9,7 +9,6 @@ All rights reserved (see LICENSE).
 
 #include <algorithm>
 #include <numeric>
-#include <ranges>
 
 #include "structures/vroom/solution_state.h"
 #include "utils/helpers.h"

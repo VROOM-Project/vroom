@@ -8,6 +8,7 @@ All rights reserved (see LICENSE).
 */
 
 #include <algorithm>
+#include <exception>
 #include <mutex>
 #include <thread>
 #include <unordered_set>
@@ -16,7 +17,6 @@ All rights reserved (see LICENSE).
 #include "algorithms/validation/check.h"
 #include "algorithms/validation/choose_ETA.h"
 #include "structures/vroom/tw_route.h"
-#include "utils/exception.h"
 #include "utils/helpers.h"
 
 namespace vroom::validation {

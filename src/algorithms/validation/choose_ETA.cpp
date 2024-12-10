@@ -9,7 +9,6 @@ All rights reserved (see LICENSE).
 
 #include <algorithm>
 #include <cmath>
-#include <numeric>
 
 #include <glpk.h>
 

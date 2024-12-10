@@ -8,7 +8,6 @@ All rights reserved (see LICENSE).
 */
 
 #include "problems/cvrp/cvrp.h"
-#include "algorithms/heuristics/heuristics.h"
 #include "algorithms/local_search/local_search.h"
 #include "problems/cvrp/operators/cross_exchange.h"
 #include "problems/cvrp/operators/intra_cross_exchange.h"
