@@ -266,7 +266,8 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
                                    s_rank);
 
       std::vector<SwapChoice> swap_choice_options;
-      swap_choice_options.reserve(16);
+      constexpr std::size_t MAX_SWAP_CHOICES = 16;
+      swap_choice_options.reserve(MAX_SWAP_CHOICES);
 
       // Options for in-place insertion in source route include
       // in-place insertion in target route and other relevant
