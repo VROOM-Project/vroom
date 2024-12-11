@@ -147,7 +147,7 @@ TSP::TSP(const Input& input, std::vector<Index>&& job_ranks, Index vehicle_rank)
     _symmetrized_matrix[i][i] = _matrix[i][i];
     for (Index j = i + 1; j < _matrix.size(); ++j) {
       _is_symmetric = _is_symmetric && (_matrix[i][j] == _matrix[j][i]);
-      UserCost val = sym_f(_matrix[i][j], _matrix[j][i]);
+      const UserCost val = sym_f(_matrix[i][j], _matrix[j][i]);
       _symmetrized_matrix[i][j] = val;
       _symmetrized_matrix[j][i] = val;
     }
@@ -169,7 +169,7 @@ std::vector<Index> TSP::raw_solve(unsigned nb_threads,
     timeout.has_value() ? utils::now() + timeout.value() : Deadline();
 
   // Applying heuristic.
-  std::list<Index> christo_sol = tsp::christofides(_symmetrized_matrix);
+  const std::list<Index> christo_sol = tsp::christofides(_symmetrized_matrix);
 
   Deadline sym_deadline = deadline;
   if (deadline.has_value() && !_is_symmetric) {
@@ -233,8 +233,8 @@ std::vector<Index> TSP::raw_solve(unsigned nb_threads,
     // Back to the asymmetric problem, picking the best way.
     std::list<Index> reverse_current_sol(current_sol);
     reverse_current_sol.reverse();
-    UserCost direct_cost = this->cost(current_sol);
-    UserCost reverse_cost = this->cost(reverse_current_sol);
+    const UserCost direct_cost = this->cost(current_sol);
+    const UserCost reverse_cost = this->cost(reverse_current_sol);
 
     // Local search on asymmetric problem.
     tsp::LocalSearch

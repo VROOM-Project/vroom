@@ -44,13 +44,13 @@ void ReverseTwoOpt::compute_gain() {
   const auto& s_v = _input.vehicles[s_vehicle];
   const auto& t_v = _input.vehicles[t_vehicle];
 
-  Index s_index = _input.jobs[s_route[s_rank]].index();
-  Index t_index = _input.jobs[t_route[t_rank]].index();
-  Index last_s = _input.jobs[s_route.back()].index();
-  Index first_t = _input.jobs[t_route.front()].index();
+  const Index s_index = _input.jobs[s_route[s_rank]].index();
+  const Index t_index = _input.jobs[t_route[t_rank]].index();
+  const Index last_s = _input.jobs[s_route.back()].index();
+  const Index first_t = _input.jobs[t_route.front()].index();
 
-  bool last_in_source = (s_rank == s_route.size() - 1);
-  bool last_in_target = (t_rank == t_route.size() - 1);
+  const bool last_in_source = (s_rank == s_route.size() - 1);
+  const bool last_in_target = (t_rank == t_route.size() - 1);
 
   // Cost of swapping route for vehicle s_vehicle after step
   // s_rank with route for vehicle t_vehicle up to step
@@ -68,17 +68,17 @@ void ReverseTwoOpt::compute_gain() {
 
   if (!last_in_target) {
     // Spare next edge in target route.
-    Index next_index = _input.jobs[t_route[t_rank + 1]].index();
+    const Index next_index = _input.jobs[t_route[t_rank + 1]].index();
     t_gain += t_v.eval(t_index, next_index);
   }
 
   if (!last_in_source) {
     // Spare next edge in source route.
-    Index next_index = _input.jobs[s_route[s_rank + 1]].index();
+    const Index next_index = _input.jobs[s_route[s_rank + 1]].index();
     s_gain += s_v.eval(s_index, next_index);
 
     // Part of source route is moved to target route.
-    Index next_s_index = _input.jobs[s_route[s_rank + 1]].index();
+    const Index next_s_index = _input.jobs[s_route[s_rank + 1]].index();
 
     // Cost or reverting source route portion. First remove forward
     // cost for end of source route as seen from source vehicle
@@ -99,7 +99,7 @@ void ReverseTwoOpt::compute_gain() {
       }
     } else {
       // Add new target -> source edge.
-      Index next_t_index = _input.jobs[t_route[t_rank + 1]].index();
+      const Index next_t_index = _input.jobs[t_route[t_rank + 1]].index();
       t_gain -= t_v.eval(next_s_index, next_t_index);
     }
   }
@@ -121,7 +121,7 @@ void ReverseTwoOpt::compute_gain() {
       // No job from source route actually swapped to target route.
       if (!last_in_target) {
         // Going straight from start to next job in target route.
-        Index next_index = _input.jobs[t_route[t_rank + 1]].index();
+        const Index next_index = _input.jobs[t_route[t_rank + 1]].index();
         t_gain -= t_v.eval(start_t, next_index);
       } else {
         // Emptying the whole target route here, so also gaining cost

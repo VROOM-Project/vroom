@@ -102,7 +102,8 @@ void ValhallaWrapper::check_response(const rapidjson::Document& json_result,
     // keys can be expected so we're playing guesses. This happens
     // e.g. when requested matrix/route size goes over the server
     // limit.
-    std::string service_str = (service == _route_service) ? "route" : "matrix";
+    const std::string service_str =
+      (service == _route_service) ? "route" : "matrix";
     std::string error = "Valhalla " + service_str + " error (";
 
     if (json_result.HasMember("error") && json_result["error"].IsString()) {

@@ -469,13 +469,14 @@ Route format_route(const Input& input,
       }
     }
 
-    bool same_location = (r > 1 && input.jobs[tw_r.route[r - 2]].index() ==
-                                     previous_job.index()) ||
-                         (r == 1 && v.has_start() &&
-                          v.start.value().index() == previous_job.index());
+    const bool same_location =
+      (r > 1 &&
+       input.jobs[tw_r.route[r - 2]].index() == previous_job.index()) ||
+      (r == 1 && v.has_start() &&
+       v.start.value().index() == previous_job.index());
     const auto current_setup = same_location ? 0 : previous_job.setup;
 
-    Duration diff =
+    const Duration diff =
       current_setup + previous_job.service + remaining_travel_time;
 
     assert(diff <= step_start);
@@ -621,7 +622,7 @@ Route format_route(const Input& input,
           // The whole remaining travel time is spent before this
           // break, not filling the whole margin.
 
-          Duration wt = margin - travel_time;
+          const Duration wt = margin - travel_time;
           forward_wt += wt;
 
           current_break.arrival =
@@ -710,7 +711,7 @@ Route format_route(const Input& input,
     assert(j_tw != current_job.tws.end());
 
     if (step_start < j_tw->start) {
-      Duration wt = j_tw->start - step_start;
+      const Duration wt = j_tw->start - step_start;
       forward_wt += wt;
 
       // Recompute user-reported waiting time rather than using
@@ -778,7 +779,7 @@ Route format_route(const Input& input,
         // The whole remaining travel time is spent before this
         // break, not filling the whole margin.
 
-        Duration wt = margin - travel_time;
+        const Duration wt = margin - travel_time;
         forward_wt += wt;
 
         current_break.arrival =

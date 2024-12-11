@@ -40,7 +40,7 @@ void set_response(auto& s, std::string& response) {
   char buf[512]; // NOLINT
   std::error_code error;
   for (;;) {
-    std::size_t len = s.read_some(asio::buffer(buf), error);
+    const std::size_t len = s.read_some(asio::buffer(buf), error);
     response.append(buf, len); // NOLINT
     if (error == asio::error::eof) {
       // Connection closed cleanly.
@@ -74,7 +74,7 @@ std::string HttpWrapper::send_then_receive(const std::string& query) const {
 
     tcp::resolver r(io_service);
 
-    tcp::resolver::query q(_server.host, _server.port);
+    const tcp::resolver::query q(_server.host, _server.port);
 
     tcp::socket s(io_service);
     asio::connect(s, r.resolve(q));
@@ -101,7 +101,7 @@ std::string HttpWrapper::ssl_send_then_receive(const std::string& query) const {
 
     tcp::resolver r(io_service);
 
-    tcp::resolver::query q(_server.host, _server.port);
+    const tcp::resolver::query q(_server.host, _server.port);
 
     asio::connect(ssock.lowest_layer(), r.resolve(q));
     ssock.handshake(asio::ssl::stream_base::handshake_type::client);
@@ -199,7 +199,7 @@ void HttpWrapper::update_sparse_matrix(const std::vector<Location>& route_locs,
   assert(legs.Size() == route_locs.size() - 1);
 
   for (rapidjson::SizeType i = 0; i < legs.Size(); ++i) {
-    std::scoped_lock<std::mutex> lock(matrix_m);
+    const std::scoped_lock<std::mutex> lock(matrix_m);
     m.durations[route_locs[i].index()][route_locs[i + 1].index()] =
       get_leg_duration(legs[i]);
     m.distances[route_locs[i].index()][route_locs[i + 1].index()] =

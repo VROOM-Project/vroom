@@ -50,8 +50,8 @@ Eval OrOpt::gain_upper_bound() {
   // For target vehicle, we consider the cost of adding source edge at
   // rank t_rank. reverse_* checks whether we should change the
   // source edge order.
-  Index s_index = _input.jobs[s_route[s_rank]].index();
-  Index after_s_index = _input.jobs[s_route[s_rank + 1]].index();
+  const Index s_index = _input.jobs[s_route[s_rank]].index();
+  const Index after_s_index = _input.jobs[s_route[s_rank + 1]].index();
 
   Eval previous_cost;
   Eval next_cost;

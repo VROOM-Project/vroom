@@ -213,7 +213,7 @@ void TWRoute::fwd_update_earliest_from(const Input& input, Index rank) {
   if (handle_last_breaks) {
     // Update earliest dates and margins for potential breaks right
     // before route end.
-    Index i = route.size();
+    const Index i = route.size();
     Duration remaining_travel_time =
       (v.has_end())
         ? v.duration(input.jobs[route[i - 1]].index(), v.end.value().index())
@@ -329,7 +329,7 @@ void TWRoute::bwd_update_latest_from(const Input& input, Index rank) {
   if (handle_first_breaks) {
     // Update latest dates and margins for breaks right before the
     // first job.
-    Index next_i = 0;
+    const Index next_i = 0;
 
     assert(breaks_at_rank[next_i] <= breaks_counts[next_i]);
     Index break_rank = breaks_counts[next_i];
@@ -781,7 +781,8 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
     const auto previous_init_load =
       (route.empty()) ? input.zero_amount() : load_at_step(first_rank);
     assert(delivery_in_range(first_rank, last_rank) <= previous_init_load);
-    Amount delta_delivery = delivery - delivery_in_range(first_rank, last_rank);
+    const Amount delta_delivery =
+      delivery - delivery_in_range(first_rank, last_rank);
 
     if (current_break != 0 &&
         !(delta_delivery <=

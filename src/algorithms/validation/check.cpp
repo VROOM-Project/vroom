@@ -72,7 +72,7 @@ check_and_set_ETA(const Input& input,
         routes[route_rank] = choose_ETA(input, v, input.vehicles[v].steps);
       }
     } catch (...) {
-      std::scoped_lock<std::mutex> lock(ep_m);
+      const std::scoped_lock<std::mutex> lock(ep_m);
       ep = std::current_exception();
     }
   };

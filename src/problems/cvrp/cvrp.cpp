@@ -156,7 +156,7 @@ Solution CVRP::solve(const unsigned nb_searches,
     std::vector<Index> job_ranks(_input.jobs.size());
     std::iota(job_ranks.begin(), job_ranks.end(), 0);
 
-    TSP p(_input, std::move(job_ranks), 0);
+    const TSP p(_input, std::move(job_ranks), 0);
 
     RawRoute r(_input, 0, 0);
     r.set_route(_input, p.raw_solve(nb_threads, timeout));

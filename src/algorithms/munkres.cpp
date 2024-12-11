@@ -127,7 +127,7 @@ minimum_weight_perfect_matching(const Matrix<T>& m) {
       if (matching_y != matching_yx.end()) {
         // Chosen y is actually matched in M, update S and T_set and
         // proceed to step 2.
-        Index matched_x = matching_y->second;
+        const Index matched_x = matching_y->second;
 
         if (const auto [iter, insert_ok] = S.insert(matched_x); insert_ok) {
           S_list.push_back(matched_x);
@@ -155,7 +155,7 @@ minimum_weight_perfect_matching(const Matrix<T>& m) {
         Index current_x = alternating_tree.at(current_y);
 
         while (current_x != unmatched_x) {
-          Index next_y = matching_xy.at(current_x);
+          const Index next_y = matching_xy.at(current_x);
 
           // Remove alternating edge from current matching.
           matching_xy.erase(matching_xy.find(current_x));

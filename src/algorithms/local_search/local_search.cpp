@@ -423,7 +423,7 @@ void LocalSearch<Route,
           continue;
         }
 
-        Priority u_priority = _input.jobs[u].priority;
+        const Priority u_priority = _input.jobs[u].priority;
         const auto& u_pickup = _input.jobs[u].pickup;
         const auto& u_delivery = _input.jobs[u].delivery;
 
@@ -504,7 +504,7 @@ void LocalSearch<Route,
                                      t_rank,
                                      u);
 
-                bool better_if_valid =
+                const bool better_if_valid =
                   (best_priorities[source] < priority_gain) ||
                   (best_priorities[source] == priority_gain &&
                    best_gains[source][source] < r.gain());
@@ -552,11 +552,11 @@ void LocalSearch<Route,
 
         const auto& job_s_type = _input.jobs[s_job_rank].type;
 
-        bool both_s_single =
+        const bool both_s_single =
           (job_s_type == JOB_TYPE::SINGLE) &&
           (_input.jobs[s_next_job_rank].type == JOB_TYPE::SINGLE);
 
-        bool is_s_pickup =
+        const bool is_s_pickup =
           (job_s_type == JOB_TYPE::PICKUP) &&
           (_sol_state.matching_delivery_rank[source][s_rank] == s_rank + 1);
 
@@ -596,11 +596,11 @@ void LocalSearch<Route,
 
           const auto& job_t_type = _input.jobs[t_job_rank].type;
 
-          bool both_t_single =
+          const bool both_t_single =
             (job_t_type == JOB_TYPE::SINGLE) &&
             (_input.jobs[t_next_job_rank].type == JOB_TYPE::SINGLE);
 
-          bool is_t_pickup =
+          const bool is_t_pickup =
             (job_t_type == JOB_TYPE::PICKUP) &&
             (_sol_state.matching_delivery_rank[target][t_rank] == t_rank + 1);
 
@@ -718,11 +718,11 @@ void LocalSearch<Route,
             const auto t_next_job_rank = _sol[target].route[t_rank + 1];
             const auto& job_t_type = _input.jobs[t_job_rank].type;
 
-            bool both_t_single =
+            const bool both_t_single =
               (job_t_type == JOB_TYPE::SINGLE) &&
               (_input.jobs[t_next_job_rank].type == JOB_TYPE::SINGLE);
 
-            bool is_t_pickup =
+            const bool is_t_pickup =
               (job_t_type == JOB_TYPE::PICKUP) &&
               (_sol_state.matching_delivery_rank[target][t_rank] == t_rank + 1);
 
@@ -1223,11 +1223,11 @@ void LocalSearch<Route,
         const auto job_s_type = _input.jobs[_sol[source].route[s_rank]].type;
         const auto s_next_job_rank = _sol[source].route[s_rank + 1];
 
-        bool both_s_single =
+        const bool both_s_single =
           (job_s_type == JOB_TYPE::SINGLE) &&
           (_input.jobs[s_next_job_rank].type == JOB_TYPE::SINGLE);
 
-        bool is_s_pickup =
+        const bool is_s_pickup =
           (job_s_type == JOB_TYPE::PICKUP) &&
           (_sol_state.matching_delivery_rank[source][s_rank] == s_rank + 1);
 
@@ -1244,12 +1244,12 @@ void LocalSearch<Route,
         for (unsigned t_rank = s_rank + 3; t_rank < end_t_rank; ++t_rank) {
           const auto& job_t_type = _input.jobs[_sol[target].route[t_rank]].type;
 
-          bool both_t_single =
+          const bool both_t_single =
             (job_t_type == JOB_TYPE::SINGLE) &&
             (_input.jobs[_sol[target].route[t_rank + 1]].type ==
              JOB_TYPE::SINGLE);
 
-          bool is_t_pickup =
+          const bool is_t_pickup =
             (job_t_type == JOB_TYPE::PICKUP) &&
             (_sol_state.matching_delivery_rank[target][t_rank] == t_rank + 1);
 
@@ -1316,12 +1316,12 @@ void LocalSearch<Route,
 
           const auto& job_t_type = _input.jobs[_sol[target].route[t_rank]].type;
 
-          bool both_t_single =
+          const bool both_t_single =
             (job_t_type == JOB_TYPE::SINGLE) &&
             (_input.jobs[_sol[source].route[t_rank + 1]].type ==
              JOB_TYPE::SINGLE);
 
-          bool is_t_pickup =
+          const bool is_t_pickup =
             (job_t_type == JOB_TYPE::PICKUP) &&
             (_sol_state.matching_delivery_rank[target][t_rank] == t_rank + 1);
 
@@ -1375,7 +1375,7 @@ void LocalSearch<Route,
           _sol_state.weak_insertion_ranks_begin[source][s_job_rank];
         if (_input.jobs[s_job_rank].type == JOB_TYPE::DELIVERY) {
           // Don't move a delivery before its matching pickup.
-          Index begin_candidate =
+          const Index begin_candidate =
             _sol_state.matching_pickup_rank[source][s_rank] + 1;
           begin_t_rank = std::max(begin_t_rank, begin_candidate);
         }
@@ -1425,11 +1425,12 @@ void LocalSearch<Route,
       for (unsigned s_rank = 0; s_rank < _sol[source].size() - 1; ++s_rank) {
         const auto& job_type = _input.jobs[_sol[source].route[s_rank]].type;
 
-        bool both_single = (job_type == JOB_TYPE::SINGLE) &&
-                           (_input.jobs[_sol[source].route[s_rank + 1]].type ==
-                            JOB_TYPE::SINGLE);
+        const bool both_single =
+          (job_type == JOB_TYPE::SINGLE) &&
+          (_input.jobs[_sol[source].route[s_rank + 1]].type ==
+           JOB_TYPE::SINGLE);
 
-        bool is_pickup =
+        const bool is_pickup =
           (job_type == JOB_TYPE::PICKUP) &&
           (_sol_state.matching_delivery_rank[source][s_rank] == s_rank + 1);
 
@@ -1548,7 +1549,7 @@ void LocalSearch<Route,
           }
 
           // Matching delivery rank in source route.
-          unsigned s_d_rank =
+          const Index s_d_rank =
             _sol_state.matching_delivery_rank[source][s_p_rank];
 
           if (!_input.vehicle_ok_with_job(target,

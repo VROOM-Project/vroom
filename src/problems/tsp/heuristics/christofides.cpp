@@ -29,7 +29,7 @@ std::list<Index> christofides(const Matrix<UserCost>& sym_matrix) {
 
   // Getting minimum spanning tree of associated graph under the form
   // of an adjacency list.
-  std::unordered_map<Index, std::list<Index>> adjacency_list =
+  const std::unordered_map<Index, std::list<Index>> adjacency_list =
     mst_graph.get_adjacency_list();
 
   // Getting odd degree vertices from the minimum spanning tree.
@@ -41,7 +41,8 @@ std::list<Index> christofides(const Matrix<UserCost>& sym_matrix) {
   }
 
   // Getting corresponding matrix for the generated sub-graph.
-  Matrix<UserCost> sub_matrix = sym_matrix.get_sub_matrix(mst_odd_vertices);
+  const Matrix<UserCost> sub_matrix =
+    sym_matrix.get_sub_matrix(mst_odd_vertices);
 
   // Computing minimum weight perfect matching.
   std::unordered_map<Index, Index> mwpm =
@@ -62,7 +63,7 @@ std::list<Index> christofides(const Matrix<UserCost>& sym_matrix) {
   }
 
   if (!wrong_vertices.empty()) {
-    std::unordered_map<Index, Index> remaining_greedy_mwpm =
+    const std::unordered_map<Index, Index> remaining_greedy_mwpm =
       utils::greedy_symmetric_approx_mwpm(
         sub_matrix.get_sub_matrix(wrong_vertices));
 
@@ -85,8 +86,8 @@ std::list<Index> christofides(const Matrix<UserCost>& sym_matrix) {
   // need to remember the one already added.
   std::unordered_set<Index> already_added;
   for (const auto& [source, target] : mwpm_final) {
-    Index first_index = mst_odd_vertices[source];
-    Index second_index = mst_odd_vertices[target];
+    const Index first_index = mst_odd_vertices[source];
+    const Index second_index = mst_odd_vertices[target];
     if (!already_added.contains(first_index)) {
       eulerian_graph_edges.emplace_back(first_index,
                                         second_index,
@@ -96,7 +97,7 @@ std::list<Index> christofides(const Matrix<UserCost>& sym_matrix) {
   }
 
   // Building Eulerian graph from the edges.
-  utils::UndirectedGraph<UserCost> eulerian_graph(
+  const utils::UndirectedGraph<UserCost> eulerian_graph(
     std::move(eulerian_graph_edges));
   assert(eulerian_graph.size() >= 2);
 
@@ -128,7 +129,7 @@ std::list<Index> christofides(const Matrix<UserCost>& sym_matrix) {
     if (!complete_tour) {
       // Add new tour to initial eulerian path and check again.
       std::list<Index> new_tour;
-      Index initial_vertex = *new_tour_start;
+      const Index initial_vertex = *new_tour_start;
       Index current_vertex = initial_vertex;
       Index next_vertex;
       // Start building new tour.

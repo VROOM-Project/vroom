@@ -35,7 +35,7 @@ public:
                       const std::vector<Vehicle>& vehicles,
                       const std::vector<Job>& jobs,
                       std::vector<std::string>& vehicles_geometry) const {
-    std::size_t m_size = locs.size();
+    const std::size_t m_size = locs.size();
     Matrices m(m_size);
 
     std::exception_ptr ep = nullptr;
@@ -83,7 +83,7 @@ public:
                                        vehicles_geometry[v_rank]);
           }
         } catch (...) {
-          std::scoped_lock<std::mutex> lock(ep_m);
+          const std::scoped_lock<std::mutex> lock(ep_m);
           ep = std::current_exception();
         }
       };

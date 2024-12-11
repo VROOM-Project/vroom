@@ -36,11 +36,11 @@ UndirectedGraph<T> minimum_spanning_tree(const UndirectedGraph<T>& graph) {
   std::iota(representative.begin(), representative.end(), 0);
 
   for (const auto& edge : edges) {
-    Index first_vertex = edge.get_first_vertex();
-    Index second_vertex = edge.get_second_vertex();
+    const Index first_vertex = edge.get_first_vertex();
+    const Index second_vertex = edge.get_second_vertex();
 
-    Index first_rep = representative[first_vertex];
-    Index second_rep = representative[second_vertex];
+    const Index first_rep = representative[first_vertex];
+    const Index second_rep = representative[second_vertex];
     if (first_rep != second_rep) {
       // Adding current edge won't create a cycle as vertices are in
       // separate connected components.

@@ -44,7 +44,7 @@ inline void seed_route(const Input& input,
       continue;
     }
 
-    bool is_pickup = (current_job.type == JOB_TYPE::PICKUP);
+    const bool is_pickup = (current_job.type == JOB_TYPE::PICKUP);
 
     if (route.size() + (is_pickup ? 2 : 1) > vehicle.max_tasks) {
       continue;
@@ -57,9 +57,9 @@ inline void seed_route(const Input& input,
                       higher_amount < current_job.delivery);
     }
     if (init == INIT::EARLIEST_DEADLINE) {
-      Duration current_deadline = is_pickup
-                                    ? input.jobs[job_rank + 1].tws.back().end
-                                    : current_job.tws.back().end;
+      const Duration current_deadline =
+        is_pickup ? input.jobs[job_rank + 1].tws.back().end
+                  : current_job.tws.back().end;
       try_validity = (current_deadline < earliest_deadline);
     }
     if (init == INIT::FURTHEST) {
@@ -177,8 +177,9 @@ inline Eval fill_route(const Input& input,
           const auto current_eval =
             utils::addition_cost(input, job_rank, vehicle, route.route, r);
 
-          double current_cost = static_cast<double>(current_eval.cost) -
-                                lambda * static_cast<double>(regrets[job_rank]);
+          const double current_cost =
+            static_cast<double>(current_eval.cost) -
+            lambda * static_cast<double>(regrets[job_rank]);
 
           if (current_cost < best_cost &&
               (vehicle.ok_for_range_bounds(route_eval + current_eval)) &&
@@ -266,7 +267,7 @@ inline Eval fill_route(const Input& input,
               current_eval = p_add + d_adds[delivery_r];
             }
 
-            double current_cost =
+            const double current_cost =
               current_eval.cost -
               lambda * static_cast<double>(regrets[job_rank]);
 
@@ -274,7 +275,7 @@ inline Eval fill_route(const Input& input,
               modified_with_pd.push_back(job_rank + 1);
 
               // Update best cost depending on validity.
-              bool valid =
+              const bool valid =
                 (vehicle.ok_for_range_bounds(route_eval + current_eval)) &&
                 route
                   .is_valid_addition_for_capacity_inclusion(input,

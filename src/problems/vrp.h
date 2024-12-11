@@ -90,7 +90,7 @@ template <class Route> struct SolvingContext {
 
   bool heuristic_solution_already_found(unsigned rank) {
     assert(rank < sol_indicators.size());
-    std::scoped_lock<std::mutex> lock(heuristic_indicators_m);
+    const std::scoped_lock<std::mutex> lock(heuristic_indicators_m);
     const auto [dummy, insertion_ok] =
       heuristic_indicators.insert(sol_indicators[rank]);
 
@@ -283,7 +283,7 @@ protected:
                                                   context);
           }
         } catch (...) {
-          std::scoped_lock<std::mutex> lock(ep_m);
+          const std::scoped_lock<std::mutex> lock(ep_m);
           ep = std::current_exception();
         }
       };
