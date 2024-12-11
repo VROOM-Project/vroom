@@ -62,7 +62,8 @@ check_and_set_ETA(const Input& input,
   std::exception_ptr ep = nullptr;
   std::mutex ep_m;
 
-  auto run_check = [&](const std::vector<Index>& vehicle_ranks) {
+  auto run_check = [&v_rank_to_actual_route_rank, &routes, &input, &ep, &ep_m](
+                     const std::vector<Index>& vehicle_ranks) {
     try {
       for (auto v : vehicle_ranks) {
         auto search = v_rank_to_actual_route_rank.find(v);
