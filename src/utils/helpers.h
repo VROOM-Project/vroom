@@ -218,20 +218,18 @@ Priority priority_sum_for_route(const Input& input,
 
 Eval route_eval_for_vehicle(const Input& input,
                             Index vehicle_rank,
-                            const std::vector<Index>::const_iterator first_job,
-                            const std::vector<Index>::const_iterator last_job);
+                            std::vector<Index>::const_iterator first_job,
+                            std::vector<Index>::const_iterator last_job);
 
 Eval route_eval_for_vehicle(const Input& input,
                             Index vehicle_rank,
                             const std::vector<Index>& route);
 
 void check_tws(const std::vector<TimeWindow>& tws,
-               const Id id,
+               Id id,
                const std::string& type);
 
-void check_priority(const Priority priority,
-                    const Id id,
-                    const std::string& type);
+void check_priority(Priority priority, Id id, const std::string& type);
 
 using RawSolution = std::vector<RawRoute>;
 using TWSolution = std::vector<TWRoute>;

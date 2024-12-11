@@ -193,17 +193,17 @@ public:
   // Returns true iff both vehicles have common job candidates.
   bool vehicle_ok_with_vehicle(Index v1_index, Index v2_index) const;
 
-  Solution solve(const unsigned nb_searches,
-                 const unsigned depth,
-                 const unsigned nb_thread,
+  Solution solve(unsigned nb_searches,
+                 unsigned depth,
+                 unsigned nb_thread,
                  const Timeout& timeout = Timeout(),
                  const std::vector<HeuristicParameters>& h_param =
                    std::vector<HeuristicParameters>());
 
   // Overload designed to expose the same interface as the `-x`
   // command-line flag for out-of-the-box setup of exploration level.
-  Solution solve(const unsigned exploration_level,
-                 const unsigned nb_thread,
+  Solution solve(unsigned exploration_level,
+                 unsigned nb_thread,
                  const Timeout& timeout = Timeout(),
                  const std::vector<HeuristicParameters>& h_param =
                    std::vector<HeuristicParameters>());

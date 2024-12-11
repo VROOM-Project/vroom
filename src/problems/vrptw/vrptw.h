@@ -23,9 +23,9 @@ public:
   explicit VRPTW(const Input& input);
 
   Solution
-  solve(const unsigned nb_searches,
-        const unsigned depth,
-        const unsigned nb_threads,
+  solve(unsigned nb_searches,
+        unsigned depth,
+        unsigned nb_threads,
         const Timeout& timeout,
         const std::vector<HeuristicParameters>& h_param) const override;
 };
