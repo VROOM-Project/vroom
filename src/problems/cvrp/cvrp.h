@@ -16,8 +16,6 @@ namespace vroom {
 
 class CVRP : public VRP {
 private:
-  bool empty_cluster(const std::vector<Index>& cluster, Index v) const;
-
   static const std::vector<HeuristicParameters> homogeneous_parameters;
   static const std::vector<HeuristicParameters> heterogeneous_parameters;
 
