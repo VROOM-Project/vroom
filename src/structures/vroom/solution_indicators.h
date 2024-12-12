@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <algorithm>
 #include <tuple>
 
 #include "structures/typedefs.h"
@@ -23,6 +24,8 @@ struct SolutionIndicators {
   unsigned assigned{0};
   Eval eval;
   unsigned used_vehicles{0};
+  // Hash based on the ordered sizes of routes in the solution.
+  uint32_t routes_hash;
 
   SolutionIndicators() = default;
 
@@ -41,6 +44,14 @@ struct SolutionIndicators {
         used_vehicles += 1;
       }
     }
+
+    std::vector<uint32_t> routes_sizes;
+    routes_sizes.reserve(sol.size());
+    std::ranges::transform(sol,
+                           std::back_inserter(routes_sizes),
+                           [](const auto& r) { return r.size(); });
+    std::ranges::sort(routes_sizes);
+    routes_hash = get_vector_hash(routes_sizes);
   }
 
   friend bool operator<(const SolutionIndicators& lhs,
