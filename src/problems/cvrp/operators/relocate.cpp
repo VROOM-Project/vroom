@@ -30,7 +30,7 @@ Relocate::Relocate(const Input& input,
              t_vehicle,
              t_rank) {
   assert(s_vehicle != t_vehicle);
-  assert(s_route.size() >= 1);
+  assert(!s_route.empty());
   assert(s_rank < s_route.size());
   assert(t_rank <= t_route.size());
 

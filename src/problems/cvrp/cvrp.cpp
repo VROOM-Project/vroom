@@ -8,7 +8,6 @@ All rights reserved (see LICENSE).
 */
 
 #include "problems/cvrp/cvrp.h"
-#include "algorithms/heuristics/heuristics.h"
 #include "algorithms/local_search/local_search.h"
 #include "problems/cvrp/operators/cross_exchange.h"
 #include "problems/cvrp/operators/intra_cross_exchange.h"
@@ -157,7 +156,7 @@ Solution CVRP::solve(const unsigned nb_searches,
     std::vector<Index> job_ranks(_input.jobs.size());
     std::iota(job_ranks.begin(), job_ranks.end(), 0);
 
-    TSP p(_input, std::move(job_ranks), 0);
+    const TSP p(_input, std::move(job_ranks), 0);
 
     RawRoute r(_input, 0, 0);
     r.set_route(_input, p.raw_solve(nb_threads, timeout));

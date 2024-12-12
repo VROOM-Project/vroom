@@ -36,39 +36,23 @@ HttpWrapper::HttpWrapper(const std::string& profile,
     _routing_args(std::move(routing_args)) {
 }
 
-std::string HttpWrapper::send_then_receive(const std::string& query) const {
-  std::string response;
-
-  try {
-    asio::io_service io_service;
-
-    tcp::resolver r(io_service);
-
-    tcp::resolver::query q(_server.host, _server.port);
-
-    tcp::socket s(io_service);
-    asio::connect(s, r.resolve(q));
-
-    asio::write(s, asio::buffer(query));
-
-    char buf[512]; // NOLINT
-    std::error_code error;
-    for (;;) {
-      std::size_t len = s.read_some(asio::buffer(buf), error);
-      response.append(buf, len); // NOLINT
-      if (error == asio::error::eof) {
-        // Connection closed cleanly.
-        break;
-      }
-      if (error) {
-        throw std::system_error(error);
-      }
+void set_response(auto& s, std::string& response) {
+  char buf[512]; // NOLINT
+  std::error_code error;
+  for (;;) {
+    const std::size_t len = s.read_some(asio::buffer(buf), error);
+    response.append(buf, len); // NOLINT
+    if (error == asio::error::eof) {
+      // Connection closed cleanly.
+      break;
     }
-  } catch (std::system_error&) {
-    throw RoutingException("Failed to connect to " + _server.host + ":" +
-                           _server.port);
+    if (error) {
+      throw std::system_error(error);
+    }
   }
+}
 
+std::string get_json(const std::string& response) {
   // Removing headers.
   auto start = response.find('{');
   if (start == std::string::npos) {
@@ -79,9 +63,31 @@ std::string HttpWrapper::send_then_receive(const std::string& query) const {
     throw RoutingException("Invalid routing response: " + response);
   }
 
-  std::string json_string = response.substr(start, end - start + 1);
+  return response.substr(start, end - start + 1);
+}
 
-  return json_string;
+std::string HttpWrapper::send_then_receive(const std::string& query) const {
+  std::string response;
+
+  try {
+    asio::io_service io_service;
+
+    tcp::resolver r(io_service);
+
+    const tcp::resolver::query q(_server.host, _server.port);
+
+    tcp::socket s(io_service);
+    asio::connect(s, r.resolve(q));
+
+    asio::write(s, asio::buffer(query));
+
+    set_response(s, response);
+  } catch (std::system_error&) {
+    throw RoutingException("Failed to connect to " + _server.host + ":" +
+                           _server.port);
+  }
+
+  return get_json(response);
 }
 
 std::string HttpWrapper::ssl_send_then_receive(const std::string& query) const {
@@ -95,43 +101,20 @@ std::string HttpWrapper::ssl_send_then_receive(const std::string& query) const {
 
     tcp::resolver r(io_service);
 
-    tcp::resolver::query q(_server.host, _server.port);
+    const tcp::resolver::query q(_server.host, _server.port);
 
     asio::connect(ssock.lowest_layer(), r.resolve(q));
     ssock.handshake(asio::ssl::stream_base::handshake_type::client);
 
     asio::write(ssock, asio::buffer(query));
 
-    char buf[512]; // NOLINT
-    std::error_code error;
-    for (;;) {
-      std::size_t len = ssock.read_some(asio::buffer(buf), error);
-      response.append(buf, len); // NOLINT
-      if (error == asio::error::eof) {
-        // Connection closed cleanly.
-        break;
-      }
-      if (error) {
-        throw std::system_error(error);
-      }
-    }
+    set_response(ssock, response);
   } catch (std::system_error&) {
     throw RoutingException("Failed to connect to " + _server.host + ":" +
                            _server.port);
   }
 
-  // Removing headers.
-  auto start = response.find('{');
-  if (start == std::string::npos) {
-    throw RoutingException("Invalid routing response: " + response);
-  }
-  auto end = response.rfind('}');
-  if (end == std::string::npos) {
-    throw RoutingException("Invalid routing response: " + response);
-  }
-  std::string json_string = response.substr(start, end - start + 1);
-
-  return json_string;
+  return get_json(response);
 }
 
 std::string HttpWrapper::run_query(const std::string& query) const {
@@ -155,7 +138,7 @@ Matrices HttpWrapper::get_matrices(const std::vector<Location>& locs) const {
   const std::size_t m_size = locs.size();
 
   rapidjson::Document json_result;
-  this->parse_response(json_result, json_string);
+  HttpWrapper::parse_response(json_result, json_string);
   this->check_response(json_result, locs, _matrix_service);
 
   if (!json_result.HasMember(_matrix_durations_key.c_str())) {
@@ -216,7 +199,7 @@ void HttpWrapper::update_sparse_matrix(const std::vector<Location>& route_locs,
   assert(legs.Size() == route_locs.size() - 1);
 
   for (rapidjson::SizeType i = 0; i < legs.Size(); ++i) {
-    std::scoped_lock<std::mutex> lock(matrix_m);
+    const std::scoped_lock<std::mutex> lock(matrix_m);
     m.durations[route_locs[i].index()][route_locs[i + 1].index()] =
       get_leg_duration(legs[i]);
     m.distances[route_locs[i].index()][route_locs[i + 1].index()] =

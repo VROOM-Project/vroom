@@ -9,7 +9,6 @@ All rights reserved (see LICENSE).
 
 #include <algorithm>
 #include <cmath>
-#include <numeric>
 
 #include <glpk.h>
 
@@ -298,7 +297,7 @@ Route choose_ETA(const Input& input,
         get_violation(v.breaks[step.rank].tws, earliest_date);
 
       const auto& tws = v.breaks[step.rank].tws;
-      if ((tws.size() != 1) or !tws.front().is_default()) {
+      if ((tws.size() != 1) || !tws.front().is_default()) {
         step_has_TW[s] = true;
 
         horizon_start_lead_times[s] = tws.front().start - horizon_start;
@@ -682,7 +681,7 @@ Route choose_ETA(const Input& input,
 
   // Makespan and \sum Y_i dummy constraints (used for second solving
   // phase).
-  auto name = "Makespan";
+  const auto* name = "Makespan";
   glp_set_row_name(lp, current_row, name);
   glp_set_row_bnds(lp, current_row, GLP_LO, 0, 0);
 
@@ -992,8 +991,7 @@ Route choose_ETA(const Input& input,
 
   auto status = glp_mip_status(lp);
   if (status == GLP_UNDEF || status == GLP_NOFEAS) {
-    throw InputException("Infeasible route for vehicle " +
-                         std::to_string(v.id) + ".");
+    throw InputException(std::format("Infeasible route for vehicle {}.", v.id));
   }
   // We should not get GLP_FEAS.
   assert(status == GLP_OPT);
@@ -1042,8 +1040,7 @@ Route choose_ETA(const Input& input,
 
   status = glp_mip_status(lp);
   if (status == GLP_UNDEF || status == GLP_NOFEAS) {
-    throw InputException("Infeasible route for vehicle " +
-                         std::to_string(v.id) + ".");
+    throw InputException(std::format("Infeasible route for vehicle {}.", v.id));
   }
   // We should not get GLP_FEAS.
   assert(status == GLP_OPT);

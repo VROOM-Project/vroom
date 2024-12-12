@@ -36,7 +36,7 @@ MixedExchange::MixedExchange(const Input& input,
     target_delivery(_input.jobs[this->t_route[t_rank]].delivery +
                     _input.jobs[this->t_route[t_rank + 1]].delivery) {
   assert(s_vehicle != t_vehicle);
-  assert(s_route.size() >= 1);
+  assert(!s_route.empty());
   assert(t_route.size() >= 2);
   assert(s_rank < s_route.size());
   assert(t_rank < t_route.size() - 1);
@@ -63,9 +63,9 @@ Eval MixedExchange::gain_upper_bound() {
   // s_rank with target edge. Part of that cost (for adjacent edges)
   // is stored in _sol_state.edge_evals_around_node. reverse_t_edge
   // checks whether we should change the target edge order.
-  Index s_index = _input.jobs[s_route[s_rank]].index();
-  Index t_index = _input.jobs[t_route[t_rank]].index();
-  Index t_after_index = _input.jobs[t_route[t_rank + 1]].index();
+  const Index s_index = _input.jobs[s_route[s_rank]].index();
+  const Index t_index = _input.jobs[t_route[t_rank]].index();
+  const Index t_after_index = _input.jobs[t_route[t_rank + 1]].index();
 
   // Determine costs added with target edge.
   Eval previous_cost;

@@ -37,10 +37,8 @@ struct VehicleCosts {
       per_hour(static_cast<Cost>(per_hour)),
       per_km(static_cast<Cost>(per_km)){};
 
-  friend bool operator==(const VehicleCosts& lhs, const VehicleCosts& rhs) {
-    return lhs.fixed == rhs.fixed && lhs.per_hour == rhs.per_hour &&
-           lhs.per_km == rhs.per_km;
-  }
+  friend bool operator==(const VehicleCosts& lhs,
+                         const VehicleCosts& rhs) = default;
 
   friend bool operator<(const VehicleCosts& lhs, const VehicleCosts& rhs) {
     return std::tie(lhs.fixed, lhs.per_hour, lhs.per_km) <

@@ -8,6 +8,7 @@ All rights reserved (see LICENSE).
 */
 
 #include <algorithm>
+#include <exception>
 #include <mutex>
 #include <thread>
 #include <unordered_set>
@@ -16,7 +17,6 @@ All rights reserved (see LICENSE).
 #include "algorithms/validation/check.h"
 #include "algorithms/validation/choose_ETA.h"
 #include "structures/vroom/tw_route.h"
-#include "utils/exception.h"
 #include "utils/helpers.h"
 
 namespace vroom::validation {
@@ -62,7 +62,8 @@ check_and_set_ETA(const Input& input,
   std::exception_ptr ep = nullptr;
   std::mutex ep_m;
 
-  auto run_check = [&](const std::vector<Index>& vehicle_ranks) {
+  auto run_check = [&v_rank_to_actual_route_rank, &routes, &input, &ep, &ep_m](
+                     const std::vector<Index>& vehicle_ranks) {
     try {
       for (auto v : vehicle_ranks) {
         auto search = v_rank_to_actual_route_rank.find(v);
@@ -72,7 +73,7 @@ check_and_set_ETA(const Input& input,
         routes[route_rank] = choose_ETA(input, v, input.vehicles[v].steps);
       }
     } catch (...) {
-      std::scoped_lock<std::mutex> lock(ep_m);
+      const std::scoped_lock<std::mutex> lock(ep_m);
       ep = std::current_exception();
     }
   };

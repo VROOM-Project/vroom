@@ -49,8 +49,8 @@ void IntraExchange::compute_gain() {
   // Consider the cost of replacing job at rank s_rank with target
   // job. Part of that cost (for adjacent edges) is stored in
   // _sol_state.edge_evals_around_node.
-  Index s_index = _input.jobs[s_route[s_rank]].index();
-  Index t_index = _input.jobs[t_route[t_rank]].index();
+  const Index s_index = _input.jobs[s_route[s_rank]].index();
+  const Index t_index = _input.jobs[t_route[t_rank]].index();
 
   // Determine costs added with target job.
   Eval new_previous_cost;
@@ -68,8 +68,8 @@ void IntraExchange::compute_gain() {
   auto n_index = _input.jobs[s_route[s_rank + 1]].index();
   Eval new_next_cost = v.eval(t_index, n_index);
 
-  Eval s_gain = _sol_state.edge_evals_around_node[s_vehicle][s_rank] -
-                new_previous_cost - new_next_cost;
+  const Eval s_gain = _sol_state.edge_evals_around_node[s_vehicle][s_rank] -
+                      new_previous_cost - new_next_cost;
 
   // Consider the cost of replacing job at rank t_rank with source
   // job. Part of that cost (for adjacent edges) is stored in
@@ -91,8 +91,8 @@ void IntraExchange::compute_gain() {
     new_next_cost = v.eval(s_index, n_index);
   }
 
-  Eval t_gain = _sol_state.edge_evals_around_node[s_vehicle][t_rank] -
-                new_previous_cost - new_next_cost;
+  const Eval t_gain = _sol_state.edge_evals_around_node[s_vehicle][t_rank] -
+                      new_previous_cost - new_next_cost;
 
   stored_gain = s_gain + t_gain;
   gain_computed = true;

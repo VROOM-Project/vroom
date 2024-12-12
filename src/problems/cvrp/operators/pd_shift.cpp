@@ -8,7 +8,6 @@ All rights reserved (see LICENSE).
 */
 
 #include "problems/cvrp/operators/pd_shift.h"
-#include "utils/helpers.h"
 
 #include "algorithms/local_search/insertion_search.h"
 

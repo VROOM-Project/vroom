@@ -80,8 +80,8 @@ Eval IntraOrOpt::gain_upper_bound() {
     new_rank += 2;
   }
 
-  Index s_index = _input.jobs[s_route[s_rank]].index();
-  Index after_s_index = _input.jobs[s_route[s_rank + 1]].index();
+  const Index s_index = _input.jobs[s_route[s_rank]].index();
+  const Index after_s_index = _input.jobs[s_route[s_rank + 1]].index();
 
   Eval previous_cost;
   Eval next_cost;

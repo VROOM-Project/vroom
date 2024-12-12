@@ -121,7 +121,7 @@ void Input::check_job(Job& job) {
   check_amount_size(job.pickup);
 
   // Ensure that location index are either always or never provided.
-  bool has_location_index = job.location.user_index();
+  const bool has_location_index = job.location.user_index();
   if (_no_addition_yet) {
     _no_addition_yet = false;
     _has_custom_location_index = has_location_index;
@@ -479,7 +479,8 @@ UserCost Input::check_cost_bound(const Matrix<UserCost>& matrix) const {
                                   max_cost_per_column[j.index()]);
   }
 
-  UserCost jobs_bound = std::max(jobs_departure_bound, jobs_arrival_bound);
+  const UserCost jobs_bound =
+    std::max(jobs_departure_bound, jobs_arrival_bound);
 
   UserCost start_bound = 0;
   UserCost end_bound = 0;
@@ -496,7 +497,7 @@ UserCost Input::check_cost_bound(const Matrix<UserCost>& matrix) const {
     }
   }
 
-  UserCost bound = utils::add_without_overflow(start_bound, jobs_bound);
+  const UserCost bound = utils::add_without_overflow(start_bound, jobs_bound);
   return utils::add_without_overflow(bound, end_bound);
 }
 
@@ -529,7 +530,7 @@ void Input::set_extra_compatibility() {
   // an empty route for vehicle based on the timing constraints (when
   // they apply).
   for (std::size_t v = 0; v < vehicles.size(); ++v) {
-    TWRoute empty_route(*this, v, _zero.size());
+    const TWRoute empty_route(*this, v, _zero.size());
     for (Index j = 0; j < jobs.size(); ++j) {
       if (_vehicle_to_job_compatibility[v][j]) {
         bool is_compatible =
@@ -538,7 +539,7 @@ void Input::set_extra_compatibility() {
                                                      jobs[j].delivery,
                                                      0);
 
-        bool is_shipment_pickup = (jobs[j].type == JOB_TYPE::PICKUP);
+        const bool is_shipment_pickup = (jobs[j].type == JOB_TYPE::PICKUP);
 
         if (is_compatible && _has_TW) {
           if (jobs[j].type == JOB_TYPE::SINGLE) {
@@ -750,8 +751,8 @@ void Input::set_jobs_vehicles_evals() {
                                                      Eval(_cost_upper_bound)));
 
   for (std::size_t j = 0; j < jobs.size(); ++j) {
-    Index j_index = jobs[j].index();
-    bool is_pickup = (jobs[j].type == JOB_TYPE::PICKUP);
+    const Index j_index = jobs[j].index();
+    const bool is_pickup = (jobs[j].type == JOB_TYPE::PICKUP);
 
     Index last_job_index = j_index;
     if (is_pickup) {
@@ -1069,7 +1070,7 @@ void Input::set_matrices(unsigned nb_thread, bool sparse_filling) {
 
           // Check for potential overflow in solution cost.
           const UserCost current_bound = check_cost_bound(c_m->second);
-          std::scoped_lock<std::mutex> lock(cost_bound_m);
+          const std::scoped_lock<std::mutex> lock(cost_bound_m);
           _cost_upper_bound =
             std::max(_cost_upper_bound,
                      utils::scale_from_user_cost(current_bound));
@@ -1081,7 +1082,7 @@ void Input::set_matrices(unsigned nb_thread, bool sparse_filling) {
           assert(search != _max_cost_per_hour.end());
           const auto max_cost_per_hour_for_profile = search->second;
 
-          std::scoped_lock<std::mutex> lock(cost_bound_m);
+          const std::scoped_lock<std::mutex> lock(cost_bound_m);
           _cost_upper_bound =
             std::max(_cost_upper_bound,
                      max_cost_per_hour_for_profile *
@@ -1089,7 +1090,7 @@ void Input::set_matrices(unsigned nb_thread, bool sparse_filling) {
         }
       }
     } catch (...) {
-      std::scoped_lock<std::mutex> lock(ep_m);
+      const std::scoped_lock<std::mutex> lock(ep_m);
       ep = std::current_exception();
     }
   };

@@ -18,7 +18,7 @@ void update_host(Servers& servers, std::string_view value) {
   // Determine profile and host from a "car:0.0.0.0"-like value.
   std::string profile = DEFAULT_PROFILE;
   std::string host;
-  std::string path = "";
+  std::string path;
 
   auto index = value.find(':');
   if (index == std::string::npos) {

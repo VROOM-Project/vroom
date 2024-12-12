@@ -48,6 +48,7 @@
 #### Internals
 
 - Iterator type required by `TWRoute::replace` function (#1103)
+- Address some of the SonaQube and clang-tidy reports (#1200)
 
 #### CI
 

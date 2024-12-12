@@ -51,8 +51,11 @@ void CostWrapper::set_costs_matrix(const Matrix<UserCost>* matrix,
 UserCost CostWrapper::user_cost_from_user_metrics(UserDuration d,
                                                   UserDistance m) const {
   assert(_cost_based_on_metrics);
-  return utils::round<UserCost>(static_cast<double>(d * _per_hour) / 3600 +
-                                static_cast<double>(m * _per_km) / 1000);
+  constexpr auto SECONDS_PER_HOUR = 3600;
+  constexpr auto M_PER_KM = 1000;
+  return utils::round<UserCost>(static_cast<double>(d * _per_hour) /
+                                  SECONDS_PER_HOUR +
+                                static_cast<double>(m * _per_km) / M_PER_KM);
 }
 
 } // namespace vroom

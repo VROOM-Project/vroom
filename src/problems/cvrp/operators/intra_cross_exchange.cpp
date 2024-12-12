@@ -73,10 +73,10 @@ Eval IntraCrossExchange::gain_upper_bound() {
   // target edge. Part of that cost (for adjacent edges) is stored in
   // _sol_state.edge_evals_around_edge.  reverse_* checks whether we
   // should change the target edge order.
-  Index s_index = _input.jobs[s_route[s_rank]].index();
-  Index s_after_index = _input.jobs[s_route[s_rank + 1]].index();
-  Index t_index = _input.jobs[s_route[t_rank]].index();
-  Index t_after_index = _input.jobs[s_route[t_rank + 1]].index();
+  const Index s_index = _input.jobs[s_route[s_rank]].index();
+  const Index s_after_index = _input.jobs[s_route[s_rank + 1]].index();
+  const Index t_index = _input.jobs[s_route[t_rank]].index();
+  const Index t_after_index = _input.jobs[s_route[t_rank + 1]].index();
 
   // Determine costs added with target edge.
   Eval previous_cost;

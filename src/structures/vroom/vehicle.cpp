@@ -137,9 +137,9 @@ bool Vehicle::cost_based_on_metrics() const {
 }
 
 Duration Vehicle::available_duration() const {
-  Duration available = tw.end - tw.start;
+  const Duration available = tw.end - tw.start;
 
-  Duration breaks_duration =
+  const Duration breaks_duration =
     std::accumulate(breaks.begin(),
                     breaks.end(),
                     0,

@@ -47,8 +47,8 @@ template <class T>
 UndirectedGraph<T>::UndirectedGraph(std::vector<Edge<T>>&& edges)
   : _edges(std::move(edges)) {
   for (auto const& edge : _edges) {
-    Index first = edge.get_first_vertex();
-    Index second = edge.get_second_vertex();
+    const Index first = edge.get_first_vertex();
+    const Index second = edge.get_second_vertex();
 
     _adjacency_list[first].push_back(second);
     _adjacency_list[second].push_back(first);

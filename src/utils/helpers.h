@@ -77,7 +77,7 @@ inline Eval addition_cost(const Input& input,
                           Index rank) {
   assert(rank <= route.size());
 
-  Index job_index = input.jobs[job_rank].index();
+  const Index job_index = input.jobs[job_rank].index();
   Eval previous_eval;
   Eval next_eval;
   Eval old_edge_eval;
@@ -138,8 +138,8 @@ inline Eval addition_cost(const Input& input,
 
   if (delivery_rank == pickup_rank + 1) {
     // Delivery is inserted just after pickup.
-    Index p_index = input.jobs[job_rank].index();
-    Index d_index = input.jobs[job_rank + 1].index();
+    const Index p_index = input.jobs[job_rank].index();
+    const Index d_index = input.jobs[job_rank + 1].index();
     eval += v.eval(p_index, d_index);
 
     Eval after_delivery;
@@ -153,7 +153,7 @@ inline Eval addition_cost(const Input& input,
       }
     } else {
       // There is a job after insertion.
-      Index next_index = input.jobs[route[pickup_rank]].index();
+      const Index next_index = input.jobs[route[pickup_rank]].index();
       after_delivery = v.eval(d_index, next_index);
       remove_after_pickup = v.eval(p_index, next_index);
     }
@@ -178,7 +178,7 @@ inline Eval in_place_delta_cost(const Input& input,
                                 const std::vector<Index>& route,
                                 Index rank) {
   assert(!route.empty());
-  Index new_index = input.jobs[job_rank].index();
+  const Index new_index = input.jobs[job_rank].index();
 
   Eval new_previous_eval;
   Eval new_next_eval;
@@ -218,20 +218,18 @@ Priority priority_sum_for_route(const Input& input,
 
 Eval route_eval_for_vehicle(const Input& input,
                             Index vehicle_rank,
-                            const std::vector<Index>::const_iterator first_job,
-                            const std::vector<Index>::const_iterator last_job);
+                            std::vector<Index>::const_iterator first_job,
+                            std::vector<Index>::const_iterator last_job);
 
 Eval route_eval_for_vehicle(const Input& input,
                             Index vehicle_rank,
                             const std::vector<Index>& route);
 
 void check_tws(const std::vector<TimeWindow>& tws,
-               const Id id,
+               Id id,
                const std::string& type);
 
-void check_priority(const Priority priority,
-                    const Id id,
-                    const std::string& type);
+void check_priority(Priority priority, Id id, const std::string& type);
 
 using RawSolution = std::vector<RawRoute>;
 using TWSolution = std::vector<TWRoute>;

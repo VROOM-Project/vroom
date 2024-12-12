@@ -9,7 +9,6 @@ All rights reserved (see LICENSE).
 
 #include <algorithm>
 #include <numeric>
-#include <ranges>
 
 #include "structures/vroom/solution_state.h"
 #include "utils/helpers.h"
@@ -268,7 +267,7 @@ void SolutionState::set_node_gains(const std::vector<Index>& route, Index v) {
 }
 
 void SolutionState::set_edge_gains(const std::vector<Index>& route, Index v) {
-  std::size_t nb_edges = (route.size() < 2) ? 0 : route.size() - 1;
+  const std::size_t nb_edges = (route.size() < 2) ? 0 : route.size() - 1;
 
   edge_gains[v] = std::vector<Eval>(nb_edges);
   edge_evals_around_edge[v] = std::vector<Eval>(nb_edges);
@@ -406,9 +405,9 @@ void SolutionState::set_pd_gains(const std::vector<Index>& route, Index v) {
     if (_input.jobs[route[pickup_rank]].type != JOB_TYPE::PICKUP) {
       continue;
     }
-    Index pickup_index = _input.jobs[route[pickup_rank]].index();
-    unsigned delivery_rank = matching_delivery_rank[v][pickup_rank];
-    Index delivery_index = _input.jobs[route[delivery_rank]].index();
+    const Index pickup_index = _input.jobs[route[pickup_rank]].index();
+    const Index delivery_rank = matching_delivery_rank[v][pickup_rank];
+    const Index delivery_index = _input.jobs[route[delivery_rank]].index();
 
     if (pickup_rank + 1 == delivery_rank) {
       // Pickup and delivery in a row.
@@ -610,7 +609,7 @@ void SolutionState::update_cheapest_job_rank_in_routes(
   cheapest_job_rank_in_routes_to[v1][v2].assign(route_1.size(), 0);
 
   for (std::size_t r1 = 0; r1 < route_1.size(); ++r1) {
-    Index index_r1 = _input.jobs[route_1[r1]].index();
+    const Index index_r1 = _input.jobs[route_1[r1]].index();
 
     auto min_from = std::numeric_limits<Cost>::max();
     auto min_to = std::numeric_limits<Cost>::max();

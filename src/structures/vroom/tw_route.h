@@ -51,7 +51,7 @@ struct OrderChoice {
   const std::vector<TimeWindow>::const_iterator b_tw;
 
   OrderChoice(const Input& input,
-              const Index job_rank,
+              Index job_rank,
               const Break& b,
               const PreviousInfo& previous);
 };
@@ -59,11 +59,9 @@ struct OrderChoice {
 class TWRoute : public RawRoute {
 private:
   PreviousInfo previous_info(const Input& input,
-                             const Index job_rank,
-                             const Index rank) const;
-  NextInfo next_info(const Input& input,
-                     const Index job_rank,
-                     const Index rank) const;
+                             Index job_rank,
+                             Index rank) const;
+  NextInfo next_info(const Input& input, Index job_rank, Index rank) const;
 
   void fwd_update_earliest_from(const Input& input, Index rank);
   void bwd_update_latest_from(const Input& input, Index rank);
@@ -77,8 +75,8 @@ private:
 
   // Define global policy wrt job/break respective insertion rule.
   OrderChoice order_choice(const Input& input,
-                           const Index job_rank,
-                           const Duration job_action_time,
+                           Index job_rank,
+                           Duration job_action_time,
                            const Break& b,
                            const PreviousInfo& previous,
                            const NextInfo& next,
@@ -169,10 +167,10 @@ public:
   template <std::forward_iterator Iter>
   bool is_valid_addition_for_tw(const Input& input,
                                 const Amount& delivery,
-                                const Iter first_job,
-                                const Iter last_job,
-                                const Index first_rank,
-                                const Index last_rank,
+                                Iter first_job,
+                                Iter last_job,
+                                Index first_rank,
+                                Index last_rank,
                                 bool check_max_load = true) const;
 
   void add(const Input& input, const Index job_rank, const Index rank) {
@@ -220,10 +218,10 @@ public:
   template <std::random_access_iterator Iter>
   void replace(const Input& input,
                const Amount& delivery,
-               const Iter first_job,
-               const Iter last_job,
-               const Index first_rank,
-               const Index last_rank);
+               Iter first_job,
+               Iter last_job,
+               Index first_rank,
+               Index last_rank);
 };
 
 } // namespace vroom

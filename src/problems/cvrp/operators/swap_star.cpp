@@ -30,8 +30,8 @@ SwapStar::SwapStar(const Input& input,
              0),
     _best_known_gain(best_known_gain) {
   assert(s_vehicle != t_vehicle);
-  assert(s_route.size() >= 1);
-  assert(t_route.size() >= 1);
+  assert(!s_route.empty());
+  assert(!t_route.empty());
   assert(_input.vehicle_ok_with_vehicle(s_vehicle, t_vehicle));
 }
 

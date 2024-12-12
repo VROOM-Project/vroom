@@ -17,7 +17,6 @@ All rights reserved (see LICENSE).
 
 #include "../include/cxxopts/include/cxxopts.hpp"
 
-#include "problems/vrp.h"
 #include "structures/cl_args.h"
 #include "utils/exception.h"
 #include "utils/helpers.h"
@@ -207,7 +206,7 @@ int main(int argc, char** argv) {
   // Get input problem from first input file, then positional arg,
   // then stdin.
   if (!cl_args.input_file.empty()) {
-    std::ifstream ifs(cl_args.input_file);
+    const std::ifstream ifs(cl_args.input_file);
     if (!ifs) {
       const auto exc =
         vroom::InputException("Can't read file: " + cl_args.input_file);
@@ -234,13 +233,13 @@ int main(int argc, char** argv) {
                                   cl_args.apply_TSPFix);
     vroom::io::parse(problem_instance, cl_args.input, cl_args.geometry);
 
-    vroom::Solution sol = (cl_args.check)
-                            ? problem_instance.check(cl_args.nb_threads)
-                            : problem_instance.solve(cl_args.nb_searches,
-                                                     cl_args.depth,
-                                                     cl_args.nb_threads,
-                                                     cl_args.timeout,
-                                                     cl_args.h_params);
+    const vroom::Solution sol = (cl_args.check)
+                                  ? problem_instance.check(cl_args.nb_threads)
+                                  : problem_instance.solve(cl_args.nb_searches,
+                                                           cl_args.depth,
+                                                           cl_args.nb_threads,
+                                                           cl_args.timeout,
+                                                           cl_args.h_params);
 
     // Write solution.
     vroom::io::write_to_json(sol,

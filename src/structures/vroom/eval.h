@@ -65,15 +65,7 @@ struct Eval {
     return lhs.cost <= rhs.cost;
   }
 
-  friend bool operator==(const Eval& lhs, const Eval& rhs) {
-    return lhs.cost == rhs.cost && lhs.duration == rhs.duration &&
-           lhs.distance == rhs.distance;
-  }
-
-  friend bool operator!=(const Eval& lhs, const Eval& rhs) {
-    return lhs.cost != rhs.cost || lhs.duration != rhs.duration ||
-           lhs.distance != rhs.distance;
-  }
+  friend bool operator==(const Eval& lhs, const Eval& rhs) = default;
 };
 
 constexpr Eval NO_EVAL = {std::numeric_limits<Cost>::max(), 0, 0};

@@ -75,11 +75,11 @@ public:
 
   void update_amounts(const Input& input);
 
-  bool has_pending_delivery_after_rank(const Index rank) const;
+  bool has_pending_delivery_after_rank(Index rank) const;
 
-  bool has_delivery_after_rank(const Index rank) const;
+  bool has_delivery_after_rank(Index rank) const;
 
-  bool has_pickup_up_to_rank(const Index rank) const;
+  bool has_pickup_up_to_rank(Index rank) const;
 
   const Amount& fwd_peak(Index rank) const {
     return _fwd_peaks[rank];
@@ -110,13 +110,13 @@ public:
   bool is_valid_addition_for_capacity(const Input&,
                                       const Amount& pickup,
                                       const Amount& delivery,
-                                      const Index rank) const;
+                                      Index rank) const;
 
   // Check if current load allows the addition of a pickup, just
   // considering capacity limitation at rank.
   bool is_valid_addition_for_load(const Input& input,
                                   const Amount& pickup,
-                                  const Index rank) const;
+                                  Index rank) const;
 
   // Check validity for inclusion (with regard to not breaking
   // capacity before and after inclusion) of some load in the existing
@@ -125,8 +125,8 @@ public:
   bool is_valid_addition_for_capacity_margins(const Input& input,
                                               const Amount& pickup,
                                               const Amount& delivery,
-                                              const Index first_rank,
-                                              const Index last_rank) const;
+                                              Index first_rank,
+                                              Index last_rank) const;
 
   // Check validity for inclusion (with regard to not breaking
   // capacity for included jobs) of the range [first_job; last_job) in
@@ -135,10 +135,10 @@ public:
   template <std::forward_iterator Iter>
   bool is_valid_addition_for_capacity_inclusion(const Input& input,
                                                 Amount delivery,
-                                                const Iter first_job,
-                                                const Iter last_job,
-                                                const Index first_rank,
-                                                const Index last_rank) const;
+                                                Iter first_job,
+                                                Iter last_job,
+                                                Index first_rank,
+                                                Index last_rank) const;
 
   const Amount& job_deliveries_sum() const;
 
@@ -193,23 +193,23 @@ public:
     return true;
   }
 
-  void add(const Input& input, const Index job_rank, const Index rank);
+  void add(const Input& input, Index job_rank, Index rank);
 
   bool is_valid_removal(const Input&, const Index, const unsigned) const {
     return true;
   };
 
-  void remove(const Input& input, const Index rank, const unsigned count);
+  void remove(const Input& input, Index rank, unsigned count);
 
   // Add the range [first_job; last_job) in the existing route at rank
   // first_rank and before last_rank *in place of* the current jobs
   // that may be there.
   template <std::forward_iterator Iter>
   void replace(const Input& input,
-               const Iter first_job,
-               const Iter last_job,
-               const Index first_rank,
-               const Index last_rank);
+               Iter first_job,
+               Iter last_job,
+               Index first_rank,
+               Index last_rank);
 
   template <std::forward_iterator Iter>
   void replace(const Input& input,

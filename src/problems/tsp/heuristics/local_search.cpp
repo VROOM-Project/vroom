@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 #include <algorithm>
 #include <iterator>
 #include <numeric>
+#include <ranges>
 #include <thread>
 #include <unordered_map>
 
@@ -29,11 +30,11 @@ LocalSearch::LocalSearch(const Matrix<UserCost>& matrix,
     _rank_limits(_nb_threads) {
   // Build _edges vector representation.
   auto location = tour.cbegin();
-  Index first_index = *location;
+  const Index first_index = *location;
   Index last_index = first_index;
   ++location;
   while (location != tour.cend()) {
-    Index current_index = *location;
+    const Index current_index = *location;
     _edges[last_index] = current_index;
     last_index = current_index;
     ++location;
@@ -43,7 +44,7 @@ LocalSearch::LocalSearch(const Matrix<UserCost>& matrix,
   // Build a vector of bounds that easily split the [0, _edges.size()]
   // look-up range 'evenly' between threads for relocate and or-opt
   // operator.
-  std::size_t range_width = _edges.size() / _nb_threads;
+  const std::size_t range_width = _edges.size() / _nb_threads;
   std::iota(_rank_limits.begin(), _rank_limits.end(), 0);
   std::transform(_rank_limits.begin(),
                  _rank_limits.end(),
@@ -52,7 +53,7 @@ LocalSearch::LocalSearch(const Matrix<UserCost>& matrix,
   // Shifting the limits to dispatch remaining ranks among more
   // threads for a more even load balance. This way the load
   // difference between ranges should be at most 1.
-  std::size_t remainder = _edges.size() % _nb_threads;
+  const std::size_t remainder = _edges.size() % _nb_threads;
   std::size_t shift = 0;
   for (std::size_t i = 1; i < _rank_limits.size(); ++i) {
     if (shift < remainder) {
@@ -84,8 +85,8 @@ LocalSearch::LocalSearch(const Matrix<UserCost>& matrix,
                      number_of_lookups.end(),
                      std::back_inserter(cumulated_lookups));
 
-    unsigned total_lookups = _edges.size() * (_edges.size() - 3) / 2;
-    unsigned thread_lookup_share = total_lookups / _nb_threads;
+    const unsigned total_lookups = _edges.size() * (_edges.size() - 3) / 2;
+    const unsigned thread_lookup_share = total_lookups / _nb_threads;
 
     Index rank = 0;
     for (std::size_t i = 1; i < _nb_threads; ++i) {
@@ -114,14 +115,14 @@ UserCost LocalSearch::relocate_step() {
                      Index& best_edge_1_start,
                      Index& best_edge_2_start) {
     for (Index edge_1_start = start; edge_1_start < end; ++edge_1_start) {
-      Index edge_1_end = _edges[edge_1_start];
+      const Index edge_1_end = _edges[edge_1_start];
       // Going through the tour while checking for insertion of
       // edge_1_end between two other nodes (edge_2_*).
       //
       // Namely edge_1_start --> edge_1_end --> next is replaced by
       // edge_1_start --> next while edge_2_start --> edge_2_end is
       // replaced by edge_2_start --> edge_1_end --> edge_2_end.
-      Index next = _edges[edge_1_end];
+      const Index next = _edges[edge_1_end];
 
       // Precomputing weights not depending on edge_2_*.
       auto first_potential_add = _matrix[edge_1_start][next];
@@ -142,7 +143,7 @@ UserCost LocalSearch::relocate_step() {
 
       Index edge_2_start = next;
       while (edge_2_start != edge_1_start) {
-        Index edge_2_end = _edges[edge_2_start];
+        const Index edge_2_end = _edges[edge_2_start];
         const auto before_cost = edge_1_weight + edge_1_end_next_weight +
                                  _matrix[edge_2_start][edge_2_end];
 
@@ -188,13 +189,13 @@ UserCost LocalSearch::relocate_step() {
   auto best_rank =
     std::distance(best_gains.begin(), std::ranges::max_element(best_gains));
   auto best_gain = best_gains[best_rank];
-  Index best_edge_1_start = best_edge_1_starts[best_rank];
-  Index best_edge_2_start = best_edge_2_starts[best_rank];
+  const Index best_edge_1_start = best_edge_1_starts[best_rank];
+  const Index best_edge_2_start = best_edge_2_starts[best_rank];
 
   if (best_gain > 0) {
     // Performing best possible exchange.
-    Index best_edge_1_end = _edges[best_edge_1_start];
-    Index best_edge_2_end = _edges[best_edge_2_start];
+    const Index best_edge_1_end = _edges[best_edge_1_start];
+    const Index best_edge_2_end = _edges[best_edge_2_start];
 
     _edges[best_edge_1_start] = _edges[best_edge_1_end];
     _edges[best_edge_1_end] = best_edge_2_end;
@@ -261,7 +262,7 @@ UserCost LocalSearch::avoid_loop_step() {
     if (!_avoid_start_relocate.first ||
         candidate != _avoid_start_relocate.second) {
       while ((current != previous_candidate) && !candidate_relocatable) {
-        Index next = _edges[current];
+        const Index next = _edges[current];
         if ((_matrix[current][candidate] + _matrix[candidate][next] <=
              _matrix[current][next]) &&
             (_matrix[current][candidate] > 0) &&
@@ -388,7 +389,7 @@ UserCost LocalSearch::two_opt_step() {
                      Index& best_edge_1_start,
                      Index& best_edge_2_start) {
     for (Index edge_1_start = start; edge_1_start < end; ++edge_1_start) {
-      Index edge_1_end = _edges[edge_1_start];
+      const Index edge_1_end = _edges[edge_1_start];
       for (Index edge_2_start = edge_1_start + 1; edge_2_start < _edges.size();
            ++edge_2_start) {
         // Trying to improve two "crossing edges".
@@ -402,7 +403,7 @@ UserCost LocalSearch::two_opt_step() {
         // is the same as with (e_1, e_2), so assuming edge_1_start <
         // edge_2_start avoids testing pairs in both orders.
 
-        Index edge_2_end = _edges[edge_2_start];
+        const Index edge_2_end = _edges[edge_2_start];
         if ((edge_2_start == edge_1_end) || (edge_2_end == edge_1_start)) {
           // Operator doesn't make sense.
           continue;
@@ -452,12 +453,12 @@ UserCost LocalSearch::two_opt_step() {
   auto best_rank =
     std::distance(best_gains.begin(), std::ranges::max_element(best_gains));
   auto best_gain = best_gains[best_rank];
-  Index best_edge_1_start = best_edge_1_starts[best_rank];
-  Index best_edge_2_start = best_edge_2_starts[best_rank];
+  const Index best_edge_1_start = best_edge_1_starts[best_rank];
+  const Index best_edge_2_start = best_edge_2_starts[best_rank];
 
   if (best_gain > 0) {
-    Index best_edge_1_end = _edges[best_edge_1_start];
-    Index best_edge_2_end = _edges[best_edge_2_start];
+    const Index best_edge_1_end = _edges[best_edge_1_start];
+    const Index best_edge_2_end = _edges[best_edge_2_start];
     // Storing part of the tour that needs to be reversed.
     std::vector<Index> to_reverse;
     for (Index current = best_edge_1_end; current != best_edge_2_start;
@@ -467,9 +468,9 @@ UserCost LocalSearch::two_opt_step() {
     // Performing exchange.
     Index current = best_edge_2_start;
     _edges[best_edge_1_start] = current;
-    for (auto next = to_reverse.rbegin(); next != to_reverse.rend(); ++next) {
-      _edges[current] = *next;
-      current = *next;
+    for (const auto& next : std::ranges::reverse_view(to_reverse)) {
+      _edges[current] = next;
+      current = next;
     }
     _edges[current] = best_edge_2_end;
   }
@@ -485,7 +486,7 @@ UserCost LocalSearch::asym_two_opt_step() {
 
   // The initial node for the first edge is arbitrary but it is handy
   // to keep in mind the previous one for stopping conditions.
-  Index previous_init = _edges.front();
+  const Index previous_init = _edges.front();
   Index init = _edges[previous_init];
 
   // Lambda function to search for the best move in a range of
@@ -499,7 +500,7 @@ UserCost LocalSearch::asym_two_opt_step() {
 
     do {
       // Going through the edges in the order of the current tour.
-      Index edge_1_end = _edges[edge_1_start];
+      const Index edge_1_end = _edges[edge_1_start];
       Index edge_2_start = _edges[edge_1_end];
       Index edge_2_end = _edges[edge_2_start];
       // Trying to improve two "crossing edges".
@@ -551,7 +552,7 @@ UserCost LocalSearch::asym_two_opt_step() {
   std::vector<UserCost> best_gains(_nb_threads, 0);
   std::vector<Index> best_edge_1_starts(_nb_threads);
   std::vector<Index> best_edge_2_starts(_nb_threads);
-  std::size_t thread_range = _edges.size() / _nb_threads;
+  const std::size_t thread_range = _edges.size() / _nb_threads;
 
   // The limits in the range given to each thread are not ranks but
   // actual nodes used to browse a piece of the current tour.
@@ -588,12 +589,12 @@ UserCost LocalSearch::asym_two_opt_step() {
   auto best_rank =
     std::distance(best_gains.begin(), std::ranges::max_element(best_gains));
   auto best_gain = best_gains[best_rank];
-  Index best_edge_1_start = best_edge_1_starts[best_rank];
-  Index best_edge_2_start = best_edge_2_starts[best_rank];
+  const Index best_edge_1_start = best_edge_1_starts[best_rank];
+  const Index best_edge_2_start = best_edge_2_starts[best_rank];
 
   if (best_gain > 0) {
-    Index best_edge_1_end = _edges[best_edge_1_start];
-    Index best_edge_2_end = _edges[best_edge_2_start];
+    const Index best_edge_1_end = _edges[best_edge_1_start];
+    const Index best_edge_2_end = _edges[best_edge_2_start];
     // Storing part of the tour that needs to be reversed.
     std::vector<Index> to_reverse;
     for (Index current = best_edge_1_end; current != best_edge_2_start;
@@ -603,9 +604,9 @@ UserCost LocalSearch::asym_two_opt_step() {
     // Performing exchange.
     Index current = best_edge_2_start;
     _edges[best_edge_1_start] = current;
-    for (auto next = to_reverse.rbegin(); next != to_reverse.rend(); ++next) {
-      _edges[current] = *next;
-      current = *next;
+    for (const auto& next : std::ranges::reverse_view(to_reverse)) {
+      _edges[current] = next;
+      current = next;
     }
     _edges[current] = best_edge_2_end;
   }
@@ -663,9 +664,9 @@ UserCost LocalSearch::or_opt_step() {
                      Index& best_edge_1_start,
                      Index& best_edge_2_start) {
     for (Index edge_1_start = start; edge_1_start < end; ++edge_1_start) {
-      Index edge_1_end = _edges[edge_1_start];
-      Index next = _edges[edge_1_end];
-      Index next_2 = _edges[next];
+      const Index edge_1_end = _edges[edge_1_start];
+      const Index next = _edges[edge_1_end];
+      const Index next_2 = _edges[next];
       Index edge_2_start = next_2;
       // Going through the tour while checking the move of edge after
       // edge_1_end in place of another edge (edge_2_*).
@@ -681,7 +682,7 @@ UserCost LocalSearch::or_opt_step() {
       auto next_next_2_weight = _matrix[next][next_2];
 
       while (edge_2_start != edge_1_start) {
-        Index edge_2_end = _edges[edge_2_start];
+        const Index edge_2_end = _edges[edge_2_start];
         const auto before_cost = edge_1_weight + next_next_2_weight +
                                  _matrix[edge_2_start][edge_2_end];
         if (const auto after_cost = first_potential_add +
@@ -726,12 +727,12 @@ UserCost LocalSearch::or_opt_step() {
   auto best_rank =
     std::distance(best_gains.begin(), std::ranges::max_element(best_gains));
   auto best_gain = best_gains[best_rank];
-  Index best_edge_1_start = best_edge_1_starts[best_rank];
-  Index best_edge_2_start = best_edge_2_starts[best_rank];
+  const Index best_edge_1_start = best_edge_1_starts[best_rank];
+  const Index best_edge_2_start = best_edge_2_starts[best_rank];
 
   if (best_gain > 0) {
-    Index best_edge_1_end = _edges[best_edge_1_start];
-    Index next = _edges[best_edge_1_end];
+    const Index best_edge_1_end = _edges[best_edge_1_start];
+    const Index next = _edges[best_edge_1_end];
 
     // Performing exchange.
     _edges[best_edge_1_start] = _edges[next];

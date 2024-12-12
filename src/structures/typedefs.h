@@ -20,11 +20,6 @@ All rights reserved (see LICENSE).
 #include <unordered_set>
 #include <vector>
 
-#ifdef _MSC_VER
-// include support for "and"/"or"
-#include <iso646.h>
-#endif
-
 namespace vroom {
 
 // To easily differentiate variable types.
@@ -90,13 +85,13 @@ constexpr auto DEFAULT_MAX_TRAVEL_TIME = std::numeric_limits<Duration>::max();
 constexpr auto DEFAULT_MAX_DISTANCE = std::numeric_limits<Distance>::max();
 
 // Available routing engines.
-enum class ROUTER { OSRM, LIBOSRM, ORS, VALHALLA };
+enum class ROUTER : std::uint8_t { OSRM, LIBOSRM, ORS, VALHALLA };
 
 // Used to describe a routing server.
 struct Server {
   std::string host;
   std::string port;
-  std::string path{""};
+  std::string path;
 
   Server() : host("0.0.0.0"), port("5000") {
   }
@@ -112,15 +107,21 @@ struct Server {
 
 // 'Single' job is a regular one-stop job without precedence
 // constraints.
-enum class JOB_TYPE { SINGLE, PICKUP, DELIVERY };
+enum class JOB_TYPE : std::uint8_t { SINGLE, PICKUP, DELIVERY };
 
 // Available location status.
-enum class STEP_TYPE { START, JOB, BREAK, END };
+enum class STEP_TYPE : std::uint8_t { START, JOB, BREAK, END };
 
 // Heuristic options.
-enum class HEURISTIC { BASIC, DYNAMIC };
-enum class INIT { NONE, HIGHER_AMOUNT, NEAREST, FURTHEST, EARLIEST_DEADLINE };
-enum class SORT { AVAILABILITY, COST };
+enum class HEURISTIC : std::uint8_t { BASIC, DYNAMIC };
+enum class INIT : std::uint8_t {
+  NONE,
+  HIGHER_AMOUNT,
+  NEAREST,
+  FURTHEST,
+  EARLIEST_DEADLINE
+};
+enum class SORT : std::uint8_t { AVAILABILITY, COST };
 
 struct HeuristicParameters {
   HEURISTIC heuristic;
@@ -137,7 +138,7 @@ struct HeuristicParameters {
 };
 
 // Possible violations.
-enum class VIOLATION {
+enum class VIOLATION : std::uint8_t {
   LEAD_TIME,
   DELAY,
   LOAD,
@@ -150,7 +151,7 @@ enum class VIOLATION {
   MAX_DISTANCE
 };
 
-enum OperatorName {
+enum OperatorName : std::uint8_t {
   UnassignedExchange,
   CrossExchange,
   MixedExchange,
@@ -202,27 +203,27 @@ struct StringHash {
   using is_transparent = void; // enables heterogenous lookup
 
   std::size_t operator()(std::string_view sv) const {
-    std::hash<std::string_view> hasher;
+    const std::hash<std::string_view> hasher;
     return hasher(sv);
   }
 };
 
 namespace utils {
-constexpr inline Duration scale_from_user_duration(UserDuration d) {
+constexpr Duration scale_from_user_duration(UserDuration d) {
   return DURATION_FACTOR * static_cast<Duration>(d);
 }
 
-constexpr inline UserDuration scale_to_user_duration(Duration d) {
+constexpr UserDuration scale_to_user_duration(Duration d) {
   assert(d <=
          scale_from_user_duration(std::numeric_limits<UserDuration>::max()));
   return static_cast<UserDuration>(d / DURATION_FACTOR);
 }
 
-constexpr inline Cost scale_from_user_cost(UserCost c) {
+constexpr Cost scale_from_user_cost(UserCost c) {
   return DURATION_FACTOR * COST_FACTOR * static_cast<Cost>(c);
 }
 
-constexpr inline UserCost scale_to_user_cost(Cost c) {
+constexpr UserCost scale_to_user_cost(Cost c) {
   assert(c <= scale_from_user_cost(std::numeric_limits<UserCost>::max()));
   return static_cast<UserCost>(c / (DURATION_FACTOR * COST_FACTOR));
 }

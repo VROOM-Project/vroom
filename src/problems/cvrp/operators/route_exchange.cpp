@@ -27,7 +27,7 @@ RouteExchange::RouteExchange(const Input& input,
              t_vehicle,
              0) { // Dummy value
   assert(s_vehicle != t_vehicle);
-  assert(s_route.size() >= 1 || t_route.size() >= 1);
+  assert(!s_route.empty() || !t_route.empty());
 
   // Whole routes should be transferable.
   assert(_sol_state.bwd_skill_rank[s_vehicle][t_vehicle] == 0);
