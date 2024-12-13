@@ -49,7 +49,7 @@ struct SolutionIndicators {
     routes_sizes.reserve(sol.size());
     std::ranges::transform(sol,
                            std::back_inserter(routes_sizes),
-                           [](const auto& r) { return r.size(); });
+                           [](const auto& r) { return std::size(r); });
     std::ranges::sort(routes_sizes);
     routes_hash = get_vector_hash(routes_sizes);
   }
