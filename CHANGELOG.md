@@ -44,6 +44,7 @@
 - Crash when input is valid JSON but not an object (#1172)
 - Capacity array check consistency (#1086)
 - Segfault when using the C++ API with empty vehicles (#1187)
+- Solution "shadowing" when only comparing indicators (#1199)
 
 #### Internals
 
