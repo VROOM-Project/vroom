@@ -242,7 +242,7 @@ void LocalSearch<Route,
         const auto& current_r = _sol[routes[i]];
         const auto& vehicle = _input.vehicles[routes[i]];
 
-        if (bool is_pickup = (_input.jobs[j].type == JOB_TYPE::PICKUP);
+        if (const bool is_pickup = (_input.jobs[j].type == JOB_TYPE::PICKUP);
             current_r.size() + (is_pickup ? 2 : 1) > vehicle.max_tasks) {
           continue;
         }
