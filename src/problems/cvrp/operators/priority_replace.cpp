@@ -139,12 +139,13 @@ bool PriorityReplace::is_valid() {
   replace_start_valid =
     (0 < _start_priority_gain) &&
     (_best_known_priority_gain <= _start_priority_gain) && (s_rank > 0) &&
-    (!source.has_pending_delivery_after_rank(s_rank)) &&
     source.is_valid_addition_for_capacity_margins(_input,
                                                   j.pickup,
                                                   j.delivery,
                                                   0,
                                                   s_rank + 1);
+  assert(!replace_start_valid ||
+         !source.has_pending_delivery_after_rank(s_rank));
 
   // Don't bother if the candidate end portion is empty or with a
   // single job (that would be an UnassignedExchange move).
