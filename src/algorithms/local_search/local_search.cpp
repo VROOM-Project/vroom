@@ -439,7 +439,8 @@ void LocalSearch<Route,
             continue;
           }
 
-          // Find where to stop when replacing beginning of route.
+          // Find where to stop when replacing beginning of route in
+          // order to generate a net priority gain.
           const auto fwd_over =
             std::ranges::find_if(_sol_state.fwd_priority[source],
                                  [u_priority](const auto p) {
@@ -449,8 +450,13 @@ void LocalSearch<Route,
             std::distance(_sol_state.fwd_priority[source].begin(), fwd_over);
           // A fwd_last_rank of zero will discard replacing the start
           // of the route.
-          const Index fwd_last_rank =
-            (fwd_over_rank > 0) ? fwd_over_rank - 1 : 0;
+          Index fwd_last_rank = (fwd_over_rank > 0) ? fwd_over_rank - 1 : 0;
+          // Go back to find the biggest route beginning portion where
+          // splitting is possible.
+          while (fwd_last_rank > 0 &&
+                 _sol[source].has_pending_delivery_after_rank(fwd_last_rank)) {
+            --fwd_last_rank;
+          }
           const Priority begin_priority_gain =
             u_priority - _sol_state.fwd_priority[source][fwd_last_rank];
 
