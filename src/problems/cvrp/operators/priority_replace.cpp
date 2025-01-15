@@ -139,6 +139,7 @@ bool PriorityReplace::is_valid() {
   replace_start_valid =
     (0 < _start_priority_gain) &&
     (_best_known_priority_gain <= _start_priority_gain) && (s_rank > 0) &&
+    (!source.has_pending_delivery_after_rank(s_rank)) &&
     source.is_valid_addition_for_capacity_margins(_input,
                                                   j.pickup,
                                                   j.delivery,
@@ -151,6 +152,7 @@ bool PriorityReplace::is_valid() {
     (0 < _end_priority_gain) &&
     (_best_known_priority_gain <= _end_priority_gain) &&
     (t_rank < s_route.size() - 1) &&
+    (t_rank == 0 || !source.has_pending_delivery_after_rank(t_rank - 1)) &&
     source.is_valid_addition_for_capacity_margins(_input,
                                                   j.pickup,
                                                   j.delivery,
