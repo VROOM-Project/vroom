@@ -460,14 +460,27 @@ void LocalSearch<Route,
           const Priority begin_priority_gain =
             u_priority - _sol_state.fwd_priority[source][fwd_last_rank];
 
-          // Find where to stop when replacing end of route.
+          // Find where to stop when replacing end of route in order
+          // to generate a net priority gain.
           const auto bwd_over =
             std::find_if(_sol_state.bwd_priority[source].crbegin(),
                          _sol_state.bwd_priority[source].crend(),
                          [u_priority](const auto p) { return u_priority < p; });
           const Index bwd_over_rank =
             std::distance(_sol_state.bwd_priority[source].crbegin(), bwd_over);
-          const Index bwd_first_rank = _sol[source].size() - bwd_over_rank;
+          Index bwd_first_rank = _sol[source].size() - bwd_over_rank;
+          if (bwd_first_rank == 0) {
+            // Sum of priorities for whole route is lower than job
+            // priority. We elude this case as it is covered by start
+            // replacing (also whole route).
+            assert(fwd_last_rank == _sol[source].size() - 1);
+            ++bwd_first_rank;
+          }
+          while (
+            bwd_first_rank < _sol[source].size() - 1 &&
+            _sol[source].has_pending_delivery_after_rank(bwd_first_rank - 1)) {
+            ++bwd_first_rank;
+          }
           const Priority end_priority_gain =
             u_priority - _sol_state.bwd_priority[source][bwd_first_rank];
 

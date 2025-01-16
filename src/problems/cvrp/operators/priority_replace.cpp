@@ -41,6 +41,7 @@ PriorityReplace::PriorityReplace(const Input& input,
     _best_known_priority_gain(best_known_priority_gain),
     _unassigned(unassigned) {
   assert(!s_route.empty());
+  assert(t_rank != 0);
   assert(_start_priority_gain > 0 or _end_priority_gain > 0);
 }
 
