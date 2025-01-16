@@ -39,6 +39,7 @@
 #### Core solving
 
 - Solution quality regression when using lots of skills (#1193)
+- Invalid route reached by `PriorityReplace` (#1162)
 - Crash due to wrong delivery values in some validity checks (#1164)
 - Crash when input is valid JSON but not an object (#1172)
 - Capacity array check consistency (#1086)
