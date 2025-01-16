@@ -35,6 +35,8 @@ PriorityReplace::PriorityReplace(const Input& input,
                          _sol_state.fwd_priority[s_vehicle][s_rank]),
     _end_priority_gain(_input.jobs[u].priority -
                        _sol_state.bwd_priority[s_vehicle][t_rank]),
+    _start_assigned_number(s_route.size() - s_rank),
+    _end_assigned_number(t_rank + 1),
     _u(u),
     _best_known_priority_gain(best_known_priority_gain),
     _unassigned(unassigned) {
@@ -111,8 +113,8 @@ void PriorityReplace::compute_gain() {
 
   if (replace_start_valid && replace_end_valid) {
     // Decide based on priority and cost.
-    if (std::tie(_end_priority_gain, t_gain) <
-        std::tie(_start_priority_gain, s_gain)) {
+    if (std::tie(_end_priority_gain, _end_assigned_number, t_gain) <
+        std::tie(_start_priority_gain, _start_assigned_number, s_gain)) {
       replace_end_valid = false;
     } else {
       replace_start_valid = false;
