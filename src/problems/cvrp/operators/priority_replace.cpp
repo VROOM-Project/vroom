@@ -156,12 +156,13 @@ bool PriorityReplace::is_valid() {
     (0 < _end_priority_gain) &&
     (_best_known_priority_gain <= _end_priority_gain) &&
     (t_rank < s_route.size() - 1) &&
-    (t_rank == 0 || !source.has_pending_delivery_after_rank(t_rank - 1)) &&
     source.is_valid_addition_for_capacity_margins(_input,
                                                   j.pickup,
                                                   j.delivery,
                                                   t_rank,
                                                   s_route.size());
+  assert(!replace_end_valid ||
+         !source.has_pending_delivery_after_rank(t_rank - 1));
 
   // Check validity with regard to vehicle range bounds, requires
   // valid gain values for both options.
