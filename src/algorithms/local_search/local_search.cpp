@@ -422,102 +422,6 @@ void LocalSearch<Route,
     if (_input.has_jobs()) {
       // Move(s) that don't make sense for shipment-only instances.
 
-      // PriorityReplace stuff
-      for (const Index u : _sol_state.unassigned) {
-        if (_input.jobs[u].type != JOB_TYPE::SINGLE) {
-          continue;
-        }
-
-        Priority u_priority = _input.jobs[u].priority;
-
-        for (const auto& [source, target] : s_t_pairs) {
-          if (source != target || !_input.vehicle_ok_with_job(source, u) ||
-              _sol[source].empty() ||
-              // We only search for net priority gains here.
-              (u_priority <= _sol_state.fwd_priority[source].front() &&
-               u_priority <= _sol_state.bwd_priority[source].back())) {
-            continue;
-          }
-
-          // Find where to stop when replacing beginning of route in
-          // order to generate a net priority gain.
-          const auto fwd_over =
-            std::ranges::find_if(_sol_state.fwd_priority[source],
-                                 [u_priority](const auto p) {
-                                   return u_priority <= p;
-                                 });
-          const Index fwd_over_rank =
-            std::distance(_sol_state.fwd_priority[source].begin(), fwd_over);
-          // A fwd_last_rank of zero will discard replacing the start
-          // of the route.
-          Index fwd_last_rank = (fwd_over_rank > 0) ? fwd_over_rank - 1 : 0;
-          // Go back to find the biggest route beginning portion where
-          // splitting is possible.
-          while (fwd_last_rank > 0 &&
-                 _sol[source].has_pending_delivery_after_rank(fwd_last_rank)) {
-            --fwd_last_rank;
-          }
-          const Priority begin_priority_gain =
-            u_priority - _sol_state.fwd_priority[source][fwd_last_rank];
-
-          // Find where to stop when replacing end of route in order
-          // to generate a net priority gain.
-          const auto bwd_over =
-            std::find_if(_sol_state.bwd_priority[source].crbegin(),
-                         _sol_state.bwd_priority[source].crend(),
-                         [u_priority](const auto p) { return u_priority <= p; });
-          const Index bwd_over_rank =
-            std::distance(_sol_state.bwd_priority[source].crbegin(), bwd_over);
-          Index bwd_first_rank = _sol[source].size() - bwd_over_rank;
-          if (bwd_first_rank == 0) {
-            // Sum of priorities for whole route is lower than job
-            // priority. We elude this case as it is covered by start
-            // replacing (also whole route).
-            assert(fwd_last_rank == _sol[source].size() - 1);
-            ++bwd_first_rank;
-          }
-          while (
-            bwd_first_rank < _sol[source].size() - 1 &&
-            _sol[source].has_pending_delivery_after_rank(bwd_first_rank - 1)) {
-            ++bwd_first_rank;
-          }
-          const Priority end_priority_gain =
-            u_priority - _sol_state.bwd_priority[source][bwd_first_rank];
-
-          assert(fwd_over_rank > 0 || bwd_over_rank > 0);
-
-          const auto best_current_priority =
-            std::max(begin_priority_gain, end_priority_gain);
-
-          if (best_current_priority > 0 &&
-              best_priorities[source] <= best_current_priority) {
-#ifdef LOG_LS_OPERATORS
-            ++tried_moves[OperatorName::PriorityReplace];
-#endif
-            PriorityReplace r(_input,
-                              _sol_state,
-                              _sol_state.unassigned,
-                              _sol[source],
-                              source,
-                              fwd_last_rank,
-                              bwd_first_rank,
-                              u,
-                              best_priorities[source]);
-
-            if (r.is_valid() &&
-                (best_priorities[source] < r.priority_gain() ||
-                 (best_priorities[source] == r.priority_gain() &&
-                  best_gains[source][source] < r.gain()))) {
-              best_priorities[source] = r.priority_gain();
-              // This may potentially define a negative value as best
-              // gain.
-              best_gains[source][source] = r.gain();
-              best_ops[source][source] = std::make_unique<PriorityReplace>(r);
-            }
-          }
-        }
-      }
-
       // UnassignedExchange stuff
       for (const Index u : _sol_state.unassigned) {
         if (_input.jobs[u].type != JOB_TYPE::SINGLE) {
@@ -619,6 +523,106 @@ void LocalSearch<Route,
                     std::make_unique<UnassignedExchange>(r);
                 }
               }
+            }
+          }
+        }
+      }
+
+      // PriorityReplace stuff (apply after UnassignedExchange to
+      // avoid a PriorityReplace move shadowing an UnassignedExchange
+      // move with same priority gain, resulting in more unassigned).
+      for (const Index u : _sol_state.unassigned) {
+        if (_input.jobs[u].type != JOB_TYPE::SINGLE) {
+          continue;
+        }
+
+        Priority u_priority = _input.jobs[u].priority;
+
+        for (const auto& [source, target] : s_t_pairs) {
+          if (source != target || !_input.vehicle_ok_with_job(source, u) ||
+              _sol[source].empty() ||
+              // We only search for net priority gains here.
+              (u_priority <= _sol_state.fwd_priority[source].front() &&
+               u_priority <= _sol_state.bwd_priority[source].back())) {
+            continue;
+          }
+
+          // Find where to stop when replacing beginning of route in
+          // order to generate a net priority gain.
+          const auto fwd_over =
+            std::ranges::find_if(_sol_state.fwd_priority[source],
+                                 [u_priority](const auto p) {
+                                   return u_priority <= p;
+                                 });
+          const Index fwd_over_rank =
+            std::distance(_sol_state.fwd_priority[source].begin(), fwd_over);
+          // A fwd_last_rank of zero will discard replacing the start
+          // of the route.
+          Index fwd_last_rank = (fwd_over_rank > 0) ? fwd_over_rank - 1 : 0;
+          // Go back to find the biggest route beginning portion where
+          // splitting is possible.
+          while (fwd_last_rank > 0 &&
+                 _sol[source].has_pending_delivery_after_rank(fwd_last_rank)) {
+            --fwd_last_rank;
+          }
+          const Priority begin_priority_gain =
+            u_priority - _sol_state.fwd_priority[source][fwd_last_rank];
+
+          // Find where to stop when replacing end of route in order
+          // to generate a net priority gain.
+          const auto bwd_over =
+            std::find_if(_sol_state.bwd_priority[source].crbegin(),
+                         _sol_state.bwd_priority[source].crend(),
+                         [u_priority](const auto p) {
+                           return u_priority <= p;
+                         });
+          const Index bwd_over_rank =
+            std::distance(_sol_state.bwd_priority[source].crbegin(), bwd_over);
+          Index bwd_first_rank = _sol[source].size() - bwd_over_rank;
+          if (bwd_first_rank == 0) {
+            // Sum of priorities for whole route is lower than job
+            // priority. We elude this case as it is covered by start
+            // replacing (also whole route).
+            assert(fwd_last_rank == _sol[source].size() - 1);
+            ++bwd_first_rank;
+          }
+          while (
+            bwd_first_rank < _sol[source].size() - 1 &&
+            _sol[source].has_pending_delivery_after_rank(bwd_first_rank - 1)) {
+            ++bwd_first_rank;
+          }
+          const Priority end_priority_gain =
+            u_priority - _sol_state.bwd_priority[source][bwd_first_rank];
+
+          assert(fwd_over_rank > 0 || bwd_over_rank > 0);
+
+          const auto best_current_priority =
+            std::max(begin_priority_gain, end_priority_gain);
+
+          if (best_current_priority > 0 &&
+              best_priorities[source] <= best_current_priority) {
+#ifdef LOG_LS_OPERATORS
+            ++tried_moves[OperatorName::PriorityReplace];
+#endif
+            PriorityReplace r(_input,
+                              _sol_state,
+                              _sol_state.unassigned,
+                              _sol[source],
+                              source,
+                              fwd_last_rank,
+                              bwd_first_rank,
+                              u,
+                              best_priorities[source]);
+
+            if (r.is_valid() &&
+                (best_priorities[source] < r.priority_gain() ||
+                 (best_priorities[source] == r.priority_gain() &&
+                  best_gains[source][source] < r.gain()))) {
+              best_priorities[source] = r.priority_gain();
+              // This may potentially define a negative value as best
+              // gain.
+              best_gains[source][source] = r.gain();
+              best_ops[source][source] = std::make_unique<PriorityReplace>(r);
             }
           }
         }
