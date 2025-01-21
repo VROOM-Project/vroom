@@ -223,6 +223,13 @@ Priority PriorityReplace::priority_gain() {
   return replace_start_valid ? _start_priority_gain : _end_priority_gain;
 }
 
+unsigned PriorityReplace::assigned() const {
+  assert(gain_computed);
+  assert(replace_start_valid xor replace_end_valid);
+
+  return replace_start_valid ? _start_assigned_number : _end_assigned_number;
+}
+
 std::vector<Index> PriorityReplace::addition_candidates() const {
   return {s_vehicle};
 }

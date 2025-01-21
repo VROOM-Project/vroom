@@ -57,6 +57,8 @@ public:
 
   Priority priority_gain();
 
+  unsigned assigned() const;
+
   std::vector<Index> addition_candidates() const override;
 
   std::vector<Index> update_candidates() const override;
