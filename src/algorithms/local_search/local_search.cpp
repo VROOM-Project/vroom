@@ -405,10 +405,11 @@ void LocalSearch<Route,
                                             std::vector<Eval>(_nb_vehicles,
                                                               Eval()));
 
-  // Store best priority increase for matching move. Only operators
-  // involving a single route and unassigned jobs can change overall
-  // priority (currently only UnassignedExchange).
+  // Store best priority increase and number of assigned tasks for use
+  // with operators involving a single route and unassigned jobs
+  // (UnassignedExchange and PriorityReplace).
   std::vector<Priority> best_priorities(_nb_vehicles, 0);
+  std::vector<unsigned> best_assigned(_nb_vehicles, 0);
 
   // Dummy init to enter first loop.
   Eval best_gain(static_cast<Cost>(1));
@@ -516,6 +517,7 @@ void LocalSearch<Route,
 
                 if (better_if_valid && r.is_valid()) {
                   best_priorities[source] = priority_gain;
+                  best_assigned[source] = _sol[source].size();
                   // This may potentially define a negative value as
                   // best gain in case priority_gain is non-zero.
                   best_gains[source][source] = r.gain();
@@ -528,9 +530,7 @@ void LocalSearch<Route,
         }
       }
 
-      // PriorityReplace stuff (apply after UnassignedExchange to
-      // avoid a PriorityReplace move shadowing an UnassignedExchange
-      // move with same priority gain, resulting in more unassigned).
+      // PriorityReplace stuff
       for (const Index u : _sol_state.unassigned) {
         if (_input.jobs[u].type != JOB_TYPE::SINGLE) {
           continue;
@@ -614,15 +614,21 @@ void LocalSearch<Route,
                               u,
                               best_priorities[source]);
 
-            if (r.is_valid() &&
-                (best_priorities[source] < r.priority_gain() ||
-                 (best_priorities[source] == r.priority_gain() &&
-                  best_gains[source][source] < r.gain()))) {
-              best_priorities[source] = r.priority_gain();
-              // This may potentially define a negative value as best
-              // gain.
-              best_gains[source][source] = r.gain();
-              best_ops[source][source] = std::make_unique<PriorityReplace>(r);
+            if (r.is_valid()) {
+              const auto priority_gain = r.priority_gain();
+              const auto assigned = r.assigned();
+              const auto gain = r.gain();
+              if (std::tie(best_priorities[source],
+                           best_assigned[source],
+                           best_gains[source][source]) <
+                  std::tie(priority_gain, assigned, gain)) {
+                best_priorities[source] = priority_gain;
+                best_assigned[source] = r.assigned();
+                // This may potentially define a negative value as best
+                // gain.
+                best_gains[source][source] = r.gain();
+                best_ops[source][source] = std::make_unique<PriorityReplace>(r);
+              }
             }
           }
         }
