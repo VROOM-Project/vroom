@@ -444,7 +444,7 @@ void LocalSearch<Route,
           const auto fwd_over =
             std::ranges::find_if(_sol_state.fwd_priority[source],
                                  [u_priority](const auto p) {
-                                   return u_priority < p;
+                                   return u_priority <= p;
                                  });
           const Index fwd_over_rank =
             std::distance(_sol_state.fwd_priority[source].begin(), fwd_over);
@@ -465,7 +465,7 @@ void LocalSearch<Route,
           const auto bwd_over =
             std::find_if(_sol_state.bwd_priority[source].crbegin(),
                          _sol_state.bwd_priority[source].crend(),
-                         [u_priority](const auto p) { return u_priority < p; });
+                         [u_priority](const auto p) { return u_priority <= p; });
           const Index bwd_over_rank =
             std::distance(_sol_state.bwd_priority[source].crbegin(), bwd_over);
           Index bwd_first_rank = _sol[source].size() - bwd_over_rank;
