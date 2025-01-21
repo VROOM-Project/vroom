@@ -409,7 +409,8 @@ void LocalSearch<Route,
   // with operators involving a single route and unassigned jobs
   // (UnassignedExchange and PriorityReplace).
   std::vector<Priority> best_priorities(_nb_vehicles, 0);
-  std::vector<unsigned> best_assigned(_nb_vehicles, 0);
+  std::vector<unsigned> best_removals(_nb_vehicles,
+                                      std::numeric_limits<unsigned>::max());
 
   // Dummy init to enter first loop.
   Eval best_gain(static_cast<Cost>(1));
@@ -517,7 +518,7 @@ void LocalSearch<Route,
 
                 if (better_if_valid && r.is_valid()) {
                   best_priorities[source] = priority_gain;
-                  best_assigned[source] = _sol[source].size();
+                  best_removals[source] = 0;
                   // This may potentially define a negative value as
                   // best gain in case priority_gain is non-zero.
                   best_gains[source][source] = r.gain();
@@ -616,14 +617,14 @@ void LocalSearch<Route,
 
             if (r.is_valid()) {
               const auto priority_gain = r.priority_gain();
-              const auto assigned = r.assigned();
+              const unsigned removal = _sol[source].size() - r.assigned();
               const auto gain = r.gain();
               if (std::tie(best_priorities[source],
-                           best_assigned[source],
+                           removal,
                            best_gains[source][source]) <
-                  std::tie(priority_gain, assigned, gain)) {
+                  std::tie(priority_gain, best_removals[source], gain)) {
                 best_priorities[source] = priority_gain;
-                best_assigned[source] = r.assigned();
+                best_removals[source] = removal;
                 // This may potentially define a negative value as best
                 // gain.
                 best_gains[source][source] = r.gain();
@@ -1837,13 +1838,16 @@ void LocalSearch<Route,
     // Find best overall move, first checking priority increase then
     // best gain if no priority increase is available.
     best_priority = 0;
+    auto best_removal = std::numeric_limits<unsigned>::max();
     best_gain = Eval();
     Index best_source = 0;
     Index best_target = 0;
 
     for (unsigned s_v = 0; s_v < _nb_vehicles; ++s_v) {
-      if (best_priorities[s_v] > best_priority) {
+      if (std::tie(best_priority, best_removals[s_v], best_gain) <
+          std::tie(best_priorities[s_v], best_removal, best_gains[s_v][s_v])) {
         best_priority = best_priorities[s_v];
+        best_removal = best_removals[s_v];
         best_gain = best_gains[s_v][s_v];
         best_source = s_v;
         best_target = s_v;
