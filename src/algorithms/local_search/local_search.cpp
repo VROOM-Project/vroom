@@ -415,6 +415,7 @@ void LocalSearch<Route,
   // Dummy init to enter first loop.
   Eval best_gain(static_cast<Cost>(1));
   Priority best_priority = 0;
+  auto best_removal = std::numeric_limits<unsigned>::max();
 
   while (best_gain.cost > 0 || best_priority > 0) {
     if (_deadline.has_value() && _deadline.value() < utils::now()) {
@@ -1838,7 +1839,7 @@ void LocalSearch<Route,
     // Find best overall move, first checking priority increase then
     // best gain if no priority increase is available.
     best_priority = 0;
-    auto best_removal = std::numeric_limits<unsigned>::max();
+    best_removal = std::numeric_limits<unsigned>::max();
     best_gain = Eval();
     Index best_source = 0;
     Index best_target = 0;
@@ -1949,6 +1950,7 @@ void LocalSearch<Route,
       for (auto v_rank : update_candidates) {
         best_gains[v_rank].assign(_nb_vehicles, Eval());
         best_priorities[v_rank] = 0;
+        best_removals[v_rank] = std::numeric_limits<unsigned>::max();
         best_ops[v_rank] = std::vector<std::unique_ptr<Operator>>(_nb_vehicles);
       }
 
@@ -1991,6 +1993,7 @@ void LocalSearch<Route,
         if (invalidate_move) {
           best_gains[v][v] = Eval();
           best_priorities[v] = 0;
+          best_removals[v] = std::numeric_limits<unsigned>::max();
           best_ops[v][v] = std::unique_ptr<Operator>();
           s_t_pairs.emplace_back(v, v);
         }
