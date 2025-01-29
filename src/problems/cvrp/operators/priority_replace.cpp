@@ -35,10 +35,13 @@ PriorityReplace::PriorityReplace(const Input& input,
                          _sol_state.fwd_priority[s_vehicle][s_rank]),
     _end_priority_gain(_input.jobs[u].priority -
                        _sol_state.bwd_priority[s_vehicle][t_rank]),
+    _start_assigned_number(s_route.size() - s_rank),
+    _end_assigned_number(t_rank + 1),
     _u(u),
     _best_known_priority_gain(best_known_priority_gain),
     _unassigned(unassigned) {
   assert(!s_route.empty());
+  assert(t_rank != 0);
   assert(_start_priority_gain > 0 or _end_priority_gain > 0);
 }
 
@@ -111,8 +114,8 @@ void PriorityReplace::compute_gain() {
 
   if (replace_start_valid && replace_end_valid) {
     // Decide based on priority and cost.
-    if (std::tie(_end_priority_gain, t_gain) <
-        std::tie(_start_priority_gain, s_gain)) {
+    if (std::tie(_end_priority_gain, _end_assigned_number, t_gain) <
+        std::tie(_start_priority_gain, _start_assigned_number, s_gain)) {
       replace_end_valid = false;
     } else {
       replace_start_valid = false;
@@ -144,6 +147,8 @@ bool PriorityReplace::is_valid() {
                                                   j.delivery,
                                                   0,
                                                   s_rank + 1);
+  assert(!replace_start_valid ||
+         !source.has_pending_delivery_after_rank(s_rank));
 
   // Don't bother if the candidate end portion is empty or with a
   // single job (that would be an UnassignedExchange move).
@@ -156,6 +161,8 @@ bool PriorityReplace::is_valid() {
                                                   j.delivery,
                                                   t_rank,
                                                   s_route.size());
+  assert(!replace_end_valid ||
+         !source.has_pending_delivery_after_rank(t_rank - 1));
 
   // Check validity with regard to vehicle range bounds, requires
   // valid gain values for both options.
@@ -214,6 +221,13 @@ Priority PriorityReplace::priority_gain() {
   assert(replace_start_valid xor replace_end_valid);
 
   return replace_start_valid ? _start_priority_gain : _end_priority_gain;
+}
+
+unsigned PriorityReplace::assigned() const {
+  assert(gain_computed);
+  assert(replace_start_valid xor replace_end_valid);
+
+  return replace_start_valid ? _start_assigned_number : _end_assigned_number;
 }
 
 std::vector<Index> PriorityReplace::addition_candidates() const {

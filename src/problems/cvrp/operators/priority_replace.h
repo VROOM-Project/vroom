@@ -20,6 +20,8 @@ private:
   bool _end_gain_computed{false};
   const Priority _start_priority_gain;
   const Priority _end_priority_gain;
+  const unsigned _start_assigned_number;
+  const unsigned _end_assigned_number;
 
 protected:
   const Index _u; // Unassigned job to insert.
@@ -54,6 +56,8 @@ public:
   void apply() override;
 
   Priority priority_gain();
+
+  unsigned assigned() const;
 
   std::vector<Index> addition_candidates() const override;
 
