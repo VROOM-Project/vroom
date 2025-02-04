@@ -24,7 +24,8 @@ struct Job {
   const Id id;
   const JOB_TYPE type;
   const Duration setup;
-  const Duration service;
+  const Duration base_service;
+  std::vector<Duration> vehicle_service;
   const Amount delivery;
   const Amount pickup;
   const Skills skills;

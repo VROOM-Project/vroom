@@ -9,6 +9,7 @@ All rights reserved (see LICENSE).
 
 #include <algorithm>
 #include <numeric>
+#include <structures/typedefs.h>
 
 #include "structures/vroom/vehicle.h"
 #include "utils/exception.h"
@@ -26,6 +27,7 @@ Vehicle::Vehicle(Id id,
                  std::string description,
                  const VehicleCosts& costs,
                  double speed_factor,
+                 double service_factor,
                  const std::optional<size_t>& max_tasks,
                  const std::optional<UserDuration>& max_travel_time,
                  const std::optional<UserDistance>& max_distance,
@@ -40,6 +42,7 @@ Vehicle::Vehicle(Id id,
     breaks(breaks),
     description(std::move(description)),
     costs(costs),
+    service_factor(service_factor),
     cost_wrapper(speed_factor, costs.per_hour, costs.per_km),
     max_tasks(max_tasks.value_or(DEFAULT_MAX_TASKS)),
     max_travel_time(max_travel_time.has_value()
@@ -53,6 +56,12 @@ Vehicle::Vehicle(Id id,
   if (!static_cast<bool>(start) && !static_cast<bool>(end)) {
     throw InputException(
       std::format("No start or end specified for vehicle {}.", id));
+  }
+
+  if (service_factor <= 0 ||
+      service_factor > MAX_SERVICE_FACTOR) {
+    throw InputException("Invalid service_factor: " +
+                         std::to_string(service_factor) + '.');
   }
 
   for (unsigned i = 0; i < breaks.size(); ++i) {
