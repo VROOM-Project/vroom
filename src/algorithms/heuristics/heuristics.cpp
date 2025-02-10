@@ -213,6 +213,16 @@ inline Eval fill_route(const Input& input,
         continue;
       }
 
+      // Bypass going through whole route if we're sure insertion cost
+      // is not good enough.
+      const double lower_cost_bound =
+        static_cast<double>(min_route_to_unassigned[job_rank] +
+                            min_unassigned_to_route[job_rank] - max_edge_cost) -
+        lambda * static_cast<double>(regrets[job_rank]);
+      if (best_cost < lower_cost_bound) {
+        continue;
+      }
+
       if (current_job.type == JOB_TYPE::SINGLE &&
           route.size() + 1 <= vehicle.max_tasks) {
         for (Index r = 0; r <= route.size(); ++r) {
