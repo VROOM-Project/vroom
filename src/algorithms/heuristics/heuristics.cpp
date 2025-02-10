@@ -352,12 +352,16 @@ inline Eval fill_route(const Input& input,
     }
 
     if (best_cost < std::numeric_limits<double>::max()) {
-      if (input.jobs[best_job_rank].type == JOB_TYPE::SINGLE) {
+      const auto& best_job = input.jobs[best_job_rank];
+      if (best_job.type == JOB_TYPE::SINGLE) {
         route.add(input, best_job_rank, best_r);
         unassigned.erase(best_job_rank);
         keep_going = true;
       }
-      if (input.jobs[best_job_rank].type == JOB_TYPE::PICKUP) {
+      if (best_job.type == JOB_TYPE::PICKUP) {
+        // TODO handle this case
+        assert(false);
+
         std::vector<Index> modified_with_pd;
         modified_with_pd.reserve(best_delivery_r - best_pickup_r + 2);
         modified_with_pd.push_back(best_job_rank);
@@ -379,6 +383,22 @@ inline Eval fill_route(const Input& input,
       }
 
       route_eval += best_eval;
+
+      // Update bounds.
+      max_edge_cost = utils::max_edge_eval(input, vehicle, route.route).cost;
+      for (const auto job_rank : unassigned) {
+        const auto unassigned_job_index = input.jobs[job_rank].index();
+
+        const auto best_to_unassigned =
+          vehicle.eval(best_job.index(), unassigned_job_index).cost;
+        min_route_to_unassigned[job_rank] =
+          std::min(min_route_to_unassigned[job_rank], best_to_unassigned);
+
+        const auto unassigned_to_best =
+          vehicle.eval(unassigned_job_index, best_job.index()).cost;
+        min_unassigned_to_route[job_rank] =
+          std::min(min_unassigned_to_route[job_rank], unassigned_to_best);
+      }
     }
   }
 
