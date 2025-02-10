@@ -149,6 +149,48 @@ inline Eval fill_route(const Input& input,
   const bool init_route_is_empty = route.empty();
   Eval route_eval = utils::route_eval_for_vehicle(input, v_rank, route.route);
 
+  // Store bounds to be able to cut out some loops.
+  auto max_edge_cost = utils::max_edge_eval(input, vehicle, route.route).cost;
+
+  std::vector<Cost> min_route_to_unassigned(input.jobs.size(),
+                                            std::numeric_limits<Cost>::max());
+  std::vector<Cost> min_unassigned_to_route(input.jobs.size(),
+                                            std::numeric_limits<Cost>::max());
+
+  for (const auto job_rank : unassigned) {
+    // TODO if unassigned job is a pickup, consider cost to pickup
+    // then cost from delivery.
+    const auto unassigned_job_index = input.jobs[job_rank].index();
+
+    if (vehicle.has_start()) {
+      const auto start_to_job =
+        vehicle.eval(vehicle.start.value().index(), unassigned_job_index).cost;
+      min_route_to_unassigned[job_rank] =
+        std::min(min_route_to_unassigned[job_rank], start_to_job);
+    }
+
+    for (const auto j : route.route) {
+      const auto job_index = input.jobs[j].index();
+
+      const auto job_to_unassigned =
+        vehicle.eval(job_index, unassigned_job_index).cost;
+      min_route_to_unassigned[job_rank] =
+        std::min(min_route_to_unassigned[job_rank], job_to_unassigned);
+
+      const auto unassigned_to_job =
+        vehicle.eval(unassigned_job_index, job_index).cost;
+      min_unassigned_to_route[job_rank] =
+        std::min(min_unassigned_to_route[job_rank], unassigned_to_job);
+    }
+
+    if (vehicle.has_end()) {
+      const auto job_to_end =
+        vehicle.eval(unassigned_job_index, vehicle.end.value().index()).cost;
+      min_unassigned_to_route[job_rank] =
+        std::min(min_unassigned_to_route[job_rank], job_to_end);
+    }
+  }
+
   bool keep_going = true;
   while (keep_going) {
     keep_going = false;
