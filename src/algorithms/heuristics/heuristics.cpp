@@ -302,6 +302,15 @@ inline Eval fill_route(const Input& input,
 
       if (current_job.type == JOB_TYPE::PICKUP &&
           route.size() + 2 <= vehicle.max_tasks) {
+
+        if (best_cost <
+            unassigned_costs.get_pd_insertion_lower_bound(input, job_rank) -
+              lambda * static_cast<double>(regrets[job_rank])) {
+          // Bypass going through whole route if we're sure insertion
+          // cost is not good enough.
+          continue;
+        }
+
         // Pre-compute cost of addition for matching delivery.
         std::vector<Eval> d_adds(route.route.size() + 1);
         std::vector<unsigned char> valid_delivery_insertions(
