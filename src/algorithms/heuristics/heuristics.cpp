@@ -189,12 +189,31 @@ template <class Route> struct UnassignedCosts {
                                min_unassigned_to_route[j] - max_edge_cost);
   }
 
-  void update_costs(const Input& input,
-                    Route& route,
-                    std::set<Index>& unassigned,
-                    Index inserted_index) {
-    max_edge_cost = utils::max_edge_eval(input, vehicle, route.route).cost;
+  double get_pd_insertion_lower_bound(const Input& input, Index p) {
+    assert(input.jobs[p].type == JOB_TYPE::PICKUP);
 
+    // Situation where pickup and delivery are not inserted in a row.
+    const auto apart_insertion = static_cast<double>(
+      min_route_to_unassigned[p] + min_unassigned_to_route[p] +
+      min_route_to_unassigned[p + 1] + min_unassigned_to_route[p + 1] -
+      2 * max_edge_cost);
+
+    // Situation where delivery is inserted next to the pickup.
+    const auto next_insertion = static_cast<double>(
+      min_route_to_unassigned[p] + min_unassigned_to_route[p + 1] +
+      vehicle.eval(input.jobs[p].index(), input.jobs[p + 1].index()).cost -
+      max_edge_cost);
+
+    return std::min(apart_insertion, next_insertion);
+  }
+
+  void update_max_edge(const Input& input, Route& route) {
+    max_edge_cost = utils::max_edge_eval(input, vehicle, route.route).cost;
+  }
+
+  void update_min_costs(const Input& input,
+                        std::set<Index>& unassigned,
+                        Index inserted_index) {
     for (const auto j : unassigned) {
       const auto unassigned_job_index = input.jobs[j].index();
 
@@ -401,10 +420,8 @@ inline Eval fill_route(const Input& input,
         unassigned.erase(best_job_rank);
         keep_going = true;
 
-        unassigned_costs.update_costs(input,
-                                      route,
-                                      unassigned,
-                                      best_job.index());
+        unassigned_costs.update_max_edge(input, route);
+        unassigned_costs.update_min_costs(input, unassigned, best_job.index());
       }
       if (best_job.type == JOB_TYPE::PICKUP) {
         std::vector<Index> modified_with_pd;
