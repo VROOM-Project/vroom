@@ -451,6 +451,13 @@ inline Eval fill_route(const Input& input,
         unassigned.erase(best_job_rank);
         unassigned.erase(best_job_rank + 1);
         keep_going = true;
+
+        unassigned_costs.update_max_edge(input, route);
+        unassigned_costs.update_min_costs(input, unassigned, best_job.index());
+        unassigned_costs
+          .update_min_costs(input,
+                            unassigned,
+                            input.jobs[best_job_rank + 1].index());
       }
 
       route_eval += best_eval;
