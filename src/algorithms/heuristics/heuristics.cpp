@@ -143,7 +143,9 @@ template <class Route> struct UnassignedCosts {
   std::vector<Cost> min_route_to_unassigned;
   std::vector<Cost> min_unassigned_to_route;
 
-  UnassignedCosts(const Input& input, Route& route, std::set<Index>& unassigned)
+  UnassignedCosts(const Input& input,
+                  Route& route,
+                  const std::set<Index>& unassigned)
     : vehicle(input.vehicles[route.vehicle_rank]),
       max_edge_cost(utils::max_edge_eval(input, vehicle, route.route).cost),
       min_route_to_unassigned(input.jobs.size(),
@@ -212,7 +214,7 @@ template <class Route> struct UnassignedCosts {
   }
 
   void update_min_costs(const Input& input,
-                        std::set<Index>& unassigned,
+                        const std::set<Index>& unassigned,
                         Index inserted_index) {
     for (const auto j : unassigned) {
       const auto unassigned_job_index = input.jobs[j].index();
