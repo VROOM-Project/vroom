@@ -181,6 +181,34 @@ inline Eval addition_cost(const Input& input,
   return eval;
 }
 
+inline Eval max_edge_eval(const Input& input,
+                          const Vehicle& v,
+                          const std::vector<Index>& route) {
+  Eval max_eval;
+
+  if (!route.empty()) {
+    if (v.has_start()) {
+      const auto start_to_first =
+        v.eval(v.start.value().index(), input.jobs[route.front()].index());
+      max_eval = std::max(max_eval, start_to_first);
+    }
+
+    for (std::size_t i = 0; i < route.size() - 1; ++i) {
+      const auto job_to_next =
+        v.eval(input.jobs[route[i]].index(), input.jobs[route[i + 1]].index());
+      max_eval = std::max(max_eval, job_to_next);
+    }
+
+    if (v.has_end()) {
+      const auto last_to_end =
+        v.eval(input.jobs[route.back()].index(), v.end.value().index());
+      max_eval = std::max(max_eval, last_to_end);
+    }
+  }
+
+  return max_eval;
+}
+
 // Helper function for SwapStar operator, computing part of the eval
 // for in-place replacing of job at rank in route with job at
 // job_rank.
