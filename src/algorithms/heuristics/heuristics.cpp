@@ -153,8 +153,6 @@ template <class Route> struct UnassignedCosts {
       min_unassigned_to_route(input.jobs.size(),
                               std::numeric_limits<Cost>::max()) {
     for (const auto job_rank : unassigned) {
-      // TODO if unassigned job is a pickup, consider cost to pickup
-      // then cost from delivery.
       const auto unassigned_job_index = input.jobs[job_rank].index();
 
       if (vehicle.has_start()) {
