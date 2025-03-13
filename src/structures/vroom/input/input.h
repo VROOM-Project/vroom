@@ -106,6 +106,7 @@ private:
   void set_jobs_vehicles_evals();
   void set_vehicle_steps_ranks();
   void init_missing_matrices(const std::string& profile);
+  void compute_vehicle_service_time();
 
   routing::Matrices get_matrices_by_profile(const std::string& profile,
                                             bool sparse_filling);
