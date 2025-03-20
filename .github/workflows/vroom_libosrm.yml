@@ -14,7 +14,7 @@ on:
       - '.github/workflows/vroom_libosrm.yml'
       - '**libosrm_wrapper**'
 env:
-  osrm-ref: d259848456c8c84df0422f7389ef034e63e6462d
+  osrm-ref: 045214007bca01135a6248c6ef4440d9d1755d57
 jobs:
   libosrm:
     strategy:
