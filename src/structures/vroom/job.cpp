@@ -21,7 +21,9 @@ Job::Job(Id id,
          Skills skills,
          Priority priority,
          const std::vector<TimeWindow>& tws,
-         std::string description)
+         std::string description,
+         const std::unordered_map<std::string, UserDuration>& setup_per_type,
+         const std::unordered_map<std::string, UserDuration>& service_per_type)
   : location(location),
     id(id),
     type(JOB_TYPE::SINGLE),
@@ -32,7 +34,9 @@ Job::Job(Id id,
     skills(std::move(skills)),
     priority(priority),
     tws(tws),
-    description(std::move(description)) {
+    description(std::move(description)),
+    setup_per_type(utils::scale_from_user_duration(setup_per_type)),
+    service_per_type(utils::scale_from_user_duration(service_per_type)) {
   utils::check_tws(tws, id, "job");
   utils::check_priority(priority, id, "job");
 }
@@ -46,7 +50,9 @@ Job::Job(Id id,
          Skills skills,
          Priority priority,
          const std::vector<TimeWindow>& tws,
-         std::string description)
+         std::string description,
+         const std::unordered_map<std::string, UserDuration>& setup_per_type,
+         const std::unordered_map<std::string, UserDuration>& service_per_type)
   : location(location),
     id(id),
     type(type),
@@ -57,7 +63,9 @@ Job::Job(Id id,
     skills(std::move(skills)),
     priority(priority),
     tws(tws),
-    description(std::move(description)) {
+    description(std::move(description)),
+    setup_per_type(utils::scale_from_user_duration(setup_per_type)),
+    service_per_type(utils::scale_from_user_duration(service_per_type)) {
   assert(type == JOB_TYPE::PICKUP || type == JOB_TYPE::DELIVERY);
   utils::check_tws(tws, id, "job");
   utils::check_priority(priority, id, "job");

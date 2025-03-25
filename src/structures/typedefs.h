@@ -17,6 +17,7 @@ All rights reserved (see LICENSE).
 #include <list>
 #include <optional>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -212,6 +213,21 @@ struct StringHash {
 namespace utils {
 constexpr Duration scale_from_user_duration(UserDuration d) {
   return DURATION_FACTOR * static_cast<Duration>(d);
+}
+
+inline std::unordered_map<std::string, Duration> scale_from_user_duration(
+  const std::unordered_map<std::string, UserDuration>& user_duration_per_type) {
+  std::unordered_map<std::string, Duration> duration_per_type;
+
+  std::transform(user_duration_per_type.begin(),
+                 user_duration_per_type.end(),
+                 std::inserter(duration_per_type, duration_per_type.end()),
+                 [](const auto& pair) {
+                   return std::make_pair(pair.first,
+                                         scale_from_user_duration(pair.second));
+                 });
+
+  return duration_per_type;
 }
 
 constexpr UserDuration scale_to_user_duration(Duration d) {

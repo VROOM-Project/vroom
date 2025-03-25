@@ -11,6 +11,7 @@ All rights reserved (see LICENSE).
 */
 
 #include <string>
+#include <unordered_map>
 
 #include "structures/typedefs.h"
 #include "structures/vroom/amount.h"
@@ -31,6 +32,8 @@ struct Job {
   const Priority priority;
   const std::vector<TimeWindow> tws;
   const std::string description;
+  const std::unordered_map<std::string, Duration> setup_per_type;
+  const std::unordered_map<std::string, Duration> service_per_type;
 
   // Constructor for regular one-stop job (JOB_TYPE::SINGLE).
   Job(Id id,
@@ -43,7 +46,11 @@ struct Job {
       Priority priority = 0,
       const std::vector<TimeWindow>& tws =
         std::vector<TimeWindow>(1, TimeWindow()),
-      std::string description = "");
+      std::string description = "",
+      const std::unordered_map<std::string, UserDuration>& setup_per_type =
+        std::unordered_map<std::string, UserDuration>(),
+      const std::unordered_map<std::string, UserDuration>& service_per_type =
+        std::unordered_map<std::string, UserDuration>());
 
   // Constructor for pickup and delivery jobs (JOB_TYPE::PICKUP or
   // JOB_TYPE::DELIVERY).
@@ -57,7 +64,11 @@ struct Job {
       Priority priority = 0,
       const std::vector<TimeWindow>& tws =
         std::vector<TimeWindow>(1, TimeWindow()),
-      std::string description = "");
+      std::string description = "",
+      const std::unordered_map<std::string, UserDuration>& setup_per_type =
+        std::unordered_map<std::string, UserDuration>(),
+      const std::unordered_map<std::string, UserDuration>& service_per_type =
+        std::unordered_map<std::string, UserDuration>());
 
   Index index() const {
     return location.index();
