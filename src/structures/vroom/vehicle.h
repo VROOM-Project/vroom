@@ -63,6 +63,7 @@ struct Vehicle {
   const Distance max_distance;
   const bool has_break_max_load;
   std::vector<VehicleStep> steps;
+  Index type;
   const std::string type_str;
   std::unordered_map<Id, Index> break_id_to_rank;
 

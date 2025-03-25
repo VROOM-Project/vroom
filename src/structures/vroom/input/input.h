@@ -78,6 +78,9 @@ private:
   Index _max_matrices_used_index{0};
   bool _all_locations_have_coords{true};
   std::vector<std::vector<Eval>> _jobs_vehicles_evals;
+  std::vector<std::string> _vehicle_types{NO_TYPE};
+  std::unordered_map<std::string, Index> _type_to_rank_in_vehicle_types{
+    {NO_TYPE, 0}};
 
   // Used in plan mode since we store route geometries while
   // generating sparse matrices.

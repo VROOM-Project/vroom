@@ -389,6 +389,20 @@ void Input::add_vehicle(const Vehicle& vehicle) {
   } else {
     search->second = std::max(search->second, current_v.costs.per_hour);
   }
+
+  // Store vehicle type stuff.
+  const auto& type = current_v.type_str;
+  if (auto search = _type_to_rank_in_vehicle_types.find(type);
+      search != _type_to_rank_in_vehicle_types.end()) {
+    // Already known type, only set vehicle type with known index.
+    current_v.type = search->second;
+  } else {
+    const Index rank = _vehicle_types.size();
+    const auto insertion = _type_to_rank_in_vehicle_types.insert({type, rank});
+    assert(insertion.second);
+    _vehicle_types.push_back(type);
+    current_v.type = rank;
+  }
 }
 
 void Input::set_durations_matrix(const std::string& profile,
