@@ -805,6 +805,32 @@ void Input::set_jobs_vehicles_evals() {
   }
 }
 
+void Input::set_jobs_durations_per_vehicle_type() {
+  const auto nb_types = _vehicle_types.size();
+
+  for (auto& job : jobs) {
+    // Populate duration vectors with default values at first.
+    job.setups = std::vector<Duration>(nb_types, job.setup);
+    job.services = std::vector<Duration>(nb_types, job.service);
+
+    // Iterate on all user-defined vehicle types to override relevant
+    // setup and service values.
+    for (std::size_t type_rank = 1; type_rank < nb_types; ++type_rank) {
+      const auto& type = _vehicle_types[type_rank];
+
+      if (const auto search = job.setup_per_type.find(type);
+          search != job.setup_per_type.end()) {
+        job.setups[type_rank] = search->second;
+      }
+
+      if (const auto search = job.service_per_type.find(type);
+          search != job.service_per_type.end()) {
+        job.services[type_rank] = search->second;
+      }
+    }
+  }
+}
+
 void Input::set_vehicle_steps_ranks() {
   std::unordered_set<Id> planned_job_ids;
   std::unordered_set<Id> planned_pickup_ids;
@@ -1155,6 +1181,8 @@ Solution Input::solve(const unsigned nb_searches,
     set_vehicle_steps_ranks();
   }
 
+  set_jobs_durations_per_vehicle_type();
+
   set_matrices(nb_thread);
   set_vehicles_costs();
 
@@ -1225,6 +1253,8 @@ Solution Input::solve(const unsigned nb_searches,
 Solution Input::check(unsigned nb_thread) {
 #if USE_LIBGLPK
   run_basic_checks();
+
+  set_jobs_durations_per_vehicle_type();
 
   set_vehicle_steps_ranks();
 

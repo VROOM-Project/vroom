@@ -107,6 +107,7 @@ private:
   void set_vehicles_costs();
   void set_vehicles_max_tasks();
   void set_jobs_vehicles_evals();
+  void set_jobs_durations_per_vehicle_type();
   void set_vehicle_steps_ranks();
   void init_missing_matrices(const std::string& profile);
 

@@ -34,6 +34,9 @@ struct Job {
   const std::string description;
   const std::unordered_map<std::string, Duration> setup_per_type;
   const std::unordered_map<std::string, Duration> service_per_type;
+  // TODO rename to setup and service.
+  std::vector<Duration> setups;
+  std::vector<Duration> services;
 
   // Constructor for regular one-stop job (JOB_TYPE::SINGLE).
   Job(Id id,
