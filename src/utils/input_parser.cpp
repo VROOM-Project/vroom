@@ -430,7 +430,8 @@ inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
                  get_value_for<size_t>(json_vehicle, "max_tasks"),
                  get_value_for<UserDuration>(json_vehicle, "max_travel_time"),
                  get_value_for<UserDistance>(json_vehicle, "max_distance"),
-                 get_vehicle_steps(json_vehicle));
+                 get_vehicle_steps(json_vehicle),
+                 get_string(json_vehicle, "type"));
 }
 
 inline Location get_task_location(const rapidjson::Value& v,

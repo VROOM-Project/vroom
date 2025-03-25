@@ -53,6 +53,7 @@ constexpr UserCost INFINITE_USER_COST =
   3 * (std::numeric_limits<UserCost>::max() / 4);
 
 const std::string DEFAULT_PROFILE = "car";
+const std::string NO_TYPE = "";
 const std::string DEFAULT_OSRM_SNAPPING_RADIUS = "35000";
 constexpr double DEFAULT_LIBOSRM_SNAPPING_RADIUS = 35000;
 
