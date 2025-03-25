@@ -53,6 +53,10 @@ Vehicle::Vehicle(Id id,
                                              return b.max_load.has_value();
                                            })),
     type_str(std::move(type_str)) {
+  if (type_str.empty()) {
+    throw InputException(std::format("Empty type for vehicle {}.", id));
+  }
+
   if (!static_cast<bool>(start) && !static_cast<bool>(end)) {
     throw InputException(
       std::format("No start or end specified for vehicle {}.", id));
