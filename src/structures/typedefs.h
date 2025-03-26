@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <algorithm>
 #include <array>
 #include <cassert>
 #include <chrono>
@@ -225,13 +226,14 @@ inline TypeToDurationMap
 scale_from_user_duration(const TypeToUserDurationMap& user_duration_per_type) {
   TypeToDurationMap duration_per_type;
 
-  std::transform(user_duration_per_type.begin(),
-                 user_duration_per_type.end(),
-                 std::inserter(duration_per_type, duration_per_type.end()),
-                 [](const auto& pair) {
-                   return std::make_pair(pair.first,
-                                         scale_from_user_duration(pair.second));
-                 });
+  std::ranges::transform(user_duration_per_type,
+                         std::inserter(duration_per_type,
+                                       duration_per_type.end()),
+                         [](const auto& pair) {
+                           return std::make_pair(pair.first,
+                                                 scale_from_user_duration(
+                                                   pair.second));
+                         });
 
   return duration_per_type;
 }
