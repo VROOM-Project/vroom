@@ -383,8 +383,8 @@ void Input::add_vehicle(const Vehicle& vehicle) {
 
   _profiles.insert(current_v.profile);
 
-  auto search = _max_cost_per_hour.find(current_v.profile);
-  if (search == _max_cost_per_hour.end()) {
+  if (auto search = _max_cost_per_hour.find(current_v.profile);
+      search == _max_cost_per_hour.end()) {
     _max_cost_per_hour.try_emplace(current_v.profile, current_v.costs.per_hour);
   } else {
     search->second = std::max(search->second, current_v.costs.per_hour);
