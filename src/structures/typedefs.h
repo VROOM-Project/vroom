@@ -210,14 +210,20 @@ struct StringHash {
   }
 };
 
+using TypeToDurationMap =
+  std::unordered_map<std::string, Duration, StringHash, std::equal_to<>>;
+
+using TypeToUserDurationMap =
+  std::unordered_map<std::string, UserDuration, StringHash, std::equal_to<>>;
+
 namespace utils {
 constexpr Duration scale_from_user_duration(UserDuration d) {
   return DURATION_FACTOR * static_cast<Duration>(d);
 }
 
-inline std::unordered_map<std::string, Duration> scale_from_user_duration(
-  const std::unordered_map<std::string, UserDuration>& user_duration_per_type) {
-  std::unordered_map<std::string, Duration> duration_per_type;
+inline TypeToDurationMap
+scale_from_user_duration(const TypeToUserDurationMap& user_duration_per_type) {
+  TypeToDurationMap duration_per_type;
 
   std::transform(user_duration_per_type.begin(),
                  user_duration_per_type.end(),

@@ -22,8 +22,8 @@ Job::Job(Id id,
          Priority priority,
          const std::vector<TimeWindow>& tws,
          std::string description,
-         const std::unordered_map<std::string, UserDuration>& setup_per_type,
-         const std::unordered_map<std::string, UserDuration>& service_per_type)
+         const TypeToUserDurationMap& setup_per_type,
+         const TypeToUserDurationMap& service_per_type)
   : location(location),
     id(id),
     type(JOB_TYPE::SINGLE),
@@ -51,8 +51,8 @@ Job::Job(Id id,
          Priority priority,
          const std::vector<TimeWindow>& tws,
          std::string description,
-         const std::unordered_map<std::string, UserDuration>& setup_per_type,
-         const std::unordered_map<std::string, UserDuration>& service_per_type)
+         const TypeToUserDurationMap& setup_per_type,
+         const TypeToUserDurationMap& service_per_type)
   : location(location),
     id(id),
     type(type),

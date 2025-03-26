@@ -32,8 +32,8 @@ struct Job {
   const Priority priority;
   const std::vector<TimeWindow> tws;
   const std::string description;
-  const std::unordered_map<std::string, Duration> setup_per_type;
-  const std::unordered_map<std::string, Duration> service_per_type;
+  const TypeToDurationMap setup_per_type;
+  const TypeToDurationMap service_per_type;
   // TODO rename to setup and service.
   std::vector<Duration> setups;
   std::vector<Duration> services;
@@ -50,10 +50,8 @@ struct Job {
       const std::vector<TimeWindow>& tws =
         std::vector<TimeWindow>(1, TimeWindow()),
       std::string description = "",
-      const std::unordered_map<std::string, UserDuration>& setup_per_type =
-        std::unordered_map<std::string, UserDuration>(),
-      const std::unordered_map<std::string, UserDuration>& service_per_type =
-        std::unordered_map<std::string, UserDuration>());
+      const TypeToUserDurationMap& setup_per_type = TypeToUserDurationMap(),
+      const TypeToUserDurationMap& service_per_type = TypeToUserDurationMap());
 
   // Constructor for pickup and delivery jobs (JOB_TYPE::PICKUP or
   // JOB_TYPE::DELIVERY).
@@ -68,10 +66,8 @@ struct Job {
       const std::vector<TimeWindow>& tws =
         std::vector<TimeWindow>(1, TimeWindow()),
       std::string description = "",
-      const std::unordered_map<std::string, UserDuration>& setup_per_type =
-        std::unordered_map<std::string, UserDuration>(),
-      const std::unordered_map<std::string, UserDuration>& service_per_type =
-        std::unordered_map<std::string, UserDuration>());
+      const TypeToUserDurationMap& setup_per_type = TypeToUserDurationMap(),
+      const TypeToUserDurationMap& service_per_type = TypeToUserDurationMap());
 
   Index index() const {
     return location.index();
