@@ -145,8 +145,9 @@ Route choose_ETA(const Input& input,
 
       const bool has_setup_time =
         !previous_index.has_value() || (previous_index.value() != job.index());
-      const auto current_action =
-        has_setup_time ? job.setup + job.service : job.service;
+      const auto current_action = has_setup_time
+                                    ? job.setups[v.type] + job.services[v.type]
+                                    : job.services[v.type];
       action_times.push_back(current_action);
       action_sum += current_action;
       relative_arrival += current_action;
@@ -1196,11 +1197,11 @@ Route choose_ETA(const Input& input,
       const auto& job = input.jobs[job_rank];
 
       const auto current_setup =
-        (previous_location != job.index()) ? job.setup : 0;
+        (previous_location != job.index()) ? job.setups[v.type] : 0;
       previous_location = job.index();
 
       setup += current_setup;
-      service += job.service;
+      service += job.services[v.type];
       priority += job.priority;
 
       current_load += job.pickup;
@@ -1306,7 +1307,7 @@ Route choose_ETA(const Input& input,
       }
 
       previous_start = service_start;
-      previous_action = current_setup + job.service;
+      previous_action = current_setup + job.services[v.type];
       previous_travel = task_travels[task_rank];
       ++task_rank;
       ++previous_rank_in_J;
