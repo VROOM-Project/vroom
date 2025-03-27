@@ -176,7 +176,7 @@ inline TimeWindow get_vehicle_time_window(const rapidjson::Value& v) {
 inline std::vector<TimeWindow> get_time_windows(const rapidjson::Value& o) {
   std::vector<TimeWindow> tws;
   if (o.HasMember("time_windows")) {
-    if (!o["time_windows"].IsArray() || o["time_windows"].Empty()) {
+    if (!o["time_windows"].IsArray()) {
       throw InputException(
         std::format("Invalid time_windows array for object {}.",
                     o["id"].GetUint64()));

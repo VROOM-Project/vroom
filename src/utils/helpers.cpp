@@ -206,7 +206,7 @@ void check_tws(const std::vector<TimeWindow>& tws,
                const std::string& type) {
   if (tws.empty()) {
     throw InputException(
-      std::format("Empty time-windows for {} {}.", type, id));
+      std::format("Empty time windows for {} {}.", type, id));
   }
 
   if (tws.size() > 1) {

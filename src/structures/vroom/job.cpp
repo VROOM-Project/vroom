@@ -67,8 +67,9 @@ Job::Job(Id id,
     setup_per_type(utils::scale_from_user_duration(setup_per_type)),
     service_per_type(utils::scale_from_user_duration(service_per_type)) {
   assert(type == JOB_TYPE::PICKUP || type == JOB_TYPE::DELIVERY);
-  utils::check_tws(tws, id, "job");
-  utils::check_priority(priority, id, "job");
+  std::string type_str = (type == JOB_TYPE::PICKUP) ? "pickup" : "delivery";
+  utils::check_tws(tws, id, type_str);
+  utils::check_priority(priority, id, type_str);
 }
 
 bool Job::is_valid_start(Duration time) const {
