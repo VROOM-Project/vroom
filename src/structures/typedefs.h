@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <algorithm>
 #include <array>
 #include <cassert>
 #include <chrono>
@@ -17,6 +18,7 @@ All rights reserved (see LICENSE).
 #include <list>
 #include <optional>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -53,6 +55,7 @@ constexpr UserCost INFINITE_USER_COST =
   3 * (std::numeric_limits<UserCost>::max() / 4);
 
 const std::string DEFAULT_PROFILE = "car";
+const std::string NO_TYPE = "";
 const std::string DEFAULT_OSRM_SNAPPING_RADIUS = "35000";
 constexpr double DEFAULT_LIBOSRM_SNAPPING_RADIUS = 35000;
 
@@ -208,9 +211,31 @@ struct StringHash {
   }
 };
 
+using TypeToDurationMap =
+  std::unordered_map<std::string, Duration, StringHash, std::equal_to<>>;
+
+using TypeToUserDurationMap =
+  std::unordered_map<std::string, UserDuration, StringHash, std::equal_to<>>;
+
 namespace utils {
 constexpr Duration scale_from_user_duration(UserDuration d) {
   return DURATION_FACTOR * static_cast<Duration>(d);
+}
+
+inline TypeToDurationMap
+scale_from_user_duration(const TypeToUserDurationMap& user_duration_per_type) {
+  TypeToDurationMap duration_per_type;
+
+  std::ranges::transform(user_duration_per_type,
+                         std::inserter(duration_per_type,
+                                       duration_per_type.end()),
+                         [](const auto& pair) {
+                           return std::make_pair(pair.first,
+                                                 scale_from_user_duration(
+                                                   pair.second));
+                         });
+
+  return duration_per_type;
 }
 
 constexpr UserDuration scale_to_user_duration(Duration d) {
