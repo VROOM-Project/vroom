@@ -181,10 +181,12 @@ inline void check_shipment(const rapidjson::Value& v) {
   }
 }
 
-inline void check_location(const rapidjson::Value& v, const std::string& type) {
+inline void check_location(const rapidjson::Value& v,
+                           const std::string& task_type) {
   if (!v.HasMember("location") || !v["location"].IsArray()) {
-    throw InputException(
-      std::format("Invalid location for {} {}.", type, v["id"].GetUint64()));
+    throw InputException(std::format("Invalid location for {} {}.",
+                                     task_type,
+                                     v["id"].GetUint64()));
   }
 }
 
@@ -203,13 +205,14 @@ inline TimeWindow get_vehicle_time_window(const rapidjson::Value& v) {
   return v_tw;
 }
 
-inline std::vector<TimeWindow> get_time_windows(const rapidjson::Value& o) {
+inline std::vector<TimeWindow> get_time_windows(const rapidjson::Value& o,
+                                                const std::string& task_type) {
   std::vector<TimeWindow> tws;
   if (o.HasMember("time_windows")) {
     if (!o["time_windows"].IsArray()) {
-      throw InputException(
-        std::format("Invalid time_windows array for object {}.",
-                    o["id"].GetUint64()));
+      throw InputException(std::format("Invalid time_windows array for {} {}.",
+                                       task_type,
+                                       o["id"].GetUint64()));
     }
 
     std::transform(o["time_windows"].Begin(),
@@ -233,7 +236,7 @@ inline Break get_break(const rapidjson::Value& b, unsigned amount_size) {
                           : std::optional<Amount>();
 
   return Break(b["id"].GetUint64(),
-               get_time_windows(b),
+               get_time_windows(b, "break"),
                get_duration(b, "service"),
                get_string(b, "description"),
                max_load);
@@ -465,13 +468,13 @@ inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
 }
 
 inline Location get_task_location(const rapidjson::Value& v,
-                                  const std::string& type) {
+                                  const std::string& task_type) {
   // Check what info are available to build task location.
   const bool has_location_coords = v.HasMember("location");
   const bool has_location_index = v.HasMember("location_index");
   if (has_location_index && !v["location_index"].IsUint()) {
     throw InputException(std::format("Invalid location_index for {} {}.",
-                                     type,
+                                     task_type,
                                      v["id"].GetUint64()));
   }
 
@@ -483,7 +486,7 @@ inline Location get_task_location(const rapidjson::Value& v,
     }
     return Location(location_index);
   }
-  check_location(v, type);
+  check_location(v, task_type);
   return Location(parse_coordinates(v, "location"));
 }
 
@@ -506,7 +509,7 @@ inline Job get_job(const rapidjson::Value& json_job, unsigned amount_size) {
              get_amount(json_job, "pickup", amount_size),
              get_skills(json_job),
              get_priority(json_job),
-             get_time_windows(json_job),
+             get_time_windows(json_job, "job"),
              get_string(json_job, "description"),
              get_duration_per_type(json_job, "setup_per_type", "job"),
              get_duration_per_type(json_job, "service_per_type", "job"));
@@ -616,7 +619,7 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
                        amount,
                        skills,
                        priority,
-                       get_time_windows(json_pickup),
+                       get_time_windows(json_pickup, "pickup"),
                        get_string(json_pickup, "description"),
                        get_duration_per_type(json_pickup,
                                              "setup_per_type",
@@ -637,7 +640,7 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
                          amount,
                          skills,
                          priority,
-                         get_time_windows(json_delivery),
+                         get_time_windows(json_delivery, "delivery"),
                          get_string(json_delivery, "description"),
                          get_duration_per_type(json_delivery,
                                                "setup_per_type",
