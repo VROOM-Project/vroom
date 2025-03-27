@@ -230,6 +230,18 @@ void check_priority(const Priority priority,
   }
 }
 
+void check_no_empty_keys(const TypeToDurationMap& type_to_duration,
+                         const Id id,
+                         const std::string& type,
+                         const std::string& key_name) {
+  if (std::ranges::any_of(type_to_duration, [](const auto& pair) {
+        return pair.first.empty();
+      })) {
+    throw InputException(
+      std::format("Empty type in {} for {} {}.", key_name, type, id));
+  }
+}
+
 inline std::vector<Job> get_unassigned_jobs_from_ranks(
   const Input& input,
   const std::unordered_set<Index>& unassigned_ranks) {

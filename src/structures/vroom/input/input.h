@@ -78,6 +78,9 @@ private:
   Index _max_matrices_used_index{0};
   bool _all_locations_have_coords{true};
   std::vector<std::vector<Eval>> _jobs_vehicles_evals;
+
+  // Default vehicle type is NO_TYPE, related to the fact that we do
+  // not allow empty types as keys for jobs.
   std::vector<std::string> _vehicle_types{NO_TYPE};
   std::unordered_map<std::string, Index, StringHash, std::equal_to<>>
     _type_to_rank_in_vehicle_types{{NO_TYPE, 0}};

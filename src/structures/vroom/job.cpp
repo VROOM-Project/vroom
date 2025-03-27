@@ -39,6 +39,11 @@ Job::Job(Id id,
     service_per_type(utils::scale_from_user_duration(service_per_type)) {
   utils::check_tws(tws, id, "job");
   utils::check_priority(priority, id, "job");
+  utils::check_no_empty_keys(this->setup_per_type, id, "job", "setup_per_type");
+  utils::check_no_empty_keys(this->service_per_type,
+                             id,
+                             "job",
+                             "service_per_type");
 }
 
 Job::Job(Id id,
@@ -70,6 +75,14 @@ Job::Job(Id id,
   std::string type_str = (type == JOB_TYPE::PICKUP) ? "pickup" : "delivery";
   utils::check_tws(tws, id, type_str);
   utils::check_priority(priority, id, type_str);
+  utils::check_no_empty_keys(this->setup_per_type,
+                             id,
+                             type_str,
+                             "setup_per_type");
+  utils::check_no_empty_keys(this->service_per_type,
+                             id,
+                             type_str,
+                             "service_per_type");
 }
 
 bool Job::is_valid_start(Duration time) const {
