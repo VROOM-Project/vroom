@@ -2,7 +2,7 @@
 
 This file is part of VROOM.
 
-Copyright (c) 2015-2024, Julien Coupey.
+Copyright (c) 2015-2025, Julien Coupey.
 All rights reserved (see LICENSE).
 
 */
@@ -35,7 +35,7 @@ int main(int argc, char** argv) {
   unsigned exploration_level;
 
   cxxopts::Options options("vroom",
-                           "VROOM Copyright (C) 2015-2024, Julien Coupey\n"
+                           "VROOM Copyright (C) 2015-2025, Julien Coupey\n"
                            "Version: " +
                              vroom::get_version() +
                              "\n\n"
