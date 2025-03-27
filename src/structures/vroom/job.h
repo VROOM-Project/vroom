@@ -24,8 +24,6 @@ struct Job {
   Location location;
   const Id id;
   const JOB_TYPE type;
-  const Duration setup;
-  const Duration service;
   const Duration default_setup;
   const Duration default_service;
   const Amount delivery;
