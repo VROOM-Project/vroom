@@ -106,6 +106,36 @@ inline UserDuration get_duration(const rapidjson::Value& object,
   return duration;
 }
 
+inline TypeToUserDurationMap
+get_duration_per_type(const rapidjson::Value& json_task,
+                      const char* key,
+                      const std::string& task_type) {
+  TypeToUserDurationMap type_to_user_duration;
+
+  if (json_task.HasMember(key)) {
+    if (!json_task[key].IsObject()) {
+      throw InputException(std::format("Invalid {} for {} {}.",
+                                       key,
+                                       task_type,
+                                       json_task["id"].GetUint64()));
+    }
+
+    for (const auto& pair : json_task[key].GetObject()) {
+      if (!pair.value.IsUint()) {
+        throw InputException(std::format("Invalid value in {} for {} {}.",
+                                         key,
+                                         task_type,
+                                         json_task["id"].GetUint64()));
+      }
+
+      type_to_user_duration.try_emplace(pair.name.GetString(),
+                                        pair.value.GetUint());
+    }
+  }
+
+  return type_to_user_duration;
+}
+
 inline Priority get_priority(const rapidjson::Value& object) {
   Priority priority = 0;
   if (object.HasMember("priority")) {
@@ -477,7 +507,9 @@ inline Job get_job(const rapidjson::Value& json_job, unsigned amount_size) {
              get_skills(json_job),
              get_priority(json_job),
              get_time_windows(json_job),
-             get_string(json_job, "description"));
+             get_string(json_job, "description"),
+             get_duration_per_type(json_job, "setup_per_type", "job"),
+             get_duration_per_type(json_job, "service_per_type", "job"));
 }
 
 template <class T> inline Matrix<T> get_matrix(rapidjson::Value& m) {
@@ -585,7 +617,13 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
                        skills,
                        priority,
                        get_time_windows(json_pickup),
-                       get_string(json_pickup, "description"));
+                       get_string(json_pickup, "description"),
+                       get_duration_per_type(json_pickup,
+                                             "setup_per_type",
+                                             "pickup"),
+                       get_duration_per_type(json_pickup,
+                                             "service_per_type",
+                                             "pickup"));
 
       // Defining delivery job.
       auto& json_delivery = json_shipment["delivery"];
@@ -600,7 +638,13 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
                          skills,
                          priority,
                          get_time_windows(json_delivery),
-                         get_string(json_delivery, "description"));
+                         get_string(json_delivery, "description"),
+                         get_duration_per_type(json_delivery,
+                                               "setup_per_type",
+                                               "delivery"),
+                         get_duration_per_type(json_delivery,
+                                               "service_per_type",
+                                               "delivery"));
 
       input.add_shipment(pickup, delivery);
     }
