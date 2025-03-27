@@ -144,10 +144,10 @@ Priority priority_sum_for_route(const Input& input,
 }
 
 Eval route_eval_for_vehicle(const Input& input,
-                            Index vehicle_rank,
+                            Index v_rank,
                             const std::vector<Index>::const_iterator first_job,
                             const std::vector<Index>::const_iterator last_job) {
-  const auto& v = input.vehicles[vehicle_rank];
+  const auto& v = input.vehicles[v_rank];
   Eval eval;
 
   if (first_job != last_job) {
@@ -172,12 +172,9 @@ Eval route_eval_for_vehicle(const Input& input,
 }
 
 Eval route_eval_for_vehicle(const Input& input,
-                            Index vehicle_rank,
+                            Index v_rank,
                             const std::vector<Index>& route) {
-  return route_eval_for_vehicle(input,
-                                vehicle_rank,
-                                route.begin(),
-                                route.end());
+  return route_eval_for_vehicle(input, v_rank, route.begin(), route.end());
 }
 
 #ifndef NDEBUG
@@ -420,7 +417,7 @@ Solution format_solution(const Input& input, const RawSolution& raw_routes) {
 Route format_route(const Input& input,
                    const TWRoute& tw_r,
                    std::unordered_set<Index>& unassigned_ranks) {
-  const auto& v = input.vehicles[tw_r.vehicle_rank];
+  const auto& v = input.vehicles[tw_r.v_rank];
 
   assert(tw_r.size() <= v.max_tasks);
 
@@ -598,7 +595,7 @@ Route format_route(const Input& input,
   Duration travel_time = current_eval.duration;
 
   for (std::size_t r = 0; r < tw_r.route.size(); ++r) {
-    assert(input.vehicle_ok_with_job(tw_r.vehicle_rank, tw_r.route[r]));
+    assert(input.vehicle_ok_with_job(tw_r.v_rank, tw_r.route[r]));
     const auto& current_job = input.jobs[tw_r.route[r]];
     auto user_distance = eval_sum.distance;
 

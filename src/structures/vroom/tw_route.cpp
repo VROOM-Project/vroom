@@ -104,7 +104,7 @@ TWRoute::TWRoute(const Input& input, Index v, unsigned amount_size)
 PreviousInfo TWRoute::previous_info(const Input& input,
                                     const Index job_rank,
                                     const Index rank) const {
-  const auto& v = input.vehicles[vehicle_rank];
+  const auto& v = input.vehicles[v_rank];
   const auto& j = input.jobs[job_rank];
 
   PreviousInfo previous(v_start, 0);
@@ -126,7 +126,7 @@ PreviousInfo TWRoute::previous_info(const Input& input,
 NextInfo TWRoute::next_info(const Input& input,
                             const Index job_rank,
                             const Index rank) const {
-  const auto& v = input.vehicles[vehicle_rank];
+  const auto& v = input.vehicles[v_rank];
   const auto& j = input.jobs[job_rank];
 
   NextInfo next(v_end, 0);
@@ -143,7 +143,7 @@ NextInfo TWRoute::next_info(const Input& input,
 }
 
 void TWRoute::fwd_update_earliest_from(const Input& input, Index rank) {
-  const auto& v = input.vehicles[vehicle_rank];
+  const auto& v = input.vehicles[v_rank];
 
   Duration current_earliest = earliest[rank];
   bool handle_last_breaks = true;
@@ -258,7 +258,7 @@ void TWRoute::fwd_update_earliest_from(const Input& input, Index rank) {
 }
 
 void TWRoute::bwd_update_latest_from(const Input& input, Index rank) {
-  const auto& v = input.vehicles[vehicle_rank];
+  const auto& v = input.vehicles[v_rank];
 
   Duration current_latest = latest[rank];
   bool handle_first_breaks = true;
@@ -362,7 +362,7 @@ void TWRoute::bwd_update_latest_from(const Input& input, Index rank) {
 void TWRoute::update_last_latest_date(const Input& input) {
   assert(!route.empty());
 
-  const auto& v = input.vehicles[vehicle_rank];
+  const auto& v = input.vehicles[v_rank];
   auto next = next_info(input, route.back(), route.size());
 
   // Latest date for breaks before end.
@@ -430,7 +430,7 @@ void TWRoute::fwd_update_action_time_from(const Input& input, Index rank) {
 
 void TWRoute::fwd_update_breaks_load_margin_from(const Input& input,
                                                  Index rank) {
-  const auto& v = input.vehicles[vehicle_rank];
+  const auto& v = input.vehicles[v_rank];
 
   // Last valid fwd_smallest value, if any.
   auto fwd_smallest =
@@ -466,7 +466,7 @@ void TWRoute::fwd_update_breaks_load_margin_from(const Input& input,
 
 void TWRoute::bwd_update_breaks_load_margin_from(const Input& input,
                                                  Index rank) {
-  const auto& v = input.vehicles[vehicle_rank];
+  const auto& v = input.vehicles[v_rank];
 
   // Last valid bwd_smallest value, if any.
   auto bwd_smallest = (breaks_counts[rank] == breaks_counts.back())
@@ -524,7 +524,7 @@ OrderChoice TWRoute::order_choice(const Input& input,
                                   const Amount& current_load,
                                   bool check_max_load) const {
   OrderChoice oc(input, job_rank, b, previous);
-  const auto& v = input.vehicles[vehicle_rank];
+  const auto& v = input.vehicles[v_rank];
   const auto& j = input.jobs[job_rank];
 
   if (oc.j_tw == j.tws.end() || oc.b_tw == b.tws.end()) {
@@ -721,7 +721,7 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
   assert(first_job <= last_job);
   assert(first_rank <= last_rank);
 
-  const auto& v = input.vehicles[vehicle_rank];
+  const auto& v = input.vehicles[v_rank];
 
   // Override this value if vehicle does not need this check anyway to
   // spare some work.
@@ -1015,7 +1015,7 @@ void TWRoute::replace(const Input& input,
   assert(first_job <= last_job);
   assert(first_rank <= last_rank);
 
-  const auto& v = input.vehicles[vehicle_rank];
+  const auto& v = input.vehicles[v_rank];
 
   PreviousInfo current(0, 0);
   NextInfo next(0, 0);
