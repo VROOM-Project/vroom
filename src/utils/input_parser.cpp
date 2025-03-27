@@ -112,25 +112,23 @@ get_duration_per_type(const rapidjson::Value& json_task,
                       const std::string& task_type) {
   TypeToUserDurationMap type_to_user_duration;
 
-  if (json_task.HasMember(key)) {
-    if (!json_task[key].IsObject()) {
-      throw InputException(std::format("Invalid {} for {} {}.",
+  if (json_task.HasMember(key) || !json_task[key].IsObject()) {
+    throw InputException(std::format("Invalid {} for {} {}.",
+                                     key,
+                                     task_type,
+                                     json_task["id"].GetUint64()));
+  }
+
+  for (const auto& pair : json_task[key].GetObject()) {
+    if (!pair.value.IsUint()) {
+      throw InputException(std::format("Invalid value in {} for {} {}.",
                                        key,
                                        task_type,
                                        json_task["id"].GetUint64()));
     }
 
-    for (const auto& pair : json_task[key].GetObject()) {
-      if (!pair.value.IsUint()) {
-        throw InputException(std::format("Invalid value in {} for {} {}.",
-                                         key,
-                                         task_type,
-                                         json_task["id"].GetUint64()));
-      }
-
-      type_to_user_duration.try_emplace(pair.name.GetString(),
-                                        pair.value.GetUint());
-    }
+    type_to_user_duration.try_emplace(pair.name.GetString(),
+                                      pair.value.GetUint());
   }
 
   return type_to_user_duration;
