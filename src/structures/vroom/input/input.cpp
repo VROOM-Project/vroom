@@ -811,8 +811,8 @@ void Input::set_jobs_durations_per_vehicle_type() {
 
   for (auto& job : jobs) {
     // Populate duration vectors with default values at first.
-    job.setups = std::vector<Duration>(nb_types, job.setup);
-    job.services = std::vector<Duration>(nb_types, job.service);
+    job.setups = std::vector<Duration>(nb_types, job.default_setup);
+    job.services = std::vector<Duration>(nb_types, job.default_service);
 
     // Iterate on all user-defined vehicle types to override relevant
     // setup and service values.

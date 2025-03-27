@@ -26,6 +26,8 @@ struct Job {
   const JOB_TYPE type;
   const Duration setup;
   const Duration service;
+  const Duration default_setup;
+  const Duration default_service;
   const Amount delivery;
   const Amount pickup;
   const Skills skills;
@@ -41,8 +43,8 @@ struct Job {
   // Constructor for regular one-stop job (JOB_TYPE::SINGLE).
   Job(Id id,
       const Location& location,
-      UserDuration setup = 0,
-      UserDuration service = 0,
+      UserDuration default_setup = 0,
+      UserDuration default_service = 0,
       Amount delivery = Amount(0),
       Amount pickup = Amount(0),
       Skills skills = Skills(),
@@ -58,8 +60,8 @@ struct Job {
   Job(Id id,
       JOB_TYPE type,
       const Location& location,
-      UserDuration setup = 0,
-      UserDuration service = 0,
+      UserDuration default_setup = 0,
+      UserDuration default_service = 0,
       const Amount& amount = Amount(0),
       Skills skills = Skills(),
       Priority priority = 0,
