@@ -307,11 +307,12 @@ Solution format_solution(const Input& input, const RawSolution& raw_routes) {
     assert(input.vehicle_ok_with_job(i, route.front()));
 
     const auto first_job_setup =
-      (first_job.index() == previous_location) ? 0 : first_job.setup;
+      (first_job.index() == previous_location) ? 0 : first_job.setups[v.type];
     setup += first_job_setup;
     previous_location = first_job.index();
 
-    service += first_job.service;
+    const auto first_job_service = first_job.services[v.type];
+    service += first_job_service;
     priority += first_job.priority;
 
     current_load += first_job.pickup;
@@ -326,12 +327,13 @@ Solution format_solution(const Input& input, const RawSolution& raw_routes) {
 
     steps.emplace_back(first_job,
                        scale_to_user_duration(first_job_setup),
+                       scale_to_user_duration(first_job_service),
                        current_load);
     auto& first = steps.back();
     first.duration = scale_to_user_duration(ETA);
     first.distance = eval_sum.distance;
     first.arrival = scale_to_user_duration(ETA);
-    ETA += (first_job_setup + first_job.service);
+    ETA += (first_job_setup + first_job_service);
     unassigned_ranks.erase(route.front());
 
     for (std::size_t r = 0; r < route.size() - 1; ++r) {
@@ -343,12 +345,14 @@ Solution format_solution(const Input& input, const RawSolution& raw_routes) {
 
       const auto& current_job = input.jobs[route[r + 1]];
 
-      const auto current_setup =
-        (current_job.index() == previous_location) ? 0 : current_job.setup;
+      const auto current_setup = (current_job.index() == previous_location)
+                                   ? 0
+                                   : current_job.setups[v.type];
       setup += current_setup;
       previous_location = current_job.index();
 
-      service += current_job.service;
+      const auto current_service = current_job.services[v.type];
+      service += current_service;
       priority += current_job.priority;
 
       current_load += current_job.pickup;
@@ -363,12 +367,13 @@ Solution format_solution(const Input& input, const RawSolution& raw_routes) {
 
       steps.emplace_back(current_job,
                          scale_to_user_duration(current_setup),
+                         scale_to_user_duration(current_service),
                          current_load);
       auto& current = steps.back();
       current.duration = scale_to_user_duration(eval_sum.duration);
       current.distance = eval_sum.distance;
       current.arrival = scale_to_user_duration(ETA);
-      ETA += (current_setup + current_job.service);
+      ETA += (current_setup + current_service);
       unassigned_ranks.erase(route[r + 1]);
     }
 
@@ -486,10 +491,10 @@ Route format_route(const Input& input,
        input.jobs[tw_r.route[r - 2]].index() == previous_job.index()) ||
       (r == 1 && v.has_start() &&
        v.start.value().index() == previous_job.index());
-    const auto current_setup = same_location ? 0 : previous_job.setup;
+    const auto current_setup = same_location ? 0 : previous_job.setups[v.type];
 
     const Duration diff =
-      current_setup + previous_job.service + remaining_travel_time;
+      current_setup + previous_job.services[v.type] + remaining_travel_time;
 
     assert(diff <= step_start);
     Duration candidate_start = step_start - diff;
@@ -687,11 +692,13 @@ Route format_route(const Input& input,
     // Back to current job.
     duration += travel_time;
     eval_sum += current_eval;
-    service += current_job.service;
+    const auto current_service = current_job.services[v.type];
+    service += current_service;
     priority += current_job.priority;
 
-    const auto current_setup =
-      (current_job.index() == previous_location) ? 0 : current_job.setup;
+    const auto current_setup = (current_job.index() == previous_location)
+                                 ? 0
+                                 : current_job.setups[v.type];
     setup += current_setup;
     previous_location = current_job.index();
 
@@ -707,6 +714,7 @@ Route format_route(const Input& input,
 
     steps.emplace_back(current_job,
                        scale_to_user_duration(current_setup),
+                       scale_to_user_duration(current_service),
                        current_load);
     auto& current = steps.back();
 
@@ -751,7 +759,7 @@ Route format_route(const Input& input,
       (current.waiting_time == 0 || scale_to_user_duration(j_tw->start) ==
                                       current.arrival + current.waiting_time));
 
-    step_start += (current_setup + current_job.service);
+    step_start += (current_setup + current_service);
 
     unassigned_ranks.erase(tw_r.route[r]);
   }

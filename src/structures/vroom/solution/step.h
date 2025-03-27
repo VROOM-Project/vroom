@@ -38,7 +38,7 @@ struct Step {
 
   Step(STEP_TYPE type, Location location, Amount load);
 
-  Step(const Job& job, UserDuration setup, Amount load);
+  Step(const Job& job, UserDuration setup, UserDuration service, Amount load);
 
   Step(const Break& b, Amount load);
 

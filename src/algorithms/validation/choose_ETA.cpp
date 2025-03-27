@@ -1199,9 +1199,10 @@ Route choose_ETA(const Input& input,
       const auto current_setup =
         (previous_location != job.index()) ? job.setups[v.type] : 0;
       previous_location = job.index();
+      const auto current_service = job.services[v.type];
 
       setup += current_setup;
-      service += job.services[v.type];
+      service += current_service;
       priority += job.priority;
 
       current_load += job.pickup;
@@ -1211,6 +1212,7 @@ Route choose_ETA(const Input& input,
 
       sol_steps.emplace_back(job,
                              utils::scale_to_user_duration(current_setup),
+                             utils::scale_to_user_duration(current_service),
                              current_load);
       auto& current = sol_steps.back();
 
