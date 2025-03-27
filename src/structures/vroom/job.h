@@ -34,7 +34,6 @@ struct Job {
   const std::string description;
   const TypeToDurationMap setup_per_type;
   const TypeToDurationMap service_per_type;
-  // TODO rename to setup and service.
   std::vector<Duration> setups;
   std::vector<Duration> services;
 
