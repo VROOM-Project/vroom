@@ -14,17 +14,17 @@ on:
       - '.github/workflows/vroom_libosrm.yml'
       - '**libosrm_wrapper**'
 env:
-  osrm-ref: d259848456c8c84df0422f7389ef034e63e6462d
+  osrm-ref: 60bc6ec9043c9d97367f66db00ec486bdc3e8d8c
 jobs:
   libosrm:
     strategy:
       matrix:
-        cxx: [g++-13, clang++-17]
+        cxx: [g++-14, clang++-18]
         include:
-          - cxx: g++-13
-            cc: gcc-13
-          - cxx: clang++-17
-            cc: clang-17
+          - cxx: g++-14
+            cc: gcc-14
+          - cxx: clang++-18
+            cc: clang-18
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
@@ -56,7 +56,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-Wno-array-bounds" -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} -DCMAKE_C_COMPILER=${{ matrix.cc }}
+          cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-Wno-array-bounds -Wno-uninitialized" -DENABLE_LTO=OFF -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} -DCMAKE_C_COMPILER=${{ matrix.cc }}
           cmake --build . -j `nproc`
         working-directory: osrm-backend
       - name: Install OSRM
