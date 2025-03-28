@@ -704,16 +704,17 @@ void Input::set_vehicles_max_tasks() {
       }
     };
 
-    std::vector<JobTime> job_times(jobs.size());
-    for (Index j = 0; j < jobs.size(); ++j) {
-      const auto action =
-        jobs[j].service +
-        (is_used_several_times(jobs[j].location) ? 0 : jobs[j].setup);
-      job_times[j] = {j, action};
-    }
-    std::sort(job_times.begin(), job_times.end());
-
     for (Index v = 0; v < vehicles.size(); ++v) {
+      std::vector<JobTime> job_times(jobs.size());
+      for (Index j = 0; j < jobs.size(); ++j) {
+        const auto action =
+          jobs[j].vehicle_service[v] +
+          (is_used_several_times(jobs[j].location) ? 0 : jobs[j].setup);
+        job_times[j] = {j, action};
+      }
+
+      std::sort(job_times.begin(), job_times.end());
+
       auto& vehicle = vehicles[v];
 
       if (vehicle.tw.is_default()) {
@@ -1111,6 +1112,25 @@ void Input::set_matrices(unsigned nb_thread, bool sparse_filling) {
   }
 }
 
+void Input::compute_vehicle_service_time() {
+  auto job_count = jobs.size();
+  auto vehicle_count = vehicles.size();
+
+  for (Index j = 0; job_count > j; j++) {
+    auto& job = jobs[j];
+    job.vehicle_service.reserve(vehicle_count);
+
+    for (Index v = 0; vehicle_count > v; v++) {
+      auto& vehicle = vehicles[v];
+
+      auto computed_service = static_cast<Duration>(
+        static_cast<double>(job.base_service) / vehicle.service_factor);
+
+      job.vehicle_service.emplace_back(computed_service);
+    }
+  }
+}
+
 std::unique_ptr<VRP> Input::get_problem() const {
   if (_has_TW) {
     return std::make_unique<VRPTW>(*this);
@@ -1143,6 +1163,7 @@ Solution Input::solve(const unsigned nb_searches,
 
   set_matrices(nb_thread);
   set_vehicles_costs();
+  compute_vehicle_service_time();
 
   // Fill vehicle/job compatibility matrices.
   set_skills_compatibility();

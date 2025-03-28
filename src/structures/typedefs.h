@@ -75,6 +75,7 @@ constexpr UserCost DEFAULT_COST_PER_KM = 0;
 
 constexpr Priority MAX_PRIORITY = 100;
 constexpr double MAX_SPEED_FACTOR = 5.0;
+constexpr double MAX_SERVICE_FACTOR = 5.0;
 constexpr unsigned MAX_EXPLORATION_LEVEL = 5;
 
 constexpr unsigned DEFAULT_EXPLORATION_LEVEL = 5;

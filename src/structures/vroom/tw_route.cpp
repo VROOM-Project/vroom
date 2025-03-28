@@ -419,9 +419,10 @@ void TWRoute::fwd_update_action_time_from(const Input& input, Index rank) {
     const auto& next_j = input.jobs[route[i]];
     const auto next_index = next_j.index();
 
-    const auto next_action_time = (next_index == current_index)
-                                    ? next_j.service
-                                    : next_j.setup + next_j.service;
+    const auto next_action_time =
+      (next_index == current_index)
+        ? next_j.vehicle_service[vehicle_rank]
+        : next_j.setup + next_j.vehicle_service[vehicle_rank];
 
     action_time[i] = next_action_time;
     current_index = next_index;
@@ -665,8 +666,8 @@ OrderChoice TWRoute::order_choice(const Input& input,
         d_tw != matching_d.tws.end()) {
       const auto matching_d_action_time =
         (matching_d.index() == j.index())
-          ? matching_d.service
-          : matching_d.setup + matching_d.service;
+          ? matching_d.vehicle_service[vehicle_rank]
+          : matching_d.setup + matching_d.vehicle_service[vehicle_rank];
 
       const Duration break_candidate =
         std::max(delivery_candidate, d_tw->start) + matching_d_action_time;
@@ -845,8 +846,9 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
       if (j_tw == j.tws.end()) {
         return false;
       }
-      const auto job_action_time =
-        (j.index() == current.location_index) ? j.service : j.setup + j.service;
+      const auto job_action_time = (j.index() == current.location_index)
+                                     ? j.vehicle_service[vehicle_rank]
+                                     : j.setup + j.vehicle_service[vehicle_rank];
       current.location_index = j.index();
       current.earliest =
         std::max(current.earliest, j_tw->start) + job_action_time;
@@ -868,8 +870,9 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
     // We still have both jobs and breaks to go through, so decide on
     // ordering.
     const auto& b = v.breaks[current_break];
-    const auto job_action_time =
-      (j.index() == current.location_index) ? j.service : j.setup + j.service;
+    const auto job_action_time = (j.index() == current.location_index)
+                                   ? j.vehicle_service[vehicle_rank]
+                                   : j.setup + j.vehicle_service[vehicle_rank];
 
     auto oc = order_choice(input,
                            *current_job,
@@ -945,7 +948,7 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
     // There is a task right after replace range and setup time does
     // apply to it.
     const auto& j_after = input.jobs[route[last_rank]];
-    auto new_action_time = j_after.setup + j_after.service;
+    auto new_action_time = j_after.setup + j_after.vehicle_service[vehicle_rank];
     if (action_time[last_rank] < new_action_time) {
       // Setup time did not previously apply to that task as action
       // time has increased. In that case the margin check for job at
@@ -1218,8 +1221,9 @@ void TWRoute::replace(const Input& input,
       breaks_at_rank[current_job_rank] = breaks_before;
       breaks_counts[current_job_rank] = previous_breaks_counts + breaks_before;
 
-      action_time[current_job_rank] =
-        (j.index() == current.location_index) ? j.service : j.setup + j.service;
+      action_time[current_job_rank] = (j.index() == current.location_index)
+                                        ? j.vehicle_service[vehicle_rank]
+                                        : j.setup + j.vehicle_service[vehicle_rank];
       current.location_index = j.index();
       current.earliest += action_time[current_job_rank];
 
@@ -1243,8 +1247,9 @@ void TWRoute::replace(const Input& input,
     // ordering.
     const auto& b = v.breaks[current_break];
 
-    const auto job_action_time =
-      (j.index() == current.location_index) ? j.service : j.setup + j.service;
+    const auto job_action_time = (j.index() == current.location_index)
+                                   ? j.vehicle_service[vehicle_rank]
+                                   : j.setup + j.vehicle_service[vehicle_rank];
 
     auto oc = order_choice(input,
                            *current_job,
@@ -1365,10 +1370,12 @@ void TWRoute::replace(const Input& input,
       // current_job_rank is the rank of the first non-replaced job.
       const auto& j = input.jobs[route[current_job_rank]];
 
-      const auto new_action_time =
-        (j.index() == current.location_index) ? j.service : j.setup + j.service;
-      assert(action_time[current_job_rank] == j.service ||
-             action_time[current_job_rank] == j.service + j.setup);
+      const auto new_action_time = (j.index() == current.location_index)
+                                     ? j.vehicle_service[vehicle_rank]
+                                     : j.setup + j.vehicle_service[vehicle_rank];
+      assert(action_time[current_job_rank] == j.vehicle_service[vehicle_rank] ||
+             action_time[current_job_rank] ==
+               j.vehicle_service[vehicle_rank] + j.setup);
 
       const bool current_action_time_changed =
         (new_action_time != action_time[current_job_rank]);

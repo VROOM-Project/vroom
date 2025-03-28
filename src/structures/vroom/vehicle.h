@@ -57,6 +57,7 @@ struct Vehicle {
   const std::vector<Break> breaks;
   const std::string description;
   const VehicleCosts costs;
+  double service_factor = 1.;
   CostWrapper cost_wrapper;
   size_t max_tasks;
   const Duration max_travel_time;
@@ -77,6 +78,7 @@ struct Vehicle {
     std::string description = "",
     const VehicleCosts& costs = VehicleCosts(),
     double speed_factor = 1.,
+    double service_factor = 1.,
     const std::optional<size_t>& max_tasks = std::optional<size_t>(),
     const std::optional<UserDuration>& max_travel_time =
       std::optional<UserDuration>(),
