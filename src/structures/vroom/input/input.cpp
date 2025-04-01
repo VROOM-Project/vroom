@@ -726,12 +726,14 @@ void Input::set_vehicles_max_tasks() {
       Duration time_sum = 0;
 
       for (std::size_t j = 0; j < jobs.size(); ++j) {
-        if (time_sum > vehicle_duration) {
-          break;
-        }
         if (vehicle_ok_with_job(v, job_times[j].rank)) {
-          ++doable_tasks;
           time_sum += job_times[j].action;
+
+          if (time_sum <= vehicle_duration) {
+            ++doable_tasks;
+          } else {
+            break;
+          }
         }
       }
 
