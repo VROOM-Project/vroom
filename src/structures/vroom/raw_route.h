@@ -54,7 +54,8 @@ private:
   Amount _pickup_margin;
 
 public:
-  Index vehicle_rank;
+  Index v_rank;
+  Index v_type;
   bool has_start;
   bool has_end;
   Amount capacity;

@@ -383,11 +383,26 @@ void Input::add_vehicle(const Vehicle& vehicle) {
 
   _profiles.insert(current_v.profile);
 
-  auto search = _max_cost_per_hour.find(current_v.profile);
-  if (search == _max_cost_per_hour.end()) {
+  if (auto search = _max_cost_per_hour.find(current_v.profile);
+      search == _max_cost_per_hour.end()) {
     _max_cost_per_hour.try_emplace(current_v.profile, current_v.costs.per_hour);
   } else {
     search->second = std::max(search->second, current_v.costs.per_hour);
+  }
+
+  // Store vehicle type stuff.
+  const auto& type = current_v.type_str;
+  if (auto search = _type_to_rank_in_vehicle_types.find(type);
+      search != _type_to_rank_in_vehicle_types.end()) {
+    // Already known type, only set vehicle type with known index.
+    current_v.type = search->second;
+  } else {
+    const Index rank = _vehicle_types.size();
+    const auto [it, insertion_ok] =
+      _type_to_rank_in_vehicle_types.try_emplace(type, rank);
+    assert(insertion_ok);
+    _vehicle_types.push_back(type);
+    current_v.type = rank;
   }
 }
 
@@ -698,20 +713,23 @@ void Input::set_vehicles_max_tasks() {
     struct JobTime {
       Index rank;
       Duration action;
-
-      bool operator<(const JobTime& rhs) const {
-        return this->action < rhs.action;
-      }
     };
 
-    std::vector<JobTime> job_times(jobs.size());
-    for (Index j = 0; j < jobs.size(); ++j) {
-      const auto action =
-        jobs[j].service +
-        (is_used_several_times(jobs[j].location) ? 0 : jobs[j].setup);
-      job_times[j] = {j, action};
+    // Store jobs ordered by increasing action time per vehicle type.
+    std::vector<std::vector<JobTime>> job_times_per_type(_vehicle_types.size(),
+                                                         std::vector<JobTime>(
+                                                           jobs.size()));
+    for (Index t = 0; t < _vehicle_types.size(); ++t) {
+      for (Index j = 0; j < jobs.size(); ++j) {
+        const auto action =
+          jobs[j].services[t] +
+          (is_used_several_times(jobs[j].location) ? 0 : jobs[j].setups[t]);
+        job_times_per_type[t][j] = {j, action};
+      }
+      std::ranges::sort(job_times_per_type[t],
+                        std::ranges::less{},
+                        &JobTime::action);
     }
-    std::sort(job_times.begin(), job_times.end());
 
     for (Index v = 0; v < vehicles.size(); ++v) {
       auto& vehicle = vehicles[v];
@@ -722,12 +740,13 @@ void Input::set_vehicles_max_tasks() {
       }
 
       const auto vehicle_duration = vehicle.available_duration();
+      const auto t = vehicle.type;
       std::size_t doable_tasks = 0;
       Duration time_sum = 0;
 
       for (std::size_t j = 0; j < jobs.size(); ++j) {
-        if (vehicle_ok_with_job(v, job_times[j].rank)) {
-          time_sum += job_times[j].action;
+        if (vehicle_ok_with_job(v, job_times_per_type[t][j].rank)) {
+          time_sum += job_times_per_type[t][j].action;
 
           if (time_sum <= vehicle_duration) {
             ++doable_tasks;
@@ -789,6 +808,32 @@ void Input::set_jobs_vehicles_evals() {
     if (is_pickup) {
       // Skip delivery.
       ++j;
+    }
+  }
+}
+
+void Input::set_jobs_durations_per_vehicle_type() {
+  const auto nb_types = _vehicle_types.size();
+
+  for (auto& job : jobs) {
+    // Populate duration vectors with default values at first.
+    job.setups = std::vector<Duration>(nb_types, job.default_setup);
+    job.services = std::vector<Duration>(nb_types, job.default_service);
+
+    // Iterate on all user-defined vehicle types to override relevant
+    // setup and service values.
+    for (std::size_t type_rank = 1; type_rank < nb_types; ++type_rank) {
+      const auto& type = _vehicle_types[type_rank];
+
+      if (const auto search = job.setup_per_type.find(type);
+          search != job.setup_per_type.end()) {
+        job.setups[type_rank] = search->second;
+      }
+
+      if (const auto search = job.service_per_type.find(type);
+          search != job.service_per_type.end()) {
+        job.services[type_rank] = search->second;
+      }
     }
   }
 }
@@ -1143,6 +1188,8 @@ Solution Input::solve(const unsigned nb_searches,
     set_vehicle_steps_ranks();
   }
 
+  set_jobs_durations_per_vehicle_type();
+
   set_matrices(nb_thread);
   set_vehicles_costs();
 
@@ -1213,6 +1260,8 @@ Solution Input::solve(const unsigned nb_searches,
 Solution Input::check(unsigned nb_thread) {
 #if USE_LIBGLPK
   run_basic_checks();
+
+  set_jobs_durations_per_vehicle_type();
 
   set_vehicle_steps_ranks();
 
