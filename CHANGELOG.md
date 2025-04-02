@@ -4,6 +4,10 @@
 
 ### Added
 
+#### Features
+
+- Ability to set different tasks setup/service time per vehicle type (#336)
+
 #### Internals
 
 - Apply heuristics to partial solutions provided in input (#977)
