@@ -713,13 +713,9 @@ void Input::set_vehicles_max_tasks() {
     struct JobTime {
       Index rank;
       Duration action;
-
-      bool operator<(const JobTime& rhs) const {
-        return this->action < rhs.action;
-      }
     };
 
-    // Store jobs ordered by increasing task time per vehicle type.
+    // Store jobs ordered by increasing action time per vehicle type.
     std::vector<std::vector<JobTime>> job_times_per_type(_vehicle_types.size(),
                                                          std::vector<JobTime>(
                                                            jobs.size()));
@@ -730,7 +726,9 @@ void Input::set_vehicles_max_tasks() {
           (is_used_several_times(jobs[j].location) ? 0 : jobs[j].setups[t]);
         job_times_per_type[t][j] = {j, action};
       }
-      std::sort(job_times_per_type[t].begin(), job_times_per_type[t].end());
+      std::ranges::sort(job_times_per_type[t],
+                        std::ranges::less{},
+                        &JobTime::action);
     }
 
     for (Index v = 0; v < vehicles.size(); ++v) {
