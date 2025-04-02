@@ -719,14 +719,19 @@ void Input::set_vehicles_max_tasks() {
       }
     };
 
-    std::vector<JobTime> job_times(jobs.size());
-    for (Index j = 0; j < jobs.size(); ++j) {
-      const auto action =
-        jobs[j].service +
-        (is_used_several_times(jobs[j].location) ? 0 : jobs[j].setup);
-      job_times[j] = {j, action};
+    // Store jobs ordered by increasing task time per vehicle type.
+    std::vector<std::vector<JobTime>> job_times_per_type(_vehicle_types.size(),
+                                                         std::vector<JobTime>(
+                                                           jobs.size()));
+    for (Index t = 0; t < _vehicle_types.size(); ++t) {
+      for (Index j = 0; j < jobs.size(); ++j) {
+        const auto action =
+          jobs[j].services[t] +
+          (is_used_several_times(jobs[j].location) ? 0 : jobs[j].setups[t]);
+        job_times_per_type[t][j] = {j, action};
+      }
+      std::sort(job_times_per_type[t].begin(), job_times_per_type[t].end());
     }
-    std::sort(job_times.begin(), job_times.end());
 
     for (Index v = 0; v < vehicles.size(); ++v) {
       auto& vehicle = vehicles[v];
@@ -737,12 +742,13 @@ void Input::set_vehicles_max_tasks() {
       }
 
       const auto vehicle_duration = vehicle.available_duration();
+      const auto t = vehicle.type;
       std::size_t doable_tasks = 0;
       Duration time_sum = 0;
 
       for (std::size_t j = 0; j < jobs.size(); ++j) {
-        if (vehicle_ok_with_job(v, job_times[j].rank)) {
-          time_sum += job_times[j].action;
+        if (vehicle_ok_with_job(v, job_times_per_type[t][j].rank)) {
+          time_sum += job_times_per_type[t][j].action;
 
           if (time_sum <= vehicle_duration) {
             ++doable_tasks;
