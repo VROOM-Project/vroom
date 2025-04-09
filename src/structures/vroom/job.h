@@ -11,7 +11,6 @@ All rights reserved (see LICENSE).
 */
 
 #include <string>
-#include <unordered_map>
 
 #include "structures/typedefs.h"
 #include "structures/vroom/amount.h"

@@ -247,7 +247,7 @@ to override the default `service` duration using
 `service_per_type`. For any `vehicle.type` value `t`, the actual
 service time for a task is `task.service_per_type[t]`, if provided. In
 any situation where `t` is not provided as a key in
-`tasks.service_per_type`, the service time falls back to the usual
+`task.service_per_type`, the service time falls back to the usual
 `service` value for all vehicles with type `t`.
 
 The exact same applies to `setup` and `setup_per_type`.

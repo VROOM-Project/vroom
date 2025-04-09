@@ -1309,7 +1309,7 @@ Route choose_ETA(const Input& input,
       }
 
       previous_start = service_start;
-      previous_action = current_setup + job.services[v.type];
+      previous_action = current_setup + current_service;
       previous_travel = task_travels[task_rank];
       ++task_rank;
       ++previous_rank_in_J;
