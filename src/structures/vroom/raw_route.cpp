@@ -17,7 +17,8 @@ RawRoute::RawRoute(const Input& input, Index i, unsigned amount_size)
     _bwd_peaks(2, _zero),
     _delivery_margin(input.vehicles[i].capacity),
     _pickup_margin(input.vehicles[i].capacity),
-    vehicle_rank(i),
+    v_rank(i),
+    v_type(input.vehicles[i].type),
     has_start(input.vehicles[i].has_start()),
     has_end(input.vehicles[i].has_end()),
     capacity(input.vehicles[i].capacity) {

@@ -61,6 +61,8 @@ A `job` object has the following properties:
 | [`location_index`] | index of relevant row and column in custom matrices |
 | [`setup`] | job setup duration (defaults to 0) |
 | [`service`] | job service duration (defaults to 0) |
+| [`setup_per_type`] | object mapping vehicle types to job setup duration values |
+| [`service_per_type`] | object mapping vehicle types to job service duration values |
 | ~~[`amount`]~~ | ~~an array of integers describing multidimensional quantities~~ |
 | [`delivery`] | an array of integers describing multidimensional quantities for delivery |
 | [`pickup`] | an array of integers describing multidimensional quantities for pickup |
@@ -92,6 +94,8 @@ A `shipment_step` is similar to a `job` object (expect for shared keys already p
 | [`location_index`] | index of relevant row and column in custom matrices |
 | [`setup`] | task setup duration (defaults to 0) |
 | [`service`] | task service duration (defaults to 0) |
+| [`setup_per_type`] | object mapping vehicle types to task setup duration values |
+| [`service_per_type`] | object mapping vehicle types to task service duration values |
 | [`time_windows`] | an array of `time_window` objects describing valid slots for task service start |
 
 An error is reported if two `delivery` (resp. `pickup`) objects have the same `id`.
@@ -112,6 +116,7 @@ A `vehicle` object has the following properties:
 | [`capacity`] | an array of integers describing multidimensional quantities |
 | [`costs`] | a `cost` object defining costs for this vehicle |
 | [`skills`] | an array of integers defining skills |
+| [`type`] | a string describing this vehicle type |
 | [`time_window`] | a `time_window` object describing working hours |
 | [`breaks`] | an array of `break` objects |
 | [`speed_factor`] | a double value in the range `(0, 5]` used to scale **all** vehicle travel times (defaults to 1.), the respected precision is limited to two digits after the decimal point |
@@ -233,6 +238,19 @@ should not be re-applied for other tasks following at the same
 place. So the total "action time" for a task is `setup + service` upon
 arriving at a new location or `service` only if performing a new task
 at the previous vehicle location.
+
+### Task times per vehicle type
+
+In a situation where the time it takes to complete a given task is
+different depending on which vehicle it is assigned to, it is possible
+to override the default `service` duration using
+`service_per_type`. For any `vehicle.type` value `t`, the actual
+service time for a task is `task.service_per_type[t]`, if provided. In
+any situation where `t` is not provided as a key in
+`task.service_per_type`, the service time falls back to the usual
+`service` value for all vehicles with type `t`.
+
+The exact same applies to `setup` and `setup_per_type`.
 
 ### Time windows
 

@@ -25,7 +25,7 @@ inline void seed_route(const Input& input,
                        auto job_not_ok) {
   assert(route.empty() && init != INIT::NONE);
 
-  const auto v_rank = route.vehicle_rank;
+  const auto v_rank = route.v_rank;
   const auto& vehicle = input.vehicles[v_rank];
 
   // Initialize current route with the "best" valid job.
@@ -146,7 +146,7 @@ template <class Route> struct UnassignedCosts {
   UnassignedCosts(const Input& input,
                   Route& route,
                   const std::set<Index>& unassigned)
-    : vehicle(input.vehicles[route.vehicle_rank]),
+    : vehicle(input.vehicles[route.v_rank]),
       max_edge_cost(utils::max_edge_eval(input, vehicle, route.route).cost),
       min_route_to_unassigned(input.jobs.size(),
                               std::numeric_limits<Cost>::max()),
@@ -236,7 +236,7 @@ inline Eval fill_route(const Input& input,
                        std::set<Index>& unassigned,
                        const std::vector<Cost>& regrets,
                        double lambda) {
-  const auto v_rank = route.vehicle_rank;
+  const auto v_rank = route.v_rank;
   const auto& vehicle = input.vehicles[v_rank];
 
   const bool init_route_is_empty = route.empty();
@@ -705,7 +705,7 @@ void set_route(const Input& input,
                Route& route,
                std::unordered_set<Index>& assigned) {
   assert(route.empty());
-  const auto& vehicle = input.vehicles[route.vehicle_rank];
+  const auto& vehicle = input.vehicles[route.v_rank];
 
   // Startup load is the sum of deliveries for (single) jobs.
   Amount single_jobs_deliveries(input.zero_amount());
@@ -746,7 +746,7 @@ void set_route(const Input& input,
     assert(!assigned.contains(job_rank));
     assigned.insert(job_rank);
 
-    if (!input.vehicle_ok_with_job(route.vehicle_rank, job_rank)) {
+    if (!input.vehicle_ok_with_job(route.v_rank, job_rank)) {
       throw InputException(
         std::format("Missing skill or step out of reach for vehicle {} and "
                     "job {}.",

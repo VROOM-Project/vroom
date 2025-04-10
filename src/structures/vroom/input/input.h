@@ -79,6 +79,12 @@ private:
   bool _all_locations_have_coords{true};
   std::vector<std::vector<Eval>> _jobs_vehicles_evals;
 
+  // Default vehicle type is NO_TYPE, related to the fact that we do
+  // not allow empty types as keys for jobs.
+  std::vector<std::string> _vehicle_types{NO_TYPE};
+  std::unordered_map<std::string, Index, StringHash, std::equal_to<>>
+    _type_to_rank_in_vehicle_types{{NO_TYPE, 0}};
+
   // Used in plan mode since we store route geometries while
   // generating sparse matrices.
   std::vector<std::string> _vehicles_geometry;
@@ -104,6 +110,7 @@ private:
   void set_vehicles_costs();
   void set_vehicles_max_tasks();
   void set_jobs_vehicles_evals();
+  void set_jobs_durations_per_vehicle_type();
   void set_vehicle_steps_ranks();
   void init_missing_matrices(const std::string& profile);
 

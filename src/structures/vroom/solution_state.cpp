@@ -524,6 +524,7 @@ void SolutionState::set_insertion_ranks(const TWRoute& tw_r, Index v) {
   }
 
   const auto& vehicle = _input.vehicles[v];
+  const auto v_type = vehicle.type;
 
   for (std::size_t j = 0; j < _input.jobs.size(); ++j) {
     if (!_input.vehicle_ok_with_job(v, j)) {
@@ -557,7 +558,7 @@ void SolutionState::set_insertion_ranks(const TWRoute& tw_r, Index v) {
         continue;
       }
       if (tw_r.latest[rev_t] <
-          job_available + job.service +
+          job_available + job.services[v_type] +
             vehicle.duration(job_index,
                              _input.jobs[tw_r.route[rev_t]].index())) {
         // Job is available too late to be performed any time before
@@ -573,7 +574,7 @@ void SolutionState::set_insertion_ranks(const TWRoute& tw_r, Index v) {
         continue;
       }
       const auto& task = _input.jobs[tw_r.route[t]];
-      if (job_deadline < task.tws.front().start + task.service +
+      if (job_deadline < task.tws.front().start + task.services[v_type] +
                            vehicle.duration(task.index(), job_index)) {
         // Too late to perform job any time after task at t solely
         // based on its TW.
@@ -588,7 +589,7 @@ void SolutionState::set_insertion_ranks(const TWRoute& tw_r, Index v) {
         continue;
       }
       const auto& task = _input.jobs[tw_r.route[rev_t]];
-      if (task.tws.back().end < job_available + job.service +
+      if (task.tws.back().end < job_available + job.services[v_type] +
                                   vehicle.duration(job_index, task.index())) {
         // Job is available too late to be performed any time before
         // task at rev_t solely based on its TW.
