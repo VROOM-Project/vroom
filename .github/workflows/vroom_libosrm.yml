@@ -14,7 +14,7 @@ on:
       - '.github/workflows/vroom_libosrm.yml'
       - '**libosrm_wrapper**'
 env:
-  osrm-ref: 6f815d48ea6d36b14f0c12d7c6b39c55077d17bd
+  osrm-tag: v6.0.0-rc.2
 jobs:
   libosrm:
     strategy:
@@ -40,13 +40,13 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/osrm-backend
-          key: osrm-${{ env.osrm-ref }}-${{ matrix.cxx }}
+          key: osrm-${{ env.osrm-tag }}-${{ matrix.cxx }}
       - name: Checkout OSRM repository
         if: steps.cache.outputs.cache-hit != 'true'
         uses: actions/checkout@v4
         with:
           repository: Project-OSRM/osrm-backend
-          ref: ${{ env.osrm-ref }}
+          ref: ${{ env.osrm-tag }}
           path: osrm-backend
       - name: Install OSRM dependencies
         run: sudo apt-get install build-essential git cmake pkg-config libbz2-dev libstxxl-dev libstxxl1v5 libxml2-dev libzip-dev libboost-all-dev lua5.2 liblua5.2-dev libtbb-dev libluabind-dev libluabind0.9.1d1
