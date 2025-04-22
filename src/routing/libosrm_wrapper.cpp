@@ -38,9 +38,9 @@ LibosrmWrapper::LibosrmWrapper(const std::string& profile)
 void throw_error(osrm::json::Object& result,
                  const std::vector<Location>& locs) {
   const std::string code =
-    result.values["code"].get<osrm::json::String>().value;
+    std::get<osrm::json::String>(result.values["code"]).value;
   const std::string message =
-    result.values["message"].get<osrm::json::String>().value;
+    std::get<osrm::json::String>(result.values["message"]).value;
 
   const std::string snapping_error_base =
     "Could not find a matching segment for coordinate ";
@@ -77,8 +77,10 @@ Matrices LibosrmWrapper::get_matrices(const std::vector<Location>& locs) const {
     throw_error(result, locs);
   }
 
-  const auto& durations = result.values["durations"].get<osrm::json::Array>();
-  const auto& distances = result.values["distances"].get<osrm::json::Array>();
+  const auto& durations =
+    std::get<osrm::json::Array>(result.values["durations"]);
+  const auto& distances =
+    std::get<osrm::json::Array>(result.values["distances"]);
 
   // Expected matrix size.
   std::size_t m_size = locs.size();
@@ -94,16 +96,18 @@ Matrices LibosrmWrapper::get_matrices(const std::vector<Location>& locs) const {
 
   std::string reason;
   for (std::size_t i = 0; i < m_size; ++i) {
-    const auto& duration_line = durations.values.at(i).get<osrm::json::Array>();
-    const auto& distance_line = distances.values.at(i).get<osrm::json::Array>();
+    const auto& duration_line =
+      std::get<osrm::json::Array>(durations.values.at(i));
+    const auto& distance_line =
+      std::get<osrm::json::Array>(distances.values.at(i));
     assert(duration_line.values.size() == m_size);
     assert(distance_line.values.size() == m_size);
 
     for (std::size_t j = 0; j < m_size; ++j) {
       const auto& duration_el = duration_line.values.at(j);
       const auto& distance_el = distance_line.values.at(j);
-      if (duration_el.is<osrm::json::Null>() ||
-          distance_el.is<osrm::json::Null>()) {
+      if (std::holds_alternative<osrm::json::Null>(duration_el) ||
+          std::holds_alternative<osrm::json::Null>(distance_el)) {
         // No route found between i and j. Just storing info as we
         // don't know yet which location is responsible between i
         // and j.
@@ -111,9 +115,9 @@ Matrices LibosrmWrapper::get_matrices(const std::vector<Location>& locs) const {
         ++nb_unfound_to_loc[j];
       } else {
         m.durations[i][j] = utils::round<UserDuration>(
-          duration_el.get<osrm::json::Number>().value);
+          std::get<osrm::json::Number>(duration_el).value);
         m.distances[i][j] = utils::round<UserDistance>(
-          distance_el.get<osrm::json::Number>().value);
+          std::get<osrm::json::Number>(distance_el).value);
       }
     }
   }
@@ -141,10 +145,9 @@ osrm::json::Object LibosrmWrapper::get_route_with_coordinates(
            osrm::RouteParameters::OverviewType::Full,
            false, // continue_straight,
            std::move(coords),
-           std::vector<boost::optional<osrm::engine::Hint>>(),
-           std::vector<
-             boost::optional<double>>(coords.size(),
-                                      DEFAULT_LIBOSRM_SNAPPING_RADIUS));
+           std::vector<std::optional<osrm::engine::Hint>>(),
+           std::vector<std::optional<double>>(coords.size(),
+                                              DEFAULT_LIBOSRM_SNAPPING_RADIUS));
 
   osrm::json::Object result;
   osrm::Status status = _osrm.Route(params, result);
@@ -153,8 +156,8 @@ osrm::json::Object LibosrmWrapper::get_route_with_coordinates(
     throw_error(result, locs);
   }
 
-  auto& result_routes = result.values["routes"].get<osrm::json::Array>();
-  return std::move(result_routes.values.at(0).get<osrm::json::Object>());
+  auto& result_routes = std::get<osrm::json::Array>(result.values["routes"]);
+  return std::move(std::get<osrm::json::Object>(result_routes.values.at(0)));
 }
 
 void LibosrmWrapper::update_sparse_matrix(
@@ -164,23 +167,23 @@ void LibosrmWrapper::update_sparse_matrix(
   std::string& vehicle_geometry) const {
   auto json_route = get_route_with_coordinates(route_locs);
 
-  auto& legs = json_route.values["legs"].get<osrm::json::Array>();
+  auto& legs = std::get<osrm::json::Array>(json_route.values["legs"]);
   assert(legs.values.size() == route_locs.size() - 1);
 
   for (std::size_t i = 0; i < legs.values.size(); ++i) {
-    auto& leg = legs.values.at(i).get<osrm::json::Object>();
+    auto& leg = std::get<osrm::json::Object>(legs.values.at(i));
 
     std::scoped_lock<std::mutex> lock(matrix_m);
     m.durations[route_locs[i].index()][route_locs[i + 1].index()] =
       utils::round<UserDuration>(
-        leg.values["duration"].get<osrm::json::Number>().value);
+        std::get<osrm::json::Number>(leg.values["duration"]).value);
     m.distances[route_locs[i].index()][route_locs[i + 1].index()] =
       utils::round<UserDistance>(
-        leg.values["distance"].get<osrm::json::Number>().value);
+        std::get<osrm::json::Number>(leg.values["distance"]).value);
   }
 
-  vehicle_geometry =
-    std::move(json_route.values["geometry"].get<osrm::json::String>().value);
+  vehicle_geometry = std::move(
+    std::get<osrm::json::String>(json_route.values["geometry"]).value);
 };
 
 void LibosrmWrapper::add_geometry(Route& route) const {
@@ -199,8 +202,8 @@ void LibosrmWrapper::add_geometry(Route& route) const {
   auto json_route = get_route_with_coordinates(locs);
 
   // Total distance and route geometry.
-  route.geometry =
-    std::move(json_route.values["geometry"].get<osrm::json::String>().value);
+  route.geometry = std::move(
+    std::get<osrm::json::String>(json_route.values["geometry"]).value);
 }
 
 } // namespace routing
