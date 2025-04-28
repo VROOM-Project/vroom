@@ -20,7 +20,6 @@ Contents:
 - deprecated keys are crossed out
 - `cost` values in output are the one used internally in the optimization objective
 - a "task" is either a job, a pickup or a delivery
-- the "service start" of a job is arrival time + waiting time
 
 # Solving mode
 
