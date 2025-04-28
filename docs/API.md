@@ -16,9 +16,11 @@ Contents:
 - all timings are in seconds
 - all distances are in meters
 - a `time_window` object is a pair of timestamps in the form `[start, end]`
+  (both ends are inclusive)
 - deprecated keys are crossed out
 - `cost` values in output are the one used internally in the optimization objective
 - a "task" is either a job, a pickup or a delivery
+- the "service start" of a job is arrival time + waiting time
 
 # Solving mode
 
@@ -265,6 +267,11 @@ able to serve any number of tasks, and a task with no `time_windows`
 key might be included at any time in any route, to the extent
 permitted by other constraints such as skills, capacity and other
 vehicles/tasks time windows.
+
+Time windows interact with arrival, waiting time, setup time and service time
+like this:
+
+![Illustration of how time windows interact with various times](./time_windows_illustration.excalidraw.svg)
 
 ### Vehicle `steps`
 
