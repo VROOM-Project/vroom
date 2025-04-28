@@ -268,8 +268,8 @@ key might be included at any time in any route, to the extent
 permitted by other constraints such as skills, capacity and other
 vehicles/tasks time windows.
 
-Time windows interact with arrival, waiting time, setup time and service time
-like this:
+Time windows concern the "service start" time of tasks, which are before setup
+and service time, but after waiting time:
 
 ![Illustration of how time windows interact with various times](./time_windows_illustration.excalidraw.svg)
 
