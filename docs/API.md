@@ -255,6 +255,14 @@ The exact same applies to `setup` and `setup_per_type`.
 
 ### Time windows
 
+The actual start time of a task **must** occur in one of its time
+windows. The start time happens:
+
+- potentially after some waiting time, if arrival is strictly before time window start;
+- right before setup and service times (those can extend paste the time window end).
+
+![Illustration of how time windows interact with various times](./time_window_illustration.svg)
+
 It is up to users to decide how to describe time windows:
 
 - **relative values**, e.g. `[0, 14400]` for a 4 hours time window starting at the beginning of the planning horizon. In that case all times reported in output with the `arrival` key are relative to the start of the planning horizon;
@@ -266,11 +274,6 @@ able to serve any number of tasks, and a task with no `time_windows`
 key might be included at any time in any route, to the extent
 permitted by other constraints such as skills, capacity and other
 vehicles/tasks time windows.
-
-Time windows concern the "service start" time of tasks, which are before setup
-and service time, but after waiting time:
-
-![Illustration of how time windows interact with various times](./time_windows_illustration.excalidraw.svg)
 
 ### Vehicle `steps`
 
