@@ -16,6 +16,7 @@ Contents:
 - all timings are in seconds
 - all distances are in meters
 - a `time_window` object is a pair of timestamps in the form `[start, end]`
+  (both ends are inclusive)
 - deprecated keys are crossed out
 - `cost` values in output are the one used internally in the optimization objective
 - a "task" is either a job, a pickup or a delivery
@@ -253,6 +254,14 @@ any situation where `t` is not provided as a key in
 The exact same applies to `setup` and `setup_per_type`.
 
 ### Time windows
+
+The actual start time of a task **must** occur in one of its time
+windows. The start time happens:
+
+- potentially after some waiting time, if arrival is strictly before time window start;
+- right before setup and service times (those can extend paste the time window end).
+
+![Illustration of how time windows interact with various times](./time_window_illustration.svg)
 
 It is up to users to decide how to describe time windows:
 
