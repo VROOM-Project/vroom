@@ -74,6 +74,7 @@ constexpr Cost COST_FACTOR = 3600;
 // outputting exact same values for duration and cost if per_hour
 // values are not set.
 constexpr UserCost DEFAULT_COST_PER_HOUR = 3600;
+constexpr UserCost DEFAULT_COST_PER_TASK_HOUR = 0;
 constexpr UserCost DEFAULT_COST_PER_KM = 0;
 
 constexpr Priority MAX_PRIORITY = 100;
