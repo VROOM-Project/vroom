@@ -269,6 +269,7 @@ inline VehicleCosts get_vehicle_costs(const rapidjson::Value& v) {
   UserCost fixed = 0;
   UserCost per_hour = DEFAULT_COST_PER_HOUR;
   UserCost per_km = DEFAULT_COST_PER_KM;
+  UserCost per_task_hour = DEFAULT_COST_PER_TASK_HOUR;
 
   if (v.HasMember("costs")) {
     if (!v["costs"].IsObject()) {
@@ -303,9 +304,19 @@ inline VehicleCosts get_vehicle_costs(const rapidjson::Value& v) {
 
       per_km = v["costs"]["per_km"].GetUint();
     }
+
+    if (v["costs"].HasMember("per_task_hour")) {
+      if (!v["costs"]["per_task_hour"].IsUint()) {
+        throw InputException(
+          std::format("Invalid per_task_hour cost for vehicle {}.",
+                      v["id"].GetUint64()));
+      }
+
+      per_task_hour = v["costs"]["per_task_hour"].GetUint();
+    }
   }
 
-  return VehicleCosts(fixed, per_hour, per_km);
+  return VehicleCosts(fixed, per_hour, per_km, per_task_hour);
 }
 
 inline std::vector<VehicleStep> get_vehicle_steps(const rapidjson::Value& v) {
