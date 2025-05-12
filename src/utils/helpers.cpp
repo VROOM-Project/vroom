@@ -393,10 +393,13 @@ Solution format_solution(const Input& input, const RawSolution& raw_routes) {
 
     assert(v.fixed_cost() % (DURATION_FACTOR * COST_FACTOR) == 0);
     const UserCost user_fixed_cost = scale_to_user_cost(v.fixed_cost());
+    const UserCost user_travel_cost = scale_to_user_cost(eval_sum.cost);
+    const UserCost user_task_cost =
+      scale_to_user_cost(v.task_cost(setup + service));
 
     routes.emplace_back(v.id,
                         std::move(steps),
-                        user_fixed_cost + scale_to_user_cost(eval_sum.cost),
+                        user_fixed_cost + user_travel_cost + user_task_cost,
                         scale_to_user_duration(eval_sum.duration),
                         eval_sum.distance,
                         scale_to_user_duration(setup),
