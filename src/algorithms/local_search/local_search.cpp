@@ -142,30 +142,31 @@ template <class Route,
           class RouteSplit,
           class PriorityReplace,
           class TSPFix>
-void LocalSearch<Route,
-                 UnassignedExchange,
-                 CrossExchange,
-                 MixedExchange,
-                 TwoOpt,
-                 ReverseTwoOpt,
-                 Relocate,
-                 OrOpt,
-                 IntraExchange,
-                 IntraCrossExchange,
-                 IntraMixedExchange,
-                 IntraRelocate,
-                 IntraOrOpt,
-                 IntraTwoOpt,
-                 PDShift,
-                 RouteExchange,
-                 SwapStar,
-                 RouteSplit,
-                 PriorityReplace,
-                 TSPFix>::try_job_additions(const std::vector<Index>& routes,
-                                            double regret_coeff
+std::unordered_set<Index>
+LocalSearch<Route,
+            UnassignedExchange,
+            CrossExchange,
+            MixedExchange,
+            TwoOpt,
+            ReverseTwoOpt,
+            Relocate,
+            OrOpt,
+            IntraExchange,
+            IntraCrossExchange,
+            IntraMixedExchange,
+            IntraRelocate,
+            IntraOrOpt,
+            IntraTwoOpt,
+            PDShift,
+            RouteExchange,
+            SwapStar,
+            RouteSplit,
+            PriorityReplace,
+            TSPFix>::try_job_additions(const std::vector<Index>& routes,
+                                       double regret_coeff
 #ifdef LOG_LS
-                                            ,
-                                            bool log_addition_step
+                                       ,
+                                       bool log_addition_step
 #endif
 ) {
   bool job_added;
@@ -348,6 +349,8 @@ void LocalSearch<Route,
     _sol_state.set_pd_matching_ranks(_sol[v].route, v);
     _sol_state.set_pd_gains(_sol[v].route, v);
   }
+
+  return modified_vehicles;
 }
 
 template <class Route,
@@ -1936,14 +1939,25 @@ void LocalSearch<Route,
       assert(new_eval + best_gain == previous_eval);
 #endif
 
-      try_job_additions(best_ops[best_source][best_target]
-                          ->addition_candidates(),
-                        0
+      auto modified_vehicles =
+        try_job_additions(best_ops[best_source][best_target]
+                            ->addition_candidates(),
+                          0
 #ifdef LOG_LS
-                        ,
-                        true
+                          ,
+                          true
 #endif
-      );
+        );
+
+      // Extend update_candidates in case a vehicle was not modified
+      // by the operator itself but afterward by
+      // try_job_additions. Can happen e.g. with UnassignedExchange.
+      for (const auto v : update_candidates) {
+        modified_vehicles.erase(v);
+      }
+      for (const auto v : modified_vehicles) {
+        update_candidates.push_back(v);
+      }
 
       // Set gains to zero for what needs to be recomputed in the next
       // round and set route pairs accordingly.
