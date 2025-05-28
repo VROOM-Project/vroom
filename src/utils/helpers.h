@@ -258,11 +258,6 @@ Priority priority_sum_for_route(const Input& input,
 
 Eval route_eval_for_vehicle(const Input& input,
                             Index vehicle_rank,
-                            std::vector<Index>::const_iterator first_job,
-                            std::vector<Index>::const_iterator last_job);
-
-Eval route_eval_for_vehicle(const Input& input,
-                            Index vehicle_rank,
                             const std::vector<Index>& route);
 
 void check_tws(const std::vector<TimeWindow>& tws,
