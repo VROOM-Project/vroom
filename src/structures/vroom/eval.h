@@ -20,16 +20,24 @@ struct Eval {
   Cost cost;
   Duration duration;
   Distance distance;
+  Duration task_duration;
 
-  constexpr Eval() : cost(0), duration(0), distance(0){};
+  constexpr Eval() : cost(0), duration(0), distance(0), task_duration(0){};
 
-  constexpr Eval(Cost cost, Duration duration = 0, Distance distance = 0)
-    : cost(cost), duration(duration), distance(distance){};
+  constexpr Eval(Cost cost,
+                 Duration duration = 0,
+                 Distance distance = 0,
+                 Duration task_duration = 0)
+    : cost(cost),
+      duration(duration),
+      distance(distance),
+      task_duration(task_duration){};
 
   Eval& operator+=(const Eval& rhs) {
     cost += rhs.cost;
     duration += rhs.duration;
     distance += rhs.distance;
+    task_duration += rhs.task_duration;
 
     return *this;
   }
@@ -38,12 +46,13 @@ struct Eval {
     cost -= rhs.cost;
     duration -= rhs.duration;
     distance -= rhs.distance;
+    task_duration -= rhs.task_duration;
 
     return *this;
   }
 
   Eval operator-() const {
-    return {-cost, -duration, -distance};
+    return {-cost, -duration, -distance, -task_duration};
   }
 
   friend Eval operator+(Eval lhs, const Eval& rhs) {
@@ -57,8 +66,8 @@ struct Eval {
   }
 
   friend bool operator<(const Eval& lhs, const Eval& rhs) {
-    return std::tie(lhs.cost, lhs.duration, lhs.distance) <
-           std::tie(rhs.cost, rhs.duration, rhs.distance);
+    return std::tie(lhs.cost, lhs.duration, lhs.distance, lhs.task_duration) <
+           std::tie(rhs.cost, rhs.duration, rhs.distance, rhs.task_duration);
   }
 
   friend bool operator<=(const Eval& lhs, const Eval& rhs) {
@@ -68,8 +77,8 @@ struct Eval {
   friend bool operator==(const Eval& lhs, const Eval& rhs) = default;
 };
 
-constexpr Eval NO_EVAL = {std::numeric_limits<Cost>::max(), 0, 0};
-constexpr Eval NO_GAIN = {std::numeric_limits<Cost>::min(), 0, 0};
+constexpr Eval NO_EVAL = {std::numeric_limits<Cost>::max(), 0, 0, 0};
+constexpr Eval NO_GAIN = {std::numeric_limits<Cost>::min(), 0, 0, 0};
 
 } // namespace vroom
 
