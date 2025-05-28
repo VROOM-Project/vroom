@@ -55,8 +55,8 @@ public:
   // appear before and after job at rank i in route for vehicle v
   // (handling cases where those edges are absent or linked with
   // start/end of vehicle). node_gains[v][i] stores potential gain
-  // when removing job at rank i in route for vehicle
-  // v.
+  // when removing job at rank i in route for vehicle v (including
+  // both gains related to edge removal and task duration).
   std::vector<std::vector<Eval>> edge_evals_around_node;
   std::vector<std::vector<Eval>> node_gains;
 
