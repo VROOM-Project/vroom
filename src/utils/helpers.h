@@ -89,26 +89,33 @@ inline Eval addition_cost(const Input& input,
                           Index rank) {
   assert(rank <= route.size());
 
-  const Index job_index = input.jobs[job_rank].index();
+  const auto& job = input.jobs[job_rank];
+  const Index job_index = job.index();
   Eval previous_eval;
   Eval next_eval;
   Eval old_edge_eval;
+  std::optional<Index> previous_index;
+
+  // Only considering service here, setup is handled down the line.
+  Duration added_task_duration = job.services[v.type];
 
   if (rank == route.size()) {
     if (route.empty()) {
       if (v.has_start()) {
-        previous_eval = v.eval(v.start.value().index(), job_index);
+        previous_index = v.start.value().index();
+        previous_eval = v.eval(previous_index.value(), job_index);
       }
       if (v.has_end()) {
         next_eval = v.eval(job_index, v.end.value().index());
       }
     } else {
       // Adding job past the end after a real job.
-      auto p_index = input.jobs[route[rank - 1]].index();
-      previous_eval = v.eval(p_index, job_index);
+      previous_index = input.jobs[route[rank - 1]].index();
+      previous_eval = v.eval(previous_index.value(), job_index);
+
       if (v.has_end()) {
         auto n_index = v.end.value().index();
-        old_edge_eval = v.eval(p_index, n_index);
+        old_edge_eval = v.eval(previous_index.value(), n_index);
         next_eval = v.eval(job_index, n_index);
       }
     }
@@ -119,18 +126,36 @@ inline Eval addition_cost(const Input& input,
 
     if (rank == 0) {
       if (v.has_start()) {
-        auto p_index = v.start.value().index();
-        previous_eval = v.eval(p_index, job_index);
-        old_edge_eval = v.eval(p_index, n_index);
+        previous_index = v.start.value().index();
+        previous_eval = v.eval(previous_index.value(), job_index);
+        old_edge_eval = v.eval(previous_index.value(), n_index);
       }
     } else {
-      auto p_index = input.jobs[route[rank - 1]].index();
-      previous_eval = v.eval(p_index, job_index);
-      old_edge_eval = v.eval(p_index, n_index);
+      previous_index = input.jobs[route[rank - 1]].index();
+      previous_eval = v.eval(previous_index.value(), job_index);
+      old_edge_eval = v.eval(previous_index.value(), n_index);
+    }
+
+    if (previous_index.has_value()) {
+      if (n_index == job_index && previous_index.value() != n_index) {
+        added_task_duration -= input.jobs[route[rank]].setups[v.type];
+      }
+      if (n_index != job_index && previous_index.value() == n_index) {
+        added_task_duration += input.jobs[route[rank]].setups[v.type];
+      }
+    } else {
+      if (n_index == job_index) {
+        added_task_duration -= input.jobs[route[rank]].setups[v.type];
+      }
     }
   }
 
-  return previous_eval + next_eval - old_edge_eval;
+  if (!previous_index.has_value() || (previous_index.value() != job_index)) {
+    added_task_duration += job.setups[v.type];
+  }
+
+  return previous_eval + next_eval - old_edge_eval +
+         v.task_eval(added_task_duration);
 }
 
 // Evaluate adding pickup with rank job_rank and associated delivery
@@ -255,11 +280,6 @@ inline Eval in_place_delta_cost(const Input& input,
 
 Priority priority_sum_for_route(const Input& input,
                                 const std::vector<Index>& route);
-
-Eval route_eval_for_vehicle(const Input& input,
-                            Index vehicle_rank,
-                            std::vector<Index>::const_iterator first_job,
-                            std::vector<Index>::const_iterator last_job);
 
 Eval route_eval_for_vehicle(const Input& input,
                             Index vehicle_rank,
