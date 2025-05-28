@@ -106,8 +106,12 @@ struct Vehicle {
     return costs.fixed;
   }
 
-  Cost task_cost(Duration hundredth_seconds) const {
-    return costs.per_task_hour * hundredth_seconds;
+  Cost task_cost(Duration task_duration) const {
+    return costs.per_task_hour * task_duration;
+  }
+
+  Eval task_eval(Duration task_duration) const {
+    return {task_cost(task_duration), 0, 0, task_duration};
   }
 
   Duration duration(Index i, Index j) const {

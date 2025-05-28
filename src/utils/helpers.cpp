@@ -152,21 +152,39 @@ Eval route_eval_for_vehicle(const Input& input,
   if (!route.empty()) {
     eval.cost += v.fixed_cost();
 
+    const auto& first_job = input.jobs[route.front()];
+    auto jobs_task_duration =
+      first_job.services[v.type] + first_job.setups[v.type];
+
     if (v.has_start()) {
-      eval +=
-        v.eval(v.start.value().index(), input.jobs[route.front()].index());
+      const auto start_index = v.start.value().index();
+      eval += v.eval(start_index, first_job.index());
+
+      if (start_index == first_job.index()) {
+        jobs_task_duration -= first_job.setups[v.type];
+      }
     }
 
     Index previous_index = input.jobs[route.front()].index();
     for (Index i = 1; i < route.size(); ++i) {
-      const Index current_index = input.jobs[route[i]].index();
+      const auto& current_job = input.jobs[route[i]];
+      const Index current_index = current_job.index();
+
       eval += v.eval(previous_index, current_index);
+
+      jobs_task_duration += current_job.services[v.type];
+      if (current_index != previous_index) {
+        jobs_task_duration += current_job.setups[v.type];
+      }
+
       previous_index = current_index;
     }
 
     if (v.has_end()) {
       eval += v.eval(previous_index, v.end.value().index());
     }
+
+    eval += v.task_eval(jobs_task_duration);
   }
 
   return eval;
