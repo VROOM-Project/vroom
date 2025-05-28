@@ -96,6 +96,9 @@ inline Eval addition_cost(const Input& input,
   Eval old_edge_eval;
   std::optional<Index> previous_index;
 
+  // Only considering service here, setup is handled down the line.
+  Duration added_task_duration = job.services[v.type];
+
   if (rank == route.size()) {
     if (route.empty()) {
       if (v.has_start()) {
@@ -132,9 +135,27 @@ inline Eval addition_cost(const Input& input,
       previous_eval = v.eval(previous_index.value(), job_index);
       old_edge_eval = v.eval(previous_index.value(), n_index);
     }
+
+    if (previous_index.has_value()) {
+      if (n_index == job_index && previous_index.value() != n_index) {
+        added_task_duration -= input.jobs[route[rank]].setups[v.type];
+      }
+      if (n_index != job_index && previous_index.value() == n_index) {
+        added_task_duration += input.jobs[route[rank]].setups[v.type];
+      }
+    } else {
+      if (n_index == job_index) {
+        added_task_duration -= input.jobs[route[rank]].setups[v.type];
+      }
+    }
   }
 
-  return previous_eval + next_eval - old_edge_eval;
+  if (!previous_index.has_value() || (previous_index.value() != job_index)) {
+    added_task_duration += job.setups[v.type];
+  }
+
+  return previous_eval + next_eval - old_edge_eval +
+         v.task_eval(added_task_duration);
 }
 
 // Evaluate adding pickup with rank job_rank and associated delivery
