@@ -56,22 +56,18 @@ public:
   // (handling cases where those edges are absent or linked with
   // start/end of vehicle). node_gains[v][i] stores potential gain
   // when removing job at rank i in route for vehicle
-  // v. node_candidates[v] is the rank that yields the biggest such
-  // gain for vehicle v.
+  // v.
   std::vector<std::vector<Eval>> edge_evals_around_node;
   std::vector<std::vector<Eval>> node_gains;
-  std::vector<Index> node_candidates;
 
   // edge_evals_around_edge[v][i] evaluates the sum of edges that
   // appear before and after edge starting at rank i in route for
   // vehicle v (handling cases where those edges are absent or linked
   // with start/end of vehicle). edge_gains[v][i] stores potential
   // gain when removing edge starting at rank i in route for vehicle
-  // v. edge_candidates[v] is the rank that yields the biggest such
-  // gain for vehicle v.
+  // v.
   std::vector<std::vector<Eval>> edge_evals_around_edge;
   std::vector<std::vector<Eval>> edge_gains;
-  std::vector<Index> edge_candidates;
 
   // pd_gains[v][i] stores potential gain when removing pickup at rank
   // i in route for vehicle v along with it's associated delivery.
