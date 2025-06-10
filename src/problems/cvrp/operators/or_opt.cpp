@@ -8,6 +8,7 @@ All rights reserved (see LICENSE).
 */
 
 #include "problems/cvrp/operators/or_opt.h"
+#include "utils/helpers.h"
 
 namespace vroom::cvrp {
 
@@ -111,6 +112,9 @@ Eval OrOpt::gain_upper_bound() {
     s_gain.cost += s_v.fixed_cost();
   }
 
+  assert(s_gain ==
+         utils::removal_cost_delta(_input, _sol_state, source, s_rank, 2));
+
   // Gain for target vehicle, including cost of moved edge.
   _normal_t_gain = old_edge_cost - previous_cost - next_cost -
                    t_v.eval(s_index, after_s_index);
@@ -122,6 +126,17 @@ Eval OrOpt::gain_upper_bound() {
     _normal_t_gain.cost -= t_v.fixed_cost();
     _reversed_t_gain.cost -= t_v.fixed_cost();
   }
+
+  assert(_normal_t_gain == utils::addition_cost_delta(_input,
+                                                      _sol_state,
+                                                      target,
+                                                      t_rank,
+                                                      t_rank,
+                                                      source,
+                                                      s_rank,
+                                                      s_rank + 2));
+
+  // TODO compute _reversed_t_gain
 
   _gain_upper_bound_computed = true;
 
