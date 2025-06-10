@@ -8,6 +8,7 @@ All rights reserved (see LICENSE).
 */
 
 #include "problems/cvrp/operators/two_opt.h"
+#include "utils/helpers.h"
 
 namespace vroom::cvrp {
 
@@ -101,6 +102,24 @@ void TwoOpt::compute_gain() {
     t_gain += t_v.eval(last_t, end_t);
     t_gain -= t_v.eval(new_last_t, end_t);
   }
+
+  assert(s_gain == utils::addition_cost_delta(_input,
+                                              _sol_state,
+                                              source,
+                                              s_rank + 1,
+                                              s_route.size(),
+                                              target,
+                                              t_rank + 1,
+                                              t_route.size()));
+
+  assert(t_gain == utils::addition_cost_delta(_input,
+                                              _sol_state,
+                                              target,
+                                              t_rank + 1,
+                                              t_route.size(),
+                                              source,
+                                              s_rank + 1,
+                                              s_route.size()));
 
   stored_gain = s_gain + t_gain;
   gain_computed = true;
