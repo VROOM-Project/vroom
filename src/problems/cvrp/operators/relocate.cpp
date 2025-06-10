@@ -55,6 +55,18 @@ void Relocate::compute_gain() {
     t_gain.cost -= t_v.fixed_cost();
   }
 
+  assert(s_gain ==
+         utils::removal_cost_delta(_input, _sol_state, source, s_rank, 1));
+
+  assert(t_gain == utils::addition_cost_delta(_input,
+                                              _sol_state,
+                                              target,
+                                              t_rank,
+                                              t_rank,
+                                              source,
+                                              s_rank,
+                                              s_rank + 1));
+
   stored_gain = s_gain + t_gain;
   gain_computed = true;
 }
