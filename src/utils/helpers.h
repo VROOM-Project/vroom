@@ -16,6 +16,7 @@ All rights reserved (see LICENSE).
 
 #include "structures/typedefs.h"
 #include "structures/vroom/raw_route.h"
+#include "structures/vroom/solution_state.h"
 #include "structures/vroom/tw_route.h"
 #include "utils/exception.h"
 
@@ -179,6 +180,106 @@ inline Eval addition_cost(const Input& input,
   }
 
   return eval;
+}
+
+// Compute cost variation when replacing the [first_rank, last_rank)
+// portion for route1 with the non-empty range [insertion_start;
+// insertion_end) from route_2.
+inline Eval addition_cost_delta(const Input& input,
+                                const SolutionState& sol_state,
+                                const RawRoute& route_1,
+                                Index first_rank,
+                                Index last_rank,
+                                const RawRoute& route_2,
+                                Index insertion_start,
+                                Index insertion_end) {
+  assert(first_rank <= last_rank);
+  assert(last_rank <= route_1.route.size());
+  assert(insertion_start <= insertion_end);
+
+  const bool empty_insertion = (insertion_start == insertion_end);
+
+  const auto& r1 = route_1.route;
+  const auto v1_rank = route_1.v_rank;
+  const auto& r2 = route_2.route;
+  const auto v2_rank = route_2.v_rank;
+  const auto& v1 = input.vehicles[v1_rank];
+
+  Eval cost_delta;
+
+  if (last_rank > first_rank) {
+    // Gain related to removed portion.
+    cost_delta += sol_state.fwd_costs[v1_rank][v1_rank][last_rank - 1];
+    cost_delta -= sol_state.fwd_costs[v1_rank][v1_rank][first_rank];
+  }
+
+  if (!empty_insertion) {
+    // Cost related to inserted portion.
+    cost_delta -= sol_state.fwd_costs[v2_rank][v1_rank][insertion_end - 1];
+    cost_delta += sol_state.fwd_costs[v2_rank][v1_rank][insertion_start];
+  }
+
+  // Determine useful values if present.
+  std::optional<Index> before_first;
+  if (first_rank > 0) {
+    before_first = input.jobs[r1[first_rank - 1]].index();
+  } else {
+    if (v1.has_start()) {
+      before_first = v1.start.value().index();
+    }
+  }
+
+  std::optional<Index> first_index;
+  if (first_rank < r1.size()) {
+    first_index = input.jobs[r1[first_rank]].index();
+  } else {
+    if (v1.has_end()) {
+      first_index = v1.end.value().index();
+    }
+  }
+
+  std::optional<Index> last_index;
+  if (last_rank < r1.size()) {
+    last_index = input.jobs[r1[last_rank]].index();
+  } else {
+    if (v1.has_end()) {
+      last_index = v1.end.value().index();
+    }
+  }
+
+  // Gain of removed edge before replaced range.
+  if (before_first && first_index) {
+    assert(!r1.empty());
+    cost_delta += v1.eval(before_first.value(), first_index.value());
+  }
+
+  if (empty_insertion) {
+    if (before_first && last_index) {
+      cost_delta -= v1.eval(before_first.value(), last_index.value());
+    }
+  } else {
+    if (before_first) {
+      // Cost of new edge to inserted range.
+      const Index insertion_start_index =
+        input.jobs[r2[insertion_start]].index();
+      cost_delta -= v1.eval(before_first.value(), insertion_start_index);
+    }
+
+    if (last_index) {
+      // Cost of new edge after inserted range.
+      const Index before_insertion_end =
+        input.jobs[r2[insertion_end - 1]].index();
+      cost_delta -= v1.eval(before_insertion_end, last_index.value());
+    }
+  }
+
+  // Gain of removed edge after replaced range, if any.
+  if (last_index && last_rank > first_rank) {
+    const Index before_last = input.jobs[r1[last_rank - 1]].index();
+    cost_delta += v1.eval(before_last, last_index.value());
+  }
+
+  return cost_delta;
 }
 
 inline Eval max_edge_eval(const Input& input,
