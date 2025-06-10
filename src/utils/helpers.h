@@ -247,14 +247,15 @@ inline Eval addition_cost_delta(const Input& input,
     }
   }
 
-  // Gain of removed edge before replaced range.
-  if (before_first && first_index) {
-    assert(!r1.empty());
+  // Gain of removed edge before replaced range. If route is empty,
+  // before_first and first_index are respectively the start and end
+  // of vehicle if defined.
+  if (before_first && first_index && !r1.empty()) {
     cost_delta += v1.eval(before_first.value(), first_index.value());
   }
 
   if (empty_insertion) {
-    if (before_first && last_index) {
+    if (before_first && last_index && !r1.empty()) {
       cost_delta -= v1.eval(before_first.value(), last_index.value());
     }
   } else {
@@ -277,6 +278,11 @@ inline Eval addition_cost_delta(const Input& input,
   if (last_index && last_rank > first_rank) {
     const Index before_last = input.jobs[r1[last_rank - 1]].index();
     cost_delta += v1.eval(before_last, last_index.value());
+  }
+
+  // Handle fixed cost addition.
+  if (r1.empty() && !empty_insertion) {
+    cost_delta.cost -= v1.fixed_cost();
   }
 
   return cost_delta;
