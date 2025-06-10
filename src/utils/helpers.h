@@ -285,7 +285,31 @@ inline Eval addition_cost_delta(const Input& input,
     cost_delta.cost -= v1.fixed_cost();
   }
 
+  if (empty_insertion && first_rank == 0 && last_rank == r1.size()) {
+    cost_delta.cost += v1.fixed_cost();
+  }
+
   return cost_delta;
+}
+
+// Compute cost variation when removing the "count" elements starting
+// from rank in route.
+inline Eval removal_cost_delta(const Input& input,
+                               const SolutionState& sol_state,
+                               const RawRoute& route,
+                               Index rank,
+                               unsigned count) {
+  assert(!route.empty());
+  assert(rank + count <= route.size());
+  return addition_cost_delta(input,
+                             sol_state,
+                             route,
+                             rank,
+                             rank + count,
+                             // dummy values for empty insertion
+                             route,
+                             0,
+                             0);
 }
 
 inline Eval max_edge_eval(const Input& input,
