@@ -136,7 +136,15 @@ Eval OrOpt::gain_upper_bound() {
                                                       s_rank,
                                                       s_rank + 2));
 
-  // TODO compute _reversed_t_gain
+  assert(_reversed_t_gain == utils::addition_cost_delta(_input,
+                                                        _sol_state,
+                                                        target,
+                                                        t_rank,
+                                                        t_rank,
+                                                        source,
+                                                        s_rank,
+                                                        s_rank + 2,
+                                                        REVERSED_INSERTION));
 
   _gain_upper_bound_computed = true;
 
