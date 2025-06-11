@@ -221,37 +221,45 @@ inline auto get_indices(const Input& input,
   return indices;
 }
 
-inline Eval get_range_costs(const SolutionState& sol_state,
-                            Index v1,
-                            Index v2,
-                            Index first_rank,
-                            Index last_rank,
-                            Index insertion_start,
-                            Index insertion_end,
-                            bool reversed_insertion) {
+inline Eval get_range_removal_gain(const SolutionState& sol_state,
+                                   Index v,
+                                   Index first_rank,
+                                   Index last_rank) {
   assert(first_rank <= last_rank);
-  assert(insertion_start <= insertion_end);
 
-  Eval cost_delta;
+  Eval removal_gain;
 
   if (last_rank > first_rank) {
     // Gain related to removed portion.
-    cost_delta += sol_state.fwd_costs[v1][v1][last_rank - 1];
-    cost_delta -= sol_state.fwd_costs[v1][v1][first_rank];
+    removal_gain += sol_state.fwd_costs[v][v][last_rank - 1];
+    removal_gain -= sol_state.fwd_costs[v][v][first_rank];
   }
+
+  return removal_gain;
+}
+
+inline Eval get_range_addition_cost(const SolutionState& sol_state,
+                                    Index v1,
+                                    Index v2,
+                                    Index insertion_start,
+                                    Index insertion_end,
+                                    bool reversed_insertion) {
+  assert(insertion_start <= insertion_end);
+
+  Eval addition_cost;
 
   if (insertion_start != insertion_end) {
     // Cost related to inserted portion.
     if (reversed_insertion) {
-      cost_delta -= sol_state.bwd_costs[v2][v1][insertion_end - 1];
-      cost_delta += sol_state.bwd_costs[v2][v1][insertion_start];
+      addition_cost += sol_state.bwd_costs[v2][v1][insertion_end - 1];
+      addition_cost -= sol_state.bwd_costs[v2][v1][insertion_start];
     } else {
-      cost_delta -= sol_state.fwd_costs[v2][v1][insertion_end - 1];
-      cost_delta += sol_state.fwd_costs[v2][v1][insertion_start];
+      addition_cost += sol_state.fwd_costs[v2][v1][insertion_end - 1];
+      addition_cost -= sol_state.fwd_costs[v2][v1][insertion_start];
     }
   }
 
-  return cost_delta;
+  return addition_cost;
 }
 
 // Compute cost variation when replacing the [first_rank, last_rank)
@@ -278,14 +286,14 @@ inline Eval addition_cost_delta(const Input& input,
   const auto v2_rank = route_2.v_rank;
   const auto& v1 = input.vehicles[v1_rank];
 
-  Eval cost_delta = get_range_costs(sol_state,
-                                    v1_rank,
-                                    v2_rank,
-                                    first_rank,
-                                    last_rank,
-                                    insertion_start,
-                                    insertion_end,
-                                    reversed_insertion);
+  Eval cost_delta =
+    get_range_removal_gain(sol_state, v1_rank, first_rank, last_rank) -
+    get_range_addition_cost(sol_state,
+                            v1_rank,
+                            v2_rank,
+                            insertion_start,
+                            insertion_end,
+                            reversed_insertion);
 
   // Determine useful values if present.
   const auto [before_first, first_index, last_index] =
