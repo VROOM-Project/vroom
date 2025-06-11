@@ -221,6 +221,30 @@ inline auto get_indices(const Input& input,
   return indices;
 }
 
+inline Eval get_range_costs(const SolutionState& sol_state,
+                            Index v1,
+                            Index v2,
+                            Index first_rank,
+                            Index last_rank,
+                            Index insertion_start,
+                            Index insertion_end) {
+  Eval cost_delta;
+
+  if (last_rank > first_rank) {
+    // Gain related to removed portion.
+    cost_delta += sol_state.fwd_costs[v1][v1][last_rank - 1];
+    cost_delta -= sol_state.fwd_costs[v1][v1][first_rank];
+  }
+
+  if (insertion_start != insertion_end) {
+    // Cost related to inserted portion.
+    cost_delta -= sol_state.fwd_costs[v2][v1][insertion_end - 1];
+    cost_delta += sol_state.fwd_costs[v2][v1][insertion_start];
+  }
+
+  return cost_delta;
+}
+
 // Compute cost variation when replacing the [first_rank, last_rank)
 // portion for route1 with the non-empty range [insertion_start;
 // insertion_end) from route_2.
@@ -244,19 +268,13 @@ inline Eval addition_cost_delta(const Input& input,
   const auto v2_rank = route_2.v_rank;
   const auto& v1 = input.vehicles[v1_rank];
 
-  Eval cost_delta;
-
-  if (last_rank > first_rank) {
-    // Gain related to removed portion.
-    cost_delta += sol_state.fwd_costs[v1_rank][v1_rank][last_rank - 1];
-    cost_delta -= sol_state.fwd_costs[v1_rank][v1_rank][first_rank];
-  }
-
-  if (!empty_insertion) {
-    // Cost related to inserted portion.
-    cost_delta -= sol_state.fwd_costs[v2_rank][v1_rank][insertion_end - 1];
-    cost_delta += sol_state.fwd_costs[v2_rank][v1_rank][insertion_start];
-  }
+  Eval cost_delta = get_range_costs(sol_state,
+                                    v1_rank,
+                                    v2_rank,
+                                    first_rank,
+                                    last_rank,
+                                    insertion_start,
+                                    insertion_end);
 
   // Determine useful values if present.
   const auto [before_first, first_index, last_index] =
