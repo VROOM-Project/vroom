@@ -110,14 +110,22 @@ Eval MixedExchange::gain_upper_bound() {
                                                       t_rank,
                                                       t_rank + 2));
 
-  // TODO compute _reversed_s_gain
-
   auto s_gain_upper_bound = _normal_s_gain;
 
   if (check_t_reverse) {
     _reversed_s_gain = _sol_state.edge_evals_around_node[s_vehicle][s_rank] -
                        reverse_previous_cost - reverse_next_cost -
                        s_v.eval(t_after_index, t_index);
+
+    assert(_reversed_s_gain == utils::addition_cost_delta(_input,
+                                                          _sol_state,
+                                                          source,
+                                                          s_rank,
+                                                          s_rank + 1,
+                                                          target,
+                                                          t_rank,
+                                                          t_rank + 2,
+                                                          REVERSED_INSERTION));
 
     s_gain_upper_bound = std::max(_normal_s_gain, _reversed_s_gain);
   }
