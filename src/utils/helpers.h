@@ -182,6 +182,45 @@ inline Eval addition_cost(const Input& input,
   return eval;
 }
 
+inline auto get_indices(const Input& input,
+                        const RawRoute& route,
+                        Index first_rank,
+                        Index last_rank) {
+  const auto& r = route.route;
+  const auto& v = input.vehicles[route.v_rank];
+
+  std::array<std::optional<Index>, 3> indices;
+
+  auto& before_first = indices[0];
+  if (first_rank > 0) {
+    before_first = input.jobs[r[first_rank - 1]].index();
+  } else {
+    if (v.has_start()) {
+      before_first = v.start.value().index();
+    }
+  }
+
+  auto& first_index = indices[1];
+  if (first_rank < r.size()) {
+    first_index = input.jobs[r[first_rank]].index();
+  } else {
+    if (v.has_end()) {
+      first_index = v.end.value().index();
+    }
+  }
+
+  auto& last_index = indices[2];
+  if (last_rank < r.size()) {
+    last_index = input.jobs[r[last_rank]].index();
+  } else {
+    if (v.has_end()) {
+      last_index = v.end.value().index();
+    }
+  }
+
+  return indices;
+}
+
 // Compute cost variation when replacing the [first_rank, last_rank)
 // portion for route1 with the non-empty range [insertion_start;
 // insertion_end) from route_2.
@@ -220,32 +259,8 @@ inline Eval addition_cost_delta(const Input& input,
   }
 
   // Determine useful values if present.
-  std::optional<Index> before_first;
-  if (first_rank > 0) {
-    before_first = input.jobs[r1[first_rank - 1]].index();
-  } else {
-    if (v1.has_start()) {
-      before_first = v1.start.value().index();
-    }
-  }
-
-  std::optional<Index> first_index;
-  if (first_rank < r1.size()) {
-    first_index = input.jobs[r1[first_rank]].index();
-  } else {
-    if (v1.has_end()) {
-      first_index = v1.end.value().index();
-    }
-  }
-
-  std::optional<Index> last_index;
-  if (last_rank < r1.size()) {
-    last_index = input.jobs[r1[last_rank]].index();
-  } else {
-    if (v1.has_end()) {
-      last_index = v1.end.value().index();
-    }
-  }
+  const auto [before_first, first_index, last_index] =
+    get_indices(input, route_1, first_rank, last_rank);
 
   // Gain of removed edge before replaced range. If route is empty,
   // before_first and first_index are respectively the start and end
