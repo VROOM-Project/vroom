@@ -8,6 +8,7 @@ All rights reserved (see LICENSE).
 */
 
 #include "problems/cvrp/operators/intra_or_opt.h"
+#include "utils/helpers.h"
 
 namespace vroom::cvrp {
 
@@ -121,11 +122,28 @@ Eval IntraOrOpt::gain_upper_bound() {
     }
   }
 
-  // Gain for source vehicle.
+  // Gain for removal
   s_gain = _sol_state.edge_gains[s_vehicle][s_rank];
 
-  // Gain for target vehicle.
+  // TODO this should replace s_gain as both s_gain and _*_t_gain will
+  // account for moved edge cost.
+  const auto new_s_gain =
+    utils::removal_cost_delta(_input, _sol_state, source, s_rank, 2);
+
+  // Gain for addition.
   _normal_t_gain = old_edge_cost - previous_cost - next_cost;
+
+  // this should replace _normal_t_gain
+  const auto new_normal_t_gain = utils::addition_cost_delta(_input,
+                                                            _sol_state,
+                                                            target,
+                                                            new_rank,
+                                                            new_rank,
+                                                            source,
+                                                            s_rank,
+                                                            s_rank + 2);
+
+  assert(s_gain + _normal_t_gain == new_s_gain + new_normal_t_gain);
 
   auto t_gain_upper_bound = _normal_t_gain;
 
@@ -134,6 +152,20 @@ Eval IntraOrOpt::gain_upper_bound() {
       v.eval(s_index, after_s_index) - v.eval(after_s_index, s_index);
     _reversed_t_gain = old_edge_cost + reverse_edge_cost -
                        reverse_previous_cost - reverse_next_cost;
+
+    // this should replace _reversed_t_gain
+    const auto new_reversed_t_gain =
+      utils::addition_cost_delta(_input,
+                                 _sol_state,
+                                 target,
+                                 new_rank,
+                                 new_rank,
+                                 source,
+                                 s_rank,
+                                 s_rank + 2,
+                                 REVERSED_INSERTION);
+
+    assert(s_gain + _reversed_t_gain == new_s_gain + new_reversed_t_gain);
 
     t_gain_upper_bound = std::max(_normal_t_gain, _reversed_t_gain);
   }
