@@ -314,16 +314,16 @@ inline Eval addition_cost_delta(const Input& input,
     if (before_first) {
       // Cost of new edge to inserted range.
       const Index first_inserted_index =
-        (reversed_insertion) ? input.jobs[r2[insertion_end - 1]].index()
-                             : input.jobs[r2[insertion_start]].index();
+        reversed_insertion ? input.jobs[r2[insertion_end - 1]].index()
+                           : input.jobs[r2[insertion_start]].index();
       cost_delta -= v1.eval(before_first.value(), first_inserted_index);
     }
 
     if (last_index) {
       // Cost of new edge after inserted range.
       const Index last_inserted_index =
-        (reversed_insertion) ? input.jobs[r2[insertion_start]].index()
-                             : input.jobs[r2[insertion_end - 1]].index();
+        reversed_insertion ? input.jobs[r2[insertion_start]].index()
+                           : input.jobs[r2[insertion_end - 1]].index();
       cost_delta -= v1.eval(last_inserted_index, last_index.value());
     }
   }
