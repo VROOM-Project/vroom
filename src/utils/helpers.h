@@ -227,7 +227,11 @@ inline Eval get_range_costs(const SolutionState& sol_state,
                             Index first_rank,
                             Index last_rank,
                             Index insertion_start,
-                            Index insertion_end) {
+                            Index insertion_end,
+                            bool reversed_insertion) {
+  assert(first_rank <= last_rank);
+  assert(insertion_start <= insertion_end);
+
   Eval cost_delta;
 
   if (last_rank > first_rank) {
@@ -238,8 +242,13 @@ inline Eval get_range_costs(const SolutionState& sol_state,
 
   if (insertion_start != insertion_end) {
     // Cost related to inserted portion.
-    cost_delta -= sol_state.fwd_costs[v2][v1][insertion_end - 1];
-    cost_delta += sol_state.fwd_costs[v2][v1][insertion_start];
+    if (reversed_insertion) {
+      cost_delta -= sol_state.bwd_costs[v2][v1][insertion_end - 1];
+      cost_delta += sol_state.bwd_costs[v2][v1][insertion_start];
+    } else {
+      cost_delta -= sol_state.fwd_costs[v2][v1][insertion_end - 1];
+      cost_delta += sol_state.fwd_costs[v2][v1][insertion_start];
+    }
   }
 
   return cost_delta;
@@ -255,7 +264,8 @@ inline Eval addition_cost_delta(const Input& input,
                                 Index last_rank,
                                 const RawRoute& route_2,
                                 Index insertion_start,
-                                Index insertion_end) {
+                                Index insertion_end,
+                                bool reversed_insertion = false) {
   assert(first_rank <= last_rank);
   assert(last_rank <= route_1.route.size());
   assert(insertion_start <= insertion_end);
@@ -274,7 +284,8 @@ inline Eval addition_cost_delta(const Input& input,
                                     first_rank,
                                     last_rank,
                                     insertion_start,
-                                    insertion_end);
+                                    insertion_end,
+                                    reversed_insertion);
 
   // Determine useful values if present.
   const auto [before_first, first_index, last_index] =
@@ -294,16 +305,18 @@ inline Eval addition_cost_delta(const Input& input,
   } else {
     if (before_first) {
       // Cost of new edge to inserted range.
-      const Index insertion_start_index =
-        input.jobs[r2[insertion_start]].index();
-      cost_delta -= v1.eval(before_first.value(), insertion_start_index);
+      const Index first_inserted_index =
+        (reversed_insertion) ? input.jobs[r2[insertion_end - 1]].index()
+                             : input.jobs[r2[insertion_start]].index();
+      cost_delta -= v1.eval(before_first.value(), first_inserted_index);
     }
 
     if (last_index) {
       // Cost of new edge after inserted range.
-      const Index before_insertion_end =
-        input.jobs[r2[insertion_end - 1]].index();
-      cost_delta -= v1.eval(before_insertion_end, last_index.value());
+      const Index last_inserted_index =
+        (reversed_insertion) ? input.jobs[r2[insertion_start]].index()
+                             : input.jobs[r2[insertion_end - 1]].index();
+      cost_delta -= v1.eval(last_inserted_index, last_index.value());
     }
   }
 
