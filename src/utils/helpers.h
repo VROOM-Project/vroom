@@ -346,6 +346,60 @@ inline Eval addition_cost_delta(const Input& input,
   return cost_delta;
 }
 
+// Compute cost variation when replacing the [first_rank, last_rank)
+// portion for route raw_route with the job at job_rank.
+inline Eval addition_cost_delta(const Input& input,
+                                const SolutionState& sol_state,
+                                const RawRoute& raw_route,
+                                Index first_rank,
+                                Index last_rank,
+                                Index job_rank) {
+  assert(first_rank <= last_rank);
+  assert(last_rank <= raw_route.route.size());
+
+  const auto& r = raw_route.route;
+  const auto v_rank = raw_route.v_rank;
+  const auto& v = input.vehicles[v_rank];
+  const auto job_index = input.jobs[job_rank].index();
+
+  Eval cost_delta =
+    get_range_removal_gain(sol_state, v_rank, first_rank, last_rank);
+
+  // Determine useful values if present.
+  const auto [before_first, first_index, last_index] =
+    get_indices(input, raw_route, first_rank, last_rank);
+
+  // Gain of removed edge before replaced range. If route is empty,
+  // before_first and first_index are respectively the start and end
+  // of vehicle if defined.
+  if (before_first && first_index && !r.empty()) {
+    cost_delta += v.eval(before_first.value(), first_index.value());
+  }
+
+  if (before_first) {
+    // Cost of new edge to inserted job.
+    cost_delta -= v.eval(before_first.value(), job_index);
+  }
+
+  if (last_index) {
+    // Cost of new edge after inserted job.
+    cost_delta -= v.eval(job_index, last_index.value());
+  }
+
+  // Gain of removed edge after replaced range, if any.
+  if (last_index && last_rank > first_rank) {
+    const Index before_last = input.jobs[r[last_rank - 1]].index();
+    cost_delta += v.eval(before_last, last_index.value());
+  }
+
+  // Handle fixed cost addition.
+  if (r.empty()) {
+    cost_delta.cost -= v.fixed_cost();
+  }
+
+  return cost_delta;
+}
+
 // Compute cost variation when removing the "count" elements starting
 // from rank in route.
 inline Eval removal_cost_delta(const Input& input,
