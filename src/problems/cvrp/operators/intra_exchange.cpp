@@ -8,6 +8,7 @@ All rights reserved (see LICENSE).
 */
 
 #include "problems/cvrp/operators/intra_exchange.h"
+#include "utils/helpers.h"
 
 namespace vroom::cvrp {
 
@@ -71,6 +72,15 @@ void IntraExchange::compute_gain() {
   const Eval s_gain = _sol_state.edge_evals_around_node[s_vehicle][s_rank] -
                       new_previous_cost - new_next_cost;
 
+  assert(s_gain == utils::addition_cost_delta(_input,
+                                              _sol_state,
+                                              source,
+                                              s_rank,
+                                              s_rank + 1,
+                                              target,
+                                              t_rank,
+                                              t_rank + 1));
+
   // Consider the cost of replacing job at rank t_rank with source
   // job. Part of that cost (for adjacent edges) is stored in
   // _sol_state.edge_evals_around_node.
@@ -93,6 +103,15 @@ void IntraExchange::compute_gain() {
 
   const Eval t_gain = _sol_state.edge_evals_around_node[s_vehicle][t_rank] -
                       new_previous_cost - new_next_cost;
+
+  assert(t_gain == utils::addition_cost_delta(_input,
+                                              _sol_state,
+                                              target,
+                                              t_rank,
+                                              t_rank + 1,
+                                              source,
+                                              s_rank,
+                                              s_rank + 1));
 
   stored_gain = s_gain + t_gain;
   gain_computed = true;

@@ -8,6 +8,7 @@ All rights reserved (see LICENSE).
 */
 
 #include "problems/cvrp/operators/route_exchange.h"
+#include "utils/helpers.h"
 
 namespace vroom::cvrp {
 
@@ -91,6 +92,24 @@ void RouteExchange::compute_gain() {
     t_gain.cost -= t_v.fixed_cost();
     s_gain.cost += s_v.fixed_cost();
   }
+
+  assert(s_gain == utils::addition_cost_delta(_input,
+                                              _sol_state,
+                                              source,
+                                              0,
+                                              s_route.size(),
+                                              target,
+                                              0,
+                                              t_route.size()));
+
+  assert(t_gain == utils::addition_cost_delta(_input,
+                                              _sol_state,
+                                              target,
+                                              0,
+                                              t_route.size(),
+                                              source,
+                                              0,
+                                              s_route.size()));
 
   stored_gain = s_gain + t_gain;
   gain_computed = true;

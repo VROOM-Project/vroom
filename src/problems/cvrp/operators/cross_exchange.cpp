@@ -8,6 +8,7 @@ All rights reserved (see LICENSE).
 */
 
 #include "problems/cvrp/operators/cross_exchange.h"
+#include "utils/helpers.h"
 
 namespace vroom::cvrp {
 
@@ -114,6 +115,15 @@ Eval CrossExchange::gain_upper_bound() {
                    s_v.eval(s_index, s_after_index) - previous_cost -
                    next_cost - s_v.eval(t_index, t_after_index);
 
+  assert(_normal_s_gain == utils::addition_cost_delta(_input,
+                                                      _sol_state,
+                                                      source,
+                                                      s_rank,
+                                                      s_rank + 2,
+                                                      target,
+                                                      t_rank,
+                                                      t_rank + 2));
+
   auto s_gain_upper_bound = _normal_s_gain;
 
   if (check_t_reverse) {
@@ -121,6 +131,16 @@ Eval CrossExchange::gain_upper_bound() {
                        s_v.eval(s_index, s_after_index) -
                        reverse_previous_cost - reverse_next_cost -
                        s_v.eval(t_after_index, t_index);
+
+    assert(_reversed_s_gain == utils::addition_cost_delta(_input,
+                                                          _sol_state,
+                                                          source,
+                                                          s_rank,
+                                                          s_rank + 2,
+                                                          target,
+                                                          t_rank,
+                                                          t_rank + 2,
+                                                          REVERSED_INSERTION));
 
     s_gain_upper_bound = std::max(_normal_s_gain, _reversed_s_gain);
   }
@@ -162,6 +182,15 @@ Eval CrossExchange::gain_upper_bound() {
                    t_v.eval(t_index, t_after_index) - previous_cost -
                    next_cost - t_v.eval(s_index, s_after_index);
 
+  assert(_normal_t_gain == utils::addition_cost_delta(_input,
+                                                      _sol_state,
+                                                      target,
+                                                      t_rank,
+                                                      t_rank + 2,
+                                                      source,
+                                                      s_rank,
+                                                      s_rank + 2));
+
   auto t_gain_upper_bound = _normal_t_gain;
 
   if (check_s_reverse) {
@@ -169,6 +198,16 @@ Eval CrossExchange::gain_upper_bound() {
                        t_v.eval(t_index, t_after_index) -
                        reverse_previous_cost - reverse_next_cost -
                        t_v.eval(s_after_index, s_index);
+
+    assert(_reversed_t_gain == utils::addition_cost_delta(_input,
+                                                          _sol_state,
+                                                          target,
+                                                          t_rank,
+                                                          t_rank + 2,
+                                                          source,
+                                                          s_rank,
+                                                          s_rank + 2,
+                                                          REVERSED_INSERTION));
 
     t_gain_upper_bound = std::max(_normal_t_gain, _reversed_t_gain);
   }

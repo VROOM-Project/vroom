@@ -8,6 +8,7 @@ All rights reserved (see LICENSE).
 */
 
 #include "problems/cvrp/operators/reverse_two_opt.h"
+#include "utils/helpers.h"
 
 namespace vroom::cvrp {
 
@@ -138,6 +139,26 @@ void ReverseTwoOpt::compute_gain() {
     // Emptying target route.
     t_gain.cost += t_v.fixed_cost();
   }
+
+  assert(s_gain == utils::addition_cost_delta(_input,
+                                              _sol_state,
+                                              source,
+                                              s_rank + 1,
+                                              s_route.size(),
+                                              target,
+                                              0,
+                                              t_rank + 1,
+                                              REVERSED_INSERTION));
+
+  assert(t_gain == utils::addition_cost_delta(_input,
+                                              _sol_state,
+                                              target,
+                                              0,
+                                              t_rank + 1,
+                                              source,
+                                              s_rank + 1,
+                                              s_route.size(),
+                                              REVERSED_INSERTION));
 
   stored_gain = s_gain + t_gain;
   gain_computed = true;

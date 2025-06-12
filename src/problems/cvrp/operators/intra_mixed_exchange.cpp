@@ -8,6 +8,7 @@ All rights reserved (see LICENSE).
 */
 
 #include "problems/cvrp/operators/intra_mixed_exchange.h"
+#include "utils/helpers.h"
 
 namespace vroom::cvrp {
 
@@ -118,14 +119,36 @@ Eval IntraMixedExchange::gain_upper_bound() {
   _normal_s_gain = _sol_state.edge_evals_around_node[s_vehicle][s_rank] -
                    previous_cost - next_cost;
 
+  // TODO this should replace _normal_s_gain as both t_gain and
+  // _*_s_gain will account for moved edge cost.
+  const auto new_normal_s_gain = utils::addition_cost_delta(_input,
+                                                            _sol_state,
+                                                            source,
+                                                            s_rank,
+                                                            s_rank + 1,
+                                                            target,
+                                                            t_rank,
+                                                            t_rank + 2);
+
   auto s_gain_upper_bound = _normal_s_gain;
 
+  Eval new_reversed_s_gain;
   if (check_t_reverse) {
     const auto reverse_edge_cost =
       v.eval(t_index, t_after_index) - v.eval(t_after_index, t_index);
     _reversed_s_gain = _sol_state.edge_evals_around_node[s_vehicle][s_rank] +
                        reverse_edge_cost - reverse_previous_cost -
                        reverse_next_cost;
+
+    new_reversed_s_gain = utils::addition_cost_delta(_input,
+                                                     _sol_state,
+                                                     source,
+                                                     s_rank,
+                                                     s_rank + 1,
+                                                     target,
+                                                     t_rank,
+                                                     t_rank + 2,
+                                                     REVERSED_INSERTION);
 
     s_gain_upper_bound = std::max(_normal_s_gain, _reversed_s_gain);
   }
@@ -160,6 +183,20 @@ Eval IntraMixedExchange::gain_upper_bound() {
 
   t_gain = _sol_state.edge_evals_around_edge[t_vehicle][t_rank] -
            previous_cost - next_cost;
+
+  // this should replace t_gain
+  const auto new_t_gain = utils::addition_cost_delta(_input,
+                                                     _sol_state,
+                                                     source,
+                                                     t_rank,
+                                                     t_rank + 2,
+                                                     source,
+                                                     s_rank,
+                                                     s_rank + 1);
+
+  assert(t_gain + _normal_s_gain == new_t_gain + new_normal_s_gain);
+  assert(!check_t_reverse ||
+         (t_gain + _reversed_s_gain == new_t_gain + new_reversed_s_gain));
 
   _gain_upper_bound_computed = true;
 

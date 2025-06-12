@@ -85,6 +85,13 @@ void UnassignedExchange::compute_gain() {
     } else {
       s_gain -= v.eval(u_index, _input.jobs[s_route[s_rank + 1]].index());
     }
+
+    assert(s_gain == utils::addition_cost_delta(_input,
+                                                _sol_state,
+                                                source,
+                                                s_rank,
+                                                s_rank + 1,
+                                                _u));
   } else {
     // No common edge so both gains can be computed independently.
     s_gain = _sol_state.node_gains[s_vehicle][s_rank] -

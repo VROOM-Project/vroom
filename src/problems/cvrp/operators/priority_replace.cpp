@@ -9,6 +9,8 @@ All rights reserved (see LICENSE).
 
 #include <algorithm>
 
+#include "utils/helpers.h"
+
 #include "problems/cvrp/operators/priority_replace.h"
 
 namespace vroom::cvrp {
@@ -72,6 +74,10 @@ void PriorityReplace::compute_start_gain() {
     s_gain -= v.eval(u_index, s_next_index);
   }
 
+  assert(
+    s_gain ==
+    utils::addition_cost_delta(_input, _sol_state, source, 0, s_rank + 1, _u));
+
   _start_gain_computed = true;
 }
 
@@ -103,6 +109,13 @@ void PriorityReplace::compute_end_gain() {
     t_gain += v.eval(t_previous_index, t_index);
     t_gain -= v.eval(t_previous_index, u_index);
   }
+
+  assert(t_gain == utils::addition_cost_delta(_input,
+                                              _sol_state,
+                                              source,
+                                              t_rank,
+                                              source.size(),
+                                              _u));
 
   _end_gain_computed = true;
 }
