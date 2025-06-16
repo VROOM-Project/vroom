@@ -456,6 +456,7 @@ inline Eval in_place_delta_cost(const Input& input,
                                 const Vehicle& v,
                                 const std::vector<Index>& route,
                                 Index rank) {
+  // TODO remove this function.
   assert(!route.empty());
   const Index new_index = input.jobs[job_rank].index();
 
