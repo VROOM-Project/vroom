@@ -84,6 +84,16 @@ compute_best_route_split_choice(const Input& input,
                                        end_v.end.value().index());
       }
 
+      assert(current_end_eval ==
+             -utils::addition_cost_delta(input,
+                                         sol_state,
+                                         empty_routes[v_rank],
+                                         0,
+                                         0,
+                                         source,
+                                         r,
+                                         source.size()));
+
       if (!end_v.ok_for_range_bounds(current_end_eval)) {
         continue;
       }
@@ -153,6 +163,17 @@ compute_best_route_split_choice(const Input& input,
           begin_v.eval(input.jobs[source.route[r - 1]].index(),
                        begin_v.end.value().index());
       }
+
+      assert(current_begin_eval ==
+             -utils::addition_cost_delta(input,
+                                         sol_state,
+                                         empty_routes[v_rank],
+                                         0,
+                                         0,
+                                         source,
+                                         0,
+                                         r));
+
 
       if (!begin_v.ok_for_range_bounds(current_begin_eval)) {
         continue;
