@@ -174,7 +174,6 @@ compute_best_route_split_choice(const Input& input,
                                          0,
                                          r));
 
-
       if (!begin_v.ok_for_range_bounds(current_begin_eval)) {
         continue;
       }

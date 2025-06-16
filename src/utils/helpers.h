@@ -263,8 +263,8 @@ inline Eval get_range_addition_cost(const SolutionState& sol_state,
 }
 
 // Compute cost variation when replacing the [first_rank, last_rank)
-// portion for route1 with the non-empty range [insertion_start;
-// insertion_end) from route_2.
+// portion for route1 with the range [insertion_start; insertion_end)
+// from route_2.
 inline Eval addition_cost_delta(const Input& input,
                                 const SolutionState& sol_state,
                                 const RawRoute& route_1,
