@@ -66,7 +66,13 @@ void ReverseTwoOpt::compute_gain() {
   t_gain += _sol_state.fwd_costs[t_vehicle][t_vehicle][t_rank];
   s_gain -= _sol_state.bwd_costs[t_vehicle][s_vehicle][t_rank];
 
-  if (!last_in_target) {
+  if (last_in_target) {
+    // Spare cost to target route end if any.
+    if (t_v.has_end()) {
+      const auto end_t = t_v.end.value().index();
+      t_gain += t_v.eval(t_index, end_t);
+    }
+  } else {
     // Spare next edge in target route.
     const Index next_index = _input.jobs[t_route[t_rank + 1]].index();
     t_gain += t_v.eval(t_index, next_index);
