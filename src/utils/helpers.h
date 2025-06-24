@@ -268,12 +268,12 @@ inline Eval get_range_addition_cost(const SolutionState& sol_state,
 inline Eval addition_cost_delta(const Input& input,
                                 const SolutionState& sol_state,
                                 const RawRoute& route_1,
-                                Index first_rank,
-                                Index last_rank,
+                                const Index first_rank,
+                                const Index last_rank,
                                 const RawRoute& route_2,
-                                Index insertion_start,
-                                Index insertion_end,
-                                bool reversed_insertion = false) {
+                                const Index insertion_start,
+                                const Index insertion_end,
+                                const bool reversed_insertion = false) {
   assert(first_rank <= last_rank);
   assert(last_rank <= route_1.route.size());
   assert(insertion_start <= insertion_end);
@@ -307,7 +307,10 @@ inline Eval addition_cost_delta(const Input& input,
   }
 
   if (empty_insertion) {
-    if (before_first && last_index && !r1.empty()) {
+    if (before_first && last_index &&
+        !(first_rank == 0 && last_rank == r1.size())) {
+      // Add cost of new edge replacing removed range, except if
+      // resulting route is empty.
       cost_delta -= v1.eval(before_first.value(), last_index.value());
     }
   } else {
