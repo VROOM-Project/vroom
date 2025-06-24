@@ -56,6 +56,7 @@
 - Segfault when using the C++ API with empty vehicles (#1187)
 - Solution "shadowing" when only comparing indicators (#1199)
 - Too loose `max_tasks` bound derived from TW (#1243)
+- Wrong evaluation in `ReverseTwoOpt` (#1271)
 
 #### Internals
 
