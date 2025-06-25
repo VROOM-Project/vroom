@@ -236,10 +236,12 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
     // TODO replace
 
     // We do not want to account for fixed cost that may be present in
-    // removal_cost_delta since no route will be emptied anyway.
+    // removal_cost_delta since no route will be emptied anyway. Also
+    // the delta value should account for the start->end cost in case
+    // of a single-step route.
     const auto new_source_delta =
       utils::removal_cost_delta(input, sol_state, source, s_rank, 1) -
-      Eval(source.size() == 1 ? s_v.fixed_cost() : 0);
+      Eval(source.size() == 1 ? s_v.fixed_cost() : 0) - source_start_end_cost;
     assert(source_delta == new_source_delta);
 
     for (unsigned t_rank = 0; t_rank < target.route.size(); ++t_rank) {
@@ -259,7 +261,8 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
       // TODO replace
       const auto new_target_delta =
         utils::removal_cost_delta(input, sol_state, target, t_rank, 1) -
-        Eval(target.size() == 1 ? t_v.fixed_cost() : 0);
+        Eval(target.size() == 1 ? t_v.fixed_cost() : 0) - target_start_end_cost;
+
       assert(target_delta == new_target_delta);
 
       if (source_delta + target_delta <= best_gain) {
