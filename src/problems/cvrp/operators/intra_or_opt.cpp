@@ -69,103 +69,33 @@ IntraOrOpt::IntraOrOpt(const Input& input,
 }
 
 Eval IntraOrOpt::gain_upper_bound() {
-  const auto& v = _input.vehicles[s_vehicle];
-
-  // The cost of removing edge starting at rank s_rank is already
-  // stored in _sol_state.edge_gains[s_vehicle][s_rank].
-
   // For addition, consider the cost of adding source edge at new rank
   // *after* removal.
-  auto new_rank = t_rank;
-  if (s_rank < t_rank) {
-    new_rank += 2;
-  }
+  const auto new_rank = t_rank + (s_rank < t_rank) ? 2 : 0;
 
-  const Index s_index = _input.jobs[s_route[s_rank]].index();
-  const Index after_s_index = _input.jobs[s_route[s_rank + 1]].index();
+  s_gain = utils::removal_cost_delta(_input, _sol_state, source, s_rank, 2);
 
-  Eval previous_cost;
-  Eval next_cost;
-  Eval reverse_previous_cost;
-  Eval reverse_next_cost;
-  Eval old_edge_cost;
-
-  if (new_rank == s_route.size()) {
-    // Adding edge past the end after a real job that was unmoved.
-    auto p_index = _input.jobs[s_route[new_rank - 1]].index();
-    previous_cost = v.eval(p_index, s_index);
-    reverse_previous_cost = v.eval(p_index, after_s_index);
-    if (v.has_end()) {
-      auto n_index = v.end.value().index();
-      old_edge_cost = v.eval(p_index, n_index);
-      next_cost = v.eval(after_s_index, n_index);
-      reverse_next_cost = v.eval(s_index, n_index);
-    }
-  } else {
-    // Adding before one of the jobs.
-    auto n_index = _input.jobs[s_route[new_rank]].index();
-    next_cost = v.eval(after_s_index, n_index);
-    reverse_next_cost = v.eval(s_index, n_index);
-
-    if (new_rank == 0) {
-      if (v.has_start()) {
-        auto p_index = v.start.value().index();
-        previous_cost = v.eval(p_index, s_index);
-        reverse_previous_cost = v.eval(p_index, after_s_index);
-        old_edge_cost = v.eval(p_index, n_index);
-      }
-    } else {
-      auto p_index = _input.jobs[s_route[new_rank - 1]].index();
-      previous_cost = v.eval(p_index, s_index);
-      reverse_previous_cost = v.eval(p_index, after_s_index);
-      old_edge_cost = v.eval(p_index, n_index);
-    }
-  }
-
-  // Gain for removal
-  s_gain = _sol_state.edge_gains[s_vehicle][s_rank];
-
-  // TODO this should replace s_gain as both s_gain and _*_t_gain will
-  // account for moved edge cost.
-  const auto new_s_gain =
-    utils::removal_cost_delta(_input, _sol_state, source, s_rank, 2);
-
-  // Gain for addition.
-  _normal_t_gain = old_edge_cost - previous_cost - next_cost;
-
-  // this should replace _normal_t_gain
-  const auto new_normal_t_gain = utils::addition_cost_delta(_input,
-                                                            _sol_state,
-                                                            target,
-                                                            new_rank,
-                                                            new_rank,
-                                                            source,
-                                                            s_rank,
-                                                            s_rank + 2);
-
-  assert(s_gain + _normal_t_gain == new_s_gain + new_normal_t_gain);
+  _normal_t_gain = utils::addition_cost_delta(_input,
+                                              _sol_state,
+                                              target,
+                                              new_rank,
+                                              new_rank,
+                                              source,
+                                              s_rank,
+                                              s_rank + 2);
 
   auto t_gain_upper_bound = _normal_t_gain;
 
   if (check_reverse) {
-    const auto reverse_edge_cost =
-      v.eval(s_index, after_s_index) - v.eval(after_s_index, s_index);
-    _reversed_t_gain = old_edge_cost + reverse_edge_cost -
-                       reverse_previous_cost - reverse_next_cost;
-
-    // this should replace _reversed_t_gain
-    const auto new_reversed_t_gain =
-      utils::addition_cost_delta(_input,
-                                 _sol_state,
-                                 target,
-                                 new_rank,
-                                 new_rank,
-                                 source,
-                                 s_rank,
-                                 s_rank + 2,
-                                 REVERSED_INSERTION);
-
-    assert(s_gain + _reversed_t_gain == new_s_gain + new_reversed_t_gain);
+    _reversed_t_gain = utils::addition_cost_delta(_input,
+                                                  _sol_state,
+                                                  target,
+                                                  new_rank,
+                                                  new_rank,
+                                                  source,
+                                                  s_rank,
+                                                  s_rank + 2,
+                                                  REVERSED_INSERTION);
 
     t_gain_upper_bound = std::max(_normal_t_gain, _reversed_t_gain);
   }

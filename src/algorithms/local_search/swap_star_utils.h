@@ -233,17 +233,6 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
     const auto source_delta =
       sol_state.node_gains[s_vehicle][s_rank] - source_start_end_cost;
 
-    // TODO replace
-
-    // We do not want to account for fixed cost that may be present in
-    // removal_cost_delta since no route will be emptied anyway. Also
-    // the delta value should account for the start->end cost in case
-    // of a single-step route.
-    const auto new_source_delta =
-      utils::removal_cost_delta(input, sol_state, source, s_rank, 1) -
-      Eval(source.size() == 1 ? s_v.fixed_cost() : 0) - source_start_end_cost;
-    assert(source_delta == new_source_delta);
-
     for (unsigned t_rank = 0; t_rank < target.route.size(); ++t_rank) {
       const auto& source_insertions = top_insertions_in_source[t_rank];
       if (source_insertions[0].cost == NO_EVAL) {
@@ -258,32 +247,9 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
       const auto target_delta =
         sol_state.node_gains[t_vehicle][t_rank] - target_start_end_cost;
 
-      // TODO replace
-      const auto new_target_delta =
-        utils::removal_cost_delta(input, sol_state, target, t_rank, 1) -
-        Eval(target.size() == 1 ? t_v.fixed_cost() : 0) - target_start_end_cost;
-
-      assert(target_delta == new_target_delta);
-
       if (source_delta + target_delta <= best_gain) {
         continue;
       }
-
-      // TODO no need for intermediate *_in_place_delta variables
-      // anymore.
-      const auto target_in_place_delta =
-        utils::in_place_delta_cost(input,
-                                   source.route[s_rank],
-                                   t_v,
-                                   target.route,
-                                   t_rank);
-
-      const auto source_in_place_delta =
-        utils::in_place_delta_cost(input,
-                                   target.route[t_rank],
-                                   s_v,
-                                   source.route,
-                                   s_rank);
 
       std::vector<SwapChoice> swap_choice_options;
       constexpr std::size_t MAX_SWAP_CHOICES = 16;
@@ -292,28 +258,23 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
       // Options for in-place insertion in source route include
       // in-place insertion in target route and other relevant
       // positions from target_insertions.
-      const Eval in_place_s_gain = source_delta - source_in_place_delta;
-      const Eval in_place_t_gain = target_delta - target_in_place_delta;
+      const auto in_place_s_gain = utils::addition_cost_delta(input,
+                                                              sol_state,
+                                                              source,
+                                                              s_rank,
+                                                              s_rank + 1,
+                                                              target,
+                                                              t_rank,
+                                                              t_rank + 1);
 
-      const auto new_in_place_s_gain = utils::addition_cost_delta(input,
-                                                                  sol_state,
-                                                                  source,
-                                                                  s_rank,
-                                                                  s_rank + 1,
-                                                                  target,
-                                                                  t_rank,
-                                                                  t_rank + 1);
-      assert(in_place_s_gain == new_in_place_s_gain);
-
-      const auto new_in_place_t_gain = utils::addition_cost_delta(input,
-                                                                  sol_state,
-                                                                  target,
-                                                                  t_rank,
-                                                                  t_rank + 1,
-                                                                  source,
-                                                                  s_rank,
-                                                                  s_rank + 1);
-      assert(in_place_t_gain == new_in_place_t_gain);
+      const auto in_place_t_gain = utils::addition_cost_delta(input,
+                                                              sol_state,
+                                                              target,
+                                                              t_rank,
+                                                              t_rank + 1,
+                                                              source,
+                                                              s_rank,
+                                                              s_rank + 1);
 
       Eval current_gain = in_place_s_gain + in_place_t_gain;
 
