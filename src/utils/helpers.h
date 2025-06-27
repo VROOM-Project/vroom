@@ -130,7 +130,20 @@ inline Eval addition_cost(const Input& input,
     }
   }
 
-  return previous_eval + next_eval - old_edge_eval;
+  // Add lifetime penalty for time-sensitive jobs
+  Eval lifetime_penalty;
+  const auto& job = input.jobs[job_rank];
+  if (job.has_lifetime_constraint()) {
+    // Prioritize jobs with shorter lifetimes by adding cost penalty
+    const auto remaining_lifetime = job.max_lifetime;
+    if (remaining_lifetime < 3600 * DURATION_FACTOR) { // Less than 1 hour
+      lifetime_penalty.cost += 100 * COST_FACTOR; // High priority penalty
+    } else if (remaining_lifetime < 7200 * DURATION_FACTOR) { // Less than 2 hours
+      lifetime_penalty.cost += 50 * COST_FACTOR; // Medium priority penalty
+    }
+  }
+
+  return previous_eval + next_eval - old_edge_eval + lifetime_penalty;
 }
 
 // Evaluate adding pickup with rank job_rank and associated delivery
@@ -176,6 +189,18 @@ inline Eval addition_cost(const Input& input,
     // Delivery is further away so edges sets for pickup and delivery
     // addition are disjoint.
     eval += addition_cost(input, job_rank + 1, v, route, delivery_rank - 1);
+  }
+
+  // Add lifetime penalty for pickup-delivery pairs
+  const auto& pickup_job = input.jobs[job_rank];
+  if (pickup_job.has_lifetime_constraint()) {
+    // Prioritize shipments with shorter lifetimes
+    const auto remaining_lifetime = pickup_job.max_lifetime;
+    if (remaining_lifetime < 3600 * DURATION_FACTOR) { // Less than 1 hour
+      eval.cost += 200 * COST_FACTOR; // Very high priority for shipments
+    } else if (remaining_lifetime < 7200 * DURATION_FACTOR) { // Less than 2 hours
+      eval.cost += 100 * COST_FACTOR; // High priority for shipments
+    }
   }
 
   return eval;

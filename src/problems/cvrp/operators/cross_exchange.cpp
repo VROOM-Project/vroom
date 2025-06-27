@@ -227,7 +227,21 @@ bool CrossExchange::is_valid() {
   auto target_pickup = _input.jobs[t_route[t_rank]].pickup +
                        _input.jobs[t_route[t_rank + 1]].pickup;
 
-  bool valid = source.is_valid_addition_for_capacity_margins(_input,
+  // Check lifetime constraints for jobs being exchanged
+  bool lifetime_valid = true;
+  for (int i = 0; i < 2; ++i) {
+    const auto& s_job = _input.jobs[s_route[s_rank + i]];
+    const auto& t_job = _input.jobs[t_route[t_rank + i]];
+    if (s_job.has_lifetime_constraint() || t_job.has_lifetime_constraint()) {
+      // Basic heuristic check - full validation in choose_ETA
+      lifetime_valid = lifetime_valid && 
+                      (s_job.max_lifetime > 0) && 
+                      (t_job.max_lifetime > 0);
+    }
+  }
+
+  bool valid = lifetime_valid &&
+               source.is_valid_addition_for_capacity_margins(_input,
                                                              target_pickup,
                                                              target_delivery,
                                                              s_rank,

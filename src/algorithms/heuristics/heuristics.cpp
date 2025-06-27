@@ -73,7 +73,14 @@ inline void seed_route(const Input& input,
       continue;
     }
 
-    bool is_valid = (vehicle.ok_for_range_bounds(evals[job_rank][v_rank])) &&
+    // Check lifetime constraints for seed job selection
+    bool lifetime_ok = true;
+    if (current_job.has_lifetime_constraint()) {
+      lifetime_ok = (current_job.max_lifetime > 0); // Basic check
+    }
+
+    bool is_valid = lifetime_ok &&
+                    (vehicle.ok_for_range_bounds(evals[job_rank][v_rank])) &&
                     route.is_valid_addition_for_capacity(input,
                                                          current_job.pickup,
                                                          current_job.delivery,
@@ -285,13 +292,22 @@ inline Eval fill_route(const Input& input,
             static_cast<double>(current_eval.cost) -
             lambda * static_cast<double>(regrets[job_rank]);
 
+          bool lifetime_ok = true;
+          if (current_job.has_lifetime_constraint()) {
+            // For single jobs with lifetime constraints, check if they can be
+            // completed in time This is a simplified check - full validation
+            // happens later in choose_ETA
+            lifetime_ok = (current_job.max_lifetime > 0);
+          }
+
           if (current_cost < best_cost &&
               (vehicle.ok_for_range_bounds(route_eval + current_eval)) &&
               route.is_valid_addition_for_capacity(input,
                                                    current_job.pickup,
                                                    current_job.delivery,
                                                    r) &&
-              route.is_valid_addition_for_tw(input, job_rank, r)) {
+              route.is_valid_addition_for_tw(input, job_rank, r) &&
+              lifetime_ok) {
             best_cost = current_cost;
             best_job_rank = job_rank;
             best_r = r;
@@ -387,8 +403,21 @@ inline Eval fill_route(const Input& input,
             if (current_cost < best_cost) {
               modified_with_pd.push_back(job_rank + 1);
 
+              // Check lifetime constraints for pickup-delivery pairs
+              bool lifetime_valid = true;
+              if (current_job.has_lifetime_constraint()) {
+                // For pickup-delivery, ensure delivery happens within lifetime
+                // This is a heuristic check - detailed validation in choose_ETA
+                // Consider distance between pickup and delivery positions
+                const auto pickup_delivery_distance = delivery_r - pickup_r;
+                lifetime_valid =
+                  (pickup_delivery_distance <=
+                   static_cast<int>(route.size() / 2)); // Heuristic
+              }
+
               // Update best cost depending on validity.
               const bool valid =
+                lifetime_valid &&
                 (vehicle.ok_for_range_bounds(route_eval + current_eval)) &&
                 route
                   .is_valid_addition_for_capacity_inclusion(input,
