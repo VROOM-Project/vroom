@@ -60,6 +60,9 @@ get_violations(const Violations& violations,
     case MAX_DISTANCE:
       cause = "max_distance";
       break;
+    case LIFETIME:
+      cause = "lifetime";
+      break;
     default:
       assert(false);
     }
@@ -247,6 +250,14 @@ rapidjson::Value to_json(const Route& route,
     json_route.AddMember("distance", route.distance, allocator);
   }
 
+  // Add cargo lifetime information if applicable
+  if (route.max_cargo_age > 0) {
+    json_route.AddMember("max_cargo_age", route.max_cargo_age, allocator);
+  }
+  if (route.lifetime_violations > 0) {
+    json_route.AddMember("lifetime_violations", route.lifetime_violations, allocator);
+  }
+
   rapidjson::Value json_steps(rapidjson::kArrayType);
   for (const auto& step : route.steps) {
     json_steps.PushBack(to_json(step, report_distances, allocator), allocator);
@@ -363,6 +374,20 @@ rapidjson::Value to_json(const Step& s,
 
   if (report_distances) {
     json_step.AddMember("distance", s.distance, allocator);
+  }
+
+  // Add cargo lifetime information if applicable
+  if (s.cargo_pickup_time > 0) {
+    json_step.AddMember("cargo_pickup_time", s.cargo_pickup_time, allocator);
+  }
+  if (s.cargo_age > 0) {
+    json_step.AddMember("cargo_age", s.cargo_age, allocator);
+  }
+  if (s.max_cargo_lifetime > 0) {
+    json_step.AddMember("max_cargo_lifetime", s.max_cargo_lifetime, allocator);
+  }
+  if (s.has_expired_cargo) {
+    json_step.AddMember("has_expired_cargo", s.has_expired_cargo, allocator);
   }
 
   return json_step;
