@@ -71,7 +71,7 @@ IntraOrOpt::IntraOrOpt(const Input& input,
 Eval IntraOrOpt::gain_upper_bound() {
   // For addition, consider the cost of adding source edge at new rank
   // *after* removal.
-  const auto new_rank = t_rank + (s_rank < t_rank) ? 2 : 0;
+  const auto new_rank = t_rank + ((s_rank < t_rank) ? 2 : 0);
 
   s_gain = utils::removal_cost_delta(_input, _sol_state, source, s_rank, 2);
 
