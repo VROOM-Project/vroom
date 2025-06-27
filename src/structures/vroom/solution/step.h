@@ -33,6 +33,12 @@ struct Step {
   UserDuration duration{0};
   UserDuration waiting_time{0};
   UserDistance distance{0};
+  
+  // Cargo lifetime tracking
+  UserDuration cargo_pickup_time{0};
+  UserDuration cargo_age{0};
+  UserDuration max_cargo_lifetime{0};
+  bool has_expired_cargo{false};
 
   Violations violations;
 
@@ -43,6 +49,13 @@ struct Step {
   Step(const Break& b, Amount load);
 
   UserDuration departure() const;
+  
+  // Cargo lifetime methods
+  void update_cargo_lifetime(const Job& job, UserDuration current_time);
+  
+  bool violates_cargo_lifetime() const {
+    return has_expired_cargo;
+  }
 };
 
 } // namespace vroom
