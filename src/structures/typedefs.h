@@ -151,7 +151,8 @@ enum class VIOLATION : std::uint8_t {
   MISSING_BREAK,
   MAX_TRAVEL_TIME,
   MAX_LOAD,
-  MAX_DISTANCE
+  MAX_DISTANCE,
+  LIFETIME
 };
 
 enum OperatorName : std::uint8_t {
