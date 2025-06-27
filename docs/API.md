@@ -70,6 +70,7 @@ A `job` object has the following properties:
 | [`skills`] | an array of integers defining mandatory skills |
 | [`priority`] | an integer in the `[0, 100]` range describing priority level (defaults to 0) |
 | [`time_windows`] | an array of `time_window` objects describing valid slots for job service start |
+| [`max_lifetime`] | maximum duration (in seconds) that cargo can remain in the system before expiring |
 
 An error is reported if two `job` objects have the same `id`.
 
@@ -84,6 +85,7 @@ A `shipment` object has the following properties:
 | [`amount`] | an array of integers describing multidimensional quantities |
 | [`skills`] | an array of integers defining mandatory skills |
 | [`priority`] | an integer in the `[0, 100]` range describing priority level (defaults to 0) |
+| [`max_lifetime`] | maximum duration (in seconds) between pickup and delivery for perishable goods |
 
 A `shipment_step` is similar to a `job` object (expect for shared keys already present in `shipment`):
 
@@ -403,6 +405,8 @@ A `route` object has the following properties:
 | [`description`] | vehicle description, if provided in input |
 | [`geometry`]* | polyline encoded route geometry |
 | [`distance`]** | total route distance |
+| [`max_cargo_age`] | maximum cargo age encountered in this route (in seconds) |
+| [`lifetime_violations`] | number of steps with expired cargo in this route |
 
 *: provided when using the `-g` flag.
 **: provided when using the `-g` flag or passing distance matrices in input.
@@ -427,6 +431,10 @@ A `step` object has the following properties:
 | ~~[`job`]~~ | ~~id of the job performed at this step, only provided if `type` value is `job`~~ |
 | [`load`] | vehicle load after step completion (with capacity constraints) |
 | [`distance`]* | traveled distance upon arrival at this step |
+| [`cargo_pickup_time`] | time when cargo was picked up (for delivery steps with lifetime constraints) |
+| [`cargo_age`] | age of cargo at this step (for delivery steps with lifetime constraints) |
+| [`max_cargo_lifetime`] | maximum allowed lifetime for cargo at this step |
+| [`has_expired_cargo`] | true if cargo has exceeded its lifetime at this step |
 
 *: provided when using the `-g` flag.
 
@@ -437,7 +445,7 @@ A `violation` object has the following properties:
 | Key         | Description |
 | ----------- | ----------- |
 | `cause` | string describing the cause of violation |
-| [`duration`] |  Earliness (resp. lateness) if `cause` is "lead_time" (resp "delay") |
+| [`duration`] |  Earliness (resp. lateness) if `cause` is "lead_time" (resp "delay"), or excess time if `cause` is "lifetime" |
 
 Possible violation causes are:
 - "delay" if actual service start does not meet a task time window and is late on a time window end
@@ -450,6 +458,7 @@ Possible violation causes are:
 - "max_travel_time" if the vehicle has more travel time than its `max_travel_time` value
 - "max_distance" if the vehicle has a longer travel distance than its `max_distance` value
 - "max_load" if the load during a break exceed its `max_load` value
+- "lifetime" if cargo has exceeded its maximum allowed lifetime between pickup and delivery
 
 Note on violations: reporting only really makes sense when using `-c`
 to choose ETA for custom routes described in input using the `steps`

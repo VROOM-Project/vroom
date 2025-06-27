@@ -1,0 +1,71 @@
+{
+  "vehicles": [
+    {
+      "id": 1,
+      "start_index": 0,
+      "end_index": 0,
+      "capacity": [100],
+      "time_window": [28800, 64800]
+    }
+  ],
+  "jobs": [
+    {
+      "id": 1,
+      "location_index": 1,
+      "delivery": [10],
+      "service": 600,
+      "time_windows": [[32400, 36000]],
+      "max_lifetime": 7200,
+      "description": "Perishable delivery - 2 hour lifetime"
+    },
+    {
+      "id": 2,
+      "location_index": 2,
+      "delivery": [15],
+      "service": 900,
+      "time_windows": [[36000, 43200]],
+      "description": "Regular delivery - no lifetime constraint"
+    },
+    {
+      "id": 3,
+      "location_index": 3,
+      "delivery": [8],
+      "service": 300,
+      "time_windows": [[43200, 50400]],
+      "max_lifetime": 3600,
+      "description": "Very perishable delivery - 1 hour lifetime"
+    }
+  ],
+  "shipments": [
+    {
+      "amount": [20],
+      "skills": [1],
+      "max_lifetime": 5400,
+      "pickup": {
+        "id": 4,
+        "location_index": 4,
+        "time_windows": [[30600, 34200]],
+        "service": 480
+      },
+      "delivery": {
+        "id": 5,
+        "location_index": 5,
+        "time_windows": [[39600, 46800]],
+        "service": 600
+      },
+      "description": "Fresh food shipment - 1.5 hour lifetime"
+    }
+  ],
+  "matrices": {
+    "car": {
+      "durations": [
+        [0, 300, 600, 450, 240, 540],
+        [300, 0, 480, 360, 420, 720],
+        [600, 480, 0, 840, 660, 360],
+        [450, 360, 840, 0, 480, 900],
+        [240, 420, 660, 480, 0, 600],
+        [540, 720, 360, 900, 600, 0]
+      ]
+    }
+  }
+}

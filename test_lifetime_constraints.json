@@ -1,0 +1,62 @@
+{
+  "vehicles": [
+    {
+      "id": 1,
+      "start": [2.35, 48.86],
+      "end": [2.35, 48.86],
+      "capacity": [100],
+      "time_window": [28800, 64800]
+    }
+  ],
+  "jobs": [
+    {
+      "id": 1,
+      "location": [2.30, 48.87],
+      "delivery": [10],
+      "service": 600,
+      "time_windows": [[32400, 36000]],
+      "max_lifetime": 7200,
+      "description": "Perishable delivery - 2 hour lifetime"
+    },
+    {
+      "id": 2,
+      "location": [2.40, 48.85],
+      "delivery": [15],
+      "service": 900,
+      "time_windows": [[36000, 43200]],
+      "description": "Regular delivery - no lifetime constraint"
+    },
+    {
+      "id": 3,
+      "location": [2.25, 48.89],
+      "delivery": [8],
+      "service": 300,
+      "time_windows": [[43200, 50400]],
+      "max_lifetime": 3600,
+      "description": "Very perishable delivery - 1 hour lifetime"
+    }
+  ],
+  "shipments": [
+    {
+      "amount": [20],
+      "skills": [1],
+      "max_lifetime": 5400,
+      "pickup": {
+        "id": 4,
+        "location": [2.33, 48.84],
+        "time_windows": [[30600, 34200]],
+        "service": 480
+      },
+      "delivery": {
+        "id": 5,
+        "location": [2.37, 48.88],
+        "time_windows": [[39600, 46800]],
+        "service": 600
+      },
+      "description": "Fresh food shipment - 1.5 hour lifetime"
+    }
+  ],
+  "options": {
+    "g": true
+  }
+}
