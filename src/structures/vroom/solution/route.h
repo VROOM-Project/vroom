@@ -32,6 +32,10 @@ struct Route {
   std::string profile;
   std::string description;
   Violations violations;
+  
+  // Cargo lifetime tracking
+  UserDuration max_cargo_age{0};
+  unsigned lifetime_violations{0};
 
   std::string geometry;
 
@@ -53,6 +57,13 @@ struct Route {
         Violations&& violations = Violations(0, 0));
 
   void check_timing_consistency() const;
+  
+  // Cargo lifetime methods
+  void update_cargo_lifetime_stats();
+  
+  bool has_lifetime_violations() const {
+    return lifetime_violations > 0;
+  }
 };
 
 } // namespace vroom
