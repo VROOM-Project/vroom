@@ -38,7 +38,9 @@ Relocate::Relocate(const Input& input,
 }
 
 void Relocate::compute_gain() {
-  s_gain = utils::removal_cost_delta(_input, _sol_state, source, s_rank, 1);
+  // For source vehicle, we consider the cost of removing job at rank
+  // s_rank, already stored.
+  s_gain = _sol_state.node_gains[s_vehicle][s_rank];
 
   t_gain = utils::addition_cost_delta(_input,
                                       _sol_state,
