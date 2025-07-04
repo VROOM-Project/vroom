@@ -446,6 +446,50 @@ inline Eval max_edge_eval(const Input& input,
   return max_eval;
 }
 
+// Helper function for SwapStar operator, computing part of the eval
+// for in-place replacing of job at rank in route with job at
+// job_rank.
+inline Eval in_place_delta_cost(const Input& input,
+                                Index job_rank,
+                                const Vehicle& v,
+                                const std::vector<Index>& route,
+                                Index rank) {
+  assert(!route.empty());
+  const Index new_index = input.jobs[job_rank].index();
+
+  Eval new_previous_eval;
+  Eval new_next_eval;
+  std::optional<Index> p_index;
+  std::optional<Index> n_index;
+
+  if (rank == 0) {
+    if (v.has_start()) {
+      p_index = v.start.value().index();
+      new_previous_eval = v.eval(p_index.value(), new_index);
+    }
+  } else {
+    p_index = input.jobs[route[rank - 1]].index();
+    new_previous_eval = v.eval(p_index.value(), new_index);
+  }
+
+  if (rank == route.size() - 1) {
+    if (v.has_end()) {
+      n_index = v.end.value().index();
+      new_next_eval = v.eval(new_index, n_index.value());
+    }
+  } else {
+    n_index = input.jobs[route[rank + 1]].index();
+    new_next_eval = v.eval(new_index, n_index.value());
+  }
+
+  Eval old_virtual_eval;
+  if (p_index && n_index) {
+    old_virtual_eval = v.eval(p_index.value(), n_index.value());
+  }
+
+  return new_previous_eval + new_next_eval - old_virtual_eval;
+}
+
 Priority priority_sum_for_route(const Input& input,
                                 const std::vector<Index>& route);
 

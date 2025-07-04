@@ -251,6 +251,20 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
         continue;
       }
 
+      const auto target_in_place_delta =
+        utils::in_place_delta_cost(input,
+                                   source.route[s_rank],
+                                   t_v,
+                                   target.route,
+                                   t_rank);
+
+      const auto source_in_place_delta =
+        utils::in_place_delta_cost(input,
+                                   target.route[t_rank],
+                                   s_v,
+                                   source.route,
+                                   s_rank);
+
       std::vector<SwapChoice> swap_choice_options;
       constexpr std::size_t MAX_SWAP_CHOICES = 16;
       swap_choice_options.reserve(MAX_SWAP_CHOICES);
@@ -258,23 +272,8 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
       // Options for in-place insertion in source route include
       // in-place insertion in target route and other relevant
       // positions from target_insertions.
-      const auto in_place_s_gain = utils::addition_cost_delta(input,
-                                                              sol_state,
-                                                              source,
-                                                              s_rank,
-                                                              s_rank + 1,
-                                                              target,
-                                                              t_rank,
-                                                              t_rank + 1);
-
-      const auto in_place_t_gain = utils::addition_cost_delta(input,
-                                                              sol_state,
-                                                              target,
-                                                              t_rank,
-                                                              t_rank + 1,
-                                                              source,
-                                                              s_rank,
-                                                              s_rank + 1);
+      const Eval in_place_s_gain = source_delta - source_in_place_delta;
+      const Eval in_place_t_gain = target_delta - target_in_place_delta;
 
       Eval current_gain = in_place_s_gain + in_place_t_gain;
 
