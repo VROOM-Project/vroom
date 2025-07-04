@@ -349,15 +349,17 @@ inline Eval addition_cost_delta(const Input& input,
   return cost_delta;
 }
 
-// Compute cost variation when replacing the [first_rank, last_rank)
-// portion for route raw_route with the job at job_rank.
+// Compute cost variation when replacing the *non-empty* [first_rank,
+// last_rank) portion for route raw_route with the job at
+// job_rank. The case where the replaced range is empty is already
+// covered by addition_cost.
 inline Eval addition_cost_delta(const Input& input,
                                 const SolutionState& sol_state,
                                 const RawRoute& raw_route,
                                 Index first_rank,
                                 Index last_rank,
                                 Index job_rank) {
-  assert(first_rank <= last_rank);
+  assert(first_rank < last_rank && !raw_route.empty());
   assert(last_rank <= raw_route.route.size());
 
   const auto& r = raw_route.route;
@@ -372,10 +374,8 @@ inline Eval addition_cost_delta(const Input& input,
   const auto [before_first, first_index, last_index] =
     get_indices(input, raw_route, first_rank, last_rank);
 
-  // Gain of removed edge before replaced range. If route is empty,
-  // before_first and first_index are respectively the start and end
-  // of vehicle if defined.
-  if (before_first && first_index && !r.empty()) {
+  // Gain of removed edge before replaced range.
+  if (before_first && first_index) {
     cost_delta += v.eval(before_first.value(), first_index.value());
   }
 
@@ -390,14 +390,9 @@ inline Eval addition_cost_delta(const Input& input,
   }
 
   // Gain of removed edge after replaced range, if any.
-  if (last_index && last_rank > first_rank) {
+  if (last_index) {
     const Index before_last = input.jobs[r[last_rank - 1]].index();
     cost_delta += v.eval(before_last, last_index.value());
-  }
-
-  // Handle fixed cost addition.
-  if (r.empty()) {
-    cost_delta.cost -= v.fixed_cost();
   }
 
   return cost_delta;
