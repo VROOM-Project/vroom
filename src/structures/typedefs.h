@@ -87,8 +87,6 @@ constexpr auto DEFAULT_MAX_TASKS = std::numeric_limits<size_t>::max();
 constexpr auto DEFAULT_MAX_TRAVEL_TIME = std::numeric_limits<Duration>::max();
 constexpr auto DEFAULT_MAX_DISTANCE = std::numeric_limits<Distance>::max();
 
-constexpr bool REVERSED_INSERTION = true;
-
 // Available routing engines.
 enum class ROUTER : std::uint8_t { OSRM, LIBOSRM, ORS, VALHALLA };
 
