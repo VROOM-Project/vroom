@@ -42,25 +42,23 @@ ReverseTwoOpt::ReverseTwoOpt(const Input& input,
 }
 
 void ReverseTwoOpt::compute_gain() {
-  s_gain = utils::addition_cost_delta(_input,
-                                      _sol_state,
-                                      source,
-                                      s_rank + 1,
-                                      s_route.size(),
-                                      target,
-                                      0,
-                                      t_rank + 1,
-                                      REVERSED_INSERTION);
+  s_gain = std::get<1>(utils::addition_cost_delta(_input,
+                                                  _sol_state,
+                                                  source,
+                                                  s_rank + 1,
+                                                  s_route.size(),
+                                                  target,
+                                                  0,
+                                                  t_rank + 1));
 
-  t_gain = utils::addition_cost_delta(_input,
-                                      _sol_state,
-                                      target,
-                                      0,
-                                      t_rank + 1,
-                                      source,
-                                      s_rank + 1,
-                                      s_route.size(),
-                                      REVERSED_INSERTION);
+  t_gain = std::get<1>(utils::addition_cost_delta(_input,
+                                                  _sol_state,
+                                                  target,
+                                                  0,
+                                                  t_rank + 1,
+                                                  source,
+                                                  s_rank + 1,
+                                                  s_route.size()));
 
   stored_gain = s_gain + t_gain;
   gain_computed = true;

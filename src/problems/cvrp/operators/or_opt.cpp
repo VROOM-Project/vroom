@@ -43,24 +43,15 @@ OrOpt::OrOpt(const Input& input,
 Eval OrOpt::gain_upper_bound() {
   s_gain = utils::removal_cost_delta(_input, _sol_state, source, s_rank, 2);
 
-  _normal_t_gain = utils::addition_cost_delta(_input,
-                                              _sol_state,
-                                              target,
-                                              t_rank,
-                                              t_rank,
-                                              source,
-                                              s_rank,
-                                              s_rank + 2);
-
-  _reversed_t_gain = utils::addition_cost_delta(_input,
-                                                _sol_state,
-                                                target,
-                                                t_rank,
-                                                t_rank,
-                                                source,
-                                                s_rank,
-                                                s_rank + 2,
-                                                REVERSED_INSERTION);
+  std::tie(_normal_t_gain, _reversed_t_gain) =
+    utils::addition_cost_delta(_input,
+                               _sol_state,
+                               target,
+                               t_rank,
+                               t_rank,
+                               source,
+                               s_rank,
+                               s_rank + 2);
 
   _gain_upper_bound_computed = true;
 

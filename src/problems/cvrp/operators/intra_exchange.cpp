@@ -45,23 +45,23 @@ IntraExchange::IntraExchange(const Input& input,
 }
 
 void IntraExchange::compute_gain() {
-  const Eval s_gain = utils::addition_cost_delta(_input,
-                                                 _sol_state,
-                                                 source,
-                                                 s_rank,
-                                                 s_rank + 1,
-                                                 target,
-                                                 t_rank,
-                                                 t_rank + 1);
+  const Eval s_gain = std::get<0>(utils::addition_cost_delta(_input,
+                                                             _sol_state,
+                                                             source,
+                                                             s_rank,
+                                                             s_rank + 1,
+                                                             target,
+                                                             t_rank,
+                                                             t_rank + 1));
 
-  const Eval t_gain = utils::addition_cost_delta(_input,
-                                                 _sol_state,
-                                                 target,
-                                                 t_rank,
-                                                 t_rank + 1,
-                                                 source,
-                                                 s_rank,
-                                                 s_rank + 1);
+  const Eval t_gain = std::get<0>(utils::addition_cost_delta(_input,
+                                                             _sol_state,
+                                                             target,
+                                                             t_rank,
+                                                             t_rank + 1,
+                                                             source,
+                                                             s_rank,
+                                                             s_rank + 1));
 
   stored_gain = s_gain + t_gain;
   gain_computed = true;

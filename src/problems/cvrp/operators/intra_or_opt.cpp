@@ -75,29 +75,20 @@ Eval IntraOrOpt::gain_upper_bound() {
 
   s_gain = utils::removal_cost_delta(_input, _sol_state, source, s_rank, 2);
 
-  _normal_t_gain = utils::addition_cost_delta(_input,
-                                              _sol_state,
-                                              target,
-                                              new_rank,
-                                              new_rank,
-                                              source,
-                                              s_rank,
-                                              s_rank + 2);
+  std::tie(_normal_t_gain, _reversed_t_gain) =
+    utils::addition_cost_delta(_input,
+                               _sol_state,
+                               target,
+                               new_rank,
+                               new_rank,
+                               source,
+                               s_rank,
+                               s_rank + 2);
 
   auto t_gain_upper_bound = _normal_t_gain;
 
   if (check_reverse) {
-    _reversed_t_gain = utils::addition_cost_delta(_input,
-                                                  _sol_state,
-                                                  target,
-                                                  new_rank,
-                                                  new_rank,
-                                                  source,
-                                                  s_rank,
-                                                  s_rank + 2,
-                                                  REVERSED_INSERTION);
-
-    t_gain_upper_bound = std::max(_normal_t_gain, _reversed_t_gain);
+    t_gain_upper_bound = std::max(t_gain_upper_bound, _reversed_t_gain);
   }
 
   _gain_upper_bound_computed = true;

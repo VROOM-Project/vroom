@@ -57,39 +57,30 @@ MixedExchange::MixedExchange(const Input& input,
 }
 
 Eval MixedExchange::gain_upper_bound() {
-  _normal_s_gain = utils::addition_cost_delta(_input,
-                                              _sol_state,
-                                              source,
-                                              s_rank,
-                                              s_rank + 1,
-                                              target,
-                                              t_rank,
-                                              t_rank + 2);
+  std::tie(_normal_s_gain, _reversed_s_gain) =
+    utils::addition_cost_delta(_input,
+                               _sol_state,
+                               source,
+                               s_rank,
+                               s_rank + 1,
+                               target,
+                               t_rank,
+                               t_rank + 2);
 
   auto s_gain_upper_bound = _normal_s_gain;
 
   if (check_t_reverse) {
-    _reversed_s_gain = utils::addition_cost_delta(_input,
+    s_gain_upper_bound = std::max(s_gain_upper_bound, _reversed_s_gain);
+  }
+
+  t_gain = std::get<0>(utils::addition_cost_delta(_input,
                                                   _sol_state,
-                                                  source,
-                                                  s_rank,
-                                                  s_rank + 1,
                                                   target,
                                                   t_rank,
                                                   t_rank + 2,
-                                                  REVERSED_INSERTION);
-
-    s_gain_upper_bound = std::max(_normal_s_gain, _reversed_s_gain);
-  }
-
-  t_gain = utils::addition_cost_delta(_input,
-                                      _sol_state,
-                                      target,
-                                      t_rank,
-                                      t_rank + 2,
-                                      source,
-                                      s_rank,
-                                      s_rank + 1);
+                                                  source,
+                                                  s_rank,
+                                                  s_rank + 1));
 
   _gain_upper_bound_computed = true;
 

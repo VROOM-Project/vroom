@@ -73,14 +73,14 @@ compute_best_route_split_choice(const Input& input,
       }
 
       const auto current_end_eval =
-        -utils::addition_cost_delta(input,
-                                    sol_state,
-                                    empty_routes[v_rank],
-                                    0,
-                                    0,
-                                    source,
-                                    r,
-                                    source.size());
+        -std::get<0>(utils::addition_cost_delta(input,
+                                                sol_state,
+                                                empty_routes[v_rank],
+                                                0,
+                                                0,
+                                                source,
+                                                r,
+                                                source.size()));
 
       if (!end_v.ok_for_range_bounds(current_end_eval)) {
         continue;
@@ -140,14 +140,14 @@ compute_best_route_split_choice(const Input& input,
       }
 
       const auto current_begin_eval =
-        -utils::addition_cost_delta(input,
-                                    sol_state,
-                                    empty_routes[v_rank],
-                                    0,
-                                    0,
-                                    source,
-                                    0,
-                                    r);
+        -std::get<0>(utils::addition_cost_delta(input,
+                                                sol_state,
+                                                empty_routes[v_rank],
+                                                0,
+                                                0,
+                                                source,
+                                                0,
+                                                r));
 
       if (!begin_v.ok_for_range_bounds(current_begin_eval)) {
         continue;
