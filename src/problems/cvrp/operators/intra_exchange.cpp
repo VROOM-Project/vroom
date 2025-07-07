@@ -45,23 +45,19 @@ IntraExchange::IntraExchange(const Input& input,
 }
 
 void IntraExchange::compute_gain() {
-  const Eval s_gain = std::get<0>(utils::addition_cost_delta(_input,
-                                                             _sol_state,
-                                                             source,
-                                                             s_rank,
-                                                             s_rank + 1,
-                                                             target,
-                                                             t_rank,
-                                                             t_rank + 1));
+  s_gain = _sol_state.node_gains[s_vehicle][s_rank] -
+           utils::in_place_delta_cost(_input,
+                                      s_route[t_rank],
+                                      _input.vehicles[s_vehicle],
+                                      s_route,
+                                      s_rank);
 
-  const Eval t_gain = std::get<0>(utils::addition_cost_delta(_input,
-                                                             _sol_state,
-                                                             target,
-                                                             t_rank,
-                                                             t_rank + 1,
-                                                             source,
-                                                             s_rank,
-                                                             s_rank + 1));
+  t_gain = _sol_state.node_gains[s_vehicle][t_rank] -
+           utils::in_place_delta_cost(_input,
+                                      s_route[s_rank],
+                                      _input.vehicles[s_vehicle],
+                                      s_route,
+                                      t_rank);
 
   stored_gain = s_gain + t_gain;
   gain_computed = true;
