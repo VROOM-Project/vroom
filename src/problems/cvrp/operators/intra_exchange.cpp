@@ -8,6 +8,7 @@ All rights reserved (see LICENSE).
 */
 
 #include "problems/cvrp/operators/intra_exchange.h"
+#include "utils/helpers.h"
 
 namespace vroom::cvrp {
 
@@ -44,55 +45,19 @@ IntraExchange::IntraExchange(const Input& input,
 }
 
 void IntraExchange::compute_gain() {
-  const auto& v = _input.vehicles[s_vehicle];
+  s_gain = _sol_state.node_gains[s_vehicle][s_rank] -
+           utils::in_place_delta_cost(_input,
+                                      s_route[t_rank],
+                                      _input.vehicles[s_vehicle],
+                                      s_route,
+                                      s_rank);
 
-  // Consider the cost of replacing job at rank s_rank with target
-  // job. Part of that cost (for adjacent edges) is stored in
-  // _sol_state.edge_evals_around_node.
-  const Index s_index = _input.jobs[s_route[s_rank]].index();
-  const Index t_index = _input.jobs[t_route[t_rank]].index();
-
-  // Determine costs added with target job.
-  Eval new_previous_cost;
-
-  if (s_rank == 0) {
-    if (v.has_start()) {
-      auto p_index = v.start.value().index();
-      new_previous_cost = v.eval(p_index, t_index);
-    }
-  } else {
-    auto p_index = _input.jobs[s_route[s_rank - 1]].index();
-    new_previous_cost = v.eval(p_index, t_index);
-  }
-
-  auto n_index = _input.jobs[s_route[s_rank + 1]].index();
-  Eval new_next_cost = v.eval(t_index, n_index);
-
-  const Eval s_gain = _sol_state.edge_evals_around_node[s_vehicle][s_rank] -
-                      new_previous_cost - new_next_cost;
-
-  // Consider the cost of replacing job at rank t_rank with source
-  // job. Part of that cost (for adjacent edges) is stored in
-  // _sol_state.edge_evals_around_node.
-
-  // Determine costs added with source job.
-  new_next_cost = Eval();
-
-  auto p_index = _input.jobs[t_route[t_rank - 1]].index();
-  new_previous_cost = v.eval(p_index, s_index);
-
-  if (t_rank == t_route.size() - 1) {
-    if (v.has_end()) {
-      n_index = v.end.value().index();
-      new_next_cost = v.eval(s_index, n_index);
-    }
-  } else {
-    n_index = _input.jobs[t_route[t_rank + 1]].index();
-    new_next_cost = v.eval(s_index, n_index);
-  }
-
-  const Eval t_gain = _sol_state.edge_evals_around_node[s_vehicle][t_rank] -
-                      new_previous_cost - new_next_cost;
+  t_gain = _sol_state.node_gains[s_vehicle][t_rank] -
+           utils::in_place_delta_cost(_input,
+                                      s_route[s_rank],
+                                      _input.vehicles[s_vehicle],
+                                      s_route,
+                                      t_rank);
 
   stored_gain = s_gain + t_gain;
   gain_computed = true;
