@@ -7,9 +7,6 @@ All rights reserved (see LICENSE).
 
 */
 
-#include <algorithm>
-#include <ranges>
-
 #include "problems/cvrp/operators/unassigned_exchange.h"
 #include "utils/helpers.h"
 
@@ -128,18 +125,7 @@ void UnassignedExchange::apply() {
 }
 
 std::vector<Index> UnassignedExchange::addition_candidates() const {
-  // All vehicles compatible with the task that has just been
-  // unassigned (including s_vehicle).
-  std::vector<Index> compatible_vehicles;
-  compatible_vehicles.reserve(_input.vehicles.size());
-
-  std::ranges::copy_if(std::views::iota(0u, _input.vehicles.size()),
-                       std::back_inserter(compatible_vehicles),
-                       [this](const auto v) {
-                         return _input.vehicle_ok_with_job(v, this->_removed);
-                       });
-
-  return compatible_vehicles;
+  return _input.compatible_vehicles_for_job[_removed];
 }
 
 std::vector<Index> UnassignedExchange::update_candidates() const {
