@@ -29,6 +29,7 @@
 - Allow passing `path` in `Server` ctor (#1192)
 - Refactor to simplify `VRP::solve` (#1196)
 - Remove heuristic synchronisation (#1188)
+- Refactor gain evaluation in operators to ease code maintenance and extension (#1266)
 
 #### CI
 
@@ -57,6 +58,7 @@
 - Segfault when using the C++ API with empty vehicles (#1187)
 - Solution "shadowing" when only comparing indicators (#1199)
 - Too loose `max_tasks` bound derived from TW (#1243)
+- Wrong evaluation in `ReverseTwoOpt` (#1271)
 
 #### Internals
 

@@ -8,6 +8,7 @@ All rights reserved (see LICENSE).
 */
 
 #include "problems/cvrp/operators/two_opt.h"
+#include "utils/helpers.h"
 
 namespace vroom::cvrp {
 
@@ -41,66 +42,23 @@ TwoOpt::TwoOpt(const Input& input,
 }
 
 void TwoOpt::compute_gain() {
-  const auto& s_v = _input.vehicles[s_vehicle];
-  const auto& t_v = _input.vehicles[t_vehicle];
+  s_gain = std::get<0>(utils::addition_cost_delta(_input,
+                                                  _sol_state,
+                                                  source,
+                                                  s_rank + 1,
+                                                  s_route.size(),
+                                                  target,
+                                                  t_rank + 1,
+                                                  t_route.size()));
 
-  const Index s_index = _input.jobs[s_route[s_rank]].index();
-  const Index t_index = _input.jobs[t_route[t_rank]].index();
-  const Index last_s = _input.jobs[s_route.back()].index();
-  const Index last_t = _input.jobs[t_route.back()].index();
-
-  Index new_last_s = last_t;
-  Index new_last_t = last_s;
-
-  // Cost of swapping route for vehicle s_vehicle after step
-  // s_rank with route for vehicle t_vehicle after step
-  // t_rank.
-
-  // Basic costs in case we really swap jobs and not only the end of
-  // the route. Otherwise remember that last job does not change.
-  if (s_rank < s_route.size() - 1) {
-    const Index next_index = _input.jobs[s_route[s_rank + 1]].index();
-    s_gain += s_v.eval(s_index, next_index);
-    t_gain -= t_v.eval(t_index, next_index);
-
-    // Account for the change in cost across vehicles for the end of
-    // source route. Cost of remaining route retrieved by subtracting
-    // intermediate cost to overall cost.
-    s_gain += _sol_state.fwd_costs[s_vehicle][s_vehicle].back();
-    s_gain -= _sol_state.fwd_costs[s_vehicle][s_vehicle][s_rank + 1];
-    t_gain -= _sol_state.fwd_costs[s_vehicle][t_vehicle].back();
-    t_gain += _sol_state.fwd_costs[s_vehicle][t_vehicle][s_rank + 1];
-  } else {
-    new_last_t = t_index;
-  }
-  if (t_rank < t_route.size() - 1) {
-    const Index next_index = _input.jobs[t_route[t_rank + 1]].index();
-    t_gain += t_v.eval(t_index, next_index);
-    s_gain -= s_v.eval(s_index, next_index);
-
-    // Account for the change in cost across vehicles for the end of
-    // target route. Cost of remaining route retrieved by subtracting
-    // intermediate cost to overall cost.
-    t_gain += _sol_state.fwd_costs[t_vehicle][t_vehicle].back();
-    t_gain -= _sol_state.fwd_costs[t_vehicle][t_vehicle][t_rank + 1];
-    s_gain -= _sol_state.fwd_costs[t_vehicle][s_vehicle].back();
-    s_gain += _sol_state.fwd_costs[t_vehicle][s_vehicle][t_rank + 1];
-  } else {
-    new_last_s = s_index;
-  }
-
-  // Handling end route cost change because vehicle ends can be
-  // different or none.
-  if (s_v.has_end()) {
-    auto end_s = s_v.end.value().index();
-    s_gain += s_v.eval(last_s, end_s);
-    s_gain -= s_v.eval(new_last_s, end_s);
-  }
-  if (t_v.has_end()) {
-    auto end_t = t_v.end.value().index();
-    t_gain += t_v.eval(last_t, end_t);
-    t_gain -= t_v.eval(new_last_t, end_t);
-  }
+  t_gain = std::get<0>(utils::addition_cost_delta(_input,
+                                                  _sol_state,
+                                                  target,
+                                                  t_rank + 1,
+                                                  t_route.size(),
+                                                  source,
+                                                  s_rank + 1,
+                                                  s_route.size()));
 
   stored_gain = s_gain + t_gain;
   gain_computed = true;

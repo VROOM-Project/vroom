@@ -367,7 +367,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
 
       std::ranges::sort(swap_choice_options, SwapChoiceCmp);
 
-      assert(swap_choice_options.size() <= 16);
+      assert(swap_choice_options.size() <= MAX_SWAP_CHOICES);
 
       for (const auto& sc : swap_choice_options) {
         // Browse interesting options by decreasing gain and check for
