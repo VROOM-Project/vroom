@@ -9,6 +9,8 @@ All rights reserved (see LICENSE).
 
 #include <algorithm>
 
+#include "utils/helpers.h"
+
 #include "problems/cvrp/operators/priority_replace.h"
 
 namespace vroom::cvrp {
@@ -46,63 +48,19 @@ PriorityReplace::PriorityReplace(const Input& input,
 }
 
 void PriorityReplace::compute_start_gain() {
-  const auto& v = _input.vehicles[s_vehicle];
-
-  const Index u_index = _input.jobs[_u].index();
-
-  // Replace start of route up to s_rank with _u and store in s_gain.
-  s_gain = _sol_state.fwd_costs[s_vehicle][s_vehicle][s_rank];
-
-  if (v.has_start()) {
-    s_gain +=
-      v.eval(v.start.value().index(), _input.jobs[s_route.front()].index());
-    s_gain -= v.eval(v.start.value().index(), u_index);
-  }
-
-  const Index s_index = _input.jobs[s_route[s_rank]].index();
-
-  if (s_rank == s_route.size() - 1) {
-    if (v.has_end()) {
-      s_gain += v.eval(s_index, v.end.value().index());
-      s_gain -= v.eval(u_index, v.end.value().index());
-    }
-  } else {
-    const auto s_next_index = _input.jobs[s_route[s_rank + 1]].index();
-    s_gain += v.eval(s_index, s_next_index);
-    s_gain -= v.eval(u_index, s_next_index);
-  }
+  s_gain =
+    utils::addition_cost_delta(_input, _sol_state, source, 0, s_rank + 1, _u);
 
   _start_gain_computed = true;
 }
 
 void PriorityReplace::compute_end_gain() {
-  const auto& v = _input.vehicles[s_vehicle];
-
-  const Index u_index = _input.jobs[_u].index();
-
-  // Replace end of route after t_rank with _u and store in t_gain.
-  t_gain += _sol_state.fwd_costs[s_vehicle][s_vehicle].back();
-  t_gain -= _sol_state.fwd_costs[s_vehicle][s_vehicle][t_rank];
-
-  if (v.has_end()) {
-    t_gain +=
-      v.eval(_input.jobs[s_route.back()].index(), v.end.value().index());
-    t_gain -= v.eval(u_index, v.end.value().index());
-  }
-
-  assert(t_rank < s_route.size());
-  const Index t_index = _input.jobs[s_route[t_rank]].index();
-
-  if (t_rank == 0) {
-    if (v.has_start()) {
-      t_gain += v.eval(v.start.value().index(), t_index);
-      t_gain -= v.eval(v.start.value().index(), u_index);
-    }
-  } else {
-    const auto t_previous_index = _input.jobs[s_route[t_rank - 1]].index();
-    t_gain += v.eval(t_previous_index, t_index);
-    t_gain -= v.eval(t_previous_index, u_index);
-  }
+  t_gain = utils::addition_cost_delta(_input,
+                                      _sol_state,
+                                      source,
+                                      t_rank,
+                                      source.size(),
+                                      _u);
 
   _end_gain_computed = true;
 }

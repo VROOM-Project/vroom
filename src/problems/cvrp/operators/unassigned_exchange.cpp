@@ -59,34 +59,17 @@ UnassignedExchange::UnassignedExchange(const Input& input,
 }
 
 void UnassignedExchange::compute_gain() {
-  const auto& v = _input.vehicles[s_vehicle];
-
-  const Index u_index = _input.jobs[_u].index();
-
   if (t_rank == s_rank) {
-    // Removed job is replaced by the unassigned one so there is no
-    // new edge in place of removal.
-    s_gain = _sol_state.edge_evals_around_node[s_vehicle][s_rank];
-
-    // No old edge to remove when adding unassigned job in place of
-    // removed job.
-    if (t_rank == 0) {
-      if (v.has_start()) {
-        s_gain -= v.eval(v.start.value().index(), u_index);
-      }
-    } else {
-      s_gain -= v.eval(_input.jobs[s_route[t_rank - 1]].index(), u_index);
-    }
-
-    if (t_rank == s_route.size() - 1) {
-      if (v.has_end()) {
-        s_gain -= v.eval(u_index, v.end.value().index());
-      }
-    } else {
-      s_gain -= v.eval(u_index, _input.jobs[s_route[s_rank + 1]].index());
-    }
+    s_gain = utils::addition_cost_delta(_input,
+                                        _sol_state,
+                                        source,
+                                        s_rank,
+                                        s_rank + 1,
+                                        _u);
   } else {
     // No common edge so both gains can be computed independently.
+    const auto& v = _input.vehicles[s_vehicle];
+
     s_gain = _sol_state.node_gains[s_vehicle][s_rank] -
              utils::addition_cost(_input, _u, v, s_route, t_rank);
   }
@@ -142,7 +125,7 @@ void UnassignedExchange::apply() {
 }
 
 std::vector<Index> UnassignedExchange::addition_candidates() const {
-  return {s_vehicle};
+  return _input.compatible_vehicles_for_job[_removed];
 }
 
 std::vector<Index> UnassignedExchange::update_candidates() const {

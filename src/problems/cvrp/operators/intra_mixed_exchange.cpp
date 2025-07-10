@@ -8,6 +8,7 @@ All rights reserved (see LICENSE).
 */
 
 #include "problems/cvrp/operators/intra_mixed_exchange.h"
+#include "utils/helpers.h"
 
 namespace vroom::cvrp {
 
@@ -75,91 +76,30 @@ IntraMixedExchange::IntraMixedExchange(const Input& input,
 }
 
 Eval IntraMixedExchange::gain_upper_bound() {
-  const auto& v = _input.vehicles[s_vehicle];
-
-  // Consider the cost of replacing node at rank s_rank with target
-  // edge. Part of that cost (for adjacent edges) is stored in
-  // _sol_state.edge_evals_around_node.  reverse_* checks whether we
-  // should change the target edge order.
-  const Index s_index = _input.jobs[s_route[s_rank]].index();
-  const Index t_index = _input.jobs[s_route[t_rank]].index();
-  const Index t_after_index = _input.jobs[s_route[t_rank + 1]].index();
-
-  // Determine costs added with target edge.
-  Eval previous_cost;
-  Eval next_cost;
-  Eval reverse_previous_cost;
-  Eval reverse_next_cost;
-
-  if (s_rank == 0) {
-    if (v.has_start()) {
-      auto p_index = v.start.value().index();
-      previous_cost = v.eval(p_index, t_index);
-      reverse_previous_cost = v.eval(p_index, t_after_index);
-    }
-  } else {
-    auto p_index = _input.jobs[s_route[s_rank - 1]].index();
-    previous_cost = v.eval(p_index, t_index);
-    reverse_previous_cost = v.eval(p_index, t_after_index);
-  }
-
-  if (s_rank == s_route.size() - 1) {
-    if (v.has_end()) {
-      auto n_index = v.end.value().index();
-      next_cost = v.eval(t_after_index, n_index);
-      reverse_next_cost = v.eval(t_index, n_index);
-    }
-  } else {
-    auto n_index = _input.jobs[s_route[s_rank + 1]].index();
-    next_cost = v.eval(t_after_index, n_index);
-    reverse_next_cost = v.eval(t_index, n_index);
-  }
-
-  _normal_s_gain = _sol_state.edge_evals_around_node[s_vehicle][s_rank] -
-                   previous_cost - next_cost;
+  std::tie(_normal_s_gain, _reversed_s_gain) =
+    utils::addition_cost_delta(_input,
+                               _sol_state,
+                               source,
+                               s_rank,
+                               s_rank + 1,
+                               target,
+                               t_rank,
+                               t_rank + 2);
 
   auto s_gain_upper_bound = _normal_s_gain;
 
   if (check_t_reverse) {
-    const auto reverse_edge_cost =
-      v.eval(t_index, t_after_index) - v.eval(t_after_index, t_index);
-    _reversed_s_gain = _sol_state.edge_evals_around_node[s_vehicle][s_rank] +
-                       reverse_edge_cost - reverse_previous_cost -
-                       reverse_next_cost;
-
-    s_gain_upper_bound = std::max(_normal_s_gain, _reversed_s_gain);
+    s_gain_upper_bound = std::max(s_gain_upper_bound, _reversed_s_gain);
   }
 
-  // Consider the cost of replacing edge starting at rank t_rank with
-  // source node. Part of that cost (for adjacent edges) is stored in
-  // _sol_state.edge_evals_around_edge.  reverse_* checks whether we
-  // should change the source edge order.
-  previous_cost = Eval();
-  next_cost = Eval();
-
-  if (t_rank == 0) {
-    if (v.has_start()) {
-      auto p_index = v.start.value().index();
-      previous_cost = v.eval(p_index, s_index);
-    }
-  } else {
-    auto p_index = _input.jobs[s_route[t_rank - 1]].index();
-    previous_cost = v.eval(p_index, s_index);
-  }
-
-  if (t_rank == s_route.size() - 2) {
-    if (v.has_end()) {
-      auto n_index = v.end.value().index();
-      next_cost = v.eval(s_index, n_index);
-      reverse_next_cost = v.eval(s_index, n_index);
-    }
-  } else {
-    auto n_index = _input.jobs[s_route[t_rank + 2]].index();
-    next_cost = v.eval(s_index, n_index);
-  }
-
-  t_gain = _sol_state.edge_evals_around_edge[t_vehicle][t_rank] -
-           previous_cost - next_cost;
+  t_gain = std::get<0>(utils::addition_cost_delta(_input,
+                                                  _sol_state,
+                                                  source,
+                                                  t_rank,
+                                                  t_rank + 2,
+                                                  source,
+                                                  s_rank,
+                                                  s_rank + 1));
 
   _gain_upper_bound_computed = true;
 
