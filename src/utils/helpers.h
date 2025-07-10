@@ -74,12 +74,6 @@ INIT get_init(std::string_view s);
 
 SORT get_sort(std::string_view s);
 
-#ifdef LOG_LS_OPERATORS
-void log_LS_operators(
-  const std::vector<std::array<ls::OperatorStats, OperatorName::MAX>>&
-    ls_stats);
-#endif
-
 HeuristicParameters str_to_heuristic_param(const std::string& s);
 
 // Evaluate adding job with rank job_rank in given route at given rank

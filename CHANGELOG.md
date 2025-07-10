@@ -30,6 +30,7 @@
 - Refactor to simplify `VRP::solve` (#1196)
 - Remove heuristic synchronisation (#1188)
 - Refactor gain evaluation in operators to ease code maintenance and extension (#1266)
+- Remove `LOG_LS_OPERATORS` (#1263)
 
 #### CI
 

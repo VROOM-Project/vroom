@@ -92,11 +92,6 @@ LocalSearch<Route,
 
   // Setup solution state.
   _sol_state.setup(_sol);
-
-#ifdef LOG_LS_OPERATORS
-  tried_moves.fill(0);
-  applied_moves.fill(0);
-#endif
 }
 
 template <class Route>
@@ -512,9 +507,7 @@ void LocalSearch<Route,
                   // Same move as with t_rank == s_rank.
                   continue;
                 }
-#ifdef LOG_LS_OPERATORS
-                ++tried_moves[OperatorName::UnassignedExchange];
-#endif
+
                 UnassignedExchange r(_input,
                                      _sol_state,
                                      _sol_state.unassigned,
@@ -615,9 +608,6 @@ void LocalSearch<Route,
 
           if (best_current_priority > 0 &&
               best_priorities[source] <= best_current_priority) {
-#ifdef LOG_LS_OPERATORS
-            ++tried_moves[OperatorName::PriorityReplace];
-#endif
             PriorityReplace r(_input,
                               _sol_state,
                               _sol_state.unassigned,
@@ -764,9 +754,6 @@ void LocalSearch<Route,
             continue;
           }
 
-#ifdef LOG_LS_OPERATORS
-          ++tried_moves[OperatorName::CrossExchange];
-#endif
           CrossExchange r(_input,
                           _sol_state,
                           _sol[source],
@@ -881,9 +868,6 @@ void LocalSearch<Route,
               continue;
             }
 
-#ifdef LOG_LS_OPERATORS
-            ++tried_moves[OperatorName::MixedExchange];
-#endif
             MixedExchange r(_input,
                             _sol_state,
                             _sol[source],
@@ -995,9 +979,6 @@ void LocalSearch<Route,
             continue;
           }
 
-#ifdef LOG_LS_OPERATORS
-          ++tried_moves[OperatorName::TwoOpt];
-#endif
           TwoOpt r(_input,
                    _sol_state,
                    _sol[source],
@@ -1098,9 +1079,6 @@ void LocalSearch<Route,
             continue;
           }
 
-#ifdef LOG_LS_OPERATORS
-          ++tried_moves[OperatorName::ReverseTwoOpt];
-#endif
           ReverseTwoOpt r(_input,
                           _sol_state,
                           _sol[source],
@@ -1164,9 +1142,6 @@ void LocalSearch<Route,
                  _sol_state.insertion_ranks_begin[target][s_job_rank];
                t_rank < _sol_state.insertion_ranks_end[target][s_job_rank];
                ++t_rank) {
-#ifdef LOG_LS_OPERATORS
-            ++tried_moves[OperatorName::Relocate];
-#endif
             Relocate r(_input,
                        _sol_state,
                        _sol[source],
@@ -1240,9 +1215,6 @@ void LocalSearch<Route,
                      _sol_state.insertion_ranks_end[target][s_next_job_rank]);
           for (unsigned t_rank = insertion_start; t_rank < insertion_end;
                ++t_rank) {
-#ifdef LOG_LS_OPERATORS
-            ++tried_moves[OperatorName::OrOpt];
-#endif
             OrOpt r(_input,
                     _sol_state,
                     _sol[source],
@@ -1271,9 +1243,6 @@ void LocalSearch<Route,
           continue;
         }
 
-#ifdef LOG_LS_OPERATORS
-        ++tried_moves[OperatorName::TSPFix];
-#endif
         TSPFix op(_input, _sol_state, _sol[source], source);
 
         if (best_gains[source][target] < op.gain() && op.is_valid()) {
@@ -1318,9 +1287,6 @@ void LocalSearch<Route,
             continue;
           }
 
-#ifdef LOG_LS_OPERATORS
-          ++tried_moves[OperatorName::IntraExchange];
-#endif
           IntraExchange r(_input,
                           _sol_state,
                           _sol[source],
@@ -1388,9 +1354,6 @@ void LocalSearch<Route,
             continue;
           }
 
-#ifdef LOG_LS_OPERATORS
-          ++tried_moves[OperatorName::IntraCrossExchange];
-#endif
           IntraCrossExchange r(_input,
                                _sol_state,
                                _sol[source],
@@ -1460,9 +1423,6 @@ void LocalSearch<Route,
             continue;
           }
 
-#ifdef LOG_LS_OPERATORS
-          ++tried_moves[OperatorName::IntraMixedExchange];
-#endif
           IntraMixedExchange r(_input,
                                _sol_state,
                                _sol[source],
@@ -1523,9 +1483,6 @@ void LocalSearch<Route,
             break;
           }
 
-#ifdef LOG_LS_OPERATORS
-          ++tried_moves[OperatorName::IntraRelocate];
-#endif
           IntraRelocate r(_input,
                           _sol_state,
                           _sol[source],
@@ -1598,9 +1555,6 @@ void LocalSearch<Route,
             break;
           }
 
-#ifdef LOG_LS_OPERATORS
-          ++tried_moves[OperatorName::IntraOrOpt];
-#endif
           IntraOrOpt r(_input,
                        _sol_state,
                        _sol[source],
@@ -1633,9 +1587,6 @@ void LocalSearch<Route,
                                    static_cast<Index>(end_s - 1));
 
         for (unsigned t_rank = s_rank + 2; t_rank < end_t_rank; ++t_rank) {
-#ifdef LOG_LS_OPERATORS
-          ++tried_moves[OperatorName::IntraTwoOpt];
-#endif
           IntraTwoOpt r(_input,
                         _sol_state,
                         _sol[source],
@@ -1700,9 +1651,6 @@ void LocalSearch<Route,
             continue;
           }
 
-#ifdef LOG_LS_OPERATORS
-          ++tried_moves[OperatorName::PDShift];
-#endif
           PDShift pdr(_input,
                       _sol_state,
                       _sol[source],
@@ -1755,9 +1703,6 @@ void LocalSearch<Route,
           continue;
         }
 
-#ifdef LOG_LS_OPERATORS
-        ++tried_moves[OperatorName::RouteExchange];
-#endif
         RouteExchange re(_input,
                          _sol_state,
                          _sol[source],
@@ -1787,9 +1732,6 @@ void LocalSearch<Route,
           continue;
         }
 
-#ifdef LOG_LS_OPERATORS
-        ++tried_moves[OperatorName::SwapStar];
-#endif
         SwapStar r(_input,
                    _sol_state,
                    _sol[source],
@@ -1824,9 +1766,6 @@ void LocalSearch<Route,
             continue;
           }
 
-#ifdef LOG_LS_OPERATORS
-          ++tried_moves[OperatorName::RouteSplit];
-#endif
           // RouteSplit stores a const& to empty_route_ranks, which
           // will be invalid in the unique_ptr created below after
           // empty_route_ranks goes out of scope. This is fine because
@@ -1887,10 +1826,6 @@ void LocalSearch<Route,
 
       auto update_candidates =
         best_ops[best_source][best_target]->update_candidates();
-
-#ifdef LOG_LS_OPERATORS
-      ++applied_moves.at(best_ops[best_source][best_target]->get_name());
-#endif
 
 #ifdef LOG_LS
       steps.emplace_back(utils::now(),
@@ -2157,57 +2092,6 @@ void LocalSearch<Route,
     }
   }
 }
-
-#ifdef LOG_LS_OPERATORS
-template <class Route,
-          class UnassignedExchange,
-          class CrossExchange,
-          class MixedExchange,
-          class TwoOpt,
-          class ReverseTwoOpt,
-          class Relocate,
-          class OrOpt,
-          class IntraExchange,
-          class IntraCrossExchange,
-          class IntraMixedExchange,
-          class IntraRelocate,
-          class IntraOrOpt,
-          class IntraTwoOpt,
-          class PDShift,
-          class RouteExchange,
-          class SwapStar,
-          class RouteSplit,
-          class PriorityReplace,
-          class TSPFix>
-std::array<OperatorStats, OperatorName::MAX>
-LocalSearch<Route,
-            UnassignedExchange,
-            CrossExchange,
-            MixedExchange,
-            TwoOpt,
-            ReverseTwoOpt,
-            Relocate,
-            OrOpt,
-            IntraExchange,
-            IntraCrossExchange,
-            IntraMixedExchange,
-            IntraRelocate,
-            IntraOrOpt,
-            IntraTwoOpt,
-            PDShift,
-            RouteExchange,
-            SwapStar,
-            RouteSplit,
-            PriorityReplace,
-            TSPFix>::get_stats() const {
-  std::array<OperatorStats, OperatorName::MAX> stats;
-  for (auto op = 0; op < OperatorName::MAX; ++op) {
-    stats[op] = OperatorStats(tried_moves.at(op), applied_moves.at(op));
-  }
-
-  return stats;
-}
-#endif
 
 template <class Route,
           class UnassignedExchange,

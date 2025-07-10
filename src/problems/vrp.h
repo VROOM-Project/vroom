@@ -58,10 +58,6 @@ template <class Route> struct SolvingContext {
   std::set<utils::SolutionIndicators> heuristic_indicators;
   std::mutex heuristic_indicators_m;
 
-#ifdef LOG_LS_OPERATORS
-  std::vector<std::array<ls::OperatorStats, OperatorName::MAX>> ls_stats;
-#endif
-
 #ifdef LOG_LS
   std::vector<ls::log::Dump> ls_dumps;
 #endif
@@ -70,12 +66,7 @@ template <class Route> struct SolvingContext {
     : init_sol(set_init_sol<Route>(input, init_assigned)),
       vehicles_ranks(input.vehicles.size()),
       solutions(nb_searches, init_sol),
-      sol_indicators(nb_searches)
-#ifdef LOG_LS_OPERATORS
-      ,
-      ls_stats(nb_searches)
-#endif
-  {
+      sol_indicators(nb_searches) {
 
     // Deduce unassigned jobs from initial solution.
     std::ranges::copy_if(std::views::iota(0u, input.jobs.size()),
@@ -211,9 +202,7 @@ void run_single_search(const Input& input,
 
   // Store solution indicators.
   context.sol_indicators[rank] = ls.indicators();
-#ifdef LOG_LS_OPERATORS
-  context.ls_stats[rank] = ls.get_stats();
-#endif
+
 #ifdef LOG_LS
   auto ls_steps = ls.get_steps();
 
@@ -304,10 +293,6 @@ protected:
     if (ep != nullptr) {
       std::rethrow_exception(ep);
     }
-
-#ifdef LOG_LS_OPERATORS
-    utils::log_LS_operators(context.ls_stats);
-#endif
 
 #ifdef LOG_LS
     io::write_LS_logs_to_json(context.ls_dumps);
