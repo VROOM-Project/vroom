@@ -125,7 +125,7 @@ void UnassignedExchange::apply() {
 }
 
 std::vector<Index> UnassignedExchange::addition_candidates() const {
-  return {s_vehicle};
+  return _input.compatible_vehicles_for_job[_removed];
 }
 
 std::vector<Index> UnassignedExchange::update_candidates() const {

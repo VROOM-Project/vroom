@@ -142,30 +142,31 @@ template <class Route,
           class RouteSplit,
           class PriorityReplace,
           class TSPFix>
-void LocalSearch<Route,
-                 UnassignedExchange,
-                 CrossExchange,
-                 MixedExchange,
-                 TwoOpt,
-                 ReverseTwoOpt,
-                 Relocate,
-                 OrOpt,
-                 IntraExchange,
-                 IntraCrossExchange,
-                 IntraMixedExchange,
-                 IntraRelocate,
-                 IntraOrOpt,
-                 IntraTwoOpt,
-                 PDShift,
-                 RouteExchange,
-                 SwapStar,
-                 RouteSplit,
-                 PriorityReplace,
-                 TSPFix>::try_job_additions(const std::vector<Index>& routes,
-                                            double regret_coeff
+std::unordered_set<Index>
+LocalSearch<Route,
+            UnassignedExchange,
+            CrossExchange,
+            MixedExchange,
+            TwoOpt,
+            ReverseTwoOpt,
+            Relocate,
+            OrOpt,
+            IntraExchange,
+            IntraCrossExchange,
+            IntraMixedExchange,
+            IntraRelocate,
+            IntraOrOpt,
+            IntraTwoOpt,
+            PDShift,
+            RouteExchange,
+            SwapStar,
+            RouteSplit,
+            PriorityReplace,
+            TSPFix>::try_job_additions(const std::vector<Index>& routes,
+                                       double regret_coeff
 #ifdef LOG_LS
-                                            ,
-                                            bool log_addition_step
+                                       ,
+                                       bool log_addition_step
 #endif
 ) {
   bool job_added;
@@ -336,9 +337,20 @@ void LocalSearch<Route,
     }
   } while (job_added);
 
+  // Update stored data for consistency (except update_route_eval and
+  // set_insertion_ranks done along the way).
   for (const auto v : modified_vehicles) {
     _sol_state.update_route_bbox(_sol[v].route, v);
+    _sol_state.update_costs(_sol[v].route, v);
+    _sol_state.update_skills(_sol[v].route, v);
+    _sol_state.update_priorities(_sol[v].route, v);
+    _sol_state.set_node_gains(_sol[v].route, v);
+    _sol_state.set_edge_gains(_sol[v].route, v);
+    _sol_state.set_pd_matching_ranks(_sol[v].route, v);
+    _sol_state.set_pd_gains(_sol[v].route, v);
   }
+
+  return modified_vehicles;
 }
 
 template <class Route,
@@ -1902,6 +1914,14 @@ void LocalSearch<Route,
       for (auto v_rank : update_candidates) {
         _sol_state.update_route_eval(_sol[v_rank].route, v_rank);
         _sol_state.update_route_bbox(_sol[v_rank].route, v_rank);
+        _sol_state.update_costs(_sol[v_rank].route, v_rank);
+        _sol_state.update_skills(_sol[v_rank].route, v_rank);
+        _sol_state.update_priorities(_sol[v_rank].route, v_rank);
+        _sol_state.set_insertion_ranks(_sol[v_rank], v_rank);
+        _sol_state.set_node_gains(_sol[v_rank].route, v_rank);
+        _sol_state.set_edge_gains(_sol[v_rank].route, v_rank);
+        _sol_state.set_pd_matching_ranks(_sol[v_rank].route, v_rank);
+        _sol_state.set_pd_gains(_sol[v_rank].route, v_rank);
 
         assert(_sol[v_rank].size() <= _input.vehicles[v_rank].max_tasks);
         assert(_input.vehicles[v_rank].ok_for_range_bounds(
@@ -1919,29 +1939,24 @@ void LocalSearch<Route,
       assert(new_eval + best_gain == previous_eval);
 #endif
 
-      for (auto v_rank : update_candidates) {
-        // Only this update (and update_route_eval done above) are
-        // actually required for consistency inside try_job_additions.
-        _sol_state.set_insertion_ranks(_sol[v_rank], v_rank);
-      }
-
-      try_job_additions(best_ops[best_source][best_target]
-                          ->addition_candidates(),
-                        0
+      auto modified_vehicles =
+        try_job_additions(best_ops[best_source][best_target]
+                            ->addition_candidates(),
+                          0
 #ifdef LOG_LS
-                        ,
-                        true
+                          ,
+                          true
 #endif
-      );
+        );
 
-      for (auto v_rank : update_candidates) {
-        _sol_state.update_costs(_sol[v_rank].route, v_rank);
-        _sol_state.update_skills(_sol[v_rank].route, v_rank);
-        _sol_state.update_priorities(_sol[v_rank].route, v_rank);
-        _sol_state.set_node_gains(_sol[v_rank].route, v_rank);
-        _sol_state.set_edge_gains(_sol[v_rank].route, v_rank);
-        _sol_state.set_pd_matching_ranks(_sol[v_rank].route, v_rank);
-        _sol_state.set_pd_gains(_sol[v_rank].route, v_rank);
+      // Extend update_candidates in case a vehicle was not modified
+      // by the operator itself but afterward by
+      // try_job_additions. Can happen e.g. with UnassignedExchange.
+      for (const auto v : update_candidates) {
+        modified_vehicles.erase(v);
+      }
+      for (const auto v : modified_vehicles) {
+        update_candidates.push_back(v);
       }
 
       // Set gains to zero for what needs to be recomputed in the next
@@ -2118,26 +2133,19 @@ void LocalSearch<Route,
                          utils::format_solution(_input, _sol));
 #endif
 
-      // Update insertion ranks ranges.
+      // Update stored data that has not been maintained while
+      // removing.
       for (std::size_t v = 0; v < _sol.size(); ++v) {
+        _sol_state.update_costs(_sol[v].route, v);
+        _sol_state.update_skills(_sol[v].route, v);
+        _sol_state.update_priorities(_sol[v].route, v);
         _sol_state.set_insertion_ranks(_sol[v], v);
+        _sol_state.set_edge_gains(_sol[v].route, v);
       }
 
       // Refill jobs.
       constexpr double refill_regret = 1.5;
       try_job_additions(_all_routes, refill_regret);
-
-      // Update everything except what has already been updated in
-      // try_job_additions.
-      for (std::size_t v = 0; v < _sol.size(); ++v) {
-        _sol_state.update_costs(_sol[v].route, v);
-        _sol_state.update_skills(_sol[v].route, v);
-        _sol_state.update_priorities(_sol[v].route, v);
-        _sol_state.set_node_gains(_sol[v].route, v);
-        _sol_state.set_edge_gains(_sol[v].route, v);
-        _sol_state.set_pd_matching_ranks(_sol[v].route, v);
-        _sol_state.set_pd_gains(_sol[v].route, v);
-      }
 
 #ifdef LOG_LS
       steps.emplace_back(utils::now(),

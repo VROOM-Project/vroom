@@ -130,6 +130,9 @@ public:
   std::unordered_map<Id, Index> pickup_id_to_rank;
   std::unordered_map<Id, Index> delivery_id_to_rank;
 
+  // Store list of compatible vehicles for each job.
+  std::vector<std::vector<Index>> compatible_vehicles_for_job;
+
   Input(io::Servers servers = {},
         ROUTER router = ROUTER::OSRM,
         bool apply_TSPFix = false);
