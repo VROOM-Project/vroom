@@ -94,4 +94,18 @@ void Route::check_timing_consistency() const {
 }
 #endif
 
+void Route::update_cargo_lifetime_stats() {
+  max_cargo_age = 0;
+  lifetime_violations = 0;
+  
+  for (const auto& step : steps) {
+    if (step.has_expired_cargo) {
+      lifetime_violations++;
+    }
+    if (step.cargo_age > max_cargo_age) {
+      max_cargo_age = step.cargo_age;
+    }
+  }
+}
+
 } // namespace vroom

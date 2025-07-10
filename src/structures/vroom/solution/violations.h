@@ -17,6 +17,7 @@ namespace vroom {
 struct Violations {
   UserDuration lead_time;
   UserDuration delay;
+  UserDuration lifetime_violations;
 
   std::unordered_set<VIOLATION> types;
 
@@ -27,7 +28,8 @@ struct Violations {
   Violations(
     UserDuration lead_time,
     UserDuration delay,
-    std::unordered_set<VIOLATION>&& types = std::unordered_set<VIOLATION>());
+    std::unordered_set<VIOLATION>&& types = std::unordered_set<VIOLATION>(),
+    UserDuration lifetime_violations = 0);
 
   Violations& operator+=(const Violations& rhs);
 };

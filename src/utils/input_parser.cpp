@@ -512,7 +512,8 @@ inline Job get_job(const rapidjson::Value& json_job, unsigned amount_size) {
              get_time_windows(json_job, "job"),
              get_string(json_job, "description"),
              get_duration_per_type(json_job, "setup_per_type", "job"),
-             get_duration_per_type(json_job, "service_per_type", "job"));
+             get_duration_per_type(json_job, "service_per_type", "job"),
+             get_duration(json_job, "max_lifetime"));
 }
 
 template <class T> inline Matrix<T> get_matrix(rapidjson::Value& m) {
@@ -606,6 +607,7 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
       auto amount = get_amount(json_shipment, "amount", amount_size);
       auto skills = get_skills(json_shipment);
       auto priority = get_priority(json_shipment);
+      auto max_lifetime = get_duration(json_shipment, "max_lifetime");
 
       // Defining pickup job.
       auto& json_pickup = json_shipment["pickup"];
@@ -626,7 +628,8 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
                                              "pickup"),
                        get_duration_per_type(json_pickup,
                                              "service_per_type",
-                                             "pickup"));
+                                             "pickup"),
+                       max_lifetime);
 
       // Defining delivery job.
       auto& json_delivery = json_shipment["delivery"];
@@ -647,7 +650,8 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
                                                "delivery"),
                          get_duration_per_type(json_delivery,
                                                "service_per_type",
-                                               "delivery"));
+                                               "delivery"),
+                         max_lifetime);
 
       input.add_shipment(pickup, delivery);
     }

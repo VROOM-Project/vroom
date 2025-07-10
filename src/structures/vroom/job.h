@@ -36,6 +36,10 @@ struct Job {
   std::vector<Duration> setups;
   std::vector<Duration> services;
 
+  // Cargo lifetime constraints
+  const Duration max_lifetime;
+  mutable Duration pickup_time;
+
   // Constructor for regular one-stop job (JOB_TYPE::SINGLE).
   Job(Id id,
       const Location& location,
@@ -49,7 +53,8 @@ struct Job {
         std::vector<TimeWindow>(1, TimeWindow()),
       std::string description = "",
       const TypeToUserDurationMap& setup_per_type = TypeToUserDurationMap(),
-      const TypeToUserDurationMap& service_per_type = TypeToUserDurationMap());
+      const TypeToUserDurationMap& service_per_type = TypeToUserDurationMap(),
+      UserDuration max_lifetime = 0);
 
   // Constructor for pickup and delivery jobs (JOB_TYPE::PICKUP or
   // JOB_TYPE::DELIVERY).
@@ -65,13 +70,32 @@ struct Job {
         std::vector<TimeWindow>(1, TimeWindow()),
       std::string description = "",
       const TypeToUserDurationMap& setup_per_type = TypeToUserDurationMap(),
-      const TypeToUserDurationMap& service_per_type = TypeToUserDurationMap());
+      const TypeToUserDurationMap& service_per_type = TypeToUserDurationMap(),
+      UserDuration max_lifetime = 0);
 
   Index index() const {
     return location.index();
   }
 
   bool is_valid_start(Duration time) const;
+
+  // Cargo lifetime constraint methods
+  bool has_lifetime_constraint() const {
+    return max_lifetime > 0;
+  }
+
+  bool is_expired(Duration current_time) const {
+    return has_lifetime_constraint() && 
+           (current_time - pickup_time > max_lifetime);
+  }
+
+  Duration remaining_lifetime(Duration current_time) const {
+    if (!has_lifetime_constraint()) {
+      return std::numeric_limits<Duration>::max();
+    }
+    const Duration elapsed = current_time - pickup_time;
+    return (elapsed < max_lifetime) ? (max_lifetime - elapsed) : 0;
+  }
 };
 
 } // namespace vroom

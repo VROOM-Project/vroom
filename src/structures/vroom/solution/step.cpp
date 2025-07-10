@@ -8,6 +8,7 @@ All rights reserved (see LICENSE).
 */
 
 #include "structures/vroom/solution/step.h"
+#include "utils/helpers.h"
 
 namespace vroom {
 
@@ -45,6 +46,18 @@ Step::Step(const Break& b, Amount load)
 
 UserDuration Step::departure() const {
   return arrival + waiting_time + setup + service;
+}
+
+void Step::update_cargo_lifetime(const Job& job, UserDuration current_time) {
+  if (job.has_lifetime_constraint()) {
+    if (job.type == JOB_TYPE::PICKUP) {
+      cargo_pickup_time = current_time;
+    } else if (job.type == JOB_TYPE::DELIVERY) {
+      cargo_age = current_time - utils::scale_to_user_duration(job.pickup_time);
+      max_cargo_lifetime = utils::scale_to_user_duration(job.max_lifetime);
+      has_expired_cargo = cargo_age > max_cargo_lifetime;
+    }
+  }
 }
 
 } // namespace vroom

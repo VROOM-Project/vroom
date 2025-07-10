@@ -1294,6 +1294,10 @@ Route choose_ETA(const Input& input,
           expected_delivery_ranks.insert(job_rank + 1);
           delivery_to_pickup_step_rank.emplace(job_rank + 1,
                                                sol_steps.size() - 1);
+          // Track pickup time for lifetime constraints
+          if (job.has_lifetime_constraint()) {
+            input.jobs[job_rank].pickup_time = utils::scale_from_user_duration(current.arrival);
+          }
         }
         break;
       case JOB_TYPE::DELIVERY:
@@ -1304,6 +1308,18 @@ Route choose_ETA(const Input& input,
           delivery_first_ranks.insert(job_rank);
         } else {
           expected_delivery_ranks.erase(search);
+          // Check lifetime constraints for delivery
+          if (job.has_lifetime_constraint()) {
+            const auto pickup_job_rank = job_rank - 1;
+            const auto pickup_time = input.jobs[pickup_job_rank].pickup_time;
+            const auto cargo_age = utils::scale_from_user_duration(current.arrival) - pickup_time;
+            if (cargo_age > job.max_lifetime) {
+              current.violations.types.insert(VIOLATION::LIFETIME);
+              v_types.insert(VIOLATION::LIFETIME);
+            }
+            // Update step with cargo lifetime information
+            current.update_cargo_lifetime(job, current.arrival);
+          }
         }
         break;
       }

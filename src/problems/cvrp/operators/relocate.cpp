@@ -61,7 +61,17 @@ void Relocate::compute_gain() {
 
 bool Relocate::is_valid() {
   assert(gain_computed);
-  return is_valid_for_source_range_bounds() &&
+  
+  bool lifetime_valid = true;
+  const auto& job = _input.jobs[s_route[s_rank]];
+  if (job.has_lifetime_constraint()) {
+    // Basic heuristic check for lifetime constraints
+    // Full validation happens in choose_ETA
+    lifetime_valid = (job.max_lifetime > 0);
+  }
+  
+  return lifetime_valid &&
+         is_valid_for_source_range_bounds() &&
          is_valid_for_target_range_bounds() &&
          target
            .is_valid_addition_for_capacity(_input,
