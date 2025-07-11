@@ -86,7 +86,7 @@ inline Eval addition_cost(const Input& input,
   assert(rank <= route.size());
 
   const auto& job = input.jobs[job_rank];
-  const Index job_index = job.index();
+  const auto job_index = job.index();
   Eval previous_eval;
   Eval next_eval;
   Eval old_edge_eval;
