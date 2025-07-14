@@ -144,6 +144,24 @@ void SolutionState::update_costs(const std::vector<Index>& route, Index v) {
       }
 
       bwd_task_evals[v][v_rank][i] = bwd_evals[v][v_rank][i - 1] + service_eval;
+      if (previous_index != current_index) {
+        bwd_task_evals[v][v_rank][i - 1] +=
+          vehicle.task_eval(previous_job.setups[vehicle.type]);
+      }
+    }
+  }
+
+  // Handle backward setup eval to "new" first job.
+  const auto& last_job = _input.jobs[route.back()];
+  const auto last_index = last_job.index();
+
+  for (Index v_rank = 0; v_rank < _nb_vehicles; ++v_rank) {
+    const auto& vehicle = _input.vehicles[v_rank];
+
+    if (!vehicle.has_start() ||
+        vehicle.start.value().index() != last_index) {
+      bwd_task_evals[v][v_rank].back() +=
+        vehicle.task_eval(last_job.setups[vehicle.type]);
     }
   }
 }
