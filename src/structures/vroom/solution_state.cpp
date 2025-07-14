@@ -93,26 +93,36 @@ void SolutionState::update_costs(const std::vector<Index>& route, Index v) {
     std::vector<std::vector<Eval>>(_nb_vehicles,
                                    std::vector<Eval>(route.size()));
 
-  Index previous_index = 0; // dummy init
-  if (!route.empty()) {
-    const auto& first_job = _input.jobs[route[0]];
+  if (route.empty()) {
+    return;
+  }
 
-    for (Index v_rank = 0; v_rank < _nb_vehicles; ++v_rank) {
-      fwd_evals[v][v_rank][0] = Eval();
-      bwd_evals[v][v_rank][0] = Eval();
+  // Handle evals for first job.
+  const Job& first_job = _input.jobs[route[0]];
 
-      const auto& vehicle = _input.vehicles[v_rank];
-      const auto service_eval = vehicle.task_eval(first_job.services[vehicle.type]);
+  for (Index v_rank = 0; v_rank < _nb_vehicles; ++v_rank) {
+    fwd_evals[v][v_rank][0] = Eval();
+    bwd_evals[v][v_rank][0] = Eval();
 
-      fwd_task_evals[v][v_rank][0] = service_eval;
-      bwd_task_evals[v][v_rank][0] = service_eval;
+    const auto& vehicle = _input.vehicles[v_rank];
+    const auto service_eval =
+      vehicle.task_eval(first_job.services[vehicle.type]);
+
+    fwd_task_evals[v][v_rank][0] = service_eval;
+    bwd_task_evals[v][v_rank][0] = service_eval;
+
+    if (!vehicle.has_start() ||
+        vehicle.start.value().index() != first_job.index()) {
+      fwd_task_evals[v][v_rank][0] +=
+        vehicle.task_eval(first_job.setups[vehicle.type]);
     }
-
-    previous_index = first_job.index();
   }
 
   for (std::size_t i = 1; i < route.size(); ++i) {
+    const auto& previous_job = _input.jobs[route[i - 1]];
     const auto& current_job = _input.jobs[route[i]];
+
+    const auto previous_index = previous_job.index();
     const auto current_index = current_job.index();
 
     for (Index v_rank = 0; v_rank < _nb_vehicles; ++v_rank) {
@@ -124,12 +134,17 @@ void SolutionState::update_costs(const std::vector<Index>& route, Index v) {
                                 other_v.eval(current_index, previous_index);
 
       const auto& vehicle = _input.vehicles[v_rank];
-      const auto service_eval = vehicle.task_eval(current_job.services[vehicle.type]);
+      const auto service_eval =
+        vehicle.task_eval(current_job.services[vehicle.type]);
 
       fwd_task_evals[v][v_rank][i] = fwd_evals[v][v_rank][i - 1] + service_eval;
+      if (previous_index != current_index) {
+        fwd_task_evals[v][v_rank][i] +=
+          vehicle.task_eval(current_job.setups[vehicle.type]);
+      }
+
       bwd_task_evals[v][v_rank][i] = bwd_evals[v][v_rank][i - 1] + service_eval;
     }
-    previous_index = current_index;
   }
 }
 
