@@ -374,7 +374,8 @@ inline Eval addition_cost_delta(const Input& input,
   const auto& r = raw_route.route;
   const auto v_rank = raw_route.v_rank;
   const auto& v = input.vehicles[v_rank];
-  const auto job_index = input.jobs[job_rank].index();
+  const auto& job = input.jobs[job_rank];
+  const auto job_index = job.index();
 
   Eval cost_delta =
     get_range_removal_gain(sol_state, v_rank, first_rank, last_rank);
@@ -404,7 +405,28 @@ inline Eval addition_cost_delta(const Input& input,
     cost_delta += v.eval(before_last, last_index.value());
   }
 
-  return cost_delta;
+  // Handle service/setup delta.
+  Duration added_task_duration = job.services[v.type];
+
+  if (last_rank < r.size()) {
+    // There are remaining jobs after replaced range.
+    const auto& next_job = input.jobs[r[last_rank]];
+    const auto next_index = next_job.index();
+    const auto previous_index = input.jobs[r[last_rank - 1]].index();
+
+    if (next_index == job_index && previous_index != next_index) {
+      added_task_duration -= next_job.setups[v.type];
+    }
+    if (next_index != job_index && previous_index == next_index) {
+      added_task_duration += next_job.setups[v.type];
+    }
+  }
+
+  if (!before_first || before_first.value() != job_index) {
+    added_task_duration += job.setups[v.type];
+  }
+
+  return cost_delta + v.task_eval(added_task_duration);
 }
 
 // Compute cost variation when removing the "count" elements starting
