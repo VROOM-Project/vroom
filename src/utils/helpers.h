@@ -117,30 +117,30 @@ inline Eval addition_cost(const Input& input,
     }
   } else {
     // Adding before one of the jobs.
-    auto n_index = input.jobs[route[rank]].index();
-    next_eval = v.eval(job_index, n_index);
+    auto next_index = input.jobs[route[rank]].index();
+    next_eval = v.eval(job_index, next_index);
 
     if (rank == 0) {
       if (v.has_start()) {
         previous_index = v.start.value().index();
         previous_eval = v.eval(previous_index.value(), job_index);
-        old_edge_eval = v.eval(previous_index.value(), n_index);
+        old_edge_eval = v.eval(previous_index.value(), next_index);
       }
     } else {
       previous_index = input.jobs[route[rank - 1]].index();
       previous_eval = v.eval(previous_index.value(), job_index);
-      old_edge_eval = v.eval(previous_index.value(), n_index);
+      old_edge_eval = v.eval(previous_index.value(), next_index);
     }
 
     if (previous_index.has_value()) {
-      if (n_index == job_index && previous_index.value() != n_index) {
+      if (next_index == job_index && previous_index.value() != next_index) {
         added_task_duration -= input.jobs[route[rank]].setups[v.type];
       }
-      if (n_index != job_index && previous_index.value() == n_index) {
+      if (next_index != job_index && previous_index.value() == next_index) {
         added_task_duration += input.jobs[route[rank]].setups[v.type];
       }
     } else {
-      if (n_index == job_index) {
+      if (next_index == job_index) {
         added_task_duration -= input.jobs[route[rank]].setups[v.type];
       }
     }
