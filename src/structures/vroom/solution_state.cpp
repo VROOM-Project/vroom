@@ -18,8 +18,8 @@ namespace vroom::utils {
 SolutionState::SolutionState(const Input& input)
   : _input(input),
     _nb_vehicles(_input.vehicles.size()),
-    fwd_costs(_nb_vehicles, std::vector<std::vector<Eval>>(_nb_vehicles)),
-    bwd_costs(_nb_vehicles, std::vector<std::vector<Eval>>(_nb_vehicles)),
+    fwd_evals(_nb_vehicles, std::vector<std::vector<Eval>>(_nb_vehicles)),
+    bwd_evals(_nb_vehicles, std::vector<std::vector<Eval>>(_nb_vehicles)),
     fwd_skill_rank(_nb_vehicles, std::vector<Index>(_nb_vehicles)),
     bwd_skill_rank(_nb_vehicles, std::vector<Index>(_nb_vehicles)),
     fwd_priority(_nb_vehicles),
@@ -77,10 +77,10 @@ template <class Solution> void SolutionState::setup(const Solution& sol) {
 }
 
 void SolutionState::update_costs(const std::vector<Index>& route, Index v) {
-  fwd_costs[v] =
+  fwd_evals[v] =
     std::vector<std::vector<Eval>>(_nb_vehicles,
                                    std::vector<Eval>(route.size()));
-  bwd_costs[v] =
+  bwd_evals[v] =
     std::vector<std::vector<Eval>>(_nb_vehicles,
                                    std::vector<Eval>(route.size()));
 
@@ -88,8 +88,8 @@ void SolutionState::update_costs(const std::vector<Index>& route, Index v) {
   if (!route.empty()) {
     previous_index = _input.jobs[route[0]].index();
     for (Index v_rank = 0; v_rank < _nb_vehicles; ++v_rank) {
-      fwd_costs[v][v_rank][0] = Eval();
-      bwd_costs[v][v_rank][0] = Eval();
+      fwd_evals[v][v_rank][0] = Eval();
+      bwd_evals[v][v_rank][0] = Eval();
     }
   }
 
@@ -97,10 +97,10 @@ void SolutionState::update_costs(const std::vector<Index>& route, Index v) {
     const auto current_index = _input.jobs[route[i]].index();
     for (Index v_rank = 0; v_rank < _nb_vehicles; ++v_rank) {
       const auto& other_v = _input.vehicles[v_rank];
-      fwd_costs[v][v_rank][i] = fwd_costs[v][v_rank][i - 1] +
+      fwd_evals[v][v_rank][i] = fwd_evals[v][v_rank][i - 1] +
                                 other_v.eval(previous_index, current_index);
 
-      bwd_costs[v][v_rank][i] = bwd_costs[v][v_rank][i - 1] +
+      bwd_evals[v][v_rank][i] = bwd_evals[v][v_rank][i - 1] +
                                 other_v.eval(current_index, previous_index);
     }
     previous_index = current_index;

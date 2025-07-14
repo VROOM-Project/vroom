@@ -44,10 +44,10 @@ void IntraTwoOpt::compute_gain() {
 
   // Cost of reversing vehicle route between s_rank and t_rank
   // included.
-  stored_gain += _sol_state.fwd_costs[s_vehicle][s_vehicle][t_rank];
-  stored_gain -= _sol_state.fwd_costs[s_vehicle][s_vehicle][s_rank];
-  stored_gain += _sol_state.bwd_costs[s_vehicle][s_vehicle][s_rank];
-  stored_gain -= _sol_state.bwd_costs[s_vehicle][s_vehicle][t_rank];
+  stored_gain += _sol_state.fwd_evals[s_vehicle][s_vehicle][t_rank];
+  stored_gain -= _sol_state.fwd_evals[s_vehicle][s_vehicle][s_rank];
+  stored_gain += _sol_state.bwd_evals[s_vehicle][s_vehicle][s_rank];
+  stored_gain -= _sol_state.bwd_evals[s_vehicle][s_vehicle][t_rank];
 
   // Cost of going to t_rank first instead of s_rank.
   if (s_rank > 0) {

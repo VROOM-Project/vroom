@@ -251,8 +251,8 @@ inline Eval get_range_removal_gain(const SolutionState& sol_state,
 
   if (last_rank > first_rank) {
     // Gain related to removed portion.
-    removal_gain += sol_state.fwd_costs[v][v][last_rank - 1];
-    removal_gain -= sol_state.fwd_costs[v][v][first_rank];
+    removal_gain += sol_state.fwd_evals[v][v][last_rank - 1];
+    removal_gain -= sol_state.fwd_evals[v][v][first_rank];
   }
 
   return removal_gain;
@@ -291,11 +291,11 @@ addition_cost_delta(const Input& input,
   Eval straight_delta;
   Eval reversed_delta;
   if (insertion_start != insertion_end) {
-    straight_delta += sol_state.fwd_costs[v2_rank][v1_rank][insertion_start];
-    straight_delta -= sol_state.fwd_costs[v2_rank][v1_rank][insertion_end - 1];
+    straight_delta += sol_state.fwd_evals[v2_rank][v1_rank][insertion_start];
+    straight_delta -= sol_state.fwd_evals[v2_rank][v1_rank][insertion_end - 1];
 
-    reversed_delta += sol_state.bwd_costs[v2_rank][v1_rank][insertion_start];
-    reversed_delta -= sol_state.bwd_costs[v2_rank][v1_rank][insertion_end - 1];
+    reversed_delta += sol_state.bwd_evals[v2_rank][v1_rank][insertion_start];
+    reversed_delta -= sol_state.bwd_evals[v2_rank][v1_rank][insertion_end - 1];
   }
 
   // Determine useful values if present.
