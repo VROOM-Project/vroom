@@ -20,6 +20,8 @@ SolutionState::SolutionState(const Input& input)
     _nb_vehicles(_input.vehicles.size()),
     fwd_evals(_nb_vehicles, std::vector<std::vector<Eval>>(_nb_vehicles)),
     bwd_evals(_nb_vehicles, std::vector<std::vector<Eval>>(_nb_vehicles)),
+    fwd_task_evals(_nb_vehicles, std::vector<std::vector<Eval>>(_nb_vehicles)),
+    bwd_task_evals(_nb_vehicles, std::vector<std::vector<Eval>>(_nb_vehicles)),
     fwd_skill_rank(_nb_vehicles, std::vector<Index>(_nb_vehicles)),
     bwd_skill_rank(_nb_vehicles, std::vector<Index>(_nb_vehicles)),
     fwd_priority(_nb_vehicles),
@@ -84,17 +86,35 @@ void SolutionState::update_costs(const std::vector<Index>& route, Index v) {
     std::vector<std::vector<Eval>>(_nb_vehicles,
                                    std::vector<Eval>(route.size()));
 
+  fwd_task_evals[v] =
+    std::vector<std::vector<Eval>>(_nb_vehicles,
+                                   std::vector<Eval>(route.size()));
+  bwd_task_evals[v] =
+    std::vector<std::vector<Eval>>(_nb_vehicles,
+                                   std::vector<Eval>(route.size()));
+
   Index previous_index = 0; // dummy init
   if (!route.empty()) {
-    previous_index = _input.jobs[route[0]].index();
+    const auto& first_job = _input.jobs[route[0]];
+
     for (Index v_rank = 0; v_rank < _nb_vehicles; ++v_rank) {
       fwd_evals[v][v_rank][0] = Eval();
       bwd_evals[v][v_rank][0] = Eval();
+
+      const auto& vehicle = _input.vehicles[v_rank];
+      const auto service_eval = vehicle.task_eval(first_job.services[vehicle.type]);
+
+      fwd_task_evals[v][v_rank][0] = service_eval;
+      bwd_task_evals[v][v_rank][0] = service_eval;
     }
+
+    previous_index = first_job.index();
   }
 
   for (std::size_t i = 1; i < route.size(); ++i) {
-    const auto current_index = _input.jobs[route[i]].index();
+    const auto& current_job = _input.jobs[route[i]];
+    const auto current_index = current_job.index();
+
     for (Index v_rank = 0; v_rank < _nb_vehicles; ++v_rank) {
       const auto& other_v = _input.vehicles[v_rank];
       fwd_evals[v][v_rank][i] = fwd_evals[v][v_rank][i - 1] +
@@ -102,6 +122,12 @@ void SolutionState::update_costs(const std::vector<Index>& route, Index v) {
 
       bwd_evals[v][v_rank][i] = bwd_evals[v][v_rank][i - 1] +
                                 other_v.eval(current_index, previous_index);
+
+      const auto& vehicle = _input.vehicles[v_rank];
+      const auto service_eval = vehicle.task_eval(current_job.services[vehicle.type]);
+
+      fwd_task_evals[v][v_rank][i] = fwd_evals[v][v_rank][i - 1] + service_eval;
+      bwd_task_evals[v][v_rank][i] = bwd_evals[v][v_rank][i - 1] + service_eval;
     }
     previous_index = current_index;
   }
