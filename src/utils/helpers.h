@@ -254,9 +254,11 @@ inline Eval get_range_removal_gain(const SolutionState& sol_state,
     removal_gain += sol_state.fwd_evals[v][v][last_rank - 1];
     removal_gain -= sol_state.fwd_evals[v][v][first_rank];
 
-    removal_gain += sol_state.fwd_task_evals[v][v][last_rank - 1];
+    removal_gain += sol_state.fwd_setup_evals[v][v][last_rank - 1];
+    removal_gain += sol_state.fwd_service_evals[v][v][last_rank - 1];
     if (first_rank > 0) {
-      removal_gain -= sol_state.fwd_task_evals[v][v][first_rank - 1];
+      removal_gain -= sol_state.fwd_setup_evals[v][v][first_rank - 1];
+      removal_gain -= sol_state.fwd_service_evals[v][v][first_rank - 1];
     }
   }
 

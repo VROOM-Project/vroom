@@ -35,15 +35,19 @@ public:
   std::vector<std::vector<std::vector<Eval>>> fwd_evals;
   std::vector<std::vector<std::vector<Eval>>> bwd_evals;
 
-  // fwd_task_evals[v][new_v][i] stores the total task cost from job
+  // fwd_setup_evals[v][new_v][i] stores the total setup cost from job
   // at rank 0 to job at rank i (included) in the route for vehicle v,
   // from the point of view of a vehicle
-  // new_v. bwd_task_evals[v][new_v][i] stores the total cost from job
-  // at rank i (included) to job at rank 0 (i.e. when *reversing* all
-  // edges) in the route for vehicle v, from the point of view of a
-  // vehicle new_v.
-  std::vector<std::vector<std::vector<Eval>>> fwd_task_evals;
-  std::vector<std::vector<std::vector<Eval>>> bwd_task_evals;
+  // new_v. bwd_setup_evals[v][new_v][i] stores the total cost from
+  // job at rank i (included) to job at rank 0 (i.e. when *reversing*
+  // all edges) in the route for vehicle v, from the point of view of
+  // a vehicle new_v.
+  std::vector<std::vector<std::vector<Eval>>> fwd_setup_evals;
+  std::vector<std::vector<std::vector<Eval>>> bwd_setup_evals;
+
+  // Same for service times.
+  std::vector<std::vector<std::vector<Eval>>> fwd_service_evals;
+  std::vector<std::vector<std::vector<Eval>>> bwd_service_evals;
 
   // fwd_skill_rank[v1][v2] stores the maximum rank r for a step in
   // route for vehicle v1 such that v2 can handle all jobs from step 0

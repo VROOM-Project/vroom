@@ -20,8 +20,12 @@ SolutionState::SolutionState(const Input& input)
     _nb_vehicles(_input.vehicles.size()),
     fwd_evals(_nb_vehicles, std::vector<std::vector<Eval>>(_nb_vehicles)),
     bwd_evals(_nb_vehicles, std::vector<std::vector<Eval>>(_nb_vehicles)),
-    fwd_task_evals(_nb_vehicles, std::vector<std::vector<Eval>>(_nb_vehicles)),
-    bwd_task_evals(_nb_vehicles, std::vector<std::vector<Eval>>(_nb_vehicles)),
+    fwd_setup_evals(_nb_vehicles, std::vector<std::vector<Eval>>(_nb_vehicles)),
+    bwd_setup_evals(_nb_vehicles, std::vector<std::vector<Eval>>(_nb_vehicles)),
+    fwd_service_evals(_nb_vehicles,
+                      std::vector<std::vector<Eval>>(_nb_vehicles)),
+    bwd_service_evals(_nb_vehicles,
+                      std::vector<std::vector<Eval>>(_nb_vehicles)),
     fwd_skill_rank(_nb_vehicles, std::vector<Index>(_nb_vehicles)),
     bwd_skill_rank(_nb_vehicles, std::vector<Index>(_nb_vehicles)),
     fwd_priority(_nb_vehicles),
@@ -86,10 +90,17 @@ void SolutionState::update_costs(const std::vector<Index>& route, Index v) {
     std::vector<std::vector<Eval>>(_nb_vehicles,
                                    std::vector<Eval>(route.size()));
 
-  fwd_task_evals[v] =
+  fwd_setup_evals[v] =
     std::vector<std::vector<Eval>>(_nb_vehicles,
                                    std::vector<Eval>(route.size()));
-  bwd_task_evals[v] =
+  bwd_setup_evals[v] =
+    std::vector<std::vector<Eval>>(_nb_vehicles,
+                                   std::vector<Eval>(route.size()));
+
+  fwd_service_evals[v] =
+    std::vector<std::vector<Eval>>(_nb_vehicles,
+                                   std::vector<Eval>(route.size()));
+  bwd_service_evals[v] =
     std::vector<std::vector<Eval>>(_nb_vehicles,
                                    std::vector<Eval>(route.size()));
 
@@ -108,12 +119,12 @@ void SolutionState::update_costs(const std::vector<Index>& route, Index v) {
     const auto service_eval =
       vehicle.task_eval(first_job.services[vehicle.type]);
 
-    fwd_task_evals[v][v_rank][0] = service_eval;
-    bwd_task_evals[v][v_rank][0] = service_eval;
+    fwd_service_evals[v][v_rank][0] = service_eval;
+    bwd_service_evals[v][v_rank][0] = service_eval;
 
     if (!vehicle.has_start() ||
         vehicle.start.value().index() != first_job.index()) {
-      fwd_task_evals[v][v_rank][0] +=
+      fwd_setup_evals[v][v_rank][0] =
         vehicle.task_eval(first_job.setups[vehicle.type]);
     }
   }
@@ -136,18 +147,24 @@ void SolutionState::update_costs(const std::vector<Index>& route, Index v) {
       const auto& vehicle = _input.vehicles[v_rank];
       const auto service_eval =
         vehicle.task_eval(current_job.services[vehicle.type]);
+      fwd_service_evals[v][v_rank][i] =
+        fwd_service_evals[v][v_rank][i - 1] + service_eval;
+      bwd_service_evals[v][v_rank][i] =
+        bwd_service_evals[v][v_rank][i - 1] + service_eval;
 
-      fwd_task_evals[v][v_rank][i] = fwd_evals[v][v_rank][i - 1] + service_eval;
-      if (previous_index != current_index) {
-        fwd_task_evals[v][v_rank][i] +=
-          vehicle.task_eval(current_job.setups[vehicle.type]);
-      }
+      const bool apply_setup = (previous_index != current_index);
 
-      bwd_task_evals[v][v_rank][i] = bwd_evals[v][v_rank][i - 1] + service_eval;
-      if (previous_index != current_index) {
-        bwd_task_evals[v][v_rank][i - 1] +=
+      const auto fwd_setup_eval =
+        apply_setup ? vehicle.task_eval(current_job.setups[vehicle.type])
+                    : Eval();
+      fwd_setup_evals[v][v_rank][i] =
+        fwd_setup_evals[v][v_rank][i - 1] + fwd_setup_eval;
+
+      if (apply_setup) {
+        bwd_setup_evals[v][v_rank][i - 1] +=
           vehicle.task_eval(previous_job.setups[vehicle.type]);
       }
+      bwd_setup_evals[v][v_rank][i] = bwd_setup_evals[v][v_rank][i - 1];
     }
   }
 
@@ -158,9 +175,8 @@ void SolutionState::update_costs(const std::vector<Index>& route, Index v) {
   for (Index v_rank = 0; v_rank < _nb_vehicles; ++v_rank) {
     const auto& vehicle = _input.vehicles[v_rank];
 
-    if (!vehicle.has_start() ||
-        vehicle.start.value().index() != last_index) {
-      bwd_task_evals[v][v_rank].back() +=
+    if (!vehicle.has_start() || vehicle.start.value().index() != last_index) {
+      bwd_setup_evals[v][v_rank].back() +=
         vehicle.task_eval(last_job.setups[vehicle.type]);
     }
   }
