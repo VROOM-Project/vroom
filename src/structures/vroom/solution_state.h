@@ -42,11 +42,10 @@ public:
 
   // fwd_setup_evals[v][new_v][i] stores the total setup cost from job
   // at rank 0 to job at rank i (included) in the route for vehicle v,
-  // from the point of view of a vehicle
-  // new_v. bwd_setup_evals[v][new_v][i] stores the total cost from
-  // job at rank i (included) to job at rank 0 (i.e. when *reversing*
-  // all edges) in the route for vehicle v, from the point of view of
-  // a vehicle new_v.
+  // from the point of view of vehicle new_v.
+  // bwd_setup_evals[v][new_v][i] stores the total setup cost from
+  // last job to job at rank i included, i.e. when *reversing* route
+  // for vehicle v, from the point of view of a vehicle new_v.
   std::vector<std::vector<std::vector<Eval>>> fwd_setup_evals;
   std::vector<std::vector<std::vector<Eval>>> bwd_setup_evals;
 

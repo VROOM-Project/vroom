@@ -103,7 +103,10 @@ void SolutionState::update_costs(const std::vector<Index>& route, Index v) {
   }
 
   // Handle evals for first job.
-  const Job& first_job = _input.jobs[route[0]];
+  const auto& first_job = _input.jobs[route[0]];
+  const auto first_index = first_job.index();
+  const auto& last_job = _input.jobs[route.back()];
+  const auto last_index = last_job.index();
 
   for (Index v_rank = 0; v_rank < _nb_vehicles; ++v_rank) {
     fwd_evals[v][v_rank][0] = Eval();
@@ -115,10 +118,14 @@ void SolutionState::update_costs(const std::vector<Index>& route, Index v) {
 
     service_evals[v][v_rank][0] = service_eval;
 
-    if (!vehicle.has_start() ||
-        vehicle.start.value().index() != first_job.index()) {
+    if (!vehicle.has_start() || vehicle.start.value().index() != first_index) {
       fwd_setup_evals[v][v_rank][0] =
         vehicle.task_eval(first_job.setups[vehicle.type]);
+    }
+
+    if (!vehicle.has_start() || vehicle.start.value().index() != last_index) {
+      bwd_setup_evals[v][v_rank].back() =
+        vehicle.task_eval(last_job.setups[vehicle.type]);
     }
   }
 
@@ -128,47 +135,42 @@ void SolutionState::update_costs(const std::vector<Index>& route, Index v) {
 
     const auto previous_index = previous_job.index();
     const auto current_index = current_job.index();
+    const bool apply_setup = (previous_index != current_index);
 
     for (Index v_rank = 0; v_rank < _nb_vehicles; ++v_rank) {
-      const auto& other_v = _input.vehicles[v_rank];
+      const auto& vehicle = _input.vehicles[v_rank];
       fwd_evals[v][v_rank][i] = fwd_evals[v][v_rank][i - 1] +
-                                other_v.eval(previous_index, current_index);
+                                vehicle.eval(previous_index, current_index);
 
       bwd_evals[v][v_rank][i] = bwd_evals[v][v_rank][i - 1] +
-                                other_v.eval(current_index, previous_index);
+                                vehicle.eval(current_index, previous_index);
 
-      const auto& vehicle = _input.vehicles[v_rank];
       const auto service_eval =
         vehicle.task_eval(current_job.services[vehicle.type]);
       service_evals[v][v_rank][i] =
         service_evals[v][v_rank][i - 1] + service_eval;
 
-      const bool apply_setup = (previous_index != current_index);
-
-      const auto fwd_setup_eval =
-        apply_setup ? vehicle.task_eval(current_job.setups[vehicle.type])
-                    : Eval();
-      fwd_setup_evals[v][v_rank][i] =
-        fwd_setup_evals[v][v_rank][i - 1] + fwd_setup_eval;
-
+      fwd_setup_evals[v][v_rank][i] = fwd_setup_evals[v][v_rank][i - 1];
       if (apply_setup) {
-        bwd_setup_evals[v][v_rank][i - 1] +=
-          vehicle.task_eval(previous_job.setups[vehicle.type]);
+        fwd_setup_evals[v][v_rank][i] +=
+          vehicle.task_eval(current_job.setups[vehicle.type]);
       }
-      bwd_setup_evals[v][v_rank][i] = bwd_setup_evals[v][v_rank][i - 1];
     }
   }
 
-  // Handle backward setup eval to "new" first job.
-  const auto& last_job = _input.jobs[route.back()];
-  const auto last_index = last_job.index();
+  // Handling bwd_setup_evals only.
+  for (std::size_t i = route.size() - 1; i > 0; --i) {
+    const auto& previous_job = _input.jobs[route[i]];
+    const auto& current_job = _input.jobs[route[i - 1]];
+    const bool apply_setup = (previous_job.index() != current_job.index());
 
-  for (Index v_rank = 0; v_rank < _nb_vehicles; ++v_rank) {
-    const auto& vehicle = _input.vehicles[v_rank];
-
-    if (!vehicle.has_start() || vehicle.start.value().index() != last_index) {
-      bwd_setup_evals[v][v_rank].back() +=
-        vehicle.task_eval(last_job.setups[vehicle.type]);
+    for (Index v_rank = 0; v_rank < _nb_vehicles; ++v_rank) {
+      bwd_setup_evals[v][v_rank][i - 1] = bwd_setup_evals[v][v_rank][i];
+      if (apply_setup) {
+        const auto& vehicle = _input.vehicles[v_rank];
+        bwd_setup_evals[v][v_rank][i - 1] +=
+          vehicle.task_eval(current_job.setups[vehicle.type]);
+      }
     }
   }
 }
