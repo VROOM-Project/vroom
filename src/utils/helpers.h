@@ -281,6 +281,7 @@ addition_cost_delta(const Input& input,
   assert(first_rank <= last_rank);
   assert(last_rank <= route_1.route.size());
   assert(insertion_start <= insertion_end);
+  assert((first_rank < last_rank) xor (insertion_start < insertion_end));
 
   const bool empty_insertion = (insertion_start == insertion_end);
 
@@ -294,15 +295,38 @@ addition_cost_delta(const Input& input,
   Eval cost_delta =
     get_range_removal_gain(sol_state, v1_rank, first_rank, last_rank);
 
-  // Part of the cost that depends on insertion orientation.
+  // Part of the cost that may depend on insertion orientation.
+  Eval service_delta;
   Eval straight_delta;
   Eval reversed_delta;
   if (insertion_start != insertion_end) {
+    // Edges cost eval.
     straight_delta += sol_state.fwd_evals[v2_rank][v1_rank][insertion_start];
     straight_delta -= sol_state.fwd_evals[v2_rank][v1_rank][insertion_end - 1];
 
     reversed_delta += sol_state.bwd_evals[v2_rank][v1_rank][insertion_start];
     reversed_delta -= sol_state.bwd_evals[v2_rank][v1_rank][insertion_end - 1];
+
+    // Tasks service eval.
+    service_delta -=
+      sol_state.service_evals[v2_rank][v1_rank][insertion_end - 1];
+    if (insertion_start > 0) {
+      service_delta +=
+        sol_state.service_evals[v2_rank][v1_rank][insertion_start - 1];
+    }
+
+    // Tasks setup eval, this purposefully does not include setup time
+    // for the first job in the previous route context (using
+    // insertion_start, not the previous rank).
+    straight_delta -=
+      sol_state.fwd_setup_evals[v2_rank][v1_rank][insertion_end - 1];
+    straight_delta +=
+      sol_state.fwd_setup_evals[v2_rank][v1_rank][insertion_start];
+
+    reversed_delta +=
+      sol_state.bwd_setup_evals[v2_rank][v1_rank][insertion_start];
+    reversed_delta -=
+      sol_state.bwd_setup_evals[v2_rank][v1_rank][insertion_end - 1];
   }
 
   // Determine useful values if present.
@@ -356,8 +380,88 @@ addition_cost_delta(const Input& input,
     cost_delta.cost += v1.fixed_cost();
   }
 
-  return std::make_tuple(cost_delta + straight_delta,
-                         cost_delta + reversed_delta);
+  // Handle setup delta at the beginning and end of replaced range.
+  Duration straight_task_setup = 0;
+  Duration reversed_task_setup = 0;
+
+  if (insertion_start == insertion_end) {
+    // This is basically a range removal.
+    assert(first_rank < last_rank);
+    if (last_rank < r1.size()) {
+      // There are remaining jobs after removed range.
+      const auto& next_job = input.jobs[r1[last_rank]];
+      const auto next_index = next_job.index();
+      const auto previous_index = input.jobs[r1[last_rank - 1]].index();
+
+      const bool before_same_as_next =
+        before_first.has_value() && before_first.value() == next_index;
+
+      if (before_same_as_next && previous_index != next_index) {
+        straight_task_setup -= next_job.setups[v1.type];
+        reversed_task_setup -= next_job.setups[v1.type];
+      }
+      if (!before_same_as_next && previous_index == next_index) {
+        straight_task_setup += next_job.setups[v1.type];
+        reversed_task_setup += next_job.setups[v1.type];
+      }
+    }
+  } else {
+    // We do insert stuff.
+    const auto& first_inserted = input.jobs[r2[insertion_start]];
+    const auto first_inserted_index = first_inserted.index();
+    const auto& last_inserted = input.jobs[r2[insertion_end - 1]];
+    const auto last_inserted_index = last_inserted.index();
+
+    if (before_first.has_value()) {
+      if (before_first.value() != first_inserted_index) {
+        straight_task_setup -= first_inserted.setups[v1.type];
+      }
+      if (before_first.value() != last_inserted_index) {
+        reversed_task_setup -= last_inserted.setups[v1.type];
+      }
+    }
+
+    if (last_rank < r1.size()) {
+      // There are remaining jobs after removed range.
+      const auto& next_job = input.jobs[r1[last_rank]];
+      const auto next_index = next_job.index();
+      const std::optional<Index> previous_index =
+        (last_rank > first_rank) ? input.jobs[r1[last_rank - 1]].index()
+                                 : before_first;
+
+      if (!previous_index.has_value()) {
+        if (last_inserted_index == next_index) {
+          straight_task_setup -= next_job.setups[v1.type];
+        }
+        if (first_inserted_index == next_index) {
+          reversed_task_setup -= next_job.setups[v1.type];
+        }
+      } else {
+        if (next_index == last_inserted_index &&
+            previous_index.value() != next_index) {
+          straight_task_setup -= next_job.setups[v1.type];
+        }
+        if (next_index != last_inserted_index &&
+            previous_index.value() == next_index) {
+          straight_task_setup += next_job.setups[v1.type];
+        }
+
+        if (next_index == first_inserted_index &&
+            previous_index.value() != next_index) {
+          reversed_task_setup -= next_job.setups[v1.type];
+        }
+        if (next_index != first_inserted_index &&
+            previous_index.value() == next_index) {
+          reversed_task_setup += next_job.setups[v1.type];
+        }
+      }
+    }
+  }
+
+  return std::make_tuple(cost_delta + service_delta + straight_delta +
+                           v1.task_eval(straight_task_setup),
+                         cost_delta + service_delta + reversed_delta +
+                           v1.task_eval(reversed_task_setup));
 }
 
 // Compute cost variation when replacing the *non-empty* [first_rank,
