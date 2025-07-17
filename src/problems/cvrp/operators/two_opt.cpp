@@ -42,7 +42,7 @@ TwoOpt::TwoOpt(const Input& input,
 }
 
 void TwoOpt::compute_gain() {
-  s_gain = std::get<0>(utils::addition_cost_delta(_input,
+  s_gain = std::get<0>(utils::addition_eval_delta(_input,
                                                   _sol_state,
                                                   source,
                                                   s_rank + 1,
@@ -51,7 +51,7 @@ void TwoOpt::compute_gain() {
                                                   t_rank + 1,
                                                   t_route.size()));
 
-  t_gain = std::get<0>(utils::addition_cost_delta(_input,
+  t_gain = std::get<0>(utils::addition_eval_delta(_input,
                                                   _sol_state,
                                                   target,
                                                   t_rank + 1,

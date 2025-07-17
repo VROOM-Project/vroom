@@ -279,7 +279,7 @@ inline Eval fill_route(const Input& input,
 
         for (Index r = 0; r <= route.size(); ++r) {
           const auto current_eval =
-            utils::addition_cost(input, job_rank, vehicle, route.route, r);
+            utils::addition_eval(input, job_rank, vehicle, route.route, r);
 
           const double current_cost =
             static_cast<double>(current_eval.cost) -
@@ -317,7 +317,7 @@ inline Eval fill_route(const Input& input,
           route.route.size() + 1);
 
         for (unsigned d_rank = 0; d_rank <= route.route.size(); ++d_rank) {
-          d_adds[d_rank] = utils::addition_cost(input,
+          d_adds[d_rank] = utils::addition_eval(input,
                                                 job_rank + 1,
                                                 vehicle,
                                                 route.route,
@@ -329,7 +329,7 @@ inline Eval fill_route(const Input& input,
         }
 
         for (Index pickup_r = 0; pickup_r <= route.size(); ++pickup_r) {
-          const auto p_add = utils::addition_cost(input,
+          const auto p_add = utils::addition_eval(input,
                                                   job_rank,
                                                   vehicle,
                                                   route.route,
@@ -370,7 +370,7 @@ inline Eval fill_route(const Input& input,
 
             Eval current_eval;
             if (pickup_r == delivery_r) {
-              current_eval = utils::addition_cost(input,
+              current_eval = utils::addition_eval(input,
                                                   job_rank,
                                                   vehicle,
                                                   route.route,

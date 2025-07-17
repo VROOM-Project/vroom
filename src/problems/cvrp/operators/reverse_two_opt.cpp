@@ -42,7 +42,7 @@ ReverseTwoOpt::ReverseTwoOpt(const Input& input,
 }
 
 void ReverseTwoOpt::compute_gain() {
-  s_gain = std::get<1>(utils::addition_cost_delta(_input,
+  s_gain = std::get<1>(utils::addition_eval_delta(_input,
                                                   _sol_state,
                                                   source,
                                                   s_rank + 1,
@@ -51,7 +51,7 @@ void ReverseTwoOpt::compute_gain() {
                                                   0,
                                                   t_rank + 1));
 
-  t_gain = std::get<1>(utils::addition_cost_delta(_input,
+  t_gain = std::get<1>(utils::addition_eval_delta(_input,
                                                   _sol_state,
                                                   target,
                                                   0,

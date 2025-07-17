@@ -252,14 +252,14 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
       }
 
       const auto target_in_place_delta =
-        utils::in_place_delta_cost(input,
+        utils::in_place_delta_eval(input,
                                    source.route[s_rank],
                                    t_v,
                                    target.route,
                                    t_rank);
 
       const auto source_in_place_delta =
-        utils::in_place_delta_cost(input,
+        utils::in_place_delta_eval(input,
                                    target.route[t_rank],
                                    s_v,
                                    source.route,

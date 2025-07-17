@@ -36,7 +36,7 @@ RouteExchange::RouteExchange(const Input& input,
 }
 
 void RouteExchange::compute_gain() {
-  s_gain = std::get<0>(utils::addition_cost_delta(_input,
+  s_gain = std::get<0>(utils::addition_eval_delta(_input,
                                                   _sol_state,
                                                   source,
                                                   0,
@@ -45,7 +45,7 @@ void RouteExchange::compute_gain() {
                                                   0,
                                                   t_route.size()));
 
-  t_gain = std::get<0>(utils::addition_cost_delta(_input,
+  t_gain = std::get<0>(utils::addition_eval_delta(_input,
                                                   _sol_state,
                                                   target,
                                                   0,

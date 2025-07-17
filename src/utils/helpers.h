@@ -78,7 +78,7 @@ HeuristicParameters str_to_heuristic_param(const std::string& s);
 
 // Evaluate adding job with rank job_rank in given route at given rank
 // for vehicle v.
-inline Eval addition_cost(const Input& input,
+inline Eval addition_eval(const Input& input,
                           Index job_rank,
                           const Vehicle& v,
                           const std::vector<Index>& route,
@@ -158,7 +158,7 @@ inline Eval addition_cost(const Input& input,
 // (with rank job_rank + 1) in given route for vehicle v. Pickup is
 // inserted at pickup_rank in route and delivery is inserted at
 // delivery_rank in route **with pickup**.
-inline Eval addition_cost(const Input& input,
+inline Eval addition_eval(const Input& input,
                           Index job_rank,
                           const Vehicle& v,
                           const std::vector<Index>& route,
@@ -167,7 +167,7 @@ inline Eval addition_cost(const Input& input,
   assert(pickup_rank < delivery_rank && delivery_rank <= route.size() + 1);
 
   // Start with pickup eval.
-  auto eval = addition_cost(input, job_rank, v, route, pickup_rank);
+  auto eval = addition_eval(input, job_rank, v, route, pickup_rank);
 
   if (delivery_rank == pickup_rank + 1) {
     // Delivery is inserted just after pickup.
@@ -196,7 +196,7 @@ inline Eval addition_cost(const Input& input,
   } else {
     // Delivery is further away so edges sets for pickup and delivery
     // addition are disjoint.
-    eval += addition_cost(input, job_rank + 1, v, route, delivery_rank - 1);
+    eval += addition_eval(input, job_rank + 1, v, route, delivery_rank - 1);
   }
 
   return eval;
@@ -270,7 +270,7 @@ inline Eval get_range_removal_gain(const SolutionState& sol_state,
 // from route_2. Returns a tuple to evaluate at once both options
 // where new range is inserted as is, or reversed.
 inline std::tuple<Eval, Eval>
-addition_cost_delta(const Input& input,
+addition_eval_delta(const Input& input,
                     const SolutionState& sol_state,
                     const RawRoute& route_1,
                     const Index first_rank,
@@ -467,8 +467,8 @@ addition_cost_delta(const Input& input,
 // Compute cost variation when replacing the *non-empty* [first_rank,
 // last_rank) portion for route raw_route with the job at
 // job_rank. The case where the replaced range is empty is already
-// covered by addition_cost.
-inline Eval addition_cost_delta(const Input& input,
+// covered by addition_eval.
+inline Eval addition_eval_delta(const Input& input,
                                 const SolutionState& sol_state,
                                 const RawRoute& raw_route,
                                 Index first_rank,
@@ -537,7 +537,7 @@ inline Eval addition_cost_delta(const Input& input,
 
 // Compute cost variation when removing the "count" elements starting
 // from rank in route.
-inline Eval removal_cost_delta(const Input& input,
+inline Eval removal_eval_delta(const Input& input,
                                const SolutionState& sol_state,
                                const RawRoute& route,
                                Index rank,
@@ -545,7 +545,7 @@ inline Eval removal_cost_delta(const Input& input,
   assert(!route.empty());
   assert(rank + count <= route.size());
 
-  return std::get<0>(addition_cost_delta(input,
+  return std::get<0>(addition_eval_delta(input,
                                          sol_state,
                                          route,
                                          rank,
@@ -587,7 +587,7 @@ inline Eval max_edge_eval(const Input& input,
 // Helper function for SwapStar operator, computing part of the eval
 // for in-place replacing of job at rank in route with job at
 // job_rank.
-inline Eval in_place_delta_cost(const Input& input,
+inline Eval in_place_delta_eval(const Input& input,
                                 Index job_rank,
                                 const Vehicle& v,
                                 const std::vector<Index>& route,

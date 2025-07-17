@@ -58,7 +58,7 @@ MixedExchange::MixedExchange(const Input& input,
 
 Eval MixedExchange::gain_upper_bound() {
   std::tie(_normal_s_gain, _reversed_s_gain) =
-    utils::addition_cost_delta(_input,
+    utils::addition_eval_delta(_input,
                                _sol_state,
                                source,
                                s_rank,
@@ -73,7 +73,7 @@ Eval MixedExchange::gain_upper_bound() {
     s_gain_upper_bound = std::max(s_gain_upper_bound, _reversed_s_gain);
   }
 
-  t_gain = std::get<0>(utils::addition_cost_delta(_input,
+  t_gain = std::get<0>(utils::addition_eval_delta(_input,
                                                   _sol_state,
                                                   target,
                                                   t_rank,

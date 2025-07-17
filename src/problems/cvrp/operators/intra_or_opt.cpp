@@ -73,10 +73,10 @@ Eval IntraOrOpt::gain_upper_bound() {
   // *after* removal.
   const auto new_rank = t_rank + ((s_rank < t_rank) ? 2 : 0);
 
-  s_gain = utils::removal_cost_delta(_input, _sol_state, source, s_rank, 2);
+  s_gain = utils::removal_eval_delta(_input, _sol_state, source, s_rank, 2);
 
   std::tie(_normal_t_gain, _reversed_t_gain) =
-    utils::addition_cost_delta(_input,
+    utils::addition_eval_delta(_input,
                                _sol_state,
                                target,
                                new_rank,
