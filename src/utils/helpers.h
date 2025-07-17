@@ -171,12 +171,18 @@ inline Eval addition_eval(const Input& input,
 
   if (delivery_rank == pickup_rank + 1) {
     // Delivery is inserted just after pickup.
-    const Index p_index = input.jobs[job_rank].index();
-    const Index d_index = input.jobs[job_rank + 1].index();
+    const auto p_index = input.jobs[job_rank].index();
+    const auto& d_job = input.jobs[job_rank + 1];
+    const auto d_index = d_job.index();
     eval += v.eval(p_index, d_index);
 
     Eval after_delivery;
     Eval remove_after_pickup;
+
+    Duration added_task_duration = d_job.services[v.type];
+    if (d_index != p_index) {
+      added_task_duration += d_job.setups[v.type];
+    }
 
     if (pickup_rank == route.size()) {
       // Addition at the end of a route.
@@ -186,13 +192,23 @@ inline Eval addition_eval(const Input& input,
       }
     } else {
       // There is a job after insertion.
-      const Index next_index = input.jobs[route[pickup_rank]].index();
+      const auto& next_job = input.jobs[route[pickup_rank]];
+      const auto next_index = next_job.index();
       after_delivery = v.eval(d_index, next_index);
       remove_after_pickup = v.eval(p_index, next_index);
+
+      if (next_index == d_index && p_index != next_index) {
+        added_task_duration -= next_job.setups[v.type];
+      }
+      if (next_index != d_index && p_index == next_index) {
+        added_task_duration += next_job.setups[v.type];
+      }
     }
 
     eval += after_delivery;
     eval -= remove_after_pickup;
+
+    eval += v.task_eval(added_task_duration);
   } else {
     // Delivery is further away so edges sets for pickup and delivery
     // addition are disjoint.
