@@ -35,7 +35,7 @@ struct SwapChoice {
 
   SwapChoice() = default;
 
-  SwapChoice(Eval gain,
+  SwapChoice(const Eval& gain,
              Index s_rank,
              Index t_rank,
              Index insertion_in_source,
