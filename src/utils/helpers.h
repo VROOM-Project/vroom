@@ -585,15 +585,16 @@ inline Eval max_edge_eval(const Input& input,
 }
 
 // Helper function for SwapStar operator, computing part of the eval
-// for in-place replacing of job at rank in route with job at
+// for in-place replacing of job at rank in route r with job at
 // job_rank.
 inline Eval in_place_delta_eval(const Input& input,
                                 Index job_rank,
                                 const Vehicle& v,
-                                const std::vector<Index>& route,
+                                const std::vector<Index>& r,
                                 Index rank) {
-  assert(!route.empty());
-  const Index new_index = input.jobs[job_rank].index();
+  assert(!r.empty());
+  const auto& job = input.jobs[job_rank];
+  const auto job_index = job.index();
 
   Eval new_previous_eval;
   Eval new_next_eval;
@@ -603,21 +604,21 @@ inline Eval in_place_delta_eval(const Input& input,
   if (rank == 0) {
     if (v.has_start()) {
       p_index = v.start.value().index();
-      new_previous_eval = v.eval(p_index.value(), new_index);
+      new_previous_eval = v.eval(p_index.value(), job_index);
     }
   } else {
-    p_index = input.jobs[route[rank - 1]].index();
-    new_previous_eval = v.eval(p_index.value(), new_index);
+    p_index = input.jobs[r[rank - 1]].index();
+    new_previous_eval = v.eval(p_index.value(), job_index);
   }
 
-  if (rank == route.size() - 1) {
+  if (rank == r.size() - 1) {
     if (v.has_end()) {
       n_index = v.end.value().index();
-      new_next_eval = v.eval(new_index, n_index.value());
+      new_next_eval = v.eval(job_index, n_index.value());
     }
   } else {
-    n_index = input.jobs[route[rank + 1]].index();
-    new_next_eval = v.eval(new_index, n_index.value());
+    n_index = input.jobs[r[rank + 1]].index();
+    new_next_eval = v.eval(job_index, n_index.value());
   }
 
   Eval old_virtual_eval;
@@ -625,7 +626,30 @@ inline Eval in_place_delta_eval(const Input& input,
     old_virtual_eval = v.eval(p_index.value(), n_index.value());
   }
 
-  return new_previous_eval + new_next_eval - old_virtual_eval;
+  Duration added_task_duration = job.services[v.type];
+
+  if (rank + 1u < r.size()) {
+    // There is a next job after inserted job.
+    const auto& next_job = input.jobs[r[rank + 1]];
+    const auto next_index = next_job.index();
+
+    const bool before_same_as_next =
+      p_index.has_value() && p_index.value() == next_index;
+
+    if (before_same_as_next && job_index != next_index) {
+      added_task_duration += next_job.setups[v.type];
+    }
+    if (!before_same_as_next && job_index == next_index) {
+      added_task_duration -= next_job.setups[v.type];
+    }
+  }
+
+  if (!p_index || p_index.value() != job_index) {
+    added_task_duration += job.setups[v.type];
+  }
+
+  return new_previous_eval + new_next_eval - old_virtual_eval +
+         v.task_eval(added_task_duration);
 }
 
 Priority priority_sum_for_route(const Input& input,
