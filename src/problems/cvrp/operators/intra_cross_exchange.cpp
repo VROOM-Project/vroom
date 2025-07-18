@@ -32,7 +32,6 @@ IntraCrossExchange::IntraCrossExchange(const Input& input,
     // check_t_reverse are false.
     check_s_reverse(check_s_reverse),
     check_t_reverse(check_t_reverse),
-    _moved_jobs(t_rank - s_rank + 2),
     _first_rank(s_rank),
     _last_rank(t_rank + 2),
     _delivery(source.delivery_in_range(_first_rank, _last_rank)) {
@@ -56,6 +55,11 @@ IntraCrossExchange::IntraCrossExchange(const Input& input,
           _input.jobs[this->t_route[t_rank + 1]].type == JOB_TYPE::DELIVERY &&
           !check_t_reverse &&
           _sol_state.matching_delivery_rank[t_vehicle][t_rank] == t_rank + 1));
+}
+
+void IntraCrossExchange::prepare_moved_jobs() {
+  _moved_jobs.clear();
+  _moved_jobs.resize(t_rank - s_rank + 2);
 
   _moved_jobs[0] = s_route[t_rank];
   _moved_jobs[1] = s_route[t_rank + 1];
@@ -206,6 +210,7 @@ void IntraCrossExchange::compute_gain() {
 }
 
 bool IntraCrossExchange::is_valid() {
+  prepare_moved_jobs();
   assert(_gain_upper_bound_computed);
 
   const auto& s_v = _input.vehicles[s_vehicle];

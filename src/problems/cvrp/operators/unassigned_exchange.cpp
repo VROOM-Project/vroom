@@ -33,7 +33,6 @@ UnassignedExchange::UnassignedExchange(const Input& input,
     _unassigned(unassigned),
     _first_rank(std::min(s_rank, t_rank)),
     _last_rank((s_rank < t_rank) ? t_rank : s_rank + 1),
-    _moved_jobs(_last_rank - _first_rank),
     _removed(s_route[s_rank]),
     _delivery(source.delivery_in_range(_first_rank, _last_rank)) {
   assert(t_rank != s_rank + 1);
@@ -44,17 +43,21 @@ UnassignedExchange::UnassignedExchange(const Input& input,
   assert(_input.jobs[_removed].delivery <= _delivery);
   _delivery -= _input.jobs[_removed].delivery;
   _delivery += _input.jobs[_u].delivery;
+}
 
+void UnassignedExchange::prepare_moved_jobs() {
+  _moved_jobs.clear();
+  _moved_jobs.resize(_last_rank - _first_rank);
   if (s_rank < t_rank) {
     std::copy(s_route.begin() + s_rank + 1,
               s_route.begin() + t_rank,
               _moved_jobs.begin());
-    _moved_jobs.back() = u;
+    _moved_jobs.back() = _u;
   } else {
     std::copy(s_route.begin() + t_rank,
               s_route.begin() + s_rank,
               _moved_jobs.begin() + 1);
-    _moved_jobs.front() = u;
+    _moved_jobs.front() = _u;
   }
 }
 
@@ -96,6 +99,7 @@ void UnassignedExchange::compute_gain() {
 }
 
 bool UnassignedExchange::is_valid() {
+  prepare_moved_jobs();
   auto pickup = source.pickup_in_range(_first_rank, _last_rank);
   assert(_input.jobs[_removed].pickup <= pickup);
   pickup -= _input.jobs[_removed].pickup;

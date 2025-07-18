@@ -21,6 +21,7 @@ protected:
   const Index _last_rank;
   const Amount _delivery;
 
+  void prepare_moved_jobs();
   void compute_gain() override;
 
 public:

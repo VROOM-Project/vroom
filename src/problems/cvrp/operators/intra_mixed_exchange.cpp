@@ -30,7 +30,6 @@ IntraMixedExchange::IntraMixedExchange(const Input& input,
     // Required for consistency in compute_gain if check_t_reverse is
     // false.
     check_t_reverse(check_t_reverse),
-    _moved_jobs((s_rank < t_rank) ? t_rank - s_rank + 2 : s_rank - t_rank + 1),
     _first_rank(std::min(s_rank, t_rank)),
     _last_rank((t_rank < s_rank) ? s_rank + 1 : t_rank + 2),
     _delivery(source.delivery_in_range(_first_rank, _last_rank)) {
@@ -49,6 +48,12 @@ IntraMixedExchange::IntraMixedExchange(const Input& input,
           _input.jobs[this->t_route[t_rank + 1]].type == JOB_TYPE::DELIVERY &&
           !check_t_reverse &&
           _sol_state.matching_delivery_rank[t_vehicle][t_rank] == t_rank + 1));
+}
+
+void IntraMixedExchange::prepare_moved_jobs() {
+  _moved_jobs.clear();
+  _moved_jobs.resize((s_rank < t_rank) ? t_rank - s_rank + 2
+                                       : s_rank - t_rank + 1);
 
   Index s_node;
   if (t_rank < s_rank) {
@@ -193,6 +198,7 @@ void IntraMixedExchange::compute_gain() {
 }
 
 bool IntraMixedExchange::is_valid() {
+  prepare_moved_jobs();
   assert(_gain_upper_bound_computed);
 
   const auto& s_v = _input.vehicles[s_vehicle];

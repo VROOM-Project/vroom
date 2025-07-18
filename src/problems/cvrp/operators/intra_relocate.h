@@ -19,6 +19,8 @@ protected:
   void compute_gain() override;
 
   std::vector<Index> _moved_jobs;
+  void prepare_moved_jobs();
+
   const Index _first_rank;
   const Index _last_rank;
   const Amount _delivery;

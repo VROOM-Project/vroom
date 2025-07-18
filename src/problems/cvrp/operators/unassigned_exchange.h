@@ -21,6 +21,8 @@ protected:
   const Index _first_rank;
   const Index _last_rank;
   std::vector<Index> _moved_jobs;
+  void prepare_moved_jobs();
+
   const Index _removed;
   Amount _delivery;
 
