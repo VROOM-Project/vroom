@@ -177,7 +177,7 @@ enum OperatorName : std::uint8_t {
   MAX
 };
 
-#if defined(LOG_LS_OPERATORS) || defined(LOG_LS)
+#ifdef LOG_LS
 const std::array<std::string, OperatorName::MAX>
   OPERATOR_NAMES({"UnassignedExchange",
                   "CrossExchange",
@@ -253,23 +253,6 @@ constexpr UserCost scale_to_user_cost(Cost c) {
   return static_cast<UserCost>(c / (DURATION_FACTOR * COST_FACTOR));
 }
 } // namespace utils
-
-#ifdef LOG_LS_OPERATORS
-namespace ls {
-struct OperatorStats {
-  unsigned tried_moves;
-  unsigned applied_moves;
-
-  OperatorStats() : tried_moves(0), applied_moves(0) {
-  }
-
-  OperatorStats(const unsigned tried_moves, const unsigned applied_moves)
-    : tried_moves(tried_moves), applied_moves(applied_moves) {
-  }
-};
-} // namespace ls
-#endif
-
 } // namespace vroom
 
 #endif

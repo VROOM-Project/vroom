@@ -8,6 +8,7 @@ All rights reserved (see LICENSE).
 */
 
 #include "problems/cvrp/operators/route_exchange.h"
+#include "utils/helpers.h"
 
 namespace vroom::cvrp {
 
@@ -35,62 +36,23 @@ RouteExchange::RouteExchange(const Input& input,
 }
 
 void RouteExchange::compute_gain() {
-  const auto& s_v = _input.vehicles[s_vehicle];
-  const auto& t_v = _input.vehicles[t_vehicle];
+  s_gain = std::get<0>(utils::addition_cost_delta(_input,
+                                                  _sol_state,
+                                                  source,
+                                                  0,
+                                                  s_route.size(),
+                                                  target,
+                                                  0,
+                                                  t_route.size()));
 
-  if (!s_route.empty()) {
-    // Handle changes at route start.
-    auto first_s_index = _input.jobs[s_route.front()].index();
-    if (s_v.has_start()) {
-      s_gain += s_v.eval(s_v.start.value().index(), first_s_index);
-    }
-    if (t_v.has_start()) {
-      t_gain -= t_v.eval(t_v.start.value().index(), first_s_index);
-    }
-
-    // Handle changes at route end.
-    auto last_s_index = _input.jobs[s_route.back()].index();
-    if (s_v.has_end()) {
-      s_gain += s_v.eval(last_s_index, s_v.end.value().index());
-    }
-    if (t_v.has_end()) {
-      t_gain -= t_v.eval(last_s_index, t_v.end.value().index());
-    }
-
-    // Handle inner cost change for route.
-    s_gain += _sol_state.fwd_costs[s_vehicle][s_vehicle].back();
-    t_gain -= _sol_state.fwd_costs[s_vehicle][t_vehicle].back();
-  } else {
-    s_gain.cost -= s_v.fixed_cost();
-    t_gain.cost += t_v.fixed_cost();
-  }
-
-  if (!t_route.empty()) {
-    // Handle changes at route start.
-    auto first_t_index = _input.jobs[t_route.front()].index();
-    if (t_v.has_start()) {
-      t_gain += t_v.eval(t_v.start.value().index(), first_t_index);
-    }
-    if (s_v.has_start()) {
-      s_gain -= s_v.eval(s_v.start.value().index(), first_t_index);
-    }
-
-    // Handle changes at route end.
-    auto last_t_index = _input.jobs[t_route.back()].index();
-    if (t_v.has_end()) {
-      t_gain += t_v.eval(last_t_index, t_v.end.value().index());
-    }
-    if (s_v.has_end()) {
-      s_gain -= s_v.eval(last_t_index, s_v.end.value().index());
-    }
-
-    // Handle inner cost change for route.
-    t_gain += _sol_state.fwd_costs[t_vehicle][t_vehicle].back();
-    s_gain -= _sol_state.fwd_costs[t_vehicle][s_vehicle].back();
-  } else {
-    t_gain.cost -= t_v.fixed_cost();
-    s_gain.cost += s_v.fixed_cost();
-  }
+  t_gain = std::get<0>(utils::addition_cost_delta(_input,
+                                                  _sol_state,
+                                                  target,
+                                                  0,
+                                                  t_route.size(),
+                                                  source,
+                                                  0,
+                                                  s_route.size()));
 
   stored_gain = s_gain + t_gain;
   gain_computed = true;

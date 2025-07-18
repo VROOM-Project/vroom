@@ -72,17 +72,15 @@ compute_best_route_split_choice(const Input& input,
         continue;
       }
 
-      Eval current_end_eval(end_v.fixed_cost());
-      current_end_eval += sol_state.fwd_costs[s_vehicle][v].back() -
-                          sol_state.fwd_costs[s_vehicle][v][r];
-      if (end_v.has_start()) {
-        current_end_eval += end_v.eval(end_v.start.value().index(),
-                                       input.jobs[source.route[r]].index());
-      }
-      if (end_v.has_end()) {
-        current_end_eval += end_v.eval(input.jobs[source.route.back()].index(),
-                                       end_v.end.value().index());
-      }
+      const auto current_end_eval =
+        -std::get<0>(utils::addition_cost_delta(input,
+                                                sol_state,
+                                                empty_routes[v_rank],
+                                                0,
+                                                0,
+                                                source,
+                                                r,
+                                                source.size()));
 
       if (!end_v.ok_for_range_bounds(current_end_eval)) {
         continue;
@@ -141,18 +139,15 @@ compute_best_route_split_choice(const Input& input,
         continue;
       }
 
-      Eval current_begin_eval(begin_v.fixed_cost());
-      current_begin_eval += sol_state.fwd_costs[s_vehicle][v][r - 1];
-      if (begin_v.has_start()) {
-        current_begin_eval +=
-          begin_v.eval(begin_v.start.value().index(),
-                       input.jobs[source.route.front()].index());
-      }
-      if (begin_v.has_end()) {
-        current_begin_eval +=
-          begin_v.eval(input.jobs[source.route[r - 1]].index(),
-                       begin_v.end.value().index());
-      }
+      const auto current_begin_eval =
+        -std::get<0>(utils::addition_cost_delta(input,
+                                                sol_state,
+                                                empty_routes[v_rank],
+                                                0,
+                                                0,
+                                                source,
+                                                0,
+                                                r));
 
       if (!begin_v.ok_for_range_bounds(current_begin_eval)) {
         continue;

@@ -12,10 +12,12 @@ All rights reserved (see LICENSE).
 
 #include <optional>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include "structures/typedefs.h"
 #include "structures/vroom/raw_route.h"
+#include "structures/vroom/solution_state.h"
 #include "structures/vroom/tw_route.h"
 #include "utils/exception.h"
 
@@ -71,12 +73,6 @@ inline unsigned get_nb_searches(unsigned exploration_level) {
 INIT get_init(std::string_view s);
 
 SORT get_sort(std::string_view s);
-
-#ifdef LOG_LS_OPERATORS
-void log_LS_operators(
-  const std::vector<std::array<ls::OperatorStats, OperatorName::MAX>>&
-    ls_stats);
-#endif
 
 HeuristicParameters str_to_heuristic_param(const std::string& s);
 
@@ -179,6 +175,227 @@ inline Eval addition_cost(const Input& input,
   }
 
   return eval;
+}
+
+inline auto get_indices(const Input& input,
+                        const RawRoute& route,
+                        Index first_rank,
+                        Index last_rank) {
+  const auto& r = route.route;
+  const auto& v = input.vehicles[route.v_rank];
+
+  std::array<std::optional<Index>, 3> indices;
+
+  auto& before_first = indices[0];
+  if (first_rank > 0) {
+    before_first = input.jobs[r[first_rank - 1]].index();
+  } else {
+    if (v.has_start()) {
+      before_first = v.start.value().index();
+    }
+  }
+
+  auto& first_index = indices[1];
+  if (first_rank < r.size()) {
+    first_index = input.jobs[r[first_rank]].index();
+  } else {
+    if (v.has_end()) {
+      first_index = v.end.value().index();
+    }
+  }
+
+  auto& last_index = indices[2];
+  if (last_rank < r.size()) {
+    last_index = input.jobs[r[last_rank]].index();
+  } else {
+    if (v.has_end()) {
+      last_index = v.end.value().index();
+    }
+  }
+
+  return indices;
+}
+
+inline Eval get_range_removal_gain(const SolutionState& sol_state,
+                                   Index v,
+                                   Index first_rank,
+                                   Index last_rank) {
+  assert(first_rank <= last_rank);
+
+  Eval removal_gain;
+
+  if (last_rank > first_rank) {
+    // Gain related to removed portion.
+    removal_gain += sol_state.fwd_costs[v][v][last_rank - 1];
+    removal_gain -= sol_state.fwd_costs[v][v][first_rank];
+  }
+
+  return removal_gain;
+}
+
+// Compute cost variation when replacing the [first_rank, last_rank)
+// portion for route1 with the range [insertion_start; insertion_end)
+// from route_2. Returns a tuple to evaluate at once both options
+// where new range is inserted as is, or reversed.
+inline std::tuple<Eval, Eval>
+addition_cost_delta(const Input& input,
+                    const SolutionState& sol_state,
+                    const RawRoute& route_1,
+                    const Index first_rank,
+                    const Index last_rank,
+                    const RawRoute& route_2,
+                    const Index insertion_start,
+                    const Index insertion_end) {
+  assert(first_rank <= last_rank);
+  assert(last_rank <= route_1.route.size());
+  assert(insertion_start <= insertion_end);
+
+  const bool empty_insertion = (insertion_start == insertion_end);
+
+  const auto& r1 = route_1.route;
+  const auto v1_rank = route_1.v_rank;
+  const auto& r2 = route_2.route;
+  const auto v2_rank = route_2.v_rank;
+  const auto& v1 = input.vehicles[v1_rank];
+
+  // Common part of the cost.
+  Eval cost_delta =
+    get_range_removal_gain(sol_state, v1_rank, first_rank, last_rank);
+
+  // Part of the cost that depends on insertion orientation.
+  Eval straight_delta;
+  Eval reversed_delta;
+  if (insertion_start != insertion_end) {
+    straight_delta += sol_state.fwd_costs[v2_rank][v1_rank][insertion_start];
+    straight_delta -= sol_state.fwd_costs[v2_rank][v1_rank][insertion_end - 1];
+
+    reversed_delta += sol_state.bwd_costs[v2_rank][v1_rank][insertion_start];
+    reversed_delta -= sol_state.bwd_costs[v2_rank][v1_rank][insertion_end - 1];
+  }
+
+  // Determine useful values if present.
+  const auto [before_first, first_index, last_index] =
+    get_indices(input, route_1, first_rank, last_rank);
+
+  // Gain of removed edge before replaced range. If route is empty,
+  // before_first and first_index are respectively the start and end
+  // of vehicle if defined.
+  if (before_first && first_index && !r1.empty()) {
+    cost_delta += v1.eval(before_first.value(), first_index.value());
+  }
+
+  if (empty_insertion) {
+    if (before_first && last_index &&
+        !(first_rank == 0 && last_rank == r1.size())) {
+      // Add cost of new edge replacing removed range, except if
+      // resulting route is empty.
+      cost_delta -= v1.eval(before_first.value(), last_index.value());
+    }
+  } else {
+    if (before_first) {
+      // Cost of new edge to inserted range.
+      straight_delta -=
+        v1.eval(before_first.value(), input.jobs[r2[insertion_start]].index());
+      reversed_delta -= v1.eval(before_first.value(),
+                                input.jobs[r2[insertion_end - 1]].index());
+    }
+
+    if (last_index) {
+      // Cost of new edge after inserted range.
+      straight_delta -=
+        v1.eval(input.jobs[r2[insertion_end - 1]].index(), last_index.value());
+      reversed_delta -=
+        v1.eval(input.jobs[r2[insertion_start]].index(), last_index.value());
+    }
+  }
+
+  // Gain of removed edge after replaced range, if any.
+  if (last_index && last_rank > first_rank) {
+    const Index before_last = input.jobs[r1[last_rank - 1]].index();
+    cost_delta += v1.eval(before_last, last_index.value());
+  }
+
+  // Handle fixed cost addition.
+  if (r1.empty() && !empty_insertion) {
+    cost_delta.cost -= v1.fixed_cost();
+  }
+
+  if (empty_insertion && first_rank == 0 && last_rank == r1.size()) {
+    cost_delta.cost += v1.fixed_cost();
+  }
+
+  return std::make_tuple(cost_delta + straight_delta,
+                         cost_delta + reversed_delta);
+}
+
+// Compute cost variation when replacing the *non-empty* [first_rank,
+// last_rank) portion for route raw_route with the job at
+// job_rank. The case where the replaced range is empty is already
+// covered by addition_cost.
+inline Eval addition_cost_delta(const Input& input,
+                                const SolutionState& sol_state,
+                                const RawRoute& raw_route,
+                                Index first_rank,
+                                Index last_rank,
+                                Index job_rank) {
+  assert(first_rank < last_rank && !raw_route.empty());
+  assert(last_rank <= raw_route.route.size());
+
+  const auto& r = raw_route.route;
+  const auto v_rank = raw_route.v_rank;
+  const auto& v = input.vehicles[v_rank];
+  const auto job_index = input.jobs[job_rank].index();
+
+  Eval cost_delta =
+    get_range_removal_gain(sol_state, v_rank, first_rank, last_rank);
+
+  // Determine useful values if present.
+  const auto [before_first, first_index, last_index] =
+    get_indices(input, raw_route, first_rank, last_rank);
+
+  // Gain of removed edge before replaced range.
+  if (before_first && first_index) {
+    cost_delta += v.eval(before_first.value(), first_index.value());
+  }
+
+  if (before_first) {
+    // Cost of new edge to inserted job.
+    cost_delta -= v.eval(before_first.value(), job_index);
+  }
+
+  if (last_index) {
+    // Cost of new edge after inserted job.
+    cost_delta -= v.eval(job_index, last_index.value());
+  }
+
+  // Gain of removed edge after replaced range, if any.
+  if (last_index) {
+    const Index before_last = input.jobs[r[last_rank - 1]].index();
+    cost_delta += v.eval(before_last, last_index.value());
+  }
+
+  return cost_delta;
+}
+
+// Compute cost variation when removing the "count" elements starting
+// from rank in route.
+inline Eval removal_cost_delta(const Input& input,
+                               const SolutionState& sol_state,
+                               const RawRoute& route,
+                               Index rank,
+                               unsigned count) {
+  assert(!route.empty());
+  assert(rank + count <= route.size());
+
+  return std::get<0>(addition_cost_delta(input,
+                                         sol_state,
+                                         route,
+                                         rank,
+                                         rank + count,
+                                         // dummy values for empty insertion
+                                         route,
+                                         0,
+                                         0));
 }
 
 inline Eval max_edge_eval(const Input& input,

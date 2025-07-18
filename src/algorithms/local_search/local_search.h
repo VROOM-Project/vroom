@@ -57,21 +57,15 @@ private:
   std::vector<Route>& _best_sol;
   utils::SolutionIndicators _best_sol_indicators;
 
-#ifdef LOG_LS_OPERATORS
-  // Store operator usage stats.
-  std::array<unsigned, OperatorName::MAX> tried_moves;
-  std::array<unsigned, OperatorName::MAX> applied_moves;
-#endif
-
 #ifdef LOG_LS
   std::vector<log::Step> steps;
 #endif
 
-  void try_job_additions(const std::vector<Index>& routes,
-                         double regret_coeff
+  std::unordered_set<Index> try_job_additions(const std::vector<Index>& routes,
+                                              double regret_coeff
 #ifdef LOG_LS
-                         ,
-                         bool log_addition_step = false
+                                              ,
+                                              bool log_addition_step = false
 #endif
   );
 
@@ -99,10 +93,6 @@ public:
   utils::SolutionIndicators indicators() const;
 
   void run();
-
-#ifdef LOG_LS_OPERATORS
-  std::array<OperatorStats, OperatorName::MAX> get_stats() const;
-#endif
 
 #ifdef LOG_LS
   std::vector<log::Step> get_steps() const {

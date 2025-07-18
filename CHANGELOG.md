@@ -29,6 +29,8 @@
 - Allow passing `path` in `Server` ctor (#1192)
 - Refactor to simplify `VRP::solve` (#1196)
 - Remove heuristic synchronisation (#1188)
+- Refactor gain evaluation in operators to ease code maintenance and extension (#1266)
+- Remove `LOG_LS_OPERATORS` (#1263)
 
 #### CI
 
@@ -49,6 +51,7 @@
 
 - Solution quality regression when using lots of skills (#1193)
 - Invalid route reached by `PriorityReplace` (#1162)
+- Unassigned job with empty compatible vehicle (#1258)
 - Account for gain and assigned tasks to pick priority-improving moves (#1212)
 - Crash due to wrong delivery values in some validity checks (#1164)
 - Crash when input is valid JSON but not an object (#1172)
