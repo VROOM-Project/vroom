@@ -778,8 +778,9 @@ void Input::set_jobs_vehicles_evals() {
                                                      Eval(_cost_upper_bound)));
 
   for (std::size_t j = 0; j < jobs.size(); ++j) {
-    const Index j_index = jobs[j].index();
-    const bool is_pickup = (jobs[j].type == JOB_TYPE::PICKUP);
+    const auto& job = jobs[j];
+    const Index j_index = job.index();
+    const bool is_pickup = (job.type == JOB_TYPE::PICKUP);
 
     Index last_job_index = j_index;
     if (is_pickup) {
@@ -796,14 +797,30 @@ void Input::set_jobs_vehicles_evals() {
 
       auto& current_eval = _jobs_vehicles_evals[j][v];
 
+      Duration added_task_duration = job.services[vehicle.type];
+
       current_eval = is_pickup ? vehicle.eval(j_index, last_job_index) : Eval();
       if (vehicle.has_start()) {
-        current_eval += vehicle.eval(vehicle.start.value().index(), j_index);
+        const auto start_index = vehicle.start.value().index();
+        current_eval += vehicle.eval(start_index, j_index);
+
+        if (start_index != j_index) {
+          added_task_duration += job.setups[vehicle.type];
+        }
       }
       if (vehicle.has_end()) {
         current_eval +=
           vehicle.eval(last_job_index, vehicle.end.value().index());
       }
+
+      if (is_pickup) {
+        const auto& d_job = jobs[j + 1];
+        added_task_duration += d_job.services[vehicle.type];
+        if (j_index != d_job.index()) {
+          added_task_duration += d_job.setups[vehicle.type];
+        }
+      }
+      current_eval += vehicle.task_eval(added_task_duration);
 
       if (is_pickup) {
         // Assign same eval to delivery.
