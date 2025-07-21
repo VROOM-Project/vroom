@@ -153,31 +153,38 @@ template <class Route> struct UnassignedCosts {
       min_unassigned_to_route(input.jobs.size(),
                               std::numeric_limits<Cost>::max()) {
     for (const auto job_rank : unassigned) {
-      const auto unassigned_job_index = input.jobs[job_rank].index();
+      const auto& unassigned_job = input.jobs[job_rank];
+      const auto unassigned_job_index = unassigned_job.index();
+
+      // The purpose here is to generate insertion lower bounds so we
+      // only account for service times (no setup) which are
+      // independent of insertion rank.
+      const auto added_service = unassigned_job.services[vehicle.type];
+      const auto service_cost = vehicle.task_eval(added_service).cost;
 
       if (vehicle.has_start()) {
         const auto start_to_job =
           vehicle.eval(vehicle.start.value().index(), unassigned_job_index)
             .cost;
-        min_route_to_unassigned[job_rank] = start_to_job;
+        min_route_to_unassigned[job_rank] = start_to_job + service_cost;
       }
 
       if (vehicle.has_end()) {
         const auto job_to_end =
           vehicle.eval(unassigned_job_index, vehicle.end.value().index()).cost;
-        min_unassigned_to_route[job_rank] = job_to_end;
+        min_unassigned_to_route[job_rank] = job_to_end + service_cost;
       }
 
       for (const auto j : route.route) {
         const auto job_index = input.jobs[j].index();
 
         const auto job_to_unassigned =
-          vehicle.eval(job_index, unassigned_job_index).cost;
+          vehicle.eval(job_index, unassigned_job_index).cost + service_cost;
         min_route_to_unassigned[job_rank] =
           std::min(min_route_to_unassigned[job_rank], job_to_unassigned);
 
         const auto unassigned_to_job =
-          vehicle.eval(unassigned_job_index, job_index).cost;
+          vehicle.eval(unassigned_job_index, job_index).cost + service_cost;
         min_unassigned_to_route[job_rank] =
           std::min(min_unassigned_to_route[job_rank], unassigned_to_job);
       }
@@ -215,15 +222,19 @@ template <class Route> struct UnassignedCosts {
                         const std::set<Index>& unassigned,
                         Index inserted_index) {
     for (const auto j : unassigned) {
-      const auto unassigned_job_index = input.jobs[j].index();
+      const auto& unassigned_job = input.jobs[j];
+      const auto unassigned_job_index = unassigned_job.index();
+
+      const auto added_service = unassigned_job.services[vehicle.type];
+      const auto service_cost = vehicle.task_eval(added_service).cost;
 
       const auto to_unassigned =
-        vehicle.eval(inserted_index, unassigned_job_index).cost;
+        vehicle.eval(inserted_index, unassigned_job_index).cost + service_cost;
       min_route_to_unassigned[j] =
         std::min(min_route_to_unassigned[j], to_unassigned);
 
       const auto from_unassigned =
-        vehicle.eval(unassigned_job_index, inserted_index).cost;
+        vehicle.eval(unassigned_job_index, inserted_index).cost + service_cost;
       min_unassigned_to_route[j] =
         std::min(min_unassigned_to_route[j], from_unassigned);
     }
