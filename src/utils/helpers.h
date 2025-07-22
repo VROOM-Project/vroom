@@ -297,7 +297,7 @@ addition_eval_delta(const Input& input,
   assert(first_rank <= last_rank);
   assert(last_rank <= route_1.route.size());
   assert(insertion_start <= insertion_end);
-  assert((first_rank < last_rank) xor (insertion_start < insertion_end));
+  assert((first_rank < last_rank) || (insertion_start < insertion_end));
 
   const bool empty_insertion = (insertion_start == insertion_end);
 
