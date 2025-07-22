@@ -925,13 +925,16 @@ void LocalSearch<Route,
           continue;
         }
 
+        const unsigned jobs_moved_from_source =
+          _sol[source].size() - s_rank - 1;
+
         const auto& s_fwd_delivery = _sol[source].fwd_deliveries(s_rank);
         const auto& s_fwd_pickup = _sol[source].fwd_pickups(s_rank);
         const auto& s_bwd_delivery = _sol[source].bwd_deliveries(s_rank);
         const auto& s_bwd_pickup = _sol[source].bwd_pickups(s_rank);
 
         Index end_t_rank = _sol[target].size();
-        if (s_rank + 1 < _sol[source].size()) {
+        if (jobs_moved_from_source > 0) {
           // There is a route end after s_rank in source route.
           const auto s_next_job_rank = _sol[source].route[s_rank + 1];
           end_t_rank =
@@ -942,6 +945,14 @@ void LocalSearch<Route,
 
         for (int t_rank = end_t_rank - 1; t_rank >= first_t_rank; --t_rank) {
           if (_sol[target].has_pending_delivery_after_rank(t_rank)) {
+            continue;
+          }
+
+          assert(static_cast<int>(_sol[target].size()) - t_rank - 1 >= 0);
+          const unsigned jobs_moved_from_target =
+            _sol[target].size() - static_cast<unsigned>(t_rank) - 1;
+          if (jobs_moved_from_source <= 2 && jobs_moved_from_target <= 2) {
+            // One of Relocate, OrOpt, SwapStar, MixedExchange, or no-opt.
             continue;
           }
 
