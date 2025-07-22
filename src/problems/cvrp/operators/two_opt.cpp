@@ -36,6 +36,9 @@ TwoOpt::TwoOpt(const Input& input,
   assert(!t_route.empty());
   assert(s_rank < s_route.size());
   assert(t_rank < t_route.size());
+  // Moving at least a portion with more than 3 jobs, else the
+  // situation is covered by other moves.
+  assert(s_rank + 3u < s_route.size() || t_rank + 3u < t_route.size());
 
   assert(_sol_state.bwd_skill_rank[s_vehicle][t_vehicle] <= s_rank + 1);
   assert(_sol_state.bwd_skill_rank[t_vehicle][s_vehicle] <= t_rank + 1);
