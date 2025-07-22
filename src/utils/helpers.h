@@ -548,7 +548,7 @@ inline Eval addition_eval_delta(const Input& input,
     added_task_duration += job.setups[v.type];
   }
 
-  return cost_delta + v.task_eval(added_task_duration);
+  return cost_delta - v.task_eval(added_task_duration);
 }
 
 // Compute cost variation when removing the "count" elements starting
