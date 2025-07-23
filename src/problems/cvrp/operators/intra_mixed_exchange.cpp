@@ -52,7 +52,6 @@ IntraMixedExchange::IntraMixedExchange(const Input& input,
 }
 
 void IntraMixedExchange::prepare_moved_jobs() {
-  _moved_jobs.clear();
   _moved_jobs.resize((s_rank < t_rank) ? t_rank - s_rank + 2
                                        : s_rank - t_rank + 1);
 

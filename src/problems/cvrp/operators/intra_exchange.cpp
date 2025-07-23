@@ -41,7 +41,6 @@ IntraExchange::IntraExchange(const Input& input,
   // only in is_valid() to avoid unnecessary allocations.
 }
 void IntraExchange::prepare_moved_jobs() {
-  _moved_jobs.clear();
   _moved_jobs.resize(_last_rank - _first_rank);
   std::copy(s_route.begin() + _first_rank,
             s_route.begin() + _last_rank,

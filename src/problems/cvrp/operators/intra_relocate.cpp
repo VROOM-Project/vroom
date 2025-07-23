@@ -37,7 +37,6 @@ IntraRelocate::IntraRelocate(const Input& input,
 }
 
 void IntraRelocate::prepare_moved_jobs() {
-  _moved_jobs.clear();
   _moved_jobs.resize((_last_rank - _first_rank));
   if (t_rank < s_rank) {
     _moved_jobs[0] = s_route[s_rank];

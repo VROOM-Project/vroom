@@ -49,7 +49,6 @@ IntraOrOpt::IntraOrOpt(const Input& input,
 }
 
 void IntraOrOpt::prepare_moved_jobs() {
-  _moved_jobs.clear();
   _moved_jobs.resize((s_rank < t_rank) ? t_rank - s_rank + 2
                                        : s_rank - t_rank + 2);
   if (t_rank < s_rank) {

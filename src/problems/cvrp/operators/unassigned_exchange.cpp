@@ -46,7 +46,6 @@ UnassignedExchange::UnassignedExchange(const Input& input,
 }
 
 void UnassignedExchange::prepare_moved_jobs() {
-  _moved_jobs.clear();
   _moved_jobs.resize(_last_rank - _first_rank);
   if (s_rank < t_rank) {
     std::copy(s_route.begin() + s_rank + 1,

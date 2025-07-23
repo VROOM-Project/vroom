@@ -59,7 +59,6 @@ IntraCrossExchange::IntraCrossExchange(const Input& input,
 }
 
 void IntraCrossExchange::prepare_moved_jobs() {
-  _moved_jobs.clear();
   _moved_jobs.resize(t_rank - s_rank + 2);
 
   _moved_jobs[0] = s_route[t_rank];
