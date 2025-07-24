@@ -428,13 +428,13 @@ addition_eval_delta(const Input& input,
     const auto& last_inserted = input.jobs[r2[insertion_end - 1]];
     const auto last_inserted_index = last_inserted.index();
 
-    if (before_first.has_value()) {
-      if (before_first.value() != first_inserted_index) {
-        straight_task_setup -= first_inserted.setups[v1.type];
-      }
-      if (before_first.value() != last_inserted_index) {
-        reversed_task_setup -= last_inserted.setups[v1.type];
-      }
+    if (!before_first.has_value() ||
+        before_first.value() != first_inserted_index) {
+      straight_task_setup -= first_inserted.setups[v1.type];
+    }
+    if (!before_first.has_value() ||
+        before_first.value() != last_inserted_index) {
+      reversed_task_setup -= last_inserted.setups[v1.type];
     }
 
     if (last_rank < r1.size()) {

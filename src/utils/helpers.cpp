@@ -120,12 +120,11 @@ Eval route_eval_for_vehicle(const Input& input,
     auto jobs_task_duration = first_job.services[v.type];
 
     if (v.has_start()) {
-      const auto start_index = v.start.value().index();
-      eval += v.eval(start_index, first_job.index());
+      eval += v.eval(v.start.value().index(), first_job.index());
+    }
 
-      if (start_index != first_job.index()) {
-        jobs_task_duration += first_job.setups[v.type];
-      }
+    if (!v.has_start() || v.start.value().index() != first_job.index()) {
+      jobs_task_duration += first_job.setups[v.type];
     }
 
     Index previous_index = input.jobs[route.front()].index();
