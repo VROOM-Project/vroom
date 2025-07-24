@@ -51,14 +51,16 @@ void ReverseTwoOpt::compute_gain() {
                                                   0,
                                                   t_rank + 1));
 
-  t_gain = std::get<1>(utils::addition_eval_delta(_input,
-                                                  _sol_state,
-                                                  target,
-                                                  0,
-                                                  t_rank + 1,
-                                                  source,
-                                                  s_rank + 1,
-                                                  s_route.size()));
+  t_gain = (s_rank + 1u < s_route.size())
+             ? std::get<1>(utils::addition_eval_delta(_input,
+                                                      _sol_state,
+                                                      target,
+                                                      0,
+                                                      t_rank + 1,
+                                                      source,
+                                                      s_rank + 1,
+                                                      s_route.size()))
+             : utils::removal_gain(_input, _sol_state, target, 0, t_rank + 1);
 
   stored_gain = s_gain + t_gain;
   gain_computed = true;
