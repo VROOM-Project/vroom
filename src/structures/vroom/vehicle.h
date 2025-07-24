@@ -31,10 +31,10 @@ struct VehicleCosts {
   const Cost per_km;
   const Cost per_task_hour;
 
-  VehicleCosts(UserCost fixed = 0,
-               UserCost per_hour = DEFAULT_COST_PER_HOUR,
-               UserCost per_km = DEFAULT_COST_PER_KM,
-               UserCost per_task_hour = DEFAULT_COST_PER_TASK_HOUR)
+  explicit VehicleCosts(UserCost fixed = 0,
+                        UserCost per_hour = DEFAULT_COST_PER_HOUR,
+                        UserCost per_km = DEFAULT_COST_PER_KM,
+                        UserCost per_task_hour = DEFAULT_COST_PER_TASK_HOUR)
     : fixed(utils::scale_from_user_cost(fixed)),
       per_hour(static_cast<Cost>(per_hour)),
       per_km(static_cast<Cost>(per_km)),

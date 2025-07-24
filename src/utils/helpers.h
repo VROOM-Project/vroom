@@ -346,11 +346,11 @@ addition_eval_delta(const Input& input,
   // Gain of removed edge before replaced range. If route is empty,
   // before_first and first_index are respectively the start and end
   // of vehicle if defined.
-  if (before_first && first_index && !r1.empty()) {
+  if (before_first.has_value() && first_index.has_value() && !r1.empty()) {
     cost_delta += v1.eval(before_first.value(), first_index.value());
   }
 
-  if (before_first) {
+  if (before_first.has_value()) {
     // Cost of new edge to inserted range.
     straight_delta -=
       v1.eval(before_first.value(), input.jobs[r2[insertion_start]].index());
@@ -358,7 +358,7 @@ addition_eval_delta(const Input& input,
       v1.eval(before_first.value(), input.jobs[r2[insertion_end - 1]].index());
   }
 
-  if (last_index) {
+  if (last_index.has_value()) {
     // Cost of new edge after inserted range.
     straight_delta -=
       v1.eval(input.jobs[r2[insertion_end - 1]].index(), last_index.value());
@@ -367,7 +367,7 @@ addition_eval_delta(const Input& input,
   }
 
   // Gain of removed edge after replaced range, if any.
-  if (last_index && last_rank > first_rank) {
+  if (last_index.has_value() && last_rank > first_rank) {
     const Index before_last = input.jobs[r1[last_rank - 1]].index();
     cost_delta += v1.eval(before_last, last_index.value());
   }
@@ -469,18 +469,18 @@ inline Eval addition_eval_delta(const Input& input,
     cost_delta += v.eval(before_first.value(), first_index.value());
   }
 
-  if (before_first) {
+  if (before_first.has_value()) {
     // Cost of new edge to inserted job.
     cost_delta -= v.eval(before_first.value(), job_index);
   }
 
-  if (last_index) {
+  if (last_index.has_value()) {
     // Cost of new edge after inserted job.
     cost_delta -= v.eval(job_index, last_index.value());
   }
 
   // Gain of removed edge after replaced range, if any.
-  if (last_index) {
+  if (last_index.has_value()) {
     const Index before_last = input.jobs[r[last_rank - 1]].index();
     cost_delta += v.eval(before_last, last_index.value());
   }
@@ -545,14 +545,14 @@ inline Eval removal_gain(const Input& input,
     cost_delta += v.eval(before_first.value(), first_index.value());
   }
 
-  if (before_first && last_index && !emptying_route) {
+  if (before_first.has_value() && last_index.has_value() && !emptying_route) {
     // Add cost of new edge replacing removed range, except if
     // resulting route is empty.
     cost_delta -= v.eval(before_first.value(), last_index.value());
   }
 
   // Gain of removed edge after replaced range, if any.
-  if (last_index) {
+  if (last_index.has_value()) {
     const Index before_last = input.jobs[r[last_rank - 1]].index();
     cost_delta += v.eval(before_last, last_index.value());
   }
@@ -643,7 +643,7 @@ inline Eval in_place_delta_eval(const Input& input,
   }
 
   Eval old_virtual_eval;
-  if (p_index && n_index) {
+  if (p_index.has_value() && n_index.has_value()) {
     old_virtual_eval = v.eval(p_index.value(), n_index.value());
   }
 

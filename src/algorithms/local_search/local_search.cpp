@@ -949,9 +949,9 @@ void LocalSearch<Route,
           }
 
           assert(static_cast<int>(_sol[target].size()) - t_rank - 1 >= 0);
-          const unsigned jobs_moved_from_target =
-            _sol[target].size() - static_cast<unsigned>(t_rank) - 1;
-          if (jobs_moved_from_source <= 2 && jobs_moved_from_target <= 2) {
+          if (const unsigned jobs_moved_from_target =
+                _sol[target].size() - static_cast<unsigned>(t_rank) - 1;
+              jobs_moved_from_source <= 2 && jobs_moved_from_target <= 2) {
             // One of Relocate, OrOpt, SwapStar, MixedExchange, or no-opt.
             continue;
           }
