@@ -24,10 +24,10 @@ struct Eval {
 
   constexpr Eval() : cost(0), duration(0), distance(0), task_duration(0){};
 
-  constexpr Eval(Cost cost,
-                 Duration duration = 0,
-                 Distance distance = 0,
-                 Duration task_duration = 0)
+  constexpr explicit Eval(Cost cost,
+                          Duration duration = 0,
+                          Distance distance = 0,
+                          Duration task_duration = 0)
     : cost(cost),
       duration(duration),
       distance(distance),
@@ -52,7 +52,7 @@ struct Eval {
   }
 
   Eval operator-() const {
-    return {-cost, -duration, -distance, -task_duration};
+    return Eval(-cost, -duration, -distance, -task_duration);
   }
 
   friend Eval operator+(Eval lhs, const Eval& rhs) {
@@ -77,8 +77,8 @@ struct Eval {
   friend bool operator==(const Eval& lhs, const Eval& rhs) = default;
 };
 
-constexpr Eval NO_EVAL = {std::numeric_limits<Cost>::max(), 0, 0, 0};
-constexpr Eval NO_GAIN = {std::numeric_limits<Cost>::min(), 0, 0, 0};
+constexpr Eval NO_EVAL = Eval(std::numeric_limits<Cost>::max(), 0, 0, 0);
+constexpr Eval NO_GAIN = Eval(std::numeric_limits<Cost>::min(), 0, 0, 0);
 
 } // namespace vroom
 

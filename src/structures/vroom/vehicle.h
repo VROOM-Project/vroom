@@ -111,7 +111,7 @@ struct Vehicle {
   }
 
   Eval task_eval(Duration task_duration) const {
-    return {task_cost(task_duration), 0, 0, task_duration};
+    return Eval(task_cost(task_duration), 0, 0, task_duration);
   }
 
   Duration duration(Index i, Index j) const {
