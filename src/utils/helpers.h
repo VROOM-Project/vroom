@@ -465,7 +465,7 @@ inline Eval addition_eval_delta(const Input& input,
     get_indices(input, raw_route, first_rank, last_rank);
 
   // Gain of removed edge before replaced range.
-  if (before_first && first_index) {
+  if (before_first.has_value() && first_index.has_value()) {
     cost_delta += v.eval(before_first.value(), first_index.value());
   }
 
@@ -541,7 +541,7 @@ inline Eval removal_gain(const Input& input,
   // Gain of removed edge before replaced range. If route is empty,
   // before_first and first_index are respectively the start and end
   // of vehicle if defined.
-  if (before_first) {
+  if (before_first.has_value()) {
     cost_delta += v.eval(before_first.value(), first_index.value());
   }
 
