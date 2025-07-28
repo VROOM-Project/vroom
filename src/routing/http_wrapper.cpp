@@ -70,14 +70,12 @@ std::string HttpWrapper::send_then_receive(const std::string& query) const {
   std::string response;
 
   try {
-    asio::io_service io_service;
+    asio::io_context io_context;
 
-    tcp::resolver r(io_service);
+    tcp::resolver r(io_context);
 
-    const tcp::resolver::query q(_server.host, _server.port);
-
-    tcp::socket s(io_service);
-    asio::connect(s, r.resolve(q));
+    tcp::socket s(io_context);
+    asio::connect(s, r.resolve(_server.host, _server.port));
 
     asio::write(s, asio::buffer(query));
 
@@ -94,16 +92,14 @@ std::string HttpWrapper::ssl_send_then_receive(const std::string& query) const {
   std::string response;
 
   try {
-    asio::io_service io_service;
+    asio::io_context io_context;
 
     asio::ssl::context ctx(asio::ssl::context::method::sslv23_client);
-    asio::ssl::stream<asio::ip::tcp::socket> ssock(io_service, ctx);
+    asio::ssl::stream<asio::ip::tcp::socket> ssock(io_context, ctx);
 
-    tcp::resolver r(io_service);
+    tcp::resolver r(io_context);
 
-    const tcp::resolver::query q(_server.host, _server.port);
-
-    asio::connect(ssock.lowest_layer(), r.resolve(q));
+    asio::connect(ssock.lowest_layer(), r.resolve(_server.host, _server.port));
     ssock.handshake(asio::ssl::stream_base::handshake_type::client);
 
     asio::write(ssock, asio::buffer(query));
