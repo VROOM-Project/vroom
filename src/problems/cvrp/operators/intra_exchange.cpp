@@ -36,9 +36,6 @@ IntraExchange::IntraExchange(const Input& input,
   assert(s_rank < t_rank - 1);
   assert(s_route.size() >= 3);
   assert(t_rank < s_route.size());
-  // Note: _moved_jobs is not allocated or populated here. It is only
-  // allocated and populated in prepare_moved_jobs(), which is called
-  // only in is_valid() to avoid unnecessary allocations.
 }
 void IntraExchange::prepare_moved_jobs() {
   _moved_jobs.resize(_last_rank - _first_rank);
