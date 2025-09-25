@@ -48,7 +48,7 @@ SolutionState::SolutionState(const Input& input)
     route_bbox(_nb_vehicles, BBox()) {
 }
 
-template <class Route> void SolutionState::setup(const Route& r) {
+void SolutionState::setup(const RawRoute& r) {
   update_costs(r);
   update_skills(r);
   update_priorities(r);

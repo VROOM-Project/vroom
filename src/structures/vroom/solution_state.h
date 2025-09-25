@@ -137,7 +137,7 @@ public:
 
   explicit SolutionState(const Input& input);
 
-  template <class Route> void setup(const Route& r);
+  void setup(const RawRoute& r);
 
   template <class Route> void setup(const std::vector<Route>& sol);
 
