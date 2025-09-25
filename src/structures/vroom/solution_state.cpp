@@ -483,67 +483,15 @@ void SolutionState::set_pd_gains(const RawRoute& raw_route) {
     if (_input.jobs[route[pickup_rank]].type != JOB_TYPE::PICKUP) {
       continue;
     }
-    const Index pickup_index = _input.jobs[route[pickup_rank]].index();
     const Index delivery_rank = matching_delivery_rank[v][pickup_rank];
-    const Index delivery_index = _input.jobs[route[delivery_rank]].index();
 
     if (pickup_rank + 1 == delivery_rank) {
       // Pickup and delivery in a row.
-      Eval previous_eval;
-      Eval next_eval;
-      Eval new_edge_eval;
-      Index p_index;
-      Index n_index;
-
-      // Compute eval for step before pickup.
-      bool has_previous_step = false;
-      if (pickup_rank > 0) {
-        has_previous_step = true;
-        p_index = _input.jobs[route[pickup_rank - 1]].index();
-        previous_eval = vehicle.eval(p_index, pickup_index);
-      } else {
-        if (vehicle.has_start()) {
-          has_previous_step = true;
-          p_index = vehicle.start.value().index();
-          previous_eval = vehicle.eval(p_index, pickup_index);
-        }
-      }
-
-      // Compute eval for step after delivery.
-      bool has_next_step = false;
-      if (delivery_rank < route.size() - 1) {
-        has_next_step = true;
-        n_index = _input.jobs[route[delivery_rank + 1]].index();
-        next_eval = vehicle.eval(delivery_index, n_index);
-      } else {
-        if (vehicle.has_end()) {
-          has_next_step = true;
-          n_index = vehicle.end.value().index();
-          next_eval = vehicle.eval(delivery_index, n_index);
-        }
-      }
-
-      if (has_previous_step && has_next_step && (route.size() > 2)) {
-        // No new edge with an open trip or if removing P&D creates an
-        // empty route.
-        new_edge_eval = vehicle.eval(p_index, n_index);
-      }
-
-      pd_gains[v][pickup_rank] = previous_eval +
-                                 vehicle.eval(pickup_index, delivery_index) +
-                                 next_eval - new_edge_eval;
-
-
-      const auto new_removal_gain = utils::removal_gain(_input,
-                                                        *this,
-                                                        raw_route,
-                                                        pickup_rank,
-                                                        pickup_rank + 2);
-
-      // Fails with service time as new_removal_gain does correctly
-      // include task duration cost, whereas current
-      // pd_gains[v][pickup_rank] does not.
-      assert(pd_gains[v][pickup_rank] == new_removal_gain);
+      pd_gains[v][pickup_rank] = utils::removal_gain(_input,
+                                                     *this,
+                                                     raw_route,
+                                                     pickup_rank,
+                                                     pickup_rank + 2);
     } else {
       // Simply add both gains as neighbouring edges are disjoint.
       pd_gains[v][pickup_rank] =
