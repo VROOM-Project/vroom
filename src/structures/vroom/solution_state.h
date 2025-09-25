@@ -151,10 +151,10 @@ public:
 
   void set_edge_gains(const RawRoute& raw_route);
 
-  // Expects to have valid values in node_gains, so should be run
-  // after set_node_gains. Expects to have valid values in
-  // matching_delivery_rank, so should be run after
-  // set_pd_matching_ranks.
+  // Expects to have valid values in node_gains,
+  // matching_delivery_rank and various *_evals (for
+  // utils::removal_gain), so should be run after set_node_gains,
+  // set_pd_matching_ranks and update_costs.
   void set_pd_gains(const RawRoute& raw_route);
 
   void set_pd_matching_ranks(const RawRoute& raw_route);

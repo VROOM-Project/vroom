@@ -532,6 +532,18 @@ void SolutionState::set_pd_gains(const RawRoute& raw_route) {
       pd_gains[v][pickup_rank] = previous_eval +
                                  vehicle.eval(pickup_index, delivery_index) +
                                  next_eval - new_edge_eval;
+
+
+      const auto new_removal_gain = utils::removal_gain(_input,
+                                                        *this,
+                                                        raw_route,
+                                                        pickup_rank,
+                                                        pickup_rank + 2);
+
+      // Fails with service time as new_removal_gain does correctly
+      // include task duration cost, whereas current
+      // pd_gains[v][pickup_rank] does not.
+      assert(pd_gains[v][pickup_rank] == new_removal_gain);
     } else {
       // Simply add both gains as neighbouring edges are disjoint.
       pd_gains[v][pickup_rank] =

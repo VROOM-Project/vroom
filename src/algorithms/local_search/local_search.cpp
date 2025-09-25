@@ -2063,6 +2063,7 @@ void LocalSearch<Route,
         for (std::size_t v = 0; v < _sol.size(); ++v) {
           // Update what is required for consistency in
           // remove_from_route.
+          _sol_state.update_costs(_sol[v]);
           _sol_state.update_route_eval(_sol[v]);
           _sol_state.update_route_bbox(_sol[v]);
           _sol_state.set_node_gains(_sol[v]);
@@ -2082,7 +2083,6 @@ void LocalSearch<Route,
       // Update stored data that has not been maintained while
       // removing.
       for (std::size_t v = 0; v < _sol.size(); ++v) {
-        _sol_state.update_costs(_sol[v]);
         _sol_state.update_skills(_sol[v]);
         _sol_state.update_priorities(_sol[v]);
         _sol_state.set_insertion_ranks(_sol[v]);
