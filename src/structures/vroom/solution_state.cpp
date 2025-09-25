@@ -477,8 +477,6 @@ void SolutionState::set_pd_gains(const RawRoute& raw_route) {
 
   pd_gains[v] = std::vector<Eval>(route.size());
 
-  const auto& vehicle = _input.vehicles[v];
-
   for (std::size_t pickup_rank = 0; pickup_rank < route.size(); ++pickup_rank) {
     if (_input.jobs[route[pickup_rank]].type != JOB_TYPE::PICKUP) {
       continue;
