@@ -9,7 +9,6 @@ All rights reserved (see LICENSE).
 
 #include <algorithm>
 #include <mutex>
-#include <semaphore>
 #include <thread>
 
 #if USE_LIBOSRM
@@ -1241,15 +1240,13 @@ Solution Input::solve(const unsigned nb_searches,
       .count();
 
   if (_geometry) {
-    std::vector<std::jthread> workers;
-    workers.reserve(sol.routes.size());
-    std::counting_semaphore<128> semaphore(128);
-    std::exception_ptr exception = nullptr;
-    std::mutex exception_mutex;
+    std::vector<std::jthread> threads;
+    threads.reserve(sol.routes.size());
+    std::exception_ptr ep = nullptr;
+    std::mutex ep_m;
 
     for (size_t i = 0; i < sol.routes.size(); ++i) {
-      workers.emplace_back([this, &semaphore, &sol, i, &exception, &exception_mutex]() {
-        semaphore.acquire();
+      threads.emplace_back([this, &sol, i, &ep, &ep_m]() {
         try {
           auto& route = sol.routes[i];
           const auto& profile = route.profile;
@@ -1261,24 +1258,21 @@ Solution Input::solve(const unsigned nb_searches,
           }
           (*rw)->add_geometry(route);
         } catch (...) {
-          std::lock_guard<std::mutex> lock(exception_mutex);
-          if (!exception) {
-            exception = std::current_exception();
+          std::lock_guard<std::mutex> lock(ep_m);
+          if (!ep) {
+            ep = std::current_exception();
           }
         }
-        semaphore.release();
       });
     }
 
     // Wait for all threads to complete
-    for (auto& worker : workers) {
-      if (worker.joinable()) {
-        worker.join();
-      }
+    for (auto& t : threads) {
+      t.join();
     }
 
-    if (exception) {
-      std::rethrow_exception(exception);
+    if (ep) {
+      std::rethrow_exception(ep);
     }
 
     _end_routing = std::chrono::high_resolution_clock::now();
