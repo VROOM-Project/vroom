@@ -9,6 +9,7 @@ All rights reserved (see LICENSE).
 
 #include <algorithm>
 #include <mutex>
+#include <semaphore>
 #include <thread>
 
 #if USE_LIBOSRM
@@ -1240,16 +1241,44 @@ Solution Input::solve(const unsigned nb_searches,
       .count();
 
   if (_geometry) {
-    for (auto& route : sol.routes) {
-      const auto& profile = route.profile;
-      auto rw = std::ranges::find_if(_routing_wrappers, [&](const auto& wr) {
-        return wr->profile == profile;
+    std::vector<std::jthread> workers;
+    workers.reserve(sol.routes.size());
+    std::counting_semaphore<128> semaphore(128);
+    std::exception_ptr exception = nullptr;
+    std::mutex exception_mutex;
+
+    for (size_t i = 0; i < sol.routes.size(); ++i) {
+      workers.emplace_back([this, &semaphore, &sol, i, &exception, &exception_mutex]() {
+        semaphore.acquire();
+        try {
+          auto& route = sol.routes[i];
+          const auto& profile = route.profile;
+          auto rw = std::ranges::find_if(_routing_wrappers, [&](const auto& wr) {
+            return wr->profile == profile;
+          });
+          if (rw == _routing_wrappers.end()) {
+            throw InputException("Route geometry request with non-routable profile " + profile + ".");
+          }
+          (*rw)->add_geometry(route);
+        } catch (...) {
+          std::lock_guard<std::mutex> lock(exception_mutex);
+          if (!exception) {
+            exception = std::current_exception();
+          }
+        }
+        semaphore.release();
       });
-      if (rw == _routing_wrappers.end()) {
-        throw InputException(
-          "Route geometry request with non-routable profile " + profile + ".");
+    }
+
+    // Wait for all threads to complete
+    for (auto& worker : workers) {
+      if (worker.joinable()) {
+        worker.join();
       }
-      (*rw)->add_geometry(route);
+    }
+
+    if (exception) {
+      std::rethrow_exception(exception);
     }
 
     _end_routing = std::chrono::high_resolution_clock::now();
