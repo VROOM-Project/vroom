@@ -48,22 +48,23 @@ SolutionState::SolutionState(const Input& input)
     route_bbox(_nb_vehicles, BBox()) {
 }
 
-template <class Route> void SolutionState::setup(const Route& r, Index v) {
-  update_costs(r.route, v);
-  update_skills(r.route, v);
-  update_priorities(r.route, v);
-  set_node_gains(r.route, v);
-  set_edge_gains(r.route, v);
-  set_pd_matching_ranks(r.route, v);
-  set_pd_gains(r.route, v);
-  set_insertion_ranks(r, v);
-  update_route_eval(r.route, v);
-  update_route_bbox(r.route, v);
+template <class Route> void SolutionState::setup(const Route& r) {
+  update_costs(r);
+  update_skills(r);
+  update_priorities(r);
+  set_node_gains(r);
+  set_edge_gains(r);
+  set_pd_matching_ranks(r);
+  set_pd_gains(r);
+  set_insertion_ranks(r);
+  update_route_eval(r);
+  update_route_bbox(r);
 }
 
-template <class Solution> void SolutionState::setup(const Solution& sol) {
+template <class Route>
+void SolutionState::setup(const std::vector<Route>& sol) {
   for (std::size_t v = 0; v < _nb_vehicles; ++v) {
-    setup(sol[v], v);
+    setup(sol[v]);
   }
 
   // Initialize unassigned jobs.
@@ -79,7 +80,10 @@ template <class Solution> void SolutionState::setup(const Solution& sol) {
   }
 }
 
-void SolutionState::update_costs(const std::vector<Index>& route, Index v) {
+void SolutionState::update_costs(const RawRoute& raw_route) {
+  const auto v = raw_route.v_rank;
+  const auto& route = raw_route.route;
+
   fwd_evals[v] =
     std::vector<std::vector<Eval>>(_nb_vehicles,
                                    std::vector<Eval>(route.size()));
@@ -175,26 +179,31 @@ void SolutionState::update_costs(const std::vector<Index>& route, Index v) {
   }
 }
 
-void SolutionState::update_skills(const std::vector<Index>& route, Index v1) {
+void SolutionState::update_skills(const RawRoute& raw_route) {
+  const auto v = raw_route.v_rank;
+  const auto& route = raw_route.route;
+
   for (std::size_t v2 = 0; v2 < _nb_vehicles; ++v2) {
-    if (v1 == v2) {
+    if (v == v2) {
       continue;
     }
 
     auto fwd = std::ranges::find_if_not(route, [&](auto j_rank) {
       return _input.vehicle_ok_with_job(v2, j_rank);
     });
-    fwd_skill_rank[v1][v2] = std::distance(route.begin(), fwd);
+    fwd_skill_rank[v][v2] = std::distance(route.begin(), fwd);
 
     auto bwd = std::find_if_not(route.rbegin(), route.rend(), [&](auto j_rank) {
       return _input.vehicle_ok_with_job(v2, j_rank);
     });
-    bwd_skill_rank[v1][v2] = route.size() - std::distance(route.rbegin(), bwd);
+    bwd_skill_rank[v][v2] = route.size() - std::distance(route.rbegin(), bwd);
   }
 }
 
-void SolutionState::update_priorities(const std::vector<Index>& route,
-                                      Index v) {
+void SolutionState::update_priorities(const RawRoute& raw_route) {
+  const auto v = raw_route.v_rank;
+  const auto& route = raw_route.route;
+
   fwd_priority[v].resize(route.size());
   std::inclusive_scan(
     route.cbegin(),
@@ -212,7 +221,10 @@ void SolutionState::update_priorities(const std::vector<Index>& route,
     0);
 }
 
-void SolutionState::set_node_gains(const std::vector<Index>& route, Index v) {
+void SolutionState::set_node_gains(const RawRoute& raw_route) {
+  const auto v = raw_route.v_rank;
+  const auto& route = raw_route.route;
+
   node_gains[v] = std::vector<Eval>(route.size());
   edge_evals_around_node[v] = std::vector<Eval>(route.size());
 
@@ -345,7 +357,10 @@ void SolutionState::set_node_gains(const std::vector<Index>& route, Index v) {
                              vehicle.task_eval(task_duration_gain);
 }
 
-void SolutionState::set_edge_gains(const std::vector<Index>& route, Index v) {
+void SolutionState::set_edge_gains(const RawRoute& raw_route) {
+  const auto v = raw_route.v_rank;
+  const auto& route = raw_route.route;
+
   const std::size_t nb_edges = (route.size() < 2) ? 0 : route.size() - 1;
 
   edge_gains[v] = std::vector<Eval>(nb_edges);
@@ -456,11 +471,10 @@ void SolutionState::set_edge_gains(const std::vector<Index>& route, Index v) {
     edge_evals_around_edge[v][last_edge_rank] - new_edge_eval;
 }
 
-void SolutionState::set_pd_gains(const std::vector<Index>& route, Index v) {
-  // Expects to have valid values in node_gains, so should be run
-  // after set_node_gains. Expects to have valid values in
-  // matching_delivery_rank, so should be run after
-  // set_pd_matching_ranks.
+void SolutionState::set_pd_gains(const RawRoute& raw_route) {
+  const auto v = raw_route.v_rank;
+  const auto& route = raw_route.route;
+
   pd_gains[v] = std::vector<Eval>(route.size());
 
   const auto& vehicle = _input.vehicles[v];
@@ -526,8 +540,10 @@ void SolutionState::set_pd_gains(const std::vector<Index>& route, Index v) {
   }
 }
 
-void SolutionState::set_pd_matching_ranks(const std::vector<Index>& route,
-                                          Index v) {
+void SolutionState::set_pd_matching_ranks(const RawRoute& raw_route) {
+  const auto v = raw_route.v_rank;
+  const auto& route = raw_route.route;
+
   matching_delivery_rank[v] = std::vector<Index>(route.size());
   matching_pickup_rank[v] = std::vector<Index>(route.size());
 
@@ -564,23 +580,29 @@ void SolutionState::set_pd_matching_ranks(const std::vector<Index>& route,
   }
 }
 
-void SolutionState::set_insertion_ranks(const RawRoute& r, Index v) {
+void SolutionState::set_insertion_ranks(const RawRoute& raw_route) {
+  const auto v = raw_route.v_rank;
+  const auto& route = raw_route.route;
+
   insertion_ranks_end[v] =
-    std::vector<Index>(_input.jobs.size(), r.route.size() + 1);
+    std::vector<Index>(_input.jobs.size(), route.size() + 1);
   insertion_ranks_begin[v] = std::vector<Index>(_input.jobs.size(), 0);
 
   weak_insertion_ranks_end[v] =
-    std::vector<Index>(_input.jobs.size(), r.route.size() + 1);
+    std::vector<Index>(_input.jobs.size(), route.size() + 1);
   weak_insertion_ranks_begin[v] = std::vector<Index>(_input.jobs.size(), 0);
 }
 
-void SolutionState::set_insertion_ranks(const TWRoute& tw_r, Index v) {
+void SolutionState::set_insertion_ranks(const TWRoute& tw_r) {
+  const auto v = tw_r.v_rank;
+  const auto& route = tw_r.route;
+
   insertion_ranks_end[v] =
-    std::vector<Index>(_input.jobs.size(), tw_r.route.size() + 1);
+    std::vector<Index>(_input.jobs.size(), route.size() + 1);
   insertion_ranks_begin[v] = std::vector<Index>(_input.jobs.size(), 0);
 
   weak_insertion_ranks_end[v] =
-    std::vector<Index>(_input.jobs.size(), tw_r.route.size() + 1);
+    std::vector<Index>(_input.jobs.size(), route.size() + 1);
   weak_insertion_ranks_begin[v] = std::vector<Index>(_input.jobs.size(), 0);
 
   if (tw_r.empty()) {
@@ -603,28 +625,27 @@ void SolutionState::set_insertion_ranks(const TWRoute& tw_r, Index v) {
     const auto job_index = job.index();
 
     // Handle insertion_ranks_*
-    for (std::size_t t = 0; t < tw_r.route.size(); ++t) {
-      if (tw_r.route[t] == j) {
+    for (std::size_t t = 0; t < route.size(); ++t) {
+      if (route[t] == j) {
         continue;
       }
       if (job_deadline <
           tw_r.earliest[t] + tw_r.action_time[t] +
-            vehicle.duration(_input.jobs[tw_r.route[t]].index(), job_index)) {
+            vehicle.duration(_input.jobs[route[t]].index(), job_index)) {
         // Too late to perform job any time after task at t based on
         // its earliest date in route for v.
         insertion_ranks_end[v][j] = t + 1;
         break;
       }
     }
-    for (std::size_t t = 0; t < tw_r.route.size(); ++t) {
-      const auto rev_t = tw_r.route.size() - 1 - t;
-      if (tw_r.route[rev_t] == j) {
+    for (std::size_t t = 0; t < route.size(); ++t) {
+      const auto rev_t = route.size() - 1 - t;
+      if (route[rev_t] == j) {
         continue;
       }
       if (tw_r.latest[rev_t] <
           job_available + job.services[v_type] +
-            vehicle.duration(job_index,
-                             _input.jobs[tw_r.route[rev_t]].index())) {
+            vehicle.duration(job_index, _input.jobs[route[rev_t]].index())) {
         // Job is available too late to be performed any time before
         // task at rev_t based on its latest date in route for v.
         insertion_ranks_begin[v][j] = rev_t + 1;
@@ -633,11 +654,11 @@ void SolutionState::set_insertion_ranks(const TWRoute& tw_r, Index v) {
     }
 
     // Handle weak_insertion_ranks_*
-    for (std::size_t t = 0; t < tw_r.route.size(); ++t) {
-      if (tw_r.route[t] == j) {
+    for (std::size_t t = 0; t < route.size(); ++t) {
+      if (route[t] == j) {
         continue;
       }
-      const auto& task = _input.jobs[tw_r.route[t]];
+      const auto& task = _input.jobs[route[t]];
       if (job_deadline < task.tws.front().start + task.services[v_type] +
                            vehicle.duration(task.index(), job_index)) {
         // Too late to perform job any time after task at t solely
@@ -647,12 +668,12 @@ void SolutionState::set_insertion_ranks(const TWRoute& tw_r, Index v) {
         break;
       }
     }
-    for (std::size_t t = 0; t < tw_r.route.size(); ++t) {
-      const auto rev_t = tw_r.route.size() - 1 - t;
-      if (tw_r.route[rev_t] == j) {
+    for (std::size_t t = 0; t < route.size(); ++t) {
+      const auto rev_t = route.size() - 1 - t;
+      if (route[rev_t] == j) {
         continue;
       }
-      const auto& task = _input.jobs[tw_r.route[rev_t]];
+      const auto& task = _input.jobs[route[rev_t]];
       if (task.tws.back().end < job_available + job.services[v_type] +
                                   vehicle.duration(job_index, task.index())) {
         // Job is available too late to be performed any time before
@@ -701,18 +722,20 @@ void SolutionState::update_cheapest_job_rank_in_routes(
   }
 }
 
-void SolutionState::update_route_eval(const std::vector<Index>& route,
-                                      Index v) {
-  route_evals[v] = route_eval_for_vehicle(_input, v, route);
+void SolutionState::update_route_eval(const RawRoute& raw_route) {
+  const auto v = raw_route.v_rank;
+
+  route_evals[v] = route_eval_for_vehicle(_input, v, raw_route.route);
 }
 
-void SolutionState::update_route_bbox(const std::vector<Index>& route,
-                                      Index v) {
+void SolutionState::update_route_bbox(const RawRoute& raw_route) {
+  const auto v = raw_route.v_rank;
+
   if (_input.all_locations_have_coords()) {
     auto& bbox = route_bbox[v];
     bbox = BBox();
 
-    std::ranges::for_each(route, [this, &bbox](const auto i) {
+    std::ranges::for_each(raw_route.route, [this, &bbox](const auto i) {
       const auto& loc = _input.jobs[i].location;
       assert(loc.has_coordinates());
       bbox.extend(loc.coordinates());

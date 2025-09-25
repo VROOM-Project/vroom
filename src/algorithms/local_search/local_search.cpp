@@ -297,8 +297,8 @@ LocalSearch<Route,
 
       // Update best_route data required for consistency.
       modified_vehicles.insert(best_route);
-      _sol_state.update_route_eval(_sol[best_route].route, best_route);
-      _sol_state.set_insertion_ranks(_sol[best_route], best_route);
+      _sol_state.update_route_eval(_sol[best_route]);
+      _sol_state.set_insertion_ranks(_sol[best_route]);
 
       const auto fixed_cost =
         _sol[best_route].empty() ? _input.vehicles[best_route].fixed_cost() : 0;
@@ -335,14 +335,14 @@ LocalSearch<Route,
   // Update stored data for consistency (except update_route_eval and
   // set_insertion_ranks done along the way).
   for (const auto v : modified_vehicles) {
-    _sol_state.update_route_bbox(_sol[v].route, v);
-    _sol_state.update_costs(_sol[v].route, v);
-    _sol_state.update_skills(_sol[v].route, v);
-    _sol_state.update_priorities(_sol[v].route, v);
-    _sol_state.set_node_gains(_sol[v].route, v);
-    _sol_state.set_edge_gains(_sol[v].route, v);
-    _sol_state.set_pd_matching_ranks(_sol[v].route, v);
-    _sol_state.set_pd_gains(_sol[v].route, v);
+    _sol_state.update_route_bbox(_sol[v]);
+    _sol_state.update_costs(_sol[v]);
+    _sol_state.update_skills(_sol[v]);
+    _sol_state.update_priorities(_sol[v]);
+    _sol_state.set_node_gains(_sol[v]);
+    _sol_state.set_edge_gains(_sol[v]);
+    _sol_state.set_pd_matching_ranks(_sol[v]);
+    _sol_state.set_pd_gains(_sol[v]);
   }
 
   return modified_vehicles;
@@ -1858,16 +1858,16 @@ void LocalSearch<Route,
 #endif
 
       for (auto v_rank : update_candidates) {
-        _sol_state.update_route_eval(_sol[v_rank].route, v_rank);
-        _sol_state.update_route_bbox(_sol[v_rank].route, v_rank);
-        _sol_state.update_costs(_sol[v_rank].route, v_rank);
-        _sol_state.update_skills(_sol[v_rank].route, v_rank);
-        _sol_state.update_priorities(_sol[v_rank].route, v_rank);
-        _sol_state.set_insertion_ranks(_sol[v_rank], v_rank);
-        _sol_state.set_node_gains(_sol[v_rank].route, v_rank);
-        _sol_state.set_edge_gains(_sol[v_rank].route, v_rank);
-        _sol_state.set_pd_matching_ranks(_sol[v_rank].route, v_rank);
-        _sol_state.set_pd_gains(_sol[v_rank].route, v_rank);
+        _sol_state.update_route_eval(_sol[v_rank]);
+        _sol_state.update_route_bbox(_sol[v_rank]);
+        _sol_state.update_costs(_sol[v_rank]);
+        _sol_state.update_skills(_sol[v_rank]);
+        _sol_state.update_priorities(_sol[v_rank]);
+        _sol_state.set_insertion_ranks(_sol[v_rank]);
+        _sol_state.set_node_gains(_sol[v_rank]);
+        _sol_state.set_edge_gains(_sol[v_rank]);
+        _sol_state.set_pd_matching_ranks(_sol[v_rank]);
+        _sol_state.set_pd_gains(_sol[v_rank]);
 
         assert(_sol[v_rank].size() <= _input.vehicles[v_rank].max_tasks);
         assert(_input.vehicles[v_rank].ok_for_range_bounds(
@@ -2063,11 +2063,11 @@ void LocalSearch<Route,
         for (std::size_t v = 0; v < _sol.size(); ++v) {
           // Update what is required for consistency in
           // remove_from_route.
-          _sol_state.update_route_eval(_sol[v].route, v);
-          _sol_state.update_route_bbox(_sol[v].route, v);
-          _sol_state.set_node_gains(_sol[v].route, v);
-          _sol_state.set_pd_matching_ranks(_sol[v].route, v);
-          _sol_state.set_pd_gains(_sol[v].route, v);
+          _sol_state.update_route_eval(_sol[v]);
+          _sol_state.update_route_bbox(_sol[v]);
+          _sol_state.set_node_gains(_sol[v]);
+          _sol_state.set_pd_matching_ranks(_sol[v]);
+          _sol_state.set_pd_gains(_sol[v]);
         }
       }
 
@@ -2082,11 +2082,11 @@ void LocalSearch<Route,
       // Update stored data that has not been maintained while
       // removing.
       for (std::size_t v = 0; v < _sol.size(); ++v) {
-        _sol_state.update_costs(_sol[v].route, v);
-        _sol_state.update_skills(_sol[v].route, v);
-        _sol_state.update_priorities(_sol[v].route, v);
-        _sol_state.set_insertion_ranks(_sol[v], v);
-        _sol_state.set_edge_gains(_sol[v].route, v);
+        _sol_state.update_costs(_sol[v]);
+        _sol_state.update_skills(_sol[v]);
+        _sol_state.update_priorities(_sol[v]);
+        _sol_state.set_insertion_ranks(_sol[v]);
+        _sol_state.set_edge_gains(_sol[v]);
       }
 
       // Refill jobs.

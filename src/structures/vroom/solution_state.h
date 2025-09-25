@@ -137,35 +137,39 @@ public:
 
   explicit SolutionState(const Input& input);
 
-  template <class Route> void setup(const Route& r, Index v);
+  template <class Route> void setup(const Route& r);
 
-  template <class Solution> void setup(const Solution& sol);
+  template <class Route> void setup(const std::vector<Route>& sol);
 
-  void update_costs(const std::vector<Index>& route, Index v);
+  void update_costs(const RawRoute& raw_route);
 
-  void update_skills(const std::vector<Index>& route, Index v1);
+  void update_skills(const RawRoute& raw_route);
 
-  void update_priorities(const std::vector<Index>& route, Index v);
+  void update_priorities(const RawRoute& raw_route);
 
-  void set_node_gains(const std::vector<Index>& route, Index v);
+  void set_node_gains(const RawRoute& raw_route);
 
-  void set_edge_gains(const std::vector<Index>& route, Index v);
+  void set_edge_gains(const RawRoute& raw_route);
 
-  void set_pd_gains(const std::vector<Index>& route, Index v);
+  // Expects to have valid values in node_gains, so should be run
+  // after set_node_gains. Expects to have valid values in
+  // matching_delivery_rank, so should be run after
+  // set_pd_matching_ranks.
+  void set_pd_gains(const RawRoute& raw_route);
 
-  void set_pd_matching_ranks(const std::vector<Index>& route, Index v);
+  void set_pd_matching_ranks(const RawRoute& raw_route);
 
   void update_cheapest_job_rank_in_routes(const std::vector<Index>& route_1,
                                           const std::vector<Index>& route_2,
                                           Index v1,
                                           Index v2);
 
-  void set_insertion_ranks(const RawRoute& r, Index v);
-  void set_insertion_ranks(const TWRoute& r, Index v);
+  void set_insertion_ranks(const RawRoute& r);
+  void set_insertion_ranks(const TWRoute& r);
 
-  void update_route_eval(const std::vector<Index>& route, Index v);
+  void update_route_eval(const RawRoute& raw_route);
 
-  void update_route_bbox(const std::vector<Index>& route, Index v);
+  void update_route_bbox(const RawRoute& raw_route);
 };
 
 } // namespace vroom::utils
