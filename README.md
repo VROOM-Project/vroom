@@ -18,7 +18,7 @@ optimization project and/or you need access to the best possible data
 for even more accurate route timing, you should use the [Vroom Premium
 API](https://verso-optim.com/api/).
 
-## Why Use Vroom?
+## Why use Vroom?
 
 Vroom is ideally suited to situations in which route optimization has
 to be done quickly, both to react to changes and new requests and to
