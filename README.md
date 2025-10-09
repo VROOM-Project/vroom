@@ -18,6 +18,26 @@ optimization project and/or you need access to the best possible data
 for even more accurate route timing, you should use the [Vroom Premium
 API](https://verso-optim.com/api/).
 
+## Why Use Vroom?
+
+Vroom is ideally suited to situations in which route optimization has
+to be done quickly, both to react to changes and new requests and to
+iterate on your routes to find the solution that works best for all
+stakeholders.
+
+Vroom doesn't replace domain expertise. It allows fleet managers and
+business owners to apply their domain knowledge and understanding of
+the company culture to larger, more complex optimization problems than
+they could manage manually.
+
+The open source project is ideal for companies who want to control
+their own infrastructure, have the technical expertise to do so and
+can manage their own data integration. If you would rather not manage
+your own infrastructure, if you want access to expertise around route
+optimization or if you want more accurate ETA relying on enhanced
+speed estimates, consider using the [Vroom Premium
+API](https://verso-optim.com/api/).
+
 ## Supported problem types
 
 Vroom solves several well-known types of vehicle routing problems
