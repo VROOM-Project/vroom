@@ -20,7 +20,7 @@ API](https://verso-optim.com/api/).
 
 ## Supported problem types
 
-VROOM can solve several well-known types of vehicle routing problems
+VROOM solves several well-known types of vehicle routing problems
 (VRP).
 
 - TSP (travelling salesman problem)
@@ -29,7 +29,9 @@ VROOM can solve several well-known types of vehicle routing problems
 - MDHVRPTW (multi-depot heterogeneous vehicle VRPTW)
 - PDPTW (pickup-and-delivery problem with TW)
 
-VROOM can also solve any mix of the above problem types.
+VROOM solves all of the above routing problems at the same time — and
+delivers the optimized route in milliseconds, even when complex
+variables are involved.
 
 ## How it works
 
