@@ -11,9 +11,12 @@ that solves complex [vehicle routing
 problems](https://en.wikipedia.org/wiki/Vehicle_routing_problem) (VRP)
 in milliseconds.
 
-The project has been initiated by [Verso](https://verso-optim.com/) to
-power its [route optimization
-API](https://blog.verso-optim.com/category/route-optimization/api/).
+The project is maintained by [Verso](https://verso-optim.com). If you
+want to get started as quickly as possible with route optimization,
+you want white-glove support to increase the ROI from your
+optimization project and/or you need access to the best possible data
+for even more accurate route timing, you should use the [VROOM Premium
+API](https://verso-optim.com/api/).
 
 ## Supported problem types
 
