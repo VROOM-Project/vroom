@@ -22,8 +22,6 @@ TWRoute::TWRoute(const Input& input, Index v, unsigned amount_size)
     breaks_counts({static_cast<unsigned>(input.vehicles[v].breaks.size())}),
     break_earliest(input.vehicles[v].breaks.size()),
     break_latest(input.vehicles[v].breaks.size()),
-    breaks_travel_margin_before(input.vehicles[v].breaks.size()),
-    breaks_travel_margin_after(input.vehicles[v].breaks.size()),
     fwd_smallest_breaks_load_margin(input.vehicles[v].breaks.size()),
     bwd_smallest_breaks_load_margin(input.vehicles[v].breaks.size()) {
   const std::string break_error =
@@ -47,7 +45,6 @@ TWRoute::TWRoute(const Input& input, Index v, unsigned amount_size)
     }
 
     break_earliest[i] = std::max(previous_earliest, b_tw->start);
-    breaks_travel_margin_before[i] = break_earliest[i] - previous_earliest;
 
     previous_earliest = break_earliest[i] + b.service;
 
@@ -81,7 +78,6 @@ TWRoute::TWRoute(const Input& input, Index v, unsigned amount_size)
     }
 
     break_latest[i] = std::min(next_latest, b_tw->end);
-    breaks_travel_margin_after[i] = next_latest - break_latest[i];
 
     next_latest = break_latest[i];
 
@@ -170,7 +166,6 @@ void TWRoute::fwd_update_earliest_from(const Input& input, Index rank) {
 
       if (current_earliest < b_tw->start) {
         auto margin = b_tw->start - current_earliest;
-        breaks_travel_margin_before[break_rank] = margin;
         if (margin < remaining_travel_time) {
           remaining_travel_time -= margin;
         } else {
@@ -178,8 +173,6 @@ void TWRoute::fwd_update_earliest_from(const Input& input, Index rank) {
         }
 
         current_earliest = b_tw->start;
-      } else {
-        breaks_travel_margin_before[break_rank] = 0;
       }
 
       break_earliest[break_rank] = current_earliest;
@@ -235,7 +228,6 @@ void TWRoute::fwd_update_earliest_from(const Input& input, Index rank) {
 
       if (current_earliest < b_tw->start) {
         auto margin = b_tw->start - current_earliest;
-        breaks_travel_margin_before[break_rank] = margin;
         if (margin < remaining_travel_time) {
           remaining_travel_time -= margin;
         } else {
@@ -243,8 +235,6 @@ void TWRoute::fwd_update_earliest_from(const Input& input, Index rank) {
         }
 
         current_earliest = b_tw->start;
-      } else {
-        breaks_travel_margin_before[break_rank] = 0;
       }
 
       break_earliest[break_rank] = current_earliest;
@@ -287,7 +277,6 @@ void TWRoute::bwd_update_latest_from(const Input& input, Index rank) {
 
       if (b_tw->end < current_latest) {
         auto margin = current_latest - b_tw->end;
-        breaks_travel_margin_after[break_rank] = margin;
         if (margin < remaining_travel_time) {
           remaining_travel_time -= margin;
         } else {
@@ -295,8 +284,6 @@ void TWRoute::bwd_update_latest_from(const Input& input, Index rank) {
         }
 
         current_latest = b_tw->end;
-      } else {
-        breaks_travel_margin_after[break_rank] = 0;
       }
 
       break_latest[break_rank] = current_latest;
@@ -347,11 +334,7 @@ void TWRoute::bwd_update_latest_from(const Input& input, Index rank) {
         });
       assert(b_tw != b.tws.rend());
       if (b_tw->end < current_latest) {
-        breaks_travel_margin_after[break_rank] = current_latest - b_tw->end;
-
         current_latest = b_tw->end;
-      } else {
-        breaks_travel_margin_after[break_rank] = 0;
       }
 
       break_latest[break_rank] = current_latest;
@@ -382,7 +365,6 @@ void TWRoute::update_last_latest_date(const Input& input) {
 
     if (b_tw->end < next.latest) {
       auto margin = next.latest - b_tw->end;
-      breaks_travel_margin_after[break_rank] = margin;
       if (margin < next.travel) {
         next.travel -= margin;
       } else {
@@ -390,8 +372,6 @@ void TWRoute::update_last_latest_date(const Input& input) {
       }
 
       next.latest = b_tw->end;
-    } else {
-      breaks_travel_margin_after[break_rank] = 0;
     }
 
     break_latest[break_rank] = next.latest;
@@ -1165,7 +1145,6 @@ void TWRoute::replace(const Input& input,
 
       if (current.earliest < b_tw->start) {
         auto margin = b_tw->start - current.earliest;
-        breaks_travel_margin_before[current_break] = margin;
         if (margin < next.travel) {
           next.travel -= margin;
         } else {
@@ -1173,8 +1152,6 @@ void TWRoute::replace(const Input& input,
         }
 
         current.earliest = b_tw->start;
-      } else {
-        breaks_travel_margin_before[current_break] = 0;
       }
       break_earliest[current_break] = current.earliest;
 
@@ -1265,7 +1242,6 @@ void TWRoute::replace(const Input& input,
 
       if (current.earliest < oc.b_tw->start) {
         auto margin = oc.b_tw->start - current.earliest;
-        breaks_travel_margin_before[current_break] = margin;
         if (margin < current.travel) {
           current.travel -= margin;
         } else {
@@ -1273,8 +1249,6 @@ void TWRoute::replace(const Input& input,
         }
 
         current.earliest = oc.b_tw->start;
-      } else {
-        breaks_travel_margin_before[current_break] = 0;
       }
       break_earliest[current_break] = current.earliest;
 

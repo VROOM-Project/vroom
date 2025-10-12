@@ -114,12 +114,6 @@ public:
   std::vector<Duration> break_earliest;
   std::vector<Duration> break_latest;
 
-  // When a break's earliest date is delayed (resp. latest date is
-  // advanced) because of it's time window start (resp. end), then
-  // some amount of time before (resp. after) can be used for travel.
-  std::vector<Duration> breaks_travel_margin_before;
-  std::vector<Duration> breaks_travel_margin_after;
-
   // fwd_smallest_breaks_load_margin[i] (resp. bwd_...) store minimal
   // margin between current load and max load for all breaks up to
   // rank i (resp. after rank i included) in vehicle breaks.
