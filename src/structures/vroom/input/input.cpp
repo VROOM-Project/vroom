@@ -1245,23 +1245,27 @@ Solution Input::solve(const unsigned nb_searches,
     std::exception_ptr ep = nullptr;
     std::mutex ep_m;
 
-    for (size_t i = 0; i < sol.routes.size(); ++i) {
-      threads.emplace_back([this, &sol, i, &ep, &ep_m]() {
-        try {
-          auto& route = sol.routes[i];
-          const auto& profile = route.profile;
-          auto rw = std::ranges::find_if(_routing_wrappers, [&](const auto& wr) {
-            return wr->profile == profile;
-          });
-          if (rw == _routing_wrappers.end()) {
-            throw InputException("Route geometry request with non-routable profile " + profile + ".");
-          }
-          (*rw)->add_geometry(route);
-        } catch (...) {
-          const std::scoped_lock<std::mutex> lock(ep_m);
-          ep = std::current_exception();
+    auto run_routing = [this, &sol, &ep, &ep_m](std::size_t i) {
+      try {
+        auto& route = sol.routes[i];
+        const auto& profile = route.profile;
+        auto rw = std::ranges::find_if(_routing_wrappers, [&](const auto& wr) {
+          return wr->profile == profile;
+        });
+        if (rw == _routing_wrappers.end()) {
+          throw InputException(
+            "Route geometry request with non-routable profile " + profile +
+            ".");
         }
-      });
+        (*rw)->add_geometry(route);
+      } catch (...) {
+        const std::scoped_lock<std::mutex> lock(ep_m);
+        ep = std::current_exception();
+      }
+    };
+
+    for (std::size_t i = 0; i < sol.routes.size(); ++i) {
+      threads.emplace_back(run_routing, i);
     }
 
     for (auto& t : threads) {
