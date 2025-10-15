@@ -1258,20 +1258,17 @@ Solution Input::solve(const unsigned nb_searches,
           }
           (*rw)->add_geometry(route);
         } catch (...) {
-          std::lock_guard<std::mutex> lock(ep_m);
-          if (!ep) {
-            ep = std::current_exception();
-          }
+          const std::scoped_lock<std::mutex> lock(ep_m);
+          ep = std::current_exception();
         }
       });
     }
 
-    // Wait for all threads to complete
     for (auto& t : threads) {
       t.join();
     }
 
-    if (ep) {
+    if (ep != nullptr) {
       std::rethrow_exception(ep);
     }
 
