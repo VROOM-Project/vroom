@@ -364,8 +364,7 @@ void TWRoute::update_last_latest_date(const Input& input) {
     assert(b_tw != b.tws.rend());
 
     if (b_tw->end < next.latest) {
-      if (const auto margin = next.latest - b_tw->end;
-          margin < next.travel) {
+      if (const auto margin = next.latest - b_tw->end; margin < next.travel) {
         next.travel -= margin;
       } else {
         next.travel = 0;
