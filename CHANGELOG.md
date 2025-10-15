@@ -31,7 +31,8 @@
 - Remove heuristic synchronisation (#1188)
 - Refactor gain evaluation in operators to ease code maintenance and extension (#1266)
 - Remove `LOG_LS_OPERATORS` (#1263)
-- Do `add_geometry` OSRM requests in parallel in routing phase (#1291)
+- Update README to clarify high-level purpose and usage of the project (#1264)
+- Run routing requests in parallel (#1218)
 
 #### CI
 
