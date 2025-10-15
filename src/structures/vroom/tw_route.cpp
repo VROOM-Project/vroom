@@ -165,8 +165,8 @@ void TWRoute::fwd_update_earliest_from(const Input& input, Index rank) {
       assert(b_tw != b.tws.end());
 
       if (current_earliest < b_tw->start) {
-        auto margin = b_tw->start - current_earliest;
-        if (margin < remaining_travel_time) {
+        if (const auto margin = b_tw->start - current_earliest;
+            margin < remaining_travel_time) {
           remaining_travel_time -= margin;
         } else {
           remaining_travel_time = 0;
@@ -227,8 +227,8 @@ void TWRoute::fwd_update_earliest_from(const Input& input, Index rank) {
       assert(b_tw != b.tws.end());
 
       if (current_earliest < b_tw->start) {
-        auto margin = b_tw->start - current_earliest;
-        if (margin < remaining_travel_time) {
+        if (const auto margin = b_tw->start - current_earliest;
+            margin < remaining_travel_time) {
           remaining_travel_time -= margin;
         } else {
           remaining_travel_time = 0;
@@ -276,8 +276,8 @@ void TWRoute::bwd_update_latest_from(const Input& input, Index rank) {
       assert(b_tw != b.tws.rend());
 
       if (b_tw->end < current_latest) {
-        auto margin = current_latest - b_tw->end;
-        if (margin < remaining_travel_time) {
+        if (const auto margin = current_latest - b_tw->end;
+            margin < remaining_travel_time) {
           remaining_travel_time -= margin;
         } else {
           remaining_travel_time = 0;
@@ -364,8 +364,8 @@ void TWRoute::update_last_latest_date(const Input& input) {
     assert(b_tw != b.tws.rend());
 
     if (b_tw->end < next.latest) {
-      auto margin = next.latest - b_tw->end;
-      if (margin < next.travel) {
+      if (const auto margin = next.latest - b_tw->end;
+          margin < next.travel) {
         next.travel -= margin;
       } else {
         next.travel = 0;
@@ -1144,8 +1144,8 @@ void TWRoute::replace(const Input& input,
       assert(b_tw != b.tws.end());
 
       if (current.earliest < b_tw->start) {
-        auto margin = b_tw->start - current.earliest;
-        if (margin < next.travel) {
+        if (const auto margin = b_tw->start - current.earliest;
+            margin < next.travel) {
           next.travel -= margin;
         } else {
           next.travel = 0;
@@ -1241,8 +1241,8 @@ void TWRoute::replace(const Input& input,
       assert(b.is_valid_for_load(current_load));
 
       if (current.earliest < oc.b_tw->start) {
-        auto margin = oc.b_tw->start - current.earliest;
-        if (margin < current.travel) {
+        if (const auto margin = oc.b_tw->start - current.earliest;
+            margin < current.travel) {
           current.travel -= margin;
         } else {
           current.travel = 0;
