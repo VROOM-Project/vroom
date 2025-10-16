@@ -1000,7 +1000,8 @@ void Input::set_matrices(unsigned nb_thread, bool sparse_filling) {
       !_has_custom_location_index) {
     throw InputException("Missing location index.");
   }
-  if ((_durations_matrices.empty() && _costs_matrices.empty()) &&
+  if ((_durations_matrices.empty() && _distances_matrices.empty() &&
+       _costs_matrices.empty()) &&
       _has_custom_location_index) {
     throw InputException(
       "Unexpected location index while no custom matrices provided.");
