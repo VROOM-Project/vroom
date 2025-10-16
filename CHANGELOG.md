@@ -44,6 +44,7 @@
 #### Dependency
 
 - Update `LibosrmWrapper` to breaking change introduced in OSRM v6 (#1234)
+- Update `asio` usage for deprecated `io_service` and `query` (#1279)
 
 ### Fixed
 
