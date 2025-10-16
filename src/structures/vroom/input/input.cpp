@@ -1013,8 +1013,10 @@ void Input::set_matrices(unsigned nb_thread, bool sparse_filling) {
   }
 
   // Report distances either if geometry is explicitly requested, or
-  // if distance matrices are manually provided.
-  _report_distances = _geometry || !_distances_matrices.empty();
+  // if distance matrices are manually provided or required in
+  // optimization objective.
+  _report_distances = _geometry || !_distances_matrices.empty() ||
+                      !_profiles_requiring_distances.empty();
 
   if (!_distances_matrices.empty()) {
     // Distances matrices should be either always or never provided.
