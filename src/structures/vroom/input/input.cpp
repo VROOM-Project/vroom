@@ -382,6 +382,9 @@ void Input::add_vehicle(const Vehicle& vehicle) {
   }
 
   _profiles.insert(current_v.profile);
+  if (current_v.costs.per_km != 0) {
+    _profiles_requiring_distances.insert(current_v.profile);
+  }
 
   if (auto search = _max_cost_per_hour.find(current_v.profile);
       search == _max_cost_per_hour.end()) {
