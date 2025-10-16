@@ -158,12 +158,7 @@ LocalSearch<Route,
             RouteSplit,
             PriorityReplace,
             TSPFix>::try_job_additions(const std::vector<Index>& routes,
-                                       double regret_coeff
-#ifdef LOG_LS
-                                       ,
-                                       bool log_addition_step
-#endif
-) {
+                                       double regret_coeff) {
   bool job_added;
 
   std::vector<std::vector<RouteInsertion>> route_job_insertions;
@@ -319,16 +314,6 @@ LocalSearch<Route,
           route_job_insertions[best_route_idx][j].eval.cost += fixed_cost;
         }
       }
-
-#ifdef LOG_LS
-      if (log_addition_step) {
-        steps.emplace_back(utils::now(),
-                           log::EVENT::JOB_ADDITION,
-                           OperatorName::MAX,
-                           utils::SolutionIndicators(_input, _sol),
-                           std::nullopt);
-      }
-#endif
     }
   } while (job_added);
 
@@ -1827,14 +1812,6 @@ void LocalSearch<Route,
       auto update_candidates =
         best_ops[best_source][best_target]->update_candidates();
 
-#ifdef LOG_LS
-      steps.emplace_back(utils::now(),
-                         log::EVENT::OPERATOR,
-                         best_ops[best_source][best_target]->get_name(),
-                         utils::SolutionIndicators(_input, _sol),
-                         std::nullopt);
-#endif
-
 #ifndef NDEBUG
       // Update route costs.
       const auto previous_eval =
@@ -1877,12 +1854,7 @@ void LocalSearch<Route,
       auto modified_vehicles =
         try_job_additions(best_ops[best_source][best_target]
                             ->addition_candidates(),
-                          0
-#ifdef LOG_LS
-                          ,
-                          true
-#endif
-        );
+                          0);
 
       // Extend update_candidates in case a vehicle was not modified
       // by the operator itself but afterward by
@@ -2003,14 +1975,6 @@ void LocalSearch<Route,
         current_sol_indicators < _best_sol_indicators) {
       _best_sol_indicators = current_sol_indicators;
       _best_sol = _sol;
-
-#ifdef LOG_LS
-      steps.emplace_back(utils::now(),
-                         log::EVENT::LOCAL_MINIMA,
-                         OperatorName::MAX,
-                         _best_sol_indicators,
-                         utils::format_solution(_input, _best_sol));
-#endif
     } else {
       // No improvement so back to previous best known for further
       // steps.
@@ -2018,13 +1982,6 @@ void LocalSearch<Route,
         _sol = _best_sol;
         _sol_state.setup(_sol);
       }
-#ifdef LOG_LS
-      steps.emplace_back(utils::now(),
-                         log::EVENT::ROLLBACK,
-                         OperatorName::MAX,
-                         _best_sol_indicators,
-                         std::nullopt);
-#endif
 
       if (_completed_depth.has_value()) {
         // Rule out situation with first descent not yielding a better
@@ -2060,14 +2017,6 @@ void LocalSearch<Route,
         }
       }
 
-#ifdef LOG_LS
-      steps.emplace_back(utils::now(),
-                         log::EVENT::RUIN,
-                         OperatorName::MAX,
-                         utils::SolutionIndicators(_input, _sol),
-                         utils::format_solution(_input, _sol));
-#endif
-
       // Update stored data that has not been maintained while
       // removing.
       for (std::size_t v = 0; v < _sol.size(); ++v) {
@@ -2081,14 +2030,6 @@ void LocalSearch<Route,
       // Refill jobs.
       constexpr double refill_regret = 1.5;
       try_job_additions(_all_routes, refill_regret);
-
-#ifdef LOG_LS
-      steps.emplace_back(utils::now(),
-                         log::EVENT::RECREATE,
-                         OperatorName::MAX,
-                         utils::SolutionIndicators(_input, _sol),
-                         utils::format_solution(_input, _sol));
-#endif
     }
   }
 }
