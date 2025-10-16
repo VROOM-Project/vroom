@@ -63,6 +63,7 @@
 - Too loose `max_tasks` bound derived from TW (#1243)
 - Wrong evaluation in `ReverseTwoOpt` (#1271)
 - Misleading error with custom distance matrix (#1281)
+- Wrong distance-based optimization with only custom durations (#1298)
 
 #### Internals
 
