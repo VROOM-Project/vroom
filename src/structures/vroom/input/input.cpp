@@ -960,9 +960,11 @@ void Input::init_missing_matrices(const std::string& profile) {
     // Custom durations matrix defined.
     if (!_distances_matrices.contains(profile)) {
       // No custom distances.
-      if (_geometry) {
-        // Get distances from routing engine later on since routing
-        // is explicitly requested.
+      if (_geometry || _profiles_requiring_distances.contains(profile)) {
+        // Get distances from routing engine later on since routing is
+        // explicitly requested, or distances should be used in
+        // optimization objective.
+        create_routing_wrapper = true;
         _distances_matrices.try_emplace(profile);
       } else {
         // Routing-less optimization with no distances involved,
