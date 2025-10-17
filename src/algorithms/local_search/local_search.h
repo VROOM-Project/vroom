@@ -13,10 +13,6 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/solution_indicators.h"
 #include "structures/vroom/solution_state.h"
 
-#ifdef LOG_LS
-#include "algorithms/local_search/log_local_search.h"
-#endif
-
 namespace vroom::ls {
 
 template <class Route,
@@ -57,17 +53,8 @@ private:
   std::vector<Route>& _best_sol;
   utils::SolutionIndicators _best_sol_indicators;
 
-#ifdef LOG_LS
-  std::vector<log::Step> steps;
-#endif
-
   std::unordered_set<Index> try_job_additions(const std::vector<Index>& routes,
-                                              double regret_coeff
-#ifdef LOG_LS
-                                              ,
-                                              bool log_addition_step = false
-#endif
-  );
+                                              double regret_coeff);
 
   void run_ls_step();
 
@@ -93,12 +80,6 @@ public:
   utils::SolutionIndicators indicators() const;
 
   void run();
-
-#ifdef LOG_LS
-  std::vector<log::Step> get_steps() const {
-    return steps;
-  }
-#endif
 };
 
 } // namespace vroom::ls
