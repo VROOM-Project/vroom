@@ -6,7 +6,9 @@
 
 #### Features
 
-- Ability to set different tasks setup/service time per vehicle type (#336)
+- Ability to set different task times per vehicle type (#336)
+- Task times can be included in the cost used internally for optimization (#1130)
+- Support for cost per hour spent on tasks on a vehicle basis (#1130)
 
 #### Internals
 

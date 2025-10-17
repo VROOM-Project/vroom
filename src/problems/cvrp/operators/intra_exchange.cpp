@@ -46,14 +46,14 @@ IntraExchange::IntraExchange(const Input& input,
 
 void IntraExchange::compute_gain() {
   s_gain = _sol_state.node_gains[s_vehicle][s_rank] -
-           utils::in_place_delta_cost(_input,
+           utils::in_place_delta_eval(_input,
                                       s_route[t_rank],
                                       _input.vehicles[s_vehicle],
                                       s_route,
                                       s_rank);
 
   t_gain = _sol_state.node_gains[s_vehicle][t_rank] -
-           utils::in_place_delta_cost(_input,
+           utils::in_place_delta_eval(_input,
                                       s_route[s_rank],
                                       _input.vehicles[s_vehicle],
                                       s_route,

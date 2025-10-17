@@ -132,6 +132,7 @@ A `cost` object has the following properties:
 | ----------- | ----------- |
 | [`fixed`] | integer defining the cost of using this vehicle in the solution (defaults to `0`) |
 | [`per_hour`] | integer defining the cost for one hour of travel time with this vehicle (defaults to `3600`) |
+| [`per_task_hour`] | integer defining the cost for one hour of task time (setup + service) with this vehicle (defaults to `0`) |
 | [`per_km`] | integer defining the cost for one km of travel time with this vehicle (defaults to `0`) |
 
 Using a non-default `per-hour` value means defining travel costs based

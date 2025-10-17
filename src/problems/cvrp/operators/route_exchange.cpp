@@ -36,23 +36,27 @@ RouteExchange::RouteExchange(const Input& input,
 }
 
 void RouteExchange::compute_gain() {
-  s_gain = std::get<0>(utils::addition_cost_delta(_input,
-                                                  _sol_state,
-                                                  source,
-                                                  0,
-                                                  s_route.size(),
-                                                  target,
-                                                  0,
-                                                  t_route.size()));
+  s_gain = t_route.empty()
+             ? _sol_state.route_evals[s_vehicle]
+             : std::get<0>(utils::addition_eval_delta(_input,
+                                                      _sol_state,
+                                                      source,
+                                                      0,
+                                                      s_route.size(),
+                                                      target,
+                                                      0,
+                                                      t_route.size()));
 
-  t_gain = std::get<0>(utils::addition_cost_delta(_input,
-                                                  _sol_state,
-                                                  target,
-                                                  0,
-                                                  t_route.size(),
-                                                  source,
-                                                  0,
-                                                  s_route.size()));
+  t_gain = s_route.empty()
+             ? _sol_state.route_evals[s_vehicle]
+             : std::get<0>(utils::addition_eval_delta(_input,
+                                                      _sol_state,
+                                                      target,
+                                                      0,
+                                                      t_route.size(),
+                                                      source,
+                                                      0,
+                                                      s_route.size()));
 
   stored_gain = s_gain + t_gain;
   gain_computed = true;

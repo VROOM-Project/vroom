@@ -73,7 +73,7 @@ compute_best_route_split_choice(const Input& input,
       }
 
       const auto current_end_eval =
-        -std::get<0>(utils::addition_cost_delta(input,
+        -std::get<0>(utils::addition_eval_delta(input,
                                                 sol_state,
                                                 empty_routes[v_rank],
                                                 0,
@@ -140,7 +140,7 @@ compute_best_route_split_choice(const Input& input,
       }
 
       const auto current_begin_eval =
-        -std::get<0>(utils::addition_cost_delta(input,
+        -std::get<0>(utils::addition_eval_delta(input,
                                                 sol_state,
                                                 empty_routes[v_rank],
                                                 0,

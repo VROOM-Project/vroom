@@ -41,10 +41,6 @@ PDShift::PDShift(const Input& input,
 
   s_gain = _sol_state.pd_gains[s_vehicle][_s_p_rank];
 
-  if (s_route.size() == 2) {
-    s_gain.cost += _input.vehicles[s_vehicle].fixed_cost();
-  }
-
   if (t_route.empty()) {
     t_gain.cost -= _input.vehicles[t_vehicle].fixed_cost();
   }
