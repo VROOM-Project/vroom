@@ -39,6 +39,8 @@ private:
   TimePoint _end_solving;
   TimePoint _end_routing;
   std::unordered_set<std::string, StringHash, std::equal_to<>> _profiles;
+  std::unordered_set<std::string, StringHash, std::equal_to<>>
+    _profiles_requiring_distances;
   std::vector<std::unique_ptr<routing::Wrapper>> _routing_wrappers;
   bool _apply_TSPFix;
   bool _no_addition_yet{true};
