@@ -32,9 +32,18 @@ struct Break {
         std::string description = "",
         std::optional<Amount> max_load = std::optional<Amount>());
 
-  bool is_valid_start(Duration time) const;
+  bool is_valid_start(Duration time) const {
+    for (const auto& tw : tws) {
+      if (tw.contains(time)) {
+        return true;
+      }
+    }
+    return false;
+  }
 
-  bool is_valid_for_load(const Amount& load) const;
+  bool is_valid_for_load(const Amount& load) const {
+    return !max_load.has_value() || load <= max_load.value();
+  }
 };
 
 } // namespace vroom

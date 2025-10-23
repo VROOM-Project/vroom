@@ -25,21 +25,4 @@ Break::Break(Id id,
   utils::check_tws(tws, id, "break");
 }
 
-bool Break::is_valid_start(Duration time) const {
-  bool valid = false;
-
-  for (const auto& tw : tws) {
-    if (tw.contains(time)) {
-      valid = true;
-      break;
-    }
-  }
-
-  return valid;
-}
-
-bool Break::is_valid_for_load(const Amount& load) const {
-  return !max_load.has_value() || load <= max_load.value();
-}
-
 } // namespace vroom

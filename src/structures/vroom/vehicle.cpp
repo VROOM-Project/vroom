@@ -107,14 +107,6 @@ Vehicle::Vehicle(Id id,
   }
 }
 
-bool Vehicle::has_start() const {
-  return static_cast<bool>(start);
-}
-
-bool Vehicle::has_end() const {
-  return static_cast<bool>(end);
-}
-
 bool Vehicle::has_same_locations(const Vehicle& other) const {
   bool same = (this->has_start() == other.has_start()) &&
               (this->has_end() == other.has_end());
@@ -130,15 +122,6 @@ bool Vehicle::has_same_locations(const Vehicle& other) const {
   return same;
 }
 
-bool Vehicle::has_same_profile(const Vehicle& other) const {
-  return (this->profile == other.profile) &&
-         this->cost_wrapper.has_same_variable_costs(other.cost_wrapper);
-}
-
-bool Vehicle::cost_based_on_metrics() const {
-  return cost_wrapper.cost_based_on_metrics();
-}
-
 Duration Vehicle::available_duration() const {
   const Duration available = tw.end - tw.start;
 
@@ -151,17 +134,6 @@ Duration Vehicle::available_duration() const {
   assert(breaks_duration <= available);
 
   return available - breaks_duration;
-}
-
-bool Vehicle::has_range_bounds() const {
-  return max_travel_time != DEFAULT_MAX_TRAVEL_TIME ||
-         max_distance != DEFAULT_MAX_DISTANCE;
-}
-
-Index Vehicle::break_rank(Id break_id) const {
-  auto search = break_id_to_rank.find(break_id);
-  assert(search != break_id_to_rank.end());
-  return search->second;
 }
 
 } // namespace vroom

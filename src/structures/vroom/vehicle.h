@@ -87,15 +87,24 @@ struct Vehicle {
     const std::vector<VehicleStep>& input_steps = std::vector<VehicleStep>(),
     std::string type_str = NO_TYPE);
 
-  bool has_start() const;
+  bool has_start() const {
+    return static_cast<bool>(start);
+  }
 
-  bool has_end() const;
+  bool has_end() const {
+    return static_cast<bool>(end);
+  }
 
   bool has_same_locations(const Vehicle& other) const;
 
-  bool has_same_profile(const Vehicle& other) const;
+  bool has_same_profile(const Vehicle& other) const {
+    return (profile == other.profile) &&
+           cost_wrapper.has_same_variable_costs(other.cost_wrapper);
+  }
 
-  bool cost_based_on_metrics() const;
+  bool cost_based_on_metrics() const {
+    return cost_wrapper.cost_based_on_metrics();
+  }
 
   Duration available_duration() const;
 
@@ -132,9 +141,16 @@ struct Vehicle {
     return e.duration <= max_travel_time && e.distance <= max_distance;
   }
 
-  bool has_range_bounds() const;
+  bool has_range_bounds() const {
+    return max_travel_time != DEFAULT_MAX_TRAVEL_TIME ||
+           max_distance != DEFAULT_MAX_DISTANCE;
+  }
 
-  Index break_rank(Id break_id) const;
+  Index break_rank(Id break_id) const {
+    auto search = break_id_to_rank.find(break_id);
+    assert(search != break_id_to_rank.end());
+    return search->second;
+  }
 
   friend bool operator<(const Vehicle& lhs, const Vehicle& rhs) {
     // Sort by:

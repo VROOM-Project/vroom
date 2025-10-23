@@ -32,16 +32,4 @@ TimeWindow::TimeWindow(UserDuration start, UserDuration end)
   }
 }
 
-bool TimeWindow::contains(Duration time) const {
-  return (start <= time) && (time <= end);
-}
-
-bool TimeWindow::is_default() const {
-  return end - start == default_length;
-}
-
-bool operator<(const TimeWindow& lhs, const TimeWindow& rhs) {
-  return lhs.start < rhs.start || (lhs.start == rhs.start && lhs.end < rhs.end);
-}
-
 } // namespace vroom

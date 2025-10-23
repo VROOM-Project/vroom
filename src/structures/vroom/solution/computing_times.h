@@ -20,7 +20,7 @@ struct ComputingTimes {
   UserDuration solving{0};
   UserDuration routing{0};
 
-  ComputingTimes();
+  ComputingTimes() = default;
 };
 
 } // namespace vroom

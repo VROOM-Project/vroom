@@ -34,9 +34,15 @@ struct Summary {
 
   Violations violations{0, 0};
 
-  Summary();
+  Summary() : routes(0), unassigned(0) {
+  }
 
-  Summary(unsigned routes, unsigned unassigned, const Amount& zero_amount);
+  Summary(unsigned routes, unsigned unassigned, const Amount& zero_amount)
+    : routes(routes),
+      unassigned(unassigned),
+      delivery(zero_amount),
+      pickup(zero_amount) {
+  }
 };
 
 } // namespace vroom

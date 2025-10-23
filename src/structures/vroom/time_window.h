@@ -25,11 +25,18 @@ struct TimeWindow {
 
   TimeWindow(UserDuration start, UserDuration end);
 
-  bool contains(Duration time) const;
+  bool contains(Duration time) const {
+    return (start <= time) && (time <= end);
+  }
 
-  bool is_default() const;
+  bool is_default() const {
+    return end - start == default_length;
+  }
 
-  friend bool operator<(const TimeWindow& lhs, const TimeWindow& rhs);
+  friend bool operator<(const TimeWindow& lhs, const TimeWindow& rhs) {
+    return lhs.start < rhs.start ||
+           (lhs.start == rhs.start && lhs.end < rhs.end);
+  }
 };
 
 } // namespace vroom
