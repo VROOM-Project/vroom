@@ -60,7 +60,7 @@ UnassignedExchange::UnassignedExchange(const Input& input,
 
 void UnassignedExchange::compute_gain() {
   if (t_rank == s_rank) {
-    s_gain = utils::addition_cost_delta(_input,
+    s_gain = utils::addition_eval_delta(_input,
                                         _sol_state,
                                         source,
                                         s_rank,
@@ -71,7 +71,7 @@ void UnassignedExchange::compute_gain() {
     const auto& v = _input.vehicles[s_vehicle];
 
     s_gain = _sol_state.node_gains[s_vehicle][s_rank] -
-             utils::addition_cost(_input, _u, v, s_route, t_rank);
+             utils::addition_eval(_input, _u, v, s_route, t_rank);
   }
 
   stored_gain = s_gain;

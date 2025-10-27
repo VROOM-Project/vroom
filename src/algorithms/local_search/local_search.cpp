@@ -292,8 +292,8 @@ LocalSearch<Route,
 
       // Update best_route data required for consistency.
       modified_vehicles.insert(best_route);
-      _sol_state.update_route_eval(_sol[best_route].route, best_route);
-      _sol_state.set_insertion_ranks(_sol[best_route], best_route);
+      _sol_state.update_route_eval(_sol[best_route]);
+      _sol_state.set_insertion_ranks(_sol[best_route]);
 
       const auto fixed_cost =
         _sol[best_route].empty() ? _input.vehicles[best_route].fixed_cost() : 0;
@@ -320,14 +320,14 @@ LocalSearch<Route,
   // Update stored data for consistency (except update_route_eval and
   // set_insertion_ranks done along the way).
   for (const auto v : modified_vehicles) {
-    _sol_state.update_route_bbox(_sol[v].route, v);
-    _sol_state.update_costs(_sol[v].route, v);
-    _sol_state.update_skills(_sol[v].route, v);
-    _sol_state.update_priorities(_sol[v].route, v);
-    _sol_state.set_node_gains(_sol[v].route, v);
-    _sol_state.set_edge_gains(_sol[v].route, v);
-    _sol_state.set_pd_matching_ranks(_sol[v].route, v);
-    _sol_state.set_pd_gains(_sol[v].route, v);
+    _sol_state.update_route_bbox(_sol[v]);
+    _sol_state.update_costs(_sol[v]);
+    _sol_state.update_skills(_sol[v]);
+    _sol_state.update_priorities(_sol[v]);
+    _sol_state.set_node_gains(_sol[v]);
+    _sol_state.set_edge_gains(_sol[v]);
+    _sol_state.set_pd_matching_ranks(_sol[v]);
+    _sol_state.set_pd_gains(_sol[v]);
   }
 
   return modified_vehicles;
@@ -910,13 +910,16 @@ void LocalSearch<Route,
           continue;
         }
 
+        const unsigned jobs_moved_from_source =
+          _sol[source].size() - s_rank - 1;
+
         const auto& s_fwd_delivery = _sol[source].fwd_deliveries(s_rank);
         const auto& s_fwd_pickup = _sol[source].fwd_pickups(s_rank);
         const auto& s_bwd_delivery = _sol[source].bwd_deliveries(s_rank);
         const auto& s_bwd_pickup = _sol[source].bwd_pickups(s_rank);
 
         Index end_t_rank = _sol[target].size();
-        if (s_rank + 1 < _sol[source].size()) {
+        if (jobs_moved_from_source > 0) {
           // There is a route end after s_rank in source route.
           const auto s_next_job_rank = _sol[source].route[s_rank + 1];
           end_t_rank =
@@ -927,6 +930,14 @@ void LocalSearch<Route,
 
         for (int t_rank = end_t_rank - 1; t_rank >= first_t_rank; --t_rank) {
           if (_sol[target].has_pending_delivery_after_rank(t_rank)) {
+            continue;
+          }
+
+          assert(static_cast<int>(_sol[target].size()) - t_rank - 1 >= 0);
+          if (const unsigned jobs_moved_from_target =
+                _sol[target].size() - static_cast<unsigned>(t_rank) - 1;
+              jobs_moved_from_source <= 2 && jobs_moved_from_target <= 2) {
+            // One of Relocate, OrOpt, SwapStar, MixedExchange, or no-opt.
             continue;
           }
 
@@ -1824,16 +1835,16 @@ void LocalSearch<Route,
 #endif
 
       for (auto v_rank : update_candidates) {
-        _sol_state.update_route_eval(_sol[v_rank].route, v_rank);
-        _sol_state.update_route_bbox(_sol[v_rank].route, v_rank);
-        _sol_state.update_costs(_sol[v_rank].route, v_rank);
-        _sol_state.update_skills(_sol[v_rank].route, v_rank);
-        _sol_state.update_priorities(_sol[v_rank].route, v_rank);
-        _sol_state.set_insertion_ranks(_sol[v_rank], v_rank);
-        _sol_state.set_node_gains(_sol[v_rank].route, v_rank);
-        _sol_state.set_edge_gains(_sol[v_rank].route, v_rank);
-        _sol_state.set_pd_matching_ranks(_sol[v_rank].route, v_rank);
-        _sol_state.set_pd_gains(_sol[v_rank].route, v_rank);
+        _sol_state.update_route_eval(_sol[v_rank]);
+        _sol_state.update_route_bbox(_sol[v_rank]);
+        _sol_state.update_costs(_sol[v_rank]);
+        _sol_state.update_skills(_sol[v_rank]);
+        _sol_state.update_priorities(_sol[v_rank]);
+        _sol_state.set_insertion_ranks(_sol[v_rank]);
+        _sol_state.set_node_gains(_sol[v_rank]);
+        _sol_state.set_edge_gains(_sol[v_rank]);
+        _sol_state.set_pd_matching_ranks(_sol[v_rank]);
+        _sol_state.set_pd_gains(_sol[v_rank]);
 
         assert(_sol[v_rank].size() <= _input.vehicles[v_rank].max_tasks);
         assert(_input.vehicles[v_rank].ok_for_range_bounds(
@@ -2009,22 +2020,22 @@ void LocalSearch<Route,
         for (std::size_t v = 0; v < _sol.size(); ++v) {
           // Update what is required for consistency in
           // remove_from_route.
-          _sol_state.update_route_eval(_sol[v].route, v);
-          _sol_state.update_route_bbox(_sol[v].route, v);
-          _sol_state.set_node_gains(_sol[v].route, v);
-          _sol_state.set_pd_matching_ranks(_sol[v].route, v);
-          _sol_state.set_pd_gains(_sol[v].route, v);
+          _sol_state.update_costs(_sol[v]);
+          _sol_state.update_route_eval(_sol[v]);
+          _sol_state.update_route_bbox(_sol[v]);
+          _sol_state.set_node_gains(_sol[v]);
+          _sol_state.set_pd_matching_ranks(_sol[v]);
+          _sol_state.set_pd_gains(_sol[v]);
         }
       }
 
       // Update stored data that has not been maintained while
       // removing.
       for (std::size_t v = 0; v < _sol.size(); ++v) {
-        _sol_state.update_costs(_sol[v].route, v);
-        _sol_state.update_skills(_sol[v].route, v);
-        _sol_state.update_priorities(_sol[v].route, v);
-        _sol_state.set_insertion_ranks(_sol[v], v);
-        _sol_state.set_edge_gains(_sol[v].route, v);
+        _sol_state.update_skills(_sol[v]);
+        _sol_state.update_priorities(_sol[v]);
+        _sol_state.set_insertion_ranks(_sol[v]);
+        _sol_state.set_edge_gains(_sol[v]);
       }
 
       // Refill jobs.

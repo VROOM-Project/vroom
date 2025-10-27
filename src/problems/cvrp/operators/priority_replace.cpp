@@ -49,13 +49,13 @@ PriorityReplace::PriorityReplace(const Input& input,
 
 void PriorityReplace::compute_start_gain() {
   s_gain =
-    utils::addition_cost_delta(_input, _sol_state, source, 0, s_rank + 1, _u);
+    utils::addition_eval_delta(_input, _sol_state, source, 0, s_rank + 1, _u);
 
   _start_gain_computed = true;
 }
 
 void PriorityReplace::compute_end_gain() {
-  t_gain = utils::addition_cost_delta(_input,
+  t_gain = utils::addition_eval_delta(_input,
                                       _sol_state,
                                       source,
                                       t_rank,

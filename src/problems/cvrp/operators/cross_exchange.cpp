@@ -69,7 +69,7 @@ CrossExchange::CrossExchange(const Input& input,
 
 Eval CrossExchange::gain_upper_bound() {
   std::tie(_normal_s_gain, _reversed_s_gain) =
-    utils::addition_cost_delta(_input,
+    utils::addition_eval_delta(_input,
                                _sol_state,
                                source,
                                s_rank,
@@ -85,7 +85,7 @@ Eval CrossExchange::gain_upper_bound() {
   }
 
   std::tie(_normal_t_gain, _reversed_t_gain) =
-    utils::addition_cost_delta(_input,
+    utils::addition_eval_delta(_input,
                                _sol_state,
                                target,
                                t_rank,

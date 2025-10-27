@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 #include <algorithm>
 
 #include "problems/cvrp/operators/intra_two_opt.h"
+#include "utils/helpers.h"
 
 namespace vroom::cvrp {
 
@@ -37,43 +38,14 @@ IntraTwoOpt::IntraTwoOpt(const Input& input,
 }
 
 void IntraTwoOpt::compute_gain() {
-  const auto& s_v = _input.vehicles[s_vehicle];
-
-  const Index s_index = _input.jobs[s_route[s_rank]].index();
-  const Index t_index = _input.jobs[t_route[t_rank]].index();
-
-  // Cost of reversing vehicle route between s_rank and t_rank
-  // included.
-  stored_gain += _sol_state.fwd_costs[s_vehicle][s_vehicle][t_rank];
-  stored_gain -= _sol_state.fwd_costs[s_vehicle][s_vehicle][s_rank];
-  stored_gain += _sol_state.bwd_costs[s_vehicle][s_vehicle][s_rank];
-  stored_gain -= _sol_state.bwd_costs[s_vehicle][s_vehicle][t_rank];
-
-  // Cost of going to t_rank first instead of s_rank.
-  if (s_rank > 0) {
-    const Index previous_index = _input.jobs[s_route[s_rank - 1]].index();
-    stored_gain += s_v.eval(previous_index, s_index);
-    stored_gain -= s_v.eval(previous_index, t_index);
-  } else {
-    if (s_v.has_start()) {
-      const Index start_index = s_v.start.value().index();
-      stored_gain += s_v.eval(start_index, s_index);
-      stored_gain -= s_v.eval(start_index, t_index);
-    }
-  }
-
-  // Cost of going from s_rank after instead of t_rank.
-  if (t_rank < s_route.size() - 1) {
-    const Index next_index = _input.jobs[s_route[t_rank + 1]].index();
-    stored_gain += s_v.eval(t_index, next_index);
-    stored_gain -= s_v.eval(s_index, next_index);
-  } else {
-    if (s_v.has_end()) {
-      const Index end_index = s_v.end.value().index();
-      stored_gain += s_v.eval(t_index, end_index);
-      stored_gain -= s_v.eval(s_index, end_index);
-    }
-  }
+  stored_gain = std::get<1>(utils::addition_eval_delta(_input,
+                                                       _sol_state,
+                                                       source,
+                                                       s_rank,
+                                                       t_rank + 1,
+                                                       source,
+                                                       s_rank,
+                                                       t_rank + 1));
 
   gain_computed = true;
 }
