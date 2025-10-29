@@ -23,11 +23,6 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/input/input.h"
 #include "structures/vroom/solution/solution.h"
 
-#ifdef LOG_LS
-#include "algorithms/local_search/log_local_search.h"
-#include "utils/output_json.h"
-#endif
-
 namespace vroom {
 
 template <class Route>
@@ -57,10 +52,6 @@ template <class Route> struct SolvingContext {
 
   std::set<utils::SolutionIndicators> heuristic_indicators;
   std::mutex heuristic_indicators_m;
-
-#ifdef LOG_LS
-  std::vector<ls::log::Dump> ls_dumps;
-#endif
 
   SolvingContext(const Input& input, unsigned nb_searches)
     : init_sol(set_init_sol<Route>(input, init_assigned)),
@@ -97,12 +88,6 @@ void run_single_search(const Input& input,
                        const Timeout& search_time,
                        SolvingContext<Route>& context) {
   const auto heuristic_start = utils::now();
-
-#ifdef LOG_LS
-  context.ls_dumps[rank].steps.emplace_back(heuristic_start,
-                                            ls::log::EVENT::START,
-                                            OperatorName::MAX);
-#endif
 
   Eval h_eval;
   switch (p.heuristic) {
@@ -156,9 +141,6 @@ void run_single_search(const Input& input,
 
     if (h_other_eval < h_eval) {
       context.solutions[rank] = std::move(other_sol);
-#ifdef LOG_LS
-      context.ls_dumps[rank].heuristic_parameters.sort = SORT::COST;
-#endif
     }
   }
 
@@ -167,15 +149,6 @@ void run_single_search(const Input& input,
     utils::SolutionIndicators(input, context.solutions[rank]);
 
   const auto heuristic_end = utils::now();
-
-#ifdef LOG_LS
-  context.ls_dumps[rank]
-    .steps.emplace_back(heuristic_end,
-                        ls::log::EVENT::HEURISTIC,
-                        OperatorName::MAX,
-                        context.sol_indicators[rank],
-                        utils::format_solution(input, context.solutions[rank]));
-#endif
 
   if (context.heuristic_solution_already_found(rank)) {
     // Duplicate heuristic solution, so skip local search.
@@ -202,15 +175,6 @@ void run_single_search(const Input& input,
 
   // Store solution indicators.
   context.sol_indicators[rank] = ls.indicators();
-
-#ifdef LOG_LS
-  auto ls_steps = ls.get_steps();
-
-  assert(context.ls_dumps[rank].steps.size() == 2);
-  context.ls_dumps[rank].steps.reserve(2 + ls_steps.size());
-
-  std::ranges::move(ls_steps, std::back_inserter(context.ls_dumps[rank].steps));
-#endif
 }
 
 class VRP {
@@ -244,10 +208,6 @@ protected:
       thread_ranks(nb_threads, std::vector<std::size_t>());
     for (std::size_t i = 0; i < nb_searches; ++i) {
       thread_ranks[i % nb_threads].push_back(i);
-
-#ifdef LOG_LS
-      context.ls_dumps.push_back({parameters[i], {}});
-#endif
     }
 
     std::exception_ptr ep = nullptr;
@@ -293,10 +253,6 @@ protected:
     if (ep != nullptr) {
       std::rethrow_exception(ep);
     }
-
-#ifdef LOG_LS
-    io::write_LS_logs_to_json(context.ls_dumps);
-#endif
 
     auto best_indic = std::min_element(context.sol_indicators.cbegin(),
                                        context.sol_indicators.cend());

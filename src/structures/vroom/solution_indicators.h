@@ -70,25 +70,6 @@ struct SolutionIndicators {
                                                 rhs.eval.distance,
                                                 rhs.routes_hash);
   }
-
-#ifdef LOG_LS
-  friend bool operator==(const SolutionIndicators& lhs,
-                         const SolutionIndicators& rhs) {
-    return std::tie(lhs.priority_sum,
-                    lhs.assigned,
-                    lhs.eval.cost,
-                    lhs.used_vehicles,
-                    lhs.eval.duration,
-                    lhs.eval.distance,
-                    lhs.routes_hash) == std::tie(rhs.priority_sum,
-                                                 rhs.assigned,
-                                                 rhs.eval.cost,
-                                                 rhs.used_vehicles,
-                                                 rhs.eval.duration,
-                                                 rhs.eval.distance,
-                                                 rhs.routes_hash);
-  }
-#endif
 };
 
 } // namespace vroom::utils

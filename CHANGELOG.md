@@ -11,7 +11,6 @@
 #### Internals
 
 - Apply heuristics to partial solutions provided in input (#977)
-- LOG_LS flag to generate debug info on the internal solving process (#1124)
 
 ### Changed
 
@@ -32,6 +31,7 @@
 - Refactor gain evaluation in operators to ease code maintenance and extension (#1266)
 - Remove `LOG_LS_OPERATORS` (#1263)
 - Update README to clarify high-level purpose and usage of the project (#1264)
+- Remove unused breaks_travel_margin members from TWRoute and associated code (#1295)
 - Inline small struct methods in `structures` (#1304)
 
 #### CI
@@ -46,6 +46,7 @@
 #### Dependency
 
 - Update `LibosrmWrapper` to breaking change introduced in OSRM v6 (#1234)
+- Update `asio` usage for deprecated `io_service` and `query` (#1279)
 
 ### Fixed
 
@@ -62,6 +63,8 @@
 - Solution "shadowing" when only comparing indicators (#1199)
 - Too loose `max_tasks` bound derived from TW (#1243)
 - Wrong evaluation in `ReverseTwoOpt` (#1271)
+- Misleading error with custom distance matrix (#1281)
+- Wrong distance-based optimization with only custom durations (#1298)
 
 #### Internals
 

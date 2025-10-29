@@ -382,6 +382,9 @@ void Input::add_vehicle(const Vehicle& vehicle) {
   }
 
   _profiles.insert(current_v.profile);
+  if (current_v.costs.per_km != 0) {
+    _profiles_requiring_distances.insert(current_v.profile);
+  }
 
   if (auto search = _max_cost_per_hour.find(current_v.profile);
       search == _max_cost_per_hour.end()) {
@@ -957,9 +960,11 @@ void Input::init_missing_matrices(const std::string& profile) {
     // Custom durations matrix defined.
     if (!_distances_matrices.contains(profile)) {
       // No custom distances.
-      if (_geometry) {
-        // Get distances from routing engine later on since routing
-        // is explicitly requested.
+      if (_geometry || _profiles_requiring_distances.contains(profile)) {
+        // Get distances from routing engine later on since routing is
+        // explicitly requested, or distances should be used in
+        // optimization objective.
+        create_routing_wrapper = true;
         _distances_matrices.try_emplace(profile);
       } else {
         // Routing-less optimization with no distances involved,
@@ -1000,15 +1005,18 @@ void Input::set_matrices(unsigned nb_thread, bool sparse_filling) {
       !_has_custom_location_index) {
     throw InputException("Missing location index.");
   }
-  if ((_durations_matrices.empty() && _costs_matrices.empty()) &&
+  if ((_durations_matrices.empty() && _distances_matrices.empty() &&
+       _costs_matrices.empty()) &&
       _has_custom_location_index) {
     throw InputException(
       "Unexpected location index while no custom matrices provided.");
   }
 
   // Report distances either if geometry is explicitly requested, or
-  // if distance matrices are manually provided.
-  _report_distances = _geometry || !_distances_matrices.empty();
+  // if distance matrices are manually provided or required in
+  // optimization objective.
+  _report_distances = _geometry || !_distances_matrices.empty() ||
+                      !_profiles_requiring_distances.empty();
 
   if (!_distances_matrices.empty()) {
     // Distances matrices should be either always or never provided.
