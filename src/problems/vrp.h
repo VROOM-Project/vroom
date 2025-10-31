@@ -214,6 +214,7 @@ protected:
     std::mutex ep_m;
 
     const auto actual_nb_threads = std::min(nb_searches, nb_threads);
+    std::counting_semaphore<32> semaphore(actual_nb_threads);
 
     Timeout search_time;
     if (timeout.has_value()) {
@@ -224,21 +225,29 @@ protected:
       search_time = timeout.value() / max_solving_number;
     }
 
-    auto run_solving =
-      [&context, &search_time, &parameters, &timeout, &ep, &ep_m, depth, this](
-        const unsigned rank) {
-        try {
-          run_single_search<Route, LocalSearch>(_input,
-                                                parameters[rank],
-                                                rank,
-                                                depth,
-                                                search_time,
-                                                context);
-        } catch (...) {
-          const std::scoped_lock<std::mutex> lock(ep_m);
-          ep = std::current_exception();
-        }
-      };
+    auto run_solving = [&context,
+                        &semaphore,
+                        &search_time,
+                        &parameters,
+                        &timeout,
+                        &ep,
+                        &ep_m,
+                        depth,
+                        this](const unsigned rank) {
+      semaphore.acquire();
+      try {
+        run_single_search<Route, LocalSearch>(_input,
+                                              parameters[rank],
+                                              rank,
+                                              depth,
+                                              search_time,
+                                              context);
+      } catch (...) {
+        const std::scoped_lock<std::mutex> lock(ep_m);
+        ep = std::current_exception();
+      }
+      semaphore.release();
+    };
 
     std::vector<std::jthread> solving_threads;
     solving_threads.reserve(nb_searches);
