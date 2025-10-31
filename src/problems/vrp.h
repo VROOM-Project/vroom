@@ -225,23 +225,15 @@ protected:
     }
 
     auto run_solving =
-      [&context, &parameters, &timeout, &ep, &ep_m, depth, this](
-        const std::vector<std::size_t>& param_ranks) {
+      [&context, &search_time, &parameters, &timeout, &ep, &ep_m, depth, this](
+        const unsigned rank) {
         try {
-          // Decide time allocated for each search.
-          Timeout search_time;
-          if (timeout.has_value()) {
-            search_time = timeout.value() / param_ranks.size();
-          }
-
-          for (auto rank : param_ranks) {
-            run_single_search<Route, LocalSearch>(_input,
-                                                  parameters[rank],
-                                                  rank,
-                                                  depth,
-                                                  search_time,
-                                                  context);
-          }
+          run_single_search<Route, LocalSearch>(_input,
+                                                parameters[rank],
+                                                rank,
+                                                depth,
+                                                search_time,
+                                                context);
         } catch (...) {
           const std::scoped_lock<std::mutex> lock(ep_m);
           ep = std::current_exception();
