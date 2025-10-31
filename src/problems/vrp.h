@@ -241,12 +241,10 @@ protected:
       };
 
     std::vector<std::jthread> solving_threads;
-    solving_threads.reserve(nb_threads);
+    solving_threads.reserve(nb_searches);
 
-    for (const auto& param_ranks : thread_ranks) {
-      if (!param_ranks.empty()) {
-        solving_threads.emplace_back(run_solving, param_ranks);
-      }
+    for (unsigned i = 0; i < nb_searches; ++i) {
+      solving_threads.emplace_back(run_solving, i);
     }
 
     for (auto& t : solving_threads) {
