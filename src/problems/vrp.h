@@ -213,6 +213,17 @@ protected:
     std::exception_ptr ep = nullptr;
     std::mutex ep_m;
 
+    const auto actual_nb_threads = std::min(nb_searches, nb_threads);
+
+    Timeout search_time;
+    if (timeout.has_value()) {
+      // Max number of solving per thread.
+      const auto dv = std::div(static_cast<long>(nb_searches),
+                               static_cast<long>(actual_nb_threads));
+      const unsigned max_solving_number = dv.quot + ((dv.rem == 0) ? 0 : 1);
+      search_time = timeout.value() / max_solving_number;
+    }
+
     auto run_solving =
       [&context, &parameters, &timeout, &ep, &ep_m, depth, this](
         const std::vector<std::size_t>& param_ranks) {
