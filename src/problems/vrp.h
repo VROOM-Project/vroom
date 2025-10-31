@@ -203,13 +203,6 @@ protected:
 
     SolvingContext<Route> context(_input, nb_searches);
 
-    // Split the heuristic parameters among threads.
-    std::vector<std::vector<std::size_t>>
-      thread_ranks(nb_threads, std::vector<std::size_t>());
-    for (std::size_t i = 0; i < nb_searches; ++i) {
-      thread_ranks[i % nb_threads].push_back(i);
-    }
-
     std::exception_ptr ep = nullptr;
     std::mutex ep_m;
 
