@@ -82,6 +82,7 @@ constexpr unsigned MAX_EXPLORATION_LEVEL = 5;
 
 constexpr unsigned DEFAULT_EXPLORATION_LEVEL = 5;
 constexpr unsigned DEFAULT_THREADS_NUMBER = 4;
+constexpr unsigned MAX_ROUTING_THREADS = 32;
 
 constexpr auto DEFAULT_MAX_TASKS = std::numeric_limits<size_t>::max();
 constexpr auto DEFAULT_MAX_TRAVEL_TIME = std::numeric_limits<Duration>::max();

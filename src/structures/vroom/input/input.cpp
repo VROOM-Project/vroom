@@ -9,6 +9,7 @@ All rights reserved (see LICENSE).
 
 #include <algorithm>
 #include <mutex>
+#include <semaphore>
 #include <thread>
 
 #if USE_LIBOSRM
@@ -1248,16 +1249,44 @@ Solution Input::solve(const unsigned nb_searches,
       .count();
 
   if (_geometry) {
-    for (auto& route : sol.routes) {
-      const auto& profile = route.profile;
-      auto rw = std::ranges::find_if(_routing_wrappers, [&](const auto& wr) {
-        return wr->profile == profile;
-      });
-      if (rw == _routing_wrappers.end()) {
-        throw InputException(
-          "Route geometry request with non-routable profile " + profile + ".");
+    std::vector<std::jthread> threads;
+    threads.reserve(sol.routes.size());
+    std::exception_ptr ep = nullptr;
+    std::mutex ep_m;
+    std::counting_semaphore<MAX_ROUTING_THREADS> semaphore(
+      std::min(MAX_ROUTING_THREADS, nb_thread));
+
+    auto run_routing = [this, &semaphore, &sol, &ep, &ep_m](std::size_t i) {
+      semaphore.acquire();
+      try {
+        auto& route = sol.routes[i];
+        const auto& profile = route.profile;
+        auto rw = std::ranges::find_if(_routing_wrappers, [&](const auto& wr) {
+          return wr->profile == profile;
+        });
+        if (rw == _routing_wrappers.end()) {
+          throw InputException(
+            "Route geometry request with non-routable profile " + profile +
+            ".");
+        }
+        (*rw)->add_geometry(route);
+      } catch (...) {
+        const std::scoped_lock<std::mutex> lock(ep_m);
+        ep = std::current_exception();
       }
-      (*rw)->add_geometry(route);
+      semaphore.release();
+    };
+
+    for (std::size_t i = 0; i < sol.routes.size(); ++i) {
+      threads.emplace_back(run_routing, i);
+    }
+
+    for (auto& t : threads) {
+      t.join();
+    }
+
+    if (ep != nullptr) {
+      std::rethrow_exception(ep);
     }
 
     _end_routing = std::chrono::high_resolution_clock::now();
