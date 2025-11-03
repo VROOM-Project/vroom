@@ -1245,7 +1245,8 @@ Solution Input::solve(const unsigned nb_searches,
     threads.reserve(sol.routes.size());
     std::exception_ptr ep = nullptr;
     std::mutex ep_m;
-    std::counting_semaphore<128> semaphore(nb_thread);
+    std::counting_semaphore<MAX_ROUTING_THREADS> semaphore(
+      std::min(MAX_ROUTING_THREADS, nb_thread));
 
     auto run_routing = [this, &semaphore, &sol, &ep, &ep_m](std::size_t i) {
       semaphore.acquire();
