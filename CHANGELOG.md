@@ -33,6 +33,7 @@
 - Update README to clarify high-level purpose and usage of the project (#1264)
 - Remove unused breaks_travel_margin members from TWRoute and associated code (#1295)
 - Run routing requests in parallel (#1218)
+- Refactor parallel solving (#1305)
 
 #### CI
 
