@@ -207,6 +207,7 @@ protected:
     std::mutex ep_m;
 
     const auto actual_nb_threads = std::min(nb_searches, nb_threads);
+    assert(actual_nb_threads <= 32);
     std::counting_semaphore<32> semaphore(actual_nb_threads);
 
     Timeout search_time;
