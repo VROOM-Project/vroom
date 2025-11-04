@@ -32,6 +32,7 @@
 - Remove `LOG_LS_OPERATORS` (#1263)
 - Update README to clarify high-level purpose and usage of the project (#1264)
 - Remove unused breaks_travel_margin members from TWRoute and associated code (#1295)
+- Run routing requests in parallel (#1218)
 
 #### CI
 
