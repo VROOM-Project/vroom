@@ -23,11 +23,6 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/input/input.h"
 #include "structures/vroom/solution/solution.h"
 
-#ifdef LOG_LS
-#include "algorithms/local_search/log_local_search.h"
-#include "utils/output_json.h"
-#endif
-
 namespace vroom {
 
 template <class Route>
@@ -57,10 +52,6 @@ template <class Route> struct SolvingContext {
 
   std::set<utils::SolutionIndicators> heuristic_indicators;
   std::mutex heuristic_indicators_m;
-
-#ifdef LOG_LS
-  std::vector<ls::log::Dump> ls_dumps;
-#endif
 
   SolvingContext(const Input& input, unsigned nb_searches)
     : init_sol(set_init_sol<Route>(input, init_assigned)),
@@ -97,12 +88,6 @@ void run_single_search(const Input& input,
                        const Timeout& search_time,
                        SolvingContext<Route>& context) {
   const auto heuristic_start = utils::now();
-
-#ifdef LOG_LS
-  context.ls_dumps[rank].steps.emplace_back(heuristic_start,
-                                            ls::log::EVENT::START,
-                                            OperatorName::MAX);
-#endif
 
   Eval h_eval;
   switch (p.heuristic) {
@@ -156,9 +141,6 @@ void run_single_search(const Input& input,
 
     if (h_other_eval < h_eval) {
       context.solutions[rank] = std::move(other_sol);
-#ifdef LOG_LS
-      context.ls_dumps[rank].heuristic_parameters.sort = SORT::COST;
-#endif
     }
   }
 
@@ -167,15 +149,6 @@ void run_single_search(const Input& input,
     utils::SolutionIndicators(input, context.solutions[rank]);
 
   const auto heuristic_end = utils::now();
-
-#ifdef LOG_LS
-  context.ls_dumps[rank]
-    .steps.emplace_back(heuristic_end,
-                        ls::log::EVENT::HEURISTIC,
-                        OperatorName::MAX,
-                        context.sol_indicators[rank],
-                        utils::format_solution(input, context.solutions[rank]));
-#endif
 
   if (context.heuristic_solution_already_found(rank)) {
     // Duplicate heuristic solution, so skip local search.
@@ -202,15 +175,6 @@ void run_single_search(const Input& input,
 
   // Store solution indicators.
   context.sol_indicators[rank] = ls.indicators();
-
-#ifdef LOG_LS
-  auto ls_steps = ls.get_steps();
-
-  assert(context.ls_dumps[rank].steps.size() == 2);
-  context.ls_dumps[rank].steps.reserve(2 + ls_steps.size());
-
-  std::ranges::move(ls_steps, std::back_inserter(context.ls_dumps[rank].steps));
-#endif
 }
 
 class VRP {
@@ -239,51 +203,51 @@ protected:
 
     SolvingContext<Route> context(_input, nb_searches);
 
-    // Split the heuristic parameters among threads.
-    std::vector<std::vector<std::size_t>>
-      thread_ranks(nb_threads, std::vector<std::size_t>());
-    for (std::size_t i = 0; i < nb_searches; ++i) {
-      thread_ranks[i % nb_threads].push_back(i);
-
-#ifdef LOG_LS
-      context.ls_dumps.push_back({parameters[i], {}});
-#endif
-    }
-
     std::exception_ptr ep = nullptr;
     std::mutex ep_m;
 
-    auto run_solving =
-      [&context, &parameters, &timeout, &ep, &ep_m, depth, this](
-        const std::vector<std::size_t>& param_ranks) {
-        try {
-          // Decide time allocated for each search.
-          Timeout search_time;
-          if (timeout.has_value()) {
-            search_time = timeout.value() / param_ranks.size();
-          }
+    const auto actual_nb_threads = std::min(nb_searches, nb_threads);
+    assert(actual_nb_threads <= 32);
+    std::counting_semaphore<32> semaphore(actual_nb_threads);
 
-          for (auto rank : param_ranks) {
-            run_single_search<Route, LocalSearch>(_input,
-                                                  parameters[rank],
-                                                  rank,
-                                                  depth,
-                                                  search_time,
-                                                  context);
-          }
-        } catch (...) {
-          const std::scoped_lock<std::mutex> lock(ep_m);
-          ep = std::current_exception();
-        }
-      };
+    Timeout search_time;
+    if (timeout.has_value()) {
+      // Max number of solving per thread.
+      const auto dv = std::div(static_cast<long>(nb_searches),
+                               static_cast<long>(actual_nb_threads));
+      const unsigned max_solving_number = dv.quot + ((dv.rem == 0) ? 0 : 1);
+      search_time = timeout.value() / max_solving_number;
+    }
+
+    auto run_solving = [&context,
+                        &semaphore,
+                        &search_time,
+                        &parameters,
+                        &timeout,
+                        &ep,
+                        &ep_m,
+                        depth,
+                        this](const unsigned rank) {
+      semaphore.acquire();
+      try {
+        run_single_search<Route, LocalSearch>(_input,
+                                              parameters[rank],
+                                              rank,
+                                              depth,
+                                              search_time,
+                                              context);
+      } catch (...) {
+        const std::scoped_lock<std::mutex> lock(ep_m);
+        ep = std::current_exception();
+      }
+      semaphore.release();
+    };
 
     std::vector<std::jthread> solving_threads;
-    solving_threads.reserve(nb_threads);
+    solving_threads.reserve(nb_searches);
 
-    for (const auto& param_ranks : thread_ranks) {
-      if (!param_ranks.empty()) {
-        solving_threads.emplace_back(run_solving, param_ranks);
-      }
+    for (unsigned i = 0; i < nb_searches; ++i) {
+      solving_threads.emplace_back(run_solving, i);
     }
 
     for (auto& t : solving_threads) {
@@ -293,10 +257,6 @@ protected:
     if (ep != nullptr) {
       std::rethrow_exception(ep);
     }
-
-#ifdef LOG_LS
-    io::write_LS_logs_to_json(context.ls_dumps);
-#endif
 
     auto best_indic = std::min_element(context.sol_indicators.cbegin(),
                                        context.sol_indicators.cend());

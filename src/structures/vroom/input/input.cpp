@@ -9,6 +9,7 @@ All rights reserved (see LICENSE).
 
 #include <algorithm>
 #include <mutex>
+#include <semaphore>
 #include <thread>
 
 #if USE_LIBOSRM
@@ -382,6 +383,9 @@ void Input::add_vehicle(const Vehicle& vehicle) {
   }
 
   _profiles.insert(current_v.profile);
+  if (current_v.costs.per_km != 0) {
+    _profiles_requiring_distances.insert(current_v.profile);
+  }
 
   if (auto search = _max_cost_per_hour.find(current_v.profile);
       search == _max_cost_per_hour.end()) {
@@ -974,9 +978,11 @@ void Input::init_missing_matrices(const std::string& profile) {
     // Custom durations matrix defined.
     if (!_distances_matrices.contains(profile)) {
       // No custom distances.
-      if (_geometry) {
-        // Get distances from routing engine later on since routing
-        // is explicitly requested.
+      if (_geometry || _profiles_requiring_distances.contains(profile)) {
+        // Get distances from routing engine later on since routing is
+        // explicitly requested, or distances should be used in
+        // optimization objective.
+        create_routing_wrapper = true;
         _distances_matrices.try_emplace(profile);
       } else {
         // Routing-less optimization with no distances involved,
@@ -1017,15 +1023,18 @@ void Input::set_matrices(unsigned nb_thread, bool sparse_filling) {
       !_has_custom_location_index) {
     throw InputException("Missing location index.");
   }
-  if ((_durations_matrices.empty() && _costs_matrices.empty()) &&
+  if ((_durations_matrices.empty() && _distances_matrices.empty() &&
+       _costs_matrices.empty()) &&
       _has_custom_location_index) {
     throw InputException(
       "Unexpected location index while no custom matrices provided.");
   }
 
   // Report distances either if geometry is explicitly requested, or
-  // if distance matrices are manually provided.
-  _report_distances = _geometry || !_distances_matrices.empty();
+  // if distance matrices are manually provided or required in
+  // optimization objective.
+  _report_distances = _geometry || !_distances_matrices.empty() ||
+                      !_profiles_requiring_distances.empty();
 
   if (!_distances_matrices.empty()) {
     // Distances matrices should be either always or never provided.
@@ -1257,16 +1266,44 @@ Solution Input::solve(const unsigned nb_searches,
       .count();
 
   if (_geometry) {
-    for (auto& route : sol.routes) {
-      const auto& profile = route.profile;
-      auto rw = std::ranges::find_if(_routing_wrappers, [&](const auto& wr) {
-        return wr->profile == profile;
-      });
-      if (rw == _routing_wrappers.end()) {
-        throw InputException(
-          "Route geometry request with non-routable profile " + profile + ".");
+    std::vector<std::jthread> threads;
+    threads.reserve(sol.routes.size());
+    std::exception_ptr ep = nullptr;
+    std::mutex ep_m;
+    std::counting_semaphore<MAX_ROUTING_THREADS> semaphore(
+      std::min(MAX_ROUTING_THREADS, nb_thread));
+
+    auto run_routing = [this, &semaphore, &sol, &ep, &ep_m](std::size_t i) {
+      semaphore.acquire();
+      try {
+        auto& route = sol.routes[i];
+        const auto& profile = route.profile;
+        auto rw = std::ranges::find_if(_routing_wrappers, [&](const auto& wr) {
+          return wr->profile == profile;
+        });
+        if (rw == _routing_wrappers.end()) {
+          throw InputException(
+            "Route geometry request with non-routable profile " + profile +
+            ".");
+        }
+        (*rw)->add_geometry(route);
+      } catch (...) {
+        const std::scoped_lock<std::mutex> lock(ep_m);
+        ep = std::current_exception();
       }
-      (*rw)->add_geometry(route);
+      semaphore.release();
+    };
+
+    for (std::size_t i = 0; i < sol.routes.size(); ++i) {
+      threads.emplace_back(run_routing, i);
+    }
+
+    for (auto& t : threads) {
+      t.join();
+    }
+
+    if (ep != nullptr) {
+      std::rethrow_exception(ep);
     }
 
     _end_routing = std::chrono::high_resolution_clock::now();
