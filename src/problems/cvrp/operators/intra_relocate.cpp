@@ -63,7 +63,7 @@ void IntraRelocate::compute_gain() {
   }
   stored_gain =
     _sol_state.node_gains[s_vehicle][s_rank] -
-    utils::addition_cost(_input, s_route[s_rank], v_target, t_route, new_rank);
+    utils::addition_eval(_input, s_route[s_rank], v_target, t_route, new_rank);
 
   gain_computed = true;
 }

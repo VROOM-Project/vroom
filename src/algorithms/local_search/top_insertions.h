@@ -15,7 +15,7 @@ All rights reserved (see LICENSE).
 namespace vroom::ls {
 
 struct InsertionOption {
-  Eval cost;
+  Eval eval;
   Index rank;
 };
 

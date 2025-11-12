@@ -26,14 +26,28 @@ public:
   // Store unassigned jobs.
   std::unordered_set<Index> unassigned;
 
-  // fwd_costs[v][new_v][i] stores the total cost from job at rank 0
+  // fwd_evals[v][new_v][i] stores the total cost from job at rank 0
   // to job at rank i in the route for vehicle v, from the point of
-  // view of a vehicle new_v. bwd_costs[v][new_v][i] stores the total
+  // view of a vehicle new_v. bwd_evals[v][new_v][i] stores the total
   // cost from job at rank i to job at rank 0 (i.e. when *reversing*
   // all edges) in the route for vehicle v, from the point of view of
   // a vehicle new_v.
-  std::vector<std::vector<std::vector<Eval>>> fwd_costs;
-  std::vector<std::vector<std::vector<Eval>>> bwd_costs;
+  std::vector<std::vector<std::vector<Eval>>> fwd_evals;
+  std::vector<std::vector<std::vector<Eval>>> bwd_evals;
+
+  // service_evals[v][new_v][i] stores the total service cost from job
+  // at rank 0 to job at rank i (included) in the route for vehicle v,
+  // from the point of view of a vehicle new_v.
+  std::vector<std::vector<std::vector<Eval>>> service_evals;
+
+  // fwd_setup_evals[v][new_v][i] stores the total setup cost from job
+  // at rank 0 to job at rank i (included) in the route for vehicle v,
+  // from the point of view of vehicle new_v.
+  // bwd_setup_evals[v][new_v][i] stores the total setup cost from
+  // last job to job at rank i included, i.e. when *reversing* route
+  // for vehicle v, from the point of view of a vehicle new_v.
+  std::vector<std::vector<std::vector<Eval>>> fwd_setup_evals;
+  std::vector<std::vector<std::vector<Eval>>> bwd_setup_evals;
 
   // fwd_skill_rank[v1][v2] stores the maximum rank r for a step in
   // route for vehicle v1 such that v2 can handle all jobs from step 0
@@ -55,23 +69,19 @@ public:
   // appear before and after job at rank i in route for vehicle v
   // (handling cases where those edges are absent or linked with
   // start/end of vehicle). node_gains[v][i] stores potential gain
-  // when removing job at rank i in route for vehicle
-  // v. node_candidates[v] is the rank that yields the biggest such
-  // gain for vehicle v.
+  // when removing job at rank i in route for vehicle v (including
+  // both gains related to edge removal and task duration).
   std::vector<std::vector<Eval>> edge_evals_around_node;
   std::vector<std::vector<Eval>> node_gains;
-  std::vector<Index> node_candidates;
 
   // edge_evals_around_edge[v][i] evaluates the sum of edges that
   // appear before and after edge starting at rank i in route for
   // vehicle v (handling cases where those edges are absent or linked
   // with start/end of vehicle). edge_gains[v][i] stores potential
   // gain when removing edge starting at rank i in route for vehicle
-  // v. edge_candidates[v] is the rank that yields the biggest such
-  // gain for vehicle v.
+  // v.
   std::vector<std::vector<Eval>> edge_evals_around_edge;
   std::vector<std::vector<Eval>> edge_gains;
-  std::vector<Index> edge_candidates;
 
   // pd_gains[v][i] stores potential gain when removing pickup at rank
   // i in route for vehicle v along with it's associated delivery.
@@ -127,35 +137,39 @@ public:
 
   explicit SolutionState(const Input& input);
 
-  template <class Route> void setup(const Route& r, Index v);
+  void setup(const RawRoute& r);
 
-  template <class Solution> void setup(const Solution& sol);
+  template <class Route> void setup(const std::vector<Route>& sol);
 
-  void update_costs(const std::vector<Index>& route, Index v);
+  void update_costs(const RawRoute& raw_route);
 
-  void update_skills(const std::vector<Index>& route, Index v1);
+  void update_skills(const RawRoute& raw_route);
 
-  void update_priorities(const std::vector<Index>& route, Index v);
+  void update_priorities(const RawRoute& raw_route);
 
-  void set_node_gains(const std::vector<Index>& route, Index v);
+  void set_node_gains(const RawRoute& raw_route);
 
-  void set_edge_gains(const std::vector<Index>& route, Index v);
+  void set_edge_gains(const RawRoute& raw_route);
 
-  void set_pd_gains(const std::vector<Index>& route, Index v);
+  // Expects to have valid values in node_gains,
+  // matching_delivery_rank and various *_evals (for
+  // utils::removal_gain), so should be run after set_node_gains,
+  // set_pd_matching_ranks and update_costs.
+  void set_pd_gains(const RawRoute& raw_route);
 
-  void set_pd_matching_ranks(const std::vector<Index>& route, Index v);
+  void set_pd_matching_ranks(const RawRoute& raw_route);
 
   void update_cheapest_job_rank_in_routes(const std::vector<Index>& route_1,
                                           const std::vector<Index>& route_2,
                                           Index v1,
                                           Index v2);
 
-  void set_insertion_ranks(const RawRoute& r, Index v);
-  void set_insertion_ranks(const TWRoute& r, Index v);
+  void set_insertion_ranks(const RawRoute& r);
+  void set_insertion_ranks(const TWRoute& r);
 
-  void update_route_eval(const std::vector<Index>& route, Index v);
+  void update_route_eval(const RawRoute& raw_route);
 
-  void update_route_bbox(const std::vector<Index>& route, Index v);
+  void update_route_bbox(const RawRoute& raw_route);
 };
 
 } // namespace vroom::utils
