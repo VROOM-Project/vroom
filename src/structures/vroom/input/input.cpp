@@ -1200,20 +1200,17 @@ std::unique_ptr<VRP> Input::get_problem() const {
 
 Solution Input::solve(const unsigned exploration_level,
                       const unsigned nb_thread,
-                      const Timeout& timeout,
-                      const std::vector<HeuristicParameters>& h_param) {
+                      const Timeout& timeout) {
   return solve(utils::get_nb_searches(exploration_level),
                utils::get_depth(exploration_level),
                nb_thread,
-               timeout,
-               h_param);
+               timeout);
 }
 
 Solution Input::solve(const unsigned nb_searches,
                       const unsigned depth,
                       const unsigned nb_thread,
-                      const Timeout& timeout,
-                      const std::vector<HeuristicParameters>& h_param) {
+                      const Timeout& timeout) {
   run_basic_checks();
 
   if (_has_initial_routes) {
@@ -1253,8 +1250,7 @@ Solution Input::solve(const unsigned nb_searches,
   }
 
   // Solve.
-  auto sol =
-    instance->solve(nb_searches, depth, nb_thread, solve_time, h_param);
+  auto sol = instance->solve(nb_searches, depth, nb_thread, solve_time);
 
   // Update timing info.
   sol.summary.computing_times.loading = loading.count();

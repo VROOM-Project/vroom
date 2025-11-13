@@ -31,7 +31,6 @@ int main(int argc, char** argv) {
   std::string router_arg;
   std::string limit_arg;
   std::string output_file;
-  std::vector<std::string> heuristic_params_arg;
   unsigned exploration_level;
 
   cxxopts::Options options("vroom",
@@ -89,9 +88,6 @@ int main(int argc, char** argv) {
   std::optional<unsigned> debug_nb_searches;
 
   options.add_options("debug_group")
-    ("e,heuristic-param",
-     "Heuristic parameter",
-     cxxopts::value<std::vector<std::string>>(heuristic_params_arg))
     ("f,apply-tsp-fix",
      "apply experimental TSPFix local search operator",
      cxxopts::value<bool>(cl_args.apply_TSPFix)->default_value("false"))
@@ -188,21 +184,6 @@ int main(int argc, char** argv) {
     cl_args.router = vroom::ROUTER::OSRM;
   }
 
-  try {
-    // Force heuristic parameters from the command-line, useful for
-    // debugging.
-    std::ranges::transform(heuristic_params_arg,
-                           std::back_inserter(cl_args.h_params),
-                           [](const auto& str_param) {
-                             return vroom::utils::str_to_heuristic_param(
-                               str_param);
-                           });
-  } catch (const vroom::Exception& e) {
-    std::cerr << "[Error] " << e.message << std::endl;
-    vroom::io::write_to_json(e, cl_args.output_file);
-    exit(e.error_code);
-  }
-
   // Get input problem from first input file, then positional arg,
   // then stdin.
   if (!cl_args.input_file.empty()) {
@@ -238,8 +219,7 @@ int main(int argc, char** argv) {
                                   : problem_instance.solve(cl_args.nb_searches,
                                                            cl_args.depth,
                                                            cl_args.nb_threads,
-                                                           cl_args.timeout,
-                                                           cl_args.h_params);
+                                                           cl_args.timeout);
 
     // Write solution.
     vroom::io::write_to_json(sol,

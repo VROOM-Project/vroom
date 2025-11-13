@@ -23,19 +23,18 @@ using Servers =
 
 struct CLArgs {
   // Listing command-line options.
-  Servers servers;                           // -a and -p
-  bool check;                                // -c
-  std::vector<HeuristicParameters> h_params; // -e
-  bool apply_TSPFix;                         // -f
-  bool geometry;                             // -g
-  std::string input_file;                    // -i
-  Timeout timeout;                           // -l
-  std::string output_file;                   // -o
-  ROUTER router;                             // -r
-  std::string input;                         // cl arg
-  unsigned nb_threads;                       // -t
-  unsigned nb_searches;                      // derived from -x
-  unsigned depth;                            // derived from -x
+  Servers servers;         // -a and -p
+  bool check;              // -c
+  bool apply_TSPFix;       // -f
+  bool geometry;           // -g
+  std::string input_file;  // -i
+  Timeout timeout;         // -l
+  std::string output_file; // -o
+  ROUTER router;           // -r
+  std::string input;       // cl arg
+  unsigned nb_threads;     // -t
+  unsigned nb_searches;    // derived from -x
+  unsigned depth;          // derived from -x
 
   void set_exploration_level(unsigned exploration_level);
 };
