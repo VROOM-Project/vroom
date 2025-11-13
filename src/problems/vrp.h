@@ -188,13 +188,9 @@ protected:
     const unsigned depth,
     const unsigned nb_threads,
     const Timeout& timeout,
-    const std::vector<HeuristicParameters>& h_param,
     const std::vector<HeuristicParameters>& homogeneous_parameters,
     const std::vector<HeuristicParameters>& heterogeneous_parameters) const {
-    // Use vector of parameters when passed for debugging, else use
-    // predefined parameter set.
-    const auto& parameters = (!h_param.empty()) ? h_param
-                             : (_input.has_homogeneous_locations())
+    const auto& parameters = (_input.has_homogeneous_locations())
                                ? homogeneous_parameters
                                : heterogeneous_parameters;
     assert(nb_searches != 0);
@@ -273,12 +269,10 @@ public:
 
   virtual ~VRP();
 
-  virtual Solution
-  solve(unsigned nb_searches,
-        unsigned depth,
-        unsigned nb_threads,
-        const Timeout& timeout,
-        const std::vector<HeuristicParameters>& h_param) const = 0;
+  virtual Solution solve(unsigned nb_searches,
+                         unsigned depth,
+                         unsigned nb_threads,
+                         const Timeout& timeout) const = 0;
 };
 
 } // namespace vroom

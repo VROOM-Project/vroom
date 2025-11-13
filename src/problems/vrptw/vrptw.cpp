@@ -143,13 +143,11 @@ VRPTW::VRPTW(const Input& input) : VRP(input) {
 Solution VRPTW::solve(const unsigned nb_searches,
                       const unsigned depth,
                       const unsigned nb_threads,
-                      const Timeout& timeout,
-                      const std::vector<HeuristicParameters>& h_param) const {
+                      const Timeout& timeout) const {
   return VRP::solve<TWRoute, vrptw::LocalSearch>(nb_searches,
                                                  depth,
                                                  nb_threads,
                                                  timeout,
-                                                 h_param,
                                                  homogeneous_parameters,
                                                  heterogeneous_parameters);
 }

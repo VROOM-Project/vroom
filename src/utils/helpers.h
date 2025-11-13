@@ -70,12 +70,6 @@ inline unsigned get_nb_searches(unsigned exploration_level) {
   return nb_searches;
 }
 
-INIT get_init(std::string_view s);
-
-SORT get_sort(std::string_view s);
-
-HeuristicParameters str_to_heuristic_param(const std::string& s);
-
 // Evaluate adding job with rank job_rank in given route at given rank
 // for vehicle v.
 inline Eval addition_eval(const Input& input,
