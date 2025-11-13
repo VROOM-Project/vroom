@@ -84,19 +84,10 @@ int main(int argc, char** argv) {
      cxxopts::value<std::string>(cl_args.input));
 
   // we don't want to print debug args on --help
-  std::optional<unsigned> debug_depth;
-  std::optional<unsigned> debug_nb_searches;
-
   options.add_options("debug_group")
     ("f,apply-tsp-fix",
      "apply experimental TSPFix local search operator",
-     cxxopts::value<bool>(cl_args.apply_TSPFix)->default_value("false"))
-    ("d,depth",
-     "search depth",
-     cxxopts::value<std::optional<unsigned>>(debug_depth))
-    ("s,nb-searches",
-     "number of searches to perform in parallel",
-     cxxopts::value<std::optional<unsigned>>(debug_nb_searches));
+     cxxopts::value<bool>(cl_args.apply_TSPFix)->default_value("false"));
 
   // clang-format on
   try {
@@ -160,12 +151,6 @@ int main(int argc, char** argv) {
   }
   exploration_level = std::min(exploration_level, vroom::MAX_EXPLORATION_LEVEL);
   cl_args.set_exploration_level(exploration_level);
-  if (debug_depth) {
-    cl_args.depth = debug_depth.value();
-  }
-  if (debug_nb_searches) {
-    cl_args.nb_searches = debug_nb_searches.value();
-  }
 
   // Determine routing engine (defaults to ROUTER::OSRM).
   if (router_arg == "libosrm") {
