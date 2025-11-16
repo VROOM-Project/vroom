@@ -22,12 +22,10 @@ private:
 public:
   explicit VRPTW(const Input& input);
 
-  Solution
-  solve(unsigned nb_searches,
-        unsigned depth,
-        unsigned nb_threads,
-        const Timeout& timeout,
-        const std::vector<HeuristicParameters>& h_param) const override;
+  Solution solve(unsigned nb_searches,
+                 unsigned depth,
+                 unsigned nb_threads,
+                 const Timeout& timeout) const override;
 };
 
 } // namespace vroom
