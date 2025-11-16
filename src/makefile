@@ -6,7 +6,7 @@
 # Variables.
 CXX ?= g++
 USE_ROUTING ?= true
-CXXFLAGS = -MMD -MP -I. -std=c++20 -Wextra -Wpedantic -Wall -O3 -DASIO_STANDALONE -DUSE_ROUTING=$(USE_ROUTING)
+CXXFLAGS = -MMD -MP -I. -std=c++20 -Wextra -Wpedantic -Wall -O3 -DASIO_STANDALONE -DUSE_ROUTING=$(USE_ROUTING) -DNDEBUG
 LDLIBS = -lpthread
 
 # Using all cpp files in current directory.
