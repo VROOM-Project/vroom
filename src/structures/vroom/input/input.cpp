@@ -1355,6 +1355,7 @@ Solution Input::check(unsigned nb_thread) {
       auto search = route_rank_to_v_rank.find(i);
       assert(search != route_rank_to_v_rank.end());
       const auto v_rank = search->second;
+      assert(v_rank < _vehicles_geometry.size());
       route.geometry = std::move(_vehicles_geometry[v_rank]);
     }
 
