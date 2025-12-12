@@ -553,9 +553,8 @@ OrderChoice TWRoute::order_choice(const Input& input,
   }
 
   if (check_max_load && j.type == JOB_TYPE::SINGLE &&
-      (!b.is_valid_for_load(current_load + j.pickup - j.delivery) ||
-       !(j.pickup <= bwd_smallest_breaks_load_margin[v.break_rank(b.id)]))) {
-    // Break won't fit right after job for load reason.
+      !(j.pickup <= bwd_smallest_breaks_load_margin[v.break_rank(b.id)])) {
+    // Break won't fit after job for load reason.
     oc.add_break_first = b.is_valid_for_load(current_load);
     return oc;
   }
