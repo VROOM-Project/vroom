@@ -852,14 +852,27 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
                                    ? j.services[v_type]
                                    : j.setups[v_type] + j.services[v_type];
 
-    auto oc = order_choice(input,
-                           *current_job,
-                           job_action_time,
-                           b,
-                           current,
-                           next,
-                           current_load,
-                           check_max_load);
+    // Use next info after insertion range for ordering decision,
+    // except if there are still jobs to insert after j, in which case
+    // we might have tighter constraints.
+    auto tighter_next = next;
+    if (current_job + 1 < last_job) {
+      const auto& next_j = input.jobs[*(current_job + 1)];
+
+      assert(next.travel <= next.latest);
+      tighter_next.latest =
+        std::min(next.latest - next.travel, next_j.tws.back().end);
+      tighter_next.travel = v.duration(j.index(), next_j.index());
+    }
+
+    const auto oc = order_choice(input,
+                                 *current_job,
+                                 job_action_time,
+                                 b,
+                                 current,
+                                 tighter_next,
+                                 current_load,
+                                 check_max_load);
 
     if (!oc.add_job_first && !oc.add_break_first) {
       // Infeasible insertion.
@@ -1226,13 +1239,26 @@ void TWRoute::replace(const Input& input,
                                    ? j.services[v_type]
                                    : j.setups[v_type] + j.services[v_type];
 
-    auto oc = order_choice(input,
-                           *current_job,
-                           job_action_time,
-                           b,
-                           current,
-                           next,
-                           current_load);
+    // Use next info after insertion range for ordering decision,
+    // except if there are still jobs to insert after j, in which case
+    // we might have tighter constraints.
+    auto tighter_next = next;
+    if (current_job + 1 < last_job) {
+      const auto& next_j = input.jobs[*(current_job + 1)];
+
+      assert(next.travel <= next.latest);
+      tighter_next.latest =
+        std::min(next.latest - next.travel, next_j.tws.back().end);
+      tighter_next.travel = v.duration(j.index(), next_j.index());
+    }
+
+    const auto oc = order_choice(input,
+                                 *current_job,
+                                 job_action_time,
+                                 b,
+                                 current,
+                                 tighter_next,
+                                 current_load);
 
     assert(oc.add_job_first xor oc.add_break_first);
     if (oc.add_break_first) {
