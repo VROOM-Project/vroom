@@ -68,6 +68,7 @@
 - Wrong evaluation in `ReverseTwoOpt` (#1271)
 - Misleading error with custom distance matrix (#1281)
 - Wrong distance-based optimization with only custom durations (#1298)
+- Break positioning heuristic shortcoming (#1251)
 
 #### Internals
 
