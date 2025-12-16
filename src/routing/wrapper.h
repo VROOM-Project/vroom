@@ -52,26 +52,20 @@ public:
           route_locs.reserve(v.steps.size());
 
           bool has_job_steps = false;
+
+          if (v.has_start()) {
+            route_locs.push_back(v.start.value());
+          }
+
           for (const auto& step : v.steps) {
-            switch (step.type) {
-              using enum STEP_TYPE;
-            case START:
-              if (v.has_start()) {
-                route_locs.push_back(v.start.value());
-              }
-              break;
-            case END:
-              if (v.has_end()) {
-                route_locs.push_back(v.end.value());
-              }
-              break;
-            case BREAK:
-              break;
-            case JOB:
+            if (step.type == STEP_TYPE::JOB) {
               has_job_steps = true;
               route_locs.push_back(jobs[step.rank].location);
-              break;
             }
+          }
+
+          if (v.has_end()) {
+            route_locs.push_back(v.end.value());
           }
 
           if (has_job_steps) {
