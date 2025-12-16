@@ -1081,7 +1081,7 @@ void Input::set_matrices(unsigned nb_thread, bool sparse_filling) {
         assert(!define_durations || define_distances);
 
         if (define_durations || define_distances) {
-          if (_locations.size() == 1) {
+          if (_locations.size() == 1 && !sparse_filling) {
             durations_m->second = Matrix<UserDuration>(1);
             distances_m->second = Matrix<UserDistance>(1);
           } else {
