@@ -402,7 +402,7 @@ void Input::add_vehicle(const Vehicle& vehicle) {
     current_v.type = search->second;
   } else {
     const Index rank = _vehicle_types.size();
-    const auto [it, insertion_ok] =
+    [[maybe_unused]] const auto [it, insertion_ok] =
       _type_to_rank_in_vehicle_types.try_emplace(type, rank);
     assert(insertion_ok);
     _vehicle_types.push_back(type);
@@ -1081,7 +1081,7 @@ void Input::set_matrices(unsigned nb_thread, bool sparse_filling) {
         assert(!define_durations || define_distances);
 
         if (define_durations || define_distances) {
-          if (_locations.size() == 1) {
+          if (_locations.size() == 1 && !sparse_filling) {
             durations_m->second = Matrix<UserDuration>(1);
             distances_m->second = Matrix<UserDistance>(1);
           } else {
@@ -1355,6 +1355,7 @@ Solution Input::check(unsigned nb_thread) {
       auto search = route_rank_to_v_rank.find(i);
       assert(search != route_rank_to_v_rank.end());
       const auto v_rank = search->second;
+      assert(v_rank < _vehicles_geometry.size());
       route.geometry = std::move(_vehicles_geometry[v_rank]);
     }
 
