@@ -93,10 +93,23 @@ void Input::add_routing_wrapper(const std::string& profile) {
       throw InputException("Invalid profile: " + profile + ".");
     }
     routing_wrapper =
-      std::make_unique<routing::ValhallaWrapper>(profile, search->second);
+      std::make_unique<routing::ValhallaWrapper>(
+        profile,
+        search->second,
+        routing_options_for_profile(profile));
   } break;
   }
 #endif
+}
+
+const std::string&
+Input::routing_options_for_profile(const std::string& profile) const {
+  static const std::string empty;
+  if (auto search = _routing_options_by_profile.find(profile);
+      search != _routing_options_by_profile.end()) {
+    return search->second;
+  }
+  return empty;
 }
 
 void Input::check_amount_size(const Amount& amount) {
@@ -431,6 +444,15 @@ void Input::set_costs_matrix(const std::string& profile, Matrix<UserCost>&& m) {
     throw InputException("Empty costs matrix for " + profile + " profile.");
   }
   _costs_matrices.insert_or_assign(profile, std::move(m));
+}
+
+void Input::set_routing_options(const std::string& profile,
+                                std::string routing_options) {
+  if (routing_options.empty()) {
+    return;
+  }
+  _routing_options_by_profile.insert_or_assign(profile,
+                                               std::move(routing_options));
 }
 
 bool Input::is_used_several_times(const Location& location) const {

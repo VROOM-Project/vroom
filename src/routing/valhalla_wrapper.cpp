@@ -19,14 +19,16 @@ constexpr unsigned polyline_precision = 5;
 constexpr unsigned valhalla_polyline_precision = 6;
 
 ValhallaWrapper::ValhallaWrapper(const std::string& profile,
-                                 const Server& server)
+                 const Server& server,
+                 std::string extra_options)
   : HttpWrapper(profile,
-                server,
-                "sources_to_targets",
-                "sources_to_targets",
-                "sources_to_targets",
-                "route",
-                R"("directions_type":"none")") {
+        server,
+        "sources_to_targets",
+        "sources_to_targets",
+        "sources_to_targets",
+        "route",
+        R"("directions_type":"none")"),
+  _extra_options(std::move(extra_options)) {
 }
 
 std::string ValhallaWrapper::get_matrix_query(
@@ -45,7 +47,11 @@ std::string ValhallaWrapper::get_matrix_query(
 
   query += "{\"sources\":[" + all_locations;
   query += "],\"targets\":[" + all_locations;
-  query += R"(],"costing":")" + profile + "\"}";
+  query += R"(],"costing":")" + profile + "\"";
+  if (!_extra_options.empty()) {
+    query += "," + _extra_options;
+  }
+  query += "}";
 
   query += " HTTP/1.1\r\n";
   query += "Host: " + _server.host + "\r\n";
@@ -70,6 +76,9 @@ ValhallaWrapper::get_route_query(const std::vector<Location>& locations) const {
 
   query += R"(],"costing":")" + profile + "\"";
   query += "," + _routing_args;
+  if (!_extra_options.empty()) {
+    query += "," + _extra_options;
+  }
   query += "}";
 
   query += " HTTP/1.1\r\n";
