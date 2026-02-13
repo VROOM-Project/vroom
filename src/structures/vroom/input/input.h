@@ -70,6 +70,8 @@ private:
     _costs_matrices;
   std::unordered_map<std::string, Cost, StringHash, std::equal_to<>>
     _max_cost_per_hour;
+  std::unordered_map<std::string, std::string, StringHash, std::equal_to<>>
+    _routing_options_by_profile;
   Cost _cost_upper_bound{0};
   std::vector<Location> _locations;
   std::unordered_map<Location, Index> _locations_to_index;
@@ -122,6 +124,8 @@ private:
   void set_matrices(unsigned nb_thread, bool sparse_filling = false);
 
   void add_routing_wrapper(const std::string& profile);
+  const std::string&
+  routing_options_for_profile(const std::string& profile) const;
 
 public:
   std::vector<Job> jobs;
@@ -159,6 +163,9 @@ public:
                             Matrix<UserDistance>&& m);
 
   void set_costs_matrix(const std::string& profile, Matrix<UserCost>&& m);
+
+  void set_routing_options(const std::string& profile,
+                           std::string routing_options);
 
   const Amount& zero_amount() const {
     return _zero;

@@ -48,6 +48,7 @@ The problem description is read from standard input or from a file
 | [`shipments`](#shipments) |  array of `shipment` objects describing pickup and delivery tasks |
 | [`vehicles`](#vehicles) |  array of `vehicle` objects describing the available vehicles |
 | [[`matrices`](#matrices)] | optional description of per-profile custom matrices |
+| [[`routing_options`](#routing-options)] | optional per-profile routing engine options (currently only works with Valhalla routing engine) |
 | ~~[`matrix`]~~ | optional two-dimensional array describing a custom matrix |
 
 ## Jobs
@@ -338,6 +339,30 @@ If custom matrices are provided for all required vehicle `profile`
 values, the `location`, `start` and `end` properties become
 optional. Instead of the coordinates, row and column indications
 provided with the `*_index` keys are used during optimization.
+
+## Routing options (Valhalla routing only)
+
+`routing_options` is an optional object keyed by profile name. Each value is a
+JSON object of extra routing engine parameters that will be merged into the
+request payload for that profile. For Valhalla, this can be used to pass
+`costing_options` and other request options.
+
+Reserved keys `costing`, `locations`, `sources`, and `targets` are rejected.
+
+Example:
+
+```json
+"routing_options": {
+  "auto": {
+    "costing_options": {
+      "auto": {
+        "use_tolls": 0.2,
+        "use_highways": 0.6
+      }
+    }
+  }
+}
+```
 
 # Output
 
