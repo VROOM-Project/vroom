@@ -81,8 +81,10 @@ int main(int argc, char** argv) {
      cxxopts::value<unsigned>(exploration_level)->default_value(std::to_string(vroom::DEFAULT_EXPLORATION_LEVEL)))
     ("stdin",
      "optional input positional arg",
-     cxxopts::value<std::string>(cl_args.input));
-
+     cxxopts::value<std::string>(cl_args.input))
+    ("s,osrm-snapping-radius",
+     "set the OSRM snapping radius, in meters",
+     cxxopts::value<unsigned>(cl_args.osrm_snapping_radius)->default_value(vroom::DEFAULT_OSRM_SNAPPING_RADIUS));
   // we don't want to print debug args on --help
   options.add_options("debug_group")
     ("f,apply-tsp-fix",
@@ -149,6 +151,9 @@ int main(int argc, char** argv) {
   for (const auto& port : port_args) {
     vroom::io::update_port(cl_args.servers, port);
   }
+
+  vroom::io::update_osrm_snap_radius(cl_args.servers, std::to_string(cl_args.osrm_snapping_radius));
+
   exploration_level = std::min(exploration_level, vroom::MAX_EXPLORATION_LEVEL);
   cl_args.set_exploration_level(exploration_level);
 

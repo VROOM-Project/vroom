@@ -76,6 +76,12 @@ void update_port(Servers& servers, std::string_view value) {
   }
 }
 
+void update_osrm_snap_radius(Servers& servers, std::string_view value) {
+  for (auto& [profile, server] : servers) {
+    server.osrm_snapping_radius = value;
+  }
+}
+
 void CLArgs::set_exploration_level(unsigned exploration_level) {
   depth = utils::get_depth(exploration_level);
 

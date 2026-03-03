@@ -23,18 +23,19 @@ using Servers =
 
 struct CLArgs {
   // Listing command-line options.
-  Servers servers;         // -a and -p
-  bool check;              // -c
-  bool apply_TSPFix;       // -f
-  bool geometry;           // -g
-  std::string input_file;  // -i
-  Timeout timeout;         // -l
-  std::string output_file; // -o
-  ROUTER router;           // -r
-  std::string input;       // cl arg
-  unsigned nb_threads;     // -t
-  unsigned nb_searches;    // derived from -x
-  unsigned depth;          // derived from -x
+  Servers servers;               // -a and -p
+  bool check;                    // -c
+  bool apply_TSPFix;             // -f
+  bool geometry;                 // -g
+  std::string input_file;        // -i
+  Timeout timeout;               // -l
+  std::string output_file;       // -o
+  ROUTER router;                 // -r
+  std::string input;             // cl arg
+  unsigned nb_threads;           // -t
+  unsigned nb_searches;          // derived from -x
+  unsigned depth;                // derived from -x
+  unsigned osrm_snapping_radius; // -s
 
   void set_exploration_level(unsigned exploration_level);
 };
@@ -42,6 +43,8 @@ struct CLArgs {
 void update_host(Servers& servers, std::string_view value);
 
 void update_port(Servers& servers, std::string_view value);
+
+void update_osrm_snap_radius(Servers& servers, std::string_view value);
 
 } // namespace vroom::io
 

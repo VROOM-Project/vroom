@@ -97,6 +97,7 @@ struct Server {
   std::string host;
   std::string port;
   std::string path;
+  std::string osrm_snapping_radius;
 
   Server() : host("0.0.0.0"), port("5000") {
   }

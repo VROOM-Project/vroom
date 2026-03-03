@@ -35,12 +35,12 @@ OsrmRoutedWrapper::build_query(const std::vector<Location>& locations,
   std::string radiuses = "radiuses=";
   radiuses.reserve(radiuses.size() +
                    locations.size() *
-                     (DEFAULT_OSRM_SNAPPING_RADIUS.size() + 1));
+                     (_server.osrm_snapping_radius.size() + 1));
 
   // Adding locations and radiuses values.
   for (auto const& location : locations) {
     query += std::format("{:.6f},{:.6f};", location.lon(), location.lat());
-    radiuses += DEFAULT_OSRM_SNAPPING_RADIUS + ";";
+    radiuses += _server.osrm_snapping_radius + ";";
   }
   // Remove trailing ';'.
   query.pop_back();
