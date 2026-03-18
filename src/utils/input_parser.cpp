@@ -8,9 +8,12 @@ All rights reserved (see LICENSE).
 */
 
 #include <algorithm>
+#include <string_view>
 
 #include "../include/rapidjson/include/rapidjson/document.h"
 #include "../include/rapidjson/include/rapidjson/error/en.h"
+#include "../include/rapidjson/include/rapidjson/stringbuffer.h"
+#include "../include/rapidjson/include/rapidjson/writer.h"
 
 #include "utils/input_parser.h"
 
@@ -35,6 +38,35 @@ inline std::string get_string(const rapidjson::Value& object, const char* key) {
     value = object[key].GetString();
   }
   return value;
+}
+
+inline std::string get_object_members_json(const rapidjson::Value& options,
+                                           const char* key) {
+  if (!options.IsObject()) {
+    throw InputException("Invalid " + std::string(key) + ".");
+  }
+
+  for (const auto& entry : options.GetObject()) {
+    const auto name = std::string_view(entry.name.GetString(),
+                                       entry.name.GetStringLength());
+    if (name == "costing" || name == "locations" || name == "sources" ||
+        name == "targets") {
+      throw InputException("Invalid key in " + std::string(key) + ": " +
+                           std::string(name) + ".");
+    }
+  }
+
+  rapidjson::StringBuffer buffer;
+  rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+  options.Accept(writer);
+
+  const std::string serialized = buffer.GetString();
+  if (serialized.size() < 2 || serialized.front() != '{' ||
+      serialized.back() != '}') {
+    throw InputException("Invalid " + std::string(key) + ".");
+  }
+
+  return serialized.substr(1, serialized.size() - 2);
 }
 
 inline double get_double(const rapidjson::Value& object, const char* key) {
@@ -694,6 +726,24 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
       input.set_durations_matrix(DEFAULT_PROFILE,
                                  get_matrix<UserDuration>(
                                    json_input["matrix"]));
+    }
+  }
+
+  if (json_input.HasMember("routing_options")) {
+    if (!json_input["routing_options"].IsObject()) {
+      throw InputException("Invalid routing_options.");
+    }
+
+    for (auto& profile_entry : json_input["routing_options"].GetObject()) {
+      if (!profile_entry.value.IsObject()) {
+        throw InputException("Invalid routing_options for profile " +
+                             std::string(profile_entry.name.GetString()) +
+                             ".");
+      }
+
+      input.set_routing_options(
+        profile_entry.name.GetString(),
+        get_object_members_json(profile_entry.value, "routing_options"));
     }
   }
 }
