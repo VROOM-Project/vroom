@@ -18,7 +18,7 @@ constexpr unsigned MINOR = 15;
 constexpr unsigned PATCH = 0;
 constexpr bool DEV = true;
 constexpr unsigned RC = 0;
-constexpr std::string_view TREXITY_EDITION = "202602262014";
+constexpr std::string_view TREXITY_EDITION = "202603201402";
 
 namespace vroom {
 
