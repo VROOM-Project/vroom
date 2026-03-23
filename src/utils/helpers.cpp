@@ -450,6 +450,7 @@ Route format_route(const Input& input,
                    const TWRoute& tw_r,
                    std::unordered_set<Index>& unassigned_ranks) {
   const auto& v = input.vehicles[tw_r.v_rank];
+  const bool allow_soft_timing_overflow = input.pinned_soft_timing();
 
   assert(tw_r.size() <= v.max_tasks);
 
@@ -493,14 +494,21 @@ Route format_route(const Input& input,
     for (Index i = 0; i < tw_r.breaks_at_rank[r]; ++i) {
       --break_rank;
       const auto& b = v.breaks[break_rank];
-      assert(b.service <= step_start);
+      if (b.service > step_start) {
+        assert(allow_soft_timing_overflow);
+        backward_wt += (b.service - step_start);
+        step_start = b.service;
+      }
       step_start -= b.service;
 
       const auto b_tw =
         std::find_if(b.tws.rbegin(), b.tws.rend(), [&](const auto& tw) {
           return tw.start <= step_start;
         });
-      assert(b_tw != b.tws.rend());
+      if (b_tw == b.tws.rend()) {
+        assert(allow_soft_timing_overflow);
+        continue;
+      }
 
       if (b_tw->end < step_start) {
         if (const auto margin = step_start - b_tw->end;
@@ -565,14 +573,21 @@ Route format_route(const Input& input,
   for (Index r = 0; r < tw_r.breaks_at_rank[0]; ++r) {
     --break_rank;
     const auto& b = v.breaks[break_rank];
-    assert(b.service <= step_start);
+    if (b.service > step_start) {
+      assert(allow_soft_timing_overflow);
+      backward_wt += (b.service - step_start);
+      step_start = b.service;
+    }
     step_start -= b.service;
 
     const auto b_tw =
       std::find_if(b.tws.rbegin(), b.tws.rend(), [&](const auto& tw) {
         return tw.start <= step_start;
       });
-    assert(b_tw != b.tws.rend());
+    if (b_tw == b.tws.rend()) {
+      assert(allow_soft_timing_overflow);
+      continue;
+    }
 
     if (b_tw->end < step_start) {
       if (const auto margin = step_start - b_tw->end;
@@ -591,9 +606,9 @@ Route format_route(const Input& input,
     first_location = v.start.value();
     // Under soft-pinned timing, we may not have enough room to move the start
     // backward by the full remaining_travel_time. Convert the overflow into
-    // backward waiting time and clamp the start at the vehicle TW start.
+    // backward waiting time and clamp the reconstructed route start at time 0.
     if (remaining_travel_time > step_start) {
-      if (input.pinned_soft_timing()) {
+      if (allow_soft_timing_overflow) {
         backward_wt += (remaining_travel_time - step_start);
         step_start = 0;
       } else {
@@ -617,7 +632,9 @@ Route format_route(const Input& input,
   steps.reserve(tw_r.size() + 2 + v.breaks.size());
 
   steps.emplace_back(STEP_TYPE::START, first_location.value(), current_load);
-  assert(v.tw.contains(step_start));
+  if (!allow_soft_timing_overflow) {
+    assert(v.tw.contains(step_start));
+  }
   steps.back().arrival = scale_to_user_duration(step_start);
   UserDuration user_previous_end = steps.back().arrival;
 
@@ -678,9 +695,10 @@ Route format_route(const Input& input,
       const auto b_tw = std::ranges::find_if(b.tws, [&](const auto& tw) {
         return step_start <= tw.end;
       });
-      assert(b_tw != b.tws.end());
-
-      if (step_start < b_tw->start) {
+      if (b_tw == b.tws.end()) {
+        assert(allow_soft_timing_overflow);
+        current_break.arrival = scale_to_user_duration(step_start);
+      } else if (step_start < b_tw->start) {
         if (const auto margin = b_tw->start - step_start;
             margin <= travel_time) {
           // Part of the remaining travel time is spent before this
@@ -713,12 +731,14 @@ Route format_route(const Input& input,
         current_break.arrival = scale_to_user_duration(step_start);
       }
 
-      assert(b_tw->start % DURATION_FACTOR == 0 &&
-             scale_to_user_duration(b_tw->start) <=
-               current_break.arrival + current_break.waiting_time &&
-             (current_break.waiting_time == 0 ||
-              scale_to_user_duration(b_tw->start) ==
-                current_break.arrival + current_break.waiting_time));
+      if (b_tw != b.tws.end()) {
+        assert(b_tw->start % DURATION_FACTOR == 0 &&
+               scale_to_user_duration(b_tw->start) <=
+                 current_break.arrival + current_break.waiting_time &&
+               (current_break.waiting_time == 0 ||
+                scale_to_user_duration(b_tw->start) ==
+                  current_break.arrival + current_break.waiting_time));
+      }
 
       // Recompute cumulated durations in a consistent way as seen
       // from UserDuration.
@@ -772,7 +792,9 @@ Route format_route(const Input& input,
     auto& current = steps.back();
 
     step_start += travel_time;
-    assert(step_start <= tw_r.latest[r]);
+    if (step_start > tw_r.latest[r]) {
+      assert(allow_soft_timing_overflow);
+    }
 
     current.arrival = scale_to_user_duration(step_start);
     current.distance = eval_sum.distance;
@@ -843,9 +865,10 @@ Route format_route(const Input& input,
     const auto b_tw = std::ranges::find_if(b.tws, [&](const auto& tw) {
       return step_start <= tw.end;
     });
-    assert(b_tw != b.tws.end());
-
-    if (step_start < b_tw->start) {
+    if (b_tw == b.tws.end()) {
+      assert(allow_soft_timing_overflow);
+      current_break.arrival = scale_to_user_duration(step_start);
+    } else if (step_start < b_tw->start) {
       if (const auto margin = b_tw->start - step_start; margin <= travel_time) {
         // Part of the remaining travel time is spent before this
         // break, filling the whole margin.
@@ -877,12 +900,14 @@ Route format_route(const Input& input,
       current_break.arrival = scale_to_user_duration(step_start);
     }
 
-    assert(b_tw->start % DURATION_FACTOR == 0 &&
-           scale_to_user_duration(b_tw->start) <=
-             current_break.arrival + current_break.waiting_time &&
-           (current_break.waiting_time == 0 ||
-            scale_to_user_duration(b_tw->start) ==
-              current_break.arrival + current_break.waiting_time));
+    if (b_tw != b.tws.end()) {
+      assert(b_tw->start % DURATION_FACTOR == 0 &&
+             scale_to_user_duration(b_tw->start) <=
+               current_break.arrival + current_break.waiting_time &&
+             (current_break.waiting_time == 0 ||
+              scale_to_user_duration(b_tw->start) ==
+                current_break.arrival + current_break.waiting_time));
+    }
 
     // Recompute cumulated durations in a consistent way as seen from
     // UserDuration.
@@ -913,7 +938,9 @@ Route format_route(const Input& input,
     eval_sum += current_eval;
     step_start += travel_time;
   }
-  assert(v.tw.contains(step_start));
+  if (!allow_soft_timing_overflow) {
+    assert(v.tw.contains(step_start));
+  }
   end_step.arrival = scale_to_user_duration(step_start);
   end_step.distance = eval_sum.distance;
 

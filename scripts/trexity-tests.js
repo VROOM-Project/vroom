@@ -1097,6 +1097,36 @@ const tests = {
     fs.rmSync(t, { recursive: true, force: true });
   },
 
+  // Regression for debug builds: the output formatter used to assert when the
+  // seeded pinned job remained late. Regular solve leaves violations arrays
+  // empty, so assert on the late arrival itself.
+  async pinned_soft_timing_outputs_late_seeded_arrival() {
+    const t = tmpDir();
+    const input = {
+      pinned_soft_timing: true,
+      pinned_lateness_limit_sec: 0,
+      vehicles: [
+        { id: 101, start_index: 0, steps: [
+          { type: 'start' }, { type: 'job', id: 1 }, { type: 'end' }
+        ] }
+      ],
+      jobs: [ { id: 1, location_index: 1, pinned: true, service: 0, time_windows: [[0, 10]] } ],
+      matrices: { car: { durations: [
+        [0, 20],
+        [20, 0]
+      ] } }
+    };
+    const f = writeJSON(t, 'pinned_soft_timing_outputs_late_seeded_arrival.json', input);
+    const { code, json } = runVroom(f);
+    assertExit(0, code);
+    assertJsonEq(json, '.summary.unassigned', 0);
+    assertJsonEq(json, '.routes.length', 1);
+    assertJsonEq(json, '.routes.0.steps.1.id', 1);
+    assertJsonEq(json, '.routes.0.steps.1.arrival', 20);
+    assertJsonEq(json, '.routes.0.steps.1.waiting_time', 0);
+    fs.rmSync(t, { recursive: true, force: true });
+  },
+
   // Control: with pinned_soft_timing=false, infeasible seed should fail (current behavior)
   async pinned_soft_timing_off_infeasible_seed_fails() {
     const t = tmpDir();
@@ -1622,6 +1652,7 @@ async function main() {
     'pinned_soft_timing_blocks_pre_insertion_budget0',
     'pinned_violation_budget_allows_small_delay',
     'pinned_soft_timing_saves_infeasible_seed',
+    'pinned_soft_timing_outputs_late_seeded_arrival',
     'pinned_soft_timing_off_infeasible_seed_fails',
     // New tests: max_first_leg_distance behavior
     'first_leg_blocks_unseeded_far_job',
