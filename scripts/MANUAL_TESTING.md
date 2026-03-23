@@ -33,5 +33,5 @@ Notes:
 ## Run multiple json sequentially
 
 ```bash
-set -o pipefail; for f in ./vroom_failures/*.json; do ./bin/vroom-macos -t 4 -x 5 -i "$f" | jq . || break; done
+set -o pipefail; for f in ./vroom_failures/*.json; do echo "$f"; ./bin/vroom-macos -t 4 -x 5 -i "$f" | jq . || break; done
 ```
