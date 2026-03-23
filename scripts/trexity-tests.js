@@ -24,8 +24,15 @@ function findBinary() {
 const BIN = findBinary();
 process.stdout.write(`[BIN] ${BIN}\n`);
 
-function runVroom(inputPath) {
-  const res = spawnSync(BIN, ['-i', inputPath], { encoding: 'utf8' });
+function runVroom(inputPath, options = {}) {
+  let args;
+  if (Array.isArray(options)) {
+    args = options;
+  } else {
+    const { explore = 5, threads = 4, extraArgs = [] } = options;
+    args = [...extraArgs, '-t', String(threads), '-x', String(explore)];
+  }
+  const res = spawnSync(BIN, [...args, '-i', inputPath], { encoding: 'utf8' });
   const stdout = res.stdout || '';
   const code = res.status ?? 1;
   let json;
@@ -801,6 +808,90 @@ const tests = {
     fs.rmSync(t, { recursive: true, force: true });
   },
 
+  async pinned_job_first_survives_repair_depths() {
+    const t = tmpDir();
+    const input = {
+      vehicles: [{
+        id: 0,
+        capacity: [2000],
+        costs: { fixed: 2000, per_hour: 1440, per_km: 30 },
+        initial_pickup_cost_multiplier: 1,
+        non_initial_pickup_cost_multiplier: 8,
+        start_index: 2,
+        max_tasks: 30,
+        steps: [
+          { type: 'job', id: 5 },
+          { type: 'job', id: 6 }
+        ]
+      }],
+      jobs: [
+        {
+          id: 5,
+          location_index: 0,
+          service: 270,
+          pickup: [0],
+          pinned: true,
+          pinned_position: 'first',
+          allowed_vehicles: [0],
+          priority: 0
+        },
+        {
+          id: 6,
+          location_index: 1,
+          service: 285,
+          delivery: [0],
+          pinned: true,
+          allowed_vehicles: [0],
+          time_windows: [[0, 33453]],
+          priority: 0
+        }
+      ],
+      shipments: [],
+      exclusive_tags_allow_pinned_conflicts: true,
+      pinned_soft_timing: true,
+      pinned_lateness_limit_sec: 3600,
+      include_action_time_in_budget: true,
+      matrices: {
+        car: {
+          durations: [
+            [0, 1206, 899, 531, 1295, 486, 974],
+            [1175, 0, 613, 942, 1444, 1271, 613],
+            [825, 653, 0, 329, 831, 659, 633],
+            [545, 947, 396, 0, 792, 337, 837],
+            [1363, 1512, 973, 867, 0, 1008, 1386],
+            [498, 1279, 729, 338, 938, 0, 1132],
+            [948, 620, 590, 834, 1326, 1126, 0]
+          ],
+          distances: [
+            [0, 10339, 7380, 4200, 13827, 3839, 8156],
+            [10231, 0, 5768, 8962, 15987, 11627, 5162],
+            [7332, 5931, 0, 3194, 10219, 5858, 5620],
+            [4362, 8985, 3367, 0, 9814, 2660, 7387],
+            [14059, 16033, 10619, 9921, 0, 9983, 14572],
+            [3808, 11659, 6041, 2660, 9909, 0, 9251],
+            [7711, 5193, 5419, 7396, 14544, 9251, 0]
+          ]
+        }
+      }
+    };
+    const f = writeJSON(t, 'pinned_job_first_survives_repair_depths.json', input);
+    const r0 = runVroom(f, { explore: 0 });
+    const r1 = runVroom(f, { explore: 5 });
+    assertExit(0, r0.code);
+    assertExit(0, r1.code);
+
+    const jobs0 = r0.json.routes[0].steps.filter(s => s.type === 'job').map(s => s.id);
+    const jobs1 = r1.json.routes[0].steps.filter(s => s.type === 'job').map(s => s.id);
+    if (String(jobs0) !== String([5, 6])) {
+      throw new Error(`Expected -x 0 job order [5,6], got [${jobs0}]`);
+    }
+    if (String(jobs1) !== String([5, 6])) {
+      throw new Error(`Expected -x 1 job order [5,6], got [${jobs1}]`);
+    }
+
+    fs.rmSync(t, { recursive: true, force: true });
+  },
+
   async pinned_job_last_success() {
     const t = tmpDir();
     const input = {
@@ -909,7 +1000,8 @@ const tests = {
     fs.rmSync(t, { recursive: true, force: true });
   },
 
-  // Shipment first under pressure: extra job that would like to be first
+  // Shipment first under pressure: extra job would like to be first, but the
+  // pinned shipment must remain anchored at the start.
   async pinned_shipment_first_under_pressure() {
     const t = tmpDir();
     const input = {
@@ -930,8 +1022,16 @@ const tests = {
       ]}}
     };
     const f = writeJSON(t, 'pinned_shipment_first_under_pressure.json', input);
-    const { code } = runVroom(f);
-    assertExit(2, code);
+    const { code, json } = runVroom(f);
+    assertExit(0, code);
+    const steps = json.routes[0].steps.filter(s => s.type === 'pickup' || s.type === 'delivery' || s.type === 'job');
+    if (!(steps[0].type === 'pickup' && steps[0].id === 9001 &&
+          steps[1].type === 'delivery' && steps[1].id === 9002)) {
+      throw new Error('Pinned shipment should remain contiguous at start');
+    }
+    if (!steps.some(s => s.type === 'job' && s.id === 3)) {
+      throw new Error('Expected extra job 3 to remain assigned');
+    }
     fs.rmSync(t, { recursive: true, force: true });
   },
 
@@ -1640,6 +1740,7 @@ async function main() {
     'pinned_vs_unpinned_cheaper_selection',
     // pinned_position
     'pinned_job_first_success',
+    'pinned_job_first_survives_repair_depths',
     'pinned_job_last_success',
     'pinned_shipment_first_contiguous_success',
     'pinned_shipment_last_contiguous_success',
@@ -1674,8 +1775,17 @@ async function main() {
     'exclusive_tags_pinned_conflict_allowed_blocks_third'
   ];
 
+  const requested = process.argv.slice(2);
+  const selected = requested.length === 0
+    ? order
+    : order.filter((name) => requested.includes(name));
+  if (requested.length !== 0 && selected.length !== requested.length) {
+    const missing = requested.filter((name) => !order.includes(name));
+    throw new Error(`Unknown test name(s): ${missing.join(', ')}`);
+  }
+
   let pass = 0, fail = 0;
-  for (const name of order) {
+  for (const name of selected) {
     // eslint-disable-next-line no-await-in-loop
     const ok = await run(name, tests[name]);
     if (ok) pass++; else fail++;

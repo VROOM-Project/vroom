@@ -2374,6 +2374,9 @@ void LocalSearch<Route,
       if (current_job.type == JOB_TYPE::DELIVERY) {
         continue;
       }
+      if (_input.job_is_pinned(_sol[v].route[r])) {
+        continue;
+      }
 
       Eval current_gain;
       bool valid_removal = false;

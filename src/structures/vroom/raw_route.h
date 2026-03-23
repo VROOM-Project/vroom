@@ -450,7 +450,38 @@ public:
 
   void add(const Input& input, Index job_rank, Index rank);
 
-  bool is_valid_removal(const Input&, const Index, const unsigned) const {
+  bool is_valid_removal(const Input& input,
+                        const Index rank,
+                        const unsigned count) const {
+    assert(rank + count <= route.size());
+
+    const auto removes_job = [&](Index job_rank) {
+      for (Index r = rank; r < rank + count; ++r) {
+        if (route[r] == job_rank) {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    if (const auto pf = input.pinned_first_for_vehicle(v_rank); pf.has_value()) {
+      const auto& req = pf.value();
+      if ((req.job_rank.has_value() && removes_job(req.job_rank.value())) ||
+          (req.pickup_rank.has_value() && removes_job(req.pickup_rank.value())) ||
+          (req.delivery_rank.has_value() && removes_job(req.delivery_rank.value()))) {
+        return false;
+      }
+    }
+
+    if (const auto pl = input.pinned_last_for_vehicle(v_rank); pl.has_value()) {
+      const auto& req = pl.value();
+      if ((req.job_rank.has_value() && removes_job(req.job_rank.value())) ||
+          (req.pickup_rank.has_value() && removes_job(req.pickup_rank.value())) ||
+          (req.delivery_rank.has_value() && removes_job(req.delivery_rank.value()))) {
+        return false;
+      }
+    }
+
     return true;
   };
 
