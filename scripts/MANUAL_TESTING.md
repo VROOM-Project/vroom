@@ -11,6 +11,8 @@ included, so you can simplify the build by excluding routing:
 
 For a full build, omit `--without-routing`.
 
+## Run
+
 Run against example requests (matrix-only):
 
 ```bash
@@ -27,3 +29,9 @@ Run with geometry (requires OSRM running for the profile):
 Notes:
 - Use the matrix-only command when the JSON includes a `matrices`/`matrix` section.
 - Re-run the build script after code changes to refresh `bin/vroom-macos`.
+
+## Run multiple json sequentially
+
+```bash
+set -o pipefail; for f in ./vroom_failures/*.json; do ./bin/vroom-macos -t 4 -x 5 -i "$f" | jq . || break; done
+```
