@@ -1658,6 +1658,180 @@ const tests = {
     fs.rmSync(t, { recursive: true, force: true });
   },
 
+  // ---------------- unfound route fallback tests ----------------
+  // Simulates the effect of UNFOUND_ROUTE_DURATION/DISTANCE (500000) in the
+  // matrix. When OSRM returns null for unreachable pairs, the routing layer
+  // replaces them with 500000. These tests verify the solver correctly avoids
+  // those edges and leaves unreachable jobs unassigned.
+
+  async unfound_route_unreachable_job_becomes_unassigned() {
+    const t = tmpDir();
+    const FALLBACK = 500000;
+    const input = {
+      vehicles: [{ id: 101, start_index: 0 }],
+      jobs: [
+        { id: 1, location_index: 1 },
+        { id: 2, location_index: 2 }
+      ],
+      matrices: { car: { durations: [
+        [0,    100,   FALLBACK],
+        [100,  0,     FALLBACK],
+        [FALLBACK, FALLBACK, 0]
+      ]}}
+    };
+    const f = writeJSON(t, 'unfound_route_unreachable_job.json', input);
+    const { code, json } = runVroom(f);
+    assertExit(0, code);
+    // Job 1 reachable (100s), job 2 unreachable (500000s) -> unassigned
+    assertJsonEq(json, '.summary.unassigned', 1);
+    const unassignedIds = json.unassigned.map(j => j.id);
+    if (!unassignedIds.includes(2)) {
+      throw new Error(`Expected job 2 unassigned, got [${unassignedIds}]`);
+    }
+    fs.rmSync(t, { recursive: true, force: true });
+  },
+
+  async unfound_route_all_jobs_unreachable() {
+    const t = tmpDir();
+    const FALLBACK = 500000;
+    const input = {
+      vehicles: [{ id: 101, start_index: 0 }],
+      jobs: [
+        { id: 1, location_index: 1 },
+        { id: 2, location_index: 2 }
+      ],
+      matrices: { car: { durations: [
+        [0,        FALLBACK, FALLBACK],
+        [FALLBACK, 0,        FALLBACK],
+        [FALLBACK, FALLBACK, 0       ]
+      ]}}
+    };
+    const f = writeJSON(t, 'unfound_route_all_unreachable.json', input);
+    const { code, json } = runVroom(f);
+    assertExit(0, code);
+    assertJsonEq(json, '.summary.unassigned', 2);
+    assertJsonEq(json, '.summary.routes', 0);
+    fs.rmSync(t, { recursive: true, force: true });
+  },
+
+  async unfound_route_mixed_reachability_partial_routes() {
+    const t = tmpDir();
+    const FALLBACK = 500000;
+    const input = {
+      vehicles: [
+        { id: 101, start_index: 0 },
+        { id: 102, start_index: 1 }
+      ],
+      jobs: [
+        { id: 1, location_index: 2 },
+        { id: 2, location_index: 3 },
+        { id: 3, location_index: 4 }
+      ],
+      matrices: { car: { durations: [
+        // 0=v101 start, 1=v102 start, 2=job1, 3=job2, 4=job3
+        [0,       0,       100,     FALLBACK, FALLBACK],
+        [0,       0,       FALLBACK, 100,     FALLBACK],
+        [100,     FALLBACK, 0,       FALLBACK, FALLBACK],
+        [FALLBACK, 100,    FALLBACK, 0,        FALLBACK],
+        [FALLBACK, FALLBACK, FALLBACK, FALLBACK, 0     ]
+      ]}}
+    };
+    const f = writeJSON(t, 'unfound_route_mixed_reachability.json', input);
+    const { code, json } = runVroom(f);
+    assertExit(0, code);
+    // Job 1 reachable from v101, job 2 reachable from v102, job 3 unreachable from both
+    assertJsonEq(json, '.summary.unassigned', 1);
+    const unassignedIds = json.unassigned.map(j => j.id);
+    if (!unassignedIds.includes(3)) {
+      throw new Error(`Expected job 3 unassigned, got [${unassignedIds}]`);
+    }
+    fs.rmSync(t, { recursive: true, force: true });
+  },
+
+  async unfound_route_pinned_task_still_assigned_despite_fallback() {
+    const t = tmpDir();
+    const FALLBACK = 500000;
+    const input = {
+      vehicles: [{ id: 101, start_index: 0, steps: [
+        { type: 'start' }, { type: 'job', id: 1 }, { type: 'end' }
+      ] }],
+      jobs: [
+        { id: 1, location_index: 1, pinned: true, allowed_vehicles: [101] }
+      ],
+      matrices: { car: { durations: [
+        [0,       FALLBACK],
+        [FALLBACK, 0      ]
+      ]}}
+    };
+    const f = writeJSON(t, 'unfound_route_pinned_despite_fallback.json', input);
+    const { code, json } = runVroom(f);
+    assertExit(0, code);
+    // Pinned constraint forces assignment even through a fallback edge
+    assertJsonEq(json, '.summary.unassigned', 0);
+    assertJsonEq(json, '.routes.0.vehicle', 101);
+    fs.rmSync(t, { recursive: true, force: true });
+  },
+
+  async unfound_route_shipment_unreachable_both_unassigned() {
+    const t = tmpDir();
+    const FALLBACK = 500000;
+    const input = {
+      vehicles: [{ id: 101, start_index: 0, capacity: [1] }],
+      shipments: [{
+        amount: [1],
+        pickup: { id: 11, location_index: 1 },
+        delivery: { id: 12, location_index: 2 }
+      }],
+      matrices: { car: { durations: [
+        [0,       FALLBACK, FALLBACK],
+        [FALLBACK, 0,       100     ],
+        [FALLBACK, 100,     0       ]
+      ]}}
+    };
+    const f = writeJSON(t, 'unfound_route_shipment_unreachable.json', input);
+    const { code, json } = runVroom(f);
+    assertExit(0, code);
+    // Both pickup and delivery should be unassigned
+    assertJsonEq(json, '.summary.unassigned', 2);
+    fs.rmSync(t, { recursive: true, force: true });
+  },
+
+  async unfound_route_reachable_jobs_still_optimized() {
+    const t = tmpDir();
+    const FALLBACK = 500000;
+    const input = {
+      vehicles: [{ id: 101, start_index: 0 }],
+      jobs: [
+        { id: 1, location_index: 1 },
+        { id: 2, location_index: 2 },
+        { id: 3, location_index: 3 }
+      ],
+      matrices: { car: { durations: [
+        // 0=start, 1=job1, 2=job2, 3=job3(unreachable)
+        [0,   100, 200, FALLBACK],
+        [100, 0,   100, FALLBACK],
+        [200, 100, 0,   FALLBACK],
+        [FALLBACK, FALLBACK, FALLBACK, 0]
+      ]}}
+    };
+    const f = writeJSON(t, 'unfound_route_reachable_optimized.json', input);
+    const { code, json } = runVroom(f);
+    assertExit(0, code);
+    // Job 3 unreachable, jobs 1 and 2 should be routed
+    assertJsonEq(json, '.summary.unassigned', 1);
+    assertJsonEq(json, '.summary.routes', 1);
+    const route = json.routes[0];
+    const jobIds = route.steps.filter(s => s.type === 'job').map(s => s.id).sort((a,b)=>a-b);
+    if (String(jobIds) !== String([1, 2])) {
+      throw new Error(`Expected jobs [1,2] routed, got [${jobIds}]`);
+    }
+    // Route duration should be reasonable (not contain fallback values)
+    if (route.duration > 1000) {
+      throw new Error(`Route duration ${route.duration} seems to include fallback edges`);
+    }
+    fs.rmSync(t, { recursive: true, force: true });
+  },
+
   async exclusive_tags_pinned_conflict_allowed_blocks_third() {
     const t = tmpDir();
     const input = {
@@ -1767,6 +1941,13 @@ async function main() {
     'pickup_multiplier_validation_rejects_zero',
     'pickup_multiplier_validation_rejects_negative',
     'pickup_multiplier_output_costs_unaffected',
+    // unfound route fallback behavior
+    'unfound_route_unreachable_job_becomes_unassigned',
+    'unfound_route_all_jobs_unreachable',
+    'unfound_route_mixed_reachability_partial_routes',
+    'unfound_route_pinned_task_still_assigned_despite_fallback',
+    'unfound_route_shipment_unreachable_both_unassigned',
+    'unfound_route_reachable_jobs_still_optimized',
     // exclusive_tags
     'exclusive_tags_single_vehicle_conflict_unassigns_one',
     'exclusive_tags_two_vehicles_all_assigned',

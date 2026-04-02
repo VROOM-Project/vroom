@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <iostream>
 #include <mutex>
 #include <thread>
 #include <vector>
@@ -38,12 +39,10 @@ public:
     const std::size_t m_size = locs.size();
     Matrices m(m_size);
 
-    std::exception_ptr ep = nullptr;
-    std::mutex ep_m;
     std::mutex matrix_m;
 
     auto run_on_vehicle_at_rank =
-      [this, &vehicles, &jobs, &matrix_m, &m, &vehicles_geometry, &ep_m, &ep](
+      [this, &vehicles, &jobs, &matrix_m, &m, &vehicles_geometry](
         Index v_rank) {
         try {
           const Vehicle& v = vehicles[v_rank];
@@ -82,9 +81,16 @@ public:
                                        matrix_m,
                                        vehicles_geometry[v_rank]);
           }
-        } catch (...) {
-          const std::scoped_lock<std::mutex> lock(ep_m);
-          ep = std::current_exception();
+        } catch (const RoutingException& e) {
+          std::cerr << "[Warning] Sparse matrix routing failed for vehicle "
+                    << v_rank << ": " << e.message
+                    << ". Using fallback values." << std::endl;
+          fill_sparse_fallback(vehicles[v_rank], jobs, m, matrix_m);
+        } catch (const std::exception& e) {
+          std::cerr << "[Warning] Routing error for vehicle "
+                    << v_rank << ": " << e.what()
+                    << ". Using fallback values." << std::endl;
+          fill_sparse_fallback(vehicles[v_rank], jobs, m, matrix_m);
         }
       };
 
@@ -99,10 +105,6 @@ public:
 
     for (auto& t : vehicles_threads) {
       t.join();
-    }
-
-    if (ep != nullptr) {
-      std::rethrow_exception(ep);
     }
 
     return m;
@@ -123,34 +125,59 @@ protected:
   explicit Wrapper(std::string profile) : profile(std::move(profile)) {
   }
 
-  static void check_unfound(const std::vector<Location>& locs,
-                            const std::vector<unsigned>& nb_unfound_from_loc,
-                            const std::vector<unsigned>& nb_unfound_to_loc) {
-    assert(nb_unfound_from_loc.size() == nb_unfound_to_loc.size());
-    unsigned max_unfound_routes_for_a_loc = 0;
-    unsigned error_loc = 0; // Initial value never actually used.
-    std::string error_direction;
-    // Finding the "worst" location for unfound routes.
-    for (unsigned i = 0; i < nb_unfound_from_loc.size(); ++i) {
-      if (nb_unfound_from_loc[i] > max_unfound_routes_for_a_loc) {
-        max_unfound_routes_for_a_loc = nb_unfound_from_loc[i];
-        error_loc = i;
-        error_direction = "from ";
-      }
-      if (nb_unfound_to_loc[i] > max_unfound_routes_for_a_loc) {
-        max_unfound_routes_for_a_loc = nb_unfound_to_loc[i];
-        error_loc = i;
-        error_direction = "to ";
+  static void fill_sparse_fallback(const Vehicle& v,
+                                   const std::vector<Job>& jobs,
+                                   Matrices& m,
+                                   std::mutex& matrix_m) {
+    std::vector<Location> route_locs;
+    for (const auto& step : v.steps) {
+      if (step.type == STEP_TYPE::START && v.has_start()) {
+        route_locs.push_back(v.start.value());
+      } else if (step.type == STEP_TYPE::END && v.has_end()) {
+        route_locs.push_back(v.end.value());
+      } else if (step.type == STEP_TYPE::JOB) {
+        route_locs.push_back(jobs[step.rank].location);
       }
     }
-    if (max_unfound_routes_for_a_loc > 0) {
-      std::string error_msg = "Unfound route(s) ";
-      error_msg += error_direction;
-      error_msg += std::format("location [{:.6f},{:.6f}]",
-                               locs[error_loc].lon(),
-                               locs[error_loc].lat());
+    const std::scoped_lock<std::mutex> lock(matrix_m);
+    for (std::size_t i = 0; i + 1 < route_locs.size(); ++i) {
+      m.durations[route_locs[i].index()][route_locs[i + 1].index()] =
+        UNFOUND_ROUTE_DURATION;
+      m.distances[route_locs[i].index()][route_locs[i + 1].index()] =
+        UNFOUND_ROUTE_DISTANCE;
+    }
+  }
 
-      throw RoutingException(error_msg);
+  static void warn_unfound(const std::vector<Location>& locs,
+                           const std::vector<unsigned>& nb_unfound_from_loc,
+                           const std::vector<unsigned>& nb_unfound_to_loc) {
+    assert(nb_unfound_from_loc.size() == nb_unfound_to_loc.size());
+    unsigned total_unfound = 0;
+    unsigned worst_loc = 0;
+    unsigned worst_count = 0;
+    std::string worst_direction;
+    for (unsigned i = 0; i < nb_unfound_from_loc.size(); ++i) {
+      total_unfound += nb_unfound_from_loc[i];
+      if (nb_unfound_from_loc[i] > worst_count) {
+        worst_count = nb_unfound_from_loc[i];
+        worst_loc = i;
+        worst_direction = "from ";
+      }
+      if (nb_unfound_to_loc[i] > worst_count) {
+        worst_count = nb_unfound_to_loc[i];
+        worst_loc = i;
+        worst_direction = "to ";
+      }
+    }
+    if (total_unfound > 0) {
+      std::cerr << "[Warning] " << total_unfound
+                << " unfound route(s) in matrix, worst: "
+                << worst_direction
+                << std::format("location [{:.6f},{:.6f}]",
+                               locs[worst_loc].lon(),
+                               locs[worst_loc].lat())
+                << ". Using fallback values for unreachable pairs."
+                << std::endl;
     }
   }
 };

@@ -51,6 +51,12 @@
 
 ### Fixed
 
+#### Routing
+
+- Graceful handling of unfound routes: null OSRM matrix entries now use large fallback penalties instead of aborting the solve, allowing the solver to return feasible routes and list unreachable jobs as unassigned
+- Per-vehicle sparse matrix routing failures no longer abort the entire solve; affected edges receive fallback values
+- Per-route geometry failures no longer discard the solution; routes that fail geometry are dropped and their jobs moved to unassigned
+
 #### Core solving
 
 - Solution quality regression when using lots of skills (#1193)

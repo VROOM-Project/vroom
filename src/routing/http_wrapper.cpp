@@ -147,8 +147,8 @@ Matrices HttpWrapper::get_matrices(const std::vector<Location>& locs) const {
   }
   assert(json_result[_matrix_distances_key.c_str()].Size() == m_size);
 
-  // Build matrices while checking for unfound routes ('null' values)
-  // to avoid unexpected behavior.
+  // Build matrices, replacing unfound routes ('null' values) with large
+  // fallback penalties so the solver can still proceed with reachable pairs.
   Matrices m(m_size);
 
   std::vector<unsigned> nb_unfound_from_loc(m_size, 0);
@@ -162,11 +162,10 @@ Matrices HttpWrapper::get_matrices(const std::vector<Location>& locs) const {
     for (rapidjson::SizeType j = 0; j < m_size; ++j) {
       if (duration_value_is_null(duration_line[j]) ||
           distance_value_is_null(distance_line[j])) {
-        // No route found between i and j. Just storing info as we
-        // don't know yet which location is responsible between i
-        // and j.
         ++nb_unfound_from_loc[i];
         ++nb_unfound_to_loc[j];
+        m.durations[i][j] = UNFOUND_ROUTE_DURATION;
+        m.distances[i][j] = UNFOUND_ROUTE_DISTANCE;
       } else {
         m.durations[i][j] = get_duration_value(duration_line[j]);
         m.distances[i][j] = get_distance_value(distance_line[j]);
@@ -174,7 +173,7 @@ Matrices HttpWrapper::get_matrices(const std::vector<Location>& locs) const {
     }
   }
 
-  check_unfound(locs, nb_unfound_from_loc, nb_unfound_to_loc);
+  warn_unfound(locs, nb_unfound_from_loc, nb_unfound_to_loc);
 
   return m;
 }

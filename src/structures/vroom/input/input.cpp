@@ -1702,12 +1702,10 @@ Solution Input::solve(const unsigned nb_searches,
   if (_geometry) {
     std::vector<std::thread> threads;
     threads.reserve(sol.routes.size());
-    std::exception_ptr ep = nullptr;
-    std::mutex ep_m;
     std::counting_semaphore<MAX_ROUTING_THREADS> semaphore(
       std::min(MAX_ROUTING_THREADS, nb_thread));
 
-    auto run_routing = [this, &semaphore, &sol, &ep, &ep_m](std::size_t i) {
+    auto run_routing = [this, &semaphore, &sol](std::size_t i) {
       semaphore.acquire();
       try {
         auto& route = sol.routes[i];
@@ -1716,14 +1714,20 @@ Solution Input::solve(const unsigned nb_searches,
           return wr->profile == profile;
         });
         if (rw == _routing_wrappers.end()) {
-          throw InputException(
-            "Route geometry request with non-routable profile " + profile +
-            ".");
+          std::cerr << "[Warning] Route geometry request with non-routable "
+                       "profile "
+                    << profile << ". Skipping geometry." << std::endl;
+        } else {
+          (*rw)->add_geometry(route);
         }
-        (*rw)->add_geometry(route);
-      } catch (...) {
-        const std::scoped_lock<std::mutex> lock(ep_m);
-        ep = std::current_exception();
+      } catch (const RoutingException& e) {
+        std::cerr << "[Warning] Failed to get geometry for route "
+                  << sol.routes[i].vehicle << ": " << e.message
+                  << ". Route will lack geometry." << std::endl;
+      } catch (const std::exception& e) {
+        std::cerr << "[Warning] Error getting geometry for route "
+                  << sol.routes[i].vehicle << ": " << e.what()
+                  << ". Route will lack geometry." << std::endl;
       }
       semaphore.release();
     };
@@ -1736,16 +1740,78 @@ Solution Input::solve(const unsigned nb_searches,
       t.join();
     }
 
-    if (ep != nullptr) {
-      std::rethrow_exception(ep);
-    }
-
     _end_routing = std::chrono::high_resolution_clock::now();
     auto routing = std::chrono::duration_cast<std::chrono::milliseconds>(
                      _end_routing - _end_solving)
                      .count();
 
     sol.summary.computing_times.routing = routing;
+
+    // Drop routes that failed geometry and move their jobs to unassigned.
+    std::vector<Route> geom_kept;
+    geom_kept.reserve(sol.routes.size());
+    std::vector<Job> geom_unassigned;
+
+    for (const auto& route : sol.routes) {
+      if (route.geometry.empty()) {
+        for (const auto& st : route.steps) {
+          if (st.step_type == STEP_TYPE::JOB) {
+            Index r = 0;
+            if (st.job_type.has_value() &&
+                st.job_type.value() == JOB_TYPE::PICKUP) {
+              r = pickup_id_to_rank.at(st.id);
+            } else if (st.job_type.has_value() &&
+                       st.job_type.value() == JOB_TYPE::DELIVERY) {
+              r = delivery_id_to_rank.at(st.id);
+            } else {
+              r = job_id_to_rank.at(st.id);
+            }
+            geom_unassigned.push_back(jobs[r]);
+          }
+        }
+      } else {
+        geom_kept.push_back(route);
+      }
+    }
+
+    if (geom_kept.size() != sol.routes.size()) {
+      std::cerr << "[Warning] Dropped "
+                << (sol.routes.size() - geom_kept.size())
+                << " route(s) due to geometry failure; "
+                << geom_unassigned.size()
+                << " job(s) moved to unassigned." << std::endl;
+
+      std::vector<Job> merged;
+      merged.reserve(sol.unassigned.size() + geom_unassigned.size());
+      for (const auto& j : sol.unassigned) {
+        merged.push_back(j);
+      }
+      for (const auto& j : geom_unassigned) {
+        merged.push_back(j);
+      }
+
+      const auto old_times = sol.summary.computing_times;
+      sol.routes = std::move(geom_kept);
+      sol.unassigned = std::move(merged);
+
+      new (&sol.summary)
+        Summary(static_cast<unsigned>(sol.routes.size()),
+                static_cast<unsigned>(sol.unassigned.size()),
+                zero_amount());
+      for (const auto& route : sol.routes) {
+        sol.summary.cost += route.cost;
+        sol.summary.delivery += route.delivery;
+        sol.summary.pickup += route.pickup;
+        sol.summary.setup += route.setup;
+        sol.summary.service += route.service;
+        sol.summary.priority += route.priority;
+        sol.summary.duration += route.duration;
+        sol.summary.distance += route.distance;
+        sol.summary.waiting_time += route.waiting_time;
+        sol.summary.violations += route.violations;
+      }
+      sol.summary.computing_times = old_times;
+    }
   }
 
   // Post-pass budget enforcement and repair.

@@ -87,14 +87,13 @@ Matrices LibosrmWrapper::get_matrices(const std::vector<Location>& locs) const {
   assert(durations.values.size() == m_size);
   assert(distances.values.size() == m_size);
 
-  // Build matrix while checking for unfound routes to avoid
-  // unexpected behavior (OSRM raises 'null').
+  // Build matrix, replacing unfound routes ('null' values) with large
+  // fallback penalties so the solver can still proceed with reachable pairs.
   Matrices m(m_size);
 
   std::vector<unsigned> nb_unfound_from_loc(m_size, 0);
   std::vector<unsigned> nb_unfound_to_loc(m_size, 0);
 
-  std::string reason;
   for (std::size_t i = 0; i < m_size; ++i) {
     const auto& duration_line =
       std::get<osrm::json::Array>(durations.values.at(i));
@@ -108,11 +107,10 @@ Matrices LibosrmWrapper::get_matrices(const std::vector<Location>& locs) const {
       const auto& distance_el = distance_line.values.at(j);
       if (std::holds_alternative<osrm::json::Null>(duration_el) ||
           std::holds_alternative<osrm::json::Null>(distance_el)) {
-        // No route found between i and j. Just storing info as we
-        // don't know yet which location is responsible between i
-        // and j.
         ++nb_unfound_from_loc[i];
         ++nb_unfound_to_loc[j];
+        m.durations[i][j] = UNFOUND_ROUTE_DURATION;
+        m.distances[i][j] = UNFOUND_ROUTE_DISTANCE;
       } else {
         m.durations[i][j] = utils::round<UserDuration>(
           std::get<osrm::json::Number>(duration_el).value);
@@ -122,7 +120,7 @@ Matrices LibosrmWrapper::get_matrices(const std::vector<Location>& locs) const {
     }
   }
 
-  check_unfound(locs, nb_unfound_from_loc, nb_unfound_to_loc);
+  warn_unfound(locs, nb_unfound_from_loc, nb_unfound_to_loc);
 
   return m;
 }

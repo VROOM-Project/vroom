@@ -58,6 +58,13 @@ using Deadline = std::optional<TimePoint>;
 constexpr UserCost INFINITE_USER_COST =
   3 * (std::numeric_limits<UserCost>::max() / 4);
 
+// Fallback values for unreachable matrix entries. Large enough that the
+// solver will never voluntarily use these edges (~5.8 days / ~500 km),
+// but small enough that summing across all locations in check_cost_bound
+// won't overflow uint32_t even for problems with ~8000 locations.
+constexpr UserDuration UNFOUND_ROUTE_DURATION = 500000;
+constexpr UserDistance UNFOUND_ROUTE_DISTANCE = 500000;
+
 const std::string DEFAULT_PROFILE = "car";
 const std::string NO_TYPE = "";
 const std::string DEFAULT_OSRM_SNAPPING_RADIUS = "35000";
