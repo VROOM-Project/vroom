@@ -14,8 +14,8 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
-TWRoute::TWRoute(const Input& input, Index v, unsigned amount_size)
-  : RawRoute(input, v, amount_size),
+TWRoute::TWRoute(const Input& input, Index v)
+  : RawRoute(input, v),
     v_start(input.vehicles[v].tw.start),
     v_end(input.vehicles[v].tw.end),
     breaks_at_rank({static_cast<unsigned>(input.vehicles[v].breaks.size())}),
@@ -69,7 +69,7 @@ void TWRoute::init_break_setup(const Input& input) {
   Duration previous_earliest = v_start;
 
   // Store smallest margin component-wise.
-  const auto amount_size = input.zero_amount().size();
+  const auto amount_size = input.get_amount_size();
   Amount fwd_smallest_margin = utils::max_amount(amount_size);
   Amount bwd_smallest_margin = utils::max_amount(amount_size);
 

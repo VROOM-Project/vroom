@@ -42,7 +42,7 @@ compute_best_route_split_choice(const Input& input,
   std::vector<Route> empty_routes;
   empty_routes.reserve(empty_route_ranks.size());
   for (auto v : empty_route_ranks) {
-    empty_routes.emplace_back(input, v, input.zero_amount().size());
+    empty_routes.emplace_back(input, v);
   }
 
   for (Index r = 1; r < source.size(); ++r) {

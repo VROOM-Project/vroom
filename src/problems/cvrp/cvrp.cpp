@@ -157,7 +157,7 @@ Solution CVRP::solve(const unsigned nb_searches,
 
     const TSP p(_input, std::move(job_ranks), 0);
 
-    RawRoute r(_input, 0, 0);
+    RawRoute r(_input, 0);
     r.set_route(_input, p.raw_solve(nb_threads, timeout));
 
     return utils::format_solution(_input, {r});

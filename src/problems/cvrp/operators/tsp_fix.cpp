@@ -45,7 +45,7 @@ bool TSPFix::is_valid() {
   bool valid = is_valid_for_source_range_bounds();
 
   if (valid) {
-    const RawRoute route(_input, s_vehicle, _input.zero_amount().size());
+    const RawRoute route(_input, s_vehicle);
 
     valid = route.is_valid_addition_for_capacity_inclusion(_input,
                                                            _s_delivery,

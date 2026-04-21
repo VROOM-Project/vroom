@@ -66,7 +66,7 @@ public:
 
   std::vector<Index> route;
 
-  RawRoute(const Input& input, Index v, unsigned amount_size);
+  RawRoute(const Input& input, Index v);
 
   void set_route(const Input& input, const std::vector<Index>& r);
 

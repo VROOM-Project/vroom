@@ -547,7 +547,7 @@ void Input::set_extra_compatibility() {
   compatible_vehicles_for_job = std::vector<std::vector<Index>>(jobs.size());
 
   for (std::size_t v = 0; v < vehicles.size(); ++v) {
-    const TWRoute empty_route(*this, v, _zero.size());
+    const TWRoute empty_route(*this, v);
     for (Index j = 0; j < jobs.size(); ++j) {
       if (!_vehicle_to_job_compatibility[v][j]) {
         continue;

@@ -31,7 +31,7 @@ template <class Route> std::vector<Route> set_init_sol(const Input& input) {
   init_sol.reserve(input.vehicles.size());
 
   for (Index v = 0; v < input.vehicles.size(); ++v) {
-    init_sol.emplace_back(input, v, input.zero_amount().size());
+    init_sol.emplace_back(input, v);
   }
 
   return init_sol;

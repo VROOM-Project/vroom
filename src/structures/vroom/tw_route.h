@@ -122,7 +122,7 @@ public:
   std::vector<Amount> fwd_smallest_breaks_load_margin;
   std::vector<Amount> bwd_smallest_breaks_load_margin;
 
-  TWRoute(const Input& input, Index v, unsigned amount_size);
+  TWRoute(const Input& input, Index v);
 
   // Check validity for addition of job at job_rank in current route
   // at rank.
