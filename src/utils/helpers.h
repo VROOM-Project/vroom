@@ -32,6 +32,9 @@ TimePoint now();
 
 Amount max_amount(std::size_t size);
 
+Amount get_single_jobs_deliveries(const Input& input,
+                                  const std::vector<VehicleStep>& steps);
+
 inline UserCost add_without_overflow(UserCost a, UserCost b) {
   if (a > std::numeric_limits<UserCost>::max() - b) {
     throw InputException(

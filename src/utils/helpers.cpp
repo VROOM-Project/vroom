@@ -28,6 +28,22 @@ Amount max_amount(std::size_t size) {
   return max;
 }
 
+Amount get_single_jobs_deliveries(const Input& input,
+                                  const std::vector<VehicleStep>& steps) {
+  Amount single_jobs_deliveries(input.zero_amount());
+  for (const auto& step : steps) {
+    if (step.type == STEP_TYPE::JOB) {
+      assert(step.job_type.has_value());
+
+      if (step.job_type.value() == JOB_TYPE::SINGLE) {
+        single_jobs_deliveries += input.jobs[step.rank].delivery;
+      }
+    }
+  }
+
+  return single_jobs_deliveries;
+}
+
 Priority priority_sum_for_route(const Input& input,
                                 const std::vector<Index>& route) {
   return std::accumulate(route.begin(),

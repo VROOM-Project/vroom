@@ -8,6 +8,7 @@ All rights reserved (see LICENSE).
 */
 
 #include "structures/vroom/raw_route.h"
+#include "utils/helpers.h"
 
 namespace vroom {
 
@@ -40,16 +41,8 @@ std::vector<Index> RawRoute::check_route_steps(const Input& input) {
   assert(!vehicle.steps.empty());
 
   // Startup load is the sum of deliveries for (single) jobs.
-  Amount single_jobs_deliveries(input.zero_amount());
-  for (const auto& step : vehicle.steps) {
-    if (step.type == STEP_TYPE::JOB) {
-      assert(step.job_type.has_value());
-
-      if (step.job_type.value() == JOB_TYPE::SINGLE) {
-        single_jobs_deliveries += input.jobs[step.rank].delivery;
-      }
-    }
-  }
+  const auto single_jobs_deliveries =
+    utils::get_single_jobs_deliveries(input, vehicle.steps);
   if (!(single_jobs_deliveries <= vehicle.capacity)) {
     throw InputException(
       std::format("Route over capacity for vehicle {}.", vehicle.id));
