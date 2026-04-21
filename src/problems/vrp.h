@@ -33,11 +33,16 @@ std::vector<Route> set_init_sol(const Input& input,
   init_sol.reserve(input.vehicles.size());
 
   for (Index v = 0; v < input.vehicles.size(); ++v) {
-    init_sol.emplace_back(input, v, input.zero_amount().size());
-  }
-
-  if (input.has_initial_routes()) {
-    heuristics::set_initial_routes<Route>(input, init_sol, init_assigned);
+    const auto& vehicle = input.vehicles[v];
+    if (vehicle.steps.empty()) {
+      init_sol.emplace_back(input, v, input.zero_amount().size());
+    } else {
+      init_sol.emplace_back(input,
+                            v,
+                            input.zero_amount().size(),
+                            input.vehicles[v].steps,
+                            init_assigned);
+    }
   }
 
   return init_sol;

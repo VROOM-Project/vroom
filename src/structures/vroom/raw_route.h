@@ -64,6 +64,12 @@ public:
 
   RawRoute(const Input& input, Index i, unsigned amount_size);
 
+  RawRoute(const Input& input,
+           Index i,
+           unsigned amount_size,
+           const std::vector<VehicleStep>& steps,
+           std::unordered_set<Index>& assigned);
+
   void set_route(const Input& input, const std::vector<Index>& r);
 
   bool empty() const {
