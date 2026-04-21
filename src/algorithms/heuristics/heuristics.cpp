@@ -711,34 +711,6 @@ Eval dynamic_vehicle_choice(const Input& input,
   return sol_eval;
 }
 
-template <class Route>
-void set_route(const Input& input,
-               Route& route,
-               std::unordered_set<Index>& assigned) {
-  assert(route.empty());
-
-  // Now route is OK with regard to capacity, max_travel_time,
-  // max_tasks, precedence and skills constraints.
-  if (!job_ranks.empty()) {
-    if (!route.is_valid_addition_for_tw(input,
-                                        single_jobs_deliveries,
-                                        job_ranks.begin(),
-                                        job_ranks.end(),
-                                        0,
-                                        0)) {
-      throw InputException(
-        std::format("Infeasible route for vehicle {}.", vehicle.id));
-    }
-
-    route.replace(input,
-                  single_jobs_deliveries,
-                  job_ranks.begin(),
-                  job_ranks.end(),
-                  0,
-                  0);
-  }
-}
-
 using RawSolution = std::vector<RawRoute>;
 using TWSolution = std::vector<TWRoute>;
 
