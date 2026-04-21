@@ -26,28 +26,19 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
-template <class Route>
-std::vector<Route> set_init_sol(const Input& input,
-                                std::unordered_set<Index>& init_assigned) {
+template <class Route> std::vector<Route> set_init_sol(const Input& input) {
   std::vector<Route> init_sol;
   init_sol.reserve(input.vehicles.size());
 
   for (Index v = 0; v < input.vehicles.size(); ++v) {
-    const auto& vehicle = input.vehicles[v];
-    if (vehicle.steps.empty()) {
-      init_sol.emplace_back(input, v, input.zero_amount().size());
-    } else {
-      init_sol.emplace_back(input,
-                            v,
-                            input.zero_amount().size(),
-                            init_assigned);
-    }
+    init_sol.emplace_back(input, v, input.zero_amount().size());
   }
 
   return init_sol;
 }
 
 template <class Route> struct SolvingContext {
+  // TODO get rid of init_assigned and compute "unassigned" directly.
   std::unordered_set<Index> init_assigned;
   const std::vector<Route> init_sol;
   std::set<Index> unassigned;
@@ -59,7 +50,7 @@ template <class Route> struct SolvingContext {
   std::mutex heuristic_indicators_m;
 
   SolvingContext(const Input& input, unsigned nb_searches)
-    : init_sol(set_init_sol<Route>(input, init_assigned)),
+    : init_sol(set_init_sol<Route>(input)),
       vehicles_ranks(input.vehicles.size()),
       solutions(nb_searches, init_sol),
       sol_indicators(nb_searches) {

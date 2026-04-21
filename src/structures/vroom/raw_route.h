@@ -53,6 +53,10 @@ private:
   Amount _delivery_margin;
   Amount _pickup_margin;
 
+  // Throws if route for vehicle steps is invalid, else return job
+  // ranks in current route.
+  std::vector<Index> check_route_steps(const Input& input);
+
 public:
   Index v_rank;
   Index v_type;
@@ -62,14 +66,7 @@ public:
 
   std::vector<Index> route;
 
-  // Used to create empty route.
   RawRoute(const Input& input, Index v, unsigned amount_size);
-
-  // Used to create route populated from matching vehicle steps.
-  RawRoute(const Input& input,
-           Index v,
-           unsigned amount_size,
-           std::unordered_set<Index>& assigned);
 
   void set_route(const Input& input, const std::vector<Index>& r);
 

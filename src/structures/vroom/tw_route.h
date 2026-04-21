@@ -122,11 +122,6 @@ public:
 
   TWRoute(const Input& input, Index v, unsigned amount_size);
 
-  TWRoute(const Input& input,
-          Index i,
-          unsigned amount_size,
-          std::unordered_set<Index>& assigned);
-
   // Check validity for addition of job at job_rank in current route
   // at rank.
   bool is_valid_addition_for_tw(const Input& input,

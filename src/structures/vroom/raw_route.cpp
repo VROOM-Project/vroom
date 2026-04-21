@@ -22,16 +22,21 @@ RawRoute::RawRoute(const Input& input, Index v, unsigned amount_size)
     has_start(input.vehicles[v].has_start()),
     has_end(input.vehicles[v].has_end()),
     capacity(input.vehicles[v].capacity) {
+  const auto& vehicle = input.vehicles[v];
+  if (!vehicle.steps.empty()) {
+    const auto job_ranks = check_route_steps(input);
+
+    if (!job_ranks.empty()) {
+      // Proceed with updating current route and all amounts.
+      set_route(input, job_ranks);
+    }
+  }
 }
 
-RawRoute::RawRoute(const Input& input,
-                   Index v,
-                   unsigned amount_size,
-                   std::unordered_set<Index>& assigned)
-  : RawRoute(input, v, amount_size) {
+std::vector<Index> RawRoute::check_route_steps(const Input& input) {
   // Check that provided route is OK with regard to capacity,
   // max_travel_time, max_tasks, precedence and skills constraints.
-  const auto& vehicle = input.vehicles[v];
+  const auto& vehicle = input.vehicles[v_rank];
   assert(!vehicle.steps.empty());
 
   // Startup load is the sum of deliveries for (single) jobs.
@@ -70,10 +75,7 @@ RawRoute::RawRoute(const Input& input,
     const auto& job = input.jobs[job_rank];
     job_ranks.push_back(job_rank);
 
-    assert(!assigned.contains(job_rank));
-    assigned.insert(job_rank);
-
-    if (!input.vehicle_ok_with_job(v, job_rank)) {
+    if (!input.vehicle_ok_with_job(v_rank, job_rank)) {
       throw InputException(
         std::format("Missing skill or step out of reach for vehicle {} and "
                     "job {}.",
@@ -148,10 +150,7 @@ RawRoute::RawRoute(const Input& input,
       std::format("Invalid shipment in route for vehicle {}.", vehicle.id));
   }
 
-  if (!job_ranks.empty()) {
-    // Proceed with updating current route and all amounts.
-    set_route(input, job_ranks);
-  }
+  return job_ranks;
 }
 
 void RawRoute::set_route(const Input& input, const std::vector<Index>& r) {
