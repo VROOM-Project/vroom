@@ -24,14 +24,20 @@ TWRoute::TWRoute(const Input& input, Index v, unsigned amount_size)
     break_latest(input.vehicles[v].breaks.size()),
     fwd_smallest_breaks_load_margin(input.vehicles[v].breaks.size()),
     bwd_smallest_breaks_load_margin(input.vehicles[v].breaks.size()) {
-  const std::string break_error =
-    std::format("Inconsistent breaks for vehicle {}.", input.vehicles[v].id);
+  init_break_setup(input);
+}
 
-  const auto& breaks = input.vehicles[v].breaks;
+void TWRoute::init_break_setup(const Input& input) {
+  const std::string break_error =
+    std::format("Inconsistent breaks for vehicle {}.",
+                input.vehicles[v_rank].id);
+
+  const auto& breaks = input.vehicles[v_rank].breaks;
 
   Duration previous_earliest = v_start;
 
   // Store smallest margin component-wise.
+  const auto amount_size = input.zero_amount().size();
   Amount fwd_smallest_margin = utils::max_amount(amount_size);
   Amount bwd_smallest_margin = utils::max_amount(amount_size);
 

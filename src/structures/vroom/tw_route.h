@@ -58,6 +58,8 @@ struct OrderChoice {
 
 class TWRoute : public RawRoute {
 private:
+  void init_break_setup(const Input& input);
+
   PreviousInfo previous_info(const Input& input,
                              Index job_rank,
                              Index rank) const;
