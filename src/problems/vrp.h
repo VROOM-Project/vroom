@@ -38,8 +38,6 @@ template <class Route> std::vector<Route> set_init_sol(const Input& input) {
 }
 
 template <class Route> struct SolvingContext {
-  // TODO get rid of init_assigned and compute "unassigned" directly.
-  std::unordered_set<Index> init_assigned;
   const std::vector<Route> init_sol;
   std::set<Index> unassigned;
   std::vector<Index> vehicles_ranks;
@@ -56,9 +54,15 @@ template <class Route> struct SolvingContext {
       sol_indicators(nb_searches) {
 
     // Deduce unassigned jobs from initial solution.
+    std::unordered_set<Index> init_assigned;
+    for (const auto& r : init_sol) {
+      for (const Index i : r.route) {
+        init_assigned.insert(i);
+      }
+    }
     std::ranges::copy_if(std::views::iota(0u, input.jobs.size()),
                          std::inserter(unassigned, unassigned.begin()),
-                         [this](const Index j) {
+                         [&](const Index j) {
                            return !init_assigned.contains(j);
                          });
 
