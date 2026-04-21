@@ -62,12 +62,13 @@ public:
 
   std::vector<Index> route;
 
-  RawRoute(const Input& input, Index i, unsigned amount_size);
+  // Used to create empty route.
+  RawRoute(const Input& input, Index v, unsigned amount_size);
 
+  // Used to create route populated from matching vehicle steps.
   RawRoute(const Input& input,
-           Index i,
+           Index v,
            unsigned amount_size,
-           const std::vector<VehicleStep>& steps,
            std::unordered_set<Index>& assigned);
 
   void set_route(const Input& input, const std::vector<Index>& r);

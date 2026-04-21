@@ -40,7 +40,6 @@ std::vector<Route> set_init_sol(const Input& input,
       init_sol.emplace_back(input,
                             v,
                             input.zero_amount().size(),
-                            input.vehicles[v].steps,
                             init_assigned);
     }
   }
