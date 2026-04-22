@@ -58,8 +58,6 @@ struct OrderChoice {
 
 class TWRoute : public RawRoute {
 private:
-  void init_break_setup(const Input& input);
-
   PreviousInfo previous_info(const Input& input,
                              Index job_rank,
                              Index rank) const;
@@ -123,6 +121,8 @@ public:
   std::vector<Amount> bwd_smallest_breaks_load_margin;
 
   TWRoute(const Input& input, Index v);
+
+  void populate_from_steps(const Input& input);
 
   // Check validity for addition of job at job_rank in current route
   // at rank.

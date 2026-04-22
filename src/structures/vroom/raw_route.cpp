@@ -23,7 +23,10 @@ RawRoute::RawRoute(const Input& input, Index v)
     has_start(input.vehicles[v].has_start()),
     has_end(input.vehicles[v].has_end()),
     capacity(input.vehicles[v].capacity) {
-  const auto& vehicle = input.vehicles[v];
+}
+
+void RawRoute::populate_from_steps(const Input& input) {
+  const auto& vehicle = input.vehicles[v_rank];
   if (!vehicle.steps.empty()) {
     const auto job_ranks = check_route_steps(input);
 

@@ -24,47 +24,10 @@ TWRoute::TWRoute(const Input& input, Index v)
     break_latest(input.vehicles[v].breaks.size()),
     fwd_smallest_breaks_load_margin(input.vehicles[v].breaks.size()),
     bwd_smallest_breaks_load_margin(input.vehicles[v].breaks.size()) {
-  // Populate break data for empty route.
-  init_break_setup(input);
-
-  const auto& vehicle = input.vehicles[v];
-  if (!vehicle.steps.empty()) {
-    // As per the call to RawRoute above, provided route is OK with
-    // regard to capacity, max_travel_time, max_tasks, precedence and
-    // skills constraints AND this->route has been updated.
-
-    if (!route.empty()) {
-      // We want to first check if route is OK for TW constraints based
-      // on our default break assignment heuristic.
-      const auto single_jobs_deliveries =
-        utils::get_single_jobs_deliveries(input, vehicle.steps);
-
-      if (this->is_valid_addition_for_tw(input,
-                                         single_jobs_deliveries,
-                                         route.begin(),
-                                         route.end(),
-                                         0,
-                                         route.size())) {
-        this->replace(input,
-                      single_jobs_deliveries,
-                      route.begin(),
-                      route.end(),
-                      0,
-                      route.size());
-      } else {
-        throw InputException(
-          std::format("Infeasible route for vehicle {}.", vehicle.id));
-      }
-    }
-  }
-}
-
-void TWRoute::init_break_setup(const Input& input) {
   const std::string break_error =
-    std::format("Inconsistent breaks for vehicle {}.",
-                input.vehicles[v_rank].id);
+    std::format("Inconsistent breaks for vehicle {}.", input.vehicles[v].id);
 
-  const auto& breaks = input.vehicles[v_rank].breaks;
+  const auto& breaks = input.vehicles[v].breaks;
 
   Duration previous_earliest = v_start;
 
@@ -132,6 +95,44 @@ void TWRoute::init_break_setup(const Input& input) {
       }
     }
     bwd_smallest_breaks_load_margin[i] = bwd_smallest_margin;
+  }
+}
+
+void TWRoute::populate_from_steps(const Input& input) {
+  const auto& vehicle = input.vehicles[v_rank];
+  if (vehicle.steps.empty()) {
+    // Nothing to do.
+    return;
+  }
+
+  // If vehicles steps are not empty, start by checking validity from
+  // a RawRoute perspective.
+  const auto job_ranks = check_route_steps(input);
+
+  // Steps route is OK with regard to capacity, max_travel_time,
+  // max_tasks, precedence and skills constraints.
+  if (!job_ranks.empty()) {
+    // We want to first check if route is OK for TW constraints based
+    // on our default break assignment heuristic.
+    const auto single_jobs_deliveries =
+      utils::get_single_jobs_deliveries(input, vehicle.steps);
+
+    if (this->is_valid_addition_for_tw(input,
+                                       single_jobs_deliveries,
+                                       job_ranks.begin(),
+                                       job_ranks.end(),
+                                       0,
+                                       0)) {
+      this->replace(input,
+                    single_jobs_deliveries,
+                    job_ranks.begin(),
+                    job_ranks.end(),
+                    0,
+                    0);
+    } else {
+      throw InputException(
+        std::format("Infeasible route for vehicle {}.", vehicle.id));
+    }
   }
 }
 

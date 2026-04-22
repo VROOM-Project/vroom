@@ -53,6 +53,7 @@ private:
   Amount _delivery_margin;
   Amount _pickup_margin;
 
+protected:
   // Throws if route for vehicle steps is invalid, else return job
   // ranks in current route.
   std::vector<Index> check_route_steps(const Input& input);
@@ -67,6 +68,8 @@ public:
   std::vector<Index> route;
 
   RawRoute(const Input& input, Index v);
+
+  void populate_from_steps(const Input& input);
 
   void set_route(const Input& input, const std::vector<Index>& r);
 
