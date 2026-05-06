@@ -17,9 +17,13 @@ namespace vroom {
 
 struct InitRouteData {
   std::vector<Index> job_ranks;
+  std::vector<unsigned> breaks_at_rank;
+  std::vector<unsigned> breaks_counts;
 
   InitRouteData(std::size_t steps_size) {
     job_ranks.reserve(steps_size);
+    breaks_at_rank.reserve(steps_size + 1);
+    breaks_counts.reserve(steps_size + 1);
   }
 };
 

@@ -60,15 +60,25 @@ InitRouteData RawRoute::check_route_steps(const Input& input) {
   }
 
   InitRouteData route_data(vehicle.steps.size());
+  route_data.breaks_at_rank.push_back(0);
+  route_data.breaks_counts.push_back(0);
+
   std::unordered_set<Index> expected_delivery_ranks;
   for (const auto& step : vehicle.steps) {
+    // Filter for real jobs while populating break data.
     if (step.type != STEP_TYPE::JOB) {
+      if (step.type == STEP_TYPE::BREAK) {
+        route_data.breaks_at_rank.back() += 1;
+        route_data.breaks_counts.back() += 1;
+      }
       continue;
     }
 
     const auto job_rank = step.rank;
     const auto& job = input.jobs[job_rank];
     route_data.job_ranks.push_back(job_rank);
+    route_data.breaks_at_rank.push_back(0);
+    route_data.breaks_counts.push_back(route_data.breaks_counts.back());
 
     if (!input.vehicle_ok_with_job(v_rank, job_rank)) {
       throw InputException(
@@ -119,6 +129,8 @@ InitRouteData RawRoute::check_route_steps(const Input& input) {
         std::format("Route over capacity for vehicle {}.", vehicle.id));
     }
   }
+  assert(route_data.breaks_at_rank.size() == route_data.job_ranks.size() + 1);
+  assert(route_data.breaks_counts.size() == route_data.job_ranks.size() + 1);
 
   if (vehicle.has_end() && !route_data.job_ranks.empty()) {
     // Update with last route leg.
