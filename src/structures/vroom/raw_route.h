@@ -15,6 +15,14 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
+struct InitRouteData {
+  std::vector<Index> job_ranks;
+
+  InitRouteData(std::size_t steps_size) {
+    job_ranks.reserve(steps_size);
+  }
+};
+
 class RawRoute {
 private:
   Amount _zero;
@@ -54,9 +62,9 @@ private:
   Amount _pickup_margin;
 
 protected:
-  // Throws if route for vehicle steps is invalid, else return job
-  // ranks in current route.
-  std::vector<Index> check_route_steps(const Input& input);
+  // Throws if route for vehicle steps is invalid, else return useful
+  // info for further manual route setup.
+  InitRouteData check_route_steps(const Input& input);
 
 public:
   Index v_rank;

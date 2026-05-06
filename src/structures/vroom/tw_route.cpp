@@ -107,11 +107,11 @@ void TWRoute::populate_from_steps(const Input& input) {
 
   // If vehicles steps are not empty, start by checking validity from
   // a RawRoute perspective.
-  const auto job_ranks = check_route_steps(input);
+  const auto route_data = check_route_steps(input);
 
   // Steps route is OK with regard to capacity, max_travel_time,
   // max_tasks, precedence and skills constraints.
-  if (!job_ranks.empty()) {
+  if (!route_data.job_ranks.empty()) {
     // We want to first check if route is OK for TW constraints based
     // on our default break assignment heuristic.
     const auto single_jobs_deliveries =
@@ -119,14 +119,14 @@ void TWRoute::populate_from_steps(const Input& input) {
 
     if (this->is_valid_addition_for_tw(input,
                                        single_jobs_deliveries,
-                                       job_ranks.begin(),
-                                       job_ranks.end(),
+                                       route_data.job_ranks.begin(),
+                                       route_data.job_ranks.end(),
                                        0,
                                        0)) {
       this->replace(input,
                     single_jobs_deliveries,
-                    job_ranks.begin(),
-                    job_ranks.end(),
+                    route_data.job_ranks.begin(),
+                    route_data.job_ranks.end(),
                     0,
                     0);
     } else {

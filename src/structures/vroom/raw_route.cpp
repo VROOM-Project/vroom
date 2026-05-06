@@ -28,16 +28,16 @@ RawRoute::RawRoute(const Input& input, Index v)
 void RawRoute::populate_from_steps(const Input& input) {
   const auto& vehicle = input.vehicles[v_rank];
   if (!vehicle.steps.empty()) {
-    const auto job_ranks = check_route_steps(input);
+    const auto route_data = check_route_steps(input);
 
-    if (!job_ranks.empty()) {
+    if (!route_data.job_ranks.empty()) {
       // Proceed with updating current route and all amounts.
-      set_route(input, job_ranks);
+      set_route(input, route_data.job_ranks);
     }
   }
 }
 
-std::vector<Index> RawRoute::check_route_steps(const Input& input) {
+InitRouteData RawRoute::check_route_steps(const Input& input) {
   // Check that provided route is OK with regard to capacity,
   // max_travel_time, max_tasks, precedence and skills constraints.
   const auto& vehicle = input.vehicles[v_rank];
@@ -59,8 +59,7 @@ std::vector<Index> RawRoute::check_route_steps(const Input& input) {
     previous_index = vehicle.start.value().index();
   }
 
-  std::vector<Index> job_ranks;
-  job_ranks.reserve(vehicle.steps.size());
+  InitRouteData route_data(vehicle.steps.size());
   std::unordered_set<Index> expected_delivery_ranks;
   for (const auto& step : vehicle.steps) {
     if (step.type != STEP_TYPE::JOB) {
@@ -69,7 +68,7 @@ std::vector<Index> RawRoute::check_route_steps(const Input& input) {
 
     const auto job_rank = step.rank;
     const auto& job = input.jobs[job_rank];
-    job_ranks.push_back(job_rank);
+    route_data.job_ranks.push_back(job_rank);
 
     if (!input.vehicle_ok_with_job(v_rank, job_rank)) {
       throw InputException(
@@ -121,7 +120,7 @@ std::vector<Index> RawRoute::check_route_steps(const Input& input) {
     }
   }
 
-  if (vehicle.has_end() && !job_ranks.empty()) {
+  if (vehicle.has_end() && !route_data.job_ranks.empty()) {
     // Update with last route leg.
     assert(previous_index.has_value());
     eval_sum +=
@@ -136,7 +135,7 @@ std::vector<Index> RawRoute::check_route_steps(const Input& input) {
       std::format("Route over max_distance for vehicle {}.", vehicle.id));
   }
 
-  if (vehicle.max_tasks < job_ranks.size()) {
+  if (vehicle.max_tasks < route_data.job_ranks.size()) {
     throw InputException(
       std::format("Too many tasks for vehicle {}.", vehicle.id));
   }
@@ -146,7 +145,7 @@ std::vector<Index> RawRoute::check_route_steps(const Input& input) {
       std::format("Invalid shipment in route for vehicle {}.", vehicle.id));
   }
 
-  return job_ranks;
+  return route_data;
 }
 
 void RawRoute::set_route(const Input& input, const std::vector<Index>& r) {
