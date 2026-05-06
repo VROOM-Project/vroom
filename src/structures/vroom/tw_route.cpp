@@ -111,32 +111,39 @@ void TWRoute::populate_from_steps(const Input& input) {
     // account for user-provided breaks at all and check if route is
     // OK for TW constraints based on our default break assignment
     // heuristic.
-    if (!route_data.job_ranks.empty()) {
-      if (this->is_valid_addition_for_tw(input,
-                                         route_data.single_jobs_deliveries,
-                                         route_data.job_ranks.begin(),
-                                         route_data.job_ranks.end(),
-                                         0,
-                                         0)) {
-        this->replace(input,
-                      route_data.single_jobs_deliveries,
-                      route_data.job_ranks.begin(),
-                      route_data.job_ranks.end(),
-                      0,
-                      0);
-      } else {
-        throw InputException(
-                             std::format("Infeasible route for vehicle {}.", vehicle.id));
-      }
-    }
+    this->populate_from_steps_with_break_heuristic(input, route_data);
   } else {
     // Try populating object data using user-provided breaks ordering.
     this->populate_from_steps_with_breaks(input, std::move(route_data));
   }
 }
 
+void TWRoute::populate_from_steps_with_break_heuristic(
+  const Input& input,
+  const InitRouteData& route_data) {
+  if (!route_data.job_ranks.empty()) {
+    if (this->is_valid_addition_for_tw(input,
+                                       route_data.single_jobs_deliveries,
+                                       route_data.job_ranks.begin(),
+                                       route_data.job_ranks.end(),
+                                       0,
+                                       0)) {
+      this->replace(input,
+                    route_data.single_jobs_deliveries,
+                    route_data.job_ranks.begin(),
+                    route_data.job_ranks.end(),
+                    0,
+                    0);
+    } else {
+      throw InputException(std::format("Infeasible route for vehicle {}.",
+                                       input.vehicles[v_rank].id));
+    }
+  }
+}
+
 void TWRoute::populate_from_steps_with_breaks(const Input& input,
                                               InitRouteData&& route_data) {
+  // TODO implement
   throw InputException(
     std::format("Infeasible route for vehicle {}.", input.vehicles[v_rank].id));
 }

@@ -73,6 +73,10 @@ private:
   void fwd_update_breaks_load_margin_from(const Input& input, Index rank);
   void bwd_update_breaks_load_margin_from(const Input& input, Index rank);
 
+  void
+  populate_from_steps_with_break_heuristic(const Input& input,
+                                           const InitRouteData& route_data);
+
   void populate_from_steps_with_breaks(const Input& input,
                                        InitRouteData&& route_data);
 
