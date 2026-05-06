@@ -114,17 +114,14 @@ void TWRoute::populate_from_steps(const Input& input) {
   if (!route_data.job_ranks.empty()) {
     // We want to first check if route is OK for TW constraints based
     // on our default break assignment heuristic.
-    const auto single_jobs_deliveries =
-      utils::get_single_jobs_deliveries(input, vehicle.steps);
-
     if (this->is_valid_addition_for_tw(input,
-                                       single_jobs_deliveries,
+                                       route_data.single_jobs_deliveries,
                                        route_data.job_ranks.begin(),
                                        route_data.job_ranks.end(),
                                        0,
                                        0)) {
       this->replace(input,
-                    single_jobs_deliveries,
+                    route_data.single_jobs_deliveries,
                     route_data.job_ranks.begin(),
                     route_data.job_ranks.end(),
                     0,

@@ -19,6 +19,7 @@ struct InitRouteData {
   std::vector<Index> job_ranks;
   std::vector<unsigned> breaks_at_rank;
   std::vector<unsigned> breaks_counts;
+  Amount single_jobs_deliveries;
 
   InitRouteData(std::size_t steps_size) {
     job_ranks.reserve(steps_size);

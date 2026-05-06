@@ -44,22 +44,24 @@ InitRouteData RawRoute::check_route_steps(const Input& input) {
   assert(!vehicle.steps.empty());
 
   // Startup load is the sum of deliveries for (single) jobs.
-  const auto single_jobs_deliveries =
+  InitRouteData route_data(vehicle.steps.size());
+  route_data.single_jobs_deliveries =
     utils::get_single_jobs_deliveries(input, vehicle.steps);
-  if (!(single_jobs_deliveries <= vehicle.capacity)) {
+
+  if (!(route_data.single_jobs_deliveries <= vehicle.capacity)) {
     throw InputException(
       std::format("Route over capacity for vehicle {}.", vehicle.id));
   }
 
   // Track load and travel time during the route for validity.
-  Amount current_load = single_jobs_deliveries;
+  Amount current_load = route_data.single_jobs_deliveries;
   Eval eval_sum;
   std::optional<Index> previous_index;
   if (vehicle.has_start()) {
     previous_index = vehicle.start.value().index();
   }
 
-  InitRouteData route_data(vehicle.steps.size());
+  // Initialize first break count slots.
   route_data.breaks_at_rank.push_back(0);
   route_data.breaks_counts.push_back(0);
 
