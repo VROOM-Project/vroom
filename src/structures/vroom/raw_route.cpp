@@ -37,7 +37,7 @@ void RawRoute::populate_from_steps(const Input& input) {
   }
 }
 
-InitRouteData RawRoute::check_route_steps(const Input& input) {
+InitRouteData RawRoute::check_route_steps(const Input& input) const {
   // Check that provided route is OK with regard to capacity,
   // max_travel_time, max_tasks, precedence and skills constraints.
   const auto& vehicle = input.vehicles[v_rank];

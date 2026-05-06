@@ -21,7 +21,7 @@ struct InitRouteData {
   std::vector<unsigned> breaks_counts;
   Amount single_jobs_deliveries;
 
-  InitRouteData(std::size_t steps_size) {
+  explicit InitRouteData(std::size_t steps_size) {
     job_ranks.reserve(steps_size);
     breaks_at_rank.reserve(steps_size + 1);
     breaks_counts.reserve(steps_size + 1);
@@ -69,7 +69,7 @@ private:
 protected:
   // Throws if route for vehicle steps is invalid, else return useful
   // info for further manual route setup.
-  InitRouteData check_route_steps(const Input& input);
+  InitRouteData check_route_steps(const Input& input) const;
 
 public:
   Index v_rank;
@@ -82,7 +82,7 @@ public:
 
   RawRoute(const Input& input, Index v);
 
-  void populate_from_steps(const Input& input);
+  virtual void populate_from_steps(const Input& input);
 
   void set_route(const Input& input, const std::vector<Index>& r);
 
