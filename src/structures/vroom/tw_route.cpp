@@ -100,37 +100,45 @@ TWRoute::TWRoute(const Input& input, Index v)
 
 void TWRoute::populate_from_steps(const Input& input) {
   const auto& vehicle = input.vehicles[v_rank];
-  if (vehicle.steps.empty()) {
-    // Nothing to do.
-    return;
-  }
 
-  // If vehicles steps are not empty, start by checking validity from
-  // a RawRoute perspective.
-  const auto route_data = check_route_steps(input);
-
-  // Steps route is OK with regard to capacity, max_travel_time,
+  // Start by checking validity from a RawRoute perspective, making
+  // sure route is OK with regard to capacity, max_travel_time,
   // max_tasks, precedence and skills constraints.
-  if (!route_data.job_ranks.empty()) {
-    // We want to first check if route is OK for TW constraints based
-    // on our default break assignment heuristic.
-    if (this->is_valid_addition_for_tw(input,
-                                       route_data.single_jobs_deliveries,
-                                       route_data.job_ranks.begin(),
-                                       route_data.job_ranks.end(),
-                                       0,
-                                       0)) {
-      this->replace(input,
-                    route_data.single_jobs_deliveries,
-                    route_data.job_ranks.begin(),
-                    route_data.job_ranks.end(),
-                    0,
-                    0);
-    } else {
-      throw InputException(
-        std::format("Infeasible route for vehicle {}.", vehicle.id));
+  auto route_data = check_route_steps(input);
+
+  if (route_data.breaks_counts.back() != vehicle.breaks.size()) {
+    // Not all breaks are provided in vehicle steps, so we do not
+    // account for user-provided breaks at all and check if route is
+    // OK for TW constraints based on our default break assignment
+    // heuristic.
+    if (!route_data.job_ranks.empty()) {
+      if (this->is_valid_addition_for_tw(input,
+                                         route_data.single_jobs_deliveries,
+                                         route_data.job_ranks.begin(),
+                                         route_data.job_ranks.end(),
+                                         0,
+                                         0)) {
+        this->replace(input,
+                      route_data.single_jobs_deliveries,
+                      route_data.job_ranks.begin(),
+                      route_data.job_ranks.end(),
+                      0,
+                      0);
+      } else {
+        throw InputException(
+                             std::format("Infeasible route for vehicle {}.", vehicle.id));
+      }
     }
+  } else {
+    // Try populating object data using user-provided breaks ordering.
+    this->populate_from_steps_with_breaks(input, std::move(route_data));
   }
+}
+
+void TWRoute::populate_from_steps_with_breaks(const Input& input,
+                                              InitRouteData&& route_data) {
+  throw InputException(
+    std::format("Infeasible route for vehicle {}.", input.vehicles[v_rank].id));
 }
 
 PreviousInfo TWRoute::previous_info(const Input& input,
