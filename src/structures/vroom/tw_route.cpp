@@ -106,15 +106,16 @@ void TWRoute::populate_from_steps(const Input& input) {
   // max_tasks, precedence and skills constraints.
   auto route_data = check_route_steps(input);
 
-  if (route_data.breaks_counts.back() != vehicle.breaks.size()) {
-    // Not all breaks are provided in vehicle steps, so we do not
-    // account for user-provided breaks at all and check if route is
-    // OK for TW constraints based on our default break assignment
-    // heuristic.
+  if (vehicle.breaks.empty() ||
+      route_data.breaks_counts.back() != vehicle.breaks.size()) {
+    // Vehicle has no break or not all breaks are provided in vehicle
+    // steps. In this case we do not account for user-provided breaks
+    // at all and check if route is OK for TW constraints based on our
+    // default break assignment heuristic.
     this->populate_from_steps_with_break_heuristic(input, route_data);
   } else {
     // Try populating object data using user-provided breaks ordering.
-    this->populate_from_steps_with_breaks(input, std::move(route_data));
+    this->populate_from_steps_with_breaks(input, route_data);
   }
 }
 
@@ -142,10 +143,267 @@ void TWRoute::populate_from_steps_with_break_heuristic(
 }
 
 void TWRoute::populate_from_steps_with_breaks(const Input& input,
-                                              InitRouteData&& route_data) {
-  // TODO implement
-  throw InputException(
-    std::format("Infeasible route for vehicle {}.", input.vehicles[v_rank].id));
+                                              const InitRouteData& route_data) {
+  if (route_data.job_ranks.empty()) {
+    // Default constructor already did all the break-related
+    // boilerplate.
+    return;
+  }
+
+  const auto& v = input.vehicles[v_rank];
+  assert(v.breaks.size() == route_data.breaks_counts.back());
+
+  const std::string error =
+    std::format("Infeasible route for vehicle {}.", v.id);
+
+  // Handle parent RawRoute members.
+  this->set_route(input, route_data.job_ranks);
+  assert(route_data.job_ranks.size() == route.size());
+
+  // We already have break counts figured out.
+  breaks_at_rank = route_data.breaks_at_rank;
+  breaks_counts = route_data.breaks_counts;
+
+  // Update members to be populated below while checking for timing
+  // validity.
+  earliest = std::vector<Duration>(route.size());
+  latest = std::vector<Duration>(route.size());
+  action_time = std::vector<Duration>(route.size());
+
+  break_earliest = std::vector<Duration>(v.breaks.size());
+  break_latest = std::vector<Duration>(v.breaks.size());
+
+  // TODO
+  // fwd_smallest_breaks_load_margin = std::vector<Amount>(v.breaks.size());
+  // bwd_smallest_breaks_load_margin = std::vector<Amount>(v.breaks.size());
+
+  Duration current_earliest = v_start;
+
+  std::optional<Index> previous_index;
+  if (v.has_start()) {
+    previous_index = v.start.value().index();
+  }
+
+  // Go forward through all breaks and jobs.
+  for (Index i = 0; i < route.size(); ++i) {
+    const auto& job = input.jobs[route[i]];
+
+    // Update earliest dates and margins for breaks before current
+    // job.
+    Duration remaining_travel_time =
+      (previous_index.has_value())
+        ? v.duration(previous_index.value(), job.index())
+        : 0;
+    previous_index = job.index();
+
+    assert(breaks_at_rank[i] <= breaks_counts[i]);
+    Index break_rank = breaks_counts[i] - breaks_at_rank[i];
+
+    for (Index r = 0; r < breaks_at_rank[i]; ++r, ++break_rank) {
+      const auto& b = v.breaks[break_rank];
+
+      const auto b_tw = std::ranges::find_if(b.tws, [&](const auto& tw) {
+        return current_earliest <= tw.end;
+      });
+      if (b_tw == b.tws.end()) {
+        throw InputException(error);
+      };
+
+      if (current_earliest < b_tw->start) {
+        if (const auto margin = b_tw->start - current_earliest;
+            margin < remaining_travel_time) {
+          remaining_travel_time -= margin;
+        } else {
+          remaining_travel_time = 0;
+        }
+
+        current_earliest = b_tw->start;
+      }
+
+      break_earliest[break_rank] = current_earliest;
+      current_earliest += v.breaks[break_rank].service;
+    }
+
+    // Back to the job after breaks.
+    current_earliest += remaining_travel_time;
+
+    const auto j_tw = std::ranges::find_if(job.tws, [&](const auto& tw) {
+      return current_earliest <= tw.end;
+    });
+    if (j_tw == job.tws.end()) {
+      throw InputException(error);
+    }
+
+    current_earliest = std::max(current_earliest, j_tw->start);
+    earliest[i] = current_earliest;
+
+    action_time[i] = job.services[v.type];
+    if (!previous_index.has_value() ||
+        (previous_index.value() != job.index())) {
+      action_time[i] += job.setups[v.type];
+    }
+
+    current_earliest += action_time[i];
+  }
+
+  // Handle remaining breaks before route end.
+  assert(!route.empty());
+  Duration remaining_travel_time =
+    (v.has_end()) ? v.duration(input.jobs.back().index(), v.end.value().index())
+                  : 0;
+
+  assert(breaks_at_rank[route.size()] <= breaks_counts[route.size()]);
+  Index break_rank = breaks_counts[route.size()] - breaks_at_rank[route.size()];
+
+  for (Index r = 0; r < breaks_at_rank[route.size()]; ++r, ++break_rank) {
+    const auto& b = v.breaks[break_rank];
+
+    const auto b_tw = std::ranges::find_if(b.tws, [&](const auto& tw) {
+      return current_earliest <= tw.end;
+    });
+    if (b_tw == b.tws.end()) {
+      throw InputException(error);
+    }
+
+    if (current_earliest < b_tw->start) {
+      if (const auto margin = b_tw->start - current_earliest;
+          margin < remaining_travel_time) {
+        remaining_travel_time -= margin;
+      } else {
+        remaining_travel_time = 0;
+      }
+
+      current_earliest = b_tw->start;
+    }
+
+    break_earliest[break_rank] = current_earliest;
+    current_earliest += v.breaks[break_rank].service;
+  }
+
+  // Consistency check with vehicle TW end.
+  earliest_end = current_earliest + remaining_travel_time;
+  if (v_end < earliest_end) {
+    throw InputException(error);
+  }
+
+  // Go backward through all breaks and jobs.
+  auto current_latest = v_end;
+
+  std::optional<Index> next_index;
+  if (v.has_end()) {
+    next_index = v.end.value().index();
+  }
+
+  for (Index next_i = route.size(); next_i > 0; --next_i) {
+    const auto& previous_j = input.jobs[route[next_i - 1]];
+    Duration remaining_travel_time =
+      (next_index.has_value())
+        ? v.duration(previous_j.index(), next_index.value())
+        : 0;
+    next_index = previous_j.index();
+
+    // Update latest dates and margins for breaks.
+    assert(breaks_at_rank[next_i] <= breaks_counts[next_i]);
+    Index break_rank = breaks_counts[next_i];
+
+    for (Index r = 0; r < breaks_at_rank[next_i]; ++r) {
+      --break_rank;
+
+      const auto& b = v.breaks[break_rank];
+      if (current_latest < b.service) {
+        throw InputException(error);
+      }
+      current_latest -= b.service;
+
+      const auto b_tw =
+        std::find_if(b.tws.rbegin(), b.tws.rend(), [&](const auto& tw) {
+          return tw.start <= current_latest;
+        });
+      if (b_tw == b.tws.rend()) {
+        throw InputException(error);
+      }
+
+      if (b_tw->end < current_latest) {
+        if (const auto margin = current_latest - b_tw->end;
+            margin < remaining_travel_time) {
+          remaining_travel_time -= margin;
+        } else {
+          remaining_travel_time = 0;
+        }
+
+        current_latest = b_tw->end;
+      }
+
+      break_latest[break_rank] = current_latest;
+    }
+
+    // Back to the job after breaks.
+    auto gap = action_time[next_i - 1] + remaining_travel_time;
+    if (current_latest < gap) {
+      throw InputException(error);
+    }
+    current_latest -= gap;
+
+    const auto j_tw =
+      std::find_if(previous_j.tws.rbegin(),
+                   previous_j.tws.rend(),
+                   [&](const auto& tw) { return tw.start <= current_latest; });
+    if (j_tw == previous_j.tws.rend()) {
+      throw InputException(error);
+    }
+
+    current_latest = std::min(current_latest, j_tw->end);
+    latest[next_i - 1] = current_latest;
+
+    if (latest[next_i - 1] < earliest[next_i - 1]) {
+      throw InputException(error);
+    }
+  }
+
+  // Update latest dates and margins for breaks right before the
+  // first job.
+  remaining_travel_time =
+    (v.has_start())
+      ? v.duration(v.end.value().index(), input.jobs.front().index())
+      : 0;
+
+  assert(breaks_at_rank[0] <= breaks_counts[0]);
+  break_rank = breaks_counts[0];
+
+  for (Index r = 0; r < breaks_at_rank[0]; ++r) {
+    --break_rank;
+    const auto& b = v.breaks[break_rank];
+
+    if (current_latest < b.service) {
+      throw InputException(error);
+    }
+    current_latest -= b.service;
+
+    const auto b_tw =
+      std::find_if(b.tws.rbegin(), b.tws.rend(), [&](const auto& tw) {
+        return tw.start <= current_latest;
+      });
+    if (b_tw == b.tws.rend()) {
+      throw InputException(error);
+    }
+
+    if (b_tw->end < current_latest) {
+      if (const auto margin = current_latest - b_tw->end;
+          margin < remaining_travel_time) {
+        remaining_travel_time -= margin;
+      } else {
+        remaining_travel_time = 0;
+      }
+      current_latest = b_tw->end;
+    }
+
+    break_latest[break_rank] = current_latest;
+  }
+
+  // Consistency check with vehicle TW start.
+  if (current_latest < v_start + remaining_travel_time) {
+    throw InputException(error);
+  }
 }
 
 PreviousInfo TWRoute::previous_info(const Input& input,

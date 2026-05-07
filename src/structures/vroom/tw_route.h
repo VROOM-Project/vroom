@@ -78,7 +78,7 @@ private:
                                            const InitRouteData& route_data);
 
   void populate_from_steps_with_breaks(const Input& input,
-                                       InitRouteData&& route_data);
+                                       const InitRouteData& route_data);
 
   // Define global policy wrt job/break respective insertion rule.
   OrderChoice order_choice(const Input& input,
