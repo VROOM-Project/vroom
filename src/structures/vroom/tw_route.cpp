@@ -101,21 +101,23 @@ TWRoute::TWRoute(const Input& input, Index v)
 void TWRoute::populate_from_steps(const Input& input) {
   const auto& vehicle = input.vehicles[v_rank];
 
-  // Start by checking validity from a RawRoute perspective, making
-  // sure route is OK with regard to capacity, max_travel_time,
-  // max_tasks, precedence and skills constraints.
-  auto route_data = check_route_steps(input);
+  if (!vehicle.steps.empty()) {
+    // Start by checking validity from a RawRoute perspective, making
+    // sure route is OK with regard to capacity, max_travel_time,
+    // max_tasks, precedence and skills constraints.
+    auto route_data = check_route_steps(input);
 
-  if (vehicle.breaks.empty() ||
-      route_data.breaks_counts.back() != vehicle.breaks.size()) {
-    // Vehicle has no break or not all breaks are provided in vehicle
-    // steps. In this case we do not account for user-provided breaks
-    // at all and check if route is OK for TW constraints based on our
-    // default break assignment heuristic.
-    this->populate_from_steps_with_break_heuristic(input, route_data);
-  } else {
-    // Try populating object data using user-provided breaks ordering.
-    this->populate_from_steps_with_breaks(input, route_data);
+    if (vehicle.breaks.empty() ||
+        route_data.breaks_counts.back() != vehicle.breaks.size()) {
+      // Vehicle has no break or not all breaks are provided in vehicle
+      // steps. In this case we do not account for user-provided breaks
+      // at all and check if route is OK for TW constraints based on our
+      // default break assignment heuristic.
+      this->populate_from_steps_with_break_heuristic(input, route_data);
+    } else {
+      // Try populating object data using user-provided breaks ordering.
+      this->populate_from_steps_with_breaks(input, route_data);
+    }
   }
 }
 
