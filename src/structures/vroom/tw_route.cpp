@@ -207,7 +207,7 @@ void TWRoute::populate_from_steps_with_breaks(const Input& input,
       });
       if (b_tw == b.tws.end()) {
         throw InputException(error);
-      };
+      }
 
       if (current_earliest < b_tw->start) {
         if (const auto margin = b_tw->start - current_earliest;
@@ -248,15 +248,16 @@ void TWRoute::populate_from_steps_with_breaks(const Input& input,
 
   // Handle remaining breaks before route end.
   assert(!route.empty());
-  Duration remaining_travel_time =
+  Duration last_remaining_travel_time =
     (v.has_end()) ? v.duration(input.jobs.back().index(), v.end.value().index())
                   : 0;
 
   assert(breaks_at_rank[route.size()] <= breaks_counts[route.size()]);
-  Index break_rank = breaks_counts[route.size()] - breaks_at_rank[route.size()];
+  Index last_break_rank =
+    breaks_counts[route.size()] - breaks_at_rank[route.size()];
 
-  for (Index r = 0; r < breaks_at_rank[route.size()]; ++r, ++break_rank) {
-    const auto& b = v.breaks[break_rank];
+  for (Index r = 0; r < breaks_at_rank[route.size()]; ++r, ++last_break_rank) {
+    const auto& b = v.breaks[last_break_rank];
 
     const auto b_tw = std::ranges::find_if(b.tws, [&](const auto& tw) {
       return current_earliest <= tw.end;
@@ -267,21 +268,21 @@ void TWRoute::populate_from_steps_with_breaks(const Input& input,
 
     if (current_earliest < b_tw->start) {
       if (const auto margin = b_tw->start - current_earliest;
-          margin < remaining_travel_time) {
-        remaining_travel_time -= margin;
+          margin < last_remaining_travel_time) {
+        last_remaining_travel_time -= margin;
       } else {
-        remaining_travel_time = 0;
+        last_remaining_travel_time = 0;
       }
 
       current_earliest = b_tw->start;
     }
 
-    break_earliest[break_rank] = current_earliest;
-    current_earliest += v.breaks[break_rank].service;
+    break_earliest[last_break_rank] = current_earliest;
+    current_earliest += v.breaks[last_break_rank].service;
   }
 
   // Consistency check with vehicle TW end.
-  earliest_end = current_earliest + remaining_travel_time;
+  earliest_end = current_earliest + last_remaining_travel_time;
   if (v_end < earliest_end) {
     throw InputException(error);
   }
@@ -362,13 +363,13 @@ void TWRoute::populate_from_steps_with_breaks(const Input& input,
 
   // Update latest dates and margins for breaks right before the
   // first job.
-  remaining_travel_time =
+  Duration first_remaining_travel_time =
     (v.has_start())
       ? v.duration(v.end.value().index(), input.jobs.front().index())
       : 0;
 
   assert(breaks_at_rank[0] <= breaks_counts[0]);
-  break_rank = breaks_counts[0];
+  Index break_rank = breaks_counts[0];
 
   for (Index r = 0; r < breaks_at_rank[0]; ++r) {
     --break_rank;
@@ -389,10 +390,10 @@ void TWRoute::populate_from_steps_with_breaks(const Input& input,
 
     if (b_tw->end < current_latest) {
       if (const auto margin = current_latest - b_tw->end;
-          margin < remaining_travel_time) {
-        remaining_travel_time -= margin;
+          margin < first_remaining_travel_time) {
+        first_remaining_travel_time -= margin;
       } else {
-        remaining_travel_time = 0;
+        first_remaining_travel_time = 0;
       }
       current_latest = b_tw->end;
     }
@@ -401,7 +402,7 @@ void TWRoute::populate_from_steps_with_breaks(const Input& input,
   }
 
   // Consistency check with vehicle TW start.
-  if (current_latest < v_start + remaining_travel_time) {
+  if (current_latest < v_start + first_remaining_travel_time) {
     throw InputException(error);
   }
 }
