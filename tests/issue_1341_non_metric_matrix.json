@@ -1,0 +1,42 @@
+{
+  "vehicles": [
+    {
+      "id": 1,
+      "start_index": 0,
+      "end_index": 0,
+      "steps": [
+        {"type": "start"},
+        {"type": "job", "id": 1},
+        {"type": "job", "id": 2},
+        {"type": "job", "id": 3},
+        {"type": "job", "id": 4},
+        {"type": "job", "id": 5},
+        {"type": "end"}
+      ]
+    }
+  ],
+  "jobs": [
+    {"id": 1, "location_index": 1, "service": 100},
+    {"id": 2, "location_index": 2, "service": 100},
+    {
+      "id": 3,
+      "location_index": 3,
+      "service": 100,
+      "time_windows": [[400, 400]]
+    },
+    {"id": 4, "location_index": 4, "service": 100},
+    {"id": 5, "location_index": 5, "service": 100}
+  ],
+  "matrices": {
+    "car": {
+      "durations": [
+        [0, 0, 100, 300, 200, 300],
+        [0, 0, 100, 10000, 200, 300],
+        [100, 100, 0, 100, 200, 300],
+        [300, 300, 100, 0, 100, 200],
+        [200, 200, 200, 100, 0, 100],
+        [300, 300, 300, 200, 100, 0]
+      ]
+    }
+  }
+}
