@@ -1,0 +1,34 @@
+{
+  "vehicles": [
+    {
+      "id": 1,
+      "profile": "car",
+      "start_index": 0,
+      "end_index": 0,
+      "time_window": [28800, 57600],
+      "breaks": [
+        {"id": 1, "service": 1800, "time_windows": [[40800, 50400]]}
+      ]
+    }
+  ],
+  "shipments": [
+    {
+      "pickup": {"id": 10, "location_index": 1, "service": 0},
+      "delivery": {
+        "id": 11,
+        "location_index": 2,
+        "service": 0,
+        "time_windows": [[39900, 40800]]
+      }
+    }
+  ],
+  "matrices": {
+    "car": {
+      "durations": [
+        [0, 1800, 1800],
+        [1800, 0, 1800],
+        [1800, 1800, 0]
+      ]
+    }
+  }
+}

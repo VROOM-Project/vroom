@@ -546,8 +546,10 @@ OrderChoice TWRoute::order_choice(const Input& input,
     job_then_break_end = earliest_job_end + b.service;
   }
 
-  if (job_then_break_end + travel_after_break > next.latest) {
-    // Starting the break is possible but then next step is not.
+  if (job_then_break_end + travel_after_break > next.latest &&
+      j.type != JOB_TYPE::PICKUP) {
+    // Starting the break is possible but then next step is not. For a
+    // pickup, keep checking because pickup -> delivery -> break may fit.
     oc.add_break_first = true;
     return oc;
   }
