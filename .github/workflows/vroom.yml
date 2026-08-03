@@ -34,6 +34,13 @@ jobs:
         working-directory: src
       - name: Validate output
         run: diff <(bin/vroom -i docs/example_2.json  | jq '.routes[].steps[]' --sort-keys) <(jq '.routes[].steps[]' --sort-keys docs/example_2_sol.json)
+      - name: Validate pickup-delivery break ordering
+        run: |
+          bin/vroom -i tests/issue_1345.json | jq -e '
+            .summary.unassigned == 0 and
+            [.routes[0].steps[].type] == ["start", "pickup", "delivery", "break", "end"] and
+            .routes[0].steps[2].arrival <= 40800 and
+            .routes[0].steps[3].arrival >= 40800'
       - name: Build libvroom example
         run: make -j
         env:
