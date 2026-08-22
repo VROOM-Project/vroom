@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <optional>
 #include <vector>
 
 #include "structures/typedefs.h"
@@ -89,6 +90,26 @@ private:
                               Index first_rank,
                               Index last_rank,
                               Index inserted_job_count) const;
+
+  // Cap-aware scheduler engine: whole committed route. Returns service-start
+  // times per job (indexed by route rank) or nullopt if no compliant schedule
+  // exists. Includes self-verification before returning a schedule.
+  // iter_budget_factor widens the fixpoint iteration budget; the default is
+  // the hot-path budget, realization retries with a wider one.
+  std::optional<std::vector<Duration>>
+  compute_cap_compliant_schedule(const Input& input,
+                                 std::size_t iter_budget_factor = 1) const;
+
+  // Cap-aware scheduler engine: virtual candidate route (same shape as
+  // check_max_transit_time's inputs). Returns service starts for all jobs in
+  // the virtual candidate route in candidate-route order, or nullopt.
+  std::optional<std::vector<Duration>>
+  compute_cap_compliant_schedule(const Input& input,
+                                 const std::vector<TraceEvent>& trace,
+                                 Index first_rank,
+                                 Index last_rank,
+                                 Index inserted_job_count,
+                                 std::size_t iter_budget_factor = 1) const;
 
   void update_last_latest_date(const Input& input);
 
@@ -224,6 +245,22 @@ public:
                                     rank,
                                     rank + count);
   };
+
+  // Produce cap-compliant service-start schedule (per job, indexed by route
+  // rank) for committed route, or nullopt. Returns nullopt at zero cost when
+  // the input has no max_transit_time constraint or when this route carries no
+  // constrained pickup (constrained_job_count_ == 0). When break_starts is
+  // given and a schedule exists, it receives the engine's break service
+  // starts (indexed by vehicle break rank), the authoritative break timing
+  // for output.
+  std::optional<std::vector<Duration>> realize_cap_compliant_schedule(
+    const Input& input,
+    std::vector<Duration>* break_starts = nullptr) const;
+
+  // True when this route contains at least one pickup with max_transit_time.
+  bool has_constrained_pickups() const {
+    return constrained_job_count_ > 0;
+  }
 
   void remove(const Input& input, const Index rank, const unsigned count) {
     assert(rank + count <= route.size());
