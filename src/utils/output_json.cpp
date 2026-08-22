@@ -60,6 +60,12 @@ get_violations(const Violations& violations,
     case MAX_DISTANCE:
       cause = "max_distance";
       break;
+    case MAX_TRANSIT_TIME:
+      cause = "max_transit_time";
+      json_violation.AddMember("duration",
+                               violations.transit_time_excess,
+                               allocator);
+      break;
     default:
       assert(false);
     }

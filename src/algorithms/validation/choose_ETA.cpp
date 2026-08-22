@@ -1124,6 +1124,12 @@ Route choose_ETA(const Input& input,
   unsigned number_of_tasks = 0;
   std::unordered_set<VIOLATION> v_types;
 
+  // Ride-time tracking for constrained shipments, keyed by pickup
+  // job_rank, holding departure times in internal Duration units. Empty
+  // when no shipment has max_transit_time.
+  std::unordered_map<Index, Duration> pickup_departure_map;
+  UserDuration user_transit_time_excess = 0;
+
   // Startup load is the sum of deliveries for (single) jobs.
   Amount current_load(input.zero_amount());
   for (const auto& step : steps) {
@@ -1295,8 +1301,13 @@ Route choose_ETA(const Input& input,
           delivery_to_pickup_step_rank.emplace(job_rank + 1,
                                                sol_steps.size() - 1);
         }
+        // Record pickup departure for the transit-time check at delivery.
+        if (job.max_transit_time.has_value()) {
+          pickup_departure_map[job_rank] =
+            service_start + current_setup + current_service;
+        }
         break;
-      case JOB_TYPE::DELIVERY:
+      case JOB_TYPE::DELIVERY: {
         auto search = expected_delivery_ranks.find(job_rank);
         if (search == expected_delivery_ranks.end()) {
           current.violations.types.insert(VIOLATION::PRECEDENCE);
@@ -1305,7 +1316,25 @@ Route choose_ETA(const Input& input,
         } else {
           expected_delivery_ranks.erase(search);
         }
+        // Transit time is only defined when the pickup was already served
+        // (delivery-first orders carry a PRECEDENCE violation instead).
+        if (job.max_transit_time.has_value()) {
+          const auto pit =
+            pickup_departure_map.find(static_cast<Index>(job_rank - 1));
+          if (pit != pickup_departure_map.end()) {
+            const Duration transit_time = service_start - pit->second;
+            if (transit_time > job.max_transit_time.value()) {
+              const auto excess = utils::scale_to_user_duration(
+                transit_time - job.max_transit_time.value());
+              current.violations.transit_time_excess = excess;
+              current.violations.types.insert(VIOLATION::MAX_TRANSIT_TIME);
+              v_types.insert(VIOLATION::MAX_TRANSIT_TIME);
+              user_transit_time_excess += excess;
+            }
+          }
+        }
         break;
+      }
       }
 
       previous_start = service_start;
@@ -1489,7 +1518,10 @@ Route choose_ETA(const Input& input,
                sum_pickups,
                v.profile,
                v.description,
-               Violations(user_lead_time, user_delay, std::move(v_types)));
+               Violations(user_lead_time,
+                          user_delay,
+                          std::move(v_types),
+                          user_transit_time_excess));
 }
 
 } // namespace vroom::validation

@@ -441,7 +441,7 @@ A `violation` object has the following properties:
 | Key         | Description |
 | ----------- | ----------- |
 | `cause` | string describing the cause of violation |
-| [`duration`] |  Earliness (resp. lateness) if `cause` is "lead_time" (resp "delay") |
+| [`duration`] | Earliness (resp. lateness) if `cause` is "lead_time" (resp. "delay") |
 
 Possible violation causes are:
 - "delay" if actual service start does not meet a task time window and is late on a time window end
@@ -454,6 +454,7 @@ Possible violation causes are:
 - "max_travel_time" if the vehicle has more travel time than its `max_travel_time` value
 - "max_distance" if the vehicle has a longer travel distance than its `max_distance` value
 - "max_load" if the load during a break exceed its `max_load` value
+- "max_transit_time" if a shipment transit time exceeds its `max_transit_time` value
 
 Note on violations: reporting only really makes sense when using `-c`
 to choose ETA for custom routes described in input using the `steps`

@@ -13,18 +13,23 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
-Violations::Violations() : lead_time(0), delay(0) {
+Violations::Violations() : lead_time(0), delay(0), transit_time_excess(0) {
 }
 
 Violations::Violations(const UserDuration lead_time,
                        const UserDuration delay,
-                       std::unordered_set<VIOLATION>&& types)
-  : lead_time(lead_time), delay(delay), types(std::move(types)) {
+                       std::unordered_set<VIOLATION>&& types,
+                       const UserDuration transit_time_excess)
+  : lead_time(lead_time),
+    delay(delay),
+    transit_time_excess(transit_time_excess),
+    types(std::move(types)) {
 }
 
 Violations& Violations::operator+=(const Violations& rhs) {
   this->lead_time += rhs.lead_time;
   this->delay += rhs.delay;
+  this->transit_time_excess += rhs.transit_time_excess;
 
   for (const auto t : rhs.types) {
     this->types.insert(t);
