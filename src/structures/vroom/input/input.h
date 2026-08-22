@@ -56,6 +56,7 @@ private:
   bool _report_distances;
   bool _has_jobs{false};
   bool _has_shipments{false};
+  bool _has_max_transit_time{false};
   std::unordered_map<std::string,
                      Matrix<UserDuration>,
                      StringHash,
@@ -175,6 +176,8 @@ public:
   bool has_jobs() const;
 
   bool has_shipments() const;
+
+  bool has_max_transit_time() const;
 
   bool report_distances() const;
 

@@ -617,27 +617,27 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
       auto amount = get_amount(json_shipment, "amount", amount_size);
       auto skills = get_skills(json_shipment);
       auto priority = get_priority(json_shipment);
+      auto max_transit_time =
+        get_value_for<UserDuration>(json_shipment, "max_transit_time");
 
       // Defining pickup job.
       auto& json_pickup = json_shipment["pickup"];
       check_id(json_pickup, "pickup");
 
-      const Job pickup(json_pickup["id"].GetUint64(),
-                       JOB_TYPE::PICKUP,
-                       get_task_location(json_pickup, "pickup"),
-                       get_duration(json_pickup, "setup"),
-                       get_duration(json_pickup, "service"),
-                       amount,
-                       skills,
-                       priority,
-                       get_time_windows(json_pickup, "pickup"),
-                       get_string(json_pickup, "description"),
-                       get_duration_per_type(json_pickup,
-                                             "setup_per_type",
-                                             "pickup"),
-                       get_duration_per_type(json_pickup,
-                                             "service_per_type",
-                                             "pickup"));
+      const Job
+        pickup(json_pickup["id"].GetUint64(),
+               JOB_TYPE::PICKUP,
+               get_task_location(json_pickup, "pickup"),
+               get_duration(json_pickup, "setup"),
+               get_duration(json_pickup, "service"),
+               amount,
+               skills,
+               priority,
+               get_time_windows(json_pickup, "pickup"),
+               get_string(json_pickup, "description"),
+               get_duration_per_type(json_pickup, "setup_per_type", "pickup"),
+               get_duration_per_type(json_pickup, "service_per_type", "pickup"),
+               max_transit_time);
 
       // Defining delivery job.
       auto& json_delivery = json_shipment["delivery"];
@@ -658,7 +658,8 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
                                                "delivery"),
                          get_duration_per_type(json_delivery,
                                                "service_per_type",
-                                               "delivery"));
+                                               "delivery"),
+                         max_transit_time);
 
       input.add_shipment(pickup, delivery);
     }

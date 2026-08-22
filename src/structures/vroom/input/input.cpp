@@ -200,6 +200,8 @@ void Input::add_job(const Job& job) {
 }
 
 void Input::add_shipment(const Job& pickup, const Job& delivery) {
+  // Preflight checks prevent partial pair insertion; check_job may still throw
+  // after insertion for the existing amount, location, and matrix checks.
   if (pickup.priority != delivery.priority) {
     throw InputException(
       std::
@@ -219,6 +221,14 @@ void Input::add_shipment(const Job& pickup, const Job& delivery) {
                   pickup.id,
                   delivery.id));
   }
+
+  if (pickup.max_transit_time != delivery.max_transit_time) {
+    throw InputException(
+      std::format("Inconsistent shipment max_transit_time for pickup {} and "
+                  "delivery {}.",
+                  pickup.id,
+                  delivery.id));
+  }
   for (const auto s : pickup.skills) {
     if (!delivery.skills.contains(s)) {
       throw InputException(
@@ -234,10 +244,6 @@ void Input::add_shipment(const Job& pickup, const Job& delivery) {
   if (pickup_id_to_rank.contains(pickup.id)) {
     throw InputException(std::format("Duplicate pickup id: {}.", pickup.id));
   }
-  pickup_id_to_rank[pickup.id] = jobs.size();
-  jobs.push_back(pickup);
-  check_job(jobs.back());
-
   if (delivery.type != JOB_TYPE::DELIVERY) {
     throw InputException(
       std::format("Wrong type for delivery {}.", delivery.id));
@@ -246,10 +252,17 @@ void Input::add_shipment(const Job& pickup, const Job& delivery) {
     throw InputException(
       std::format("Duplicate delivery id: {}.", delivery.id));
   }
+
+  pickup_id_to_rank[pickup.id] = jobs.size();
+  jobs.push_back(pickup);
+  check_job(jobs.back());
+
   delivery_id_to_rank[delivery.id] = jobs.size();
   jobs.push_back(delivery);
   check_job(jobs.back());
   _has_shipments = true;
+  _has_max_transit_time =
+    _has_max_transit_time || pickup.max_transit_time.has_value();
 }
 
 void Input::add_vehicle(const Vehicle& vehicle) {
@@ -447,6 +460,10 @@ bool Input::has_jobs() const {
 
 bool Input::has_shipments() const {
   return _has_shipments;
+}
+
+bool Input::has_max_transit_time() const {
+  return _has_max_transit_time;
 }
 
 bool Input::report_distances() const {
@@ -1191,7 +1208,7 @@ void Input::set_matrices(unsigned nb_thread, bool sparse_filling) {
 }
 
 std::unique_ptr<VRP> Input::get_problem() const {
-  if (_has_TW) {
+  if (_has_TW || _has_max_transit_time) {
     return std::make_unique<VRPTW>(*this);
   }
 

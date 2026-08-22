@@ -84,6 +84,7 @@ A `shipment` object has the following properties:
 | [`amount`] | an array of integers describing multidimensional quantities |
 | [`skills`] | an array of integers defining mandatory skills |
 | [`priority`] | an integer in the `[0, 100]` range describing priority level (defaults to 0) |
+| [`max_transit_time`] | an integer defining the maximum time from pickup departure to delivery start |
 
 A `shipment_step` is similar to a `job` object (expect for shared keys already present in `shipment`):
 

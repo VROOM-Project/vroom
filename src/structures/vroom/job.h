@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <optional>
 #include <string>
 
 #include "structures/typedefs.h"
@@ -33,6 +34,7 @@ struct Job {
   const std::string description;
   const TypeToDurationMap setup_per_type;
   const TypeToDurationMap service_per_type;
+  const std::optional<Duration> max_transit_time;
   std::vector<Duration> setups;
   std::vector<Duration> services;
 
@@ -65,7 +67,8 @@ struct Job {
         std::vector<TimeWindow>(1, TimeWindow()),
       std::string description = "",
       const TypeToUserDurationMap& setup_per_type = TypeToUserDurationMap(),
-      const TypeToUserDurationMap& service_per_type = TypeToUserDurationMap());
+      const TypeToUserDurationMap& service_per_type = TypeToUserDurationMap(),
+      std::optional<UserDuration> max_transit_time = std::nullopt);
 
   Index index() const {
     return location.index();
