@@ -10,6 +10,8 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <vector>
+
 #include "structures/typedefs.h"
 #include "structures/vroom/input/input.h"
 #include "structures/vroom/raw_route.h"
@@ -58,6 +60,19 @@ struct OrderChoice {
 
 class TWRoute : public RawRoute {
 private:
+  struct TraceEvent {
+    enum class Kind { JOB, BREAK } kind;
+    // Job input rank for jobs; vehicle-break rank for breaks.
+    Index rank;
+    // Service-start time selected by the forward simulation.
+    Duration earliest;
+    // Job setup plus service (or just service at the same location); break
+    // service for breaks.
+    Duration action_time;
+    // Job location index. Breaks use max(Index), as they have no location.
+    Index location;
+  };
+
   PreviousInfo previous_info(const Input& input,
                              Index job_rank,
                              Index rank) const;
@@ -66,9 +81,24 @@ private:
   void fwd_update_earliest_from(const Input& input, Index rank);
   void bwd_update_latest_from(const Input& input, Index rank);
 
+  // Reject (return false) when some constrained shipment pair provably
+  // exceeds its max_transit_time via the candidate-path lower bound.
+  // Sound: only rejects when the path-LB alone exceeds the cap.
+  bool check_max_transit_time(const Input& input,
+                              const std::vector<TraceEvent>& trace,
+                              Index first_rank,
+                              Index last_rank,
+                              Index inserted_job_count) const;
+
   void update_last_latest_date(const Input& input);
 
   void fwd_update_action_time_from(const Input& input, Index rank);
+
+  // Number of PICKUP jobs with max_transit_time currently in the route,
+  // maintained exclusively by replace(). Gates trace recording and the cap
+  // checks: when this is 0 and no inserted job is a constrained pickup, no
+  // cap pair can span this route.
+  Index constrained_job_count_{0};
 
   void fwd_update_breaks_load_margin_from(const Input& input, Index rank);
   void bwd_update_breaks_load_margin_from(const Input& input, Index rank);

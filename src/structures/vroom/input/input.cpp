@@ -567,6 +567,92 @@ void Input::set_extra_compatibility() {
   // they apply).
   compatible_vehicles_for_job = std::vector<std::vector<Index>>(jobs.size());
 
+  // Route-independent max_transit_time infeasibility precheck.
+  // Lower bound on transit time for any feasible schedule:
+  //   lb = max(travel_lb_across_compatible_vehicles,
+  //            delivery.tws.front().start - pickup.tws.back().end
+  //              - max_action_across_compatible_vehicles)
+  // where max_action = max over compatible vehicles of
+  //   (setups[v.type] + services[v.type]).
+  // A larger action time means a later possible departure and a smaller
+  // forced gap, so soundness requires the maximum over vehicles.
+  // The travel term must stay valid for arbitrary (possibly non-metric)
+  // matrices, where a path through intermediate stops can be shorter than
+  // the direct pickup-to-delivery leg: any such path still starts with an
+  // edge leaving the pickup and ends with an edge entering the delivery, so
+  // min(direct, cheapest_out_edge + cheapest_in_edge) lower-bounds every
+  // routing. The edge scan only runs when the direct leg alone would reject.
+  // If lb > max_transit_time, no schedule can comply: mark incompatible with
+  // all vehicles so heuristics never attempt it and it surfaces unassigned.
+  if (_has_max_transit_time) {
+    for (Index j = 0; j + 1 < static_cast<Index>(jobs.size()); ++j) {
+      if (jobs[j].type != JOB_TYPE::PICKUP ||
+          !jobs[j].max_transit_time.has_value()) {
+        continue;
+      }
+
+      // Minimum sound travel bound and maximum action time across compatible
+      // vehicles.
+      bool any_compatible = false;
+      Duration travel_lb = 0;
+      Duration max_action = 0;
+      const Index p_loc = jobs[j].index();
+      const Index d_loc = jobs[j + 1].index();
+      for (std::size_t v = 0; v < vehicles.size(); ++v) {
+        if (!_vehicle_to_job_compatibility[v][j]) {
+          continue;
+        }
+        const Duration direct = vehicles[v].duration(p_loc, d_loc);
+        Duration t = direct;
+        if (direct > *jobs[j].max_transit_time) {
+          // Direct leg alone would reject: bound indirect paths too before
+          // trusting that conclusion.
+          Duration out_min = std::numeric_limits<Duration>::max();
+          Duration in_min = std::numeric_limits<Duration>::max();
+          for (Index k = 0; k < static_cast<Index>(_locations.size()); ++k) {
+            if (k != p_loc) {
+              out_min = std::min(out_min, vehicles[v].duration(p_loc, k));
+            }
+            if (k != d_loc) {
+              in_min = std::min(in_min, vehicles[v].duration(k, d_loc));
+            }
+          }
+          if (out_min != std::numeric_limits<Duration>::max() &&
+              in_min != std::numeric_limits<Duration>::max()) {
+            t = std::min(direct, out_min + in_min);
+          }
+        }
+        if (!any_compatible || t < travel_lb) {
+          travel_lb = t;
+        }
+        const Duration act =
+          jobs[j].setups[vehicles[v].type] + jobs[j].services[vehicles[v].type];
+        if (!any_compatible || act > max_action) {
+          max_action = act;
+        }
+        any_compatible = true;
+      }
+      if (!any_compatible) {
+        // Already incompatible with all vehicles; nothing to do.
+        continue;
+      }
+
+      // TW gap term: earliest delivery start minus the latest achievable
+      // pickup departure (pickup TW end plus maximum compatible-vehicle
+      // action time).
+      const Duration latest_pickup_end = jobs[j].tws.back().end + max_action;
+      const Duration tw_gap = jobs[j + 1].tws.front().start - latest_pickup_end;
+
+      const Duration lb = std::max(travel_lb, tw_gap);
+      if (lb > *jobs[j].max_transit_time) {
+        for (std::size_t v = 0; v < vehicles.size(); ++v) {
+          _vehicle_to_job_compatibility[v][j] = false;
+          _vehicle_to_job_compatibility[v][j + 1] = false;
+        }
+      }
+    }
+  }
+
   for (std::size_t v = 0; v < vehicles.size(); ++v) {
     const TWRoute empty_route(*this, v, _zero.size());
     for (Index j = 0; j < jobs.size(); ++j) {

@@ -8,6 +8,7 @@ All rights reserved (see LICENSE).
 */
 
 #include <algorithm>
+#include <optional>
 
 #include "structures/vroom/tw_route.h"
 #include "utils/helpers.h"
@@ -88,6 +89,7 @@ bool apply_break_latest(const Break& b,
   }
   return true;
 }
+
 } // namespace
 
 TWRoute::TWRoute(const Input& input, Index v, unsigned amount_size)
@@ -680,6 +682,207 @@ OrderChoice TWRoute::order_choice(const Input& input,
   return oc;
 }
 
+bool TWRoute::check_max_transit_time(const Input& input,
+                                     const std::vector<TraceEvent>& trace,
+                                     const Index first_rank,
+                                     const Index last_rank,
+                                     const Index inserted_job_count) const {
+  // Candidate-path LB filter: reject only when the path lower bound alone
+  // exceeds the cap. Exact scheduling is handled by the engine downstream.
+  const auto& v = input.vehicles[v_rank];
+
+  const auto event_for = [&](const Index rank) -> const TraceEvent* {
+    const auto found = std::ranges::find_if(trace, [&](const auto& event) {
+      return event.kind == TraceEvent::Kind::JOB && event.rank == rank;
+    });
+    return (found == trace.end()) ? nullptr : &*found;
+  };
+  const auto trace_candidate_rank =
+    [&](const Index rank) -> std::optional<Index> {
+    Index candidate_rank = first_rank;
+    for (const auto& event : trace) {
+      if (event.kind == TraceEvent::Kind::JOB) {
+        if (event.rank == rank) {
+          return candidate_rank;
+        }
+        ++candidate_rank;
+      }
+    }
+    return std::nullopt;
+  };
+  // Returns the candidate-route rank of an external (non-inserted) job, or
+  // nullopt when it is not part of the candidate route.
+  const auto external_rank = [&](const Index rank) -> std::optional<Index> {
+    const auto removed_count = last_rank - first_rank;
+    for (Index i = 0; i < route.size(); ++i) {
+      if ((i < first_rank || last_rank <= i) && route[i] == rank) {
+        return (i < first_rank)
+                 ? i
+                 : static_cast<Index>(i + inserted_job_count - removed_count);
+      }
+    }
+    return std::nullopt;
+  };
+
+  std::vector<Index> checked_pickups;
+  checked_pickups.reserve(inserted_job_count);
+  const auto candidate_route_size = static_cast<Index>(
+    route.size() - (last_rank - first_rank) + inserted_job_count);
+
+  // Returns the job rank at candidate-route position k. The candidate route
+  // is: route[0..first_rank), trace JOB events, route[last_rank..end).
+  const auto candidate_job_at = [&](const Index k) -> Index {
+    const auto removed_count = last_rank - first_rank;
+    if (k < first_rank) {
+      return route[k];
+    }
+    if (k < first_rank + inserted_job_count) {
+      Index job_pos = k - first_rank;
+      for (const auto& evt : trace) {
+        if (evt.kind == TraceEvent::Kind::JOB) {
+          if (job_pos == 0) {
+            return evt.rank;
+          }
+          --job_pos;
+        }
+      }
+      return std::numeric_limits<Index>::max();
+    }
+    const auto orig_k = k - inserted_job_count + removed_count;
+    return route[orig_k];
+  };
+
+  // Candidate-path lower bound: walk the candidate sequence from the pickup
+  // at position pcr to the delivery at position dcr, summing travel between
+  // consecutive stops and intermediate action times (breaks skipped
+  // conservatively: they only add time). Valid for arbitrary non-metric
+  // matrices: the cargo traverses exactly this path, so the sum lower-bounds
+  // transit time for every feasible schedule. Returns nullopt when a
+  // candidate position cannot be resolved.
+  const auto path_lower_bound =
+    [&](const Index pickup_rank,
+        const Index pcr,
+        const Index dcr) -> std::optional<Duration> {
+    Index prev_loc = input.jobs[pickup_rank].index();
+    Duration path_lb = 0;
+    for (Index k = pcr + 1; k <= dcr; ++k) {
+      const auto job_r = candidate_job_at(k);
+      if (job_r == std::numeric_limits<Index>::max()) {
+        return std::nullopt;
+      }
+      const auto& jk = input.jobs[job_r];
+      const Index curr_loc = jk.index();
+      path_lb = saturating_add(path_lb, v.duration(prev_loc, curr_loc));
+      if (k < dcr) {
+        // Intermediate stop: suppress setup when the candidate predecessor
+        // location matches, mirroring the forward-trace action-time rule.
+        const Duration at = action_time_for(jk, v_type, prev_loc);
+        path_lb = saturating_add(path_lb, at);
+      }
+      prev_loc = curr_loc;
+    }
+    return path_lb;
+  };
+
+  for (const auto& event : trace) {
+    if (event.kind != TraceEvent::Kind::JOB ||
+        !input.jobs[event.rank].max_transit_time.has_value()) {
+      continue;
+    }
+    // A delivery's input rank is always its pickup's rank plus one, so the
+    // subtraction below cannot underflow for valid input.
+    assert(input.jobs[event.rank].type == JOB_TYPE::PICKUP || event.rank >= 1);
+    const Index pickup_rank = (input.jobs[event.rank].type == JOB_TYPE::PICKUP)
+                                ? event.rank
+                                : event.rank - 1;
+    // A trace contains only a few events, so linear deduplication avoids an
+    // input-sized allocation in this local-search hot path.
+    if (std::ranges::find(checked_pickups, pickup_rank) !=
+        checked_pickups.end()) {
+      continue;
+    }
+    checked_pickups.push_back(pickup_rank);
+
+    const auto delivery_rank = pickup_rank + 1;
+    const auto* pickup_event = event_for(pickup_rank);
+    const auto* delivery_event = event_for(delivery_rank);
+    const auto pickup_external =
+      pickup_event ? std::optional<Index>() : external_rank(pickup_rank);
+    const auto delivery_external =
+      delivery_event ? std::optional<Index>() : external_rank(delivery_rank);
+    const auto pickup_candidate_rank =
+      pickup_event ? trace_candidate_rank(pickup_rank) : pickup_external;
+    const auto delivery_candidate_rank =
+      delivery_event ? trace_candidate_rank(delivery_rank) : delivery_external;
+    if ((!pickup_event && (!pickup_external.has_value() ||
+                           pickup_external.value() >= candidate_route_size)) ||
+        (!delivery_event &&
+         (!delivery_external.has_value() ||
+          delivery_external.value() >= candidate_route_size))) {
+      continue;
+    }
+
+    Duration lower_bound = 0;
+    if (pickup_candidate_rank.has_value() &&
+        delivery_candidate_rank.has_value() &&
+        pickup_candidate_rank.value() < delivery_candidate_rank.value()) {
+      const auto path_lb = path_lower_bound(pickup_rank,
+                                            pickup_candidate_rank.value(),
+                                            delivery_candidate_rank.value());
+      if (path_lb.has_value()) {
+        lower_bound = path_lb.value();
+      }
+    }
+    // Reject only when the path lower bound exceeds the cap.
+    if (lower_bound > input.jobs[pickup_rank].max_transit_time.value()) {
+      return false;
+    }
+  }
+
+  // Also check constrained shipment pairs where both halves are external to
+  // the trace (pickup in route[0..first_rank), delivery in
+  // route[last_rank..end)). The trace loop above misses these because neither
+  // half appears as a trace event: this happens when only unrelated jobs are
+  // inserted between an existing pickup/delivery pair. Path lower bound only.
+  for (Index i = 0; i < first_rank; ++i) {
+    const Index job_r = route[i];
+    if (input.jobs[job_r].type != JOB_TYPE::PICKUP ||
+        !input.jobs[job_r].max_transit_time.has_value()) {
+      continue;
+    }
+    const Index pickup_rank = job_r;
+    if (std::ranges::find(checked_pickups, pickup_rank) !=
+        checked_pickups.end()) {
+      continue;
+    }
+    const Index delivery_rank = pickup_rank + 1;
+    std::optional<Index> delivery_ext_rank;
+    for (Index j = last_rank; j < route.size(); ++j) {
+      if (route[j] == delivery_rank) {
+        delivery_ext_rank = j;
+        break;
+      }
+    }
+    if (!delivery_ext_rank.has_value()) {
+      continue;
+    }
+    checked_pickups.push_back(pickup_rank);
+    const Index removed_count = last_rank - first_rank;
+    const Index pcr = i;
+    const Index dcr =
+      delivery_ext_rank.value() + inserted_job_count - removed_count;
+    if (pcr >= dcr) {
+      continue;
+    }
+    const auto path_lb = path_lower_bound(pickup_rank, pcr, dcr);
+    if (path_lb.has_value() &&
+        path_lb.value() > input.jobs[pickup_rank].max_transit_time.value()) {
+      return false;
+    }
+  }
+  return true;
+}
+
 template <std::forward_iterator Iter>
 bool TWRoute::is_valid_addition_for_tw(const Input& input,
                                        const Amount& delivery,
@@ -696,6 +899,35 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
   // Override this value if vehicle does not need this check anyway to
   // spare some work.
   check_max_load = v.has_break_max_load && check_max_load;
+
+  // Gate trace recording and the cap checks: when no constrained pickups
+  // are currently in the route (constrained_job_count_ == 0) and no inserted
+  // job is a constrained pickup, no cap pair can span this route.
+  // Mirror of the has_break_max_load idiom for the max_load check above.
+  bool any_inserted_constrained = false;
+  if (input.has_max_transit_time() && constrained_job_count_ == 0) {
+    for (auto it = first_job; it != last_job; ++it) {
+      const auto& ij = input.jobs[*it];
+      if (ij.type == JOB_TYPE::PICKUP && ij.max_transit_time.has_value()) {
+        any_inserted_constrained = true;
+        break;
+      }
+    }
+  }
+  const bool filter_max_transit_time =
+    input.has_max_transit_time() &&
+    (constrained_job_count_ > 0 || any_inserted_constrained);
+
+  const auto inserted_job_count =
+    static_cast<size_t>(std::distance(first_job, last_job));
+  // Reused per-thread scratch, cleared each call; nothing holds a reference
+  // across calls (same contract as the engine's tls buffers).
+  static thread_local std::vector<TraceEvent> trace;
+  trace.clear();
+  if (filter_max_transit_time) {
+    trace.reserve(inserted_job_count + breaks_counts[last_rank] -
+                  (breaks_counts[first_rank] - breaks_at_rank[first_rank]));
+  }
 
   PreviousInfo current(0, 0);
   NextInfo next(0, 0);
@@ -796,6 +1028,13 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
         current.earliest = b_tw->start;
       }
 
+      if (filter_max_transit_time) {
+        trace.push_back({TraceEvent::Kind::BREAK,
+                         current_break,
+                         current.earliest,
+                         b.service,
+                         std::numeric_limits<Index>::max()});
+      }
       current.earliest += b.service;
 
       ++current_break;
@@ -815,12 +1054,18 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
       if (j_tw == j.tws.end()) {
         return false;
       }
-      const auto job_action_time = (j.index() == current.location_index)
-                                     ? j.services[v_type]
-                                     : j.setups[v_type] + j.services[v_type];
+      const auto job_action_time =
+        action_time_for(j, v_type, current.location_index);
+      current.earliest = std::max(current.earliest, j_tw->start);
+      if (filter_max_transit_time) {
+        trace.push_back({TraceEvent::Kind::JOB,
+                         *current_job,
+                         current.earliest,
+                         job_action_time,
+                         j.index()});
+      }
       current.location_index = j.index();
-      current.earliest =
-        std::max(current.earliest, j_tw->start) + job_action_time;
+      current.earliest += job_action_time;
 
       if (check_max_load) {
         assert(j.delivery <= current_load);
@@ -839,9 +1084,8 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
     // We still have both jobs and breaks to go through, so decide on
     // ordering.
     const auto& b = v.breaks[current_break];
-    const auto job_action_time = (j.index() == current.location_index)
-                                   ? j.services[v_type]
-                                   : j.setups[v_type] + j.services[v_type];
+    const auto job_action_time =
+      action_time_for(j, v_type, current.location_index);
 
     // Use next info after insertion range for ordering decision,
     // except if there are still jobs to insert after j, in which case
@@ -889,16 +1133,29 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
         current.earliest = oc.b_tw->start;
       }
 
+      if (filter_max_transit_time) {
+        trace.push_back({TraceEvent::Kind::BREAK,
+                         current_break,
+                         current.earliest,
+                         b.service,
+                         std::numeric_limits<Index>::max()});
+      }
       current.earliest += b.service;
 
       ++current_break;
     }
     if (oc.add_job_first) {
-      current.location_index = j.index();
-
       current.earliest =
-        std::max(current.earliest + current.travel, oc.j_tw->start) +
-        job_action_time;
+        std::max(current.earliest + current.travel, oc.j_tw->start);
+      if (filter_max_transit_time) {
+        trace.push_back({TraceEvent::Kind::JOB,
+                         *current_job,
+                         current.earliest,
+                         job_action_time,
+                         j.index()});
+      }
+      current.location_index = j.index();
+      current.earliest += job_action_time;
 
       if (check_max_load) {
         assert(j.delivery <= current_load);
@@ -987,7 +1244,20 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
     }
   }
 
-  return current.earliest + next.travel <= next.latest;
+  if (current.earliest + next.travel > next.latest) {
+    return false;
+  }
+  if (!filter_max_transit_time) {
+    return true;
+  }
+
+  // Margin filter: proven-sound rejections only. A move that survives this
+  // may still break a cap; nothing here accepts a move as compliant.
+  return check_max_transit_time(input,
+                                trace,
+                                first_rank,
+                                last_rank,
+                                static_cast<Index>(inserted_job_count));
 }
 
 template <std::random_access_iterator Iter>
@@ -1074,6 +1344,21 @@ void TWRoute::replace(const Input& input,
         fwd_smallest_breaks_load_margin[i][a] =
           std::numeric_limits<Capacity>::max();
       }
+    }
+  }
+
+  // Maintain constrained_job_count_: decrement for constrained pickups
+  // removed from [first_rank, last_rank), increment for those inserted.
+  for (Index r = first_rank; r < last_rank; ++r) {
+    const auto& rj = input.jobs[route[r]];
+    if (rj.type == JOB_TYPE::PICKUP && rj.max_transit_time.has_value()) {
+      --constrained_job_count_;
+    }
+  }
+  for (auto it = first_job; it != last_job; ++it) {
+    const auto& ij = input.jobs[*it];
+    if (ij.type == JOB_TYPE::PICKUP && ij.max_transit_time.has_value()) {
+      ++constrained_job_count_;
     }
   }
 
