@@ -14,6 +14,82 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
+namespace {
+
+Duration saturating_add(const Duration lhs, const Duration rhs) {
+  return (std::numeric_limits<Duration>::max() - lhs < rhs)
+           ? std::numeric_limits<Duration>::max()
+           : lhs + rhs;
+}
+
+// Setup only applies when the vehicle arrives from a different location;
+// action time is service plus that conditional setup.
+Duration action_time_for(const Job& j,
+                         const Index v_type,
+                         const Index previous_location) {
+  return (j.index() == previous_location)
+           ? j.services[v_type]
+           : j.setups[v_type] + j.services[v_type];
+}
+
+// First time window whose end can accommodate time t, or tws.end().
+std::vector<TimeWindow>::const_iterator
+first_reachable_tw(const std::vector<TimeWindow>& tws, const Duration t) {
+  return std::ranges::find_if(tws, [&](const auto& tw) { return t <= tw.end; });
+}
+
+// Apply one forward break step: from departure time t, place the break in
+// its first reachable time window, absorbing any wait into the remaining
+// travel of the current leg; record its start and advance t past its
+// service. Forward twin of apply_break_latest below. Returns false when no
+// window can take the break.
+bool apply_break_earliest(const Break& b,
+                          Duration& t,
+                          Duration& remaining_travel,
+                          Duration& break_start) {
+  const auto b_tw = first_reachable_tw(b.tws, t);
+  if (b_tw == b.tws.end()) {
+    return false;
+  }
+  if (t < b_tw->start) {
+    const auto margin = b_tw->start - t;
+    remaining_travel =
+      (margin < remaining_travel) ? remaining_travel - margin : 0;
+    t = b_tw->start;
+  }
+  break_start = t;
+  t = saturating_add(t, b.service);
+  return true;
+}
+
+// Apply one backward break step: subtract its service, select the last
+// compatible time window, clamp to its end and absorb that clamp in travel.
+// The result only changes the supplied local values, never route state.
+bool apply_break_latest(const Break& b,
+                        Duration& current_latest,
+                        Duration& remaining_travel) {
+  if (b.service > current_latest) {
+    return false;
+  }
+  current_latest -= b.service;
+
+  const auto b_tw =
+    std::find_if(b.tws.rbegin(), b.tws.rend(), [&](const auto& tw) {
+      return tw.start <= current_latest;
+    });
+  if (b_tw == b.tws.rend()) {
+    return false;
+  }
+  if (b_tw->end < current_latest) {
+    const auto margin = current_latest - b_tw->end;
+    remaining_travel =
+      (margin < remaining_travel) ? remaining_travel - margin : 0;
+    current_latest = b_tw->end;
+  }
+  return true;
+}
+} // namespace
+
 TWRoute::TWRoute(const Input& input, Index v, unsigned amount_size)
   : RawRoute(input, v, amount_size),
     v_start(input.vehicles[v].tw.start),
@@ -64,20 +140,12 @@ TWRoute::TWRoute(const Input& input, Index v, unsigned amount_size)
     const Index i = breaks.size() - 1 - r_i;
     const auto& b = breaks[i];
 
-    if (next_latest < b.service) {
-      throw InputException(break_error);
-    }
-    next_latest -= b.service;
-
-    const auto b_tw =
-      std::find_if(b.tws.rbegin(), b.tws.rend(), [&](const auto& tw) {
-        return tw.start <= next_latest;
-      });
-    if (b_tw == b.tws.rend()) {
+    Duration unused_travel = 0;
+    if (!apply_break_latest(b, next_latest, unused_travel)) {
       throw InputException(break_error);
     }
 
-    break_latest[i] = std::min(next_latest, b_tw->end);
+    break_latest[i] = next_latest;
 
     next_latest = break_latest[i];
 
@@ -148,43 +216,26 @@ void TWRoute::fwd_update_earliest_from(const Input& input, Index rank) {
     const auto& next_j = input.jobs[route[i]];
     Duration remaining_travel_time =
       v.duration(input.jobs[route[i - 1]].index(), next_j.index());
-    Duration previous_action_time = action_time[i - 1];
+    // Departure from the previous job; breaks advance it in place.
+    Duration current_departure = current_earliest + action_time[i - 1];
 
     // Update earliest dates and margins for breaks.
     assert(breaks_at_rank[i] <= breaks_counts[i]);
     Index break_rank = breaks_counts[i] - breaks_at_rank[i];
 
     for (Index r = 0; r < breaks_at_rank[i]; ++r, ++break_rank) {
-      const auto& b = v.breaks[break_rank];
-
-      current_earliest += previous_action_time;
-
-      const auto b_tw = std::ranges::find_if(b.tws, [&](const auto& tw) {
-        return current_earliest <= tw.end;
-      });
-      assert(b_tw != b.tws.end());
-
-      if (current_earliest < b_tw->start) {
-        if (const auto margin = b_tw->start - current_earliest;
-            margin < remaining_travel_time) {
-          remaining_travel_time -= margin;
-        } else {
-          remaining_travel_time = 0;
-        }
-
-        current_earliest = b_tw->start;
-      }
-
-      break_earliest[break_rank] = current_earliest;
-      previous_action_time = v.breaks[break_rank].service;
+      const bool break_is_valid =
+        apply_break_earliest(v.breaks[break_rank],
+                             current_departure,
+                             remaining_travel_time,
+                             break_earliest[break_rank]);
+      assert(break_is_valid);
     }
 
     // Back to the job after breaks.
-    current_earliest += previous_action_time + remaining_travel_time;
+    current_earliest = current_departure + remaining_travel_time;
 
-    const auto j_tw = std::ranges::find_if(next_j.tws, [&](const auto& tw) {
-      return current_earliest <= tw.end;
-    });
+    const auto j_tw = first_reachable_tw(next_j.tws, current_earliest);
     assert(j_tw != next_j.tws.end());
 
     current_earliest = std::max(current_earliest, j_tw->start);
@@ -212,37 +263,22 @@ void TWRoute::fwd_update_earliest_from(const Input& input, Index rank) {
         ? v.duration(input.jobs[route[i - 1]].index(), v.end.value().index())
         : 0;
 
-    Duration previous_action_time = action_time[i - 1];
+    // Departure from the last job; breaks advance it in place.
+    Duration current_departure = current_earliest + action_time[i - 1];
 
     assert(breaks_at_rank[i] <= breaks_counts[i]);
     Index break_rank = breaks_counts[i] - breaks_at_rank[i];
 
     for (Index r = 0; r < breaks_at_rank[i]; ++r, ++break_rank) {
-      const auto& b = v.breaks[break_rank];
-      current_earliest += previous_action_time;
-
-      const auto b_tw = std::ranges::find_if(b.tws, [&](const auto& tw) {
-        return current_earliest <= tw.end;
-      });
-      assert(b_tw != b.tws.end());
-
-      if (current_earliest < b_tw->start) {
-        if (const auto margin = b_tw->start - current_earliest;
-            margin < remaining_travel_time) {
-          remaining_travel_time -= margin;
-        } else {
-          remaining_travel_time = 0;
-        }
-
-        current_earliest = b_tw->start;
-      }
-
-      break_earliest[break_rank] = current_earliest;
-      previous_action_time = v.breaks[break_rank].service;
+      const bool break_is_valid =
+        apply_break_earliest(v.breaks[break_rank],
+                             current_departure,
+                             remaining_travel_time,
+                             break_earliest[break_rank]);
+      assert(break_is_valid);
     }
 
-    earliest_end =
-      current_earliest + previous_action_time + remaining_travel_time;
+    earliest_end = current_departure + remaining_travel_time;
     assert(earliest_end <= v_end);
   }
 }
@@ -266,25 +302,9 @@ void TWRoute::bwd_update_latest_from(const Input& input, Index rank) {
       --break_rank;
 
       const auto& b = v.breaks[break_rank];
-      assert(b.service <= current_latest);
-      current_latest -= b.service;
-
-      const auto b_tw =
-        std::find_if(b.tws.rbegin(), b.tws.rend(), [&](const auto& tw) {
-          return tw.start <= current_latest;
-        });
-      assert(b_tw != b.tws.rend());
-
-      if (b_tw->end < current_latest) {
-        if (const auto margin = current_latest - b_tw->end;
-            margin < remaining_travel_time) {
-          remaining_travel_time -= margin;
-        } else {
-          remaining_travel_time = 0;
-        }
-
-        current_latest = b_tw->end;
-      }
+      const bool break_is_valid =
+        apply_break_latest(b, current_latest, remaining_travel_time);
+      assert(break_is_valid);
 
       break_latest[break_rank] = current_latest;
     }
@@ -324,18 +344,10 @@ void TWRoute::bwd_update_latest_from(const Input& input, Index rank) {
     for (Index r = 0; r < breaks_at_rank[next_i]; ++r) {
       --break_rank;
       const auto& b = v.breaks[break_rank];
-
-      assert(b.service <= current_latest);
-      current_latest -= b.service;
-
-      const auto b_tw =
-        std::find_if(b.tws.rbegin(), b.tws.rend(), [&](const auto& tw) {
-          return tw.start <= current_latest;
-        });
-      assert(b_tw != b.tws.rend());
-      if (b_tw->end < current_latest) {
-        current_latest = b_tw->end;
-      }
+      Duration unused_travel = 0;
+      const bool break_is_valid =
+        apply_break_latest(b, current_latest, unused_travel);
+      assert(break_is_valid);
 
       break_latest[break_rank] = current_latest;
     }
@@ -353,25 +365,8 @@ void TWRoute::update_last_latest_date(const Input& input) {
   for (Index r = 0; r < breaks_at_rank[route.size()]; ++r) {
     --break_rank;
     const auto& b = v.breaks[break_rank];
-
-    assert(b.service <= next.latest);
-    next.latest -= b.service;
-
-    const auto b_tw =
-      std::find_if(b.tws.rbegin(), b.tws.rend(), [&](const auto& tw) {
-        return tw.start <= next.latest;
-      });
-    assert(b_tw != b.tws.rend());
-
-    if (b_tw->end < next.latest) {
-      if (const auto margin = next.latest - b_tw->end; margin < next.travel) {
-        next.travel -= margin;
-      } else {
-        next.travel = 0;
-      }
-
-      next.latest = b_tw->end;
-    }
+    const bool break_is_valid = apply_break_latest(b, next.latest, next.travel);
+    assert(break_is_valid);
 
     break_latest[break_rank] = next.latest;
   }
@@ -399,9 +394,7 @@ void TWRoute::fwd_update_action_time_from(const Input& input, Index rank) {
     const auto next_index = next_j.index();
 
     const auto next_action_time =
-      (next_index == current_index)
-        ? next_j.services[v_type]
-        : next_j.setups[v_type] + next_j.services[v_type];
+      action_time_for(next_j, v_type, current_index);
 
     action_time[i] = next_action_time;
     current_index = next_index;
@@ -643,9 +636,7 @@ OrderChoice TWRoute::order_choice(const Input& input,
                                                });
         d_tw != matching_d.tws.end()) {
       const auto matching_d_action_time =
-        (matching_d.index() == j.index())
-          ? matching_d.services[v_type]
-          : matching_d.setups[v_type] + matching_d.services[v_type];
+        action_time_for(matching_d, v_type, j.index());
 
       const Duration break_candidate =
         std::max(delivery_candidate, d_tw->start) + matching_d_action_time;
@@ -1209,9 +1200,8 @@ void TWRoute::replace(const Input& input,
       breaks_at_rank[current_job_rank] = breaks_before;
       breaks_counts[current_job_rank] = previous_breaks_counts + breaks_before;
 
-      action_time[current_job_rank] = (j.index() == current.location_index)
-                                        ? j.services[v_type]
-                                        : j.setups[v_type] + j.services[v_type];
+      action_time[current_job_rank] =
+        action_time_for(j, v_type, current.location_index);
       current.location_index = j.index();
       current.earliest += action_time[current_job_rank];
 
@@ -1235,9 +1225,8 @@ void TWRoute::replace(const Input& input,
     // ordering.
     const auto& b = v.breaks[current_break];
 
-    const auto job_action_time = (j.index() == current.location_index)
-                                   ? j.services[v_type]
-                                   : j.setups[v_type] + j.services[v_type];
+    const auto job_action_time =
+      action_time_for(j, v_type, current.location_index);
 
     // Use next info after insertion range for ordering decision,
     // except if there are still jobs to insert after j, in which case
@@ -1368,9 +1357,8 @@ void TWRoute::replace(const Input& input,
       // current_job_rank is the rank of the first non-replaced job.
       const auto& j = input.jobs[route[current_job_rank]];
 
-      const auto new_action_time = (j.index() == current.location_index)
-                                     ? j.services[v_type]
-                                     : j.setups[v_type] + j.services[v_type];
+      const auto new_action_time =
+        action_time_for(j, v_type, current.location_index);
       assert(action_time[current_job_rank] == j.services[v_type] ||
              action_time[current_job_rank] ==
                j.services[v_type] + j.setups[v_type]);
