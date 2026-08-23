@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Added
+
+#### Features
+
+- Support for `max_transit_time` on shipments, bounding time from pickup departure to delivery start (#703)
+
 ### Fixed
 
 #### Internals
