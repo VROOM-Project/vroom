@@ -52,6 +52,10 @@ void RouteSplit::compute_gain() {
 void RouteSplit::apply() {
   assert(choice.gain != NO_GAIN);
 
+  // RouteSplit never cuts through a shipment pair: split ranks always fall
+  // between complete pairs.
+  assert(!_tw_s_route.has_pending_delivery_after_rank(choice.split_rank - 1));
+
   // Empty route holding the end of the split.
   auto& end_route = _tw_sol[_end_route_rank];
   assert(end_route.empty());

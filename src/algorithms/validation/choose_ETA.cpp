@@ -203,6 +203,67 @@ Route choose_ETA(const Input& input,
   assert(current_index == n + 1);
   assert(relative_ETA.size() == steps.size());
 
+  // Action time per step (indexed by position in steps). Matches the
+  // engine's A_P formula: setup suppressed when same location as
+  // predecessor.
+  std::vector<Duration> step_action_time(steps.size(), 0);
+  {
+    unsigned ri = 0;
+    for (unsigned s = 0; s < steps.size(); ++s) {
+      switch (steps[s].type) {
+        using enum STEP_TYPE;
+      case START:
+        step_action_time[s] = action_times[ri++];
+        break;
+      case JOB:
+        step_action_time[s] = action_times[ri++];
+        break;
+      case BREAK:
+        step_action_time[s] = v.breaks[steps[s].rank].service;
+        break;
+      case END:
+        step_action_time[s] = 0;
+        break;
+      }
+    }
+    assert(ri == action_times.size());
+  }
+
+  // Collect constrained shipment pairs for transit-time MIP soft terms.
+  struct RidePair {
+    unsigned pickup_step;
+    unsigned delivery_step;
+    Duration cap;
+    Duration action_time; // A_P: must match engine exactly
+  };
+  std::vector<RidePair> ride_pairs;
+  {
+    std::unordered_map<Index, unsigned> delivery_step_of;
+    for (unsigned s = 1; s + 1 < steps.size(); ++s) {
+      if (steps[s].type == STEP_TYPE::JOB &&
+          input.jobs[steps[s].rank].type == JOB_TYPE::DELIVERY) {
+        delivery_step_of[steps[s].rank] = s;
+      }
+    }
+    for (unsigned s = 1; s + 1 < steps.size(); ++s) {
+      if (steps[s].type != STEP_TYPE::JOB)
+        continue;
+      const auto& job = input.jobs[steps[s].rank];
+      if (job.type != JOB_TYPE::PICKUP)
+        continue;
+      if (!job.max_transit_time.has_value())
+        continue;
+      const Index delivery_rank = steps[s].rank + 1;
+      auto it = delivery_step_of.find(delivery_rank);
+      // Skip if delivery absent or comes before pickup (precedence violation).
+      if (it == delivery_step_of.end() || it->second < s)
+        continue;
+      ride_pairs.push_back(
+        {s, it->second, job.max_transit_time.value(), step_action_time[s]});
+    }
+  }
+  const unsigned P = static_cast<unsigned>(ride_pairs.size());
+
   // Determine earliest possible start based on "service_at" and
   // "service_before" constraints.
   std::vector<Duration> latest_dates(steps.size(),
@@ -979,6 +1040,62 @@ Route choose_ETA(const Input& input,
   delete[] ja;
   delete[] ar;
 
+  // Per-pair transit-time soft terms: excess variables e_p >= 0 with
+  // constraint t_{s_D} - t_{s_P} - e_p <= A_P + cap_P, weighted in
+  // phase-1 objective like delay. A_P formula matches the engine exactly
+  // (setup suppression when same location as predecessor).
+  unsigned excess_col_start = 0;
+  unsigned sigma_e_row = 0;
+  if (P > 0) {
+    const int first_excess = glp_add_cols(lp, static_cast<int>(P));
+    excess_col_start = static_cast<unsigned>(first_excess);
+    for (unsigned p = 0; p < P; ++p) {
+      const int col = first_excess + static_cast<int>(p);
+      auto e_name = std::format("e{}", p);
+      glp_set_col_name(lp, col, e_name.c_str());
+      glp_set_col_bnds(lp, col, GLP_LO, 0.0, 0.0);
+      glp_set_obj_coef(lp, col, makespan_estimate);
+    }
+
+    const int first_ride_row = glp_add_rows(lp, static_cast<int>(P));
+    for (unsigned p = 0; p < P; ++p) {
+      const int row = first_ride_row + static_cast<int>(p);
+      const auto& rp = ride_pairs[p];
+      auto r_name = std::format("R{}", p);
+      glp_set_row_name(lp, row, r_name.c_str());
+      // t_{s_D} - t_{s_P} - e_p <= A_P + cap_P
+      const double rhs = static_cast<double>(rp.action_time + rp.cap);
+      glp_set_row_bnds(lp, row, GLP_UP, 0.0, rhs);
+      int ind[4];
+      double val[4];
+      ind[1] = static_cast<int>(rp.delivery_step + 1); // t_{s_D}
+      val[1] = 1.0;
+      ind[2] = static_cast<int>(rp.pickup_step + 1); // t_{s_P}
+      val[2] = -1.0;
+      ind[3] = first_excess + static_cast<int>(p); // e_p
+      val[3] = -1.0;
+      glp_set_mat_row(lp, row, 3, ind, val);
+    }
+
+    // Sigma_E: sum of excess vars, pinned in phase 2.
+    sigma_e_row = static_cast<unsigned>(glp_add_rows(lp, 1));
+    glp_set_row_name(lp, static_cast<int>(sigma_e_row), "Sigma_E");
+    glp_set_row_bnds(lp, static_cast<int>(sigma_e_row), GLP_LO, 0.0, 0.0);
+    {
+      std::vector<int> ind(P + 1);
+      std::vector<double> val(P + 1);
+      for (unsigned p = 0; p < P; ++p) {
+        ind[p + 1] = first_excess + static_cast<int>(p);
+        val[p + 1] = 1.0;
+      }
+      glp_set_mat_row(lp,
+                      static_cast<int>(sigma_e_row),
+                      static_cast<int>(P),
+                      ind.data(),
+                      val.data());
+    }
+  }
+
   // 4. Solve for violations and makespan.
   glp_term_out(GLP_OFF);
   glp_iocp parm;
@@ -1014,6 +1131,12 @@ Route choose_ETA(const Input& input,
   for (unsigned i = 0; i <= n + 1; ++i) {
     glp_set_obj_coef(lp, start_Y_col + i, 0);
   }
+  // Zero excess objective coefficients for phase 2.
+  if (P > 0) {
+    for (unsigned p = 0; p < P; ++p) {
+      glp_set_obj_coef(lp, static_cast<int>(excess_col_start + p), 0.0);
+    }
+  }
   glp_set_obj_coef(lp, n + 2, 0);
   glp_set_obj_coef(lp, 1, 0);
 
@@ -1036,6 +1159,20 @@ Route choose_ETA(const Input& input,
     sum_y_i += get_duration(glp_mip_col_val(lp, i));
   }
   glp_set_row_bnds(lp, nb_constraints, GLP_FX, sum_y_i, sum_y_i);
+
+  // Pin sum of excess variables for phase 2.
+  if (P > 0) {
+    Duration sum_e = 0;
+    for (unsigned p = 0; p < P; ++p) {
+      sum_e += get_duration(
+        glp_mip_col_val(lp, static_cast<int>(excess_col_start + p)));
+    }
+    glp_set_row_bnds(lp,
+                     static_cast<int>(sigma_e_row),
+                     GLP_FX,
+                     static_cast<double>(sum_e),
+                     static_cast<double>(sum_e));
+  }
 
   glp_intopt(lp, &parm);
 
@@ -1123,6 +1260,12 @@ Route choose_ETA(const Input& input,
   UserDuration user_delay = 0;
   unsigned number_of_tasks = 0;
   std::unordered_set<VIOLATION> v_types;
+
+  // Ride-time tracking for constrained shipments, keyed by pickup
+  // job_rank, holding departure times in internal Duration units. Empty
+  // when no shipment has max_transit_time.
+  std::unordered_map<Index, Duration> pickup_departure_map;
+  UserDuration user_transit_time_excess = 0;
 
   // Startup load is the sum of deliveries for (single) jobs.
   Amount current_load(input.zero_amount());
@@ -1295,8 +1438,13 @@ Route choose_ETA(const Input& input,
           delivery_to_pickup_step_rank.emplace(job_rank + 1,
                                                sol_steps.size() - 1);
         }
+        // Record pickup departure for the transit-time check at delivery.
+        if (job.max_transit_time.has_value()) {
+          pickup_departure_map[job_rank] =
+            service_start + current_setup + current_service;
+        }
         break;
-      case JOB_TYPE::DELIVERY:
+      case JOB_TYPE::DELIVERY: {
         auto search = expected_delivery_ranks.find(job_rank);
         if (search == expected_delivery_ranks.end()) {
           current.violations.types.insert(VIOLATION::PRECEDENCE);
@@ -1305,7 +1453,25 @@ Route choose_ETA(const Input& input,
         } else {
           expected_delivery_ranks.erase(search);
         }
+        // Transit time is only defined when the pickup was already served
+        // (delivery-first orders carry a PRECEDENCE violation instead).
+        if (job.max_transit_time.has_value()) {
+          const auto pit =
+            pickup_departure_map.find(static_cast<Index>(job_rank - 1));
+          if (pit != pickup_departure_map.end()) {
+            const Duration transit_time = service_start - pit->second;
+            if (transit_time > job.max_transit_time.value()) {
+              const auto excess = utils::scale_to_user_duration(
+                transit_time - job.max_transit_time.value());
+              current.violations.transit_time_excess = excess;
+              current.violations.types.insert(VIOLATION::MAX_TRANSIT_TIME);
+              v_types.insert(VIOLATION::MAX_TRANSIT_TIME);
+              user_transit_time_excess += excess;
+            }
+          }
+        }
         break;
+      }
       }
 
       previous_start = service_start;
@@ -1489,7 +1655,10 @@ Route choose_ETA(const Input& input,
                sum_pickups,
                v.profile,
                v.description,
-               Violations(user_lead_time, user_delay, std::move(v_types)));
+               Violations(user_lead_time,
+                          user_delay,
+                          std::move(v_types),
+                          user_transit_time_excess));
 }
 
 } // namespace vroom::validation

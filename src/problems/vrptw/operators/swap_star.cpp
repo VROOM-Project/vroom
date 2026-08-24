@@ -46,6 +46,11 @@ void SwapStar::compute_gain() {
 }
 
 void SwapStar::apply() {
+  // SwapStar only operates on single jobs, so shipment halves are never
+  // swapped and max_transit_time enforcement cannot be bypassed here.
+  assert(_input.jobs[s_route[choice.s_rank]].type == JOB_TYPE::SINGLE);
+  assert(_input.jobs[t_route[choice.t_rank]].type == JOB_TYPE::SINGLE);
+
   const auto s_insert = ls::get_insert_range(s_route,
                                              choice.s_rank,
                                              t_route[choice.t_rank],

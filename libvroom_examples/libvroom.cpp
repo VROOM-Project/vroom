@@ -120,6 +120,7 @@ void run_example_with_osrm() {
 
   vroom::UserDuration setup = 0;
   vroom::UserDuration service = 5 * 60; // 5 minutes
+  std::optional<vroom::UserDuration> max_transit_time = 30 * 60;
 
   // Define vehicle breaks.
   vroom::Break break_1(1, {vroom::TimeWindow(32400, 34200)}, 300);
@@ -201,7 +202,13 @@ void run_example_with_osrm() {
                     setup,
                     service,
                     pd_amount,
-                    pd_skills);
+                    pd_skills,
+                    0,
+                    std::vector<vroom::TimeWindow>(1, vroom::TimeWindow()),
+                    "",
+                    {},
+                    {},
+                    max_transit_time);
 
   vroom::Job delivery(3,
                       vroom::JOB_TYPE::DELIVERY,
@@ -209,7 +216,13 @@ void run_example_with_osrm() {
                       setup,
                       service,
                       pd_amount,
-                      pd_skills);
+                      pd_skills,
+                      0,
+                      std::vector<vroom::TimeWindow>(1, vroom::TimeWindow()),
+                      "",
+                      {},
+                      {},
+                      max_transit_time);
   problem_instance.add_shipment(pickup, delivery);
 
   // Skills definitions set the following constraints:
