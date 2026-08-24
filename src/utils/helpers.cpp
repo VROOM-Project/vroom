@@ -503,22 +503,12 @@ Route format_route(const Input& input,
 
   Duration travel_time = current_eval.duration;
 
-  for (std::size_t r = 0; r < tw_r.route.size(); ++r) {
-    assert(input.vehicle_ok_with_job(tw_r.v_rank, tw_r.route[r]));
-    const auto& current_job = input.jobs[tw_r.route[r]];
-    auto user_distance = eval_sum.distance;
-
-    if (r > 0) {
-      // For r == 0, travel_time already holds the relevant value
-      // depending on whether there is a start.
-      current_eval =
-        v.eval(input.jobs[tw_r.route[r - 1]].index(), current_job.index());
-      travel_time = current_eval.duration;
-    }
-
-    // Handles breaks before this job.
+  // Emit the breaks scheduled before the stop at rank r, advancing the
+  // running schedule. Used between jobs and before the route end alike.
+  const auto emit_breaks_before = [&](const std::size_t r,
+                                      auto& user_distance) {
     assert(tw_r.breaks_at_rank[r] <= tw_r.breaks_counts[r]);
-    break_rank = tw_r.breaks_counts[r] - tw_r.breaks_at_rank[r];
+    Index break_rank = tw_r.breaks_counts[r] - tw_r.breaks_at_rank[r];
 
     for (Index i = 0; i < tw_r.breaks_at_rank[r]; ++i, ++break_rank) {
       const auto& b = v.breaks[break_rank];
@@ -594,6 +584,22 @@ Route format_route(const Input& input,
       service += b.service;
       step_start += b.service;
     }
+  };
+  for (std::size_t r = 0; r < tw_r.route.size(); ++r) {
+    assert(input.vehicle_ok_with_job(tw_r.v_rank, tw_r.route[r]));
+    const auto& current_job = input.jobs[tw_r.route[r]];
+    auto user_distance = eval_sum.distance;
+
+    if (r > 0) {
+      // For r == 0, travel_time already holds the relevant value
+      // depending on whether there is a start.
+      current_eval =
+        v.eval(input.jobs[tw_r.route[r - 1]].index(), current_job.index());
+      travel_time = current_eval.duration;
+    }
+
+    // Handles breaks before this job.
+    emit_breaks_before(r, user_distance);
 
     // Back to current job.
     duration += travel_time;
@@ -678,83 +684,7 @@ Route format_route(const Input& input,
   auto user_distance = eval_sum.distance;
 
   auto r = tw_r.route.size();
-  assert(tw_r.breaks_at_rank[r] <= tw_r.breaks_counts[r]);
-  break_rank = tw_r.breaks_counts[r] - tw_r.breaks_at_rank[r];
-
-  for (Index i = 0; i < tw_r.breaks_at_rank[r]; ++i, ++break_rank) {
-    const auto& b = v.breaks[break_rank];
-
-    assert(b.is_valid_for_load(current_load));
-
-    steps.emplace_back(b, current_load);
-    auto& current_break = steps.back();
-
-    const auto b_tw = std::ranges::find_if(b.tws, [&](const auto& tw) {
-      return step_start <= tw.end;
-    });
-    assert(b_tw != b.tws.end());
-
-    if (step_start < b_tw->start) {
-      if (const auto margin = b_tw->start - step_start; margin <= travel_time) {
-        // Part of the remaining travel time is spent before this
-        // break, filling the whole margin.
-        duration += margin;
-        travel_time -= margin;
-        current_break.arrival = scale_to_user_duration(b_tw->start);
-      } else {
-        // The whole remaining travel time is spent before this
-        // break, not filling the whole margin.
-
-        const Duration wt = margin - travel_time;
-        forward_wt += wt;
-
-        current_break.arrival =
-          scale_to_user_duration(step_start + travel_time);
-
-        // Recompute user-reported waiting time rather than using
-        // scale_to_user_duration(wt) to avoid rounding problems.
-        current_break.waiting_time =
-          scale_to_user_duration(b_tw->start) - current_break.arrival;
-        user_waiting_time += current_break.waiting_time;
-
-        duration += travel_time;
-        travel_time = 0;
-      }
-
-      step_start = b_tw->start;
-    } else {
-      current_break.arrival = scale_to_user_duration(step_start);
-    }
-
-    assert(b_tw->start % DURATION_FACTOR == 0 &&
-           scale_to_user_duration(b_tw->start) <=
-             current_break.arrival + current_break.waiting_time &&
-           (current_break.waiting_time == 0 ||
-            scale_to_user_duration(b_tw->start) ==
-              current_break.arrival + current_break.waiting_time));
-
-    // Recompute cumulated durations in a consistent way as seen from
-    // UserDuration.
-    assert(user_previous_end <= current_break.arrival);
-    auto user_travel_time = current_break.arrival - user_previous_end;
-    user_duration += user_travel_time;
-    current_break.duration = user_duration;
-
-    // Pro rata temporis distance increase.
-    if (current_eval.duration != 0) {
-      user_distance += round<UserDistance>(
-        static_cast<double>(user_travel_time * current_eval.distance) /
-        scale_to_user_duration(current_eval.duration));
-    }
-    current_break.distance = user_distance;
-
-    user_previous_end = current_break.arrival + current_break.waiting_time +
-                        current_break.service;
-
-    service += b.service;
-    step_start += b.service;
-  }
-
+  emit_breaks_before(r, user_distance);
   steps.emplace_back(STEP_TYPE::END, last_location.value(), current_load);
   auto& end_step = steps.back();
   if (v.has_end()) {
