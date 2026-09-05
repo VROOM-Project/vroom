@@ -26,14 +26,23 @@ Usage: python scripts/waste_capacity_check.py [--rules strict|assumed]
 
 import argparse
 import itertools
+import json
+import os
 import sys
 from collections import Counter
 
 import numpy as np
 from scipy.optimize import linprog
 
+# Single source of truth for sizes and loading rules.
+RULES_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                          "..", "docs", "waste_rules.json")
+
+with open(RULES_FILE, encoding="utf-8") as _f:
+    RULES_JSON = json.load(_f)
+
 # Container kinds: e = empty, f = full, number = size in m3.
-KINDS = ["e2", "e6", "e12", "e20", "e40", "f2", "f6", "f12", "f20", "f40"]
+KINDS = [f"e{s}" for s in RULES_JSON["sizes"]] + [f"f{s}" for s in RULES_JSON["sizes"]]
 
 
 def load(spec):
@@ -62,26 +71,9 @@ def fmt(vec):
 # Rules: maximal allowed loads per truck configuration.
 # ---------------------------------------------------------------------------
 
-RULES_STRICT = {
-    "small": ["3e2", "1f2"],
-    "multiban": [
-        # empties only
-        "6e2",
-        "6e6",
-        "1e12",
-        "1e12 + 3e6",
-        # full only
-        "2f2",
-        "2f6",
-        "1f12",
-        # mixed
-        "1f6 + 3e2",
-        "2f6 + 1e2",
-        "1f6 + 3e6",
-        "1f12 + 1e2",
-    ],
-    "poliban": ["1e20", "1f20", "1e40", "1f40"],
-}
+# Loaded from docs/waste_rules.json: {truck: [maximal allowed loads]}.
+RULES_STRICT = {truck: list(spec["rules"])
+                for truck, spec in RULES_JSON["trucks"].items()}
 
 # Assumption needed for an exact linear encoding (open question 1 of
 # the problem document): container kinds in the same class below are
@@ -163,11 +155,11 @@ CAPACITY = {
     "poliban": (0, 0, 1),
 }
 
-# Which container kinds each truck type may carry at all (skills).
+# Which container kinds each truck type may carry at all: those that
+# appear in at least one of its rules.
 COMPATIBLE = {
-    "small": {"e2", "f2"},
-    "multiban": {"e2", "e6", "e12", "f2", "f6", "f12"},
-    "poliban": {"e20", "f20", "e40", "f40"},
+    truck: {k for spec in specs for n, k in zip(load(spec), KINDS) if n}
+    for truck, specs in RULES_STRICT.items()
 }
 
 

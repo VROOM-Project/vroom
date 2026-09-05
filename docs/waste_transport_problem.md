@@ -64,6 +64,16 @@ Operations are coupled through the truck load:
 A single client visit may combine operations (for instance leave an
 empty container and pick up the full one standing there).
 
+From the planner's point of view, requests come in four types, which
+the planning tool translates into the movements above:
+
+| Request type | Movements |
+| --- | --- |
+| Deliver an empty container | company to client, empty container |
+| Pick up an empty container | client to company, empty container |
+| Exchange an empty container for a full one | empty container company to client, full container client to company |
+| Sell materials | company to client, a full truck of materials, nothing else on board |
+
 ## Containers
 
 Container sizes: **2 m³, 6 m³, 12 m³, 20 m³, 40 m³**.
@@ -97,56 +107,31 @@ only carry the container sizes of its type.
 What a truck can carry at the same time is **not** a simple sum of
 volumes or a count. It is a fixed list of allowed combinations,
 decided by how containers physically sit on the truck (which ones can
-go on top of or inside which). The rules below are the authoritative
-lists provided by the company. Anything not listed is assumed
-forbidden until confirmed otherwise (see open questions).
+go on top of or inside which). The authoritative lists provided by
+the company are kept in **one place**,
+[waste_rules.json](./waste_rules.json), which the planner, the check
+scripts and the example instance all read. Anything not listed there
+is assumed forbidden until confirmed otherwise (see open questions).
 
 A combination that is "smaller" than an allowed one is also allowed
 (if `6e2` is allowed, so is `4e2`).
 
-### small
+Notation used in that file: `eN` an empty N m³ container, `fN` a full
+one, `+` to combine (`2f6 + 1e2` = two full 6 m³ and one empty 2 m³).
+Each truck type has one list of maximal allowed loads.
 
-| Allowed load |
-| --- |
-| up to `3e2` |
-| `1f2` |
+### Physical arrangements (informative only)
 
-### multiban
+The mixed full-and-empty loads of the multiban come from how
+containers sit on the truck; this does not constrain the plan (see the
+notes below) but explains the list:
 
-Empty containers only:
-
-| Allowed load |
-| --- |
-| `6e2` |
-| `6e6` |
-| `1e12` |
-| `1e12 + 3e6` |
-
-Full containers only:
-
-| Allowed load |
-| --- |
-| `2f2` |
-| `2f6` |
-| `1f12` |
-
-Mixed full and empty:
-
-| Allowed load | Physical arrangement (informative only) |
+| Multiban load | Physical arrangement |
 | --- | --- |
 | `1f6 + 3e2` | the 2 m³ on top of the full 6 m³ |
 | `2f6 + 1e2` | the 2 m³ on top of one of the full 6 m³ |
 | `1f6 + 3e6` | full one below, empties on top |
 | `1f12 + 1e2` | the 2 m³ on top of the full 12 m³ |
-
-### poliban
-
-| Allowed load |
-| --- |
-| `1e20` |
-| `1f20` |
-| `1e40` |
-| `1f40` |
 
 ### Notes on the rules
 

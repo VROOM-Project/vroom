@@ -3,7 +3,9 @@
 Design draft for replacing VROOM's single linear capacity check by a
 rule-table check, so that the loading rules of
 [waste_transport_problem.md](./waste_transport_problem.md) can be
-enforced literally. Status: **brainstorm, nothing implemented**.
+enforced literally. Status: **implemented** in this repository (see
+[Implementation status](#implementation-status) at the end); the rest
+of the document is the original design, kept as the rationale.
 
 Contents:
 - [Idea](#idea)
@@ -51,25 +53,13 @@ every capacity vector of a truck cannot go on it, and VROOM already
 turns "does not fit an empty route" into an incompatibility
 (`Input::set_extra_compatibility`).
 
-Example, multiban with the strict rules (components in the order
-above):
-
-```json
-"capacities": [
-  [6, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 6, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 3, 1, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 2, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 2, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
-  [3, 0, 0, 0, 0, 0, 1, 0, 0, 0],
-  [1, 0, 0, 0, 0, 0, 2, 0, 0, 0],
-  [0, 3, 0, 0, 0, 0, 1, 0, 0, 0],
-  [1, 0, 0, 0, 0, 0, 0, 1, 0, 0]
-]
-```
-
-(`1e12` alone is dominated by `1e12 + 3e6` and can be omitted.)
+The rule lists live in [waste_rules.json](./waste_rules.json);
+`python scripts/waste_rules_to_capacities.py` prints the corresponding
+`capacities` arrays (one vector per rule, components in the order
+above; add `--materials` for the extra materials component the
+planner uses) ready to paste into a VROOM input.
+A rule dominated by another one (e.g. `1e12` next to `1e12 + 3e6`) is
+redundant and is dropped by the solver at parse time.
 
 ## Input format
 
@@ -241,3 +231,41 @@ docs a day; plus the build environment.
 5. **Build/test environment**: WSL, a Linux box, or a container.
 6. **Upstream**: keep the change free of anything waste-specific so
    that it can be offered to the upstream project.
+
+## Implementation status
+
+Decisions taken (2026-09-05):
+
+1. Representation: `capacities`, an array of alternative capacity
+   vectors on the vehicle (see [API.md](./API.md#alternative-capacity-vectors)).
+2. `capacity` and `capacities` are exclusive: providing both is an
+   input error. A `capacities` list reduced to one vector (after
+   dropping dominated vectors) is folded into `capacity`, so the
+   solver takes exactly the old code path.
+3. All checks are exact from day one: insertion checks use the
+   three-tier test (hull, single vector, step scan), `RouteExchange`
+   and route splitting fall back to a step scan through
+   `RawRoute::loads_fit`, and `TwoOpt` / `ReverseTwoOpt` are exact
+   because their margin and inclusion checks are. The remaining
+   direct comparisons in `local_search.cpp` and `swap_star_utils.h`
+   are pruning only (necessary conditions on the hull).
+4. Amount components are container kinds with one-hot amounts;
+   [waste_example.json](./waste_example.json) uses this format and no
+   longer needs skills.
+5. Build and test environment: Docker, see
+   [vroom-custom/Dockerfile.local](../vroom-custom/Dockerfile.local),
+   [docker-compose.local.yml](../docker-compose.local.yml) and
+   [scripts/vroom_local.sh](../scripts/vroom_local.sh).
+6. Nothing waste-specific in the C++.
+
+Where things are in the code:
+
+| Piece | Location |
+| --- | --- |
+| `capacities` member, hull, `can_carry`, dominated vector pruning | `src/structures/vroom/vehicle.h/.cpp` |
+| JSON key parsing and exclusivity check | `src/utils/input_parser.cpp` |
+| Three-tier checks, `loads_fit`, `nb_steps` | `src/structures/vroom/raw_route.h/.cpp` |
+| Exact `RouteExchange` | `src/problems/cvrp/operators/route_exchange.cpp` |
+| Exact route split | `src/algorithms/local_search/route_split_utils.h` |
+| Input route validation and plan mode | `src/algorithms/heuristics/heuristics.cpp`, `src/algorithms/validation/choose_ETA.cpp` |
+| Oracle checker | [scripts/waste_solution_check.py](../scripts/waste_solution_check.py) |

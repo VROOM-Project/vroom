@@ -1,0 +1,31 @@
+{
+  "_comment": "Single source of truth for the waste transport planner: container sizes, truck types with their loading rules, and the company site. A rule is a maximal allowed load written in the company's notation (eN = empty N m3 container, fN = full N m3 container, '2f6 + 1e2' = two full 6 and one empty 2); anything smaller than a listed load is allowed too. Used by frontend/public/waste_model.js (via frontend/server.js), scripts/waste_capacity_check.py and referenced by the docs.",
+  "sizes": [2, 6, 12, 20, 40],
+  "company": { "lat": 37.030558, "lng": -7.976093, "description": "company site: trucks start and end the day here" },
+  "materials": { "any_truck": true, "_comment": "materials are sold as a full truck: nothing else on board during that trip" },
+  "trucks": {
+    "small": {
+      "label": "Small",
+      "rules": ["3e2", "1f2"]
+    },
+    "multiban": {
+      "label": "Multiban",
+      "rules": [
+        "6e2",
+        "6e6",
+        "1e12 + 3e6",
+        "2f2",
+        "2f6",
+        "1f12",
+        "1f6 + 3e2",
+        "2f6 + 1e2",
+        "1f6 + 3e6",
+        "1f12 + 1e2"
+      ]
+    },
+    "poliban": {
+      "label": "Poliban",
+      "rules": ["1e20", "1f20", "1e40", "1f40"]
+    }
+  }
+}

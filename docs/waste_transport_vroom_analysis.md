@@ -19,26 +19,30 @@ Contents:
 
 ## Verdict
 
-VROOM can solve the daily plan **without code changes**, as a
-pickup-and-delivery problem, provided one assumption about the
-loading rules is confirmed by the company. Without that assumption
-the loading rules require a change in the solver core (plan B). One
-aspect of the real problem is not modelled and needs a post-check.
+VROOM solves the daily plan as a pickup-and-delivery problem. The
+loading rules of the company are enforced literally through the
+`capacities` extension of this repository (plan B, see
+[waste_transport_plan_b.md](./waste_transport_plan_b.md)), which is
+now implemented: each truck lists its allowed maximal loads and a
+load is valid when it fits one of them. The linear encoding described
+in [The multiban capacity](#the-multiban-capacity) is kept for the
+record, as it explains why the extension was needed. One aspect of
+the real problem is not modelled and needs a post-check.
 
 | Requirement | VROOM feature | Status |
 | --- | --- | --- |
 | Which truck does which operation, in which order | vehicles + shipments, heterogeneous fleet | native |
 | Trucks come back to the company to unload, several trips a day | shipments whose delivery is at the company | native (falls out of the shipment model) |
 | Pure transport A to B without passing through the company | shipment A to B | native |
-| Truck/container compatibility | skills | native |
-| Loading rules of small and poliban | capacity vector | native, exact |
-| Loading rules of the multiban | capacity vector | exact **only under an assumption** (see below); impossible with linear capacities under the strict rule list |
+| Truck/container compatibility | `capacities` (a kind with 0 in every vector cannot board) | native with the extension |
+| Loading rules of small and poliban | `capacities`, one vector per rule | exact |
+| Loading rules of the multiban | `capacities`, one vector per rule | exact with the extension; impossible with a single linear capacity under the strict rule list (see below) |
 | Start time, finishing time | vehicle `time_window` | native |
 | Lunch break | vehicle `breaks` | native |
 | Leave operations for tomorrow, with priorities | `priority`, `unassigned` output | native |
 | Objective: most operations, then time, then km | solution ranking + `costs` | native |
 | New operation mid-day | re-run with current state as input, travel times from OSRM, `steps` warm start | supported by a re-planning procedure, not by a live mode |
-| Extender on multiban / poliban | separate capacity per configuration | must be decided before solving |
+| Extender on multiban / poliban | separate `capacities` list per configuration | must be decided before solving |
 | Order of stacking | not needed: operators reorder on site | not a constraint |
 | Leave-empty and pick-full at the same client done by the same truck in one visit | none | **gap**: usually happens through cost, not guaranteed |
 
@@ -83,18 +87,35 @@ unloads, and goes out again is simply a route whose shipment
 deliveries happen to be at the company. Multi-trip behaviour needs no
 special support.
 
-| Operation | Shipment pickup | Shipment delivery | `amount` | `skills` |
+The planner works with four operation types, each translated into one
+or two shipments (implemented in
+[frontend/public/waste_model.js](../frontend/public/waste_model.js)):
+
+| Operation | Shipments | Pickup | Delivery | `amount` |
 | --- | --- | --- | --- | --- |
-| Pick up a waste container at A (to be emptied) | A | company | encoding of `fN` | `N` |
-| Pure transport of a full container A to B | A | B | encoding of `fN` | `N` |
-| Leave an empty container at A | company | A | encoding of `eN` | `N` |
-| Deliver materials at A | company | A | encoding of the material load (open question 4) | as appropriate |
-| Leave a full container at a disposal site | as pure transport | | | |
+| Deliver an empty container of size N at A | 1 | company | A | one-hot `eN` |
+| Pick up an empty container of size N at A | 1 | A | company | one-hot `eN` |
+| Exchange at A: leave an empty N, take the full N | 2 | company / A | A / company | one-hot `eN` and one-hot `fN` |
+| Sell materials at A (a full truck) | 1 | company | A | one-hot `mat` |
+
+Other movements from the problem statement remain expressible the
+same way (pure transport A to B: shipment A to B with `fN`).
+
+**Materials** are an eleventh amount component `mat`. Every truck
+gets one extra capacity vector with `mat` = 1 and every container
+kind at 0, so a materials delivery occupies the whole truck: nothing
+else can be on board on that trip.
 
 Details:
 
-- **Skills** are one id per container size (2, 6, 12, 20, 40). Vehicle
-  skills: small `[2]`, multiban `[2, 6, 12]`, poliban `[20, 40]`.
+- **Amounts** have one component per container kind, in the order
+  `e2, e6, e12, e20, e40, f2, f6, f12, f20, f40`; a container task has
+  a one-hot amount. Each vehicle lists its allowed maximal loads in
+  `capacities`, one vector per rule of
+  [waste_rules.json](./waste_rules.json). Size
+  compatibility follows: a kind with 0 in every vector of a truck
+  cannot board it, so no skills are needed (they remain useful to pin
+  an in-flight load to a truck when re-planning).
 - **Company visits**: use `setup` on the delivery steps at the company
   for the fixed overhead of a visit (VROOM applies setup once for
   consecutive tasks at the same location) and `service` for the
@@ -113,6 +134,13 @@ Details:
   many times as needed.
 
 ## The multiban capacity
+
+With the `capacities` extension the multiban is not a special case
+any more: its rule list from [waste_rules.json](./waste_rules.json)
+goes in as is, see [waste_example.json](./waste_example.json). This
+section documents why
+a single linear capacity vector was not enough, and the encoding that
+would work under an assumption if the extension were not available.
 
 ### Why it is hard
 
@@ -214,21 +242,16 @@ one", so fitting the extender is an input decision per truck per day
 are known, add them as new entries in `RULES_STRICT` and `CAPACITY`
 in the script and verify the same way.
 
-### Plan B: table-driven capacity in the core
+### Plan B: alternative capacity vectors in the core (implemented)
 
-If the loading rules must be enforced literally, the linear check has
-to be replaced by a lookup in the allowed-load table. That is a real
-change to the solver core: the peak/margin shortcuts in
-`RawRoute`/`TWRoute` assume component-wise monotone constraints and
-are used from about 90 call sites in more than 20 files (local search
-operators, heuristics, SWAP* utilities). A workable design is to keep the linear
-encoding as a *relaxation* (it accepts a superset of the real set, so
-it stays valid for pruning) and make the `is_valid_addition_for_*`
-methods of `RawRoute` and `TWRoute` exact by re-simulating the
-modified route against the table. Cost: O(route length) per check
-instead of O(1), acceptable for a small fleet. Effort: days rather
-than hours, plus tests; only worth it if the assumption above is
-refuted.
+The loading rules are enforced literally by giving each vehicle a list
+of capacity vectors (`capacities`); a load is valid when it fits at
+least one of them. The component-wise maximum of the list (the hull)
+is kept as a relaxation for the O(1) peak-based shortcuts of
+`RawRoute`, and the exact step-by-step check only runs when the hull
+accepts a load that no single vector accepts. Design, decisions and
+code map are in
+[waste_transport_plan_b.md](./waste_transport_plan_b.md).
 
 ## Time constraints
 
@@ -297,12 +320,13 @@ re-planning time `t`:
    capacity or time pushes that way. Detect in a post-check; if it
    happens too often, it can be reduced by giving both shipments the
    same tight `time_windows`.
-2. **Loading rules** are exact only under the assumption stated above.
+2. **Loading rules** are enforced exactly through `capacities`; the
+   assumption above is no longer needed.
 3. **Extender** is an input decision, not an optimisation decision.
-4. **Materials** modelling depends on how they travel (open
-   question 4). If they travel loose in the truck bed, add a fourth
-   amount component for material volume/weight and give containers a
-   value that makes mixing impossible if that is the rule.
+4. **Materials** travel as a full truck (`mat` component, exclusive
+   capacity vector) on any truck type; if partial loads or mixing with
+   containers turn out to be allowed, this becomes a matter of adding
+   vectors.
 5. **Stock of empties at the company** is assumed unlimited. If stock
    per size is limited, create at most that many leave-empty shipments
    per size (VROOM will drop the extra ones).
@@ -311,27 +335,35 @@ re-planning time `t`:
 
 ## Recommended path
 
-1. Get answers to the open questions of the problem document, in
-   particular confirm the interchangeability assumption; update
-   `RULES_STRICT` and rerun the script.
+1. Get answers to the remaining open questions of the problem
+   document (extender lists, materials, small truck with a full 2).
+   Each answer is just another vector in the relevant `capacities`
+   list.
 2. Write the input generator (operations database to VROOM JSON) using
-   the encoding table and the example below as a template. Use a
-   the OSRM instance that will run next to VROOM (`-r osrm`, `-a`,
-   `-p` flags).
-3. Write the post-checker: exact rule table plus same-visit linking,
-   on VROOM output.
-4. Only if step 1 refutes the assumption, implement plan B.
+   the example below as a template: one-hot amounts per container
+   kind, one `capacities` list per truck configuration. Use the OSRM
+   instance that will run next to VROOM (`-r osrm`, `-a`, `-p`
+   flags).
+3. Run [scripts/waste_solution_check.py](../scripts/waste_solution_check.py)
+   on VROOM output as a post-check, and extend it with same-visit
+   linking.
+4. Build the stack from the local sources with
+   [docker-compose.local.yml](../docker-compose.local.yml) so that the
+   deployed solver includes the extension.
 
 ## Example input
 
 [waste_example.json](./waste_example.json) is a small instance with
 custom matrices (no routing server needed): the company, three
-clients, a disposal site, one multiban and one small truck, and six
-operations including a swap, a pure transport and a full 12 m³. Run it
-with:
+clients, a disposal site, one multiban, one small truck, one poliban,
+and eight operations including a swap, a pure transport, a full 12 m³
+and two poliban containers. Vehicles use `capacities` generated from
+[waste_rules.json](./waste_rules.json) with
+`scripts/waste_rules_to_capacities.py`. Run it with:
 
 ```bash
-vroom -i docs/waste_example.json -x 5
+vroom -i docs/waste_example.json -x 5 -o out.json
+python scripts/waste_solution_check.py docs/waste_example.json out.json
 ```
 
 Times in the example are seconds since midnight (8:00 to 17:00, lunch
