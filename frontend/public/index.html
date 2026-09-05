@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>VROOM playground</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; font: 14px/1.4 system-ui, sans-serif; color: #222; }
+  #app { display: flex; flex-direction: row; height: 100%; }
+  #map { flex: 1; order: 1; }
+  #side { order: 2; width: 360px; background: #f7f7f7; border-left: 1px solid #ddd; display: flex; flex-direction: column; }
+  #side header { padding: 12px 12px 0; }
+  h1 { font-size: 16px; margin: 0 0 4px; }
+  #status { font-size: 12px; color: #555; min-height: 1.4em; }
+  #status.err { color: #b91c1c; }
+  .tabs { display: flex; border-bottom: 1px solid #ddd; margin-top: 8px; }
+  .tabs button { flex: 1; border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none; padding: 8px; font-weight: 600; color: #666; }
+  .tabs button.active { color: #2563eb; border-bottom-color: #2563eb; }
+  .panel { padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; flex: 1; }
+  .panel[hidden] { display: none; }
+  fieldset { border: 1px solid #ccc; border-radius: 4px; padding: 8px 10px; margin: 0; }
+  legend { font-weight: 600; font-size: 12px; text-transform: uppercase; color: #555; }
+  label { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 4px 0; }
+  input[type=number] { width: 90px; }
+  input[type=text] { width: 120px; }
+  button { cursor: pointer; padding: 6px 10px; border-radius: 4px; border: 1px solid #999; background: #fff; }
+  button.primary { background: #2563eb; color: #fff; border-color: #1d4ed8; }
+  button:disabled { opacity: .5; cursor: default; }
+  .row { display: flex; gap: 8px; }
+  .row button { flex: 1; }
+  ul.list { list-style: none; margin: 0; padding: 0; }
+  ul.list li { display: flex; justify-content: space-between; align-items: center; gap: 6px; padding: 3px 0; border-bottom: 1px solid #eee; font-size: 12px; }
+  ul.list li .x { padding: 0 6px; font-size: 12px; }
+  #points { max-height: 220px; overflow-y: auto; font-family: monospace; }
+  #vehicles li { font-family: inherit; }
+  #vehicles li input[type=number] { width: 70px; }
+  #vehicles li input[type=text] { width: 110px; }
+  #summary { font-size: 13px; }
+  #summary table { border-collapse: collapse; width: 100%; }
+  #summary td { padding: 2px 4px; border-bottom: 1px solid #eee; }
+  #summary td:first-child { color: #555; }
+  .swatch { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: middle; margin-right: 4px; }
+  .pin { width: 22px; height: 22px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; }
+  .pin span { transform: rotate(45deg); color: #fff; font-size: 10px; font-weight: 700; }
+  .hint { font-size: 12px; color: #666; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="map"></div>
+  <div id="side">
+    <header>
+      <h1>VROOM playground</h1>
+      <div id="status">Checking solver…</div>
+      <div class="tabs">
+        <button class="active" data-tab="solve">Solve</button>
+        <button data-tab="config">Config</button>
+      </div>
+    </header>
+
+    <!-- ===== Solve tab ===== -->
+    <div class="panel" id="tab-solve">
+      <fieldset>
+        <legend>Click mode</legend>
+        <label><span>Add depot (vehicle start/end)</span><input type="radio" name="mode" value="depot" checked /></label>
+        <label><span>Add job</span><input type="radio" name="mode" value="job" /></label>
+        <div class="hint">Click the map to add a point. Only one depot is kept; adding another replaces it. Points must be inside the loaded OSRM area (Portugal).</div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Points</legend>
+        <ul id="points" class="list"></ul>
+      </fieldset>
+
+      <div class="row">
+        <button id="solve" class="primary">Solve</button>
+        <button id="clear">Clear</button>
+      </div>
+
+      <div id="summary"></div>
+    </div>
+
+    <!-- ===== Config tab ===== -->
+    <div class="panel" id="tab-config" hidden>
+      <fieldset>
+        <legend>Vehicles</legend>
+        <ul id="vehicles" class="list"></ul>
+        <div class="row" style="margin-top:8px">
+          <button id="addVehicle">Add vehicle</button>
+        </div>
+        <div class="hint">All vehicles start and end at the depot. Capacity 0 means unlimited.</div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Job defaults</legend>
+        <label><span>Service time (s)</span><input id="service" type="number" min="0" step="60" value="300" /></label>
+        <label><span>Delivery amount per job</span><input id="jobAmount" type="number" min="0" value="1" /></label>
+        <div class="hint">Amounts only matter when at least one vehicle has a capacity.</div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Solver</legend>
+        <label><span>Return route geometry</span><input id="geometry" type="checkbox" checked /></label>
+      </fieldset>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---------- state ----------
+let depot = null;          // {lat, lng}
+let jobs = [];             // [{id, lat, lng}]
+let nextJobId = 1;
+let vehicles = [           // [{id, name, capacity}]
+  { id: 1, name: "vehicle 1", capacity: 0 },
+  { id: 2, name: "vehicle 2", capacity: 0 },
+];
+let nextVehicleId = 3;
+const COLORS = ["#2563eb", "#dc2626", "#16a34a", "#d97706", "#7c3aed", "#0891b2", "#be185d", "#4d7c0f"];
+
+// ---------- tabs ----------
+document.querySelectorAll(".tabs button").forEach((btn) => {
+  btn.onclick = () => {
+    document.querySelectorAll(".tabs button").forEach((b) => b.classList.toggle("active", b === btn));
+    document.getElementById("tab-solve").hidden = btn.dataset.tab !== "solve";
+    document.getElementById("tab-config").hidden = btn.dataset.tab !== "config";
+  };
+});
+
+// ---------- map ----------
+const map = L.map("map").setView([37.02, -7.93], 12); // Faro
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  maxZoom: 19,
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+}).addTo(map);
+const markerLayer = L.layerGroup().addTo(map);
+const routeLayer = L.layerGroup().addTo(map);
+
+function pinIcon(color, text) {
+  return L.divIcon({
+    className: "",
+    html: `<div class="pin" style="background:${color}"><span>${text}</span></div>`,
+    iconSize: [22, 22],
+    iconAnchor: [3, 22],
+  });
+}
+
+function currentMode() {
+  return document.querySelector("input[name=mode]:checked").value;
+}
+function setMode(value) {
+  document.querySelector(`input[name=mode][value=${value}]`).checked = true;
+}
+
+map.on("click", (e) => {
+  if (currentMode() === "depot") {
+    depot = { lat: e.latlng.lat, lng: e.latlng.lng };
+    setMode("job");
+  } else {
+    jobs.push({ id: nextJobId++, lat: e.latlng.lat, lng: e.latlng.lng });
+  }
+  routeLayer.clearLayers();
+  renderPoints();
+});
+
+// ---------- rendering: points ----------
+function renderPoints(unassignedIds = new Set(), jobColor = {}) {
+  markerLayer.clearLayers();
+  const list = document.getElementById("points");
+  list.innerHTML = "";
+
+  if (depot) {
+    L.marker([depot.lat, depot.lng], { icon: pinIcon("#111", "D") }).addTo(markerLayer).bindTooltip("Depot");
+    list.appendChild(pointRow("D depot", depot, () => { depot = null; routeLayer.clearLayers(); renderPoints(); }));
+  }
+  for (const j of jobs) {
+    const color = unassignedIds.has(j.id) ? "#9ca3af" : (jobColor[j.id] || "#2563eb");
+    L.marker([j.lat, j.lng], { icon: pinIcon(color, j.id) }).addTo(markerLayer)
+      .bindTooltip(unassignedIds.has(j.id) ? `Job ${j.id} (unassigned)` : `Job ${j.id}`);
+    list.appendChild(pointRow(`J${j.id}`, j, () => { jobs = jobs.filter((x) => x.id !== j.id); routeLayer.clearLayers(); renderPoints(); }));
+  }
+  updateSolveButton();
+}
+
+function pointRow(label, p, onDelete) {
+  const li = document.createElement("li");
+  const txt = document.createElement("span");
+  txt.textContent = `${label}  ${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}`;
+  li.append(txt, removeButton(onDelete));
+  return li;
+}
+
+function removeButton(onClick) {
+  const btn = document.createElement("button");
+  btn.className = "x";
+  btn.textContent = "×";
+  btn.title = "remove";
+  btn.onclick = onClick;
+  return btn;
+}
+
+function updateSolveButton() {
+  document.getElementById("solve").disabled = !depot || jobs.length === 0 || vehicles.length === 0;
+}
+
+// ---------- rendering: vehicles (config tab) ----------
+function renderVehicles() {
+  const list = document.getElementById("vehicles");
+  list.innerHTML = "";
+  vehicles.forEach((v, i) => {
+    const li = document.createElement("li");
+    const swatch = document.createElement("span");
+    swatch.className = "swatch";
+    swatch.style.background = COLORS[i % COLORS.length];
+
+    const name = document.createElement("input");
+    name.type = "text";
+    name.value = v.name;
+    name.title = "description";
+    name.oninput = () => { v.name = name.value; };
+
+    const capLabel = document.createElement("span");
+    capLabel.className = "hint";
+    capLabel.textContent = "cap.";
+    const cap = document.createElement("input");
+    cap.type = "number";
+    cap.min = "0";
+    cap.value = v.capacity;
+    cap.title = "capacity (0 = unlimited)";
+    cap.oninput = () => { v.capacity = Math.max(0, Number(cap.value) || 0); };
+
+    li.append(swatch, name, capLabel, cap, removeButton(() => {
+      vehicles = vehicles.filter((x) => x.id !== v.id);
+      renderVehicles();
+    }));
+    list.appendChild(li);
+  });
+  updateSolveButton();
+}
+
+document.getElementById("addVehicle").onclick = () => {
+  vehicles.push({ id: nextVehicleId, name: `vehicle ${nextVehicleId}`, capacity: 0 });
+  nextVehicleId++;
+  renderVehicles();
+};
+
+function setStatus(msg, isError = false) {
+  const el = document.getElementById("status");
+  el.textContent = msg;
+  el.className = isError ? "err" : "";
+}
+
+// ---------- VROOM request ----------
+function buildRequest() {
+  const service = Math.max(0, Number(document.getElementById("service").value) || 0);
+  const jobAmount = Math.max(0, Number(document.getElementById("jobAmount").value) || 0);
+  const useAmounts = vehicles.some((v) => v.capacity > 0);
+  const start = [depot.lng, depot.lat];
+
+  const reqVehicles = vehicles.map((v) => {
+    const out = { id: v.id, description: v.name, profile: "car", start, end: start };
+    // VROOM requires every vehicle to have the same amount dimensions, so once any
+    // vehicle has a capacity, "unlimited" ones get a very large one.
+    if (useAmounts) out.capacity = [v.capacity > 0 ? v.capacity : 1e9];
+    return out;
+  });
+  const reqJobs = jobs.map((j) => {
+    const job = { id: j.id, location: [j.lng, j.lat], service };
+    if (useAmounts) job.delivery = [jobAmount];
+    return job;
+  });
+  return {
+    vehicles: reqVehicles,
+    jobs: reqJobs,
+    options: { g: document.getElementById("geometry").checked },
+  };
+}
+
+// Google encoded polyline (precision 5), as returned by OSRM/VROOM.
+function decodePolyline(str) {
+  let index = 0, lat = 0, lng = 0;
+  const coords = [];
+  while (index < str.length) {
+    for (const which of ["lat", "lng"]) {
+      let shift = 0, result = 0, byte;
+      do {
+        byte = str.charCodeAt(index++) - 63;
+        result |= (byte & 0x1f) << shift;
+        shift += 5;
+      } while (byte >= 0x20);
+      const delta = result & 1 ? ~(result >> 1) : result >> 1;
+      if (which === "lat") lat += delta; else lng += delta;
+    }
+    coords.push([lat / 1e5, lng / 1e5]);
+  }
+  return coords;
+}
+
+function fmtDuration(s) {
+  const h = Math.floor(s / 3600), m = Math.round((s % 3600) / 60);
+  return h ? `${h}h ${m}m` : `${m}m`;
+}
+
+function showSolution(sol) {
+  routeLayer.clearLayers();
+  const jobColor = {};
+  const unassigned = new Set((sol.unassigned || []).map((u) => u.id));
+  const rows = [];
+
+  (sol.routes || []).forEach((r) => {
+    const vIndex = vehicles.findIndex((v) => v.id === r.vehicle);
+    const color = COLORS[(vIndex >= 0 ? vIndex : 0) % COLORS.length];
+    const name = (vehicles[vIndex] || {}).name || `vehicle ${r.vehicle}`;
+    const jobIds = r.steps.filter((s) => s.type === "job").map((s) => s.job);
+    jobIds.forEach((id) => (jobColor[id] = color));
+    if (r.geometry) {
+      L.polyline(decodePolyline(r.geometry), { color, weight: 4, opacity: 0.85 }).addTo(routeLayer)
+        .bindTooltip(name);
+    } else {
+      // No geometry: draw straight legs between visited points.
+      const pts = r.steps.map((s) => s.location).filter(Boolean).map(([lng, lat]) => [lat, lng]);
+      L.polyline(pts, { color, weight: 2, dashArray: "6 6", opacity: 0.8 }).addTo(routeLayer).bindTooltip(name);
+    }
+    const km = r.distance != null ? `${(r.distance / 1000).toFixed(1)} km, ` : "";
+    rows.push(`<tr><td><span class="swatch" style="background:${color}"></span>${name}</td>
+      <td>${jobIds.length} jobs, ${fmtDuration(r.duration)}, ${km}cost ${r.cost}</td></tr>`);
+  });
+
+  const s = sol.summary || {};
+  const ct = s.computing_times ? `${s.computing_times.loading + s.computing_times.solving} ms` : "-";
+  document.getElementById("summary").innerHTML = `<table>
+    <tr><td>Total cost</td><td>${s.cost ?? "-"}</td></tr>
+    <tr><td>Routes</td><td>${s.routes ?? "-"}</td></tr>
+    <tr><td>Duration</td><td>${s.duration != null ? fmtDuration(s.duration) : "-"}</td></tr>
+    <tr><td>Distance</td><td>${s.distance != null ? (s.distance / 1000).toFixed(1) + " km" : "-"}</td></tr>
+    <tr><td>Unassigned</td><td>${s.unassigned ?? 0}${unassigned.size ? " (" + [...unassigned].join(", ") + ")" : ""}</td></tr>
+    <tr><td>Computing time</td><td>${ct}</td></tr>
+    ${rows.join("")}
+  </table>`;
+  renderPoints(unassigned, jobColor);
+  const drawn = routeLayer.getLayers();
+  if (drawn.length) {
+    map.fitBounds(L.featureGroup(drawn).getBounds(), { padding: [30, 30] });
+  }
+}
+
+// ---------- actions ----------
+document.getElementById("solve").onclick = async () => {
+  const req = buildRequest();
+  document.getElementById("summary").innerHTML = "";
+  setStatus("Solving…");
+  document.getElementById("solve").disabled = true;
+  try {
+    const res = await fetch("/api", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req),
+    });
+    const text = await res.text();
+    let body;
+    try { body = JSON.parse(text); } catch { body = { raw: text }; }
+    if (!res.ok || body.code) {
+      setStatus(`Solver error (${res.status}): ${body.error || body.raw || "unknown"}`, true);
+    } else {
+      showSolution(body);
+      setStatus("Solved.");
+    }
+  } catch (err) {
+    setStatus(`Request failed: ${err.message}`, true);
+  } finally {
+    updateSolveButton();
+  }
+};
+
+document.getElementById("clear").onclick = () => {
+  depot = null; jobs = []; nextJobId = 1;
+  routeLayer.clearLayers();
+  document.getElementById("summary").innerHTML = "";
+  setMode("depot");
+  renderPoints();
+};
+
+// ---------- health check ----------
+fetch("/api/health")
+  .then((r) => (r.ok ? setStatus("Solver reachable at /api (vroom-express).") : setStatus(`Solver responded ${r.status}.`, true)))
+  .catch(() => setStatus("Solver not reachable. Run frontend/setup.sh.", true));
+
+renderVehicles();
+renderPoints();
+</script>
+</body>
+</html>
