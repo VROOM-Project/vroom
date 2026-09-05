@@ -1,0 +1,196 @@
+diff --git a/src/structures/vroom/vehicle.h b/src/structures/vroom/vehicle.h
+index b1a3075..1d2633c 100644
+--- a/src/structures/vroom/vehicle.h
++++ b/src/structures/vroom/vehicle.h
+@@ -30,22 +30,33 @@ struct VehicleCosts {
+   const Cost per_hour;
+   const Cost per_km;
+   const Cost per_task_hour;
++  const Cost route_duration_quadratic;
+ 
+   explicit VehicleCosts(UserCost fixed = 0,
+                         UserCost per_hour = DEFAULT_COST_PER_HOUR,
+                         UserCost per_km = DEFAULT_COST_PER_KM,
+-                        UserCost per_task_hour = DEFAULT_COST_PER_TASK_HOUR)
++                        UserCost per_task_hour = DEFAULT_COST_PER_TASK_HOUR,
++                        UserCost route_duration_quadratic = 0)
+     : fixed(utils::scale_from_user_cost(fixed)),
+       per_hour(static_cast<Cost>(per_hour)),
+       per_km(static_cast<Cost>(per_km)),
+-      per_task_hour(static_cast<Cost>(per_task_hour)){};
++      per_task_hour(static_cast<Cost>(per_task_hour)),
++      route_duration_quadratic(utils::scale_from_user_cost(route_duration_quadratic)){};
+ 
+   friend bool operator==(const VehicleCosts& lhs,
+                          const VehicleCosts& rhs) = default;
+ 
+   friend bool operator<(const VehicleCosts& lhs, const VehicleCosts& rhs) {
+-    return std::tie(lhs.fixed, lhs.per_hour, lhs.per_km, lhs.per_task_hour) <
+-           std::tie(rhs.fixed, rhs.per_hour, rhs.per_km, rhs.per_task_hour);
++    return std::tie(lhs.fixed,
++                    lhs.per_hour,
++                    lhs.per_km,
++                    lhs.per_task_hour,
++                    lhs.route_duration_quadratic) <
++           std::tie(rhs.fixed,
++                    rhs.per_hour,
++                    rhs.per_km,
++                    rhs.per_task_hour,
++                    rhs.route_duration_quadratic);
+   }
+ };
+ 
+diff --git a/src/utils/helpers.cpp b/src/utils/helpers.cpp
+index b49b14e..29ce413 100644
+--- a/src/utils/helpers.cpp
++++ b/src/utils/helpers.cpp
+@@ -9,6 +9,7 @@ All rights reserved (see LICENSE).
+ 
+ #include <algorithm>
+ #include <chrono>
++#include <cmath>
+ #include <numeric>
+ #include <sstream>
+ 
+@@ -78,6 +79,16 @@ Eval route_eval_for_vehicle(const Input& input,
+     }
+ 
+     eval += v.task_eval(jobs_task_duration);
++
++    if (v.costs.route_duration_quadratic > 0) {
++      const auto route_duration = eval.duration + eval.task_duration;
++      const long double duration_hours =
++        static_cast<long double>(route_duration) /
++        (static_cast<long double>(DURATION_FACTOR) * 3600.L);
++      eval.cost += static_cast<Cost>(std::llround(
++        static_cast<long double>(v.costs.route_duration_quadratic) *
++        duration_hours * duration_hours));
++    }
+   }
+ 
+   return eval;
+@@ -794,10 +805,20 @@ Route format_route(const Input& input,
+   const UserCost user_task_cost =
+     scale_to_user_cost(v.task_cost(setup + service));
++  UserCost user_route_duration_quadratic_cost = 0;
++  if (v.costs.route_duration_quadratic > 0) {
++    const long double duration_hours =
++      static_cast<long double>(user_duration + setup + service) / 3600.L;
++    user_route_duration_quadratic_cost = scale_to_user_cost(
++      static_cast<Cost>(std::llround(
++        static_cast<long double>(v.costs.route_duration_quadratic) *
++        duration_hours * duration_hours)));
++  }
+ 
+   return Route(v.id,
+                std::move(steps),
+-               user_fixed_cost + user_travel_cost + user_task_cost,
++               user_fixed_cost + user_travel_cost + user_task_cost +
++                 user_route_duration_quadratic_cost,
+                user_duration,
+                eval_sum.distance,
+                scale_to_user_duration(setup),
+                scale_to_user_duration(service),
+                user_waiting_time,
+                priority,
+diff --git a/src/utils/input_parser.cpp b/src/utils/input_parser.cpp
+index dc073b2..3b8eb59 100644
+--- a/src/utils/input_parser.cpp
++++ b/src/utils/input_parser.cpp
+@@ -270,6 +270,7 @@ inline VehicleCosts get_vehicle_costs(const rapidjson::Value& v) {
+   UserCost per_hour = DEFAULT_COST_PER_HOUR;
+   UserCost per_km = DEFAULT_COST_PER_KM;
+   UserCost per_task_hour = DEFAULT_COST_PER_TASK_HOUR;
++  UserCost route_duration_quadratic = 0;
+ 
+   if (v.HasMember("costs")) {
+     if (!v["costs"].IsObject()) {
+@@ -314,9 +315,21 @@ inline VehicleCosts get_vehicle_costs(const rapidjson::Value& v) {
+ 
+       per_task_hour = v["costs"]["per_task_hour"].GetUint();
+     }
++
++    if (v["costs"].HasMember("route_duration_quadratic")) {
++      if (!v["costs"]["route_duration_quadratic"].IsUint()) {
++        throw InputException(
++          std::format("Invalid route_duration_quadratic cost for vehicle {}.",
++                      v["id"].GetUint64()));
++      }
++
++      route_duration_quadratic =
++        v["costs"]["route_duration_quadratic"].GetUint();
++    }
+   }
+ 
+-  return VehicleCosts(fixed, per_hour, per_km, per_task_hour);
++  return VehicleCosts(
++    fixed, per_hour, per_km, per_task_hour, route_duration_quadratic);
+ }
+ 
+ inline std::vector<VehicleStep> get_vehicle_steps(const rapidjson::Value& v) {
+diff --git a/src/algorithms/local_search/operator.cpp b/src/algorithms/local_search/operator.cpp
+index 0bc8102..9d4c7ef 100644
+--- a/src/algorithms/local_search/operator.cpp
++++ b/src/algorithms/local_search/operator.cpp
+@@ -7,17 +7,61 @@ All rights reserved (see LICENSE).
+ 
+ */
+ 
++#include <cmath>
++
+ #include "algorithms/local_search/operator.h"
+ 
+ namespace vroom::ls {
+ 
++namespace {
++
++Cost route_duration_quadratic_penalty(const Vehicle& vehicle,
++                                      const Eval& eval) {
++  if (vehicle.costs.route_duration_quadratic == 0) {
++    return 0;
++  }
++
++  const auto route_duration = eval.duration + eval.task_duration;
++  const long double duration_hours =
++    static_cast<long double>(route_duration) /
++    (static_cast<long double>(DURATION_FACTOR) * 3600.L);
++
++  return static_cast<Cost>(std::llround(
++    static_cast<long double>(vehicle.costs.route_duration_quadratic) *
++    duration_hours * duration_hours));
++}
++
++} // namespace
++
+ OperatorName Operator::get_name() const {
+   return _name;
+ }
+ 
+ Eval Operator::gain() {
+   if (!gain_computed) {
+     this->compute_gain();
++
++    if (s_vehicle == t_vehicle) {
++      const auto& vehicle = _input.vehicles[s_vehicle];
++      if (vehicle.costs.route_duration_quadratic > 0) {
++        const auto old_eval = _sol_state.route_evals[s_vehicle];
++        const auto new_eval = old_eval - stored_gain;
++        stored_gain.cost += route_duration_quadratic_penalty(vehicle, old_eval) -
++                            route_duration_quadratic_penalty(vehicle, new_eval);
++      }
++    } else {
++      const auto& s_v = _input.vehicles[s_vehicle];
++      const auto& t_v = _input.vehicles[t_vehicle];
++      const auto old_s_eval = _sol_state.route_evals[s_vehicle];
++      const auto old_t_eval = _sol_state.route_evals[t_vehicle];
++      const auto new_s_eval = old_s_eval - s_gain;
++      const auto new_t_eval = old_t_eval - t_gain;
++
++      stored_gain.cost += route_duration_quadratic_penalty(s_v, old_s_eval) -
++                          route_duration_quadratic_penalty(s_v, new_s_eval) +
++                          route_duration_quadratic_penalty(t_v, old_t_eval) -
++                          route_duration_quadratic_penalty(t_v, new_t_eval);
++    }
+   }
+   return stored_gain;
+ }
