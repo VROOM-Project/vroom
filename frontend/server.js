@@ -1,6 +1,8 @@
 // Minimal static file server + proxy to vroom-express. No dependencies.
 //
 //   GET  /            -> public/index.html
+//   GET  /rules.js    -> docs/waste_rules.json wrapped as `window.WASTE_RULES = ...`
+//   GET  /rules.json  -> docs/waste_rules.json as is
 //   GET  /<file>      -> public/<file>
 //   ANY  /api/<path>  -> ${VROOM_URL}/<path>   (POST /api -> vroom-express solve endpoint)
 //
@@ -14,6 +16,26 @@ const { URL } = require("url");
 const PORT = Number(process.env.PORT || 8080);
 const VROOM_URL = new URL(process.env.VROOM_URL || "http://localhost:3000");
 const PUBLIC_DIR = path.join(__dirname, "public");
+// Single source of truth for truck types, loading rules and the company site.
+const RULES_FILE = path.join(__dirname, "..", "docs", "waste_rules.json");
+
+function serveRules(res, asScript) {
+  fs.readFile(RULES_FILE, "utf8", (err, data) => {
+    if (err) return sendJson(res, 500, { error: `cannot read ${RULES_FILE}: ${err.message}` });
+    try {
+      JSON.parse(data);
+    } catch (e) {
+      return sendJson(res, 500, { error: `${RULES_FILE} is not valid JSON: ${e.message}` });
+    }
+    if (asScript) {
+      res.writeHead(200, { "Content-Type": MIME[".js"], "Cache-Control": "no-cache" });
+      res.end(`window.WASTE_RULES = ${data.trim()};\n`);
+    } else {
+      res.writeHead(200, { "Content-Type": MIME[".json"], "Cache-Control": "no-cache" });
+      res.end(data);
+    }
+  });
+}
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -72,6 +94,8 @@ http
   .createServer((req, res) => {
     if (req.url.startsWith("/api")) return proxy(req, res);
     if (req.method !== "GET") return sendJson(res, 405, { error: "method not allowed" });
+    if (req.url === "/rules.js") return serveRules(res, true);
+    if (req.url === "/rules.json") return serveRules(res, false);
     serveStatic(req, res);
   })
   .listen(PORT, () => {

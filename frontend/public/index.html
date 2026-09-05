@@ -3,15 +3,17 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>VROOM playground</title>
+<title>Waste transport planner</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="rules.js"></script>
+<script src="waste_model.js"></script>
 <style>
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; font: 14px/1.4 system-ui, sans-serif; color: #222; }
   #app { display: flex; flex-direction: row; height: 100%; }
-  #map { flex: 1; order: 1; }
-  #side { order: 2; width: 360px; background: #f7f7f7; border-left: 1px solid #ddd; display: flex; flex-direction: column; }
+  #map { flex: 1; order: 2; }
+  #side { order: 1; width: 400px; background: #f7f7f7; border-right: 1px solid #ddd; display: flex; flex-direction: column; }
   #side header { padding: 12px 12px 0; }
   h1 { font-size: 16px; margin: 0 0 4px; }
   #status { font-size: 12px; color: #555; min-height: 1.4em; }
@@ -24,28 +26,34 @@
   fieldset { border: 1px solid #ccc; border-radius: 4px; padding: 8px 10px; margin: 0; }
   legend { font-weight: 600; font-size: 12px; text-transform: uppercase; color: #555; }
   label { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 4px 0; }
-  input[type=number] { width: 90px; }
-  input[type=text] { width: 120px; }
+  input[type=number] { width: 80px; }
+  input[type=time] { width: 100px; }
+  select { padding: 3px; }
   button { cursor: pointer; padding: 6px 10px; border-radius: 4px; border: 1px solid #999; background: #fff; }
   button.primary { background: #2563eb; color: #fff; border-color: #1d4ed8; }
   button:disabled { opacity: .5; cursor: default; }
   .row { display: flex; gap: 8px; }
   .row button { flex: 1; }
   ul.list { list-style: none; margin: 0; padding: 0; }
-  ul.list li { display: flex; justify-content: space-between; align-items: center; gap: 6px; padding: 3px 0; border-bottom: 1px solid #eee; font-size: 12px; }
-  ul.list li .x { padding: 0 6px; font-size: 12px; }
-  #points { max-height: 220px; overflow-y: auto; font-family: monospace; }
-  #vehicles li { font-family: inherit; }
-  #vehicles li input[type=number] { width: 70px; }
-  #vehicles li input[type=text] { width: 110px; }
+  ul.list li { display: flex; align-items: center; gap: 6px; padding: 3px 0; border-bottom: 1px solid #eee; font-size: 12px; }
+  ul.list li .x { padding: 0 6px; font-size: 12px; margin-left: auto; }
+  ul.list li select { font-size: 12px; }
+  ul.list li input[type=number] { width: 52px; font-size: 12px; }
+  #points { max-height: 260px; overflow-y: auto; }
+  #points .id { font-weight: 700; min-width: 26px; }
+  #fleet li { justify-content: space-between; }
+  #fleet li .name { min-width: 80px; }
   #summary { font-size: 13px; }
   #summary table { border-collapse: collapse; width: 100%; }
-  #summary td { padding: 2px 4px; border-bottom: 1px solid #eee; }
-  #summary td:first-child { color: #555; }
+  #summary td { padding: 2px 4px; border-bottom: 1px solid #eee; vertical-align: top; }
+  #summary td:first-child { color: #555; white-space: nowrap; }
+  #summary ol { margin: 2px 0 4px; padding-left: 18px; font-size: 12px; color: #444; }
+  #summary ol li.company { color: #888; }
   .swatch { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: middle; margin-right: 4px; }
   .pin { width: 22px; height: 22px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; }
   .pin span { transform: rotate(45deg); color: #fff; font-size: 10px; font-weight: 700; }
   .hint { font-size: 12px; color: #666; }
+  .warn { font-size: 12px; color: #b45309; }
 </style>
 </head>
 <body>
@@ -53,30 +61,35 @@
   <div id="map"></div>
   <div id="side">
     <header>
-      <h1>VROOM playground</h1>
+      <h1>Waste transport planner</h1>
       <div id="status">Checking solver…</div>
       <div class="tabs">
-        <button class="active" data-tab="solve">Solve</button>
+        <button class="active" data-tab="solve">Plan</button>
         <button data-tab="config">Config</button>
       </div>
     </header>
 
-    <!-- ===== Solve tab ===== -->
+    <!-- ===== Plan tab ===== -->
     <div class="panel" id="tab-solve">
       <fieldset>
         <legend>Click mode</legend>
-        <label><span>Add depot (vehicle start/end)</span><input type="radio" name="mode" value="depot" checked /></label>
-        <label><span>Add job</span><input type="radio" name="mode" value="job" /></label>
-        <div class="hint">Click the map to add a point. Only one depot is kept; adding another replaces it. Points must be inside the loaded OSRM area (Portugal).</div>
+        <label><span>Move the company (trucks start and end there)</span><input type="radio" name="mode" value="depot" /></label>
+        <label><span>Add an operation</span><input type="radio" name="mode" value="op" checked /></label>
+        <label><span>Operation</span><select id="opType"></select></label>
+        <label><span>Container size</span><select id="opSize"></select></label>
+        <div class="hint">The company is preset (pin C). Click the map to add operations; switch to "Move the company" to relocate it. Points must be inside the loaded OSRM area (Portugal).</div>
       </fieldset>
 
       <fieldset>
-        <legend>Points</legend>
+        <legend>Operations</legend>
         <ul id="points" class="list"></ul>
+        <div class="hint">Type, size and priority (0–100, higher is dropped last) can be edited per operation.</div>
       </fieldset>
 
+      <div id="problems" class="warn"></div>
+
       <div class="row">
-        <button id="solve" class="primary">Solve</button>
+        <button id="solve" class="primary">Plan the day</button>
         <button id="clear">Clear</button>
       </div>
 
@@ -86,40 +99,53 @@
     <!-- ===== Config tab ===== -->
     <div class="panel" id="tab-config" hidden>
       <fieldset>
-        <legend>Vehicles</legend>
-        <ul id="vehicles" class="list"></ul>
-        <div class="row" style="margin-top:8px">
-          <button id="addVehicle">Add vehicle</button>
-        </div>
-        <div class="hint">All vehicles start and end at the depot. Capacity 0 means unlimited.</div>
+        <legend>Fleet</legend>
+        <ul id="fleet" class="list"></ul>
+        <div class="hint">Number of trucks of each type available today. Any truck can sell materials (a full truck, nothing else on board). Loading rules per type follow docs/waste_transport_problem.md.</div>
       </fieldset>
 
       <fieldset>
-        <legend>Job defaults</legend>
-        <label><span>Service time (s)</span><input id="service" type="number" min="0" step="60" value="300" /></label>
-        <label><span>Delivery amount per job</span><input id="jobAmount" type="number" min="0" value="1" /></label>
-        <div class="hint">Amounts only matter when at least one vehicle has a capacity.</div>
+        <legend>Working day</legend>
+        <label><span>Start</span><input id="dayStart" type="time" value="08:00" /></label>
+        <label><span>End</span><input id="dayEnd" type="time" value="17:00" /></label>
+        <label><span>Lunch start</span><input id="lunchStart" type="time" value="12:00" /></label>
+        <label><span>Lunch end</span><input id="lunchEnd" type="time" value="13:00" /></label>
+        <div class="hint">Lunch is a fixed break from start to end for every truck. Set both to the same time for no lunch.</div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Operation times</legend>
+        <label><span>At a client, per container (min)</span><input id="clientService" type="number" min="0" step="1" value="10" /></label>
+        <label><span>At the company, per visit (min)</span><input id="companySetup" type="number" min="0" step="1" value="5" /></label>
+        <label><span>At the company, per container (min)</span><input id="companyService" type="number" min="0" step="1" value="5" /></label>
       </fieldset>
 
       <fieldset>
         <legend>Solver</legend>
         <label><span>Return route geometry</span><input id="geometry" type="checkbox" checked /></label>
+        <label><span>Show request JSON after solving</span><input id="showRequest" type="checkbox" /></label>
       </fieldset>
     </div>
   </div>
 </div>
 
 <script>
+// Truck types, loading rules and the company site come from
+// docs/waste_rules.json, served by frontend/server.js as /rules.js.
+if (typeof WASTE_RULES === "undefined") {
+  document.getElementById("status").textContent = "docs/waste_rules.json could not be loaded (is frontend/server.js running?).";
+  document.getElementById("status").className = "err";
+  throw new Error("WASTE_RULES missing");
+}
+const M = WasteModel.create(WASTE_RULES);
+
 // ---------- state ----------
-let depot = null;          // {lat, lng}
-let jobs = [];             // [{id, lat, lng}]
-let nextJobId = 1;
-let vehicles = [           // [{id, name, capacity}]
-  { id: 1, name: "vehicle 1", capacity: 0 },
-  { id: 2, name: "vehicle 2", capacity: 0 },
-];
-let nextVehicleId = 3;
+let depot = { ...M.COMPANY }; // {lat, lng}, preset to the company site
+let operations = [];       // [{id, lat, lng, type, size, priority}]
+let nextOpId = 1;
+let fleet = M.defaultFleet();
 const COLORS = ["#2563eb", "#dc2626", "#16a34a", "#d97706", "#7c3aed", "#0891b2", "#be185d", "#4d7c0f"];
+let lastRequestVehicles = [];
 
 // ---------- tabs ----------
 document.querySelectorAll(".tabs button").forEach((btn) => {
@@ -130,8 +156,33 @@ document.querySelectorAll(".tabs button").forEach((btn) => {
   };
 });
 
+// ---------- selectors ----------
+function fillTypeSelect(sel, value) {
+  sel.innerHTML = "";
+  for (const [key, t] of Object.entries(M.OPERATION_TYPES)) {
+    const o = document.createElement("option");
+    o.value = key; o.textContent = t.label;
+    sel.appendChild(o);
+  }
+  sel.value = value;
+}
+function fillSizeSelect(sel, value) {
+  sel.innerHTML = "";
+  for (const s of M.SIZES) {
+    const o = document.createElement("option");
+    o.value = s; o.textContent = `${s} m³`;
+    sel.appendChild(o);
+  }
+  sel.value = value;
+}
+const opTypeSel = document.getElementById("opType");
+const opSizeSel = document.getElementById("opSize");
+fillTypeSelect(opTypeSel, "exchange");
+fillSizeSelect(opSizeSel, 6);
+opTypeSel.onchange = () => { opSizeSel.disabled = !M.OPERATION_TYPES[opTypeSel.value].needsSize; };
+
 // ---------- map ----------
-const map = L.map("map").setView([37.02, -7.93], 12); // Faro
+const map = L.map("map").setView([M.COMPANY.lat, M.COMPANY.lng], 13); // centred on the company
 L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
   maxZoom: 19,
   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
@@ -158,38 +209,69 @@ function setMode(value) {
 map.on("click", (e) => {
   if (currentMode() === "depot") {
     depot = { lat: e.latlng.lat, lng: e.latlng.lng };
-    setMode("job");
+    setMode("op");
   } else {
-    jobs.push({ id: nextJobId++, lat: e.latlng.lat, lng: e.latlng.lng });
+    operations.push({
+      id: nextOpId++,
+      lat: e.latlng.lat,
+      lng: e.latlng.lng,
+      type: opTypeSel.value,
+      size: Number(opSizeSel.value),
+      priority: 0,
+    });
   }
   routeLayer.clearLayers();
   renderPoints();
 });
 
 // ---------- rendering: points ----------
-function renderPoints(unassignedIds = new Set(), jobColor = {}) {
+function renderPoints(unassignedOps = new Set(), opColor = {}) {
   markerLayer.clearLayers();
   const list = document.getElementById("points");
   list.innerHTML = "";
 
   if (depot) {
-    L.marker([depot.lat, depot.lng], { icon: pinIcon("#111", "D") }).addTo(markerLayer).bindTooltip("Depot");
-    list.appendChild(pointRow("D depot", depot, () => { depot = null; routeLayer.clearLayers(); renderPoints(); }));
+    L.marker([depot.lat, depot.lng], { icon: pinIcon("#111", "C") }).addTo(markerLayer).bindTooltip("Company");
+    const li = document.createElement("li");
+    const txt = document.createElement("span");
+    txt.textContent = `Company  ${depot.lat.toFixed(5)}, ${depot.lng.toFixed(5)}`;
+    li.append(txt, removeButton(() => { depot = null; routeLayer.clearLayers(); renderPoints(); }));
+    list.appendChild(li);
   }
-  for (const j of jobs) {
-    const color = unassignedIds.has(j.id) ? "#9ca3af" : (jobColor[j.id] || "#2563eb");
-    L.marker([j.lat, j.lng], { icon: pinIcon(color, j.id) }).addTo(markerLayer)
-      .bindTooltip(unassignedIds.has(j.id) ? `Job ${j.id} (unassigned)` : `Job ${j.id}`);
-    list.appendChild(pointRow(`J${j.id}`, j, () => { jobs = jobs.filter((x) => x.id !== j.id); routeLayer.clearLayers(); renderPoints(); }));
+  for (const op of operations) {
+    const color = unassignedOps.has(op.id) ? "#9ca3af" : (opColor[op.id] || "#2563eb");
+    L.marker([op.lat, op.lng], { icon: pinIcon(color, op.id) }).addTo(markerLayer)
+      .bindTooltip(`Op ${op.id}: ${M.describe(op)}${unassignedOps.has(op.id) ? " (unassigned)" : ""}`);
+    list.appendChild(opRow(op));
   }
+  renderProblems();
   updateSolveButton();
 }
 
-function pointRow(label, p, onDelete) {
+function opRow(op) {
   const li = document.createElement("li");
-  const txt = document.createElement("span");
-  txt.textContent = `${label}  ${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}`;
-  li.append(txt, removeButton(onDelete));
+  const id = document.createElement("span");
+  id.className = "id";
+  id.textContent = `#${op.id}`;
+
+  const type = document.createElement("select");
+  fillTypeSelect(type, op.type);
+  const size = document.createElement("select");
+  fillSizeSelect(size, op.size);
+  size.disabled = !M.OPERATION_TYPES[op.type].needsSize;
+  type.onchange = () => { op.type = type.value; size.disabled = !M.OPERATION_TYPES[op.type].needsSize; routeLayer.clearLayers(); renderPoints(); };
+  size.onchange = () => { op.size = Number(size.value); routeLayer.clearLayers(); renderPoints(); };
+
+  const prio = document.createElement("input");
+  prio.type = "number"; prio.min = "0"; prio.max = "100"; prio.value = op.priority;
+  prio.title = "priority (0–100)";
+  prio.oninput = () => { op.priority = Math.max(0, Math.min(100, Number(prio.value) || 0)); };
+
+  li.append(id, type, size, prio, removeButton(() => {
+    operations = operations.filter((x) => x.id !== op.id);
+    routeLayer.clearLayers();
+    renderPoints();
+  }));
   return li;
 }
 
@@ -202,50 +284,39 @@ function removeButton(onClick) {
   return btn;
 }
 
+function renderProblems() {
+  const problems = M.validate({ operations, fleet, times: readTimes() });
+  document.getElementById("problems").innerHTML = problems.map((p) => `<div>⚠ ${p}</div>`).join("");
+  return problems;
+}
+
 function updateSolveButton() {
-  document.getElementById("solve").disabled = !depot || jobs.length === 0 || vehicles.length === 0;
+  const total = M.TYPE_ORDER.reduce((n, t) => n + (fleet[t] || 0), 0);
+  document.getElementById("solve").disabled = !depot || operations.length === 0 || total === 0;
 }
 
-// ---------- rendering: vehicles (config tab) ----------
-function renderVehicles() {
-  const list = document.getElementById("vehicles");
+// ---------- rendering: fleet (config tab) ----------
+function renderFleet() {
+  const list = document.getElementById("fleet");
   list.innerHTML = "";
-  vehicles.forEach((v, i) => {
+  for (const type of M.TYPE_ORDER) {
     const li = document.createElement("li");
-    const swatch = document.createElement("span");
-    swatch.className = "swatch";
-    swatch.style.background = COLORS[i % COLORS.length];
+    const name = document.createElement("span");
+    name.className = "name";
+    name.textContent = M.TRUCK_TYPES[type].label;
+    name.title = `allowed loads: ${M.TRUCK_TYPES[type].rules.join(" | ")}`;
 
-    const name = document.createElement("input");
-    name.type = "text";
-    name.value = v.name;
-    name.title = "description";
-    name.oninput = () => { v.name = name.value; };
+    const countLabel = document.createElement("span");
+    countLabel.className = "hint";
+    countLabel.textContent = "trucks";
+    const count = document.createElement("input");
+    count.type = "number"; count.min = "0"; count.max = "20"; count.value = fleet[type];
+    count.oninput = () => { fleet[type] = Math.max(0, Math.floor(Number(count.value) || 0)); renderProblems(); updateSolveButton(); };
 
-    const capLabel = document.createElement("span");
-    capLabel.className = "hint";
-    capLabel.textContent = "cap.";
-    const cap = document.createElement("input");
-    cap.type = "number";
-    cap.min = "0";
-    cap.value = v.capacity;
-    cap.title = "capacity (0 = unlimited)";
-    cap.oninput = () => { v.capacity = Math.max(0, Number(cap.value) || 0); };
-
-    li.append(swatch, name, capLabel, cap, removeButton(() => {
-      vehicles = vehicles.filter((x) => x.id !== v.id);
-      renderVehicles();
-    }));
+    li.append(name, countLabel, count);
     list.appendChild(li);
-  });
-  updateSolveButton();
+  }
 }
-
-document.getElementById("addVehicle").onclick = () => {
-  vehicles.push({ id: nextVehicleId, name: `vehicle ${nextVehicleId}`, capacity: 0 });
-  nextVehicleId++;
-  renderVehicles();
-};
 
 function setStatus(msg, isError = false) {
   const el = document.getElementById("status");
@@ -254,29 +325,31 @@ function setStatus(msg, isError = false) {
 }
 
 // ---------- VROOM request ----------
-function buildRequest() {
-  const service = Math.max(0, Number(document.getElementById("service").value) || 0);
-  const jobAmount = Math.max(0, Number(document.getElementById("jobAmount").value) || 0);
-  const useAmounts = vehicles.some((v) => v.capacity > 0);
-  const start = [depot.lng, depot.lat];
+function secondsOf(inputId) {
+  const [h, m] = (document.getElementById(inputId).value || "0:0").split(":").map(Number);
+  return (h || 0) * 3600 + (m || 0) * 60;
+}
+function numberOf(inputId) {
+  return Math.max(0, Number(document.getElementById(inputId).value) || 0);
+}
 
-  const reqVehicles = vehicles.map((v) => {
-    const out = { id: v.id, description: v.name, profile: "car", start, end: start };
-    // VROOM requires every vehicle to have the same amount dimensions, so once any
-    // vehicle has a capacity, "unlimited" ones get a very large one.
-    if (useAmounts) out.capacity = [v.capacity > 0 ? v.capacity : 1e9];
-    return out;
-  });
-  const reqJobs = jobs.map((j) => {
-    const job = { id: j.id, location: [j.lng, j.lat], service };
-    if (useAmounts) job.delivery = [jobAmount];
-    return job;
-  });
+function readTimes() {
   return {
-    vehicles: reqVehicles,
-    jobs: reqJobs,
-    options: { g: document.getElementById("geometry").checked },
+    dayStart: secondsOf("dayStart"),
+    dayEnd: secondsOf("dayEnd"),
+    lunchStart: secondsOf("lunchStart"),
+    lunchEnd: secondsOf("lunchEnd"),
+    clientService: numberOf("clientService") * 60,
+    companySetup: numberOf("companySetup") * 60,
+    companyService: numberOf("companyService") * 60,
   };
+}
+
+function buildRequest() {
+  return M.buildRequest({
+    depot, operations, fleet, times: readTimes(),
+    geometry: document.getElementById("geometry").checked,
+  });
 }
 
 // Google encoded polyline (precision 5), as returned by OSRM/VROOM.
@@ -303,44 +376,61 @@ function fmtDuration(s) {
   const h = Math.floor(s / 3600), m = Math.round((s % 3600) / 60);
   return h ? `${h}h ${m}m` : `${m}m`;
 }
+function fmtClock(s) {
+  const h = Math.floor(s / 3600) % 24, m = Math.floor((s % 3600) / 60);
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+function esc(s) {
+  return String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+}
 
-function showSolution(sol) {
+function showSolution(sol, stepInfo) {
   routeLayer.clearLayers();
-  const jobColor = {};
-  const unassigned = new Set((sol.unassigned || []).map((u) => u.id));
+  const opColor = {};
+  const unassignedOps = new Set((sol.unassigned || []).map((u) => M.opIdOfStep(u.id)));
   const rows = [];
 
-  (sol.routes || []).forEach((r) => {
-    const vIndex = vehicles.findIndex((v) => v.id === r.vehicle);
-    const color = COLORS[(vIndex >= 0 ? vIndex : 0) % COLORS.length];
-    const name = (vehicles[vIndex] || {}).name || `vehicle ${r.vehicle}`;
-    const jobIds = r.steps.filter((s) => s.type === "job").map((s) => s.job);
-    jobIds.forEach((id) => (jobColor[id] = color));
+  (sol.routes || []).forEach((r, i) => {
+    const v = lastRequestVehicles.find((x) => x.id === r.vehicle) || {};
+    const color = COLORS[i % COLORS.length];
+    const name = v.description || `vehicle ${r.vehicle}`;
+    const items = [];
+    let clientStops = 0;
+    for (const s of r.steps) {
+      if (s.type === "start") { items.push(`<li class="company">${fmtClock(s.arrival)} leave company</li>`); continue; }
+      if (s.type === "end") { items.push(`<li class="company">${fmtClock(s.arrival)} back at company</li>`); continue; }
+      if (s.type === "break") { items.push(`<li class="company">${fmtClock(s.arrival)} lunch</li>`); continue; }
+      const text = s.description || stepInfo[s.id] || `${s.type} ${s.id}`;
+      const opId = M.opIdOfStep(s.id);
+      const atCompany = /at company/.test(text);
+      if (!atCompany) { clientStops++; opColor[opId] = opColor[opId] || color; }
+      items.push(`<li class="${atCompany ? "company" : ""}">${fmtClock(s.arrival)} ${esc(text)}</li>`);
+    }
     if (r.geometry) {
-      L.polyline(decodePolyline(r.geometry), { color, weight: 4, opacity: 0.85 }).addTo(routeLayer)
-        .bindTooltip(name);
+      L.polyline(decodePolyline(r.geometry), { color, weight: 4, opacity: 0.85 }).addTo(routeLayer).bindTooltip(name);
     } else {
-      // No geometry: draw straight legs between visited points.
       const pts = r.steps.map((s) => s.location).filter(Boolean).map(([lng, lat]) => [lat, lng]);
       L.polyline(pts, { color, weight: 2, dashArray: "6 6", opacity: 0.8 }).addTo(routeLayer).bindTooltip(name);
     }
     const km = r.distance != null ? `${(r.distance / 1000).toFixed(1)} km, ` : "";
-    rows.push(`<tr><td><span class="swatch" style="background:${color}"></span>${name}</td>
-      <td>${jobIds.length} jobs, ${fmtDuration(r.duration)}, ${km}cost ${r.cost}</td></tr>`);
+    rows.push(`<tr><td><span class="swatch" style="background:${color}"></span>${esc(name)}</td>
+      <td>${clientStops} client stops, ${fmtDuration(r.duration)} driving, ${fmtDuration(r.duration + (r.service || 0) + (r.waiting_time || 0))} in total, ${km}cost ${r.cost}
+      <ol>${items.join("")}</ol></td></tr>`);
   });
 
   const s = sol.summary || {};
   const ct = s.computing_times ? `${s.computing_times.loading + s.computing_times.solving} ms` : "-";
+  const unassignedText = unassignedOps.size ? ` (ops ${[...unassignedOps].sort((a, b) => a - b).join(", ")})` : "";
   document.getElementById("summary").innerHTML = `<table>
     <tr><td>Total cost</td><td>${s.cost ?? "-"}</td></tr>
-    <tr><td>Routes</td><td>${s.routes ?? "-"}</td></tr>
-    <tr><td>Duration</td><td>${s.duration != null ? fmtDuration(s.duration) : "-"}</td></tr>
+    <tr><td>Trucks used</td><td>${s.routes ?? "-"} of ${lastRequestVehicles.length}</td></tr>
+    <tr><td>Travel time</td><td>${s.duration != null ? fmtDuration(s.duration) : "-"}</td></tr>
     <tr><td>Distance</td><td>${s.distance != null ? (s.distance / 1000).toFixed(1) + " km" : "-"}</td></tr>
-    <tr><td>Unassigned</td><td>${s.unassigned ?? 0}${unassigned.size ? " (" + [...unassigned].join(", ") + ")" : ""}</td></tr>
+    <tr><td>Unassigned operations</td><td>${unassignedOps.size}${unassignedText}</td></tr>
     <tr><td>Computing time</td><td>${ct}</td></tr>
     ${rows.join("")}
   </table>`;
-  renderPoints(unassigned, jobColor);
+  renderPoints(unassignedOps, opColor);
   const drawn = routeLayer.getLayers();
   if (drawn.length) {
     map.fitBounds(L.featureGroup(drawn).getBounds(), { padding: [30, 30] });
@@ -349,15 +439,21 @@ function showSolution(sol) {
 
 // ---------- actions ----------
 document.getElementById("solve").onclick = async () => {
-  const req = buildRequest();
+  const problems = renderProblems();
+  if (problems.length) {
+    setStatus("Fix the warnings above before planning.", true);
+    return;
+  }
+  const { request, stepInfo } = buildRequest();
+  lastRequestVehicles = request.vehicles;
   document.getElementById("summary").innerHTML = "";
-  setStatus("Solving…");
+  setStatus("Planning…");
   document.getElementById("solve").disabled = true;
   try {
     const res = await fetch("/api", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(req),
+      body: JSON.stringify(request),
     });
     const text = await res.text();
     let body;
@@ -365,8 +461,12 @@ document.getElementById("solve").onclick = async () => {
     if (!res.ok || body.code) {
       setStatus(`Solver error (${res.status}): ${body.error || body.raw || "unknown"}`, true);
     } else {
-      showSolution(body);
-      setStatus("Solved.");
+      showSolution(body, stepInfo);
+      setStatus("Planned.");
+    }
+    if (document.getElementById("showRequest").checked) {
+      document.getElementById("summary").insertAdjacentHTML("beforeend",
+        `<details><summary>Request JSON</summary><pre style="font-size:11px;white-space:pre-wrap">${esc(JSON.stringify(request, null, 1))}</pre></details>`);
     }
   } catch (err) {
     setStatus(`Request failed: ${err.message}`, true);
@@ -376,10 +476,11 @@ document.getElementById("solve").onclick = async () => {
 };
 
 document.getElementById("clear").onclick = () => {
-  depot = null; jobs = []; nextJobId = 1;
+  depot = { ...M.COMPANY }; operations = []; nextOpId = 1;
   routeLayer.clearLayers();
   document.getElementById("summary").innerHTML = "";
-  setMode("depot");
+  setMode("op");
+  map.setView([M.COMPANY.lat, M.COMPANY.lng], 13);
   renderPoints();
 };
 
@@ -388,7 +489,11 @@ fetch("/api/health")
   .then((r) => (r.ok ? setStatus("Solver reachable at /api (vroom-express).") : setStatus(`Solver responded ${r.status}.`, true)))
   .catch(() => setStatus("Solver not reachable. Run frontend/setup.sh.", true));
 
-renderVehicles();
+for (const id of ["dayStart", "dayEnd", "lunchStart", "lunchEnd"]) {
+  document.getElementById(id).oninput = renderProblems;
+}
+
+renderFleet();
 renderPoints();
 </script>
 </body>

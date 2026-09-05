@@ -3,6 +3,8 @@
 #   1. (optional) builds the OSRM routing data from osrm-data/*.osm.pbf if the
 #      derived *.osrm files are missing, or if you pass --rebuild-osrm
 #   2. starts the OSRM + vroom-express stack from the repo root docker-compose.yml
+#      with docker-compose.local.yml, i.e. VROOM built from this repository's
+#      sources (the planner needs the `capacities` extension)
 #   3. waits until vroom-express answers on http://localhost:3000/health
 #   4. installs npm deps (none today, but keeps the workflow uniform)
 #
@@ -53,8 +55,8 @@ if [ "$REBUILD" = 1 ] || [ ! -f "$DATA_DIR/$BASE.osrm.mldgr" ] || [ ! -f "$DATA_
   echo "    OSRM data ready."
 fi
 
-echo "==> Starting OSRM + vroom-express (docker compose up -d)"
-(cd "$ROOT" && docker compose up -d)
+echo "==> Starting OSRM + vroom-express built from local sources (docker compose up -d --build)"
+(cd "$ROOT" && docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build)
 
 echo "==> Waiting for vroom-express on http://localhost:3000/health"
 for i in $(seq 1 60); do
