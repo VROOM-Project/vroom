@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Added
+
+#### Features
+
+- Alternative capacity vectors per vehicle with `capacities`: a route step load is valid when it fits at least one of them, which allows loading rules that are not a single upper bound per metric
+
 ### Fixed
 
 #### Internals

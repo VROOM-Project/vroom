@@ -15,6 +15,78 @@ All rights reserved (see LICENSE).
 
 namespace vroom {
 
+namespace {
+
+// Reduce a list of alternative capacity vectors: check size
+// consistency and drop duplicates and vectors dominated
+// (component-wise) by another one, since anything fitting them also
+// fits the dominating vector.
+std::vector<Amount> reduce_capacities(Id id,
+                                      const Amount& capacity,
+                                      const std::vector<Amount>& capacities) {
+  if (capacities.empty()) {
+    return capacities;
+  }
+
+  if (!capacity.empty()) {
+    throw InputException(
+      std::format("Both capacity and capacities specified for vehicle {}.",
+                  id));
+  }
+
+  const auto amount_size = capacities.front().size();
+  for (const auto& c : capacities) {
+    if (c.size() != amount_size) {
+      throw InputException(
+        std::format("Inconsistent capacities length for vehicle {}.", id));
+    }
+  }
+
+  std::vector<Amount> reduced;
+  reduced.reserve(capacities.size());
+  // Note: a single remaining vector is folded into capacity (see
+  // capacities_hull) so that the vehicle behaves exactly as with a
+  // plain capacity.
+  for (std::size_t i = 0; i < capacities.size(); ++i) {
+    bool dominated = false;
+    for (std::size_t j = 0; j < capacities.size(); ++j) {
+      if (i != j && capacities[i] <= capacities[j] &&
+          (!(capacities[j] <= capacities[i]) || j < i)) {
+        // Strictly dominated, or a duplicate of an earlier vector.
+        dominated = true;
+        break;
+      }
+    }
+    if (!dominated) {
+      reduced.push_back(capacities[i]);
+    }
+  }
+
+  if (reduced.size() == 1) {
+    reduced.clear();
+  }
+
+  return reduced;
+}
+
+// Component-wise maximum over all capacity vectors.
+Amount capacities_hull(const Amount& capacity,
+                       const std::vector<Amount>& capacities) {
+  if (capacities.empty()) {
+    return capacity;
+  }
+
+  Amount hull(capacities.front().size());
+  for (const auto& c : capacities) {
+    for (std::size_t i = 0; i < hull.size(); ++i) {
+      hull[i] = std::max(hull[i], c[i]);
+    }
+  }
+  return hull;
+}
+
+} // namespace
+
 Vehicle::Vehicle(Id id,
                  const std::optional<Location>& start,
                  const std::optional<Location>& end,
@@ -30,12 +102,14 @@ Vehicle::Vehicle(Id id,
                  const std::optional<UserDuration>& max_travel_time,
                  const std::optional<UserDistance>& max_distance,
                  const std::vector<VehicleStep>& input_steps,
-                 std::string type_str)
+                 std::string type_str,
+                 const std::vector<Amount>& capacities)
   : id(id),
     start(start),
     end(end),
     profile(std::move(profile)),
-    capacity(capacity),
+    capacities(reduce_capacities(id, capacity, capacities)),
+    capacity(capacities_hull(capacity, capacities)),
     skills(std::move(skills)),
     tw(tw),
     breaks(breaks),

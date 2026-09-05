@@ -90,7 +90,7 @@ void RawRoute::update_amounts(const Input& input) {
   current_pickups = _zero;
 
   _current_loads.back() = _fwd_pickups.back();
-  assert(_current_loads.back() <= capacity);
+  assert(input.vehicles[v_rank].can_carry(_current_loads.back()));
 
   for (std::size_t i = 0; i < route.size(); ++i) {
     auto bwd_i = route.size() - i - 1;
@@ -99,7 +99,7 @@ void RawRoute::update_amounts(const Input& input) {
     _bwd_pickups[bwd_i] = current_pickups;
     _current_loads[bwd_i + 1] =
       _fwd_pickups[bwd_i] + _pd_loads[bwd_i] + current_deliveries;
-    assert(_current_loads[bwd_i + 1] <= capacity);
+    assert(input.vehicles[v_rank].can_carry(_current_loads[bwd_i + 1]));
     const auto& job = input.jobs[route[bwd_i]];
     if (job.type == JOB_TYPE::SINGLE) {
       current_deliveries += job.delivery;
@@ -107,7 +107,7 @@ void RawRoute::update_amounts(const Input& input) {
     }
   }
   _current_loads[0] = current_deliveries;
-  assert(_current_loads[0] <= capacity);
+  assert(input.vehicles[v_rank].can_carry(_current_loads[0]));
 
   auto peak = _current_loads[0];
   _fwd_peaks[0] = peak;
@@ -158,27 +158,44 @@ bool RawRoute::has_pickup_up_to_rank(const Index rank) const {
   return 0 < _nb_pickups[rank];
 }
 
-bool RawRoute::is_valid_addition_for_capacity(const Input&,
+bool RawRoute::is_valid_addition_for_capacity(const Input& input,
                                               const Amount& pickup,
                                               const Amount& delivery,
                                               const Index rank) const {
   assert(rank <= route.size());
 
-  return (_fwd_peaks[rank] + delivery <= capacity) &&
-         (_bwd_peaks[rank] + pickup <= capacity);
+  // Necessary condition based on the capacity hull (exact for a
+  // single capacity vector).
+  if (!(_fwd_peaks[rank] + delivery <= capacity) ||
+      !(_bwd_peaks[rank] + pickup <= capacity)) {
+    return false;
+  }
+
+  const auto& v = input.vehicles[v_rank];
+  if (!v.has_alternative_capacities()) {
+    return true;
+  }
+
+  // Sufficient condition: peaks fit one of the capacity vectors.
+  // Else fall back to checking each affected step. Steps up to rank
+  // (included) get the delivery, steps from rank on get the pickup.
+  return (v.can_carry(_fwd_peaks[rank] + delivery) ||
+          loads_fit(v, 0, rank + 1, delivery)) &&
+         (v.can_carry(_bwd_peaks[rank] + pickup) ||
+          loads_fit(v, rank, nb_steps(), pickup));
 }
 
-bool RawRoute::is_valid_addition_for_load(const Input&,
+bool RawRoute::is_valid_addition_for_load(const Input& input,
                                           const Amount& pickup,
                                           const Index rank) const {
   assert(rank <= route.size());
 
   const auto& load = route.empty() ? _zero : _current_loads[rank];
-  return load + pickup <= capacity;
+  return input.vehicles[v_rank].can_carry(load + pickup);
 }
 
 bool RawRoute::is_valid_addition_for_capacity_margins(
-  const Input&,
+  const Input& input,
   const Amount& pickup,
   const Amount& delivery,
   const Index first_rank,
@@ -194,10 +211,32 @@ bool RawRoute::is_valid_addition_for_capacity_margins(
 
   auto replaced_deliveries = first_deliveries - _bwd_deliveries[last_rank - 1];
 
-  return (_fwd_peaks[first_rank] + delivery <=
-          capacity + replaced_deliveries) &&
-         (_bwd_peaks[last_rank] + pickup <=
-          capacity + _fwd_pickups[last_rank - 1] - first_pickups);
+  // Necessary condition based on the capacity hull (exact for a
+  // single capacity vector).
+  if (!(_fwd_peaks[first_rank] + delivery <=
+        capacity + replaced_deliveries) ||
+      !(_bwd_peaks[last_rank] + pickup <=
+        capacity + _fwd_pickups[last_rank - 1] - first_pickups)) {
+    return false;
+  }
+
+  const auto& v = input.vehicles[v_rank];
+  if (!v.has_alternative_capacities()) {
+    return true;
+  }
+
+  // Sufficient condition: shifted peaks fit one of the capacity
+  // vectors. Else fall back to checking each affected step: steps
+  // up to first_rank (included) lose the replaced deliveries and
+  // get the new delivery, steps from last_rank on lose the replaced
+  // pickups and get the new pickup.
+  const Amount fwd_delta = delivery - replaced_deliveries;
+  const Amount bwd_delta = pickup - _fwd_pickups[last_rank - 1] + first_pickups;
+
+  return (v.can_carry(_fwd_peaks[first_rank] + fwd_delta) ||
+          loads_fit(v, 0, first_rank + 1, fwd_delta)) &&
+         (v.can_carry(_bwd_peaks[last_rank] + bwd_delta) ||
+          loads_fit(v, last_rank, nb_steps(), bwd_delta));
 }
 
 template <std::forward_iterator Iter>
@@ -224,7 +263,9 @@ bool RawRoute::is_valid_addition_for_capacity_inclusion(
   delivery += ((route.empty()) ? _zero : _current_loads[first_rank]) -
               replaced_deliveries;
 
-  bool valid = (delivery <= capacity);
+  const auto& v = input.vehicles[v_rank];
+
+  bool valid = v.can_carry(delivery);
 
   for (auto job_iter = first_job; job_iter != last_job; ++job_iter) {
     if (!valid) {
@@ -235,7 +276,7 @@ bool RawRoute::is_valid_addition_for_capacity_inclusion(
     delivery += job.pickup;
     delivery -= job.delivery;
 
-    valid = (delivery <= capacity);
+    valid = v.can_carry(delivery);
   }
 
   return valid;

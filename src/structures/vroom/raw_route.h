@@ -174,6 +174,31 @@ public:
     return _current_loads[s];
   }
 
+  // Number of steps in current route (start and end included).
+  std::size_t nb_steps() const {
+    return route.empty() ? 2 : _current_loads.size();
+  }
+
+  // Check whether every load at steps in [first_step; last_step),
+  // shifted by delta, can be carried by vehicle v (which may be
+  // another vehicle than the one for this route). This is the exact
+  // check against alternative capacity vectors.
+  template <typename E>
+  bool loads_fit(const Vehicle& v,
+                 Index first_step,
+                 Index last_step,
+                 const AmountExpression<E>& delta) const {
+    assert(first_step <= last_step);
+    assert(last_step <= nb_steps());
+    for (Index s = first_step; s < last_step; ++s) {
+      const auto& load = route.empty() ? _zero : _current_loads[s];
+      if (!v.can_carry(load + delta)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   bool is_valid_addition_for_tw(const Input&, const Index, const Index) const {
     return true;
   };

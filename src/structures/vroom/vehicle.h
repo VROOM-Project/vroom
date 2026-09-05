@@ -10,9 +10,11 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <algorithm>
 #include <string>
 #include <tuple>
 #include <unordered_map>
+#include <vector>
 
 #include "structures/typedefs.h"
 #include "structures/vroom/amount.h"
@@ -54,6 +56,13 @@ struct Vehicle {
   std::optional<Location> start;
   std::optional<Location> end;
   const std::string profile;
+  // Alternative capacity vectors: a load is valid iff it fits at
+  // least one of them (component-wise). Empty when the vehicle has a
+  // single capacity vector, in which case capacity alone applies.
+  const std::vector<Amount> capacities;
+  // Component-wise maximum over all capacity vectors (the "hull"),
+  // or the single capacity vector. Fitting the hull is a necessary
+  // condition for a valid load, so this can be used as a relaxation.
   const Amount capacity;
   const Skills skills;
   const TimeWindow tw;
@@ -88,7 +97,25 @@ struct Vehicle {
     const std::optional<UserDistance>& max_distance =
       std::optional<UserDistance>(),
     const std::vector<VehicleStep>& input_steps = std::vector<VehicleStep>(),
-    std::string type_str = NO_TYPE);
+    std::string type_str = NO_TYPE,
+    const std::vector<Amount>& capacities = std::vector<Amount>());
+
+  // Whether validity of a load requires checking against several
+  // capacity vectors (when false, load <= capacity is exact).
+  bool has_alternative_capacities() const {
+    return !capacities.empty();
+  }
+
+  // Whether the vehicle can carry a given load at some point in its
+  // route, i.e. the load fits at least one of the capacity vectors.
+  template <typename E> bool can_carry(const AmountExpression<E>& load) const {
+    if (capacities.empty()) {
+      return load <= capacity;
+    }
+    return std::ranges::any_of(capacities, [&load](const auto& c) {
+      return load <= c;
+    });
+  }
 
   bool has_start() const;
 

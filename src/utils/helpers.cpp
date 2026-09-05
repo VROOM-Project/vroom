@@ -188,7 +188,7 @@ Solution format_solution(const Input& input, const RawSolution& raw_routes) {
     std::unordered_set<Index> expected_delivery_ranks;
 #endif
     Amount current_load = raw_routes[i].job_deliveries_sum();
-    assert(current_load <= v.capacity);
+    assert(v.can_carry(current_load));
 
     // Steps for current route.
     std::vector<Step> steps;
@@ -222,7 +222,7 @@ Solution format_solution(const Input& input, const RawSolution& raw_routes) {
     current_load -= first_job.delivery;
     sum_pickups += first_job.pickup;
     sum_deliveries += first_job.delivery;
-    assert(current_load <= v.capacity);
+    assert(v.can_carry(current_load));
 
 #ifndef NDEBUG
     check_precedence(input, expected_delivery_ranks, route.front());
@@ -262,7 +262,7 @@ Solution format_solution(const Input& input, const RawSolution& raw_routes) {
       current_load -= current_job.delivery;
       sum_pickups += current_job.pickup;
       sum_deliveries += current_job.delivery;
-      assert(current_load <= v.capacity);
+      assert(v.can_carry(current_load));
 
 #ifndef NDEBUG
       check_precedence(input, expected_delivery_ranks, route[r + 1]);
@@ -465,7 +465,7 @@ Route format_route(const Input& input,
   std::unordered_set<Index> expected_delivery_ranks;
 #endif
   Amount current_load = tw_r.job_deliveries_sum();
-  assert(current_load <= v.capacity);
+  assert(v.can_carry(current_load));
 
   // Steps for current route.
   std::vector<Step> steps;
@@ -612,7 +612,7 @@ Route format_route(const Input& input,
     current_load -= current_job.delivery;
     sum_pickups += current_job.pickup;
     sum_deliveries += current_job.delivery;
-    assert(current_load <= v.capacity);
+    assert(v.can_carry(current_load));
 
 #ifndef NDEBUG
     check_precedence(input, expected_delivery_ranks, tw_r.route[r]);

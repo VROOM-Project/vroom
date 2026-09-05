@@ -402,10 +402,53 @@ inline std::vector<VehicleStep> get_vehicle_steps(const rapidjson::Value& v) {
   return steps;
 }
 
+inline std::vector<Amount> get_capacities(const rapidjson::Value& json_vehicle,
+                                          Id v_id) {
+  std::vector<Amount> capacities;
+
+  if (!json_vehicle.HasMember("capacities")) {
+    return capacities;
+  }
+
+  if (!json_vehicle["capacities"].IsArray()) {
+    throw InputException(
+      std::format("Invalid capacities array for vehicle {}.", v_id));
+  }
+
+  const auto& json_capacities = json_vehicle["capacities"];
+  capacities.reserve(json_capacities.Size());
+
+  for (rapidjson::SizeType i = 0; i < json_capacities.Size(); ++i) {
+    if (!json_capacities[i].IsArray()) {
+      throw InputException(
+        std::format("Invalid capacities array for vehicle {}.", v_id));
+    }
+
+    Amount capacity(json_capacities[i].Size());
+    for (rapidjson::SizeType j = 0; j < json_capacities[i].Size(); ++j) {
+      if (!json_capacities[i][j].IsUint()) {
+        throw InputException(
+          std::format("Invalid capacities value for vehicle {}.", v_id));
+      }
+      capacity[j] = json_capacities[i][j].GetUint();
+    }
+    capacities.push_back(std::move(capacity));
+  }
+
+  return capacities;
+}
+
 inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
                            unsigned amount_size) {
   check_id(json_vehicle, "vehicle");
   auto v_id = json_vehicle["id"].GetUint64();
+
+  if (json_vehicle.HasMember("capacity") &&
+      json_vehicle.HasMember("capacities")) {
+    throw InputException(
+      std::format("Both capacity and capacities specified for vehicle {}.",
+                  v_id));
+  }
 
   // Check what info are available for vehicle start, then build
   // optional start location.
@@ -475,7 +518,8 @@ inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
                  get_value_for<UserDuration>(json_vehicle, "max_travel_time"),
                  get_value_for<UserDistance>(json_vehicle, "max_distance"),
                  get_vehicle_steps(json_vehicle),
-                 get_string(json_vehicle, "type"));
+                 get_string(json_vehicle, "type"),
+                 get_capacities(json_vehicle, v_id));
 }
 
 inline Location get_task_location(const rapidjson::Value& v,
@@ -582,8 +626,16 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
   const bool first_vehicle_has_capacity =
     (first_vehicle.HasMember("capacity") &&
      first_vehicle["capacity"].IsArray() && !first_vehicle["capacity"].Empty());
+  const bool first_vehicle_has_capacities =
+    (first_vehicle.HasMember("capacities") &&
+     first_vehicle["capacities"].IsArray() &&
+     !first_vehicle["capacities"].Empty() &&
+     first_vehicle["capacities"][0].IsArray());
   const unsigned amount_size =
-    first_vehicle_has_capacity ? first_vehicle["capacity"].Size() : 0;
+    first_vehicle_has_capacity
+      ? first_vehicle["capacity"].Size()
+      : (first_vehicle_has_capacities ? first_vehicle["capacities"][0].Size()
+                                      : 0);
 
   input.set_geometry(geometry);
 

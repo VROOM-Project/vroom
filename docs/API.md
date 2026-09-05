@@ -115,6 +115,7 @@ A `vehicle` object has the following properties:
 | [`end`] | coordinates array |
 | [`end_index`] | index of relevant row and column in custom matrices |
 | [`capacity`] | an array of integers describing multidimensional quantities |
+| [`capacities`] | an array of `capacity`-like arrays: alternative capacity vectors, the load must fit at least one of them (exclusive with `capacity`) |
 | [`costs`] | a `cost` object defining costs for this vehicle |
 | [`skills`] | an array of integers defining skills |
 | [`type`] | a string describing this vehicle type |
@@ -207,6 +208,36 @@ first.
 It is assumed that all delivery-related amounts for jobs are loaded at
 vehicle start, while all pickup-related amounts for jobs are brought
 back at vehicle end.
+
+#### Alternative capacity vectors
+
+Some loading rules cannot be expressed as a single upper bound per
+metric, e.g. "either 6 small items, or 2 big items and 1 small item".
+Use `capacities` instead of `capacity` to provide several capacity
+vectors: the load at each route step is valid as soon as it fits
+**at least one** of them (component-wise). Each vector describes a
+maximal allowed load, so anything smaller than a listed vector is
+allowed too.
+
+```json
+"capacities": [
+  [6, 0],
+  [1, 2]
+]
+```
+
+Rules:
+
+- `capacity` and `capacities` are mutually exclusive for a given
+  vehicle. A vehicle with a single vector in `capacities` behaves
+  exactly as with `capacity`.
+- All vectors must have the same length as other amounts in the
+  input. Vectors dominated by another one are ignored.
+- A task whose amount fits none of the vectors of a vehicle is
+  incompatible with that vehicle, so `skills` are not needed to
+  express size compatibility.
+- The `load` reported at each step in the output is unchanged: it is
+  the sum of amounts on board.
 
 ### Skills
 

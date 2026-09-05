@@ -1170,7 +1170,7 @@ Route choose_ETA(const Input& input,
            get_duration(glp_mip_col_val(lp, start_Y_col)));
   }
 
-  if (!(current_load <= v.capacity)) {
+  if (!v.can_carry(current_load)) {
     start_step.violations.types.insert(VIOLATION::LOAD);
     v_types.insert(VIOLATION::LOAD);
   }
@@ -1260,7 +1260,7 @@ Route choose_ETA(const Input& input,
         current.violations.delay = user_service_start - user_tw_end;
         user_delay += current.violations.delay;
       }
-      if (!(current_load <= v.capacity)) {
+      if (!v.can_carry(current_load)) {
         current.violations.types.insert(VIOLATION::LOAD);
         v_types.insert(VIOLATION::LOAD);
       }
@@ -1376,7 +1376,7 @@ Route choose_ETA(const Input& input,
         current.violations.delay = user_service_start - user_tw_end;
         user_delay += current.violations.delay;
       }
-      if (!(current_load <= v.capacity)) {
+      if (!v.can_carry(current_load)) {
         current.violations.types.insert(VIOLATION::LOAD);
         v_types.insert(VIOLATION::LOAD);
       }
@@ -1428,7 +1428,7 @@ Route choose_ETA(const Input& input,
         end_step.violations.delay = end_step.arrival - user_v_tw_end;
         user_delay += end_step.violations.delay;
       }
-      if (!(current_load <= v.capacity)) {
+      if (!v.can_carry(current_load)) {
         end_step.violations.types.insert(VIOLATION::LOAD);
         v_types.insert(VIOLATION::LOAD);
       }

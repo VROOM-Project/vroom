@@ -72,6 +72,17 @@ compute_best_route_split_choice(const Input& input,
         continue;
       }
 
+      if (end_v.has_alternative_capacities() &&
+          !end_v.can_carry(end_max_load) &&
+          // Loads in end route are current loads minus pickups
+          // done before rank r.
+          !source.loads_fit(end_v,
+                            r,
+                            source.nb_steps(),
+                            input.zero_amount() - source.fwd_pickups(r - 1))) {
+        continue;
+      }
+
       const auto current_end_eval =
         -std::get<0>(utils::addition_eval_delta(input,
                                                 sol_state,
@@ -136,6 +147,18 @@ compute_best_route_split_choice(const Input& input,
 
       if (sol_state.fwd_skill_rank[s_vehicle][v] < r ||
           !(begin_max_load <= begin_v.capacity) || begin_v.max_tasks < r) {
+        continue;
+      }
+
+      if (begin_v.has_alternative_capacities() &&
+          !begin_v.can_carry(begin_max_load) &&
+          // Loads in begin route are current loads minus deliveries
+          // pending after rank r - 1.
+          !source.loads_fit(begin_v,
+                            0,
+                            r + 1,
+                            input.zero_amount() -
+                              source.bwd_deliveries(r - 1))) {
         continue;
       }
 

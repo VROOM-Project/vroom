@@ -65,10 +65,17 @@ void RouteExchange::compute_gain() {
 bool RouteExchange::is_valid() {
   assert(gain_computed);
 
+  const auto& s_v = _input.vehicles[s_vehicle];
+  const auto& t_v = _input.vehicles[t_vehicle];
+
+  // Max load fitting one capacity vector is sufficient, else check
+  // every step load against the other vehicle.
   return is_valid_for_source_range_bounds() &&
          is_valid_for_target_range_bounds() &&
-         (source.max_load() <= _input.vehicles[t_vehicle].capacity) &&
-         (target.max_load() <= _input.vehicles[s_vehicle].capacity);
+         (t_v.can_carry(source.max_load()) ||
+          source.loads_fit(t_v, 0, source.nb_steps(), _input.zero_amount())) &&
+         (s_v.can_carry(target.max_load()) ||
+          target.loads_fit(s_v, 0, target.nb_steps(), _input.zero_amount()));
 }
 
 void RouteExchange::apply() {

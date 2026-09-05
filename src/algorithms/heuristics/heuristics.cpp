@@ -729,7 +729,7 @@ void set_route(const Input& input,
       }
     }
   }
-  if (!(single_jobs_deliveries <= vehicle.capacity)) {
+  if (!vehicle.can_carry(single_jobs_deliveries)) {
     throw InputException(
       std::format("Route over capacity for vehicle {}.", vehicle.id));
   }
@@ -801,7 +801,7 @@ void set_route(const Input& input,
     }
 
     // Check validity after this step wrt capacity.
-    if (!(current_load <= vehicle.capacity)) {
+    if (!vehicle.can_carry(current_load)) {
       throw InputException(
         std::format("Route over capacity for vehicle {}.", vehicle.id));
     }
