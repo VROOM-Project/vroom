@@ -1,0 +1,83 @@
+# Build VROOM from the sources in this repository (instead of cloning
+# upstream as Dockerfile does), then package it with vroom-express
+# exactly like the regular image.
+#
+# Build context must be the repository root:
+#
+#   docker build -f vroom-custom/Dockerfile.local -t logistic-vroom:local .
+#
+# or use docker-compose.local.yml as an override.
+#
+# The "deps" stage alone is a development environment: build it with
+# --target deps and bind-mount the repository to compile and run the
+# solver without rebuilding the image (see scripts/build_local.sh).
+
+FROM debian:trixie-slim AS deps
+
+WORKDIR /
+
+RUN apt-get update > /dev/null && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    git-core \
+    build-essential \
+    g++ \
+    libssl-dev \
+    libasio-dev \
+    libglpk-dev \
+    pkg-config \
+    patch \
+    rsync \
+    python3 \
+    > /dev/null && \
+    rm -rf /var/lib/apt/lists/*
+
+ARG VROOM_EXPRESS_RELEASE=master
+
+RUN git clone --branch ${VROOM_EXPRESS_RELEASE} --single-branch https://github.com/VROOM-Project/vroom-express.git
+
+FROM deps AS builder
+
+# Sources checked out on Windows may carry CRLF line endings, which
+# GNU make does not tolerate in the makefile: normalise everything.
+COPY src /vroom/src
+COPY include /vroom/include
+COPY vroom-custom/route-duration-quadratic.patch /tmp/route-duration-quadratic.patch
+
+RUN find /vroom/src /vroom/include -type f \
+      \( -name '*.cpp' -o -name '*.h' -o -name makefile \) \
+      -exec sed -i 's/\r$//' {} + && \
+    cd /vroom && \
+    patch -p1 < /tmp/route-duration-quadratic.patch && \
+    sed -i 's/-O3 /-O3 -DNDEBUG /' /vroom/src/makefile && \
+    make -C /vroom/src -j$(nproc)
+
+FROM debian:trixie-slim AS runstage
+
+COPY --from=builder /vroom-express/. /vroom-express
+COPY --from=builder /vroom/bin/vroom /usr/local/bin
+COPY vroom-custom/docker-entrypoint.sh /docker-entrypoint.sh
+
+WORKDIR /vroom-express
+
+RUN apt-get update > /dev/null && \
+    apt-get install -y --no-install-recommends \
+    nodejs \
+    npm \
+    libssl3 \
+    curl \
+    libglpk40 \
+    > /dev/null && \
+    rm -rf /var/lib/apt/lists/* && \
+    npm config set loglevel error && \
+    npm install && \
+    mkdir /conf
+
+ENV VROOM_DOCKER=osrm \
+    VROOM_LOG=/conf
+
+HEALTHCHECK --start-period=10s CMD curl --fail -s http://localhost:3000/health || exit 1
+
+EXPOSE 3000
+
+ENTRYPOINT ["/bin/bash"]
+CMD ["/docker-entrypoint.sh"]

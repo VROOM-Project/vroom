@@ -1,0 +1,11 @@
+# Override that builds the vroom service from the sources in this
+# repository (vroom-custom/Dockerfile.local) instead of cloning
+# upstream. Use it together with the main compose file:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.local.yml up --build
+services:
+  vroom:
+    build:
+      context: .
+      dockerfile: vroom-custom/Dockerfile.local
+    image: logistic-vroom-route-penalty:local-src
