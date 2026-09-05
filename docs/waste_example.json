@@ -1,0 +1,104 @@
+{
+  "_comment": "Waste transport example, see waste_transport_vroom_analysis.md. Amount components are [U stack units, C bed positions, P poliban slot]. Location indices: 0 company, 1 client A, 2 client B, 3 client C, 4 disposal site D. Skills are container sizes. Times are seconds since midnight.",
+  "vehicles": [
+    {
+      "id": 1,
+      "description": "multiban 1",
+      "type": "multiban",
+      "start_index": 0,
+      "end_index": 0,
+      "capacity": [12, 2, 0],
+      "skills": [2, 6, 12],
+      "time_window": [28800, 61200],
+      "breaks": [
+        {
+          "id": 1,
+          "description": "lunch",
+          "time_windows": [[43200, 46800]],
+          "service": 3600
+        }
+      ],
+      "costs": { "per_hour": 3600, "per_task_hour": 3600 }
+    },
+    {
+      "id": 2,
+      "description": "small 1",
+      "type": "small",
+      "start_index": 0,
+      "end_index": 0,
+      "capacity": [6, 1, 0],
+      "skills": [2],
+      "time_window": [28800, 61200],
+      "breaks": [
+        {
+          "id": 1,
+          "description": "lunch",
+          "time_windows": [[43200, 46800]],
+          "service": 3600
+        }
+      ],
+      "costs": { "per_hour": 3600, "per_task_hour": 3600 }
+    }
+  ],
+  "shipments": [
+    {
+      "_comment": "pick up full 6 at client A, empty it at the company",
+      "amount": [5, 1, 0],
+      "skills": [6],
+      "priority": 50,
+      "pickup": { "id": 101, "location_index": 1, "service": 600 },
+      "delivery": { "id": 102, "location_index": 0, "setup": 300, "service": 600 }
+    },
+    {
+      "_comment": "leave an empty 6 at client A (swap with the previous one)",
+      "amount": [2, 0, 0],
+      "skills": [6],
+      "priority": 50,
+      "pickup": { "id": 201, "location_index": 0, "setup": 300, "service": 300 },
+      "delivery": { "id": 202, "location_index": 1, "service": 600 }
+    },
+    {
+      "_comment": "pick up full 12 at client B, empty it at the company",
+      "amount": [10, 2, 0],
+      "skills": [12],
+      "priority": 80,
+      "pickup": { "id": 301, "location_index": 2, "service": 900 },
+      "delivery": { "id": 302, "location_index": 0, "setup": 300, "service": 900 }
+    },
+    {
+      "_comment": "leave an empty 2 at client C",
+      "amount": [2, 0, 0],
+      "skills": [2],
+      "priority": 10,
+      "pickup": { "id": 401, "location_index": 0, "setup": 300, "service": 300 },
+      "delivery": { "id": 402, "location_index": 3, "service": 600 }
+    },
+    {
+      "_comment": "pure transport: full 6 from client C to disposal site D",
+      "amount": [5, 1, 0],
+      "skills": [6],
+      "priority": 30,
+      "pickup": { "id": 501, "location_index": 3, "service": 600 },
+      "delivery": { "id": 502, "location_index": 4, "service": 600 }
+    },
+    {
+      "_comment": "pick up full 2 at client B, empty it at the company (small or multiban)",
+      "amount": [5, 1, 0],
+      "skills": [2],
+      "priority": 20,
+      "pickup": { "id": 601, "location_index": 2, "service": 600 },
+      "delivery": { "id": 602, "location_index": 0, "setup": 300, "service": 600 }
+    }
+  ],
+  "matrices": {
+    "car": {
+      "durations": [
+        [0, 1200, 1800, 900, 2400],
+        [1200, 0, 900, 1500, 1800],
+        [1800, 900, 0, 2100, 1500],
+        [900, 1500, 2100, 0, 2700],
+        [2400, 1800, 1500, 2700, 0]
+      ]
+    }
+  }
+}

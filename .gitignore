@@ -8,3 +8,4 @@ build/
 osrm-data/
 vroom-conf/
 frontend/node_modules/
+.claude/launch.json
