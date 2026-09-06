@@ -7,53 +7,254 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="rules.js"></script>
+<script src="defaults.js"></script>
 <script src="waste_model.js"></script>
 <style>
+  :root {
+    --bg: #eef0f4;
+    --panel: #ffffff;
+    --panel-2: #f7f8fa;
+    --ink: #111725;
+    --ink-2: #4b5565;
+    --ink-3: #8b95a7;
+    --line: #e2e6ed;
+    --line-2: #eef1f5;
+    --brand: #2563eb;
+    --brand-dark: #1d4ed8;
+    --brand-soft: #eff4ff;
+    --danger: #b91c1c;
+    --warn: #b45309;
+    --ok: #15803d;
+    --r: 10px;
+    --r-sm: 7px;
+    --shadow: 0 1px 2px rgba(17,23,37,.05), 0 2px 6px rgba(17,23,37,.05);
+    --shadow-lg: 0 4px 16px rgba(17,23,37,.10);
+  }
   * { box-sizing: border-box; }
-  html, body { height: 100%; margin: 0; font: 14px/1.4 system-ui, sans-serif; color: #222; }
-  #app { display: flex; flex-direction: row; height: 100%; }
-  #map { flex: 1; order: 2; }
-  #side { order: 1; width: 400px; background: #f7f7f7; border-right: 1px solid #ddd; display: flex; flex-direction: column; }
-  #side header { padding: 12px 12px 0; }
-  h1 { font-size: 16px; margin: 0 0 4px; }
-  #status { font-size: 12px; color: #555; min-height: 1.4em; }
-  #status.err { color: #b91c1c; }
-  .tabs { display: flex; border-bottom: 1px solid #ddd; margin-top: 8px; }
-  .tabs button { flex: 1; border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none; padding: 8px; font-weight: 600; color: #666; }
-  .tabs button.active { color: #2563eb; border-bottom-color: #2563eb; }
-  .panel { padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; flex: 1; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font: 14px/1.45 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    -webkit-font-smoothing: antialiased;
+  }
+  #app { display: flex; height: 100%; }
+  #map { flex: 1; order: 2; background: #dfe3ea; }
+
+  /* ============================= side panel ============================= */
+  #side {
+    order: 1;
+    width: 424px;
+    flex: none;
+    background: var(--panel-2);
+    border-right: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    z-index: 500;
+    box-shadow: 1px 0 12px rgba(17,23,37,.06);
+  }
+  #side header { padding: 14px 16px 0; background: var(--panel); border-bottom: 1px solid var(--line); }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand .logo {
+    width: 32px; height: 32px; flex: none; border-radius: 9px;
+    background: linear-gradient(150deg, #3b7bf6, #1d4ed8);
+    display: grid; place-items: center; color: #fff;
+    box-shadow: 0 2px 6px rgba(37,99,235,.35);
+  }
+  h1 { font-size: 15px; font-weight: 650; margin: 0; letter-spacing: -.01em; }
+  .brand .sub { margin: 1px 0 0; font-size: 12px; color: var(--ink-3); }
+
+  #status {
+    display: flex; align-items: center; gap: 7px;
+    margin: 10px 0 0; padding: 6px 10px;
+    font-size: 12px; color: var(--ink-2);
+    background: var(--panel-2); border: 1px solid var(--line);
+    border-radius: 999px;
+  }
+  #status .dot { width: 7px; height: 7px; flex: none; border-radius: 50%; background: var(--ink-3); }
+  #status.ok .dot { background: var(--ok); }
+  #status.busy .dot { background: var(--brand); animation: pulse 1s ease-in-out infinite; }
+  #status.err { color: var(--danger); background: #fef2f2; border-color: #fecaca; }
+  #status.err .dot { background: var(--danger); }
+  @keyframes pulse { 50% { opacity: .25; } }
+
+  .tabs { display: flex; gap: 18px; margin-top: 10px; }
+  .tabs button {
+    border: 0; background: none; padding: 8px 0 9px; border-radius: 0;
+    font: inherit; font-size: 13px; font-weight: 600; color: var(--ink-3);
+    border-bottom: 2px solid transparent; cursor: pointer; box-shadow: none;
+  }
+  .tabs button:hover { color: var(--ink-2); background: none; }
+  .tabs button.active { color: var(--brand); border-bottom-color: var(--brand); }
+
+  .panel {
+    padding: 14px; overflow-y: auto; background: var(--panel-2);
+    display: flex; flex-direction: column; gap: 12px; flex: 1; min-height: 0;
+  }
   .panel[hidden] { display: none; }
-  fieldset { border: 1px solid #ccc; border-radius: 4px; padding: 8px 10px; margin: 0; }
-  legend { font-weight: 600; font-size: 12px; text-transform: uppercase; color: #555; }
-  label { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 4px 0; }
-  input[type=number] { width: 80px; }
-  input[type=time] { width: 100px; }
-  select { padding: 3px; }
-  button { cursor: pointer; padding: 6px 10px; border-radius: 4px; border: 1px solid #999; background: #fff; }
-  button.primary { background: #2563eb; color: #fff; border-color: #1d4ed8; }
-  button:disabled { opacity: .5; cursor: default; }
-  .row { display: flex; gap: 8px; }
-  .row button { flex: 1; }
-  ul.list { list-style: none; margin: 0; padding: 0; }
-  ul.list li { display: flex; align-items: center; gap: 6px; padding: 3px 0; border-bottom: 1px solid #eee; font-size: 12px; }
-  ul.list li .x { padding: 0 6px; font-size: 12px; margin-left: auto; }
-  ul.list li select { font-size: 12px; }
-  ul.list li input[type=number] { width: 52px; font-size: 12px; }
-  #points { max-height: 260px; overflow-y: auto; }
-  #points .id { font-weight: 700; min-width: 26px; }
-  #fleet li { justify-content: space-between; }
-  #fleet li .name { min-width: 80px; }
-  #summary { font-size: 13px; }
-  #summary table { border-collapse: collapse; width: 100%; }
-  #summary td { padding: 2px 4px; border-bottom: 1px solid #eee; vertical-align: top; }
-  #summary td:first-child { color: #555; white-space: nowrap; }
-  #summary ol { margin: 2px 0 4px; padding-left: 18px; font-size: 12px; color: #444; }
-  #summary ol li.company { color: #888; }
-  .swatch { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: middle; margin-right: 4px; }
-  .pin { width: 22px; height: 22px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; }
-  .pin span { transform: rotate(45deg); color: #fff; font-size: 10px; font-weight: 700; }
-  .hint { font-size: 12px; color: #666; }
-  .warn { font-size: 12px; color: #b45309; }
+
+  /* cards, in place of the default fieldset chrome */
+  fieldset {
+    border: 1px solid var(--line); border-radius: var(--r); margin: 0;
+    padding: 12px 13px 13px; background: var(--panel); box-shadow: var(--shadow);
+  }
+  legend {
+    font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--ink-3); padding: 0; margin-bottom: 9px; float: left; width: 100%;
+  }
+  legend + * { clear: both; }
+
+  label { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: 7px 0; color: var(--ink-2); }
+  input[type=number], input[type=time], select {
+    font: inherit; font-size: 13px; color: var(--ink);
+    border: 1px solid var(--line); border-radius: var(--r-sm);
+    padding: 5px 7px; background: #fff; min-width: 0;
+  }
+  input:focus-visible, select:focus-visible, button:focus-visible {
+    outline: 2px solid var(--brand); outline-offset: 1px;
+  }
+  input[type=number] { width: 74px; text-align: right; }
+  input[type=number].wide { width: 124px; }
+  input[type=time] { width: 112px; }
+  .btn-row { display: flex; gap: 8px; margin-top: 10px; }
+  .btn-row button { flex: 1; }
+  input:disabled, select:disabled { background: var(--panel-2); color: var(--ink-3); }
+  input[type=checkbox] { width: 15px; height: 15px; accent-color: var(--brand); }
+
+  button {
+    cursor: pointer; font: inherit; font-size: 13px; font-weight: 550;
+    padding: 8px 12px; border-radius: var(--r-sm);
+    border: 1px solid var(--line); background: #fff; color: var(--ink-2);
+    box-shadow: var(--shadow); transition: background .12s, border-color .12s, color .12s;
+  }
+  button:hover:not(:disabled) { background: var(--panel-2); color: var(--ink); }
+  button.primary { background: var(--brand); color: #fff; border-color: var(--brand-dark); box-shadow: 0 1px 2px rgba(37,99,235,.4); }
+  button.primary:hover:not(:disabled) { background: var(--brand-dark); color: #fff; }
+  button:disabled { opacity: .45; cursor: default; box-shadow: none; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 108px; gap: 8px; }
+  .field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .field > span { font-size: 11px; font-weight: 600; color: var(--ink-3); }
+  .field select { width: 100%; }
+
+  /* legend of operation kinds */
+  .legend { display: flex; flex-wrap: wrap; gap: 5px 12px; margin-top: 11px; padding-top: 10px; border-top: 1px dashed var(--line); }
+  .legend div { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--ink-2); }
+  .chip { width: 18px; height: 18px; flex: none; border-radius: 6px; display: grid; place-items: center; background: var(--c, var(--brand)); }
+  .chip svg { display: block; }
+
+  /* operation / fleet rows */
+  ul.list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+  ul.list li {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 7px; border: 1px solid var(--line); border-radius: 8px;
+    background: var(--panel-2); font-size: 12.5px;
+  }
+  ul.list li:hover { border-color: #ccd5e4; background: #fff; }
+  ul.list li.hot { border-color: var(--brand); background: var(--brand-soft); }
+  ul.list li select { font-size: 12px; padding: 3px 4px; }
+  ul.list li input[type=number] { width: 46px; font-size: 12px; padding: 3px 5px; }
+  ul.list li .type { flex: 1; min-width: 0; }
+  ul.list li .x {
+    margin-left: auto; padding: 0; width: 22px; height: 22px; flex: none;
+    display: grid; place-items: center; font-size: 15px; line-height: 1;
+    color: var(--ink-3); border-color: transparent; background: none; box-shadow: none;
+  }
+  ul.list li .x:hover { background: #fee2e2; color: var(--danger); }
+  #points { max-height: 302px; overflow-y: auto; padding: 1px; }
+  #points .id { font-weight: 700; color: var(--ink-2); min-width: 22px; font-variant-numeric: tabular-nums; }
+  #points li.company { background: #fff; border-style: dashed; }
+  #points li.company .name { font-weight: 600; }
+  #points li.company .coords { color: var(--ink-3); font-variant-numeric: tabular-nums; font-size: 11.5px; }
+  #points li.company .fixed {
+    margin-left: auto; font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+    color: var(--ink-3); background: var(--panel-2); border: 1px solid var(--line);
+    border-radius: 999px; padding: 1px 7px; cursor: default;
+  }
+  .route-tag { width: 4px; align-self: stretch; border-radius: 2px; background: var(--rc, transparent); flex: none; margin: -6px 2px -6px -3px; }
+  .empty { padding: 16px 4px; text-align: center; color: var(--ink-3); font-size: 12.5px; }
+
+  #fleet li { gap: 10px; }
+  #fleet li .name { font-weight: 600; flex: 1; }
+  #fleet li .unit { color: var(--ink-3); font-size: 11.5px; }
+
+  /* warnings + action bar */
+  #problems:not(:empty) {
+    background: #fffbeb; border: 1px solid #fde68a; color: var(--warn);
+    border-radius: var(--r); padding: 9px 11px; font-size: 12.5px;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  /* always-reachable action bar, outside the scrolling panel */
+  #actions {
+    display: flex; gap: 8px; flex: none; padding: 12px 14px;
+    background: var(--panel); border-top: 1px solid var(--line);
+    box-shadow: 0 -3px 10px rgba(17,23,37,.05);
+  }
+  #actions[hidden] { display: none; }
+  #actions button { flex: 1; padding: 10px 12px; font-size: 13.5px; }
+  #actions button.primary { flex: 2; }
+
+  /* solution summary */
+  #summary:empty { display: none; }
+  #summary { display: flex; flex-direction: column; gap: 10px; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; box-shadow: var(--shadow); }
+  .stats div { background: var(--panel); padding: 8px 10px; }
+  .stats .k { display: block; font-size: 10.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
+  .stats .v { display: block; font-size: 14px; font-weight: 650; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .stats .v.muted { color: var(--ink-3); font-weight: 550; }
+  .stats .v.bad { color: var(--warn); }
+  .route { border: 1px solid var(--line); border-radius: var(--r); background: var(--panel); box-shadow: var(--shadow); overflow: hidden; }
+  .route > summary { list-style: none; cursor: pointer; padding: 9px 11px; display: flex; align-items: center; gap: 8px; }
+  .route > summary::-webkit-details-marker { display: none; }
+  .route > summary:hover { background: var(--panel-2); }
+  .route .swatch { width: 10px; height: 10px; flex: none; border-radius: 3px; background: var(--rc); box-shadow: 0 0 0 2px #fff, 0 0 0 3px rgba(17,23,37,.12); }
+  .route .name { font-weight: 600; font-size: 13px; }
+  .route .meta { margin-left: auto; font-size: 11.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .route ol { list-style: none; margin: 0; padding: 6px 11px 10px; border-top: 1px solid var(--line-2); }
+  .route ol li { display: flex; gap: 8px; font-size: 12px; color: var(--ink-2); padding: 3px 0 3px 14px; position: relative; }
+  .route ol li::before {
+    content: ""; position: absolute; left: 0; top: 8px; width: 7px; height: 7px; border-radius: 50%;
+    background: #fff; box-shadow: inset 0 0 0 2px var(--rc); z-index: 1;
+  }
+  .route ol li::after { content: ""; position: absolute; left: 3px; top: 12px; height: 100%; width: 1px; background: var(--line); }
+  .route ol li:last-child::after { display: none; }
+  .route ol li.company { color: var(--ink-3); }
+  .route ol li.company::before { box-shadow: inset 0 0 0 2px #c7d0de; }
+  .route ol li .t { font-variant-numeric: tabular-nums; color: var(--ink-3); flex: none; }
+  #summary details.raw > summary { cursor: pointer; font-size: 12px; color: var(--ink-3); }
+  #summary details.raw pre { font-size: 11px; white-space: pre-wrap; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 8px; max-height: 240px; overflow: auto; }
+
+  .hint { font-size: 12px; color: var(--ink-3); line-height: 1.45; }
+  .hint code { font-size: 11.5px; background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; color: var(--ink-2); }
+  fieldset > .hint:last-child { margin-top: 10px; }
+
+  /* ================================ map ================================ */
+  .pin-icon { background: none; border: 0; }
+  .pin { transform-origin: 50% 100%; transition: transform .13s ease-out; filter: drop-shadow(0 2px 3px rgba(17,23,37,.32)); }
+  .pin:hover, .pin.hot { transform: scale(1.18); }
+  .pin .halo { opacity: 0; transition: opacity .13s ease-out; }
+  .pin:hover .halo, .pin.hot .halo { opacity: .28; }
+  .pin.dim { filter: drop-shadow(0 1px 2px rgba(17,23,37,.22)); }
+  .leaflet-tooltip {
+    background: rgba(17,23,37,.93); color: #fff; border: 0; border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(17,23,37,.3); padding: 5px 9px;
+    font: 550 12px/1.35 ui-sans-serif, system-ui, sans-serif;
+  }
+  .leaflet-tooltip-top::before { border-top-color: rgba(17,23,37,.93); }
+  .leaflet-tooltip-bottom::before { border-bottom-color: rgba(17,23,37,.93); }
+  .leaflet-tooltip .sub { display: block; opacity: .6; font-weight: 400; font-size: 11px; margin-top: 1px; }
+  .leaflet-bar a, .leaflet-bar a:hover { color: var(--ink-2); border-bottom-color: var(--line); }
+  .leaflet-bar { border: 1px solid rgba(17,23,37,.12) !important; border-radius: 8px !important; box-shadow: var(--shadow-lg); overflow: hidden; }
+  .leaflet-control-attribution { font-size: 10px; background: rgba(255,255,255,.82); }
+  .map-toggle a { display: grid !important; place-items: center; }
+  #map.muted .leaflet-tile-pane { filter: saturate(.38) brightness(1.07) contrast(.93); }
+
+  @media (max-width: 860px) {
+    #app { flex-direction: column; }
+    #side { width: 100%; height: 56%; border-right: 0; border-bottom: 1px solid var(--line); }
+    #map { min-height: 44%; }
+  }
 </style>
 </head>
 <body>
@@ -61,8 +262,14 @@
   <div id="map"></div>
   <div id="side">
     <header>
-      <h1>Waste transport planner</h1>
-      <div id="status">Checking solver…</div>
+      <div class="brand">
+        <span class="logo"><svg width="19" height="19" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M1.6 11.6V4.9h7v6.7"/><path d="M8.6 7.3h2.9l2.9 2.7v1.6"/><circle cx="4.6" cy="12.4" r="1.4"/><circle cx="11.5" cy="12.4" r="1.4"/></svg></span>
+        <div>
+          <h1>Waste transport planner</h1>
+          <p class="sub">Click the map to place today's operations</p>
+        </div>
+      </div>
+      <div id="status"><span class="dot"></span><span class="txt">Checking solver…</span></div>
       <div class="tabs">
         <button class="active" data-tab="solve">Plan</button>
         <button data-tab="config">Config</button>
@@ -72,26 +279,22 @@
     <!-- ===== Plan tab ===== -->
     <div class="panel" id="tab-solve">
       <fieldset>
-        <legend>Click mode</legend>
-        <label><span>Move the company (trucks start and end there)</span><input type="radio" name="mode" value="depot" /></label>
-        <label><span>Add an operation</span><input type="radio" name="mode" value="op" checked /></label>
-        <label><span>Operation</span><select id="opType"></select></label>
-        <label><span>Container size</span><select id="opSize"></select></label>
-        <div class="hint">The company is preset (pin C). Click the map to add operations; switch to "Move the company" to relocate it. Points must be inside the loaded OSRM area (Portugal).</div>
+        <legend>New operation</legend>
+        <div class="grid2">
+          <div class="field"><span>Operation</span><select id="opType"></select></div>
+          <div class="field"><span>Container</span><select id="opSize"></select></div>
+        </div>
+        <div class="legend" id="opLegend"></div>
+        <div class="hint">Click anywhere on the map to add an operation with these settings. The company is fixed; its site is set in Config.</div>
       </fieldset>
 
       <fieldset>
         <legend>Operations</legend>
         <ul id="points" class="list"></ul>
-        <div class="hint">Type, size and priority (0–100, higher is dropped last) can be edited per operation.</div>
+        <div class="hint">Type, size and priority (0–100, higher is dropped last) are editable per row. Points must be inside the loaded OSRM area (Portugal).</div>
       </fieldset>
 
-      <div id="problems" class="warn"></div>
-
-      <div class="row">
-        <button id="solve" class="primary">Plan the day</button>
-        <button id="clear">Clear</button>
-      </div>
+      <div id="problems"></div>
 
       <div id="summary"></div>
     </div>
@@ -99,9 +302,20 @@
     <!-- ===== Config tab ===== -->
     <div class="panel" id="tab-config" hidden>
       <fieldset>
+        <legend>Company site</legend>
+        <label><span>Latitude</span><input id="companyLat" class="wide" type="number" step="0.000001" /></label>
+        <label><span>Longitude</span><input id="companyLng" class="wide" type="number" step="0.000001" /></label>
+        <div class="btn-row">
+          <button id="centreCompany">Centre the map here</button>
+          <button id="resetCompany">Reset to default</button>
+        </div>
+        <div class="hint">Trucks start and end the day here, so it cannot be moved by clicking the map. Must be inside the loaded OSRM area (Portugal).</div>
+      </fieldset>
+
+      <fieldset>
         <legend>Fleet</legend>
         <ul id="fleet" class="list"></ul>
-        <div class="hint">Number of trucks of each type available today. Any truck can sell materials (a full truck, nothing else on board). Loading rules per type follow docs/waste_transport_problem.md.</div>
+        <div class="hint">Trucks of each type available today. Any truck can sell materials (a full truck, nothing else on board). Loading rules per type follow docs/waste_transport_problem.md.</div>
       </fieldset>
 
       <fieldset>
@@ -125,27 +339,97 @@
         <label><span>Return route geometry</span><input id="geometry" type="checkbox" checked /></label>
         <label><span>Show request JSON after solving</span><input id="showRequest" type="checkbox" /></label>
       </fieldset>
+
+      <div class="hint">Everything on this tab starts from <code>docs/waste_defaults.json</code>, next to the loading rules in <code>docs/waste_rules.json</code>. Changes here live in this browser tab only — edit that file to change the defaults.</div>
     </div>
+
+    <footer id="actions">
+      <button id="solve" class="primary">Plan the day</button>
+      <button id="clear">Clear</button>
+    </footer>
   </div>
 </div>
 
 <script>
-// Truck types, loading rules and the company site come from
-// docs/waste_rules.json, served by frontend/server.js as /rules.js.
-if (typeof WASTE_RULES === "undefined") {
-  document.getElementById("status").textContent = "docs/waste_rules.json could not be loaded (is frontend/server.js running?).";
+// Truck types and loading rules come from docs/waste_rules.json; the
+// company site, fleet, working day and service times come from
+// docs/waste_defaults.json next to it. Both are served by
+// frontend/server.js as /rules.js and /defaults.js.
+function bootError(file) {
+  document.getElementById("status").querySelector(".txt").textContent =
+    `${file} could not be loaded (is frontend/server.js running?).`;
   document.getElementById("status").className = "err";
-  throw new Error("WASTE_RULES missing");
+  throw new Error(`${file} missing`);
 }
-const M = WasteModel.create(WASTE_RULES);
+if (typeof WASTE_RULES === "undefined") bootError("docs/waste_rules.json");
+if (typeof WASTE_DEFAULTS === "undefined") bootError("docs/waste_defaults.json");
+const M = WasteModel.create(WASTE_RULES, WASTE_DEFAULTS);
 
 // ---------- state ----------
-let depot = { ...M.COMPANY }; // {lat, lng}, preset to the company site
+// The company is fixed on the map: it only moves from the Config tab.
+let depot = { ...M.COMPANY };
 let operations = [];       // [{id, lat, lng, type, size, priority}]
 let nextOpId = 1;
 let fleet = M.defaultFleet();
-const COLORS = ["#2563eb", "#dc2626", "#16a34a", "#d97706", "#7c3aed", "#0891b2", "#be185d", "#4d7c0f"];
+const COLORS = ["#2563eb", "#dc2626", "#059669", "#d97706", "#7c3aed", "#0891b2", "#db2777", "#65a30d"];
 let lastRequestVehicles = [];
+
+// ---------- look of an operation: colour + glyph on a 16x16 grid ----------
+const OP_STYLE = {
+  deliver_empty:  { color: "#0891b2", glyph: '<path d="M8 3.4v7.4"/><path d="M4.7 7.5 8 10.8l3.3-3.3"/><path d="M3.6 13h8.8"/>' },
+  pickup_empty:   { color: "#7c3aed", glyph: '<path d="M8 12.6V5.2"/><path d="M4.7 8.5 8 5.2l3.3 3.3"/><path d="M3.6 13h8.8"/>' },
+  exchange:       { color: "#2563eb", glyph: '<path d="M3.4 6.2h8.4"/><path d="M9.6 4 11.8 6.2 9.6 8.4"/><path d="M12.6 10.4H4.2"/><path d="M6.4 8.2 4.2 10.4 6.4 12.6"/>' },
+  sell_materials: { color: "#d97706", glyph: '<path d="M8 2.7 13 5.5v5.5L8 13.8 3 11V5.5z"/><path d="M3 5.5 8 8.3l5-2.8"/><path d="M8 8.3v5.5"/>' },
+};
+const COMPANY_COLOR = "#111725";
+const COMPANY_GLYPH = '<path d="M2.6 8 8 3.4 13.4 8"/><path d="M4.4 7.2v5.4h7.2V7.2"/><path d="M6.9 12.6V9.6h2.2v3"/>';
+const UNASSIGNED_COLOR = "#98a2b3";
+
+function glyphGroup(glyph, tx, ty, scale, width) {
+  return `<g transform="translate(${tx} ${ty})${scale !== 1 ? ` scale(${scale})` : ""}" fill="none" stroke="#fff" ` +
+    `stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round">${glyph}</g>`;
+}
+
+// Small square chip used in the legend and in every operation row.
+function chip(type, color) {
+  const st = OP_STYLE[type];
+  return `<span class="chip" style="--c:${color || st.color}">` +
+    `<svg width="12" height="12" viewBox="0 0 16 16">${glyphGroup(st.glyph, 0, 0, 1, 1.7)}</svg></span>`;
+}
+
+// Teardrop pin, 34x38, tip at (14,35): glyph tells the operation kind,
+// the badge carries the operation id, the fill is the route colour once
+// the day has been planned.
+function opPin(op, color) {
+  const st = OP_STYLE[op.type];
+  const dim = color === UNASSIGNED_COLOR;
+  const html =
+    `<div class="pin${dim ? " dim" : ""}">` +
+    `<svg width="34" height="38" viewBox="0 0 34 38" xmlns="http://www.w3.org/2000/svg">` +
+      `<circle class="halo" cx="14" cy="14" r="13.5" fill="${color}"/>` +
+      `<path d="M14 34.6C14 34.6 24.5 21.6 24.5 14A10.5 10.5 0 1 0 3.5 14C3.5 21.6 14 34.6 14 34.6Z"` +
+      ` fill="${color}" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>` +
+      glyphGroup(st.glyph, 6, 6, 1, 1.7) +
+      `<circle cx="26" cy="7.5" r="7" fill="#fff" stroke="${color}" stroke-width="1.6"/>` +
+      `<text x="26" y="7.5" dy="3.1" text-anchor="middle" font-size="8.5" font-weight="700"` +
+      ` fill="#111725" font-family="ui-sans-serif, system-ui, sans-serif">${op.id}</text>` +
+    `</svg></div>`;
+  return L.divIcon({ className: "pin-icon", html, iconSize: [34, 38], iconAnchor: [14, 35], tooltipAnchor: [0, -30] });
+}
+
+// The company sits a size up and in near-black, so the base of every
+// route reads at a glance.
+function companyPin() {
+  const html =
+    `<div class="pin">` +
+    `<svg width="34" height="44" viewBox="0 0 34 44" xmlns="http://www.w3.org/2000/svg">` +
+      `<circle class="halo" cx="17" cy="17" r="16" fill="${COMPANY_COLOR}"/>` +
+      `<path d="M17 42C17 42 29.5 26.4 29.5 17A12.5 12.5 0 1 0 4.5 17C4.5 26.4 17 42 17 42Z"` +
+      ` fill="${COMPANY_COLOR}" stroke="#fff" stroke-width="2.4" stroke-linejoin="round"/>` +
+      glyphGroup(COMPANY_GLYPH, 6.5, 6.5, 1.31, 1.35) +
+    `</svg></div>`;
+  return L.divIcon({ className: "pin-icon", html, iconSize: [34, 44], iconAnchor: [17, 42], tooltipAnchor: [0, -36] });
+}
 
 // ---------- tabs ----------
 document.querySelectorAll(".tabs button").forEach((btn) => {
@@ -153,15 +437,16 @@ document.querySelectorAll(".tabs button").forEach((btn) => {
     document.querySelectorAll(".tabs button").forEach((b) => b.classList.toggle("active", b === btn));
     document.getElementById("tab-solve").hidden = btn.dataset.tab !== "solve";
     document.getElementById("tab-config").hidden = btn.dataset.tab !== "config";
+    document.getElementById("actions").hidden = btn.dataset.tab !== "solve";
   };
 });
 
 // ---------- selectors ----------
-function fillTypeSelect(sel, value) {
+function fillTypeSelect(sel, value, short) {
   sel.innerHTML = "";
   for (const [key, t] of Object.entries(M.OPERATION_TYPES)) {
     const o = document.createElement("option");
-    o.value = key; o.textContent = t.label;
+    o.value = key; o.textContent = short ? t.short : t.label;
     sel.appendChild(o);
   }
   sel.value = value;
@@ -181,93 +466,152 @@ fillTypeSelect(opTypeSel, "exchange");
 fillSizeSelect(opSizeSel, 6);
 opTypeSel.onchange = () => { opSizeSel.disabled = !M.OPERATION_TYPES[opTypeSel.value].needsSize; };
 
+document.getElementById("opLegend").innerHTML = Object.entries(M.OPERATION_TYPES)
+  .map(([key, t]) => `<div>${chip(key)}${esc(t.short)}</div>`).join("");
+
 // ---------- map ----------
-const map = L.map("map").setView([M.COMPANY.lat, M.COMPANY.lng], 13); // centred on the company
+const map = L.map("map", { zoomControl: false }).setView([M.COMPANY.lat, M.COMPANY.lng], 13);
+L.control.zoom({ position: "topright" }).addTo(map);
+L.control.scale({ imperial: false, position: "bottomleft" }).addTo(map);
+
 L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
   maxZoom: 19,
   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
 }).addTo(map);
+
+// The standard OSM tiles are colourful enough to fight with the pins and the
+// route lines, so the basemap is desaturated by default (CSS, no extra tile
+// provider) with a control to get the full colours back.
+const MutedControl = L.Control.extend({
+  options: { position: "topright" },
+  onAdd() {
+    const bar = L.DomUtil.create("div", "leaflet-bar map-toggle");
+    const a = L.DomUtil.create("a", "", bar);
+    a.href = "#";
+    a.title = "Toggle basemap colours";
+    a.innerHTML = '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" ' +
+      'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="5.6"/>' +
+      '<path d="M8 2.4v11.2"/><path d="M8 2.4a5.6 5.6 0 0 1 0 11.2z" fill="currentColor" stroke="none"/></svg>';
+    L.DomEvent.on(a, "click", (e) => {
+      L.DomEvent.stop(e);
+      map.getContainer().classList.toggle("muted");
+    });
+    L.DomEvent.disableClickPropagation(bar);
+    return bar;
+  },
+});
+map.addControl(new MutedControl());
+map.getContainer().classList.add("muted");
+
+const routeLayer = L.layerGroup().addTo(map); // below the markers
 const markerLayer = L.layerGroup().addTo(map);
-const routeLayer = L.layerGroup().addTo(map);
-
-function pinIcon(color, text) {
-  return L.divIcon({
-    className: "",
-    html: `<div class="pin" style="background:${color}"><span>${text}</span></div>`,
-    iconSize: [22, 22],
-    iconAnchor: [3, 22],
-  });
-}
-
-function currentMode() {
-  return document.querySelector("input[name=mode]:checked").value;
-}
-function setMode(value) {
-  document.querySelector(`input[name=mode][value=${value}]`).checked = true;
-}
+const markerOf = {}; // operation id -> marker
 
 map.on("click", (e) => {
-  if (currentMode() === "depot") {
-    depot = { lat: e.latlng.lat, lng: e.latlng.lng };
-    setMode("op");
-  } else {
-    operations.push({
-      id: nextOpId++,
-      lat: e.latlng.lat,
-      lng: e.latlng.lng,
-      type: opTypeSel.value,
-      size: Number(opSizeSel.value),
-      priority: 0,
-    });
-  }
+  operations.push({
+    id: nextOpId++,
+    lat: e.latlng.lat,
+    lng: e.latlng.lng,
+    type: opTypeSel.value,
+    size: Number(opSizeSel.value),
+    priority: 0,
+  });
   routeLayer.clearLayers();
   renderPoints();
 });
 
+// Hovering a row lights up its pin and the other way round.
+function setHot(opId, on) {
+  const marker = markerOf[opId];
+  const el = marker && marker.getElement() && marker.getElement().querySelector(".pin");
+  if (el) el.classList.toggle("hot", on);
+  const li = document.querySelector(`#points li[data-op="${opId}"]`);
+  if (li) li.classList.toggle("hot", on);
+}
+
 // ---------- rendering: points ----------
 function renderPoints(unassignedOps = new Set(), opColor = {}) {
   markerLayer.clearLayers();
+  for (const key of Object.keys(markerOf)) delete markerOf[key];
   const list = document.getElementById("points");
   list.innerHTML = "";
 
-  if (depot) {
-    L.marker([depot.lat, depot.lng], { icon: pinIcon("#111", "C") }).addTo(markerLayer).bindTooltip("Company");
+  L.marker([depot.lat, depot.lng], { icon: companyPin(), zIndexOffset: 1000, interactive: true })
+    .addTo(markerLayer)
+    .bindTooltip("<b>Company</b><span class='sub'>fixed — trucks start and end here</span>", { direction: "top" });
+  const site = document.createElement("li");
+  site.className = "company";
+  site.innerHTML =
+    `<span class="chip" style="--c:${COMPANY_COLOR}"><svg width="12" height="12" viewBox="0 0 16 16">` +
+    `${glyphGroup(COMPANY_GLYPH, 0, 0, 1, 1.5)}</svg></span>` +
+    `<span class="name">Company</span>` +
+    `<span class="coords">${depot.lat.toFixed(5)}, ${depot.lng.toFixed(5)}</span>` +
+    `<span class="fixed" title="the company site is set in Config">fixed</span>`;
+  list.appendChild(site);
+
+  for (const op of operations) {
+    const unassigned = unassignedOps.has(op.id);
+    const color = unassigned ? UNASSIGNED_COLOR : (opColor[op.id] || OP_STYLE[op.type].color);
+    const marker = L.marker([op.lat, op.lng], { icon: opPin(op, color), riseOnHover: true })
+      .addTo(markerLayer)
+      .bindTooltip(`<b>#${op.id}</b> ${esc(M.describe(op))}` +
+        `<span class="sub">${unassigned ? "not assigned to any truck" : `priority ${op.priority}`}</span>`,
+        { direction: "top" });
+    marker.on("mouseover", () => setHot(op.id, true));
+    marker.on("mouseout", () => setHot(op.id, false));
+    marker.on("click", () => {
+      const li = document.querySelector(`#points li[data-op="${op.id}"]`);
+      if (li) li.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    });
+    markerOf[op.id] = marker;
+    list.appendChild(opRow(op, color, unassigned));
+  }
+
+  if (!operations.length) {
     const li = document.createElement("li");
-    const txt = document.createElement("span");
-    txt.textContent = `Company  ${depot.lat.toFixed(5)}, ${depot.lng.toFixed(5)}`;
-    li.append(txt, removeButton(() => { depot = null; routeLayer.clearLayers(); renderPoints(); }));
+    li.className = "empty";
+    li.style.border = "0";
+    li.style.background = "none";
+    li.textContent = "No operations yet — click the map to add one.";
     list.appendChild(li);
   }
-  for (const op of operations) {
-    const color = unassignedOps.has(op.id) ? "#9ca3af" : (opColor[op.id] || "#2563eb");
-    L.marker([op.lat, op.lng], { icon: pinIcon(color, op.id) }).addTo(markerLayer)
-      .bindTooltip(`Op ${op.id}: ${M.describe(op)}${unassignedOps.has(op.id) ? " (unassigned)" : ""}`);
-    list.appendChild(opRow(op));
-  }
+
   renderProblems();
   updateSolveButton();
 }
 
-function opRow(op) {
+function opRow(op, color, unassigned) {
   const li = document.createElement("li");
+  li.className = "op";
+  li.dataset.op = op.id;
+  li.onmouseenter = () => setHot(op.id, true);
+  li.onmouseleave = () => setHot(op.id, false);
+
+  const tag = document.createElement("span");
+  tag.className = "route-tag";
+  tag.style.setProperty("--rc", color);
+
+  const mark = document.createElement("span");
+  mark.innerHTML = chip(op.type, unassigned ? UNASSIGNED_COLOR : OP_STYLE[op.type].color);
   const id = document.createElement("span");
   id.className = "id";
   id.textContent = `#${op.id}`;
 
   const type = document.createElement("select");
-  fillTypeSelect(type, op.type);
+  type.className = "type";
+  fillTypeSelect(type, op.type, true);
   const size = document.createElement("select");
   fillSizeSelect(size, op.size);
   size.disabled = !M.OPERATION_TYPES[op.type].needsSize;
-  type.onchange = () => { op.type = type.value; size.disabled = !M.OPERATION_TYPES[op.type].needsSize; routeLayer.clearLayers(); renderPoints(); };
+  type.onchange = () => { op.type = type.value; routeLayer.clearLayers(); renderPoints(); };
   size.onchange = () => { op.size = Number(size.value); routeLayer.clearLayers(); renderPoints(); };
 
   const prio = document.createElement("input");
   prio.type = "number"; prio.min = "0"; prio.max = "100"; prio.value = op.priority;
-  prio.title = "priority (0–100)";
+  prio.title = "priority (0–100, higher is dropped last)";
   prio.oninput = () => { op.priority = Math.max(0, Math.min(100, Number(prio.value) || 0)); };
 
-  li.append(id, type, size, prio, removeButton(() => {
+  li.append(tag, mark.firstElementChild, id, type, size, prio, removeButton(() => {
     operations = operations.filter((x) => x.id !== op.id);
     routeLayer.clearLayers();
     renderPoints();
@@ -278,7 +622,7 @@ function opRow(op) {
 function removeButton(onClick) {
   const btn = document.createElement("button");
   btn.className = "x";
-  btn.textContent = "×";
+  btn.innerHTML = "&times;";
   btn.title = "remove";
   btn.onclick = onClick;
   return btn;
@@ -286,13 +630,13 @@ function removeButton(onClick) {
 
 function renderProblems() {
   const problems = M.validate({ operations, fleet, times: readTimes() });
-  document.getElementById("problems").innerHTML = problems.map((p) => `<div>⚠ ${p}</div>`).join("");
+  document.getElementById("problems").innerHTML = problems.map((p) => `<div>⚠ ${esc(p)}</div>`).join("");
   return problems;
 }
 
 function updateSolveButton() {
   const total = M.TYPE_ORDER.reduce((n, t) => n + (fleet[t] || 0), 0);
-  document.getElementById("solve").disabled = !depot || operations.length === 0 || total === 0;
+  document.getElementById("solve").disabled = operations.length === 0 || total === 0;
 }
 
 // ---------- rendering: fleet (config tab) ----------
@@ -307,7 +651,7 @@ function renderFleet() {
     name.title = `allowed loads: ${M.TRUCK_TYPES[type].rules.join(" | ")}`;
 
     const countLabel = document.createElement("span");
-    countLabel.className = "hint";
+    countLabel.className = "unit";
     countLabel.textContent = "trucks";
     const count = document.createElement("input");
     count.type = "number"; count.min = "0"; count.max = "20"; count.value = fleet[type];
@@ -318,10 +662,10 @@ function renderFleet() {
   }
 }
 
-function setStatus(msg, isError = false) {
+function setStatus(msg, state = "") {
   const el = document.getElementById("status");
-  el.textContent = msg;
-  el.className = isError ? "err" : "";
+  el.querySelector(".txt").textContent = msg;
+  el.className = state;
 }
 
 // ---------- VROOM request ----------
@@ -384,56 +728,73 @@ function esc(s) {
   return String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
 }
 
+// A white casing under the coloured line keeps routes legible where they overlap.
+function drawRoute(latlngs, color, name, dashed) {
+  if (latlngs.length < 2) return;
+  L.polyline(latlngs, { color: "#fff", weight: dashed ? 5 : 7, opacity: .9, lineCap: "round", lineJoin: "round" }).addTo(routeLayer);
+  L.polyline(latlngs, {
+    color, weight: dashed ? 2.5 : 4, opacity: .95, lineCap: "round", lineJoin: "round",
+    dashArray: dashed ? "7 7" : null,
+  }).addTo(routeLayer).bindTooltip(name, { sticky: true });
+}
+
 function showSolution(sol, stepInfo) {
   routeLayer.clearLayers();
   const opColor = {};
   const unassignedOps = new Set((sol.unassigned || []).map((u) => M.opIdOfStep(u.id)));
-  const rows = [];
+  const routes = sol.routes || [];
+  const cards = [];
 
-  (sol.routes || []).forEach((r, i) => {
+  routes.forEach((r, i) => {
     const v = lastRequestVehicles.find((x) => x.id === r.vehicle) || {};
     const color = COLORS[i % COLORS.length];
     const name = v.description || `vehicle ${r.vehicle}`;
     const items = [];
     let clientStops = 0;
     for (const s of r.steps) {
-      if (s.type === "start") { items.push(`<li class="company">${fmtClock(s.arrival)} leave company</li>`); continue; }
-      if (s.type === "end") { items.push(`<li class="company">${fmtClock(s.arrival)} back at company</li>`); continue; }
-      if (s.type === "break") { items.push(`<li class="company">${fmtClock(s.arrival)} lunch</li>`); continue; }
+      const clock = `<span class="t">${fmtClock(s.arrival)}</span>`;
+      if (s.type === "start") { items.push(`<li class="company">${clock}<span>leave the company</span></li>`); continue; }
+      if (s.type === "end") { items.push(`<li class="company">${clock}<span>back at the company</span></li>`); continue; }
+      if (s.type === "break") { items.push(`<li class="company">${clock}<span>lunch</span></li>`); continue; }
       const text = s.description || stepInfo[s.id] || `${s.type} ${s.id}`;
       const opId = M.opIdOfStep(s.id);
       const atCompany = /at company/.test(text);
       if (!atCompany) { clientStops++; opColor[opId] = opColor[opId] || color; }
-      items.push(`<li class="${atCompany ? "company" : ""}">${fmtClock(s.arrival)} ${esc(text)}</li>`);
+      items.push(`<li class="${atCompany ? "company" : ""}">${clock}<span>${esc(text)}</span></li>`);
     }
+
     if (r.geometry) {
-      L.polyline(decodePolyline(r.geometry), { color, weight: 4, opacity: 0.85 }).addTo(routeLayer).bindTooltip(name);
+      drawRoute(decodePolyline(r.geometry), color, esc(name), false);
     } else {
-      const pts = r.steps.map((s) => s.location).filter(Boolean).map(([lng, lat]) => [lat, lng]);
-      L.polyline(pts, { color, weight: 2, dashArray: "6 6", opacity: 0.8 }).addTo(routeLayer).bindTooltip(name);
+      drawRoute(r.steps.map((s) => s.location).filter(Boolean).map(([lng, lat]) => [lat, lng]), color, esc(name), true);
     }
-    const km = r.distance != null ? `${(r.distance / 1000).toFixed(1)} km, ` : "";
-    rows.push(`<tr><td><span class="swatch" style="background:${color}"></span>${esc(name)}</td>
-      <td>${clientStops} client stops, ${fmtDuration(r.duration)} driving, ${fmtDuration(r.duration + (r.service || 0) + (r.waiting_time || 0))} in total, ${km}cost ${r.cost}
-      <ol>${items.join("")}</ol></td></tr>`);
+
+    const km = r.distance != null ? ` · ${(r.distance / 1000).toFixed(1)} km` : "";
+    cards.push(`<details class="route" style="--rc:${color}"${routes.length <= 3 ? " open" : ""}>
+      <summary><span class="swatch"></span><span class="name">${esc(name)}</span>
+        <span class="meta">${clientStops} stop${clientStops === 1 ? "" : "s"} · ${fmtDuration(r.duration + (r.service || 0) + (r.waiting_time || 0))}${km}</span>
+      </summary>
+      <ol>${items.join("")}</ol></details>`);
   });
 
   const s = sol.summary || {};
-  const ct = s.computing_times ? `${s.computing_times.loading + s.computing_times.solving} ms` : "-";
-  const unassignedText = unassignedOps.size ? ` (ops ${[...unassignedOps].sort((a, b) => a - b).join(", ")})` : "";
-  document.getElementById("summary").innerHTML = `<table>
-    <tr><td>Total cost</td><td>${s.cost ?? "-"}</td></tr>
-    <tr><td>Trucks used</td><td>${s.routes ?? "-"} of ${lastRequestVehicles.length}</td></tr>
-    <tr><td>Travel time</td><td>${s.duration != null ? fmtDuration(s.duration) : "-"}</td></tr>
-    <tr><td>Distance</td><td>${s.distance != null ? (s.distance / 1000).toFixed(1) + " km" : "-"}</td></tr>
-    <tr><td>Unassigned operations</td><td>${unassignedOps.size}${unassignedText}</td></tr>
-    <tr><td>Computing time</td><td>${ct}</td></tr>
-    ${rows.join("")}
-  </table>`;
+  const ct = s.computing_times ? `${s.computing_times.loading + s.computing_times.solving} ms` : "–";
+  const unassignedTitle = unassignedOps.size ? ` title="operations ${[...unassignedOps].sort((a, b) => a - b).join(", ")}"` : "";
+  document.getElementById("summary").innerHTML = `
+    <div class="stats">
+      <div><span class="k">Trucks</span><span class="v">${s.routes ?? "–"}<span class="v muted" style="display:inline;font-size:12px"> / ${lastRequestVehicles.length}</span></span></div>
+      <div><span class="k">Driving</span><span class="v">${s.duration != null ? fmtDuration(s.duration) : "–"}</span></div>
+      <div><span class="k">Distance</span><span class="v">${s.distance != null ? (s.distance / 1000).toFixed(1) + " km" : "–"}</span></div>
+      <div><span class="k">Cost</span><span class="v">${s.cost ?? "–"}</span></div>
+      <div${unassignedTitle}><span class="k">Unassigned</span><span class="v ${unassignedOps.size ? "bad" : "muted"}">${unassignedOps.size}</span></div>
+      <div><span class="k">Solved in</span><span class="v muted">${ct}</span></div>
+    </div>
+    ${cards.join("")}`;
+
   renderPoints(unassignedOps, opColor);
   const drawn = routeLayer.getLayers();
   if (drawn.length) {
-    map.fitBounds(L.featureGroup(drawn).getBounds(), { padding: [30, 30] });
+    map.fitBounds(L.featureGroup(drawn).getBounds(), { padding: [40, 40] });
   }
 }
 
@@ -441,13 +802,13 @@ function showSolution(sol, stepInfo) {
 document.getElementById("solve").onclick = async () => {
   const problems = renderProblems();
   if (problems.length) {
-    setStatus("Fix the warnings above before planning.", true);
+    setStatus("Fix the warnings above before planning.", "err");
     return;
   }
   const { request, stepInfo } = buildRequest();
   lastRequestVehicles = request.vehicles;
   document.getElementById("summary").innerHTML = "";
-  setStatus("Planning…");
+  setStatus("Planning…", "busy");
   document.getElementById("solve").disabled = true;
   try {
     const res = await fetch("/api", {
@@ -459,40 +820,91 @@ document.getElementById("solve").onclick = async () => {
     let body;
     try { body = JSON.parse(text); } catch { body = { raw: text }; }
     if (!res.ok || body.code) {
-      setStatus(`Solver error (${res.status}): ${body.error || body.raw || "unknown"}`, true);
+      setStatus(`Solver error (${res.status}): ${body.error || body.raw || "unknown"}`, "err");
     } else {
       showSolution(body, stepInfo);
-      setStatus("Planned.");
+      setStatus("Day planned.", "ok");
     }
     if (document.getElementById("showRequest").checked) {
       document.getElementById("summary").insertAdjacentHTML("beforeend",
-        `<details><summary>Request JSON</summary><pre style="font-size:11px;white-space:pre-wrap">${esc(JSON.stringify(request, null, 1))}</pre></details>`);
+        `<details class="raw"><summary>Request JSON</summary><pre>${esc(JSON.stringify(request, null, 1))}</pre></details>`);
     }
   } catch (err) {
-    setStatus(`Request failed: ${err.message}`, true);
+    setStatus(`Request failed: ${err.message}`, "err");
   } finally {
     updateSolveButton();
   }
 };
 
+// Clears the day, not the configuration: the company stays where Config
+// put it.
 document.getElementById("clear").onclick = () => {
-  depot = { ...M.COMPANY }; operations = []; nextOpId = 1;
+  operations = []; nextOpId = 1;
   routeLayer.clearLayers();
   document.getElementById("summary").innerHTML = "";
-  setMode("op");
-  map.setView([M.COMPANY.lat, M.COMPANY.lng], 13);
+  map.setView([depot.lat, depot.lng], 13);
   renderPoints();
 };
 
 // ---------- health check ----------
 fetch("/api/health")
-  .then((r) => (r.ok ? setStatus("Solver reachable at /api (vroom-express).") : setStatus(`Solver responded ${r.status}.`, true)))
-  .catch(() => setStatus("Solver not reachable. Run frontend/setup.sh.", true));
+  .then((r) => (r.ok
+    ? setStatus("Solver reachable at /api (vroom-express).", "ok")
+    : setStatus(`Solver responded ${r.status}.`, "err")))
+  .catch(() => setStatus("Solver not reachable. Run frontend/setup.sh.", "err"));
 
 for (const id of ["dayStart", "dayEnd", "lunchStart", "lunchEnd"]) {
   document.getElementById(id).oninput = renderProblems;
 }
 
+// ---------- config: starting values from docs/waste_defaults.json ----------
+function applyDefaults() {
+  const t = M.defaultTimes();
+  document.getElementById("dayStart").value = fmtClock(t.dayStart);
+  document.getElementById("dayEnd").value = fmtClock(t.dayEnd);
+  document.getElementById("lunchStart").value = fmtClock(t.lunchStart);
+  document.getElementById("lunchEnd").value = fmtClock(t.lunchEnd);
+  document.getElementById("clientService").value = t.clientService / 60;
+  document.getElementById("companySetup").value = t.companySetup / 60;
+  document.getElementById("companyService").value = t.companyService / 60;
+  document.getElementById("geometry").checked = !!M.SOLVER_DEFAULTS.geometry;
+  document.getElementById("showRequest").checked = !!M.SOLVER_DEFAULTS.show_request;
+  fleet = M.defaultFleet();
+  setCompany(M.COMPANY);
+}
+
+// The one place the company site changes.
+function setCompany({ lat, lng }) {
+  depot = { lat, lng };
+  document.getElementById("companyLat").value = lat;
+  document.getElementById("companyLng").value = lng;
+  routeLayer.clearLayers();
+  document.getElementById("summary").innerHTML = "";
+  renderPoints();
+}
+
+for (const id of ["companyLat", "companyLng"]) {
+  document.getElementById(id).onchange = () => {
+    const lat = Number(document.getElementById("companyLat").value);
+    const lng = Number(document.getElementById("companyLng").value);
+    if (!isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+      setStatus("Company site: latitude must be -90..90 and longitude -180..180.", "err");
+      setCompany(depot);
+      return;
+    }
+    setCompany({ lat, lng });
+    map.panTo([lat, lng]);
+    setStatus(`Company moved to ${lat.toFixed(5)}, ${lng.toFixed(5)}.`);
+  };
+}
+document.getElementById("centreCompany").onclick = () => map.setView([depot.lat, depot.lng], 13);
+document.getElementById("resetCompany").onclick = () => {
+  setCompany(M.COMPANY);
+  map.setView([M.COMPANY.lat, M.COMPANY.lng], 13);
+  setStatus("Company site back to the docs/waste_defaults.json value.");
+};
+
+applyDefaults();
 renderFleet();
 renderPoints();
 </script>

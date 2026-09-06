@@ -3,11 +3,15 @@
 // a VROOM request using the `capacities` extension of this fork.
 //
 // The rules themselves live in docs/waste_rules.json (single source of
-// truth). This file only interprets them: build a model with
-//   WasteModel.create(rules)
-// where `rules` is the parsed JSON. In the browser the server exposes it
-// as window.WASTE_RULES (script /rules.js); under node use
-//   require("./waste_model").create(require("../../docs/waste_rules.json"))
+// truth) and the planner's starting values in docs/waste_defaults.json
+// next to it. This file only interprets them: build a model with
+//   WasteModel.create(rules, defaults)
+// where both arguments are the parsed JSON (`defaults` is optional and
+// falls back to the built-in values below). In the browser the server
+// exposes them as window.WASTE_RULES (/rules.js) and
+// window.WASTE_DEFAULTS (/defaults.js); under node use
+//   require("./waste_model").create(require("../../docs/waste_rules.json"),
+//                                   require("../../docs/waste_defaults.json"))
 //
 // Amount components are container kinds, one-hot per task:
 //   e2 e6 ...  empty containers by size (m3), one per size in rules.sizes
@@ -25,10 +29,37 @@
     sell_materials: { label: "Sell materials (full truck)", short: "materials", needsSize: false },
   };
 
-  function create(rules) {
+  // Fallbacks for every value docs/waste_defaults.json may set, so the
+  // model still works when it is called without them.
+  const BUILTIN_DEFAULTS = {
+    company: { lat: 37.030558, lng: -7.976093 },
+    fleet: {},
+    working_day: { start: "08:00", end: "17:00", lunch_start: "12:00", lunch_end: "13:00" },
+    operation_times_min: { client_per_container: 10, company_per_visit: 5, company_per_container: 5 },
+    solver: { geometry: true, show_request: false },
+  };
+
+  // "08:30" -> 30600. Also accepts a plain number of seconds.
+  function clockToSeconds(value, fallback) {
+    if (typeof value === "number" && isFinite(value)) return value;
+    const m = /^(\d{1,2}):(\d{2})$/.exec(String(value || "").trim());
+    if (!m) return fallback;
+    return Number(m[1]) * 3600 + Number(m[2]) * 60;
+  }
+
+  function minutesToSeconds(value, fallback) {
+    const n = Number(value);
+    return isFinite(n) && n >= 0 ? Math.round(n * 60) : fallback;
+  }
+
+  function create(rules, defaults) {
     if (!rules || !rules.trucks || !rules.sizes) {
-      throw new Error("waste rules missing: expected {sizes, trucks, company}");
+      throw new Error("waste rules missing: expected {sizes, trucks}");
     }
+    const D = defaults || {};
+    const day = { ...BUILTIN_DEFAULTS.working_day, ...(D.working_day || {}) };
+    const svc = { ...BUILTIN_DEFAULTS.operation_times_min, ...(D.operation_times_min || {}) };
+    const SOLVER_DEFAULTS = { ...BUILTIN_DEFAULTS.solver, ...(D.solver || {}) };
     const SIZES = rules.sizes.slice();
     const KINDS = [...SIZES.map((s) => `e${s}`), ...SIZES.map((s) => `f${s}`), "mat"];
     const TRUCK_TYPES = {};
@@ -36,7 +67,14 @@
       TRUCK_TYPES[key] = { label: t.label || key, rules: t.rules.slice() };
     }
     const TYPE_ORDER = Object.keys(TRUCK_TYPES);
-    const COMPANY = { lat: rules.company.lat, lng: rules.company.lng };
+    // The company site is a planner setting, not a loading rule: it comes
+    // from waste_defaults.json (rules.company is still honoured so older
+    // rule files keep working).
+    const site = D.company || rules.company || BUILTIN_DEFAULTS.company;
+    const COMPANY = { lat: Number(site.lat), lng: Number(site.lng) };
+    if (!isFinite(COMPANY.lat) || !isFinite(COMPANY.lng)) {
+      throw new Error("waste defaults: company must have numeric lat and lng");
+    }
 
     function zeros() {
       return KINDS.map(() => 0);
@@ -83,21 +121,24 @@
 
     function defaultFleet() {
       const fleet = {};
-      for (const t of TYPE_ORDER) fleet[t] = 1;
+      for (const t of TYPE_ORDER) {
+        const n = Number((D.fleet || {})[t]);
+        fleet[t] = isFinite(n) && n >= 0 ? Math.floor(n) : 1;
+      }
       return fleet;
     }
 
     function defaultTimes() {
       return {
-        dayStart: 8 * 3600,
-        dayEnd: 17 * 3600,
+        dayStart: clockToSeconds(day.start, 8 * 3600),
+        dayEnd: clockToSeconds(day.end, 17 * 3600),
         // Lunch: a fixed break from lunchStart to lunchEnd. Equal values
         // mean no lunch.
-        lunchStart: 12 * 3600,
-        lunchEnd: 13 * 3600,
-        clientService: 600,
-        companySetup: 300,
-        companyService: 300,
+        lunchStart: clockToSeconds(day.lunch_start, 12 * 3600),
+        lunchEnd: clockToSeconds(day.lunch_end, 13 * 3600),
+        clientService: minutesToSeconds(svc.client_per_container, 600),
+        companySetup: minutesToSeconds(svc.company_per_visit, 300),
+        companyService: minutesToSeconds(svc.company_per_container, 300),
       };
     }
 
@@ -250,6 +291,7 @@
 
     return {
       SIZES, KINDS, TRUCK_TYPES, TYPE_ORDER, OPERATION_TYPES, COMPANY,
+      SOLVER_DEFAULTS,
       parseLoad, oneHot, capacitiesFor, sizesFor,
       defaultFleet, defaultTimes,
       opIdOfStep, describe, buildRequest, validate,

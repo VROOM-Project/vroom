@@ -1,0 +1,30 @@
+{
+  "_comment": "Starting values for the waste transport planner UI. Companion to waste_rules.json: that file holds what the trucks are physically allowed to carry (fixed), this one holds what the planner may change from day to day. Every value below is editable in the planner's Config tab; edits live in the browser only, so change this file to move the defaults. Times are local HH:MM, durations are minutes. Read by frontend/public/waste_model.js through frontend/server.js (/defaults.js).",
+  "company": {
+    "lat": 37.030558,
+    "lng": -7.976093,
+    "_comment": "company site: trucks start and end the day here. Must be inside the routing area loaded by OSRM (Portugal)."
+  },
+  "fleet": {
+    "_comment": "trucks of each type available on a normal day; keys are the truck types of waste_rules.json",
+    "small": 1,
+    "multiban": 1,
+    "poliban": 1
+  },
+  "working_day": {
+    "start": "08:00",
+    "end": "17:00",
+    "lunch_start": "12:00",
+    "lunch_end": "13:00",
+    "_comment": "lunch is a fixed break for every truck; equal start and end mean no lunch"
+  },
+  "operation_times_min": {
+    "client_per_container": 10,
+    "company_per_visit": 5,
+    "company_per_container": 5
+  },
+  "solver": {
+    "geometry": true,
+    "show_request": false
+  }
+}
