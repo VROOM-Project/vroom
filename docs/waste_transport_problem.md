@@ -35,7 +35,11 @@ part of the optimisation.
 
 The company site (referred to below as **the company**) is where the
 trucks start and end the day, where full containers are emptied and
-where empty containers and materials are stocked.
+where empty containers and materials are stocked. It is a single fixed
+location for a planning day, not something chosen per operation; its
+coordinates, together with the other values a planner may change
+(fleet size, working day, service times), live in
+[waste_defaults.json](./waste_defaults.json).
 
 ## Operations
 
