@@ -10,6 +10,7 @@ Contents:
 - [How VROOM sees the problem](#how-vroom-sees-the-problem)
 - [Mapping operations to VROOM tasks](#mapping-operations-to-vroom-tasks)
 - [The multiban capacity](#the-multiban-capacity)
+- [No-go areas](#no-go-areas)
 - [Time constraints](#time-constraints)
 - [Objective](#objective)
 - [Re-planning during the day](#re-planning-during-the-day)
@@ -43,6 +44,7 @@ the real problem is not modelled and needs a post-check.
 | Objective: most operations, then time, then km | solution ranking + `costs` | native |
 | New operation mid-day | re-run with current state as input, travel times from OSRM, `steps` warm start | supported by a re-planning procedure, not by a live mode |
 | Chico (trailer) on a multiban or poliban, decided by the solver | each truck listed twice (plain and with chico, own `capacities` and `costs`), `vehicle_groups` caps the vehicles used at the number of trucks | native with the extension |
+| Areas a truck may not drive through | not a solver constraint at all: one routing `profile` per restricted vehicle, served by an OSRM dataset where those roads are unusable | native, outside the solver (see [No-go areas](#no-go-areas)) |
 | Order of stacking | not needed: operators reorder on site | not a constraint |
 | Leave-empty and pick-full at the same client done by the same truck in one visit | none | **gap**: usually happens through cost, not guaranteed |
 
@@ -114,16 +116,21 @@ Details:
   `capacities`, one vector per rule of
   [waste_rules.json](./waste_rules.json). Size
   compatibility follows: a kind with 0 in every vector of a truck
-  cannot board it, so no skills are needed (they remain useful to pin
-  an in-flight load to a truck when re-planning).
+  cannot board it, so no skill is needed for it. Skills are used for
+  two other things: keeping an operation inside a no-go area away from
+  the vehicles that may not go there (see
+  [No-go areas](#no-go-areas)), and pinning an in-flight load to a
+  truck when re-planning.
 - **Company visits**: use `setup` on the delivery steps at the company
   for the fixed overhead of a visit (VROOM applies setup once for
   consecutive tasks at the same location) and `service` for the
   per-container unloading time. Same for pickups of empties.
 - **Vehicles** start and end at the company, with `time_window`,
-  `breaks`, `capacities` (per truck configuration, see below) and
-  `type` (`small`, `multiban`, `poliban`) so that operation durations
-  can differ per truck through `service_per_type`.
+  `breaks`, `capacities` (per truck configuration, see below), `type`
+  (`small`, `multiban`, `poliban`) so that operation durations can
+  differ per truck through `service_per_type`, and `profile`, which is
+  the default one unless the configuration has areas it may not drive
+  through (see [No-go areas](#no-go-areas)).
 - **Chicos** are handled by listing every truck of a type twice: `n`
   plain vehicles and `min(chicos, n)` vehicles with the chico
   capacity list, all in one `vehicle_groups` entry with
@@ -281,6 +288,40 @@ accepts a load that no single vector accepts. Design, decisions and
 code map are in
 [waste_transport_plan_b.md](./waste_transport_plan_b.md).
 
+## No-go areas
+
+The one requirement that VROOM cannot be asked about. It only ever sees
+a travel-time matrix and, with `-g`, a polyline OSRM draws afterwards;
+between two stops there is no path, no geometry and nothing to test a
+polygon against. No capacity, skill or cost trick changes that: "do not
+drive through here" is a statement about the road graph.
+
+It is enforced there instead, using a feature VROOM already has: each
+vehicle carries a `profile`, and VROOM builds one routing wrapper per
+profile with its own host and port. Vehicles going out with a chico use
+a profile served by a copy of the routing data in which every road
+inside a forbidden area is overridden to 1 km/h, so their travel times,
+their stop order and their drawn route avoid those areas by
+construction. The copy is produced by `osrm-customize` alone (the MLD
+partition does not depend on segment speeds), which keeps a zone change
+down to minutes.
+
+Two consequences worth stating:
+
+- The penalty makes crossing absurd, not impossible. Where an area is
+  genuinely unavoidable the route still goes through it, slowly, rather
+  than the plan failing outright — which is the intended trade, since a
+  disconnected client would make OSRM return no route and abort the whole
+  run. `scripts/waste_solution_check.py` reads the zones and reports any
+  route that stopped in or crossed one.
+- An operation inside a forbidden area is excluded from the vehicles that
+  cannot reach it, rather than merely made expensive: every zone is a
+  skill, held by the vehicles allowed in and required by the tasks
+  sitting inside.
+
+Details, file format and the build pipeline are in
+[no_go_zones.md](./no_go_zones.md); no C++ was involved.
+
 ## Time constraints
 
 - **Working hours**: vehicle `time_window` `[start, end]`, in seconds
@@ -350,10 +391,11 @@ re-planning time `t`:
    same tight `time_windows`.
 2. **Loading rules** are enforced exactly through `capacities`; the
    assumption above is no longer needed.
-3. **Chicos** are chosen by the solver, but a chico is assumed to
-   change nothing but the capacity (same speed, same service times,
-   same reachable places). If it does, the chico vehicles get their
-   own `speed_factor`, `type` or `costs`.
+3. **Chicos** are chosen by the solver. A chico changes the capacity
+   and, through its routing profile, the areas the truck may drive
+   through (see [No-go areas](#no-go-areas)); it is still assumed to
+   change nothing else — same speed, same service times. If it does,
+   the chico vehicles get their own `speed_factor`, `type` or `costs`.
 4. **Materials** are a full container of a standard size; if the
    company later wants materials without a container, that becomes a
    new amount component with its own vectors.

@@ -11,6 +11,7 @@ Contents:
 - [Containers](#containers)
 - [Trucks](#trucks)
 - [Loading rules](#loading-rules)
+- [No-go areas](#no-go-areas)
 - [Constraints](#constraints)
 - [Objective](#objective)
 - [Dynamics: operations added during the day](#dynamics-operations-added-during-the-day)
@@ -170,6 +171,25 @@ notes below) but explains the list:
   incorrect because they either allowed forbidden combinations or
   forbade allowed ones.
 
+## No-go areas
+
+Some parts of the map are closed to some vehicles: narrow streets, a
+historic centre, a low bridge. A truck concerned by such an area may not
+even **drive through** it on its way somewhere else, so this is a
+constraint on the route itself and not only on which clients it serves.
+
+Today the only vehicles concerned are the ones going out with a chico:
+the combination is long enough that some streets are out of the
+question, and both chico types share the same areas. The areas are drawn
+on the map by the planner, who knows them, rather than listed here; they
+live in [no_go_zones.json](./no_go_zones.json). Nothing about the
+mechanism is specific to chicos, and a truck type could be restricted
+the same way (see
+[no_go_zones.md](./no_go_zones.md#restricting-another-kind-of-vehicle)).
+
+A client sitting inside an area closed to the chicos can still be
+served, but only by a truck without one.
+
 ## Constraints
 
 - **Working hours**: every truck has a start time and a finishing time
@@ -187,6 +207,8 @@ notes below) but explains the list:
 - **Chicos**: a truck takes at most one chico, of the type matching
   the truck, for the whole day; no more chicos go out than the
   company owns, and no more trucks than it has.
+- **No-go areas**: a truck with a chico neither stops in nor drives
+  through the areas closed to it (see [No-go areas](#no-go-areas)).
 - **Unassigned operations are acceptable**: if not everything fits in
   the day, the leftover moves to the next day. Operations can carry a
   **priority** so that the planner controls which ones are dropped
@@ -264,3 +286,9 @@ can be expressed exactly (see the analysis document).
 8. **Unloading at the company.** Typical duration of a company visit
    (fixed part plus a per-container part), and whether the company has
    opening hours that constrain it.
+9. **No-go areas.** Which areas exactly, and are they really the same
+   for the multiban chico and the poliban chico? Is any area closed to
+   a truck type on its own (a poliban in a narrow centre, say), and are
+   any of them closed only at certain hours? The first two answers cost
+   nothing to apply; a per-truck-type area costs one more routing
+   dataset, and a time-dependent one is not supported at all.

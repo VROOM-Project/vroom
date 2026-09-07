@@ -1,5 +1,5 @@
 {
-  "_comment": "Starting values for the waste transport planner UI. Companion to waste_rules.json: that file holds what the trucks and chicos are physically allowed to carry (fixed), this one holds what the planner may change from day to day. Everything but the solver block and the chico costs is editable in the planner's Config tab; edits live in the browser only, so change this file to move the defaults. The solver block has no UI at all and is only set here. Times are local HH:MM, durations are minutes. Read by frontend/public/waste_model.js through frontend/server.js (/defaults.js).",
+  "_comment": "Starting values for the waste transport planner UI. Companion to waste_rules.json, which holds what the trucks and chicos are physically allowed to carry (fixed), and to no_go_zones.json, which holds the areas some of them may not drive through; this one holds what the planner may change from day to day. Everything but the solver block and the chico costs is editable in the planner's Config tab; edits live in the browser only, so change this file to move the defaults. The solver block has no UI at all and is only set here. Times are local HH:MM, durations are minutes. Read by frontend/public/waste_model.js through frontend/server.js (/defaults.js).",
   "company": {
     "lat": 37.030558,
     "lng": -7.976093,
