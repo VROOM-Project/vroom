@@ -30,6 +30,11 @@
 // offered both with and without a chico, and a VROOM vehicle group caps
 // the number of vehicles used at the number of physical trucks.
 //
+// Costs (docs/waste_defaults.json, "costs" block) are what the solver
+// minimises once it has decided what gets done. In money, a route costs
+// the road it burns and nothing else; see COST_MODEL below for why, and
+// solverPerKm for how money turns into what VROOM is actually given.
+//
 // No-go zones (docs/no_go_zones.json, third argument of create, exposed
 // in the browser as window.WASTE_ZONES) are areas some vehicles may not
 // drive through. VROOM only ever sees travel times, so a zone is not a
@@ -51,6 +56,38 @@
     sell_materials: { label: "Sell materials (full container)", short: "materials", needsSize: true },
   };
 
+  // ---------- the cost model ----------
+  //
+  //   cost(route) = chico multiplier x cost per km of the truck type x km
+  //                 + REFERENCE_PER_HOUR x driving hours
+  //
+  // The first term is the company's real cost: the drivers are salaried
+  // by the month, so their time is spent whether a truck goes out or
+  // not and pricing it would trade fuel against money already gone.
+  // Time is a hard limit (the working day, the lunch break, any cap in
+  // `limits`), not a price. Service time is not priced either
+  // (per_task_hour is 0), and no vehicle carries a fixed cost.
+  //
+  // The second term is not a business cost and is not editable. It has
+  // to be there: VROOM derives its internal "unreachable" sentinel from
+  // per_hour alone (`_cost_upper_bound`, see Input::set_matrices in
+  // src/structures/vroom/input/input.cpp), so with per_hour at 0 an
+  // impossible job/vehicle pair evaluates cheaper than a possible one
+  // and both the regret heuristic and insertion ranking go blind. It
+  // never biases which truck is used, being identical on all of them;
+  // it only mildly prefers less driving between otherwise equal plans.
+  const REFERENCE_PER_HOUR = 3600;
+
+  // Money never reaches the solver. Only the ratios between the
+  // configurations decide which truck drives, while the absolute level
+  // decides something else entirely: how completely the term above is
+  // drowned out. So the money figures are normalised, the dearest
+  // configuration landing here. Measured on a 20-operation day, the
+  // plan found is identical for a dearest-configuration value anywhere
+  // between roughly 700 and 10000 and degrades outside that, this
+  // sitting in the middle of the safe range.
+  const COST_SCALE = 3000;
+
   // Fallbacks for every value docs/waste_defaults.json may set, so the
   // model still works when it is called without them.
   const BUILTIN_DEFAULTS = {
@@ -59,7 +96,9 @@
     chicos: {},
     working_day: { start: "08:00", end: "17:00", lunch_start: "12:00", lunch_end: "13:00" },
     operation_times_min: { client_per_container: 10, company_per_visit: 5, company_per_container: 5 },
-    solver: { geometry: true, show_request: false },
+    costs: { currency: "\u20ac", per_km: {}, chico_multiplier: {} },
+    limits: { max_travel_time_min: 0, max_distance_km: 0, max_tasks: 0 },
+    solver: { geometry: true, exploration_level: 5, threads: 4, show_request: false },
   };
 
   // Fallback when no zone file is given: a single unrestricted profile,
@@ -86,6 +125,11 @@
   function nonNegativeInt(value, fallback) {
     const n = Number(value);
     return isFinite(n) && n >= 0 ? Math.floor(n) : fallback;
+  }
+
+  function nonNegativeNumber(value, fallback) {
+    const n = Number(value);
+    return isFinite(n) && n >= 0 ? n : fallback;
   }
 
   function create(rules, defaults, zoneConfig) {
@@ -119,6 +163,35 @@
       };
     }
     const CHICO_ORDER = Object.keys(CHICO_TYPES);
+
+    // Every vehicle configuration the planner can put on the road: a
+    // truck type on its own, and the same type with each chico that
+    // fits it. Keys use the selector vocabulary of no_go_zones.json
+    // ("truck:<type>", "chico:<key>") and address a configuration in
+    // the costs of waste_defaults.json. A chico attaches to exactly one
+    // truck type, so "chico:<key>" names the pair on its own.
+    const VEHICLE_CONFIGS = [];
+    for (const type of TYPE_ORDER) {
+      VEHICLE_CONFIGS.push({
+        key: `truck:${type}`,
+        label: TRUCK_TYPES[type].label,
+        type,
+        chico: null,
+      });
+      for (const k of CHICO_ORDER) {
+        if (CHICO_TYPES[k].attachesTo !== type) continue;
+        VEHICLE_CONFIGS.push({
+          key: `chico:${k}`,
+          label: `${TRUCK_TYPES[type].label} + chico`,
+          type,
+          chico: k,
+        });
+      }
+    }
+
+    function configKeyOf(type, chico) {
+      return chico ? `chico:${chico}` : `truck:${type}`;
+    }
 
     // ---------- no-go zones and routing profiles ----------
     // A zone is an area a routing profile may not enter. It is enforced
@@ -328,13 +401,79 @@
       return chicos;
     }
 
-    // Fixed cost charged once when a truck goes out with this chico
-    // (VROOM's costs.fixed, same unit as the other costs: one hour of
-    // driving is 3600). Set in docs/waste_defaults.json; 0 lets the
-    // solver take a chico whenever it helps.
-    function chicoCost(chicoKey) {
-      const entry = (D.chicos || {})[chicoKey];
-      return nonNegativeInt(entry && typeof entry === "object" ? entry.cost : 0, 0);
+    // ---------- costs ----------
+    // What a route costs the company, in money:
+    //   {currency, per_km: {<truck type>: money},
+    //             chico_multiplier: {<chico key>: factor}}
+    // A truck type missing a price costs 1 a kilometre and a chico
+    // without a multiplier costs its truck nothing extra, so a defaults
+    // file that says nothing about costs behaves as it did before they
+    // existed.
+    function defaultCosts() {
+      const src = D.costs || {};
+      const perKm = {};
+      for (const type of TYPE_ORDER) {
+        perKm[type] = nonNegativeNumber((src.per_km || {})[type], 1);
+      }
+      const multiplier = {};
+      for (const key of CHICO_ORDER) {
+        multiplier[key] = nonNegativeNumber((src.chico_multiplier || {})[key], 1);
+      }
+      return {
+        currency: src.currency || BUILTIN_DEFAULTS.costs.currency,
+        per_km: perKm,
+        chico_multiplier: multiplier,
+      };
+    }
+
+    // What one kilometre costs for one vehicle configuration, in money:
+    // its truck type's price, times its chico's multiplier if it has
+    // one. This is the number to report a plan's cost with.
+    function moneyPerKm(configKey, costs) {
+      const c = costs || defaultCosts();
+      const cfg = VEHICLE_CONFIGS.find((v) => v.key === configKey);
+      if (!cfg) return 0;
+      const base = nonNegativeNumber((c.per_km || {})[cfg.type], 0);
+      const factor = cfg.chico
+        ? nonNegativeNumber((c.chico_multiplier || {})[cfg.chico], 1)
+        : 1;
+      return base * factor;
+    }
+
+    // The money figures as VROOM wants them: one non-negative integer
+    // per configuration, normalised so the dearest lands on COST_SCALE
+    // and the rest keep their ratios to it. A configuration that costs
+    // something is never rounded down to 0, which would make it free to
+    // drive; if nothing costs anything, every per_km is 0 and the plan
+    // is decided by the reference term alone.
+    function solverPerKm(costs) {
+      const money = {};
+      let dearest = 0;
+      for (const cfg of VEHICLE_CONFIGS) {
+        money[cfg.key] = moneyPerKm(cfg.key, costs);
+        dearest = Math.max(dearest, money[cfg.key]);
+      }
+
+      const out = {};
+      for (const cfg of VEHICLE_CONFIGS) {
+        out[cfg.key] = dearest > 0 && money[cfg.key] > 0
+          ? Math.max(1, Math.round((money[cfg.key] / dearest) * COST_SCALE))
+          : 0;
+      }
+      return out;
+    }
+
+    // Hard caps per truck, unlike the costs above: a route breaking one
+    // of them is not a plan at all. 0 means no limit and the key is
+    // then left out of the request. Returned in VROOM's units
+    // (seconds, metres) rather than the file's (minutes, km).
+    function defaultLimits() {
+      const src = D.limits || {};
+      return {
+        maxTravelTime: minutesToSeconds(src.max_travel_time_min, 0),
+        maxDistance: Math.round(nonNegativeNumber(src.max_distance_km, 0) * 1000),
+        maxTasks: nonNegativeInt(src.max_tasks, 0),
+      };
     }
 
     function defaultTimes() {
@@ -378,13 +517,21 @@
     //   fleet        {small: n, multiban: n, poliban: n}
     //   chicos       {multiban: n, poliban: n}      chicos available
     //   times        see defaultTimes()
-    //   geometry     bool
+    //   costs        see defaultCosts()
+    //   limits       see defaultLimits()
+    //   geometry     bool                          vroom's -g
+    //   exploration  0..5                          vroom's -x
+    //   threads      int                           vroom's -t
     // Returns {request, stepInfo, vehicleInfo}: stepInfo maps step ids
     // to a description, vehicleInfo maps vehicle ids to {type, chico}.
-    function buildRequest({ depot, operations, fleet, chicos, times, geometry }) {
+    function buildRequest({ depot, operations, fleet, chicos, times, costs, limits,
+                            geometry, exploration, threads }) {
       fleet = Object.assign(defaultFleet(), fleet || {});
       chicos = Object.assign(defaultChicos(), chicos || {});
       times = Object.assign(defaultTimes(), times || {});
+      costs = costs || defaultCosts();
+      limits = Object.assign(defaultLimits(), limits || {});
+      const perKm = solverPerKm(costs);
       const company = [depot.lng, depot.lat];
 
       const vehicles = [];
@@ -399,6 +546,15 @@
         // its travel times and its drawn route go through the areas it
         // is not allowed in.
         const profile = profileFor({ type, chico });
+        // The whole cost of this configuration is its road: the
+        // reference per_hour (see REFERENCE_PER_HOUR, it is the same on
+        // every vehicle and is not a business cost), no task cost, no
+        // fixed cost, and the normalised price of a kilometre. A
+        // configuration priced at nothing sends no per_km at all, which
+        // also spares VROOM the distance matrix.
+        const perKmForVehicle = perKm[configKeyOf(type, chico)];
+        const vehicleCosts = { per_hour: REFERENCE_PER_HOUR, per_task_hour: 0 };
+        if (perKmForVehicle > 0) vehicleCosts.per_km = perKmForVehicle;
         const v = {
           id: vId++,
           description,
@@ -408,9 +564,12 @@
           end: company,
           capacities,
           time_window: [times.dayStart, times.dayEnd],
-          costs: { per_hour: 3600, per_task_hour: 3600 },
+          costs: vehicleCosts,
           ...extra,
         };
+        if (limits.maxTravelTime > 0) v.max_travel_time = limits.maxTravelTime;
+        if (limits.maxDistance > 0) v.max_distance = limits.maxDistance;
+        if (limits.maxTasks > 0) v.max_tasks = limits.maxTasks;
         // With no zone at all, no vehicle and no task carries a skill.
         const zoneSkills = zoneSkillsOfProfile(profile);
         if (ZONES.length) v.skills = zoneSkills;
@@ -450,11 +609,11 @@
         }
         for (const [chicoKey, count] of Object.entries(offered)) {
           const caps = chicoCapacitiesFor(chicoKey);
-          const cost = chicoCost(chicoKey);
           for (let i = 1; i <= count; i++) {
+            // What taking this chico costs is its "chico:<key>" entry in
+            // the costs, applied by addVehicle like any other override.
             const v = addVehicle(type, `${label} + chico ${i}`, caps, chicoKey, {
               groups,
-              costs: { fixed: cost, per_hour: 3600, per_task_hour: 3600 },
             });
             vehicleInfo[v.id] = { type, chico: chicoKey, profile: v.profile };
           }
@@ -532,7 +691,20 @@
         }
       }
 
-      const request = { vehicles, shipments, options: { g: !!geometry } };
+      // vroom-express turns these into command-line flags, for the ones
+      // its config.yml allows to be overridden (vroom-conf/config.yml,
+      // "override"). A distance cap needs distances to exist at all,
+      // which -g guarantees; a non-zero per_km asks for them on its own
+      // (Input::_profiles_requiring_distances), a max_distance does not.
+      const options = { g: !!geometry || limits.maxDistance > 0 };
+      if (exploration !== undefined && exploration !== null) {
+        options.x = Math.max(0, Math.min(5, nonNegativeInt(exploration, 5)));
+      }
+      if (threads !== undefined && threads !== null) {
+        options.t = Math.max(1, nonNegativeInt(threads, 4));
+      }
+
+      const request = { vehicles, shipments, options };
       if (vehicleGroups.length) request.vehicle_groups = vehicleGroups;
       return { request, stepInfo, vehicleInfo };
     }
@@ -614,8 +786,10 @@
       SIZES, KINDS, TRUCK_TYPES, TYPE_ORDER, CHICO_TYPES, CHICO_ORDER,
       OPERATION_TYPES, COMPANY, SOLVER_DEFAULTS,
       ZONES, PROFILES, DEFAULT_PROFILE,
+      REFERENCE_PER_HOUR, COST_SCALE, VEHICLE_CONFIGS,
       parseLoad, oneHot, capacitiesFor, chicoCapacitiesFor, sizesFor,
-      defaultFleet, defaultChicos, chicoCost, chicosOffered, defaultTimes,
+      defaultFleet, defaultChicos, chicosOffered, defaultTimes,
+      defaultCosts, moneyPerKm, solverPerKm, defaultLimits, configKeyOf,
       profileFor, pointInZone, zonesAt, blockedProfilesAt, describeProfiles,
       opIdOfStep, describe, buildRequest, validate,
     };

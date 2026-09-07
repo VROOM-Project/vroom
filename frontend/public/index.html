@@ -288,6 +288,24 @@
   .map-toggle a { display: grid !important; place-items: center; }
   #map.muted .leaflet-tile-pane { filter: saturate(.38) brightness(1.07) contrast(.93); }
 
+  /* ========================== costs tab ========================== */
+  #costPerKm li .name, #costChico li .name { font-weight: 600; flex: 1; }
+  #costPerKm li .unit, #costChico li .unit { color: var(--ink-3); font-size: 11.5px; }
+  #costPerKm li input[type=number], #costChico li input[type=number] { width: 68px; text-align: right; }
+
+  .formula { font-size: 12px; line-height: 1.5; color: var(--ink-2); background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 8px 9px; }
+  .formula b { color: var(--ink); font-weight: 650; }
+  .formula .muted { color: var(--ink-3); }
+  .formula table { border-collapse: collapse; width: 100%; margin: 2px 0 6px; }
+  .formula td { padding: 1px 0; }
+  .formula td.n { text-align: right; font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 600; }
+  .formula td.raw { text-align: right; width: 52px; color: var(--ink-3); font-weight: 400; }
+  .formula .warn { color: var(--warn); }
+
+  ol.rank { margin: 0; padding-left: 17px; font-size: 12.5px; color: var(--ink-2); }
+  ol.rank li { margin: 4px 0; }
+  ol.rank b { color: var(--ink); font-weight: 650; }
+
   @media (max-width: 860px) {
     #app { flex-direction: column; }
     #side { width: 100%; height: 56%; border-right: 0; border-bottom: 1px solid var(--line); }
@@ -311,6 +329,7 @@
       <div class="tabs">
         <button class="active" data-tab="solve">Plan</button>
         <button data-tab="zones">Zones</button>
+        <button data-tab="costs">Costs</button>
         <button data-tab="config">Config</button>
       </div>
     </header>
@@ -373,6 +392,62 @@
         <div class="hint" id="drawHint">Click on the map to place the corners of the area, then Finish (or double-click the last corner). At least three corners.</div>
         <ul id="zones" class="list"></ul>
         <div class="hint">Tick which vehicles an area is closed to. Areas are stored in <code>docs/no_go_zones.json</code> and saved as soon as they change, so they are shared with everyone using this planner — unlike the Config tab, which only changes this browser. To reshape an area, delete it and draw it again.</div>
+      </fieldset>
+    </div>
+
+    <!-- ===== Costs tab ===== -->
+    <!-- What the solver minimises once it has decided what gets done.
+         Cost is the third criterion solutions are ranked by, after the
+         priority sum and the number of operations assigned, so nothing
+         here makes an operation more or less likely to be done: it
+         chooses between plans that do the same work. Starting values
+         come from the "costs", "limits" and "solver" blocks of
+         docs/waste_defaults.json; edits live in this browser and reach
+         the solver on the next Plan. -->
+    <div class="panel" id="tab-costs" hidden>
+      <fieldset>
+        <legend>Cost per kilometre</legend>
+        <ul id="costPerKm" class="list"></ul>
+        <div class="hint">What a kilometre of that truck really costs the company: fuel, tyres, wear, everything that scales with the road. Trucks of one type are identical, so this is per type. Only the differences between the types decide which truck drives.</div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Chico</legend>
+        <ul id="costChico" class="list"></ul>
+        <div class="hint">What attaching a chico does to that truck's cost per kilometre: 1.25 means a quarter dearer with the trailer on. At 1 the solver takes a chico whenever it saves kilometres. Hitching time is time, and time is not priced.</div>
+      </fieldset>
+
+      <fieldset>
+        <legend>What the solver is told</legend>
+        <div class="formula" id="costFormula"></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Limits per truck</legend>
+        <label><span>Max driving time (min)</span><input id="maxTravelTime" type="number" min="0" step="1" value="0" /></label>
+        <label><span>Max distance (km)</span><input id="maxDistance" type="number" min="0" step="1" value="0" /></label>
+        <label><span>Max tasks</span><input id="maxTasks" type="number" min="0" step="1" value="0" /></label>
+        <div class="hint">Hard caps, not costs: a route breaking one of them is not a plan at all, so operations get left for tomorrow rather than made expensive. 0 means no limit. A task is one shipment step, not one operation: an exchange is four (load the empty and drop the full at the company, leave the empty and take the full at the client).</div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Search</legend>
+        <label><span>Exploration level (0–5)</span><input id="explorationLevel" type="number" min="0" max="5" step="1" value="5" /></label>
+        <label><span>Threads</span><input id="threads" type="number" min="1" max="32" step="1" value="4" /></label>
+        <label><span>Follow the roads</span><input id="geometry" type="checkbox" checked /></label>
+        <div class="hint">Exploration is how hard the solver looks: 5 is the best plan and the slowest, 0 the quickest. Following the roads asks for the driven route (vroom's -g) so the map draws real streets and kilometres are reported; without it the map draws straight lines. A per km cost or a distance limit needs it and turns it on by itself.</div>
+      </fieldset>
+
+      <fieldset>
+        <legend>How the solver ranks plans</legend>
+        <ol class="rank">
+          <li><b>Priority</b> — the total priority of the operations done.</li>
+          <li><b>Operations done</b> — the most, whatever they cost.</li>
+          <li><b>Cost</b> — the kilometres, priced per truck above.</li>
+          <li><b>Trucks used</b>, then <b>driving time</b>, then <b>distance</b>.</li>
+        </ol>
+        <div class="hint">Each line only speaks when the ones above it are tied, so cost never drops an operation to save money. Nothing prices the drivers' time: they are paid by the month whether a truck goes out or not, so the plan cannot spend it and does not try to save it. Their day is a limit instead — the working hours in Config, and the caps below.</div>
+        <div class="btn-row"><button id="resetCosts">Back to the defaults</button></div>
       </fieldset>
     </div>
 
@@ -441,6 +516,9 @@ let chicos = M.defaultChicos();
 const COLORS = ["#2563eb", "#dc2626", "#059669", "#d97706", "#7c3aed", "#0891b2", "#db2777", "#65a30d"];
 let lastRequestVehicles = [];
 let lastVehicleInfo = {};
+// Prices the last plan was made with, so its cost can be reported in
+// money even if the boxes change afterwards.
+let lastCosts = null;
 
 // ---------- look of an operation: colour + glyph on a 16x16 grid ----------
 const OP_STYLE = {
@@ -1156,6 +1234,143 @@ function setStatus(msg, state = "") {
   el.className = state;
 }
 
+// ---------- costs (costs tab) ----------
+// A plan costs what its trucks burn on the road, and nothing else: the
+// drivers are salaried by the month, so their time is spent whether a
+// truck goes out or not. The planner types real money per kilometre and
+// the model turns it into what VROOM wants (see solverPerKm in
+// waste_model.js). Everything is read straight off the inputs when a
+// request is built, so a change reaches the solver on the next Plan
+// with nothing to save.
+const CURRENCY = M.defaultCosts().currency;
+
+function readCosts() {
+  const costs = { currency: CURRENCY, per_km: {}, chico_multiplier: {} };
+  for (const type of M.TYPE_ORDER) costs.per_km[type] = numberOf(`costkm-${type}`);
+  for (const key of M.CHICO_ORDER) costs.chico_multiplier[key] = numberOf(`chicomul-${key}`);
+  return costs;
+}
+
+function readLimits() {
+  return {
+    maxTravelTime: numberOf("maxTravelTime") * 60,
+    maxDistance: Math.round(numberOf("maxDistance") * 1000),
+    maxTasks: numberOf("maxTasks"),
+  };
+}
+
+function readSearch() {
+  return {
+    geometry: document.getElementById("geometry").checked,
+    exploration: Math.max(0, Math.min(5, numberOf("explorationLevel"))),
+    threads: Math.max(1, numberOf("threads")),
+  };
+}
+
+function money(value) {
+  return `${CURRENCY}${value.toFixed(2)}`;
+}
+
+// A plan drawn with the old prices would sit there looking current, so
+// any change clears it; the prices themselves are picked up by the next
+// Plan.
+function onCostChange() {
+  routeLayer.clearLayers();
+  document.getElementById("summary").innerHTML = "";
+  refreshCostHints();
+}
+
+// Money never reaches the solver, only the ratios between the
+// configurations do. Showing both keeps that honest: what a kilometre
+// costs, and the integer VROOM is handed for it.
+function refreshCostHints() {
+  const costs = readCosts();
+  const perKm = M.solverPerKm(costs);
+  const rows = M.VEHICLE_CONFIGS
+    .map((cfg) => `<tr><td>${esc(cfg.label)}</td>` +
+      `<td class="n">${esc(money(M.moneyPerKm(cfg.key, costs)))}/km</td>` +
+      `<td class="raw">${perKm[cfg.key]}</td></tr>`)
+    .join("");
+
+  const priced = M.VEHICLE_CONFIGS.some((cfg) => M.moneyPerKm(cfg.key, costs) > 0);
+  const note = priced
+    ? `<span class="muted">The right-hand column is what VROOM is given: the same numbers rescaled, ` +
+      `since only their ratios decide which truck drives. A route also carries a small charge for its ` +
+      `driving time, the same on every truck, which the solver needs internally and which no plan can escape.</span>`
+    : `<span class="warn">Nothing costs anything, so every plan that does the same operations is worth ` +
+      `the same and the solver falls back on driving time and the fewest trucks. Price at least one truck.</span>`;
+
+  document.getElementById("costFormula").innerHTML = `<table>${rows}</table>${note}`;
+}
+
+// Rendered from M.TYPE_ORDER and M.CHICO_ORDER, so a new truck type or
+// chico in waste_rules.json shows up here without touching this file.
+function renderCosts() {
+  const defaults = M.defaultCosts();
+
+  const kmList = document.getElementById("costPerKm");
+  kmList.innerHTML = "";
+  for (const type of M.TYPE_ORDER) {
+    const li = document.createElement("li");
+    const name = document.createElement("span");
+    name.className = "name";
+    name.textContent = M.TRUCK_TYPES[type].label;
+    const unit = document.createElement("span");
+    unit.className = "unit";
+    unit.textContent = `${CURRENCY} per km`;
+    const input = document.createElement("input");
+    input.type = "number"; input.min = "0"; input.step = "0.01";
+    input.id = `costkm-${type}`;
+    input.value = defaults.per_km[type];
+    input.oninput = onCostChange;
+    li.append(name, unit, input);
+    kmList.appendChild(li);
+  }
+
+  const chicoList = document.getElementById("costChico");
+  chicoList.innerHTML = "";
+  for (const key of M.CHICO_ORDER) {
+    const c = M.CHICO_TYPES[key];
+    const li = document.createElement("li");
+    const name = document.createElement("span");
+    name.className = "name";
+    name.textContent = c.label;
+    name.title = `attaches to a ${M.TRUCK_TYPES[c.attachesTo].label.toLowerCase()}`;
+    const unit = document.createElement("span");
+    unit.className = "unit";
+    unit.textContent = "x cost per km";
+    const input = document.createElement("input");
+    input.type = "number"; input.min = "0"; input.step = "0.05";
+    input.id = `chicomul-${key}`;
+    input.value = defaults.chico_multiplier[key];
+    input.oninput = onCostChange;
+    li.append(name, unit, input);
+    chicoList.appendChild(li);
+  }
+
+  const limits = M.defaultLimits();
+  document.getElementById("maxTravelTime").value = limits.maxTravelTime / 60;
+  document.getElementById("maxDistance").value = limits.maxDistance / 1000;
+  document.getElementById("maxTasks").value = limits.maxTasks;
+
+  document.getElementById("explorationLevel").value = M.SOLVER_DEFAULTS.exploration_level;
+  document.getElementById("threads").value = M.SOLVER_DEFAULTS.threads;
+  document.getElementById("geometry").checked = !!M.SOLVER_DEFAULTS.geometry;
+
+  for (const id of ["maxTravelTime", "maxDistance", "maxTasks", "explorationLevel", "threads"]) {
+    document.getElementById(id).oninput = onCostChange;
+  }
+  document.getElementById("geometry").onchange = onCostChange;
+
+  refreshCostHints();
+}
+
+document.getElementById("resetCosts").onclick = () => {
+  renderCosts();
+  onCostChange();
+  setStatus("Costs back to the values of docs/waste_defaults.json.");
+};
+
 // ---------- VROOM request ----------
 function secondsOf(inputId) {
   const [h, m] = (document.getElementById(inputId).value || "0:0").split(":").map(Number);
@@ -1178,9 +1393,13 @@ function readTimes() {
 }
 
 function buildRequest() {
+  const search = readSearch();
   return M.buildRequest({
     depot, operations, fleet, chicos, times: readTimes(),
-    geometry: M.SOLVER_DEFAULTS.geometry,
+    costs: readCosts(), limits: readLimits(),
+    geometry: search.geometry,
+    exploration: search.exploration,
+    threads: search.threads,
   });
 }
 
@@ -1269,6 +1488,17 @@ function showSolution(sol, stepInfo) {
       <ol>${items.join("")}</ol></details>`);
   });
 
+  // What the day costs in money: every route's kilometres at the price
+  // of the truck that drove them. The solver's own cost figure is a
+  // rescaled internal number, kept on hover for debugging.
+  let runningCost = 0;
+  let costKnown = routes.length > 0;
+  for (const r of routes) {
+    const info = lastVehicleInfo[r.vehicle] || {};
+    if (r.distance == null) { costKnown = false; break; }
+    runningCost += M.moneyPerKm(M.configKeyOf(info.type, info.chico), lastCosts) * (r.distance / 1000);
+  }
+
   const s = sol.summary || {};
   const ct = s.computing_times ? `${s.computing_times.loading + s.computing_times.solving} ms` : "–";
   const unassignedTitle = unassignedOps.size ? ` title="operations ${[...unassignedOps].sort((a, b) => a - b).join(", ")}"` : "";
@@ -1278,7 +1508,7 @@ function showSolution(sol, stepInfo) {
       <div><span class="k">Chicos</span><span class="v">${chicosUsed}<span class="v muted" style="display:inline;font-size:12px"> / ${chicosTotal}</span></span></div>
       <div><span class="k">Driving</span><span class="v">${s.duration != null ? fmtDuration(s.duration) : "–"}</span></div>
       <div><span class="k">Distance</span><span class="v">${s.distance != null ? (s.distance / 1000).toFixed(1) + " km" : "–"}</span></div>
-      <div><span class="k">Cost</span><span class="v">${s.cost ?? "–"}</span></div>
+      <div title="solver cost ${s.cost ?? "–"}"><span class="k">Cost</span><span class="v">${costKnown ? esc(money(runningCost)) : "–"}</span></div>
       <div${unassignedTitle}><span class="k">Unassigned</span><span class="v ${unassignedOps.size ? "bad" : "muted"}">${unassignedOps.size}</span></div>
       <div><span class="k">Solved in</span><span class="v muted">${ct}</span></div>
     </div>
@@ -1301,6 +1531,7 @@ document.getElementById("solve").onclick = async () => {
   const { request, stepInfo, vehicleInfo } = buildRequest();
   lastRequestVehicles = request.vehicles;
   lastVehicleInfo = vehicleInfo;
+  lastCosts = readCosts();
   document.getElementById("summary").innerHTML = "";
   setStatus("Planning…", "busy");
   document.getElementById("solve").disabled = true;
@@ -1393,6 +1624,7 @@ function setCompany({ lat, lng }) {
 
 applyDefaults();
 renderFleet();
+renderCosts();
 renderZones();
 refreshZoneState();
 renderPoints();

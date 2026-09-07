@@ -12,14 +12,12 @@
     "poliban": 3
   },
   "chicos": {
-    "_comment": "chico attachments available on a normal day; keys are the chico types of waste_rules.json. count: how many the company has (never more are offered than trucks of the matching type). cost: fixed cost charged once when a truck goes out with the chico, in the solver's cost unit where one hour of driving is 3600 (e.g. 1800 = half an hour of hitching); 0 lets the solver take a chico whenever it helps. Not editable in the UI.",
+    "_comment": "chico attachments available on a normal day; keys are the chico types of waste_rules.json. count: how many the company has (never more are offered than trucks of the matching type). What taking one costs the plan is part of the cost model, under costs.by_vehicle[\"chico:<key>\"].",
     "multiban": {
-      "count": 4,
-      "cost": 0
+      "count": 4
     },
     "poliban": {
-      "count": 1,
-      "cost": 0
+      "count": 1
     }
   },
   "working_day": {
@@ -34,9 +32,32 @@
     "company_per_visit": 10,
     "company_per_container": 10
   },
+  "costs": {
+    "_comment": "What a plan costs the company, in money. The only thing that varies with the plan is what the trucks burn on the road, so the cost of a route is (chico multiplier) x (cost per km of the truck type) x km. Nothing else is priced: the drivers are on a monthly salary, so their time is spent whether a truck goes out or not, and pricing it would trade real fuel against money already gone. Time is still a hard limit through the working day of a truck, it just costs nothing. Editable in the planner's Costs tab; edits live in the browser only, so change this file to move the defaults.",
+    "currency": "\u20ac",
+    "per_km": {
+      "_comment": "cost of one kilometre for each truck type of waste_rules.json: fuel, tyres, wear, everything that scales with the road. Only the differences between the types decide which truck drives; the absolute level is handled by the planner (see solverPerKm in frontend/public/waste_model.js). The values below are placeholders, all equal, which makes every type cost the same per km: replace them with the company's real figures.",
+      "small": 0.40,
+      "multiban": 0.65,
+      "poliban": 0.80
+    },
+    "chico_multiplier": {
+      "_comment": "what attaching a chico does to that truck's cost per km, per chico type of waste_rules.json: 1.25 means a quarter dearer with the trailer on. 1 lets the solver take a chico whenever it saves kilometres, which is the behaviour before this had a value.",
+      "multiban": 1.8,
+      "poliban": 1.8
+    }
+  },
+  "limits": {
+    "_comment": "Hard caps per truck, not costs: a route breaking one of them is not a plan at all, whereas a cost only makes it less attractive. 0 means no limit. max_tasks counts VROOM tasks, i.e. shipment steps, not planner operations: an exchange is four of them (two pickups and two deliveries). Editable in the Costs tab.",
+    "max_travel_time_min": 0,
+    "max_distance_km": 0,
+    "max_tasks": 0
+  },
   "solver": {
-    "_comment": "not shown in the planner UI; edit here. geometry: ask the solver for the driven route (vroom's -g) so the map follows the roads and distances are reported, off draws straight lines between stops. show_request: append the JSON sent to the solver under the summary, for debugging.",
+    "_comment": "geometry, exploration_level and threads are in the planner's Costs tab; show_request has no UI and is only set here. geometry: ask the solver for the driven route (vroom's -g) so the map follows the roads and distances are reported, off draws straight lines between stops. exploration_level: vroom's -x, 0 (fastest) to 5 (best); vroom-conf/config.yml holds the server's own default and this overrides it per request. threads: vroom's -t. show_request: append the JSON sent to the solver under the summary, for debugging.",
     "geometry": true,
+    "exploration_level": 5,
+    "threads": 4,
     "show_request": false
   }
 }

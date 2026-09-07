@@ -41,9 +41,9 @@ the real problem is not modelled and needs a post-check.
 | Start time, finishing time | vehicle `time_window` | native |
 | Lunch break | vehicle `breaks` | native |
 | Leave operations for tomorrow, with priorities | `priority`, `unassigned` output | native |
-| Objective: most operations, then time, then km | solution ranking + `costs` | native |
+| Objective: most operations, then the cost of the kilometres driven | solution ranking + `costs`, priced per truck type in the planner's Costs tab | native |
 | New operation mid-day | re-run with current state as input, travel times from OSRM, `steps` warm start | supported by a re-planning procedure, not by a live mode |
-| Chico (trailer) on a multiban or poliban, decided by the solver | each truck listed twice (plain and with chico, own `capacities` and `costs`), `vehicle_groups` caps the vehicles used at the number of trucks | native with the extension |
+| Chico (trailer) on a multiban or poliban, decided by the solver | each truck listed twice (plain and with chico, own `capacities` and a multiplier on its `per_km`), `vehicle_groups` caps the vehicles used at the number of trucks | native with the extension |
 | Areas a truck may not drive through | not a solver constraint at all: one routing `profile` per restricted vehicle, served by an OSRM dataset where those roads are unusable | native, outside the solver (see [No-go areas](#no-go-areas)) |
 | Order of stacking | not needed: operators reorder on site | not a constraint |
 | Leave-empty and pick-full at the same client done by the same truck in one visit | none | **gap**: usually happens through cost, not guaranteed |
@@ -271,11 +271,15 @@ group stay allowed, since they do not change the count). Because
 chico vehicles are only `min(chicos, trucks)`, the chico count is
 enforced by construction.
 
-The chico vehicles carry `costs.fixed` = the chico cost from
-[waste_defaults.json](./waste_defaults.json), charged once when the
-vehicle is used. With a zero cost the solver takes a chico whenever
-it reduces the objective; a positive cost makes it prefer plain
-trucks unless the chico saves more than that.
+What a chico costs is a multiplier on its truck's cost per kilometre
+(`chico_multiplier` in [waste_defaults.json](./waste_defaults.json)):
+the rig burns more fuel per km, and the hitching time is time, which
+the plan does not price. At 1 the solver takes a chico whenever it
+saves kilometres; above it, only when the kilometres saved are worth
+more than the dearer ones driven. Measured on a 14-operation day with
+six multibans and four chicos: at 1 and 1.25 the plan takes two chicos
+and drives 122 km, at 2 it drops them and drives 176 km with plain
+trucks instead.
 
 ### Plan B: alternative capacity vectors in the core (implemented)
 
@@ -342,20 +346,59 @@ Details, file format and the build pipeline are in
 
 VROOM ranks solutions by priority sum, then assigned tasks, then cost,
 then vehicles used, then duration, then distance. This matches the
-stated order (operations first, then time, then km).
+stated order: operations first, then what they cost to drive.
 
 - Give each shipment a `priority` in `[0, 100]` (0 default). Higher
   values are dropped last. Both steps of a shipment must carry the
   same priority.
-- Cost: with `costs.per_hour` = 3600 (default) the cost is travel
-  time; add `costs.per_task_hour` = 3600 to make it total working
-  time (travel + service). Add a small `costs.per_km` to break ties on
-  kilometres (this requires distances: `-g`, or `distances` in the
-  custom matrices).
+- **What a plan costs the company** is the road its trucks burn, and
+  nothing else. The drivers are on a monthly salary, so their time is
+  spent whether a truck goes out or not: pricing it would trade real
+  fuel against money already gone, and a plan using one more driver to
+  save kilometres is the better plan. Time is a hard limit instead
+  (the working day, the lunch break, the caps in `limits`), never a
+  price. So no vehicle carries a `fixed` cost, `per_task_hour` is 0,
+  and `route_duration_quadratic` (the extension of this fork in
+  [route-duration-quadratic.patch](../vroom-custom/route-duration-quadratic.patch))
+  is not used, though the patch stays in the build.
+- The planner therefore states one figure per truck type, the **cost
+  of a kilometre** in money, and one **multiplier per chico**: with the
+  trailer on, that truck's kilometre costs multiplier times as much.
+  A route costs `multiplier x cost per km of the type x km`. Both live
+  in the `costs` block of [waste_defaults.json](./waste_defaults.json)
+  and are edited in the planner's **Costs** tab, which also carries
+  the per-truck hard caps (`max_travel_time`, `max_distance`,
+  `max_tasks`) and the search settings below.
+- **Money never reaches the solver.** Only the ratios between the
+  configurations decide which truck drives; the absolute level decides
+  something else entirely, and one thing forces it. VROOM derives its
+  internal "unreachable" sentinel from `per_hour` alone
+  (`_cost_upper_bound` in
+  [input.cpp](../src/structures/vroom/input/input.cpp)), so `per_hour`
+  cannot be 0 or small: with it at 0 an impossible job/vehicle pair
+  evaluates *cheaper* than a possible one and both the regret
+  heuristic and the insertion ranking go blind — quietly, giving worse
+  plans rather than wrong ones. So `per_hour` stays at its default
+  3600 on every vehicle, where it biases nothing (being identical
+  everywhere) beyond mildly preferring less driving between equal
+  plans, and the money figures are normalised instead, the dearest
+  configuration landing on `COST_SCALE`
+  ([waste_model.js](../frontend/public/waste_model.js)). Measured on a
+  20-operation day, the plan found is the same for a dearest value
+  anywhere between roughly 700 and 10000 and degrades outside it;
+  `COST_SCALE` is 3000.
+- A non-zero `per_km` makes VROOM fetch distances on its own
+  (`Input::_profiles_requiring_distances`); `-g` does it too.
+- Cost only ever chooses between plans that do the same work: it sits
+  below the priority sum and the number of assigned tasks in the
+  ranking, and above tie-breaks (vehicles used, duration, distance)
+  that a cost difference almost always settles first.
 - Unassigned operations appear in the `unassigned` output array; they
   are the input of the next day.
 - Latency being a non-issue, run with the highest exploration level
-  (`-x 5`) and several threads (`-t`).
+  (`-x 5`) and several threads (`-t`). The planner sends both as
+  request options (`x`, `t`), which vroom-express applies over the
+  defaults of [config.yml](../vroom-conf/config.yml).
 
 ## Re-planning during the day
 
