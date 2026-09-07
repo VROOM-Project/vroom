@@ -10,6 +10,8 @@ Recomputes the load at every step of every route from the input
 - shipments: pickup before delivery in the same route, both or none
   assigned;
 - skills: a task is only served by a vehicle having all its skills;
+- vehicle groups: no more routes than "max_vehicles" for the vehicles
+  of each "vehicle_groups" entry;
 - every task appears exactly once, either in a route or in
   "unassigned";
 - the "load" arrays reported by VROOM match the recomputation when
@@ -151,6 +153,19 @@ def check(input_data, solution):
     for key, task in tasks.items():
         if key not in seen:
             errors.append(f"{key[0]} {key[1]} neither assigned nor unassigned")
+
+    used = {
+        r["vehicle"]
+        for r in solution.get("routes", [])
+        if any(s.get("type") in ("job", "pickup", "delivery") for s in r.get("steps", []))
+    }
+    for group in input_data.get("vehicle_groups", []):
+        members = [v_id for v_id, v in vehicles.items() if group["id"] in v.get("groups", [])]
+        n = sum(1 for v_id in members if v_id in used)
+        if n > group["max_vehicles"]:
+            errors.append(
+                f"vehicle group {group['id']}: {n} vehicles used, max {group['max_vehicles']}"
+            )
     for s_rank, shipment in enumerate(input_data.get("shipments", [])):
         p = seen.get(("pickup", shipment["pickup"]["id"]))
         d = seen.get(("delivery", shipment["delivery"]["id"]))
@@ -178,7 +193,7 @@ def main(argv):
     if errors:
         print(f"{len(errors)} violation(s) in {argv[2]}")
         return 1
-    print(f"OK: {argv[2]} satisfies capacity, precedence and skills constraints")
+    print(f"OK: {argv[2]} satisfies capacity, precedence, skills and vehicle group constraints")
     return 0
 
 

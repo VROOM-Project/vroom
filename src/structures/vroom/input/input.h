@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <algorithm>
 #include <chrono>
 #include <memory>
 #include <optional>
@@ -21,6 +22,7 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/matrices.h"
 #include "structures/vroom/solution/solution.h"
 #include "structures/vroom/vehicle.h"
+#include "structures/vroom/vehicle_group.h"
 
 namespace vroom {
 
@@ -81,6 +83,12 @@ private:
   bool _all_locations_have_coords{true};
   std::vector<std::vector<Eval>> _jobs_vehicles_evals;
 
+  // Vehicle groups (usage limits), see VehicleGroup. For each vehicle
+  // rank, the ranks of the groups it belongs to.
+  bool _has_vehicle_groups{false};
+  std::unordered_map<Id, Index> _vehicle_group_id_to_rank;
+  std::vector<std::vector<Index>> _vehicle_group_ranks;
+
   // Default vehicle type is NO_TYPE, related to the fact that we do
   // not allow empty types as keys for jobs.
   std::vector<std::string> _vehicle_types{NO_TYPE};
@@ -104,6 +112,8 @@ private:
 
   void run_basic_checks() const;
 
+  void check_vehicle_groups_usage() const;
+
   UserCost check_cost_bound(const Matrix<UserCost>& matrix) const;
 
   void set_skills_compatibility();
@@ -126,6 +136,7 @@ private:
 public:
   std::vector<Job> jobs;
   std::vector<Vehicle> vehicles;
+  std::vector<VehicleGroup> vehicle_groups;
 
   // Store rank in jobs accessible from job/pickup/delivery id.
   std::unordered_map<Id, Index> job_id_to_rank;
@@ -150,7 +161,58 @@ public:
 
   void add_shipment(const Job& pickup, const Job& delivery);
 
+  // Groups must be added before the vehicles that refer to them.
+  void add_vehicle_group(const VehicleGroup& group);
+
   void add_vehicle(const Vehicle& vehicle);
+
+  bool has_vehicle_groups() const {
+    return _has_vehicle_groups;
+  }
+
+  const std::vector<Index>& vehicle_group_ranks(Index v) const {
+    return _vehicle_group_ranks[v];
+  }
+
+  // Whether vehicle groups allow making the (currently empty) route
+  // of vehicle `opened` non-empty, given the current routes in sol.
+  // `closed` is a route (of another vehicle) emptied by the same
+  // move, if any. A vehicle is "used" when its route is not empty.
+  template <class Route>
+  bool vehicle_groups_allow_opening(Index opened,
+                                    std::optional<Index> closed,
+                                    const std::vector<Route>& sol) const {
+    if (!_has_vehicle_groups) {
+      return true;
+    }
+    assert(sol[opened].empty());
+
+    for (const auto g : _vehicle_group_ranks[opened]) {
+      const auto& group = vehicle_groups[g];
+      unsigned used = 0;
+      for (const auto v : group.vehicles) {
+        if (!sol[v].empty() && !(closed.has_value() && v == closed.value())) {
+          ++used;
+        }
+      }
+      if (used >= group.max_vehicles) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // Whether the current routes in sol satisfy all vehicle group
+  // usage limits.
+  template <class Route>
+  bool vehicle_groups_satisfied(const std::vector<Route>& sol) const {
+    return std::ranges::all_of(vehicle_groups, [&sol](const auto& group) {
+      const auto used = std::ranges::count_if(group.vehicles, [&sol](Index v) {
+        return !sol[v].empty();
+      });
+      return used <= group.max_vehicles;
+    });
+  }
 
   void set_durations_matrix(const std::string& profile,
                             Matrix<UserDuration>&& m);

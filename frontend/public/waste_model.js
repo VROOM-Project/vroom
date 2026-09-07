@@ -1,6 +1,7 @@
-// Waste transport model: truck types, loading rules, operation types and
-// the translation of a planner's day (company + operations + fleet) into
-// a VROOM request using the `capacities` extension of this fork.
+// Waste transport model: truck types, loading rules, chico attachments,
+// operation types and the translation of a planner's day (company +
+// operations + fleet) into a VROOM request using the `capacities` and
+// `vehicle_groups` extensions of this fork.
 //
 // The rules themselves live in docs/waste_rules.json (single source of
 // truth) and the planner's starting values in docs/waste_defaults.json
@@ -16,7 +17,15 @@
 // Amount components are container kinds, one-hot per task:
 //   e2 e6 ...  empty containers by size (m3), one per size in rules.sizes
 //   f2 f6 ...  full containers by size
-//   mat        a full truck of materials (nothing else on board)
+// Materials are sold in a container of a standard size that leaves the
+// company full, so for the loading rules they are a full container.
+//
+// Chicos are trailers that attach to a truck type. A truck with a chico
+// carries one allowed load per bed (its own plus `extra_loads` on the
+// chico), any mix. The company has a limited number of chicos and the
+// solver decides which trucks take one: every truck of a type is
+// offered both with and without a chico, and a VROOM vehicle group caps
+// the number of vehicles used at the number of physical trucks.
 (function (root, factory) {
   if (typeof module === "object" && module.exports) module.exports = factory();
   else root.WasteModel = factory();
@@ -24,9 +33,9 @@
   // Planner-facing operation types.
   const OPERATION_TYPES = {
     deliver_empty: { label: "Deliver empty container", short: "deliver empty", needsSize: true },
-    pickup_empty: { label: "Pick up empty container", short: "pick up empty", needsSize: true },
+    pickup_full: { label: "Pick up full container", short: "pick up full", needsSize: true },
     exchange: { label: "Exchange empty for full", short: "exchange", needsSize: true },
-    sell_materials: { label: "Sell materials (full truck)", short: "materials", needsSize: false },
+    sell_materials: { label: "Sell materials (full container)", short: "materials", needsSize: true },
   };
 
   // Fallbacks for every value docs/waste_defaults.json may set, so the
@@ -34,6 +43,7 @@
   const BUILTIN_DEFAULTS = {
     company: { lat: 37.030558, lng: -7.976093 },
     fleet: {},
+    chicos: {},
     working_day: { start: "08:00", end: "17:00", lunch_start: "12:00", lunch_end: "13:00" },
     operation_times_min: { client_per_container: 10, company_per_visit: 5, company_per_container: 5 },
     solver: { geometry: true, show_request: false },
@@ -52,6 +62,11 @@
     return isFinite(n) && n >= 0 ? Math.round(n * 60) : fallback;
   }
 
+  function nonNegativeInt(value, fallback) {
+    const n = Number(value);
+    return isFinite(n) && n >= 0 ? Math.floor(n) : fallback;
+  }
+
   function create(rules, defaults) {
     if (!rules || !rules.trucks || !rules.sizes) {
       throw new Error("waste rules missing: expected {sizes, trucks}");
@@ -61,12 +76,29 @@
     const svc = { ...BUILTIN_DEFAULTS.operation_times_min, ...(D.operation_times_min || {}) };
     const SOLVER_DEFAULTS = { ...BUILTIN_DEFAULTS.solver, ...(D.solver || {}) };
     const SIZES = rules.sizes.slice();
-    const KINDS = [...SIZES.map((s) => `e${s}`), ...SIZES.map((s) => `f${s}`), "mat"];
+    const KINDS = [...SIZES.map((s) => `e${s}`), ...SIZES.map((s) => `f${s}`)];
     const TRUCK_TYPES = {};
     for (const [key, t] of Object.entries(rules.trucks)) {
       TRUCK_TYPES[key] = { label: t.label || key, rules: t.rules.slice() };
     }
     const TYPE_ORDER = Object.keys(TRUCK_TYPES);
+
+    // Chico attachments: which truck type each one fits and how many
+    // extra loads it adds.
+    const CHICO_TYPES = {};
+    for (const [key, c] of Object.entries(rules.chicos || {})) {
+      if (key.startsWith("_")) continue;
+      if (!TRUCK_TYPES[c.attaches_to]) {
+        throw new Error(`chico ${key}: unknown truck type ${c.attaches_to}`);
+      }
+      CHICO_TYPES[key] = {
+        label: c.label || key,
+        attachesTo: c.attaches_to,
+        extraLoads: nonNegativeInt(c.extra_loads, 2),
+      };
+    }
+    const CHICO_ORDER = Object.keys(CHICO_TYPES);
+
     // The company site is a planner setting, not a loading rule: it comes
     // from waste_defaults.json (rules.company is still honoured so older
     // rule files keep working).
@@ -105,12 +137,38 @@
     // Validate every rule once so a typo in the JSON fails loudly.
     for (const t of Object.values(TRUCK_TYPES)) t.rules.forEach(parseLoad);
 
-    // Capacity vectors of a truck type. Every truck may alternatively
-    // carry a full load of materials and nothing else.
+    // Capacity vectors of a truck type, one per rule.
     function capacitiesFor(type) {
-      const caps = TRUCK_TYPES[type].rules.map(parseLoad);
-      caps.push(oneHot("mat"));
-      return caps;
+      return TRUCK_TYPES[type].rules.map(parseLoad);
+    }
+
+    const leq = (a, b) => a.every((x, i) => x <= b[i]);
+    const addVec = (a, b) => a.map((x, i) => x + b[i]);
+
+    // Drop duplicates and vectors dominated by another one (the solver
+    // does it too; this keeps the request small).
+    function maximal(vectors) {
+      const out = [];
+      for (const v of vectors) {
+        if (out.some((o) => leq(v, o))) continue;
+        for (let i = out.length - 1; i >= 0; i--) if (leq(out[i], v)) out.splice(i, 1);
+        out.push(v);
+      }
+      return out;
+    }
+
+    // Capacity vectors of a truck type with a chico: any (extraLoads + 1)
+    // allowed loads together, one per bed.
+    function chicoCapacitiesFor(chicoKey) {
+      const c = CHICO_TYPES[chicoKey];
+      const base = capacitiesFor(c.attachesTo);
+      let sums = base.map((v) => v.slice());
+      for (let k = 0; k < c.extraLoads; k++) {
+        const next = [];
+        for (const s of sums) for (const b of base) next.push(addVec(s, b));
+        sums = maximal(next);
+      }
+      return sums;
     }
 
     // Which container sizes a truck type can carry at all.
@@ -121,11 +179,27 @@
 
     function defaultFleet() {
       const fleet = {};
-      for (const t of TYPE_ORDER) {
-        const n = Number((D.fleet || {})[t]);
-        fleet[t] = isFinite(n) && n >= 0 ? Math.floor(n) : 1;
-      }
+      for (const t of TYPE_ORDER) fleet[t] = nonNegativeInt((D.fleet || {})[t], 1);
       return fleet;
+    }
+
+    // Number of chicos of each type available today.
+    function defaultChicos() {
+      const chicos = {};
+      for (const k of CHICO_ORDER) {
+        const entry = (D.chicos || {})[k];
+        chicos[k] = nonNegativeInt(entry && typeof entry === "object" ? entry.count : entry, 0);
+      }
+      return chicos;
+    }
+
+    // Fixed cost charged once when a truck goes out with this chico
+    // (VROOM's costs.fixed, same unit as the other costs: one hour of
+    // driving is 3600). Set in docs/waste_defaults.json; 0 lets the
+    // solver take a chico whenever it helps.
+    function chicoCost(chicoKey) {
+      const entry = (D.chicos || {})[chicoKey];
+      return nonNegativeInt(entry && typeof entry === "object" ? entry.cost : 0, 0);
     }
 
     function defaultTimes() {
@@ -153,43 +227,93 @@
       return t.needsSize ? `${t.short} ${op.size} m³` : t.short;
     }
 
+    // Chicos offered for a truck type: never more than the trucks.
+    function chicosOffered(type, fleet, chicos) {
+      const offered = {};
+      for (const k of CHICO_ORDER) {
+        if (CHICO_TYPES[k].attachesTo !== type) continue;
+        offered[k] = Math.min(chicos[k] || 0, fleet[type] || 0);
+      }
+      return offered;
+    }
+
     // Build the VROOM request.
     //   depot        {lat, lng}                     the company
     //   operations   [{id, lat, lng, type, size, priority}]
     //   fleet        {small: n, multiban: n, poliban: n}
+    //   chicos       {multiban: n, poliban: n}      chicos available
     //   times        see defaultTimes()
     //   geometry     bool
-    function buildRequest({ depot, operations, fleet, times, geometry }) {
+    // Returns {request, stepInfo, vehicleInfo}: stepInfo maps step ids
+    // to a description, vehicleInfo maps vehicle ids to {type, chico}.
+    function buildRequest({ depot, operations, fleet, chicos, times, geometry }) {
       fleet = Object.assign(defaultFleet(), fleet || {});
+      chicos = Object.assign(defaultChicos(), chicos || {});
       times = Object.assign(defaultTimes(), times || {});
       const company = [depot.lng, depot.lat];
 
       const vehicles = [];
+      const vehicleGroups = [];
+      const vehicleInfo = {};
       let vId = 1;
+      let gId = 1;
+
+      const addVehicle = (type, description, capacities, extra) => {
+        const v = {
+          id: vId++,
+          description,
+          type,
+          profile: "car",
+          start: company,
+          end: company,
+          capacities,
+          time_window: [times.dayStart, times.dayEnd],
+          costs: { per_hour: 3600, per_task_hour: 3600 },
+          ...extra,
+        };
+        if (times.lunchEnd > times.lunchStart) {
+          // VROOM break time windows bound the break start: a single
+          // instant makes the lunch fixed.
+          v.breaks = [{
+            id: 1,
+            description: "lunch",
+            time_windows: [[times.lunchStart, times.lunchStart]],
+            service: times.lunchEnd - times.lunchStart,
+          }];
+        }
+        vehicles.push(v);
+        return v;
+      };
+
       for (const type of TYPE_ORDER) {
-        for (let i = 1; i <= (fleet[type] || 0); i++) {
-          const v = {
-            id: vId++,
-            description: `${TRUCK_TYPES[type].label.toLowerCase()} ${i}`,
-            type,
-            profile: "car",
-            start: company,
-            end: company,
-            capacities: capacitiesFor(type),
-            time_window: [times.dayStart, times.dayEnd],
-            costs: { per_hour: 3600, per_task_hour: 3600 },
-          };
-          if (times.lunchEnd > times.lunchStart) {
-            // VROOM break time windows bound the break start: a single
-            // instant makes the lunch fixed.
-            v.breaks = [{
-              id: 1,
-              description: "lunch",
-              time_windows: [[times.lunchStart, times.lunchStart]],
-              service: times.lunchEnd - times.lunchStart,
-            }];
+        const n = fleet[type] || 0;
+        if (n === 0) continue;
+        const label = TRUCK_TYPES[type].label.toLowerCase();
+        const offered = chicosOffered(type, fleet, chicos);
+        const anyChico = Object.values(offered).some((c) => c > 0);
+
+        // One group per truck type: plain and chico versions of the
+        // trucks together may not exceed the number of physical trucks.
+        let groups;
+        if (anyChico) {
+          vehicleGroups.push({ id: gId, max_vehicles: n, description: `${label} trucks` });
+          groups = [gId++];
+        }
+
+        for (let i = 1; i <= n; i++) {
+          const v = addVehicle(type, `${label} ${i}`, capacitiesFor(type), groups ? { groups } : {});
+          vehicleInfo[v.id] = { type, chico: null };
+        }
+        for (const [chicoKey, count] of Object.entries(offered)) {
+          const caps = chicoCapacitiesFor(chicoKey);
+          const cost = chicoCost(chicoKey);
+          for (let i = 1; i <= count; i++) {
+            const v = addVehicle(type, `${label} + chico ${i}`, caps, {
+              groups,
+              costs: { fixed: cost, per_hour: 3600, per_task_hour: 3600 },
+            });
+            vehicleInfo[v.id] = { type, chico: chicoKey };
           }
-          vehicles.push(v);
         }
       }
 
@@ -220,11 +344,11 @@
               delivery: atClient(base + 2, op, `${tag}: deliver empty ${size} m³`),
             });
             break;
-          case "pickup_empty":
+          case "pickup_full":
             push({
-              amount: oneHot(`e${size}`),
-              pickup: atClient(base + 1, op, `${tag}: pick up empty ${size} m³`),
-              delivery: atCompany(base + 2, `${tag}: unload empty ${size} m³ at company`),
+              amount: oneHot(`f${size}`),
+              pickup: atClient(base + 1, op, `${tag}: pick up full ${size} m³`),
+              delivery: atCompany(base + 2, `${tag}: empty full ${size} m³ at company`),
             });
             break;
           case "exchange":
@@ -240,10 +364,12 @@
             });
             break;
           case "sell_materials":
+            // A container of materials leaves the company full and stays
+            // at the client: a full container for the loading rules.
             push({
-              amount: oneHot("mat"),
-              pickup: atCompany(base + 1, `${tag}: load materials at company (full truck)`),
-              delivery: atClient(base + 2, op, `${tag}: deliver materials`),
+              amount: oneHot(`f${size}`),
+              pickup: atCompany(base + 1, `${tag}: load materials (${size} m³ container) at company`),
+              delivery: atClient(base + 2, op, `${tag}: deliver materials (${size} m³ container)`),
             });
             break;
           default:
@@ -252,7 +378,8 @@
       }
 
       const request = { vehicles, shipments, options: { g: !!geometry } };
-      return { request, stepInfo };
+      if (vehicleGroups.length) request.vehicle_groups = vehicleGroups;
+      return { request, stepInfo, vehicleInfo };
     }
 
     // Sanity checks on a planner's day before building the request.
@@ -275,25 +402,20 @@
       for (const t of TYPE_ORDER) {
         if (!fleet[t]) continue;
         for (const s of sizesFor(t)) carriers[s] = true;
-        carriers.mat = true;
       }
       for (const op of operations) {
-        const t = OPERATION_TYPES[op.type];
-        if (t.needsSize && !carriers[op.size]) {
+        if (!carriers[op.size]) {
           problems.push(`Operation ${op.id}: no truck in the fleet can carry a ${op.size} m³ container.`);
-        }
-        if (!t.needsSize && !carriers.mat) {
-          problems.push(`Operation ${op.id}: no truck in the fleet is allowed to carry materials.`);
         }
       }
       return problems;
     }
 
     return {
-      SIZES, KINDS, TRUCK_TYPES, TYPE_ORDER, OPERATION_TYPES, COMPANY,
-      SOLVER_DEFAULTS,
-      parseLoad, oneHot, capacitiesFor, sizesFor,
-      defaultFleet, defaultTimes,
+      SIZES, KINDS, TRUCK_TYPES, TYPE_ORDER, CHICO_TYPES, CHICO_ORDER,
+      OPERATION_TYPES, COMPANY, SOLVER_DEFAULTS,
+      parseLoad, oneHot, capacitiesFor, chicoCapacitiesFor, sizesFor,
+      defaultFleet, defaultChicos, chicoCost, chicosOffered, defaultTimes,
       opIdOfStep, describe, buildRequest, validate,
     };
   }

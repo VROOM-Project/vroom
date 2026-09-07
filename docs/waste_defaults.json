@@ -1,5 +1,5 @@
 {
-  "_comment": "Starting values for the waste transport planner UI. Companion to waste_rules.json: that file holds what the trucks are physically allowed to carry (fixed), this one holds what the planner may change from day to day. Every value below is editable in the planner's Config tab; edits live in the browser only, so change this file to move the defaults. Times are local HH:MM, durations are minutes. Read by frontend/public/waste_model.js through frontend/server.js (/defaults.js).",
+  "_comment": "Starting values for the waste transport planner UI. Companion to waste_rules.json: that file holds what the trucks and chicos are physically allowed to carry (fixed), this one holds what the planner may change from day to day. Everything but the solver block and the chico costs is editable in the planner's Config tab; edits live in the browser only, so change this file to move the defaults. The solver block has no UI at all and is only set here. Times are local HH:MM, durations are minutes. Read by frontend/public/waste_model.js through frontend/server.js (/defaults.js).",
   "company": {
     "lat": 37.030558,
     "lng": -7.976093,
@@ -7,9 +7,20 @@
   },
   "fleet": {
     "_comment": "trucks of each type available on a normal day; keys are the truck types of waste_rules.json",
-    "small": 1,
-    "multiban": 1,
-    "poliban": 1
+    "small": 5,
+    "multiban": 15,
+    "poliban": 3
+  },
+  "chicos": {
+    "_comment": "chico attachments available on a normal day; keys are the chico types of waste_rules.json. count: how many the company has (never more are offered than trucks of the matching type). cost: fixed cost charged once when a truck goes out with the chico, in the solver's cost unit where one hour of driving is 3600 (e.g. 1800 = half an hour of hitching); 0 lets the solver take a chico whenever it helps. Not editable in the UI.",
+    "multiban": {
+      "count": 4,
+      "cost": 0
+    },
+    "poliban": {
+      "count": 1,
+      "cost": 0
+    }
   },
   "working_day": {
     "start": "08:00",
@@ -20,10 +31,11 @@
   },
   "operation_times_min": {
     "client_per_container": 10,
-    "company_per_visit": 5,
-    "company_per_container": 5
+    "company_per_visit": 10,
+    "company_per_container": 10
   },
   "solver": {
+    "_comment": "not shown in the planner UI; edit here. geometry: ask the solver for the driven route (vroom's -g) so the map follows the roads and distances are reported, off draws straight lines between stops. show_request: append the JSON sent to the solver under the summary, for debugging.",
     "geometry": true,
     "show_request": false
   }

@@ -71,6 +71,14 @@ private:
 
   void remove_from_routes();
 
+  // Whether vehicle groups allow a move that makes the (currently
+  // empty) route of vehicle `opened` non-empty, `closed` being a
+  // route emptied by the same move, if any.
+  bool can_open_route(Index opened,
+                      std::optional<Index> closed = std::nullopt) const {
+    return _input.vehicle_groups_allow_opening(opened, closed, _sol);
+  }
+
 public:
   LocalSearch(const Input& input,
               std::vector<Route>& tw_sol,

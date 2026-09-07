@@ -4,7 +4,8 @@
 #      derived *.osrm files are missing, or if you pass --rebuild-osrm
 #   2. starts the OSRM + vroom-express stack from the repo root docker-compose.yml
 #      with docker-compose.local.yml, i.e. VROOM built from this repository's
-#      sources (the planner needs the `capacities` extension)
+#      sources (the planner needs the `capacities` and `vehicle_groups`
+#      extensions)
 #   3. waits until vroom-express answers on http://localhost:3000/health
 #   4. installs npm deps (none today, but keeps the workflow uniform)
 #

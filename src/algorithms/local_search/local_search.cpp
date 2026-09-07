@@ -196,6 +196,15 @@ LocalSearch<Route,
     Index best_route = 0;
     std::size_t best_route_idx = 0;
 
+    // Empty routes that vehicle groups do not allow to open.
+    std::vector<bool> route_locked(routes.size(), false);
+    if (_input.has_vehicle_groups()) {
+      for (std::size_t i = 0; i < routes.size(); ++i) {
+        route_locked[i] =
+          _sol[routes[i]].empty() && !can_open_route(routes[i]);
+      }
+    }
+
     for (const auto j : _sol_state.unassigned) {
       const auto& current_job = _input.jobs[j];
       if (current_job.type == JOB_TYPE::DELIVERY) {
@@ -226,7 +235,7 @@ LocalSearch<Route,
       // Find best route for current job based on cost of addition and
       // regret cost of not adding.
       for (std::size_t i = 0; i < routes.size(); ++i) {
-        if (route_job_insertions[i][j].eval == NO_EVAL) {
+        if (route_job_insertions[i][j].eval == NO_EVAL || route_locked[i]) {
           continue;
         }
 
@@ -1106,6 +1115,14 @@ void LocalSearch<Route,
           continue;
         }
 
+        if (_sol[target].empty() &&
+            !can_open_route(target,
+                            (_sol[source].size() == 1)
+                              ? std::optional<Index>(source)
+                              : std::nullopt)) {
+          continue;
+        }
+
         const auto& t_delivery_margin = _sol[target].delivery_margin();
         const auto& t_pickup_margin = _sol[target].pickup_margin();
 
@@ -1163,6 +1180,14 @@ void LocalSearch<Route,
         }
 
         if (_sol[target].size() + 2 > _input.vehicles[target].max_tasks) {
+          continue;
+        }
+
+        if (_sol[target].empty() &&
+            !can_open_route(target,
+                            (_sol[source].size() == 2)
+                              ? std::optional<Index>(source)
+                              : std::nullopt)) {
           continue;
         }
 
@@ -1613,6 +1638,14 @@ void LocalSearch<Route,
           continue;
         }
 
+        if (_sol[target].empty() &&
+            !can_open_route(target,
+                            (_sol[source].size() == 2)
+                              ? std::optional<Index>(source)
+                              : std::nullopt)) {
+          continue;
+        }
+
         for (unsigned s_p_rank = 0; s_p_rank < _sol[source].size();
              ++s_p_rank) {
           if (_input.jobs[_sol[source].route[s_p_rank]].type !=
@@ -1687,6 +1720,11 @@ void LocalSearch<Route,
           continue;
         }
 
+        if ((_sol[source].empty() && !can_open_route(source, target)) ||
+            (_sol[target].empty() && !can_open_route(target, source))) {
+          continue;
+        }
+
         const auto& s_deliveries_sum = _sol[source].job_deliveries_sum();
         const auto& s_pickups_sum = _sol[source].job_pickups_sum();
         const auto& t_deliveries_sum = _sol[target].job_deliveries_sum();
@@ -1750,7 +1788,7 @@ void LocalSearch<Route,
       empty_route_ranks.reserve(_input.vehicles.size());
 
       for (Index v = 0; v < _input.vehicles.size(); ++v) {
-        if (_sol[v].empty()) {
+        if (_sol[v].empty() && can_open_route(v)) {
           empty_route_ranks.push_back(v);
         }
       }
@@ -1862,10 +1900,14 @@ void LocalSearch<Route,
       assert(new_eval + best_gain == previous_eval);
 #endif
 
+      assert(_input.vehicle_groups_satisfied(_sol));
+
       auto modified_vehicles =
         try_job_additions(best_ops[best_source][best_target]
                             ->addition_candidates(),
                           0);
+
+      assert(_input.vehicle_groups_satisfied(_sol));
 
       // Extend update_candidates in case a vehicle was not modified
       // by the operator itself but afterward by
@@ -2041,6 +2083,7 @@ void LocalSearch<Route,
       // Refill jobs.
       constexpr double refill_regret = 1.5;
       try_job_additions(_all_routes, refill_regret);
+      assert(_input.vehicle_groups_satisfied(_sol));
     }
   }
 }

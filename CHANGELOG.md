@@ -7,6 +7,7 @@
 #### Features
 
 - Alternative capacity vectors per vehicle with `capacities`: a route step load is valid when it fits at least one of them, which allows loading rules that are not a single upper bound per metric
+- Vehicle groups with a usage limit (`vehicle_groups` and vehicle `groups`): at most `max_vehicles` of a group can have a non-empty route, which lets the solver choose between alternative configurations of the same physical vehicle
 
 ### Fixed
 

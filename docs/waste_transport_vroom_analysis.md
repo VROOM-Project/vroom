@@ -42,7 +42,7 @@ the real problem is not modelled and needs a post-check.
 | Leave operations for tomorrow, with priorities | `priority`, `unassigned` output | native |
 | Objective: most operations, then time, then km | solution ranking + `costs` | native |
 | New operation mid-day | re-run with current state as input, travel times from OSRM, `steps` warm start | supported by a re-planning procedure, not by a live mode |
-| Extender on multiban / poliban | separate `capacities` list per configuration | must be decided before solving |
+| Chico (trailer) on a multiban or poliban, decided by the solver | each truck listed twice (plain and with chico, own `capacities` and `costs`), `vehicle_groups` caps the vehicles used at the number of trucks | native with the extension |
 | Order of stacking | not needed: operators reorder on site | not a constraint |
 | Leave-empty and pick-full at the same client done by the same truck in one visit | none | **gap**: usually happens through cost, not guaranteed |
 
@@ -94,17 +94,17 @@ or two shipments (implemented in
 | Operation | Shipments | Pickup | Delivery | `amount` |
 | --- | --- | --- | --- | --- |
 | Deliver an empty container of size N at A | 1 | company | A | one-hot `eN` |
-| Pick up an empty container of size N at A | 1 | A | company | one-hot `eN` |
+| Pick up a full container of size N at A | 1 | A | company | one-hot `fN` |
 | Exchange at A: leave an empty N, take the full N | 2 | company / A | A / company | one-hot `eN` and one-hot `fN` |
-| Sell materials at A (a full truck) | 1 | company | A | one-hot `mat` |
+| Sell materials at A in a container of size N | 1 | company | A | one-hot `fN` |
 
 Other movements from the problem statement remain expressible the
 same way (pure transport A to B: shipment A to B with `fN`).
 
-**Materials** are an eleventh amount component `mat`. Every truck
-gets one extra capacity vector with `mat` = 1 and every container
-kind at 0, so a materials delivery occupies the whole truck: nothing
-else can be on board on that trip.
+**Materials** need no component of their own: they travel in a
+container of a standard size that leaves the company full, so the
+shipment carries `fN` and obeys the same loading rules as any full
+container, sharing the truck with other containers.
 
 Details:
 
@@ -121,9 +121,16 @@ Details:
   consecutive tasks at the same location) and `service` for the
   per-container unloading time. Same for pickups of empties.
 - **Vehicles** start and end at the company, with `time_window`,
-  `breaks`, `skills`, `capacity` (per truck configuration, see below)
-  and `type` (`small`, `multiban`, `poliban`) so that operation
-  durations can differ per truck through `service_per_type`.
+  `breaks`, `capacities` (per truck configuration, see below) and
+  `type` (`small`, `multiban`, `poliban`) so that operation durations
+  can differ per truck through `service_per_type`.
+- **Chicos** are handled by listing every truck of a type twice: `n`
+  plain vehicles and `min(chicos, n)` vehicles with the chico
+  capacity list, all in one `vehicle_groups` entry with
+  `max_vehicles` = `n`. Trucks of a type being identical, it does not
+  matter which physical truck ends up with the chico, so the solver
+  freely chooses how many chicos go out and on which routes. See
+  [Chicos](#chicos).
 - **Swap at a client** (leave empty, take full) is two shipments. The
   cost structure pushes VROOM to serve both in the same visit, but
   nothing forces it; see the gaps section.
@@ -233,14 +240,35 @@ editing `RULES_STRICT` / `INTERCHANGEABLE`: it will say whether the
 new set is still linearly representable and what the encoding gets
 wrong. If it is not representable, the only exact option is plan B.
 
-### Extender
+### Chicos
 
-A truck with the extender is a different capacity vector. VROOM
-cannot express "this truck is either configuration A or B, choose
-one", so fitting the extender is an input decision per truck per day
-(or run the solver once per scenario). Once the extender rule lists
-are known, add them as new entries in `RULES_STRICT` and `CAPACITY`
-in the script and verify the same way.
+A truck with a chico has three beds, each taking any allowed load of
+the truck type. Its capacity list is therefore the set of sums of any
+three rules (with repetition), duplicates and dominated vectors
+removed: 104 vectors for the multiban, 20 for the poliban.
+`python scripts/waste_rules_to_capacities.py --chico` prints them.
+The `capacities` check is linear in the number of vectors, so this is
+noticeably more work per check than the plain list but well within
+the stated budget.
+
+Choosing whether a truck takes a chico is the solver's job. VROOM
+cannot say "this vehicle is either configuration A or B", so the
+planner offers both as separate vehicles and the `vehicle_groups`
+extension of this repository (see
+[API.md](./API.md#vehicle-groups)) limits the number of vehicles used
+in the group to the number of physical trucks. Construction
+heuristics skip a vehicle whose group is full, and local search
+rejects any move that would open an empty route in a full group
+(moves that swap a whole route into an empty vehicle of the same
+group stay allowed, since they do not change the count). Because
+chico vehicles are only `min(chicos, trucks)`, the chico count is
+enforced by construction.
+
+The chico vehicles carry `costs.fixed` = the chico cost from
+[waste_defaults.json](./waste_defaults.json), charged once when the
+vehicle is used. With a zero cost the solver takes a chico whenever
+it reduces the objective; a positive cost makes it prefer plain
+trucks unless the chico saves more than that.
 
 ### Plan B: alternative capacity vectors in the core (implemented)
 
@@ -322,11 +350,13 @@ re-planning time `t`:
    same tight `time_windows`.
 2. **Loading rules** are enforced exactly through `capacities`; the
    assumption above is no longer needed.
-3. **Extender** is an input decision, not an optimisation decision.
-4. **Materials** travel as a full truck (`mat` component, exclusive
-   capacity vector) on any truck type; if partial loads or mixing with
-   containers turn out to be allowed, this becomes a matter of adding
-   vectors.
+3. **Chicos** are chosen by the solver, but a chico is assumed to
+   change nothing but the capacity (same speed, same service times,
+   same reachable places). If it does, the chico vehicles get their
+   own `speed_factor`, `type` or `costs`.
+4. **Materials** are a full container of a standard size; if the
+   company later wants materials without a container, that becomes a
+   new amount component with its own vectors.
 5. **Stock of empties at the company** is assumed unlimited. If stock
    per size is limited, create at most that many leave-empty shipments
    per size (VROOM will drop the extra ones).
@@ -336,9 +366,9 @@ re-planning time `t`:
 ## Recommended path
 
 1. Get answers to the remaining open questions of the problem
-   document (extender lists, materials, small truck with a full 2).
-   Each answer is just another vector in the relevant `capacities`
-   list.
+   document (unlisted multiban mixtures, small truck with a full 2,
+   chico cost and side effects). Each answer is just another vector
+   in the relevant `capacities` list or a value in the defaults file.
 2. Write the input generator (operations database to VROOM JSON) using
    the example below as a template: one-hot amounts per container
    kind, one `capacities` list per truck configuration. Use the OSRM
@@ -357,9 +387,12 @@ re-planning time `t`:
 custom matrices (no routing server needed): the company, three
 clients, a disposal site, one multiban, one small truck, one poliban,
 and eight operations including a swap, a pure transport, a full 12 m³
-and two poliban containers. Vehicles use `capacities` generated from
-[waste_rules.json](./waste_rules.json) with
-`scripts/waste_rules_to_capacities.py`. Run it with:
+and two poliban containers. The multiban appears twice, plain
+(vehicle 1) and with a chico (vehicle 4), in a vehicle group with
+`max_vehicles` 1, so the solver picks one of the two. Vehicles use
+`capacities` generated from [waste_rules.json](./waste_rules.json)
+with `scripts/waste_rules_to_capacities.py` (`--chico` for vehicle
+4). Run it with:
 
 ```bash
 vroom -i docs/waste_example.json -x 5 -o out.json

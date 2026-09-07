@@ -103,7 +103,8 @@ Vehicle::Vehicle(Id id,
                  const std::optional<UserDistance>& max_distance,
                  const std::vector<VehicleStep>& input_steps,
                  std::string type_str,
-                 const std::vector<Amount>& capacities)
+                 const std::vector<Amount>& capacities,
+                 std::vector<Id> groups)
   : id(id),
     start(start),
     end(end),
@@ -126,10 +127,21 @@ Vehicle::Vehicle(Id id,
                                            [](const auto& b) {
                                              return b.max_load.has_value();
                                            })),
-    type_str(std::move(type_str)) {
+    type_str(std::move(type_str)),
+    groups(std::move(groups)) {
   if (!static_cast<bool>(start) && !static_cast<bool>(end)) {
     throw InputException(
       std::format("No start or end specified for vehicle {}.", id));
+  }
+
+  for (std::size_t i = 0; i < this->groups.size(); ++i) {
+    for (std::size_t j = i + 1; j < this->groups.size(); ++j) {
+      if (this->groups[i] == this->groups[j]) {
+        throw InputException(std::format("Duplicate group {} for vehicle {}.",
+                                         this->groups[i],
+                                         id));
+      }
+    }
   }
 
   for (unsigned i = 0; i < breaks.size(); ++i) {
