@@ -273,6 +273,31 @@
   .hint code { font-size: 11.5px; background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; color: var(--ink-2); }
   fieldset > .hint:last-child { margin-top: 10px; }
 
+  /* ============================ CSV import ============================= */
+  /* What a file holds, shown before it replaces the day. */
+  #csvReport {
+    margin-top: 10px; padding: 9px 11px; border-radius: var(--r);
+    font-size: 12.5px; color: var(--ink-2);
+    background: var(--brand-soft); border: 1px solid #c7dbfe;
+    display: flex; flex-direction: column; gap: 3px;
+  }
+  #csvReport.has-error { background: #fef2f2; border-color: #fecaca; }
+  #csvReport[hidden] { display: none; }
+  #csvReport .head { font-weight: 650; color: var(--ink); margin-bottom: 3px; }
+  #csvReport .err-item { color: var(--danger); }
+  #csvReport .btn-row { margin-top: 7px; }
+  /* pointer-events: none, or the overlay would swallow its own drop */
+  #drop {
+    position: fixed; inset: 0; z-index: 2000; pointer-events: none;
+    background: rgba(37,99,235,.10); display: grid; place-items: center;
+  }
+  #drop[hidden] { display: none; }
+  #drop span {
+    background: var(--panel); color: var(--brand); font-weight: 650;
+    border: 2px dashed var(--brand); border-radius: var(--r);
+    padding: 14px 20px; box-shadow: var(--shadow-lg);
+  }
+
   /* ================================ map ================================ */
   .pin-icon { background: none; border: 0; }
   .pin { transform-origin: 50% 100%; transition: transform .13s ease-out; filter: drop-shadow(0 2px 3px rgba(17,23,37,.32)); }
@@ -328,7 +353,7 @@
         <span class="logo"><svg width="19" height="19" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M1.6 11.6V4.9h7v6.7"/><path d="M8.6 7.3h2.9l2.9 2.7v1.6"/><circle cx="4.6" cy="12.4" r="1.4"/><circle cx="11.5" cy="12.4" r="1.4"/></svg></span>
         <div>
           <h1>Waste transport planner</h1>
-          <p class="sub">Click the map or enter coordinates to place today's operations</p>
+          <p class="sub">Click the map, type coordinates or import a CSV</p>
         </div>
       </div>
       <div id="status"><span class="dot"></span><span class="txt">Checking solver…</span></div>
@@ -360,7 +385,14 @@
       <fieldset>
         <legend>Operations</legend>
         <ul id="points" class="list"></ul>
+        <div class="btn-row">
+          <button id="importCsv">Import a CSV</button>
+          <button id="exportCsv">Download CSV</button>
+        </div>
+        <input id="csvFile" type="file" accept=".csv,.txt,text/csv,text/plain" hidden />
+        <div id="csvReport" hidden></div>
         <div class="hint">Type, size and priority (0–100, higher is dropped last) are editable per row. Points must be inside the loaded OSRM area (Portugal).</div>
+        <div class="hint">A CSV is the day's list as the office already has it. Its first row names the columns — <code>lat</code>, <code>lng</code>, <code>type</code> and <code>size</code> are needed, <code>priority</code> is not — in any order, spelled any way, with anything else on the row ignored. <code>type</code> is one of the four operations above and <code>size</code> a container size in m³. A comma, a semicolon or a tab separates the columns, and a file may be dropped anywhere on this window instead of picked. Importing replaces the whole list, so a file is read and shown before anything is thrown away. Download writes the list back in the same format, or an empty one gives a template to fill in.</div>
       </fieldset>
 
       <div id="problems"></div>
@@ -504,6 +536,8 @@
     </footer>
   </div>
 </div>
+
+<div id="drop" hidden><span>Drop the CSV to load today's operations</span></div>
 
 <script>
 // Truck types and loading rules come from docs/waste_rules.json; the
@@ -1076,6 +1110,177 @@ for (const input of [newLatInput, newLngInput]) {
   };
 }
 
+// ---------- adding by CSV ----------
+// The third way in, next to the map and the coordinate boxes: the day's
+// list as the office already has it. The file carries only what an
+// operation is — where, what and which container, and how badly it is
+// wanted — since there is no geocoder here and everything else about a
+// day belongs to the configuration rather than to one client. What
+// comes out of it is an ordinary operation: it draws the same pin and
+// its row is edited and removed like any other. The reading and the
+// writing of the format itself are in waste_model.js, next to the
+// operation types and the container sizes they are checked against.
+const csvFileInput = document.getElementById("csvFile");
+const csvReport = document.getElementById("csvReport");
+
+document.getElementById("importCsv").onclick = () => {
+  // Cleared first, so that picking the same file twice reads it twice:
+  // a file corrected in the meantime is the usual second pick.
+  csvFileInput.value = "";
+  csvFileInput.click();
+};
+csvFileInput.onchange = () => {
+  if (csvFileInput.files[0]) readCsvFile(csvFileInput.files[0]);
+};
+
+// An office spreadsheet is as often Windows-1252 as UTF-8, and the
+// wrong guess does not fail, it quietly turns a letter into a
+// replacement character. So the bytes are decoded again when the first
+// try leaves one behind.
+function decodeCsv(buffer) {
+  const utf8 = new TextDecoder("utf-8").decode(buffer);
+  if (!utf8.includes("�")) return utf8;
+  try {
+    return new TextDecoder("windows-1252").decode(buffer);
+  } catch (e) {
+    return utf8;
+  }
+}
+
+function readCsvFile(file) {
+  file.arrayBuffer()
+    .then((buf) => showCsvReport(M.parseOperationsCsv(decodeCsv(buf)), file.name))
+    .catch((e) => setStatus(`${file.name} could not be read: ${e.message}`, "err"));
+}
+
+// An import replaces the day, so the file is read and reported before
+// anything is thrown away, and it takes a click to go through with it.
+// Rows that could not be read are named by their line and left out:
+// one bad line in two hundred should not cost the other hundred and
+// ninety-nine.
+const CSV_PROBLEMS_SHOWN = 12;
+
+function showCsvReport({ operations: read, problems }, name) {
+  document.querySelector(".tabs button[data-tab=solve]").click();
+  csvReport.hidden = false;
+  csvReport.className = read.length ? "" : "has-error";
+  csvReport.innerHTML = "";
+
+  const head = document.createElement("div");
+  head.className = "head";
+  head.textContent = read.length
+    ? `${name}: ${plural(read.length, "operation")} read` +
+      (problems.length ? `, ${plural(problems.length, "row")} left out` : "")
+    : `${name}: nothing could be read from it.`;
+  csvReport.appendChild(head);
+
+  for (const p of problems.slice(0, CSV_PROBLEMS_SHOWN)) {
+    const item = document.createElement("div");
+    item.className = "err-item";
+    item.textContent = p.line ? `Line ${p.line}: ${p.text}` : p.text;
+    csvReport.appendChild(item);
+  }
+  if (problems.length > CSV_PROBLEMS_SHOWN) {
+    const rest = document.createElement("div");
+    rest.className = "err-item";
+    rest.textContent = `… and ${problems.length - CSV_PROBLEMS_SHOWN} more.`;
+    csvReport.appendChild(rest);
+  }
+
+  const bar = document.createElement("div");
+  bar.className = "btn-row";
+  if (read.length) {
+    const go = document.createElement("button");
+    go.className = "primary";
+    go.textContent = operations.length
+      ? `Replace today's ${plural(operations.length, "operation")}`
+      : `Load ${plural(read.length, "operation")}`;
+    go.onclick = () => { applyCsv(read); hideCsvReport(); };
+    bar.appendChild(go);
+  }
+  const stop = document.createElement("button");
+  stop.textContent = read.length ? "Cancel" : "Close";
+  stop.onclick = hideCsvReport;
+  bar.appendChild(stop);
+  csvReport.appendChild(bar);
+}
+
+function hideCsvReport() {
+  csvReport.hidden = true;
+  csvReport.innerHTML = "";
+}
+
+function plural(n, word) {
+  return `${n} ${word}${n === 1 ? "" : "s"}`;
+}
+
+// The file is the day, not an addition to it: the list is replaced and
+// the numbering starts again, so #3 on the map is the third operation
+// of the file and a row can be found in the spreadsheet it came from.
+function applyCsv(read) {
+  nextOpId = 1;
+  operations = read.map((op) => Object.assign({ id: nextOpId++ }, op));
+  routeLayer.clearLayers();
+  document.getElementById("summary").innerHTML = "";
+  renderPoints();
+  const bounds = L.latLngBounds(operations.map((op) => [op.lat, op.lng]));
+  bounds.extend([depot.lat, depot.lng]);
+  // Leaflet caches the size of its container and only measures it again
+  // when asked. A map built while its pane had no width yet still holds
+  // 0x0, and fitting a box into nothing zooms to the maximum instead of
+  // out over the file, so the size is taken again first.
+  map.invalidateSize({ animate: false });
+  map.fitBounds(bounds, { padding: [40, 40] });
+  setStatus(`${plural(operations.length, "operation")} loaded from the file.`, "ok");
+}
+
+// The list written back in the format it is read in, so a day can go
+// out to a spreadsheet and come home. An empty list gives the template,
+// which is the only description of the format anyone reads.
+document.getElementById("exportCsv").onclick = () => {
+  const url = URL.createObjectURL(
+    new Blob([M.operationsToCsv(operations)], { type: "text/csv;charset=utf-8" }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = operations.length ? "operations.csv" : "operations-template.csv";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 0);
+  setStatus(operations.length
+    ? `${plural(operations.length, "operation")} written to operations.csv.`
+    : "An empty operations-template.csv written to fill in.", "ok");
+};
+
+// Dropping the file on the window does the same as picking it. Both
+// dragenter and dragleave fire for every element the pointer crosses,
+// so the overlay is counted in and out rather than toggled.
+const dropOverlay = document.getElementById("drop");
+let dragDepth = 0;
+
+function draggingFile(e) {
+  return Array.prototype.indexOf.call((e.dataTransfer || {}).types || [], "Files") >= 0;
+}
+window.addEventListener("dragenter", (e) => {
+  if (!draggingFile(e)) return;
+  dragDepth++;
+  dropOverlay.hidden = false;
+});
+window.addEventListener("dragover", (e) => { if (draggingFile(e)) e.preventDefault(); });
+window.addEventListener("dragleave", (e) => {
+  if (!draggingFile(e)) return;
+  dragDepth = Math.max(0, dragDepth - 1);
+  if (!dragDepth) dropOverlay.hidden = true;
+});
+window.addEventListener("drop", (e) => {
+  if (!draggingFile(e)) return;
+  e.preventDefault();
+  dragDepth = 0;
+  dropOverlay.hidden = true;
+  const file = e.dataTransfer.files[0];
+  if (file) readCsvFile(file);
+});
+
 // Hovering a row lights up its pin and the other way round.
 function setHot(opId, on) {
   const marker = markerOf[opId];
@@ -1137,7 +1342,7 @@ function renderPoints(unassignedOps = new Set(), opColor = {}, partialOps = new 
     li.className = "empty";
     li.style.border = "0";
     li.style.background = "none";
-    li.textContent = "No operations yet — click the map or enter coordinates to add one.";
+    li.textContent = "No operations yet — click the map, enter coordinates or import a CSV.";
     list.appendChild(li);
   }
 
@@ -1814,6 +2019,7 @@ document.getElementById("solve").onclick = async () => {
 // put it.
 document.getElementById("clear").onclick = () => {
   operations = []; nextOpId = 1;
+  hideCsvReport();
   routeLayer.clearLayers();
   document.getElementById("summary").innerHTML = "";
   map.setView([depot.lat, depot.lng], 13);

@@ -92,6 +92,20 @@
 // only decides which vehicle uses which profile, and keeps operations
 // inside a zone away from the vehicles that cannot reach them, through
 // one skill per zone.
+//
+// The day's operations also read and write as a CSV
+// (parseOperationsCsv, operationsToCsv), which is how a list already
+// held in the office gets in without being clicked onto the map one
+// point at a time. A row carries only what an operation is — lat, lng,
+// type, size, and a priority it may leave out — because there is no
+// geocoder anywhere in the planner and everything else about a day is
+// configuration rather than a property of one client. The reading is
+// deliberately forgiving of what spreadsheets do to a file (any of
+// three delimiters, decimal commas, the columns in any order and named
+// in either language, quoted fields, comments, a byte order mark) and
+// unforgiving of what a row says, since a wrong container size sends
+// the wrong truck: a row that cannot be understood is left out and
+// reported by its line rather than guessed at.
 (function (root, factory) {
   if (typeof module === "object" && module.exports) module.exports = factory();
   else root.WasteModel = factory();
@@ -1094,6 +1108,235 @@
       return `${labels.slice(0, -1).join(", ")} and ${labels[labels.length - 1]}`;
     }
 
+    // ---------- the day's operations as a CSV ----------
+    //
+    // A third way in, next to clicking the map and typing a pair of
+    // coordinates: the list as the office already has it. A row carries
+    // exactly what an operation is and nothing else — where it is, what
+    // is done there, in which container, and how badly it is wanted —
+    // because everything else about a day (the fleet, the working
+    // hours, the prices) belongs to the configuration and not to one
+    // client. There is no geocoder anywhere in the planner, so a row
+    // has to bring its own coordinates.
+    const CSV_COLUMNS = ["lat", "lng", "type", "size", "priority"];
+    const CSV_REQUIRED = ["lat", "lng", "type", "size"];
+
+    // No two spreadsheets name these columns the same way, and none of
+    // the differences mean anything: case, spaces, underscores and
+    // accents are dropped before a header cell is looked up here.
+    const CSV_ALIASES = {
+      lat: "lat", latitude: "lat", y: "lat",
+      lng: "lng", lon: "lng", long: "lng", longitude: "lng", x: "lng",
+      type: "type", operation: "type", op: "type", kind: "type", service: "type",
+      size: "size", container: "size", containersize: "size", volume: "size", m3: "size",
+      priority: "priority", prio: "priority",
+      // The Portuguese for the column names, which is what the office
+      // spreadsheets are written in. Only the headings: what an
+      // operation is called in a cell stays the planner's own wording,
+      // since guessing at that would be guessing at the business.
+      operacao: "type", tipo: "type",
+      tamanho: "size", contentor: "size", dimensao: "size",
+      prioridade: "priority",
+    };
+
+    function csvKey(s) {
+      return String(s == null ? "" : s).toLowerCase()
+        .replace(/³/g, "3")
+        .normalize("NFD").replace(/[̀-ͯ]/g, "")
+        .replace(/[^a-z0-9]+/g, "");
+    }
+
+    // Every spelling of an operation the planner itself shows, plus the
+    // short forms someone typing a list by hand reaches for.
+    const CSV_TYPES = (function () {
+      const map = {};
+      for (const [key, t] of Object.entries(OPERATION_TYPES)) {
+        for (const spelling of [key, t.short, t.label]) map[csvKey(spelling)] = key;
+      }
+      return Object.assign(map, {
+        deliver: "deliver_empty", delivery: "deliver_empty", drop: "deliver_empty",
+        dropempty: "deliver_empty", empty: "deliver_empty",
+        pickup: "pickup_full", pick: "pickup_full", collect: "pickup_full",
+        collection: "pickup_full", full: "pickup_full",
+        swap: "exchange", change: "exchange",
+        material: "sell_materials", sell: "sell_materials",
+      });
+    })();
+
+    // A number as a spreadsheet writes it. Where the decimal separator
+    // is a comma the delimiter has to be something else, so a comma
+    // left inside a field is a decimal point and a dot beside it is a
+    // thousands separator: "41,14961" and "1.234,5" both read.
+    function csvNumber(raw) {
+      let s = String(raw == null ? "" : raw).trim().replace(/\s/g, "");
+      if (!s) return NaN;
+      if (s.includes(",")) s = s.replace(/\./g, "").replace(",", ".");
+      return /^[-+]?(?:\d+\.?\d*|\.\d+)$/.test(s) ? Number(s) : NaN;
+    }
+
+    // The delimiter is whatever the header uses most: a comma, a
+    // semicolon (what a spreadsheet writes where the decimal separator
+    // is a comma) or a tab (what a block copied out of one carries).
+    function csvDelimiter(text) {
+      const first = text.split(/\r?\n/)
+        .find((l) => l.trim() !== "" && !l.trim().startsWith("#")) || "";
+      let best = ",";
+      let most = 0;
+      for (const d of [",", ";", "\t"]) {
+        const n = first.split(d).length - 1;
+        if (n > most) { best = d; most = n; }
+      }
+      return best;
+    }
+
+    // RFC 4180 rows, each with the line it started on so that a
+    // complaint can name it. A quoted field may hold the delimiter and
+    // even a newline, and "" inside one is a single quote.
+    function csvRows(text, delim) {
+      const rows = [];
+      let cells = [];
+      let field = "";
+      let line = 1;
+      let rowLine = 1;
+      let quoted = false;
+      let started = false;
+      const endRow = () => {
+        cells.push(field);
+        rows.push({ line: rowLine, cells });
+        cells = [];
+        field = "";
+        started = false;
+      };
+      for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        if (!started) { rowLine = line; started = true; }
+        if (quoted) {
+          if (c === '"' && text[i + 1] === '"') { field += '"'; i++; }
+          else if (c === '"') quoted = false;
+          else { field += c; if (c === "\n") line++; }
+          continue;
+        }
+        if (c === '"' && field === "") quoted = true;
+        else if (c === delim) { cells.push(field); field = ""; }
+        else if (c === "\n") { endRow(); line++; }
+        else if (c !== "\r") field += c;
+      }
+      if (started) endRow();
+      return rows;
+    }
+
+    // A file is read as far as it can be: a row that cannot be
+    // understood is left out and reported by line, and the rest still
+    // load, because one typo in two hundred lines should not cost a
+    // day's list. Returns {operations, problems, rows}, the operations
+    // carrying no id — the planner numbers them — and a problem being
+    // {line, text}.
+    const CSV_MAX_ROWS = 2000;
+
+    function parseOperationsCsv(text) {
+      const operations = [];
+      const problems = [];
+      let body = String(text == null ? "" : text);
+      if (body.charCodeAt(0) === 0xfeff) body = body.slice(1);
+
+      const rows = csvRows(body, csvDelimiter(body)).filter((r) =>
+        r.cells.some((c) => c.trim() !== "") && !r.cells[0].trim().startsWith("#"));
+      if (!rows.length) {
+        problems.push({ line: 0, text: "The file holds no rows." });
+        return { operations, problems, rows: 0 };
+      }
+
+      const column = {};
+      rows[0].cells.forEach((cell, i) => {
+        const field = CSV_ALIASES[csvKey(cell)];
+        if (field && !(field in column)) column[field] = i;
+      });
+      const missing = CSV_REQUIRED.filter((f) => !(f in column));
+      if (missing.length) {
+        problems.push({ line: rows[0].line, text:
+          `The first row must name the columns and this one has no ${missing.join(", ")}. ` +
+          `A header reads "${CSV_COLUMNS.join(",")}"; priority may be left out.` });
+        return { operations, problems, rows: 0 };
+      }
+
+      let data = rows.slice(1);
+      if (data.length > CSV_MAX_ROWS) {
+        problems.push({ line: data[CSV_MAX_ROWS].line, text:
+          `Only the first ${CSV_MAX_ROWS} rows were read, of ${data.length} in the file.` });
+        data = data.slice(0, CSV_MAX_ROWS);
+      }
+
+      for (const row of data) {
+        const cell = (field) => String(row.cells[column[field]] || "").trim();
+        const drop = (text) => problems.push({ line: row.line, text });
+
+        const lat = csvNumber(cell("lat"));
+        const lng = csvNumber(cell("lng"));
+        if (!isFinite(lat) || !isFinite(lng)) {
+          drop(`lat and lng must be numbers, not "${cell("lat")}" and "${cell("lng")}".`);
+          continue;
+        }
+        if (Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+          drop(`lat must be -90..90 and lng -180..180, not ${lat} and ${lng}.`);
+          continue;
+        }
+
+        const type = CSV_TYPES[csvKey(cell("type"))];
+        if (!type) {
+          drop(`"${cell("type")}" is not an operation. One of ` +
+               `${Object.keys(OPERATION_TYPES).join(", ")}.`);
+          continue;
+        }
+
+        let size = SIZES[0];
+        if (OPERATION_TYPES[type].needsSize) {
+          size = csvNumber(cell("size"));
+          if (!SIZES.includes(size)) {
+            drop(`"${cell("size")}" is not a container size. One of ${SIZES.join(", ")} m³.`);
+            continue;
+          }
+        }
+
+        let priority = 0;
+        const wanted = "priority" in column ? cell("priority") : "";
+        if (wanted !== "") {
+          priority = csvNumber(wanted);
+          if (!isFinite(priority) || priority < 0 || priority > 100 || priority % 1 !== 0) {
+            drop(`"${wanted}" is not a priority. A whole number 0..100, or nothing at all.`);
+            continue;
+          }
+        }
+
+        operations.push({ lat, lng, type, size, priority });
+      }
+      return { operations, problems, rows: data.length };
+    }
+
+    // The same shape written back, so a day can go out to a
+    // spreadsheet and come home. An empty list gives the template,
+    // which is the only description of the format anyone reads.
+    function operationsToCsv(operations) {
+      const lines = [CSV_COLUMNS.join(",")];
+      for (const op of operations || []) {
+        lines.push([
+          Number(op.lat).toFixed(6),
+          Number(op.lng).toFixed(6),
+          op.type,
+          (OPERATION_TYPES[op.type] || {}).needsSize ? op.size : "",
+          op.priority || 0,
+        ].join(","));
+      }
+      if (!(operations || []).length) {
+        lines.push(
+          "# One line per operation. Replace the example below and delete these notes.",
+          `# lat and lng are degrees, as ${COMPANY.lat.toFixed(5)},${COMPANY.lng.toFixed(5)} — the company.`,
+          `# type is one of ${Object.keys(OPERATION_TYPES).join(", ")}; size is ${SIZES.join(", ")} (m3).`,
+          "# priority is 0..100, higher is dropped last, and may be left empty.",
+          `${COMPANY.lat.toFixed(6)},${COMPANY.lng.toFixed(6)},exchange,${SIZES.includes(6) ? 6 : SIZES[0]},50`);
+      }
+      return lines.join("\r\n") + "\r\n";
+    }
+
     return {
       SIZES, KINDS, TRUCK_TYPES, TYPE_ORDER, CHICO_TYPES, CHICO_ORDER,
       OPERATION_TYPES, COMPANY, SOLVER_DEFAULTS,
@@ -1107,6 +1350,7 @@
       moneyForEarlyStart, solverEarlyStart, defaultLimits, configKeyOf,
       profileFor, pointInZone, zonesAt, blockedProfilesAt, describeProfiles,
       opIdOfStep, describe, buildRequest, validate,
+      CSV_COLUMNS, parseOperationsCsv, operationsToCsv,
     };
   }
 
