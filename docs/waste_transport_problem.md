@@ -125,9 +125,10 @@ its bed, `6e6` on the first chico bed and `1f12` on the second.
 The company has a limited number of chicos of each type, fewer than
 trucks. Whether a truck goes out with a chico is not decided by the
 planner beforehand: the planning tool considers both possibilities
-for every truck and chooses which trucks, if any, take a chico. A
-chico may carry a cost (hitching time or similar) that the tool
-accounts for; it is zero until the company provides it.
+for every truck and chooses which trucks, if any, take a chico. What
+a chico costs is expressed as a multiplier on its truck's cost per
+kilometre; it is 1 (the trailer costs nothing extra) until the company
+provides a figure.
 
 ## Loading rules
 
@@ -220,8 +221,16 @@ A good plan, in order of importance:
 
 1. maximises the number of operations done today (weighted by
    priority);
-2. minimises the total time spent doing them;
-3. if possible, also minimises the kilometres driven.
+2. minimises what the driving costs the company, which is the
+   kilometres driven priced per truck type: fuel, tyres and wear
+   differ between a small truck, a multiban and a poliban, and a truck
+   towing a chico burns more per kilometre than the same truck alone.
+
+Time is **not** part of the objective. The drivers are paid by the
+month, so their hours are spent whether a truck goes out that day or
+not; a plan that sends one more truck out to save kilometres is the
+better plan, not the worse one. Time only sets what fits: the working
+hours below are a limit, not a price.
 
 ## Dynamics: operations added during the day
 
@@ -268,8 +277,8 @@ can be expressed exactly (see the analysis document).
    adding two beds that take any allowed load of the truck type, and
    the planner decides which trucks take one. Still open: does a
    chico change anything else (driving speed, time to load and
-   unload, places the truck cannot reach), and what is the cost of
-   taking one?
+   unload, places the truck cannot reach), and by how much does it
+   raise the truck's cost per kilometre?
 4. **Materials.** Confirmed: materials travel in a full container of
    a standard size and can share the truck with other containers.
    Still open: which sizes are used for materials, and does the
