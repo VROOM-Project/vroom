@@ -33,7 +33,12 @@
     "end": "17:00",
     "lunch_start": "12:00",
     "lunch_end": "13:00",
-    "_comment": "lunch is spent at the company: every truck is back and unloaded by lunch_start and loads nothing before lunch_end, so the day is a morning and an afternoon shift, both planned in one solve; equal start and end mean no lunch"
+    "early_start_max_min": {
+      "small": 60,
+      "multiban": 60,
+      "poliban": 60
+    },
+    "_comment": "lunch is spent at the company: every truck is back and unloaded by lunch_start and loads nothing before lunch_end, so the day is a morning and an afternoon shift, both planned in one solve; equal start and end mean no lunch. early_start_max_min is how much earlier than start a truck may go out, per truck type of waste_rules.json (a plain number instead of the block means the same for every type). It is offered in two steps, half of it and all of it, on the morning shift only, since the afternoon begins when lunch ends: the day is extended at the front, the end does not move, and the solver decides which trucks come in early against what it costs (costs.early_start_per_hour, one price for the whole fleet). A type left out, or set to 0, is offered no early start at all and costs nothing in solving time; that is the behaviour before this existed. Every step is one more vehicle per truck of that type for the solver to weigh, so allow it where it is needed rather than everywhere."
   },
   "operation_times_min": {
     "client_per_container": 10,
@@ -53,7 +58,9 @@
       "_comment": "what attaching a chico does to that truck's cost per km, per chico type of waste_rules.json: 1.25 means a quarter dearer with the trailer on. 1 lets the solver take a chico whenever it saves kilometres, which is the behaviour before this had a value.",
       "multiban": 1.8,
       "poliban": 1.8
-    }
+    },
+    "early_start_per_hour": 20,
+    "_comment_early_start": "what one hour of early start costs, for a truck going out before the working day begins (working_day.early_start_max_min). Unlike a driver's ordinary time this is a real cost — it is worked on top of the day, not inside it — so it is priced and traded against the kilometres it saves: a truck comes in early when doing so saves more road than the early hours cost. It cannot keep an operation from being done, though: the solver does the most operations first and only then looks at money. Priced at 0 the early start is free, which makes trucks go out early for no reason, so the planner warns about it."
   },
   "limits": {
     "_comment": "Hard caps per truck and shift, not costs: a route breaking one of them is not a plan at all, whereas a cost only makes it less attractive. 0 means no limit. With a lunch, each cap applies to the morning and to the afternoon separately, not to the whole day. max_tasks counts VROOM tasks, i.e. shipment steps, not planner operations: an exchange is four of them (two pickups and two deliveries). Editable in the Costs tab.",

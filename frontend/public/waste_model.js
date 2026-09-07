@@ -39,6 +39,36 @@
 // the company (see shiftsOf and buildRequest). One solve still plans
 // the whole day, choosing what goes before and after lunch.
 //
+// An early start (docs/waste_defaults.json, "working_day" block) lets a
+// truck go out before the working day begins. It extends the day at the
+// front and never moves its end, so it is time worked on top of the day
+// and it is priced (costs.early_start_per_hour, one price for the whole
+// fleet) rather than merely allowed. How much earlier is per truck
+// type, since which drivers can come in early is not a fleet-wide
+// fact; a type allowed none is offered none and costs nothing in
+// solving time. Only the first shift can start early: the afternoon
+// begins when lunch ends. Which trucks come in early is the solver's to
+// decide, the same way it decides chicos — every truck is offered its
+// normal start and two earlier ones (see earlyStartsOf), each a vehicle
+// of its own carrying the price of its earliness as a VROOM `fixed`
+// cost, and the vehicle group caps them all at the number of physical
+// trucks. Jobs carry no time window of their own, so a vehicle offered
+// an earlier window really does leave at it: the smallest early start
+// that does the work is also the cheapest, so that is the one taken.
+//
+// What it will not do, today, is buy an operation with an early start.
+// A vehicle group decides which of a truck's versions is used in the
+// heuristic that starts a search and never revisits it: once the group
+// is full the local search cannot open another member, and going from
+// "this truck, normal start" to "this truck, an hour early and four
+// more tasks" would have to pass through "this truck, an hour early
+// and the same tasks", which costs more and is refused. So an early
+// start is taken when it saves kilometres and not when it would only
+// let more work be done, even though more work assigned outranks any
+// cost. The same blind spot decides which trucks take a chico, so it
+// is the vehicle group mechanism rather than anything here; fixing it
+// is solver work.
+//
 // Chicos are trailers that attach to a truck type. A truck with a chico
 // carries one allowed load per bed (its own plus `extra_loads` on the
 // chico), any mix. The company has a limited number of chicos and the
@@ -111,16 +141,25 @@
   // sitting in the middle of the safe range.
   const COST_SCALE = 3000;
 
+  // How many early starts a truck is offered on top of not starting
+  // early at all: the maximum earliness cut into this many steps, so
+  // two means half of it and all of it. Every step is one more VROOM
+  // vehicle per truck configuration on the first shift, so this buys
+  // granularity with solving time.
+  const EARLY_STEPS = 2;
+
   // Fallbacks for every value docs/waste_defaults.json may set, so the
-  // model still works when it is called without them.
+  // model still works when it is called without them. No early start
+  // and no price for one, so a model built without a defaults file
+  // behaves exactly as it did before early starts existed.
   const BUILTIN_DEFAULTS = {
     company: { lat: 37.030558, lng: -7.976093 },
     fleet: {},
     chicos: {},
     container_stock: {},
-    working_day: { start: "08:00", end: "17:00", lunch_start: "12:00", lunch_end: "13:00" },
+    working_day: { start: "08:00", end: "17:00", lunch_start: "12:00", lunch_end: "13:00", early_start_max_min: 0 },
     operation_times_min: { client_per_container: 10, company_per_visit: 5, company_per_container: 5 },
-    costs: { currency: "\u20ac", per_km: {}, chico_multiplier: {} },
+    costs: { currency: "\u20ac", per_km: {}, chico_multiplier: {}, early_start_per_hour: 0 },
     limits: { max_travel_time_min: 0, max_distance_km: 0, max_tasks: 0 },
     solver: { geometry: true, exploration_level: 5, threads: 4, show_request: false },
   };
@@ -139,6 +178,14 @@
     const m = /^(\d{1,2}):(\d{2})$/.exec(String(value || "").trim());
     if (!m) return fallback;
     return Number(m[1]) * 3600 + Number(m[2]) * 60;
+  }
+
+  // 30600 -> "08:30", the other way round from clockToSeconds.
+  function clockOf(seconds) {
+    const s = Math.max(0, Math.round(seconds));
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
   }
 
   function minutesToSeconds(value, fallback) {
@@ -465,7 +512,8 @@
     // ---------- costs ----------
     // What a route costs the company, in money:
     //   {currency, per_km: {<truck type>: money},
-    //             chico_multiplier: {<chico key>: factor}}
+    //             chico_multiplier: {<chico key>: factor},
+    //             early_start_per_hour: money}
     // A truck type missing a price costs 1 a kilometre and a chico
     // without a multiplier costs its truck nothing extra, so a defaults
     // file that says nothing about costs behaves as it did before they
@@ -484,6 +532,7 @@
         currency: src.currency || BUILTIN_DEFAULTS.costs.currency,
         per_km: perKm,
         chico_multiplier: multiplier,
+        early_start_per_hour: nonNegativeNumber(src.early_start_per_hour, 0),
       };
     }
 
@@ -501,6 +550,17 @@
       return base * factor;
     }
 
+    // What the dearest configuration of all costs per kilometre, in
+    // money: the yardstick everything sent to the solver is measured
+    // against. 0 when nothing is priced at all.
+    function dearestMoneyPerKm(costs) {
+      let dearest = 0;
+      for (const cfg of VEHICLE_CONFIGS) {
+        dearest = Math.max(dearest, moneyPerKm(cfg.key, costs));
+      }
+      return dearest;
+    }
+
     // The money figures as VROOM wants them: one non-negative integer
     // per configuration, normalised so the dearest lands on COST_SCALE
     // and the rest keep their ratios to it. A configuration that costs
@@ -508,20 +568,45 @@
     // drive; if nothing costs anything, every per_km is 0 and the plan
     // is decided by the reference term alone.
     function solverPerKm(costs) {
-      const money = {};
-      let dearest = 0;
-      for (const cfg of VEHICLE_CONFIGS) {
-        money[cfg.key] = moneyPerKm(cfg.key, costs);
-        dearest = Math.max(dearest, money[cfg.key]);
-      }
-
+      const dearest = dearestMoneyPerKm(costs);
       const out = {};
       for (const cfg of VEHICLE_CONFIGS) {
-        out[cfg.key] = dearest > 0 && money[cfg.key] > 0
-          ? Math.max(1, Math.round((money[cfg.key] / dearest) * COST_SCALE))
+        const money = moneyPerKm(cfg.key, costs);
+        out[cfg.key] = dearest > 0 && money > 0
+          ? Math.max(1, Math.round((money / dearest) * COST_SCALE))
           : 0;
       }
       return out;
+    }
+
+    // What going out `seconds` before the working day begins costs, in
+    // money: the hourly price of an early start for the time it buys.
+    // This is the number to report a plan's early starts with.
+    function moneyForEarlyStart(seconds, costs) {
+      const c = costs || defaultCosts();
+      if (!(seconds > 0)) return 0;
+      return nonNegativeNumber(c.early_start_per_hour, 0) * (seconds / 3600);
+    }
+
+    // The same figure as VROOM wants it, as a `fixed` cost on the
+    // vehicle that starts early. It has to land on the scale solverPerKm
+    // puts kilometres on, or the trade the solver is being asked to make
+    // is not the company's: VROOM weighs a fixed cost and a kilometre
+    // driven at per_km 1 exactly alike, so one unit here is one such
+    // kilometre and dividing by the dearest price per kilometre before
+    // scaling by COST_SCALE puts money and road in the same units.
+    // Never 0 while an early start is on offer: at 0 an early vehicle
+    // and its normal twin would cost precisely the same and the solver
+    // would send trucks out early for nothing.
+    function solverEarlyStart(seconds, costs) {
+      if (!(seconds > 0)) return 0;
+      const dearest = dearestMoneyPerKm(costs);
+      // Nothing is priced per kilometre, so there is no money scale to
+      // put this on. What is left is the reference charge on driving
+      // time (see REFERENCE_PER_HOUR), which comes to one unit a
+      // second, so an hour early is worth an hour more on the road.
+      if (dearest <= 0) return Math.round(seconds);
+      return Math.max(1, Math.round((moneyForEarlyStart(seconds, costs) / dearest) * COST_SCALE));
     }
 
     // Hard caps per truck, unlike the costs above: a route breaking one
@@ -537,6 +622,20 @@
       };
     }
 
+    // How much earlier than the working day each truck type may go out,
+    // in seconds: the "early_start_max_min" block of the defaults, which
+    // may also be a plain number meaning the same for every type. A type
+    // it says nothing about gets no early start.
+    function defaultEarlyStartMax() {
+      const src = day.early_start_max_min;
+      const shared = (src !== null && typeof src === "object") ? undefined : src;
+      const out = {};
+      for (const type of TYPE_ORDER) {
+        out[type] = minutesToSeconds(shared === undefined ? (src || {})[type] : shared, 0);
+      }
+      return out;
+    }
+
     function defaultTimes() {
       return {
         dayStart: clockToSeconds(day.start, 8 * 3600),
@@ -546,6 +645,12 @@
         // nothing before lunchEnd. Equal values mean no lunch.
         lunchStart: clockToSeconds(day.lunch_start, 12 * 3600),
         lunchEnd: clockToSeconds(day.lunch_end, 13 * 3600),
+        // How much earlier than dayStart a truck may go out, per truck
+        // type. The day is extended at the front and its end does not
+        // move, so this is time worked on top of it;
+        // costs.early_start_per_hour is what that is worth. 0 for a
+        // type offers it no early start at all.
+        earlyStartMax: defaultEarlyStartMax(),
         clientService: minutesToSeconds(svc.client_per_container, 600),
         companySetup: minutesToSeconds(svc.company_per_visit, 300),
         companyService: minutesToSeconds(svc.company_per_container, 300),
@@ -568,6 +673,33 @@
       if (lunchStart > dayStart) shifts.push({ key: "morning", label: "morning", start: dayStart, end: lunchStart });
       if (dayEnd > lunchEnd) shifts.push({ key: "afternoon", label: "afternoon", start: lunchEnd, end: dayEnd });
       return shifts;
+    }
+
+    // How much earlier than its shift a truck of this type may go out,
+    // in seconds. The times object holds one value per truck type; a
+    // plain number is taken to mean the same for every type, which is
+    // what a caller passing its own times most likely means.
+    function earlyStartMaxOf(times, type) {
+      const src = (times || {}).earlyStartMax;
+      const value = (src !== null && typeof src === "object") ? src[type] : src;
+      return isFinite(value) ? Math.max(0, Math.round(value)) : 0;
+    }
+
+    // The early starts on offer to a truck type for the first shift of
+    // the day, in seconds before its normal start and cheapest first:
+    // the maximum earliness cut into EARLY_STEPS steps, so an hour
+    // allowed gives half an hour and an hour. Rounded to whole minutes,
+    // and empty when the type is allowed none. Only the first shift
+    // gets these: the afternoon begins when lunch ends and nothing may
+    // move that.
+    function earlyStartsOf(times, type) {
+      const max = earlyStartMaxOf(times, type);
+      const out = [];
+      for (let i = 1; i <= EARLY_STEPS; ++i) {
+        const seconds = Math.round((max * i) / EARLY_STEPS / 60) * 60;
+        if (seconds > 0 && !out.includes(seconds)) out.push(seconds);
+      }
+      return out;
     }
 
     // Step ids are derived from the operation id so that solution steps
@@ -606,8 +738,9 @@
     //   threads      int                           vroom's -t
     // Returns {request, stepInfo, vehicleInfo}: stepInfo maps step ids
     // to a description, vehicleInfo maps vehicle ids to {type, chico,
-    // profile, shift}, shift being a key of shiftsOf (a physical truck
-    // is one vehicle per shift).
+    // profile, shift, early}, shift being a key of shiftsOf (a physical
+    // truck is one vehicle per shift) and early the seconds this
+    // vehicle goes out before its shift normally starts, 0 for most.
     function buildRequest({ depot, operations, fleet, chicos, stock, times, costs, limits,
                             geometry, exploration, threads }) {
       fleet = Object.assign(defaultFleet(), fleet || {});
@@ -631,7 +764,7 @@
       // shift, and VROOM has no break to place any more.
       const shifts = shiftsOf(times);
 
-      const addVehicle = (type, description, capacities, chico, shift, extra) => {
+      const addVehicle = (type, description, capacities, chico, shift, early, extra) => {
         // The profile is what enforces the no-go zones: it decides which
         // OSRM instance answers for this vehicle, and therefore whether
         // its travel times and its drawn route go through the areas it
@@ -646,17 +779,29 @@
         const perKmForVehicle = perKm[configKeyOf(type, chico)];
         const vehicleCosts = { per_hour: REFERENCE_PER_HOUR, per_task_hour: 0 };
         if (perKmForVehicle > 0) vehicleCosts.per_km = perKmForVehicle;
+        // An early start is the one thing besides the road that a plan
+        // pays for, and it is paid per truck that goes out early rather
+        // than per kilometre: VROOM's `fixed` cost, charged exactly when
+        // this vehicle is used. Nothing else on any vehicle is fixed, so
+        // it is the whole price of the earliness.
+        if (early > 0) vehicleCosts.fixed = solverEarlyStart(early, costs);
+        const parts = [description];
+        if (shifts.length > 1) parts.push(shift.label);
+        if (early > 0) parts.push(`from ${clockOf(shift.start - early)}`);
         const v = {
           id: vId++,
-          description: shifts.length > 1 ? `${description}, ${shift.label}` : description,
+          description: parts.join(", "),
           type,
           profile,
           start: company,
           end: company,
           capacities,
           // The shift: back at the company, unloaded, by its end, and
-          // not loading anything before its start.
-          time_window: [shift.start, shift.end],
+          // not loading anything before its start — brought forward by
+          // `early` when this vehicle is one of the early starts. The
+          // end never moves: an early start lengthens the day, it does
+          // not shift it.
+          time_window: [shift.start - early, shift.end],
           costs: vehicleCosts,
           ...extra,
         };
@@ -668,7 +813,7 @@
         const zoneSkills = zoneSkillsOfProfile(profile);
         if (ZONES.length) v.skills = zoneSkills;
         vehicles.push(v);
-        vehicleInfo[v.id] = { type, chico, profile, shift: shift.key };
+        vehicleInfo[v.id] = { type, chico, profile, shift: shift.key, early };
         return v;
       };
 
@@ -678,32 +823,48 @@
         const label = TRUCK_TYPES[type].label.toLowerCase();
         const offered = chicosOffered(type, fleet, chicos);
         const anyChico = Object.values(offered).some((c) => c > 0);
+        // One more vehicle per early start this type is offered, on the
+        // first shift only, see earlyStartsOf. A type allowed none adds
+        // no vehicles at all.
+        const earlyStarts = earlyStartsOf(times, type);
 
-        for (const shift of shifts) {
-          // One group per truck type and shift: plain and chico versions
-          // of the trucks together may not exceed the number of physical
-          // trucks. Counting per shift is what lets a truck put its chico
-          // on or take it off at the company over lunch.
+        shifts.forEach((shift, shiftRank) => {
+          // Only the first shift of the day can start early: the
+          // afternoon begins when lunch ends and nothing may move that.
+          const earlyForShift = shiftRank === 0 ? earlyStarts : [];
+          // The starts this truck type is offered on this shift, its
+          // normal one first so the free option is the one the solver
+          // finds before any it has to pay for.
+          const starts = [0, ...earlyForShift];
+
+          // One group per truck type and shift: every version of the
+          // trucks together — plain, with a chico, starting early —
+          // may not exceed the number of physical trucks, so the group
+          // is what turns those versions into alternatives rather than
+          // extra trucks. Counting per shift is what lets a truck put
+          // its chico on or take it off at the company over lunch.
           let groups;
-          if (anyChico) {
+          if (anyChico || earlyForShift.length) {
             const suffix = shifts.length > 1 ? `, ${shift.label}` : "";
             vehicleGroups.push({ id: gId, max_vehicles: n, description: `${label} trucks${suffix}` });
             groups = [gId++];
           }
+          const extra = groups ? { groups } : {};
 
-          for (let i = 1; i <= n; i++) {
-            addVehicle(type, `${label} ${i}`, capacitiesFor(type), null, shift,
-                       groups ? { groups } : {});
-          }
-          for (const [chicoKey, count] of Object.entries(offered)) {
-            const caps = chicoCapacitiesFor(chicoKey);
-            for (let i = 1; i <= count; i++) {
-              // What taking this chico costs is its "chico:<key>" entry in
-              // the costs, applied by addVehicle like any other override.
-              addVehicle(type, `${label} + chico ${i}`, caps, chicoKey, shift, { groups });
+          for (const early of starts) {
+            for (let i = 1; i <= n; i++) {
+              addVehicle(type, `${label} ${i}`, capacitiesFor(type), null, shift, early, extra);
+            }
+            for (const [chicoKey, count] of Object.entries(offered)) {
+              const caps = chicoCapacitiesFor(chicoKey);
+              for (let i = 1; i <= count; i++) {
+                // What taking this chico costs is its "chico:<key>" entry in
+                // the costs, applied by addVehicle like any other override.
+                addVehicle(type, `${label} + chico ${i}`, caps, chicoKey, shift, early, extra);
+              }
             }
           }
-        }
+        });
       }
 
       // A container only leaves the company if there is one in the yard.
@@ -828,11 +989,12 @@
     // Returns {level, text} entries: an "error" makes the day
     // unplannable as it stands, a "warning" is something the planner
     // should see but that the solver can live with.
-    function validate({ depot, operations, fleet, chicos, stock, times }) {
+    function validate({ depot, operations, fleet, chicos, stock, times, costs }) {
       fleet = Object.assign(defaultFleet(), fleet || {});
       chicos = Object.assign(defaultChicos(), chicos || {});
       stock = Object.assign(defaultContainerStock(), stock || {});
       times = Object.assign(defaultTimes(), times || {});
+      costs = costs || defaultCosts();
       const found = [];
       const error = (text) => found.push({ level: "error", text });
       const warning = (text) => found.push({ level: "warning", text });
@@ -847,6 +1009,25 @@
         error("Lunch: must be inside the working day.");
       } else if (times.dayEnd > times.dayStart && !shiftsOf(times).length) {
         error("Lunch: it covers the whole working day, so no truck could go out.");
+      }
+      // Only the types with trucks today can start early, so only they
+      // are worth complaining about.
+      const earlyTypes = TYPE_ORDER.filter((t) => (fleet[t] || 0) > 0 &&
+                                                  earlyStartsOf(times, t).length);
+      if (earlyTypes.length) {
+        const earliest = shiftsOf(times)[0];
+        for (const type of earlyTypes) {
+          const most = earlyStartMaxOf(times, type);
+          if (earliest && earliest.start - most < 0) {
+            error(`Starting early: ${TRUCK_TYPES[type].label.toLowerCase()} trucks would be ` +
+                  "on the road before midnight.");
+          }
+        }
+        if (!(nonNegativeNumber(costs.early_start_per_hour, 0) > 0)) {
+          warning("Starting early costs nothing, so trucks may go out early with nothing " +
+                  "to gain by it. Price an hour of early start in the Costs tab, or set " +
+                  "the early start to 0 minutes in Config.");
+        }
       }
       const total = TYPE_ORDER.reduce((n, t) => n + (fleet[t] || 0), 0);
       if (total === 0) error("The fleet is empty: set at least one truck in Config.");
@@ -917,11 +1098,13 @@
       SIZES, KINDS, TRUCK_TYPES, TYPE_ORDER, CHICO_TYPES, CHICO_ORDER,
       OPERATION_TYPES, COMPANY, SOLVER_DEFAULTS,
       ZONES, PROFILES, DEFAULT_PROFILE,
-      REFERENCE_PER_HOUR, COST_SCALE, VEHICLE_CONFIGS,
+      REFERENCE_PER_HOUR, COST_SCALE, EARLY_STEPS, VEHICLE_CONFIGS,
       parseLoad, oneHot, capacitiesFor, chicoCapacitiesFor, sizesFor,
       defaultFleet, defaultChicos, defaultContainerStock, stockFor,
       takesContainerOut, stockUsers, chicosOffered, defaultTimes, shiftsOf,
-      defaultCosts, moneyPerKm, solverPerKm, defaultLimits, configKeyOf,
+      earlyStartsOf, earlyStartMaxOf, clockOf,
+      defaultCosts, moneyPerKm, dearestMoneyPerKm, solverPerKm,
+      moneyForEarlyStart, solverEarlyStart, defaultLimits, configKeyOf,
       profileFor, pointInZone, zonesAt, blockedProfilesAt, describeProfiles,
       opIdOfStep, describe, buildRequest, validate,
     };

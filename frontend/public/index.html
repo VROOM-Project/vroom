@@ -424,6 +424,12 @@
       </fieldset>
 
       <fieldset>
+        <legend>Starting early</legend>
+        <label><span>Per hour before the working day</span><input id="costEarlyPerHour" type="number" min="0" step="0.5" value="0" /></label>
+        <div class="hint" id="earlyCostHint">What an hour of early start is worth: a truck going out before the day begins works that hour on top of its day, so unlike ordinary driver time it is a real cost and is priced. The solver sends a truck out early only when doing so saves more road than the early hours cost. It cannot keep an operation from being done — the most operations come first and money only chooses between plans doing the same work. One price covers the whole fleet; how early each type of truck may go out at all is set per type in Config. At 0 the early start is free and trucks may take one for nothing.</div>
+      </fieldset>
+
+      <fieldset>
         <legend>What the solver is told</legend>
         <div class="formula" id="costFormula"></div>
       </fieldset>
@@ -476,6 +482,10 @@
         <label><span>Lunch start</span><input id="lunchStart" type="time" value="12:00" /></label>
         <label><span>Lunch end</span><input id="lunchEnd" type="time" value="13:00" /></label>
         <div class="hint">Lunch is spent at the company: every truck is back and unloaded by the lunch start and loads nothing before the lunch end, so the day is a morning and an afternoon shift, both planned together. Set both to the same time for no lunch.</div>
+
+        <div class="sub">Starting early</div>
+        <ul id="earlyStart" class="list"></ul>
+        <div class="hint">How much earlier than the start above a truck of that type may go out, offered in two steps: half of it and all of it. Trucks of a type are identical, so this is per type — set it where the drivers can actually come in early and leave the rest at 0. Only the morning may start early: the afternoon begins when lunch ends. The day is only made longer at the front, so a truck that comes in early still finishes at the end above. Which trucks come in early is the solver's decision, weighed against what an hour of it costs in the Costs tab. Each step is one more version of every truck of that type for the solver to weigh, so 0 is the cheapest answer where it is not needed.</div>
       </fieldset>
 
       <fieldset>
@@ -1187,7 +1197,7 @@ function removeButton(onClick) {
 // Errors block the plan, warnings do not: an operation inside an area
 // closed to some trucks is still served by the others.
 function renderProblems() {
-  const found = M.validate({ depot, operations, fleet, chicos, stock, times: readTimes() });
+  const found = M.validate({ depot, operations, fleet, chicos, stock, times: readTimes(), costs: readCosts() });
   // The container rows say how many operations ask for each size.
   renderContainerLabels();
   const box = document.getElementById("problems");
@@ -1202,6 +1212,33 @@ function renderProblems() {
 function updateSolveButton() {
   const total = M.TYPE_ORDER.reduce((n, t) => n + (fleet[t] || 0), 0);
   document.getElementById("solve").disabled = operations.length === 0 || total === 0;
+}
+
+// How much earlier each truck type may go out, one row per type like
+// the fleet above it. Built once from M.TYPE_ORDER, so a new truck type
+// in waste_rules.json shows up here on its own; the values are read
+// straight off the inputs when a request is built.
+function renderEarlyStart() {
+  const list = document.getElementById("earlyStart");
+  list.innerHTML = "";
+  for (const type of M.TYPE_ORDER) {
+    const li = document.createElement("li");
+    const name = document.createElement("span");
+    name.className = "name";
+    name.textContent = M.TRUCK_TYPES[type].label;
+    const unit = document.createElement("span");
+    unit.className = "unit";
+    unit.textContent = "min earlier";
+    const input = document.createElement("input");
+    input.type = "number"; input.min = "0"; input.step = "15";
+    input.id = `early-${type}`;
+    input.value = 0;
+    // The one working-day value the solver is also given a price for, so
+    // changing it invalidates a drawn plan the way a cost does.
+    input.oninput = () => { onCostChange(); renderProblems(); };
+    li.append(name, unit, input);
+    list.appendChild(li);
+  }
 }
 
 // ---------- rendering: fleet (config tab) ----------
@@ -1325,6 +1362,7 @@ function readCosts() {
   const costs = { currency: CURRENCY, per_km: {}, chico_multiplier: {} };
   for (const type of M.TYPE_ORDER) costs.per_km[type] = numberOf(`costkm-${type}`);
   for (const key of M.CHICO_ORDER) costs.chico_multiplier[key] = numberOf(`chicomul-${key}`);
+  costs.early_start_per_hour = numberOf("costEarlyPerHour");
   return costs;
 }
 
@@ -1355,6 +1393,9 @@ function onCostChange() {
   routeLayer.clearLayers();
   document.getElementById("summary").innerHTML = "";
   refreshCostHints();
+  // An early start priced at nothing is a warning, so the problems box
+  // follows the prices too.
+  renderProblems();
 }
 
 // Money never reaches the solver, only the ratios between the
@@ -1369,6 +1410,33 @@ function refreshCostHints() {
       `<td class="raw">${perKm[cfg.key]}</td></tr>`)
     .join("");
 
+  // The early starts on offer, on the same scale: a fixed charge on the
+  // vehicle that takes one, worth so many kilometres of the dearest
+  // truck. Showing that equivalence is the only honest way to read the
+  // number, since it is what the solver is actually weighing. One price
+  // covers the whole fleet, so a step is one row however many types are
+  // offered it, named by the types that are.
+  const times = readTimes();
+  const typesOfStep = new Map();
+  for (const type of M.TYPE_ORDER) {
+    for (const seconds of M.earlyStartsOf(times, type)) {
+      if (!typesOfStep.has(seconds)) typesOfStep.set(seconds, []);
+      typesOfStep.get(seconds).push(M.TRUCK_TYPES[type].label.toLowerCase());
+    }
+  }
+  const dearest = M.dearestMoneyPerKm(costs);
+  const earlyRows = [...typesOfStep.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([seconds, types]) => {
+      const fixed = M.solverEarlyStart(seconds, costs);
+      const km = dearest > 0 ? ` <span class="muted">(${(fixed / M.COST_SCALE).toFixed(1)} km of the dearest truck)</span>` : "";
+      const who = types.length === M.TYPE_ORDER.length ? "every truck" : types.join(", ");
+      return `<tr><td>Start ${fmtDuration(seconds)} early <span class="muted">(${esc(who)})</span></td>` +
+        `<td class="n">${esc(money(M.moneyForEarlyStart(seconds, costs)))}</td>` +
+        `<td class="raw">${fixed}${km}</td></tr>`;
+    })
+    .join("");
+
   const priced = M.VEHICLE_CONFIGS.some((cfg) => M.moneyPerKm(cfg.key, costs) > 0);
   const note = priced
     ? `<span class="muted">The right-hand column is what VROOM is given: the same numbers rescaled, ` +
@@ -1377,7 +1445,7 @@ function refreshCostHints() {
     : `<span class="warn">Nothing costs anything, so every plan that does the same operations is worth ` +
       `the same and the solver falls back on driving time and the fewest trucks. Price at least one truck.</span>`;
 
-  document.getElementById("costFormula").innerHTML = `<table>${rows}</table>${note}`;
+  document.getElementById("costFormula").innerHTML = `<table>${rows}${earlyRows}</table>${note}`;
 }
 
 // Rendered from M.TYPE_ORDER and M.CHICO_ORDER, so a new truck type or
@@ -1425,6 +1493,8 @@ function renderCosts() {
     chicoList.appendChild(li);
   }
 
+  document.getElementById("costEarlyPerHour").value = defaults.early_start_per_hour;
+
   const limits = M.defaultLimits();
   document.getElementById("maxTravelTime").value = limits.maxTravelTime / 60;
   document.getElementById("maxDistance").value = limits.maxDistance / 1000;
@@ -1434,7 +1504,7 @@ function renderCosts() {
   document.getElementById("threads").value = M.SOLVER_DEFAULTS.threads;
   document.getElementById("geometry").checked = !!M.SOLVER_DEFAULTS.geometry;
 
-  for (const id of ["maxTravelTime", "maxDistance", "maxTasks", "explorationLevel", "threads"]) {
+  for (const id of ["costEarlyPerHour", "maxTravelTime", "maxDistance", "maxTasks", "explorationLevel", "threads"]) {
     document.getElementById(id).oninput = onCostChange;
   }
   document.getElementById("geometry").onchange = onCostChange;
@@ -1463,6 +1533,7 @@ function readTimes() {
     dayEnd: secondsOf("dayEnd"),
     lunchStart: secondsOf("lunchStart"),
     lunchEnd: secondsOf("lunchEnd"),
+    earlyStartMax: Object.fromEntries(M.TYPE_ORDER.map((t) => [t, numberOf(`early-${t}`) * 60])),
     clientService: numberOf("clientService") * 60,
     companySetup: numberOf("companySetup") * 60,
     companyService: numberOf("companyService") * 60,
@@ -1579,6 +1650,9 @@ function showSolution(sol, stepInfo) {
     const name = `${typeLabel} ${truck.k}`;
     const items = [];
     const chicoShifts = [];
+    // Only the first shift of the day can start early, so a truck has at
+    // most one early start and this holds how much of one.
+    let earlyBy = 0;
     let clientStops = 0;
     let time = 0;
     let distance = 0;
@@ -1595,10 +1669,17 @@ function showSolution(sol, stepInfo) {
       }
       const info = lastVehicleInfo[r.vehicle] || {};
       if (info.chico) chicoShifts.push(shift.label);
+      if (info.early > 0) earlyBy = info.early;
       const withChico = info.chico ? " with the chico" : "";
+      // An early start is worth spelling out on the line it happens:
+      // it is the one thing on a route the planner is paying for
+      // besides the road.
+      const early = info.early > 0
+        ? `, ${fmtDuration(info.early)} before the working day (${esc(money(M.moneyForEarlyStart(info.early, lastCosts)))})`
+        : "";
       for (const s of r.steps) {
         const clock = `<span class="t">${fmtClock(s.arrival)}</span>`;
-        if (s.type === "start") { items.push(`<li class="company">${clock}<span>leave the company${withChico}</span></li>`); continue; }
+        if (s.type === "start") { items.push(`<li class="company">${clock}<span>leave the company${withChico}${early}</span></li>`); continue; }
         if (s.type === "end") { items.push(`<li class="company">${clock}<span>back at the company</span></li>`); continue; }
         if (s.type === "break") { items.push(`<li class="company">${clock}<span>break</span></li>`); continue; }
         const text = s.description || stepInfo[s.id] || `${s.type} ${s.id}`;
@@ -1624,22 +1705,25 @@ function showSolution(sol, stepInfo) {
       const wholeDay = shifts.length === 1 || chicoShifts.length === shifts.length;
       chicoNote = wholeDay ? " · chico" : ` · chico in the ${chicoShifts.join(" and ")}`;
     }
+    const earlyNote = earlyBy > 0 ? ` · ${fmtDuration(earlyBy)} early` : "";
     cards.push(`<details class="route" style="--rc:${color}"${trucksUsed <= 3 ? " open" : ""}>
       <summary><span class="swatch"></span><span class="name">${esc(name)}</span>
-        <span class="meta">${clientStops} stop${clientStops === 1 ? "" : "s"} · ${fmtDuration(time)}${km}${chicoNote}</span>
+        <span class="meta">${clientStops} stop${clientStops === 1 ? "" : "s"} · ${fmtDuration(time)}${km}${chicoNote}${earlyNote}</span>
       </summary>
       <ol>${items.join("")}</ol></details>`);
   });
 
   // What the day costs in money: every route's kilometres at the price
-  // of the truck that drove them. The solver's own cost figure is a
-  // rescaled internal number, kept on hover for debugging.
+  // of the truck that drove them, plus the hours any truck put in before
+  // the working day. The solver's own cost figure is a rescaled internal
+  // number, kept on hover for debugging.
   let runningCost = 0;
   let costKnown = routes.length > 0;
   for (const r of routes) {
     const info = lastVehicleInfo[r.vehicle] || {};
     if (r.distance == null) { costKnown = false; break; }
     runningCost += M.moneyPerKm(M.configKeyOf(info.type, info.chico), lastCosts) * (r.distance / 1000);
+    runningCost += M.moneyForEarlyStart(info.early || 0, lastCosts);
   }
 
   const s = sol.summary || {};
@@ -1754,6 +1838,9 @@ function applyDefaults() {
   document.getElementById("dayEnd").value = fmtClock(t.dayEnd);
   document.getElementById("lunchStart").value = fmtClock(t.lunchStart);
   document.getElementById("lunchEnd").value = fmtClock(t.lunchEnd);
+  for (const type of M.TYPE_ORDER) {
+    document.getElementById(`early-${type}`).value = (t.earlyStartMax[type] || 0) / 60;
+  }
   document.getElementById("clientService").value = t.clientService / 60;
   document.getElementById("companySetup").value = t.companySetup / 60;
   document.getElementById("companyService").value = t.companyService / 60;
@@ -1772,13 +1859,22 @@ function setCompany({ lat, lng }) {
   renderPoints();
 }
 
+// The early starts and the prices come first: both are read by the
+// problems box and by the cost hints (an early start priced at nothing
+// is one of the things warned about), and both are lists built from the
+// truck types rather than markup, so anything that lands on the map
+// before them would be reading inputs that do not exist yet. The hints
+// are then drawn again at the end, once the working day is the real one
+// rather than the markup's placeholder.
+renderEarlyStart();
+renderCosts();
 applyDefaults();
 renderFleet();
 renderContainers();
-renderCosts();
 renderZones();
 refreshZoneState();
 renderPoints();
+refreshCostHints();
 </script>
 </body>
 </html>
