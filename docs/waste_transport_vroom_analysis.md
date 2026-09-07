@@ -10,6 +10,7 @@ Contents:
 - [How VROOM sees the problem](#how-vroom-sees-the-problem)
 - [Mapping operations to VROOM tasks](#mapping-operations-to-vroom-tasks)
 - [The multiban capacity](#the-multiban-capacity)
+- [The stock of containers](#the-stock-of-containers)
 - [No-go areas](#no-go-areas)
 - [Time constraints](#time-constraints)
 - [Objective](#objective)
@@ -38,6 +39,7 @@ the real problem is not modelled and needs a post-check.
 | Truck/container compatibility | `capacities` (a kind with 0 in every vector cannot board) | native with the extension |
 | Loading rules of small and poliban | `capacities`, one vector per rule | exact |
 | Loading rules of the multiban | `capacities`, one vector per rule | exact with the extension; impossible with a single linear capacity under the strict rule list (see below) |
+| No more operations taking a container out than the yard holds, the solver choosing which are dropped | `task_groups`, one group per container size | native with the extension |
 | Start time, finishing time | vehicle `time_window` | native |
 | Lunch break | vehicle `breaks` | native |
 | Leave operations for tomorrow, with priorities | `priority`, `unassigned` output | native |
@@ -75,9 +77,13 @@ here:
   then fewer vehicles used, then duration, then distance.
 
 What VROOM does **not** have: a multi-trip concept, "same vehicle" or
-"same visit" links between independent tasks, or any capacity rule
-that is not a linear inequality. (It has no loading-order constraints
-either, which is fine: order does not matter in this problem.)
+"same visit" links between independent tasks, any capacity rule
+that is not a linear inequality, or a limit on how many tasks of a
+given set are assigned (capacity is per vehicle and per route step, so
+it says nothing about a resource shared by the whole fleet over the
+day). It has no loading-order constraints either, which is fine here:
+order does not matter in this problem. The last two are what the
+`capacities` and `task_groups` extensions of this repository add.
 
 ## Mapping operations to VROOM tasks
 
@@ -292,6 +298,71 @@ accepts a load that no single vector accepts. Design, decisions and
 code map are in
 [waste_transport_plan_b.md](./waste_transport_plan_b.md).
 
+## The stock of containers
+
+The company can only hand out the containers it has. Every operation
+that takes one out of the yard (an empty delivery, the empty half of
+an exchange, materials in a container of that size) uses up one
+container of its size; a pick-up brings one in instead. When a day
+asks for more of a size than the yard holds, some of those operations
+have to wait for another day, and **which** ones is the solver's
+decision, not the planner's.
+
+This is a cardinality constraint over a set of tasks — at most `n` of
+these are assigned — and VROOM has nothing of the kind: capacity is
+checked per vehicle at each route step, so it cannot express a
+resource shared by the whole fleet across the whole day. Two ways out
+were possible:
+
+- generate only `n` of the competing shipments and drop the rest in
+  the planner. This is what the earlier version of this document
+  suggested, and it is wrong for the stated problem: the choice of
+  which operations are dropped would be made before the solver sees
+  the day, by whatever order the planner happened to use, ignoring
+  priorities and kilometres;
+- give the core the constraint. That is what `task_groups` does (see
+  [API.md](./API.md#task-groups)), the third extension of this
+  repository after `capacities` and `vehicle_groups`, and the one
+  that keeps the decision where it belongs.
+
+How the planner uses it: one group per container size that has a
+stated stock, `max_tasks` = the stock, holding the company-outbound
+shipment of every operation of that size (see `buildRequest` in
+[waste_model.js](../frontend/public/waste_model.js)). The stock itself
+is the `container_stock` block of
+[waste_defaults.json](./waste_defaults.json), edited in the planner's
+Config tab under the fleet; an empty box means the stock of that size
+is not tracked and no group is emitted for it, which is exactly the
+behaviour before this existed.
+
+Where the constraint is enforced in the solver, mirroring
+`vehicle_groups`: the construction heuristics skip a task whose groups
+are full (`seed_route` and `fill_route` in
+[heuristics.cpp](../src/algorithms/heuristics/heuristics.cpp)), and so
+does the local search whenever it turns an unassigned task into an
+assigned one — the refill pass `try_job_additions`, `UnassignedExchange`
+(exactly, since it knows the task it unassigns in exchange) and
+`PriorityReplace` (conservatively, since the tasks it unassigns are
+only decided when the move is applied). Moves that only shuffle
+assigned tasks between routes cannot change a group's count, so they
+need no check at all. Input `steps` that already exceed a limit are
+rejected before solving.
+
+Two consequences worth stating:
+
+- **Priority is how the planner steers the choice.** Cost decides
+  between plans doing the same work, so between two operations
+  competing for the last container the solver keeps the cheaper one to
+  serve unless priorities say otherwise.
+- **An exchange can be split by the stock.** Its two shipments are
+  independent (see [Gaps and limitations](#gaps-and-limitations)) and
+  only the empty half is in the group, so a size that has run out
+  turns the exchange into a plain pick-up of the full container rather
+  than dropping it whole. That is usually the useful behaviour, but it
+  is a change to the operation the planner asked for, so the planner
+  counts such an operation as partly done rather than unassigned and
+  marks it in the summary and the operation list.
+
 ## No-go areas
 
 The one requirement that VROOM cannot be asked about. It only ever sees
@@ -442,9 +513,14 @@ re-planning time `t`:
 4. **Materials** are a full container of a standard size; if the
    company later wants materials without a container, that becomes a
    new amount component with its own vectors.
-5. **Stock of empties at the company** is assumed unlimited. If stock
-   per size is limited, create at most that many leave-empty shipments
-   per size (VROOM will drop the extra ones).
+5. **Stock of containers at the company** is enforced through
+   `task_groups`, one group per size (see
+   [The stock of containers](#the-stock-of-containers)). A size left
+   blank in the planner is unlimited. What is not modelled is
+   turnover: a container brought back full and emptied during the day
+   does not become available again in the same plan, which is
+   pessimistic when the yard turns over quickly (open question 9 of
+   the problem document).
 6. **Company unloading throughput** (trucks queueing) is out of scope,
    as stated in the problem.
 

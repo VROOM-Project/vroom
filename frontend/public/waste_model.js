@@ -1,7 +1,7 @@
 // Waste transport model: truck types, loading rules, chico attachments,
 // operation types and the translation of a planner's day (company +
-// operations + fleet) into a VROOM request using the `capacities` and
-// `vehicle_groups` extensions of this fork.
+// operations + fleet) into a VROOM request using the `capacities`,
+// `vehicle_groups` and `task_groups` extensions of this fork.
 //
 // The rules themselves live in docs/waste_rules.json (single source of
 // truth), the planner's starting values in docs/waste_defaults.json and
@@ -22,6 +22,14 @@
 //   f2 f6 ...  full containers by size
 // Materials are sold in a container of a standard size that leaves the
 // company full, so for the loading rules they are a full container.
+//
+// The containers the company has in the yard (docs/waste_defaults.json,
+// "container_stock" block, edited in the planner's Config tab) cap how
+// many operations may take one out in a day: one `task_groups` entry
+// per size, holding the company-outbound shipment of every operation of
+// that size. The solver then decides which operations are left for
+// another day, priority first, instead of the planner choosing
+// beforehand. A size left blank is not tracked and gets no group.
 //
 // Chicos are trailers that attach to a truck type. A truck with a chico
 // carries one allowed load per bed (its own plus `extra_loads` on the
@@ -49,11 +57,16 @@
   else root.WasteModel = factory();
 })(typeof self !== "undefined" ? self : this, function () {
   // Planner-facing operation types.
+  // `takesContainerOut` marks the operations that need a container from
+  // the company yard to start with, and so use up the stock of that
+  // size: an exchange leaves an empty behind, materials leave in a
+  // container of that size. Picking up a full container does not, it
+  // brings one in.
   const OPERATION_TYPES = {
-    deliver_empty: { label: "Deliver empty container", short: "deliver empty", needsSize: true },
-    pickup_full: { label: "Pick up full container", short: "pick up full", needsSize: true },
-    exchange: { label: "Exchange empty for full", short: "exchange", needsSize: true },
-    sell_materials: { label: "Sell materials (full container)", short: "materials", needsSize: true },
+    deliver_empty: { label: "Deliver empty container", short: "deliver empty", needsSize: true, takesContainerOut: true },
+    pickup_full: { label: "Pick up full container", short: "pick up full", needsSize: true, takesContainerOut: false },
+    exchange: { label: "Exchange empty for full", short: "exchange", needsSize: true, takesContainerOut: true },
+    sell_materials: { label: "Sell materials (full container)", short: "materials", needsSize: true, takesContainerOut: true },
   };
 
   // ---------- the cost model ----------
@@ -94,6 +107,7 @@
     company: { lat: 37.030558, lng: -7.976093 },
     fleet: {},
     chicos: {},
+    container_stock: {},
     working_day: { start: "08:00", end: "17:00", lunch_start: "12:00", lunch_end: "13:00" },
     operation_times_min: { client_per_container: 10, company_per_visit: 5, company_per_container: 5 },
     costs: { currency: "\u20ac", per_km: {}, chico_multiplier: {} },
@@ -391,6 +405,43 @@
       return fleet;
     }
 
+    // Containers of each size the company has in the yard today, as
+    // {size: count}. A null value means the stock is not tracked for
+    // that size, i.e. there is always one available.
+    function defaultContainerStock() {
+      const stock = {};
+      const src = D.container_stock || {};
+      for (const size of SIZES) {
+        const raw = src[size];
+        stock[size] = (raw === undefined || raw === null || raw === "")
+          ? null
+          : nonNegativeInt(raw, 0);
+      }
+      return stock;
+    }
+
+    // How many containers of that size the yard holds, null when the
+    // stock is not tracked (no limit).
+    function stockFor(stock, size) {
+      const raw = (stock || {})[size];
+      if (raw === undefined || raw === null || raw === "") return null;
+      const n = Number(raw);
+      return isFinite(n) && n >= 0 ? Math.floor(n) : null;
+    }
+
+    // Whether an operation takes a container out of the company yard,
+    // and therefore uses up the stock of its size.
+    function takesContainerOut(op) {
+      const t = OPERATION_TYPES[op.type];
+      return !!(t && t.takesContainerOut);
+    }
+
+    // Operations that use up the stock of a given size.
+    function stockUsers(operations, size) {
+      return (operations || []).filter(
+        (op) => takesContainerOut(op) && Number(op.size) === Number(size));
+    }
+
     // Number of chicos of each type available today.
     function defaultChicos() {
       const chicos = {};
@@ -516,6 +567,8 @@
     //   operations   [{id, lat, lng, type, size, priority}]
     //   fleet        {small: n, multiban: n, poliban: n}
     //   chicos       {multiban: n, poliban: n}      chicos available
+    //   stock        {2: n, 6: n, ...}              containers in the yard,
+    //                                               null for no limit
     //   times        see defaultTimes()
     //   costs        see defaultCosts()
     //   limits       see defaultLimits()
@@ -524,10 +577,11 @@
     //   threads      int                           vroom's -t
     // Returns {request, stepInfo, vehicleInfo}: stepInfo maps step ids
     // to a description, vehicleInfo maps vehicle ids to {type, chico}.
-    function buildRequest({ depot, operations, fleet, chicos, times, costs, limits,
+    function buildRequest({ depot, operations, fleet, chicos, stock, times, costs, limits,
                             geometry, exploration, threads }) {
       fleet = Object.assign(defaultFleet(), fleet || {});
       chicos = Object.assign(defaultChicos(), chicos || {});
+      stock = Object.assign(defaultContainerStock(), stock || {});
       times = Object.assign(defaultTimes(), times || {});
       costs = costs || defaultCosts();
       limits = Object.assign(defaultLimits(), limits || {});
@@ -620,6 +674,29 @@
         }
       }
 
+      // A container only leaves the company if there is one in the yard.
+      // The stock is a plain cap on how many operations of a size can
+      // take one out today, which is a `task_groups` entry of this fork
+      // (see docs/API.md#task-groups): the company-outbound shipment of
+      // every operation of that size joins one group, whose `max_tasks`
+      // is the stock. The solver then leaves the ones that do not fit
+      // unassigned, choosing which by the usual ranking (priority
+      // first, then what the plan costs), instead of the planner
+      // picking beforehand.
+      const taskGroups = [];
+      const stockGroupOfSize = {};
+      let tgId = 1;
+      for (const size of SIZES) {
+        const available = stockFor(stock, size);
+        if (available === null || !stockUsers(operations, size).length) continue;
+        stockGroupOfSize[size] = tgId;
+        taskGroups.push({
+          id: tgId++,
+          max_tasks: available,
+          description: `${size} m³ containers in the yard`,
+        });
+      }
+
       const shipments = [];
       const stepInfo = {}; // step id -> text
 
@@ -644,9 +721,14 @@
         // the company end of a shipment is checked separately (a company
         // inside a zone is a configuration error, see validate).
         const skills = zoneSkillsAt(op.lng, op.lat);
-        const push = (s) => {
+        // The shipment that takes the container out of the yard carries
+        // the stock group of its size; the other half of an exchange
+        // brings a container in, so it does not.
+        const stockGroup = takesContainerOut(op) ? stockGroupOfSize[size] : undefined;
+        const push = (s, fromStock) => {
           s.priority = priority;
           if (skills.length) s.skills = skills;
+          if (fromStock && stockGroup !== undefined) s.groups = [stockGroup];
           shipments.push(s);
         };
 
@@ -656,7 +738,7 @@
               amount: oneHot(`e${size}`),
               pickup: atCompany(base + 1, `${tag}: load empty ${size} m³ at company`),
               delivery: atClient(base + 2, op, `${tag}: deliver empty ${size} m³`),
-            });
+            }, true);
             break;
           case "pickup_full":
             push({
@@ -670,7 +752,7 @@
               amount: oneHot(`e${size}`),
               pickup: atCompany(base + 1, `${tag}: load empty ${size} m³ at company`),
               delivery: atClient(base + 2, op, `${tag}: leave empty ${size} m³ (exchange)`),
-            });
+            }, true);
             push({
               amount: oneHot(`f${size}`),
               pickup: atClient(base + 3, op, `${tag}: pick up full ${size} m³ (exchange)`),
@@ -684,7 +766,7 @@
               amount: oneHot(`f${size}`),
               pickup: atCompany(base + 1, `${tag}: load materials (${size} m³ container) at company`),
               delivery: atClient(base + 2, op, `${tag}: deliver materials (${size} m³ container)`),
-            });
+            }, true);
             break;
           default:
             throw new Error(`unknown operation type ${op.type}`);
@@ -706,6 +788,7 @@
 
       const request = { vehicles, shipments, options };
       if (vehicleGroups.length) request.vehicle_groups = vehicleGroups;
+      if (taskGroups.length) request.task_groups = taskGroups;
       return { request, stepInfo, vehicleInfo };
     }
 
@@ -713,9 +796,10 @@
     // Returns {level, text} entries: an "error" makes the day
     // unplannable as it stands, a "warning" is something the planner
     // should see but that the solver can live with.
-    function validate({ depot, operations, fleet, chicos, times }) {
+    function validate({ depot, operations, fleet, chicos, stock, times }) {
       fleet = Object.assign(defaultFleet(), fleet || {});
       chicos = Object.assign(defaultChicos(), chicos || {});
+      stock = Object.assign(defaultContainerStock(), stock || {});
       times = Object.assign(defaultTimes(), times || {});
       const found = [];
       const error = (text) => found.push({ level: "error", text });
@@ -742,6 +826,19 @@
                 `${describeProfiles(z.blockedProfiles)} could not leave it. ` +
                 "Move the company or the zone.");
         }
+      }
+
+      // The yard cannot hand out more containers than it holds, so the
+      // extra operations are left for another day whatever the fleet
+      // does. Worth saying before the plan comes back short.
+      for (const size of SIZES) {
+        const available = stockFor(stock, size);
+        if (available === null) continue;
+        const needed = stockUsers(operations, size).length;
+        if (needed <= available) continue;
+        warning(`${needed} operations need a ${size} m³ container from the yard ` +
+                `and only ${available} ${available === 1 ? "is" : "are"} in stock: ` +
+                `the solver will leave ${needed - available} of them for another day.`);
       }
 
       for (const op of operations) {
@@ -788,7 +885,8 @@
       ZONES, PROFILES, DEFAULT_PROFILE,
       REFERENCE_PER_HOUR, COST_SCALE, VEHICLE_CONFIGS,
       parseLoad, oneHot, capacitiesFor, chicoCapacitiesFor, sizesFor,
-      defaultFleet, defaultChicos, chicosOffered, defaultTimes,
+      defaultFleet, defaultChicos, defaultContainerStock, stockFor,
+      takesContainerOut, stockUsers, chicosOffered, defaultTimes,
       defaultCosts, moneyPerKm, solverPerKm, defaultLimits, configKeyOf,
       profileFor, pointInZone, zonesAt, blockedProfilesAt, describeProfiles,
       opIdOfStep, describe, buildRequest, validate,

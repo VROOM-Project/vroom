@@ -40,7 +40,8 @@ inline void seed_route(const Input& input,
     const auto& current_job = input.jobs[job_rank];
 
     if (!input.vehicle_ok_with_job(v_rank, job_rank) ||
-        current_job.type == JOB_TYPE::DELIVERY || job_not_ok(job_rank)) {
+        current_job.type == JOB_TYPE::DELIVERY || job_not_ok(job_rank) ||
+        !input.task_groups_allow_adding(job_rank, unassigned)) {
       continue;
     }
 
@@ -275,6 +276,11 @@ inline Eval fill_route(const Input& input,
       const auto& current_job = input.jobs[job_rank];
 
       if (current_job.type == JOB_TYPE::DELIVERY) {
+        continue;
+      }
+
+      if (!input.task_groups_allow_adding(job_rank, unassigned)) {
+        // Task group assignment limit reached.
         continue;
       }
 

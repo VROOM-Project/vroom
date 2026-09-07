@@ -12,6 +12,8 @@ Recomputes the load at every step of every route from the input
 - skills: a task is only served by a vehicle having all its skills;
 - vehicle groups: no more routes than "max_vehicles" for the vehicles
   of each "vehicle_groups" entry;
+- task groups: no more assigned tasks than "max_tasks" for the tasks
+  of each "task_groups" entry, a shipment counting as one;
 - every task appears exactly once, either in a route or in
   "unassigned";
 - the "load" arrays reported by VROOM match the recomputation when
@@ -300,6 +302,23 @@ def check(input_data, solution):
                 f"pickup on vehicle {p}, delivery on vehicle {d}"
             )
 
+    # Task groups: a group holds jobs and shipments (a shipment counted
+    # once, through its pickup) of which at most max_tasks may be
+    # assigned.
+    for group in input_data.get("task_groups", []):
+        members = []
+        for job in input_data.get("jobs", []):
+            if group["id"] in job.get("groups", []):
+                members.append(("job", job["id"]))
+        for shipment in input_data.get("shipments", []):
+            if group["id"] in shipment.get("groups", []):
+                members.append(("pickup", shipment["pickup"]["id"]))
+        n = sum(1 for key in members if seen.get(key) is not None)
+        if n > group["max_tasks"]:
+            errors.append(
+                f"task group {group['id']}: {n} tasks assigned, max {group['max_tasks']}"
+            )
+
     return errors
 
 
@@ -313,7 +332,7 @@ def main(argv):
         solution = json.load(f)
 
     errors = check(input_data, solution)
-    checked = "capacity, precedence, skills and vehicle group constraints"
+    checked = "capacity, precedence, skills, vehicle and task group constraints"
     if len(argv) == 4:
         with open(argv[3], encoding="utf-8") as f:
             zone_config = json.load(f)

@@ -48,6 +48,7 @@ The problem description is read from standard input or from a file
 | [`shipments`](#shipments) |  array of `shipment` objects describing pickup and delivery tasks |
 | [`vehicles`](#vehicles) |  array of `vehicle` objects describing the available vehicles |
 | [[`vehicle_groups`](#vehicle-groups)] | optional array of `vehicle_group` objects limiting how many vehicles of a group can be used |
+| [[`task_groups`](#task-groups)] | optional array of `task_group` objects limiting how many tasks of a group can be assigned |
 | [[`matrices`](#matrices)] | optional description of per-profile custom matrices |
 | ~~[`matrix`]~~ | optional two-dimensional array describing a custom matrix |
 
@@ -70,6 +71,7 @@ A `job` object has the following properties:
 | [`pickup`] | an array of integers describing multidimensional quantities for pickup |
 | [`skills`] | an array of integers defining mandatory skills |
 | [`priority`] | an integer in the `[0, 100]` range describing priority level (defaults to 0) |
+| [`groups`] | an array of `task_group` ids this job belongs to |
 | [`time_windows`] | an array of `time_window` objects describing valid slots for job service start |
 
 An error is reported if two `job` objects have the same `id`.
@@ -85,6 +87,7 @@ A `shipment` object has the following properties:
 | [`amount`] | an array of integers describing multidimensional quantities |
 | [`skills`] | an array of integers defining mandatory skills |
 | [`priority`] | an integer in the `[0, 100]` range describing priority level (defaults to 0) |
+| [`groups`] | an array of `task_group` ids this shipment belongs to |
 
 A `shipment_step` is similar to a `job` object (expect for shared keys already present in `shipment`):
 
@@ -279,6 +282,46 @@ Rules:
   `steps` that already use more vehicles than allowed are rejected.
 - In plan mode, routes are validated per vehicle; the group limit is
   only checked on the number of vehicles with tasks in `steps`.
+
+### Task groups
+
+A `task_group` object has the following properties:
+
+| Key         | Description |
+| ----------- | ----------- |
+| `id` | integer |
+| `max_tasks` | an integer: maximum number of tasks of this group that can be assigned in the solution |
+| [`description`] | a string describing this group |
+
+A job or a shipment joins a group by listing the group `id` in its
+`groups` array. Use this when several tasks compete for a resource
+there is a limited number of, so that the solver decides which of them
+are left unassigned instead of the choice being made beforehand. A
+shipment counts as a **single** task here (unlike vehicle `max_tasks`,
+which counts route steps): its two steps are assigned together.
+
+```json
+"task_groups": [
+  { "id": 1, "max_tasks": 2, "description": "two containers in stock" }
+],
+"shipments": [
+  { "groups": [1], "pickup": { "id": 1, ... }, "delivery": { "id": 2, ... } },
+  { "groups": [1], "pickup": { "id": 3, ... }, "delivery": { "id": 4, ... } },
+  { "groups": [1], "pickup": { "id": 5, ... }, "delivery": { "id": 6, ... } }
+]
+```
+
+Rules:
+
+- A task may belong to several groups, in which case every limit
+  applies. Unknown group ids are an input error, and both steps of a
+  shipment must list the same groups.
+- The constraint is hard: tasks of a full group stay unassigned even
+  when a vehicle could serve them. Which ones are dropped follows the
+  usual solution ranking, priority first, so `priority` is the way to
+  say which tasks should survive a full group.
+- Input `steps` that already assign more tasks of a group than allowed
+  are rejected, in solving as well as in plan mode.
 
 ### Skills
 

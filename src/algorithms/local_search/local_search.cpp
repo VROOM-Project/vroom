@@ -8,6 +8,7 @@ All rights reserved (see LICENSE).
 */
 
 #include <numeric>
+#include <span>
 
 #include "algorithms/local_search/insertion_search.h"
 #include "algorithms/local_search/local_search.h"
@@ -208,6 +209,11 @@ LocalSearch<Route,
     for (const auto j : _sol_state.unassigned) {
       const auto& current_job = _input.jobs[j];
       if (current_job.type == JOB_TYPE::DELIVERY) {
+        continue;
+      }
+
+      if (!_input.task_groups_allow_adding(j, _sol_state.unassigned)) {
+        // Task group assignment limit reached.
         continue;
       }
 
@@ -455,9 +461,18 @@ void LocalSearch<Route,
             _sol_state.weak_insertion_ranks_end[source][u];
 
           for (unsigned s_rank = 0; s_rank < _sol[source].size(); ++s_rank) {
-            const auto& current_job = _input.jobs[_sol[source].route[s_rank]];
+            const Index removed = _sol[source].route[s_rank];
+            const auto& current_job = _input.jobs[removed];
             if (current_job.type != JOB_TYPE::SINGLE ||
                 u_priority < current_job.priority) {
+              continue;
+            }
+
+            if (!_input.task_groups_allow_adding(u,
+                                                 _sol_state.unassigned,
+                                                 std::span(&removed, 1))) {
+              // Task group assignment limit reached, even accounting
+              // for the job this move unassigns.
               continue;
             }
 
@@ -534,6 +549,13 @@ void LocalSearch<Route,
       // PriorityReplace stuff
       for (const Index u : _sol_state.unassigned) {
         if (_input.jobs[u].type != JOB_TYPE::SINGLE) {
+          continue;
+        }
+
+        if (!_input.task_groups_allow_adding(u, _sol_state.unassigned)) {
+          // Task group assignment limit reached. Which jobs this move
+          // would unassign is only decided when applying it, so we
+          // rule it out rather than count on them making room.
           continue;
         }
 
@@ -1901,6 +1923,7 @@ void LocalSearch<Route,
 #endif
 
       assert(_input.vehicle_groups_satisfied(_sol));
+      assert(_input.task_groups_satisfied(_sol));
 
       auto modified_vehicles =
         try_job_additions(best_ops[best_source][best_target]
@@ -1908,6 +1931,7 @@ void LocalSearch<Route,
                           0);
 
       assert(_input.vehicle_groups_satisfied(_sol));
+      assert(_input.task_groups_satisfied(_sol));
 
       // Extend update_candidates in case a vehicle was not modified
       // by the operator itself but afterward by
@@ -1955,6 +1979,13 @@ void LocalSearch<Route,
             // This move should be invalidated because a required
             // unassigned job has been added by try_job_additions in
             // the meantime.
+            invalidate_move = true;
+            break;
+          }
+          if (!_input.task_groups_allow_adding(req_u, _sol_state.unassigned)) {
+            // Same thing for a task group filled up in the meantime.
+            // Moves that make room in the group by unassigning one of
+            // its tasks are only ruled out until recomputed.
             invalidate_move = true;
             break;
           }
@@ -2084,6 +2115,7 @@ void LocalSearch<Route,
       constexpr double refill_regret = 1.5;
       try_job_additions(_all_routes, refill_regret);
       assert(_input.vehicle_groups_satisfied(_sol));
+      assert(_input.task_groups_satisfied(_sol));
     }
   }
 }

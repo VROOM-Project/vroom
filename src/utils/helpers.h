@@ -680,6 +680,10 @@ void check_tws(const std::vector<TimeWindow>& tws,
 
 void check_priority(Priority priority, Id id, const std::string& type);
 
+void check_groups(const std::vector<Id>& groups,
+                  Id id,
+                  const std::string& type);
+
 void check_no_empty_keys(const TypeToDurationMap& type_to_duration,
                          const Id id,
                          const std::string& type,

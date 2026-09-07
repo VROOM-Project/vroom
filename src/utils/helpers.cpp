@@ -133,6 +133,19 @@ void check_priority(const Priority priority,
   }
 }
 
+void check_groups(const std::vector<Id>& groups,
+                  const Id id,
+                  const std::string& type) {
+  for (std::size_t i = 0; i < groups.size(); ++i) {
+    for (std::size_t j = i + 1; j < groups.size(); ++j) {
+      if (groups[i] == groups[j]) {
+        throw InputException(
+          std::format("Duplicate group {} for {} {}.", groups[i], type, id));
+      }
+    }
+  }
+}
+
 void check_no_empty_keys(const TypeToDurationMap& type_to_duration,
                          const Id id,
                          const std::string& type,

@@ -9,6 +9,7 @@ Contents:
 - [Context and goal](#context-and-goal)
 - [Operations](#operations)
 - [Containers](#containers)
+  - [Stock at the company](#stock-at-the-company)
 - [Trucks](#trucks)
 - [Loading rules](#loading-rules)
 - [No-go areas](#no-go-areas)
@@ -99,6 +100,26 @@ ones can be nested or placed on top of others. Throughout this
 document `eN` means an empty N m³ container and `fN` a full one
 (`3e2` = three empty 2 m³ containers, `1f6` = one full 6 m³
 container).
+
+### Stock at the company
+
+The company only has so many containers of each size standing in the
+yard, and every operation that takes one out uses one up: delivering an
+empty container, an exchange (which leaves an empty behind) and selling
+materials (which leave in a container of that size). Picking up a full
+container at a client does not; it brings one in.
+
+So a day may ask for more containers of a size than the company has,
+and then some of those operations cannot be done today whatever the
+fleet does. Which ones are left for the next day is a planning
+decision, not a fixed one: the planner states how many containers of
+each size are available and the plan drops the ones that do not fit,
+priority first (see [Objective](#objective)).
+
+Containers brought back full during the day are emptied at the company
+and could in principle go out again the same day; today's counts are
+read as what is available for the day, without that turnover (see
+open question 10).
 
 ## Trucks
 
@@ -202,6 +223,9 @@ served, but only by a truck without one.
 - **Loading rules**: at every moment the load on a truck must be one
   of the allowed combinations for that truck (see
   [Loading rules](#loading-rules)).
+- **Stock of containers**: no more operations taking a container out of
+  the company can be done in a day than there are containers of that
+  size in the yard (see [Stock at the company](#stock-at-the-company)).
 - **Load conservation**: a container can only be left somewhere if it
   is on board; a full container picked up has to be unloaded somewhere
   (company or destination) before the end of the day.
@@ -295,7 +319,12 @@ can be expressed exactly (see the analysis document).
 8. **Unloading at the company.** Typical duration of a company visit
    (fixed part plus a per-container part), and whether the company has
    opening hours that constrain it.
-9. **No-go areas.** Which areas exactly, and are they really the same
+9. **Stock turnover.** A container collected full during the day is
+   emptied at the company. Is it available again the same day for
+   another operation, and if so after how long? Today the stock is
+   read as a plain count for the whole day, which is right when the
+   turnover is slow and slightly pessimistic otherwise.
+10. **No-go areas.** Which areas exactly, and are they really the same
    for the multiban chico and the poliban chico? Is any area closed to
    a truck type on its own (a poliban in a narrow centre, say), and are
    any of them closed only at certain hours? The first two answers cost

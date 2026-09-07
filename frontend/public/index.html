@@ -178,9 +178,15 @@
   .route-tag { width: 4px; align-self: stretch; border-radius: 2px; background: var(--rc, transparent); flex: none; margin: -6px 2px -6px -3px; }
   .empty { padding: 16px 4px; text-align: center; color: var(--ink-3); font-size: 12.5px; }
 
-  #fleet li { gap: 10px; }
-  #fleet li .name { font-weight: 600; flex: 1; }
-  #fleet li .unit { color: var(--ink-3); font-size: 11.5px; }
+  #fleet li, #containers li { gap: 10px; }
+  #fleet li .name, #containers li .name { font-weight: 600; flex: 1; }
+  #fleet li .unit, #containers li .unit { color: var(--ink-3); font-size: 11.5px; }
+
+  /* second heading inside a card, for the containers under the fleet */
+  .sub {
+    font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--ink-3); margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--line);
+  }
 
   /* warnings + action bar */
   #problems:not(:empty) {
@@ -457,6 +463,10 @@
         <legend>Fleet</legend>
         <ul id="fleet" class="list"></ul>
         <div class="hint">Trucks of each type available today, and chicos: trailers that make a truck carry three allowed loads at once. The solver decides which trucks take a chico, never more than the trucks of that type. Materials travel in a full container of the chosen size. Loading rules per type follow docs/waste_transport_problem.md.</div>
+
+        <div class="sub">Containers in the yard</div>
+        <ul id="containers" class="list"></ul>
+        <div class="hint">Containers of each size the company has to hand out today. Only operations that take one out use them up: delivering an empty one, an exchange (it leaves an empty behind) and materials (they leave in a container of that size). Picking up a full container does not, it brings one in. When more operations than containers need a size, the extra ones are left for another day and the solver picks which, priority first. Leave a box empty for a stock large enough not to matter.</div>
       </fieldset>
 
       <fieldset>
@@ -513,6 +523,10 @@ let operations = [];       // [{id, lat, lng, type, size, priority}]
 let nextOpId = 1;
 let fleet = M.defaultFleet();
 let chicos = M.defaultChicos();
+// Containers of each size in the yard, {size: count} with null for a
+// stock that is not tracked. What the company can hand out today caps
+// how many operations may take a container out of it.
+let stock = M.defaultContainerStock();
 const COLORS = ["#2563eb", "#dc2626", "#059669", "#d97706", "#7c3aed", "#0891b2", "#db2777", "#65a30d"];
 let lastRequestVehicles = [];
 let lastVehicleInfo = {};
@@ -1057,7 +1071,10 @@ function setHot(opId, on) {
 }
 
 // ---------- rendering: points ----------
-function renderPoints(unassignedOps = new Set(), opColor = {}) {
+// unassignedOps: operations no truck does at all. partialOps: ones whose
+// movements were split, some done today and some left for another day —
+// an exchange whose empty container was not available, typically.
+function renderPoints(unassignedOps = new Set(), opColor = {}, partialOps = new Set()) {
   markerLayer.clearLayers();
   for (const key of Object.keys(markerOf)) delete markerOf[key];
   const list = document.getElementById("points");
@@ -1078,11 +1095,17 @@ function renderPoints(unassignedOps = new Set(), opColor = {}) {
 
   for (const op of operations) {
     const unassigned = unassignedOps.has(op.id);
+    const partial = partialOps.has(op.id);
     const color = unassigned ? UNASSIGNED_COLOR : (opColor[op.id] || OP_STYLE[op.type].color);
+    const state = unassigned
+      ? "not assigned to any truck"
+      : partial
+        ? "partly done: the rest is left for another day"
+        : `priority ${op.priority}`;
     const marker = L.marker([op.lat, op.lng], { icon: opPin(op, color), riseOnHover: true })
       .addTo(markerLayer)
       .bindTooltip(`<b>#${op.id}</b> ${esc(M.describe(op))}` +
-        `<span class="sub">${unassigned ? "not assigned to any truck" : `priority ${op.priority}`}</span>`,
+        `<span class="sub">${state}</span>`,
         { direction: "top" });
     marker.on("mouseover", () => setHot(op.id, true));
     marker.on("mouseout", () => setHot(op.id, false));
@@ -1091,7 +1114,7 @@ function renderPoints(unassignedOps = new Set(), opColor = {}) {
       if (li) li.scrollIntoView({ block: "nearest", behavior: "smooth" });
     });
     markerOf[op.id] = marker;
-    list.appendChild(opRow(op, color, unassigned));
+    list.appendChild(opRow(op, color, unassigned, partial));
   }
 
   if (!operations.length) {
@@ -1107,7 +1130,7 @@ function renderPoints(unassignedOps = new Set(), opColor = {}) {
   updateSolveButton();
 }
 
-function opRow(op, color, unassigned) {
+function opRow(op, color, unassigned, partial) {
   const li = document.createElement("li");
   li.className = "op";
   li.dataset.op = op.id;
@@ -1122,7 +1145,8 @@ function opRow(op, color, unassigned) {
   mark.innerHTML = chip(op.type, unassigned ? UNASSIGNED_COLOR : OP_STYLE[op.type].color);
   const id = document.createElement("span");
   id.className = "id";
-  id.textContent = `#${op.id}`;
+  id.textContent = partial ? `#${op.id}*` : `#${op.id}`;
+  if (partial) id.title = "partly done: some of its movements are left for another day";
 
   const type = document.createElement("select");
   type.className = "type";
@@ -1158,7 +1182,9 @@ function removeButton(onClick) {
 // Errors block the plan, warnings do not: an operation inside an area
 // closed to some trucks is still served by the others.
 function renderProblems() {
-  const found = M.validate({ depot, operations, fleet, chicos, times: readTimes() });
+  const found = M.validate({ depot, operations, fleet, chicos, stock, times: readTimes() });
+  // The container rows say how many operations ask for each size.
+  renderContainerLabels();
   const box = document.getElementById("problems");
   const errors = found.filter((f) => f.level === "error");
   box.classList.toggle("has-error", errors.length > 0);
@@ -1219,6 +1245,52 @@ function renderFleet() {
     li.append(name, countLabel, count);
     list.appendChild(li);
   }
+}
+
+// ---------- rendering: containers in the yard (config tab) ----------
+function renderContainers() {
+  const list = document.getElementById("containers");
+  list.innerHTML = "";
+  for (const size of M.SIZES) {
+    const li = document.createElement("li");
+    const name = document.createElement("span");
+    name.className = "name";
+    name.textContent = `${size} m³`;
+
+    const unit = document.createElement("span");
+    unit.className = "unit";
+    const count = document.createElement("input");
+    count.type = "number"; count.min = "0"; count.max = "999";
+    count.placeholder = "any";
+    count.value = stock[size] === null ? "" : stock[size];
+    const refreshLabel = () => {
+      const available = M.stockFor(stock, size);
+      const needed = M.stockUsers(operations, size).length;
+      unit.textContent = available !== null && needed > available
+        ? `in stock (${needed} asked for)`
+        : "in stock";
+    };
+    // An empty box is "not tracked": the yard always has one.
+    count.oninput = () => {
+      stock[size] = count.value.trim() === ""
+        ? null
+        : Math.max(0, Math.floor(Number(count.value) || 0));
+      refreshLabel();
+      renderProblems();
+    };
+    refreshLabel();
+    li.dataset.size = size;
+    li._refresh = refreshLabel;
+    li.append(name, unit, count);
+    list.appendChild(li);
+  }
+}
+
+// Re-render the container rows' labels when the operations change (they
+// say when more operations than containers need a size), without
+// rebuilding the inputs the user is typing in.
+function renderContainerLabels() {
+  for (const el of document.querySelectorAll("#containers li[data-size]")) el._refresh();
 }
 
 // Re-render the chico rows' labels when the truck counts change (they
@@ -1395,7 +1467,7 @@ function readTimes() {
 function buildRequest() {
   const search = readSearch();
   return M.buildRequest({
-    depot, operations, fleet, chicos, times: readTimes(),
+    depot, operations, fleet, chicos, stock, times: readTimes(),
     costs: readCosts(), limits: readLimits(),
     geometry: search.geometry,
     exploration: search.exploration,
@@ -1448,7 +1520,24 @@ function drawRoute(latlngs, color, name, dashed) {
 function showSolution(sol, stepInfo) {
   routeLayer.clearLayers();
   const opColor = {};
-  const unassignedOps = new Set((sol.unassigned || []).map((u) => M.opIdOfStep(u.id)));
+  // An operation is one or two shipments, so a solution can leave part
+  // of one behind: an exchange whose empty half found no container in
+  // the yard still has its full container picked up. Only the ones with
+  // nothing done at all count as unassigned.
+  const unassignedSteps = new Set((sol.unassigned || []).map((u) => u.id));
+  const stepsOfOp = {};
+  for (const stepId of Object.keys(stepInfo || {})) {
+    const opId = M.opIdOfStep(Number(stepId));
+    (stepsOfOp[opId] = stepsOfOp[opId] || []).push(Number(stepId));
+  }
+  const unassignedOps = new Set();
+  const partialOps = new Set();
+  for (const [opId, steps] of Object.entries(stepsOfOp)) {
+    const dropped = steps.filter((id) => unassignedSteps.has(id)).length;
+    if (!dropped) continue;
+    if (dropped === steps.length) unassignedOps.add(Number(opId));
+    else partialOps.add(Number(opId));
+  }
   const routes = sol.routes || [];
   const cards = [];
   let chicosUsed = 0;
@@ -1502,6 +1591,9 @@ function showSolution(sol, stepInfo) {
   const s = sol.summary || {};
   const ct = s.computing_times ? `${s.computing_times.loading + s.computing_times.solving} ms` : "–";
   const unassignedTitle = unassignedOps.size ? ` title="operations ${[...unassignedOps].sort((a, b) => a - b).join(", ")}"` : "";
+  const partialNote = partialOps.size
+    ? `<span class="v muted" style="display:inline;font-size:12px" title="operations ${[...partialOps].sort((a, b) => a - b).join(", ")}: partly done"> +${partialOps.size} partly</span>`
+    : "";
   document.getElementById("summary").innerHTML = `
     <div class="stats">
       <div><span class="k">Trucks</span><span class="v">${s.routes ?? "–"}<span class="v muted" style="display:inline;font-size:12px"> / ${trucksTotal}</span></span></div>
@@ -1509,12 +1601,12 @@ function showSolution(sol, stepInfo) {
       <div><span class="k">Driving</span><span class="v">${s.duration != null ? fmtDuration(s.duration) : "–"}</span></div>
       <div><span class="k">Distance</span><span class="v">${s.distance != null ? (s.distance / 1000).toFixed(1) + " km" : "–"}</span></div>
       <div title="solver cost ${s.cost ?? "–"}"><span class="k">Cost</span><span class="v">${costKnown ? esc(money(runningCost)) : "–"}</span></div>
-      <div${unassignedTitle}><span class="k">Unassigned</span><span class="v ${unassignedOps.size ? "bad" : "muted"}">${unassignedOps.size}</span></div>
+      <div${unassignedTitle}><span class="k">Unassigned</span><span class="v ${unassignedOps.size ? "bad" : "muted"}">${unassignedOps.size}${partialNote}</span></div>
       <div><span class="k">Solved in</span><span class="v muted">${ct}</span></div>
     </div>
     ${cards.join("")}`;
 
-  renderPoints(unassignedOps, opColor);
+  renderPoints(unassignedOps, opColor, partialOps);
   const drawn = routeLayer.getLayers();
   if (drawn.length) {
     map.fitBounds(L.featureGroup(drawn).getBounds(), { padding: [40, 40] });
@@ -1610,6 +1702,7 @@ function applyDefaults() {
   document.getElementById("companyService").value = t.companyService / 60;
   fleet = M.defaultFleet();
   chicos = M.defaultChicos();
+  stock = M.defaultContainerStock();
   setCompany(M.COMPANY);
 }
 
@@ -1624,6 +1717,7 @@ function setCompany({ lat, lng }) {
 
 applyDefaults();
 renderFleet();
+renderContainers();
 renderCosts();
 renderZones();
 refreshZoneState();
