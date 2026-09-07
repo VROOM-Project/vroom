@@ -16,6 +16,11 @@ Recomputes the load at every step of every route from the input
   of each "task_groups" entry, a shipment counting as one;
 - every task appears exactly once, either in a route or in
   "unassigned";
+- vehicle time windows: a route leaves no earlier than its vehicle
+  "time_window" start and is back no later than its end. With lunch
+  spent at the company, a truck is one vehicle per shift, so this is
+  what checks that every truck is back before lunch and out only
+  after it;
 - the "load" arrays reported by VROOM match the recomputation when
   present;
 - no-go zones, when a zone file is given: no route of a vehicle stops
@@ -271,6 +276,23 @@ def check(input_data, solution):
         if pending_pickups:
             errors.append(f"vehicle {v_id}: shipments picked up but never delivered")
 
+        # The route must fit the vehicle's working window: the start
+        # step is the departure, the end step the arrival back. VROOM
+        # reports both as "arrival".
+        tw = vehicle.get("time_window")
+        if tw and steps:
+            first, last = steps[0], steps[-1]
+            if first.get("type") == "start" and first.get("arrival", tw[0]) < tw[0]:
+                errors.append(
+                    f"vehicle {v_id}: leaves at {first['arrival']}, before its "
+                    f"time window opens at {tw[0]}"
+                )
+            if last.get("type") == "end" and last.get("arrival", tw[1]) > tw[1]:
+                errors.append(
+                    f"vehicle {v_id}: back at {last['arrival']}, after its "
+                    f"time window closes at {tw[1]}"
+                )
+
     for u in solution.get("unassigned", []):
         key = (u.get("type"), u.get("id"))
         if key in seen:
@@ -332,7 +354,7 @@ def main(argv):
         solution = json.load(f)
 
     errors = check(input_data, solution)
-    checked = "capacity, precedence, skills, vehicle and task group constraints"
+    checked = "capacity, precedence, skills, vehicle time window, vehicle and task group constraints"
     if len(argv) == 4:
         with open(argv[3], encoding="utf-8") as f:
             zone_config = json.load(f)

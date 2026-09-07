@@ -33,7 +33,7 @@
     "end": "17:00",
     "lunch_start": "12:00",
     "lunch_end": "13:00",
-    "_comment": "lunch is a fixed break for every truck; equal start and end mean no lunch"
+    "_comment": "lunch is spent at the company: every truck is back and unloaded by lunch_start and loads nothing before lunch_end, so the day is a morning and an afternoon shift, both planned in one solve; equal start and end mean no lunch"
   },
   "operation_times_min": {
     "client_per_container": 10,
@@ -56,7 +56,7 @@
     }
   },
   "limits": {
-    "_comment": "Hard caps per truck, not costs: a route breaking one of them is not a plan at all, whereas a cost only makes it less attractive. 0 means no limit. max_tasks counts VROOM tasks, i.e. shipment steps, not planner operations: an exchange is four of them (two pickups and two deliveries). Editable in the Costs tab.",
+    "_comment": "Hard caps per truck and shift, not costs: a route breaking one of them is not a plan at all, whereas a cost only makes it less attractive. 0 means no limit. With a lunch, each cap applies to the morning and to the afternoon separately, not to the whole day. max_tasks counts VROOM tasks, i.e. shipment steps, not planner operations: an exchange is four of them (two pickups and two deliveries). Editable in the Costs tab.",
     "max_travel_time_min": 0,
     "max_distance_km": 0,
     "max_tasks": 0

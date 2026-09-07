@@ -43,6 +43,7 @@ void RouteSplit::compute_gain() {
                                                s_vehicle,
                                                source,
                                                _empty_route_ranks,
+                                               _sol,
                                                _best_known_gain);
   if (choice.gain.cost > 0) {
     stored_gain = choice.gain;

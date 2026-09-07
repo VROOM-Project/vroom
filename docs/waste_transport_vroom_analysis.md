@@ -41,7 +41,7 @@ the real problem is not modelled and needs a post-check.
 | Loading rules of the multiban | `capacities`, one vector per rule | exact with the extension; impossible with a single linear capacity under the strict rule list (see below) |
 | No more operations taking a container out than the yard holds, the solver choosing which are dropped | `task_groups`, one group per container size | native with the extension |
 | Start time, finishing time | vehicle `time_window` | native |
-| Lunch break | vehicle `breaks` | native |
+| Lunch break, spent at the company | two vehicles per truck configuration, one per shift, each with the shift as its `time_window`; no `breaks` | native |
 | Leave operations for tomorrow, with priorities | `priority`, `unassigned` output | native |
 | Objective: most operations, then the cost of the kilometres driven | solution ranking + `costs`, priced per truck type in the planner's Costs tab | native |
 | New operation mid-day | re-run with current state as input, travel times from OSRM, `steps` warm start | supported by a re-planning procedure, not by a live mode |
@@ -132,17 +132,22 @@ Details:
   consecutive tasks at the same location) and `service` for the
   per-container unloading time. Same for pickups of empties.
 - **Vehicles** start and end at the company, with `time_window`,
-  `breaks`, `capacities` (per truck configuration, see below), `type`
+  `capacities` (per truck configuration, see below), `type`
   (`small`, `multiban`, `poliban`) so that operation durations can
   differ per truck through `service_per_type`, and `profile`, which is
   the default one unless the configuration has areas it may not drive
-  through (see [No-go areas](#no-go-areas)).
-- **Chicos** are handled by listing every truck of a type twice: `n`
-  plain vehicles and `min(chicos, n)` vehicles with the chico
-  capacity list, all in one `vehicle_groups` entry with
-  `max_vehicles` = `n`. Trucks of a type being identical, it does not
-  matter which physical truck ends up with the chico, so the solver
-  freely chooses how many chicos go out and on which routes. See
+  through (see [No-go areas](#no-go-areas)). Lunch being spent at the
+  company, a truck's day is two shifts, morning and afternoon, and
+  each configuration of each truck is one VROOM vehicle per shift
+  (see [Time constraints](#time-constraints)).
+- **Chicos** are handled by listing every truck of a type twice in
+  each shift: `n` plain vehicles and `min(chicos, n)` vehicles with
+  the chico capacity list, all in one `vehicle_groups` entry per shift
+  with `max_vehicles` = `n`. Trucks of a type being identical, it does
+  not matter which physical truck ends up with the chico, so the
+  solver freely chooses how many chicos go out and on which routes,
+  and the group counting per shift lets a chico go on or come off at
+  the company over lunch. See
   [Chicos](#chicos).
 - **Swap at a client** (leave empty, take full) is two shipments. The
   cost structure pushes VROOM to serve both in the same visit, but
@@ -402,9 +407,23 @@ Details, file format and the build pipeline are in
 - **Working hours**: vehicle `time_window` `[start, end]`, in seconds
   (relative to midnight or absolute timestamps, as long as all inputs
   agree).
-- **Lunch break**: one entry in vehicle `breaks` with the allowed
-  start window and `service` equal to the break length. VROOM places
-  the break between two tasks.
+- **Lunch break**: spent at the company, so it is not a VROOM `break`
+  at all. A VROOM break is a pause without a location, taken between
+  two tasks wherever the truck happens to be, and it cannot be pinned
+  to a place. Instead each truck configuration is two vehicles, a
+  morning one with `time_window` `[day start, lunch start]` and an
+  afternoon one with `[lunch end, day end]`, both starting and ending
+  at the company. A route ends when its last task is done, so the
+  morning truck is back and unloaded by the lunch start; a route
+  starts at its window's start, so nothing is loaded before the lunch
+  end. One solve still plans the whole day, and decides what goes
+  before or after lunch. The per-vehicle caps (`max_travel_time`,
+  `max_distance`, `max_tasks`) then apply per shift. A lunch set to
+  zero length gives one vehicle per configuration for the whole day.
+  Two solves, one per half-day, were the alternative; they were
+  rejected because the morning would grab what it can and the
+  afternoon get the leftovers, with the stock, the priorities and the
+  chico caps to be carried across by hand.
 - **Operation durations**: `service` on each pickup and delivery step,
   `service_per_type` when they differ per truck type, `setup` for the
   per-visit overhead at the company.
@@ -427,8 +446,8 @@ stated order: operations first, then what they cost to drive.
   spent whether a truck goes out or not: pricing it would trade real
   fuel against money already gone, and a plan using one more driver to
   save kilometres is the better plan. Time is a hard limit instead
-  (the working day, the lunch break, the caps in `limits`), never a
-  price. So no vehicle carries a `fixed` cost, `per_task_hour` is 0,
+  (the working day, lunch at the company, the caps in `limits`), never
+  a price. So no vehicle carries a `fixed` cost, `per_task_hour` is 0,
   and `route_duration_quadratic` (the extension of this fork in
   [route-duration-quadratic.patch](../vroom-custom/route-duration-quadratic.patch))
   is not used, though the patch stays in the build.
@@ -480,9 +499,11 @@ current GPS coordinates as `start` and VROOM fetches the matrix from
 OSRM itself (no precomputed matrices needed). Procedure at
 re-planning time `t`:
 
-1. For each truck: `start` = its current coordinates (or its next stop
-   if it is about to arrive), `time_window` = `[t, end]`; keep the
-   lunch `break` if not taken yet; `end` unchanged (the company).
+1. For each truck: the vehicle of the current shift gets `start` = its
+   current coordinates (or its next stop if it is about to arrive) and
+   `time_window` = `[t, shift end]`, `end` unchanged (the company);
+   the vehicle of a shift not started yet is unchanged, and one of a
+   shift already over is dropped.
 2. Drop shipments fully done.
 3. Shipments picked up but not yet delivered become **jobs with a
    `delivery` amount** at the destination. VROOM loads job deliveries
@@ -510,6 +531,15 @@ re-planning time `t`:
    through (see [No-go areas](#no-go-areas)); it is still assumed to
    change nothing else — same speed, same service times. If it does,
    the chico vehicles get their own `speed_factor`, `type` or `costs`.
+   A chico goes on or comes off only over lunch: a VROOM vehicle keeps
+   one configuration for its whole route, a route is a shift, and the
+   shifts meet at the company at lunch. A truck back at the yard at
+   10:00 to unload keeps whatever it left with. Swapping at any yard
+   stop, wanted later, would mean either many short shifts per truck
+   (cheap in the planner, but a trip cannot span two of them) or a
+   vehicle whose capacity changes at a depot visit, with the chico a
+   resource shared across the fleet, which is a new concept in the
+   C++ core on the scale of the vehicle groups extension.
 4. **Materials** are a full container of a standard size; if the
    company later wants materials without a container, that becomes a
    new amount component with its own vectors.
@@ -548,17 +578,21 @@ re-planning time `t`:
 custom matrices (no routing server needed): the company, three
 clients, a disposal site, one multiban, one small truck, one poliban,
 and eight operations including a swap, a pure transport, a full 12 m³
-and two poliban containers. The multiban appears twice, plain
-(vehicle 1) and with a chico (vehicle 4), in a vehicle group with
-`max_vehicles` 1, so the solver picks one of the two. Vehicles use
+and two poliban containers. Lunch is spent at the company, so every
+truck is two vehicles: vehicles 1 to 4 are the morning shift, 5 to 8
+the same trucks in the afternoon. The multiban appears twice in each
+shift, plain (vehicles 1 and 5) and with a chico (vehicles 4 and 8),
+in one vehicle group per shift with `max_vehicles` 1, so the solver
+picks one of the two for each half of the day. Vehicles use
 `capacities` generated from [waste_rules.json](./waste_rules.json)
-with `scripts/waste_rules_to_capacities.py` (`--chico` for vehicle
-4). Run it with:
+with `scripts/waste_rules_to_capacities.py` (`--chico` for vehicles
+4 and 8). Run it with:
 
 ```bash
 vroom -i docs/waste_example.json -x 5 -o out.json
 python scripts/waste_solution_check.py docs/waste_example.json out.json
 ```
 
-Times in the example are seconds since midnight (8:00 to 17:00, lunch
-window 12:00 to 13:00).
+Times in the example are seconds since midnight: the morning runs
+8:00 to 12:00, the afternoon 13:00 to 17:00, lunch being 12:00 to
+13:00 at the company.
