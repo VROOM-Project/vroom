@@ -1,0 +1,32 @@
+{
+  "_comment": "Areas the trucks may not drive through, and the routing profiles that enforce them. Third source of truth next to waste_rules.json (what the trucks may carry, fixed) and waste_defaults.json (what the planner may change day to day). A zone is not a solver constraint: VROOM only ever sees a travel-time matrix, so a forbidden area is enforced in the road graph. Each restricted profile gets its own OSRM dataset in which every road inside its zones is made prohibitively slow (see scripts/build_zone_graphs.sh), and the vehicles that must respect those zones use that profile. Drawn in the planner's Zones tab, which writes this file back through frontend/server.js. Changing a zone means rebuilding the affected dataset and restarting its OSRM container, which the Apply button of that tab does (scripts/build_zone_graphs.sh --apply); until then the planner says the routing data is out of date and refuses to plan with it. Full documentation: no_go_zones.md.",
+  "penalty": {
+    "_comment": "How a road inside a zone is made unusable. osrm-customize --segment-speed-file overrides every road segment inside a zone with this speed and rate, so the road stays connected (nothing ever becomes unroutable, and a client whose only access is through a zone still gets a route) but is never worth taking: at 1 km/h, crossing 500 m of zone costs half an hour. Lower speed_kmh to make it harsher. rate is OSRM's weight rate (metres per weight unit, the lower the more the router avoids the segment); it is needed because the stock car.lua weights by routability and not by duration, so overriding the speed alone would not be enough.",
+    "speed_kmh": 1,
+    "rate": 0.0001
+  },
+  "profiles": {
+    "_comment": "One entry per OSRM instance, named with letters only: VROOM puts the profile name in the OSRM request URL and OSRM accepts nothing else there ('car_chico' fails at solve time with 'URL string malformed'). 'car' is the unrestricted dataset every vehicle uses by default; any other profile is a copy of it with its zones penalised, served by its own container and declared under the same name in vroom-conf/config.yml, which is what binds a VROOM vehicle profile to a routing server. Each profile costs about 500 MB of disk and one container, so keep them few. 'service' is the docker-compose.yml service serving the profile, which the planner's Apply button (scripts/build_zone_graphs.sh --apply) starts or restarts after a build; 'host_port' is where that container is published on the host, used by the planner and the build script to check the instance from outside. Inside the compose network every osrm-routed listens on 5000, which is the port config.yml uses.",
+    "car": {
+      "host_port": 5000,
+      "description": "default profile: no area restriction"
+    },
+    "chico": {
+      "host_port": 5001,
+      "service": "osrm-chico",
+      "description": "trucks going out with a chico"
+    }
+  },
+  "vehicle_profiles": {
+    "_comment": "Which routing profile a vehicle configuration uses. The first matching rule wins, otherwise 'default'. Selectors: 'chico' (any vehicle with a chico), 'chico:<key>' (a chico type of waste_rules.json), 'truck:<type>' (a truck type, with or without a chico). Today only chicos are restricted; to ban, say, polibans from a historic centre, add a 'poliban' profile above, a rule {\"match\": \"truck:poliban\", \"profile\": \"poliban\"} here, a zone listing that profile below and a container for it.",
+    "rules": [
+      {
+        "match": "chico",
+        "profile": "chico"
+      }
+    ],
+    "default": "car"
+  },
+  "_zone_format": "Shape of an entry of \"zones\": {\"id\": 1, \"name\": \"Olhao centre\", \"blocked_profiles\": [\"chico\"], \"polygon\": [[-7.84, 37.03], [-7.83, 37.03], [-7.83, 37.02], [-7.84, 37.02]]}. polygon is a single ring of [longitude, latitude] pairs (the same order as every VROOM location), closed implicitly (do not repeat the first point) and without holes: draw two zones rather than one with a hole. blocked_profiles lists the profiles that may not enter, and every profile named there must exist above. With no zones at all every vehicle stays on the \"car\" profile and the second OSRM instance is not needed.",
+  "zones": []
+}

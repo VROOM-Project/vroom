@@ -565,6 +565,12 @@ Eval basic(const Input& input,
     auto v_rank = vehicles_ranks[v];
     auto& current_r = routes[v_rank];
 
+    if (current_r.empty() &&
+        !input.vehicle_groups_allow_opening(v_rank, std::nullopt, routes)) {
+      // Vehicle group usage limit reached.
+      continue;
+    }
+
     if (current_r.empty() && init != INIT::NONE) {
       // Trivial lambda for no additional job validity constraint.
       constexpr auto job_not_ok = [](const Index) { return false; };
@@ -692,6 +698,12 @@ Eval dynamic_vehicle_choice(const Input& input,
     }
 
     auto& current_r = routes[v_rank];
+
+    if (current_r.empty() &&
+        !input.vehicle_groups_allow_opening(v_rank, std::nullopt, routes)) {
+      // Vehicle group usage limit reached.
+      continue;
+    }
 
     if (current_r.empty() && init != INIT::NONE) {
       auto job_not_ok =

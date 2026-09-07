@@ -11,6 +11,7 @@ Contents:
 - [Containers](#containers)
 - [Trucks](#trucks)
 - [Loading rules](#loading-rules)
+- [No-go areas](#no-go-areas)
 - [Constraints](#constraints)
 - [Objective](#objective)
 - [Dynamics: operations added during the day](#dynamics-operations-added-during-the-day)
@@ -74,9 +75,19 @@ the planning tool translates into the movements above:
 | Request type | Movements |
 | --- | --- |
 | Deliver an empty container | company to client, empty container |
-| Pick up an empty container | client to company, empty container |
+| Pick up a full container | client to company, full container |
 | Exchange an empty container for a full one | empty container company to client, full container client to company |
-| Sell materials | company to client, a full truck of materials, nothing else on board |
+| Sell materials | company to client, a full container of materials |
+
+A container collected at a client is always a **full** one: the truck
+brings it back to the company to be emptied. Empty containers only
+travel the other way, from the company to a client, so no request
+takes an empty container away from a client.
+
+Materials are sold in a container of one of the standard sizes that
+leaves the company already full and stays at the client. For the
+loading rules it is simply a full container of that size: other
+containers can travel on the same truck, and even on the same axle.
 
 ## Containers
 
@@ -99,12 +110,24 @@ Three truck types:
 | multiban | 2, 6, 12 m³ |
 | poliban | 20, 40 m³ |
 
-The multiban and the poliban can be fitted with an **extender** that
-makes them bigger. Which combinations become possible with the
-extender is not specified yet (see [open questions](#open-questions)).
-
 Compatibility between containers and trucks is strict: a truck can
 only carry the container sizes of its type.
+
+### Chicos
+
+A **chico** is a trailer that attaches to a truck. There are two
+types, one for the multiban and one for the poliban. A truck with a
+chico carries three times as much: its own bed plus two more on the
+chico, and each bed takes any load allowed for the truck type, in any
+mix. A multiban with a chico can for instance carry `1f6 + 3e2` on
+its bed, `6e6` on the first chico bed and `1f12` on the second.
+
+The company has a limited number of chicos of each type, fewer than
+trucks. Whether a truck goes out with a chico is not decided by the
+planner beforehand: the planning tool considers both possibilities
+for every truck and chooses which trucks, if any, take a chico. A
+chico may carry a cost (hitching time or similar) that the tool
+accounts for; it is zero until the company provides it.
 
 ## Loading rules
 
@@ -148,6 +171,25 @@ notes below) but explains the list:
   incorrect because they either allowed forbidden combinations or
   forbade allowed ones.
 
+## No-go areas
+
+Some parts of the map are closed to some vehicles: narrow streets, a
+historic centre, a low bridge. A truck concerned by such an area may not
+even **drive through** it on its way somewhere else, so this is a
+constraint on the route itself and not only on which clients it serves.
+
+Today the only vehicles concerned are the ones going out with a chico:
+the combination is long enough that some streets are out of the
+question, and both chico types share the same areas. The areas are drawn
+on the map by the planner, who knows them, rather than listed here; they
+live in [no_go_zones.json](./no_go_zones.json). Nothing about the
+mechanism is specific to chicos, and a truck type could be restricted
+the same way (see
+[no_go_zones.md](./no_go_zones.md#restricting-another-kind-of-vehicle)).
+
+A client sitting inside an area closed to the chicos can still be
+served, but only by a truck without one.
+
 ## Constraints
 
 - **Working hours**: every truck has a start time and a finishing time
@@ -162,6 +204,11 @@ notes below) but explains the list:
 - **Load conservation**: a container can only be left somewhere if it
   is on board; a full container picked up has to be unloaded somewhere
   (company or destination) before the end of the day.
+- **Chicos**: a truck takes at most one chico, of the type matching
+  the truck, for the whole day; no more chicos go out than the
+  company owns, and no more trucks than it has.
+- **No-go areas**: a truck with a chico neither stops in nor drives
+  through the areas closed to it (see [No-go areas](#no-go-areas)).
 - **Unassigned operations are acceptable**: if not everything fits in
   the day, the leftover moves to the next day. Operations can carry a
   **priority** so that the planner controls which ones are dropped
@@ -217,20 +264,31 @@ can be expressed exactly (see the analysis document).
 2. **`1f12 + 1f2`.** One description says a full 12 m³ can travel with
    a 2 m³ "full or empty"; the final list only has `1f12 + 1e2`. Which
    is right?
-3. **Extender.** What does each truck type carry with the extender
-   fitted? Is the decision to fit it taken per truck per day (an input
-   to the planner) or should the planner decide?
-4. **Materials.** How are materials transported: inside a container
-   (which size, on which truck) or loose in the truck? Do they share
-   the truck with containers?
+3. **Chicos.** Confirmed: two chico types (multiban, poliban), each
+   adding two beds that take any allowed load of the truck type, and
+   the planner decides which trucks take one. Still open: does a
+   chico change anything else (driving speed, time to load and
+   unload, places the truck cannot reach), and what is the cost of
+   taking one?
+4. **Materials.** Confirmed: materials travel in a full container of
+   a standard size and can share the truck with other containers.
+   Still open: which sizes are used for materials, and does the
+   container come back to the company later (as a normal pick-up)?
 5. **Small truck with a full 2 m³.** Is `1f2 + 1e2` or `1f2 + 2e2`
    allowed on the small truck, or is a full 2 m³ always alone?
-6. **Where empties come from.** Always from the company, or can an
-   empty container unloaded at a client have been picked up empty
-   elsewhere?
+6. **Where empties come from.** Empties always come from the
+   company: a container collected at a client is always full. Is
+   there any exception, for instance a client site that stocks
+   empties for another one?
 7. **Disposal sites.** When a full container is "left somewhere" other
    than the company, is that a final drop (the container stays there)
    or does the truck wait and bring the container back?
 8. **Unloading at the company.** Typical duration of a company visit
    (fixed part plus a per-container part), and whether the company has
    opening hours that constrain it.
+9. **No-go areas.** Which areas exactly, and are they really the same
+   for the multiban chico and the poliban chico? Is any area closed to
+   a truck type on its own (a poliban in a narrow centre, say), and are
+   any of them closed only at certain hours? The first two answers cost
+   nothing to apply; a per-truck-type area costs one more routing
+   dataset, and a time-dependent one is not supported at all.

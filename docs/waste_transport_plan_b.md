@@ -39,7 +39,7 @@ Why this is the right shape for the problem:
 - "Anything smaller than an allowed combination is allowed" is built
   in: every finite down-closed set is exactly the union of the boxes
   below its maximal elements. So this covers *any* rule table of the
-  kind the company can produce, for any truck or extender
+  kind the company can produce, for any truck or chico
   configuration.
 - With one capacity vector it is exactly today's VROOM, so nothing
   changes for existing users and the change is generic enough to be

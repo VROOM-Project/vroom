@@ -8,6 +8,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="rules.js"></script>
 <script src="defaults.js"></script>
+<script src="zones.js"></script>
 <script src="waste_model.js"></script>
 <style>
   :root {
@@ -134,9 +135,11 @@
   button:disabled { opacity: .45; cursor: default; box-shadow: none; }
 
   .grid2 { display: grid; grid-template-columns: 1fr 108px; gap: 8px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: end; margin-top: 8px; }
   .field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
   .field > span { font-size: 11px; font-weight: 600; color: var(--ink-3); }
   .field select { width: 100%; }
+  .field input[type=number] { width: 100%; text-align: left; }
 
   /* legend of operation kinds */
   .legend { display: flex; flex-wrap: wrap; gap: 5px 12px; margin-top: 11px; padding-top: 10px; border-top: 1px dashed var(--line); }
@@ -185,6 +188,41 @@
     border-radius: var(--r); padding: 9px 11px; font-size: 12.5px;
     display: flex; flex-direction: column; gap: 4px;
   }
+  /* an error blocks the plan, a warning does not */
+  #problems.has-error:not(:empty) { background: #fef2f2; border-color: #fecaca; }
+  #problems .err-item { color: var(--danger); }
+  #problems .warn-item { color: var(--warn); }
+
+  /* no-go zones */
+  #zones li { gap: 8px; flex-wrap: wrap; }
+  #zones li .name { font-weight: 600; flex: 1; }
+  #zones li .name input {
+    font: inherit; font-weight: 600; color: inherit; width: 100%;
+    border: 1px solid transparent; background: none; border-radius: var(--r-sm); padding: 2px 4px;
+  }
+  #zones li .name input:hover { border-color: var(--line); }
+  #zones li .name input:focus { border-color: var(--brand); background: #fff; outline: none; }
+  #zones li .meta { color: var(--ink-3); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+  #zones li .profiles { flex-basis: 100%; display: flex; gap: 12px; flex-wrap: wrap; }
+  #zones li .profiles label {
+    display: flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--ink-2);
+    margin: 0; padding: 0; border: none; background: none;
+  }
+  #zones li .profiles input { width: auto; margin: 0; }
+  #zoneState { font-size: 12px; border-radius: var(--r); padding: 9px 11px; margin-bottom: 8px; }
+  #zoneState.ok { background: #f0fdf4; border: 1px solid #bbf7d0; color: var(--ok); }
+  #zoneState.stale { background: #fffbeb; border: 1px solid #fde68a; color: var(--warn); }
+  #zoneState.err { background: #fef2f2; border: 1px solid #fecaca; color: var(--danger); }
+  #zoneState.busy { background: var(--panel); border: 1px solid var(--line); }
+  /* overflow-wrap: a fieldset is as wide as its widest unbreakable
+     word by default, and a build log is full of long paths. */
+  #zoneState code {
+    display: block; margin-top: 5px; font-size: 11.5px;
+    background: rgba(17,23,37,.05); border-radius: var(--r-sm); padding: 4px 6px;
+  }
+  #drawHint { display: none; }
+  body.drawing #drawHint { display: block; }
+  body.drawing #map { cursor: crosshair; }
   /* always-reachable action bar, outside the scrolling panel */
   #actions {
     display: flex; gap: 8px; flex: none; padding: 12px 14px;
@@ -266,12 +304,13 @@
         <span class="logo"><svg width="19" height="19" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M1.6 11.6V4.9h7v6.7"/><path d="M8.6 7.3h2.9l2.9 2.7v1.6"/><circle cx="4.6" cy="12.4" r="1.4"/><circle cx="11.5" cy="12.4" r="1.4"/></svg></span>
         <div>
           <h1>Waste transport planner</h1>
-          <p class="sub">Click the map to place today's operations</p>
+          <p class="sub">Click the map or enter coordinates to place today's operations</p>
         </div>
       </div>
       <div id="status"><span class="dot"></span><span class="txt">Checking solver…</span></div>
       <div class="tabs">
         <button class="active" data-tab="solve">Plan</button>
+        <button data-tab="zones">Zones</button>
         <button data-tab="config">Config</button>
       </div>
     </header>
@@ -284,8 +323,13 @@
           <div class="field"><span>Operation</span><select id="opType"></select></div>
           <div class="field"><span>Container</span><select id="opSize"></select></div>
         </div>
+        <div class="grid3">
+          <div class="field"><span>Latitude</span><input id="newLat" type="number" step="0.000001" placeholder="41.14961" /></div>
+          <div class="field"><span>Longitude</span><input id="newLng" type="number" step="0.000001" placeholder="-8.61099" /></div>
+          <button id="addOp">Add</button>
+        </div>
         <div class="legend" id="opLegend"></div>
-        <div class="hint">Click anywhere on the map to add an operation with these settings. The company is fixed; its site is set in Config.</div>
+        <div class="hint">Click anywhere on the map, or type a latitude and longitude, to add an operation with these settings. The company is fixed; its site is set in Config.</div>
       </fieldset>
 
       <fieldset>
@@ -299,23 +343,45 @@
       <div id="summary"></div>
     </div>
 
-    <!-- ===== Config tab ===== -->
-    <div class="panel" id="tab-config" hidden>
+    <!-- ===== Zones tab ===== -->
+    <!-- Areas some trucks may not drive through. This is not a solver
+         constraint: the vehicles bound to a restricted routing profile
+         get their travel times and their route from an OSRM instance in
+         which the roads inside these areas are prohibitively slow, so
+         the plan drives around them. Editing a zone therefore means
+         rebuilding that instance's data; the box at the top says when
+         it is out of date, and Apply rebuilds it (frontend/server.js
+         runs scripts/build_zone_graphs.sh --apply). See
+         docs/no_go_zones.md. -->
+    <div class="panel" id="tab-zones" hidden>
       <fieldset>
-        <legend>Company site</legend>
-        <label><span>Latitude</span><input id="companyLat" class="wide" type="number" step="0.000001" /></label>
-        <label><span>Longitude</span><input id="companyLng" class="wide" type="number" step="0.000001" /></label>
+        <legend>Routing data</legend>
+        <div id="zoneState">Checking…</div>
         <div class="btn-row">
-          <button id="centreCompany">Centre the map here</button>
-          <button id="resetCompany">Reset to default</button>
+          <button id="applyZones" class="primary">Apply the areas to the routing data</button>
         </div>
-        <div class="hint">Trucks start and end the day here, so it cannot be moved by clicking the map. Must be inside the loaded OSRM area (Portugal).</div>
+        <div class="hint">Zones are enforced by the road graph, not by the solver, so a change here only reaches the plan once the routing data is rebuilt and its container restarted. Apply does both; it takes a minute or two and the planner will not plan with out-of-date data meanwhile.</div>
       </fieldset>
 
       <fieldset>
+        <legend>Areas</legend>
+        <div class="btn-row">
+          <button id="drawZone">Draw a zone</button>
+          <button id="finishZone" hidden>Finish</button>
+          <button id="cancelZone" hidden>Cancel</button>
+        </div>
+        <div class="hint" id="drawHint">Click on the map to place the corners of the area, then Finish (or double-click the last corner). At least three corners.</div>
+        <ul id="zones" class="list"></ul>
+        <div class="hint">Tick which vehicles an area is closed to. Areas are stored in <code>docs/no_go_zones.json</code> and saved as soon as they change, so they are shared with everyone using this planner — unlike the Config tab, which only changes this browser. To reshape an area, delete it and draw it again.</div>
+      </fieldset>
+    </div>
+
+    <!-- ===== Config tab ===== -->
+    <div class="panel" id="tab-config" hidden>
+      <fieldset>
         <legend>Fleet</legend>
         <ul id="fleet" class="list"></ul>
-        <div class="hint">Trucks of each type available today. Any truck can sell materials (a full truck, nothing else on board). Loading rules per type follow docs/waste_transport_problem.md.</div>
+        <div class="hint">Trucks of each type available today, and chicos: trailers that make a truck carry three allowed loads at once. The solver decides which trucks take a chico, never more than the trucks of that type. Materials travel in a full container of the chosen size. Loading rules per type follow docs/waste_transport_problem.md.</div>
       </fieldset>
 
       <fieldset>
@@ -334,13 +400,7 @@
         <label><span>At the company, per container (min)</span><input id="companyService" type="number" min="0" step="1" value="5" /></label>
       </fieldset>
 
-      <fieldset>
-        <legend>Solver</legend>
-        <label><span>Return route geometry</span><input id="geometry" type="checkbox" checked /></label>
-        <label><span>Show request JSON after solving</span><input id="showRequest" type="checkbox" /></label>
-      </fieldset>
-
-      <div class="hint">Everything on this tab starts from <code>docs/waste_defaults.json</code>, next to the loading rules in <code>docs/waste_rules.json</code>. Changes here live in this browser tab only — edit that file to change the defaults.</div>
+      <!-- <div class="hint">Everything on this tab starts from <code>docs/waste_defaults.json</code>, next to the loading rules in <code>docs/waste_rules.json</code>. Changes here live in this browser tab only — edit that file to change the defaults.</div> -->
     </div>
 
     <footer id="actions">
@@ -363,7 +423,13 @@ function bootError(file) {
 }
 if (typeof WASTE_RULES === "undefined") bootError("docs/waste_rules.json");
 if (typeof WASTE_DEFAULTS === "undefined") bootError("docs/waste_defaults.json");
-const M = WasteModel.create(WASTE_RULES, WASTE_DEFAULTS);
+// The forbidden areas (/zones.js) are optional: without them every
+// vehicle uses the default routing profile, which is how the planner
+// behaved before zones existed.
+const zoneConfig = typeof WASTE_ZONES === "undefined" ? undefined : WASTE_ZONES;
+// Not const: drawing or deleting an area rebuilds the model, since the
+// zones decide which routing profile each vehicle uses.
+let M = WasteModel.create(WASTE_RULES, WASTE_DEFAULTS, zoneConfig);
 
 // ---------- state ----------
 // The company is fixed on the map: it only moves from the Config tab.
@@ -371,13 +437,15 @@ let depot = { ...M.COMPANY };
 let operations = [];       // [{id, lat, lng, type, size, priority}]
 let nextOpId = 1;
 let fleet = M.defaultFleet();
+let chicos = M.defaultChicos();
 const COLORS = ["#2563eb", "#dc2626", "#059669", "#d97706", "#7c3aed", "#0891b2", "#db2777", "#65a30d"];
 let lastRequestVehicles = [];
+let lastVehicleInfo = {};
 
 // ---------- look of an operation: colour + glyph on a 16x16 grid ----------
 const OP_STYLE = {
   deliver_empty:  { color: "#0891b2", glyph: '<path d="M8 3.4v7.4"/><path d="M4.7 7.5 8 10.8l3.3-3.3"/><path d="M3.6 13h8.8"/>' },
-  pickup_empty:   { color: "#7c3aed", glyph: '<path d="M8 12.6V5.2"/><path d="M4.7 8.5 8 5.2l3.3 3.3"/><path d="M3.6 13h8.8"/>' },
+  pickup_full:    { color: "#7c3aed", glyph: '<path d="M8 12.6V5.2"/><path d="M4.7 8.5 8 5.2l3.3 3.3"/><path d="M3.6 13h8.8"/>' },
   exchange:       { color: "#2563eb", glyph: '<path d="M3.4 6.2h8.4"/><path d="M9.6 4 11.8 6.2 9.6 8.4"/><path d="M12.6 10.4H4.2"/><path d="M6.4 8.2 4.2 10.4 6.4 12.6"/>' },
   sell_materials: { color: "#d97706", glyph: '<path d="M8 2.7 13 5.5v5.5L8 13.8 3 11V5.5z"/><path d="M3 5.5 8 8.3l5-2.8"/><path d="M8 8.3v5.5"/>' },
 };
@@ -435,9 +503,11 @@ function companyPin() {
 document.querySelectorAll(".tabs button").forEach((btn) => {
   btn.onclick = () => {
     document.querySelectorAll(".tabs button").forEach((b) => b.classList.toggle("active", b === btn));
-    document.getElementById("tab-solve").hidden = btn.dataset.tab !== "solve";
-    document.getElementById("tab-config").hidden = btn.dataset.tab !== "config";
+    for (const other of document.querySelectorAll(".tabs button")) {
+      document.getElementById(`tab-${other.dataset.tab}`).hidden = other !== btn;
+    }
     document.getElementById("actions").hidden = btn.dataset.tab !== "solve";
+    if (btn.dataset.tab === "zones") refreshZoneState();
   };
 });
 
@@ -503,22 +573,401 @@ const MutedControl = L.Control.extend({
 map.addControl(new MutedControl());
 map.getContainer().classList.add("muted");
 
+const zoneLayer = L.layerGroup().addTo(map);  // below everything else
 const routeLayer = L.layerGroup().addTo(map); // below the markers
 const markerLayer = L.layerGroup().addTo(map);
 const markerOf = {}; // operation id -> marker
 
-map.on("click", (e) => {
-  operations.push({
+// ---------- no-go zones ----------
+// Areas some trucks may not drive through. Nothing here constrains the
+// solver: a zone is enforced by the road graph of the routing profile it
+// is closed to (docs/no_go_zones.md). What the planner does is draw the
+// areas, save them to docs/no_go_zones.json through frontend/server.js,
+// and say when the routing data built from them is out of date.
+const ZONES_ENABLED = !!zoneConfig;
+if (!ZONES_ENABLED) {
+  document.querySelector(".tabs button[data-tab=zones]").hidden = true;
+}
+
+let zoneList = ((zoneConfig || {}).zones || []).map((z) => ({
+  id: Number(z.id),
+  name: String(z.name || `zone ${z.id}`),
+  blocked_profiles: (z.blocked_profiles || []).slice(),
+  polygon: (z.polygon || []).map((pt) => [Number(pt[0]), Number(pt[1])]),
+}));
+
+// Profiles an area can be closed to. The default profile is not one of
+// them: it is served by the unrestricted dataset by definition, so
+// closing an area to it would change nothing. To keep another kind of
+// truck out of an area, give it a profile of its own in
+// docs/no_go_zones.json.
+const ZONE_PROFILES = Object.keys((zoneConfig || {}).profiles || {})
+  .filter((name) => !name.startsWith("_") && name !== M.DEFAULT_PROFILE);
+
+function profileLabel(name) {
+  const def = ((zoneConfig || {}).profiles || {})[name];
+  return (def && def.description) || name;
+}
+
+// The zones decide which routing profile every vehicle uses, so the
+// model is rebuilt whenever they change.
+function rebuildModel() {
+  M = WasteModel.create(WASTE_RULES, WASTE_DEFAULTS, { ...zoneConfig, zones: zoneList });
+}
+
+function renderZones() {
+  zoneLayer.clearLayers();
+  for (const z of zoneList) {
+    if (z.polygon.length < 3) continue;
+    const closed = z.blocked_profiles.length
+      ? z.blocked_profiles.map(profileLabel).join(", ")
+      : "closed to nobody yet";
+    L.polygon(z.polygon.map(([lng, lat]) => [lat, lng]), {
+      color: "#b91c1c", weight: 1.5, dashArray: "5 4",
+      fillColor: "#b91c1c", fillOpacity: 0.1, interactive: false,
+    }).bindTooltip(`${esc(z.name)}<span class="sub">${esc(closed)}</span>`, { sticky: true })
+      .addTo(zoneLayer);
+  }
+  renderZoneList();
+}
+
+function renderZoneList() {
+  const list = document.getElementById("zones");
+  if (!list) return;
+  list.innerHTML = "";
+  if (!zoneList.length) {
+    const li = document.createElement("li");
+    li.className = "empty";
+    li.textContent = "No area yet. Draw one to keep some trucks out of it.";
+    list.appendChild(li);
+    return;
+  }
+  for (const z of zoneList) {
+    const li = document.createElement("li");
+
+    const name = document.createElement("span");
+    name.className = "name";
+    const input = document.createElement("input");
+    input.value = z.name;
+    input.title = "name of the area";
+    input.onchange = () => { z.name = input.value.trim() || `zone ${z.id}`; saveZones(); };
+    name.appendChild(input);
+
+    const meta = document.createElement("span");
+    meta.className = "meta";
+    meta.textContent = `${z.polygon.length} corners`;
+
+    const profiles = document.createElement("span");
+    profiles.className = "profiles";
+    for (const profile of ZONE_PROFILES) {
+      const label = document.createElement("label");
+      const box = document.createElement("input");
+      box.type = "checkbox";
+      box.checked = z.blocked_profiles.includes(profile);
+      box.onchange = () => {
+        z.blocked_profiles = box.checked
+          ? [...new Set([...z.blocked_profiles, profile])]
+          : z.blocked_profiles.filter((p) => p !== profile);
+        saveZones();
+      };
+      label.appendChild(box);
+      label.appendChild(document.createTextNode(`closed to ${profileLabel(profile)}`));
+      profiles.appendChild(label);
+    }
+
+    li.append(name, meta, removeButton(() => {
+      zoneList = zoneList.filter((other) => other !== z);
+      saveZones();
+    }), profiles);
+    list.appendChild(li);
+  }
+}
+
+// The file is the single source of truth and the build script reads it,
+// so every change goes straight back to disk.
+async function saveZones() {
+  rebuildModel();
+  renderZones();
+  renderProblems();
+  routeLayer.clearLayers();
+  if (!ZONES_ENABLED) return;
+  try {
+    const res = await fetch("/zones.json", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ zones: zoneList }),
+    });
+    const body = await res.json();
+    if (!res.ok) {
+      setStatus(`Could not save the areas: ${body.error || res.status}`, "err");
+      return;
+    }
+    setStatus(`Areas saved to docs/no_go_zones.json (${body.zones}).`);
+  } catch (err) {
+    setStatus(`Could not save the areas: ${err.message}`, "err");
+  }
+  refreshZoneState();
+}
+
+// Is the routing data behind each restricted profile built, current and
+// answering? An area that has not made it into the road graph yet would
+// otherwise silently do nothing to the plan.
+// Returns the per-profile state, which the Plan button checks too, so
+// that a plan is never made with routing data that does not match the
+// areas. `null` when the state could not be read.
+let zoneStatus = null; // profile -> {built, up_to_date, reachable, ...}
+
+// Why a profile's routing data is not ready to plan with, or "" if it is.
+function zoneProblem(name, p) {
+  const who = profileLabel(name);
+  if (!p.built) return `the routing data for ${who} has not been built yet`;
+  if (!p.up_to_date) return `the routing data for ${who} is older than the areas`;
+  if (p.reachable === false) return `nothing answers for ${who} on port ${p.host_port}`;
+  return "";
+}
+
+async function refreshZoneState() {
+  const box = document.getElementById("zoneState");
+  if (!box || !ZONES_ENABLED) return null;
+  let status;
+  try {
+    const res = await fetch("/zones/status");
+    status = await res.json();
+    if (!res.ok) throw new Error(status.error || res.status);
+  } catch (err) {
+    zoneStatus = null;
+    box.className = "err";
+    box.textContent = `Cannot read the state of the routing data: ${err.message}`;
+    return null;
+  }
+  zoneStatus = status.profiles || {};
+
+  const profiles = Object.entries(zoneStatus);
+  const applyBtn = document.getElementById("applyZones");
+  if (!profiles.length) {
+    box.className = "ok";
+    box.textContent = "No area is closed to anyone: every truck uses the default routing profile, and the plan needs nothing else.";
+    applyBtn.hidden = true;
+    return zoneStatus;
+  }
+  applyBtn.hidden = false;
+
+  const lines = [];
+  let worst = "ok";
+  for (const [name, p] of profiles) {
+    const who = esc(profileLabel(name));
+    if (!p.built) {
+      worst = "stale";
+      lines.push(`The routing data for ${who} has not been built yet, so the ${p.zones} area(s) closed to them are not enforced. Apply to build it.`);
+    } else if (!p.up_to_date) {
+      worst = "stale";
+      lines.push(`The routing data for ${who} is older than the areas above: it still avoids the previous ones. Apply to rebuild it.`);
+    } else if (p.reachable === false) {
+      worst = "err";
+      lines.push(`The routing data for ${who} is up to date, but nothing answers on port ${p.host_port}. Apply to start its container.`);
+    } else {
+      lines.push(`${p.zones} area(s) closed to ${who}, routing data up to date and served${p.built_at ? ` (built ${esc(p.built_at)})` : ""}.`);
+    }
+  }
+  box.className = worst;
+  box.innerHTML = lines.join("<br>");
+  return zoneStatus;
+}
+
+// ---------- applying the areas ----------
+// The server runs scripts/build_zone_graphs.sh --apply, which rebuilds
+// whatever is out of date and (re)starts the containers; the tab follows
+// it and rereads the state when it is done.
+let applyPoll = null;
+
+// `announce` is false on page load: a build that finished long ago must
+// not replace the status line.
+async function pollBuild(announce = true) {
+  let state;
+  try {
+    const res = await fetch("/zones/build");
+    state = await res.json();
+    if (!res.ok) throw new Error(state.error || res.status);
+  } catch (err) {
+    setStatus(`Cannot follow the build: ${err.message}`, "err");
+    stopBuildPolling();
+    return;
+  }
+  if (state.running) {
+    document.getElementById("applyZones").disabled = true;
+    const box = document.getElementById("zoneState");
+    box.className = "busy";
+    box.textContent = `Applying the areas to the routing data (started ${state.started_at})…`;
+    if (!applyPoll) applyPoll = setInterval(pollBuild, 2000);
+    return;
+  }
+  const wasPolling = applyPoll !== null;
+  stopBuildPolling();
+  if (state.exit_code === null || !(announce || wasPolling)) return;
+  if (state.exit_code === 0) {
+    setStatus("Areas applied: the routing data is current and served.", "ok");
+  } else {
+    setStatus(`Applying the areas failed (exit ${state.exit_code}).`, "err");
+  }
+  refreshZoneState();
+}
+
+function stopBuildPolling() {
+  if (applyPoll) clearInterval(applyPoll);
+  applyPoll = null;
+  document.getElementById("applyZones").disabled = false;
+}
+
+async function applyZones() {
+  document.getElementById("applyZones").disabled = true;
+  try {
+    const res = await fetch("/zones/build", { method: "POST" });
+    const body = await res.json();
+    if (!res.ok && res.status !== 409) throw new Error(body.error || res.status);
+  } catch (err) {
+    setStatus(`Cannot apply the areas: ${err.message}`, "err");
+    document.getElementById("applyZones").disabled = false;
+    return;
+  }
+  setStatus("Applying the areas to the routing data…", "busy");
+  pollBuild();
+}
+
+// ---------- drawing an area ----------
+let drawing = null; // {points: [[lng, lat]], line}
+
+function setDrawing(on) {
+  document.body.classList.toggle("drawing", on);
+  document.getElementById("drawZone").hidden = on;
+  document.getElementById("finishZone").hidden = !on;
+  document.getElementById("cancelZone").hidden = !on;
+  if (on) map.doubleClickZoom.disable(); else map.doubleClickZoom.enable();
+}
+
+function startDrawing() {
+  drawing = {
+    points: [],
+    line: L.polyline([], { color: "#b91c1c", weight: 2, dashArray: "5 4" }).addTo(zoneLayer),
+  };
+  setDrawing(true);
+  setStatus("Click on the map to place the corners of the area, then Finish.");
+}
+
+function addDrawingPoint(lat, lng) {
+  drawing.points.push([lng, lat]);
+  drawing.line.setLatLngs(drawing.points.map(([x, y]) => [y, x]));
+}
+
+function cancelDrawing() {
+  if (!drawing) return;
+  zoneLayer.removeLayer(drawing.line);
+  drawing = null;
+  setDrawing(false);
+  renderZones();
+}
+
+function finishDrawing() {
+  if (!drawing) return;
+  if (drawing.points.length < 3) {
+    setStatus("An area needs at least three corners.", "err");
+    return;
+  }
+  const id = zoneList.reduce((max, z) => Math.max(max, z.id), 0) + 1;
+  // Closed to every restricted profile by default: an area is drawn
+  // because something may not go there, and the ticks in the list say
+  // exactly what.
+  zoneList.push({
+    id,
+    name: `Zone ${id}`,
+    blocked_profiles: ZONE_PROFILES.slice(),
+    polygon: drawing.points,
+  });
+  zoneLayer.removeLayer(drawing.line);
+  drawing = null;
+  setDrawing(false);
+  saveZones();
+}
+
+if (ZONES_ENABLED) {
+  document.getElementById("applyZones").onclick = applyZones;
+  // A build started before this page was opened is followed too.
+  pollBuild();
+  document.getElementById("drawZone").onclick = startDrawing;
+  document.getElementById("finishZone").onclick = finishDrawing;
+  document.getElementById("cancelZone").onclick = cancelDrawing;
+  // Leaflet fires two clicks before a double-click, so by the time this
+  // runs the last corner has been placed twice.
+  map.on("dblclick", () => {
+    if (!drawing) return;
+    drawing.points.pop();
+    finishDrawing();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (!drawing) return;
+    if (e.key === "Enter") finishDrawing();
+    if (e.key === "Escape") cancelDrawing();
+  });
+}
+
+// Operations come in two ways — clicking the map and typing coordinates in
+// the panel — and both end up here.
+function addOperation(lat, lng) {
+  const op = {
     id: nextOpId++,
-    lat: e.latlng.lat,
-    lng: e.latlng.lng,
+    lat,
+    lng,
     type: opTypeSel.value,
     size: Number(opSizeSel.value),
     priority: 0,
-  });
+  };
+  operations.push(op);
   routeLayer.clearLayers();
   renderPoints();
+  return op;
+}
+
+map.on("click", (e) => {
+  // While an area is being drawn the map places its corners instead.
+  if (drawing) return addDrawingPoint(e.latlng.lat, e.latlng.lng);
+  addOperation(e.latlng.lat, e.latlng.lng);
 });
+
+// ---------- adding by coordinates ----------
+const newLatInput = document.getElementById("newLat");
+const newLngInput = document.getElementById("newLng");
+
+function addOperationFromInputs() {
+  const lat = Number(newLatInput.value);
+  const lng = Number(newLngInput.value);
+  const filled = newLatInput.value.trim() !== "" && newLngInput.value.trim() !== "";
+  if (!filled || !isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+    setStatus("New operation: latitude must be -90..90 and longitude -180..180.", "err");
+    return;
+  }
+  const op = addOperation(lat, lng);
+  newLatInput.value = "";
+  newLngInput.value = "";
+  newLatInput.focus();
+  map.panTo([lat, lng]);
+  setStatus(`Operation #${op.id} added at ${lat.toFixed(5)}, ${lng.toFixed(5)}.`);
+}
+
+document.getElementById("addOp").onclick = addOperationFromInputs;
+for (const input of [newLatInput, newLngInput]) {
+  input.onkeydown = (e) => {
+    if (e.key === "Enter") { e.preventDefault(); addOperationFromInputs(); }
+  };
+  // A pair pasted as one string ("41.14961, -8.61099", as map sites copy it)
+  // fills both boxes; a number input would otherwise just drop it.
+  input.onpaste = (e) => {
+    const text = ((e.clipboardData || window.clipboardData).getData("text") || "").trim();
+    const pair = text.match(/^(-?\d+(?:\.\d+)?)\s*[,;\s]\s*(-?\d+(?:\.\d+)?)$/);
+    if (!pair) return;
+    e.preventDefault();
+    newLatInput.value = pair[1];
+    newLngInput.value = pair[2];
+  };
+}
 
 // Hovering a row lights up its pin and the other way round.
 function setHot(opId, on) {
@@ -546,7 +995,7 @@ function renderPoints(unassignedOps = new Set(), opColor = {}) {
     `${glyphGroup(COMPANY_GLYPH, 0, 0, 1, 1.5)}</svg></span>` +
     `<span class="name">Company</span>` +
     `<span class="coords">${depot.lat.toFixed(5)}, ${depot.lng.toFixed(5)}</span>` +
-    `<span class="fixed" title="the company site is set in Config">fixed</span>`;
+    `<span class="fixed" title="trucks start and end here">fixed</span>`;
   list.appendChild(site);
 
   for (const op of operations) {
@@ -572,7 +1021,7 @@ function renderPoints(unassignedOps = new Set(), opColor = {}) {
     li.className = "empty";
     li.style.border = "0";
     li.style.background = "none";
-    li.textContent = "No operations yet — click the map to add one.";
+    li.textContent = "No operations yet — click the map or enter coordinates to add one.";
     list.appendChild(li);
   }
 
@@ -628,10 +1077,17 @@ function removeButton(onClick) {
   return btn;
 }
 
+// Errors block the plan, warnings do not: an operation inside an area
+// closed to some trucks is still served by the others.
 function renderProblems() {
-  const problems = M.validate({ operations, fleet, times: readTimes() });
-  document.getElementById("problems").innerHTML = problems.map((p) => `<div>⚠ ${esc(p)}</div>`).join("");
-  return problems;
+  const found = M.validate({ depot, operations, fleet, chicos, times: readTimes() });
+  const box = document.getElementById("problems");
+  const errors = found.filter((f) => f.level === "error");
+  box.classList.toggle("has-error", errors.length > 0);
+  box.innerHTML = found
+    .map((f) => `<div class="${f.level === "error" ? "err" : "warn"}-item">⚠ ${esc(f.text)}</div>`)
+    .join("");
+  return errors;
 }
 
 function updateSolveButton() {
@@ -655,11 +1111,43 @@ function renderFleet() {
     countLabel.textContent = "trucks";
     const count = document.createElement("input");
     count.type = "number"; count.min = "0"; count.max = "20"; count.value = fleet[type];
-    count.oninput = () => { fleet[type] = Math.max(0, Math.floor(Number(count.value) || 0)); renderProblems(); updateSolveButton(); };
+    count.oninput = () => { fleet[type] = Math.max(0, Math.floor(Number(count.value) || 0)); renderProblems(); updateSolveButton(); renderChicoLabels(); };
 
     li.append(name, countLabel, count);
     list.appendChild(li);
   }
+
+  // Chicos: trailers the solver may attach to trucks of a type.
+  for (const key of M.CHICO_ORDER) {
+    const c = M.CHICO_TYPES[key];
+    const li = document.createElement("li");
+    const name = document.createElement("span");
+    name.className = "name";
+    name.textContent = c.label;
+    name.title = `attaches to a ${M.TRUCK_TYPES[c.attachesTo].label.toLowerCase()}: the truck then carries ${c.extraLoads + 1} allowed loads at once`;
+
+    const countLabel = document.createElement("span");
+    countLabel.className = "unit";
+    const count = document.createElement("input");
+    count.type = "number"; count.min = "0"; count.max = "20"; count.value = chicos[key];
+    const refreshLabel = () => {
+      const trucks = fleet[c.attachesTo] || 0;
+      countLabel.textContent = chicos[key] > trucks ? `chicos (only ${trucks} truck${trucks === 1 ? "" : "s"})` : "chicos";
+    };
+    count.oninput = () => { chicos[key] = Math.max(0, Math.floor(Number(count.value) || 0)); refreshLabel(); };
+    refreshLabel();
+    li.dataset.chico = key;
+    li._refresh = refreshLabel;
+    li.append(name, countLabel, count);
+    list.appendChild(li);
+  }
+}
+
+// Re-render the chico rows' labels when the truck counts change (they
+// say when more chicos than trucks are set), without rebuilding the
+// truck inputs the user is typing in.
+function renderChicoLabels() {
+  for (const el of document.querySelectorAll("#fleet li[data-chico]")) el._refresh();
 }
 
 function setStatus(msg, state = "") {
@@ -691,8 +1179,8 @@ function readTimes() {
 
 function buildRequest() {
   return M.buildRequest({
-    depot, operations, fleet, times: readTimes(),
-    geometry: document.getElementById("geometry").checked,
+    depot, operations, fleet, chicos, times: readTimes(),
+    geometry: M.SOLVER_DEFAULTS.geometry,
   });
 }
 
@@ -744,11 +1232,15 @@ function showSolution(sol, stepInfo) {
   const unassignedOps = new Set((sol.unassigned || []).map((u) => M.opIdOfStep(u.id)));
   const routes = sol.routes || [];
   const cards = [];
+  let chicosUsed = 0;
+  const trucksTotal = Object.values(lastVehicleInfo).filter((v) => !v.chico).length;
+  const chicosTotal = Object.values(lastVehicleInfo).filter((v) => v.chico).length;
 
   routes.forEach((r, i) => {
     const v = lastRequestVehicles.find((x) => x.id === r.vehicle) || {};
     const color = COLORS[i % COLORS.length];
     const name = v.description || `vehicle ${r.vehicle}`;
+    if ((lastVehicleInfo[r.vehicle] || {}).chico) chicosUsed++;
     const items = [];
     let clientStops = 0;
     for (const s of r.steps) {
@@ -782,7 +1274,8 @@ function showSolution(sol, stepInfo) {
   const unassignedTitle = unassignedOps.size ? ` title="operations ${[...unassignedOps].sort((a, b) => a - b).join(", ")}"` : "";
   document.getElementById("summary").innerHTML = `
     <div class="stats">
-      <div><span class="k">Trucks</span><span class="v">${s.routes ?? "–"}<span class="v muted" style="display:inline;font-size:12px"> / ${lastRequestVehicles.length}</span></span></div>
+      <div><span class="k">Trucks</span><span class="v">${s.routes ?? "–"}<span class="v muted" style="display:inline;font-size:12px"> / ${trucksTotal}</span></span></div>
+      <div><span class="k">Chicos</span><span class="v">${chicosUsed}<span class="v muted" style="display:inline;font-size:12px"> / ${chicosTotal}</span></span></div>
       <div><span class="k">Driving</span><span class="v">${s.duration != null ? fmtDuration(s.duration) : "–"}</span></div>
       <div><span class="k">Distance</span><span class="v">${s.distance != null ? (s.distance / 1000).toFixed(1) + " km" : "–"}</span></div>
       <div><span class="k">Cost</span><span class="v">${s.cost ?? "–"}</span></div>
@@ -800,16 +1293,33 @@ function showSolution(sol, stepInfo) {
 
 // ---------- actions ----------
 document.getElementById("solve").onclick = async () => {
-  const problems = renderProblems();
-  if (problems.length) {
-    setStatus("Fix the warnings above before planning.", "err");
+  const errors = renderProblems();
+  if (errors.length) {
+    setStatus("Fix the problems above before planning.", "err");
     return;
   }
-  const { request, stepInfo } = buildRequest();
+  const { request, stepInfo, vehicleInfo } = buildRequest();
   lastRequestVehicles = request.vehicles;
+  lastVehicleInfo = vehicleInfo;
   document.getElementById("summary").innerHTML = "";
   setStatus("Planning…", "busy");
   document.getElementById("solve").disabled = true;
+  // A restricted profile some vehicle is about to use must be served by
+  // routing data matching the areas: with older data the plan would
+  // silently avoid the wrong ones, with none the solver fails.
+  if (ZONES_ENABLED) {
+    const status = (await refreshZoneState()) || {};
+    const used = new Set(request.vehicles.map((v) => v.profile));
+    const problems = Object.entries(status)
+      .filter(([name]) => used.has(name))
+      .map(([name, p]) => zoneProblem(name, p))
+      .filter(Boolean);
+    if (problems.length) {
+      setStatus(`Cannot plan: ${problems.join("; ")}. Open the Zones tab and Apply the areas.`, "err");
+      updateSolveButton();
+      return;
+    }
+  }
   try {
     const res = await fetch("/api", {
       method: "POST",
@@ -825,7 +1335,7 @@ document.getElementById("solve").onclick = async () => {
       showSolution(body, stepInfo);
       setStatus("Day planned.", "ok");
     }
-    if (document.getElementById("showRequest").checked) {
+    if (M.SOLVER_DEFAULTS.show_request) {
       document.getElementById("summary").insertAdjacentHTML("beforeend",
         `<details class="raw"><summary>Request JSON</summary><pre>${esc(JSON.stringify(request, null, 1))}</pre></details>`);
     }
@@ -867,45 +1377,24 @@ function applyDefaults() {
   document.getElementById("clientService").value = t.clientService / 60;
   document.getElementById("companySetup").value = t.companySetup / 60;
   document.getElementById("companyService").value = t.companyService / 60;
-  document.getElementById("geometry").checked = !!M.SOLVER_DEFAULTS.geometry;
-  document.getElementById("showRequest").checked = !!M.SOLVER_DEFAULTS.show_request;
   fleet = M.defaultFleet();
+  chicos = M.defaultChicos();
   setCompany(M.COMPANY);
 }
 
-// The one place the company site changes.
+// The company site is fixed: it comes from docs/waste_defaults.json and
+// is not editable in the planner.
 function setCompany({ lat, lng }) {
   depot = { lat, lng };
-  document.getElementById("companyLat").value = lat;
-  document.getElementById("companyLng").value = lng;
   routeLayer.clearLayers();
   document.getElementById("summary").innerHTML = "";
   renderPoints();
 }
 
-for (const id of ["companyLat", "companyLng"]) {
-  document.getElementById(id).onchange = () => {
-    const lat = Number(document.getElementById("companyLat").value);
-    const lng = Number(document.getElementById("companyLng").value);
-    if (!isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
-      setStatus("Company site: latitude must be -90..90 and longitude -180..180.", "err");
-      setCompany(depot);
-      return;
-    }
-    setCompany({ lat, lng });
-    map.panTo([lat, lng]);
-    setStatus(`Company moved to ${lat.toFixed(5)}, ${lng.toFixed(5)}.`);
-  };
-}
-document.getElementById("centreCompany").onclick = () => map.setView([depot.lat, depot.lng], 13);
-document.getElementById("resetCompany").onclick = () => {
-  setCompany(M.COMPANY);
-  map.setView([M.COMPANY.lat, M.COMPANY.lng], 13);
-  setStatus("Company site back to the docs/waste_defaults.json value.");
-};
-
 applyDefaults();
 renderFleet();
+renderZones();
+refreshZoneState();
 renderPoints();
 </script>
 </body>

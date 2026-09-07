@@ -252,6 +252,34 @@ void Input::add_shipment(const Job& pickup, const Job& delivery) {
   _has_shipments = true;
 }
 
+void Input::add_vehicle_group(const VehicleGroup& group) {
+  if (_vehicle_group_id_to_rank.contains(group.id)) {
+    throw InputException(
+      std::format("Duplicate vehicle group id: {}.", group.id));
+  }
+  _vehicle_group_id_to_rank[group.id] = vehicle_groups.size();
+  vehicle_groups.push_back(group);
+  _has_vehicle_groups = true;
+}
+
+void Input::check_vehicle_groups_usage() const {
+  for (const auto& group : vehicle_groups) {
+    const auto used =
+      std::ranges::count_if(group.vehicles, [this](const Index v) {
+        return std::ranges::any_of(vehicles[v].steps, [](const auto& s) {
+          return s.type == STEP_TYPE::JOB;
+        });
+      });
+    if (used > group.max_vehicles) {
+      throw InputException(
+        std::format("Input steps use {} vehicles of group {} (max {}).",
+                    used,
+                    group.id,
+                    group.max_vehicles));
+    }
+  }
+}
+
 void Input::add_vehicle(const Vehicle& vehicle) {
   vehicles.push_back(vehicle);
 
@@ -259,6 +287,20 @@ void Input::add_vehicle(const Vehicle& vehicle) {
 
   // Ensure amount size consistency.
   check_amount_size(current_v.capacity);
+
+  // Resolve vehicle groups.
+  const Index v_rank = vehicles.size() - 1;
+  _vehicle_group_ranks.emplace_back();
+  for (const auto g_id : current_v.groups) {
+    auto search = _vehicle_group_id_to_rank.find(g_id);
+    if (search == _vehicle_group_id_to_rank.end()) {
+      throw InputException(std::format("Unknown group {} for vehicle {}.",
+                                       g_id,
+                                       current_v.id));
+    }
+    _vehicle_group_ranks.back().push_back(search->second);
+    vehicle_groups[search->second].vehicles.push_back(v_rank);
+  }
 
   // Check for time-windows and skills.
   _has_TW = _has_TW || !vehicle.tw.is_default() || !vehicle.breaks.empty();
@@ -1215,6 +1257,7 @@ Solution Input::solve(const unsigned nb_searches,
 
   if (_has_initial_routes) {
     set_vehicle_steps_ranks();
+    check_vehicle_groups_usage();
   }
 
   set_jobs_durations_per_vehicle_type();
@@ -1320,6 +1363,7 @@ Solution Input::check(unsigned nb_thread) {
   set_jobs_durations_per_vehicle_type();
 
   set_vehicle_steps_ranks();
+  check_vehicle_groups_usage();
 
   constexpr bool sparse_filling = true;
   set_matrices(nb_thread, sparse_filling);

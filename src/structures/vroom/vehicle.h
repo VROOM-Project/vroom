@@ -78,6 +78,9 @@ struct Vehicle {
   Index type;
   const std::string type_str;
   std::unordered_map<Id, Index> break_id_to_rank;
+  // Ids of the vehicle groups this vehicle belongs to (see
+  // VehicleGroup): at most max_vehicles of a group can be used.
+  const std::vector<Id> groups;
 
   Vehicle(
     Id id,
@@ -98,7 +101,8 @@ struct Vehicle {
       std::optional<UserDistance>(),
     const std::vector<VehicleStep>& input_steps = std::vector<VehicleStep>(),
     std::string type_str = NO_TYPE,
-    const std::vector<Amount>& capacities = std::vector<Amount>());
+    const std::vector<Amount>& capacities = std::vector<Amount>(),
+    std::vector<Id> groups = std::vector<Id>());
 
   // Whether validity of a load requires checking against several
   // capacity vectors (when false, load <= capacity is exact).

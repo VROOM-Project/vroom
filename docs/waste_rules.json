@@ -1,11 +1,22 @@
 {
-  "_comment": "Single source of truth for what the trucks of the waste transport problem may carry: container sizes and truck types with their loading rules. A rule is a maximal allowed load written in the company's notation (eN = empty N m3 container, fN = full N m3 container, '2f6 + 1e2' = two full 6 and one empty 2); anything smaller than a listed load is allowed too. Used by frontend/public/waste_model.js (via frontend/server.js), scripts/waste_capacity_check.py and referenced by the docs. Values a planner may change day to day (company site, fleet size, working day, service times) live next door in waste_defaults.json.",
-  "sizes": [2, 6, 12, 20, 40],
-  "materials": { "any_truck": true, "_comment": "materials are sold as a full truck: nothing else on board during that trip" },
+  "_comment": "Single source of truth for what the trucks of the waste transport problem may carry: container sizes, truck types with their loading rules, and the chico attachments. A rule is a maximal allowed load written in the company's notation (eN = empty N m3 container, fN = full N m3 container, '2f6 + 1e2' = two full 6 and one empty 2); anything smaller than a listed load is allowed too. Used by frontend/public/waste_model.js (via frontend/server.js), scripts/waste_rules_to_capacities.py, scripts/waste_capacity_check.py and referenced by the docs. Values a planner may change day to day (company site, fleet size, chicos available, working day, service times) live next door in waste_defaults.json.",
+  "sizes": [
+    2,
+    6,
+    12,
+    20,
+    40
+  ],
+  "materials": {
+    "_comment": "materials are sold in a container of a standard size that leaves the company full and stays at the client; for the loading rules it is a full container of that size, and other containers may travel with it"
+  },
   "trucks": {
     "small": {
       "label": "Small",
-      "rules": ["3e2", "1f2"]
+      "rules": [
+        "3e2",
+        "1f2"
+      ]
     },
     "multiban": {
       "label": "Multiban",
@@ -24,7 +35,25 @@
     },
     "poliban": {
       "label": "Poliban",
-      "rules": ["1e20", "1f20", "1e40", "1f40"]
+      "rules": [
+        "1e20",
+        "1f20",
+        "1e40",
+        "1f40"
+      ]
+    }
+  },
+  "chicos": {
+    "_comment": "trailers that attach to a truck type. A chico adds extra_loads beds and each bed takes any allowed load of the truck type, so a truck with a chico carries extra_loads + 1 allowed loads at once, any mix (e.g. multiban: '1f6 + 3e2' plus '6e6' plus '1f12'). How many chicos the company has is set in waste_defaults.json; the solver decides which trucks take one.",
+    "multiban": {
+      "label": "Chico multiban",
+      "attaches_to": "multiban",
+      "extra_loads": 2
+    },
+    "poliban": {
+      "label": "Chico poliban",
+      "attaches_to": "poliban",
+      "extra_loads": 2
     }
   }
 }

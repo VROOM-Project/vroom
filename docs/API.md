@@ -47,6 +47,7 @@ The problem description is read from standard input or from a file
 | [`jobs`](#jobs) |  array of `job` objects describing the places to visit |
 | [`shipments`](#shipments) |  array of `shipment` objects describing pickup and delivery tasks |
 | [`vehicles`](#vehicles) |  array of `vehicle` objects describing the available vehicles |
+| [[`vehicle_groups`](#vehicle-groups)] | optional array of `vehicle_group` objects limiting how many vehicles of a group can be used |
 | [[`matrices`](#matrices)] | optional description of per-profile custom matrices |
 | ~~[`matrix`]~~ | optional two-dimensional array describing a custom matrix |
 
@@ -126,6 +127,7 @@ A `vehicle` object has the following properties:
 | [`max_travel_time`] | an integer defining the maximum travel time for this vehicle |
 | [`max_distance`] | an integer defining the maximum distance for this vehicle |
 | [`steps`] | an array of `vehicle_step` objects describing a custom route for this vehicle |
+| [`groups`] | an array of integers: ids of the `vehicle_group` objects this vehicle belongs to |
 
 A `cost` object has the following properties:
 
@@ -238,6 +240,45 @@ Rules:
   express size compatibility.
 - The `load` reported at each step in the output is unchanged: it is
   the sum of amounts on board.
+
+### Vehicle groups
+
+A `vehicle_group` object has the following properties:
+
+| Key         | Description |
+| ----------- | ----------- |
+| `id` | integer |
+| `max_vehicles` | an integer: maximum number of vehicles of this group that can be used (have a non-empty route) in the solution |
+| [`description`] | a string describing this group |
+
+A vehicle joins a group by listing the group `id` in its `groups`
+array. Use this to describe alternative configurations of the same
+physical vehicle (e.g. with and without a trailer, each with its own
+`capacity` or `capacities` and `costs`) as several `vehicle` objects,
+letting the solver pick which configuration to use, or to model a
+number of drivers smaller than the number of vehicles.
+
+```json
+"vehicle_groups": [
+  { "id": 1, "max_vehicles": 2, "description": "two trucks" }
+],
+"vehicles": [
+  { "id": 1, "groups": [1], "capacity": [4], ... },
+  { "id": 2, "groups": [1], "capacity": [4], ... },
+  { "id": 3, "groups": [1], "capacity": [12], "costs": { "fixed": 500 }, ... },
+  { "id": 4, "groups": [1], "capacity": [12], "costs": { "fixed": 500 }, ... }
+]
+```
+
+Rules:
+
+- A vehicle may belong to several groups, in which case every limit
+  applies. Unknown group ids are an input error.
+- In solving mode, the constraint is hard: a vehicle stays unused
+  when its groups are full, even if tasks remain unassigned. Input
+  `steps` that already use more vehicles than allowed are rejected.
+- In plan mode, routes are validated per vehicle; the group limit is
+  only checked on the number of vehicles with tasks in `steps`.
 
 ### Skills
 

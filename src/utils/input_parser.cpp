@@ -438,6 +438,48 @@ inline std::vector<Amount> get_capacities(const rapidjson::Value& json_vehicle,
   return capacities;
 }
 
+inline std::vector<Id> get_vehicle_groups(const rapidjson::Value& json_vehicle,
+                                          Id v_id) {
+  std::vector<Id> groups;
+
+  if (!json_vehicle.HasMember("groups")) {
+    return groups;
+  }
+
+  if (!json_vehicle["groups"].IsArray()) {
+    throw InputException(
+      std::format("Invalid groups array for vehicle {}.", v_id));
+  }
+
+  const auto& json_groups = json_vehicle["groups"];
+  groups.reserve(json_groups.Size());
+  for (rapidjson::SizeType i = 0; i < json_groups.Size(); ++i) {
+    if (!json_groups[i].IsUint64()) {
+      throw InputException(
+        std::format("Invalid groups value for vehicle {}.", v_id));
+    }
+    groups.push_back(json_groups[i].GetUint64());
+  }
+
+  return groups;
+}
+
+inline VehicleGroup get_vehicle_group(const rapidjson::Value& json_group) {
+  check_id(json_group, "vehicle group");
+  const auto g_id = json_group["id"].GetUint64();
+
+  if (!json_group.HasMember("max_vehicles") ||
+      !json_group["max_vehicles"].IsUint()) {
+    throw InputException(
+      std::format("Invalid or missing max_vehicles for vehicle group {}.",
+                  g_id));
+  }
+
+  return VehicleGroup(g_id,
+                      json_group["max_vehicles"].GetUint(),
+                      get_string(json_group, "description"));
+}
+
 inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
                            unsigned amount_size) {
   check_id(json_vehicle, "vehicle");
@@ -519,7 +561,8 @@ inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
                  get_value_for<UserDistance>(json_vehicle, "max_distance"),
                  get_vehicle_steps(json_vehicle),
                  get_string(json_vehicle, "type"),
-                 get_capacities(json_vehicle, v_id));
+                 get_capacities(json_vehicle, v_id),
+                 get_vehicle_groups(json_vehicle, v_id));
 }
 
 inline Location get_task_location(const rapidjson::Value& v,
@@ -638,6 +681,19 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
                                       : 0);
 
   input.set_geometry(geometry);
+
+  // Add vehicle groups (before vehicles, which refer to them).
+  if (json_input.HasMember("vehicle_groups")) {
+    if (!json_input["vehicle_groups"].IsArray()) {
+      throw InputException("Invalid vehicle_groups.");
+    }
+
+    for (rapidjson::SizeType i = 0; i < json_input["vehicle_groups"].Size();
+         ++i) {
+      input.add_vehicle_group(
+        get_vehicle_group(json_input["vehicle_groups"][i]));
+    }
+  }
 
   // Add all vehicles.
   for (rapidjson::SizeType i = 0; i < json_input["vehicles"].Size(); ++i) {
