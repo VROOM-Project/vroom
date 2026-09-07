@@ -15,15 +15,140 @@ Recomputes the load at every step of every route from the input
 - every task appears exactly once, either in a route or in
   "unassigned";
 - the "load" arrays reported by VROOM match the recomputation when
-  present.
+  present;
+- no-go zones, when a zone file is given: no route of a vehicle stops
+  in, or drives through, an area closed to its routing profile.
+
+The zone check is the one that can genuinely fail without the solver
+being at fault. Zones are not a solver constraint: they are enforced by
+making the roads inside them prohibitively slow in the routing data of
+the profile they are closed to (docs/no_go_zones.md), which keeps the
+map connected but leaves crossing possible where there is no
+alternative at all. This is where such a crossing shows up. It needs
+the route geometry, so run VROOM with -g.
 
 Exit status is 0 when no violation is found, 1 otherwise. Usage:
 
-    python scripts/waste_solution_check.py input.json solution.json
+    python scripts/waste_solution_check.py input.json solution.json \
+                                           [docs/no_go_zones.json]
 """
 
 import json
 import sys
+
+
+def decode_polyline(encoded, precision=5):
+    """Google encoded polyline (what OSRM and VROOM return) to [lng, lat]."""
+    coords = []
+    index = lat = lng = 0
+    factor = 10 ** precision
+    while index < len(encoded):
+        for which in range(2):
+            shift = result = 0
+            while True:
+                byte = ord(encoded[index]) - 63
+                index += 1
+                result |= (byte & 0x1F) << shift
+                shift += 5
+                if byte < 0x20:
+                    break
+            delta = ~(result >> 1) if result & 1 else result >> 1
+            if which == 0:
+                lat += delta
+            else:
+                lng += delta
+        coords.append([lng / factor, lat / factor])
+    return coords
+
+
+def point_in_ring(ring, lng, lat):
+    """Ray casting on a [lng, lat] ring."""
+    inside = False
+    j = len(ring) - 1
+    for i in range(len(ring)):
+        xi, yi = ring[i][0], ring[i][1]
+        xj, yj = ring[j][0], ring[j][1]
+        if (yi > lat) != (yj > lat) and lng < (xj - xi) * (lat - yi) / (yj - yi) + xi:
+            inside = not inside
+        j = i
+    return inside
+
+
+def segments_cross(a, b, c, d):
+    """Whether segment ab properly crosses segment cd."""
+
+    def side(p, q, r):
+        return (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0])
+
+    d1, d2 = side(c, d, a), side(c, d, b)
+    d3, d4 = side(a, b, c), side(a, b, d)
+    return ((d1 > 0) != (d2 > 0)) and ((d3 > 0) != (d4 > 0))
+
+
+def path_touches_zone(path, ring):
+    """Whether a polyline enters a zone: a vertex inside, or an edge
+    crossing the boundary (a straight leg over a small area has no
+    vertex inside it)."""
+    for lng, lat in path:
+        if point_in_ring(ring, lng, lat):
+            return True
+    for i in range(len(path) - 1):
+        for j in range(len(ring)):
+            if segments_cross(path[i], path[i + 1], ring[j], ring[(j + 1) % len(ring)]):
+                return True
+    return False
+
+
+def check_zones(input_data, solution, zone_config):
+    """Routes that stop in or drive through an area closed to them."""
+    errors = []
+    zones = [
+        z for z in zone_config.get("zones", [])
+        if z.get("blocked_profiles") and len(z.get("polygon", [])) >= 3
+    ]
+    if not zones:
+        return errors
+
+    vehicles = {v["id"]: v for v in input_data.get("vehicles", [])}
+    default_profile = (zone_config.get("vehicle_profiles", {}) or {}).get("default", "car")
+
+    for route in solution.get("routes", []):
+        vehicle = vehicles.get(route.get("vehicle"), {})
+        profile = vehicle.get("profile", default_profile)
+        closed = [z for z in zones if profile in z["blocked_profiles"]]
+        if not closed:
+            continue
+
+        path = []
+        if route.get("geometry"):
+            path = decode_polyline(route["geometry"])
+
+        for zone in closed:
+            ring = zone["polygon"]
+            name = zone.get("name", zone.get("id"))
+            for step in route.get("steps", []):
+                loc = step.get("location")
+                if loc and point_in_ring(ring, loc[0], loc[1]):
+                    errors.append(
+                        f"vehicle {route.get('vehicle')} (profile {profile}) stops at "
+                        f"{step.get('type')} {step.get('id', '')} inside no-go zone "
+                        f"{name!r}, which is closed to it"
+                    )
+            if path and path_touches_zone(path, ring):
+                errors.append(
+                    f"vehicle {route.get('vehicle')} (profile {profile}) drives through "
+                    f"no-go zone {name!r}, which is closed to it: the penalty on those "
+                    f"roads was not enough, or its routing data is out of date "
+                    f"(scripts/build_zone_graphs.sh)"
+                )
+        if not path:
+            errors.append(
+                f"vehicle {route.get('vehicle')} (profile {profile}) has no geometry, "
+                f"so only its stops could be checked against the no-go zones: "
+                f"re-run VROOM with -g"
+            )
+
+    return errors
 
 
 def fits(load, vectors):
@@ -179,7 +304,7 @@ def check(input_data, solution):
 
 
 def main(argv):
-    if len(argv) != 3:
+    if len(argv) not in (3, 4):
         print(__doc__)
         return 2
     with open(argv[1], encoding="utf-8") as f:
@@ -188,12 +313,19 @@ def main(argv):
         solution = json.load(f)
 
     errors = check(input_data, solution)
+    checked = "capacity, precedence, skills and vehicle group constraints"
+    if len(argv) == 4:
+        with open(argv[3], encoding="utf-8") as f:
+            zone_config = json.load(f)
+        errors += check_zones(input_data, solution, zone_config)
+        checked += ", and stays out of the no-go zones"
+
     for e in errors:
         print("VIOLATION:", e)
     if errors:
         print(f"{len(errors)} violation(s) in {argv[2]}")
         return 1
-    print(f"OK: {argv[2]} satisfies capacity, precedence, skills and vehicle group constraints")
+    print(f"OK: {argv[2]} satisfies {checked}")
     return 0
 
 
