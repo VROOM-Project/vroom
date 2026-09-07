@@ -4,15 +4,18 @@
 // `vehicle_groups` extensions of this fork.
 //
 // The rules themselves live in docs/waste_rules.json (single source of
-// truth) and the planner's starting values in docs/waste_defaults.json
-// next to it. This file only interprets them: build a model with
-//   WasteModel.create(rules, defaults)
-// where both arguments are the parsed JSON (`defaults` is optional and
-// falls back to the built-in values below). In the browser the server
-// exposes them as window.WASTE_RULES (/rules.js) and
-// window.WASTE_DEFAULTS (/defaults.js); under node use
+// truth), the planner's starting values in docs/waste_defaults.json and
+// the forbidden areas in docs/no_go_zones.json, all three next to each
+// other. This file only interprets them: build a model with
+//   WasteModel.create(rules, defaults, zones)
+// where every argument is the parsed JSON (`defaults` and `zones` are
+// optional and fall back to the built-in values below). In the browser
+// the server exposes them as window.WASTE_RULES (/rules.js),
+// window.WASTE_DEFAULTS (/defaults.js) and window.WASTE_ZONES
+// (/zones.js); under node use
 //   require("./waste_model").create(require("../../docs/waste_rules.json"),
-//                                   require("../../docs/waste_defaults.json"))
+//                                   require("../../docs/waste_defaults.json"),
+//                                   require("../../docs/no_go_zones.json"))
 //
 // Amount components are container kinds, one-hot per task:
 //   e2 e6 ...  empty containers by size (m3), one per size in rules.sizes
@@ -26,6 +29,16 @@
 // solver decides which trucks take one: every truck of a type is
 // offered both with and without a chico, and a VROOM vehicle group caps
 // the number of vehicles used at the number of physical trucks.
+//
+// No-go zones (docs/no_go_zones.json, third argument of create, exposed
+// in the browser as window.WASTE_ZONES) are areas some vehicles may not
+// drive through. VROOM only ever sees travel times, so a zone is not a
+// solver constraint: it is enforced in the road graph, by giving the
+// restricted vehicles a routing `profile` served by an OSRM instance in
+// which the roads inside the zones are prohibitively slow. This file
+// only decides which vehicle uses which profile, and keeps operations
+// inside a zone away from the vehicles that cannot reach them, through
+// one skill per zone.
 (function (root, factory) {
   if (typeof module === "object" && module.exports) module.exports = factory();
   else root.WasteModel = factory();
@@ -49,6 +62,14 @@
     solver: { geometry: true, show_request: false },
   };
 
+  // Fallback when no zone file is given: a single unrestricted profile,
+  // which is exactly the behaviour before no-go zones existed.
+  const BUILTIN_ZONES = {
+    profiles: { car: { description: "default profile: no area restriction" } },
+    vehicle_profiles: { rules: [], default: "car" },
+    zones: [],
+  };
+
   // "08:30" -> 30600. Also accepts a plain number of seconds.
   function clockToSeconds(value, fallback) {
     if (typeof value === "number" && isFinite(value)) return value;
@@ -67,7 +88,7 @@
     return isFinite(n) && n >= 0 ? Math.floor(n) : fallback;
   }
 
-  function create(rules, defaults) {
+  function create(rules, defaults, zoneConfig) {
     if (!rules || !rules.trucks || !rules.sizes) {
       throw new Error("waste rules missing: expected {sizes, trucks}");
     }
@@ -98,6 +119,120 @@
       };
     }
     const CHICO_ORDER = Object.keys(CHICO_TYPES);
+
+    // ---------- no-go zones and routing profiles ----------
+    // A zone is an area a routing profile may not enter. It is enforced
+    // outside the solver, in the OSRM dataset that profile is served
+    // from (scripts/build_zone_graphs.sh); here it decides two things:
+    // which profile a vehicle uses, and which vehicles may serve an
+    // operation that sits inside a zone.
+    const Z = { ...BUILTIN_ZONES, ...(zoneConfig || {}) };
+    const PROFILES = {};
+    for (const [key, def] of Object.entries(Z.profiles || {})) {
+      if (key.startsWith("_")) continue;
+      PROFILES[key] = {
+        description: (def && def.description) || key,
+        hostPort: def && def.host_port,
+      };
+    }
+    if (!Object.keys(PROFILES).length) {
+      throw new Error("no_go_zones.json: at least one routing profile is needed");
+    }
+
+    const PROFILE_RULES = ((Z.vehicle_profiles || {}).rules || []).filter((r) => r && r.match);
+    const DEFAULT_PROFILE = (Z.vehicle_profiles || {}).default || Object.keys(PROFILES)[0];
+    for (const name of [DEFAULT_PROFILE, ...PROFILE_RULES.map((r) => r.profile)]) {
+      if (!PROFILES[name]) {
+        throw new Error(`no_go_zones.json: vehicle_profiles names unknown profile ${name}`);
+      }
+    }
+
+    // Zones that actually forbid something. A zone blocking no profile,
+    // or only profiles nothing uses, is inert and simply ignored.
+    const ZONES = (Z.zones || [])
+      .filter((z) => z && Array.isArray(z.polygon) && (z.blocked_profiles || []).length)
+      .map((z) => ({
+        id: Number(z.id),
+        name: String(z.name || `zone ${z.id}`),
+        blockedProfiles: z.blocked_profiles.slice(),
+        polygon: z.polygon.map((pt) => [Number(pt[0]), Number(pt[1])]),
+      }));
+    for (const z of ZONES) {
+      for (const name of z.blockedProfiles) {
+        if (!PROFILES[name]) {
+          throw new Error(`no_go_zones.json: zone ${z.id} blocks unknown profile ${name}`);
+        }
+      }
+    }
+
+    // Which routing profile a vehicle configuration uses: the first
+    // matching rule wins. Selectors are "chico" (any chico),
+    // "chico:<key>" and "truck:<type>"; adding a selector here is all it
+    // takes to restrict another kind of vehicle.
+    function matchesSelector(selector, vehicle) {
+      if (selector === "chico") return !!vehicle.chico;
+      if (selector.startsWith("chico:")) return vehicle.chico === selector.slice(6);
+      if (selector.startsWith("truck:")) return vehicle.type === selector.slice(6);
+      throw new Error(`no_go_zones.json: unknown vehicle selector ${selector}`);
+    }
+
+    // Profiles that some zone actually forbids something to. A profile
+    // nothing is blocked from is the default profile in disguise, and
+    // using it would mean asking for a routing server that need not even
+    // be running: with no zone drawn, every vehicle stays on the default
+    // one and the extra OSRM instance is unnecessary.
+    const RESTRICTED_PROFILES = new Set(ZONES.flatMap((z) => z.blockedProfiles));
+
+    function profileFor(vehicle) {
+      for (const rule of PROFILE_RULES) {
+        if (matchesSelector(rule.match, vehicle)) {
+          return RESTRICTED_PROFILES.has(rule.profile) ? rule.profile : DEFAULT_PROFILE;
+        }
+      }
+      return DEFAULT_PROFILE;
+    }
+
+    // Ray casting on the [lng, lat] ring; a point on the very edge may
+    // fall either way, which is irrelevant at the scale of a drawn area.
+    function pointInZone(zone, lng, lat) {
+      const ring = zone.polygon;
+      let inside = false;
+      for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+        const [xi, yi] = ring[i];
+        const [xj, yj] = ring[j];
+        if ((yi > lat) !== (yj > lat) &&
+            lng < ((xj - xi) * (lat - yi)) / (yj - yi) + xi) {
+          inside = !inside;
+        }
+      }
+      return inside;
+    }
+
+    function zonesAt(lng, lat) {
+      return ZONES.filter((z) => pointInZone(z, lng, lat));
+    }
+
+    // Profiles that cannot reach a point, i.e. that are blocked by at
+    // least one of the zones covering it.
+    function blockedProfilesAt(lng, lat) {
+      const blocked = new Set();
+      for (const z of zonesAt(lng, lat)) {
+        for (const p of z.blockedProfiles) blocked.add(p);
+      }
+      return [...blocked];
+    }
+
+    // A zone becomes a mandatory skill: the operations inside it require
+    // it, and only the vehicles whose profile may enter it hold it. So a
+    // truck that cannot reach a client is never even considered for it,
+    // instead of being merely discouraged by the penalised travel times.
+    function zoneSkillsAt(lng, lat) {
+      return zonesAt(lng, lat).map((z) => z.id);
+    }
+
+    function zoneSkillsOfProfile(profile) {
+      return ZONES.filter((z) => !z.blockedProfiles.includes(profile)).map((z) => z.id);
+    }
 
     // The company site is a planner setting, not a loading rule: it comes
     // from waste_defaults.json (rules.company is still honoured so older
@@ -258,12 +393,17 @@
       let vId = 1;
       let gId = 1;
 
-      const addVehicle = (type, description, capacities, extra) => {
+      const addVehicle = (type, description, capacities, chico, extra) => {
+        // The profile is what enforces the no-go zones: it decides which
+        // OSRM instance answers for this vehicle, and therefore whether
+        // its travel times and its drawn route go through the areas it
+        // is not allowed in.
+        const profile = profileFor({ type, chico });
         const v = {
           id: vId++,
           description,
           type,
-          profile: "car",
+          profile,
           start: company,
           end: company,
           capacities,
@@ -271,6 +411,9 @@
           costs: { per_hour: 3600, per_task_hour: 3600 },
           ...extra,
         };
+        // With no zone at all, no vehicle and no task carries a skill.
+        const zoneSkills = zoneSkillsOfProfile(profile);
+        if (ZONES.length) v.skills = zoneSkills;
         if (times.lunchEnd > times.lunchStart) {
           // VROOM break time windows bound the break start: a single
           // instant makes the lunch fixed.
@@ -301,18 +444,19 @@
         }
 
         for (let i = 1; i <= n; i++) {
-          const v = addVehicle(type, `${label} ${i}`, capacitiesFor(type), groups ? { groups } : {});
-          vehicleInfo[v.id] = { type, chico: null };
+          const v = addVehicle(type, `${label} ${i}`, capacitiesFor(type), null,
+                               groups ? { groups } : {});
+          vehicleInfo[v.id] = { type, chico: null, profile: v.profile };
         }
         for (const [chicoKey, count] of Object.entries(offered)) {
           const caps = chicoCapacitiesFor(chicoKey);
           const cost = chicoCost(chicoKey);
           for (let i = 1; i <= count; i++) {
-            const v = addVehicle(type, `${label} + chico ${i}`, caps, {
+            const v = addVehicle(type, `${label} + chico ${i}`, caps, chicoKey, {
               groups,
               costs: { fixed: cost, per_hour: 3600, per_task_hour: 3600 },
             });
-            vehicleInfo[v.id] = { type, chico: chicoKey };
+            vehicleInfo[v.id] = { type, chico: chicoKey, profile: v.profile };
           }
         }
       }
@@ -334,7 +478,18 @@
         const priority = Math.max(0, Math.min(100, Number(op.priority) || 0));
         const size = op.size;
         const tag = `op ${op.id}`;
-        const push = (s) => { s.priority = priority; shipments.push(s); };
+        // An operation inside a zone requires that zone's skill, which
+        // only the vehicles allowed in carry: the ones that cannot get
+        // there are excluded outright rather than merely discouraged by
+        // the travel times. Shipment skills cover both of its steps, and
+        // the company end of a shipment is checked separately (a company
+        // inside a zone is a configuration error, see validate).
+        const skills = zoneSkillsAt(op.lng, op.lat);
+        const push = (s) => {
+          s.priority = priority;
+          if (skills.length) s.skills = skills;
+          shipments.push(s);
+        };
 
         switch (op.type) {
           case "deliver_empty":
@@ -383,39 +538,85 @@
     }
 
     // Sanity checks on a planner's day before building the request.
-    function validate({ operations, fleet, times }) {
+    // Returns {level, text} entries: an "error" makes the day
+    // unplannable as it stands, a "warning" is something the planner
+    // should see but that the solver can live with.
+    function validate({ depot, operations, fleet, chicos, times }) {
       fleet = Object.assign(defaultFleet(), fleet || {});
+      chicos = Object.assign(defaultChicos(), chicos || {});
       times = Object.assign(defaultTimes(), times || {});
-      const problems = [];
+      const found = [];
+      const error = (text) => found.push({ level: "error", text });
+      const warning = (text) => found.push({ level: "warning", text });
+
       if (times.dayEnd <= times.dayStart) {
-        problems.push("Working day: the end must be after the start.");
+        error("Working day: the end must be after the start.");
       }
       if (times.lunchEnd < times.lunchStart) {
-        problems.push("Lunch: the end must not be before the start.");
+        error("Lunch: the end must not be before the start.");
       } else if (times.lunchEnd > times.lunchStart &&
                  (times.lunchStart < times.dayStart || times.lunchEnd > times.dayEnd)) {
-        problems.push("Lunch: must be inside the working day.");
+        error("Lunch: must be inside the working day.");
       }
       const total = TYPE_ORDER.reduce((n, t) => n + (fleet[t] || 0), 0);
-      if (total === 0) problems.push("The fleet is empty: set at least one truck in Config.");
-      const carriers = {};
-      for (const t of TYPE_ORDER) {
-        if (!fleet[t]) continue;
-        for (const s of sizesFor(t)) carriers[s] = true;
-      }
-      for (const op of operations) {
-        if (!carriers[op.size]) {
-          problems.push(`Operation ${op.id}: no truck in the fleet can carry a ${op.size} m³ container.`);
+      if (total === 0) error("The fleet is empty: set at least one truck in Config.");
+
+      // The company is the start, the end and every unloading stop of
+      // every route, so a restricted profile whose depot is inside its
+      // own no-go zone can do nothing sensible at all.
+      if (depot) {
+        for (const z of zonesAt(depot.lng, depot.lat)) {
+          error(`The company site is inside the no-go zone "${z.name}": ` +
+                `${describeProfiles(z.blockedProfiles)} could not leave it. ` +
+                "Move the company or the zone.");
         }
       }
-      return problems;
+
+      for (const op of operations) {
+        // Vehicle configurations of today's fleet that could carry this
+        // container, as routing profiles.
+        const able = [];
+        for (const t of TYPE_ORDER) {
+          if (!fleet[t] || !sizesFor(t).includes(op.size)) continue;
+          able.push(profileFor({ type: t, chico: null }));
+          for (const [key, count] of Object.entries(chicosOffered(t, fleet, chicos))) {
+            if (count > 0) able.push(profileFor({ type: t, chico: key }));
+          }
+        }
+        if (!able.length) {
+          error(`Operation ${op.id}: no truck in the fleet can carry a ${op.size} m³ container.`);
+          continue;
+        }
+        const here = zonesAt(op.lng, op.lat);
+        if (!here.length) continue;
+        const blocked = blockedProfilesAt(op.lng, op.lat);
+        const names = here.map((z) => `"${z.name}"`).join(", ");
+        if (able.every((profile) => blocked.includes(profile))) {
+          error(`Operation ${op.id} is inside the no-go zone ${names} and no truck ` +
+                `of the fleet that can carry a ${op.size} m³ container is allowed in.`);
+        } else if (able.some((profile) => blocked.includes(profile))) {
+          warning(`Operation ${op.id} is inside the no-go zone ${names}: ` +
+                  `${describeProfiles(blocked)} cannot serve it, so it is left to the others.`);
+        }
+      }
+      return found;
+    }
+
+    // "trucks going out with a chico" rather than "chico": the
+    // descriptions come from no_go_zones.json.
+    function describeProfiles(names) {
+      const labels = names.map((n) => (PROFILES[n] ? PROFILES[n].description : n));
+      if (labels.length <= 1) return labels[0] || "no vehicle";
+      return `${labels.slice(0, -1).join(", ")} and ${labels[labels.length - 1]}`;
     }
 
     return {
       SIZES, KINDS, TRUCK_TYPES, TYPE_ORDER, CHICO_TYPES, CHICO_ORDER,
       OPERATION_TYPES, COMPANY, SOLVER_DEFAULTS,
+      ZONES, PROFILES, DEFAULT_PROFILE,
       parseLoad, oneHot, capacitiesFor, chicoCapacitiesFor, sizesFor,
       defaultFleet, defaultChicos, chicoCost, chicosOffered, defaultTimes,
+      profileFor, pointInZone, zonesAt, blockedProfilesAt, describeProfiles,
       opIdOfStep, describe, buildRequest, validate,
     };
   }
