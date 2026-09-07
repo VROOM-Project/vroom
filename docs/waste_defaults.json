@@ -20,6 +20,14 @@
       "count": 1
     }
   },
+  "container_stock": {
+    "_comment": "empty containers of each size the company has in the yard for a normal day; keys are the sizes of waste_rules.json. Only operations that take a container out of the company use them up: delivering an empty one, the empty half of an exchange, and materials (which leave in a container of that size). Picking up a full container at a client does not, it brings one in. When more operations than containers need a size, the extra ones are left unassigned and the solver decides which, the same way it decides everything else (priority first, then what the plan costs). Leave a size out, or set it to null, for a stock large enough not to matter. Editable in the planner's Config tab.",
+    "2": null,
+    "6": null,
+    "12": null,
+    "20": null,
+    "40": null
+  },
   "working_day": {
     "start": "08:00",
     "end": "17:00",

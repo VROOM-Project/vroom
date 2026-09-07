@@ -8,6 +8,7 @@
 
 - Alternative capacity vectors per vehicle with `capacities`: a route step load is valid when it fits at least one of them, which allows loading rules that are not a single upper bound per metric
 - Vehicle groups with a usage limit (`vehicle_groups` and vehicle `groups`): at most `max_vehicles` of a group can have a non-empty route, which lets the solver choose between alternative configurations of the same physical vehicle
+- Task groups with an assignment limit (`task_groups` and job/shipment `groups`): at most `max_tasks` of a group can be assigned, which lets the solver choose which tasks are left unassigned when several compete for a resource in limited supply
 
 ### Fixed
 

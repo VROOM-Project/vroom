@@ -464,6 +464,47 @@ inline std::vector<Id> get_vehicle_groups(const rapidjson::Value& json_vehicle,
   return groups;
 }
 
+inline std::vector<Id> get_task_groups(const rapidjson::Value& json_task,
+                                       const std::string& type,
+                                       Id id) {
+  std::vector<Id> groups;
+
+  if (!json_task.HasMember("groups")) {
+    return groups;
+  }
+
+  if (!json_task["groups"].IsArray()) {
+    throw InputException(
+      std::format("Invalid groups array for {} {}.", type, id));
+  }
+
+  const auto& json_groups = json_task["groups"];
+  groups.reserve(json_groups.Size());
+  for (rapidjson::SizeType i = 0; i < json_groups.Size(); ++i) {
+    if (!json_groups[i].IsUint64()) {
+      throw InputException(
+        std::format("Invalid groups value for {} {}.", type, id));
+    }
+    groups.push_back(json_groups[i].GetUint64());
+  }
+
+  return groups;
+}
+
+inline TaskGroup get_task_group(const rapidjson::Value& json_group) {
+  check_id(json_group, "task group");
+  const auto g_id = json_group["id"].GetUint64();
+
+  if (!json_group.HasMember("max_tasks") || !json_group["max_tasks"].IsUint()) {
+    throw InputException(
+      std::format("Invalid or missing max_tasks for task group {}.", g_id));
+  }
+
+  return TaskGroup(g_id,
+                   json_group["max_tasks"].GetUint(),
+                   get_string(json_group, "description"));
+}
+
 inline VehicleGroup get_vehicle_group(const rapidjson::Value& json_group) {
   check_id(json_group, "vehicle group");
   const auto g_id = json_group["id"].GetUint64();
@@ -610,7 +651,8 @@ inline Job get_job(const rapidjson::Value& json_job, unsigned amount_size) {
              get_time_windows(json_job, "job"),
              get_string(json_job, "description"),
              get_duration_per_type(json_job, "setup_per_type", "job"),
-             get_duration_per_type(json_job, "service_per_type", "job"));
+             get_duration_per_type(json_job, "service_per_type", "job"),
+             get_task_groups(json_job, "job", json_job["id"].GetUint64()));
 }
 
 template <class T> inline Matrix<T> get_matrix(rapidjson::Value& m) {
@@ -695,6 +737,18 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
     }
   }
 
+  // Add task groups (before jobs and shipments, which refer to
+  // them).
+  if (json_input.HasMember("task_groups")) {
+    if (!json_input["task_groups"].IsArray()) {
+      throw InputException("Invalid task_groups.");
+    }
+
+    for (rapidjson::SizeType i = 0; i < json_input["task_groups"].Size(); ++i) {
+      input.add_task_group(get_task_group(json_input["task_groups"][i]));
+    }
+  }
+
   // Add all vehicles.
   for (rapidjson::SizeType i = 0; i < json_input["vehicles"].Size(); ++i) {
     auto& json_vehicle = json_input["vehicles"][i];
@@ -730,22 +784,23 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
       auto& json_pickup = json_shipment["pickup"];
       check_id(json_pickup, "pickup");
 
-      const Job pickup(json_pickup["id"].GetUint64(),
-                       JOB_TYPE::PICKUP,
-                       get_task_location(json_pickup, "pickup"),
-                       get_duration(json_pickup, "setup"),
-                       get_duration(json_pickup, "service"),
-                       amount,
-                       skills,
-                       priority,
-                       get_time_windows(json_pickup, "pickup"),
-                       get_string(json_pickup, "description"),
-                       get_duration_per_type(json_pickup,
-                                             "setup_per_type",
-                                             "pickup"),
-                       get_duration_per_type(json_pickup,
-                                             "service_per_type",
-                                             "pickup"));
+      const auto p_id = json_pickup["id"].GetUint64();
+      auto groups = get_task_groups(json_shipment, "shipment", p_id);
+
+      const Job
+        pickup(p_id,
+               JOB_TYPE::PICKUP,
+               get_task_location(json_pickup, "pickup"),
+               get_duration(json_pickup, "setup"),
+               get_duration(json_pickup, "service"),
+               amount,
+               skills,
+               priority,
+               get_time_windows(json_pickup, "pickup"),
+               get_string(json_pickup, "description"),
+               get_duration_per_type(json_pickup, "setup_per_type", "pickup"),
+               get_duration_per_type(json_pickup, "service_per_type", "pickup"),
+               groups);
 
       // Defining delivery job.
       auto& json_delivery = json_shipment["delivery"];
@@ -766,7 +821,8 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
                                                "delivery"),
                          get_duration_per_type(json_delivery,
                                                "service_per_type",
-                                               "delivery"));
+                                               "delivery"),
+                         groups);
 
       input.add_shipment(pickup, delivery);
     }

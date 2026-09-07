@@ -193,9 +193,11 @@ void Input::add_job(const Job& job) {
   if (job_id_to_rank.contains(job.id)) {
     throw InputException(std::format("Duplicate job id: {}.", job.id));
   }
-  job_id_to_rank[job.id] = jobs.size();
+  const Index j_rank = jobs.size();
+  job_id_to_rank[job.id] = j_rank;
   jobs.push_back(job);
   check_job(jobs.back());
+  set_task_groups(jobs.back(), j_rank);
   _has_jobs = true;
 }
 
@@ -228,15 +230,24 @@ void Input::add_shipment(const Job& pickup, const Job& delivery) {
     }
   }
 
+  if (pickup.groups != delivery.groups) {
+    throw InputException(
+      std::format("Inconsistent shipment groups for pickup {} and delivery {}.",
+                  pickup.id,
+                  delivery.id));
+  }
+
   if (pickup.type != JOB_TYPE::PICKUP) {
     throw InputException(std::format("Wrong type for pickup {}.", pickup.id));
   }
   if (pickup_id_to_rank.contains(pickup.id)) {
     throw InputException(std::format("Duplicate pickup id: {}.", pickup.id));
   }
-  pickup_id_to_rank[pickup.id] = jobs.size();
+  const Index p_rank = jobs.size();
+  pickup_id_to_rank[pickup.id] = p_rank;
   jobs.push_back(pickup);
   check_job(jobs.back());
+  set_task_groups(jobs.back(), p_rank);
 
   if (delivery.type != JOB_TYPE::DELIVERY) {
     throw InputException(
@@ -246,9 +257,12 @@ void Input::add_shipment(const Job& pickup, const Job& delivery) {
     throw InputException(
       std::format("Duplicate delivery id: {}.", delivery.id));
   }
-  delivery_id_to_rank[delivery.id] = jobs.size();
+  const Index d_rank = jobs.size();
+  delivery_id_to_rank[delivery.id] = d_rank;
   jobs.push_back(delivery);
   check_job(jobs.back());
+  // A shipment is a single member of a group, held by its pickup.
+  set_task_groups(jobs.back(), d_rank, false);
   _has_shipments = true;
 }
 
@@ -260,6 +274,57 @@ void Input::add_vehicle_group(const VehicleGroup& group) {
   _vehicle_group_id_to_rank[group.id] = vehicle_groups.size();
   vehicle_groups.push_back(group);
   _has_vehicle_groups = true;
+}
+
+void Input::add_task_group(const TaskGroup& group) {
+  if (_task_group_id_to_rank.contains(group.id)) {
+    throw InputException(std::format("Duplicate task group id: {}.", group.id));
+  }
+  _task_group_id_to_rank[group.id] = task_groups.size();
+  task_groups.push_back(group);
+  _has_task_groups = true;
+}
+
+void Input::set_task_groups(const Job& job, const Index j, const bool member) {
+  assert(_task_group_ranks.size() == j);
+  _task_group_ranks.emplace_back();
+
+  for (const auto g_id : job.groups) {
+    auto search = _task_group_id_to_rank.find(g_id);
+    if (search == _task_group_id_to_rank.end()) {
+      throw InputException(
+        std::format("Unknown group {} for task {}.", g_id, job.id));
+    }
+    if (member) {
+      _task_group_ranks.back().push_back(search->second);
+      task_groups[search->second].tasks.push_back(j);
+    }
+  }
+}
+
+void Input::check_task_groups_usage() const {
+  std::unordered_set<Index> in_steps;
+  for (const auto& v : vehicles) {
+    for (const auto& s : v.steps) {
+      if (s.type == STEP_TYPE::JOB) {
+        in_steps.insert(s.rank);
+      }
+    }
+  }
+
+  for (const auto& group : task_groups) {
+    const auto used =
+      std::ranges::count_if(group.tasks, [&in_steps](const Index t) {
+        return in_steps.contains(t);
+      });
+    if (used > group.max_tasks) {
+      throw InputException(
+        std::format("Input steps assign {} tasks of group {} (max {}).",
+                    used,
+                    group.id,
+                    group.max_tasks));
+    }
+  }
 }
 
 void Input::check_vehicle_groups_usage() const {
@@ -1258,6 +1323,7 @@ Solution Input::solve(const unsigned nb_searches,
   if (_has_initial_routes) {
     set_vehicle_steps_ranks();
     check_vehicle_groups_usage();
+    check_task_groups_usage();
   }
 
   set_jobs_durations_per_vehicle_type();
@@ -1364,6 +1430,7 @@ Solution Input::check(unsigned nb_thread) {
 
   set_vehicle_steps_ranks();
   check_vehicle_groups_usage();
+  check_task_groups_usage();
 
   constexpr bool sparse_filling = true;
   set_matrices(nb_thread, sparse_filling);

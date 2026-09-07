@@ -11,6 +11,7 @@ All rights reserved (see LICENSE).
 */
 
 #include <string>
+#include <vector>
 
 #include "structures/typedefs.h"
 #include "structures/vroom/amount.h"
@@ -33,6 +34,9 @@ struct Job {
   const std::string description;
   const TypeToDurationMap setup_per_type;
   const TypeToDurationMap service_per_type;
+  // Ids of the task groups this task belongs to (see TaskGroup). For
+  // a shipment, both steps carry the groups of the shipment.
+  const std::vector<Id> groups;
   std::vector<Duration> setups;
   std::vector<Duration> services;
 
@@ -49,7 +53,8 @@ struct Job {
         std::vector<TimeWindow>(1, TimeWindow()),
       std::string description = "",
       const TypeToUserDurationMap& setup_per_type = TypeToUserDurationMap(),
-      const TypeToUserDurationMap& service_per_type = TypeToUserDurationMap());
+      const TypeToUserDurationMap& service_per_type = TypeToUserDurationMap(),
+      std::vector<Id> groups = std::vector<Id>());
 
   // Constructor for pickup and delivery jobs (JOB_TYPE::PICKUP or
   // JOB_TYPE::DELIVERY).
@@ -65,7 +70,8 @@ struct Job {
         std::vector<TimeWindow>(1, TimeWindow()),
       std::string description = "",
       const TypeToUserDurationMap& setup_per_type = TypeToUserDurationMap(),
-      const TypeToUserDurationMap& service_per_type = TypeToUserDurationMap());
+      const TypeToUserDurationMap& service_per_type = TypeToUserDurationMap(),
+      std::vector<Id> groups = std::vector<Id>());
 
   Index index() const {
     return location.index();

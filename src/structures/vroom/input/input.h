@@ -14,6 +14,7 @@ All rights reserved (see LICENSE).
 #include <chrono>
 #include <memory>
 #include <optional>
+#include <span>
 #include <unordered_map>
 
 #include "routing/wrapper.h"
@@ -21,6 +22,7 @@ All rights reserved (see LICENSE).
 #include "structures/typedefs.h"
 #include "structures/vroom/matrices.h"
 #include "structures/vroom/solution/solution.h"
+#include "structures/vroom/task_group.h"
 #include "structures/vroom/vehicle.h"
 #include "structures/vroom/vehicle_group.h"
 
@@ -89,6 +91,14 @@ private:
   std::unordered_map<Id, Index> _vehicle_group_id_to_rank;
   std::vector<std::vector<Index>> _vehicle_group_ranks;
 
+  // Task groups (assignment limits), see TaskGroup. For each job
+  // rank, the ranks of the groups it belongs to. A shipment counts as
+  // a single member of a group, held by its pickup, so the entry for
+  // a delivery step is always empty.
+  bool _has_task_groups{false};
+  std::unordered_map<Id, Index> _task_group_id_to_rank;
+  std::vector<std::vector<Index>> _task_group_ranks;
+
   // Default vehicle type is NO_TYPE, related to the fact that we do
   // not allow empty types as keys for jobs.
   std::vector<std::string> _vehicle_types{NO_TYPE};
@@ -114,6 +124,13 @@ private:
 
   void check_vehicle_groups_usage() const;
 
+  void check_task_groups_usage() const;
+
+  // Register job at rank j as a member of the groups listed in its
+  // `groups`, or as a member of no group at all when `member` is
+  // false (delivery step of a shipment).
+  void set_task_groups(const Job& job, Index j, bool member = true);
+
   UserCost check_cost_bound(const Matrix<UserCost>& matrix) const;
 
   void set_skills_compatibility();
@@ -137,6 +154,7 @@ public:
   std::vector<Job> jobs;
   std::vector<Vehicle> vehicles;
   std::vector<VehicleGroup> vehicle_groups;
+  std::vector<TaskGroup> task_groups;
 
   // Store rank in jobs accessible from job/pickup/delivery id.
   std::unordered_map<Id, Index> job_id_to_rank;
@@ -163,6 +181,10 @@ public:
 
   // Groups must be added before the vehicles that refer to them.
   void add_vehicle_group(const VehicleGroup& group);
+
+  // Groups must be added before the jobs and shipments that refer to
+  // them.
+  void add_task_group(const TaskGroup& group);
 
   void add_vehicle(const Vehicle& vehicle);
 
@@ -211,6 +233,61 @@ public:
         return !sol[v].empty();
       });
       return used <= group.max_vehicles;
+    });
+  }
+
+  bool has_task_groups() const {
+    return _has_task_groups;
+  }
+
+  // Whether task groups allow assigning the job at rank `added`,
+  // `unassigned` holding the ranks of the currently unassigned jobs
+  // (`added` among them) and `removed` the ranks of assigned tasks
+  // that the same move unassigns, if any. A shipment is represented
+  // by its pickup rank on both counts.
+  template <class Set>
+  bool task_groups_allow_adding(Index added,
+                                const Set& unassigned,
+                                std::span<const Index> removed = {}) const {
+    if (!_has_task_groups) {
+      return true;
+    }
+
+    for (const auto g : _task_group_ranks[added]) {
+      const auto& group = task_groups[g];
+      unsigned assigned = 0;
+      for (const auto t : group.tasks) {
+        if (!unassigned.contains(t) &&
+            std::ranges::find(removed, t) == removed.end()) {
+          ++assigned;
+        }
+      }
+      if (assigned >= group.max_tasks) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // Whether the current routes in sol satisfy all task group
+  // assignment limits.
+  template <class Route>
+  bool task_groups_satisfied(const std::vector<Route>& sol) const {
+    if (!_has_task_groups) {
+      return true;
+    }
+
+    std::unordered_set<Index> assigned;
+    for (const auto& r : sol) {
+      assigned.insert(r.route.begin(), r.route.end());
+    }
+
+    return std::ranges::all_of(task_groups, [&assigned](const auto& group) {
+      const auto used =
+        std::ranges::count_if(group.tasks, [&assigned](const Index t) {
+          return assigned.contains(t);
+        });
+      return used <= group.max_tasks;
     });
   }
 
