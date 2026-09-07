@@ -6,6 +6,12 @@ build/
 .vscode
 .idea
 osrm-data/
-vroom-conf/
+# The vroom-express container seeds vroom-conf/config.yml from its own
+# default on first run, but that default only knows the plain "car"
+# profile: the routing profiles that enforce the no-go zones
+# (docs/no_go_zones.md) have to come with the repository, so the file
+# itself is tracked and only the log it writes next to it is ignored.
+vroom-conf/*
+!vroom-conf/config.yml
 frontend/node_modules/
 .claude/launch.json

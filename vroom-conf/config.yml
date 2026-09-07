@@ -1,0 +1,35 @@
+cliArgs:
+  threads: 4
+  explore: 1
+  geometry: true
+  timeout: 300000
+  limit: "1mb"
+  baseurl: "/"
+  logsize: "100M"
+  logdir: "/tmp"
+  port: 3000
+  path: ""
+  override: ["c", "g", "l", "t", "x"]
+
+# One entry per routing profile a vehicle may use. VROOM only queries
+# the profiles its vehicles actually ask for, so a profile declared
+# here whose container is down costs nothing until a vehicle uses it.
+#
+# Ports are the ones inside the compose network (osrm-routed always
+# listens on 5000 in its container); the host-side ports of
+# docker-compose.yml (5000, 5001) are a different thing and only matter
+# from outside.
+routingServers:
+  osrm:
+    car:
+      host: "osrm"
+      port: "5000"
+      baseurl: "/"
+    # Trucks going out with a chico: same map, but the roads inside the
+    # no-go zones of docs/no_go_zones.json are prohibitively slow, so
+    # routes and travel times avoid those areas. Served by the
+    # osrm-chico container; see docs/no_go_zones.md.
+    chico:
+      host: "osrm-chico"
+      port: "5000"
+      baseurl: "/"

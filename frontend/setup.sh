@@ -7,7 +7,9 @@
 #      sources (the planner needs the `capacities` and `vehicle_groups`
 #      extensions)
 #   3. waits until vroom-express answers on http://localhost:3000/health
-#   4. installs npm deps (none today, but keeps the workflow uniform)
+#   4. builds the restricted routing data of any no-go zone drawn in the
+#      planner, and starts the OSRM instance serving it
+#   5. installs npm deps (none today, but keeps the workflow uniform)
 #
 # Afterwards run:  npm run dev   (from this folder), then open http://localhost:8080
 #
@@ -16,6 +18,11 @@
 #     of files. Re-running osrm-partition alone on already-partitioned data
 #     leaves stale cell metrics and osrm-routed then segfaults on every route/table
 #     request (exit code 139, silent restart loop). Use --rebuild-osrm to redo it.
+#   * no-go zones (docs/no_go_zones.json) need one further dataset per
+#     restricted routing profile, built from this one by
+#     scripts/build_zone_graphs.sh (customize only, so minutes rather than
+#     hours). Without a zone drawn there is nothing to build and nothing
+#     extra to run: every vehicle uses the default profile.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -80,6 +87,15 @@ else
   echo "    the data files are inconsistent: rerun  $0 --rebuild-osrm" >&2
   exit 1
 fi
+
+echo "==> No-go zones"
+# Areas the planner has drawn are enforced by a copy of the routing data
+# in which the roads inside them are prohibitively slow, one per
+# restricted profile; the plan only avoids them once it is built and
+# served. --apply builds what is missing or out of date, starts the
+# containers serving it and waits for them; it does nothing when no
+# zone is drawn. The same thing the planner's Apply button runs.
+"$ROOT/scripts/build_zone_graphs.sh" --apply 2>&1 | sed "s/^/    /"
 
 echo "==> npm install"
 (cd "$HERE" && npm install --no-audit --no-fund)
