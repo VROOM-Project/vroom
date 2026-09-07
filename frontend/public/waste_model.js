@@ -31,12 +31,22 @@
 // another day, priority first, instead of the planner choosing
 // beforehand. A size left blank is not tracked and gets no group.
 //
+// Lunch (docs/waste_defaults.json, "working_day" block) is spent at the
+// company: every truck is back and unloaded by the lunch start and
+// loads nothing before the lunch end. VROOM cannot pin a break to a
+// place, so a truck's day is two shifts instead, morning and
+// afternoon, each a VROOM vehicle of its own that starts and ends at
+// the company (see shiftsOf and buildRequest). One solve still plans
+// the whole day, choosing what goes before and after lunch.
+//
 // Chicos are trailers that attach to a truck type. A truck with a chico
 // carries one allowed load per bed (its own plus `extra_loads` on the
 // chico), any mix. The company has a limited number of chicos and the
 // solver decides which trucks take one: every truck of a type is
 // offered both with and without a chico, and a VROOM vehicle group caps
-// the number of vehicles used at the number of physical trucks.
+// the number of vehicles used at the number of physical trucks. The
+// group counts per shift, so a chico can go on or come off at the
+// company over lunch.
 //
 // Costs (docs/waste_defaults.json, "costs" block) are what the solver
 // minimises once it has decided what gets done. In money, a route costs
@@ -77,8 +87,8 @@
   // The first term is the company's real cost: the drivers are salaried
   // by the month, so their time is spent whether a truck goes out or
   // not and pricing it would trade fuel against money already gone.
-  // Time is a hard limit (the working day, the lunch break, any cap in
-  // `limits`), not a price. Service time is not priced either
+  // Time is a hard limit (the working day, lunch at the company, any
+  // cap in `limits`), not a price. Service time is not priced either
   // (per_task_hour is 0), and no vehicle carries a fixed cost.
   //
   // The second term is not a business cost and is not editable. It has
@@ -531,14 +541,33 @@
       return {
         dayStart: clockToSeconds(day.start, 8 * 3600),
         dayEnd: clockToSeconds(day.end, 17 * 3600),
-        // Lunch: a fixed break from lunchStart to lunchEnd. Equal values
-        // mean no lunch.
+        // Lunch, from lunchStart to lunchEnd, is spent at the company:
+        // every truck is back and unloaded by lunchStart and loads
+        // nothing before lunchEnd. Equal values mean no lunch.
         lunchStart: clockToSeconds(day.lunch_start, 12 * 3600),
         lunchEnd: clockToSeconds(day.lunch_end, 13 * 3600),
         clientService: minutesToSeconds(svc.client_per_container, 600),
         companySetup: minutesToSeconds(svc.company_per_visit, 300),
         companyService: minutesToSeconds(svc.company_per_container, 300),
       };
+    }
+
+    // The shifts of a truck's day, each starting and ending at the
+    // company: the morning up to lunch and the afternoon from lunch on,
+    // or the whole day when there is no lunch. A lunch starting at the
+    // day's start (or ending at its end) simply leaves one shift. Lunch
+    // is a hard rule, and VROOM has no "break at a location", so this
+    // is how it is expressed: one VROOM vehicle per truck configuration
+    // and shift, with the shift as its time_window. Being a route end,
+    // the lunch start is also when the last unloading must be finished,
+    // and being a route start, the lunch end is when loading may begin.
+    function shiftsOf(times) {
+      const { dayStart, dayEnd, lunchStart, lunchEnd } = times;
+      if (!(lunchEnd > lunchStart)) return [{ key: "day", label: "day", start: dayStart, end: dayEnd }];
+      const shifts = [];
+      if (lunchStart > dayStart) shifts.push({ key: "morning", label: "morning", start: dayStart, end: lunchStart });
+      if (dayEnd > lunchEnd) shifts.push({ key: "afternoon", label: "afternoon", start: lunchEnd, end: dayEnd });
+      return shifts;
     }
 
     // Step ids are derived from the operation id so that solution steps
@@ -576,7 +605,9 @@
     //   exploration  0..5                          vroom's -x
     //   threads      int                           vroom's -t
     // Returns {request, stepInfo, vehicleInfo}: stepInfo maps step ids
-    // to a description, vehicleInfo maps vehicle ids to {type, chico}.
+    // to a description, vehicleInfo maps vehicle ids to {type, chico,
+    // profile, shift}, shift being a key of shiftsOf (a physical truck
+    // is one vehicle per shift).
     function buildRequest({ depot, operations, fleet, chicos, stock, times, costs, limits,
                             geometry, exploration, threads }) {
       fleet = Object.assign(defaultFleet(), fleet || {});
@@ -594,7 +625,13 @@
       let vId = 1;
       let gId = 1;
 
-      const addVehicle = (type, description, capacities, chico, extra) => {
+      // Lunch is spent at the company, so a truck's day is one or two
+      // shifts that both start and end there (see shiftsOf). Every
+      // configuration of every truck becomes one VROOM vehicle per
+      // shift, and VROOM has no break to place any more.
+      const shifts = shiftsOf(times);
+
+      const addVehicle = (type, description, capacities, chico, shift, extra) => {
         // The profile is what enforces the no-go zones: it decides which
         // OSRM instance answers for this vehicle, and therefore whether
         // its travel times and its drawn route go through the areas it
@@ -611,33 +648,27 @@
         if (perKmForVehicle > 0) vehicleCosts.per_km = perKmForVehicle;
         const v = {
           id: vId++,
-          description,
+          description: shifts.length > 1 ? `${description}, ${shift.label}` : description,
           type,
           profile,
           start: company,
           end: company,
           capacities,
-          time_window: [times.dayStart, times.dayEnd],
+          // The shift: back at the company, unloaded, by its end, and
+          // not loading anything before its start.
+          time_window: [shift.start, shift.end],
           costs: vehicleCosts,
           ...extra,
         };
+        // The caps in `limits` are per VROOM vehicle, hence per shift.
         if (limits.maxTravelTime > 0) v.max_travel_time = limits.maxTravelTime;
         if (limits.maxDistance > 0) v.max_distance = limits.maxDistance;
         if (limits.maxTasks > 0) v.max_tasks = limits.maxTasks;
         // With no zone at all, no vehicle and no task carries a skill.
         const zoneSkills = zoneSkillsOfProfile(profile);
         if (ZONES.length) v.skills = zoneSkills;
-        if (times.lunchEnd > times.lunchStart) {
-          // VROOM break time windows bound the break start: a single
-          // instant makes the lunch fixed.
-          v.breaks = [{
-            id: 1,
-            description: "lunch",
-            time_windows: [[times.lunchStart, times.lunchStart]],
-            service: times.lunchEnd - times.lunchStart,
-          }];
-        }
         vehicles.push(v);
+        vehicleInfo[v.id] = { type, chico, profile, shift: shift.key };
         return v;
       };
 
@@ -648,28 +679,29 @@
         const offered = chicosOffered(type, fleet, chicos);
         const anyChico = Object.values(offered).some((c) => c > 0);
 
-        // One group per truck type: plain and chico versions of the
-        // trucks together may not exceed the number of physical trucks.
-        let groups;
-        if (anyChico) {
-          vehicleGroups.push({ id: gId, max_vehicles: n, description: `${label} trucks` });
-          groups = [gId++];
-        }
+        for (const shift of shifts) {
+          // One group per truck type and shift: plain and chico versions
+          // of the trucks together may not exceed the number of physical
+          // trucks. Counting per shift is what lets a truck put its chico
+          // on or take it off at the company over lunch.
+          let groups;
+          if (anyChico) {
+            const suffix = shifts.length > 1 ? `, ${shift.label}` : "";
+            vehicleGroups.push({ id: gId, max_vehicles: n, description: `${label} trucks${suffix}` });
+            groups = [gId++];
+          }
 
-        for (let i = 1; i <= n; i++) {
-          const v = addVehicle(type, `${label} ${i}`, capacitiesFor(type), null,
-                               groups ? { groups } : {});
-          vehicleInfo[v.id] = { type, chico: null, profile: v.profile };
-        }
-        for (const [chicoKey, count] of Object.entries(offered)) {
-          const caps = chicoCapacitiesFor(chicoKey);
-          for (let i = 1; i <= count; i++) {
-            // What taking this chico costs is its "chico:<key>" entry in
-            // the costs, applied by addVehicle like any other override.
-            const v = addVehicle(type, `${label} + chico ${i}`, caps, chicoKey, {
-              groups,
-            });
-            vehicleInfo[v.id] = { type, chico: chicoKey, profile: v.profile };
+          for (let i = 1; i <= n; i++) {
+            addVehicle(type, `${label} ${i}`, capacitiesFor(type), null, shift,
+                       groups ? { groups } : {});
+          }
+          for (const [chicoKey, count] of Object.entries(offered)) {
+            const caps = chicoCapacitiesFor(chicoKey);
+            for (let i = 1; i <= count; i++) {
+              // What taking this chico costs is its "chico:<key>" entry in
+              // the costs, applied by addVehicle like any other override.
+              addVehicle(type, `${label} + chico ${i}`, caps, chicoKey, shift, { groups });
+            }
           }
         }
       }
@@ -813,6 +845,8 @@
       } else if (times.lunchEnd > times.lunchStart &&
                  (times.lunchStart < times.dayStart || times.lunchEnd > times.dayEnd)) {
         error("Lunch: must be inside the working day.");
+      } else if (times.dayEnd > times.dayStart && !shiftsOf(times).length) {
+        error("Lunch: it covers the whole working day, so no truck could go out.");
       }
       const total = TYPE_ORDER.reduce((n, t) => n + (fleet[t] || 0), 0);
       if (total === 0) error("The fleet is empty: set at least one truck in Config.");
@@ -886,7 +920,7 @@
       REFERENCE_PER_HOUR, COST_SCALE, VEHICLE_CONFIGS,
       parseLoad, oneHot, capacitiesFor, chicoCapacitiesFor, sizesFor,
       defaultFleet, defaultChicos, defaultContainerStock, stockFor,
-      takesContainerOut, stockUsers, chicosOffered, defaultTimes,
+      takesContainerOut, stockUsers, chicosOffered, defaultTimes, shiftsOf,
       defaultCosts, moneyPerKm, solverPerKm, defaultLimits, configKeyOf,
       profileFor, pointInZone, zonesAt, blockedProfilesAt, describeProfiles,
       opIdOfStep, describe, buildRequest, validate,

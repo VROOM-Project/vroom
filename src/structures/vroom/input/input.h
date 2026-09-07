@@ -224,6 +224,44 @@ public:
     return true;
   }
 
+  // Whether vehicle groups allow a move that makes the (currently
+  // empty) routes of both `opened_1` and `opened_2` non-empty at
+  // once, `closed` being a route emptied by the same move, if any.
+  // Checking the two vehicles one at a time is not enough: each can
+  // be allowed on its own while together they exceed a group limit.
+  template <class Route>
+  bool vehicle_groups_allow_opening_both(Index opened_1,
+                                         Index opened_2,
+                                         std::optional<Index> closed,
+                                         const std::vector<Route>& sol) const {
+    if (!_has_vehicle_groups) {
+      return true;
+    }
+    assert(opened_1 != opened_2);
+    assert(sol[opened_1].empty() && sol[opened_2].empty());
+
+    for (const auto& [opened, other] :
+         {std::pair(opened_1, opened_2), std::pair(opened_2, opened_1)}) {
+      for (const auto g : _vehicle_group_ranks[opened]) {
+        const auto& group = vehicle_groups[g];
+        unsigned used =
+          (std::ranges::find(group.vehicles, other) != group.vehicles.end())
+            ? 1
+            : 0;
+        for (const auto v : group.vehicles) {
+          if (!sol[v].empty() &&
+              !(closed.has_value() && v == closed.value())) {
+            ++used;
+          }
+        }
+        if (used >= group.max_vehicles) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
   // Whether the current routes in sol satisfy all vehicle group
   // usage limits.
   template <class Route>

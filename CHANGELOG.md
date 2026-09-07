@@ -15,6 +15,7 @@
 #### Internals
 
 - Add include to fix `std::counting_semaphore` usage (#1333)
+- `RouteSplit` now respects `vehicle_groups`: it opens two empty routes at once, and a group limit that each of them satisfied on its own could be exceeded by the pair
 
 ## [v1.15.0] - 2026-03-12
 

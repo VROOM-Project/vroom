@@ -217,7 +217,10 @@ served, but only by a truck without one.
 - **Working hours**: every truck has a start time and a finishing time
   for the day.
 - **Lunch break**: every truck (operator) has a lunch break during the
-  day.
+  day, spent at the company: a truck is back at the company, unloaded,
+  by the start of lunch, and loads nothing before its end. The day is
+  therefore a morning shift and an afternoon shift, each starting and
+  ending at the company.
 - **Compatibility**: containers can only travel on trucks of a
   compatible type (see [Trucks](#trucks)).
 - **Loading rules**: at every moment the load on a truck must be one
@@ -230,8 +233,9 @@ served, but only by a truck without one.
   is on board; a full container picked up has to be unloaded somewhere
   (company or destination) before the end of the day.
 - **Chicos**: a truck takes at most one chico, of the type matching
-  the truck, for the whole day; no more chicos go out than the
-  company owns, and no more trucks than it has.
+  the truck, for a whole shift; since lunch is spent at the company, a
+  chico can be put on or taken off there over lunch. No more chicos go
+  out than the company owns, and no more trucks than it has.
 - **No-go areas**: a truck with a chico neither stops in nor drives
   through the areas closed to it (see [No-go areas](#no-go-areas)).
 - **Unassigned operations are acceptable**: if not everything fits in

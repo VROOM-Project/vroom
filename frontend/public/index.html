@@ -429,11 +429,11 @@
       </fieldset>
 
       <fieldset>
-        <legend>Limits per truck</legend>
+        <legend>Limits per truck and shift</legend>
         <label><span>Max driving time (min)</span><input id="maxTravelTime" type="number" min="0" step="1" value="0" /></label>
         <label><span>Max distance (km)</span><input id="maxDistance" type="number" min="0" step="1" value="0" /></label>
         <label><span>Max tasks</span><input id="maxTasks" type="number" min="0" step="1" value="0" /></label>
-        <div class="hint">Hard caps, not costs: a route breaking one of them is not a plan at all, so operations get left for tomorrow rather than made expensive. 0 means no limit. A task is one shipment step, not one operation: an exchange is four (load the empty and drop the full at the company, leave the empty and take the full at the client).</div>
+        <div class="hint">Hard caps, not costs: a route breaking one of them is not a plan at all, so operations get left for tomorrow rather than made expensive. 0 means no limit. With a lunch, each cap applies to the morning and to the afternoon separately, not to the whole day. A task is one shipment step, not one operation: an exchange is four (load the empty and drop the full at the company, leave the empty and take the full at the client).</div>
       </fieldset>
 
       <fieldset>
@@ -475,7 +475,7 @@
         <label><span>End</span><input id="dayEnd" type="time" value="17:00" /></label>
         <label><span>Lunch start</span><input id="lunchStart" type="time" value="12:00" /></label>
         <label><span>Lunch end</span><input id="lunchEnd" type="time" value="13:00" /></label>
-        <div class="hint">Lunch is a fixed break from start to end for every truck. Set both to the same time for no lunch.</div>
+        <div class="hint">Lunch is spent at the company: every truck is back and unloaded by the lunch start and loads nothing before the lunch end, so the day is a morning and an afternoon shift, both planned together. Set both to the same time for no lunch.</div>
       </fieldset>
 
       <fieldset>
@@ -530,6 +530,11 @@ let stock = M.defaultContainerStock();
 const COLORS = ["#2563eb", "#dc2626", "#059669", "#d97706", "#7c3aed", "#0891b2", "#db2777", "#65a30d"];
 let lastRequestVehicles = [];
 let lastVehicleInfo = {};
+// The shifts (see WasteModel.shiftsOf) and the lunch the last request
+// was built with, so that the cards read right even if the Config tab
+// changes while the plan is on screen.
+let lastShifts = [];
+let lastLunch = { start: 0, end: 0 };
 // Prices the last plan was made with, so its cost can be reported in
 // money even if the boxes change afterwards.
 let lastCosts = null;
@@ -1540,39 +1545,88 @@ function showSolution(sol, stepInfo) {
   }
   const routes = sol.routes || [];
   const cards = [];
-  let chicosUsed = 0;
-  const trucksTotal = Object.values(lastVehicleInfo).filter((v) => !v.chico).length;
-  const chicosTotal = Object.values(lastVehicleInfo).filter((v) => v.chico).length;
+  // Lunch is spent at the company, so a truck's day is one VROOM
+  // vehicle per shift (morning, afternoon) and a solution holds one
+  // route per shift. The trucks of a type are identical, so the k-th
+  // vehicle of a type used in the morning and the k-th used in the
+  // afternoon are shown as the same truck: one card, lunch in between.
+  const shifts = lastShifts.length ? lastShifts : [{ key: "day", label: "day" }];
+  const firstShift = shifts[0].key;
+  const trucksTotal = Object.values(lastVehicleInfo).filter((v) => !v.chico && v.shift === firstShift).length;
+  const chicosTotal = Object.values(lastVehicleInfo).filter((v) => v.chico && v.shift === firstShift).length;
+  const trucks = {};
+  const usedOfShift = {};
+  const chicosOfShift = {};
+  for (const r of routes) {
+    const info = lastVehicleInfo[r.vehicle] || {};
+    const shift = info.shift || "day";
+    const key = `${info.type}|${shift}`;
+    usedOfShift[key] = (usedOfShift[key] || 0) + 1;
+    const k = usedOfShift[key];
+    const truckKey = `${info.type} ${k}`;
+    const truck = trucks[truckKey] || (trucks[truckKey] = { type: info.type, k, byShift: {} });
+    truck.byShift[shift] = r;
+    if (info.chico) chicosOfShift[shift] = (chicosOfShift[shift] || 0) + 1;
+  }
+  const chicosUsed = Math.max(0, ...Object.values(chicosOfShift));
+  const typeRank = (t) => { const i = M.TYPE_ORDER.indexOf(t); return i < 0 ? M.TYPE_ORDER.length : i; };
+  const truckList = Object.values(trucks).sort((a, b) => typeRank(a.type) - typeRank(b.type) || a.k - b.k);
+  const trucksUsed = truckList.length;
 
-  routes.forEach((r, i) => {
-    const v = lastRequestVehicles.find((x) => x.id === r.vehicle) || {};
+  truckList.forEach((truck, i) => {
     const color = COLORS[i % COLORS.length];
-    const name = v.description || `vehicle ${r.vehicle}`;
-    if ((lastVehicleInfo[r.vehicle] || {}).chico) chicosUsed++;
+    const typeLabel = (M.TRUCK_TYPES[truck.type] || { label: truck.type || "vehicle" }).label.toLowerCase();
+    const name = `${typeLabel} ${truck.k}`;
     const items = [];
+    const chicoShifts = [];
     let clientStops = 0;
-    for (const s of r.steps) {
-      const clock = `<span class="t">${fmtClock(s.arrival)}</span>`;
-      if (s.type === "start") { items.push(`<li class="company">${clock}<span>leave the company</span></li>`); continue; }
-      if (s.type === "end") { items.push(`<li class="company">${clock}<span>back at the company</span></li>`); continue; }
-      if (s.type === "break") { items.push(`<li class="company">${clock}<span>lunch</span></li>`); continue; }
-      const text = s.description || stepInfo[s.id] || `${s.type} ${s.id}`;
-      const opId = M.opIdOfStep(s.id);
-      const atCompany = /at company/.test(text);
-      if (!atCompany) { clientStops++; opColor[opId] = opColor[opId] || color; }
-      items.push(`<li class="${atCompany ? "company" : ""}">${clock}<span>${esc(text)}</span></li>`);
-    }
+    let time = 0;
+    let distance = 0;
+    let distanceKnown = true;
+    shifts.forEach((shift, j) => {
+      if (j > 0) {
+        items.push(`<li class="company"><span class="t">${fmtClock(lastLunch.start)}</span>` +
+                   `<span>lunch at the company until ${fmtClock(lastLunch.end)}</span></li>`);
+      }
+      const r = truck.byShift[shift.key];
+      if (!r) {
+        items.push(`<li class="company"><span class="t"></span><span>stays at the company${shifts.length > 1 ? ` in the ${shift.label}` : ""}</span></li>`);
+        return;
+      }
+      const info = lastVehicleInfo[r.vehicle] || {};
+      if (info.chico) chicoShifts.push(shift.label);
+      const withChico = info.chico ? " with the chico" : "";
+      for (const s of r.steps) {
+        const clock = `<span class="t">${fmtClock(s.arrival)}</span>`;
+        if (s.type === "start") { items.push(`<li class="company">${clock}<span>leave the company${withChico}</span></li>`); continue; }
+        if (s.type === "end") { items.push(`<li class="company">${clock}<span>back at the company</span></li>`); continue; }
+        if (s.type === "break") { items.push(`<li class="company">${clock}<span>break</span></li>`); continue; }
+        const text = s.description || stepInfo[s.id] || `${s.type} ${s.id}`;
+        const opId = M.opIdOfStep(s.id);
+        const atCompany = /at company/.test(text);
+        if (!atCompany) { clientStops++; opColor[opId] = opColor[opId] || color; }
+        items.push(`<li class="${atCompany ? "company" : ""}">${clock}<span>${esc(text)}</span></li>`);
+      }
+      time += r.duration + (r.service || 0) + (r.waiting_time || 0);
+      if (r.distance != null) distance += r.distance; else distanceKnown = false;
 
-    if (r.geometry) {
-      drawRoute(decodePolyline(r.geometry), color, esc(name), false);
-    } else {
-      drawRoute(r.steps.map((s) => s.location).filter(Boolean).map(([lng, lat]) => [lat, lng]), color, esc(name), true);
-    }
+      const tooltip = esc(shifts.length > 1 ? `${name}, ${shift.label}` : name);
+      if (r.geometry) {
+        drawRoute(decodePolyline(r.geometry), color, tooltip, false);
+      } else {
+        drawRoute(r.steps.map((s) => s.location).filter(Boolean).map(([lng, lat]) => [lat, lng]), color, tooltip, true);
+      }
+    });
 
-    const km = r.distance != null ? ` · ${(r.distance / 1000).toFixed(1)} km` : "";
-    cards.push(`<details class="route" style="--rc:${color}"${routes.length <= 3 ? " open" : ""}>
+    const km = distanceKnown ? ` · ${(distance / 1000).toFixed(1)} km` : "";
+    let chicoNote = "";
+    if (chicoShifts.length) {
+      const wholeDay = shifts.length === 1 || chicoShifts.length === shifts.length;
+      chicoNote = wholeDay ? " · chico" : ` · chico in the ${chicoShifts.join(" and ")}`;
+    }
+    cards.push(`<details class="route" style="--rc:${color}"${trucksUsed <= 3 ? " open" : ""}>
       <summary><span class="swatch"></span><span class="name">${esc(name)}</span>
-        <span class="meta">${clientStops} stop${clientStops === 1 ? "" : "s"} · ${fmtDuration(r.duration + (r.service || 0) + (r.waiting_time || 0))}${km}</span>
+        <span class="meta">${clientStops} stop${clientStops === 1 ? "" : "s"} · ${fmtDuration(time)}${km}${chicoNote}</span>
       </summary>
       <ol>${items.join("")}</ol></details>`);
   });
@@ -1596,7 +1650,7 @@ function showSolution(sol, stepInfo) {
     : "";
   document.getElementById("summary").innerHTML = `
     <div class="stats">
-      <div><span class="k">Trucks</span><span class="v">${s.routes ?? "–"}<span class="v muted" style="display:inline;font-size:12px"> / ${trucksTotal}</span></span></div>
+      <div><span class="k">Trucks</span><span class="v">${trucksUsed}<span class="v muted" style="display:inline;font-size:12px"> / ${trucksTotal}</span></span></div>
       <div><span class="k">Chicos</span><span class="v">${chicosUsed}<span class="v muted" style="display:inline;font-size:12px"> / ${chicosTotal}</span></span></div>
       <div><span class="k">Driving</span><span class="v">${s.duration != null ? fmtDuration(s.duration) : "–"}</span></div>
       <div><span class="k">Distance</span><span class="v">${s.distance != null ? (s.distance / 1000).toFixed(1) + " km" : "–"}</span></div>
@@ -1623,6 +1677,9 @@ document.getElementById("solve").onclick = async () => {
   const { request, stepInfo, vehicleInfo } = buildRequest();
   lastRequestVehicles = request.vehicles;
   lastVehicleInfo = vehicleInfo;
+  const times = readTimes();
+  lastShifts = M.shiftsOf(times);
+  lastLunch = { start: times.lunchStart, end: times.lunchEnd };
   lastCosts = readCosts();
   document.getElementById("summary").innerHTML = "";
   setStatus("Planning…", "busy");
