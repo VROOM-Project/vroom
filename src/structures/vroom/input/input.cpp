@@ -1355,8 +1355,20 @@ Solution Input::check(unsigned nb_thread) {
       auto search = route_rank_to_v_rank.find(i);
       assert(search != route_rank_to_v_rank.end());
       const auto v_rank = search->second;
-      assert(v_rank < _vehicles_geometry.size());
-      route.geometry = std::move(_vehicles_geometry[v_rank]);
+      if (v_rank < _vehicles_geometry.size() &&
+          !_vehicles_geometry[v_rank].empty()) {
+        route.geometry = std::move(_vehicles_geometry[v_rank]);
+      } else {
+        auto rw = std::ranges::find_if(_routing_wrappers, [&](const auto& wr) {
+          return wr->profile == route.profile;
+        });
+        if (rw == _routing_wrappers.end()) {
+          throw InputException(
+            "Route geometry request with non-routable profile " +
+            route.profile + ".");
+        }
+        (*rw)->add_geometry(route);
+      }
     }
 
     _end_routing = std::chrono::high_resolution_clock::now();
