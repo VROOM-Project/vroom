@@ -501,6 +501,7 @@ OrderChoice TWRoute::order_choice(const Input& input,
                                   const Break& b,
                                   const PreviousInfo& previous,
                                   const NextInfo& next,
+                                  const NextInfo& tighter_next,
                                   const Amount& current_load,
                                   bool check_max_load) const {
   OrderChoice oc(input, job_rank, b, previous);
@@ -596,7 +597,7 @@ OrderChoice TWRoute::order_choice(const Input& input,
   break_then_job_end =
     std::max(earliest_job_start, new_j_tw->start) + job_action_time;
 
-  if (break_then_job_end + next.travel > next.latest) {
+  if (break_then_job_end + tighter_next.travel > tighter_next.latest) {
     // Arrival at the job is valid but next step is not.
     oc.add_job_first = true;
     return oc;
@@ -870,6 +871,7 @@ bool TWRoute::is_valid_addition_for_tw(const Input& input,
                                  job_action_time,
                                  b,
                                  current,
+                                 next,
                                  tighter_next,
                                  current_load,
                                  check_max_load);
@@ -1257,6 +1259,7 @@ void TWRoute::replace(const Input& input,
                                  job_action_time,
                                  b,
                                  current,
+                                 next,
                                  tighter_next,
                                  current_load);
 

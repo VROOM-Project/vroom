@@ -80,6 +80,7 @@ private:
                            const Break& b,
                            const PreviousInfo& previous,
                            const NextInfo& next,
+                           const NextInfo& tighter_next,
                            const Amount& current_load,
                            bool check_max_load = true) const;
 
