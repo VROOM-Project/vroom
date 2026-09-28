@@ -1358,17 +1358,18 @@ Solution Input::check(unsigned nb_thread) {
       if (v_rank < _vehicles_geometry.size() &&
           !_vehicles_geometry[v_rank].empty()) {
         route.geometry = std::move(_vehicles_geometry[v_rank]);
-      } else {
-        auto rw = std::ranges::find_if(_routing_wrappers, [&](const auto& wr) {
-          return wr->profile == route.profile;
-        });
-        if (rw == _routing_wrappers.end()) {
-          throw InputException(
-            "Route geometry request with non-routable profile " +
-            route.profile + ".");
-        }
-        (*rw)->add_geometry(route);
+        continue;
       }
+
+      auto rw = std::ranges::find_if(_routing_wrappers, [&](const auto& wr) {
+        return wr->profile == route.profile;
+      });
+      if (rw == _routing_wrappers.end()) {
+        throw InputException(
+          "Route geometry request with non-routable profile " + route.profile +
+          ".");
+      }
+      (*rw)->add_geometry(route);
     }
 
     _end_routing = std::chrono::high_resolution_clock::now();
