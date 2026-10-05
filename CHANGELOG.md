@@ -4,6 +4,10 @@
 
 ### Fixed
 
+#### Core solving
+
+- Segfault with geometry request with plan mode and user-defined matrices (#1334)
+
 #### Internals
 
 - Add include to fix `std::counting_semaphore` usage (#1333)
