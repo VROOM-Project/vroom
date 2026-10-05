@@ -1080,7 +1080,14 @@ void Input::set_matrices(unsigned nb_thread, bool sparse_filling) {
         const bool define_distances = (distances_m->second.size() == 0);
         assert(!define_durations || define_distances);
 
-        if (define_durations || define_distances) {
+        const bool need_geometry =
+          sparse_filling && !(_routing_wrappers.empty());
+
+        if (define_durations || define_distances || need_geometry) {
+          // Populate relevant matrices if either durations or
+          // distances are not user-provided. The need_geometry case
+          // is useful for a plan request with both provided but
+          // geometries are still requested.
           if (_locations.size() == 1 && !sparse_filling) {
             durations_m->second = Matrix<UserDuration>(1);
             distances_m->second = Matrix<UserDistance>(1);
