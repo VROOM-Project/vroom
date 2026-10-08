@@ -532,7 +532,7 @@ void LocalSearch<Route,
 
         for (const auto& [source, target] : s_t_pairs) {
           if (source != target || !_input.vehicle_ok_with_job(source, u) ||
-              _sol[source].empty() ||
+              (_sol[source].size() < 2) ||
               // We only search for net priority gains here.
               (u_priority <= _sol_state.fwd_priority[source].front() &&
                u_priority <= _sol_state.bwd_priority[source].back())) {
@@ -583,7 +583,9 @@ void LocalSearch<Route,
           if (bwd_first_rank == 0) {
             // Sum of priorities for whole route is lower than job
             // priority. We elude this case as it is covered by start
-            // replacing (also whole route).
+            // replacing (also whole route). Also this is fine because
+            // we make sure route size is at least 2 for this move to
+            // not also be covered by UnassignedExchange.
             assert(fwd_last_rank == _sol[source].size() - 1);
             ++bwd_first_rank;
           }
