@@ -557,8 +557,12 @@ void LocalSearch<Route,
                  _sol[source].has_pending_delivery_after_rank(fwd_last_rank)) {
             --fwd_last_rank;
           }
+          assert(_sol_state.fwd_priority[source][fwd_last_rank] <= u_priority ||
+                 fwd_last_rank == 0);
           const Priority begin_priority_gain =
-            u_priority - _sol_state.fwd_priority[source][fwd_last_rank];
+            (fwd_last_rank == 0)
+              ? 0
+              : u_priority - _sol_state.fwd_priority[source][fwd_last_rank];
 
           // Find where to stop when replacing end of route in order
           // to generate a net priority gain.
