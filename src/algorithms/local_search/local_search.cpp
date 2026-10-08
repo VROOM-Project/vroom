@@ -592,8 +592,14 @@ void LocalSearch<Route,
             _sol[source].has_pending_delivery_after_rank(bwd_first_rank - 1)) {
             ++bwd_first_rank;
           }
+
+          assert(_sol_state.bwd_priority[source][bwd_first_rank] <=
+                   u_priority ||
+                 bwd_first_rank == _sol[source].size() - 1);
           const Priority end_priority_gain =
-            u_priority - _sol_state.bwd_priority[source][bwd_first_rank];
+            (bwd_first_rank == _sol[source].size() - 1)
+              ? 0
+              : u_priority - _sol_state.bwd_priority[source][bwd_first_rank];
 
           assert(fwd_over_rank > 0 || bwd_over_rank > 0);
 
