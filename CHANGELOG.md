@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Added
+
+#### Features
+
+- `max_work_time` at vehicle level to bound travel time plus task time (#1070)
+
 ### Fixed
 
 #### Internals

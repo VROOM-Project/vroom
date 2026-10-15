@@ -821,6 +821,13 @@ void set_route(const Input& input,
     throw InputException(
       std::format("Route over max_distance for vehicle {}.", vehicle.id));
   }
+  const auto route_eval =
+    utils::route_eval_for_vehicle(input, route.v_rank, job_ranks);
+  if (!vehicle.ok_for_work_time(route_eval.duration +
+                                route_eval.task_duration)) {
+    throw InputException(
+      std::format("Route over max_work_time for vehicle {}.", vehicle.id));
+  }
 
   if (vehicle.max_tasks < job_ranks.size()) {
     throw InputException(
@@ -832,7 +839,7 @@ void set_route(const Input& input,
       std::format("Invalid shipment in route for vehicle {}.", vehicle.id));
   }
 
-  // Now route is OK with regard to capacity, max_travel_time,
+  // Now route is OK with regard to capacity, max_travel_time, max_work_time,
   // max_tasks, precedence and skills constraints.
   if (!job_ranks.empty()) {
     if (!route.is_valid_addition_for_tw(input,

@@ -88,6 +88,7 @@ constexpr unsigned MAX_ROUTING_THREADS = 32;
 constexpr auto DEFAULT_MAX_TASKS = std::numeric_limits<size_t>::max();
 constexpr auto DEFAULT_MAX_TRAVEL_TIME = std::numeric_limits<Duration>::max();
 constexpr auto DEFAULT_MAX_DISTANCE = std::numeric_limits<Distance>::max();
+constexpr auto DEFAULT_MAX_WORK_TIME = std::numeric_limits<Duration>::max();
 
 // Available routing engines.
 enum class ROUTER : std::uint8_t { OSRM, LIBOSRM, ORS, VALHALLA };
@@ -153,7 +154,8 @@ enum class VIOLATION : std::uint8_t {
   MISSING_BREAK,
   MAX_TRAVEL_TIME,
   MAX_LOAD,
-  MAX_DISTANCE
+  MAX_DISTANCE,
+  MAX_WORK_TIME
 };
 
 enum OperatorName : std::uint8_t {

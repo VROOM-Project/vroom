@@ -64,6 +64,7 @@ struct Vehicle {
   size_t max_tasks;
   const Duration max_travel_time;
   const Distance max_distance;
+  const Duration max_work_time;
   const bool has_break_max_load;
   std::vector<VehicleStep> steps;
   Index type;
@@ -87,6 +88,8 @@ struct Vehicle {
       std::optional<UserDuration>(),
     const std::optional<UserDistance>& max_distance =
       std::optional<UserDistance>(),
+    const std::optional<UserDuration>& max_work_time =
+      std::optional<UserDuration>(),
     const std::vector<VehicleStep>& input_steps = std::vector<VehicleStep>(),
     std::string type_str = NO_TYPE);
 
@@ -138,9 +141,15 @@ struct Vehicle {
     return d <= max_distance;
   }
 
+  bool ok_for_work_time(Duration d) const {
+    assert(0 <= d);
+    return d <= max_work_time;
+  }
+
   bool ok_for_range_bounds(const Eval& e) const {
-    assert(0 <= e.duration && 0 <= e.distance);
-    return e.duration <= max_travel_time && e.distance <= max_distance;
+    assert(0 <= e.duration && 0 <= e.distance && 0 <= e.task_duration);
+    return e.duration <= max_travel_time && e.distance <= max_distance &&
+           e.duration + e.task_duration <= max_work_time;
   }
 
   bool has_range_bounds() const;
@@ -152,16 +161,18 @@ struct Vehicle {
     //   - decreasing max_tasks
     //   - decreasing capacity
     //   - decreasing TW length
-    //   - decreasing range (max travel time and distance)
+    //   - decreasing range (max travel time, distance and work time)
     return std::tie(rhs.max_tasks,
                     rhs.capacity,
                     rhs.tw.length,
                     rhs.max_travel_time,
-                    rhs.max_distance) < std::tie(lhs.max_tasks,
-                                                 lhs.capacity,
-                                                 lhs.tw.length,
-                                                 lhs.max_travel_time,
-                                                 lhs.max_distance);
+                    rhs.max_distance,
+                    rhs.max_work_time) < std::tie(lhs.max_tasks,
+                                                  lhs.capacity,
+                                                  lhs.tw.length,
+                                                  lhs.max_travel_time,
+                                                  lhs.max_distance,
+                                                  lhs.max_work_time);
   }
 };
 

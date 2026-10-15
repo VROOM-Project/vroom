@@ -124,6 +124,7 @@ A `vehicle` object has the following properties:
 | [`max_tasks`] | an integer defining the maximum number of tasks in a route for this vehicle |
 | [`max_travel_time`] | an integer defining the maximum travel time for this vehicle |
 | [`max_distance`] | an integer defining the maximum distance for this vehicle |
+| [`max_work_time`] | an integer defining the maximum work time (travel time plus task time, excluding waiting time and breaks) for this vehicle |
 | [`steps`] | an array of `vehicle_step` objects describing a custom route for this vehicle |
 
 A `cost` object has the following properties:
@@ -452,6 +453,7 @@ Possible violation causes are:
 - "missing_break" if a vehicle break has been omitted in its custom route
 - "max_travel_time" if the vehicle has more travel time than its `max_travel_time` value
 - "max_distance" if the vehicle has a longer travel distance than its `max_distance` value
+- "max_work_time" if the vehicle has more work time (travel time plus task time) than its `max_work_time` value
 - "max_load" if the load during a break exceed its `max_load` value
 
 Note on violations: reporting only really makes sense when using `-c`
