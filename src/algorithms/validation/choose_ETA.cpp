@@ -49,6 +49,29 @@ inline Duration get_violation(const std::vector<TimeWindow>& tws,
   return violation;
 }
 
+inline void add_range_violations(const Vehicle& v,
+                                 UserDuration user_duration,
+                                 Duration jobs_task_duration,
+                                 UserDistance distance,
+                                 Violations& violations,
+                                 std::unordered_set<VIOLATION>& v_types) {
+  const auto add_violation = [&](VIOLATION type) {
+    violations.types.insert(type);
+    v_types.insert(type);
+  };
+
+  const auto duration = utils::scale_from_user_duration(user_duration);
+  if (!v.ok_for_travel_time(duration)) {
+    add_violation(VIOLATION::MAX_TRAVEL_TIME);
+  }
+  if (!v.ok_for_work_time(duration + jobs_task_duration)) {
+    add_violation(VIOLATION::MAX_WORK_TIME);
+  }
+  if (!v.ok_for_distance(distance)) {
+    add_violation(VIOLATION::MAX_DISTANCE);
+  }
+}
+
 Route choose_ETA(const Input& input,
                  unsigned vehicle_rank,
                  const std::vector<VehicleStep>& steps) {
@@ -1275,20 +1298,12 @@ Route choose_ETA(const Input& input,
         current.violations.types.insert(VIOLATION::MAX_TASKS);
         v_types.insert(VIOLATION::MAX_TASKS);
       }
-      if (!v.ok_for_travel_time(
-            utils::scale_from_user_duration(user_duration))) {
-        current.violations.types.insert(VIOLATION::MAX_TRAVEL_TIME);
-        v_types.insert(VIOLATION::MAX_TRAVEL_TIME);
-      }
-      if (!v.ok_for_work_time(utils::scale_from_user_duration(user_duration) +
-                              jobs_task_duration)) {
-        current.violations.types.insert(VIOLATION::MAX_WORK_TIME);
-        v_types.insert(VIOLATION::MAX_WORK_TIME);
-      }
-      if (!v.ok_for_distance(current.distance)) {
-        current.violations.types.insert(VIOLATION::MAX_DISTANCE);
-        v_types.insert(VIOLATION::MAX_DISTANCE);
-      }
+      add_range_violations(v,
+                           user_duration,
+                           jobs_task_duration,
+                           current.distance,
+                           current.violations,
+                           v_types);
 
       switch (job.type) {
       case JOB_TYPE::SINGLE:
@@ -1387,20 +1402,12 @@ Route choose_ETA(const Input& input,
         current.violations.types.insert(VIOLATION::LOAD);
         v_types.insert(VIOLATION::LOAD);
       }
-      if (!v.ok_for_travel_time(
-            utils::scale_from_user_duration(user_duration))) {
-        current.violations.types.insert(VIOLATION::MAX_TRAVEL_TIME);
-        v_types.insert(VIOLATION::MAX_TRAVEL_TIME);
-      }
-      if (!v.ok_for_work_time(utils::scale_from_user_duration(user_duration) +
-                              jobs_task_duration)) {
-        current.violations.types.insert(VIOLATION::MAX_WORK_TIME);
-        v_types.insert(VIOLATION::MAX_WORK_TIME);
-      }
-      if (!v.ok_for_distance(current.distance)) {
-        current.violations.types.insert(VIOLATION::MAX_DISTANCE);
-        v_types.insert(VIOLATION::MAX_DISTANCE);
-      }
+      add_range_violations(v,
+                           user_duration,
+                           jobs_task_duration,
+                           current.distance,
+                           current.violations,
+                           v_types);
       if (!b.is_valid_for_load(current_load)) {
         current.violations.types.insert(VIOLATION::MAX_LOAD);
         v_types.insert(VIOLATION::MAX_LOAD);
@@ -1444,20 +1451,12 @@ Route choose_ETA(const Input& input,
         end_step.violations.types.insert(VIOLATION::LOAD);
         v_types.insert(VIOLATION::LOAD);
       }
-      if (!v.ok_for_travel_time(
-            utils::scale_from_user_duration(user_duration))) {
-        end_step.violations.types.insert(VIOLATION::MAX_TRAVEL_TIME);
-        v_types.insert(VIOLATION::MAX_TRAVEL_TIME);
-      }
-      if (!v.ok_for_work_time(utils::scale_from_user_duration(user_duration) +
-                              jobs_task_duration)) {
-        end_step.violations.types.insert(VIOLATION::MAX_WORK_TIME);
-        v_types.insert(VIOLATION::MAX_WORK_TIME);
-      }
-      if (!v.ok_for_distance(end_step.distance)) {
-        end_step.violations.types.insert(VIOLATION::MAX_DISTANCE);
-        v_types.insert(VIOLATION::MAX_DISTANCE);
-      }
+      add_range_violations(v,
+                           user_duration,
+                           jobs_task_duration,
+                           end_step.distance,
+                           end_step.violations,
+                           v_types);
 
       break;
     }

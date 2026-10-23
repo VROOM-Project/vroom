@@ -821,9 +821,9 @@ void set_route(const Input& input,
     throw InputException(
       std::format("Route over max_distance for vehicle {}.", vehicle.id));
   }
-  const auto route_eval =
-    utils::route_eval_for_vehicle(input, route.v_rank, job_ranks);
-  if (!vehicle.ok_for_work_time(route_eval.duration +
+  if (const auto route_eval =
+        utils::route_eval_for_vehicle(input, route.v_rank, job_ranks);
+      !vehicle.ok_for_work_time(route_eval.duration +
                                 route_eval.task_duration)) {
     throw InputException(
       std::format("Route over max_work_time for vehicle {}.", vehicle.id));
