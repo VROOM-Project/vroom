@@ -29,6 +29,7 @@ Vehicle::Vehicle(Id id,
                  const std::optional<size_t>& max_tasks,
                  const std::optional<UserDuration>& max_travel_time,
                  const std::optional<UserDistance>& max_distance,
+                 const std::optional<UserDuration>& max_work_time,
                  const std::vector<VehicleStep>& input_steps,
                  std::string type_str)
   : id(id),
@@ -48,6 +49,9 @@ Vehicle::Vehicle(Id id,
                       : DEFAULT_MAX_TRAVEL_TIME),
     max_distance(max_distance.has_value() ? max_distance.value()
                                           : DEFAULT_MAX_DISTANCE),
+    max_work_time(max_work_time.has_value()
+                    ? utils::scale_from_user_duration(max_work_time.value())
+                    : DEFAULT_MAX_WORK_TIME),
     has_break_max_load(std::ranges::any_of(breaks,
                                            [](const auto& b) {
                                              return b.max_load.has_value();
@@ -155,7 +159,8 @@ Duration Vehicle::available_duration() const {
 
 bool Vehicle::has_range_bounds() const {
   return max_travel_time != DEFAULT_MAX_TRAVEL_TIME ||
-         max_distance != DEFAULT_MAX_DISTANCE;
+         max_distance != DEFAULT_MAX_DISTANCE ||
+         max_work_time != DEFAULT_MAX_WORK_TIME;
 }
 
 Index Vehicle::break_rank(Id break_id) const {
