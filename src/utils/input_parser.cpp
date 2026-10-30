@@ -819,10 +819,25 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
       auto amount = get_amount(json_shipment, "amount", amount_size);
       auto skills = get_skills(json_shipment);
       auto priority = get_priority(json_shipment);
+      auto soft_skills = get_soft_skills(json_shipment);
+      const auto soft_skill_match_mode =
+        get_soft_skill_match_mode(json_shipment);
+
+      if (soft_skill_match_mode.has_value() && soft_skills.empty()) {
+        throw InputException("Invalid soft_skill_match_mode for shipment: "
+                             "soft_skills must be non-empty when "
+                             "soft_skill_match_mode is set.");
+      }
 
       // Defining pickup job.
       auto& json_pickup = json_shipment["pickup"];
       check_id(json_pickup, "pickup");
+
+      if (json_pickup.HasMember("soft_skills") ||
+          json_pickup.HasMember("soft_skill_match_mode")) {
+        throw InputException(
+          "Endpoint-level soft_skills not allowed on shipment pickup.");
+      }
 
       const Job pickup(json_pickup["id"].GetUint64(),
                        JOB_TYPE::PICKUP,
@@ -839,11 +854,19 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
                                              "pickup"),
                        get_duration_per_type(json_pickup,
                                              "service_per_type",
-                                             "pickup"));
+                                             "pickup"),
+                       soft_skills,
+                       soft_skill_match_mode);
 
       // Defining delivery job.
       auto& json_delivery = json_shipment["delivery"];
       check_id(json_delivery, "delivery");
+
+      if (json_delivery.HasMember("soft_skills") ||
+          json_delivery.HasMember("soft_skill_match_mode")) {
+        throw InputException(
+          "Endpoint-level soft_skills not allowed on shipment delivery.");
+      }
 
       const Job delivery(json_delivery["id"].GetUint64(),
                          JOB_TYPE::DELIVERY,
@@ -858,9 +881,11 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
                          get_duration_per_type(json_delivery,
                                                "setup_per_type",
                                                "delivery"),
-                         get_duration_per_type(json_delivery,
-                                               "service_per_type",
-                                               "delivery"));
+                       get_duration_per_type(json_delivery,
+                                             "service_per_type",
+                                             "delivery"),
+                       soft_skills,
+                       soft_skill_match_mode);
 
       input.add_shipment(pickup, delivery);
     }
