@@ -589,6 +589,24 @@ inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
     profile = DEFAULT_PROFILE;
   }
 
+  // Duplicates allowed; the unordered_set deduplicates.
+  SoftSkills soft_skills;
+  if (json_vehicle.HasMember("soft_skills")) {
+    if (!json_vehicle["soft_skills"].IsArray()) {
+      throw InputException(
+        std::format("Invalid soft_skills for vehicle {}.", v_id));
+    }
+
+    for (rapidjson::SizeType i = 0; i < json_vehicle["soft_skills"].Size();
+         ++i) {
+      if (!json_vehicle["soft_skills"][i].IsUint()) {
+        throw InputException(
+          std::format("Invalid soft skill value for vehicle {}.", v_id));
+      }
+      soft_skills.insert(json_vehicle["soft_skills"][i].GetUint());
+    }
+  }
+
   return Vehicle(v_id,
                  start,
                  end,
@@ -604,7 +622,8 @@ inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
                  get_value_for<UserDuration>(json_vehicle, "max_travel_time"),
                  get_value_for<UserDistance>(json_vehicle, "max_distance"),
                  get_vehicle_steps(json_vehicle),
-                 get_string(json_vehicle, "type"));
+                 get_string(json_vehicle, "type"),
+                 soft_skills);
 }
 
 inline Location get_task_location(const rapidjson::Value& v,
