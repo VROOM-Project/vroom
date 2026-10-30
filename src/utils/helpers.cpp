@@ -9,6 +9,7 @@ All rights reserved (see LICENSE).
 
 #include <algorithm>
 #include <chrono>
+#include <iostream>
 #include <numeric>
 #include <sstream>
 
@@ -173,6 +174,20 @@ inline void set_soft_skill_preference_placeholders(Solution& sol,
     totals += *route.soft_skill_preference;
   }
   sol.summary.soft_skill_preference = totals;
+}
+
+// Report preference-count inconsistencies without altering the
+// solution: pure validation through utils::validate_preference_
+// invariants, violation details sent to std::cerr with the "[Error]"
+// prefix used across the command-line binary.
+inline void report_preference_invariants(const Solution& sol) {
+  if (const auto violation = validate_preference_invariants(sol.summary,
+                                                            sol.routes);
+      violation.has_value()) {
+    std::cerr << "[Error] Soft-skill preference reporting invariant "
+                 "violated: "
+              << *violation << std::endl;
+  }
 }
 
 Solution format_solution(const Input& input, const RawSolution& raw_routes) {
@@ -341,6 +356,7 @@ Solution format_solution(const Input& input, const RawSolution& raw_routes) {
                std::move(routes),
                get_unassigned_jobs_from_ranks(input, unassigned_ranks));
   set_soft_skill_preference_placeholders(sol, input);
+  report_preference_invariants(sol);
 
   return sol;
 }
@@ -851,6 +867,7 @@ Solution format_solution(const Input& input, const TWSolution& tw_routes) {
                std::move(routes),
                get_unassigned_jobs_from_ranks(input, unassigned_ranks));
   set_soft_skill_preference_placeholders(sol, input);
+  report_preference_invariants(sol);
 
   return sol;
 }
