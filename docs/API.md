@@ -37,6 +37,14 @@ implicitly become soft constraints. The output is a set of routes
 matching the expected description while minimizing timing violations
 and reporting all constraint violations.
 
+Note on soft-skills: soft-skills fields are ignored in plan mode
+(`-c`). Vehicle assignments are predetermined by the `steps` array,
+so no skill-based job assignment takes place and soft-skills on tasks
+have no effect on the output. Inputs holding `soft_skills`,
+`soft_skill_match_mode` or `options.soft_skills` alongside `steps`
+are accepted without error for backward compatibility, and no
+`soft_skill_preference` object is reported in the solution.
+
 # Input
 
 The problem description is read from standard input or from a file
