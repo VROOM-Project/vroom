@@ -44,6 +44,12 @@ inline void seed_route(const Input& input,
       continue;
     }
 
+    if (input.has_soft_skills()) {
+      // Placeholder for Task 15: preference-aware seed ranking. Inputs
+      // without any soft-skills never enter this branch, keeping the
+      // exact upstream seed selection below (zero change fast path).
+    }
+
     const bool is_pickup = (current_job.type == JOB_TYPE::PICKUP);
 
     if (route.size() + (is_pickup ? 2 : 1) > vehicle.max_tasks) {
@@ -270,6 +276,13 @@ inline Eval fill_route(const Input& input,
     for (const auto job_rank : unassigned) {
       if (!input.vehicle_ok_with_job(v_rank, job_rank)) {
         continue;
+      }
+
+      if (input.has_soft_skills()) {
+        // Placeholder for Task 15: preference-aware insertion ranking
+        // for job_rank on v_rank. Inputs without any soft-skills never
+        // enter this branch, keeping the upstream ranking below
+        // untouched (zero change fast path).
       }
 
       const auto& current_job = input.jobs[job_rank];
@@ -545,6 +558,12 @@ Eval basic(const Input& input,
           regrets[v][j] < input.get_cost_upper_bound()) {
         all_compatible_jobs_later_undoable = false;
       }
+
+      if (input.has_soft_skills()) {
+        // Placeholder for Task 15: preference-aware regret adjustment
+        // for job j and vehicle vehicles_ranks[v]. Soft-skills-free
+        // inputs skip this entirely (zero change fast path).
+      }
     }
 
     if (all_compatible_jobs_later_undoable) {
@@ -681,6 +700,12 @@ Eval dynamic_vehicle_choice(const Input& input,
       if (input.vehicle_ok_with_job(v_rank, j) &&
           regrets[j] < input.get_cost_upper_bound()) {
         all_compatible_jobs_later_undoable = false;
+      }
+
+      if (input.has_soft_skills()) {
+        // Placeholder for Task 15: preference-aware regret adjustment
+        // for job j on the dynamic vehicle choice. Soft-skills-free
+        // inputs skip this entirely (zero change fast path).
       }
     }
 

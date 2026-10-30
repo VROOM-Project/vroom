@@ -40,6 +40,14 @@ protected:
 
   virtual void compute_gain() = 0;
 
+  // True iff the input actually contains soft-skills. Every preference
+  // check added to derived operators (Tasks 17-24) must be gated on
+  // this so that soft-skills-free inputs keep the pure Eval-based
+  // gain behavior (zero change fast path).
+  bool has_soft_skills() const {
+    return _input.has_soft_skills();
+  }
+
   bool is_valid_for_source_range_bounds() const;
 
   bool is_valid_for_target_range_bounds() const;
@@ -68,6 +76,15 @@ public:
       t_route(t_raw_route.route),
       t_vehicle(t_vehicle),
       t_rank(t_rank) {
+    if (!input.has_soft_skills()) {
+      // Fast path: no soft-skills in input, so no preference state to
+      // prepare and the operator keeps its exact upstream Eval-only
+      // behavior. Tasks 17-24 add any preference-related construction
+      // strictly after this guard.
+      return;
+    }
+
+    // Placeholder for Tasks 17-24: operator preference state setup.
   }
 
   OperatorName get_name() const;

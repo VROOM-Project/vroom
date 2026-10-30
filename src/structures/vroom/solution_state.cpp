@@ -59,6 +59,16 @@ void SolutionState::setup(const RawRoute& r) {
   set_insertion_ranks(r);
   update_route_eval(r);
   update_route_bbox(r);
+
+  if (!_input.has_soft_skills()) {
+    // Fast path: the input holds no soft-skills, so every soft-skill
+    // precomputation is bypassed and setup keeps its exact upstream
+    // behavior (zero behavioral change invariant).
+    return;
+  }
+
+  // Placeholder for Task 14: update_soft_skills(r) precomputation runs
+  // only when the input actually contains soft-skills.
 }
 
 template <class Route>

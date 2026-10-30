@@ -94,6 +94,23 @@ LocalSearch<Route,
   _sol_state.setup(_sol);
 }
 
+// Incumbent comparison gate. Inputs without any soft-skills always
+// use the existing Eval-based SolutionIndicators ordering; Task 22
+// activates its lexicographic (priority > preference > Eval)
+// comparison strictly inside the has_soft_skills() branch so this
+// fast path never changes (zero change invariant).
+inline bool incumbent_better(const Input& input,
+                             const utils::SolutionIndicators& lhs,
+                             const utils::SolutionIndicators& rhs) {
+  if (!input.has_soft_skills()) {
+    return lhs < rhs;
+  }
+
+  // Placeholder for Task 22: lexicographic incumbent comparison for
+  // soft-skills inputs. Currently identical to the fast path above.
+  return lhs < rhs;
+}
+
 template <class Route>
 RouteInsertion compute_best_insertion(const Input& input,
                                       const utils::SolutionState& sol_state,
@@ -1981,15 +1998,18 @@ void LocalSearch<Route,
     // A round of local search.
     run_ls_step();
 
-    // Comparison with indicators for current solution.
+    // Comparison with indicators for current solution, through the
+    // soft-skills bypass gate (Eval-only when no soft-skills).
     if (const utils::SolutionIndicators current_sol_indicators(_input, _sol);
-        current_sol_indicators < _best_sol_indicators) {
+        incumbent_better(_input, current_sol_indicators,
+                         _best_sol_indicators)) {
       _best_sol_indicators = current_sol_indicators;
       _best_sol = _sol;
     } else {
       // No improvement so back to previous best known for further
       // steps.
-      if (_best_sol_indicators < current_sol_indicators) {
+      if (incumbent_better(_input, _best_sol_indicators,
+                           current_sol_indicators)) {
         _sol = _best_sol;
         _sol_state.setup(_sol);
       }
