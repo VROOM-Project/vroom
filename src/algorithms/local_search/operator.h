@@ -187,13 +187,92 @@ protected:
                                baselines);
   }
 
+  // Placement eval for the task at job_rank after a move to
+  // to_vehicle, landing in the frozen content of route destination
+  // at destination_rank.
+  //
+  // Normal case (destination does not hold the task): the actual
+  // single-job addition eval at the destination rank, or the best
+  // feasible pickup-and-delivery insertion search for a shipment -
+  // destination is to_vehicle's own frozen route there, so the
+  // sol_state insertion ranks used by the search match.
+  //
+  // Diagonal case (whole-route exchange: destination already holds
+  // the task, only the serving vehicle changes): an insertion search
+  // would index destination with to_vehicle rank ranges bound to a
+  // different route (which can exceed the destination size) and
+  // duplicate the pair. Evaluate instead the exact marginal
+  // contribution on destination with the task endpoints stripped,
+  // re-added at their original ranks (same remove-then-readd trick
+  // as the authoritative scorer).
+  template <class Route>
+  Eval placement_eval_after_move(Index job_rank,
+                                 Index to_vehicle,
+                                 const Route& destination,
+                                 Index destination_rank) const {
+    const auto& job = _input.jobs[job_rank];
+    const auto& route = destination.route;
+    const bool in_place =
+      std::find(route.begin(), route.end(), job_rank) != route.end();
+
+    if (!in_place) {
+      return (job.type == JOB_TYPE::SINGLE)
+               ? utils::addition_eval(_input,
+                                      job_rank,
+                                      _input.vehicles[to_vehicle],
+                                      route,
+                                      destination_rank)
+               : compute_best_insertion_pd(_input,
+                                           _sol_state,
+                                           job_rank,
+                                           to_vehicle,
+                                           destination,
+                                           NO_EVAL)
+                     .eval;
+    }
+
+    const auto& vehicle = _input.vehicles[to_vehicle];
+    if (job.type == JOB_TYPE::SINGLE) {
+      std::vector<Index> stripped;
+      stripped.reserve(route.size() - 1);
+      std::copy_if(route.begin(),
+                   route.end(),
+                   std::back_inserter(stripped),
+                   [job_rank](Index other) { return other != job_rank; });
+      return utils::addition_eval(_input, job_rank, vehicle, stripped,
+                                  destination_rank);
+    }
+
+    // Pickup staying in place: its delivery endpoint shares the same
+    // route (shipment atomicity). Strip both endpoints and restore
+    // the original placement by ranks.
+    assert(job.type == JOB_TYPE::PICKUP);
+    const auto delivery_it =
+      std::find(route.begin(), route.end(), job_rank + 1);
+    assert(delivery_it != route.end());
+    const Index delivery_rank = static_cast<Index>(
+      std::distance(route.begin(), delivery_it));
+    std::vector<Index> stripped;
+    stripped.reserve(route.size() - 2);
+    std::copy_if(route.begin(),
+                 route.end(),
+                 std::back_inserter(stripped),
+                 [job_rank](Index other) {
+                   return other != job_rank && other != job_rank + 1;
+                 });
+    return utils::addition_eval(_input,
+                                job_rank,
+                                vehicle,
+                                stripped,
+                                destination_rank,
+                                delivery_rank);
+  }
+
   // Preference delta of moving the task at job_rank from
   // from_vehicle to to_vehicle, landing in the frozen content of
-  // route destination at destination_rank. Placement eval: the
-  // actual single-job addition eval at the destination rank, or the
-  // best feasible pickup-and-delivery insertion for a shipment.
-  // DELIVERY endpoints contribute nothing: their preference is the
-  // PICKUP's (shared soft skills), counted once per shipment.
+  // route destination at destination_rank. DELIVERY endpoints
+  // contribute nothing: their preference is the PICKUP's (shared
+  // soft skills), counted once per shipment.
   template <class Route>
   int task_move_delta(Index job_rank,
                       Index from_vehicle,
@@ -204,23 +283,14 @@ protected:
     if (job.type == JOB_TYPE::DELIVERY) {
       return 0;
     }
-    const int post = task_post_match(job_rank, to_vehicle, [&]() {
-      return (job.type == JOB_TYPE::SINGLE)
-               ? utils::addition_eval(_input,
-                                      job_rank,
-                                      _input.vehicles[to_vehicle],
-                                      destination.route,
-                                      destination_rank)
-               : compute_best_insertion_pd(_input,
-                                           _sol_state,
-                                           job_rank,
-                                           to_vehicle,
-                                           destination,
-                                           NO_EVAL)
-                     .eval;
-    })
-                ? 1
-                : 0;
+    const int post = task_post_match(job_rank, to_vehicle,
+                                     [&]() {
+                                       return placement_eval_after_move(
+                                         job_rank, to_vehicle, destination,
+                                         destination_rank);
+                                     })
+                       ? 1
+                       : 0;
     return post - (task_pre_match(job_rank, from_vehicle) ? 1 : 0);
   }
 
