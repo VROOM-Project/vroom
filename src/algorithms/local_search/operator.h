@@ -170,7 +170,9 @@ protected:
   // of threshold: status-quo assignments are not decisions (see
   // fixture 03).
   template <class EvalFn>
-  bool task_post_match(Index job_rank, Index to_vehicle, EvalFn&& placement_eval) const {
+  bool task_post_match(Index job_rank,
+                       Index to_vehicle,
+                       EvalFn&& placement_eval) const {
     if (!task_matches_vehicle(_input, job_rank, to_vehicle)) {
       return false;
     }
@@ -189,6 +191,43 @@ protected:
                             opts.threshold_mode,
                             opts.missing_distance_policy,
                             _input.has_distance_data());
+  }
+
+  // Preference delta of moving the task at job_rank from
+  // from_vehicle to to_vehicle, landing in the frozen content of
+  // route destination at destination_rank. Placement eval: the
+  // actual single-job addition eval at the destination rank, or the
+  // best feasible pickup-and-delivery insertion for a shipment.
+  // DELIVERY endpoints contribute nothing: their preference is the
+  // PICKUP's (shared soft skills), counted once per shipment.
+  template <class Route>
+  int task_move_delta(Index job_rank,
+                      Index from_vehicle,
+                      Index to_vehicle,
+                      const Route& destination,
+                      Index destination_rank) const {
+    const auto& job = _input.jobs[job_rank];
+    if (job.type == JOB_TYPE::DELIVERY) {
+      return 0;
+    }
+    const int post = task_post_match(job_rank, to_vehicle, [&]() {
+      return (job.type == JOB_TYPE::SINGLE)
+               ? utils::addition_eval(_input,
+                                      job_rank,
+                                      _input.vehicles[to_vehicle],
+                                      destination.route,
+                                      destination_rank)
+               : compute_best_insertion_pd(_input,
+                                           _sol_state,
+                                           job_rank,
+                                           to_vehicle,
+                                           destination,
+                                           NO_EVAL)
+                     .eval;
+    })
+                ? 1
+                : 0;
+    return post - (task_pre_match(job_rank, from_vehicle) ? 1 : 0);
   }
 
   bool is_valid_for_source_range_bounds() const;

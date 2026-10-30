@@ -112,6 +112,17 @@ inline bool incumbent_better(const Input& input,
   return lhs < rhs;
 }
 
+// Gain upper-bound pruning stays sound only while a candidate can
+// win on Eval alone. Preference-aware operators may win on a
+// positive preference delta with any Eval, so the bound is skipped
+// for soft-skills inputs; the subsequent lexicographic key
+// comparison then does the actual filtering.
+inline bool upper_bound_interesting(const Input& input,
+                                    const Eval& current_best_gain,
+                                    const Eval& upper_bound) {
+  return input.has_soft_skills() || current_best_gain < upper_bound;
+}
+
 template <class Route>
 RouteInsertion compute_best_insertion(const Input& input,
                                       const utils::SolutionState& sol_state,
@@ -774,8 +785,9 @@ void LocalSearch<Route,
           r.set_preference_context(_preference_scan);
 
           auto& current_best = best_gains[source][target];
-          if (current_best.gain < r.gain_upper_bound() && r.is_valid() &&
-              current_best < r.key()) {
+          if (upper_bound_interesting(_input, current_best.gain,
+                                      r.gain_upper_bound()) &&
+              r.is_valid() && current_best < r.key()) {
             current_best = r.key();
             best_ops[source][target] = std::make_unique<CrossExchange>(r);
           }
@@ -888,8 +900,9 @@ void LocalSearch<Route,
             r.set_preference_context(_preference_scan);
 
             auto& current_best = best_gains[source][target];
-            if (current_best.gain < r.gain_upper_bound() && r.is_valid() &&
-                current_best < r.key()) {
+            if (upper_bound_interesting(_input, current_best.gain,
+                                        r.gain_upper_bound()) &&
+                r.is_valid() && current_best < r.key()) {
               current_best = r.key();
               best_ops[source][target] = std::make_unique<MixedExchange>(r);
             }
@@ -1134,9 +1147,9 @@ void LocalSearch<Route,
         const auto& t_pickup_margin = _sol[target].pickup_margin();
 
         for (unsigned s_rank = 0; s_rank < _sol[source].size(); ++s_rank) {
-          if (!_input.has_soft_skills() &&
-              _sol_state.node_gains[source][s_rank] <=
-                best_gains[source][target].gain) {
+          if (!upper_bound_interesting(_input,
+                                       best_gains[source][target].gain,
+                                       _sol_state.node_gains[source][s_rank])) {
             // Except if addition cost in target route is negative
             // (!!), overall gain can't exceed current known best
             // gain. Skipped for soft-skills inputs since a candidate
