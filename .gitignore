@@ -5,3 +5,6 @@ lib/
 build/
 .vscode
 .idea
+# Synthetic benchmark instances and results (generated, large)
+benchmarks/instances/
+benchmarks/results/
