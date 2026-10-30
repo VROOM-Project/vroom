@@ -433,6 +433,10 @@ void Input::set_costs_matrix(const std::string& profile, Matrix<UserCost>&& m) {
   _costs_matrices.insert_or_assign(profile, std::move(m));
 }
 
+void Input::set_soft_skills_options(const SoftSkillsOptions& options) {
+  _soft_skills_options = options;
+}
+
 bool Input::is_used_several_times(const Location& location) const {
   return _locations_used_several_times.contains(location);
 }

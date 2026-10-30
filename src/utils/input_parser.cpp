@@ -147,6 +147,135 @@ inline Priority get_priority(const rapidjson::Value& object) {
   return priority;
 }
 
+inline SoftSkillsOptions
+get_soft_skills_options(const rapidjson::Value& json_options) {
+  if (!json_options.IsObject()) {
+    throw InputException("Invalid options.soft_skills object.");
+  }
+
+  for (const auto& member : json_options.GetObject()) {
+    const std::string key(member.name.GetString());
+    if (key != "default_match_mode" && key != "threshold_mode" &&
+        key != "max_cost_factor" && key != "max_distance_factor" &&
+        key != "missing_distance_policy") {
+      throw InputException("Unknown key in options.soft_skills: " + key + ".");
+    }
+  }
+
+  SoftSkillsOptions options;
+
+  if (json_options.HasMember("default_match_mode")) {
+    if (!json_options["default_match_mode"].IsString()) {
+      throw InputException("Invalid default_match_mode value.");
+    }
+    const std::string value(json_options["default_match_mode"].GetString());
+    if (value == "all") {
+      options.default_match_mode = SoftSkillMatchMode::ALL;
+    } else if (value == "any") {
+      options.default_match_mode = SoftSkillMatchMode::ANY;
+    } else {
+      throw InputException("Invalid default_match_mode: " + value +
+                           ". Expected: all, any.");
+    }
+  }
+
+  if (json_options.HasMember("threshold_mode")) {
+    if (!json_options["threshold_mode"].IsString()) {
+      throw InputException("Invalid threshold_mode value.");
+    }
+    const std::string value(json_options["threshold_mode"].GetString());
+    if (value == "cost") {
+      options.threshold_mode = ThresholdMode::COST;
+    } else if (value == "distance") {
+      options.threshold_mode = ThresholdMode::DISTANCE;
+    } else if (value == "both") {
+      options.threshold_mode = ThresholdMode::BOTH;
+    } else {
+      throw InputException("Invalid threshold_mode: " + value +
+                           ". Expected: cost, distance, both.");
+    }
+  }
+
+  if (json_options.HasMember("max_cost_factor")) {
+    if (!json_options["max_cost_factor"].IsNumber()) {
+      throw InputException("Invalid max_cost_factor value.");
+    }
+    options.max_cost_factor = json_options["max_cost_factor"].GetDouble();
+    if (options.max_cost_factor < 1.) {
+      throw InputException(
+        std::format("Invalid max_cost_factor: {}. Expected a value greater "
+                    "than or equal to 1.",
+                    options.max_cost_factor));
+    }
+  }
+
+  if (json_options.HasMember("max_distance_factor")) {
+    if (!json_options["max_distance_factor"].IsNumber()) {
+      throw InputException("Invalid max_distance_factor value.");
+    }
+    options.max_distance_factor =
+      json_options["max_distance_factor"].GetDouble();
+    if (options.max_distance_factor < 1.) {
+      throw InputException(
+        std::format("Invalid max_distance_factor: {}. Expected a value greater "
+                    "than or equal to 1.",
+                    options.max_distance_factor));
+    }
+  }
+
+  if (json_options.HasMember("missing_distance_policy")) {
+    if (options.threshold_mode == ThresholdMode::COST) {
+      throw InputException(
+        "Invalid missing_distance_policy: only applicable when "
+        "options.soft_skills.threshold_mode involves distance "
+        "(distance or both).");
+    }
+    if (!json_options["missing_distance_policy"].IsString()) {
+      throw InputException("Invalid missing_distance_policy value.");
+    }
+    const std::string value(json_options["missing_distance_policy"].GetString());
+    if (value == "reject") {
+      options.missing_distance_policy = MissingDistancePolicy::REJECT;
+    } else if (value == "skip_distance") {
+      options.missing_distance_policy = MissingDistancePolicy::SKIP_DISTANCE;
+    } else {
+      throw InputException("Invalid missing_distance_policy: " + value +
+                           ". Expected: reject, skip_distance.");
+    }
+  }
+
+  return options;
+}
+
+inline void parse_options(Input& input, const rapidjson::Value& json_input) {
+  if (!json_input.HasMember("options")) {
+    return;
+  }
+  if (!json_input["options"].IsObject()) {
+    throw InputException("Invalid options object.");
+  }
+
+  const auto& json_options = json_input["options"];
+
+  // Defaults silently apply when no soft_skills options are provided.
+  if (!json_options.HasMember("soft_skills")) {
+    return;
+  }
+
+  const auto options = get_soft_skills_options(json_options["soft_skills"]);
+
+  if ((options.threshold_mode == ThresholdMode::DISTANCE ||
+       options.threshold_mode == ThresholdMode::BOTH) &&
+      !input.has_distance_data()) {
+    throw InputException(
+      "Invalid options.soft_skills: distance data required for "
+      "threshold_mode \"distance\" or \"both\" but no distances matrix "
+      "is provided in input.");
+  }
+
+  input.set_soft_skills_options(options);
+}
+
 template <typename T>
 inline std::optional<T> get_value_for(const rapidjson::Value& object,
                                       const char* key) {
@@ -696,6 +825,10 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
                                    json_input["matrix"]));
     }
   }
+
+  // Parse options once all matrices are loaded so that cross-checks
+  // can rely on the whole input.
+  parse_options(input, json_input);
 }
 
 } // namespace vroom::io

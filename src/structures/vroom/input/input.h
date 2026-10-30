@@ -164,6 +164,8 @@ public:
 
   void set_costs_matrix(const std::string& profile, Matrix<UserCost>&& m);
 
+  void set_soft_skills_options(const SoftSkillsOptions& options);
+
   const Amount& zero_amount() const {
     return _zero;
   }
@@ -183,6 +185,12 @@ public:
   const SoftSkillsOptions& get_soft_skills_options() const {
     return _soft_skills_options.has_value() ? *_soft_skills_options
                                             : DEFAULT_SOFT_SKILLS_OPTIONS;
+  }
+
+  // Returns true iff at least one profile has a distances matrix
+  // provided in input.
+  bool has_distance_data() const {
+    return !_distances_matrices.empty();
   }
 
   bool has_jobs() const;
