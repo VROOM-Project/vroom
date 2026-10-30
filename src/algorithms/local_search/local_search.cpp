@@ -1672,8 +1672,9 @@ void LocalSearch<Route,
             continue;
           }
 
-          if (_sol_state.pd_gains[source][s_p_rank] <=
-              best_gains[source][target].gain) {
+          if (!upper_bound_interesting(_input,
+                                       best_gains[source][target].gain,
+                                       _sol_state.pd_gains[source][s_p_rank])) {
             // Except if addition cost in target route is negative
             // (!!), overall gain can't exceed current known best
             // gain.

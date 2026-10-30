@@ -52,19 +52,38 @@ PDShift::PDShift(const Input& input,
 }
 
 void PDShift::compute_gain() {
+  // In preference mode any feasible insertion qualifies (NO_EVAL
+  // threshold idiom): a shift that gains preference may win with a
+  // negative Eval gain, and the lexicographic key then discards the
+  // preference-losing or preference-neutral regressions.
+  const Eval pd_threshold = (has_soft_skills() && has_preference_context())
+                              ? NO_EVAL
+                              : s_gain - stored_gain;
+
   if (const ls::RouteInsertion rs =
         ls::compute_best_insertion_pd(_input,
                                       _sol_state,
                                       s_route[_s_p_rank],
                                       t_vehicle,
                                       target,
-                                      s_gain - stored_gain);
+                                      pd_threshold);
       rs.eval != NO_EVAL) {
     _valid = true;
     t_gain -= rs.eval;
     stored_gain = s_gain + t_gain;
     _best_t_p_rank = rs.pickup_rank;
     _best_t_d_rank = rs.delivery_rank;
+
+    if (has_soft_skills() && has_preference_context()) {
+      // The shipment moves as a whole, so its preference counts once
+      // through the pickup endpoint, on the actual insertion eval.
+      const auto job_rank = s_route[_s_p_rank];
+      const int post =
+        task_post_match(job_rank, t_vehicle, [&]() { return rs.eval; }) ? 1
+                                                                        : 0;
+      preference_delta =
+        post - (task_pre_match(job_rank, s_vehicle) ? 1 : 0);
+    }
   }
 
   gain_computed = true;

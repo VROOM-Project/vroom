@@ -74,15 +74,18 @@ void RouteExchange::compute_gain() {
 
   if (has_soft_skills() && has_preference_context()) {
     // Whole routes are exchanged: sum the delta of every task moved
-    // to the other vehicle. Shipment preference counts once through
-    // its PICKUP endpoint (DELIVERY endpoints contribute nothing);
-    // each task is evaluated against the frozen opposite route (Q6).
+    // to the other vehicle. After the swap a task keeps its route
+    // content and ranks (only the vehicle start/end change), so its
+    // placement eval is the marginal addition on its own route; the
+    // destination rank is always valid there. Shipment preference
+    // counts once through its PICKUP endpoint (DELIVERY endpoints
+    // contribute nothing); evals use the frozen pre-move state (Q6).
     int delta = 0;
     for (Index r = 0; r < s_route.size(); ++r) {
-      delta += task_move_delta(s_route[r], s_vehicle, t_vehicle, target, r);
+      delta += task_move_delta(s_route[r], s_vehicle, t_vehicle, source, r);
     }
     for (Index r = 0; r < t_route.size(); ++r) {
-      delta += task_move_delta(t_route[r], t_vehicle, s_vehicle, source, r);
+      delta += task_move_delta(t_route[r], t_vehicle, s_vehicle, target, r);
     }
     preference_delta = delta;
   }
