@@ -39,3 +39,7 @@ jobs:
         env:
           CXX: ${{ matrix.cxx }}
         working-directory: libvroom_examples
+      # soft-skills test harness: build/run step is wired in Task 30 (CI
+      # integration). Marker for the target that links against libvroom:
+      #   - name: Build and run soft-skills tests
+      #     run: make -j -C test/soft_skills && ./test/soft_skills/test_runner
