@@ -10,8 +10,10 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <optional>
 #include <string>
 
+#include "structures/vroom/solution/soft_skill_preference.h"
 #include "structures/vroom/solution/step.h"
 #include "structures/vroom/solution/violations.h"
 
@@ -32,6 +34,11 @@ struct Route {
   std::string profile;
   std::string description;
   Violations violations;
+
+  // Only set when the input holds soft-skills, then reported in
+  // output_json as "soft_skill_preference". Placeholder counts until
+  // the authoritative scorer provides them.
+  std::optional<SoftSkillPreference> soft_skill_preference;
 
   std::string geometry;
 

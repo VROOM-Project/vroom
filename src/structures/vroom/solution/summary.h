@@ -10,9 +10,12 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <optional>
+
 #include "structures/typedefs.h"
 #include "structures/vroom/amount.h"
 #include "structures/vroom/solution/computing_times.h"
+#include "structures/vroom/solution/soft_skill_preference.h"
 #include "structures/vroom/solution/violations.h"
 
 namespace vroom {
@@ -33,6 +36,11 @@ struct Summary {
   ComputingTimes computing_times;
 
   Violations violations{0, 0};
+
+  // Only set when the input holds soft-skills, then reported in
+  // output_json as "soft_skill_preference". Placeholder counts until
+  // the authoritative scorer provides them.
+  std::optional<SoftSkillPreference> soft_skill_preference;
 
   Summary();
 

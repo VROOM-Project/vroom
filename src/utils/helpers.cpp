@@ -156,6 +156,25 @@ inline std::vector<Job> get_unassigned_jobs_from_ranks(
   return unassigned_jobs;
 }
 
+// Tag every route of the solution with placeholder soft-skill
+// preference counts and aggregate them at summary level, only when
+// the input holds soft-skills. Summary counts are the exact sum of
+// route counts by construction, so the reporting invariants hold. To
+// be replaced by the authoritative scorer output.
+inline void set_soft_skill_preference_placeholders(Solution& sol,
+                                                   const Input& input) {
+  if (!input.has_soft_skills()) {
+    return;
+  }
+
+  SoftSkillPreference totals;
+  for (auto& route : sol.routes) {
+    route.soft_skill_preference = SoftSkillPreference();
+    totals += *route.soft_skill_preference;
+  }
+  sol.summary.soft_skill_preference = totals;
+}
+
 Solution format_solution(const Input& input, const RawSolution& raw_routes) {
   std::vector<Route> routes;
   routes.reserve(raw_routes.size());
@@ -318,9 +337,12 @@ Solution format_solution(const Input& input, const RawSolution& raw_routes) {
                         v.description);
   }
 
-  return Solution(input.zero_amount(),
-                  std::move(routes),
-                  get_unassigned_jobs_from_ranks(input, unassigned_ranks));
+  Solution sol(input.zero_amount(),
+               std::move(routes),
+               get_unassigned_jobs_from_ranks(input, unassigned_ranks));
+  set_soft_skill_preference_placeholders(sol, input);
+
+  return sol;
 }
 
 Route format_route(const Input& input,
@@ -825,9 +847,12 @@ Solution format_solution(const Input& input, const TWSolution& tw_routes) {
     }
   }
 
-  return Solution(input.zero_amount(),
-                  std::move(routes),
-                  get_unassigned_jobs_from_ranks(input, unassigned_ranks));
+  Solution sol(input.zero_amount(),
+               std::move(routes),
+               get_unassigned_jobs_from_ranks(input, unassigned_ranks));
+  set_soft_skill_preference_placeholders(sol, input);
+
+  return sol;
 }
 
 } // namespace vroom::utils

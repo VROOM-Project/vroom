@@ -184,6 +184,12 @@ rapidjson::Value to_json(const Summary& summary,
   json_summary.AddMember("waiting_time", summary.waiting_time, allocator);
   json_summary.AddMember("priority", summary.priority, allocator);
 
+  if (summary.soft_skill_preference.has_value()) {
+    json_summary.AddMember("soft_skill_preference",
+                           to_json(*summary.soft_skill_preference, allocator),
+                           allocator);
+  }
+
   if (report_distances) {
     json_summary.AddMember("distance", summary.distance, allocator);
   }
@@ -197,6 +203,17 @@ rapidjson::Value to_json(const Summary& summary,
                          allocator);
 
   return json_summary;
+}
+
+rapidjson::Value to_json(const SoftSkillPreference& preference,
+                         rapidjson::Document::AllocatorType& allocator) {
+  rapidjson::Value json_preference(rapidjson::kObjectType);
+
+  json_preference.AddMember("eligible", preference.eligible, allocator);
+  json_preference.AddMember("satisfied", preference.satisfied, allocator);
+  json_preference.AddMember("unsatisfied", preference.unsatisfied, allocator);
+
+  return json_preference;
 }
 
 rapidjson::Value to_json(const Route& route,
@@ -242,6 +259,12 @@ rapidjson::Value to_json(const Route& route,
   json_route.AddMember("duration", route.duration, allocator);
   json_route.AddMember("waiting_time", route.waiting_time, allocator);
   json_route.AddMember("priority", route.priority, allocator);
+
+  if (route.soft_skill_preference.has_value()) {
+    json_route.AddMember("soft_skill_preference",
+                         to_json(*route.soft_skill_preference, allocator),
+                         allocator);
+  }
 
   if (report_distances) {
     json_route.AddMember("distance", route.distance, allocator);
