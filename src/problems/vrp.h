@@ -20,6 +20,7 @@ All rights reserved (see LICENSE).
 
 #include "algorithms/heuristics/heuristics.h"
 #include "algorithms/local_search/local_search.h"
+#include "algorithms/local_search/preference_scoring.h"
 #include "structures/vroom/eval.h"
 #include "structures/vroom/input/input.h"
 #include "structures/vroom/solution/solution.h"
@@ -80,6 +81,31 @@ template <class Route> struct SolvingContext {
     return !insertion_ok;
   }
 };
+
+// Strict lexicographic comparison for the cross-thread merge of the
+// per-search solutions (Task 26): priority sum first, then the
+// authoritative satisfied preference count (recomputed by
+// ls::compute_authoritative_preference on the candidate itself -- the
+// memoized indicators.preference of thread-local search state is
+// never trusted), then the plain SolutionIndicators ordering, which
+// places assigned jobs before the Eval cost and ends on the routes
+// hash, so full ties break deterministically on the first
+// comparison-eligible rank. This mirrors the local-search incumbent
+// gate (incumbent_better) with the memoized raw match count replaced
+// by the authoritative threshold-aware one; equal candidates are
+// never "better".
+inline bool cross_thread_better(const utils::SolutionIndicators& lhs,
+                                std::size_t lhs_satisfied,
+                                const utils::SolutionIndicators& rhs,
+                                std::size_t rhs_satisfied) {
+  if (lhs.priority_sum != rhs.priority_sum) {
+    return lhs.priority_sum > rhs.priority_sum;
+  }
+  if (lhs_satisfied != rhs_satisfied) {
+    return lhs_satisfied > rhs_satisfied;
+  }
+  return lhs < rhs;
+}
 
 template <class Route, class LocalSearch>
 void run_single_search(const Input& input,
@@ -255,14 +281,51 @@ protected:
       std::rethrow_exception(ep);
     }
 
-    auto best_indic = std::min_element(context.sol_indicators.cbegin(),
-                                       context.sol_indicators.cend());
+    // Cross-thread merge (Task 26). Without soft-skills this is the
+    // upstream first-minimum scan over the thread-local indicators.
+    // With soft-skills every candidate is rescored from scratch
+    // through ls::compute_authoritative_preference -- thread-local
+    // memoized counts are never trusted (Q20) -- and candidates are
+    // then ordered with cross_thread_better, mirroring the
+    // local-search incumbent gate with the authoritative satisfied
+    // count as the preference key. Strict comparison only, so the
+    // earliest search rank wins a full tie.
+    std::size_t winner_rank;
+    if (!_input.has_soft_skills()) {
+      winner_rank = std::distance(
+        context.sol_indicators.cbegin(),
+        std::min_element(context.sol_indicators.cbegin(),
+                         context.sol_indicators.cend()));
+    } else {
+      winner_rank = 0;
+      utils::SolutionState sol_state(_input);
+      sol_state.setup(context.solutions[winner_rank]);
+      std::size_t winner_satisfied =
+        ls::compute_authoritative_preference(_input,
+                                            context.solutions[winner_rank],
+                                            sol_state)
+          .satisfied;
 
-    return utils::
-      format_solution(_input,
-                      context.solutions[std::distance(context.sol_indicators
-                                                        .cbegin(),
-                                                      best_indic)]);
+      for (std::size_t rank = 1; rank < context.sol_indicators.size();
+           ++rank) {
+        sol_state.setup(context.solutions[rank]);
+        const auto satisfied =
+          ls::compute_authoritative_preference(_input,
+                                               context.solutions[rank],
+                                               sol_state)
+            .satisfied;
+
+        if (cross_thread_better(context.sol_indicators[rank],
+                                satisfied,
+                                context.sol_indicators[winner_rank],
+                                winner_satisfied)) {
+          winner_rank = rank;
+          winner_satisfied = satisfied;
+        }
+      }
+    }
+
+    return utils::format_solution(_input, context.solutions[winner_rank]);
   }
 
 public:
