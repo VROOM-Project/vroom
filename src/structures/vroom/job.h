@@ -28,6 +28,8 @@ struct Job {
   const Amount delivery;
   const Amount pickup;
   const Skills skills;
+  const SoftSkills soft_skills;
+  const std::optional<SoftSkillMatchMode> soft_skill_match_mode;
   const Priority priority;
   const std::vector<TimeWindow> tws;
   const std::string description;
@@ -49,7 +51,9 @@ struct Job {
         std::vector<TimeWindow>(1, TimeWindow()),
       std::string description = "",
       const TypeToUserDurationMap& setup_per_type = TypeToUserDurationMap(),
-      const TypeToUserDurationMap& service_per_type = TypeToUserDurationMap());
+      const TypeToUserDurationMap& service_per_type = TypeToUserDurationMap(),
+      SoftSkills soft_skills = SoftSkills(),
+      std::optional<SoftSkillMatchMode> soft_skill_match_mode = std::nullopt);
 
   // Constructor for pickup and delivery jobs (JOB_TYPE::PICKUP or
   // JOB_TYPE::DELIVERY).
@@ -65,7 +69,9 @@ struct Job {
         std::vector<TimeWindow>(1, TimeWindow()),
       std::string description = "",
       const TypeToUserDurationMap& setup_per_type = TypeToUserDurationMap(),
-      const TypeToUserDurationMap& service_per_type = TypeToUserDurationMap());
+      const TypeToUserDurationMap& service_per_type = TypeToUserDurationMap(),
+      SoftSkills soft_skills = SoftSkills(),
+      std::optional<SoftSkillMatchMode> soft_skill_match_mode = std::nullopt);
 
   Index index() const {
     return location.index();

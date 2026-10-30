@@ -45,6 +45,7 @@ private:
   bool _apply_TSPFix;
   bool _no_addition_yet{true};
   bool _has_skills{false};
+  bool _has_soft_skills{false};
   bool _has_TW{false};
   bool _has_all_coordinates{true};
   bool _has_custom_location_index;
@@ -171,6 +172,10 @@ public:
   bool is_used_several_times(const Location& location) const;
 
   bool has_skills() const;
+
+  bool has_soft_skills() const {
+    return _has_soft_skills;
+  }
 
   bool has_jobs() const;
 
