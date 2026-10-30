@@ -164,7 +164,7 @@ protected:
   // Post-move preference status of the task at job_rank placed on
   // vehicle to_vehicle: the vehicle must match the task's soft
   // skills and the given placement eval must stay within threshold
-  // of the frozen best non-matching insertion (Q3 auto-pass when no
+  // of the frozen non-match baseline (Q3 auto-pass when no
   // feasible non-matching alternative exists). A task currently on a
   // matching vehicle counts as matched for the "pre" side regardless
   // of threshold: status-quo assignments are not decisions (see
@@ -180,17 +180,11 @@ protected:
     if (!baselines.nonmatch_feasible) {
       return true;
     }
-    const auto& opts = _input.get_soft_skills_options();
-    const auto eval = placement_eval();
-    return threshold_passes(eval.cost,
-                            baselines.best_nonmatch_cost->cost,
-                            opts.max_cost_factor,
-                            eval.distance,
-                            baselines.best_nonmatch_distance->distance,
-                            opts.max_distance_factor,
-                            opts.threshold_mode,
-                            opts.missing_distance_policy,
-                            _input.has_distance_data());
+    return ls::task_post_match(_input,
+                               job_rank,
+                               to_vehicle,
+                               placement_eval(),
+                               baselines);
   }
 
   // Preference delta of moving the task at job_rank from

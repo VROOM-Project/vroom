@@ -134,6 +134,34 @@ inline bool task_matches_vehicle(const Input& input,
                           mode);
 }
 
+// Post-move preference status of placing the task at job_rank on
+// vehicle to_vehicle with the given (frozen) insertion eval: the
+// vehicle must match and the eval must stay within threshold of the
+// frozen best non-matching insertion (Q3 auto-pass when no feasible
+// non-matching alternative exists).
+inline bool task_post_match(const Input& input,
+                            Index job_rank,
+                            Index to_vehicle,
+                            const Eval& placement_eval,
+                            const PreferenceBaselines& baselines) {
+  if (!task_matches_vehicle(input, job_rank, to_vehicle)) {
+    return false;
+  }
+  if (!baselines.nonmatch_feasible) {
+    return true;
+  }
+  const auto& opts = input.get_soft_skills_options();
+  return threshold_passes(placement_eval.cost,
+                          baselines.best_nonmatch_cost->cost,
+                          opts.max_cost_factor,
+                          placement_eval.distance,
+                          baselines.best_nonmatch_distance->distance,
+                          opts.max_distance_factor,
+                          opts.threshold_mode,
+                          opts.missing_distance_policy,
+                          input.has_distance_data());
+}
+
 } // namespace vroom::ls
 
 #endif

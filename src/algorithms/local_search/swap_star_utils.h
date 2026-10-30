@@ -12,8 +12,9 @@ All rights reserved (see LICENSE).
 
 #include <algorithm>
 
+#include "algorithms/local_search/operator.h"
 #include "algorithms/local_search/top_insertions.h"
-#include "structures/typedefs.h"
+#include "structures/vroom/eval.h"
 #include "structures/vroom/input/input.h"
 #include "structures/vroom/solution_state.h"
 #include "utils/helpers.h"
@@ -32,6 +33,10 @@ struct SwapChoice {
   Index insertion_in_target{0};
   Amount source_range_delivery{0};
   Amount target_range_delivery{0};
+  // Net preference delta of the swapped single jobs, set by
+  // compute_best_swap_star_choice in preference mode (free functions
+  // cannot reach the Operator base helper).
+  int preference_delta{0};
 
   SwapChoice() = default;
 
@@ -176,7 +181,14 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
                                          const Route& source,
                                          const Index t_vehicle,
                                          const Route& target,
-                                         const Eval& best_known_gain) {
+                                         const Eval& best_known_gain,
+                                         const PreferenceScanContext* pref = nullptr) {
+  // Preference mode: choices then compete on the lexicographic
+  // (preference delta, gain) key instead of Eval alone, which also
+  // rules out the Eval-only pruning below (a positive-delta choice
+  // may win with any gain).
+  const bool preference_mode = (pref != nullptr) && input.has_soft_skills();
+
   // Preprocessing phase.
   std::vector<ThreeInsertions> top_insertions_in_target(source.route.size(),
                                                         empty_three_insertions);
@@ -205,6 +217,40 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
   // Search phase.
   auto best_choice = empty_swap_choice;
   Eval best_gain = best_known_gain;
+
+  GainKey best_key{0, best_known_gain};
+  std::vector<std::optional<PreferenceBaselines>> s_baselines;
+  std::vector<std::optional<PreferenceBaselines>> t_baselines;
+  if (preference_mode) {
+    s_baselines.resize(source.route.size());
+    t_baselines.resize(target.route.size());
+  }
+
+  // Delta of swapping one single job onto the other route; baselines
+  // are cached per rank since they don't depend on the chosen
+  // insertion position (Q6 frozen state).
+  const auto job_delta = [&](Index job_rank,
+                             Index from_vehicle,
+                             Index to_vehicle,
+                             const std::vector<Index>& dest_route,
+                             Index dest_rank,
+                             std::optional<PreferenceBaselines>& cached) {
+    const int pre = task_matches_vehicle(input, job_rank, from_vehicle) ? 1 : 0;
+    if (!task_matches_vehicle(input, job_rank, to_vehicle)) {
+      return -pre;
+    }
+    if (!cached.has_value()) {
+      cached = pref->baselines(input, sol_state, job_rank);
+    }
+    const auto eval = utils::addition_eval(input,
+                                           job_rank,
+                                           input.vehicles[to_vehicle],
+                                           dest_route,
+                                           dest_rank);
+    return static_cast<int>(
+             task_post_match(input, job_rank, to_vehicle, eval, *cached)) -
+           pre;
+  };
 
   const auto& s_v = input.vehicles[s_vehicle];
   const auto& t_v = input.vehicles[t_vehicle];
@@ -247,7 +293,8 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
       const auto target_delta =
         sol_state.node_gains[t_vehicle][t_rank] - target_start_end_cost;
 
-      if (source_delta + target_delta <= best_gain) {
+      if (!preference_mode && source_delta + target_delta <= best_gain) {
+        // Eval gain upper-bound pruning; unsound in preference mode.
         continue;
       }
 
@@ -280,7 +327,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
       if (s_v.ok_for_range_bounds(s_eval - in_place_s_gain)) {
         // Only bother further checking in-place insertion in source
         // route if max travel time constraint is OK.
-        if (best_gain < current_gain &&
+        if ((preference_mode || best_gain < current_gain) &&
             t_v.ok_for_range_bounds(t_eval - in_place_t_gain)) {
           SwapChoice sc(current_gain, s_rank, t_rank, s_rank, t_rank);
           if (valid_choice_for_insertion_ranks(sol_state,
@@ -298,7 +345,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
               (ti.eval != NO_EVAL)) {
             const Eval t_gain = target_delta - ti.eval;
             current_gain = in_place_s_gain + t_gain;
-            if (best_gain < current_gain &&
+            if ((preference_mode || best_gain < current_gain) &&
                 t_v.ok_for_range_bounds(t_eval - t_gain)) {
               SwapChoice sc(current_gain, s_rank, t_rank, s_rank, ti.rank);
               if (valid_choice_for_insertion_ranks(sol_state,
@@ -330,7 +377,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
           }
 
           current_gain = s_gain + in_place_t_gain;
-          if (best_gain < current_gain &&
+          if ((preference_mode || best_gain < current_gain) &&
               t_v.ok_for_range_bounds(t_eval - in_place_t_gain)) {
             SwapChoice sc(current_gain, s_rank, t_rank, si.rank, t_rank);
             if (valid_choice_for_insertion_ranks(sol_state,
@@ -348,7 +395,7 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
                 (ti.eval != NO_EVAL)) {
               const Eval t_gain = target_delta - ti.eval;
               current_gain = s_gain + t_gain;
-              if (best_gain < current_gain &&
+              if ((preference_mode || best_gain < current_gain) &&
                   t_v.ok_for_range_bounds(t_eval - t_gain)) {
                 SwapChoice sc(current_gain, s_rank, t_rank, si.rank, ti.rank);
                 if (valid_choice_for_insertion_ranks(sol_state,
@@ -470,13 +517,34 @@ SwapChoice compute_best_swap_star_choice(const Input& input,
                                                          t_insert.last_rank);
 
           if (target_valid) {
-            best_gain = sc.gain;
-            best_choice = sc;
-            best_choice.source_range_delivery = source_delivery;
-            best_choice.target_range_delivery = target_delivery;
-            // Options are ordered by decreasing gain so we stop at
-            // the first valid one.
-            break;
+            if (!preference_mode) {
+              best_gain = sc.gain;
+              best_choice = sc;
+              best_choice.source_range_delivery = source_delivery;
+              best_choice.target_range_delivery = target_delivery;
+              // Options are ordered by decreasing gain so we stop at
+              // the first valid one.
+              break;
+            }
+            // Preference mode: keep the best (delta, gain) key over
+            // all valid options instead of the first gain-ordered
+            // one.
+            const int delta =
+              job_delta(source.route[sc.s_rank], s_vehicle, t_vehicle,
+                        target.route, sc.insertion_in_target,
+                        s_baselines[sc.s_rank]) +
+              job_delta(target.route[sc.t_rank], t_vehicle, s_vehicle,
+                        source.route, sc.insertion_in_source,
+                        t_baselines[sc.t_rank]);
+            const GainKey sc_key{delta, sc.gain};
+            if (best_key < sc_key) {
+              best_key = sc_key;
+              best_gain = sc.gain;
+              best_choice = sc;
+              best_choice.preference_delta = delta;
+              best_choice.source_range_delivery = source_delivery;
+              best_choice.target_range_delivery = target_delivery;
+            }
           }
         }
       }
