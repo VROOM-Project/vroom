@@ -138,6 +138,7 @@ void Input::check_job(Job& job) {
   // Check for time-windows and skills.
   _has_TW = _has_TW || (!(job.tws.size() == 1) || !job.tws[0].is_default());
   _has_skills = _has_skills || !job.skills.empty();
+  _has_soft_skills = _has_soft_skills || !job.soft_skills.empty();
 
   if (!job.location.user_index()) {
     // Index of job in the matrices is not specified in input, check

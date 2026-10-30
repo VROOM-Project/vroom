@@ -147,6 +147,48 @@ inline Priority get_priority(const rapidjson::Value& object) {
   return priority;
 }
 
+inline SoftSkills get_soft_skills(const rapidjson::Value& object) {
+  SoftSkills soft_skills;
+  if (object.HasMember("soft_skills")) {
+    if (!object["soft_skills"].IsArray()) {
+      throw InputException("Invalid soft_skills object.");
+    }
+    for (rapidjson::SizeType i = 0; i < object["soft_skills"].Size(); ++i) {
+      if (!object["soft_skills"][i].IsUint()) {
+        throw InputException("Invalid soft skill value.");
+      }
+      soft_skills.insert(object["soft_skills"][i].GetUint());
+    }
+  }
+
+  return soft_skills;
+}
+
+inline std::optional<SoftSkillMatchMode>
+get_soft_skill_match_mode(const rapidjson::Value& object) {
+  std::optional<SoftSkillMatchMode> match_mode;
+  if (object.HasMember("soft_skill_match_mode")) {
+    if (!object["soft_skill_match_mode"].IsString()) {
+      std::string message("Invalid soft_skill_match_mode");
+      if (object.HasMember("id") && object["id"].IsUint64()) {
+        message += " for task " + std::to_string(object["id"].GetUint64());
+      }
+      throw InputException(message + ": not a string.");
+    }
+    const std::string value(object["soft_skill_match_mode"].GetString());
+    if (value == "all") {
+      match_mode = SoftSkillMatchMode::ALL;
+    } else if (value == "any") {
+      match_mode = SoftSkillMatchMode::ANY;
+    } else {
+      throw InputException("Invalid soft_skill_match_mode: " + value +
+                           ". Expected: all, any.");
+    }
+  }
+
+  return match_mode;
+}
+
 inline SoftSkillsOptions
 get_soft_skills_options(const rapidjson::Value& json_options) {
   if (!json_options.IsObject()) {
@@ -659,6 +701,16 @@ inline Job get_job(const rapidjson::Value& json_job, unsigned amount_size) {
                                   !json_job.HasMember("delivery") &&
                                   !json_job.HasMember("pickup");
 
+  auto soft_skills = get_soft_skills(json_job);
+  const auto soft_skill_match_mode = get_soft_skill_match_mode(json_job);
+
+  if (soft_skill_match_mode.has_value() && soft_skills.empty()) {
+    throw InputException(
+      std::format("Invalid soft_skill_match_mode for job {}: soft_skills "
+                  "must be non-empty when soft_skill_match_mode is set.",
+                  json_job["id"].GetUint64()));
+  }
+
   return Job(json_job["id"].GetUint64(),
              get_task_location(json_job, "job"),
              get_duration(json_job, "setup"),
@@ -671,7 +723,9 @@ inline Job get_job(const rapidjson::Value& json_job, unsigned amount_size) {
              get_time_windows(json_job, "job"),
              get_string(json_job, "description"),
              get_duration_per_type(json_job, "setup_per_type", "job"),
-             get_duration_per_type(json_job, "service_per_type", "job"));
+             get_duration_per_type(json_job, "service_per_type", "job"),
+             std::move(soft_skills),
+             soft_skill_match_mode);
 }
 
 template <class T> inline Matrix<T> get_matrix(rapidjson::Value& m) {
