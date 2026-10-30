@@ -36,8 +36,8 @@ struct Route {
   Violations violations;
 
   // Only set when the input holds soft-skills, then reported in
-  // output_json as "soft_skill_preference". Placeholder counts until
-  // the authoritative scorer provides them.
+  // output_json as "soft_skill_preference". Authoritative counts from
+  // ls::compute_route_preference (Task 25).
   std::optional<SoftSkillPreference> soft_skill_preference;
 
   std::string geometry;

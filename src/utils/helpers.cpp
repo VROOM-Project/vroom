@@ -15,6 +15,12 @@ All rights reserved (see LICENSE).
 
 #include "utils/helpers.h"
 
+// Authoritative preference scorer lives with the local-search
+// evaluators it must share verbatim (Q20: one source of truth for
+// scoring). The include direction (utils -> algorithms) is deliberate
+// and .cpp-level only.
+#include "algorithms/local_search/preference_scoring.h"
+
 namespace vroom::utils {
 
 TimePoint now() {
@@ -157,22 +163,44 @@ inline std::vector<Job> get_unassigned_jobs_from_ranks(
   return unassigned_jobs;
 }
 
-// Tag every route of the solution with placeholder soft-skill
+// Tag every route of the solution with its authoritative soft-skill
 // preference counts and aggregate them at summary level, only when
-// the input holds soft-skills. Summary counts are the exact sum of
-// route counts by construction, so the reporting invariants hold. To
-// be replaced by the authoritative scorer output.
-inline void set_soft_skill_preference_placeholders(Solution& sol,
-                                                   const Input& input) {
+// the input holds soft-skills (Task 25). Counts come from
+// ls::compute_route_preference, the same authoritative evaluator used
+// by the cross-thread merge: threshold-aware against freshly
+// recomputed baselines, shipments counted once, never taken from any
+// memoized thread-local value. Summary counts are the exact sum of
+// route counts by construction (iterating the raw per-vehicle
+// solution in order, skipping the empty routes exactly like
+// format_solution did when building sol.routes), so the reporting
+// invariants hold.
+template <class Route>
+inline void set_soft_skill_preference_counts(Solution& sol,
+                                             const Input& input,
+                                             const std::vector<Route>& raw_sol) {
   if (!input.has_soft_skills()) {
     return;
   }
 
+  utils::SolutionState sol_state(input);
+  sol_state.setup(raw_sol);
+
   SoftSkillPreference totals;
-  for (auto& route : sol.routes) {
-    route.soft_skill_preference = SoftSkillPreference();
-    totals += *route.soft_skill_preference;
+  std::size_t route_idx = 0;
+  for (Index v_rank = 0; v_rank < raw_sol.size(); ++v_rank) {
+    if (raw_sol[v_rank].route.empty()) {
+      continue;
+    }
+    const auto counts = ls::compute_route_preference(input,
+                                                     raw_sol,
+                                                     sol_state,
+                                                     v_rank);
+    assert(route_idx < sol.routes.size());
+    sol.routes[route_idx].soft_skill_preference = counts;
+    totals += counts;
+    ++route_idx;
   }
+  assert(route_idx == sol.routes.size());
   sol.summary.soft_skill_preference = totals;
 }
 
@@ -355,7 +383,7 @@ Solution format_solution(const Input& input, const RawSolution& raw_routes) {
   Solution sol(input.zero_amount(),
                std::move(routes),
                get_unassigned_jobs_from_ranks(input, unassigned_ranks));
-  set_soft_skill_preference_placeholders(sol, input);
+  set_soft_skill_preference_counts(sol, input, raw_routes);
   report_preference_invariants(sol);
 
   return sol;
@@ -866,7 +894,7 @@ Solution format_solution(const Input& input, const TWSolution& tw_routes) {
   Solution sol(input.zero_amount(),
                std::move(routes),
                get_unassigned_jobs_from_ranks(input, unassigned_ranks));
-  set_soft_skill_preference_placeholders(sol, input);
+  set_soft_skill_preference_counts(sol, input, tw_routes);
   report_preference_invariants(sol);
 
   return sol;
