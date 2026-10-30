@@ -19,6 +19,7 @@ All rights reserved (see LICENSE).
 #include "structures/generic/matrix.h"
 #include "structures/typedefs.h"
 #include "structures/vroom/matrices.h"
+#include "structures/vroom/soft_skills_options.h"
 #include "structures/vroom/solution/solution.h"
 #include "structures/vroom/vehicle.h"
 
@@ -94,6 +95,8 @@ private:
 
   std::optional<unsigned> _amount_size;
   Amount _zero;
+
+  std::optional<SoftSkillsOptions> _soft_skills_options;
 
   const io::Servers _servers;
   const ROUTER _router;
@@ -175,6 +178,11 @@ public:
 
   bool has_soft_skills() const {
     return _has_soft_skills;
+  }
+
+  const SoftSkillsOptions& get_soft_skills_options() const {
+    return _soft_skills_options.has_value() ? *_soft_skills_options
+                                            : DEFAULT_SOFT_SKILLS_OPTIONS;
   }
 
   bool has_jobs() const;
