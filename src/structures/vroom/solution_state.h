@@ -58,6 +58,21 @@ public:
   std::vector<std::vector<Index>> fwd_skill_rank;
   std::vector<std::vector<Index>> bwd_skill_rank;
 
+  // Soft-skill counterparts of fwd/bwd_skill_rank above: same rank
+  // semantics, but "v2 can handle" is replaced by "v2 matches the soft
+  // skills of" according to each job's effective match mode (see
+  // vroom::soft_skill_match and vroom::effective_match_mode). Only
+  // maintained when the input actually contains soft-skills.
+  std::vector<std::vector<Index>> fwd_soft_skill_rank;
+  std::vector<std::vector<Index>> bwd_soft_skill_rank;
+
+  // fwd_soft_preference_score[v][i] stores the cumulative number of
+  // jobs from job at rank 0 to job at rank i (included) in the route
+  // for vehicle v whose soft-skills are matched by vehicle v.
+  // Placeholder: zeroed by update_soft_skills until the authoritative
+  // threshold-based computation lands (Tasks 16/25).
+  std::vector<std::vector<Index>> fwd_soft_preference_score;
+
   // fwd_priority[v][i] stores the sum of priorities from job at rank
   // 0 to job at rank i (included) in the route for vehicle v.
   // bwd_priority[v][i] stores the sum of priorities from job at rank
@@ -144,6 +159,10 @@ public:
   void update_costs(const RawRoute& raw_route);
 
   void update_skills(const RawRoute& raw_route);
+
+  // Soft-skills counterpart of update_skills, no-op unless the input
+  // contains soft-skills.
+  void update_soft_skills(const RawRoute& raw_route);
 
   void update_priorities(const RawRoute& raw_route);
 
