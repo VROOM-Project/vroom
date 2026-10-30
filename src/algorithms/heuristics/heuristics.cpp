@@ -8,17 +8,230 @@ All rights reserved (see LICENSE).
 */
 
 #include <algorithm>
+#include <limits>
+#include <optional>
+#include <vector>
 
 #include "algorithms/heuristics/heuristics.h"
 #include "utils/helpers.h"
+#include "utils/soft_skills.h"
 
 namespace vroom::heuristics {
+
+namespace {
+
+// Preference-aware insertion ranking support for inputs that contain
+// soft-skills (Task 15). Jobs without soft-skills bypass every
+// computation below, and inputs with no soft-skills at all never even
+// reach the enclosing has_soft_skills() branches, so the upstream
+// heuristics stay untouched on legacy inputs.
+
+// On-demand reference metrics for a single soft-skills job: best
+// feasible insertion cost and distance across the vehicles that do
+// not match its soft-skills, plus a possible deferral target (a
+// matching vehicle that is still to be processed and whose best
+// feasible insertion stays within threshold of the non-matching
+// reference). Computed per heuristic call from the current content of
+// all routes, never cached beyond that scope.
+struct SoftJobReference {
+  bool nonmatch_feasible{false};
+  Cost best_nonmatch_cost{std::numeric_limits<Cost>::max()};
+  Distance best_nonmatch_distance{std::numeric_limits<Distance>::max()};
+
+  bool defer_to_match{false};
+  Index defer_target{0};
+};
+
+// Best feasible insertion metrics of a (single or pickup) job into the
+// current content of one route, as seen from its own vehicle.
+struct VehicleInsertionScan {
+  bool feasible{false};
+  Cost best_cost{std::numeric_limits<Cost>::max()};
+  Distance best_distance{std::numeric_limits<Distance>::max()};
+  // Eval of the lowest-cost feasible insertion.
+  Eval best_eval;
+};
+
+template <class Route>
+inline VehicleInsertionScan
+scan_soft_feasible_insertions(const Input& input,
+                              Index job_rank,
+                              Index v_rank,
+                              const Route& route) {
+  VehicleInsertionScan scan;
+
+  if (!input.vehicle_ok_with_job(v_rank, job_rank)) {
+    return scan;
+  }
+
+  const auto& vehicle = input.vehicles[v_rank];
+  const auto& job = input.jobs[job_rank];
+  const auto route_eval =
+    utils::route_eval_for_vehicle(input, v_rank, route.route);
+
+  auto consider = [&](const Eval& e) {
+    scan.feasible = true;
+    if (e.cost < scan.best_cost) {
+      scan.best_cost = e.cost;
+      scan.best_eval = e;
+    }
+    if (e.distance < scan.best_distance) {
+      scan.best_distance = e.distance;
+    }
+  };
+
+  if (job.type == JOB_TYPE::SINGLE
+      && route.size() + 1 <= vehicle.max_tasks) {
+    for (Index r = 0; r <= route.size(); ++r) {
+      const auto e =
+        utils::addition_eval(input, job_rank, vehicle, route.route, r);
+      if (vehicle.ok_for_range_bounds(route_eval + e)
+          && route.is_valid_addition_for_capacity(input,
+                                                  job.pickup,
+                                                  job.delivery,
+                                                  r)
+          && route.is_valid_addition_for_tw(input, job_rank, r)) {
+        consider(e);
+      }
+    }
+  }
+
+  if (job.type == JOB_TYPE::PICKUP
+      && route.size() + 2 <= vehicle.max_tasks) {
+    // Only considering pickup and delivery inserted next to each
+    // other, which is enough as a preference reference point.
+    std::vector<Index> p_d({job_rank, static_cast<Index>(job_rank + 1)});
+    for (Index r = 0; r <= route.size(); ++r) {
+      const auto e = utils::addition_eval(input,
+                                          job_rank,
+                                          vehicle,
+                                          route.route,
+                                          r,
+                                          r + 1);
+      if (vehicle.ok_for_range_bounds(route_eval + e)
+          && route.is_valid_addition_for_capacity_inclusion(input,
+                                                            input.zero_amount(),
+                                                            p_d.begin(),
+                                                            p_d.end(),
+                                                            r,
+                                                            r)
+          && route.is_valid_addition_for_tw(input,
+                                            input.zero_amount(),
+                                            p_d.begin(),
+                                            p_d.end(),
+                                            r,
+                                            r)) {
+        consider(e);
+      }
+    }
+  }
+
+  return scan;
+}
+
+// Soft-skills threshold check for a candidate insertion against the
+// non-matching reference of its job. With no feasible non-matching
+// alternative at all, the comparison automatically passes (Q3).
+inline bool soft_pref_gain(const Eval& candidate,
+                           const SoftJobReference& reference,
+                           const SoftSkillsOptions& opts,
+                           bool distance_data_available) {
+  if (!reference.nonmatch_feasible) {
+    return true;
+  }
+
+  return threshold_passes(candidate.cost,
+                          reference.best_nonmatch_cost,
+                          opts.max_cost_factor,
+                          candidate.distance,
+                          reference.best_nonmatch_distance,
+                          opts.max_distance_factor,
+                          opts.threshold_mode,
+                          opts.missing_distance_policy,
+                          distance_data_available);
+}
+
+template <class Route>
+inline std::vector<std::optional<SoftJobReference>>
+build_soft_references(const Input& input,
+                      const std::vector<Route>& routes,
+                      const std::set<Index>& unassigned,
+                      const std::vector<Index>& remaining_ranks,
+                      const SoftSkillsOptions& opts,
+                      bool distance_data_available) {
+  std::vector<std::optional<SoftJobReference>> references(input.jobs.size());
+
+  for (const auto job_rank : unassigned) {
+    const auto& job = input.jobs[job_rank];
+    if (job.soft_skills.empty() || job.type == JOB_TYPE::DELIVERY) {
+      continue;
+    }
+
+    const auto mode = effective_match_mode(job, opts);
+    SoftJobReference reference;
+
+    std::optional<Index> cheapest_match_rank;
+    Cost cheapest_match_cost = std::numeric_limits<Cost>::max();
+
+    const auto nb_vehicles = input.vehicles.size();
+    for (Index v_rank = 0; v_rank < nb_vehicles; ++v_rank) {
+      const bool matches = soft_skill_match(job.soft_skills,
+                                            input.vehicles[v_rank].soft_skills,
+                                            mode);
+      const auto scan =
+        scan_soft_feasible_insertions(input, job_rank, v_rank, routes[v_rank]);
+
+      if (!scan.feasible) {
+        continue;
+      }
+
+      if (!matches) {
+        reference.nonmatch_feasible = true;
+        reference.best_nonmatch_cost =
+          std::min(reference.best_nonmatch_cost, scan.best_cost);
+        reference.best_nonmatch_distance =
+          std::min(reference.best_nonmatch_distance, scan.best_distance);
+      } else if(std::find(remaining_ranks.begin(),
+                          remaining_ranks.end(),
+                          v_rank)
+                != remaining_ranks.end()
+                && scan.best_cost < cheapest_match_cost) {
+        // Cheapest matching vehicle still to be processed: candidate
+        // deferral target.
+        cheapest_match_rank = v_rank;
+        cheapest_match_cost = scan.best_cost;
+      }
+    }
+
+    if (cheapest_match_rank.has_value()) {
+      reference.defer_target = *cheapest_match_rank;
+      const auto target_scan = scan_soft_feasible_insertions(input,
+                                                             job_rank,
+                                                             reference.defer_target,
+                                                             routes[reference.defer_target]);
+      reference.defer_to_match =
+        !reference.nonmatch_feasible
+        || soft_pref_gain(target_scan.best_eval,
+                          reference,
+                          opts,
+                          distance_data_available);
+    }
+
+    references[job_rank] = reference;
+  }
+
+  return references;
+}
+
+} // anonymous namespace
 
 // Add seed job to route if required and return current cost of route
 // without vehicle fixed cost.
 template <class Route>
 inline void seed_route(const Input& input,
                        Route& route,
+                       const std::vector<Route>& routes,
+                       const std::vector<Index>& remaining_ranks,
                        INIT init,
                        const std::vector<std::vector<Eval>>& evals,
                        std::set<Index>& unassigned,
@@ -27,6 +240,19 @@ inline void seed_route(const Input& input,
 
   const auto v_rank = route.v_rank;
   const auto& vehicle = input.vehicles[v_rank];
+
+  const auto& opts = input.get_soft_skills_options();
+  const bool distance_data_available = input.has_distance_data();
+
+  std::vector<std::optional<SoftJobReference>> soft_references;
+  if (input.has_soft_skills()) {
+    soft_references = build_soft_references(input,
+                                           routes,
+                                           unassigned,
+                                           remaining_ranks,
+                                           opts,
+                                           distance_data_available);
+  }
 
   // Initialize current route with the "best" valid job.
   bool init_ok = false;
@@ -44,10 +270,19 @@ inline void seed_route(const Input& input,
       continue;
     }
 
-    if (input.has_soft_skills()) {
-      // Placeholder for Task 15: preference-aware seed ranking. Inputs
-      // without any soft-skills never enter this branch, keeping the
-      // exact upstream seed selection below (zero change fast path).
+    if (input.has_soft_skills() && !current_job.soft_skills.empty()) {
+      const auto& reference = *soft_references[job_rank];
+      const auto matches = soft_skill_match(current_job.soft_skills,
+                                            vehicle.soft_skills,
+                                            effective_match_mode(current_job,
+                                                                 opts));
+      if (!matches && reference.defer_to_match &&
+          reference.defer_target != v_rank) {
+        // A remaining vehicle matches this job's soft-skills and can
+        // insert it within threshold: the current vehicle yields the
+        // seed slot to that vehicle.
+        continue;
+      }
     }
 
     const bool is_pickup = (current_job.type == JOB_TYPE::PICKUP);
@@ -250,11 +485,26 @@ template <class Route> struct UnassignedCosts {
 template <class Route>
 inline Eval fill_route(const Input& input,
                        Route& route,
+                       const std::vector<Route>& routes,
+                       const std::vector<Index>& remaining_ranks,
                        std::set<Index>& unassigned,
                        const std::vector<Cost>& regrets,
                        double lambda) {
   const auto v_rank = route.v_rank;
   const auto& vehicle = input.vehicles[v_rank];
+
+  const auto& opts = input.get_soft_skills_options();
+  const bool distance_data_available = input.has_distance_data();
+
+  std::vector<std::optional<SoftJobReference>> soft_references;
+  if (input.has_soft_skills()) {
+    soft_references = build_soft_references(input,
+                                           routes,
+                                           unassigned,
+                                           remaining_ranks,
+                                           opts,
+                                           distance_data_available);
+  }
 
   const bool init_route_is_empty = route.empty();
   Eval route_eval = utils::route_eval_for_vehicle(input, v_rank, route.route);
@@ -266,6 +516,7 @@ inline Eval fill_route(const Input& input,
   while (keep_going) {
     keep_going = false;
     double best_cost = std::numeric_limits<double>::max();
+    bool best_pref = false;
     Index best_job_rank = 0;
     Index best_r = 0;
     Index best_pickup_r = 0;
@@ -278,24 +529,40 @@ inline Eval fill_route(const Input& input,
         continue;
       }
 
-      if (input.has_soft_skills()) {
-        // Placeholder for Task 15: preference-aware insertion ranking
-        // for job_rank on v_rank. Inputs without any soft-skills never
-        // enter this branch, keeping the upstream ranking below
-        // untouched (zero change fast path).
-      }
-
       const auto& current_job = input.jobs[job_rank];
 
       if (current_job.type == JOB_TYPE::DELIVERY) {
         continue;
       }
 
+      // Preference-aware ranking (Task 15): on soft-skills inputs,
+      // insertions that gain a preference point rank above
+      // cost-equivalent non-matching ones (lexicographic order:
+      // existing priority semantics, then preference, then Eval).
+      bool boost_candidates = false;
+      if (input.has_soft_skills() && !current_job.soft_skills.empty()) {
+        const auto& reference = *soft_references[job_rank];
+        const auto matches =
+          soft_skill_match(current_job.soft_skills,
+                           vehicle.soft_skills,
+                           effective_match_mode(current_job, opts));
+        if (!matches && reference.defer_to_match &&
+            reference.defer_target != v_rank) {
+          // A remaining vehicle matches this job's soft-skills and can
+          // insert it within threshold: the current vehicle defers to
+          // that vehicle.
+          continue;
+        }
+        boost_candidates = matches;
+      }
+
       if (current_job.type == JOB_TYPE::SINGLE &&
           route.size() + 1 <= vehicle.max_tasks) {
 
-        if (best_cost < unassigned_costs.get_insertion_lower_bound(job_rank) -
-                          lambda * static_cast<double>(regrets[job_rank])) {
+        if ((!boost_candidates || best_pref) &&
+            best_cost <
+              unassigned_costs.get_insertion_lower_bound(job_rank) -
+                lambda * static_cast<double>(regrets[job_rank])) {
           // Bypass going through whole route if we're sure insertion
           // cost is not good enough.
           continue;
@@ -309,17 +576,29 @@ inline Eval fill_route(const Input& input,
             static_cast<double>(current_eval.cost) -
             lambda * static_cast<double>(regrets[job_rank]);
 
-          if (current_cost < best_cost &&
+          if ((current_cost < best_cost ||
+               (boost_candidates && !best_pref)) &&
               (vehicle.ok_for_range_bounds(route_eval + current_eval)) &&
               route.is_valid_addition_for_capacity(input,
                                                    current_job.pickup,
                                                    current_job.delivery,
                                                    r) &&
               route.is_valid_addition_for_tw(input, job_rank, r)) {
-            best_cost = current_cost;
-            best_job_rank = job_rank;
-            best_r = r;
-            best_eval = current_eval;
+            const bool current_pref =
+              boost_candidates &&
+              soft_pref_gain(current_eval,
+                             *soft_references[job_rank],
+                             opts,
+                             distance_data_available);
+
+            if ((current_pref && !best_pref) ||
+                (current_pref == best_pref && current_cost < best_cost)) {
+              best_cost = current_cost;
+              best_pref = current_pref;
+              best_job_rank = job_rank;
+              best_r = r;
+              best_eval = current_eval;
+            }
           }
         }
       }
@@ -327,9 +606,10 @@ inline Eval fill_route(const Input& input,
       if (current_job.type == JOB_TYPE::PICKUP &&
           route.size() + 2 <= vehicle.max_tasks) {
 
-        if (best_cost <
-            unassigned_costs.get_pd_insertion_lower_bound(input, job_rank) -
-              lambda * static_cast<double>(regrets[job_rank])) {
+        if ((!boost_candidates || best_pref) &&
+            best_cost <
+              unassigned_costs.get_pd_insertion_lower_bound(input, job_rank) -
+                lambda * static_cast<double>(regrets[job_rank])) {
           // Bypass going through whole route if we're sure insertion
           // cost is not good enough.
           continue;
@@ -408,7 +688,8 @@ inline Eval fill_route(const Input& input,
               current_eval.cost -
               lambda * static_cast<double>(regrets[job_rank]);
 
-            if (current_cost < best_cost) {
+            if (current_cost < best_cost ||
+                (boost_candidates && !best_pref)) {
               modified_with_pd.push_back(job_rank + 1);
 
               // Update best cost depending on validity.
@@ -433,12 +714,23 @@ inline Eval fill_route(const Input& input,
               modified_with_pd.pop_back();
 
               if (valid) {
-                best_cost = current_cost;
-                best_job_rank = job_rank;
-                best_pickup_r = pickup_r;
-                best_delivery_r = delivery_r;
-                best_modified_delivery = modified_delivery;
-                best_eval = current_eval;
+                const bool current_pref =
+                  boost_candidates &&
+                  soft_pref_gain(current_eval,
+                                 *soft_references[job_rank],
+                                 opts,
+                                 distance_data_available);
+
+                if ((current_pref && !best_pref) ||
+                    (current_pref == best_pref && current_cost < best_cost)) {
+                  best_cost = current_cost;
+                  best_pref = current_pref;
+                  best_job_rank = job_rank;
+                  best_pickup_r = pickup_r;
+                  best_delivery_r = delivery_r;
+                  best_modified_delivery = modified_delivery;
+                  best_eval = current_eval;
+                }
               }
             }
           }
@@ -559,11 +851,9 @@ Eval basic(const Input& input,
         all_compatible_jobs_later_undoable = false;
       }
 
-      if (input.has_soft_skills()) {
-        // Placeholder for Task 15: preference-aware regret adjustment
-        // for job j and vehicle vehicles_ranks[v]. Soft-skills-free
-        // inputs skip this entirely (zero change fast path).
-      }
+      // Task 15 note: preference-aware handling happens at insertion
+      // ranking time in seed_route/fill_route through on-demand soft
+      // job references, so empty-route regrets stay cost-based.
     }
 
     if (all_compatible_jobs_later_undoable) {
@@ -584,15 +874,30 @@ Eval basic(const Input& input,
     auto v_rank = vehicles_ranks[v];
     auto& current_r = routes[v_rank];
 
+    const std::vector<Index> remaining_ranks(vehicles_ranks.begin() + v + 1,
+                                             vehicles_ranks.end());
+
     if (current_r.empty() && init != INIT::NONE) {
       // Trivial lambda for no additional job validity constraint.
       constexpr auto job_not_ok = [](const Index) { return false; };
 
-      seed_route(input, current_r, init, evals, unassigned, job_not_ok);
+      seed_route(input,
+                 current_r,
+                 routes,
+                 remaining_ranks,
+                 init,
+                 evals,
+                 unassigned,
+                 job_not_ok);
     }
 
-    const auto current_eval =
-      fill_route(input, current_r, unassigned, regrets[v], lambda);
+    const auto current_eval = fill_route(input,
+                                         current_r,
+                                         routes,
+                                         remaining_ranks,
+                                         unassigned,
+                                         regrets[v],
+                                         lambda);
     sol_eval += current_eval;
   }
 
@@ -702,11 +1007,9 @@ Eval dynamic_vehicle_choice(const Input& input,
         all_compatible_jobs_later_undoable = false;
       }
 
-      if (input.has_soft_skills()) {
-        // Placeholder for Task 15: preference-aware regret adjustment
-        // for job j on the dynamic vehicle choice. Soft-skills-free
-        // inputs skip this entirely (zero change fast path).
-      }
+      // Task 15 note: preference-aware handling happens at insertion
+      // ranking time in seed_route/fill_route through on-demand soft
+      // job references, so empty-route regrets stay cost-based.
     }
 
     if (all_compatible_jobs_later_undoable) {
@@ -725,11 +1028,23 @@ Eval dynamic_vehicle_choice(const Input& input,
           return jobs_min_costs[job_rank] < evals[job_rank][v_rank].cost;
         };
 
-      seed_route(input, current_r, init, evals, unassigned, job_not_ok);
+      seed_route(input,
+                 current_r,
+                 routes,
+                 vehicles_ranks,
+                 init,
+                 evals,
+                 unassigned,
+                 job_not_ok);
     }
 
-    const auto current_eval =
-      fill_route(input, current_r, unassigned, regrets, lambda);
+    const auto current_eval = fill_route(input,
+                                         current_r,
+                                         routes,
+                                         vehicles_ranks,
+                                         unassigned,
+                                         regrets,
+                                         lambda);
     sol_eval += current_eval;
   }
 
