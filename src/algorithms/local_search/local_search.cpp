@@ -7,6 +7,11 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <algorithm>
+#include <cstdint>
+#include <deque>
+#include <functional>
+#include <iostream>
 #include <numeric>
 
 #include "algorithms/local_search/insertion_search.h"
@@ -130,6 +135,25 @@ inline bool upper_bound_interesting(const Input& input,
                                     const Eval& current_best_gain,
                                     const Eval& upper_bound) {
   return input.has_soft_skills() || current_best_gain < upper_bound;
+}
+
+// State fingerprint for the cycle-detection diagnostic (Task 24):
+// std::hash-based combination of the preference count, the total Eval
+// cost and the (ordered) route sizes carried by the solution
+// indicators. Two distinct states sharing a fingerprint require a hash
+// collision on all three components, which makes the diagnostic
+// false-positive-safe in practice.
+inline std::size_t cycle_state_hash(const utils::SolutionIndicators& indics) {
+  const auto mix = [](std::size_t seed, std::uint64_t value) {
+    return seed ^ (std::hash<std::uint64_t>{}(value) + 0x9e3779b97f4a7c15ULL
+                   + (seed << 6) + (seed >> 2));
+  };
+
+  std::size_t hash = 0;
+  hash = mix(hash, indics.preference);
+  hash = mix(hash, static_cast<std::uint64_t>(indics.eval.cost));
+  hash = mix(hash, indics.routes_hash);
+  return hash;
 }
 
 template <class Route>
@@ -441,6 +465,19 @@ void LocalSearch<Route,
   std::vector<Priority> best_priorities(_nb_vehicles, 0);
   std::vector<unsigned> best_removals(_nb_vehicles,
                                       std::numeric_limits<unsigned>::max());
+
+  // Lightweight cycle-detection backstop (Task 24): bounded history of
+  // post-move solution fingerprints (preference count, Eval cost,
+  // route sizes). Purely diagnostic -- the strict lexicographic
+  // incumbent (Task 22) remains the primary anti-cycling mechanism --
+  // and only maintained for soft-skills inputs, so the upstream
+  // Eval-only fast path stays untouched.
+  constexpr std::size_t cycle_history_window = 16;
+  std::deque<std::size_t> state_history;
+  if (_input.has_soft_skills()) {
+    state_history.push_back(
+      cycle_state_hash(utils::SolutionIndicators(_input, _sol)));
+  }
 
   // Dummy init to enter first loop.
   GainKey best_key{0, Eval(static_cast<Cost>(1))};
@@ -1879,6 +1916,13 @@ void LocalSearch<Route,
         || best_key.gain.cost > 0) {
       assert(best_ops[best_source][best_target] != nullptr);
 
+      // Snapshot of the pre-move solution for the cycle-detection
+      // backstop below (only taken for soft-skills inputs).
+      std::vector<Route> pre_move_sol;
+      if (_input.has_soft_skills()) {
+        pre_move_sol = _sol;
+      }
+
       best_ops[best_source][best_target]->apply();
 
       auto update_candidates =
@@ -1936,6 +1980,35 @@ void LocalSearch<Route,
       }
       for (const auto v : modified_vehicles) {
         update_candidates.push_back(v);
+      }
+
+      // Cycle-detection diagnostic (Task 24): when the post-move
+      // solution fingerprint matches a recent history entry, the move
+      // reproduces an already-visited state. Log the diagnostic,
+      // restore the pre-move solution and end this local search step,
+      // so the oscillating move is skipped and the caller restarts a
+      // fresh step from a consistent state.
+      if (_input.has_soft_skills()) {
+        const auto post_move_hash =
+          cycle_state_hash(utils::SolutionIndicators(_input, _sol));
+        if (std::find(state_history.begin(),
+                      state_history.end(),
+                      post_move_hash)
+            != state_history.end()) {
+          std::cerr << "[Warning] Soft-skills local search cycle detected "
+                       "(state hash "
+                    << post_move_hash
+                    << "), skipping move and ending local search step."
+                    << std::endl;
+          _sol = std::move(pre_move_sol);
+          _sol_state.setup(_sol);
+          break;
+        }
+
+        state_history.push_back(post_move_hash);
+        if (state_history.size() > cycle_history_window) {
+          state_history.pop_front();
+        }
       }
 
       // Set gains to zero for what needs to be recomputed in the next
