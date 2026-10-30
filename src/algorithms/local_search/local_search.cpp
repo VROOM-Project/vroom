@@ -96,10 +96,12 @@ LocalSearch<Route,
 }
 
 // Incumbent comparison gate. Inputs without any soft-skills always
-// use the existing Eval-based SolutionIndicators ordering; Task 22
-// activates its lexicographic (priority > preference > Eval)
-// comparison strictly inside the has_soft_skills() branch so this
-// fast path never changes (zero change invariant).
+// use the existing Eval-based SolutionIndicators ordering, so the
+// fast path never changes (zero change invariant). Soft-skills
+// inputs get the lexicographic order priority sum > preference
+// count > remaining indicators (assigned jobs, then Eval cost,
+// vehicles, duration, distance, routes hash), which extends the
+// plain ordering by inserting preference right after priority.
 inline bool incumbent_better(const Input& input,
                              const utils::SolutionIndicators& lhs,
                              const utils::SolutionIndicators& rhs) {
@@ -107,8 +109,15 @@ inline bool incumbent_better(const Input& input,
     return lhs < rhs;
   }
 
-  // Placeholder for Task 22: lexicographic incumbent comparison for
-  // soft-skills inputs. Currently identical to the fast path above.
+  // Strict comparisons only: equal indicators are never "better",
+  // so the incumbent is replaced exclusively on a strict
+  // lexicographic improvement (Q7).
+  if (lhs.priority_sum != rhs.priority_sum) {
+    return lhs.priority_sum > rhs.priority_sum;
+  }
+  if (lhs.preference != rhs.preference) {
+    return lhs.preference > rhs.preference;
+  }
   return lhs < rhs;
 }
 
