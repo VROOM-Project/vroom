@@ -10,11 +10,90 @@ All rights reserved (see LICENSE).
 
 */
 
+#include "algorithms/local_search/preference_baselines.h"
 #include "structures/typedefs.h"
 #include "structures/vroom/input/input.h"
 #include "structures/vroom/solution_state.h"
 
 namespace vroom::ls {
+
+// Move acceptance key: net soft-skills preference delta first, then
+// the regular Eval gain. Lexicographic comparison of keys implements
+// the (priority >) preference > Eval hierarchy (Q4/Q5): a
+// preference-gaining move wins over any non-preference move, a
+// preference-losing move never wins on Eval alone. When all deltas
+// are zero the comparison reduces to the upstream Eval-only
+// behavior (zero change invariant).
+struct GainKey {
+  int preference_delta{0};
+  Eval gain;
+
+  friend bool operator<(const GainKey& lhs, const GainKey& rhs) {
+    return std::tie(lhs.preference_delta, lhs.gain)
+           < std::tie(rhs.preference_delta, rhs.gain);
+  }
+};
+
+// Type-erased view on the current solution routes for on-demand
+// preference baseline scans. The LocalSearch instantiation owns a
+// concrete SolutionPreferenceScan<Route> (RawRoute for CVRP, TWRoute
+// for VRPTW) and hands it to the preference-aware operators, so
+// compute_gain() implementations never need to know the concrete
+// route type themselves.
+class PreferenceScanContext {
+public:
+  virtual ~PreferenceScanContext() = default;
+
+  virtual PreferenceBaselines baselines(const Input& input,
+                                        const utils::SolutionState& sol_state,
+                                        Index job_rank) const = 0;
+
+  // Best feasible insertion eval of the task at job_rank (JOB_TYPE::
+  // SINGLE or JOB_TYPE::PICKUP) into the frozen route of vehicle
+  // v_rank; NO_EVAL when no feasible insertion exists.
+  virtual Eval best_insertion(const Input& input,
+                              const utils::SolutionState& sol_state,
+                              Index job_rank,
+                              Index v_rank) const = 0;
+};
+
+template <class Route>
+class SolutionPreferenceScan : public PreferenceScanContext {
+private:
+  const std::vector<Route>& _sol;
+
+public:
+  explicit SolutionPreferenceScan(const std::vector<Route>& sol) : _sol(sol) {
+  }
+
+  PreferenceBaselines baselines(const Input& input,
+                                const utils::SolutionState& sol_state,
+                                Index job_rank) const override {
+    return compute_preference_baselines(input, sol_state, _sol, job_rank);
+  }
+
+  Eval best_insertion(const Input& input,
+                      const utils::SolutionState& sol_state,
+                      Index job_rank,
+                      Index v_rank) const override {
+    assert(input.jobs[job_rank].type == JOB_TYPE::SINGLE
+           || input.jobs[job_rank].type == JOB_TYPE::PICKUP);
+    return (input.jobs[job_rank].type == JOB_TYPE::SINGLE)
+             ? compute_best_insertion_single(input,
+                                             sol_state,
+                                             job_rank,
+                                             v_rank,
+                                             _sol[v_rank])
+                 .eval
+             : compute_best_insertion_pd(input,
+                                         sol_state,
+                                         job_rank,
+                                         v_rank,
+                                         _sol[v_rank],
+                                         NO_EVAL)
+                 .eval;
+  }
+};
 
 class Operator {
 protected:
@@ -38,6 +117,16 @@ protected:
   Eval t_gain;
   Eval stored_gain;
 
+  // Net preference delta of this move over the tasks it relocates
+  // (number of tasks gaining a threshold-qualified match minus the
+  // number losing their current match). Stays 0 unless soft-skills
+  // preference logic is active (Tasks 17-20).
+  int preference_delta{0};
+
+  // Owned by the LocalSearch instantiation; null when no preference
+  // context was wired for this operator.
+  const PreferenceScanContext* _preference_scan{nullptr};
+
   virtual void compute_gain() = 0;
 
   // True iff the input actually contains soft-skills. Every preference
@@ -46,6 +135,60 @@ protected:
   // gain behavior (zero change fast path).
   bool has_soft_skills() const {
     return _input.has_soft_skills();
+  }
+
+  // True iff compute_gain() may run preference logic: requires both
+  // soft-skills in input and a solution route context for baseline
+  // scans.
+  bool has_preference_context() const {
+    return _preference_scan != nullptr;
+  }
+
+  PreferenceBaselines preference_baselines(Index job_rank) const {
+    return _preference_scan->baselines(_input, _sol_state, job_rank);
+  }
+
+  // Best feasible insertion eval of a task (SINGLE or PICKUP) into
+  // the frozen route of the given vehicle.
+  Eval best_preference_insertion(Index job_rank, Index v_rank) const {
+    return _preference_scan->best_insertion(_input, _sol_state, job_rank,
+                                            v_rank);
+  }
+
+  // Raw (not threshold-qualified) soft-skill match of the task at
+  // job_rank with the given vehicle.
+  bool task_pre_match(Index job_rank, Index v_rank) const {
+    return task_matches_vehicle(_input, job_rank, v_rank);
+  }
+
+  // Post-move preference status of the task at job_rank placed on
+  // vehicle to_vehicle: the vehicle must match the task's soft
+  // skills and the given placement eval must stay within threshold
+  // of the frozen best non-matching insertion (Q3 auto-pass when no
+  // feasible non-matching alternative exists). A task currently on a
+  // matching vehicle counts as matched for the "pre" side regardless
+  // of threshold: status-quo assignments are not decisions (see
+  // fixture 03).
+  template <class EvalFn>
+  bool task_post_match(Index job_rank, Index to_vehicle, EvalFn&& placement_eval) const {
+    if (!task_matches_vehicle(_input, job_rank, to_vehicle)) {
+      return false;
+    }
+    const auto baselines = preference_baselines(job_rank);
+    if (!baselines.nonmatch_feasible) {
+      return true;
+    }
+    const auto& opts = _input.get_soft_skills_options();
+    const auto eval = placement_eval();
+    return threshold_passes(eval.cost,
+                            baselines.best_nonmatch_cost->cost,
+                            opts.max_cost_factor,
+                            eval.distance,
+                            baselines.best_nonmatch_distance->distance,
+                            opts.max_distance_factor,
+                            opts.threshold_mode,
+                            opts.missing_distance_policy,
+                            _input.has_distance_data());
   }
 
   bool is_valid_for_source_range_bounds() const;
@@ -88,6 +231,21 @@ public:
   }
 
   OperatorName get_name() const;
+
+  // Wire the solution route context used for on-demand preference
+  // baseline scans. Called by LocalSearch on the operators it
+  // evaluates; operators never wired keep preference_delta at 0.
+  void set_preference_context(const PreferenceScanContext& scan) {
+    _preference_scan = &scan;
+  }
+
+  // Acceptance key for this move: preference delta first, then Eval
+  // gain. Gain computation must run first since it is what computes
+  // the preference delta on most operators.
+  GainKey key() {
+    this->gain();
+    return GainKey{preference_delta, stored_gain};
+  }
 
   virtual Eval gain();
 

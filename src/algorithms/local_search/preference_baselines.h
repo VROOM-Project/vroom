@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <algorithm>
 #include <optional>
 #include <vector>
 
@@ -76,6 +77,15 @@ compute_preference_baselines(const Input& input,
       continue;
     }
 
+    if (std::find(sol[v].route.begin(), sol[v].route.end(), job_rank)
+        != sol[v].route.end()) {
+      // The vehicle currently holding the task is not an "insertion
+      // alternative" for it: evaluating an insertion into the route
+      // that already contains the (unique) task would produce a bogus
+      // near-zero duplicate-insertion reference.
+      continue;
+    }
+
     // Best insertion of the job into the current content of route v,
     // if any (capacity and time windows included).
     const auto insertion =
@@ -105,6 +115,23 @@ compute_preference_baselines(const Input& input,
   }
 
   return baselines;
+}
+
+// Raw soft-skill match of the task at job_rank with a vehicle: true
+// iff the task carries soft skills and the vehicle's skills match
+// under the effective mode. Empty task skills are neutral, so this
+// is false for them (matching predicate contract).
+inline bool task_matches_vehicle(const Input& input,
+                                 Index job_rank,
+                                 Index v_rank) {
+  const auto& job = input.jobs[job_rank];
+  if (job.soft_skills.empty()) {
+    return false;
+  }
+  const auto mode = effective_match_mode(job, input.get_soft_skills_options());
+  return soft_skill_match(job.soft_skills,
+                          input.vehicles[v_rank].soft_skills,
+                          mode);
 }
 
 } // namespace vroom::ls

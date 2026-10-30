@@ -36,7 +36,6 @@ Relocate::Relocate(const Input& input,
 
   assert(_input.vehicle_ok_with_job(t_vehicle, this->s_route[s_rank]));
 }
-
 void Relocate::compute_gain() {
   // For source vehicle, we consider the cost of removing job at rank
   // s_rank, already stored.
@@ -49,13 +48,29 @@ void Relocate::compute_gain() {
   // For target vehicle, we consider the cost of adding source job at
   // rank t_rank.
   const auto& t_v = _input.vehicles[t_vehicle];
-  t_gain = -utils::addition_eval(_input, s_route[s_rank], t_v, t_route, t_rank);
+  const auto addition =
+    utils::addition_eval(_input, s_route[s_rank], t_v, t_route, t_rank);
+  t_gain = -addition;
 
   if (t_route.empty()) {
     t_gain.cost -= t_v.fixed_cost();
   }
 
   stored_gain = s_gain + t_gain;
+
+  if (has_soft_skills() && has_preference_context()) {
+    // Net preference delta of moving the single job from s_vehicle to
+    // t_vehicle: post-move status counts a threshold-qualified match
+    // on the target vehicle; pre status is the raw match on the
+    // source vehicle (status-quo, no threshold decision).
+    const auto job_rank = s_route[s_rank];
+    const bool post =
+      task_post_match(job_rank, t_vehicle,
+                      [&]() { return addition; });
+    const bool pre = task_pre_match(job_rank, s_vehicle);
+    preference_delta = static_cast<int>(post) - static_cast<int>(pre);
+  }
+
   gain_computed = true;
 }
 
