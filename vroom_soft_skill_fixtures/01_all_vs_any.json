@@ -1,0 +1,118 @@
+{
+  "vehicles": [
+    {
+      "id": 1,
+      "start_index": 0,
+      "end_index": 0,
+      "capacity": [
+        10
+      ],
+      "time_window": [
+        0,
+        28800
+      ],
+      "soft_skills": [
+        101
+      ]
+    },
+    {
+      "id": 2,
+      "start_index": 2,
+      "end_index": 2,
+      "capacity": [
+        10
+      ],
+      "time_window": [
+        0,
+        28800
+      ],
+      "soft_skills": [
+        101,
+        202
+      ]
+    }
+  ],
+  "jobs": [
+    {
+      "id": 101,
+      "location_index": 1,
+      "delivery": [
+        1
+      ],
+      "service": 300,
+      "time_windows": [
+        [
+          0,
+          28800
+        ]
+      ],
+      "soft_skills": [
+        101,
+        202
+      ],
+      "soft_skill_match_mode": "all"
+    }
+  ],
+  "matrices": {
+    "car": {
+      "durations": [
+        [
+          0,
+          600,
+          1200
+        ],
+        [
+          600,
+          0,
+          600
+        ],
+        [
+          1200,
+          600,
+          0
+        ]
+      ],
+      "distances": [
+        [
+          0,
+          1000,
+          2000
+        ],
+        [
+          1000,
+          0,
+          1000
+        ],
+        [
+          2000,
+          1000,
+          0
+        ]
+      ],
+      "costs": [
+        [
+          0,
+          100,
+          200
+        ],
+        [
+          100,
+          0,
+          100
+        ],
+        [
+          200,
+          100,
+          0
+        ]
+      ]
+    }
+  },
+  "options": {
+    "soft_skills": {
+      "default_match_mode": "all",
+      "threshold_mode": "distance",
+      "max_distance_factor": 2.0
+    }
+  }
+}

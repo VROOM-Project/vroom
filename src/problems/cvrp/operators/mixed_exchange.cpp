@@ -110,6 +110,19 @@ void MixedExchange::compute_gain() {
 
   stored_gain += t_gain;
 
+  if (has_soft_skills() && has_preference_context()) {
+    // The single source job moves into the target route at t_rank
+    // while both target edge jobs move into the source route around
+    // s_rank. Each task is evaluated against the frozen pre-move
+    // routes (Q6); a shipment edge counts once through its PICKUP
+    // endpoint and the DELIVERY endpoint contributes nothing.
+    preference_delta =
+      task_move_delta(s_route[s_rank], s_vehicle, t_vehicle, target, t_rank) +
+      task_move_delta(t_route[t_rank], t_vehicle, s_vehicle, source, s_rank) +
+      task_move_delta(t_route[t_rank + 1], t_vehicle, s_vehicle, source,
+                      s_rank + 1);
+  }
+
   gain_computed = true;
 }
 

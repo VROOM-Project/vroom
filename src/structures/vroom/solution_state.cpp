@@ -12,6 +12,7 @@ All rights reserved (see LICENSE).
 
 #include "structures/vroom/solution_state.h"
 #include "utils/helpers.h"
+#include "utils/soft_skills.h"
 
 namespace vroom::utils {
 
@@ -25,6 +26,9 @@ SolutionState::SolutionState(const Input& input)
     bwd_setup_evals(_nb_vehicles, std::vector<std::vector<Eval>>(_nb_vehicles)),
     fwd_skill_rank(_nb_vehicles, std::vector<Index>(_nb_vehicles)),
     bwd_skill_rank(_nb_vehicles, std::vector<Index>(_nb_vehicles)),
+    fwd_soft_skill_rank(_nb_vehicles, std::vector<Index>(_nb_vehicles)),
+    bwd_soft_skill_rank(_nb_vehicles, std::vector<Index>(_nb_vehicles)),
+    fwd_soft_preference_score(_nb_vehicles),
     fwd_priority(_nb_vehicles),
     bwd_priority(_nb_vehicles),
     edge_evals_around_node(_nb_vehicles),
@@ -59,6 +63,15 @@ void SolutionState::setup(const RawRoute& r) {
   set_insertion_ranks(r);
   update_route_eval(r);
   update_route_bbox(r);
+
+  if (!_input.has_soft_skills()) {
+    // Fast path: the input holds no soft-skills, so every soft-skill
+    // precomputation is bypassed and setup keeps its exact upstream
+    // behavior (zero behavioral change invariant).
+    return;
+  }
+
+  update_soft_skills(r);
 }
 
 template <class Route>
@@ -198,6 +211,42 @@ void SolutionState::update_skills(const RawRoute& raw_route) {
     });
     bwd_skill_rank[v][v2] = route.size() - std::distance(route.rbegin(), bwd);
   }
+}
+
+void SolutionState::update_soft_skills(const RawRoute& raw_route) {
+  if (!_input.has_soft_skills()) {
+    return;
+  }
+
+  const auto v = raw_route.v_rank;
+  const auto& route = raw_route.route;
+  const auto& opts = _input.get_soft_skills_options();
+
+  for (std::size_t v2 = 0; v2 < _nb_vehicles; ++v2) {
+    if (v == v2) {
+      continue;
+    }
+
+    const auto& vehicle = _input.vehicles[v2];
+    auto fwd = std::ranges::find_if_not(route, [&](auto j_rank) {
+      const auto& job = _input.jobs[j_rank];
+      return soft_skill_match(job.soft_skills,
+                              vehicle.soft_skills,
+                              effective_match_mode(job, opts));
+    });
+    fwd_soft_skill_rank[v][v2] = std::distance(route.begin(), fwd);
+
+    auto bwd = std::find_if_not(route.rbegin(), route.rend(), [&](auto j_rank) {
+      const auto& job = _input.jobs[j_rank];
+      return soft_skill_match(job.soft_skills,
+                              vehicle.soft_skills,
+                              effective_match_mode(job, opts));
+    });
+    bwd_soft_skill_rank[v][v2] =
+      route.size() - std::distance(route.rbegin(), bwd);
+  }
+
+  fwd_soft_preference_score[v].assign(route.size(), 0);
 }
 
 void SolutionState::update_priorities(const RawRoute& raw_route) {

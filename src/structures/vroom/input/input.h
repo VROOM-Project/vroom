@@ -19,6 +19,7 @@ All rights reserved (see LICENSE).
 #include "structures/generic/matrix.h"
 #include "structures/typedefs.h"
 #include "structures/vroom/matrices.h"
+#include "structures/vroom/soft_skills_options.h"
 #include "structures/vroom/solution/solution.h"
 #include "structures/vroom/vehicle.h"
 
@@ -45,6 +46,7 @@ private:
   bool _apply_TSPFix;
   bool _no_addition_yet{true};
   bool _has_skills{false};
+  bool _has_soft_skills{false};
   bool _has_TW{false};
   bool _has_all_coordinates{true};
   bool _has_custom_location_index;
@@ -93,6 +95,8 @@ private:
 
   std::optional<unsigned> _amount_size;
   Amount _zero;
+
+  std::optional<SoftSkillsOptions> _soft_skills_options;
 
   const io::Servers _servers;
   const ROUTER _router;
@@ -160,6 +164,8 @@ public:
 
   void set_costs_matrix(const std::string& profile, Matrix<UserCost>&& m);
 
+  void set_soft_skills_options(const SoftSkillsOptions& options);
+
   const Amount& zero_amount() const {
     return _zero;
   }
@@ -171,6 +177,21 @@ public:
   bool is_used_several_times(const Location& location) const;
 
   bool has_skills() const;
+
+  bool has_soft_skills() const {
+    return _has_soft_skills;
+  }
+
+  const SoftSkillsOptions& get_soft_skills_options() const {
+    return _soft_skills_options.has_value() ? *_soft_skills_options
+                                            : DEFAULT_SOFT_SKILLS_OPTIONS;
+  }
+
+  // Returns true iff at least one profile has a distances matrix
+  // provided in input.
+  bool has_distance_data() const {
+    return !_distances_matrices.empty();
+  }
 
   bool has_jobs() const;
 

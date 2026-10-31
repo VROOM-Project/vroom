@@ -138,6 +138,7 @@ void Input::check_job(Job& job) {
   // Check for time-windows and skills.
   _has_TW = _has_TW || (!(job.tws.size() == 1) || !job.tws[0].is_default());
   _has_skills = _has_skills || !job.skills.empty();
+  _has_soft_skills = _has_soft_skills || !job.soft_skills.empty();
 
   if (!job.location.user_index()) {
     // Index of job in the matrices is not specified in input, check
@@ -263,6 +264,7 @@ void Input::add_vehicle(const Vehicle& vehicle) {
   // Check for time-windows and skills.
   _has_TW = _has_TW || !vehicle.tw.is_default() || !vehicle.breaks.empty();
   _has_skills = _has_skills || !current_v.skills.empty();
+  _has_soft_skills = _has_soft_skills || !current_v.soft_skills.empty();
 
   bool has_location_index = false;
   bool has_all_coordinates = true;
@@ -431,6 +433,10 @@ void Input::set_costs_matrix(const std::string& profile, Matrix<UserCost>&& m) {
     throw InputException("Empty costs matrix for " + profile + " profile.");
   }
   _costs_matrices.insert_or_assign(profile, std::move(m));
+}
+
+void Input::set_soft_skills_options(const SoftSkillsOptions& options) {
+  _soft_skills_options = options;
 }
 
 bool Input::is_used_several_times(const Location& location) const {

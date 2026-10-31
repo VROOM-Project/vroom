@@ -16,11 +16,18 @@ All rights reserved (see LICENSE).
 #include "structures/typedefs.h"
 #include "structures/vroom/input/input.h"
 #include "utils/helpers.h"
+#include "utils/soft_skills.h"
 
 namespace vroom::utils {
 
 struct SolutionIndicators {
   Priority priority_sum{0};
+  // Number of assigned jobs whose soft skills are matched by the
+  // vehicle serving them (raw status-quo match, same predicate as
+  // the operators' pre-move status). Remains 0 for inputs without
+  // any soft-skills, so lexicographic comparisons that factor it in
+  // degrade to the plain ordering on those inputs.
+  uint32_t preference{0};
   unsigned assigned{0};
   Eval eval;
   unsigned used_vehicles{0};
@@ -32,10 +39,27 @@ struct SolutionIndicators {
   template <class Route>
   SolutionIndicators(const Input& input, const std::vector<Route>& sol)
     : SolutionIndicators() {
+    const auto& opts = input.get_soft_skills_options();
+    const bool has_soft_skills = input.has_soft_skills();
+
     Index v_rank = 0;
     for (const auto& r : sol) {
       priority_sum += utils::priority_sum_for_route(input, r.route);
       assigned += r.route.size();
+
+      if (has_soft_skills) {
+        // Status-quo preference count: each job of the route served
+        // by its own vehicle under that vehicle's soft skills.
+        const auto& vehicle_skills = input.vehicles[v_rank].soft_skills;
+        for (const auto j_rank : r.route) {
+          const auto& job = input.jobs[j_rank];
+          if (soft_skill_match(job.soft_skills,
+                               vehicle_skills,
+                               effective_match_mode(job, opts))) {
+            ++preference;
+          }
+        }
+      }
 
       eval += utils::route_eval_for_vehicle(input, v_rank, r.route);
       ++v_rank;

@@ -37,6 +37,14 @@ implicitly become soft constraints. The output is a set of routes
 matching the expected description while minimizing timing violations
 and reporting all constraint violations.
 
+Note on soft-skills: soft-skills fields are ignored in plan mode
+(`-c`). Vehicle assignments are predetermined by the `steps` array,
+so no skill-based job assignment takes place and soft-skills on tasks
+have no effect on the output. Inputs holding `soft_skills`,
+`soft_skill_match_mode` or `options.soft_skills` alongside `steps`
+are accepted without error for backward compatibility, and no
+`soft_skill_preference` object is reported in the solution.
+
 # Input
 
 The problem description is read from standard input or from a file
@@ -47,6 +55,7 @@ The problem description is read from standard input or from a file
 | [`jobs`](#jobs) |  array of `job` objects describing the places to visit |
 | [`shipments`](#shipments) |  array of `shipment` objects describing pickup and delivery tasks |
 | [`vehicles`](#vehicles) |  array of `vehicle` objects describing the available vehicles |
+| [[`options`](#options)] | optional optimization options |
 | [[`matrices`](#matrices)] | optional description of per-profile custom matrices |
 | ~~[`matrix`]~~ | optional two-dimensional array describing a custom matrix |
 
@@ -68,6 +77,8 @@ A `job` object has the following properties:
 | [`delivery`] | an array of integers describing multidimensional quantities for delivery |
 | [`pickup`] | an array of integers describing multidimensional quantities for pickup |
 | [`skills`] | an array of integers defining mandatory skills |
+| [`soft_skills`] | an array of integers defining non-mandatory preferred skills (see [soft skills](#soft-skills)) |
+| [`soft_skill_match_mode`] | a string (either `all` or `any`) setting how `soft_skills` must be matched by a vehicle, overriding `options.soft_skills.default_match_mode` (see [soft skills](#soft-skills)) |
 | [`priority`] | an integer in the `[0, 100]` range describing priority level (defaults to 0) |
 | [`time_windows`] | an array of `time_window` objects describing valid slots for job service start |
 
@@ -83,6 +94,8 @@ A `shipment` object has the following properties:
 | `delivery` | a `shipment_step` object describing delivery |
 | [`amount`] | an array of integers describing multidimensional quantities |
 | [`skills`] | an array of integers defining mandatory skills |
+| [`soft_skills`] | an array of integers defining non-mandatory preferred skills, applying to the shipment as a whole (see [soft skills](#soft-skills)) |
+| [`soft_skill_match_mode`] | a string (either `all` or `any`) setting how `soft_skills` must be matched by a vehicle, overriding `options.soft_skills.default_match_mode` (see [soft skills](#soft-skills)) |
 | [`priority`] | an integer in the `[0, 100]` range describing priority level (defaults to 0) |
 
 A `shipment_step` is similar to a `job` object (expect for shared keys already present in `shipment`):
@@ -101,6 +114,11 @@ A `shipment_step` is similar to a `job` object (expect for shared keys already p
 
 An error is reported if two `delivery` (resp. `pickup`) objects have the same `id`.
 
+Unlike `job` objects, `shipment_step` objects do **not** accept
+`soft_skills` or `soft_skill_match_mode`: those keys describe the
+shipment as a whole and are only valid at `shipment` level. Using them
+on a `pickup` or `delivery` step is an input error.
+
 ## Vehicles
 
 A `vehicle` object has the following properties:
@@ -117,6 +135,7 @@ A `vehicle` object has the following properties:
 | [`capacity`] | an array of integers describing multidimensional quantities |
 | [`costs`] | a `cost` object defining costs for this vehicle |
 | [`skills`] | an array of integers defining skills |
+| [`soft_skills`] | an array of integers defining preferred skills held by this vehicle (see [soft skills](#soft-skills)) |
 | [`type`] | a string describing this vehicle type |
 | [`time_window`] | a `time_window` object describing working hours |
 | [`breaks`] | an array of `break` objects |
@@ -225,6 +244,61 @@ This definition implies in particular that:
 In order to ease modeling problems with no skills required, not
 providing a `skills` key default to providing an empty array.
 
+### Soft skills
+
+Use `soft_skills` to describe situations where several vehicles can
+serve a task without violating any constraint, but some of them are
+preferred. Unlike regular `skills`, soft skills **never** restrict the
+set of feasible assignments: a task is served by a non-matching
+vehicle rather than left unassigned or forcing a hard-constraint
+violation. They bias the optimization: the solver favors solutions
+that assign more tasks to matching vehicles, and within those, the
+usual cost (and distance) minimization applies.
+
+A task with a non-empty `soft_skills` array matches a vehicle
+according to a match mode:
+
+- `"all"`: every soft skill of the task must be held by the vehicle
+  (`task.soft_skills ⊆ vehicle.soft_skills`);
+- `"any"`: at least one soft skill of the task must be held by the
+  vehicle (`task.soft_skills ∩ vehicle.soft_skills ≠ ∅`).
+
+The match mode defaults to `options.soft_skills.default_match_mode`
+(`"all"` unless set otherwise) and can be overridden per task with the
+`soft_skill_match_mode` key.
+
+Rules of thumb:
+
+- soft skills on a `shipment` describe the whole shipment (both the
+  pickup and the delivery legs); they are counted once in the
+  reported preference statistics;
+- a vehicle's `soft_skills` is just a pool used for matching, it
+  imposes nothing on the vehicle;
+- entries of `soft_skills` must be unsigned integers (unlike hard
+  skills, strings are rejected); a non-array value, a non-integer
+  entry or an invalid `soft_skill_match_mode` value is an input error
+  (status code `2`);
+- hard skills always win: `soft_skills` never make a task eligible to
+  a vehicle that fails the hard `skills` check.
+
+Satisfying a preference is not accepted at any price: the incurred
+cost and/or distance must stay within a threshold factor of what
+could be achieved without the preference. All of this is tuned in
+[`options.soft_skills`](#options).
+
+Solutions report how many preferred assignments were achieved with
+the `soft_skill_preference` output object, see
+[output](#soft-skill-preference).
+
+**Backward compatibility**: inputs that use none of `soft_skills`,
+`soft_skill_match_mode` or `options.soft_skills` are processed exactly
+as before, with unchanged solutions and unchanged output (no
+`soft_skill_preference` object is emitted). All soft-skills keys are
+optional and additive.
+
+In plan mode (`-c`), soft-skills fields are ignored, see
+[plan mode](#plan-mode).
+
 ### Task priorities
 
 Useful in situations where not all tasks can be performed, to gain
@@ -302,6 +376,45 @@ In that context:
 An error is raised if for any of the vehicles the provided `steps`
 describe a route that is invalid with regard to any of the
 constraints.
+
+## Options
+
+The optional top-level `options` object holds optimization options.
+
+| Key                | Description |
+| ------------------ | ----------- |
+| [`soft_skills`]    | object fine-tuning how soft-skills preferences are pursued |
+
+### `options.soft_skills`
+
+All keys of `options.soft_skills` are optional; the defaults below
+apply silently when the object or a key is omitted. Unknown keys
+inside `options.soft_skills` are input errors.
+
+| Key | Default | Valid values | Description |
+| --- | ------- | ------------ | ----------- |
+| `default_match_mode` | `"all"` | `"all"`, `"any"` | match mode used for tasks without a `soft_skill_match_mode` override |
+| `threshold_mode` | `"cost"` | `"cost"`, `"distance"`, `"both"` | metric(s) the preference-acceptance threshold is evaluated on |
+| `max_cost_factor` | `1` | number `>= 1` | maximum ratio between the route cost impact of a preference-satisfying assignment and the best cost achievable on non-matching vehicles for the assignment to count as satisfied |
+| `max_distance_factor` | `1` | number `>= 1` | same as `max_cost_factor`, evaluated on distance; only used when `threshold_mode` is `"distance"` or `"both"` |
+| `missing_distance_policy` | `"reject"` | `"reject"`, `"skip_distance"` | behavior when `threshold_mode` involves distance but no distance data is available at evaluation time: `"reject"` makes such preferences never satisfied, `"skip_distance"` drops the distance part of the threshold (in `"both"` mode the cost part still applies) |
+
+A preference counts as **satisfied** when the assigned vehicle matches
+the task's soft skills and the placement passes the threshold: for
+each metric involved in `threshold_mode`, the metric value must not
+exceed `max_*_factor` times the best value achievable across all
+feasible **non-matching** vehicles (a factor of `1` meaning no extra
+cost/distance is tolerated at all). When no feasible non-matching
+alternative exists at all, the threshold passes automatically.
+
+`missing_distance_policy` can only be set together with
+`threshold_mode` `"distance"` or `"both"`, otherwise it is an input
+error. Likewise, `threshold_mode` `"distance"` or `"both"` requires
+distance matrices in input and raises an input error when none are
+provided.
+
+Invalid values (non-string modes, non-number factors, factors lower
+than `1`, unknown keys, ...) raise an input error (status code `2`).
 
 ## Matrices
 
@@ -382,8 +495,13 @@ The `summary` object has the following properties:
 | [`delivery`] | total delivery for all routes |
 | [`pickup`] | total pickup for all routes |
 | [`distance`]* | total distance for all routes |
+| [`soft_skill_preference`]*** | object summarizing soft-skills satisfaction for all routes |
 
 *: provided when using the `-g` flag or passing distance matrices in input.
+
+***: provided when the input holds soft skills, i.e. at least one
+vehicle or task has a non-empty `soft_skills` array (see
+[soft-skill preference](#soft-skill-preference)).
 
 ## Routes
 
@@ -406,9 +524,29 @@ A `route` object has the following properties:
 | [`description`] | vehicle description, if provided in input |
 | [`geometry`]* | polyline encoded route geometry |
 | [`distance`]** | total route distance |
+| [`soft_skill_preference`]*** | object reporting soft-skills satisfaction for this route |
 
 *: provided when using the `-g` flag.
 **: provided when using the `-g` flag or passing distance matrices in input.
+
+***: provided when the input holds soft skills (see
+[soft-skill preference](#soft-skill-preference)).
+
+### Soft-skill preference
+
+The `soft_skill_preference` object has the following properties:
+
+| Key | Description |
+| --- | ----------- |
+| `eligible` | number of assigned tasks that define soft skills (a shipment counts once, through its pickup) |
+| `satisfied` | number of eligible tasks assigned to a matching vehicle within the threshold set in [`options.soft_skills`](#options) |
+| `unsatisfied` | number of eligible tasks that are assigned but not preference-satisfied |
+
+By construction, `eligible = satisfied + unsatisfied` holds for each
+route, and the summary-level object aggregates the route-level ones.
+Unassigned tasks are not counted. The object is omitted entirely when
+the input holds no soft skills, and in plan mode (`-c`, see
+[plan mode](#plan-mode)).
 
 ### Steps
 

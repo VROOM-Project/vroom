@@ -24,6 +24,9 @@ rapidjson::Value to_json(const Summary& summary,
                          bool report_distances,
                          rapidjson::Document::AllocatorType& allocator);
 
+rapidjson::Value to_json(const SoftSkillPreference& preference,
+                         rapidjson::Document::AllocatorType& allocator);
+
 rapidjson::Value to_json(const ComputingTimes& ct,
                          rapidjson::Document::AllocatorType& allocator);
 

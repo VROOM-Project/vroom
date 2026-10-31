@@ -1,0 +1,10 @@
+case_id,mode,task_soft_skills_semicolon,vehicle_soft_skills_semicolon,is_preferred
+all_full,all,101;202,101;202,True
+all_partial,all,101;202,101,False
+any_partial,any,101;202,101,True
+any_none,any,101;202,303,False
+any_full,any,101;202,101;202,True
+all_empty_task,all,,101,False
+any_empty_task,any,,101,False
+all_empty_vehicle,all,101,,False
+any_empty_vehicle,any,101,,False

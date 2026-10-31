@@ -1,0 +1,7 @@
+case_id,distance_factor,cost_factor,reference_distance_m,preferred_distance_m,reference_cost,preferred_cost,both_thresholds_pass
+distance_within,2.0,1.5,1000,1900,100,120,True
+distance_exceeded,2.0,1.5,1000,2100,100,120,False
+distance_equal,2.0,1.5,1000,2000,100,120,True
+cost_exceeded,2.0,1.5,1000,1500,100,151,False
+cost_equal,2.0,1.5,1000,1500,100,150,True
+both_one_exceeded,2.0,1.5,1000,2100,100,110,False

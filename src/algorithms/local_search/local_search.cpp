@@ -7,6 +7,11 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <algorithm>
+#include <cstdint>
+#include <deque>
+#include <functional>
+#include <iostream>
 #include <numeric>
 
 #include "algorithms/local_search/insertion_search.h"
@@ -86,12 +91,69 @@ LocalSearch<Route,
     _sol_state(input),
     _sol(sol),
     _best_sol(sol),
-    _best_sol_indicators(_input, _sol) {
+    _best_sol_indicators(_input, _sol),
+    _preference_scan(_sol) {
   // Initialize all route indices.
   std::iota(_all_routes.begin(), _all_routes.end(), 0);
 
   // Setup solution state.
   _sol_state.setup(_sol);
+}
+
+// Incumbent comparison gate. Inputs without any soft-skills always
+// use the existing Eval-based SolutionIndicators ordering, so the
+// fast path never changes (zero change invariant). Soft-skills
+// inputs get the lexicographic order priority sum > preference
+// count > remaining indicators (assigned jobs, then Eval cost,
+// vehicles, duration, distance, routes hash), which extends the
+// plain ordering by inserting preference right after priority.
+inline bool incumbent_better(const Input& input,
+                             const utils::SolutionIndicators& lhs,
+                             const utils::SolutionIndicators& rhs) {
+  if (!input.has_soft_skills()) {
+    return lhs < rhs;
+  }
+
+  // Strict comparisons only: equal indicators are never "better",
+  // so the incumbent is replaced exclusively on a strict
+  // lexicographic improvement (Q7).
+  if (lhs.priority_sum != rhs.priority_sum) {
+    return lhs.priority_sum > rhs.priority_sum;
+  }
+  if (lhs.preference != rhs.preference) {
+    return lhs.preference > rhs.preference;
+  }
+  return lhs < rhs;
+}
+
+// Gain upper-bound pruning stays sound only while a candidate can
+// win on Eval alone. Preference-aware operators may win on a
+// positive preference delta with any Eval, so the bound is skipped
+// for soft-skills inputs; the subsequent lexicographic key
+// comparison then does the actual filtering.
+inline bool upper_bound_interesting(const Input& input,
+                                    const Eval& current_best_gain,
+                                    const Eval& upper_bound) {
+  return input.has_soft_skills() || current_best_gain < upper_bound;
+}
+
+// State fingerprint for the cycle-detection diagnostic (Task 24):
+// std::hash-based combination of the preference count, the total Eval
+// cost and the (ordered) route sizes carried by the solution
+// indicators. Two distinct states sharing a fingerprint require a hash
+// collision on all three components, which makes the diagnostic
+// false-positive-safe in practice.
+inline std::size_t cycle_state_hash(const utils::SolutionIndicators& indics) {
+  const auto mix = [](std::size_t seed, std::uint64_t value) {
+    return seed ^ (std::hash<std::uint64_t>{}(value) + 0x9e3779b97f4a7c15ULL
+                   + (seed << 6) + (seed >> 2));
+  };
+
+  std::size_t hash = 0;
+  hash = mix(hash, indics.preference);
+  hash = mix(hash, static_cast<std::uint64_t>(indics.eval.cost));
+  hash = mix(hash, indics.routes_hash);
+  return hash;
 }
 
 template <class Route>
@@ -392,10 +454,10 @@ void LocalSearch<Route,
     }
   }
 
-  // Store best gain for matching move.
-  std::vector<std::vector<Eval>> best_gains(_nb_vehicles,
-                                            std::vector<Eval>(_nb_vehicles,
-                                                              Eval()));
+  // Store best key (preference delta, then gain) for matching move.
+  std::vector<std::vector<GainKey>> best_gains(
+    _nb_vehicles,
+    std::vector<GainKey>(_nb_vehicles));
 
   // Store best priority increase and number of assigned tasks for use
   // with operators involving a single route and unassigned jobs
@@ -404,12 +466,26 @@ void LocalSearch<Route,
   std::vector<unsigned> best_removals(_nb_vehicles,
                                       std::numeric_limits<unsigned>::max());
 
+  // Lightweight cycle-detection backstop (Task 24): bounded history of
+  // post-move solution fingerprints (preference count, Eval cost,
+  // route sizes). Purely diagnostic -- the strict lexicographic
+  // incumbent (Task 22) remains the primary anti-cycling mechanism --
+  // and only maintained for soft-skills inputs, so the upstream
+  // Eval-only fast path stays untouched.
+  constexpr std::size_t cycle_history_window = 16;
+  std::deque<std::size_t> state_history;
+  if (_input.has_soft_skills()) {
+    state_history.push_back(
+      cycle_state_hash(utils::SolutionIndicators(_input, _sol)));
+  }
+
   // Dummy init to enter first loop.
-  Eval best_gain(static_cast<Cost>(1));
+  GainKey best_key{0, Eval(static_cast<Cost>(1))};
   Priority best_priority = 0;
   auto best_removal = std::numeric_limits<unsigned>::max();
 
-  while (best_gain.cost > 0 || best_priority > 0) {
+  while (best_key.gain.cost > 0 || best_priority > 0
+         || best_key.preference_delta > 0) {
     if (_deadline.has_value() && _deadline.value() < utils::now()) {
       break;
     }
@@ -501,18 +577,20 @@ void LocalSearch<Route,
                                      s_rank,
                                      t_rank,
                                      u);
+                r.set_preference_context(_preference_scan);
 
+                const auto r_key = r.key();
                 const bool better_if_valid =
                   (best_priorities[source] < priority_gain) ||
-                  (best_priorities[source] == priority_gain &&
-                   best_gains[source][source] < r.gain());
+                  (best_priorities[source] == priority_gain
+                   && best_gains[source][source] < r_key);
 
                 if (better_if_valid && r.is_valid()) {
                   best_priorities[source] = priority_gain;
                   best_removals[source] = 0;
                   // This may potentially define a negative value as
                   // best gain in case priority_gain is non-zero.
-                  best_gains[source][source] = r.gain();
+                  best_gains[source][source] = r_key;
                   best_ops[source][source] =
                     std::make_unique<UnassignedExchange>(r);
                 }
@@ -602,20 +680,21 @@ void LocalSearch<Route,
                               bwd_first_rank,
                               u,
                               best_priorities[source]);
+            r.set_preference_context(_preference_scan);
 
             if (r.is_valid()) {
               const auto priority_gain = r.priority_gain();
               const unsigned removal = _sol[source].size() - r.assigned();
-              const auto gain = r.gain();
+              const auto gain_key = r.key();
               if (std::tie(best_priorities[source],
                            removal,
                            best_gains[source][source]) <
-                  std::tie(priority_gain, best_removals[source], gain)) {
+                  std::tie(priority_gain, best_removals[source], gain_key)) {
                 best_priorities[source] = priority_gain;
                 best_removals[source] = removal;
                 // This may potentially define a negative value as best
                 // gain.
-                best_gains[source][source] = r.gain();
+                best_gains[source][source] = gain_key;
                 best_ops[source][source] = std::make_unique<PriorityReplace>(r);
               }
             }
@@ -749,11 +828,13 @@ void LocalSearch<Route,
                           t_rank,
                           !is_s_pickup,
                           !is_t_pickup);
+          r.set_preference_context(_preference_scan);
 
           auto& current_best = best_gains[source][target];
-          if (current_best < r.gain_upper_bound() && r.is_valid() &&
-              current_best < r.gain()) {
-            current_best = r.gain();
+          if (upper_bound_interesting(_input, current_best.gain,
+                                      r.gain_upper_bound()) &&
+              r.is_valid() && current_best < r.key()) {
+            current_best = r.key();
             best_ops[source][target] = std::make_unique<CrossExchange>(r);
           }
         }
@@ -862,11 +943,13 @@ void LocalSearch<Route,
                             target,
                             t_rank,
                             !is_t_pickup);
+            r.set_preference_context(_preference_scan);
 
             auto& current_best = best_gains[source][target];
-            if (current_best < r.gain_upper_bound() && r.is_valid() &&
-                current_best < r.gain()) {
-              current_best = r.gain();
+            if (upper_bound_interesting(_input, current_best.gain,
+                                        r.gain_upper_bound()) &&
+                r.is_valid() && current_best < r.key()) {
+              current_best = r.key();
               best_ops[source][target] = std::make_unique<MixedExchange>(r);
             }
           }
@@ -984,8 +1067,8 @@ void LocalSearch<Route,
                    target,
                    t_rank);
 
-          if (best_gains[source][target] < r.gain() && r.is_valid()) {
-            best_gains[source][target] = r.gain();
+          if (best_gains[source][target] < r.key() && r.is_valid()) {
+            best_gains[source][target] = r.key();
             best_ops[source][target] = std::make_unique<TwoOpt>(r);
           }
         }
@@ -1084,8 +1167,8 @@ void LocalSearch<Route,
                           target,
                           t_rank);
 
-          if (best_gains[source][target] < r.gain() && r.is_valid()) {
-            best_gains[source][target] = r.gain();
+          if (best_gains[source][target] < r.key() && r.is_valid()) {
+            best_gains[source][target] = r.key();
             best_ops[source][target] = std::make_unique<ReverseTwoOpt>(r);
           }
         }
@@ -1110,11 +1193,13 @@ void LocalSearch<Route,
         const auto& t_pickup_margin = _sol[target].pickup_margin();
 
         for (unsigned s_rank = 0; s_rank < _sol[source].size(); ++s_rank) {
-          if (_sol_state.node_gains[source][s_rank] <=
-              best_gains[source][target]) {
+          if (!upper_bound_interesting(_input,
+                                       best_gains[source][target].gain,
+                                       _sol_state.node_gains[source][s_rank])) {
             // Except if addition cost in target route is negative
             // (!!), overall gain can't exceed current known best
-            // gain.
+            // gain. Skipped for soft-skills inputs since a candidate
+            // may still win on a positive preference delta.
             continue;
           }
 
@@ -1146,9 +1231,11 @@ void LocalSearch<Route,
                        _sol[target],
                        target,
                        t_rank);
+            r.set_preference_context(_preference_scan);
 
-            if (best_gains[source][target] < r.gain() && r.is_valid()) {
-              best_gains[source][target] = r.gain();
+            const auto r_key = r.key();
+            if (best_gains[source][target] < r_key && r.is_valid()) {
+              best_gains[source][target] = r_key;
               best_ops[source][target] = std::make_unique<Relocate>(r);
             }
           }
@@ -1171,7 +1258,7 @@ void LocalSearch<Route,
 
         for (unsigned s_rank = 0; s_rank < _sol[source].size() - 1; ++s_rank) {
           if (_sol_state.edge_gains[source][s_rank] <=
-              best_gains[source][target]) {
+              best_gains[source][target].gain) {
             // Except if addition cost in route target is negative
             // (!!), overall gain can't exceed current known best gain.
             continue;
@@ -1221,9 +1308,9 @@ void LocalSearch<Route,
                     t_rank);
 
             auto& current_best = best_gains[source][target];
-            if (current_best < r.gain_upper_bound() && r.is_valid() &&
-                current_best < r.gain()) {
-              current_best = r.gain();
+            if (current_best.gain < r.gain_upper_bound() && r.is_valid() &&
+                current_best < r.key()) {
+              current_best = r.key();
               best_ops[source][target] = std::make_unique<OrOpt>(r);
             }
           }
@@ -1241,8 +1328,8 @@ void LocalSearch<Route,
 
         TSPFix op(_input, _sol_state, _sol[source], source);
 
-        if (best_gains[source][target] < op.gain() && op.is_valid()) {
-          best_gains[source][target] = op.gain();
+        if (best_gains[source][target] < op.key() && op.is_valid()) {
+          best_gains[source][target] = op.key();
           best_ops[source][target] = std::make_unique<TSPFix>(op);
         }
       }
@@ -1290,8 +1377,8 @@ void LocalSearch<Route,
                           s_rank,
                           t_rank);
 
-          if (best_gains[source][source] < r.gain() && r.is_valid()) {
-            best_gains[source][source] = r.gain();
+          if (best_gains[source][source] < r.key() && r.is_valid()) {
+            best_gains[source][source] = r.key();
             best_ops[source][source] = std::make_unique<IntraExchange>(r);
           }
         }
@@ -1360,9 +1447,9 @@ void LocalSearch<Route,
                                !is_t_pickup);
 
           auto& current_best = best_gains[source][target];
-          if (current_best < r.gain_upper_bound() && r.is_valid() &&
-              current_best < r.gain()) {
-            current_best = r.gain();
+          if (current_best.gain < r.gain_upper_bound() && r.is_valid() &&
+              current_best < r.key()) {
+            current_best = r.key();
             best_ops[source][source] = std::make_unique<IntraCrossExchange>(r);
           }
         }
@@ -1427,9 +1514,9 @@ void LocalSearch<Route,
                                t_rank,
                                !is_t_pickup);
           auto& current_best = best_gains[source][target];
-          if (current_best < r.gain_upper_bound() && r.is_valid() &&
-              current_best < r.gain()) {
-            current_best = r.gain();
+          if (current_best.gain < r.gain_upper_bound() && r.is_valid() &&
+              current_best < r.key()) {
+            current_best = r.key();
             best_ops[source][source] = std::make_unique<IntraMixedExchange>(r);
           }
         }
@@ -1445,7 +1532,7 @@ void LocalSearch<Route,
 
       for (unsigned s_rank = 0; s_rank < _sol[source].size(); ++s_rank) {
         if (_sol_state.node_gains[source][s_rank] <=
-            best_gains[source][source]) {
+            best_gains[source][source].gain) {
           // Except if addition cost in route is negative (!!),
           // overall gain can't exceed current known best gain.
           continue;
@@ -1486,8 +1573,8 @@ void LocalSearch<Route,
                           s_rank,
                           t_rank);
 
-          if (best_gains[source][source] < r.gain() && r.is_valid()) {
-            best_gains[source][source] = r.gain();
+          if (best_gains[source][source] < r.key() && r.is_valid()) {
+            best_gains[source][source] = r.key();
             best_ops[source][source] = std::make_unique<IntraRelocate>(r);
           }
         }
@@ -1518,7 +1605,7 @@ void LocalSearch<Route,
 
         if (is_pickup) {
           if (_sol_state.pd_gains[source][s_rank] <=
-              best_gains[source][source]) {
+              best_gains[source][source].gain) {
             // Except if addition cost in route is negative (!!),
             // overall gain can't exceed current known best gain.
             continue;
@@ -1526,7 +1613,7 @@ void LocalSearch<Route,
         } else {
           // Regular single job.
           if (_sol_state.edge_gains[source][s_rank] <=
-              best_gains[source][source]) {
+              best_gains[source][source].gain) {
             // Except if addition cost in route is negative (!!),
             // overall gain can't exceed current known best gain.
             continue;
@@ -1559,9 +1646,9 @@ void LocalSearch<Route,
                        t_rank,
                        !is_pickup);
           auto& current_best = best_gains[source][target];
-          if (current_best < r.gain_upper_bound() && r.is_valid() &&
-              current_best < r.gain()) {
-            current_best = r.gain();
+          if (current_best.gain < r.gain_upper_bound() && r.is_valid() &&
+              current_best < r.key()) {
+            current_best = r.key();
             best_ops[source][source] = std::make_unique<IntraOrOpt>(r);
           }
         }
@@ -1590,8 +1677,8 @@ void LocalSearch<Route,
                         s_rank,
                         t_rank);
           auto& current_best = best_gains[source][target];
-          if (current_best < r.gain() && r.is_valid()) {
-            current_best = r.gain();
+          if (current_best < r.key() && r.is_valid()) {
+            current_best = r.key();
             best_ops[source][source] = std::make_unique<IntraTwoOpt>(r);
           }
         }
@@ -1631,8 +1718,9 @@ void LocalSearch<Route,
             continue;
           }
 
-          if (_sol_state.pd_gains[source][s_p_rank] <=
-              best_gains[source][target]) {
+          if (!upper_bound_interesting(_input,
+                                       best_gains[source][target].gain,
+                                       _sol_state.pd_gains[source][s_p_rank])) {
             // Except if addition cost in target route is negative
             // (!!), overall gain can't exceed current known best
             // gain.
@@ -1655,10 +1743,12 @@ void LocalSearch<Route,
                       s_d_rank,
                       _sol[target],
                       target,
-                      best_gains[source][target]);
+                      best_gains[source][target].gain);
+          pdr.set_preference_context(_preference_scan);
 
-          if (best_gains[source][target] < pdr.gain() && pdr.is_valid()) {
-            best_gains[source][target] = pdr.gain();
+          const auto pdr_key = pdr.key();
+          if (best_gains[source][target] < pdr_key && pdr.is_valid()) {
+            best_gains[source][target] = pdr_key;
             best_ops[source][target] = std::make_unique<PDShift>(pdr);
           }
         }
@@ -1705,9 +1795,11 @@ void LocalSearch<Route,
                          source,
                          _sol[target],
                          target);
+        re.set_preference_context(_preference_scan);
 
-        if (best_gains[source][target] < re.gain() && re.is_valid()) {
-          best_gains[source][target] = re.gain();
+        const auto re_key = re.key();
+        if (best_gains[source][target] < re_key && re.is_valid()) {
+          best_gains[source][target] = re_key;
           best_ops[source][target] = std::make_unique<RouteExchange>(re);
         }
       }
@@ -1734,10 +1826,12 @@ void LocalSearch<Route,
                    source,
                    _sol[target],
                    target,
-                   best_gains[source][target]);
+                   best_gains[source][target].gain);
+        r.set_preference_context(_preference_scan);
 
-        if (best_gains[source][target] < r.gain()) {
-          best_gains[source][target] = r.gain();
+        const auto r_key = r.key();
+        if (best_gains[source][target] < r_key) {
+          best_gains[source][target] = r_key;
           best_ops[source][target] = std::make_unique<SwapStar>(r);
         }
       }
@@ -1773,10 +1867,12 @@ void LocalSearch<Route,
                        source,
                        empty_route_ranks,
                        _sol,
-                       best_gains[source][target]);
+                       best_gains[source][target].gain);
+          r.set_preference_context(_preference_scan);
 
-          if (best_gains[source][target] < r.gain()) {
-            best_gains[source][target] = r.gain();
+          const auto r_key = r.key();
+          if (best_gains[source][target] < r_key) {
+            best_gains[source][target] = r_key;
             best_ops[source][target] = std::make_unique<RouteSplit>(r);
           }
         }
@@ -1784,19 +1880,20 @@ void LocalSearch<Route,
     }
 
     // Find best overall move, first checking priority increase then
-    // best gain if no priority increase is available.
+    // best key (preference delta, then gain) if no priority increase
+    // is available.
     best_priority = 0;
     best_removal = std::numeric_limits<unsigned>::max();
-    best_gain = Eval();
+    best_key = GainKey();
     Index best_source = 0;
     Index best_target = 0;
 
     for (unsigned s_v = 0; s_v < _nb_vehicles; ++s_v) {
-      if (std::tie(best_priority, best_removals[s_v], best_gain) <
+      if (std::tie(best_priority, best_removals[s_v], best_key) <
           std::tie(best_priorities[s_v], best_removal, best_gains[s_v][s_v])) {
         best_priority = best_priorities[s_v];
         best_removal = best_removals[s_v];
-        best_gain = best_gains[s_v][s_v];
+        best_key = best_gains[s_v][s_v];
         best_source = s_v;
         best_target = s_v;
       }
@@ -1805,8 +1902,8 @@ void LocalSearch<Route,
     if (best_priority == 0) {
       for (unsigned s_v = 0; s_v < _nb_vehicles; ++s_v) {
         for (unsigned t_v = 0; t_v < _nb_vehicles; ++t_v) {
-          if (best_gain < best_gains[s_v][t_v]) {
-            best_gain = best_gains[s_v][t_v];
+          if (best_key < best_gains[s_v][t_v]) {
+            best_key = best_gains[s_v][t_v];
             best_source = s_v;
             best_target = t_v;
           }
@@ -1815,8 +1912,16 @@ void LocalSearch<Route,
     }
 
     // Apply matching operator.
-    if (best_priority > 0 || best_gain.cost > 0) {
+    if (best_priority > 0 || best_key.preference_delta > 0
+        || best_key.gain.cost > 0) {
       assert(best_ops[best_source][best_target] != nullptr);
+
+      // Snapshot of the pre-move solution for the cycle-detection
+      // backstop below (only taken for soft-skills inputs).
+      std::vector<Route> pre_move_sol;
+      if (_input.has_soft_skills()) {
+        pre_move_sol = _sol;
+      }
 
       best_ops[best_source][best_target]->apply();
 
@@ -1859,7 +1964,7 @@ void LocalSearch<Route,
                         [&](auto sum, auto c) {
                           return sum + _sol_state.route_evals[c];
                         });
-      assert(new_eval + best_gain == previous_eval);
+      assert(new_eval + best_key.gain == previous_eval);
 #endif
 
       auto modified_vehicles =
@@ -1877,11 +1982,40 @@ void LocalSearch<Route,
         update_candidates.push_back(v);
       }
 
+      // Cycle-detection diagnostic (Task 24): when the post-move
+      // solution fingerprint matches a recent history entry, the move
+      // reproduces an already-visited state. Log the diagnostic,
+      // restore the pre-move solution and end this local search step,
+      // so the oscillating move is skipped and the caller restarts a
+      // fresh step from a consistent state.
+      if (_input.has_soft_skills()) {
+        const auto post_move_hash =
+          cycle_state_hash(utils::SolutionIndicators(_input, _sol));
+        if (std::find(state_history.begin(),
+                      state_history.end(),
+                      post_move_hash)
+            != state_history.end()) {
+          std::cerr << "[Warning] Soft-skills local search cycle detected "
+                       "(state hash "
+                    << post_move_hash
+                    << "), skipping move and ending local search step."
+                    << std::endl;
+          _sol = std::move(pre_move_sol);
+          _sol_state.setup(_sol);
+          break;
+        }
+
+        state_history.push_back(post_move_hash);
+        if (state_history.size() > cycle_history_window) {
+          state_history.pop_front();
+        }
+      }
+
       // Set gains to zero for what needs to be recomputed in the next
       // round and set route pairs accordingly.
       s_t_pairs.clear();
       for (auto v_rank : update_candidates) {
-        best_gains[v_rank].assign(_nb_vehicles, Eval());
+        best_gains[v_rank].assign(_nb_vehicles, GainKey());
         best_priorities[v_rank] = 0;
         best_removals[v_rank] = std::numeric_limits<unsigned>::max();
         best_ops[v_rank] = std::vector<std::unique_ptr<Operator>>(_nb_vehicles);
@@ -1890,7 +2024,7 @@ void LocalSearch<Route,
       for (unsigned v = 0; v < _nb_vehicles; ++v) {
         for (auto v_rank : update_candidates) {
           if (_input.vehicle_ok_with_vehicle(v, v_rank)) {
-            best_gains[v][v_rank] = Eval();
+            best_gains[v][v_rank] = GainKey();
             best_ops[v][v_rank] = std::unique_ptr<Operator>();
 
             s_t_pairs.emplace_back(v, v_rank);
@@ -1924,7 +2058,7 @@ void LocalSearch<Route,
         }
 
         if (invalidate_move) {
-          best_gains[v][v] = Eval();
+          best_gains[v][v] = GainKey();
           best_priorities[v] = 0;
           best_removals[v] = std::numeric_limits<unsigned>::max();
           best_ops[v][v] = std::unique_ptr<Operator>();
@@ -1981,15 +2115,18 @@ void LocalSearch<Route,
     // A round of local search.
     run_ls_step();
 
-    // Comparison with indicators for current solution.
+    // Comparison with indicators for current solution, through the
+    // soft-skills bypass gate (Eval-only when no soft-skills).
     if (const utils::SolutionIndicators current_sol_indicators(_input, _sol);
-        current_sol_indicators < _best_sol_indicators) {
+        incumbent_better(_input, current_sol_indicators,
+                         _best_sol_indicators)) {
       _best_sol_indicators = current_sol_indicators;
       _best_sol = _sol;
     } else {
       // No improvement so back to previous best known for further
       // steps.
-      if (_best_sol_indicators < current_sol_indicators) {
+      if (incumbent_better(_input, _best_sol_indicators,
+                           current_sol_indicators)) {
         _sol = _best_sol;
         _sol_state.setup(_sol);
       }

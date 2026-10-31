@@ -31,16 +31,24 @@ SwapStar::SwapStar(const Input& input,
 
 void SwapStar::compute_gain() {
   // Similar to cvrp::SwapStar::compute_gain but makes sure to trigger
-  // ls::compute_best_swap_star_choice<TWRoute>.
+  // ls::compute_best_swap_star_choice<TWRoute>. The helper is
+  // generic over the route type, so wiring the preference scan here
+  // gives the same (delta, gain) choice competition as the CVRP
+  // instantiation, with TW-aware insertion evals.
   choice = ls::compute_best_swap_star_choice(_input,
                                              _sol_state,
                                              s_vehicle,
                                              _tw_s_route,
                                              t_vehicle,
                                              _tw_t_route,
-                                             _best_known_gain);
-  if (choice.gain.cost > 0) {
+                                             _best_known_gain,
+                                             has_soft_skills() &&
+                                                     has_preference_context()
+                                                   ? _preference_scan
+                                                   : nullptr);
+  if (choice.gain.cost > 0 || choice.preference_delta > 0) {
     stored_gain = choice.gain;
+    preference_delta = choice.preference_delta;
   }
   gain_computed = true;
 }

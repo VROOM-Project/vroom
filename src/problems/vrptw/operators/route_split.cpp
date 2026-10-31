@@ -45,6 +45,26 @@ void RouteSplit::compute_gain() {
     // back to initial vehicle ranks in _sol.
     _begin_route_rank = _empty_route_ranks[choice.v_begin];
     _end_route_rank = _empty_route_ranks[choice.v_end];
+
+    if (has_soft_skills() && has_preference_context()) {
+      // Net delta across the two resulting routes: each task moves
+      // from s_vehicle to its split vehicle, evaluated against the
+      // frozen (still empty) content of the target route. Shipments
+      // count once through their pickups. Same pattern as
+      // cvrp::RouteSplit::compute_gain, but the base class _sol is a
+      // dummy for this instantiation, so destinations are read from
+      // _tw_sol (TW-aware insertion evals).
+      int delta = 0;
+      for (Index r = 0; r < s_route.size(); ++r) {
+        const auto to_vehicle =
+          (r < choice.split_rank) ? _begin_route_rank : _end_route_rank;
+        // Destination rank is irrelevant on the frozen (empty) split
+        // route, hence 0.
+        delta += task_move_delta(s_route[r], s_vehicle, to_vehicle,
+                                 _tw_sol[to_vehicle], 0);
+      }
+      preference_delta = delta;
+    }
   }
   gain_computed = true;
 }

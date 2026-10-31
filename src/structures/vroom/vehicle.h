@@ -56,6 +56,7 @@ struct Vehicle {
   const std::string profile;
   const Amount capacity;
   const Skills skills;
+  const SoftSkills soft_skills;
   const TimeWindow tw;
   const std::vector<Break> breaks;
   const std::string description;
@@ -88,7 +89,8 @@ struct Vehicle {
     const std::optional<UserDistance>& max_distance =
       std::optional<UserDistance>(),
     const std::vector<VehicleStep>& input_steps = std::vector<VehicleStep>(),
-    std::string type_str = NO_TYPE);
+    std::string type_str = NO_TYPE,
+    SoftSkills soft_skills = SoftSkills());
 
   bool has_start() const;
 

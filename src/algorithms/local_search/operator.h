@@ -10,11 +10,90 @@ All rights reserved (see LICENSE).
 
 */
 
+#include "algorithms/local_search/preference_baselines.h"
 #include "structures/typedefs.h"
 #include "structures/vroom/input/input.h"
 #include "structures/vroom/solution_state.h"
 
 namespace vroom::ls {
+
+// Move acceptance key: net soft-skills preference delta first, then
+// the regular Eval gain. Lexicographic comparison of keys implements
+// the (priority >) preference > Eval hierarchy (Q4/Q5): a
+// preference-gaining move wins over any non-preference move, a
+// preference-losing move never wins on Eval alone. When all deltas
+// are zero the comparison reduces to the upstream Eval-only
+// behavior (zero change invariant).
+struct GainKey {
+  int preference_delta{0};
+  Eval gain;
+
+  friend bool operator<(const GainKey& lhs, const GainKey& rhs) {
+    return std::tie(lhs.preference_delta, lhs.gain)
+           < std::tie(rhs.preference_delta, rhs.gain);
+  }
+};
+
+// Type-erased view on the current solution routes for on-demand
+// preference baseline scans. The LocalSearch instantiation owns a
+// concrete SolutionPreferenceScan<Route> (RawRoute for CVRP, TWRoute
+// for VRPTW) and hands it to the preference-aware operators, so
+// compute_gain() implementations never need to know the concrete
+// route type themselves.
+class PreferenceScanContext {
+public:
+  virtual ~PreferenceScanContext() = default;
+
+  virtual PreferenceBaselines baselines(const Input& input,
+                                        const utils::SolutionState& sol_state,
+                                        Index job_rank) const = 0;
+
+  // Best feasible insertion eval of the task at job_rank (JOB_TYPE::
+  // SINGLE or JOB_TYPE::PICKUP) into the frozen route of vehicle
+  // v_rank; NO_EVAL when no feasible insertion exists.
+  virtual Eval best_insertion(const Input& input,
+                              const utils::SolutionState& sol_state,
+                              Index job_rank,
+                              Index v_rank) const = 0;
+};
+
+template <class Route>
+class SolutionPreferenceScan : public PreferenceScanContext {
+private:
+  const std::vector<Route>& _sol;
+
+public:
+  explicit SolutionPreferenceScan(const std::vector<Route>& sol) : _sol(sol) {
+  }
+
+  PreferenceBaselines baselines(const Input& input,
+                                const utils::SolutionState& sol_state,
+                                Index job_rank) const override {
+    return compute_preference_baselines(input, sol_state, _sol, job_rank);
+  }
+
+  Eval best_insertion(const Input& input,
+                      const utils::SolutionState& sol_state,
+                      Index job_rank,
+                      Index v_rank) const override {
+    assert(input.jobs[job_rank].type == JOB_TYPE::SINGLE
+           || input.jobs[job_rank].type == JOB_TYPE::PICKUP);
+    return (input.jobs[job_rank].type == JOB_TYPE::SINGLE)
+             ? compute_best_insertion_single(input,
+                                             sol_state,
+                                             job_rank,
+                                             v_rank,
+                                             _sol[v_rank])
+                 .eval
+             : compute_best_insertion_pd(input,
+                                         sol_state,
+                                         job_rank,
+                                         v_rank,
+                                         _sol[v_rank],
+                                         NO_EVAL)
+                 .eval;
+  }
+};
 
 class Operator {
 protected:
@@ -38,7 +117,182 @@ protected:
   Eval t_gain;
   Eval stored_gain;
 
+  // Net preference delta of this move over the tasks it relocates
+  // (number of tasks gaining a threshold-qualified match minus the
+  // number losing their current match). Stays 0 unless soft-skills
+  // preference logic is active (Tasks 17-20).
+  int preference_delta{0};
+
+  // Owned by the LocalSearch instantiation; null when no preference
+  // context was wired for this operator.
+  const PreferenceScanContext* _preference_scan{nullptr};
+
   virtual void compute_gain() = 0;
+
+  // True iff the input actually contains soft-skills. Every preference
+  // check added to derived operators (Tasks 17-24) must be gated on
+  // this so that soft-skills-free inputs keep the pure Eval-based
+  // gain behavior (zero change fast path).
+  bool has_soft_skills() const {
+    return _input.has_soft_skills();
+  }
+
+  // True iff compute_gain() may run preference logic: requires both
+  // soft-skills in input and a solution route context for baseline
+  // scans.
+  bool has_preference_context() const {
+    return _preference_scan != nullptr;
+  }
+
+  PreferenceBaselines preference_baselines(Index job_rank) const {
+    return _preference_scan->baselines(_input, _sol_state, job_rank);
+  }
+
+  // Best feasible insertion eval of a task (SINGLE or PICKUP) into
+  // the frozen route of the given vehicle.
+  Eval best_preference_insertion(Index job_rank, Index v_rank) const {
+    return _preference_scan->best_insertion(_input, _sol_state, job_rank,
+                                            v_rank);
+  }
+
+  // Raw (not threshold-qualified) soft-skill match of the task at
+  // job_rank with the given vehicle.
+  bool task_pre_match(Index job_rank, Index v_rank) const {
+    return task_matches_vehicle(_input, job_rank, v_rank);
+  }
+
+  // Post-move preference status of the task at job_rank placed on
+  // vehicle to_vehicle: the vehicle must match the task's soft
+  // skills and the given placement eval must stay within threshold
+  // of the frozen non-match baseline (Q3 auto-pass when no
+  // feasible non-matching alternative exists). A task currently on a
+  // matching vehicle counts as matched for the "pre" side regardless
+  // of threshold: status-quo assignments are not decisions (see
+  // fixture 03).
+  template <class EvalFn>
+  bool task_post_match(Index job_rank,
+                       Index to_vehicle,
+                       EvalFn&& placement_eval) const {
+    if (!task_matches_vehicle(_input, job_rank, to_vehicle)) {
+      return false;
+    }
+    const auto baselines = preference_baselines(job_rank);
+    if (!baselines.nonmatch_feasible) {
+      return true;
+    }
+    return ls::task_post_match(_input,
+                               job_rank,
+                               to_vehicle,
+                               placement_eval(),
+                               baselines);
+  }
+
+  // Placement eval for the task at job_rank after a move to
+  // to_vehicle, landing in the frozen content of route destination
+  // at destination_rank.
+  //
+  // Normal case (destination does not hold the task): the actual
+  // single-job addition eval at the destination rank, or the best
+  // feasible pickup-and-delivery insertion search for a shipment -
+  // destination is to_vehicle's own frozen route there, so the
+  // sol_state insertion ranks used by the search match.
+  //
+  // Diagonal case (whole-route exchange: destination already holds
+  // the task, only the serving vehicle changes): an insertion search
+  // would index destination with to_vehicle rank ranges bound to a
+  // different route (which can exceed the destination size) and
+  // duplicate the pair. Evaluate instead the exact marginal
+  // contribution on destination with the task endpoints stripped,
+  // re-added at their original ranks (same remove-then-readd trick
+  // as the authoritative scorer).
+  template <class Route>
+  Eval placement_eval_after_move(Index job_rank,
+                                 Index to_vehicle,
+                                 const Route& destination,
+                                 Index destination_rank) const {
+    const auto& job = _input.jobs[job_rank];
+    const auto& route = destination.route;
+    const bool in_place =
+      std::find(route.begin(), route.end(), job_rank) != route.end();
+
+    if (!in_place) {
+      return (job.type == JOB_TYPE::SINGLE)
+               ? utils::addition_eval(_input,
+                                      job_rank,
+                                      _input.vehicles[to_vehicle],
+                                      route,
+                                      destination_rank)
+               : compute_best_insertion_pd(_input,
+                                           _sol_state,
+                                           job_rank,
+                                           to_vehicle,
+                                           destination,
+                                           NO_EVAL)
+                     .eval;
+    }
+
+    const auto& vehicle = _input.vehicles[to_vehicle];
+    if (job.type == JOB_TYPE::SINGLE) {
+      std::vector<Index> stripped;
+      stripped.reserve(route.size() - 1);
+      std::copy_if(route.begin(),
+                   route.end(),
+                   std::back_inserter(stripped),
+                   [job_rank](Index other) { return other != job_rank; });
+      return utils::addition_eval(_input, job_rank, vehicle, stripped,
+                                  destination_rank);
+    }
+
+    // Pickup staying in place: its delivery endpoint shares the same
+    // route (shipment atomicity). Strip both endpoints and restore
+    // the original placement by ranks.
+    assert(job.type == JOB_TYPE::PICKUP);
+    const auto delivery_it =
+      std::find(route.begin(), route.end(), job_rank + 1);
+    assert(delivery_it != route.end());
+    const Index delivery_rank = static_cast<Index>(
+      std::distance(route.begin(), delivery_it));
+    std::vector<Index> stripped;
+    stripped.reserve(route.size() - 2);
+    std::copy_if(route.begin(),
+                 route.end(),
+                 std::back_inserter(stripped),
+                 [job_rank](Index other) {
+                   return other != job_rank && other != job_rank + 1;
+                 });
+    return utils::addition_eval(_input,
+                                job_rank,
+                                vehicle,
+                                stripped,
+                                destination_rank,
+                                delivery_rank);
+  }
+
+  // Preference delta of moving the task at job_rank from
+  // from_vehicle to to_vehicle, landing in the frozen content of
+  // route destination at destination_rank. DELIVERY endpoints
+  // contribute nothing: their preference is the PICKUP's (shared
+  // soft skills), counted once per shipment.
+  template <class Route>
+  int task_move_delta(Index job_rank,
+                      Index from_vehicle,
+                      Index to_vehicle,
+                      const Route& destination,
+                      Index destination_rank) const {
+    const auto& job = _input.jobs[job_rank];
+    if (job.type == JOB_TYPE::DELIVERY) {
+      return 0;
+    }
+    const int post = task_post_match(job_rank, to_vehicle,
+                                     [&]() {
+                                       return placement_eval_after_move(
+                                         job_rank, to_vehicle, destination,
+                                         destination_rank);
+                                     })
+                       ? 1
+                       : 0;
+    return post - (task_pre_match(job_rank, from_vehicle) ? 1 : 0);
+  }
 
   bool is_valid_for_source_range_bounds() const;
 
@@ -68,9 +322,33 @@ public:
       t_route(t_raw_route.route),
       t_vehicle(t_vehicle),
       t_rank(t_rank) {
+    if (!input.has_soft_skills()) {
+      // Fast path: no soft-skills in input, so no preference state to
+      // prepare and the operator keeps its exact upstream Eval-only
+      // behavior. Tasks 17-24 add any preference-related construction
+      // strictly after this guard.
+      return;
+    }
+
+    // Placeholder for Tasks 17-24: operator preference state setup.
   }
 
   OperatorName get_name() const;
+
+  // Wire the solution route context used for on-demand preference
+  // baseline scans. Called by LocalSearch on the operators it
+  // evaluates; operators never wired keep preference_delta at 0.
+  void set_preference_context(const PreferenceScanContext& scan) {
+    _preference_scan = &scan;
+  }
+
+  // Acceptance key for this move: preference delta first, then Eval
+  // gain. Gain computation must run first since it is what computes
+  // the preference delta on most operators.
+  GainKey key() {
+    this->gain();
+    return GainKey{preference_delta, stored_gain};
+  }
 
   virtual Eval gain();
 

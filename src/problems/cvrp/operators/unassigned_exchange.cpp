@@ -75,6 +75,22 @@ void UnassignedExchange::compute_gain() {
   }
 
   stored_gain = s_gain;
+
+  if (has_soft_skills() && has_preference_context()) {
+    // The unassigned task has preference status 0 by definition; it
+    // gains one point if it lands on a matching vehicle within
+    // threshold of the frozen non-match baseline. The task kicked out
+    // of the route goes back to unassigned and loses its current
+    // status. Both are single jobs here (shipment endpoints are not
+    // handled by this operator).
+    const int post =
+      task_post_match(_u, s_vehicle,
+                      [&]() { return best_preference_insertion(_u, s_vehicle); })
+        ? 1
+        : 0;
+    preference_delta = post - (task_pre_match(_removed, s_vehicle) ? 1 : 0);
+  }
+
   gain_computed = true;
 }
 

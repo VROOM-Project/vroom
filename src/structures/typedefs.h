@@ -46,6 +46,9 @@ struct Coordinates {
 
 using OptionalCoordinates = std::optional<Coordinates>;
 using Skills = std::unordered_set<Skill>;
+// Intentionally a distinct alias from Skills: soft skills feed a
+// separate preference mechanism, not hard-skills compatibility.
+using SoftSkills = std::unordered_set<Skill>;
 using TimePoint = std::chrono::high_resolution_clock::time_point;
 using Timeout = std::optional<std::chrono::milliseconds>;
 using Deadline = std::optional<TimePoint>;
@@ -113,6 +116,10 @@ struct Server {
 // 'Single' job is a regular one-stop job without precedence
 // constraints.
 enum class JOB_TYPE : std::uint8_t { SINGLE, PICKUP, DELIVERY };
+
+// Available matching modes for job soft skills against vehicle soft
+// skills.
+enum class SoftSkillMatchMode : std::uint8_t { ALL, ANY };
 
 // Available location status.
 enum class STEP_TYPE : std::uint8_t { START, JOB, BREAK, END };

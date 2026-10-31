@@ -10,6 +10,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include "algorithms/local_search/operator.h"
 #include "structures/vroom/solution_indicators.h"
 #include "structures/vroom/solution_state.h"
 
@@ -52,6 +53,11 @@ private:
 
   std::vector<Route>& _best_sol;
   utils::SolutionIndicators _best_sol_indicators;
+
+  // Solution route view handed to preference-aware operators for
+  // on-demand baseline scans (Tasks 17-20). Inert when the input has
+  // no soft-skills.
+  SolutionPreferenceScan<Route> _preference_scan;
 
   std::unordered_set<Index> try_job_additions(const std::vector<Index>& routes,
                                               double regret_coeff);

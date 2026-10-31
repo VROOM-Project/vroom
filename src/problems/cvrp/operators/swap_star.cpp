@@ -42,9 +42,14 @@ void SwapStar::compute_gain() {
                                              source,
                                              t_vehicle,
                                              target,
-                                             _best_known_gain);
-  if (choice.gain.cost > 0) {
+                                             _best_known_gain,
+                                             has_soft_skills() &&
+                                                     has_preference_context()
+                                                   ? _preference_scan
+                                                   : nullptr);
+  if (choice.gain.cost > 0 || choice.preference_delta > 0) {
     stored_gain = choice.gain;
+    preference_delta = choice.preference_delta;
   }
   gain_computed = true;
 }

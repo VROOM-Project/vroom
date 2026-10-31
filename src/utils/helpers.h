@@ -11,6 +11,8 @@ All rights reserved (see LICENSE).
 */
 
 #include <optional>
+#include <format>
+#include <optional>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -687,6 +689,117 @@ void check_no_empty_keys(const TypeToDurationMap& type_to_duration,
 
 using RawSolution = std::vector<RawRoute>;
 using TWSolution = std::vector<TWRoute>;
+
+// Validate the soft-skill preference counts reported for a solution
+// without modifying them. Checks, in order:
+//
+// 1. presence consistency: either summary and every non-empty-count
+//    route all report a soft_skill_preference, or none of them does;
+// 2. for the summary and for every route: no negative (or sentinel
+//    saturated) counts, eligible >= satisfied and eligible >=
+//    unsatisfied;
+// 3. per route: eligible == satisfied + unsatisfied;
+// 4. summary totals match the sums of the route-level counts.
+//
+// Counts are held in std::size_t so true negatives are impossible by
+// type; the saturation guard below still catches corrupted values
+// produced by underflow. Returns nullopt when the solution holds no
+// preference reporting or all invariants hold, otherwise a
+// human-readable description of the first detected violation.
+inline std::optional<std::string>
+validate_preference_invariants(const Summary& summary,
+                               const std::vector<Route>& routes) {
+  constexpr std::size_t count_limit = std::numeric_limits<std::size_t>::max() / 2;
+
+  const auto check_counts = [](const SoftSkillPreference& pref,
+                               const std::string& where)
+    -> std::optional<std::string> {
+    if (pref.eligible > count_limit || pref.satisfied > count_limit ||
+        pref.unsatisfied > count_limit) {
+      return std::format("{}: negative or saturated preference count.", where);
+    }
+    if (pref.eligible < pref.satisfied) {
+      return std::format("{}: eligible ({}) < satisfied ({}).",
+                         where,
+                         pref.eligible,
+                         pref.satisfied);
+    }
+    if (pref.eligible < pref.unsatisfied) {
+      return std::format("{}: eligible ({}) < unsatisfied ({}).",
+                         where,
+                         pref.eligible,
+                         pref.unsatisfied);
+    }
+    if (pref.eligible != pref.satisfied + pref.unsatisfied) {
+      return std::format(
+        "{}: eligible ({}) != satisfied ({}) + unsatisfied ({}).",
+        where,
+        pref.eligible,
+        pref.satisfied,
+        pref.unsatisfied);
+    }
+    return std::nullopt;
+  };
+
+  const auto& summary_pref = summary.soft_skill_preference;
+
+  std::size_t sum_eligible = 0;
+  std::size_t sum_satisfied = 0;
+  std::size_t sum_unsatisfied = 0;
+
+  for (const auto& route : routes) {
+    if (!route.soft_skill_preference.has_value()) {
+      if (summary_pref.has_value()) {
+        return std::format(
+          "Route {} holds no soft_skill_preference while summary does.",
+          route.vehicle);
+      }
+      continue;
+    }
+    if (!summary_pref.has_value()) {
+      return std::format(
+        "Route {} holds a soft_skill_preference while summary does not.",
+        route.vehicle);
+    }
+
+    const auto& pref = route.soft_skill_preference.value();
+    if (const auto violation =
+          check_counts(pref, std::format("Route {}", route.vehicle));
+        violation.has_value()) {
+      return violation;
+    }
+
+    sum_eligible += pref.eligible;
+    sum_satisfied += pref.satisfied;
+    sum_unsatisfied += pref.unsatisfied;
+  }
+
+  if (summary_pref.has_value()) {
+    if (const auto violation = check_counts(*summary_pref, "Summary");
+        violation.has_value()) {
+      return violation;
+    }
+    if (summary_pref->eligible != sum_eligible) {
+      return std::format("Summary eligible ({}) != sum of route eligible ({}).",
+                         summary_pref->eligible,
+                         sum_eligible);
+    }
+    if (summary_pref->satisfied != sum_satisfied) {
+      return std::format(
+        "Summary satisfied ({}) != sum of route satisfied ({}).",
+        summary_pref->satisfied,
+        sum_satisfied);
+    }
+    if (summary_pref->unsatisfied != sum_unsatisfied) {
+      return std::format(
+        "Summary unsatisfied ({}) != sum of route unsatisfied ({}).",
+        summary_pref->unsatisfied,
+        sum_unsatisfied);
+    }
+  }
+
+  return std::nullopt;
+}
 
 Solution format_solution(const Input& input, const RawSolution& raw_routes);
 

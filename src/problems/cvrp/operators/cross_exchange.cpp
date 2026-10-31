@@ -145,6 +145,22 @@ void CrossExchange::compute_gain() {
     }
   }
 
+  if (has_soft_skills() && has_preference_context()) {
+    // Both edges are exchanged; each moved task is evaluated
+    // independently against the frozen pre-move routes (Q6). A
+    // shipment edge counts once through its PICKUP endpoint, the
+    // DELIVERY endpoint contributes nothing. Edge-direction reversal
+    // does not change which pair of ranks receives each task, so the
+    // delta is orientation-agnostic.
+    preference_delta =
+      task_move_delta(s_route[s_rank], s_vehicle, t_vehicle, target, t_rank) +
+      task_move_delta(s_route[s_rank + 1], s_vehicle, t_vehicle, target,
+                      t_rank + 1) +
+      task_move_delta(t_route[t_rank], t_vehicle, s_vehicle, source, s_rank) +
+      task_move_delta(t_route[t_rank + 1], t_vehicle, s_vehicle, source,
+                      s_rank + 1);
+  }
+
   gain_computed = true;
 }
 

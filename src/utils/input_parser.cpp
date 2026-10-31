@@ -147,6 +147,177 @@ inline Priority get_priority(const rapidjson::Value& object) {
   return priority;
 }
 
+inline SoftSkills get_soft_skills(const rapidjson::Value& object) {
+  SoftSkills soft_skills;
+  if (object.HasMember("soft_skills")) {
+    if (!object["soft_skills"].IsArray()) {
+      throw InputException("Invalid soft_skills object.");
+    }
+    for (rapidjson::SizeType i = 0; i < object["soft_skills"].Size(); ++i) {
+      if (!object["soft_skills"][i].IsUint()) {
+        throw InputException("Invalid soft skill value.");
+      }
+      soft_skills.insert(object["soft_skills"][i].GetUint());
+    }
+  }
+
+  return soft_skills;
+}
+
+inline std::optional<SoftSkillMatchMode>
+get_soft_skill_match_mode(const rapidjson::Value& object) {
+  std::optional<SoftSkillMatchMode> match_mode;
+  if (object.HasMember("soft_skill_match_mode")) {
+    if (!object["soft_skill_match_mode"].IsString()) {
+      std::string message("Invalid soft_skill_match_mode");
+      if (object.HasMember("id") && object["id"].IsUint64()) {
+        message += " for task " + std::to_string(object["id"].GetUint64());
+      }
+      throw InputException(message + ": not a string.");
+    }
+    const std::string value(object["soft_skill_match_mode"].GetString());
+    if (value == "all") {
+      match_mode = SoftSkillMatchMode::ALL;
+    } else if (value == "any") {
+      match_mode = SoftSkillMatchMode::ANY;
+    } else {
+      throw InputException("Invalid soft_skill_match_mode: " + value +
+                           ". Expected: all, any.");
+    }
+  }
+
+  return match_mode;
+}
+
+inline SoftSkillsOptions
+get_soft_skills_options(const rapidjson::Value& json_options) {
+  if (!json_options.IsObject()) {
+    throw InputException("Invalid options.soft_skills object.");
+  }
+
+  for (const auto& member : json_options.GetObject()) {
+    const std::string key(member.name.GetString());
+    if (key != "default_match_mode" && key != "threshold_mode" &&
+        key != "max_cost_factor" && key != "max_distance_factor" &&
+        key != "missing_distance_policy") {
+      throw InputException("Unknown key in options.soft_skills: " + key + ".");
+    }
+  }
+
+  SoftSkillsOptions options;
+
+  if (json_options.HasMember("default_match_mode")) {
+    if (!json_options["default_match_mode"].IsString()) {
+      throw InputException("Invalid default_match_mode value.");
+    }
+    const std::string value(json_options["default_match_mode"].GetString());
+    if (value == "all") {
+      options.default_match_mode = SoftSkillMatchMode::ALL;
+    } else if (value == "any") {
+      options.default_match_mode = SoftSkillMatchMode::ANY;
+    } else {
+      throw InputException("Invalid default_match_mode: " + value +
+                           ". Expected: all, any.");
+    }
+  }
+
+  if (json_options.HasMember("threshold_mode")) {
+    if (!json_options["threshold_mode"].IsString()) {
+      throw InputException("Invalid threshold_mode value.");
+    }
+    const std::string value(json_options["threshold_mode"].GetString());
+    if (value == "cost") {
+      options.threshold_mode = ThresholdMode::COST;
+    } else if (value == "distance") {
+      options.threshold_mode = ThresholdMode::DISTANCE;
+    } else if (value == "both") {
+      options.threshold_mode = ThresholdMode::BOTH;
+    } else {
+      throw InputException("Invalid threshold_mode: " + value +
+                           ". Expected: cost, distance, both.");
+    }
+  }
+
+  if (json_options.HasMember("max_cost_factor")) {
+    if (!json_options["max_cost_factor"].IsNumber()) {
+      throw InputException("Invalid max_cost_factor value.");
+    }
+    options.max_cost_factor = json_options["max_cost_factor"].GetDouble();
+    if (options.max_cost_factor < 1.) {
+      throw InputException(
+        std::format("Invalid max_cost_factor: {}. Expected a value greater "
+                    "than or equal to 1.",
+                    options.max_cost_factor));
+    }
+  }
+
+  if (json_options.HasMember("max_distance_factor")) {
+    if (!json_options["max_distance_factor"].IsNumber()) {
+      throw InputException("Invalid max_distance_factor value.");
+    }
+    options.max_distance_factor =
+      json_options["max_distance_factor"].GetDouble();
+    if (options.max_distance_factor < 1.) {
+      throw InputException(
+        std::format("Invalid max_distance_factor: {}. Expected a value greater "
+                    "than or equal to 1.",
+                    options.max_distance_factor));
+    }
+  }
+
+  if (json_options.HasMember("missing_distance_policy")) {
+    if (options.threshold_mode == ThresholdMode::COST) {
+      throw InputException(
+        "Invalid missing_distance_policy: only applicable when "
+        "options.soft_skills.threshold_mode involves distance "
+        "(distance or both).");
+    }
+    if (!json_options["missing_distance_policy"].IsString()) {
+      throw InputException("Invalid missing_distance_policy value.");
+    }
+    const std::string value(json_options["missing_distance_policy"].GetString());
+    if (value == "reject") {
+      options.missing_distance_policy = MissingDistancePolicy::REJECT;
+    } else if (value == "skip_distance") {
+      options.missing_distance_policy = MissingDistancePolicy::SKIP_DISTANCE;
+    } else {
+      throw InputException("Invalid missing_distance_policy: " + value +
+                           ". Expected: reject, skip_distance.");
+    }
+  }
+
+  return options;
+}
+
+inline void parse_options(Input& input, const rapidjson::Value& json_input) {
+  if (!json_input.HasMember("options")) {
+    return;
+  }
+  if (!json_input["options"].IsObject()) {
+    throw InputException("Invalid options object.");
+  }
+
+  const auto& json_options = json_input["options"];
+
+  // Defaults silently apply when no soft_skills options are provided.
+  if (!json_options.HasMember("soft_skills")) {
+    return;
+  }
+
+  const auto options = get_soft_skills_options(json_options["soft_skills"]);
+
+  if ((options.threshold_mode == ThresholdMode::DISTANCE ||
+       options.threshold_mode == ThresholdMode::BOTH) &&
+      !input.has_distance_data()) {
+    throw InputException(
+      "Invalid options.soft_skills: distance data required for "
+      "threshold_mode \"distance\" or \"both\" but no distances matrix "
+      "is provided in input.");
+  }
+
+  input.set_soft_skills_options(options);
+}
+
 template <typename T>
 inline std::optional<T> get_value_for(const rapidjson::Value& object,
                                       const char* key) {
@@ -460,6 +631,24 @@ inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
     profile = DEFAULT_PROFILE;
   }
 
+  // Duplicates allowed; the unordered_set deduplicates.
+  SoftSkills soft_skills;
+  if (json_vehicle.HasMember("soft_skills")) {
+    if (!json_vehicle["soft_skills"].IsArray()) {
+      throw InputException(
+        std::format("Invalid soft_skills for vehicle {}.", v_id));
+    }
+
+    for (rapidjson::SizeType i = 0; i < json_vehicle["soft_skills"].Size();
+         ++i) {
+      if (!json_vehicle["soft_skills"][i].IsUint()) {
+        throw InputException(
+          std::format("Invalid soft skill value for vehicle {}.", v_id));
+      }
+      soft_skills.insert(json_vehicle["soft_skills"][i].GetUint());
+    }
+  }
+
   return Vehicle(v_id,
                  start,
                  end,
@@ -475,7 +664,8 @@ inline Vehicle get_vehicle(const rapidjson::Value& json_vehicle,
                  get_value_for<UserDuration>(json_vehicle, "max_travel_time"),
                  get_value_for<UserDistance>(json_vehicle, "max_distance"),
                  get_vehicle_steps(json_vehicle),
-                 get_string(json_vehicle, "type"));
+                 get_string(json_vehicle, "type"),
+                 soft_skills);
 }
 
 inline Location get_task_location(const rapidjson::Value& v,
@@ -511,6 +701,16 @@ inline Job get_job(const rapidjson::Value& json_job, unsigned amount_size) {
                                   !json_job.HasMember("delivery") &&
                                   !json_job.HasMember("pickup");
 
+  auto soft_skills = get_soft_skills(json_job);
+  const auto soft_skill_match_mode = get_soft_skill_match_mode(json_job);
+
+  if (soft_skill_match_mode.has_value() && soft_skills.empty()) {
+    throw InputException(
+      std::format("Invalid soft_skill_match_mode for job {}: soft_skills "
+                  "must be non-empty when soft_skill_match_mode is set.",
+                  json_job["id"].GetUint64()));
+  }
+
   return Job(json_job["id"].GetUint64(),
              get_task_location(json_job, "job"),
              get_duration(json_job, "setup"),
@@ -523,7 +723,9 @@ inline Job get_job(const rapidjson::Value& json_job, unsigned amount_size) {
              get_time_windows(json_job, "job"),
              get_string(json_job, "description"),
              get_duration_per_type(json_job, "setup_per_type", "job"),
-             get_duration_per_type(json_job, "service_per_type", "job"));
+             get_duration_per_type(json_job, "service_per_type", "job"),
+             std::move(soft_skills),
+             soft_skill_match_mode);
 }
 
 template <class T> inline Matrix<T> get_matrix(rapidjson::Value& m) {
@@ -617,10 +819,25 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
       auto amount = get_amount(json_shipment, "amount", amount_size);
       auto skills = get_skills(json_shipment);
       auto priority = get_priority(json_shipment);
+      auto soft_skills = get_soft_skills(json_shipment);
+      const auto soft_skill_match_mode =
+        get_soft_skill_match_mode(json_shipment);
+
+      if (soft_skill_match_mode.has_value() && soft_skills.empty()) {
+        throw InputException("Invalid soft_skill_match_mode for shipment: "
+                             "soft_skills must be non-empty when "
+                             "soft_skill_match_mode is set.");
+      }
 
       // Defining pickup job.
       auto& json_pickup = json_shipment["pickup"];
       check_id(json_pickup, "pickup");
+
+      if (json_pickup.HasMember("soft_skills") ||
+          json_pickup.HasMember("soft_skill_match_mode")) {
+        throw InputException(
+          "Endpoint-level soft_skills not allowed on shipment pickup.");
+      }
 
       const Job pickup(json_pickup["id"].GetUint64(),
                        JOB_TYPE::PICKUP,
@@ -637,11 +854,19 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
                                              "pickup"),
                        get_duration_per_type(json_pickup,
                                              "service_per_type",
-                                             "pickup"));
+                                             "pickup"),
+                       soft_skills,
+                       soft_skill_match_mode);
 
       // Defining delivery job.
       auto& json_delivery = json_shipment["delivery"];
       check_id(json_delivery, "delivery");
+
+      if (json_delivery.HasMember("soft_skills") ||
+          json_delivery.HasMember("soft_skill_match_mode")) {
+        throw InputException(
+          "Endpoint-level soft_skills not allowed on shipment delivery.");
+      }
 
       const Job delivery(json_delivery["id"].GetUint64(),
                          JOB_TYPE::DELIVERY,
@@ -656,9 +881,11 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
                          get_duration_per_type(json_delivery,
                                                "setup_per_type",
                                                "delivery"),
-                         get_duration_per_type(json_delivery,
-                                               "service_per_type",
-                                               "delivery"));
+                       get_duration_per_type(json_delivery,
+                                             "service_per_type",
+                                             "delivery"),
+                       soft_skills,
+                       soft_skill_match_mode);
 
       input.add_shipment(pickup, delivery);
     }
@@ -696,6 +923,10 @@ void parse(Input& input, const std::string& input_str, bool geometry) {
                                    json_input["matrix"]));
     }
   }
+
+  // Parse options once all matrices are loaded so that cross-checks
+  // can rely on the whole input.
+  parse_options(input, json_input);
 }
 
 } // namespace vroom::io

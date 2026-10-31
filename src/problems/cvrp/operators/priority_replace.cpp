@@ -70,10 +70,72 @@ void PriorityReplace::compute_gain() {
   assert(_start_gain_computed || !replace_start_valid);
   assert(_end_gain_computed || !replace_end_valid);
 
+  int start_delta = 0;
+  int end_delta = 0;
+
+  if (has_soft_skills() && has_preference_context()) {
+    // Preference tiebreak below the priority gain (Q5: preference
+    // never blocks a priority improvement): the unassigned job joins
+    // s_vehicle (status 0 to 0/1, evaluated on the marginal cost it
+    // adds to the remaining route content) while the replaced route
+    // portion goes back to unassigned and loses whatever match it
+    // held. Shipment portions count once through their pickups.
+    const auto replaced_match_count = [&](Index first, Index last) {
+      int lost = 0;
+      for (Index r = first; r < last; ++r) {
+        const auto& job = _input.jobs[s_route[r]];
+        if (job.type != JOB_TYPE::DELIVERY &&
+            task_pre_match(s_route[r], s_vehicle)) {
+          ++lost;
+        }
+      }
+      return lost;
+    };
+
+    std::vector<Index> rest_begin(s_route.begin() + s_rank + 1, s_route.end());
+    std::vector<Index> rest_end(s_route.begin(), s_route.begin() + t_rank);
+
+    const int post_begin =
+      task_post_match(_u,
+                      s_vehicle,
+                      [&]() {
+                        return utils::addition_eval(_input,
+                                                    _u,
+                                                    _input.vehicles[s_vehicle],
+                                                    rest_begin,
+                                                    0);
+                      })
+            ? 1
+            : 0;
+    const int post_end =
+      task_post_match(_u,
+                      s_vehicle,
+                      [&]() {
+                        return utils::addition_eval(_input,
+                                                    _u,
+                                                    _input.vehicles[s_vehicle],
+                                                    rest_end,
+                                                    rest_end.size());
+                      })
+            ? 1
+            : 0;
+
+    start_delta = post_begin - replaced_match_count(0, s_rank + 1);
+    end_delta = post_end - replaced_match_count(t_rank, s_route.size());
+  }
+
   if (replace_start_valid && replace_end_valid) {
-    // Decide based on priority and cost.
-    if (std::tie(_end_priority_gain, _end_assigned_number, t_gain) <
-        std::tie(_start_priority_gain, _start_assigned_number, s_gain)) {
+    // Decide based on priority, then preference tiebreak, then cost.
+    if (has_soft_skills() && has_preference_context()) {
+      if (std::tie(_end_priority_gain, end_delta, _end_assigned_number,
+                   t_gain) < std::tie(_start_priority_gain, start_delta,
+                                      _start_assigned_number, s_gain)) {
+        replace_end_valid = false;
+      } else {
+        replace_start_valid = false;
+      }
+    } else if (std::tie(_end_priority_gain, _end_assigned_number, t_gain) <
+               std::tie(_start_priority_gain, _start_assigned_number, s_gain)) {
       replace_end_valid = false;
     } else {
       replace_start_valid = false;
@@ -82,9 +144,11 @@ void PriorityReplace::compute_gain() {
 
   if (replace_start_valid) {
     stored_gain = s_gain;
+    preference_delta = start_delta;
   } else {
     assert(replace_end_valid);
     stored_gain = t_gain;
+    preference_delta = end_delta;
   }
 
   gain_computed = true;

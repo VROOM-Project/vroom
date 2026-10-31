@@ -39,3 +39,48 @@ jobs:
         env:
           CXX: ${{ matrix.cxx }}
         working-directory: libvroom_examples
+      - name: Build soft-skills test harness (matrix)
+        run: make -j -C test/soft_skills USE_ROUTING=false
+        env:
+          CXX: ${{ matrix.cxx }}
+      - name: Run soft-skills tests
+        run: ./test/soft_skills/test_runner
+  tsan:
+    name: vroom + ThreadSanitizer (separate variant, not default)
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install libasio-dev
+      - name: Build vroom with ThreadSanitizer
+        run: make -j USE_ROUTING=false CXX="g++-14 -fsanitize=thread -g"
+        working-directory: src
+      - name: Build soft-skills test harness with ThreadSanitizer
+        run: >-
+          make -j -C test/soft_skills USE_ROUTING=false
+          CXX="g++-14 -fsanitize=thread -g"
+      - name: Run soft-skills tests under ThreadSanitizer
+        env:
+          TSAN_OPTIONS: halt_on_error=0
+        run: ./test/soft_skills/test_runner
+      - name: Run soft-skills fixtures multi-threaded under ThreadSanitizer
+        env:
+          TSAN_OPTIONS: halt_on_error=0
+        run: |
+          fail=0
+          for fixture in vroom_soft_skill_fixtures/*.json; do
+            echo "::group::$fixture"
+            ./bin/vroom -t 4 -i "$fixture" > /dev/null 2> tsan.log || fail=1
+            if grep -q "ThreadSanitizer" tsan.log; then
+              echo "ThreadSanitizer warnings for $fixture:"
+              cat tsan.log
+              fail=1
+            fi
+            echo "::endgroup::"
+          done
+          exit $fail
