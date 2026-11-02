@@ -47,6 +47,15 @@ void Input::add_routing_wrapper(const std::string& profile) {
     throw InputException("Missing coordinates for routing engine.");
   }
 
+  for (const auto& location : _locations) {
+    if (location.lon() < -180 || location.lon() > 180 || location.lat() < -90 ||
+        location.lat() > 90) {
+      throw InputException(std::format("Invalid coordinates: [{},{}].",
+                                       location.lon(),
+                                       location.lat()));
+    }
+  }
+
   assert(std::find_if(_routing_wrappers.begin(),
                       _routing_wrappers.end(),
                       [&](const auto& wr) { return wr->profile == profile; }) ==
