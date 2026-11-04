@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Added
+
+#### Features
+
+- `osrm_post` routing engine sending requests to OSRM as POST with a JSON body (#1365)
+
+### Changed
+
+#### Internals
+
+- Share POST query building across HTTP routing wrappers via `HttpWrapper::build_post_query` (#1365)
+- Add `io::json_to_string` and use it in `write_to_output` (#1365)
+- Parse `-r` routing engine values from a lookup table (#1365)
+
 ### Fixed
 
 #### Internals
