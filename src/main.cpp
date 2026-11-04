@@ -9,6 +9,7 @@ All rights reserved (see LICENSE).
 
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <sstream>
 
 #if USE_LIBOSRM
@@ -23,6 +24,13 @@ All rights reserved (see LICENSE).
 #include "utils/input_parser.h"
 #include "utils/output_json.h"
 #include "utils/version.h"
+
+const std::map<std::string, vroom::ROUTER> ROUTERS =
+  {{"libosrm", vroom::ROUTER::LIBOSRM},
+   {"osrm", vroom::ROUTER::OSRM},
+   {"osrm_post", vroom::ROUTER::OSRM_POST},
+   {"ors", vroom::ROUTER::ORS},
+   {"valhalla", vroom::ROUTER::VALHALLA}};
 
 int main(int argc, char** argv) {
   vroom::io::CLArgs cl_args;
@@ -70,7 +78,7 @@ int main(int argc, char** argv) {
      "host port for the routing profile",
      cxxopts::value<std::vector<std::string>>(port_args)->default_value({vroom::DEFAULT_PROFILE + ":5000"}))
     ("r,router",
-     "osrm, libosrm, ors or valhalla",
+     "osrm, osrm_post, libosrm, ors or valhalla",
      cxxopts::value<std::string>(router_arg)->default_value("osrm"))
     ("t,threads",
      "number of available threads",
@@ -152,22 +160,16 @@ int main(int argc, char** argv) {
   exploration_level = std::min(exploration_level, vroom::MAX_EXPLORATION_LEVEL);
   cl_args.set_exploration_level(exploration_level);
 
-  // Determine routing engine (defaults to ROUTER::OSRM).
-  if (router_arg == "libosrm") {
-    cl_args.router = vroom::ROUTER::LIBOSRM;
-  } else if (router_arg == "ors") {
-    cl_args.router = vroom::ROUTER::ORS;
-  } else if (router_arg == "valhalla") {
-    cl_args.router = vroom::ROUTER::VALHALLA;
-  } else if (!router_arg.empty() && router_arg != "osrm") {
+  // Determine routing engine (an empty value defaults to ROUTER::OSRM).
+  const auto router = ROUTERS.find(router_arg.empty() ? "osrm" : router_arg);
+  if (router == ROUTERS.end()) {
     const auto e =
       vroom::InputException("Invalid routing engine: " + router_arg + ".");
     std::cerr << "[Error] " << e.message << std::endl;
     vroom::io::write_to_json(e, cl_args.output_file);
     exit(e.error_code);
-  } else {
-    cl_args.router = vroom::ROUTER::OSRM;
   }
+  cl_args.router = router->second;
 
   // Get input problem from first input file, then positional arg,
   // then stdin.

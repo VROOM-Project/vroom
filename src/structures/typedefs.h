@@ -90,7 +90,7 @@ constexpr auto DEFAULT_MAX_TRAVEL_TIME = std::numeric_limits<Duration>::max();
 constexpr auto DEFAULT_MAX_DISTANCE = std::numeric_limits<Distance>::max();
 
 // Available routing engines.
-enum class ROUTER : std::uint8_t { OSRM, LIBOSRM, ORS, VALHALLA };
+enum class ROUTER : std::uint8_t { OSRM, LIBOSRM, ORS, VALHALLA, OSRM_POST };
 
 // Used to describe a routing server.
 struct Server {

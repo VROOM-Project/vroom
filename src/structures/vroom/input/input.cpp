@@ -23,6 +23,7 @@ All rights reserved (see LICENSE).
 #include "routing/libosrm_wrapper.h"
 #endif
 #include "routing/ors_wrapper.h"
+#include "routing/osrm_post_routed_wrapper.h"
 #include "routing/osrm_routed_wrapper.h"
 #include "routing/valhalla_wrapper.h"
 #include "structures/vroom/input/input.h"
@@ -63,6 +64,14 @@ void Input::add_routing_wrapper(const std::string& profile) {
     }
     routing_wrapper =
       std::make_unique<routing::OsrmRoutedWrapper>(profile, search->second);
+  } break;
+  case ROUTER::OSRM_POST: {
+    auto search = _servers.find(profile);
+    if (search == _servers.end()) {
+      throw InputException("Invalid profile: " + profile + ".");
+    }
+    routing_wrapper =
+      std::make_unique<routing::OsrmPostRoutedWrapper>(profile, search->second);
   } break;
   case ROUTER::LIBOSRM:
 #if USE_LIBOSRM
