@@ -1,27 +1,26 @@
 #ifndef OSRM_POST_ROUTED_WRAPPER_H
 #define OSRM_POST_ROUTED_WRAPPER_H
 
-#include "routing/http_wrapper.h"
-#include <map>
+/*
+
+This file is part of VROOM.
+
+Copyright (c) 2015-2025, Julien Coupey.
+All rights reserved (see LICENSE).
+
+*/
+
+#include "routing/osrm_routed_wrapper.h"
 
 namespace vroom::routing {
 
-class OsrmPostRoutedWrapper : public HttpWrapper {
+class OsrmPostRoutedWrapper : public OsrmRoutedWrapper {
 private:
   std::string build_query(const std::vector<Location>& locations,
                           const std::string& service) const override;
 
-  void check_response(const rapidjson::Document& json_result,
-                      const std::vector<Location>& locs,
-                      const std::string& service) const override;
-
-  const rapidjson::Value&
-  get_legs(const rapidjson::Value& result) const override;
-
   std::string build_request_body(const std::vector<Location>& locations,
                                  const std::string& service) const;
-
-  std::map<std::string, rapidjson::Value> get_routing_args_as_map() const;
 
 public:
   OsrmPostRoutedWrapper(const std::string& profile, const Server& server);

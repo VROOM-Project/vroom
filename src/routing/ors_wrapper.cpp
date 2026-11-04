@@ -44,18 +44,7 @@ std::string OrsWrapper::build_query(const std::vector<Location>& locations,
   }
   body += "}";
 
-  // Building query for ORS
-  std::string query = "POST /" + _server.path + service + "/" + profile;
-
-  query += " HTTP/1.0\r\n";
-  query += "Accept: */*\r\n";
-  query += "Content-Type: application/json\r\n";
-  query += std::format("Content-Length: {}\r\n", body.size());
-  query += "Host: " + _server.host + ":" + _server.port + "\r\n";
-  query += "Connection: close\r\n";
-  query += "\r\n" + body;
-
-  return query;
+  return build_post_query(service + "/" + profile, body);
 }
 
 void OrsWrapper::check_response(const rapidjson::Document& json_result,
