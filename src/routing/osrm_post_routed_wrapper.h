@@ -23,10 +23,6 @@ private:
 
   std::map<std::string, rapidjson::Value> get_routing_args_as_map() const;
 
-  std::vector<std::string> split(const std::string& str, char delimiter) const;
-
-  std::string json_to_string(const rapidjson::Document& docs) const;
-
 public:
   OsrmPostRoutedWrapper(const std::string& profile, const Server& server);
 };

@@ -8,8 +8,7 @@ All rights reserved (see LICENSE).
 */
 
 #include "routing/osrm_post_routed_wrapper.h"
-#include "../include/rapidjson/include/rapidjson/stringbuffer.h"
-#include "../include/rapidjson/include/rapidjson/writer.h"
+#include "utils/helpers.h"
 
 namespace vroom::routing {
 
@@ -67,10 +66,7 @@ std::string OsrmPostRoutedWrapper::build_request_body(
     }
   }
   docs.Swap(body);
-  rapidjson::StringBuffer buffer;
-  rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-  docs.Accept(writer);
-  return std::string(buffer.GetString(), buffer.GetSize());
+  return vroom::utils::json_to_string(docs);
 }
 
 void OsrmPostRoutedWrapper::check_response(
@@ -111,9 +107,10 @@ OsrmPostRoutedWrapper::get_legs(const rapidjson::Value& result) const {
 std::map<std::string, rapidjson::Value>
 OsrmPostRoutedWrapper::get_routing_args_as_map() const {
   std::map<std::string, rapidjson::Value> mapping;
-  std::vector<std::string> keys_values = split(this->_routing_args, '&');
+  std::vector<std::string> keys_values =
+    vroom::utils::split(this->_routing_args, '&');
   for (const auto& k_v : keys_values) {
-    std::vector<std::string> key_and_value = split(k_v, '=');
+    std::vector<std::string> key_and_value = vroom::utils::split(k_v, '=');
     std::string& key = key_and_value[0];
     std::string& value = key_and_value[1];
     mapping[key] = value == "true" ? rapidjson::Value(true)
@@ -122,22 +119,6 @@ OsrmPostRoutedWrapper::get_routing_args_as_map() const {
                      : rapidjson::Value(value.c_str(), value.length());
   }
   return mapping;
-}
-
-std::vector<std::string> OsrmPostRoutedWrapper::split(const std::string& str,
-                                                      char delimiter) const {
-  std::vector<std::string> tokens;
-  size_t start = 0;
-  size_t end = str.find(delimiter);
-
-  while (end != std::string::npos) {
-    tokens.push_back(str.substr(start, end - start));
-    start = end + 1;
-    end = str.find(delimiter, start);
-  }
-
-  tokens.push_back(str.substr(start));
-  return tokens;
 }
 
 } // namespace vroom::routing
