@@ -9,6 +9,7 @@ All rights reserved (see LICENSE).
 
 #include "routing/osrm_post_routed_wrapper.h"
 #include "utils/helpers.h"
+#include "utils/output_json.h"
 
 namespace vroom::routing {
 
@@ -66,7 +67,7 @@ std::string OsrmPostRoutedWrapper::build_request_body(
     }
   }
   docs.Swap(body);
-  return vroom::utils::json_to_string(docs);
+  return io::json_to_string(docs);
 }
 
 void OsrmPostRoutedWrapper::check_response(

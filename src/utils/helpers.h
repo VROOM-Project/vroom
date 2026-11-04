@@ -21,8 +21,6 @@ All rights reserved (see LICENSE).
 #include "structures/vroom/tw_route.h"
 #include "utils/exception.h"
 
-#include "../include/rapidjson/include/rapidjson/document.h"
-
 namespace vroom::utils {
 
 template <typename T> T round(double value) {
@@ -697,8 +695,6 @@ Route format_route(const Input& input,
                    std::unordered_set<Index>& unassigned_ranks);
 
 Solution format_solution(const Input& input, const TWSolution& tw_routes);
-
-std::string json_to_string(const rapidjson::Document& docs);
 
 std::vector<std::string> split(const std::string& str, char delimiter);
 

@@ -12,9 +12,6 @@ All rights reserved (see LICENSE).
 #include <numeric>
 #include <sstream>
 
-#include "../include/rapidjson/include/rapidjson/stringbuffer.h"
-#include "../include/rapidjson/include/rapidjson/writer.h"
-
 #include "utils/helpers.h"
 
 namespace vroom::utils {
@@ -831,13 +828,6 @@ Solution format_solution(const Input& input, const TWSolution& tw_routes) {
   return Solution(input.zero_amount(),
                   std::move(routes),
                   get_unassigned_jobs_from_ranks(input, unassigned_ranks));
-}
-
-std::string json_to_string(const rapidjson::Document& docs) {
-  rapidjson::StringBuffer buffer;
-  rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-  docs.Accept(writer);
-  return std::string(buffer.GetString(), buffer.GetSize());
 }
 
 std::vector<std::string> split(const std::string& str, char delimiter) {
