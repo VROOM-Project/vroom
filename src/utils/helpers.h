@@ -696,8 +696,6 @@ Route format_route(const Input& input,
 
 Solution format_solution(const Input& input, const TWSolution& tw_routes);
 
-std::vector<std::string> split(const std::string& str, char delimiter);
-
 } // namespace vroom::utils
 
 #endif
