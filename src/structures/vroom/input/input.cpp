@@ -56,23 +56,18 @@ void Input::add_routing_wrapper(const std::string& profile) {
   auto& routing_wrapper = _routing_wrappers.emplace_back();
 
   switch (_router) {
-  case ROUTER::OSRM: {
+  case ROUTER::OSRM:
     // Use osrm-routed.
-    auto search = _servers.find(profile);
-    if (search == _servers.end()) {
-      throw InputException("Invalid profile: " + profile + ".");
-    }
     routing_wrapper =
-      std::make_unique<routing::OsrmRoutedWrapper>(profile, search->second);
-  } break;
-  case ROUTER::OSRM_POST: {
-    auto search = _servers.find(profile);
-    if (search == _servers.end()) {
-      throw InputException("Invalid profile: " + profile + ".");
-    }
+      std::make_unique<routing::OsrmRoutedWrapper>(profile,
+                                                   get_server(profile));
+    break;
+  case ROUTER::OSRM_POST:
+    // Use osrm-routed with POST requests.
     routing_wrapper =
-      std::make_unique<routing::OsrmPostRoutedWrapper>(profile, search->second);
-  } break;
+      std::make_unique<routing::OsrmPostRoutedWrapper>(profile,
+                                                       get_server(profile));
+    break;
   case ROUTER::LIBOSRM:
 #if USE_LIBOSRM
     // Use libosrm.
@@ -86,24 +81,16 @@ void Input::add_routing_wrapper(const std::string& profile) {
     // Attempt to use libosrm while compiling without it.
     throw RoutingException("VROOM compiled without libosrm installed.");
 #endif
-  case ROUTER::ORS: {
+  case ROUTER::ORS:
     // Use ORS http wrapper.
-    auto search = _servers.find(profile);
-    if (search == _servers.end()) {
-      throw InputException("Invalid profile: " + profile + ".");
-    }
     routing_wrapper =
-      std::make_unique<routing::OrsWrapper>(profile, search->second);
-  } break;
-  case ROUTER::VALHALLA: {
+      std::make_unique<routing::OrsWrapper>(profile, get_server(profile));
+    break;
+  case ROUTER::VALHALLA:
     // Use Valhalla http wrapper.
-    auto search = _servers.find(profile);
-    if (search == _servers.end()) {
-      throw InputException("Invalid profile: " + profile + ".");
-    }
     routing_wrapper =
-      std::make_unique<routing::ValhallaWrapper>(profile, search->second);
-  } break;
+      std::make_unique<routing::ValhallaWrapper>(profile, get_server(profile));
+    break;
   }
 #endif
 }
@@ -1383,6 +1370,14 @@ Solution Input::check(unsigned nb_thread) {
   // Silence -Wunused-parameter warning.
   (void)nb_thread;
 #endif
+}
+
+const Server& Input::get_server(const std::string& profile) const {
+  const auto search = _servers.find(profile);
+  if (search == _servers.end()) {
+    throw InputException("Invalid profile: " + profile + ".");
+  }
+  return search->second;
 }
 
 } // namespace vroom

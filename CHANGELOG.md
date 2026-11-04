@@ -15,6 +15,7 @@
 - Share POST query building across HTTP routing wrappers via `HttpWrapper::build_post_query` (#1365)
 - Add `io::json_to_string` and use it in `write_to_output` (#1365)
 - Parse `-r` routing engine values from a lookup table (#1365)
+- Reduce code duplication when creating routing wrappers (#1365)
 
 ### Fixed
 
