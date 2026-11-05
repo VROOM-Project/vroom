@@ -8,6 +8,10 @@
 
 - Add include to fix `std::counting_semaphore` usage (#1333)
 
+#### Routing
+
+- Input error on coordinates out of range for routing engines (#975)
+
 ## [v1.15.0] - 2026-03-12
 
 ### Added

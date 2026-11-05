@@ -35,6 +35,10 @@ public:
 
   bool has_coordinates() const;
 
+  // True if coordinates are set and are a valid longitude/latitude
+  // pair.
+  bool has_real_coordinates() const;
+
   Index index() const {
     return _index;
   }
