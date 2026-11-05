@@ -9,7 +9,6 @@ All rights reserved (see LICENSE).
 
 #include <fstream>
 #include <iostream>
-#include <map>
 #include <sstream>
 
 #if USE_LIBOSRM
@@ -25,7 +24,7 @@ All rights reserved (see LICENSE).
 #include "utils/output_json.h"
 #include "utils/version.h"
 
-const std::map<std::string, vroom::ROUTER> ROUTERS =
+const std::unordered_map<std::string, vroom::ROUTER> ROUTERS =
   {{"libosrm", vroom::ROUTER::LIBOSRM},
    {"osrm", vroom::ROUTER::OSRM},
    {"osrm_post", vroom::ROUTER::OSRM_POST},
