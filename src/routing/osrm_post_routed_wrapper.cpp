@@ -37,7 +37,7 @@ std::string OsrmPostRoutedWrapper::build_request_body(
     coord.PushBack(location.lon(), allocator);
     coord.PushBack(location.lat(), allocator);
     coordinates.PushBack(coord, allocator);
-    radiuses.PushBack(DEFAULT_LIBOSRM_SNAPPING_RADIUS, allocator);
+    radiuses.PushBack(DEFAULT_POST_OSRM_SNAPPING_RADIUS, allocator);
   }
   body.AddMember("coordinates", coordinates, allocator);
   body.AddMember("radiuses", radiuses, allocator);
