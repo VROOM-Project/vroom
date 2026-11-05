@@ -57,6 +57,7 @@ constexpr UserCost INFINITE_USER_COST =
 const std::string DEFAULT_PROFILE = "car";
 const std::string NO_TYPE = "";
 const std::string DEFAULT_OSRM_SNAPPING_RADIUS = "35000";
+constexpr unsigned int DEFAULT_POST_OSRM_SNAPPING_RADIUS = 35000;
 constexpr double DEFAULT_LIBOSRM_SNAPPING_RADIUS = 35000;
 
 // Our internal time measure is the hundredth of a second.
@@ -90,7 +91,7 @@ constexpr auto DEFAULT_MAX_TRAVEL_TIME = std::numeric_limits<Duration>::max();
 constexpr auto DEFAULT_MAX_DISTANCE = std::numeric_limits<Distance>::max();
 
 // Available routing engines.
-enum class ROUTER : std::uint8_t { OSRM, LIBOSRM, ORS, VALHALLA };
+enum class ROUTER : std::uint8_t { OSRM, LIBOSRM, ORS, VALHALLA, OSRM_POST };
 
 // Used to describe a routing server.
 struct Server {
