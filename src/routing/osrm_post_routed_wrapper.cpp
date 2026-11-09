@@ -46,7 +46,8 @@ std::string OsrmPostRoutedWrapper::build_request_body(
     body.AddMember("steps", false, allocator);
     body.AddMember("overview", "full", allocator);
     body.AddMember("continue_straight", false, allocator);
-  } else if (service == _matrix_service) {
+  } else {
+    assert(service == _matrix_service);
     rapidjson::Value annotations(rapidjson::kArrayType);
     annotations.PushBack("duration", allocator);
     annotations.PushBack("distance", allocator);
