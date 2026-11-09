@@ -32,6 +32,12 @@ bool Location::has_coordinates() const {
   return _coords.has_value();
 }
 
+bool Location::has_real_coordinates() const {
+  assert(this->has_coordinates());
+  return -180 <= _coords.value().lon && _coords.value().lon <= 180 &&
+         -90 <= _coords.value().lat && _coords.value().lat <= 90;
+}
+
 Coordinates Location::coordinates() const {
   assert(this->has_coordinates());
   return _coords.value();
