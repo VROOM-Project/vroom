@@ -121,6 +121,8 @@ private:
 
   void set_matrices(unsigned nb_thread, bool sparse_filling = false);
 
+  const Server& get_server(const std::string& profile) const;
+
   void add_routing_wrapper(const std::string& profile);
 
 public:

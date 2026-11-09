@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Added
+
+#### Features
+
+- Support POST requests to OSRM using `-r osrm_post` (#1365)
+
+### Changed
+
+
 ### Fixed
 
 #### Internals
