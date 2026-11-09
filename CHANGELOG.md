@@ -6,8 +6,7 @@
 
 #### Features
 
-- `osrm_post` routing engine sending requests to OSRM as POST with a JSON body (#1365)
-- Added the `osrm_post` option via the `-r` flag to choose to send a JSON request via POST to the OSRM router (#1365)
+- Support POST requests to OSRM using `-r osrm_post` (#1365)
 
 ### Changed
 
