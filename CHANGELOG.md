@@ -13,6 +13,10 @@
 
 ### Fixed
 
+#### Core solving
+
+- Out-of-bounds read in `PriorityReplace` candidate selection (#1369)
+
 #### Internals
 
 - Add include to fix `std::counting_semaphore` usage (#1333)
