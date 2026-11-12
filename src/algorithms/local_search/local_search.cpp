@@ -532,7 +532,8 @@ void LocalSearch<Route,
 
         for (const auto& [source, target] : s_t_pairs) {
           if (source != target || !_input.vehicle_ok_with_job(source, u) ||
-              _sol[source].empty() ||
+              // Replacing a single job is an UnassignedExchange move.
+              _sol[source].size() < 2 ||
               // We only search for net priority gains here.
               (u_priority <= _sol_state.fwd_priority[source].front() &&
                u_priority <= _sol_state.bwd_priority[source].back())) {
@@ -570,7 +571,11 @@ void LocalSearch<Route,
                          });
           const Index bwd_over_rank =
             std::distance(_sol_state.bwd_priority[source].crbegin(), bwd_over);
-          Index bwd_first_rank = _sol[source].size() - bwd_over_rank;
+          // A bwd_first_rank of route size - 1 will discard replacing
+          // the end of the route.
+          Index bwd_first_rank = (bwd_over_rank > 0)
+                                   ? _sol[source].size() - bwd_over_rank
+                                   : _sol[source].size() - 1;
           if (bwd_first_rank == 0) {
             // Sum of priorities for whole route is lower than job
             // priority. We elude this case as it is covered by start
