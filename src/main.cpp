@@ -7,9 +7,9 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <array>
 #include <fstream>
 #include <iostream>
-#include <sstream>
 
 #if USE_LIBOSRM
 #include "osrm/exception.hpp"
@@ -31,6 +31,29 @@ const std::unordered_map<std::string, vroom::ROUTER> ROUTERS =
    {"ors", vroom::ROUTER::ORS},
    {"valhalla", vroom::ROUTER::VALHALLA}};
 
+namespace {
+std::string read_input(std::istream& source, std::size_t max_bytes) {
+  std::string input;
+  std::array<char, 8192> buffer;
+  while (source) {
+    auto read_size = buffer.size();
+    if (max_bytes != 0 && max_bytes - input.size() < read_size) {
+      read_size = max_bytes - input.size() + 1;
+    }
+    source.read(buffer.data(), static_cast<std::streamsize>(read_size));
+    const auto count = static_cast<std::size_t>(source.gcount());
+    if (max_bytes != 0 && count > max_bytes - input.size()) {
+      throw vroom::InputException("Input exceeds --max-input-bytes.");
+    }
+    input.append(buffer.data(), count);
+  }
+  if (source.bad() || !source.eof()) {
+    throw vroom::InputException("Can't read input stream.");
+  }
+  return input;
+}
+} // namespace
+
 int main(int argc, char** argv) {
   vroom::io::CLArgs cl_args;
   std::vector<std::string> host_args;
@@ -39,6 +62,7 @@ int main(int argc, char** argv) {
   std::string limit_arg;
   std::string output_file;
   unsigned exploration_level;
+  std::size_t max_input_bytes;
 
   cxxopts::Options options("vroom",
                            "VROOM Copyright (C) 2015-2025, Julien Coupey\n"
@@ -70,6 +94,9 @@ int main(int argc, char** argv) {
     ("l,limit",
      "stop solving process after 'limit' seconds",
      cxxopts::value<std::string>(limit_arg))
+    ("max-input-bytes",
+     "reject JSON inputs larger than this many bytes (0 means unlimited)",
+     cxxopts::value<std::size_t>(max_input_bytes)->default_value("0"))
     ("o,output",
      "write output to a file rather than stdout",
      cxxopts::value<std::string>(output_file))
@@ -170,30 +197,20 @@ int main(int argc, char** argv) {
   }
   cl_args.router = router->second;
 
-  // Get input problem from first input file, then positional arg,
-  // then stdin.
-  if (!cl_args.input_file.empty()) {
-    const std::ifstream ifs(cl_args.input_file);
-    if (!ifs) {
-      const auto exc =
-        vroom::InputException("Can't read file: " + cl_args.input_file);
-      std::cerr << "[Error] " << exc.message << std::endl;
-      vroom::io::write_to_json(exc, cl_args.output_file);
-      exit(exc.error_code);
+  // Prefer an input file, then inline JSON, then stdin.
+  try {
+    if (!cl_args.input_file.empty()) {
+      std::ifstream input_file(cl_args.input_file, std::ios::binary);
+      if (!input_file) {
+        throw vroom::InputException("Can't read file: " + cl_args.input_file);
+      }
+      cl_args.input = read_input(input_file, max_input_bytes);
+    } else if (cl_args.input.empty()) {
+      cl_args.input = read_input(std::cin, max_input_bytes);
+    } else if (max_input_bytes != 0 && cl_args.input.size() > max_input_bytes) {
+      throw vroom::InputException("Input exceeds --max-input-bytes.");
     }
 
-    std::stringstream buffer;
-    buffer << ifs.rdbuf();
-
-    cl_args.input = buffer.str();
-  } else if (cl_args.input.empty()) {
-    // No input file provided and no positional arg, check stdin.
-    std::stringstream buffer;
-    buffer << std::cin.rdbuf();
-    cl_args.input = buffer.str();
-  }
-
-  try {
     // Build problem.
     vroom::Input problem_instance(cl_args.servers,
                                   cl_args.router,
