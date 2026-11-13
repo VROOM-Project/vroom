@@ -1325,8 +1325,14 @@ void LocalSearch<Route,
         Index end_t_rank = _sol[source].size() - 1;
         const auto end_s_next =
           _sol_state.weak_insertion_ranks_end[source][s_next_job_rank];
-        assert(end_s_next > 1);
-        end_t_rank = std::min(end_t_rank, static_cast<Index>(end_s_next - 2));
+        if (end_s_next > 1) {
+          end_t_rank =
+            std::min(end_t_rank, static_cast<Index>(end_s_next - 2));
+        } else {
+          // The next job cannot be reinserted after the first route task.
+          // No intra cross-exchange candidate can satisfy that bound.
+          end_t_rank = std::min(end_t_rank, end_s_next);
+        }
 
         for (unsigned t_rank = s_rank + 3; t_rank < end_t_rank; ++t_rank) {
           const auto& job_t_type = _input.jobs[_sol[target].route[t_rank]].type;

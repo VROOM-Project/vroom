@@ -34,6 +34,8 @@ jobs:
         working-directory: src
       - name: Validate output
         run: diff <(bin/vroom -i docs/example_2.json  | jq '.routes[].steps[]' --sort-keys) <(jq '.routes[].steps[]' --sort-keys docs/example_2_sol.json)
+      - name: Regression test for non-metric duration matrix
+        run: bin/vroom -i tests/issue_1341_non_metric_matrix.json | jq -e '.code == 0'
       - name: Build libvroom example
         run: make -j
         env:
