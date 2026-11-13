@@ -6,6 +6,7 @@
 
 #### Features
 
+- No AI policy (#1366)
 - Support POST requests to OSRM using `-r osrm_post` (#1365)
 
 ### Changed

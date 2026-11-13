@@ -15,6 +15,9 @@ on something you want to submit a PR for, feel free to open an issue
 in order to discuss implementation details or make sure your idea fits
 with the scope or aim of the project.
 
+Please make sure you read our [AI policy](AI-POLICY.md) before
+contributing.
+
 ## Branching
 
 * The tip of the `master` branch is the current dev version.
