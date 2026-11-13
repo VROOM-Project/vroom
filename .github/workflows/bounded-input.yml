@@ -19,8 +19,8 @@ jobs:
           set -euo pipefail
           fixture=docs/example_2.json
           bytes=$(wc -c < "$fixture")
-          inline=
-          inline_bytes=
+          inline=$(cat "$fixture")
+          inline_bytes=$(printf '%s' "$inline" | wc -c)
           baseline=$(bin/vroom -i "$fixture" | jq '.routes[].steps[]' --sort-keys)
           diff <(printf '%s\n' "$baseline") <(jq '.routes[].steps[]' --sort-keys docs/example_2_sol.json)
           test "$(bin/vroom --max-input-bytes "$bytes" -i "$fixture" | jq '.code')" = 0
