@@ -17,6 +17,7 @@
 #### Core solving
 
 - Segfault with geometry request with plan mode and user-defined matrices (#1334)
+- Out-of-bounds read in `PriorityReplace` (#1348)
 
 #### Internals
 
