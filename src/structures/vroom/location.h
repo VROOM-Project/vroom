@@ -35,6 +35,8 @@ public:
 
   bool has_coordinates() const;
 
+  bool has_real_coordinates() const;
+
   Index index() const {
     return _index;
   }

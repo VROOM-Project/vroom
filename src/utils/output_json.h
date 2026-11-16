@@ -38,6 +38,8 @@ rapidjson::Value to_json(const Step& s,
 rapidjson::Value to_json(const Location& loc,
                          rapidjson::Document::AllocatorType& allocator);
 
+std::string json_to_string(const rapidjson::Document& docs);
+
 void write_to_json(const vroom::Exception& e,
                    const std::string& output_file = "");
 

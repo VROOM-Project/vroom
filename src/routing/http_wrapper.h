@@ -43,6 +43,9 @@ protected:
 
   std::string run_query(const std::string& query) const;
 
+  std::string build_post_query(const std::string& path,
+                               const std::string& body) const;
+
   static void parse_response(rapidjson::Document& json_result,
                              const std::string& json_content);
 

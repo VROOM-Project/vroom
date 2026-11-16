@@ -378,21 +378,25 @@ rapidjson::Value to_json(const Location& loc,
   return json_coords;
 }
 
+std::string json_to_string(const rapidjson::Document& docs) {
+  rapidjson::StringBuffer buffer;
+  rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+  docs.Accept(writer);
+  return std::string(buffer.GetString(), buffer.GetSize());
+}
+
 void write_to_output(const rapidjson::Document& json_output,
                      const std::string& output_file) {
-  // Rapidjson writing process.
-  rapidjson::StringBuffer s;
-  rapidjson::Writer<rapidjson::StringBuffer> r_writer(s);
-  json_output.Accept(r_writer);
+  const std::string output = json_to_string(json_output);
 
   // Write to relevant output.
   if (output_file.empty()) {
     // Log to standard output.
-    std::cout << s.GetString() << std::endl;
+    std::cout << output << std::endl;
   } else {
     // Log to file.
     std::ofstream out_stream(output_file, std::ofstream::out);
-    out_stream << s.GetString();
+    out_stream << output;
     out_stream.close();
   }
 }

@@ -23,6 +23,7 @@ All rights reserved (see LICENSE).
 #include "routing/libosrm_wrapper.h"
 #endif
 #include "routing/ors_wrapper.h"
+#include "routing/osrm_post_routed_wrapper.h"
 #include "routing/osrm_routed_wrapper.h"
 #include "routing/valhalla_wrapper.h"
 #include "structures/vroom/input/input.h"
@@ -47,6 +48,17 @@ void Input::add_routing_wrapper(const std::string& profile) {
     throw InputException("Missing coordinates for routing engine.");
   }
 
+  if (const auto invalid =
+        std::ranges::find_if(_locations,
+                             [](const auto& location) {
+                               return !location.has_real_coordinates();
+                             });
+      invalid != _locations.end()) {
+    throw InputException(std::format("Invalid coordinates: [{},{}].",
+                                     invalid->lon(),
+                                     invalid->lat()));
+  }
+
   assert(std::find_if(_routing_wrappers.begin(),
                       _routing_wrappers.end(),
                       [&](const auto& wr) { return wr->profile == profile; }) ==
@@ -55,15 +67,18 @@ void Input::add_routing_wrapper(const std::string& profile) {
   auto& routing_wrapper = _routing_wrappers.emplace_back();
 
   switch (_router) {
-  case ROUTER::OSRM: {
+  case ROUTER::OSRM:
     // Use osrm-routed.
-    auto search = _servers.find(profile);
-    if (search == _servers.end()) {
-      throw InputException("Invalid profile: " + profile + ".");
-    }
     routing_wrapper =
-      std::make_unique<routing::OsrmRoutedWrapper>(profile, search->second);
-  } break;
+      std::make_unique<routing::OsrmRoutedWrapper>(profile,
+                                                   get_server(profile));
+    break;
+  case ROUTER::OSRM_POST:
+    // Use osrm-routed with POST requests.
+    routing_wrapper =
+      std::make_unique<routing::OsrmPostRoutedWrapper>(profile,
+                                                       get_server(profile));
+    break;
   case ROUTER::LIBOSRM:
 #if USE_LIBOSRM
     // Use libosrm.
@@ -77,24 +92,16 @@ void Input::add_routing_wrapper(const std::string& profile) {
     // Attempt to use libosrm while compiling without it.
     throw RoutingException("VROOM compiled without libosrm installed.");
 #endif
-  case ROUTER::ORS: {
+  case ROUTER::ORS:
     // Use ORS http wrapper.
-    auto search = _servers.find(profile);
-    if (search == _servers.end()) {
-      throw InputException("Invalid profile: " + profile + ".");
-    }
     routing_wrapper =
-      std::make_unique<routing::OrsWrapper>(profile, search->second);
-  } break;
-  case ROUTER::VALHALLA: {
+      std::make_unique<routing::OrsWrapper>(profile, get_server(profile));
+    break;
+  case ROUTER::VALHALLA:
     // Use Valhalla http wrapper.
-    auto search = _servers.find(profile);
-    if (search == _servers.end()) {
-      throw InputException("Invalid profile: " + profile + ".");
-    }
     routing_wrapper =
-      std::make_unique<routing::ValhallaWrapper>(profile, search->second);
-  } break;
+      std::make_unique<routing::ValhallaWrapper>(profile, get_server(profile));
+    break;
   }
 #endif
 }
@@ -1080,7 +1087,14 @@ void Input::set_matrices(unsigned nb_thread, bool sparse_filling) {
         const bool define_distances = (distances_m->second.size() == 0);
         assert(!define_durations || define_distances);
 
-        if (define_durations || define_distances) {
+        const bool need_geometry =
+          sparse_filling && !(_routing_wrappers.empty());
+
+        if (define_durations || define_distances || need_geometry) {
+          // Populate relevant matrices if either durations or
+          // distances are not user-provided. The need_geometry case
+          // is useful for a plan request with both provided but
+          // geometries are still requested.
           if (_locations.size() == 1 && !sparse_filling) {
             durations_m->second = Matrix<UserDuration>(1);
             distances_m->second = Matrix<UserDistance>(1);
@@ -1374,6 +1388,14 @@ Solution Input::check(unsigned nb_thread) {
   // Silence -Wunused-parameter warning.
   (void)nb_thread;
 #endif
+}
+
+const Server& Input::get_server(const std::string& profile) const {
+  const auto search = _servers.find(profile);
+  if (search == _servers.end()) {
+    throw InputException("Invalid profile: " + profile + ".");
+  }
+  return search->second;
 }
 
 } // namespace vroom

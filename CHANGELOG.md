@@ -2,11 +2,29 @@
 
 ## Unreleased
 
+### Added
+
+#### Features
+
+- No AI policy (#1366)
+- Support POST requests to OSRM using `-r osrm_post` (#1365)
+
+### Changed
+
+
 ### Fixed
+
+#### Core solving
+
+- Segfault with geometry request with plan mode and user-defined matrices (#1334)
 
 #### Internals
 
 - Add include to fix `std::counting_semaphore` usage (#1333)
+
+#### Routing
+
+- Input error on coordinates out of range for routing engines (#975)
 
 ## [v1.15.0] - 2026-03-12
 

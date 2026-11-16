@@ -7,6 +7,7 @@ All rights reserved (see LICENSE).
 
 */
 
+#include <format>
 #include <utility>
 
 #include <asio.hpp>
@@ -34,6 +35,19 @@ HttpWrapper::HttpWrapper(const std::string& profile,
     _matrix_distances_key(std::move(matrix_distances_key)),
     _route_service(std::move(route_service)),
     _routing_args(std::move(routing_args)) {
+}
+
+std::string HttpWrapper::build_post_query(const std::string& path,
+                                          const std::string& body) const {
+  std::string query = "POST /" + _server.path + path + " HTTP/1.0\r\n";
+  query += "Accept: */*\r\n";
+  query += "Content-Type: application/json\r\n";
+  query += std::format("Content-Length: {}\r\n", body.size());
+  query += "Host: " + _server.host + ":" + _server.port + "\r\n";
+  query += "Connection: close\r\n";
+  query += "\r\n" + body;
+
+  return query;
 }
 
 void set_response(auto& s, std::string& response) {
