@@ -10,21 +10,14 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "routing/http_wrapper.h"
+#include "routing/osrm_routed_wrapper.h"
 
 namespace vroom::routing {
 
-class OsrmGetWrapper : public HttpWrapper {
+class OsrmGetWrapper : public OsrmRoutedWrapper {
 private:
   std::string build_query(const std::vector<Location>& locations,
                           const std::string& service) const override;
-
-  void check_response(const rapidjson::Document& json_result,
-                      const std::vector<Location>& locs,
-                      const std::string& service) const override;
-
-  const rapidjson::Value&
-  get_legs(const rapidjson::Value& result) const override;
 
   std::string build_query_body(const std::vector<Location>& locations,
                                const std::string& service) const;

@@ -10,11 +10,11 @@ All rights reserved (see LICENSE).
 
 */
 
-#include "routing/osrm_get_wrapper.h"
+#include "routing/osrm_routed_wrapper.h"
 
 namespace vroom::routing {
 
-class OsrmPostWrapper : public OsrmGetWrapper {
+class OsrmPostWrapper : public OsrmRoutedWrapper {
 private:
   std::string build_query(const std::vector<Location>& locations,
                           const std::string& service) const override;
