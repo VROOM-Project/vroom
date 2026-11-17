@@ -46,7 +46,17 @@ std::string HttpWrapper::build_post_query(const std::string& path,
   query += "Host: " + _server.host + ":" + _server.port + "\r\n";
   query += "Connection: close\r\n";
   query += "\r\n" + body;
+  return query;
+}
 
+std::string HttpWrapper::build_get_query(const std::string& path,
+                                         const std::string& body) const {
+  std::string query = "GET /" + _server.path + path;
+  query += body;
+  query += " HTTP/1.1\r\n";
+  query += "Host: " + _server.host + "\r\n";
+  query += "Accept: */*\r\n";
+  query += "Connection: close\r\n\r\n";
   return query;
 }
 
