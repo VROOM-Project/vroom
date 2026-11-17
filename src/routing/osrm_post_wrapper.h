@@ -1,5 +1,5 @@
-#ifndef OSRM_POST_ROUTED_WRAPPER_H
-#define OSRM_POST_ROUTED_WRAPPER_H
+#ifndef OSRM_POST_WRAPPER_H
+#define OSRM_POST_WRAPPER_H
 
 /*
 
@@ -14,7 +14,7 @@ All rights reserved (see LICENSE).
 
 namespace vroom::routing {
 
-class OsrmPostRoutedWrapper : public OsrmGetWrapper {
+class OsrmPostWrapper : public OsrmGetWrapper {
 private:
   std::string build_query(const std::vector<Location>& locations,
                           const std::string& service) const override;
@@ -24,7 +24,7 @@ private:
                                const std::string& service) const;
 
 public:
-  OsrmPostRoutedWrapper(const std::string& profile, const Server& server);
+  OsrmPostWrapper(const std::string& profile, const Server& server);
 };
 
 } // namespace vroom::routing

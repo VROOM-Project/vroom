@@ -1,5 +1,5 @@
-#ifndef OSRM_ROUTED_WRAPPER_H
-#define OSRM_ROUTED_WRAPPER_H
+#ifndef OSRM_GET_WRAPPER_H
+#define OSRM_GET_WRAPPER_H
 
 /*
 
